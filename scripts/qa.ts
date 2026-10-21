@@ -12,6 +12,7 @@ import sharp from "sharp";
 import { ROOT } from "./lib/files.ts";
 import { withDevServer } from "./lib/server.ts";
 import { withChrome } from "./lib/chrome.ts";
+import { listenInPage, type ListenResult } from "./lib/listen.ts";
 
 const OUT = join(ROOT, "captures/qa");
 mkdirSync(OUT, { recursive: true });
@@ -63,6 +64,8 @@ const now = (page: Page) =>
     const a = d.audio!();
     return { lastS: d.lastS ?? 0, frames: d.frames ?? 0, audio: a, perf: performance.now() };
   });
+
+let listen: ListenResult | undefined;
 
 await withDevServer(async (base) => {
   const browser = await chromium.launch({ args: ["--use-angle=metal", "--enable-gpu", "--autoplay-policy=no-user-gesture-required"] });
@@ -209,7 +212,10 @@ await withDevServer(async (base) => {
       record("Climax frame rate (Google Chrome)", fps >= 55, `${fps.toFixed(1)} frames per second from ${f0.s.toFixed(1)} s to ${f1.s.toFixed(1)} s (the display's refresh rate is the ceiling)`);
       await page.eval("window.__vis = []; document.addEventListener('visibilitychange', () => window.__vis.push(document.visibilityState))");
       const before = await snap();
-      const tab = (await browser.send("Target.createTarget", { url: "about:blank", background: false })) as { targetId: string };
+      const tab = (await browser.send("Target.createTarget", { url: "about:blank", background: false, newWindow: false })) as { targetId: string };
+      await browser.send("Target.activateTarget", { targetId: tab.targetId });
+      const winOf = async (targetId: string) => ((await browser.send("Browser.getWindowForTarget", { targetId })) as { windowId?: number }).windowId;
+      const windows = [await winOf(pageId), await winOf(tab.targetId)];
       const during: Snap[] = [];
       for (let i = 0; i < 5; i++) {
         await sleep(2000);
@@ -228,11 +234,41 @@ await withDevServer(async (base) => {
       record(
         "Hidden tab, real tab switch in the climax (Google Chrome)",
         hidden && stalled <= 2 && Math.abs(moved - gap) < 0.1 && Math.abs(lead) < 120 && after.startedLate === 0,
-        `page ${hidden ? "was hidden for 10 s" : "was NOT hidden"} (${stalled} frames drawn while hidden); ${after.scheduled - before.scheduled} sounds kept playing on the audio clock meanwhile; on return song time had moved ${moved.toFixed(3)} s over ${gap.toFixed(3)} s, the picture is ${lead.toFixed(0)} ms from the audio, and ${after.startedLate} sounds started late`,
+        `page ${hidden ? "was hidden for 10 s" : `was NOT hidden (demo in window ${windows[0]}, new tab in window ${windows[1]})`} (${stalled} frames drawn while hidden); ${after.scheduled - before.scheduled} sounds kept playing on the audio clock meanwhile; on return song time had moved ${moved.toFixed(3)} s over ${gap.toFixed(3)} s, the picture is ${lead.toFixed(0)} ms from the audio, and ${after.startedLate} sounds started late`,
       );
       return true;
     });
     if (!ran) record("Hidden tab, real tab switch in the climax (Google Chrome)", false, "Google Chrome is not installed, so the real tab switch was not run");
+  }
+
+  // ------------------------------------------------------- listening pass
+  // The whole level's mix rendered offline through the live mixing graph, then measured.
+  {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+    const page = await ctx.newPage();
+    await page.goto(`${base}/?test`);
+    await waitReady(page);
+    await page.waitForFunction(() => (window as unknown as { __demo: { renderMix?: unknown } }).__demo.renderMix !== undefined);
+    // tsx names functions with a __name helper that does not exist in the page.
+    const l = await page.evaluate<ListenResult>(`(() => { const __name = (f) => f; return (${listenInPage.toString()})(); })()`);
+    listen = l;
+    record("Mix: no clipping", l.clipped === 0 && l.peakDb < 0, `peak ${l.peakDb.toFixed(2)} dBFS, ${l.clipped} clipped samples over the whole level`);
+    const below = l.musicPeakDb - l.sfxP95Db;
+    record("Mix: effects about 6 dB below the music's peak", below >= 4.5 && below <= 7.5, `music peak ${l.musicPeakDb.toFixed(1)} dB (400 ms RMS); effects 95th percentile ${l.sfxP95Db.toFixed(1)} dB: ${below.toFixed(1)} dB below`);
+    const loud = l.sections.filter((x) => x.sfxDb > x.musicDb);
+    record("Mix: music stays in front in every section", loud.length === 0, loud.length ? `effects louder than the music in ${loud.map((x) => x.label).join(", ")}` : l.sections.map((x) => `${x.label} ${(x.musicDb - x.sfxDb).toFixed(1)} dB`).join(", "));
+    const flat = l.sections.filter((x) => x.mixSpreadDb < x.musicSpreadDb - 1);
+    record(
+      "Mix: no wall of noise",
+      flat.length === 0,
+      `the mix keeps the music's rise and fall between hits (p10–p90 of 50 ms levels, music → mix): ${l.sections.map((x) => `${x.label} ${x.musicSpreadDb.toFixed(1)} → ${x.mixSpreadDb.toFixed(1)}`).join(", ")}`,
+    );
+    record(
+      "Mix: effects heard on time",
+      l.lateness.over10ms === 0,
+      `${l.lateness.events} sound events: perceived onset (decoded file, 5 ms envelope at half peak) minus scheduled time is at most ${Math.abs(l.lateness.maxMs).toFixed(1)} ms; ${l.lateness.over10ms} are off by more than 10 ms`,
+    );
+    await ctx.close();
   }
 
   // -------------------------------------------- captures for the human review
@@ -294,6 +330,18 @@ const md = [
   "|---|---|---|",
   ...results.map((r) => `| ${r.item} | ${r.ok ? "ok" : "**FAIL**"} | ${r.detail} |`),
   "",
+  ...(listen
+    ? [
+        "## Mix by section",
+        "",
+        "Levels are RMS of the offline render; spread is the p10–p90 range of 50 ms levels.",
+        "",
+        "| Section | Music dB | Effects dB | Mix dB | Music spread dB | Mix spread dB |",
+        "|---|---|---|---|---|---|",
+        ...listen.sections.map((x) => `| ${x.label} | ${x.musicDb.toFixed(1)} | ${x.sfxDb.toFixed(1)} | ${x.mixDb.toFixed(1)} | ${x.musicSpreadDb.toFixed(1)} | ${x.mixSpreadDb.toFixed(1)} |`),
+        "",
+      ]
+    : []),
 ].join("\n");
 writeFileSync(join(OUT, "report.md"), md);
 writeFileSync(join(OUT, "report.json"), JSON.stringify(results, null, 1));
