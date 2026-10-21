@@ -384,6 +384,8 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap): Le
       checkRef(song, e.boss.diesAt, [...path, "boss", "diesAt"]);
     }
     if (e.threats) checkRef(song, e.threats.until, [...path, "threats", "until"]);
+    if (e.levelUp && e.xp === undefined) issues.push({ ...at(path), message: "a levelUp needs xp (the experience it takes)" });
+    if (e.xp !== undefined && !e.levelUp) issues.push({ ...at([...path, "xp"]), message: "xp only applies to a levelUp" });
     if (e.titleCard) checkRef(song, e.titleCard.until, [...path, "titleCard", "until"]);
     const kinds = ["levelUp", "formation", "threats", "boss", "banner", "titleCard", "landmark", "timeScale", "blast"].filter((k) => (e as Record<string, unknown>)[k] !== undefined);
     if (kinds.length === 0) issues.push({ ...at(path), message: "event does nothing (add levelUp, formation, threats, boss, banner, titleCard, landmark, timeScale or blast)" });

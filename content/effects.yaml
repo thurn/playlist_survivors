@@ -166,6 +166,15 @@ effects:
       - { kind: distortion, radius: 160, life: 0.45, clock: song, strength: 1 }
       - { kind: decal, art: "proc:crack", size: 1.6 }
       - { kind: light, color: "#ff8a3a", radius: 140, life: 0.3, clock: song, strength: 1.5 }
+  - id: shockwave
+    layers:
+      - { kind: sprite, art: "proc:arc", clock: world, life: 0.22, align: hitShape, additive: true, tint: "#ffd890", scale: 1 }
+      - { kind: burst, art: "proc:spark", count: [4, 8], speed: [60, 140], life: 0.3, clock: world, drag: 3, tint: "#ffe8b0" }
+      - { kind: shake, trauma: [0.05, 0.1] }
+  - id: arrow-shatter
+    layers:
+      - { kind: burst, art: "proc:spark", count: 10, speed: [60, 160], life: 0.3, clock: world, drag: 3, tint: "#fff0c0" }
+      - { kind: burst, art: "proc:shard", count: 3, speed: [40, 100], life: 0.5, clock: world, gravity: 300, tint: "#c8a070", additive: false }
   - id: arrow-release
     layers:
       - { kind: burst, art: "proc:spark", count: 4, speed: [30, 80], life: 0.2, clock: world, tint: "#fff0c0" }

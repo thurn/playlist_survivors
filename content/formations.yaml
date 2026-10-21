@@ -3,7 +3,7 @@ formations:
     shape: kick-line
     enemy: skeleton-ember
     count: 12
-    spacing: 34                  # the line is about 374 px long
+    spacing: 28                  # the line is about 310 px long
     enterFrom: right
     entranceBeats: 8
     step: beat

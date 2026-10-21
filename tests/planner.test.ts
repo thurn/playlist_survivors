@@ -43,6 +43,8 @@ describe("simulated playthrough on the synthetic song", () => {
       const b0 = plan.songBeats[i];
       const b1 = plan.songBeats[i + 1];
       if (b0 < sec.s0 + 2 || b1 > sec.s1) continue;
+      // (A cleave's hit-stop freezes the step for a moment: skip those beats.)
+      if (warp.hitStops().some(([h0]) => h0 > b0 - 0.05 && h0 < b0 + 0.3)) continue;
       // Inside one beat gap, after the step has landed and before the next press.
       const a = heroSample(plan, warp.toWorld(b0 + 0.2));
       const b = heroSample(plan, warp.toWorld(b0 + 0.27));
@@ -79,5 +81,25 @@ describe("simulated playthrough on the synthetic song", () => {
     const presses = plan.inputs.filter((i) => i.kind === "press" && i.s < prelude.s1);
     expect(presses.length).toBeGreaterThan(0);
     expect(presses.every((i) => !i.steps && i.rating === undefined)).toBe(true);
+  });
+
+  it("cleaves on accents, meets every threat with a near miss, and kills the boss on its chord", () => {
+    const heavy = plan.swings.filter((x) => x.kind === "heavy" && x.press !== undefined);
+    expect(heavy.length).toBeGreaterThan(3);
+    for (const h of heavy) expect(h.accent).toBeGreaterThanOrEqual(0.7);
+    // Each cleave's shockwave lands band by band on sixteenth notes.
+    const waves = plan.hits.filter((h) => h.source === "wave");
+    expect(waves.length).toBeGreaterThan(heavy.length * 4);
+    expect(plan.threats.length).toBeGreaterThan(8);
+    expect(plan.threats.filter((t) => t.outcome === "near-miss").length / plan.threats.length).toBeGreaterThanOrEqual(0.9);
+    expect(plan.nearMisses.length).toBeGreaterThan(0);
+    expect(plan.boss?.deathS).toBeDefined();
+    expect(plan.boss!.deathS! - plan.boss!.chordS).toBeLessThan(0.5);
+  });
+
+  it("levels up from earned experience at (or after) the scheduled moments", () => {
+    const scheduled = input.level.events.filter((e) => e.levelUp).length;
+    expect(plan.weapons.length).toBe(scheduled);
+    expect(plan.hud.xpFill.some((f) => f >= 1 - 1e-9)).toBe(true);
   });
 });

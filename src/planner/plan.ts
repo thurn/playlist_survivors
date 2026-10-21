@@ -77,6 +77,11 @@ export function virtualPlayer(ctx: Ctx, sch: Schedule, profile: SkillProfile = "
     ctx.sections.map((s) => ({ steps: s.level.movement === "steps", presses: s.level.presses, s0: s.s0, s1: s.s1 })),
     ctx.song.beats,
     profile,
+    (slot) => {
+      const rule = ctx.sections[slot.section].level.heavyOnAccents;
+      return slot.accent > 0 && slot.accent >= rule.minStrength && (rule.label === undefined || rule.label === slot.accentLabel);
+    },
+    sch.boss?.sDeath,
   );
 }
 
@@ -210,7 +215,10 @@ export function plan(input: PlannerInput, opts: PlannerOptions = {}): Plan {
     swings: sim.swings,
     inputs: sim.inputs,
     groove: { s: Float64Array.from(sim.groove.s), v: Float32Array.from(sim.groove.v) },
-    nearMisses: [],
+    nearMisses: sim.threats.filter((t) => t.outcome === "near-miss").map((t) => ({ s: t.s, w: t.w, kind: t.kind })),
+    threats: sim.threats.map((t) => ({ s: t.s, kind: t.kind, outcome: t.outcome })),
+    boss: sim.boss && sch.boss ? { id: sim.boss.id, chordS: sch.boss.sDeath, deathS: sim.boss.deathS } : undefined,
+    formations: sim.formations.map((f) => ({ def: f.def, sRelease: f.sRelease, members: f.members })),
     stats,
   };
 }

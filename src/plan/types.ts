@@ -64,8 +64,8 @@ export interface EnemyRecord {
   formation?: number;
   /** Spawn has a visible effect (boss landing, summoning). */
   entrance?: "land" | "summon";
-  /** Boss slams or archer releases, as world times. */
-  attacks?: { w: number; kind: "shoot" | "slam"; dir: number }[];
+  /** Boss slams or archer releases: wind-up (or draw) start and release, as world times. */
+  attacks?: { w0: number; w: number; kind: "shoot" | "slam"; dir: number }[];
   /** Planned dance (kick) times for formation members. */
   dance?: { w0: number; w1: number; anim: string; alternate: boolean; phase: number };
 }
@@ -92,6 +92,8 @@ export interface Hit {
   intensity: number;
   /** Damage dealt to each enemy caught (after the groove bonus). */
   damage: number;
+  /** Hits of one cleave shockwave share a group: each enemy takes at most one of them. */
+  group?: number;
 }
 
 export interface EffectEvent {
@@ -148,7 +150,8 @@ export type UiEvent =
   | { kind: "levelUp"; s: number; weapon: string }
   | { kind: "perfect"; s: number; x: number; y: number }
   | { kind: "weaponFire"; s: number; weapon: string }
-  | { kind: "bossBar"; s: number; until: number; hits: number[]; name: string }
+  /** The boss's health bar: song time and remaining health (0–1) after each hit. */
+  | { kind: "bossBar"; s: number; until: number; health: [number, number][]; name: string }
   | { kind: "end"; s: number };
 
 export interface Projectile {
@@ -284,8 +287,14 @@ export interface Plan {
   inputs: PlanInput[];
   /** The groove meter (0–1) after each change, at song times. */
   groove: { s: Float64Array; v: Float32Array };
-  /** Near misses (primary events). */
+  /** Near misses. */
   nearMisses: { s: number; w: number; kind: "arrow" | "slam" }[];
+  /** Every threat (arrow or boss slam) and how it ended. */
+  threats: { s: number; kind: "arrow" | "slam"; outcome: "near-miss" | "touch" | "miss" }[];
+  /** The boss: its death chord and when it died. */
+  boss?: { id: number; chordS: number; deathS?: number };
+  /** Formations: their releases and members (enemy ids). */
+  formations: { def: string; sRelease: number; members: number[] }[];
   /** Song-time beat index of every sixteenth slot is beatIndex × 4. */
   stats: PlanStats;
 }

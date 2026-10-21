@@ -124,7 +124,7 @@ export interface HudState {
   markers: { dt: number; size: number; kind: string }[];
   banners: { text: string; age: number; dur: number }[];
   title?: { age: number; remaining: number };
-  boss?: { name: string; hitsTaken: number; hits: number; age: number; remaining: number };
+  boss?: { name: string; health: number; age: number; remaining: number };
   end?: { age: number };
 }
 
@@ -384,8 +384,8 @@ export class Evaluator {
       // Attacks: archers draw and loose; the boss winds up its slam.
       if (e.attacks) {
         for (const at of e.attacks) {
-          const lead = at.kind === "slam" ? 0.6 : 0.75;
-          if (w >= at.w - lead && w < at.w + 0.25) {
+          const lead = Math.max(0.05, at.w - at.w0);
+          if (w >= at.w0 && w < at.w + 0.25) {
             anim = at.kind === "slam" ? "slash" : "shoot";
             const n = at.kind === "slam" ? 6 : 13;
             const impact = at.kind === "slam" ? 4 : 9;
@@ -824,7 +824,7 @@ export class Evaluator {
       if (u.s > s) break;
       if (u.kind === "banner" && s - u.s < u.dur) banners.push({ text: u.text, age: s - u.s, dur: u.dur });
       if (u.kind === "title" && s < u.until + 1.5) title = { age: s - u.s, remaining: u.until - s };
-      if (u.kind === "bossBar" && s < u.until + 1) boss = { name: u.name, hitsTaken: u.hits.filter((t) => t <= s).length, hits: u.hits.length, age: s - u.s, remaining: u.until - s };
+      if (u.kind === "bossBar" && s < u.until + 1) boss = { name: u.name, health: u.health.findLast(([t]) => t <= s)?.[1] ?? 1, age: s - u.s, remaining: u.until - s };
       if (u.kind === "end") end = { age: s - u.s };
     }
     const progress = clamp(s / plan.duration, 0, 1);

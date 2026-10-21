@@ -184,9 +184,7 @@ export class Hud {
         const a = clamp(hud.boss.age * 2, 0, 1) * clamp(1 + hud.boss.remaining, 0, 1);
         const bw = 360;
         g.roundRect(px(480 - bw / 2), py(54), bw * u, 10 * u, 3 * u).fill({ color: 0x000000, alpha: 0.65 * a });
-        const left = 1 - hud.boss.hitsTaken / Math.max(1, hud.boss.hits);
-        g.roundRect(px(480 - bw / 2 + 1), py(55), (bw - 2) * u * left, 8 * u, 3 * u).fill({ color: 0xc02030, alpha: a });
-        for (let k = 1; k < hud.boss.hits; k++) g.rect(px(480 - bw / 2 + (bw * k) / hud.boss.hits), py(55), Math.max(1, u), 8 * u).fill({ color: 0x000000, alpha: 0.5 * a });
+        g.roundRect(px(480 - bw / 2 + 1), py(55), (bw - 2) * u * clamp(hud.boss.health, 0, 1), 8 * u, 3 * u).fill({ color: 0xc02030, alpha: a });
         this.text(hud.boss.name, px(480), py(42), fs, 0xffc0c0, "center", a);
       }
     }

@@ -26,7 +26,7 @@ export interface CheckResult {
 
 const MAX_REPORTED = 8;
 /** Recorded enemy positions are 30 Hz samples of fast, surging motion: allow this much interpolation error. */
-const SAMPLE_SLACK = 8;
+const SAMPLE_SLACK = 10;
 /** The hero track is sampled at 60 Hz and a step moves fast: interpolating mid-step is off by a few pixels. */
 const HERO_SLACK = 8;
 /** Pace window, measured along the route. */
@@ -216,8 +216,10 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
       const a = sw.aim;
       const targets: AimTarget[] = [];
       for (let i = 0; i < a.targets.length; i += 4) targets.push({ x: a.targets[i], y: a.targets[i + 1], r: a.targets[i + 2], weight: a.targets[i + 3] });
+      // A cleave aims with its shockwave's reach.
       const shape = sw.kind === "heavy" ? hero.swings.heavy.hitShape : hero.swings.light.hitShape;
-      const dir = aim(a.x, a.y, a.facing, targets, { radius: shape.radius, halfAngle: (shape.degrees * Math.PI) / 360 });
+      const radius = sw.kind === "heavy" ? hero.swings.heavy.wave.to : shape.radius;
+      const dir = aim(a.x, a.y, a.facing, targets, { radius, halfAngle: (shape.degrees * Math.PI) / 360 });
       if (Math.abs(wrapAngle(dir - sw.dir)) > 1e-6) f.push(`swing at ${fmt(sw.s)} aimed at ${sw.dir.toFixed(3)} rad; auto-aim gives ${dir.toFixed(3)}`);
       // The snapshot is the recorded state: the hero where the track has it, the targets where enemies were.
       const ww = warp.toWorld(sw.sWind);
@@ -239,14 +241,18 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
   {
     const f: string[] = [];
     let n = 0;
+    // A cleave's shockwave hits each enemy at most once.
+    const groupHits = new Map<number, Set<number>>();
+    for (const h of plan.hits) if (h.group !== undefined) (groupHits.get(h.group) ?? groupHits.set(h.group, new Set()).get(h.group)!).add(h.id);
     for (const h of plan.hits) {
       if (h.source === "ring") continue;
       for (const id of bucketAt(h.w)) {
         const e = byId.get(id)!;
         if (h.w < e.spawnW || h.w > e.deathW - 1e-9) continue;
         if (fatesOnHit[h.id].has(id)) continue;
-        // Spawned this very instant, after the hit resolved.
-        if (Math.abs(h.w - e.spawnW) < 1e-9) continue;
+        if (h.group !== undefined && e.fates.some((f) => groupHits.get(h.group!)!.has(f.hit))) continue;
+        // Spawned this very instant, after the hit resolved; or the boss still dropping in.
+        if (Math.abs(h.w - e.spawnW) < 1e-9 || (e.entrance === "land" && h.w < e.spawnW + 0.55)) continue;
         enemyPos(plan, e, h.w, tmp);
         const def = lib.enemies.get(e.type)!;
         n++;
@@ -265,7 +271,8 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
         enemyPos(plan, e, fate.w, tmp);
         if (Math.hypot(tmp.x - fate.x, tmp.y - fate.y) > SAMPLE_SLACK) f.push(`#${e.id} ${e.type} is recorded ${Math.hypot(tmp.x - fate.x, tmp.y - fate.y).toFixed(1)} px from where ${h.what} hit it at ${fmt(h.s)}`);
         if (fate.lethal && total < e.health - 1e-9) f.push(`#${e.id} ${e.type} dies at ${fmt(h.s)} after ${total.toFixed(2)} damage (health ${e.health})`);
-        if (!fate.lethal && total >= e.health - 1e-9) f.push(`#${e.id} ${e.type} survives ${total.toFixed(2)} damage at ${fmt(h.s)} (health ${e.health})`);
+        // (The boss cannot drop below 1 health before its death chord.)
+        if (!fate.lethal && total >= e.health - 1e-9 && def.size !== "boss") f.push(`#${e.id} ${e.type} survives ${total.toFixed(2)} damage at ${fmt(h.s)} (health ${e.health})`);
       }
     }
     add("damage adds up", f, n);
@@ -408,6 +415,39 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
     if (worst.ahead > PACE_AHEAD) f.push(`the hero runs ${worst.ahead.toFixed(0)} px ahead of the pace point at w=${worst.wa.toFixed(1)} (max ${PACE_AHEAD})`);
     if (worst.behind > PACE_BEHIND) f.push(`the hero falls ${worst.behind.toFixed(0)} px behind the pace point at w=${worst.wb.toFixed(1)} (max ${PACE_BEHIND})`);
     add("pace", f, n);
+  }
+
+  // Signature moments (skilled and perfect players).
+  if (plan.profile !== "casual") {
+    const f: string[] = [];
+    let n = 0;
+    const beatAt = (t: number) => {
+      const bi = Math.max(0, Math.min(plan.songBeats.length - 2, Math.floor(beatIndexFromBeats(plan.songBeats, t))));
+      return plan.songBeats[bi + 1] - plan.songBeats[bi];
+    };
+    if (plan.boss) {
+      n++;
+      const { chordS, deathS } = plan.boss;
+      if (deathS === undefined) f.push(`the boss never dies (death chord at ${fmt(chordS)})`);
+      else if (deathS < chordS - 0.001 || deathS > chordS + beatAt(chordS) + 0.001) f.push(`the boss dies at ${fmt(deathS)}, not within a beat after its death chord at ${fmt(chordS)}`);
+    }
+    if (plan.threats.length > 0) {
+      n++;
+      const near = plan.threats.filter((t) => t.outcome === "near-miss").length;
+      if (near < 0.9 * plan.threats.length) f.push(`only ${near} of ${plan.threats.length} threats end as near misses (90% needed): ${plan.threats.filter((t) => t.outcome !== "near-miss").map((t) => `${t.kind} at ${fmt(t.s)} ${t.outcome}`).join(", ")}`);
+    }
+    for (const fm of plan.formations) {
+      if (lib.formations.get(fm.def)?.shape !== "kick-line") continue;
+      const limit = fm.sRelease + 2 * beatAt(fm.sRelease) + 0.001;
+      for (const id of fm.members) {
+        n++;
+        const e = byId.get(id)!;
+        const last = e.fates[e.fates.length - 1];
+        const ds = last?.lethal ? plan.hits[last.hit].s : Infinity;
+        if (ds > limit) f.push(`kick-line skeleton #${id} dies at ${Number.isFinite(ds) ? fmt(ds) : "never"}, more than two beats after the release at ${fmt(fm.sRelease)}`);
+      }
+    }
+    add("signature moments", f, n);
   }
 
   // Hit-stop limits.

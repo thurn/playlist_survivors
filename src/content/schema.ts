@@ -84,7 +84,8 @@ export const heroDef = z.strictObject({
       wave: z.strictObject({ to: z.number().positive(), band: z.number().positive(), damage: z.number().positive() }),
     }),
   }),
-  aimWeights: z.strictObject({ regular: z.number().positive(), elite: z.number().positive(), boss: z.number().positive() }),
+  /** What the sword aims for: the summed weight of the enemies a swing (or a cleave's shockwave) would catch. */
+  aimWeights: z.strictObject({ regular: z.number().positive(), elite: z.number().positive(), boss: z.number().positive(), formation: z.number().positive() }),
 });
 export type HeroDef = z.infer<typeof heroDef>;
 
@@ -270,11 +271,13 @@ export const levelSection = z.strictObject({
 export const levelEvent = z.strictObject({
   at: musicalRef,
   levelUp: id.optional(),
+  /** Experience the level-up needs (gems collected since the previous one). */
+  xp: z.number().positive().optional(),
   formation: id.optional(),
   threats: z
     .strictObject({ kind: z.enum(["archer-volley"]), every: z.string().regex(/^\d+ (bars?|beats?)$/), until: musicalRef, archers: z.number().int().positive().default(2) })
     .optional(),
-  boss: z.strictObject({ type: id, hits: z.number().int().positive(), slams: z.number().int().min(0), diesAt: musicalRef }).optional(),
+  boss: z.strictObject({ type: id, slams: z.number().int().min(0), diesAt: musicalRef }).optional(),
   banner: z.string().optional(),
   titleCard: z.strictObject({ until: musicalRef }).optional(),
   landmark: id.optional(),

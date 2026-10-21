@@ -75,8 +75,10 @@ sections:
 events:
   - at: { section: galop-opening, point: start }
     levelUp: orbiting-blades
+    xp: 220                 # gems: the skilled player fills the bar a little before
   - at: { section: theme-a-repeat, point: start }
     levelUp: chain-lightning
+    xp: 850
   - at: { section: theme-a-repeat, point: start, offsetBeats: 4 }
     formation: bee-wedge
   - at: { section: theme-a-repeat, phrase: 2, point: start }
@@ -86,8 +88,9 @@ events:
     threats: { kind: archer-volley, every: 2 bars, until: { section: kick-line, phrase: 2, point: finalAccent, offsetBeats: -4 }, archers: 2 }
   - at: { section: bridge, point: start }
     levelUp: fire-trail
+    xp: 1350
   - at: { section: climax, point: start }
-    boss: { type: minotaur, hits: 8, slams: 4, diesAt: { accent: tutti-chord, fromEnd: 2 } }
+    boss: { type: minotaur, slams: 4, diesAt: { accent: tutti-chord, fromEnd: 2 } }
     landmark: standing-stones
   - at: { accent: tutti-chord, fromEnd: 2 }
     timeScale: 0.4          # slow motion after the boss's death blow

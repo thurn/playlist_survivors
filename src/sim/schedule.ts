@@ -6,7 +6,8 @@
  */
 import { smoothstep, lerp } from "../core/shaping.ts";
 import { barOfBeatIndex, beatIndexAt, beatIndexOf, timeOfBeatIndex } from "../core/songmap.ts";
-import { beatDurationAt, sectionIndexAt, subdivisionBeats, type Ctx } from "../planner/context.ts";
+import { beatDurationAt, PlanError, sectionIndexAt, subdivisionBeats, type Ctx } from "../planner/context.ts";
+import { phraseFinalAccent, resolveRef, sectionPhrases } from "../planner/musical.ts";
 
 export interface GridSlot {
   s: number;
@@ -40,8 +41,15 @@ export interface Schedule {
   baseSteps: { s: number; rate: number }[];
   /** Route distance of the pace point, sampled every 1/PACE_RATE song seconds. */
   pace: Float64Array;
-  levelUps: { id: string; s: number }[];
+  /** Level-ups at their scheduled musical moments, with the XP each one needs. */
+  levelUps: { id: string; s: number; xp: number }[];
   blast?: { s: number; weapon: string };
+  /** Archer volleys: draw (the telegraph), release, and arrival one beat later. */
+  volleys: { sDraw: number; sRelease: number; sArrive: number; archers: number; group: number }[];
+  /** Archer groups: when they enter, how many, and when their last volley flies. */
+  archerGroups: { s: number; archers: number; until: number }[];
+  boss?: { type: string; sEnter: number; sDeath: number; slams: { sMark: number; sLand: number }[] };
+  formations: { def: string; sStart: number; sRelease: number; line?: number }[];
 }
 
 export const PACE_RATE = 120;
@@ -192,6 +200,68 @@ export function nextStepAfter(steps: { s: number; rate: number }[], s: number): 
   return lo < steps.length ? steps[lo].s : Infinity;
 }
 
+function parseEvery(every: string, bpb: number): number {
+  const [n, unit] = every.split(" ");
+  return Number(n) * (unit.startsWith("bar") ? bpb : 1);
+}
+
+/** The encounters the level script schedules: archer volleys, the boss and its slams, formations. */
+function encounters(ctx: Ctx): Pick<Schedule, "volleys" | "archerGroups" | "boss" | "formations"> {
+  const { song, idx } = ctx;
+  const tAt = (bi: number) => timeOfBeatIndex(song, bi);
+  const biAt = (t: number) => beatIndexAt(song, t);
+  const bpbAt = (t: number) => idx.beatsPerBar[Math.max(1, barOfBeatIndex(idx, biAt(t)))] ?? 2;
+  const volleys: Schedule["volleys"] = [];
+  const archerGroups: Schedule["archerGroups"] = [];
+  const formations: Schedule["formations"] = [];
+  let boss: Schedule["boss"];
+  for (const e of ctx.events) {
+    const ev = e.ev;
+    if (ev.threats) {
+      const until = resolveRef(idx, ev.threats.until);
+      const step = parseEvery(ev.threats.every, bpbAt(e.s));
+      const group = archerGroups.length;
+      let last = e.s;
+      for (let bi = Math.round(biAt(e.s)) + step; tAt(bi + 1) < until; bi += step) {
+        volleys.push({ sDraw: tAt(bi - 1), sRelease: tAt(bi), sArrive: tAt(bi + 1), archers: ev.threats.archers, group });
+        last = tAt(bi + 1);
+      }
+      archerGroups.push({ s: e.s, archers: ev.threats.archers, until: last });
+    }
+    if (ev.boss) {
+      const sDeath = resolveRef(idx, ev.boss.diesAt);
+      const bEnter = biAt(e.s);
+      const bDeath = biAt(sDeath);
+      const bpb = bpbAt(e.s);
+      const first = bEnter + 4 * bpb;
+      const lastB = bDeath - 4 * bpb;
+      const slams: { sMark: number; sLand: number }[] = [];
+      for (let k = 0; k < ev.boss.slams; k++) {
+        const target = first + ((k + 0.5) / ev.boss.slams) * (lastB - first);
+        // On a downbeat an even number of bars after the entrance: the boss lumbers every two bars.
+        const bars = Math.max(2, Math.round((target - bEnter) / (2 * bpb)) * 2);
+        const bi = bEnter + bars * bpb;
+        slams.push({ sMark: tAt(bi - 2), sLand: tAt(bi) });
+      }
+      boss = { type: ev.boss.type, sEnter: e.s, sDeath, slams };
+    }
+    if (ev.formation) {
+      const def = ctx.lib.formations.get(ev.formation)!;
+      const section = sectionIndexAt(ctx, e.s);
+      let sRelease: number;
+      if (def.release.at === "finalAccentOfPhrase") {
+        const startBar = barOfBeatIndex(idx, biAt(e.s));
+        const phrases = sectionPhrases(idx, ctx.sections[section].label).filter((p) => p[0] >= startBar);
+        const ph = phrases[def.release.phrases - 1] ?? phrases[phrases.length - 1];
+        if (!ph) throw new PlanError(`${ctx.level.file}:${e.line}: formation ${ev.formation} has no phrase to release on`);
+        sRelease = phraseFinalAccent(idx, ph);
+      } else sRelease = tAt(biAt(e.s) + def.entranceBeats + def.release.beats);
+      formations.push({ def: ev.formation, sStart: e.s, sRelease, line: e.line });
+    }
+  }
+  return { volleys, archerGroups, boss, formations };
+}
+
 export function buildSchedule(ctx: Ctx): Schedule {
   const grids = ctx.sections.map((_, i) => sectionGrid(ctx, i));
   const slots = grids.flat().sort((a, b) => a.s - b.s);
@@ -216,12 +286,23 @@ export function buildSchedule(ctx: Ctx): Schedule {
   const levelUps: Schedule["levelUps"] = [];
   let blast: Schedule["blast"];
   for (const e of ctx.events) {
-    if (e.ev.levelUp) levelUps.push({ id: e.ev.levelUp, s: e.s });
+    if (e.ev.levelUp) levelUps.push({ id: e.ev.levelUp, s: e.s, xp: e.ev.xp ?? 1 });
     if (e.ev.blast) blast = { s: e.s, weapon: e.ev.blast };
   }
   levelUps.sort((a, b) => a.s - b.s);
+  const enc = encounters(ctx);
+  // A charging formation's release is an accent: the skilled player meets it with a cleave.
+  for (const f of enc.formations) {
+    const def = ctx.lib.formations.get(f.def)!;
+    if (def.release.mode !== "charge") continue;
+    const sl = slots.find((x) => x.kind === "grid" && Math.abs(x.s - f.sRelease) <= 0.04);
+    if (sl && sl.accent < 1) {
+      sl.accent = 1;
+      sl.accentLabel = "release";
+    }
+  }
   const gridSlots = slots.filter((x) => x.kind === "grid");
-  return { grids, slots, strikeTimes: Float64Array.from(slots, (x) => x.s), gridSlots, gridTimes: Float64Array.from(gridSlots, (x) => x.s), baseSteps: steps, pace, levelUps, blast };
+  return { grids, slots, strikeTimes: Float64Array.from(slots, (x) => x.s), gridSlots, gridTimes: Float64Array.from(gridSlots, (x) => x.s), baseSteps: steps, pace, levelUps, blast, ...enc };
 }
 
 /** Route distance of the pace point at song time s. */

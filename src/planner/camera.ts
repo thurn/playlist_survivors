@@ -16,8 +16,8 @@ export const VIEW_H = 540;
 export class CameraRig {
   x = 0;
   y = 0;
-  private vx = 0;
-  private vy = 0;
+  vx = 0;
+  vy = 0;
   private started = false;
   readonly xs: number[] = [];
   readonly ys: number[] = [];

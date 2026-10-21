@@ -5,11 +5,11 @@
  */
 import { Rng, hash32 } from "../core/rng.ts";
 import { clamp } from "../core/shaping.ts";
-import { beatIndexAt, timeOfBeatIndex } from "../core/songmap.ts";
+import { beatIndexAt } from "../core/songmap.ts";
 import type { Warp } from "../core/warp.ts";
 import type { CameraTrack, EffectEvent, GemEvent, HeroTrack, HudSeries, Projectile, SlamMarker, SoundEvent, UiEvent } from "../plan/types.ts";
 import { heroSample } from "../plan/sample.ts";
-import type { SimResult } from "../sim/simulate.ts";
+import { HURTBOX_LIFT, type SimResult } from "../sim/simulate.ts";
 import { sectionIndexAt, type Ctx } from "./context.ts";
 import { cameraAt, VIEW_W } from "./camera.ts";
 import { resolveRef } from "./musical.ts";
@@ -98,6 +98,7 @@ export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam:
 
   // ------------------------------------------------------------ swings
   const perfect: number[] = [];
+  const levelUps: number[] = [];
   const markers: HudSeries["markers"] = [];
   for (const sw of sim.swings) {
     const h = hits[sw.hit];
@@ -170,7 +171,6 @@ export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam:
   }
 
   // ------------------------------------------------------- moments and UI
-  const levelUps: number[] = [];
   for (const g of sim.weaponsGranted) {
     const p = heroAt(warp.toWorld(g.s));
     levelUps.push(g.s);
@@ -193,65 +193,71 @@ export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam:
   }
 
   // ---------------------------------------------------------------- gems
-  const hitStops = sim.hitStops;
-  const nextDownbeat = (s: number) => {
-    let bi = Math.ceil(beatIndexAt(song, s + 0.12));
-    for (let guard = 0; guard < 64; guard++) {
-      const t = timeOfBeatIndex(song, bi);
-      const bar = barIndexFor(ctx, bi);
-      const isDown = bar > 0 && ctx.idx.barStart[bar] === bi;
-      // A downbeat where a hit-stop starts is fine: the gems land on the impact itself.
-      const inStop = hitStops.some(([a, b]) => t > a + 1e-6 && t < b);
-      if (isDown && !inStop) return t;
-      bi++;
-    }
-    return timeOfBeatIndex(song, bi);
-  };
-  const gemsRaw: { w0: number; x0: number; y0: number; s1: number; big: boolean; seed: number }[] = [];
-  for (const e of sim.enemies) {
-    const d = deathByEnemy.get(e.id);
-    if (!d) continue;
-    const big = lib.enemies.get(e.type)!.size !== "regular";
-    let s1 = nextDownbeat(d.s);
-    if (sim.blastS !== undefined && d.s >= sim.blastS - 1e-6) {
-      // The finale's gems arrive one beat after the blast.
-      s1 = timeOfBeatIndex(song, beatIndexAt(song, sim.blastS) + 1);
-    }
-    gemsRaw.push({ w0: warp.toWorld(d.s), x0: d.x, y0: d.y, s1, big, seed: seedOf("gem", e.id) });
-  }
-  gemsRaw.sort((a, b) => a.s1 - b.s1 || a.w0 - b.w0);
-  // XP segments end at each level-up and at the finale gems' arrival.
-  const segEnds = [...levelUps];
-  const finalArrival = gemsRaw.length ? gemsRaw[gemsRaw.length - 1].s1 : ctx.duration;
-  segEnds.push(finalArrival);
-  const segOf = (s: number) => {
-    for (let i = 0; i < segEnds.length; i++) if (s <= segEnds[i] + 1e-6) return i;
-    return segEnds.length - 1;
-  };
-  const segTotals = segEnds.map(() => 0);
-  for (const g of gemsRaw) segTotals[segOf(g.s1)] += g.big ? 5 : 1;
-  const gems: GemEvent[] = [];
-  const xpTimes: number[] = [];
-  const xpFill: number[] = [];
-  const segAcc = segEnds.map(() => 0);
-  for (const g of gemsRaw) {
-    const seg = segOf(g.s1);
-    const v = (g.big ? 5 : 1) / Math.max(1, segTotals[seg]);
-    segAcc[seg] += v;
-    gems.push({ w0: g.w0, x0: g.x0, y0: g.y0, s1: g.s1, w1: warp.toWorld(g.s1), value: v, big: g.big, seed: g.seed });
-    xpTimes.push(g.s1);
-    xpFill.push(Math.min(1, segAcc[seg]));
-  }
-  // Gem pickup sparkles, one per arrival slot.
+  // Gems fly to the hero; the XP bar fills from the ones collected (the simulation levels up).
+  const gems: GemEvent[] = sim.gems.map((g) => ({ w0: g.w0, x0: g.x0, y0: g.y0, s1: g.s1, w1: g.w1, value: g.value, big: g.big, seed: seedOf("gem", g.enemy) }));
   const arrivals = new Set<number>();
   for (const g of gems) {
-    if (arrivals.has(g.s1)) continue;
+    if (arrivals.has(g.s1) || g.w1 === 0) continue;
     arrivals.add(g.s1);
     const p = heroAt(g.w1);
     fx("gem-pickup", g.s1, p.x, p.y - 16, 0, 0.7);
     sfx("gem", g.s1, p.x, PRIORITY.ambient, 0.4);
   }
+  const finalArrival = gems.length ? Math.max(...gems.map((g) => g.s1)) : ctx.duration;
   if (sim.blastS !== undefined) ui.push({ kind: "end", s: finalArrival + 1.6 });
+  const xpTimes = sim.xp.map((x) => x.s);
+  const xpFill = sim.xp.map((x) => x.fill);
+
+  // ------------------------------------------------------------- threats
+  const projectiles: Projectile[] = [];
+  for (const a of sim.arrows) {
+    if (a.w1 === 0) continue;
+    projectiles.push({ kind: "arrow", w0: a.wRelease, w1: a.w1, x0: a.x0, y0: a.y0, x1: a.x1, y1: a.y1, wMiss: a.wArrive });
+    fx("arrow-release", a.sRelease, a.x0, a.y0, Math.atan2(a.ay - a.y0, a.ax - a.x0), 0.6);
+    sfx("arrow", a.sRelease, a.x0, PRIORITY.nearMiss, 0.8);
+    // An arrow that touches the hero shatters in a spark: no damage, no other penalty.
+    if (a.outcome === "touch") fx("arrow-shatter", a.sArrive, a.x1, a.y1, 0, 0.8);
+  }
+  const slams: SlamMarker[] = [];
+  for (const sl of sim.slams) {
+    slams.push({ w0: sl.wMark, w1: sl.wLand, x: sl.x, y: sl.y, radius: sl.radius });
+    fx("boss-slam", sl.sLand, sl.x, sl.y, 0, 1, { scale: sl.radius / 60 });
+    sfx("boss-slam", sl.sLand, sl.x, PRIORITY.boss, 1, true);
+  }
+  for (const t of sim.threats) {
+    if (t.outcome !== "near-miss") continue;
+    // The near-miss juice: a whoosh, a ring and a "PERFECT" callout (the slow-motion dip is in the warp).
+    perfect.push(t.s);
+    ui.push({ kind: "perfect", s: t.s, x: t.x, y: t.y - 44 });
+    fx("near-miss", t.s, t.x, t.y - HURTBOX_LIFT, 0, 1);
+    sfx("near-miss", t.s, t.x, PRIORITY.nearMiss, 1);
+  }
+
+  // ---------------------------------------------------------------- the boss
+  if (sim.boss) {
+    const b = sim.boss;
+    fx("boss-land", b.landS, b.x, b.y, 0, 1);
+    sfx("boss-land", b.landS, b.x, PRIORITY.boss, 1, true);
+    const bossEvent = ctx.events.find((e) => e.ev.boss);
+    const name = bossEvent?.ev.banner ?? bossEvent?.ev.boss?.type.toUpperCase() ?? "BOSS";
+    ui.push({ kind: "bossBar", s: b.landS, until: b.deathS ?? sim.blastS ?? ctx.duration, health: b.health.map((h) => [h.s, h.frac] as [number, number]), name });
+    // The boss-kill effect on whatever swing kills it.
+    if (b.deathS !== undefined && b.killHit !== undefined) {
+      const h = hits[b.killHit];
+      const at = h.shape.kind === "arc" || h.shape.kind === "circle" || h.shape.kind === "ring" ? h.shape : { x: 0, y: 0 };
+      fx("hit-heavy", h.s, at.x, at.y, h.dir, 1, { hit: h.source === "move" ? h.id : undefined });
+      fx("hit-burst", h.s, at.x, at.y, h.dir, 1);
+      sfx("finisher", h.s, at.x, PRIORITY.hero, 1.2, true);
+    }
+  }
+  // Cleave shockwaves: a crescent per band, on its sixteenth note.
+  for (const wv of sim.waves) {
+    for (const id of wv.hits) {
+      const h = hits[id];
+      const sh = h.shape as Extract<typeof h.shape, { kind: "arc" }>;
+      fx("shockwave", h.s, sh.x, sh.y, h.dir, 0.8, { hit: id });
+    }
+  }
 
   // --------------------------------------------------- voice budget
   const bySlot = new Map<number, SoundEvent[]>();
@@ -280,19 +286,5 @@ export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam:
     levelUps,
     weaponFires: Object.fromEntries(Object.entries(weaponFires).map(([k, v]) => [k, Float64Array.from(v.sort((a, b) => a - b))])),
   };
-  const projectiles: Projectile[] = [];
-  const slams: SlamMarker[] = [];
   return { effects, sounds: kept, gems, ui, hud, projectiles, slams };
-}
-
-function barIndexFor(ctx: Ctx, bi: number): number {
-  let lo = 1;
-  let hi = ctx.idx.barCount;
-  if (bi < ctx.idx.barStart[1]) return 0;
-  while (lo < hi) {
-    const mid = (lo + hi + 1) >> 1;
-    if (ctx.idx.barStart[mid] <= bi) lo = mid;
-    else hi = mid - 1;
-  }
-  return lo;
 }

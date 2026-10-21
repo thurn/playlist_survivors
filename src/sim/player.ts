@@ -7,7 +7,7 @@
 import type { HeroDef } from "../content/schema.ts";
 import { Rng } from "../core/rng.ts";
 import { clamp } from "../core/shaping.ts";
-import { KEY_DIR, type Key } from "./movement.ts";
+import { easeOut, KEY_DIR, type Key } from "./movement.ts";
 import type { GridSlot } from "./schedule.ts";
 
 export interface Observation {
@@ -15,7 +15,13 @@ export interface Observation {
   s: number;
   hero: { x: number; y: number; stepping: boolean };
   enemies: { x: number; y: number; type: string; health: number }[];
-  threats: { kind: "arrow" | "slam"; x: number; y: number; dir?: number; landsAt: number; radius?: number }[];
+  /**
+   * Visible threats: an arrow's line runs from (x, y) through its aim point (ax, ay); a slam marker
+   * is a circle of `radius` (already grown by the hurtbox) around (x, y).
+   */
+  threats: { kind: "arrow" | "slam"; x: number; y: number; ax?: number; ay?: number; landsAt: number; radius?: number }[];
+  /** The boss, when it is in the fight. */
+  boss?: { x: number; y: number };
   /** Where the route schedule says the hero should be now, and the route's direction there. */
   pacePoint: { x: number; y: number; tx: number; ty: number };
   /** Distance from a point to the edge of the walkable band (negative outside). */
@@ -59,6 +65,8 @@ export interface PlayerSection {
   s1: number;
 }
 
+/** A near miss: within this many pixels of the hurtbox's edge. */
+const NEAR = 24;
 /** Free movement: the weave across the corridor (px) and its period (beats). */
 const WEAVE = 70;
 const WEAVE_BEATS = 16;
@@ -87,8 +95,11 @@ function normal(r: Rng): number {
 }
 
 export class VirtualPlayer implements Player {
-  /** Planned decisions (song time): presses in step movement, steering on each beat in free movement. */
-  private plan: { s: number; kind: "press" | "steer"; beat: number; release?: boolean }[] = [];
+  /**
+   * Planned decisions (song time): presses in step movement, a look for threats on every other
+   * grid slot (a dodge adds a press there), and steering on each beat in free movement.
+   */
+  private plan: { s: number; kind: "press" | "watch" | "steer"; beat: number; release?: boolean }[] = [];
   private next = 0;
   private lastDir: { x: number; y: number } | undefined;
   private count = 0;
@@ -101,17 +112,23 @@ export class VirtualPlayer implements Player {
     sections: readonly PlayerSection[],
     beats: readonly number[],
     profile: SkillProfile = "skilled",
+    /** Is a grid slot an accent the section turns into a cleave? */
+    heavyAccent: (slot: GridSlot) => boolean = () => false,
+    /** The boss's death chord (song time), which the player knows from the song. */
+    private readonly bossChord?: number,
   ) {
     const spec = PROFILES[profile];
-    for (const sl of slots) {
+    const grid = slots.filter((sl) => sl.kind === "grid" && sections[sl.section].steps);
+    grid.forEach((sl, i) => {
       const sec = sections[sl.section];
-      if (!sec.steps || sl.kind !== "grid") continue;
-      const pressed = spec.downbeatsOnly ? sl.slot === 0 : sec.presses[sl.slot % sec.presses.length] === "x";
-      if (!pressed) continue;
+      let pressed = spec.downbeatsOnly ? sl.slot === 0 : sec.presses[sl.slot % sec.presses.length] === "x";
+      // Press one grid step before an accent strong enough for a cleave, even on a rest slot.
+      const next = grid[i + 1];
+      if (next && heavyAccent(next)) pressed = true;
       const r = new Rng(seed, "press-time", Math.round(sl.s * 1000));
       const err = spec.sd > 0 ? clamp(normal(r) * spec.sd, -spec.clampS, spec.clampS) : 0;
-      this.plan.push({ s: sl.s + err, kind: "press", beat: sl.bi });
-    }
+      this.plan.push({ s: sl.s + (pressed ? err : 0), kind: pressed ? "press" : "watch", beat: sl.bi });
+    });
     // Free movement: change the held keys at most once per beat; let go before step movement.
     const sectionAt = (t: number) => sections.findLast((x) => t >= x.s0 - 1e-9) ?? sections[0];
     for (let i = 0; i < beats.length; i++) {
@@ -135,6 +152,8 @@ export class VirtualPlayer implements Player {
     if (this.next >= this.plan.length) return [];
     const d = this.plan[this.next++];
     if (d.kind === "steer") return this.steer(obs, d.beat, d.release ?? false);
+    // On a rest slot, press only to get out of a threat's way.
+    if (d.kind === "watch" && !this.inDanger(obs)) return [];
     const keys = this.chooseKeys(obs);
     this.count++;
     const r = new Rng(this.seed, "press-keys", this.count);
@@ -181,6 +200,28 @@ export class VirtualPlayer implements Player {
     return out;
   }
 
+  /** Would standing here be hit: an arrow about to fly (or flying) at the hero, or a slam marker underfoot? */
+  private inDanger(obs: Observation): boolean {
+    return obs.threats.some((t) => this.threatCost(t, obs.hero.x, obs.hero.y) >= 50);
+  }
+
+  /** 50 inside a threat, a little when the hero would be clear of it but not close enough for a near miss. */
+  private threatCost(t: Observation["threats"][number], x: number, y: number): number {
+    if (t.kind === "slam") {
+      const edge = Math.hypot(x - t.x, y - t.y) - (t.radius ?? 30);
+      return edge <= 3 ? 50 : edge > NEAR - 4 ? 12 : 0;
+    }
+    // The arrow's line, from the archer through its aim point, against the hurtbox.
+    const dx = (t.ax ?? x) - t.x;
+    const dy = (t.ay ?? y) - t.y;
+    const dl = Math.hypot(dx, dy) || 1;
+    const hx = x - t.x;
+    const hy = y - 20 - t.y;
+    if (hx * dx + hy * dy < 0) return 0;
+    const edge = Math.abs(hx * (dy / dl) - hy * (dx / dl)) - 10;
+    return edge <= 3 ? 50 : edge > NEAR - 4 ? 12 : 0;
+  }
+
   /** Score the eight directions by where the step would leave the hero, and pick the lowest cost. */
   private chooseKeys(obs: Observation): Key[] {
     const L = this.hero.step.length;
@@ -199,11 +240,15 @@ export class VirtualPlayer implements Player {
       const lat = (ax - p.x) * nx + (ay - p.y) * ny;
       let cost = along > 0 ? (along / 30) ** 2 : (along / 70) ** 2;
       cost += (lat / 160) ** 2;
-      // Leave slam markers and arrow lines.
+      // Leave slam markers and arrow lines, by a close shave: judged where the step has taken the
+      // hero when the threat lands.
       for (const t of obs.threats) {
-        const rad = (t.radius ?? 30) + 14;
-        if (Math.hypot(ax - t.x, ay - t.y) < rad) cost += 50;
+        const u = clamp((t.landsAt - obs.s) / (this.hero.step.durationMs / 1000), 0, 1);
+        const e = easeOut(u);
+        cost += this.threatCost(t, obs.hero.x + d.x * L * e, obs.hero.y + d.y * L * e);
       }
+      // Be beside the boss for its death chord.
+      if (obs.boss && this.bossChord !== undefined && obs.s > this.bossChord - 1.5 && obs.s < this.bossChord) cost += Math.max(0, Math.hypot(ax - obs.boss.x, ay - obs.boss.y) - 70) / 15;
       // Stay off the walls.
       const edge = obs.edgeDistance(ax, ay);
       cost += 2.0 * clamp(1 - edge / 60, 0, 2);

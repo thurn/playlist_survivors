@@ -6,8 +6,8 @@ export interface Vec {
 }
 
 export type Shape =
-  /** A circular sector: everything within `radius` and `halfAngle` of `dir`. */
-  | { kind: "arc"; x: number; y: number; radius: number; dir: number; halfAngle: number }
+  /** A circular sector: everything within `radius` and `halfAngle` of `dir` (and beyond `inner`, for a shockwave band). */
+  | { kind: "arc"; x: number; y: number; radius: number; dir: number; halfAngle: number; inner?: number }
   | { kind: "circle"; x: number; y: number; radius: number }
   /** A capsule: the segment (x0,y0)–(x1,y1) thickened by `radius`. Lines and dashes use it. */
   | { kind: "capsule"; x0: number; y0: number; x1: number; y1: number; radius: number }
@@ -48,6 +48,7 @@ export function shapeContains(s: Shape, px: number, py: number, margin = 0): boo
     case "arc": {
       const d = dist(px, py, s.x, s.y);
       if (d > s.radius + margin) return false;
+      if (s.inner !== undefined && d < s.inner - margin) return false;
       if (d <= margin) return true;
       const da = Math.abs(wrapAngle(Math.atan2(py - s.y, px - s.x) - s.dir));
       if (da <= s.halfAngle) return true;
@@ -67,7 +68,7 @@ export function shapeArea(s: Shape): number {
     case "capsule":
       return Math.PI * s.radius * s.radius + 2 * s.radius * dist(s.x0, s.y0, s.x1, s.y1);
     case "arc":
-      return s.halfAngle * s.radius * s.radius;
+      return s.halfAngle * (s.radius * s.radius - (s.inner ?? 0) ** 2);
   }
 }
 
@@ -153,7 +154,7 @@ export function sampleInShape(s: Shape, r: () => number, inset = 0): Vec {
       return { x: s.x + Math.cos(a) * rad, y: s.y + Math.sin(a) * rad };
     }
     case "arc": {
-      const minR = Math.min(s.radius * 0.35, 20);
+      const minR = Math.max(Math.min(s.radius * 0.35, 20), (s.inner ?? 0) + inset);
       const maxR = Math.max(minR, s.radius - inset);
       const rad = Math.sqrt(minR * minR + r() * (maxR * maxR - minR * minR));
       const angInset = Math.min(s.halfAngle * 0.9, inset / Math.max(rad, 1));
@@ -210,10 +211,10 @@ export function nearestInside(s: Shape, px: number, py: number, inset = 0.5): Ve
     case "arc": {
       const d = dist(px, py, s.x, s.y);
       const a = wrapAngle(Math.atan2(py - s.y, px - s.x) - s.dir);
-      const r = Math.min(Math.max(d, 2), s.radius - inset);
+      const r = Math.min(Math.max(d, 2, (s.inner ?? 0) + inset), s.radius - inset);
       const lim = Math.max(0, s.halfAngle - inset / Math.max(r, 1));
       const aa = Math.max(-lim, Math.min(lim, a)) + s.dir;
-      if (d <= s.radius - inset && Math.abs(a) <= lim) return { x: px, y: py };
+      if (d <= s.radius - inset && d >= (s.inner ?? 0) + inset && Math.abs(a) <= lim) return { x: px, y: py };
       return { x: s.x + Math.cos(aa) * r, y: s.y + Math.sin(aa) * r };
     }
   }
