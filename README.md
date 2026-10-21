@@ -51,7 +51,7 @@ Every important property is checkable by a command:
 | `npm run capture -- --times 12,35.2,88.31,141.5` | Headless-Chrome screenshots at exact song times into `captures/`. `--sections` captures the start of every section. |
 | `npm run bench` | Headed Chrome, whole song at real-time speed: fails if JavaScript frame time exceeds 8 ms or GPU time 10 ms at p95, or any frame exceeds 33 ms. |
 | `npm run test:e2e` | Playwright: capture hook, metronome flash on the beat, broken level script shows an error and never starts, reload uses the cached plan. |
-| `npm run qa` | Real-time playback in Chromium over the design's Manual QA items a machine can judge: planning time, audio clock rate, picture/audio offset, frame rate, hidden-tab recovery (a 10 s main-thread stall), resize letterboxing, click track, `?seed=1859`, finale clearance; writes `captures/qa/report.md` and review frames. |
+| `npm run qa` | Real-time playback in Chromium over the design's Manual QA items a machine can judge: planning time, audio clock rate, picture/audio offset, frame rate, hidden-tab recovery (a real tab switch in the installed Google Chrome during the climax, and a 10 s main-thread stall), climax frame rate, resize letterboxing, click track, `?seed=1859`, finale clearance, and a listening pass over the offline-rendered mix (clipping, effects level, music in front, no wall of noise, effects on time); writes `captures/qa/report.md` and review frames. |
 | `npm run check:analysis` | The analysis tool's pytest suite and ruff. |
 | `npm run check:all` | All of the above except captures and the benchmark. |
 
