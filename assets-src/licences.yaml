@@ -53,6 +53,12 @@ entries:
     licences: [OGA-BY 3.0]
     authors: [Eliza Wyatt (DeathsDarling)]
     urls: [https://github.com/ElizaWy/LPC]
+  - files: ["lpc:lpc-revised/Structure/Walls/Jagged Stone Walls.png", "lpc:lpc-revised/Structure/Pillars/Stone Pillar A.png"]
+    title: LPC Revised jagged stone walls and stone pillars
+    licences: [OGA-BY 3.0]
+    authors: [Lanea Zimmerman (Sharm), Eliza Wyatt (DeathsDarling)]
+    urls: [https://github.com/ElizaWy/LPC, https://opengameart.org/content/lpc-interior-castle-tiles]
+    notes: Broken into ruins by a scripted edit in the baker.
   - files: ["lpc:lpc-revised/Objects/Small Items/Fire, Camp.png"]
     title: LPC Revised campfire
     licences: [OGA-BY 3.0]

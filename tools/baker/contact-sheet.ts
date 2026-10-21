@@ -31,7 +31,7 @@ class Sheet {
   }
 
   /** Lay frames out in rows that wrap at maxW. */
-  row(frames: Img[], opts: { prefix?: string; anchor?: { ax: number; ay: number }; impact?: number } = {}): void {
+  row(frames: Img[], opts: { prefix?: string; anchor?: { ax: number; ay: number }; anchors?: Array<{ ax: number; ay: number }>; impact?: number } = {}): void {
     const s = this.scale;
     let x = 8;
     if (opts.prefix) {
@@ -46,7 +46,7 @@ class Sheet {
         x = 56;
         rowH = 0;
       }
-      this.items.push({ img: f, x, y: this.y, scale: s, bg: true, mark: opts.anchor, border: i === opts.impact ? "#ffd000" : undefined });
+      this.items.push({ img: f, x, y: this.y, scale: s, bg: true, mark: opts.anchors?.[i] ?? opts.anchor, border: i === opts.impact ? "#ffd000" : undefined });
       this.labels.push({ x: x + 1, y: this.y + 9, text: String(i), size: 8, color: "#ffffff" });
       x += w + 4;
       rowH = Math.max(rowH, h);
@@ -139,18 +139,15 @@ async function main(): Promise<void> {
     for (const [id, rects] of Object.entries(world.tiles)) {
       sheet.label(`${id} (${rects.length} variants) and a 6x3 random-ish tiling`, 12);
       const tiles = rects.map((r) => cut(wp, r));
-      sheet.row(tiles);
       const tiled = new Img(32 * 6, 32 * 3);
       for (let y = 0; y < 3; y++) for (let x = 0; x < 6; x++) tiled.blit(tiles[(x * 7 + y * 3 + x * y) % tiles.length], x * 32, y * 32);
-      sheet.row([tiled]);
+      sheet.row([...tiles, tiled]);
     }
     sheet.label("world props", 18, "#9fe0ff");
     for (const [id, p] of Object.entries(world.props)) {
       sheet.label(`${id}  tall=${p.tall} radius=${p.radius}${p.frames ? `  animated ${p.fps} fps` : ""}`, 12);
-      p.variants.forEach((v, i) => {
-        const frames = p.frames?.[i]?.map((r) => cut(wp, r)) ?? [cut(wp, v.rect)];
-        sheet.row(frames, { prefix: `v${i}`, anchor: { ax: v.anchorX, ay: v.anchorY } });
-      });
+      sheet.row(p.variants.map((v) => cut(wp, v.rect)), { anchors: p.variants.map((v) => ({ ax: v.anchorX, ay: v.anchorY })) });
+      p.frames?.forEach((fr, i) => sheet.row(fr.map((r) => cut(wp, r)), { prefix: `v${i}`, anchor: { ax: p.variants[i].anchorX, ay: p.variants[i].anchorY } }));
     }
   };
   const effectsSection = (sheet: Sheet) => {
