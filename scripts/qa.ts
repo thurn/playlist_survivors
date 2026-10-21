@@ -35,6 +35,8 @@ interface Hook {
   ready: Promise<void>;
   lastS?: number;
   frames?: number;
+  planMs?: number;
+  planSource?: string;
   audio?: () => AudioState;
   renderAt(s: number): Promise<void>;
   checks?: () => { name: string; failures: string[] }[];
@@ -72,6 +74,11 @@ await withDevServer(async (base) => {
     page.on("pageerror", (e) => errors.push(e.message));
     await page.goto(`${base}/?test`);
     await waitReady(page);
+    const planned = await page.evaluate(() => {
+      const d = (window as unknown as { __demo: Hook }).__demo;
+      return { ms: d.planMs ?? NaN, source: d.planSource ?? "?" };
+    });
+    record("Planning time", planned.source === "planner" && planned.ms < 2000, `fresh profile, so no cached plan: planned in the worker, with its output checks, in ${planned.ms.toFixed(0)} ms (budget 2000 ms)`);
     record("Start: title screen", await page.getByText("Click to begin").isVisible(), "the title screen shows “Click to begin” once loading finishes");
     await play(page);
     await page.waitForTimeout(2000);
@@ -168,7 +175,8 @@ await withDevServer(async (base) => {
     await page.goto(`${base}/?test&seed=1859`);
     await waitReady(page);
     const failed = await page.evaluate(() => (window as unknown as { __demo: Hook }).__demo.checks!().filter((c) => c.failures.length > 0).map((c) => c.name));
-    record("?seed=1859 re-plans and passes every plan check", failed.length === 0, failed.length ? `failing: ${failed.join(", ")}` : "all planner output checks pass in the browser");
+    const ms = await page.evaluate(() => (window as unknown as { __demo: Hook }).__demo.planMs ?? NaN);
+    record("?seed=1859 re-plans and passes every plan check", failed.length === 0 && ms < 2000, failed.length ? `failing: ${failed.join(", ")}` : `all planner output checks pass in the browser; planned in ${ms.toFixed(0)} ms`);
     await ctx.close();
   }
 
