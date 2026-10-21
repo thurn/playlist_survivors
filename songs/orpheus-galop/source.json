@@ -1,0 +1,22 @@
+{
+  "title": "Offenbach - Orpheus in the Underworld - Overture (arr. Carl Binder)",
+  "performer": "Musopen (sourced from a 1950s LP transfer)",
+  "commonsPage": "https://commons.wikimedia.org/wiki/File:Offenbach_-_Orpheus_in_the_Underworld_-_Overture.ogg",
+  "url": "https://upload.wikimedia.org/wikipedia/commons/a/a8/Offenbach_-_Orpheus_in_the_Underworld_-_Overture.ogg",
+  "format": "Ogg Vorbis, 44.1 kHz, mono",
+  "bytes": 8056832,
+  "duration": 563.017,
+  "sha256": "cb79800808b4abb9b8a703630d63f313b68babc84beae8da61672d4a10747955",
+  "sha1": "1da312628f15b59c8c808fecc382815af0a0e096",
+  "license": "Tagged CC0 on Wikimedia Commons; treat as unverified (Musopen LP transfer, past DMCA notice). Private tech demo only; replace before any public release.",
+  "localPath": "tools/analysis/work/orpheus-overture.ogg",
+  "excerpt": {
+    "file": "public/audio/orpheus-galop.flac",
+    "cropStart": 415.2,
+    "cropEnd": 559.8,
+    "sampleRate": 44100,
+    "channels": 1,
+    "sha256": "c61ccf6874f74ca8311bff831b03d7f5dc38d73906ace7e619013006ad218c04",
+    "command": "uv run --project tools/analysis ps-analysis crop tools/analysis/work/orpheus-overture.ogg --start 415.2 --end 559.8 --out public/audio/orpheus-galop.flac"
+  }
+}
