@@ -246,7 +246,8 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
     const loop = (ts: number) => {
       const frameDur = lastTs > 0 ? Math.min(50, ts - lastTs) : 1000 / 60;
       lastTs = ts;
-      const s = Math.min(plan!.duration, clock.songTimeAtPresentation(ts, frameDur));
+      // Song time keeps running after the music ends, so the credits roll on.
+      const s = clock.songTimeAtPresentation(ts, frameDur);
       drawAt(s);
       requestAnimationFrame(loop);
     };
