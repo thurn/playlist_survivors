@@ -1,0 +1,235 @@
+{
+ "type": "map",
+ "version": "1.10",
+ "tiledversion": "1.11.0",
+ "orientation": "orthogonal",
+ "renderorder": "right-down",
+ "width": 24,
+ "height": 24,
+ "tilewidth": 32,
+ "tileheight": 32,
+ "infinite": false,
+ "nextlayerid": 2,
+ "nextobjectid": 11,
+ "properties": [
+  {
+   "name": "clearRadius",
+   "type": "float",
+   "value": 260
+  },
+  {
+   "name": "offsetAlong",
+   "type": "float",
+   "value": 0
+  }
+ ],
+ "tilesets": [],
+ "layers": [
+  {
+   "id": 1,
+   "name": "props",
+   "type": "objectgroup",
+   "visible": true,
+   "opacity": 1,
+   "x": 0,
+   "y": 0,
+   "draworder": "topdown",
+   "objects": [
+    {
+     "id": 1,
+     "rotation": 0,
+     "visible": true,
+     "width": 0,
+     "height": 0,
+     "point": true,
+     "name": "ruin-pillar",
+     "type": "prop",
+     "x": 234,
+     "y": 294,
+     "properties": [
+      {
+       "name": "variant",
+       "type": "int",
+       "value": 0
+      }
+     ]
+    },
+    {
+     "id": 2,
+     "rotation": 0,
+     "visible": true,
+     "width": 0,
+     "height": 0,
+     "point": true,
+     "name": "ruin-pillar",
+     "type": "prop",
+     "x": 534,
+     "y": 294,
+     "properties": [
+      {
+       "name": "variant",
+       "type": "int",
+       "value": 1
+      }
+     ]
+    },
+    {
+     "id": 3,
+     "rotation": 0,
+     "visible": true,
+     "width": 0,
+     "height": 0,
+     "point": true,
+     "name": "ruin-pillar",
+     "type": "prop",
+     "x": 194,
+     "y": 424,
+     "properties": [
+      {
+       "name": "variant",
+       "type": "int",
+       "value": 2
+      }
+     ]
+    },
+    {
+     "id": 4,
+     "rotation": 0,
+     "visible": true,
+     "width": 0,
+     "height": 0,
+     "point": true,
+     "name": "ruin-pillar",
+     "type": "prop",
+     "x": 574,
+     "y": 424,
+     "properties": [
+      {
+       "name": "variant",
+       "type": "int",
+       "value": 3
+      }
+     ]
+    },
+    {
+     "id": 5,
+     "rotation": 0,
+     "visible": true,
+     "width": 0,
+     "height": 0,
+     "point": true,
+     "name": "ruin-pillar",
+     "type": "prop",
+     "x": 264,
+     "y": 534,
+     "properties": [
+      {
+       "name": "variant",
+       "type": "int",
+       "value": 4
+      }
+     ]
+    },
+    {
+     "id": 6,
+     "rotation": 0,
+     "visible": true,
+     "width": 0,
+     "height": 0,
+     "point": true,
+     "name": "ruin-pillar",
+     "type": "prop",
+     "x": 504,
+     "y": 534,
+     "properties": [
+      {
+       "name": "variant",
+       "type": "int",
+       "value": 5
+      }
+     ]
+    },
+    {
+     "id": 7,
+     "rotation": 0,
+     "visible": true,
+     "width": 0,
+     "height": 0,
+     "point": true,
+     "name": "ruin-wall",
+     "type": "prop",
+     "x": 344,
+     "y": 214,
+     "properties": []
+    },
+    {
+     "id": 8,
+     "rotation": 0,
+     "visible": true,
+     "width": 0,
+     "height": 0,
+     "point": true,
+     "name": "ruin-wall",
+     "type": "prop",
+     "x": 444,
+     "y": 209,
+     "properties": [
+      {
+       "name": "variant",
+       "type": "int",
+       "value": 1
+      }
+     ]
+    },
+    {
+     "id": 9,
+     "rotation": 0,
+     "visible": true,
+     "width": 0,
+     "height": 0,
+     "point": true,
+     "name": "brazier",
+     "type": "prop",
+     "x": 154,
+     "y": 364,
+     "properties": [
+      {
+       "name": "lightColor",
+       "type": "string",
+       "value": "#ffb050"
+      },
+      {
+       "name": "lightRadius",
+       "type": "float",
+       "value": 130
+      }
+     ]
+    },
+    {
+     "id": 10,
+     "rotation": 0,
+     "visible": true,
+     "width": 0,
+     "height": 0,
+     "point": true,
+     "name": "brazier",
+     "type": "prop",
+     "x": 614,
+     "y": 364,
+     "properties": [
+      {
+       "name": "lightColor",
+       "type": "string",
+       "value": "#ffb050"
+      },
+      {
+       "name": "lightRadius",
+       "type": "float",
+       "value": 130
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

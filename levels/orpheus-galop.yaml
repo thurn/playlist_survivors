@@ -76,7 +76,7 @@ events:
     levelUp: fire-trail
     banner: "THE DESCENT"
   - at: { section: climax, point: start }
-    boss: { type: minotaur, hits: 8, slams: 4 }
+    boss: { type: minotaur, hits: 8, slams: 4, diesAt: { accent: tutti-chord, fromEnd: 2 } }
     banner: "LORD OF THE REVEL"
     landmark: standing-stones
   - at: { accent: tutti-chord, fromEnd: 2 }

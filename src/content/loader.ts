@@ -381,7 +381,10 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap): Le
     need([...path, "levelUp"], "weapons", e.levelUp);
     need([...path, "formation"], "formations", e.formation);
     need([...path, "blast"], "weapons", e.blast);
-    if (e.boss) need([...path, "boss", "type"], "enemies", e.boss.type);
+    if (e.boss) {
+      need([...path, "boss", "type"], "enemies", e.boss.type);
+      checkRef(song, e.boss.diesAt, [...path, "boss", "diesAt"]);
+    }
     if (e.threats) checkRef(song, e.threats.until, [...path, "threats", "until"]);
     if (e.titleCard) checkRef(song, e.titleCard.until, [...path, "titleCard", "until"]);
     const kinds = ["levelUp", "formation", "threats", "boss", "banner", "titleCard", "landmark", "timeScale", "blast"].filter((k) => (e as Record<string, unknown>)[k] !== undefined);

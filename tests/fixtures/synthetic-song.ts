@@ -59,10 +59,10 @@ export function syntheticSongMap(): SongMap {
     { time: timeOfBar(89), strength: 0.9 },
     { time: timeOfBar(97), strength: 0.75 },
     { time: timeOfBar(105), strength: 0.85 },
-    { time: timeOfBar(121), strength: 0.9 },
-    { time: timeOfBar(129), strength: 1, label: "tutti-chord" },
-    { time: timeOfBar(133), strength: 1, label: "tutti-chord" },
-    { time: timeOfBar(136), strength: 1, label: "tutti-chord" },
+    { time: timeOfBar(117), strength: 0.9 },
+    { time: timeOfBar(121), strength: 1, label: "tutti-chord" },
+    { time: timeOfBar(125), strength: 1, label: "tutti-chord" },
+    { time: timeOfBar(128), strength: 1, label: "tutti-chord" },
   ];
   return {
     version: 1,

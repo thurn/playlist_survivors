@@ -93,7 +93,7 @@ enemies:
     atlas: skeleton-archer
     radius: 12
     group: bar
-    speed: 60
+    speed: 80
     lifetime: [6, 40]
     size: regular
     attack: archer
