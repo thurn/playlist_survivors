@@ -58,6 +58,64 @@ export const moveDef = z.strictObject({
 });
 export type MoveDef = z.infer<typeof moveDef>;
 
+// ---------------------------------------------------------------------- hero
+
+const arcShape = z.strictObject({ kind: z.literal("arc"), radius: z.number().positive(), degrees: z.number().positive().max(360) });
+
+/** The movement model, timing windows, groove and swings. See docs/design/beat-steps.md. */
+export const heroDef = z.strictObject({
+  step: z.strictObject({
+    /** Step length in world pixels. */
+    length: z.number().positive(),
+    /** Step duration in world milliseconds. */
+    durationMs: z.number().positive(),
+    /** Height of the hop arc in world pixels. */
+    hop: z.number().min(0),
+    /** A perpendicular key this soon after the first bends the step into a diagonal. */
+    diagonalWindowMs: z.number().min(0),
+  }),
+  walk: z.strictObject({
+    /** World pixels per world-second. */
+    speed: z.number().positive(),
+    /** Time to reach full speed from standing, or to stop. */
+    accelMs: z.number().positive(),
+    /** World pixels travelled per full walk cycle. */
+    strideCycle: z.number().positive(),
+  }),
+  timing: z.strictObject({
+    perfectMs: z.number().positive(),
+    greatMs: z.number().positive(),
+    goodMs: z.number().positive(),
+    /** The lowest accuracy any press earns. */
+    floor: unit,
+  }),
+  groove: z.strictObject({
+    /** Each rated press moves the groove this fraction of the way toward its accuracy. */
+    follow: unit,
+    /** With no presses in step movement, the groove halves every this many bars. */
+    idleHalfLifeBars: z.number().positive(),
+    /** Damage bonus at full groove (0.2 is +20%). */
+    maxBonus: z.number().min(0),
+  }),
+  swings: z.strictObject({
+    /** The armed swing strikes on the first grid time at least this long after the press. */
+    minLeadMs: z.number().positive(),
+    /** Wind-up before the impact frame, when there is time for it. */
+    windupMs: z.number().positive(),
+    light: z.strictObject({ animations: z.array(z.string()).min(1), hitShape: arcShape, damage: z.number().positive() }),
+    heavy: z.strictObject({
+      animation: z.string(),
+      hitShape: arcShape,
+      damage: z.number().positive(),
+      hitStopMs: z.number().min(0).max(150),
+      /** The crescent shockwave: bands of `band` px from the arc's edge out to `to` px, one per sixteenth note. */
+      wave: z.strictObject({ to: z.number().positive(), band: z.number().positive(), damage: z.number().positive() }),
+    }),
+  }),
+  aimWeights: z.strictObject({ regular: z.number().positive(), elite: z.number().positive(), boss: z.number().positive() }),
+});
+export type HeroDef = z.infer<typeof heroDef>;
+
 // ------------------------------------------------------------------ movesets
 
 const attackRule = z.union([
@@ -213,6 +271,7 @@ export type ZoneTheme = z.infer<typeof zoneTheme>;
 // ------------------------------------------------------------- content files
 
 export const contentFile = z.strictObject({
+  hero: heroDef.optional(),
   moves: z.array(moveDef).optional(),
   movesets: z.array(movesetDef).optional(),
   enemies: z.array(enemyDef).optional(),

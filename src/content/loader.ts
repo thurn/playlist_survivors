@@ -11,6 +11,7 @@ import {
   type EffectRecipe,
   type EnemyDef,
   type FormationDef,
+  type HeroDef,
   type LevelScriptInput,
   type MoveDef,
   type MovesetDef,
@@ -108,6 +109,8 @@ interface Origin {
 }
 
 export interface ContentLibrary {
+  /** The hero's movement model, timing, groove and swings (exactly one content file defines it). */
+  hero: HeroDef;
   moves: Map<string, MoveDef>;
   movesets: Map<string, MovesetDef>;
   enemies: Map<string, EnemyDef>;
@@ -118,7 +121,7 @@ export interface ContentLibrary {
   zones: Map<string, ZoneTheme>;
 }
 
-type Kind = keyof ContentLibrary;
+type Kind = Exclude<keyof ContentLibrary, "hero">;
 const KINDS: Kind[] = ["moves", "movesets", "enemies", "weapons", "formations", "effects", "soundPalettes", "zones"];
 
 function resolveExtends<T extends { id: string; extends?: string }>(
@@ -171,12 +174,21 @@ export function loadContent(files: SourceFile[]): ContentLibrary {
   const issues: ContentIssue[] = [];
   const lib = Object.fromEntries(KINDS.map((k) => [k, new Map()])) as unknown as ContentLibrary;
   const origins = Object.fromEntries(KINDS.map((k) => [k, new Map<string, Origin>()])) as Record<Kind, Map<string, Origin>>;
+  let heroOrigin: Origin | undefined;
 
   for (const f of [...files].sort((a, b) => a.name.localeCompare(b.name))) {
     const p = parseYaml(f, issues);
     if (!p) continue;
     const data = validate(contentFile, p, issues);
     if (!data) continue;
+    if (data.hero) {
+      const origin = { file: f.name, line: lineOf(p, ["hero"]) };
+      if (heroOrigin) issues.push({ ...origin, path: "hero", message: `the hero is already defined at ${heroOrigin.file}:${heroOrigin.line}` });
+      else {
+        lib.hero = data.hero;
+        heroOrigin = origin;
+      }
+    }
     for (const kind of KINDS) {
       const list = (data as Record<string, { id: string }[] | undefined>)[kind];
       if (!list) continue;
@@ -201,6 +213,8 @@ export function loadContent(files: SourceFile[]): ContentLibrary {
     sounds: { ...p.sounds, ...c.sounds },
     extends: undefined,
   }));
+
+  if (!heroOrigin) issues.push({ file: "content", path: "hero", message: "no content file defines the hero" });
 
   // Cross references.
   const ref = (kind: Kind, defId: string, field: string, target: Kind, value: string | undefined) => {
@@ -295,7 +309,7 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap): Le
   if (!data) throw new ContentError(issues);
 
   const at = (path: (string | number)[]) => ({ file: f.name, line: lineOf(p, path), path: pathString(path) });
-  const need = (path: (string | number)[], kind: keyof ContentLibrary, value: string | undefined) => {
+  const need = (path: (string | number)[], kind: Kind, value: string | undefined) => {
     if (value !== undefined && !lib[kind].has(value)) {
       issues.push({ ...at(path), message: `unknown ${kind.replace(/s$/, "")} "${value}"` });
     }

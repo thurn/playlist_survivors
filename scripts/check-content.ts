@@ -12,7 +12,9 @@ import { checkBrokenFixtures, loadRealContent } from "./lib/content-check.ts";
 let failed = false;
 try {
   const lib = loadRealContent();
-  const counts = Object.entries(lib).map(([k, m]) => `${(m as Map<string, unknown>).size} ${k}`);
+  const counts = Object.entries(lib)
+    .filter(([, m]) => m instanceof Map)
+    .map(([k, m]) => `${(m as Map<string, unknown>).size} ${k}`);
   console.log(`content ok: ${counts.join(", ")}`);
   for (const name of readdirSync(join(ROOT, "levels")).filter((f) => f.endsWith(".yaml"))) {
     const src = readSource(join("levels", name));

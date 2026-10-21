@@ -263,6 +263,14 @@ function checkContent(chars: CharacterAtlas | null, world: WorldAtlas | null, fx
       if (n && !chars.sprites.hero?.animations[n]) fail(`content/moves.yaml: ${m.id} uses unknown hero animation ${n}`);
     }
   }
+  const hero = loadYaml("hero.yaml");
+  if (hero && chars) {
+    const swings = (hero.hero as { swings?: { light?: { animations?: string[] }; heavy?: { animation?: string } } } | undefined)?.swings;
+    for (const n of [...(swings?.light?.animations ?? []), swings?.heavy?.animation]) {
+      if (n && !chars.sprites.hero?.animations[n]) fail(`content/hero.yaml: swing uses unknown hero animation ${n}`);
+      else if (n && chars.sprites.hero.animations[n].impactFrame === undefined) fail(`content/hero.yaml: swing animation ${n} has no impactFrame`);
+    }
+  }
   const formations = loadYaml("formations.yaml");
   if (formations && chars) {
     const enemyAtlas = new Map(((enemies?.enemies as Array<{ id: string; atlas?: string }>) ?? []).map((e) => [e.id, e.atlas ?? e.id]));

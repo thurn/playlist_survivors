@@ -1,0 +1,14 @@
+# The hero: movement model, timing windows, groove and swings.
+# See docs/design/beat-steps.md. Animations name baked hero animations in
+# public/assets/characters.json.
+hero:
+  step: { length: 44, durationMs: 110, hop: 5, diagonalWindowMs: 40 }
+  walk: { speed: 80, accelMs: 60, strideCycle: 64 }
+  timing: { perfectMs: 35, greatMs: 70, goodMs: 120, floor: 0.1 }
+  groove: { follow: 0.3, idleHalfLifeBars: 8, maxBonus: 0.2 }
+  swings:
+    minLeadMs: 90
+    windupMs: 190
+    light: { animations: [slash, backslash, halfslash], hitShape: { kind: arc, radius: 100, degrees: 150 }, damage: 1.0 }
+    heavy: { animation: slash-oversize, hitShape: { kind: arc, radius: 130, degrees: 200 }, damage: 2.5, hitStopMs: 110, wave: { to: 330, band: 25, damage: 1.0 } }
+  aimWeights: { regular: 1, elite: 2, boss: 5 }
