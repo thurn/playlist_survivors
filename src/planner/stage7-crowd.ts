@@ -172,20 +172,22 @@ function repairSpacing(kp: KillPlan, r: CrowdResult): void {
     const a0 = start[k];
     const a1 = start[k + 1];
     if (a1 - a0 < 2) continue;
+    // Iterate until no overlaps remain (dense clusters need a few passes).
+    for (let iter = 0, moved = true; iter < 6 && moved; iter++) {
+      moved = false;
     gen++;
-    for (let m = a0; m < a1; m++) {
-      const i = members[m];
-      const o = (es[i].sampleOffset + k - k0[i]) * 2;
-      const h = hashOf(Math.floor(s[o] / 32), Math.floor(s[o + 1] / 32));
-      if (stamp[h] !== gen) {
-        stamp[h] = gen;
-        head[h] = -1;
+      for (let m = a0; m < a1; m++) {
+        const i = members[m];
+        const o = (es[i].sampleOffset + k - k0[i]) * 2;
+        const h = hashOf(Math.floor(s[o] / 32), Math.floor(s[o + 1] / 32));
+        if (stamp[h] !== gen) {
+          stamp[h] = gen;
+          head[h] = -1;
+        }
+        nextArr[m] = head[h];
+        head[h] = m;
       }
-      nextArr[m] = head[h];
-      head[h] = m;
-    }
-    for (let iter = 0; iter < 2; iter++)
-    for (let m = a0; m < a1; m++) {
+      for (let m = a0; m < a1; m++) {
       const i = members[m];
       const oa = (es[i].sampleOffset + k - k0[i]) * 2;
       const cx = Math.floor(s[oa] / 32);
@@ -211,12 +213,14 @@ function repairSpacing(kp: KillPlan, r: CrowdResult): void {
             const uy = d > 0.01 ? dy / d : 0;
             const push = goal - d;
             const wa = la ? 0 : lb ? 1 : 0.5;
+            if (goal - d > 0.2) moved = true;
             s[oa] += ux * push * wa;
             s[oa + 1] += uy * push * wa;
             s[ob] -= ux * push * (1 - wa);
             s[ob + 1] -= uy * push * (1 - wa);
           }
         }
+    }
     }
   }
 }
@@ -555,7 +559,10 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
       // Arrival. Until the final approach, swarm on a ring around the hero in the
       // direction of the eventual kill; then step in.
       const m = mult[ag.def.group] ?? 1;
-      const approaching = !wp.appointment && remaining < APPROACH * (ag.approachBoost ?? 1);
+      // Step in early enough to cover the remaining distance at this enemy's own speed.
+      const gap = len2(wp.x - st.x, wp.y - st.y);
+      const needed = gap / (ag.def.speed * 0.85) + BLEND + 0.1;
+      const approaching = !wp.appointment && remaining < Math.max(APPROACH * (ag.approachBoost ?? 1), needed);
       st.approach = approaching;
       const vmax = ag.def.speed * m * (approaching ? 1.6 : 1);
       const direct = len2(wp.x - st.x, wp.y - st.y);
