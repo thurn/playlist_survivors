@@ -1,21 +1,24 @@
 # QA report: Orpheus galop tech demo
 
-Status of every item in the design's *Manual QA* section
-(`docs/design/tech-demo.md`), as of 2026-10-21.
+Status of every item in the *Manual QA* sections of
+[`docs/design/beat-steps.md`](../design/beat-steps.md) (the simulated
+playthrough) and of [`docs/design/tech-demo.md`](../design/tech-demo.md) where
+it still applies, as of 2026-10-21.
 
 Each item is either **verified** by a command, **partly verified** (a command
 covers the measurable part and a person still has to judge the feel), or a
 **human gate** that nothing automated can close. Items marked *agent review*
-were judged by eye from captures and contact sheets by the implementing agent;
-a person should still confirm them.
+were judged by eye from captures by the implementing agent; a person should
+still confirm them.
 
 To reproduce:
 
 ```bash
-npm run check:all   # lint, types, unit tests, content, assets, songmap, plan, determinism, seeds, analysis
-npm run test:e2e    # capture hook, metronome flash, broken level, cached plan
-npm run qa          # real-time playback (Chromium, plus a real tab switch in Google Chrome) and a measured
-                    # listening pass over the offline-rendered mix; writes captures/qa/report.md and review frames
+npm run check:all   # lint, types, unit tests, content, assets, songmap, plan checks with causality, determinism, seeds, analysis
+npm run test:e2e    # capture hook, metronome flash, broken level, cached plan, ?player=
+npm run qa          # real-time playback (Chromium, plus a real tab switch in Google Chrome), every profile's
+                    # playthrough, and a measured listening pass over the offline-rendered mix;
+                    # writes captures/qa/report.md and review frames
 npm run bench       # whole song at real-time speed, frame-time budgets
 ```
 
@@ -25,97 +28,128 @@ npm run bench       # whole song at real-time speed, frame-time budgets
 
 | Area | State |
 |---|---|
-| Plan correctness (all 10 output checks, 8 seeds, determinism) | verified |
-| Planning time (budget 2 s) | verified: about 1.4–1.6 s in the browser worker, including the output checks |
-| Audio clock, picture/audio offset, a real hidden tab in Google Chrome, resize, cached plan, broken level | verified |
-| Frame time over the whole song; climax frame rate in Google Chrome | verified (numbers below) |
+| Recording checks (14 checks, skilled and casual players, 4 seeds in CI, 6 more by hand) | verified |
+| Causality: re-simulating with the presses after three cut times removed changes nothing before them | verified (every seed, both players) |
+| Simulation time (budget 3 s) | verified: about 1.0–1.3 s in Node, 1.1–1.2 s in the browser worker including the checks |
+| Every strike and its impact sound on the grid, for every profile | verified |
+| Stillness between steps, no skating, every movement from an input | verified |
+| Reward spectrum: casual below skilled, perfect at the top | verified (numbers below) |
+| Signature moments: boss on its chord, near misses, the kick line's fall | verified for the skilled and perfect players |
+| Audio clock, picture/audio offset, hidden tab, resize, cached plan, broken level | verified |
 | Sound mix: clipping, effects level, music in front, no wall of noise, effects on time | verified by measurement; listening still needed |
-| Kick line on the beat; kick frames readable | fixed and verified (unit test, captures); art confirmed by agent review |
-| Feel: metronome lock by eye and ear, dance, juice, zones, art, listening | **human gates, not yet run** |
+| Feel: steps, swings toward the crowd, juice, the dance of the horde | **human gates, not yet run** |
 
-## Problems this QA pass found and fixed
+## Problems found and fixed while building the simulation
 
-- **Kick line danced off the beat.** The kick reached full extension 42% of
-  the way through each beat and the dancers stood still on the beat. The
-  wind-up now happens before the beat and the kick lands on it. A unit test in
-  `tests/planner.test.ts` would have caught this.
-- **Kick frames read as a stick.** The extended leg was a straight plank with
-  no knee or foot. It now has knee and ankle knobs and a toe-up can-can foot,
-  and is long enough to clear the body in side view.
-- **Slow-attack samples landed late.** Some heavy, medium, boss, finisher,
-  multi-kill and weapon samples took 25–210 ms to reach half their peak. The
-  baker now records each sample's onset in `sounds.json`, and the planner
-  starts the sample that much early.
-- **The mix clipped and the effects buried the music.** The output peaked at
-  +0.1 dBFS. The effects sat only 3.3 dB under the music's peak, and in the
-  quiet kick-line passage they ran 7 dB over the music. The effects now follow
-  the music's loudness as scheduled automation and sit 5.7 dB under its peak,
-  and an output trim keeps the peak at −1.1 dBFS.
+- **Cutting presses changed earlier frames.** Enemies were integrated over
+  steps that a press could split, so a press after the cut time changed
+  rounding before it. Enemies now integrate only on the fixed 1/120 s steps,
+  are extrapolated between them, and world time comes from the warp's
+  breakpoints. Automatic swings are scheduled by their own (wind-up) time,
+  not their strike time.
+- **A cleave's shockwave could not catch a charging line**, and its bands
+  were pushed past two beats by the cleave's own hit-stop. Bands now keep
+  their sixteenth-note slots and each reaches everyone the front has passed.
+- **The sword ignored the boss and the kick line in a crowd of hundreds.**
+  The aim weights are now 200 for the boss and 20 for formation members, and a
+  cleave aims with its shockwave's reach.
+- **Two archers' arrows could not both be near-missed by one step.** Archers
+  of a volley now share a post, 20 px apart, and the virtual player judges a
+  dodge by where the step has taken the hero when the arrow lands.
+- **Enemies appeared on screen for a frame.** An enemy's first sample was
+  taken up to 33 ms after it spawned, a few pixels inside the view. The spawn
+  spot is now its first sample.
+- **The prelude's mix filled in.** Cleave shockwaves trigger kills on eight
+  sixteenth notes, each with a ringing multi-kill sound. Free movement now
+  groups kill sounds per beat, uses the short single-kill sound, and the
+  prelude palette is quieter.
 
-## First check: the synced metronome
-
-| Item | State | Evidence |
-|---|---|---|
-| Start | verified | `qa`: the title screen shows "Click to begin" once loading finishes. Clicking starts a running AudioContext. |
-| Beat flash | partly verified | e2e: at three sampled galop beats the `?metronome` flash is bright on the beat and has faded just past mid-beat. `qa`: song time advances 0.999–1.003× real time. The picture's song time is 21–32 ms behind the audio thread's, which matches output latency plus one frame, so there is no drift. `qa` also confirms the click track is scheduled. **Human:** watch and listen with `?metronome` from the first beat to the last. |
-| Slow-motion camera test | **human gate** | Needs a phone camera, speakers and a screen. |
-
-## Full playthrough
+## First assembled check
 
 | Item | State | Evidence |
 |---|---|---|
-| Prelude | partly verified | Capture `section-prelude.png`: the title card is legible over the slow-motion prelude. **Human:** does it feel calm? |
-| First chord | partly verified | Capture `section-galop-opening.png` shows the LEVEL UP callout. Plan check "hit-stop clearance" covers 35 stops within 40–150 ms, with clearance before the next primary event. **Human:** is the snap obvious? |
-| On the beat | verified | Plan check "impacts on time": 313 hero impacts land on the beat grid, and the hero's impact frame is on the sample nearest the impact. **Human:** confirm the feel. |
-| Ensemble rhythm | partly verified | Enemy types are grouped on different subdivisions (`group: beat` / `eighth` in `content/enemies.yaml`, with walk cycles timed in beats), The kick line now kicks on the beat (unit test). **Human:** does the horde *look* like it is dancing? |
-| No ghost hits | verified | Plan check "no pass-through" (2646 checked): no hit shape passes through a body it does not damage. "deaths covered" (2949): every death has a hit that covers it. |
-| Spawning | partly verified | Plan check "off-screen spawns" (2918): spawns start outside the camera view, at the forest edge. **Human:** do the entrance effects read well? |
-| Kick line | verified, agent review | Unit test: every dancing member is in the kick's impact frame on each beat and back to standing late in the beat. Captures at 96.82–97.76 s show all twelve kicking in unison, alternating legs each beat. The sweep starts at 100.01 s, on the phrase's final accent. **Human:** does it read as a can-can? |
-| Archers | verified | Plan check "near misses stay near" (16). Capture `archer-near-miss.png` shows the PERFECT callout. |
-| Boss | verified | Slams are near misses with telegraphs (capture `boss-slam-dodged.png`). The finisher lands at 139.041 s, the second-to-last chord (capture `boss-death.png`). **Human:** are the telegraphs readable? |
-| Finale | verified | `qa`: 456 living monsters just before the final chord (139.58 s) and 0 one beat later. Plan check "clean ending": nobody outlives the ring. Capture `finale-blast.png`. |
-| Zones | agent review | Section captures `section-*.png` run from the dark teal twilight forest of the prelude, through amber grass, to red infernal ground with lava and stone faces in the climax. **Human:** judge the mood. |
-| Sound | partly verified | Plan check "sound budget": at most 4 voices per sixteenth. The `qa` listening pass renders the whole mix offline through the live mixing graph. No samples clip (peak −1.1 dBFS). Effects sit 5.7 dB under the music's peak, and under the music in every section, by 3.2–12.9 dB. The mix keeps the music's own rise and fall between hits in every section (climax 3.8 → 3.9 dB), so the effects do not fill it into a wall. All 2161 effects are heard within 0.1 ms of their scheduled time. **Human:** listen through. |
-| HUD | verified | Unit test: the XP bar is exactly full at each level-up and on the final chord. Captures show level, combo and kill counters climbing. The end card totals (2949 kills) match the plan. |
-| Credits | partly verified | Capture `end-card.png` shows the totals and the start of the credits. `check:assets` checks that every licensed asset is in the credits. **Human:** watch the roll to the share-alike notices. |
+| Open `?start=1:10` | verified | `qa`: playback starts on click with `?start`; captures `theme-a-75.20.png` and `theme-a-75.30.png`. |
+| The hero stands still between steps | verified | `qa`: the hero moves 0.000 px between 75.20 s and 75.30 s. Unit test: still inside 20 beat gaps of theme A. Check "every hero movement has an input": step movement only within 110 ms of a press. |
+| Each step is quick and firm | partly verified | The step is a 110 ms cubic ease-out with a 5 px hop and a dust puff on landing; check "every hero movement has an input" bounds every step to 44 px. **Human:** does it feel firm? |
+| Swings go toward the crowd | verified, agent review | Check "auto-aim is the rule": every swing's direction is re-derived from its recorded aim snapshot, and the snapshot matches the recorded hero and enemies. Captures show swings into the thick of the crowd. **Human:** confirm. |
+| Enemies chase and surround | partly verified, agent review | Enemies steer at the hero and stop at contact; check "population" keeps them on the level's curve and "spacing" keeps them apart. **Human:** does it read as a horde closing in? |
+| Every sword impact on the beat | verified | Check "impacts on the grid": every strike within 1 ms of a grid time and its impact sound exactly on it, for every profile. `qa` listening pass: 2240 sound events heard within 0.1 ms of their scheduled times. **Human:** listen. |
+
+## Full playthrough (`?player=skilled`)
+
+| Item | State | Evidence |
+|---|---|---|
+| Prelude | partly verified | Unit test: the hero walks with held keys, swings by itself every two beats and cleaves on strong anchors; presses there are not rated. Check "no skating": the walk cycle advances with the distance walked. **Human:** does it feel calm? |
+| Count-in | verified, agent review | The beat track fades in and four count marks pulse on the last four beats before the galop (capture at 53.75 s). |
+| Galop opening | verified | Presses once per bar; cleaves with hit-stops on the tutti chords (check "hit-stops": 34 stops within 40–150 ms). Capture `first-cleave.png`. |
+| Theme A | verified | A step and a swing on every beat; the groove sits at +20% (an orc's 1.15 health falls to one 1.2 swing). |
+| Kick line | verified | Check "signature moments": every dancer dies within two beats of the release, most to the release cleave's shockwave. Capture `kick-line-release.png`. **Human:** does the ripple read? |
+| Archers | verified | Check "signature moments": at least 90% of threats are near misses (all of them for the skilled player on the four CI seeds). Capture `archer-near-miss.png`. |
+| Boss | verified | Slam markers drop under the hero, which steps off them (capture `boss-slam-dodged.png`). The boss dies on its death chord at 139.041 s (check "signature moments"; capture `boss-death.png`). |
+| Finale | verified | `qa`: 458 living monsters just before the final chord and 0 one beat later; check "clean ending". The end card shows kills, rating counts and the average groove. |
+| Key display and groove | verified, agent review | Captures show the keys lit with their rating and the groove meter at +20% through the galop. |
+
+## The reward spectrum
+
+| Item | State | Evidence |
+|---|---|---|
+| `?player=casual` is calmer | verified | One press per bar (207 presses against the skilled 267). Average groove about +13% (12–14% over four seeds) against +20%; 7600–8000 kills against 8700–9000. Orcs often need two swings below a 0.75 groove. The design's +5–10% would need a far less generous accuracy table: see *Tuning Notes* in the design. |
+| Casual impacts stay on the beat | verified | `qa`: 196 casual swings, 0 off the grid, although many presses land 70–250 ms off the beat. Unit test likewise. |
+| The demo still progresses | verified | The casual run passes every check, reaches the finale and is cleared by the blast; its level-ups arrive one to four seconds after their scheduled moments. |
+| Nothing punishes the player | verified | There is no miss rating, no hero health loss (arrows and slams that touch the hero do no damage) and no combo. |
+| `?player=perfect` | verified | `qa`: every press Perfect, groove +20%. |
 
 ## Edge cases
 
 | Item | State | Evidence |
 |---|---|---|
-| Hidden tab | verified | `qa` drives the installed Google Chrome, without Playwright, and switches to a new tab for 10 s during the climax. The page reports `hidden` and draws 0 frames. The audio plays on and schedules 310 sounds meanwhile, because Chrome does not throttle tabs that are playing audio. On return, song time has moved 10.884 s over 10.883 s, the picture is 16 ms from the audio, and 0 sounds start late. One of four runs failed to hide the tab and the cause was never found; the check now logs window ids. A 10 s main-thread stall additionally tests the skip path: 19–20 stale sounds skipped, 0 started late. |
-| Window resize | verified | `qa`: resizing to 1280×1024 mid-playback gives a 1280×1024 canvas with the 16:9 view letterboxed, and playback continues. Capture `resize-1280x1024.png` shows the pixel art is still sharp. |
-| Cached plan | verified | e2e: the second load reports `planSource = cache` and the same plan hash. |
-| Broken level script | verified | e2e: a level with a bar range outside the song shows an error naming the file and line, and no canvas or start button ever appears. `check:content` covers 12 broken fixtures. |
-| Performance | verified | `qa`: 119.9 fps in Google Chrome from 105.8 s to 109.8 s, the start of the climax, on a 120 Hz display. `bench` numbers below. |
+| A press during a hit-stop | verified | The simulation ends a hit-stop at a press (check "hit-stops" accepts stops shorter than 40 ms only when a press ended them). **Human:** find one by eye. |
+| A diagonal step | verified | Unit test: a perpendicular key within 40 ms bends the step smoothly onto the diagonal, landing 44 px away. The virtual player presses diagonals as two keys a few milliseconds apart. |
+| The corridor edge | verified | Unit test: a step toward the edge stops at it. |
+| Other seeds | verified | `check:seeds` (1859, 7, 2024) and `qa` (`?seed=1859` in the browser) pass every check; seeds 1, 2, 3, 42, 99 and 500 also pass. |
+| Determinism | verified | `check:determinism`: two runs give the same plan hash. e2e: a reload loads the cached plan with the same hash. |
+| Hidden tab | verified | `qa` switches to a real new tab in Google Chrome for 10 s during the climax: the page draws 0 frames, the audio schedules 331 sounds meanwhile, and on return the picture is 25 ms from the audio with 0 late sounds. One run in three failed to hide the tab, as in the earlier QA pass; the cause is in the test harness, not the demo. |
+| Window resize, cached plan, broken level script | verified | As before: `qa` resize letterboxing, e2e cached plan and broken level (13 broken fixtures in `check:content`). |
+
+## Sound
+
+`qa`'s listening pass renders the whole mix offline through the live mixing
+graph:
+
+- No samples clip (peak −0.9 dBFS).
+- The effects' 95th percentile sits 5.0 dB under the music's peak, and the
+  music is in front in every section, by 1.1–14.6 dB.
+- The mix keeps the music's own rise and fall between hits in every section
+  (prelude 19.5 → 18.6 dB, climax 3.8 → 4.3 dB), so the effects do not fill it
+  into a wall.
+- All 2240 effects are heard within 0.1 ms of their scheduled time.
+- Check "sound budget": at most 4 voices start per sixteenth note.
+
+**Human:** listen through, especially the cleaves' shockwaves and the step
+rustles, which are meant to sit well under the music.
 
 ## Performance
 
-`npm run bench` played the whole song, climax included, at real-time speed in headed Chrome on this machine. It covered 17,346 frames:
+`npm run bench` played the whole song at real-time speed in headed Chrome on
+this machine, 17,343 frames on a 120 Hz display:
 
 | Measure | Median | p95 | Max | Budget |
 |---|---|---|---|---|
-| JavaScript frame time | 1.70 ms | 3.00 ms | 4.90 ms | 8 ms at p95 |
-| GPU frame time | 0.76 ms | 1.54 ms | 4.91 ms | 10 ms at p95 |
-| Frame interval | 8.30 ms | 10.20 ms | 10.40 ms | 33 ms max |
+| JavaScript frame time | 1.80 ms | 3.00 ms | 5.70 ms | 8 ms at p95 |
+| GPU frame time | 0.76 ms | 1.71 ms | 8.39 ms | 10 ms at p95 |
+| Frame interval | 8.30 ms | 9.30 ms | 9.50 ms | 33 ms max |
 
-The display refreshes at 120 Hz. The longest gap between frames was 10.4 ms, so no frame was dropped, even at that rate.
-
-Planning time (fresh profile, no cache):
-
-- Browser worker, including the output checks: 1407 ms (default seed), 1577 ms (seed 1859).
-- Node `check:plan`: about 1.6–1.9 s.
-- On battery power the same machine is about twice as slow. Node took 2.4–5.7 s, and the
-  code from before this QA pass is just as slow, so this is the power state, not a
-  regression. The budget is for the reference machine; measure it on mains power.
+No frame was dropped. `qa` measured 120 fps through the climax in Google
+Chrome. The simulation runs once at load: about 1.15 s in the browser worker
+including its checks, then the plan cache makes reloads instant.
 
 ## What a person still has to do
 
 The README's *Human review gates* list these steps:
 
 1. Listen to the analysis click track for the song map.
-2. Watch `?metronome` from the first beat to the last, and optionally film it in slow motion.
-3. Confirm the art: the contact sheets, including the new can-can kick frames.
-4. Confirm zones and juice from `captures/qa/`.
+2. Watch `?metronome` from the first beat to the last.
+3. Do the first assembled check at `?start=1:10`.
+4. Compare `?player=skilled`, `?player=casual` and `?player=perfect`.
 5. Listen through the whole level.
-6. Do one full manual playthrough with this table at hand.
+6. Do one full playthrough with this table at hand.

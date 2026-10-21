@@ -30,7 +30,7 @@ soundPalettes:
   - id: soft-chimes
     extends: crisp-steel
     tuned: true
-    gain: 0.8
+    gain: 0.5               # quiet enough to keep the prelude's dynamics
     sounds:
       hit-light: [{ id: kenney/glass_001, rootNote: C6 }, { id: kenney/glass_002, rootNote: C6 }, { id: kenney/glass_003, rootNote: C6 }]
       hit-medium: [{ id: kenney/impactGlass_medium_000, rootNote: E6 }, { id: kenney/impactGlass_medium_001, rootNote: E6 }, { id: kenney/impactGlass_medium_002, rootNote: E6 }]

@@ -139,7 +139,9 @@ export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam:
       deathByEnemy.set(e.id, { s: h.s, x: f.x, y: f.y });
       const recipe = h.source === "ring" ? "blast-hit" : def.death.recipe;
       fx(recipe, h.s, f.x, f.y, h.dir, Math.max(0.4, h.intensity), { debris: def.death.debris });
-      const slot = Math.round(beatIndexAt(song, h.s) * 4);
+      // Kill sounds group per sixteenth note; in the slow, quiet free movement, per beat.
+      const free = sectionOf(h.s).level.movement === "free";
+      const slot = free ? Math.round(beatIndexAt(song, h.s)) * 4 : Math.round(beatIndexAt(song, h.s) * 4);
       const k = killsBySlot.get(slot) ?? { s: h.s, x: f.x, n: 0, big: false };
       k.n++;
       k.big ||= def.size !== "regular";
@@ -148,7 +150,8 @@ export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam:
   }
   killTimes.sort((a, b) => a - b);
   for (const k of [...killsBySlot.values()].sort((a, b) => a.s - b.s)) {
-    if (k.n === 1) sfx("kill", k.s, k.x, PRIORITY.kill, 0.6);
+    // The slow, quiet free movement keeps to the short single-kill sound: a ringing multi-kill would fill its silences.
+    if (k.n === 1 || sectionOf(k.s).level.movement === "free") sfx("kill", k.s, k.x, PRIORITY.kill, 0.6);
     else sfx("kill-multi", k.s, k.x, PRIORITY.kill, 0.5 + 0.22 * Math.log2(k.n));
   }
 

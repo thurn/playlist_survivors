@@ -1,13 +1,18 @@
 # Playlist Survivors — tech demo
 
-A non-interactive, browser-based level that plays itself to the end of
-Offenbach's *Orpheus in the Underworld* overture (the slow passage, then the
-Infernal Galop). A hero hacks through a horde of up to ~500 LPC monsters, and
-every hop, slash, kill, flash and sound lands on the music.
+A non-interactive, browser-based rhythm game level that plays itself to the end
+of Offenbach's *Orpheus in the Underworld* overture (the slow passage, then the
+Infernal Galop). A virtual player presses the arrow keys to the beat; the hero
+steps one pace per press while the sword swings itself at the crowd, and every
+strike and impact sound lands on the music, through a horde of up to ~500 LPC
+monsters.
 
-The design is in [docs/design/tech-demo.md](docs/design/tech-demo.md). The
-whole level is **planned in advance** from a song map and a level script, then
-played back: each frame is a pure function of the audio clock's song time.
+The design is in [docs/design/tech-demo.md](docs/design/tech-demo.md), with the
+gameplay in [docs/design/beat-steps.md](docs/design/beat-steps.md), which
+supersedes parts of it. The level is a **simulated playthrough**: the game rules
+run forward in time, driven by the virtual player's key presses, and never read
+a press before it happens. The simulation is recorded at load, then played
+back: each frame is a pure function of the audio clock's song time.
 
 ## Running it
 
@@ -37,7 +42,8 @@ headphones or speakers.
 | `?start=1:35` | Start playback from a song time, in seconds (`?start=95.5`) or `m:ss`. |
 | `?capture&t=88.31` | Render one frozen frame at song time 88.31 s, without audio. |
 | `?avOffsetMs=-40` | Shift the picture relative to the audio (e.g. Bluetooth latency). |
-| `?seed=1859` | Re-plan, and regenerate the map, with a different seed. |
+| `?seed=1859` | Re-simulate, and regenerate the map, with a different seed. |
+| `?player=casual` | Re-simulate with another skill profile: `perfect`, `skilled` (the level's default) or `casual`. |
 | `?test` | Expose the `window.__demo` test hook (`ready`, `renderAt(s)`, `stats()`). |
 | `?bench` | Play the whole song on a virtual clock and record frame times. |
 
@@ -51,13 +57,13 @@ Every important property is checkable by a command:
 | `npm run check:songmap` | The song map against the beat-grid acceptance thresholds. |
 | `npm run check:content` | Every content file and level script against its schema, plus the deliberately broken fixtures in `tests/fixtures/broken/` (each must fail with a useful, line-numbered message). |
 | `npm run check:assets` | Licences, credits, atlas manifests, and that every sprite/animation/sound named in content exists. |
-| `npm run check:plan` | Runs the planner with all its output checks and prints peak population, kills per section, total hit-stop time and the longest stretch without a primary event. `-- --seed=1859` for another seed. |
-| `npm run check:determinism` | Plans twice and generates the map twice; hashes must match. |
-| `npm run check:seeds` | The plan checks on three more seeds (`?seed=` must still pass every check). |
+| `npm run check:plan` | Runs the simulated playthrough with all its checks, including causality (re-simulating with the presses after three cut times removed must change nothing before them), then the casual player's too. Prints peak population, kills per section, presses by rating, the average groove, hit-stop time and the threats, and the two players' kills and groove side by side. `-- --seed=1859` for another seed, `-- --player=perfect` for another profile. |
+| `npm run check:determinism` | Simulates twice and generates the map twice; hashes must match. |
+| `npm run check:seeds` | The checks on three more seeds (`?seed=` must still pass every check). |
 | `npm run capture -- --times 12,35.2,88.31,141.5` | Headless-Chrome screenshots at exact song times into `captures/`. `--sections` captures the start of every section. |
 | `npm run bench` | Headed Chrome, whole song at real-time speed: fails if JavaScript frame time exceeds 8 ms or GPU time 10 ms at p95, or any frame exceeds 33 ms. |
-| `npm run test:e2e` | Playwright: capture hook, metronome flash on the beat, broken level script shows an error and never starts, reload uses the cached plan. |
-| `npm run qa` | Real-time playback in Chromium over the design's Manual QA items a machine can judge: planning time, audio clock rate, picture/audio offset, frame rate, hidden-tab recovery (a real tab switch in the installed Google Chrome during the climax, and a 10 s main-thread stall), climax frame rate, resize letterboxing, click track, `?seed=1859`, finale clearance, and a listening pass over the offline-rendered mix (clipping, effects level, music in front, no wall of noise, effects on time); writes `captures/qa/report.md` and review frames. |
+| `npm run test:e2e` | Playwright: capture hook, metronome flash on the beat, broken level script shows an error and never starts, reload uses the cached plan, `?player=` re-simulates with another profile. |
+| `npm run qa` | Real-time playback in Chromium over the design's Manual QA items a machine can judge: simulation time, stillness between steps, every profile's impacts on the grid and the reward spectrum, audio clock rate, picture/audio offset, frame rate, hidden-tab recovery (a real tab switch in the installed Google Chrome during the climax, and a 10 s main-thread stall), climax frame rate, resize letterboxing, click track, `?seed=1859`, finale clearance, and a listening pass over the offline-rendered mix (clipping, effects level, music in front, no wall of noise, effects on time); writes `captures/qa/report.md` and review frames. |
 | `npm run check:analysis` | The analysis tool's pytest suite and ruff. |
 | `npm run check:all` | All of the above except captures and the benchmark. |
 
@@ -66,7 +72,7 @@ Every important property is checkable by a command:
 ```text
 recording ──ps-analysis (crop, analyze, report, edit, check, click)──► songs/orpheus-galop/songmap.json
 LPC packs ──tools/baker (npm run bake)──► public/assets/ (atlases, effects, sounds, credits)
-content/*.yaml + levels/orpheus-galop.yaml + song map ──planner (web worker)──► plan
+content/*.yaml + levels/orpheus-galop.yaml + song map ──simulation + virtual player (web worker)──► recorded plan
 audio clock → song time s → evaluatePlan(plan, s) → PixiJS renderer + HUD
 ```
 
@@ -75,12 +81,15 @@ audio clock → song time s → evaluatePlan(plan, s) → PixiJS renderer + HUD
 - `tools/baker/`, `assets-src/` — the asset baker: ULPC character compositing,
   the scripted kick animation, white hit-flash frames, terrain and props,
   effects, loudness-normalized sounds, the licence manifest and credits.
-- `content/` — moves, movesets, enemies, weapons, formations, effect recipes,
+- `content/` — the hero (movement, timing, groove, swings, aim), enemies, weapons, formations, effect recipes,
   sound palettes, zone themes and Tiled landmarks (`content/landmarks/*.tmj`).
 - `levels/` — level scripts (bars and beats, never seconds).
 - `src/core/` — song map maths, the time warp, geometry, seeded randomness.
 - `src/content/` — schemas and YAML loaders with line-numbered errors.
-- `src/planner/` — the eight planning stages and the output checks.
+- `src/sim/` — the simulation: the song schedule, the movement model, timing and groove, auto-aim, the
+  virtual player and the forward game loop.
+- `src/planner/` — the pipeline (schedule, map, simulation, emission), the recording checks and the
+  causality check.
 - `src/mapgen/` — the forest generator (route, corridor, zones, props, landmarks).
 - `src/plan/` — the plan format and stateless frame evaluation.
 - `src/runtime/` — audio clock and sound scheduling, renderer, HUD, app shell.
@@ -103,9 +112,13 @@ and lists what is still open.
    `captures/contact-sheet*.png`, including the skeletons' can-can kick frames.
 4. **Zones** — `npm run capture -- --sections` and review each zone.
 5. **Juice** — review captures of the biggest moments (first galop chord,
-   kick-line sweep, boss slams, boss death, finale blast).
+   the kick line's release cleave, boss slams, boss death, finale blast).
 6. **Sound** — listen to the whole level.
-7. **Full QA** — the checklist in the design document's *Manual QA* section.
+7. **Step movement** — open `?start=1:10` (theme A) and confirm the first
+   assembled check in [beat-steps.md](docs/design/beat-steps.md#first-assembled-check):
+   still between steps, quick firm steps, swings toward the crowd, every impact on the beat.
+8. **Reward spectrum** — compare `?player=skilled` with `?player=casual` (and `?player=perfect`).
+9. **Full QA** — the checklists in the *Manual QA* sections of both design documents.
 
 ## Licences
 

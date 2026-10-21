@@ -7,7 +7,7 @@ const BASE = `http://localhost:${devPort()}`;
 interface Hook {
   ready: Promise<void>;
   renderAt(s: number): Promise<void>;
-  plan: { songBeats: Float64Array; barStart: number[]; duration: number };
+  plan: { songBeats: Float64Array; barStart: number[]; duration: number; profile: string; stats: { averageGroove: number } };
   planHash: string;
   planSource: string;
 }
@@ -77,4 +77,15 @@ test("a reload uses the cached plan and produces the same plan", async ({ page }
   const second = await page.evaluate(() => ({ hash: (window as unknown as { __demo: Hook }).__demo.planHash, source: (window as unknown as { __demo: Hook }).__demo.planSource }));
   expect(second.source).toBe("cache");
   expect(second.hash).toBe(first);
+});
+
+test("?player= re-runs the simulation with another skill profile", async ({ page }) => {
+  await openDemo(page, "");
+  const skilled = await page.evaluate(() => ({ hash: (window as unknown as { __demo: Hook }).__demo.planHash, plan: (window as unknown as { __demo: Hook }).__demo.plan }));
+  await openDemo(page, "&player=casual");
+  const casual = await page.evaluate(() => ({ hash: (window as unknown as { __demo: Hook }).__demo.planHash, plan: (window as unknown as { __demo: Hook }).__demo.plan }));
+  expect(skilled.plan.profile).toBe("skilled");
+  expect(casual.plan.profile).toBe("casual");
+  expect(casual.hash).not.toBe(skilled.hash);
+  expect(casual.plan.stats.averageGroove).toBeLessThan(skilled.plan.stats.averageGroove);
 });

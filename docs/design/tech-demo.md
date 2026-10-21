@@ -1,5 +1,7 @@
 # Playlist Survivors Tech Demo: Technical Design
 
+> **Partly superseded.** The demo is now a simulated playthrough driven by a virtual player's key presses: see [beat-steps.md](beat-steps.md). That document replaces the Moves, Movesets and Enemy types sections, planner Stages 2, 4, 6 and 7 and the planner output checks, the hit-stop rules, the HUD's combo counter and beat-track markers, and the Can-Can moveset table. Notes in those sections point to their replacements.
+
 ## Introduction
 
 Playlist Survivors is a planned rhythm game with fantasy action-RPG elements.
@@ -474,6 +476,8 @@ returns the song time at which the hit-stop began.
 
 ### Hit-stop rules
 
+> **Superseded** by [beat-steps.md, Hit-stop](beat-steps.md#hit-stop): a hit-stop no longer looks ahead to the next hero action. It lasts `min(hitStopMs × (0.6 + 0.4 × accent), 150 ms)`, a press ends it early, and heavy impacts during one do not start another.
+
 Synchronized events come in two tiers, and only the first tier constrains
 hit-stops:
 
@@ -589,6 +593,8 @@ wide. At the default zoom, the screen shows 960×540 world pixels.
 
 ### Moves
 
+> **Superseded** by [beat-steps.md, Hero settings](beat-steps.md#hero-settings) (`content/hero.yaml`): the sword's light and heavy swings, auto-aimed. `content/moves.yaml` is gone.
+
 A **move** is one hero action: an animation plus what it does to the world.
 Each move defines:
 
@@ -638,6 +644,8 @@ hitStopMs: 110
 ```
 
 ### Movesets
+
+> **Superseded** by [beat-steps.md, Level script](beat-steps.md#level-script): each section sets `movement`, `pace`, `presses`, `timingGrid` and `heavyOnAccents`. `content/movesets.yaml` is gone.
 
 A **moveset** is a section's choreography style. It has four parts:
 
@@ -700,6 +708,8 @@ onAnchor: { move: burst, minStrength: 0.5 }
 ```
 
 ### Enemy types
+
+> **Superseded** by [beat-steps.md, Enemies and weapons](beat-steps.md#enemies-and-weapons): enemies have `health` and a `behavior` (`chase`, `archer` or `boss`) instead of a planning `lifetime` and elite `hits`; weapons have a `damage` instead of `killsPerFiring`.
 
 Each enemy type defines:
 
@@ -1001,6 +1011,8 @@ This stage converts the level script's musical references into song time.
 
 ### Stage 2: Choose actions and threats
 
+> **Superseded.** The song schedule (`src/sim/schedule.ts`) resolves weapon slots, archer volleys, slams and formations; the virtual player's presses replace the move choice. See [beat-steps.md](beat-steps.md#proposed-design).
+
 This stage decides what happens on each slot, still in song time. Nothing
 here has a position yet; positions come in later stages.
 
@@ -1042,6 +1054,8 @@ The planner then calls the map generator with the route schedule.
 
 ### Stage 4: Plan hero motion
 
+> **Superseded** by [beat-steps.md, Movement Model](beat-steps.md#movement-model): presses step the hero; held keys walk it.
+
 The hero's position is the sum of three parts:
 
 - **Route progress:** the route schedule gives the hero's distance along the
@@ -1081,6 +1095,8 @@ This stage produces the camera's path and zoom.
   events (see [Juice](#juice) below).
 
 ### Stage 6: Assign kills (planning backwards)
+
+> **Superseded** by [beat-steps.md, Enemy Rules](beat-steps.md#enemy-rules): a spawn director, chasing, health and damage decide who dies, going forward.
 
 This stage creates every enemy from its death. For each hit (a hero move,
 weapon firing, sweep hit or ring hit), the planner:
@@ -1161,6 +1177,8 @@ spawn: 22 world-seconds earlier, off-screen on the side the arc faces
 
 ### Stage 7: Simulate the crowd
 
+> **Superseded** by the forward simulation (`src/sim/simulate.ts`): enemies chase the hero, not planned appointments.
+
 A fixed-step crowd simulation (60 steps per world-second) moves every enemy
 from its spawn point to its fates and appointments. It uses a spatial hash.
 Forces on each enemy:
@@ -1208,6 +1226,8 @@ sound palette entry, and emits:
   runtime can count events up to any time with a binary search.
 
 ### Planner output checks
+
+> **Superseded** by [beat-steps.md, Automated Checks](beat-steps.md#automated-checks), including the causality check.
 
 The planner runs these checks on its own output. They also run in the test
 suite. Every failure names the time and entity involved.
@@ -1565,12 +1585,17 @@ The HUD tells viewers this is a rhythm game and a Survivors game at once.
 Every element pulses with the music in song time.
 
 - **Beat track:** a NecroDancer-style track at the bottom of the screen.
+  - *Superseded by [beat-steps.md, HUD](beat-steps.md#hud): the song's beats
+    slide toward the heart and presses land on the track; the track no longer
+    shows upcoming hero actions, which the game cannot know.*
   - Markers for the hero's upcoming actions slide toward a beating heart in
     the centre.
   - Heavy hits show as larger markers.
   - In `free` sections the markers become a flowing ribbon.
-- **Combo counter:** counts on-beat hero actions. Play is perfect, so the
-  combo never breaks. It changes color at milestones (50, 100, 250).
+- **Combo counter:** *superseded by the groove meter and the key display
+  ([beat-steps.md, HUD](beat-steps.md#hud)).* Counts on-beat hero actions.
+  Play is perfect, so the combo never breaks. It changes color at milestones
+  (50, 100, 250).
 - **"PERFECT" callouts:** on heavy moves that land on accents, and on near
   misses.
 - **XP bar:** fills from gem pickups. It reaches full exactly at each
@@ -1739,6 +1764,8 @@ start and end of the section. "New" lists what first appears there.
 | Bridge | pulsed | descent-steps | ember-hollow | 1.0 | 350 → 420 | fire trail, ember orcs |
 | Theme A return (climax) | pulsed | revel-onslaught | infernal-grove | 1.0 | 420 → 500 | boss |
 | Coda | pulsed | finale-frenzy | infernal-grove | 1.0, then 0.4 after the boss dies | 500 → 450 | boss death, finale blast |
+
+> **Superseded.** The Moveset column is replaced by each section's movement and press pattern: see [beat-steps.md, Level script](beat-steps.md#level-script) for the skilled player's presses per section.
 
 The movesets:
 

@@ -888,6 +888,50 @@ review in the browser.
      [tech-demo.md](tech-demo.md) pointing here.
    - **Gate:** the full playthrough in [Manual QA](#manual-qa).
 
+## Tuning Notes
+
+The implementation follows this document, with these values and rules
+settled during tuning (task 6). Each keeps every check passing on all seeds.
+
+- **Spawning:** up to 120 enemies per beat, not 12. A cleave's shockwave can
+  clear a few hundred enemies in half a second, and the horde must re-flood
+  from off-screen within a beat to stay on the population curve. In free
+  movement the director also runs on the off-beat eighth, because its beats
+  are slow. Each spawn's first recorded sample is its spawn spot.
+- **Auto-aim:** the boss weighs 200 and formation members 20 (a new weight),
+  so the sword finds them in a crowd of hundreds. A cleave aims with its
+  shockwave's reach (330 px), not just its arc.
+- **Cleave shockwave:** each band reaches everyone between the arc's edge and
+  its own front, and hits each enemy at most once, so charging enemies cannot
+  slip between bands. Bands keep their sixteenth-note slots; a band inside a
+  hit-stop is skipped and the next one covers its ground.
+- **Archers** of a volley share one post, shoulder to shoulder 20 px apart,
+  so their arrows fly nearly parallel and one step can near-miss both. The
+  virtual player dodges on the release beat; it judges a step by where it
+  will have taken the hero when the threat lands.
+- **Slams:** the marker is 28 px across the middle. Leaving it before the
+  slam lands is a near miss, however far the hero went.
+- **The boss** lands 110 px ahead of the hero. Once its death chord has come,
+  the first hit kills it if it is at its 1-health floor.
+- **The kick line** rides with the camera-smoothed hero, 170 px ahead along
+  the route, 28 px between dancers. Its release is treated as an accent, so a
+  skilled player meets it with a cleave, and the line charges at four times
+  its walking speed.
+- **The finale blast's** bands are growing discs: each kills everyone its
+  front has reached.
+- **Groove decay** starts two bars after the last press, so pressing once per
+  bar never decays.
+- **Experience:** 350, 1000 and 2000 gems for the three level-ups. The
+  skilled player levels up on schedule; the casual player one to four
+  seconds late.
+- **The casual profile's** timing error is normal with an 120 ms deviation,
+  clamped to ±250 ms. With the accuracy table above, the 45 ms of the
+  starting value earns almost the skilled player's bonus (+18%); 120 ms
+  gives about +13%, against the skilled +20%.
+- **Kill sounds** in free movement group per beat, not per sixteenth note,
+  and use the short single-kill sound, so the quiet prelude keeps its
+  dynamics.
+
 ## Manual QA
 
 Run the dev server from a worktree (`npm run dev`, port from `npm run port`),
@@ -937,7 +981,8 @@ Play the whole song at `?player=skilled` with headphones.
 ### The reward spectrum
 
 - **Open `?player=casual`.** The game is visibly calmer: one press per bar,
-  lower groove (around +5% to +10%), and orcs often needing two swings.
+  lower groove (around +12% to +15%; see [Tuning Notes](#tuning-notes)), and
+  orcs often needing two swings.
 - **Casual impacts stay on the beat.** The casual player's steps drift off
   the beat, but every sword impact and impact sound is still exactly on
   it.

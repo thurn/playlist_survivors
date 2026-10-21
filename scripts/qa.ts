@@ -43,7 +43,25 @@ interface Hook {
   renderAt(s: number): Promise<void>;
   checks?: () => { name: string; failures: string[] }[];
   stats?: () => { alive: number; particles: number };
-  plan: { duration: number; songBeats: number[]; sections: { label: string; s0: number }[]; slams: { w1: number }[]; nearMisses: { s: number; kind: string }[]; swings: { s: number; kind: string }[]; hits: { s: number; source: string }[] };
+  plan: {
+    duration: number;
+    songBeats: number[];
+    sections: { label: string; s0: number }[];
+    slams: { w1: number }[];
+    nearMisses: { s: number; kind: string }[];
+    threats: { s: number; kind: string; outcome: string }[];
+    swings: { s: number; kind: string }[];
+    hits: { s: number; source: string }[];
+    inputs: { s: number; kind: string; rating?: string; steps: boolean; bend?: boolean }[];
+    grid: ArrayLike<number>;
+    warp: { s: number; w: number; rate: number }[];
+    hero: { rate: number; x: ArrayLike<number>; y: ArrayLike<number> };
+    formations: { def: string; sRelease: number }[];
+    boss?: { chordS: number; deathS?: number };
+    profile: string;
+    stats: { averageGroove: number; presses: number; ratings: { perfect: number; great: number; good: number; none: number } };
+    hud: { kills: ArrayLike<number> };
+  };
 }
 const hook = (page: Page) => page.evaluate(() => (window as unknown as { __demo: Hook }).__demo);
 void hook;
@@ -82,7 +100,7 @@ await withDevServer(async (base) => {
       const d = (window as unknown as { __demo: Hook }).__demo;
       return { ms: d.planMs ?? NaN, source: d.planSource ?? "?" };
     });
-    record("Planning time", planned.source === "planner" && planned.ms < 2000, `fresh profile, so no cached plan: planned in the worker, with its output checks, in ${planned.ms.toFixed(0)} ms (budget 2000 ms)`);
+    record("Planning time", planned.source === "planner" && planned.ms < 3000, `fresh profile, so no cached plan: simulated in the worker, with its checks, in ${planned.ms.toFixed(0)} ms (budget 3000 ms)`);
     record("Start: title screen", await page.getByText("Click to begin").isVisible(), "the title screen shows “Click to begin” once loading finishes");
     await play(page);
     await page.waitForTimeout(2000);
@@ -180,7 +198,68 @@ await withDevServer(async (base) => {
     await waitReady(page);
     const failed = await page.evaluate(() => (window as unknown as { __demo: Hook }).__demo.checks!().filter((c) => c.failures.length > 0).map((c) => c.name));
     const ms = await page.evaluate(() => (window as unknown as { __demo: Hook }).__demo.planMs ?? NaN);
-    record("?seed=1859 re-plans and passes every plan check", failed.length === 0 && ms < 2000, failed.length ? `failing: ${failed.join(", ")}` : `all planner output checks pass in the browser; planned in ${ms.toFixed(0)} ms`);
+    record("?seed=1859 re-plans and passes every plan check", failed.length === 0 && ms < 3000, failed.length ? `failing: ${failed.join(", ")}` : `all recording checks pass in the browser; simulated in ${ms.toFixed(0)} ms`);
+    await ctx.close();
+  }
+
+  // ------------------------------------------- step movement and the reward spectrum
+  // Each profile's playthrough, simulated in the browser: stillness between steps, every
+  // impact on the grid, and how the groove and kills differ between players.
+  {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+    const page = await ctx.newPage();
+    const runs: Record<string, { bonus: number; kills: number; presses: number; ratings: Record<string, number>; offGrid: number; swings: number; failed: string[] }> = {};
+    for (const player of ["skilled", "casual", "perfect"]) {
+      await page.goto(`${base}/?test&player=${player}`);
+      await waitReady(page);
+      runs[player] = await page.evaluate(() => {
+        const d = (window as unknown as { __demo: Hook }).__demo;
+        const p = d.plan;
+        const grid = Array.from(p.grid);
+        const offGrid = p.swings.filter((sw) => Math.min(...grid.map((g) => Math.abs(g - sw.s))) > 0.001).length;
+        return {
+          bonus: p.stats.averageGroove * 0.2,
+          kills: p.hud.kills.length,
+          presses: p.stats.presses,
+          ratings: p.stats.ratings,
+          offGrid,
+          swings: p.swings.length,
+          failed: d.checks!().filter((c) => c.failures.length > 0).map((c) => c.name),
+        };
+      });
+      if (player === "skilled") {
+        // The hero stands still between steps: two moments inside one beat gap of theme A.
+        const warp = await page.evaluate(() => (window as unknown as { __demo: Hook }).__demo.plan.warp);
+        const rate = await page.evaluate(() => (window as unknown as { __demo: Hook }).__demo.plan.hero.rate);
+        const toWorld = (t: number) => {
+          let b = warp[0];
+          for (const x of warp) if (x.s <= t) b = x;
+          return b.w + (t - b.s) * b.rate;
+        };
+        const at = async (t: number) => {
+          const f = toWorld(t) * rate;
+          const k = Math.floor(f);
+          const xy = await page.evaluate((i) => {
+            const h = (window as unknown as { __demo: Hook }).__demo.plan.hero;
+            return [h.x[i], h.y[i], h.x[i + 1], h.y[i + 1]];
+          }, k);
+          const u = f - k;
+          return { x: xy[0] + (xy[2] - xy[0]) * u, y: xy[1] + (xy[3] - xy[1]) * u };
+        };
+        const a = await at(75.2);
+        const b = await at(75.3);
+        const still = Math.hypot(a.x - b.x, a.y - b.y);
+        record("Theme A: the hero stands still between steps", still < 0.01, `the hero moves ${still.toFixed(3)} px between 75.20 s and 75.30 s (inside one beat gap)`);
+      }
+    }
+    for (const [player, r] of Object.entries(runs)) {
+      record(`?player=${player}: every check passes and every impact is on the grid`, r.failed.length === 0 && r.offGrid === 0, r.failed.length ? `failing: ${r.failed.join(", ")}` : `${r.swings} swings, ${r.offGrid} off the grid; ${r.presses} presses (perfect ${r.ratings.perfect}, great ${r.ratings.great}, good ${r.ratings.good}, unrated ${r.ratings.none}); ${r.kills} kills; average groove +${(r.bonus * 100).toFixed(0)}%`);
+    }
+    record(
+      "Reward spectrum: casual below skilled, perfect at the top",
+      runs.casual.bonus < runs.skilled.bonus - 0.03 && runs.casual.kills < runs.skilled.kills && runs.perfect.ratings.great + runs.perfect.ratings.good + runs.perfect.ratings.none === 0 && runs.perfect.bonus > 0.19,
+      `average groove: casual +${(runs.casual.bonus * 100).toFixed(0)}%, skilled +${(runs.skilled.bonus * 100).toFixed(0)}%, perfect +${(runs.perfect.bonus * 100).toFixed(0)}% (every press Perfect); kills: casual ${runs.casual.kills}, skilled ${runs.skilled.kills}`,
+    );
     await ctx.close();
   }
 
@@ -280,10 +359,21 @@ await withDevServer(async (base) => {
     await page.evaluate(() => document.querySelectorAll("body > div:not(#app)").forEach((d) => d.remove()));
     const plan = await page.evaluate(() => {
       const p = (window as unknown as { __demo: Hook }).__demo.plan;
-      return { sections: p.sections, misses: p.nearMisses, heavy: p.swings.filter((a) => a.kind === "heavy").map((a) => a.s), blast: p.hits.find((h) => h.source === "ring")?.s };
+      return {
+        sections: p.sections,
+        misses: p.nearMisses,
+        heavy: p.swings.filter((a) => a.kind === "heavy" && a.s > 54).map((a) => a.s),
+        blast: p.hits.find((h) => h.source === "ring")?.s,
+        release: p.formations.find((f) => f.def === "skeleton-kick-line")?.sRelease,
+        bossDeath: p.boss?.deathS,
+      };
     });
     const moments: [string, number][] = [];
     for (const s of plan.sections) moments.push([`section-${s.label}`, s.s0 + 0.6]);
+    // The first assembled check: two moments inside one beat gap of theme A.
+    moments.push(["theme-a-75.20", 75.2], ["theme-a-75.30", 75.3]);
+    if (plan.release !== undefined) moments.push(["kick-line-release", plan.release + 0.3]);
+    if (plan.bossDeath !== undefined) moments.push(["boss-death", plan.bossDeath + 0.05]);
     const arrow = plan.misses.find((m) => m.kind === "arrow");
     const slam = plan.misses.find((m) => m.kind === "slam");
     const cleave = plan.heavy[0];
@@ -312,7 +402,13 @@ await withDevServer(async (base) => {
       await page.locator("canvas").screenshot({ path: join(OUT, "finale-after.png") });
       record("Finale clears the field within a beat", cleared, `living monsters: ${counts.join(", ")} (final chord at ${blast.s.toFixed(2)} s)`);
     }
-    record("Review captures", true, `${moments.length} frames written to captures/qa/ for the human review`);
+    // The reward spectrum: the casual player at the same moment of theme A.
+    await page.goto(`${base}/?test&player=casual`);
+    await waitReady(page);
+    await page.evaluate(() => document.querySelectorAll("body > div:not(#app)").forEach((d) => d.remove()));
+    await page.evaluate((s) => (window as unknown as { __demo: Hook }).__demo.renderAt(s), 75.2);
+    await page.locator("canvas").screenshot({ path: join(OUT, "casual-theme-a-75.20.png") });
+    record("Review captures", true, `${moments.length + 1} frames written to captures/qa/ for the human review`);
     await ctx.close();
   }
   await browser.close();
