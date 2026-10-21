@@ -1075,21 +1075,26 @@
       "notes": "down 4 and 5 added by JaidynReiman; recolors by Joe White; original by Manuel Riecke (MrBeast) Also offered under: GPL 3.0."
     },
     {
-      "file": "ulpc:hat/helmet/barbarian_viking/adult/*",
+      "file": "ulpc:hat/helmet/horned/adult/*",
       "authors": [
         "bluecarrot16",
-        "JaidynReiman",
-        "Napsio (Vitruvian Studio)"
+        "Shaun Williams",
+        "Matthew Krohn (makrohn)",
+        "Johannes Sjölund (wulax)",
+        "Sander Frenken (castelonia)"
       ],
-      "licence": "OGA-BY 3.0",
+      "licence": "CC-BY-SA 3.0",
       "urls": [
-        "https://opengameart.org/content/lpc-helmets",
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-full-plate-golden-armor",
+        "https://opengameart.org/content/lpc-full-plate-golden-armor-0",
+        "https://opengameart.org/content/lpc-helmets-mega-pack",
         "https://opengameart.org/content/lpc-expanded-hats-facial-helmets"
       ],
       "usedFor": [
         "orc-elite"
       ],
-      "notes": "original version by bluecarrot16, color reduction by Napsio (Vitruvian Studio) Also offered under: CC-BY 3.0, CC-BY 4.0, GPL 2.0, GPL 3.0."
+      "notes": "Also offered under: GPL 3.0."
     },
     {
       "file": "ulpc:head/heads/goblin/adult/*",

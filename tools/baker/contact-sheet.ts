@@ -13,7 +13,7 @@ import { join } from "node:path";
 import sharp from "sharp";
 import type { AtlasRect, CharacterAtlas, EffectsAtlas, WorldAtlas } from "../../src/assets/types.ts";
 import { FACINGS } from "../../src/assets/types.ts";
-import { Img, loadImage } from "./lib/image.ts";
+import { Img, loadImage, savePng } from "./lib/image.ts";
 import { CAPTURES, OUT } from "./lib/paths.ts";
 
 interface Label { x: number; y: number; text: string; size: number; color: string }
@@ -60,6 +60,14 @@ class Sheet {
   }
 
   async save(path: string): Promise<void> {
+    const img = await this.render();
+    mkdirSync(CAPTURES, { recursive: true });
+    await savePng(img, path);
+    console.log(`wrote ${path} (${img.w}x${img.h})`);
+  }
+
+  /** Draw frames and labels into one image. */
+  async render(): Promise<Img> {
     const W = Math.max(400, Math.min(this.maxW, this.width + 8));
     const H = this.y + 8;
     const base = new Img(W, H);
@@ -89,13 +97,40 @@ class Sheet {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">${this.labels
       .map((l) => `<text x="${l.x}" y="${l.y}" font-family="Menlo, monospace" font-size="${l.size}" fill="${l.color}" stroke="#000" stroke-width="0.6" paint-order="stroke">${esc(l.text)}</text>`)
       .join("")}</svg>`;
-    mkdirSync(CAPTURES, { recursive: true });
-    await sharp(Buffer.from(base.data.buffer, base.data.byteOffset, base.data.length), { raw: { width: W, height: H, channels: 4 } })
+    const { data } = await sharp(Buffer.from(base.data.buffer, base.data.byteOffset, base.data.length), { raw: { width: W, height: H, channels: 4 } })
       .composite([{ input: Buffer.from(svg), top: 0, left: 0 }])
-      .png()
-      .toFile(path);
-    console.log(`wrote ${path} (${W}x${H})`);
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    return new Img(W, H, new Uint8Array(data.buffer, data.byteOffset, data.length).slice());
   }
+}
+
+/** Tile section images into columns (tallest first into the shortest column). */
+async function saveOverview(sections: Img[], path: string): Promise<void> {
+  const colH = Math.max(6000, ...sections.map((s) => s.h));
+  const cols: Array<{ items: Img[]; h: number; w: number }> = [];
+  for (const s of sections) {
+    let col = cols.find((c) => c.h + s.h <= colH);
+    if (!col) cols.push((col = { items: [], h: 0, w: 0 }));
+    col.items.push(s);
+    col.h += s.h;
+    col.w = Math.max(col.w, s.w);
+  }
+  const W = cols.reduce((a, c) => a + c.w, 0), H = Math.max(...cols.map((c) => c.h));
+  const out = new Img(W, H);
+  for (let i = 0; i < out.data.length; i += 4) { out.data[i] = 38; out.data[i + 1] = 42; out.data[i + 2] = 54; out.data[i + 3] = 255; }
+  let x = 0;
+  for (const c of cols) {
+    let y = 0;
+    for (const s of c.items) {
+      out.blit(s, x, y);
+      y += s.h;
+    }
+    x += c.w;
+  }
+  mkdirSync(CAPTURES, { recursive: true });
+  await savePng(out, path);
+  console.log(`wrote ${path} (${W}x${H})`);
 }
 
 async function pagesOf(names: string[]): Promise<Img[]> {
@@ -113,7 +148,7 @@ async function main(): Promise<void> {
   const cp = await pagesOf(chars.pages);
   const wp = await pagesOf(world.pages);
   const ep = await pagesOf(fx.pages);
-  const all = new Sheet(3000, 1);
+  const sections: Img[] = [];
 
   const charSection = (sheet: Sheet, id: string) => {
     const sprite = chars.sprites[id];
@@ -128,7 +163,9 @@ async function main(): Promise<void> {
     sheet.gap();
   };
   for (const id of Object.keys(chars.sprites)) {
-    charSection(all, id);
+    const sec = new Sheet(1400, 1);
+    charSection(sec, id);
+    sections.push(await sec.render());
     const one = new Sheet(2400, 2);
     charSection(one, id);
     await one.save(join(CAPTURES, `contact-sheet-${id}.png`));
@@ -157,9 +194,13 @@ async function main(): Promise<void> {
       sheet.row(a.frames.map((r) => cut(ep, r)), { anchor: { ax: a.anchorX, ay: a.anchorY } });
     }
   };
-  worldSection(all);
-  effectsSection(all);
-  await all.save(join(CAPTURES, "contact-sheet.png"));
+  const ws = new Sheet(1400, 1);
+  worldSection(ws);
+  sections.push(await ws.render());
+  const es = new Sheet(1400, 1);
+  effectsSection(es);
+  sections.push(await es.render());
+  await saveOverview(sections, join(CAPTURES, "contact-sheet.png"));
   const w2 = new Sheet(2400, 2);
   worldSection(w2);
   await w2.save(join(CAPTURES, "contact-sheet-world.png"));

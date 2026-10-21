@@ -7,9 +7,9 @@
     { "item": "head/heads/fantasy/heads_orc_male", "color": "dark_green" },
     { "item": "legs/pants/legs_pants", "color": "charcoal" },
     { "item": "feet/boots/feet_boots_basic", "color": "black" },
-    { "item": "arms/bauldron", "color": "metal.iron" },
+    { "item": "arms/bauldron", "color": "metal.steel" },
     { "item": "arms/wrists/arms_bracers", "color": "iron" },
-    { "item": "headwear/helmets/helmets/hat_helmet_barbarian_viking", "colors": ["iron", "black"] },
+    { "item": "headwear/helmets/helmets/hat_helmet_horned", "color": "steel" },
     { "item": "weapons/blunt/weapon_blunt_waraxe", "variant": "waraxe", "fallback": { "idle": "walk:0" } }
   ],
   "animations": {
