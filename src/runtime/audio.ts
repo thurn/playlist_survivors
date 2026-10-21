@@ -189,18 +189,20 @@ export class AudioEngine implements SongClock {
     return this.started;
   }
 
-  /** Start playback (from a user gesture). */
-  async start(plan: Plan): Promise<void> {
+  /** Start playback (from a user gesture), optionally `fromS` seconds into the song. */
+  async start(plan: Plan, fromS = 0): Promise<void> {
     await this.ctx.resume();
     if (!this.music) throw new Error("music not loaded");
+    const offset = Math.max(0, Math.min(fromS, this.music.duration));
     const src = this.ctx.createBufferSource();
     src.buffer = this.music;
     src.connect(this.mix.musicGain);
     const when = this.ctx.currentTime + 0.1;
-    src.start(when);
-    this.mix.follow(this.followCurve(), when);
+    src.start(when, offset);
+    this.mix.follow(this.followCurve(), when, offset);
     this.source = src;
-    this.t0 = when;
+    // Song time 0 is in the past; the scheduler skips every event before the offset.
+    this.t0 = when - offset;
     this.started = true;
     this.schedIdx = 0;
     this.handled = new Uint8Array(plan.events.sounds.length);
@@ -344,10 +346,12 @@ class Mix {
   }
 
   /** Schedules the effects level over the song, starting at context time t0. */
-  follow(curve: Float32Array | undefined, t0: number): void {
+  /** Schedules the follow curve from song time `fromS`, which plays at context time `when`. */
+  follow(curve: Float32Array | undefined, when: number, fromS = 0): void {
+    if (curve) curve = curve.subarray(Math.floor(fromS * LEVEL_RATE));
     if (!curve || curve.length < 2) return;
-    this.sfxFollow.gain.setValueAtTime(curve[0], t0);
-    this.sfxFollow.gain.setValueCurveAtTime(curve, t0, curve.length / LEVEL_RATE);
+    this.sfxFollow.gain.setValueAtTime(curve[0], when);
+    this.sfxFollow.gain.setValueCurveAtTime(curve, when, curve.length / LEVEL_RATE);
   }
 
   /** Starts one sound at context time `when`; returns whether it ducked the music. */

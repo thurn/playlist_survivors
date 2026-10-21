@@ -21,6 +21,8 @@ export interface Params {
   capture: boolean;
   captureT?: number;
   avOffsetMs: number;
+  /** Song time in seconds to start playback from (`?start=95` or `?start=1:35`). */
+  startS: number;
   seed?: number;
   test: boolean;
   bench: boolean;
@@ -37,12 +39,21 @@ export function readParams(search: string): Params {
     capture: q.has("capture"),
     captureT: num("t"),
     avOffsetMs: num("avOffsetMs") ?? 0,
+    startS: parseTimestamp(q.get("start")),
     seed: num("seed"),
     test: q.has("test") || q.has("capture") || q.has("bench"),
     bench: q.has("bench"),
     checks: q.has("checks"),
     level: q.get("level") ?? undefined,
   };
+}
+
+/** Seconds from "95.5", "1:35" or "1:02:03"; 0 when missing or malformed. */
+export function parseTimestamp(v: string | null): number {
+  if (!v) return 0;
+  const parts = v.split(":").map(Number);
+  if (parts.length > 3 || parts.some((n) => !Number.isFinite(n) || n < 0)) return 0;
+  return parts.reduce((acc, n) => acc * 60 + n, 0);
 }
 
 interface Overlay {
@@ -250,6 +261,7 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
     // Title screen: one click unlocks audio.
     overlay.prompt.style.display = "block";
     overlay.status.textContent = params.metronome ? "Metronome mode: beat flash and click track" : "Headphones recommended";
+    if (params.startS > 0) overlay.status.textContent += ` · starting at ${params.startS.toFixed(1)} s`;
     await new Promise<void>((resolve) => {
       const go = () => {
         window.removeEventListener("pointerdown", go);
@@ -262,7 +274,7 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
     overlay.root.style.transition = "opacity .6s";
     overlay.root.style.opacity = "0";
     setTimeout(() => overlay.root.remove(), 700);
-    await audio!.start(plan);
+    await audio!.start(plan, params.startS);
     hook.audio = () => ({ state: audio!.ctx.state, contextSongTime: audio!.contextSongTime(), stats: { ...audio!.stats } });
     const clock: SongClock = audio!;
     // The display's refresh period: a median of recent frame intervals, so a single long

@@ -66,8 +66,6 @@ sections:
     intensity: 1
 
 events:
-  - at: { section: prelude, point: start }
-    titleCard: { until: { section: prelude, phrase: 2, point: finalAccent } }
   - at: { section: galop-opening, point: start }
     levelUp: orbiting-blades
   - at: { section: theme-a-repeat, point: start }
@@ -78,14 +76,11 @@ events:
     formation: bee-wedge
   - at: { section: kick-line, point: start }
     formation: skeleton-kick-line
-    banner: "THE KICK LINE"
     threats: { kind: archer-volley, every: 2 bars, until: { section: kick-line, phrase: 2, point: finalAccent, offsetBeats: -4 }, archers: 2 }
   - at: { section: bridge, point: start }
     levelUp: fire-trail
-    banner: "THE DESCENT"
   - at: { section: climax, point: start }
     boss: { type: minotaur, hits: 8, slams: 4, diesAt: { accent: tutti-chord, fromEnd: 2 } }
-    banner: "LORD OF THE REVEL"
     landmark: standing-stones
   - at: { accent: tutti-chord, fromEnd: 2 }
     timeScale: 0.4          # slow motion after the boss's death blow

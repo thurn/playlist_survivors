@@ -29,6 +29,7 @@ headphones or speakers.
 | Parameter | Effect |
 |---|---|
 | `?metronome` | Full-screen flash on every beat plus a click track over the music (the sync check). |
+| `?start=1:35` | Start playback from a song time, in seconds (`?start=95.5`) or `m:ss`. |
 | `?capture&t=88.31` | Render one frozen frame at song time 88.31 s, without audio. |
 | `?avOffsetMs=-40` | Shift the picture relative to the audio (e.g. Bluetooth latency). |
 | `?seed=1859` | Re-plan, and regenerate the map, with a different seed. |

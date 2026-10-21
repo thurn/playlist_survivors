@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Smoother } from "../src/runtime/audio.ts";
+import { parseTimestamp } from "../src/runtime/app.ts";
 
 describe("audio clock smoother", () => {
   it("never runs backwards and corrects at most 2 ms per frame", () => {
@@ -28,5 +29,16 @@ describe("audio clock smoother", () => {
     expect(sm.update(20.5, 10_000)).toBeCloseTo(20.5, 9);
     // A backwards glitch of more than 50 ms is also taken immediately.
     expect(sm.update(20.3, 10_000 + 1000 / 60)).toBeCloseTo(20.3, 9);
+  });
+});
+
+describe("start timestamp", () => {
+  it("parses seconds and m:ss, and ignores malformed values", () => {
+    expect(parseTimestamp(null)).toBe(0);
+    expect(parseTimestamp("95.5")).toBe(95.5);
+    expect(parseTimestamp("1:35")).toBe(95);
+    expect(parseTimestamp("1:02:03")).toBe(3723);
+    expect(parseTimestamp("abc")).toBe(0);
+    expect(parseTimestamp("-5")).toBe(0);
   });
 });
