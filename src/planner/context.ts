@@ -32,6 +32,8 @@ export interface PlannerInput {
   heroAnims?: Record<string, AnimInfo>;
   /** Tiled landmark maps by id (parsed JSON). */
   landmarks?: Record<string, unknown>;
+  /** Seconds from each sound sample's start to its perceived onset, from the sound manifest. */
+  soundOnsets?: Record<string, number>;
   /** Build version, mixed into the plan hash. */
   version?: string;
 }
@@ -163,6 +165,7 @@ export interface Ctx {
   sections: SectionInfo[];
   duration: number;
   heroAnims: Record<string, AnimInfo>;
+  soundOnsets: Record<string, number>;
   // Stage 1
   slots: Slot[][];
   events: ResolvedEvent[];
@@ -249,6 +252,7 @@ export function makeCtx(input: PlannerInput): Ctx {
     sections,
     duration: song.audio.duration,
     heroAnims: { ...DEFAULT_HERO_ANIMS, ...(input.heroAnims ?? {}) },
+    soundOnsets: input.soundOnsets ?? {},
     slots: [],
     events: [],
     actions: [],

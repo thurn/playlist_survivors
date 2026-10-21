@@ -3,1152 +3,1382 @@
     "fantasy/Dragon_Growl_00": {
       "file": "fantasy/Dragon_Growl_00.ogg",
       "durationS": 3.285,
-      "lufs": -18.5
+      "lufs": -18.5,
+      "onsetS": 0.1304
     },
     "fantasy/Dragon_Growl_01": {
       "file": "fantasy/Dragon_Growl_01.ogg",
       "durationS": 4.25,
-      "lufs": -18.1
+      "lufs": -18.1,
+      "onsetS": 0.253
     },
     "fantasy/Goblin_00": {
       "file": "fantasy/Goblin_00.ogg",
       "durationS": 3.068,
-      "lufs": -18.2
+      "lufs": -18.2,
+      "onsetS": 0.2166
     },
     "fantasy/Goblin_01": {
       "file": "fantasy/Goblin_01.ogg",
       "durationS": 0.681,
-      "lufs": -18.3
+      "lufs": -18.3,
+      "onsetS": 0.1488
     },
     "fantasy/Goblin_02": {
       "file": "fantasy/Goblin_02.ogg",
       "durationS": 2.418,
-      "lufs": -18.2
+      "lufs": -18.2,
+      "onsetS": 1.0734
     },
     "fantasy/Goblin_03": {
       "file": "fantasy/Goblin_03.ogg",
       "durationS": 0.944,
-      "lufs": -18.2
+      "lufs": -18.2,
+      "onsetS": 0.1545
     },
     "fantasy/Goblin_04": {
       "file": "fantasy/Goblin_04.ogg",
       "durationS": 1.569,
-      "lufs": -18.1
+      "lufs": -18.1,
+      "onsetS": 0.045
     },
     "fantasy/Jingle_Achievement_00": {
       "file": "fantasy/Jingle_Achievement_00.ogg",
       "durationS": 3.563,
-      "lufs": -20.1
+      "lufs": -20.1,
+      "onsetS": 0.0026
     },
     "fantasy/Jingle_Win_00": {
       "file": "fantasy/Jingle_Win_00.ogg",
       "durationS": 9.538,
-      "lufs": -18.1
+      "lufs": -18.1,
+      "onsetS": 0
     },
     "fantasy/Pickup_Gold_00": {
       "file": "fantasy/Pickup_Gold_00.ogg",
       "durationS": 0.29,
-      "lufs": -18.5
+      "lufs": -18.5,
+      "onsetS": 0.0353
     },
     "fantasy/Pickup_Gold_01": {
       "file": "fantasy/Pickup_Gold_01.ogg",
       "durationS": 0.224,
-      "lufs": -22.4
+      "lufs": -22.4,
+      "onsetS": 0.0075
     },
     "fantasy/Pickup_Gold_02": {
       "file": "fantasy/Pickup_Gold_02.ogg",
       "durationS": 0.251,
-      "lufs": -22.7
+      "lufs": -22.7,
+      "onsetS": 0.0107
     },
     "fantasy/Spell_00": {
       "file": "fantasy/Spell_00.ogg",
       "durationS": 1.942,
-      "lufs": -18.1
+      "lufs": -18.1,
+      "onsetS": 0.0252
     },
     "fantasy/Spell_01": {
       "file": "fantasy/Spell_01.ogg",
       "durationS": 1.083,
-      "lufs": -19.3
+      "lufs": -19.3,
+      "onsetS": 0.0051
     },
     "fantasy/Spell_02": {
       "file": "fantasy/Spell_02.ogg",
       "durationS": 3.368,
-      "lufs": -18
+      "lufs": -18,
+      "onsetS": 0.301
     },
     "fantasy/Spell_03": {
       "file": "fantasy/Spell_03.ogg",
       "durationS": 5.72,
-      "lufs": -29.5
+      "lufs": -29.5,
+      "onsetS": 0.132
     },
     "fantasy/Spell_04": {
       "file": "fantasy/Spell_04.ogg",
       "durationS": 3.39,
-      "lufs": -18
+      "lufs": -18,
+      "onsetS": 0.426
     },
     "fantasy/Trap_00": {
       "file": "fantasy/Trap_00.ogg",
       "durationS": 0.706,
-      "lufs": -18.2
+      "lufs": -18.2,
+      "onsetS": 0.067
     },
     "fantasy/Trap_01": {
       "file": "fantasy/Trap_01.ogg",
       "durationS": 1.24,
-      "lufs": -18.1
+      "lufs": -18.1,
+      "onsetS": 0.061
     },
     "fantasy/Trap_02": {
       "file": "fantasy/Trap_02.ogg",
       "durationS": 0.815,
-      "lufs": -18.2
+      "lufs": -18.2,
+      "onsetS": 0.061
     },
     "kenney/bong_001": {
       "file": "kenney/bong_001.ogg",
       "durationS": 0.12,
-      "lufs": -23
+      "lufs": -23,
+      "onsetS": 0
     },
     "kenney/chop": {
       "file": "kenney/chop.ogg",
       "durationS": 0.24,
-      "lufs": -21.3
+      "lufs": -21.3,
+      "onsetS": 0.0471
     },
     "kenney/cloth1": {
       "file": "kenney/cloth1.ogg",
       "durationS": 0.603,
-      "lufs": -26.8
+      "lufs": -26.8,
+      "onsetS": 0.0842
     },
     "kenney/cloth2": {
       "file": "kenney/cloth2.ogg",
       "durationS": 0.376,
-      "lufs": -21.3
+      "lufs": -21.3,
+      "onsetS": 0.0642
     },
     "kenney/cloth3": {
       "file": "kenney/cloth3.ogg",
       "durationS": 0.461,
-      "lufs": -21.6
+      "lufs": -21.6,
+      "onsetS": 0.0491
     },
     "kenney/cloth4": {
       "file": "kenney/cloth4.ogg",
       "durationS": 0.384,
-      "lufs": -22
+      "lufs": -22,
+      "onsetS": 0.084
     },
     "kenney/confirmation_001": {
       "file": "kenney/confirmation_001.ogg",
       "durationS": 0.29,
-      "lufs": -18
+      "lufs": -18,
+      "onsetS": 0
     },
     "kenney/confirmation_002": {
       "file": "kenney/confirmation_002.ogg",
       "durationS": 0.532,
-      "lufs": -18
+      "lufs": -18,
+      "onsetS": 0
     },
     "kenney/confirmation_003": {
       "file": "kenney/confirmation_003.ogg",
       "durationS": 0.318,
-      "lufs": -18.1
+      "lufs": -18.1,
+      "onsetS": 0
     },
     "kenney/confirmation_004": {
       "file": "kenney/confirmation_004.ogg",
       "durationS": 0.485,
-      "lufs": -18
+      "lufs": -18,
+      "onsetS": 0.0785
     },
     "kenney/drawKnife1": {
       "file": "kenney/drawKnife1.ogg",
       "durationS": 0.216,
-      "lufs": -18.2
+      "lufs": -18.2,
+      "onsetS": 0.0291
     },
     "kenney/drawKnife2": {
       "file": "kenney/drawKnife2.ogg",
       "durationS": 0.31,
-      "lufs": -18.2
+      "lufs": -18.2,
+      "onsetS": 0.0756
     },
     "kenney/drawKnife3": {
       "file": "kenney/drawKnife3.ogg",
       "durationS": 0.256,
-      "lufs": -26.2
+      "lufs": -26.2,
+      "onsetS": 0.0647
     },
     "kenney/drop_001": {
       "file": "kenney/drop_001.ogg",
       "durationS": 0.111,
-      "lufs": -25.2
+      "lufs": -25.2,
+      "onsetS": 0
     },
     "kenney/drop_002": {
       "file": "kenney/drop_002.ogg",
       "durationS": 0.188,
-      "lufs": -23.9
+      "lufs": -23.9,
+      "onsetS": 0
     },
     "kenney/footstep_grass_000": {
       "file": "kenney/footstep_grass_000.ogg",
       "durationS": 0.775,
-      "lufs": -29
+      "lufs": -29,
+      "onsetS": 0
     },
     "kenney/footstep_grass_001": {
       "file": "kenney/footstep_grass_001.ogg",
       "durationS": 0.671,
-      "lufs": -28.2
+      "lufs": -28.2,
+      "onsetS": 0
     },
     "kenney/footstep_grass_002": {
       "file": "kenney/footstep_grass_002.ogg",
       "durationS": 0.69,
-      "lufs": -28.6
+      "lufs": -28.6,
+      "onsetS": 0
     },
     "kenney/footstep_grass_003": {
       "file": "kenney/footstep_grass_003.ogg",
       "durationS": 0.666,
-      "lufs": -29.4
+      "lufs": -29.4,
+      "onsetS": 0
     },
     "kenney/footstep_grass_004": {
       "file": "kenney/footstep_grass_004.ogg",
       "durationS": 0.587,
-      "lufs": -28.8
+      "lufs": -28.8,
+      "onsetS": 0
     },
     "kenney/glass_001": {
       "file": "kenney/glass_001.ogg",
       "durationS": 0.276,
-      "lufs": -19.8
+      "lufs": -19.8,
+      "onsetS": 0
     },
     "kenney/glass_002": {
       "file": "kenney/glass_002.ogg",
       "durationS": 0.122,
-      "lufs": -22.3
+      "lufs": -22.3,
+      "onsetS": 0
     },
     "kenney/glass_003": {
       "file": "kenney/glass_003.ogg",
       "durationS": 0.121,
-      "lufs": -19.9
+      "lufs": -19.9,
+      "onsetS": 0.0276
     },
     "kenney/glass_004": {
       "file": "kenney/glass_004.ogg",
       "durationS": 0.692,
-      "lufs": -18.1
+      "lufs": -18.1,
+      "onsetS": 0
     },
     "kenney/glass_005": {
       "file": "kenney/glass_005.ogg",
       "durationS": 0.094,
-      "lufs": -23.6
+      "lufs": -23.6,
+      "onsetS": 0
     },
     "kenney/glass_006": {
       "file": "kenney/glass_006.ogg",
       "durationS": 0.102,
-      "lufs": -22.9
+      "lufs": -22.9,
+      "onsetS": 0
     },
     "kenney/handleCoins": {
       "file": "kenney/handleCoins.ogg",
       "durationS": 0.701,
-      "lufs": -26.4
+      "lufs": -26.4,
+      "onsetS": 0.0955
     },
     "kenney/handleCoins2": {
       "file": "kenney/handleCoins2.ogg",
       "durationS": 0.287,
-      "lufs": -21.5
+      "lufs": -21.5,
+      "onsetS": 0.0495
     },
     "kenney/impactBell_heavy_000": {
       "file": "kenney/impactBell_heavy_000.ogg",
       "durationS": 1.48,
-      "lufs": -27.8
+      "lufs": -27.8,
+      "onsetS": 0
     },
     "kenney/impactBell_heavy_001": {
       "file": "kenney/impactBell_heavy_001.ogg",
       "durationS": 1.741,
-      "lufs": -25.9
+      "lufs": -25.9,
+      "onsetS": 0
     },
     "kenney/impactBell_heavy_002": {
       "file": "kenney/impactBell_heavy_002.ogg",
       "durationS": 0.697,
-      "lufs": -25.6
+      "lufs": -25.6,
+      "onsetS": 0
     },
     "kenney/impactBell_heavy_003": {
       "file": "kenney/impactBell_heavy_003.ogg",
       "durationS": 0.654,
-      "lufs": -26.3
+      "lufs": -26.3,
+      "onsetS": 0
     },
     "kenney/impactBell_heavy_004": {
       "file": "kenney/impactBell_heavy_004.ogg",
       "durationS": 0.299,
-      "lufs": -25
+      "lufs": -25,
+      "onsetS": 0
     },
     "kenney/impactGeneric_light_000": {
       "file": "kenney/impactGeneric_light_000.ogg",
       "durationS": 0.141,
-      "lufs": -26.1
+      "lufs": -26.1,
+      "onsetS": 0
     },
     "kenney/impactGeneric_light_001": {
       "file": "kenney/impactGeneric_light_001.ogg",
       "durationS": 0.115,
-      "lufs": -28
+      "lufs": -28,
+      "onsetS": 0
     },
     "kenney/impactGeneric_light_002": {
       "file": "kenney/impactGeneric_light_002.ogg",
       "durationS": 0.144,
-      "lufs": -27.2
+      "lufs": -27.2,
+      "onsetS": 0
     },
     "kenney/impactGeneric_light_003": {
       "file": "kenney/impactGeneric_light_003.ogg",
       "durationS": 0.135,
-      "lufs": -27.7
+      "lufs": -27.7,
+      "onsetS": 0
     },
     "kenney/impactGeneric_light_004": {
       "file": "kenney/impactGeneric_light_004.ogg",
       "durationS": 0.137,
-      "lufs": -27.6
+      "lufs": -27.6,
+      "onsetS": 0
     },
     "kenney/impactGlass_light_000": {
       "file": "kenney/impactGlass_light_000.ogg",
       "durationS": 0.207,
-      "lufs": -22.6
+      "lufs": -22.6,
+      "onsetS": 0
     },
     "kenney/impactGlass_light_001": {
       "file": "kenney/impactGlass_light_001.ogg",
       "durationS": 0.207,
-      "lufs": -23.3
+      "lufs": -23.3,
+      "onsetS": 0
     },
     "kenney/impactGlass_light_002": {
       "file": "kenney/impactGlass_light_002.ogg",
       "durationS": 0.207,
-      "lufs": -21.8
+      "lufs": -21.8,
+      "onsetS": 0
     },
     "kenney/impactGlass_light_003": {
       "file": "kenney/impactGlass_light_003.ogg",
       "durationS": 0.207,
-      "lufs": -22.9
+      "lufs": -22.9,
+      "onsetS": 0
     },
     "kenney/impactGlass_light_004": {
       "file": "kenney/impactGlass_light_004.ogg",
       "durationS": 0.207,
-      "lufs": -23.5
+      "lufs": -23.5,
+      "onsetS": 0
     },
     "kenney/impactGlass_medium_000": {
       "file": "kenney/impactGlass_medium_000.ogg",
       "durationS": 0.54,
-      "lufs": -25.8
+      "lufs": -25.8,
+      "onsetS": 0
     },
     "kenney/impactGlass_medium_001": {
       "file": "kenney/impactGlass_medium_001.ogg",
       "durationS": 0.54,
-      "lufs": -25.7
+      "lufs": -25.7,
+      "onsetS": 0
     },
     "kenney/impactGlass_medium_002": {
       "file": "kenney/impactGlass_medium_002.ogg",
       "durationS": 0.54,
-      "lufs": -26.6
+      "lufs": -26.6,
+      "onsetS": 0
     },
     "kenney/impactMetal_heavy_000": {
       "file": "kenney/impactMetal_heavy_000.ogg",
       "durationS": 0.165,
-      "lufs": -27.4
+      "lufs": -27.4,
+      "onsetS": 0
     },
     "kenney/impactMetal_heavy_001": {
       "file": "kenney/impactMetal_heavy_001.ogg",
       "durationS": 0.356,
-      "lufs": -27
+      "lufs": -27,
+      "onsetS": 0
     },
     "kenney/impactMetal_heavy_002": {
       "file": "kenney/impactMetal_heavy_002.ogg",
       "durationS": 0.114,
-      "lufs": -26.7
+      "lufs": -26.7,
+      "onsetS": 0
     },
     "kenney/impactMetal_heavy_003": {
       "file": "kenney/impactMetal_heavy_003.ogg",
       "durationS": 0.204,
-      "lufs": -27
+      "lufs": -27,
+      "onsetS": 0
     },
     "kenney/impactMetal_heavy_004": {
       "file": "kenney/impactMetal_heavy_004.ogg",
       "durationS": 0.131,
-      "lufs": -27.2
+      "lufs": -27.2,
+      "onsetS": 0
     },
     "kenney/impactMetal_light_000": {
       "file": "kenney/impactMetal_light_000.ogg",
       "durationS": 0.349,
-      "lufs": -19.2
+      "lufs": -19.2,
+      "onsetS": 0
     },
     "kenney/impactMetal_light_001": {
       "file": "kenney/impactMetal_light_001.ogg",
       "durationS": 0.249,
-      "lufs": -20.4
+      "lufs": -20.4,
+      "onsetS": 0
     },
     "kenney/impactMetal_light_002": {
       "file": "kenney/impactMetal_light_002.ogg",
       "durationS": 0.233,
-      "lufs": -20.7
+      "lufs": -20.7,
+      "onsetS": 0
     },
     "kenney/impactMetal_light_003": {
       "file": "kenney/impactMetal_light_003.ogg",
       "durationS": 0.482,
-      "lufs": -18.1
+      "lufs": -18.1,
+      "onsetS": 0
     },
     "kenney/impactMetal_light_004": {
       "file": "kenney/impactMetal_light_004.ogg",
       "durationS": 0.21,
-      "lufs": -21.3
+      "lufs": -21.3,
+      "onsetS": 0
     },
     "kenney/impactMetal_medium_000": {
       "file": "kenney/impactMetal_medium_000.ogg",
       "durationS": 0.269,
-      "lufs": -23.2
+      "lufs": -23.2,
+      "onsetS": 0
     },
     "kenney/impactMetal_medium_001": {
       "file": "kenney/impactMetal_medium_001.ogg",
       "durationS": 0.141,
-      "lufs": -24.6
+      "lufs": -24.6,
+      "onsetS": 0
     },
     "kenney/impactMetal_medium_002": {
       "file": "kenney/impactMetal_medium_002.ogg",
       "durationS": 0.116,
-      "lufs": -27.4
+      "lufs": -27.4,
+      "onsetS": 0
     },
     "kenney/impactMetal_medium_003": {
       "file": "kenney/impactMetal_medium_003.ogg",
       "durationS": 0.251,
-      "lufs": -23.6
+      "lufs": -23.6,
+      "onsetS": 0
     },
     "kenney/impactMetal_medium_004": {
       "file": "kenney/impactMetal_medium_004.ogg",
       "durationS": 0.107,
-      "lufs": -26.7
+      "lufs": -26.7,
+      "onsetS": 0
     },
     "kenney/impactMining_000": {
       "file": "kenney/impactMining_000.ogg",
       "durationS": 0.821,
-      "lufs": -25.1
+      "lufs": -25.1,
+      "onsetS": 0
     },
     "kenney/impactMining_001": {
       "file": "kenney/impactMining_001.ogg",
       "durationS": 0.748,
-      "lufs": -25.5
+      "lufs": -25.5,
+      "onsetS": 0
     },
     "kenney/impactMining_002": {
       "file": "kenney/impactMining_002.ogg",
       "durationS": 0.805,
-      "lufs": -26
+      "lufs": -26,
+      "onsetS": 0
     },
     "kenney/impactMining_003": {
       "file": "kenney/impactMining_003.ogg",
       "durationS": 0.839,
-      "lufs": -27.4
+      "lufs": -27.4,
+      "onsetS": 0.0003
     },
     "kenney/impactMining_004": {
       "file": "kenney/impactMining_004.ogg",
       "durationS": 0.83,
-      "lufs": -26.1
+      "lufs": -26.1,
+      "onsetS": 0.0054
     },
     "kenney/impactPlate_heavy_000": {
       "file": "kenney/impactPlate_heavy_000.ogg",
       "durationS": 0.489,
-      "lufs": -24.2
+      "lufs": -24.2,
+      "onsetS": 0
     },
     "kenney/impactPlate_heavy_001": {
       "file": "kenney/impactPlate_heavy_001.ogg",
       "durationS": 0.349,
-      "lufs": -23.4
+      "lufs": -23.4,
+      "onsetS": 0
     },
     "kenney/impactPlate_heavy_002": {
       "file": "kenney/impactPlate_heavy_002.ogg",
       "durationS": 0.494,
-      "lufs": -23.6
+      "lufs": -23.6,
+      "onsetS": 0
     },
     "kenney/impactPlate_heavy_003": {
       "file": "kenney/impactPlate_heavy_003.ogg",
       "durationS": 0.344,
-      "lufs": -23
+      "lufs": -23,
+      "onsetS": 0
     },
     "kenney/impactPlate_heavy_004": {
       "file": "kenney/impactPlate_heavy_004.ogg",
       "durationS": 0.559,
-      "lufs": -24.4
+      "lufs": -24.4,
+      "onsetS": 0
     },
     "kenney/impactPlate_light_000": {
       "file": "kenney/impactPlate_light_000.ogg",
       "durationS": 0.542,
-      "lufs": -24.8
+      "lufs": -24.8,
+      "onsetS": 0
     },
     "kenney/impactPlate_light_001": {
       "file": "kenney/impactPlate_light_001.ogg",
       "durationS": 0.655,
-      "lufs": -25
+      "lufs": -25,
+      "onsetS": 0
     },
     "kenney/impactPlate_light_002": {
       "file": "kenney/impactPlate_light_002.ogg",
       "durationS": 0.489,
-      "lufs": -24.6
+      "lufs": -24.6,
+      "onsetS": 0
     },
     "kenney/impactPlate_light_003": {
       "file": "kenney/impactPlate_light_003.ogg",
       "durationS": 0.528,
-      "lufs": -23.7
+      "lufs": -23.7,
+      "onsetS": 0
     },
     "kenney/impactPlate_light_004": {
       "file": "kenney/impactPlate_light_004.ogg",
       "durationS": 0.586,
-      "lufs": -24.9
+      "lufs": -24.9,
+      "onsetS": 0
     },
     "kenney/impactPlate_medium_000": {
       "file": "kenney/impactPlate_medium_000.ogg",
       "durationS": 0.609,
-      "lufs": -24.7
+      "lufs": -24.7,
+      "onsetS": 0
     },
     "kenney/impactPlate_medium_001": {
       "file": "kenney/impactPlate_medium_001.ogg",
       "durationS": 0.615,
-      "lufs": -24
+      "lufs": -24,
+      "onsetS": 0
     },
     "kenney/impactPlate_medium_002": {
       "file": "kenney/impactPlate_medium_002.ogg",
       "durationS": 0.515,
-      "lufs": -24.6
+      "lufs": -24.6,
+      "onsetS": 0
     },
     "kenney/impactPlate_medium_003": {
       "file": "kenney/impactPlate_medium_003.ogg",
       "durationS": 0.654,
-      "lufs": -25.4
+      "lufs": -25.4,
+      "onsetS": 0
     },
     "kenney/impactPlate_medium_004": {
       "file": "kenney/impactPlate_medium_004.ogg",
       "durationS": 0.534,
-      "lufs": -23.2
+      "lufs": -23.2,
+      "onsetS": 0
     },
     "kenney/impactPunch_heavy_000": {
       "file": "kenney/impactPunch_heavy_000.ogg",
       "durationS": 0.599,
-      "lufs": -18.6
+      "lufs": -18.6,
+      "onsetS": 0.0189
     },
     "kenney/impactPunch_heavy_001": {
       "file": "kenney/impactPunch_heavy_001.ogg",
       "durationS": 0.495,
-      "lufs": -18.4
+      "lufs": -18.4,
+      "onsetS": 0.015
     },
     "kenney/impactPunch_heavy_002": {
       "file": "kenney/impactPunch_heavy_002.ogg",
       "durationS": 0.429,
-      "lufs": -18.4
+      "lufs": -18.4,
+      "onsetS": 0.0122
     },
     "kenney/impactPunch_heavy_003": {
       "file": "kenney/impactPunch_heavy_003.ogg",
       "durationS": 0.439,
-      "lufs": -18.7
+      "lufs": -18.7,
+      "onsetS": 0.0129
     },
     "kenney/impactPunch_heavy_004": {
       "file": "kenney/impactPunch_heavy_004.ogg",
       "durationS": 0.496,
-      "lufs": -18.5
+      "lufs": -18.5,
+      "onsetS": 0.015
     },
     "kenney/impactPunch_medium_000": {
       "file": "kenney/impactPunch_medium_000.ogg",
       "durationS": 0.296,
-      "lufs": -19.8
+      "lufs": -19.8,
+      "onsetS": 0.0146
     },
     "kenney/impactPunch_medium_001": {
       "file": "kenney/impactPunch_medium_001.ogg",
       "durationS": 0.324,
-      "lufs": -19.7
+      "lufs": -19.7,
+      "onsetS": 0.0134
     },
     "kenney/impactPunch_medium_002": {
       "file": "kenney/impactPunch_medium_002.ogg",
       "durationS": 0.356,
-      "lufs": -19.6
+      "lufs": -19.6,
+      "onsetS": 0.0207
     },
     "kenney/impactPunch_medium_003": {
       "file": "kenney/impactPunch_medium_003.ogg",
       "durationS": 0.3,
-      "lufs": -20.1
+      "lufs": -20.1,
+      "onsetS": 0.0168
     },
     "kenney/impactPunch_medium_004": {
       "file": "kenney/impactPunch_medium_004.ogg",
       "durationS": 0.357,
-      "lufs": -19.4
+      "lufs": -19.4,
+      "onsetS": 0.0207
     },
     "kenney/impactSoft_heavy_000": {
       "file": "kenney/impactSoft_heavy_000.ogg",
       "durationS": 0.507,
-      "lufs": -19.2
+      "lufs": -19.2,
+      "onsetS": 0
     },
     "kenney/impactSoft_heavy_001": {
       "file": "kenney/impactSoft_heavy_001.ogg",
       "durationS": 0.569,
-      "lufs": -18.9
+      "lufs": -18.9,
+      "onsetS": 0
     },
     "kenney/impactSoft_heavy_002": {
       "file": "kenney/impactSoft_heavy_002.ogg",
       "durationS": 0.569,
-      "lufs": -18.8
+      "lufs": -18.8,
+      "onsetS": 0
     },
     "kenney/impactSoft_heavy_003": {
       "file": "kenney/impactSoft_heavy_003.ogg",
       "durationS": 0.541,
-      "lufs": -19.2
+      "lufs": -19.2,
+      "onsetS": 0
     },
     "kenney/impactSoft_heavy_004": {
       "file": "kenney/impactSoft_heavy_004.ogg",
       "durationS": 0.498,
-      "lufs": -19
+      "lufs": -19,
+      "onsetS": 0
     },
     "kenney/impactSoft_medium_000": {
       "file": "kenney/impactSoft_medium_000.ogg",
       "durationS": 0.115,
-      "lufs": -22.5
+      "lufs": -22.5,
+      "onsetS": 0
     },
     "kenney/impactSoft_medium_001": {
       "file": "kenney/impactSoft_medium_001.ogg",
       "durationS": 0.18,
-      "lufs": -21.9
+      "lufs": -21.9,
+      "onsetS": 0
     },
     "kenney/impactSoft_medium_002": {
       "file": "kenney/impactSoft_medium_002.ogg",
       "durationS": 0.132,
-      "lufs": -22.4
+      "lufs": -22.4,
+      "onsetS": 0
     },
     "kenney/impactSoft_medium_003": {
       "file": "kenney/impactSoft_medium_003.ogg",
       "durationS": 0.137,
-      "lufs": -22.4
+      "lufs": -22.4,
+      "onsetS": 0
     },
     "kenney/impactSoft_medium_004": {
       "file": "kenney/impactSoft_medium_004.ogg",
       "durationS": 0.144,
-      "lufs": -22
+      "lufs": -22,
+      "onsetS": 0
     },
     "kenney/impactWood_heavy_000": {
       "file": "kenney/impactWood_heavy_000.ogg",
       "durationS": 0.31,
-      "lufs": -23.8
+      "lufs": -23.8,
+      "onsetS": 0
     },
     "kenney/impactWood_heavy_001": {
       "file": "kenney/impactWood_heavy_001.ogg",
       "durationS": 0.31,
-      "lufs": -23.8
+      "lufs": -23.8,
+      "onsetS": 0
     },
     "kenney/impactWood_heavy_002": {
       "file": "kenney/impactWood_heavy_002.ogg",
       "durationS": 0.31,
-      "lufs": -23.8
+      "lufs": -23.8,
+      "onsetS": 0
     },
     "kenney/knifeSlice": {
       "file": "kenney/knifeSlice.ogg",
       "durationS": 0.377,
-      "lufs": -18.2
+      "lufs": -18.2,
+      "onsetS": 0
     },
     "kenney/knifeSlice2": {
       "file": "kenney/knifeSlice2.ogg",
       "durationS": 0.465,
-      "lufs": -18.2
+      "lufs": -18.2,
+      "onsetS": 0
     },
     "kenney/maximize_001": {
       "file": "kenney/maximize_001.ogg",
       "durationS": 0.254,
-      "lufs": -18.9
+      "lufs": -18.9,
+      "onsetS": 0.1239
     },
     "kenney/maximize_002": {
       "file": "kenney/maximize_002.ogg",
       "durationS": 0.255,
-      "lufs": -19.2
+      "lufs": -19.2,
+      "onsetS": 0.1198
     },
     "kenney/maximize_003": {
       "file": "kenney/maximize_003.ogg",
       "durationS": 0.204,
-      "lufs": -21.2
+      "lufs": -21.2,
+      "onsetS": 0.124
     },
     "kenney/maximize_004": {
       "file": "kenney/maximize_004.ogg",
       "durationS": 0.396,
-      "lufs": -18.1
+      "lufs": -18.1,
+      "onsetS": 0.2221
     },
     "kenney/metalClick": {
       "file": "kenney/metalClick.ogg",
       "durationS": 0.366,
-      "lufs": -25.3
+      "lufs": -25.3,
+      "onsetS": 0.0968
     },
     "kenney/metalLatch": {
       "file": "kenney/metalLatch.ogg",
       "durationS": 0.228,
-      "lufs": -22.3
+      "lufs": -22.3,
+      "onsetS": 0.0394
     },
     "kenney/minimize_001": {
       "file": "kenney/minimize_001.ogg",
       "durationS": 0.256,
-      "lufs": -18.3
+      "lufs": -18.3,
+      "onsetS": 0
     },
     "kenney/minimize_002": {
       "file": "kenney/minimize_002.ogg",
       "durationS": 0.256,
-      "lufs": -18.7
+      "lufs": -18.7,
+      "onsetS": 0
     },
     "kenney/pluck_001": {
       "file": "kenney/pluck_001.ogg",
       "durationS": 0.1,
-      "lufs": -26.6
+      "lufs": -26.6,
+      "onsetS": 0
     },
     "kenney/pluck_002": {
       "file": "kenney/pluck_002.ogg",
       "durationS": 0.141,
-      "lufs": -25.9
+      "lufs": -25.9,
+      "onsetS": 0
     },
     "kenney/select_001": {
       "file": "kenney/select_001.ogg",
       "durationS": 0.04,
-      "lufs": -25
+      "lufs": -25,
+      "onsetS": 0
     },
     "kenney/select_002": {
       "file": "kenney/select_002.ogg",
       "durationS": 0.04,
-      "lufs": -25.7
+      "lufs": -25.7,
+      "onsetS": 0
     },
     "kenney/select_003": {
       "file": "kenney/select_003.ogg",
       "durationS": 0.216,
-      "lufs": -18.1
+      "lufs": -18.1,
+      "onsetS": 0
     },
     "rpg80/blade_01": {
       "file": "rpg80/blade_01.ogg",
       "durationS": 0.225,
-      "lufs": -21.5
+      "lufs": -21.5,
+      "onsetS": 0
     },
     "rpg80/blade_02": {
       "file": "rpg80/blade_02.ogg",
       "durationS": 0.276,
-      "lufs": -20.6
+      "lufs": -20.6,
+      "onsetS": 0.035
     },
     "rpg80/blade_03": {
       "file": "rpg80/blade_03.ogg",
       "durationS": 0.264,
-      "lufs": -22.2
+      "lufs": -22.2,
+      "onsetS": 0.0095
     },
     "rpg80/chain_01": {
       "file": "rpg80/chain_01.ogg",
       "durationS": 0.399,
-      "lufs": -18.3
+      "lufs": -18.3,
+      "onsetS": 0.0393
     },
     "rpg80/chain_02": {
       "file": "rpg80/chain_02.ogg",
       "durationS": 0.363,
-      "lufs": -18.2
+      "lufs": -18.2,
+      "onsetS": 0.0101
     },
     "rpg80/chain_03": {
       "file": "rpg80/chain_03.ogg",
       "durationS": 0.738,
-      "lufs": -18.9
+      "lufs": -18.9,
+      "onsetS": 0.0151
     },
     "rpg80/creature_die_01": {
       "file": "rpg80/creature_die_01.ogg",
       "durationS": 0.735,
-      "lufs": -18
+      "lufs": -18,
+      "onsetS": 0.2585
     },
     "rpg80/creature_hurt_01": {
       "file": "rpg80/creature_hurt_01.ogg",
       "durationS": 0.451,
-      "lufs": -18
+      "lufs": -18,
+      "onsetS": 0.0122
     },
     "rpg80/creature_hurt_02": {
       "file": "rpg80/creature_hurt_02.ogg",
       "durationS": 0.455,
-      "lufs": -18.6
+      "lufs": -18.6,
+      "onsetS": 0.005
     },
     "rpg80/creature_misc_01": {
       "file": "rpg80/creature_misc_01.ogg",
       "durationS": 0.232,
-      "lufs": -19.6
+      "lufs": -19.6,
+      "onsetS": 0.0031
     },
     "rpg80/creature_misc_02": {
       "file": "rpg80/creature_misc_02.ogg",
       "durationS": 0.056,
-      "lufs": -20.6
+      "lufs": -20.6,
+      "onsetS": 0.0047
     },
     "rpg80/creature_misc_03": {
       "file": "rpg80/creature_misc_03.ogg",
       "durationS": 0.498,
-      "lufs": -18.2
+      "lufs": -18.2,
+      "onsetS": 0.0953
     },
     "rpg80/creature_misc_04": {
       "file": "rpg80/creature_misc_04.ogg",
       "durationS": 0.341,
-      "lufs": -21.1
+      "lufs": -21.1,
+      "onsetS": 0.0294
     },
     "rpg80/creature_monster_01": {
       "file": "rpg80/creature_monster_01.ogg",
       "durationS": 0.134,
-      "lufs": -21.8
+      "lufs": -21.8,
+      "onsetS": 0.0163
     },
     "rpg80/creature_monster_02": {
       "file": "rpg80/creature_monster_02.ogg",
       "durationS": 0.124,
-      "lufs": -22.8
+      "lufs": -22.8,
+      "onsetS": 0.039
     },
     "rpg80/creature_monster_03": {
       "file": "rpg80/creature_monster_03.ogg",
       "durationS": 0.801,
-      "lufs": -18.1
+      "lufs": -18.1,
+      "onsetS": 0.2574
     },
     "rpg80/creature_monster_04": {
       "file": "rpg80/creature_monster_04.ogg",
       "durationS": 0.675,
-      "lufs": -18.1
+      "lufs": -18.1,
+      "onsetS": 0.2255
     },
     "rpg80/creature_roar_01": {
       "file": "rpg80/creature_roar_01.ogg",
       "durationS": 0.562,
-      "lufs": -18
+      "lufs": -18,
+      "onsetS": 0.1566
     },
     "rpg80/creature_roar_02": {
       "file": "rpg80/creature_roar_02.ogg",
       "durationS": 0.866,
-      "lufs": -18.6
+      "lufs": -18.6,
+      "onsetS": 0.1664
     },
     "rpg80/creature_roar_03": {
       "file": "rpg80/creature_roar_03.ogg",
       "durationS": 0.862,
-      "lufs": -18
+      "lufs": -18,
+      "onsetS": 0.0331
     },
     "rpg80/creature_slime_01": {
       "file": "rpg80/creature_slime_01.ogg",
       "durationS": 0.566,
-      "lufs": -18.2
+      "lufs": -18.2,
+      "onsetS": 0.0683
     },
     "rpg80/creature_slime_02": {
       "file": "rpg80/creature_slime_02.ogg",
       "durationS": 0.511,
-      "lufs": -20.2
+      "lufs": -20.2,
+      "onsetS": 0.0436
     },
     "rpg80/creature_slime_03": {
       "file": "rpg80/creature_slime_03.ogg",
       "durationS": 0.412,
-      "lufs": -18
+      "lufs": -18,
+      "onsetS": 0.0179
     },
     "rpg80/creature_slime_04": {
       "file": "rpg80/creature_slime_04.ogg",
       "durationS": 0.494,
-      "lufs": -18.1
+      "lufs": -18.1,
+      "onsetS": 0.0999
     },
     "rpg80/item_coins_01": {
       "file": "rpg80/item_coins_01.ogg",
       "durationS": 0.329,
-      "lufs": -27.6
+      "lufs": -27.6,
+      "onsetS": 0
     },
     "rpg80/item_coins_02": {
       "file": "rpg80/item_coins_02.ogg",
       "durationS": 0.542,
-      "lufs": -23.9
+      "lufs": -23.9,
+      "onsetS": 0.0016
     },
     "rpg80/item_gem_01": {
       "file": "rpg80/item_gem_01.ogg",
       "durationS": 0.207,
-      "lufs": -25.3
+      "lufs": -25.3,
+      "onsetS": 0
     },
     "rpg80/item_gem_02": {
       "file": "rpg80/item_gem_02.ogg",
       "durationS": 0.093,
-      "lufs": -28.4
+      "lufs": -28.4,
+      "onsetS": 0
     },
     "rpg80/item_gem_03": {
       "file": "rpg80/item_gem_03.ogg",
       "durationS": 0.169,
-      "lufs": -28.4
+      "lufs": -28.4,
+      "onsetS": 0
     },
     "rpg80/item_gem_04": {
       "file": "rpg80/item_gem_04.ogg",
       "durationS": 0.505,
-      "lufs": -24.8
+      "lufs": -24.8,
+      "onsetS": 0.21
     },
     "rpg80/metal_01": {
       "file": "rpg80/metal_01.ogg",
       "durationS": 0.472,
-      "lufs": -24.2
+      "lufs": -24.2,
+      "onsetS": 0.1691
     },
     "rpg80/metal_02": {
       "file": "rpg80/metal_02.ogg",
       "durationS": 0.527,
-      "lufs": -18.1
+      "lufs": -18.1,
+      "onsetS": 0.1237
     },
     "rpg80/metal_03": {
       "file": "rpg80/metal_03.ogg",
       "durationS": 0.331,
-      "lufs": -19
+      "lufs": -19,
+      "onsetS": 0.12
     },
     "rpg80/misc_01": {
       "file": "rpg80/misc_01.ogg",
       "durationS": 0.155,
-      "lufs": -27.9
+      "lufs": -27.9,
+      "onsetS": 0.0313
     },
     "rpg80/misc_02": {
       "file": "rpg80/misc_02.ogg",
       "durationS": 0.371,
-      "lufs": -18.6
+      "lufs": -18.6,
+      "onsetS": 0.0167
     },
     "rpg80/misc_03": {
       "file": "rpg80/misc_03.ogg",
       "durationS": 0.195,
-      "lufs": -20.4
+      "lufs": -20.4,
+      "onsetS": 0.0009
     },
     "rpg80/spell_01": {
       "file": "rpg80/spell_01.ogg",
       "durationS": 0.561,
-      "lufs": -18.1
+      "lufs": -18.1,
+      "onsetS": 0.0559
     },
     "rpg80/spell_02": {
       "file": "rpg80/spell_02.ogg",
       "durationS": 0.451,
-      "lufs": -18.2
+      "lufs": -18.2,
+      "onsetS": 0.0277
     },
     "rpg80/spell_fire_01": {
       "file": "rpg80/spell_fire_01.ogg",
       "durationS": 0.71,
-      "lufs": -21
+      "lufs": -21,
+      "onsetS": 0.0912
     },
     "rpg80/spell_fire_02": {
       "file": "rpg80/spell_fire_02.ogg",
       "durationS": 0.654,
-      "lufs": -18.2
+      "lufs": -18.2,
+      "onsetS": 0.0717
     },
     "rpg80/spell_fire_03": {
       "file": "rpg80/spell_fire_03.ogg",
       "durationS": 1.489,
-      "lufs": -20.8
+      "lufs": -20.8,
+      "onsetS": 0.1918
     },
     "rpg80/spell_fire_04": {
       "file": "rpg80/spell_fire_04.ogg",
       "durationS": 1.098,
-      "lufs": -21.1
+      "lufs": -21.1,
+      "onsetS": 0.1301
     },
     "rpg80/spell_fire_05": {
       "file": "rpg80/spell_fire_05.ogg",
       "durationS": 1.047,
-      "lufs": -18.2
+      "lufs": -18.2,
+      "onsetS": 0.1328
     },
     "rpg80/spell_fire_06": {
       "file": "rpg80/spell_fire_06.ogg",
       "durationS": 0.856,
-      "lufs": -20.3
+      "lufs": -20.3,
+      "onsetS": 0.013
     },
     "rpg80/spell_fire_07": {
       "file": "rpg80/spell_fire_07.ogg",
       "durationS": 0.454,
-      "lufs": -18.1
+      "lufs": -18.1,
+      "onsetS": 0.0996
     },
     "rpg80/stones_01": {
       "file": "rpg80/stones_01.ogg",
       "durationS": 0.465,
-      "lufs": -25.9
+      "lufs": -25.9,
+      "onsetS": 0
     },
     "rpg80/stones_02": {
       "file": "rpg80/stones_02.ogg",
       "durationS": 0.611,
-      "lufs": -26.7
+      "lufs": -26.7,
+      "onsetS": 0.151
     },
     "rpg80/stones_03": {
       "file": "rpg80/stones_03.ogg",
       "durationS": 0.69,
-      "lufs": -26
+      "lufs": -26,
+      "onsetS": 0.0941
     },
     "rpg80/stones_04": {
       "file": "rpg80/stones_04.ogg",
       "durationS": 0.217,
-      "lufs": -22.7
+      "lufs": -22.7,
+      "onsetS": 0
     },
     "rpgpack/bite-small": {
       "file": "rpgpack/bite-small.ogg",
       "durationS": 0.344,
-      "lufs": -19.8
+      "lufs": -19.8,
+      "onsetS": 0.0092
     },
     "rpgpack/bite-small2": {
       "file": "rpgpack/bite-small2.ogg",
       "durationS": 0.302,
-      "lufs": -25.5
+      "lufs": -25.5,
+      "onsetS": 0.0619
     },
     "rpgpack/bubble": {
       "file": "rpgpack/bubble.ogg",
       "durationS": 0.352,
-      "lufs": -19.8
+      "lufs": -19.8,
+      "onsetS": 0.0405
     },
     "rpgpack/bubble2": {
       "file": "rpgpack/bubble2.ogg",
       "durationS": 0.345,
-      "lufs": -20.7
+      "lufs": -20.7,
+      "onsetS": 0.0389
     },
     "rpgpack/bubble3": {
       "file": "rpgpack/bubble3.ogg",
       "durationS": 0.585,
-      "lufs": -18.3
+      "lufs": -18.3,
+      "onsetS": 0.0606
     },
     "rpgpack/chainmail1": {
       "file": "rpgpack/chainmail1.ogg",
       "durationS": 0.421,
-      "lufs": -20.7
+      "lufs": -20.7,
+      "onsetS": 0.0371
     },
     "rpgpack/chainmail2": {
       "file": "rpgpack/chainmail2.ogg",
       "durationS": 0.462,
-      "lufs": -18.5
+      "lufs": -18.5,
+      "onsetS": 0.0128
     },
     "rpgpack/giant1": {
       "file": "rpgpack/giant1.ogg",
       "durationS": 0.502,
-      "lufs": -18
+      "lufs": -18,
+      "onsetS": 0.0289
     },
     "rpgpack/giant2": {
       "file": "rpgpack/giant2.ogg",
       "durationS": 0.612,
-      "lufs": -18
+      "lufs": -18,
+      "onsetS": 0.0195
     },
     "rpgpack/giant3": {
       "file": "rpgpack/giant3.ogg",
       "durationS": 0.461,
-      "lufs": -18.3
+      "lufs": -18.3,
+      "onsetS": 0.0417
     },
     "rpgpack/magic1": {
       "file": "rpgpack/magic1.ogg",
       "durationS": 0.615,
-      "lufs": -18.2
+      "lufs": -18.2,
+      "onsetS": 0.038
     },
     "rpgpack/metal-ringing": {
       "file": "rpgpack/metal-ringing.ogg",
       "durationS": 0.475,
-      "lufs": -17.9
+      "lufs": -17.9,
+      "onsetS": 0.0098
     },
     "rpgpack/metal-small1": {
       "file": "rpgpack/metal-small1.ogg",
       "durationS": 0.129,
-      "lufs": -23.5
+      "lufs": -23.5,
+      "onsetS": 0
     },
     "rpgpack/metal-small2": {
       "file": "rpgpack/metal-small2.ogg",
       "durationS": 0.193,
-      "lufs": -24.4
+      "lufs": -24.4,
+      "onsetS": 0.0012
     },
     "rpgpack/metal-small3": {
       "file": "rpgpack/metal-small3.ogg",
       "durationS": 0.264,
-      "lufs": -21.2
+      "lufs": -21.2,
+      "onsetS": 0
     },
     "rpgpack/mnstr1": {
       "file": "rpgpack/mnstr1.ogg",
       "durationS": 0.322,
-      "lufs": -20.1
+      "lufs": -20.1,
+      "onsetS": 0.0408
     },
     "rpgpack/mnstr2": {
       "file": "rpgpack/mnstr2.ogg",
       "durationS": 0.341,
-      "lufs": -20.1
+      "lufs": -20.1,
+      "onsetS": 0.0937
     },
     "rpgpack/mnstr3": {
       "file": "rpgpack/mnstr3.ogg",
       "durationS": 0.396,
-      "lufs": -19.4
+      "lufs": -19.4,
+      "onsetS": 0.0833
     },
     "rpgpack/mnstr4": {
       "file": "rpgpack/mnstr4.ogg",
       "durationS": 0.559,
-      "lufs": -19.2
+      "lufs": -19.2,
+      "onsetS": 0.0786
     },
     "rpgpack/ogre1": {
       "file": "rpgpack/ogre1.ogg",
       "durationS": 0.345,
-      "lufs": -18
+      "lufs": -18,
+      "onsetS": 0.0992
     },
     "rpgpack/ogre2": {
       "file": "rpgpack/ogre2.ogg",
       "durationS": 0.506,
-      "lufs": -18.2
+      "lufs": -18.2,
+      "onsetS": 0.1725
     },
     "rpgpack/ogre3": {
       "file": "rpgpack/ogre3.ogg",
       "durationS": 0.488,
-      "lufs": -18.1
+      "lufs": -18.1,
+      "onsetS": 0.017
     },
     "rpgpack/shade1": {
       "file": "rpgpack/shade1.ogg",
       "durationS": 0.39,
-      "lufs": -18.2
+      "lufs": -18.2,
+      "onsetS": 0.0863
     },
     "rpgpack/shade2": {
       "file": "rpgpack/shade2.ogg",
       "durationS": 0.422,
-      "lufs": -18.2
+      "lufs": -18.2,
+      "onsetS": 0.1473
     },
     "rpgpack/shade3": {
       "file": "rpgpack/shade3.ogg",
       "durationS": 0.459,
-      "lufs": -18.2
+      "lufs": -18.2,
+      "onsetS": 0.1146
     },
     "rpgpack/shade4": {
       "file": "rpgpack/shade4.ogg",
       "durationS": 0.556,
-      "lufs": -18.1
+      "lufs": -18.1,
+      "onsetS": 0.1043
     },
     "rpgpack/slime1": {
       "file": "rpgpack/slime1.ogg",
       "durationS": 0.179,
-      "lufs": -25.3
+      "lufs": -25.3,
+      "onsetS": 0.0246
     },
     "rpgpack/slime2": {
       "file": "rpgpack/slime2.ogg",
       "durationS": 0.263,
-      "lufs": -27.8
+      "lufs": -27.8,
+      "onsetS": 0.0637
     },
     "rpgpack/slime3": {
       "file": "rpgpack/slime3.ogg",
       "durationS": 0.172,
-      "lufs": -28.8
+      "lufs": -28.8,
+      "onsetS": 0.069
     },
     "rpgpack/slime4": {
       "file": "rpgpack/slime4.ogg",
       "durationS": 0.167,
-      "lufs": -24.5
+      "lufs": -24.5,
+      "onsetS": 0.0631
     },
     "rpgpack/spell": {
       "file": "rpgpack/spell.ogg",
       "durationS": 2.727,
-      "lufs": -18
+      "lufs": -18,
+      "onsetS": 0.0692
     },
     "rpgpack/swing": {
       "file": "rpgpack/swing.ogg",
       "durationS": 0.128,
-      "lufs": -24
+      "lufs": -24,
+      "onsetS": 0.0261
     },
     "rpgpack/swing2": {
       "file": "rpgpack/swing2.ogg",
       "durationS": 0.084,
-      "lufs": -24.1
+      "lufs": -24.1,
+      "onsetS": 0.009
     },
     "rpgpack/swing3": {
       "file": "rpgpack/swing3.ogg",
       "durationS": 0.093,
-      "lufs": -23
+      "lufs": -23,
+      "onsetS": 0.0143
     },
     "rpgpack/sword-unsheathe": {
       "file": "rpgpack/sword-unsheathe.ogg",
       "durationS": 0.365,
-      "lufs": -18.1
+      "lufs": -18.1,
+      "onsetS": 0.0138
     },
     "rpgpack/sword-unsheathe2": {
       "file": "rpgpack/sword-unsheathe2.ogg",
       "durationS": 0.294,
-      "lufs": -18.3
+      "lufs": -18.3,
+      "onsetS": 0.0017
     },
     "rpgpack/sword-unsheathe3": {
       "file": "rpgpack/sword-unsheathe3.ogg",
       "durationS": 0.346,
-      "lufs": -18.1
+      "lufs": -18.1,
+      "onsetS": 0.0158
     },
     "rpgpack/sword-unsheathe4": {
       "file": "rpgpack/sword-unsheathe4.ogg",
       "durationS": 0.308,
-      "lufs": -18.1
+      "lufs": -18.1,
+      "onsetS": 0.01
     },
     "rpgpack/sword-unsheathe5": {
       "file": "rpgpack/sword-unsheathe5.ogg",
       "durationS": 0.319,
-      "lufs": -18.3
+      "lufs": -18.3,
+      "onsetS": 0.0366
     },
     "sot/bomb": {
       "file": "sot/bomb.ogg",
       "durationS": 0.582,
-      "lufs": -18.1
+      "lufs": -18.1,
+      "onsetS": 0
     },
     "sot/fire": {
       "file": "sot/fire.ogg",
       "durationS": 1.702,
-      "lufs": -18.8
+      "lufs": -18.8,
+      "onsetS": 0.1495
     },
     "sot/metal-bowl": {
       "file": "sot/metal-bowl.ogg",
       "durationS": 0.538,
-      "lufs": -24.1
+      "lufs": -24.1,
+      "onsetS": 0
     }
   }
 }

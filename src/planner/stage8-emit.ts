@@ -18,6 +18,9 @@ const PRIORITY = { hero: 0, boss: 1, nearMiss: 2, weapon: 3, kill: 4, ambient: 5
 
 const NOTE_NAMES: Record<string, number> = { C: 0, "C#": 1, Db: 1, D: 2, "D#": 3, Eb: 3, E: 4, F: 5, "F#": 6, Gb: 6, G: 7, "G#": 8, Ab: 8, A: 9, "A#": 10, Bb: 10, B: 11 };
 
+/** The most a sample is started ahead of its event; the audio scheduler looks this far ahead. */
+export const MAX_SOUND_LEAD = 0.25;
+
 export function noteToMidi(note: string): number | undefined {
   const m = /^([A-G][#b]?)(-?\d)$/.exec(note.trim());
   if (!m) return undefined;
@@ -88,7 +91,9 @@ export function stage8(ctx: Ctx, kp: KillPlan): EmitResult {
     }
     const c = cameraAt(cam, warp.toWorld(s));
     const pan = clamp((x - c.x) / (VIEW_W / 2 / c.zoom), -0.8, 0.8);
-    sounds.push({ sample: id, s, gain: gain * sg * pal.gain, pan, rate, priority, duck });
+    // Start slow-attack samples early so they are heard on time.
+    const lead = Math.min(MAX_SOUND_LEAD, (ctx.soundOnsets[id] ?? 0) / rate);
+    sounds.push({ sample: id, s, gain: gain * sg * pal.gain, pan, rate, priority, duck, ...(lead > 0.001 ? { lead } : {}) });
   };
 
   // ------------------------------------------------------- hero actions

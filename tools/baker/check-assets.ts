@@ -194,6 +194,7 @@ function checkSounds(): SoundManifest | null {
     if (!existsSync(join(SFX_OUT, s.file))) fail(`sounds: missing file ${s.file}`);
     if (!(s.durationS > 0)) fail(`sounds: ${id} has no duration`);
     if (!Number.isFinite(s.lufs) || s.lufs < -40 || s.lufs > -10) fail(`sounds: ${id} loudness ${s.lufs} LUFS looks wrong`);
+    if (!(s.onsetS >= 0 && s.onsetS < s.durationS)) fail(`sounds: ${id} onset ${s.onsetS} s is missing or outside the sample`);
   }
   for (const id of ["kenney/impactMetal_light_000", "kenney/impactMetal_heavy_000", "kenney/impactPunch_heavy_000", "kenney/impactPlate_light_000", "rpgpack/swing2", "kenney/pluck_001", "sot/bomb", "kenney/impactBell_heavy_000", "fantasy/Jingle_Achievement_00"]) {
     if (!m.sounds[id]) fail(`sounds: missing required sample ${id}`);

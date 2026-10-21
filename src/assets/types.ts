@@ -93,6 +93,8 @@ export interface SoundEntry {
   durationS: number;
   /** Integrated loudness after normalization. */
   lufs: number;
+  /** Seconds from the start of the sample to its perceived onset (first reaching half its peak). */
+  onsetS: number;
 }
 
 /** public/assets/sfx/sounds.json, keyed by sample id such as "kenney/impactMetal_light_000". */

@@ -40,6 +40,27 @@ function loudnessOf(l: Loudness, durationS: number): number {
   return durationS >= 0.6 && l.integrated > -69 ? l.integrated : l.momentaryMax;
 }
 
+/**
+ * The perceived onset: when the sound's 5 ms RMS envelope first reaches half its
+ * maximum. The planner starts the sample this much early so a slow attack is
+ * heard on the beat. (scripts/lib/listen.ts measures it the same way in QA.)
+ */
+export function onsetSeconds(pcm: Float32Array, rate: number): number {
+  const win = Math.max(1, Math.round(rate * 0.005));
+  const env = new Float32Array(Math.max(1, pcm.length - win + 1));
+  let sum = 0;
+  for (let i = 0; i < pcm.length; i++) {
+    sum += pcm[i] * pcm[i];
+    if (i >= win) sum -= pcm[i - win] * pcm[i - win];
+    if (i >= win - 1) env[i - win + 1] = Math.sqrt(Math.max(0, sum) / win);
+  }
+  let max = 0;
+  for (const v of env) max = Math.max(max, v);
+  let i = 0;
+  while (i < env.length && env[i] < 0.5 * max) i++;
+  return i / rate;
+}
+
 async function encodeOgg(pcm: Float32Array): Promise<Uint8Array> {
   const enc = await createOggEncoder();
   enc.configure({ channels: 1, sampleRate: RATE, vbrQuality: 4, oggSerialNo: 0x50534658 });
@@ -82,8 +103,12 @@ async function bakeOne(def: SoundDef, target: SoundsDoc["target"], tmp: string):
   mkdirSync(dirname(out), { recursive: true });
   writeFileSync(out, ogg);
   const after = await measure(["-i", out]);
+  // The onset is measured on the encoded file, as it will be played.
+  await run(FFMPEG, ["-v", "error", "-y", "-i", out, "-ac", "1", "-ar", String(RATE), "-f", "f32le", raw]);
+  const dec = readFileSync(raw);
+  const onset = onsetSeconds(new Float32Array(dec.buffer.slice(dec.byteOffset, dec.byteOffset + dec.length)), RATE);
   rmSync(raw);
-  return { file, durationS: Math.round(durationS * 1000) / 1000, lufs: Math.round(loudnessOf(after, durationS) * 10) / 10 };
+  return { file, durationS: Math.round(durationS * 1000) / 1000, lufs: Math.round(loudnessOf(after, durationS) * 10) / 10, onsetS: Math.round(onset * 10000) / 10000 };
 }
 
 export async function bakeSounds(use: (ref: string, usedFor: string) => void, log: (s: string) => void): Promise<SoundManifest> {

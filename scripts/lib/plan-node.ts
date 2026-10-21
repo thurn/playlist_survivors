@@ -3,7 +3,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { loadContent, loadLevel } from "../../src/content/loader.ts";
 import type { SongMap } from "../../src/core/songmap.ts";
-import type { CharacterAtlas, WorldAtlas } from "../../src/assets/types.ts";
+import type { CharacterAtlas, SoundManifest, WorldAtlas } from "../../src/assets/types.ts";
 import { plan } from "../../src/planner/plan.ts";
 import type { PlannerInput, AnimInfo } from "../../src/planner/context.ts";
 import type { PropInfo } from "../../src/mapgen/mapgen.ts";
@@ -33,6 +33,13 @@ export function propsFromAtlas(): Record<string, PropInfo> | undefined {
   return Object.fromEntries(Object.entries(atlas.props).map(([k, v]) => [k, { tall: v.tall, radius: v.radius }]));
 }
 
+export function soundOnsets(): Record<string, number> | undefined {
+  const p = join(ROOT, "public/assets/sfx/sounds.json");
+  if (!existsSync(p)) return undefined;
+  const m = JSON.parse(readFileSync(p, "utf8")) as SoundManifest;
+  return Object.fromEntries(Object.entries(m.sounds).map(([k, v]) => [k, v.onsetS ?? 0]));
+}
+
 export function plannerInput(opts: { songMap?: SongMap; seed?: number; level?: string } = {}): PlannerInput {
   const content = loadContent(readContentFiles());
   const levelSrc = readSource(opts.level ?? "levels/orpheus-galop.yaml");
@@ -40,7 +47,7 @@ export function plannerInput(opts: { songMap?: SongMap; seed?: number; level?: s
   const songMap = opts.songMap ?? (hasSongMap(songName) ? readSongMap(songName) : undefined);
   if (!songMap) throw new Error(`no song map for ${songName}`);
   const level = loadLevel(levelSrc, content, songMap);
-  return { songMap, level, content, seed: opts.seed ?? level.seed, heroAnims: heroAnimsFromAtlas(), landmarks: readLandmarks(), version: "node" };
+  return { songMap, level, content, seed: opts.seed ?? level.seed, heroAnims: heroAnimsFromAtlas(), landmarks: readLandmarks(), soundOnsets: soundOnsets(), version: "node" };
 }
 
 export function runPlanner(opts: { songMap?: SongMap; seed?: number; level?: string } = {}): Plan {

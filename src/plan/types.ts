@@ -111,6 +111,11 @@ export interface SoundEvent {
   priority: number;
   /** Duck the music under this sound. */
   duck?: boolean;
+  /**
+   * Seconds before `s` at which the sample starts, so that its perceived onset
+   * (a slow attack, a swell) is heard at `s`.
+   */
+  lead?: number;
 }
 
 export interface GemEvent {
