@@ -2,6 +2,14 @@
 set -eu
 cd "$(dirname "$0")/.."
 
+# Everything in check:all except the Playwright e2e tests: Chromium starts its
+# own process session, which Tollgate rejects. Run `npm run test:e2e` by hand.
 npm ci --no-audit --no-fund --prefer-offline
-npm run check:all
+npm run check
+npm run check:analysis
+npm run check:songmap
+npm run check:content
+npm run check:assets
+npm run check:determinism
+npm run check:seeds
 npm run build
