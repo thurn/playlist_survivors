@@ -1,0 +1,10 @@
+node_modules/
+dist/
+captures/
+test-results/
+playwright-report/
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+tools/analysis/work/

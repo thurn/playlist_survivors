@@ -1,0 +1,11 @@
+Metadata-Version: 2.4
+Name: ps-analysis
+Version: 0.1.0
+Summary: Audio analysis tool that builds Playlist Survivors song maps
+Requires-Python: <3.13,>=3.12
+Requires-Dist: numpy<2.3
+Requires-Dist: scipy
+Requires-Dist: librosa>=0.10
+Requires-Dist: soundfile
+Requires-Dist: matplotlib
+Requires-Dist: madmom @ git+https://github.com/CPJKU/madmom.git

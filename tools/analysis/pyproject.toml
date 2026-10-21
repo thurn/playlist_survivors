@@ -1,0 +1,29 @@
+[project]
+name = "ps-analysis"
+version = "0.1.0"
+description = "Audio analysis tool that builds Playlist Survivors song maps"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "numpy<2.3",
+  "scipy",
+  "librosa>=0.10",
+  "soundfile",
+  "matplotlib",
+  "madmom @ git+https://github.com/CPJKU/madmom.git",
+]
+
+[project.scripts]
+ps-analysis = "ps_analysis.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[dependency-groups]
+dev = ["pytest", "ruff"]
+
+[tool.uv]
+python-preference = "only-system"
