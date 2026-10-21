@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { checkPlan, summarizeChecks } from "../src/planner/checks.ts";
 import { planHash } from "../src/planner/plan.ts";
+import { Evaluator } from "../src/plan/evaluate.ts";
 import { plannerInput, runPlanner } from "../scripts/lib/plan-node.ts";
 import { syntheticSongMap } from "./fixtures/synthetic-song.ts";
 
@@ -34,5 +35,30 @@ describe("planner on the synthetic song", () => {
       for (let i = 0; i < plan.hud.xpTimes.length; i++) if (plan.hud.xpTimes[i] <= lu + 1e-6) last = i;
       if (last >= 0) expect(plan.hud.xpFill[last]).toBeCloseTo(1, 5);
     }
+  });
+});
+
+describe("kick line", () => {
+  const songMap = syntheticSongMap();
+  const plan = runPlanner({ songMap });
+  const lib = plannerInput({ songMap }).content;
+  const ev = new Evaluator(plan, lib);
+  const sec = plan.sections.find((s) => s.label === "kick-line")!;
+  const beats = Array.from(plan.songBeats).filter((t) => t > sec.s0 + 4 && t < sec.s0 + 10);
+
+  it("kicks on the beat and stands between kicks", () => {
+    let onBeat = 0;
+    let standing = 0;
+    for (let i = 0; i + 1 < beats.length; i++) {
+      for (const e of ev.evaluate(beats[i] + 0.002).enemies) {
+        if (!e.anim.startsWith("kick")) continue;
+        onBeat++;
+        expect(e.frame, `${e.type} #${e.id} at ${beats[i].toFixed(2)} s`).toBe(2);
+      }
+      const late = beats[i] + 0.8 * (beats[i + 1] - beats[i]);
+      for (const e of ev.evaluate(late).enemies) if (e.anim.startsWith("kick") && e.frame === 0) standing++;
+    }
+    expect(onBeat).toBeGreaterThan(20);
+    expect(standing).toBeGreaterThan(0);
   });
 });

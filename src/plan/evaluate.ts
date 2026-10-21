@@ -20,6 +20,9 @@ const MAX_SHAKE = 9;
 export const MAX_PARTICLES = 6000;
 export const MAX_DECALS = 400;
 
+/** Fraction of a beat the can-can kick's wind-up (stand, knee) takes before the kick lands on the beat. */
+const KICK_WINDUP = 0.36;
+
 export interface EnemySprite {
   id: number;
   type: string;
@@ -356,10 +359,13 @@ export class Evaluator {
       }
       // Formation dance.
       if (e.dance && w >= e.dance.w0 && w < e.dance.w1) {
+        // The kick lands on the beat: the knee comes up in the last part of the beat
+        // before, the leg is out on the beat and held, then comes down for the next.
         anim = "kick";
-        const k2 = Math.floor(wbi);
-        if (e.dance.alternate && k2 % 2 === 1) anim = "kick-alt";
-        frame = clamp(Math.floor(frac(wbi) * 3 * 1.6), 0, 2);
+        const u = wbi + KICK_WINDUP;
+        if (e.dance.alternate && Math.floor(u) % 2 === 1) anim = "kick-alt";
+        const ph = frac(u);
+        frame = ph < KICK_WINDUP / 2 ? 0 : ph < KICK_WINDUP ? 1 : 2;
         facing = 2;
       }
       // Non-lethal hits: flash and knockback.
