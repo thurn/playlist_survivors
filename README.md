@@ -47,6 +47,7 @@ Every important property is checkable by a command:
 | `npm run check:assets` | Licences, credits, atlas manifests, and that every sprite/animation/sound named in content exists. |
 | `npm run check:plan` | Runs the planner with all its output checks and prints peak population, kills per section, total hit-stop time and the longest stretch without a primary event. `-- --seed=1859` for another seed. |
 | `npm run check:determinism` | Plans twice and generates the map twice; hashes must match. |
+| `npm run check:seeds` | The plan checks on three more seeds (`?seed=` must still pass every check). |
 | `npm run capture -- --times 12,35.2,88.31,141.5` | Headless-Chrome screenshots at exact song times into `captures/`. `--sections` captures the start of every section. |
 | `npm run bench` | Headed Chrome, whole song at real-time speed: fails if JavaScript frame time exceeds 8 ms or GPU time 10 ms at p95, or any frame exceeds 33 ms. |
 | `npm run test:e2e` | Playwright: capture hook, metronome flash on the beat, broken level script shows an error and never starts, reload uses the cached plan. |

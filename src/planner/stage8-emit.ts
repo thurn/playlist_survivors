@@ -8,7 +8,6 @@ import type { KillPlan } from "./stage6-kills.ts";
 import { HURTBOX_LIFT, HURTBOX_RADIUS } from "./stage6-kills.ts";
 import { heroAt } from "./stage4-hero.ts";
 import { cameraAt, VIEW_W } from "./stage5-camera.ts";
-import { HITSTOP_CLEARANCE } from "./stage3-warp.ts";
 import { resolveRef } from "./stage1-musical.ts";
 import type { MusicalRef } from "../content/schema.ts";
 
@@ -260,7 +259,9 @@ export function stage8(ctx: Ctx, kp: KillPlan): EmitResult {
     const land = ag.waypoints[0];
     fx("boss-land", b.sEnter, land.x, land.y, 0, 1);
     sfx("boss-land", b.sEnter, land.x, PRIORITY.boss, 1, true);
-    ui.push({ kind: "bossBar", s: b.sEnter, until: b.sDeath, hits: ctx.actions.filter((a) => a.bossHit).map((a) => a.s) });
+    const bossEvent = ctx.events.find((e) => e.ev.boss);
+    const name = bossEvent?.ev.banner ?? b.type.toUpperCase();
+    ui.push({ kind: "bossBar", s: b.sEnter, until: b.sDeath, hits: ctx.actions.filter((a) => a.bossHit).map((a) => a.s), name });
   }
   if (ctx.blastS !== undefined) {
     const p = heroAt(hero, warp.toWorld(ctx.blastS));
@@ -287,7 +288,8 @@ export function stage8(ctx: Ctx, kp: KillPlan): EmitResult {
       const t = timeOfBeatIndex(song, bi);
       const bar = barIndexFor(ctx, bi);
       const isDown = bar > 0 && ctx.idx.barStart[bar] === bi;
-      const inStop = hitStops.some(([a, b]) => t >= a - 1e-6 && t < b + HITSTOP_CLEARANCE * 0);
+      // A downbeat where a hit-stop starts is fine: the gems land on the impact itself.
+      const inStop = hitStops.some(([a, b]) => t > a + 1e-6 && t < b);
       if (isDown && !inStop) return t;
       bi++;
     }

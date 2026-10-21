@@ -113,7 +113,7 @@ export interface HudState {
   markers: { dt: number; size: number; kind: string }[];
   banners: { text: string; age: number; dur: number }[];
   title?: { age: number; remaining: number };
-  boss?: { hitsTaken: number; hits: number; age: number; remaining: number };
+  boss?: { name: string; hitsTaken: number; hits: number; age: number; remaining: number };
   end?: { age: number };
 }
 
@@ -779,7 +779,7 @@ export class Evaluator {
       if (u.s > s) break;
       if (u.kind === "banner" && s - u.s < u.dur) banners.push({ text: u.text, age: s - u.s, dur: u.dur });
       if (u.kind === "title" && s < u.until + 1.5) title = { age: s - u.s, remaining: u.until - s };
-      if (u.kind === "bossBar" && s < u.until + 1) boss = { hitsTaken: u.hits.filter((t) => t <= s).length, hits: u.hits.length, age: s - u.s, remaining: u.until - s };
+      if (u.kind === "bossBar" && s < u.until + 1) boss = { name: u.name, hitsTaken: u.hits.filter((t) => t <= s).length, hits: u.hits.length, age: s - u.s, remaining: u.until - s };
       if (u.kind === "end") end = { age: s - u.s };
     }
     const progress = clamp(s / plan.duration, 0, 1);

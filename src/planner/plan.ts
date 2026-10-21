@@ -103,7 +103,7 @@ export function plan(input: PlannerInput, opts: PlannerOptions = {}): Plan {
     enemies: crowd.enemies.length,
     hits: kp.hits.length,
     planMs: now() - t0,
-    dropped: crowd.dropped ?? 0,
+    stragglers: crowd.stragglers ?? 0,
   };
 
   const plan: Plan = {
@@ -148,6 +148,7 @@ export function plan(input: PlannerInput, opts: PlannerOptions = {}): Plan {
     title: ctx.level.title,
     actions: ctx.actions.map((a) => ({
       s: a.s,
+      bi: a.bi,
       w: a.w,
       kind: a.kind,
       move: a.move.id,

@@ -21,7 +21,7 @@ const { ok, text } = summarizeChecks(results);
 const st = plan.stats;
 console.log(`plan ${planHash(plan)} (seed ${plan.seed}) in ${ms.toFixed(0)} ms`);
 console.log(`  peak population      ${st.peakPopulation}`);
-console.log(`  enemies              ${st.enemies} (${st.dropped} dropped by the crowd simulation)`);
+console.log(`  enemies              ${st.enemies} (${st.stragglers} lunging the last stretch)`);
 console.log(`  kills per section    ${Object.entries(st.killsPerSection).map(([k, v]) => `${k} ${v}`).join(", ")}`);
 console.log(`  total hit-stop time  ${(st.totalHitStop * 1000).toFixed(0)} ms`);
 console.log(`  longest stretch without a primary event  ${st.longestGapWithoutPrimary.toFixed(2)} s`);

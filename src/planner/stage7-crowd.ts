@@ -7,7 +7,8 @@ import { nearestInside, pushOutDir, shapeBounds, shapeContains } from "../core/g
 import { Rng } from "../core/rng.ts";
 import { beatHit, beatSwell, smoothstep } from "../core/shaping.ts";
 import { barOfBeatIndex } from "../core/songmap.ts";
-import type { EnemyRecord, Hit } from "../plan/types.ts";
+import type { EnemyRecord, Hit, Plan } from "../plan/types.ts";
+import { enemyPos } from "../plan/sample.ts";
 import { PlanError, sectionIndexAt, type Ctx } from "./context.ts";
 import type { Agent, KillPlan } from "./stage6-kills.ts";
 import { heroAt, worldBeatIndex } from "./stage4-hero.ts";
@@ -29,7 +30,7 @@ const MIN_GAP = 0.6;
 /** The spacing check's limit (0.5 body widths) plus a little slack. */
 const HARD_GAP = 0.56;
 /** Enemies this close to a hit's shape when it fires count as caught (robust to interpolation). */
-const CONVERT_MARGIN = 3;
+const CONVERT_MARGIN = 6;
 /** Clearance the crowd keeps around formation members. */
 const FORMATION_ROOM = 34;
 /** Extra clearance around the boss so its big sprite stays readable. */
@@ -38,12 +39,12 @@ const BOSS_ROOM = 22;
 const SWORD_GUARD = 1.5;
 /** Keep-out applies to hits firing within this many world-seconds. */
 const KEEPOUT_WINDOW = 0.4;
+/** Keep-out lookahead for sword swings. */
+const SWING_KEEPOUT_WINDOW = 0.9;
 const PERSONAL_SPACE = 40;
 const MISS_LIMIT = 24;
-/** Simulation runs: the first, plus re-runs with 30% more lifetime for enemies that missed. */
-const MAX_RUNS = 2;
-/** Re-run only when more than this fraction of enemies missed; otherwise drop the few stragglers. */
-const RERUN_FRACTION = 0.005;
+/** Re-runs (of just the enemies that missed) with 30% more lifetime each time. */
+const RERUNS = 3;
 const DEBUG = typeof process !== "undefined" && !!process.env?.PS_DEBUG;
 export const missLog: string[] = [];
 
@@ -51,8 +52,8 @@ export interface CrowdResult {
   enemies: EnemyRecord[];
   samples: Float32Array;
   misses: number;
-  /** Enemies removed because they could not reach their targets. */
-  dropped?: number;
+  /** Enemies that lunged more than 24 px in their final blend after every re-run. */
+  stragglers?: number;
 }
 
 interface State {
@@ -77,6 +78,8 @@ interface State {
   holding: boolean;
   /** Spawned this step: it stays exactly on its (off-screen) spawn point. */
   fresh: boolean;
+  /** Replayed from a previous run (partial re-runs): moves by its old samples only. */
+  ghost: boolean;
   /** Cached separation push. */
   sx: number;
   sy: number;
@@ -90,19 +93,32 @@ const GROUP_STEPS = { eighth: 0.5, beat: 1, bar: -1, "two-bar": -2 } as const;
 export function simulateCrowd(ctx: Ctx, kp: KillPlan): CrowdResult {
   let result!: CrowdResult;
   const missedOf = (r: CrowdResult) => new Set(r.enemies.filter((e) => (e as EnemyRecord & { _missed?: boolean })._missed).map((e) => e.id));
-  for (let attempt = 0; attempt < MAX_RUNS; attempt++) {
-    result = runOnce(ctx, kp);
-    if (DEBUG) console.error(`crowd run ${attempt}: misses ${result.misses}`);
-    if (result.misses === 0) {
-      repairSpacing(kp, result);
-      return { ...result, dropped: 0 };
-    }
-    if (attempt === MAX_RUNS - 1 || result.misses <= kp.agents.length * RERUN_FRACTION) break;
-    // Give each missing enemy 30% more lifetime and re-run the whole simulation.
+  // Each run starts from the planned waypoints and fates; conversions from an earlier
+  // run must not leak into the next.
+  const snapshot = kp.agents.map((a) => ({
+    a,
+    waypoints: a.waypoints.map((w) => ({ ...w })),
+    fates: a.e.fates.map((f) => ({ ...f })),
+    deathW: a.e.deathW,
+    kinUntil: a.kinUntil,
+  }));
+  result = runOnce(ctx, kp);
+  if (DEBUG) console.error(`crowd run 0: misses ${result.misses}`);
+  // Up to three re-runs: each missing enemy gets 30% more lifetime (and steps in earlier);
+  // only the enemies that missed are re-simulated, against everyone else's paths.
+  for (let attempt = 1; attempt <= RERUNS && result.misses > 0; attempt++) {
     const missed = missedOf(result);
+    const byAgent = new Map(snapshot.map((sn) => [sn.a.e.id, sn]));
+    for (const list of kp.fatesByHit) for (let i = list.length - 1; i >= 0; i--) if (missed.has(list[i])) list.splice(i, 1);
     for (const ag of kp.agents) {
-      if (!missed.has(ag.e.id) || ag.exempt) continue;
-      // Step in earlier next time.
+      if (!missed.has(ag.e.id)) continue;
+      const sn = byAgent.get(ag.e.id)!;
+      ag.waypoints = sn.waypoints.map((w) => ({ ...w }));
+      ag.e.fates = sn.fates.map((f) => ({ ...f }));
+      ag.e.deathW = sn.deathW;
+      ag.kinUntil = sn.kinUntil;
+      for (const f of ag.e.fates) kp.fatesByHit[f.hit]?.push(ag.e.id);
+      if (ag.exempt) continue;
       ag.approachBoost = (ag.approachBoost ?? 1) * 1.8;
       const first = ag.waypoints[0];
       const L = (first.w - ag.e.spawnW) * 1.3;
@@ -114,11 +130,13 @@ export function simulateCrowd(ctx: Ctx, kp: KillPlan): CrowdResult {
       ag.spawnX = sp.x;
       ag.spawnY = sp.y;
     }
+    result = runOnce(ctx, kp, { only: missed, prev: result });
+    if (DEBUG) console.error(`crowd re-run ${attempt}: misses ${result.misses}`);
   }
-  // Enemies that still cannot make it are removed; their hits simply kill fewer.
-  const missed = missedOf(result);
-  if (missed.size > Math.max(10, kp.agents.length * 0.02)) {
-    const bad = result.enemies.filter((e) => missed.has(e.id));
+  // Any enemy still short of its target after three re-runs lunges the last stretch in the
+  // final blend. More than a handful means the plan itself is unworkable.
+  if (result.misses > Math.max(3, kp.agents.length * 0.01)) {
+    const bad = result.enemies.filter((e) => (e as EnemyRecord & { _missed?: boolean })._missed);
     throw new PlanError(
       `${bad.length} enemies could not reach their targets: ` +
         bad
@@ -127,21 +145,10 @@ export function simulateCrowd(ctx: Ctx, kp: KillPlan): CrowdResult {
           .join(", "),
     );
   }
-  kp.agents = kp.agents.filter((a) => !missed.has(a.e.id));
-  for (const list of kp.fatesByHit) for (let i = list.length - 1; i >= 0; i--) if (missed.has(list[i])) list.splice(i, 1);
-  const keep = result.enemies.filter((e) => !missed.has(e.id));
-  let total = 0;
-  for (const e of keep) total += e.sampleCount * 2;
-  const samples = new Float32Array(total);
-  let off = 0;
-  for (const e of keep) {
-    samples.set(result.samples.subarray(e.sampleOffset * 2, (e.sampleOffset + e.sampleCount) * 2), off);
-    e.sampleOffset = off / 2;
-    off += e.sampleCount * 2;
-  }
-  const out = { enemies: keep, samples, misses: 0, dropped: missed.size };
-  repairSpacing(kp, out);
-  return out;
+  for (const e of result.enemies) delete (e as EnemyRecord & { _missed?: boolean })._missed;
+  repairSpacing(kp, result);
+  resolveOverlaps(kp, result);
+  return { ...result, stragglers: result.misses };
 }
 
 /**
@@ -171,19 +178,19 @@ function repairSpacing(kp: KillPlan, r: CrowdResult): void {
   const hashOf = (cx: number, cy: number) => (((cx * 73856093) ^ (cy * 19349663)) >>> 0) % H;
   const locked = (e: EnemyRecord, k: number) => {
     const w = k / SAMPLE_RATE;
-    if (w >= e.deathW - 0.5 / SAMPLE_RATE) return true;
-    for (const f of e.fates) if (Math.abs(f.w - w) < 0.75 / SAMPLE_RATE) return true;
-    return false;
+    // Only samples from the moment of death on must stay exact (the body lies at its death spot).
+    return w >= e.deathW - 0.5 / SAMPLE_RATE;
   };
   let gen = 0;
+  const pairs: number[] = [];
   for (let k = 0; k <= maxK; k++) {
     const a0 = start[k];
     const a1 = start[k + 1];
     if (a1 - a0 < 2) continue;
-    // Iterate until no overlaps remain (dense clusters need a few passes).
-    for (let iter = 0, moved = true; iter < 6 && moved; iter++) {
-      moved = false;
-    gen++;
+    // Detect overlapping pairs with a hash, re-solve just those pairs a few times, and
+    // detect again only if anything moved.
+    for (let detect = 0; detect < 4; detect++) {
+      gen++;
       for (let m = a0; m < a1; m++) {
         const i = members[m];
         const o = (es[i].sampleOffset + k - k0[i]) * 2;
@@ -195,40 +202,63 @@ function repairSpacing(kp: KillPlan, r: CrowdResult): void {
         nextArr[m] = head[h];
         head[h] = m;
       }
+      pairs.length = 0;
       for (let m = a0; m < a1; m++) {
-      const i = members[m];
-      const oa = (es[i].sampleOffset + k - k0[i]) * 2;
-      const cx = Math.floor(s[oa] / 32);
-      const cy = Math.floor(s[oa + 1] / 32);
-      for (let gx = cx - 1; gx <= cx + 1; gx++)
-        for (let gy = cy - 1; gy <= cy + 1; gy++) {
-          const h = hashOf(gx, gy);
-          if (stamp[h] !== gen) continue;
-          for (let n = head[h]; n >= 0; n = nextArr[n]) {
-            if (n <= m) continue;
-            const j = members[n];
-            const ob = (es[j].sampleOffset + k - k0[j]) * 2;
-            const goal = HARD_GAP * (radius[i] + radius[j]);
-            const dx = s[oa] - s[ob];
-            const dy = s[oa + 1] - s[ob + 1];
-            const d2 = dx * dx + dy * dy;
-            if (d2 >= goal * goal) continue;
-            const la = locked(es[i], k);
-            const lb = locked(es[j], k);
-            if (la && lb) continue;
-            const d = Math.sqrt(d2) || 0.01;
-            const ux = d > 0.01 ? dx / d : 1;
-            const uy = d > 0.01 ? dy / d : 0;
-            const push = goal - d;
-            const wa = la ? 0 : lb ? 1 : 0.5;
-            if (goal - d > 0.2) moved = true;
-            s[oa] += ux * push * wa;
-            s[oa + 1] += uy * push * wa;
-            s[ob] -= ux * push * (1 - wa);
-            s[ob + 1] -= uy * push * (1 - wa);
+        const i = members[m];
+        const oa = (es[i].sampleOffset + k - k0[i]) * 2;
+        const cx = Math.floor(s[oa] / 32);
+        const cy = Math.floor(s[oa + 1] / 32);
+        for (let gx = cx - 1; gx <= cx + 1; gx++)
+          for (let gy = cy - 1; gy <= cy + 1; gy++) {
+            const h = hashOf(gx, gy);
+            if (stamp[h] !== gen) continue;
+            for (let n = head[h]; n >= 0; n = nextArr[n]) {
+              if (n <= m) continue;
+              const j = members[n];
+              const ob = (es[j].sampleOffset + k - k0[j]) * 2;
+              const goal = HARD_GAP * (radius[i] + radius[j]) + 2;
+              const dx = s[oa] - s[ob];
+              const dy = s[oa + 1] - s[ob + 1];
+              if (dx * dx + dy * dy < goal * goal) pairs.push(i, j);
+            }
           }
+      }
+      if (pairs.length === 0) break;
+      let movedAny = false;
+      for (let iter = 0, moved = true; iter < 10 && moved; iter++) {
+        moved = false;
+        for (let p = 0; p < pairs.length; p += 2) {
+          const i = pairs[p];
+          const j = pairs[p + 1];
+          const oa = (es[i].sampleOffset + k - k0[i]) * 2;
+          const ob = (es[j].sampleOffset + k - k0[j]) * 2;
+          const goal = HARD_GAP * (radius[i] + radius[j]);
+          const dx = s[oa] - s[ob];
+          const dy = s[oa + 1] - s[ob + 1];
+          const d2 = dx * dx + dy * dy;
+          if (d2 >= goal * goal) continue;
+          const la = locked(es[i], k);
+          const lb = locked(es[j], k);
+          if (la && lb) continue;
+          const d = Math.sqrt(d2) || 0.01;
+          const ux = d > 0.01 ? dx / d : 1;
+          const uy = d > 0.01 ? dy / d : 0;
+          const push = goal - d;
+          const wa = la ? 0 : lb ? 1 : 0.5;
+          if (push > 0.05) moved = true;
+          movedAny = true;
+          // A spawn sample may only budge a little: it must stay off-screen.
+          const ca = k === k0[i] ? 1.5 : Infinity;
+          const cb = k === k0[j] ? 1.5 : Infinity;
+          const pa = Math.min(push * wa, ca);
+          const pb = Math.min(push * (1 - wa), cb);
+          s[oa] += ux * pa;
+          s[oa + 1] += uy * pa;
+          s[ob] -= ux * pb;
+          s[ob + 1] -= uy * pb;
         }
-    }
+      }
+      if (!movedAny) break;
     }
   }
 }
@@ -245,8 +275,15 @@ function respawn(view: [number, number, number, number], ag: Agent, tx: number, 
   return cands[0];
 }
 
-function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
+/**
+ * One crowd simulation. With `partial`, only the `only` agents are simulated; everyone
+ * else is replayed from the previous run's samples as a fixed obstacle (a "ghost").
+ */
+function runOnce(ctx: Ctx, kp: KillPlan, partial?: { only: Set<number>; prev: CrowdResult }): CrowdResult {
   const warp = ctx.warp!;
+  const prevLayout = new Map<number, { off: number; w0: number; n: number }>();
+  if (partial) for (const e of partial.prev.enemies) prevLayout.set(e.id, { off: e.sampleOffset, w0: e.sampleW0, n: e.sampleCount });
+  const prevSamples = partial?.prev.samples;
   const hero = ctx.hero!;
   for (const ag of kp.agents)
     for (const wp of ag.waypoints) {
@@ -262,6 +299,7 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
 
   const states: State[] = kp.agents.map((ag) => ({
     ag,
+    ghost: partial !== undefined && !partial.only.has(ag.e.id),
     r: ag.def.radius,
     x: ag.spawnX,
     y: ag.spawnY,
@@ -292,6 +330,7 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
   const convertToFate = (st: State, h: Hit) => {
     const ag = st.ag;
     const e = ag.e;
+    if (DEBUG) missLog.push(`conv w=${h.w.toFixed(1)} ${h.source}:${h.what} next=${((ag.waypoints[st.wp]?.w ?? 0) - h.w).toFixed(2)} appr=${st.approach}`);
     // Caught at the edge: step just inside the shape so the death is covered.
     if (!shapeContains(h.shape, st.x, st.y, -0.5)) {
       const p = nearestInside(h.shape, st.x, st.y, 1);
@@ -302,10 +341,10 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
     kp.fatesByHit[h.id].push(e.id);
     // Enemies on their way to an appointment (archers, the boss) survive with a flinch.
     const appointmentAhead = ag.waypoints.slice(st.wp).some((wp) => wp.appointment);
-    // The sword is the star: a weapon never steals a victim the hero is about to cut down;
-    // it only makes it flinch.
+    // A victim on its way to its own sword kill is only knocked back by an earlier hit
+    // (sword or weapon): each swing keeps the victims it was planned with.
     const next = ag.waypoints[st.wp];
-    const swordSoon = h.source === "weapon" && next !== undefined && next.lethal && next.hit >= 0 && kp.hits[next.hit].source === "move" && next.w - h.w < SWORD_GUARD;
+    const swordSoon = (h.source === "weapon" || h.source === "move") && next !== undefined && next.lethal && next.hit >= 0 && kp.hits[next.hit].source === "move" && next.w - h.w < SWORD_GUARD;
     if (ag.def.size === "regular" && !(ag.kinematic && !ag.simulated) && !appointmentAhead && !swordSoon) {
       // Die here, now: drop the remaining waypoints and fates.
       const old = ag.waypoints.slice(st.wp);
@@ -347,7 +386,24 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
     return stamp[c] === curStep ? c : -1;
   };
 
-  for (let step = 0; step <= steps; step++) {
+  // A partial re-run only needs the span where its enemies are alive.
+  let firstStep = 0;
+  let lastStep = steps;
+  if (partial) {
+    let lo = Infinity;
+    let hi = -Infinity;
+    for (const st of states) {
+      if (st.ghost) continue;
+      lo = Math.min(lo, st.ag.e.spawnW);
+      hi = Math.max(hi, st.ag.e.deathW);
+    }
+    if (lo !== Infinity) {
+      firstStep = Math.max(0, Math.floor((lo * SIM_RATE) / 2) * 2 - 2);
+      lastStep = Math.min(steps, Math.ceil(hi * SIM_RATE) + 4);
+    }
+    while (firedPtr < hits.length && hits[firedPtr].w < firstStep * dt) firedPtr++;
+  }
+  for (let step = firstStep; step <= lastStep; step++) {
     const w = step * dt;
     // Spawn. Last step's spawns may move once their first sample is recorded.
     for (const st of active) if (st.firstSample >= 0) st.fresh = false;
@@ -361,6 +417,43 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
         st.y = p.y;
       }
       active.push(st);
+    }
+
+    // Ghosts follow their samples from the previous run.
+    if (prevSamples) {
+      for (const st of active) {
+        if (!st.ghost) continue;
+        const lay = prevLayout.get(st.ag.e.id)!;
+        if (w >= st.ag.e.deathW) st.done = true;
+        const f = Math.max(0, Math.min(lay.n - 1, (w - lay.w0) * SAMPLE_RATE));
+        const k = Math.min(lay.n - 2, Math.floor(f));
+        const u = lay.n > 1 ? f - k : 0;
+        const o = (lay.off + Math.max(0, k)) * 2;
+        st.x = prevSamples[o] + (lay.n > 1 ? (prevSamples[o + 2] - prevSamples[o]) * u : 0);
+        st.y = prevSamples[o + 1] + (lay.n > 1 ? (prevSamples[o + 3] - prevSamples[o + 1]) * u : 0);
+      }
+    }
+
+    // Record samples at 30 Hz: positions at this step's time, before anything moves.
+    const record = step % (SIM_RATE / SAMPLE_RATE) === 0;
+    if (record) {
+      const si = step / (SIM_RATE / SAMPLE_RATE);
+      for (const st of active) {
+        if (st.ghost) continue;
+        if (st.firstSample < 0) st.firstSample = si;
+        if (st.ag.kinematic && w <= st.ag.kinUntil && !st.done) {
+          const p = st.ag.kinematic(w);
+          st.x = p.x;
+          st.y = p.y;
+        }
+        st.samples.push(st.x, st.y);
+      }
+      for (let i = active.length - 1; i >= 0; i--) {
+        if (active[i].done) {
+          // One extra sample at the death position, then retire.
+          active.splice(i, 1);
+        }
+      }
     }
 
     // Rhythm multipliers per group.
@@ -423,7 +516,9 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
       const b = shapeBounds(hits[i].shape);
       const big = b[2] - b[0] > 180;
       upcoming.push({ h: hits[i], b, big });
-      if (hits[i].w - w <= KEEPOUT_WINDOW) {
+      // Sword swings are big: the waiting crowd starts clearing them earlier.
+      const window = hits[i].source === "move" ? SWING_KEEPOUT_WINDOW : KEEPOUT_WINDOW;
+      if (hits[i].w - w <= window) {
         keepout.push(upcoming[upcoming.length - 1]);
         ub0 = Math.min(ub0, b[0]);
         ub1 = Math.min(ub1, b[1]);
@@ -436,17 +531,18 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
       const h = hits[firedPtr++];
       if (h.source === "ring") continue;
       const b = shapeBounds(h.shape);
-      const cx0 = Math.floor(b[0] / cell);
-      const cx1 = Math.floor(b[2] / cell);
-      const cy0 = Math.floor(b[1] / cell);
-      const cy1 = Math.floor(b[3] / cell);
+      const pad = 20; // bodies that overlap the shape from a neighbouring cell
+      const cx0 = Math.floor((b[0] - pad) / cell);
+      const cx1 = Math.floor((b[2] + pad) / cell);
+      const cy0 = Math.floor((b[1] - pad) / cell);
+      const cy1 = Math.floor((b[3] + pad) / cell);
       for (let gx = cx0; gx <= cx1; gx++) {
         for (let gy = cy0; gy <= cy1; gy++) {
           const c = cellOf(gx, gy);
           if (c < 0) continue;
           for (let j = head[c]; j >= 0; j = next[j]) {
             const st = active[j];
-            if (st.done || st.fateHits.has(h.id) || !shapeContains(h.shape, st.x, st.y, CONVERT_MARGIN)) continue;
+            if (st.ghost || st.done || st.fateHits.has(h.id) || !shapeContains(h.shape, st.x, st.y, 0.5 * st.r + CONVERT_MARGIN)) continue;
             // Already dead by the time this hit lands (both fall in this step)?
             const cur = st.ag.waypoints[st.wp];
             if (cur && cur.lethal && cur.w <= h.w + 1e-9) continue;
@@ -480,7 +576,8 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
     }
     for (let i = 0; scan && i < active.length; i++) {
       const st = active[i];
-      if (st.done || (st.ag.kinematic && w <= st.ag.kinUntil)) continue;
+      // In a partial re-run, only pairs involving a re-simulated enemy matter.
+      if (st.ghost || st.done || (st.ag.kinematic && w <= st.ag.kinUntil)) continue;
       const cx = Math.floor(st.x / cell);
       const cy = Math.floor(st.y / cell);
       for (let gx = cx - 1; gx <= cx + 1; gx++) {
@@ -488,8 +585,8 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
           const c = cellOf(gx, gy);
           if (c < 0) continue;
           for (let j = head[c]; j >= 0; j = next[j]) {
-            if (j <= i) continue;
             const o = active[j];
+            if (j === i || (j < i && !o.ghost)) continue;
             if (o.done || (o.ag.kinematic && w <= o.ag.kinUntil)) continue;
             const ox = st.x - o.x;
             const oy = st.y - o.y;
@@ -527,7 +624,7 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
         continue;
       }
       if (st.done) continue;
-      if (st.fresh) continue;
+      if (st.fresh || st.ghost) continue;
       let wp = ag.waypoints[st.wp];
       while (wp && w >= wp.w - 1e-9 && !(wp.holdUntil !== undefined && w < wp.holdUntil)) {
         st.x = wp.x;
@@ -641,7 +738,8 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
       const nearHits = st.x > ub0 - st.r - 10 && st.x < ub2 + st.r + 10 && st.y > ub1 - st.r - 10 && st.y < ub3 + st.r + 10;
       for (const u of nearHits ? keepout : NONE) {
         if (st.fateHits.has(u.h.id)) continue;
-        if (u.h.w - w > KEEPOUT_WINDOW) continue;
+        const window = u.h.source === "move" ? SWING_KEEPOUT_WINDOW : KEEPOUT_WINDOW;
+        if (u.h.w - w > window) continue;
         // While stepping in, nothing is dodged; anyone caught is converted at hit time.
         if (approaching) continue;
         const b = u.b;
@@ -649,7 +747,7 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
         if (st.x < b[0] - mg || st.x > b[2] + mg || st.y < b[1] - mg || st.y > b[3] + mg) continue;
         if (!shapeContains(u.h.shape, st.x, st.y, mg)) continue;
         const dir = pushOutDir(u.h.shape, st.x, st.y);
-        const urgency = 1 - Math.max(0, u.h.w - w) / KEEPOUT_WINDOW;
+        const urgency = 1 - Math.max(0, u.h.w - w) / window;
         const f = 140 + 260 * urgency;
         dvx += dir.x * f;
         dvy += dir.y * f;
@@ -678,8 +776,8 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
         const uy = d > 0.01 ? oy / d : 0;
         // Idle enemies keep a comfortable gap; anyone stepping in only keeps the hard
         // minimum, and mostly makes the others yield. Blending enemies never move.
-        const ma = st.blendW >= 0 || st.holding || st.fresh ? 0 : st.approach ? 0.15 : 1;
-        const mb = o.blendW >= 0 || o.holding || o.fresh ? 0 : o.approach ? 0.15 : 1;
+        const ma = st.blendW >= 0 || st.holding || st.fresh || st.ghost ? 0 : st.approach ? 0.15 : 1;
+        const mb = o.blendW >= 0 || o.holding || o.fresh || o.ghost ? 0 : o.approach ? 0.15 : 1;
         if (ma + mb === 0) continue;
         const stepping = ma < 1 || mb < 1;
         const goal = stepping ? HARD_GAP * (st.r + o.r) : lim;
@@ -694,32 +792,28 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
       }
     }
 
-    // Record samples at 30 Hz.
-    const record = step % (SIM_RATE / SAMPLE_RATE) === 0;
-    if (record) {
-      const si = step / (SIM_RATE / SAMPLE_RATE);
-      for (const st of active) {
-        if (st.firstSample < 0) st.firstSample = si;
-        st.samples.push(st.x, st.y);
-      }
-      for (let i = active.length - 1; i >= 0; i--) {
-        if (active[i].done) {
-          // One extra sample at the death position, then retire.
-          active.splice(i, 1);
-        }
-      }
-    }
   }
 
   let total = 0;
-  for (const st of states) total += st.samples.length;
+  for (const st of states) total += st.ghost ? prevLayout.get(st.ag.e.id)!.n * 2 : st.samples.length;
   const samples = new Float32Array(total);
   let off = 0;
   let misses = 0;
   const enemies: EnemyRecord[] = [];
   for (const st of states) {
-    samples.set(st.samples, off);
     const e = st.ag.e;
+    if (st.ghost) {
+      const lay = prevLayout.get(e.id)!;
+      samples.set(prevSamples!.subarray(lay.off * 2, (lay.off + lay.n) * 2), off);
+      e.sampleOffset = off / 2;
+      e.sampleCount = lay.n;
+      e.sampleW0 = lay.w0;
+      off += lay.n * 2;
+      delete (e as EnemyRecord & { _missed?: boolean })._missed;
+      enemies.push(e);
+      continue;
+    }
+    samples.set(st.samples, off);
     e.sampleOffset = off / 2;
     e.sampleCount = st.samples.length / 2;
     // The first stored sample is at world time firstSample / SAMPLE_RATE.
@@ -732,4 +826,50 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
     enemies.push(e);
   }
   return { enemies, samples, misses };
+}
+
+/**
+ * Final guarantee of the no-pass-through rule, using the same interpolation the
+ * runtime draws with: an enemy whose body overlaps a hit it has no fate on takes
+ * that hit. Regular enemies die there; the boss, elites and archers on their way
+ * to a firing spot flinch.
+ */
+function resolveOverlaps(kp: KillPlan, r: CrowdResult): void {
+  const view = { enemySamples: r.samples, enemySampleRate: SAMPLE_RATE } as unknown as Plan;
+  const byId = new Map(kp.agents.map((a) => [a.e.id, a]));
+  const live = r.enemies.filter((e) => byId.has(e.id));
+  const sorted = [...live].sort((a, b) => a.spawnW - b.spawnW);
+  const pos = { x: 0, y: 0 };
+  for (const h of kp.hits) {
+    if (h.source === "ring") continue;
+    const b = shapeBounds(h.shape);
+    for (const e of sorted) {
+      if (e.spawnW > h.w) break;
+      if (h.w > e.deathW - 1e-6 || e.formation !== undefined) continue;
+      if (e.fates.some((f) => f.hit === h.id)) continue;
+      const ag = byId.get(e.id)!;
+      const margin = 0.5 * ag.def.radius;
+      enemyPos(view, e, h.w, pos);
+      if (pos.x < b[0] - 20 || pos.x > b[2] + 20 || pos.y < b[1] - 20 || pos.y > b[3] + 20) continue;
+      if (!shapeContains(h.shape, pos.x, pos.y, margin)) continue;
+      const spot = shapeContains(h.shape, pos.x, pos.y) ? { x: pos.x, y: pos.y } : nearestInside(h.shape, pos.x, pos.y, 1);
+      const next = e.fates.find((f) => f.w > h.w);
+      const appointmentAhead = ag.waypoints.some((wp) => wp.appointment && wp.w > h.w);
+      const swordSoon = (h.source === "weapon" || h.source === "move") && next !== undefined && next.lethal && kp.hits[next.hit].source === "move" && next.w - h.w < SWORD_GUARD;
+      if (ag.def.size === "regular" && !appointmentAhead && !swordSoon) {
+        for (const f of e.fates) if (f.w > h.w) {
+          const l = kp.fatesByHit[f.hit];
+          const i = l.indexOf(e.id);
+          if (i >= 0) l.splice(i, 1);
+        }
+        e.fates = e.fates.filter((f) => f.w < h.w);
+        e.fates.push({ w: h.w, x: spot.x, y: spot.y, hit: h.id, lethal: true });
+        e.deathW = h.w;
+      } else {
+        e.fates.push({ w: h.w, x: pos.x, y: pos.y, hit: h.id, lethal: false });
+        e.fates.sort((a, c) => a.w - c.w);
+      }
+      kp.fatesByHit[h.id].push(e.id);
+    }
+  }
 }

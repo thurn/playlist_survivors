@@ -67,6 +67,7 @@ export class AudioEngine implements SongClock {
   private timer?: ReturnType<typeof setInterval>;
   private clickBuffer?: AudioBuffer;
   private clickIdx = 0;
+  private duckEnd = -Infinity;
 
   constructor(
     readonly avOffsetMs = 0,
@@ -236,13 +237,19 @@ export class AudioEngine implements SongClock {
     src.connect(gain).connect(pan).connect(this.sfxBus);
     src.start(when);
     if (ev.duck) {
-      // Scheduled gain automation: the music dips under heavy impacts.
+      // Scheduled gain automation: the music dips under heavy impacts. Overlapping dips
+      // extend the hold rather than restarting from full volume.
       const g = this.musicGain.gain;
+      const ducked = when <= this.duckEnd;
       g.cancelScheduledValues(when);
-      g.setValueAtTime(g.value, when);
-      g.linearRampToValueAtTime(DUCK_GAIN, when + 0.01);
+      if (ducked) g.setValueAtTime(DUCK_GAIN, when);
+      else {
+        g.setValueAtTime(1, when);
+        g.linearRampToValueAtTime(DUCK_GAIN, when + 0.01);
+      }
       g.setValueAtTime(DUCK_GAIN, when + DUCK_S);
       g.linearRampToValueAtTime(1, when + DUCK_S + 0.08);
+      this.duckEnd = when + DUCK_S + 0.08;
     }
   }
 }

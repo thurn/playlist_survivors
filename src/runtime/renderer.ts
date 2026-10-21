@@ -76,6 +76,16 @@ class Pool<T extends Container> {
       this.parent.addChild(it);
     }
     it.visible = true;
+    // Reset everything a previous use may have set: frames never depend on earlier frames.
+    if (it instanceof Sprite) {
+      it.rotation = 0;
+      it.skew.set(0, 0);
+      it.scale.set(1);
+      it.anchor.set(0.5);
+      it.alpha = 1;
+      it.tint = 0xffffff;
+      it.zIndex = 0;
+    }
     this.used++;
     return it;
   }

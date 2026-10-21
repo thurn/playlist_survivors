@@ -19,6 +19,9 @@ const COMBO_COLORS: [number, number][] = [
 
 export class Hud {
   readonly root = new Container();
+  /** Everything except the letterbox bars; it pulses with the beat. */
+  private layer = new Container();
+  private bars = new Graphics();
   private g = new Graphics();
   private texts: PixelText[] = [];
   private used = 0;
@@ -29,7 +32,8 @@ export class Hud {
     readonly lib: ContentLibrary,
     credits: CreditsFile,
   ) {
-    this.root.addChild(this.g);
+    this.root.addChild(this.bars, this.layer);
+    this.layer.addChild(this.g);
     const r = credits.recording;
     const lines: Hud["creditLines"] = [];
     const push = (text: string, tint = 0xffffff, scale = 1) => lines.push({ text, tint, scale });
@@ -58,7 +62,7 @@ export class Hud {
     if (!t) {
       t = new PixelText();
       this.texts.push(t);
-      this.root.addChild(t);
+      this.layer.addChild(t);
     }
     this.used++;
     t.visible = true;
@@ -73,13 +77,13 @@ export class Hud {
   draw(f: Frame, out: { x: number; y: number; w: number; h: number }, options: { metronome: boolean }): void {
     const g = this.g;
     g.clear();
+    this.bars.clear();
     this.used = 0;
     const u = out.h / 540; // HUD pixels per base unit
     const px = (v: number) => out.x + v * u;
     const py = (v: number) => out.y + v * u;
     const hud = f.hud;
     const pulse = hud.free ? 0.5 + 0.5 * Math.cos(2 * Math.PI * hud.barPhase) : Math.exp(-6 * hud.beatPhase);
-    const scalePulse = 1 + 0.045 * pulse;
     const fs = Math.max(1, Math.round(u));
     const intro = smoothstep((f.s - 0.5) / 1.5);
     this.root.alpha = 1;
@@ -87,8 +91,13 @@ export class Hud {
     // Letterbox bars.
     const W = out.x * 2 + out.w;
     const H = out.y * 2 + out.h;
-    if (out.x > 0) g.rect(0, 0, out.x, H).rect(out.x + out.w, 0, out.x + 1, H).fill(0x000000);
-    if (out.y > 0) g.rect(0, 0, W, out.y).rect(0, out.y + out.h, W, out.y + 1).fill(0x000000);
+    if (out.x > 0) this.bars.rect(0, 0, out.x, H).rect(out.x + out.w, 0, out.x + 1, H).fill(0x000000);
+    if (out.y > 0) this.bars.rect(0, 0, W, out.y).rect(0, out.y + out.h, W, out.y + 1).fill(0x000000);
+    // The whole HUD scales up 3–6% on each beat (in song time), around the screen centre.
+    const hudScale = hud.end ? 1 : 1 + (0.03 + 0.03 * hud.energy) * pulse;
+    this.layer.pivot.set(out.x + out.w / 2, out.y + out.h / 2);
+    this.layer.position.set(out.x + out.w / 2, out.y + out.h / 2);
+    this.layer.scale.set(hudScale);
 
     if (!hud.end) {
       // XP bar along the top.
@@ -116,7 +125,7 @@ export class Hud {
       // Combo and kills.
       const comboCol = COMBO_COLORS.find(([n]) => hud.combo >= n)![1];
       this.text("COMBO", px(948), py(14), fs, 0xb0b0c0, "right", intro);
-      this.text(`${hud.combo}`, px(948), py(24), Math.round(2 * u * scalePulse), comboCol, "right", intro);
+      this.text(`${hud.combo}`, px(948), py(24), Math.round(2 * u), comboCol, "right", intro);
       this.text("KILLS", px(948), py(44), fs, 0xb0b0c0, "right", intro);
       this.text(`${hud.kills}`, px(948), py(54), Math.round(2 * u), 0xffffff, "right", intro);
       this.text(`PERFECT ${hud.perfects}`, px(948), py(74), fs, 0xffe060, "right", intro);
@@ -167,7 +176,7 @@ export class Hud {
         const left = 1 - hud.boss.hitsTaken / Math.max(1, hud.boss.hits);
         g.roundRect(px(480 - bw / 2 + 1), py(55), (bw - 2) * u * left, 8 * u, 3 * u).fill({ color: 0xc02030, alpha: a });
         for (let k = 1; k < hud.boss.hits; k++) g.rect(px(480 - bw / 2 + (bw * k) / hud.boss.hits), py(55), Math.max(1, u), 8 * u).fill({ color: 0x000000, alpha: 0.5 * a });
-        this.text("LORD OF THE REVEL", px(480), py(42), fs, 0xffc0c0, "center", a);
+        this.text(hud.boss.name, px(480), py(42), fs, 0xffc0c0, "center", a);
       }
     }
 

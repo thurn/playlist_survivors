@@ -22,6 +22,14 @@ export interface CheckResult {
 
 const MAX_REPORTED = 8;
 
+function timeAtBeatIndex(beats: Float64Array, i: number): number {
+  const n = beats.length;
+  if (i <= 0) return beats[0] + i * (beats[1] - beats[0]);
+  if (i >= n - 1) return beats[n - 1] + (i - (n - 1)) * (beats[n - 1] - beats[n - 2]);
+  const k = Math.floor(i);
+  return beats[k] + (i - k) * (beats[k + 1] - beats[k]);
+}
+
 function beatIndexFromBeats(beats: Float64Array, s: number): number {
   const n = beats.length;
   if (s <= beats[0]) return (s - beats[0]) / (beats[1] - beats[0]);
@@ -60,8 +68,10 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
     let n = 0;
     for (const a of plan.actions) {
       n++;
+      // The impact, mapped back through the warp, must land on its musical slot.
+      const slot = timeAtBeatIndex(plan.songBeats, a.bi);
       const back = warp.toSong(a.w);
-      if (Math.abs(back - a.s) > 0.001) f.push(`${a.move} at ${fmt(a.s)} lands at song time ${back.toFixed(4)}`);
+      if (Math.abs(back - slot) > 0.001) f.push(`${a.move} for the slot at ${fmt(slot)} lands at song time ${back.toFixed(4)}`);
       if (a.kind === "attack" || a.kind === "counter" || a.kind === "finisher") {
         // The impact frame must show on one of the two 60 Hz samples around the impact.
         const k = Math.round(a.w * plan.hero.rate);
@@ -123,8 +133,10 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
         if (h.w < e.spawnW || h.w > e.deathW - 1e-6) continue;
         if (fatesOnHit[h.id].has(id)) continue;
         enemyPos(plan, e, h.w, tmp);
-        if (tmp.x < b[0] - 2 || tmp.x > b[2] + 2 || tmp.y < b[1] - 2 || tmp.y > b[3] + 2) continue;
-        if (shapeContains(h.shape, tmp.x, tmp.y, -3)) f.push(`#${e.id} ${e.type} is inside ${h.what}'s ${h.shape.kind} at ${fmt(h.s)} without a fate on it`);
+        if (tmp.x < b[0] - 20 || tmp.x > b[2] + 20 || tmp.y < b[1] - 20 || tmp.y > b[3] + 20) continue;
+        // The body (half its radius around the centre) must stay clear, with 1 px of slack.
+        const def = lib.enemies.get(e.type)!;
+        if (shapeContains(h.shape, tmp.x, tmp.y, 0.5 * def.radius - 1)) f.push(`#${e.id} ${e.type} overlaps ${h.what}'s ${h.shape.kind} at ${fmt(h.s)} without a fate on it`);
       }
     }
     add("no pass-through", f, n);
@@ -259,6 +271,11 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
     const f: string[] = [];
     const prim = [...plan.actions.map((a) => a.s), ...plan.nearMisses.map((m) => m.s)].sort((a, b) => a - b);
     const stops = warp.hitStops();
+    // Secondary events (weapon, sweep and ring hits) never fire inside a hit-stop.
+    for (const h of plan.hits) {
+      if (h.primary) continue;
+      if (stops.some(([a, b]) => h.s > a + 1e-6 && h.s < b - 1e-6)) f.push(`${h.what} hit at ${fmt(h.s)} fires inside a hit-stop`);
+    }
     for (const [s0, s1] of stops) {
       const len = s1 - s0;
       if (len > HITSTOP_MAX + 1e-6) f.push(`hit-stop at ${fmt(s0)} lasts ${(len * 1000).toFixed(0)} ms (max 150)`);

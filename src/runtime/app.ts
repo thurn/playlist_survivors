@@ -47,6 +47,7 @@ export function readParams(search: string): Params {
 
 interface Overlay {
   root: HTMLDivElement;
+  sub: HTMLDivElement;
   status: HTMLDivElement;
   bar: HTMLDivElement;
   prompt: HTMLDivElement;
@@ -61,7 +62,7 @@ function makeOverlay(): Overlay {
   title.textContent = "PLAYLIST SURVIVORS";
   title.style.cssText = "font-size:clamp(28px,6vw,64px);letter-spacing:0.12em;color:#ffe080;text-shadow:0 0 24px #ff6a3c88;";
   const sub = document.createElement("div");
-  sub.textContent = "Orpheus in the Underworld — a tech demo";
+  sub.textContent = "a tech demo";
   sub.style.cssText = "color:#a8a0c8;";
   const barWrap = document.createElement("div");
   barWrap.style.cssText = "width:min(420px,80vw);height:6px;background:#1c1830;border-radius:3px;overflow:hidden;";
@@ -79,7 +80,7 @@ function makeOverlay(): Overlay {
   error.style.cssText = "display:none;max-width:min(900px,92vw);white-space:pre-wrap;text-align:left;color:#ff9090;background:#1a0a10;border:1px solid #ff606066;padding:12px 16px;border-radius:6px;font-size:13px;";
   root.append(style, title, sub, barWrap, status, prompt, error);
   document.body.appendChild(root);
-  return { root, status, bar, prompt, error };
+  return { root, sub, status, bar, prompt, error };
 }
 
 export interface DemoHook {
@@ -137,6 +138,7 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
       const songName = /^song: (\S+)/m.exec(lf.text)?.[1] ?? "";
       const sm = songMap(songName);
       const level = loadLevel(lf, lib, sm);
+      overlay.sub.textContent = `${level.title.piece} — a tech demo`;
       input = { songMap: sm, level, content: lib, seed: params.seed ?? level.seed, landmarks: landmarks(), version: __BUILD_VERSION__ };
     } catch (e) {
       throw e instanceof ContentError ? new Error(`Level script or content error:\n${e.message}`) : e;
@@ -253,9 +255,20 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
     setTimeout(() => overlay.root.remove(), 700);
     await audio!.start(plan);
     const clock: SongClock = audio!;
+    // The display's refresh period: a median of recent frame intervals, so a single long
+    // frame (or a return from a hidden tab) does not shift the picture ahead of the audio.
     let lastTs = 0;
+    const intervals: number[] = [];
+    let frameDur = 1000 / 60;
     const loop = (ts: number) => {
-      const frameDur = lastTs > 0 ? Math.min(50, ts - lastTs) : 1000 / 60;
+      if (lastTs > 0) {
+        const dt = ts - lastTs;
+        if (dt > 2 && dt < 100) {
+          intervals.push(dt);
+          if (intervals.length > 31) intervals.shift();
+          frameDur = [...intervals].sort((a, b) => a - b)[intervals.length >> 1];
+        }
+      }
       lastTs = ts;
       // Song time keeps running after the music ends, so the credits roll on.
       const s = clock.songTimeAtPresentation(ts, frameDur);

@@ -132,7 +132,7 @@ export type UiEvent =
   | { kind: "levelUp"; s: number; weapon: string }
   | { kind: "perfect"; s: number; x: number; y: number }
   | { kind: "weaponFire"; s: number; weapon: string }
-  | { kind: "bossBar"; s: number; until: number; hits: number[] }
+  | { kind: "bossBar"; s: number; until: number; hits: number[]; name: string }
   | { kind: "end"; s: number };
 
 export interface Projectile {
@@ -266,6 +266,8 @@ export interface Plan {
 
 export interface PlanAction {
   s: number;
+  /** Beat index of the musical slot the action was chosen for. */
+  bi: number;
   w: number;
   kind: string;
   move: string;
@@ -299,8 +301,8 @@ export interface PlanStats {
   enemies: number;
   hits: number;
   planMs: number;
-  /** Enemies the crowd simulation could not route and removed. */
-  dropped: number;
+  /** Enemies that lunged more than 24 px in their final blend after every crowd re-run. */
+  stragglers: number;
 }
 
 export type { Facing };

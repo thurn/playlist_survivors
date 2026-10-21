@@ -11,6 +11,13 @@ function move(ctx: Ctx, id: string): MoveDef {
   return m;
 }
 
+/** The strongest accent within 40 ms of song time s (0 if none). */
+function accentAt(ctx: Ctx, s: number): { strength: number; label?: string } {
+  let best = { strength: 0 } as { strength: number; label?: string };
+  for (const a of ctx.song.accents) if (Math.abs(a.time - s) <= 0.04 && a.strength > best.strength) best = { strength: a.strength, label: a.label };
+  return best;
+}
+
 function makeAction(ctx: Ctx, s: number, m: MoveDef, kind: ActionKind, extra: Partial<HeroAction> = {}): HeroAction {
   const section = sectionIndexAt(ctx, s);
   const bi = beatIndexAt(ctx.song, s);
@@ -199,7 +206,8 @@ export function stage2(ctx: Ctx): void {
     }
     // Death blow: the action on diesAt becomes a finisher.
     actions = actions.filter((a) => Math.abs(a.s - b.sDeath) > 0.04);
-    actions.push(makeAction(ctx, b.sDeath, move(ctx, "finisher"), "finisher", { bossHit: true }));
+    const da = accentAt(ctx, b.sDeath);
+    actions.push(makeAction(ctx, b.sDeath, move(ctx, "finisher"), "finisher", { bossHit: true, accent: da.strength, accentLabel: da.label }));
     // The remaining planned hits: the heaviest moves while the boss is present, spread evenly.
     const extra = Math.max(0, b.hits - counters.length - 1);
     const rank = { heavy: 3, medium: 2, light: 1 } as const;
@@ -240,7 +248,8 @@ export function stage2(ctx: Ctx): void {
   // The finale blast ends the hero's routine.
   if (ctx.blastS !== undefined) {
     actions = actions.filter((a) => a.s < ctx.blastS! - 0.04);
-    actions.push(makeAction(ctx, ctx.blastS, move(ctx, "burst"), "blast"));
+    const ba = accentAt(ctx, ctx.blastS);
+    actions.push(makeAction(ctx, ctx.blastS, move(ctx, "burst"), "blast", { accent: ba.strength, accentLabel: ba.label }));
   }
 
   actions.sort((a, b) => a.s - b.s);

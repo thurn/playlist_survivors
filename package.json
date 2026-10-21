@@ -22,8 +22,9 @@
     "check:determinism": "tsx scripts/check-plan.ts --determinism",
     "capture": "tsx scripts/capture.ts",
     "bench": "tsx scripts/bench.ts",
-    "check:all": "npm run check && npm run check:analysis && npm run check:songmap && npm run check:content && npm run check:assets && npm run check:determinism && npm run test:e2e",
-    "check:analysis": "uv run --directory tools/analysis pytest -q && uv run --directory tools/analysis ruff check ."
+    "check:all": "npm run check && npm run check:analysis && npm run check:songmap && npm run check:content && npm run check:assets && npm run check:determinism && npm run check:seeds && npm run test:e2e",
+    "check:analysis": "uv run --directory tools/analysis pytest -q && uv run --directory tools/analysis ruff check .",
+    "check:seeds": "tsx scripts/check-plan.ts --seed=1859 && tsx scripts/check-plan.ts --seed=7 && tsx scripts/check-plan.ts --seed=2024"
   },
   "dependencies": {
     "pixi.js": "^8.22.0",
