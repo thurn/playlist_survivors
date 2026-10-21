@@ -9,6 +9,8 @@ import type { MapLayout, MapProp, MapZone } from "../plan/types.ts";
 
 export const TILE = 32;
 export const CORRIDOR_HALF_WIDTH = 352;
+/** Zones blend over this many tiles, mixing both themes' tiles in noisy patches. */
+const BLEND_TILES = 8;
 const ROUTE_STEP = 8;
 const MARGIN = 1200;
 
@@ -196,7 +198,7 @@ function zoneAt(zones: MapZone[], d: number): number {
 /** The zone used for a point, with blending over 8 tiles around zone boundaries. */
 function blendedZone(zones: MapZone[], d: number, r01: number): number {
   const i = zoneAt(zones, d);
-  const blend = 8 * TILE;
+  const blend = BLEND_TILES * TILE;
   if (i + 1 < zones.length && d > zones[i].d1 - blend / 2) {
     const u = smoothstep((d - (zones[i].d1 - blend / 2)) / blend);
     return r01 < u ? i + 1 : i;

@@ -259,7 +259,7 @@ export function stage8(ctx: Ctx, kp: KillPlan): EmitResult {
     const land = ag.waypoints[0];
     fx("boss-land", b.sEnter, land.x, land.y, 0, 1);
     sfx("boss-land", b.sEnter, land.x, PRIORITY.boss, 1, true);
-    ui.push({ kind: "bossBar", s: b.sEnter, until: b.sDeath, hits: ag.e.fates.map((f) => hits[f.hit].s) });
+    ui.push({ kind: "bossBar", s: b.sEnter, until: b.sDeath, hits: ctx.actions.filter((a) => a.bossHit).map((a) => a.s) });
   }
   if (ctx.blastS !== undefined) {
     const p = heroAt(hero, warp.toWorld(ctx.blastS));
@@ -336,7 +336,7 @@ export function stage8(ctx: Ctx, kp: KillPlan): EmitResult {
     fx("gem-pickup", g.s1, p.x, p.y - 16, 0, 0.7);
     sfx("gem", g.s1, p.x, PRIORITY.ambient, 0.4);
   }
-  if (ctx.blastS !== undefined) ui.push({ kind: "end", s: finalArrival + 0.6 });
+  if (ctx.blastS !== undefined) ui.push({ kind: "end", s: finalArrival + 1.6 });
 
   // --------------------------------------------------- voice budget
   const bySlot = new Map<number, SoundEvent[]>();

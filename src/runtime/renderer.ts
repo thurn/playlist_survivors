@@ -49,8 +49,8 @@ const GRADES: Record<ZoneTheme["colorGrade"], Grade> = {
   twilight: { mul: [0.86, 0.92, 1.12], lift: [0.0, 0.01, 0.04], contrast: 1.05, saturation: 0.85 },
   neutral: { mul: [1.02, 1.0, 0.97], lift: [0, 0, 0], contrast: 1.04, saturation: 1.05 },
   autumn: { mul: [1.08, 0.98, 0.86], lift: [0.02, 0.01, 0], contrast: 1.06, saturation: 1.1 },
-  ember: { mul: [1.15, 0.9, 0.78], lift: [0.03, 0.0, 0.0], contrast: 1.1, saturation: 1.05 },
-  infernal: { mul: [1.2, 0.84, 0.72], lift: [0.05, 0.0, 0.0], contrast: 1.16, saturation: 1.1 },
+  ember: { mul: [1.1, 0.94, 0.84], lift: [0.02, 0.0, 0.0], contrast: 1.08, saturation: 1.0 },
+  infernal: { mul: [1.12, 0.9, 0.82], lift: [0.03, 0.0, 0.01], contrast: 1.1, saturation: 0.98 },
 };
 
 function rgb(c: number): [number, number, number] {
@@ -360,6 +360,15 @@ export class Renderer {
       const t = this.charTexture("hero", h.anim, h.facing, h.frame, false);
       if (t) {
         addShadow(h.x, h.y, 1 - h.z / 40);
+        // A soft ground ring keeps the hero easy to find in the thickest crowd.
+        const ring = this.pools.decal.next();
+        ring.texture = proc.get("glow")!;
+        ring.anchor.set(0.5);
+        ring.position.set(Math.round(h.x), Math.round(h.y));
+        ring.scale.set(1.6, 0.8);
+        ring.rotation = 0;
+        ring.tint = 0xfff0b0;
+        ring.alpha = 0.55;
         const sp = this.pools.sorted.next();
         sp.texture = t.tex;
         sp.anchor.set(t.a.anchorX / t.a.frameW, t.a.anchorY / t.a.frameH);

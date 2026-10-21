@@ -30,6 +30,8 @@ const MIN_GAP = 0.6;
 const HARD_GAP = 0.56;
 /** Enemies this close to a hit's shape when it fires count as caught (robust to interpolation). */
 const CONVERT_MARGIN = 3;
+/** Clearance the crowd keeps around formation members. */
+const FORMATION_ROOM = 34;
 /** Keep-out applies to hits firing within this many world-seconds. */
 const KEEPOUT_WINDOW = 0.4;
 const PERSONAL_SPACE = 40;
@@ -316,7 +318,8 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
   const stamp = new Int32Array(G * G).fill(-1);
   let next = new Int32Array(1024);
   let curStep = -1;
-  const pairs: number[] = [];
+  const pairs: State[] = [];
+  const dancing: State[] = [];
   let gox = 0;
   let goy = 0;
   const cellOf = (gx: number, gy: number) => {
@@ -383,6 +386,9 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
       head[c] = i;
     }
 
+    dancing.length = 0;
+    for (const st of active) if (st.ag.kinematic && w <= st.ag.kinUntil && !st.done) dancing.push(st);
+
     // Hits firing within the next beat.
     while (hitPtr < hits.length && hits[hitPtr].w < w) hitPtr++;
     const beatLen = Math.max(0.1, wb[Math.min(wb.length - 1, Math.floor(wbi) + 1)] - wb[Math.max(0, Math.floor(wbi))]);
@@ -441,6 +447,49 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
     const hpn = heroAt(hero, w + 0.1);
     const heroVx = (hpn.x - hp.x) * 10;
     const heroVy = (hpn.y - hp.y) * 10;
+
+    // One neighbour scan per step: symmetric separation forces, and the overlapping pairs
+    // that positional correction re-solves after movement.
+    const scan = (step & 1) === 0;
+    if (scan) {
+      pairs.length = 0;
+      for (let i = 0; i < active.length; i++) {
+        active[i].sx = 0;
+        active[i].sy = 0;
+      }
+    }
+    for (let i = 0; scan && i < active.length; i++) {
+      const st = active[i];
+      if (st.done || (st.ag.kinematic && w <= st.ag.kinUntil)) continue;
+      const cx = Math.floor(st.x / cell);
+      const cy = Math.floor(st.y / cell);
+      for (let gx = cx - 1; gx <= cx + 1; gx++) {
+        for (let gy = cy - 1; gy <= cy + 1; gy++) {
+          const c = cellOf(gx, gy);
+          if (c < 0) continue;
+          for (let j = head[c]; j >= 0; j = next[j]) {
+            if (j <= i) continue;
+            const o = active[j];
+            if (o.done || (o.ag.kinematic && w <= o.ag.kinUntil)) continue;
+            const ox = st.x - o.x;
+            const oy = st.y - o.y;
+            const lim = 0.8 * (st.r + o.r);
+            const d2 = ox * ox + oy * oy;
+            if (d2 >= lim * lim) continue;
+            const d = Math.sqrt(d2) || 0.01;
+            const k = 1 - d / lim;
+            const fa = k * (st.approach ? 25 : 90);
+            const fb = k * (o.approach ? 25 : 90);
+            st.sx += (ox / d) * fa;
+            st.sy += (oy / d) * fa;
+            o.sx -= (ox / d) * fb;
+            o.sy -= (oy / d) * fb;
+            const lc = MIN_GAP * (st.r + o.r) + 2;
+            if (d2 < lc * lc) pairs.push(st, o);
+          }
+        }
+      }
+    }
 
     for (let i = active.length - 1; i >= 0; i--) {
       const st = active[i];
@@ -536,36 +585,24 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
         dvx = td > 1e-6 ? (tx / td) * sp : 0;
         dvy = td > 1e-6 ? (ty / td) * sp : 0;
       }
-      // Separation (recomputed at 30 Hz, held in between).
-      if ((step & 1) === 0) {
-      let sepx = 0;
-      let sepy = 0;
-      const cx = Math.floor(st.x / cell);
-      const cy = Math.floor(st.y / cell);
-      for (let gx = cx - 1; gx <= cx + 1; gx++) {
-        for (let gy = cy - 1; gy <= cy + 1; gy++) {
-          const c = cellOf(gx, gy);
-          if (c < 0) continue;
-          for (let j = head[c]; j >= 0; j = next[j]) {
-            const o = active[j];
-            if (o === st || o.done) continue;
-            const ox = st.x - o.x;
-            const oy = st.y - o.y;
-            const lim = 0.8 * (st.r + o.r);
-            const d2 = ox * ox + oy * oy;
-            if (d2 >= lim * lim) continue;
-            const d = Math.sqrt(d2) || 0.01;
-            const f = (1 - d / lim) * (approaching ? 25 : 90);
-            sepx += (ox / d) * f;
-            sepy += (oy / d) * f;
-          }
+      // Separation comes from the shared neighbour scan; dancing formations get extra room.
+      let sepx = st.sx;
+      let sepy = st.sy;
+      if (!approaching)
+        for (const o of dancing) {
+          if (o === st) continue;
+          const ox = st.x - o.x;
+          const oy = st.y - o.y;
+          const lim = st.r + FORMATION_ROOM;
+          const d2 = ox * ox + oy * oy;
+          if (d2 >= lim * lim) continue;
+          const d = Math.sqrt(d2) || 0.01;
+          const f = (1 - d / lim) * 160;
+          sepx += (ox / d) * f;
+          sepy += (oy / d) * f;
         }
-      }
-      st.sx = sepx;
-      st.sy = sepy;
-      }
-      dvx += st.sx;
-      dvy += st.sy;
+      dvx += sepx;
+      dvy += sepy;
       // Personal space around the hero, except in the beat before one of its own fates.
       const hx = st.x - hp.x;
       const hy = st.y - hp.y;
@@ -601,33 +638,12 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
     }
 
     // Positional correction: push apart overlapping pairs (blending enemies hold their line).
-    // One neighbour scan collects the overlapping pairs; a few more passes re-solve just those.
-    pairs.length = 0;
-    for (let i = 0; i < active.length; i++) {
-      const st = active[i];
-      if (st.done || (st.ag.kinematic && w <= st.ag.kinUntil)) continue;
-      const cx = Math.floor(st.x / cell);
-      const cy = Math.floor(st.y / cell);
-      for (let gx = cx - 1; gx <= cx + 1; gx++) {
-        for (let gy = cy - 1; gy <= cy + 1; gy++) {
-          const c = cellOf(gx, gy);
-          if (c < 0) continue;
-          for (let j = head[c]; j >= 0; j = next[j]) {
-            if (j <= i) continue;
-            const o = active[j];
-            if (o.done || (o.ag.kinematic && w <= o.ag.kinUntil)) continue;
-            const lim = MIN_GAP * (st.r + o.r) + 2;
-            const ox = st.x - o.x;
-            const oy = st.y - o.y;
-            if (ox * ox + oy * oy < lim * lim) pairs.push(i, j);
-          }
-        }
-      }
-    }
+    // Re-solve the overlapping pairs found by the neighbour scan.
     for (let iter = 0; iter < 4; iter++) {
       for (let p = 0; p < pairs.length; p += 2) {
-        const st = active[pairs[p]];
-        const o = active[pairs[p + 1]];
+        const st = pairs[p];
+        const o = pairs[p + 1];
+        if (st.done || o.done) continue;
         const lim = MIN_GAP * (st.r + o.r);
         const ox = st.x - o.x;
         const oy = st.y - o.y;

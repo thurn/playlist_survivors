@@ -19,7 +19,8 @@
     "check:songmap": "uv run --project tools/analysis ps-analysis check songs/orpheus-galop/songmap.json",
     "check:content": "tsx scripts/check-content.ts",
     "check:plan": "tsx scripts/check-plan.ts",
-    "check:determinism": "tsx scripts/check-plan.ts --determinism"
+    "check:determinism": "tsx scripts/check-plan.ts --determinism",
+    "capture": "tsx scripts/capture.ts"
   },
   "dependencies": {
     "pixi.js": "^8.22.0",

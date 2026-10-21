@@ -1,17 +1,50 @@
-# Sound palettes. Sample ids name entries in public/assets/sfx/sounds.json.
+# Sound palettes. Sample ids name entries in public/assets/sfx/sounds.json
+# (see assets-src/sfx-catalogue.md). Event keys come from the planner's Stage 8.
 soundPalettes:
   - id: crisp-steel
     tuned: false
     sounds:
-      hit-light: [kenney/impactMetal_light_000]
-      hit-medium: [kenney/impactMetal_medium_000]
-      hit-heavy: [kenney/impactMetal_heavy_000]
-      kill-multi: [kenney/impactPunch_heavy_000]
-      near-miss: [kenney/impactSoft_medium_000]
+      hit-light: [kenney/impactMetal_light_000, kenney/impactMetal_light_001, kenney/impactMetal_light_002, kenney/impactMetal_light_004, rpg80/blade_01, rpg80/blade_02]
+      hit-medium: [kenney/impactMetal_medium_000, kenney/impactMetal_medium_003, rpg80/metal_02, rpg80/metal_03]
+      hit-heavy: [kenney/impactPlate_heavy_001, kenney/impactPlate_heavy_003, fantasy/Trap_00]
+      finisher: [fantasy/Trap_01]
+      burst: [rpgpack/magic1, rpg80/spell_01]
+      kill: [kenney/impactSoft_medium_000, kenney/impactSoft_medium_001, kenney/impactSoft_medium_003]
+      kill-multi: [kenney/impactPunch_heavy_000, kenney/impactPunch_heavy_001, kenney/impactPunch_heavy_002]
+      near-miss: [rpgpack/swing2, rpgpack/swing3]
+      dodge: [kenney/cloth2, kenney/cloth3]
+      arrow: [kenney/pluck_001, kenney/pluck_002]
+      boss-hit: [rpgpack/giant1, rpgpack/giant2, rpgpack/giant3]
+      boss-slam: [sot/bomb, rpg80/stones_01]
+      boss-land: [sot/bomb]
+      level-up: [fantasy/Jingle_Achievement_00]
+      blast: [sot/bomb]
+      weapon-blades: [kenney/knifeSlice, kenney/knifeSlice2, kenney/drawKnife1]
+      weapon-lightning: [rpg80/spell_02, rpg80/spell_01]
+      weapon-fire: [rpg80/spell_fire_01, rpg80/spell_fire_02, rpg80/spell_fire_03]
+      gem: [rpg80/item_gem_01, rpg80/item_gem_02, rpg80/item_gem_03, rpg80/item_gem_04]
+
+  # The slow prelude: pitched glass and bells, transposed to notes in the section's key.
   - id: soft-chimes
     extends: crisp-steel
     tuned: true
-    sounds: {}
+    gain: 0.8
+    sounds:
+      hit-light: [{ id: kenney/glass_001, rootNote: C6 }, { id: kenney/glass_002, rootNote: C6 }, { id: kenney/glass_003, rootNote: C6 }]
+      hit-medium: [{ id: kenney/impactGlass_medium_000, rootNote: E6 }, { id: kenney/impactGlass_medium_001, rootNote: E6 }, { id: kenney/impactGlass_medium_002, rootNote: E6 }]
+      hit-heavy: [{ id: kenney/impactBell_heavy_000, rootNote: C5 }, { id: kenney/impactBell_heavy_001, rootNote: C5 }]
+      burst: [{ id: kenney/impactBell_heavy_002, rootNote: C5 }, { id: sot/metal-bowl, rootNote: A4 }]
+      kill: [{ id: kenney/impactGlass_light_000, rootNote: G6 }, { id: kenney/impactGlass_light_001, rootNote: G6 }, { id: kenney/impactGlass_light_002, rootNote: G6 }]
+      kill-multi: [{ id: sot/metal-bowl, rootNote: A4 }]
+      gem: [{ id: kenney/impactGlass_light_003, rootNote: G6 }, { id: kenney/impactGlass_light_004, rootNote: G6 }]
+
+  # The climax: heavier, stonier impacts.
   - id: heavy-infernal
     extends: crisp-steel
-    sounds: {}
+    sounds:
+      hit-light: [kenney/impactMetal_light_000, kenney/impactMetal_light_003, kenney/impactPlate_light_003]
+      hit-medium: [kenney/impactPlate_medium_001, kenney/impactPlate_medium_004, kenney/chop]
+      hit-heavy: [fantasy/Trap_00, fantasy/Trap_02, kenney/impactMining_000]
+      kill: [kenney/impactSoft_heavy_000, kenney/impactSoft_heavy_001, kenney/impactSoft_heavy_002]
+      kill-multi: [kenney/impactPunch_heavy_003, kenney/impactPunch_heavy_004, rpg80/stones_02]
+      weapon-fire: [rpg80/spell_fire_04, rpg80/spell_fire_05, sot/fire]

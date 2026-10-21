@@ -47,7 +47,7 @@ zones:
       - { sprite: ruin-pillar, density: 0.006 }
       - { sprite: rock-small, density: 0.006, corridor: true }
       - { sprite: patch-lava, density: 0.004, corridor: true }
-    ambientLight: "#7a3a2e"
+    ambientLight: "#a06050"
     colorGrade: ember
     particles: rising-embers
     heatHaze: true
@@ -61,7 +61,7 @@ zones:
       - { sprite: ruin-wall, density: 0.006 }
       - { sprite: campfire, density: 0.004, light: { color: "#ffa040", radius: 90 }, corridor: true }
       - { sprite: rock-small, density: 0.006, corridor: true }
-    ambientLight: "#5a2a2a"
+    ambientLight: "#8a5248"
     colorGrade: infernal
     particles: rising-embers
     heatHaze: true
