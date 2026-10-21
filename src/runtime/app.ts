@@ -8,6 +8,7 @@ import { Evaluator } from "../plan/evaluate.ts";
 import type { Plan } from "../plan/types.ts";
 import type { PlannerInput } from "../planner/context.ts";
 import { checkPlan } from "../planner/checks.ts";
+import { planHash } from "../planner/plan.ts";
 import { loadGameAssets, type GameAssets } from "./assets.ts";
 import { AudioEngine, VirtualClock, type SongClock } from "./audio.ts";
 import { Hud } from "./hud.ts";
@@ -24,6 +25,8 @@ export interface Params {
   test: boolean;
   bench: boolean;
   checks: boolean;
+  /** Test hook: a level script name (levels/ or the broken fixtures). */
+  level?: string;
 }
 
 export function readParams(search: string): Params {
@@ -38,6 +41,7 @@ export function readParams(search: string): Params {
     test: q.has("test") || q.has("capture") || q.has("bench"),
     bench: q.has("bench"),
     checks: q.has("checks"),
+    level: q.get("level") ?? undefined,
   };
 }
 
@@ -83,6 +87,9 @@ export interface DemoHook {
   renderAt(s: number): Promise<void>;
   stats(): { frameMs: number[]; alive: number; particles: number };
   plan?: Plan;
+  planHash?: string;
+  planSource?: "cache" | "planner";
+  planMs?: number;
   checks?: () => { name: string; failures: string[] }[];
   bench?: Promise<BenchResult>;
 }
@@ -126,7 +133,7 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
     let input: PlannerInput;
     try {
       lib = loadContent(contentFiles());
-      const lf = levelFile();
+      const lf = levelFile(params.level);
       const songName = /^song: (\S+)/m.exec(lf.text)?.[1] ?? "";
       const sm = songMap(songName);
       const level = loadLevel(lf, lib, sm);
@@ -160,7 +167,9 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
     // 4. Plan (cached by input hash and build version).
     progress(0.68, "Planning the choreography");
     const key = await cacheKey([input, props]);
+    const tPlan = performance.now();
     let plan = await loadCachedPlan(key);
+    hook.planSource = plan ? "cache" : "planner";
     if (!plan) {
       plan = await new Promise<Plan>((resolve, reject) => {
         const worker = new Worker(new URL("./planWorker.ts", import.meta.url), { type: "module" });
@@ -175,6 +184,8 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
       await storePlan(key, plan);
     }
     hook.plan = plan;
+    hook.planMs = performance.now() - tPlan;
+    hook.planHash = planHash(plan);
     hook.checks = () => checkPlan(plan!, lib);
     if (audio) {
       progress(0.9, "Loading sounds");
