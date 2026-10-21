@@ -1,5 +1,5 @@
 # Sound palettes. Sample ids name entries in public/assets/sfx/sounds.json
-# (see assets-src/sfx-catalogue.md). Event keys come from the planner's Stage 8.
+# (see assets-src/sfx-catalogue.md). Event keys come from the planner's emission stage.
 soundPalettes:
   - id: crisp-steel
     tuned: false
@@ -14,6 +14,7 @@ soundPalettes:
       kill-multi: [kenney/impactPunch_heavy_000, kenney/impactPunch_heavy_001, kenney/impactPunch_heavy_002]
       near-miss: [rpgpack/swing2, rpgpack/swing3]
       dodge: [kenney/cloth2, kenney/cloth3]
+      step: [kenney/cloth2, kenney/cloth3]   # a soft rustle well under the music
       arrow: [kenney/pluck_001, kenney/pluck_002]
       boss-hit: [rpgpack/giant1, rpgpack/giant2, rpgpack/giant3]
       boss-slam: [sot/bomb, rpg80/stones_01]

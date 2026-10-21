@@ -1,11 +1,13 @@
 # The Can-Can roster. `atlas` names a sprite in public/assets/characters.json.
+# A light swing deals 1.0 damage before the groove bonus (up to +20%), so
+# health just above 1.0 dies to one swing only at a high groove.
 enemies:
   - id: slime
     atlas: slime
     radius: 10
     group: beat
     speed: 90
-    lifetime: [4, 30]
+    health: 0.8
     size: regular
     walkCycleBeats: 1
     hop: true
@@ -15,7 +17,7 @@ enemies:
     radius: 10
     group: eighth
     speed: 165
-    lifetime: [4, 30]
+    health: 0.6
     size: regular
     hover: 18
     walkCycleBeats: 0.5
@@ -25,7 +27,7 @@ enemies:
     radius: 11
     group: bar
     speed: 68
-    lifetime: [6, 40]
+    health: 0.6
     size: regular
     hover: 14
     walkCycleBeats: 2
@@ -35,7 +37,7 @@ enemies:
     radius: 9
     group: eighth
     speed: 180
-    lifetime: [3, 25]
+    health: 0.6
     size: regular
     hover: 16
     walkCycleBeats: 0.5
@@ -45,7 +47,7 @@ enemies:
     radius: 12
     group: beat
     speed: 112
-    lifetime: [4, 40]
+    health: 1.0
     size: regular
     death: { recipe: death-humanoid, debris: ["#5a8f3a", "#8b1a1a"] }
   - id: orc
@@ -53,7 +55,7 @@ enemies:
     radius: 13
     group: bar
     speed: 105
-    lifetime: [4, 40]
+    health: 1.15
     size: regular
     death: { recipe: death-humanoid, debris: ["#6a8a4a", "#8b1a1a"] }
   - id: orc-elite
@@ -61,16 +63,15 @@ enemies:
     radius: 14
     group: bar
     speed: 98
-    lifetime: [8, 40]
+    health: 3.0
     size: elite
-    hits: 3
     death: { recipe: death-elite, debris: ["#6a8a4a", "#8b1a1a", "#a0a0a8"] }
   - id: orc-ember
     atlas: orc-ember
     radius: 13
     group: bar
     speed: 108
-    lifetime: [4, 40]
+    health: 1.15
     size: regular
     death: { recipe: death-ember, debris: ["#ff7a2e", "#5a1a1a"] }
   - id: skeleton
@@ -78,7 +79,7 @@ enemies:
     radius: 12
     group: beat
     speed: 108
-    lifetime: [4, 40]
+    health: 1.0
     size: regular
     death: { recipe: death-skeleton, debris: ["#e8e0d0", "#a89880"] }
   - id: skeleton-ember
@@ -86,7 +87,7 @@ enemies:
     radius: 12
     group: beat
     speed: 108
-    lifetime: [4, 40]
+    health: 1.1
     size: regular
     death: { recipe: death-ember, debris: ["#ffb060", "#e8e0d0"] }
   - id: skeleton-archer
@@ -94,18 +95,18 @@ enemies:
     radius: 12
     group: bar
     speed: 120
-    lifetime: [6, 40]
+    health: 1.0
     size: regular
-    attack: archer
+    behavior: archer
     death: { recipe: death-skeleton, debris: ["#e8e0d0", "#a89880"] }
   - id: minotaur
     atlas: minotaur
     radius: 26
     group: two-bar
     speed: 70
-    lifetime: [10, 120]
+    health: 40
     size: boss
-    attack: slam
+    behavior: boss
     scale: 2
     walkCycleBeats: 4
     death: { recipe: death-boss, debris: ["#6a4a2a", "#8b1a1a", "#ffd080"] }

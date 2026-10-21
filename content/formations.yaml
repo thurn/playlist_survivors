@@ -8,7 +8,7 @@ formations:
     entranceBeats: 8
     step: beat
     dance: { animation: kick, on: beat, alternateLegs: true }
-    release: { at: finalAccentOfPhrase, phrases: 2, move: sweep, stagger: sixteenth }
+    release: { at: finalAccentOfPhrase, phrases: 2, mode: charge }
   - id: bee-wedge
     shape: v-wedge
     enemy: bee

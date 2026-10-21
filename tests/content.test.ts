@@ -7,12 +7,10 @@ import { syntheticSongMap } from "./fixtures/synthetic-song.ts";
 describe("content", () => {
   it("loads every content file", () => {
     const lib = loadRealContent();
-    expect(lib.moves.get("cleave")?.hitStopMs).toBe(110);
-    // galop-dashes inherits locomotion and rules from galop-steps.
-    const dashes = lib.movesets.get("galop-dashes")!;
-    expect(dashes.locomotion?.mode).toBe("step");
-    expect(dashes.attacks?.some((a) => "pattern" in a && a.moves.includes("dash-strike"))).toBe(true);
-    expect(dashes.attacks?.some((a) => "pattern" in a && a.moves.includes("slash"))).toBe(true);
+    expect(lib.hero.swings.heavy.hitStopMs).toBe(110);
+    expect(lib.enemies.get("orc")?.health).toBe(1.15);
+    expect(lib.enemies.get("minotaur")?.behavior).toBe("boss");
+    expect(lib.weapons.get("orbiting-blades")?.damage).toBe(0.6);
   });
 
   it("loads the level script with inherited section fields", () => {
@@ -22,6 +20,13 @@ describe("content", () => {
     expect(opening.zone).toBe("twilight-glade"); // inherited
     expect(opening.timeScale).toEqual({ from: 1, to: 1 }); // default, not inherited
     expect(level.sections[2].sfxPalette).toBe("crisp-steel");
+    // Movement settings: presses and pace inherit; the timing grid and heavy swings do not.
+    const repeat = level.sections[3];
+    expect(repeat.movement).toBe("steps");
+    expect(repeat.presses).toBe("xx");
+    expect(repeat.pace).toBe(55);
+    expect(opening.heavyOnAccents).toEqual({ minStrength: 0.7, label: "tutti-chord" });
+    expect(level.sections[2].heavyOnAccents).toEqual({ minStrength: 0.7, label: undefined });
   });
 
   it("rejects every broken fixture with a useful message", () => {

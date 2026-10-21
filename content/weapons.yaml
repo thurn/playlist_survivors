@@ -6,7 +6,7 @@ weapons:
     fires: { every: eighth }
     orbit: { count: 3, radius: 72, periodBars: 1 }
     hitShape: { kind: circle, radius: 14 }
-    killsPerFiring: [0, 0.12]    # per blade, at energy 0 and 1 (the sword is the star)
+    damage: 0.6                  # to each enemy a blade touches, on each eighth note
     weight: light
     effect: blades-hit
     sound: weapon-blades
@@ -18,7 +18,7 @@ weapons:
     fires: { every: bar }
     chain: { jumps: [2, 4], step: sixteenth, range: 110 }
     hitShape: { kind: circle, radius: 16 }
-    killsPerFiring: [1, 1]       # each jump kills its target
+    damage: 1.2                  # per jump
     weight: medium
     effect: lightning-hit
     sound: weapon-lightning
@@ -30,7 +30,7 @@ weapons:
     fires: { every: beat }
     trail: { beats: 2, spacing: 18 }
     hitShape: { kind: circle, radius: 20 }
-    killsPerFiring: [0, 0.1]     # per trail circle
+    damage: 0.4                  # per beat, to everything in the trail
     weight: light
     effect: fire-hit
     sound: weapon-fire
@@ -41,6 +41,7 @@ weapons:
     kind: blast
     fires: { every: sixteenth }
     blast: { beats: 1, step: sixteenth, radius: 900 }
+    damage: 1000                 # kills anything
     weight: heavy
     effect: blast-hit
     sound: blast

@@ -5,7 +5,8 @@ title: { piece: "x", composer: "y", performer: "z" }
 zones: [twilight-glade]
 sections:
   - section: prelude
-    moveset: spinning-glide
+    pace: 30
+    presses: "x."
     zone: twilight-glade
     population: [0, 10]
     roster: { bat: 1 }

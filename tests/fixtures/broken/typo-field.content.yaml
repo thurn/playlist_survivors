@@ -6,5 +6,6 @@ enemies:
     group: beat
     speed: 70
     lifetme: [4, 40]
+    health: 1
     size: regular
     death: { recipe: death-humanoid, debris: ["#5a8f3a"] }

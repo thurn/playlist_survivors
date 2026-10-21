@@ -1,9 +1,0 @@
-# expect: movesets.broken-steps.attacks.moves: unknown move "pirouette"
-movesets:
-  - id: broken-steps
-    locomotion: { mode: step, every: beat }
-    travelSpeed: 50
-    grid: eighth
-    attacks:
-      - pattern: "x.x."
-        moves: [pirouette]

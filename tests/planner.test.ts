@@ -1,17 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { checkPlan, summarizeChecks } from "../src/planner/checks.ts";
 import { planHash } from "../src/planner/plan.ts";
-import { Evaluator } from "../src/plan/evaluate.ts";
-import { plannerInput, runPlanner } from "../scripts/lib/plan-node.ts";
+import { checkCausality } from "../src/planner/sim-checks.ts";
+import { Warp } from "../src/core/warp.ts";
+import { heroSample } from "../src/plan/sample.ts";
+import { plannerInput, propsFromAtlas, runPlanner } from "../scripts/lib/plan-node.ts";
 import { syntheticSongMap } from "./fixtures/synthetic-song.ts";
 
-describe("planner on the synthetic song", () => {
+describe("simulated playthrough on the synthetic song", () => {
   const songMap = syntheticSongMap();
   const plan = runPlanner({ songMap });
+  const input = plannerInput({ songMap });
 
-  it("passes every output check", () => {
-    const res = checkPlan(plan, plannerInput({ songMap }).content);
-    const { ok, text } = summarizeChecks(res);
+  it("passes every check", () => {
+    const { ok, text } = summarizeChecks(checkPlan(plan, input.content));
     expect(ok, text).toBe(true);
   });
 
@@ -21,44 +23,44 @@ describe("planner on the synthetic song", () => {
     expect(again.map.hash).toBe(plan.map.hash);
   });
 
+  it("is causal: cutting the presses after T changes nothing before T", () => {
+    const r = checkCausality(input, { props: propsFromAtlas() });
+    expect(r.failures, r.failures.join("\n")).toEqual([]);
+  });
+
   it("ends with a finale that clears the horde", () => {
     const ring = plan.hits.filter((h) => h.source === "ring");
     expect(ring.length).toBeGreaterThan(0);
     const end = ring[ring.length - 1].w;
     expect(plan.enemies.every((e) => e.deathW <= end + 1e-6)).toBe(true);
-    expect(plan.hud.xpFill[plan.hud.xpFill.length - 1]).toBeCloseTo(1, 5);
   });
 
-  it("fills the XP bar exactly at each level-up", () => {
-    for (const lu of plan.hud.levelUps) {
-      let last = -1;
-      for (let i = 0; i < plan.hud.xpTimes.length; i++) if (plan.hud.xpTimes[i] <= lu + 1e-6) last = i;
-      if (last >= 0) expect(plan.hud.xpFill[last]).toBeCloseTo(1, 5);
+  it("stands still between steps", () => {
+    const warp = new Warp(plan.warp);
+    const sec = plan.sections.find((s) => s.label === "theme-a")!;
+    let checked = 0;
+    for (let i = 0; i + 1 < plan.songBeats.length && checked < 20; i++) {
+      const b0 = plan.songBeats[i];
+      const b1 = plan.songBeats[i + 1];
+      if (b0 < sec.s0 + 2 || b1 > sec.s1) continue;
+      // Inside one beat gap, after the step has landed and before the next press.
+      const a = heroSample(plan, warp.toWorld(b0 + 0.2));
+      const b = heroSample(plan, warp.toWorld(b0 + 0.27));
+      expect(Math.hypot(a.x - b.x, a.y - b.y), `beat at ${b0.toFixed(2)}`).toBeLessThan(1e-6);
+      checked++;
     }
+    expect(checked).toBe(20);
   });
-});
 
-describe("kick line", () => {
-  const songMap = syntheticSongMap();
-  const plan = runPlanner({ songMap });
-  const lib = plannerInput({ songMap }).content;
-  const ev = new Evaluator(plan, lib);
-  const sec = plan.sections.find((s) => s.label === "kick-line")!;
-  const beats = Array.from(plan.songBeats).filter((t) => t > sec.s0 + 4 && t < sec.s0 + 10);
-
-  it("kicks on the beat and stands between kicks", () => {
-    let onBeat = 0;
-    let standing = 0;
-    for (let i = 0; i + 1 < beats.length; i++) {
-      for (const e of ev.evaluate(beats[i] + 0.002).enemies) {
-        if (!e.anim.startsWith("kick")) continue;
-        onBeat++;
-        expect(e.frame, `${e.type} #${e.id} at ${beats[i].toFixed(2)} s`).toBe(2);
-      }
-      const late = beats[i] + 0.8 * (beats[i + 1] - beats[i]);
-      for (const e of ev.evaluate(late).enemies) if (e.anim.startsWith("kick") && e.frame === 0) standing++;
+  it("strikes one beat after the press that armed it, with the groove bonus", () => {
+    const armed = plan.swings.filter((s) => s.press !== undefined);
+    expect(armed.length).toBeGreaterThan(100);
+    for (const sw of armed) {
+      const p = plan.inputs[sw.press!];
+      expect(sw.s - p.s).toBeGreaterThanOrEqual(0.09 - 1e-9);
+      expect(sw.s - p.s).toBeLessThan(0.75);
     }
-    expect(onBeat).toBeGreaterThan(20);
-    expect(standing).toBeGreaterThan(0);
+    const late = plan.hits.filter((h) => h.source === "move" && h.s > 60);
+    expect(Math.min(...late.map((h) => h.damage))).toBeGreaterThan(1.1);
   });
 });

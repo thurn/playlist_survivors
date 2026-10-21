@@ -6,7 +6,7 @@ zones: [twilight-glade]
 sections:
   - section: prelude
     population: [0, 9000]
-    moveset: spinning-glide
+    pace: 30
     zone: twilight-glade
     roster: { bat: 1 }
     sfxPalette: soft-chimes

@@ -43,7 +43,7 @@ interface Hook {
   renderAt(s: number): Promise<void>;
   checks?: () => { name: string; failures: string[] }[];
   stats?: () => { alive: number; particles: number };
-  plan: { duration: number; songBeats: number[]; sections: { label: string; s0: number }[]; slams: { w1: number }[]; nearMisses: { s: number; kind: string }[]; actions: { s: number; kind: string }[] };
+  plan: { duration: number; songBeats: number[]; sections: { label: string; s0: number }[]; slams: { w1: number }[]; nearMisses: { s: number; kind: string }[]; swings: { s: number; kind: string }[]; hits: { s: number; source: string }[] };
 }
 const hook = (page: Page) => page.evaluate(() => (window as unknown as { __demo: Hook }).__demo);
 void hook;
@@ -280,19 +280,17 @@ await withDevServer(async (base) => {
     await page.evaluate(() => document.querySelectorAll("body > div:not(#app)").forEach((d) => d.remove()));
     const plan = await page.evaluate(() => {
       const p = (window as unknown as { __demo: Hook }).__demo.plan;
-      return { sections: p.sections, misses: p.nearMisses, actions: p.actions.filter((a) => a.kind !== "attack").map((a) => ({ s: a.s, kind: a.kind })) };
+      return { sections: p.sections, misses: p.nearMisses, heavy: p.swings.filter((a) => a.kind === "heavy").map((a) => a.s), blast: p.hits.find((h) => h.source === "ring")?.s };
     });
     const moments: [string, number][] = [];
     for (const s of plan.sections) moments.push([`section-${s.label}`, s.s0 + 0.6]);
     const arrow = plan.misses.find((m) => m.kind === "arrow");
     const slam = plan.misses.find((m) => m.kind === "slam");
-    const sweep = plan.actions.find((a) => a.kind === "sweep");
-    const finisher = plan.actions.find((a) => a.kind === "finisher");
-    const blast = plan.actions.find((a) => a.kind === "blast");
+    const cleave = plan.heavy[0];
+    const blast = plan.blast !== undefined ? { s: plan.blast } : undefined;
     if (arrow) moments.push(["archer-near-miss", arrow.s + 0.02]);
     if (slam) moments.push(["boss-slam-dodged", slam.s + 0.02]);
-    if (sweep) moments.push(["kick-line-sweep", sweep.s + 0.35]);
-    if (finisher) moments.push(["boss-death", finisher.s + 0.05]);
+    if (cleave !== undefined) moments.push(["first-cleave", cleave + 0.05]);
     if (blast) moments.push(["finale-blast", blast.s + 0.3]);
     moments.push(["end-card", 147]);
     for (const [name, t] of moments) {

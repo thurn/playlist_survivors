@@ -1,0 +1,14 @@
+# expect: weapons.broken-blades.effect: unknown effect "sparkle"
+weapons:
+  - id: broken-blades
+    name: Broken Blades
+    kind: orbit
+    fires: { every: eighth }
+    orbit: { count: 3, radius: 72, periodBars: 1 }
+    hitShape: { kind: circle, radius: 14 }
+    damage: 0.6
+    weight: light
+    effect: sparkle
+    sound: weapon-blades
+    icon: blades
+    color: "#bfe8ff"

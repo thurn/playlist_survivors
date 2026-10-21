@@ -1,23 +1,27 @@
 /**
- * The planner: a pure function from song map, level script and content to a
- * complete plan. Deterministic: the same inputs and seed always produce the
- * same plan hash.
+ * The planner: runs the simulated playthrough and records it as a plan. A pure
+ * function of the song map, level script, content, seed and skill profile:
+ * the same inputs always produce the same plan hash.
+ *
+ * 1. Resolve musical time and the song schedule.
+ * 2. Generate the map (the route length comes from the pace schedule).
+ * 3. Run the simulation with the virtual player.
+ * 4. Record the camera from the simulated hero (the camera runs inside the simulation).
+ * 5. Emit effects, sounds, gems and HUD data.
  */
 import { generateMap, type LandmarkPlacement, type TiledMap, type PropInfo } from "../mapgen/mapgen.ts";
-import type { Plan, PlanStats } from "../plan/types.ts";
+import type { MapLayout, Plan, PlanStats } from "../plan/types.ts";
 import { hash32 } from "../core/rng.ts";
-import { makeCtx, sectionIndexAt, type PlannerInput } from "./context.ts";
-import { stage1 } from "./stage1-musical.ts";
-import { stage2 } from "./stage2-actions.ts";
-import { stage3, progressAt, planHitStops } from "./stage3-warp.ts";
-import { stage4 } from "./stage4-hero.ts";
-import { stage5 } from "./stage5-camera.ts";
-import { stage6 } from "./stage6-kills.ts";
-import { simulateCrowd, SAMPLE_RATE } from "./stage7-crowd.ts";
-import { stage8 } from "./stage8-emit.ts";
+import { Warp } from "../core/warp.ts";
+import { makeCtx, sectionIndexAt, type Ctx, type PlannerInput } from "./context.ts";
+import { resolveEvents } from "./musical.ts";
+import { emit } from "./emit.ts";
 import { recipeLife } from "../plan/effects-life.ts";
+import { buildSchedule, paceAt, type Schedule } from "../sim/schedule.ts";
+import { ENEMY_RATE, simulate, type SimResult } from "../sim/simulate.ts";
+import { VirtualPlayer, type Player, type SkillProfile } from "../sim/player.ts";
 
-export const PLAN_FORMAT = "1";
+export const PLAN_FORMAT = "2";
 export const ACTIVE_BUCKET = 0.5;
 /** Enemies stay drawable this long after death (the fall animation). */
 export const DEATH_ANIM = 0.55;
@@ -27,22 +31,27 @@ export interface PlannerOptions {
   props?: Record<string, PropInfo>;
   /** Clock for timing only (performance.now); never affects output. */
   now?: () => number;
+  /** The virtual player's skill profile (default skilled). */
+  profile?: SkillProfile;
 }
 
-export function plan(input: PlannerInput, opts: PlannerOptions = {}): Plan {
-  const now = opts.now ?? (() => 0);
-  const t0 = now();
-  const ctx = makeCtx(input);
-  stage1(ctx);
-  stage2(ctx);
-  stage3(ctx);
+export interface SimRun {
+  ctx: Ctx;
+  sch: Schedule;
+  map: MapLayout;
+  sim: SimResult;
+}
 
-  // Map generation: needs the route schedule.
-  const warp = ctx.warp!;
+/** The song schedule and the map: everything the simulation needs before it starts. */
+export function prepare(input: PlannerInput, props?: Record<string, PropInfo>): { ctx: Ctx; sch: Schedule; map: MapLayout } {
+  const ctx = makeCtx(input);
+  resolveEvents(ctx);
+  const sch = buildSchedule(ctx);
+  // The route length comes from the pace schedule in song time, plus a margin for hit-stops.
   const zoneExt = new Map<string, { d0: number; d1: number }>();
   for (const sec of ctx.sections) {
-    const d0 = progressAt(ctx, warp.toWorld(sec.s0));
-    const d1 = progressAt(ctx, warp.toWorld(sec.s1));
+    const d0 = paceAt(sch, sec.s0);
+    const d1 = paceAt(sch, sec.s1);
     const z = zoneExt.get(sec.level.zone);
     if (z) z.d1 = d1;
     else zoneExt.set(sec.level.zone, { d0, d1 });
@@ -53,23 +62,52 @@ export function plan(input: PlannerInput, opts: PlannerOptions = {}): Plan {
     if (!e.ev.landmark) continue;
     const map = input.landmarks?.[e.ev.landmark] as TiledMap | undefined;
     if (!map) continue;
-    landmarks.push({ id: e.ev.landmark, d: progressAt(ctx, warp.toWorld(e.s)), map });
+    landmarks.push({ id: e.ev.landmark, d: paceAt(sch, e.s), map });
   }
-  const wEnd = warp.toWorld(ctx.duration);
-  ctx.map = generateMap({ seed: ctx.seed, routeLength: progressAt(ctx, wEnd) + 400, zones, themes: ctx.lib.zones, landmarks, props: opts.props });
+  const map = generateMap({ seed: ctx.seed, routeLength: paceAt(sch, ctx.duration) + 400, zones, themes: ctx.lib.zones, landmarks, props });
+  return { ctx, sch, map };
+}
 
-  stage4(ctx);
-  stage5(ctx);
-  const kp = stage6(ctx);
-  const crowd = simulateCrowd(ctx, kp);
-  const emitted = stage8(ctx, kp);
+/** The virtual player for a profile. */
+export function virtualPlayer(ctx: Ctx, sch: Schedule, profile: SkillProfile = "skilled"): VirtualPlayer {
+  return new VirtualPlayer(
+    ctx.lib.hero,
+    ctx.seed,
+    sch.slots,
+    ctx.sections.map((s) => ({ steps: s.level.movement === "steps", presses: s.level.presses })),
+    profile,
+  );
+}
+
+/** Run the simulation only (no emission): for the causality and determinism checks. */
+export function runSim(input: PlannerInput, opts: { props?: Record<string, PropInfo>; profile?: SkillProfile; player?: Player; cutS?: number; untilS?: number } = {}): SimRun {
+  const { ctx, sch, map } = prepare(input, opts.props);
+  const player = opts.player ?? virtualPlayer(ctx, sch, opts.profile);
+  const sim = simulate(ctx, sch, map, { player, cutS: opts.cutS, untilS: opts.untilS });
+  return { ctx, sch, map, sim };
+}
+
+export function plan(input: PlannerInput, opts: PlannerOptions = {}): Plan {
+  const now = opts.now ?? (() => 0);
+  const t0 = now();
+  const profile = opts.profile ?? "skilled";
+  const { ctx, sch, map } = prepare(input, opts.props);
+  const tSim = now();
+  const sim = simulate(ctx, sch, map, { player: virtualPlayer(ctx, sch, profile) });
+  const simMs = now() - tSim;
+  const warp = new Warp(sim.warp);
+  const wEnd = warp.toWorld(ctx.duration);
+  const hero = sim.hero;
+  const camera = sim.camera.track();
+  const emitted = emit(ctx, sim, warp, hero, camera);
 
   // Active-entity index: per bucket of world time.
   const nb = Math.ceil((wEnd + 2) / ACTIVE_BUCKET) + 1;
   const enemyBuckets: number[][] = Array.from({ length: nb }, () => []);
-  for (const e of crowd.enemies) {
+  for (const e of sim.enemies) {
     const b0 = Math.max(0, Math.floor(e.spawnW / ACTIVE_BUCKET));
-    const b1 = Math.min(nb - 1, Math.floor((e.deathW + DEATH_ANIM) / ACTIVE_BUCKET));
+    const end = Number.isFinite(e.deathW) ? e.deathW + (e.recycled ? 0 : DEATH_ANIM) : wEnd + 2;
+    const b1 = Math.min(nb - 1, Math.floor(end / ACTIVE_BUCKET));
     for (let b = b0; b <= b1; b++) enemyBuckets[b].push(e.id);
   }
   const effectBuckets: number[][] = Array.from({ length: nb }, () => []);
@@ -89,48 +127,66 @@ export function plan(input: PlannerInput, opts: PlannerOptions = {}): Plan {
     killsPerSection[lab] = (killsPerSection[lab] ?? 0) + 1;
   }
   let peak = 0;
-  for (const b of enemyBuckets) peak = Math.max(peak, b.length);
-  const stops = planHitStops(ctx);
-  const prim = [...ctx.actions.map((a) => a.s), ...ctx.threats.map((t) => t.sMiss)].sort((a, b) => a - b);
-  let gap = 0;
-  const galopStart = ctx.sections.find((s) => s.song.feel === "pulsed")?.s0 ?? 0;
-  for (let i = 1; i < prim.length; i++) if (prim[i - 1] >= galopStart) gap = Math.max(gap, prim[i] - prim[i - 1]);
+  for (let b = 0; b < nb; b++) {
+    const w = (b + 0.5) * ACTIVE_BUCKET;
+    let n = 0;
+    for (const id of enemyBuckets[b]) {
+      const e = sim.enemies[id];
+      if (w >= e.spawnW && w < e.deathW) n++;
+    }
+    peak = Math.max(peak, n);
+  }
+  const presses = sim.inputs.filter((i) => i.kind === "press" && !i.bend);
+  const ratings = { perfect: 0, great: 0, good: 0, none: 0 };
+  for (const p of presses) if (p.steps) ratings[p.rating ?? "none"]++;
+  let gSum = 0;
+  let gN = 0;
+  for (const sec of ctx.sections) {
+    if (sec.level.movement !== "steps") continue;
+    for (let s = sec.s0; s < Math.min(sec.s1, sim.blastS ?? Infinity); s += 0.25) {
+      gSum += grooveAt(sim.groove, s);
+      gN++;
+    }
+  }
   const stats: PlanStats = {
     peakPopulation: peak,
     killsPerSection,
-    totalHitStop: stops.reduce((a, h) => a + (h.s1 - h.s0), 0),
-    longestGapWithoutPrimary: gap,
-    enemies: crowd.enemies.length,
-    hits: kp.hits.length,
+    totalHitStop: sim.hitStops.reduce((a, h) => a + (h[1] - h[0]), 0),
+    enemies: sim.enemies.length,
+    hits: sim.hits.length,
+    swings: sim.swings.length,
+    presses: presses.length,
+    ratings,
+    averageGroove: gN > 0 ? gSum / gN : 0,
     planMs: now() - t0,
-    stragglers: crowd.stragglers ?? 0,
+    simMs,
   };
 
-  const plan: Plan = {
+  return {
     version: `${PLAN_FORMAT}:${input.version ?? "dev"}`,
     seed: ctx.seed,
     song: ctx.song.song,
     duration: ctx.duration,
-    warp: warp.breaks,
-    worldBeats: ctx.worldBeats!,
+    warp: sim.warp,
+    worldBeats: Float64Array.from(ctx.song.beats, (s) => warp.toWorld(s)),
     songBeats: Float64Array.from(ctx.song.beats),
     energy: Float32Array.from(ctx.song.energy),
     barStart: ctx.idx.barStart,
-    hero: ctx.hero!,
-    camera: ctx.camera!,
-    hits: kp.hits,
-    enemies: crowd.enemies,
-    enemySamples: crowd.samples,
-    enemySampleRate: SAMPLE_RATE,
+    hero,
+    camera,
+    hits: sim.hits,
+    enemies: sim.enemies,
+    enemySamples: sim.enemySamples,
+    enemySampleRate: ENEMY_RATE,
     events: { effects: emitted.effects, sounds: emitted.sounds, gems: emitted.gems, ui: emitted.ui },
     projectiles: emitted.projectiles,
     slams: emitted.slams,
-    chains: emitted.chains,
+    chains: sim.chains,
     activeBucket: ACTIVE_BUCKET,
     activeEnemies: enemyBuckets.map((b) => Uint32Array.from(b)),
     activeEffects: effectBuckets.map((b) => Uint32Array.from(b)),
     hud: emitted.hud,
-    map: ctx.map,
+    map,
     sections: ctx.sections.map((s) => ({
       label: s.label,
       population: s.level.population,
@@ -138,32 +194,37 @@ export function plan(input: PlannerInput, opts: PlannerOptions = {}): Plan {
       s1: s.s1,
       zone: s.level.zone,
       feel: s.song.feel,
+      movement: s.level.movement,
       intensity: s.level.intensity,
       sfxPalette: s.level.sfxPalette,
       key: s.song.key,
       banner: s.level.banner,
     })),
-    weapons: ctx.weaponsGranted,
+    weapons: sim.weaponsGranted,
     accents: ctx.song.accents.map((a) => ({ s: a.time, strength: a.strength, punch: ctx.sections[sectionIndexAt(ctx, a.time)].level.camera.punchOnAccents })),
     title: ctx.level.title,
-    actions: ctx.actions.map((a) => ({
-      s: a.s,
-      bi: a.bi,
-      w: a.w,
-      kind: a.kind,
-      move: a.move.id,
-      weight: a.move.weight,
-      anim: a.move.animation.name,
-      impactFrame: a.move.impactFrame ?? ctx.heroAnims[a.move.animation.name]?.impactFrame ?? 3,
-      hit: a.hit,
-      x: a.x,
-      y: a.y,
-      dir: a.dir,
-    })),
-    nearMisses: ctx.threats.map((t) => ({ s: t.sMiss, w: warp.toWorld(t.sMiss), kind: t.kind })),
+    profile,
+    pace: { rate: 120, d: Float32Array.from(sch.pace) },
+    grid: Float64Array.from(sch.strikeTimes),
+    swings: sim.swings,
+    inputs: sim.inputs,
+    groove: { s: Float64Array.from(sim.groove.s), v: Float32Array.from(sim.groove.v) },
+    nearMisses: [],
     stats,
   };
-  return plan;
+}
+
+/** The groove meter at song time s (its last value at or before s). */
+export function grooveAt(g: { s: ArrayLike<number>; v: ArrayLike<number> }, s: number): number {
+  let lo = 0;
+  let hi = g.s.length - 1;
+  if (hi < 0 || s < g.s[0]) return 0;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (g.s[mid] <= s) lo = mid;
+    else hi = mid - 1;
+  }
+  return g.v[lo];
 }
 
 /** A stable hash of the whole plan, for determinism checks and caching. */
@@ -172,15 +233,18 @@ export function planHash(p: Plan): string {
   const mixArr = (a: ArrayLike<number>) => {
     for (let i = 0; i < a.length; i++) h = hash32(h, Math.round(a[i] * 1000));
   };
-  h = hash32(h, p.version, p.seed, p.song);
+  h = hash32(h, p.version, p.seed, p.song, p.profile);
   for (const b of p.warp) h = hash32(h, Math.round(b.s * 1e6), Math.round(b.w * 1e6), Math.round(b.rate * 1e6));
   mixArr(p.hero.x);
   mixArr(p.hero.y);
   mixArr(p.hero.anim);
+  mixArr(p.hero.frame);
   mixArr(p.camera.x);
   mixArr(p.camera.zoom);
   mixArr(p.enemySamples);
-  for (const e of p.enemies) h = hash32(h, e.type, Math.round(e.spawnW * 1e4), Math.round(e.deathW * 1e4), e.fates.length);
+  for (const e of p.enemies) h = hash32(h, e.type, Math.round(e.spawnW * 1e4), Math.round((Number.isFinite(e.deathW) ? e.deathW : -1) * 1e4), e.fates.length);
+  for (const i of p.inputs) h = hash32(h, i.kind, i.key, Math.round(i.s * 1e5));
+  for (const sw of p.swings) h = hash32(h, Math.round(sw.s * 1e5), Math.round(sw.dir * 1e4), sw.hit);
   for (const ev of p.events.effects) h = hash32(h, ev.recipe, Math.round(ev.w * 1e4), Math.round(ev.x), ev.seed);
   for (const ev of p.events.sounds) h = hash32(h, ev.sample, Math.round(ev.s * 1e5), Math.round(ev.gain * 100));
   h = hash32(h, p.map.hash);

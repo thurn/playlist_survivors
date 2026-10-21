@@ -1,6 +1,10 @@
-# expect: duplicate id "slash"
-moves:
-  - id: slash
-    animation: { name: slash, fps: 16 }
-    hitShape: { kind: arc, radius: 56, degrees: 120 }
-    weight: light
+# expect: duplicate id "goblin"
+enemies:
+  - id: goblin
+    atlas: goblin
+    radius: 12
+    group: beat
+    speed: 70
+    health: 1
+    size: regular
+    death: { recipe: death-humanoid, debris: ["#5a8f3a"] }

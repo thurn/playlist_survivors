@@ -1,6 +1,7 @@
 /**
- * The plan: the planner's complete, immutable timeline of a level. The
- * runtime evaluates it at any song time without stepping state.
+ * The plan: the recording of a simulated playthrough, a complete, immutable
+ * timeline of a level. The runtime evaluates it at any song time without
+ * stepping state.
  */
 import type { Shape } from "../core/geometry.ts";
 import type { WarpBreak } from "../core/warp.ts";
@@ -39,13 +40,20 @@ export interface Fate {
   /** Index into Plan.hits. */
   hit: number;
   lethal: boolean;
+  /** Damage this hit dealt (after the groove bonus). */
+  damage: number;
 }
 
 export interface EnemyRecord {
   id: number;
   type: string;
+  /** Health at spawn. */
+  health: number;
   spawnW: number;
+  /** World time of death, or of leaving the field (recycled), or Infinity. */
   deathW: number;
+  /** Recycled: it left the field far behind the hero without dying (no death animation). */
+  recycled?: boolean;
   /** Offset of this enemy's (x, y) pairs in Plan.enemySamples, in samples. */
   sampleOffset: number;
   sampleCount: number;
@@ -62,7 +70,8 @@ export interface EnemyRecord {
   dance?: { w0: number; w1: number; anim: string; alternate: boolean; phase: number };
 }
 
-export type HitSource = "move" | "weapon" | "sweep" | "ring";
+/** The sword (a swing), an automatic weapon, a cleave's shockwave band, or a finale-blast band. */
+export type HitSource = "move" | "weapon" | "wave" | "ring";
 
 export interface Hit {
   id: number;
@@ -81,6 +90,8 @@ export interface Hit {
   accent: number;
   section: number;
   intensity: number;
+  /** Damage dealt to each enemy caught (after the groove bonus). */
+  damage: number;
 }
 
 export interface EffectEvent {
@@ -169,7 +180,7 @@ export interface Chain {
 export interface HudSeries {
   /** Song times of each kill (sorted). */
   kills: Float64Array;
-  /** Song times of each on-beat hero action (sorted). */
+  /** Song times of each press (sorted). */
   combo: Float64Array;
   perfect: Float64Array;
   /** Song time of each gem arrival and the XP bar fraction right after it. */
@@ -261,28 +272,72 @@ export interface Plan {
   /** Song times of accents with the camera punch flag. */
   accents: { s: number; strength: number; punch: boolean }[];
   title: { piece: string; composer: string; performer: string };
-  /** Hero actions (primary events) in time order. */
-  actions: PlanAction[];
+  /** The virtual player's skill profile. */
+  profile: string;
+  /** The pace point's route distance, sampled `rate` times per song second. */
+  pace: { rate: number; d: Float32Array };
+  /** Every timing-grid time (song time): swings strike on these. */
+  grid: Float64Array;
+  /** Sword swings in strike order. */
+  swings: PlanSwing[];
+  /** Every key press and release, in time order. */
+  inputs: PlanInput[];
+  /** The groove meter (0–1) after each change, at song times. */
+  groove: { s: Float64Array; v: Float32Array };
   /** Near misses (primary events). */
   nearMisses: { s: number; w: number; kind: "arrow" | "slam" }[];
   /** Song-time beat index of every sixteenth slot is beatIndex × 4. */
   stats: PlanStats;
 }
 
-export interface PlanAction {
-  s: number;
-  /** Beat index of the musical slot the action was chosen for. */
-  bi: number;
-  w: number;
-  kind: string;
-  move: string;
-  weight: "light" | "medium" | "heavy";
-  anim: string;
-  impactFrame: number;
-  hit?: number;
+export interface AimSnapshot {
+  /** Hero position and facing (radians) at the start of the wind-up. */
   x: number;
   y: number;
+  facing: number;
+  /** Enemies near enough to matter: x, y, body radius and aim weight per enemy. */
+  targets: number[];
+}
+
+export interface PlanSwing {
+  /** Song and world time of the strike (on the grid). */
+  s: number;
+  w: number;
+  /** Song time the swing was armed (its press, or the automatic trigger) and its wind-up began. */
+  sArmed: number;
+  sWind: number;
+  kind: "light" | "heavy";
+  anim: string;
+  impactFrame: number;
+  /** Aim direction (radians), chosen at the start of the wind-up. */
   dir: number;
+  /** Hero position at the strike. */
+  x: number;
+  y: number;
+  /** Index into Plan.hits. */
+  hit: number;
+  /** Index into Plan.inputs of the press that armed it (undefined for automatic swings). */
+  press?: number;
+  /** Accent strength at the strike (0 if none). */
+  accent: number;
+  aim: AimSnapshot;
+}
+
+export interface PlanInput {
+  s: number;
+  w: number;
+  kind: "press" | "release";
+  key: "up" | "down" | "left" | "right";
+  /** Rated presses (step movement): the rating, accuracy and offset from the grid (song seconds). */
+  rating?: "perfect" | "great" | "good";
+  accuracy?: number;
+  delta?: number;
+  /** A diagonal's second key, which bent the step instead of starting a new one. */
+  bend?: boolean;
+  /** Did this press arm a swing? */
+  armed?: boolean;
+  /** Step movement (true) or free movement (false). */
+  steps: boolean;
 }
 
 export interface PlanSection {
@@ -292,6 +347,7 @@ export interface PlanSection {
   s1: number;
   zone: string;
   feel: "pulsed" | "free";
+  movement: "steps" | "free";
   intensity: number;
   sfxPalette: string;
   key?: string;
@@ -302,12 +358,15 @@ export interface PlanStats {
   peakPopulation: number;
   killsPerSection: Record<string, number>;
   totalHitStop: number;
-  longestGapWithoutPrimary: number;
   enemies: number;
   hits: number;
+  swings: number;
+  presses: number;
+  ratings: { perfect: number; great: number; good: number; none: number };
+  /** Mean groove over step sections. */
+  averageGroove: number;
   planMs: number;
-  /** Enemies that lunged more than 24 px in their final blend after every crowd re-run. */
-  stragglers: number;
+  simMs: number;
 }
 
 export type { Facing };

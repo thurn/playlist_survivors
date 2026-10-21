@@ -13,14 +13,12 @@ import {
   type FormationDef,
   type HeroDef,
   type LevelScriptInput,
-  type MoveDef,
-  type MovesetDef,
   type MusicalRef,
   type SoundPalette,
   type WeaponDef,
   type ZoneTheme,
 } from "./schema.ts";
-import type { SongMap } from "../core/songmap.ts";
+import { indexSong, type SongMap } from "../core/songmap.ts";
 
 export interface SourceFile {
   name: string;
@@ -111,8 +109,6 @@ interface Origin {
 export interface ContentLibrary {
   /** The hero's movement model, timing, groove and swings (exactly one content file defines it). */
   hero: HeroDef;
-  moves: Map<string, MoveDef>;
-  movesets: Map<string, MovesetDef>;
   enemies: Map<string, EnemyDef>;
   weapons: Map<string, WeaponDef>;
   formations: Map<string, FormationDef>;
@@ -122,7 +118,7 @@ export interface ContentLibrary {
 }
 
 type Kind = Exclude<keyof ContentLibrary, "hero">;
-const KINDS: Kind[] = ["moves", "movesets", "enemies", "weapons", "formations", "effects", "soundPalettes", "zones"];
+const KINDS: Kind[] = ["enemies", "weapons", "formations", "effects", "soundPalettes", "zones"];
 
 function resolveExtends<T extends { id: string; extends?: string }>(
   kind: string,
@@ -156,18 +152,6 @@ function resolveExtends<T extends { id: string; extends?: string }>(
     return merged;
   };
   for (const key of [...defs.keys()]) visit(key, []);
-}
-
-export function mergeMoveset(parent: MovesetDef, child: MovesetDef): MovesetDef {
-  const out: MovesetDef = { ...parent };
-  for (const [k, v] of Object.entries(child)) {
-    if (v === undefined || k === "attacks") continue;
-    (out as Record<string, unknown>)[k] = v;
-  }
-  out.attacks = [...(parent.attacks ?? []), ...(child.attacks ?? [])];
-  out.extends = undefined;
-  out.id = child.id;
-  return out;
 }
 
 export function loadContent(files: SourceFile[]): ContentLibrary {
@@ -206,7 +190,6 @@ export function loadContent(files: SourceFile[]): ContentLibrary {
     }
   }
 
-  resolveExtends("movesets", lib.movesets, origins.movesets, issues, mergeMoveset);
   resolveExtends("soundPalettes", lib.soundPalettes, origins.soundPalettes, issues, (p, c) => ({
     ...p,
     ...c,
@@ -224,31 +207,8 @@ export function loadContent(files: SourceFile[]): ContentLibrary {
       issues.push({ ...o, path: `${kind}.${defId}.${field}`, message: `unknown ${target.replace(/s$/, "")} "${value}"` });
     }
   };
-  for (const [k, m] of lib.moves) {
-    ref("moves", k, "effect", "effects", m.effect);
-    ref("moves", k, "extraEffect", "effects", m.extraEffect);
-    if (!m.dodge && !m.hitShape) issues.push({ ...origins.moves.get(k)!, path: `moves.${k}.hitShape`, message: "attacking moves need a hitShape" });
-    if (m.weight === "heavy" && m.hitStopMs === undefined) issues.push({ ...origins.moves.get(k)!, path: `moves.${k}.hitStopMs`, message: "heavy moves need hitStopMs" });
-  }
-  for (const [k, ms] of lib.movesets) {
-    const o = origins.movesets.get(k)!;
-    if (!ms.locomotion) issues.push({ ...o, path: `movesets.${k}.locomotion`, message: "locomotion is required (directly or through extends)" });
-    if (ms.travelSpeed === undefined) issues.push({ ...o, path: `movesets.${k}.travelSpeed`, message: "travelSpeed is required" });
-    for (const a of ms.attacks ?? []) {
-      if ("pattern" in a) {
-        a.moves.forEach((mv) => ref("movesets", k, "attacks.moves", "moves", mv));
-        if (!ms.grid) issues.push({ ...o, path: `movesets.${k}.grid`, message: "pattern attacks need a grid" });
-      } else if ("onAccent" in a) ref("movesets", k, "attacks.onAccent.move", "moves", a.onAccent.move);
-      else ref("movesets", k, "attacks.onSectionEnd", "moves", a.onSectionEnd);
-    }
-    ref("movesets", k, "continuous.move", "moves", ms.continuous?.move);
-    ref("movesets", k, "onAnchor.move", "moves", ms.onAnchor?.move);
-  }
   for (const [k, e] of lib.enemies) {
     ref("enemies", k, "death.recipe", "effects", e.death.recipe);
-    if (e.size !== "regular" && e.hits === undefined && e.size === "elite") {
-      issues.push({ ...origins.enemies.get(k)!, path: `enemies.${k}.hits`, message: "elite enemies need hits" });
-    }
   }
   for (const [k, w] of lib.weapons) {
     ref("weapons", k, "effect", "effects", w.effect);
@@ -259,7 +219,6 @@ export function loadContent(files: SourceFile[]): ContentLibrary {
   }
   for (const [k, f] of lib.formations) {
     ref("formations", k, "enemy", "enemies", f.enemy);
-    if ("move" in f.release) ref("formations", k, "release.move", "moves", f.release.move);
   }
 
   if (issues.length > 0) throw new ContentError(issues);
@@ -272,7 +231,14 @@ export interface ResolvedSection {
   /** Song-map section label. */
   label: string;
   bars: [number, number];
-  moveset: string;
+  /** Step movement (one step per press) or free movement (held keys walk). */
+  movement: "steps" | "free";
+  /** Route speed of the pace point, world pixels per world-second. */
+  pace: number;
+  /** The skilled player's presses per timing-grid slot of each bar: x presses, . rests. */
+  presses: string;
+  timingGrid: "eighth" | "beat" | "bar";
+  heavyOnAccents: { minStrength: number; label?: string };
   zone: string;
   timeScale: { from: number; to: number };
   population: [number, number];
@@ -351,7 +317,6 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap): Le
       issues.push({ ...at(path), message: "a section needs bars or section" });
       return;
     }
-    need([...path, "moveset"], "movesets", s.moveset);
     need([...path, "zone"], "zones", s.zone);
     need([...path, "sfxPalette"], "soundPalettes", s.sfxPalette);
     for (const t of Object.keys(s.roster ?? {})) need([...path, "roster", t], "enemies", t);
@@ -364,13 +329,32 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap): Le
     if (!roster) issues.push({ ...at(path), message: "the first section must set roster" });
     if (!sfx) issues.push({ ...at(path), message: "the first section must set sfxPalette" });
     const ts = s.timeScale ?? 1;
+    const timeScale = typeof ts === "number" ? { from: ts, to: ts } : ts;
     const cam = { zoom: 1, lead: 60, punchOnAccents: false, ...(prev?.camera ?? {}), ...(s.camera ?? {}) };
+    const feel = song.sections.find((x) => x.label === label)!.feel;
+    const movement = s.movement ?? (feel === "free" ? "free" : "steps");
+    const pace = s.pace ?? prev?.pace;
+    const presses = s.presses ?? prev?.presses;
+    if (pace === undefined) issues.push({ ...at(path), message: "the first section must set pace" });
+    if (presses === undefined && movement === "steps") issues.push({ ...at(path), message: "a step section needs presses (set here or on an earlier section)" });
+    const timingGrid = s.timingGrid ?? "beat";
+    if (pace !== undefined && presses !== undefined && movement === "steps") {
+      const err = paceError(song, bars, timingGrid, presses, pace, (timeScale.from + timeScale.to) / 2, lib.hero?.step.length ?? 44);
+      if (err) issues.push({ ...at(s.pace !== undefined ? [...path, "pace"] : path), path: "", message: `section ${label}: ${err}` });
+    }
+    if (pace !== undefined && movement === "free" && lib.hero && pace > 0.9 * lib.hero.walk.speed) {
+      issues.push({ ...at(s.pace !== undefined ? [...path, "pace"] : path), path: "", message: `section ${label}: pace ${pace} is more than 90% of the walking speed (${lib.hero.walk.speed})` });
+    }
     const r: ResolvedSection = {
       label,
       bars,
-      moveset: s.moveset,
+      movement,
+      pace: pace ?? 0,
+      presses: presses ?? "x",
+      timingGrid,
+      heavyOnAccents: { minStrength: s.heavyOnAccents?.minStrength ?? 0.7, label: s.heavyOnAccents?.label },
       zone: zone ?? "",
-      timeScale: typeof ts === "number" ? { from: ts, to: ts } : ts,
+      timeScale,
       population: s.population,
       roster: roster ?? {},
       camera: cam,
@@ -421,6 +405,29 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap): Le
     eventLines: data.events.map((_, i) => lineOf(p, ["events", i])),
     file: f.name,
   };
+}
+
+/** At most this fraction of a skilled player's steps go forward along the route. */
+export const FORWARD_SHARE = 0.8;
+
+/**
+ * Why a step section's pace is out of reach, or undefined: forward progress
+ * can be at most 80% of the step length times the press rate.
+ */
+export function paceError(song: SongMap, bars: [number, number], grid: "eighth" | "beat" | "bar", presses: string, pace: number, timeScale: number, stepLength: number): string | undefined {
+  const idx = indexSong(song);
+  const b0 = idx.barStart[bars[0]];
+  const b1 = bars[1] + 1 <= idx.barCount ? idx.barStart[bars[1] + 1] : song.beats.length - 1;
+  if (!(b1 > b0) || b1 > song.beats.length - 1) return undefined;
+  const beatS = (song.beats[b1] - song.beats[b0]) / (b1 - b0);
+  const bpb = idx.beatsPerBar[bars[0]] ?? 2;
+  const slotsPerBeat = grid === "eighth" ? 2 : grid === "beat" ? 1 : 1 / bpb;
+  const share = [...presses].filter((c) => c === "x").length / presses.length;
+  // Presses per world-second: slow motion stretches the music over more world time.
+  const rate = (share * slotsPerBeat) / beatS / Math.max(0.05, timeScale);
+  const needed = pace / (FORWARD_SHARE * stepLength);
+  if (needed <= rate + 1e-9) return undefined;
+  return `pace ${pace} needs ${needed.toFixed(2)} presses per second (at most ${Math.round(FORWARD_SHARE * 100)}% of ${stepLength} px steps go forward), but "${presses}" presses only ${rate.toFixed(2)} times per second`;
 }
 
 /** Why a musical reference cannot resolve against this song map, or undefined. */

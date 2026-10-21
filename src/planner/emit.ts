@@ -1,15 +1,18 @@
-/** Stage 8: emit effects, sounds, gems, HUD series and UI events. */
+/**
+ * Emission: effects, sounds, gems, HUD series and UI events, produced from the
+ * simulation's events. The sound voice budget is enforced as sounds are
+ * emitted, which needs no future knowledge.
+ */
 import { Rng, hash32 } from "../core/rng.ts";
 import { clamp } from "../core/shaping.ts";
 import { beatIndexAt, timeOfBeatIndex } from "../core/songmap.ts";
-import type { EffectEvent, GemEvent, HudSeries, Projectile, SlamMarker, SoundEvent, UiEvent, Chain } from "../plan/types.ts";
+import type { Warp } from "../core/warp.ts";
+import type { CameraTrack, EffectEvent, GemEvent, HeroTrack, HudSeries, Projectile, SlamMarker, SoundEvent, UiEvent } from "../plan/types.ts";
+import { heroSample } from "../plan/sample.ts";
+import type { SimResult } from "../sim/simulate.ts";
 import { sectionIndexAt, type Ctx } from "./context.ts";
-import type { KillPlan } from "./stage6-kills.ts";
-import { HURTBOX_LIFT, HURTBOX_RADIUS } from "./stage6-kills.ts";
-import { heroAt } from "./stage4-hero.ts";
-import { cameraAt, VIEW_W } from "./stage5-camera.ts";
-import { resolveRef } from "./stage1-musical.ts";
-import type { MusicalRef } from "../content/schema.ts";
+import { cameraAt, VIEW_W } from "./camera.ts";
+import { resolveRef } from "./musical.ts";
 
 export const VOICE_BUDGET = 4;
 
@@ -45,20 +48,17 @@ export interface EmitResult {
   hud: HudSeries;
   projectiles: Projectile[];
   slams: SlamMarker[];
-  chains: Chain[];
 }
 
-export function stage8(ctx: Ctx, kp: KillPlan): EmitResult {
-  const warp = ctx.warp!;
-  const hero = ctx.hero!;
-  const cam = ctx.camera!;
+export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam: CameraTrack): EmitResult {
   const lib = ctx.lib;
   const song = ctx.song;
-  const hits = kp.hits;
+  const hits = sim.hits;
   const effects: EffectEvent[] = [];
   const sounds: SoundEvent[] = [];
   const ui: UiEvent[] = [];
   const seedOf = (...k: (number | string)[]) => hash32(ctx.seed, ...k);
+  const heroAt = (w: number) => heroSample({ hero } as never, w);
 
   const fx = (recipe: string, s: number, x: number, y: number, dir: number, intensity: number, extra: Partial<EffectEvent> = {}) => {
     if (!lib.effects.has(recipe)) return;
@@ -96,112 +96,36 @@ export function stage8(ctx: Ctx, kp: KillPlan): EmitResult {
     sounds.push({ sample: id, s, gain: gain * sg * pal.gain, pan, rate, priority, duck, ...(lead > 0.001 ? { lead } : {}) });
   };
 
-  // ------------------------------------------------------- hero actions
+  // ------------------------------------------------------------ swings
   const perfect: number[] = [];
-  const combo: number[] = [];
   const markers: HudSeries["markers"] = [];
-  for (const a of ctx.actions) {
-    if (a.combo) combo.push(a.s);
-    const size = a.move.weight === "heavy" ? 3 : a.move.weight === "medium" ? 2 : 1;
-    markers.push({ s: a.s, size, kind: a.kind === "dodge" ? "dodge" : "attack" });
-    if (a.kind === "dodge") {
-      fx("dodge", a.s, a.x0, a.y0, a.dir, 0.7);
-      sfx(a.move.sound ?? "dodge", a.s, a.x, PRIORITY.nearMiss, 0.7);
-      continue;
-    }
-    if (a.kind === "blast") continue;
-    const h = a.hit !== undefined ? hits[a.hit] : undefined;
-    const intensity = h?.intensity ?? 0.6;
-    if (a.kind !== "sweep") {
-      fx(a.move.effect ?? `hit-${a.move.weight}`, a.s, a.x, a.y, a.dir, intensity, { hit: a.hit });
-      if (a.move.extraEffect) fx(a.move.extraEffect, a.s, a.x, a.y, a.dir, intensity);
-    }
-    sfx("swing", a.s - 0.04, a.x, PRIORITY.hero + 0.5, 0.7);
-    const key = a.move.sound ?? `hit-${a.move.weight}`;
-    const heavy = a.move.weight === "heavy";
-    sfx(key, a.s, a.x, heavy ? PRIORITY.hero : PRIORITY.hero + 0.3, heavy ? 1.1 : 0.95, heavy);
-    if (a.bossHit) sfx("boss-hit", a.s, a.x, PRIORITY.boss, 1);
-    if (heavy && a.accent > 0) {
-      perfect.push(a.s);
-      ui.push({ kind: "perfect", s: a.s, x: a.x, y: a.y - 40 });
-      fx("perfect-accent", a.s, a.x, a.y - 48, 0, 1);
+  for (const sw of sim.swings) {
+    const h = hits[sw.hit];
+    const heavy = sw.kind === "heavy";
+    markers.push({ s: sw.s, size: heavy ? 3 : 1, kind: "attack" });
+    fx(`hit-${sw.kind}`, sw.s, sw.x, sw.y, sw.dir, h.intensity, { hit: sw.hit });
+    sfx("swing", sw.s - 0.04, sw.x, PRIORITY.hero + 0.5, 0.7);
+    sfx(`hit-${sw.kind}`, sw.s, sw.x, heavy ? PRIORITY.hero : PRIORITY.hero + 0.3, heavy ? 1.1 : 0.95, heavy);
+    if (heavy && sw.accent > 0) {
+      perfect.push(sw.s);
+      ui.push({ kind: "perfect", s: sw.s, x: sw.x, y: sw.y - 40 });
+      fx("perfect-accent", sw.s, sw.x, sw.y - 48, 0, 1);
     }
   }
+  const combo = sim.inputs.filter((i) => i.kind === "press" && !i.bend).map((i) => i.s);
 
-  // ---------------------------------------------------------- hop landings
-  for (const sec of ctx.sections) {
-    const loco = sec.moveset.locomotion;
-    if (!loco || loco.mode !== "step") continue;
-    const bpb = ctx.idx.beatsPerBar[sec.song.bars[0]] ?? 2;
-    const step = loco.every === "bar" ? bpb : 1;
-    for (let bi = sec.b0 + step; bi < sec.b1; bi += step) {
-      const s = timeOfBeatIndex(song, bi);
-      const p = heroAt(hero, warp.toWorld(s));
-      fx("dust", s, p.x, p.y, 0, 0.5);
-    }
-  }
-
-  // ---------------------------------------------------------- threats
-  const projectiles: Projectile[] = [];
-  const slams: SlamMarker[] = [];
-  for (const th of ctx.threats) {
-    const wMiss = warp.toWorld(th.sMiss);
-    const hm = heroAt(hero, wMiss);
-    perfect.push(th.sMiss);
-    ui.push({ kind: "perfect", s: th.sMiss, x: hm.x, y: hm.y - 44 });
-    fx("near-miss", th.sMiss, hm.x, hm.y - HURTBOX_LIFT, 0, 1);
-    sfx("near-miss", th.sMiss, hm.x, PRIORITY.nearMiss, 1);
-    if (th.kind === "arrow") {
-      const archers = kp.agents.filter((ag) => ag.def.attack === "archer" && ag.e.attacks?.some((at) => Math.abs(at.w - warp.toWorld(th.sRelease)) < 1e-6));
-      for (const ag of archers) {
-        const ap = ag.waypoints.find((w) => w.appointment)!;
-        const wRel = warp.toWorld(th.sRelease);
-        // Aim so the arrow passes 14 px from the hurtbox edge at the near miss.
-        const hx = hm.x;
-        const hy = hm.y - HURTBOX_LIFT;
-        const ax = ap.x;
-        const ay = ap.y - 24;
-        const dx = hx - ax;
-        const dy = hy - ay;
-        const dl = Math.hypot(dx, dy) || 1;
-        // Offset the target toward where the hero came from.
-        const dodge = ctx.actions[th.dodgeAction!];
-        const back = { x: dodge.x0 - dodge.x, y: dodge.y0 - dodge.y };
-        const nx = -dy / dl;
-        const ny = dx / dl;
-        const side = Math.sign(nx * back.x + ny * back.y) || 1;
-        const miss = HURTBOX_RADIUS + 14;
-        const tx = hx + nx * side * miss;
-        const ty = hy + ny * side * miss;
-        const fl = Math.hypot(tx - ax, ty - ay);
-        const v = fl / Math.max(0.05, wMiss - wRel);
-        const ux = (tx - ax) / fl;
-        const uy = (ty - ay) / fl;
-        const extra = 260;
-        projectiles.push({ kind: "arrow", w0: wRel, w1: wMiss + extra / v, x0: ax, y0: ay, x1: tx + ux * extra, y1: ty + uy * extra, wMiss });
-        fx("arrow-release", th.sRelease, ax, ay, Math.atan2(uy, ux), 0.6);
-        sfx("arrow", th.sRelease, ax, PRIORITY.nearMiss, 0.8);
-      }
-    } else {
-      const boss = kp.agents.find((ag) => ag.def.attack === "slam");
-      const dodge = ctx.actions[th.dodgeAction!];
-      const px = dodge.x0;
-      const py = dodge.y0;
-      const d = Math.hypot(hm.x - px, hm.y - HURTBOX_LIFT - (py - HURTBOX_LIFT));
-      const radius = clamp(d - HURTBOX_RADIUS - 14, 24, 120);
-      slams.push({ w0: warp.toWorld(th.sRelease), w1: wMiss, x: px, y: py, radius });
-      fx("boss-slam", th.sMiss, px, py, 0, 1, { scale: radius / 60 });
-      sfx("boss-slam", th.sMiss, px, PRIORITY.boss, 1, true);
-      void boss;
-    }
+  // ---------------------------------------------------------- step landings
+  for (const l of sim.landings) {
+    fx("dust", l.s, l.x, l.y, 0, 0.5, { w: l.w });
+    sfx("step", l.s, l.x, PRIORITY.ambient, 0.25);
   }
 
   // ------------------------------------------------- deaths and hits on enemies
   const killTimes: number[] = [];
   const killsBySlot = new Map<number, { s: number; x: number; n: number; big: boolean }>();
   const deathByEnemy = new Map<number, { s: number; x: number; y: number }>();
-  for (const ag of kp.agents) {
-    const e = ag.e;
+  for (const e of sim.enemies) {
+    const def = lib.enemies.get(e.type)!;
     for (const f of e.fates) {
       const h = hits[f.hit];
       if (!f.lethal) {
@@ -210,12 +134,12 @@ export function stage8(ctx: Ctx, kp: KillPlan): EmitResult {
       }
       killTimes.push(h.s);
       deathByEnemy.set(e.id, { s: h.s, x: f.x, y: f.y });
-      const recipe = h.source === "ring" ? "blast-hit" : ag.def.death.recipe;
-      fx(recipe, h.s, f.x, f.y, h.dir, Math.max(0.4, h.intensity), { debris: ag.def.death.debris });
+      const recipe = h.source === "ring" ? "blast-hit" : def.death.recipe;
+      fx(recipe, h.s, f.x, f.y, h.dir, Math.max(0.4, h.intensity), { debris: def.death.debris });
       const slot = Math.round(beatIndexAt(song, h.s) * 4);
       const k = killsBySlot.get(slot) ?? { s: h.s, x: f.x, n: 0, big: false };
       k.n++;
-      k.big ||= ag.def.size !== "regular";
+      k.big ||= def.size !== "regular";
       killsBySlot.set(slot, k);
     }
   }
@@ -225,53 +149,37 @@ export function stage8(ctx: Ctx, kp: KillPlan): EmitResult {
     else sfx("kill-multi", k.s, k.x, PRIORITY.kill, 0.5 + 0.22 * Math.log2(k.n));
   }
 
-  // Weapon hits that kill: effects and sounds.
+  // Weapon hits: effects and sounds where they connect.
   const weaponFires: Record<string, number[]> = {};
-  const firedSlots = new Set<string>();
+  for (const f of sim.weaponFires) (weaponFires[f.weapon] ??= []).push(f.s);
+  const caught = new Set<number>();
+  for (const e of sim.enemies) for (const f of e.fates) caught.add(f.hit);
   for (const h of hits) {
     if (h.source !== "weapon") continue;
     const wd = lib.weapons.get(h.what)!;
-    const key = `${h.what}@${h.s.toFixed(4)}`;
-    if (!firedSlots.has(key)) {
-      firedSlots.add(key);
-      (weaponFires[h.what] ??= []).push(h.s);
-    }
-    const hasKill = kp.fatesByHit[h.id].length > 0;
+    const at = h.shape as { x: number; y: number };
     if (wd.kind === "chain") {
-      fx(wd.effect, h.s, (h.shape as { x: number }).x, (h.shape as { y: number }).y, h.dir, h.intensity);
-      sfx(wd.sound, h.s, (h.shape as { x: number }).x, PRIORITY.weapon, 0.7);
-    } else if (hasKill) {
-      fx(wd.effect, h.s, (h.shape as { x: number }).x, (h.shape as { y: number }).y, h.dir, h.intensity);
-      sfx(wd.sound, h.s, (h.shape as { x: number }).x, PRIORITY.weapon, 0.5);
+      fx(wd.effect, h.s, at.x, at.y, h.dir, h.intensity);
+      sfx(wd.sound, h.s, at.x, PRIORITY.weapon, 0.7);
+    } else if (caught.has(h.id)) {
+      fx(wd.effect, h.s, at.x, at.y, h.dir, h.intensity);
+      sfx(wd.sound, h.s, at.x, PRIORITY.weapon, 0.5);
     }
-  }
-  for (const f of ctx.formations) {
-    for (const h of hits) if (h.source === "sweep" && h.section === f.section) fx("hit-sweep", h.s, (h.shape as { x: number }).x, (h.shape as { y: number }).y, h.dir, h.intensity);
   }
 
   // ------------------------------------------------------- moments and UI
   const levelUps: number[] = [];
-  for (const g of ctx.weaponsGranted) {
-    const p = heroAt(hero, warp.toWorld(g.s));
+  for (const g of sim.weaponsGranted) {
+    const p = heroAt(warp.toWorld(g.s));
     levelUps.push(g.s);
     ui.push({ kind: "levelUp", s: g.s, weapon: g.id });
     fx("level-up", g.s, p.x, p.y - 16, 0, 1);
     sfx("level-up", g.s, p.x, PRIORITY.hero, 1, true);
   }
-  if (ctx.boss) {
-    const b = ctx.boss;
-    const ag = kp.agents.find((a) => a.e.id === b.enemy)!;
-    const land = ag.waypoints[0];
-    fx("boss-land", b.sEnter, land.x, land.y, 0, 1);
-    sfx("boss-land", b.sEnter, land.x, PRIORITY.boss, 1, true);
-    const bossEvent = ctx.events.find((e) => e.ev.boss);
-    const name = bossEvent?.ev.banner ?? b.type.toUpperCase();
-    ui.push({ kind: "bossBar", s: b.sEnter, until: b.sDeath, hits: ctx.actions.filter((a) => a.bossHit).map((a) => a.s), name });
-  }
-  if (ctx.blastS !== undefined) {
-    const p = heroAt(hero, warp.toWorld(ctx.blastS));
-    fx("finale-blast", ctx.blastS, p.x, p.y - 16, 0, 1);
-    sfx("blast", ctx.blastS, p.x, PRIORITY.hero, 1.2, true);
+  if (sim.blastS !== undefined) {
+    const p = heroAt(warp.toWorld(sim.blastS));
+    fx("finale-blast", sim.blastS, p.x, p.y - 16, 0, 1);
+    sfx("blast", sim.blastS, p.x, PRIORITY.hero, 1.2, true);
   }
   for (const a of song.accents) {
     if (a.strength >= 0.9) fx("accent-flash", a.time, 0, 0, 0, a.strength * sectionOf(a.time).level.intensity);
@@ -279,14 +187,11 @@ export function stage8(ctx: Ctx, kp: KillPlan): EmitResult {
   for (const sec of ctx.sections) if (sec.level.banner) ui.push({ kind: "banner", s: sec.s0, text: sec.level.banner, dur: 2.6 });
   for (const e of ctx.events) {
     if (e.ev.banner) ui.push({ kind: "banner", s: e.s, text: e.ev.banner, dur: 2.6 });
-    if (e.ev.titleCard) {
-      const until = resolveUntil(ctx, e.ev.titleCard.until);
-      ui.push({ kind: "title", s: e.s, until });
-    }
+    if (e.ev.titleCard) ui.push({ kind: "title", s: e.s, until: resolveRef(ctx.idx, e.ev.titleCard.until) });
   }
 
   // ---------------------------------------------------------------- gems
-  const hitStops = warp.hitStops();
+  const hitStops = sim.hitStops;
   const nextDownbeat = (s: number) => {
     let bi = Math.ceil(beatIndexAt(song, s + 0.12));
     for (let guard = 0; guard < 64; guard++) {
@@ -301,16 +206,16 @@ export function stage8(ctx: Ctx, kp: KillPlan): EmitResult {
     return timeOfBeatIndex(song, bi);
   };
   const gemsRaw: { w0: number; x0: number; y0: number; s1: number; big: boolean; seed: number }[] = [];
-  for (const ag of kp.agents) {
-    const d = deathByEnemy.get(ag.e.id);
+  for (const e of sim.enemies) {
+    const d = deathByEnemy.get(e.id);
     if (!d) continue;
-    const big = ag.def.size !== "regular";
+    const big = lib.enemies.get(e.type)!.size !== "regular";
     let s1 = nextDownbeat(d.s);
-    if (ctx.blastS !== undefined && d.s >= ctx.blastS - 1e-6) {
+    if (sim.blastS !== undefined && d.s >= sim.blastS - 1e-6) {
       // The finale's gems arrive one beat after the blast.
-      s1 = timeOfBeatIndex(song, beatIndexAt(song, ctx.blastS) + 1);
+      s1 = timeOfBeatIndex(song, beatIndexAt(song, sim.blastS) + 1);
     }
-    gemsRaw.push({ w0: warp.toWorld(d.s), x0: d.x, y0: d.y, s1, big, seed: seedOf("gem", ag.e.id) });
+    gemsRaw.push({ w0: warp.toWorld(d.s), x0: d.x, y0: d.y, s1, big, seed: seedOf("gem", e.id) });
   }
   gemsRaw.sort((a, b) => a.s1 - b.s1 || a.w0 - b.w0);
   // XP segments end at each level-up and at the finale gems' arrival.
@@ -340,11 +245,11 @@ export function stage8(ctx: Ctx, kp: KillPlan): EmitResult {
   for (const g of gems) {
     if (arrivals.has(g.s1)) continue;
     arrivals.add(g.s1);
-    const p = heroAt(hero, g.w1);
+    const p = heroAt(g.w1);
     fx("gem-pickup", g.s1, p.x, p.y - 16, 0, 0.7);
     sfx("gem", g.s1, p.x, PRIORITY.ambient, 0.4);
   }
-  if (ctx.blastS !== undefined) ui.push({ kind: "end", s: finalArrival + 1.6 });
+  if (sim.blastS !== undefined) ui.push({ kind: "end", s: finalArrival + 1.6 });
 
   // --------------------------------------------------- voice budget
   const bySlot = new Map<number, SoundEvent[]>();
@@ -363,7 +268,6 @@ export function stage8(ctx: Ctx, kp: KillPlan): EmitResult {
 
   effects.sort((a, b) => a.w - b.w || a.s - b.s);
   ui.sort((a, b) => a.s - b.s);
-  const chains: Chain[] = kp.chainPaths.map((p) => ({ points: p }));
   const hud: HudSeries = {
     kills: Float64Array.from(killTimes),
     combo: Float64Array.from(combo.sort((a, b) => a - b)),
@@ -374,7 +278,9 @@ export function stage8(ctx: Ctx, kp: KillPlan): EmitResult {
     levelUps,
     weaponFires: Object.fromEntries(Object.entries(weaponFires).map(([k, v]) => [k, Float64Array.from(v.sort((a, b) => a - b))])),
   };
-  return { effects, sounds: kept, gems, ui, hud, projectiles, slams, chains };
+  const projectiles: Projectile[] = [];
+  const slams: SlamMarker[] = [];
+  return { effects, sounds: kept, gems, ui, hud, projectiles, slams };
 }
 
 function barIndexFor(ctx: Ctx, bi: number): number {
@@ -387,8 +293,4 @@ function barIndexFor(ctx: Ctx, bi: number): number {
     else hi = mid - 1;
   }
   return lo;
-}
-
-function resolveUntil(ctx: Ctx, r: MusicalRef): number {
-  return resolveRef(ctx.idx, r);
 }

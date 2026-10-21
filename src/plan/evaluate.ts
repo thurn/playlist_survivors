@@ -20,6 +20,11 @@ const MAX_SHAKE = 9;
 export const MAX_PARTICLES = 6000;
 export const MAX_DECALS = 400;
 
+/** World pixels per full walk cycle for a regular-sized enemy (two strides). */
+const ENEMY_STRIDE = 56;
+/** An enemy this close to the hero (plus its radius), standing still, is in melee. */
+const MELEE_REACH = 20;
+
 /** Fraction of a beat the can-can kick's wind-up (stand, knee) takes before the kick lands on the beat. */
 const KICK_WINDUP = 0.36;
 
@@ -186,6 +191,25 @@ export class Evaluator {
     this.uiSorted = plan.events.ui;
   }
 
+  private walkedCache = new Map<number, Float32Array>();
+  /** Distance an enemy has walked by world time w (prefix sums over its samples). */
+  walked(e: EnemyRecord, w: number): number {
+    let pre = this.walkedCache.get(e.id);
+    const sm = this.plan.enemySamples;
+    if (!pre) {
+      pre = new Float32Array(Math.max(1, e.sampleCount));
+      for (let i = 1; i < e.sampleCount; i++) {
+        const o = (e.sampleOffset + i) * 2;
+        pre[i] = pre[i - 1] + Math.hypot(sm[o] - sm[o - 2], sm[o + 1] - sm[o - 1]);
+      }
+      this.walkedCache.set(e.id, pre);
+    }
+    const f = clamp((w - e.sampleW0) * this.plan.enemySampleRate, 0, Math.max(0, e.sampleCount - 1));
+    const k = Math.min(pre.length - 2, Math.floor(f));
+    if (k < 0) return 0;
+    return lerp(pre[k], pre[k + 1], f - k);
+  }
+
   sectionAt(s: number): number {
     const secs = this.plan.sections;
     for (let i = secs.length - 1; i >= 0; i--) if (s >= secs[i].s0) return i;
@@ -299,7 +323,7 @@ export class Evaluator {
     let alive = 0;
     for (let k = 0; k < ebucket.length; k++) {
       const e = this.enemyById.get(ebucket[k])!;
-      if (w < e.spawnW || w > e.deathW + DEATH_FALL) continue;
+      if (w < e.spawnW || w > e.deathW + DEATH_FALL || (e.recycled && w >= e.deathW)) continue;
       const def = this.lib.enemies.get(e.type)!;
       enemyPos(plan, e, Math.min(w, e.deathW), tmp);
       let x = tmp.x;
@@ -315,17 +339,27 @@ export class Evaluator {
       enemyPos(plan, e, Math.min(w, e.deathW) + 0.1, tmp2);
       let vx = tmp2.x - tmp.x;
       let vy = tmp2.y - tmp.y;
-      if (vx * vx + vy * vy < 0.5) {
+      const moving = vx * vx + vy * vy >= 0.5;
+      if (!moving) {
         vx = h.x - x;
         vy = h.y - y;
       }
       let facing = facingOf(vx, vy);
       const dying = w >= e.deathW;
       if (!dying) alive++;
-      // Walk cycle timed by the world beat grid.
-      const cyc = def.walkCycleBeats;
-      const wphase = frac(wbi / cyc + (e.id % 7) * 0.013);
-      frame = Math.floor(wphase * 8);
+      // Walk cycles advance by distance, like the hero's: the feet never slide.
+      const stride = ENEMY_STRIDE * def.scale * (def.radius / 12);
+      frame = Math.floor(frac(this.walked(e, Math.min(w, e.deathW)) / stride + (e.id % 7) * 0.13) * 8);
+      // At the hero, melee enemies attack on their movement group's subdivision (it never hurts).
+      const contact = Math.hypot(h.x - x, h.y - y) <= MELEE_REACH + def.radius;
+      if (contact && !moving && !dying && def.behavior === "chase") {
+        const flyer = def.atlas === "slime" || def.atlas === "bat" || def.atlas === "bee" || def.atlas === "eyeball";
+        const n = flyer ? 5 : 6;
+        const impact = flyer ? 2 : 4;
+        const period = def.group === "eighth" ? 0.5 : def.group === "beat" ? 1 : def.group === "bar" ? bar.len : 2 * bar.len;
+        anim = flyer ? "attack" : "slash";
+        frame = Math.floor(frac(wbi / period + impact / n) * n);
+      }
       if (def.hop) {
         const ph = frac(wbi);
         const hopH = Math.sin(Math.PI * clamp((ph - 0.55) / 0.45, 0, 1));
@@ -334,7 +368,7 @@ export class Evaluator {
         sx = 1 + 0.25 * land * (1 - hopH);
         sy = 1 - 0.2 * land * (1 - hopH) + 0.12 * hopH;
       }
-      if (def.hover > 0) z += 3 * Math.sin((wbi * Math.PI * 2) / Math.max(0.5, cyc));
+      if (def.hover > 0) z += 3 * Math.sin((wbi * Math.PI * 2) / Math.max(0.5, def.walkCycleBeats));
       // Entrances: the boss lands from above.
       if (e.entrance === "land") {
         const landW = e.spawnW + 0.55;
@@ -368,16 +402,17 @@ export class Evaluator {
         frame = ph < KICK_WINDUP / 2 ? 0 : ph < KICK_WINDUP ? 1 : 2;
         facing = 2;
       }
-      // Non-lethal hits: flash and knockback.
+      // Hits flash white; the killing blow also knocks the body back (the simulation
+      // already moved survivors).
       for (const f of e.fates) {
         const age = w - f.w;
-        if (age < 0 || (f.lethal && false)) continue;
+        if (age < 0) continue;
         if (age < FLASH_TIME) flash = true;
-        if (age < KNOCK_TIME) {
+        if (age < KNOCK_TIME && f.lethal) {
           const kx = f.x - h.x;
           const ky = f.y - h.y;
           const kl = Math.hypot(kx, ky) || 1;
-          const amt = (1 - age / KNOCK_TIME) ** 2 * (f.lethal ? 10 : 7);
+          const amt = (1 - age / KNOCK_TIME) ** 2 * 10;
           x += (kx / kl) * amt;
           y += (ky / kl) * amt;
           sx *= 1 + 0.15 * (1 - age / KNOCK_TIME);
@@ -392,6 +427,7 @@ export class Evaluator {
         z = def.hover * Math.max(0, 1 - age * 4);
       }
       if (anim === "walk" && def.atlas === "slime") frame = Math.floor(frac(wbi) * 4);
+      else if (anim === "walk" && def.walkCycleBeats > 0 && (def.atlas === "bat" || def.atlas === "bee" || def.atlas === "eyeball")) frame = Math.floor(frac(wbi / def.walkCycleBeats) * 4);
       enemies.push({ id: e.id, type: e.type, x, y, z, anim, facing, frame, flash, alpha, scaleX: sx * def.scale, scaleY: sy * def.scale, shadow: def.scale });
     }
 

@@ -1,4 +1,4 @@
-# expect: :7: sections[0].moveset: required field is missing
+# expect: :7: sections[0].population: required field is missing
 song: orpheus-galop
 seed: 1
 title: { piece: "x", composer: "y", performer: "z" }
@@ -6,6 +6,7 @@ zones: [twilight-glade]
 sections:
   - section: prelude
     zone: twilight-glade
-    population: [0, 10]
+    pace: 30
+    presses: "x."
     roster: { bat: 1 }
     sfxPalette: soft-chimes

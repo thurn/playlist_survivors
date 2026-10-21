@@ -138,10 +138,10 @@ export function routeFrame(r: { step: number; x: ArrayLike<number>; y: ArrayLike
 }
 
 /** Nearest route distance and signed lateral offset for points, via a coarse grid. */
-class RouteLookup {
+export class RouteLookup {
   private cells = new Map<number, number[]>();
   private readonly cell = 128;
-  constructor(private r: Route) {
+  constructor(private r: { step: number; x: ArrayLike<number>; y: ArrayLike<number> }) {
     for (let i = 0; i < r.x.length; i += 2) {
       const key = this.key(Math.floor(r.x[i] / this.cell), Math.floor(r.y[i] / this.cell));
       let list = this.cells.get(key);

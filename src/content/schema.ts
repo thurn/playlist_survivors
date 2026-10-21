@@ -30,34 +30,6 @@ export const hitShapeDef = z.discriminatedUnion("kind", [
 ]);
 export type HitShapeDef = z.infer<typeof hitShapeDef>;
 
-// --------------------------------------------------------------------- moves
-
-export const moveDef = z.strictObject({
-  id,
-  animation: z.strictObject({
-    name: z.string(),
-    fps: z.number().positive(),
-    /** Spin: cycle the animation through all four facings. */
-    cycleFacings: z.boolean().optional(),
-  }),
-  /** Frame on which the hit lands; defaults to the atlas's impact frame. */
-  impactFrame: z.number().int().min(0).optional(),
-  hitShape: hitShapeDef.optional(),
-  weight,
-  hitStopMs: z.number().min(0).max(150).optional(),
-  /** Distance the hero moves during the move, in world pixels. */
-  travel: z.number().min(0).default(0),
-  /** Effect recipe; defaults to hit-<weight>. */
-  effect: id.optional(),
-  /** Sound palette event key; defaults to hit-<weight>. */
-  sound: z.string().optional(),
-  /** A second recipe played on impact (e.g. the finisher's burst). */
-  extraEffect: id.optional(),
-  /** Dodge: no damage, triggers the near-miss effect. */
-  dodge: z.boolean().optional(),
-});
-export type MoveDef = z.infer<typeof moveDef>;
-
 // ---------------------------------------------------------------------- hero
 
 const arcShape = z.strictObject({ kind: z.literal("arc"), radius: z.number().positive(), degrees: z.number().positive().max(360) });
@@ -116,39 +88,6 @@ export const heroDef = z.strictObject({
 });
 export type HeroDef = z.infer<typeof heroDef>;
 
-// ------------------------------------------------------------------ movesets
-
-const attackRule = z.union([
-  z.strictObject({ pattern: z.string().regex(/^[x.|]+$/, "patterns use x, . and |"), moves: z.array(id).min(1) }),
-  z.strictObject({
-    onAccent: z.strictObject({ minStrength: unit.default(0), move: id, label: z.string().optional() }),
-  }),
-  z.strictObject({ onSectionEnd: id }),
-]);
-export type AttackRule = z.infer<typeof attackRule>;
-
-export const pathShape = z.enum(["forward", "zigzag", "circle", "figure-eight"]);
-export type PathShape = z.infer<typeof pathShape>;
-
-export const movesetDef = z.strictObject({
-  id,
-  extends: id.optional(),
-  locomotion: z
-    .strictObject({ mode: z.enum(["step", "dash", "glide"]), every: subdivision.optional() })
-    .optional(),
-  travelSpeed: z.number().min(0).optional(),
-  path: pathShape.optional(),
-  /** Amplitude of the path shape around the route, in world pixels. */
-  pathSize: z.number().min(0).optional(),
-  grid: subdivision.optional(),
-  attacks: z.array(attackRule).optional(),
-  continuous: z.strictObject({ move: id, everyBeats: z.number().positive() }).optional(),
-  onAnchor: z.strictObject({ move: id, minStrength: unit.default(0) }).optional(),
-  /** Attack direction cycle relative to the route: left, right, ahead, behind. */
-  directions: z.array(z.enum(["left", "right", "ahead", "behind"])).optional(),
-});
-export type MovesetDef = z.infer<typeof movesetDef>;
-
 // ------------------------------------------------------------------- enemies
 
 export const enemyDef = z.strictObject({
@@ -157,11 +96,12 @@ export const enemyDef = z.strictObject({
   atlas: z.string(),
   radius: z.number().positive(),
   group: subdivision.exclude(["sixteenth"]),
+  /** Chasing speed in world pixels per world-second, before the group's surge. */
   speed: z.number().positive(),
-  lifetime: range,
+  /** Damage it takes to kill (a light swing deals 1.0 before the groove bonus). */
+  health: z.number().positive(),
   size: z.enum(["regular", "elite", "boss"]),
-  hits: z.number().int().positive().optional(),
-  attack: z.enum(["none", "archer", "slam"]).default("none"),
+  behavior: z.enum(["chase", "archer", "boss"]).default("chase"),
   scale: z.number().positive().default(1),
   /** Flying enemies hover; the shadow is drawn below them. */
   hover: z.number().min(0).default(0),
@@ -185,7 +125,8 @@ export const weaponDef = z.strictObject({
   trail: z.strictObject({ beats: z.number().positive(), spacing: z.number().positive().default(18) }).optional(),
   blast: z.strictObject({ beats: z.number().positive(), step: subdivision, radius: z.number().positive() }).optional(),
   hitShape: z.strictObject({ kind: z.literal("circle"), radius: z.number().positive() }).optional(),
-  killsPerFiring: range.default([0, 0]),
+  /** Base damage per hit, multiplied by the groove like the sword's. */
+  damage: z.number().positive(),
   weight,
   effect: id,
   sound: z.string(),
@@ -207,15 +148,15 @@ export const formationDef = z.strictObject({
   entranceBeats: z.number().positive().default(4),
   step: subdivision.default("beat"),
   dance: z.strictObject({ animation: z.string(), on: subdivision, alternateLegs: z.boolean().default(false) }).optional(),
+  /** At the release the surviving members become normal chasing enemies; a charge rushes the hero first. */
   release: z.union([
     z.strictObject({
       at: z.literal("finalAccentOfPhrase"),
       /** Phrase number within the event's section, counted from the formation start. */
       phrases: z.number().int().positive().default(2),
-      move: id,
-      stagger: subdivision,
+      mode: z.enum(["charge", "break"]).default("charge"),
     }),
-    z.strictObject({ at: z.literal("afterBeats"), beats: z.number().positive(), mode: z.literal("break") }),
+    z.strictObject({ at: z.literal("afterBeats"), beats: z.number().positive(), mode: z.enum(["charge", "break"]).default("break") }),
   ]),
 });
 export type FormationDef = z.infer<typeof formationDef>;
@@ -272,8 +213,6 @@ export type ZoneTheme = z.infer<typeof zoneTheme>;
 
 export const contentFile = z.strictObject({
   hero: heroDef.optional(),
-  moves: z.array(moveDef).optional(),
-  movesets: z.array(movesetDef).optional(),
   enemies: z.array(enemyDef).optional(),
   weapons: z.array(weaponDef).optional(),
   formations: z.array(formationDef).optional(),
@@ -308,7 +247,16 @@ const timeScale = z.union([z.number().min(0.25).max(1), z.strictObject({ from: z
 export const levelSection = z.strictObject({
   bars: barRange.optional(),
   section: z.string().optional(),
-  moveset: id,
+  /** Step movement (one step per press) or free movement (held keys walk); defaults from the song map's feel. */
+  movement: z.enum(["steps", "free"]).optional(),
+  /** Route speed of the pace point, in world pixels per world-second. Inherited from the previous section. */
+  pace: z.number().min(0).optional(),
+  /** The skilled player's presses: one character per timing-grid slot of each bar, x presses and . rests. Inherited. */
+  presses: z.string().regex(/^[x.]+$/, "presses use x and .").optional(),
+  /** The grid presses are rated against and swings strike on. */
+  timingGrid: z.enum(["eighth", "beat", "bar"]).optional(),
+  /** Swings striking on accents this strong (and with this label) become heavy cleaves. */
+  heavyOnAccents: z.strictObject({ minStrength: unit.default(0.7), label: z.string().optional() }).optional(),
   zone: id.optional(),
   timeScale: timeScale.optional(),
   population: z.tuple([z.number().int().min(0).max(520), z.number().int().min(0).max(520)]),
