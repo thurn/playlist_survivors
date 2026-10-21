@@ -21,7 +21,9 @@ function buildVersion(): string {
 export default defineConfig({
   base: "./",
   define: { __BUILD_VERSION__: JSON.stringify(buildVersion()) },
-  server: { port: 5199, strictPort: true },
+  // Tollgate worktrees live under .worktrees/; their files must not trigger reloads or dependency scans.
+  server: { port: 5199, strictPort: true, watch: { ignored: ["**/.worktrees/**"] } },
+  optimizeDeps: { entries: ["index.html"] },
   preview: { port: 5198, strictPort: true },
   build: { target: "es2022", chunkSizeWarningLimit: 4000 },
   worker: { format: "es" },
