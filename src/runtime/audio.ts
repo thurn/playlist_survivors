@@ -68,6 +68,8 @@ export class AudioEngine implements SongClock {
   private clickBuffer?: AudioBuffer;
   private clickIdx = 0;
   private duckEnd = -Infinity;
+  /** For the QA hook: sounds started, sounds skipped because they were already late, clicks. */
+  readonly stats = { scheduled: 0, skippedLate: 0, startedLate: 0, clicks: 0, ducks: 0, ticks: 0 };
 
   constructor(
     readonly avOffsetMs = 0,
@@ -178,7 +180,7 @@ export class AudioEngine implements SongClock {
   }
 
   /** Song time the audio thread is producing right now (ahead of what is heard). */
-  private contextSongTime(): number {
+  contextSongTime(): number {
     return this.ctx.currentTime - this.t0;
   }
 
@@ -197,13 +199,18 @@ export class AudioEngine implements SongClock {
   }
 
   private schedule(plan: Plan): void {
+    this.stats.ticks++;
     const now = this.contextSongTime();
     const horizon = now + LOOKAHEAD_S;
     const sounds = plan.events.sounds;
     while (this.schedIdx < sounds.length && sounds[this.schedIdx].s <= horizon) {
       const ev = sounds[this.schedIdx++];
       // Never late: events already in the past (a hidden tab) are skipped.
-      if (ev.s < now) continue;
+      if (ev.s < now) {
+        this.stats.skippedLate++;
+        continue;
+      }
+      this.stats.scheduled++;
       this.play(ev);
     }
     if (this.metronome && this.clickBuffer) {
@@ -219,6 +226,7 @@ export class AudioEngine implements SongClock {
         src.playbackRate.value = bars.has(i) ? 1.5 : 1;
         src.connect(g).connect(this.musicGain);
         src.start(this.t0 + beats[i]);
+        this.stats.clicks++;
       }
     }
   }
@@ -227,6 +235,7 @@ export class AudioEngine implements SongClock {
     const buf = this.buffers.get(ev.sample);
     if (!buf) return;
     const when = this.t0 + ev.s;
+    if (when < this.ctx.currentTime) this.stats.startedLate++;
     const src = this.ctx.createBufferSource();
     src.buffer = buf;
     src.playbackRate.value = ev.rate;
@@ -250,6 +259,7 @@ export class AudioEngine implements SongClock {
       g.setValueAtTime(DUCK_GAIN, when + DUCK_S);
       g.linearRampToValueAtTime(1, when + DUCK_S + 0.08);
       this.duckEnd = when + DUCK_S + 0.08;
+      this.stats.ducks++;
     }
   }
 }

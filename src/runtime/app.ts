@@ -93,6 +93,10 @@ export interface DemoHook {
   planMs?: number;
   checks?: () => { name: string; failures: string[] }[];
   bench?: Promise<BenchResult>;
+  /** QA: the song time of the last drawn frame, and audio state. */
+  lastS?: number;
+  frames?: number;
+  audio?: () => { state: string; contextSongTime: number; stats: { scheduled: number; skippedLate: number; startedLate: number; clicks: number; ducks: number; ticks: number } };
 }
 
 export interface BenchResult {
@@ -254,6 +258,7 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
     overlay.root.style.opacity = "0";
     setTimeout(() => overlay.root.remove(), 700);
     await audio!.start(plan);
+    hook.audio = () => ({ state: audio!.ctx.state, contextSongTime: audio!.contextSongTime(), stats: { ...audio!.stats } });
     const clock: SongClock = audio!;
     // The display's refresh period: a median of recent frame intervals, so a single long
     // frame (or a return from a hidden tab) does not shift the picture ahead of the audio.
@@ -273,6 +278,8 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
       // Song time keeps running after the music ends, so the credits roll on.
       const s = clock.songTimeAtPresentation(ts, frameDur);
       drawAt(s);
+      hook.lastS = s;
+      hook.frames = (hook.frames ?? 0) + 1;
       requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
