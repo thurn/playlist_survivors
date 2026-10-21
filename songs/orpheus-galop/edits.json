@@ -262,6 +262,11 @@
   "time": 54.0656
  },
  {
+  "op": "moveBeat",
+  "index": 242,
+  "time": 104.5476
+ },
+ {
   "op": "setPhrases",
   "phrases": [
    [
