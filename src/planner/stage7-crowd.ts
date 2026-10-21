@@ -150,8 +150,11 @@ export function simulateCrowd(ctx: Ctx, kp: KillPlan): CrowdResult {
     );
   }
   for (const e of result.enemies) delete (e as EnemyRecord & { _missed?: boolean })._missed;
+  const tr = performance.now();
   repairSpacing(kp, result);
+  const tv = performance.now();
   resolveOverlaps(kp, result);
+  if (DEBUG) console.error(`repair ${(tv - tr).toFixed(0)} ms, resolve ${(performance.now() - tv).toFixed(0)} ms`);
   return { ...result, stragglers: result.misses };
 }
 
@@ -167,13 +170,16 @@ function repairSpacing(kp: KillPlan, r: CrowdResult): void {
   let maxK = 0;
   for (let i = 0; i < es.length; i++) maxK = Math.max(maxK, k0[i] + es[i].sampleCount);
   // Counting sort of (enemy, frame) pairs by frame.
+  // Only every third frame is repaired (the checked 10 Hz frames).
+  const STRIDE = SAMPLE_RATE / 10;
+  const firstK = (i: number) => Math.ceil(k0[i] / STRIDE) * STRIDE - k0[i];
   const count = new Int32Array(maxK + 1);
-  for (let i = 0; i < es.length; i++) for (let k = 0; k < es[i].sampleCount; k++) count[k0[i] + k]++;
+  for (let i = 0; i < es.length; i++) for (let k = firstK(i); k < es[i].sampleCount; k += STRIDE) count[k0[i] + k]++;
   const start = new Int32Array(maxK + 2);
   for (let k = 0; k <= maxK; k++) start[k + 1] = start[k] + count[k];
   const fill = start.slice();
   const members = new Int32Array(start[maxK + 1]);
-  for (let i = 0; i < es.length; i++) for (let k = 0; k < es[i].sampleCount; k++) members[fill[k0[i] + k]++] = i;
+  for (let i = 0; i < es.length; i++) for (let k = firstK(i); k < es[i].sampleCount; k += STRIDE) members[fill[k0[i] + k]++] = i;
   const s = r.samples;
   const H = 4096;
   const head = new Int32Array(H);
@@ -189,7 +195,7 @@ function repairSpacing(kp: KillPlan, r: CrowdResult): void {
   const pairs: number[] = [];
   // The spacing check samples 10 times per second (every third 30 Hz frame); the crowd
   // simulation's own correction keeps the frames in between close.
-  for (let k = 0; k <= maxK; k += SAMPLE_RATE / 10) {
+  for (let k = 0; k <= maxK; k += STRIDE) {
     const a0 = start[k];
     const a1 = start[k + 1];
     if (a1 - a0 < 2) continue;
@@ -848,13 +854,18 @@ function resolveOverlaps(kp: KillPlan, r: CrowdResult): void {
   const view = { enemySamples: r.samples, enemySampleRate: SAMPLE_RATE } as unknown as Plan;
   const byId = new Map(kp.agents.map((a) => [a.e.id, a]));
   const live = r.enemies.filter((e) => byId.has(e.id));
-  const sorted = [...live].sort((a, b) => a.spawnW - b.spawnW);
+  // Enemies alive in each 0.5 s bucket of world time.
+  const B = 0.5;
+  const buckets: EnemyRecord[][] = [];
+  for (const e of live) {
+    for (let b = Math.max(0, Math.floor(e.spawnW / B)); b <= Math.floor(e.deathW / B); b++) (buckets[b] ??= []).push(e);
+  }
   const pos = { x: 0, y: 0 };
   for (const h of kp.hits) {
     if (h.source === "ring") continue;
     const b = shapeBounds(h.shape);
-    for (const e of sorted) {
-      if (e.spawnW > h.w) break;
+    for (const e of buckets[Math.floor(h.w / B)] ?? []) {
+      if (e.spawnW > h.w) continue;
       if (h.w > e.deathW - 1e-6 || e.formation !== undefined) continue;
       if (e.fates.some((f) => f.hit === h.id)) continue;
       const ag = byId.get(e.id)!;
