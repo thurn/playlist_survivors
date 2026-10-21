@@ -1,68 +1,64 @@
 /**
- * A synthetic song map with the same section roles as the real Can-Can map:
- * a free 4/4 prelude, then a 2/4 galop at 185 quarter notes per minute.
+ * A synthetic song map with the same form as the real Can-Can map: a free
+ * prelude (4/4, then a quiet 2/4 vamp), then a 2/4 galop at about 185 quarter
+ * notes per minute with a faster coda.
  */
 import type { SongMap, SongSection } from "../../src/core/songmap.ts";
+
+const FORM: { label: string; bars: [number, number]; bpm: number; feel: "free" | "pulsed" }[] = [
+  { label: "prelude", bars: [1, 30], bpm: 86, feel: "free" },
+  { label: "galop-opening", bars: [31, 53], bpm: 176, feel: "pulsed" },
+  { label: "theme-a", bars: [54, 69], bpm: 185, feel: "pulsed" },
+  { label: "theme-a-repeat", bars: [70, 85], bpm: 187, feel: "pulsed" },
+  { label: "kick-line", bars: [86, 101], bpm: 188, feel: "pulsed" },
+  { label: "bridge", bars: [102, 107], bpm: 185, feel: "pulsed" },
+  { label: "climax", bars: [108, 139], bpm: 192, feel: "pulsed" },
+  { label: "coda", bars: [140, 177], bpm: 238, feel: "pulsed" },
+];
 
 export function syntheticSongMap(): SongMap {
   const beats: number[] = [];
   const energy: number[] = [];
-  let t = 0.5;
-  // Prelude: 8 bars of 4/4 at a wavering ~66 bpm.
-  for (let i = 0; i < 32; i++) {
-    beats.push(t);
-    energy.push(0.15 + 0.1 * Math.sin(i / 5));
-    t += 60 / 66 + 0.04 * Math.sin(i);
-  }
-  const galopBars: [string, number][] = [
-    ["galop-opening", 8],
-    ["theme-a", 16],
-    ["theme-a-repeat", 16],
-    ["kick-line", 16],
-    ["bridge", 16],
-    ["climax", 32],
-    ["coda", 16],
-  ];
-  const beat = 60 / 185;
-  const sections: SongSection[] = [
-    {
-      label: "prelude",
-      bars: [1, 8],
-      feel: "free",
-      key: "F major",
-      anchors: [0.5, 4.2, 8.1, 12.0, 15.6, 19.9, 24.1, 28.0].map((time, i) => ({ time, strength: 0.4 + 0.08 * i })),
-    },
-  ];
-  let bar = 9;
-  for (const [label, n] of galopBars) {
-    sections.push({ label, bars: [bar, bar + n - 1], feel: "pulsed", key: "D major" });
-    for (let i = 0; i < n * 2; i++) {
+  const barTime: number[] = [];
+  let t = 0.15;
+  for (let bar = 1; bar <= 177; bar++) {
+    const sec = FORM.find((f) => bar >= f.bars[0] && bar <= f.bars[1])!;
+    const bpb = bar <= 14 ? 4 : 2;
+    // The vamp (bars 15–30) is already at galop tempo, quietly.
+    const bpm = bar <= 14 ? sec.bpm : bar <= 30 ? 176 : sec.bpm;
+    barTime[bar] = t;
+    for (let b = 0; b < bpb; b++) {
       beats.push(t);
-      const prog = (beats.length - 32) / (galopBars.reduce((a, b) => a + b[1], 0) * 2);
-      energy.push(Math.min(1, 0.55 + 0.45 * prog + (i % 2 === 0 ? 0.05 : 0)));
-      t += beat;
+      const prog = bar / 177;
+      energy.push(sec.feel === "free" ? 0.15 + 0.08 * Math.sin(beats.length / 5) : Math.min(1, 0.5 + 0.45 * prog + (b === 0 ? 0.05 : 0)));
+      t += (60 / bpm) * (bar <= 14 ? 1 + 0.03 * Math.sin(beats.length) : 1);
     }
-    bar += n;
   }
+  barTime[178] = t;
+  const sections: SongSection[] = FORM.map((f) => ({ label: f.label, bars: f.bars, feel: f.feel, key: f.feel === "free" ? "E major" : "D major" }));
+  sections[0].anchors = [0.15, 4.1, 8.2, 12.6, 16.4, 20.5, 24.4, 28.8, 33.0, 36.0, 40.5, 44.2, 47.9, 51.6].filter((x) => x < barTime[31]).map((time, i) => ({ time, strength: 0.4 + 0.04 * i }));
   const phrases: [number, number][] = [];
-  for (const s of sections) for (let b = s.bars[0]; b <= s.bars[1]; b += s.label === "prelude" ? 4 : 8) phrases.push([b, Math.min(s.bars[1], b + (s.label === "prelude" ? 3 : 7))]);
-  const timeOfBar = (b: number) => (b <= 8 ? beats[(b - 1) * 4] : beats[32 + (b - 9) * 2]);
+  for (const f of FORM) {
+    const len = f.label === "prelude" ? 4 : 8;
+    for (let b = f.bars[0]; b <= f.bars[1]; b += len) phrases.push([b, Math.min(f.bars[1], b + len - 1)]);
+  }
   const accents = [
-    { time: timeOfBar(9), strength: 1, label: "tutti-chord" },
-    { time: timeOfBar(11), strength: 0.9, label: "tutti-chord" },
-    { time: timeOfBar(13), strength: 0.9, label: "tutti-chord" },
-    { time: timeOfBar(25), strength: 0.8 },
-    { time: timeOfBar(41), strength: 0.8 },
-    { time: timeOfBar(56), strength: 0.85 },
-    { time: timeOfBar(64), strength: 0.9 },
-    { time: timeOfBar(73), strength: 0.8 },
-    { time: timeOfBar(89), strength: 0.9 },
-    { time: timeOfBar(97), strength: 0.75 },
-    { time: timeOfBar(105), strength: 0.85 },
-    { time: timeOfBar(117), strength: 0.9 },
-    { time: timeOfBar(121), strength: 1, label: "tutti-chord" },
-    { time: timeOfBar(125), strength: 1, label: "tutti-chord" },
-    { time: timeOfBar(128), strength: 1, label: "tutti-chord" },
+    { time: barTime[31], strength: 1, label: "tutti-chord" },
+    { time: barTime[33], strength: 0.9, label: "tutti-chord" },
+    { time: barTime[35], strength: 0.9, label: "tutti-chord" },
+    { time: barTime[62], strength: 0.8 },
+    { time: barTime[78], strength: 0.8 },
+    { time: barTime[93], strength: 0.85 },
+    { time: barTime[101], strength: 0.9 },
+    { time: barTime[108], strength: 0.85 },
+    { time: barTime[116], strength: 0.9 },
+    { time: barTime[124], strength: 0.75 },
+    { time: barTime[132], strength: 0.85 },
+    { time: barTime[150], strength: 0.9 },
+    { time: barTime[170], strength: 1, label: "tutti-chord" },
+    { time: barTime[173], strength: 1, label: "tutti-chord" },
+    { time: barTime[175], strength: 1, label: "tutti-chord" },
+    { time: barTime[176], strength: 1, label: "tutti-chord" },
   ];
   return {
     version: 1,
@@ -70,13 +66,13 @@ export function syntheticSongMap(): SongMap {
     audio: { file: "orpheus-galop.flac", source: "synthetic", cropStart: 0, cropEnd: t + 2, sampleRate: 44100, duration: t + 2 },
     meter: [
       { fromBar: 1, beatsPerBar: 4 },
-      { fromBar: 9, beatsPerBar: 2 },
+      { fromBar: 15, beatsPerBar: 2 },
     ],
     beats,
     firstDownbeatIndex: 0,
     sections,
     phrases,
-    tempoChanges: [],
+    tempoChanges: [{ bars: [140, 177] }],
     energy,
     accents,
   };

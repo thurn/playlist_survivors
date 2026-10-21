@@ -303,7 +303,7 @@ export class Evaluator {
       let y = tmp.y;
       let z = def.hover;
       let anim = "walk";
-      let frame = 0;
+      let frame: number;
       let alpha = 1;
       let flash = false;
       let sx = 1;
