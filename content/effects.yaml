@@ -4,26 +4,30 @@
 effects:
   - id: hit-light
     layers:
-      - { kind: sprite, art: "proc:arc", clock: world, life: 0.16, align: hitShape, additive: true, tint: "#fff6d8" }
-      - { kind: burst, art: "proc:spark", count: [5, 12], speed: [80, 200], life: 0.3, clock: world, drag: 3 }
-      - { kind: shake, trauma: [0.06, 0.16] }
-      - { kind: light, color: "#fff2c0", radius: [40, 80], life: 0.12, clock: song }
+      - { kind: sprite, art: "proc:arc", clock: world, life: 0.26, align: hitShape, additive: true, tint: "#7fc8ff", scale: [1.08, 1.16] }
+      - { kind: sprite, art: "proc:arc", clock: world, life: 0.2, align: hitShape, additive: true, tint: "#ffffff" }
+      - { kind: burst, art: "proc:spark", count: [12, 24], speed: [140, 300], life: 0.4, clock: world, drag: 3, spread: 150, size: [1.2, 1.8] }
+      - { kind: shake, trauma: [0.16, 0.3] }
+      - { kind: light, color: "#d8f0ff", radius: [90, 150], life: 0.16, clock: song, strength: [1, 1.4] }
   - id: hit-medium
     layers:
-      - { kind: sprite, art: "proc:arc", clock: world, life: 0.2, align: hitShape, additive: true, tint: "#d8f0ff" }
-      - { kind: burst, art: "proc:spark", count: [10, 20], speed: [100, 260], life: 0.4, clock: world, drag: 3 }
-      - { kind: shake, trauma: [0.12, 0.26] }
-      - { kind: light, color: "#d0e8ff", radius: [60, 110], life: 0.15, clock: song }
+      - { kind: sprite, art: "proc:arc", clock: world, life: 0.3, align: hitShape, additive: true, tint: "#a0b8ff", scale: [1.1, 1.2] }
+      - { kind: sprite, art: "proc:arc", clock: world, life: 0.22, align: hitShape, additive: true, tint: "#ffffff" }
+      - { kind: burst, art: "proc:spark", count: [18, 32], speed: [160, 340], life: 0.45, clock: world, drag: 2.5, spread: 170, size: [1.3, 2] }
+      - { kind: shake, trauma: [0.22, 0.36] }
+      - { kind: light, color: "#d0e0ff", radius: [110, 170], life: 0.18, clock: song, strength: [1.2, 1.6] }
   - id: hit-heavy
     layers:
-      - { kind: sprite, art: "proc:arc", clock: world, life: 0.26, align: hitShape, additive: true, tint: "#ffe0a0", scale: [1, 1.15] }
-      - { kind: burst, art: "proc:spark", count: [20, 40], speed: [140, 360], life: 0.5, clock: world, drag: 2.5 }
-      - { kind: ring, color: "#fff0c8", radius: [70, 120], life: 0.3, clock: world, width: [3, 6] }
-      - { kind: shake, trauma: [0.3, 0.55] }
-      - { kind: distortion, radius: [80, 140], life: 0.35, clock: song, strength: [0.5, 1] }
+      - { kind: sprite, art: "proc:arc", clock: world, life: 0.36, align: hitShape, additive: true, tint: "#ffb040", scale: [1.12, 1.25] }
+      - { kind: sprite, art: "proc:arc", clock: world, life: 0.28, align: hitShape, additive: true, tint: "#fff4d0" }
+      - { kind: burst, art: "proc:spark", count: [30, 56], speed: [180, 420], life: 0.55, clock: world, drag: 2.2, spread: 200, size: [1.5, 2.4] }
+      - { kind: ring, color: "#fff0c8", radius: [110, 170], life: 0.32, clock: world, width: [4, 8] }
+      - { kind: shake, trauma: [0.4, 0.62] }
+      - { kind: distortion, radius: [110, 180], life: 0.35, clock: song, strength: [0.6, 1] }
       - { kind: aberration, strength: [0.4, 1], life: 0.18 }
-      - { kind: light, color: "#ffe0a0", radius: [100, 180], life: 0.25, clock: song, strength: [1, 1.6] }
-      - { kind: decal, art: "proc:scorch", size: [0.8, 1.3] }
+      - { kind: flash, opacity: [0.06, 0.14], life: 0.1, color: "#fff4d0" }
+      - { kind: light, color: "#ffe0a0", radius: [150, 240], life: 0.28, clock: song, strength: [1.4, 2] }
+      - { kind: decal, art: "proc:scorch", size: [1, 1.6] }
   - id: hit-spin
     layers:
       - { kind: ring, color: "#e8f4ff", radius: [56, 70], life: 0.22, clock: world, width: [4, 8] }
@@ -51,36 +55,36 @@ effects:
       - { kind: light, color: "#c8a0ff", radius: [140, 220], life: 0.4, clock: song, strength: [1.2, 1.8] }
   - id: death-humanoid
     layers:
-      - { kind: burst, art: "proc:shard", count: [5, 10], speed: [60, 160], life: 0.7, clock: world, gravity: 380, tint: debris, additive: false }
-      - { kind: burst, art: "proc:gib", count: [2, 4], speed: [50, 120], life: 0.9, clock: world, gravity: 420, tint: debris, additive: false }
+      - { kind: burst, art: "proc:shard", count: [5, 10], speed: [120, 280], spread: 140, life: 0.7, clock: world, gravity: 380, tint: debris, additive: false }
+      - { kind: burst, art: "proc:gib", count: [2, 4], speed: [110, 240], spread: 140, life: 0.9, clock: world, gravity: 420, tint: debris, additive: false }
       - { kind: sprite, art: "proc:wisp", clock: world, life: 0.9, align: up, additive: true, tint: "#d8f0ff" }
       - { kind: decal, art: "proc:splat", tint: debris, size: [0.7, 1.2] }
   - id: death-elite
     layers:
-      - { kind: burst, art: "proc:shard", count: [12, 20], speed: [80, 200], life: 0.8, clock: world, gravity: 380, tint: debris, additive: false }
-      - { kind: burst, art: "proc:gib", count: [4, 7], speed: [60, 160], life: 1.0, clock: world, gravity: 420, tint: debris, additive: false }
+      - { kind: burst, art: "proc:shard", count: [12, 20], speed: [140, 320], spread: 140, life: 0.8, clock: world, gravity: 380, tint: debris, additive: false }
+      - { kind: burst, art: "proc:gib", count: [4, 7], speed: [120, 280], spread: 140, life: 1.0, clock: world, gravity: 420, tint: debris, additive: false }
       - { kind: sprite, art: "fx:explosion-small", clock: world, life: 0.5, additive: true }
       - { kind: sprite, art: "proc:wisp", clock: world, life: 1.0, align: up, additive: true, tint: "#ffe8b0" }
       - { kind: decal, art: "proc:splat", tint: debris, size: [1.2, 1.6] }
       - { kind: shake, trauma: [0.1, 0.2] }
   - id: death-slime
     layers:
-      - { kind: burst, art: "proc:drop", count: [6, 12], speed: [60, 150], life: 0.6, clock: world, gravity: 420, tint: debris, additive: false }
+      - { kind: burst, art: "proc:drop", count: [6, 12], speed: [120, 270], spread: 140, life: 0.6, clock: world, gravity: 420, tint: debris, additive: false }
       - { kind: sprite, art: "proc:wisp", clock: world, life: 0.7, align: up, additive: true, tint: "#d0ffb0" }
       - { kind: decal, art: "proc:splat", tint: debris, size: [0.8, 1.2] }
   - id: death-flyer
     layers:
-      - { kind: burst, art: "proc:shard", count: [4, 8], speed: [50, 130], life: 0.6, clock: world, gravity: 300, tint: debris, additive: false }
+      - { kind: burst, art: "proc:shard", count: [4, 8], speed: [110, 250], spread: 140, life: 0.6, clock: world, gravity: 300, tint: debris, additive: false }
       - { kind: burst, art: "proc:spark", count: [4, 8], speed: [40, 100], life: 0.5, clock: world, drag: 2, tint: "#fff0d0" }
       - { kind: sprite, art: "proc:wisp", clock: world, life: 0.7, align: up, additive: true, tint: "#f0e0ff" }
   - id: death-skeleton
     layers:
-      - { kind: burst, art: "proc:bone", count: [5, 9], speed: [70, 170], life: 0.8, clock: world, gravity: 420, tint: debris, additive: false }
+      - { kind: burst, art: "proc:bone", count: [5, 9], speed: [130, 290], spread: 140, life: 0.8, clock: world, gravity: 420, tint: debris, additive: false }
       - { kind: sprite, art: "proc:wisp", clock: world, life: 0.9, align: up, additive: true, tint: "#c8f0ff" }
       - { kind: decal, art: "proc:dust", tint: "#a89880", size: [0.8, 1.1] }
   - id: death-ember
     layers:
-      - { kind: burst, art: "proc:bone", count: [5, 9], speed: [70, 170], life: 0.8, clock: world, gravity: 420, tint: debris, additive: false }
+      - { kind: burst, art: "proc:bone", count: [5, 9], speed: [130, 290], spread: 140, life: 0.8, clock: world, gravity: 420, tint: debris, additive: false }
       - { kind: burst, art: "proc:ember", count: [6, 12], speed: [30, 90], life: 1.0, clock: world, gravity: -60, tint: "#ffa040" }
       - { kind: sprite, art: "fx:explosion-small", clock: world, life: 0.45, additive: true, scale: 0.8 }
       - { kind: decal, art: "proc:scorch", size: [0.7, 1.0] }

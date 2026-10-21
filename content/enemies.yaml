@@ -4,7 +4,7 @@ enemies:
     atlas: slime
     radius: 10
     group: beat
-    speed: 60
+    speed: 90
     lifetime: [4, 30]
     size: regular
     walkCycleBeats: 1
@@ -14,7 +14,7 @@ enemies:
     atlas: bat
     radius: 10
     group: eighth
-    speed: 110
+    speed: 165
     lifetime: [4, 30]
     size: regular
     hover: 18
@@ -24,7 +24,7 @@ enemies:
     atlas: eyeball
     radius: 11
     group: bar
-    speed: 45
+    speed: 68
     lifetime: [6, 40]
     size: regular
     hover: 14
@@ -34,7 +34,7 @@ enemies:
     atlas: bee
     radius: 9
     group: eighth
-    speed: 120
+    speed: 180
     lifetime: [3, 25]
     size: regular
     hover: 16
@@ -44,7 +44,7 @@ enemies:
     atlas: goblin
     radius: 12
     group: beat
-    speed: 75
+    speed: 112
     lifetime: [4, 40]
     size: regular
     death: { recipe: death-humanoid, debris: ["#5a8f3a", "#8b1a1a"] }
@@ -52,7 +52,7 @@ enemies:
     atlas: orc
     radius: 13
     group: bar
-    speed: 70
+    speed: 105
     lifetime: [4, 40]
     size: regular
     death: { recipe: death-humanoid, debris: ["#6a8a4a", "#8b1a1a"] }
@@ -60,7 +60,7 @@ enemies:
     atlas: orc-elite
     radius: 14
     group: bar
-    speed: 65
+    speed: 98
     lifetime: [8, 40]
     size: elite
     hits: 3
@@ -69,7 +69,7 @@ enemies:
     atlas: orc-ember
     radius: 13
     group: bar
-    speed: 72
+    speed: 108
     lifetime: [4, 40]
     size: regular
     death: { recipe: death-ember, debris: ["#ff7a2e", "#5a1a1a"] }
@@ -77,7 +77,7 @@ enemies:
     atlas: skeleton
     radius: 12
     group: beat
-    speed: 72
+    speed: 108
     lifetime: [4, 40]
     size: regular
     death: { recipe: death-skeleton, debris: ["#e8e0d0", "#a89880"] }
@@ -85,7 +85,7 @@ enemies:
     atlas: skeleton-ember
     radius: 12
     group: beat
-    speed: 72
+    speed: 108
     lifetime: [4, 40]
     size: regular
     death: { recipe: death-ember, debris: ["#ffb060", "#e8e0d0"] }
@@ -93,7 +93,7 @@ enemies:
     atlas: skeleton-archer
     radius: 12
     group: bar
-    speed: 80
+    speed: 120
     lifetime: [6, 40]
     size: regular
     attack: archer

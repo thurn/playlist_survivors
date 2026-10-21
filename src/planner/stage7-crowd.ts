@@ -34,12 +34,16 @@ const CONVERT_MARGIN = 3;
 const FORMATION_ROOM = 34;
 /** Extra clearance around the boss so its big sprite stays readable. */
 const BOSS_ROOM = 22;
+/** Weapons only make an enemy flinch if a sword hit will kill it within this many world-seconds. */
+const SWORD_GUARD = 1.5;
 /** Keep-out applies to hits firing within this many world-seconds. */
 const KEEPOUT_WINDOW = 0.4;
 const PERSONAL_SPACE = 40;
 const MISS_LIMIT = 24;
 /** Simulation runs: the first, plus re-runs with 30% more lifetime for enemies that missed. */
 const MAX_RUNS = 2;
+/** Re-run only when more than this fraction of enemies missed; otherwise drop the few stragglers. */
+const RERUN_FRACTION = 0.005;
 const DEBUG = typeof process !== "undefined" && !!process.env?.PS_DEBUG;
 export const missLog: string[] = [];
 
@@ -71,6 +75,8 @@ interface State {
   approach: boolean;
   /** Holding an appointment this step. */
   holding: boolean;
+  /** Spawned this step: it stays exactly on its (off-screen) spawn point. */
+  fresh: boolean;
   /** Cached separation push. */
   sx: number;
   sy: number;
@@ -91,7 +97,7 @@ export function simulateCrowd(ctx: Ctx, kp: KillPlan): CrowdResult {
       repairSpacing(kp, result);
       return { ...result, dropped: 0 };
     }
-    if (attempt === MAX_RUNS - 1) break;
+    if (attempt === MAX_RUNS - 1 || result.misses <= kp.agents.length * RERUN_FRACTION) break;
     // Give each missing enemy 30% more lifetime and re-run the whole simulation.
     const missed = missedOf(result);
     for (const ag of kp.agents) {
@@ -274,6 +280,7 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
     sy: 0,
     approach: false,
     holding: false,
+    fresh: false,
     missed: false,
   }));
   const bySpawn = [...states].sort((a, b) => a.ag.e.spawnW - b.ag.e.spawnW || a.ag.e.id - b.ag.e.id);
@@ -295,7 +302,11 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
     kp.fatesByHit[h.id].push(e.id);
     // Enemies on their way to an appointment (archers, the boss) survive with a flinch.
     const appointmentAhead = ag.waypoints.slice(st.wp).some((wp) => wp.appointment);
-    if (ag.def.size === "regular" && !(ag.kinematic && !ag.simulated) && !appointmentAhead) {
+    // The sword is the star: a weapon never steals a victim the hero is about to cut down;
+    // it only makes it flinch.
+    const next = ag.waypoints[st.wp];
+    const swordSoon = h.source === "weapon" && next !== undefined && next.lethal && next.hit >= 0 && kp.hits[next.hit].source === "move" && next.w - h.w < SWORD_GUARD;
+    if (ag.def.size === "regular" && !(ag.kinematic && !ag.simulated) && !appointmentAhead && !swordSoon) {
       // Die here, now: drop the remaining waypoints and fates.
       const old = ag.waypoints.slice(st.wp);
       for (const o of old) if (o.hit >= 0) {
@@ -338,10 +349,12 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
 
   for (let step = 0; step <= steps; step++) {
     const w = step * dt;
-    // Spawn.
+    // Spawn. Last step's spawns may move once their first sample is recorded.
+    for (const st of active) if (st.firstSample >= 0) st.fresh = false;
     while (nextSpawn < bySpawn.length && bySpawn[nextSpawn].ag.e.spawnW <= w + 1e-9) {
       const st = bySpawn[nextSpawn++];
       st.active = true;
+      st.fresh = true;
       if (st.ag.kinematic && w <= st.ag.kinUntil) {
         const p = st.ag.kinematic(Math.max(w, st.ag.e.spawnW));
         st.x = p.x;
@@ -514,6 +527,7 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
         continue;
       }
       if (st.done) continue;
+      if (st.fresh) continue;
       let wp = ag.waypoints[st.wp];
       while (wp && w >= wp.w - 1e-9 && !(wp.holdUntil !== undefined && w < wp.holdUntil)) {
         st.x = wp.x;
@@ -664,8 +678,8 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
         const uy = d > 0.01 ? oy / d : 0;
         // Idle enemies keep a comfortable gap; anyone stepping in only keeps the hard
         // minimum, and mostly makes the others yield. Blending enemies never move.
-        const ma = st.blendW >= 0 || st.holding ? 0 : st.approach ? 0.15 : 1;
-        const mb = o.blendW >= 0 || o.holding ? 0 : o.approach ? 0.15 : 1;
+        const ma = st.blendW >= 0 || st.holding || st.fresh ? 0 : st.approach ? 0.15 : 1;
+        const mb = o.blendW >= 0 || o.holding || o.fresh ? 0 : o.approach ? 0.15 : 1;
         if (ma + mb === 0) continue;
         const stepping = ma < 1 || mb < 1;
         const goal = stepping ? HARD_GAP * (st.r + o.r) : lim;
@@ -681,7 +695,8 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
     }
 
     // Record samples at 30 Hz.
-    if (step % (SIM_RATE / SAMPLE_RATE) === 0) {
+    const record = step % (SIM_RATE / SAMPLE_RATE) === 0;
+    if (record) {
       const si = step / (SIM_RATE / SAMPLE_RATE);
       for (const st of active) {
         if (st.firstSample < 0) st.firstSample = si;

@@ -21,12 +21,19 @@ export function stage5(ctx: Ctx): void {
   const zoom = new Float32Array(n);
 
   const punches: { w: number; amt: number }[] = [];
+  // Every sword hit kicks the camera in a touch: the swings are the star.
+  for (const a of ctx.actions) {
+    if (a.kind === "dodge" || a.kind === "blast") continue;
+    const amt = a.move.weight === "heavy" ? 0.035 : a.move.weight === "medium" ? 0.022 : 0.014;
+    punches.push({ w: a.w, amt: amt * ctx.sections[a.section].level.intensity });
+  }
   for (const a of ctx.song.accents) {
     const sec = ctx.sections[sectionIndexAt(ctx, a.time)];
     if (!sec.level.camera.punchOnAccents) continue;
     punches.push({ w: warp.toWorld(a.time), amt: 0.02 + 0.02 * a.strength });
   }
 
+  punches.sort((p, q) => p.w - q.w);
   const zoomAt = (w: number) => {
     const s = warp.toSong(w);
     const i = sectionIndexAt(ctx, s);

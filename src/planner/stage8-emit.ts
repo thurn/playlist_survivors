@@ -112,9 +112,10 @@ export function stage8(ctx: Ctx, kp: KillPlan): EmitResult {
       fx(a.move.effect ?? `hit-${a.move.weight}`, a.s, a.x, a.y, a.dir, intensity, { hit: a.hit });
       if (a.move.extraEffect) fx(a.move.extraEffect, a.s, a.x, a.y, a.dir, intensity);
     }
+    sfx("swing", a.s - 0.04, a.x, PRIORITY.hero + 0.5, 0.7);
     const key = a.move.sound ?? `hit-${a.move.weight}`;
     const heavy = a.move.weight === "heavy";
-    sfx(key, a.s, a.x, heavy ? PRIORITY.hero : PRIORITY.weapon - 0.5, heavy ? 1 : 0.8, heavy);
+    sfx(key, a.s, a.x, heavy ? PRIORITY.hero : PRIORITY.hero + 0.3, heavy ? 1.1 : 0.95, heavy);
     if (a.bossHit) sfx("boss-hit", a.s, a.x, PRIORITY.boss, 1);
     if (heavy && a.accent > 0) {
       perfect.push(a.s);

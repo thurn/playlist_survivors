@@ -24,7 +24,7 @@ sections:
     moveset: herald-cleaves
     population: [60, 120]
     roster: { slime: 2, goblin: 2, bat: 1 }
-    camera: { zoom: 1.0, lead: 60, punchOnAccents: true }
+    camera: { zoom: 1.2, lead: 50, punchOnAccents: true }
     sfxPalette: crisp-steel
   - bars: 54-69            # theme-a
     section: theme-a
@@ -43,14 +43,14 @@ sections:
     zone: mushroom-grove
     population: [320, 350]
     roster: { goblin: 3, skeleton: 3, orc: 1, slime: 1 }
-    camera: { zoom: 0.9, lead: 30 }
+    camera: { zoom: 1.0, lead: 230 }
   - bars: 102-107            # bridge
     section: bridge
     moveset: descent-steps
     zone: ember-hollow
     population: [350, 420]
     roster: { skeleton: 2, orc-ember: 3, goblin: 2, bat: 1, orc-elite: 0.2 }
-    camera: { zoom: 0.85, lead: 60 }
+    camera: { zoom: 1.05, lead: 60 }
     sfxPalette: heavy-infernal
   - bars: 108-139            # climax
     section: climax
@@ -58,7 +58,7 @@ sections:
     zone: infernal-grove
     population: [420, 500]
     roster: { orc-ember: 3, skeleton-ember: 3, goblin: 2, bat: 1, orc-elite: 0.25 }
-    camera: { zoom: 0.7, lead: 0 }
+    camera: { zoom: 0.9, lead: 0 }
   - bars: 140-177            # coda
     section: coda
     moveset: finale-frenzy

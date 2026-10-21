@@ -683,9 +683,10 @@ export class Evaluator {
           const hit = this.plan.hits[ev.hit];
           const sh = hit.shape;
           if (sh.kind === "arc") {
-            art = sh.halfAngle > 1.2 ? "proc:arc160" : "proc:arc120";
+            const deg = (sh.halfAngle * 360) / Math.PI;
+            art = deg < 135 ? "proc:arc120" : deg < 180 ? "proc:arc150" : "proc:arc200";
             rot = sh.dir;
-            const base = art === "proc:arc160" ? 80 : 64;
+            const base = art === "proc:arc120" ? 62 : art === "proc:arc150" ? 78 : 98;
             sxx = syy = (sh.radius / base) * scale * (0.85 + 0.25 * u);
             y -= 14;
           } else if (sh.kind === "capsule") {

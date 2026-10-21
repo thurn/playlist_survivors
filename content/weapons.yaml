@@ -6,7 +6,7 @@ weapons:
     fires: { every: eighth }
     orbit: { count: 3, radius: 72, periodBars: 1 }
     hitShape: { kind: circle, radius: 14 }
-    killsPerFiring: [0, 0.5]     # per blade, at energy 0 and 1
+    killsPerFiring: [0, 0.12]    # per blade, at energy 0 and 1 (the sword is the star)
     weight: light
     effect: blades-hit
     sound: weapon-blades
@@ -16,7 +16,7 @@ weapons:
     name: Chain Lightning
     kind: chain
     fires: { every: bar }
-    chain: { jumps: [3, 6], step: sixteenth, range: 110 }
+    chain: { jumps: [2, 4], step: sixteenth, range: 110 }
     hitShape: { kind: circle, radius: 16 }
     killsPerFiring: [1, 1]       # each jump kills its target
     weight: medium
@@ -30,7 +30,7 @@ weapons:
     fires: { every: beat }
     trail: { beats: 2, spacing: 18 }
     hitShape: { kind: circle, radius: 20 }
-    killsPerFiring: [0, 0.35]    # per trail circle
+    killsPerFiring: [0, 0.1]     # per trail circle
     weight: light
     effect: fire-hit
     sound: weapon-fire

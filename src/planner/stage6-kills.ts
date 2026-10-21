@@ -19,9 +19,13 @@ export const HURTBOX_RADIUS = 10;
 export const HURTBOX_LIFT = 20;
 const SPAWN_MARGIN = 16;
 /** World-seconds before the finale during which the ring's enemies fill the population. */
-const FINALE_FILL = 12;
+const FINALE_FILL = 5;
 /** The spawn schedule aims this much above the target population. */
 const SPAWN_AIM = 1.08;
+/** The finale's enemies stand at least this far from the hero. */
+const RING_CLEAR = 230;
+/** Two kill spots this close in time must not overlap (both enemies blend in together). */
+const SPOT_WINDOW = 0.35;
 /** Never schedule more living enemies than this (the hard cap is 520). */
 const POP_CAP = 500;
 /** Free sections lose more enemies to big area hits, so they aim higher. */
@@ -71,7 +75,8 @@ export interface KillPlan {
   dropped?: number;
 }
 
-const BASE_KILLS = { light: 2, medium: 4, heavy: 7 } as const;
+/** Kills per hero move before scaling: the sword is the core power fantasy, so it kills a lot. */
+const BASE_KILLS = { light: 12, medium: 18, heavy: 28 } as const;
 
 export function targetPopulation(ctx: Ctx, s: number): number {
   const sec = ctx.sections[sectionIndexAt(ctx, s)];
@@ -612,14 +617,14 @@ function assignCrowd(
   // Kill spots already taken, by time bucket and cell: enemies blending into nearby spots
   // at the same moment would overlap.
   let taken = new Map<number, { x: number; y: number; w: number; r: number }[]>();
-  const takenKey = (x: number, y: number, w: number) => (Math.floor(w / 0.8) * 4096 + Math.floor(x / 48) + 2048) * 4096 + Math.floor(y / 48) + 2048;
+  const takenKey = (x: number, y: number, w: number) => (Math.floor(w / SPOT_WINDOW) * 4096 + Math.floor(x / 48) + 2048) * 4096 + Math.floor(y / 48) + 2048;
   const spotFree = (x: number, y: number, w: number, r: number) => {
     for (let dt = -1; dt <= 1; dt++)
       for (let gx = -1; gx <= 1; gx++)
         for (let gy = -1; gy <= 1; gy++) {
-          const l = taken.get(takenKey(x + gx * 48, y + gy * 48, w + dt * 0.8));
+          const l = taken.get(takenKey(x + gx * 48, y + gy * 48, w + dt * SPOT_WINDOW));
           if (!l) continue;
-          for (const q of l) if (Math.abs(q.w - w) < 0.8 && dist(q.x, q.y, x, y) < r + q.r + 6) return false;
+          for (const q of l) if (Math.abs(q.w - w) < SPOT_WINDOW && dist(q.x, q.y, x, y) < r + q.r + 3) return false;
         }
     return true;
   };
@@ -720,7 +725,8 @@ function assignCrowd(
         x = lerp(view[0] + 20, view[2] - 20, r.next());
         y = lerp(view[1] + 40, view[3] - 10, r.next());
         const d = dist(x, y, cx, cy);
-        if (d < 40 || d >= outer) continue;
+        // The finale horde surrounds the hero's cleared ground, closing in from the edges.
+        if (d < RING_CLEAR || d >= outer) continue;
         if (ringSpecs.some((q) => dist(q.x, q.y, x, y) < 2 * def.radius + 2) && tries < 30) continue;
         break;
       }
@@ -906,7 +912,9 @@ function assignCrowd(
       if (h.w >= ringW - FINALE_FILL && f > 1) continue;
       const r = new Rng(ctx.seed, "bal", h.id, round);
       const base = Math.max(kills[h.id], f > 1 ? 0.6 : 0);
-      kills[h.id] = clamp(r.roundStochastic(base * Math.pow(f, 0.85)), minKills[h.id], caps[h.id]);
+      // Weapons give up kills first and gain them last: sword swings carry the kill count.
+      const k = h.source === "move" ? (f < 1 ? 0.6 : 1.0) : f < 1 ? 2.0 : 0.4;
+      kills[h.id] = clamp(r.roundStochastic(base * Math.pow(f, k)), minKills[h.id], caps[h.id]);
     }
     if (bad === 0) break;
   }

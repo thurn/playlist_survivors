@@ -219,6 +219,8 @@ const PROC: Record<string, [number, number, Draw]> = {
   }],
   arc120: [128, 128, (g, w, h) => arc(g, w, h, 120)],
   arc160: [160, 160, (g, w, h) => arc(g, w, h, 160)],
+  arc150: [160, 160, (g, w, h) => arc(g, w, h, 150)],
+  arc200: [200, 200, (g, w, h) => arc(g, w, h, 200)],
   streak: [64, 16, (g, w, h) => {
     const grd = g.createLinearGradient(0, 0, w, 0);
     grd.addColorStop(0, "rgba(255,255,255,0)");
@@ -299,7 +301,7 @@ const COPY_FX = ["gib-1", "gib-2", "gib-3", "gib-4", "gib-5", "gib-6", "gib-smal
 
 function buildProcAtlas(fxPages: TextureSource[], effects: EffectsAtlas): { proc: Map<string, Texture>; source: TextureSource } {
   const W = 1024;
-  const H = 512;
+  const H = 1024;
   const canvas = document.createElement("canvas");
   canvas.width = W;
   canvas.height = H;

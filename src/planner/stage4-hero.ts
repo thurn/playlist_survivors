@@ -10,6 +10,8 @@ export const HERO_RATE = 60;
 const CORRIDOR_MARGIN = 48;
 /** How far ahead of the route point the boss's home sits. */
 export const BOSS_HOME_AHEAD = 110;
+/** The kick line stands this far ahead of the hero: clear of sword reach until the sweep. */
+export const SWEEP_LEAD = 140;
 
 export const HERO_ANIMS = ["idle", "walk", "run", "jump", "slash", "backslash", "halfslash", "thrust", "spellcast", "slash-oversize", "hurt"];
 
@@ -230,7 +232,7 @@ export function stage4(ctx: Ctx): void {
       const stagger = def.release.at === "finalAccentOfPhrase" ? 0.25 : 0.25;
       for (let k = 0; k < def.count; k++) {
         const s = ctx.song.beats.length > 0 ? timeAtBeat(ctx, bi0 + k * stagger) : a.s;
-        prof.push([warp.toWorld(s), 24 + k * def.spacing]);
+        prof.push([warp.toWorld(s), SWEEP_LEAD + k * def.spacing]);
       }
       const last = prof[prof.length - 1];
       pushes.push({ a, wStart: a.w - 0.1, wImpact: last[0], wHold: last[0], dx: Math.cos(a.dir), dy: Math.sin(a.dir), beat: beatW(a.w), profile: prof });

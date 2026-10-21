@@ -4,6 +4,7 @@ soundPalettes:
   - id: crisp-steel
     tuned: false
     sounds:
+      swing: [rpgpack/swing, rpgpack/swing3, rpg80/blade_01, rpg80/blade_02, rpg80/blade_03]
       hit-light: [kenney/impactMetal_light_000, kenney/impactMetal_light_001, kenney/impactMetal_light_002, kenney/impactMetal_light_004, rpg80/blade_01, rpg80/blade_02]
       hit-medium: [kenney/impactMetal_medium_000, kenney/impactMetal_medium_003, rpg80/metal_02, rpg80/metal_03]
       hit-heavy: [kenney/impactPlate_heavy_001, kenney/impactPlate_heavy_003, fantasy/Trap_00]
