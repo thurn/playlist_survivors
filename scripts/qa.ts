@@ -11,6 +11,7 @@ import { chromium, type Page } from "@playwright/test";
 import sharp from "sharp";
 import { ROOT } from "./lib/files.ts";
 import { withDevServer } from "./lib/server.ts";
+import { withChrome } from "./lib/chrome.ts";
 
 const OUT = join(ROOT, "captures/qa");
 mkdirSync(OUT, { recursive: true });
@@ -178,6 +179,60 @@ await withDevServer(async (base) => {
     const ms = await page.evaluate(() => (window as unknown as { __demo: Hook }).__demo.planMs ?? NaN);
     record("?seed=1859 re-plans and passes every plan check", failed.length === 0 && ms < 2000, failed.length ? `failing: ${failed.join(", ")}` : `all planner output checks pass in the browser; planned in ${ms.toFixed(0)} ms`);
     await ctx.close();
+  }
+
+  // ------------------------------------- real hidden tab, in the climax, in Chrome
+  // Playwright's Chromium never really hides a tab, so this drives the installed
+  // Google Chrome directly: play into the climax, open a new foreground tab for
+  // 10 s, then switch back.
+  {
+    const ran = await withChrome(`${base}/?test`, async ({ page, pageId, browser }) => {
+      const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+      for (let i = 0; i < 300 && !(await page.eval<boolean>("!!(window.__demo && window.__demo.planHash)")); i++) await sleep(200);
+      await page.eval("window.__demo.ready");
+      const pt = await page.eval<{ x: number; y: number }>(
+        `(() => { const el = [...document.querySelectorAll('*')].find((e) => e.children.length === 0 && /Click to begin/.test(e.textContent)); const r = el.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`,
+      );
+      await page.click(pt.x, pt.y);
+      for (let i = 0; i < 50 && !(await page.eval<boolean>("!!window.__demo.audio")); i++) await sleep(100);
+      const climax = await page.eval<number>(`window.__demo.plan.sections.find((s) => s.label === "climax").s0`);
+      while ((await page.eval<number>("window.__demo.lastS ?? 0")) < climax + 1) await sleep(250);
+      type Snap = { vis: string; s: number; frames: number; t: number; ctxS: number; scheduled: number; startedLate: number };
+      const snap = () =>
+        page.eval<Snap>(
+          `(() => { const d = window.__demo, a = d.audio(); return { vis: document.visibilityState, s: d.lastS, frames: d.frames, t: performance.now(), ctxS: a.contextSongTime, scheduled: a.stats.scheduled, startedLate: a.stats.startedLate }; })()`,
+        );
+      const f0 = await snap();
+      await sleep(4000);
+      const f1 = await snap();
+      const fps = (f1.frames - f0.frames) / ((f1.t - f0.t) / 1000);
+      record("Climax frame rate (Google Chrome)", fps >= 55, `${fps.toFixed(1)} frames per second from ${f0.s.toFixed(1)} s to ${f1.s.toFixed(1)} s (the display's refresh rate is the ceiling)`);
+      await page.eval("window.__vis = []; document.addEventListener('visibilitychange', () => window.__vis.push(document.visibilityState))");
+      const before = await snap();
+      const tab = (await browser.send("Target.createTarget", { url: "about:blank", background: false })) as { targetId: string };
+      const during: Snap[] = [];
+      for (let i = 0; i < 5; i++) {
+        await sleep(2000);
+        during.push(await snap());
+      }
+      await browser.send("Target.closeTarget", { targetId: tab.targetId });
+      await browser.send("Target.activateTarget", { targetId: pageId });
+      await sleep(800);
+      const after = await snap();
+      const vis = await page.eval<string[]>("window.__vis");
+      const hidden = during.every((d) => d.vis === "hidden") && vis[0] === "hidden" && after.vis === "visible";
+      const stalled = during[during.length - 1].frames - during[0].frames;
+      const moved = after.s - before.s;
+      const gap = (after.t - before.t) / 1000;
+      const lead = (after.s - after.ctxS) * 1000;
+      record(
+        "Hidden tab, real tab switch in the climax (Google Chrome)",
+        hidden && stalled <= 2 && Math.abs(moved - gap) < 0.1 && Math.abs(lead) < 120 && after.startedLate === 0,
+        `page ${hidden ? "was hidden for 10 s" : "was NOT hidden"} (${stalled} frames drawn while hidden); ${after.scheduled - before.scheduled} sounds kept playing on the audio clock meanwhile; on return song time had moved ${moved.toFixed(3)} s over ${gap.toFixed(3)} s, the picture is ${lead.toFixed(0)} ms from the audio, and ${after.startedLate} sounds started late`,
+      );
+      return true;
+    });
+    if (!ran) record("Hidden tab, real tab switch in the climax (Google Chrome)", false, "Google Chrome is not installed, so the real tab switch was not run");
   }
 
   // -------------------------------------------- captures for the human review
