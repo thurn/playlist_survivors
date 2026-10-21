@@ -80,6 +80,8 @@ interface State {
   fresh: boolean;
   /** Replayed from a previous run (partial re-runs): moves by its old samples only. */
   ghost: boolean;
+  /** For ghosts: the previous run's sample layout. */
+  lay?: { off: number; w0: number; n: number };
   /** Cached separation push. */
   sx: number;
   sy: number;
@@ -89,6 +91,8 @@ interface State {
 const NONE: never[] = [];
 const len2 = (x: number, y: number): number => Math.sqrt(x * x + y * y);
 const GROUP_STEPS = { eighth: 0.5, beat: 1, bar: -1, "two-bar": -2 } as const;
+const GROUP_ENTRIES = Object.entries(GROUP_STEPS);
+const mult: Record<string, number> = { eighth: 1, beat: 1, bar: 1, "two-bar": 1 };
 
 export function simulateCrowd(ctx: Ctx, kp: KillPlan): CrowdResult {
   let result!: CrowdResult;
@@ -183,7 +187,9 @@ function repairSpacing(kp: KillPlan, r: CrowdResult): void {
   };
   let gen = 0;
   const pairs: number[] = [];
-  for (let k = 0; k <= maxK; k++) {
+  // The spacing check samples 10 times per second (every third 30 Hz frame); the crowd
+  // simulation's own correction keeps the frames in between close.
+  for (let k = 0; k <= maxK; k += SAMPLE_RATE / 10) {
     const a0 = start[k];
     const a1 = start[k + 1];
     if (a1 - a0 < 2) continue;
@@ -300,6 +306,7 @@ function runOnce(ctx: Ctx, kp: KillPlan, partial?: { only: Set<number>; prev: Cr
   const states: State[] = kp.agents.map((ag) => ({
     ag,
     ghost: partial !== undefined && !partial.only.has(ag.e.id),
+    lay: partial !== undefined && !partial.only.has(ag.e.id) ? prevLayout.get(ag.e.id) : undefined,
     r: ag.def.radius,
     x: ag.spawnX,
     y: ag.spawnY,
@@ -324,6 +331,8 @@ function runOnce(ctx: Ctx, kp: KillPlan, partial?: { only: Set<number>; prev: Cr
   const bySpawn = [...states].sort((a, b) => a.ag.e.spawnW - b.ag.e.spawnW || a.ag.e.id - b.ag.e.id);
   let nextSpawn = 0;
   const active: State[] = [];
+  // Hit bounds, computed once.
+  const bounds = hits.map((h) => shapeBounds(h.shape));
   let hitPtr = 0;
   let firedPtr = 0;
   /** An enemy caught inside a hit without a fate on it takes that hit: regular enemies die there. */
@@ -423,7 +432,7 @@ function runOnce(ctx: Ctx, kp: KillPlan, partial?: { only: Set<number>; prev: Cr
     if (prevSamples) {
       for (const st of active) {
         if (!st.ghost) continue;
-        const lay = prevLayout.get(st.ag.e.id)!;
+        const lay = st.lay!;
         if (w >= st.ag.e.deathW) st.done = true;
         const f = Math.max(0, Math.min(lay.n - 1, (w - lay.w0) * SAMPLE_RATE));
         const k = Math.min(lay.n - 2, Math.floor(f));
@@ -464,8 +473,7 @@ function runOnce(ctx: Ctx, kp: KillPlan, partial?: { only: Set<number>; prev: Cr
     const bar = Math.max(1, barOfBeatIndex(ctx.idx, wbi));
     const bpb = ctx.idx.beatsPerBar[Math.min(ctx.idx.barCount, bar)] ?? 2;
     const barStart = ctx.idx.barStart[Math.min(ctx.idx.barCount, bar)] ?? 0;
-    const mult: Record<string, number> = {};
-    for (const [g, st] of Object.entries(GROUP_STEPS)) {
+    for (const [g, st] of GROUP_ENTRIES) {
       let period = st > 0 ? st : -st * bpb;
       let phase: number;
       if (free) {
@@ -499,8 +507,10 @@ function runOnce(ctx: Ctx, kp: KillPlan, partial?: { only: Set<number>; prev: Cr
     }
 
     // Obstacles the crowd gives extra room: dancing formations and the boss.
-    dancing.length = 0;
-    for (const st of active) if (!st.done && ((st.ag.kinematic && w <= st.ag.kinUntil) || st.ag.def.size === "boss")) dancing.push(st);
+    if ((step & 1) === 0) {
+      dancing.length = 0;
+      for (const st of active) if (!st.done && ((st.ag.kinematic && w <= st.ag.kinUntil) || st.ag.def.size === "boss")) dancing.push(st);
+    }
 
     // Hits firing within the next beat.
     while (hitPtr < hits.length && hits[hitPtr].w < w) hitPtr++;
@@ -513,7 +523,7 @@ function runOnce(ctx: Ctx, kp: KillPlan, partial?: { only: Set<number>; prev: Cr
     let ub3 = -Infinity;
     for (let i = hitPtr; i < hits.length && hits[i].w <= w + Math.max(beatLen, free ? HOLD_LOOKAHEAD_FREE : HOLD_LOOKAHEAD); i++) {
       if (hits[i].source === "ring") continue;
-      const b = shapeBounds(hits[i].shape);
+      const b = bounds[i];
       const big = b[2] - b[0] > 180;
       upcoming.push({ h: hits[i], b, big });
       // Sword swings are big: the waiting crowd starts clearing them earlier.
@@ -530,7 +540,7 @@ function runOnce(ctx: Ctx, kp: KillPlan, partial?: { only: Set<number>; prev: Cr
     while (firedPtr < hits.length && hits[firedPtr].w <= w) {
       const h = hits[firedPtr++];
       if (h.source === "ring") continue;
-      const b = shapeBounds(h.shape);
+      const b = bounds[h.id];
       const pad = 20; // bodies that overlap the shape from a neighbouring cell
       const cx0 = Math.floor((b[0] - pad) / cell);
       const cx1 = Math.floor((b[2] + pad) / cell);
