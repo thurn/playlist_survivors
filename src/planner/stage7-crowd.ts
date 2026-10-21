@@ -32,6 +32,8 @@ const HARD_GAP = 0.56;
 const CONVERT_MARGIN = 3;
 /** Clearance the crowd keeps around formation members. */
 const FORMATION_ROOM = 34;
+/** Extra clearance around the boss so its big sprite stays readable. */
+const BOSS_ROOM = 22;
 /** Keep-out applies to hits firing within this many world-seconds. */
 const KEEPOUT_WINDOW = 0.4;
 const PERSONAL_SPACE = 40;
@@ -390,8 +392,9 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
       head[c] = i;
     }
 
+    // Obstacles the crowd gives extra room: dancing formations and the boss.
     dancing.length = 0;
-    for (const st of active) if (st.ag.kinematic && w <= st.ag.kinUntil && !st.done) dancing.push(st);
+    for (const st of active) if (!st.done && ((st.ag.kinematic && w <= st.ag.kinUntil) || st.ag.def.size === "boss")) dancing.push(st);
 
     // Hits firing within the next beat.
     while (hitPtr < hits.length && hits[hitPtr].w < w) hitPtr++;
@@ -600,7 +603,7 @@ function runOnce(ctx: Ctx, kp: KillPlan): CrowdResult {
           if (o === st) continue;
           const ox = st.x - o.x;
           const oy = st.y - o.y;
-          const lim = st.r + FORMATION_ROOM;
+          const lim = st.r + (o.ag.def.size === "boss" ? o.r + BOSS_ROOM : FORMATION_ROOM);
           const d2 = ox * ox + oy * oy;
           if (d2 >= lim * lim) continue;
           const d = Math.sqrt(d2) || 0.01;
