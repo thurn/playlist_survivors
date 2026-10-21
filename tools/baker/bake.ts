@@ -60,9 +60,11 @@ async function main(): Promise<void> {
 
   const credits = new CreditCollector();
   const perOutput: Record<string, Set<string>> = {};
+  const soundRefs = new Map<string, string[]>();
   const user = (output: string) => (ref: string, usedFor: string) => {
     credits.use(ref, usedFor);
     (perOutput[output] ??= new Set()).add(ref);
+    if (output === "sounds") soundRefs.set(ref, [...(soundRefs.get(ref) ?? []), usedFor.replace(/^sfx:/, "")]);
   };
 
   if (want("characters")) {
@@ -103,7 +105,16 @@ async function main(): Promise<void> {
         outputs.push({ file: f, licence: lic, ...(lic.startsWith("CC-BY-SA") ? { notes: "Contains art derived from CC-BY-SA sources, so the baked page is CC-BY-SA." } : {}) });
       }
     }
-    outputs.push({ file: "sfx/*", licence: outputLicence([...(perOutput.sounds ?? [])]), notes: "Each sample keeps its source's licence; see entries." });
+    // Samples are separate works: each keeps its own licence, listed per pack folder.
+    const byPack = new Map<string, string[]>();
+    for (const [ref, ids] of soundRefs) for (const id of ids) {
+      const pack = id.split("/")[0];
+      byPack.set(pack, [...(byPack.get(pack) ?? []), ref]);
+    }
+    for (const [pack, refs] of [...byPack].sort()) {
+      const lics = [...new Set(refs.map((r) => leastRestrictive(resolveLicence(r).licences)!))].sort();
+      outputs.push({ file: `sfx/${pack}/*`, licence: lics.join(" / "), notes: lics.length > 1 ? "Mixed: each sample keeps its source's licence (see entries)." : "Each sample keeps its source's licence." });
+    }
     const file: CreditsFile = { recording: RECORDING, entries: credits.entries(), outputs };
     writeJson(join(OUT, "credits.json"), file);
   } else if (!existsSync(join(OUT, "credits.json"))) {

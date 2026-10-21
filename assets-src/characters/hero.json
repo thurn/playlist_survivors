@@ -1,5 +1,5 @@
 {
-  "$comment": "The hero: an armoured swordsman with a heater shield. Items are generator sheet definitions (sheet_definitions/<item>.json). The arming sword is drawn in the one-handed animations; the longsword appears only in the oversized thrust and the overhead cleave (slash-oversize).",
+  "$comment": "The hero: an armoured swordsman with a heater shield. Items are generator sheet definitions (sheet_definitions/<item>.json). The backslash keeps the generator sheet's backhand half (columns 6-12; columns 0-5 are the forehand swing that `slash` already covers). The arming sword is drawn in the one-handed animations; the longsword appears only in the oversized thrust and the overhead cleave (slash-oversize).",
   "id": "hero",
   "bodyType": "male",
   "layers": [
@@ -21,12 +21,12 @@
     "walk": {},
     "run": {},
     "jump": {},
-    "slash": { "impactFrame": 3 },
-    "backslash": { "impactFrame": 7 },
-    "halfslash": { "impactFrame": 3 },
+    "slash": { "impactFrame": 4 },
+    "backslash": { "cols": [6, 7, 8, 9, 10, 11, 12], "impactFrame": 4 },
+    "halfslash": { "impactFrame": 2 },
     "thrust": { "impactFrame": 5 },
-    "spellcast": { "impactFrame": 5 },
-    "slash-oversize": { "impactFrame": 3 },
+    "spellcast": { "impactFrame": 4 },
+    "slash-oversize": { "impactFrame": 4 },
     "hurt": {}
   }
 }

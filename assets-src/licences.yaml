@@ -73,6 +73,12 @@ entries:
     licences: [CC-BY-SA 3.0, GPL 3.0]
     authors: [Charles Sanchez (CharlesGabriel)]
     urls: [https://opengameart.org/content/lpc-monsters, https://gitlab.com/tales/sourceoftales]
+  - files: ["lpc:source-of-tales/sprites/monsters/*.xml"]
+    title: Source of Tales monster sprite metadata (frame layout only)
+    licences: [CC0]
+    authors: [Source of Tales team]
+    urls: [https://gitlab.com/tales/sourceoftales]
+    notes: AUTHORS.txt licenses the game's XML configuration files under CC0.
   - files: ["lpc:source-of-tales/tiles/lava.png", "lpc:source-of-tales/tiles/lavarock.png"]
     title: LPC lava and lava rock
     licences: [CC-BY-SA 3.0, GPL 3.0]
@@ -100,6 +106,21 @@ entries:
     authors: [shimobayashi, quodup]
     urls: [https://gitlab.com/tales/sourceoftales]
     notes: Blood by shimobayashi, recolored to an explosion by quodup.
+  - files: ["lpc:source-of-tales/sfx/bomb.ogg"]
+    title: Bomb explosion sound
+    licences: [CC0]
+    authors: [Luke.RUSTLTD]
+    urls: [https://opengameart.org/users/lukerustltd, https://gitlab.com/tales/sourceoftales]
+  - files: ["lpc:source-of-tales/sfx/fire.ogg"]
+    title: Fire crackle
+    licences: [CC-BY-SA 3.0, GPL 3.0, GPL 2.0]
+    authors: [Bart K.]
+    urls: [https://gitlab.com/tales/sourceoftales]
+  - files: ["lpc:source-of-tales/sfx/metal-bowl.ogg"]
+    title: Metal bowl
+    licences: [CC-BY-SA 3.0, GPL 3.0]
+    authors: [Johnathan Roatch]
+    urls: [https://gitlab.com/tales/sourceoftales]
   - files: ["lpc:source-of-tales/scripts/**"]
     title: Source of Tales scripts (not art; GPL-only, listed so accidental use fails)
     licences: [GPL 3.0]

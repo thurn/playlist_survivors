@@ -1,0 +1,533 @@
+{
+  "$comment": "Effects atlas inputs. Frame sources: `strip` (a row of equal frames), `grid` (frames in reading order from a sheet; `count` limits it), `files` (one file per frame, either a list or every PNG in `dir` in natural order), or `script`. `scale` is a nearest-neighbour scale, `anchor` is \"center\" (default) or \"bottom\" (ground-based effects: the point where they touch the ground). Frames are padded to a common size, then trimmed to their union bounds. See assets-src/effects-catalogue.md.",
+  "anims": {
+    "slash-crescent": {
+      "files": {
+        "dir": "dl:weapon-slash-everything/Classic/1"
+      },
+      "fps": 30,
+      "desc": "golden crescent slash arc sweeping round (Weapon Slash, Classic 1); smooth glow, best drawn additive"
+    },
+    "slash-crescent-back": {
+      "files": {
+        "dir": "dl:weapon-slash-everything/Classic/2"
+      },
+      "fps": 30,
+      "desc": "golden crescent arc sweeping the other way (Classic 2): pair with backslash"
+    },
+    "slash-sweep": {
+      "files": {
+        "dir": "dl:weapon-slash-everything/Classic/3"
+      },
+      "fps": 30,
+      "desc": "wide, faint golden sweep arc low to the ground (Classic 3)"
+    },
+    "slash-stab": {
+      "files": {
+        "dir": "dl:weapon-slash-everything/Classic/4"
+      },
+      "fps": 30,
+      "desc": "diagonal golden stab streak with sparks (Classic 4): thrusts and dash-strikes"
+    },
+    "slash-streak": {
+      "files": {
+        "dir": "dl:weapon-slash-everything/Classic/5"
+      },
+      "fps": 30,
+      "desc": "long straight diagonal golden slash streak (Classic 5): sweeps and cleaves"
+    },
+    "slash-crescent-fire": {
+      "files": {
+        "dir": "dl:weapon-slash-everything/Alternative 3/1"
+      },
+      "fps": 30,
+      "desc": "orange-red fire version of slash-crescent (Alternative 3)"
+    },
+    "slash-crescent-back-fire": {
+      "files": {
+        "dir": "dl:weapon-slash-everything/Alternative 3/2"
+      },
+      "fps": 30,
+      "desc": "fire version of slash-crescent-back"
+    },
+    "slash-streak-fire": {
+      "files": {
+        "dir": "dl:weapon-slash-everything/Alternative 3/5"
+      },
+      "fps": 30,
+      "desc": "fire version of slash-streak"
+    },
+    "slash-crescent-blue": {
+      "files": {
+        "dir": "dl:weapon-slash-everything/Alternative 2/1"
+      },
+      "fps": 30,
+      "desc": "electric blue version of slash-crescent (Alternative 2)"
+    },
+    "slash-crescent-back-blue": {
+      "files": {
+        "dir": "dl:weapon-slash-everything/Alternative 2/2"
+      },
+      "fps": 30,
+      "desc": "blue version of slash-crescent-back"
+    },
+    "slash-crescent-purple": {
+      "files": {
+        "dir": "dl:weapon-slash-everything/Alternative 1/1"
+      },
+      "fps": 30,
+      "desc": "magenta/purple version of slash-crescent (Alternative 1)"
+    },
+    "explosion-small": {
+      "strip": {
+        "src": "dl:lpc-explosions/bang2d-1.png",
+        "frameW": 32,
+        "frameH": 32
+      },
+      "fps": 24,
+      "desc": "32 px pixel explosion: orange flash expanding into a red, dithered cloud that fades (LPC explosions bang2d-1)"
+    },
+    "explosion-small-alt": {
+      "strip": {
+        "src": "dl:lpc-explosions/lumpybang2d-1.png",
+        "frameW": 32,
+        "frameH": 32
+      },
+      "fps": 24,
+      "desc": "lumpier small explosion that breaks into chunks (lumpybang2d-1)"
+    },
+    "explosion-big": {
+      "strip": {
+        "src": "dl:lpc-explosions/nicebang2d-1.png",
+        "frameW": 32,
+        "frameH": 32
+      },
+      "scale": 2,
+      "fps": 18,
+      "desc": "64 px explosion: big orange ball breaking into red dither (nicebang2d-1 at 2x, nearest)"
+    },
+    "explosion-ring": {
+      "strip": {
+        "src": "dl:lpc-explosions/donut2d-1.png",
+        "frameW": 32,
+        "frameH": 32
+      },
+      "scale": 2,
+      "fps": 18,
+      "desc": "64 px expanding ring/donut blast (donut2d-1 at 2x): shockwaves, level-up"
+    },
+    "explosion-plasma": {
+      "strip": {
+        "src": "dl:lpc-explosions/bang2d-plasma-1.png",
+        "frameW": 32,
+        "frameH": 32
+      },
+      "fps": 24,
+      "desc": "small explosion that turns blue-violet (bang2d-plasma-1): magic hits"
+    },
+    "explosion-fire": {
+      "grid": {
+        "src": "lpc:source-of-tales/particles/bomb_explosion.png",
+        "frameW": 64,
+        "frameH": 64
+      },
+      "fps": 30,
+      "desc": "64 px fiery orange ring explosion with drifting embers, 23 frames (Source of Tales bomb)"
+    },
+    "smoke": {
+      "strip": {
+        "src": "dl:lpc-explosions/smoke2d-1.png",
+        "frameW": 32,
+        "frameH": 32
+      },
+      "fps": 16,
+      "desc": "small dark smoke puff that disperses (smoke2d-1): dust puffs, scorch smoke"
+    },
+    "smoking-bits": {
+      "strip": {
+        "src": "dl:lpc-explosions/smokingbits-1.png",
+        "frameW": 32,
+        "frameH": 32
+      },
+      "fps": 18,
+      "desc": "red-hot bits flying out and smoking (smokingbits-1): debris"
+    },
+    "sparks": {
+      "strip": {
+        "src": "dl:lpc-explosions/sparks-1.png",
+        "frameW": 32,
+        "frameH": 32
+      },
+      "fps": 24,
+      "desc": "orange-red spark spray radiating out (sparks-1)"
+    },
+    "sparks-blue": {
+      "strip": {
+        "src": "dl:lpc-explosions/sparksblue-1.png",
+        "frameW": 32,
+        "frameH": 32
+      },
+      "fps": 24,
+      "desc": "blue spark spray (sparksblue-1): lightning hits"
+    },
+    "sparkle": {
+      "strip": {
+        "src": "dl:lpc-explosions/sparkles.png",
+        "frameW": 32,
+        "frameH": 32
+      },
+      "fps": 20,
+      "desc": "red-orange star sparkles spreading and twinkling out (sparkles)"
+    },
+    "sparkle-blue": {
+      "strip": {
+        "src": "dl:lpc-explosions/sparkles-blue-1.png",
+        "frameW": 32,
+        "frameH": 32
+      },
+      "fps": 20,
+      "desc": "blue star sparkles (sparkles-blue-1): gem arrival, level-up"
+    },
+    "spell-fireball": {
+      "files": {
+        "list": [
+          "dl:starsteel-spell-effects/Fireball1.png",
+          "dl:starsteel-spell-effects/Fireball2.png",
+          "dl:starsteel-spell-effects/Fireball3.png",
+          "dl:starsteel-spell-effects/Fireball4.png",
+          "dl:starsteel-spell-effects/Fireball5.png",
+          "dl:starsteel-spell-effects/Fireball6.png",
+          "dl:starsteel-spell-effects/Fireball7.png",
+          "dl:starsteel-spell-effects/Fireball8.png",
+          "dl:starsteel-spell-effects/Fireball9.png"
+        ]
+      },
+      "fps": 16,
+      "desc": "64x32 fireball flying right with a flame tail (StarsteelGaming); rotate to aim"
+    },
+    "spell-icespear": {
+      "files": {
+        "list": [
+          "dl:starsteel-spell-effects/Icespear.png",
+          "dl:starsteel-spell-effects/Icespear2.png",
+          "dl:starsteel-spell-effects/Icespear3.png",
+          "dl:starsteel-spell-effects/Icespear4.png",
+          "dl:starsteel-spell-effects/Icespear5.png",
+          "dl:starsteel-spell-effects/Icespear6.png"
+        ]
+      },
+      "fps": 16,
+      "desc": "long pale-blue ice spear flying right with frost flecks (StarsteelGaming)"
+    },
+    "spell-thundersphere": {
+      "files": {
+        "list": [
+          "dl:starsteel-spell-effects/Thundersphere1.png",
+          "dl:starsteel-spell-effects/Thundersphere2.png",
+          "dl:starsteel-spell-effects/Thundersphere3.png",
+          "dl:starsteel-spell-effects/Thundersphere4.png",
+          "dl:starsteel-spell-effects/Thundersphere5.png",
+          "dl:starsteel-spell-effects/Thundersphere6.png",
+          "dl:starsteel-spell-effects/Thundersphere7.png",
+          "dl:starsteel-spell-effects/Thundersphere8.png"
+        ]
+      },
+      "fps": 16,
+      "desc": "small yellow-white electric sphere bursting with spikes (StarsteelGaming)"
+    },
+    "spell-burst": {
+      "files": {
+        "list": [
+          "dl:starsteel-spell-effects/Thundersphere1.png",
+          "dl:starsteel-spell-effects/Thundersphere2.png",
+          "dl:starsteel-spell-effects/Thundersphere3.png",
+          "dl:starsteel-spell-effects/Thundersphere4.png",
+          "dl:starsteel-spell-effects/Thundersphere5.png",
+          "dl:starsteel-spell-effects/Thundersphere6.png",
+          "dl:starsteel-spell-effects/Thundersphere7.png",
+          "dl:starsteel-spell-effects/Thundersphere8.png"
+        ]
+      },
+      "scale": 2,
+      "fps": 16,
+      "desc": "thundersphere at 2x: a radial burst of yellow-white light (the `burst` move)"
+    },
+    "spell-firelion": {
+      "grid": {
+        "src": "dl:lpc-magic-pack/magic_pack/sheets/firelion_down.png",
+        "frameW": 128,
+        "frameH": 128
+      },
+      "anchor": "bottom",
+      "fps": 20,
+      "desc": "128 px fire lion rising from the ground and roaring, then dying to embers (Extended LPC Magic Pack)"
+    },
+    "spell-icetacle": {
+      "grid": {
+        "src": "dl:lpc-magic-pack/magic_pack/sheets/icetacle.png",
+        "frameW": 128,
+        "frameH": 128
+      },
+      "anchor": "bottom",
+      "fps": 20,
+      "desc": "ice crystals erupting from the ground, then shattering into a frozen lump (Magic Pack)"
+    },
+    "spell-tornado": {
+      "grid": {
+        "src": "dl:lpc-magic-pack/magic_pack/sheets/tornado.png",
+        "frameW": 128,
+        "frameH": 128
+      },
+      "anchor": "bottom",
+      "fps": 20,
+      "desc": "whirling pale tornado growing and dissipating (Magic Pack)"
+    },
+    "spell-iceshield": {
+      "grid": {
+        "src": "dl:lpc-magic-pack/magic_pack/sheets/iceshield.png",
+        "frameW": 128,
+        "frameH": 128
+      },
+      "fps": 20,
+      "desc": "hexagonal ice shield forming into a sphere, then breaking (Magic Pack)"
+    },
+    "spell-spikes": {
+      "grid": {
+        "src": "dl:lpc-magic-pack/magic_pack/sheets/spikes.png",
+        "frameW": 64,
+        "frameH": 64,
+        "count": 10
+      },
+      "anchor": "bottom",
+      "fps": 20,
+      "desc": "small earth spikes punching up out of the ground (Magic Pack)"
+    },
+    "lightning-claw": {
+      "grid": {
+        "src": "dl:lpc-magic-pack/magic_pack/sheets/lightningclaw.png",
+        "frameW": 128,
+        "frameH": 128
+      },
+      "anchor": "bottom",
+      "fps": 20,
+      "desc": "golden lightning claws striking down and splashing (Magic Pack): chain lightning impact"
+    },
+    "lightning": {
+      "files": {
+        "list": [
+          "lpc:source-of-tales/particles/lightning1.png",
+          "lpc:source-of-tales/particles/lightning2.png"
+        ]
+      },
+      "anchor": "bottom",
+      "fps": 20,
+      "desc": "tall white-blue lightning bolt, two flickering frames (Source of Tales); anchor is the strike point at the bottom"
+    },
+    "fire": {
+      "grid": {
+        "src": "lpc:source-of-tales/tiles/fire.png",
+        "frameW": 32,
+        "frameH": 32,
+        "first": 1
+      },
+      "anchor": "bottom",
+      "fps": 8,
+      "desc": "looping small flame, 3 frames (Source of Tales fire); anchor at its base"
+    },
+    "blood-splat": {
+      "strip": {
+        "src": "dl:gore-blood-gibs/RC Art - Gore Blood Gibs/Sprites/Blood1_Splat_RefSheet.png",
+        "frameW": 10,
+        "frameH": 10
+      },
+      "fps": 20,
+      "desc": "tiny 10 px blood splash (Gore pack)"
+    },
+    "blood-burst": {
+      "strip": {
+        "src": "dl:gore-blood-gibs/RC Art - Gore Blood Gibs/Sprites/Blood2_Burst_RefSheet.png",
+        "frameW": 20,
+        "frameH": 20
+      },
+      "fps": 20,
+      "desc": "20 px blood burst spray"
+    },
+    "blood-blast": {
+      "strip": {
+        "src": "dl:gore-blood-gibs/RC Art - Gore Blood Gibs/Sprites/Blood3_Blast_RefSheet.png",
+        "frameW": 34,
+        "frameH": 34
+      },
+      "fps": 24,
+      "desc": "34 px blood blast that spreads and fades, 13 frames"
+    },
+    "glow-splat": {
+      "files": {
+        "list": [
+          "dl:gore-blood-gibs/RC Art - Gore Blood Gibs/Sprites/glow_splat_medium_light.png"
+        ]
+      },
+      "fps": 1,
+      "desc": "single-frame soft dark-red glow splat (32 px): flash under gibbing"
+    },
+    "glow-splat-large": {
+      "files": {
+        "list": [
+          "dl:gore-blood-gibs/RC Art - Gore Blood Gibs/Sprites/glow_splat_large_light.png"
+        ]
+      },
+      "fps": 1,
+      "desc": "64 px version of glow-splat"
+    },
+    "glow-mist": {
+      "files": {
+        "list": [
+          "dl:gore-blood-gibs/RC Art - Gore Blood Gibs/Sprites/glow_mist_large.png"
+        ]
+      },
+      "fps": 1,
+      "desc": "64 px dithered red mist: lingers where a body gibbed"
+    },
+    "soul-wisp": {
+      "script": "soul-wisp",
+      "fps": 12,
+      "anchor": "bottom",
+      "desc": "pale blue spectral flame rising, narrowing and fading over 8 frames (fire art recoloured); anchor at the bottom where it leaves the body"
+    },
+    "gib-1": {
+      "files": {
+        "list": [
+          "dl:gore-blood-gibs/RC Art - Gore Blood Gibs/Sprites/meat gib 1.png"
+        ]
+      },
+      "fps": 1,
+      "desc": "bloody meat chunk (single frame) for gib particles"
+    },
+    "gib-2": {
+      "files": {
+        "list": [
+          "dl:gore-blood-gibs/RC Art - Gore Blood Gibs/Sprites/meat gib 3.png"
+        ]
+      },
+      "fps": 1,
+      "desc": "bloody meat chunk (single frame) for gib particles"
+    },
+    "gib-3": {
+      "files": {
+        "list": [
+          "dl:gore-blood-gibs/RC Art - Gore Blood Gibs/Sprites/meat gib 5.png"
+        ]
+      },
+      "fps": 1,
+      "desc": "bloody meat chunk (single frame) for gib particles"
+    },
+    "gib-4": {
+      "files": {
+        "list": [
+          "dl:gore-blood-gibs/RC Art - Gore Blood Gibs/Sprites/meat gib 6.png"
+        ]
+      },
+      "fps": 1,
+      "desc": "bloody meat chunk (single frame) for gib particles"
+    },
+    "gib-5": {
+      "files": {
+        "list": [
+          "dl:gore-blood-gibs/RC Art - Gore Blood Gibs/Sprites/meat gib 8.png"
+        ]
+      },
+      "fps": 1,
+      "desc": "bloody meat chunk (single frame) for gib particles"
+    },
+    "gib-6": {
+      "files": {
+        "list": [
+          "dl:gore-blood-gibs/RC Art - Gore Blood Gibs/Sprites/meat gib 12.png"
+        ]
+      },
+      "fps": 1,
+      "desc": "bloody meat chunk (single frame) for gib particles"
+    },
+    "gib-7": {
+      "files": {
+        "list": [
+          "dl:gore-blood-gibs/RC Art - Gore Blood Gibs/Sprites/meat gib 13.png"
+        ]
+      },
+      "fps": 1,
+      "desc": "bloody meat chunk (single frame) for gib particles"
+    },
+    "gib-8": {
+      "files": {
+        "list": [
+          "dl:gore-blood-gibs/RC Art - Gore Blood Gibs/Sprites/meat gib 14.png"
+        ]
+      },
+      "fps": 1,
+      "desc": "bloody meat chunk (single frame) for gib particles"
+    },
+    "gib-small-1": {
+      "files": {
+        "list": [
+          "dl:gore-blood-gibs/RC Art - Gore Blood Gibs/Sprites/meat gib 10.png"
+        ]
+      },
+      "fps": 1,
+      "desc": "tiny meat chunk (single frame) for gib particles"
+    },
+    "gib-small-2": {
+      "files": {
+        "list": [
+          "dl:gore-blood-gibs/RC Art - Gore Blood Gibs/Sprites/meat gib 11.png"
+        ]
+      },
+      "fps": 1,
+      "desc": "tiny meat chunk (single frame) for gib particles"
+    },
+    "gib-small-3": {
+      "files": {
+        "list": [
+          "dl:gore-blood-gibs/RC Art - Gore Blood Gibs/Sprites/meat gib 19.png"
+        ]
+      },
+      "fps": 1,
+      "desc": "tiny meat chunk (single frame) for gib particles"
+    },
+    "bone-1": {
+      "files": {
+        "list": [
+          "dl:gore-blood-gibs/RC Art - Gore Blood Gibs/Sprites/meat gib 17.png"
+        ]
+      },
+      "fps": 1,
+      "desc": "bone chip (single frame) for skeleton debris"
+    },
+    "bone-2": {
+      "files": {
+        "list": [
+          "dl:gore-blood-gibs/RC Art - Gore Blood Gibs/Sprites/meat gib 18.png"
+        ]
+      },
+      "fps": 1,
+      "desc": "bone chip (single frame) for skeleton debris"
+    },
+    "bone-3": {
+      "files": {
+        "list": [
+          "dl:gore-blood-gibs/RC Art - Gore Blood Gibs/Sprites/meat gib 15.png"
+        ]
+      },
+      "fps": 1,
+      "desc": "bone chip (single frame) for skeleton debris"
+    },
+    "bone-4": {
+      "files": {
+        "list": [
+          "dl:gore-blood-gibs/RC Art - Gore Blood Gibs/Sprites/meat gib 16.png"
+        ]
+      },
+      "fps": 1,
+      "desc": "bone chip (single frame) for skeleton debris"
+    }
+  }
+}

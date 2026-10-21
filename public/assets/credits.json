@@ -1,0 +1,1962 @@
+{
+  "recording": {
+    "title": "Orpheus in the Underworld — Overture",
+    "composer": "Jacques Offenbach",
+    "performer": "Musopen archive recording",
+    "licence": "CC0 (unverified)",
+    "url": "https://commons.wikimedia.org/wiki/File:Offenbach_-_Orpheus_in_the_Underworld_-_Overture.ogg",
+    "notes": "Development recording. Its CC0 status is unverified, so it must be replaced (or its licence confirmed) before public release."
+  },
+  "entries": [
+    {
+      "file": "dl:fantasy-sound-library/**",
+      "title": "Fantasy Sound Effects Library",
+      "authors": [
+        "Little Robot Sound Factory"
+      ],
+      "licence": "CC-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/fantasy-sound-effects-library",
+        "https://www.littlerobotsoundfactory.com"
+      ],
+      "usedFor": [
+        "sfx:fantasy/Dragon_Growl_00",
+        "sfx:fantasy/Dragon_Growl_01",
+        "sfx:fantasy/Goblin_00",
+        "sfx:fantasy/Goblin_01",
+        "sfx:fantasy/Goblin_02",
+        "sfx:fantasy/Goblin_03",
+        "sfx:fantasy/Goblin_04",
+        "sfx:fantasy/Jingle_Achievement_00",
+        "sfx:fantasy/Jingle_Win_00",
+        "sfx:fantasy/Pickup_Gold_00",
+        "sfx:fantasy/Pickup_Gold_01",
+        "sfx:fantasy/Pickup_Gold_02",
+        "sfx:fantasy/Spell_00",
+        "sfx:fantasy/Spell_01",
+        "sfx:fantasy/Spell_02",
+        "sfx:fantasy/Spell_03",
+        "sfx:fantasy/Spell_04",
+        "sfx:fantasy/Trap_00",
+        "sfx:fantasy/Trap_01",
+        "sfx:fantasy/Trap_02"
+      ]
+    },
+    {
+      "file": "dl:gore-blood-gibs/**",
+      "title": "Gore Blood Gibs Meat Chunks",
+      "authors": [
+        "Reactorcore"
+      ],
+      "licence": "CC0",
+      "urls": [
+        "https://opengameart.org/content/gore-blood-gibs-meat-chunks"
+      ],
+      "usedFor": [
+        "effect:blood-blast",
+        "effect:blood-burst",
+        "effect:blood-splat",
+        "effect:bone-1",
+        "effect:bone-2",
+        "effect:bone-3",
+        "effect:bone-4",
+        "effect:gib-1",
+        "effect:gib-2",
+        "effect:gib-3",
+        "effect:gib-4",
+        "effect:gib-5",
+        "effect:gib-6",
+        "effect:gib-7",
+        "effect:gib-8",
+        "effect:gib-small-1",
+        "effect:gib-small-2",
+        "effect:gib-small-3",
+        "effect:glow-mist",
+        "effect:glow-splat",
+        "effect:glow-splat-large"
+      ]
+    },
+    {
+      "file": "dl:kenney-impact-sounds/**",
+      "title": "Impact Sounds",
+      "authors": [
+        "Kenney (www.kenney.nl)"
+      ],
+      "licence": "CC0",
+      "urls": [
+        "https://kenney.nl/assets/impact-sounds"
+      ],
+      "usedFor": [
+        "sfx:kenney/footstep_grass_000",
+        "sfx:kenney/footstep_grass_001",
+        "sfx:kenney/footstep_grass_002",
+        "sfx:kenney/footstep_grass_003",
+        "sfx:kenney/footstep_grass_004",
+        "sfx:kenney/impactBell_heavy_000",
+        "sfx:kenney/impactBell_heavy_001",
+        "sfx:kenney/impactBell_heavy_002",
+        "sfx:kenney/impactBell_heavy_003",
+        "sfx:kenney/impactBell_heavy_004",
+        "sfx:kenney/impactGeneric_light_000",
+        "sfx:kenney/impactGeneric_light_001",
+        "sfx:kenney/impactGeneric_light_002",
+        "sfx:kenney/impactGeneric_light_003",
+        "sfx:kenney/impactGeneric_light_004",
+        "sfx:kenney/impactGlass_light_000",
+        "sfx:kenney/impactGlass_light_001",
+        "sfx:kenney/impactGlass_light_002",
+        "sfx:kenney/impactGlass_light_003",
+        "sfx:kenney/impactGlass_light_004",
+        "sfx:kenney/impactGlass_medium_000",
+        "sfx:kenney/impactGlass_medium_001",
+        "sfx:kenney/impactGlass_medium_002",
+        "sfx:kenney/impactMetal_heavy_000",
+        "sfx:kenney/impactMetal_heavy_001",
+        "sfx:kenney/impactMetal_heavy_002",
+        "sfx:kenney/impactMetal_heavy_003",
+        "sfx:kenney/impactMetal_heavy_004",
+        "sfx:kenney/impactMetal_light_000",
+        "sfx:kenney/impactMetal_light_001",
+        "sfx:kenney/impactMetal_light_002",
+        "sfx:kenney/impactMetal_light_003",
+        "sfx:kenney/impactMetal_light_004",
+        "sfx:kenney/impactMetal_medium_000",
+        "sfx:kenney/impactMetal_medium_001",
+        "sfx:kenney/impactMetal_medium_002",
+        "sfx:kenney/impactMetal_medium_003",
+        "sfx:kenney/impactMetal_medium_004",
+        "sfx:kenney/impactMining_000",
+        "sfx:kenney/impactMining_001",
+        "sfx:kenney/impactMining_002",
+        "sfx:kenney/impactMining_003",
+        "sfx:kenney/impactMining_004",
+        "sfx:kenney/impactPlate_heavy_000",
+        "sfx:kenney/impactPlate_heavy_001",
+        "sfx:kenney/impactPlate_heavy_002",
+        "sfx:kenney/impactPlate_heavy_003",
+        "sfx:kenney/impactPlate_heavy_004",
+        "sfx:kenney/impactPlate_light_000",
+        "sfx:kenney/impactPlate_light_001",
+        "sfx:kenney/impactPlate_light_002",
+        "sfx:kenney/impactPlate_light_003",
+        "sfx:kenney/impactPlate_light_004",
+        "sfx:kenney/impactPlate_medium_000",
+        "sfx:kenney/impactPlate_medium_001",
+        "sfx:kenney/impactPlate_medium_002",
+        "sfx:kenney/impactPlate_medium_003",
+        "sfx:kenney/impactPlate_medium_004",
+        "sfx:kenney/impactPunch_heavy_000",
+        "sfx:kenney/impactPunch_heavy_001",
+        "sfx:kenney/impactPunch_heavy_002",
+        "sfx:kenney/impactPunch_heavy_003",
+        "sfx:kenney/impactPunch_heavy_004",
+        "sfx:kenney/impactPunch_medium_000",
+        "sfx:kenney/impactPunch_medium_001",
+        "sfx:kenney/impactPunch_medium_002",
+        "sfx:kenney/impactPunch_medium_003",
+        "sfx:kenney/impactPunch_medium_004",
+        "sfx:kenney/impactSoft_heavy_000",
+        "sfx:kenney/impactSoft_heavy_001",
+        "sfx:kenney/impactSoft_heavy_002",
+        "sfx:kenney/impactSoft_heavy_003",
+        "sfx:kenney/impactSoft_heavy_004",
+        "sfx:kenney/impactSoft_medium_000",
+        "sfx:kenney/impactSoft_medium_001",
+        "sfx:kenney/impactSoft_medium_002",
+        "sfx:kenney/impactSoft_medium_003",
+        "sfx:kenney/impactSoft_medium_004",
+        "sfx:kenney/impactWood_heavy_000",
+        "sfx:kenney/impactWood_heavy_001",
+        "sfx:kenney/impactWood_heavy_002"
+      ]
+    },
+    {
+      "file": "dl:kenney-interface-sounds/**",
+      "title": "Interface Sounds",
+      "authors": [
+        "Kenney (www.kenney.nl)"
+      ],
+      "licence": "CC0",
+      "urls": [
+        "https://kenney.nl/assets/interface-sounds"
+      ],
+      "usedFor": [
+        "sfx:kenney/bong_001",
+        "sfx:kenney/confirmation_001",
+        "sfx:kenney/confirmation_002",
+        "sfx:kenney/confirmation_003",
+        "sfx:kenney/confirmation_004",
+        "sfx:kenney/drop_001",
+        "sfx:kenney/drop_002",
+        "sfx:kenney/glass_001",
+        "sfx:kenney/glass_002",
+        "sfx:kenney/glass_003",
+        "sfx:kenney/glass_004",
+        "sfx:kenney/glass_005",
+        "sfx:kenney/glass_006",
+        "sfx:kenney/maximize_001",
+        "sfx:kenney/maximize_002",
+        "sfx:kenney/maximize_003",
+        "sfx:kenney/maximize_004",
+        "sfx:kenney/minimize_001",
+        "sfx:kenney/minimize_002",
+        "sfx:kenney/pluck_001",
+        "sfx:kenney/pluck_002",
+        "sfx:kenney/select_001",
+        "sfx:kenney/select_002",
+        "sfx:kenney/select_003"
+      ]
+    },
+    {
+      "file": "dl:kenney-rpg-audio/**",
+      "title": "RPG Audio",
+      "authors": [
+        "Kenney (www.kenney.nl)"
+      ],
+      "licence": "CC0",
+      "urls": [
+        "https://kenney.nl/assets/rpg-audio"
+      ],
+      "usedFor": [
+        "sfx:kenney/chop",
+        "sfx:kenney/cloth1",
+        "sfx:kenney/cloth2",
+        "sfx:kenney/cloth3",
+        "sfx:kenney/cloth4",
+        "sfx:kenney/drawKnife1",
+        "sfx:kenney/drawKnife2",
+        "sfx:kenney/drawKnife3",
+        "sfx:kenney/handleCoins",
+        "sfx:kenney/handleCoins2",
+        "sfx:kenney/knifeSlice",
+        "sfx:kenney/knifeSlice2",
+        "sfx:kenney/metalClick",
+        "sfx:kenney/metalLatch"
+      ]
+    },
+    {
+      "file": "dl:lpc-explosions/**",
+      "title": "LPC explosions",
+      "authors": [
+        "theidiotmachine"
+      ],
+      "licence": "CC0",
+      "urls": [
+        "https://opengameart.org/content/lpc-explosions"
+      ],
+      "usedFor": [
+        "effect:explosion-big",
+        "effect:explosion-plasma",
+        "effect:explosion-ring",
+        "effect:explosion-small",
+        "effect:explosion-small-alt",
+        "effect:smoke",
+        "effect:smoking-bits",
+        "effect:sparkle",
+        "effect:sparkle-blue",
+        "effect:sparks",
+        "effect:sparks-blue"
+      ]
+    },
+    {
+      "file": "dl:lpc-magic-pack/**",
+      "title": "Extended LPC Magic Pack",
+      "authors": [
+        "Daniel Eddeland"
+      ],
+      "licence": "CC-BY-SA 3.0",
+      "urls": [
+        "https://opengameart.org/content/extended-lpc-magic-pack"
+      ],
+      "usedFor": [
+        "effect:lightning-claw",
+        "effect:spell-firelion",
+        "effect:spell-iceshield",
+        "effect:spell-icetacle",
+        "effect:spell-spikes",
+        "effect:spell-tornado"
+      ],
+      "notes": "Also offered under: GPL 3.0."
+    },
+    {
+      "file": "dl:rpg-sound-pack/**",
+      "title": "RPG Sound Pack",
+      "authors": [
+        "artisticdude"
+      ],
+      "licence": "CC0",
+      "urls": [
+        "https://opengameart.org/content/rpg-sound-pack"
+      ],
+      "usedFor": [
+        "sfx:rpgpack/bite-small",
+        "sfx:rpgpack/bite-small2",
+        "sfx:rpgpack/bubble",
+        "sfx:rpgpack/bubble2",
+        "sfx:rpgpack/bubble3",
+        "sfx:rpgpack/chainmail1",
+        "sfx:rpgpack/chainmail2",
+        "sfx:rpgpack/giant1",
+        "sfx:rpgpack/giant2",
+        "sfx:rpgpack/giant3",
+        "sfx:rpgpack/magic1",
+        "sfx:rpgpack/metal-ringing",
+        "sfx:rpgpack/metal-small1",
+        "sfx:rpgpack/metal-small2",
+        "sfx:rpgpack/metal-small3",
+        "sfx:rpgpack/mnstr1",
+        "sfx:rpgpack/mnstr2",
+        "sfx:rpgpack/mnstr3",
+        "sfx:rpgpack/mnstr4",
+        "sfx:rpgpack/ogre1",
+        "sfx:rpgpack/ogre2",
+        "sfx:rpgpack/ogre3",
+        "sfx:rpgpack/shade1",
+        "sfx:rpgpack/shade2",
+        "sfx:rpgpack/shade3",
+        "sfx:rpgpack/shade4",
+        "sfx:rpgpack/slime1",
+        "sfx:rpgpack/slime2",
+        "sfx:rpgpack/slime3",
+        "sfx:rpgpack/slime4",
+        "sfx:rpgpack/spell",
+        "sfx:rpgpack/swing",
+        "sfx:rpgpack/swing2",
+        "sfx:rpgpack/swing3",
+        "sfx:rpgpack/sword-unsheathe",
+        "sfx:rpgpack/sword-unsheathe2",
+        "sfx:rpgpack/sword-unsheathe3",
+        "sfx:rpgpack/sword-unsheathe4",
+        "sfx:rpgpack/sword-unsheathe5"
+      ]
+    },
+    {
+      "file": "dl:rpg80/**",
+      "title": "80 CC0 RPG SFX",
+      "authors": [
+        "rubberduck"
+      ],
+      "licence": "CC0",
+      "urls": [
+        "https://opengameart.org/content/80-cc0-rpg-sfx"
+      ],
+      "usedFor": [
+        "sfx:rpg80/blade_01",
+        "sfx:rpg80/blade_02",
+        "sfx:rpg80/blade_03",
+        "sfx:rpg80/chain_01",
+        "sfx:rpg80/chain_02",
+        "sfx:rpg80/chain_03",
+        "sfx:rpg80/creature_die_01",
+        "sfx:rpg80/creature_hurt_01",
+        "sfx:rpg80/creature_hurt_02",
+        "sfx:rpg80/creature_misc_01",
+        "sfx:rpg80/creature_misc_02",
+        "sfx:rpg80/creature_misc_03",
+        "sfx:rpg80/creature_misc_04",
+        "sfx:rpg80/creature_monster_01",
+        "sfx:rpg80/creature_monster_02",
+        "sfx:rpg80/creature_monster_03",
+        "sfx:rpg80/creature_monster_04",
+        "sfx:rpg80/creature_roar_01",
+        "sfx:rpg80/creature_roar_02",
+        "sfx:rpg80/creature_roar_03",
+        "sfx:rpg80/creature_slime_01",
+        "sfx:rpg80/creature_slime_02",
+        "sfx:rpg80/creature_slime_03",
+        "sfx:rpg80/creature_slime_04",
+        "sfx:rpg80/item_coins_01",
+        "sfx:rpg80/item_coins_02",
+        "sfx:rpg80/item_gem_01",
+        "sfx:rpg80/item_gem_02",
+        "sfx:rpg80/item_gem_03",
+        "sfx:rpg80/item_gem_04",
+        "sfx:rpg80/metal_01",
+        "sfx:rpg80/metal_02",
+        "sfx:rpg80/metal_03",
+        "sfx:rpg80/misc_01",
+        "sfx:rpg80/misc_02",
+        "sfx:rpg80/misc_03",
+        "sfx:rpg80/spell_01",
+        "sfx:rpg80/spell_02",
+        "sfx:rpg80/spell_fire_01",
+        "sfx:rpg80/spell_fire_02",
+        "sfx:rpg80/spell_fire_03",
+        "sfx:rpg80/spell_fire_04",
+        "sfx:rpg80/spell_fire_05",
+        "sfx:rpg80/spell_fire_06",
+        "sfx:rpg80/spell_fire_07",
+        "sfx:rpg80/stones_01",
+        "sfx:rpg80/stones_02",
+        "sfx:rpg80/stones_03",
+        "sfx:rpg80/stones_04"
+      ]
+    },
+    {
+      "file": "dl:starsteel-spell-effects/**",
+      "title": "Spell Effects by StarsteelGaming",
+      "authors": [
+        "StarsteelGaming"
+      ],
+      "licence": "CC0",
+      "urls": [
+        "https://opengameart.org/content/spell-effects-by-starsteelgaming"
+      ],
+      "usedFor": [
+        "effect:spell-burst",
+        "effect:spell-fireball",
+        "effect:spell-icespear",
+        "effect:spell-thundersphere"
+      ],
+      "notes": "Created by StarsteelGaming at OpenGameArt.org (2018)."
+    },
+    {
+      "file": "dl:weapon-slash-everything/**",
+      "title": "Weapon Slash – Effect",
+      "authors": [
+        "Cethiel"
+      ],
+      "licence": "CC0",
+      "urls": [
+        "https://opengameart.org/content/weapon-slash-effect"
+      ],
+      "usedFor": [
+        "effect:slash-crescent",
+        "effect:slash-crescent-back",
+        "effect:slash-crescent-back-blue",
+        "effect:slash-crescent-back-fire",
+        "effect:slash-crescent-blue",
+        "effect:slash-crescent-fire",
+        "effect:slash-crescent-purple",
+        "effect:slash-stab",
+        "effect:slash-streak",
+        "effect:slash-streak-fire",
+        "effect:slash-sweep"
+      ]
+    },
+    {
+      "file": "lpc:lpc-revised/Objects/Small Items/Fire, Camp.png",
+      "title": "LPC Revised campfire",
+      "authors": [
+        "Lanea Zimmerman (Sharm)",
+        "Eliza Wyatt (DeathsDarling)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://github.com/ElizaWy/LPC",
+        "https://opengameart.org/content/lpc-dungeon-elements"
+      ],
+      "usedFor": [
+        "world:campfire"
+      ]
+    },
+    {
+      "file": "lpc:lpc-revised/Structure/Pillars/Stone Pillar A.png",
+      "title": "LPC Revised jagged stone walls and stone pillars",
+      "authors": [
+        "Lanea Zimmerman (Sharm)",
+        "Eliza Wyatt (DeathsDarling)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://github.com/ElizaWy/LPC",
+        "https://opengameart.org/content/lpc-interior-castle-tiles"
+      ],
+      "usedFor": [
+        "world:ruin-pillar"
+      ],
+      "notes": "Broken into ruins by a scripted edit in the baker."
+    },
+    {
+      "file": "lpc:lpc-revised/Structure/Walls/Jagged Stone Walls.png",
+      "title": "LPC Revised jagged stone walls and stone pillars",
+      "authors": [
+        "Lanea Zimmerman (Sharm)",
+        "Eliza Wyatt (DeathsDarling)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://github.com/ElizaWy/LPC",
+        "https://opengameart.org/content/lpc-interior-castle-tiles"
+      ],
+      "usedFor": [
+        "world:ruin-wall"
+      ],
+      "notes": "Broken into ruins by a scripted edit in the baker."
+    },
+    {
+      "file": "lpc:lpc-revised/Terrain/flowers.png",
+      "title": "LPC Revised flowers",
+      "authors": [
+        "Lanea Zimmerman (Sharm)",
+        "Hyptosis",
+        "Eliza Wyatt (DeathsDarling)",
+        "BlueCarrot16"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://github.com/ElizaWy/LPC",
+        "https://opengameart.org/content/lpc-interior-castle-tiles",
+        "https://opengameart.org/content/lots-of-free-2d-tiles-and-sprites-by-hyptosis"
+      ],
+      "usedFor": [
+        "world:flower-summer"
+      ]
+    },
+    {
+      "file": "lpc:lpc-revised/Terrain/mushrooms.png",
+      "title": "LPC Revised mushrooms",
+      "authors": [
+        "Eliza Wyatt (DeathsDarling)",
+        "Hyptosis"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://github.com/ElizaWy/LPC",
+        "https://opengameart.org/content/lots-of-free-2d-tiles-and-sprites-by-hyptosis"
+      ],
+      "usedFor": [
+        "world:mushroom",
+        "world:mushroom-big"
+      ]
+    },
+    {
+      "file": "lpc:lpc-revised/Terrain/plants_*.png",
+      "title": "LPC Revised plants",
+      "authors": [
+        "Lanea Zimmerman (Sharm)",
+        "Eliza Wyatt (DeathsDarling)",
+        "Hyptosis"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://github.com/ElizaWy/LPC",
+        "https://opengameart.org/content/lots-of-free-2d-tiles-and-sprites-by-hyptosis"
+      ],
+      "usedFor": [
+        "world:bush-autumn",
+        "world:bush-summer",
+        "world:grass-tuft"
+      ],
+      "notes": "Hyptosis permitted use of his CC-BY 3.0 work under OGA-BY 3.0."
+    },
+    {
+      "file": "lpc:lpc-revised/Terrain/Rocks, Grasslands.png",
+      "title": "LPC Revised rocks",
+      "authors": [
+        "Eliza Wyatt (DeathsDarling)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://github.com/ElizaWy/LPC"
+      ],
+      "usedFor": [
+        "world:rock-big",
+        "world:rock-small"
+      ]
+    },
+    {
+      "file": "lpc:lpc-revised/Terrain/terrain_*.png",
+      "title": "LPC Revised terrain (grass and dirt)",
+      "authors": [
+        "Lanea Zimmerman (Sharm)",
+        "Eliza Wyatt (DeathsDarling)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://github.com/ElizaWy/LPC",
+        "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles"
+      ],
+      "usedFor": [
+        "world:dirt-autumn",
+        "world:dirt-ember",
+        "world:dirt-summer",
+        "world:grass-autumn",
+        "world:grass-ember",
+        "world:grass-summer",
+        "world:patch-dirt-autumn",
+        "world:patch-dirt-ember",
+        "world:patch-dirt-summer"
+      ],
+      "notes": "Original grass and dirt by Lanea Zimmerman; edited, animated and recolored by Eliza Wyatt. Ember variants recolored by the baker."
+    },
+    {
+      "file": "lpc:lpc-revised/Terrain/trees_*.png",
+      "title": "LPC Revised trees",
+      "authors": [
+        "Lanea Zimmerman (Sharm)",
+        "Eliza Wyatt (DeathsDarling)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://github.com/ElizaWy/LPC",
+        "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles"
+      ],
+      "usedFor": [
+        "world:tree-autumn",
+        "world:tree-dead",
+        "world:tree-summer"
+      ],
+      "notes": "Original trees by Lanea Zimmerman. Leafless tree and thick trunk by Eliza Wyatt."
+    },
+    {
+      "file": "lpc:lpc-revised/Terrain/wildflowers_*.png",
+      "title": "LPC Revised wildflowers",
+      "authors": [
+        "Lanea Zimmerman (Sharm)",
+        "Eliza Wyatt (DeathsDarling)",
+        "Demetrius"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://github.com/ElizaWy/LPC",
+        "https://opengameart.org/content/lpc-winter-tiles"
+      ],
+      "usedFor": [
+        "world:flower-autumn",
+        "world:flower-summer"
+      ]
+    },
+    {
+      "file": "lpc:lpc-tile-atlas/files/terrain_atlas.png#ruins",
+      "title": "LPC tile atlas (ruins and standing stones)",
+      "authors": [
+        "Lanea Zimmerman (Sharm)",
+        "Casper Nilsson",
+        "Daniel Eddeland",
+        "Skyler Robert Colladay",
+        "Stephen Challener (Redshrike)",
+        "Charles Sanchez (CharlesGabriel)",
+        "Manuel Riecke (MrBeast)",
+        "Daniel Armstrong (HughSpectrum)"
+      ],
+      "licence": "CC-BY-SA 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-tile-atlas"
+      ],
+      "usedFor": [
+        "world:ruin-pillar",
+        "world:standing-stone"
+      ],
+      "notes": "The atlas does not attribute individual tiles; all its non-LGPL contributors are credited. Also offered under: GPL 3.0."
+    },
+    {
+      "file": "lpc:source-of-tales/particles/bomb_explosion.png",
+      "title": "Bomb explosion",
+      "authors": [
+        "shimobayashi",
+        "quodup"
+      ],
+      "licence": "CC-BY-SA 3.0",
+      "urls": [
+        "https://gitlab.com/tales/sourceoftales"
+      ],
+      "usedFor": [
+        "effect:explosion-fire"
+      ],
+      "notes": "Blood by shimobayashi, recolored to an explosion by quodup."
+    },
+    {
+      "file": "lpc:source-of-tales/particles/lightning*.png",
+      "title": "Fire and lightning (Skorpio's sci-fi sprite pack, LPC)",
+      "authors": [
+        "Jonas Klinger (Skorpio)"
+      ],
+      "licence": "CC-BY-SA 3.0",
+      "urls": [
+        "https://gitlab.com/tales/sourceoftales"
+      ],
+      "usedFor": [
+        "effect:lightning"
+      ],
+      "notes": "AUTHORS.txt lists the lightning files as particles/lithning*.png. Also offered under: GPL 3.0."
+    },
+    {
+      "file": "lpc:source-of-tales/sfx/bomb.ogg",
+      "title": "Bomb explosion sound",
+      "authors": [
+        "Luke.RUSTLTD"
+      ],
+      "licence": "CC0",
+      "urls": [
+        "https://opengameart.org/users/lukerustltd",
+        "https://gitlab.com/tales/sourceoftales"
+      ],
+      "usedFor": [
+        "sfx:sot/bomb"
+      ]
+    },
+    {
+      "file": "lpc:source-of-tales/sfx/fire.ogg",
+      "title": "Fire crackle",
+      "authors": [
+        "Bart K."
+      ],
+      "licence": "CC-BY-SA 3.0",
+      "urls": [
+        "https://gitlab.com/tales/sourceoftales"
+      ],
+      "usedFor": [
+        "sfx:sot/fire"
+      ],
+      "notes": "Also offered under: GPL 3.0, GPL 2.0."
+    },
+    {
+      "file": "lpc:source-of-tales/sfx/metal-bowl.ogg",
+      "title": "Metal bowl",
+      "authors": [
+        "Johnathan Roatch"
+      ],
+      "licence": "CC-BY-SA 3.0",
+      "urls": [
+        "https://gitlab.com/tales/sourceoftales"
+      ],
+      "usedFor": [
+        "sfx:sot/metal-bowl"
+      ],
+      "notes": "Also offered under: GPL 3.0."
+    },
+    {
+      "file": "lpc:source-of-tales/sprites/monsters/bat*.png",
+      "title": "LPC monsters (slime, bat, bee, eyeball)",
+      "authors": [
+        "Charles Sanchez (CharlesGabriel)"
+      ],
+      "licence": "CC-BY-SA 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-monsters",
+        "https://gitlab.com/tales/sourceoftales"
+      ],
+      "usedFor": [
+        "bat"
+      ],
+      "notes": "Also offered under: GPL 3.0."
+    },
+    {
+      "file": "lpc:source-of-tales/sprites/monsters/bee*.png",
+      "title": "LPC monsters (slime, bat, bee, eyeball)",
+      "authors": [
+        "Charles Sanchez (CharlesGabriel)"
+      ],
+      "licence": "CC-BY-SA 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-monsters",
+        "https://gitlab.com/tales/sourceoftales"
+      ],
+      "usedFor": [
+        "bee"
+      ],
+      "notes": "Also offered under: GPL 3.0."
+    },
+    {
+      "file": "lpc:source-of-tales/sprites/monsters/eyeball.png",
+      "title": "LPC monsters (slime, bat, bee, eyeball)",
+      "authors": [
+        "Charles Sanchez (CharlesGabriel)"
+      ],
+      "licence": "CC-BY-SA 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-monsters",
+        "https://gitlab.com/tales/sourceoftales"
+      ],
+      "usedFor": [
+        "eyeball"
+      ],
+      "notes": "Also offered under: GPL 3.0."
+    },
+    {
+      "file": "lpc:source-of-tales/sprites/monsters/slime*.png",
+      "title": "LPC monsters (slime, bat, bee, eyeball)",
+      "authors": [
+        "Charles Sanchez (CharlesGabriel)"
+      ],
+      "licence": "CC-BY-SA 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-monsters",
+        "https://gitlab.com/tales/sourceoftales"
+      ],
+      "usedFor": [
+        "slime"
+      ],
+      "notes": "Also offered under: GPL 3.0."
+    },
+    {
+      "file": "lpc:source-of-tales/tiles/castle_lightsources.png",
+      "title": "LPC castle light sources (standing torch)",
+      "authors": [
+        "Daniel Armstrong (HughSpectrum)"
+      ],
+      "licence": "CC-BY-SA 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-castle",
+        "https://gitlab.com/tales/sourceoftales"
+      ],
+      "usedFor": [
+        "world:brazier"
+      ],
+      "notes": "Also offered under: GPL 3.0."
+    },
+    {
+      "file": "lpc:source-of-tales/tiles/fire.png",
+      "title": "Fire and lightning (Skorpio's sci-fi sprite pack, LPC)",
+      "authors": [
+        "Jonas Klinger (Skorpio)"
+      ],
+      "licence": "CC-BY-SA 3.0",
+      "urls": [
+        "https://gitlab.com/tales/sourceoftales"
+      ],
+      "usedFor": [
+        "effect:fire",
+        "effect:soul-wisp"
+      ],
+      "notes": "AUTHORS.txt lists the lightning files as particles/lithning*.png. Also offered under: GPL 3.0."
+    },
+    {
+      "file": "lpc:source-of-tales/tiles/lava.png",
+      "title": "LPC lava and lava rock",
+      "authors": [
+        "Lanea Zimmerman (Sharm)"
+      ],
+      "licence": "CC-BY-SA 3.0",
+      "urls": [
+        "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+        "https://gitlab.com/tales/sourceoftales"
+      ],
+      "usedFor": [
+        "world:lava",
+        "world:lava-pool",
+        "world:patch-lava"
+      ],
+      "notes": "Also offered under: GPL 3.0."
+    },
+    {
+      "file": "lpc:source-of-tales/tiles/lavarock.png",
+      "title": "LPC lava and lava rock",
+      "authors": [
+        "Lanea Zimmerman (Sharm)"
+      ],
+      "licence": "CC-BY-SA 3.0",
+      "urls": [
+        "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+        "https://gitlab.com/tales/sourceoftales"
+      ],
+      "usedFor": [
+        "world:lava-pool",
+        "world:lava-rock"
+      ],
+      "notes": "Also offered under: GPL 3.0."
+    },
+    {
+      "file": "lpc:source-of-tales/tiles/whitheredtree1.png",
+      "title": "Withered tree",
+      "authors": [
+        "Barbara Rivera"
+      ],
+      "licence": "CC-BY-SA 3.0",
+      "urls": [
+        "https://gitlab.com/tales/sourceoftales"
+      ],
+      "usedFor": [
+        "world:tree-dead"
+      ],
+      "notes": "Also offered under: GPL 3.0."
+    },
+    {
+      "file": "ulpc:arms/bracers/male/*",
+      "authors": [
+        "Matthew Krohn (makrohn)",
+        "Johannes Sjölund (wulax)",
+        "JaidynReiman"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites"
+      ],
+      "usedFor": [
+        "minotaur",
+        "orc",
+        "orc-elite",
+        "orc-ember"
+      ],
+      "notes": "original by wulax, adjustments by Makrohn, climb/emote/jump/sit/run by JaidynReiman Also offered under: CC-BY-SA 3.0, GPL 3.0."
+    },
+    {
+      "file": "ulpc:arms/hands/gloves/male/*",
+      "authors": [
+        "Michael Whitlock (bigbeargames)",
+        "Matthew Krohn (makrohn)",
+        "Johannes Sjölund (wulax)",
+        "bluecarrot16",
+        "JaidynReiman"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "http://opengameart.org/content/lpc-clothing-updates"
+      ],
+      "usedFor": [
+        "hero"
+      ],
+      "notes": "metal gloves by wulax, recolors by bigbeargames, adapted to v3 bases by bluecarrot16, added to expanded animations by JaidynReiman Also offered under: CC-BY-SA 3.0, GPL 3.0."
+    },
+    {
+      "file": "ulpc:body/bodies/male/*",
+      "authors": [
+        "bluecarrot16",
+        "JaidynReiman",
+        "Benjamin K. Smith (BenCreating)",
+        "Evert",
+        "Eliza Wyatt (ElizaWy)",
+        "TheraHedwig",
+        "MuffinElZangano",
+        "Durrani",
+        "Johannes Sjölund (wulax)",
+        "Stephen Challener (Redshrike)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-male-jumping-animation-by-durrani",
+        "https://opengameart.org/content/lpc-runcycle-and-diagonal-walkcycle",
+        "https://opengameart.org/content/lpc-revised-character-basics",
+        "https://opengameart.org/content/lpc-be-seated",
+        "https://opengameart.org/content/lpc-runcycle-for-male-muscular-and-pregnant-character-bases-with-modular-heads",
+        "https://opengameart.org/content/lpc-jump-expanded",
+        "https://opengameart.org/content/lpc-character-bases"
+      ],
+      "usedFor": [
+        "hero",
+        "orc",
+        "orc-ember"
+      ],
+      "notes": "see details at https://opengameart.org/content/lpc-character-bases; 'Thick' Male Revised Run/Climb by JaidynReiman (based on ElizaWy's LPC Revised) Also offered under: CC-BY-SA 3.0, GPL 3.0."
+    },
+    {
+      "file": "ulpc:body/bodies/muscular/*",
+      "authors": [
+        "bluecarrot16",
+        "JaidynReiman",
+        "Evert",
+        "TheraHedwig",
+        "MuffinElZangano",
+        "Durrani",
+        "Sander Frenken (castelonia)",
+        "Benjamin K. Smith (BenCreating)",
+        "Eliza Wyatt (ElizaWy)",
+        "dalonedrau",
+        "Stephen Challener (Redshrike)"
+      ],
+      "licence": "CC-BY-SA 3.0",
+      "urls": [
+        "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+        "https://opengameart.org/content/lpc-barbarian-sprite-base",
+        "https://opengameart.org/content/lpc-muscular-swing-animation",
+        "https://opengameart.org/content/lpc-muscular-hurt-animation",
+        "https://opengameart.org/content/lpc-jump-expanded",
+        "https://opengameart.org/content/lpc-revised-character-basics",
+        "https://opengameart.org/content/lpc-be-seated",
+        "https://opengameart.org/content/lpc-jump-expanded",
+        "https://opengameart.org/content/lpc-character-bases",
+        "https://opengameart.org/content/lpc-male-jumping-animation-by-durrani"
+      ],
+      "usedFor": [
+        "minotaur",
+        "orc-elite"
+      ],
+      "notes": "see details at https://opengameart.org/content/lpc-character-bases Also offered under: GPL 3.0."
+    },
+    {
+      "file": "ulpc:body/bodies/skeleton/*",
+      "authors": [
+        "bluecarrot16",
+        "Napsio",
+        "JaidynReiman",
+        "Johannes Sjölund (wulax)",
+        "Stephen Challener (Redshrike)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-skeleton",
+        "https://opengameart.org/content/lpc-character-bases"
+      ],
+      "usedFor": [
+        "skeleton",
+        "skeleton-archer",
+        "skeleton-ember"
+      ],
+      "notes": "Also offered under: CC-BY-SA 3.0, GPL 3.0."
+    },
+    {
+      "file": "ulpc:body/bodies/teen/*",
+      "authors": [
+        "bluecarrot16",
+        "Evert",
+        "TheraHedwig",
+        "Benjamin K. Smith (BenCreating)",
+        "MuffinElZangano",
+        "Durrani",
+        "Pierre Vigier (pvigier)",
+        "Eliza Wyatt (ElizaWy)",
+        "Matthew Krohn (makrohn)",
+        "Johannes Sjölund (wulax)",
+        "Stephen Challener (Redshrike)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-ladies",
+        "https://opengameart.org/content/lpc-teen-unisex-base-clothes",
+        "https://opengameart.org/content/lpc-jump-expanded",
+        "https://opengameart.org/content/lpc-revised-character-basics",
+        "https://opengameart.org/content/lpc-be-seated",
+        "https://gitlab.com/vagabondgame/lpc-characters",
+        "https://opengameart.org/content/lpc-male-jumping-animation-by-durrani",
+        "https://opengameart.org/content/lpc-jump-expanded"
+      ],
+      "usedFor": [
+        "goblin"
+      ],
+      "notes": "Also offered under: CC-BY-SA 3.0, GPL 3.0."
+    },
+    {
+      "file": "ulpc:feet/boots/basic/male/*",
+      "authors": [
+        "JaidynReiman",
+        "bluecarrot16",
+        "Nila122"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-clothes-and-hair",
+        "https://opengameart.org/content/lpc-expanded-socks-shoes"
+      ],
+      "usedFor": [
+        "hero",
+        "orc-elite"
+      ],
+      "notes": "original by Nila122, edited for male and v3 bases by bluecarrot16, Jump/Sit/Emote/Run/Revised Combat by JaidynReiman Also offered under: CC-BY-SA 3.0, GPL 2.0, GPL 3.0."
+    },
+    {
+      "file": "ulpc:feet/hoofs/male/*",
+      "authors": [
+        "JaidynReiman",
+        "Evert"
+      ],
+      "licence": "CC-BY-SA 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-faun-and-minotaur"
+      ],
+      "usedFor": [
+        "minotaur"
+      ],
+      "notes": "original by Evert, color cleanup/minor fixes/climb/jump/sit/emote by JaidynReiman Also offered under: GPL 3.0."
+    },
+    {
+      "file": "ulpc:hair/parted/adult/*",
+      "authors": [
+        "JaidynReiman",
+        "Joe White",
+        "Manuel Riecke (MrBeast)"
+      ],
+      "licence": "CC-BY-SA 3.0",
+      "urls": [
+        "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+        "https://github.com/jrconway3/Universal-LPC-spritesheet/commit/46ddcf05a0e43e7aa6ffd47d350eef0eb529ac24",
+        "https://opengameart.org/content/lpc-expanded-hair"
+      ],
+      "usedFor": [
+        "hero"
+      ],
+      "notes": "down 4 and 5 added by JaidynReiman; recolors by Joe White; original by Manuel Riecke (MrBeast) Also offered under: GPL 3.0."
+    },
+    {
+      "file": "ulpc:hat/helmet/barbarian_viking/adult/*",
+      "authors": [
+        "bluecarrot16",
+        "JaidynReiman",
+        "Napsio (Vitruvian Studio)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-helmets",
+        "https://opengameart.org/content/lpc-expanded-hats-facial-helmets"
+      ],
+      "usedFor": [
+        "orc-elite"
+      ],
+      "notes": "original version by bluecarrot16, color reduction by Napsio (Vitruvian Studio) Also offered under: CC-BY 3.0, CC-BY 4.0, GPL 2.0, GPL 3.0."
+    },
+    {
+      "file": "ulpc:head/heads/goblin/adult/*",
+      "authors": [
+        "bluecarrot16",
+        "Stephen Challener (Redshrike)",
+        "William.Thomsponj"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-goblin",
+        "https://opengameart.org/content/lpc-folk"
+      ],
+      "usedFor": [
+        "goblin"
+      ],
+      "notes": "original goblin by Redshrike, commisioned by William.Thomsponj; modular head extracted and enlarged by bluecarrot16 Also offered under: CC-BY 4.0, GPL 2.0, GPL 3.0."
+    },
+    {
+      "file": "ulpc:head/heads/human/male/*",
+      "authors": [
+        "bluecarrot16",
+        "Benjamin K. Smith (BenCreating)",
+        "Stephen Challener (Redshrike)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+        "https://opengameart.org/content/lpc-character-bases"
+      ],
+      "usedFor": [
+        "hero"
+      ],
+      "notes": "original head by Redshrike, tweaks by BenCreating, modular version by bluecarrot16 Also offered under: CC-BY-SA 3.0, GPL 3.0."
+    },
+    {
+      "file": "ulpc:head/heads/minotaur/male/*",
+      "authors": [
+        "Evert",
+        "Nila122",
+        "Daniel Eddeland (daneeklu)"
+      ],
+      "licence": "CC-BY-SA 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-style-farm-animals",
+        "https://opengameart.org/content/lpc-lizard-headgear",
+        "https://opengameart.org/content/lpc-faun-and-minotaur"
+      ],
+      "usedFor": [
+        "minotaur"
+      ],
+      "notes": "original cow by daneeklu, combined with horns by Nila122 and adapted to minotaur by Evert Also offered under: GPL 3.0."
+    },
+    {
+      "file": "ulpc:head/heads/orc/male/*",
+      "authors": [
+        "bluecarrot16",
+        "Matthew Krohn (makrohn)",
+        "Stephen Challener (Redshrike)",
+        "Zi Ye"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/four-characters-my-lpc-entries",
+        "https://opengameart.org/content/sinbad-the-ogre",
+        "https://opengameart.org/content/lpc-male-sheets",
+        "https://opengameart.org/content/lpc-character-bases"
+      ],
+      "usedFor": [
+        "orc",
+        "orc-elite",
+        "orc-ember"
+      ],
+      "notes": "Sinbad the ogre design by Zi Ye, original 4-direction sprite by Redshrike, additional hurt/cast animations by makrohn, headless version by bluecarrot16 Also offered under: CC-BY-SA 3.0, GPL 3.0."
+    },
+    {
+      "file": "ulpc:head/heads/skeleton/adult/*",
+      "authors": [
+        "bluecarrot16",
+        "Napsio",
+        "JaidynReiman",
+        "Johannes Sjölund (wulax)",
+        "Stephen Challener (Redshrike)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-skeleton",
+        "https://opengameart.org/content/lpc-character-bases"
+      ],
+      "usedFor": [
+        "skeleton",
+        "skeleton-archer",
+        "skeleton-ember"
+      ],
+      "notes": "Also offered under: CC-BY-SA 3.0, GPL 3.0."
+    },
+    {
+      "file": "ulpc:legs/pantaloons/male/*",
+      "authors": [
+        "Nila122",
+        "JaidynReiman",
+        "Johannes Sjölund (wulax)",
+        "Stephen Challener (Redshrike)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-pirates",
+        "https://opengameart.org/content/more-lpc-clothes-and-hair",
+        "https://opengameart.org/content/lpc-expanded-pants"
+      ],
+      "usedFor": [
+        "orc",
+        "orc-ember"
+      ],
+      "notes": "Original bases by Redshrike, thrust/shoot bases by Wulax, Original Pantaloons by Nila122, climb/jump/run/sit/emotes/revised combat by JaidynReiman Also offered under: GPL 2.0, GPL 3.0, CC-BY-SA 3.0."
+    },
+    {
+      "file": "ulpc:legs/pants/male/*",
+      "authors": [
+        "bluecarrot16",
+        "JaidynReiman",
+        "ElizaWy",
+        "Matthew Krohn (makrohn)",
+        "Johannes Sjölund (wulax)",
+        "Stephen Challener (Redshrike)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-expanded-pants"
+      ],
+      "usedFor": [
+        "hero",
+        "minotaur",
+        "orc-elite"
+      ],
+      "notes": "original male pants by wulax, recolors and edits to v3 base by bluecarrot16, climb/jump/run/sit/emotes/revised combat by JaidynReiman based on ElizaWy's LPC Revised Also offered under: GPL 3.0, CC-BY-SA 3.0."
+    },
+    {
+      "file": "ulpc:legs/shorts/shorts/thin/*",
+      "authors": [
+        "ElizaWy",
+        "JaidynReiman",
+        "Johannes Sjölund (wulax)",
+        "Stephen Challener (Redshrike)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://github.com/ElizaWy/LPC/tree/main/Characters/Clothing",
+        "https://opengameart.org/content/lpc-expanded-sit-run-jump-more",
+        "https://opengameart.org/content/lpc-expanded-pants"
+      ],
+      "usedFor": [
+        "goblin"
+      ],
+      "notes": "Original bases by Redshrike, thrust/shoot bases by Wulax, original shorts by ElizaWy, climb/jump/run/sit/emotes/revised combat by JaidynReiman"
+    },
+    {
+      "file": "ulpc:shield/heater/revised/trim/bg/*",
+      "authors": [
+        "bluecarrot16",
+        "Sander Frenken (castelonia)",
+        "ElizaWy",
+        "JaidynReiman"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-shields"
+      ],
+      "usedFor": [
+        "hero"
+      ]
+    },
+    {
+      "file": "ulpc:shield/heater/revised/trim/fg/*",
+      "authors": [
+        "bluecarrot16",
+        "Sander Frenken (castelonia)",
+        "ElizaWy",
+        "JaidynReiman"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-shields"
+      ],
+      "usedFor": [
+        "hero"
+      ]
+    },
+    {
+      "file": "ulpc:shield/heater/revised/wood/bg/*",
+      "authors": [
+        "bluecarrot16",
+        "Sander Frenken (castelonia)",
+        "ElizaWy",
+        "JaidynReiman"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-shields"
+      ],
+      "usedFor": [
+        "hero"
+      ]
+    },
+    {
+      "file": "ulpc:shield/heater/revised/wood/fg/*",
+      "authors": [
+        "bluecarrot16",
+        "Sander Frenken (castelonia)",
+        "ElizaWy",
+        "JaidynReiman"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-shields"
+      ],
+      "usedFor": [
+        "hero"
+      ]
+    },
+    {
+      "file": "ulpc:shoulders/bauldron/male/*",
+      "authors": [
+        "Nila122",
+        "JaidynReiman"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/more-lpc-clothes-and-hair"
+      ],
+      "usedFor": [
+        "minotaur",
+        "orc-elite"
+      ],
+      "notes": "Original by Nila122, climb/jump/sit/emote/run by JaidynReiman Also offered under: GPL 2.0, GPL 3.0, CC-BY-SA 3.0."
+    },
+    {
+      "file": "ulpc:shoulders/pauldrons/male/*",
+      "authors": [
+        "Matthew Krohn (makrohn)",
+        "Johannes Sjölund (wulax)",
+        "bluecarrot16",
+        "JaidynReiman"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "http://opengameart.org/content/lpc-clothing-updates"
+      ],
+      "usedFor": [
+        "hero"
+      ],
+      "notes": "adapted to female base by makrohn, adapted to v3 bases by bluecarrot16, climb/jump/sit/emote/run/revised combat by JaidynReiman Also offered under: CC-BY-SA 3.0, GPL 3.0."
+    },
+    {
+      "file": "ulpc:torso/armour/plate/male/*",
+      "authors": [
+        "Napsio (Vitruvian Studio)",
+        "JaidynReiman",
+        "bluecarrot16",
+        "Michael Whitlock (bigbeargames)",
+        "Johannes Sjölund (wulax)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-combat-armor-for-women"
+      ],
+      "usedFor": [
+        "hero"
+      ],
+      "notes": "original by wulax, recolor by bigbeargames, color reduced to 7 colors and adapted to v3 bases by bluecarrot16, run/jump/sit/climb/revised combat by JaidynReiman, reduced colors to 6 (based on Napsio's Vitruvian) Also offered under: CC-BY-SA 3.0, GPL 3.0."
+    },
+    {
+      "file": "ulpc:torso/waist/belt_leather/female/hurt/leather.png",
+      "authors": [
+        "bluecarrot16",
+        "Johannes Sjölund (wulax)",
+        "Matthew Krohn (makrohn)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-combat-armor-for-women",
+        "https://opengameart.org/content/lpc-pirates"
+      ],
+      "usedFor": [
+        "goblin"
+      ],
+      "notes": "Also offered under: CC-BY-SA 3.0, GPL 3.0."
+    },
+    {
+      "file": "ulpc:torso/waist/belt_leather/female/slash/leather.png",
+      "authors": [
+        "bluecarrot16",
+        "Johannes Sjölund (wulax)",
+        "Matthew Krohn (makrohn)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-combat-armor-for-women",
+        "https://opengameart.org/content/lpc-pirates"
+      ],
+      "usedFor": [
+        "goblin"
+      ],
+      "notes": "Also offered under: CC-BY-SA 3.0, GPL 3.0."
+    },
+    {
+      "file": "ulpc:torso/waist/belt_leather/male/hurt/charcoal.png",
+      "authors": [
+        "bluecarrot16",
+        "Johannes Sjölund (wulax)",
+        "Matthew Krohn (makrohn)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-combat-armor-for-women",
+        "https://opengameart.org/content/lpc-pirates"
+      ],
+      "usedFor": [
+        "orc",
+        "orc-ember"
+      ],
+      "notes": "Also offered under: CC-BY-SA 3.0, GPL 3.0."
+    },
+    {
+      "file": "ulpc:torso/waist/belt_leather/male/slash/charcoal.png",
+      "authors": [
+        "bluecarrot16",
+        "Johannes Sjölund (wulax)",
+        "Matthew Krohn (makrohn)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-combat-armor-for-women",
+        "https://opengameart.org/content/lpc-pirates"
+      ],
+      "usedFor": [
+        "orc",
+        "orc-ember"
+      ],
+      "notes": "Also offered under: CC-BY-SA 3.0, GPL 3.0."
+    },
+    {
+      "file": "ulpc:weapon/blunt/mace/attack_slash/behind/mace.png",
+      "authors": [
+        "Johannes Sjölund (wulax)",
+        "bluecarrot16"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-extended-weapon-animations"
+      ],
+      "usedFor": [
+        "orc",
+        "orc-ember"
+      ],
+      "notes": "Also offered under: CC-BY-SA 3.0."
+    },
+    {
+      "file": "ulpc:weapon/blunt/mace/attack_slash/mace.png",
+      "authors": [
+        "Johannes Sjölund (wulax)",
+        "bluecarrot16"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-extended-weapon-animations"
+      ],
+      "usedFor": [
+        "orc",
+        "orc-ember"
+      ],
+      "notes": "Also offered under: CC-BY-SA 3.0."
+    },
+    {
+      "file": "ulpc:weapon/blunt/mace/hurt/mace.png",
+      "authors": [
+        "Johannes Sjölund (wulax)",
+        "bluecarrot16"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-extended-weapon-animations"
+      ],
+      "usedFor": [
+        "orc",
+        "orc-ember"
+      ],
+      "notes": "Also offered under: CC-BY-SA 3.0."
+    },
+    {
+      "file": "ulpc:weapon/blunt/mace/universal_behind/hurt/mace.png",
+      "authors": [
+        "Johannes Sjölund (wulax)",
+        "bluecarrot16"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-extended-weapon-animations"
+      ],
+      "usedFor": [
+        "orc",
+        "orc-ember"
+      ],
+      "notes": "Also offered under: CC-BY-SA 3.0."
+    },
+    {
+      "file": "ulpc:weapon/blunt/waraxe/attack_slash/behind/waraxe.png",
+      "authors": [
+        "Benjamin K. Smith (BenCreating)",
+        "bluecarrot16",
+        "Sander Frenken (castelonia)"
+      ],
+      "licence": "CC-BY-SA 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-weapons"
+      ],
+      "usedFor": [
+        "minotaur",
+        "orc-elite"
+      ],
+      "notes": "Also offered under: GPL 3.0."
+    },
+    {
+      "file": "ulpc:weapon/blunt/waraxe/attack_slash/waraxe.png",
+      "authors": [
+        "Benjamin K. Smith (BenCreating)",
+        "bluecarrot16",
+        "Sander Frenken (castelonia)"
+      ],
+      "licence": "CC-BY-SA 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-weapons"
+      ],
+      "usedFor": [
+        "minotaur",
+        "orc-elite"
+      ],
+      "notes": "Also offered under: GPL 3.0."
+    },
+    {
+      "file": "ulpc:weapon/blunt/waraxe/hurt/waraxe.png",
+      "authors": [
+        "Benjamin K. Smith (BenCreating)",
+        "bluecarrot16",
+        "Sander Frenken (castelonia)"
+      ],
+      "licence": "CC-BY-SA 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-weapons"
+      ],
+      "usedFor": [
+        "minotaur",
+        "orc-elite"
+      ],
+      "notes": "Also offered under: GPL 3.0."
+    },
+    {
+      "file": "ulpc:weapon/ranged/bow/arrow/shoot/arrow.png",
+      "authors": [
+        "Johannes Sjölund (wulax)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites"
+      ],
+      "usedFor": [
+        "skeleton-archer"
+      ],
+      "notes": "Also offered under: CC-BY-SA 3.0, GPL 3.0."
+    },
+    {
+      "file": "ulpc:weapon/ranged/bow/normal/universal/background/hurt/dark.png",
+      "authors": [
+        "Johannes Sjölund (wulax)",
+        "Pierre Vigier (pvigier)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-walk-animations-for-bows"
+      ],
+      "usedFor": [
+        "skeleton-archer"
+      ],
+      "notes": "original by wulax, walk animations by pvigier, split into layers and tweaked for v3 character bases by bluecarrot16. pvigier has agreed to license this sheet as OGA-BY 3.0+. Also offered under: GPL 3.0, CC-BY 4.0."
+    },
+    {
+      "file": "ulpc:weapon/ranged/bow/normal/universal/background/shoot/dark.png",
+      "authors": [
+        "Johannes Sjölund (wulax)",
+        "Pierre Vigier (pvigier)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-walk-animations-for-bows"
+      ],
+      "usedFor": [
+        "skeleton-archer"
+      ],
+      "notes": "original by wulax, walk animations by pvigier, split into layers and tweaked for v3 character bases by bluecarrot16. pvigier has agreed to license this sheet as OGA-BY 3.0+. Also offered under: GPL 3.0, CC-BY 4.0."
+    },
+    {
+      "file": "ulpc:weapon/ranged/bow/normal/universal/foreground/hurt/dark.png",
+      "authors": [
+        "Johannes Sjölund (wulax)",
+        "Pierre Vigier (pvigier)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-walk-animations-for-bows"
+      ],
+      "usedFor": [
+        "skeleton-archer"
+      ],
+      "notes": "original by wulax, walk animations by pvigier, split into layers and tweaked for v3 character bases by bluecarrot16. pvigier has agreed to license this sheet as OGA-BY 3.0+. Also offered under: GPL 3.0, CC-BY 4.0."
+    },
+    {
+      "file": "ulpc:weapon/ranged/bow/normal/universal/foreground/shoot/dark.png",
+      "authors": [
+        "Johannes Sjölund (wulax)",
+        "Pierre Vigier (pvigier)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-walk-animations-for-bows"
+      ],
+      "usedFor": [
+        "skeleton-archer"
+      ],
+      "notes": "original by wulax, walk animations by pvigier, split into layers and tweaked for v3 character bases by bluecarrot16. pvigier has agreed to license this sheet as OGA-BY 3.0+. Also offered under: GPL 3.0, CC-BY 4.0."
+    },
+    {
+      "file": "ulpc:weapon/ranged/bow/normal/walk/background/dark.png",
+      "authors": [
+        "Johannes Sjölund (wulax)",
+        "Pierre Vigier (pvigier)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-walk-animations-for-bows"
+      ],
+      "usedFor": [
+        "skeleton-archer"
+      ],
+      "notes": "original by wulax, walk animations by pvigier, split into layers and tweaked for v3 character bases by bluecarrot16. pvigier has agreed to license this sheet as OGA-BY 3.0+. Also offered under: GPL 3.0, CC-BY 4.0."
+    },
+    {
+      "file": "ulpc:weapon/ranged/bow/normal/walk/foreground/dark.png",
+      "authors": [
+        "Johannes Sjölund (wulax)",
+        "Pierre Vigier (pvigier)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-walk-animations-for-bows"
+      ],
+      "usedFor": [
+        "skeleton-archer"
+      ],
+      "notes": "original by wulax, walk animations by pvigier, split into layers and tweaked for v3 character bases by bluecarrot16. pvigier has agreed to license this sheet as OGA-BY 3.0+. Also offered under: GPL 3.0, CC-BY 4.0."
+    },
+    {
+      "file": "ulpc:weapon/sword/arming/attack_backslash/bg/steel.png",
+      "authors": [
+        "ElizaWy; walk and down by JaidynReiman"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://github.com/ElizaWy/LPC/tree/main/Characters/Props/Sword%2001%20-%20Arming%20Sword",
+        "https://opengameart.org/content/lpc-expanded-sit-run-jump-more"
+      ],
+      "usedFor": [
+        "hero"
+      ]
+    },
+    {
+      "file": "ulpc:weapon/sword/arming/attack_backslash/fg/steel.png",
+      "authors": [
+        "ElizaWy; walk and down by JaidynReiman"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://github.com/ElizaWy/LPC/tree/main/Characters/Props/Sword%2001%20-%20Arming%20Sword",
+        "https://opengameart.org/content/lpc-expanded-sit-run-jump-more"
+      ],
+      "usedFor": [
+        "hero"
+      ]
+    },
+    {
+      "file": "ulpc:weapon/sword/arming/attack_halfslash/bg/steel.png",
+      "authors": [
+        "ElizaWy; walk and down by JaidynReiman"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://github.com/ElizaWy/LPC/tree/main/Characters/Props/Sword%2001%20-%20Arming%20Sword",
+        "https://opengameart.org/content/lpc-expanded-sit-run-jump-more"
+      ],
+      "usedFor": [
+        "hero"
+      ]
+    },
+    {
+      "file": "ulpc:weapon/sword/arming/attack_halfslash/fg/steel.png",
+      "authors": [
+        "ElizaWy; walk and down by JaidynReiman"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://github.com/ElizaWy/LPC/tree/main/Characters/Props/Sword%2001%20-%20Arming%20Sword",
+        "https://opengameart.org/content/lpc-expanded-sit-run-jump-more"
+      ],
+      "usedFor": [
+        "hero"
+      ]
+    },
+    {
+      "file": "ulpc:weapon/sword/arming/attack_slash/bg/*",
+      "authors": [
+        "ElizaWy; walk and down by JaidynReiman"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://github.com/ElizaWy/LPC/tree/main/Characters/Props/Sword%2001%20-%20Arming%20Sword",
+        "https://opengameart.org/content/lpc-expanded-sit-run-jump-more"
+      ],
+      "usedFor": [
+        "goblin",
+        "hero",
+        "skeleton"
+      ]
+    },
+    {
+      "file": "ulpc:weapon/sword/arming/attack_slash/fg/*",
+      "authors": [
+        "ElizaWy; walk and down by JaidynReiman"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://github.com/ElizaWy/LPC/tree/main/Characters/Props/Sword%2001%20-%20Arming%20Sword",
+        "https://opengameart.org/content/lpc-expanded-sit-run-jump-more"
+      ],
+      "usedFor": [
+        "goblin",
+        "hero",
+        "skeleton"
+      ]
+    },
+    {
+      "file": "ulpc:weapon/sword/arming/universal/bg/hurt/*",
+      "authors": [
+        "ElizaWy; walk and down by JaidynReiman"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://github.com/ElizaWy/LPC/tree/main/Characters/Props/Sword%2001%20-%20Arming%20Sword",
+        "https://opengameart.org/content/lpc-expanded-sit-run-jump-more"
+      ],
+      "usedFor": [
+        "goblin",
+        "hero",
+        "skeleton"
+      ]
+    },
+    {
+      "file": "ulpc:weapon/sword/arming/universal/bg/idle/*",
+      "authors": [
+        "ElizaWy; walk and down by JaidynReiman"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://github.com/ElizaWy/LPC/tree/main/Characters/Props/Sword%2001%20-%20Arming%20Sword",
+        "https://opengameart.org/content/lpc-expanded-sit-run-jump-more"
+      ],
+      "usedFor": [
+        "goblin",
+        "hero",
+        "skeleton"
+      ]
+    },
+    {
+      "file": "ulpc:weapon/sword/arming/universal/fg/hurt/*",
+      "authors": [
+        "ElizaWy; walk and down by JaidynReiman"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://github.com/ElizaWy/LPC/tree/main/Characters/Props/Sword%2001%20-%20Arming%20Sword",
+        "https://opengameart.org/content/lpc-expanded-sit-run-jump-more"
+      ],
+      "usedFor": [
+        "goblin",
+        "hero",
+        "skeleton"
+      ]
+    },
+    {
+      "file": "ulpc:weapon/sword/arming/universal/fg/idle/*",
+      "authors": [
+        "ElizaWy; walk and down by JaidynReiman"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://github.com/ElizaWy/LPC/tree/main/Characters/Props/Sword%2001%20-%20Arming%20Sword",
+        "https://opengameart.org/content/lpc-expanded-sit-run-jump-more"
+      ],
+      "usedFor": [
+        "goblin",
+        "hero",
+        "skeleton"
+      ]
+    },
+    {
+      "file": "ulpc:weapon/sword/dagger/behind/slash/dagger.png",
+      "authors": [
+        "bluecarrot16",
+        "Johannes Sjölund (wulax)",
+        "Matthew Krohn (makrohn)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-extended-weapon-animations"
+      ],
+      "usedFor": [
+        "skeleton-archer"
+      ],
+      "notes": "Also offered under: CC-BY-SA 3.0, GPL 3.0."
+    },
+    {
+      "file": "ulpc:weapon/sword/dagger/slash/dagger.png",
+      "authors": [
+        "bluecarrot16",
+        "Johannes Sjölund (wulax)",
+        "Matthew Krohn (makrohn)"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-extended-weapon-animations"
+      ],
+      "usedFor": [
+        "skeleton-archer"
+      ],
+      "notes": "Also offered under: CC-BY-SA 3.0, GPL 3.0."
+    },
+    {
+      "file": "ulpc:weapon/sword/longsword/attack_slash/behind/longsword.png",
+      "authors": [
+        "Johannes Sjölund (wulax)",
+        "bluecarrot16"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-extended-weapon-animations"
+      ],
+      "usedFor": [
+        "hero"
+      ],
+      "notes": "Also offered under: CC-BY-SA 3.0."
+    },
+    {
+      "file": "ulpc:weapon/sword/longsword/attack_slash/longsword.png",
+      "authors": [
+        "Johannes Sjölund (wulax)",
+        "bluecarrot16"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-extended-weapon-animations"
+      ],
+      "usedFor": [
+        "hero"
+      ],
+      "notes": "Also offered under: CC-BY-SA 3.0."
+    },
+    {
+      "file": "ulpc:weapon/sword/longsword/attack_thrust/behind/longsword.png",
+      "authors": [
+        "Johannes Sjölund (wulax)",
+        "bluecarrot16"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-extended-weapon-animations"
+      ],
+      "usedFor": [
+        "hero"
+      ],
+      "notes": "Also offered under: CC-BY-SA 3.0."
+    },
+    {
+      "file": "ulpc:weapon/sword/longsword/attack_thrust/longsword.png",
+      "authors": [
+        "Johannes Sjölund (wulax)",
+        "bluecarrot16"
+      ],
+      "licence": "OGA-BY 3.0",
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-extended-weapon-animations"
+      ],
+      "usedFor": [
+        "hero"
+      ],
+      "notes": "Also offered under: CC-BY-SA 3.0."
+    }
+  ],
+  "outputs": [
+    {
+      "file": "characters-0.png",
+      "licence": "CC-BY-SA 3.0",
+      "notes": "Contains art derived from CC-BY-SA sources, so the baked page is CC-BY-SA."
+    },
+    {
+      "file": "world-0.png",
+      "licence": "CC-BY-SA 3.0",
+      "notes": "Contains art derived from CC-BY-SA sources, so the baked page is CC-BY-SA."
+    },
+    {
+      "file": "effects-0.png",
+      "licence": "CC-BY-SA 3.0",
+      "notes": "Contains art derived from CC-BY-SA sources, so the baked page is CC-BY-SA."
+    },
+    {
+      "file": "sfx/fantasy/*",
+      "licence": "CC-BY 3.0",
+      "notes": "Each sample keeps its source's licence."
+    },
+    {
+      "file": "sfx/kenney/*",
+      "licence": "CC0",
+      "notes": "Each sample keeps its source's licence."
+    },
+    {
+      "file": "sfx/rpg80/*",
+      "licence": "CC0",
+      "notes": "Each sample keeps its source's licence."
+    },
+    {
+      "file": "sfx/rpgpack/*",
+      "licence": "CC0",
+      "notes": "Each sample keeps its source's licence."
+    },
+    {
+      "file": "sfx/sot/*",
+      "licence": "CC-BY-SA 3.0 / CC0",
+      "notes": "Mixed: each sample keeps its source's licence (see entries)."
+    }
+  ]
+}
