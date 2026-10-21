@@ -97,6 +97,8 @@ export interface DemoHook {
   lastS?: number;
   frames?: number;
   audio?: () => { state: string; contextSongTime: number; stats: { scheduled: number; skippedLate: number; startedLate: number; clicks: number; ducks: number; ticks: number } };
+  /** QA listening pass: the level's mix rendered offline through the live mixing graph. */
+  renderMix?: (parts: { music: boolean; sfx: boolean }) => Promise<AudioBuffer>;
 }
 
 export interface BenchResult {
@@ -159,6 +161,7 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
     const charsJson = await (await fetch(`${import.meta.env.BASE_URL}assets/characters.json`)).json();
     for (const [k, a] of Object.entries(charsJson.sprites.hero.animations as Record<string, { impactFrame?: number }>)) if (heroAnims[k]) (heroAnims[k] as { frames: number; impactFrame?: number }).impactFrame = a.impactFrame;
     input.heroAnims = heroAnims;
+    input.soundOnsets = Object.fromEntries(Object.entries(assets.sounds.sounds).map(([k, v]) => [k, v.onsetS ?? 0]));
     const props = Object.fromEntries([...assets.props.entries()].map(([k, v]) => [k, { tall: v.tall, radius: 10 }]));
     const worldJson = await (await fetch(`${import.meta.env.BASE_URL}assets/world.json`)).json();
     for (const [k, v] of Object.entries(worldJson.props as Record<string, { radius: number }>)) if (props[k]) props[k].radius = v.radius;
@@ -196,6 +199,8 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
     if (audio) {
       progress(0.9, "Loading sounds");
       await audio.loadSounds(assets.sounds, new Set(plan.events.sounds.map((e) => e.sample)), `${import.meta.env.BASE_URL}assets/sfx/`);
+      const p = plan;
+      hook.renderMix = (parts) => audio.renderOffline(p, parts);
     }
 
     const evaluator = new Evaluator(plan, lib);

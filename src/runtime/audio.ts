@@ -8,12 +8,60 @@ import type { Plan, SoundEvent } from "../plan/types.ts";
 
 const SCHEDULE_EVERY_MS = 25;
 const LOOKAHEAD_S = 0.15;
+/** Matches the planner's MAX_SOUND_LEAD: samples with slow attacks start up to this early. */
+const MAX_LEAD_S = 0.25;
 const MAX_CORRECTION_S = 0.002;
 const JUMP_S = 0.05;
 /** Sound effects sit about 6 dB below the music's peak. */
-const SFX_LEVEL = 0.5;
+const SFX_LEVEL = 0.32;
 const DUCK_GAIN = 0.66; // about −3.5 dB
 const DUCK_S = 0.12;
+/** The limiter overshoots by a fraction of a dB on the sharpest transients; this keeps peaks under 0 dBFS. */
+const OUTPUT_TRIM = 0.89; // −1 dB
+
+/** The effects follow the music's loudness: they move this fraction of the music's dB change. */
+const FOLLOW = 0.75;
+const FOLLOW_MAX_CUT_DB = 10;
+const LEVEL_RATE = 10; // envelope points per second
+
+/**
+ * The effects bus gain over the song, as scheduled automation: when the music is
+ * quieter than its loud passages, the effects come down with it so the music
+ * stays in front. Computed once from the decoded music, so it is a pure function
+ * of song time like everything else.
+ */
+export function followCurve(music: AudioBuffer): Float32Array {
+  const sr = music.sampleRate;
+  const win = Math.floor(0.4 * sr);
+  const hop = Math.floor(sr / LEVEL_RATE);
+  const chans = Array.from({ length: music.numberOfChannels }, (_, c) => music.getChannelData(c));
+  const n = Math.max(1, Math.floor(music.length / hop));
+  const level = new Float32Array(n);
+  for (let k = 0; k < n; k++) {
+    const i0 = Math.max(0, k * hop - win / 2);
+    const i1 = Math.min(music.length, i0 + win);
+    let sum = 0;
+    for (const ch of chans) for (let i = i0; i < i1; i++) sum += ch[i] * ch[i];
+    level[k] = 10 * Math.log10(Math.max(sum / Math.max(1, (i1 - i0) * chans.length), 1e-12));
+  }
+  // Smooth over a second so the effects do not pump with the music's own rhythm.
+  const smooth = new Float32Array(n);
+  const half = LEVEL_RATE / 2;
+  for (let k = 0; k < n; k++) {
+    let sum = 0;
+    let cnt = 0;
+    for (let j = Math.max(0, k - half); j <= Math.min(n - 1, k + half); j++) {
+      sum += level[j];
+      cnt++;
+    }
+    smooth[k] = sum / cnt;
+  }
+  const sorted = [...smooth].sort((a, b) => a - b);
+  const ref = sorted[Math.floor(0.9 * (sorted.length - 1))];
+  const curve = new Float32Array(n);
+  for (let k = 0; k < n; k++) curve[k] = Math.pow(10, Math.max(-FOLLOW_MAX_CUT_DB, Math.min(0, FOLLOW * (smooth[k] - ref))) / 20);
+  return curve;
+}
 
 /** Keeps the song-time estimate monotonic and slew-limited, except after a glitch. */
 export class Smoother {
@@ -57,17 +105,16 @@ export class AudioEngine implements SongClock {
   readonly ctx: AudioContext;
   private music?: AudioBuffer;
   private source?: AudioBufferSourceNode;
-  private musicGain: GainNode;
-  private sfxBus: GainNode;
+  private mix: Mix;
   private buffers = new Map<string, AudioBuffer>();
   private t0 = 0;
   private started = false;
   private smoother = new Smoother();
   private schedIdx = 0;
+  private handled = new Uint8Array(0);
   private timer?: ReturnType<typeof setInterval>;
   private clickBuffer?: AudioBuffer;
   private clickIdx = 0;
-  private duckEnd = -Infinity;
   /** For the QA hook: sounds started, sounds skipped because they were already late, clicks. */
   readonly stats = { scheduled: 0, skippedLate: 0, startedLate: 0, clicks: 0, ducks: 0, ticks: 0 };
 
@@ -76,25 +123,7 @@ export class AudioEngine implements SongClock {
     readonly metronome = false,
   ) {
     this.ctx = new AudioContext({ latencyHint: "interactive" });
-    const limiter = this.ctx.createDynamicsCompressor();
-    limiter.threshold.value = -1.5;
-    limiter.knee.value = 0;
-    limiter.ratio.value = 20;
-    limiter.attack.value = 0.002;
-    limiter.release.value = 0.08;
-    limiter.connect(this.ctx.destination);
-    this.musicGain = this.ctx.createGain();
-    this.musicGain.connect(limiter);
-    const comp = this.ctx.createDynamicsCompressor();
-    comp.threshold.value = -18;
-    comp.knee.value = 8;
-    comp.ratio.value = 4;
-    comp.attack.value = 0.003;
-    comp.release.value = 0.12;
-    this.sfxBus = this.ctx.createGain();
-    this.sfxBus.gain.value = SFX_LEVEL;
-    this.sfxBus.connect(comp);
-    comp.connect(limiter);
+    this.mix = new Mix(this.ctx);
   }
 
   async loadMusic(url: string, onProgress?: (f: number) => void): Promise<void> {
@@ -146,6 +175,12 @@ export class AudioEngine implements SongClock {
     this.clickBuffer = click;
   }
 
+  private curve?: Float32Array;
+  private followCurve(): Float32Array | undefined {
+    if (!this.curve && this.music) this.curve = followCurve(this.music);
+    return this.curve;
+  }
+
   get duration(): number {
     return this.music?.duration ?? 0;
   }
@@ -160,13 +195,15 @@ export class AudioEngine implements SongClock {
     if (!this.music) throw new Error("music not loaded");
     const src = this.ctx.createBufferSource();
     src.buffer = this.music;
-    src.connect(this.musicGain);
+    src.connect(this.mix.musicGain);
     const when = this.ctx.currentTime + 0.1;
     src.start(when);
+    this.mix.follow(this.followCurve(), when);
     this.source = src;
     this.t0 = when;
     this.started = true;
     this.schedIdx = 0;
+    this.handled = new Uint8Array(plan.events.sounds.length);
     this.clickIdx = 0;
     this.smoother.reset();
     this.timer = setInterval(() => this.schedule(plan), SCHEDULE_EVERY_MS);
@@ -203,16 +240,24 @@ export class AudioEngine implements SongClock {
     const now = this.contextSongTime();
     const horizon = now + LOOKAHEAD_S;
     const sounds = plan.events.sounds;
-    while (this.schedIdx < sounds.length && sounds[this.schedIdx].s <= horizon) {
-      const ev = sounds[this.schedIdx++];
+    // Events are sorted by their heard time s, but each starts at s − lead, so a later
+    // event with a long lead can be due first: scan the window and mark what is handled.
+    if (this.handled.length !== sounds.length) this.handled = new Uint8Array(sounds.length);
+    for (let i = this.schedIdx; i < sounds.length && sounds[i].s <= horizon + MAX_LEAD_S; i++) {
+      if (this.handled[i]) continue;
+      const ev = sounds[i];
+      const start = ev.s - (ev.lead ?? 0);
+      if (start > horizon) continue;
+      this.handled[i] = 1;
       // Never late: events already in the past (a hidden tab) are skipped.
-      if (ev.s < now) {
+      if (start < now) {
         this.stats.skippedLate++;
         continue;
       }
       this.stats.scheduled++;
       this.play(ev);
     }
+    while (this.schedIdx < sounds.length && this.handled[this.schedIdx]) this.schedIdx++;
     if (this.metronome && this.clickBuffer) {
       const beats = plan.songBeats;
       const bars = new Set(plan.barStart);
@@ -224,7 +269,7 @@ export class AudioEngine implements SongClock {
         const g = this.ctx.createGain();
         g.gain.value = bars.has(i) ? 0.9 : 0.45;
         src.playbackRate.value = bars.has(i) ? 1.5 : 1;
-        src.connect(g).connect(this.musicGain);
+        src.connect(g).connect(this.mix.musicGain);
         src.start(this.t0 + beats[i]);
         this.stats.clicks++;
       }
@@ -234,8 +279,79 @@ export class AudioEngine implements SongClock {
   private play(ev: SoundEvent): void {
     const buf = this.buffers.get(ev.sample);
     if (!buf) return;
-    const when = this.t0 + ev.s;
+    const when = this.t0 + ev.s - (ev.lead ?? 0);
     if (when < this.ctx.currentTime) this.stats.startedLate++;
+    if (this.mix.play(buf, when, ev)) this.stats.ducks++;
+  }
+
+  /**
+   * Renders the whole level's mix offline through the same graph, for the QA
+   * listening pass: music and sound effects together or either alone.
+   */
+  async renderOffline(plan: Plan, parts: { music: boolean; sfx: boolean }): Promise<AudioBuffer> {
+    const sr = this.ctx.sampleRate;
+    const length = Math.ceil((this.duration + 2) * sr);
+    const ctx = new OfflineAudioContext({ numberOfChannels: 2, length, sampleRate: sr });
+    const mix = new Mix(ctx);
+    mix.follow(this.followCurve(), 0);
+    if (parts.music && this.music) {
+      const src = ctx.createBufferSource();
+      src.buffer = this.music;
+      src.connect(mix.musicGain);
+      src.start(0);
+    }
+    for (const ev of plan.events.sounds) {
+      const buf = this.buffers.get(ev.sample);
+      if (!buf) continue;
+      // The music ducks whenever the effects are present, whether or not the music is rendered.
+      if (parts.sfx) mix.play(buf, Math.max(0, ev.s - (ev.lead ?? 0)), ev);
+    }
+    return ctx.startRendering();
+  }
+}
+
+/** The mixing graph: music bus with ducking, effects bus compressor, final limiter. */
+class Mix {
+  readonly musicGain: GainNode;
+  private sfxBus: GainNode;
+  private sfxFollow: GainNode;
+  private duckEnd = -Infinity;
+
+  constructor(private ctx: BaseAudioContext) {
+    const limiter = ctx.createDynamicsCompressor();
+    limiter.threshold.value = -1.5;
+    limiter.knee.value = 0;
+    limiter.ratio.value = 20;
+    limiter.attack.value = 0.002;
+    limiter.release.value = 0.08;
+    const trim = ctx.createGain();
+    trim.gain.value = OUTPUT_TRIM;
+    limiter.connect(trim).connect(ctx.destination);
+    this.musicGain = ctx.createGain();
+    this.musicGain.connect(limiter);
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -18;
+    comp.knee.value = 8;
+    comp.ratio.value = 4;
+    comp.attack.value = 0.003;
+    comp.release.value = 0.12;
+    this.sfxBus = ctx.createGain();
+    this.sfxBus.gain.value = SFX_LEVEL;
+    this.sfxBus.connect(comp);
+    // After the compressor, so that it does not undo the follow.
+    this.sfxFollow = ctx.createGain();
+    comp.connect(this.sfxFollow).connect(limiter);
+  }
+
+  /** Schedules the effects level over the song, starting at context time t0. */
+  follow(curve: Float32Array | undefined, t0: number): void {
+    if (!curve || curve.length < 2) return;
+    this.sfxFollow.gain.setValueAtTime(curve[0], t0);
+    this.sfxFollow.gain.setValueCurveAtTime(curve, t0, curve.length / LEVEL_RATE);
+  }
+
+  /** Starts one sound at context time `when`; returns whether it ducked the music. */
+  play(buf: AudioBuffer, when: number, ev: SoundEvent): boolean {
     const src = this.ctx.createBufferSource();
     src.buffer = buf;
     src.playbackRate.value = ev.rate;
@@ -245,21 +361,20 @@ export class AudioEngine implements SongClock {
     pan.pan.value = ev.pan;
     src.connect(gain).connect(pan).connect(this.sfxBus);
     src.start(when);
-    if (ev.duck) {
-      // Scheduled gain automation: the music dips under heavy impacts. Overlapping dips
-      // extend the hold rather than restarting from full volume.
-      const g = this.musicGain.gain;
-      const ducked = when <= this.duckEnd;
-      g.cancelScheduledValues(when);
-      if (ducked) g.setValueAtTime(DUCK_GAIN, when);
-      else {
-        g.setValueAtTime(1, when);
-        g.linearRampToValueAtTime(DUCK_GAIN, when + 0.01);
-      }
-      g.setValueAtTime(DUCK_GAIN, when + DUCK_S);
-      g.linearRampToValueAtTime(1, when + DUCK_S + 0.08);
-      this.duckEnd = when + DUCK_S + 0.08;
-      this.stats.ducks++;
+    if (!ev.duck) return false;
+    // Scheduled gain automation: the music dips under heavy impacts. Overlapping dips
+    // extend the hold rather than restarting from full volume.
+    const g = this.musicGain.gain;
+    const ducked = when <= this.duckEnd;
+    g.cancelScheduledValues(when);
+    if (ducked) g.setValueAtTime(DUCK_GAIN, when);
+    else {
+      g.setValueAtTime(1, when);
+      g.linearRampToValueAtTime(DUCK_GAIN, when + 0.01);
     }
+    g.setValueAtTime(DUCK_GAIN, when + DUCK_S);
+    g.linearRampToValueAtTime(1, when + DUCK_S + 0.08);
+    this.duckEnd = when + DUCK_S + 0.08;
+    return true;
   }
 }
