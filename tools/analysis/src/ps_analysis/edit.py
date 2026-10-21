@@ -25,6 +25,13 @@ Beat-grid operations (energy is recomputed afterwards when audio is given):
 - `{"op": "smooth", "from": a, "to": b, "window": w}`: replace beats a..b by a
   centred moving linear fit over ±w beats (removes jitter while following
   tempo drift; the end beats a and b are kept).
+- `{"op": "fitOnsets", "from": a, "to": b, "windowMs"?: 45, "maxChange"?: 0.075}`:
+  move beats a..b onto nearby onset peaks (within `windowMs`) where that keeps
+  every gap within `maxChange` of the previous one (ignored inside marked
+  tempo changes). A dynamic programme picks, for every beat, its current time
+  or a time at or near a peak, minimising the number of beats more than 25 ms
+  from a peak plus small displacement and smoothness penalties. Beats a-2,
+  a-1, b+1 and b+2 stay fixed and are included in the smoothness constraint.
 - `{"op": "extend", "until": s}`: append beats at the last gap while they are
   at or before time s.
 - `{"op": "setFirstDownbeat", "index": i}`.
@@ -200,6 +207,90 @@ def op_smooth(m: sm.SongMap, e: dict[str, Any], ctx: Context) -> None:
     m["beats"] = [float(t) for t in out]
 
 
+def _in_tempo_change(m: sm.SongMap, idx: sm.SongIndex, beat: int) -> bool:
+    for tc in m["tempoChanges"]:
+        a, b = tc["bars"]
+        if a <= idx.bar_count and idx.bar_start[a] <= beat <= idx.bar_end_beat(
+            min(b, idx.bar_count)
+        ):
+            return True
+    return False
+
+
+def op_fit_onsets(m: sm.SongMap, e: dict[str, Any], ctx: Context) -> None:
+    if ctx.onsets is None:
+        raise EditError("fitOnsets needs the audio (onset peaks)")
+    a, b = e["from"], e["to"]
+    _check_index(m, a, "from")
+    _check_index(m, b, "to")
+    window = float(e.get("windowMs", 45)) / 1000
+    max_change = float(e.get("maxChange", 0.075))
+    align = 0.025
+    peaks = ctx.onsets.peak_times
+    beats = list(m["beats"])
+    idx = sm.index_song(m)
+    lo, hi = max(0, a - 2), min(len(beats) - 1, b + 2)
+
+    def aligned(t: float) -> bool:
+        _, off = ctx.onsets.nearest_peak(t)
+        return abs(off) <= align
+
+    cands: list[list[tuple[float, float]]] = []
+    for i in range(lo, hi + 1):
+        t = beats[i]
+        if i < a or i > b:
+            cands.append([(t, 0.0)])
+            continue
+        opts = {round(t, 5): 0.0 if aligned(t) else 1.0}
+        for p in peaks[(peaks >= t - window) & (peaks <= t + window)]:
+            for x in (p, p + float(np.clip(t - p, -0.02, 0.02))):
+                opts.setdefault(round(float(x), 5), 0.0)
+        cands.append([(x, c + 2.0 * abs(x - t)) for x, c in opts.items()])
+
+    n = len(cands)
+    # Second-order Viterbi over (previous candidate, current candidate).
+    inf = float("inf")
+    cost: dict[tuple[int, int], float] = {}
+    back: list[dict[tuple[int, int], int]] = [{} for _ in range(n)]
+    if n == 1:
+        return
+    for j0, (x0, c0) in enumerate(cands[0]):
+        for j1, (x1, c1) in enumerate(cands[1]):
+            if x1 > x0:
+                cost[(j0, j1)] = c0 + c1
+    for k in range(2, n):
+        exempt = any(_in_tempo_change(m, idx, lo + k - d) for d in (0, 1, 2))
+        new: dict[tuple[int, int], float] = {}
+        for (jp, jc), cv in cost.items():
+            xp, xc = cands[k - 2][jp][0], cands[k - 1][jc][0]
+            g0 = xc - xp
+            for jn, (xn, cn) in enumerate(cands[k]):
+                g1 = xn - xc
+                if g1 <= 0:
+                    continue
+                r = g1 / g0 - 1
+                if abs(r) > max_change and not exempt:
+                    continue
+                v = cv + cn + (0.0 if exempt else 4.0 * r * r)
+                if v < new.get((jc, jn), inf):
+                    new[(jc, jn)] = v
+                    back[k][(jc, jn)] = jp
+        if not new:
+            raise EditError(
+                f"no smooth fit around beat {lo + k} ({beats[lo + k]:.3f} s); try a larger maxChange"
+            )
+        cost = new
+    (jp, jc), _ = min(cost.items(), key=lambda kv: kv[1])
+    path = [jc, jp]
+    for k in range(n - 1, 1, -1):
+        jpp = back[k][(path[-1], path[-2])]
+        path.append(jpp)
+    path.reverse()
+    for k, j in enumerate(path):
+        beats[lo + k] = cands[k][j][0]
+    m["beats"] = beats
+
+
 def op_extend(m: sm.SongMap, e: dict[str, Any], ctx: Context) -> None:
     beats = _beats(m)
     gap = beats[-1] - beats[-2]
@@ -316,6 +407,7 @@ OPS: dict[str, Callable[[sm.SongMap, dict[str, Any], Context], None]] = {
     "spliceTracker": op_splice_tracker,
     "smooth": op_smooth,
     "extend": op_extend,
+    "fitOnsets": op_fit_onsets,
     "setFirstDownbeat": op_set_first_downbeat,
     "setMeter": op_set_meter,
     "setSection": op_set_section,
@@ -341,6 +433,7 @@ BEAT_OPS = {
     "spliceTracker",
     "smooth",
     "extend",
+    "fitOnsets",
 }
 
 

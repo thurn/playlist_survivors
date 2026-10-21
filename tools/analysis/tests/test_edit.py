@@ -205,3 +205,23 @@ def test_reports_beat_changes(grid_map) -> None:
     assert not changed
     _, changed = apply_edits(grid_map, [{"op": "shift", "beats": [0, 0], "byMs": 1}])
     assert changed
+
+
+def test_fit_onsets_moves_beats_onto_peaks_smoothly(grid_map) -> None:
+    beats = grid_map["beats"]
+    peaks = [t + 0.03 for t in beats]  # every onset 30 ms late: shift the whole grid
+    peaks[8] = beats[8] - 0.04  # one stray early peak that would break smoothness
+    ctx = Context(onsets=_onsets(sorted(peaks)))
+    out = run(
+        grid_map, {"op": "fitOnsets", "from": 2, "to": 13, "maxChange": 0.08}, ctx=ctx
+    )
+    b = np.array(out["beats"])
+    assert b[0] == beats[0] and b[15] == beats[15]  # outside the range: fixed
+    gaps = np.diff(b)
+    assert np.all(np.abs(gaps[1:] / gaps[:-1] - 1) <= 0.08 + 1e-9)
+    on_peak = [
+        i for i in range(2, 14) if np.min(np.abs(np.array(peaks) - b[i])) <= 0.025
+    ]
+    assert len(on_peak) >= 10
+    with pytest.raises(EditError, match="needs the audio"):
+        run(grid_map, {"op": "fitOnsets", "from": 2, "to": 13})
