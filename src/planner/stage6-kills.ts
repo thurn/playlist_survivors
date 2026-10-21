@@ -18,6 +18,14 @@ import { viewRect } from "./stage5-camera.ts";
 export const HURTBOX_RADIUS = 10;
 export const HURTBOX_LIFT = 20;
 const SPAWN_MARGIN = 16;
+/** World-seconds before the finale during which the ring's enemies fill the population. */
+const FINALE_FILL = 12;
+/** The spawn schedule aims this much above the target population. */
+const SPAWN_AIM = 1.08;
+/** Never schedule more living enemies than this (the hard cap is 520). */
+const POP_CAP = 500;
+/** Free sections lose more enemies to big area hits, so they aim higher. */
+const SPAWN_AIM_FREE = 1.12;
 
 /** Planned waypoint for the crowd simulation. */
 export interface Waypoint {
@@ -48,6 +56,8 @@ export interface Agent {
   exempt: boolean;
   /** Has the crowd ever simulated this agent (false for pure formation members)? */
   simulated: boolean;
+  /** Multiplier on the final-approach window, raised after a miss. */
+  approachBoost?: number;
 }
 
 export interface KillPlan {
@@ -86,7 +96,7 @@ export function spriteOffscreen(view: [number, number, number, number], def: Ene
 /** The closest point just outside the view (for this sprite) to a target point. */
 function spawnPoint(view: [number, number, number, number], def: EnemyDef, tx: number, ty: number, r: Rng): { x: number; y: number } {
   const ext = spriteExtents(def);
-  const m = SPAWN_MARGIN + 6;
+  const m = SPAWN_MARGIN + 12;
   const left = view[0] - m - ext.hx;
   const right = view[2] + m + ext.hx;
   const top = view[1] - m - ext.down;
@@ -115,7 +125,7 @@ function spawnPoint(view: [number, number, number, number], def: EnemyDef, tx: n
 
 /** Effective average speed for planning: the rhythm multiplier averages about 0.73. */
 function plannedSpeed(def: EnemyDef): number {
-  return def.speed * 0.62;
+  return def.speed * 0.72;
 }
 
 interface KillSpec {
@@ -302,8 +312,13 @@ export function stage6(ctx: Ctx): KillPlan {
     }
   }
 
+  // Nothing hits after the finale blast's last ring.
+  if (ringHits.length > 0) {
+    const endW = Math.max(...ringHits.map((i) => hits[i].w));
+    for (const h of hits) if (h.source === "weapon" && h.w > endW) h.w = Number.NaN;
+  }
   // Sort hits by world time (stable) and remap action/formation references.
-  const order = hits.map((_, i) => i).sort((a, b) => hits[a].w - hits[b].w || hits[a].s - hits[b].s || a - b);
+  const order = hits.map((_, i) => i).filter((i) => !Number.isNaN(hits[i].w)).sort((a, b) => hits[a].w - hits[b].w || hits[a].s - hits[b].s || a - b);
   const remap = new Map<number, number>();
   order.forEach((old, i) => remap.set(old, i));
   const sorted = order.map((old, i) => ({ ...hits[old], id: i }));
@@ -333,7 +348,8 @@ export function stage6(ctx: Ctx): KillPlan {
     return tw > 0 ? tr / tw : 12;
   };
   const caps = hits.map((h) => (h.source === "ring" || h.source === "sweep" ? 0 : Math.max(1, Math.floor((0.6 * shapeArea(h.shape)) / (Math.PI * meanRadius(h.s) ** 2)))));
-  const minKills = hits.map((h) => (h.source === "move" ? 1 : 0));
+  // While the horde is still gathering (small targets), hero swings may hit nobody.
+  const minKills = hits.map((h) => (h.source === "move" && targetPopulation(ctx, h.s) >= 30 ? 1 : 0));
   const kills = hits.map((h, i) => {
     if (h.source === "ring" || h.source === "sweep") return 0;
     const target = targetPopulation(ctx, h.s);
@@ -527,11 +543,6 @@ export function stage6(ctx: Ctx): KillPlan {
   for (const af of archerFates) {
     const ap = af.agent.waypoints[0];
     const ok = claimKill(af.agent, af.after, af.after + 12, ap.x, ap.y, ap.holdUntil ?? ap.w);
-    if (!ok && process.env.PS_DEBUG) {
-      const near = hits.filter((h) => h.w >= af.after && h.w <= af.after + 12 && h.source !== "ring");
-      const hh = near.map((h) => [h.w.toFixed(2), h.source, h.what, Math.round(dist((h.shape as { x: number }).x ?? 0, (h.shape as { y: number }).y ?? 0, ap.x, ap.y))]);
-      console.error("archer", ap, near.length, JSON.stringify(hh.slice(0, 20)));
-    }
     if (!ok) throw new PlanError(`archer ${af.agent.e.id} found no hit to die on after w=${af.after.toFixed(2)}`);
   }
 
@@ -565,6 +576,28 @@ function assignCrowd(
     return r.weighted(types, types.map((t) => roster[t]));
   };
 
+  // Kill spots already taken, by time bucket and cell: enemies blending into nearby spots
+  // at the same moment would overlap.
+  let taken = new Map<number, { x: number; y: number; w: number; r: number }[]>();
+  const takenKey = (x: number, y: number, w: number) => (Math.floor(w / 0.8) * 4096 + Math.floor(x / 48) + 2048) * 4096 + Math.floor(y / 48) + 2048;
+  const spotFree = (x: number, y: number, w: number, r: number) => {
+    for (let dt = -1; dt <= 1; dt++)
+      for (let gx = -1; gx <= 1; gx++)
+        for (let gy = -1; gy <= 1; gy++) {
+          const l = taken.get(takenKey(x + gx * 48, y + gy * 48, w + dt * 0.8));
+          if (!l) continue;
+          for (const q of l) if (Math.abs(q.w - w) < 0.8 && dist(q.x, q.y, x, y) < r + q.r + 6) return false;
+        }
+    return true;
+  };
+  const takeSpot = (x: number, y: number, w: number, r: number) => {
+    const k = takenKey(x, y, w);
+    let l = taken.get(k);
+    if (!l) taken.set(k, (l = []));
+    l.push({ x, y, w, r });
+  };
+  for (const q of reserved) takeSpot(q.x, q.y, hits[q.hit].w, 14);
+
   /** Kill positions for one hit: Poisson-disk points inside the shape. */
   const placeKills = (h: Hit, count: number): KillSpec[] => {
     const out: KillSpec[] = [];
@@ -583,6 +616,8 @@ function assignCrowd(
         if (out.some((q) => dist(q.x, q.y, p.x, p.y) < 2 * def.radius)) continue;
         if (reserved.some((q) => q.hit === h.id && dist(q.x, q.y, p.x, p.y) < 2 * def.radius)) continue;
         if (formationPos.some((f) => h.w >= f.w0 && h.w <= f.w1 && dist(f.x, f.y, p.x, p.y) < 2 * def.radius + 4)) continue;
+        if (!spotFree(p.x, p.y, h.w, def.radius)) continue;
+        takeSpot(p.x, p.y, h.w, def.radius);
         out.push({ hit: h.id, x: p.x, y: p.y, type });
         placed = true;
       }
@@ -592,65 +627,193 @@ function assignCrowd(
 
   const wEnd = warp.toWorld(ctx.duration);
   const targetW = (w: number) => targetPopulation(ctx, warp.toSong(w));
+  const freeAt = (w: number) => ctx.sections[sectionIndexAt(ctx, warp.toSong(w))].song.feel === "free";
 
   const regularHits = hits.filter((h) => !ringSet.has(h.id) && h.source !== "sweep");
   let specs: KillSpec[] = [];
   let lifetimes: number[] = [];
   let spawns: { w: number; x: number; y: number }[] = [];
 
-  const lifetimeFor = (k: KillSpec, deathW: number, rate: number, r: Rng): { L: number; sp: { w: number; x: number; y: number }; ok: boolean } => {
-    const def = lib.enemies.get(k.type)!;
-    const want = clamp(targetW(deathW) / Math.max(0.05, rate), def.lifetime[0], def.lifetime[1]);
-    const speed = plannedSpeed(def);
-    const tryL = (L: number) => {
-      const w = Math.max(0, deathW - L);
-      const view = viewRect(cam, w);
-      const p = spawnPoint(view, def, k.x, k.y, r);
-      const need = dist(p.x, p.y, k.x, k.y) / Math.max(0.1, deathW - w);
-      return { L: deathW - w, sp: { w, ...p }, ok: need <= speed, need };
-    };
-    const factors = [1, 0.8, 1.25, 0.6, 1.6, 0.45, 2.2, 0.3];
-    let best: ReturnType<typeof tryL> | undefined;
-    for (const f of factors) {
-      const L = clamp(want * f, def.lifetime[0], def.lifetime[1]);
-      const t = tryL(L);
-      if (t.ok) return t;
-      if (!best || t.need < best.need) best = t;
-    }
-    return { ...best!, ok: false };
-  };
-
   // Balance population: iterate kill counts until the curve is within ±15%.
   const bucket = 0.5;
   const nb = Math.ceil(wEnd / bucket) + 1;
   const ringW = ringHits.length ? hits[ringHits[0]].w : Infinity;
+  // Archers and other fixed non-exempt agents need spawns.
+  for (const ag of fixed) {
+    if (ag.exempt) continue;
+    const first = ag.waypoints[0];
+    const r = new Rng(ctx.seed, "fixedspawn", ag.e.id);
+    let L = 6;
+    let sp = { x: 0, y: 0 };
+    for (; L < 40; L *= 1.3) {
+      const w = Math.max(0, first.w - L);
+      sp = spawnPoint(viewRect(cam, w), ag.def, first.x, first.y, r);
+      if (dist(sp.x, sp.y, first.x, first.y) / (first.w - w) <= plannedSpeed(ag.def)) break;
+    }
+    ag.e.spawnW = Math.max(0, first.w - L);
+    ag.spawnX = sp.x;
+    ag.spawnY = sp.y;
+  }
+
   const fixedAlive = new Float64Array(nb);
   for (const a of fixed) {
     const s0 = Math.max(0, Math.floor(a.e.spawnW / bucket));
     const s1 = Math.min(nb - 1, Math.floor(a.e.deathW / bucket));
     for (let b = s0; b <= s1; b++) fixedAlive[b]++;
   }
-  let pop = new Float64Array(nb);
+  // Finale ring: exactly the target population's worth of enemies, spread across the bands
+  // in view. They are scheduled with everyone else, so they walk in as the regulars thin out.
+  const ringSpecs: KillSpec[] = [];
+  if (ringHits.length > 0 && blastWeapon) {
+    const blastW = hits[ringHits[0]].w;
+    const nRing = Math.round(targetW(blastW - 1e-3));
+    const ringShape = hits[ringHits[0]].shape as Extract<Shape, { kind: "ring" }>;
+    const cx = ringShape.x;
+    const cy = ringShape.y;
+    const view = viewRect(cam, blastW);
+    const outer = (hits[ringHits[ringHits.length - 1]].shape as Extract<Shape, { kind: "ring" }>).outer;
+    const r = new Rng(ctx.seed, "ring");
+    for (let j = 0; j < nRing; j++) {
+      const type = pickType(hits[ringHits[0]].s, r);
+      const def = lib.enemies.get(type)!;
+      let x = cx;
+      let y = cy;
+      for (let tries = 0; tries < 40; tries++) {
+        x = lerp(view[0] + 20, view[2] - 20, r.next());
+        y = lerp(view[1] + 40, view[3] - 10, r.next());
+        const d = dist(x, y, cx, cy);
+        if (d < 40 || d >= outer) continue;
+        if (ringSpecs.some((q) => dist(q.x, q.y, x, y) < 2 * def.radius + 2) && tries < 30) continue;
+        break;
+      }
+      const d = dist(x, y, cx, cy);
+      const band =
+        ringHits.find((hid) => {
+          const sh = hits[hid].shape as Extract<Shape, { kind: "ring" }>;
+          return d >= sh.inner && d < sh.outer;
+        }) ?? ringHits[ringHits.length - 1];
+      ringSpecs.push({ hit: band, x, y, type });
+    }
+  }
+
+  // Before the finale, the horde gathers: regular hits kill as few as allowed.
+  for (const h of regularHits) if (h.w >= ringW - FINALE_FILL) kills[h.id] = minKills[h.id];
+
+  let pop: Float64Array<ArrayBuffer> = new Float64Array(nb);
+  let bestBad = Infinity;
+  let best: { specs: KillSpec[]; lifetimes: number[]; spawns: { w: number; x: number; y: number }[]; pop: Float64Array<ArrayBuffer> } | undefined;
+  const baseTaken = taken;
   for (let round = 0; round < 10; round++) {
+    taken = new Map([...baseTaken].map(([k, v]) => [k, [...v]]));
+    for (const k of ringSpecs) takeSpot(k.x, k.y, hits[k.hit].w, 12);
     specs = [];
     for (const h of regularHits) specs.push(...placeKills(h, kills[h.id]));
-    // Kill rate around each death: kills in the 4 world-seconds centred on it.
+    specs.push(...ringSpecs);
+    // Feasible lifetime range per kill: long enough to walk in from off-screen.
     const deathTimes = specs.map((k) => hits[k.hit].w);
-    const sortedD = [...deathTimes].sort((a, b) => a - b);
-    const countIn = (a: number, b: number) => upperBound(sortedD, b) - upperBound(sortedD, a);
-    lifetimes = [];
-    spawns = [];
     const feasible: KillSpec[] = [];
+    const lmin: number[] = [];
+    const lmax: number[] = [];
+    const dws: number[] = [];
     specs.forEach((k, i) => {
       const dw = deathTimes[i];
-      const rate = countIn(dw - 2, dw + 2) / 4;
-      const r = new Rng(ctx.seed, "spawn", k.hit, i, round > 0 ? 1 : 0);
-      const t = lifetimeFor(k, dw, rate, r);
+      const def = lib.enemies.get(k.type)!;
+      const r = new Rng(ctx.seed, "lmin", k.hit, i);
+      let L = def.lifetime[0];
+      let ok = false;
+      for (let tries = 0; tries < 9; tries++) {
+        const w = Math.max(0, dw - L);
+        const p = spawnPoint(viewRect(cam, w), def, k.x, k.y, r);
+        if (dist(p.x, p.y, k.x, k.y) / Math.max(0.1, dw - w) <= plannedSpeed(def)) {
+          ok = true;
+          L = dw - w;
+          break;
+        }
+        if (w === 0) break;
+        L = Math.min(def.lifetime[1], L * 1.3);
+      }
       // A kill nobody can walk to in time (e.g. right after the song starts) is dropped.
-      if (!t.ok) return;
+      if (!ok) return;
       feasible.push(k);
-      lifetimes.push(t.L);
-      spawns.push(t.sp);
+      lmin.push(L);
+      lmax.push(Math.max(L, def.lifetime[1]));
+      dws.push(dw);
+    });
+    // Desired cumulative spawns: S*(t) = target(t) - fixed(t) + deaths(t).
+    const order = dws.map((_, i) => i).sort((a, b) => dws[a] - dws[b]);
+    const nS = order.length;
+    const slots: number[] = [];
+    {
+      let di = 0;
+      let best = 0;
+      for (let b = 0; b < nb && slots.length < nS; b++) {
+        const t = b * bucket;
+        while (di < nS && dws[order[di]] <= t) di++;
+        // Aim a little high: the crowd simulation loses a few enemies to unplanned hits.
+        const want = Math.min(nS, Math.max(best, Math.round(Math.min(targetW(t + bucket / 2) * (freeAt(t) ? SPAWN_AIM_FREE : SPAWN_AIM), POP_CAP) - fixedAlive[b] + di)));
+        best = want;
+        while (slots.length < want) slots.push(t);
+      }
+      while (slots.length < nS) slots.push(wEnd);
+    }
+    // Earliest-deadline-first: each spawn slot goes to the waiting enemy that must spawn soonest.
+    const release = order.map((i) => Math.max(0, dws[i] - lmax[i]));
+    const deadline = (i: number) => Math.max(0, dws[i] - lmin[i]);
+    const byRelease = order.map((_, k) => k).sort((a, b) => release[a] - release[b]);
+    const spawnW = new Float64Array(specs.length).fill(-1);
+    const heap: number[] = [];
+    const hpush = (i: number) => {
+      heap.push(i);
+      let c = heap.length - 1;
+      while (c > 0) {
+        const pnt = (c - 1) >> 1;
+        if (deadline(heap[pnt]) <= deadline(heap[c])) break;
+        [heap[pnt], heap[c]] = [heap[c], heap[pnt]];
+        c = pnt;
+      }
+    };
+    const hpop = (): number => {
+      const top = heap[0];
+      const last = heap.pop()!;
+      if (heap.length > 0) {
+        heap[0] = last;
+        let c = 0;
+        for (;;) {
+          const l = 2 * c + 1;
+          const rr = l + 1;
+          let m = c;
+          if (l < heap.length && deadline(heap[l]) < deadline(heap[m])) m = l;
+          if (rr < heap.length && deadline(heap[rr]) < deadline(heap[m])) m = rr;
+          if (m === c) break;
+          [heap[m], heap[c]] = [heap[c], heap[m]];
+          c = m;
+        }
+      }
+      return top;
+    };
+    let ri = 0;
+    for (const t of slots) {
+      while (ri < byRelease.length && release[byRelease[ri]] <= t) hpush(order[byRelease[ri++]]);
+      // Anyone whose deadline has passed spawns at its deadline.
+      while (heap.length > 0 && deadline(heap[0]) < t) {
+        const i = hpop();
+        spawnW[i] = deadline(i);
+      }
+      if (heap.length > 0) spawnW[hpop()] = t;
+    }
+    while (heap.length > 0) {
+      const i = hpop();
+      spawnW[i] = deadline(i);
+    }
+    for (const i of order) if (spawnW[i] < 0) spawnW[i] = deadline(i);
+    lifetimes = [];
+    spawns = [];
+    feasible.forEach((k, i) => {
+      const w = Math.min(spawnW[i], deadline(i));
+      const r = new Rng(ctx.seed, "spawn", k.hit, i);
+      const p = spawnPoint(viewRect(cam, w), lib.enemies.get(k.type)!, k.x, k.y, r);
+      lifetimes.push(dws[i] - w);
+      spawns.push({ w, ...p });
     });
     specs = feasible;
     pop = new Float64Array(nb);
@@ -660,11 +823,14 @@ function assignCrowd(
       const s1 = Math.min(nb - 1, Math.floor(hits[k.hit].w / bucket));
       for (let b = s0; b <= s1; b++) pop[b]++;
     });
-    // Compare per bar window.
+    // Compare per bar window, then scale each hit's kills by the population error over
+    // the span its enemies were alive (a window's population comes from later kills).
     let bad = 0;
-    const bars = barWindows(ctx);
-    for (const [w0, w1] of bars) {
-      if (w0 >= ringW - 6) continue; // the finale's ring enemies fill the end
+    const ratio = new Float64Array(nb).fill(1);
+    for (const [w0, w1] of barWindows(ctx)) {
+      if (w0 >= ringW - 0.01) continue;
+      // Near the finale, the ring's enemies fill any shortfall, so only excess counts.
+      const nearEnd = w0 >= ringW - FINALE_FILL;
       const b0 = Math.floor(w0 / bucket);
       const b1 = Math.max(b0, Math.floor(w1 / bucket) - 1);
       let p = 0;
@@ -677,22 +843,36 @@ function assignCrowd(
       p /= m;
       t /= m;
       const tol = Math.max(0.15 * t, 4);
-      if (Math.abs(p - t) <= tol * 0.8) continue;
-      bad++;
-      const inWin = regularHits.filter((h) => h.w >= w0 && h.w < w1 + 2);
-      const deltaSign = p < t ? 1 : -1;
-      // Scale the change with the miss.
-      const steps = Math.max(1, Math.round(Math.abs(p - t) / Math.max(4, t * 0.1)));
-      for (const h of inWin) {
-        const before = kills[h.id];
-        kills[h.id] = clamp(kills[h.id] + deltaSign * steps, minKills[h.id], caps[h.id]);
-        void before;
+      if (nearEnd ? p > t + tol * 0.75 : Math.abs(p - t) > tol * 0.75) {
+        bad++;
       }
+      const r = nearEnd && p < t ? 1 : clamp((t + 2) / (p + 2), 0.25, 4);
+      for (let b = b0; b <= b1; b++) ratio[b] = r;
+    }
+    if (bad < bestBad) {
+      bestBad = bad;
+      best = { specs, lifetimes, spawns, pop };
+    }
+    if (bad <= Math.max(2, barWindows(ctx).length * 0.02) || round === 9) break;
+    const lifeByHit = new Map<number, number>();
+    specs.forEach((k, i) => lifeByHit.set(k.hit, Math.max(lifeByHit.get(k.hit) ?? 0, lifetimes[i])));
+    for (const h of regularHits) {
+      if (h.w >= ringW - 1e-6) continue;
+      const L = lifeByHit.get(h.id) ?? 6;
+      const b0 = Math.max(0, Math.floor((h.w - L) / bucket));
+      const b1 = Math.min(nb - 1, Math.floor(h.w / bucket));
+      let acc = 0;
+      for (let b = b0; b <= b1; b++) acc += Math.log(ratio[b]);
+      const f = Math.exp(acc / Math.max(1, b1 - b0 + 1));
+      if (h.w >= ringW - FINALE_FILL && f > 1) continue;
+      const r = new Rng(ctx.seed, "bal", h.id, round);
+      const base = Math.max(kills[h.id], f > 1 ? 0.6 : 0);
+      kills[h.id] = clamp(r.roundStochastic(base * Math.pow(f, 0.85)), minKills[h.id], caps[h.id]);
     }
     if (bad === 0) break;
   }
 
-  // Finale ring: exactly the target population's worth of enemies, filling the deficit.
+  if (best) ({ specs, lifetimes, spawns, pop } = best);
   const agents: Agent[] = [...fixed];
   let id = firstId;
   specs.forEach((k, i) => {
@@ -714,6 +894,8 @@ function assignCrowd(
         const p = sampleInShape(eh.shape, () => r.next(), def.radius * 0.5);
         if (dist(p.x, p.y, tx, ty) > speed * (tw - eh.w)) continue;
         if (reserved.some((q) => q.hit === eh.id && dist(q.x, q.y, p.x, p.y) < 2 * def.radius)) continue;
+        if (!spotFree(p.x, p.y, eh.w, def.radius)) continue;
+        takeSpot(p.x, p.y, eh.w, def.radius);
         reserved.push({ hit: eh.id, x: p.x, y: p.y });
         waypoints.unshift({ w: eh.w, x: p.x, y: p.y, hit: eh.id, lethal: false });
         rec.fates.unshift({ w: eh.w, x: p.x, y: p.y, hit: eh.id, lethal: false });
@@ -727,90 +909,7 @@ function assignCrowd(
     agents.push({ e: rec, def, waypoints, spawnX: spawns[i].x, spawnY: spawns[i].y, kinUntil: -Infinity, exempt: false, simulated: true });
   });
 
-  // Archers and other fixed non-exempt agents need spawns.
-  for (const ag of fixed) {
-    if (ag.exempt) continue;
-    const first = ag.waypoints[0];
-    const r = new Rng(ctx.seed, "fixedspawn", ag.e.id);
-    let L = 6;
-    let sp = { x: 0, y: 0 };
-    for (; L < 40; L *= 1.3) {
-      const w = Math.max(0, first.w - L);
-      sp = spawnPoint(viewRect(cam, w), ag.def, first.x, first.y, r);
-      if (dist(sp.x, sp.y, first.x, first.y) / (first.w - w) <= plannedSpeed(ag.def)) break;
-    }
-    ag.e.spawnW = Math.max(0, first.w - L);
-    ag.spawnX = sp.x;
-    ag.spawnY = sp.y;
-  }
 
-  if (ringHits.length > 0 && blastWeapon) {
-    const blastW = hits[ringHits[0]].w;
-    const nRing = Math.round(targetW(blastW - 1e-3));
-    // Population without ring enemies, per bucket, near the end.
-    const popNow = new Float64Array(nb);
-    for (const a of agents) {
-      const s0 = Math.max(0, Math.floor(a.e.spawnW / bucket));
-      const s1 = Math.min(nb - 1, Math.floor(a.e.deathW / bucket));
-      for (let b = s0; b <= s1; b++) popNow[b]++;
-    }
-    const bBlast = Math.floor(blastW / bucket);
-    // N(b): ring enemies alive by bucket b, non-decreasing, following the deficit.
-    const N = new Int32Array(bBlast + 1);
-    let running = nRing;
-    for (let b = bBlast; b >= 0; b--) {
-      const deficit = clamp(Math.round(targetW(b * bucket + bucket / 2) - popNow[b]), 0, nRing);
-      running = b === bBlast ? nRing : Math.min(running, deficit);
-      N[b] = running;
-    }
-    const spawnTimes: number[] = [];
-    for (let b = 0; b <= bBlast && spawnTimes.length < nRing; b++) {
-      while (spawnTimes.length < N[b]) spawnTimes.push(b * bucket);
-    }
-    while (spawnTimes.length < nRing) spawnTimes.push(Math.max(0, blastW - 6));
-    const ringShape = hits[ringHits[0]].shape as Extract<Shape, { kind: "ring" }>;
-    const cx = ringShape.x;
-    const cy = ringShape.y;
-    const view = viewRect(cam, blastW);
-    const outer = (hits[ringHits[ringHits.length - 1]].shape as Extract<Shape, { kind: "ring" }>).outer;
-    const r = new Rng(ctx.seed, "ring");
-    const placed: { x: number; y: number }[] = [];
-    for (let j = 0; j < nRing; j++) {
-      const type = pickType(hits[ringHits[0]].s, r);
-      const def = lib.enemies.get(type)!;
-      let x = cx;
-      let y = cy;
-      for (let tries = 0; tries < 40; tries++) {
-        x = lerp(view[0] + 20, view[2] - 20, r.next());
-        y = lerp(view[1] + 40, view[3] - 10, r.next());
-        const d = dist(x, y, cx, cy);
-        if (d < 40 || d >= outer) continue;
-        if (placed.some((q) => dist(q.x, q.y, x, y) < 2 * def.radius + 2) && tries < 30) continue;
-        break;
-      }
-      placed.push({ x, y });
-      const d = dist(x, y, cx, cy);
-      const band = ringHits.find((hid) => {
-        const s = hits[hid].shape as Extract<Shape, { kind: "ring" }>;
-        return d >= s.inner && d < s.outer;
-      }) ?? ringHits[ringHits.length - 1];
-      const h = hits[band];
-      const sw = Math.min(spawnTimes[j], h.w - def.lifetime[0]);
-      const sp = spawnPoint(viewRect(cam, Math.max(0, sw)), def, x, y, new Rng(ctx.seed, "ringspawn", j));
-      // Ring enemies must be able to walk in.
-      let spawnW = Math.max(0, sw);
-      let spx = sp.x;
-      let spy = sp.y;
-      for (let L = h.w - spawnW; dist(spx, spy, x, y) / Math.max(0.1, h.w - spawnW) > plannedSpeed(def) && L < def.lifetime[1]; L *= 1.25) {
-        spawnW = Math.max(0, h.w - L * 1.25);
-        const p2 = spawnPoint(viewRect(cam, spawnW), def, x, y, new Rng(ctx.seed, "ringspawn2", j, Math.round(L)));
-        spx = p2.x;
-        spy = p2.y;
-      }
-      const rec: EnemyRecord = { id: id++, type, spawnW, deathW: h.w, sampleOffset: 0, sampleCount: 0, sampleW0: 0, fates: [{ w: h.w, x, y, hit: h.id, lethal: true }] };
-      agents.push({ e: rec, def, waypoints: [{ w: h.w, x, y, hit: h.id, lethal: true }], spawnX: spx, spawnY: spy, kinUntil: -Infinity, exempt: false, simulated: true });
-    }
-  }
 
   // Every agent's first leg must be walkable: move spawns earlier where needed.
   for (const ag of agents) {
@@ -839,16 +938,6 @@ function assignCrowd(
   return { agents, fatesByHit, chainPaths };
 }
 
-function upperBound(arr: number[], x: number): number {
-  let lo = 0;
-  let hi = arr.length;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (arr[mid] <= x) lo = mid + 1;
-    else hi = mid;
-  }
-  return lo;
-}
 
 /** World-time windows of one bar each, across the song. */
 export function barWindows(ctx: Ctx): [number, number][] {

@@ -183,7 +183,7 @@ export function stage8(ctx: Ctx, kp: KillPlan): EmitResult {
       const px = dodge.x0;
       const py = dodge.y0;
       const d = Math.hypot(hm.x - px, hm.y - HURTBOX_LIFT - (py - HURTBOX_LIFT));
-      const radius = clamp(d - HURTBOX_RADIUS - 14, 24, 70);
+      const radius = clamp(d - HURTBOX_RADIUS - 14, 24, 120);
       slams.push({ w0: warp.toWorld(th.sRelease), w1: wMiss, x: px, y: py, radius });
       fx("boss-slam", th.sMiss, px, py, 0, 1, { scale: radius / 60 });
       sfx("boss-slam", th.sMiss, px, PRIORITY.boss, 1, true);

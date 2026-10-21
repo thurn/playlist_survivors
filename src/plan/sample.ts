@@ -11,6 +11,15 @@ export function enemyPos(plan: Plan, e: EnemyRecord, w: number, out: { x: number
     return out;
   }
   const f = (w - e.sampleW0) * plan.enemySampleRate;
+  if (w >= e.deathW - 1e-9) {
+    // From the moment of death the body lies exactly at its death spot.
+    const last = e.fates[e.fates.length - 1];
+    if (last && last.lethal) {
+      out.x = last.x;
+      out.y = last.y;
+      return out;
+    }
+  }
   if (f <= 0) {
     out.x = s[e.sampleOffset * 2];
     out.y = s[e.sampleOffset * 2 + 1];

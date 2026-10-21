@@ -180,3 +180,41 @@ export function moveShape(s: Shape, dx: number, dy: number): Shape {
       return { ...s, x: s.x + dx, y: s.y + dy };
   }
 }
+
+/** The nearest point inside the shape (shrunk by `inset`) to p. */
+export function nearestInside(s: Shape, px: number, py: number, inset = 0.5): Vec {
+  switch (s.kind) {
+    case "circle": {
+      const d = dist(px, py, s.x, s.y);
+      const r = Math.max(0, s.radius - inset);
+      if (d <= r) return { x: px, y: py };
+      return { x: s.x + ((px - s.x) / d) * r, y: s.y + ((py - s.y) / d) * r };
+    }
+    case "ring": {
+      const d = dist(px, py, s.x, s.y) || 1e-6;
+      const r = Math.min(s.outer - inset, Math.max(s.inner + inset, d));
+      return { x: s.x + ((px - s.x) / d) * r, y: s.y + ((py - s.y) / d) * r };
+    }
+    case "capsule": {
+      const dx = s.x1 - s.x0;
+      const dy = s.y1 - s.y0;
+      const l2 = dx * dx + dy * dy;
+      const t = l2 === 0 ? 0 : Math.max(0, Math.min(1, ((px - s.x0) * dx + (py - s.y0) * dy) / l2));
+      const cx = s.x0 + t * dx;
+      const cy = s.y0 + t * dy;
+      const d = dist(px, py, cx, cy);
+      const r = Math.max(0, s.radius - inset);
+      if (d <= r) return { x: px, y: py };
+      return { x: cx + ((px - cx) / d) * r, y: cy + ((py - cy) / d) * r };
+    }
+    case "arc": {
+      const d = dist(px, py, s.x, s.y);
+      const a = wrapAngle(Math.atan2(py - s.y, px - s.x) - s.dir);
+      const r = Math.min(Math.max(d, 2), s.radius - inset);
+      const lim = Math.max(0, s.halfAngle - inset / Math.max(r, 1));
+      const aa = Math.max(-lim, Math.min(lim, a)) + s.dir;
+      if (d <= s.radius - inset && Math.abs(a) <= lim) return { x: px, y: py };
+      return { x: s.x + Math.cos(aa) * r, y: s.y + Math.sin(aa) * r };
+    }
+  }
+}

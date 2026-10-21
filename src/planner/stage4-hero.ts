@@ -311,22 +311,44 @@ export function stage4(ctx: Ctx): void {
 
   // --- Animation and facing.
   const animIdx = (name: string) => Math.max(0, HERO_ANIMS.indexOf(name));
-  const windows = ctx.actions
-    .filter((a) => a.kind !== "blast" || true)
-    .map((a) => {
-      const info = ctx.heroAnims[a.move.animation.name] ?? { frames: 6 };
-      const start = animStartOf(a);
-      return { a, start, end: start + info.frames / a.move.animation.fps, frames: info.frames };
-    });
+  // Each move's animation starts early so its impact frame lands on the slot. When that
+  // wind-up would cut into the previous move's impact, the wind-up plays faster instead.
+  let prevImpact = -Infinity;
+  const windows = ctx.actions.map((a) => {
+    const info = ctx.heroAnims[a.move.animation.name] ?? { frames: 6 };
+    const impact = a.move.impactFrame ?? info.impactFrame ?? 3;
+    let fps = a.move.animation.fps;
+    let start = a.w - impact / fps;
+    const earliest = prevImpact + 1 / 40;
+    if (start < earliest && impact > 0) {
+      start = Math.min(a.w - 1 / 120, earliest);
+      // A snap: the wind-up plays as fast as needed (the impact frame still lands on the slot).
+      fps = impact / Math.max(1 / 240, a.w - start);
+      start = a.w - impact / fps;
+    }
+    prevImpact = Math.max(prevImpact, a.w);
+    return { a, start, end: start + info.frames / fps, frames: info.frames, fps };
+  });
   let wi = 0;
   let lastFacing = 3;
   for (let k = 0; k < n; k++) {
     const w = k / HERO_RATE;
     while (wi < windows.length && windows[wi].end <= w) wi++;
+    // Before an impact, show the action whose impact comes next; after it, follow through
+    // until the next action's animation starts.
     let win: (typeof windows)[number] | undefined;
-    for (let j = wi; j < windows.length && windows[j].start <= w; j++) if (w < windows[j].end) win = windows[j];
+    let pending: (typeof windows)[number] | undefined;
+    for (let j = wi; j < windows.length && windows[j].start <= w; j++) {
+      if (w >= windows[j].end) continue;
+      if (windows[j].a.w >= w) {
+        if (!pending || windows[j].a.w < pending.a.w) pending = windows[j];
+      } else win = windows[j];
+    }
+    if (pending) win = pending;
     if (win) {
-      const fr = clamp(Math.floor((w - win.start) * win.a.move.animation.fps), 0, win.frames - 1);
+      const imp = win.a.move.impactFrame ?? ctx.heroAnims[win.a.move.animation.name]?.impactFrame ?? 3;
+      // The sample nearest the impact always shows the impact frame, however fast the wind-up.
+      const fr = Math.abs(w - win.a.w) <= 0.5 / HERO_RATE ? imp : clamp(Math.floor((w - win.start) * win.fps + 1e-6), 0, win.frames - 1);
       anim[k] = animIdx(win.a.move.animation.name);
       frame[k] = fr;
       let fc = facingOf(win.a.dir);
