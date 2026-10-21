@@ -11,9 +11,8 @@ zones: [twilight-glade, galop-woods, mushroom-grove, ember-hollow, infernal-grov
 sections:
   - bars: 1-30            # prelude — slow passage, free feel
     section: prelude
-    movement: steps          # free movement arrives with walking; until then the prelude steps
+    movement: free           # held keys walk; the sword swings by itself every two beats
     pace: 30                 # route speed, world px per world-second
-    presses: "x."            # skilled player: every other beat
     zone: twilight-glade
     timeScale: 0.5
     population: [0, 60]

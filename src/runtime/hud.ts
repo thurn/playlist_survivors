@@ -165,6 +165,17 @@ export class Hud {
           g.roundRect(px(cx + side * (14 + d)) - sz / 2, py(cy) - sz * 1.6, sz, sz * 3.2, sz / 2).fill({ color: col, alpha: a * (hud.free ? 0.5 : 1) });
         }
       }
+      // The count-in before step movement: the track fades in and four marks count the beats.
+      if (hud.countIn) {
+        const ci = hud.countIn;
+        for (let k = 1; k <= 4; k++) {
+          const lit = k <= ci.count;
+          const now = k === ci.count;
+          const r = (3 + (now ? 3 * Math.exp(-6 * hud.beatPhase) : 0)) * u;
+          g.circle(px(cx - 45 + (k - 1) * 30), py(cy - 22), r).fill({ color: lit ? 0xffe080 : 0x606070, alpha: (lit ? 1 : 0.5) * (0.4 + 0.6 * ci.fade) });
+        }
+        g.roundRect(px(cx - 200), py(cy - 9), 400 * u, 18 * u, 9 * u).stroke({ color: 0xffe080, width: Math.max(1, u), alpha: 0.6 * ci.fade });
+      }
       const heart = (10 + 4 * pulse) * u;
       this.heart(g, px(cx), py(cy), heart, options.metronome ? 0xffffff : 0xff3060);
 

@@ -21,7 +21,7 @@ import type { AimSnapshot, Chain, EnemyRecord, Fate, HeroTrack, Hit, MapLayout, 
 import { CameraRig } from "../planner/camera.ts";
 import { sectionIndexAt, subdivisionBeats, weightFactor, type Ctx } from "../planner/context.ts";
 import { aim, catches, swingArc, type AimTarget } from "./aim.ts";
-import { bendStep, startStep, stepEnd, stepPose, stepSeconds, type Clamp, type Step } from "./movement.ts";
+import { bendStep, startStep, stepEnd, stepPose, stepSeconds, walkFrame, walkTarget, type Clamp, type Key, type Step } from "./movement.ts";
 import type { KeyEvent, Observation, Player } from "./player.ts";
 import { nextStepAfter, paceAt, stepRate, type GridSlot, type Schedule } from "./schedule.ts";
 import { armedStrike, damageMultiplier, grooveAfterPress, grooveDecay, ratePressOnGrid } from "./timing.ts";
@@ -157,7 +157,10 @@ type Ev =
   | { kind: "blast"; band: number }
   | { kind: "beat"; bi: number }
   | { kind: "appear"; type: string }
-  | { kind: "levelUp"; id: string };
+  | { kind: "levelUp"; id: string }
+  | { kind: "mode"; steps: boolean }
+  | { kind: "auto"; slot: GridSlot }
+  | { kind: "idle"; slot: GridSlot; prev: number };
 
 interface ChainState {
   points: { w: number; x: number; y: number }[];
@@ -168,7 +171,39 @@ interface ChainState {
 }
 
 /** Event order at equal times. */
-const ORDER: Record<Ev["kind"], number> = { hitstopEnd: 0, levelUp: 1, decide: 2, key: 3, wind: 4, strike: 5, fire: 6, chain: 7, blast: 8, beat: 9, appear: 10 };
+const ORDER: Record<Ev["kind"], number> = { hitstopEnd: 0, mode: 1, levelUp: 2, decide: 3, key: 4, idle: 5, auto: 6, wind: 7, strike: 8, fire: 9, chain: 10, blast: 11, beat: 12, appear: 13 };
+
+/** Free movement: analytic walking from a velocity toward a target velocity at a constant acceleration. */
+interface Walk {
+  w0: number;
+  x0: number;
+  y0: number;
+  vx0: number;
+  vy0: number;
+  tx: number;
+  ty: number;
+  /** Seconds to reach the target velocity. */
+  t: number;
+}
+
+function walkPose(wk: Walk, atW: number): { x: number; y: number; vx: number; vy: number } {
+  const dt = Math.max(0, atW - wk.w0);
+  if (dt <= wk.t) {
+    const u = wk.t > 0 ? dt / wk.t : 1;
+    return {
+      x: wk.x0 + wk.vx0 * dt + ((wk.tx - wk.vx0) * dt * u) / 2,
+      y: wk.y0 + wk.vy0 * dt + ((wk.ty - wk.vy0) * dt * u) / 2,
+      vx: wk.vx0 + (wk.tx - wk.vx0) * u,
+      vy: wk.vy0 + (wk.ty - wk.vy0) * u,
+    };
+  }
+  return {
+    x: wk.x0 + ((wk.vx0 + wk.tx) * wk.t) / 2 + wk.tx * (dt - wk.t),
+    y: wk.y0 + ((wk.vy0 + wk.ty) * wk.t) / 2 + wk.ty * (dt - wk.t),
+    vx: wk.tx,
+    vy: wk.ty,
+  };
+}
 
 class Queue {
   private heap: { s: number; o: number; seq: number; ev: Ev }[] = [];
@@ -299,9 +334,13 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
   const hitStops: [number, number][] = [];
 
   const p0 = pacePoint(0);
-  const restX = p0.x;
-  const restY = p0.y;
+  let restPose = { x: p0.x, y: p0.y };
   let step: Step | undefined;
+  /** Free movement: the current walk (undefined in step movement). */
+  let walk: Walk | undefined;
+  const held = new Set<Key>();
+  let walked = 0;
+  let lastSample: { x: number; y: number } | undefined;
   let landed = true;
   let facingAngle = 0;
   const landings: Landing[] = [];
@@ -314,7 +353,7 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
   const inputs: PlanInput[] = [];
   const swings: Swing[] = [];
   const liveSwings: Swing[] = [];
-  const takenSlots = new Set<number>();
+  const takenSlots = new Set<GridSlot>();
   let lightCount = 0;
   const swingRecords: PlanSwing[] = [];
   const hits: Hit[] = [];
@@ -365,8 +404,36 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
   const sbiAt = (t: number) => beatIndexAt(song, t);
 
   // ---------------------------------------------------------------- hero
-  /** The hero at world time atW: on its latest step (which ends standing still at its landing spot). */
-  const heroPose = (atW: number): { x: number; y: number; z: number; u: number } => (step ? stepPose(hero, step, atW) : { x: restX, y: restY, z: 0, u: 1 });
+  /**
+   * The hero at world time atW: walking (free movement), or on its latest step
+   * (which ends standing still at its landing spot).
+   */
+  const heroPose = (atW: number): { x: number; y: number; z: number; u: number; vx: number; vy: number } => {
+    if (walk) return { ...walkPose(walk, atW), z: 0, u: 1 };
+    if (step) return { ...stepPose(hero, step, atW), vx: 0, vy: 0 };
+    return { x: restPose.x, y: restPose.y, z: 0, u: 1, vx: 0, vy: 0 };
+  };
+
+  /** Free movement: start walking toward the held keys' velocity from where the hero is now. */
+  const rewalk = () => {
+    const p = heroPose(w);
+    const t = walkTarget(hero, held);
+    const accel = hero.walk.speed / (hero.walk.accelMs / 1000);
+    walk = { w0: w, x0: p.x, y0: p.y, vx0: p.vx, vy0: p.vy, tx: t.x, ty: t.y, t: Math.hypot(t.x - p.vx, t.y - p.vy) / accel };
+    step = undefined;
+    if (t.x !== 0 || t.y !== 0) facingAngle = Math.atan2(t.y, t.x);
+  };
+
+  /** A section boundary: entering step movement stops any walk; entering free movement walks with the held keys. */
+  const switchMode = (steps: boolean) => {
+    if (steps) {
+      if (!walk) return;
+      const p = heroPose(w);
+      walk = undefined;
+      step = undefined;
+      restPose = { x: p.x, y: p.y };
+    } else rewalk();
+  };
 
   const startHitStop = (len: number) => {
     if (inStop(s)) return; // No stacking.
@@ -471,13 +538,14 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
   };
 
   // ---------------------------------------------------------------- swings
-  const swingFor = (slotIndex: number, sArmed: number, press?: number): Swing | undefined => {
-    const slot = sch.slots[slotIndex];
-    if (!slot || takenSlots.has(slotIndex)) return undefined;
+  /** Arm a swing for a slot (one swing per slot): the press's, or an automatic one. */
+  const swingFor = (slot: GridSlot | undefined, sArmed: number, press?: number): Swing | undefined => {
+    if (!slot || takenSlots.has(slot)) return undefined;
     if (blastS !== undefined && slot.s >= blastS - 1e-6) return undefined;
-    takenSlots.add(slotIndex);
+    takenSlots.add(slot);
     const sec = ctx.sections[slot.section];
-    const heavy = false;
+    // Free movement cleaves on strong anchors.
+    const heavy = slot.kind === "anchor";
     const anim = heavy ? hero.swings.heavy.animation : hero.swings.light.animations[lightCount++ % hero.swings.light.animations.length];
     const info = anims[anim] ?? { frames: 6, impactFrame: 3 };
     const sWind = Math.max(sArmed, slot.s - hero.swings.windupMs / 1000 / Math.max(0.05, baseRate(slot.s)));
@@ -551,7 +619,12 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
     const input: PlanInput = { s, w, kind: "press", key: e.key, steps };
     const idx = inputs.length;
     inputs.push(input);
-    if (!steps) return;
+    held.add(e.key);
+    // Free movement: held keys walk; presses are not rated and do not arm the sword.
+    if (!steps) {
+      rewalk();
+      return;
+    }
     // A perpendicular key just after the first bends the step into a diagonal.
     const bent = step ? bendStep(hero, step, w, e.key, corridor.clamp) : undefined;
     if (bent) {
@@ -563,9 +636,8 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
     step = startStep(hero, w, hp.x, hp.y, e.key, corridor.clamp);
     landed = false;
     facingAngle = Math.atan2(step.dy, step.dx);
-    // Rate the press against the grid, and arm the sword.
-    // Rated against the timing grid (sections' grids join end to end).
-    const rated = ratePressOnGrid(hero, s, sch.strikeTimes);
+    // Rate the press against the timing grid (the sections' grids join end to end), and arm the sword.
+    const rated = ratePressOnGrid(hero, s, sch.gridTimes);
     input.rating = rated.rating;
     input.accuracy = rated.accuracy;
     input.delta = rated.delta;
@@ -573,13 +645,28 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
     lastPressS = s;
     grooveS.push(s);
     grooveV.push(groove);
-    const slot = armedStrike(hero, sch.strikeTimes, s);
-    input.armed = swingFor(slot, s, idx) !== undefined;
+    input.armed = swingFor(sch.gridSlots[armedStrike(hero, sch.gridTimes, s)], s, idx) !== undefined;
+  };
+
+  const release = (e: KeyEvent) => {
+    const steps = sectionAt(s).level.movement === "steps";
+    inputs.push({ s, w, kind: "release", key: e.key, steps });
+    held.delete(e.key);
+    if (!steps) rewalk();
+  };
+
+  /** Step movement: a bar that ended with no swing in it gets one by itself on the next downbeat. */
+  const idleSwing = (slot: GridSlot, prev: number) => {
+    if (takenSlots.has(slot)) return;
+    if (swings.some((sw) => sw.sStrike >= prev - 1e-9 && sw.sStrike < slot.s - 1e-9)) return;
+    swingFor(slot, s);
   };
 
   // ---------------------------------------------------------------- sampling
   const sampleHero = (wk: number, sk: number) => {
     const p = heroPose(wk);
+    if (lastSample) walked += Math.hypot(p.x - lastSample.x, p.y - lastSample.y);
+    lastSample = { x: p.x, y: p.y };
     hx.push(p.x);
     hy.push(p.y);
     hz.push(p.z);
@@ -593,7 +680,8 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
         if (!winding || c.sStrike < winding.sStrike) winding = c;
       } else if (c.impact + (wk - c.wStrike) * c.fps < c.frames && (!following || c.sStrike > following.sStrike)) following = c;
     }
-    const sw = winding ?? following;
+    // The sample nearest a strike always shows its impact frame, even when the next swing is winding up.
+    const sw = following && wk - following.wStrike <= 0.5 / HERO_RATE + 1e-9 ? following : (winding ?? following);
     const half = 0.5 / HERO_RATE;
     if (sw) {
       let fr: number;
@@ -612,6 +700,11 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
       hAnim.push(animIdx("jump"));
       hFrame.push(clamp(Math.floor(p.u * 5), 0, 4));
       hFacing.push(facingIndex(facingAngle));
+    } else if (Math.hypot(p.vx, p.vy) > 1) {
+      // Walking: the cycle advances by distance, facing the way the hero walks.
+      hAnim.push(animIdx("walk"));
+      hFrame.push(walkFrame(hero, walked, anims.walk?.frames ?? 8));
+      hFacing.push(facingIndex(Math.atan2(p.vy, p.vx)));
     } else {
       hAnim.push(animIdx("idle"));
       hFrame.push(Math.floor(frac(sbiAt(sk) / 2) * 2) % 2);
@@ -1015,7 +1108,22 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
     }
   };
 
-  // Song-owned events.
+  // Song-owned events: mode switches, automatic swings in free movement, idle-swing checks in step movement.
+  const windupBefore = (t: number) => t - hero.swings.windupMs / 1000 / Math.max(0.05, baseRate(t));
+  for (let i = 1; i < ctx.sections.length; i++) {
+    const a = ctx.sections[i - 1].level.movement;
+    const b = ctx.sections[i].level.movement;
+    if (a !== b) q.push(ctx.sections[i].s0, { kind: "mode", steps: b === "steps" });
+  }
+  if (ctx.sections[0].level.movement === "free") walk = { w0: 0, x0: restPose.x, y0: restPose.y, vx0: 0, vy0: 0, tx: 0, ty: 0, t: 0 };
+  for (const sl of sch.slots) if (sl.kind !== "grid") q.push(Math.max(0, windupBefore(sl.s)), { kind: "auto", slot: sl });
+  let prevDown: GridSlot | undefined;
+  for (const sl of sch.gridSlots) {
+    if (sl.slot !== 0) continue;
+    // The bar before must be a step bar too.
+    if (prevDown && sl.bar === prevDown.bar + 1) q.push(Math.max(prevDown.s, windupBefore(sl.s)), { kind: "idle", slot: sl, prev: prevDown.s });
+    prevDown = sl;
+  }
   for (let bi = 0; bi < song.beats.length; bi++) if (song.beats[bi] < endS) q.push(song.beats[bi], { kind: "beat", bi });
   for (const lu of sch.levelUps) if (lu.s < endS) q.push(lu.s, { kind: "levelUp", id: lu.id });
   if (sch.blast && sch.blast.s < endS) {
@@ -1059,7 +1167,16 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
         }
         case "key":
           if (ev.e.kind === "press") press(ev.e);
-          else inputs.push({ s, w, kind: "release", key: ev.e.key, steps: sectionAt(s).level.movement === "steps" });
+          else release(ev.e);
+          break;
+        case "mode":
+          switchMode(ev.steps);
+          break;
+        case "auto":
+          swingFor(ev.slot, s);
+          break;
+        case "idle":
+          idleSwing(ev.slot, ev.prev);
           break;
         case "wind":
           if (!ev.sw.aimed) doWind(ev.sw);

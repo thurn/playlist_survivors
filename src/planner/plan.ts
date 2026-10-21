@@ -74,7 +74,8 @@ export function virtualPlayer(ctx: Ctx, sch: Schedule, profile: SkillProfile = "
     ctx.lib.hero,
     ctx.seed,
     sch.slots,
-    ctx.sections.map((s) => ({ steps: s.level.movement === "steps", presses: s.level.presses })),
+    ctx.sections.map((s) => ({ steps: s.level.movement === "steps", presses: s.level.presses, s0: s.s0, s1: s.s1 })),
+    ctx.song.beats,
     profile,
   );
 }

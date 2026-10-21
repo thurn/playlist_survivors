@@ -115,7 +115,10 @@ export interface HudState {
   elapsed: number;
   beatPhase: number;
   barPhase: number;
+  /** Free movement (the beat track is a flowing ribbon). */
   free: boolean;
+  /** The count-in before step movement: which of the four count marks is lit (1–4), and how far the beat track has faded in (0–1). */
+  countIn?: { count: number; fade: number };
   energy: number;
   /** Upcoming hero actions: seconds until impact and size. */
   markers: { dt: number; size: number; kind: string }[];
@@ -254,7 +257,7 @@ export class Evaluator {
     const sbi = this.beatIndex(plan.songBeats, s);
     const si = this.sectionAt(s);
     const section = plan.sections[si];
-    const free = section.feel === "free";
+    const free = section.movement === "free";
     const bar = this.barAt(Math.max(0, sbi));
     const beatPhase = frac(sbi);
     const barPhase = clamp((sbi - bar.start) / bar.len, 0, 0.9999);
@@ -825,8 +828,15 @@ export class Evaluator {
       if (u.kind === "end") end = { age: s - u.s };
     }
     const progress = clamp(s / plan.duration, 0, 1);
-    void sbi;
-    return { kills, combo, perfects, xp, level, weapons, progress, elapsed: s, beatPhase, barPhase, free, energy, markers, banners, title, boss, end };
+    // The count-in: four count marks pulse on the last four beats before step movement.
+    let countIn: HudState["countIn"];
+    const si = this.sectionAt(s);
+    const next = plan.sections[si + 1];
+    if (free && next && next.movement === "steps") {
+      const left = this.beatIndex(plan.songBeats, next.s0) - sbi;
+      if (left > 0 && left <= 4) countIn = { count: clamp(5 - Math.ceil(left - 1e-6), 1, 4), fade: clamp(1 - left / 4, 0, 1) };
+    }
+    return { kills, combo, perfects, xp, level, weapons, progress, elapsed: s, beatPhase, barPhase, free, countIn, energy, markers, banners, title, boss, end };
   }
 }
 

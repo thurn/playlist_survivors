@@ -106,7 +106,9 @@ export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam:
     fx(`hit-${sw.kind}`, sw.s, sw.x, sw.y, sw.dir, h.intensity, { hit: sw.hit });
     sfx("swing", sw.s - 0.04, sw.x, PRIORITY.hero + 0.5, 0.7);
     sfx(`hit-${sw.kind}`, sw.s, sw.x, heavy ? PRIORITY.hero : PRIORITY.hero + 0.3, heavy ? 1.1 : 0.95, heavy);
-    if (heavy && sw.accent > 0) {
+    // "PERFECT" for a Perfect press whose swing lands on an accent.
+    const pressRating = sw.press !== undefined ? sim.inputs[sw.press].rating : undefined;
+    if (sw.accent > 0 && pressRating === "perfect") {
       perfect.push(sw.s);
       ui.push({ kind: "perfect", s: sw.s, x: sw.x, y: sw.y - 40 });
       fx("perfect-accent", sw.s, sw.x, sw.y - 48, 0, 1);

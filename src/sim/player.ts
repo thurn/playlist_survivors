@@ -55,7 +55,16 @@ export const PROFILES: Record<SkillProfile, ProfileSpec> = {
 export interface PlayerSection {
   steps: boolean;
   presses: string;
+  s0: number;
+  s1: number;
 }
+
+/** Free movement: the weave across the corridor (px) and its period (beats). */
+const WEAVE = 70;
+const WEAVE_BEATS = 16;
+/** Free movement: aim this far ahead of the pace point, and stand still when this close. */
+const STEER_LEAD = 16;
+const STEER_STOP = 14;
 
 /** The eight step directions: one key, or two perpendicular keys for a diagonal. */
 const DIRECTIONS: Key[][] = [["right"], ["right", "down"], ["down"], ["down", "left"], ["left"], ["left", "up"], ["up"], ["up", "right"]];
@@ -78,42 +87,54 @@ function normal(r: Rng): number {
 }
 
 export class VirtualPlayer implements Player {
-  /** Planned press times (song time) and the grid slot each one aims at. */
-  private presses: { s: number; slot: GridSlot }[] = [];
+  /** Planned decisions (song time): presses in step movement, steering on each beat in free movement. */
+  private plan: { s: number; kind: "press" | "steer"; beat: number; release?: boolean }[] = [];
   private next = 0;
   private lastDir: { x: number; y: number } | undefined;
   private count = 0;
+  private held = new Set<Key>();
 
   constructor(
     private readonly hero: HeroDef,
     private readonly seed: number,
     slots: readonly GridSlot[],
     sections: readonly PlayerSection[],
+    beats: readonly number[],
     profile: SkillProfile = "skilled",
   ) {
     const spec = PROFILES[profile];
     for (const sl of slots) {
       const sec = sections[sl.section];
-      if (!sec.steps) continue;
+      if (!sec.steps || sl.kind !== "grid") continue;
       const pressed = spec.downbeatsOnly ? sl.slot === 0 : sec.presses[sl.slot % sec.presses.length] === "x";
       if (!pressed) continue;
       const r = new Rng(seed, "press-time", Math.round(sl.s * 1000));
       const err = spec.sd > 0 ? clamp(normal(r) * spec.sd, -spec.clampS, spec.clampS) : 0;
-      this.presses.push({ s: sl.s + err, slot: sl });
+      this.plan.push({ s: sl.s + err, kind: "press", beat: sl.bi });
     }
-    this.presses.sort((a, b) => a.s - b.s);
+    // Free movement: change the held keys at most once per beat; let go before step movement.
+    const sectionAt = (t: number) => sections.findLast((x) => t >= x.s0 - 1e-9) ?? sections[0];
+    for (let i = 0; i < beats.length; i++) {
+      const sec = sectionAt(beats[i]);
+      if (sec.steps) continue;
+      const next = beats[i + 1];
+      const release = next === undefined || sectionAt(next).steps;
+      this.plan.push({ s: beats[i] + 0.01, kind: "steer", beat: i, release });
+    }
+    this.plan.sort((a, b) => a.s - b.s);
   }
 
   nextDecision(after: number): number {
-    while (this.next < this.presses.length && this.presses[this.next].s < after - 1e-9) this.next++;
-    return this.next < this.presses.length ? this.presses[this.next].s : Infinity;
+    while (this.next < this.plan.length && this.plan[this.next].s < after - 1e-9) this.next++;
+    return this.next < this.plan.length ? this.plan[this.next].s : Infinity;
   }
 
   decide(obs: Observation): KeyEvent[] {
-    // The press planned for now.
-    while (this.next < this.presses.length && this.presses[this.next].s < obs.s - 1e-9) this.next++;
-    if (this.next >= this.presses.length) return [];
-    this.next++;
+    // The decision planned for now.
+    while (this.next < this.plan.length && this.plan[this.next].s < obs.s - 1e-9) this.next++;
+    if (this.next >= this.plan.length) return [];
+    const d = this.plan[this.next++];
+    if (d.kind === "steer") return this.steer(obs, d.beat, d.release ?? false);
     const keys = this.chooseKeys(obs);
     this.count++;
     const r = new Rng(this.seed, "press-keys", this.count);
@@ -125,6 +146,38 @@ export class VirtualPlayer implements Player {
       out.push({ s, kind: "press", key: keys[i] });
     }
     for (const k of keys) out.push({ s: s + r.range(0.06, 0.1), kind: "release", key: k });
+    return out;
+  }
+
+  /**
+   * Free movement: hold the direction key toward the pace point plus a slow
+   * weave across the corridor.
+   */
+  private steer(obs: Observation, beat: number, release: boolean): KeyEvent[] {
+    let want: Key[] = [];
+    if (!release) {
+      const p = obs.pacePoint;
+      const weave = WEAVE * Math.sin((2 * Math.PI * beat) / WEAVE_BEATS);
+      const tx = p.x + p.tx * STEER_LEAD - p.ty * weave;
+      const ty = p.y + p.ty * STEER_LEAD + p.tx * weave;
+      const dx = tx - obs.hero.x;
+      const dy = ty - obs.hero.y;
+      if (Math.hypot(dx, dy) > STEER_STOP) {
+        const k = ((Math.round((Math.atan2(dy, dx) / (2 * Math.PI)) * 8) % 8) + 8) % 8;
+        want = DIRECTIONS[k];
+      }
+    }
+    const out: KeyEvent[] = [];
+    for (const k of [...this.held]) {
+      if (want.includes(k)) continue;
+      this.held.delete(k);
+      out.push({ s: obs.s, kind: "release", key: k });
+    }
+    for (const k of want) {
+      if (this.held.has(k)) continue;
+      this.held.add(k);
+      out.push({ s: obs.s, kind: "press", key: k });
+    }
     return out;
   }
 

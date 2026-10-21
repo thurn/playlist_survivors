@@ -119,13 +119,36 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
     add("impacts on the grid", f, n);
   }
 
-  // Every hero movement has an input.
+  // Every hero movement has an input: in step movement, a press in the 110 ms before; in free
+  // movement, a held key (the hero stops within 60 ms of the last key going up). No step exceeds 44 px.
   {
     const f: string[] = [];
     const t = plan.hero;
     const presses = plan.inputs.filter((i) => i.kind === "press" && i.steps && !i.bend);
     const pressW = presses.map((p) => p.w);
     const stepS = hero.step.durationMs / 1000;
+    const stopS = hero.walk.accelMs / 1000;
+    // World-time intervals in which at least one key is held during free movement.
+    const heldSpans: [number, number][] = [];
+    {
+      const down = new Map<string, number>();
+      let open = 0;
+      let since = 0;
+      for (const i of plan.inputs) {
+        if (i.kind === "press") {
+          if (!down.has(i.key)) {
+            if (open++ === 0) since = i.w;
+            down.set(i.key, i.w);
+          }
+        } else if (down.delete(i.key) && --open === 0) heldSpans.push([since, i.w]);
+      }
+      if (open > 0) heldSpans.push([since, Infinity]);
+    }
+    const heldNear = (w0: number, w1: number) => heldSpans.some(([a, b]) => a <= w1 + 1e-9 && b + stopS >= w0 - 1e-9);
+    const movementAt = (w: number) => {
+      const s = warp.toSong(w);
+      return (plan.sections.findLast((x) => s >= x.s0 - 1e-9) ?? plan.sections[0]).movement;
+    };
     let n = 0;
     let pi = 0;
     for (let k = 0; k + 1 < t.x.length; k++) {
@@ -136,7 +159,10 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
       const w1 = (k + 1) / t.rate;
       while (pi + 1 < pressW.length && pressW[pi + 1] <= w1 + 1e-9) pi++;
       const pw = pressW[pi];
-      if (pw === undefined || pw > w1 + 1e-9 || w0 > pw + stepS + 1e-6) f.push(`the hero moves ${d.toFixed(1)} px at w=${w0.toFixed(3)} with no press in the 110 ms before`);
+      const pressed = pw !== undefined && pw <= w1 + 1e-9 && w0 <= pw + stepS + 1e-6;
+      // A walk stops on the boundary into step movement; a step may still be landing after one into free movement.
+      if (pressed || (movementAt(w1) === "free" || movementAt(w0) === "free" ? heldNear(w0, w1) : false)) continue;
+      f.push(`the hero moves ${d.toFixed(1)} px at w=${w0.toFixed(3)} with no press in the 110 ms before and no key held`);
     }
     for (let i = 0; i < presses.length; i++) {
       const p = presses[i];
@@ -147,6 +173,38 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
       if (d > hero.step.length + 0.75) f.push(`the step at ${fmt(p.s)} covers ${d.toFixed(1)} px (max ${hero.step.length})`);
     }
     add("every hero movement has an input", f, n + presses.length);
+  }
+
+  // No skating: while walking, the walk cycle advances within 10% of the rate the distance implies.
+  {
+    const f: string[] = [];
+    const t = plan.hero;
+    const walkI = t.animNames.indexOf("walk");
+    const frames = 8;
+    let n = 0;
+    let k = 0;
+    while (k < t.x.length) {
+      if (t.anim[k] !== walkI) {
+        k++;
+        continue;
+      }
+      // One run of walking samples.
+      let dist = 0;
+      let adv = 0;
+      let j = k;
+      while (j + 1 < t.x.length && t.anim[j + 1] === walkI) {
+        dist += Math.hypot(t.x[j + 1] - t.x[j], t.y[j + 1] - t.y[j]);
+        adv += (t.frame[j + 1] - t.frame[j] + frames) % frames;
+        j++;
+      }
+      if (j - k >= 30) {
+        n++;
+        const expected = (dist / hero.walk.strideCycle) * frames;
+        if (Math.abs(adv - expected) > Math.max(1, 0.1 * expected)) f.push(`the walk from w=${(k / t.rate).toFixed(2)} covers ${dist.toFixed(0)} px but its cycle advances ${adv} frames (expected ${expected.toFixed(1)})`);
+      }
+      k = j + 1;
+    }
+    add("no skating", f, n);
   }
 
   // Auto-aim is the rule.

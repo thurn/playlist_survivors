@@ -63,4 +63,21 @@ describe("simulated playthrough on the synthetic song", () => {
     const late = plan.hits.filter((h) => h.source === "move" && h.s > 60);
     expect(Math.min(...late.map((h) => h.damage))).toBeGreaterThan(1.1);
   });
+
+  it("walks in free movement, swinging by itself every two beats and cleaving on strong anchors", () => {
+    const prelude = plan.sections.find((x) => x.label === "prelude")!;
+    expect(prelude.movement).toBe("free");
+    const warp = new Warp(plan.warp);
+    let walking = 0;
+    for (let w = 1; w < warp.toWorld(prelude.s1); w += 0.1) if (heroSample(plan, w).anim === "walk") walking++;
+    expect(walking).toBeGreaterThan(20);
+    const swings = plan.swings.filter((x) => x.s < prelude.s1);
+    expect(swings.length).toBeGreaterThan(10);
+    expect(swings.every((x) => x.press === undefined)).toBe(true);
+    expect(swings.some((x) => x.kind === "heavy")).toBe(true);
+    // Free-movement presses are not rated.
+    const presses = plan.inputs.filter((i) => i.kind === "press" && i.s < prelude.s1);
+    expect(presses.length).toBeGreaterThan(0);
+    expect(presses.every((i) => !i.steps && i.rating === undefined)).toBe(true);
+  });
 });
