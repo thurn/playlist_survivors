@@ -29,7 +29,7 @@ answer should be obvious within seconds of watching.
   screenshake, hit-stop, flashes and impact sounds. Juice is mandatory here,
   not polish.
 - **A large horde.** Up to about 500 detailed monsters alive at once.
-- **Data-driven levels.** Adding one of the five later songs should need new
+- **Data-driven levels.** Adding one of the four later songs should need new
   data, not new code paths.
 
 ### Fixed constraints
@@ -41,8 +41,8 @@ answer should be obvious within seconds of watching.
   1920×1080 and 60 fps. Firefox and Safari are best-effort.
 - **Liberated Pixel Cup (LPC) art.** Characters and terrain come from the LPC
   collections, plus a few compatible CC0 effect packs.
-- **Legally usable music.** The recording must be public domain or Creative
-  Commons. See the [Music Source](#music-source) section below.
+- **Legally usable music.** The recording must be public domain, Creative
+  Commons or the EFF Open Audio License. See the [Music Source](#music-source) section below.
 - **Asset licence policy.** Allowed licences are CC0, CC-BY, CC-BY-SA and
   OGA-BY (OpenGameArt's attribution licence, which is CC-BY 3.0 minus its ban
   on DRM). GPL-only and LGPL-only art is not allowed. When an asset offers
@@ -1814,23 +1814,36 @@ The movesets:
 
 ## Future Songs
 
-The design must handle the five later songs with only new data: a song map,
+The design must handle the four later songs with only new data: a song map,
 a level script, and possibly new movesets, enemies and zone themes. Each song
-stresses something different:
+stresses something different.
 
 - **William Tell Overture (finale):** a sustained fast gallop. It tests long
   dense sections and how stable the crowd simulation is at the population
   cap.
 - **Beethoven's Fifth (first movement):** dramatic pauses on held notes. Each
   pause should become a short `free` passage with slow motion, not a long
-  hit-stop.
+  hit-stop. These pauses are now the main test of `free` sections and anchors.
 - **In the Hall of the Mountain King:** a steady accelerating tempo, marked as
   a tempo change in the song map. It tests beat-grid checks across a
   deliberate ramp, and enemy speeds that rise with tempo.
 - **Flight of the Bumblebee:** constant sixteenth notes. It tests the sound
   voice budget and whether effects on every subdivision stay readable.
-- **Ride of the Valkyries:** rubato passages with a weak beat. It tests `free`
-  sections and anchors at length.
+
+Each song's source recording is committed in full under `songs/<id>/`, with
+its provenance, licence and hashes in `source.json`. Choosing the excerpt and
+writing the song map come later.
+
+| Song | Directory | Recording | Licence |
+|---|---|---|---|
+| William Tell finale | `songs/william-tell-finale/` | [US Marine Band, *Grand Scenes* (2000)](https://commons.wikimedia.org/wiki/File:Gioachino_Rossini,_William_Tell_Overture_(military_band_version,_2000).ogg), full overture; the finale starts at about 7:30 | Public domain (US military work) |
+| Beethoven's Fifth, I | `songs/beethoven-fifth/` | [Fulda Symphonic Orchestra, Simon Schindler (2002)](https://commons.wikimedia.org/wiki/File:Ludwig_van_Beethoven_-_Symphonie_5_c-moll_-_1._Allegro_con_brio.ogg) | EFF Open Audio License 1.0 (attribution, share-alike) |
+| In the Hall of the Mountain King | `songs/mountain-king/` | [Czech National Symphony Orchestra as the Musopen Symphony Orchestra (2012)](https://commons.wikimedia.org/wiki/File:Musopen_-_In_the_Hall_Of_The_Mountain_King.ogg) | Public domain (released by Musopen) |
+| Flight of the Bumblebee | `songs/bumblebee/` | [US Air Force Band of the Rockies, Concert Band (2007)](https://commons.wikimedia.org/wiki/File:Flight_of_the_Bumblebee_-_Concert_Band_-_United_States_Air_Force_Band_of_the_Rockies.mp3) | Public domain (US military work) |
+
+The military recordings may be credited, but nothing may imply endorsement
+by the bands or the Department of Defense. The Marine Band's name is a
+trademark.
 
 Code must not branch on song id. Any song-specific behavior belongs in
 content data.
