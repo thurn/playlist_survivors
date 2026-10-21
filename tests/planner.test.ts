@@ -103,3 +103,33 @@ describe("simulated playthrough on the synthetic song", () => {
     expect(plan.hud.xpFill.some((f) => f >= 1 - 1e-9)).toBe(true);
   });
 });
+
+describe("skill profiles", () => {
+  const songMap = syntheticSongMap();
+  const lib = plannerInput({ songMap }).content;
+  const skilled = runPlanner({ songMap });
+  const casual = runPlanner({ songMap, profile: "casual" });
+  const perfect = runPlanner({ songMap, profile: "perfect" });
+
+  it("lets the casual player through every check, with less reward", () => {
+    const { ok, text } = summarizeChecks(checkPlan(casual, lib));
+    expect(ok, text).toBe(true);
+    expect(casual.profile).toBe("casual");
+    expect(casual.stats.averageGroove).toBeLessThan(skilled.stats.averageGroove - 0.1);
+    expect(casual.stats.presses).toBeLessThan(skilled.stats.presses);
+  });
+
+  it("strikes on the grid however early or late the casual player presses", () => {
+    const grid = Array.from(casual.grid);
+    const late = casual.inputs.filter((i) => i.kind === "press" && Math.abs(i.delta ?? 0) > 0.07);
+    expect(late.length).toBeGreaterThan(10);
+    for (const sw of casual.swings) expect(Math.min(...grid.map((g) => Math.abs(g - sw.s)))).toBeLessThan(0.001);
+  });
+
+  it("rates every perfect-profile press Perfect", () => {
+    const rated = perfect.inputs.filter((i) => i.kind === "press" && i.steps && !i.bend);
+    expect(rated.length).toBeGreaterThan(100);
+    expect(rated.every((i) => i.rating === "perfect")).toBe(true);
+  });
+});
+

@@ -6,16 +6,17 @@ import { Container, Graphics } from "pixi.js";
 import type { CreditsFile } from "../assets/types.ts";
 import type { ContentLibrary } from "../content/loader.ts";
 import { clamp, smoothstep } from "../core/shaping.ts";
-import type { Frame } from "../plan/evaluate.ts";
+import type { Frame, KeyName } from "../plan/evaluate.ts";
 import type { Plan } from "../plan/types.ts";
 import { PixelText, textWidth } from "./font.ts";
 
-const COMBO_COLORS: [number, number][] = [
-  [250, 0xff60ff],
-  [100, 0xffd040],
-  [50, 0x80e0ff],
-  [0, 0xffffff],
-];
+/** Press ratings: gold for Perfect, white for Great, pale blue for Good, plain for unrated. */
+const RATING_COLORS: Record<string, number> = { perfect: 0xffd040, great: 0xffffff, good: 0x9fd0ff };
+const PLAIN = 0x8890a8;
+const ratingColor = (r: string | undefined) => (r ? (RATING_COLORS[r] ?? PLAIN) : PLAIN);
+
+/** The key display: each key's place (column, row) in the cluster. */
+const KEY_PLACES: Record<KeyName, [number, number, number]> = { up: [1, 0, -Math.PI / 2], left: [0, 1, Math.PI], down: [1, 1, Math.PI / 2], right: [2, 1, 0] };
 
 export class Hud {
   readonly root = new Container();
@@ -122,13 +123,32 @@ export class Hud {
         g.circle(x + s / 2, y + s / 2, (4 + 3 * wp.flash) * u).fill({ color: col, alpha: 0.5 + 0.5 * wp.flash });
       });
 
-      // Combo and kills.
-      const comboCol = COMBO_COLORS.find(([n]) => hud.combo >= n)![1];
-      this.text("COMBO", px(948), py(14), fs, 0xb0b0c0, "right", intro);
-      this.text(`${hud.combo}`, px(948), py(24), Math.round(2 * u), comboCol, "right", intro);
-      this.text("KILLS", px(948), py(44), fs, 0xb0b0c0, "right", intro);
-      this.text(`${hud.kills}`, px(948), py(54), Math.round(2 * u), 0xffffff, "right", intro);
-      this.text(`PERFECT ${hud.perfects}`, px(948), py(74), fs, 0xffe060, "right", intro);
+      // Kills and the rated presses so far.
+      this.text("KILLS", px(948), py(14), fs, 0xb0b0c0, "right", intro);
+      this.text(`${hud.kills}`, px(948), py(24), Math.round(2 * u), 0xffffff, "right", intro);
+      this.text(`PERFECT ${hud.ratings.perfect}`, px(948), py(44), fs, RATING_COLORS.perfect, "right", intro);
+      this.text(`GREAT ${hud.ratings.great}`, px(948), py(54), fs, RATING_COLORS.great, "right", intro);
+      this.text(`GOOD ${hud.ratings.good}`, px(948), py(64), fs, RATING_COLORS.good, "right", intro);
+
+      // The key display: four arrow keys, lit while pressed, tinted by the press's rating.
+      for (const k of Object.keys(KEY_PLACES) as KeyName[]) {
+        const [col, row, ang] = KEY_PLACES[k];
+        const key = hud.keys[k];
+        const ks = 22;
+        const kx = 26 + col * (ks + 3);
+        const ky = 452 + row * (ks + 3);
+        const col0 = ratingColor(key.rating);
+        g.roundRect(px(kx), py(ky), ks * u, ks * u, 4 * u).fill({ color: key.lit > 0 ? col0 : 0x101018, alpha: (0.25 + 0.65 * key.lit) * intro });
+        g.roundRect(px(kx), py(ky), ks * u, ks * u, 4 * u).stroke({ color: key.lit > 0 ? col0 : 0x606878, width: Math.max(1, u), alpha: intro });
+        // The arrow.
+        const cx0 = px(kx + ks / 2);
+        const cy0 = py(ky + ks / 2);
+        const r = 6 * u;
+        const tip = { x: cx0 + Math.cos(ang) * r, y: cy0 + Math.sin(ang) * r };
+        const l = { x: cx0 + Math.cos(ang + 2.4) * r, y: cy0 + Math.sin(ang + 2.4) * r };
+        const rr = { x: cx0 + Math.cos(ang - 2.4) * r, y: cy0 + Math.sin(ang - 2.4) * r };
+        g.poly([tip.x, tip.y, l.x, l.y, rr.x, rr.y]).fill({ color: key.lit > 0.5 ? 0x101018 : 0xd0d8e8, alpha: intro });
+      }
 
       // Song progress line with section marks.
       const pl = 20;
@@ -140,7 +160,7 @@ export class Hud {
       const ss = Math.floor(hud.elapsed % 60);
       this.text(`${mm}:${ss.toString().padStart(2, "0")}`, px(pl), py(520), fs, 0xc0c0c0, "left", 0.9);
 
-      // Beat track: markers slide toward a beating heart.
+      // Beat track: the song's beats slide toward a beating heart, and presses land on it.
       const cx = 480;
       const cy = 504;
       g.roundRect(px(cx - 200), py(cy - 9), 400 * u, 18 * u, 9 * u).fill({ color: 0x000000, alpha: 0.45 * intro });
@@ -155,26 +175,32 @@ export class Hud {
           g.stroke({ color: 0x9fb8ff, width: 2 * u, alpha: 0.7 });
         }
       }
-      for (const m of hud.markers) {
-        const d = m.dt * 90;
-        if (d < -6) continue;
-        const a = clamp(1 - m.dt / 2.2, 0, 1) * (m.dt < 0 ? 1 + m.dt * 6 : 1);
-        const sz = (2 + m.size * 1.6) * u;
-        const col = m.kind === "dodge" ? 0x80f0ff : m.size >= 3 ? 0xffb040 : 0xffffff;
-        for (const side of [-1, 1]) {
-          g.roundRect(px(cx + side * (14 + d)) - sz / 2, py(cy) - sz * 1.6, sz, sz * 3.2, sz / 2).fill({ color: col, alpha: a * (hud.free ? 0.5 : 1) });
-        }
+      // Ticks fade in with the count-in before step movement.
+      const trackA = hud.free ? (hud.countIn?.fade ?? 0) : 1;
+      for (const t of hud.ticks) {
+        const d = t.dt * 90;
+        if (d > 186) continue;
+        const a = clamp(1 - t.dt / 2.2, 0, 1) * (t.dt < 0 ? 1 + t.dt * 8 : 1) * trackA;
+        const sz = (t.down ? 4 : 2.5) * u;
+        for (const side of [-1, 1]) g.roundRect(px(cx + side * (14 + d)) - sz / 2, py(cy) - sz * 1.6, sz, sz * 3.2, sz / 2).fill({ color: t.down ? 0xffe8b0 : 0xffffff, alpha: a });
       }
-      // The count-in before step movement: the track fades in and four marks count the beats.
-      if (hud.countIn) {
-        const ci = hud.countIn;
-        for (let k = 1; k <= 4; k++) {
-          const lit = k <= ci.count;
-          const now = k === ci.count;
-          const r = (3 + (now ? 3 * Math.exp(-6 * hud.beatPhase) : 0)) * u;
-          g.circle(px(cx - 45 + (k - 1) * 30), py(cy - 22), r).fill({ color: lit ? 0xffe080 : 0x606070, alpha: (lit ? 1 : 0.5) * (0.4 + 0.6 * ci.fade) });
-        }
-        g.roundRect(px(cx - 200), py(cy - 9), 400 * u, 18 * u, 9 * u).stroke({ color: 0xffe080, width: Math.max(1, u), alpha: 0.6 * ci.fade });
+      // Each press flashes on the track: early to the left, late to the right, colored by its rating.
+      for (const pr of hud.presses) {
+        if (!pr.steps) continue;
+        const a = clamp(1 - pr.age / 0.6, 0, 1);
+        const x = cx + clamp(pr.delta * 400, -70, 70);
+        const r = (4 + 6 * (1 - a)) * u;
+        g.circle(px(x), py(cy - 20), r).stroke({ color: ratingColor(pr.rating), width: 2 * u, alpha: a });
+        g.circle(px(x), py(cy - 20), 2.5 * u).fill({ color: ratingColor(pr.rating), alpha: a });
+      }
+      // The groove meter beside the heart, with the damage bonus.
+      {
+        const gx = cx + 212;
+        const gw = 70;
+        g.roundRect(px(gx), py(cy - 5), gw * u, 10 * u, 3 * u).fill({ color: 0x000000, alpha: 0.55 * intro });
+        g.roundRect(px(gx + 1), py(cy - 4), (gw - 2) * u * clamp(hud.groove, 0, 1), 8 * u, 3 * u).fill({ color: hud.groove > 0.85 ? 0xffd040 : 0x60c0ff, alpha: intro });
+        this.text("GROOVE", px(gx), py(cy - 16), fs, 0xb0b0c0, "left", intro);
+        this.text(`+${Math.round(hud.bonus * 100)}%`, px(gx + gw + 6), py(cy - 4), fs, hud.groove > 0.85 ? 0xffd040 : 0xffffff, "left", intro);
       }
       const heart = (10 + 4 * pulse) * u;
       this.heart(g, px(cx), py(cy), heart, options.metronome ? 0xffffff : 0xff3060);
@@ -218,10 +244,13 @@ export class Hud {
       const scroll = Math.max(0, hud.end.age - 5) * 26;
       const y0 = 120 - scroll;
       this.text("ENCORE!", px(480), py(y0), Math.max(1, Math.round(5 * u)), 0xffe080, "center", a);
-      this.text(`KILLS ${hud.kills}`, px(480), py(y0 + 60), Math.max(1, Math.round(2 * u)), 0xffffff, "center", a);
-      this.text(`COMBO ${hud.combo}`, px(480), py(y0 + 82), Math.max(1, Math.round(2 * u)), 0x80e0ff, "center", a);
-      this.text(`PERFECT ${hud.perfects}`, px(480), py(y0 + 104), Math.max(1, Math.round(2 * u)), 0xffe060, "center", a);
-      let y = y0 + 170;
+      const big = Math.max(1, Math.round(2 * u));
+      this.text(`KILLS ${hud.kills}`, px(480), py(y0 + 60), big, 0xffffff, "center", a);
+      this.text(`PERFECT ${hud.ratings.perfect}`, px(480), py(y0 + 82), big, RATING_COLORS.perfect, "center", a);
+      this.text(`GREAT ${hud.ratings.great}`, px(480), py(y0 + 104), big, RATING_COLORS.great, "center", a);
+      this.text(`GOOD ${hud.ratings.good}`, px(480), py(y0 + 126), big, RATING_COLORS.good, "center", a);
+      this.text(`AVERAGE GROOVE +${Math.round(hud.end.averageGroove * this.lib.hero.groove.maxBonus * 100)}%`, px(480), py(y0 + 148), big, 0x80e0ff, "center", a);
+      let y = y0 + 200;
       for (const line of this.creditLines) {
         const sc = Math.max(1, Math.round(line.scale * u));
         if (py(y) > out.y - 20 && py(y) < out.y + out.h) this.text(line.text, px(480), py(y), sc, line.tint, "center", a);

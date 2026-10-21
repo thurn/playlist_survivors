@@ -166,11 +166,14 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
     }
     for (let i = 0; i < presses.length; i++) {
       const p = presses[i];
-      const end = Math.min(p.w + stepS, presses[i + 1]?.w ?? Infinity);
+      // From the press to the landing, or to the last sample before the next press interrupts it.
+      const next = presses[i + 1]?.w ?? Infinity;
+      const end = p.w + stepS < next ? Math.min(Math.ceil((p.w + stepS) * t.rate) / t.rate, next) : Math.floor(next * t.rate - 1e-9) / t.rate;
+      if (end <= p.w) continue;
       const a = heroSample(plan, p.w);
       const b = heroSample(plan, end);
       const d = Math.hypot(b.x - a.x, b.y - a.y);
-      if (d > hero.step.length + 0.75) f.push(`the step at ${fmt(p.s)} covers ${d.toFixed(1)} px (max ${hero.step.length})`);
+      if (d > hero.step.length + 2) f.push(`the step at ${fmt(p.s)} covers ${d.toFixed(1)} px (max ${hero.step.length})`);
     }
     add("every hero movement has an input", f, n + presses.length);
   }

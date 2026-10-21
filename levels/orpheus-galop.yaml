@@ -2,6 +2,7 @@
 # every musical reference is a bar/beat or a named musical moment, never seconds.
 song: orpheus-galop
 seed: 1858
+player: skilled            # the virtual player's skill profile; ?player= overrides it
 title:
   piece: "Orpheus in the Underworld — Overture"
   composer: "Jacques Offenbach"

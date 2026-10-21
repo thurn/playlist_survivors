@@ -288,6 +288,8 @@ export const levelEvent = z.strictObject({
 export const levelScript = z.strictObject({
   song: id,
   seed: z.number().int(),
+  /** The virtual player's default skill profile (`?player=` overrides it). */
+  player: z.enum(["perfect", "skilled", "casual"]).default("skilled"),
   title: z.strictObject({ piece: z.string(), composer: z.string(), performer: z.string() }),
   zones: z.array(id).min(1),
   sections: z.array(levelSection).min(1),

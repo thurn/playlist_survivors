@@ -8,6 +8,7 @@ import { clamp } from "../core/shaping.ts";
 import { beatIndexAt } from "../core/songmap.ts";
 import type { Warp } from "../core/warp.ts";
 import type { CameraTrack, EffectEvent, GemEvent, HeroTrack, HudSeries, Projectile, SlamMarker, SoundEvent, UiEvent } from "../plan/types.ts";
+import { grooveAt } from "../plan/evaluate.ts";
 import { heroSample } from "../plan/sample.ts";
 import { HURTBOX_LIFT, type SimResult } from "../sim/simulate.ts";
 import { sectionIndexAt, type Ctx } from "./context.ts";
@@ -99,12 +100,12 @@ export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam:
   // ------------------------------------------------------------ swings
   const perfect: number[] = [];
   const levelUps: number[] = [];
-  const markers: HudSeries["markers"] = [];
   for (const sw of sim.swings) {
     const h = hits[sw.hit];
     const heavy = sw.kind === "heavy";
-    markers.push({ s: sw.s, size: heavy ? 3 : 1, kind: "attack" });
-    fx(`hit-${sw.kind}`, sw.s, sw.x, sw.y, sw.dir, h.intensity, { hit: sw.hit });
+    // The sword's trail brightens with the groove.
+    const g = grooveAt({ s: sim.groove.s, v: sim.groove.v }, sw.s);
+    fx(`hit-${sw.kind}`, sw.s, sw.x, sw.y, sw.dir, Math.min(1, h.intensity * (0.55 + 0.45 * g) + 0.25 * g), { hit: sw.hit });
     sfx("swing", sw.s - 0.04, sw.x, PRIORITY.hero + 0.5, 0.7);
     sfx(`hit-${sw.kind}`, sw.s, sw.x, heavy ? PRIORITY.hero : PRIORITY.hero + 0.3, heavy ? 1.1 : 0.95, heavy);
     // "PERFECT" for a Perfect press whose swing lands on an accent.
@@ -115,7 +116,6 @@ export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam:
       fx("perfect-accent", sw.s, sw.x, sw.y - 48, 0, 1);
     }
   }
-  const combo = sim.inputs.filter((i) => i.kind === "press" && !i.bend).map((i) => i.s);
 
   // ---------------------------------------------------------- step landings
   for (const l of sim.landings) {
@@ -278,11 +278,9 @@ export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam:
   ui.sort((a, b) => a.s - b.s);
   const hud: HudSeries = {
     kills: Float64Array.from(killTimes),
-    combo: Float64Array.from(combo.sort((a, b) => a - b)),
     perfect: Float64Array.from(perfect.sort((a, b) => a - b)),
     xpTimes: Float64Array.from(xpTimes),
     xpFill: Float32Array.from(xpFill),
-    markers: markers.sort((a, b) => a.s - b.s),
     levelUps,
     weaponFires: Object.fromEntries(Object.entries(weaponFires).map(([k, v]) => [k, Float64Array.from(v.sort((a, b) => a - b))])),
   };

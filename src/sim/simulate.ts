@@ -1385,7 +1385,8 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
     const bands = Math.max(1, Math.round(b.beats / subdivisionBeats(b.step, 2)));
     const hp = heroPose(w);
     const last = band === bands - 1;
-    const inner = (b.radius * band) / bands;
+    // The ring's front: everything inside it falls (the last band reaches everyone left).
+    const inner = 0;
     const outer = last ? 1e6 : (b.radius * (band + 1)) / bands;
     const h = addHit({ source: "ring", what: wd.id, weight: "heavy", primary: false, shape: { kind: "ring", x: hp.x, y: hp.y, inner, outer }, dir: 0, accent: 0, damage: wd.damage }, 1);
     applyHit(h);

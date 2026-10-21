@@ -20,6 +20,25 @@ const MAX_SHAKE = 9;
 export const MAX_PARTICLES = 6000;
 export const MAX_DECALS = 400;
 
+/** The beat track shows beats this far ahead (seconds), and presses this long after them. */
+const TRACK_AHEAD = 2.2;
+const PRESS_SHOW = 0.6;
+/** A released key's light fades over this long. */
+const KEY_FADE = 0.25;
+
+/** The groove meter at song time s (its last value at or before s). */
+export function grooveAt(g: { s: ArrayLike<number>; v: ArrayLike<number> }, s: number): number {
+  let lo = 0;
+  let hi = g.s.length - 1;
+  if (hi < 0 || s < g.s[0]) return 0;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (g.s[mid] <= s) lo = mid;
+    else hi = mid - 1;
+  }
+  return g.v[lo];
+}
+
 /** World pixels per full walk cycle for a regular-sized enemy (two strides). */
 const ENEMY_STRIDE = 56;
 /** An enemy this close to the hero (plus its radius), standing still, is in melee. */
@@ -104,10 +123,21 @@ export interface Shockwave {
   strength: number;
 }
 
+export type KeyName = "up" | "down" | "left" | "right";
+
 export interface HudState {
   kills: number;
-  combo: number;
-  perfects: number;
+  /** Rated presses so far. */
+  ratings: { perfect: number; great: number; good: number };
+  /** The groove meter (0–1) and the damage bonus it gives (0.19 is +19%). */
+  groove: number;
+  bonus: number;
+  /** The arrow keys: how lit each one is (0–1) and the rating of the press that lit it. */
+  keys: Record<KeyName, { lit: number; rating?: string }>;
+  /** The beat track: upcoming beats (seconds until each) from the song, downbeats marked. */
+  ticks: { dt: number; down: boolean }[];
+  /** Presses on the beat track as they happen: seconds since, offset from the grid (seconds), rating. */
+  presses: { age: number; delta: number; rating?: string; steps: boolean }[];
   xp: number;
   level: number;
   weapons: { id: string; flash: number }[];
@@ -120,12 +150,10 @@ export interface HudState {
   /** The count-in before step movement: which of the four count marks is lit (1–4), and how far the beat track has faded in (0–1). */
   countIn?: { count: number; fade: number };
   energy: number;
-  /** Upcoming hero actions: seconds until impact and size. */
-  markers: { dt: number; size: number; kind: string }[];
   banners: { text: string; age: number; dur: number }[];
   title?: { age: number; remaining: number };
   boss?: { name: string; health: number; age: number; remaining: number };
-  end?: { age: number };
+  end?: { age: number; averageGroove: number };
 }
 
 export interface Frame {
@@ -183,6 +211,8 @@ export class Evaluator {
   private enemyById: Map<number, EnemyRecord>;
   private recipes: Map<string, EffectRecipe>;
   private uiSorted: UiEvent[];
+  private downbeats: Set<number>;
+  private maxBonus: number;
 
   constructor(
     readonly plan: Plan,
@@ -192,6 +222,8 @@ export class Evaluator {
     this.enemyById = new Map(plan.enemies.map((e) => [e.id, e]));
     this.recipes = lib.effects;
     this.uiSorted = plan.events.ui;
+    this.downbeats = new Set(plan.barStart.filter((b) => Number.isFinite(b)));
+    this.maxBonus = lib.hero.groove.maxBonus;
   }
 
   private walkedCache = new Map<number, Float32Array>();
@@ -790,14 +822,42 @@ export class Evaluator {
     const plan = this.plan;
     const hs = plan.hud;
     const kills = countUpTo(hs.kills, s);
-    const combo = countUpTo(hs.combo, s);
-    const perfects = countUpTo(hs.perfect, s);
     const xi = countUpTo(hs.xpTimes, s);
-    let xp = xi > 0 ? hs.xpFill[xi - 1] : 0;
+    const xp = xi > 0 ? hs.xpFill[xi - 1] : 0;
     const level = 1 + countUpTo(Float64Array.from(hs.levelUps), s);
-    // The bar resets after each level-up.
-    const lastLU = hs.levelUps.filter((t) => t <= s).pop();
-    if (lastLU !== undefined && (xi === 0 || hs.xpTimes[xi - 1] <= lastLU + 1e-6) && s > lastLU + 0.4) xp = 0;
+    // Presses: the key display, the ratings so far, and the beat track.
+    const ratings = { perfect: 0, great: 0, good: 0 };
+    const keys: HudState["keys"] = { up: { lit: 0 }, down: { lit: 0 }, left: { lit: 0 }, right: { lit: 0 } };
+    const presses: HudState["presses"] = [];
+    const lastPress: Partial<Record<KeyName, { s: number; rating?: string; released?: number }>> = {};
+    let rating: string | undefined;
+    for (const i of plan.inputs) {
+      if (i.s > s) break;
+      if (i.kind === "release") {
+        const lp = lastPress[i.key];
+        if (lp && lp.released === undefined) lp.released = i.s;
+        continue;
+      }
+      // A diagonal's second key shows the rating of the press it bent.
+      if (!i.bend) rating = i.rating;
+      lastPress[i.key] = { s: i.s, rating: i.bend ? rating : i.rating };
+      if (i.bend) continue;
+      if (i.rating) ratings[i.rating]++;
+      if (s - i.s < PRESS_SHOW) presses.push({ age: s - i.s, delta: i.delta ?? 0, rating: i.rating, steps: i.steps });
+    }
+    for (const k of Object.keys(keys) as KeyName[]) {
+      const lp = lastPress[k];
+      if (!lp) continue;
+      const lit = lp.released === undefined ? 1 : clamp(1 - (s - lp.released) / KEY_FADE, 0, 1);
+      keys[k] = { lit, rating: lp.rating };
+    }
+    const ticks: HudState["ticks"] = [];
+    const bs = plan.songBeats;
+    for (let bi = Math.max(0, Math.floor(sbi)); bi < bs.length && bs[bi] - s <= TRACK_AHEAD; bi++) {
+      if (bs[bi] < s - 0.12) continue;
+      ticks.push({ dt: bs[bi] - s, down: this.downbeats.has(bi) });
+    }
+    const groove = grooveAt(plan.groove, s);
     const weapons: HudState["weapons"] = [];
     for (const g of plan.weapons) {
       if (g.s > s) continue;
@@ -809,13 +869,6 @@ export class Evaluator {
       }
       weapons.push({ id: g.id, flash });
     }
-    // Upcoming markers within 2 s.
-    const markers: HudState["markers"] = [];
-    for (const m of hs.markers) {
-      const dt = m.s - s;
-      if (dt < -0.15 || dt > 2.2) continue;
-      markers.push({ dt, size: m.size, kind: m.kind });
-    }
     const banners: HudState["banners"] = [];
     let title: HudState["title"];
     let boss: HudState["boss"];
@@ -825,7 +878,7 @@ export class Evaluator {
       if (u.kind === "banner" && s - u.s < u.dur) banners.push({ text: u.text, age: s - u.s, dur: u.dur });
       if (u.kind === "title" && s < u.until + 1.5) title = { age: s - u.s, remaining: u.until - s };
       if (u.kind === "bossBar" && s < u.until + 1) boss = { name: u.name, health: u.health.findLast(([t]) => t <= s)?.[1] ?? 1, age: s - u.s, remaining: u.until - s };
-      if (u.kind === "end") end = { age: s - u.s };
+      if (u.kind === "end") end = { age: s - u.s, averageGroove: plan.stats.averageGroove };
     }
     const progress = clamp(s / plan.duration, 0, 1);
     // The count-in: four count marks pulse on the last four beats before step movement.
@@ -836,7 +889,7 @@ export class Evaluator {
       const left = this.beatIndex(plan.songBeats, next.s0) - sbi;
       if (left > 0 && left <= 4) countIn = { count: clamp(5 - Math.ceil(left - 1e-6), 1, 4), fade: clamp(1 - left / 4, 0, 1) };
     }
-    return { kills, combo, perfects, xp, level, weapons, progress, elapsed: s, beatPhase, barPhase, free, countIn, energy, markers, banners, title, boss, end };
+    return { kills, ratings, groove, bonus: this.maxBonus * groove, keys, ticks, presses, xp, level, weapons, progress, elapsed: s, beatPhase, barPhase, free, countIn, energy, banners, title, boss, end };
   }
 }
 

@@ -17,6 +17,7 @@ import { makeCtx, sectionIndexAt, type Ctx, type PlannerInput } from "./context.
 import { resolveEvents } from "./musical.ts";
 import { emit } from "./emit.ts";
 import { recipeLife } from "../plan/effects-life.ts";
+import { grooveAt } from "../plan/evaluate.ts";
 import { buildSchedule, paceAt, type Schedule } from "../sim/schedule.ts";
 import { ENEMY_RATE, simulate, type SimResult } from "../sim/simulate.ts";
 import { VirtualPlayer, type Player, type SkillProfile } from "../sim/player.ts";
@@ -88,7 +89,7 @@ export function virtualPlayer(ctx: Ctx, sch: Schedule, profile: SkillProfile = "
 /** Run the simulation only (no emission): for the causality and determinism checks. */
 export function runSim(input: PlannerInput, opts: { props?: Record<string, PropInfo>; profile?: SkillProfile; player?: Player; cutS?: number; untilS?: number } = {}): SimRun {
   const { ctx, sch, map } = prepare(input, opts.props);
-  const player = opts.player ?? virtualPlayer(ctx, sch, opts.profile);
+  const player = opts.player ?? virtualPlayer(ctx, sch, opts.profile ?? input.profile ?? input.level.player);
   const sim = simulate(ctx, sch, map, { player, cutS: opts.cutS, untilS: opts.untilS });
   return { ctx, sch, map, sim };
 }
@@ -96,7 +97,7 @@ export function runSim(input: PlannerInput, opts: { props?: Record<string, PropI
 export function plan(input: PlannerInput, opts: PlannerOptions = {}): Plan {
   const now = opts.now ?? (() => 0);
   const t0 = now();
-  const profile = opts.profile ?? "skilled";
+  const profile = opts.profile ?? input.profile ?? input.level.player;
   const { ctx, sch, map } = prepare(input, opts.props);
   const tSim = now();
   const sim = simulate(ctx, sch, map, { player: virtualPlayer(ctx, sch, profile) });
@@ -221,19 +222,6 @@ export function plan(input: PlannerInput, opts: PlannerOptions = {}): Plan {
     formations: sim.formations.map((f) => ({ def: f.def, sRelease: f.sRelease, members: f.members })),
     stats,
   };
-}
-
-/** The groove meter at song time s (its last value at or before s). */
-export function grooveAt(g: { s: ArrayLike<number>; v: ArrayLike<number> }, s: number): number {
-  let lo = 0;
-  let hi = g.s.length - 1;
-  if (hi < 0 || s < g.s[0]) return 0;
-  while (lo < hi) {
-    const mid = (lo + hi + 1) >> 1;
-    if (g.s[mid] <= s) lo = mid;
-    else hi = mid - 1;
-  }
-  return g.v[lo];
 }
 
 /** A stable hash of the whole plan, for determinism checks and caching. */

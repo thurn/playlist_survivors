@@ -54,7 +54,7 @@ export interface ProfileSpec {
 export const PROFILES: Record<SkillProfile, ProfileSpec> = {
   perfect: { sd: 0, clampS: 0, downbeatsOnly: false },
   skilled: { sd: 0.012, clampS: 0.04, downbeatsOnly: false },
-  casual: { sd: 0.045, clampS: 0.15, downbeatsOnly: true },
+  casual: { sd: 0.12, clampS: 0.25, downbeatsOnly: true },
 };
 
 /** Sections as the player knows them: the press pattern and step movement. */

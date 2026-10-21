@@ -183,14 +183,12 @@ export interface Chain {
 export interface HudSeries {
   /** Song times of each kill (sorted). */
   kills: Float64Array;
-  /** Song times of each press (sorted). */
-  combo: Float64Array;
+
   perfect: Float64Array;
   /** Song time of each gem arrival and the XP bar fraction right after it. */
   xpTimes: Float64Array;
   xpFill: Float32Array;
-  /** Hero action markers for the beat track: song time and size (1 light … 3 heavy). */
-  markers: { s: number; size: number; kind: "attack" | "dodge" | "weapon" }[];
+
   levelUps: number[];
   /** Song times each weapon fired, for icon flashes. */
   weaponFires: Record<string, Float64Array>;

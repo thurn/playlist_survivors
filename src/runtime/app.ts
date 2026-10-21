@@ -24,6 +24,8 @@ export interface Params {
   /** Song time in seconds to start playback from (`?start=95` or `?start=1:35`). */
   startS: number;
   seed?: number;
+  /** The virtual player's skill profile (`?player=casual`). */
+  player?: "perfect" | "skilled" | "casual";
   test: boolean;
   bench: boolean;
   checks: boolean;
@@ -41,6 +43,7 @@ export function readParams(search: string): Params {
     avOffsetMs: num("avOffsetMs") ?? 0,
     startS: parseTimestamp(q.get("start")),
     seed: num("seed"),
+    player: (["perfect", "skilled", "casual"] as const).find((p) => p === q.get("player")),
     test: q.has("test") || q.has("capture") || q.has("bench"),
     bench: q.has("bench"),
     checks: q.has("checks"),
@@ -156,7 +159,7 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
       const sm = songMap(songName);
       const level = loadLevel(lf, lib, sm);
       overlay.sub.textContent = `${level.title.piece} — a tech demo`;
-      input = { songMap: sm, level, content: lib, seed: params.seed ?? level.seed, landmarks: landmarks(), version: __BUILD_VERSION__ };
+      input = { songMap: sm, level, content: lib, seed: params.seed ?? level.seed, profile: params.player ?? level.player, landmarks: landmarks(), version: __BUILD_VERSION__ };
     } catch (e) {
       throw e instanceof ContentError ? new Error(`Level script or content error:\n${e.message}`) : e;
     }
@@ -262,6 +265,7 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
     overlay.prompt.style.display = "block";
     overlay.status.textContent = params.metronome ? "Metronome mode: beat flash and click track" : "Headphones recommended";
     if (params.startS > 0) overlay.status.textContent += ` · starting at ${params.startS.toFixed(1)} s`;
+    if (params.player) overlay.status.textContent += ` · ${params.player} player`;
     await new Promise<void>((resolve) => {
       const go = () => {
         window.removeEventListener("pointerdown", go);

@@ -254,6 +254,7 @@ export type LevelEvent = LevelScriptInput["events"][number];
 export interface LevelScript {
   song: string;
   seed: number;
+  player: "perfect" | "skilled" | "casual";
   title: LevelScriptInput["title"];
   zones: string[];
   sections: ResolvedSection[];
@@ -400,6 +401,7 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap): Le
   return {
     song: data.song,
     seed: data.seed,
+    player: data.player,
     title: data.title,
     zones: data.zones,
     sections,

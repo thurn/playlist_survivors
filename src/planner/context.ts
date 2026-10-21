@@ -32,6 +32,8 @@ export interface PlannerInput {
   soundOnsets?: Record<string, number>;
   /** Build version, mixed into the plan hash. */
   version?: string;
+  /** The virtual player's skill profile (default: the level script's). */
+  profile?: "perfect" | "skilled" | "casual";
 }
 
 export interface SectionInfo {
