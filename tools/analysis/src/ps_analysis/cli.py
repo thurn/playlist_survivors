@@ -187,6 +187,7 @@ def cmd_check(a: argparse.Namespace) -> int:
     if a.format in ("json", "both"):
         _emit(res.to_json())
     if a.format in ("text", "both"):
+        sys.stdout.flush()
         print(ck.format_text(res), file=sys.stderr)
     return 0 if res.ok else 1
 
