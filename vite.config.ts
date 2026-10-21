@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { defineConfig } from "vitest/config";
+import { devPort, previewPort } from "./scripts/lib/port.ts";
 
 /** A hash of the planner and runtime sources: cached plans from older code are never used. */
 function buildVersion(): string {
@@ -22,9 +23,9 @@ export default defineConfig({
   base: "./",
   define: { __BUILD_VERSION__: JSON.stringify(buildVersion()) },
   // Tollgate worktrees live under .worktrees/; their files must not trigger reloads or dependency scans.
-  server: { port: 5199, strictPort: true, watch: { ignored: ["**/.worktrees/**"] } },
+  server: { port: devPort(), strictPort: true, watch: { ignored: ["**/.worktrees/**"] } },
   optimizeDeps: { entries: ["index.html"] },
-  preview: { port: 5198, strictPort: true },
+  preview: { port: previewPort(), strictPort: true },
   build: { target: "es2022", chunkSizeWarningLimit: 4000 },
   worker: { format: "es" },
   test: {

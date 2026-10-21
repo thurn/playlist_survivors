@@ -1,7 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 import sharp from "sharp";
+import { devPort } from "../../scripts/lib/port.ts";
 
-const BASE = "http://localhost:5199";
+const BASE = `http://localhost:${devPort()}`;
 
 interface Hook {
   ready: Promise<void>;

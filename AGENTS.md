@@ -8,4 +8,5 @@ Executor sessions in Hive project `playlist_survivors` work from beads.
 
 - **Delivery.** Every change, including feature beads, delivers through an independent Tollgate worktree (`tg candidate`, then `tg approve --wait`). Never commit on master or use `tg push-master`.
 - **Worktrees.** Use a fresh worktree per prompt or bead. Run `npm ci` in each new worktree before running checks. Run Tollgate waits from the main checkout, since promotion removes the clean worktree.
+- **Ports.** Port 5199 (and preview port 5198) belongs to the operator's own testing in the main checkout: never start, stop, reuse or browse a server on it. In a worktree, `npm run dev`, `npm run preview`, Playwright and `scripts/lib/server.ts` pick that worktree's own port automatically; `npm run port` prints it. Never pass `--port` to Vite, and don't use the `demo` launch config from a worktree, since it expects port 5199.
 - **No subagents.** Never dispatch a subagent for implementation, review, QA or research, and never shell out to another agent CLI.

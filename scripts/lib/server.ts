@@ -1,7 +1,8 @@
 /** Runs a Vite dev server for scripts (or reuses one already on the port). */
 import { createServer } from "vite";
+import { devPort } from "./port.ts";
 
-const PORT = 5199;
+const PORT = devPort();
 
 async function alive(url: string): Promise<boolean> {
   try {

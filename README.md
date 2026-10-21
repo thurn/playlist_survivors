@@ -20,6 +20,11 @@ npx playwright install chromium   # for captures, the benchmark and e2e tests
 npm run dev                        # http://localhost:5199
 ```
 
+The main checkout always serves on port 5199 (preview on 5198). Each git
+worktree gets its own stable port in 5200–5999 instead, hashed from its path, so
+it never touches the main server and rarely meets another worktree; `npm run port`
+prints it, and `PORT` overrides it.
+
 Open the page in desktop Chrome, wait for the progress bar, then click
 **Click to begin** (browsers need one click before audio can play). Use wired
 headphones or speakers.

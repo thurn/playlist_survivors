@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "port": "tsx -e \"import('./scripts/lib/port.ts').then((m) => console.log(m.devPort()))\"",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "eslint .",
