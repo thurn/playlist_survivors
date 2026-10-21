@@ -1,0 +1,6 @@
+version = 1
+
+[[step]]
+name = "ci"
+run = "./scripts/ci"
+timeout = "15m"
