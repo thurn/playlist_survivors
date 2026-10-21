@@ -51,6 +51,7 @@ Every important property is checkable by a command:
 | `npm run capture -- --times 12,35.2,88.31,141.5` | Headless-Chrome screenshots at exact song times into `captures/`. `--sections` captures the start of every section. |
 | `npm run bench` | Headed Chrome, whole song at real-time speed: fails if JavaScript frame time exceeds 8 ms or GPU time 10 ms at p95, or any frame exceeds 33 ms. |
 | `npm run test:e2e` | Playwright: capture hook, metronome flash on the beat, broken level script shows an error and never starts, reload uses the cached plan. |
+| `npm run qa` | Real-time playback in Chromium over the design's Manual QA items a machine can judge: planning time, audio clock rate, picture/audio offset, frame rate, hidden-tab recovery (a 10 s main-thread stall), resize letterboxing, click track, `?seed=1859`, finale clearance; writes `captures/qa/report.md` and review frames. |
 | `npm run check:analysis` | The analysis tool's pytest suite and ruff. |
 | `npm run check:all` | All of the above except captures and the benchmark. |
 
@@ -82,6 +83,8 @@ audio clock → song time s → evaluatePlan(plan, s) → PixiJS renderer + HUD
 ## Human review gates
 
 These need eyes and ears; the commands above get everything ready.
+`docs/qa/qa-report.md` maps every Manual QA item to its automated evidence
+and lists what is still open.
 
 1. **Song map** — listen to `tools/analysis/work/orpheus-galop-click.wav`
    (`npm run analysis -- click songs/orpheus-galop/songmap.json`) and confirm the
