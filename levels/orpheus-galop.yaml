@@ -9,7 +9,8 @@ title:
 zones: [twilight-glade, galop-woods, mushroom-grove, ember-hollow, infernal-grove]
 
 sections:
-  - section: prelude            # slow passage, free feel
+  - bars: 1-30            # prelude — slow passage, free feel
+    section: prelude
     moveset: spinning-glide
     zone: twilight-glade
     timeScale: 0.5
@@ -18,41 +19,48 @@ sections:
     camera: { zoom: 1.4, lead: 20, punchOnAccents: false }
     sfxPalette: soft-chimes
     intensity: 0.6
-  - section: galop-opening
+  - bars: 31-53            # galop-opening
+    section: galop-opening
     moveset: herald-cleaves
     population: [60, 120]
     roster: { slime: 2, goblin: 2, bat: 1 }
     camera: { zoom: 1.0, lead: 60, punchOnAccents: true }
     sfxPalette: crisp-steel
-  - section: theme-a
+  - bars: 54-69            # theme-a
+    section: theme-a
     moveset: galop-steps
     zone: galop-woods
     population: [120, 250]
     roster: { goblin: 4, slime: 2, orc: 1, bat: 1 }
-  - section: theme-a-repeat
+  - bars: 70-85            # theme-a-repeat
+    section: theme-a-repeat
     moveset: galop-dashes
     population: [250, 320]
     roster: { goblin: 4, orc: 2, slime: 1, bee: 1, orc-elite: 0.15 }
-  - section: kick-line
+  - bars: 86-101            # kick-line
+    section: kick-line
     moveset: kick-line-dance
     zone: mushroom-grove
     population: [320, 350]
     roster: { goblin: 3, skeleton: 3, orc: 1, slime: 1 }
     camera: { zoom: 0.9, lead: 30 }
-  - section: bridge
+  - bars: 102-107            # bridge
+    section: bridge
     moveset: descent-steps
     zone: ember-hollow
     population: [350, 420]
     roster: { skeleton: 2, orc-ember: 3, goblin: 2, bat: 1, orc-elite: 0.2 }
     camera: { zoom: 0.85, lead: 60 }
     sfxPalette: heavy-infernal
-  - section: climax
+  - bars: 108-139            # climax
+    section: climax
     moveset: revel-onslaught
     zone: infernal-grove
     population: [420, 500]
     roster: { orc-ember: 3, skeleton-ember: 3, goblin: 2, bat: 1, orc-elite: 0.25 }
     camera: { zoom: 0.7, lead: 0 }
-  - section: coda
+  - bars: 140-177            # coda
+    section: coda
     moveset: finale-frenzy
     population: [500, 450]
     intensity: 1
