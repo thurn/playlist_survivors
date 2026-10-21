@@ -16,7 +16,8 @@
     "bake": "tsx tools/baker/bake.ts",
     "bake:contact-sheet": "tsx tools/baker/contact-sheet.ts",
     "check:assets": "tsx tools/baker/check-assets.ts",
-    "check:songmap": "uv run --project tools/analysis ps-analysis check songs/orpheus-galop/songmap.json"
+    "check:songmap": "uv run --project tools/analysis ps-analysis check songs/orpheus-galop/songmap.json",
+    "check:content": "tsx scripts/check-content.ts"
   },
   "dependencies": {
     "pixi.js": "^8.22.0",

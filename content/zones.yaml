@@ -1,0 +1,67 @@
+# Zone themes. Tile and prop ids name entries in public/assets/world.json.
+zones:
+  - id: twilight-glade
+    name: Twilight Glade
+    terrain: { ground: grass-summer, path: dirt-summer, patch: patch-dirt-summer }
+    props:
+      - { sprite: tree-summer, density: 0.05 }
+      - { sprite: bush-summer, density: 0.02 }
+      - { sprite: flower-summer, density: 0.012, corridor: true }
+      - { sprite: grass-tuft, density: 0.02, corridor: true }
+      - { sprite: rock-small, density: 0.004, corridor: true }
+    ambientLight: "#4a5a8c"
+    colorGrade: twilight
+    particles: fireflies
+    tint: "#9fb0e0"
+  - id: galop-woods
+    name: Galop Woods
+    terrain: { ground: grass-summer, path: dirt-summer, patch: patch-dirt-summer }
+    props:
+      - { sprite: tree-summer, density: 0.06 }
+      - { sprite: bush-summer, density: 0.02 }
+      - { sprite: rock-big, density: 0.004 }
+      - { sprite: flower-summer, density: 0.01, corridor: true }
+      - { sprite: grass-tuft, density: 0.015, corridor: true }
+      - { sprite: rock-small, density: 0.004, corridor: true }
+    ambientLight: "#d8d0c0"
+    colorGrade: neutral
+    particles: none
+  - id: mushroom-grove
+    name: Mushroom Grove
+    terrain: { ground: grass-autumn, path: dirt-autumn, patch: patch-dirt-autumn }
+    props:
+      - { sprite: tree-autumn, density: 0.05 }
+      - { sprite: mushroom-big, density: 0.02 }
+      - { sprite: bush-autumn, density: 0.015 }
+      - { sprite: mushroom, density: 0.014, corridor: true }
+      - { sprite: flower-autumn, density: 0.008, corridor: true }
+    ambientLight: "#c09070"
+    colorGrade: autumn
+    particles: falling-leaves
+  - id: ember-hollow
+    name: Ember Hollow
+    terrain: { ground: grass-ember, path: dirt-ember, patch: patch-dirt-ember }
+    props:
+      - { sprite: tree-dead, density: 0.04 }
+      - { sprite: brazier, density: 0.006, light: { color: "#ff7a2e", radius: 96 } }
+      - { sprite: ruin-pillar, density: 0.006 }
+      - { sprite: rock-small, density: 0.006, corridor: true }
+      - { sprite: patch-lava, density: 0.004, corridor: true }
+    ambientLight: "#7a3a2e"
+    colorGrade: ember
+    particles: rising-embers
+    heatHaze: true
+  - id: infernal-grove
+    name: Infernal Grove
+    terrain: { ground: lava-rock, path: dirt-ember, patch: patch-lava }
+    props:
+      - { sprite: tree-dead, density: 0.03 }
+      - { sprite: lava-pool, density: 0.01 }
+      - { sprite: brazier, density: 0.01, light: { color: "#ff6a1e", radius: 110 } }
+      - { sprite: ruin-wall, density: 0.006 }
+      - { sprite: campfire, density: 0.004, light: { color: "#ffa040", radius: 90 }, corridor: true }
+      - { sprite: rock-small, density: 0.006, corridor: true }
+    ambientLight: "#5a2a2a"
+    colorGrade: infernal
+    particles: rising-embers
+    heatHaze: true

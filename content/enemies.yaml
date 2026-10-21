@@ -1,0 +1,111 @@
+# The Can-Can roster. `atlas` names a sprite in public/assets/characters.json.
+enemies:
+  - id: slime
+    atlas: slime
+    radius: 10
+    group: beat
+    speed: 60
+    lifetime: [4, 30]
+    size: regular
+    walkCycleBeats: 1
+    hop: true
+    death: { recipe: death-slime, debris: ["#7ad04a", "#c8f07a"] }
+  - id: bat
+    atlas: bat
+    radius: 10
+    group: eighth
+    speed: 110
+    lifetime: [4, 30]
+    size: regular
+    hover: 18
+    walkCycleBeats: 0.5
+    death: { recipe: death-flyer, debris: ["#5a3a6a", "#8b1a1a"] }
+  - id: eyeball
+    atlas: eyeball
+    radius: 11
+    group: bar
+    speed: 45
+    lifetime: [6, 40]
+    size: regular
+    hover: 14
+    walkCycleBeats: 2
+    death: { recipe: death-flyer, debris: ["#f0e8e0", "#c03030"] }
+  - id: bee
+    atlas: bee
+    radius: 9
+    group: eighth
+    speed: 120
+    lifetime: [3, 25]
+    size: regular
+    hover: 16
+    walkCycleBeats: 0.5
+    death: { recipe: death-flyer, debris: ["#f0c020", "#302010"] }
+  - id: goblin
+    atlas: goblin
+    radius: 12
+    group: beat
+    speed: 75
+    lifetime: [4, 40]
+    size: regular
+    death: { recipe: death-humanoid, debris: ["#5a8f3a", "#8b1a1a"] }
+  - id: orc
+    atlas: orc
+    radius: 13
+    group: bar
+    speed: 70
+    lifetime: [4, 40]
+    size: regular
+    death: { recipe: death-humanoid, debris: ["#6a8a4a", "#8b1a1a"] }
+  - id: orc-elite
+    atlas: orc-elite
+    radius: 14
+    group: bar
+    speed: 65
+    lifetime: [8, 40]
+    size: elite
+    hits: 3
+    death: { recipe: death-elite, debris: ["#6a8a4a", "#8b1a1a", "#a0a0a8"] }
+  - id: orc-ember
+    atlas: orc-ember
+    radius: 13
+    group: bar
+    speed: 72
+    lifetime: [4, 40]
+    size: regular
+    death: { recipe: death-ember, debris: ["#ff7a2e", "#5a1a1a"] }
+  - id: skeleton
+    atlas: skeleton
+    radius: 12
+    group: beat
+    speed: 72
+    lifetime: [4, 40]
+    size: regular
+    death: { recipe: death-skeleton, debris: ["#e8e0d0", "#a89880"] }
+  - id: skeleton-ember
+    atlas: skeleton-ember
+    radius: 12
+    group: beat
+    speed: 72
+    lifetime: [4, 40]
+    size: regular
+    death: { recipe: death-ember, debris: ["#ffb060", "#e8e0d0"] }
+  - id: skeleton-archer
+    atlas: skeleton-archer
+    radius: 12
+    group: bar
+    speed: 60
+    lifetime: [6, 40]
+    size: regular
+    attack: archer
+    death: { recipe: death-skeleton, debris: ["#e8e0d0", "#a89880"] }
+  - id: minotaur
+    atlas: minotaur
+    radius: 26
+    group: two-bar
+    speed: 70
+    lifetime: [10, 120]
+    size: boss
+    attack: slam
+    scale: 2
+    walkCycleBeats: 4
+    death: { recipe: death-boss, debris: ["#6a4a2a", "#8b1a1a", "#ffd080"] }

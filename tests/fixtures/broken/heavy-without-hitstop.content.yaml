@@ -1,0 +1,6 @@
+# expect: moves.broken-smash.hitStopMs: heavy moves need hitStopMs
+moves:
+  - id: broken-smash
+    animation: { name: slash, fps: 16 }
+    hitShape: { kind: circle, radius: 40 }
+    weight: heavy

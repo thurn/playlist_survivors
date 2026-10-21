@@ -1,0 +1,17 @@
+# Sound palettes. Sample ids name entries in public/assets/sfx/sounds.json.
+soundPalettes:
+  - id: crisp-steel
+    tuned: false
+    sounds:
+      hit-light: [kenney/impactMetal_light_000]
+      hit-medium: [kenney/impactMetal_medium_000]
+      hit-heavy: [kenney/impactMetal_heavy_000]
+      kill-multi: [kenney/impactPunch_heavy_000]
+      near-miss: [kenney/impactSoft_medium_000]
+  - id: soft-chimes
+    extends: crisp-steel
+    tuned: true
+    sounds: {}
+  - id: heavy-infernal
+    extends: crisp-steel
+    sounds: {}

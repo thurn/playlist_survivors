@@ -1,0 +1,12 @@
+# expect: :8: sections[0].population[1]
+song: orpheus-galop
+seed: 1
+title: { piece: "x", composer: "y", performer: "z" }
+zones: [twilight-glade]
+sections:
+  - section: prelude
+    population: [0, 9000]
+    moveset: spinning-glide
+    zone: twilight-glade
+    roster: { bat: 1 }
+    sfxPalette: soft-chimes

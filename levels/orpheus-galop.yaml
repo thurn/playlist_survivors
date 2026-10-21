@@ -1,0 +1,86 @@
+# Level script for the Can-Can level. Sections are keyed by song-map section;
+# every musical reference is a bar/beat or a named musical moment, never seconds.
+song: orpheus-galop
+seed: 1858
+title:
+  piece: "Orpheus in the Underworld — Overture"
+  composer: "Jacques Offenbach"
+  performer: "Musopen archive recording"   # the source credits no performer
+zones: [twilight-glade, galop-woods, mushroom-grove, ember-hollow, infernal-grove]
+
+sections:
+  - section: prelude            # slow passage, free feel
+    moveset: spinning-glide
+    zone: twilight-glade
+    timeScale: 0.5
+    population: [0, 60]
+    roster: { bat: 3, slime: 2, eyeball: 1 }
+    camera: { zoom: 1.4, lead: 20, punchOnAccents: false }
+    sfxPalette: soft-chimes
+    intensity: 0.6
+  - section: galop-opening
+    moveset: herald-cleaves
+    population: [60, 120]
+    roster: { slime: 2, goblin: 2, bat: 1 }
+    camera: { zoom: 1.0, lead: 60, punchOnAccents: true }
+    sfxPalette: crisp-steel
+  - section: theme-a
+    moveset: galop-steps
+    zone: galop-woods
+    population: [120, 250]
+    roster: { goblin: 4, slime: 2, orc: 1, bat: 1 }
+  - section: theme-a-repeat
+    moveset: galop-dashes
+    population: [250, 320]
+    roster: { goblin: 4, orc: 2, slime: 1, bee: 1, orc-elite: 0.15 }
+  - section: kick-line
+    moveset: kick-line-dance
+    zone: mushroom-grove
+    population: [320, 350]
+    roster: { goblin: 3, skeleton: 3, orc: 1, slime: 1 }
+    camera: { zoom: 0.9, lead: 30 }
+  - section: bridge
+    moveset: descent-steps
+    zone: ember-hollow
+    population: [350, 420]
+    roster: { skeleton: 2, orc-ember: 3, goblin: 2, bat: 1, orc-elite: 0.2 }
+    camera: { zoom: 0.85, lead: 60 }
+    sfxPalette: heavy-infernal
+  - section: climax
+    moveset: revel-onslaught
+    zone: infernal-grove
+    population: [420, 500]
+    roster: { orc-ember: 3, skeleton-ember: 3, goblin: 2, bat: 1, orc-elite: 0.25 }
+    camera: { zoom: 0.7, lead: 0 }
+  - section: coda
+    moveset: finale-frenzy
+    population: [500, 450]
+    intensity: 1
+
+events:
+  - at: { section: prelude, point: start }
+    titleCard: { until: { section: prelude, phrase: 2, point: finalAccent } }
+  - at: { section: galop-opening, point: start }
+    levelUp: orbiting-blades
+  - at: { section: theme-a-repeat, point: start }
+    levelUp: chain-lightning
+  - at: { section: theme-a-repeat, point: start, offsetBeats: 4 }
+    formation: bee-wedge
+  - at: { section: theme-a-repeat, phrase: 2, point: start }
+    formation: bee-wedge
+  - at: { section: kick-line, point: start }
+    formation: skeleton-kick-line
+    banner: "THE KICK LINE"
+    threats: { kind: archer-volley, every: 2 bars, until: { section: kick-line, phrase: 2, point: finalAccent, offsetBeats: -4 }, archers: 2 }
+  - at: { section: bridge, point: start }
+    levelUp: fire-trail
+    banner: "THE DESCENT"
+  - at: { section: climax, point: start }
+    boss: { type: minotaur, hits: 8, slams: 4 }
+    banner: "LORD OF THE REVEL"
+    landmark: standing-stones
+  - at: { accent: tutti-chord, fromEnd: 2 }
+    timeScale: 0.4          # slow motion after the boss's death blow
+  - at: { accent: tutti-chord, fromEnd: 1 }
+    blast: finale-blast
+    landmark: ruined-shrine

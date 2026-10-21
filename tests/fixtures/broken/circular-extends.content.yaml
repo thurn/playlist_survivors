@@ -1,0 +1,6 @@
+# expect: circular extends
+movesets:
+  - id: loop-a
+    extends: loop-b
+  - id: loop-b
+    extends: loop-a

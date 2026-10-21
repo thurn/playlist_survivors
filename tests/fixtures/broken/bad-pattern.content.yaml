@@ -1,0 +1,9 @@
+# expect: :8: movesets[0].attacks[0].pattern: patterns use x, . and |
+movesets:
+  - id: broken-pattern
+    locomotion: { mode: step, every: beat }
+    travelSpeed: 50
+    grid: eighth
+    attacks:
+      - pattern: "x-x-"
+        moves: [slash]

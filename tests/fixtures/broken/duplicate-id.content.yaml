@@ -1,0 +1,6 @@
+# expect: duplicate id "slash"
+moves:
+  - id: slash
+    animation: { name: slash, fps: 16 }
+    hitShape: { kind: arc, radius: 56, degrees: 120 }
+    weight: light

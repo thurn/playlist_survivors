@@ -1,0 +1,20 @@
+formations:
+  - id: skeleton-kick-line
+    shape: kick-line
+    enemy: skeleton-ember
+    count: 12
+    spacing: 34                  # the line is about 374 px long
+    enterFrom: right
+    entranceBeats: 8
+    step: beat
+    dance: { animation: kick, on: beat, alternateLegs: true }
+    release: { at: finalAccentOfPhrase, phrases: 2, move: sweep, stagger: sixteenth }
+  - id: bee-wedge
+    shape: v-wedge
+    enemy: bee
+    count: 9
+    spacing: 22
+    enterFrom: top
+    entranceBeats: 4
+    step: eighth
+    release: { at: afterBeats, beats: 6, mode: break }
