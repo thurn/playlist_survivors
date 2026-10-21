@@ -5,7 +5,8 @@
 Playlist Survivors is meant to be a rhythm game. The player presses the arrow
 keys or WASD to the beat of a song. The hero steps one pace per press and
 swings a sword automatically, like a Vampire Survivors weapon, while a horde
-closes in.
+closes in. Every sword strike, and every impact sound, lands exactly on the
+beat.
 
 The current tech demo does not work that way. It plays itself, and it was
 built by planning the whole level backwards from the kills:
@@ -46,6 +47,9 @@ existing renderer plays the recording back in sync with the music.
 - **Automatic, intelligent attacks.** The sword aims itself at the best
   target, like Vampire Survivors weapons. The player chooses where to stand,
   not where to swing.
+- **Every impact on the beat.** Sword strikes and their impact sounds always
+  land exactly on the musical grid, however early or late the player
+  presses. Timing changes how hard the sword hits, never when it lands.
 - **Reward without punishment.** Accurate timing earns up to about 20% more
   damage. Off-beat or sparse pressing still works and still earns some
   reward. The hero never takes damage.
@@ -122,15 +126,18 @@ The parts, in the order a frame of the game experiences them:
 - **Recorder:** writes the result in the existing plan format, so the
   evaluator, renderer, effects and sounds keep working.
 
-A press in a step section, from key to screen:
+A press in a step section, from key to screen. The press moves the hero at
+once, and the swing it arms strikes on the next beat:
 
 ```text
-song 88.302  virtual player presses Right (8 ms before the beat at 88.310)
+song 88.002  virtual player presses Right (8 ms before the beat at 88.010)
              rating: Perfect, accuracy 1.0, groove 0.93 -> 0.95
-             hero starts a 44 px step right, finishing at 88.412
-             auto-aim scores 16 directions; best is 205 degrees (9 enemies)
-             swing impact at 88.302, damage 1.0 x 1.19 = 1.19
-             7 enemies die, 2 orc elites take damage and flash
+             hero starts a 44 px step right, finishing at 88.112
+             the sword is armed to strike on the next beat, 88.334
+song 88.147  wind-up starts; auto-aim scores 16 directions and picks
+             205 degrees (9 enemies in the arc)
+song 88.334  impact exactly on the beat, damage 1.0 x 1.19 = 1.19
+             impact sound on the beat; 7 enemies die, 2 orc elites flash
 ```
 
 ## Movement Model
@@ -158,6 +165,9 @@ removes the skating.
 - **Hop:** a 5 px jump arc, and a small dust puff on landing.
 - **Starts on the press.** There is no wind-up before the press, because the
   game cannot know a press is coming.
+- **Quiet:** a step makes no sharp sound, only a soft rustle well under the
+  music. Its landing puff is visual. The only percussive sounds are the
+  impacts, which are on the grid.
 - **Diagonals:** the first key starts the step immediately. If a
   perpendicular key arrives within 40 ms, the rest of the step bends
   toward the diagonal and still covers 44 px in total. Bending only reacts
@@ -209,9 +219,9 @@ beat starts to matter.
 
 The hero's animation follows directly from the movement model and swings:
 
-- **Swinging:** the swing animation for its full length, facing the aim
-  direction, even while a step moves the body. A swing that starts during a
-  step reads as a jumping slash.
+- **Swinging:** the swing animation for its full length, timed so its
+  impact frame shows at the strike time, facing the aim direction. A
+  wind-up that overlaps a step reads as a jumping slash.
 - **Stepping without a swing:** the jump animation over the step's duration.
 - **Walking:** the walk cycle, advanced by distance.
 - **Standing:** the idle animation, breathing on the beat.
@@ -239,7 +249,9 @@ size maps to an **accuracy** between 0.1 and 1.0:
 120 and up   (none)     0.4 -> 0.1, reached at 250 ms or half a grid step
 ```
 
-Any press, however late, still moves the hero and swings the sword.
+Any press, however late, still moves the hero at once and arms a swing.
+The swing strikes on the grid either way. See
+[When the sword strikes](#when-the-sword-strikes) below.
 
 ### The groove meter
 
@@ -250,7 +262,7 @@ accuracy. It is the player's running skill score.
   accuracy: `groove += 0.3 * (accuracy - groove)`.
 - **Press rate does not matter.** Pressing perfectly once per bar keeps the
   meter as high as pressing perfectly on every beat. Pressing more often is
-  rewarded separately, because every press swings.
+  rewarded separately, because every press arms a swing.
 - **Idle decay:** with no presses in step movement, the meter halves every
   8 bars.
 - **Frozen in free movement:** a quiet passage is a rest for the groove too.
@@ -288,8 +300,10 @@ blocks progress.
 ### Heavy swings on accents
 
 An **accent** is a loud, marked moment in the song map, such as a tutti
-chord. A press rated Great or better within 40 ms of an accent becomes a
-**cleave**, a heavy swing:
+chord. When a swing strikes on an accent, and the press that armed it was
+rated Great or better, it becomes a **cleave**, a heavy swing. A skilled
+player therefore presses one beat before each big chord, and the cleave
+lands on the chord:
 
 - **Shape:** an arc of radius 130 px and 200 degrees.
 - **Damage:** 2.5 base damage.
@@ -310,11 +324,37 @@ moments. Enemies in a line die one after another on sixteenth notes.
 The sword is an automatic weapon. The player triggers it by pressing, or the
 game triggers it on a timer, and the game always picks the direction.
 
+### When the sword strikes
+
+Every swing strikes exactly on a time from the song's grid. The game knows
+those times in advance, because they come from the song, so every swing can
+play a full wind-up and every impact sound can be scheduled on the beat.
+
+- **A press arms the sword.** The armed swing strikes on the first grid time
+  at least 90 ms after the press. For an on-time press, that is the next
+  beat.
+- **One swing per grid time.** A press whose strike time is already taken
+  only steps.
+- **Wind-up:** the swing animation starts so its impact frame lands on the
+  strike time, about 190 ms before it. When the press comes later than
+  that, the wind-up plays faster to fit, but never in less than 90 ms.
+- **Hits resolve at the strike time,** against the enemies' positions then.
+
+Pressing on beat 1 therefore steps on beat 1 and strikes on beat 2. Pressing
+on every beat gives a step and a strike on every beat, a little dance of
+step-and-slash. A late press still strikes on the beat: a casual player's
+steps drift off the beat, but their sword never does.
+
+```text
+grid (beats)   88.010        88.334        88.658
+press          88.002 Right  88.341 Up
+step           88.002        88.341
+strike                       88.334        88.658
+```
+
 ### Swings in each mode
 
-- **Step movement:** every press swings. At most one swing happens per
-  timing-grid slot, the window from half a grid step before a grid time to
-  half a grid step after it. A second press in the same slot only steps.
+- **Step movement:** every press arms one swing, as above.
 - **Idle swings in step movement:** if a bar ends with no swing in it, the
   sword swings by itself on the next downbeat. A player who stops pressing
   still fights.
@@ -323,15 +363,13 @@ game triggers it on a timer, and the game always picks the direction.
   strong moments the song map marks in free-feel sections, where there is no
   steady beat.
 
-Automatic swings know their time in advance, because it comes from the
-song. They play the full wind-up so the impact frame lands on the beat.
-Press swings cannot have a wind-up, so they start on the impact frame at
-the press.
+Automatic swings strike on the grid in the same way, with a full wind-up.
 
 ### Choosing the direction
 
 Auto-aim picks the direction that hits the most valuable targets. It reads
-only the game state at the moment of the swing.
+only the game state at the start of the wind-up, when the hero turns to
+face the swing.
 
 ```ts
 function aim(state: SimState, shape: ArcShape): number {
@@ -470,9 +508,10 @@ rate = sectionTimeScale(s) * nearMissDip(s) * (inHitStop(s) ? 0 : 1)
 w += rate * (1 / 120)
 ```
 
-Presses fall between steps. A press takes effect at its exact time: its
-rating, swing impact and step start use the press timestamp, not the step
-boundary.
+Presses fall between simulation steps. A press takes effect at its exact
+time: its rating and step start use the press timestamp, not the step
+boundary. Strikes, weapon hits and other impacts happen at their exact grid
+times, also between steps.
 
 ### Hit-stop
 
@@ -520,8 +559,12 @@ It cannot see the future of the simulation.
   says which grid slots the skilled player presses. One character per
   slot: `x` presses and `.` rests. For example, `x.` presses once per 2/4
   bar and `xx` presses every beat.
-- **Accents:** it always presses on accents strong enough for a cleave,
-  even on a rest slot.
+- **Accents:** it always presses one grid step before an accent strong
+  enough for a cleave, even on a rest slot, so the cleave strikes on the
+  accent.
+- **Strikes follow presses:** each press's swing strikes one grid step
+  later. The pattern `.x` presses on beat 2 of a 2/4 bar, so its swings
+  strike on downbeats.
 - **Human timing:** each press lands at its grid time plus a seeded random
   error drawn from its skill profile. See
   [Skill profiles](#skill-profiles) below.
@@ -615,10 +658,13 @@ These moves and movesets are removed, because no input can produce them:
 - **Enemies** gain `health`, see the table in [Damage](#damage), and a
   `behavior`: `chase`, `archer` or `boss`. The planning-only `lifetime` range
   and the elite `hits` count are removed.
-- **Weapons** gain a base `damage` per hit: orbiting blades 0.6 with a 0.25 s
-  per-enemy cooldown per blade, chain lightning 1.2 per jump, fire trail 0.4
-  per beat, and the finale blast enough to kill anything. The weapons'
+- **Weapons** gain a base `damage` per hit: orbiting blades 0.6 to each
+  enemy a blade touches, chain lightning 1.2 per jump, fire trail 0.4 per
+  beat, and the finale blast enough to kill anything. The weapons'
   planning-only `killsPerFiring` range is removed.
+- **Weapons hit only on their subdivision.** Blades damage what they touch
+  on each eighth note, not continuously, so weapon impact sounds are on the
+  grid too.
 
 ### Level script
 
@@ -640,13 +686,13 @@ The skilled player's presses for the Can-Can level:
 ```text
 section          movement  presses  why
 prelude          free      -        slow, rubato; walking
-galop-opening    steps     x.       once per bar; cleaves on tutti chords
+galop-opening    steps     .x       once per bar; cleaves on tutti chords
 theme-a          steps     xx       every beat (about 180 per minute)
 theme-a-repeat   steps     xx
-kick-line        steps     x.       once per bar while the line dances
+kick-line        steps     .x       once per bar while the line dances
 bridge           steps     xx
 climax           steps     xx
-coda             steps     x.       about 115 per minute at 230 BPM
+coda             steps     .x       about 115 per minute at 230 BPM
 ```
 
 The loader checks that each section's pace is reachable. Forward progress
@@ -655,7 +701,7 @@ loader fails with a line-numbered error, as for other content errors:
 
 ```text
 levels/orpheus-galop.yaml:47: section kick-line: pace 70 needs 1.6 steps per
-second forward, but "x." presses only 1.47 times per second
+second forward, but ".x" presses only 1.47 times per second
 ```
 
 ### Level-ups and experience
@@ -736,6 +782,14 @@ The HUD should make it obvious that a player is pressing keys to the beat.
 The planner's output checks are replaced by simulation checks. They run when
 the recording is built and in the test suite, and every failure names the
 time and entity involved.
+
+Checks that keep the demo on the music:
+
+- **Impacts on the grid:** every sword strike, and its impact sound, lands
+  within 1 ms of a grid time, for every skill profile. Weapon hits land on
+  their subdivisions, shockwave bands on sixteenth notes, and slams and
+  arrow arrivals on beats.
+- **Sound budget:** no sixteenth-note slot exceeds the voice budget.
 
 Checks that prove the demo is honest:
 
@@ -854,7 +908,8 @@ Do this as soon as the simulation runs end to end, before broader review.
   face that side, whatever direction the hero stepped.
 - **Enemies chase and surround** the hero. Nobody walks to a fixed spot and
   waits.
-- **Kills land on presses,** and presses sit on the beat to the ear.
+- **Every sword impact is on the beat** to the ear, one beat after the step
+  that armed it.
 
 ### Full playthrough
 
@@ -883,6 +938,9 @@ Play the whole song at `?player=skilled` with headphones.
 
 - **Open `?player=casual`.** The game is visibly calmer: one press per bar,
   lower groove (around +5% to +10%), and orcs often needing two swings.
+- **Casual impacts stay on the beat.** The casual player's steps drift off
+  the beat, but every sword impact and impact sound is still exactly on
+  it.
 - **The demo still progresses.** The casual run reaches the finale and the
   blast clears the screen. Its boss may outlive the death chord until
   finished off or caught by the blast.
