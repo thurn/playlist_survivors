@@ -1,0 +1,18 @@
+{
+  "$comment": "Goblin: ULPC goblin head on the green teen body, short trousers and a short (arming) sword.",
+  "id": "goblin",
+  "bodyType": "teen",
+  "layers": [
+    { "item": "body/body", "color": "green" },
+    { "item": "head/heads/fantasy/heads_goblin", "color": "green" },
+    { "item": "legs/shorts/legs_shorts", "color": "brown" },
+    { "item": "torso/waist/belt_leather", "variant": "leather" },
+    { "item": "weapons/sword/weapon_sword_arming", "variant": "iron" }
+  ],
+  "animations": {
+    "idle": {},
+    "walk": {},
+    "slash": { "impactFrame": 4 },
+    "hurt": {}
+  }
+}

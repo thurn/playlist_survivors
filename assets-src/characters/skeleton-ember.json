@@ -1,0 +1,17 @@
+{
+  "$comment": "Ember skeleton for the kick line: glowing orange/red bones, unarmed. `kick` and `kick-alt` (the other leg) are generated from the standing walk frame by tools/baker/lib/kick.ts.",
+  "id": "skeleton-ember",
+  "bodyType": "male",
+  "layers": [
+    { "item": "body/special/body_skeleton", "color": { "custom": ["#2a0806", "#6b1408", "#b8320c", "#e8651a", "#ffa640", "#ffe28a"] } },
+    { "item": "head/heads/undead/heads_skeleton", "color": { "custom": ["#2a0806", "#6b1408", "#b8320c", "#e8651a", "#ffa640", "#ffe28a"] } }
+  ],
+  "animations": {
+    "idle": {},
+    "walk": {},
+    "slash": { "impactFrame": 4 },
+    "hurt": {},
+    "kick": { "script": "kick", "fps": 8, "impactFrame": 2 },
+    "kick-alt": { "script": "kick-alt", "fps": 8, "impactFrame": 2 }
+  }
+}

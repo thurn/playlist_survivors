@@ -1,0 +1,54 @@
+{
+  "$comment": "Skeleton archer: skeleton body with a bow. The bow is held in the generator's 128 px walk sheet; it has no idle frames, so idle borrows that sheet's standing column. The bow is put away for the dagger slash.",
+  "id": "skeleton-archer",
+  "bodyType": "male",
+  "layers": [
+    {
+      "item": "body/special/body_skeleton",
+      "color": "white"
+    },
+    {
+      "item": "head/heads/undead/heads_skeleton",
+      "color": "white"
+    },
+    {
+      "item": "weapons/ranged/bow/weapon_ranged_bow_normal",
+      "variant": "dark",
+      "except": [
+        "slash"
+      ],
+      "fallback": {
+        "idle": "walk_128:0"
+      }
+    },
+    {
+      "item": "weapons/ranged/bow/weapon_ranged_bow_arrow",
+      "variant": "arrow",
+      "only": [
+        "shoot"
+      ]
+    },
+    {
+      "item": "weapons/sword/weapon_sword_dagger",
+      "variant": "dagger",
+      "only": [
+        "slash"
+      ]
+    }
+  ],
+  "animations": {
+    "idle": {},
+    "walk": {
+      "custom": [
+        "walk_128"
+      ]
+    },
+    "slash": {
+      "impactFrame": 4
+    },
+    "shoot": {
+      "impactFrame": 8
+    },
+    "hurt": {}
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "$comment": "Small monsters from source-of-tales. walk = the XML 'stand' cycle (their looping move), attack = the XML lunge (offsets baked into a frame with an 8 px margin), hurt = the XML death. The eyeball has no XML or death sheet: its cycle follows the other monsters' XML and its death is a generated fade. Flying monsters have their baked shadow removed and are anchored where it was.",
+  "monsters": {
+    "slime": { "xml": "lpc:source-of-tales/sprites/monsters/slime.xml" },
+    "bat": { "xml": "lpc:source-of-tales/sprites/monsters/bat.xml", "flying": true },
+    "bee": { "xml": "lpc:source-of-tales/sprites/monsters/bee.xml", "flying": true },
+    "eyeball": { "image": "lpc:source-of-tales/sprites/monsters/eyeball.png", "frameW": 32, "frameH": 38, "flying": true }
+  }
+}

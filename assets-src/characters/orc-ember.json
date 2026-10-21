@@ -1,0 +1,10 @@
+{
+  "$comment": "Ember orc for the infernal zones: the orc recipe with charred red skin.",
+  "id": "orc-ember",
+  "extends": "orc",
+  "override": {
+    "body/body": { "color": { "custom": ["#120706", "#3a0f0a", "#6b1a0e", "#9c2c12", "#cf4a18", "#f07a2a"] } },
+    "head/heads/fantasy/heads_orc_male": { "color": { "custom": ["#120706", "#3a0f0a", "#6b1a0e", "#9c2c12", "#cf4a18", "#f07a2a"] } },
+    "legs/pants/legs_pantaloons": { "color": "black" }
+  }
+}

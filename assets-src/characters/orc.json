@@ -1,0 +1,19 @@
+{
+  "$comment": "Orc: ULPC orc head on the dark green male body with a mace. The mace only exists as an oversized swing, so `slash` uses the 192 px slash_oversize sheet; idle borrows the mace's standing walk frame.",
+  "id": "orc",
+  "bodyType": "male",
+  "layers": [
+    { "item": "body/body", "color": "dark_green" },
+    { "item": "head/heads/fantasy/heads_orc_male", "color": "dark_green" },
+    { "item": "legs/pants/legs_pantaloons", "color": "brown" },
+    { "item": "torso/waist/belt_leather", "variant": "charcoal" },
+    { "item": "arms/wrists/arms_bracers", "color": "iron" },
+    { "item": "weapons/blunt/weapon_blunt_mace", "variant": "mace", "fallback": { "idle": "walk:0" } }
+  ],
+  "animations": {
+    "idle": {},
+    "walk": {},
+    "slash": { "custom": ["slash_oversize"], "impactFrame": 4 },
+    "hurt": {}
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "$comment": "Orc elite: the orc head on the muscular body, armoured with a horned helmet, iron bauldron and bracers, wielding a war axe (oversized swing).",
+  "id": "orc-elite",
+  "bodyType": "muscular",
+  "layers": [
+    { "item": "body/body", "color": "dark_green" },
+    { "item": "head/heads/fantasy/heads_orc_male", "color": "dark_green" },
+    { "item": "legs/pants/legs_pants", "color": "charcoal" },
+    { "item": "feet/boots/feet_boots_basic", "color": "black" },
+    { "item": "arms/bauldron", "color": "metal.iron" },
+    { "item": "arms/wrists/arms_bracers", "color": "iron" },
+    { "item": "headwear/helmets/helmets/hat_helmet_barbarian_viking", "colors": ["iron", "black"] },
+    { "item": "weapons/blunt/weapon_blunt_waraxe", "variant": "waraxe", "fallback": { "idle": "walk:0" } }
+  ],
+  "animations": {
+    "idle": {},
+    "walk": {},
+    "slash": { "custom": ["slash_oversize"], "impactFrame": 4 },
+    "hurt": {}
+  }
+}

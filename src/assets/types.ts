@@ -31,6 +31,8 @@ export interface SpriteAnimation {
   frames: Record<Facing, SpriteFrame[]>;
   /** Frame on which a hit lands, for attack animations. */
   impactFrame?: number;
+  /** Suggested playback rate in frames per second (moves may override it). */
+  fps?: number;
 }
 
 export interface CharacterSprite {
@@ -115,4 +117,9 @@ export interface CreditEntry {
 export interface CreditsFile {
   recording: { title: string; composer: string; performer: string; licence: string; url: string; notes?: string };
   entries: CreditEntry[];
+  /**
+   * Licences of the baked output files. Art derived from CC-BY-SA sources is
+   * itself CC-BY-SA, so a page holding any such art is listed as CC-BY-SA.
+   */
+  outputs?: Array<{ file: string; licence: string; notes?: string }>;
 }

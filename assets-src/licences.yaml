@@ -1,0 +1,177 @@
+# Licence manifest for every non-generator source file the baker may use.
+#
+# Generator art (ulpc: references) is licensed by the generator's CREDITS.csv
+# and is not listed here. Every other source reference must match one of the
+# `files` glob patterns below (first match wins; `*` stays inside one path
+# segment, `**` crosses segments):
+#   lpc:<path under ~/Documents/lpc>
+#   dl:<source id from tools/baker/sources.json>/<path inside the archive>
+#
+# Allowed licences: CC0, CC-BY, OGA-BY, CC-BY-SA. GPL-only and LGPL-only art
+# is rejected: an entry whose licences are all disallowed makes the bake fail
+# if anything matching it is used. When several licences are listed, the
+# credits record the least restrictive allowed one
+# (CC0 < OGA-BY < CC-BY < CC-BY-SA).
+
+entries:
+  # ------------------------------------------------------------- LPC Revised
+  - files: ["lpc:lpc-revised/Terrain/terrain_*.png"]
+    title: LPC Revised terrain (grass and dirt)
+    licences: [OGA-BY 3.0]
+    authors: [Lanea Zimmerman (Sharm), Eliza Wyatt (DeathsDarling)]
+    urls: [https://github.com/ElizaWy/LPC, https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles]
+    notes: Original grass and dirt by Lanea Zimmerman; edited, animated and recolored by Eliza Wyatt. Ember variants recolored by the baker.
+  - files: ["lpc:lpc-revised/Terrain/trees_*.png"]
+    title: LPC Revised trees
+    licences: [OGA-BY 3.0]
+    authors: [Lanea Zimmerman (Sharm), Eliza Wyatt (DeathsDarling)]
+    urls: [https://github.com/ElizaWy/LPC, https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles]
+    notes: Original trees by Lanea Zimmerman. Leafless tree and thick trunk by Eliza Wyatt.
+  - files: ["lpc:lpc-revised/Terrain/plants_*.png"]
+    title: LPC Revised plants
+    licences: [OGA-BY 3.0]
+    authors: [Lanea Zimmerman (Sharm), Eliza Wyatt (DeathsDarling), Hyptosis]
+    urls: [https://github.com/ElizaWy/LPC, https://opengameart.org/content/lots-of-free-2d-tiles-and-sprites-by-hyptosis]
+    notes: Hyptosis permitted use of his CC-BY 3.0 work under OGA-BY 3.0.
+  - files: ["lpc:lpc-revised/Terrain/mushrooms.png"]
+    title: LPC Revised mushrooms
+    licences: [OGA-BY 3.0]
+    authors: [Eliza Wyatt (DeathsDarling), Hyptosis]
+    urls: [https://github.com/ElizaWy/LPC, https://opengameart.org/content/lots-of-free-2d-tiles-and-sprites-by-hyptosis]
+  - files: ["lpc:lpc-revised/Terrain/flowers.png"]
+    title: LPC Revised flowers
+    licences: [OGA-BY 3.0]
+    authors: [Lanea Zimmerman (Sharm), Hyptosis, Eliza Wyatt (DeathsDarling), BlueCarrot16]
+    urls: [https://github.com/ElizaWy/LPC, https://opengameart.org/content/lpc-interior-castle-tiles, https://opengameart.org/content/lots-of-free-2d-tiles-and-sprites-by-hyptosis]
+  - files: ["lpc:lpc-revised/Terrain/wildflowers_*.png"]
+    title: LPC Revised wildflowers
+    licences: [OGA-BY 3.0]
+    authors: [Lanea Zimmerman (Sharm), Eliza Wyatt (DeathsDarling), Demetrius]
+    urls: [https://github.com/ElizaWy/LPC, https://opengameart.org/content/lpc-winter-tiles]
+  - files: ["lpc:lpc-revised/Terrain/Rocks, *.png"]
+    title: LPC Revised rocks
+    licences: [OGA-BY 3.0]
+    authors: [Eliza Wyatt (DeathsDarling)]
+    urls: [https://github.com/ElizaWy/LPC]
+  - files: ["lpc:lpc-revised/Objects/Small Items/Fire, Camp.png"]
+    title: LPC Revised campfire
+    licences: [OGA-BY 3.0]
+    authors: [Lanea Zimmerman (Sharm), Eliza Wyatt (DeathsDarling)]
+    urls: [https://github.com/ElizaWy/LPC, https://opengameart.org/content/lpc-dungeon-elements]
+
+  # ---------------------------------------------------------- Source of Tales
+  # Per-file authors and licences from source-of-tales/AUTHORS.txt. Art is dual
+  # licensed CC-BY-SA 3.0 / GPL 3.0; we use CC-BY-SA 3.0.
+  - files: ["lpc:source-of-tales/sprites/monsters/slime*.png", "lpc:source-of-tales/sprites/monsters/bat*.png", "lpc:source-of-tales/sprites/monsters/bee*.png", "lpc:source-of-tales/sprites/monsters/eyeball.png"]
+    title: LPC monsters (slime, bat, bee, eyeball)
+    licences: [CC-BY-SA 3.0, GPL 3.0]
+    authors: [Charles Sanchez (CharlesGabriel)]
+    urls: [https://opengameart.org/content/lpc-monsters, https://gitlab.com/tales/sourceoftales]
+  - files: ["lpc:source-of-tales/tiles/lava.png", "lpc:source-of-tales/tiles/lavarock.png"]
+    title: LPC lava and lava rock
+    licences: [CC-BY-SA 3.0, GPL 3.0]
+    authors: [Lanea Zimmerman (Sharm)]
+    urls: [https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles, https://gitlab.com/tales/sourceoftales]
+  - files: ["lpc:source-of-tales/tiles/castle_lightsources.png"]
+    title: LPC castle light sources (standing torch)
+    licences: [CC-BY-SA 3.0, GPL 3.0]
+    authors: [Daniel Armstrong (HughSpectrum)]
+    urls: [https://opengameart.org/content/lpc-castle, https://gitlab.com/tales/sourceoftales]
+  - files: ["lpc:source-of-tales/tiles/fire.png", "lpc:source-of-tales/particles/lightning*.png"]
+    title: Fire and lightning (Skorpio's sci-fi sprite pack, LPC)
+    licences: [CC-BY-SA 3.0, GPL 3.0]
+    authors: [Jonas Klinger (Skorpio)]
+    urls: [https://gitlab.com/tales/sourceoftales]
+    notes: AUTHORS.txt lists the lightning files as particles/lithning*.png.
+  - files: ["lpc:source-of-tales/tiles/whitheredtree1.png"]
+    title: Withered tree
+    licences: [CC-BY-SA 3.0, GPL 3.0]
+    authors: [Barbara Rivera]
+    urls: [https://gitlab.com/tales/sourceoftales]
+  - files: ["lpc:source-of-tales/particles/bomb_explosion.png"]
+    title: Bomb explosion
+    licences: [CC-BY-SA 3.0]
+    authors: [shimobayashi, quodup]
+    urls: [https://gitlab.com/tales/sourceoftales]
+    notes: Blood by shimobayashi, recolored to an explosion by quodup.
+  - files: ["lpc:source-of-tales/scripts/**"]
+    title: Source of Tales scripts (not art; GPL-only, listed so accidental use fails)
+    licences: [GPL 3.0]
+    authors: [Source of Tales team]
+    urls: [https://gitlab.com/tales/sourceoftales]
+
+  # ---------------------------------------------------------- LPC tile atlas
+  # terrain_atlas.png collects LPC base assets and LPC entries. Its
+  # Attribution.txt gives CC-BY-SA 3.0 and GPL 3.0 for the collection; the only
+  # GPL/LGPL-only part (Johann Charlot's shoot'em up kit) is not in the ruins
+  # and standing-stone tiles used here (rows 12-16, columns 14-20).
+  - files: ["lpc:lpc-tile-atlas/files/terrain_atlas.png#ruins"]
+    title: LPC tile atlas (ruins and standing stones)
+    licences: [CC-BY-SA 3.0, GPL 3.0]
+    authors: [Lanea Zimmerman (Sharm), Casper Nilsson, Daniel Eddeland, Skyler Robert Colladay, Stephen Challener (Redshrike), Charles Sanchez (CharlesGabriel), Manuel Riecke (MrBeast), Daniel Armstrong (HughSpectrum)]
+    urls: [https://opengameart.org/content/lpc-tile-atlas]
+    notes: The atlas does not attribute individual tiles; all its non-LGPL contributors are credited.
+  - files: ["lpc:lpc-tile-atlas/files/terrain_atlas.png", "lpc:lpc-tile-atlas/files/base_out_atlas.png", "lpc:lpc-tile-atlas2/files/*.png"]
+    title: LPC tile atlas (unreviewed regions; may contain LGPL-only art)
+    licences: [GPL 3.0, LGPL 3.0]
+    authors: [see Attribution.txt]
+    urls: [https://opengameart.org/content/lpc-tile-atlas]
+    notes: Use only reviewed regions (referenced with a #region suffix and listed above).
+
+  # ---------------------------------------------------------- downloaded packs
+  - files: ["dl:lpc-explosions/**"]
+    title: LPC explosions
+    licences: [CC0]
+    authors: [theidiotmachine]
+    urls: [https://opengameart.org/content/lpc-explosions]
+  - files: ["dl:weapon-slash-everything/**"]
+    title: Weapon Slash – Effect
+    licences: [CC0]
+    authors: [Cethiel]
+    urls: [https://opengameart.org/content/weapon-slash-effect]
+  - files: ["dl:starsteel-spell-effects/**"]
+    title: Spell Effects by StarsteelGaming
+    licences: [CC0]
+    authors: [StarsteelGaming]
+    urls: [https://opengameart.org/content/spell-effects-by-starsteelgaming]
+    notes: Created by StarsteelGaming at OpenGameArt.org (2018).
+  - files: ["dl:gore-blood-gibs/**"]
+    title: Gore Blood Gibs Meat Chunks
+    licences: [CC0]
+    authors: [Reactorcore]
+    urls: [https://opengameart.org/content/gore-blood-gibs-meat-chunks]
+  - files: ["dl:lpc-magic-pack/**"]
+    title: Extended LPC Magic Pack
+    licences: [CC-BY-SA 3.0, GPL 3.0]
+    authors: [Daniel Eddeland]
+    urls: [https://opengameart.org/content/extended-lpc-magic-pack]
+  - files: ["dl:kenney-impact-sounds/**"]
+    title: Impact Sounds
+    licences: [CC0]
+    authors: [Kenney (www.kenney.nl)]
+    urls: [https://kenney.nl/assets/impact-sounds]
+  - files: ["dl:kenney-rpg-audio/**"]
+    title: RPG Audio
+    licences: [CC0]
+    authors: [Kenney (www.kenney.nl)]
+    urls: [https://kenney.nl/assets/rpg-audio]
+  - files: ["dl:kenney-interface-sounds/**"]
+    title: Interface Sounds
+    licences: [CC0]
+    authors: [Kenney (www.kenney.nl)]
+    urls: [https://kenney.nl/assets/interface-sounds]
+  - files: ["dl:rpg80/**"]
+    title: 80 CC0 RPG SFX
+    licences: [CC0]
+    authors: [rubberduck]
+    urls: [https://opengameart.org/content/80-cc0-rpg-sfx]
+  - files: ["dl:rpg-sound-pack/**"]
+    title: RPG Sound Pack
+    licences: [CC0]
+    authors: [artisticdude]
+    urls: [https://opengameart.org/content/rpg-sound-pack]
+  - files: ["dl:fantasy-sound-library/**"]
+    title: Fantasy Sound Effects Library
+    licences: [CC-BY 3.0]
+    authors: [Little Robot Sound Factory]
+    urls: [https://opengameart.org/content/fantasy-sound-effects-library, https://www.littlerobotsoundfactory.com]

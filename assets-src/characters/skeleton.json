@@ -1,0 +1,16 @@
+{
+  "$comment": "Skeleton warrior: ULPC skeleton body and head with an iron arming sword.",
+  "id": "skeleton",
+  "bodyType": "male",
+  "layers": [
+    { "item": "body/special/body_skeleton", "color": "white" },
+    { "item": "head/heads/undead/heads_skeleton", "color": "white" },
+    { "item": "weapons/sword/weapon_sword_arming", "variant": "iron" }
+  ],
+  "animations": {
+    "idle": {},
+    "walk": {},
+    "slash": { "impactFrame": 4 },
+    "hurt": {}
+  }
+}

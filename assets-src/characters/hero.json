@@ -1,0 +1,32 @@
+{
+  "$comment": "The hero: an armoured swordsman with a heater shield. Items are generator sheet definitions (sheet_definitions/<item>.json). The arming sword is drawn in the one-handed animations; the longsword appears only in the oversized thrust and the overhead cleave (slash-oversize).",
+  "id": "hero",
+  "bodyType": "male",
+  "layers": [
+    { "item": "body/body", "color": "light" },
+    { "item": "head/heads/human/heads_human_male", "colors": ["light", "blue"] },
+    { "item": "hair/short/hair_parted", "color": "chestnut" },
+    { "item": "legs/pants/legs_pants", "color": "navy" },
+    { "item": "feet/boots/feet_boots_basic", "color": "brown" },
+    { "item": "torso/armour/torso_armour_plate", "color": "steel" },
+    { "item": "arms/shoulders/shoulders_pauldrons", "color": "red" },
+    { "item": "arms/arms_gloves", "color": "cloth.brown" },
+    { "item": "weapons/shields/heater/shield_heater_revised_wood", "color": "oak", "except": ["slash-oversize"] },
+    { "item": "weapons/shields/heater/shield_heater_revised_trim", "color": "gold", "except": ["slash-oversize"] },
+    { "item": "weapons/sword/weapon_sword_arming", "variant": "steel", "except": ["thrust", "slash-oversize"] },
+    { "item": "weapons/sword/weapon_sword_longsword", "variant": "longsword", "only": ["thrust", "slash-oversize"] }
+  ],
+  "animations": {
+    "idle": {},
+    "walk": {},
+    "run": {},
+    "jump": {},
+    "slash": { "impactFrame": 3 },
+    "backslash": { "impactFrame": 7 },
+    "halfslash": { "impactFrame": 3 },
+    "thrust": { "impactFrame": 5 },
+    "spellcast": { "impactFrame": 5 },
+    "slash-oversize": { "impactFrame": 3 },
+    "hurt": {}
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "$comment": "Downloaded source packs. The baker verifies each archive against sha256 and extracts it under ~/.cache/playlist-survivors/extracted/<id>/.",
+  "sources": {
+    "lpc-explosions": {
+      "url": "https://opengameart.org/sites/default/files/Pix.zip",
+      "page": "https://opengameart.org/content/lpc-explosions",
+      "sha256": "13b8efaf2eb60ef875a585102b89b28ed382cd80f8fd39c97f696d8524d190a7",
+      "file": "lpc-explosions.zip"
+    },
+    "weapon-slash-everything": {
+      "url": "https://opengameart.org/sites/default/files/Everything_0.zip",
+      "page": "https://opengameart.org/content/weapon-slash-effect",
+      "sha256": "163eb4e4d41385f3b888e7176c6da077d0e7fa7c101da96bbaa4645a2ec9d673",
+      "file": "weapon-slash-everything.zip"
+    },
+    "starsteel-spell-effects": {
+      "url": "https://opengameart.org/sites/default/files/Spell%20Effects.zip",
+      "page": "https://opengameart.org/content/spell-effects-by-starsteelgaming",
+      "sha256": "b5692931609436bc11fed995393ba560080043c448ef37aee6c636425fd56c4e",
+      "file": "starsteel-spell-effects.zip"
+    },
+    "gore-blood-gibs": {
+      "url": "https://opengameart.org/sites/default/files/rc_art_-_gore_blood_gibs.zip",
+      "page": "https://opengameart.org/content/gore-blood-gibs-meat-chunks",
+      "sha256": "59917f2f8aec67316aff9869000d11e19e68b296b7f8f9deb606c587b09c6af5",
+      "file": "gore-blood-gibs.zip"
+    },
+    "lpc-magic-pack": {
+      "url": "https://opengameart.org/sites/default/files/magic_pack.zip",
+      "page": "https://opengameart.org/content/extended-lpc-magic-pack",
+      "sha256": "0241cb0810644e4ed0a60589135d8dd98874edc47cce370fb79f1baec34446f9",
+      "file": "lpc-magic-pack.zip"
+    },
+    "rpg80": {
+      "url": "https://opengameart.org/sites/default/files/80-CC0-RPG-SFX_0.zip",
+      "page": "https://opengameart.org/content/80-cc0-rpg-sfx",
+      "sha256": "1c2f06ff4e8563b5b8b745b23cf213c1474142a69bb82bd8f5e10d9b3f7a7bbd",
+      "file": "rpg80.zip"
+    },
+    "rpg-sound-pack": {
+      "url": "https://opengameart.org/sites/default/files/rpg_sound_pack.zip",
+      "page": "https://opengameart.org/content/rpg-sound-pack",
+      "sha256": "f80754a9c04854e30c9da89d0186540ad097309d98b41387b6e83029e2601421",
+      "file": "rpg-sound-pack.zip"
+    },
+    "fantasy-sound-library": {
+      "url": "https://opengameart.org/sites/default/files/Fantasy%20Sound%20Library.zip",
+      "page": "https://opengameart.org/content/fantasy-sound-effects-library",
+      "sha256": "5649523e6be5180f81141bc00f9a1597a1297f193896b7295e6ffebaeb41bb53",
+      "file": "fantasy-sound-library.zip"
+    },
+    "kenney-impact-sounds": {
+      "url": "https://kenney.nl/media/pages/assets/impact-sounds/87b4ddecda-1677589768/kenney_impact-sounds.zip",
+      "page": "https://kenney.nl/assets/impact-sounds",
+      "sha256": "029d734af1582474edf3a694d1b0cebc97c1c152f2f39fa34d4c2bafc5de77f8",
+      "file": "kenney-impact-sounds.zip"
+    },
+    "kenney-rpg-audio": {
+      "url": "https://kenney.nl/media/pages/assets/rpg-audio/8e99002d76-1677590336/kenney_rpg-audio.zip",
+      "page": "https://kenney.nl/assets/rpg-audio",
+      "sha256": "6dbeaf8544da958d8f2adcb4a4a4b76c1ade34a05f8ab9edccd327da7375f38b",
+      "file": "kenney-rpg-audio.zip"
+    },
+    "kenney-interface-sounds": {
+      "url": "https://kenney.nl/media/pages/assets/interface-sounds/fa43c1dd4d-1677589452/kenney_interface-sounds.zip",
+      "page": "https://kenney.nl/assets/interface-sounds",
+      "sha256": "f2193d072726d6758a5f7871b2dcc54dcce0d5c35c6f0a62f92549b327c81232",
+      "file": "kenney-interface-sounds.zip"
+    }
+  }
+}

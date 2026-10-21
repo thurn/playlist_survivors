@@ -1,0 +1,21 @@
+{
+  "$comment": "Minotaur boss: ULPC minotaur head on the muscular body with hoofs and a war axe; the runtime draws it at 2x. The war axe only has an oversized swing, so `slash` and `slash-oversize` share it (slash-oversize is the slower, heavier timing of the same art).",
+  "id": "minotaur",
+  "bodyType": "muscular",
+  "layers": [
+    { "item": "body/body", "color": "fur_brown" },
+    { "item": "head/heads/beast/heads_minotaur", "color": "fur_brown" },
+    { "item": "legs/pants/legs_pants", "color": "maroon" },
+    { "item": "feet/feet_hoofs", "color": "fur_black" },
+    { "item": "arms/bauldron", "color": "metal.bronze" },
+    { "item": "arms/wrists/arms_bracers", "color": "bronze" },
+    { "item": "weapons/blunt/weapon_blunt_waraxe", "variant": "waraxe", "fallback": { "idle": "walk:0" } }
+  ],
+  "animations": {
+    "idle": {},
+    "walk": {},
+    "slash": { "custom": ["slash_oversize"], "impactFrame": 4 },
+    "slash-oversize": { "impactFrame": 4, "fps": 10 },
+    "hurt": {}
+  }
+}
