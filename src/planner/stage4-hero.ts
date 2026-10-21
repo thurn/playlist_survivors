@@ -372,11 +372,13 @@ export function stage4(ctx: Ctx): void {
       frame[k] = clamp(Math.floor(((u - 0.5) / 0.5) * 5), 0, 4);
     } else if (speed > 140) {
       anim[k] = animIdx("run");
-      frame[k] = Math.floor(frac(wbi / 2) * 8) % 8;
+      const nRun = ctx.heroAnims.run?.frames ?? 8;
+      frame[k] = Math.floor(frac(wbi / 2) * nRun) % nRun;
     } else if (speed > 8) {
       anim[k] = animIdx("walk");
-      // One stride per beat: the 8 walk frames (after the standing frame) span two beats.
-      frame[k] = 1 + (Math.floor(frac(wbi / 2) * 8) % 8);
+      // One stride per beat: the walk cycle (two strides) spans two beats.
+      const nWalk = ctx.heroAnims.walk?.frames ?? 8;
+      frame[k] = Math.floor(frac(wbi / 2) * nWalk) % nWalk;
     } else {
       anim[k] = animIdx("idle");
       frame[k] = Math.floor(frac(wbi / 2) * 2) % 2;

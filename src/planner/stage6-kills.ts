@@ -128,6 +128,13 @@ function plannedSpeed(def: EnemyDef): number {
   return def.speed * 0.72;
 }
 
+/** Where a formation member stands at world time w (during its formation). */
+interface FormationSpot {
+  w0: number;
+  w1: number;
+  at: (w: number) => { x: number; y: number };
+}
+
 interface KillSpec {
   hit: number;
   x: number;
@@ -210,7 +217,7 @@ export function stage6(ctx: Ctx): KillPlan {
   }
 
   // ------------------------------------------------------- formation layouts
-  const formationPos: { x: number; y: number; w0: number; w1: number }[] = [];
+  const formationPos: FormationSpot[] = [];
   const memberPositions = new Map<number, { x: number; y: number }[]>();
   for (const f of ctx.formations) {
     const def = lib.formations.get(f.def)!;
@@ -229,12 +236,23 @@ export function stage6(ctx: Ctx): KillPlan {
       if (k === 0) sweep.hit = hid;
     }
     memberPositions.set(f.id, pts);
-    for (const p of pts) formationPos.push({ ...p, w0: warp.toWorld(f.sStart), w1: warp.toWorld(f.sRelease) + 1 });
+    const wRel = warp.toWorld(f.sRelease);
+    const fr = routeFrame(route, progressAt(ctx, wRel));
+    const dRel = progressAt(ctx, wRel);
+    for (const p of pts) formationPos.push({ w0: warp.toWorld(f.sStart), w1: wRel + 1, at: (w: number) => {
+      const back = dRel - progressAt(ctx, Math.min(w, wRel));
+      return { x: p.x - fr.tx * back, y: p.y - fr.ty * back };
+    } });
   }
 
   // ------------------------------------------------------------ weapon hits
   const chainPaths: { w: number; x: number; y: number }[][] = [];
-  const nearFormation = (x: number, y: number, w: number, r: number) => formationPos.some((p) => w >= p.w0 && w <= p.w1 && dist(p.x, p.y, x, y) < r);
+  const nearFormation = (x: number, y: number, w: number, r: number) =>
+    formationPos.some((p) => {
+      if (w < p.w0 || w > p.w1) return false;
+      const q = p.at(w);
+      return dist(q.x, q.y, x, y) < r;
+    });
   for (const fi of ctx.firings) {
     const wd = lib.weapons.get(fi.weapon)!;
     const h = heroAt(hero, fi.w);
@@ -382,16 +400,25 @@ export function stage6(ctx: Ctx): KillPlan {
       const view0 = viewRect(cam, w0);
       pts.forEach((p, k) => {
         const hit = hits[hitIds[k]];
-        const startX = view0[2] + 60 + 40 + k * 6;
-        const sx = Math.max(startX, p.x + 40);
         const rec = newRecord(def.enemy, w0, hit.w);
         rec.formation = f.id;
         rec.fates.push({ w: hit.w, x: p.x, y: p.y, hit: hit.id, lethal: true });
         if (def.dance) rec.dance = { w0: wEnterEnd, w1: hit.w, anim: def.dance.animation, alternate: def.dance.alternateLegs, phase: 0 };
         const steps = def.entranceBeats;
         const bStart = beatIndexAt(ctx.song, f.sStart);
+        // The line parades forward with the hero: its dance spot trails its release spot
+        // by however much route is still to be covered.
+        const fr0 = routeFrame(route, progressAt(ctx, hit.w));
+        const dRel = progressAt(ctx, hit.w);
+        const danceAt = (w: number) => {
+          const back = dRel - progressAt(ctx, Math.min(w, hit.w));
+          return { x: p.x - fr0.tx * back, y: p.y - fr0.ty * back };
+        };
+        // Enter from just off the right edge of the view.
+        const sx = Math.max(view0[2] + 100 + k * 6, danceAt(w0).x + 40);
         const kin = (w: number) => {
-          if (w >= wEnterEnd) return { x: p.x, y: p.y };
+          const d = danceAt(w);
+          if (w >= wEnterEnd) return d;
           const wbi = worldBeatIndex(wb, w) - bStart;
           const u = clamp(wbi / steps, 0, 1);
           // March in on the beat: each step eases quickly, then holds.
@@ -399,9 +426,9 @@ export function stage6(ctx: Ctx): KillPlan {
           const fr = u * steps - kk;
           const e = (kk + Math.min(1, fr / 0.45)) / steps;
           const ee = 1 - (1 - Math.min(1, e)) ** 2;
-          return { x: lerp(sx, p.x, ee), y: p.y + Math.sin(Math.PI * Math.min(1, fr / 0.45)) * -3 };
+          return { x: lerp(sx, d.x, ee), y: d.y + Math.sin(Math.PI * Math.min(1, fr / 0.45)) * -3 };
         };
-        const ag: Agent = { e: rec, def: edef, waypoints: [{ w: hit.w, x: p.x, y: p.y, hit: hit.id, lethal: true }], spawnX: sx, spawnY: p.y, kinematic: kin, kinUntil: hit.w, exempt: true, simulated: false };
+        const ag: Agent = { e: rec, def: edef, waypoints: [{ w: hit.w, x: p.x, y: p.y, hit: hit.id, lethal: true }], spawnX: sx, spawnY: danceAt(w0).y, kinematic: kin, kinUntil: hit.w, exempt: true, simulated: false };
         f.members.push(rec.id);
         fixedAgents.push(ag);
       });
@@ -563,16 +590,22 @@ function assignCrowd(
   blastWeapon: WeaponDef | undefined,
   firstId: number,
   chainPaths: { w: number; x: number; y: number }[][],
-  formationPos: { x: number; y: number; w0: number; w1: number }[],
+  formationPos: FormationSpot[],
 ): { agents: Agent[]; fatesByHit: number[][]; chainPaths: { w: number; x: number; y: number }[][] } {
   const warp = ctx.warp!;
   const hero = ctx.hero!;
   const cam = ctx.camera!;
   const lib = ctx.lib;
 
+  // Types first seen in the level only start dying once they have had time to walk in.
+  const firstSeenW = new Map<string, number>();
+  for (const sec of ctx.sections) for (const t of Object.keys(sec.level.roster)) if (!firstSeenW.has(t)) firstSeenW.set(t, warp.toWorld(sec.s0));
   const pickType = (s: number, r: Rng): string => {
     const roster = ctx.sections[sectionIndexAt(ctx, s)].level.roster;
-    const types = Object.keys(roster).filter((t) => lib.enemies.get(t)!.size !== "boss");
+    const all = Object.keys(roster).filter((t) => lib.enemies.get(t)!.size !== "boss");
+    const w = warp.toWorld(s);
+    const ready = all.filter((t) => (firstSeenW.get(t) ?? 0) <= w - lib.enemies.get(t)!.lifetime[0] * 1.5);
+    const types = ready.length > 0 ? ready : all;
     return r.weighted(types, types.map((t) => roster[t]));
   };
 
@@ -615,7 +648,11 @@ function assignCrowd(
         if (dist(p.x, p.y, hh.x, hh.y) < 16) continue;
         if (out.some((q) => dist(q.x, q.y, p.x, p.y) < 2 * def.radius)) continue;
         if (reserved.some((q) => q.hit === h.id && dist(q.x, q.y, p.x, p.y) < 2 * def.radius)) continue;
-        if (formationPos.some((f) => h.w >= f.w0 && h.w <= f.w1 && dist(f.x, f.y, p.x, p.y) < 2 * def.radius + 4)) continue;
+        if (formationPos.some((f) => {
+          if (h.w < f.w0 || h.w > f.w1) return false;
+          const q = f.at(h.w);
+          return dist(q.x, q.y, p.x, p.y) < 2 * def.radius + 4;
+        })) continue;
         if (!spotFree(p.x, p.y, h.w, def.radius)) continue;
         takeSpot(p.x, p.y, h.w, def.radius);
         out.push({ hit: h.id, x: p.x, y: p.y, type });
@@ -627,6 +664,7 @@ function assignCrowd(
 
   const wEnd = warp.toWorld(ctx.duration);
   const targetW = (w: number) => targetPopulation(ctx, warp.toSong(w));
+  const firstW = (type: string) => firstSeenW.get(type) ?? 0;
   const freeAt = (w: number) => ctx.sections[sectionIndexAt(ctx, warp.toSong(w))].song.feel === "free";
 
   const regularHits = hits.filter((h) => !ringSet.has(h.id) && h.source !== "sweep");
@@ -757,7 +795,8 @@ function assignCrowd(
       while (slots.length < nS) slots.push(wEnd);
     }
     // Earliest-deadline-first: each spawn slot goes to the waiting enemy that must spawn soonest.
-    const release = order.map((i) => Math.max(0, dws[i] - lmax[i]));
+    // Nobody spawns before the first section whose roster has its type ("New" in the level design).
+    const release = order.map((i) => Math.max(0, dws[i] - lmax[i], firstW(feasible[i].type)));
     const deadline = (i: number) => Math.max(0, dws[i] - lmin[i]);
     const byRelease = order.map((_, k) => k).sort((a, b) => release[a] - release[b]);
     const spawnW = new Float64Array(specs.length).fill(-1);

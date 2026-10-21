@@ -40,7 +40,7 @@ movesets:
 
   - id: kick-line-dance
     locomotion: { mode: step, every: bar }
-    travelSpeed: 12
+    travelSpeed: 45
     path: circle
     pathSize: 50
     grid: eighth
@@ -52,7 +52,7 @@ movesets:
 
   - id: descent-steps
     locomotion: { mode: step, every: beat }
-    travelSpeed: 55
+    travelSpeed: 85
     path: forward
     pathSize: 30
     grid: eighth

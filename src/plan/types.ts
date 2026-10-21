@@ -227,6 +227,8 @@ export interface Plan {
   /** World beat grid. */
   worldBeats: Float64Array;
   songBeats: Float64Array;
+  /** Song-map energy (0–1) per song beat. */
+  energy: Float32Array;
   /** Beat index of each bar start (1-based bars). */
   barStart: number[];
   hero: HeroTrack;

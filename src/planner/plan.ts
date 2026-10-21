@@ -114,6 +114,7 @@ export function plan(input: PlannerInput, opts: PlannerOptions = {}): Plan {
     warp: warp.breaks,
     worldBeats: ctx.worldBeats!,
     songBeats: Float64Array.from(ctx.song.beats),
+    energy: Float32Array.from(ctx.song.energy),
     barStart: ctx.idx.barStart,
     hero: ctx.hero!,
     camera: ctx.camera!,

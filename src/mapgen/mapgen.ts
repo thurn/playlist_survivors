@@ -3,7 +3,7 @@
  * for a given seed, route length, zone extents, themes and landmarks.
  */
 import type { ZoneTheme } from "../content/schema.ts";
-import { Rng, hash32, noise1 } from "../core/rng.ts";
+import { Rng, hash32, noise1, noise2 } from "../core/rng.ts";
 import { smoothstep } from "../core/shaping.ts";
 import type { MapLayout, MapProp, MapZone } from "../plan/types.ts";
 
@@ -250,7 +250,9 @@ export function generateMap(input: MapInput): MapLayout {
       const py = originY + ty * TILE + TILE / 2;
       const { d } = lookup.nearest(px, py);
       const k = ty * cols + tx;
-      const z = blendedZone(zones, d, hash32(tileSeed, tx, ty) / 4294967296);
+      // Smooth noise gives organic patches where zones blend, not a checkerboard.
+      const n = 0.7 * noise2(tileSeed, tx / 3.5, ty / 3.5) + 0.3 * noise2(tileSeed + 1, tx / 1.3, ty / 1.3);
+      const z = blendedZone(zones, d, n);
       const theme = input.themes.get(zones[z].id)!;
       tiles[k] = tileIndex(theme.terrain.ground);
       tileVariants[k] = hash32(tileSeed, tx, ty, 1) & 0xff;

@@ -1,2 +1,3 @@
-const app = document.getElementById("app")!;
-app.textContent = "Playlist Survivors";
+import { readParams, runApp } from "./runtime/app.ts";
+
+void runApp(document.getElementById("app")!, readParams(location.search));

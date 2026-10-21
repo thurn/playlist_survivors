@@ -105,3 +105,18 @@ export function noise1(seed: number, x: number): number {
   const u = f * f * (3 - 2 * f);
   return a + (b - a) * u;
 }
+
+/** Smooth 2D value noise in [0, 1]. */
+export function noise2(seed: number, x: number, y: number): number {
+  const ix = Math.floor(x);
+  const iy = Math.floor(y);
+  const fx = x - ix;
+  const fy = y - iy;
+  const ux = fx * fx * (3 - 2 * fx);
+  const uy = fy * fy * (3 - 2 * fy);
+  const a = rand01(seed, ix, iy);
+  const b = rand01(seed, ix + 1, iy);
+  const c = rand01(seed, ix, iy + 1);
+  const d = rand01(seed, ix + 1, iy + 1);
+  return a + (b - a) * ux + (c - a) * uy + (a - b - c + d) * ux * uy;
+}
