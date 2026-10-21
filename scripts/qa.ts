@@ -38,7 +38,8 @@ interface Hook {
   audio?: () => AudioState;
   renderAt(s: number): Promise<void>;
   checks?: () => { name: string; failures: string[] }[];
-  plan: { duration: number; sections: { label: string; s0: number }[]; slams: { w1: number }[]; nearMisses: { s: number; kind: string }[]; actions: { s: number; kind: string }[] };
+  stats?: () => { alive: number; particles: number };
+  plan: { duration: number; songBeats: number[]; sections: { label: string; s0: number }[]; slams: { w1: number }[]; nearMisses: { s: number; kind: string }[]; actions: { s: number; kind: string }[] };
 }
 const hook = (page: Page) => page.evaluate(() => (window as unknown as { __demo: Hook }).__demo);
 void hook;
@@ -198,6 +199,21 @@ await withDevServer(async (base) => {
     for (const [name, t] of moments) {
       await page.evaluate((s) => (window as unknown as { __demo: Hook }).__demo.renderAt(s), t);
       await page.locator("canvas").screenshot({ path: join(OUT, `${name}.png`) });
+    }
+    // The finale blast clears every monster within a beat of the final chord.
+    if (blast) {
+      const counts: string[] = [];
+      let cleared = false;
+      const beats = await page.evaluate(() => (window as unknown as { __demo: Hook }).__demo.plan.songBeats);
+      const next = beats.find((b) => b > blast.s + 1e-3) ?? blast.s + 0.5;
+      for (const t of [blast.s - 0.02, next, next + 0.5]) {
+        await page.evaluate((s) => (window as unknown as { __demo: Hook }).__demo.renderAt(s), t);
+        const alive = await page.evaluate(() => (window as unknown as { __demo: Hook }).__demo.stats!().alive);
+        counts.push(`${alive} at ${t.toFixed(2)} s`);
+        if (t === next) cleared = alive === 0;
+      }
+      await page.locator("canvas").screenshot({ path: join(OUT, "finale-after.png") });
+      record("Finale clears the field within a beat", cleared, `living monsters: ${counts.join(", ")} (final chord at ${blast.s.toFixed(2)} s)`);
     }
     record("Review captures", true, `${moments.length} frames written to captures/qa/ for the human review`);
     await ctx.close();
