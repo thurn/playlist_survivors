@@ -27,6 +27,9 @@ export interface KickParams {
   /** Frame 3 (extended): whole-leg angle, side and front/back views. */
   kickSide: number;
   kickFront: number;
+  /** Frame 3: the extended leg's thigh and shin, exaggerated so the kick clears the body. */
+  extThigh: number;
+  extShin: number;
   /** Front/back knee raise: thigh angle and how short it looks (foreshortening). */
   frontKneeThigh: number;
   frontThighScale: number;
@@ -39,8 +42,10 @@ export const DEFAULT_KICK: KickParams = {
   foot: 4,
   kneeThigh: 128,
   kneeShin: -12,
-  kickSide: 136,
-  kickFront: 132,
+  kickSide: 118,
+  kickFront: 128,
+  extThigh: 8,
+  extShin: 8,
   frontKneeThigh: 25,
   frontThighScale: 0.45,
 };
@@ -101,6 +106,21 @@ function legPoints(hx: number, hy: number, p: KickParams, thighDeg: number, shin
   return [[hx, hy], knee, ankle, toe];
 }
 
+/**
+ * The extended can-can leg: straight, with knee and ankle knobs and the foot
+ * flexed toe-up, so that it reads as a leg rather than a stick at game scale.
+ */
+function extendedLeg(img: Img, hx: number, hy: number, p: KickParams, deg: number, col: LegColours): void {
+  const pts = legPoints(hx, hy, { ...p, thigh: p.extThigh, shin: p.extShin, foot: 3.5 }, deg, deg, 180, 1);
+  drawBone(img, pts.slice(0, 3), col);
+  drawBone(img, pts.slice(2), col, 1.15);
+  // Knee and ankle knobs.
+  for (const [x, y] of [pts[1], pts[2]]) {
+    stampDisc(img, x, y, 2.2, col.outline);
+    stampDisc(img, x, y, 1.3, col.fill);
+  }
+}
+
 function sideKick(stand: Img, p: KickParams): Img[] {
   const hipY = p.sideHipY;
   const col = sampleColours(stand, hipY);
@@ -115,7 +135,7 @@ function sideKick(stand: Img, p: KickParams): Img[] {
   stampDisc(knee, kneePts[1][0], kneePts[1][1], 1.5, col.light);
   const ext = new Img(stand.w, stand.h);
   ext.draw(stand, -1, -1); // lean back a little as the leg goes up
-  drawBone(ext, legPoints(hx - 1, hipY - 1, p, p.kickSide, p.kickSide, p.kickSide + 15, 1), col);
+  extendedLeg(ext, hx - 1, hipY - 1, p, p.kickSide, col);
   return [stand.clone(), knee, ext];
 }
 
@@ -150,7 +170,7 @@ function frontKick(stand: Img, p: KickParams): Img[] {
   // Frame 3: leg kicked out and up to the side, body tilting away.
   const ext = new Img(stand.w, stand.h);
   ext.draw(base, -1, -1);
-  drawBone(ext, legPoints(hx - 1, hipY - 1, p, p.kickFront, p.kickFront, p.kickFront + 10, 1), col);
+  extendedLeg(ext, hx - 1, hipY - 1, p, p.kickFront, col);
   return [stand.clone(), knee, ext];
 }
 
