@@ -21,7 +21,8 @@
     "check:plan": "tsx scripts/check-plan.ts",
     "check:determinism": "tsx scripts/check-plan.ts --determinism",
     "capture": "tsx scripts/capture.ts",
-    "bench": "tsx scripts/bench.ts"
+    "bench": "tsx scripts/bench.ts",
+    "check:all": "npm run check && npm run check:songmap && npm run check:content && npm run check:assets && npm run check:determinism && npm run test:e2e"
   },
   "dependencies": {
     "pixi.js": "^8.22.0",
