@@ -35,8 +35,8 @@ answer should be obvious within seconds of watching.
 - **No user input** during the level. The only interaction is one click to
   start, which browsers require before audio can play.
 - **Desktop browsers only.** The target is current Chrome on the **reference
-  laptop**, an Apple M1 MacBook Air (2020), at 1920×1080 and 60 fps. Firefox
-  and Safari are best-effort.
+  machine**, the Apple Silicon Mac used for development and review, at
+  1920×1080 and 60 fps. Firefox and Safari are best-effort.
 - **Liberated Pixel Cup (LPC) art.** Characters and terrain come from the LPC
   collections, plus a few compatible CC0 effect packs.
 - **Legally usable music.** The recording must be public domain or Creative
@@ -201,10 +201,11 @@ The system has five offline or load-time stages and one runtime.
   commands to correct the draft into the final song map, which is committed.
 - **Asset baker** (Node, offline): composites LPC layers into sprite atlases
   and generates the credits list.
+- **Planner** (TypeScript, at load): turns the song map, level script and
+  content definitions into the plan.
 - **Map generator** (TypeScript, at load): builds the forest from the route,
-  zone themes and hand-made landmarks.
-- **Planner** (TypeScript, at load): turns the song map, level script, map
-  and content definitions into the plan.
+  zone themes and hand-made landmarks. The planner calls it partway through
+  planning, once it knows how far the hero travels in each section.
 - **Runtime** (TypeScript in the browser): plays the audio, reads song time,
   evaluates the plan at that time, renders it and schedules sound effects.
 
@@ -258,6 +259,9 @@ A song map contains:
     stretches the tempo), so motion should flow.
   - An optional musical key, such as `D major`, used to tune pitched sound
     effects.
+- **Phrases:** the bar ranges of musical phrases (typically 4 or 8 bars),
+  taken from the score. Anchors, kick-line timing and other choreography
+  refer to phrases.
 - **Anchors:** in `free` sections, a short list of strong musical moments
   (phrase starts, swells, chord changes), each with a time and a 0–1
   strength. The planner synchronizes visible events to anchors instead of to
@@ -283,6 +287,7 @@ An abbreviated example:
       "anchors": [{ "time": 0.41, "strength": 0.6 }, { "time": 9.02, "strength": 0.8 }] },
     { "label": "galop-opening", "bars": [9, 16], "feel": "pulsed", "key": "A major" }
   ],
+  "phrases": [[1, 4], [5, 8], [9, 12], [13, 16]],
   "tempoChanges": [],
   "energy": [0.12, 0.14, 0.13, 0.15],
   "accents": [{ "time": 35.2, "strength": 1.0, "label": "tutti-chord" }]
@@ -308,6 +313,20 @@ timeOf(songMap, { bar: 9, beat: 1 });   // → 35.2 (first beat of the galop)
 
 Before the first beat and after the last beat, conversion extrapolates from
 the nearest two beats.
+
+Level scripts and content can also refer to musical moments by name instead
+of by bar and beat. Each form resolves to one song time through the song map:
+
+```yaml
+at: { bar: 9, beat: 1 }                          # a bar and beat
+at: { section: kick-line, phrase: 2, point: finalAccent }  # see below
+at: { accent: tutti-chord, fromEnd: 2 }          # the second-to-last tutti chord
+at: { section: coda, point: start }              # also: end
+```
+
+A phrase's `finalAccent` is the strongest accent in the phrase's last bar, or
+the first beat of that bar if it has no accent. `phrase` counts from 1 within
+the section.
 
 ## Building the Song Map
 
@@ -382,7 +401,7 @@ score's structure.
    - phase errors, where bar lines land on the wrong beat
 4. Apply `edit` operations, then repeat `report` until the numbers settle.
 5. Confirm that section boundaries fall on downbeats and that bar counts match
-   the score.
+   the score. Record the phrases from the score.
 6. Curate accents. Keep the strongest 20–40 and label the obvious tutti
    chords.
 7. Run `check` and `click`. Commit the song map, the edit list and the report
@@ -428,7 +447,9 @@ The warp is the running total of a playback rate that the planner chooses.
 - **Rate 0** is a hit-stop: world time freezes for 40–150 ms after a heavy
   impact. A hit-stop never lasts longer than 150 ms. Longer dramatic pauses
   use slow motion instead.
-- **Ramps:** rate changes other than hit-stops blend smoothly over one beat.
+- **Ramps:** section-to-section rate changes blend smoothly over one beat.
+  Near-miss dips are short: 40 ms down to 0.4, 70 ms held, 40 ms back up.
+  Hit-stops start and end instantly.
 
 Hit-stops never need "catch-up" time. After a 100 ms hit-stop, world time
 simply stays 100 ms behind song time for the rest of the song. This is
@@ -456,24 +477,38 @@ returns the song time at which the hit-stop began.
 Synchronized events come in two tiers, and only the first tier constrains
 hit-stops:
 
-- **Primary events** are hero impacts, threat impacts (an arrow arriving, a
-  boss slam) and dodges. Every hit-stop must end at least 50 ms (song time)
+- **Primary events** are hero impacts, dodges and **near misses** (the
+  moment a threat, such as an arrow or a boss slam, reaches the spot the hero
+  just left). Every hit-stop must end at least 50 ms (song time)
   before the next primary event.
-- **Secondary events** are automatic weapon firings, gem arrivals and kills
-  spread out by a sweep or the finale blast. A secondary event that falls
-  inside a hit-stop moves to the first slot of its subdivision after the
-  hit-stop ends. Weapons "rest" during the freeze.
+- **Secondary events** are automatic weapon firings and the individual hits
+  of a sweep or the finale blast. A secondary event that falls inside a
+  hit-stop moves to the next **slot** (a musical moment where actions can
+  happen; see [Stage 1](#stage-1-resolve-musical-time)) of its subdivision
+  after the hit-stop ends. Weapons "rest" during the freeze.
 
 The length of each hit-stop is:
 
 ```text
-wanted = move.hitStopMs × (0.6 + 0.4 × accentStrength)   // 0 if no accent
+accentFactor = 0.6 + 0.4 × accentStrength      // accentStrength 0 if no accent
+wanted = move.hitStopMs × accentFactor
 length = min(wanted, gapToNextPrimaryEvent − 50 ms, 150 ms)
 skip the hit-stop if length < 40 ms
 ```
 
 At galop tempo the hero acts at most on every beat (324 ms apart), so a
 150 ms hit-stop always fits.
+
+An example warp table across a hit-stop and a slow-motion ramp. Each row is a
+breakpoint; between rows, world time advances at the row's rate.
+
+```text
+song s    world w    rate   note
+35.200    17.600     0.0    hit-stop on the first galop chord (prelude ran at 0.5)
+35.310    17.600     1.0    110 ms freeze ends; full speed
+88.310    70.600     0.0    cleave hit-stop
+88.420    70.600     1.0
+```
 
 ### World beat grid
 
@@ -524,8 +559,9 @@ For each group:
   subdivision and coasts between.
 - **Animation:** walk cycles are timed from the world beat grid, not elapsed
   time. A goblin takes exactly one stride per beat.
-- **Free sections:** `beatSwell` over a two-beat period replaces `beatHit`.
-  Motion breathes instead of ticking.
+- **Free sections:** each group uses `beatSwell` instead of `beatHit`, over
+  its own period lengthened to at least two beats. Motion breathes instead of
+  ticking, and the groups still move at different rates.
 
 ### Environment and HUD
 
@@ -545,7 +581,9 @@ formations, effect recipes, sound palettes and zone themes. Content files are
 YAML, validated against schemas at load. A level script refers to content by
 id.
 
-All distances are in **world pixels**, the native pixel size of the LPC art.
+All durations in content and in the planner are world seconds unless stated
+otherwise. All distances are in **world pixels**, the native pixel size of
+the LPC art.
 Terrain tiles are 32 px. Character frames are 64 px, with bodies about 24 px
 wide. At the default zoom, the screen shows 960×540 world pixels.
 
@@ -556,7 +594,8 @@ Each move defines:
 
 - **Animation:** which baked animation plays, at what frame rate.
 - **Impact frame:** the frame on which the hit lands. The planner starts the
-  animation early so this frame lands exactly on its slot. Wind-up happens
+  animation early so this frame lands exactly on its slot (its scheduled
+  musical moment). Wind-up happens
   before the beat and contact happens on it.
 - **Hit shape:** the area the move damages: an arc, a circle, a line or a
   capsule along a dash path. Its direction is any angle. The sprite uses the
@@ -564,7 +603,9 @@ Each move defines:
 - **Weight:** light, medium or heavy. Weight scales kill counts, effects,
   hit-stop and sound.
 - **Hit-stop:** `hitStopMs`, used only by heavy moves.
-- **Travel:** how far the hero moves during the move.
+- **Travel:** how far the hero moves during the move. See
+  [Stage 4](#stage-4-plan-hero-motion) for how travel combines with the
+  hero's path.
 
 The move list:
 
@@ -580,6 +621,8 @@ The move list:
   one. Medium.
 - **burst:** a spellcast that hits a circle of radius 140 px. Heavy, 130 ms
   hit-stop.
+- **finisher:** a cleave with a burst on impact, used for the boss's death
+  blow. Heavy, 150 ms hit-stop.
 - **dodge:** a short dash out of a threat's path. It deals no damage and
   triggers the near-miss effect.
 
@@ -609,8 +652,9 @@ A **moveset** is a section's choreography style. It has four parts:
   `zigzag`, `circle` or `figure-eight`.
 - **Attack rules:** which moves fire on which slots.
 
-Attack patterns for `pulsed` sections are grid strings with one character per
-grid slot in a bar. `x` fires a move and `.` rests.
+Attack rules for `pulsed` sections use grid strings with one character per
+grid slot. `x` fires a move and `.` rests. A pattern may span several bars,
+separated by `|`, and repeats for the whole section.
 
 ```yaml
 id: galop-steps
@@ -623,6 +667,24 @@ attacks:
     moves: [slash, backslash]   # alternate
   - onAccent: { minStrength: 0.7, move: cleave }   # replaces that slot's move
   - onSectionEnd: dash-strike                       # on the section's last beat
+```
+
+The rest of the rule vocabulary:
+
+- **`extends`:** inherit another moveset's fields and rules, then override or
+  add to them.
+- **`onAccent` with `label`:** match only accents with that label, such as
+  `tutti-chord`.
+- **Accent matching:** an accent matches the nearest grid slot within 40 ms,
+  even if the pattern rests there. Accents further off the grid trigger no
+  move but still drive effects such as zoom punches.
+
+```yaml
+id: galop-dashes
+extends: galop-steps
+attacks:
+  - pattern: "x...|...."      # dash-strike on beat 1 of every second bar
+    moves: [dash-strike]
 ```
 
 Grids are not used in `free` sections. A `free` moveset instead lists
@@ -641,13 +703,15 @@ onAnchor: { move: burst, minStrength: 0.5 }
 
 Each enemy type defines:
 
-- **Sprite:** baked atlas animations for walk, attack, hurt and death.
+- **Sprite:** baked atlas animations for walk, attack and hurt. LPC's hurt
+  animation is a fall to the ground, so it doubles as the death animation,
+  followed by the death effect.
 - **Radius:** the body radius used for spacing. A **body width** is twice
   this.
 - **Movement group:** see [Enemy movement groups](#enemy-movement-groups).
 - **Speed and lifetime range:** used by the planner.
-- **Size class:** `regular` dies in one hit. `elite` and `boss` take several
-  planned hits.
+- **Size class:** `regular` dies in one hit. `elite` and `boss` take
+  `hits` planned hits.
 - **Attack behavior:** `none`, `archer` or `slam`.
 - **Death:** which effect recipe plays and which debris colors to use.
 
@@ -657,7 +721,7 @@ atlas: goblin
 radius: 12
 group: beat
 speed: 70
-lifetime: [4, 25]
+lifetime: [4, 40]
 size: regular
 attack: none
 death: { recipe: death-humanoid, debris: ["#5a8f3a", "#8b1a1a"] }
@@ -684,8 +748,7 @@ the arsenal builds up like the layers of an orchestra. Every firing is a hit
 with a shape and a slot, planned exactly like a hero move.
 
 - **Orbiting blades:** three blades orbit at radius 72 px, one orbit per bar.
-  Each blade's hit shape is a 14 px circle at its position. Blades may kill on
-  any eighth-note slot.
+  Each blade's hit shape is a 14 px circle at its position.
 - **Chain lightning:** fires on downbeats. It jumps between 3–6 enemies one
   sixteenth note apart. Each jump is a 16 px circle hit on its target.
 - **Fire trail:** the ground along the hero's path over the last two beats
@@ -693,11 +756,18 @@ with a shape and a slot, planned exactly like a hero move.
 - **Finale blast:** a one-off ring that expands from the hero on the final
   chord. See [Signature moments](#signature-moments) below.
 
+Each firing kills a small number of enemies, which may be zero. The weapon's
+`killsPerFiring` range is interpolated by the slot's energy, and the planner
+rounds it with a seeded random draw. For example, at energy 0.5 the blades
+below kill 0.25 enemies per blade per firing on average, about 4.6 kills per
+second at galop tempo.
+
 ```yaml
 id: orbiting-blades
 fires: { every: eighth }
 orbit: { count: 3, radius: 72, periodBars: 1 }
 hitShape: { kind: circle, radius: 14, at: blade }
+killsPerFiring: [0, 0.5]     # per blade, at energy 0 and 1
 weight: light
 ```
 
@@ -777,14 +847,17 @@ determines the real ones):
 ```yaml
 song: orpheus-galop
 seed: 1858
-title: { piece: "Orpheus in the Underworld — Overture", composer: "Jacques Offenbach" }
+title:
+  piece: "Orpheus in the Underworld — Overture"
+  composer: "Jacques Offenbach"
+  performer: "Musopen archive recording"   # the source credits no performer
 zones: [twilight-glade, galop-woods, mushroom-grove, ember-hollow, infernal-grove]
 sections:
   - bars: 1-8           # slow prelude, 4/4
     moveset: spinning-glide
     zone: twilight-glade
     timeScale: 0.5
-    population: [30, 60]
+    population: [0, 60]
     roster: { bat: 3, slime: 2, eyeball: 1 }
     camera: { zoom: 1.4, lead: 40 }
     sfxPalette: soft-chimes
@@ -801,24 +874,58 @@ events:
     formation: skeleton-kick-line
 ```
 
+Events use the musical reference forms from
+[Musical positions](#musical-positions). The event types are:
+
+- **`levelUp`:** grant a weapon.
+- **`formation`:** start a formation; its own definition sets its release.
+- **`threats`:** schedule enemy attacks across a range.
+- **`boss`:** a boss entrance, with its hit count and slams.
+- **`banner`:** show a section banner.
+- **`titleCard`:** show the title card over a range.
+- **`landmark`:** stamp a Tiled landmark at the hero's route position.
+- **`timeScale`:** change the world-time rate from this moment, ramping over
+  one beat. It overrides the section's `timeScale` until the next section.
+
+```yaml
+  - at: { section: prelude, point: start }
+    titleCard: { until: { section: prelude, phrase: 2, point: finalAccent } }
+  - at: { section: kick-line, point: start }
+    threats: { kind: archer-volley, every: 2 bars, until: { section: kick-line, point: end } }
+  - at: { section: climax, point: start }
+    boss: { type: minotaur, hits: 8, slams: 4 }
+    banner: "LORD OF THE REVEL"
+    landmark: standing-stones
+  - at: { accent: tutti-chord, fromEnd: 2 }
+    timeScale: 0.4          # slow motion after the boss's death blow
+```
+
 ## Map Generation
 
 The map is a long strip of forest that the hero travels through over the
-song. A seeded generator builds it before the planner runs.
+song. A seeded generator builds it during planning, between
+[Stage 3](#stage-3-build-the-time-warp) and
+[Stage 4](#stage-4-plan-hero-motion).
 
 ### Route schedule
 
-The **route schedule** says how far along the route the hero is at the start
-of each section. It is computed from the song map and level script alone, so
-both the map generator and the planner can use it.
+The **route schedule** says how far along the route the hero is at every
+moment. The planner computes it right after building the time warp, and both
+the map generator and the hero planning stage use it.
 
 ```text
-distance(section) = worldDuration(section) × moveset(section).travelSpeed
-routeLength       = sum of all section distances
-zone extent       = the route stretch covered by that zone's sections
+progress(w)  = ∫ travelSpeed of the current section's moveset, over world time
+routeLength  = progress at the end of the song
+zone extent  = the stretch of route covered while that zone's sections play
 ```
 
+Because progress runs on world time, the hero stands still during hit-stops
+and slows down in slow motion, and stays in step with the map.
+
 ### Layout
+
+The generator lays out the route, a corridor for combat, the forest around
+it, and landmarks.
 
 - **Route:** a smooth curve of length `routeLength`, heading generally right
   and slightly up, made of gentle bends.
@@ -859,23 +966,26 @@ function plan(input: {
   songMap: SongMap;
   level: LevelScript;
   content: ContentLibrary;
-  map: MapLayout;      // route, corridor and zones, from the map generator
-  seed: number;
-}): Plan;
+  seed: number;        // the level script's seed unless ?seed= overrides it
+}): Plan;              // includes the generated MapLayout
 ```
 
 Requirements:
 
 - **Deterministic.** Use a seeded random generator, stable sorts and no
   `Date` or `Math.random`. The same inputs produce byte-identical output.
-- **Fast.** Under 2 seconds for a 3-minute song on the reference laptop.
-- **Cached.** Results are cached in IndexedDB, keyed by a hash of the inputs.
+- **Fast.** Under 2 seconds for a 3-minute song on the reference machine.
+- **Cached.** Results are cached in IndexedDB, keyed by a hash of the inputs
+  plus the build's version hash, so code changes never load a stale plan.
 
-The planner runs in eight stages. Each stage reads only the outputs of
-earlier stages. Two ordering decisions matter:
+The planner runs in eight stages, calling the map generator between Stages 3
+and 4. Each stage reads only the outputs of earlier stages. Three ordering
+decisions matter:
 
 - **Actions before warp.** Moves are chosen in song time before the time warp
   exists, because hit-stops depend on which moves are heavy.
+- **Map after warp.** The map is generated after the warp, because the route
+  length depends on how much world time passes.
 - **Camera before kills.** The camera is planned before kills, because spawn
   positions depend on what the camera can see.
 
@@ -883,51 +993,67 @@ earlier stages. Two ordering decisions matter:
 
 This stage converts the level script's musical references into song time.
 
-- Convert every bar and beat reference through the song map.
+- Resolve every musical reference through the song map.
 - Build each section's list of **slots**: the musical moments where actions
   can happen. In `pulsed` sections, slots are the moveset's grid positions.
   In `free` sections, slots are anchors plus the continuous-move times.
-- Attach each slot's energy and the strength of any accent on it.
+- Attach each slot's energy and the strength of any accent matched to it.
 
 ### Stage 2: Choose actions and threats
 
-This stage decides what happens on each slot, still in song time.
+This stage decides what happens on each slot, still in song time. Nothing
+here has a position yet; positions come in later stages.
 
 - **Pick moves:** for each slot, take the move from the moveset's rules.
   Accent rules override pattern moves.
 - **Fire weapons:** add automatic weapon firings on their subdivisions, from
   each weapon's level-up onward.
 - **Schedule threats:** enemies attack, but the hero never takes damage, so
-  each threat is scheduled together with the hero's escape.
+  each threat is scheduled together with the hero's escape. Each threat gets
+  a **bearing**: the direction, relative to the route, it comes from.
   - **Archer volley:** an archer releases on a beat. On the beat before the
-    arrow arrives, the hero dodges.
+    arrow arrives, the hero dodges. The near miss is the arrow's arrival.
   - **Boss slam:** a glowing ground marker grows over two beats. The hero
     dodges on the slam beat, and the slam lands on empty ground. The hero
     counter-attacks with a cleave on the next beat.
   - **Dodges replace attacks:** a dodge takes over its slot's planned
     attack.
-- **Expand formations:** formation releases become their planned hits, such
-  as one sweep hit per kick-line skeleton.
+- **Assign multi-hit targets:** the boss's `hits` are its slam counters plus
+  the heaviest hero moves while it is present, spread evenly. Its death blow
+  becomes a `finisher`. Those hits also kill crowd enemies as normal.
+- **Expand set moments:** a formation release becomes one hit per member,
+  such as one sweep hit per kick-line skeleton on successive sixteenth notes.
+  The finale blast becomes a series of ring hits on sixteenth notes across one
+  beat, each a ring-shaped band further from the hero than the last.
 
 ### Stage 3: Build the time warp
 
-- Start from each section's `timeScale`. Ramp between sections over one beat.
-- Add a 150 ms dip to rate 0.4 at each near miss.
+This stage builds `W` from the chosen actions.
+
+- Start from each section's `timeScale` and any `timeScale` events. Ramp
+  between rates over one beat.
+- Add a near-miss dip at each near miss.
 - Add hit-stops for heavy moves, following the
   [Hit-stop rules](#hit-stop-rules).
 - Move secondary events out of hit-stops.
-- Produce `W`, its inverse and the world beat grid.
+- Produce `W`, its inverse, the world beat grid and the route schedule.
+
+The planner then calls the map generator with the route schedule.
 
 ### Stage 4: Plan hero motion
 
-The hero's position comes from two parts:
+The hero's position is the sum of three parts:
 
 - **Route progress:** the route schedule gives the hero's distance along the
-  route at every moment.
-- **Local choreography:** the moveset's path shape adds an offset around the
-  route position, staying inside the combat corridor.
+  route at every world time.
+- **Path shape:** the moveset's path shape adds an offset around the route
+  position.
+- **Move travel:** dashes, hops, dodges and sweeps push the hero along their
+  own paths. The resulting extra offset then relaxes back toward the path
+  shape over two beats, like a spring.
 
-On top of that path:
+The total offset is clamped to stay inside the combat corridor. On top of the
+path:
 
 - **Locomotion timing:** hops, dashes and dodges are timed to the world beat
   grid.
@@ -935,11 +1061,15 @@ On top of that path:
   frame lands on the slot.
 - **Directions:** attack directions alternate in a pattern (for example left,
   right, ahead, ahead) so the routine reads as a dance. Dodges move sideways
-  relative to the incoming threat.
+  relative to the threat's bearing.
+- **Sweeps:** a sweep is a straight dash whose length is the formation's
+  length. Stage 6 places the formation along it.
 - **Output:** position, facing and current animation, baked at 60 samples
   per world-second.
 
 ### Stage 5: Plan the camera
+
+This stage produces the camera's path and zoom.
 
 - The camera aims at the hero's position plus `lead` pixels ahead along the
   route.
@@ -953,7 +1083,7 @@ On top of that path:
 ### Stage 6: Assign kills (planning backwards)
 
 This stage creates every enemy from its death. For each hit (a hero move,
-weapon firing, sweep hit or finale blast hit), the planner:
+weapon firing, sweep hit or ring hit), the planner:
 
 1. Chooses a kill count:
 
@@ -963,39 +1093,71 @@ weapon firing, sweep hit or finale blast hit), the planner:
    cap:    0.6 × hitShapeArea / (π × enemyRadius²)
    ```
 
-   Weapon hits and sweep hits use their own fixed count, usually 1.
+   Weapons use `killsPerFiring`. Sweep hits kill exactly their one formation
+   member. Ring hits share out the living population at the blast (see
+   below).
 2. Chooses kill positions inside the hit shape at the hit time, by Poisson
    disk sampling so bodies don't overlap.
 3. Creates an enemy for each position, with a **fate**: the time, position
    and hit of its death.
 4. Gives elites and the boss several fates, one per planned hit. Only the
-   last fate is lethal.
+   last fate is lethal. An elite's earlier fates are hero hits within its
+   lifetime whose shapes can reach it.
 
 Threat enemies also get **appointments**: a position they must stand at on a
-given beat. Examples are an archer's firing spot on its release beat and the
-boss's slam position on each slam. The arrow's path is computed once the
-hero's position is known, so that it passes 8–24 px from the hero's
+given beat. An archer's firing spot lies along its threat's bearing, at a
+standoff distance from where the hero is on the release beat. The boss's
+slam position is next to where the hero stood before the dodge. Arrow paths
+are computed from these, so that each arrow passes 8–24 px from the hero's
 **hurtbox** (the area that would count as being hit: a 10 px circle centred
 20 px above the hero's feet).
 
+Formations are placed backwards in the same way. A kick line's members are
+laid out along the hero's sweep path at release time. Their earlier dance
+position and entrance path are worked out back from there.
+
 Population is controlled through lifetimes. The number of living enemies is
 roughly the kill rate multiplied by the average lifetime. So each enemy's
-lifetime is:
+lifetime starts as:
 
 ```text
-killRate = kills in the 4 seconds centred on its death time ÷ 4
+killRate = kills in the 4 world-seconds centred on its death ÷ 4
 lifetime = clamp(targetPopulation ÷ killRate, typeLifetimeMin, typeLifetimeMax)
 ```
 
-In calm sections kills are rare, so enemies live long and loiter near the
-hero. At the climax, kills come fast and the crowd is dense.
+A balancing pass then compares the resulting population curve with the
+target, in windows of one bar:
+
+- **Too few enemies:** increase kill counts on hits in the window, up to each
+  hit's cap.
+- **Too many enemies:** decrease kill counts, down to 1 for hero moves and 0
+  for weapons.
+- **Repeat:** recompute lifetimes and repeat until the curve is within ±15%,
+  for at most 10 rounds. After that, any remaining miss is a planner error.
+
+At the finale blast, the ring hits kill every enemy alive at that moment. The
+planner creates exactly the target population's worth of enemies with fates
+on the ring hits, at positions spread across the bands.
 
 Each enemy's spawn time is its death time minus its lifetime. It spawns just
 outside the camera's view at that moment, on the side it will approach from.
+"Outside" means the sprite's whole bounding box (2× for the boss) is at
+least 16 px beyond the view's edge. A spawn time before the song starts is
+moved to the song start, with the spawn still off-screen.
 
 Some enemies are exempt from spawning off-screen. These are formations and
 boss entrances whose entrance has a visible effect (a summoning circle, or
 landing from above with a growing shadow).
+
+Here is one hit traced through this stage, with illustrative numbers:
+
+```text
+slot: bar 33 beat 1, energy 0.8, accent 0.9 → move cleave (heavy)
+kills = round(7 × (400 / 250) × (0.5 + 0.8)) = 15; cap = 0.6 × 8936 / 452 = 11 → 11
+positions: 11 Poisson-disk points in the 160° arc, radius 80 px
+killRate near bar 33 = 18/s → lifetime = 400 / 18 ≈ 22 s (goblin max 40)
+spawn: 22 world-seconds earlier, off-screen on the side the arc faces
+```
 
 ### Stage 7: Simulate the crowd
 
@@ -1039,8 +1201,9 @@ sound palette entry, and emits:
 - **Sound events:** sample id, song time, gain, stereo pan (from screen
   position) and pitch. See [Sound](#sound) below.
 - **Experience gems:** each death drops gems. They arrive at the hero on the
-  next downbeat. Gem values are scaled so the XP bar fills exactly at each
-  level-up, and fills a final time exactly on the final chord.
+  next downbeat that is not inside a hit-stop. Gem values are scaled so that
+  the XP bar fills exactly at each level-up, and fills a final time when the
+  finale blast's gems arrive, one beat after the blast. The end card follows.
 - **HUD series:** kill, combo, "PERFECT" and XP times, stored sorted, so the
   runtime can count events up to any time with a binary search.
 
@@ -1053,8 +1216,8 @@ suite. Every failure names the time and entity involved.
   song time, mapped back through the warp.
 - **Deaths covered:** every enemy dies inside the shape of the hit that
   kills it.
-- **Off-screen spawns:** every non-exempt enemy spawns outside the camera
-  view plus a 16 px margin.
+- **Off-screen spawns:** every non-exempt enemy's sprite spawns fully outside
+  the camera view plus a 16 px margin.
 - **No pass-through:** no enemy is inside a hit shape at the hit time unless
   it has a fate on that hit.
 - **Spacing:** no two enemies' centres are closer than 0.5 body widths
@@ -1086,6 +1249,7 @@ interface Plan {
   activeIndex: IntervalIndex;   // per 0.5 s bucket: ids of events alive then
   camera: CameraTrack;          // 60 Hz samples: x, y, zoom
   hud: HudSeries;               // sorted times for kills, combo, PERFECT, XP
+  map: MapLayout;               // route, corridor, zones, props, landmarks
 }
 interface EnemyRecord {
   type: string; spawnW: number; deathW: number;
@@ -1121,8 +1285,8 @@ The runtime loads everything, starts playback on the first click, then draws
 
 1. Load atlases, the song map, the level script and content.
 2. Fetch and decode the FLAC audio into an `AudioBuffer`.
-3. Generate the map and run the planner in a worker, or load the plan from
-   the cache.
+3. Run the planner (which also generates the map) in a worker, or load the
+   plan from the cache.
 4. Show the title screen with "Click to begin".
 
 The loading screen shows a progress bar. If schema validation or the planner
@@ -1143,8 +1307,9 @@ Song time must match what the listener hears at the moment a frame appears.
   frame.
 - **Fallback:** if `getOutputTimestamp` is unavailable, the runtime uses
   `currentTime − outputLatency` instead.
-- **Smoothing:** the estimate never runs backwards. It corrects by at most
-  2 ms per frame, unless the error exceeds 50 ms, in which case it jumps.
+- **Smoothing:** normally the estimate never runs backwards and corrects by
+  at most 2 ms per frame. If the error exceeds 50 ms, for example after an
+  audio glitch, it jumps straight to the new value, backwards if necessary.
 
 ```ts
 const { contextTime, performanceTime } = ctx.getOutputTimestamp();
@@ -1206,7 +1371,7 @@ Performance rules:
   hit flash swaps the texture instead of using a per-sprite shader.
 - **Cheap particles:** particles use `ParticleContainer`, with at most 6,000
   live at once.
-- **Budgets:** at the busiest moment on the reference laptop, JavaScript
+- **Budgets:** at the busiest moment on the reference machine, JavaScript
   frame time under 8 ms and GPU frame time under 10 ms.
 
 ## Juice
@@ -1242,6 +1407,9 @@ layers:
 ```
 
 ### Effect catalogue
+
+The catalogue below lists every effect the recipes draw on, grouped by what
+triggers it.
 
 Hits and deaths:
 
@@ -1341,6 +1509,8 @@ which the plan already knows.
 
 ### Scheduling
 
+Sounds are scheduled slightly ahead of time so they start sample-accurately.
+
 - **Scheduler loop:** a loop runs every 25 ms and schedules every sound event
   in the next 150 ms of song time.
 - **Start time:** each sound starts at context time `t0 + s`, using
@@ -1374,10 +1544,13 @@ Budget rules:
   sound, whose gain grows with the logarithm of the kill count.
 - **Variation:** pitch varies by up to ±1 semitone. In palettes marked
   `tuned`, pitched sounds (bells, chimes, magic) are instead transposed to
-  notes in the section's key.
+  notes in the section's key. Each pitched sample records its `rootNote` in
+  the palette so it can be transposed.
 - **Normalization:** every sample is loudness-normalized at bake time.
 
 ### Mixing
+
+The mix keeps the music in front while letting big impacts punch through.
 
 - **Music bus:** the music gain dips 3–4 dB for 120 ms under heavy impacts.
   The dip is scheduled gain automation, so no live level detection is needed.
@@ -1401,7 +1574,7 @@ Every element pulses with the music in song time.
 - **"PERFECT" callouts:** on heavy moves that land on accents, and on near
   misses.
 - **XP bar:** fills from gem pickups. It reaches full exactly at each
-  level-up, and once more on the final chord.
+  level-up, and once more when the finale blast's gems arrive.
 - **Kill counter:** total kills so far.
 - **Song progress:** elapsed time and a thin progress line marked with
   section boundaries.
@@ -1437,7 +1610,7 @@ choices.
     { "item": "legs/pants", "color": "brown" },
     { "item": "weapons/sword/dagger", "variant": "steel" }
   ],
-  "animations": ["walk", "slash", "hurt", "idle"]
+  "animations": ["walk", "slash", "hurt", "idle"]   // hurt doubles as death
 }
 ```
 
@@ -1475,6 +1648,10 @@ Two LPC gaps need custom work:
 - **Allowed licences:** CC0, CC-BY, OGA-BY and CC-BY-SA.
 - **Disallowed licences:** GPL-only and LGPL-only art is rejected. The baker
   fails if a recipe or zone theme refers to it.
+- **Licence sources:** for generator assets, the licence of each file comes
+  from the generator's `CREDITS.csv`. For every other pack, a hand-maintained
+  licence manifest in the repository lists each source file or file pattern
+  with its licence, authors and URL. Any asset missing from both is an error.
 - **Least restrictive option:** when an asset lists several licences, the
   credits record the least restrictive one.
 - **Share-alike output:** baked or modified art derived from CC-BY-SA sources
@@ -1532,9 +1709,9 @@ window.__demo = {
 ```
 
 - **Benchmark:** plays the whole song on the virtual clock at real-time speed,
-  in headed Chrome on the reference laptop. It records JavaScript frame time
-  with `performance` marks, and GPU time with `EXT_disjoint_timer_query_webgl2`
-  where available. It fails if a budget from [Rendering](#rendering) is
+  in headed (visible-window) Chrome on the reference machine. It records
+  JavaScript frame time with `performance` marks, and GPU time with
+  `EXT_disjoint_timer_query_webgl2` where available. It fails if a budget from [Rendering](#rendering) is
   exceeded at the 95th percentile, or if any frame exceeds 33 ms.
 - **Asset check:** confirms that every recipe's licence is allowed, that
   every animation referenced in content exists in the atlases, and that every
@@ -1554,14 +1731,14 @@ start and end of the section. "New" lists what first appears there.
 
 | Section role | Feel | Moveset | Zone | Time scale | Population | New |
 |---|---|---|---|---|---|---|
-| Slow prelude | free | spinning-glide | twilight-glade | 0.5 | 30 → 60 | bats, slimes, eyeballs, title card |
+| Slow prelude | free | spinning-glide | twilight-glade | 0.5 | 0 → 60 | bats, slimes, eyeballs, title card |
 | Galop opening chords | pulsed | herald-cleaves | twilight-glade | 1.0 | 60 → 120 | goblins, orbiting blades |
 | Theme A | pulsed | galop-steps | galop-woods | 1.0 | 120 → 250 | orcs |
 | Theme A repeat | pulsed | galop-dashes | galop-woods | 1.0 | 250 → 320 | chain lightning, bee formations |
-| Contrasting theme | pulsed | kick-line-dance | mushroom-grove | 1.0 | 320 → 350 | kick line, archers |
-| Bridge | pulsed | descent-steps | ember-hollow | 1.0 | 350 → 420 | fire trail, ember variants |
+| Contrasting theme | pulsed | kick-line-dance | mushroom-grove | 1.0 | 320 → 350 | kick line of ember skeletons, archers |
+| Bridge | pulsed | descent-steps | ember-hollow | 1.0 | 350 → 420 | fire trail, ember orcs |
 | Theme A return (climax) | pulsed | revel-onslaught | infernal-grove | 1.0 | 420 → 500 | boss |
-| Coda | pulsed | finale-frenzy | infernal-grove | 1.0 → 0.4 | 500 → 0 | boss death, finale blast |
+| Coda | pulsed | finale-frenzy | infernal-grove | 1.0, then 0.4 after the boss dies | 500 → 450 | boss death, finale blast |
 
 The movesets:
 
@@ -1599,12 +1776,13 @@ The movesets:
   - The boss takes 8 planned hits across the climax.
   - It performs 4 telegraphed slams, each dodged on the beat and followed by
     a counter-attack.
-  - It dies on the second-to-last tutti chord. The death has a 150 ms
-    hit-stop, then a slow-motion ramp to rate 0.4.
+  - It dies on the second-to-last tutti chord from a `finisher` move. The
+    death has a 150 ms hit-stop, then a `timeScale` event ramps to rate 0.4
+    for the rest of the song.
 - **Finale blast:**
   - On the final chord, a ring expands from the hero across the screen.
-  - Every remaining enemy dies as the ring reaches it, on sixteenth-note hits
-    spread over one beat.
+  - Every remaining enemy (about 450) dies as the ring reaches it, on
+    sixteenth-note hits spread over one beat.
   - The population drops to zero.
 
 ## Future Songs
@@ -1754,7 +1932,7 @@ Watch the whole level at least twice and confirm:
 - **Broken level script.** Introduce a deliberate error in the level script,
   such as a bar range outside the song. Loading must show a clear error and
   must not start playback.
-- **Performance.** Run on the reference laptop with Chrome's FPS meter
+- **Performance.** Run on the reference machine with Chrome's FPS meter
   turned on. The climax must hold 60 fps.
 
 ### Test hooks for QA
@@ -1764,5 +1942,5 @@ Watch the whole level at least twice and confirm:
   without audio, to inspect a specific moment.
 - `?avOffsetMs=-40` shifts the picture relative to the audio, for unusual
   audio hardware.
-- `?seed=1859` re-plans with a different seed. The level should look
-  different but still pass every plan check.
+- `?seed=1859` re-plans, and regenerates the map, with a different seed. The
+  level should look different but still pass every plan check.
