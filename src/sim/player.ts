@@ -15,8 +15,8 @@ export interface Observation {
   /** Song and world time now. */
   s: number;
   w: number;
-  /** The hero; with strides, how far a press would stride now (the budget); with press classes, the tier. */
-  hero: { x: number; y: number; stepping: boolean; stride?: number; tier?: number };
+  /** The hero; with strides, how far a press would stride now (the budget); with press classes, the tier; with gems on the field, the pickup radius. */
+  hero: { x: number; y: number; stepping: boolean; stride?: number; tier?: number; pickup?: number };
   enemies: { x: number; y: number; type: string; health: number }[];
   /**
    * Visible threats: an arrow's line runs from (x, y) through its aim point (ax, ay); a slam marker
@@ -30,6 +30,9 @@ export interface Observation {
   /** Set pieces: a closing ring (its centre, radius now, the angles of its gaps), and a stampede's runners. */
   ring?: { x: number; y: number; r: number; gaps: number[] };
   runners?: { x: number; y: number; vx: number; vy: number }[];
+  /** Gems on the field near the hero (with their experience), and the nearest vacuum waiting to be touched. */
+  gems?: { x: number; y: number; value: number }[];
+  vacuum?: { x: number; y: number };
   /** Where the route schedule says the hero should be now, and the route's direction there. */
   pacePoint: { x: number; y: number; tx: number; ty: number };
   /** Distance from a point to the edge of the walkable band (negative outside). */
@@ -129,6 +132,11 @@ const RING_OUT = 80;
 const RUNNER_LOOK = 0.15;
 const RUNNER_NEAR = 40;
 const RUNNER_CLOSE = 70;
+/** Gems on the field: what each point of experience in reach is worth to a step (up to a cap). */
+const GEM_PULL = 0.12;
+const GEM_PULL_MAX = 15;
+/** A vacuum in sight draws the player to touch it, this strongly. */
+const VACUUM_PULL = 4;
 
 /** The eight step directions: one key, or two perpendicular keys for a diagonal. */
 const DIRECTIONS: Key[][] = [["right"], ["right", "down"], ["down"], ["down", "left"], ["left"], ["left", "up"], ["up"], ["up", "right"]];
@@ -323,6 +331,23 @@ export class VirtualPlayer implements Player {
     return { x: ring.x + Math.cos(g) * (ring.r + RING_OUT), y: ring.y + Math.sin(g) * (ring.r + RING_OUT), near: 30 };
   }
 
+  /** Free movement, gems on the field: a vacuum to touch, or else the gem in reach worth most for its distance. */
+  private gemTarget(obs: Observation): { x: number; y: number } | undefined {
+    if (obs.vacuum) return obs.vacuum;
+    let best: { x: number; y: number } | undefined;
+    let bestScore = 0;
+    for (const g of obs.gems ?? []) {
+      const d = Math.hypot(g.x - obs.hero.x, g.y - obs.hero.y);
+      if (d <= (obs.hero.pickup ?? 0) * 0.5) continue;
+      const score = g.value / (d + 30);
+      if (score > bestScore) {
+        bestScore = score;
+        best = g;
+      }
+    }
+    return best;
+  }
+
   /** The cost of standing where the hero is. */
   private standCost(obs: Observation): number {
     return this.placeCost(obs, this.paceFrame(obs), { x: 0, y: 0 }, obs.hero.x, obs.hero.y, 0);
@@ -337,8 +362,14 @@ export class VirtualPlayer implements Player {
     if (!release) {
       const p = this.paceFrame(obs);
       const weave = WEAVE * Math.sin((2 * Math.PI * beat) / WEAVE_BEATS);
-      const tx = p.x + p.tx * STEER_LEAD - p.ty * weave;
-      const ty = p.y + p.ty * STEER_LEAD + p.tx * weave;
+      let tx = p.x + p.tx * STEER_LEAD - p.ty * weave;
+      let ty = p.y + p.ty * STEER_LEAD + p.tx * weave;
+      // Gems on the field: walk to the most valuable gem in reach for its distance (a vacuum first).
+      const gem = this.gemTarget(obs);
+      if (gem) {
+        tx = gem.x;
+        ty = gem.y;
+      }
       const dx = tx - obs.hero.x;
       const dy = ty - obs.hero.y;
       if (Math.hypot(dx, dy) > STEER_STOP) {
@@ -503,6 +534,13 @@ export class VirtualPlayer implements Player {
     // nearest gap before it closes (once outside, it no longer matters).
     const way = this.ringWay(obs);
     if (way) cost += 3 * clamp((Math.hypot(ax - way.x, ay - way.y) - way.near) / 120, 0, 3);
+    // Gems on the field: the experience a step would bring inside the pickup radius, and a vacuum.
+    if (obs.gems && obs.hero.pickup) {
+      let value = 0;
+      for (const g of obs.gems) if (Math.hypot(ax - g.x, ay - g.y) <= obs.hero.pickup) value += g.value;
+      cost -= GEM_PULL * Math.min(value, GEM_PULL_MAX);
+    }
+    if (obs.vacuum) cost += VACUUM_PULL * clamp((Math.hypot(ax - obs.vacuum.x, ay - obs.vacuum.y) - 10) / 100, 0, 3);
     // A stampede: keep out of its runners' way (its gaps are where none are).
     for (const rn of obs.runners ?? []) {
       const d = Math.hypot(ax - (rn.x + rn.vx * RUNNER_LOOK), ay - (rn.y + rn.vy * RUNNER_LOOK));

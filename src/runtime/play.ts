@@ -124,6 +124,8 @@ export async function runLive(env: LiveEnv): Promise<void> {
     }
     const evaluator = new Evaluator(recording.plan, lib, recording);
     const renderer = new Renderer(app, assets, recording.plan, lib);
+    // (?debug=moves shows the pickup radius all the time.)
+    renderer.showPickup = params.debugMoves;
     const hud = new Hud(recording.plan, lib, assets.credits);
     app.stage.addChild(renderer.screen, hud.root);
     stage = { recording, evaluator, renderer, hud };

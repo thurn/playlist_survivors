@@ -32,7 +32,12 @@ export interface Rules {
    * closing rings and stampedes bring the rest.
    */
   setPieces: boolean;
+  /**
+   * Gems on the field: they wait where they drop and are collected inside a pickup radius that grows
+   * with the tier, on sixteenth notes, with a chime that climbs the scale; vacuums follow set pieces.
+   */
+  fieldGems: boolean;
 }
 
 /** The scripted demo's rules: today's behavior. */
-export const DEMO_RULES: Readonly<Rules> = Object.freeze({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false, pressClasses: false, selfFiring: false, gridSounds: false, pressCleaves: false, setPieces: false });
+export const DEMO_RULES: Readonly<Rules> = Object.freeze({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false, pressClasses: false, selfFiring: false, gridSounds: false, pressCleaves: false, setPieces: false, fieldGems: false });

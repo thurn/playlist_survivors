@@ -18,9 +18,9 @@ import { grooveAt } from "../plan/evaluate.ts";
 import type { CameraTrack, Chain, EffectEvent, EnemyRecord, Fate, GemEvent, HeroTrack, Hit, MapLayout, Plan, PlanInput, PlanSwing, Projectile, SlamMarker, SoundEvent, UiEvent } from "../plan/types.ts";
 import { beatIndexIn, type PlanIndex } from "../plan/view.ts";
 import { beatDurationAt, sectionIndexAt, type Ctx } from "../planner/context.ts";
-import { budgetSlot, Emitter, lastAtOrBefore, soundSlot, VOICE_BUDGET, type EmitSink } from "../planner/emit.ts";
+import { budgetSlot, chimeDegree, Emitter, lastAtOrBefore, soundSlot, VOICE_BUDGET, type EmitSink } from "../planner/emit.ts";
 import { ACTIVE_BUCKET, DEATH_ANIM, planHeader } from "../planner/plan.ts";
-import type { ArrowRecord, Attack, BossInfo, Cleave, Dance, FormationRecord, GemRecord, Landing, LandmarkRecord, PressTrace, Recorder, SlamRecord, Threat, ZoneWaveRecord } from "../sim/recorder.ts";
+import type { ArrowRecord, Attack, BossInfo, Cleave, Dance, FormationRecord, GemRecord, Landing, LandmarkRecord, PressTrace, Recorder, SlamRecord, Threat, VacuumRecord, ZoneWaveRecord } from "../sim/recorder.ts";
 import type { Schedule } from "../sim/schedule.ts";
 import { ENEMY_RATE, HERO_ANIMS, HERO_RATE, SLAM_RADIUS } from "../sim/simulate.ts";
 
@@ -101,6 +101,8 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
   private gemFirst = 0;
   private readonly gemsLive: GemEvent[] = [];
   private readonly arrivals = new Set<number>();
+  /** Gems on the field: the latest chime's sixteenth-note slot and scale degree (a run climbs from it). */
+  private lastChime?: { slot: number; degree: number };
   /** Emission waiting for its slot to close: kills grouped per slot, sounds per slot (voice budget), weapon hits (until their fates are in). */
   private readonly pendingKills = new Map<number, { s: number; x: number; n: number; big: boolean; end: number; movedFrom?: number }>();
   private readonly pendingSounds = new Map<number, SoundEvent[]>();
@@ -149,6 +151,7 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
       groove: this.grooveSeries,
       tier: this.tierSeries,
       ...(ctx.level.rules.pressCleaves ? { cleaves: [] } : {}),
+      ...(ctx.level.rules.fieldGems ? { vacuums: [], pickupRadius: ctx.lib.hero.pickupRadius ?? [40] } : {}),
       health: this.healthSeries,
       nearMisses: [],
       threats: [],
@@ -203,7 +206,8 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
     this.version++;
     this.worldBeatsFinal = Math.max(0, Math.min(this.worldBeatsFinal, Math.floor(beatIndexIn(this.plan.songBeats, this.s)) - 2));
     this.effFirst = Math.min(this.effFirst, this.plan.events.effects.length);
-    this.gemFirst = Math.min(this.gemFirst, this.gemsLive.length);
+    // (Gems on the field live long and arrive out of order: a rewind can take an arrival back.)
+    this.gemFirst = this.ctx.level.rules.fieldGems ? 0 : Math.min(this.gemFirst, this.gemsLive.length);
   }
 
   /** Nothing before `mark` will be rewound: forget how to undo it. */
@@ -575,8 +579,8 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
   }
 
   gem(g: GemRecord): void {
-    // Until it arrives, a gem flies on its schedule as if nothing changes.
-    const ev = this.emitter.gem({ ...g, w1: this.predictW(g.s1) });
+    // Until it arrives, a gem flies on its schedule as if nothing changes (a gem on the field waits).
+    const ev = this.emitter.gem({ ...g, w1: Number.isFinite(g.s1) ? this.predictW(g.s1) : Infinity });
     this.add(this.gemsLive, ev);
     this.add(this.plan.events.gems, ev);
   }
@@ -587,7 +591,43 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
     if (this.arrivals.has(ev.s1)) return;
     this.arrivals.add(ev.s1);
     this.undo(() => this.arrivals.delete(ev.s1));
-    this.emitter.gemArrival(ev.s1, this.heroNow());
+    if (!this.ctx.level.rules.fieldGems) {
+      this.emitter.gemArrival(ev.s1, this.heroNow());
+      return;
+    }
+    // One chime per sixteenth with pickups, the next degree of its run.
+    const before = this.lastChime;
+    const slot = Math.round(beatIndexAt(this.ctx.song, ev.s1) * 4);
+    this.lastChime = { slot, degree: chimeDegree(before, slot) };
+    this.undo(() => {
+      this.lastChime = before;
+    });
+    this.emitter.gemArrival(ev.s1, this.heroNow(), this.lastChime.degree);
+  }
+
+  gemFly(gem: number, w: number, s1: number): void {
+    const ev = this.gemsLive[gem];
+    this.set(ev, "wT", w);
+    this.set(ev, "s1", s1);
+    this.set(ev, "w1", this.predictW(s1));
+  }
+
+  gemGrow(gem: number, value: number, big: boolean): void {
+    const ev = this.gemsLive[gem];
+    this.set(ev, "value", value);
+    this.set(ev, "big", big);
+  }
+
+  vacuum(v: VacuumRecord): void {
+    this.add(this.plan.vacuums!, { ...v });
+  }
+
+  vacuumTouch(i: number, s: number, w: number, gems: number): void {
+    const v = this.plan.vacuums![i];
+    this.set(v, "sTouch", s);
+    this.set(v, "wTouch", w);
+    this.set(v, "gems", gems);
+    this.emitter.vacuumTouch(v);
   }
 
   xp(s: number, fill: number): void {
@@ -808,7 +848,9 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
 
   gemsAt(w: number): GemEvent[] {
     const gems = this.gemsLive;
-    while (this.gemFirst < gems.length && gems[this.gemFirst].w0 < w - 6) this.gemFirst++;
+    // (Gems on the field wait until picked up: only those that have arrived are behind.)
+    if (this.ctx.level.rules.fieldGems) while (this.gemFirst < gems.length && gems[this.gemFirst].w1 < w - 1) this.gemFirst++;
+    else while (this.gemFirst < gems.length && gems[this.gemFirst].w0 < w - 6) this.gemFirst++;
     const out: GemEvent[] = [];
     for (let i = this.gemFirst; i < gems.length; i++) {
       const g = gems[i];
@@ -872,7 +914,8 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
     part("effects", () => p.events.effects.forEach((x) => mix(x.recipe, x.s, x.w, x.x, x.y, x.seed)));
     part("sounds", () => p.events.sounds.forEach((x) => mix(x.sample, x.s, x.gain, x.pan, x.rate)));
     part("ui", () => p.events.ui.forEach((x) => mix(x.kind, x.s)));
-    part("gems", () => p.events.gems.forEach((x) => mix(x.w0, x.w1, x.s1)));
+    part("gems", () => p.events.gems.forEach((x) => mix(x.w0, x.w1, x.s1, x.wT ?? -1, x.value, x.big ? 1 : 0)));
+    part("vacuums", () => (p.vacuums ?? []).forEach((v) => mix(v.s, v.w, v.x, v.y, v.sTouch ?? -1, v.wTouch ?? -1, v.gems ?? -1)));
     part("projectiles", () => p.projectiles.forEach((x) => mix(x.w0, x.w1, x.x1, x.y1)));
     part("slams", () => p.slams.forEach((x) => mix(x.w0, x.w1, x.x, x.y)));
     part("chains", () => p.chains.forEach((c) => c.points.forEach((q) => mix(q.w, q.x, q.y))));

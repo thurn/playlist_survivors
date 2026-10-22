@@ -6,6 +6,7 @@
  */
 import type { ContentLibrary } from "../content/loader.ts";
 import { waveRadius } from "../mapgen/openfield.ts";
+import { gemTotals } from "../plan/evaluate.ts";
 import { partnerPress, type Plan } from "../plan/types.ts";
 import { viewRect } from "./camera.ts";
 import { heldAt, heldSpans, type CheckResult } from "./checks.ts";
@@ -295,6 +296,12 @@ export function checkPlay(plan: Plan, lib: ContentLibrary, opts: PlayCheckOption
       const got = plan.weapons.find((g) => g.id === due.id);
       if (!got) f.push(`the ${due.id} level-up never happens (scheduled at ${fmt(due.s)})`);
       else if (Math.abs(got.s - due.s) > 0.001) f.push(`the ${due.id} level-up happens at ${fmt(got.s)}, not on its scheduled moment at ${fmt(due.s)}`);
+    }
+    // Gems on the field: at least 60% of the experience dropped is collected.
+    if (plan.rules?.fieldGems) {
+      n++;
+      const g = gemTotals(plan);
+      if (g.collected < 0.6 * g.dropped) f.push(`only ${g.collected} of ${g.dropped} experience dropped is collected (60% needed)`);
     }
     add("signature moments", f, n);
   }

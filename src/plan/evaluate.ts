@@ -260,7 +260,7 @@ export interface HudState {
    * The end card. With press classes: loose and stray presses, and the song seconds spent at each
    * tier in the sections with a steady beat.
    */
-  end?: { age: number; averageGroove: number; loose?: number; strays?: number; tierTime?: number[] };
+  end?: { age: number; averageGroove: number; loose?: number; strays?: number; tierTime?: number[]; gems?: { collected: number; dropped: number } };
   /** The hero's health (fraction of its maximum; always full without play mode's health), its hurt flash and its heal glow (0–1). */
   health: number;
   hurt: number;
@@ -285,6 +285,12 @@ export interface Frame {
    * hero has a faint aura, pulsing with the beat.
    */
   tier?: number;
+  /**
+   * Gems on the field (play mode): vacuums lying in wait, the pickup radius now, and how strongly to
+   * show it (a faint ring for one beat after each tier change).
+   */
+  vacuums?: { x: number; y: number }[];
+  pickup?: { radius: number; flash: number };
   enemies: EnemySprite[];
   particles: Particle[];
   fx: FxSprite[];
@@ -674,11 +680,13 @@ export class Evaluator {
       const u = (w - g.w0) / Math.max(0.05, g.w1 - g.w0);
       const r0 = rand01(g.seed, 1);
       const r1 = rand01(g.seed, 2);
-      // Burst out, hang, then fly to the hero in an arc.
+      // Burst out, hang, then fly to the hero in an arc. (A gem on the field rests where it fell
+      // until the hero's pickup radius reaches it, then flies in from there.)
       const ox = (r0 - 0.5) * 30;
       const oy = (r1 - 0.5) * 20 - 6;
       const pop = smoothstep(Math.min(1, (w - g.w0) / 0.25));
-      const fly = smoothstep(clamp((u - 0.55) / 0.45, 0, 1));
+      const onField = plan.rules?.fieldGems && (g.wT !== undefined || !Number.isFinite(g.w1));
+      const fly = onField ? (g.wT !== undefined && w > g.wT ? smoothstep(clamp((w - g.wT) / Math.max(0.05, g.w1 - g.wT), 0, 1)) : 0) : smoothstep(clamp((u - 0.55) / 0.45, 0, 1));
       const hp = heroSample(plan, w);
       const bx = g.x0 + ox * pop;
       const by = g.y0 + oy * pop - 4 * Math.sin(Math.PI * pop);
@@ -705,6 +713,7 @@ export class Evaluator {
       camera: { x: cam.x, y: cam.y, zoom: cam.zoom, shakeX, shakeY },
       hero: { x: h.x, y: h.y, z: h.z, facing: this.spinFacing(s, h.facing), anim: h.anim, frame: h.frame, afterimages: after, hurt: hurtAt(plan.health, s) },
       ...(tier !== undefined ? { tier } : {}),
+      ...(plan.pickupRadius ? this.gemField(s, w, tier ?? 0) : {}),
       enemies,
       particles,
       fx,
@@ -997,6 +1006,24 @@ export class Evaluator {
     return this.swingTiers.get(hit);
   }
 
+  /** Gems on the field: the vacuums waiting at world time w, and the pickup radius (flashing for a beat after a tier change). */
+  private gemField(s: number, w: number, tier: number): Pick<Frame, "vacuums" | "pickup"> {
+    const plan = this.plan;
+    const radii = plan.pickupRadius!;
+    const vacuums = (plan.vacuums ?? []).filter((v) => w >= v.w && (v.wTouch === undefined || w < v.wTouch)).map((v) => ({ x: v.x, y: v.y }));
+    let flash = 0;
+    const t = plan.tier;
+    if (t) {
+      const k = countUpTo(t.s, s) - 1;
+      if (k > 0) {
+        const since = s - t.s[k];
+        const beat = this.beatLenAt(this.beatIndex(plan.songBeats, s));
+        if (since < beat) flash = 1 - since / beat;
+      }
+    }
+    return { vacuums, pickup: { radius: radii[Math.max(0, Math.min(radii.length - 1, tier))], flash } };
+  }
+
   private tierAt(s: number): number {
     const t = this.plan.tier;
     if (!t) return 0;
@@ -1105,6 +1132,8 @@ export class Evaluator {
           const own = plan.inputs.filter((i) => i.kind === "press" && i.steps);
           Object.assign(end, { loose: own.filter((i) => i.class === "counted" && !i.rating).length, strays: own.filter((i) => i.class === "stray").length, tierTime: tierTimes(plan, this.index.blastS() ?? plan.duration) });
         }
+        // Gems on the field: the gems collected (their experience) against those dropped.
+        if (plan.rules?.fieldGems) end.gems = gemTotals(plan);
       }
     }
     const progress = clamp(s / plan.duration, 0, 1);
@@ -1137,3 +1166,14 @@ export function facingOf(vx: number, vy: number): number {
 }
 
 export { beatSwell, beatHit };
+
+/** Gems on the field: the experience collected (gems that reached the hero) against all that dropped. */
+export function gemTotals(plan: Pick<Plan, "events">): { collected: number; dropped: number } {
+  let collected = 0;
+  let dropped = 0;
+  for (const g of plan.events.gems) {
+    dropped += g.value;
+    if (Number.isFinite(g.w1) && g.w1 > 0) collected += g.value;
+  }
+  return { collected, dropped };
+}

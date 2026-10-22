@@ -57,6 +57,19 @@ export interface SoundPlacement {
   /** A pan and a seed position of its own (a sound fixed in advance must not change with the hero). */
   pan?: number;
   seedX?: number;
+  /** A gem chime (gems on the field): the scale degree from the section's tonic it plays (0 is the tonic). */
+  degree?: number;
+}
+
+/** A run of gem chimes climbs at most this many scale degrees (two octaves), then starts again. */
+const CHIME_RANGE = 14;
+
+/**
+ * Gem chimes' scale degrees, for the sixteenth-note slots (sorted) with pickups: consecutive slots
+ * climb the scale, and a beat without pickups (more than four slots on) starts again from the tonic.
+ */
+export function chimeDegree(prev: { slot: number; degree: number } | undefined, slot: number): number {
+  return prev && slot - prev.slot <= 4 ? (prev.degree + 1) % CHIME_RANGE : 0;
 }
 
 /** The latest of sorted key-event times at or before s (-Infinity when none). */
@@ -211,7 +224,14 @@ export class Emitter {
     const sg = typeof pick === "string" ? 1 : (pick.gain ?? 1);
     let rate = Math.pow(2, r.range(-1, 1) / 12);
     const scale = keyScale(sec.song.key);
-    if (pal.tuned && root && scale) {
+    if (at.degree !== undefined && root && scale && noteToMidi(root) !== undefined) {
+      // A gem chime: the scale degree from the tonic at or below the sample's root note.
+      const rm = noteToMidi(root)!;
+      const tonic = rm - ((((rm - scale[0]) % 12) + 12) % 12);
+      const d = at.degree;
+      const target = tonic + ((scale[d % scale.length] - scale[0] + 12) % 12) + 12 * Math.floor(d / scale.length);
+      rate = Math.pow(2, (target - rm) / 12);
+    } else if (pal.tuned && root && scale) {
       const rm = noteToMidi(root);
       if (rm !== undefined) {
         const options: number[] = [];
@@ -344,15 +364,27 @@ export class Emitter {
   }
 
   /** A gem as the evaluator draws it. */
-  gem(g: { w0: number; x0: number; y0: number; s1: number; w1: number; value: number; big: boolean; enemy: number }): GemEvent {
-    return { w0: g.w0, x0: g.x0, y0: g.y0, s1: g.s1, w1: g.w1, value: g.value, big: g.big, seed: this.seedOf("gem", g.enemy) };
+  gem(g: { w0: number; x0: number; y0: number; s1: number; w1: number; value: number; big: boolean; enemy: number; wT?: number }): GemEvent {
+    return { w0: g.w0, x0: g.x0, y0: g.y0, s1: g.s1, w1: g.w1, value: g.value, big: g.big, seed: this.seedOf("gem", g.enemy), ...(g.wT !== undefined ? { wT: g.wT } : {}) };
   }
 
-  /** The first gem to arrive at a time: the pickup sparkle and chime. */
-  gemArrival(s1: number, p: { x: number; y: number }): void {
+  /** The first gem to arrive at a time: the pickup sparkle and chime (gems on the field: the chime's scale degree in its run). */
+  gemArrival(s1: number, p: { x: number; y: number }, degree?: number): void {
     this.fx("gem-pickup", s1, p.x, p.y - 16, 0, 0.7);
+    if (degree !== undefined) {
+      // (Collected on a sixteenth already, known when it took off at least NEVER_LATE before.)
+      this.sfx("chime", s1, p.x, PRIORITY.ambient, 0.45, false, 1, undefined, { every: "sixteenth", degree, pan: 0, seedX: 0 });
+      return;
+    }
     // (With grid sounds on the next sixteenth, known from the latest key event before the arrival.)
     this.sfx("gem", s1, p.x, PRIORITY.ambient, 0.4, false, 1, undefined, this.onGrid ? { every: "sixteenth", known: this.knownAt(s1) } : {});
+  }
+
+  /** A vacuum touched (gems on the field): its pickup sound on the next sixteenth, a burst where it lay. */
+  vacuumTouch(v: { sTouch?: number; x: number; y: number }): void {
+    if (v.sTouch === undefined) return;
+    this.fx("gem-pickup", v.sTouch, v.x, v.y - 8, 0, 1);
+    this.sfx("vacuum", v.sTouch, v.x, PRIORITY.hero + 0.6, 0.6, false, 1, undefined, { every: "sixteenth", known: this.knownAt(v.sTouch) });
   }
 
   /** An arrow's release (and its shatter, once it has touched the hero). */
@@ -512,12 +544,25 @@ export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam:
   // Gems fly to the hero; the XP bar fills from the ones collected (the simulation levels up).
   const gems: GemEvent[] = sim.gems.map((g) => em.gem(g));
   const arrivals = new Set<number>();
-  for (const g of gems) {
-    if (arrivals.has(g.s1) || g.w1 === 0) continue;
-    arrivals.add(g.s1);
-    em.gemArrival(g.s1, heroAt(g.w1));
-  }
-  const finalArrival = gems.length ? Math.max(...gems.map((g) => g.s1)) : ctx.duration;
+  if (ctx.level.rules.fieldGems) {
+    // Gems on the field: one chime per sixteenth with pickups, climbing the scale through a run.
+    const firsts = new Map<number, GemEvent>();
+    for (const g of gems) if (Number.isFinite(g.w1) && g.w1 > 0 && !firsts.has(g.s1)) firsts.set(g.s1, g);
+    let prev: { slot: number; degree: number } | undefined;
+    for (const g of [...firsts.values()].sort((a, b) => a.s1 - b.s1)) {
+      const slot = Math.round(beatIndexAt(song, g.s1) * 4);
+      prev = { slot, degree: chimeDegree(prev, slot) };
+      em.gemArrival(g.s1, heroAt(g.w1), prev.degree);
+    }
+    for (const v of sim.vacuums) em.vacuumTouch(v);
+  } else
+    for (const g of gems) {
+      if (arrivals.has(g.s1) || g.w1 === 0) continue;
+      arrivals.add(g.s1);
+      em.gemArrival(g.s1, heroAt(g.w1));
+    }
+  const arrived = gems.filter((g) => Number.isFinite(g.s1) && g.w1 > 0).map((g) => g.s1);
+  const finalArrival = arrived.length ? Math.max(...arrived) : ctx.duration;
   if (sim.blastS !== undefined) sink.ui({ kind: "end", s: finalArrival + 1.6 });
   const xpTimes = sim.xp.map((x) => x.s);
   const xpFill = sim.xp.map((x) => x.fill);

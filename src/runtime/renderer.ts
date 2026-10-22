@@ -98,6 +98,8 @@ class Pool<T extends Container> {
 }
 
 export class Renderer {
+  /** ?debug=moves: show the pickup radius ring all the time (gems on the field). */
+  showPickup = false;
   readonly worldRT: RenderTexture;
   readonly lightRT: RenderTexture;
   readonly bloomRT: RenderTexture;
@@ -348,6 +350,18 @@ export class Renderer {
       sp.alpha = d.alpha;
       sp.tint = d.tint;
     }
+    // Gems on the field: the pickup radius as a faint ring, for a beat after each tier change (always
+    // with ?debug=moves).
+    if (f.pickup && (f.pickup.flash > 0 || this.showPickup)) {
+      const ring = this.pools.decal.next();
+      ring.texture = proc.get("ring")!;
+      ring.anchor.set(0.5);
+      ring.position.set(f.hero.x, f.hero.y);
+      ring.scale.set((f.pickup.radius * 2) / 128, (f.pickup.radius * 2 * 0.7) / 128);
+      ring.rotation = 0;
+      ring.tint = 0x80ffe0;
+      ring.alpha = Math.max(this.showPickup ? 0.3 : 0, 0.6 * f.pickup.flash);
+    }
     for (const sl of f.slams) {
       const sp = this.pools.decal.next();
       sp.texture = proc.get("glow")!;
@@ -531,6 +545,26 @@ export class Renderer {
       sp.scale.set(1);
       sp.alpha = 1;
       sp.tint = 0xffffff;
+    }
+    // Gems on the field: vacuums waiting to be touched, pulsing on the beat.
+    for (const v of f.vacuums ?? []) {
+      const pulse = beatSwell(f.hud.beatPhase);
+      const g = this.pools.fxA.next();
+      g.texture = proc.get("glow")!;
+      g.anchor.set(0.5);
+      g.position.set(Math.round(v.x), Math.round(v.y - 10));
+      g.scale.set(1.2 + 0.3 * pulse);
+      g.rotation = 0;
+      g.tint = 0x80ffe0;
+      g.alpha = 0.7;
+      const sp = this.pools.over.next();
+      sp.texture = proc.get("gem-big")!;
+      sp.anchor.set(0.5);
+      sp.position.set(Math.round(v.x), Math.round(v.y - 10 - 3 * pulse));
+      sp.rotation = 0;
+      sp.scale.set(1.6);
+      sp.alpha = 1;
+      sp.tint = 0xc0fff0;
     }
     for (const g of f.gems) {
       const sp = this.pools.over.next();

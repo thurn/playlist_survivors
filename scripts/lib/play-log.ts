@@ -8,7 +8,7 @@
  * rules serve as references while the groove is tuned.
  */
 import type { HeroDef } from "../../src/content/schema.ts";
-import type { ApplyLog, ClockProbe, DropLog, HeroPath, KeyLog, SoundLog, SoundMove } from "../../src/live/log.ts";
+import type { ApplyLog, ClockProbe, DropLog, GemLog, HeroPath, KeyLog, SoundLog, SoundMove } from "../../src/live/log.ts";
 import type { PressTrace } from "../../src/sim/recorder.ts";
 import { classifyPress, drainPerBeat, freshPressMemo, grooveAfterChange, tierFor } from "../../src/sim/timing.ts";
 
@@ -46,6 +46,8 @@ export interface PlayLogFile {
   heroPath?: HeroPath;
   /** Grid sounds: the sounds moved to a later slot, known too late for their own. */
   soundMoves?: SoundMove[];
+  /** Gems on the field: pickups per sixteenth, vacuums, and the experience dropped and collected. */
+  gems?: GemLog;
   keys: KeyLog[];
   applies: ApplyLog[];
   drops: DropLog[];
@@ -296,6 +298,13 @@ export function summarize(log: PlayLogFile, opts: SummaryOptions = {}): string {
   const sk = new Map<string, number>();
   for (const x of log.sounds) if (inRange(x.s)) sk.set(x.kind, (sk.get(x.kind) ?? 0) + 1);
   if (sk.size > 0) say(`Sounds: ${[...sk].map(([k, n]) => `${k} ${n}`).join(", ")}`);
+  // Gems on the field: collected against dropped, pickups per sixteenth, and the vacuums.
+  if (log.gems) {
+    const gl = log.gems;
+    const pick = gl.pickups.filter((p) => inRange(p.s));
+    say(`Gems: ${gl.collected} of ${gl.dropped} experience dropped collected (${gl.dropped ? Math.round((100 * gl.collected) / gl.dropped) : 0}%), on ${pick.length} sixteenths (most on one: ${Math.max(0, ...pick.map((p) => p.n))} gems)`);
+    for (const v of gl.vacuums.filter((x) => inRange(x.s))) say(`  vacuum at ${f(v.s, 2)}: ${v.sTouch !== undefined ? `touched at ${f(v.sTouch, 2)}, ${v.gems ?? 0} gems in view flew in` : "never touched"}`);
+  }
   // Grid sounds: each sound known less than 60 ms before its slot moved to a later one.
   const moves = (log.soundMoves ?? []).filter((m) => inRange(m.from));
   if (moves.length > 0) {

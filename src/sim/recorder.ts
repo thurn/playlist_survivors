@@ -47,7 +47,14 @@ export interface SlamRecord {
 
 export type Threat = { s: number; w: number; kind: "arrow" | "slam"; outcome: "near-miss" | "touch" | "miss"; x: number; y: number };
 export type BossInfo = { id: number; landS: number; x: number; y: number; deathS?: number; killHit?: number; health: { s: number; frac: number }[] };
-export type GemRecord = { w0: number; x0: number; y0: number; s1: number; w1: number; value: number; big: boolean; enemy: number };
+/**
+ * A gem: dropped at (x0, y0) at world time w0, arriving at the hero at song and world time s1, w1.
+ * Gems on the field (rules.fieldGems) wait (s1 and w1 Infinity) until the hero's pickup radius
+ * reaches them; they take off at world time wT.
+ */
+export type GemRecord = { w0: number; x0: number; y0: number; s1: number; w1: number; value: number; big: boolean; enemy: number; wT?: number };
+/** A vacuum (rules.fieldGems): dropped at (x, y) at song and world time s, w; touched at sTouch, wTouch, sending `gems` gems in view. */
+export type VacuumRecord = { s: number; w: number; x: number; y: number; sTouch?: number; wTouch?: number; gems?: number };
 export type FormationRecord = { def: string; sStart: number; sRelease: number; members: number[] };
 /** The open field: a transform wave sweeps out from the hero on a section's first downbeat. */
 export type ZoneWaveRecord = { s: number; w: number; x: number; y: number; zone: string };
@@ -169,6 +176,8 @@ export interface SimResult {
   boss?: BossInfo;
   /** Gems: drop (world time, place) and arrival at the hero (song and world time). */
   gems: GemRecord[];
+  /** Gems on the field: the vacuums that follow set pieces. */
+  vacuums: VacuumRecord[];
   /** The XP bar after each change (fraction of the next level-up's requirement). */
   xp: { s: number; fill: number }[];
   /** Cleave shockwaves: one hit per band (with press cleaves, the cleave that launched it). */
@@ -223,6 +232,12 @@ export interface Recorder {
   bossDeath(s: number, killHit: number): void;
   gem(g: GemRecord): void;
   gemArrive(gem: number, w: number): void;
+  /** Gems on the field: a gem takes off for the hero at world time w, to arrive at song time s1. */
+  gemFly(gem: number, w: number, s1: number): void;
+  /** Gems on the field, past the cap: a death adds its value to the nearest gem, which grows. */
+  gemGrow(gem: number, value: number, big: boolean): void;
+  vacuum(v: VacuumRecord): void;
+  vacuumTouch(i: number, s: number, w: number, gems: number): void;
   xp(s: number, fill: number): void;
   /** A cleave shockwave starts (with press cleaves, the accent's cleave that launched it); its band hits follow. */
   wave(cleave?: Cleave): void;
@@ -275,6 +290,7 @@ export class BatchRecorder implements Recorder {
   readonly threats: Threat[] = [];
   bossInfo?: BossInfo;
   readonly gems: GemRecord[] = [];
+  readonly vacuums: VacuumRecord[] = [];
   readonly xpSeries: { s: number; fill: number }[] = [{ s: 0, fill: 0 }];
   readonly waves: ({ hits: number[] } & Partial<Cleave>)[] = [];
   readonly formations: FormationRecord[] = [];
@@ -388,6 +404,22 @@ export class BatchRecorder implements Recorder {
   gemArrive(gem: number, w: number): void {
     this.gems[gem].w1 = w;
   }
+  gemFly(gem: number, w: number, s1: number): void {
+    this.gems[gem].wT = w;
+    this.gems[gem].s1 = s1;
+  }
+  gemGrow(gem: number, value: number, big: boolean): void {
+    this.gems[gem].value = value;
+    this.gems[gem].big = big;
+  }
+  vacuum(v: VacuumRecord): void {
+    this.vacuums.push(v);
+  }
+  vacuumTouch(i: number, s: number, w: number, gems: number): void {
+    this.vacuums[i].sTouch = s;
+    this.vacuums[i].wTouch = w;
+    this.vacuums[i].gems = gems;
+  }
   xp(s: number, fill: number): void {
     this.xpSeries.push({ s, fill });
   }
@@ -458,6 +490,7 @@ export class BatchRecorder implements Recorder {
       threats: this.threats,
       boss: this.bossInfo,
       gems: this.gems,
+      vacuums: this.vacuums,
       xp: this.xpSeries,
       waves: this.waves,
       formations: this.formations,

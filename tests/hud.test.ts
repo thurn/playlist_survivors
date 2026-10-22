@@ -110,7 +110,7 @@ describe("press classes on the HUD", () => {
     expect(styleOf(overlap).hud.stomp).toMatchObject({ lit: 1, rating: "great" });
   });
 
-  it("ends with kills, the rating counts, loose and stray presses, the average groove and the time at each tier", () => {
+  it("ends with kills, the rating counts, loose and stray presses, the average groove, the time at each tier and the gems collected", () => {
     const ev = new Evaluator(plan, lib);
     const endS = plan.events.ui.find((u) => u.kind === "end")!.s;
     const hud = ev.evaluate(endS + 0.5).hud;
@@ -130,7 +130,12 @@ describe("press classes on the HUD", () => {
       `LOOSE ${end.loose}   STRAY ${end.strays}`,
       `AVERAGE GROOVE ${Math.round(end.averageGroove * 100)}%`,
       `TIME AT TIER  ${end.tierTime!.map((t, i) => `${i}: ${Math.round(t)}S`).join("  ")}`,
+      `GEMS ${end.gems!.collected} OF ${end.gems!.dropped}`,
     ]);
+    // Gems on the field: the experience collected, of all that dropped.
+    expect(end.gems!.dropped).toBe(plan.events.gems.reduce((a, g) => a + g.value, 0));
+    expect(end.gems!.collected).toBeLessThan(end.gems!.dropped);
+    expect(end.gems!.collected).toBeGreaterThan(0);
     // A recorded run of play mode (?player=) shows the grade of its average groove; the demo shows none.
     expect(endCardGrade(end, undefined)?.grade).toBe(gradeFor(end.averageGroove));
     expect(endCardGrade(end, { grade: "S", newBest: true })?.grade).toBe("S");

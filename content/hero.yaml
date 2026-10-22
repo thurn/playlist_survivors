@@ -59,6 +59,8 @@ hero:
   # Play mode's health: each enemy touching the hero bites at most once per biteEveryMs. Rhythm
   # heals: a press rated Great or better heals `beat`, and from the 4th such beat in a row each
   # heals `streak` more; a lesser press or a stumble ends the streak.
+  # Play mode's gems on the field (rules.fieldGems): a gem inside this radius (px, by tier) flies in.
+  pickupRadius: [40, 65, 95, 120]
   health: { max: 5000, biteEveryMs: 600, heal: { beat: 15, streakFrom: 4, streak: 15 } }
   # The boss outweighs a crowd of hundreds; formation members draw a cleave to the line.
   aimWeights: { regular: 1, elite: 2, boss: 1000, formation: 20 }

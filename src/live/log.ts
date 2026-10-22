@@ -41,9 +41,37 @@ export interface SoundMove {
   s: number;
 }
 
-/** What the log carries of a recording up to song time s: the groove and tier series, the sounds moved to a later slot, and the hero's path. */
-export function recordingContext(plan: Plan, warp: Warp, s: number): { groove: { s: number[]; v: number[] }; tier?: { s: number[]; v: number[] }; soundMoves: SoundMove[]; heroPath: HeroPath } {
+/** Gems on the field (play mode): pickups per sixteenth (song time, gems, experience), the vacuums, and the experience dropped and collected. */
+export interface GemLog {
+  pickups: { s: number; n: number; xp: number }[];
+  vacuums: { s: number; sTouch?: number; gems?: number }[];
+  dropped: number;
+  collected: number;
+}
+
+/** Gems on the field: what the log carries of them (in live play, up to world time `w`: gems still in flight haven't landed). */
+export function gemLog(plan: Plan, w = Infinity): GemLog {
+  const by = new Map<number, { n: number; xp: number }>();
+  let dropped = 0;
+  let collected = 0;
+  for (const g of plan.events.gems) {
+    dropped += g.value;
+    if (!Number.isFinite(g.w1) || g.w1 <= 0 || g.w1 > w) continue;
+    collected += g.value;
+    const p = by.get(g.s1) ?? { n: 0, xp: 0 };
+    p.n++;
+    p.xp += g.value;
+    by.set(g.s1, p);
+  }
+  const pickups = [...by].sort((a, b) => a[0] - b[0]).map(([t, p]) => ({ s: r6s(t), n: p.n, xp: p.xp }));
+  const vacuums = (plan.vacuums ?? []).map((v) => ({ s: r6s(v.s), ...(v.sTouch !== undefined ? { sTouch: r6s(v.sTouch), gems: v.gems ?? 0 } : {}) }));
+  return { pickups, vacuums, dropped, collected };
+}
+
+/** What the log carries of a recording up to song time s: the groove and tier series, the sounds moved to a later slot, gems on the field, and the hero's path. */
+export function recordingContext(plan: Plan, warp: Warp, s: number): { groove: { s: number[]; v: number[] }; tier?: { s: number[]; v: number[] }; soundMoves: SoundMove[]; gems?: GemLog; heroPath: HeroPath } {
   return {
+    ...(plan.rules?.fieldGems ? { gems: gemLog(plan, warp.toWorld(s)) } : {}),
     soundMoves: plan.events.sounds.filter((x) => x.movedFrom !== undefined).map((x) => ({ key: x.key ?? x.sample, sample: x.sample, from: r6s(x.movedFrom!), s: r6s(x.s) })),
     groove: { s: Array.from(plan.groove.s, r6s), v: Array.from(plan.groove.v, (v) => Math.round(v * 1e4) / 1e4) },
     ...(plan.tier ? { tier: { s: Array.from(plan.tier.s, r6s), v: Array.from(plan.tier.v) } } : {}),

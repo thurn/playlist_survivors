@@ -8,7 +8,9 @@ world: open                 # the demo's default is corridor
 # on its subdivision's slot, never late (gridSounds). An eligible accent's swing is heavy for everyone,
 # and a press on the chord launches its shockwave (pressCleaves). The steady stream aims for 60% of
 # the population curve, and set pieces (the closing rings and stampedes below) bring the rest (setPieces).
-rules: { oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true, selfFiring: true, gridSounds: true, pressCleaves: true, setPieces: true }
+# Gems wait where they drop, collected inside a pickup radius that grows with the tier, and a vacuum
+# follows each set piece (fieldGems).
+rules: { oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true, selfFiring: true, gridSounds: true, pressCleaves: true, setPieces: true, fieldGems: true }
 hero:
   # Fixed-speed strides: 140 px/s at any tempo and press rate, faster than every enemy but bats and bees.
   walk: { speed: 140 }
@@ -31,14 +33,15 @@ sections:
   - section: climax
     camera: { lead: 0 }
 # Experience for each level-up: the moderate player fills each bar a little before its moment
-# (with set pieces' thinner stream it collects about 234-257 by the first on the checked seeds).
+# (with gems on the field it collects them only where it walks: about 110-130 by the first, 500-630
+# between the first and second, and 930-1210 between the second and third on the checked seeds).
 events:
   - at: { section: galop-opening, point: start }
-    xp: 220
+    xp: 100
   - at: { section: theme-a-repeat, point: start }
-    xp: 850
+    xp: 470
   - at: { section: bridge, point: start }
-    xp: 1700
+    xp: 880
   # Set pieces (rules.setPieces): closing rings around where the hero stands, each closing on an
   # accent a cleave can meet, and stampedes running across the view.
   - at: { accent: tutti-chord, fromEnd: 6 }           # 0:59.5

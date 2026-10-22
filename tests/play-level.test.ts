@@ -22,8 +22,8 @@ describe("the play level file", () => {
     expect(play.extends).toBe("orpheus-galop");
     expect(play.world).toBe("open");
     expect(demo.world).toBe("corridor");
-    expect(play.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true, selfFiring: true, gridSounds: true, pressCleaves: true, setPieces: true });
-    expect(demo.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false, pressClasses: false, selfFiring: false, gridSounds: false, pressCleaves: false, setPieces: false });
+    expect(play.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true, selfFiring: true, gridSounds: true, pressCleaves: true, setPieces: true, fieldGems: true });
+    expect(demo.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false, pressClasses: false, selfFiring: false, gridSounds: false, pressCleaves: false, setPieces: false, fieldGems: false });
     expect(play.player).toBe("moderate");
     expect(play.seed).toBe(demo.seed);
     expect(play.title).toEqual(demo.title);
@@ -49,9 +49,9 @@ describe("the play level file", () => {
     expect(pieces.map((e) => (e.ring ? `ring ${e.ring.count}` : `stampede ${e.stampede!.count}`))).toEqual(["ring 30", "stampede 40", "ring 60", "stampede 60", "ring 80"]);
     expect(play.events.length).toBe(demo.events.length + pieces.length);
     expect(play.events.filter((e) => e.levelUp).map((e) => [e.levelUp, e.xp])).toEqual([
-      ["orbiting-blades", 220],
-      ["chain-lightning", 850],
-      ["fire-trail", 1700],
+      ["orbiting-blades", 100],
+      ["chain-lightning", 470],
+      ["fire-trail", 880],
     ]);
     expect(play.events.filter((e) => !e.levelUp && !e.ring && !e.stampede)).toEqual(demo.events.filter((e) => !e.levelUp));
   });

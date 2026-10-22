@@ -131,8 +131,8 @@ describe("the impacts-on-the-grid check", () => {
     const result = () => checkPlan(p, lib).find((c) => c.name === "impacts on the grid")!;
     expect(result().failures).toEqual([]);
     const keys = new Set(p.events.sounds.map((x) => x.key));
-    for (const k of ["kill-multi", "tier-up", "level-up", "weapon-blades", "weapon-lightning", "gem"]) expect(keys.has(k), k).toBe(true);
-    for (const key of ["kill-multi", "tier-up", "level-up", "weapon-lightning", "gem"]) {
+    for (const k of ["kill-multi", "tier-up", "level-up", "weapon-blades", "weapon-lightning", "chime"]) expect(keys.has(k), k).toBe(true);
+    for (const key of ["kill-multi", "tier-up", "level-up", "weapon-lightning", "chime"]) {
       const snd = p.events.sounds.find((x) => x.key === key)!;
       snd.s += 0.005;
       expect(result().failures.some((f) => f.startsWith(`${key} sound at`)), key).toBe(true);

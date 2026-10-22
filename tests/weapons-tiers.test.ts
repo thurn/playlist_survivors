@@ -80,7 +80,8 @@ describe("the blades", () => {
     const sec = section("galop-opening");
     const beats = Array.from(sch.gridTimes).filter((g) => g > sec.s0 + 0.5 && g < sec.s0 + 9);
     const rec = new BatchRecorder();
-    run(beats.slice(0, 14).flatMap((b) => tap(b)), [beats[18]], rec);
+    // (Today's gems, which all fly in: a hero standing through the prelude collects no gems on the field.)
+    run(beats.slice(0, 14).flatMap((b) => tap(b)), [beats[18]], rec, { fieldGems: false });
     const tierAt = (s: number) => rec.tierV[rec.tierS.findLastIndex((x) => x <= s)];
     const firings = new Map<number, typeof rec.hits>();
     for (const h of rec.hits) if (h.what === "orbiting-blades") firings.set(h.s, [...(firings.get(h.s) ?? []), h]);

@@ -18,7 +18,8 @@ export interface HudLine {
 
 /**
  * The end card's totals. With press classes: kills, the rating counts (loose too), stray presses,
- * the average groove and the time at each tier; otherwise today's kills, ratings and damage bonus.
+ * the average groove and the time at each tier (and with gems on the field, the experience collected
+ * of all that dropped); otherwise today's kills, ratings and damage bonus.
  */
 export function endCardLines(hud: Pick<HudState, "kills" | "ratings">, end: NonNullable<HudState["end"]>, maxBonus: number): HudLine[] {
   const lines: HudLine[] = [
@@ -34,6 +35,7 @@ export function endCardLines(hud: Pick<HudState, "kills" | "ratings">, end: NonN
   lines.push({ text: `LOOSE ${end.loose ?? 0}   STRAY ${end.strays ?? 0}`, color: RATING_COLORS.stumble });
   lines.push({ text: `AVERAGE GROOVE ${Math.round(end.averageGroove * 100)}%`, color: 0x80e0ff });
   lines.push({ text: `TIME AT TIER  ${end.tierTime.map((t, i) => `${i}: ${Math.round(t)}S`).join("  ")}`, color: 0xc0c8e0 });
+  if (end.gems) lines.push({ text: `GEMS ${end.gems.collected} OF ${end.gems.dropped}`, color: 0x80ffd0 });
   return lines;
 }
 

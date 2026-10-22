@@ -77,6 +77,13 @@ const RING_ROW = 32;
 /** A stampede runs at this times its enemy's speed, in rows this far apart. */
 export const STAMPEDE_SPEED = 2.5;
 const STAMPEDE_ROW = 48;
+/** Gems on the field (rules.fieldGems): at most this many lie on the field. */
+export const GEM_CAP = 300;
+/** A vacuum drops this far ahead of the hero, is touched within this distance, and its gems land over one bar. */
+export const VACUUM_AHEAD = 150;
+export const VACUUM_TOUCH = 24;
+/** The player sees a vacuum within this distance (px) of the hero. */
+const VACUUM_SEEN = 400;
 /** Hit-stop limits (seconds). */
 export const HITSTOP_MAX = 0.15;
 export const HITSTOP_MIN = 0.04;
@@ -251,6 +258,7 @@ type Ev =
   | { kind: "stampede"; k: number }
   | { kind: "formationRelease"; f: number }
   | { kind: "gem"; gem: number; value: number }
+  | { kind: "vacuumDrop" }
   | { kind: "levelDue"; i: number }
   | { kind: "levelUp"; id: string }
   | { kind: "zoneWave"; zone: string }
@@ -318,6 +326,7 @@ const ORDER: Record<Ev["kind"], number> = {
   arrive: 19,
   slamLand: 19,
   gem: 20,
+  vacuumDrop: 4,
   beat: 21,
   appear: 22,
   zoneWave: 4,
@@ -461,6 +470,9 @@ interface Io {
 type Punch = { s: number; amt: number; w?: number };
 
 /** Everything a simulation carries from one moment to the next. A snapshot is a deep copy of it. */
+/** An element of one of the state's lists. */
+type StateOf<K extends "field" | "vacuums"> = SimState[K][number];
+
 interface SimState {
   s: number;
   w: number;
@@ -512,6 +524,11 @@ interface SimState {
   nChains: number;
   nArrows: number;
   nGems: number;
+  /** Gems on the field (rules.fieldGems): those lying where they dropped, by gem record; the vacuums still to touch; the stampedes in play (formation index) and whether their vacuum has dropped. */
+  field: { gem: number; x: number; y: number; value: number; big: boolean }[];
+  vacuums: { i: number; x: number; y: number }[];
+  nVacuums: number;
+  stampedes: { fi: number; done: boolean }[];
   /** Camera punches: song time, strength, and world time once it has happened (it freezes in a hit-stop). */
   punches: Punch[];
   alive: Foe[];
@@ -597,6 +614,10 @@ function freshState(env: Env): SimState {
     nChains: 0,
     nArrows: 0,
     nGems: 0,
+    field: [],
+    vacuums: [],
+    nVacuums: 0,
+    stampedes: [],
     punches,
     alive: [],
     pending: 0,
@@ -717,6 +738,7 @@ function engine(env: Env, st: SimState, io: Io) {
   const strides = env.rules.strides;
   const selfFiring = env.rules.selfFiring;
   const setPieces = env.rules.setPieces;
+  const fieldGems = env.rules.fieldGems;
   const pressCleaves = env.rules.pressCleaves;
   const rule = strideRule(hero);
   /** How long a step (or stride) takes. */
@@ -1833,6 +1855,7 @@ function engine(env: Env, st: SimState, io: Io) {
     if (!between) st.rateS = t;
     if (fixed && st.w > st.lastFixedW) {
       moveFoes(st.w);
+      if (fieldGems) collectGems();
       st.lastFixedW = st.w;
     }
     rec().clock?.(st.s, st.w, between);
@@ -1886,18 +1909,30 @@ function engine(env: Env, st: SimState, io: Io) {
     return out;
   };
 
+  /** Gems on the field as the player sees them: those within a stride or two of the pickup radius, and the nearest vacuum. */
+  const gemView = (hp: { x: number; y: number }): Pick<Observation, "gems" | "vacuum"> => {
+    if (!fieldGems) return {};
+    const reach = pickupRadius() + 150;
+    const gems = st.field.filter((g) => Math.hypot(g.x - hp.x, g.y - hp.y) <= reach).map((g) => ({ x: g.x, y: g.y, value: g.value }));
+    let vacuum: { x: number; y: number } | undefined;
+    // (A vacuum the player sees: within VACUUM_SEEN of the hero; one left far behind no longer draws it.)
+    for (const v of st.vacuums) if (Math.hypot(v.x - hp.x, v.y - hp.y) <= VACUUM_SEEN && (!vacuum || Math.hypot(v.x - hp.x, v.y - hp.y) < Math.hypot(vacuum.x - hp.x, vacuum.y - hp.y))) vacuum = { x: v.x, y: v.y };
+    return { ...(gems.length ? { gems } : {}), ...(vacuum ? { vacuum } : {}) };
+  };
+
   const observe = (): Observation => {
     const hp = heroPose(st.w);
     const pp = forward();
     return {
       s: st.s,
       w: st.w,
-      hero: { x: hp.x, y: hp.y, stepping: hp.u < 1, ...(strides ? { stride: strideNow(hp) } : {}), ...(env.rules.pressClasses ? { tier: st.tier } : {}) },
+      hero: { x: hp.x, y: hp.y, stepping: hp.u < 1, ...(strides ? { stride: strideNow(hp) } : {}), ...(env.rules.pressClasses ? { tier: st.tier } : {}), ...(fieldGems ? { pickup: pickupRadius() } : {}) },
       enemies: st.alive.filter((f) => f.alive).map((f) => ({ x: posX(f, st.w), y: posY(f, st.w), type: f.type, health: f.health })),
       threats: visibleThreats(hp),
       boss: st.bossFoe && st.bossFoe.alive && !pinned(st.bossFoe) ? { x: posX(st.bossFoe, st.w), y: posY(st.bossFoe, st.w) } : undefined,
       formation: dancingFormation(),
       ...setPieceView(hp),
+      ...gemView(hp),
       pacePoint: { x: pp.x, y: pp.y, tx: pp.tx, ty: pp.ty },
       edgeDistance: (x, y) => world.edge(x, y),
     };
@@ -1976,6 +2011,12 @@ function engine(env: Env, st: SimState, io: Io) {
       spawnFoe(f.type, p2.x, p2.y, f.health);
     }
     st.alive = st.alive.filter((f) => f.alive);
+    // A stampede whose runners have all left the view (or died): its vacuum on the next downbeat.
+    for (const sp of st.stampedes) {
+      if (sp.done || st.alive.some((f) => f.formation === sp.fi && f.run)) continue;
+      sp.done = true;
+      st.q.push(downbeatAtOrAfter(st.s + 1e-6), { kind: "vacuumDrop" });
+    }
   };
 
   const grantWeapon = (id: string) => {
@@ -2118,16 +2159,93 @@ function engine(env: Env, st: SimState, io: Io) {
   const onDeath = (f: Foe, fate: Fate, h: Hit) => {
     // Every death drops gems, which fly to the hero on the next downbeat (a beat after the finale blast).
     const big = f.def.size !== "regular";
-    const s1 = st.blasting && blastS !== undefined ? timeOfBeatIndex(song, sbiAt(blastS) + 1) : downbeatAtOrAfter(st.s + 0.12);
     const value = big ? 5 : 1;
-    rec().gem({ w0: st.w, x0: fate.x, y0: fate.y, s1, w1: 0, value, big, enemy: f.id });
-    st.q.push(s1, { kind: "gem", gem: st.nGems++, value });
+    if (fieldGems && !st.blasting) dropOnField(f, fate, value, big);
+    else {
+      const s1 = st.blasting && blastS !== undefined ? timeOfBeatIndex(song, sbiAt(blastS) + 1) : downbeatAtOrAfter(st.s + 0.12);
+      rec().gem({ w0: st.w, x0: fate.x, y0: fate.y, s1, w1: 0, value, big, enemy: f.id });
+      st.q.push(s1, { kind: "gem", gem: st.nGems++, value });
+    }
     if (f === st.bossFoe) {
       rec().bossDeath(st.s, h.id);
       // Slams it had marked never land.
       st.slamMarks.clear();
       if (h.source !== "ring") startHitStop(BOSS_KILL_STOP);
     }
+  };
+
+  // ------------------------------------------------------- gems on the field
+  /** Gems on the field: the pickup radius at the tier now. */
+  const pickupRadius = () => {
+    const r = hero.pickupRadius ?? [40];
+    return r[Math.max(0, Math.min(r.length - 1, st.tier))];
+  };
+  /** The first sixteenth note at or after song time t. */
+  const sixteenthAtOrAfter = (t: number) => timeOfBeatIndex(song, Math.ceil(sbiAt(t) * 4 - 1e-6) / 4);
+
+  /** A death's gem waits where it dropped; past the cap, its value goes to the nearest gem, which grows. */
+  const dropOnField = (f: Foe, fate: Fate, value: number, big: boolean) => {
+    if (st.field.length >= GEM_CAP) {
+      let near = st.field[0];
+      for (const g of st.field) if (Math.hypot(g.x - fate.x, g.y - fate.y) < Math.hypot(near.x - fate.x, near.y - fate.y)) near = g;
+      near.value += value;
+      near.big = near.big || big || near.value >= 5;
+      rec().gemGrow(near.gem, near.value, near.big);
+      return;
+    }
+    rec().gem({ w0: st.w, x0: fate.x, y0: fate.y, s1: Infinity, w1: Infinity, value, big, enemy: f.id });
+    st.field.push({ gem: st.nGems++, x: fate.x, y: fate.y, value, big });
+  };
+
+  /** A gem takes off for the hero now, collected (its experience counting) at song time s1. */
+  const takeOff = (g: StateOf<"field">, s1: number) => {
+    rec().gemFly(g.gem, st.w, s1);
+    st.q.push(s1, { kind: "gem", gem: g.gem, value: g.value });
+  };
+
+  /**
+   * On every fixed step: gems inside the pickup radius take off, collected on the first sixteenth at
+   * least NEVER_LATE away; a vacuum the hero touches sends every gem in view, landing over one bar.
+   */
+  const collectGems = () => {
+    if (st.blasting) return;
+    const hp = heroPose(st.w);
+    const r = pickupRadius();
+    if (st.field.some((g) => Math.hypot(g.x - hp.x, g.y - hp.y) <= r)) {
+      const s1 = sixteenthAtOrAfter(st.s + NEVER_LATE);
+      st.field = st.field.filter((g) => {
+        if (Math.hypot(g.x - hp.x, g.y - hp.y) > r) return true;
+        takeOff(g, s1);
+        return false;
+      });
+    }
+    const v = st.vacuums.find((x) => Math.hypot(x.x - hp.x, x.y - hp.y) <= VACUUM_TOUCH);
+    if (v) touchVacuum(v, hp);
+  };
+
+  const touchVacuum = (v: StateOf<"vacuums">, hp: { x: number; y: number }) => {
+    st.vacuums = st.vacuums.filter((x) => x !== v);
+    const view = st.camera.view();
+    const inView = st.field.filter((g) => g.x >= view[0] && g.x <= view[2] && g.y >= view[1] && g.y <= view[3]).sort((a, b) => Math.hypot(a.x - hp.x, a.y - hp.y) - Math.hypot(b.x - hp.x, b.y - hp.y));
+    rec().vacuumTouch(v.i, st.s, st.w, inView.length);
+    if (inView.length === 0) return;
+    // Over one bar of sixteenths from the first at least NEVER_LATE away, nearest first.
+    const bi0 = sbiAt(sixteenthAtOrAfter(st.s + NEVER_LATE));
+    const bpb = ctx.idx.beatsPerBar[Math.max(1, barOfBeatIndex(ctx.idx, sbiAt(st.s)))] ?? 2;
+    const n = 4 * bpb;
+    const taken = new Set(inView);
+    inView.forEach((g, k) => takeOff(g, timeOfBeatIndex(song, bi0 + Math.floor((k * n) / inView.length) / 4)));
+    st.field = st.field.filter((g) => !taken.has(g));
+  };
+
+  /** A vacuum drops on the first downbeat after a set piece ends, VACUUM_AHEAD along the hero's heading. */
+  const vacuumDrop = () => {
+    const hp = heroPose(st.w);
+    const x = hp.x + st.heading.x * VACUUM_AHEAD;
+    const y = hp.y + st.heading.y * VACUUM_AHEAD;
+    const i = st.nVacuums++;
+    rec().vacuum({ s: st.s, w: st.w, x, y });
+    st.vacuums.push({ i, x, y });
   };
 
   const grant = (id: string) => {
@@ -2474,6 +2592,8 @@ function engine(env: Env, st: SimState, io: Io) {
       }
     }
     st.rings.push({ x: hp.x, y: hp.y, s0, s1, r0, gaps: gapAngles });
+    // Its vacuum on the first downbeat after its accent.
+    if (fieldGems) st.q.push(downbeatAtOrAfter(s1 + 1e-6), { kind: "vacuumDrop" });
     rec().formation({ def: "ring", sStart: s0, sRelease: s1, members });
   };
 
@@ -2512,6 +2632,7 @@ function engine(env: Env, st: SimState, io: Io) {
       }
     }
     rec().formation({ def: "stampede", sStart: st.s, sRelease: st.s, members });
+    if (fieldGems) st.stampedes.push({ fi, done: false });
   };
 
   const formationRelease = (fi: number) => {
@@ -2579,6 +2700,8 @@ function engine(env: Env, st: SimState, io: Io) {
       q.push(f.sStart, { kind: "formation", f: i });
       q.push(f.sRelease, { kind: "formationRelease", f: i });
     });
+    // Gems on the field: a vacuum on the first downbeat after the kick line's release.
+    if (fieldGems) for (const f of sch.formations) if (lib.formations.get(f.def)?.shape === "kick-line") q.push(downbeatAtOrAfter(f.sRelease + 1e-6), { kind: "vacuumDrop" });
     if (env.rules.setPieces) {
       sch.rings.forEach((r, k) => q.push(r.s, { kind: "ring", k }));
       sch.stampedes.forEach((r, k) => q.push(r.s, { kind: "stampede", k }));
@@ -2700,6 +2823,9 @@ function engine(env: Env, st: SimState, io: Io) {
           break;
         case "levelDue":
           levelDue(ev.i);
+          break;
+        case "vacuumDrop":
+          vacuumDrop();
           break;
         case "gem":
           gemArrives(ev.gem, ev.value);

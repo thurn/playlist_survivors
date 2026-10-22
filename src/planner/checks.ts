@@ -674,9 +674,9 @@ export function summarizeChecks(results: CheckResult[]): { ok: boolean; text: st
 /**
  * The rows of "Sound on the Grid" that exist so far, by emission key: the subdivision each keeps to
  * (kills: sixteenths, or beats in a free section; the timing grid: beats in a free section and past its end). The sword's impact is checked against its strike
- * above; its whoosh is the impact's lead-in, and strides' rustle is exempt. Gem chimes play on the
- * next sixteenth; the vacuum, orbs, chickens, hurt and shockwave bands arrive with the beads that
- * add those rows.
+ * above; its whoosh is the impact's lead-in, and strides' rustle is exempt. Gem chimes (gems on the
+ * field: chime) and the vacuum's pickup play on sixteenths; orbs, chickens and hurt arrive with the
+ * beads that add those rows.
  */
 export function soundRows(lib: ContentLibrary): Map<string, Subdivision | "kill"> {
   const rows = new Map<string, Subdivision | "kill">([
@@ -687,6 +687,8 @@ export function soundRows(lib: ContentLibrary): Map<string, Subdivision | "kill"
     ["level-up", "bar"],
     ["near-miss", "beat"],
     ["gem", "sixteenth"],
+    ["chime", "sixteenth"],
+    ["vacuum", "sixteenth"],
   ]);
   for (const wd of lib.weapons.values()) if (wd.kind !== "blast") rows.set(wd.sound, weaponSubdivision(wd));
   return rows;
