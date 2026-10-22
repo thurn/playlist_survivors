@@ -429,7 +429,7 @@ interface SimState {
   swings: Swing[];
   liveSwings: Swing[];
   takenSlots: Set<GridSlot>;
-  /** One step per grid slot: the grid index of the latest step. */
+  /** One rated press per grid slot: the grid index of the latest rated step. */
   lastStepGrid: number;
   lightCount: number;
   nInputs: number;
@@ -889,20 +889,14 @@ function engine(env: Env, st: SimState, io: Io) {
     const steps = sec.level.movement === "steps";
     // Play mode's timing log (a no-op elsewhere): what the press did, and why.
     const trace: PressTrace | undefined = rec().press ? { id: e.id, s: st.s, w: st.w, kind: "press", key: e.key, section: sec.label, movement: steps ? "steps" : "free", outcome: "step", grooveBefore: st.groove } : undefined;
-    // One step per grid slot (play mode): every press belongs to its nearest grid time, and only
-    // the first press for a grid time steps, is rated and arms a swing. A diagonal's second key
-    // still bends the step.
+    // One rated press per grid slot (play mode): every press belongs to its nearest grid time, and
+    // only the first press for a grid time is rated and arms a swing. Every press still steps, and
+    // a diagonal's second key still bends the step.
+    let extraGrid: number | undefined;
     if (env.rules.oneStepPerSlot && steps && !(st.step && bendStep(hero, st.step, st.w, e.key, world.clamp))) {
       const gi = nearestIndex(sch.gridTimes, st.s);
-      if (gi === st.lastStepGrid) {
-        // An extra press: it does nothing (the key display greys it).
-        st.nInputs++;
-        st.held.add(e.key);
-        rec().input({ s: st.s, w: st.w, kind: "press", key: e.key, steps: true, ignored: true });
-        if (trace) rec().press!({ ...trace, outcome: "ignored", gridIndex: gi, gridS: sch.gridTimes[gi], delta: st.s - sch.gridTimes[gi], stepS: st.lastPressS });
-        return;
-      }
-      st.lastStepGrid = gi;
+      if (gi === st.lastStepGrid) extraGrid = gi;
+      else st.lastStepGrid = gi;
     }
     if (inStop(st.s)) {
       // A press ends the hit-stop early: world time resumes at the press.
@@ -934,6 +928,14 @@ function engine(env: Env, st: SimState, io: Io) {
     st.step = startStep(hero, st.w, hp.x, hp.y, e.key, world.clamp);
     st.landed = false;
     st.facingAngle = Math.atan2(st.step.dy, st.step.dx);
+    if (extraGrid !== undefined) {
+      // An extra press for a grid time that already had its step: it steps, unrated (the key
+      // display greys it), and leaves the groove and the sword alone.
+      input.extra = true;
+      rec().input(input);
+      if (trace) rec().press!({ ...trace, outcome: "extra", gridIndex: extraGrid, gridS: sch.gridTimes[extraGrid], delta: st.s - sch.gridTimes[extraGrid], stepS: st.lastPressS });
+      return;
+    }
     // Rate the press against the timing grid (the sections' grids join end to end), and arm the sword.
     const rated = ratePressOnGrid(hero, st.s, sch.gridTimes);
     input.rating = rated.rating;

@@ -293,7 +293,7 @@ await withDevServer(async (base) => {
       lastHero?: { s: number; x: number; y: number };
       stats(): { frameMs: number[] };
       play: { phase(): string; menu(): { items: string[] } | undefined; choose(label: string): void; compareReplay(): string[] };
-      live: { recording: { plan: { songBeats: ArrayLike<number>; grid: ArrayLike<number>; swings: { s: number }[]; inputs: { s: number; kind: string; steps: boolean; ignored?: boolean; bend?: boolean }[]; events: { sounds: { s: number; priority: number }[] } } } };
+      live: { recording: { plan: { songBeats: ArrayLike<number>; grid: ArrayLike<number>; swings: { s: number }[]; inputs: { s: number; kind: string; steps: boolean; extra?: boolean; bend?: boolean }[]; events: { sounds: { s: number; priority: number }[] } } } };
     };
     const ph = (page: Page) => page.evaluate(() => (window as unknown as { __demo: PlayHook }).__demo.play.phase());
     const songNow = (page: Page) => page.evaluate(() => (window as unknown as { __demo: PlayHook }).__demo.lastS);
@@ -328,7 +328,7 @@ await withDevServer(async (base) => {
       if (Math.hypot(after.x - before.x, after.y - before.y) > 2) instant++;
     }
     record("Play: a press steps at once", instant === onBeat.length, `${instant} of ${onBeat.length} presses moved the hero on the next frame drawn`);
-    // Mashing: three presses for one beat step once; the extra two are ignored (and greyed).
+    // Mashing: three presses for one beat are rated once; the extra two step unrated (and greyed).
     const mash = beats.find((b) => b > onBeat[onBeat.length - 1] + 0.3)!;
     await waitSong(page, mash - 0.01);
     for (let k = 0; k < 3; k++) await page.keyboard.press("ArrowUp");
@@ -364,7 +364,7 @@ await withDevServer(async (base) => {
           swings: swings.length,
           offGrid: swings.filter((sw) => Math.min(...grid.map((g) => Math.abs(g - sw.s))) > 0.001).length,
           silent: swings.filter((sw) => !strikes.has(Math.round(sw.s * 1e4))).length,
-          mash: steps.filter((i) => i.s >= mash - 0.2 && i.s < mash + 0.2).map((p) => !!p.ignored),
+          mash: steps.filter((i) => i.s >= mash - 0.2 && i.s < mash + 0.2).map((p) => !!p.extra),
           diag: steps.filter((i) => i.s >= diag - 0.2 && i.s < diag + 0.2).map((p) => !!p.bend),
           hold: steps.filter((i) => i.s >= hold - 0.2 && i.s < hold + 0.6).length,
           p95: ms[Math.floor(0.95 * (ms.length - 1))],
@@ -373,7 +373,7 @@ await withDevServer(async (base) => {
       { t0, mash, diag, hold },
     );
     record("Play: impacts on the beat", live.swings > 8 && live.offGrid === 0 && live.silent === 0, `${live.swings} swings in live play, ${live.offGrid} off the grid, ${live.silent} without an impact sound on the strike`);
-    record("Play: mashing steps once per beat", live.mash.length === 3 && live.mash.filter((x) => x).length === 2, `three presses for one beat: ${live.mash.map((x) => (x ? "ignored" : "stepped")).join(", ")}`);
+    record("Play: mashing rates one press per beat", live.mash.length === 3 && live.mash.filter((x) => x).length === 2, `three presses for one beat: ${live.mash.map((x) => (x ? "extra" : "rated")).join(", ")}`);
     record("Play: Up and Right together step diagonally", live.diag.length === 2 && live.diag[1], `the second key ${live.diag[1] ? "bent the step into a diagonal" : "did not bend the step"}`);
     record("Play: holding a key steps once", live.hold === 1, `${live.hold} press recorded for a key held 0.4 s (its repeats ignored)`);
     record("Play: frame rate and frame time", fps >= 55 && live.p95 < 8, `${fps.toFixed(1)} frames per second; JavaScript frame time (simulation, rollback and drawing) p95 ${live.p95.toFixed(2)} ms`);

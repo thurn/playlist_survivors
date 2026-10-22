@@ -73,7 +73,7 @@ export class KeyboardInput {
   private queue: KeyEvent[] = [];
   private held = new Set<Key>();
   enabled = true;
-  /** Ignored keys (one step per slot greys them) are the simulation's business: every press goes in. */
+  /** Extra presses (one rated press per slot greys them) are the simulation's business: every press goes in. */
   constructor(
     private readonly songTime: (perfMs: number) => number,
     private readonly offsetMs: () => number = () => 0,

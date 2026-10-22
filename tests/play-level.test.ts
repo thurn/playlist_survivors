@@ -119,20 +119,21 @@ describe("play-mode rules", () => {
     return { travel: Math.hypot(end.x - start.x, end.y - start.y), presses, groove, grid };
   };
 
-  it("steps once per grid slot: a mashed press does nothing, a diagonal still bends", () => {
+  it("rates one press per grid slot: a mashed press still steps, a diagonal still bends", () => {
     const m = mash(play.rules);
-    expect(m.presses.map((p) => [p.key, !!p.ignored, !!p.bend, p.rating !== undefined])).toEqual([
+    expect(m.presses.map((p) => [p.key, !!p.extra, !!p.bend, p.rating !== undefined])).toEqual([
       ["right", false, false, true],
       ["right", true, false, false],
       ["right", false, false, true],
       ["down", false, true, false],
     ]);
-    // The ignored press is not rated and does not touch the groove; it arms nothing.
+    // The extra press is not rated and does not touch the groove; it arms nothing.
     expect(m.groove).toBe(2);
     expect(m.presses[1].armed).toBeUndefined();
-    // Two steps: one straight, one diagonal (each 44 px).
+    // Three steps, as in the demo where every press steps: the mashed press moves the hero too.
     const diag = Math.hypot(44 + 44 / Math.SQRT2, 44 / Math.SQRT2);
-    expect(m.travel).toBeCloseTo(diag, 0);
+    expect(m.travel).toBeGreaterThan(diag + 30);
+    expect(m.travel).toBeCloseTo(mash(demo.rules).travel, 6);
   });
 
   it("walks at full speed in the calm prelude", () => {
@@ -148,7 +149,7 @@ describe("play-mode rules", () => {
 
   it("leaves the demo's rules alone: there, every press steps", () => {
     const m = mash(demo.rules);
-    expect(m.presses.filter((p) => p.ignored).length).toBe(0);
+    expect(m.presses.filter((p) => p.extra).length).toBe(0);
     expect(m.groove).toBe(3);
   });
 });

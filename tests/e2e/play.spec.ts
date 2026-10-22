@@ -12,7 +12,7 @@ interface PlayHook {
     recording: {
       refresh(): void;
       timeWarp: { toWorld(s: number): number };
-      plan: { songBeats: Float64Array; hero: { x: Float32Array; y: Float32Array }; inputs: { s: number; kind: string; ignored?: boolean; bend?: boolean; steps: boolean; rating?: string }[]; swings: { s: number; press?: number }[] };
+      plan: { songBeats: Float64Array; hero: { x: Float32Array; y: Float32Array }; inputs: { s: number; kind: string; extra?: boolean; bend?: boolean; steps: boolean; rating?: string }[]; swings: { s: number; press?: number }[] };
     };
   };
 }
@@ -41,7 +41,7 @@ async function waitSong(page: Page, s: number) {
 
 test.describe.configure({ mode: "serial" });
 
-test("play mode: a step per press, swings on the beat, mashing ignored, Esc pauses and resumes", async ({ page }) => {
+test("play mode: a step per press, swings on the beat, mashing rated once, Esc pauses and resumes", async ({ page }) => {
   await openPlay(page, "&start=1:10");
   const beats = await hook(page)(() => Array.from((window as unknown as { __demo: PlayHook }).__demo.live.recording.plan.songBeats));
   const from = (await songNow(page)) + 0.3;
@@ -68,20 +68,20 @@ test("play mode: a step per press, swings on the beat, mashing ignored, Esc paus
       return { x: plan.hero.x[k], y: plan.hero.y[k] };
     };
     const presses = plan.inputs.filter((i) => i.kind === "press" && i.s >= t0 && i.steps);
-    // Each press that stepped moved the hero one step (44 px). (Measured where the step before had
+    // Each rated press moved the hero one step (44 px). (Measured where the step before had
     // landed: under load, presses can bunch up, and a step then starts from a moving hero.)
-    const stepped = presses.filter((i) => !i.ignored && !i.bend);
+    const stepped = presses.filter((i) => !i.extra && !i.bend);
     const steps = stepped.filter((p, i) => i === 0 || p.s - stepped[i - 1].s >= 0.15).map((p) => {
       const a = heroAt(p.s, -0.005);
       const b = heroAt(p.s, 0.13);
       return Math.hypot(b.x - a.x, b.y - a.y);
     });
-    return { stepped: stepped.length, steps, ignored: presses.filter((i) => i.ignored).length, armed: plan.swings.filter((sw) => sw.s >= t0 && sw.press !== undefined).length };
+    return { stepped: stepped.length, steps, extra: presses.filter((i) => i.extra).length, armed: plan.swings.filter((sw) => sw.s >= t0 && sw.press !== undefined).length };
   }, from);
   expect(r.stepped).toBe(9);
   expect(r.steps.length).toBeGreaterThanOrEqual(6);
   for (const d of r.steps) expect(d).toBeCloseTo(44, 0);
-  expect(r.ignored).toBe(2);
+  expect(r.extra).toBe(2);
   expect(r.armed).toBeGreaterThanOrEqual(8);
 
   // Esc pauses: song time stops.

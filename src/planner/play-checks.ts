@@ -57,7 +57,7 @@ export function checkPlay(plan: Plan, lib: ContentLibrary, opts: PlayCheckOption
     const seen = new Map<number, number>();
     let n = 0;
     for (const i of plan.inputs) {
-      if (i.kind !== "press" || !i.steps || i.bend || i.ignored || i.rating === undefined) continue;
+      if (i.kind !== "press" || !i.steps || i.bend || i.extra || i.rating === undefined) continue;
       n++;
       const g = nearest(plan.grid, i.s);
       const prev = seen.get(g);

@@ -73,7 +73,7 @@ describe("live play", () => {
     const live = playLive();
     live.runner.finish();
     expect(live.runner.stats.rollbacks).toBeGreaterThan(100);
-    expect(live.recording.plan.inputs.filter((i) => i.ignored).length).toBeGreaterThan(5);
+    expect(live.recording.plan.inputs.filter((i) => i.extra).length).toBeGreaterThan(5);
     expect(live.runner.stats.lateKeys).toBe(0);
     expect(live.runner.applied.length).toBe(keys.length);
     // (Fed in the order they were applied: keys at the very same instant take effect in that order.)

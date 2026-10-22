@@ -359,8 +359,8 @@ export interface PlanInput {
   delta?: number;
   /** A diagonal's second key, which bent the step instead of starting a new one. */
   bend?: boolean;
-  /** One step per grid slot: an extra press for a grid time that already has its step (it does nothing). */
-  ignored?: boolean;
+  /** One rated press per grid slot: an extra press for a grid time that already has its step (it steps, unrated, and arms nothing). */
+  extra?: boolean;
   /** Did this press arm a swing? */
   armed?: boolean;
   /** Step movement (true) or free movement (false). */

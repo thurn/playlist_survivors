@@ -38,17 +38,17 @@ describe("accent telegraphs", () => {
 });
 
 describe("the key display", () => {
-  it("greys an ignored press", () => {
+  it("greys an extra press", () => {
     const plan = runPlanner({ songMap, level: PLAY });
     // A press, then a mashed one for the same grid time.
     const s = plan.grid[200];
     plan.inputs = [
       { s, w: s, kind: "press", key: "up", steps: true, rating: "perfect" },
       { s: s + 0.01, w: s, kind: "release", key: "up", steps: true },
-      { s: s + 0.02, w: s, kind: "press", key: "up", steps: true, ignored: true },
+      { s: s + 0.02, w: s, kind: "press", key: "up", steps: true, extra: true },
     ];
     const keys = new Evaluator(plan, lib).evaluate(s + 0.03).hud;
-    expect(keys.keys.up.rating).toBe("ignored");
+    expect(keys.keys.up.rating).toBe("extra");
     expect(keys.ratings.perfect).toBe(1);
   });
 });

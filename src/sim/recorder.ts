@@ -66,18 +66,18 @@ export interface PressTrace {
   section: string;
   movement: "steps" | "free";
   /**
-   * ignored: one step per grid slot, and this grid time already had its step;
+   * extra: a step for a grid time that already had its rated step (unrated, arming nothing);
    * bend: a diagonal's second key bent the step; step: a new step (rated, and maybe arming a swing);
    * walk: free movement (held keys walk); release: a key went up.
    */
-  outcome: "ignored" | "bend" | "step" | "walk" | "release";
+  outcome: "extra" | "bend" | "step" | "walk" | "release";
   /** The nearest grid time (index and song time), and the press's offset from it (song seconds). */
   gridIndex?: number;
   gridS?: number;
   delta?: number;
   rating?: string;
   accuracy?: number;
-  /** Ignored presses: the song time of the press that took this grid time's step. */
+  /** Extra presses: the song time of the press that took this grid time's step. */
   stepS?: number;
   /** The press cut a hit-stop short. */
   cutHitStop?: boolean;

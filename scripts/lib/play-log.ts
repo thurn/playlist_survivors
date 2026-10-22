@@ -41,7 +41,7 @@ export interface PressRow {
   /**
    * What happened: the keyboard's fate when it never reached the game (repeat, disabled, held),
    * dropped (a count-in or restart threw it away), unapplied (queued but never applied),
-   * or the simulation's outcome (step, ignored, bend, walk).
+   * or the simulation's outcome (step, extra, bend, walk).
    */
   outcome: string;
   section?: string;
@@ -50,7 +50,7 @@ export interface PressRow {
   strikeS?: number;
   heavy?: boolean;
   noSwing?: string;
-  /** Ignored presses: ms since the press that took the slot. */
+  /** Extra presses: ms since the press that took the slot. */
   sinceStepMs?: number;
   /** Applied: how long after the press (ms, by song time) the frame applied it, and whether it rolled back. */
   applyLagMs?: number;
@@ -108,7 +108,7 @@ export function pressRows(log: PlayLogFile): PressRow[] {
         row.strikeS = t.strikeS;
         row.heavy = t.heavy;
         row.noSwing = t.noSwing;
-        if (t.outcome === "ignored" && t.stepS !== undefined) row.sinceStepMs = (t.s - t.stepS) * 1000;
+        if (t.outcome === "extra" && t.stepS !== undefined) row.sinceStepMs = (t.s - t.stepS) * 1000;
       } else if (a) row.outcome = "untraced";
     }
     rows.push(row);
@@ -167,7 +167,7 @@ export function summarize(log: PlayLogFile, opts: SummaryOptions = {}): string {
   const grid = rows.filter((r) => r.gridDeltaMs !== undefined).map((r) => r.gridDeltaMs!);
   const beat = rows.filter((r) => r.outcome === "step" && r.beatDeltaMs !== undefined).map((r) => r.beatDeltaMs!);
   if (grid.length > 0) {
-    say(`Offset from the nearest grid time (rated steps and ignored presses, + is late): median ${f(median(grid), 1)} ms, mean ${f(mean(grid), 1)}, sd ${f(sd(grid), 1)}`);
+    say(`Offset from the nearest grid time (rated steps and extra presses, + is late): median ${f(median(grid), 1)} ms, mean ${f(mean(grid), 1)}, sd ${f(sd(grid), 1)}`);
     const bins = [-250, -150, -100, -60, -30, 0, 30, 60, 100, 150, 250];
     const hist = new Array(bins.length + 1).fill(0);
     for (const v of grid) hist[bins.findIndex((b) => v < b) === -1 ? bins.length : bins.findIndex((b) => v < b)]++;
@@ -175,8 +175,8 @@ export function summarize(log: PlayLogFile, opts: SummaryOptions = {}): string {
     say(`  ${labels.map((l, i) => `${l}: ${hist[i]}`).filter((_, i) => hist[i] > 0).join("  ")}`);
   }
   if (beat.length > 0) say(`Offset of steps from the nearest beat: median ${f(median(beat), 1)} ms, mean ${f(mean(beat), 1)}, sd ${f(sd(beat), 1)}`);
-  const ignored = rows.filter((r) => r.outcome === "ignored" && r.sinceStepMs !== undefined).map((r) => r.sinceStepMs!);
-  if (ignored.length > 0) say(`Ignored presses came ${f(median(ignored))} ms (median) after the press that took their grid time`);
+  const extra = rows.filter((r) => r.outcome === "extra" && r.sinceStepMs !== undefined).map((r) => r.sinceStepMs!);
+  if (extra.length > 0) say(`Extra presses came ${f(median(extra))} ms (median) after the press that took their grid time`);
   say();
 
   // Input path.

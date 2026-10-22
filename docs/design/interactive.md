@@ -27,7 +27,7 @@ These were settled in a design interview before this plan was written:
 | Choosing a mode | A title screen with **Play** (the default) and **Watch the demo**. `?mode=play` and `?mode=demo` skip it. |
 | Latency | Automatic compensation, plus an optional tap-along calibration. Timing windows are a little looser for humans. |
 | "Moderately competent" | A new `moderate` virtual player profile. Automated checks require it to hit the signature moments. |
-| Mashing | One step per grid slot. Extra presses in a slot are ignored. |
+| Mashing | Every press steps. Only the first press in a grid slot is rated and arms a swing. |
 | Controls | Arrows/WASD for gameplay. Menus also take Enter, Space and the mouse. Esc pauses. |
 | Starting mid-song | `?start=` fast-forwards with the `moderate` bot, then hands control to the keyboard. |
 | End of run | The end card plus a letter grade, the saved best grade, and a deterministic replay of the run. |
@@ -267,11 +267,12 @@ the enemies instead:
 ### One step per grid slot
 
 In step movement, every press belongs to its nearest grid time. Only the
-first press for each grid time steps, is rated and arms a swing.
+first press for each grid time is rated and arms a swing, but every press
+steps: dropping a movement press feels like lost input.
 
-- **Ignored presses:** a second press for the same grid time does nothing.
-  It flashes grey on the key display. It is not rated and does not touch the
-  groove.
+- **Extra presses:** a second press for the same grid time steps like any
+  other. It flashes grey on the key display. It is not rated, does not touch
+  the groove and arms nothing.
 - **Diagonals:** a perpendicular key within 40 ms bends the step, as
   today. It is part of the same step, not a second press.
 - **Off-beat presses are limited, never punished:** a press halfway between
@@ -510,7 +511,7 @@ moderate   normal, sd 30 ms,     85% of the section's pattern slots       250 ms
 
 - **Accent telegraphs** on the beat track, as described above. These are
   play mode only.
-- **Ignored presses** flash grey on the key display.
+- **Extra presses** flash grey on the key display.
 - **Count marks** for resume and mid-song starts reuse the step-section
   count-in.
 - **The pause menu and end-card menu** are drawn by the HUD, in the demo's
@@ -568,7 +569,7 @@ These checks run the `moderate` bot through play mode headless, on seeds
 - **End to end** (Playwright, `tests/e2e/play.spec.ts`): open
   `?mode=play&start=1:10&test`. Send synthetic arrow presses on the beat for
   four bars. Check that the hero moved one step per press, that swings
-  happened, that a mashed press was ignored, and that Esc pauses and
+  happened, that a mashed press was rated once, and that Esc pauses and
   resumes.
 - **Benchmark:** `npm run bench -- --play` plays theme A to the climax with
   synthetic presses on every beat. It must stay within the existing frame
@@ -624,7 +625,7 @@ worktree, as described in [AGENTS.md](../../AGENTS.md). Tasks marked
    - The Playwright play spec.
 7. **Telegraphs and HUD.**
    - Accent ticks, "press here" rings and the heart glow, play mode only.
-   - Grey ignored presses on the key display.
+   - Grey extra presses on the key display.
 8. **Tuning, QA tooling and documentation.**
    - Tune the play file (XP, boss health, timing windows, the bot's
      weights and grade thresholds) until `check:play` passes on all seeds.

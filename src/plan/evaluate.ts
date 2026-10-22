@@ -863,9 +863,9 @@ export class Evaluator {
         if (lp && lp.released === undefined) lp.released = i.s;
         continue;
       }
-      // One step per grid slot: an extra press flashes grey on the key display, and nothing else.
-      if (i.ignored) {
-        lastPress[i.key] = { s: i.s, rating: "ignored" };
+      // One rated press per grid slot: an extra press flashes grey on the key display, and is not counted.
+      if (i.extra) {
+        lastPress[i.key] = { s: i.s, rating: "extra" };
         continue;
       }
       // A diagonal's second key shows the rating of the press it bent.

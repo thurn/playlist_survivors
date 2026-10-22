@@ -191,7 +191,7 @@ export function planWithSim(input: PlannerInput, opts: PlannerOptions = {}): { p
     }
     peak = Math.max(peak, n);
   }
-  const presses = sim.inputs.filter((i) => i.kind === "press" && !i.bend && !i.ignored);
+  const presses = sim.inputs.filter((i) => i.kind === "press" && !i.bend && !i.extra);
   const ratings = { perfect: 0, great: 0, good: 0, none: 0 };
   for (const p of presses) if (p.steps) ratings[p.rating ?? "none"]++;
   let gSum = 0;

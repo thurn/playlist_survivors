@@ -20,7 +20,7 @@ describe("play mode's timing log", () => {
     session.recording.pressLog = (t) => log.press(t);
     session.runner.log = log;
 
-    // A step on a grid time, a second press for the same grid time (ignored), then a step on the next.
+    // A step on a grid time, a second press for the same grid time (an unrated extra step), then a step on the next.
     const [g0, g1] = grid;
     const keys: KeyEvent[] = [
       { s: g0 + 0.01, kind: "press", key: "right" },
@@ -42,7 +42,7 @@ describe("play mode's timing log", () => {
     }
 
     const traces = keys.map((k) => log.traces.get(k.id!));
-    expect(traces.map((t) => t?.outcome)).toEqual(["step", "release", "ignored", "release", "step"]);
+    expect(traces.map((t) => t?.outcome)).toEqual(["step", "release", "extra", "release", "step"]);
     expect(traces[0]!.gridS).toBeCloseTo(g0, 9);
     expect(traces[0]!.delta).toBeCloseTo(0.01, 9);
     expect(traces[0]!.strikeS).toBeGreaterThan(g0);
@@ -54,11 +54,11 @@ describe("play mode's timing log", () => {
     // The report, from the saved form.
     const file = JSON.parse(JSON.stringify({ ...log.toJSON(), beats: Array.from(session.recording.plan.songBeats) })) as PlayLogFile;
     const rows = pressRows(file);
-    expect(rows.map((r) => r.outcome)).toEqual(["step", "ignored", "step"]);
+    expect(rows.map((r) => r.outcome)).toEqual(["step", "extra", "step"]);
     expect(rows[1].sinceStepMs).toBeCloseTo(50, 6);
     const text = summarize(file);
     expect(text).toContain("Presses: 3");
-    expect(text).toMatch(/ignored\s+1/);
+    expect(text).toMatch(/extra\s+1/);
   });
 
   it("reports keys the keyboard never handed to the game", () => {
