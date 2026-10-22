@@ -105,6 +105,12 @@ export const heroDef = z.strictObject({
       wave: z.strictObject({ to: z.number().positive(), band: z.number().positive(), damage: z.number().positive() }),
     }),
   }),
+  /**
+   * Health, when the level's rules give the hero health (play mode). Enemies touching the hero
+   * bite for their contactDamage, each at most once per biteEveryMs of world time; arrows and
+   * slams deal their attacker's attackDamage.
+   */
+  health: z.strictObject({ max: z.number().positive(), biteEveryMs: z.number().positive() }),
   /** What the sword aims for: the summed weight of the enemies a swing (or a cleave's shockwave) would catch. */
   aimWeights: z.strictObject({ regular: z.number().positive(), elite: z.number().positive(), boss: z.number().positive(), formation: z.number().positive() }),
 });
@@ -132,6 +138,10 @@ export const enemyDef = z.strictObject({
   /** Hop locomotion with squash and stretch (slimes). */
   hop: z.boolean().optional(),
   death: z.strictObject({ recipe: id, debris: z.array(color).min(1) }),
+  /** Health a touch takes from the hero (see the hero's health). */
+  contactDamage: z.number().min(0).default(0),
+  /** Health its attack takes from the hero when it lands: an archer's arrow, the boss's slam. */
+  attackDamage: z.number().min(0).default(0),
 });
 export type EnemyDef = z.infer<typeof enemyDef>;
 
@@ -324,7 +334,7 @@ export const levelScript = z.strictObject({
   /** The demo's forest corridor along a route, or play mode's open field. */
   world: z.enum(["corridor", "open"]).default("corridor"),
   /** Play-mode rule changes. */
-  rules: z.strictObject({ oneStepPerSlot: z.boolean().default(false), accentTelegraphs: z.boolean().default(false) }).optional(),
+  rules: z.strictObject({ oneStepPerSlot: z.boolean().default(false), accentTelegraphs: z.boolean().default(false), health: z.boolean().default(false) }).optional(),
   /** Overrides merged over content/hero.yaml for this level only (checked against the hero schema). */
   hero: z.record(z.string(), z.unknown()).optional(),
   title: z.strictObject({ piece: z.string(), composer: z.string(), performer: z.string() }),

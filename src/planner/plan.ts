@@ -130,6 +130,17 @@ export function virtualPlayer(ctx: Ctx, sch: Schedule, profile: SkillProfile = "
   );
 }
 
+/** The lowest the hero's health fell, and when it ran out. */
+export function healthStats(h: { s: ArrayLike<number>; v: ArrayLike<number> }): { minHealth: number; deathS?: number } {
+  let minHealth = 1;
+  let deathS: number | undefined;
+  for (let i = 0; i < h.v.length; i++) {
+    minHealth = Math.min(minHealth, h.v[i]);
+    if (h.v[i] <= 0 && deathS === undefined) deathS = h.s[i];
+  }
+  return deathS === undefined ? { minHealth } : { minHealth, deathS };
+}
+
 /** A player who mashes at `rate` presses per second, steering like the virtual player for `profile`. */
 export function masherPlayer(ctx: Ctx, sch: Schedule, rate: number, profile: SkillProfile = "moderate"): MasherPlayer {
   const sections = ctx.sections.map((s) => ({ steps: s.level.movement === "steps", presses: s.level.presses, s0: s.s0, s1: s.s1, pace: s.level.pace }));
@@ -221,6 +232,7 @@ export function planWithSim(input: PlannerInput, opts: PlannerOptions = {}): { p
     presses: presses.length,
     ratings,
     averageGroove: gN > 0 ? gSum / gN : 0,
+    ...healthStats(sim.health),
     planMs: now() - t0,
     simMs,
   };
@@ -247,6 +259,7 @@ export function planWithSim(input: PlannerInput, opts: PlannerOptions = {}): { p
     swings: sim.swings,
     inputs: sim.inputs,
     groove: { s: Float64Array.from(sim.groove.s), v: Float32Array.from(sim.groove.v) },
+    health: { s: Float64Array.from(sim.health.s), v: Float32Array.from(sim.health.v) },
     nearMisses: sim.threats.filter((t) => t.outcome === "near-miss").map((t) => ({ s: t.s, w: t.w, kind: t.kind })),
     threats: sim.threats.map((t) => ({ s: t.s, kind: t.kind, outcome: t.outcome })),
     boss: sim.boss && sch.boss ? { id: sim.boss.id, deathS: sim.boss.deathS } : undefined,

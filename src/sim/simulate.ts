@@ -47,6 +47,8 @@ export const HURTBOX_RADIUS = 10;
 export const HURTBOX_LIFT = 20;
 /** Enemies stop this far beyond touching the hero. */
 const CONTACT_GAP = 4;
+/** An enemy this much farther than its stopping point still bites. */
+const BITE_SLACK = 2;
 /** At most this many spawns per beat. */
 export const SPAWN_PER_BEAT = 120;
 /** Share of spawns from the forward half of the view. */
@@ -154,6 +156,8 @@ interface Foe {
   slotUntil: number;
   /** A charge (the kick line's release) runs faster until this song time. */
   chargeUntil: number;
+  /** World time of its latest bite on the hero (play mode's health). */
+  biteW: number;
   /** Archer group, and this archer's place in it (shoulder to shoulder at a shared post). */
   archerGroup?: number;
   archerSlot?: number;
@@ -457,7 +461,9 @@ interface SimState {
   foeSamples: Foe[];
   formationMembers: Foe[][];
   blasting: boolean;
-  flying: { v: number; index: number; x0: number; y0: number; ax: number; ay: number; wRelease: number; ux: number; uy: number }[];
+  flying: { v: number; index: number; x0: number; y0: number; ax: number; ay: number; wRelease: number; ux: number; uy: number; damage: number }[];
+  /** The hero's health (play mode), in the hero's health units. */
+  health: number;
   slamMarks: Map<number, { x: number; y: number; sMark: number; wMark: number }>;
   bossFoe?: Foe;
   xpNow: number;
@@ -531,6 +537,7 @@ function freshState(env: Env): SimState {
     formationMembers: env.sch.formations.map(() => []),
     blasting: false,
     flying: [],
+    health: env.ctx.lib.hero.health.max,
     slamMarks: new Map(),
     xpNow: 0,
     level: 0,
@@ -692,6 +699,7 @@ function engine(env: Env, st: SimState, io: Io) {
       weight: weightOf(def),
       slotUntil: -Infinity,
       chargeUntil: -Infinity,
+      biteW: -Infinity,
     };
     if (extra?.formation !== undefined) f.formation = extra.formation;
     // Its first sample is the spawn spot itself, at the last sample time before it appeared.
@@ -1198,6 +1206,8 @@ function engine(env: Env, st: SimState, io: Io) {
       } else mults[g] = (0.6 + 0.8 * beatHit(ph)) / 0.733;
     }
     const alive = st.alive;
+    const health = env.rules.health && st.health > 0;
+    const biteEvery = hero.health.biteEveryMs / 1000;
     for (const f of alive) {
       // Bring everyone to this step's time first. Formation members follow their slots
       // (and the boss holds still while it drops in).
@@ -1357,6 +1367,11 @@ function engine(env: Env, st: SimState, io: Io) {
         const uy = ed > 0.01 ? ey / ed : 0;
         f.x = hp.x + ux * minD;
         f.y = hp.y + uy * minD;
+      }
+      // An enemy at contact bites, at most once per biteEveryMs of world time.
+      if (health && f.def.contactDamage > 0 && Math.max(ed, minD) <= minD + CONTACT_GAP + BITE_SLACK && w1 - f.biteW >= biteEvery) {
+        f.biteW = w1;
+        hurt(f.def.contactDamage);
       }
     }
   };
@@ -1748,10 +1763,17 @@ function engine(env: Env, st: SimState, io: Io) {
       const dl = Math.hypot(ax - x0, ay - y0) || 1;
       const r: ArrowRecord = { sRelease: st.s, wRelease: st.w, sArrive: vol.sArrive, wArrive: 0, x0, y0, ax, ay, x1: ax, y1: ay, w1: 0, outcome: "miss" };
       rec().arrow(r);
-      st.flying.push({ v, index: st.nArrows++, x0, y0, ax, ay, wRelease: st.w, ux: (ax - x0) / dl, uy: (ay - y0) / dl });
+      st.flying.push({ v, index: st.nArrows++, x0, y0, ax, ay, wRelease: st.w, ux: (ax - x0) / dl, uy: (ay - y0) / dl, damage: f.def.attackDamage });
       rec().attack(f.id, { w0: f.drawing.w0, w: st.w, kind: "shoot", dir: Math.atan2(ay - y0, ax - x0) });
       f.drawing = undefined;
     }
+  };
+
+  /** The hero takes damage (play mode's health); at none, the run is over and it takes no more. */
+  const hurt = (amount: number) => {
+    if (!env.rules.health || amount <= 0 || st.health <= 0) return;
+    st.health = Math.max(0, st.health - amount);
+    rec().health(st.s, st.health / hero.health.max);
   };
 
   /** A near miss: the slow-motion dip starts now (dips do not stack). */
@@ -1777,7 +1799,8 @@ function engine(env: Env, st: SimState, io: Io) {
       const len = Math.hypot(a.ax - a.x0, a.ay - a.y0);
       const speed = len / Math.max(1e-3, st.w - a.wRelease);
       if (outcome === "touch") {
-        // It shatters on the hero, harmlessly.
+        // It shatters on the hero (and hurts, when the hero has health).
+        hurt(a.damage);
         rec().arrowEnd(a.index, { wArrive, outcome, x1: a.x0 + a.ux * t, y1: a.y0 + a.uy * t, w1: a.wRelease + t / speed });
       } else {
         rec().arrowEnd(a.index, { wArrive, outcome, x1: a.ax + a.ux * ARROW_OVERSHOOT, y1: a.ay + a.uy * ARROW_OVERSHOOT, w1: st.w + ARROW_OVERSHOOT / speed });
@@ -1837,6 +1860,7 @@ function engine(env: Env, st: SimState, io: Io) {
     rec().slam({ sMark: m.sMark, wMark: m.wMark, sLand: st.s, wLand: st.w, x: m.x, y: m.y, radius: SLAM_RADIUS, outcome });
     rec().attack(boss.id, { w0: Math.max(m.wMark, st.w - 0.6), w: st.w, kind: "slam", dir: Math.atan2(m.y - posY(boss, st.w), m.x - posX(boss, st.w)) });
     rec().threat({ s: st.s, w: st.w, kind: "slam", outcome, x: hp.x, y: hp.y });
+    if (outcome === "touch") hurt(boss.def.attackDamage);
     if (outcome === "near-miss") nearMiss();
   };
 

@@ -246,6 +246,8 @@ class PlayController {
   private frameDur = 1000 / 60;
   /** The audio clock is running for the current count-in (a seek is asynchronous). */
   private clockReady = false;
+  /** The hero's health ran out: the game waits on the fallen menu (Esc does not resume). */
+  private fallen = false;
 
   constructor(
     private readonly env: LiveEnv,
@@ -355,6 +357,7 @@ class PlayController {
       const frame = this.liveFrame(s, keys, this.hudOptions());
       this.lastS = s;
       if (frame.hud.end && !this.end) this.showEnd();
+      else if (frame.hud.health <= 0) this.fall();
     } else if (this.phase === "paused") this.draw(this.lastS, this.hudOptions());
     else if (this.phase === "replay") {
       const frame = this.draw(s, this.hudOptions());
@@ -409,6 +412,23 @@ class PlayController {
     };
   }
 
+  /** The hero's health ran out: the game stops there, and the player restarts the section or the song. */
+  private fall(): void {
+    const at = this.lastS;
+    this.keyboard.releaseAll(at);
+    this.session().runner.frame(at, this.keyboard.drain());
+    this.keyboard.enabled = false;
+    this.phase = "paused";
+    this.fallen = true;
+    this.log.event("fell", at);
+    void this.log.flush("fell");
+    void this.audio.pauseLive();
+    this.menu = {
+      menu: { title: "YOU FELL", items: ["Restart section", "Restart song", "Quit to title"], selected: 0 },
+      actions: [() => this.restartSection(), () => void this.restartSong(), () => this.quit()],
+    };
+  }
+
   /** Resume after a one-bar count-in: the music replays the bar before the pause point; the game resumes exactly there. */
   private resume(): void {
     this.log.event("resume", this.lastS);
@@ -418,6 +438,7 @@ class PlayController {
   }
 
   private restartSection(): void {
+    this.fallen = false;
     const s0 = this.session().runner.restartSection();
     this.log.event("restartSection", s0);
     this.menu = undefined;
@@ -439,6 +460,7 @@ class PlayController {
     this.show(session.recording);
     this.menu = undefined;
     this.end = undefined;
+    this.fallen = false;
     this.replayRec = undefined;
     this.keyboard.enabled = true;
     this.discardKeys();
@@ -504,6 +526,7 @@ class PlayController {
     }
     if (e.key === "Escape") {
       e.preventDefault();
+      if (this.fallen) return;
       if (this.phase === "paused" && this.menu) this.resume();
       else this.pause();
       return;

@@ -1,6 +1,8 @@
 # The Can-Can roster. `atlas` names a sprite in public/assets/characters.json.
 # A light swing deals 1.0 damage before the groove bonus (up to +20%), so
 # health just above 1.0 dies to one swing only at a high groove.
+# contactDamage is what a touch takes from the hero's health (6500, play mode),
+# attackDamage what an arrow or the boss's slam takes when it lands.
 enemies:
   - id: slime
     atlas: slime
@@ -9,6 +11,7 @@ enemies:
     speed: 90
     health: 0.8
     size: regular
+    contactDamage: 3
     walkCycleBeats: 1
     hop: true
     death: { recipe: death-slime, debris: ["#7ad04a", "#c8f07a"] }
@@ -19,6 +22,7 @@ enemies:
     speed: 165
     health: 0.6
     size: regular
+    contactDamage: 2
     hover: 18
     walkCycleBeats: 0.5
     death: { recipe: death-flyer, debris: ["#5a3a6a", "#8b1a1a"] }
@@ -29,6 +33,7 @@ enemies:
     speed: 68
     health: 0.6
     size: regular
+    contactDamage: 2
     hover: 14
     walkCycleBeats: 2
     death: { recipe: death-flyer, debris: ["#f0e8e0", "#c03030"] }
@@ -39,6 +44,7 @@ enemies:
     speed: 180
     health: 0.6
     size: regular
+    contactDamage: 2
     hover: 16
     walkCycleBeats: 0.5
     death: { recipe: death-flyer, debris: ["#f0c020", "#302010"] }
@@ -49,6 +55,7 @@ enemies:
     speed: 112
     health: 1.0
     size: regular
+    contactDamage: 4
     death: { recipe: death-humanoid, debris: ["#5a8f3a", "#8b1a1a"] }
   - id: orc
     atlas: orc
@@ -57,6 +64,7 @@ enemies:
     speed: 105
     health: 1.15
     size: regular
+    contactDamage: 5
     death: { recipe: death-humanoid, debris: ["#6a8a4a", "#8b1a1a"] }
   - id: orc-elite
     atlas: orc-elite
@@ -65,6 +73,7 @@ enemies:
     speed: 98
     health: 3.0
     size: elite
+    contactDamage: 8
     death: { recipe: death-elite, debris: ["#6a8a4a", "#8b1a1a", "#a0a0a8"] }
   - id: orc-ember
     atlas: orc-ember
@@ -73,6 +82,7 @@ enemies:
     speed: 108
     health: 1.15
     size: regular
+    contactDamage: 6
     death: { recipe: death-ember, debris: ["#ff7a2e", "#5a1a1a"] }
   - id: skeleton
     atlas: skeleton
@@ -81,6 +91,7 @@ enemies:
     speed: 108
     health: 1.0
     size: regular
+    contactDamage: 4
     death: { recipe: death-skeleton, debris: ["#e8e0d0", "#a89880"] }
   - id: skeleton-ember
     atlas: skeleton-ember
@@ -89,6 +100,7 @@ enemies:
     speed: 108
     health: 1.1
     size: regular
+    contactDamage: 6
     death: { recipe: death-ember, debris: ["#ffb060", "#e8e0d0"] }
   - id: skeleton-archer
     atlas: skeleton-archer
@@ -97,6 +109,8 @@ enemies:
     speed: 120
     health: 1.0
     size: regular
+    contactDamage: 3
+    attackDamage: 12
     behavior: archer
     death: { recipe: death-skeleton, debris: ["#e8e0d0", "#a89880"] }
   - id: minotaur
@@ -106,6 +120,8 @@ enemies:
     speed: 70
     health: 175
     size: boss
+    contactDamage: 10
+    attackDamage: 25
     behavior: boss
     scale: 2
     walkCycleBeats: 4

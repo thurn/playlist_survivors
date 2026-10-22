@@ -8,7 +8,9 @@ export interface Rules {
   oneStepPerSlot: boolean;
   /** The HUD shows the cleave accents in advance. */
   accentTelegraphs: boolean;
+  /** The hero has health: enemies that touch it bite, arrows and slams hurt, and at none the run is over. */
+  health: boolean;
 }
 
 /** The scripted demo's rules: today's behavior. */
-export const DEMO_RULES: Readonly<Rules> = Object.freeze({ oneStepPerSlot: false, accentTelegraphs: false });
+export const DEMO_RULES: Readonly<Rules> = Object.freeze({ oneStepPerSlot: false, accentTelegraphs: false, health: false });

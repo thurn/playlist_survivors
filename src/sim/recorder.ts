@@ -113,6 +113,8 @@ export interface SimResult {
   swings: PlanSwing[];
   inputs: PlanInput[];
   groove: { s: number[]; v: number[] };
+  /** The hero's health (fraction of its maximum) after each change; it starts full. */
+  health: { s: number[]; v: number[] };
   landings: Landing[];
   weaponsGranted: { id: string; s: number }[];
   /** Song times each weapon fired. */
@@ -161,6 +163,8 @@ export interface Recorder {
   swing(sw: PlanSwing): void;
   input(i: PlanInput): void;
   groove(s: number, v: number): void;
+  /** The hero's health (fraction of its maximum) after a change. */
+  health(s: number, frac: number): void;
   landing(l: Landing): void;
   weapon(id: string, s: number): void;
   fire(weapon: string, s: number): void;
@@ -216,6 +220,8 @@ export class BatchRecorder implements Recorder {
   readonly inputs: PlanInput[] = [];
   readonly grooveS: number[] = [0];
   readonly grooveV: number[] = [0];
+  readonly healthS: number[] = [0];
+  readonly healthV: number[] = [1];
   readonly landings: Landing[] = [];
   readonly weaponsGranted: { id: string; s: number }[] = [];
   readonly weaponFires: { weapon: string; s: number }[] = [];
@@ -280,6 +286,10 @@ export class BatchRecorder implements Recorder {
   groove(s: number, v: number): void {
     this.grooveS.push(s);
     this.grooveV.push(v);
+  }
+  health(s: number, frac: number): void {
+    this.healthS.push(s);
+    this.healthV.push(frac);
   }
   landing(l: Landing): void {
     this.landings.push(l);
@@ -385,6 +395,7 @@ export class BatchRecorder implements Recorder {
       swings: this.swings,
       inputs: this.inputs,
       groove: { s: this.grooveS, v: this.grooveV },
+      health: { s: this.healthS, v: this.healthV },
       landings: this.landings,
       weaponsGranted: this.weaponsGranted,
       weaponFires: this.weaponFires,

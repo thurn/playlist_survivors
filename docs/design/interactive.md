@@ -314,6 +314,29 @@ hero:
 
 Cleaves still need a press rated Great or better.
 
+### Health
+
+Play mode gives the hero health (`rules.health` in the play level), in the
+manner of Vampire Survivors: the crowd hurts by touching.
+
+- **Bites:** an enemy at contact with the hero (within 2 px of where it
+  stops) bites for its `contactDamage`, at most once per `biteEveryMs` (600)
+  of world time. There is no invulnerability after a bite, so a surrounding
+  crowd hurts fast; killing it is the defence.
+- **Attacks:** an arrow that touches the hero takes its archer's
+  `attackDamage` (12), and a slam that lands on the hero the boss's (25).
+- **Starting values:** the hero has 6500 health (`hero.health.max`);
+  enemies bite for 2 (bats, bees, eyeballs) to 10 (the minotaur). Over the
+  song the `perfect` bot takes about 2100–2300, `moderate` 2650–3050,
+  `casual` 4050–5650 and a masher at 8 presses a second 7500–8700.
+- **Running out:** the game stops on a **YOU FELL** menu: Restart section,
+  Restart song, Quit to title (Esc does not resume). Restarting the section
+  restores the health the hero had at its start.
+- **HUD:** the HP bar at the top left shows it and flashes white on a bite;
+  the hero flashes red.
+- **The demo is unchanged:** its rules have no health, so its bar stays
+  full.
+
 ### The open field
 
 Play mode has no corridor and no route. The hero can walk anywhere.
@@ -514,6 +537,8 @@ moderate   normal, sd 30 ms,     85% of the section's pattern slots       250 ms
 - **Restart section:** the sim keeps a snapshot at each section's start.
   Restarting restores it, truncates the recording, and resumes with a
   count-in from the section's first bar.
+- **Falling:** when the hero's health runs out, the game stops as if
+  paused, on a menu without Resume (see [Health](#health)).
 
 ### End of run
 
@@ -571,11 +596,13 @@ These checks run the `moderate` bot through play mode headless, on seeds
   the screen within one bar.
 - **The reward spectrum:** the `casual` bot in play mode reaches the
   finale, and the blast clears the screen.
+- **The hero survives:** the `moderate` and `casual` bots end with health
+  left.
 - **Mashing does not pay:** mashers at 4 and 8 presses a second (steering
-  like `moderate`, ignoring the beat) earn a C and fewer kills than
-  `moderate` on the same seed.
-- **Report:** kills, average groove and grade for `moderate`, `casual` and
-  the mashers, side by side.
+  like `moderate`, ignoring the beat) earn a C and fewer kills (while the
+  hero lives) than `moderate` on the same seed.
+- **Report:** kills, average groove, grade and lowest health for
+  `moderate`, `casual` and the mashers, side by side.
 
 ### Live play
 

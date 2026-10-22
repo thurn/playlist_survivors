@@ -288,6 +288,8 @@ export interface Plan {
   inputs: PlanInput[];
   /** The groove meter (0–1) after each change, at song times. */
   groove: { s: ArrayLike<number>; v: ArrayLike<number> };
+  /** The hero's health (fraction of its maximum) after each change; it starts full and only changes when the level's rules give the hero health. */
+  health: { s: ArrayLike<number>; v: ArrayLike<number> };
   /** Near misses. */
   nearMisses: { s: number; w: number; kind: "arrow" | "slam" }[];
   /** Every threat (arrow or boss slam) and how it ended. */
@@ -396,6 +398,9 @@ export interface PlanStats {
   ratings: { perfect: number; great: number; good: number; none: number };
   /** Mean groove over step sections. */
   averageGroove: number;
+  /** The lowest the hero's health fell (fraction of its maximum), and when it ran out, if it did. */
+  minHealth: number;
+  deathS?: number;
   planMs: number;
   simMs: number;
 }

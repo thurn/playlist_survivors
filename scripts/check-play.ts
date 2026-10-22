@@ -3,8 +3,9 @@
  * open field and play-mode rules) headless on four seeds, with the checks the
  * demo shares and play mode's own, then the `casual` player for the reward
  * spectrum, then mashers (presses at 4 and 8 per second, ignoring the beat),
- * which must earn a C and fewer kills than the moderate player. Prints kills,
- * average groove and grade side by side.
+ * which must earn a C and fewer kills than the moderate player. The moderate
+ * and casual players must survive (the hero's health never runs out). Prints
+ * kills, average groove, grade and lowest health side by side.
  *
  *   npm run check:play [-- --seeds=1858,7]
  */
@@ -22,27 +23,32 @@ const seeds = (args.find((a) => a.startsWith("--seeds="))?.split("=")[1] ?? "185
 const lib = plannerInput({ level: LEVEL }).content;
 
 const MASH_RATES = [4, 8];
-const report: { seed: number; profile: string; kills: number; groove: number; grade: string }[] = [];
+const report: { seed: number; profile: string; kills: number; groove: number; grade: string; health: string }[] = [];
+/** Kills while the hero lived, and its lowest health (or when it fell). */
+const killsAlive = (plan: Plan) => Array.from(plan.hud.kills).filter((s) => plan.stats.deathS === undefined || s <= plan.stats.deathS).length;
+const healthNote = (plan: Plan) => (plan.stats.deathS === undefined ? `${Math.round(plan.stats.minHealth * 100)}%` : `fell ${plan.stats.deathS.toFixed(0)}s`);
 let failed = false;
 for (const seed of seeds) {
   for (const profile of ["moderate", "casual"] as SkillProfile[]) {
     const t0 = performance.now();
     const plan: Plan = runPlanner({ level: LEVEL, seed, profile });
     const ms = performance.now() - t0;
-    const results = [...checkPlan(plan, lib), ...checkPlay(plan, lib, { signature: profile === "moderate" })];
+    // The players the game is tuned for live to the end.
+    const survives = { name: "the hero survives", failures: plan.stats.deathS === undefined ? [] : [`the hero's health ran out at s=${plan.stats.deathS.toFixed(3)}`], checked: 1 };
+    const results = [...checkPlan(plan, lib), ...checkPlay(plan, lib, { signature: profile === "moderate" }), survives];
     const { ok, text } = summarizeChecks(results);
     failed ||= !ok;
     const st = plan.stats;
     console.log(`play ${planHash(plan)} (seed ${seed}, ${profile} player) in ${ms.toFixed(0)} ms: ${plan.hud.kills.length} kills, presses ${st.presses} (perfect ${st.ratings.perfect}, great ${st.ratings.great}, good ${st.ratings.good}, unrated ${st.ratings.none}), groove ${st.averageGroove.toFixed(2)}, threats ${plan.threats.length} (${plan.nearMisses.length} near misses)`);
     console.log(text);
-    report.push({ seed, profile, kills: plan.hud.kills.length, groove: st.averageGroove, grade: gradeFor(st.averageGroove) });
+    report.push({ seed, profile, kills: plan.hud.kills.length, groove: st.averageGroove, grade: gradeFor(st.averageGroove), health: healthNote(plan) });
   }
-  // Mashing must not pay: a C, and fewer kills than playing on the beat.
+  // Mashing must not pay: a C, and fewer kills (while the hero lives) than playing on the beat.
   const moderate = report.find((r) => r.seed === seed && r.profile === "moderate")!;
   for (const rate of MASH_RATES) {
     const plan: Plan = runPlanner({ level: LEVEL, seed, mashRate: rate });
     const st = plan.stats;
-    const r = { seed, profile: `mash ${rate}/s`, kills: plan.hud.kills.length, groove: st.averageGroove, grade: gradeFor(st.averageGroove) };
+    const r = { seed, profile: `mash ${rate}/s`, kills: killsAlive(plan), groove: st.averageGroove, grade: gradeFor(st.averageGroove), health: healthNote(plan) };
     report.push(r);
     const f: string[] = [];
     if (r.grade !== "C") f.push(`seed ${seed}: mashing ${rate}/s earned ${r.grade} (groove ${r.groove.toFixed(3)})`);
@@ -52,6 +58,6 @@ for (const seed of seeds) {
     console.log(text);
   }
 }
-console.log("\nseed   player     kills  groove  grade");
-for (const r of report) console.log(`${String(r.seed).padEnd(6)} ${r.profile.padEnd(10)} ${String(r.kills).padStart(5)}  ${r.groove.toFixed(2).padStart(6)}  ${r.grade}`);
+console.log("\nseed   player     kills  groove  grade  health (lowest)");
+for (const r of report) console.log(`${String(r.seed).padEnd(6)} ${r.profile.padEnd(10)} ${String(r.kills).padStart(5)}  ${r.groove.toFixed(2).padStart(6)}  ${r.grade.padEnd(5)}  ${r.health}`);
 process.exit(failed ? 1 : 0);

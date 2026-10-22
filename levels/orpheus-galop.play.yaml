@@ -2,7 +2,7 @@
 # the differences restated. See docs/design/interactive.md.
 extends: orpheus-galop
 world: open                 # the demo's default is corridor
-rules: { oneStepPerSlot: true, accentTelegraphs: true }
+rules: { oneStepPerSlot: true, accentTelegraphs: true, health: true }
 hero:
   timing: { perfectMs: 45, greatMs: 90, goodMs: 140, floor: 0.1 }
   # A loosely timed press swings short: 55% of the arc's reach at the timing floor, full at Perfect.

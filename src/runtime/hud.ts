@@ -155,10 +155,10 @@ export class Hud {
       });
       this.text(`LV ${hud.level}`, px(xpX - 8), py(7), fs, 0x60ffc0, "right", intro);
 
-      // Health (always full) and weapons, top left.
+      // Health and weapons, top left. A bite flashes the bar white.
       swell(12, 24, 90, 7, () => {
         g.roundRect(px(12), py(24), 90 * u, 7 * u, 2 * u).fill({ color: 0x000000, alpha: 0.55 * intro });
-        g.roundRect(px(13), py(25), 88 * u, 5 * u, 2 * u).fill({ color: 0xff4050, alpha: intro });
+        if (hud.health > 0) g.roundRect(px(13), py(25), 88 * u * clamp(hud.health, 0, 1), 5 * u, 2 * u).fill({ color: hud.hurt > 0.5 ? 0xffffff : 0xff4050, alpha: intro });
       });
       this.text("HP", px(12), py(14), fs, 0xff8090, "left", intro);
       hud.weapons.forEach((wp, i) => {

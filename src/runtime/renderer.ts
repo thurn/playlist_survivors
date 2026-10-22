@@ -407,7 +407,9 @@ export class Renderer {
         sp.position.set(Math.round(h.x), Math.round(h.y - h.z));
         sp.scale.set(1);
         sp.alpha = 1;
-        sp.tint = 0xffffff;
+        // A bite flashes the hero red.
+        const gb = Math.round(255 * (1 - 0.7 * h.hurt));
+        sp.tint = (0xff << 16) | (gb << 8) | gb;
         sp.zIndex = h.y;
       }
     }

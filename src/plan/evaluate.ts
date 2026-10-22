@@ -41,6 +41,28 @@ export function grooveAt(g: { s: ArrayLike<number>; v: ArrayLike<number> }, s: n
   return g.v[lo];
 }
 
+/** The hero's health (fraction of its maximum) at song time s. */
+export function healthAt(h: { s: ArrayLike<number>; v: ArrayLike<number> }, s: number): number {
+  return h.s.length > 0 && s >= h.s[0] ? grooveAt(h, s) : 1;
+}
+
+/** A hurt flash fades over this long (song seconds). */
+const HURT_FADE = 0.3;
+
+/** How hurt the hero looks at song time s (0–1): it flashes on each drop in health and fades. */
+export function hurtAt(h: { s: ArrayLike<number>; v: ArrayLike<number> }, s: number): number {
+  let lo = 0;
+  let hi = h.s.length - 1;
+  if (hi < 1 || s < h.s[0]) return 0;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (h.s[mid] <= s) lo = mid;
+    else hi = mid - 1;
+  }
+  for (let i = lo; i > 0 && s - h.s[i] < HURT_FADE; i--) if (h.v[i] < h.v[i - 1]) return 1 - (s - h.s[i]) / HURT_FADE;
+  return 0;
+}
+
 /** World pixels per full walk cycle for a regular-sized enemy (two strides). */
 const ENEMY_STRIDE = 56;
 /** An enemy this close to the hero (plus its radius), standing still, is in melee. */
@@ -161,6 +183,9 @@ export interface HudState {
   title?: { age: number; remaining: number };
   boss?: { name: string; health: number; age: number; remaining: number };
   end?: { age: number; averageGroove: number };
+  /** The hero's health (fraction of its maximum; always full without play mode's health) and its hurt flash (0–1). */
+  health: number;
+  hurt: number;
 }
 
 export interface Frame {
@@ -173,7 +198,7 @@ export interface Frame {
   sectionIndex: number;
   energy: number;
   camera: { x: number; y: number; zoom: number; shakeX: number; shakeY: number };
-  hero: { x: number; y: number; z: number; facing: number; anim: string; frame: number; afterimages: { x: number; y: number; facing: number; anim: string; frame: number; alpha: number }[] };
+  hero: { x: number; y: number; z: number; facing: number; anim: string; frame: number; afterimages: { x: number; y: number; facing: number; anim: string; frame: number; alpha: number }[]; hurt: number };
   enemies: EnemySprite[];
   particles: Particle[];
   fx: FxSprite[];
@@ -583,7 +608,7 @@ export class Evaluator {
       sectionIndex: si,
       energy,
       camera: { x: cam.x, y: cam.y, zoom: cam.zoom, shakeX, shakeY },
-      hero: { x: h.x, y: h.y, z: h.z, facing: h.facing, anim: h.anim, frame: h.frame, afterimages: after },
+      hero: { x: h.x, y: h.y, z: h.z, facing: h.facing, anim: h.anim, frame: h.frame, afterimages: after, hurt: hurtAt(plan.health, s) },
       enemies,
       particles,
       fx,
@@ -935,7 +960,9 @@ export class Evaluator {
       const left = this.beatIndex(plan.songBeats, next.s0) - sbi;
       if (left > 0 && left <= 4) countIn = { count: clamp(5 - Math.ceil(left - 1e-6), 1, 4), fade: clamp(1 - left / 4, 0, 1) };
     }
-    return { kills, ratings, groove, bonus: this.maxBonus * groove, keys, ticks, heartGlow, presses, xp, level, weapons, progress, elapsed: s, beatPhase, barPhase, free, countIn, energy, banners, title, boss, end };
+    const health = healthAt(plan.health, s);
+    const hurt = hurtAt(plan.health, s);
+    return { kills, ratings, groove, bonus: this.maxBonus * groove, keys, ticks, heartGlow, presses, xp, level, weapons, progress, elapsed: s, beatPhase, barPhase, free, countIn, energy, banners, title, boss, end, health, hurt };
   }
 }
 

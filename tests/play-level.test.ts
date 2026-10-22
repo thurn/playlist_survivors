@@ -22,8 +22,8 @@ describe("the play level file", () => {
     expect(play.extends).toBe("orpheus-galop");
     expect(play.world).toBe("open");
     expect(demo.world).toBe("corridor");
-    expect(play.rules).toEqual({ oneStepPerSlot: true, accentTelegraphs: true });
-    expect(demo.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: false });
+    expect(play.rules).toEqual({ oneStepPerSlot: true, accentTelegraphs: true, health: true });
+    expect(demo.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: false, health: false });
     expect(play.player).toBe("moderate");
     expect(play.seed).toBe(demo.seed);
     expect(play.title).toEqual(demo.title);
