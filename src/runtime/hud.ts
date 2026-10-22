@@ -11,7 +11,9 @@ import type { Plan } from "../plan/types.ts";
 import { PixelText, textWidth } from "./font.ts";
 
 /** Press ratings: gold for Perfect, white for Great, pale blue for Good, plain for unrated. */
-const RATING_COLORS: Record<string, number> = { perfect: 0xffd040, great: 0xffffff, good: 0x9fd0ff };
+const RATING_COLORS: Record<string, number> = { perfect: 0xffd040, great: 0xffffff, good: 0x9fd0ff, ignored: 0x4a4a54 };
+/** Play mode's telegraphs: the cleaves' accents and the beats to press for them. */
+const TELEGRAPH = 0xffc040;
 const PLAIN = 0x8890a8;
 const ratingColor = (r: string | undefined) => (r ? (RATING_COLORS[r] ?? PLAIN) : PLAIN);
 
@@ -216,8 +218,14 @@ export class Hud {
         const d = t.dt * 90;
         if (d > 186) continue;
         const a = clamp(1 - t.dt / 2.2, 0, 1) * (t.dt < 0 ? 1 + t.dt * 8 : 1) * trackA;
-        const sz = (t.down ? 4 : 2.5) * u;
-        for (const side of [-1, 1]) g.roundRect(px(cx + side * (14 + d)) - sz / 2, py(cy) - sz * 1.6, sz, sz * 3.2, sz / 2).fill({ color: t.down ? 0xffe8b0 : 0xffffff, alpha: a });
+        // An accent that will cleave: a large gold tick.
+        const sz = (t.cleave ? 6 : t.down ? 4 : 2.5) * u;
+        const color = t.cleave ? TELEGRAPH : t.down ? 0xffe8b0 : 0xffffff;
+        for (const side of [-1, 1]) {
+          g.roundRect(px(cx + side * (14 + d)) - sz / 2, py(cy) - sz * 1.6, sz, sz * 3.2, sz / 2).fill({ color, alpha: a });
+          // "Press here": a gold ring on the beat before it.
+          if (t.pressHere) g.circle(px(cx + side * (14 + d)), py(cy), 7 * u).stroke({ color: TELEGRAPH, width: Math.max(1, 1.5 * u), alpha: a });
+        }
       }
       // Each press flashes on the track: early to the left, late to the right, colored by its rating.
       for (const pr of hud.presses) {
@@ -250,7 +258,10 @@ export class Hud {
         g.roundRect(px(cx - 200), py(cy - 9), 400 * u, 18 * u, 9 * u).stroke({ color: 0xffe080, width: Math.max(1, u), alpha: 0.6 * ci.fade });
       }
       const heart = (10 + 4 * pulse) * u;
-      this.heart(g, px(cx), py(cy), heart, options.metronome ? 0xffffff : 0xff3060);
+      // Over the beat before a cleave's accent, the heart glows gold.
+      const glow = hud.heartGlow ?? 0;
+      if (glow > 0) g.circle(px(cx), py(cy + 2), heart * (1.6 + 0.4 * glow)).fill({ color: TELEGRAPH, alpha: 0.35 * glow });
+      this.heart(g, px(cx), py(cy), heart * (1 + 0.15 * glow), options.metronome ? 0xffffff : glow > 0.5 ? 0xffa040 : 0xff3060);
 
       // Boss bar.
       if (hud.boss && hud.boss.remaining > -1) {

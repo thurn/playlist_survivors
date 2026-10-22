@@ -136,8 +136,13 @@ export interface HudState {
   bonus: number;
   /** The arrow keys: how lit each one is (0–1) and the rating of the press that lit it. */
   keys: Record<KeyName, { lit: number; rating?: string }>;
-  /** The beat track: upcoming beats (seconds until each) from the song, downbeats marked. */
-  ticks: { dt: number; down: boolean }[];
+  /**
+   * The beat track: upcoming beats (seconds until each) from the song, downbeats marked. Play
+   * mode telegraphs the cleaves: accents that will cleave, and the beat to press for each.
+   */
+  ticks: { dt: number; down: boolean; cleave?: boolean; pressHere?: boolean }[];
+  /** Play mode: the heart glows (0–1) over the beat before a cleave's accent. */
+  heartGlow?: number;
   /** Presses on the beat track as they happen: seconds since, offset from the grid (seconds), rating. */
   presses: { age: number; delta: number; rating?: string; steps: boolean }[];
   xp: number;
@@ -233,6 +238,25 @@ export class Evaluator {
     this.uiSorted = plan.events.ui;
     this.downbeats = new Set(plan.barStart.filter((b) => Number.isFinite(b)));
     this.maxBonus = lib.hero.groove.maxBonus;
+    // Play mode's telegraphs: the song owns the accents, so the HUD may show them in advance.
+    if (plan.rules?.accentTelegraphs && plan.cleaveAccents) {
+      this.cleaveTimes = plan.cleaveAccents.map((a) => a.s).sort((a, b) => a - b);
+      // The grid time one grid step before each accent: a Great press there arms the cleave.
+      for (const a of this.cleaveTimes) {
+        let i = 0;
+        while (i + 1 < plan.grid.length && plan.grid[i + 1] <= a + 1e-6) i++;
+        if (i > 0) this.pressHereTimes.push(plan.grid[i - 1]);
+      }
+    }
+  }
+
+  private cleaveTimes: number[] = [];
+  private pressHereTimes: number[] = [];
+
+  /** Is there a time in a sorted list within 40 ms of t? */
+  private near(list: number[], t: number): boolean {
+    const i = countUpTo(list, t + 0.04);
+    return i > 0 && list[i - 1] >= t - 0.04;
   }
 
   /** Prefix sums of walked distance per enemy, for the sample count and index version they were built from. */
@@ -839,6 +863,11 @@ export class Evaluator {
         if (lp && lp.released === undefined) lp.released = i.s;
         continue;
       }
+      // One step per grid slot: an extra press flashes grey on the key display, and nothing else.
+      if (i.ignored) {
+        lastPress[i.key] = { s: i.s, rating: "ignored" };
+        continue;
+      }
       // A diagonal's second key shows the rating of the press it bent.
       if (!i.bend) rating = i.rating;
       lastPress[i.key] = { s: i.s, rating: i.bend ? rating : i.rating };
@@ -856,7 +885,22 @@ export class Evaluator {
     const bs = plan.songBeats;
     for (let bi = Math.max(0, Math.floor(sbi)); bi < bs.length && bs[bi] - s <= TRACK_AHEAD; bi++) {
       if (bs[bi] < s - 0.12) continue;
-      ticks.push({ dt: bs[bi] - s, down: this.downbeats.has(bi) });
+      const tick: HudState["ticks"][number] = { dt: bs[bi] - s, down: this.downbeats.has(bi) };
+      if (this.cleaveTimes.length) {
+        if (this.near(this.cleaveTimes, bs[bi])) tick.cleave = true;
+        if (this.near(this.pressHereTimes, bs[bi])) tick.pressHere = true;
+      }
+      ticks.push(tick);
+    }
+    // The heart glows over the beat before a cleave's accent, and fades just after it.
+    let heartGlow: number | undefined;
+    if (this.cleaveTimes.length) {
+      const i = countUpTo(this.cleaveTimes, s - 0.12);
+      const c = this.cleaveTimes[i];
+      if (c !== undefined) {
+        const beat = this.beatLenAt(this.beatIndex(plan.songBeats, c) - 0.5);
+        heartGlow = s <= c ? clamp(1 - (c - s) / beat, 0, 1) : clamp(1 - (s - c) / 0.12, 0, 1);
+      }
     }
     const groove = grooveAt(plan.groove, s);
     const weapons: HudState["weapons"] = [];
@@ -890,7 +934,7 @@ export class Evaluator {
       const left = this.beatIndex(plan.songBeats, next.s0) - sbi;
       if (left > 0 && left <= 4) countIn = { count: clamp(5 - Math.ceil(left - 1e-6), 1, 4), fade: clamp(1 - left / 4, 0, 1) };
     }
-    return { kills, ratings, groove, bonus: this.maxBonus * groove, keys, ticks, presses, xp, level, weapons, progress, elapsed: s, beatPhase, barPhase, free, countIn, energy, banners, title, boss, end };
+    return { kills, ratings, groove, bonus: this.maxBonus * groove, keys, ticks, heartGlow, presses, xp, level, weapons, progress, elapsed: s, beatPhase, barPhase, free, countIn, energy, banners, title, boss, end };
   }
 }
 
