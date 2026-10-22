@@ -137,7 +137,9 @@ export interface DemoHook {
   frames?: number;
   audio?: () => { state: string; contextSongTime: number; stats: { scheduled: number; skippedLate: number; startedLate: number; clicks: number; ducks: number; ticks: number } };
   /** Play mode's flow: its phase, the menu on screen, pausing, and choosing a menu item by its label. */
-  play?: { phase(): string; pause(): void; menu(): { items: string[]; selected: number } | undefined; choose(label: string): void };
+  play?: { phase(): string; pause(): void; menu(): { items: string[]; selected: number } | undefined; choose(label: string): void; compareReplay(): string[] };
+  /** Play mode: the hero where the last frame drew it. */
+  lastHero?: { s: number; x: number; y: number };
   /** Play mode: the live runner and recording, and a way to press keys at exact song times. */
   live?: { runner: import("../live/runner.ts").LiveRunner; recording: import("../live/recording.ts").LiveRecording; key(e: import("../sim/player.ts").KeyEvent): void };
   /** QA listening pass: the level's mix rendered offline through the live mixing graph. */

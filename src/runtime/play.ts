@@ -83,14 +83,15 @@ async function newSession(env: LiveEnv, startS: number, onProgress?: (f: number)
  * Watch my run: the recorded key events replayed through the engine in batch mode (the virtual
  * player's part again first, after a mid-song start). The replay equals the live run.
  */
-export function replay(input: PlannerInput, props: Record<string, PropInfo> | undefined, startS: number, keys: readonly KeyEvent[]): LiveRecording {
+export function replay(input: PlannerInput, props: Record<string, PropInfo> | undefined, startS: number, keys: readonly KeyEvent[], untilS?: number): LiveRecording {
   const { recording, sim } = liveSim(input, props, startS > 0);
   if (startS > 0) {
     sim.advanceTo(startS);
     handOver(sim, recording);
   }
   for (const k of keys) sim.key(k);
-  sim.runToEnd();
+  if (untilS !== undefined) sim.advanceTo(untilS);
+  else sim.runToEnd();
   return recording;
 }
 
@@ -132,6 +133,7 @@ export async function runLive(env: LiveEnv): Promise<void> {
     st.hud.draw(frame, st.renderer.outputRect(), { metronome: false, ...opts });
     app.renderer.render(app.stage);
     lastStats = { alive: frame.stats.alive, particles: frame.stats.particles };
+    hook.lastHero = { s, x: frame.hero.x, y: frame.hero.y };
     return frame;
   };
 
@@ -266,6 +268,16 @@ class PlayController {
       choose: (label) => {
         const i = this.menu?.menu.items.findIndex((x) => x.startsWith(label)) ?? -1;
         if (i >= 0) this.menu!.actions[i]();
+      },
+      // QA: the replay of the run so far, part by part against the live recording.
+      compareReplay: () => {
+        const live = this.session();
+        // (Up to where the live run has got.)
+        const sim = live.runner.sim;
+        const again = replay(this.env.input, this.env.props, this.startS, live.runner.applied, sim.done ? undefined : sim.s);
+        const a = live.recording.hashParts();
+        const b = again.hashParts();
+        return Object.keys(a).filter((k) => a[k] !== b[k]);
       },
     };
     // A mid-song start begins with a one-bar count-in: the music starts a bar early.

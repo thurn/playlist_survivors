@@ -1,18 +1,28 @@
-# Playlist Survivors — tech demo
+# Playlist Survivors
 
-A non-interactive, browser-based rhythm game level that plays itself to the end
-of Offenbach's *Orpheus in the Underworld* overture (the slow passage, then the
-Infernal Galop). A virtual player presses the arrow keys to the beat; the hero
-steps one pace per press while the sword swings itself at the crowd, and every
-strike and impact sound lands on the music, through a horde of up to ~500 LPC
-monsters.
+A browser-based rhythm game level set to Offenbach's *Orpheus in the
+Underworld* overture (the slow passage, then the Infernal Galop). You press the
+arrow keys (or WASD) to the beat; the hero steps one pace per press while the
+sword swings itself at the crowd, and every strike and impact sound lands on
+the music, through a horde of up to ~500 LPC monsters.
 
-The design is in [docs/design/tech-demo.md](docs/design/tech-demo.md), with the
-gameplay in [docs/design/beat-steps.md](docs/design/beat-steps.md), which
-supersedes parts of it. The level is a **simulated playthrough**: the game rules
-run forward in time, driven by the virtual player's key presses, and never read
-a press before it happens. The simulation is recorded at load, then played
-back: each frame is a pure function of the audio clock's song time.
+It has two modes:
+
+- **Play** — the real game. The keyboard drives the game rules live, in an
+  open field that re-themes itself in transform waves on the music. Designed in
+  [docs/design/interactive.md](docs/design/interactive.md).
+- **Watch the demo** — the original tech demo, unchanged: a virtual player
+  presses the keys along a forest corridor.
+
+The demo's design is in [docs/design/tech-demo.md](docs/design/tech-demo.md),
+with the gameplay in [docs/design/beat-steps.md](docs/design/beat-steps.md),
+which supersedes parts of it. Both modes run one **simulated playthrough**
+engine: the game rules run forward in time, driven by key presses, and never
+read a press before it happens. The demo records its simulation at load, then
+plays it back (each frame a pure function of the audio clock's song time).
+Play mode runs it live on the main thread, a frame at a time, ahead of the
+music with rollback when a press comes in, so sounds can be scheduled early
+and every impact still lands on the beat.
 
 ## Running it
 
@@ -30,22 +40,46 @@ worktree gets its own stable port in 5200–5999 instead, hashed from its path, 
 it never touches the main server and rarely meets another worktree; `npm run port`
 prints it, and `PORT` overrides it.
 
-Open the page in desktop Chrome, wait for the progress bar, then click
-**Click to begin** (browsers need one click before audio can play). Use wired
-headphones or speakers.
+Open the page in desktop Chrome, wait for the progress bar, then choose
+**Play** (the default), **Watch the demo** or **Calibrate** (the choice also
+unlocks audio). Use wired headphones or speakers.
+
+### Controls
+
+| Key | In play | In menus |
+|---|---|---|
+| Arrows or WASD | Move: in step sections one step per press (one per beat slot; extra presses are ignored and grey), in free sections held keys walk. Two perpendicular keys within 40 ms step diagonally. | Up/Down (W/S) move the selection; Right chooses |
+| Enter, Space, a click | — | Choose |
+| Esc | Pause (losing focus pauses too) | Resume |
+
+The pause menu has **Resume**, **Restart section**, **Restart song** and **Quit
+to title**; play resumes after a one-bar count-in. The end card shows a letter
+grade from the average groove (S, A, B, C), the best grade so far (saved in
+this browser), and **Play again**, **Watch my run** (an exact replay) and
+**Watch the demo**.
+
+**Calibrate** (on the title screen) plays 8 clicks at 120 BPM: tap any arrow
+along with them. The median tap error, after the first two taps, becomes the
+input offset (`ps.inputOffsetMs` in local storage), so presses are judged as
+you hear them. Redo it any time.
 
 ### URL parameters
 
 | Parameter | Effect |
 |---|---|
+| `?mode=play` / `?mode=demo` | Skip the title screen's choice (the one click to unlock audio is still needed). |
+| `?mode=play&player=moderate` | Plan a play-mode run with a virtual player and play it back like the demo (captures, QA, tuning). |
 | `?metronome` | Full-screen flash on every beat plus a click track over the music (the sync check). |
-| `?start=1:35` | Start playback from a song time, in seconds (`?start=95.5`) or `m:ss`. |
+| `?start=1:35` | Start from a song time, in seconds (`?start=95.5`) or `m:ss`. In play mode the level's virtual player plays up to there headless, then hands over after a one-bar count-in. |
 | `?capture&t=88.31` | Render one frozen frame at song time 88.31 s, without audio. |
 | `?avOffsetMs=-40` | Shift the picture relative to the audio (e.g. Bluetooth latency). |
 | `?seed=1859` | Re-simulate, and regenerate the map, with a different seed. |
-| `?player=casual` | Re-simulate with another skill profile: `perfect`, `skilled` (the level's default) or `casual`. |
-| `?test` | Expose the `window.__demo` test hook (`ready`, `renderAt(s)`, `stats()`). |
-| `?bench` | Play the whole song on a virtual clock and record frame times. |
+| `?player=casual` | Re-simulate with another skill profile: `perfect`, `skilled` (the demo level's default), `casual` or `moderate` (play mode's stand-in for a moderately competent human). |
+| `?test` | Expose the `window.__demo` test hook (`ready`, `renderAt(s)`, `stats()`; in play mode also `live` and `play`). |
+| `?bench` | Play the whole song on a virtual clock and record frame times (`&mode=play`: live play from theme A to the climax). |
+
+`?player=`, `?capture`, `?bench`, `?test` and `?metronome` imply the demo, so
+existing tools and URLs keep working.
 
 ## Checks
 
@@ -60,16 +94,19 @@ Every important property is checkable by a command:
 | `npm run check:plan` | Runs the simulated playthrough with all its checks, including causality (re-simulating with the presses after a cut removed must change nothing before it), then the casual player's too, and prints a one-line summary of each (enemies, kills, presses, groove, near misses) with the two players' kills and groove side by side. `-- --seeds=1859,7` for other seeds, `-- --player=perfect` for another profile. |
 | `npm run check:determinism` | The level's seed simulated twice; plan and map hashes must match. |
 | `npm run check:seeds` | The level's seed with causality and determinism, then the checks on three more seeds (`?seed=` must still pass every check). In CI. |
+| `npm run check:play` | Play mode, headless: the `moderate` and `casual` virtual players through the open field on four seeds, with the checks the demo shares plus play mode's own (one step per slot, transform waves off screen within a bar, the finale, and the moderate player's signature moments: 80% of cleave accents cleaved, the kick line down within two beats, 75% near misses, the boss on its chord, level-ups on time). Prints kills, groove and grade side by side. In CI. |
 | `npm run capture -- --times 12,35.2,88.31,141.5` | Headless-Chrome screenshots at exact song times into `captures/`. `--sections` captures the start of every section. |
-| `npm run bench` | Headed Chrome, whole song at real-time speed: fails if JavaScript frame time exceeds 8 ms or GPU time 10 ms at p95, or any frame exceeds 33 ms. |
-| `npm run test:e2e` | Playwright: capture hook, metronome flash on the beat, broken level script shows an error and never starts, reload uses the cached plan, `?player=` re-simulates with another profile. |
-| `npm run qa` | About 45 s of playback in Chromium over the design's Manual QA items a machine can judge: simulation time, stillness between steps, the skilled and casual players' impacts on the grid and the reward spectrum, audio clock rate, picture/audio offset, frame rate, hidden-tab recovery (a 3 s main-thread stall), resize letterboxing, click track, finale clearance, and a listening pass over the offline-rendered mix (clipping, effects level, music in front, no wall of noise, effects on time); writes `captures/qa/report.md` and review frames. |
+| `npm run bench` | Headed Chrome, whole song at real-time speed: fails if JavaScript frame time exceeds 8 ms or GPU time 10 ms at p95, or any frame exceeds 33 ms. `-- --play` benchmarks live play instead (theme A to the climax, a late-arriving press on every beat, so it includes the rollbacks). |
+| `npm run test:e2e` | Playwright: capture hook, metronome flash on the beat, broken level script shows an error and never starts, reload uses the cached plan, `?player=` re-simulates with another profile; and play mode at `?start=1:10` (a step per press, swings, a mashed press ignored, Esc pauses and resumes). |
+| `npm run qa` | About 45 s of playback in Chromium over the design's Manual QA items a machine can judge: simulation time, stillness between steps, the skilled and casual players' impacts on the grid and the reward spectrum, audio clock rate, picture/audio offset, frame rate, hidden-tab recovery (a 3 s main-thread stall), resize letterboxing, click track, finale clearance, and a listening pass over the offline-rendered mix (clipping, effects level, music in front, no wall of noise, effects on time); then live play mode with synthetic key presses (a press steps at once, impacts on the grid, mashing, diagonals, held keys, frame time, Esc and losing focus, Watch my run identical, a mid-song start); writes `captures/qa/report.md` and review frames. `-- --play` runs only the play-mode items. |
 | `npm run check:analysis` | The analysis tool's pytest suite and ruff. |
 | `npm run check:all` | All of the above except captures, QA and the benchmark. |
 
-`scripts/ci` (the Tollgate gate, about 30 s) runs `check`, `check:content`,
-`check:assets`, `check:seeds` and the build; `check:analysis` and `check:songmap`
-only when `tools/analysis/` or `songs/` differ from master.
+`scripts/ci` (the Tollgate gate, about 40 s) runs `check`, `check:content`,
+`check:assets`, `check:seeds`, `check:play` and the build; `check:analysis` and
+`check:songmap` only when `tools/analysis/` or `songs/` differ from master. The
+golden demo hashes (`tests/golden/`) are part of `check`: the demo's plan for
+every seed and demo profile must stay byte-identical.
 
 ## How it fits together
 
@@ -78,6 +115,9 @@ recording ──ps-analysis (crop, analyze, report, edit, check, click)──►
 LPC packs ──tools/baker (npm run bake)──► public/assets/ (atlases, effects, sounds, credits)
 content/*.yaml + levels/orpheus-galop.yaml + song map ──simulation + virtual player (web worker)──► recorded plan
 audio clock → song time s → evaluatePlan(plan, s) → PixiJS renderer + HUD
+
+play: levels/orpheus-galop.play.yaml (extends the demo's) ──Sim(open field, keyboard), live, per frame──►
+      live recording (rewindable) → the same evaluator, renderer and HUD; sounds scheduled as they become final
 ```
 
 - `tools/analysis/` — the Python audio analysis tool (madmom, librosa). The
@@ -87,16 +127,22 @@ audio clock → song time s → evaluatePlan(plan, s) → PixiJS renderer + HUD
   effects, loudness-normalized sounds, the licence manifest and credits.
 - `content/` — the hero (movement, timing, groove, swings, aim), enemies, weapons, formations, effect recipes,
   sound palettes, zone themes and Tiled landmarks (`content/landmarks/*.tmj`).
-- `levels/` — level scripts (bars and beats, never seconds).
+- `levels/` — level scripts (bars and beats, never seconds). `orpheus-galop.play.yaml`
+  extends the demo's level with play mode's world, rules, timing windows and tuning.
 - `src/core/` — song map maths, the time warp, geometry, seeded randomness.
 - `src/content/` — schemas and YAML loaders with line-numbered errors.
 - `src/sim/` — the simulation: the song schedule, the movement model, timing and groove, auto-aim, the
-  virtual player and the forward game loop.
+  virtual players and the steppable, cloneable game loop (`Sim`), behind the `World` (corridor or
+  open field), `Rules` and `Recorder` interfaces.
+- `src/live/` — live play: the rewindable live recording, the runner (snapshots, speculation and
+  rollback), keyboard input and the latency mapping, and cancellable sound scheduling.
 - `src/planner/` — the pipeline (schedule, map, simulation, emission), the recording checks and the
   causality check.
-- `src/mapgen/` — the forest generator (route, corridor, zones, props, landmarks).
+- `src/mapgen/` — the forest generator (route, corridor, zones, props, landmarks), and play mode's
+  open field (chunks, transform waves, landmarks stamped around the hero).
 - `src/plan/` — the plan format and stateless frame evaluation.
-- `src/runtime/` — audio clock and sound scheduling, renderer, HUD, app shell.
+- `src/runtime/` — audio clock and sound scheduling, renderer, HUD, the title screen and calibration,
+  the app shell and play mode's flow (count-ins, pause, restarts, the end card, Watch my run).
 - `scripts/` — the check, capture and benchmark commands.
 
 ## Human review gates
@@ -123,6 +169,10 @@ and lists what is still open.
    still between steps, quick firm steps, swings toward the crowd, every impact on the beat.
 8. **Reward spectrum** — compare `?player=skilled` with `?player=casual` (and `?player=perfect`).
 9. **Full QA** — the checklists in the *Manual QA* sections of both design documents.
+10. **Play mode** — `?mode=play&player=moderate` from the start, at `?start=1:10` and at the climax
+    (the open field, transform waves, landmarks); then play theme A by hand at `?mode=play&start=1:10`
+    with headphones (steps feel instant, impacts on the beat); then the *Manual QA* playthrough in
+    [interactive.md](docs/design/interactive.md#manual-qa).
 
 ## Licences
 

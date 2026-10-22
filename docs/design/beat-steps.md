@@ -89,6 +89,9 @@ See the [Automated checks](#automated-checks) section below.
 
   Everything else, including the song map, time warp, world beat grid, juice,
   sound mixing, assets and the renderer, still applies.
+- [Interactive play](interactive.md): play mode, which runs these rules live
+  with real key presses in an open field (the "later interactive build"
+  below).
 - [README](../../README.md): commands, URL parameters and the review gates.
 - [QA report](../qa/qa-report.md): how each manual QA item of the current
   demo is checked. The new checks below extend it.
@@ -110,7 +113,8 @@ back the recording.
 Precomputing the playthrough is honest because the simulation is causal.
 Each step reads only presses that have already happened. A later interactive
 build can run the same simulation live, one step per frame, with real key
-presses in place of the virtual player.
+presses in place of the virtual player. [Interactive play](interactive.md) is
+that build.
 
 The parts, in the order a frame of the game experiences them:
 

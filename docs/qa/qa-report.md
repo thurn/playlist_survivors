@@ -2,8 +2,9 @@
 
 Status of every item in the *Manual QA* sections of
 [`docs/design/beat-steps.md`](../design/beat-steps.md) (the simulated
-playthrough) and of [`docs/design/tech-demo.md`](../design/tech-demo.md) where
-it still applies, as of 2026-10-21.
+playthrough), of [`docs/design/tech-demo.md`](../design/tech-demo.md) where
+it still applies, and of [`docs/design/interactive.md`](../design/interactive.md)
+(play mode; see [Play mode](#play-mode)), as of 2026-10-21.
 
 Each item is either **verified** by a command, **partly verified** (a command
 covers the measurable part and a person still has to judge the feel), or a
@@ -21,6 +22,9 @@ npm run qa          # about 45 s: real-time playback in Chromium, the skilled an
                     # playthrough, and a measured listening pass over the offline-rendered mix;
                     # writes captures/qa/report.md and review frames
 npm run bench       # whole song at real-time speed, frame-time budgets
+npm run check:play  # play mode, headless: moderate and casual players on four seeds
+npm run qa -- --play          # only play mode's items, in live play with synthetic key presses
+npm run bench -- --play       # live play from theme A to the climax, a press on every beat
 ```
 
 `captures/` is not committed. `npm run qa` regenerates `captures/qa/`.
@@ -39,6 +43,10 @@ npm run bench       # whole song at real-time speed, frame-time budgets
 | Audio clock, picture/audio offset, hidden tab, resize, cached plan, broken level | verified |
 | Sound mix: clipping, effects level, music in front, no wall of noise, effects on time | verified by measurement; listening still needed |
 | Feel: steps, swings toward the crowd, juice, the dance of the horde | **human gates, not yet run** |
+| The frozen demo: plan hashes for 4 seeds × 3 demo profiles unchanged since before play mode | verified (`tests/golden/`, in `check`) |
+| Play mode: live play equals a replay of its key events; rollbacks leave no trace | verified (unit tests; `qa --play`: Watch my run identical) |
+| Play mode: signature moments for the moderate player, waves, one step per slot | verified (`check:play`, four seeds, in CI) |
+| Play mode: feel with real hands and ears | **human gates, not yet run** |
 
 ## Problems found and fixed while building the simulation
 
@@ -145,6 +153,63 @@ No frame was dropped. `qa` measured 120 fps through the climax in Google
 Chrome. The simulation runs once at load: about 1.15 s in the browser worker
 including its checks, then the plan cache makes reloads instant.
 
+## Play mode
+
+The Manual QA of [interactive.md](../design/interactive.md#manual-qa). The
+commands judge everything measurable with the `moderate` virtual player
+(headless, `check:play`) and with synthetic key presses in live play
+(`qa --play`, the e2e play spec, `bench --play`). What it feels like under
+real hands is still a human gate.
+
+### Feel
+
+| Item | State | Evidence |
+|---|---|---|
+| A press steps at once | verified | `qa --play`: 8 of 8 presses on the beat moved the hero in the first frame drawn after the key event. A key event's song time comes from its timestamp; the runner applies it at that time (rolling back the speculative 200 ms ahead) before the frame is drawn. **Human:** no perceptible delay. |
+| Impacts are on the beat, however sloppy the presses | verified | `qa --play`: every live swing within 1 ms of a grid time with its impact sound on the strike. `check:play`: "impacts on the grid" for the moderate and casual players on four seeds. Unit test: live play records exactly what a batch run of the same keys records. **Human:** listen. |
+| Mashing moves the hero once per beat, the key display greys the extra presses | verified | `qa --play` and the e2e play spec: three presses for one beat step once and two are ignored; unit test: the ignored press is not rated, does not touch the groove and greys the key. |
+| Diagonals: Up and Right together step 44 px diagonally | verified | `qa --play`: the second key bends the step; unit test: one straight and one diagonal step cover 44 px each. |
+| Holding a key does nothing after the first step | verified | `qa --play`: a key held 0.4 s (with repeats) records one press. |
+| Frame time in live play | verified | `bench -- --play` (theme A to the climax, a late press on every beat, 212 rollbacks): JavaScript p95 3.6 ms, max 11.2 ms; GPU p95 5.7 ms; no frame over 33 ms. `qa --play`: 60 fps, JavaScript p95 4.1 ms. |
+
+### The set pieces, played
+
+| Item | State | Evidence |
+|---|---|---|
+| Prelude: held keys walk across the open field; the sword swings by itself | verified | Same rules as the demo (free movement); the open field has no walls (unit test: no route; the hero roams). **Human:** play it. |
+| Count-in, then the first transform wave on the galop's downbeat | verified, agent review | The play file starts the galop in the woods, so the first wave sweeps out at 43.21 s (`check:play` "zone waves": every wave on a downbeat and off screen within a bar). Capture reviewed by the agent: the green woods fill the ring as it passes. |
+| Galop opening: gold "press here" rings, a Great press cleaves | verified, agent review | Unit tests: the cleaves' accents show as large gold ticks with a gold ring on the beat before, and the heart glows over that beat (play mode only; the demo's HUD is unchanged). `check:play`: at least 80% of cleave accents cleaved by the moderate player. |
+| Theme A: a step and a swing on every beat; the crowd comes mostly from ahead | verified | 60% of spawns from the half ahead of the hero's heading (same spawn director as the demo); "off-screen spawns" and "population" pass in `check:play`. |
+| Kick line: stays on screen, dances, charges; the release cleave ripples through | verified | `check:play`: every skeleton down within two beats of the release on four seeds; the camera leads toward the line while it is in play. **Human:** does it read? |
+| Archers: telegraphed; a sidestep earns a near miss | verified | `check:play`: 75% or more near misses (14–16 of 14–16 for the moderate player). |
+| Boss: standing stones rise around the hero; slams can be stepped off; the boss dies on its chord | verified | `check:play`: the boss dies on its chord on all four seeds. Unit test: the standing stones are stamped on the hero at the climax's first downbeat; the renderer raises them over a bar. **Human:** watch them rise. |
+| Finale: the shrine rises, the blast clears the screen, the end card shows a grade | verified | `check:play` "the finale" (moderate and casual) and "clean ending"; `qa --play` capture `play-end-card.png`. Grades: moderate A on all four seeds (average groove 0.96–0.97), casual B (0.71–0.80); thresholds S 0.972, A 0.9, B 0.7. |
+
+### Flow
+
+| Item | State | Evidence |
+|---|---|---|
+| Esc pauses and resumes with a count-in | verified | `qa --play` and the e2e play spec: song time stops while paused; the music replays the bar before the pause point and the game resumes exactly there. |
+| Restart section returns to the section's first bar with the same world | verified | Unit test: a section restart 20 s back rewinds the recording and replays identically (Watch my run equals the live run afterwards). **Human:** try it. |
+| Switching tabs pauses | verified | `qa --play`: a window blur pauses; a hidden page pauses too (the same handler). **Human:** a real tab switch. |
+| A mid-song start in a believable world | verified | `qa --play` at `?start=1:50`: 430 monsters on screen just after the hand-over (capture `play-start-1-50.png`). The song is 2:24 long, so the design's `2:30` example is past its end. |
+| Calibrate with a known offset, and Perfect ratings become reachable | partly verified | Unit tests: the offset is the median tap error after the first two taps, ignoring taps far from any click. **Human:** calibrate with Bluetooth headphones. |
+| Watch my run replays the run identically | verified | `qa --play`: the replay's recording equals the live run's, part by part; unit test likewise with a mid-song start and a restarted section. |
+| Watch the demo plays the unchanged scripted demo | verified | Golden plan hashes for every seed and demo profile, in `check`. |
+
+### Tuning
+
+- **Experience:** 360, 850 and 1700 for the three level-ups. The moderate
+  player collects about 400–450, 950–990 and 1900–2200 by each scheduled
+  moment, so every bar fills a little before its level-up on all four seeds.
+- **Boss health:** unchanged: the moderate player wears it down to its floor
+  before the death chord on every seed.
+- **Timing windows:** 45, 90 and 140 ms as the design started them.
+- **Grades:** the design's starting thresholds gave every bot an S (play mode's
+  windows make most of the moderate player's presses Perfect), so they are
+  S 0.972, A 0.9, B 0.7. The grade is the first thing to retune after real
+  play: the moderate player sits within 0.01 of an S.
+
 ## What a person still has to do
 
 The README's *Human review gates* list these steps:
@@ -155,3 +220,7 @@ The README's *Human review gates* list these steps:
 4. Compare `?player=skilled`, `?player=casual` and `?player=perfect`.
 5. Listen through the whole level.
 6. Do one full playthrough with this table at hand.
+7. Play mode: watch `?mode=play&player=moderate` from the start, at
+   `?start=1:10` and at the climax; play theme A by hand at
+   `?mode=play&start=1:10` with headphones; then the play-mode playthrough
+   above, including Calibrate with Bluetooth headphones and a real tab switch.

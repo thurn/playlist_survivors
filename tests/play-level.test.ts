@@ -34,11 +34,14 @@ describe("the play level file", () => {
     expect(play.sections.find((s) => s.label === "galop-opening")!.zone).toBe("galop-woods");
     const changed = ["climax", "galop-vamp", "galop-opening"];
     for (const [i, s] of play.sections.entries()) if (!changed.includes(s.label)) expect(s).toEqual(demo.sections[i]);
-    // Events merge by `at` and kind: the first level-up needs less experience; nothing is added.
+    // Events merge by `at` and kind: the level-ups need their own experience; nothing is added.
     expect(play.events.length).toBe(demo.events.length);
-    const first = play.events.find((e) => e.levelUp === "orbiting-blades")!;
-    expect(first.xp).toBe(180);
-    expect(play.events.filter((e) => !e.levelUp || e.levelUp !== "orbiting-blades")).toEqual(demo.events.filter((e) => !e.levelUp || e.levelUp !== "orbiting-blades"));
+    expect(play.events.filter((e) => e.levelUp).map((e) => [e.levelUp, e.xp])).toEqual([
+      ["orbiting-blades", 360],
+      ["chain-lightning", 850],
+      ["fire-trail", 1700],
+    ]);
+    expect(play.events.filter((e) => !e.levelUp)).toEqual(demo.events.filter((e) => !e.levelUp));
   });
 
   it("merges its hero overrides over content/hero.yaml for this level only", () => {

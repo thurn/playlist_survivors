@@ -13,6 +13,12 @@ sections:
     zone: galop-woods
   - section: climax
     camera: { lead: 0 }
+# Experience for each level-up: the moderate player fills each bar a little before its moment
+# (it collects about 400, 950 and 1900 by then on the checked seeds).
 events:
   - at: { section: galop-opening, point: start }
-    xp: 180
+    xp: 360
+  - at: { section: theme-a-repeat, point: start }
+    xp: 850
+  - at: { section: bridge, point: start }
+    xp: 1700

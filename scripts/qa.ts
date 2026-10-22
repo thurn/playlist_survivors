@@ -3,7 +3,7 @@
  * can verify in real Chrome playback, plus captures of each checklist moment
  * for the human review. Writes captures/qa/report.md and report.json.
  *
- *   npm run qa
+ *   npm run qa [-- --play]     (--play: only play mode's items)
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -14,6 +14,7 @@ import { withDevServer } from "./lib/server.ts";
 import { listenInPage, type ListenResult } from "./lib/listen.ts";
 
 const OUT = join(ROOT, "captures/qa");
+const onlyPlay = process.argv.includes("--play");
 mkdirSync(OUT, { recursive: true });
 
 interface Result {
@@ -88,7 +89,7 @@ await withDevServer(async (base) => {
   const browser = await chromium.launch({ args: ["--use-angle=metal", "--enable-gpu", "--autoplay-policy=no-user-gesture-required"] });
 
   // ---------------------------------------------------------------- playback
-  {
+  if (!onlyPlay) {
     const ctx = await browser.newContext({ viewport: { width: 1920, height: 1080 } });
     const page = await ctx.newPage();
     const errors: string[] = [];
@@ -121,7 +122,7 @@ await withDevServer(async (base) => {
   // A hidden tab stops animation frames and timers while the audio thread plays on.
   // Playwright keeps its tabs visible, so the page's main thread is stalled for 3 s
   // instead, which stops both in the same way.
-  {
+  if (!onlyPlay) {
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
     const page = await ctx.newPage();
     await page.goto(`${base}/?test`);
@@ -149,7 +150,7 @@ await withDevServer(async (base) => {
     await ctx.close();
   }
 
-  {
+  if (!onlyPlay) {
     const ctx = await browser.newContext({ viewport: { width: 1920, height: 1080 } });
     const page = await ctx.newPage();
     const errors: string[] = [];
@@ -177,7 +178,7 @@ await withDevServer(async (base) => {
   }
 
   // --------------------------------------------------------------- metronome
-  {
+  if (!onlyPlay) {
     const ctx = await browser.newContext({ viewport: { width: 1920, height: 1080 } });
     const page = await ctx.newPage();
     await page.goto(`${base}/?test&metronome`);
@@ -192,7 +193,7 @@ await withDevServer(async (base) => {
   // ------------------------------------------- step movement and the reward spectrum
   // Each profile's playthrough, simulated in the browser: stillness between steps, every
   // impact on the grid, and how the groove and kills differ between players.
-  {
+  if (!onlyPlay) {
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
     const page = await ctx.newPage();
     const runs: Record<string, { bonus: number; kills: number; presses: number; ratings: Record<string, number>; offGrid: number; swings: number; failed: string[] }> = {};
@@ -252,7 +253,7 @@ await withDevServer(async (base) => {
 
   // ------------------------------------------------------- listening pass
   // The whole level's mix rendered offline through the live mixing graph, then measured.
-  {
+  if (!onlyPlay) {
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
     const page = await ctx.newPage();
     await page.goto(`${base}/?test`);
@@ -280,8 +281,139 @@ await withDevServer(async (base) => {
     await ctx.close();
   }
 
-  // -------------------------------------------- captures for the human review
+  // ------------------------------------------------------------ play mode
+  // The Manual QA items of docs/design/interactive.md a machine can judge, in live play with
+  // real (synthetic) key presses: steps feel instant, impacts stay on the grid, mashing and
+  // holding, diagonals, pausing, losing focus, and Watch my run.
   {
+    type PlayHook = {
+      ready: Promise<void>;
+      lastS: number;
+      frames?: number;
+      lastHero?: { s: number; x: number; y: number };
+      stats(): { frameMs: number[] };
+      play: { phase(): string; menu(): { items: string[] } | undefined; choose(label: string): void; compareReplay(): string[] };
+      live: { recording: { plan: { songBeats: ArrayLike<number>; grid: ArrayLike<number>; swings: { s: number }[]; inputs: { s: number; kind: string; steps: boolean; ignored?: boolean; bend?: boolean }[]; events: { sounds: { s: number; priority: number }[] } } } };
+    };
+    const ph = (page: Page) => page.evaluate(() => (window as unknown as { __demo: PlayHook }).__demo.play.phase());
+    const songNow = (page: Page) => page.evaluate(() => (window as unknown as { __demo: PlayHook }).__demo.lastS);
+    const nextFrame = (page: Page) => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(undefined)))));
+    const waitSong = async (page: Page, s: number) => {
+      for (let now = await songNow(page); now < s; now = await songNow(page)) await page.waitForTimeout(Math.min(200, Math.max(2, (s - now) * 1000 - 4)));
+    };
+    const openPlay = async (page: Page, start: string) => {
+      await page.goto(`${base}/?mode=play&start=${start}&test`);
+      await waitReady(page);
+      await page.getByText("Click to begin").click();
+      await page.waitForFunction(() => (window as unknown as { __demo: PlayHook }).__demo.play?.phase() === "playing", undefined, { timeout: 30_000 });
+    };
+    const ctx = await browser.newContext({ viewport: { width: 1920, height: 1080 } });
+    const page = await ctx.newPage();
+    const errors: string[] = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+    await openPlay(page, "1:10");
+    const beats = await page.evaluate(() => Array.from((window as unknown as { __demo: PlayHook }).__demo.live.recording.plan.songBeats));
+    const t0 = (await songNow(page)) + 0.3;
+    const f0 = await page.evaluate(() => (window as unknown as { __demo: PlayHook }).__demo.frames ?? 0);
+    const p0 = performance.now();
+    // A press steps at once: the first frame drawn after a key press shows the hero moving.
+    let instant = 0;
+    const onBeat = beats.filter((b) => b > t0).slice(0, 8);
+    for (const [i, b] of onBeat.entries()) {
+      await waitSong(page, b - 0.01);
+      const before = await page.evaluate(() => (window as unknown as { __demo: PlayHook }).__demo.lastHero!);
+      await page.keyboard.press(i % 2 ? "ArrowLeft" : "ArrowRight");
+      await nextFrame(page);
+      const after = await page.evaluate(() => (window as unknown as { __demo: PlayHook }).__demo.lastHero!);
+      if (Math.hypot(after.x - before.x, after.y - before.y) > 2) instant++;
+    }
+    record("Play: a press steps at once", instant === onBeat.length, `${instant} of ${onBeat.length} presses moved the hero on the next frame drawn`);
+    // Mashing: three presses for one beat step once; the extra two are ignored (and greyed).
+    const mash = beats.find((b) => b > onBeat[onBeat.length - 1] + 0.3)!;
+    await waitSong(page, mash - 0.01);
+    for (let k = 0; k < 3; k++) await page.keyboard.press("ArrowUp");
+    // Diagonals: Up and Right together are one diagonal step.
+    const diag = beats.find((b) => b > mash + 0.3)!;
+    await waitSong(page, diag - 0.01);
+    await page.keyboard.down("ArrowUp");
+    await page.keyboard.down("ArrowRight");
+    await page.keyboard.up("ArrowUp");
+    await page.keyboard.up("ArrowRight");
+    // Holding a key steps once (its repeats do nothing).
+    const hold = beats.find((b) => b > diag + 0.3)!;
+    await waitSong(page, hold - 0.01);
+    await page.keyboard.down("ArrowDown");
+    for (let k = 0; k < 10; k++) {
+      await page.waitForTimeout(40);
+      await page.keyboard.down("ArrowDown");
+    }
+    await page.keyboard.up("ArrowDown");
+    await waitSong(page, hold + 0.6);
+    const fps = ((await page.evaluate(() => (window as unknown as { __demo: PlayHook }).__demo.frames ?? 0)) - f0) / ((performance.now() - p0) / 1000);
+    // (No named functions inside page.evaluate: the bundler would wrap them in a helper the page lacks.)
+    const live = await page.evaluate(
+      ({ t0, mash, diag, hold }) => {
+        const d = (window as unknown as { __demo: PlayHook }).__demo;
+        const plan = d.live.recording.plan;
+        const grid = Array.from(plan.grid);
+        const ms = d.stats().frameMs.slice(-600).sort((a, b) => a - b);
+        const strikes = new Set(plan.events.sounds.filter((x) => x.priority <= 0.3 + 1e-9).map((x) => Math.round(x.s * 1e4)));
+        const swings = plan.swings.filter((sw) => sw.s > t0);
+        const steps = plan.inputs.filter((i) => i.kind === "press" && i.steps);
+        return {
+          swings: swings.length,
+          offGrid: swings.filter((sw) => Math.min(...grid.map((g) => Math.abs(g - sw.s))) > 0.001).length,
+          silent: swings.filter((sw) => !strikes.has(Math.round(sw.s * 1e4))).length,
+          mash: steps.filter((i) => i.s >= mash - 0.2 && i.s < mash + 0.2).map((p) => !!p.ignored),
+          diag: steps.filter((i) => i.s >= diag - 0.2 && i.s < diag + 0.2).map((p) => !!p.bend),
+          hold: steps.filter((i) => i.s >= hold - 0.2 && i.s < hold + 0.6).length,
+          p95: ms[Math.floor(0.95 * (ms.length - 1))],
+        };
+      },
+      { t0, mash, diag, hold },
+    );
+    record("Play: impacts on the beat", live.swings > 8 && live.offGrid === 0 && live.silent === 0, `${live.swings} swings in live play, ${live.offGrid} off the grid, ${live.silent} without an impact sound on the strike`);
+    record("Play: mashing steps once per beat", live.mash.length === 3 && live.mash.filter((x) => x).length === 2, `three presses for one beat: ${live.mash.map((x) => (x ? "ignored" : "stepped")).join(", ")}`);
+    record("Play: Up and Right together step diagonally", live.diag.length === 2 && live.diag[1], `the second key ${live.diag[1] ? "bent the step into a diagonal" : "did not bend the step"}`);
+    record("Play: holding a key steps once", live.hold === 1, `${live.hold} press recorded for a key held 0.4 s (its repeats ignored)`);
+    record("Play: frame rate and frame time", fps >= 55 && live.p95 < 8, `${fps.toFixed(1)} frames per second; JavaScript frame time (simulation, rollback and drawing) p95 ${live.p95.toFixed(2)} ms`);
+    // Esc pauses (song time stops) and resumes after a count-in, exactly where it stopped.
+    await page.keyboard.press("Escape");
+    await page.waitForFunction(() => (window as unknown as { __demo: PlayHook }).__demo.play.phase() === "paused");
+    const pausedAt = await songNow(page);
+    await page.waitForTimeout(600);
+    const still = Math.abs((await songNow(page)) - pausedAt);
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(() => (window as unknown as { __demo: PlayHook }).__demo.play.phase() === "playing", undefined, { timeout: 10_000 });
+    const resumed = await songNow(page);
+    record("Play: Esc pauses and resumes", still < 1e-6 && resumed >= pausedAt - 1e-6 && resumed < pausedAt + 0.2, `paused at ${pausedAt.toFixed(2)} s (song time still for 0.6 s); resumed after a one-bar count-in at ${resumed.toFixed(2)} s`);
+    // Losing focus pauses.
+    await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+    record("Play: losing focus pauses", (await ph(page)) === "paused", `after a window blur the game is ${await ph(page)}`);
+    record("Play: no page errors", errors.length === 0, errors.length ? errors.join("; ") : "none during live play");
+    // Watch my run: play to the end from late in the song, then replay it.
+    await openPlay(page, "2:15");
+    const rest = await page.evaluate(() => Array.from((window as unknown as { __demo: PlayHook }).__demo.live.recording.plan.songBeats));
+    const from = (await songNow(page)) + 0.3;
+    for (const [i, b] of rest.filter((x) => x > from && x < from + 4).entries()) {
+      await waitSong(page, b - 0.01);
+      await page.keyboard.press(["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp"][i % 4]);
+    }
+    await page.waitForFunction(() => (window as unknown as { __demo: PlayHook }).__demo.play.menu()?.items.includes("Watch my run") ?? false, undefined, { timeout: 30_000 });
+    const differ = await page.evaluate(() => (window as unknown as { __demo: PlayHook }).__demo.play.compareReplay());
+    await page.locator("canvas").screenshot({ path: join(OUT, "play-end-card.png") });
+    record("Play: Watch my run replays the run identically", differ.length === 0, differ.length ? `the replay differs in: ${differ.join(", ")}` : "the replay's recording equals the live run's, part by part");
+    // A mid-song start: the bot played up to the climax, and the field is busy.
+    await openPlay(page, "1:50");
+    await page.waitForTimeout(800);
+    await page.locator("canvas").screenshot({ path: join(OUT, "play-start-1-50.png") });
+    const alive = await page.evaluate(() => (window as unknown as { __demo: { stats(): { alive: number } } }).__demo.stats().alive);
+    record("Play: ?start=1:50 starts mid-song in a believable world", alive > 100, `${alive} monsters on screen just after the hand-over (capture: play-start-1-50.png)`);
+    await ctx.close();
+  }
+
+  // -------------------------------------------- captures for the human review
+  if (!onlyPlay) {
     const ctx = await browser.newContext({ viewport: { width: 1920, height: 1080 } });
     const page = await ctx.newPage();
     await page.goto(`${base}/?test`);

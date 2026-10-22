@@ -11,6 +11,8 @@ npm run check:content
 npm run check:assets
 # The level's seed with causality and determinism, then three more seeds.
 npm run check:seeds
+# Play mode on four seeds: the moderate player's signature moments, and the casual player's finale.
+npm run check:play
 npm run build
 
 # The analysis tool and the song maps change rarely, and checking them builds a
