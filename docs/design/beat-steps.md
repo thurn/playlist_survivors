@@ -466,13 +466,13 @@ Its movement and targeting come from the game state.
 - **Slams:** on scheduled beats, a marker appears at the hero's current
   position and grows for two beats. The slam then lands on the marker.
   Leaving the marker earns a near miss.
-- **Health:** 40 points, tuned so a skilled player wears it down across
-  the climax.
-- **Death on the chord:** the boss's health cannot drop below 1 until the
-  death chord named in the level script. The first hit at or after that
-  chord kills it, with the boss-kill effect and hit-stop. If its health is
-  still high at the chord, it fights on until killed or caught by the finale
-  blast.
+- **Health:** 175 points, tuned so a skilled player kills it a few seconds
+  before the closing chords. Its health is real: there is no floor holding
+  it alive for a scripted moment. The killing hit plays the boss-kill effect
+  and hit-stop. A player who hasn't worn it down sees it caught by the
+  finale blast instead.
+- **Slam window:** the level script's `slamsUntil` reference spreads the
+  slams from four bars after the entrance to four bars before it.
 
 ### Formations
 
@@ -827,7 +827,6 @@ Checks that keep the demo looking right:
   point, measured along the route. This is required for the skilled and
   perfect profiles only.
 - **Signature moments**, for the skilled and perfect profiles:
-  - The boss dies within one beat after its death chord.
   - At least 90% of threats end as near misses.
   - Every kick-line skeleton dies within two beats of the release.
 
@@ -918,8 +917,8 @@ settled during tuning (task 6). Each keeps every check passing on all seeds.
   will have taken the hero when the threat lands.
 - **Slams:** the marker is 28 px across the middle. Leaving it before the
   slam lands is a near miss, however far the hero went.
-- **The boss** lands 110 px ahead of the hero. Once its death chord has come,
-  the first hit kills it if it is at its 1-health floor.
+- **The boss** lands 110 px ahead of the hero. Slams it has marked but not
+  landed are dropped when it dies.
 - **The kick line** rides with the camera-smoothed hero, 170 px ahead along
   the route, 28 px between dancers. Its release is treated as an accent, so a
   skilled player meets it with a cleave, and the line charges at four times
@@ -999,8 +998,8 @@ Play the whole song at `?player=skilled` with headphones.
   the beat, but every sword impact and impact sound is still exactly on
   it.
 - **The demo still progresses.** The casual run reaches the finale and the
-  blast clears the screen. Its boss may outlive the death chord until
-  finished off or caught by the blast.
+  blast clears the screen. Its boss usually survives until the blast
+  catches it.
 - **Nothing punishes the player.** There is no miss rating, health loss or
   combo reset at any point.
 - **Compare with `?player=perfect`:** every press is Perfect, and the

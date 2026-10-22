@@ -91,7 +91,6 @@ describe("simulated playthrough on the synthetic song", () => {
     expect(plan.threats.filter((t) => t.outcome === "near-miss").length / plan.threats.length).toBeGreaterThanOrEqual(0.9);
     expect(plan.nearMisses.length).toBeGreaterThan(0);
     expect(plan.boss?.deathS).toBeDefined();
-    expect(plan.boss!.deathS! - plan.boss!.chordS).toBeLessThan(0.5);
   });
 
   it("levels up from earned experience at (or after) the scheduled moments", () => {

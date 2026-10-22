@@ -274,8 +274,7 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
         enemyPos(plan, e, fate.w, tmp);
         if (Math.hypot(tmp.x - fate.x, tmp.y - fate.y) > SAMPLE_SLACK) f.push(`#${e.id} ${e.type} is recorded ${Math.hypot(tmp.x - fate.x, tmp.y - fate.y).toFixed(1)} px from where ${h.what} hit it at ${fmt(h.s)}`);
         if (fate.lethal && total < e.health - 1e-9) f.push(`#${e.id} ${e.type} dies at ${fmt(h.s)} after ${total.toFixed(2)} damage (health ${e.health})`);
-        // (The boss cannot drop below 1 health before its death chord.)
-        if (!fate.lethal && total >= e.health - 1e-9 && def.size !== "boss") f.push(`#${e.id} ${e.type} survives ${total.toFixed(2)} damage at ${fmt(h.s)} (health ${e.health})`);
+        if (!fate.lethal && total >= e.health - 1e-9) f.push(`#${e.id} ${e.type} survives ${total.toFixed(2)} damage at ${fmt(h.s)} (health ${e.health})`);
       }
     }
     add("damage adds up", f, n);
@@ -428,12 +427,6 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
       const bi = Math.max(0, Math.min(plan.songBeats.length - 2, Math.floor(beatIndexFromBeats(plan.songBeats, t))));
       return plan.songBeats[bi + 1] - plan.songBeats[bi];
     };
-    if (plan.boss) {
-      n++;
-      const { chordS, deathS } = plan.boss;
-      if (deathS === undefined) f.push(`the boss never dies (death chord at ${fmt(chordS)})`);
-      else if (deathS < chordS - 0.001 || deathS > chordS + beatAt(chordS) + 0.001) f.push(`the boss dies at ${fmt(deathS)}, not within a beat after its death chord at ${fmt(chordS)}`);
-    }
     if (plan.threats.length > 0) {
       n++;
       const near = plan.threats.filter((t) => t.outcome === "near-miss").length;

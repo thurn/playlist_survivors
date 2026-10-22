@@ -556,7 +556,7 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap, res
     need([...path, "blast"], "weapons", e.blast);
     if (e.boss) {
       need([...path, "boss", "type"], "enemies", e.boss.type);
-      checkRef(song, e.boss.diesAt, [...path, "boss", "diesAt"]);
+      checkRef(song, e.boss.slamsUntil, [...path, "boss", "slamsUntil"]);
     }
     if (e.threats) checkRef(song, e.threats.until, [...path, "threats", "until"]);
     if (e.levelUp && e.xp === undefined) issues.push({ ...at(path), message: "a levelUp needs xp (the experience it takes)" });

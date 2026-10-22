@@ -147,8 +147,6 @@ export class VirtualPlayer implements Player {
     profile: SkillProfile = "skilled",
     /** Is a grid slot an accent the section turns into a cleave? */
     heavyAccent: (slot: GridSlot) => boolean = () => false,
-    /** The boss's death chord (song time), which the player knows from the song. */
-    private readonly bossChord?: number,
     opts: { open?: boolean } = {},
   ) {
     const spec = PROFILES[profile];
@@ -362,8 +360,6 @@ export class VirtualPlayer implements Player {
         const e = easeOut(u);
         cost += this.threatCost(t, obs.hero.x + d.x * L * e, obs.hero.y + d.y * L * e);
       }
-      // Be beside the boss for its death chord.
-      if (obs.boss && this.bossChord !== undefined && obs.s > this.bossChord - 1.5 && obs.s < this.bossChord) cost += Math.max(0, Math.hypot(ax - obs.boss.x, ay - obs.boss.y) - 70) / 15;
       // Stay off the walls.
       const edge = obs.edgeDistance(ax, ay);
       cost += 2.0 * clamp(1 - edge / 60, 0, 2);

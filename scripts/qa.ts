@@ -57,7 +57,7 @@ interface Hook {
     warp: { s: number; w: number; rate: number }[];
     hero: { rate: number; x: ArrayLike<number>; y: ArrayLike<number> };
     formations: { def: string; sRelease: number }[];
-    boss?: { chordS: number; deathS?: number };
+    boss?: { deathS?: number };
     profile: string;
     stats: { averageGroove: number; presses: number; ratings: { perfect: number; great: number; good: number; none: number } };
     hud: { kills: ArrayLike<number> };

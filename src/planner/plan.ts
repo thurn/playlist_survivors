@@ -124,7 +124,6 @@ export function virtualPlayer(ctx: Ctx, sch: Schedule, profile: SkillProfile = "
     ctx.song.beats,
     profile,
     (slot) => cleaves(ctx, slot),
-    sch.boss?.sDeath,
     { open: ctx.level.world === "open" },
   );
 }
@@ -241,7 +240,7 @@ export function planWithSim(input: PlannerInput, opts: PlannerOptions = {}): { p
     groove: { s: Float64Array.from(sim.groove.s), v: Float32Array.from(sim.groove.v) },
     nearMisses: sim.threats.filter((t) => t.outcome === "near-miss").map((t) => ({ s: t.s, w: t.w, kind: t.kind })),
     threats: sim.threats.map((t) => ({ s: t.s, kind: t.kind, outcome: t.outcome })),
-    boss: sim.boss && sch.boss ? { id: sim.boss.id, chordS: sch.boss.sDeath, deathS: sim.boss.deathS } : undefined,
+    boss: sim.boss && sch.boss ? { id: sim.boss.id, deathS: sim.boss.deathS } : undefined,
     formations: sim.formations.map((f) => ({ def: f.def, sRelease: f.sRelease, members: f.members })),
     stats,
     ...(ctx.level.world === "open" ? { open: openFieldRecord(ctx, map, sim, opts.props) } : {}),

@@ -286,7 +286,7 @@ export const levelEvent = z.strictObject({
   threats: z
     .strictObject({ kind: z.enum(["archer-volley"]), every: z.string().regex(/^\d+ (bars?|beats?)$/), until: musicalRef, archers: z.number().int().positive().default(2) })
     .optional(),
-  boss: z.strictObject({ type: id, slams: z.number().int().min(0), diesAt: musicalRef }).optional(),
+  boss: z.strictObject({ type: id, slams: z.number().int().min(0), slamsUntil: musicalRef }).optional(),
   banner: z.string().optional(),
   titleCard: z.strictObject({ until: musicalRef }).optional(),
   landmark: id.optional(),

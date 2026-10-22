@@ -48,7 +48,7 @@ export interface Schedule {
   volleys: { sDraw: number; sRelease: number; sArrive: number; archers: number; group: number }[];
   /** Archer groups: when they enter, how many, and when their last volley flies. */
   archerGroups: { s: number; archers: number; until: number }[];
-  boss?: { type: string; sEnter: number; sDeath: number; slams: { sMark: number; sLand: number }[] };
+  boss?: { type: string; sEnter: number; slams: { sMark: number; sLand: number }[] };
   formations: { def: string; sStart: number; sRelease: number; line?: number }[];
 }
 
@@ -239,12 +239,12 @@ function encounters(ctx: Ctx): Pick<Schedule, "volleys" | "archerGroups" | "boss
       archerGroups.push({ s: e.s, archers: ev.threats.archers, until: last });
     }
     if (ev.boss) {
-      const sDeath = resolveRef(idx, ev.boss.diesAt);
+      // Slams spread from four bars after the entrance to four bars before slamsUntil.
       const bEnter = biAt(e.s);
-      const bDeath = biAt(sDeath);
+      const bUntil = biAt(resolveRef(idx, ev.boss.slamsUntil));
       const bpb = bpbAt(e.s);
       const first = bEnter + 4 * bpb;
-      const lastB = bDeath - 4 * bpb;
+      const lastB = bUntil - 4 * bpb;
       const slams: { sMark: number; sLand: number }[] = [];
       for (let k = 0; k < ev.boss.slams; k++) {
         const target = first + ((k + 0.5) / ev.boss.slams) * (lastB - first);
@@ -253,7 +253,7 @@ function encounters(ctx: Ctx): Pick<Schedule, "volleys" | "archerGroups" | "boss
         const bi = bEnter + bars * bpb;
         slams.push({ sMark: tAt(bi - 2), sLand: tAt(bi) });
       }
-      boss = { type: ev.boss.type, sEnter: e.s, sDeath, slams };
+      boss = { type: ev.boss.type, sEnter: e.s, slams };
     }
     if (ev.formation) {
       const def = ctx.lib.formations.get(ev.formation)!;

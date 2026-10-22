@@ -156,8 +156,7 @@ interface Foe {
   archerGroup?: number;
   archerSlot?: number;
   drawing?: { w0: number };
-  /** The boss: its health cannot drop below 1 before this song time; it lands at landS. */
-  floorUntil?: number;
+  /** The boss lands at landS (out of reach while it drops in). */
   landS?: number;
 }
 
@@ -640,9 +639,12 @@ function engine(env: Env, st: SimState, io: Io) {
     if (inStop(st.s)) return; // No stacking.
     // The finale blast's bands never wait for a hit-stop.
     if (blastS !== undefined && st.s >= blastS - 1e-6) return;
-    if (len < HITSTOP_MIN) return;
+    // A swing already armed strikes on time: the stop ends a sample before its strike.
+    let end = st.s + Math.min(len, HITSTOP_MAX);
+    for (const sw of st.swings) if (!sw.struck && sw.sStrike > st.s) end = Math.min(end, sw.sStrike - 1 / HERO_RATE);
+    if (end - st.s < HITSTOP_MIN) return;
     st.stopStart = st.s;
-    st.stopEnd = st.s + Math.min(len, HITSTOP_MAX);
+    st.stopEnd = end;
     rec().hitStop(st.stopStart, st.stopEnd);
     st.q.push(st.stopEnd, { kind: "hitstopEnd" });
   };
@@ -735,11 +737,7 @@ function engine(env: Env, st: SimState, io: Io) {
   /** Deal damage to one enemy from a hit; records the fate. */
   const damage = (f: Foe, h: Hit) => {
     if (!hittable(f)) return;
-    // The boss cannot drop below 1 health before its death chord; the first hit at or after the
-    // chord kills it (if it is worn down that far).
-    if (f.floorUntil !== undefined && st.s >= f.floorUntil - 1e-6 && f.health <= 1 + 1e-9) f.health = 0;
-    else f.health -= h.damage;
-    if (f.floorUntil !== undefined && st.s < f.floorUntil - 1e-6) f.health = Math.max(f.health, 1);
+    f.health -= h.damage;
     const lethal = f.health <= 1e-9;
     const fate: Fate = { w: st.w, x: posX(f, st.w), y: posY(f, st.w), hit: h.id, lethal, damage: h.damage };
     f.lastFate = fate;
@@ -1595,6 +1593,8 @@ function engine(env: Env, st: SimState, io: Io) {
     st.q.push(s1, { kind: "gem", gem: st.nGems++, value });
     if (f === st.bossFoe) {
       rec().bossDeath(st.s, h.id);
+      // Slams it had marked never land.
+      st.slamMarks.clear();
       if (h.source !== "ring") startHitStop(BOSS_KILL_STOP);
     }
   };
@@ -1726,7 +1726,6 @@ function engine(env: Env, st: SimState, io: Io) {
     const y = hp.y + pp.ty * BOSS_LAND_AHEAD;
     const f = spawnFoe(b.type, x, y, undefined, { entrance: "land", attacks: [] });
     f.landS = b.sEnter;
-    f.floorUntil = b.sDeath;
     st.bossFoe = f;
     rec().boss({ id: f.id, landS: b.sEnter, x, y, health: [{ s: st.s, frac: 1 }] });
   };

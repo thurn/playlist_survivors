@@ -139,13 +139,6 @@ export function checkPlay(plan: Plan, lib: ContentLibrary, opts: PlayCheckOption
       const near = plan.threats.filter((t) => t.outcome === "near-miss").length;
       if (near < 0.75 * plan.threats.length) f.push(`only ${near} of ${plan.threats.length} threats end as near misses (75% needed): ${plan.threats.filter((t) => t.outcome !== "near-miss").map((t) => `${t.kind} at ${fmt(t.s)} ${t.outcome}`).join(", ")}`);
     }
-    // The boss dies within one beat after its death chord.
-    if (plan.boss) {
-      n++;
-      const { chordS, deathS } = plan.boss;
-      if (deathS === undefined) f.push(`the boss never dies (death chord at ${fmt(chordS)})`);
-      else if (deathS < chordS - 0.001 || deathS > chordS + beatLen(chordS) + 0.001) f.push(`the boss dies at ${fmt(deathS)}, not within a beat after its death chord at ${fmt(chordS)}`);
-    }
     // Every scheduled level-up happens on its scheduled moment.
     for (const due of plan.levelUpsDue ?? []) {
       n++;

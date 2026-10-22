@@ -394,8 +394,8 @@ The rules are unchanged. Play mode only tunes the numbers:
 
 - **XP requirements** in the play level file are set so the `moderate` bot
   fills each bar a little before its scheduled level-up.
-- **Boss health** is tuned so the `moderate` bot wears it below 1 before the
-  death chord.
+- **Boss health** is shared with watch mode. A boss the player hasn't
+  killed is caught by the finale blast.
 - **The finale blast** still clears the screen on the final chord, whatever
   the player has done.
 
@@ -551,7 +551,6 @@ These checks run the `moderate` bot through play mode headless, on seeds
   - At least 80% of cleave-eligible accents produce a cleave.
   - Every kick-line skeleton dies within two beats of the release.
   - At least 75% of threats end as near misses.
-  - The boss dies within one beat after its death chord.
   - Every scheduled level-up happens on its scheduled moment.
 - **Zone waves:** every transform wave starts on a downbeat and has left
   the screen within one bar.

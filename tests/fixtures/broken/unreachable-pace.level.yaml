@@ -99,7 +99,7 @@ events:
     levelUp: fire-trail
     xp: 2000
   - at: { section: climax, point: start }
-    boss: { type: minotaur, slams: 4, diesAt: { accent: tutti-chord, fromEnd: 2 } }
+    boss: { type: minotaur, slams: 4, slamsUntil: { accent: tutti-chord, fromEnd: 2 } }
     landmark: standing-stones
   - at: { accent: tutti-chord, fromEnd: 2 }
     timeScale: 0.4          # slow motion after the boss's death blow

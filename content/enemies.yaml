@@ -104,7 +104,7 @@ enemies:
     radius: 26
     group: two-bar
     speed: 70
-    health: 40
+    health: 175
     size: boss
     behavior: boss
     scale: 2

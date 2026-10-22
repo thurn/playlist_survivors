@@ -292,8 +292,8 @@ export interface Plan {
   nearMisses: { s: number; w: number; kind: "arrow" | "slam" }[];
   /** Every threat (arrow or boss slam) and how it ended. */
   threats: { s: number; kind: "arrow" | "slam"; outcome: "near-miss" | "touch" | "miss" }[];
-  /** The boss: its death chord and when it died. */
-  boss?: { id: number; chordS: number; deathS?: number };
+  /** The boss, and when it died (if it did). */
+  boss?: { id: number; deathS?: number };
   /** Formations: their releases and members (enemy ids). */
   formations: { def: string; sRelease: number; members: number[] }[];
   /** Song-time beat index of every sixteenth slot is beatIndex × 4. */

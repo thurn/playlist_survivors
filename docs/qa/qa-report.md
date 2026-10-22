@@ -95,7 +95,7 @@ npm run bench -- --play       # live play from theme A to the climax, a press on
 | Theme A | verified | A step and a swing on every beat; the groove sits at +20% (an orc's 1.15 health falls to one 1.2 swing). |
 | Kick line | verified | Check "signature moments": every dancer dies within two beats of the release, most to the release cleave's shockwave. Capture `kick-line-release.png`. **Human:** does the ripple read? |
 | Archers | verified | Check "signature moments": at least 90% of threats are near misses (all of them for the skilled player on the four CI seeds). Capture `archer-near-miss.png`. |
-| Boss | verified | Slam markers drop under the hero, which steps off them (capture `boss-slam-dodged.png`). The boss dies on its death chord at 139.041 s (check "signature moments"; capture `boss-death.png`). |
+| Boss | verified | Slam markers drop under the hero, which steps off them (capture `boss-slam-dodged.png`). With 175 health and no floor, the skilled player kills it at 134–138 s on the four CI seeds; a casual player leaves it to the finale blast (capture `boss-death.png`). |
 | Finale | verified | `qa`: 458 living monsters just before the final chord and 0 one beat later; check "clean ending". The end card shows kills, rating counts and the average groove. |
 | Key display and groove | verified, agent review | Captures show the keys lit with their rating and the groove meter at +20% through the galop. |
 
@@ -202,8 +202,8 @@ real hands is still a human gate.
 - **Experience:** 360, 850 and 1700 for the three level-ups. The moderate
   player collects about 400–450, 950–990 and 1900–2200 by each scheduled
   moment, so every bar fills a little before its level-up on all four seeds.
-- **Boss health:** unchanged: the moderate player wears it down to its floor
-  before the death chord on every seed.
+- **Boss health:** 175, with no floor. The moderate player kills it at
+  138.1 s on two of the four seeds; on the other two the finale blast does.
 - **Timing windows:** 45, 90 and 140 ms as the design started them.
 - **Grades:** the design's starting thresholds gave every bot an S (play mode's
   windows make most of the moderate player's presses Perfect), so they are

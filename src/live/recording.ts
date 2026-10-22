@@ -524,7 +524,7 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
   }
 
   boss(info: BossInfo): void {
-    this.set(this.plan, "boss", { id: info.id, chordS: this.sch.boss!.sDeath, deathS: undefined });
+    this.set(this.plan, "boss", { id: info.id, deathS: undefined });
     this.emitter.bossLand(info);
     const bar = this.emitter.bossBar(info, this.sch.blast?.s ?? this.ctx.duration) as Extract<UiEvent, { kind: "bossBar" }>;
     this.ui(bar);
