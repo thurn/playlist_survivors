@@ -23,6 +23,19 @@ climax           1:45-2:05   191
 coda             2:05-2:24   231, ending on the final chord at 2:19.6
 ```
 
+A few terms come up throughout:
+
+- **Meter:** the prelude is in 4/4 and the galop in 2/4, so a galop bar is two
+  beats, about 0.65 s.
+- **Song time:** seconds into the music. Every time in this document is song
+  time.
+- **Timing grid:** the points a section's rhythm is judged against, normally
+  its beats (a section may use eighth notes or bars instead). Each point is a
+  **grid time**. "On the grid" means on a grid time or one of its
+  subdivisions.
+- **Level script:** the file that describes the song's sections, enemy
+  rosters and events in bars and beats.
+
 There are three ways to see a run:
 
 - **Play:** the keyboard drives the game live.
@@ -50,6 +63,32 @@ Rhythm sits on top of that. Pressing on the beat makes attacks bigger, and late
 in the song that size is what keeps the horde off the hero. Pressing at random
 keeps a player alive early in the song, but not late.
 
+### How play mode works today
+
+Today's rules, which the problems below refer to:
+
+- **Steps:** in a section with a steady beat, each press moves the hero one
+  44 px step in 110 ms. Holding a key does nothing after the first step. In
+  the prelude, held keys walk at 80 px/s.
+- **Ratings:** each press is rated by its distance from the nearest beat:
+  Perfect within 45 ms, Great within 90 ms, Good within 140 ms.
+- **Swings armed by presses:** a press **arms** the sword, which then swings
+  on the next beat at least 90 ms away. A bar without presses gets one idle
+  swing. In the prelude the sword swings by itself on every beat.
+- **One rated press per beat:** only the first press for a beat is rated and
+  arms a swing. An extra press is allowed if it is a well-timed off-beat or a
+  quick double tap; any other extra press **stumbles**: the hero doesn't step,
+  the next swing is lost, and the groove halves.
+- **The groove:** a meter that moves part of the way toward each rated
+  press's accuracy and adds up to 20% damage.
+- **Accents:** a Great press one beat before a big marked chord arms a
+  **cleave**, a heavy swing with a shockwave.
+- **Health:** 5,000. Each touching enemy bites at most every 600 ms. A
+  **clean press**, Great or better, heals 15, and from the fourth clean press
+  in a row (a **streak**) each heals 30.
+- **Gems and level-ups:** gems fly to the hero on the next downbeat, and three
+  level-ups at fixed moments each grant a weapon.
+
 ### What is wrong today
 
 Today's play mode works against that feel. These measurements come from the
@@ -57,33 +96,30 @@ play-mode checks (`npm run check:play`) and from playtest logs. The **moderate
 player** below is the virtual player that stands in for a moderately competent
 human.
 
-- **Speed is press rate.** Each press is a 44 px step. Pressing on every beat
-  at 185 beats per minute moves the hero about 135 px/s, and pressing once a
-  bar about 68 px/s. Goblins run at 112 px/s, orcs 105, bats 165 and bees 180.
-  Pressing faster than the beat is the only way to outrun the horde, and a
-  slower song makes the gap wider.
+- **Speed is press rate.** Pressing on every beat at 185 beats per minute
+  moves the hero about 135 px/s, and pressing once a bar about 68 px/s.
+  Goblins run at 112 px/s, orcs 105, bats 165 and bees 180. Pressing faster
+  than the beat is the only way to outrun the horde, and a slower song makes
+  the gap wider.
 - **Mashing nearly ties.** A virtual player pressing at random four times a
   second gets about 95% of the moderate player's kills and ends with 71–82%
   health. Its first press in each beat arms a swing, so it swings on every
   beat, just like an accurate player.
 - **Presses that do nothing feel bad.** An earlier rule ignored a second press
-  for the same beat, 36 times in one playtest log. Today's stumble rule refuses
-  to step on about half of the extra presses: 84 of 472 presses in sections
-  with a steady beat, in the latest log. Both read as dropped input.
+  for the same beat, 36 times in one playtest log. In the latest log, 84 of
+  165 extra presses stumbled (out of 472 presses in sections with a steady
+  beat). Both read as dropped input.
 - **Players press eighth notes.** In the same log, extra presses came a median
   176 ms after the beat's press, which is an eighth note at the galop's tempo.
   This is good, musical play.
-- **Healing is the real defence.** The hero has 5,000 health. Each touching
-  enemy bites every 600 ms, with no invulnerability, and every clean press
-  heals 15 (30 in a streak). The moderate player takes 2,650–3,050 damage, many
-  hundreds of bites, and heals it back, staying above about 90%.
+- **Healing is the real defence.** The moderate player takes 2,650–3,050
+  damage, many hundreds of bites, and heals it back, staying above about 90%.
 - **The horde can't be avoided.** The **spawn director**, which keeps the
   population on the level's target curve, refills it on every beat from just
   outside the view, from every side, up to 500 enemies.
 - **Attacks are short.** A light swing reaches 100 px, in a view 700–1,070 px
   wide depending on the camera's zoom.
-- **Gems collect themselves.** They fly to the hero on the next downbeat, so
-  nothing pulls the hero across the field.
+- **Gems collect themselves,** so nothing pulls the hero across the field.
 - **The run starts at the beginning.** The hero starts with only a sword and
   gains three weapons: an early-game arc, not a late run.
 
@@ -93,12 +129,13 @@ The redesign keeps the music-locked presentation and moves survival onto
 movement and space:
 
 - **Fixed-speed strides.** The hero moves at one speed, whatever the tempo or
-  press rate, in **strides**: quick eased hops, like today's steps, that land
-  on the beat. Every press moves the hero.
+  press rate, in **strides**: quick eased hops like today's steps. A press
+  strides at once, and a held key strides on every beat.
 - **Weapons fire by themselves on the beat.** Presses no longer arm swings.
 - **The groove meter sets a tier.** On-beat presses fill a meter whose
-  **tier**, 0 to 3, grows the area of every attack. Extra presses off the beat,
-  and silence, drain it.
+  **tier**, 0 to 3, grows the area of every attack. **Stray presses**, extra
+  presses that are neither on the beat nor a well-timed off-beat, drain it,
+  and so does silence.
 - **A small health pool.** About 100 health, a short invulnerability after each
   bite, and healing only from pickups and level-ups.
 - **A readable horde.** A thinner steady stream, plus **set pieces**, scripted
@@ -122,9 +159,8 @@ These decisions were settled before this document was written:
 - **Power:** every weapon fires on its own beat whatever the player presses. A
   forgiving groove meter sets visible tiers.
 - **Groove:** on-beat presses fill it, and an off-beat eighth note rated
-  Perfect (the tightest timing) adds a little. It drains after a bar without
-  filling, and stray presses, extra presses that are neither on the beat nor
-  on the off-beat, take a chunk off it.
+  Perfect adds a little. It drains after a bar without filling, and stray
+  presses take a chunk off it.
 - **Loadout:** the sword, orbiting blades (blades circling the hero) and chain
   lightning (a bolt that jumps between enemies) from the start. Upgrades add a
   fire trail (burning ground left behind the hero) and evolve the other
@@ -170,6 +206,9 @@ The finished design is judged against these goals:
 - **Causality kept.** No game rule reads a press before it happens, as today.
 
 ## Related Information
+
+Read [beat-steps.md](beat-steps.md) and [interactive.md](interactive.md)
+first if you need today's rules in full:
 
 - [Beat steps and a simulated playthrough](beat-steps.md): today's rules. It
   covers step movement, timing and groove, auto-aim, swings armed by presses,
@@ -219,7 +258,7 @@ The parts of the loop, each defined briefly here and fully in its own section:
 
 - **Strides.** The hero moves in quick hops of up to one stride of ground,
   about 45 px in the galop, at a fixed average speed. See
-  [Movement](#movement-strides-locked-to-the-beat).
+  [Movement](#movement-fixed-speed-strides).
 - **The groove.** Each press is rated Perfect, Great, Good or loose by how
   close it lands to the beat. The groove is a meter from 0 to 1 that rises with
   well-rated presses and falls with stray presses and silence, and its tier
@@ -235,43 +274,39 @@ The parts of the loop, each defined briefly here and fully in its own section:
   of three upgrades. See
   [Gems, Pickups and Level-Ups](#gems-pickups-and-level-ups).
 
-One second of theme A follows. Times are **song time**, seconds into the
-music, and the beats fall at 72.100, 72.425 and 72.750:
-
-```text
-72.092  tap Right, 8 ms early: Perfect; groove 0.55 -> 0.63, now tier 2
-        a 45 px stride right starts at once and lands at 72.202
-72.235  the sword winds up by itself, aimed at the densest arc
-72.270  tap Up on the off-beat: a Perfect off-beat; groove 0.63 -> 0.66
-        a 25 px stride up: only that much ground has built up
-72.425  impact on the beat: a 160 px, 240° tier-2 swing kills 9; their
-        gems stay where they died, 120-160 px out
-72.600  a goblin bites: health 64 -> 60, invulnerable until 73.100
-72.746  tap Right, 4 ms early: Perfect; the stride brings 4 gems inside
-        the 95 px pickup radius, and they land with one chime at 72.831
-```
+[One Second of Play](#one-second-of-play), after those sections, traces all of
+them together.
 
 ### Rules that hold everywhere
 
 The rest of the design follows from these rules:
 
-- **No dead presses.** Every key press strides or stomps at once.
+- **No dead presses.** Every key press strides, bends the stride in progress,
+  or stomps, at once.
 - **Timing never changes where the hero goes.** Stride lengths and speed never
-  depend on ratings. Timing changes only the groove.
+  depend on ratings.
+- **Timing changes power, and nothing else.** It moves the groove, and on an
+  accent it decides whether a shockwave launches (see
+  [Accents and cleaves](#accents-and-cleaves)).
+- **Presses never arm swings.** Every weapon fires on its own schedule. An
+  accent's shockwave is the one thing a press launches.
 - **Every percussive gameplay sound is on the grid.** See
   [Sound on the Grid](#sound-on-the-grid).
-- **The song decides when; the game state decides where.** The game may
-  schedule anything from the song in advance, and no rule reads a press before
-  it happens, as today.
+- **Causality.** The game may schedule anything the song determines in
+  advance, such as the grid, accents, set pieces and level-ups, but no rule
+  reads a press before it happens. A press 50 ms after a chord can't change
+  the impact that already landed on the chord, so it launches a wave that
+  starts after the chord instead. Play mode keeps today's live loop, which
+  runs a little ahead of the music and rolls back when a press arrives.
 - **The groove measures rhythm only.** Damage, kills and pickups never change
   it.
-- **Presses never arm attacks.**
 
-## Movement: Strides Locked to the Beat
+## Movement: Fixed-Speed Strides
 
 The hero moves at one fixed speed. Ground builds up as time passes, and each
 stride spends what has built up. Pressing more often therefore makes strides
-shorter, never the hero faster. Today's 44 px step becomes the longest stride.
+shorter, never the hero faster. A full stride at the galop's tempo is about as
+long as today's 44 px step.
 
 ### The stride budget
 
@@ -282,15 +317,12 @@ Four quantities decide how far the hero may go:
   px/s) and bees (180); the rest move at 68–120 px/s. **World time** is the
   clock game motion runs on: it slows for slow motion and stops during a
   freeze, while song time follows the music.
-- **Stride period:** one step of the section's **timing grid** (the beat,
-  unless the level script picks eighth notes or bars), halved while it is
-  longer than 0.4 s, or 0.35 s in sections with no steady beat. The **level
-  script** describes the song's sections, rosters and events in bars and
-  beats.
+- **Stride period:** one step of the section's timing grid, halved while it is
+  longer than 0.4 s, or 0.35 s in sections with no steady beat.
 - **One stride:** the walk speed times the stride period. That is 44–48 px
-  through most of the galop, 36 px in the 230 beats-per-minute coda, and 49 px
-  with no steady beat. At 78 beats per minute the period halves to an eighth
-  note (385 ms), for a 54 px stride.
+  through the galop, 36 px in the 230 beats-per-minute coda, and 49 px with no
+  steady beat. At 78 beats per minute the period halves to an eighth note
+  (385 ms), for a 54 px stride.
 - **Stride budget:** the ground the hero may still cover. It refills at the
   walk speed, never above one stride, and every stride spends all of it.
 
@@ -329,14 +361,18 @@ mash 8 per second     8, on the presses    about 18 px     140 px/s
 
 A stride starts in exactly two situations:
 
-- **On every direction key press,** at once. This is what makes every press
-  visible.
-- **On every grid time while a direction key is held,** after the first stride.
-  A **grid time** is a point of the timing grid, normally a beat. A player who
-  only holds a key strides on the beat.
-- **Never on release.** Releasing every key stops further strides; a stride in
-  progress finishes.
-- **Never on key repeat events,** which are ignored, as today.
+- **On every direction key press,** at once, except a partner key: a
+  perpendicular key within 40 ms of a press bends that press's stride toward
+  the diagonal instead, and an opposite key within 40 ms turns it into a stomp
+  (see [Standing still: stomps](#standing-still-stomps)).
+- **On every grid time while a direction key is held,** after the first
+  stride. A player who only holds a key strides on the beat.
+
+Strides never start on release or on key repeat events:
+
+- **Release:** releasing every key stops further strides; a stride in progress
+  finishes.
+- **Key repeat events** are ignored, as today.
 
 A press between beats strides at once, and holding then snaps to the beat:
 
@@ -357,9 +393,9 @@ Every stride has the same shape; only its length and direction vary:
   keys, the more recent wins.
 - **Diagonals:** a perpendicular key within 40 ms bends the stride toward the
   diagonal without changing its length, as today.
-- **Interruptions:** a press during a stride stops it where it is. The ground
-  it hadn't covered returns to the budget, and the new stride sets off from
-  there.
+- **Interruptions:** any other press during a stride stops it where it is. The
+  ground it hadn't covered returns to the budget, and the new stride sets off
+  from there.
 - **Nothing blocks a stride.** The hero passes through enemies, and the open
   field has no walls.
 - **Quiet:** a stride makes only a soft rustle well under the music.
@@ -391,19 +427,24 @@ moving.
 - **Opposite keys rock.** The first key's stride turns into a rock step: over
   the rest of its 110 ms the hero comes back to where it began, and the ground
   goes back to the budget.
-- **A stomp plants the hero** until the next grid time, so held keys don't
-  stride then. A new direction press still strides at once. A player can't
-  hold a direction to travel and tap Space for the groove at the same time.
-- **A stomp does nothing else:** no attack, knockback or damage.
+- **A stomp cancels the next held stride.** The first grid time after a stomp
+  passes without a held-key stride, and holding resumes on the grid time after
+  that. Holding a direction and stomping on every beat therefore never moves
+  the hero. A new direction press still strides at once.
+- **A stomp has no attack of its own:** no knockback and no damage. On an
+  accent it counts like any press, so a Perfect stomp on the chord launches
+  the shockwave.
 - **Presentation:** both feet stamp with a ring of dust. There is no
   percussive sound, because a press can't be relied on to land on the grid.
 
 ```text
-a closing ring is about to meet the hero on a chord; the player waits
-71.120  Space, 10 ms early: Perfect; groove +0.08; the hero stamps
-71.445  Left, then Right 25 ms later: one stomp, Great; a rock step out
-        and back
-71.770  Space on the chord: Perfect, so the heavy swing launches its wave
+the first closing ring meets the hero on the chord at 62.300
+(beats at 61.616, 61.958 and 62.300); the player waits inside it
+61.606  Space, 10 ms early: Perfect; groove +0.08; the hero stamps
+62.018  Left, then Right 25 ms later: one stomp, 60 ms late: Great; a
+        rock step out and back
+62.295  Space on the chord, 5 ms early: Perfect, so the heavy swing
+        launches its shockwave
 ```
 
 ## Timing and the Groove
@@ -417,9 +458,8 @@ the tier, 0 to 3, and the tier sets the size of every attack.
 Each press in a pulsed section is rated by how far it lands from the nearest
 grid time:
 
-- **Delta:** a press's time minus the nearest grid time, in song time, after
-  the player's calibration offset (the input delay measured on the title
-  screen), as today.
+- **Delta:** a press's time minus the nearest grid time, after the player's
+  calibration offset (the input delay measured on the title screen), as today.
 - **Ratings,** with today's play-mode windows: Perfect within 45 ms, Great
   within 90 ms, Good within 140 ms, and **loose** beyond that.
 - **The off-beat** of a grid time is the point half-way to the next one: the
@@ -434,49 +474,31 @@ classes are checked in this order:
 
 1. **Partner:** a perpendicular key within 40 ms of the previous press, which
    bends that stride, or the opposite key within 40 ms, which makes a stomp. It
-   is part of the previous press and isn't judged on its own.
+   belongs to the previous press and isn't judged on its own.
 2. **Off-beat press:** within 90 ms of the off-beat after a grid time whose
    counted press was Great or better, and the first such press for that
-   off-beat. Perfect adds to the groove; Great is safe and changes nothing.
+   off-beat. A Perfect one (within 45 ms) adds to the groove; a Great one is
+   safe and changes nothing.
 3. **Counted press:** the first press for its nearest grid time. Its rating
    changes the groove.
-4. **Double tap:** within 100 ms after the counted press, such as a double tap
-   or a slow diagonal. It changes nothing and shows grey.
+4. **Double tap:** a second press within 100 ms after the counted press, such
+   as a key bounced twice or a slow diagonal. It changes nothing and shows
+   grey.
 5. **Stray press:** anything else. It still strides, because every press does,
    and takes a chunk off the groove. It shows red.
 
-Starting values, tuned until the checks in
-[Automated Checks](#automated-checks) pass:
-
-```yaml
-groove:
-  counted: { perfect: 0.08, great: 0.02, good: -0.05, loose: -0.10 }
-  offbeat: { perfect: 0.03, great: 0 }
-  doubleTap: 0
-  stray: -0.10
-  drain: { afterBars: 1, emptyInBars: 8 }
-  tiers: [0.3, 0.6, 0.85]
-  hysteresis: 0.05
-```
-
-### Why loose timing costs a little
-
-At 185 beats per minute a beat lasts 325 ms, so a press at a random moment
-lands within 90 ms of a beat more than half the time. If every Great or Good
-press added to the groove, pressing at random would fill it. With the values
-above, a random press averages about zero:
+Six presses at 185 beats per minute, one of each kind, with the groove change
+each one makes (the values are in [Starting values](#starting-values) below):
 
 ```text
-expected groove change per counted press, at 185 beats per minute
-random timing: 28% Perfect, 28% Great, 31% Good, 14% loose
-  0.28 x 0.08 + 0.28 x 0.02 - 0.31 x 0.05 - 0.14 x 0.10   = about 0.00
-an honest press, 60 ms standard deviation                 = about +0.04
-the moderate player, 30 ms standard deviation             = about +0.07
+beats at 10.000 and 10.325; the off-beat between them is at 10.1625
+ 9.992  Right  counted press for 10.000, 8 ms early: Perfect      +0.08
+10.020  Up     partner, 28 ms later: the stride bends diagonally      0
+10.070  Right  double tap, 78 ms after the counted press              0
+10.120  Right  off-beat press, 43 ms early: Perfect               +0.03
+10.150  Right  stray: 10.000's counted press and off-beat are taken -0.10
+10.400  Right  counted press for 10.325, 75 ms late: Great        +0.02
 ```
-
-Mashing is worse than random timing, because it adds stray presses on top. At
-four random presses a second, about a third of the beats also get a stray
-press, so the groove falls steadily.
 
 ### Drain
 
@@ -510,6 +532,41 @@ groove   tier   from 0, with a Perfect press on every beat
 - **Sound:** a rising chime for a tier-up and a soft falling one for a
   tier-down, on the next grid time.
 
+### Starting values
+
+These are changes to the groove on its 0-to-1 scale, tuned until the checks in
+[Automated Checks](#automated-checks) pass:
+
+```yaml
+groove:
+  counted: { perfect: 0.08, great: 0.02, good: -0.05, loose: -0.10 }
+  offbeat: { perfect: 0.03, great: 0 }
+  doubleTap: 0
+  stray: -0.10
+  drain: { afterBars: 1, emptyInBars: 8 }
+  tiers: [0.3, 0.6, 0.85]
+  hysteresis: 0.05
+```
+
+### Why loose timing costs a little
+
+At 185 beats per minute a beat lasts 325 ms, so a press at a random moment
+lands within 90 ms of a beat more than half the time. If every Great or Good
+press added to the groove, pressing at random would fill it. With the values
+above, a random press averages about zero:
+
+```text
+expected groove change per counted press, at 185 beats per minute
+random timing: 28% Perfect, 28% Great, 31% Good, 14% loose
+  0.28 x 0.08 + 0.28 x 0.02 - 0.31 x 0.05 - 0.14 x 0.10   = about 0.00
+an honest press, 60 ms standard deviation                 = about +0.04
+the moderate player, 30 ms standard deviation             = about +0.07
+```
+
+Mashing is worse than random timing, because it adds stray presses on top. At
+four random presses a second, about a third of the beats also get a stray
+press, so the groove falls steadily.
+
 ### The grade
 
 The end card's letter grade still comes from the average groove over pulsed
@@ -520,8 +577,9 @@ only hold keys a C.
 
 ## Attacks
 
-Every weapon fires by itself on its own beat. Presses never arm attacks; the
-tier only changes how big the attacks are.
+Every weapon fires by itself on its own beat. Presses never arm swings; the
+tier changes how big the attacks are, and a press on an accent can launch a
+shockwave.
 
 ### Firing
 
@@ -579,6 +637,9 @@ tier  sword swing        blades           lightning          trail  damage
 
 ### Accents and cleaves
 
+This section builds on the counted press and its rating (see
+[Press classes](#press-classes)) and on the tier table above.
+
 An **accent** is a loud moment marked in the song map, such as a tutti chord
 (one the whole orchestra plays together), with a strength from 0 to 1. The
 level script decides, section by section, which accents are eligible:
@@ -587,18 +648,21 @@ opening. The kick line's release counts as an accent, as today.
 
 - **The heavy impact is the same for everyone.** On an eligible accent the
   sword's swing is heavy whatever the player pressed: 130, 160, 190 or 220 px
-  by tier, over 200° (a spin at tier 3), with 2.5 base damage and the heavy
-  impact sound exactly on the accent.
+  by tier, always 50° wider than that tier's light swing (200°, 230°, 290°, and
+  a full spin at tier 3), with 2.5 base damage and the heavy impact sound
+  exactly on the accent.
 - **A press on the chord makes a cleave.** When the accent's counted press is
   Great or better, early or late, the swing also launches a **shockwave**: a
   crescent (a full ring at tier 3) that travels outward in 25 px bands, one per
   sixteenth note. It deals 1.0 base damage to every enemy it reaches, out to
   260, 300, 340 or 380 px by tier.
 - **The wave starts on the "and".** Its first band is on the eighth note after
-  the accent, then one band per sixteenth. Even a press 90 ms late leaves about
-  70 ms to schedule that band at 185 beats per minute, and 40 ms in the coda.
-- **Never late.** If the press is known too late to schedule the first band's
-  sound exactly, the wave starts one sixteenth later instead.
+  the accent, then one band per sixteenth.
+- **Never late.** A sound plays exactly on its slot only when it is known at
+  least 60 ms ahead (see [Sound on the Grid](#sound-on-the-grid)). At 185
+  beats per minute an eighth note is 162 ms, so even a press 90 ms late is in
+  time for the first band. In the coda an eighth note is 130 ms, so a press
+  more than 70 ms late starts the wave one sixteenth later instead.
 - **Hit-stop only for early presses.** A hit-stop is silent, so it can't throw
   a sound off the grid. It happens only when the press came before the impact,
   with today's length: `min(110 ms × (0.6 + 0.4 × strength), 150 ms)`.
@@ -659,8 +723,9 @@ them:
   aims for 60% of the level script's population curve. Set pieces bring the
   rest.
 - **Placement as today:** just outside the view, 60% of spawns from the half
-  ahead of the hero's **heading**, its average direction of travel over the
-  last two beats. Enemies left far behind move ahead, as today.
+  ahead of the hero's **heading**: its average direction of travel over the
+  last two beats. While the hero stands still the heading keeps its last
+  value, starting to the right. Enemies left far behind move ahead, as today.
 - **Speeds:** every enemy except bats and bees stays slower than the hero,
   from the eyeball's 68 px/s to the skeleton archer's 120. Bats (165) and bees
   (180) are faster but die to any hit (health 0.6).
@@ -668,17 +733,20 @@ them:
 ### Set pieces
 
 Each set piece is scheduled from the song in the level script, and its
-members are ordinary enemies that can be hit at any time:
+members are ordinary enemies that can be hit at any time.
 
-- **Closing ring:** enemies evenly spaced on a circle around the hero's
-  position when it spawns, just outside the view, with two or three gaps of
-  three missing places. It spawns four to eight bars before its target accent
-  and closes at a steady speed, reaching 100 px from its centre (a tier-0
-  swing's reach) on the accent; then its members chase as usual. The centre
-  stays fixed, so the hero can leave through a gap, push through the line and
-  take bites, or stay in the middle and cleave on the chord. Rings of more
-  than 40 enemies form two rows, and ring members are exempt from the spacing
-  check while in formation, as formation members are today.
+- **Closing ring:**
+  - **Shape:** enemies evenly spaced on a circle just outside the view,
+    centred where the hero stood when it spawned, with two or three gaps of
+    three missing places. Rings of more than 40 enemies form two rows.
+  - **Timing:** it spawns four to eight bars before its target accent and
+    closes at a steady speed, reaching 100 px from its centre (a tier-0
+    swing's reach) on the accent. Then its members chase as usual.
+  - **The hero's options:** the centre stays fixed, so the hero can leave
+    through a gap, push through the line and take bites, or stay in the middle
+    and cleave on the chord.
+  - **Spacing:** ring members are exempt from the spacing check while in
+    formation, as formation members are today.
 - **Stampede:** a band of goblins at 2.5 times their speed enters from one side
   of the view and runs straight across in two or three rows with gaps,
   ignoring the hero. Members that leave the far side are recycled. The hero
@@ -756,11 +824,12 @@ music:
 - **Budget:** chimes share the existing limit on sounds per sixteenth note.
 
 ```text
-theme A, in G major: the hero strides into a field of gems after a cleave
-72.506  3 gems land: G
-72.588  5 gems land: A
-72.669  2 gems land: B
-72.750 to 73.075: no pickups for a beat, so the next run starts on G
+theme A, in G major, beats at 76.330 and 76.656: the hero strides into a
+field of gems after a cleave
+76.411  3 gems land: G
+76.493  5 gems land: A
+76.574  2 gems land: B
+76.656 to 76.981: no pickups for a beat, so the next run starts on G
 ```
 
 ### Vacuum
@@ -812,8 +881,8 @@ A level-up is a choice made by walking, so the music never stops:
     icon.
 - **Walking into an orb,** within 24 px, takes it. The upgrade applies on the
   next grid time, with its sound there, and the other orbs sink away.
-- **Two bars to choose.** If no orb is taken by then, the one nearest the
-  hero's heading is taken.
+- **Two bars to choose.** If no orb is taken by then, the orb that rose ahead
+  of the hero is taken.
 - **No pause.** The world doesn't slow, and the music never stops.
 
 ```text
@@ -821,7 +890,7 @@ galop opening, beats every 342 ms from the level-up downbeat at 54.07
 54.07  enemies within 160 px are pushed out to 160 px, the hero heals 20,
        and three orbs rise: Fire Trail ahead, Blades Evolve to the left,
        Might to the right
-54.30  the player presses and holds Left: a 45 px stride toward the orb
+54.30  the player presses and holds Left: a full 48 px stride toward it
 54.86  the third stride (15 px at 54.41, 48 px at 54.75) reaches the orb,
        and the other two sink away
 55.09  on the next beat the blades evolve, with the upgrade's sound
@@ -845,6 +914,24 @@ lightning evolves: every beat, and    might: damage +10%
   Watch my run replays them exactly.
 - **Choices matter:** with three level-ups and seven items, every run skips
   some.
+
+## One Second of Play
+
+With the pieces above defined, here is one second of theme A at tier 2. The
+beats fall at 72.100, 72.425 and 72.750, and a sixteenth note is 81 ms:
+
+```text
+72.092  tap Right, 8 ms early: Perfect; groove 0.55 -> 0.63, now tier 2
+        a 45 px stride right starts at once and lands at 72.202
+72.235  the sword winds up by itself, aimed at the densest arc
+72.270  tap Up on the off-beat: a Perfect off-beat; groove 0.63 -> 0.66
+        a 25 px stride up: only that much ground has built up
+72.425  impact on the beat: a 160 px, 240° tier-2 swing kills 9; their
+        gems stay where they died, 120-160 px out
+72.600  a goblin bites: health 64 -> 60, invulnerable until 73.100
+72.746  tap Right, 4 ms early: Perfect; the stride brings 4 gems inside
+        the 95 px pickup radius, and they land with one chime at 72.831
+```
 
 ## The Prelude
 
@@ -925,8 +1012,12 @@ near miss                     the threat's landing, already on a beat
 strides and stomps            only a soft rustle, which is exempt
 ```
 
-- **Never late.** A sound that becomes known too late for its slot moves to
-  the next slot of its subdivision. The play log records each move.
+- **Never late.** A sound is scheduled exactly only when it is known at least
+  60 ms before its slot. A sound known later moves to the next slot of its
+  subdivision instead of starting late, and the play log records each move.
+- **Free sections:** the song map still marks beats where there is no steady
+  pulse, so every row uses those beats and their subdivisions there, and kills
+  group per beat.
 - **Checked.** Today's "impacts on the grid" check grows to cover every row.
 
 ## HUD
@@ -1062,8 +1153,8 @@ entity involved, as today.
   ending, off-screen spawns for the steady stream, live play equal to replay,
   and an identical Watch my run.
 - **Removed:** the corridor pace checks and one step per beat.
-- **No dead presses:** every key press produces a stride, a rock step or a
-  stomp at its time.
+- **No dead presses:** every key press produces a stride, a bend of the stride
+  in progress, a rock step or a stomp at its time.
 - **The speed cap:** over every window of time, for every player, the hero's
   displacement is at most `140 × elapsed + one stride + 1 px`.
 - **Every movement has an input:** strides start only at a key press, or at a
@@ -1155,6 +1246,8 @@ A) and spend two bars on each of these:
 
 ### Full playthroughs
 
+Whole runs check the difficulty curve. Each should end as described:
+
 - **An honest run:** play the whole song on the beat. Expect to finish with
   roughly half health, at tier 2 or 3 through most of the galop.
 - **A mashing run:** mash from the galop on. Expect to survive theme A, lose
@@ -1166,6 +1259,8 @@ A) and spend two bars on each of these:
 
 ### Set pieces and pickups
 
+Each of these starts a little before its moment with `?start=`:
+
 - **The ring at 1:02.3** (`?start=0:58`): walk out through a gap. Then restart
   the section, stay in the middle and press on the chord: the wave starts on
   the "and" and clears the ring, and a vacuum drops on the next downbeat.
@@ -1176,22 +1271,25 @@ A) and spend two bars on each of these:
 - **Chicken:** kill an orc elite in theme A's repeat and walk over its
   chicken.
 - **Level-ups:** at 0:54.1, walk into an orb. At 1:20.2, take none, and check
-  that the one ahead is taken after two bars. Collect too little before the
-  bridge, and check that its level-up comes late, on the first downbeat after
-  the bar fills.
+  that the orb that rose ahead is taken after two bars. Collect too little
+  before the bridge, and check that its level-up comes late, on the first
+  downbeat after the bar fills.
 
 ### Edge cases
 
+These trigger the rules most likely to go wrong:
+
 - **A late press on a chord,** about 80 ms after it: the heavy impact is on
-  the chord, and the wave starts on the "and", never late. In the coda
-  (`?start=2:05`) the wave may start a sixteenth later instead.
+  the chord, and the wave starts on the "and". In the coda (`?start=2:05`), a
+  press more than 70 ms late starts the wave a sixteenth later instead. No
+  sound ever starts late.
 - **An early press on a chord** brings a brief hit-stop; a late one doesn't.
 - **A press during a hit-stop** ends it, as today, and strides at once.
 - **A diagonal:** two perpendicular keys within 40 ms make one diagonal stride
   of the same length.
 - **Opposite keys together:** a rock step out and back, counted as one stomp.
-- **Space while holding a direction:** the hero stops striding until the next
-  beat.
+- **Space while holding a direction:** the held stride on the next grid time
+  is skipped, so holding and stomping on every beat never moves the hero.
 - **The tier threshold:** keep the groove hovering around 0.6, and check that
   the tier doesn't flicker.
 - **YOU FELL:** fall, restart the section, and check that health and the world
