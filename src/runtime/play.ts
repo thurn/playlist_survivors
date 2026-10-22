@@ -27,6 +27,7 @@ import type { KeyEvent } from "../sim/player.ts";
 import { clickToBegin, PLAY_LEVEL, runBench, type DemoHook, type Overlay, type Params } from "./app.ts";
 import type { GameAssets } from "./assets.ts";
 import type { AudioEngine } from "./audio.ts";
+import { DebugMovesPanel, movesReadout } from "./debug-moves.ts";
 import { Hud, type EndCardInfo, type HudMenu, type HudOptions } from "./hud.ts";
 import { Renderer } from "./renderer.ts";
 import { loadBestGrade, saveBestGrade } from "./title.ts";
@@ -132,12 +133,15 @@ export async function runLive(env: LiveEnv): Promise<void> {
   show(session.recording);
   let lastStats = { alive: 0, particles: 0 };
   hook.stats = () => ({ frameMs: env.frameMs, ...lastStats });
+  // ?debug=moves: movement and the groove by the numbers, from the recording as drawn.
+  const moves = params.debugMoves ? new DebugMovesPanel() : undefined;
   const draw = (s: number, opts: Partial<HudOptions> = {}): Frame => {
     const st = stage!;
     st.recording.refresh();
     const frame = st.evaluator.evaluate(s);
     st.renderer.draw(frame);
     st.hud.draw(frame, st.renderer.outputRect(), { metronome: false, ...opts });
+    moves?.update(movesReadout(st.recording.plan, s));
     app.renderer.render(app.stage);
     lastStats = { alive: frame.stats.alive, particles: frame.stats.particles };
     hook.lastHero = { s, x: frame.hero.x, y: frame.hero.y };

@@ -313,9 +313,10 @@ export interface Plan {
   /**
    * Play mode's fixed-speed strides (absent without the rule): the walk speed (px per world
    * second), a stride's duration and hop height, the stride period without a steady beat, and the
-   * steps a held key strides on (song times) with the stride period at each.
+   * steps a held key strides on (song times) with the stride period at each and how many steps
+   * their grid step has (a stomp cancels that many).
    */
-  strides?: { speed: number; durationS: number; hop: number; freePeriodS: number; steps: Float64Array; periods: Float64Array };
+  strides?: { speed: number; durationS: number; hop: number; freePeriodS: number; steps: Float64Array; periods: Float64Array; per?: Uint8Array };
 }
 
 export interface OpenFieldRecord {

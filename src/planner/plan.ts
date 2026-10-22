@@ -116,7 +116,7 @@ export function planHeader(ctx: Ctx, sch: Schedule, map: MapLayout, profile: str
 
 function stridesHeader(ctx: Ctx, sch: Schedule): NonNullable<Plan["strides"]> {
   const r = strideRule(ctx.lib.hero);
-  return { speed: r.speed, durationS: r.durationS, hop: r.hop, freePeriodS: r.freePeriodS, steps: Float64Array.from(sch.strideSteps.s), periods: Float64Array.from(sch.strideSteps.period) };
+  return { speed: r.speed, durationS: r.durationS, hop: r.hop, freePeriodS: r.freePeriodS, steps: Float64Array.from(sch.strideSteps.s), periods: Float64Array.from(sch.strideSteps.period), per: Uint8Array.from(sch.strideSteps.per) };
 }
 
 /** Does a grid slot's accent make a cleave of a swing armed by a press rated Great or better? */

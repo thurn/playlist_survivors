@@ -91,6 +91,7 @@ are logged too. See [`src/live/log.ts`](src/live/log.ts).
 | `?mode=play` / `?mode=demo` | Skip the title screen's choice (the one click to unlock audio is still needed). |
 | `?mode=play&player=moderate` | Plan a play-mode run with a virtual player and play it back like the demo (captures, QA, tuning). |
 | `?metronome` | Full-screen flash on every beat plus a click track over the music (the sync check). |
+| `?mode=play&debug=moves` | Play mode with a movement overlay: the hero's speed over the last second, the stride budget, the groove and tier, and the last eight presses with their class and offset (for the Manual QA of docs/design/gameplay-redesign.md). |
 | `?start=1:35` | Start from a song time, in seconds (`?start=95.5`) or `m:ss`. In play mode the level's virtual player plays up to there headless, then hands over after a one-bar count-in. |
 | `?capture&t=88.31` | Render one frozen frame at song time 88.31 s, without audio. |
 | `?avOffsetMs=-40` | Shift the picture relative to the audio (e.g. Bluetooth latency). |

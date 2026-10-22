@@ -35,6 +35,8 @@ export interface Params {
   level?: string;
   /** `?mode=play` plays the real game (the play level file); `?mode=demo` the scripted demo. */
   mode?: "play" | "demo";
+  /** `?debug=moves`: play mode's movement and groove overlay (src/runtime/debug-moves.ts). */
+  debugMoves: boolean;
 }
 
 /** The level a mode plays. */
@@ -56,6 +58,7 @@ export function readParams(search: string): Params {
     checks: q.has("checks"),
     level: q.get("level") ?? undefined,
     mode: (["play", "demo"] as const).find((m) => m === q.get("mode")),
+    debugMoves: q.get("debug") === "moves",
   };
 }
 
