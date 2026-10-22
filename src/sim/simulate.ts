@@ -31,8 +31,8 @@ import { BatchRecorder, type ArrowRecord, type PressTrace, type Recorder, type S
 import { DEMO_RULES, type Rules } from "./rules.ts";
 import { nextStepAfter, stepRate, stepSpan, type GridSlot, type Schedule } from "./schedule.ts";
 import { budgetAt, freshStrides, heldDirection, interrupt, periodAt, settle, startStride, stompCancelsUntil, strideRule, striding, type StrideState } from "./strides.ts";
-import { chainAt, orbitAt, swingArcAt, tierDamage, trailRadiusAt } from "./tiers.ts";
-import { armedStrike, classifyPress, damageMultiplier, drainPerBeat, firstAtOrAfter, freshPressMemo, grooveAfterChange, type PressJudgement, type PressMemo, type PressRating, grooveAfterOffbeat, grooveAfterPress, grooveDecay, nearestIndex, ratePress, ratePressOnGrid, type Rating, tierFor } from "./timing.ts";
+import { chainAt, heavyArcAt, orbitAt, swingArcAt, tierDamage, trailRadiusAt, waveReachAt } from "./tiers.ts";
+import { armedStrike, classifyPress, NEVER_LATE, damageMultiplier, drainPerBeat, firstAtOrAfter, freshPressMemo, grooveAfterChange, type PressJudgement, type PressMemo, type PressRating, grooveAfterOffbeat, grooveAfterPress, grooveDecay, nearestIndex, ratePress, ratePressOnGrid, type Rating, tierFor } from "./timing.ts";
 import { CorridorWorld, OpenWorld, type World } from "./world.ts";
 
 export type { ArrowRecord, Landing, SimResult, SlamRecord } from "./recorder.ts";
@@ -63,7 +63,7 @@ const SEPARATION = 0.8;
 /** Positional correction keeps centres at least this fraction of the summed radii apart. */
 const MIN_GAP = 0.6;
 /** Non-lethal hits knock an enemy this far away from the hero. */
-const KNOCKBACK = 10;
+export const KNOCKBACK = 10;
 const KNOCK_TIME = 0.12;
 /** An enemy this many view widths behind the hero is recycled to a spawn point ahead. */
 const RECYCLE_VIEWS = 1.5;
@@ -100,7 +100,10 @@ const BOSS_LAND_PUSH = 120;
 const BOSS_KILL_STOP = 0.15;
 /** The player reacts to a threat only after it has been visible this long (song seconds). */
 const REACTION = 0.15;
-/** Self-firing weapons: a cleave aims this much beyond its shockwave's reach, at what will charge into it. */
+/**
+ * Self-firing weapons: a heavy swing aims this much beyond its shockwave's reach, at what will charge
+ * into it (the open field's kick line is a file along the heading, 170-480 px ahead).
+ */
 const CLEAVE_AIM_AHEAD = 160;
 /** The kick line stands this far ahead of the pace point; its charge is this much faster than a walk. */
 const LINE_LEAD = 170;
@@ -168,6 +171,16 @@ interface Foe {
   drawing?: { w0: number };
   /** The boss lands at landS (out of reach while it drops in). */
   landS?: number;
+}
+
+/** A heavy impact on an accent, as its shockwave would launch from it. */
+interface PendingCleave {
+  gi: number;
+  s: number;
+  x: number;
+  y: number;
+  dir: number;
+  tier: number;
 }
 
 interface Swing {
@@ -239,6 +252,10 @@ interface Wave {
   group: number;
   /** Self-firing weapons: its cleave's damage multiplier. */
   mult?: number;
+  /** Press cleaves: the heavy impact's arc at its tier, where the bands start, their half-angle, and how far the last reaches. */
+  inner?: number;
+  halfAngle?: number;
+  to?: number;
 }
 
 interface ChainState {
@@ -455,6 +472,12 @@ interface SimState {
   memo: PressMemo;
   tier: number;
   lastRaiseS: number;
+  /**
+   * Press cleaves: an eligible accent's heavy impact that struck before its counted press, waiting
+   * for that press (Great or better launches its shockwave): the accent's grid index and time, where
+   * the hero stood and aimed, and the tier.
+   */
+  pendingCleave?: PendingCleave;
   /** Swings that may still matter (the idle-swing rule looks back one bar). */
   swings: Swing[];
   liveSwings: Swing[];
@@ -598,8 +621,8 @@ function engine(env: Env, st: SimState, io: Io) {
   const heavyReach = { radius: hero.swings.heavy.hitShape.radius, halfAngle: (hero.swings.heavy.hitShape.degrees * Math.PI) / 360 };
   // A cleave aims at everything its arc and its shockwave will reach.
   const heavyAim = { radius: hero.swings.heavy.wave.to, halfAngle: heavyReach.halfAngle };
-  // Self-firing weapons (until accents are reworked): a cleave also aims at what will come into its
-  // shockwave's reach, such as a kick line charging from further down the line.
+  // Self-firing weapons: a cleave also aims at what will come into its shockwave's reach, such as a
+  // kick line charging from further down the line.
   const chargeAim = { radius: hero.swings.heavy.wave.to + CLEAVE_AIM_AHEAD, halfAngle: heavyReach.halfAngle };
   const anims = ctx.heroAnims;
   const animIdx = (name: string) => Math.max(0, HERO_ANIMS.indexOf(name));
@@ -674,6 +697,7 @@ function engine(env: Env, st: SimState, io: Io) {
   // ---------------------------------------------------------------- strides
   const strides = env.rules.strides;
   const selfFiring = env.rules.selfFiring;
+  const pressCleaves = env.rules.pressCleaves;
   const rule = strideRule(hero);
   /** How long a step (or stride) takes. */
   const stepDur = strides ? rule.durationS : stepSeconds(hero);
@@ -1044,12 +1068,41 @@ function engine(env: Env, st: SimState, io: Io) {
     return { radius: arc.radius, halfAngle: (arc.degrees * Math.PI) / 360 };
   };
 
+  /** The heavy impact's reach at a tier (press cleaves): its arc, a full spin at 360°. */
+  const heavyTierReach = (tier: number) => {
+    const arc = heavyArcAt(hero, tier);
+    return { radius: arc.radius, halfAngle: (arc.degrees * Math.PI) / 360 };
+  };
+  /** Press cleaves: is a heavy swing an eligible accent's (sized by the tier), not a free section's anchor (as today)? */
+  const accentCleave = (sw: Swing) => pressCleaves && sw.heavy && sw.slot.kind === "grid" && sw.tier !== undefined;
+  /** Where an accent's heavy swing aims (press cleaves): out to its shockwave's reach at the tier and on along a charging line. */
+  const accentAimAt = (tier: number) => ({ radius: waveReachAt(hero, tier) + CLEAVE_AIM_AHEAD, halfAngle: heavyTierReach(tier).halfAngle });
+
+  /**
+   * Press cleaves: launch an accent's shockwave, known at song time `known` (its press, or the strike
+   * when the press came first). Its first band is on the eighth note after the accent, or when known
+   * less than NEVER_LATE before that, on the first sixteenth at least that long after; then one band
+   * per sixteenth, 25 px further each, out to the tier's reach.
+   */
+  const launchCleave = (c: PendingCleave, known: number, press: number) => {
+    const wd = hero.swings.heavy.wave;
+    const reach = heavyTierReach(c.tier);
+    let bi0 = sbiAt(c.s) + 0.5;
+    while (timeOfBeatIndex(song, bi0) - known < NEVER_LATE - 1e-9) bi0 += 0.25;
+    // (Enough bands to reach it: the last one stops at the reach.)
+    const to = waveReachAt(hero, c.tier);
+    const bands = Math.ceil((to - reach.radius) / wd.band - 1e-9);
+    const wave: Wave = { x: c.x, y: c.y, dir: c.dir, band: 0, hit: new Set(), group: st.nWaves++, mult: tierDamage(hero, c.tier), inner: reach.radius, halfAngle: reach.halfAngle, to };
+    rec().wave({ s: c.s, press, band0: timeOfBeatIndex(song, bi0) });
+    for (let k = 0; k < bands; k++) st.q.push(timeOfBeatIndex(song, bi0 + k * 0.25), { kind: "wave", wave: { ...wave, band: k } });
+  };
+
   const doWind = (sw: Swing) => {
     if (sw.lost) return;
     const hp = heroPose(st.w);
     // Self-firing weapons: the tier when the wind-up starts sizes the swing, whatever comes after.
     if (selfFiring) sw.tier = st.tier;
-    const reach = sw.heavy ? (sw.tier !== undefined ? chargeAim : heavyAim) : sw.tier !== undefined ? tierReach(sw.tier) : lightReach;
+    const reach = sw.heavy ? (accentCleave(sw) ? accentAimAt(sw.tier!) : sw.tier !== undefined ? chargeAim : heavyAim) : sw.tier !== undefined ? tierReach(sw.tier) : lightReach;
     const targets = aimTargets(hp.x, hp.y, reach.radius);
     // The snapshot is aim's whole input, so the check can re-run it.
     const snap: AimSnapshot = { x: hp.x, y: hp.y, facing: st.facingAngle, targets: [] };
@@ -1060,7 +1113,7 @@ function engine(env: Env, st: SimState, io: Io) {
     sw.record = { s: sw.sStrike, w: 0, sArmed: sw.sArmed, sWind: sw.sWind, kind: sw.heavy ? "heavy" : "light", anim: sw.anim, impactFrame: sw.impact, dir: sw.dir, x: 0, y: 0, hit: -1, press: sw.press, accent: sw.accent, aim: snap };
     if (sw.tier !== undefined) {
       sw.record.tier = sw.tier;
-      sw.record.reach = sw.heavy ? { radius: chargeAim.radius, degrees: hero.swings.heavy.hitShape.degrees } : swingArcAt(hero, sw.tier);
+      sw.record.reach = sw.heavy ? { radius: reach.radius, degrees: (reach.halfAngle * 360) / Math.PI } : swingArcAt(hero, sw.tier);
     }
     const windW = Math.max(1 / 240, (sw.sStrike - sw.sWind) * baseRate(sw.sStrike));
     sw.fps = sw.impact / windW;
@@ -1071,7 +1124,7 @@ function engine(env: Env, st: SimState, io: Io) {
     if (!sw.aimed) doWind(sw);
     const hp = heroPose(st.w);
     const def = sw.heavy ? hero.swings.heavy : hero.swings.light;
-    const reach = sw.heavy ? heavyReach : sw.tier !== undefined ? tierReach(sw.tier) : lightReachOf(sw);
+    const reach = sw.heavy ? (accentCleave(sw) ? heavyTierReach(sw.tier!) : heavyReach) : sw.tier !== undefined ? tierReach(sw.tier) : lightReachOf(sw);
     const shape: Shape = swingArc(hp.x, hp.y, sw.dir, reach);
     const mult = sw.tier !== undefined ? tierDamage(hero, sw.tier) : damageMultiplier(hero, st.groove);
     const h = addHit({ source: "move", what: sw.heavy ? "cleave" : "slash", weight: sw.heavy ? "heavy" : "light", primary: true, shape, dir: sw.dir, accent: sw.accent, damage: def.damage * mult });
@@ -1085,7 +1138,21 @@ function engine(env: Env, st: SimState, io: Io) {
     r.hit = h.id;
     rec().swing(r);
     sw.record = undefined;
-    if (sw.heavy) {
+    if (sw.heavy && pressCleaves && sw.slot.kind === "grid") {
+      // Press cleaves: the heavy impact is everyone's; the accent's counted press of Great or better
+      // launches its shockwave, now when it came first (with a hit-stop), or when it comes. (A free
+      // section's heavy swing on a strong anchor works as today, below.)
+      const gi = nearestIndex(sch.gridTimes, sw.sStrike);
+      const c: PendingCleave = { gi, s: sw.sStrike, x: hp.x, y: hp.y, dir: sw.dir, tier: sw.tier ?? 0 };
+      const counted = st.memo.counted.get(gi);
+      if (counted && counted.s <= st.s + 1e-9) {
+        if (counted.rating === "perfect" || counted.rating === "great") {
+          startHitStop(Math.min(0.15, (hero.swings.heavy.hitStopMs / 1000) * (0.6 + 0.4 * sw.accent)));
+          launchCleave(c, counted.s, counted.s);
+        }
+        st.pendingCleave = undefined;
+      } else st.pendingCleave = c;
+    } else if (sw.heavy) {
       if (!selfFiring || sw.press !== undefined) startHitStop((hero.swings.heavy.hitStopMs / 1000) * (0.6 + 0.4 * sw.accent));
       // The cleave's crescent shockwave travels outward along its aim, one band per sixteenth note.
       // Band k reaches 25 px further on the k-th sixteenth after the strike.
@@ -1102,8 +1169,9 @@ function engine(env: Env, st: SimState, io: Io) {
     // The wave rests during a hit-stop, like the weapons: the next band covers this one's ground.
     if (inStop(st.s) && st.s > st.stopStart + 1e-9) return;
     const wd = hero.swings.heavy.wave;
-    const outer = heavyReach.radius + wd.band * (wave.band + 1);
-    const shape: Shape = { kind: "arc", x: wave.x, y: wave.y, radius: outer, inner: heavyReach.radius, dir: wave.dir, halfAngle: heavyReach.halfAngle };
+    const inner = wave.inner ?? heavyReach.radius;
+    const outer = Math.min(inner + wd.band * (wave.band + 1), wave.to ?? Infinity);
+    const shape: Shape = { kind: "arc", x: wave.x, y: wave.y, radius: outer, inner, dir: wave.dir, halfAngle: wave.halfAngle ?? heavyReach.halfAngle };
     // Everyone the front has reached and the wave has not hit yet.
     const h = addHit({ source: "wave", what: "shockwave", weight: "medium", primary: false, shape, dir: wave.dir, accent: 0, damage: wd.damage * (wave.mult ?? damageMultiplier(hero, st.groove)), group: wave.group });
     rec().waveHit(wave.group, h.id);
@@ -1185,6 +1253,13 @@ function engine(env: Env, st: SimState, io: Io) {
     // Press classes (play mode): every press in step movement is classed against the grid, before
     // it moves the hero (a partner bends or rocks the stride in progress).
     const judged = env.rules.pressClasses && steps ? classifyPress(hero, sch.gridTimes, st.s, partnerOf(e.key), st.memo) : undefined;
+    // Press cleaves: the counted press of an accent whose heavy impact has struck: Great or better
+    // launches its shockwave now (a late press brings no hit-stop).
+    const pc = st.pendingCleave;
+    if (pressCleaves && pc && judged?.class === "counted" && judged.gridIndex === pc.gi) {
+      if (judged.rating === "perfect" || judged.rating === "great") launchCleave(pc, st.s, st.s);
+      st.pendingCleave = undefined;
+    }
     if (env.rules.oneStepPerSlot && steps && !partnerOf(e.key)) {
       const gi = nearestIndex(sch.gridTimes, st.s);
       if (gi === st.lastStepGrid) extraGrid = gi;

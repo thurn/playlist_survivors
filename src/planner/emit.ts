@@ -18,7 +18,7 @@ import type { ArrowRecord, BossInfo, Landing, LandmarkRecord, SimResult, SlamRec
 import type { TiledMap } from "../mapgen/mapgen.ts";
 import { stampLandmark } from "../mapgen/openfield.ts";
 import { HURTBOX_LIFT } from "../sim/simulate.ts";
-import { firstAtOrAfter } from "../sim/timing.ts";
+import { firstAtOrAfter, NEVER_LATE } from "../sim/timing.ts";
 import { sectionIndexAt, type Ctx } from "./context.ts";
 import { cameraAt, VIEW_W } from "./camera.ts";
 import { resolveRef } from "./musical.ts";
@@ -33,11 +33,7 @@ const NOTE_NAMES: Record<string, number> = { C: 0, "C#": 1, Db: 1, D: 2, "D#": 3
 /** The most a sample is started ahead of its event; the audio scheduler looks this far ahead. */
 export const MAX_SOUND_LEAD = 0.25;
 
-/**
- * Never late (rules.gridSounds): a sound plays exactly on its slot only when it is known at least
- * this long before it; one known later moves to a later slot of its subdivision.
- */
-export const NEVER_LATE = 0.06;
+export { NEVER_LATE } from "../sim/timing.ts";
 
 /** The grid a sound keeps to: the timing grid, or a subdivision of the song map's beats (also in free sections). */
 export type Subdivision = "grid" | "sixteenth" | "eighth" | "beat" | "bar";

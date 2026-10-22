@@ -13,6 +13,18 @@ export function swingArcAt(hero: HeroDef, tier: number): { radius: number; degre
   return { radius: arc.radius, degrees: arc.degrees };
 }
 
+/** The heavy impact's arc at a tier (rules.pressCleaves), or the heavy swing's own. */
+export function heavyArcAt(hero: HeroDef, tier: number): { radius: number; degrees: number } {
+  const arc = hero.swings.heavy.tiers ? at(hero.swings.heavy.tiers, tier) : hero.swings.heavy.hitShape;
+  return { radius: arc.radius, degrees: arc.degrees };
+}
+
+/** How far a cleave's shockwave reaches at a tier (rules.pressCleaves), or the heavy swing's own. */
+export function waveReachAt(hero: HeroDef, tier: number): number {
+  const t = hero.swings.heavy.wave.tiers;
+  return t ? at(t, tier) : hero.swings.heavy.wave.to;
+}
+
 /** Every hero attack's damage multiplier at a tier. */
 export const tierDamage = (hero: HeroDef, tier: number): number => at(hero.meter.damage, tier);
 

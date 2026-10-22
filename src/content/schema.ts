@@ -138,7 +138,15 @@ export const heroDef = z.strictObject({
       damage: z.number().positive(),
       hitStopMs: z.number().min(0).max(150),
       /** The crescent shockwave: bands of `band` px from the arc's edge out to `to` px, one per sixteenth note. */
-      wave: z.strictObject({ to: z.number().positive(), band: z.number().positive(), damage: z.number().positive() }),
+      wave: z.strictObject({
+        to: z.number().positive(),
+        band: z.number().positive(),
+        damage: z.number().positive(),
+        /** Play mode's tiers (rules.pressCleaves): how far the shockwave reaches at tiers 0 to 3. */
+        tiers: z.array(z.number().positive()).min(1).optional(),
+      }),
+      /** Play mode's tiers (rules.pressCleaves): the heavy impact's arc at tiers 0 to 3 (360 is a full spin). */
+      tiers: z.array(arcShape).min(1).optional(),
     }),
   }),
   /**
@@ -385,7 +393,7 @@ export const levelScript = z.strictObject({
   /** The demo's forest corridor along a route, or play mode's open field. */
   world: z.enum(["corridor", "open"]).default("corridor"),
   /** Play-mode rule changes. */
-  rules: z.strictObject({ oneStepPerSlot: z.boolean().default(false), accentTelegraphs: z.boolean().default(false), health: z.boolean().default(false), strides: z.boolean().default(false), pressClasses: z.boolean().default(false), selfFiring: z.boolean().default(false), gridSounds: z.boolean().default(false) }).optional(),
+  rules: z.strictObject({ oneStepPerSlot: z.boolean().default(false), accentTelegraphs: z.boolean().default(false), health: z.boolean().default(false), strides: z.boolean().default(false), pressClasses: z.boolean().default(false), selfFiring: z.boolean().default(false), gridSounds: z.boolean().default(false), pressCleaves: z.boolean().default(false) }).optional(),
   /** Overrides merged over content/hero.yaml for this level only (checked against the hero schema). */
   hero: z.record(z.string(), z.unknown()).optional(),
   title: z.strictObject({ piece: z.string(), composer: z.string(), performer: z.string() }),

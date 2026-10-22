@@ -172,7 +172,8 @@ export class VirtualPlayer implements Player {
     profile: SkillProfile = "skilled",
     /** Is a grid slot an accent the section turns into a cleave? */
     heavyAccent: (slot: GridSlot) => boolean = () => false,
-    opts: { open?: boolean; strides?: boolean; groove?: boolean } = {},
+    /** Press cleaves: press each eligible accent on the chord, instead of setting it up a grid step early. */
+    opts: { open?: boolean; strides?: boolean; groove?: boolean; pressOnAccents?: boolean } = {},
   ) {
     const spec = opts.groove ? { ...PROFILES[profile], ...GROOVE_PROFILES[profile] } : PROFILES[profile];
     this.spec = spec;
@@ -185,9 +186,12 @@ export class VirtualPlayer implements Player {
       const sec = sections[sl.section];
       let pressed = spec.eighths || (spec.downbeatsOnly ? sl.slot === 0 : sec.presses[sl.slot % sec.presses.length] === "x");
       if (pressed && spec.pressRate < 1 && new Rng(seed, "press-skip", Math.round(sl.s * 1000)).next() >= spec.pressRate) pressed = false;
-      // Press one grid step before an accent strong enough for a cleave, even on a rest slot.
+      // Press one grid step before an accent strong enough for a cleave, even on a rest slot (with
+      // press cleaves, on the accent itself).
       const next = grid[i + 1];
-      if (next && heavyAccent(next) && (spec.accentRate >= 1 || new Rng(seed, "accent-setup", Math.round(sl.s * 1000)).next() < spec.accentRate)) pressed = true;
+      if (opts.pressOnAccents) {
+        if (heavyAccent(sl) && (spec.accentRate >= 1 || new Rng(seed, "accent-press", Math.round(sl.s * 1000)).next() < spec.accentRate)) pressed = true;
+      } else if (next && heavyAccent(next) && (spec.accentRate >= 1 || new Rng(seed, "accent-setup", Math.round(sl.s * 1000)).next() < spec.accentRate)) pressed = true;
       const r = new Rng(seed, "press-time", Math.round(sl.s * 1000));
       const err = spec.sd > 0 ? clamp(normal(r) * spec.sd, -spec.clampS, spec.clampS) : 0;
       this.plan.push({ s: sl.s + (pressed ? err : 0), kind: pressed ? "press" : "watch", beat: sl.bi });

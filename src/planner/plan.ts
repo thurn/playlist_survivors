@@ -138,7 +138,7 @@ export function virtualPlayer(ctx: Ctx, sch: Schedule, profile: SkillProfile = "
     ctx.song.beats,
     profile,
     (slot) => cleaves(ctx, slot),
-    { open: ctx.level.world === "open", strides: ctx.level.rules.strides, groove: ctx.level.rules.pressClasses },
+    { open: ctx.level.world === "open", strides: ctx.level.rules.strides, groove: ctx.level.rules.pressClasses, pressOnAccents: ctx.level.rules.pressCleaves },
   );
 }
 
@@ -285,6 +285,7 @@ export function planWithSim(input: PlannerInput, opts: PlannerOptions = {}): { p
     inputs: sim.inputs,
     groove: { s: Float64Array.from(sim.groove.s), v: Float32Array.from(sim.groove.v) },
     ...(ctx.level.rules.pressClasses ? { tier: { s: Float64Array.from(sim.tier.s), v: Uint8Array.from(sim.tier.v) } } : {}),
+    ...(ctx.level.rules.pressCleaves ? { cleaves: sim.waves.filter((w) => w.s !== undefined).map((w) => ({ s: w.s!, press: w.press!, band0: w.band0! })) } : {}),
     health: { s: Float64Array.from(sim.health.s), v: Float32Array.from(sim.health.v) },
     nearMisses: sim.threats.filter((t) => t.outcome === "near-miss").map((t) => ({ s: t.s, w: t.w, kind: t.kind })),
     threats: sim.threats.map((t) => ({ s: t.s, kind: t.kind, outcome: t.outcome })),

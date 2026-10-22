@@ -122,6 +122,17 @@ export interface PressTrace {
 
 /** A tier change's chime: the grid time it sounds on, whether the tier rose, and the world time of the change. */
 /** A tier change's chime: its song time (a grid time), up or down, and the change's world and song time. */
+/**
+ * A cleave (rules.pressCleaves): a counted press of Great or better on an eligible accent launched
+ * its shockwave. The accent's song time, the press's, and the first band's (the eighth after the
+ * accent, or a sixteenth later when the press came too late for it).
+ */
+export interface Cleave {
+  s: number;
+  press: number;
+  band0: number;
+}
+
 export type TierChime = { s: number; up: boolean; w: number; at: number };
 
 export type Attack = NonNullable<EnemyRecord["attacks"]>[number];
@@ -160,8 +171,8 @@ export interface SimResult {
   gems: GemRecord[];
   /** The XP bar after each change (fraction of the next level-up's requirement). */
   xp: { s: number; fill: number }[];
-  /** Cleave shockwaves: one hit per band. */
-  waves: { hits: number[] }[];
+  /** Cleave shockwaves: one hit per band (with press cleaves, the cleave that launched it). */
+  waves: ({ hits: number[] } & Partial<Cleave>)[];
   /** Formation releases (song time) and their members. */
   formations: FormationRecord[];
   /** The open field's transform waves and landmarks. */
@@ -213,8 +224,8 @@ export interface Recorder {
   gem(g: GemRecord): void;
   gemArrive(gem: number, w: number): void;
   xp(s: number, fill: number): void;
-  /** A cleave shockwave starts; its band hits follow. */
-  wave(): void;
+  /** A cleave shockwave starts (with press cleaves, the accent's cleave that launched it); its band hits follow. */
+  wave(cleave?: Cleave): void;
   waveHit(wave: number, hit: number): void;
   formation(f: FormationRecord): void;
   zoneWave(z: ZoneWaveRecord): void;
@@ -265,7 +276,7 @@ export class BatchRecorder implements Recorder {
   bossInfo?: BossInfo;
   readonly gems: GemRecord[] = [];
   readonly xpSeries: { s: number; fill: number }[] = [{ s: 0, fill: 0 }];
-  readonly waves: { hits: number[] }[] = [];
+  readonly waves: ({ hits: number[] } & Partial<Cleave>)[] = [];
   readonly formations: FormationRecord[] = [];
   readonly zoneWaves: ZoneWaveRecord[] = [];
   readonly landmarks: LandmarkRecord[] = [];
@@ -380,8 +391,8 @@ export class BatchRecorder implements Recorder {
   xp(s: number, fill: number): void {
     this.xpSeries.push({ s, fill });
   }
-  wave(): void {
-    this.waves.push({ hits: [] });
+  wave(cleave?: Cleave): void {
+    this.waves.push({ hits: [], ...cleave });
   }
   waveHit(wave: number, hit: number): void {
     this.waves[wave].hits.push(hit);

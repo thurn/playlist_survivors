@@ -248,7 +248,7 @@ export class Hud {
         const color = t.cleave ? TELEGRAPH : t.down ? 0xffe8b0 : 0xffffff;
         for (const side of [-1, 1]) {
           g.roundRect(px(cx + side * (14 + d)) - sz / 2, py(cy) - sz * 1.6, sz, sz * 3.2, sz / 2).fill({ color, alpha: a });
-          // "Press here": a gold ring on the beat before it.
+          // "Press here": a gold ring on the beat to press (with press cleaves, the accent's own tick).
           if (t.pressHere) g.circle(px(cx + side * (14 + d)), py(cy), 7 * u).stroke({ color: TELEGRAPH, width: Math.max(1, 1.5 * u), alpha: a });
         }
       }

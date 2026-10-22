@@ -197,6 +197,12 @@ export function classifyPress(hero: HeroDef, grid: ArrayLike<number>, s: number,
   return { class: "stray", delta, gridIndex: gi, change: m.stray };
 }
 
+/**
+ * Never late (rules.gridSounds): a sound plays exactly on its slot only when it is known at least
+ * this long before it; one known later moves to a later slot of its subdivision.
+ */
+export const NEVER_LATE = 0.06;
+
 /** The groove after a change: on its 0-to-1 scale. */
 export const grooveAfterChange = (groove: number, change: number): number => clamp(groove + change, 0, 1);
 

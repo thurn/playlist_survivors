@@ -13,9 +13,9 @@ import { RouteLookup } from "../mapgen/mapgen.ts";
 import { partnerPress, type EnemyRecord, type Plan } from "../plan/types.ts";
 import { enemyPos, heroSample } from "../plan/sample.ts";
 import { aim, catches, type AimTarget } from "../sim/aim.ts";
-import { HITSTOP_MAX, HITSTOP_MIN, POP_CAP, spriteOffscreen } from "../sim/simulate.ts";
+import { HITSTOP_MAX, HITSTOP_MIN, KNOCKBACK, POP_CAP, spriteOffscreen } from "../sim/simulate.ts";
 import { viewRect } from "./camera.ts";
-import { VOICE_BUDGET, weaponSubdivision, type Subdivision } from "./emit.ts";
+import { NEVER_LATE, VOICE_BUDGET, weaponSubdivision, type Subdivision } from "./emit.ts";
 
 export interface CheckResult {
   name: string;
@@ -215,6 +215,33 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
       const bi = beatIndexFromBeats(plan.songBeats, h.s) * 4;
       if (Math.abs(bi - Math.round(bi)) > 0.004) f.push(`${h.what} hit at ${fmt(h.s)} is off its subdivision`);
     }
+    // Press cleaves: the heavy impact's sound is on the accent, and the shockwave's first band on the
+    // eighth after it, or on the first sixteenth at least NEVER_LATE after a late press; the bands
+    // then follow on sixteenths (checked with the weapon hits above).
+    if (plan.rules?.pressCleaves) {
+      const waveHits = plan.hits.filter((h) => h.source === "wave").map((h) => h.s);
+      // Every eligible accent's swing is heavy, whatever was pressed, with its sound on the accent.
+      const heavySounds = plan.events.sounds.filter((snd) => snd.key === "hit-heavy").map((snd) => snd.s);
+      const heavySwings = plan.swings.filter((sw) => sw.kind === "heavy").map((sw) => sw.s);
+      const blastS = plan.hits.find((h) => h.source === "ring")?.s ?? Infinity;
+      for (const a of plan.cleaveAccents ?? []) {
+        if (a.s >= blastS - 0.04) continue;
+        n++;
+        if (distToNearest(heavySwings, a.s) > 1e-6) f.push(`eligible accent at ${fmt(a.s)} has no heavy swing`);
+        else if (plan.rules.gridSounds && distToNearest(heavySounds, a.s) > 1e-6) f.push(`eligible accent at ${fmt(a.s)} has no heavy impact sound on it`);
+      }
+      for (const c of plan.cleaves ?? []) {
+        n++;
+        const bi = beatIndexFromBeats(plan.songBeats, c.s);
+        let k = bi + 0.5;
+        while (timeOfBeatFromBeats(plan.songBeats, k) - c.press < NEVER_LATE - 1e-6) k += 0.25;
+        const want = timeOfBeatFromBeats(plan.songBeats, k);
+        if (Math.abs(c.band0 - want) > 0.001) f.push(`cleave on ${fmt(c.s)} (press ${fmt(c.press)}): first band at ${fmt(c.band0)}, expected ${fmt(want)}`);
+        // (A band rests in a hit-stop, while world time stands still: the next one covers its ground.)
+        const frozen = warp.toWorld(c.band0) - warp.toWorld(c.band0 - 0.005) < 1e-6;
+        if (!frozen && distToNearest(waveHits, c.band0) > 0.001) f.push(`cleave on ${fmt(c.s)}: no shockwave band at ${fmt(c.band0)}`);
+      }
+    }
     // Grid sounds (play mode): every gameplay sound of the table in "Sound on the Grid" plays on a
     // slot of its subdivision, within 1 ms (the timing grid's slots are beats in a free section).
     if (plan.rules?.gridSounds) {
@@ -355,11 +382,24 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
       const near: { x: number; y: number }[] = [];
       for (const id of bucketAt(ww)) {
         const e = byId.get(id)!;
-        if (ww < e.spawnW || ww >= e.deathW) continue;
+        // (In a hit-stop world time stands still: an enemy dying at the wind-up's world time was still
+        // alive at it when its death came later in song time.)
+        const diesLater = Math.abs(ww - e.deathW) <= 1e-9 && (plan.hits[e.fates[e.fates.length - 1]?.hit]?.s ?? -Infinity) > sw.sWind + 1e-9;
+        if (ww < e.spawnW || (ww >= e.deathW && !diesLater)) continue;
         enemyPos(plan, e, ww, tmp);
         near.push({ x: tmp.x, y: tmp.y });
+        // (One spawned within a sample of the wind-up, in a hit-stop's frozen world time, is recorded
+        // from the next sample on, after it has moved on: its first sample stands for it too.)
+        if (e.spawnW > ww - 1 / plan.enemySampleRate) {
+          enemyPos(plan, e, e.spawnW + 1 / plan.enemySampleRate, tmp);
+          near.push({ x: tmp.x, y: tmp.y });
+        }
       }
-      for (const t of targets) if (!near.some((q) => Math.hypot(q.x - t.x, q.y - t.y) <= SAMPLE_SLACK)) f.push(`swing at ${fmt(sw.s)}: aim target at (${t.x.toFixed(0)}, ${t.y.toFixed(0)}) matches no recorded enemy`);
+      // (A wind-up in a hit-stop's frozen world time: enemies knocked back in it are recorded at one
+      // of the places they passed, up to a knockback apart.)
+      const frozen = ww - warp.toWorld(sw.sWind - 0.02) < 1e-6;
+      const slack = frozen ? SAMPLE_SLACK + KNOCKBACK : SAMPLE_SLACK;
+      for (const t of targets) if (!near.some((q) => Math.hypot(q.x - t.x, q.y - t.y) <= slack)) f.push(`swing at ${fmt(sw.s)}: aim target at (${t.x.toFixed(0)}, ${t.y.toFixed(0)}) matches no recorded enemy`);
     }
     add("auto-aim is the rule", f, n);
   }
@@ -438,6 +478,15 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
       while (bar + 1 < plan.barStart.length && plan.barStart[bar + 1] <= Math.floor(bi + 1e-6)) bar++;
       return bar;
     });
+    // Press cleaves: a cleave's shockwave clears a crowd on purpose (a full ring at tier 3), and the
+    // stream takes a bar to refill: the bar of its accent and the next one aren't held to the target.
+    const barOf = (s: number) => {
+      const bi = Math.floor(beatIndexFromBeats(plan.songBeats, s) + 1e-6);
+      let bar = 1;
+      while (bar + 1 < plan.barStart.length && plan.barStart[bar + 1] <= bi) bar++;
+      return bar;
+    };
+    const cleaveBars = new Set((plan.cleaves ?? []).flatMap((c) => [barOf(c.s), barOf(c.s) + 1]));
     for (let bar = 1; bar + 1 < plan.barStart.length; bar++) {
       const b0 = plan.barStart[bar];
       const b1 = plan.barStart[bar + 1];
@@ -445,6 +494,7 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
       const w0 = wb[b0];
       const w1 = wb[b1];
       if (w1 > blastW - 0.01) break;
+      if (cleaveBars.has(bar)) continue;
       let pSum = 0;
       let tSum = 0;
       let k = 0;

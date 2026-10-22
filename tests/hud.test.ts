@@ -17,11 +17,13 @@ describe("accent telegraphs", () => {
   const i = Array.from(plan.grid).findIndex((g) => Math.abs(g - accent.s) < 1e-6);
   const before = plan.grid[i - 1];
 
-  it("shows the accents that will cleave, and the beat to press for each, in advance", () => {
+  it("shows the accents that will cleave in advance, with a gold ring on the accent's own tick", () => {
     const hud = ev.evaluate(accent.s - 1.5).hud;
     const at = (t: number) => hud.ticks.find((k) => Math.abs(accent.s - 1.5 + k.dt - t) < 0.01);
     expect(at(accent.s)?.cleave).toBe(true);
-    expect(at(before)?.pressHere).toBe(true);
+    // (A press on the chord launches its shockwave: the ring is on the accent, not the beat before.)
+    expect(at(accent.s)?.pressHere).toBe(true);
+    expect(at(before)?.pressHere).toBeFalsy();
     expect(hud.ticks.filter((k) => k.cleave).length).toBeGreaterThanOrEqual(1);
     expect(hud.ticks.filter((k) => !k.cleave && !k.pressHere).length).toBeGreaterThan(2);
   });

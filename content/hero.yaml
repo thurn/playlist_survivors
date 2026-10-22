@@ -42,7 +42,20 @@ hero:
         - { kind: arc, radius: 130, degrees: 180 }
         - { kind: arc, radius: 160, degrees: 240 }
         - { kind: arc, radius: 190, degrees: 360 }
-    heavy: { animation: slash-oversize, hitShape: { kind: arc, radius: 130, degrees: 200 }, damage: 2.5, hitStopMs: 110, wave: { to: 330, band: 25, damage: 1.0 } }
+    heavy:
+      animation: slash-oversize
+      hitShape: { kind: arc, radius: 130, degrees: 200 }
+      damage: 2.5
+      hitStopMs: 110
+      # Play mode's tiers (rules.pressCleaves): the shockwave reaches 260-380 px.
+      wave: { to: 330, band: 25, damage: 1.0, tiers: [260, 300, 340, 380] }
+      # Play mode's heavy impact on an accent, by tier: always 50 degrees wider than that tier's light
+      # swing, a full spin at tier 3.
+      tiers:
+        - { kind: arc, radius: 130, degrees: 200 }
+        - { kind: arc, radius: 160, degrees: 230 }
+        - { kind: arc, radius: 190, degrees: 290 }
+        - { kind: arc, radius: 220, degrees: 360 }
   # Play mode's health: each enemy touching the hero bites at most once per biteEveryMs. Rhythm
   # heals: a press rated Great or better heals `beat`, and from the 4th such beat in a row each
   # heals `streak` more; a lesser press or a stumble ends the streak.

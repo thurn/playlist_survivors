@@ -260,11 +260,12 @@ export function checkPlay(plan: Plan, lib: ContentLibrary, opts: PlayCheckOption
   {
     const f: string[] = [];
     let n = 0;
-    // At least 80% of the cleave-eligible accents produce a cleave.
+    // At least 80% of the cleave-eligible accents produce a cleave: with press cleaves, a shockwave
+    // its press launched (every eligible accent's swing is heavy); before them, a heavy swing.
     const accents = plan.cleaveAccents ?? [];
     if (accents.length > 0) {
       n++;
-      const heavy = new Set(plan.swings.filter((sw) => sw.kind === "heavy").map((sw) => Math.round(sw.s * 1000)));
+      const heavy = new Set((plan.cleaves ?? plan.swings.filter((sw) => sw.kind === "heavy")).map((x) => Math.round(x.s * 1000)));
       const missed = accents.filter((a) => !heavy.has(Math.round(a.s * 1000)));
       const got = accents.length - missed.length;
       if (got < 0.8 * accents.length) f.push(`only ${got} of ${accents.length} cleave accents produce a cleave (80% needed); missed ${missed.slice(0, 6).map((a) => fmt(a.s)).join(", ")}`);

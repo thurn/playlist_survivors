@@ -342,8 +342,10 @@ export class Evaluator {
     // Play mode's telegraphs: the song owns the accents, so the HUD may show them in advance.
     if (plan.rules?.accentTelegraphs && plan.cleaveAccents) {
       this.cleaveTimes = plan.cleaveAccents.map((a) => a.s).sort((a, b) => a - b);
-      // The grid time one grid step before each accent: a Great press there arms the cleave.
-      for (const a of this.cleaveTimes) {
+      // The grid time one grid step before each accent: a Great press there arms the cleave (with
+      // press cleaves, the accent's own tick: a press on the chord launches its shockwave).
+      if (plan.rules.pressCleaves) this.pressHereTimes = [...this.cleaveTimes];
+      else for (const a of this.cleaveTimes) {
         let i = 0;
         while (i + 1 < plan.grid.length && plan.grid[i + 1] <= a + 1e-6) i++;
         if (i > 0) this.pressHereTimes.push(plan.grid[i - 1]);
@@ -887,7 +889,12 @@ export class Evaluator {
         if (L.align === "hitShape" && ev.hit !== undefined) {
           const hit = this.plan.hits[ev.hit];
           const sh = hit.shape;
-          if (sh.kind === "arc") {
+          if (sh.kind === "arc" && sh.halfAngle >= Math.PI - 1e-6) {
+            // A full spin, or a cleave's shockwave at tier 3: a whole ring.
+            art = "proc:ring";
+            sxx = syy = (sh.radius / 62) * scale * (0.85 + 0.25 * u);
+            y -= 14;
+          } else if (sh.kind === "arc") {
             const deg = (sh.halfAngle * 360) / Math.PI;
             art = deg < 135 ? "proc:arc120" : deg < 180 ? "proc:arc150" : "proc:arc200";
             rot = sh.dir;

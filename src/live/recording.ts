@@ -20,7 +20,7 @@ import { beatIndexIn, type PlanIndex } from "../plan/view.ts";
 import { beatDurationAt, sectionIndexAt, type Ctx } from "../planner/context.ts";
 import { budgetSlot, Emitter, lastAtOrBefore, soundSlot, VOICE_BUDGET, type EmitSink } from "../planner/emit.ts";
 import { ACTIVE_BUCKET, DEATH_ANIM, planHeader } from "../planner/plan.ts";
-import type { ArrowRecord, Attack, BossInfo, Dance, FormationRecord, GemRecord, Landing, LandmarkRecord, PressTrace, Recorder, SlamRecord, Threat, ZoneWaveRecord } from "../sim/recorder.ts";
+import type { ArrowRecord, Attack, BossInfo, Cleave, Dance, FormationRecord, GemRecord, Landing, LandmarkRecord, PressTrace, Recorder, SlamRecord, Threat, ZoneWaveRecord } from "../sim/recorder.ts";
 import type { Schedule } from "../sim/schedule.ts";
 import { ENEMY_RATE, HERO_ANIMS, HERO_RATE, SLAM_RADIUS } from "../sim/simulate.ts";
 
@@ -148,6 +148,7 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
       inputs: [],
       groove: this.grooveSeries,
       tier: this.tierSeries,
+      ...(ctx.level.rules.pressCleaves ? { cleaves: [] } : {}),
       health: this.healthSeries,
       nearMisses: [],
       threats: [],
@@ -594,9 +595,10 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
     this.add(this.hud.xpFill, fill);
   }
 
-  wave(): void {
+  wave(cleave?: Cleave): void {
     this.nWaves++;
     this.undo(() => this.nWaves--);
+    if (cleave && this.plan.cleaves) this.add(this.plan.cleaves, cleave);
   }
 
   waveHit(_wave: number, hit: number): void {

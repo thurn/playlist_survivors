@@ -169,16 +169,15 @@ describe("strides without a steady beat", () => {
 
 describe("a press during a hit-stop", () => {
   const { ctx, sch, run } = play(syntheticSongMap());
-  // A cleave: a Perfect press one grid step before an accent the level turns into a cleave.
+  // A cleave with a hit-stop: a Perfect press on the chord, before its heavy impact.
   const i = sch.gridSlots.findIndex((g) => g.s > 60 && cleaves(ctx, g));
   const accent = sch.gridSlots[i].s;
-  const before = sch.gridSlots[i - 1].s;
 
   it("ends the hit-stop and strides at once", () => {
     const rec = new BatchRecorder();
     const press = accent + 0.03;
-    // (With presses arming swings: a self-firing cleave brings no hit-stop.)
-    const r = run([...tap(before), ...tap(press, "down")], [press, press + 0.02], rec, { selfFiring: false });
+    // (The same key again: a perpendicular one would bend the first stride, still moving in the stop.)
+    const r = run([...tap(accent - 0.02, "down"), ...tap(press, "down")], [press, press + 0.02], rec);
     const stop = rec.hitStops.find(([s0]) => Math.abs(s0 - accent) < 0.02);
     expect(stop).toBeDefined();
     expect(stop![1]).toBeCloseTo(press, 9);

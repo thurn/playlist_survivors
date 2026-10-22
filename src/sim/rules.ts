@@ -21,7 +21,13 @@ export interface Rules {
    * known less than 60 ms before its slot moves to a later slot (src/planner/emit.ts).
    */
   gridSounds: boolean;
+  /**
+   * Accents and cleaves: an eligible accent's swing is heavy for everyone, sized by the tier; a
+   * counted press of Great or better on the chord (early or late) launches its shockwave from the
+   * eighth after it, and only an early press brings a hit-stop.
+   */
+  pressCleaves: boolean;
 }
 
 /** The scripted demo's rules: today's behavior. */
-export const DEMO_RULES: Readonly<Rules> = Object.freeze({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false, pressClasses: false, selfFiring: false, gridSounds: false });
+export const DEMO_RULES: Readonly<Rules> = Object.freeze({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false, pressClasses: false, selfFiring: false, gridSounds: false, pressCleaves: false });
