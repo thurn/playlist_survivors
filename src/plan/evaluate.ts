@@ -11,7 +11,7 @@ import { Warp } from "../core/warp.ts";
 import { latestWave, waveRadius } from "../mapgen/openfield.ts";
 import { countUpTo, enemyPos, heroSample } from "./sample.ts";
 import { StaticIndex, type PlanIndex } from "./view.ts";
-import { partnerPress, type EffectEvent, type EnemyRecord, type Plan, type PlanSection, type UiEvent } from "./types.ts";
+import { partnerPress, type EffectEvent, type EnemyRecord, type Plan, type PlanInput, type PlanSection, type UiEvent } from "./types.ts";
 
 export const DEATH_FALL = 0.5;
 const FLASH_TIME = 0.05;
@@ -27,6 +27,8 @@ const TRACK_AHEAD = 2.2;
 const PRESS_SHOW = 0.6;
 /** A released key's light fades over this long. */
 const KEY_FADE = 0.25;
+/** A tier-up flashes the groove meter for this long (song seconds). */
+const TIER_FLASH = 0.6;
 
 /** The groove meter at song time s (its last value at or before s). */
 export function grooveAt(g: { s: ArrayLike<number>; v: ArrayLike<number> }, s: number): number {
@@ -159,6 +161,51 @@ export interface Shockwave {
 
 export type KeyName = "up" | "down" | "left" | "right";
 
+/** A key on the key display: how lit (0–1), the press's rating or style, and whether it is outlined (an off-beat press). */
+export interface KeyLight {
+  lit: number;
+  rating?: string;
+  outline?: boolean;
+}
+
+/**
+ * How the key display shows a press (not a partner): a counted press in its rating's colour
+ * (loose beyond Good), an off-beat press outlined in its rating's, a double tap grey ("extra"),
+ * a stray press red ("stumble"). Presses without a class (the demo, older plans) as before.
+ */
+export function pressStyle(i: PlanInput): { rating?: string; outline?: boolean } {
+  switch (i.class) {
+    case "counted":
+      return { rating: i.rating ?? "loose" };
+    case "offbeat":
+      return { rating: i.offbeat, outline: true };
+    case "double":
+      return { rating: "extra" };
+    case "stray":
+      return { rating: "stumble" };
+  }
+  if (i.extra) return { rating: i.stumble ? "stumble" : (i.offbeat ?? "extra") };
+  return { rating: i.rating };
+}
+
+/** Song seconds spent at each tier, over the sections with a steady beat, up to song time `until`. */
+export function tierTimes(plan: Plan, until: number): number[] {
+  const t = plan.tier;
+  if (!t) return [];
+  const out = [0, 0, 0, 0];
+  for (const sec of plan.sections) {
+    if (sec.movement !== "steps") continue;
+    const a = sec.s0;
+    const b = Math.min(sec.s1, until);
+    for (let k = 0; k < t.s.length; k++) {
+      const lo = Math.max(a, t.s[k]);
+      const hi = Math.min(b, k + 1 < t.s.length ? t.s[k + 1] : Infinity);
+      if (hi > lo) out[t.v[k]] += hi - lo;
+    }
+  }
+  return out;
+}
+
 export interface HudState {
   kills: number;
   /** Rated presses so far. */
@@ -166,8 +213,19 @@ export interface HudState {
   /** The groove meter (0–1) and the damage bonus it gives (0.19 is +19%). */
   groove: number;
   bonus: number;
-  /** The arrow keys: how lit each one is (0–1) and the rating of the press that lit it. */
-  keys: Record<KeyName, { lit: number; rating?: string }>;
+  /**
+   * The arrow keys: how lit each one is (0–1) and the style of the press that lit it: a rating
+   * (perfect, great, good; loose), extra (a double tap, grey) or stumble (a stray press, red);
+   * an off-beat press is outlined.
+   */
+  keys: Record<KeyName, KeyLight>;
+  /** Play mode's stomps with Space: both feet, lit like a key. */
+  stomp?: KeyLight;
+  /**
+   * Press classes (play mode): the tier (0–3), the groove values its marks stand at, and a flash
+   * (1 at a tier-up, fading).
+   */
+  tier?: { n: number; marks: number[]; flash: number };
   /**
    * The beat track: upcoming beats (seconds until each) from the song, downbeats marked. Play
    * mode telegraphs the cleaves: accents that will cleave, and the beat to press for each.
@@ -192,7 +250,11 @@ export interface HudState {
   banners: { text: string; age: number; dur: number }[];
   title?: { age: number; remaining: number };
   boss?: { name: string; health: number; age: number; remaining: number };
-  end?: { age: number; averageGroove: number };
+  /**
+   * The end card. With press classes: loose and stray presses, and the song seconds spent at each
+   * tier in the sections with a steady beat.
+   */
+  end?: { age: number; averageGroove: number; loose?: number; strays?: number; tierTime?: number[] };
   /** The hero's health (fraction of its maximum; always full without play mode's health), its hurt flash and its heal glow (0–1). */
   health: number;
   hurt: number;
@@ -892,8 +954,10 @@ export class Evaluator {
     const ratings = { perfect: 0, great: 0, good: 0 };
     const keys: HudState["keys"] = { up: { lit: 0 }, down: { lit: 0 }, left: { lit: 0 }, right: { lit: 0 } };
     const presses: HudState["presses"] = [];
-    const lastPress: Partial<Record<KeyName, { s: number; rating?: string; released?: number }>> = {};
+    // (The feet, "space", light for Space and for the opposite key of a two-key stomp, which releases them.)
+    const lastPress: Partial<Record<KeyName | "space", { s: number; rating?: string; outline?: boolean; released?: number; via?: string }>> = {};
     let rating: string | undefined;
+    let outline: boolean | undefined;
     // The heal streak, as the simulation counts it: a rated press of Great or better extends it; a lesser one or a stumble ends it.
     let streak = 0;
     for (const i of plan.inputs) {
@@ -904,31 +968,34 @@ export class Evaluator {
         else if (!i.extra) streak = i.rating === "perfect" || i.rating === "great" ? streak + 1 : 0;
       }
       if (i.kind === "release") {
-        if (i.key === "space") continue;
         const lp = lastPress[i.key];
-        if (lp && lp.released === undefined) lp.released = i.s;
+        // (Feet lit by a two-key stomp go out with its second key, not with Space.)
+        if (lp && lp.released === undefined && (lp.via === undefined || lp.via === i.key)) lp.released = i.s;
+        const feet = lastPress.space;
+        if (feet?.via === i.key && feet.released === undefined) feet.released = i.s;
         continue;
       }
-      // An extra press (not its grid time's rated, counted press) shows its off-beat rating on the key
-      // display: grey when it has none (a double tap), red when it stumbled or strayed. It is not counted.
-      if (i.extra) {
-        if (i.key !== "space") lastPress[i.key] = { s: i.s, rating: i.stumble || i.class === "stray" ? "stumble" : (i.offbeat ?? "extra") };
-        continue;
-      }
-      // A diagonal's second key (or a rock step's) shows the rating of the press it bent (or rocked).
-      // A stomp with Space lights no arrow (it counts as a press).
-      if (!partner) rating = i.rating;
-      if (i.key !== "space") lastPress[i.key] = { s: i.s, rating: partner ? rating : i.rating };
-      if (partner) continue;
+      // Each press lights its key in its style (a Space stomp lights the feet). A diagonal's second
+      // key (or a rock step's) shows the style of the press it bent (or rocked). Only rated,
+      // counted presses count.
+      if (!partner) ({ rating, outline } = pressStyle(i));
+      lastPress[i.key] = { s: i.s, rating, outline };
+      // Two opposite keys together are one stomp: both feet too, in the first key's style.
+      if (i.stomp && i.key !== "space") lastPress.space = { s: i.s, rating, outline, via: i.key };
+      if (partner || i.extra) continue;
       if (i.rating) ratings[i.rating]++;
       if (s - i.s < PRESS_SHOW) presses.push({ age: s - i.s, delta: i.delta ?? 0, rating: i.rating, steps: i.steps });
     }
+    const light = (lp: { rating?: string; outline?: boolean; released?: number }): KeyLight => ({
+      lit: lp.released === undefined ? 1 : clamp(1 - (s - lp.released) / KEY_FADE, 0, 1),
+      rating: lp.rating,
+      ...(lp.outline ? { outline: true } : {}),
+    });
     for (const k of Object.keys(keys) as KeyName[]) {
       const lp = lastPress[k];
-      if (!lp) continue;
-      const lit = lp.released === undefined ? 1 : clamp(1 - (s - lp.released) / KEY_FADE, 0, 1);
-      keys[k] = { lit, rating: lp.rating };
+      if (lp) keys[k] = light(lp);
     }
+    const stomp = lastPress.space ? light(lastPress.space) : undefined;
     const ticks: HudState["ticks"] = [];
     const bs = plan.songBeats;
     for (let bi = Math.max(0, Math.floor(sbi)); bi < bs.length && bs[bi] - s <= TRACK_AHEAD; bi++) {
@@ -971,7 +1038,13 @@ export class Evaluator {
       if (u.kind === "banner" && s - u.s < u.dur) banners.push({ text: u.text, age: s - u.s, dur: u.dur });
       if (u.kind === "title" && s < u.until + 1.5) title = { age: s - u.s, remaining: u.until - s };
       if (u.kind === "bossBar" && s < u.until + 1) boss = { name: u.name, health: u.health.findLast(([t]) => t <= s)?.[1] ?? 1, age: s - u.s, remaining: u.until - s };
-      if (u.kind === "end") end = { age: s - u.s, averageGroove: plan.stats.averageGroove };
+      if (u.kind === "end") {
+        end = { age: s - u.s, averageGroove: plan.stats.averageGroove };
+        if (plan.tier) {
+          const own = plan.inputs.filter((i) => i.kind === "press" && i.steps);
+          Object.assign(end, { loose: own.filter((i) => i.class === "counted" && !i.rating).length, strays: own.filter((i) => i.class === "stray").length, tierTime: tierTimes(plan, this.index.blastS() ?? plan.duration) });
+        }
+      }
     }
     const progress = clamp(s / plan.duration, 0, 1);
     // The count-in: four count marks pulse on the last four beats before step movement.
@@ -986,7 +1059,14 @@ export class Evaluator {
     const hurt = hurtAt(plan.health, s);
     const heal = healAt(plan.health, s);
     const streakHud = plan.rules?.health ? { n: streak, healing: streak >= this.lib.hero.health.heal.streakFrom } : undefined;
-    return { kills, ratings, groove, bonus: this.maxBonus * groove, keys, ticks, heartGlow, presses, xp, level, weapons, progress, elapsed: s, beatPhase, barPhase, free, countIn, energy, banners, title, boss, end, health, hurt, heal, streak: streakHud };
+    let tier: HudState["tier"];
+    if (plan.tier) {
+      const k = countUpTo(plan.tier.s, s) - 1;
+      const n = plan.tier.v[Math.max(0, k)];
+      const up = k > 0 && plan.tier.v[k] > plan.tier.v[k - 1];
+      tier = { n, marks: this.lib.hero.meter.tiers, flash: up ? clamp(1 - (s - plan.tier.s[k]) / TIER_FLASH, 0, 1) : 0 };
+    }
+    return { kills, ratings, groove, bonus: this.maxBonus * groove, keys, stomp, tier, ticks, heartGlow, presses, xp, level, weapons, progress, elapsed: s, beatPhase, barPhase, free, countIn, energy, banners, title, boss, end, health, hurt, heal, streak: streakHud };
   }
 }
 

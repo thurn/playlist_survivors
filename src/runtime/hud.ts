@@ -6,12 +6,10 @@ import { Container, Graphics } from "pixi.js";
 import type { CreditsFile } from "../assets/types.ts";
 import type { ContentLibrary } from "../content/loader.ts";
 import { clamp, smoothstep } from "../core/shaping.ts";
-import type { Frame, KeyName } from "../plan/evaluate.ts";
+import type { Frame, KeyLight, KeyName } from "../plan/evaluate.ts";
 import type { Plan } from "../plan/types.ts";
 import { PixelText, textWidth } from "./font.ts";
-
-/** Press ratings: gold for Perfect, white for Great, pale blue for Good, plain for unrated. */
-const RATING_COLORS: Record<string, number> = { perfect: 0xffd040, great: 0xffffff, good: 0x9fd0ff, extra: 0x4a4a54, stumble: 0xe04848 };
+import { endCardGrade, endCardLines, RATING_COLORS, TIER_COLORS, tierLabel } from "./hud-lines.ts";
 /** Play mode's telegraphs: the cleaves' accents and the beats to press for them. */
 const TELEGRAPH = 0xffc040;
 const PLAIN = 0x8890a8;
@@ -182,17 +180,22 @@ export class Hud {
       this.text(`GREAT ${hud.ratings.great}`, px(948), py(54), fs, RATING_COLORS.great, "right", intro);
       this.text(`GOOD ${hud.ratings.good}`, px(948), py(64), fs, RATING_COLORS.good, "right", intro);
 
-      // The key display: four arrow keys, lit while pressed, tinted by the press's rating.
+      // The key display: four arrow keys, lit while pressed, tinted by the press's style (an off-beat
+      // press outlined in its rating's colour), and both feet for a stomp with Space.
+      const keyFace = (key: KeyLight, x: number, y: number, w: number, h: number) => {
+        const col0 = ratingColor(key.rating);
+        const solid = key.lit > 0 && !key.outline;
+        g.roundRect(px(x), py(y), w * u, h * u, 4 * u).fill({ color: solid ? col0 : 0x101018, alpha: (0.25 + 0.65 * key.lit) * intro });
+        g.roundRect(px(x), py(y), w * u, h * u, 4 * u).stroke({ color: key.lit > 0 ? col0 : 0x606878, width: Math.max(1, (key.outline && key.lit > 0 ? 2.5 : 1) * u), alpha: intro });
+      };
       for (const k of Object.keys(KEY_PLACES) as KeyName[]) {
         const [col, row, ang] = KEY_PLACES[k];
         const key = hud.keys[k];
         const ks = 22;
         const kx = 26 + col * (ks + 3);
         const ky = 452 + row * (ks + 3);
-        const col0 = ratingColor(key.rating);
         swell(kx, ky, ks, ks, () => {
-          g.roundRect(px(kx), py(ky), ks * u, ks * u, 4 * u).fill({ color: key.lit > 0 ? col0 : 0x101018, alpha: (0.25 + 0.65 * key.lit) * intro });
-          g.roundRect(px(kx), py(ky), ks * u, ks * u, 4 * u).stroke({ color: key.lit > 0 ? col0 : 0x606878, width: Math.max(1, u), alpha: intro });
+          keyFace(key, kx, ky, ks, ks);
           // The arrow.
           const cx0 = px(kx + ks / 2);
           const cy0 = py(ky + ks / 2);
@@ -200,8 +203,13 @@ export class Hud {
           const tip = { x: cx0 + Math.cos(ang) * r, y: cy0 + Math.sin(ang) * r };
           const l = { x: cx0 + Math.cos(ang + 2.4) * r, y: cy0 + Math.sin(ang + 2.4) * r };
           const rr = { x: cx0 + Math.cos(ang - 2.4) * r, y: cy0 + Math.sin(ang - 2.4) * r };
-          g.poly([tip.x, tip.y, l.x, l.y, rr.x, rr.y]).fill({ color: key.lit > 0.5 ? 0x101018 : 0xd0d8e8, alpha: intro });
+          g.poly([tip.x, tip.y, l.x, l.y, rr.x, rr.y]).fill({ color: key.lit > 0.5 && !key.outline ? 0x101018 : 0xd0d8e8, alpha: intro });
         });
+      }
+      if (hud.stomp || this.plan.rules?.strides) {
+        // Both feet, beside the arrows: a stomp (Space) stamps them.
+        const foot = hud.stomp ?? { lit: 0 };
+        for (const [i, fx] of [104, 117].entries()) swell(fx, 479 + (i ? 0 : 2), 10, 18, () => keyFace(foot, fx, 479 + (i ? 0 : 2), 10, 18));
       }
 
       // Song progress line with section marks.
@@ -253,16 +261,22 @@ export class Hud {
         g.circle(px(x), py(cy - 20), r).stroke({ color: ratingColor(pr.rating), width: 2 * u, alpha: a });
         g.circle(px(x), py(cy - 20), 2.5 * u).fill({ color: ratingColor(pr.rating), alpha: a });
       }
-      // The groove meter beside the heart, with the damage bonus.
+      // The groove meter beside the heart: with press classes, its tier marks and the tier (a
+      // tier-up flashes it); otherwise the damage bonus.
       {
         const gx = cx + 212;
         const gw = 70;
+        const tier = hud.tier;
+        const barColor = tier ? TIER_COLORS[Math.min(TIER_COLORS.length - 1, tier.n)] : hud.groove > 0.85 ? 0xffd040 : 0x60c0ff;
         swell(gx, cy - 5, gw, 10, () => {
+          if (tier && tier.flash > 0) g.roundRect(px(gx - 3), py(cy - 8), (gw + 6) * u, 16 * u, 5 * u).fill({ color: barColor, alpha: 0.45 * tier.flash * intro });
           g.roundRect(px(gx), py(cy - 5), gw * u, 10 * u, 3 * u).fill({ color: 0x000000, alpha: 0.55 * intro });
-          g.roundRect(px(gx + 1), py(cy - 4), (gw - 2) * u * clamp(hud.groove, 0, 1), 8 * u, 3 * u).fill({ color: hud.groove > 0.85 ? 0xffd040 : 0x60c0ff, alpha: intro });
+          g.roundRect(px(gx + 1), py(cy - 4), (gw - 2) * u * clamp(hud.groove, 0, 1), 8 * u, 3 * u).fill({ color: barColor, alpha: intro });
+          for (const m of tier?.marks ?? []) g.rect(px(gx + 1 + (gw - 2) * m) - Math.max(1, u) / 2, py(cy - 6), Math.max(1, u), 12 * u).fill({ color: 0xffffff, alpha: 0.7 * intro });
         });
         this.text("GROOVE", px(gx), py(cy - 16), fs, 0xb0b0c0, "left", intro);
-        this.text(`+${Math.round(hud.bonus * 100)}%`, px(gx + gw + 6), py(cy - 4), fs, hud.groove > 0.85 ? 0xffd040 : 0xffffff, "left", intro);
+        if (tier) this.text(tierLabel(tier.n), px(gx + gw + 6), py(cy - 4 - 2 * tier.flash), Math.max(1, Math.round((1 + tier.flash) * u)), tier.flash > 0 ? 0xffffff : barColor, "left", intro);
+        else this.text(`+${Math.round(hud.bonus * 100)}%`, px(gx + gw + 6), py(cy - 4), fs, hud.groove > 0.85 ? 0xffd040 : 0xffffff, "left", intro);
         // Play mode's heal streak: clean beats in a row, green once each one heals extra.
         if (hud.streak && hud.streak.n >= 2) this.text(`STREAK ${hud.streak.n}`, px(gx), py(cy + 8), fs, hud.streak.healing ? 0x60ff90 : 0xb0b0c0, "left", intro);
       }
@@ -327,18 +341,17 @@ export class Hud {
       const y0 = 120 - scroll;
       this.text("ENCORE!", px(480), py(y0), Math.max(1, Math.round(5 * u)), 0xffe080, "center", a);
       const big = Math.max(1, Math.round(2 * u));
-      this.text(`KILLS ${hud.kills}`, px(480), py(y0 + 60), big, 0xffffff, "center", a);
-      this.text(`PERFECT ${hud.ratings.perfect}`, px(480), py(y0 + 82), big, RATING_COLORS.perfect, "center", a);
-      this.text(`GREAT ${hud.ratings.great}`, px(480), py(y0 + 104), big, RATING_COLORS.great, "center", a);
-      this.text(`GOOD ${hud.ratings.good}`, px(480), py(y0 + 126), big, RATING_COLORS.good, "center", a);
-      this.text(`AVERAGE GROOVE +${Math.round(hud.end.averageGroove * this.lib.hero.groove.maxBonus * 100)}%`, px(480), py(y0 + 148), big, 0x80e0ff, "center", a);
-      let y = y0 + 200;
-      // Play mode: the grade, the best grade and where the player took over.
-      const end = options.end;
+      const lines = endCardLines(hud, hud.end, this.lib.hero.groove.maxBonus);
+      lines.forEach((l, i) => this.text(l.text, px(480), py(y0 + 60 + 22 * i), big, l.color, "center", a));
+      const after = y0 + 60 + 22 * lines.length;
+      let y = after + 30;
+      // Play mode: the grade, the best grade and where the player took over (a recorded run of play
+      // mode, such as ?player=, shows its grade from the average groove).
+      const end: EndCardInfo | undefined = endCardGrade(hud.end, options.end);
       if (end) {
-        this.text(`GRADE ${end.grade}`, px(480), py(y0 + 176), Math.max(1, Math.round(4 * u)), 0xffd040, "center", a);
+        this.text(`GRADE ${end.grade}`, px(480), py(after + 6), Math.max(1, Math.round(4 * u)), 0xffd040, "center", a);
         const notes = [end.newBest ? "NEW BEST!" : end.best ? `BEST ${end.best}` : "", end.startedAt ? `STARTED AT ${fmtTime(end.startedAt)}` : ""].filter((x) => x);
-        notes.forEach((n, i) => this.text(n, px(480), py(y0 + 214 + i * 14), fs, 0xc0c0d8, "center", a));
+        notes.forEach((n, i) => this.text(n, px(480), py(after + 44 + i * 14), fs, 0xc0c0d8, "center", a));
         y += 50 + notes.length * 14;
       }
       // (Above the end card's menu, when there is one.)

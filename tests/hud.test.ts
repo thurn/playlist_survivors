@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { plannerInput, runPlanner } from "../scripts/lib/plan-node.ts";
 import { Evaluator } from "../src/plan/evaluate.ts";
+import type { PlanInput } from "../src/plan/types.ts";
+import { gradeFor } from "../src/plan/grade.ts";
+import { endCardGrade, endCardLines } from "../src/runtime/hud-lines.ts";
 import { syntheticSongMap } from "./fixtures/synthetic-song.ts";
 
 const songMap = syntheticSongMap();
@@ -50,5 +53,87 @@ describe("the key display", () => {
     const keys = new Evaluator(plan, lib).evaluate(s + 0.03).hud;
     expect(keys.keys.up.rating).toBe("extra");
     expect(keys.ratings.perfect).toBe(1);
+  });
+});
+
+describe("press classes on the HUD", () => {
+  const plan = runPlanner({ songMap, level: PLAY });
+
+  it("shows the tier beside the groove meter, its marks, and a flash on each tier-up", () => {
+    const ev = new Evaluator(plan, lib);
+    const t = plan.tier!;
+    const up = Array.from(t.v).findIndex((v, k) => k > 0 && v > t.v[k - 1]);
+    expect(up).toBeGreaterThan(0);
+    const at = t.s[up];
+    const hud = ev.evaluate(at + 0.01).hud;
+    expect(hud.tier).toMatchObject({ n: t.v[up], marks: [0.3, 0.6, 0.85] });
+    expect(hud.tier!.flash).toBeGreaterThan(0.9);
+    expect(ev.evaluate(at + 1).hud.tier!.flash).toBe(0);
+    expect(ev.evaluate(1).hud.tier).toMatchObject({ n: 0, flash: 0 });
+    // The demo has no tiers: its meter keeps the damage bonus.
+    expect(new Evaluator(runPlanner({ songMap }), lib).evaluate(at).hud.tier).toBeUndefined();
+  });
+
+  it("styles each press class on the key display, and shows stomps as both feet", () => {
+    const s = plan.grid[200];
+    const p = (dt: number, key: PlanInput["key"], extra: Partial<PlanInput>): PlanInput[] => [
+      { s: s + dt, w: s + dt, kind: "press", key, steps: true, ...extra },
+    ];
+    const styleOf = (inputs: PlanInput[], key: "up" | "down" | "left" | "right" = "up") => {
+      const hud = new Evaluator({ ...plan, inputs }, lib).evaluate(s + 0.5).hud;
+      return { key: hud.keys[key], hud };
+    };
+    expect(styleOf(p(0, "up", { class: "counted", rating: "perfect" })).key).toMatchObject({ lit: 1, rating: "perfect" });
+    expect(styleOf(p(0, "up", { class: "counted", rating: "good" })).key.rating).toBe("good");
+    expect(styleOf(p(0, "up", { class: "counted" })).key.rating).toBe("loose");
+    expect(styleOf(p(0, "up", { class: "offbeat", offbeat: "perfect", extra: true })).key).toMatchObject({ rating: "perfect", outline: true });
+    expect(styleOf(p(0, "up", { class: "double", extra: true })).key.rating).toBe("extra");
+    expect(styleOf(p(0, "up", { class: "stray", extra: true })).key.rating).toBe("stumble");
+    // A diagonal's partner shows the style of the press it bent; neither extra press counts.
+    const bend = styleOf([...p(0, "up", { class: "counted", rating: "great" }), ...p(0.01, "right", { class: "partner", bend: true })], "right");
+    expect(bend.key.rating).toBe("great");
+    expect(bend.hud.ratings).toEqual({ perfect: 0, great: 1, good: 0 });
+    // A stomp with Space lights both feet in its rating's colour, and no arrow.
+    const stomp = styleOf(p(0, "space", { class: "counted", rating: "perfect", stomp: true }));
+    expect(stomp.hud.stomp).toMatchObject({ lit: 1, rating: "perfect" });
+    expect(stomp.key.lit).toBe(0);
+    expect(stomp.hud.ratings.perfect).toBe(1);
+    // Two opposite keys together are one stomp: both feet light in the first key's style, and go out with the second key.
+    const rock = [...p(0, "up", { class: "counted", rating: "great" }), ...p(0.02, "down", { class: "partner", stomp: true, rock: true })];
+    expect(styleOf(rock).hud.stomp).toMatchObject({ lit: 1, rating: "great" });
+    const released: PlanInput[] = [...rock, { s: s + 0.05, w: s + 0.05, kind: "release", key: "down", steps: true }];
+    expect(styleOf(released).hud.stomp!.lit).toBe(0);
+    // Space held across a two-key stomp: letting go of Space leaves the feet to the second key.
+    const overlap: PlanInput[] = [...p(-0.2, "space", { class: "counted", rating: "perfect", stomp: true }), ...rock, { s: s + 0.05, w: s + 0.05, kind: "release", key: "space", steps: true }];
+    expect(styleOf(overlap).hud.stomp).toMatchObject({ lit: 1, rating: "great" });
+  });
+
+  it("ends with kills, the rating counts, loose and stray presses, the average groove and the time at each tier", () => {
+    const ev = new Evaluator(plan, lib);
+    const endS = plan.events.ui.find((u) => u.kind === "end")!.s;
+    const hud = ev.evaluate(endS + 0.5).hud;
+    const end = hud.end!;
+    const own = plan.inputs.filter((i) => i.kind === "press" && i.steps);
+    expect(end.strays).toBe(own.filter((i) => i.class === "stray").length);
+    expect(end.loose).toBe(own.filter((i) => i.class === "counted" && !i.rating).length);
+    const pulsed = plan.sections.filter((x) => x.movement === "steps").reduce((a, x) => a + Math.min(x.s1, endS) - x.s0, 0);
+    expect(end.tierTime!.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(pulsed + 1e-6);
+    expect(end.tierTime![3]).toBeGreaterThan(10);
+    const lines = endCardLines(hud, end, lib.hero.groove.maxBonus).map((l) => l.text);
+    expect(lines).toEqual([
+      `KILLS ${hud.kills}`,
+      `PERFECT ${hud.ratings.perfect}`,
+      `GREAT ${hud.ratings.great}`,
+      `GOOD ${hud.ratings.good}`,
+      `LOOSE ${end.loose}   STRAY ${end.strays}`,
+      `AVERAGE GROOVE ${Math.round(end.averageGroove * 100)}%`,
+      `TIME AT TIER  ${end.tierTime!.map((t, i) => `${i}: ${Math.round(t)}S`).join("  ")}`,
+    ]);
+    // A recorded run of play mode (?player=) shows the grade of its average groove; the demo shows none.
+    expect(endCardGrade(end, undefined)?.grade).toBe(gradeFor(end.averageGroove));
+    expect(endCardGrade(end, { grade: "S", newBest: true })?.grade).toBe("S");
+    expect(endCardGrade({ age: 1, averageGroove: 0.9 }, undefined)).toBeUndefined();
+    // The demo's end card keeps its damage bonus.
+    expect(endCardLines(hud, { age: 1, averageGroove: 0.5 }, 0.2).map((l) => l.text).at(-1)).toBe("AVERAGE GROOVE +10%");
   });
 });
