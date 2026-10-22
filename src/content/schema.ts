@@ -68,6 +68,11 @@ export const heroDef = z.strictObject({
     idleHalfLifeBars: z.number().positive(),
     /** Damage bonus at full groove (0.2 is +20%). */
     maxBonus: z.number().min(0),
+    /**
+     * Off-beat presses (an extra press rated Great or better against the half-way point between
+     * two grid times) lift the groove past full, up to this damage bonus (0.25 is +25%).
+     */
+    offbeatBonus: z.number().min(0),
   }),
   swings: z.strictObject({
     /** The armed swing strikes on the first grid time at least this long after the press. */

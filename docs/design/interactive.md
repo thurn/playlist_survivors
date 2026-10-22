@@ -271,8 +271,12 @@ first press for each grid time is rated and arms a swing, but every press
 steps: dropping a movement press feels like lost input.
 
 - **Extra presses:** a second press for the same grid time steps like any
-  other. It flashes grey on the key display. It is not rated, does not touch
-  the groove and arms nothing.
+  other and arms nothing. Rated Great or better against the half-way point
+  to the neighbouring grid time (an eighth note on a beat grid), it shows
+  that rating on the key display and lifts the groove past full, up to +25%
+  damage (`offbeatBonus`; on-grid presses alone top out at +20%). Otherwise
+  it flashes grey and leaves the groove alone: a loose extra press never
+  costs anything.
 - **Diagonals:** a perpendicular key within 40 ms bends the step, as
   today. It is part of the same step, not a second press.
 - **Off-beat presses are limited, never punished:** a press halfway between

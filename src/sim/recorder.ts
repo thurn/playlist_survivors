@@ -79,6 +79,9 @@ export interface PressTrace {
   accuracy?: number;
   /** Extra presses: the song time of the press that took this grid time's step. */
   stepS?: number;
+  /** Extra presses: the offset from the half-way point between grid times, and its rating there. */
+  offbeatDelta?: number;
+  offbeat?: string;
   /** The press cut a hit-stop short. */
   cutHitStop?: boolean;
   /** The previous step had not landed yet (this one starts from where the hero was). */

@@ -361,6 +361,8 @@ export interface PlanInput {
   bend?: boolean;
   /** One rated press per grid slot: an extra press for a grid time that already has its step (it steps, unrated, and arms nothing). */
   extra?: boolean;
+  /** An extra press rated Great or better against the half-way point between grid times (it lifts the groove past full). */
+  offbeat?: "perfect" | "great";
   /** Did this press arm a swing? */
   armed?: boolean;
   /** Step movement (true) or free movement (false). */

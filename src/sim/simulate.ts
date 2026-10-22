@@ -30,7 +30,7 @@ import type { KeyEvent, Observation, Player } from "./player.ts";
 import { BatchRecorder, type ArrowRecord, type PressTrace, type Recorder, type SimResult } from "./recorder.ts";
 import { DEMO_RULES, type Rules } from "./rules.ts";
 import { nextStepAfter, stepRate, stepSpan, type GridSlot, type Schedule } from "./schedule.ts";
-import { armedStrike, damageMultiplier, grooveAfterPress, grooveDecay, nearestIndex, ratePressOnGrid, type Rating } from "./timing.ts";
+import { armedStrike, damageMultiplier, grooveAfterOffbeat, grooveAfterPress, grooveDecay, nearestIndex, ratePress, ratePressOnGrid, type Rating } from "./timing.ts";
 import { CorridorWorld, OpenWorld, type World } from "./world.ts";
 
 export type { ArrowRecord, Landing, SimResult, SlamRecord } from "./recorder.ts";
@@ -929,11 +929,23 @@ function engine(env: Env, st: SimState, io: Io) {
     st.landed = false;
     st.facingAngle = Math.atan2(st.step.dy, st.step.dx);
     if (extraGrid !== undefined) {
-      // An extra press for a grid time that already had its step: it steps, unrated (the key
-      // display greys it), and leaves the groove and the sword alone.
+      // An extra press for a grid time that already had its step: it steps and arms nothing. Rated
+      // Great or better against the half-way point to the neighbouring grid time (an eighth note
+      // on a beat grid), it lifts the groove past full; otherwise it is unrated (the key display
+      // greys it) and leaves the groove alone.
       input.extra = true;
+      const g0 = sch.gridTimes[extraGrid];
+      const g1 = sch.gridTimes[st.s >= g0 ? extraGrid + 1 : extraGrid - 1];
+      const off = g1 === undefined ? undefined : ratePress(hero, st.s - (g0 + g1) / 2, Math.abs(g1 - g0) / 2);
+      if (off?.rating === "perfect" || off?.rating === "great") {
+        input.offbeat = off.rating;
+        st.groove = grooveAfterOffbeat(hero, st.groove, off.accuracy);
+        rec().groove(st.s, st.groove);
+      }
       rec().input(input);
-      if (trace) rec().press!({ ...trace, outcome: "extra", gridIndex: extraGrid, gridS: sch.gridTimes[extraGrid], delta: st.s - sch.gridTimes[extraGrid], stepS: st.lastPressS });
+      if (trace) {
+        rec().press!({ ...trace, outcome: "extra", gridIndex: extraGrid, gridS: g0, delta: st.s - g0, stepS: st.lastPressS, ...(off ? { offbeatDelta: off.delta, offbeat: input.offbeat } : {}), grooveAfter: st.groove });
+      }
       return;
     }
     // Rate the press against the timing grid (the sections' grids join end to end), and arm the sword.

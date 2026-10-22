@@ -863,9 +863,10 @@ export class Evaluator {
         if (lp && lp.released === undefined) lp.released = i.s;
         continue;
       }
-      // One rated press per grid slot: an extra press flashes grey on the key display, and is not counted.
+      // One rated press per grid slot: an extra press shows its off-beat rating on the key display
+      // (grey when it has none), and is not counted.
       if (i.extra) {
-        lastPress[i.key] = { s: i.s, rating: "extra" };
+        lastPress[i.key] = { s: i.s, rating: i.offbeat ?? "extra" };
         continue;
       }
       // A diagonal's second key shows the rating of the press it bent.

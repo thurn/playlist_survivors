@@ -73,9 +73,23 @@ export function grooveDecay(hero: HeroDef, groove: number, bars: number): number
   return groove * Math.pow(0.5, Math.max(0, bars) / hero.groove.idleHalfLifeBars);
 }
 
-/** All hero damage is multiplied by this: 1.0 at no groove up to 1 + maxBonus. */
+/** The groove's ceiling: 1 (full) from on-grid presses, up to offbeatBonus / maxBonus with off-beat presses. */
+export function grooveCeiling(hero: HeroDef): number {
+  const g = hero.groove;
+  return g.maxBonus > 0 ? Math.max(1, g.offbeatBonus / g.maxBonus) : 1;
+}
+
+/**
+ * The groove after an off-beat press rated Great or better: it moves part of the way toward the
+ * ceiling scaled by the press's accuracy, and never down (a loose off-beat costs nothing).
+ */
+export function grooveAfterOffbeat(hero: HeroDef, groove: number, accuracy: number): number {
+  return Math.max(groove, grooveAfterPress(hero, groove, grooveCeiling(hero) * accuracy));
+}
+
+/** All hero damage is multiplied by this: 1.0 at no groove, 1 + maxBonus at full, up to 1 + offbeatBonus. */
 export function damageMultiplier(hero: HeroDef, groove: number): number {
-  return 1 + hero.groove.maxBonus * clamp(groove, 0, 1);
+  return 1 + hero.groove.maxBonus * clamp(groove, 0, grooveCeiling(hero));
 }
 
 // ------------------------------------------------------- when the sword strikes

@@ -4,7 +4,7 @@ import { TAU, wrapAngle } from "../src/core/geometry.ts";
 import { aim, type AimTarget } from "../src/sim/aim.ts";
 import { stepSpan } from "../src/sim/schedule.ts";
 import { bendStep, startStep, stepEnd, stepPose, walkFrame, walkTarget, walkVelocity, type Clamp } from "../src/sim/movement.ts";
-import { armedStrike, damageMultiplier, grooveAfterPress, grooveDecay, ratePress, ratePressOnGrid, windupStart } from "../src/sim/timing.ts";
+import { armedStrike, damageMultiplier, grooveAfterOffbeat, grooveAfterPress, grooveDecay, ratePress, ratePressOnGrid, windupStart } from "../src/sim/timing.ts";
 
 const hero = loadRealContent().hero;
 
@@ -133,6 +133,19 @@ describe("timing", () => {
     expect(damageMultiplier(hero, 0)).toBe(1);
     expect(damageMultiplier(hero, 0.95)).toBeCloseTo(1.19, 9);
     expect(damageMultiplier(hero, 1)).toBeCloseTo(1.2, 9);
+  });
+
+  it("lets off-beat presses lift the groove past full, to +25% damage, and never lower it", () => {
+    expect(grooveAfterOffbeat(hero, 1, 1)).toBeCloseTo(1.075, 9);
+    let g = 1;
+    for (let k = 0; k < 40; k++) g = grooveAfterOffbeat(hero, g, 1);
+    expect(g).toBeCloseTo(1.25, 6);
+    expect(damageMultiplier(hero, g)).toBeCloseTo(1.25, 6);
+    expect(damageMultiplier(hero, 2)).toBeCloseTo(1.25, 9);
+    // A Good off-beat (accuracy 0.4) when the groove is already high leaves it alone.
+    expect(grooveAfterOffbeat(hero, 0.9, 0.4)).toBe(0.9);
+    // On-grid presses alone pull it back toward their accuracy.
+    expect(grooveAfterPress(hero, 1.25, 1)).toBeCloseTo(1.175, 9);
   });
 
   it("arms the swing for the first grid time at least 90 ms after the press", () => {

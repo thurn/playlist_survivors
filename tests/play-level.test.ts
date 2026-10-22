@@ -5,6 +5,7 @@ import { levelResolver, readSource } from "../scripts/lib/files.ts";
 import { plannerInput, propsFromAtlas } from "../scripts/lib/plan-node.ts";
 import { prepare, runSim, virtualPlayer } from "../src/planner/plan.ts";
 import type { KeyEvent } from "../src/sim/player.ts";
+import { grooveAt } from "../src/plan/evaluate.ts";
 import { BatchRecorder } from "../src/sim/recorder.ts";
 import { Sim, HERO_ANIMS, HERO_RATE } from "../src/sim/simulate.ts";
 import { ratePress } from "../src/sim/timing.ts";
@@ -134,6 +135,37 @@ describe("play-mode rules", () => {
     const diag = Math.hypot(44 + 44 / Math.SQRT2, 44 / Math.SQRT2);
     expect(m.travel).toBeGreaterThan(diag + 30);
     expect(m.travel).toBeCloseTo(mash(demo.rules).travel, 6);
+  });
+
+  it("lifts the groove past full for eighth notes on the off-beat, and ignores sloppy extras", () => {
+    const sec = ctx.sections.find((s) => s.label === "theme-a")!;
+    const grid = Array.from(sch.gridTimes).filter((g) => g > sec.s0 + 2).slice(0, 17);
+    const run = (offset: number) => {
+      const rec = new BatchRecorder();
+      const sim = new Sim(ctx, sch, new CorridorWorld(map, sch), play.rules, rec);
+      sim.advanceTo(grid[0] - 0.5);
+      for (let k = 0; k + 1 < grid.length; k++) {
+        const half = (grid[k] + grid[k + 1]) / 2;
+        sim.key({ s: grid[k], kind: "press", key: k % 2 ? "left" : "right" });
+        sim.key({ s: grid[k] + 0.02, kind: "release", key: k % 2 ? "left" : "right" });
+        sim.key({ s: half + offset, kind: "press", key: k % 2 ? "right" : "left" });
+        sim.key({ s: half + offset + 0.02, kind: "release", key: k % 2 ? "right" : "left" });
+      }
+      sim.advanceTo(grid[grid.length - 1] - 0.01);
+      sim.runToEnd();
+      const r = rec.result({ endS: sim.s, animNames: HERO_ANIMS, heroRate: HERO_RATE });
+      const extras = r.inputs.filter((i) => i.kind === "press" && i.extra && i.s > grid[0] && i.s < grid[grid.length - 1]);
+      return { groove: grooveAt(r.groove, grid[grid.length - 1] - 0.01), extras };
+    };
+    const onBeat = run(0);
+    expect(onBeat.extras.length).toBe(16);
+    expect(onBeat.extras.every((i) => i.offbeat === "perfect")).toBe(true);
+    expect(onBeat.groove).toBeGreaterThan(1.05);
+    // Extras outside the Great window around the half-beat are unrated: the groove stays at what the beat presses give.
+    const sloppy = run(-0.13);
+    expect(sloppy.extras.length).toBe(16);
+    expect(sloppy.extras.every((i) => i.offbeat === undefined)).toBe(true);
+    expect(sloppy.groove).toBeLessThanOrEqual(1);
   });
 
   it("walks at full speed in the calm prelude", () => {

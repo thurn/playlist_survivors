@@ -50,8 +50,10 @@ export interface PressRow {
   strikeS?: number;
   heavy?: boolean;
   noSwing?: string;
-  /** Extra presses: ms since the press that took the slot. */
+  /** Extra presses: ms since the press that took the slot, and the off-beat rating and offset. */
   sinceStepMs?: number;
+  offbeat?: string;
+  offbeatDeltaMs?: number;
   /** Applied: how long after the press (ms, by song time) the frame applied it, and whether it rolled back. */
   applyLagMs?: number;
   late?: boolean;
@@ -109,6 +111,10 @@ export function pressRows(log: PlayLogFile): PressRow[] {
         row.heavy = t.heavy;
         row.noSwing = t.noSwing;
         if (t.outcome === "extra" && t.stepS !== undefined) row.sinceStepMs = (t.s - t.stepS) * 1000;
+        if (t.outcome === "extra") {
+          row.offbeat = t.offbeat;
+          if (t.offbeatDelta !== undefined) row.offbeatDeltaMs = t.offbeatDelta * 1000;
+        }
       } else if (a) row.outcome = "untraced";
     }
     rows.push(row);
@@ -159,6 +165,9 @@ export function summarize(log: PlayLogFile, opts: SummaryOptions = {}): string {
   const ratings = new Map<string, number>();
   for (const r of rows) if (r.outcome === "step") ratings.set(r.rating ?? "(none)", (ratings.get(r.rating ?? "(none)") ?? 0) + 1);
   if (ratings.size > 0) say(`  step ratings: ${[...ratings].map(([k, n]) => `${k} ${n}`).join(", ")}`);
+  const offbeats = new Map<string, number>();
+  for (const r of rows) if (r.outcome === "extra") offbeats.set(r.offbeat ?? "(none)", (offbeats.get(r.offbeat ?? "(none)") ?? 0) + 1);
+  if (offbeats.size > 0) say(`  extra presses' off-beat ratings: ${[...offbeats].map(([k, n]) => `${k} ${n}`).join(", ")}`);
   const noSwing = rows.filter((r) => r.outcome === "step" && r.noSwing);
   if (noSwing.length > 0) say(`  steps that armed no swing: ${noSwing.length} (${[...new Set(noSwing.map((r) => r.noSwing))].join(", ")})`);
   say();
@@ -230,6 +239,7 @@ export function summarize(log: PlayLogFile, opts: SummaryOptions = {}): string {
       if (r.noSwing) notes.push(`no swing: ${r.noSwing}`);
       if (r.heavy) notes.push("CLEAVE");
       if (r.sinceStepMs !== undefined) notes.push(`${f(r.sinceStepMs)} ms after the slot's step`);
+      if (r.offbeatDeltaMs !== undefined) notes.push(`off-beat ${r.offbeat ?? "unrated"} (${f(r.offbeatDeltaMs)} ms)`);
       if (r.rollback) notes.push("rollback");
       if (r.late) notes.push("LATE (applied at settled time)");
       if (r.runs !== undefined && r.runs > 1) notes.push(`ran ${r.runs}×`);
