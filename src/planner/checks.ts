@@ -10,7 +10,7 @@ import { shapeContains, wrapAngle } from "../core/geometry.ts";
 import { lerp } from "../core/shaping.ts";
 import { Warp } from "../core/warp.ts";
 import { RouteLookup } from "../mapgen/mapgen.ts";
-import type { EnemyRecord, Plan } from "../plan/types.ts";
+import { partnerPress, type EnemyRecord, type Plan } from "../plan/types.ts";
 import { enemyPos, heroSample } from "../plan/sample.ts";
 import { aim, catches, type AimTarget } from "../sim/aim.ts";
 import { HITSTOP_MAX, HITSTOP_MIN, POP_CAP, spriteOffscreen } from "../sim/simulate.ts";
@@ -76,11 +76,12 @@ export function planPaceAt(plan: Plan, s: number): number {
   return p[k] + (p[k + 1] - p[k]) * Math.min(1, f - k);
 }
 
-/** Song-time spans in which a key is held: from each press to its key's release. */
+/** Song-time spans in which a direction key is held: from each press to its key's release (Space, a stomp, moves nothing). */
 export function heldSpans(inputs: Plan["inputs"]): [number, number][] {
   const out: [number, number][] = [];
   const down = new Map<string, number>();
   for (const i of inputs) {
+    if (i.key === "space") continue;
     if (i.kind === "press") {
       if (!down.has(i.key)) down.set(i.key, i.s);
     } else if (down.has(i.key)) {
@@ -122,9 +123,10 @@ function checkStrideInputs(plan: Plan, warp: Warp, stopS: number): CheckResult {
   const spans = heldSpans(plan.inputs);
   const movementAt = (s: number) => (plan.sections.findLast((x) => s >= x.s0 - 1e-9) ?? plan.sections[0]).movement;
   // Every stride start: each press, and each step of the stride period (in step movement) while a key is held.
-  // (A held step at the very moment a press strides adds nothing: the press's stride stands.)
+  // (A held step at the very moment a press strides adds nothing: the press's stride stands. A stomp
+  // with Space starts no movement: a rock step back belongs to the stride it rocks.)
   const all: { s: number; w: number; held: boolean }[] = [];
-  for (const i of plan.inputs) if (i.kind === "press" && !i.bend) all.push({ s: i.s, w: i.w, held: false });
+  for (const i of plan.inputs) if (i.kind === "press" && !partnerPress(i) && i.key !== "space") all.push({ s: i.s, w: i.w, held: false });
   for (const s of st.steps) if (movementAt(s) === "steps" && heldAt(spans, s)) all.push({ s, w: warp.toWorld(s), held: true });
   all.sort((a, b) => a.w - b.w || Number(a.held) - Number(b.held) || a.s - b.s);
   const starts: typeof all = [];

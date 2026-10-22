@@ -2,7 +2,7 @@
 # expect: the hero is already defined at content/hero.yaml
 hero:
   step: { length: 44, durationMs: 110, hop: 5, diagonalWindowMs: 40 }
-  stride: { durationMs: 110, hop: 5, maxPeriodS: 0.4, freePeriodS: 0.35 }
+  stride: { durationMs: 110, hop: 5, maxPeriodS: 0.4, freePeriodS: 0.35, stompMs: 40 }
   walk: { speed: 80, accelMs: 60, strideCycle: 64 }
   timing: { perfectMs: 35, greatMs: 70, goodMs: 120, floor: 0.1 }
   groove: { follow: 0.3, idleHalfLifeBars: 8, maxBonus: 0.2, offbeatBonus: 0.25 }

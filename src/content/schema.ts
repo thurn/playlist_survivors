@@ -59,6 +59,8 @@ export const heroDef = z.strictObject({
     maxPeriodS: z.number().positive(),
     /** The stride period in sections without a steady beat (seconds). */
     freePeriodS: z.number().positive(),
+    /** Two opposite keys this close together (ms) make one stomp: the hero stands still. */
+    stompMs: z.number().min(0),
   }),
   walk: z.strictObject({
     /** World pixels per world-second. */

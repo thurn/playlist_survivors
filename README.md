@@ -49,6 +49,7 @@ unlocks audio). Use wired headphones or speakers.
 | Key | In play | In menus |
 |---|---|---|
 | Arrows or WASD | Move in fixed-speed strides, 140 px/s however you press: every press strides at once with the ground built up since the last stride (a full stride, about 45 px, after a beat's pause), and a held key strides on every beat (every eighth note when the beat is slow). One press per beat slot is rated; a second, off-beat press is fine; any other extra press stumbles, shown red, but still strides. In free sections held keys walk. Two perpendicular keys within 40 ms make one diagonal stride. | Up/Down (W/S) move the selection; Right chooses |
+| Space, or two opposite keys within 40 ms | Stomp: press without moving, rated like any press. Opposite keys rock the first key's stride out and back. While a direction is held, a stomp skips the next held stride (the next two when the beat is slow), so holding and stomping on every beat stands still. | (Space chooses, below) |
 | Enter, Space, a click | — | Choose |
 | Esc | Pause (losing focus pauses too) | Resume |
 

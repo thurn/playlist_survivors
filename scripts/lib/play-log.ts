@@ -48,7 +48,7 @@ export interface PressRow {
   /**
    * What happened: the keyboard's fate when it never reached the game (repeat, disabled, held),
    * dropped (a count-in or restart threw it away), unapplied (queued but never applied),
-   * or the simulation's outcome (stride, or step in older logs; extra, stumble, ignored, bend, walk).
+   * or the simulation's outcome (stride, or step in older logs; stomp, rock, extra, stumble, ignored, bend, walk).
    */
   outcome: string;
   /** Strides: the stride's length, the budget left after it, and the ground an interrupted stride gave back (px). */
@@ -157,8 +157,8 @@ export interface SummaryOptions {
   table?: boolean;
 }
 
-/** A rated press that moved the hero: a stride, or a step in logs from before strides. */
-const counted = (outcome: string) => outcome === "stride" || outcome === "step";
+/** A press rated on its own: a stride or a stomp, or a step in logs from before strides. */
+const counted = (outcome: string) => outcome === "stride" || outcome === "stomp" || outcome === "step";
 
 /** A plain-text report. */
 export function summarize(log: PlayLogFile, opts: SummaryOptions = {}): string {

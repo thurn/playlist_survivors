@@ -12,6 +12,11 @@ import type { HeroDef } from "../content/schema.ts";
 import { clamp, smoothstep } from "../core/shaping.ts";
 
 export type Key = "up" | "down" | "left" | "right";
+/** A gameplay key: a direction, or Space (play mode's stomp). */
+export type InputKey = Key | "space";
+
+/** Two keys on opposite sides (Left and Right, or Up and Down)? */
+export const opposite = (a: Key, b: Key): boolean => KEY_DIR[a].x === -KEY_DIR[b].x && KEY_DIR[a].y === -KEY_DIR[b].y;
 export const KEYS: readonly Key[] = ["up", "left", "down", "right"];
 
 /** Unit vector of each key, in world coordinates (y grows downward). */
@@ -50,8 +55,20 @@ export interface Step {
   /** Strides: the stride's length before walls (a bend keeps it), and whether a held key started it rather than a press. */
   len?: number;
   held?: boolean;
-  /** Strides: the press a held stride took over from within the diagonal window (its world time): the bend window counts from it. */
-  pressW?: number;
+  /** Strides: the song time it started (the stomp window counts song time, as the player hears it). */
+  s0?: number;
+  /**
+   * Strides: the press a held stride took over from within the diagonal window, its world and song
+   * time and where its stride began: the bend and stomp windows count from it, and a rock step
+   * returns there.
+   */
+  press?: { w: number; s: number; x: number; y: number };
+  /**
+   * Strides: a stomp within the stomp window of the stride's start turned it into a rock step at
+   * world time w, where the hero was at (x, y): over the rest of the stride it comes back to where
+   * the press's stride began, (tx, ty).
+   */
+  rock?: { w: number; x: number; y: number; tx: number; ty: number };
 }
 
 export interface StepPose {
@@ -81,7 +98,7 @@ export function startStep(hero: HeroDef, w: number, x: number, y: number, key: K
  * Returns undefined when the key does not bend this step (it starts a new one).
  */
 export function bendStep(hero: HeroDef, step: Step, w: number, key: Key, walls: Clamp = NO_WALLS, durationS = stepSeconds(hero)): Step | undefined {
-  if (step.bendE !== undefined || step.held || w - (step.pressW ?? step.w0) > hero.step.diagonalWindowMs / 1000 + 1e-9) return undefined;
+  if (step.bendE !== undefined || step.held || step.rock || step.keys.length === 0 || w - (step.press?.w ?? step.w0) > hero.step.diagonalWindowMs / 1000 + 1e-9) return undefined;
   const d = KEY_DIR[key];
   if (Math.abs(d.x * step.dx + d.y * step.dy) > 1e-9) return undefined;
   const u = clamp((w - step.w0) / durationS, 0, 1);
@@ -99,6 +116,12 @@ export function stepPose(hero: HeroDef, step: Step, w: number): StepPose {
 /** Where a step or stride lasting durationS, with a hop of `hop` px, has taken the hero at world time w. */
 export function movePose(step: Step, w: number, durationS: number, hop: number): StepPose {
   const u = clamp((w - step.w0) / durationS, 0, 1);
+  const rock = step.rock;
+  if (rock && w >= rock.w) {
+    // A rock step: from where the stomp found the hero back to the start, eased like a stride.
+    const g = easeOut(clamp((w - rock.w) / Math.max(1e-9, step.w0 + durationS - rock.w), 0, 1));
+    return { x: rock.x + (rock.tx - rock.x) * g, y: rock.y + (rock.ty - rock.y) * g, z: hop * Math.sin(Math.PI * u), u };
+  }
   const e = easeOut(u);
   let x = step.x0 + step.dx * step.len1 * e;
   let y = step.y0 + step.dy * step.len1 * e;

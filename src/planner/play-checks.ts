@@ -6,7 +6,7 @@
  */
 import type { ContentLibrary } from "../content/loader.ts";
 import { waveRadius } from "../mapgen/openfield.ts";
-import type { Plan } from "../plan/types.ts";
+import { partnerPress, type Plan } from "../plan/types.ts";
 import { viewRect } from "./camera.ts";
 import { heldAt, heldSpans, type CheckResult } from "./checks.ts";
 import { Warp } from "../core/warp.ts";
@@ -54,27 +54,36 @@ export function checkStrides(plan: Plan): CheckResult[] {
   const warp = new Warp(plan.warp);
   const presses = plan.inputs.filter((i) => i.kind === "press");
 
-  // No dead presses: every press strides at once (or bends the stride in progress). Its own stride
-  // is recorded, and the first hero sample after it shows the hop of a stride that started at the
-  // press (unless another stride started in between); a bend shows the hop of the stride it bent.
+  // No dead presses: every press strides at once, bends the stride in progress, or stomps. A stride
+  // is recorded, and the first hero samples after it show the hop of a stride that started at the
+  // press (unless another stride started in between). A bend, or an opposite key's rock step, shows
+  // the hop of the press stride just before it. A stomp stamps its ring of dust at the press, and
+  // a stomp that rocked no stride stamps in place with a hop of its own.
   {
     const f: string[] = [];
     let n = 0;
     const held = heldSpans(plan.inputs);
-    const startW = [...presses.filter((p) => !p.bend).map((p) => p.w), ...Array.from(st.steps).filter((s) => heldAt(held, s)).map((s) => warp.toWorld(s))];
+    const stamps = plan.events.effects.filter((e) => e.recipe === "stomp").map((e) => e.s);
+    const startW = [...presses.filter((p) => !partnerPress(p)).map((p) => p.w), ...Array.from(st.steps).filter((s) => heldAt(held, s)).map((s) => warp.toWorld(s))];
     for (const p of presses) {
       const k = Math.floor(p.w * t.rate + 1e-9) + 1;
       if (k >= t.z.length) continue;
       n++;
       const wk = k / t.rate;
-      if (p.bend) {
-        // The stride it bends started at a press just before it (within the diagonal window), and is moving.
-        const from = presses.some((q) => !q.bend && q.w <= p.w + 1e-9 && q.w >= p.w - BEND_WINDOW);
-        if (!from || !(t.z[k] > 1e-6)) f.push(`the ${p.key} press at ${fmt(p.s)} bends no stride in progress (no press stride just before it, or no hop at w=${wk.toFixed(3)})`);
+      if (p.stomp && !stamps.some((s) => Math.abs(s - p.s) < 1e-6)) {
+        f.push(`the stomp at ${fmt(p.s)} stamps no ring of dust`);
         continue;
       }
-      if (p.stride === undefined) {
-        f.push(`the ${p.key} press at ${fmt(p.s)} records no stride`);
+      if (partnerPress(p)) {
+        // The stride it bends (or rocks) started at a press just before it (within the window), and is moving.
+        const from = presses.some((q) => !partnerPress(q) && q.w <= p.w + 1e-9 && q.w >= p.w - BEND_WINDOW);
+        if (!from || !(t.z[k] > 1e-6)) f.push(`the ${p.key} press at ${fmt(p.s)} ${p.bend ? "bends" : "rocks"} no stride in progress (no press stride just before it, or no hop at w=${wk.toFixed(3)})`);
+        continue;
+      }
+      // (A stride rocked back near its end hardly moves: its ring of dust is the stomp's evidence.)
+      if (p.stomp && p.rock) continue;
+      if (p.stride === undefined && !p.stomp) {
+        f.push(`the ${p.key} press at ${fmt(p.s)} records no stride or stomp`);
         continue;
       }
       // The two samples after the press, while no other stride has started: a stride ending can
@@ -191,7 +200,7 @@ export function checkPlay(plan: Plan, lib: ContentLibrary, opts: PlayCheckOption
     const seen = new Map<number, number>();
     let n = 0;
     for (const i of plan.inputs) {
-      if (i.kind !== "press" || !i.steps || i.bend || i.extra || i.rating === undefined) continue;
+      if (i.kind !== "press" || !i.steps || partnerPress(i) || i.extra || i.rating === undefined) continue;
       n++;
       const g = nearest(plan.grid, i.s);
       const prev = seen.get(g);

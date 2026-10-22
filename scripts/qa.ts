@@ -297,7 +297,7 @@ await withDevServer(async (base) => {
       live: {
         recording: {
           timeWarp: { toWorld(s: number): number };
-          plan: { songBeats: ArrayLike<number>; grid: ArrayLike<number>; hero: { x: ArrayLike<number>; y: ArrayLike<number> }; swings: { s: number }[]; inputs: { s: number; kind: string; steps: boolean; extra?: boolean; bend?: boolean; stride?: number }[]; events: { sounds: { s: number; priority: number }[] } };
+          plan: { songBeats: ArrayLike<number>; grid: ArrayLike<number>; hero: { x: ArrayLike<number>; y: ArrayLike<number> }; swings: { s: number }[]; inputs: { s: number; kind: string; key: string; steps: boolean; extra?: boolean; bend?: boolean; stride?: number; stomp?: boolean; rock?: boolean; rating?: string }[]; events: { sounds: { s: number; priority: number }[] } };
         };
       };
     };
@@ -411,6 +411,51 @@ await withDevServer(async (base) => {
       "Play: holding a key presses once and strides on every beat",
       live.hold === 1 && live.held.every((d) => Math.abs(d / live.oneStride - 1) < 0.1),
       `${live.hold} press recorded for a key held three beats (its repeats ignored); from beat to beat the hero covered ${live.held.map((d) => d.toFixed(1)).join(", ")} px (one stride is ${live.oneStride.toFixed(1)})`,
+    );
+    // Stomps: Space on every beat while holding Right keeps the hero still; Left then Right 25 ms
+    // later is one stomp, a rock step out and back.
+    const stompAt = beats.findIndex((b) => b > heldBeats[2] + 0.6);
+    const stompBeats = [1, 2, 3, 4].map((k) => beats[stompAt + k]);
+    await waitSong(page, beats[stompAt] - 0.15);
+    await page.keyboard.down("ArrowRight");
+    for (const b of stompBeats) {
+      await waitSong(page, b - 0.01);
+      await page.keyboard.press("Space");
+    }
+    await waitSong(page, stompBeats[3] + 0.1);
+    await page.keyboard.up("ArrowRight");
+    const rockAt = beats[stompAt + 6] + 0.02;
+    await waitSong(page, rockAt);
+    await page.keyboard.down("ArrowLeft");
+    await page.waitForTimeout(25);
+    await page.keyboard.down("ArrowRight");
+    await page.keyboard.up("ArrowLeft");
+    await page.keyboard.up("ArrowRight");
+    await waitSong(page, rockAt + 0.4);
+    const stomps = await page.evaluate(
+      ({ stompBeats, rockAt }) => {
+        const rec = (window as unknown as { __demo: PlayHook }).__demo.live.recording;
+        const plan = rec.plan;
+        const [a, b, c, d] = [stompBeats[0] - 0.05, stompBeats[3] + 0.3, rockAt - 0.01, rockAt + 0.3].map((s) => Math.floor(rec.timeWarp.toWorld(s) * 60 + 1e-6));
+        const ins = plan.inputs.filter((i) => i.kind === "press" && i.s > stompBeats[0] - 0.2 && i.s < rockAt + 0.2);
+        return {
+          still: Math.hypot(plan.hero.x[b] - plan.hero.x[a], plan.hero.y[b] - plan.hero.y[a]),
+          spaces: ins.filter((i) => i.key === "space" && i.stomp).length,
+          rocked: Math.hypot(plan.hero.x[d] - plan.hero.x[c], plan.hero.y[d] - plan.hero.y[c]),
+          pair: ins.filter((i) => i.s >= rockAt - 0.05).map((i) => `${i.key}${i.rock ? " (rock)" : ""}${i.rating ? ` ${i.rating}` : ""}`),
+        };
+      },
+      { stompBeats, rockAt },
+    );
+    record(
+      "Play: Space on every beat while holding a direction keeps the hero still",
+      stomps.spaces === 4 && stomps.still < 0.5,
+      `${stomps.spaces} stomps over four beats with Right held; the hero moved ${stomps.still.toFixed(2)} px`,
+    );
+    record(
+      "Play: Left then Right together are one stomp, a rock step out and back",
+      stomps.pair.length === 2 && stomps.pair[1].startsWith("right (rock)") && stomps.rocked < 0.5,
+      `presses: ${stomps.pair.join(", ")}; the hero ended ${stomps.rocked.toFixed(2)} px from where it began`,
     );
     record("Play: frame rate and frame time", fps >= 55 && live.p95 < 8, `${fps.toFixed(1)} frames per second; JavaScript frame time (simulation, rollback and drawing) p95 ${live.p95.toFixed(2)} ms`);
     // Esc pauses (song time stops) and resumes after a count-in, exactly where it stopped.

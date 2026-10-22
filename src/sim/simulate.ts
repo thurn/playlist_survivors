@@ -25,12 +25,12 @@ import { CameraRig } from "../planner/camera.ts";
 import { sectionIndexAt, subdivisionBeats, weightFactor, type Ctx } from "../planner/context.ts";
 import { aim, catches, swingArc, type AimTarget } from "./aim.ts";
 import { deepClone, registerShared } from "./clone.ts";
-import { bendStep, movePose, startStep, stepEnd, stepPose, stepSeconds, walkFrame, walkTarget, type Key, type Step } from "./movement.ts";
+import { bendStep, movePose, opposite, startStep, stepEnd, stepPose, stepSeconds, walkFrame, walkTarget, type InputKey, type Key, type Step } from "./movement.ts";
 import type { KeyEvent, Observation, Player } from "./player.ts";
 import { BatchRecorder, type ArrowRecord, type PressTrace, type Recorder, type SimResult } from "./recorder.ts";
 import { DEMO_RULES, type Rules } from "./rules.ts";
 import { nextStepAfter, stepRate, stepSpan, type GridSlot, type Schedule } from "./schedule.ts";
-import { budgetAt, freshStrides, heldDirection, interrupt, periodAt, settle, startStride, strideRule, striding, type StrideState } from "./strides.ts";
+import { budgetAt, freshStrides, heldDirection, interrupt, periodAt, settle, startStride, stompCancelsUntil, strideRule, striding, type StrideState } from "./strides.ts";
 import { armedStrike, damageMultiplier, type PressRating, grooveAfterOffbeat, grooveAfterPress, grooveDecay, nearestIndex, ratePress, ratePressOnGrid, type Rating } from "./timing.ts";
 import { CorridorWorld, OpenWorld, type World } from "./world.ts";
 
@@ -664,12 +664,24 @@ function engine(env: Env, st: SimState, io: Io) {
    */
   const heldStrideLimit = () => oneStride(st.s - 1e-6);
   /** A press's key goes down: held keys keep the order they were pressed in (the more recent of two opposite keys wins). */
-  const hold = (key: Key) => {
+  const hold = (key: InputKey) => {
+    if (key === "space") return;
     if (strides) st.held.delete(key);
     st.held.add(key);
   };
   /** Would this key bend the step (or press stride) in progress into a diagonal? */
-  const bendOf = (key: Key) => (st.step ? bendStep(hero, st.step, st.w, key, world.clamp, stepDur) : undefined);
+  const bendOf = (key: InputKey) => (key !== "space" && st.step ? bendStep(hero, st.step, st.w, key, world.clamp, stepDur) : undefined);
+  /**
+   * Strides: would this key, opposite to the press whose stride is moving and within the stomp
+   * window of it, make a stomp of the two (rocking that stride back)?
+   */
+  const rocks = (key: InputKey): boolean => {
+    const sp = st.step;
+    if (!strides || key === "space" || !sp || sp.held || sp.rock || sp.bendE !== undefined || sp.keys.length === 0 || !striding(rule, sp, st.w)) return false;
+    return st.s - (sp.press?.s ?? sp.s0 ?? -Infinity) <= rule.stompS + 1e-9 && opposite(sp.keys[0], key);
+  };
+  /** A press that belongs to the one before it: a diagonal's second key, or a stomp's opposite key. */
+  const partnerOf = (key: InputKey) => bendOf(key) !== undefined || rocks(key);
   /** Strides, free movement: is the hero walking now (not waiting for a stride to land)? */
   const walking = () => st.walk !== undefined && (!st.step || st.w >= st.walk.w0 - 1e-12);
   /** Strides, free movement: the walk ends where the hero is now (a walk waiting for a landing is dropped). */
@@ -725,20 +737,52 @@ function engine(env: Env, st: SimState, io: Io) {
     const dir = heldDirection(st.held) ?? { x: Math.cos(st.facingAngle), y: Math.sin(st.facingAngle) };
     // A held stride taking over a press's stride within the diagonal window carries on that press:
     // a perpendicular key still bends it.
-    const pressW = key === undefined && prev && !prev.held && prev.bendE === undefined ? (prev.pressW ?? prev.w0) : undefined;
-    const carried = pressW !== undefined && st.w - pressW <= hero.step.diagonalWindowMs / 1000 + 1e-9;
+    const press = key === undefined && prev && !prev.held && !prev.rock && prev.keys.length > 0 && prev.bendE === undefined ? (prev.press ?? { w: prev.w0, s: prev.s0 ?? st.s, x: prev.x0, y: prev.y0 }) : undefined;
+    const carried = press !== undefined && (st.w - press.w <= hero.step.diagonalWindowMs / 1000 + 1e-9 || st.s - press.s <= rule.stompS + 1e-9);
     st.step = startStride(rule, st.strides, st.w, hp.x, hp.y, dir, one, { key, held: key === undefined && !carried }, world.clamp);
-    if (carried) Object.assign(st.step, { pressW, keys: prev!.keys });
+    st.step.s0 = st.s;
+    if (carried) Object.assign(st.step, { press, keys: prev!.keys });
     st.landed = false;
     st.facingAngle = Math.atan2(dir.y, dir.x);
     return { stride: st.step.len ?? 0, returned };
   };
   /**
+   * Strides: a stomp plants the hero. A stride that started within the stomp window rocks back to
+   * where it began (the ground it had not covered goes back to the budget); an older one stops where
+   * it is. Then, unless rocking, both feet stamp: a hop in place. Either way a ring of dust, no
+   * sound, and in step movement the held strides of one grid step are cancelled.
+   */
+  const stompHere = (input: PlanInput): Pick<PressTrace, "budget" | "returned"> => {
+    input.stomp = true;
+    const hp = heroPose(st.w);
+    let returned = 0;
+    const moving = st.step && striding(rule, st.step, st.w) ? st.step : undefined;
+    // Only a stride (held, or a press's) rocks; a stamp still hopping stamps again.
+    const rocking = moving && (moving.held || moving.keys.length > 0) && !moving.rock && st.s - (moving.press?.s ?? moving.s0 ?? -Infinity) <= rule.stompS + 1e-9;
+    // A rock step returns to where the press's stride began (a held stride that took over from it carries it).
+    const home = moving?.press ?? (moving ? { x: moving.x0, y: moving.y0 } : undefined);
+    if (moving) returned = interrupt(rule, st.strides, moving, st.w, hp.x, hp.y, oneStride(st.s), rocking ? Math.hypot(moving.x0 - home!.x, moving.y0 - home!.y) : 0);
+    if (rocking) {
+      st.step = { ...moving, ex: 0, ey: 0, rock: { w: st.w, x: hp.x, y: hp.y, tx: home!.x, ty: home!.y } };
+      // It lands where it began: the ring of dust is its landing, with no rustle after.
+      st.landed = true;
+      input.rock = true;
+    } else {
+      st.step = { w0: st.w, s0: st.s, x0: hp.x, y0: hp.y, dx: Math.cos(st.facingAngle), dy: Math.sin(st.facingAngle), len1: 0, ex: 0, ey: 0, keys: [], len: 0, held: false };
+      // A stamp lands where it began: no landing puff or rustle after it.
+      st.landed = true;
+    }
+    rec().landing({ s: st.s, w: st.w, x: hp.x, y: hp.y, stomp: true });
+    if (sectionAt(st.s).level.movement === "steps") st.strides.stompUntil = stompCancelsUntil(sch.strideSteps, st.s);
+    return { budget: budgetAt(rule, st.strides, st.w, oneStride(st.s)), returned };
+  };
+  /**
    * Strides: a step of the stride period. A held key strides, taking over from a stride still moving
-   * as a press would (so no ground is lost), except one a press started at this very moment.
+   * as a press would (so no ground is lost), except one a press started at this very moment. A stomp
+   * cancels the held strides of one grid step.
    */
   const heldStride = () => {
-    if (st.held.size === 0 || sectionAt(st.s).level.movement !== "steps") return;
+    if (st.held.size === 0 || sectionAt(st.s).level.movement !== "steps" || st.s <= st.strides.stompUntil + 1e-9) return;
     if (st.step && !st.step.held && Math.abs(st.w - st.step.w0) < 1e-9) return;
     strideOff(undefined);
   };
@@ -1052,8 +1096,12 @@ function engine(env: Env, st: SimState, io: Io) {
     if (!bend) input.stride = r.stride;
     return { stride: r.stride, budget: budgetAt(rule, st.strides, st.w, oneStride(st.s)), returned: r.returned };
   };
+  /** Strides: what a press does to the hero: a stride toward the held keys, or a stomp for Space. */
+  const pressMove = (key: InputKey, input: PlanInput): Partial<PressTrace> => (key === "space" ? stompHere(input) : strideTrace(strideOff(key), input));
 
   const press = (e: KeyEvent) => {
+    // Space stomps only with strides; without them (the demo) it is not a gameplay key.
+    if (e.key === "space" && !strides) return;
     const sec = sectionAt(st.s);
     const steps = sec.level.movement === "steps";
     // Play mode's timing log (a no-op elsewhere): what the press did, and why.
@@ -1062,7 +1110,7 @@ function engine(env: Env, st: SimState, io: Io) {
     // only the first press for a grid time is rated and arms a swing. Every press still steps, and
     // a diagonal's second key still bends the step.
     let extraGrid: number | undefined;
-    if (env.rules.oneStepPerSlot && steps && !bendOf(e.key)) {
+    if (env.rules.oneStepPerSlot && steps && !partnerOf(e.key)) {
       const gi = nearestIndex(sch.gridTimes, st.s);
       if (gi === st.lastStepGrid) extraGrid = gi;
       else {
@@ -1103,8 +1151,8 @@ function engine(env: Env, st: SimState, io: Io) {
         stumble();
       }
       hold(e.key);
-      // With strides every press strides: a stumble keeps its penalties, but not the hero still.
-      const moved = strides ? strideTrace(strideOff(e.key), input) : {};
+      // With strides every press strides (or stomps): a stumble keeps its penalties, but not the hero still.
+      const moved = strides ? pressMove(e.key, input) : {};
       rec().input(input);
       if (trace) rec().press!({ ...trace, ...moved, outcome: input.stumble ? "stumble" : "ignored", gridIndex: extraGrid, gridS: g0, delta: st.s - g0, stepS: st.lastPressS, grooveAfter: st.groove });
       return;
@@ -1115,14 +1163,15 @@ function engine(env: Env, st: SimState, io: Io) {
     if (!steps) {
       if (strides) {
         const bent = bendOf(e.key);
+        const rocked = !bent && rocks(e.key);
         if (bent) {
           st.step = bent;
           input.bend = true;
         } else stopWalk();
-        const moved = bent ? strideTrace({ stride: bent.len ?? 0, returned: 0 }, input, true) : strideTrace(strideOff(e.key), input);
+        const moved = bent ? strideTrace({ stride: bent.len ?? 0, returned: 0 }, input, true) : rocked ? stompHere(input) : pressMove(e.key, input);
         walkOn();
         rec().input(input);
-        if (trace) rec().press!({ ...trace, ...moved, outcome: bent ? "bend" : "stride" });
+        if (trace) rec().press!({ ...trace, ...moved, outcome: bent ? "bend" : rocked ? "rock" : e.key === "space" ? "stomp" : "stride" });
         return;
       }
       rewalk();
@@ -1140,14 +1189,21 @@ function engine(env: Env, st: SimState, io: Io) {
       if (trace) rec().press!({ ...trace, ...moved, outcome: "bend" });
       return;
     }
+    // An opposite key just after the first makes the two one stomp: the first one's stride rocks back.
+    if (rocks(e.key)) {
+      const moved = stompHere(input);
+      rec().input(input);
+      if (trace) rec().press!({ ...trace, ...moved, outcome: "rock" });
+      return;
+    }
     if (trace && st.step && !st.landed) trace.midStep = true;
     let moved: Partial<PressTrace> = {};
     if (strides) {
-      moved = strideTrace(strideOff(e.key), input);
-      if (trace) trace.outcome = "stride";
+      moved = pressMove(e.key, input);
+      if (trace) trace.outcome = e.key === "space" ? "stomp" : "stride";
     } else {
       const hp = heroPose(st.w);
-      st.step = startStep(hero, st.w, hp.x, hp.y, e.key, world.clamp);
+      st.step = startStep(hero, st.w, hp.x, hp.y, e.key as Key, world.clamp);
       st.landed = false;
       st.facingAngle = Math.atan2(st.step.dy, st.step.dx);
     }
@@ -1191,12 +1247,13 @@ function engine(env: Env, st: SimState, io: Io) {
   };
 
   const release = (e: KeyEvent) => {
+    if (e.key === "space" && !strides) return;
     const sec = sectionAt(st.s);
     const steps = sec.level.movement === "steps";
     st.nInputs++;
     rec().input({ s: st.s, w: st.w, kind: "release", key: e.key, steps });
     rec().press?.({ id: e.id, s: st.s, w: st.w, kind: "release", key: e.key, section: sec.label, movement: steps ? "steps" : "free", outcome: "release" });
-    st.held.delete(e.key);
+    if (e.key !== "space") st.held.delete(e.key);
     // With strides a stride in progress finishes; in free movement the walk follows the keys still held.
     if (!steps) {
       if (strides) walkOn();
@@ -1538,17 +1595,18 @@ function engine(env: Env, st: SimState, io: Io) {
     const b = st.breaks[st.breaks.length - 1];
     const w1 = b.w + (t - b.s) * b.rate;
     if (w1 > st.w) {
-      // Step landings (the dust puff).
+      while (st.nextHeroK / HERO_RATE <= w1 + 1e-12) {
+        const wk = st.nextHeroK / HERO_RATE;
+        sampleHero(wk, b.s + (wk - b.w) / rate);
+        st.nextHeroK++;
+      }
+      // Step landings (the dust puff), after the samples up to them: a live recording sounds them
+      // with the camera sample before, whatever frames the clock stopped at on the way.
       if (st.step && !st.landed && st.step.w0 + stepDur <= w1 + 1e-12) {
         const wl = st.step.w0 + stepDur;
         const end = stepEnd(st.step);
         rec().landing({ s: b.s + (wl - b.w) / rate, w: wl, x: end.x, y: end.y });
         st.landed = true;
-      }
-      while (st.nextHeroK / HERO_RATE <= w1 + 1e-12) {
-        const wk = st.nextHeroK / HERO_RATE;
-        sampleHero(wk, b.s + (wk - b.w) / rate);
-        st.nextHeroK++;
       }
       while (st.nextFoeK / ENEMY_RATE <= w1 + 1e-12) {
         recordFoes(st.nextFoeK / ENEMY_RATE);

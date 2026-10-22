@@ -13,6 +13,8 @@ export interface Landing {
   w: number;
   x: number;
   y: number;
+  /** A stomp (play mode's strides): both feet stamp with a ring of dust, at the press, without a sound. */
+  stomp?: boolean;
 }
 
 export interface ArrowRecord {
@@ -73,9 +75,11 @@ export interface PressTrace {
    * walk: free movement (held keys walk); release: a key went up.
    * With strides every press strides, a stumble and an ignored press too (they keep their names for
    * what they did to the groove and the swings); stride: a new stride (in step movement rated, and
-   * maybe arming a swing, as a step; in free movement unrated, with a walk after it while the key is held).
+   * maybe arming a swing, as a step; in free movement unrated, with a walk after it while the key is held);
+   * stomp: Space, a press without moving; rock: the second of two opposite keys, which made the first
+   * one's stride a rock step back (the pair is one stomp, timed and rated by the first).
    */
-  outcome: "extra" | "stumble" | "ignored" | "bend" | "step" | "stride" | "walk" | "release";
+  outcome: "extra" | "stumble" | "ignored" | "bend" | "step" | "stride" | "stomp" | "rock" | "walk" | "release";
   /** The nearest grid time (index and song time), and the press's offset from it (song seconds). */
   gridIndex?: number;
   gridS?: number;

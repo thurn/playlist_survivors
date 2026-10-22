@@ -360,7 +360,8 @@ export interface PlanInput {
   s: number;
   w: number;
   kind: "press" | "release";
-  key: "up" | "down" | "left" | "right";
+  /** A direction, or Space (a stomp). */
+  key: "up" | "down" | "left" | "right" | "space";
   /** Rated presses (step movement): the rating, accuracy and offset from the grid (song seconds). */
   rating?: "perfect" | "great" | "good";
   accuracy?: number;
@@ -377,6 +378,10 @@ export interface PlanInput {
   armed?: boolean;
   /** Strides: the length of the stride this press started (px; absent for a bend, which keeps the stride's). */
   stride?: number;
+  /** Strides: the press made a stomp (Space, or the second of two opposite keys within 40 ms). */
+  stomp?: boolean;
+  /** Strides: the stomp turned the stride in progress into a rock step back to where it began. */
+  rock?: boolean;
   /** Step movement (true) or free movement (false). */
   steps: boolean;
 }
@@ -414,3 +419,9 @@ export interface PlanStats {
 }
 
 export type { Facing };
+
+/**
+ * A press that belongs to the one before it rather than counting on its own: a diagonal's second
+ * key (a bend), or the second of two opposite keys (a stomp's rock step).
+ */
+export const partnerPress = (i: PlanInput): boolean => !!i.bend || (!!i.rock && i.key !== "space");

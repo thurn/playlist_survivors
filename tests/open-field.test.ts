@@ -68,8 +68,10 @@ describe("a play-mode run in the open field", () => {
       return checkStrides({ ...plan, inputs }).find((c) => c.name === "no dead presses")!.failures;
     };
     expect(checkStrides(plan).find((c) => c.name === "no dead presses")!.failures).toEqual([]);
-    // A tapped press with no other press for half a second around it: the hero stands still 300 ms on.
-    const p = plan.inputs.find((i, _k, all) => i.kind === "press" && i.s > 60 && !i.bend && all.every((j) => j === i || j.kind !== "press" || Math.abs(j.s - i.s) > 0.5))!;
+    // A tapped press (released within 150 ms) with no other press for half a second around it: the
+    // hero stands still 300 ms on.
+    const tapped = (i: (typeof plan.inputs)[number]) => plan.inputs.some((j) => j.kind === "release" && j.key === i.key && j.s > i.s && j.s < i.s + 0.15);
+    const p = plan.inputs.find((i, _k, all) => i.kind === "press" && i.s > 60 && i.key !== "space" && !i.bend && tapped(i) && all.every((j) => j === i || j.kind !== "press" || Math.abs(j.s - i.s) > 0.5))!;
     const at = (dt: number) => ({ ...p, s: p.s + dt, w: p.w + dt });
     // An unapplied press after the stride has landed, with or without a stride recorded for it.
     expect(dead({ ...at(0.3), stride: 10 }).length).toBe(1);
@@ -80,6 +82,19 @@ describe("a play-mode run in the open field", () => {
     expect(dead({ ...at(0.09), stride: 10 }).length).toBe(1);
     // A bend claimed long after the stride landed.
     expect(dead({ ...at(0.3), bend: true, stride: undefined }).length).toBe(1);
+  });
+
+  it("lets no stomp with Space authorize movement", () => {
+    // A quiet moment, 300 ms after a tapped press: a Space stomp there, and the hero nudged 10 px.
+    const tapped = (i: (typeof plan.inputs)[number]) => plan.inputs.some((j) => j.kind === "release" && j.key === i.key && j.s > i.s && j.s < i.s + 0.15);
+    const p = plan.inputs.find((i, _k, all) => i.kind === "press" && i.s > 60 && i.key !== "space" && !i.bend && tapped(i) && all.every((j) => j === i || j.kind !== "press" || Math.abs(j.s - i.s) > 0.5))!;
+    const at = { ...p, s: p.s + 0.3, w: p.w + 0.3, key: "space" as const, stride: undefined, stomp: true, rating: undefined };
+    const inputs = [...plan.inputs, at, { ...at, kind: "release" as const, s: at.s + 0.05, w: at.w + 0.05 }].sort((a, b) => a.w - b.w);
+    const x = Float32Array.from(plan.hero.x);
+    const k = Math.floor(at.w * plan.hero.rate) + 1;
+    for (let j = k; j < k + 3; j++) x[j] += 10;
+    const moved = checkPlan({ ...plan, inputs, hero: { ...plan.hero, x } }, input.content).find((c) => c.name === "every hero movement has an input")!;
+    expect(moved.failures.length).toBeGreaterThan(0);
   });
 
   it("holds the hero to the walk speed over windows of any length", () => {

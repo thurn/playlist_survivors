@@ -29,7 +29,7 @@ function batch(keys: readonly KeyEvent[], until = Infinity): { recording: LiveRe
 }
 
 // Realistic presses: the moderate player's, from a headless run. Then extra presses that land inside
-// hit-stops (a press ends a hit-stop early) and mashed presses.
+// hit-stops (a press ends a hit-stop early), mashed presses, and stomps: Space, and opposite keys.
 const bot = (() => {
   const recording = new LiveRecording(ctx, sch, map, ctx.lib, "player", props);
   const sim = new Sim(ctx, sch, worldFor(ctx, sch, map), ctx.level.rules, recording, { player: virtualPlayer(ctx, sch, "moderate") });
@@ -44,6 +44,12 @@ const keys: KeyEvent[] = bot.plan.inputs.map((i) => ({ s: i.s, kind: i.kind, key
   for (let k = 0; k < 30; k++) {
     const s = 60 + r.next() * 60;
     keys.push({ s, kind: "press", key: "left" }, { s: s + 0.03, kind: "release", key: "left" });
+  }
+  for (let k = 0; k < 12; k++) {
+    const s = 50 + r.next() * 70;
+    keys.push({ s, kind: "press", key: "space" }, { s: s + 0.05, kind: "release", key: "space" });
+    const t = 50 + r.next() * 70;
+    keys.push({ s: t, kind: "press", key: "down" }, { s: t + 0.02, kind: "press", key: "up" }, { s: t + 0.06, kind: "release", key: "down" }, { s: t + 0.07, kind: "release", key: "up" });
   }
   keys.sort((a, b) => a.s - b.s);
 }
@@ -69,11 +75,32 @@ function playLive(opts: { until?: number; onFrame?: (now: number, frame: number,
 }
 
 describe("live play", () => {
+  it("sounds a stride's landing the same whichever frames the clock stopped at", () => {
+    // A batch run, and the same with the clock stopped between the press and the landing.
+    const keys: KeyEvent[] = [
+      { s: 66.2, kind: "press", key: "right" },
+      { s: 66.23, kind: "release", key: "right" },
+    ];
+    const plain = batch(keys, 67);
+    const stopped = (() => {
+      const recording = new LiveRecording(ctx, sch, map, ctx.lib, "player", props);
+      const sim = new Sim(ctx, sch, worldFor(ctx, sch, map), ctx.level.rules, recording);
+      for (const k of keys) sim.key(k);
+      sim.advanceTo(66.3095);
+      sim.advanceTo(67);
+      return recording;
+    })();
+    expect(stopped.hashParts().sounds).toBe(plain.recording.hashParts().sounds);
+  });
+
   it("records exactly what a batch run of the same key events records", () => {
     const live = playLive();
     live.runner.finish();
     expect(live.runner.stats.rollbacks).toBeGreaterThan(100);
     expect(live.recording.plan.inputs.filter((i) => i.extra).length).toBeGreaterThan(5);
+    // Stomps with Space, and opposite keys that rocked a stride back.
+    expect(live.recording.plan.inputs.filter((i) => i.stomp && i.key === "space").length).toBeGreaterThan(10);
+    expect(live.recording.plan.inputs.filter((i) => i.rock && i.key !== "space").length).toBeGreaterThan(5);
     expect(live.runner.stats.lateKeys).toBe(0);
     expect(live.runner.applied.length).toBe(keys.length);
     // (Fed in the order they were applied: keys at the very same instant take effect in that order.)

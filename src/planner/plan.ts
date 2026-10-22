@@ -12,7 +12,7 @@
 import { DEFAULT_PROPS, generateMap, type LandmarkPlacement, type TiledMap, type PropInfo } from "../mapgen/mapgen.ts";
 import { openFieldLayout, stampLandmark, WAVE_BANDS, type LandmarkStamp, type ZoneWave } from "../mapgen/openfield.ts";
 import { barOfBeatIndex, beatIndexAt, timeOfBeatIndex } from "../core/songmap.ts";
-import type { MapLayout, OpenFieldRecord, Plan, PlanStats } from "../plan/types.ts";
+import { partnerPress, type MapLayout, type OpenFieldRecord, type Plan, type PlanStats } from "../plan/types.ts";
 import { hash32 } from "../core/rng.ts";
 import { Warp } from "../core/warp.ts";
 import { beatDurationAt, makeCtx, sectionIndexAt, type Ctx, type PlannerInput } from "./context.ts";
@@ -219,7 +219,7 @@ export function planWithSim(input: PlannerInput, opts: PlannerOptions = {}): { p
     }
     peak = Math.max(peak, n);
   }
-  const presses = sim.inputs.filter((i) => i.kind === "press" && !i.bend && !i.extra);
+  const presses = sim.inputs.filter((i) => i.kind === "press" && !partnerPress(i) && !i.extra);
   const ratings = { perfect: 0, great: 0, good: 0, none: 0 };
   for (const p of presses) if (p.steps) ratings[p.rating ?? "none"]++;
   let gSum = 0;

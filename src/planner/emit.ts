@@ -104,7 +104,8 @@ export class Emitter {
     this.sink.effect({ recipe, s, w: this.warp.toWorld(s), x, y, dir, intensity, seed, ...extra });
   }
 
-  sfx(key: string, s: number, x: number, priority: number, gain = 1, duck = false, rateScale = 1): void {
+  /** A sound effect. `panW`: pan it by the camera sample at or before this world time (not between samples). */
+  sfx(key: string, s: number, x: number, priority: number, gain = 1, duck = false, rateScale = 1, panW?: number): void {
     const ctx = this.ctx;
     const sec = this.sectionOf(s);
     const pal = ctx.lib.soundPalettes.get(sec.level.sfxPalette);
@@ -128,7 +129,9 @@ export class Emitter {
       }
     }
     rate *= rateScale;
-    const c = cameraAt(this.cam(), this.warp.toWorld(s));
+    const cam = this.cam();
+    const k = panW === undefined ? -1 : Math.max(0, Math.min(cam.x.length - 1, Math.floor((panW - cam.w0) * cam.rate + 1e-9)));
+    const c = k < 0 ? cameraAt(cam, this.warp.toWorld(s)) : { x: cam.x[k], zoom: cam.zoom[k] };
     const pan = clamp((x - c.x) / (VIEW_W / 2 / c.zoom), -0.8, 0.8);
     // Start slow-attack samples early so they are heard on time.
     const lead = Math.min(MAX_SOUND_LEAD, (ctx.soundOnsets[id] ?? 0) / rate);
@@ -151,8 +154,14 @@ export class Emitter {
   }
 
   landing(l: Landing): void {
+    // A stomp stamps a ring of dust, with no sound: a press can't be relied on to land on the grid.
+    if (l.stomp) {
+      this.fx("stomp", l.s, l.x, l.y, 0, 1, { w: l.w });
+      return;
+    }
     this.fx("dust", l.s, l.x, l.y, 0, 0.5, { w: l.w });
-    this.sfx("step", l.s, l.x, PRIORITY.ambient, 0.25);
+    // (Panned by the camera sample before the landing: in live play the one after may not exist yet.)
+    this.sfx("step", l.s, l.x, PRIORITY.ambient, 0.25, false, 1, l.w);
   }
 
   /** A hit on an enemy: a flash, or its death. Returns the kill for the kill sounds. */

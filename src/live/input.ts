@@ -1,9 +1,9 @@
 /**
- * Keyboard input for play mode: arrows and WASD, each press and release at
+ * Keyboard input for play mode: arrows, WASD and Space (a stomp), each press and release at
  * its exact song time (from the event's timestamp, through the same mapping
  * the picture uses, less the player's calibration offset).
  */
-import type { Key } from "../sim/movement.ts";
+import type { InputKey, Key } from "../sim/movement.ts";
 import type { KeyEvent } from "../sim/player.ts";
 import type { ClockProbe, KeyLog, PlayLog } from "./log.ts";
 
@@ -30,6 +30,11 @@ export function keyOf(e: { key: string; code: string }): Key | undefined {
       return "right";
   }
   return undefined;
+}
+
+/** Play mode's gameplay keys: the directions, and Space for a stomp. */
+export function gameKeyOf(e: { key: string; code: string }): InputKey | undefined {
+  return keyOf(e) ?? (e.code === "Space" || e.key === " " ? "space" : undefined);
 }
 
 /**
@@ -71,7 +76,7 @@ export function saveInputOffset(ms: number): void {
 /** Collects key events between frames. */
 export class KeyboardInput {
   private queue: KeyEvent[] = [];
-  private held = new Set<Key>();
+  private held = new Set<InputKey>();
   enabled = true;
   /** Extra presses (one rated press per slot greys them) are the simulation's business: every press goes in. */
   constructor(
@@ -84,7 +89,7 @@ export class KeyboardInput {
   clock?: () => ClockProbe;
 
   private readonly onDown = (e: KeyboardEvent) => {
-    const k = keyOf(e);
+    const k = gameKeyOf(e);
     if (!k) return;
     e.preventDefault();
     const fate: KeyLog["fate"] = e.repeat ? "repeat" : !this.enabled ? "disabled" : this.held.has(k) ? "held" : "queued";
@@ -96,7 +101,7 @@ export class KeyboardInput {
   };
 
   private readonly onUp = (e: KeyboardEvent) => {
-    const k = keyOf(e);
+    const k = gameKeyOf(e);
     if (!k) return;
     if (!this.held.has(k)) return this.record(e, "up", k, "not-held");
     this.held.delete(k);
@@ -107,7 +112,7 @@ export class KeyboardInput {
   };
 
   /** Log a key event (and give a queued one its id). */
-  private record(e: KeyboardEvent, type: KeyLog["type"], k: Key, fate: KeyLog["fate"], ev?: KeyEvent): void {
+  private record(e: KeyboardEvent, type: KeyLog["type"], k: InputKey, fate: KeyLog["fate"], ev?: KeyEvent): void {
     const log = this.log;
     if (!log) return;
     const id = log.newKeyId();

@@ -5,8 +5,9 @@ hero:
   step: { length: 44, durationMs: 110, hop: 5, diagonalWindowMs: 40 }
   # Play mode's fixed-speed strides (rules.strides; see docs/design/gameplay-redesign.md): the hero
   # moves at the walk speed, a stride lasting durationMs. The stride period is one step of the
-  # timing grid, halved while longer than maxPeriodS, or freePeriodS without a steady beat.
-  stride: { durationMs: 110, hop: 5, maxPeriodS: 0.4, freePeriodS: 0.35 }
+  # timing grid, halved while longer than maxPeriodS, or freePeriodS without a steady beat. Two
+  # opposite keys within stompMs (or Space) stomp: the hero stays put.
+  stride: { durationMs: 110, hop: 5, maxPeriodS: 0.4, freePeriodS: 0.35, stompMs: 40 }
   walk: { speed: 80, accelMs: 60, strideCycle: 64 }
   timing: { perfectMs: 35, greatMs: 70, goodMs: 120, floor: 0.1 }
   groove: { follow: 0.3, idleHalfLifeBars: 8, maxBonus: 0.2, offbeatBonus: 0.25, stumble: 0.5 }

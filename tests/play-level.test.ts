@@ -157,8 +157,9 @@ describe("play-mode rules", () => {
         const half = (grid[k] + grid[k + 1]) / 2;
         sim.key({ s: grid[k], kind: "press", key: k % 2 ? "left" : "right" });
         sim.key({ s: grid[k] + 0.02, kind: "release", key: k % 2 ? "left" : "right" });
-        sim.key({ s: half + offset, kind: "press", key: k % 2 ? "right" : "left" });
-        sim.key({ s: half + offset + 0.02, kind: "release", key: k % 2 ? "right" : "left" });
+        // (The beat's own key again: an opposite key this soon after the beat's press would stomp.)
+        sim.key({ s: half + offset, kind: "press", key: k % 2 ? "left" : "right" });
+        sim.key({ s: half + offset + 0.02, kind: "release", key: k % 2 ? "left" : "right" });
       }
       sim.advanceTo(grid[grid.length - 1] - 0.01);
       sim.runToEnd();

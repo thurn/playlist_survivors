@@ -25,16 +25,19 @@ export interface StrideRule {
   hop: number;
   maxPeriodS: number;
   freePeriodS: number;
+  /** Two opposite keys this close together (s) make one stomp. */
+  stompS: number;
 }
 
 export function strideRule(hero: HeroDef): StrideRule {
-  return { speed: hero.walk.speed, durationS: hero.stride.durationMs / 1000, hop: hero.stride.hop, maxPeriodS: hero.stride.maxPeriodS, freePeriodS: hero.stride.freePeriodS };
+  return { speed: hero.walk.speed, durationS: hero.stride.durationMs / 1000, hop: hero.stride.hop, maxPeriodS: hero.stride.maxPeriodS, freePeriodS: hero.stride.freePeriodS, stompS: hero.stride.stompMs / 1000 };
 }
 
-/** The steps a held key strides on (song times), and the stride period at each. */
+/** The steps a held key strides on (song times), the stride period at each, and how many steps its grid step has. */
 export interface StrideSteps {
   s: Float64Array;
   period: Float64Array;
+  per: Uint8Array;
 }
 
 /**
@@ -45,6 +48,7 @@ export interface StrideSteps {
 export function strideSteps(grid: ArrayLike<number>, maxPeriodS: number): StrideSteps {
   const s: number[] = [];
   const period: number[] = [];
+  const per: number[] = [];
   for (let i = 0; i < grid.length; i++) {
     const g0 = grid[i];
     const len = i + 1 < grid.length ? grid[i + 1] - g0 : i > 0 ? g0 - grid[i - 1] : maxPeriodS;
@@ -53,9 +57,10 @@ export function strideSteps(grid: ArrayLike<number>, maxPeriodS: number): Stride
     for (let k = 0; k < n; k++) {
       s.push(g0 + (k * len) / n);
       period.push(len / n);
+      per.push(n);
     }
   }
-  return { s: Float64Array.from(s), period: Float64Array.from(period) };
+  return { s: Float64Array.from(s), period: Float64Array.from(period), per: Uint8Array.from(per) };
 }
 
 /** The stride period at song time s in a section with a steady beat: the period of the step it falls in. */
@@ -71,6 +76,20 @@ export function periodAt(steps: StrideSteps, s: number): number {
     else hi = mid - 1;
   }
   return steps.period[lo];
+}
+
+/**
+ * Song time of the last held step a stomp at song time s cancels: the held strides of one grid
+ * step, from the first step at or after s. That is one held stride, or two where the stride period
+ * at the stomp is halved.
+ */
+export function stompCancelsUntil(steps: StrideSteps, s: number): number {
+  const t = steps.s;
+  let j = 0;
+  while (j < t.length && t[j] < s - 1e-9) j++;
+  if (j >= t.length) return s;
+  const at = t[j] <= s + 1e-9 ? j : Math.max(0, j - 1);
+  return t[Math.min(t.length - 1, j + steps.per[at] - 1)];
 }
 
 /**
@@ -97,9 +116,11 @@ export interface StrideState {
   w: number;
   /** World time from which a walk spends the refill (free sections), or Infinity. */
   walkFrom: number;
+  /** A stomp cancels the held strides up to this song time. */
+  stompUntil: number;
 }
 
-export const freshStrides = (): StrideState => ({ budget: 0, w: 0, walkFrom: Infinity });
+export const freshStrides = (): StrideState => ({ budget: 0, w: 0, walkFrom: Infinity, stompUntil: -Infinity });
 
 /** The budget at world time w (at or after st.w): refilled at the walk speed, never above one stride. */
 export function budgetAt(rule: StrideRule, st: StrideState, w: number, oneStride: number): number {
@@ -122,9 +143,10 @@ export const striding = (rule: StrideRule, stride: Step | undefined, w: number):
  * ground: the stride's length less how far the hero is from where it started
  * (a bent stride curves, so its progress along the path would overstate it).
  */
-export function interrupt(rule: StrideRule, st: StrideState, stride: Step, w: number, x: number, y: number, oneStride: number): number {
+export function interrupt(rule: StrideRule, st: StrideState, stride: Step, w: number, x: number, y: number, oneStride: number, walkBack = 0): number {
   settle(rule, st, w, oneStride);
-  const back = Math.hypot(stride.ex, stride.ey) - Math.hypot(x - stride.x0, y - stride.y0);
+  // (A rock step that returns past the stride's start, to its press's, pays for that walk too.)
+  const back = Math.hypot(stride.ex, stride.ey) - Math.hypot(x - stride.x0, y - stride.y0) - walkBack;
   if (back <= 0) return 0;
   const before = st.budget;
   st.budget = Math.min(oneStride, st.budget + back);

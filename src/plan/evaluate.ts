@@ -11,7 +11,7 @@ import { Warp } from "../core/warp.ts";
 import { latestWave, waveRadius } from "../mapgen/openfield.ts";
 import { countUpTo, enemyPos, heroSample } from "./sample.ts";
 import { StaticIndex, type PlanIndex } from "./view.ts";
-import type { EffectEvent, EnemyRecord, Plan, PlanSection, UiEvent } from "./types.ts";
+import { partnerPress, type EffectEvent, type EnemyRecord, type Plan, type PlanSection, type UiEvent } from "./types.ts";
 
 export const DEATH_FALL = 0.5;
 const FLASH_TIME = 0.05;
@@ -898,11 +898,13 @@ export class Evaluator {
     let streak = 0;
     for (const i of plan.inputs) {
       if (i.s > s) break;
-      if (i.kind === "press" && i.steps && !i.bend) {
+      const partner = partnerPress(i);
+      if (i.kind === "press" && i.steps && !partner) {
         if (i.stumble) streak = 0;
         else if (!i.extra) streak = i.rating === "perfect" || i.rating === "great" ? streak + 1 : 0;
       }
       if (i.kind === "release") {
+        if (i.key === "space") continue;
         const lp = lastPress[i.key];
         if (lp && lp.released === undefined) lp.released = i.s;
         continue;
@@ -910,13 +912,14 @@ export class Evaluator {
       // One rated press per grid slot: an extra press shows its off-beat rating on the key display
       // (grey when it has none, red when the hero stumbled), and is not counted.
       if (i.extra) {
-        lastPress[i.key] = { s: i.s, rating: i.stumble ? "stumble" : (i.offbeat ?? "extra") };
+        if (i.key !== "space") lastPress[i.key] = { s: i.s, rating: i.stumble ? "stumble" : (i.offbeat ?? "extra") };
         continue;
       }
-      // A diagonal's second key shows the rating of the press it bent.
-      if (!i.bend) rating = i.rating;
-      lastPress[i.key] = { s: i.s, rating: i.bend ? rating : i.rating };
-      if (i.bend) continue;
+      // A diagonal's second key (or a rock step's) shows the rating of the press it bent (or rocked).
+      // A stomp with Space lights no arrow (it counts as a press).
+      if (!partner) rating = i.rating;
+      if (i.key !== "space") lastPress[i.key] = { s: i.s, rating: partner ? rating : i.rating };
+      if (partner) continue;
       if (i.rating) ratings[i.rating]++;
       if (s - i.s < PRESS_SHOW) presses.push({ age: s - i.s, delta: i.delta ?? 0, rating: i.rating, steps: i.steps });
     }

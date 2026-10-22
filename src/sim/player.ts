@@ -8,7 +8,7 @@ import type { HeroDef } from "../content/schema.ts";
 import { Rng } from "../core/rng.ts";
 import { wrapAngle } from "../core/geometry.ts";
 import { clamp } from "../core/shaping.ts";
-import { easeOut, KEY_DIR, type Key } from "./movement.ts";
+import { easeOut, KEY_DIR, type InputKey, type Key } from "./movement.ts";
 import type { GridSlot } from "./schedule.ts";
 
 export interface Observation {
@@ -35,7 +35,8 @@ export interface Observation {
 export interface KeyEvent {
   s: number;
   kind: "press" | "release";
-  key: Key;
+  /** A direction, or Space (play mode's stomp). */
+  key: InputKey;
   /** Play mode's log: which keyboard event this is (the simulation only passes it on to its traces). */
   id?: number;
 }
@@ -216,22 +217,26 @@ export class VirtualPlayer implements Player {
 
   /**
    * Strides: let go of the keys held, press the new direction (a key already down is pressed
-   * again), and hold it, so the hero strides on every grid step until the next decision. When
-   * standing still would be better than the best direction, or in a careful moment (a threat in
-   * view, a formation dancing), tap instead: one stride, then stand.
+   * again), and hold it, so the hero strides on every grid step until the next decision. In a
+   * careful moment (a threat in view, a formation dancing), tap instead: one stride, then stand.
+   * When standing still would be better than the best direction, stomp (Space) to keep the beat.
    */
   private strideKeys(obs: Observation, keys: Key[], r: Rng): KeyEvent[] {
     const out: KeyEvent[] = [];
     for (const k of this.held) out.push({ s: obs.s, kind: "release", key: k });
     this.held.clear();
+    if (this.standCost(obs) < this.bestCost) {
+      out.push({ s: obs.s, kind: "press", key: "space" }, { s: obs.s + r.range(0.06, 0.1), kind: "release", key: "space" });
+      return out;
+    }
     let s = obs.s;
     for (let i = 0; i < keys.length; i++) {
       if (i > 0) s += r.range(0.002, 0.015);
       out.push({ s, kind: "press", key: keys[i] });
     }
-    // Careful moments (a threat in view, a formation dancing) and a better spot standing still: tap.
+    // Careful moments (a threat in view, a formation dancing): tap.
     const careful = obs.threats.length > 0 || obs.formation !== undefined;
-    if (careful || this.standCost(obs) < this.bestCost) for (const k of keys) out.push({ s: s + r.range(0.06, 0.1), kind: "release", key: k });
+    if (careful) for (const k of keys) out.push({ s: s + r.range(0.06, 0.1), kind: "release", key: k });
     else for (const k of keys) this.held.add(k);
     return out;
   }

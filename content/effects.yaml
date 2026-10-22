@@ -146,6 +146,11 @@ effects:
   - id: dust
     layers:
       - { kind: burst, art: "proc:dust", count: [3, 6], speed: [15, 45], life: 0.4, clock: world, spread: 180, drag: 2, additive: false, tint: "#b8a890" }
+  # A stomp: both feet stamp, with a ring of dust.
+  - id: stomp
+    layers:
+      - { kind: ring, color: "#c8b8a0", radius: 30, life: 0.3, clock: world, width: 3 }
+      - { kind: burst, art: "proc:dust", count: [8, 12], speed: [30, 70], life: 0.45, clock: world, drag: 2, additive: false, tint: "#b8a890" }
   - id: perfect-accent
     layers:
       - { kind: text, text: "PERFECT", color: "#ffe060", life: 0.8, size: 18 }
