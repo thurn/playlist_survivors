@@ -89,3 +89,14 @@ test("?player= re-runs the simulation with another skill profile", async ({ page
   expect(casual.hash).not.toBe(skilled.hash);
   expect(casual.plan.stats.averageGroove).toBeLessThan(skilled.plan.stats.averageGroove);
 });
+
+test("?mode=play&player= plans and plays back the holder and a masher, with a low groove", async ({ page }) => {
+  for (const player of ["holder", "mash4"]) {
+    await openDemo(page, `&mode=play&player=${player}`);
+    const plan = await page.evaluate(() => (window as unknown as { __demo: Hook }).__demo.plan);
+    expect(plan.profile).toBe(player);
+    expect(plan.stats.averageGroove).toBeLessThan(0.3);
+    await page.evaluate(() => (window as unknown as { __demo: Hook }).__demo.renderAt(90));
+    expect(await brightness(page)).toBeGreaterThan(5);
+  }
+});

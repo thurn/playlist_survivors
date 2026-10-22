@@ -4,7 +4,7 @@
  * pace), as a practiced player would, and sees only the current game state
  * when it acts. It never sees the future of the simulation.
  */
-import type { HeroDef } from "../content/schema.ts";
+import type { HeroDef, SkillProfileName } from "../content/schema.ts";
 import { Rng } from "../core/rng.ts";
 import { wrapAngle } from "../core/geometry.ts";
 import { clamp } from "../core/shaping.ts";
@@ -49,7 +49,10 @@ export interface Player {
   decide(obs: Observation): KeyEvent[];
 }
 
-export type SkillProfile = "perfect" | "skilled" | "casual" | "moderate";
+/** The players that press a pattern on the grid (the holder and mashers steer with one of them). */
+export type SkillProfile = "perfect" | "skilled" | "casual" | "moderate" | "eighths";
+/** Every virtual player `?player=` names: a skill profile, the holder, or a masher. */
+export type PlayerName = SkillProfileName;
 
 export interface ProfileSpec {
   /** Standard deviation and clamp of the timing error, in seconds. */
@@ -57,6 +60,8 @@ export interface ProfileSpec {
   clampS: number;
   /** Casual players press downbeats only. */
   downbeatsOnly: boolean;
+  /** The eighths player presses every grid time and every off-beat (half-way to the next grid time). */
+  eighths?: boolean;
   /** Share of the section's pattern slots pressed, and of the presses that set up a cleave (seeded draws). */
   pressRate: number;
   accentRate: number;
@@ -76,6 +81,16 @@ export const PROFILES: Record<SkillProfile, ProfileSpec> = {
   // The automated stand-in for a moderately competent human (play mode's checks require it to
   // hit the signature moments).
   moderate: { sd: 0.03, clampS: 0.1, downbeatsOnly: false, pressRate: 0.85, accentRate: 0.8, reaction: 0.25, sloppy: 0.15 },
+  eighths: { sd: 0.012, clampS: 0.04, downbeatsOnly: false, eighths: true, pressRate: 1, accentRate: 1, reaction: SIM_REACTION, sloppy: 0 },
+};
+
+/**
+ * Changes to the profiles under the groove (rules.pressClasses), kept apart so the demo's players
+ * stay as they are until the demo takes the groove too (hv-efvd): the casual player stands for a
+ * sparse, sloppy but honest player, and at 185 beats per minute 120 ms is close to random timing.
+ */
+const GROOVE_PROFILES: Partial<Record<SkillProfile, Partial<ProfileSpec>>> = {
+  casual: { sd: 0.06, clampS: 0.15 },
 };
 
 /** Sections as the player knows them: the press pattern and step movement. */
@@ -157,9 +172,9 @@ export class VirtualPlayer implements Player {
     profile: SkillProfile = "skilled",
     /** Is a grid slot an accent the section turns into a cleave? */
     heavyAccent: (slot: GridSlot) => boolean = () => false,
-    opts: { open?: boolean; strides?: boolean } = {},
+    opts: { open?: boolean; strides?: boolean; groove?: boolean } = {},
   ) {
-    const spec = PROFILES[profile];
+    const spec = opts.groove ? { ...PROFILES[profile], ...GROOVE_PROFILES[profile] } : PROFILES[profile];
     this.spec = spec;
     this.sections = sections;
     this.beats = beats;
@@ -168,7 +183,7 @@ export class VirtualPlayer implements Player {
     const grid = slots.filter((sl) => sl.kind === "grid" && sections[sl.section].steps);
     grid.forEach((sl, i) => {
       const sec = sections[sl.section];
-      let pressed = spec.downbeatsOnly ? sl.slot === 0 : sec.presses[sl.slot % sec.presses.length] === "x";
+      let pressed = spec.eighths || (spec.downbeatsOnly ? sl.slot === 0 : sec.presses[sl.slot % sec.presses.length] === "x");
       if (pressed && spec.pressRate < 1 && new Rng(seed, "press-skip", Math.round(sl.s * 1000)).next() >= spec.pressRate) pressed = false;
       // Press one grid step before an accent strong enough for a cleave, even on a rest slot.
       const next = grid[i + 1];
@@ -176,6 +191,14 @@ export class VirtualPlayer implements Player {
       const r = new Rng(seed, "press-time", Math.round(sl.s * 1000));
       const err = spec.sd > 0 ? clamp(normal(r) * spec.sd, -spec.clampS, spec.clampS) : 0;
       this.plan.push({ s: sl.s + (pressed ? err : 0), kind: pressed ? "press" : "watch", beat: sl.bi });
+      // The eighths player's off-beat, half-way to the next grid time: in the same section, or in
+      // the pulsed section right after it.
+      const joined = next && (next.section === sl.section || (next.section === sl.section + 1 && sections[next.section].s0 <= sec.s1 + 1e-6));
+      if (spec.eighths && next && joined) {
+        const off = (sl.s + next.s) / 2;
+        const ro = new Rng(seed, "offbeat-time", Math.round(off * 1000));
+        this.plan.push({ s: off + (spec.sd > 0 ? clamp(normal(ro) * spec.sd, -spec.clampS, spec.clampS) : 0), kind: "press", beat: sl.bi });
+      }
     });
     // Free movement: change the held keys at most once per beat; let go before step movement.
     const sectionAt = (t: number) => sections.findLast((x) => t >= x.s0 - 1e-9) ?? sections[0];
@@ -402,9 +425,11 @@ export class VirtualPlayer implements Player {
     return edge <= 3 ? 50 : edge > NEAR - 4 ? 12 : 0;
   }
 
-  /** The keys the player would press now, ignoring timing (the masher borrows its sense of direction). */
+  /** The keys the player would press now, ignoring timing (the holder and masher borrow its sense of direction). */
   steerKeys(obs: Observation): Key[] {
     this.moveRoam(obs);
+    // (A fresh draw for each choice: its noise and whether it is sloppy.)
+    this.count++;
     return this.chooseKeys(obs);
   }
 
@@ -536,5 +561,74 @@ export class MasherPlayer implements Player {
       { s: obs.s, kind: "press", key },
       { s: obs.s + 0.03, kind: "release", key },
     ];
+  }
+}
+
+/**
+ * A player who never taps: in step movement it holds the direction the virtual player would
+ * choose and changes it at most once a bar, at a seeded random moment in the bar (letting go of
+ * the keys it no longer wants and pressing the new ones), and in free movement it steers like the
+ * virtual player. Play mode's checks use it to keep holding keys at tier 0.
+ */
+export class HolderPlayer implements Player {
+  /** The moment of each bar's change, for bars that start in step movement. */
+  private readonly moments: number[] = [];
+  private next = 0;
+  private held = new Set<Key>();
+
+  constructor(
+    private readonly steerer: VirtualPlayer,
+    private readonly sections: readonly PlayerSection[],
+    seed: number,
+    /** Song times of the bars' starts, in order. */
+    bars: readonly number[],
+  ) {
+    for (let i = 0; i + 1 < bars.length; i++) {
+      if (!this.steps(bars[i])) continue;
+      this.moments.push(bars[i] + (bars[i + 1] - bars[i]) * new Rng(seed, "hold", Math.round(bars[i] * 1000)).next());
+    }
+  }
+
+  private steps(s: number): boolean {
+    return (this.sections.findLast((x) => s >= x.s0 - 1e-9) ?? this.sections[0]).steps;
+  }
+
+  private momentAt(after: number): number {
+    while (this.next < this.moments.length && this.moments[this.next] < after - 1e-9) this.next++;
+    return this.next < this.moments.length ? this.moments[this.next] : Infinity;
+  }
+
+  nextDecision(after: number): number {
+    // The virtual player's own decisions in step movement are skipped: only its steering counts.
+    let v = this.steerer.nextDecision(after);
+    while (Number.isFinite(v) && this.steps(v)) v = this.steerer.nextDecision(v + 1e-6);
+    return Math.min(this.momentAt(after), v);
+  }
+
+  decide(obs: Observation): KeyEvent[] {
+    if (!this.steps(obs.s)) {
+      // Into free movement: let go, and the virtual player steers from there.
+      const out = [...this.held].map((key) => ({ s: obs.s, kind: "release" as const, key }));
+      this.held.clear();
+      return [...out, ...this.steerer.decide(obs)];
+    }
+    if (Math.abs(obs.s - this.momentAt(obs.s)) > 1e-6) return [];
+    this.next++;
+    const want = this.steerer.steerKeys(obs);
+    const out: KeyEvent[] = [];
+    for (const key of [...this.held]) {
+      if (want.includes(key)) continue;
+      this.held.delete(key);
+      out.push({ s: obs.s, kind: "release", key });
+    }
+    let s = obs.s;
+    for (const key of want) {
+      if (this.held.has(key)) continue;
+      // A diagonal's second key follows within a few milliseconds.
+      if (out.some((e) => e.kind === "press")) s += 0.008;
+      this.held.add(key);
+      out.push({ s, kind: "press", key });
+    }
+    return out;
   }
 }

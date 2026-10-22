@@ -8,7 +8,7 @@ import { plan, planWithSim } from "../../src/planner/plan.ts";
 import type { PlannerInput, AnimInfo } from "../../src/planner/context.ts";
 import type { PropInfo } from "../../src/mapgen/mapgen.ts";
 import type { Plan } from "../../src/plan/types.ts";
-import type { SkillProfile } from "../../src/sim/player.ts";
+import type { PlayerName } from "../../src/sim/player.ts";
 import type { SimResult } from "../../src/sim/simulate.ts";
 import { ROOT, hasSongMap, levelResolver, readContentFiles, readSongMap, readSource } from "./files.ts";
 
@@ -52,11 +52,11 @@ export function plannerInput(opts: { songMap?: SongMap; seed?: number; level?: s
   return { songMap, level, content, seed: opts.seed ?? level.seed, heroAnims: heroAnimsFromAtlas(), landmarks: readLandmarks(), soundOnsets: soundOnsets(), version: "node" };
 }
 
-export function runPlanner(opts: { songMap?: SongMap; seed?: number; level?: string; profile?: SkillProfile; mashRate?: number } = {}): Plan {
-  return plan(plannerInput(opts), { props: propsFromAtlas(), now: () => performance.now(), profile: opts.profile, mashRate: opts.mashRate });
+export function runPlanner(opts: { songMap?: SongMap; seed?: number; level?: string; profile?: PlayerName } = {}): Plan {
+  return plan(plannerInput(opts), { props: propsFromAtlas(), now: () => performance.now(), profile: opts.profile });
 }
 
 /** The plan and its simulation, from one run. */
-export function runPlannerWithSim(opts: { songMap?: SongMap; seed?: number; level?: string; profile?: SkillProfile } = {}): { plan: Plan; sim: SimResult } {
+export function runPlannerWithSim(opts: { songMap?: SongMap; seed?: number; level?: string; profile?: PlayerName } = {}): { plan: Plan; sim: SimResult } {
   return planWithSim(plannerInput(opts), { props: propsFromAtlas(), now: () => performance.now(), profile: opts.profile });
 }

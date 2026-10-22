@@ -66,7 +66,7 @@ describe("press classes on the HUD", () => {
     expect(up).toBeGreaterThan(0);
     const at = t.s[up];
     const hud = ev.evaluate(at + 0.01).hud;
-    expect(hud.tier).toMatchObject({ n: t.v[up], marks: [0.3, 0.6, 0.85] });
+    expect(hud.tier).toMatchObject({ n: t.v[up], marks: lib.hero.meter.tiers });
     expect(hud.tier!.flash).toBeGreaterThan(0.9);
     expect(ev.evaluate(at + 1).hud.tier!.flash).toBe(0);
     expect(ev.evaluate(1).hud.tier).toMatchObject({ n: 0, flash: 0 });

@@ -146,7 +146,7 @@ describe("play-mode rules", () => {
     expect(mash(demo.rules).travel).toBeGreaterThan(m.travel + 20);
   });
 
-  it("adds a little for Perfect eighth notes on the off-beat, and nothing for sloppy double taps", () => {
+  it("classes eighth notes on the off-beat apart, and sloppy double taps as doubles that change nothing", () => {
     const sec = ctx.sections.find((s) => s.label === "theme-a")!;
     const grid = Array.from(sch.gridTimes).filter((g) => g > sec.s0 + 2).slice(0, 7);
     const run = (offset: number) => {
@@ -166,16 +166,17 @@ describe("play-mode rules", () => {
       const extras = r.inputs.filter((i) => i.kind === "press" && i.extra && i.s > grid[0]);
       return { groove: grooveAt(r.groove, grid[grid.length - 1] - 0.01), extras };
     };
-    // Six Perfect beats (+0.08 each) and six Perfect off-beats (+0.03 each).
+    // Six Perfect beats and six Perfect off-beats (which the tuned meter counts for nothing).
+    const m = play.hero.meter;
     const onBeat = run(0);
     expect(onBeat.extras.length).toBe(6);
     expect(onBeat.extras.every((i) => i.class === "offbeat" && i.offbeat === "perfect")).toBe(true);
-    expect(onBeat.groove).toBeCloseTo(6 * 0.08 + 6 * 0.03, 6);
+    expect(onBeat.groove).toBeCloseTo(6 * m.counted.perfect + 6 * m.offbeat.perfect, 6);
     // 130 ms before the half-beat is 32 ms after the beat's press: a double tap, which changes nothing.
     const sloppy = run(-0.13);
     expect(sloppy.extras.length).toBe(6);
     expect(sloppy.extras.every((i) => i.class === "double" && i.offbeat === undefined)).toBe(true);
-    expect(sloppy.groove).toBeCloseTo(6 * 0.08, 6);
+    expect(sloppy.groove).toBeCloseTo(6 * m.counted.perfect + 6 * m.doubleTap, 6);
   });
 
   it("walks at full speed in the calm prelude", () => {

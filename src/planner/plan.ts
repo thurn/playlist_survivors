@@ -22,7 +22,7 @@ import { recipeLife } from "../plan/effects-life.ts";
 import { grooveAt } from "../plan/evaluate.ts";
 import { buildSchedule, paceAt, type GridSlot, type Schedule } from "../sim/schedule.ts";
 import { ENEMY_RATE, simulate, type SimResult } from "../sim/simulate.ts";
-import { MasherPlayer, VirtualPlayer, type Player, type SkillProfile } from "../sim/player.ts";
+import { HolderPlayer, MasherPlayer, VirtualPlayer, type Player, type PlayerName, type PlayerSection, type SkillProfile } from "../sim/player.ts";
 import { strideRule } from "../sim/strides.ts";
 
 export const PLAN_FORMAT = "2";
@@ -35,10 +35,8 @@ export interface PlannerOptions {
   props?: Record<string, PropInfo>;
   /** Clock for timing only (performance.now); never affects output. */
   now?: () => number;
-  /** The virtual player's skill profile (default skilled). */
-  profile?: SkillProfile;
-  /** Mash instead of playing on the beat: presses per second (see MasherPlayer). */
-  mashRate?: number;
+  /** The virtual player (default the level's): a skill profile, the holder or a masher. */
+  profile?: PlayerName;
   /** A player of the caller's own instead of the virtual player (for checks and tests). */
   player?: Player;
 }
@@ -125,18 +123,37 @@ export function cleaves(ctx: Ctx, slot: GridSlot): boolean {
   return slot.kind === "grid" && slot.accent > 0 && slot.accent >= rule.minStrength && (rule.label === undefined || rule.label === slot.accentLabel);
 }
 
+/** Sections as the virtual players know them. */
+function playerSections(ctx: Ctx): PlayerSection[] {
+  return ctx.sections.map((s) => ({ steps: s.level.movement === "steps", presses: s.level.presses, s0: s.s0, s1: s.s1, pace: s.level.pace }));
+}
+
 /** The virtual player for a profile. */
 export function virtualPlayer(ctx: Ctx, sch: Schedule, profile: SkillProfile = "skilled"): VirtualPlayer {
   return new VirtualPlayer(
     ctx.lib.hero,
     ctx.seed,
     sch.slots,
-    ctx.sections.map((s) => ({ steps: s.level.movement === "steps", presses: s.level.presses, s0: s.s0, s1: s.s1, pace: s.level.pace })),
+    playerSections(ctx),
     ctx.song.beats,
     profile,
     (slot) => cleaves(ctx, slot),
-    { open: ctx.level.world === "open", strides: ctx.level.rules.strides },
+    { open: ctx.level.world === "open", strides: ctx.level.rules.strides, groove: ctx.level.rules.pressClasses },
   );
+}
+
+/** The players that ignore the beat steer like this one. */
+const STEERER: SkillProfile = "moderate";
+
+/** The player a name stands for: a skill profile's virtual player, the holder, or a masher (mash2, mash4, mash8). */
+export function playerFor(ctx: Ctx, sch: Schedule, name: PlayerName): Player {
+  const mash = /^mash(\d+)$/.exec(name);
+  if (mash) return masherPlayer(ctx, sch, Number(mash[1]));
+  if (name === "holder") {
+    const bars = ctx.idx.barStart.slice(1).map((b) => ctx.song.beats[b]).filter((s) => s !== undefined);
+    return new HolderPlayer(virtualPlayer(ctx, sch, STEERER), playerSections(ctx), ctx.seed, [...bars, ctx.duration]);
+  }
+  return virtualPlayer(ctx, sch, name as SkillProfile);
 }
 
 /** The lowest the hero's health fell, and when it ran out. */
@@ -151,15 +168,14 @@ export function healthStats(h: { s: ArrayLike<number>; v: ArrayLike<number> }): 
 }
 
 /** A player who mashes at `rate` presses per second, steering like the virtual player for `profile`. */
-export function masherPlayer(ctx: Ctx, sch: Schedule, rate: number, profile: SkillProfile = "moderate"): MasherPlayer {
-  const sections = ctx.sections.map((s) => ({ steps: s.level.movement === "steps", presses: s.level.presses, s0: s.s0, s1: s.s1, pace: s.level.pace }));
-  return new MasherPlayer(virtualPlayer(ctx, sch, profile), sections, ctx.seed, rate);
+export function masherPlayer(ctx: Ctx, sch: Schedule, rate: number, profile: SkillProfile = STEERER): MasherPlayer {
+  return new MasherPlayer(virtualPlayer(ctx, sch, profile), playerSections(ctx), ctx.seed, rate);
 }
 
 /** Run the simulation only (no emission): for the causality and determinism checks. */
-export function runSim(input: PlannerInput, opts: { props?: Record<string, PropInfo>; profile?: SkillProfile; player?: Player; cutS?: number; untilS?: number } = {}): SimRun {
+export function runSim(input: PlannerInput, opts: { props?: Record<string, PropInfo>; profile?: PlayerName; player?: Player; cutS?: number; untilS?: number } = {}): SimRun {
   const { ctx, sch, map } = prepare(input, opts.props);
-  const player = opts.player ?? virtualPlayer(ctx, sch, opts.profile ?? input.profile ?? input.level.player);
+  const player = opts.player ?? playerFor(ctx, sch, opts.profile ?? input.profile ?? input.level.player);
   const sim = simulate(ctx, sch, map, { player, cutS: opts.cutS, untilS: opts.untilS });
   return { ctx, sch, map, sim };
 }
@@ -175,7 +191,7 @@ export function planWithSim(input: PlannerInput, opts: PlannerOptions = {}): { p
   const profile = opts.profile ?? input.profile ?? input.level.player;
   const { ctx, sch, map } = prepare(input, opts.props);
   const tSim = now();
-  const player = opts.player ?? (opts.mashRate ? masherPlayer(ctx, sch, opts.mashRate, profile) : virtualPlayer(ctx, sch, profile));
+  const player = opts.player ?? playerFor(ctx, sch, profile);
   const sim = simulate(ctx, sch, map, { player });
   const simMs = now() - tSim;
   const warp = new Warp(sim.warp);
@@ -247,7 +263,7 @@ export function planWithSim(input: PlannerInput, opts: PlannerOptions = {}): { p
   };
 
   const recorded: Plan = {
-    ...planHeader(ctx, sch, map, opts.mashRate ? `masher-${opts.mashRate}` : profile),
+    ...planHeader(ctx, sch, map, profile),
     warp: sim.warp,
     worldBeats: Float64Array.from(ctx.song.beats, (s) => warp.toWorld(s)),
     hero,

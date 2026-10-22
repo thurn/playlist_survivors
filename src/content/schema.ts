@@ -366,8 +366,13 @@ export const levelEvent = z.strictObject({
   blast: id.optional(),
 });
 
-/** The virtual players: the demo's three, and play mode's stand-in for a moderately competent human. */
-export const skillProfile = z.enum(["perfect", "skilled", "casual", "moderate"]);
+/**
+ * The virtual players: the demo's three, play mode's stand-in for a moderately competent human, the
+ * eighths player (every eighth note), and the players the groove must not reward: the holder (holds
+ * directions, never taps) and mashers at 2, 4 and 8 presses a second.
+ */
+export const PLAYER_NAMES = ["perfect", "skilled", "casual", "moderate", "eighths", "holder", "mash2", "mash4", "mash8"] as const;
+export const skillProfile = z.enum(PLAYER_NAMES);
 export type SkillProfileName = z.infer<typeof skillProfile>;
 
 export const levelScript = z.strictObject({

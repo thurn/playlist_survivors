@@ -56,21 +56,21 @@ describe("the self-firing sword", () => {
   });
 
   it("is sized by the tier when its wind-up starts, whatever the tier does before it strikes", () => {
-    // From the groove at 0, the 4th Perfect press on the beat lifts it to tier 1, at that beat:
+    // From the groove at 0, the 6th Perfect press on the beat lifts it to tier 1, at that beat:
     // after its swing's wind-up started (about 190 ms before), so that swing stays tier 0.
     const rec = new BatchRecorder();
     const keys: KeyEvent[] = beats.slice(0, 8).flatMap((b) => tap(b));
     run(keys, [beats[9]], rec);
     const swingAt = (s: number) => rec.swings.find((sw) => Math.abs(sw.s - s) < 1e-6)!;
     const hit = (s: number) => rec.hits[swingAt(s).hit];
-    expect(rec.tierS[rec.tierV.indexOf(1)]).toBeCloseTo(beats[3], 9);
-    expect(swingAt(beats[3])).toMatchObject({ tier: 0, reach: { radius: 100, degrees: 150 } });
-    expect(swingAt(beats[4])).toMatchObject({ tier: 1, reach: { radius: 130, degrees: 180 } });
+    expect(rec.tierS[rec.tierV.indexOf(1)]).toBeCloseTo(beats[5], 9);
+    expect(swingAt(beats[5])).toMatchObject({ tier: 0, reach: { radius: 100, degrees: 150 } });
+    expect(swingAt(beats[6])).toMatchObject({ tier: 1, reach: { radius: 130, degrees: 180 } });
     // Its hit's arc and damage follow the swing's tier.
-    expect(hit(beats[3]).shape).toMatchObject({ kind: "arc", radius: 100 });
-    expect(hit(beats[4]).shape).toMatchObject({ kind: "arc", radius: 130 });
-    expect(hit(beats[3]).damage).toBeCloseTo(hero.swings.light.damage * 1.0, 9);
-    expect(hit(beats[4]).damage).toBeCloseTo(hero.swings.light.damage * 1.1, 9);
+    expect(hit(beats[5]).shape).toMatchObject({ kind: "arc", radius: 100 });
+    expect(hit(beats[6]).shape).toMatchObject({ kind: "arc", radius: 130 });
+    expect(hit(beats[5]).damage).toBeCloseTo(hero.swings.light.damage * 1.0, 9);
+    expect(hit(beats[6]).damage).toBeCloseTo(hero.swings.light.damage * 1.1, 9);
   });
 });
 

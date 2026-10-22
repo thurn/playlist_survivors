@@ -4,6 +4,7 @@
  */
 import { Application } from "pixi.js";
 import { ContentError, levelSongName, loadContent, loadLevel, type ContentLibrary } from "../content/loader.ts";
+import { PLAYER_NAMES, type SkillProfileName } from "../content/schema.ts";
 import { Evaluator } from "../plan/evaluate.ts";
 import type { Plan } from "../plan/types.ts";
 import type { PlannerInput } from "../planner/context.ts";
@@ -26,8 +27,8 @@ export interface Params {
   /** Song time in seconds to start playback from (`?start=95` or `?start=1:35`). */
   startS: number;
   seed?: number;
-  /** The virtual player's skill profile (`?player=casual`). */
-  player?: "perfect" | "skilled" | "casual" | "moderate";
+  /** The virtual player (`?player=casual`): a skill profile, the holder or a masher. */
+  player?: SkillProfileName;
   test: boolean;
   bench: boolean;
   checks: boolean;
@@ -52,7 +53,7 @@ export function readParams(search: string): Params {
     avOffsetMs: num("avOffsetMs") ?? 0,
     startS: parseTimestamp(q.get("start")),
     seed: num("seed"),
-    player: (["perfect", "skilled", "casual", "moderate"] as const).find((p) => p === q.get("player")),
+    player: PLAYER_NAMES.find((p) => p === q.get("player")),
     test: q.has("test") || q.has("capture") || q.has("bench"),
     bench: q.has("bench"),
     checks: q.has("checks"),

@@ -163,6 +163,10 @@ export function checkStrides(plan: Plan): CheckResult[] {
       const w0 = warp.toWorld(s0);
       const w1 = warp.toWorld(s1);
       if (w1 - w0 < 1e-3) continue;
+      // (A stride still moving when the bar starts, frozen by a hit-stop or slowed by slow motion
+      // just before it, is taken over by the bar's first held stride, which adds the rest of its
+      // ground: the bar covers more than the ground built since the step before.)
+      if (w0 - warp.toWorld(prevStep) < st.durationS - 1e-9) continue;
       // The hero stands still just before each held stride: from the sample at or before the bar's
       // first stride to the one at or before the next bar's.
       const k0 = Math.floor(w0 * t.rate + 1e-9);
@@ -294,4 +298,72 @@ export function checkPlay(plan: Plan, lib: ContentLibrary, opts: PlayCheckOption
     add("signature moments", f, n);
   }
   return results;
+}
+
+/** The groove checks start after this section: the galop vamp, where the song's pulse begins. */
+const GROOVE_FROM = "galop-vamp";
+
+/**
+ * The share of pulsed time after the galop vamp (step sections, while the hero lives) during
+ * which the tier passes `test`. Without press classes the tier is 0 throughout.
+ */
+export function tierShare(plan: Plan, test: (tier: number) => boolean): number {
+  const from = plan.sections.findIndex((sec) => sec.label === GROOVE_FROM);
+  const end = plan.stats.deathS ?? Infinity;
+  const ts = plan.tier?.s ?? [];
+  const tv = plan.tier?.v ?? [];
+  let total = 0;
+  let passed = 0;
+  for (const sec of plan.sections.slice(from + 1)) {
+    if (sec.movement !== "steps") continue;
+    const s1 = Math.min(sec.s1, end);
+    if (s1 <= sec.s0) continue;
+    total += s1 - sec.s0;
+    // The tier series is piecewise constant: walk its changes across the section.
+    let i = 0;
+    while (i < ts.length && ts[i] <= sec.s0) i++;
+    let s = sec.s0;
+    let tier = i > 0 ? tv[i - 1] : 0;
+    for (; s < s1; i++) {
+      const next = i < ts.length ? Math.min(ts[i], s1) : s1;
+      if (test(tier)) passed += next - s;
+      s = next;
+      if (i < ts.length) tier = tv[i];
+    }
+  }
+  return total > 0 ? passed / total : 0;
+}
+
+/** Each player the groove check knows: the moderate player climbs, the holder and mashers stay at tier 0. */
+const TIER_RULES: { match: (player: string) => boolean; what: string; test: (tier: number) => boolean; min: number }[] = [
+  { match: (p) => p === "moderate", what: "at tier 2 or higher", test: (t) => t >= 2, min: 0.7 },
+  { match: (p) => p === "holder" || /^mash\d+$/.test(p), what: "at tier 0", test: (t) => t === 0, min: 0.8 },
+];
+
+/** The eighths player's average groove is within this of the skilled player's. */
+const EIGHTHS_GROOVE = 0.05;
+
+/**
+ * The groove tells the players apart, on one seed's runs (by player name): after the galop vamp
+ * the moderate player is at tier 2 or higher for at least 70% of pulsed time, and the holder and
+ * mashers are at tier 0 for at least 80% of it; the eighths player's average groove is within
+ * 0.05 of the skilled player's.
+ */
+export function checkGroove(runs: ReadonlyMap<string, Plan>): CheckResult[] {
+  const out: CheckResult[] = [];
+  for (const [player, plan] of runs) {
+    const rule = TIER_RULES.find((r) => r.match(player));
+    if (!rule) continue;
+    const share = tierShare(plan, rule.test);
+    const failures = share >= rule.min ? [] : [`seed ${plan.seed}: the ${player} player was ${rule.what} for ${(share * 100).toFixed(0)}% of pulsed time after the galop vamp (at least ${rule.min * 100}%)`];
+    out.push({ name: `groove: the ${player} player is ${rule.what} for at least ${rule.min * 100}% of pulsed time`, failures, checked: 1 });
+  }
+  const eighths = runs.get("eighths");
+  const skilled = runs.get("skilled");
+  if (eighths && skilled) {
+    const d = eighths.stats.averageGroove - skilled.stats.averageGroove;
+    const failures = Math.abs(d) <= EIGHTHS_GROOVE ? [] : [`seed ${eighths.seed}: the eighths player's average groove ${eighths.stats.averageGroove.toFixed(3)}, the skilled player's ${skilled.stats.averageGroove.toFixed(3)}`];
+    out.push({ name: `groove: the eighths player's average is within ${EIGHTHS_GROOVE} of the skilled player's`, failures, checked: 1 });
+  }
+  return out;
 }

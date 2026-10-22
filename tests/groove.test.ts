@@ -13,6 +13,7 @@ import { syntheticSongMap } from "./fixtures/synthetic-song.ts";
 
 const { ctx, sch, section, run } = play(syntheticSongMap());
 const hero = ctx.lib.hero;
+const m = hero.meter;
 
 describe("press classes", () => {
   it("class the design's six presses at 185 beats per minute, with their groove changes", () => {
@@ -29,7 +30,7 @@ describe("press classes", () => {
       ["stray", undefined],
       ["counted", "great"],
     ]);
-    expect(got.map((j) => j.change)).toEqual([0.08, 0, 0, 0.03, -0.1, 0.02]);
+    expect(got.map((j) => j.change)).toEqual([m.counted.perfect, 0, m.doubleTap, m.offbeat.perfect, m.stray, m.counted.great]);
   });
 
   it("rates counted presses Perfect, Great, Good and loose, and lets only a Great or better one have an off-beat", () => {
@@ -44,14 +45,16 @@ describe("press classes", () => {
 });
 
 describe("tiers", () => {
-  it("rise at 0.30, 0.60 and 0.85, and drop only 0.05 below a threshold", () => {
-    expect(tierFor(hero, 0, 0.29)).toBe(0);
-    expect(tierFor(hero, 0, 0.3)).toBe(1);
+  it("rise at their thresholds (0.45, 0.60 and 0.85), and drop only 0.05 below one", () => {
+    const [t1, t2, t3] = m.tiers;
+    expect([m.tiers, m.hysteresis]).toEqual([[0.45, 0.6, 0.85], 0.05]);
+    expect(tierFor(hero, 0, t1 - 0.01)).toBe(0);
+    expect(tierFor(hero, 0, t1)).toBe(1);
     expect(tierFor(hero, 0, 0.9)).toBe(3);
-    expect(tierFor(hero, 2, 0.57)).toBe(2);
-    expect(tierFor(hero, 2, 0.549)).toBe(1);
-    expect(tierFor(hero, 3, 0.81)).toBe(3);
-    expect(tierFor(hero, 3, 0.79)).toBe(2);
+    expect(tierFor(hero, 2, t2 - 0.03)).toBe(2);
+    expect(tierFor(hero, 2, t2 - 0.051)).toBe(1);
+    expect(tierFor(hero, 3, t3 - 0.04)).toBe(3);
+    expect(tierFor(hero, 3, t3 - 0.06)).toBe(2);
     // Hovering about 0.6, the tier does not flicker.
     let t = 0;
     const seen: number[] = [];
@@ -59,7 +62,7 @@ describe("tiers", () => {
     expect(new Set(seen)).toEqual(new Set([2]));
   });
 
-  it("climb from 0 with a Perfect press on every beat: tier 1 after 4 beats, 2 after 8 and 3 after 11", () => {
+  it("climb from 0 with a Perfect press on every beat: tier 1 after 6 beats, 2 after 8 and 3 after 11", () => {
     let g = 0;
     let t = 0;
     const after: number[] = [];
@@ -68,7 +71,7 @@ describe("tiers", () => {
       t = tierFor(hero, t, g);
       after.push(t);
     }
-    expect(after.indexOf(1) + 1).toBe(4);
+    expect(after.indexOf(1) + 1).toBe(6);
     expect(after.indexOf(2) + 1).toBe(8);
     expect(after.indexOf(3) + 1).toBe(11);
   });
@@ -86,7 +89,7 @@ describe("the groove in play", () => {
     run(presses.flatMap((b) => tap(b)), [last + 11 * bar], rec);
     const groove = (s: number) => grooveAt({ s: rec.grooveS, v: rec.grooveV }, s);
     const tierAt = (s: number) => rec.tierV[rec.tierS.findLastIndex((x) => x <= s + 1e-9)];
-    expect(tierAt(presses[3] + 0.01)).toBe(1);
+    expect(tierAt(presses[5] + 0.01)).toBe(1);
     expect(tierAt(presses[7] + 0.01)).toBe(2);
     expect(tierAt(presses[10] + 0.01)).toBe(3);
     expect(groove(last + 0.01)).toBe(1);

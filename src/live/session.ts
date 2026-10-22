@@ -5,7 +5,7 @@
  */
 import type { PropInfo } from "../mapgen/mapgen.ts";
 import type { Ctx, PlannerInput } from "../planner/context.ts";
-import { prepare, virtualPlayer } from "../planner/plan.ts";
+import { playerFor, prepare } from "../planner/plan.ts";
 import type { KeyEvent } from "../sim/player.ts";
 import { Sim, worldFor } from "../sim/simulate.ts";
 import { LiveRecording } from "./recording.ts";
@@ -31,7 +31,7 @@ export interface LiveOptions {
 export function liveSim(input: PlannerInput, props: Record<string, PropInfo> | undefined, bot: boolean): { ctx: Ctx; recording: LiveRecording; sim: Sim } {
   const { ctx, sch, map } = prepare(input, props);
   const recording = new LiveRecording(ctx, sch, map, ctx.lib, "player", props);
-  const sim = new Sim(ctx, sch, worldFor(ctx, sch, map), ctx.level.rules, recording, bot ? { player: virtualPlayer(ctx, sch, ctx.level.player) } : {});
+  const sim = new Sim(ctx, sch, worldFor(ctx, sch, map), ctx.level.rules, recording, bot ? { player: playerFor(ctx, sch, ctx.level.player) } : {});
   return { ctx, recording, sim };
 }
 
