@@ -1842,9 +1842,9 @@ song maps come later.
 
 - **William Tell finale (2:43):** trumpet fanfare, galop and coda. Two joins
   skip a repeat of the galop theme and the quieter middle strain.
-- **Beethoven's Fifth (2:55):** the recapitulation and coda, uncut. It fades
-  in over 1.5 s at the end of the motto's fermata and keeps the oboe cadenza,
-  which is a natural `free` passage. The exposition and coda are in different keys, so no clean
+- **Beethoven's Fifth (3:00):** the recapitulation and coda, uncut. It opens
+  on the full motto (G-G-G-Eb, F-F-F-D) and its fermatas and keeps the oboe
+  cadenza, which is a natural `free` passage. The exposition and coda are in different keys, so no clean
   join between them exists.
 - **In the Hall of the Mountain King (2:32):** the whole piece. Its
   accelerando is the reason for the song, so nothing is cut.
