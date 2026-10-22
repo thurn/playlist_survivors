@@ -31,6 +31,7 @@ import { BatchRecorder, type ArrowRecord, type PressTrace, type Recorder, type S
 import { DEMO_RULES, type Rules } from "./rules.ts";
 import { nextStepAfter, stepRate, stepSpan, type GridSlot, type Schedule } from "./schedule.ts";
 import { budgetAt, freshStrides, heldDirection, interrupt, periodAt, settle, startStride, stompCancelsUntil, strideRule, striding, type StrideState } from "./strides.ts";
+import { chainAt, orbitAt, swingArcAt, tierDamage, trailRadiusAt } from "./tiers.ts";
 import { armedStrike, classifyPress, damageMultiplier, drainPerBeat, firstAtOrAfter, freshPressMemo, grooveAfterChange, type PressJudgement, type PressMemo, type PressRating, grooveAfterOffbeat, grooveAfterPress, grooveDecay, nearestIndex, ratePress, ratePressOnGrid, type Rating, tierFor } from "./timing.ts";
 import { CorridorWorld, OpenWorld, type World } from "./world.ts";
 
@@ -99,6 +100,8 @@ const BOSS_LAND_PUSH = 120;
 const BOSS_KILL_STOP = 0.15;
 /** The player reacts to a threat only after it has been visible this long (song seconds). */
 const REACTION = 0.15;
+/** Self-firing weapons: a cleave aims this much beyond its shockwave's reach, at what will charge into it. */
+const CLEAVE_AIM_AHEAD = 160;
 /** The kick line stands this far ahead of the pace point; its charge is this much faster than a walk. */
 const LINE_LEAD = 170;
 const CHARGE_BEATS = 2;
@@ -181,6 +184,8 @@ interface Swing {
   accuracy: number;
   /** Lost to a stumble before its wind-up: it never winds up or strikes. */
   lost?: boolean;
+  /** Self-firing weapons: the tier read when the wind-up started (it sizes the swing and its damage). */
+  tier?: number;
   accent: number;
   dir: number;
   aimed: boolean;
@@ -232,6 +237,8 @@ interface Wave {
   hit: Set<Foe>;
   /** Index of the wave's record. */
   group: number;
+  /** Self-firing weapons: its cleave's damage multiplier. */
+  mult?: number;
 }
 
 interface ChainState {
@@ -243,6 +250,9 @@ interface ChainState {
   jumps: number;
   energy: number;
   bi: number;
+  /** Self-firing weapons: each jump's reach and damage multiplier, set by the tier when it fired. */
+  range?: number;
+  mult?: number;
 }
 
 /** Event order at equal times. */
@@ -588,6 +598,9 @@ function engine(env: Env, st: SimState, io: Io) {
   const heavyReach = { radius: hero.swings.heavy.hitShape.radius, halfAngle: (hero.swings.heavy.hitShape.degrees * Math.PI) / 360 };
   // A cleave aims at everything its arc and its shockwave will reach.
   const heavyAim = { radius: hero.swings.heavy.wave.to, halfAngle: heavyReach.halfAngle };
+  // Self-firing weapons (until accents are reworked): a cleave also aims at what will come into its
+  // shockwave's reach, such as a kick line charging from further down the line.
+  const chargeAim = { radius: hero.swings.heavy.wave.to + CLEAVE_AIM_AHEAD, halfAngle: heavyReach.halfAngle };
   const anims = ctx.heroAnims;
   const animIdx = (name: string) => Math.max(0, HERO_ANIMS.indexOf(name));
   const pacePoint = (s: number) => world.pacePoint(s);
@@ -660,6 +673,7 @@ function engine(env: Env, st: SimState, io: Io) {
 
   // ---------------------------------------------------------------- strides
   const strides = env.rules.strides;
+  const selfFiring = env.rules.selfFiring;
   const rule = strideRule(hero);
   /** How long a step (or stride) takes. */
   const stepDur = strides ? rule.durationS : stepSeconds(hero);
@@ -670,6 +684,16 @@ function engine(env: Env, st: SimState, io: Io) {
    * uneven grid, a step shorter than the one before would otherwise lose ground while holding.)
    */
   const heldStrideLimit = () => oneStride(st.s - 1e-6);
+  /**
+   * Strides: how far a press would stride now: the budget, plus the ground a stride still moving
+   * would give back (as an interruption does), at most one stride.
+   */
+  const strideNow = (hp: { x: number; y: number }) => {
+    const one = oneStride(st.s);
+    const sp = st.step;
+    const back = sp && striding(rule, sp, st.w) ? Math.max(0, Math.hypot(sp.ex, sp.ey) - Math.hypot(hp.x - sp.x0, hp.y - sp.y0)) : 0;
+    return Math.min(one, budgetAt(rule, st.strides, st.w, one) + back);
+  };
   /** A press's key goes down: held keys keep the order they were pressed in (the more recent of two opposite keys wins). */
   const hold = (key: InputKey) => {
     if (key === "space") return;
@@ -981,7 +1005,8 @@ function engine(env: Env, st: SimState, io: Io) {
     // free movement cleaves on strong anchors.
     const rule = sec.level.heavyOnAccents;
     const onAccent = slot.accent > 0 && slot.accent >= rule.minStrength && (rule.label === undefined || rule.label === slot.accentLabel);
-    const heavy = slot.kind === "anchor" || (slot.kind === "grid" && onAccent && (rating === "perfect" || rating === "great"));
+    // (Self-firing weapons, until accents are reworked: an eligible accent's swing is heavy for everyone.)
+    const heavy = slot.kind === "anchor" || (slot.kind === "grid" && onAccent && (selfFiring || rating === "perfect" || rating === "great"));
     const anim = heavy ? hero.swings.heavy.animation : hero.swings.light.animations[st.lightCount++ % hero.swings.light.animations.length];
     const info = anims[anim] ?? { frames: 6, impactFrame: 3 };
     const sWind = Math.max(sArmed, slot.s - hero.swings.windupMs / 1000 / Math.max(0.05, baseRate(slot.s)));
@@ -1013,10 +1038,18 @@ function engine(env: Env, st: SimState, io: Io) {
   /** A light swing's reach: its arc, shortened by a loosely timed press (it still aims with the full arc). */
   const lightReachOf = (sw: Swing) => (sw.accuracy >= 1 ? lightReach : { ...lightReach, radius: lightReach.radius * lerp(hero.swings.light.minReach, 1, sw.accuracy) });
 
+  /** A light swing's arc at a tier (self-firing weapons). */
+  const tierReach = (tier: number) => {
+    const arc = swingArcAt(hero, tier);
+    return { radius: arc.radius, halfAngle: (arc.degrees * Math.PI) / 360 };
+  };
+
   const doWind = (sw: Swing) => {
     if (sw.lost) return;
     const hp = heroPose(st.w);
-    const reach = sw.heavy ? heavyAim : lightReach;
+    // Self-firing weapons: the tier when the wind-up starts sizes the swing, whatever comes after.
+    if (selfFiring) sw.tier = st.tier;
+    const reach = sw.heavy ? (sw.tier !== undefined ? chargeAim : heavyAim) : sw.tier !== undefined ? tierReach(sw.tier) : lightReach;
     const targets = aimTargets(hp.x, hp.y, reach.radius);
     // The snapshot is aim's whole input, so the check can re-run it.
     const snap: AimSnapshot = { x: hp.x, y: hp.y, facing: st.facingAngle, targets: [] };
@@ -1025,6 +1058,10 @@ function engine(env: Env, st: SimState, io: Io) {
     sw.aimed = true;
     st.facingAngle = sw.dir;
     sw.record = { s: sw.sStrike, w: 0, sArmed: sw.sArmed, sWind: sw.sWind, kind: sw.heavy ? "heavy" : "light", anim: sw.anim, impactFrame: sw.impact, dir: sw.dir, x: 0, y: 0, hit: -1, press: sw.press, accent: sw.accent, aim: snap };
+    if (sw.tier !== undefined) {
+      sw.record.tier = sw.tier;
+      sw.record.reach = sw.heavy ? { radius: chargeAim.radius, degrees: hero.swings.heavy.hitShape.degrees } : swingArcAt(hero, sw.tier);
+    }
     const windW = Math.max(1 / 240, (sw.sStrike - sw.sWind) * baseRate(sw.sStrike));
     sw.fps = sw.impact / windW;
   };
@@ -1034,9 +1071,9 @@ function engine(env: Env, st: SimState, io: Io) {
     if (!sw.aimed) doWind(sw);
     const hp = heroPose(st.w);
     const def = sw.heavy ? hero.swings.heavy : hero.swings.light;
-    const reach = sw.heavy ? heavyReach : lightReachOf(sw);
+    const reach = sw.heavy ? heavyReach : sw.tier !== undefined ? tierReach(sw.tier) : lightReachOf(sw);
     const shape: Shape = swingArc(hp.x, hp.y, sw.dir, reach);
-    const mult = damageMultiplier(hero, st.groove);
+    const mult = sw.tier !== undefined ? tierDamage(hero, sw.tier) : damageMultiplier(hero, st.groove);
     const h = addHit({ source: "move", what: sw.heavy ? "cleave" : "slash", weight: sw.heavy ? "heavy" : "light", primary: true, shape, dir: sw.dir, accent: sw.accent, damage: def.damage * mult });
     applyHit(h);
     sw.struck = true;
@@ -1049,10 +1086,10 @@ function engine(env: Env, st: SimState, io: Io) {
     rec().swing(r);
     sw.record = undefined;
     if (sw.heavy) {
-      startHitStop((hero.swings.heavy.hitStopMs / 1000) * (0.6 + 0.4 * sw.accent));
+      if (!selfFiring || sw.press !== undefined) startHitStop((hero.swings.heavy.hitStopMs / 1000) * (0.6 + 0.4 * sw.accent));
       // The cleave's crescent shockwave travels outward along its aim, one band per sixteenth note.
       // Band k reaches 25 px further on the k-th sixteenth after the strike.
-      const wave: Wave = { x: hp.x, y: hp.y, dir: sw.dir, band: 0, hit: new Set(), group: st.nWaves++ };
+      const wave: Wave = { x: hp.x, y: hp.y, dir: sw.dir, band: 0, hit: new Set(), group: st.nWaves++, ...(sw.tier !== undefined ? { mult } : {}) };
       rec().wave();
       // (On the sixteenth-note grid, from the strike's own sixteenth or the next one.)
       const bi0 = Math.ceil(sbiAt(st.s) * 4 - 1e-6) / 4;
@@ -1068,7 +1105,7 @@ function engine(env: Env, st: SimState, io: Io) {
     const outer = heavyReach.radius + wd.band * (wave.band + 1);
     const shape: Shape = { kind: "arc", x: wave.x, y: wave.y, radius: outer, inner: heavyReach.radius, dir: wave.dir, halfAngle: heavyReach.halfAngle };
     // Everyone the front has reached and the wave has not hit yet.
-    const h = addHit({ source: "wave", what: "shockwave", weight: "medium", primary: false, shape, dir: wave.dir, accent: 0, damage: wd.damage * damageMultiplier(hero, st.groove), group: wave.group });
+    const h = addHit({ source: "wave", what: "shockwave", weight: "medium", primary: false, shape, dir: wave.dir, accent: 0, damage: wd.damage * (wave.mult ?? damageMultiplier(hero, st.groove)), group: wave.group });
     rec().waveHit(wave.group, h.id);
     for (const f of applyHit(h, (f) => !wave.hit.has(f))) wave.hit.add(f);
   };
@@ -1291,13 +1328,14 @@ function engine(env: Env, st: SimState, io: Io) {
     }
     const slot = sch.gridSlots[armedStrike(hero, sch.gridTimes, st.s)];
     const taken = slot !== undefined && st.takenSlots.has(slot);
-    const sw = swingFor(slot, st.s, idx, rated.rating, env.rules.oneStepPerSlot || env.rules.pressClasses ? rated.accuracy : 1);
+    // (Self-firing weapons: presses arm nothing; the sword swings on every grid time by itself.)
+    const sw = selfFiring ? undefined : swingFor(slot, st.s, idx, rated.rating, env.rules.oneStepPerSlot || env.rules.pressClasses ? rated.accuracy : 1);
     input.armed = sw !== undefined;
     rec().input(input);
     if (trace) {
       Object.assign(trace, moved, { gridIndex: rated.gridIndex, gridS: sch.gridTimes[rated.gridIndex], delta: rated.delta, rating: rated.rating, accuracy: rated.accuracy, grooveAfter: st.groove, slotS: slot?.s, accent: slot?.accent }, judgedTrace(judged));
       if (sw) Object.assign(trace, { strikeS: sw.sStrike, heavy: sw.heavy });
-      else trace.noSwing = !slot ? "no-slot" : taken ? "slot-taken" : "blast";
+      else if (!selfFiring) trace.noSwing = !slot ? "no-slot" : taken ? "slot-taken" : "blast";
       rec().press!(trace);
     }
   };
@@ -1722,7 +1760,7 @@ function engine(env: Env, st: SimState, io: Io) {
     return {
       s: st.s,
       w: st.w,
-      hero: { x: hp.x, y: hp.y, stepping: hp.u < 1 },
+      hero: { x: hp.x, y: hp.y, stepping: hp.u < 1, ...(strides ? { stride: strideNow(hp) } : {}) },
       enemies: st.alive.filter((f) => f.alive).map((f) => ({ x: posX(f, st.w), y: posY(f, st.w), type: f.type, health: f.health })),
       threats: visibleThreats(hp),
       boss: st.bossFoe && st.bossFoe.alive && !pinned(st.bossFoe) ? { x: posX(st.bossFoe, st.w), y: posY(st.bossFoe, st.w) } : undefined,
@@ -1824,22 +1862,25 @@ function engine(env: Env, st: SimState, io: Io) {
     rec().fire(wd.id, st.s);
     const hp = heroPose(st.w);
     const energy = energyAt(song, st.s);
-    const mult = damageMultiplier(hero, st.groove);
+    // Self-firing weapons: the tier when it fires sets its area and damage.
+    const mult = selfFiring ? tierDamage(hero, st.tier) : damageMultiplier(hero, st.groove);
     if (wd.kind === "orbit" && wd.orbit) {
       const bar = Math.max(1, barOfBeatIndex(ctx.idx, bi));
       const bpb = ctx.idx.beatsPerBar[bar] ?? 2;
       const th0 = (TAU * bi) / (wd.orbit.periodBars * bpb);
-      for (let k = 0; k < wd.orbit.count; k++) {
-        const th = th0 + (k * TAU) / wd.orbit.count;
-        const x = hp.x + Math.cos(th) * wd.orbit.radius;
-        const y = hp.y + Math.sin(th) * wd.orbit.radius * 0.8;
+      const orbit = selfFiring ? orbitAt(wd, st.tier) : wd.orbit;
+      for (let k = 0; k < orbit.count; k++) {
+        const th = th0 + (k * TAU) / orbit.count;
+        const x = hp.x + Math.cos(th) * orbit.radius;
+        const y = hp.y + Math.sin(th) * orbit.radius * 0.8;
         const h = addHit({ source: "weapon", what: wd.id, weight: wd.weight, primary: false, shape: { kind: "circle", x, y, radius: wd.hitShape!.radius }, dir: th + Math.PI / 2, accent: 0, damage: wd.damage * mult }, energy);
         applyHit(h);
       }
     } else if (wd.kind === "chain" && wd.chain) {
-      const jumps = Math.round(lerp(wd.chain.jumps[0], wd.chain.jumps[1], energy));
+      const tiered = selfFiring ? chainAt(wd, st.tier) : undefined;
+      const jumps = tiered ? tiered.jumps : Math.round(lerp(wd.chain.jumps[0], wd.chain.jumps[1], energy));
       const first = { w: st.w, x: hp.x, y: hp.y - 24 };
-      const chain: ChainState = { last: first, index: st.nChains++, hit: new Set(), jumps, energy, bi };
+      const chain: ChainState = { last: first, index: st.nChains++, hit: new Set(), jumps, energy, bi, ...(tiered ? { range: tiered.range } : {}), ...(selfFiring ? { mult } : {}) };
       rec().chain(first);
       chainJump(wd, chain, 0);
     } else if (wd.kind === "trail" && wd.trail) {
@@ -1859,7 +1900,7 @@ function engine(env: Env, st: SimState, io: Io) {
         if (Math.hypot(x - lastX, y - lastY) < wd.trail.spacing) continue;
         lastX = x;
         lastY = y;
-        const h = addHit({ source: "weapon", what: wd.id, weight: wd.weight, primary: false, shape: { kind: "circle", x, y, radius: wd.hitShape!.radius }, dir: 0, accent: 0, damage: wd.damage * mult }, energy);
+        const h = addHit({ source: "weapon", what: wd.id, weight: wd.weight, primary: false, shape: { kind: "circle", x, y, radius: selfFiring ? trailRadiusAt(wd, st.tier) : wd.hitShape!.radius }, dir: 0, accent: 0, damage: wd.damage * mult }, energy);
         applyHit(h);
       }
     }
@@ -1875,7 +1916,7 @@ function engine(env: Env, st: SimState, io: Io) {
     const fx = from.x;
     const fy = j === 0 ? from.y + 24 : from.y + 16;
     let best: Foe | undefined;
-    let bestD = wd.chain!.range;
+    let bestD = chain.range ?? wd.chain!.range;
     for (const f of st.alive) {
       if (!f.alive || chain.hit.has(f)) continue;
       const d = Math.hypot(posX(f, st.w) - fx, posY(f, st.w) - fy);
@@ -1891,7 +1932,7 @@ function engine(env: Env, st: SimState, io: Io) {
     const p = { w: st.w, x: bx, y: by - 16 };
     chain.last = p;
     rec().chainPoint(chain.index, p);
-    const h = addHit({ source: "weapon", what: wd.id, weight: wd.weight, primary: false, shape: { kind: "circle", x: bx, y: by, radius: wd.hitShape!.radius }, dir: Math.atan2(by - fy, bx - fx), accent: 0, damage: wd.damage * damageMultiplier(hero, st.groove) }, chain.energy);
+    const h = addHit({ source: "weapon", what: wd.id, weight: wd.weight, primary: false, shape: { kind: "circle", x: bx, y: by, radius: wd.hitShape!.radius }, dir: Math.atan2(by - fy, bx - fx), accent: 0, damage: wd.damage * (chain.mult ?? damageMultiplier(hero, st.groove)) }, chain.energy);
     applyHit(h);
     if (j + 1 < chain.jumps) {
       const stepB = subdivisionBeats(wd.chain!.step, 2);
@@ -2245,11 +2286,12 @@ function engine(env: Env, st: SimState, io: Io) {
       if (a !== b) q.push(ctx.sections[i].s0, { kind: "mode", steps: b === "steps" });
     }
     if (ctx.sections[0].level.movement === "free") st.walk = { w0: 0, x0: st.restPose.x, y0: st.restPose.y, vx0: 0, vy0: 0, tx: 0, ty: 0, t: 0 };
-    for (const sl of sch.slots) if (sl.kind !== "grid") q.push(Math.max(0, windupBefore(sl.s)), { kind: "auto", slot: sl });
+    // Self-firing weapons: the sword swings by itself on every slot, the grid's too, and presses arm nothing.
+    for (const sl of sch.slots) if (sl.kind !== "grid" || selfFiring) q.push(Math.max(0, windupBefore(sl.s)), { kind: "auto", slot: sl });
     // Strides: a held key strides on every step of the stride period.
     if (strides) for (const t of sch.strideSteps.s) q.push(t, { kind: "held" });
     let prevDown: GridSlot | undefined;
-    for (const sl of sch.gridSlots) {
+    for (const sl of selfFiring ? [] : sch.gridSlots) {
       if (sl.slot !== 0) continue;
       // The bar before must be a step bar too.
       if (prevDown && sl.bar === prevDown.bar + 1) q.push(Math.max(prevDown.s, windupBefore(sl.s)), { kind: "idle", slot: sl, prev: prevDown.s });

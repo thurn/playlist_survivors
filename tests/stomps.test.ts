@@ -182,7 +182,8 @@ describe("the stomp window", () => {
   it("counts song time: opposite keys 60 ms apart are no stomp, though a hit-stop froze the world between them", () => {
     const rec = new BatchRecorder();
     const keys: KeyEvent[] = [...tap(before), { s: accent - 0.03, kind: "press", key: "left" }, { s: accent + 0.03, kind: "press", key: "right" }];
-    const r = run(keys, [accent + 0.3], rec);
+    // (With presses arming swings: a self-firing cleave brings no hit-stop.)
+    const r = run(keys, [accent + 0.3], rec, { selfFiring: false });
     expect(rec.hitStops.some(([s0]) => Math.abs(s0 - accent) < 0.02)).toBe(true);
     const right = r.inputs.find((k) => k.key === "right" && k.s > accent)!;
     expect(right.rock).toBeUndefined();

@@ -112,6 +112,8 @@ export const heroDef = z.strictObject({
     tiers: z.array(unit).min(1),
     hysteresis: z.number().min(0),
     doubleTapMs: z.number().min(0),
+    /** Every hero attack's damage is multiplied by its tier's (rules.selfFiring), in place of the groove's bonus. */
+    damage: z.array(z.number().positive()).min(1),
   }),
   swings: z.strictObject({
     /** The armed swing strikes on the first grid time at least this long after the press. */
@@ -127,6 +129,8 @@ export const heroDef = z.strictObject({
        * to the full radius at accuracy 1 (Perfect). Automatic swings reach the full radius.
        */
       minReach: unit.default(1),
+      /** Play mode's tiers (rules.selfFiring): the light swing's arc at tiers 0 to 3. */
+      tiers: z.array(arcShape).min(1).optional(),
     }),
     heavy: z.strictObject({
       animation: z.string(),
@@ -193,9 +197,10 @@ export const weaponDef = z.strictObject({
   name: z.string(),
   kind: z.enum(["orbit", "chain", "trail", "blast"]),
   fires: z.strictObject({ every: subdivision }),
-  orbit: z.strictObject({ count: z.number().int().positive(), radius: z.number().positive(), periodBars: z.number().positive() }).optional(),
-  chain: z.strictObject({ jumps: range, step: subdivision, range: z.number().positive().default(110) }).optional(),
-  trail: z.strictObject({ beats: z.number().positive(), spacing: z.number().positive().default(18) }).optional(),
+  /** Play mode's tiers (rules.selfFiring): each kind's area at tiers 0 to 3 replaces its count and radius, jumps and range, or hit radius. */
+  orbit: z.strictObject({ count: z.number().int().positive(), radius: z.number().positive(), periodBars: z.number().positive(), tiers: z.array(z.strictObject({ count: z.number().int().positive(), radius: z.number().positive() })).min(1).optional() }).optional(),
+  chain: z.strictObject({ jumps: range, step: subdivision, range: z.number().positive().default(110), tiers: z.array(z.strictObject({ jumps: z.number().int().positive(), range: z.number().positive() })).min(1).optional() }).optional(),
+  trail: z.strictObject({ beats: z.number().positive(), spacing: z.number().positive().default(18), tiers: z.array(z.strictObject({ radius: z.number().positive() })).min(1).optional() }).optional(),
   blast: z.strictObject({ beats: z.number().positive(), step: subdivision, radius: z.number().positive() }).optional(),
   hitShape: z.strictObject({ kind: z.literal("circle"), radius: z.number().positive() }).optional(),
   /** Base damage per hit, multiplied by the groove like the sword's. */
@@ -375,7 +380,7 @@ export const levelScript = z.strictObject({
   /** The demo's forest corridor along a route, or play mode's open field. */
   world: z.enum(["corridor", "open"]).default("corridor"),
   /** Play-mode rule changes. */
-  rules: z.strictObject({ oneStepPerSlot: z.boolean().default(false), accentTelegraphs: z.boolean().default(false), health: z.boolean().default(false), strides: z.boolean().default(false), pressClasses: z.boolean().default(false) }).optional(),
+  rules: z.strictObject({ oneStepPerSlot: z.boolean().default(false), accentTelegraphs: z.boolean().default(false), health: z.boolean().default(false), strides: z.boolean().default(false), pressClasses: z.boolean().default(false), selfFiring: z.boolean().default(false) }).optional(),
   /** Overrides merged over content/hero.yaml for this level only (checked against the hero schema). */
   hero: z.record(z.string(), z.unknown()).optional(),
   title: z.strictObject({ piece: z.string(), composer: z.string(), performer: z.string() }),

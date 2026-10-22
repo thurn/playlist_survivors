@@ -23,10 +23,20 @@ hero:
     tiers: [0.3, 0.6, 0.85]
     hysteresis: 0.05
     doubleTapMs: 100
+    damage: [1.0, 1.1, 1.2, 1.3]   # every attack's damage by tier (rules.selfFiring)
   swings:
     minLeadMs: 90
     windupMs: 190
-    light: { animations: [slash, backslash, halfslash], hitShape: { kind: arc, radius: 100, degrees: 150 }, damage: 1.0 }
+    light:
+      animations: [slash, backslash, halfslash]
+      hitShape: { kind: arc, radius: 100, degrees: 150 }
+      damage: 1.0
+      # Play mode's tiers (rules.selfFiring): tier 0 is today's swing; tier 3 a full spin.
+      tiers:
+        - { kind: arc, radius: 100, degrees: 150 }
+        - { kind: arc, radius: 130, degrees: 180 }
+        - { kind: arc, radius: 160, degrees: 240 }
+        - { kind: arc, radius: 190, degrees: 360 }
     heavy: { animation: slash-oversize, hitShape: { kind: arc, radius: 130, degrees: 200 }, damage: 2.5, hitStopMs: 110, wave: { to: 330, band: 25, damage: 1.0 } }
   # Play mode's health: each enemy touching the hero bites at most once per biteEveryMs. Rhythm
   # heals: a press rated Great or better heals `beat`, and from the 4th such beat in a row each

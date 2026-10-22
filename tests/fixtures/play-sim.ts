@@ -8,6 +8,7 @@ import { prepare } from "../../src/planner/plan.ts";
 import type { InputKey } from "../../src/sim/movement.ts";
 import type { KeyEvent } from "../../src/sim/player.ts";
 import { BatchRecorder } from "../../src/sim/recorder.ts";
+import type { Rules } from "../../src/sim/rules.ts";
 import { Sim, worldFor } from "../../src/sim/simulate.ts";
 
 const LEVEL = "levels/orpheus-galop.play.yaml";
@@ -31,8 +32,9 @@ export function slowSection(song: SongMap, label: string, bpm: number): SongMap 
 export function play(song: SongMap) {
   const { ctx, sch, map } = prepare(plannerInput({ songMap: song, level: LEVEL }), props);
   const section = (label: string) => ctx.sections.find((s) => s.label === label)!;
-  const run = (keys: KeyEvent[], probes: number[], rec = new BatchRecorder()) => {
-    const sim = new Sim(ctx, sch, worldFor(ctx, sch, map), ctx.level.rules, rec);
+  /** (`rules` overrides the level's rule switches, such as selfFiring off to arm a cleave with a press.) */
+  const run = (keys: KeyEvent[], probes: number[], rec = new BatchRecorder(), rules: Partial<Rules> = {}) => {
+    const sim = new Sim(ctx, sch, worldFor(ctx, sch, map), { ...ctx.level.rules, ...rules }, rec);
     const t0 = Math.min(...keys.map((k) => k.s), ...probes) - 0.01;
     sim.advanceTo(t0);
     for (const k of keys) sim.key(k);

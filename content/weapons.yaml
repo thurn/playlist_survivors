@@ -4,7 +4,11 @@ weapons:
     name: Orbiting Blades
     kind: orbit
     fires: { every: eighth }
-    orbit: { count: 3, radius: 72, periodBars: 1 }
+    orbit:
+      count: 3
+      radius: 72
+      periodBars: 1
+      tiers: [{ count: 3, radius: 72 }, { count: 3, radius: 90 }, { count: 4, radius: 105 }, { count: 5, radius: 120 }]
     hitShape: { kind: circle, radius: 14 }
     damage: 0.6                  # to each enemy a blade touches, on each eighth note
     weight: light
@@ -16,7 +20,11 @@ weapons:
     name: Chain Lightning
     kind: chain
     fires: { every: bar }
-    chain: { jumps: [2, 4], step: sixteenth, range: 110 }
+    chain:
+      jumps: [2, 4]
+      step: sixteenth
+      range: 110
+      tiers: [{ jumps: 3, range: 110 }, { jumps: 4, range: 125 }, { jumps: 5, range: 140 }, { jumps: 6, range: 160 }]
     hitShape: { kind: circle, radius: 16 }
     damage: 1.2                  # per jump
     weight: medium
@@ -28,7 +36,10 @@ weapons:
     name: Fire Trail
     kind: trail
     fires: { every: beat }
-    trail: { beats: 2, spacing: 18 }
+    trail:
+      beats: 2
+      spacing: 18
+      tiers: [{ radius: 20 }, { radius: 26 }, { radius: 32 }, { radius: 38 }]
     hitShape: { kind: circle, radius: 20 }
     damage: 0.4                  # per beat, to everything in the trail
     weight: light

@@ -74,8 +74,10 @@ function freeGrid(ctx: Ctx, i: number): GridSlot[] {
   }
   const every = sec.level.autoSwingBeats;
   for (let bi = sec.b0 + every; bi < sec.b1 - 0.5; bi += every) {
-    // An anchor's cleave replaces the automatic swing near it.
-    if (anchors.some((a) => Math.abs(beatIndexAt(song, a.time) - bi) < 1)) continue;
+    // An anchor's cleave replaces the automatic swing near it (with self-firing weapons, only the
+    // beat's within half a beat of it: the sword swings on every other beat).
+    const near = ctx.level.rules.selfFiring ? 0.5 : 1;
+    if (anchors.some((a) => Math.abs(beatIndexAt(song, a.time) - bi) < near)) continue;
     out.push({ s: timeOfBeatIndex(song, bi), bi, bar: barOfBeatIndex(idx, bi), slot: 0, section: i, accent: 0, kind: "auto" });
   }
   return out.sort((a, b) => a.s - b.s);

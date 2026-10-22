@@ -12,6 +12,7 @@ import { latestWave, waveRadius } from "../mapgen/openfield.ts";
 import { countUpTo, enemyPos, heroSample } from "./sample.ts";
 import { StaticIndex, type PlanIndex } from "./view.ts";
 import { partnerPress, type EffectEvent, type EnemyRecord, type Plan, type PlanInput, type PlanSection, type UiEvent } from "./types.ts";
+import { orbitAt } from "../sim/tiers.ts";
 
 export const DEATH_FALL = 0.5;
 const FLASH_TIME = 0.05;
@@ -616,9 +617,11 @@ export class Evaluator {
       if (wd.kind === "orbit" && wd.orbit) {
         const bpb = bar.len;
         const th0 = (Math.PI * 2 * wbi) / (wd.orbit.periodBars * bpb);
-        for (let k = 0; k < wd.orbit.count; k++) {
-          const th = th0 + (k * Math.PI * 2) / wd.orbit.count;
-          blades.push({ x: h.x + Math.cos(th) * wd.orbit.radius, y: h.y + Math.sin(th) * wd.orbit.radius * 0.8, rot: th * 3 });
+        // Self-firing weapons: the blades and their orbit at the tier now.
+        const orbit = plan.rules?.selfFiring && plan.tier ? orbitAt(wd, this.tierAt(s)) : wd.orbit;
+        for (let k = 0; k < orbit.count; k++) {
+          const th = th0 + (k * Math.PI * 2) / orbit.count;
+          blades.push({ x: h.x + Math.cos(th) * orbit.radius, y: h.y + Math.sin(th) * orbit.radius * 0.8, rot: th * 3 });
         }
       } else if (wd.kind === "trail") {
         for (let k = 0; k < 10; k++) {
@@ -941,6 +944,14 @@ export class Evaluator {
       default:
         return;
     }
+  }
+
+  /** The tier at song time s (play mode's press classes; 0 without them). */
+  private tierAt(s: number): number {
+    const t = this.plan.tier;
+    if (!t) return 0;
+    const k = countUpTo(t.s, s) - 1;
+    return t.v[Math.max(0, k)];
   }
 
   private hud(s: number, sbi: number, beatPhase: number, barPhase: number, free: boolean, energy: number): HudState {

@@ -312,9 +312,9 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
       const a = sw.aim;
       const targets: AimTarget[] = [];
       for (let i = 0; i < a.targets.length; i += 4) targets.push({ x: a.targets[i], y: a.targets[i + 1], r: a.targets[i + 2], weight: a.targets[i + 3] });
-      // A cleave aims with its shockwave's reach.
-      const shape = sw.kind === "heavy" ? hero.swings.heavy.hitShape : hero.swings.light.hitShape;
-      const radius = sw.kind === "heavy" ? hero.swings.heavy.wave.to : shape.radius;
+      // A cleave aims with its shockwave's reach; a swing sized by its tier (self-firing weapons) with the reach it recorded.
+      const shape = sw.reach ?? (sw.kind === "heavy" ? hero.swings.heavy.hitShape : hero.swings.light.hitShape);
+      const radius = sw.reach ? sw.reach.radius : sw.kind === "heavy" ? hero.swings.heavy.wave.to : shape.radius;
       const dir = aim(a.x, a.y, a.facing, targets, { radius, halfAngle: (shape.degrees * Math.PI) / 360 });
       if (Math.abs(wrapAngle(dir - sw.dir)) > 1e-6) f.push(`swing at ${fmt(sw.s)} aimed at ${sw.dir.toFixed(3)} rad; auto-aim gives ${dir.toFixed(3)}`);
       // The snapshot is the recorded state: the hero where the track has it, the targets where enemies were.

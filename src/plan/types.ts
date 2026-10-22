@@ -309,7 +309,7 @@ export interface Plan {
   /** Level-ups at their scheduled musical moments. */
   levelUpsDue?: { id: string; s: number }[];
   /** Play mode's rule changes (absent in the demo). */
-  rules?: { oneStepPerSlot: boolean; accentTelegraphs: boolean; health?: boolean; strides?: boolean };
+  rules?: { oneStepPerSlot: boolean; accentTelegraphs: boolean; health?: boolean; strides?: boolean; pressClasses?: boolean; selfFiring?: boolean };
   /**
    * Play mode's fixed-speed strides (absent without the rule): the walk speed (px per world
    * second), a stride's duration and hop height, the stride period without a steady beat, and the
@@ -357,6 +357,9 @@ export interface PlanSwing {
   /** Accent strength at the strike (0 if none). */
   accent: number;
   aim: AimSnapshot;
+  /** Self-firing weapons (play mode): the tier read when the wind-up started, and the reach its aim used (a light swing's arc; a cleave's aim, past its shockwave). */
+  tier?: number;
+  reach?: { radius: number; degrees: number };
 }
 
 export interface PlanInput {

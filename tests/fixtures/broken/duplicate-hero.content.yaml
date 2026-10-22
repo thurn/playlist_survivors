@@ -6,7 +6,7 @@ hero:
   walk: { speed: 80, accelMs: 60, strideCycle: 64 }
   timing: { perfectMs: 35, greatMs: 70, goodMs: 120, floor: 0.1 }
   groove: { follow: 0.3, idleHalfLifeBars: 8, maxBonus: 0.2, offbeatBonus: 0.25 }
-  meter: { counted: { perfect: 0.08, great: 0.02, good: -0.05, loose: -0.1 }, offbeat: { perfect: 0.03, great: 0 }, doubleTap: 0, stray: -0.1, drain: { afterBars: 1, emptyInBars: 8 }, tiers: [0.3, 0.6, 0.85], hysteresis: 0.05, doubleTapMs: 100 }
+  meter: { counted: { perfect: 0.08, great: 0.02, good: -0.05, loose: -0.1 }, offbeat: { perfect: 0.03, great: 0 }, doubleTap: 0, stray: -0.1, drain: { afterBars: 1, emptyInBars: 8 }, tiers: [0.3, 0.6, 0.85], hysteresis: 0.05, doubleTapMs: 100, damage: [1, 1.1, 1.2, 1.3] }
   swings:
     minLeadMs: 90
     windupMs: 190

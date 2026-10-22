@@ -51,7 +51,7 @@ describe("a play-mode run in the open field", () => {
   it("is played by the moderate player in the open field", () => {
     expect(plan.profile).toBe("moderate");
     expect(plan.open).toBeDefined();
-    expect(plan.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true });
+    expect(plan.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true, selfFiring: true });
   });
 
   it("hurts the hero, heals it on clean beats, and it survives", () => {

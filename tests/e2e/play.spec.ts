@@ -41,7 +41,7 @@ async function waitSong(page: Page, s: number) {
 
 test.describe.configure({ mode: "serial" });
 
-test("play mode: a stride per press, swings on the beat, mashing rated once, Esc pauses and resumes", async ({ page }) => {
+test("play mode: a stride per press, the sword on every beat, mashing rated once, Esc pauses and resumes", async ({ page }) => {
   await openPlay(page, "&start=1:10");
   const beats = await hook(page)(() => Array.from((window as unknown as { __demo: PlayHook }).__demo.live.recording.plan.songBeats));
   const from = (await songNow(page)) + 0.3;
@@ -80,7 +80,7 @@ test("play mode: a stride per press, swings on the beat, mashing rated once, Esc
       return { moved: Math.hypot(b.x - a.x, b.y - a.y), stride: p.stride ?? -1 };
     });
     const k = beats.findIndex((b) => b > t0);
-    return { stepped: stepped.length, strides, beat: beats[k + 1] - beats[k], allStride: presses.every((i) => i.bend || i.stride !== undefined), extra: presses.filter((i) => i.extra).length, armed: plan.swings.filter((sw) => sw.s >= t0 && sw.press !== undefined).length };
+    return { stepped: stepped.length, strides, beat: beats[k + 1] - beats[k], allStride: presses.every((i) => i.bend || i.stride !== undefined), extra: presses.filter((i) => i.extra).length, armed: plan.swings.filter((sw) => sw.s >= t0 && sw.press !== undefined).length, onBeats: beats.filter((b) => b >= t0 && b < t0 + 2.5).filter((b) => plan.swings.some((sw) => Math.abs(sw.s - b) < 1e-4)).length, beatsIn: beats.filter((b) => b >= t0 && b < t0 + 2.5).length };
   }, [from, beats] as [number, number[]]);
   expect(r.stepped).toBe(9);
   expect(r.allStride).toBe(true);
@@ -92,7 +92,9 @@ test("play mode: a stride per press, swings on the beat, mashing rated once, Esc
     if (i > 0) expect(d.stride).toBeGreaterThan(one * 0.75);
   }
   expect(r.extra).toBe(2);
-  expect(r.armed).toBeGreaterThanOrEqual(8);
+  // The sword swings by itself on every beat; presses arm nothing.
+  expect(r.armed).toBe(0);
+  expect(r.onBeats).toBe(r.beatsIn);
 
   // Esc pauses: song time stops.
   await page.keyboard.press("Escape");

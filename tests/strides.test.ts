@@ -177,7 +177,8 @@ describe("a press during a hit-stop", () => {
   it("ends the hit-stop and strides at once", () => {
     const rec = new BatchRecorder();
     const press = accent + 0.03;
-    const r = run([...tap(before), ...tap(press, "down")], [press, press + 0.02], rec);
+    // (With presses arming swings: a self-firing cleave brings no hit-stop.)
+    const r = run([...tap(before), ...tap(press, "down")], [press, press + 0.02], rec, { selfFiring: false });
     const stop = rec.hitStops.find(([s0]) => Math.abs(s0 - accent) < 0.02);
     expect(stop).toBeDefined();
     expect(stop![1]).toBeCloseTo(press, 9);

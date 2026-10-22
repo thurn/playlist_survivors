@@ -194,6 +194,24 @@ export function checkPlay(plan: Plan, lib: ContentLibrary, opts: PlayCheckOption
 
   results.push(...checkStrides(plan));
 
+  // Self-firing weapons: the sword swings on every grid time of the sections with a steady beat
+  // (until the finale blast ends its routine).
+  if (plan.rules?.selfFiring) {
+    const f: string[] = [];
+    const struck = new Set(plan.swings.map((sw) => Math.round(sw.s * 1e4)));
+    const blast = plan.hits.find((h) => h.source === "ring")?.s ?? Infinity;
+    let n = 0;
+    for (const sec of plan.sections) {
+      if (sec.movement !== "steps") continue;
+      for (const g of plan.grid) {
+        if (g < sec.s0 - 1e-9 || g >= sec.s1 - 1e-9 || g >= blast - 0.04) continue;
+        n++;
+        if (!struck.has(Math.round(g * 1e4))) f.push(`no swing on the grid time ${fmt(g)} (${sec.label})`);
+      }
+    }
+    add("the sword swings on every grid time", f, n);
+  }
+
   // Zone waves: each starts on a downbeat and has left the screen within one bar.
   if (plan.open) {
     const f: string[] = [];

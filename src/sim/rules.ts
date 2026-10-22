@@ -14,7 +14,9 @@ export interface Rules {
   strides: boolean;
   /** Press classes and the groove meter: every press is classed against the grid, and the groove fills, drains and sets a tier. */
   pressClasses: boolean;
+  /** Every weapon fires by itself: the sword on every grid time, presses arm nothing, and the tier sets attack area and damage. */
+  selfFiring: boolean;
 }
 
 /** The scripted demo's rules: today's behavior. */
-export const DEMO_RULES: Readonly<Rules> = Object.freeze({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false, pressClasses: false });
+export const DEMO_RULES: Readonly<Rules> = Object.freeze({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false, pressClasses: false, selfFiring: false });

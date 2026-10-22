@@ -2,9 +2,11 @@
 
 A browser-based rhythm game level set to Offenbach's *Orpheus in the
 Underworld* overture (the slow passage, then the Infernal Galop). You press the
-arrow keys (or WASD) to the beat; the hero steps one pace per press while the
-sword swings itself at the crowd, and every strike and impact sound lands on
-the music, through a horde of up to ~500 LPC monsters.
+arrow keys (or WASD) to the beat; in play mode the hero strides at one steady
+speed however you press, and the sword and every other weapon fire by
+themselves on the beat, growing with the tier your groove reaches. Every strike
+and impact sound lands on the music, through a horde of up to ~500 LPC
+monsters.
 
 It has two modes:
 
@@ -72,9 +74,8 @@ you hear them. Redo it any time.
 
 Play mode logs every gameplay key from the DOM event to what the game did with
 it: the audio clock it was timed by, when the live runner applied it (and any
-rollback), and the simulation's outcome and reason (a step and its rating, the
-swing it armed, a press ignored because its grid time already had a step, a
-bend, a walk, or a key thrown away by a count-in). Frames and sound scheduling
+rollback), and the simulation's outcome and reason (a stride with its class and
+rating, a stomp, a bend, a walk, or a key thrown away by a count-in). Frames and sound scheduling
 are logged too. See [`src/live/log.ts`](src/live/log.ts).
 
 - The dev server saves it to `logs/play/<session>.json` on pause, at the end,
@@ -119,7 +120,7 @@ Every important property is checkable by a command:
 | `npm run check:play` | Play mode, headless: the `moderate` and `casual` virtual players through the open field on four seeds, with the checks the demo shares plus play mode's own (no dead presses, the speed cap, holding keeps full speed, transform waves off screen within a bar, the finale, and the moderate player's signature moments: 80% of cleave accents cleaved, the kick line down within two beats, 75% near misses, the boss on its chord, level-ups on time), and mashers at 4 and 8 presses a second, which must earn a C and fewer kills than `moderate` and pass the movement checks too; `moderate` and `casual` must survive. Prints kills, groove, grade and lowest health side by side. In CI. |
 | `npm run capture -- --times 12,35.2,88.31,141.5` | Headless-Chrome screenshots at exact song times into `captures/`. `--sections` captures the start of every section. |
 | `npm run bench` | Headed Chrome, whole song at real-time speed: fails if JavaScript frame time exceeds 8 ms or GPU time 10 ms at p95, or any frame exceeds 33 ms. `-- --play` benchmarks live play instead (theme A to the climax, a late-arriving press on every beat, so it includes the rollbacks). |
-| `npm run test:e2e` | Playwright: capture hook, metronome flash on the beat, broken level script shows an error and never starts, reload uses the cached plan, `?player=` re-simulates with another profile; and play mode at `?start=1:10` (a stride per press, swings, a mashed press rated once, Esc pauses and resumes). |
+| `npm run test:e2e` | Playwright: capture hook, metronome flash on the beat, broken level script shows an error and never starts, reload uses the cached plan, `?player=` re-simulates with another profile; and play mode at `?start=1:10` (a stride per press, the sword on every beat, a mashed press rated once, Esc pauses and resumes). |
 | `npm run qa` | About 45 s of playback in Chromium over the design's Manual QA items a machine can judge: simulation time, stillness between steps, the skilled and casual players' impacts on the grid and the reward spectrum, audio clock rate, picture/audio offset, frame rate, hidden-tab recovery (a 3 s main-thread stall), resize letterboxing, click track, finale clearance, and a listening pass over the offline-rendered mix (clipping, effects level, music in front, no wall of noise, effects on time); then live play mode with synthetic key presses (a press strides at once, impacts on the grid, mashing, diagonals, held keys striding on the beat, frame time, Esc and losing focus, Watch my run identical, a mid-song start); writes `captures/qa/report.md` and review frames. `-- --play` runs only the play-mode items. |
 | `npm run check:analysis` | The analysis tool's pytest suite and ruff. |
 | `npm run check:all` | All of the above except captures, QA and the benchmark. |

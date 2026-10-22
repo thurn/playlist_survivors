@@ -15,7 +15,8 @@ export interface Observation {
   /** Song and world time now. */
   s: number;
   w: number;
-  hero: { x: number; y: number; stepping: boolean };
+  /** The hero; with strides, how far a press would stride now (the budget). */
+  hero: { x: number; y: number; stepping: boolean; stride?: number };
   enemies: { x: number; y: number; type: string; health: number }[];
   /**
    * Visible threats: an arrow's line runs from (x, y) through its aim point (ax, ay); a slam marker
@@ -101,6 +102,8 @@ const ROAM_CROWD = 200;
 const ROAM_LEASH = 120;
 /** The roam walks up this close to a dancing formation's middle, so the cleave on its release reaches the whole line. */
 const ROAM_FORMATION = 100;
+/** Strides: a released line is walked at for this long (song seconds) after it last danced. */
+const LINE_MEMORY = 0.7;
 
 /** The eight step directions: one key, or two perpendicular keys for a diagonal. */
 const DIRECTIONS: Key[][] = [["right"], ["right", "down"], ["down"], ["down", "left"], ["left"], ["left", "up"], ["up"], ["up", "right"]];
@@ -140,6 +143,8 @@ export class VirtualPlayer implements Player {
   private readonly strides: boolean;
   /** The cost of the latest choice of keys. */
   private bestCost = Infinity;
+  /** Strides: the latest dancing formation's middle, and when it was seen (a line's charge follows its dance). */
+  private lastLine?: { x: number; y: number; s: number };
   /** The open field's roam point: where it is, its heading (radians), and when it last moved. */
   private roam?: { x: number; y: number; dir: number; w: number; bi: number };
 
@@ -226,7 +231,7 @@ export class VirtualPlayer implements Player {
     for (const k of this.held) out.push({ s: obs.s, kind: "release", key: k });
     this.held.clear();
     // (Not while a dancing formation's middle is out of reach: walk up to the line to cleave it.)
-    const f = obs.formation;
+    const f = this.line(obs);
     const atLine = !f || Math.hypot(f.x - obs.hero.x, f.y - obs.hero.y) <= ROAM_FORMATION;
     if (atLine && this.standCost(obs) < this.bestCost) {
       out.push({ s: obs.s, kind: "press", key: "space" }, { s: obs.s + r.range(0.06, 0.1), kind: "release", key: "space" });
@@ -255,6 +260,16 @@ export class VirtualPlayer implements Player {
     if (this.placeCost(obs, p, d, obs.hero.x + d.x * L, obs.hero.y + d.y * L, L) <= this.standCost(obs)) return [];
     this.held.clear();
     return keys.map((key) => ({ s: obs.s, kind: "release" as const, key }));
+  }
+
+  /**
+   * Strides: the formation to walk up to: one dancing now, or for a beat or so after its release
+   * (a charging line), where it last danced.
+   */
+  private line(obs: Observation): { x: number; y: number } | undefined {
+    if (obs.formation) this.lastLine = { ...obs.formation, s: obs.s };
+    const l = this.lastLine;
+    return l && obs.s - l.s <= LINE_MEMORY ? l : undefined;
   }
 
   /** The cost of standing where the hero is. */
@@ -426,14 +441,15 @@ export class VirtualPlayer implements Player {
     cost += 0.5 * Math.min(close, 6) * 0.5;
     cost -= 0.8 * Math.min(near, 15) / 5;
     // Strides: walk up to a dancing line, so the cleave on its release reaches the whole line.
-    const f = obs.formation;
-    if (this.strides && f) cost += 1.5 * clamp((Math.hypot(ax - f.x, ay - f.y) - ROAM_FORMATION) / 100, 0, 3);
+    const f = this.strides ? this.line(obs) : undefined;
+    if (f) cost += 3 * clamp((Math.hypot(ax - f.x, ay - f.y) - ROAM_FORMATION) / 100, 0, 3);
     return cost;
   }
 
   /** Score the eight directions by where the step would leave the hero, and pick the lowest cost. */
   private chooseKeys(obs: Observation): Key[] {
-    const L = this.hero.step.length;
+    // (With strides a press covers the budget: judge where it would leave the hero by that.)
+    const L = this.strides && obs.hero.stride !== undefined ? obs.hero.stride : this.hero.step.length;
     const p = this.paceFrame(obs);
     let best: Key[] = DIRECTIONS[0];
     let bestCost = Infinity;
