@@ -307,7 +307,7 @@ export interface Plan {
   /** Level-ups at their scheduled musical moments. */
   levelUpsDue?: { id: string; s: number }[];
   /** Play mode's rule changes (absent in the demo). */
-  rules?: { oneStepPerSlot: boolean; accentTelegraphs: boolean };
+  rules?: { oneStepPerSlot: boolean; accentTelegraphs: boolean; health?: boolean };
 }
 
 export interface OpenFieldRecord {

@@ -52,10 +52,14 @@ describe("a play-mode run in the open field", () => {
     expect(plan.rules).toEqual({ oneStepPerSlot: true, accentTelegraphs: true, health: true });
   });
 
-  it("hurts the hero, who survives", () => {
+  it("hurts the hero, heals it on clean beats, and it survives", () => {
     expect(plan.stats.minHealth).toBeLessThan(1);
     expect(plan.stats.minHealth).toBeGreaterThan(0);
     expect(plan.stats.deathS).toBeUndefined();
+    const h = plan.health;
+    let heals = 0;
+    for (let i = 1; i < h.v.length; i++) if (h.v[i] > h.v[i - 1]) heals++;
+    expect(heals).toBeGreaterThan(0);
   });
 
   it("passes the checks it shares with the demo, and play mode's own rules", () => {

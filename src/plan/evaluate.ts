@@ -51,6 +51,16 @@ const HURT_FADE = 0.3;
 
 /** How hurt the hero looks at song time s (0–1): it flashes on each drop in health and fades. */
 export function hurtAt(h: { s: ArrayLike<number>; v: ArrayLike<number> }, s: number): number {
+  return healthFlash(h, s, -1);
+}
+
+/** How brightly the health bar glows from a heal at song time s (0–1). */
+export function healAt(h: { s: ArrayLike<number>; v: ArrayLike<number> }, s: number): number {
+  return healthFlash(h, s, 1);
+}
+
+/** A flash on the latest change of health in direction `dir` (-1 a drop, 1 a rise), fading over HURT_FADE. */
+function healthFlash(h: { s: ArrayLike<number>; v: ArrayLike<number> }, s: number, dir: number): number {
   let lo = 0;
   let hi = h.s.length - 1;
   if (hi < 1 || s < h.s[0]) return 0;
@@ -59,7 +69,7 @@ export function hurtAt(h: { s: ArrayLike<number>; v: ArrayLike<number> }, s: num
     if (h.s[mid] <= s) lo = mid;
     else hi = mid - 1;
   }
-  for (let i = lo; i > 0 && s - h.s[i] < HURT_FADE; i--) if (h.v[i] < h.v[i - 1]) return 1 - (s - h.s[i]) / HURT_FADE;
+  for (let i = lo; i > 0 && s - h.s[i] < HURT_FADE; i--) if ((h.v[i] - h.v[i - 1]) * dir > 0) return 1 - (s - h.s[i]) / HURT_FADE;
   return 0;
 }
 
@@ -183,9 +193,12 @@ export interface HudState {
   title?: { age: number; remaining: number };
   boss?: { name: string; health: number; age: number; remaining: number };
   end?: { age: number; averageGroove: number };
-  /** The hero's health (fraction of its maximum; always full without play mode's health) and its hurt flash (0–1). */
+  /** The hero's health (fraction of its maximum; always full without play mode's health), its hurt flash and its heal glow (0–1). */
   health: number;
   hurt: number;
+  heal: number;
+  /** Play mode's health: clean beats in a row (rated Great or better), and whether the streak heals extra. */
+  streak?: { n: number; healing: boolean };
 }
 
 export interface Frame {
@@ -881,8 +894,14 @@ export class Evaluator {
     const presses: HudState["presses"] = [];
     const lastPress: Partial<Record<KeyName, { s: number; rating?: string; released?: number }>> = {};
     let rating: string | undefined;
+    // The heal streak, as the simulation counts it: a rated press of Great or better extends it; a lesser one or a stumble ends it.
+    let streak = 0;
     for (const i of plan.inputs) {
       if (i.s > s) break;
+      if (i.kind === "press" && i.steps && !i.bend) {
+        if (i.stumble) streak = 0;
+        else if (!i.extra) streak = i.rating === "perfect" || i.rating === "great" ? streak + 1 : 0;
+      }
       if (i.kind === "release") {
         const lp = lastPress[i.key];
         if (lp && lp.released === undefined) lp.released = i.s;
@@ -962,7 +981,9 @@ export class Evaluator {
     }
     const health = healthAt(plan.health, s);
     const hurt = hurtAt(plan.health, s);
-    return { kills, ratings, groove, bonus: this.maxBonus * groove, keys, ticks, heartGlow, presses, xp, level, weapons, progress, elapsed: s, beatPhase, barPhase, free, countIn, energy, banners, title, boss, end, health, hurt };
+    const heal = healAt(plan.health, s);
+    const streakHud = plan.rules?.health ? { n: streak, healing: streak >= this.lib.hero.health.heal.streakFrom } : undefined;
+    return { kills, ratings, groove, bonus: this.maxBonus * groove, keys, ticks, heartGlow, presses, xp, level, weapons, progress, elapsed: s, beatPhase, barPhase, free, countIn, energy, banners, title, boss, end, health, hurt, heal, streak: streakHud };
   }
 }
 

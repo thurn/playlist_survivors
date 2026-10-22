@@ -55,7 +55,9 @@ unlocks audio). Use wired headphones or speakers.
 The pause menu has **Resume**, **Restart section**, **Restart song** and **Quit
 to title**; play resumes after a one-bar count-in. Enemies that touch the hero
 bite, and arrows and slams hurt: when the HP bar runs out, the game stops on a
-**YOU FELL** menu (Restart section, Restart song, Quit to title). The end card shows a letter
+**YOU FELL** menu (Restart section, Restart song, Quit to title). Clean beats
+(Great or better) heal, and a streak of them (STREAK under the groove meter)
+heals more; a sloppy press or a stumble ends the streak. The end card shows a letter
 grade from the average groove (S, A, B, C), the best grade so far (saved in
 this browser), and **Play again**, **Watch my run** (an exact replay) and
 **Watch the demo**.

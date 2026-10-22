@@ -1,7 +1,7 @@
 # The Can-Can roster. `atlas` names a sprite in public/assets/characters.json.
 # A light swing deals 1.0 damage before the groove bonus (up to +20%), so
 # health just above 1.0 dies to one swing only at a high groove.
-# contactDamage is what a touch takes from the hero's health (6500, play mode),
+# contactDamage is what a touch takes from the hero's health (5000, play mode),
 # attackDamage what an arrow or the boss's slam takes when it lands.
 enemies:
   - id: slime

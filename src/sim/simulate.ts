@@ -464,6 +464,8 @@ interface SimState {
   flying: { v: number; index: number; x0: number; y0: number; ax: number; ay: number; wRelease: number; ux: number; uy: number; damage: number }[];
   /** The hero's health (play mode), in the hero's health units. */
   health: number;
+  /** Clean beats in a row (rated Great or better): they heal the hero. */
+  streak: number;
   slamMarks: Map<number, { x: number; y: number; sMark: number; wMark: number }>;
   bossFoe?: Foe;
   xpNow: number;
@@ -538,6 +540,7 @@ function freshState(env: Env): SimState {
     blasting: false,
     flying: [],
     health: env.ctx.lib.hero.health.max,
+    streak: 0,
     slamMarks: new Map(),
     xpNow: 0,
     level: 0,
@@ -929,6 +932,7 @@ function engine(env: Env, st: SimState, io: Io) {
     }
     st.groove *= 1 - hero.groove.stumble;
     rec().groove(st.s, st.groove);
+    st.streak = 0;
   };
 
   const press = (e: KeyEvent) => {
@@ -1031,6 +1035,7 @@ function engine(env: Env, st: SimState, io: Io) {
     st.groove = grooveAfterPress(hero, st.groove, rated.accuracy);
     st.lastPressS = st.s;
     st.slotRating = rated.rating;
+    beatHeal(rated.rating);
     rec().groove(st.s, st.groove);
     const slot = sch.gridSlots[armedStrike(hero, sch.gridTimes, st.s)];
     const taken = slot !== undefined && st.takenSlots.has(slot);
@@ -1773,6 +1778,16 @@ function engine(env: Env, st: SimState, io: Io) {
   const hurt = (amount: number) => {
     if (!env.rules.health || amount <= 0 || st.health <= 0) return;
     st.health = Math.max(0, st.health - amount);
+    rec().health(st.s, st.health / hero.health.max);
+  };
+
+  /** A rated press in step movement: a clean beat (Great or better) heals, more so in a streak; anything less ends the streak. */
+  const beatHeal = (rating: Rating | undefined) => {
+    const clean = rating === "perfect" || rating === "great";
+    st.streak = clean ? st.streak + 1 : 0;
+    const h = hero.health.heal;
+    if (!clean || !env.rules.health || st.health <= 0 || st.health >= hero.health.max) return;
+    st.health = Math.min(hero.health.max, st.health + h.beat + (st.streak >= h.streakFrom ? h.streak : 0));
     rec().health(st.s, st.health / hero.health.max);
   };
 

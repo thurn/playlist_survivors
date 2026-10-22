@@ -110,7 +110,16 @@ export const heroDef = z.strictObject({
    * bite for their contactDamage, each at most once per biteEveryMs of world time; arrows and
    * slams deal their attacker's attackDamage.
    */
-  health: z.strictObject({ max: z.number().positive(), biteEveryMs: z.number().positive() }),
+  health: z.strictObject({
+    max: z.number().positive(),
+    biteEveryMs: z.number().positive(),
+    /**
+     * Rhythm heals. A clean beat (a rated press of Great or better in step movement) heals
+     * `beat`; from the `streakFrom`-th clean beat in a row, each heals `streak` more. A rated
+     * press below Great, or a stumble, ends the streak; grid times without a press do not.
+     */
+    heal: z.strictObject({ beat: z.number().min(0), streakFrom: z.number().int().min(1), streak: z.number().min(0) }),
+  }),
   /** What the sword aims for: the summed weight of the enemies a swing (or a cleave's shockwave) would catch. */
   aimWeights: z.strictObject({ regular: z.number().positive(), elite: z.number().positive(), boss: z.number().positive(), formation: z.number().positive() }),
 });

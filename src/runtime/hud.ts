@@ -155,10 +155,11 @@ export class Hud {
       });
       this.text(`LV ${hud.level}`, px(xpX - 8), py(7), fs, 0x60ffc0, "right", intro);
 
-      // Health and weapons, top left. A bite flashes the bar white.
+      // Health and weapons, top left. A bite flashes the bar white, a heal green.
       swell(12, 24, 90, 7, () => {
         g.roundRect(px(12), py(24), 90 * u, 7 * u, 2 * u).fill({ color: 0x000000, alpha: 0.55 * intro });
-        if (hud.health > 0) g.roundRect(px(13), py(25), 88 * u * clamp(hud.health, 0, 1), 5 * u, 2 * u).fill({ color: hud.hurt > 0.5 ? 0xffffff : 0xff4050, alpha: intro });
+        const color = hud.hurt > 0.5 ? 0xffffff : hud.heal > 0.3 ? 0x60ff90 : 0xff4050;
+        if (hud.health > 0) g.roundRect(px(13), py(25), 88 * u * clamp(hud.health, 0, 1), 5 * u, 2 * u).fill({ color, alpha: intro });
       });
       this.text("HP", px(12), py(14), fs, 0xff8090, "left", intro);
       hud.weapons.forEach((wp, i) => {
@@ -262,6 +263,8 @@ export class Hud {
         });
         this.text("GROOVE", px(gx), py(cy - 16), fs, 0xb0b0c0, "left", intro);
         this.text(`+${Math.round(hud.bonus * 100)}%`, px(gx + gw + 6), py(cy - 4), fs, hud.groove > 0.85 ? 0xffd040 : 0xffffff, "left", intro);
+        // Play mode's heal streak: clean beats in a row, green once each one heals extra.
+        if (hud.streak && hud.streak.n >= 2) this.text(`STREAK ${hud.streak.n}`, px(gx), py(cy + 8), fs, hud.streak.healing ? 0x60ff90 : 0xb0b0c0, "left", intro);
       }
       // The count-in before step movement: four marks count the last four beats.
       if (hud.countIn) {

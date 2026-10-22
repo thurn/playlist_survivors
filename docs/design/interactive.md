@@ -325,15 +325,29 @@ manner of Vampire Survivors: the crowd hurts by touching.
   crowd hurts fast; killing it is the defence.
 - **Attacks:** an arrow that touches the hero takes its archer's
   `attackDamage` (12), and a slam that lands on the hero the boss's (25).
-- **Starting values:** the hero has 6500 health (`hero.health.max`);
+- **Rhythm heals:** the only healing. A clean beat (a rated press of Great
+  or better in step movement) heals 15 (`hero.health.heal.beat`); from the
+  4th clean beat in a row (`streakFrom`), each heals 15 more (`streak`). A
+  rated press below Great, or a stumble, ends the streak; grid times with
+  no press leave it alone, so resting costs nothing.
+- **Starting values:** the hero has 5000 health (`hero.health.max`);
   enemies bite for 2 (bats, bees, eyeballs) to 10 (the minotaur). Over the
   song the `perfect` bot takes about 2100–2300, `moderate` 2650–3050,
-  `casual` 4050–5650 and a masher at 8 presses a second 7500–8700.
+  `casual` 4050–5650 and a masher at 8 presses a second 7500–8700. With
+  the heals, `moderate`'s health never drops below about 90%, `casual`'s
+  falls to 18–56%, a masher at 4 presses a second to 71–82%, and a masher
+  at 8 runs out around 2:05. Without them `casual` would fall on every
+  checked seed.
+- **What mashing at 4 a second shows:** it presses every beat, so it swings
+  twice as often as `casual` (which presses only downbeats) and gathers a
+  smaller crowd. Healing alone does not put it below an honest but sparse
+  player; its C grade and lost swings do.
 - **Running out:** the game stops on a **YOU FELL** menu: Restart section,
   Restart song, Quit to title (Esc does not resume). Restarting the section
   restores the health the hero had at its start.
-- **HUD:** the HP bar at the top left shows it and flashes white on a bite;
-  the hero flashes red.
+- **HUD:** the HP bar at the top left shows it, flashing white on a bite
+  and green on a heal; the hero flashes red. Below the groove meter,
+  **STREAK n** counts clean beats in a row, green once each heals extra.
 - **The demo is unchanged:** its rules have no health, so its bar stays
   full.
 
