@@ -69,6 +69,14 @@ const KNOCK_TIME = 0.12;
 const RECYCLE_VIEWS = 1.5;
 /** The hard population cap. */
 export const POP_CAP = 520;
+/** The horde's set pieces (rules.setPieces): the steady stream aims for this share of the population curve. */
+export const STREAM_SHARE = 0.6;
+/** A closing ring reaches this far from its centre on its accent (a tier-0 swing's reach); a second row rides this much further out. */
+export const RING_CLOSE = 100;
+const RING_ROW = 32;
+/** A stampede runs at this times its enemy's speed, in rows this far apart. */
+export const STAMPEDE_SPEED = 2.5;
+const STAMPEDE_ROW = 48;
 /** Hit-stop limits (seconds). */
 export const HITSTOP_MAX = 0.15;
 export const HITSTOP_MIN = 0.04;
@@ -161,6 +169,10 @@ interface Foe {
    */
   slot?: (t: number) => { x: number; y: number };
   slotUntil: number;
+  /** A closing ring's member (set pieces): its place in the world by song time, until slotUntil. */
+  at?: (t: number) => { x: number; y: number };
+  /** A stampede's runner (set pieces): its fixed velocity straight across the view (px per world second). */
+  run?: { vx: number; vy: number };
   /** A charge (the kick line's release) runs faster until this song time. */
   chargeUntil: number;
   /** World time of its latest bite on the hero (play mode's health). */
@@ -235,6 +247,8 @@ type Ev =
   | { kind: "slamMark"; k: number }
   | { kind: "slamLand"; k: number }
   | { kind: "formation"; f: number }
+  | { kind: "ring"; k: number }
+  | { kind: "stampede"; k: number }
   | { kind: "formationRelease"; f: number }
   | { kind: "gem"; gem: number; value: number }
   | { kind: "levelDue"; i: number }
@@ -280,6 +294,8 @@ const ORDER: Record<Ev["kind"], number> = {
   levelDue: 2,
   levelUp: 3,
   formation: 4,
+  ring: 4,
+  stampede: 4,
   bossSpawn: 4,
   archers: 4,
   decide: 5,
@@ -504,6 +520,8 @@ interface SimState {
   /** Enemies still recording samples. */
   foeSamples: Foe[];
   formationMembers: Foe[][];
+  /** Set pieces: each closing ring, its centre, when it spawned and closes, and the angles of its gaps. */
+  rings: { x: number; y: number; s0: number; s1: number; r0: number; gaps: number[] }[];
   blasting: boolean;
   flying: { v: number; index: number; x0: number; y0: number; ax: number; ay: number; wRelease: number; ux: number; uy: number; damage: number }[];
   /** The hero's health (play mode), in the hero's health units. */
@@ -585,6 +603,7 @@ function freshState(env: Env): SimState {
     nextId: 0,
     foeSamples: [],
     formationMembers: env.sch.formations.map(() => []),
+    rings: [],
     blasting: false,
     flying: [],
     health: env.ctx.lib.hero.health.max,
@@ -697,6 +716,7 @@ function engine(env: Env, st: SimState, io: Io) {
   // ---------------------------------------------------------------- strides
   const strides = env.rules.strides;
   const selfFiring = env.rules.selfFiring;
+  const setPieces = env.rules.setPieces;
   const pressCleaves = env.rules.pressCleaves;
   const rule = strideRule(hero);
   /** How long a step (or stride) takes. */
@@ -1587,6 +1607,17 @@ function engine(env: Env, st: SimState, io: Io) {
       // Bring everyone to this step's time first. Formation members follow their slots
       // (and the boss holds still while it drops in).
       const dt = w1 - f.lastW;
+      if (f.at && s < f.slotUntil) {
+        // A closing ring's member: on its circle, closing in song time.
+        const p = f.at(s);
+        const rate = rateAt(s);
+        const q2 = f.at(s + 1 / SIM_RATE);
+        f.vx = rate > 0 ? ((q2.x - p.x) * SIM_RATE) / rate : 0;
+        f.vy = rate > 0 ? ((q2.y - p.y) * SIM_RATE) / rate : 0;
+        f.x = p.x;
+        f.y = p.y;
+        continue;
+      }
       if (f.slot && s < f.slotUntil) {
         // On the slot now, moving with the anchor and the slot's own pace until the next step.
         const a = formationAnchor();
@@ -1657,9 +1688,10 @@ function engine(env: Env, st: SimState, io: Io) {
               const d = Math.sqrt(d2) || 0.01;
               const ux = d > 0.01 ? ox / d : 1;
               const uy = d > 0.01 ? oy / d : 0;
-              // Formation members and the landing boss hold their places: the crowd gives way.
-              const pa = pinned(a);
-              const pb = pinned(b);
+              // Formation members, the landing boss and a stampede's runners hold their places or
+              // course: the crowd gives way.
+              const pa = pinned(a) || a.run !== undefined;
+              const pb = pinned(b) || b.run !== undefined;
               if (pa && pb) continue;
               const wa = pa ? 0 : pb ? 1 : 0.5;
               const k = (1 - d / lim) * 90;
@@ -1693,6 +1725,20 @@ function engine(env: Env, st: SimState, io: Io) {
     for (const f of alive) {
       const dt = w1 - f.lastW;
       f.lastW = w1;
+      // Set pieces keep their course (a ring's circle, a stampede's run), whatever the hero does, and
+      // bite whoever they run into.
+      if ((f.at && s < f.slotUntil) || f.run) {
+        if (f.run) {
+          f.vx = f.run.vx;
+          f.vy = f.run.vy;
+        }
+        const ed = Math.hypot(f.x - hp.x, f.y - hp.y);
+        if (health && f.def.contactDamage > 0 && ed <= HURTBOX_RADIUS + f.r + CONTACT_GAP + BITE_SLACK && w1 - f.biteW >= biteEvery) {
+          f.biteW = w1;
+          hurt(f.def.contactDamage);
+        }
+        continue;
+      }
       if (pinned(f)) continue;
       if (f.archerGroup !== undefined) {
         const p = posts.get(f.archerGroup)!;
@@ -1829,17 +1875,29 @@ function engine(env: Env, st: SimState, io: Io) {
     return n > 0 ? { x: x / n, y: y / n } : undefined;
   };
 
+  /** Set pieces as the player sees them: the latest ring still closing, and stampede runners within 300 px. */
+  const setPieceView = (hp: { x: number; y: number }): Pick<Observation, "ring" | "runners"> => {
+    if (!setPieces) return {};
+    const out: Pick<Observation, "ring" | "runners"> = {};
+    const ring = st.rings.findLast((r) => st.s >= r.s0 && st.s < r.s1);
+    if (ring) out.ring = { x: ring.x, y: ring.y, r: lerp(ring.r0, RING_CLOSE, (st.s - ring.s0) / (ring.s1 - ring.s0)), gaps: ring.gaps };
+    const runners = st.alive.filter((f) => f.alive && f.run && Math.hypot(posX(f, st.w) - hp.x, posY(f, st.w) - hp.y) < 300);
+    if (runners.length > 0) out.runners = runners.map((f) => ({ x: posX(f, st.w), y: posY(f, st.w), vx: f.run!.vx, vy: f.run!.vy }));
+    return out;
+  };
+
   const observe = (): Observation => {
     const hp = heroPose(st.w);
     const pp = forward();
     return {
       s: st.s,
       w: st.w,
-      hero: { x: hp.x, y: hp.y, stepping: hp.u < 1, ...(strides ? { stride: strideNow(hp) } : {}) },
+      hero: { x: hp.x, y: hp.y, stepping: hp.u < 1, ...(strides ? { stride: strideNow(hp) } : {}), ...(env.rules.pressClasses ? { tier: st.tier } : {}) },
       enemies: st.alive.filter((f) => f.alive).map((f) => ({ x: posX(f, st.w), y: posY(f, st.w), type: f.type, health: f.health })),
       threats: visibleThreats(hp),
       boss: st.bossFoe && st.bossFoe.alive && !pinned(st.bossFoe) ? { x: posX(st.bossFoe, st.w), y: posY(st.bossFoe, st.w) } : undefined,
       formation: dancingFormation(),
+      ...setPieceView(hp),
       pacePoint: { x: pp.x, y: pp.y, tx: pp.tx, ty: pp.ty },
       edgeDistance: (x, y) => world.edge(x, y),
     };
@@ -1854,9 +1912,11 @@ function engine(env: Env, st: SimState, io: Io) {
   const spawnDirector = (bi: number) => {
     if (st.blasting) return;
     const s = st.s;
-    const target = targetPopulation(ctx, s);
-    const living = st.alive.length + st.pending;
-    const want = Math.min(SPAWN_PER_BEAT, Math.round(target) - living, POP_CAP - living);
+    // (With set pieces the stream is thinner, and set pieces add to it: it counts only its own.)
+    const target = targetPopulation(ctx, s) * (setPieces ? STREAM_SHARE : 1);
+    const all = st.alive.length + st.pending;
+    const living = setPieces ? st.alive.filter((f) => f.formation === undefined).length + st.pending : all;
+    const want = Math.min(SPAWN_PER_BEAT, Math.round(target) - living, POP_CAP - all);
     if (want <= 0) return;
     const sec = sectionAt(s);
     const roster = Object.entries(sec.level.roster).filter(([t]) => lib.enemies.get(t)!.behavior === "chase");
@@ -1880,7 +1940,8 @@ function engine(env: Env, st: SimState, io: Io) {
 
   const appear = (type: string) => {
     st.pending--;
-    if (st.blasting) return;
+    // (Never past the cap: a set piece may have taken the room since it was queued.)
+    if (st.blasting || st.alive.length >= POP_CAP) return;
     const def = lib.enemies.get(type)!;
     const r = new Rng(ctx.seed, "appear", st.nextId);
     const p = spawnPoint(def, r, false);
@@ -1896,6 +1957,12 @@ function engine(env: Env, st: SimState, io: Io) {
     const behind = st.alive.filter((f) => {
       const dx = posX(f, st.w) - hp.x;
       const dy = posY(f, st.w) - hp.y;
+      // A stampede's runner, once it has left the view on the side it runs to.
+      if (f.alive && f.run) {
+        const x = posX(f, st.w);
+        const y = posY(f, st.w);
+        return (f.run.vx > 0 && x > view[2] + STAMPEDE_ROW) || (f.run.vx < 0 && x < view[0] - STAMPEDE_ROW) || (f.run.vy > 0 && y > view[3] + STAMPEDE_ROW) || (f.run.vy < 0 && y < view[1] - STAMPEDE_ROW);
+      }
       return f.alive && Math.hypot(dx, dy) >= RECYCLE_VIEWS * vw && (world.open || dx * pp.tx + dy * pp.ty < 0);
     });
     for (const f of behind) {
@@ -2206,6 +2273,8 @@ function engine(env: Env, st: SimState, io: Io) {
     const pp = forward();
     const x = hp.x + pp.tx * BOSS_LAND_AHEAD;
     const y = hp.y + pp.ty * BOSS_LAND_AHEAD;
+    // (With set pieces, room under the cap first: they can fill it.)
+    if (setPieces) makeRoom(1);
     const f = spawnFoe(b.type, x, y, undefined, { entrance: "land", attacks: [] });
     f.landS = b.sEnter;
     st.bossFoe = f;
@@ -2255,7 +2324,7 @@ function engine(env: Env, st: SimState, io: Io) {
 
   // ---------------------------------------------------------------- formations
   /** Formation members on their slots and the boss dropping in hold their places. */
-  const pinned = (f: Foe) => (f.slot !== undefined && st.s < f.slotUntil) || (f.landS !== undefined && st.s < f.landS);
+  const pinned = (f: Foe) => ((f.slot !== undefined || f.at !== undefined) && st.s < f.slotUntil) || (f.landS !== undefined && st.s < f.landS);
 
   /** Formations ride with the camera-smoothed hero: the camera centre less its lead. */
   const formationAnchor = () => {
@@ -2276,7 +2345,9 @@ function engine(env: Env, st: SimState, io: Io) {
     const dir = world.open ? { x: 0, y: 0, tx: st.heading.x, ty: st.heading.y } : undefined;
     if (dir) st.formationDir = { x: dir.tx, y: dir.ty, until: fs.sRelease };
     const frame = (t: number) => dir ?? pacePoint(t);
-    for (let k = 0; k < def.count; k++) {
+    // (With set pieces, as many as fit under the cap, after the stream makes room.)
+    const count = setPieces ? makeRoom(def.count) : def.count;
+    for (let k = 0; k < count; k++) {
       let place: (t: number) => { x: number; y: number };
       let start: { x: number; y: number };
       // Places are offsets from the anchor; the entrance starts just off the camera's view.
@@ -2330,6 +2401,117 @@ function engine(env: Env, st: SimState, io: Io) {
       st.formationMembers[fi].push(f);
     }
     rec().formation({ def: fs.def, sStart: fs.sStart, sRelease: fs.sRelease, members });
+  };
+
+  /**
+   * Room for a set piece of n under the cap: the stream's enemies furthest from the hero leave the
+   * field (as recycling does, without coming back). Returns how many of the n fit.
+   */
+  const makeRoom = (n: number): number => {
+    const excess = st.alive.length + n - POP_CAP;
+    if (excess > 0) {
+      const hp = heroPose(st.w);
+      const far = st.alive.filter((f) => f.alive && f.formation === undefined && f.def.size !== "boss").sort((a, b) => Math.hypot(posX(b, st.w) - hp.x, posY(b, st.w) - hp.y) - Math.hypot(posX(a, st.w) - hp.x, posY(a, st.w) - hp.y));
+      for (const f of far.slice(0, excess)) {
+        f.alive = false;
+        f.finalSample = true;
+        f.deathW = st.w;
+        rec().death(f.id, st.w, true);
+      }
+      st.alive = st.alive.filter((f) => f.alive);
+    }
+    return Math.max(0, Math.min(n, POP_CAP - st.alive.length));
+  };
+
+  /**
+   * A closing ring (set pieces): its members evenly spaced on a circle just outside the view, around
+   * where the hero stands, with gaps of three missing places (two rows past 40 members). It closes at a
+   * steady speed to RING_CLOSE from its centre on its accent; then its members chase as usual.
+   */
+  const ringEnter = (k: number) => {
+    const ring = { ...sch.rings[k] };
+    ring.count = makeRoom(ring.count);
+    if (ring.count === 0) return;
+    const def = lib.enemies.get(ring.enemy)!;
+    const hp = heroPose(st.w);
+    const view = st.camera.view();
+    const far = Math.max(...[view[0], view[2]].flatMap((x) => [view[1], view[3]].map((y) => Math.hypot(x - hp.x, y - hp.y))));
+    const r0 = far + def.radius + SPAWN_MARGIN;
+    const r = new Rng(ctx.seed, "ring", k);
+    const a0 = r.range(0, Math.PI * 2);
+    const rows = ring.count > 40 ? 2 : 1;
+    const fi = sch.formations.length + k;
+    const members: number[] = [];
+    const s0 = st.s;
+    const s1 = ring.sClose;
+    const gapAngles: number[] = [];
+    for (let row = 0; row < rows; row++) {
+      const n = row === 0 ? Math.ceil(ring.count / rows) : Math.floor(ring.count / rows);
+      const places = n + 3 * ring.gaps;
+      const gap = new Set<number>();
+      for (let g = 0; g < ring.gaps; g++) {
+        const first = Math.floor((g * places) / ring.gaps);
+        for (let j = 0; j < 3; j++) gap.add(first + j);
+        if (row === 0) gapAngles.push(a0 + ((first + 1) * Math.PI * 2) / places);
+      }
+      const from = r0 + row * RING_ROW;
+      const to = RING_CLOSE + row * RING_ROW;
+      for (let j = 0; j < places; j++) {
+        if (gap.has(j)) continue;
+        const th = a0 + (j * Math.PI * 2) / places;
+        const c = Math.cos(th);
+        const sn = Math.sin(th);
+        const at = (t: number) => {
+          const rad = lerp(from, to, clamp((t - s0) / (s1 - s0), 0, 1));
+          return { x: hp.x + c * rad, y: hp.y + sn * rad };
+        };
+        const p = at(s0);
+        const f = spawnFoe(ring.enemy, p.x, p.y, undefined, { formation: fi });
+        f.weight = weightOf(def, true);
+        f.at = at;
+        f.slotUntil = s1;
+        members.push(f.id);
+      }
+    }
+    st.rings.push({ x: hp.x, y: hp.y, s0, s1, r0, gaps: gapAngles });
+    rec().formation({ def: "ring", sStart: s0, sRelease: s1, members });
+  };
+
+  /**
+   * A stampede (set pieces): its enemies enter from one side of the view at STAMPEDE_SPEED times their
+   * speed and run straight across, ignoring the hero, in rows with a gap of three missing places at
+   * the same height in each. Those that leave the far side are recycled.
+   */
+  const stampedeEnter = (k: number) => {
+    const sp = { ...sch.stampedes[k] };
+    sp.count = makeRoom(sp.count);
+    if (sp.count === 0) return;
+    const def = lib.enemies.get(sp.enemy)!;
+    const view = st.camera.view();
+    const r = new Rng(ctx.seed, "stampede", k);
+    const dir = r.next() < 0.5 ? 1 : -1;
+    const speed = def.speed * STAMPEDE_SPEED;
+    const fi = sch.formations.length + sch.rings.length + k;
+    const members: number[] = [];
+    const perRow = Math.ceil(sp.count / sp.rows);
+    const places = perRow + 3;
+    const top = view[1] - def.radius;
+    const span = view[3] - view[1] + 2 * def.radius;
+    const gapAt = Math.floor(r.range(0.2, 0.7) * places);
+    let left = sp.count;
+    for (let row = 0; row < sp.rows && left > 0; row++) {
+      const x = dir > 0 ? view[0] - SPAWN_MARGIN - def.radius - row * STAMPEDE_ROW : view[2] + SPAWN_MARGIN + def.radius + row * STAMPEDE_ROW;
+      for (let j = 0; j < places && left > 0; j++) {
+        if (j >= gapAt && j < gapAt + 3) continue;
+        const y = top + (span * (j + 0.5)) / places;
+        const f = spawnFoe(sp.enemy, x, y, undefined, { formation: fi });
+        f.run = { vx: dir * speed, vy: 0 };
+        f.vx = dir * speed;
+        members.push(f.id);
+        left--;
+      }
+    }
+    rec().formation({ def: "stampede", sStart: st.s, sRelease: st.s, members });
   };
 
   const formationRelease = (fi: number) => {
@@ -2397,6 +2579,10 @@ function engine(env: Env, st: SimState, io: Io) {
       q.push(f.sStart, { kind: "formation", f: i });
       q.push(f.sRelease, { kind: "formationRelease", f: i });
     });
+    if (env.rules.setPieces) {
+      sch.rings.forEach((r, k) => q.push(r.s, { kind: "ring", k }));
+      sch.stampedes.forEach((r, k) => q.push(r.s, { kind: "stampede", k }));
+    }
     if (sch.blast && sch.blast.s < endS) {
       const wd = lib.weapons.get(sch.blast.weapon)!;
       const b = wd.blast!;
@@ -2550,6 +2736,12 @@ function engine(env: Env, st: SimState, io: Io) {
           break;
         case "formationRelease":
           formationRelease(ev.f);
+          break;
+        case "ring":
+          ringEnter(ev.k);
+          break;
+        case "stampede":
+          stampedeEnter(ev.k);
           break;
         case "zoneWave": {
           const hp = heroPose(st.w);

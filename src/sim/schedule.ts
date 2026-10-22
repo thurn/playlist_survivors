@@ -53,6 +53,9 @@ export interface Schedule {
   archerGroups: { s: number; archers: number; until: number }[];
   boss?: { type: string; sEnter: number; slams: { sMark: number; sLand: number }[] };
   formations: { def: string; sStart: number; sRelease: number; line?: number }[];
+  /** Play mode's set pieces: closing rings (spawn and close times) and stampedes. */
+  rings: { s: number; sClose: number; enemy: string; count: number; gaps: number }[];
+  stampedes: { s: number; enemy: string; count: number; rows: number }[];
 }
 
 export const PACE_RATE = 120;
@@ -221,7 +224,7 @@ function parseEvery(every: string, bpb: number): number {
 }
 
 /** The encounters the level script schedules: archer volleys, the boss and its slams, formations. */
-function encounters(ctx: Ctx): Pick<Schedule, "volleys" | "archerGroups" | "boss" | "formations"> {
+function encounters(ctx: Ctx): Pick<Schedule, "volleys" | "archerGroups" | "boss" | "formations" | "rings" | "stampedes"> {
   const { song, idx } = ctx;
   const tAt = (bi: number) => timeOfBeatIndex(song, bi);
   const biAt = (t: number) => beatIndexAt(song, t);
@@ -229,9 +232,17 @@ function encounters(ctx: Ctx): Pick<Schedule, "volleys" | "archerGroups" | "boss
   const volleys: Schedule["volleys"] = [];
   const archerGroups: Schedule["archerGroups"] = [];
   const formations: Schedule["formations"] = [];
+  const rings: Schedule["rings"] = [];
+  const stampedes: Schedule["stampedes"] = [];
   let boss: Schedule["boss"];
   for (const e of ctx.events) {
     const ev = e.ev;
+    if (ev.ring) {
+      const sClose = resolveRef(idx, ev.ring.closesOn);
+      if (sClose <= e.s + 1) throw new PlanError(`${ctx.level.eventFiles?.[e.index] ?? ctx.level.file}:${e.line}: the ring closes at ${sClose.toFixed(2)} s, not after it spawns at ${e.s.toFixed(2)} s`);
+      rings.push({ s: e.s, sClose, enemy: ev.ring.enemy, count: ev.ring.count, gaps: ev.ring.gaps });
+    }
+    if (ev.stampede) stampedes.push({ s: e.s, enemy: ev.stampede.enemy, count: ev.stampede.count, rows: ev.stampede.rows });
     if (ev.threats) {
       const until = resolveRef(idx, ev.threats.until);
       const step = parseEvery(ev.threats.every, bpbAt(e.s));
@@ -274,7 +285,7 @@ function encounters(ctx: Ctx): Pick<Schedule, "volleys" | "archerGroups" | "boss
       formations.push({ def: ev.formation, sStart: e.s, sRelease, line: e.line });
     }
   }
-  return { volleys, archerGroups, boss, formations };
+  return { volleys, archerGroups, boss, formations, rings, stampedes };
 }
 
 export function buildSchedule(ctx: Ctx): Schedule {

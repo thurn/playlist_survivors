@@ -314,7 +314,7 @@ export interface Plan {
   /** Level-ups at their scheduled musical moments. */
   levelUpsDue?: { id: string; s: number }[];
   /** Play mode's rule changes (absent in the demo). */
-  rules?: { oneStepPerSlot: boolean; accentTelegraphs: boolean; health?: boolean; strides?: boolean; pressClasses?: boolean; selfFiring?: boolean; gridSounds?: boolean; pressCleaves?: boolean };
+  rules?: { oneStepPerSlot: boolean; accentTelegraphs: boolean; health?: boolean; strides?: boolean; pressClasses?: boolean; selfFiring?: boolean; gridSounds?: boolean; pressCleaves?: boolean; setPieces?: boolean };
   /**
    * Play mode's fixed-speed strides (absent without the rule): the walk speed (px per world
    * second), a stride's duration and hop height, the stride period without a steady beat, and the

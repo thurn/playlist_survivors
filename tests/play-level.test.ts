@@ -22,8 +22,8 @@ describe("the play level file", () => {
     expect(play.extends).toBe("orpheus-galop");
     expect(play.world).toBe("open");
     expect(demo.world).toBe("corridor");
-    expect(play.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true, selfFiring: true, gridSounds: true, pressCleaves: true });
-    expect(demo.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false, pressClasses: false, selfFiring: false, gridSounds: false, pressCleaves: false });
+    expect(play.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true, selfFiring: true, gridSounds: true, pressCleaves: true, setPieces: true });
+    expect(demo.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false, pressClasses: false, selfFiring: false, gridSounds: false, pressCleaves: false, setPieces: false });
     expect(play.player).toBe("moderate");
     expect(play.seed).toBe(demo.seed);
     expect(play.title).toEqual(demo.title);
@@ -43,14 +43,17 @@ describe("the play level file", () => {
     expect(play.sections.find((s) => s.label === "galop-vamp")!.calm).toBe(0); // not inherited
     const changed = ["prelude", "climax", "galop-vamp", "galop-opening"];
     for (const [i, s] of play.sections.entries()) if (!changed.includes(s.label)) expect(s).toEqual(demo.sections[i]);
-    // Events merge by `at` and kind: the level-ups need their own experience; nothing is added.
-    expect(play.events.length).toBe(demo.events.length);
+    // Events merge by `at` and kind: the level-ups need their own experience; the set pieces (rings
+    // and stampedes) are play mode's own, added to the demo's.
+    const pieces = play.events.filter((e) => e.ring || e.stampede);
+    expect(pieces.map((e) => (e.ring ? `ring ${e.ring.count}` : `stampede ${e.stampede!.count}`))).toEqual(["ring 30", "stampede 40", "ring 60", "stampede 60", "ring 80"]);
+    expect(play.events.length).toBe(demo.events.length + pieces.length);
     expect(play.events.filter((e) => e.levelUp).map((e) => [e.levelUp, e.xp])).toEqual([
-      ["orbiting-blades", 300],
+      ["orbiting-blades", 220],
       ["chain-lightning", 850],
       ["fire-trail", 1700],
     ]);
-    expect(play.events.filter((e) => !e.levelUp)).toEqual(demo.events.filter((e) => !e.levelUp));
+    expect(play.events.filter((e) => !e.levelUp && !e.ring && !e.stampede)).toEqual(demo.events.filter((e) => !e.levelUp));
   });
 
   it("merges its hero overrides over content/hero.yaml for this level only", () => {

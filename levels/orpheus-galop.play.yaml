@@ -6,8 +6,9 @@ world: open                 # the demo's default is corridor
 # and the groove meter fills, drains and sets the tier. Every weapon fires by itself (selfFiring):
 # the sword on every grid time, and the tier sets attack area and damage. Every gameplay sound plays
 # on its subdivision's slot, never late (gridSounds). An eligible accent's swing is heavy for everyone,
-# and a press on the chord launches its shockwave (pressCleaves).
-rules: { oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true, selfFiring: true, gridSounds: true, pressCleaves: true }
+# and a press on the chord launches its shockwave (pressCleaves). The steady stream aims for 60% of
+# the population curve, and set pieces (the closing rings and stampedes below) bring the rest (setPieces).
+rules: { oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true, selfFiring: true, gridSounds: true, pressCleaves: true, setPieces: true }
 hero:
   # Fixed-speed strides: 140 px/s at any tempo and press rate, faster than every enemy but bats and bees.
   walk: { speed: 140 }
@@ -30,12 +31,23 @@ sections:
   - section: climax
     camera: { lead: 0 }
 # Experience for each level-up: the moderate player fills each bar a little before its moment
-# (with strides it collects about 320-360 by the first on the checked seeds: the prelude's faster
-# walk kills a little less than the old 80 px/s walk did).
+# (with set pieces' thinner stream it collects about 234-257 by the first on the checked seeds).
 events:
   - at: { section: galop-opening, point: start }
-    xp: 300
+    xp: 220
   - at: { section: theme-a-repeat, point: start }
     xp: 850
   - at: { section: bridge, point: start }
     xp: 1700
+  # Set pieces (rules.setPieces): closing rings around where the hero stands, each closing on an
+  # accent a cleave can meet, and stampedes running across the view.
+  - at: { accent: tutti-chord, fromEnd: 6 }           # 0:59.5
+    ring: { enemy: goblin, count: 30, gaps: 3, closesOn: { accent: tutti-chord, fromEnd: 5 } }   # 1:02.3
+  - at: { bar: 104, beat: 1 }                         # 1:42.0, after the bridge's level-up
+    stampede: { enemy: goblin, count: 40, rows: 2 }
+  - at: { bar: 118, beat: 2 }                         # 1:51.2
+    ring: { enemy: goblin, count: 60, gaps: 3, closesOn: { bar: 126, beat: 2 } }                 # 1:56.2
+  - at: { section: coda, point: start }               # 2:04.6
+    stampede: { enemy: goblin, count: 60, rows: 3 }
+  - at: { bar: 147, beat: 1 }                         # 2:08.8
+    ring: { enemy: goblin, count: 80, gaps: 3, closesOn: { bar: 154, beat: 2 } }                 # 2:13.0

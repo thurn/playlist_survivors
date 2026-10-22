@@ -13,7 +13,7 @@ import { RouteLookup } from "../mapgen/mapgen.ts";
 import { partnerPress, type EnemyRecord, type Plan } from "../plan/types.ts";
 import { enemyPos, heroSample } from "../plan/sample.ts";
 import { aim, catches, type AimTarget } from "../sim/aim.ts";
-import { HITSTOP_MAX, HITSTOP_MIN, KNOCKBACK, POP_CAP, spriteOffscreen } from "../sim/simulate.ts";
+import { HITSTOP_MAX, HITSTOP_MIN, KNOCKBACK, POP_CAP, spriteOffscreen, STREAM_SHARE } from "../sim/simulate.ts";
 import { viewRect } from "./camera.ts";
 import { NEVER_LATE, VOICE_BUDGET, weaponSubdivision, type Subdivision } from "./emit.ts";
 
@@ -463,11 +463,14 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
   {
     const f: string[] = [];
     let n = 0;
-    const alive = (w: number) => {
+    // With set pieces the steady stream (enemies outside any formation, ring or stampede) is held to
+    // STREAM_SHARE of the curve, and set pieces add to it: the cap is on everyone.
+    const stream = plan.rules?.setPieces ?? false;
+    const alive = (w: number, streamOnly = false) => {
       let c = 0;
       for (const id of bucketAt(w)) {
         const e = byId.get(id)!;
-        if (w >= e.spawnW && w < e.deathW) c++;
+        if (w >= e.spawnW && w < e.deathW && !(streamOnly && e.formation !== undefined)) c++;
       }
       return c;
     };
@@ -501,8 +504,8 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
       for (let w = w0; w < w1; w += 0.1) {
         const p = alive(w);
         if (p > POP_CAP) f.push(`population ${p} exceeds ${POP_CAP} at w=${w.toFixed(1)}`);
-        pSum += p;
-        tSum += targetAt(plan, warp.toSong(w));
+        pSum += stream ? alive(w, true) : p;
+        tSum += targetAt(plan, warp.toSong(w)) * (stream ? STREAM_SHARE : 1);
         k++;
       }
       if (k === 0) continue;
@@ -513,7 +516,7 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
       const p = pSum / k;
       const t = tSum / k;
       const tol = Math.max(0.25 * t, 6);
-      if (Math.abs(p - t) > tol) f.push(`bar ${bar}: population ${p.toFixed(0)} vs target ${t.toFixed(0)} (±${tol.toFixed(0)})`);
+      if (Math.abs(p - t) > tol) f.push(`bar ${bar}: ${stream ? "the stream's " : ""}population ${p.toFixed(0)} vs target ${t.toFixed(0)} (±${tol.toFixed(0)})`);
     }
     add("population", f, n);
   }

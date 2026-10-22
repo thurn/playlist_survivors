@@ -27,7 +27,12 @@ export interface Rules {
    * eighth after it, and only an early press brings a hit-stop.
    */
   pressCleaves: boolean;
+  /**
+   * The horde's set pieces: the steady stream aims for 60% of the population curve, and the level's
+   * closing rings and stampedes bring the rest.
+   */
+  setPieces: boolean;
 }
 
 /** The scripted demo's rules: today's behavior. */
-export const DEMO_RULES: Readonly<Rules> = Object.freeze({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false, pressClasses: false, selfFiring: false, gridSounds: false, pressCleaves: false });
+export const DEMO_RULES: Readonly<Rules> = Object.freeze({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false, pressClasses: false, selfFiring: false, gridSounds: false, pressCleaves: false, setPieces: false });

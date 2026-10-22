@@ -363,6 +363,17 @@ export const levelEvent = z.strictObject({
   /** Experience the level-up needs (gems collected since the previous one). */
   xp: z.number().positive().optional(),
   formation: id.optional(),
+  /**
+   * Play mode's closing ring (rules.setPieces): `count` enemies evenly spaced on a circle just outside
+   * the view, around where the hero stands, with `gaps` gaps of three missing places (two rows past
+   * 40); it closes at a steady speed to 100 px from its centre on `closesOn`, then its members chase.
+   */
+  ring: z.strictObject({ enemy: id, count: z.number().int().positive(), gaps: z.number().int().min(0).max(6).default(3), closesOn: musicalRef }).optional(),
+  /**
+   * Play mode's stampede (rules.setPieces): `count` enemies at 2.5 times their speed run straight
+   * across the view from one side, in `rows` rows with a gap in each, ignoring the hero.
+   */
+  stampede: z.strictObject({ enemy: id, count: z.number().int().positive(), rows: z.number().int().min(1).max(4).default(3) }).optional(),
   threats: z
     .strictObject({ kind: z.enum(["archer-volley"]), every: z.string().regex(/^\d+ (bars?|beats?)$/), until: musicalRef, archers: z.number().int().positive().default(2) })
     .optional(),
@@ -393,7 +404,7 @@ export const levelScript = z.strictObject({
   /** The demo's forest corridor along a route, or play mode's open field. */
   world: z.enum(["corridor", "open"]).default("corridor"),
   /** Play-mode rule changes. */
-  rules: z.strictObject({ oneStepPerSlot: z.boolean().default(false), accentTelegraphs: z.boolean().default(false), health: z.boolean().default(false), strides: z.boolean().default(false), pressClasses: z.boolean().default(false), selfFiring: z.boolean().default(false), gridSounds: z.boolean().default(false), pressCleaves: z.boolean().default(false) }).optional(),
+  rules: z.strictObject({ oneStepPerSlot: z.boolean().default(false), accentTelegraphs: z.boolean().default(false), health: z.boolean().default(false), strides: z.boolean().default(false), pressClasses: z.boolean().default(false), selfFiring: z.boolean().default(false), gridSounds: z.boolean().default(false), pressCleaves: z.boolean().default(false), setPieces: z.boolean().default(false) }).optional(),
   /** Overrides merged over content/hero.yaml for this level only (checked against the hero schema). */
   hero: z.record(z.string(), z.unknown()).optional(),
   title: z.strictObject({ piece: z.string(), composer: z.string(), performer: z.string() }),

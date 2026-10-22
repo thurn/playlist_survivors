@@ -281,7 +281,7 @@ export interface LevelScript {
   extends?: string;
   /** The demo's forest corridor, or play mode's open field. */
   world: "corridor" | "open";
-  rules: { oneStepPerSlot: boolean; accentTelegraphs: boolean; health: boolean; strides: boolean; pressClasses: boolean; selfFiring: boolean; gridSounds: boolean; pressCleaves: boolean };
+  rules: { oneStepPerSlot: boolean; accentTelegraphs: boolean; health: boolean; strides: boolean; pressClasses: boolean; selfFiring: boolean; gridSounds: boolean; pressCleaves: boolean; setPieces: boolean };
   /** The hero for this level: content/hero.yaml with the level's overrides (the same object when it has none). */
   hero: HeroDef;
 }
@@ -304,7 +304,7 @@ interface LevelSource {
   locate(path: (string | number)[]): Origin;
 }
 
-const EVENT_KINDS = ["levelUp", "formation", "threats", "boss", "banner", "titleCard", "landmark", "timeScale", "blast"];
+const EVENT_KINDS = ["levelUp", "formation", "ring", "stampede", "threats", "boss", "banner", "titleCard", "landmark", "timeScale", "blast"];
 
 const isRecord = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === "object" && !Array.isArray(v);
 
@@ -553,6 +553,11 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap, res
     checkRef(song, e.at, [...path, "at"]);
     need([...path, "levelUp"], "weapons", e.levelUp);
     need([...path, "formation"], "formations", e.formation);
+    if (e.ring) {
+      need([...path, "ring", "enemy"], "enemies", e.ring.enemy);
+      checkRef(song, e.ring.closesOn, [...path, "ring", "closesOn"]);
+    }
+    if (e.stampede) need([...path, "stampede", "enemy"], "enemies", e.stampede.enemy);
     need([...path, "blast"], "weapons", e.blast);
     if (e.boss) {
       need([...path, "boss", "type"], "enemies", e.boss.type);
@@ -562,8 +567,8 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap, res
     if (e.levelUp && e.xp === undefined) issues.push({ ...at(path), message: "a levelUp needs xp (the experience it takes)" });
     if (e.xp !== undefined && !e.levelUp) issues.push({ ...at([...path, "xp"]), message: "xp only applies to a levelUp" });
     if (e.titleCard) checkRef(song, e.titleCard.until, [...path, "titleCard", "until"]);
-    const kinds = ["levelUp", "formation", "threats", "boss", "banner", "titleCard", "landmark", "timeScale", "blast"].filter((k) => (e as Record<string, unknown>)[k] !== undefined);
-    if (kinds.length === 0) issues.push({ ...at(path), message: "event does nothing (add levelUp, formation, threats, boss, banner, titleCard, landmark, timeScale or blast)" });
+    const kinds = EVENT_KINDS.filter((k) => (e as Record<string, unknown>)[k] !== undefined);
+    if (kinds.length === 0) issues.push({ ...at(path), message: "event does nothing (add levelUp, formation, ring, stampede, threats, boss, banner, titleCard, landmark, timeScale or blast)" });
   });
 
   function checkRef(map: SongMap, r: MusicalRef, path: (string | number)[]) {
@@ -585,7 +590,7 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap, res
     file: f.name,
     extends: data.extends,
     world: data.world,
-    rules: { oneStepPerSlot: data.rules?.oneStepPerSlot ?? false, accentTelegraphs: data.rules?.accentTelegraphs ?? false, health: data.rules?.health ?? false, strides: data.rules?.strides ?? false, pressClasses: data.rules?.pressClasses ?? false, selfFiring: data.rules?.selfFiring ?? false, gridSounds: data.rules?.gridSounds ?? false, pressCleaves: data.rules?.pressCleaves ?? false },
+    rules: { oneStepPerSlot: data.rules?.oneStepPerSlot ?? false, accentTelegraphs: data.rules?.accentTelegraphs ?? false, health: data.rules?.health ?? false, strides: data.rules?.strides ?? false, pressClasses: data.rules?.pressClasses ?? false, selfFiring: data.rules?.selfFiring ?? false, gridSounds: data.rules?.gridSounds ?? false, pressCleaves: data.rules?.pressCleaves ?? false, setPieces: data.rules?.setPieces ?? false },
     hero: levelHero,
   };
 }

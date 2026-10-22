@@ -15,8 +15,8 @@ export interface Observation {
   /** Song and world time now. */
   s: number;
   w: number;
-  /** The hero; with strides, how far a press would stride now (the budget). */
-  hero: { x: number; y: number; stepping: boolean; stride?: number };
+  /** The hero; with strides, how far a press would stride now (the budget); with press classes, the tier. */
+  hero: { x: number; y: number; stepping: boolean; stride?: number; tier?: number };
   enemies: { x: number; y: number; type: string; health: number }[];
   /**
    * Visible threats: an arrow's line runs from (x, y) through its aim point (ax, ay); a slam marker
@@ -27,6 +27,9 @@ export interface Observation {
   boss?: { x: number; y: number };
   /** The middle of a formation still dancing in its slots, when one is. */
   formation?: { x: number; y: number };
+  /** Set pieces: a closing ring (its centre, radius now, the angles of its gaps), and a stampede's runners. */
+  ring?: { x: number; y: number; r: number; gaps: number[] };
+  runners?: { x: number; y: number; vx: number; vy: number }[];
   /** Where the route schedule says the hero should be now, and the route's direction there. */
   pacePoint: { x: number; y: number; tx: number; ty: number };
   /** Distance from a point to the edge of the walkable band (negative outside). */
@@ -119,6 +122,13 @@ const ROAM_LEASH = 120;
 const ROAM_FORMATION = 100;
 /** Strides: a released line is walked at for this long (song seconds) after it last danced. */
 const LINE_MEMORY = 0.7;
+/** Set pieces: from tier 2 the player waits this close to a closing ring's middle (to cleave the chord); below it, leaves this far beyond a gap. */
+const RING_MIDDLE = 40;
+const RING_OUT = 80;
+/** A stampede's runner is avoided this far ahead in time (s), at these distances (px). */
+const RUNNER_LOOK = 0.15;
+const RUNNER_NEAR = 40;
+const RUNNER_CLOSE = 70;
 
 /** The eight step directions: one key, or two perpendicular keys for a diagonal. */
 const DIRECTIONS: Key[][] = [["right"], ["right", "down"], ["down"], ["down", "left"], ["left"], ["left", "up"], ["up"], ["up", "right"]];
@@ -299,6 +309,20 @@ export class VirtualPlayer implements Player {
     return l && obs.s - l.s <= LINE_MEMORY ? l : undefined;
   }
 
+  /**
+   * The way through a closing ring the hero is inside: from tier 2 its middle (a cleave on the chord
+   * clears it); below it, out through the gap nearest the hero. How close counts as there, too.
+   */
+  private ringWay(obs: Observation): { x: number; y: number; near: number } | undefined {
+    const ring = obs.ring;
+    if (!ring || Math.hypot(obs.hero.x - ring.x, obs.hero.y - ring.y) >= ring.r) return undefined;
+    if ((obs.hero.tier ?? 0) >= 2) return { x: ring.x, y: ring.y, near: RING_MIDDLE };
+    if (ring.gaps.length === 0) return undefined;
+    const th = Math.atan2(obs.hero.y - ring.y, obs.hero.x - ring.x);
+    const g = ring.gaps.reduce((a, b) => (Math.abs(wrapAngle(b - th)) < Math.abs(wrapAngle(a - th)) ? b : a));
+    return { x: ring.x + Math.cos(g) * (ring.r + RING_OUT), y: ring.y + Math.sin(g) * (ring.r + RING_OUT), near: 30 };
+  }
+
   /** The cost of standing where the hero is. */
   private standCost(obs: Observation): number {
     return this.placeCost(obs, this.paceFrame(obs), { x: 0, y: 0 }, obs.hero.x, obs.hero.y, 0);
@@ -376,8 +400,11 @@ export class VirtualPlayer implements Player {
       r.dir += new Rng(this.seed, "roam", Math.floor(b / 2 + 1e-9)).range(-1, 1) * ROAM_TURN * ((next - b) / 2);
       b = next;
     }
-    // A dancing formation draws the roam to it (a player walks up to the line to cleave it); otherwise the crowd does.
-    if (obs.formation) {
+    // Inside a closing ring the roam heads for the player's way through it (its middle or a gap); a
+    // dancing formation draws the roam to it (a player walks up to the line to cleave it); otherwise the crowd does.
+    const way = this.ringWay(obs);
+    if (way) r.dir += wrapAngle(Math.atan2(way.y - r.y, way.x - r.x) - r.dir) * Math.min(1, dw * 3);
+    else if (obs.formation) {
       const f = obs.formation;
       if (Math.hypot(f.x - r.x, f.y - r.y) > ROAM_FORMATION) r.dir += wrapAngle(Math.atan2(f.y - r.y, f.x - r.x) - r.dir) * Math.min(1, dw * 1.5);
     } else if (obs.enemies.length > 0) {
@@ -472,6 +499,16 @@ export class VirtualPlayer implements Player {
     // Strides: walk up to a dancing line, so the cleave on its release reaches the whole line.
     const f = this.strides ? this.line(obs) : undefined;
     if (f) cost += 3 * clamp((Math.hypot(ax - f.x, ay - f.y) - ROAM_FORMATION) / 100, 0, 3);
+    // A closing ring: from tier 2 wait in its middle and cleave the chord; below it, leave through the
+    // nearest gap before it closes (once outside, it no longer matters).
+    const way = this.ringWay(obs);
+    if (way) cost += 3 * clamp((Math.hypot(ax - way.x, ay - way.y) - way.near) / 120, 0, 3);
+    // A stampede: keep out of its runners' way (its gaps are where none are).
+    for (const rn of obs.runners ?? []) {
+      const d = Math.hypot(ax - (rn.x + rn.vx * RUNNER_LOOK), ay - (rn.y + rn.vy * RUNNER_LOOK));
+      if (d < RUNNER_NEAR) cost += 6;
+      else if (d < RUNNER_CLOSE) cost += 2;
+    }
     return cost;
   }
 
