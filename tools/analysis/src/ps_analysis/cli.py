@@ -73,6 +73,7 @@ def cmd_crop(a: argparse.Namespace) -> int:
         mono=not a.stereo,
         segments=segments,
         crossfade_ms=a.crossfade_ms,
+        fade_in_ms=a.fade_in_ms,
     )
     info["source"] = a.source_url or str(a.source)
     info["sourceSha256"] = sha256(a.source)
@@ -240,6 +241,12 @@ def build_parser() -> argparse.ArgumentParser:
         action="append",
         metavar="S:E",
         help="a source range to keep; repeat to join several, skipping what lies between",
+    )
+    c.add_argument(
+        "--fade-in-ms",
+        type=float,
+        default=5.0,
+        help="fade-in at the start of the excerpt (default 5)",
     )
     c.add_argument(
         "--crossfade-ms",
