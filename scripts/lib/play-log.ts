@@ -1,10 +1,16 @@
 /**
  * Reading play mode's timing log (src/live/log.ts): one row per gameplay key
  * press from the DOM event to what the simulation did, and a summary of
- * timing offsets, outcomes, the audio clock, frames and sounds.
+ * timing offsets, outcomes, press classes and time at each tier per section,
+ * the hero's speed over each second, the audio clock, frames and sounds.
+ * Re-rating (`rerate`) classes a log's presses again under the current groove
+ * rules, with grid times from the song map, so logs recorded under older
+ * rules serve as references while the groove is tuned.
  */
-import type { ApplyLog, ClockProbe, DropLog, KeyLog, SoundLog } from "../../src/live/log.ts";
+import type { HeroDef } from "../../src/content/schema.ts";
+import type { ApplyLog, ClockProbe, DropLog, HeroPath, KeyLog, SoundLog } from "../../src/live/log.ts";
 import type { PressTrace } from "../../src/sim/recorder.ts";
+import { classifyPress, drainPerBeat, freshPressMemo, grooveAfterChange, tierFor } from "../../src/sim/timing.ts";
 
 export interface PlayLogFile {
   id: string;
@@ -21,10 +27,23 @@ export interface PlayLogFile {
     /** Logs from play mode with strides. */
     stride?: { durationMs: number; maxPeriodS: number; freePeriodS: number };
     walk?: { speed: number };
+    /** Logs from play mode with press classes: the groove meter's values it was played under. */
+    meter?: HeroDef["meter"];
   };
+  /** The level's play-mode rule switches. */
+  rules?: Record<string, boolean>;
+  /** When the player took over from the virtual player (song time). */
+  playerFrom?: number;
   sections?: { label: string; s0: number; s1: number; movement: string }[];
   beats?: number[];
   grid?: { s: number[]; accent: number[] };
+  /** The recording's settled presses (the virtual player's before the hand-over too). */
+  inputs?: { s: number; kind: string; key?: string; class?: string; rating?: string; offbeat?: string }[];
+  /** Logs with press classes: the groove (0–1) and the tier after each change. */
+  groove?: { s: number[]; v: number[] };
+  tier?: { s: number[]; v: number[] };
+  /** The hero's path every few hundredths of song time, for its speed. */
+  heroPath?: HeroPath;
   keys: KeyLog[];
   applies: ApplyLog[];
   drops: DropLog[];
@@ -51,6 +70,13 @@ export interface PressRow {
    * or the simulation's outcome (stride, or step in older logs; stomp, rock, extra, stumble, ignored, bend, walk).
    */
   outcome: string;
+  /** Press classes: the class (partner, offbeat, counted, double, stray), the groove before and after, and the tier after. */
+  class?: string;
+  grooveBefore?: number;
+  grooveAfter?: number;
+  tier?: number;
+  /** Re-rated under the current rules (rerate): the class and rating there, when the summary re-rates. */
+  rerated?: { class: string; rating?: string; tier: number };
   /** Strides: the stride's length, the budget left after it, and the ground an interrupted stride gave back (px). */
   stride?: number;
   budget?: number;
@@ -123,6 +149,12 @@ export function pressRows(log: PlayLogFile): PressRow[] {
         row.noSwing = t.noSwing;
         row.stride = t.stride;
         row.budget = t.budget;
+        row.class = t.class;
+        row.grooveBefore = t.grooveBefore;
+        row.grooveAfter = t.grooveAfter;
+        row.tier = t.tier;
+        // (An off-beat's rating is its off-beat rating.)
+        if (t.class === "offbeat") row.rating = t.offbeat;
         row.returned = t.returned;
         if ((t.outcome === "extra" || t.outcome === "stumble" || t.outcome === "ignored") && t.stepS !== undefined) row.sinceStepMs = (t.s - t.stepS) * 1000;
         if (t.outcome === "extra") {
@@ -155,6 +187,8 @@ export interface SummaryOptions {
   to?: number;
   /** Print the per-press table (default true). */
   table?: boolean;
+  /** Re-rate the presses under these rules (the current game's), beside what the log recorded. */
+  rerate?: RerateRules;
 }
 
 /** A press rated on its own: a stride or a stomp, or a step in logs from before strides. */
@@ -166,6 +200,14 @@ export function summarize(log: PlayLogFile, opts: SummaryOptions = {}): string {
   const say = (s = "") => out.push(s);
   const inRange = (s?: number) => s === undefined || ((opts.from === undefined || s >= opts.from) && (opts.to === undefined || s <= opts.to));
   const rows = pressRows(log).filter((r) => inRange(r.s));
+  const rerated = opts.rerate ? rerate(log, opts.rerate) : undefined;
+  if (rerated) {
+    const byId = new Map(rerated.presses.filter((p) => p.id !== undefined).map((p) => [p.id!, p]));
+    for (const r of rows) {
+      const p = byId.get(r.id);
+      if (p) r.rerated = { class: p.class, ...(p.rating ? { rating: p.rating } : {}), tier: p.tier };
+    }
+  }
 
   say(`Play log ${log.id} (saved ${log.savedAt})`);
   if (log.userAgent) say(`  browser: ${log.userAgent}`);
@@ -190,6 +232,10 @@ export function summarize(log: PlayLogFile, opts: SummaryOptions = {}): string {
   if (noSwing.length > 0) say(`  rated presses that armed no swing: ${noSwing.length} (${[...new Set(noSwing.map((r) => r.noSwing))].join(", ")})`);
   const strides = rows.filter((r) => r.stride !== undefined && r.outcome !== "bend").map((r) => r.stride!);
   if (strides.length > 0) say(`  strides: median ${f(median(strides), 1)} px (min ${f(Math.min(...strides), 1)}, max ${f(Math.max(...strides), 1)}); ${rows.filter((r) => (r.returned ?? 0) > 0).length} interrupted the stride before`);
+  say();
+
+  // Press classes and time at each tier, per section; the speed over each second.
+  for (const line of grooveReport(log, rows, rerated, opts)) say(line);
   say();
 
   // Timing offsets.
@@ -253,7 +299,7 @@ export function summarize(log: PlayLogFile, opts: SummaryOptions = {}): string {
 
   if (opts.table !== false) {
     say();
-    say("   id      s   key    beat   Δbeat  Δgrid  outcome        rating   strike  stride  notes");
+    say("   id      s   key    beat   Δbeat  Δgrid  outcome        class    rating   groove     tier  strike  stride/left  notes");
     for (const r of rows) {
       const notes: string[] = [];
       if (r.noSwing) notes.push(`no swing: ${r.noSwing}`);
@@ -265,11 +311,308 @@ export function summarize(log: PlayLogFile, opts: SummaryOptions = {}): string {
       if (r.late) notes.push("LATE (applied at settled time)");
       if (r.runs !== undefined && r.runs > 1) notes.push(`ran ${r.runs}×`);
       if (r.handlerLagMs > 20) notes.push(`handler +${f(r.handlerLagMs)} ms`);
+      if (r.rerated && (r.rerated.class !== r.class || r.rerated.rating !== (r.class ? r.rating : undefined))) notes.push(`re-rated: ${r.rerated.class}${r.rerated.rating ? ` ${r.rerated.rating}` : ""} (tier ${r.rerated.tier})`);
       if (r.section) notes.push(r.section);
+      const groove = r.grooveBefore !== undefined ? `${f(r.grooveBefore, 2)}→${f(r.grooveAfter ?? r.grooveBefore, 2)}` : "";
+      const stride = r.stride !== undefined || r.budget !== undefined ? `${f(r.stride, 1)}/${f(r.budget, 1)}` : "";
       say(
-        `${lpad(String(r.id), 5)} ${lpad(f(r.s, 3), 8)}  ${pad(r.key, 5)} ${lpad(r.beat !== undefined ? String(r.beat) : "", 6)} ${lpad(f(r.beatDeltaMs), 6)} ${lpad(f(r.gridDeltaMs), 6)}  ${pad(r.outcome, 14)} ${pad(r.rating ?? "", 8)} ${lpad(f(r.strikeS, 3), 7)}  ${lpad(f(r.stride, 1), 6)}  ${notes.join("; ")}`,
+        `${lpad(String(r.id), 5)} ${lpad(f(r.s, 3), 8)}  ${pad(r.key, 5)} ${lpad(r.beat !== undefined ? String(r.beat) : "", 6)} ${lpad(f(r.beatDeltaMs), 6)} ${lpad(f(r.gridDeltaMs), 6)}  ${pad(r.outcome, 14)} ${pad(r.class ?? "", 8)} ${pad(r.rating ?? "", 8)} ${pad(groove, 10)} ${lpad(r.tier !== undefined ? String(r.tier) : "", 4)}  ${lpad(f(r.strikeS, 3), 6)}  ${lpad(stride, 11)}  ${notes.join("; ")}`,
       );
     }
   }
   return out.join("\n");
+}
+
+/** What re-rating needs from the current game: the hero (its timing and meter) and the song's grid, beats and sections. */
+export interface RerateRules {
+  hero: Pick<HeroDef, "timing" | "meter">;
+  /** Grid times (song seconds, sorted), from the song map. */
+  grid: ArrayLike<number>;
+  /** Beat times, for the drain. */
+  beats: ArrayLike<number>;
+  /** The current level's sections: pulsed (steps) or free, and their beats per bar. */
+  sections: { label: string; s0: number; s1: number; movement: string; beatsPerBar: number }[];
+}
+
+/** A press re-rated under the current rules. */
+export interface ReratedPress {
+  id?: number;
+  s: number;
+  section: string;
+  key: string;
+  class: string;
+  rating?: string;
+  change: number;
+  groove: number;
+  tier: number;
+}
+
+export interface Rerated {
+  /** From the player's first song time (the hand-over, or the start) to the end of play. */
+  from: number;
+  to: number;
+  /** The groove re-rating starts from: the log's own at `from` when it has one, else 0. */
+  groove0: number;
+  presses: ReratedPress[];
+  groove: { s: number[]; v: number[] };
+  tier: { s: number[]; v: number[] };
+}
+
+/** The song time where the player's play starts and ends in a log: the hand-over (or start), to the last frame played or press. */
+export function playSpan(log: PlayLogFile): { from: number; to: number } {
+  const fr = log.frames;
+  const playing = fr.phases.indexOf("playing");
+  const from = log.playerFrom ?? log.params?.startS ?? 0;
+  // The final attempt: frames after the last restart, and the presses that survived it.
+  const restart = lastRestart(log);
+  let to = restart?.s ?? -Infinity;
+  for (let i = 0; i < fr.s.length; i++) if (fr.phase[i] === playing && (!restart || fr.perf[i] > restart.perf)) to = Math.max(to, fr.s[i]);
+  const { kept } = finalPresses(log);
+  for (const t of log.traces) if (t.id !== undefined && kept.has(t.id)) to = Math.max(to, t.s);
+  return { from, to: Number.isFinite(to) ? to : from };
+}
+
+function lastRestart(log: PlayLogFile): { perf: number; s?: number } | undefined {
+  return log.events.filter((e) => e.kind === "restartSection" || e.kind === "restartSong").sort((a, b) => a.perf - b.perf).at(-1);
+}
+
+/**
+ * The presses of the log's final timeline, by trace id: a restart rewinds the recording (a section
+ * restart to a snapshot at or before the section's start, a song restart to the start), so the
+ * presses made before it from there on are gone from the recording, and from the groove and tier
+ * it logged. Every press the recording kept is among its settled inputs (same song time and key);
+ * a log without them falls back on the restart events' song times.
+ */
+export function finalPresses(log: PlayLogFile): { kept: Set<number>; dropped: number } {
+  if (log.inputs) {
+    // One input for each trace: the latest attempt's press claims it first (ids rise with key presses).
+    const settled = log.inputs.filter((i) => i.kind === "press");
+    const used = new Set<number>();
+    const kept = new Set<number>();
+    let dropped = 0;
+    const presses = log.traces.filter((t) => t.kind === "press" && t.id !== undefined).sort((a, b) => b.id! - a.id!);
+    for (const t of presses) {
+      const k = settled.findIndex((i, n) => !used.has(n) && Math.abs(i.s - t.s) < 1e-5 && (i.key === undefined || i.key === t.key));
+      if (k >= 0) {
+        used.add(k);
+        kept.add(t.id!);
+      } else dropped++;
+    }
+    return { kept, dropped };
+  }
+  const perf = new Map(log.keys.map((k) => [k.id, k.timeStamp]));
+  const restarts = log.events.filter((e) => (e.kind === "restartSection" || e.kind === "restartSong") && e.s !== undefined).sort((a, b) => a.perf - b.perf);
+  const kept = new Set<number>();
+  let dropped = 0;
+  for (const t of log.traces) {
+    if (t.kind !== "press" || t.id === undefined) continue;
+    const at = perf.get(t.id) ?? -Infinity;
+    // Gone when a later restart rewound to a song time at or before it.
+    if (restarts.some((e) => e.perf > at && (e.kind === "restartSong" || t.s >= e.s! - 1e-9))) dropped++;
+    else kept.add(t.id);
+  }
+  return { kept, dropped };
+}
+
+/** The value of a step series (each value holds from its time to the next) at song time s. */
+function stepAt(series: { s: ArrayLike<number>; v: ArrayLike<number> }, s: number, before = 0): number {
+  let v = before;
+  for (let i = 0; i < series.s.length && series.s[i] <= s + 1e-9; i++) v = series.v[i];
+  return v;
+}
+
+/**
+ * Re-rate a log's presses under the current groove rules: every press of the player's in a pulsed
+ * section is classed against the song map's grid (a diagonal's second key and a stomp's opposite
+ * key, as the log recorded them, are partners), the groove changes by the current meter, drains a
+ * bar after the latest press that raised it, and sets the tier. Logs recorded before press classes
+ * (step movement, one rated press per grid slot) re-rate the same way.
+ */
+export function rerate(log: PlayLogFile, rules: RerateRules): Rerated {
+  const { hero, grid, beats } = rules;
+  const { from, to } = playSpan(log);
+  const sectionAt = (s: number) => rules.sections.findLast((x) => s >= x.s0 - 1e-9) ?? rules.sections[0];
+  const { kept } = finalPresses(log);
+  const presses = log.traces.filter((t) => t.kind === "press" && t.id !== undefined && kept.has(t.id) && t.s >= from - 1e-9 && sectionAt(t.s).movement === "steps").sort((a, b) => a.s - b.s);
+  const groove0 = log.groove ? stepAt(log.groove, from) : 0;
+  let groove = groove0;
+  // (From the tier the log had at the hand-over: a tier drops only below its hysteresis.)
+  let tier = tierFor(hero as HeroDef, log.tier ? stepAt(log.tier, from) : 0, groove);
+  // The drain's bar runs from the latest press before the hand-over that raised the groove under
+  // the meter the log was played under (the virtual player's: a press at a full groove still
+  // counts), or else from the hand-over.
+  let lastRaise = groove > 0 ? from : -Infinity;
+  const played = log.hero?.meter;
+  if (played && log.inputs) {
+    const raised = (i: NonNullable<PlayLogFile["inputs"]>[number]) =>
+      i.class === "counted" ? played.counted[(i.rating ?? "loose") as keyof typeof played.counted] > 0 : i.class === "offbeat" ? played.offbeat[(i.offbeat ?? "great") as keyof typeof played.offbeat] > 0 : false;
+    const last = log.inputs.findLast((i) => i.kind === "press" && i.s <= from + 1e-9 && raised(i));
+    if (last) lastRaise = last.s;
+  }
+  const out: Rerated = { from, to, groove0, presses: [], groove: { s: [from], v: [groove] }, tier: { s: [from], v: [tier] } };
+  const set = (s: number, g: number) => {
+    if (g !== groove) {
+      groove = g;
+      out.groove.s.push(s);
+      out.groove.v.push(g);
+    }
+    const t = tierFor(hero as HeroDef, tier, groove);
+    if (t !== tier) {
+      tier = t;
+      out.tier.s.push(s);
+      out.tier.v.push(t);
+    }
+  };
+  // The classes remember the virtual player's last presses before the hand-over (a press of the
+  // player's soon after one of them can be a double tap or an off-beat).
+  const memo = freshPressMemo();
+  for (const i of log.inputs ?? []) {
+    if (i.kind !== "press" || i.s >= from - 1e-9 || i.s < from - 2 || sectionAt(i.s).movement !== "steps") continue;
+    classifyPress(hero as HeroDef, grid, i.s, i.class === "partner", memo);
+  }
+  let bi = 0;
+  while (bi < beats.length && beats[bi] < from - 1e-9) bi++;
+  for (let pi = 0; pi <= presses.length; pi++) {
+    const s = pi < presses.length ? presses[pi].s : to;
+    // The drain on each beat of a pulsed section up to this press.
+    for (; bi + 1 < beats.length && beats[bi] < s - 1e-9 && beats[bi] <= to; bi++) {
+      const sec = sectionAt(beats[bi]);
+      const beatS = beats[bi + 1] - beats[bi];
+      if (sec.movement === "steps" && groove > 0 && beats[bi] - lastRaise > hero.meter.drain.afterBars * sec.beatsPerBar * beatS + 1e-9) set(beats[bi], Math.max(0, groove - drainPerBeat(hero as HeroDef, sec.beatsPerBar)));
+    }
+    if (pi === presses.length) break;
+    const p = presses[pi];
+    const partner = p.class === "partner" || p.outcome === "bend" || p.outcome === "rock";
+    const j = classifyPress(hero as HeroDef, grid, p.s, partner, memo);
+    if (j.change > 0) lastRaise = p.s;
+    set(p.s, grooveAfterChange(groove, j.change));
+    out.presses.push({ id: p.id, s: p.s, section: sectionAt(p.s).label, key: p.key, class: j.class, ...(j.rating ? { rating: j.rating } : {}), change: j.change, groove, tier });
+  }
+  return out;
+}
+
+export const CLASSES = ["partner", "offbeat", "counted", "double", "stray"] as const;
+
+/** Seconds at each tier (0–3) in each pulsed section between from and to, from a tier series. */
+export function tierTime(tier: { s: ArrayLike<number>; v: ArrayLike<number> }, sections: readonly { label: string; s0: number; s1: number; movement: string }[], from: number, to: number): Map<string, number[]> {
+  const out = new Map<string, number[]>();
+  for (const sec of sections) {
+    if (sec.movement !== "steps") continue;
+    const a = Math.max(sec.s0, from);
+    const b = Math.min(sec.s1, to);
+    if (b <= a) continue;
+    const secs = [0, 0, 0, 0];
+    let s = a;
+    let t = stepAt(tier, a);
+    for (let i = 0; i < tier.s.length; i++) {
+      if (tier.s[i] <= a) continue;
+      if (tier.s[i] >= b) break;
+      secs[Math.min(3, t)] += tier.s[i] - s;
+      s = tier.s[i];
+      t = tier.v[i];
+    }
+    secs[Math.min(3, t)] += b - s;
+    out.set(sec.label, secs);
+  }
+  return out;
+}
+
+/** Presses by class in each section. */
+export function classesBySection(presses: readonly { section?: string; class?: string }[]): Map<string, Record<string, number>> {
+  const out = new Map<string, Record<string, number>>();
+  for (const p of presses) {
+    if (!p.class || !p.section) continue;
+    const row = out.get(p.section) ?? Object.fromEntries(CLASSES.map((c) => [c, 0]));
+    row[p.class] = (row[p.class] ?? 0) + 1;
+    out.set(p.section, row);
+  }
+  return out;
+}
+
+/** The hero's speed over each second of song time: path length over the world time it took (px per world second). */
+export function speedPerSecond(path: HeroPath): { s: number; speed: number; px: number }[] {
+  const out: { s: number; speed: number; px: number }[] = [];
+  const per = Math.max(1, Math.round(1 / path.dt));
+  for (let k = 0; k + per < path.x.length; k += per) {
+    let px = 0;
+    for (let i = k; i < k + per; i++) px += Math.hypot(path.x[i + 1] - path.x[i], path.y[i + 1] - path.y[i]);
+    const dw = path.w[k + per] - path.w[k];
+    out.push({ s: path.s0 + k * path.dt, speed: dw > 1e-6 ? px / dw : 0, px });
+  }
+  return out;
+}
+
+/** The average of a step series over the pulsed sections between from and to. */
+function averageOver(series: { s: ArrayLike<number>; v: ArrayLike<number> }, sections: readonly { s0: number; s1: number; movement: string }[], from: number, to: number): number | undefined {
+  let sum = 0;
+  let n = 0;
+  for (const sec of sections) {
+    if (sec.movement !== "steps") continue;
+    for (let s = Math.max(sec.s0, from); s < Math.min(sec.s1, to); s += 0.05) {
+      sum += stepAt(series, s);
+      n++;
+    }
+  }
+  return n > 0 ? sum / n : undefined;
+}
+
+/** The press-class and tier table per section, recorded and re-rated, and the hero's speed per second. */
+function grooveReport(log: PlayLogFile, rows: readonly PressRow[], rerated: Rerated | undefined, opts: SummaryOptions): string[] {
+  const out: string[] = [];
+  const { from: spanFrom, to: spanTo } = rerated ?? playSpan(log);
+  const from = Math.max(spanFrom, opts.from ?? -Infinity);
+  const to = Math.min(spanTo, opts.to ?? Infinity);
+  const sections = log.sections ?? opts.rerate?.sections ?? [];
+  const table = (title: string, classes: Map<string, Record<string, number>>, tiers: Map<string, number[]> | undefined) => {
+    out.push(title);
+    out.push(`  ${pad("section", 16)} ${CLASSES.map((c) => lpad(c, 8)).join("")}   ${tiers ? ["tier 0", "1", "2", "3"].map((t) => lpad(t, 7)).join("") + "  (seconds)" : ""}`);
+    for (const sec of sections) {
+      const c = classes.get(sec.label);
+      const t = tiers?.get(sec.label);
+      if (!c && !t) continue;
+      out.push(`  ${pad(sec.label, 16)} ${CLASSES.map((k) => lpad(String(c?.[k] ?? 0), 8)).join("")}   ${t ? t.map((x) => lpad(f(x, 1), 7)).join("") : ""}`);
+    }
+  };
+  const { kept, dropped } = finalPresses(log);
+  const mine = rows.filter((r) => r.s !== undefined && r.s >= from - 1e-9 && r.s <= to + 1e-9 && kept.has(r.id));
+  const recordedClasses = classesBySection(mine);
+  // The recorded tiers: the log's series, or else the tier after each press (drains between presses unseen).
+  const tierSeries = log.tier ?? (mine.some((r) => r.tier !== undefined) ? { s: mine.filter((r) => r.tier !== undefined).map((r) => r.s!), v: mine.filter((r) => r.tier !== undefined).map((r) => r.tier!) } : undefined);
+  if (recordedClasses.size > 0 || tierSeries) {
+    table(`Press classes and time at each tier, per section (recorded${log.tier ? "" : tierSeries ? "; tiers from the presses alone" : ""}):`, recordedClasses, tierSeries ? tierTime(tierSeries, sections, from, to) : undefined);
+    if (log.groove) out.push(`  average groove over pulsed time: ${f(averageOver(log.groove, sections, from, to), 2)}`);
+  } else out.push("Press classes: none recorded (a log from before press classes; re-rate it with the current rules)");
+  if (dropped > 0) out.push(`  (${dropped} presses that a later restart rewound are left out, here and in re-rating)`);
+  if (rerated && opts.rerate) {
+    const m = opts.rerate.hero.meter;
+    const t = opts.rerate.hero.timing;
+    out.push("");
+    const presses = rerated.presses.filter((p) => p.s >= from - 1e-9 && p.s <= to + 1e-9);
+    table(
+      `Re-rated under the current rules (Perfect ±${t.perfectMs}, Great ±${t.greatMs}, Good ±${t.goodMs} ms; counted ${m.counted.perfect}/${m.counted.great}/${m.counted.good}/${m.counted.loose}, off-beat ${m.offbeat.perfect}/${m.offbeat.great}, stray ${m.stray}; tiers at ${m.tiers.join("/")}), from groove ${f(rerated.groove0, 2)} at ${f(rerated.from, 1)} s:`,
+      classesBySection(presses),
+      tierTime(rerated.tier, sections, from, to),
+    );
+    const avg = averageOver(rerated.groove, sections, from, to);
+    if (avg !== undefined) out.push(`  average groove over pulsed time: ${f(avg, 2)}`);
+    const changed = new Map<string, number>();
+    for (const r of mine) if (r.rerated && r.class && r.rerated.class !== r.class) changed.set(`${r.class}→${r.rerated.class}`, (changed.get(`${r.class}→${r.rerated.class}`) ?? 0) + 1);
+    if (changed.size > 0) out.push(`  classes changed: ${[...changed].map(([k, n]) => `${k} ${n}`).join(", ")}`);
+  }
+  // The hero's speed over each second.
+  if (log.heroPath) {
+    const walk = log.hero?.walk?.speed;
+    const secs = speedPerSecond(log.heroPath).filter((x) => x.s >= from - 1e-9 && x.s + 1 <= to + 1e-9);
+    out.push("");
+    out.push(`Speed (px per world second, over each second of song time${walk ? `; the walk speed is ${walk}` : ""}):`);
+    for (const sec of sections) {
+      const v = secs.filter((x) => x.s >= sec.s0 - 1e-9 && x.s < sec.s1).map((x) => x.speed);
+      if (v.length === 0) continue;
+      out.push(`  ${pad(sec.label, 16)} median ${lpad(f(median(v)), 4)}, max ${lpad(f(Math.max(...v)), 4)}${walk ? `; ${v.filter((x) => x > walk * 1.05).length} s above it, ${v.filter((x) => x < 1).length} s standing` : ""}`);
+    }
+    if (opts.table !== false && secs.length > 0) {
+      for (let k = 0; k < secs.length; k += 10) out.push(`  ${secs.slice(k, k + 10).map((x) => `${lpad(f(x.s), 4)}s ${lpad(f(x.speed), 3)}`).join("  ")}`);
+    }
+  } else out.push("", "Speed: no hero path in this log (logs from before it carry none)");
+  return out;
 }

@@ -75,15 +75,21 @@ you hear them. Redo it any time.
 Play mode logs every gameplay key from the DOM event to what the game did with
 it: the audio clock it was timed by, when the live runner applied it (and any
 rollback), and the simulation's outcome and reason (a stride with its class and
-rating, a stomp, a bend, a walk, or a key thrown away by a count-in). Frames and sound scheduling
-are logged too. See [`src/live/log.ts`](src/live/log.ts).
+rating, a stomp, a bend, a walk, or a key thrown away by a count-in), with the
+stride's length and the budget left, the groove before and after, and the tier.
+Frames, sound scheduling, the groove and tier over time, the meter's values and
+the hero's path are logged too. See [`src/live/log.ts`](src/live/log.ts).
 
 - The dev server saves it to `logs/play/<session>.json` on pause, at the end,
   on restart, every 15 s while playing and on leaving the page.
 - F8 downloads it (any build).
-- `npm run log:play` summarizes the newest log: outcome counts, timing offsets
-  from the grid and the beat, the input path, the audio clock and frames, then
-  one row per press. Pass a file, `--from`/`--to` (song seconds) or `--no-table`.
+- `npm run log:play` summarizes the newest log: outcome counts, presses by class
+  and time at each tier per section, the hero's speed over each second, timing
+  offsets from the grid and the beat, the input path, the audio clock and
+  frames, then one row per press. It also re-rates the log's presses under the
+  current groove rules (grid times from the song map, so logs from before press
+  classes re-rate too) and prints the classes and tiers beside the log's own.
+  Pass a file, `--from`/`--to` (song seconds), `--no-table` or `--no-rerate`.
 
 ### URL parameters
 

@@ -11,11 +11,50 @@
  * - frames: every animation frame's timestamp, song time and phase.
  * - sounds: the live sound scheduler's starts, late starts, skips and cancels.
  * - events: phase changes (count-ins, pauses, restarts, the end), focus, flushes.
+ * - the context (play.ts): settings, the song's grid, the meter's values, the settled presses and
+ *   swings, the groove and tier series, and the hero's path (heroPath) for its speed.
  *
  * The dev server saves it to logs/play/<id>.json (see vite.config.ts), and
  * `npm run log:play` summarizes it. Elsewhere, F8 downloads it.
  */
+import type { Warp } from "../core/warp.ts";
+import type { HeroTrack, Plan } from "../plan/types.ts";
 import type { PressTrace } from "../sim/recorder.ts";
+
+/** The hero's path sampled every `dt` of song time from s0: world time and position (px). */
+export interface HeroPath {
+  dt: number;
+  s0: number;
+  w: number[];
+  x: number[];
+  y: number[];
+}
+
+const r6s = (v: number) => Math.round(v * 1e6) / 1e6;
+
+/** What the log carries of a recording up to song time s: the groove and tier series and the hero's path. */
+export function recordingContext(plan: Plan, warp: Warp, s: number): { groove: { s: number[]; v: number[] }; tier?: { s: number[]; v: number[] }; heroPath: HeroPath } {
+  return {
+    groove: { s: Array.from(plan.groove.s, r6s), v: Array.from(plan.groove.v, (v) => Math.round(v * 1e4) / 1e4) },
+    ...(plan.tier ? { tier: { s: Array.from(plan.tier.s, r6s), v: Array.from(plan.tier.v) } } : {}),
+    heroPath: heroPath(plan.hero, warp, 0, s),
+  };
+}
+
+/** The hero's path from song time s0 to s1, every dt (for the log's speed per second). */
+export function heroPath(hero: HeroTrack, warp: Warp, s0: number, s1: number, dt = 0.05): HeroPath {
+  const out: HeroPath = { dt, s0, w: [], x: [], y: [] };
+  const n = hero.x.length;
+  if (n === 0) return out;
+  for (let k = 0; s0 + k * dt <= s1 + 1e-9; k++) {
+    const w = warp.toWorld(s0 + k * dt);
+    const i = Math.max(0, Math.min(n - 1, Math.round((w - hero.w0) * hero.rate)));
+    out.w.push(Math.round(w * 1e4) / 1e4);
+    out.x.push(Math.round(hero.x[i] * 10) / 10);
+    out.y.push(Math.round(hero.y[i] * 10) / 10);
+  }
+  return out;
+}
 
 /** The audio clock's raw readings at one moment. */
 export interface ClockProbe {

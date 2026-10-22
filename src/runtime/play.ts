@@ -13,7 +13,7 @@ import type { Application } from "pixi.js";
 import type { ContentLibrary } from "../content/loader.ts";
 import { indexSong, timeOfBeatIndex } from "../core/songmap.ts";
 import { KeyboardInput, keyOf, loadInputOffset } from "../live/input.ts";
-import { PlayLog } from "../live/log.ts";
+import { PlayLog, recordingContext } from "../live/log.ts";
 import type { LiveRecording } from "../live/recording.ts";
 import { LiveRunner } from "../live/runner.ts";
 import { handOver, liveSim } from "../live/session.ts";
@@ -578,6 +578,7 @@ function logContext(env: LiveEnv, lib: ContentLibrary, level: string, startS: nu
   const { recording, runner } = session;
   const { ctx, sch, plan } = recording;
   const hero = lib.hero;
+  recording.refresh();
   const ac = env.audio?.ctx;
   return {
     level,
@@ -585,7 +586,7 @@ function logContext(env: LiveEnv, lib: ContentLibrary, level: string, startS: nu
     params: { avOffsetMs: env.params.avOffsetMs, startS, mode: env.params.mode },
     inputOffsetMs: loadInputOffset(),
     audio: ac ? { sampleRate: ac.sampleRate, baseLatency: ac.baseLatency, outputLatency: ac.outputLatency, state: ac.state, stats: env.audio!.stats, live: env.audio!.liveStats() } : undefined,
-    hero: { timing: hero.timing, step: hero.step, swings: { minLeadMs: hero.swings.minLeadMs, windupMs: hero.swings.windupMs }, stride: hero.stride, walk: { speed: hero.walk.speed } },
+    hero: { timing: hero.timing, step: hero.step, swings: { minLeadMs: hero.swings.minLeadMs, windupMs: hero.swings.windupMs }, stride: hero.stride, walk: { speed: hero.walk.speed }, meter: ctx.lib.hero.meter },
     rules: ctx.level.rules,
     playerFrom: recording.playerFrom,
     runner: { ...runner.stats, settled: runner.settled, simS: runner.sim.s },
@@ -594,5 +595,6 @@ function logContext(env: LiveEnv, lib: ContentLibrary, level: string, startS: nu
     grid: { s: Array.from(sch.gridTimes, (v) => round(v)), accent: sch.gridSlots.map((x) => round(x.accent, 100)), section: sch.gridSlots.map((x) => x.section) },
     inputs: plan.inputs.map((i) => ({ ...i, s: round(i.s), w: round(i.w) })),
     swings: plan.swings.map((w) => ({ s: round(w.s), sArmed: round(w.sArmed), kind: w.kind, press: w.press, accent: w.accent })),
+    ...recordingContext(plan, recording.timeWarp, recording.s),
   };
 }
