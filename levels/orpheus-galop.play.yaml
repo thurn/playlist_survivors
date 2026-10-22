@@ -8,10 +8,12 @@ hero:
 player: moderate            # the bot used for ?start= and for checks
 sections:
   # The prelude plays at full speed: a slowed world makes walking feel like wading. The music's
-  # calm goes to the enemies instead, which drift in slowly on a spiral.
+  # calm goes to the enemies instead, which drift in slowly on a spiral. The sword swings by
+  # itself on every beat, twice the demo's rate, so the calm stretch still clears enemies.
   - section: prelude
     timeScale: 1
     calm: 0.5
+    autoSwingBeats: 1
   # The galop starts in the woods: the first transform wave sweeps out on its first downbeat,
   # right after the count-in.
   - section: galop-vamp
@@ -19,10 +21,10 @@ sections:
   - section: climax
     camera: { lead: 0 }
 # Experience for each level-up: the moderate player fills each bar a little before its moment
-# (it collects about 400, 950 and 1900 by then on the checked seeds).
+# (it collects about 355-415, 950 and 1900 by then on the checked seeds).
 events:
   - at: { section: galop-opening, point: start }
-    xp: 360
+    xp: 340
   - at: { section: theme-a-repeat, point: start }
     xp: 850
   - at: { section: bridge, point: start }

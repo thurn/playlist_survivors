@@ -37,6 +37,8 @@ describe("the play level file", () => {
     const prelude = play.sections.find((s) => s.label === "prelude")!;
     expect(prelude.timeScale).toEqual({ from: 1, to: 1 });
     expect(prelude.calm).toBe(0.5);
+    expect(prelude.autoSwingBeats).toBe(1);
+    expect(demo.sections[0].autoSwingBeats).toBe(2);
     expect(demo.sections[0].calm).toBe(0);
     expect(play.sections.find((s) => s.label === "galop-vamp")!.calm).toBe(0); // not inherited
     const changed = ["prelude", "climax", "galop-vamp", "galop-opening"];
@@ -44,7 +46,7 @@ describe("the play level file", () => {
     // Events merge by `at` and kind: the level-ups need their own experience; nothing is added.
     expect(play.events.length).toBe(demo.events.length);
     expect(play.events.filter((e) => e.levelUp).map((e) => [e.levelUp, e.xp])).toEqual([
-      ["orbiting-blades", 360],
+      ["orbiting-blades", 340],
       ["chain-lightning", 850],
       ["fire-trail", 1700],
     ]);
@@ -177,6 +179,14 @@ describe("play-mode rules", () => {
     sim.advanceTo(3.5);
     const b = sim.heroPosition();
     expect(Math.hypot(b.x - a.x, b.y - a.y)).toBeCloseTo(play.hero.walk.speed, -1);
+  });
+
+  it("swings by itself on every beat in the prelude, twice the demo's rate", () => {
+    const autos = (s: typeof sch) => s.slots.filter((x) => x.kind === "auto" && x.section === 0);
+    const demoSch = prepare(plannerInput({ songMap: song }), propsFromAtlas()).sch;
+    const gaps = autos(sch).slice(1).map((x, i) => x.bi - autos(sch)[i].bi);
+    expect(Math.min(...gaps)).toBe(1);
+    expect(autos(sch).length).toBeGreaterThan(1.8 * autos(demoSch).length);
   });
 
   it("leaves the demo's rules alone: there, every press steps", () => {

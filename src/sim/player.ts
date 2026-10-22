@@ -98,6 +98,8 @@ const STEER_STOP = 14;
 const ROAM_TURN = Math.PI / 4;
 const ROAM_CROWD = 200;
 const ROAM_LEASH = 120;
+/** The roam walks up this close to a dancing formation's middle, so the cleave on its release reaches the whole line. */
+const ROAM_FORMATION = 100;
 
 /** The eight step directions: one key, or two perpendicular keys for a diagonal. */
 const DIRECTIONS: Key[][] = [["right"], ["right", "down"], ["down"], ["down", "left"], ["left"], ["left", "up"], ["up"], ["up", "right"]];
@@ -283,7 +285,7 @@ export class VirtualPlayer implements Player {
     // A dancing formation draws the roam to it (a player walks up to the line to cleave it); otherwise the crowd does.
     if (obs.formation) {
       const f = obs.formation;
-      if (Math.hypot(f.x - r.x, f.y - r.y) > ROAM_CROWD) r.dir += wrapAngle(Math.atan2(f.y - r.y, f.x - r.x) - r.dir) * Math.min(1, dw * 1.5);
+      if (Math.hypot(f.x - r.x, f.y - r.y) > ROAM_FORMATION) r.dir += wrapAngle(Math.atan2(f.y - r.y, f.x - r.x) - r.dir) * Math.min(1, dw * 1.5);
     } else if (obs.enemies.length > 0) {
       let cx = 0;
       let cy = 0;

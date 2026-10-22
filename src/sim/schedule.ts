@@ -22,7 +22,7 @@ export interface GridSlot {
   accentLabel?: string;
   /**
    * grid: a step section's timing grid (presses arm swings for these);
-   * auto: a free section's automatic swing, every two beats;
+   * auto: a free section's automatic swing, every two beats by default;
    * anchor: a strong song-map anchor in a free section, where the sword cleaves.
    */
   kind: "grid" | "auto" | "anchor";
@@ -56,12 +56,10 @@ export const PACE_RATE = 120;
 /** Section paces blend with this time constant (world seconds). */
 const PACE_EASE = 0.3;
 
-/** Free movement: the sword swings by itself this often (beats). */
-export const AUTO_SWING_BEATS = 2;
 /** Free movement: anchors at least this strong get a cleave. */
 export const ANCHOR_CLEAVE = 0.5;
 
-/** A free section's strike times: an automatic swing every two beats, and cleaves on strong anchors. */
+/** A free section's strike times: an automatic swing every autoSwingBeats beats, and cleaves on strong anchors. */
 function freeGrid(ctx: Ctx, i: number): GridSlot[] {
   const sec = ctx.sections[i];
   const { idx, song } = ctx;
@@ -71,7 +69,8 @@ function freeGrid(ctx: Ctx, i: number): GridSlot[] {
     const bi = beatIndexAt(song, a.time);
     out.push({ s: a.time, bi, bar: barOfBeatIndex(idx, bi), slot: 0, section: i, accent: a.strength, kind: "anchor" });
   }
-  for (let bi = sec.b0 + AUTO_SWING_BEATS; bi < sec.b1 - 0.5; bi += AUTO_SWING_BEATS) {
+  const every = sec.level.autoSwingBeats;
+  for (let bi = sec.b0 + every; bi < sec.b1 - 0.5; bi += every) {
     // An anchor's cleave replaces the automatic swing near it.
     if (anchors.some((a) => Math.abs(beatIndexAt(song, a.time) - bi) < 1)) continue;
     out.push({ s: timeOfBeatIndex(song, bi), bi, bar: barOfBeatIndex(idx, bi), slot: 0, section: i, accent: 0, kind: "auto" });

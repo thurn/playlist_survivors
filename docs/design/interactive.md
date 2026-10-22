@@ -263,6 +263,10 @@ the enemies instead:
 - The play level sets the prelude to `timeScale: 1` and `calm: 0.5`: the
   hero walks at its full 80 px/s, and even a bat closes more slowly than
   the hero walks.
+- **`autoSwingBeats`** (a section field, default 2, not inherited) sets how
+  often the sword swings by itself in free movement. The play level's
+  prelude swings on every beat, twice the demo's rate, so the calm stretch
+  still keeps the field clear.
 
 ### One step per grid slot
 

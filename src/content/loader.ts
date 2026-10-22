@@ -234,6 +234,9 @@ export function loadContent(files: SourceFile[]): ContentLibrary {
 
 // ---------------------------------------------------------------- level script
 
+/** Free movement: the sword swings by itself this often (beats) unless a section sets autoSwingBeats. */
+export const AUTO_SWING_BEATS = 2;
+
 export interface ResolvedSection {
   /** Song-map section label. */
   label: string;
@@ -250,6 +253,8 @@ export interface ResolvedSection {
   timeScale: { from: number; to: number };
   /** Enemy calm, 0 to 1: speed scales by 1 - calm and the approach curls by up to CALM_CURL. */
   calm: number;
+  /** Free movement: the sword swings by itself every this many beats. */
+  autoSwingBeats: number;
   population: [number, number];
   roster: Record<string, number>;
   camera: { zoom: number; lead: number; punchOnAccents: boolean };
@@ -524,6 +529,7 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap, res
       zone: zone ?? "",
       timeScale,
       calm: s.calm ?? 0,
+      autoSwingBeats: s.autoSwingBeats ?? AUTO_SWING_BEATS,
       population: s.population,
       roster: roster ?? {},
       camera: cam,
