@@ -401,8 +401,8 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
     add("clean ending", f, plan.enemies.length);
   }
 
-  // Pace: the hero keeps up with the route (skilled and perfect players).
-  if (plan.profile !== "casual") {
+  // Pace: the hero keeps up with the route (skilled and perfect players; the open field has no route).
+  if (plan.profile !== "casual" && !plan.open) {
     const f: string[] = [];
     let n = 0;
     const lookup = new RouteLookup({ step: plan.map.routeStep, x: plan.map.routeX, y: plan.map.routeY });
@@ -420,8 +420,8 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
     add("pace", f, n);
   }
 
-  // Signature moments (skilled and perfect players).
-  if (plan.profile !== "casual") {
+  // Signature moments (skilled and perfect players; play mode has its own, in play-checks.ts).
+  if (plan.profile !== "casual" && !plan.open) {
     const f: string[] = [];
     let n = 0;
     const beatAt = (t: number) => {

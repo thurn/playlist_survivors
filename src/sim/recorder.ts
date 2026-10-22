@@ -47,6 +47,10 @@ export type Threat = { s: number; w: number; kind: "arrow" | "slam"; outcome: "n
 export type BossInfo = { id: number; landS: number; x: number; y: number; deathS?: number; killHit?: number; health: { s: number; frac: number }[] };
 export type GemRecord = { w0: number; x0: number; y0: number; s1: number; w1: number; value: number; big: boolean; enemy: number };
 export type FormationRecord = { def: string; sStart: number; sRelease: number; members: number[] };
+/** The open field: a transform wave sweeps out from the hero on a section's first downbeat. */
+export type ZoneWaveRecord = { s: number; w: number; x: number; y: number; zone: string };
+/** The open field: a landmark rises centred on the hero. */
+export type LandmarkRecord = { id: string; s: number; w: number; x: number; y: number };
 export type Attack = NonNullable<EnemyRecord["attacks"]>[number];
 export type Dance = NonNullable<EnemyRecord["dance"]>;
 
@@ -82,6 +86,9 @@ export interface SimResult {
   waves: { hits: number[] }[];
   /** Formation releases (song time) and their members. */
   formations: FormationRecord[];
+  /** The open field's transform waves and landmarks. */
+  zoneWaves: ZoneWaveRecord[];
+  landmarks: LandmarkRecord[];
 }
 
 /**
@@ -128,6 +135,8 @@ export interface Recorder {
   wave(): void;
   waveHit(wave: number, hit: number): void;
   formation(f: FormationRecord): void;
+  zoneWave(z: ZoneWaveRecord): void;
+  landmark(l: LandmarkRecord): void;
 }
 
 /** Builds the demo's SimResult, exactly as the simulation used to assemble it. */
@@ -160,6 +169,8 @@ export class BatchRecorder implements Recorder {
   readonly xpSeries: { s: number; fill: number }[] = [{ s: 0, fill: 0 }];
   readonly waves: { hits: number[] }[] = [];
   readonly formations: FormationRecord[] = [];
+  readonly zoneWaves: ZoneWaveRecord[] = [];
+  readonly landmarks: LandmarkRecord[] = [];
 
   warp(b: WarpBreak, replaceLast: boolean): void {
     if (replaceLast) this.breaks[this.breaks.length - 1] = b;
@@ -271,6 +282,12 @@ export class BatchRecorder implements Recorder {
   formation(f: FormationRecord): void {
     this.formations.push(f);
   }
+  zoneWave(z: ZoneWaveRecord): void {
+    this.zoneWaves.push(z);
+  }
+  landmark(l: LandmarkRecord): void {
+    this.landmarks.push(l);
+  }
 
   /** The finished recording. */
   result(end: { endS: number; blastS?: number; animNames: string[]; heroRate: number }): SimResult {
@@ -323,6 +340,8 @@ export class BatchRecorder implements Recorder {
       xp: this.xpSeries,
       waves: this.waves,
       formations: this.formations,
+      zoneWaves: this.zoneWaves,
+      landmarks: this.landmarks,
     };
   }
 }

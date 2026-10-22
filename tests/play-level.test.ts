@@ -29,7 +29,11 @@ describe("the play level file", () => {
     // Sections merge field by field: the climax keeps its zoom and loses its camera lead.
     const climax = play.sections.find((s) => s.label === "climax")!;
     expect(climax.camera).toEqual({ ...demo.sections.find((s) => s.label === "climax")!.camera, lead: 0 });
-    for (const [i, s] of play.sections.entries()) if (s.label !== "climax") expect(s).toEqual(demo.sections[i]);
+    // The galop starts in the woods (the vamp sets it; the opening inherits it).
+    expect(play.sections.find((s) => s.label === "galop-vamp")!.zone).toBe("galop-woods");
+    expect(play.sections.find((s) => s.label === "galop-opening")!.zone).toBe("galop-woods");
+    const changed = ["climax", "galop-vamp", "galop-opening"];
+    for (const [i, s] of play.sections.entries()) if (!changed.includes(s.label)) expect(s).toEqual(demo.sections[i]);
     // Events merge by `at` and kind: the first level-up needs less experience; nothing is added.
     expect(play.events.length).toBe(demo.events.length);
     const first = play.events.find((e) => e.levelUp === "orbiting-blades")!;
@@ -156,7 +160,7 @@ describe("the moderate virtual player", () => {
   it("reacts to threats later than the skilled player", () => {
     const { ctx, sch } = prepare(input, propsFromAtlas());
     const v = sch.volleys[0];
-    const obs = { s: v.sDraw + 0.2, hero: { x: 0, y: 0, stepping: false }, enemies: [], pacePoint: { x: 0, y: 0, tx: 1, ty: 0 }, edgeDistance: () => 100, threats: [{ kind: "slam" as const, x: 0, y: 0, radius: 38, landsAt: v.sArrive, seenAt: v.sDraw }] };
+    const obs = { s: v.sDraw + 0.2, w: v.sDraw + 0.2, hero: { x: 0, y: 0, stepping: false }, enemies: [], pacePoint: { x: 0, y: 0, tx: 1, ty: 0 }, edgeDistance: () => 100, threats: [{ kind: "slam" as const, x: 0, y: 0, radius: 38, landsAt: v.sArrive, seenAt: v.sDraw }] };
     // Both players stand on a slam marker on a rest slot: the skilled one steps away, the moderate one has not reacted yet.
     const watch = (p: ReturnType<typeof virtualPlayer>) => {
       p.nextDecision(obs.s);

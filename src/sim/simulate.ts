@@ -31,7 +31,7 @@ import { BatchRecorder, type ArrowRecord, type Recorder, type SimResult } from "
 import { DEMO_RULES, type Rules } from "./rules.ts";
 import { nextStepAfter, stepRate, type GridSlot, type Schedule } from "./schedule.ts";
 import { armedStrike, damageMultiplier, grooveAfterPress, grooveDecay, nearestIndex, ratePressOnGrid, type Rating } from "./timing.ts";
-import { CorridorWorld, type World } from "./world.ts";
+import { CorridorWorld, OpenWorld, type World } from "./world.ts";
 
 export type { ArrowRecord, Landing, SimResult, SlamRecord } from "./recorder.ts";
 export { Corridor } from "./world.ts";
@@ -96,6 +96,9 @@ const REACTION = 0.15;
 const LINE_LEAD = 170;
 const CHARGE_BEATS = 2;
 const CHARGE_SPEED = 4;
+/** The open field: the heading is the hero's displacement over this many beats, once it is at least this long (px). */
+const HEADING_BEATS = 2;
+const HEADING_MIN = 6;
 /** An intermediate clock stop keeps at least this far (song seconds) from the loop's own stops. */
 const CLOCK_EPS = 1e-9;
 /** Hero samples kept for the fire trail (world seconds); the trail reaches back two beats. */
@@ -204,7 +207,9 @@ type Ev =
   | { kind: "formationRelease"; f: number }
   | { kind: "gem"; gem: number; value: number }
   | { kind: "levelDue"; i: number }
-  | { kind: "levelUp"; id: string };
+  | { kind: "levelUp"; id: string }
+  | { kind: "zoneWave"; zone: string }
+  | { kind: "landmark"; id: string };
 
 interface Wave {
   x: number;
@@ -257,6 +262,8 @@ const ORDER: Record<Ev["kind"], number> = {
   gem: 20,
   beat: 21,
   appear: 22,
+  zoneWave: 4,
+  landmark: 4,
 };
 
 /** Events that point at mutable state; the rest are frozen, so snapshots share them. */
@@ -436,6 +443,9 @@ interface SimState {
   xpNow: number;
   level: number;
   overdue: boolean;
+  /** The open field: the hero's heading (a unit vector), and a formation's direction while it is in play. */
+  heading: { x: number; y: number };
+  formationDir?: { x: number; y: number; until: number };
   /** Recent hero samples (for the fire trail): sample index heroBase onward. */
   heroX: number[];
   heroY: number[];
@@ -502,6 +512,7 @@ function freshState(env: Env): SimState {
     xpNow: 0,
     level: 0,
     overdue: false,
+    heading: { x: 1, y: 0 },
     heroX: [],
     heroY: [],
     heroBase: 0,
@@ -532,6 +543,19 @@ function engine(env: Env, st: SimState, io: Io) {
   const anims = ctx.heroAnims;
   const animIdx = (name: string) => Math.max(0, HERO_ANIMS.indexOf(name));
   const pacePoint = (s: number) => world.pacePoint(s);
+  /** The way forward now: the route's pace point in the corridor, the hero's heading in the open field. */
+  const forward = (): { x: number; y: number; tx: number; ty: number } => {
+    if (!world.open) return pacePoint(st.s);
+    const hp = heroPose(st.w);
+    return { x: hp.x, y: hp.y, tx: st.heading.x, ty: st.heading.y };
+  };
+  /** The camera lead's direction at song time s: along the route, or the heading (a formation's direction while it is in play). */
+  const leadDir = (s: number): { tx: number; ty: number } => {
+    if (!world.open) return pacePoint(s);
+    const fd = st.formationDir;
+    if (fd && s < fd.until) return { tx: fd.x, ty: fd.y };
+    return { tx: st.heading.x, ty: st.heading.y };
+  };
   const sectionAt = (s: number) => ctx.sections[sectionIndexAt(ctx, s)];
   const blastS = sch.blast?.s;
   const rec = () => io.recorder;
@@ -658,7 +682,7 @@ function engine(env: Env, st: SimState, io: Io) {
     const cy = (view[1] + view[3]) / 2;
     const ext = spriteExtents(def);
     const m = SPAWN_MARGIN + SPAWN_EXTRA;
-    const pp = pacePoint(st.s);
+    const pp = forward();
     const fwd = Math.atan2(pp.ty, pp.tx);
     let x = cx;
     let y = cy;
@@ -932,6 +956,17 @@ function engine(env: Env, st: SimState, io: Io) {
       st.heroY.splice(0, drop);
       st.heroBase += drop;
     }
+    // The open field's heading: the hero's displacement over the last two beats (kept while it stands still).
+    if (world.open) {
+      const bi = Math.max(0, Math.min(song.beats.length - 2, Math.floor(sbiAt(sk))));
+      const span = HEADING_BEATS * (song.beats[bi + 1] - song.beats[bi]) * Math.max(0.05, baseRate(sk));
+      const last = st.heroX.length - 1;
+      const back = Math.max(0, last - Math.round(span * HERO_RATE));
+      const dx = st.heroX[last] - st.heroX[back];
+      const dy = st.heroY[last] - st.heroY[back];
+      const d = Math.hypot(dx, dy);
+      if (d >= HEADING_MIN) st.heading = { x: dx / d, y: dy / d };
+    }
     // Animation: a swing (wind-up, impact, follow-through), a step's jump, or idle.
     // A swing winding up takes precedence over one following through.
     let winding: Swing | undefined;
@@ -978,7 +1013,7 @@ function engine(env: Env, st: SimState, io: Io) {
     rec().hero(p.x, p.y, p.z, facing, anim, frame);
     // The camera follows the hero with the section's lead along the route.
     const sec = sectionAt(sk);
-    const f = pacePoint(sk);
+    const f = leadDir(sk);
     const lead = sec.level.camera.lead;
     let zoom = sec.level.camera.zoom;
     if (sec.index > 0) {
@@ -1269,9 +1304,10 @@ function engine(env: Env, st: SimState, io: Io) {
 
   const observe = (): Observation => {
     const hp = heroPose(st.w);
-    const pp = pacePoint(st.s);
+    const pp = forward();
     return {
       s: st.s,
+      w: st.w,
       hero: { x: hp.x, y: hp.y, stepping: hp.u < 1 },
       enemies: st.alive.filter((f) => f.alive).map((f) => ({ x: posX(f, st.w), y: posY(f, st.w), type: f.type, health: f.health })),
       threats: visibleThreats(hp),
@@ -1327,11 +1363,12 @@ function engine(env: Env, st: SimState, io: Io) {
     const view = st.camera.view();
     const vw = view[2] - view[0];
     const hp = heroPose(st.w);
-    const pp = pacePoint(st.s);
+    const pp = forward();
+    // Behind the hero along the route; in the open field, too far away in any direction.
     const behind = st.alive.filter((f) => {
       const dx = posX(f, st.w) - hp.x;
       const dy = posY(f, st.w) - hp.y;
-      return f.alive && Math.hypot(dx, dy) >= RECYCLE_VIEWS * vw && dx * pp.tx + dy * pp.ty < 0;
+      return f.alive && Math.hypot(dx, dy) >= RECYCLE_VIEWS * vw && (world.open || dx * pp.tx + dy * pp.ty < 0);
     });
     for (const f of behind) {
       // Not a kill: it leaves the field and re-enters ahead with its health.
@@ -1611,7 +1648,7 @@ function engine(env: Env, st: SimState, io: Io) {
   const bossSpawn = () => {
     const b = sch.boss!;
     const hp = heroPose(st.w);
-    const pp = pacePoint(st.s);
+    const pp = forward();
     const x = hp.x + pp.tx * BOSS_LAND_AHEAD;
     const y = hp.y + pp.ty * BOSS_LAND_AHEAD;
     const f = spawnFoe(b.type, x, y, undefined, { entrance: "land", attacks: [] });
@@ -1666,7 +1703,7 @@ function engine(env: Env, st: SimState, io: Io) {
   /** Formations ride with the camera-smoothed hero: the camera centre less its lead. */
   const formationAnchor = () => {
     const lead = sectionAt(st.s).level.camera.lead;
-    const pp = pacePoint(st.s);
+    const pp = leadDir(st.s);
     const cam = st.camera;
     return { x: cam.x - pp.tx * lead, y: cam.y - pp.ty * lead + 12, vx: cam.vx, vy: cam.vy };
   };
@@ -1678,6 +1715,10 @@ function engine(env: Env, st: SimState, io: Io) {
     const bStart = sbiAt(fs.sStart);
     const stepB = subdivisionBeats(def.step, 2);
     const members: number[] = [];
+    // In the open field a formation keeps the heading it entered on, and the camera leads that way while it is in play.
+    const dir = world.open ? { x: 0, y: 0, tx: st.heading.x, ty: st.heading.y } : undefined;
+    if (dir) st.formationDir = { x: dir.tx, y: dir.ty, until: fs.sRelease };
+    const frame = (t: number) => dir ?? pacePoint(t);
     for (let k = 0; k < def.count; k++) {
       let place: (t: number) => { x: number; y: number };
       let start: { x: number; y: number };
@@ -1686,18 +1727,24 @@ function engine(env: Env, st: SimState, io: Io) {
       if (def.shape === "kick-line") {
         // A line of dancers ahead of the hero, along the route.
         place = (t) => {
-          const p = pacePoint(t);
+          const p = frame(t);
           const d = LINE_LEAD + def.spacing * k;
           return { x: p.tx * d, y: p.ty * d };
         };
         const end = place(fs.sStart);
-        start = { x: Math.max(view[2] + 100 + k * 6 - a0.x, end.x + 40), y: end.y };
+        if (dir) {
+          // From just off the screen, on the side it stands.
+          const ex = dir.tx > 1e-6 ? (view[2] - a0.x) / dir.tx : dir.tx < -1e-6 ? (view[0] - a0.x) / dir.tx : Infinity;
+          const ey = dir.ty > 1e-6 ? (view[3] - a0.y) / dir.ty : dir.ty < -1e-6 ? (view[1] - a0.y) / dir.ty : Infinity;
+          const out = Math.max(Math.min(ex, ey) + 100 + k * 6, LINE_LEAD + def.spacing * k + 40);
+          start = { x: dir.tx * out, y: dir.ty * out };
+        } else start = { x: Math.max(view[2] + 100 + k * 6 - a0.x, end.x + 40), y: end.y };
       } else {
         // A V-wedge: the leader in front, the arms trailing back.
         const arm = k === 0 ? 0 : Math.ceil(k / 2);
         const side = k === 0 ? 0 : k % 2 === 0 ? 1 : -1;
         place = (t) => {
-          const p = pacePoint(t);
+          const p = frame(t);
           const cx = p.tx * 120;
           const cy = p.ty * 120 - 70;
           return { x: cx - p.tx * arm * def.spacing - p.ty * side * arm * def.spacing, y: cy - p.ty * arm * def.spacing + p.tx * side * arm * def.spacing };
@@ -1796,6 +1843,15 @@ function engine(env: Env, st: SimState, io: Io) {
       const bands = Math.max(1, Math.round(b.beats / stepB));
       const bi0 = sbiAt(sch.blast.s);
       for (let k = 0; k < bands; k++) q.push(timeOfBeatIndex(song, bi0 + k * stepB), { kind: "blast", band: k });
+    }
+    if (world.open) {
+      // A transform wave on the first downbeat of each section whose zone differs from the previous one's.
+      for (let i = 1; i < ctx.sections.length; i++) {
+        const z = ctx.sections[i].level.zone;
+        if (z !== ctx.sections[i - 1].level.zone) q.push(ctx.sections[i].s0, { kind: "zoneWave", zone: z });
+      }
+      // Landmarks rise centred on the hero.
+      for (const e of ctx.events) if (e.ev.landmark) q.push(e.s, { kind: "landmark", id: e.ev.landmark });
     }
     scheduleDecision(0);
 
@@ -1924,6 +1980,16 @@ function engine(env: Env, st: SimState, io: Io) {
         case "formationRelease":
           formationRelease(ev.f);
           break;
+        case "zoneWave": {
+          const hp = heroPose(st.w);
+          rec().zoneWave({ s: st.s, w: st.w, x: hp.x, y: hp.y, zone: ev.zone });
+          break;
+        }
+        case "landmark": {
+          const hp = heroPose(st.w);
+          rec().landmark({ id: ev.id, s: st.s, w: st.w, x: hp.x, y: hp.y });
+          break;
+        }
       }
     }
   };
@@ -2067,7 +2133,8 @@ export class Sim {
 
 export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptions): SimResult {
   const rec = new BatchRecorder();
-  const sim = new Sim(ctx, sch, new CorridorWorld(map, sch), ctx.level.rules ?? DEMO_RULES, rec, opts);
+  const world = ctx.level.world === "open" ? new OpenWorld() : new CorridorWorld(map, sch);
+  const sim = new Sim(ctx, sch, world, ctx.level.rules ?? DEMO_RULES, rec, opts);
   sim.runToEnd();
   return rec.result({ endS: sim.s, blastS: sch.blast?.s, animNames: HERO_ANIMS, heroRate: HERO_RATE });
 }

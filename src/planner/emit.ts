@@ -14,7 +14,9 @@ import type { Warp } from "../core/warp.ts";
 import type { CameraTrack, EffectEvent, EnemyRecord, Fate, GemEvent, HeroTrack, Hit, HudSeries, PlanSwing, Projectile, SlamMarker, SoundEvent, UiEvent } from "../plan/types.ts";
 import { grooveAt } from "../plan/evaluate.ts";
 import { heroSample } from "../plan/sample.ts";
-import type { ArrowRecord, BossInfo, Landing, SimResult, SlamRecord, Threat } from "../sim/recorder.ts";
+import type { ArrowRecord, BossInfo, Landing, LandmarkRecord, SimResult, SlamRecord, Threat, ZoneWaveRecord } from "../sim/recorder.ts";
+import type { TiledMap } from "../mapgen/mapgen.ts";
+import { stampLandmark } from "../mapgen/openfield.ts";
 import { HURTBOX_LIFT } from "../sim/simulate.ts";
 import { sectionIndexAt, type Ctx } from "./context.ts";
 import { cameraAt, VIEW_W } from "./camera.ts";
@@ -102,7 +104,7 @@ export class Emitter {
     this.sink.effect({ recipe, s, w: this.warp.toWorld(s), x, y, dir, intensity, seed, ...extra });
   }
 
-  sfx(key: string, s: number, x: number, priority: number, gain = 1, duck = false): void {
+  sfx(key: string, s: number, x: number, priority: number, gain = 1, duck = false, rateScale = 1): void {
     const ctx = this.ctx;
     const sec = this.sectionOf(s);
     const pal = ctx.lib.soundPalettes.get(sec.level.sfxPalette);
@@ -125,6 +127,7 @@ export class Emitter {
         rate = Math.pow(2, (target - rm) / 12);
       }
     }
+    rate *= rateScale;
     const c = cameraAt(this.cam(), this.warp.toWorld(s));
     const pan = clamp((x - c.x) / (VIEW_W / 2 / c.zoom), -0.8, 0.8);
     // Start slow-attack samples early so they are heard on time.
@@ -266,6 +269,18 @@ export class Emitter {
     this.sfx("finisher", h.s, at.x, PRIORITY.hero, 1.2, true);
   }
 
+  /** A transform wave: a low sweep on the downbeat, under the music. */
+  zoneWave(z: ZoneWaveRecord): void {
+    this.sfx("zone-sweep", z.s, z.x, PRIORITY.ambient, 0.45, false, 0.5);
+  }
+
+  /** A landmark rises from the ground: dust at each of its props on the downbeat. */
+  landmark(l: LandmarkRecord): void {
+    const tm = this.ctx.input.landmarks?.[l.id] as TiledMap | undefined;
+    if (!tm) return;
+    for (const p of stampLandmark(tm, l.x, l.y).props) this.fx("dust", l.s, p.x, p.y, 0, 1);
+  }
+
   /** A cleave shockwave band: a crescent on its sixteenth note. */
   waveBand(h: Hit): void {
     const sh = h.shape as Extract<typeof h.shape, { kind: "arc" }>;
@@ -400,6 +415,9 @@ export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam:
   }
   // Cleave shockwaves: a crescent per band, on its sixteenth note.
   for (const wv of sim.waves) for (const id of wv.hits) em.waveBand(hits[id]);
+  // The open field's transform waves and landmarks.
+  for (const z of sim.zoneWaves) em.zoneWave(z);
+  for (const l of sim.landmarks) em.landmark(l);
 
   // --------------------------------------------------- voice budget
   const bySlot = new Map<number, SoundEvent[]>();

@@ -25,6 +25,7 @@
     "bench": "tsx scripts/bench.ts",
     "check:all": "npm run check && npm run check:analysis && npm run check:songmap && npm run check:content && npm run check:assets && npm run check:seeds && npm run test:e2e",
     "check:analysis": "uv run --directory tools/analysis pytest -q && uv run --directory tools/analysis ruff check .",
+    "check:play": "tsx scripts/check-play.ts",
     "check:seeds": "tsx scripts/check-plan.ts --seeds=1858,1859,7,2024 --determinism",
     "qa": "tsx scripts/qa.ts"
   },

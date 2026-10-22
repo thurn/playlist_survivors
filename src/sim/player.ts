@@ -6,13 +6,15 @@
  */
 import type { HeroDef } from "../content/schema.ts";
 import { Rng } from "../core/rng.ts";
+import { wrapAngle } from "../core/geometry.ts";
 import { clamp } from "../core/shaping.ts";
 import { easeOut, KEY_DIR, type Key } from "./movement.ts";
 import type { GridSlot } from "./schedule.ts";
 
 export interface Observation {
-  /** Song time now. */
+  /** Song and world time now. */
   s: number;
+  w: number;
   hero: { x: number; y: number; stepping: boolean };
   enemies: { x: number; y: number; type: string; health: number }[];
   /**
@@ -76,6 +78,8 @@ export interface PlayerSection {
   presses: string;
   s0: number;
   s1: number;
+  /** The section's pace (world px per world-second): the open field's roam speed. */
+  pace?: number;
 }
 
 /** A near miss: within this many pixels of the hurtbox's edge. */
@@ -86,6 +90,10 @@ const WEAVE_BEATS = 16;
 /** Free movement: aim this far ahead of the pace point, and stand still when this close. */
 const STEER_LEAD = 16;
 const STEER_STOP = 14;
+/** The open field's roam point: it turns at most this much per bar, heads for a crowd farther than this, and stays this close to the hero. */
+const ROAM_TURN = Math.PI / 4;
+const ROAM_CROWD = 200;
+const ROAM_LEASH = 120;
 
 /** The eight step directions: one key, or two perpendicular keys for a diagonal. */
 const DIRECTIONS: Key[][] = [["right"], ["right", "down"], ["down"], ["down", "left"], ["left"], ["left", "up"], ["up"], ["up", "right"]];
@@ -118,6 +126,11 @@ export class VirtualPlayer implements Player {
   private count = 0;
   private held = new Set<Key>();
   private readonly spec: ProfileSpec;
+  private readonly sections: readonly PlayerSection[];
+  private readonly beats: readonly number[];
+  private readonly open: boolean;
+  /** The open field's roam point: where it is, its heading (radians), and when it last moved. */
+  private roam?: { x: number; y: number; dir: number; w: number; bi: number };
 
   constructor(
     private readonly hero: HeroDef,
@@ -130,9 +143,13 @@ export class VirtualPlayer implements Player {
     heavyAccent: (slot: GridSlot) => boolean = () => false,
     /** The boss's death chord (song time), which the player knows from the song. */
     private readonly bossChord?: number,
+    opts: { open?: boolean } = {},
   ) {
     const spec = PROFILES[profile];
     this.spec = spec;
+    this.sections = sections;
+    this.beats = beats;
+    this.open = opts.open ?? false;
     const grid = slots.filter((sl) => sl.kind === "grid" && sections[sl.section].steps);
     grid.forEach((sl, i) => {
       const sec = sections[sl.section];
@@ -165,6 +182,7 @@ export class VirtualPlayer implements Player {
   decide(seen: Observation): KeyEvent[] {
     // A slower player only reacts to a threat once it has been in view a while.
     const obs = this.spec.reaction > SIM_REACTION + 1e-9 ? { ...seen, threats: seen.threats.filter((t) => seen.s >= t.seenAt + this.spec.reaction - 1e-9) } : seen;
+    this.moveRoam(obs);
     // The decision planned for now.
     while (this.next < this.plan.length && this.plan[this.next].s < obs.s - 1e-9) this.next++;
     if (this.next >= this.plan.length) return [];
@@ -193,7 +211,7 @@ export class VirtualPlayer implements Player {
   private steer(obs: Observation, beat: number, release: boolean): KeyEvent[] {
     let want: Key[] = [];
     if (!release) {
-      const p = obs.pacePoint;
+      const p = this.paceFrame(obs);
       const weave = WEAVE * Math.sin((2 * Math.PI * beat) / WEAVE_BEATS);
       const tx = p.x + p.tx * STEER_LEAD - p.ty * weave;
       const ty = p.y + p.ty * STEER_LEAD + p.tx * weave;
@@ -216,6 +234,73 @@ export class VirtualPlayer implements Player {
       out.push({ s: obs.s, kind: "press", key: k });
     }
     return out;
+  }
+
+  /** What the player keeps up with: the route's pace point, or in the open field its roam point. */
+  private paceFrame(obs: Observation): Observation["pacePoint"] {
+    if (!this.open || !this.roam) return obs.pacePoint;
+    return { x: this.roam.x, y: this.roam.y, tx: Math.cos(this.roam.dir), ty: Math.sin(this.roam.dir) };
+  }
+
+  private beatIndex(s: number): number {
+    const b = this.beats;
+    let lo = 0;
+    let hi = b.length - 1;
+    if (s <= b[0]) return 0;
+    if (s >= b[hi]) return hi;
+    while (hi - lo > 1) {
+      const mid = (lo + hi) >> 1;
+      if (b[mid] <= s) lo = mid;
+      else hi = mid;
+    }
+    return lo + (s - b[lo]) / (b[hi] - b[lo]);
+  }
+
+  /**
+   * The open field has no pace point: the player follows a roam point instead. It starts at the
+   * hero and moves at the section's pace along a heading that turns slowly (seeded, at most 45
+   * degrees per bar), pulled toward the crowd when the crowd is more than 200 px away.
+   */
+  private moveRoam(obs: Observation): void {
+    if (!this.open) return;
+    const bi = this.beatIndex(obs.s);
+    if (!this.roam) {
+      this.roam = { x: obs.hero.x, y: obs.hero.y, dir: 0, w: obs.w, bi };
+      return;
+    }
+    const r = this.roam;
+    const dw = Math.max(0, obs.w - r.w);
+    // A turn rate per bar of two beats.
+    for (let b = r.bi; b < bi - 1e-9; ) {
+      const next = Math.min(bi, Math.floor(b / 2 + 1e-9) * 2 + 2);
+      r.dir += new Rng(this.seed, "roam", Math.floor(b / 2 + 1e-9)).range(-1, 1) * ROAM_TURN * ((next - b) / 2);
+      b = next;
+    }
+    if (obs.enemies.length > 0) {
+      let cx = 0;
+      let cy = 0;
+      for (const e of obs.enemies) {
+        cx += e.x;
+        cy += e.y;
+      }
+      cx /= obs.enemies.length;
+      cy /= obs.enemies.length;
+      if (Math.hypot(cx - r.x, cy - r.y) > ROAM_CROWD) r.dir += wrapAngle(Math.atan2(cy - r.y, cx - r.x) - r.dir) * Math.min(1, dw * 1.5);
+    }
+    const sec = this.sections.findLast((x) => obs.s >= x.s0 - 1e-9) ?? this.sections[0];
+    const pace = sec.pace ?? 40;
+    r.x += Math.cos(r.dir) * pace * dw;
+    r.y += Math.sin(r.dir) * pace * dw;
+    // On a leash: it never runs far ahead of the hero.
+    const lx = r.x - obs.hero.x;
+    const ly = r.y - obs.hero.y;
+    const ld = Math.hypot(lx, ly);
+    if (ld > ROAM_LEASH) {
+      r.x = obs.hero.x + (lx / ld) * ROAM_LEASH;
+      r.y = obs.hero.y + (ly / ld) * ROAM_LEASH;
+    }
+    r.w = obs.w;
+    r.bi = bi;
   }
 
   /** Would standing here be hit: an arrow about to fly (or flying) at the hero, or a slam marker underfoot? */
@@ -243,7 +328,7 @@ export class VirtualPlayer implements Player {
   /** Score the eight directions by where the step would leave the hero, and pick the lowest cost. */
   private chooseKeys(obs: Observation): Key[] {
     const L = this.hero.step.length;
-    const p = obs.pacePoint;
+    const p = this.paceFrame(obs);
     const nx = -p.ty;
     const ny = p.tx;
     let best: Key[] = DIRECTIONS[0];

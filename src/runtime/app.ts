@@ -31,7 +31,12 @@ export interface Params {
   checks: boolean;
   /** Test hook: a level script name (levels/ or the broken fixtures). */
   level?: string;
+  /** `?mode=play` plays the real game (the play level file); `?mode=demo` the scripted demo. */
+  mode?: "play" | "demo";
 }
+
+/** The level a mode plays. */
+export const PLAY_LEVEL = "orpheus-galop.play";
 
 export function readParams(search: string): Params {
   const q = new URLSearchParams(search);
@@ -48,6 +53,7 @@ export function readParams(search: string): Params {
     bench: q.has("bench"),
     checks: q.has("checks"),
     level: q.get("level") ?? undefined,
+    mode: (["play", "demo"] as const).find((m) => m === q.get("mode")),
   };
 }
 
@@ -154,7 +160,7 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
     let input: PlannerInput;
     try {
       lib = loadContent(contentFiles());
-      const lf = levelFile(params.level);
+      const lf = levelFile(params.level ?? (params.mode === "play" ? PLAY_LEVEL : undefined));
       const songName = levelSongName(lf, levelResolver);
       const sm = songMap(songName);
       const level = loadLevel(lf, lib, sm, levelResolver);

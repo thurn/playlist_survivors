@@ -6,6 +6,7 @@
 import type { Shape } from "../core/geometry.ts";
 import type { WarpBreak } from "../core/warp.ts";
 import type { Facing } from "../assets/types.ts";
+import type { LandmarkStamp, ZoneWave } from "../mapgen/openfield.ts";
 
 /** Hero animation ids used in the hero track. Indexes into Plan.hero.animNames. */
 export interface HeroTrack {
@@ -295,6 +296,21 @@ export interface Plan {
   formations: { def: string; sRelease: number; members: number[] }[];
   /** Song-time beat index of every sixteenth slot is beatIndex × 4. */
   stats: PlanStats;
+  /** Play mode's open field (absent in the demo's corridor): its transform waves and landmarks. */
+  open?: OpenFieldRecord;
+  /** Grid times whose accent a swing armed by a press rated Great or better turns into a cleave (song time, strength). */
+  cleaveAccents?: { s: number; strength: number }[];
+  /** Level-ups at their scheduled musical moments. */
+  levelUpsDue?: { id: string; s: number }[];
+  /** Play mode's rule changes (absent in the demo). */
+  rules?: { oneStepPerSlot: boolean; accentTelegraphs: boolean };
+}
+
+export interface OpenFieldRecord {
+  /** Zone index (into map.zones) before the first wave. */
+  firstZone: number;
+  waves: ZoneWave[];
+  landmarks: LandmarkStamp[];
 }
 
 export interface AimSnapshot {

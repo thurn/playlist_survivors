@@ -7,6 +7,10 @@ hero:
   timing: { perfectMs: 45, greatMs: 90, goodMs: 140, floor: 0.1 }
 player: moderate            # the bot used for ?start= and for checks
 sections:
+  # The galop starts in the woods: the first transform wave sweeps out on its first downbeat,
+  # right after the count-in.
+  - section: galop-vamp
+    zone: galop-woods
   - section: climax
     camera: { lead: 0 }
 events:

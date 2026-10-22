@@ -8,6 +8,7 @@ import type { EffectLayer, EffectRecipe } from "../content/schema.ts";
 import { rand01, noise1 } from "../core/rng.ts";
 import { beatHit, beatSwell, clamp, frac, lerp, smoothstep } from "../core/shaping.ts";
 import { Warp } from "../core/warp.ts";
+import { latestWave, waveRadius } from "../mapgen/openfield.ts";
 import { countUpTo, enemyPos, heroSample } from "./sample.ts";
 import type { EffectEvent, EnemyRecord, Plan, PlanSection, UiEvent } from "./types.ts";
 
@@ -185,6 +186,11 @@ export interface Frame {
   gems: { x: number; y: number; big: boolean }[];
   /** Zone blend at the camera: index into plan.map.zones and blend toward the next. */
   zone: { a: number; b: number; t: number };
+  /**
+   * The open field: the zone everywhere a transform wave has not reached, and the wave sweeping
+   * out now (its ring's radius, and the zones it changes from and to).
+   */
+  open?: { base: number; wave?: { x: number; y: number; radius: number; prev: number; zone: number } };
   hud: HudState;
   metronome: number;
   stats: { alive: number; particles: number };
@@ -526,7 +532,8 @@ export class Evaluator {
     }
 
     // Zone blend at the camera.
-    const zone = this.zoneAt(w);
+    const open = plan.open ? this.openZone(s, sbi, w) : undefined;
+    const zone = open ? open.zone : this.zoneAt(w);
 
     const hud = this.hud(s, sbi, beatPhase, barPhase, free, energy);
     let metronome = 0;
@@ -560,6 +567,7 @@ export class Evaluator {
       slams,
       gems,
       zone,
+      ...(open ? { open: { base: open.base, wave: open.wave } } : {}),
       hud,
       metronome,
       stats: { alive, particles: particles.length },
@@ -649,6 +657,18 @@ export class Evaluator {
       });
     }
     void s;
+  }
+
+  /** The open field's zones: the newest transform wave decides, and the camera blends as its ring passes. */
+  private openZone(s: number, sbi: number, w: number): { zone: Frame["zone"]; base: number; wave?: NonNullable<Frame["open"]>["wave"] } {
+    const op = this.plan.open!;
+    const wv = latestWave(op.waves, s);
+    if (!wv) return { zone: { a: op.firstZone, b: op.firstZone, t: 0 }, base: op.firstZone };
+    if (s >= wv.endS) return { zone: { a: wv.zone, b: wv.zone, t: 0 }, base: wv.zone };
+    const radius = waveRadius(wv, sbi);
+    const cam = this.cameraAt(w);
+    const d = Math.hypot(cam.x - wv.x, cam.y - wv.y);
+    return { zone: { a: wv.prev, b: wv.zone, t: smoothstep((radius - d + 150) / 300) }, base: wv.prev, wave: { x: wv.x, y: wv.y, radius, prev: wv.prev, zone: wv.zone } };
   }
 
   private zoneAt(w: number): Frame["zone"] {

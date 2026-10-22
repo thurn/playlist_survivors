@@ -27,6 +27,8 @@ import { beatSwell, clamp, frac, lerp } from "../core/shaping.ts";
 import type { Frame } from "../plan/evaluate.ts";
 import { hex } from "../plan/evaluate.ts";
 import type { MapProp, Plan } from "../plan/types.ts";
+import { chunkContent, propFade, tileVariant, type ChunkContent } from "../mapgen/openfield.ts";
+import type { PropInfo } from "../mapgen/mapgen.ts";
 import type { GameAssets } from "./assets.ts";
 import { PixelText } from "./font.ts";
 import { brightFrag, compositeFrag, compositeVert, MAX_WAVES } from "./shaders.ts";
@@ -100,6 +102,8 @@ export class Renderer {
   readonly bloomRT: RenderTexture;
   private world = new Container();
   private ground = new Container();
+  /** The open field: ground tiles a transform wave has re-themed, over the chunks it has not reached. */
+  private groundOver = new Container();
   private decalLayer = new Container();
   private shadowLayer = new Container();
   private sorted = new Container({ sortableChildren: true });
@@ -138,7 +142,7 @@ export class Renderer {
     this.partAdd = new ParticleContainer({ dynamicProperties: { position: true, rotation: true, color: true, vertex: true, uvs: true }, texture: new Texture({ source: assets.procSource }) });
     this.partAdd.blendMode = "add";
     this.fxAdd.blendMode = "add";
-    this.world.addChild(this.ground, this.decalLayer, this.shadowLayer, this.sorted, this.overLayer, this.fxNormal, this.partNormal, this.bolts, this.fxAdd, this.partAdd, this.textLayer);
+    this.world.addChild(this.ground, this.groundOver, this.decalLayer, this.shadowLayer, this.sorted, this.overLayer, this.fxNormal, this.partNormal, this.bolts, this.fxAdd, this.partAdd, this.textLayer);
     this.bolts.blendMode = "add";
 
     const sp = (_parent: Container, blend?: "add" | "normal") => () => {
@@ -154,6 +158,7 @@ export class Renderer {
       fxN: new Pool(this.fxNormal, sp(this.fxNormal)),
       fxA: new Pool(this.fxAdd, sp(this.fxAdd)),
       light: new Pool(this.lights, sp(this.lights, "add")),
+      tile: new Pool(this.groundOver, sp(this.groundOver)),
     };
     this.textPool = new Pool(this.textLayer, () => new PixelText());
 
@@ -305,13 +310,15 @@ export class Renderer {
     const beatPulse = free ? beatSwell(frac(f.sbi / 4)) : Math.exp(-6 * frac(f.sbi));
     const barPulse = free ? beatSwell(frac(f.sbi / 4)) : Math.exp(-6 * ((f.hud.barPhase * 1) % 1));
 
-    // Ground chunks.
-    for (const c of this.chunks.values()) c.sprite.visible = false;
-    for (let cy = Math.floor(top / CHUNK); cy <= Math.floor((top + viewH) / CHUNK); cy++)
-      for (let cx = Math.floor(left / CHUNK); cx <= Math.floor((left + viewW) / CHUNK); cx++) this.chunkFor(cx, cy).visible = true;
-
     for (const p of Object.values(this.pools)) p.begin();
     this.textPool.begin();
+
+    // Ground chunks.
+    for (const c of this.chunks.values()) c.sprite.visible = false;
+    if (f.open) this.drawOpenGround(f, left, top, viewW, viewH);
+    else
+      for (let cy = Math.floor(top / CHUNK); cy <= Math.floor((top + viewH) / CHUNK); cy++)
+        for (let cx = Math.floor(left / CHUNK); cx <= Math.floor((left + viewW) / CHUNK); cx++) this.chunkFor(cx, cy).visible = true;
 
     // Decals and slam markers.
     const proc = this.assets.proc;
@@ -405,7 +412,8 @@ export class Renderer {
     }
     // Tall props, swaying with the bar.
     const sway = (free ? beatSwell(frac(f.sbi / 4)) : beatSwell(f.hud.barPhase)) - 0.5;
-    for (let gy = Math.floor((top - 160) / 256); gy <= Math.floor((top + viewH + 160) / 256); gy++) {
+    if (f.open) this.drawOpenProps(f, left, top, viewW, viewH, sway);
+    else for (let gy = Math.floor((top - 160) / 256); gy <= Math.floor((top + viewH + 160) / 256); gy++) {
       for (let gx = Math.floor((left - 160) / 256); gx <= Math.floor((left + viewW + 160) / 256); gx++) {
         const list = this.propGrid.get(gx * 65536 + gy);
         if (!list) continue;
@@ -624,6 +632,231 @@ export class Renderer {
     u.uHaze = za.heatHaze || zb.heatHaze ? 1 : 0;
     u.uTime = s;
     void w;
+  }
+
+  // ------------------------------------------------------------------ the open field
+
+  private openContent = new Map<string, ChunkContent>();
+  private propInfo?: Record<string, PropInfo>;
+
+  /** Chunk (cx, cy)'s props in a zone (cached; regenerated identically when dropped). */
+  private contentFor(cx: number, cy: number, zone: number): ChunkContent {
+    const key = `${cx},${cy},${zone}`;
+    let c = this.openContent.get(key);
+    if (!c) {
+      if (this.openContent.size > 600) this.openContent.clear();
+      this.propInfo ??= Object.fromEntries([...this.assets.props.entries()].map(([k, v]) => [k, { tall: v.tall, radius: 10 }]));
+      c = chunkContent(this.plan.seed, cx, cy, this.themes[zone], this.propInfo);
+      this.openContent.set(key, c);
+    }
+    return c;
+  }
+
+  /** Draw a ground prop (a patch, a flower) into a chunk being baked. */
+  private bakeProp(p: MapProp, x0: number, y0: number, into: Container): void {
+    const def = this.assets.props.get(p.sprite);
+    if (!def || def.variants[0].frames) return;
+    const v = def.variants[p.variant % def.variants.length];
+    const sp = new Sprite(v.tex);
+    sp.x = Math.round(p.x - x0 - (p.flip ? -v.ax : v.ax));
+    sp.y = Math.round(p.y - y0 - v.ay);
+    if (p.flip) sp.scale.x = -1;
+    into.addChild(sp);
+  }
+
+  private tileTexture(zone: number, tx: number, ty: number): Texture {
+    const theme = this.themes[zone];
+    const vars = this.assets.tiles.get(theme.terrain.ground) ?? this.assets.tiles.get("grass-summer")!;
+    return vars[tileVariant(this.plan.seed, tx, ty) % vars.length];
+  }
+
+  /** An open-field chunk baked for one zone. */
+  private openChunkFor(cx: number, cy: number, zone: number): Sprite {
+    const key = `${cx},${cy},${zone}`;
+    const c = this.chunks.get(key);
+    if (c) {
+      c.used = this.frameCounter;
+      return c.sprite;
+    }
+    this.evictChunk();
+    const rt = RenderTexture.create({ width: CHUNK, height: CHUNK, scaleMode: "nearest" });
+    const tmp = new Container();
+    const x0 = cx * CHUNK;
+    const y0 = cy * CHUNK;
+    const tint = hex(this.themes[zone]?.tint ?? "#ffffff");
+    for (let ty = 0; ty < CHUNK / 32; ty++) {
+      for (let tx = 0; tx < CHUNK / 32; tx++) {
+        const sp = new Sprite(this.tileTexture(zone, cx * 16 + tx, cy * 16 + ty));
+        sp.x = tx * 32;
+        sp.y = ty * 32;
+        sp.tint = tint;
+        tmp.addChild(sp);
+      }
+    }
+    // Ground props from this chunk and its neighbours (they may overlap the edge).
+    for (let ny = cy - 1; ny <= cy + 1; ny++)
+      for (let nx = cx - 1; nx <= cx + 1; nx++)
+        for (const p of this.contentFor(nx, ny, zone).ground) {
+          if (p.x < x0 - 128 || p.x > x0 + CHUNK + 128 || p.y < y0 - 128 || p.y > y0 + CHUNK + 128) continue;
+          this.bakeProp(p, x0, y0, tmp);
+        }
+    this.app.renderer.render({ container: tmp, target: rt, clear: true });
+    tmp.destroy({ children: true });
+    const sprite = new Sprite(rt);
+    sprite.x = x0;
+    sprite.y = y0;
+    this.ground.addChild(sprite);
+    this.chunks.set(key, { sprite, rt, used: this.frameCounter });
+    return sprite;
+  }
+
+  private evictChunk(): void {
+    if (this.chunks.size < MAX_CHUNKS) return;
+    let oldest: string | undefined;
+    let ou = Infinity;
+    for (const [k, v] of this.chunks)
+      if (v.used < ou) {
+        ou = v.used;
+        oldest = k;
+      }
+    const o = this.chunks.get(oldest!)!;
+    o.sprite.destroy();
+    o.rt.destroy(true);
+    this.chunks.delete(oldest!);
+  }
+
+  /**
+   * The open field's ground: chunks in the zone a transform wave has not reached, and, while a
+   * wave sweeps out, the new zone's tiles inside its ring with a glowing band at its edge.
+   */
+  private drawOpenGround(f: Frame, left: number, top: number, viewW: number, viewH: number): void {
+    const op = f.open!;
+    for (let cy = Math.floor(top / CHUNK); cy <= Math.floor((top + viewH) / CHUNK); cy++)
+      for (let cx = Math.floor(left / CHUNK); cx <= Math.floor((left + viewW) / CHUNK); cx++) this.openChunkFor(cx, cy, op.base).visible = true;
+    const wv = op.wave;
+    if (!wv) return;
+    // Bake the new zone's chunks ahead, one a frame, so the switch when the wave has passed costs nothing.
+    let baked = false;
+    for (let cy = Math.floor(top / CHUNK); cy <= Math.floor((top + viewH) / CHUNK) && !baked; cy++)
+      for (let cx = Math.floor(left / CHUNK); cx <= Math.floor((left + viewW) / CHUNK) && !baked; cx++) {
+        if (this.chunks.has(`${cx},${cy},${wv.zone}`)) continue;
+        this.openChunkFor(cx, cy, wv.zone).visible = false;
+        baked = true;
+      }
+    const r2 = wv.radius * wv.radius;
+    const tint = hex(this.themes[wv.zone]?.tint ?? "#ffffff");
+    for (let ty = Math.floor(top / 32); ty <= Math.floor((top + viewH) / 32); ty++) {
+      for (let tx = Math.floor(left / 32); tx <= Math.floor((left + viewW) / 32); tx++) {
+        const x = tx * 32;
+        const y = ty * 32;
+        if ((x + 16 - wv.x) ** 2 + (y + 16 - wv.y) ** 2 > r2) continue;
+        const sp = this.pools.tile.next();
+        sp.texture = this.tileTexture(wv.zone, tx, ty);
+        sp.anchor.set(0);
+        sp.position.set(x, y);
+        sp.tint = tint;
+      }
+    }
+    // The new zone's ground props inside the ring.
+    for (let cy = Math.floor((top - 128) / CHUNK); cy <= Math.floor((top + viewH + 128) / CHUNK); cy++)
+      for (let cx = Math.floor((left - 128) / CHUNK); cx <= Math.floor((left + viewW + 128) / CHUNK); cx++)
+        for (const p of this.contentFor(cx, cy, wv.zone).ground) {
+          if ((p.x - wv.x) ** 2 + (p.y - wv.y) ** 2 > r2 || p.x < left - 128 || p.x > left + viewW + 128 || p.y < top - 128 || p.y > top + viewH + 128) continue;
+          const def = this.assets.props.get(p.sprite);
+          if (!def || def.variants[0].frames) continue;
+          const v = def.variants[p.variant % def.variants.length];
+          const sp = this.pools.tile.next();
+          sp.texture = v.tex;
+          sp.anchor.set(v.ax / v.tex.width, v.ay / v.tex.height);
+          sp.position.set(p.x, p.y);
+          sp.scale.set(p.flip ? -1 : 1, 1);
+        }
+    // The soft flash of the new zone's color, at the ring's edge.
+    const theme = this.themes[wv.zone];
+    const ring = this.pools.fxA.next();
+    ring.texture = this.assets.proc.get("ring")!;
+    ring.anchor.set(0.5);
+    ring.position.set(wv.x, wv.y);
+    ring.scale.set((wv.radius * 2) / 122);
+    ring.tint = hex(theme?.ambientLight ?? "#ffffff");
+    ring.alpha = 0.75;
+    const glow = this.pools.fxA.next();
+    glow.texture = this.assets.proc.get("ring")!;
+    glow.anchor.set(0.5);
+    glow.position.set(wv.x, wv.y);
+    glow.scale.set((wv.radius * 2 + 60) / 122);
+    glow.tint = hex(theme?.tint ?? "#ffffff");
+    glow.alpha = 0.35;
+  }
+
+  /** The open field's tall props (fading near the hero) and landmarks rising from the ground. */
+  private drawOpenProps(f: Frame, left: number, top: number, viewW: number, viewH: number, sway: number): void {
+    const op = f.open!;
+    const wv = op.wave;
+    const s = f.s;
+    const landmarks = (this.plan.open?.landmarks ?? []).filter((l) => s >= l.s);
+    const draw = (p: MapProp, alpha: number, rise = 1) => {
+      const def = this.assets.props.get(p.sprite);
+      if (!def) return;
+      const v = def.variants[p.variant % def.variants.length];
+      const sp = this.pools.sorted.next();
+      sp.texture = v.frames ? v.frames[Math.floor(s * def.fps + p.x) % v.frames.length] : v.tex;
+      sp.anchor.set(v.ax / v.tex.width, v.ay / v.tex.height);
+      sp.position.set(p.x, p.y);
+      sp.scale.set(p.flip ? -1 : 1, rise);
+      sp.skew.x = p.sprite.startsWith("tree") || p.sprite.startsWith("bush") || p.sprite.startsWith("mushroom") ? sway * 0.06 * (0.6 + 0.4 * rand01(p.x, p.y)) : 0;
+      sp.alpha = alpha;
+      sp.tint = 0xffffff;
+      sp.zIndex = p.y;
+      if (p.light) {
+        const l = this.pools.light.next();
+        l.texture = this.assets.proc.get("light")!;
+        l.anchor.set(0.5);
+        l.position.set(p.x, p.y - 20);
+        const flick = 0.85 + 0.15 * Math.sin(s * 9 + p.x);
+        l.scale.set(((p.light.radius * 2) / 64) * flick * rise);
+        l.tint = hex(p.light.color);
+        l.alpha = 0.8 * alpha;
+      }
+    };
+    const hx = f.hero.x;
+    const hy = f.hero.y;
+    for (let cy = Math.floor((top - 160) / CHUNK); cy <= Math.floor((top + viewH + 160) / CHUNK); cy++) {
+      for (let cx = Math.floor((left - 160) / CHUNK); cx <= Math.floor((left + viewW + 160) / CHUNK); cx++) {
+        const zones = wv ? [wv.prev, wv.zone] : [op.base];
+        for (const z of zones) {
+          for (const p of this.contentFor(cx, cy, z).tall) {
+            if (p.x < left - 160 || p.x > left + viewW + 160 || p.y < top - 40 || p.y > top + viewH + 200) continue;
+            if (wv) {
+              const inside = (p.x - wv.x) ** 2 + (p.y - wv.y) ** 2 <= wv.radius * wv.radius;
+              if (inside !== (z === wv.zone)) continue;
+            }
+            // A landmark clears the ground around it as it rises.
+            let a = propFade(p, hx, hy);
+            for (const l of landmarks) if ((p.x - l.x) ** 2 + (p.y - l.y) ** 2 < l.clearRadius * l.clearRadius) a *= clamp(1 - (s - l.s) / l.rise, 0, 1);
+            if (a > 0.01) draw(p, a);
+          }
+        }
+      }
+    }
+    for (const l of landmarks) {
+      const u = clamp((s - l.s) / l.rise, 0, 1);
+      const rise = 1 - (1 - u) ** 3;
+      for (const p of l.props) {
+        if (p.x < left - 200 || p.x > left + viewW + 200 || p.y < top - 40 || p.y > top + viewH + 240) continue;
+        if (p.tall || p.light) draw(p, Math.min(1, u * 3) * propFade(p, hx, hy), Math.max(0.02, rise));
+        else {
+          const def = this.assets.props.get(p.sprite);
+          if (!def) continue;
+          const v = def.variants[p.variant % def.variants.length];
+          const sp = this.pools.decal.next();
+          sp.texture = v.tex;
+          sp.anchor.set(v.ax / v.tex.width, v.ay / v.tex.height);
+          sp.position.set(p.x, p.y);
+          sp.alpha = rise;
+        }
+      }
+    }
   }
 
   private drawParticles(f: Frame): void {

@@ -4,13 +4,15 @@
  */
 import type { MapLayout } from "../plan/types.ts";
 import { RouteLookup, routeFrame, type RouteFrame } from "../mapgen/mapgen.ts";
-import type { Clamp } from "./movement.ts";
+import { NO_WALLS, type Clamp } from "./movement.ts";
 import { paceAt, type Schedule } from "./schedule.ts";
 
 /** The walkable band: the corridor less this margin. */
 const CORRIDOR_MARGIN = 48;
 
 export interface World {
+  /** The open field: no route, no walls; the hero's heading leads instead of the route. */
+  readonly open: boolean;
   /** Wall rule for steps: the longest straight move that stays walkable. */
   readonly clamp: Clamp;
   /** Distance from (x, y) to the edge of the walkable area (negative outside). */
@@ -52,6 +54,7 @@ export class Corridor {
 
 /** The demo's world: a corridor through the forest, and the route's pace point. */
 export class CorridorWorld implements World {
+  readonly open = false;
   private corridor: Corridor;
   private route: { step: number; x: Float32Array; y: Float32Array };
   readonly clamp: Clamp;
@@ -71,5 +74,24 @@ export class CorridorWorld implements World {
 
   pacePoint(s: number): RouteFrame {
     return routeFrame(this.route, paceAt(this.sch, s));
+  }
+}
+
+/**
+ * Play mode's world: an open field generated in chunks around the hero. The
+ * hero can walk anywhere, and props never block. There is no route: spawns,
+ * the camera lead and formations follow the hero's heading instead.
+ */
+export class OpenWorld implements World {
+  readonly open = true;
+  readonly clamp: Clamp = NO_WALLS;
+
+  edge(): number {
+    return Infinity;
+  }
+
+  /** The field's origin, heading right (where the hero starts). */
+  pacePoint(): RouteFrame {
+    return { x: 0, y: 0, tx: 1, ty: 0 };
   }
 }

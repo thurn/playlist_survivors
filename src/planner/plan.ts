@@ -9,16 +9,18 @@
  * 4. Record the camera from the simulated hero (the camera runs inside the simulation).
  * 5. Emit effects, sounds, gems and HUD data.
  */
-import { generateMap, type LandmarkPlacement, type TiledMap, type PropInfo } from "../mapgen/mapgen.ts";
-import type { MapLayout, Plan, PlanStats } from "../plan/types.ts";
+import { DEFAULT_PROPS, generateMap, type LandmarkPlacement, type TiledMap, type PropInfo } from "../mapgen/mapgen.ts";
+import { openFieldLayout, stampLandmark, WAVE_BANDS, type LandmarkStamp, type ZoneWave } from "../mapgen/openfield.ts";
+import { barOfBeatIndex, beatIndexAt, timeOfBeatIndex } from "../core/songmap.ts";
+import type { MapLayout, OpenFieldRecord, Plan, PlanStats } from "../plan/types.ts";
 import { hash32 } from "../core/rng.ts";
 import { Warp } from "../core/warp.ts";
-import { makeCtx, sectionIndexAt, type Ctx, type PlannerInput } from "./context.ts";
+import { beatDurationAt, makeCtx, sectionIndexAt, type Ctx, type PlannerInput } from "./context.ts";
 import { resolveEvents } from "./musical.ts";
 import { emit } from "./emit.ts";
 import { recipeLife } from "../plan/effects-life.ts";
 import { grooveAt } from "../plan/evaluate.ts";
-import { buildSchedule, paceAt, type Schedule } from "../sim/schedule.ts";
+import { buildSchedule, paceAt, type GridSlot, type Schedule } from "../sim/schedule.ts";
 import { ENEMY_RATE, simulate, type SimResult } from "../sim/simulate.ts";
 import { VirtualPlayer, type Player, type SkillProfile } from "../sim/player.ts";
 
@@ -48,6 +50,8 @@ export function prepare(input: PlannerInput, props?: Record<string, PropInfo>): 
   const ctx = makeCtx(input);
   resolveEvents(ctx);
   const sch = buildSchedule(ctx);
+  // The open field has no route: its ground is generated in chunks as it is seen.
+  if (ctx.level.world === "open") return { ctx, sch, map: openFieldLayout(ctx.level.zones) };
   // The route length comes from the pace schedule in song time, plus a margin for hit-stops.
   const zoneExt = new Map<string, { d0: number; d1: number }>();
   for (const sec of ctx.sections) {
@@ -69,20 +73,24 @@ export function prepare(input: PlannerInput, props?: Record<string, PropInfo>): 
   return { ctx, sch, map };
 }
 
+/** Does a grid slot's accent make a cleave of a swing armed by a press rated Great or better? */
+export function cleaves(ctx: Ctx, slot: GridSlot): boolean {
+  const rule = ctx.sections[slot.section].level.heavyOnAccents;
+  return slot.kind === "grid" && slot.accent > 0 && slot.accent >= rule.minStrength && (rule.label === undefined || rule.label === slot.accentLabel);
+}
+
 /** The virtual player for a profile. */
 export function virtualPlayer(ctx: Ctx, sch: Schedule, profile: SkillProfile = "skilled"): VirtualPlayer {
   return new VirtualPlayer(
     ctx.lib.hero,
     ctx.seed,
     sch.slots,
-    ctx.sections.map((s) => ({ steps: s.level.movement === "steps", presses: s.level.presses, s0: s.s0, s1: s.s1 })),
+    ctx.sections.map((s) => ({ steps: s.level.movement === "steps", presses: s.level.presses, s0: s.s0, s1: s.s1, pace: s.level.pace })),
     ctx.song.beats,
     profile,
-    (slot) => {
-      const rule = ctx.sections[slot.section].level.heavyOnAccents;
-      return slot.accent > 0 && slot.accent >= rule.minStrength && (rule.label === undefined || rule.label === slot.accentLabel);
-    },
+    (slot) => cleaves(ctx, slot),
     sch.boss?.sDeath,
+    { open: ctx.level.world === "open" },
   );
 }
 
@@ -226,8 +234,38 @@ export function planWithSim(input: PlannerInput, opts: PlannerOptions = {}): { p
     boss: sim.boss && sch.boss ? { id: sim.boss.id, chordS: sch.boss.sDeath, deathS: sim.boss.deathS } : undefined,
     formations: sim.formations.map((f) => ({ def: f.def, sRelease: f.sRelease, members: f.members })),
     stats,
+    ...(ctx.level.world === "open" ? { open: openFieldRecord(ctx, map, sim, opts.props) } : {}),
+    cleaveAccents: sch.gridSlots.filter((sl) => cleaves(ctx, sl)).map((sl) => ({ s: sl.s, strength: sl.accent })),
+    levelUpsDue: sch.levelUps.map((l) => ({ id: l.id, s: l.s })),
+    ...(ctx.level.rules.oneStepPerSlot || ctx.level.rules.accentTelegraphs ? { rules: ctx.level.rules } : {}),
   };
   return { plan: recorded, sim };
+}
+
+/** The open field's transform waves and landmarks, from the simulation's records. */
+export function openFieldRecord(ctx: Ctx, map: MapLayout, sim: Pick<SimResult, "zoneWaves" | "landmarks">, props?: Record<string, PropInfo>): OpenFieldRecord {
+  const zoneIndex = (id: string) => Math.max(0, map.zones.findIndex((z) => z.id === id));
+  const firstZone = zoneIndex(ctx.sections[0].level.zone);
+  let prev = firstZone;
+  const waves: ZoneWave[] = sim.zoneWaves.map((z) => {
+    const sbi = beatIndexAt(ctx.song, z.s);
+    const wv: ZoneWave = { s: z.s, w: z.w, x: z.x, y: z.y, sbi, prev, zone: zoneIndex(z.zone), endS: timeOfBeatIndex(ctx.song, sbi + WAVE_BANDS / 4) };
+    prev = wv.zone;
+    return wv;
+  });
+  const info = { ...DEFAULT_PROPS, ...(props ?? {}) };
+  const landmarks: LandmarkStamp[] = [];
+  for (const l of sim.landmarks) {
+    const tm = ctx.input.landmarks?.[l.id] as TiledMap | undefined;
+    if (!tm) continue;
+    const st = stampLandmark(tm, l.x, l.y, info);
+    // It rises over one bar.
+    const sbi = beatIndexAt(ctx.song, l.s);
+    const bar = Math.max(1, barOfBeatIndex(ctx.idx, sbi + 1e-6));
+    const len = (ctx.idx.beatsPerBar[bar] ?? 2) * beatDurationAt(ctx, l.s);
+    landmarks.push({ id: l.id, s: l.s, w: l.w, x: l.x, y: l.y, props: st.props, clearRadius: st.clearRadius, rise: len });
+  }
+  return { firstZone, waves, landmarks };
 }
 
 /** A stable hash of the whole plan, for determinism checks and caching. */
