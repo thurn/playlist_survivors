@@ -142,6 +142,8 @@ export interface DemoHook {
   lastHero?: { s: number; x: number; y: number };
   /** Play mode: the live runner and recording, and a way to press keys at exact song times. */
   live?: { runner: import("../live/runner.ts").LiveRunner; recording: import("../live/recording.ts").LiveRecording; key(e: import("../sim/player.ts").KeyEvent): void };
+  /** Play mode's timing log (see src/live/log.ts). */
+  playLog?: import("../live/log.ts").PlayLog;
   /** QA listening pass: the level's mix rendered offline through the live mixing graph. */
   renderMix?: (parts: { music: boolean; sfx: boolean }) => Promise<AudioBuffer>;
 }

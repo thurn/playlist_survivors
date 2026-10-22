@@ -13,6 +13,7 @@
  * the key at t and runs ahead again. Speculation only assumes the absence of
  * presses, so the settled recording equals a run fed the same key events.
  */
+import type { PlayLog } from "./log.ts";
 import type { LiveRecording } from "./recording.ts";
 import type { KeyEvent } from "../sim/player.ts";
 import type { Recorder } from "../sim/recorder.ts";
@@ -48,6 +49,8 @@ export class LiveRunner {
   /** Section start times, and the rollback point at the latest one the settled time has passed (for restarting it). */
   private readonly sectionStarts: number[];
   private sectionSnap?: Snapshot & { section: number };
+  /** Play mode's timing log: when each key was applied, and the rollbacks. */
+  log?: PlayLog;
 
   constructor(
     public sim: Sim,
@@ -96,11 +99,13 @@ export class LiveRunner {
       // A very late event (a main-thread stall) is applied at the settled time instead.
       const t = Math.max(e.s, this.settled, this.snaps[0].s);
       if (t > e.s) this.stats.lateKeys++;
-      if (this.sim.s > t) this.rollBack(t);
+      const from = this.sim.s;
+      const to = from > t ? this.rollBack(t) : undefined;
       this.run(t);
       const k = { ...e, s: Math.max(t, this.sim.s) };
       this.sim.key(k);
       this.applied.push(k);
+      if (this.log && e.id !== undefined) this.log.apply({ id: e.id, frameS: now, frameTs: performance.now(), appliedS: k.s, late: t > e.s, rollbackFrom: to !== undefined ? from : undefined, rollbackTo: to });
     }
     this.run(now + SPECULATE_S);
     this.settled = Math.max(this.settled, now - SETTLE_S);
@@ -134,8 +139,8 @@ export class LiveRunner {
     return Math.max(snap.s, this.sectionStarts[snap.section]);
   }
 
-  /** Restore the newest snapshot before song time t, and rewind the recording to it. */
-  private rollBack(t: number): void {
+  /** Restore the newest snapshot before song time t, and rewind the recording to it. Returns the snapshot's time. */
+  private rollBack(t: number): number {
     let i = this.snaps.length - 1;
     while (i > 0 && this.snaps[i].s >= t) i--;
     const snap = this.snaps[i];
@@ -146,6 +151,7 @@ export class LiveRunner {
     this.snaps.length = i + 1;
     // Keys applied after the snapshot (they came in out of order) go back in, in the order they were applied.
     for (let k = snap.applied; k < this.applied.length; k++) this.sim.key(this.applied[k]);
+    return snap.s;
   }
 
   /** Run to the end of the song (no more presses). */

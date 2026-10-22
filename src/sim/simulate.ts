@@ -27,7 +27,7 @@ import { aim, catches, swingArc, type AimTarget } from "./aim.ts";
 import { deepClone, registerShared } from "./clone.ts";
 import { bendStep, startStep, stepEnd, stepPose, stepSeconds, walkFrame, walkTarget, type Key, type Step } from "./movement.ts";
 import type { KeyEvent, Observation, Player } from "./player.ts";
-import { BatchRecorder, type ArrowRecord, type Recorder, type SimResult } from "./recorder.ts";
+import { BatchRecorder, type ArrowRecord, type PressTrace, type Recorder, type SimResult } from "./recorder.ts";
 import { DEMO_RULES, type Rules } from "./rules.ts";
 import { nextStepAfter, stepRate, type GridSlot, type Schedule } from "./schedule.ts";
 import { armedStrike, damageMultiplier, grooveAfterPress, grooveDecay, nearestIndex, ratePressOnGrid, type Rating } from "./timing.ts";
@@ -883,16 +883,21 @@ function engine(env: Env, st: SimState, io: Io) {
 
   // ---------------------------------------------------------------- input
   const press = (e: KeyEvent) => {
+    const sec = sectionAt(st.s);
+    const steps = sec.level.movement === "steps";
+    // Play mode's timing log (a no-op elsewhere): what the press did, and why.
+    const trace: PressTrace | undefined = rec().press ? { id: e.id, s: st.s, w: st.w, kind: "press", key: e.key, section: sec.label, movement: steps ? "steps" : "free", outcome: "step", grooveBefore: st.groove } : undefined;
     // One step per grid slot (play mode): every press belongs to its nearest grid time, and only
     // the first press for a grid time steps, is rated and arms a swing. A diagonal's second key
     // still bends the step.
-    if (env.rules.oneStepPerSlot && sectionAt(st.s).level.movement === "steps" && !(st.step && bendStep(hero, st.step, st.w, e.key, world.clamp))) {
+    if (env.rules.oneStepPerSlot && steps && !(st.step && bendStep(hero, st.step, st.w, e.key, world.clamp))) {
       const gi = nearestIndex(sch.gridTimes, st.s);
       if (gi === st.lastStepGrid) {
         // An extra press: it does nothing (the key display greys it).
         st.nInputs++;
         st.held.add(e.key);
         rec().input({ s: st.s, w: st.w, kind: "press", key: e.key, steps: true, ignored: true });
+        if (trace) rec().press!({ ...trace, outcome: "ignored", gridIndex: gi, gridS: sch.gridTimes[gi], delta: st.s - sch.gridTimes[gi], stepS: st.lastPressS });
         return;
       }
       st.lastStepGrid = gi;
@@ -901,9 +906,8 @@ function engine(env: Env, st: SimState, io: Io) {
       // A press ends the hit-stop early: world time resumes at the press.
       st.stopEnd = st.s;
       rec().hitStopCut(st.s);
+      if (trace) trace.cutHitStop = true;
     }
-    const sec = sectionAt(st.s);
-    const steps = sec.level.movement === "steps";
     const input: PlanInput = { s: st.s, w: st.w, kind: "press", key: e.key, steps };
     const idx = st.nInputs++;
     st.held.add(e.key);
@@ -911,6 +915,7 @@ function engine(env: Env, st: SimState, io: Io) {
     if (!steps) {
       rewalk();
       rec().input(input);
+      if (trace) rec().press!({ ...trace, outcome: "walk" });
       return;
     }
     // A perpendicular key just after the first bends the step into a diagonal.
@@ -919,8 +924,10 @@ function engine(env: Env, st: SimState, io: Io) {
       st.step = bent;
       input.bend = true;
       rec().input(input);
+      if (trace) rec().press!({ ...trace, outcome: "bend" });
       return;
     }
+    if (trace && st.step && !st.landed) trace.midStep = true;
     const hp = heroPose(st.w);
     st.step = startStep(hero, st.w, hp.x, hp.y, e.key, world.clamp);
     st.landed = false;
@@ -933,14 +940,25 @@ function engine(env: Env, st: SimState, io: Io) {
     st.groove = grooveAfterPress(hero, st.groove, rated.accuracy);
     st.lastPressS = st.s;
     rec().groove(st.s, st.groove);
-    input.armed = swingFor(sch.gridSlots[armedStrike(hero, sch.gridTimes, st.s)], st.s, idx, rated.rating) !== undefined;
+    const slot = sch.gridSlots[armedStrike(hero, sch.gridTimes, st.s)];
+    const taken = slot !== undefined && st.takenSlots.has(slot);
+    const sw = swingFor(slot, st.s, idx, rated.rating);
+    input.armed = sw !== undefined;
     rec().input(input);
+    if (trace) {
+      Object.assign(trace, { gridIndex: rated.gridIndex, gridS: sch.gridTimes[rated.gridIndex], delta: rated.delta, rating: rated.rating, accuracy: rated.accuracy, grooveAfter: st.groove, slotS: slot?.s, accent: slot?.accent });
+      if (sw) Object.assign(trace, { strikeS: sw.sStrike, heavy: sw.heavy });
+      else trace.noSwing = !slot ? "no-slot" : taken ? "slot-taken" : "blast";
+      rec().press!(trace);
+    }
   };
 
   const release = (e: KeyEvent) => {
-    const steps = sectionAt(st.s).level.movement === "steps";
+    const sec = sectionAt(st.s);
+    const steps = sec.level.movement === "steps";
     st.nInputs++;
     rec().input({ s: st.s, w: st.w, kind: "release", key: e.key, steps });
+    rec().press?.({ id: e.id, s: st.s, w: st.w, kind: "release", key: e.key, section: sec.label, movement: steps ? "steps" : "free", outcome: "release" });
     st.held.delete(e.key);
     if (!steps) rewalk();
   };

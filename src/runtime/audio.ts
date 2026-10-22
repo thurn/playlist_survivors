@@ -5,6 +5,7 @@
  */
 import type { SoundManifest } from "../assets/types.ts";
 import { songTimeAtPerformance } from "../live/input.ts";
+import type { ClockProbe } from "../live/log.ts";
 import { LiveSoundScheduler } from "../live/sounds.ts";
 import type { Plan, SoundEvent } from "../plan/types.ts";
 
@@ -264,6 +265,7 @@ export class AudioEngine implements SongClock {
       ),
     };
     this.live.scheduler.muteBefore = muteBeforeS;
+    this.live.scheduler.log = this.soundLog;
     this.timer = setInterval(() => this.scheduleLive(), SCHEDULE_EVERY_MS);
     this.scheduleLive();
   }
@@ -298,6 +300,18 @@ export class AudioEngine implements SongClock {
     this.smoother.reset();
     if (!this.timer) this.timer = setInterval(() => this.scheduleLive(), SCHEDULE_EVERY_MS);
     this.scheduleLive();
+  }
+
+  /** Play mode's timing log: the live scheduler's starts, late starts, skips and cancels. */
+  soundLog?: LiveSoundScheduler["log"];
+
+  /** The unsmoothed song time the latest songTimeAtPresentation read (for the timing log). */
+  lastRawPresentation = 0;
+
+  /** The audio clock's raw readings now (for the timing log). */
+  clockProbe(): ClockProbe {
+    const ts = typeof this.ctx.getOutputTimestamp === "function" ? this.ctx.getOutputTimestamp() : undefined;
+    return { perfNow: performance.now(), currentTime: this.ctx.currentTime, outputLatency: this.ctx.outputLatency ?? 0, baseLatency: this.ctx.baseLatency ?? 0, contextTime: ts?.contextTime, performanceTime: ts?.performanceTime, t0: this.t0, state: this.ctx.state };
   }
 
   /** Calibration: `n` clicks at `bpm`, starting about a second from now. Returns their context times. */
@@ -363,6 +377,7 @@ export class AudioEngine implements SongClock {
       const lat = this.ctx.outputLatency || this.ctx.baseLatency || 0;
       raw = this.ctx.currentTime - lat + (presentAt - performance.now()) / 1000 - this.t0;
     }
+    this.lastRawPresentation = raw;
     return this.smoother.update(raw, presentAt);
   }
 

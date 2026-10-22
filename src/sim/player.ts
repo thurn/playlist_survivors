@@ -34,6 +34,8 @@ export interface KeyEvent {
   s: number;
   kind: "press" | "release";
   key: Key;
+  /** Play mode's log: which keyboard event this is (the simulation only passes it on to its traces). */
+  id?: number;
 }
 
 export interface Player {

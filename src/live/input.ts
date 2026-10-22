@@ -5,6 +5,7 @@
  */
 import type { Key } from "../sim/movement.ts";
 import type { KeyEvent } from "../sim/player.ts";
+import type { ClockProbe, KeyLog, PlayLog } from "./log.ts";
 
 /** Gameplay keys: arrows by key, WASD by physical position. */
 export function keyOf(e: { key: string; code: string }): Key | undefined {
@@ -78,22 +79,41 @@ export class KeyboardInput {
     private readonly offsetMs: () => number = () => 0,
   ) {}
 
+  /** Play mode's timing log, and the audio clock's raw readings for it. */
+  log?: PlayLog;
+  clock?: () => ClockProbe;
+
   private readonly onDown = (e: KeyboardEvent) => {
     const k = keyOf(e);
     if (!k) return;
     e.preventDefault();
-    if (e.repeat || !this.enabled || this.held.has(k)) return;
+    const fate: KeyLog["fate"] = e.repeat ? "repeat" : !this.enabled ? "disabled" : this.held.has(k) ? "held" : "queued";
+    if (fate !== "queued") return this.record(e, "down", k, fate);
     this.held.add(k);
-    this.queue.push({ s: this.songTime(e.timeStamp) - this.offsetMs() / 1000, kind: "press", key: k });
+    const ev: KeyEvent = { s: this.songTime(e.timeStamp) - this.offsetMs() / 1000, kind: "press", key: k };
+    this.record(e, "down", k, fate, ev);
+    this.queue.push(ev);
   };
 
   private readonly onUp = (e: KeyboardEvent) => {
     const k = keyOf(e);
-    if (!k || !this.held.has(k)) return;
+    if (!k) return;
+    if (!this.held.has(k)) return this.record(e, "up", k, "not-held");
     this.held.delete(k);
-    if (!this.enabled) return;
-    this.queue.push({ s: this.songTime(e.timeStamp) - this.offsetMs() / 1000, kind: "release", key: k });
+    if (!this.enabled) return this.record(e, "up", k, "disabled");
+    const ev: KeyEvent = { s: this.songTime(e.timeStamp) - this.offsetMs() / 1000, kind: "release", key: k };
+    this.record(e, "up", k, "queued", ev);
+    this.queue.push(ev);
   };
+
+  /** Log a key event (and give a queued one its id). */
+  private record(e: KeyboardEvent, type: KeyLog["type"], k: Key, fate: KeyLog["fate"], ev?: KeyEvent): void {
+    const log = this.log;
+    if (!log) return;
+    const id = log.newKeyId();
+    if (ev) ev.id = id;
+    log.key({ id, type, key: k, code: e.code, timeStamp: e.timeStamp, handledAt: performance.now(), repeat: e.repeat, fate, s: ev?.s, offsetMs: ev ? this.offsetMs() : undefined, clock: ev ? this.clock?.() : undefined });
+  }
 
   attach(target: Window = window): void {
     target.addEventListener("keydown", this.onDown);
@@ -107,7 +127,7 @@ export class KeyboardInput {
 
   /** Release every held key at song time s (losing focus, pausing). */
   releaseAll(s: number): void {
-    for (const k of this.held) this.queue.push({ s, kind: "release", key: k });
+    for (const k of this.held) this.queue.push({ s, kind: "release", key: k, id: this.log?.newKeyId() });
     this.held.clear();
   }
 

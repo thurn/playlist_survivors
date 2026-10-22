@@ -40,6 +40,9 @@ export class LiveSoundScheduler {
   private scheduled = new Map<string, { when: number; s: number; handle?: { stop(): void } }>();
   readonly stats = { scheduled: 0, cancelled: 0, startedLate: 0, skippedLate: 0 };
 
+  /** Play mode's timing log: every start, late start, skip and cancel. */
+  log?: (e: { kind: "scheduled" | "startedLate" | "skipped" | "cancelled"; sample: string; s: number; songNow: number; at?: number; offset?: number }) => void;
+
   /** Sounds before this song time stay silent (a count-in replays the bar before a resume). */
   muteBefore = -Infinity;
 
@@ -65,6 +68,7 @@ export class LiveSoundScheduler {
         // Its onset has passed (a stall, or a sound the recording only now has): never late.
         this.scheduled.set(key, { when: start, s: ev.s });
         this.stats.skippedLate++;
+        this.log?.({ kind: "skipped", sample: ev.sample, s: ev.s, songNow });
         continue;
       }
       // A slow attack that should already have started starts now, partway in: its onset stays on time.
@@ -73,12 +77,14 @@ export class LiveSoundScheduler {
       const handle = this.out.start(ev, Math.max(start, now), offset);
       this.scheduled.set(key, { when: Math.max(start, now), s: ev.s, handle });
       this.stats.scheduled++;
+      this.log?.({ kind: offset > 0 ? "startedLate" : "scheduled", sample: ev.sample, s: ev.s, songNow, at: Math.max(start, now), offset });
     }
     for (const [key, sc] of this.scheduled) {
       if (sc.when > now && !present.has(key)) {
         sc.handle?.stop();
         this.scheduled.delete(key);
         this.stats.cancelled++;
+        this.log?.({ kind: "cancelled", sample: key.split("@")[0], s: sc.s, songNow });
       } else if (sc.s < songNow - 2) this.scheduled.delete(key);
     }
   }

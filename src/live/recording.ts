@@ -20,7 +20,7 @@ import { beatIndexIn, type PlanIndex } from "../plan/view.ts";
 import { beatDurationAt, sectionIndexAt, type Ctx } from "../planner/context.ts";
 import { budgetSlot, Emitter, soundSlot, VOICE_BUDGET, type EmitSink } from "../planner/emit.ts";
 import { ACTIVE_BUCKET, DEATH_ANIM, planHeader } from "../planner/plan.ts";
-import type { ArrowRecord, Attack, BossInfo, Dance, FormationRecord, GemRecord, Landing, LandmarkRecord, Recorder, SlamRecord, Threat, ZoneWaveRecord } from "../sim/recorder.ts";
+import type { ArrowRecord, Attack, BossInfo, Dance, FormationRecord, GemRecord, Landing, LandmarkRecord, PressTrace, Recorder, SlamRecord, Threat, ZoneWaveRecord } from "../sim/recorder.ts";
 import type { Schedule } from "../sim/schedule.ts";
 import { ENEMY_RATE, HERO_ANIMS, HERO_RATE, SLAM_RADIUS } from "../sim/simulate.ts";
 
@@ -407,6 +407,13 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
 
   input(i: PlanInput): void {
     this.add(this.plan.inputs, i);
+  }
+
+  /** Play mode's timing log: what each key did in the simulation (outside the journal: a rollback's re-run replaces it). */
+  pressLog?: (t: PressTrace) => void;
+
+  press(t: PressTrace): void {
+    this.pressLog?.(t);
   }
 
   groove(s: number, v: number): void {

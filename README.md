@@ -63,6 +63,22 @@ along with them. The median tap error, after the first two taps, becomes the
 input offset (`ps.inputOffsetMs` in local storage), so presses are judged as
 you hear them. Redo it any time.
 
+### Timing log
+
+Play mode logs every gameplay key from the DOM event to what the game did with
+it: the audio clock it was timed by, when the live runner applied it (and any
+rollback), and the simulation's outcome and reason (a step and its rating, the
+swing it armed, a press ignored because its grid time already had a step, a
+bend, a walk, or a key thrown away by a count-in). Frames and sound scheduling
+are logged too. See [`src/live/log.ts`](src/live/log.ts).
+
+- The dev server saves it to `logs/play/<session>.json` on pause, at the end,
+  on restart, every 15 s while playing and on leaving the page.
+- F8 downloads it (any build).
+- `npm run log:play` summarizes the newest log: outcome counts, timing offsets
+  from the grid and the beat, the input path, the audio clock and frames, then
+  one row per press. Pass a file, `--from`/`--to` (song seconds) or `--no-table`.
+
 ### URL parameters
 
 | Parameter | Effect |

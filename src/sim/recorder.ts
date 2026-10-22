@@ -51,6 +51,50 @@ export type FormationRecord = { def: string; sStart: number; sRelease: number; m
 export type ZoneWaveRecord = { s: number; w: number; x: number; y: number; zone: string };
 /** The open field: a landmark rises centred on the hero. */
 export type LandmarkRecord = { id: string; s: number; w: number; x: number; y: number };
+/**
+ * What a key event did in the simulation, and why (play mode's timing log).
+ * A rollback runs a press again, so its latest trace is the one that counts.
+ */
+export interface PressTrace {
+  /** The key event's id (KeyEvent.id), when it has one. */
+  id?: number;
+  s: number;
+  w: number;
+  kind: "press" | "release";
+  key: string;
+  /** The section's label and movement at the press. */
+  section: string;
+  movement: "steps" | "free";
+  /**
+   * ignored: one step per grid slot, and this grid time already had its step;
+   * bend: a diagonal's second key bent the step; step: a new step (rated, and maybe arming a swing);
+   * walk: free movement (held keys walk); release: a key went up.
+   */
+  outcome: "ignored" | "bend" | "step" | "walk" | "release";
+  /** The nearest grid time (index and song time), and the press's offset from it (song seconds). */
+  gridIndex?: number;
+  gridS?: number;
+  delta?: number;
+  rating?: string;
+  accuracy?: number;
+  /** Ignored presses: the song time of the press that took this grid time's step. */
+  stepS?: number;
+  /** The press cut a hit-stop short. */
+  cutHitStop?: boolean;
+  /** The previous step had not landed yet (this one starts from where the hero was). */
+  midStep?: boolean;
+  grooveBefore?: number;
+  grooveAfter?: number;
+  /** The swing it armed: the strike's song time and whether it is a heavy cleave. */
+  strikeS?: number;
+  heavy?: boolean;
+  /** No swing armed: past the last grid slot, the slot already had a swing, or the finale blast ends the sword's routine. */
+  noSwing?: "no-slot" | "slot-taken" | "blast";
+  /** The slot it would arm (even when it did not), and that slot's accent. */
+  slotS?: number;
+  accent?: number;
+}
+
 export type Attack = NonNullable<EnemyRecord["attacks"]>[number];
 export type Dance = NonNullable<EnemyRecord["dance"]>;
 
@@ -146,6 +190,8 @@ export interface Recorder {
   slamMark?(k: number, m: { x: number; y: number; sMark: number; wMark: number; sLand: number; boss: number; dir: number }): void;
   drawStart?(id: number, w0: number, sRelease: number, dir: number): void;
   danceStart?(id: number, sFrom: number, anim: string, alternate: boolean): void;
+  /** Optional, for play mode's timing log: what a key event did, and why. */
+  press?(t: PressTrace): void;
 }
 
 /** Builds the demo's SimResult, exactly as the simulation used to assemble it. */

@@ -13,6 +13,7 @@ import type { Application } from "pixi.js";
 import type { ContentLibrary } from "../content/loader.ts";
 import { indexSong, timeOfBeatIndex } from "../core/songmap.ts";
 import { KeyboardInput, keyOf, loadInputOffset } from "../live/input.ts";
+import { PlayLog } from "../live/log.ts";
 import type { LiveRecording } from "../live/recording.ts";
 import { LiveRunner } from "../live/runner.ts";
 import { handOver, liveSim } from "../live/session.ts";
@@ -67,7 +68,7 @@ interface Stage {
 }
 
 /** A fresh live session: a mid-song start fast-forwards with the level's virtual player, then hands over. */
-async function newSession(env: LiveEnv, startS: number, onProgress?: (f: number) => void): Promise<{ recording: LiveRecording; runner: LiveRunner }> {
+async function newSession(env: LiveEnv, startS: number, log: PlayLog, onProgress?: (f: number) => void): Promise<{ recording: LiveRecording; runner: LiveRunner }> {
   const { recording, sim } = liveSim(env.input, env.props, startS > 0);
   for (let t = 0; t < startS; ) {
     t = Math.min(startS, t + 5);
@@ -76,7 +77,11 @@ async function newSession(env: LiveEnv, startS: number, onProgress?: (f: number)
     await yieldToUi();
   }
   if (startS > 0) handOver(sim, recording);
-  return { recording, runner: new LiveRunner(sim, recording) };
+  // (The virtual player's presses before the hand-over have no key ids: the log skips them.)
+  recording.pressLog = (t) => log.press(t);
+  const runner = new LiveRunner(sim, recording);
+  runner.log = log;
+  return { recording, runner };
 }
 
 /**
@@ -102,7 +107,9 @@ export async function runLive(env: LiveEnv): Promise<void> {
   const level = input.level.file.split("/").pop()!.replace(/\.ya?ml$/, "") || PLAY_LEVEL;
 
   progress(0.7, startS > 0 ? `Fast-forwarding to ${fmtTime(startS)}` : "Preparing the field");
-  let session = await newSession(env, startS, (f) => progress(0.7 + 0.2 * f, `Fast-forwarding to ${fmtTime(startS)}`));
+  const log = new PlayLog();
+  hook.playLog = log;
+  let session = await newSession(env, startS, log, (f) => progress(0.7 + 0.2 * f, `Fast-forwarding to ${fmtTime(startS)}`));
   if (audio) {
     progress(0.92, "Loading sounds");
     await audio.loadSounds(assets.sounds, paletteSamples(lib), `${import.meta.env.BASE_URL}assets/sfx/`);
@@ -207,7 +214,8 @@ export async function runLive(env: LiveEnv): Promise<void> {
     if (startS > 0) overlay.status.textContent += ` · starting at ${fmtTime(startS)}`;
     await clickToBegin(overlay);
   }
-  void new PlayController(env, level, startS, () => session, (s) => (session = s), show, () => stage!.hud, draw, liveFrame).start();
+  log.context = () => logContext(env, lib, level, startS, session);
+  void new PlayController(env, level, startS, log, () => session, (s) => (session = s), show, () => stage!.hud, draw, liveFrame).start();
 }
 
 /** One bar before song time s (a count-in's length), from the song map. */
@@ -243,6 +251,7 @@ class PlayController {
     private readonly env: LiveEnv,
     private readonly level: string,
     private readonly startS: number,
+    private readonly log: PlayLog,
     private readonly session: () => { recording: LiveRecording; runner: LiveRunner },
     private readonly setSession: (s: { recording: LiveRecording; runner: LiveRunner }) => void,
     private readonly show: (r: LiveRecording) => Stage,
@@ -252,6 +261,14 @@ class PlayController {
   ) {
     const audio = env.audio!;
     this.keyboard = new KeyboardInput((perfMs) => audio.songTimeAt(perfMs), loadInputOffset);
+    this.keyboard.log = log;
+    this.keyboard.clock = () => audio.clockProbe();
+    audio.soundLog = (e) => log.sound(e);
+  }
+
+  /** Keys thrown away outside play (a count-in, a restart). */
+  private discardKeys(): void {
+    for (const k of this.keyboard.drain()) this.log.drop({ id: k.id, s: k.s, phase: this.phase });
   }
 
   private get audio(): AudioEngine {
@@ -291,6 +308,9 @@ class PlayController {
     window.addEventListener("pointerdown", this.onPointer);
     window.addEventListener("blur", this.onBlur);
     document.addEventListener("visibilitychange", this.onVisibility);
+    window.addEventListener("pagehide", () => this.log.beacon());
+    this.log.event("start", this.startS);
+    void this.log.flush("start");
     requestAnimationFrame(this.loop);
   }
 
@@ -302,7 +322,8 @@ class PlayController {
     this.count = { beats: bar.beats, beatLen: bar.beatLen };
     this.phase = "countIn";
     this.clockReady = false;
-    this.keyboard.drain();
+    this.log.event("countIn", s, { from: bar.from, beats: bar.beats });
+    this.discardKeys();
     if (first) await this.audio.startLive(() => this.session().recording.plan.events.sounds, bar.from, s);
     else await this.audio.seekLive(bar.from, s);
     this.clockReady = true;
@@ -310,21 +331,28 @@ class PlayController {
 
   private readonly loop = (ts: number) => {
     const audio = this.audio;
+    const perf = performance.now();
     const s = audio.songTimeAtPresentation(ts, this.frameDur);
     this.trackFrames(ts);
     const hook = this.env.hook;
+    let nKeys = 0;
     if (this.phase === "countIn") {
       // Input begins on the bar line.
-      this.keyboard.drain();
+      this.discardKeys();
       if (!this.clockReady) this.draw(this.holdS, { countIn: { count: 0, of: this.count.beats, fade: 1, beatPhase: 0 } });
       else if (s < this.holdS) {
         const k = Math.min(this.count.beats, Math.max(1, Math.floor((s - this.countFrom) / this.count.beatLen) + 1));
         const ph = Math.max(0, ((s - this.countFrom) / this.count.beatLen) % 1);
         this.draw(this.holdS, { countIn: { count: k, of: this.count.beats, fade: 1, beatPhase: ph } });
-      } else this.phase = "playing";
+      } else {
+        this.phase = "playing";
+        this.log.event("playing", s);
+      }
     }
     if (this.phase === "playing") {
-      const frame = this.liveFrame(s, this.keyboard.drain(), this.hudOptions());
+      const keys = this.keyboard.drain();
+      nKeys = keys.length;
+      const frame = this.liveFrame(s, keys, this.hudOptions());
       this.lastS = s;
       if (frame.hud.end && !this.end) this.showEnd();
     } else if (this.phase === "paused") this.draw(this.lastS, this.hudOptions());
@@ -335,6 +363,10 @@ class PlayController {
     // (The song time drawn: the game waits through count-ins and pauses.)
     hook.lastS = this.phase === "paused" ? this.lastS : this.phase === "countIn" ? Math.min(s, this.holdS) : s;
     hook.frames = (hook.frames ?? 0) + 1;
+    if (this.phase === "playing" || this.phase === "countIn") {
+      this.log.frame({ ts, perf, s, raw: audio.lastRawPresentation, phase: this.phase, dur: this.frameDur, keys: nKeys, ms: performance.now() - perf, simS: this.session().runner.sim.s });
+      if (this.phase === "playing") this.log.maybeFlush();
+    }
     requestAnimationFrame(this.loop);
   };
 
@@ -368,6 +400,8 @@ class PlayController {
     this.keyboard.enabled = false;
     this.lastS = at;
     this.phase = "paused";
+    this.log.event("pause", at);
+    void this.log.flush("pause");
     void this.audio.pauseLive();
     this.menu = {
       menu: { title: "PAUSED", items: ["Resume", "Restart section", "Restart song", "Quit to title"], selected: 0 },
@@ -377,6 +411,7 @@ class PlayController {
 
   /** Resume after a one-bar count-in: the music replays the bar before the pause point; the game resumes exactly there. */
   private resume(): void {
+    this.log.event("resume", this.lastS);
     this.menu = undefined;
     this.keyboard.enabled = true;
     void this.countIn(this.lastS);
@@ -384,6 +419,7 @@ class PlayController {
 
   private restartSection(): void {
     const s0 = this.session().runner.restartSection();
+    this.log.event("restartSection", s0);
     this.menu = undefined;
     this.keyboard.enabled = true;
     this.end = undefined;
@@ -395,15 +431,17 @@ class PlayController {
   private async restartSong(): Promise<void> {
     this.menu = { menu: { title: "RESTARTING", items: [], selected: 0, notes: this.startS > 0 ? [`fast-forwarding to ${fmtTime(this.startS)}`] : [] }, actions: [] };
     this.draw(this.lastS, this.hudOptions());
+    this.log.event("restartSong", this.startS);
+    void this.log.flush("restartSong");
     await this.audio.pauseLive();
-    const session = await newSession(this.env, this.startS);
+    const session = await newSession(this.env, this.startS, this.log);
     this.setSession(session);
     this.show(session.recording);
     this.menu = undefined;
     this.end = undefined;
     this.replayRec = undefined;
     this.keyboard.enabled = true;
-    this.keyboard.drain();
+    this.discardKeys();
     this.lastS = this.startS;
     await this.countIn(this.startS);
   }
@@ -431,6 +469,8 @@ class PlayController {
     const newBest = !best || gradeRank(grade) < gradeRank(best);
     if (newBest) saveBestGrade(this.level, grade);
     this.end = { grade, best: newBest ? undefined : best, newBest, startedAt: this.startS > 0 ? this.startS : undefined };
+    this.log.event("end", this.lastS, { grade, averageGroove: plan.stats.averageGroove });
+    void this.log.flush("end");
     this.menu = this.endMenu();
   }
 
@@ -456,6 +496,12 @@ class PlayController {
   // ------------------------------------------------------------------ input
 
   private readonly onKey = (e: KeyboardEvent) => {
+    if (e.key === "F8") {
+      // Save the timing log as a file (development builds also save it to logs/play/).
+      e.preventDefault();
+      this.log.download();
+      return;
+    }
     if (e.key === "Escape") {
       e.preventDefault();
       if (this.phase === "paused" && this.menu) this.resume();
@@ -480,9 +526,13 @@ class PlayController {
   };
 
   /** Losing focus releases every held key and pauses. */
-  private readonly onBlur = () => this.pause();
+  private readonly onBlur = () => {
+    this.log.event("blur", this.lastS);
+    this.pause();
+  };
 
   private readonly onVisibility = () => {
+    this.log.event("visibility", this.lastS, document.hidden ? "hidden" : "visible");
     if (document.hidden) this.pause();
   };
 }
@@ -492,4 +542,30 @@ function benchFrom(input: PlannerInput): number {
   const sm = input.songMap;
   const sec = sm.sections.find((x) => x.label === "theme-a");
   return sec ? timeOfBeatIndex(sm, indexSong(sm).barStart[sec.bars[0]]) : 0;
+}
+
+const round = (v: number, d = 1e6) => Math.round(v * d) / d;
+
+/** What the timing log carries besides its events: settings, the song's grid and the recording's settled presses and swings. */
+function logContext(env: LiveEnv, lib: ContentLibrary, level: string, startS: number, session: { recording: LiveRecording; runner: LiveRunner }): Record<string, unknown> {
+  const { recording, runner } = session;
+  const { ctx, sch, plan } = recording;
+  const hero = lib.hero;
+  const ac = env.audio?.ctx;
+  return {
+    level,
+    seed: env.input.seed,
+    params: { avOffsetMs: env.params.avOffsetMs, startS, mode: env.params.mode },
+    inputOffsetMs: loadInputOffset(),
+    audio: ac ? { sampleRate: ac.sampleRate, baseLatency: ac.baseLatency, outputLatency: ac.outputLatency, state: ac.state, stats: env.audio!.stats, live: env.audio!.liveStats() } : undefined,
+    hero: { timing: hero.timing, step: hero.step, swings: { minLeadMs: hero.swings.minLeadMs, windupMs: hero.swings.windupMs } },
+    rules: ctx.level.rules,
+    playerFrom: recording.playerFrom,
+    runner: { ...runner.stats, settled: runner.settled, simS: runner.sim.s },
+    sections: ctx.sections.map((x) => ({ label: x.label, s0: round(x.s0), s1: round(x.s1), movement: x.level.movement })),
+    beats: Array.from(plan.songBeats, (v) => round(v)),
+    grid: { s: Array.from(sch.gridTimes, (v) => round(v)), accent: sch.gridSlots.map((x) => round(x.accent, 100)), section: sch.gridSlots.map((x) => x.section) },
+    inputs: plan.inputs.map((i) => ({ ...i, s: round(i.s), w: round(i.w) })),
+    swings: plan.swings.map((w) => ({ s: round(w.s), sArmed: round(w.sArmed), kind: w.kind, press: w.press, accent: w.accent })),
+  };
 }
