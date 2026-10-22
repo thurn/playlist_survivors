@@ -7,6 +7,11 @@ hero:
   timing: { perfectMs: 45, greatMs: 90, goodMs: 140, floor: 0.1 }
 player: moderate            # the bot used for ?start= and for checks
 sections:
+  # The prelude plays at full speed: a slowed world makes walking feel like wading. The music's
+  # calm goes to the enemies instead, which drift in slowly on a spiral.
+  - section: prelude
+    timeScale: 1
+    calm: 0.5
   # The galop starts in the woods: the first transform wave sweeps out on its first downbeat,
   # right after the count-in.
   - section: galop-vamp

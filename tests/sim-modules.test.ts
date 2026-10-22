@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { loadRealContent } from "../scripts/lib/content-check.ts";
 import { TAU, wrapAngle } from "../src/core/geometry.ts";
 import { aim, type AimTarget } from "../src/sim/aim.ts";
+import { stepSpan } from "../src/sim/schedule.ts";
 import { bendStep, startStep, stepEnd, stepPose, walkFrame, walkTarget, walkVelocity, type Clamp } from "../src/sim/movement.ts";
 import { armedStrike, damageMultiplier, grooveAfterPress, grooveDecay, ratePress, ratePressOnGrid, windupStart } from "../src/sim/timing.ts";
 
@@ -173,5 +174,20 @@ describe("auto-aim", () => {
     expect(aim(0, 0, 1, [enemy(120, 120)], reach)).toBeCloseTo(Math.PI / 4, 6);
     expect(aim(0, 0, 1, [enemy(300, 0)], reach)).toBe(1);
     expect(aim(0, 0, 1, [], reach)).toBe(1);
+  });
+});
+
+describe("rate steps", () => {
+  const steps = [
+    { s: 0, rate: 1 },
+    { s: 2, rate: 0.5 },
+    { s: 3, rate: 0.25 },
+  ];
+
+  it("measures world time across the steps between two song times", () => {
+    expect(stepSpan(steps, 0, 1)).toBeCloseTo(1, 9);
+    expect(stepSpan(steps, 1.5, 2.5)).toBeCloseTo(0.5 + 0.25, 9);
+    expect(stepSpan(steps, 1, 5)).toBeCloseTo(1 + 0.5 + 0.5, 9);
+    expect(stepSpan(steps, 4, 4)).toBe(0);
   });
 });

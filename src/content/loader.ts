@@ -248,6 +248,8 @@ export interface ResolvedSection {
   heavyOnAccents: { minStrength: number; label?: string };
   zone: string;
   timeScale: { from: number; to: number };
+  /** Enemy calm, 0 to 1: speed scales by 1 - calm and the approach curls by up to CALM_CURL. */
+  calm: number;
   population: [number, number];
   roster: Record<string, number>;
   camera: { zoom: number; lead: number; punchOnAccents: boolean };
@@ -521,6 +523,7 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap, res
       heavyOnAccents: { minStrength: s.heavyOnAccents?.minStrength ?? 0.7, label: s.heavyOnAccents?.label },
       zone: zone ?? "",
       timeScale,
+      calm: s.calm ?? 0,
       population: s.population,
       roster: roster ?? {},
       camera: cam,

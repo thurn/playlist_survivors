@@ -200,6 +200,17 @@ export function nextStepAfter(steps: { s: number; rate: number }[], s: number): 
   return lo < steps.length ? steps[lo].s : Infinity;
 }
 
+/** World time between song times s0 and s1 (s0 <= s1) at the steps' rates. */
+export function stepSpan(steps: { s: number; rate: number }[], s0: number, s1: number): number {
+  let w = 0;
+  for (let a = s0; a < s1; ) {
+    const b = Math.min(s1, nextStepAfter(steps, a));
+    w += (b - a) * stepRate(steps, a);
+    a = b;
+  }
+  return w;
+}
+
 function parseEvery(every: string, bpb: number): number {
   const [n, unit] = every.split(" ");
   return Number(n) * (unit.startsWith("bar") ? bpb : 1);

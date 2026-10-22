@@ -249,6 +249,21 @@ Play mode runs the [beat-steps.md](beat-steps.md) rules, with the changes
 below. Each change lives in `Rules`, set from the play level file, so the
 demo never sees it.
 
+### A calm prelude, not a slow one
+
+The demo plays its prelude in slow motion (`timeScale: 0.5`). Played, that
+halves the hero's walking speed, and walking through molasses feels awful.
+Play mode keeps the world at full speed there and gives the music's calm to
+the enemies instead:
+
+- **`calm`** (a section field, 0 to 0.9, default 0, not inherited) scales
+  every enemy's speed by `1 - calm` and turns its approach up to 60° off
+  the line to the hero (`calm × 60°`), half of them each way, so they
+  spiral in lazily rather than charge.
+- The play level sets the prelude to `timeScale: 1` and `calm: 0.5`: the
+  hero walks at its full 80 px/s, and even a bat closes more slowly than
+  the hero walks.
+
 ### One step per grid slot
 
 In step movement, every press belongs to its nearest grid time. Only the
@@ -656,8 +671,8 @@ open it in desktop Chrome with wired headphones, and choose **Play**.
 
 ### The set pieces, played
 
-- **Prelude:** held keys walk smoothly across the open field. The sword
-  swings by itself.
+- **Prelude:** held keys walk smoothly, at full speed, across the open
+  field. The sword swings by itself, and the enemies drift in calmly.
 - **Count-in** before the galop, then the first transform wave sweeps out
   on the downbeat.
 - **Galop opening:** the gold "press here" rings line up the tutti chords,

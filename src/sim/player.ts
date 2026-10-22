@@ -24,6 +24,8 @@ export interface Observation {
   threats: { kind: "arrow" | "slam"; x: number; y: number; ax?: number; ay?: number; landsAt: number; radius?: number; seenAt: number }[];
   /** The boss, when it is in the fight. */
   boss?: { x: number; y: number };
+  /** The middle of a formation still dancing in its slots, when one is. */
+  formation?: { x: number; y: number };
   /** Where the route schedule says the hero should be now, and the route's direction there. */
   pacePoint: { x: number; y: number; tx: number; ty: number };
   /** Distance from a point to the edge of the walkable band (negative outside). */
@@ -261,7 +263,7 @@ export class VirtualPlayer implements Player {
   /**
    * The open field has no pace point: the player follows a roam point instead. It starts at the
    * hero and moves at the section's pace along a heading that turns slowly (seeded, at most 45
-   * degrees per bar), pulled toward the crowd when the crowd is more than 200 px away.
+   * degrees per bar), pulled toward a dancing formation, or else the crowd, when it is more than 200 px away.
    */
   private moveRoam(obs: Observation): void {
     if (!this.open) return;
@@ -278,7 +280,11 @@ export class VirtualPlayer implements Player {
       r.dir += new Rng(this.seed, "roam", Math.floor(b / 2 + 1e-9)).range(-1, 1) * ROAM_TURN * ((next - b) / 2);
       b = next;
     }
-    if (obs.enemies.length > 0) {
+    // A dancing formation draws the roam to it (a player walks up to the line to cleave it); otherwise the crowd does.
+    if (obs.formation) {
+      const f = obs.formation;
+      if (Math.hypot(f.x - r.x, f.y - r.y) > ROAM_CROWD) r.dir += wrapAngle(Math.atan2(f.y - r.y, f.x - r.x) - r.dir) * Math.min(1, dw * 1.5);
+    } else if (obs.enemies.length > 0) {
       let cx = 0;
       let cy = 0;
       for (const e of obs.enemies) {

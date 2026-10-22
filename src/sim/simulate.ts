@@ -29,7 +29,7 @@ import { bendStep, startStep, stepEnd, stepPose, stepSeconds, walkFrame, walkTar
 import type { KeyEvent, Observation, Player } from "./player.ts";
 import { BatchRecorder, type ArrowRecord, type PressTrace, type Recorder, type SimResult } from "./recorder.ts";
 import { DEMO_RULES, type Rules } from "./rules.ts";
-import { nextStepAfter, stepRate, type GridSlot, type Schedule } from "./schedule.ts";
+import { nextStepAfter, stepRate, stepSpan, type GridSlot, type Schedule } from "./schedule.ts";
 import { armedStrike, damageMultiplier, grooveAfterPress, grooveDecay, nearestIndex, ratePressOnGrid, type Rating } from "./timing.ts";
 import { CorridorWorld, OpenWorld, type World } from "./world.ts";
 
@@ -74,6 +74,8 @@ const GROOVE_GRACE_BARS = 2;
 export const NEAR_MISS = 24;
 /** The near-miss slow-motion dip: down to 0.4 over 40 ms, held 70 ms, back up over 40 ms. */
 const DIP_RATE = 0.4;
+/** A fully calm section's curl: enemies head this far (radians) off the line to the hero, so they spiral in. */
+const CALM_CURL = Math.PI / 3;
 const DIP_RAMP = 0.04;
 const DIP_HOLD = 0.07;
 /** Archers keep this distance from the hero, and shoot only when this close. */
@@ -1013,7 +1015,8 @@ function engine(env: Env, st: SimState, io: Io) {
     if (sw) {
       let fr: number;
       if (!sw.struck) {
-        const toImpactW = (sw.sStrike - sk) * Math.max(1e-6, baseRate(sk));
+        // Across the rate steps to the strike: a ramp (such as a timeScale event's) changes the rate on the way.
+        const toImpactW = Math.max(1e-6 * (sw.sStrike - sk), stepSpan(sch.baseSteps, sk, sw.sStrike));
         if (toImpactW <= half + 1e-9) fr = sw.impact;
         else fr = clamp(Math.floor((sw.impact * (sk - sw.sWind)) / Math.max(1e-6, sw.sStrike - sw.sWind)), 0, sw.impact - 1);
       } else {
@@ -1095,6 +1098,10 @@ function engine(env: Env, st: SimState, io: Io) {
     const s = st.s;
     const sec = sectionAt(s);
     const free = sec.song.feel === "free";
+    // A calm section slows the enemies (not the hero) and curls their approach into a lazy spiral.
+    const calmSpeed = 1 - sec.level.calm;
+    const curlCos = Math.cos(sec.level.calm * CALM_CURL);
+    const curlSin = Math.sin(sec.level.calm * CALM_CURL);
     const sbi = sbiAt(s);
     const bar = Math.max(1, barOfBeatIndex(ctx.idx, sbi));
     const bpb = ctx.idx.beatsPerBar[Math.min(ctx.idx.barCount, bar)] ?? 2;
@@ -1229,7 +1236,7 @@ function engine(env: Env, st: SimState, io: Io) {
         const tx = hp.x + (cx / cl) * ARCHER_RANGE - (cy / cl) * off - f.x;
         const ty = hp.y + (cy / cl) * ARCHER_RANGE + (cx / cl) * off - f.y;
         const tl = Math.hypot(tx, ty) || 1;
-        const sp = f.def.speed * (mults[f.def.group] ?? 1) * clamp(tl / 20, 0, 1);
+        const sp = f.def.speed * calmSpeed * (mults[f.def.group] ?? 1) * clamp(tl / 20, 0, 1);
         const kk = Math.min(1, dt * 12);
         f.vx += ((tx / tl) * sp - f.vx) * kk;
         f.vy += ((ty / tl) * sp - f.vy) * kk;
@@ -1240,13 +1247,15 @@ function engine(env: Env, st: SimState, io: Io) {
       const dy = hp.y - f.y;
       const d = Math.hypot(dx, dy) || 0.01;
       const contact = HURTBOX_RADIUS + f.r + CONTACT_GAP;
-      const m = mults[f.def.group] ?? 1;
+      const m = (mults[f.def.group] ?? 1) * calmSpeed;
       const charge = s < f.chargeUntil ? CHARGE_SPEED : 1;
       // Archers keep their distance; everyone else closes to contact.
       const speed =
         f.def.behavior === "archer" ? f.def.speed * m * clamp((d - ARCHER_RANGE) / 30, -0.5, 1) : f.def.speed * m * charge * clamp((d - contact) / 16, 0, 1);
-      const tvx = (dx / d) * speed + f.sx;
-      const tvy = (dy / d) * speed + f.sy;
+      // The curl turns half the enemies clockwise and half counterclockwise.
+      const cs = f.id % 2 === 0 ? curlSin : -curlSin;
+      const tvx = ((dx * curlCos - dy * cs) / d) * speed + f.sx;
+      const tvy = ((dy * curlCos + dx * cs) / d) * speed + f.sy;
       // The new velocity carries the enemy to the next step (positions are extrapolated with it).
       f.vx += (tvx - f.vx) * k;
       f.vy += (tvy - f.vy) * k;
@@ -1333,6 +1342,20 @@ function engine(env: Env, st: SimState, io: Io) {
     return out;
   };
 
+  /** The middle of the formation members still in their slots, if any. */
+  const dancingFormation = (): { x: number; y: number } | undefined => {
+    let x = 0;
+    let y = 0;
+    let n = 0;
+    for (const f of st.alive) {
+      if (!f.alive || !f.slot || st.s >= f.slotUntil) continue;
+      x += posX(f, st.w);
+      y += posY(f, st.w);
+      n++;
+    }
+    return n > 0 ? { x: x / n, y: y / n } : undefined;
+  };
+
   const observe = (): Observation => {
     const hp = heroPose(st.w);
     const pp = forward();
@@ -1343,6 +1366,7 @@ function engine(env: Env, st: SimState, io: Io) {
       enemies: st.alive.filter((f) => f.alive).map((f) => ({ x: posX(f, st.w), y: posY(f, st.w), type: f.type, health: f.health })),
       threats: visibleThreats(hp),
       boss: st.bossFoe && st.bossFoe.alive && !pinned(st.bossFoe) ? { x: posX(st.bossFoe, st.w), y: posY(st.bossFoe, st.w) } : undefined,
+      formation: dancingFormation(),
       pacePoint: { x: pp.x, y: pp.y, tx: pp.tx, ty: pp.ty },
       edgeDistance: (x, y) => world.edge(x, y),
     };

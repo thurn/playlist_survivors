@@ -260,6 +260,8 @@ export const levelSection = z.strictObject({
   heavyOnAccents: z.strictObject({ minStrength: unit.default(0.7), label: z.string().optional() }).optional(),
   zone: id.optional(),
   timeScale: timeScale.optional(),
+  /** How calm the enemies are, 0 (default) to 1: they move slower and spiral in rather than charge. Not inherited. */
+  calm: unit.max(0.9).optional(),
   population: z.tuple([z.number().int().min(0).max(520), z.number().int().min(0).max(520)]),
   roster: z.record(z.string(), z.number().positive()).optional(),
   camera: z.strictObject({ zoom: z.number().min(0.7).max(1.4).optional(), lead: z.number().optional(), punchOnAccents: z.boolean().optional() }).optional(),

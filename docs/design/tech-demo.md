@@ -846,6 +846,9 @@ the previous section's value.
 - **`zone`:** the zone the hero is in during this section. Inherits.
 - **`timeScale`:** the world-time rate, either one number or a
   `{ from, to }` ramp across the section. Default 1.0.
+- **`calm`:** how calm the enemies are, 0 to 0.9: they move at `1 - calm`
+  of their speed and spiral in. Default 0. Play mode uses it in place of a
+  slowed world (see [interactive.md](interactive.md)).
 - **`population`:** the target number of living enemies, as
   `[start, end]` for the section.
 - **`roster`:** the enemy types that spawn, with relative weights. Inherits.

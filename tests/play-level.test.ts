@@ -32,7 +32,13 @@ describe("the play level file", () => {
     // The galop starts in the woods (the vamp sets it; the opening inherits it).
     expect(play.sections.find((s) => s.label === "galop-vamp")!.zone).toBe("galop-woods");
     expect(play.sections.find((s) => s.label === "galop-opening")!.zone).toBe("galop-woods");
-    const changed = ["climax", "galop-vamp", "galop-opening"];
+    // The prelude plays at full speed, with calm enemies instead.
+    const prelude = play.sections.find((s) => s.label === "prelude")!;
+    expect(prelude.timeScale).toEqual({ from: 1, to: 1 });
+    expect(prelude.calm).toBe(0.5);
+    expect(demo.sections[0].calm).toBe(0);
+    expect(play.sections.find((s) => s.label === "galop-vamp")!.calm).toBe(0); // not inherited
+    const changed = ["prelude", "climax", "galop-vamp", "galop-opening"];
     for (const [i, s] of play.sections.entries()) if (!changed.includes(s.label)) expect(s).toEqual(demo.sections[i]);
     // Events merge by `at` and kind: the level-ups need their own experience; nothing is added.
     expect(play.events.length).toBe(demo.events.length);
@@ -127,6 +133,17 @@ describe("play-mode rules", () => {
     // Two steps: one straight, one diagonal (each 44 px).
     const diag = Math.hypot(44 + 44 / Math.SQRT2, 44 / Math.SQRT2);
     expect(m.travel).toBeCloseTo(diag, 0);
+  });
+
+  it("walks at full speed in the calm prelude", () => {
+    const sim = new Sim(ctx, sch, new CorridorWorld(map, sch), play.rules, new BatchRecorder());
+    sim.advanceTo(2);
+    sim.key({ s: 2, kind: "press", key: "right" });
+    sim.advanceTo(2.5);
+    const a = sim.heroPosition();
+    sim.advanceTo(3.5);
+    const b = sim.heroPosition();
+    expect(Math.hypot(b.x - a.x, b.y - a.y)).toBeCloseTo(play.hero.walk.speed, -1);
   });
 
   it("leaves the demo's rules alone: there, every press steps", () => {
