@@ -9,6 +9,10 @@
  *
  * Time advances in fixed steps of 1/120 s of song time. Presses, strikes,
  * weapon hits and other events happen at their exact times between steps.
+ *
+ * The simulation is a steppable `Sim`: the demo runs it to the end at load
+ * time (`simulate`), play mode advances it a frame at a time and clones it for
+ * rollback. Everything it produces goes to a Recorder; its own state is small.
  */
 import type { EnemyDef, HeroDef, WeaponDef } from "../content/schema.ts";
 import { TAU, type Shape } from "../core/geometry.ts";
@@ -16,15 +20,21 @@ import { Rng } from "../core/rng.ts";
 import { beatHit, beatSwell, clamp, frac, lerp, smoothstep } from "../core/shaping.ts";
 import { beatIndexAt, energyAt, timeOfBeatIndex, barOfBeatIndex } from "../core/songmap.ts";
 import type { WarpBreak } from "../core/warp.ts";
-import { RouteLookup, routeFrame } from "../mapgen/mapgen.ts";
-import type { AimSnapshot, Chain, EnemyRecord, Fate, HeroTrack, Hit, MapLayout, PlanInput, PlanSwing } from "../plan/types.ts";
+import type { AimSnapshot, Fate, Hit, MapLayout, PlanInput, PlanSwing } from "../plan/types.ts";
 import { CameraRig } from "../planner/camera.ts";
 import { sectionIndexAt, subdivisionBeats, weightFactor, type Ctx } from "../planner/context.ts";
 import { aim, catches, swingArc, type AimTarget } from "./aim.ts";
-import { bendStep, startStep, stepEnd, stepPose, stepSeconds, walkFrame, walkTarget, type Clamp, type Key, type Step } from "./movement.ts";
+import { deepClone, registerShared } from "./clone.ts";
+import { bendStep, startStep, stepEnd, stepPose, stepSeconds, walkFrame, walkTarget, type Key, type Step } from "./movement.ts";
 import type { KeyEvent, Observation, Player } from "./player.ts";
-import { nextStepAfter, paceAt, stepRate, type GridSlot, type Schedule } from "./schedule.ts";
+import { BatchRecorder, type ArrowRecord, type Recorder, type SimResult } from "./recorder.ts";
+import { DEMO_RULES, type Rules } from "./rules.ts";
+import { nextStepAfter, stepRate, type GridSlot, type Schedule } from "./schedule.ts";
 import { armedStrike, damageMultiplier, grooveAfterPress, grooveDecay, ratePressOnGrid, type Rating } from "./timing.ts";
+import { CorridorWorld, type World } from "./world.ts";
+
+export type { ArrowRecord, Landing, SimResult, SlamRecord } from "./recorder.ts";
+export { Corridor } from "./world.ts";
 
 /** Fixed simulation steps per song second. */
 export const SIM_RATE = 120;
@@ -37,8 +47,6 @@ export const HURTBOX_RADIUS = 10;
 export const HURTBOX_LIFT = 20;
 /** Enemies stop this far beyond touching the hero. */
 const CONTACT_GAP = 4;
-/** The walkable band: the corridor less this margin. */
-const CORRIDOR_MARGIN = 48;
 /** At most this many spawns per beat. */
 export const SPAWN_PER_BEAT = 120;
 /** Share of spawns from the forward half of the view. */
@@ -88,6 +96,10 @@ const REACTION = 0.15;
 const LINE_LEAD = 170;
 const CHARGE_BEATS = 2;
 const CHARGE_SPEED = 4;
+/** An intermediate clock stop keeps at least this far (song seconds) from the loop's own stops. */
+const CLOCK_EPS = 1e-9;
+/** Hero samples kept for the fire trail (world seconds); the trail reaches back two beats. */
+const HERO_HISTORY = 10;
 
 export const HERO_ANIMS = ["idle", "walk", "run", "jump", "slash", "backslash", "halfslash", "thrust", "spellcast", "slash-oversize", "hurt"];
 
@@ -99,81 +111,15 @@ export interface SimOptions {
   untilS?: number;
 }
 
-export interface Landing {
-  s: number;
-  w: number;
-  x: number;
-  y: number;
-}
-
-export interface SimResult {
-  warp: WarpBreak[];
-  hero: HeroTrack;
-  camera: CameraRig;
-  hits: Hit[];
-  enemies: EnemyRecord[];
-  enemySamples: Float32Array;
-  swings: PlanSwing[];
-  inputs: PlanInput[];
-  groove: { s: number[]; v: number[] };
-  landings: Landing[];
-  weaponsGranted: { id: string; s: number }[];
-  /** Song times each weapon fired. */
-  weaponFires: { weapon: string; s: number }[];
-  chains: Chain[];
-  hitStops: [number, number][];
-  blastS?: number;
-  /** Song time the simulation ended. */
-  endS: number;
-  arrows: ArrowRecord[];
-  slams: SlamRecord[];
-  /** Every threat (arrow or slam) and how it ended. */
-  threats: { s: number; w: number; kind: "arrow" | "slam"; outcome: "near-miss" | "touch" | "miss"; x: number; y: number }[];
-  boss?: { id: number; landS: number; x: number; y: number; deathS?: number; killHit?: number; health: { s: number; frac: number }[] };
-  /** Gems: drop (world time, place) and arrival at the hero (song and world time). */
-  gems: { w0: number; x0: number; y0: number; s1: number; w1: number; value: number; big: boolean; enemy: number }[];
-  /** The XP bar after each change (fraction of the next level-up's requirement). */
-  xp: { s: number; fill: number }[];
-  /** Cleave shockwaves: one hit per band. */
-  waves: { hits: number[] }[];
-  /** Formation releases (song time) and their members. */
-  formations: { def: string; sStart: number; sRelease: number; members: number[] }[];
-}
-
-export interface ArrowRecord {
-  sRelease: number;
-  wRelease: number;
-  sArrive: number;
-  wArrive: number;
-  x0: number;
-  y0: number;
-  /** Where it was aimed: the hero's hurtbox at the release. */
-  ax: number;
-  ay: number;
-  /** End of the drawn flight. */
-  x1: number;
-  y1: number;
-  w1: number;
-  outcome: "near-miss" | "touch" | "miss";
-}
-
-export interface SlamRecord {
-  sMark: number;
-  wMark: number;
-  sLand: number;
-  wLand: number;
-  x: number;
-  y: number;
-  radius: number;
-  outcome: "near-miss" | "touch" | "miss";
-}
-
 /** Per-enemy simulation state. */
 interface Foe {
-  rec: EnemyRecord;
+  id: number;
+  type: string;
   def: EnemyDef;
   r: number;
   health: number;
+  /** Health at spawn. */
+  health0: number;
   x: number;
   y: number;
   vx: number;
@@ -184,7 +130,9 @@ interface Foe {
   alive: boolean;
   /** Record one last sample (the death spot), then retire. */
   finalSample: boolean;
-  samples: number[];
+  deathW: number;
+  lastFate?: Fate;
+  formation?: number;
   sx: number;
   sy: number;
   knockX: number;
@@ -254,7 +202,7 @@ type Ev =
   | { kind: "slamLand"; k: number }
   | { kind: "formation"; f: number }
   | { kind: "formationRelease"; f: number }
-  | { kind: "gem"; gem: number }
+  | { kind: "gem"; gem: number; value: number }
   | { kind: "levelDue"; i: number }
   | { kind: "levelUp"; id: string };
 
@@ -264,11 +212,15 @@ interface Wave {
   dir: number;
   band: number;
   hit: Set<Foe>;
-  record: { hits: number[] };
+  /** Index of the wave's record. */
+  group: number;
 }
 
 interface ChainState {
-  points: { w: number; x: number; y: number }[];
+  /** The chain's latest point. */
+  last: { w: number; x: number; y: number };
+  /** Index of the chain's record. */
+  index: number;
   hit: Set<Foe>;
   jumps: number;
   energy: number;
@@ -307,6 +259,9 @@ const ORDER: Record<Ev["kind"], number> = {
   appear: 22,
 };
 
+/** Events that point at mutable state; the rest are frozen, so snapshots share them. */
+const MUTABLE_EVENTS = new Set<Ev["kind"]>(["wind", "strike", "wave", "chain"]);
+
 /** Free movement: analytic walking from a velocity toward a target velocity at a constant acceleration. */
 interface Walk {
   w0: number;
@@ -339,12 +294,16 @@ function walkPose(wk: Walk, atW: number): { x: number; y: number; vx: number; vy
   };
 }
 
+type Entry = { s: number; o: number; seq: number; ev: Ev };
+
 class Queue {
-  private heap: { s: number; o: number; seq: number; ev: Ev }[] = [];
+  private heap: Entry[] = [];
   private seq = 0;
   push(s: number, ev: Ev): void {
     const h = this.heap;
-    h.push({ s, o: ORDER[ev.kind], seq: this.seq++, ev });
+    const entry: Entry = { s, o: ORDER[ev.kind], seq: this.seq++, ev };
+    if (!MUTABLE_EVENTS.has(ev.kind)) Object.freeze(entry);
+    h.push(entry);
     let c = h.length - 1;
     while (c > 0) {
       const p = (c - 1) >> 1;
@@ -411,160 +370,198 @@ export function facingIndex(dir: number): number {
   return 1;
 }
 
-/** The walkable band around the route. */
-export class Corridor {
-  private lookup: RouteLookup;
-  readonly half: number;
-  constructor(readonly map: MapLayout) {
-    this.lookup = new RouteLookup({ step: map.routeStep, x: map.routeX, y: map.routeY });
-    this.half = map.corridorHalfWidth - CORRIDOR_MARGIN;
+/** What a simulation is made of that never changes: shared by every clone. */
+interface Env {
+  ctx: Ctx;
+  sch: Schedule;
+  world: World;
+  rules: Rules;
+  endS: number;
+  cutS: number;
+  shared: WeakSet<object>;
+}
+
+/** Where a simulation sends its events, and who decides its presses (the batch run's virtual player). */
+interface Io {
+  recorder: Recorder;
+  player?: Player;
+}
+
+type Punch = { s: number; amt: number; w?: number };
+
+/** Everything a simulation carries from one moment to the next. A snapshot is a deep copy of it. */
+interface SimState {
+  s: number;
+  w: number;
+  q: Queue;
+  breaks: WarpBreak[];
+  stopStart: number;
+  stopEnd: number;
+  restPose: { x: number; y: number };
+  step?: Step;
+  /** Free movement: the current walk (undefined in step movement). */
+  walk?: Walk;
+  held: Set<Key>;
+  walked: number;
+  lastSample?: { x: number; y: number };
+  landed: boolean;
+  facingAngle: number;
+  groove: number;
+  lastPressS: number;
+  /** Swings that may still matter (the idle-swing rule looks back one bar). */
+  swings: Swing[];
+  liveSwings: Swing[];
+  takenSlots: Set<GridSlot>;
+  lightCount: number;
+  nInputs: number;
+  nHits: number;
+  nWaves: number;
+  nChains: number;
+  nArrows: number;
+  nGems: number;
+  /** Camera punches: song time, strength, and world time once it has happened (it freezes in a hit-stop). */
+  punches: Punch[];
+  alive: Foe[];
+  pending: number;
+  nextId: number;
+  /** Enemies still recording samples. */
+  foeSamples: Foe[];
+  formationMembers: Foe[][];
+  blasting: boolean;
+  flying: { v: number; index: number; x0: number; y0: number; ax: number; ay: number; wRelease: number; ux: number; uy: number }[];
+  slamMarks: Map<number, { x: number; y: number; sMark: number; wMark: number }>;
+  bossFoe?: Foe;
+  xpNow: number;
+  level: number;
+  overdue: boolean;
+  /** Recent hero samples (for the fire trail): sample index heroBase onward. */
+  heroX: number[];
+  heroY: number[];
+  heroBase: number;
+  camera: CameraRig;
+  nextHeroK: number;
+  nextFoeK: number;
+  /** The near-miss dip, as constant steps from its start (song time). */
+  dipStart: number;
+  head: Int32Array;
+  stamp: Int32Array;
+  nextArr: Int32Array;
+  gen: number;
+  fixedK: number;
+  lastFixedW: number;
+  recycleK: number;
+}
+
+const CELL = 32;
+const G = 192;
+
+function freshState(env: Env): SimState {
+  const song = env.ctx.song;
+  const punches: Punch[] = [];
+  for (const a of song.accents) {
+    const sec = env.ctx.sections[sectionIndexAt(env.ctx, a.time)];
+    if (sec.level.camera.punchOnAccents) punches.push({ s: a.time, amt: 0.02 + 0.02 * a.strength });
   }
-  /** Distance from (x, y) to the band's edge (negative outside). */
-  edge(x: number, y: number): number {
-    return this.half - Math.abs(this.lookup.nearest(x, y).lat);
-  }
-  /** Route distance and lateral offset of the nearest route point. */
-  nearest(x: number, y: number): { d: number; lat: number } {
-    return this.lookup.nearest(x, y);
-  }
-  /** Wall rule for steps: the longest straight move that stays in the band. */
-  readonly clamp: Clamp = (x, y, dx, dy, len) => {
-    if (this.edge(x + dx * len, y + dy * len) >= 0) return len;
-    if (this.edge(x, y) < 0) return 0;
-    let lo = 0;
-    let hi = len;
-    for (let i = 0; i < 12; i++) {
-      const mid = (lo + hi) / 2;
-      if (this.edge(x + dx * mid, y + dy * mid) >= 0) lo = mid;
-      else hi = mid;
-    }
-    return lo;
+  const p0 = env.world.pacePoint(0);
+  return {
+    s: 0,
+    w: 0,
+    q: new Queue(),
+    breaks: [],
+    stopStart: -1,
+    stopEnd: -1,
+    restPose: { x: p0.x, y: p0.y },
+    held: new Set(),
+    walked: 0,
+    landed: true,
+    facingAngle: 0,
+    groove: 0,
+    lastPressS: -Infinity,
+    swings: [],
+    liveSwings: [],
+    takenSlots: new Set(),
+    lightCount: 0,
+    nInputs: 0,
+    nHits: 0,
+    nWaves: 0,
+    nChains: 0,
+    nArrows: 0,
+    nGems: 0,
+    punches,
+    alive: [],
+    pending: 0,
+    nextId: 0,
+    foeSamples: [],
+    formationMembers: env.sch.formations.map(() => []),
+    blasting: false,
+    flying: [],
+    slamMarks: new Map(),
+    xpNow: 0,
+    level: 0,
+    overdue: false,
+    heroX: [],
+    heroY: [],
+    heroBase: 0,
+    camera: new CameraRig(),
+    nextHeroK: 0,
+    nextFoeK: 0,
+    dipStart: -Infinity,
+    head: new Int32Array(G * G),
+    stamp: new Int32Array(G * G).fill(-1),
+    nextArr: new Int32Array(1024),
+    gen: 0,
+    fixedK: 1,
+    lastFixedW: 0,
+    recycleK: 0,
   };
 }
 
-export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptions): SimResult {
+/** The game rules over one state: every closure reads and writes `st`. */
+function engine(env: Env, st: SimState, io: Io) {
+  const { ctx, sch, world, endS, cutS } = env;
   const hero: HeroDef = ctx.lib.hero;
   const song = ctx.song;
   const lib = ctx.lib;
-  const route = { step: map.routeStep, x: map.routeX, y: map.routeY };
-  const corridor = new Corridor(map);
-  const endS = Math.min(opts.untilS ?? Infinity, ctx.duration + 1);
-  const cutS = opts.cutS ?? Infinity;
-  const player = opts.player;
   const lightReach = { radius: hero.swings.light.hitShape.radius, halfAngle: (hero.swings.light.hitShape.degrees * Math.PI) / 360 };
   const heavyReach = { radius: hero.swings.heavy.hitShape.radius, halfAngle: (hero.swings.heavy.hitShape.degrees * Math.PI) / 360 };
   // A cleave aims at everything its arc and its shockwave will reach.
   const heavyAim = { radius: hero.swings.heavy.wave.to, halfAngle: heavyReach.halfAngle };
   const anims = ctx.heroAnims;
   const animIdx = (name: string) => Math.max(0, HERO_ANIMS.indexOf(name));
-  const pacePoint = (s: number) => routeFrame(route, paceAt(sch, s));
+  const pacePoint = (s: number) => world.pacePoint(s);
   const sectionAt = (s: number) => ctx.sections[sectionIndexAt(ctx, s)];
-
-  // ---------------------------------------------------------------- state
-  let s = 0;
-  let w = 0;
-  const q = new Queue();
-  const breaks: WarpBreak[] = [];
-  let stopStart = -1;
-  let stopEnd = -1;
-  const hitStops: [number, number][] = [];
-
-  const p0 = pacePoint(0);
-  let restPose = { x: p0.x, y: p0.y };
-  let step: Step | undefined;
-  /** Free movement: the current walk (undefined in step movement). */
-  let walk: Walk | undefined;
-  const held = new Set<Key>();
-  let walked = 0;
-  let lastSample: { x: number; y: number } | undefined;
-  let landed = true;
-  let facingAngle = 0;
-  const landings: Landing[] = [];
-
-  let groove = 0;
-  let lastPressS = -Infinity;
-  const grooveS: number[] = [0];
-  const grooveV: number[] = [0];
-
-  const inputs: PlanInput[] = [];
-  const swings: Swing[] = [];
-  const liveSwings: Swing[] = [];
-  const takenSlots = new Set<GridSlot>();
-  let lightCount = 0;
-  const swingRecords: PlanSwing[] = [];
-  const hits: Hit[] = [];
-  /** Camera punches: song time, strength, and world time once it has happened (it freezes in a hit-stop). */
-  const punches: { s: number; amt: number; w?: number }[] = [];
-  for (const a of song.accents) {
-    const sec = sectionAt(a.time);
-    if (sec.level.camera.punchOnAccents) punches.push({ s: a.time, amt: 0.02 + 0.02 * a.strength });
-  }
-
-  const foes: Foe[] = [];
-  let alive: Foe[] = [];
-  let pending = 0;
-  let nextId = 0;
-  const records: EnemyRecord[] = [];
-  const foeSamples: Foe[] = [];
-
-  const weaponsGranted: { id: string; s: number }[] = [];
-  const weaponFires: { weapon: string; s: number }[] = [];
-  const chains: Chain[] = [];
   const blastS = sch.blast?.s;
-  let blasting = false;
-  const waves: { hits: number[] }[] = [];
-  const arrows: ArrowRecord[] = [];
-  const flying: { v: number; rec: ArrowRecord; ux: number; uy: number }[] = [];
-  const slamRecords: SlamRecord[] = [];
-  const slamMarks = new Map<number, { x: number; y: number; sMark: number; wMark: number }>();
-  const threats: SimResult["threats"] = [];
-  let bossFoe: Foe | undefined;
-  let bossInfo: SimResult["boss"];
-  const gems: SimResult["gems"] = [];
-  const xpSeries: SimResult["xp"] = [{ s: 0, fill: 0 }];
-  let xpNow = 0;
-  let level = 0;
-  let overdue = false;
-  const formationRecords: SimResult["formations"] = [];
-
-  // Hero and camera tracks.
-  const hx: number[] = [];
-  const hy: number[] = [];
-  const hz: number[] = [];
-  const hFacing: number[] = [];
-  const hAnim: number[] = [];
-  const hFrame: number[] = [];
-  const camera = new CameraRig();
-  let nextHeroK = 0;
-  let nextFoeK = 0;
+  const rec = () => io.recorder;
 
   // ---------------------------------------------------------------- time
   const baseRate = (t: number) => stepRate(sch.baseSteps, t);
-  const inStop = (t: number) => t >= stopStart - 1e-12 && t < stopEnd - 1e-12;
-  // The near-miss dip, as constant steps from its start (song time).
-  let dipStart = -Infinity;
+  const inStop = (t: number) => t >= st.stopStart - 1e-12 && t < st.stopEnd - 1e-12;
   const DIP_STEPS = [0, 0.25, 0.5, 0.75, 1].map((k) => k * DIP_RAMP);
   const dipCuts = () => [...DIP_STEPS, ...DIP_STEPS.map((d) => DIP_RAMP + DIP_HOLD + d)];
   const dipFactor = (t: number) => {
-    const d = t - dipStart;
+    const d = t - st.dipStart;
     if (d < 0 || d >= 2 * DIP_RAMP + DIP_HOLD - 1e-12) return 1;
     if (d < DIP_RAMP) return 1 - (1 - DIP_RATE) * ((Math.floor((d / DIP_RAMP) * 4 + 1e-9) + 1) / 4);
     if (d < DIP_RAMP + DIP_HOLD) return DIP_RATE;
     return DIP_RATE + (1 - DIP_RATE) * ((Math.floor(((d - DIP_RAMP - DIP_HOLD) / DIP_RAMP) * 4 + 1e-9) + 1) / 4);
   };
   const nextDipCut = (t: number) => {
-    for (const c of dipCuts()) if (dipStart + c > t + 1e-12) return dipStart + c;
+    for (const c of dipCuts()) if (st.dipStart + c > t + 1e-12) return st.dipStart + c;
     return Infinity;
   };
   const rateAt = (t: number) => (inStop(t) ? 0 : Math.round(baseRate(t) * dipFactor(t) * 1e6) / 1e6);
   const pushBreak = (rate: number) => {
+    const breaks = st.breaks;
     const last = breaks[breaks.length - 1];
     if (last && last.rate === rate) return;
-    if (last && Math.abs(last.s - s) < 1e-12) {
-      breaks[breaks.length - 1] = { s, w, rate };
+    const b = Object.freeze({ s: st.s, w: st.w, rate });
+    if (last && Math.abs(last.s - st.s) < 1e-12) {
+      breaks[breaks.length - 1] = b;
+      rec().warp(b, true);
       return;
     }
-    breaks.push({ s, w, rate });
+    breaks.push(b);
+    rec().warp(b, false);
   };
   /** Song beat index at song time t. */
   const sbiAt = (t: number) => beatIndexAt(song, t);
@@ -575,67 +572,90 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
    * (which ends standing still at its landing spot).
    */
   const heroPose = (atW: number): { x: number; y: number; z: number; u: number; vx: number; vy: number } => {
-    if (walk) return { ...walkPose(walk, atW), z: 0, u: 1 };
-    if (step) return { ...stepPose(hero, step, atW), vx: 0, vy: 0 };
-    return { x: restPose.x, y: restPose.y, z: 0, u: 1, vx: 0, vy: 0 };
+    if (st.walk) return { ...walkPose(st.walk, atW), z: 0, u: 1 };
+    if (st.step) return { ...stepPose(hero, st.step, atW), vx: 0, vy: 0 };
+    return { x: st.restPose.x, y: st.restPose.y, z: 0, u: 1, vx: 0, vy: 0 };
   };
 
   /** Free movement: start walking toward the held keys' velocity from where the hero is now. */
   const rewalk = () => {
-    const p = heroPose(w);
-    const t = walkTarget(hero, held);
+    const p = heroPose(st.w);
+    const t = walkTarget(hero, st.held);
     const accel = hero.walk.speed / (hero.walk.accelMs / 1000);
-    walk = { w0: w, x0: p.x, y0: p.y, vx0: p.vx, vy0: p.vy, tx: t.x, ty: t.y, t: Math.hypot(t.x - p.vx, t.y - p.vy) / accel };
-    step = undefined;
-    if (t.x !== 0 || t.y !== 0) facingAngle = Math.atan2(t.y, t.x);
+    st.walk = { w0: st.w, x0: p.x, y0: p.y, vx0: p.vx, vy0: p.vy, tx: t.x, ty: t.y, t: Math.hypot(t.x - p.vx, t.y - p.vy) / accel };
+    st.step = undefined;
+    if (t.x !== 0 || t.y !== 0) st.facingAngle = Math.atan2(t.y, t.x);
   };
 
   /** A section boundary: entering step movement stops any walk; entering free movement walks with the held keys. */
   const switchMode = (steps: boolean) => {
     if (steps) {
-      if (!walk) return;
-      const p = heroPose(w);
-      walk = undefined;
-      step = undefined;
-      restPose = { x: p.x, y: p.y };
+      if (!st.walk) return;
+      const p = heroPose(st.w);
+      st.walk = undefined;
+      st.step = undefined;
+      st.restPose = { x: p.x, y: p.y };
     } else rewalk();
   };
 
   const startHitStop = (len: number) => {
-    if (inStop(s)) return; // No stacking.
+    if (inStop(st.s)) return; // No stacking.
     // The finale blast's bands never wait for a hit-stop.
-    if (blastS !== undefined && s >= blastS - 1e-6) return;
+    if (blastS !== undefined && st.s >= blastS - 1e-6) return;
     if (len < HITSTOP_MIN) return;
-    stopStart = s;
-    stopEnd = s + Math.min(len, HITSTOP_MAX);
-    hitStops.push([stopStart, stopEnd]);
-    q.push(stopEnd, { kind: "hitstopEnd" });
+    st.stopStart = st.s;
+    st.stopEnd = st.s + Math.min(len, HITSTOP_MAX);
+    rec().hitStop(st.stopStart, st.stopEnd);
+    st.q.push(st.stopEnd, { kind: "hitstopEnd" });
   };
 
   // ---------------------------------------------------------------- enemies
   const weightOf = (def: EnemyDef, formation = false) =>
     def.size === "boss" ? hero.aimWeights.boss : formation ? hero.aimWeights.formation : def.size === "elite" ? hero.aimWeights.elite : hero.aimWeights.regular;
-  const spawnFoe = (type: string, x: number, y: number, health?: number): Foe => {
+  const spawnFoe = (type: string, x: number, y: number, health?: number, extra?: { entrance?: "land"; attacks?: []; formation?: number }): Foe => {
     const def = lib.enemies.get(type)!;
-    const rec: EnemyRecord = { id: nextId++, type, health: health ?? def.health, spawnW: w, deathW: Infinity, sampleOffset: 0, sampleCount: 0, sampleW0: 0, fates: [] };
-    const f: Foe = { rec, def, r: def.radius, health: rec.health, x, y, vx: 0, vy: 0, lastW: w, alive: true, finalSample: false, samples: [], sx: 0, sy: 0, knockX: 0, knockY: 0, knockT: 0, weight: weightOf(def), slotUntil: -Infinity, chargeUntil: -Infinity };
+    const id = st.nextId++;
+    const h0 = health ?? def.health;
+    const f: Foe = {
+      id,
+      type,
+      def,
+      r: def.radius,
+      health: h0,
+      health0: h0,
+      x,
+      y,
+      vx: 0,
+      vy: 0,
+      lastW: st.w,
+      alive: true,
+      finalSample: false,
+      deathW: Infinity,
+      sx: 0,
+      sy: 0,
+      knockX: 0,
+      knockY: 0,
+      knockT: 0,
+      weight: weightOf(def),
+      slotUntil: -Infinity,
+      chargeUntil: -Infinity,
+    };
+    if (extra?.formation !== undefined) f.formation = extra.formation;
     // Its first sample is the spawn spot itself, at the last sample time before it appeared.
-    f.samples.push(x, y);
-    rec.sampleW0 = Math.max(0, nextFoeK - 1) / ENEMY_RATE;
-    foes.push(f);
-    alive.push(f);
-    records.push(rec);
-    foeSamples.push(f);
+    rec().spawn({ id, type, health: h0, spawnW: st.w, deathW: Infinity, sampleOffset: 0, sampleCount: 0, sampleW0: Math.max(0, st.nextFoeK - 1) / ENEMY_RATE, fates: [], ...extra });
+    rec().sample(id, x, y);
+    st.alive.push(f);
+    st.foeSamples.push(f);
     return f;
   };
 
   const spawnPoint = (def: EnemyDef, r: Rng, forwardOnly: boolean): { x: number; y: number } => {
-    const view = camera.view();
+    const view = st.camera.view();
     const cx = (view[0] + view[2]) / 2;
     const cy = (view[1] + view[3]) / 2;
     const ext = spriteExtents(def);
     const m = SPAWN_MARGIN + SPAWN_EXTRA;
-    const pp = pacePoint(s);
+    const pp = pacePoint(st.s);
     const fwd = Math.atan2(pp.ty, pp.tx);
     let x = cx;
     let y = cy;
@@ -655,7 +675,7 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
       const t = Math.min(tx, ty);
       x = cx + c * t;
       y = cy + sn * t;
-      if (corridor.edge(x, y) > -20) break;
+      if (world.edge(x, y) > -20) break;
     }
     return { x, y };
   };
@@ -663,7 +683,8 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
   const kill = (f: Foe) => {
     f.alive = false;
     f.finalSample = true;
-    f.rec.deathW = w;
+    f.deathW = st.w;
+    rec().death(f.id, st.w, false);
   };
 
   /** An enemy's position at world time atW (at or after its last fixed step). */
@@ -671,26 +692,27 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
   const posY = (f: Foe, atW: number) => f.y + f.vy * (atW - f.lastW);
 
   /** Can this enemy be hit now? (The boss is out of reach while it drops in.) */
-  const hittable = (f: Foe) => f.alive && (f.landS === undefined || s >= f.landS - 1e-9);
+  const hittable = (f: Foe) => f.alive && (f.landS === undefined || st.s >= f.landS - 1e-9);
 
   /** Deal damage to one enemy from a hit; records the fate. */
   const damage = (f: Foe, h: Hit) => {
     if (!hittable(f)) return;
     // The boss cannot drop below 1 health before its death chord; the first hit at or after the
     // chord kills it (if it is worn down that far).
-    if (f.floorUntil !== undefined && s >= f.floorUntil - 1e-6 && f.health <= 1 + 1e-9) f.health = 0;
+    if (f.floorUntil !== undefined && st.s >= f.floorUntil - 1e-6 && f.health <= 1 + 1e-9) f.health = 0;
     else f.health -= h.damage;
-    if (f.floorUntil !== undefined && s < f.floorUntil - 1e-6) f.health = Math.max(f.health, 1);
+    if (f.floorUntil !== undefined && st.s < f.floorUntil - 1e-6) f.health = Math.max(f.health, 1);
     const lethal = f.health <= 1e-9;
-    const fate: Fate = { w, x: posX(f, w), y: posY(f, w), hit: h.id, lethal, damage: h.damage };
-    f.rec.fates.push(fate);
-    if (f === bossFoe) bossInfo!.health.push({ s, frac: Math.max(0, f.health) / f.rec.health });
+    const fate: Fate = { w: st.w, x: posX(f, st.w), y: posY(f, st.w), hit: h.id, lethal, damage: h.damage };
+    f.lastFate = fate;
+    rec().fate(f.id, fate);
+    if (f === st.bossFoe) rec().bossHealth(st.s, Math.max(0, f.health) / f.health0);
     if (lethal) {
       kill(f);
       onDeath(f, fate, h);
     } else {
       // A white flash and a knockback away from the hero.
-      const hp = heroPose(w);
+      const hp = heroPose(st.w);
       const dx = fate.x - hp.x;
       const dy = fate.y - hp.y;
       const dl = Math.hypot(dx, dy) || 1;
@@ -703,59 +725,61 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
   const intensityOf = (sec: number, energy: number, weight: Hit["weight"], accent: number) =>
     clamp(ctx.sections[sec].level.intensity * (0.35 + 0.65 * energy) * weightFactor(weight) * (accent > 0 ? accent : 1), 0, 1);
 
-  const addHit = (h: Omit<Hit, "id" | "intensity" | "s" | "w" | "section" | "energy">, energy = energyAt(song, s)): Hit => {
-    const section = sectionIndexAt(ctx, s);
-    const hit: Hit = { ...h, id: hits.length, s, w, section, energy, intensity: intensityOf(section, energy, h.weight, h.accent) };
-    hits.push(hit);
+  const addHit = (h: Omit<Hit, "id" | "intensity" | "s" | "w" | "section" | "energy">, energy = energyAt(song, st.s)): Hit => {
+    const section = sectionIndexAt(ctx, st.s);
+    const hit: Hit = { ...h, id: st.nHits++, s: st.s, w: st.w, section, energy, intensity: intensityOf(section, energy, h.weight, h.accent) };
+    rec().hit(hit);
     return hit;
   };
 
   /** Everyone alive inside a shape takes the hit. Returns who was hit. */
   const applyHit = (h: Hit, filter?: (f: Foe) => boolean): Foe[] => {
     const out: Foe[] = [];
-    for (const f of alive) {
+    for (const f of st.alive) {
       if (!hittable(f) || (filter && !filter(f))) continue;
-      if (catches(h.shape, posX(f, w), posY(f, w), f.r)) {
+      if (catches(h.shape, posX(f, st.w), posY(f, st.w), f.r)) {
         damage(f, h);
         out.push(f);
       }
     }
-    alive = alive.filter((f) => f.alive);
+    st.alive = st.alive.filter((f) => f.alive);
     return out;
   };
 
   // ---------------------------------------------------------------- swings
   /** Arm a swing for a slot (one swing per slot): the press's, or an automatic one. */
   const swingFor = (slot: GridSlot | undefined, sArmed: number, press?: number, rating?: Rating): Swing | undefined => {
-    if (!slot || takenSlots.has(slot)) return undefined;
+    if (!slot || st.takenSlots.has(slot)) return undefined;
     // The finale blast ends the sword's routine (its chord is matched to the grid within 40 ms).
     if (blastS !== undefined && slot.s >= blastS - 0.04) return undefined;
-    takenSlots.add(slot);
+    st.takenSlots.add(slot);
     const sec = ctx.sections[slot.section];
     // A swing striking on an accent, armed by a press rated Great or better, is a heavy cleave;
     // free movement cleaves on strong anchors.
     const rule = sec.level.heavyOnAccents;
     const onAccent = slot.accent > 0 && slot.accent >= rule.minStrength && (rule.label === undefined || rule.label === slot.accentLabel);
     const heavy = slot.kind === "anchor" || (slot.kind === "grid" && onAccent && (rating === "perfect" || rating === "great"));
-    const anim = heavy ? hero.swings.heavy.animation : hero.swings.light.animations[lightCount++ % hero.swings.light.animations.length];
+    const anim = heavy ? hero.swings.heavy.animation : hero.swings.light.animations[st.lightCount++ % hero.swings.light.animations.length];
     const info = anims[anim] ?? { frames: 6, impactFrame: 3 };
     const sWind = Math.max(sArmed, slot.s - hero.swings.windupMs / 1000 / Math.max(0.05, baseRate(slot.s)));
-    const sw: Swing = { sArmed, sWind, sStrike: slot.s, slot, heavy, anim, impact: info.impactFrame ?? 3, frames: info.frames, press, accent: slot.accent, dir: facingAngle, aimed: false, struck: false, wStrike: 0, fps: 16 };
-    swings.push(sw);
-    liveSwings.push(sw);
-    q.push(sWind, { kind: "wind", sw });
-    q.push(slot.s, { kind: "strike", sw });
+    const sw: Swing = { sArmed, sWind, sStrike: slot.s, slot, heavy, anim, impact: info.impactFrame ?? 3, frames: info.frames, press, accent: slot.accent, dir: st.facingAngle, aimed: false, struck: false, wStrike: 0, fps: 16 };
+    // Only swings from the last few seconds can matter to the idle-swing rule.
+    if (st.swings.length > 64) st.swings = st.swings.filter((x) => x.sStrike >= st.s - 8);
+    st.swings.push(sw);
+    st.liveSwings.push(sw);
+    st.q.push(sWind, { kind: "wind", sw });
+    st.q.push(slot.s, { kind: "strike", sw });
     const amt = (heavy ? 0.035 : 0.014) * sec.level.intensity;
-    punches.push({ s: slot.s, amt });
+    st.punches.push({ s: slot.s, amt });
     return sw;
   };
 
   const aimTargets = (x: number, y: number, reach: number): AimTarget[] => {
     const out: AimTarget[] = [];
-    for (const f of alive) {
+    for (const f of st.alive) {
       if (!hittable(f)) continue;
-      const fx = posX(f, w);
-      const fy = posY(f, w);
+      const fx = posX(f, st.w);
+      const fy = posY(f, st.w);
       if (Math.abs(fx - x) > 2 * reach + f.r || Math.abs(fy - y) > 2 * reach + f.r) continue;
       if (Math.hypot(fx - x, fy - y) > 2 * reach + f.r) continue;
       out.push({ x: fx, y: fy, r: f.r, weight: f.weight });
@@ -764,15 +788,15 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
   };
 
   const doWind = (sw: Swing) => {
-    const hp = heroPose(w);
+    const hp = heroPose(st.w);
     const reach = sw.heavy ? heavyAim : lightReach;
     const targets = aimTargets(hp.x, hp.y, reach.radius);
     // The snapshot is aim's whole input, so the check can re-run it.
-    const snap: AimSnapshot = { x: hp.x, y: hp.y, facing: facingAngle, targets: [] };
+    const snap: AimSnapshot = { x: hp.x, y: hp.y, facing: st.facingAngle, targets: [] };
     for (const t of targets) snap.targets.push(t.x, t.y, t.r, t.weight);
-    sw.dir = aim(hp.x, hp.y, facingAngle, targets, reach);
+    sw.dir = aim(hp.x, hp.y, st.facingAngle, targets, reach);
     sw.aimed = true;
-    facingAngle = sw.dir;
+    st.facingAngle = sw.dir;
     sw.record = { s: sw.sStrike, w: 0, sArmed: sw.sArmed, sWind: sw.sWind, kind: sw.heavy ? "heavy" : "light", anim: sw.anim, impactFrame: sw.impact, dir: sw.dir, x: 0, y: 0, hit: -1, press: sw.press, accent: sw.accent, aim: snap };
     const windW = Math.max(1 / 240, (sw.sStrike - sw.sWind) * baseRate(sw.sStrike));
     sw.fps = sw.impact / windW;
@@ -780,114 +804,122 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
 
   const doStrike = (sw: Swing) => {
     if (!sw.aimed) doWind(sw);
-    const hp = heroPose(w);
+    const hp = heroPose(st.w);
     const def = sw.heavy ? hero.swings.heavy : hero.swings.light;
     const reach = sw.heavy ? heavyReach : lightReach;
     const shape: Shape = swingArc(hp.x, hp.y, sw.dir, reach);
-    const mult = damageMultiplier(hero, groove);
+    const mult = damageMultiplier(hero, st.groove);
     const h = addHit({ source: "move", what: sw.heavy ? "cleave" : "slash", weight: sw.heavy ? "heavy" : "light", primary: true, shape, dir: sw.dir, accent: sw.accent, damage: def.damage * mult });
     applyHit(h);
     sw.struck = true;
-    sw.wStrike = w;
-    const rec = sw.record!;
-    rec.w = w;
-    rec.x = hp.x;
-    rec.y = hp.y;
-    rec.hit = h.id;
-    swingRecords.push(rec);
+    sw.wStrike = st.w;
+    const r = sw.record!;
+    r.w = st.w;
+    r.x = hp.x;
+    r.y = hp.y;
+    r.hit = h.id;
+    rec().swing(r);
+    sw.record = undefined;
     if (sw.heavy) {
       startHitStop((hero.swings.heavy.hitStopMs / 1000) * (0.6 + 0.4 * sw.accent));
       // The cleave's crescent shockwave travels outward along its aim, one band per sixteenth note.
       // Band k reaches 25 px further on the k-th sixteenth after the strike.
-      const wave: Wave = { x: hp.x, y: hp.y, dir: sw.dir, band: 0, hit: new Set(), record: { hits: [] } };
-      waves.push(wave.record);
+      const wave: Wave = { x: hp.x, y: hp.y, dir: sw.dir, band: 0, hit: new Set(), group: st.nWaves++ };
+      rec().wave();
       // (On the sixteenth-note grid, from the strike's own sixteenth or the next one.)
-      const bi0 = Math.ceil(sbiAt(s) * 4 - 1e-6) / 4;
+      const bi0 = Math.ceil(sbiAt(st.s) * 4 - 1e-6) / 4;
       const bands = Math.round((hero.swings.heavy.wave.to - heavyReach.radius) / hero.swings.heavy.wave.band);
-      for (let k = 0; k < bands; k++) q.push(timeOfBeatIndex(song, bi0 + k * 0.25), { kind: "wave", wave: { ...wave, band: k } });
+      for (let k = 0; k < bands; k++) st.q.push(timeOfBeatIndex(song, bi0 + k * 0.25), { kind: "wave", wave: { ...wave, band: k } });
     }
   };
 
   const waveBand = (wave: Wave) => {
     // The wave rests during a hit-stop, like the weapons: the next band covers this one's ground.
-    if (inStop(s) && s > stopStart + 1e-9) return;
+    if (inStop(st.s) && st.s > st.stopStart + 1e-9) return;
     const wd = hero.swings.heavy.wave;
     const outer = heavyReach.radius + wd.band * (wave.band + 1);
     const shape: Shape = { kind: "arc", x: wave.x, y: wave.y, radius: outer, inner: heavyReach.radius, dir: wave.dir, halfAngle: heavyReach.halfAngle };
     // Everyone the front has reached and the wave has not hit yet.
-    const h = addHit({ source: "wave", what: "shockwave", weight: "medium", primary: false, shape, dir: wave.dir, accent: 0, damage: wd.damage * damageMultiplier(hero, groove), group: waves.indexOf(wave.record) });
-    wave.record.hits.push(h.id);
+    const h = addHit({ source: "wave", what: "shockwave", weight: "medium", primary: false, shape, dir: wave.dir, accent: 0, damage: wd.damage * damageMultiplier(hero, st.groove), group: wave.group });
+    rec().waveHit(wave.group, h.id);
     for (const f of applyHit(h, (f) => !wave.hit.has(f))) wave.hit.add(f);
   };
 
   // ---------------------------------------------------------------- input
   const press = (e: KeyEvent) => {
-    if (inStop(s)) {
+    if (inStop(st.s)) {
       // A press ends the hit-stop early: world time resumes at the press.
-      stopEnd = s;
-      hitStops[hitStops.length - 1][1] = s;
+      st.stopEnd = st.s;
+      rec().hitStopCut(st.s);
     }
-    const sec = sectionAt(s);
+    const sec = sectionAt(st.s);
     const steps = sec.level.movement === "steps";
-    const input: PlanInput = { s, w, kind: "press", key: e.key, steps };
-    const idx = inputs.length;
-    inputs.push(input);
-    held.add(e.key);
+    const input: PlanInput = { s: st.s, w: st.w, kind: "press", key: e.key, steps };
+    const idx = st.nInputs++;
+    st.held.add(e.key);
     // Free movement: held keys walk; presses are not rated and do not arm the sword.
     if (!steps) {
       rewalk();
+      rec().input(input);
       return;
     }
     // A perpendicular key just after the first bends the step into a diagonal.
-    const bent = step ? bendStep(hero, step, w, e.key, corridor.clamp) : undefined;
+    const bent = st.step ? bendStep(hero, st.step, st.w, e.key, world.clamp) : undefined;
     if (bent) {
-      step = bent;
+      st.step = bent;
       input.bend = true;
+      rec().input(input);
       return;
     }
-    const hp = heroPose(w);
-    step = startStep(hero, w, hp.x, hp.y, e.key, corridor.clamp);
-    landed = false;
-    facingAngle = Math.atan2(step.dy, step.dx);
+    const hp = heroPose(st.w);
+    st.step = startStep(hero, st.w, hp.x, hp.y, e.key, world.clamp);
+    st.landed = false;
+    st.facingAngle = Math.atan2(st.step.dy, st.step.dx);
     // Rate the press against the timing grid (the sections' grids join end to end), and arm the sword.
-    const rated = ratePressOnGrid(hero, s, sch.gridTimes);
+    const rated = ratePressOnGrid(hero, st.s, sch.gridTimes);
     input.rating = rated.rating;
     input.accuracy = rated.accuracy;
     input.delta = rated.delta;
-    groove = grooveAfterPress(hero, groove, rated.accuracy);
-    lastPressS = s;
-    grooveS.push(s);
-    grooveV.push(groove);
-    input.armed = swingFor(sch.gridSlots[armedStrike(hero, sch.gridTimes, s)], s, idx, rated.rating) !== undefined;
+    st.groove = grooveAfterPress(hero, st.groove, rated.accuracy);
+    st.lastPressS = st.s;
+    rec().groove(st.s, st.groove);
+    input.armed = swingFor(sch.gridSlots[armedStrike(hero, sch.gridTimes, st.s)], st.s, idx, rated.rating) !== undefined;
+    rec().input(input);
   };
 
   const release = (e: KeyEvent) => {
-    const steps = sectionAt(s).level.movement === "steps";
-    inputs.push({ s, w, kind: "release", key: e.key, steps });
-    held.delete(e.key);
+    const steps = sectionAt(st.s).level.movement === "steps";
+    st.nInputs++;
+    rec().input({ s: st.s, w: st.w, kind: "release", key: e.key, steps });
+    st.held.delete(e.key);
     if (!steps) rewalk();
   };
 
   /** Step movement: a bar that ended with no swing in it gets one by itself on the next downbeat. */
   const idleSwing = (slot: GridSlot, prev: number) => {
-    if (takenSlots.has(slot)) return;
-    if (swings.some((sw) => sw.sStrike >= prev - 1e-9 && sw.sStrike < slot.s - 1e-9)) return;
-    swingFor(slot, s);
+    if (st.takenSlots.has(slot)) return;
+    if (st.swings.some((sw) => sw.sStrike >= prev - 1e-9 && sw.sStrike < slot.s - 1e-9)) return;
+    swingFor(slot, st.s);
   };
 
   // ---------------------------------------------------------------- sampling
   const sampleHero = (wk: number, sk: number) => {
     const p = heroPose(wk);
-    if (lastSample) walked += Math.hypot(p.x - lastSample.x, p.y - lastSample.y);
-    lastSample = { x: p.x, y: p.y };
-    hx.push(p.x);
-    hy.push(p.y);
-    hz.push(p.z);
+    if (st.lastSample) st.walked += Math.hypot(p.x - st.lastSample.x, p.y - st.lastSample.y);
+    st.lastSample = { x: p.x, y: p.y };
+    st.heroX.push(p.x);
+    st.heroY.push(p.y);
+    if (st.heroX.length > 2 * HERO_HISTORY * HERO_RATE) {
+      const drop = st.heroX.length - HERO_HISTORY * HERO_RATE;
+      st.heroX.splice(0, drop);
+      st.heroY.splice(0, drop);
+      st.heroBase += drop;
+    }
     // Animation: a swing (wind-up, impact, follow-through), a step's jump, or idle.
     // A swing winding up takes precedence over one following through.
     let winding: Swing | undefined;
     let following: Swing | undefined;
-    for (const c of liveSwings) {
+    for (const c of st.liveSwings) {
       if (c.sWind > sk + 1e-9) continue;
       if (!c.struck) {
         if (!winding || c.sStrike < winding.sStrike) winding = c;
@@ -896,6 +928,9 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
     // The sample nearest a strike always shows its impact frame, even when the next swing is winding up.
     const sw = following && wk - following.wStrike <= 0.5 / HERO_RATE + 1e-9 ? following : (winding ?? following);
     const half = 0.5 / HERO_RATE;
+    let anim: number;
+    let frame: number;
+    let facing: number;
     if (sw) {
       let fr: number;
       if (!sw.struck) {
@@ -906,23 +941,24 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
         const since = wk - sw.wStrike;
         fr = since <= half + 1e-9 ? sw.impact : clamp(sw.impact + Math.floor(since * sw.fps + 1e-6), sw.impact, sw.frames - 1);
       }
-      hAnim.push(animIdx(sw.anim));
-      hFrame.push(fr);
-      hFacing.push(facingIndex(sw.aimed ? sw.dir : facingAngle));
+      anim = animIdx(sw.anim);
+      frame = fr;
+      facing = facingIndex(sw.aimed ? sw.dir : st.facingAngle);
     } else if (p.u < 1) {
-      hAnim.push(animIdx("jump"));
-      hFrame.push(clamp(Math.floor(p.u * 5), 0, 4));
-      hFacing.push(facingIndex(facingAngle));
+      anim = animIdx("jump");
+      frame = clamp(Math.floor(p.u * 5), 0, 4);
+      facing = facingIndex(st.facingAngle);
     } else if (Math.hypot(p.vx, p.vy) > 1) {
       // Walking: the cycle advances by distance, facing the way the hero walks.
-      hAnim.push(animIdx("walk"));
-      hFrame.push(walkFrame(hero, walked, anims.walk?.frames ?? 8));
-      hFacing.push(facingIndex(Math.atan2(p.vy, p.vx)));
+      anim = animIdx("walk");
+      frame = walkFrame(hero, st.walked, anims.walk?.frames ?? 8);
+      facing = facingIndex(Math.atan2(p.vy, p.vx));
     } else {
-      hAnim.push(animIdx("idle"));
-      hFrame.push(Math.floor(frac(sbiAt(sk) / 2) * 2) % 2);
-      hFacing.push(facingIndex(facingAngle));
+      anim = animIdx("idle");
+      frame = Math.floor(frac(sbiAt(sk) / 2) * 2) % 2;
+      facing = facingIndex(st.facingAngle);
     }
+    rec().hero(p.x, p.y, p.z, facing, anim, frame);
     // The camera follows the hero with the section's lead along the route.
     const sec = sectionAt(sk);
     const f = pacePoint(sk);
@@ -933,46 +969,41 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
       const u = smoothstep((sbiAt(sk) - sec.b0) / bpb);
       zoom = lerp(ctx.sections[sec.index - 1].level.camera.zoom, zoom, u);
     }
+    const punches = st.punches;
     for (let i = punches.length - 1; i >= 0; i--) {
-      const pu = punches[i];
-      if (pu.w === undefined && sk >= pu.s - 1e-9) pu.w = worldOf(pu.s);
+      let pu = punches[i];
+      if (pu.w === undefined && sk >= pu.s - 1e-9) punches[i] = pu = Object.freeze({ s: pu.s, amt: pu.amt, w: worldOf(pu.s) });
       // Before the impact the punch leads in by song time; after it, it decays in world time.
       const age = pu.w !== undefined ? wk - pu.w : sk - pu.s;
       if (age > 1.2 || age < -0.05) continue;
       const env = age < 0 ? smoothstep((age + 0.05) / 0.05) : Math.exp(-age / 0.22);
       zoom *= 1 + pu.amt * env;
     }
-    camera.sample(p.x + f.tx * lead, p.y + f.ty * lead - 12, zoom);
+    st.camera.sample(p.x + f.tx * lead, p.y + f.ty * lead - 12, zoom);
+    rec().camera(st.camera.x, st.camera.y, zoom);
     // Retire swings whose follow-through has ended.
-    for (let i = liveSwings.length - 1; i >= 0; i--) {
-      const c = liveSwings[i];
-      if (c.struck && c.impact + (wk - c.wStrike) * c.fps >= c.frames) liveSwings.splice(i, 1);
+    for (let i = st.liveSwings.length - 1; i >= 0; i--) {
+      const c = st.liveSwings[i];
+      if (c.struck && c.impact + (wk - c.wStrike) * c.fps >= c.frames) st.liveSwings.splice(i, 1);
     }
   };
 
   const recordFoes = (wk: number) => {
-    for (let i = foeSamples.length - 1; i >= 0; i--) {
-      const f = foeSamples[i];
-      if (f.samples.length === 0) f.rec.sampleW0 = wk;
+    const list = st.foeSamples;
+    for (let i = list.length - 1; i >= 0; i--) {
+      const f = list[i];
       if (f.finalSample) {
-        const last = f.rec.fates[f.rec.fates.length - 1];
-        if (last && last.lethal) f.samples.push(last.x, last.y);
-        else f.samples.push(f.x, f.y);
-        foeSamples.splice(i, 1);
+        const last = f.lastFate;
+        if (last && last.lethal) rec().sample(f.id, last.x, last.y);
+        else rec().sample(f.id, f.x, f.y);
+        list.splice(i, 1);
         continue;
       }
-      f.samples.push(posX(f, wk), posY(f, wk));
+      rec().sample(f.id, posX(f, wk), posY(f, wk));
     }
   };
 
   // ---------------------------------------------------------------- motion
-  const cell = 32;
-  const G = 192;
-  const head = new Int32Array(G * G);
-  const stamp = new Int32Array(G * G).fill(-1);
-  let nextArr = new Int32Array(1024);
-  let gen = 0;
-
   const groupPhase = (group: string, sbi: number, barStart: number, bpb: number): number => {
     const period = group === "eighth" ? 0.5 : group === "beat" ? 1 : group === "bar" ? bpb : 2 * bpb;
     const ph = ((sbi - barStart) / period) % 1;
@@ -982,6 +1013,7 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
   /** Integrate every enemy to world time w1 (a fixed step). */
   const moveFoes = (w1: number) => {
     const hp = heroPose(w1);
+    const s = st.s;
     const sec = sectionAt(s);
     const free = sec.song.feel === "free";
     const sbi = sbiAt(s);
@@ -997,6 +1029,7 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
         mults[g] = 0.6 + 0.8 * beatSwell(ph);
       } else mults[g] = (0.6 + 0.8 * beatHit(ph)) / 0.733;
     }
+    const alive = st.alive;
     for (const f of alive) {
       // Bring everyone to this step's time first. Formation members follow their slots
       // (and the boss holds still while it drops in).
@@ -1022,16 +1055,20 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
       f.y += f.vy * dt;
     }
     {
-      gen++;
-      const gox = Math.floor(hp.x / cell) - G / 2;
-      const goy = Math.floor(hp.y / cell) - G / 2;
-      if (nextArr.length < alive.length) nextArr = new Int32Array(alive.length * 2);
+      st.gen++;
+      const gen = st.gen;
+      const head = st.head;
+      const stamp = st.stamp;
+      const gox = Math.floor(hp.x / CELL) - G / 2;
+      const goy = Math.floor(hp.y / CELL) - G / 2;
+      if (st.nextArr.length < alive.length) st.nextArr = new Int32Array(alive.length * 2);
+      const nextArr = st.nextArr;
       for (let i = 0; i < alive.length; i++) {
         const f = alive[i];
         f.sx = 0;
         f.sy = 0;
-        const ix = Math.floor(f.x / cell) - gox;
-        const iy = Math.floor(f.y / cell) - goy;
+        const ix = Math.floor(f.x / CELL) - gox;
+        const iy = Math.floor(f.y / CELL) - goy;
         if (ix < 0 || iy < 0 || ix >= G || iy >= G) {
           nextArr[i] = -2;
           continue;
@@ -1047,8 +1084,8 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
       // Separation forces and positional correction, pairwise.
       for (let i = 0; i < alive.length; i++) {
         const a = alive[i];
-        const ix = Math.floor(a.x / cell) - gox;
-        const iy = Math.floor(a.y / cell) - goy;
+        const ix = Math.floor(a.x / CELL) - gox;
+        const iy = Math.floor(a.y / CELL) - goy;
         if (ix < 0 || iy < 0 || ix >= G || iy >= G) continue;
         for (let gx = ix - 1; gx <= ix + 1; gx++) {
           if (gx < 0 || gx >= G) continue;
@@ -1155,38 +1192,38 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
   };
 
   /**
-   * Advance to song time t. World time comes from the warp breaks, and the
+   * Move the clock to song time t. World time comes from the warp breaks, and the
    * hero and enemy samples are taken at their exact times from the state so
    * far, so how events split the time between fixed steps changes nothing.
    */
-  const advanceTo = (t: number, fixed: boolean) => {
-    const rate = rateAt(s);
+  const moveClock = (t: number, fixed: boolean) => {
+    const rate = rateAt(st.s);
     pushBreak(rate);
-    const b = breaks[breaks.length - 1];
+    const b = st.breaks[st.breaks.length - 1];
     const w1 = b.w + (t - b.s) * b.rate;
-    if (w1 > w) {
+    if (w1 > st.w) {
       // Step landings (the dust puff).
-      if (step && !landed && step.w0 + stepSeconds(hero) <= w1 + 1e-12) {
-        const wl = step.w0 + stepSeconds(hero);
-        const end = stepEnd(step);
-        landings.push({ s: b.s + (wl - b.w) / rate, w: wl, x: end.x, y: end.y });
-        landed = true;
+      if (st.step && !st.landed && st.step.w0 + stepSeconds(hero) <= w1 + 1e-12) {
+        const wl = st.step.w0 + stepSeconds(hero);
+        const end = stepEnd(st.step);
+        rec().landing({ s: b.s + (wl - b.w) / rate, w: wl, x: end.x, y: end.y });
+        st.landed = true;
       }
-      while (nextHeroK / HERO_RATE <= w1 + 1e-12) {
-        const wk = nextHeroK / HERO_RATE;
+      while (st.nextHeroK / HERO_RATE <= w1 + 1e-12) {
+        const wk = st.nextHeroK / HERO_RATE;
         sampleHero(wk, b.s + (wk - b.w) / rate);
-        nextHeroK++;
+        st.nextHeroK++;
       }
-      while (nextFoeK / ENEMY_RATE <= w1 + 1e-12) {
-        recordFoes(nextFoeK / ENEMY_RATE);
-        nextFoeK++;
+      while (st.nextFoeK / ENEMY_RATE <= w1 + 1e-12) {
+        recordFoes(st.nextFoeK / ENEMY_RATE);
+        st.nextFoeK++;
       }
     }
-    s = t;
-    w = w1;
-    if (fixed && w > lastFixedW) {
-      moveFoes(w);
-      lastFixedW = w;
+    st.s = t;
+    st.w = w1;
+    if (fixed && st.w > st.lastFixedW) {
+      moveFoes(st.w);
+      st.lastFixedW = st.w;
     }
   };
 
@@ -1194,47 +1231,50 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
   /** Threats the player can see: each only after it has been visible for 150 ms. */
   const visibleThreats = (hp: { x: number; y: number }): Observation["threats"] => {
     const out: Observation["threats"] = [];
+    const s = st.s;
     // Archers drawing (the arrow will fly at the hero's position at the release)...
     for (const v of sch.volleys) {
       if (s < v.sDraw + REACTION - 1e-9 || s > v.sRelease + 1e-9) continue;
-      for (const f of alive) {
+      for (const f of st.alive) {
         if (!f.alive || f.archerGroup !== v.group || !f.drawing) continue;
-        out.push({ kind: "arrow", x: posX(f, w), y: posY(f, w) - 24, ax: hp.x, ay: hp.y - HURTBOX_LIFT, landsAt: v.sArrive });
+        out.push({ kind: "arrow", x: posX(f, st.w), y: posY(f, st.w) - 24, ax: hp.x, ay: hp.y - HURTBOX_LIFT, landsAt: v.sArrive });
       }
     }
     // ...arrows in flight...
-    for (const a of flying) {
+    for (const a of st.flying) {
       if (s < sch.volleys[a.v].sDraw + REACTION - 1e-9) continue;
-      out.push({ kind: "arrow", x: a.rec.x0, y: a.rec.y0, ax: a.rec.ax, ay: a.rec.ay, landsAt: a.rec.sArrive });
+      out.push({ kind: "arrow", x: a.x0, y: a.y0, ax: a.ax, ay: a.ay, landsAt: sch.volleys[a.v].sArrive });
     }
     // ...and slam markers.
-    for (const [k, m] of slamMarks) if (s >= m.sMark + REACTION - 1e-9) out.push({ kind: "slam", x: m.x, y: m.y, radius: SLAM_RADIUS + HURTBOX_RADIUS, landsAt: sch.boss!.slams[k].sLand });
+    for (const [k, m] of st.slamMarks) if (s >= m.sMark + REACTION - 1e-9) out.push({ kind: "slam", x: m.x, y: m.y, radius: SLAM_RADIUS + HURTBOX_RADIUS, landsAt: sch.boss!.slams[k].sLand });
     return out;
   };
 
   const observe = (): Observation => {
-    const hp = heroPose(w);
-    const pp = pacePoint(s);
+    const hp = heroPose(st.w);
+    const pp = pacePoint(st.s);
     return {
-      s,
+      s: st.s,
       hero: { x: hp.x, y: hp.y, stepping: hp.u < 1 },
-      enemies: alive.filter((f) => f.alive).map((f) => ({ x: posX(f, w), y: posY(f, w), type: f.rec.type, health: f.health })),
+      enemies: st.alive.filter((f) => f.alive).map((f) => ({ x: posX(f, st.w), y: posY(f, st.w), type: f.type, health: f.health })),
       threats: visibleThreats(hp),
-      boss: bossFoe && bossFoe.alive && !pinned(bossFoe) ? { x: posX(bossFoe, w), y: posY(bossFoe, w) } : undefined,
+      boss: st.bossFoe && st.bossFoe.alive && !pinned(st.bossFoe) ? { x: posX(st.bossFoe, st.w), y: posY(st.bossFoe, st.w) } : undefined,
       pacePoint: { x: pp.x, y: pp.y, tx: pp.tx, ty: pp.ty },
-      edgeDistance: (x, y) => corridor.edge(x, y),
+      edgeDistance: (x, y) => world.edge(x, y),
     };
   };
 
   const scheduleDecision = (after: number) => {
-    const t = player.nextDecision(after);
-    if (t <= cutS && t < endS) q.push(Math.max(t, after), { kind: "decide" });
+    if (!io.player) return;
+    const t = io.player.nextDecision(after);
+    if (t <= cutS && t < endS) st.q.push(Math.max(t, after), { kind: "decide" });
   };
 
   const spawnDirector = (bi: number) => {
-    if (blasting) return;
+    if (st.blasting) return;
+    const s = st.s;
     const target = targetPopulation(ctx, s);
-    const living = alive.length + pending;
+    const living = st.alive.length + st.pending;
     const want = Math.min(SPAWN_PER_BEAT, Math.round(target) - living, POP_CAP - living);
     if (want <= 0) return;
     const sec = sectionAt(s);
@@ -1252,49 +1292,49 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
         const start = ctx.idx.barStart[Math.min(ctx.idx.barCount, nb)];
         sAppear = start !== undefined && start < song.beats.length ? timeOfBeatIndex(song, start) : s;
       }
-      pending++;
-      q.push(Math.max(s, sAppear), { kind: "appear", type });
+      st.pending++;
+      st.q.push(Math.max(s, sAppear), { kind: "appear", type });
     }
   };
 
   const appear = (type: string) => {
-    pending--;
-    if (blasting) return;
+    st.pending--;
+    if (st.blasting) return;
     const def = lib.enemies.get(type)!;
-    const r = new Rng(ctx.seed, "appear", nextId);
+    const r = new Rng(ctx.seed, "appear", st.nextId);
     const p = spawnPoint(def, r, false);
     spawnFoe(type, p.x, p.y);
   };
 
   const recycle = () => {
-    const view = camera.view();
+    const view = st.camera.view();
     const vw = view[2] - view[0];
-    const hp = heroPose(w);
-    const pp = pacePoint(s);
-    const behind = alive.filter((f) => {
-      const dx = posX(f, w) - hp.x;
-      const dy = posY(f, w) - hp.y;
+    const hp = heroPose(st.w);
+    const pp = pacePoint(st.s);
+    const behind = st.alive.filter((f) => {
+      const dx = posX(f, st.w) - hp.x;
+      const dy = posY(f, st.w) - hp.y;
       return f.alive && Math.hypot(dx, dy) >= RECYCLE_VIEWS * vw && dx * pp.tx + dy * pp.ty < 0;
     });
     for (const f of behind) {
       // Not a kill: it leaves the field and re-enters ahead with its health.
       f.alive = false;
       f.finalSample = true;
-      f.rec.deathW = w;
-      f.rec.recycled = true;
-      const r = new Rng(ctx.seed, "recycle", f.rec.id);
+      f.deathW = st.w;
+      rec().death(f.id, st.w, true);
+      const r = new Rng(ctx.seed, "recycle", f.id);
       const p2 = spawnPoint(f.def, r, true);
-      spawnFoe(f.rec.type, p2.x, p2.y, f.health);
+      spawnFoe(f.type, p2.x, p2.y, f.health);
     }
-    alive = alive.filter((f) => f.alive);
+    st.alive = st.alive.filter((f) => f.alive);
   };
 
   const grantWeapon = (id: string) => {
-    weaponsGranted.push({ id, s });
+    rec().weapon(id, st.s);
     const wd = lib.weapons.get(id)!;
     if (wd.kind === "blast") return;
     const end = blastS ?? ctx.duration;
-    const startBar = Math.max(1, barOfBeatIndex(ctx.idx, sbiAt(s)));
+    const startBar = Math.max(1, barOfBeatIndex(ctx.idx, sbiAt(st.s)));
     for (let bar = startBar; bar <= ctx.idx.barCount; bar++) {
       const bpb = ctx.idx.beatsPerBar[bar];
       const stepB = subdivisionBeats(wd.fires.every, bpb);
@@ -1303,19 +1343,19 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
         if (bi > song.beats.length - 1) continue;
         const t = timeOfBeatIndex(song, bi);
         // The weapon starts on the slot after its level-up.
-        if (t <= s + 0.01 || t >= end - 0.01 || t > endS) continue;
-        q.push(t, { kind: "fire", weapon: wd, bi });
+        if (t <= st.s + 0.01 || t >= end - 0.01 || t > endS) continue;
+        st.q.push(t, { kind: "fire", weapon: wd, bi });
       }
     }
   };
 
   const fire = (wd: WeaponDef, bi: number) => {
     // Weapons rest during a hit-stop: the next slot of their subdivision fires instead.
-    if (inStop(s)) return;
-    weaponFires.push({ weapon: wd.id, s });
-    const hp = heroPose(w);
-    const energy = energyAt(song, s);
-    const mult = damageMultiplier(hero, groove);
+    if (inStop(st.s)) return;
+    rec().fire(wd.id, st.s);
+    const hp = heroPose(st.w);
+    const energy = energyAt(song, st.s);
+    const mult = damageMultiplier(hero, st.groove);
     if (wd.kind === "orbit" && wd.orbit) {
       const bar = Math.max(1, barOfBeatIndex(ctx.idx, bi));
       const bpb = ctx.idx.beatsPerBar[bar] ?? 2;
@@ -1329,40 +1369,47 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
       }
     } else if (wd.kind === "chain" && wd.chain) {
       const jumps = Math.round(lerp(wd.chain.jumps[0], wd.chain.jumps[1], energy));
-      const chain: ChainState = { points: [{ w, x: hp.x, y: hp.y - 24 }], hit: new Set(), jumps, energy, bi };
-      chains.push({ points: chain.points });
+      const first = { w: st.w, x: hp.x, y: hp.y - 24 };
+      const chain: ChainState = { last: first, index: st.nChains++, hit: new Set(), jumps, energy, bi };
+      rec().chain(first);
       chainJump(wd, chain, 0);
     } else if (wd.kind === "trail" && wd.trail) {
       // Circles along the hero's path over the last beats.
-      const bd = (song.beats[Math.min(song.beats.length - 1, Math.floor(bi))] - song.beats[Math.max(0, Math.floor(bi) - 1)]) * baseRate(s);
-      const wFrom = w - wd.trail.beats * Math.max(0.05, bd);
+      const bd = (song.beats[Math.min(song.beats.length - 1, Math.floor(bi))] - song.beats[Math.max(0, Math.floor(bi) - 1)]) * baseRate(st.s);
+      const wFrom = st.w - wd.trail.beats * Math.max(0.05, bd);
+      const hx = st.heroX;
+      const hy = st.heroY;
+      const base = st.heroBase;
+      if (base > 0 && base / HERO_RATE >= wFrom) throw new Error(`the fire trail reaches back past the kept hero samples (w=${st.w.toFixed(2)})`);
       let lastX = Infinity;
       let lastY = Infinity;
-      for (let k = hx.length - 1; k >= 0 && k / HERO_RATE >= wFrom; k--) {
-        if (k / HERO_RATE > w - 0.12) continue;
-        if (Math.hypot(hx[k] - lastX, hy[k] - lastY) < wd.trail.spacing) continue;
-        lastX = hx[k];
-        lastY = hy[k];
-        const h = addHit({ source: "weapon", what: wd.id, weight: wd.weight, primary: false, shape: { kind: "circle", x: hx[k], y: hy[k], radius: wd.hitShape!.radius }, dir: 0, accent: 0, damage: wd.damage * mult }, energy);
+      for (let k = base + hx.length - 1; k >= base && k / HERO_RATE >= wFrom; k--) {
+        if (k / HERO_RATE > st.w - 0.12) continue;
+        const x = hx[k - base];
+        const y = hy[k - base];
+        if (Math.hypot(x - lastX, y - lastY) < wd.trail.spacing) continue;
+        lastX = x;
+        lastY = y;
+        const h = addHit({ source: "weapon", what: wd.id, weight: wd.weight, primary: false, shape: { kind: "circle", x, y, radius: wd.hitShape!.radius }, dir: 0, accent: 0, damage: wd.damage * mult }, energy);
         applyHit(h);
       }
     }
   };
 
   const chainJump = (wd: WeaponDef, chain: ChainState, j: number) => {
-    if (inStop(s)) {
+    if (inStop(st.s)) {
       // A jump inside a hit-stop waits for the next sixteenth after it.
-      q.push(timeOfBeatIndex(song, Math.floor(sbiAt(s) * 4 + 1e-6) / 4 + 0.25), { kind: "chain", weapon: wd, chain, jump: j });
+      st.q.push(timeOfBeatIndex(song, Math.floor(sbiAt(st.s) * 4 + 1e-6) / 4 + 0.25), { kind: "chain", weapon: wd, chain, jump: j });
       return;
     }
-    const from = chain.points[chain.points.length - 1];
+    const from = chain.last;
     const fx = from.x;
     const fy = j === 0 ? from.y + 24 : from.y + 16;
     let best: Foe | undefined;
     let bestD = wd.chain!.range;
-    for (const f of alive) {
+    for (const f of st.alive) {
       if (!f.alive || chain.hit.has(f)) continue;
-      const d = Math.hypot(posX(f, w) - fx, posY(f, w) - fy);
+      const d = Math.hypot(posX(f, st.w) - fx, posY(f, st.w) - fy);
       if (d < bestD) {
         bestD = d;
         best = f;
@@ -1370,14 +1417,16 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
     }
     if (!best) return;
     chain.hit.add(best);
-    const bx = posX(best, w);
-    const by = posY(best, w);
-    chain.points.push({ w, x: bx, y: by - 16 });
-    const h = addHit({ source: "weapon", what: wd.id, weight: wd.weight, primary: false, shape: { kind: "circle", x: bx, y: by, radius: wd.hitShape!.radius }, dir: Math.atan2(by - fy, bx - fx), accent: 0, damage: wd.damage * damageMultiplier(hero, groove) }, chain.energy);
+    const bx = posX(best, st.w);
+    const by = posY(best, st.w);
+    const p = { w: st.w, x: bx, y: by - 16 };
+    chain.last = p;
+    rec().chainPoint(chain.index, p);
+    const h = addHit({ source: "weapon", what: wd.id, weight: wd.weight, primary: false, shape: { kind: "circle", x: bx, y: by, radius: wd.hitShape!.radius }, dir: Math.atan2(by - fy, bx - fx), accent: 0, damage: wd.damage * damageMultiplier(hero, st.groove) }, chain.energy);
     applyHit(h);
     if (j + 1 < chain.jumps) {
       const stepB = subdivisionBeats(wd.chain!.step, 2);
-      q.push(timeOfBeatIndex(song, chain.bi + (j + 1) * stepB), { kind: "chain", weapon: wd, chain, jump: j + 1 });
+      st.q.push(timeOfBeatIndex(song, chain.bi + (j + 1) * stepB), { kind: "chain", weapon: wd, chain, jump: j + 1 });
     }
   };
 
@@ -1385,7 +1434,7 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
     const wd = lib.weapons.get(sch.blast!.weapon)!;
     const b = wd.blast!;
     const bands = Math.max(1, Math.round(b.beats / subdivisionBeats(b.step, 2)));
-    const hp = heroPose(w);
+    const hp = heroPose(st.w);
     const last = band === bands - 1;
     // The ring's front: everything inside it falls (the last band reaches everyone left).
     const inner = 0;
@@ -1394,14 +1443,15 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
     applyHit(h);
     if (last) {
       // Nothing survives the final band, wherever it stands.
-      for (const f of alive) if (f.alive) damage(f, h);
-      alive = alive.filter((f) => f.alive);
+      for (const f of st.alive) if (f.alive) damage(f, h);
+      st.alive = st.alive.filter((f) => f.alive);
     }
   };
 
   // ---------------------------------------------------------------- deaths, gems and level-ups
   /** World time of a song time at or before now, from the warp so far. */
   const worldOf = (t: number) => {
+    const breaks = st.breaks;
     for (let i = breaks.length - 1; i >= 0; i--) if (breaks[i].s <= t + 1e-12) return breaks[i].w + (t - breaks[i].s) * breaks[i].rate;
     return 0;
   };
@@ -1410,66 +1460,65 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
     while (bar <= ctx.idx.barCount && timeOfBeatIndex(song, ctx.idx.barStart[bar]) < t - 1e-9) bar++;
     return bar <= ctx.idx.barCount ? timeOfBeatIndex(song, ctx.idx.barStart[bar]) : t;
   };
-  const levelReq = () => sch.levelUps[Math.min(level, sch.levelUps.length - 1)]?.xp ?? 1;
-  const pushXp = () => xpSeries.push({ s, fill: clamp(xpNow / levelReq(), 0, 1) });
+  const levelReq = () => sch.levelUps[Math.min(st.level, sch.levelUps.length - 1)]?.xp ?? 1;
+  const pushXp = () => rec().xp(st.s, clamp(st.xpNow / levelReq(), 0, 1));
 
   const onDeath = (f: Foe, fate: Fate, h: Hit) => {
     // Every death drops gems, which fly to the hero on the next downbeat (a beat after the finale blast).
     const big = f.def.size !== "regular";
-    const s1 = blasting && blastS !== undefined ? timeOfBeatIndex(song, sbiAt(blastS) + 1) : downbeatAtOrAfter(s + 0.12);
-    gems.push({ w0: w, x0: fate.x, y0: fate.y, s1, w1: 0, value: big ? 5 : 1, big, enemy: f.rec.id });
-    q.push(s1, { kind: "gem", gem: gems.length - 1 });
-    if (f === bossFoe && bossInfo) {
-      bossInfo.deathS = s;
-      bossInfo.killHit = h.id;
+    const s1 = st.blasting && blastS !== undefined ? timeOfBeatIndex(song, sbiAt(blastS) + 1) : downbeatAtOrAfter(st.s + 0.12);
+    const value = big ? 5 : 1;
+    rec().gem({ w0: st.w, x0: fate.x, y0: fate.y, s1, w1: 0, value, big, enemy: f.id });
+    st.q.push(s1, { kind: "gem", gem: st.nGems++, value });
+    if (f === st.bossFoe) {
+      rec().bossDeath(st.s, h.id);
       if (h.source !== "ring") startHitStop(BOSS_KILL_STOP);
     }
   };
 
   const grant = (id: string) => {
-    if (blasting) return;
-    level++;
-    xpNow = 0;
-    overdue = false;
+    if (st.blasting) return;
+    st.level++;
+    st.xpNow = 0;
+    st.overdue = false;
     pushXp();
     grantWeapon(id);
   };
 
-  const gemArrives = (i: number) => {
-    const g = gems[i];
-    g.w1 = w;
-    if (level >= sch.levelUps.length) {
-      xpNow += g.value;
+  const gemArrives = (i: number, value: number) => {
+    rec().gemArrive(i, st.w);
+    if (st.level >= sch.levelUps.length) {
+      st.xpNow += value;
       pushXp();
       return;
     }
-    xpNow += g.value;
+    st.xpNow += value;
     pushXp();
     // A bar that fills after its scheduled moment levels up on the first downbeat after it fills.
-    if (overdue && xpNow >= levelReq()) {
-      overdue = false;
-      q.push(downbeatAtOrAfter(s), { kind: "levelUp", id: sch.levelUps[level].id });
+    if (st.overdue && st.xpNow >= levelReq()) {
+      st.overdue = false;
+      st.q.push(downbeatAtOrAfter(st.s), { kind: "levelUp", id: sch.levelUps[st.level].id });
     }
   };
 
   const levelDue = (i: number) => {
-    if (i !== level) return;
+    if (i !== st.level) return;
     // A full bar waits and glows until the scheduled moment.
-    if (xpNow >= levelReq()) grant(sch.levelUps[i].id);
-    else overdue = true;
+    if (st.xpNow >= levelReq()) grant(sch.levelUps[i].id);
+    else st.overdue = true;
   };
 
   // ---------------------------------------------------------------- archers
   const spawnArchers = (group: number, n: number) => {
     const def = lib.enemies.get("skeleton-archer")!;
-    const r = new Rng(ctx.seed, "archers", group, nextId);
+    const r = new Rng(ctx.seed, "archers", group, st.nextId);
     // They come from one side together, so a single step can dodge their volley.
     const p = spawnPoint(def, r, true);
-    const hp = heroPose(w);
+    const hp = heroPose(st.w);
     const dx = p.x - hp.x;
     const dy = p.y - hp.y;
     const dl = Math.hypot(dx, dy) || 1;
-    const taken = new Set(alive.filter((f) => f.alive && f.archerGroup === group).map((f) => f.archerSlot));
+    const taken = new Set(st.alive.filter((f) => f.alive && f.archerGroup === group).map((f) => f.archerSlot));
     for (let k = 0, placed = 0; placed < n && k < 16; k++) {
       if (taken.has(k)) continue;
       const off = (k - 0.5) * ARCHER_GAP;
@@ -1482,93 +1531,87 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
 
   const draw = (v: number) => {
     const vol = sch.volleys[v];
-    const hp = heroPose(w);
-    const group = alive.filter((f) => f.alive && f.archerGroup === vol.group);
-    for (const f of group) if (Math.hypot(posX(f, w) - hp.x, posY(f, w) - hp.y) <= ARCHER_SHOOT_RANGE) f.drawing = { w0: w };
+    const hp = heroPose(st.w);
+    const group = st.alive.filter((f) => f.alive && f.archerGroup === vol.group);
+    for (const f of group) if (Math.hypot(posX(f, st.w) - hp.x, posY(f, st.w) - hp.y) <= ARCHER_SHOOT_RANGE) f.drawing = { w0: st.w };
     // Replacements for fallen archers walk in for the next volley.
     if (group.length < vol.archers) spawnArchers(vol.group, vol.archers - group.length);
   };
 
   const loose = (v: number) => {
     const vol = sch.volleys[v];
-    const hp = heroPose(w);
+    const hp = heroPose(st.w);
     // Each arrow aims at the hero's position at the moment of release, not a predicted one.
     const ax = hp.x;
     const ay = hp.y - HURTBOX_LIFT;
-    for (const f of alive) {
+    for (const f of st.alive) {
       if (!f.alive || f.archerGroup !== vol.group || !f.drawing) continue;
-      const x0 = posX(f, w);
-      const y0 = posY(f, w) - 24;
+      const x0 = posX(f, st.w);
+      const y0 = posY(f, st.w) - 24;
       const dl = Math.hypot(ax - x0, ay - y0) || 1;
-      const rec: ArrowRecord = { sRelease: s, wRelease: w, sArrive: vol.sArrive, wArrive: 0, x0, y0, ax, ay, x1: ax, y1: ay, w1: 0, outcome: "miss" };
-      arrows.push(rec);
-      flying.push({ v, rec, ux: (ax - x0) / dl, uy: (ay - y0) / dl });
-      (f.rec.attacks ??= []).push({ w0: f.drawing.w0, w, kind: "shoot", dir: Math.atan2(ay - y0, ax - x0) });
+      const r: ArrowRecord = { sRelease: st.s, wRelease: st.w, sArrive: vol.sArrive, wArrive: 0, x0, y0, ax, ay, x1: ax, y1: ay, w1: 0, outcome: "miss" };
+      rec().arrow(r);
+      st.flying.push({ v, index: st.nArrows++, x0, y0, ax, ay, wRelease: st.w, ux: (ax - x0) / dl, uy: (ay - y0) / dl });
+      rec().attack(f.id, { w0: f.drawing.w0, w: st.w, kind: "shoot", dir: Math.atan2(ay - y0, ax - x0) });
       f.drawing = undefined;
     }
   };
 
   /** A near miss: the slow-motion dip starts now (dips do not stack). */
   const nearMiss = () => {
-    if (s < dipStart + 2 * DIP_RAMP + DIP_HOLD) return;
-    dipStart = s;
+    if (st.s < st.dipStart + 2 * DIP_RAMP + DIP_HOLD) return;
+    st.dipStart = st.s;
   };
 
   const arrive = (v: number) => {
-    const hp = heroPose(w);
+    const hp = heroPose(st.w);
     const hx0 = hp.x;
     const hy0 = hp.y - HURTBOX_LIFT;
-    for (let i = flying.length - 1; i >= 0; i--) {
-      const a = flying[i];
+    for (let i = st.flying.length - 1; i >= 0; i--) {
+      const a = st.flying[i];
       if (a.v !== v) continue;
-      flying.splice(i, 1);
-      const rec = a.rec;
-      rec.wArrive = w;
+      st.flying.splice(i, 1);
+      const wArrive = st.w;
       // Closest approach of the arrow's line to the hurtbox, ahead of the archer.
-      const t = (hx0 - rec.x0) * a.ux + (hy0 - rec.y0) * a.uy;
-      const perp = Math.abs((hx0 - rec.x0) * a.uy - (hy0 - rec.y0) * a.ux);
+      const t = (hx0 - a.x0) * a.ux + (hy0 - a.y0) * a.uy;
+      const perp = Math.abs((hx0 - a.x0) * a.uy - (hy0 - a.y0) * a.ux);
       const edge = perp - HURTBOX_RADIUS;
-      rec.outcome = t < 0 ? "miss" : edge <= 0 ? "touch" : edge <= NEAR_MISS ? "near-miss" : "miss";
-      const len = Math.hypot(rec.ax - rec.x0, rec.ay - rec.y0);
-      const speed = len / Math.max(1e-3, w - rec.wRelease);
-      if (rec.outcome === "touch") {
+      const outcome = t < 0 ? "miss" : edge <= 0 ? "touch" : edge <= NEAR_MISS ? "near-miss" : "miss";
+      const len = Math.hypot(a.ax - a.x0, a.ay - a.y0);
+      const speed = len / Math.max(1e-3, st.w - a.wRelease);
+      if (outcome === "touch") {
         // It shatters on the hero, harmlessly.
-        rec.x1 = rec.x0 + a.ux * t;
-        rec.y1 = rec.y0 + a.uy * t;
-        rec.w1 = rec.wRelease + t / speed;
+        rec().arrowEnd(a.index, { wArrive, outcome, x1: a.x0 + a.ux * t, y1: a.y0 + a.uy * t, w1: a.wRelease + t / speed });
       } else {
-        rec.x1 = rec.ax + a.ux * ARROW_OVERSHOOT;
-        rec.y1 = rec.ay + a.uy * ARROW_OVERSHOOT;
-        rec.w1 = w + ARROW_OVERSHOOT / speed;
+        rec().arrowEnd(a.index, { wArrive, outcome, x1: a.ax + a.ux * ARROW_OVERSHOOT, y1: a.ay + a.uy * ARROW_OVERSHOOT, w1: st.w + ARROW_OVERSHOOT / speed });
       }
-      threats.push({ s, w, kind: "arrow", outcome: rec.outcome, x: hp.x, y: hp.y });
-      if (rec.outcome === "near-miss") nearMiss();
+      rec().threat({ s: st.s, w: st.w, kind: "arrow", outcome, x: hp.x, y: hp.y });
+      if (outcome === "near-miss") nearMiss();
     }
   };
 
   // ---------------------------------------------------------------- the boss
   const bossSpawn = () => {
     const b = sch.boss!;
-    const hp = heroPose(w);
-    const pp = pacePoint(s);
+    const hp = heroPose(st.w);
+    const pp = pacePoint(st.s);
     const x = hp.x + pp.tx * BOSS_LAND_AHEAD;
     const y = hp.y + pp.ty * BOSS_LAND_AHEAD;
-    const f = spawnFoe(b.type, x, y);
-    f.rec.entrance = "land";
-    f.rec.attacks = [];
+    const f = spawnFoe(b.type, x, y, undefined, { entrance: "land", attacks: [] });
     f.landS = b.sEnter;
     f.floorUntil = b.sDeath;
-    bossFoe = f;
-    bossInfo = { id: f.rec.id, landS: b.sEnter, x, y, health: [{ s, frac: 1 }] };
+    st.bossFoe = f;
+    rec().boss({ id: f.id, landS: b.sEnter, x, y, health: [{ s: st.s, frac: 1 }] });
   };
 
   const bossLand = () => {
-    if (!bossFoe || !bossFoe.alive) return;
+    const boss = st.bossFoe;
+    if (!boss || !boss.alive) return;
     // It lands on the downbeat, knocking nearby enemies back.
-    for (const f of alive) {
-      if (f === bossFoe || !f.alive || pinned(f)) continue;
-      const dx = posX(f, w) - bossFoe.x;
-      const dy = posY(f, w) - bossFoe.y;
+    for (const f of st.alive) {
+      if (f === boss || !f.alive || pinned(f)) continue;
+      const dx = posX(f, st.w) - boss.x;
+      const dy = posY(f, st.w) - boss.y;
       const d = Math.hypot(dx, dy);
       if (d >= BOSS_LAND_PUSH || d < 1e-6) continue;
       f.knockX = (dx / d) * (BOSS_LAND_PUSH - d) * 0.5;
@@ -1578,45 +1621,46 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
   };
 
   const slamMark = (k: number) => {
-    if (!bossFoe || !bossFoe.alive) return;
+    if (!st.bossFoe || !st.bossFoe.alive) return;
     // A marker appears at the hero's current position and grows for two beats.
-    const hp = heroPose(w);
-    slamMarks.set(k, { x: hp.x, y: hp.y, sMark: s, wMark: w });
+    const hp = heroPose(st.w);
+    st.slamMarks.set(k, { x: hp.x, y: hp.y, sMark: st.s, wMark: st.w });
   };
 
   const slamLand = (k: number) => {
-    const m = slamMarks.get(k);
-    if (!m || !bossFoe || !bossFoe.alive) return;
-    slamMarks.delete(k);
-    const hp = heroPose(w);
+    const m = st.slamMarks.get(k);
+    const boss = st.bossFoe;
+    if (!m || !boss || !boss.alive) return;
+    st.slamMarks.delete(k);
+    const hp = heroPose(st.w);
     // The marker appears under the hero: leaving it before the slam lands is a near miss.
     const edge = Math.hypot(hp.x - m.x, hp.y - m.y) - SLAM_RADIUS - HURTBOX_RADIUS;
     const outcome = edge <= 0 ? "touch" : "near-miss";
-    slamRecords.push({ sMark: m.sMark, wMark: m.wMark, sLand: s, wLand: w, x: m.x, y: m.y, radius: SLAM_RADIUS, outcome });
-    bossFoe.rec.attacks!.push({ w0: Math.max(m.wMark, w - 0.6), w, kind: "slam", dir: Math.atan2(m.y - posY(bossFoe, w), m.x - posX(bossFoe, w)) });
-    threats.push({ s, w, kind: "slam", outcome, x: hp.x, y: hp.y });
+    rec().slam({ sMark: m.sMark, wMark: m.wMark, sLand: st.s, wLand: st.w, x: m.x, y: m.y, radius: SLAM_RADIUS, outcome });
+    rec().attack(boss.id, { w0: Math.max(m.wMark, st.w - 0.6), w: st.w, kind: "slam", dir: Math.atan2(m.y - posY(boss, st.w), m.x - posX(boss, st.w)) });
+    rec().threat({ s: st.s, w: st.w, kind: "slam", outcome, x: hp.x, y: hp.y });
     if (outcome === "near-miss") nearMiss();
   };
 
   // ---------------------------------------------------------------- formations
   /** Formation members on their slots and the boss dropping in hold their places. */
-  const pinned = (f: Foe) => (f.slot !== undefined && s < f.slotUntil) || (f.landS !== undefined && s < f.landS);
+  const pinned = (f: Foe) => (f.slot !== undefined && st.s < f.slotUntil) || (f.landS !== undefined && st.s < f.landS);
 
   /** Formations ride with the camera-smoothed hero: the camera centre less its lead. */
   const formationAnchor = () => {
-    const lead = sectionAt(s).level.camera.lead;
-    const pp = pacePoint(s);
-    return { x: camera.x - pp.tx * lead, y: camera.y - pp.ty * lead + 12, vx: camera.vx, vy: camera.vy };
+    const lead = sectionAt(st.s).level.camera.lead;
+    const pp = pacePoint(st.s);
+    const cam = st.camera;
+    return { x: cam.x - pp.tx * lead, y: cam.y - pp.ty * lead + 12, vx: cam.vx, vy: cam.vy };
   };
 
   const formationEnter = (fi: number) => {
     const fs = sch.formations[fi];
     const def = lib.formations.get(fs.def)!;
-    const view = camera.view();
+    const view = st.camera.view();
     const bStart = sbiAt(fs.sStart);
     const stepB = subdivisionBeats(def.step, 2);
     const members: number[] = [];
-    formationRecords.push({ def: fs.def, sStart: fs.sStart, sRelease: fs.sRelease, members });
     for (let k = 0; k < def.count; k++) {
       let place: (t: number) => { x: number; y: number };
       let start: { x: number; y: number };
@@ -1655,109 +1699,123 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
         const e = 1 - (1 - Math.min(1, (kk + Math.min(1, fr / 0.45)) / steps)) ** 2;
         return { x: lerp(start.x, d.x, e), y: lerp(start.y, d.y, e) - (def.shape === "kick-line" ? Math.sin(Math.PI * Math.min(1, fr / 0.45)) * 3 : 0) };
       };
-      const p = slot(s);
-      const f = spawnFoe(def.enemy, a0.x + p.x, a0.y + p.y);
-      f.rec.formation = fi;
+      const p = slot(st.s);
+      const f = spawnFoe(def.enemy, a0.x + p.x, a0.y + p.y, undefined, { formation: fi });
       f.weight = weightOf(f.def, true);
       f.slot = slot;
       f.slotUntil = fs.sRelease;
-      members.push(f.rec.id);
+      members.push(f.id);
+      st.formationMembers[fi].push(f);
     }
+    rec().formation({ def: fs.def, sStart: fs.sStart, sRelease: fs.sRelease, members });
   };
 
   const formationRelease = (fi: number) => {
     const fs = sch.formations[fi];
     const def = lib.formations.get(fs.def)!;
+    const s = st.s;
     const wEnter = worldOf(timeOfBeatIndex(song, sbiAt(fs.sStart) + def.entranceBeats));
     const beat = (song.beats[Math.min(song.beats.length - 1, Math.floor(sbiAt(s)) + 1)] ?? s) - (song.beats[Math.floor(sbiAt(s))] ?? s);
-    for (const f of foes) {
-      if (f.rec.formation !== fi) continue;
-      if (def.dance) f.rec.dance = { w0: wEnter, w1: f.alive ? w : f.rec.deathW, anim: def.dance.animation, alternate: def.dance.alternateLegs, phase: 0 };
+    for (const f of st.formationMembers[fi]) {
+      if (def.dance) rec().dance(f.id, { w0: wEnter, w1: f.alive ? st.w : f.deathW, anim: def.dance.animation, alternate: def.dance.alternateLegs, phase: 0 });
       if (!f.alive) continue;
       // The survivors become chasers; a charge rushes the hero first.
       f.slotUntil = s;
       if (def.release.mode === "charge") f.chargeUntil = s + CHARGE_BEATS * Math.max(0.1, beat);
     }
+    st.formationMembers[fi] = [];
   };
 
-  // Song-owned events: mode switches, automatic swings in free movement, idle-swing checks in step movement.
+  // ---------------------------------------------------------------- the loop
   const windupBefore = (t: number) => t - hero.swings.windupMs / 1000 / Math.max(0.05, baseRate(t));
-  for (let i = 1; i < ctx.sections.length; i++) {
-    const a = ctx.sections[i - 1].level.movement;
-    const b = ctx.sections[i].level.movement;
-    if (a !== b) q.push(ctx.sections[i].s0, { kind: "mode", steps: b === "steps" });
-  }
-  if (ctx.sections[0].level.movement === "free") walk = { w0: 0, x0: restPose.x, y0: restPose.y, vx0: 0, vy0: 0, tx: 0, ty: 0, t: 0 };
-  for (const sl of sch.slots) if (sl.kind !== "grid") q.push(Math.max(0, windupBefore(sl.s)), { kind: "auto", slot: sl });
-  let prevDown: GridSlot | undefined;
-  for (const sl of sch.gridSlots) {
-    if (sl.slot !== 0) continue;
-    // The bar before must be a step bar too.
-    if (prevDown && sl.bar === prevDown.bar + 1) q.push(Math.max(prevDown.s, windupBefore(sl.s)), { kind: "idle", slot: sl, prev: prevDown.s });
-    prevDown = sl;
-  }
-  for (let bi = 0; bi < song.beats.length; bi++) {
-    q.push(song.beats[bi], { kind: "beat", bi });
-    // Free movement's beats are slow: the spawn director also looks on every sixteenth note.
-    if (bi + 1 < song.beats.length && sectionAt(song.beats[bi]).level.movement === "free") for (const f of [0.25, 0.5, 0.75]) q.push(timeOfBeatIndex(song, bi + f), { kind: "spawnTick", bi: bi + f });
-  }
-  sch.levelUps.forEach((lu, i) => q.push(lu.s, { kind: "levelDue", i }));
-  sch.archerGroups.forEach((g, i) => q.push(g.s, { kind: "archers", group: i, n: g.archers }));
-  sch.volleys.forEach((v, i) => {
-    q.push(v.sDraw, { kind: "draw", v: i });
-    q.push(v.sRelease, { kind: "release", v: i });
-    q.push(v.sArrive, { kind: "arrive", v: i });
-  });
-  if (sch.boss) {
-    // The boss drops in for half a second before it lands on its downbeat.
-    q.push(Math.max(0, sch.boss.sEnter - 0.55 / Math.max(0.05, baseRate(sch.boss.sEnter))), { kind: "bossSpawn" });
-    q.push(sch.boss.sEnter, { kind: "bossLand" });
-    sch.boss.slams.forEach((sl, k) => {
-      q.push(sl.sMark, { kind: "slamMark", k });
-      q.push(sl.sLand, { kind: "slamLand", k });
-    });
-  }
-  sch.formations.forEach((f, i) => {
-    q.push(f.sStart, { kind: "formation", f: i });
-    q.push(f.sRelease, { kind: "formationRelease", f: i });
-  });
-  if (sch.blast && sch.blast.s < endS) {
-    const wd = lib.weapons.get(sch.blast.weapon)!;
-    const b = wd.blast!;
-    const stepB = subdivisionBeats(b.step, 2);
-    const bands = Math.max(1, Math.round(b.beats / stepB));
-    const bi0 = sbiAt(sch.blast.s);
-    for (let k = 0; k < bands; k++) q.push(timeOfBeatIndex(song, bi0 + k * stepB), { kind: "blast", band: k });
-  }
-  scheduleDecision(0);
 
-  // The first camera and hero samples.
-  pushBreak(rateAt(0));
-  sampleHero(0, 0);
-  nextHeroK = 1;
-  recordFoes(0);
-  nextFoeK = 1;
-
-  let fixedK = 1;
-  let lastFixedW = 0;
-  let recycleK = 0;
-  while (s < endS) {
-    const tFixed = fixedK / SIM_RATE;
-    const tRate = Math.min(nextStepAfter(sch.baseSteps, s), inStop(s) ? stopEnd : Infinity, nextDipCut(s));
-    const t = Math.min(q.peek(), tFixed, tRate, endS);
-    advanceTo(t, t === tFixed);
-    if (t === tFixed) {
-      fixedK++;
-      if (++recycleK % 30 === 0) recycle();
+  /** Song-owned events and the first samples: a fresh simulation's song time 0. */
+  const init = () => {
+    const q = st.q;
+    // Mode switches, automatic swings in free movement, idle-swing checks in step movement.
+    for (let i = 1; i < ctx.sections.length; i++) {
+      const a = ctx.sections[i - 1].level.movement;
+      const b = ctx.sections[i].level.movement;
+      if (a !== b) q.push(ctx.sections[i].s0, { kind: "mode", steps: b === "steps" });
     }
-    while (q.peek() <= s + 1e-12) {
+    if (ctx.sections[0].level.movement === "free") st.walk = { w0: 0, x0: st.restPose.x, y0: st.restPose.y, vx0: 0, vy0: 0, tx: 0, ty: 0, t: 0 };
+    for (const sl of sch.slots) if (sl.kind !== "grid") q.push(Math.max(0, windupBefore(sl.s)), { kind: "auto", slot: sl });
+    let prevDown: GridSlot | undefined;
+    for (const sl of sch.gridSlots) {
+      if (sl.slot !== 0) continue;
+      // The bar before must be a step bar too.
+      if (prevDown && sl.bar === prevDown.bar + 1) q.push(Math.max(prevDown.s, windupBefore(sl.s)), { kind: "idle", slot: sl, prev: prevDown.s });
+      prevDown = sl;
+    }
+    for (let bi = 0; bi < song.beats.length; bi++) {
+      q.push(song.beats[bi], { kind: "beat", bi });
+      // Free movement's beats are slow: the spawn director also looks on every sixteenth note.
+      if (bi + 1 < song.beats.length && sectionAt(song.beats[bi]).level.movement === "free") for (const f of [0.25, 0.5, 0.75]) q.push(timeOfBeatIndex(song, bi + f), { kind: "spawnTick", bi: bi + f });
+    }
+    sch.levelUps.forEach((lu, i) => q.push(lu.s, { kind: "levelDue", i }));
+    sch.archerGroups.forEach((g, i) => q.push(g.s, { kind: "archers", group: i, n: g.archers }));
+    sch.volleys.forEach((v, i) => {
+      q.push(v.sDraw, { kind: "draw", v: i });
+      q.push(v.sRelease, { kind: "release", v: i });
+      q.push(v.sArrive, { kind: "arrive", v: i });
+    });
+    if (sch.boss) {
+      // The boss drops in for half a second before it lands on its downbeat.
+      q.push(Math.max(0, sch.boss.sEnter - 0.55 / Math.max(0.05, baseRate(sch.boss.sEnter))), { kind: "bossSpawn" });
+      q.push(sch.boss.sEnter, { kind: "bossLand" });
+      sch.boss.slams.forEach((sl, k) => {
+        q.push(sl.sMark, { kind: "slamMark", k });
+        q.push(sl.sLand, { kind: "slamLand", k });
+      });
+    }
+    sch.formations.forEach((f, i) => {
+      q.push(f.sStart, { kind: "formation", f: i });
+      q.push(f.sRelease, { kind: "formationRelease", f: i });
+    });
+    if (sch.blast && sch.blast.s < endS) {
+      const wd = lib.weapons.get(sch.blast.weapon)!;
+      const b = wd.blast!;
+      const stepB = subdivisionBeats(b.step, 2);
+      const bands = Math.max(1, Math.round(b.beats / stepB));
+      const bi0 = sbiAt(sch.blast.s);
+      for (let k = 0; k < bands; k++) q.push(timeOfBeatIndex(song, bi0 + k * stepB), { kind: "blast", band: k });
+    }
+    scheduleDecision(0);
+
+    // The first camera and hero samples.
+    pushBreak(rateAt(0));
+    sampleHero(0, 0);
+    st.nextHeroK = 1;
+    recordFoes(0);
+    st.nextFoeK = 1;
+  };
+
+  /** Song time of the loop's next stop: the next event, fixed step or rate change. */
+  const nextStop = () => {
+    const tFixed = st.fixedK / SIM_RATE;
+    const tRate = Math.min(nextStepAfter(sch.baseSteps, st.s), inStop(st.s) ? st.stopEnd : Infinity, nextDipCut(st.s));
+    return Math.min(st.q.peek(), tFixed, tRate, endS);
+  };
+
+  /** One turn of the loop: move to the next stop, then run every event due there. */
+  const step = () => {
+    const tFixed = st.fixedK / SIM_RATE;
+    const t = nextStop();
+    moveClock(t, t === tFixed);
+    if (t === tFixed) {
+      st.fixedK++;
+      if (++st.recycleK % 30 === 0) recycle();
+    }
+    const q = st.q;
+    while (q.peek() <= st.s + 1e-12) {
       const { ev } = q.pop();
       switch (ev.kind) {
         case "hitstopEnd":
           break;
         case "decide": {
-          for (const ke of player.decide(observe())) if (ke.s <= cutS + 1e-12 && ke.s < endS) q.push(Math.max(s, ke.s), { kind: "key", e: ke });
-          scheduleDecision(s + 1e-6);
+          if (!io.player) break;
+          for (const ke of io.player.decide(observe())) if (ke.s <= cutS + 1e-12 && ke.s < endS) q.push(Math.max(st.s, ke.s), { kind: "key", e: ke });
+          scheduleDecision(st.s + 1e-6);
           break;
         }
         case "key":
@@ -1768,7 +1826,7 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
           switchMode(ev.steps);
           break;
         case "auto":
-          swingFor(ev.slot, s);
+          swingFor(ev.slot, st.s);
           break;
         case "idle":
           idleSwing(ev.slot, ev.prev);
@@ -1786,7 +1844,7 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
           chainJump(ev.weapon, ev.chain, ev.jump);
           break;
         case "blast":
-          if (ev.band === 0) blasting = true;
+          if (ev.band === 0) st.blasting = true;
           blastBand(ev.band);
           break;
         case "spawnTick":
@@ -1795,13 +1853,12 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
         case "beat": {
           spawnDirector(ev.bi);
           // Idle decay: with no presses, the groove halves every few bars.
-          const sec = sectionAt(s);
+          const sec = sectionAt(st.s);
           const bpb = ctx.idx.beatsPerBar[sec.song.bars[0]] ?? 2;
           const beatS = song.beats[Math.min(song.beats.length - 1, ev.bi + 1)] - song.beats[Math.max(0, Math.min(song.beats.length - 2, ev.bi))];
-          if (s - lastPressS > GROOVE_GRACE_BARS * bpb * beatS && groove > 0) {
-            groove = grooveDecay(hero, groove, 1 / bpb);
-            grooveS.push(s);
-            grooveV.push(groove);
+          if (st.s - st.lastPressS > GROOVE_GRACE_BARS * bpb * beatS && st.groove > 0) {
+            st.groove = grooveDecay(hero, st.groove, 1 / bpb);
+            rec().groove(st.s, st.groove);
           }
           break;
         }
@@ -1815,7 +1872,7 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
           levelDue(ev.i);
           break;
         case "gem":
-          gemArrives(ev.gem);
+          gemArrives(ev.gem, ev.value);
           break;
         case "wave":
           waveBand(ev.wave);
@@ -1852,63 +1909,148 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
           break;
       }
     }
-  }
-  // Close the tracks: a final hero sample at the end, and every enemy's last sample.
-  const wEnd = w;
-  while (nextFoeK / ENEMY_RATE <= wEnd + 1 / ENEMY_RATE) {
-    const wk = nextFoeK / ENEMY_RATE;
-    recordFoes(wk);
-    nextFoeK++;
+  };
+
+  /** Close the tracks: every enemy's last sample. */
+  const finish = () => {
+    const wEnd = st.w;
+    while (st.nextFoeK / ENEMY_RATE <= wEnd + 1 / ENEMY_RATE) {
+      recordFoes(st.nextFoeK / ENEMY_RATE);
+      st.nextFoeK++;
+    }
+  };
+
+  const pushKey = (e: KeyEvent) => {
+    if (e.s < st.s - 1e-12) throw new Error(`key event at s=${e.s} is before the simulation's time ${st.s}`);
+    if (e.s <= cutS + 1e-12 && e.s < endS) st.q.push(e.s, { kind: "key", e });
+  };
+
+  return { init, step, nextStop, moveClock, finish, observe, pushKey, heroPose };
+}
+
+/**
+ * A steppable simulation. `advanceTo` runs the game rules up to a song time;
+ * `key` applies a key event at its exact song time; `clone` is a snapshot for
+ * rollback. Advancing in many small calls gives exactly the recording one run
+ * to the end gives.
+ */
+export class Sim {
+  private readonly env: Env;
+  private readonly st: SimState;
+  private readonly io: Io;
+  private readonly eng: ReturnType<typeof engine>;
+  private finished = false;
+
+  constructor(ctx: Ctx, sch: Schedule, world: World, rules: Rules, recorder: Recorder, opts: { player?: Player; cutS?: number; untilS?: number } = {}, from?: { env: Env; st: SimState }) {
+    if (from) {
+      this.env = from.env;
+      this.st = from.st;
+    } else {
+      const shared = new WeakSet<object>();
+      registerShared(ctx, shared);
+      registerShared(sch, shared);
+      shared.add(world);
+      shared.add(rules);
+      this.env = { ctx, sch, world, rules, endS: Math.min(opts.untilS ?? Infinity, ctx.duration + 1), cutS: opts.cutS ?? Infinity, shared };
+      this.st = freshState(this.env);
+    }
+    this.io = { recorder, player: opts.player };
+    this.eng = engine(this.env, this.st, this.io);
+    if (!from) this.eng.init();
   }
 
-  // Pack enemy samples.
-  let total = 0;
-  for (const f of foes) total += f.samples.length;
-  const enemySamples = new Float32Array(total);
-  let off = 0;
-  for (const f of foes) {
-    enemySamples.set(f.samples, off);
-    f.rec.sampleOffset = off / 2;
-    f.rec.sampleCount = f.samples.length / 2;
-    off += f.samples.length;
+  /** Song time now. */
+  get s(): number {
+    return this.st.s;
   }
 
-  const heroTrack: HeroTrack = {
-    rate: HERO_RATE,
-    w0: 0,
-    x: Float32Array.from(hx),
-    y: Float32Array.from(hy),
-    z: Float32Array.from(hz),
-    facing: Uint8Array.from(hFacing),
-    anim: Uint8Array.from(hAnim),
-    frame: Uint8Array.from(hFrame),
-    animNames: HERO_ANIMS,
-    trail: new Float32Array(hx.length),
-  };
-  return {
-    warp: breaks,
-    hero: heroTrack,
-    camera,
-    hits,
-    enemies: records,
-    enemySamples,
-    swings: swingRecords,
-    inputs,
-    groove: { s: grooveS, v: grooveV },
-    landings,
-    weaponsGranted,
-    weaponFires,
-    chains,
-    hitStops,
-    blastS,
-    endS: s,
-    arrows,
-    slams: slamRecords,
-    threats,
-    boss: bossInfo,
-    gems,
-    xp: xpSeries,
-    waves,
-    formations: formationRecords,
-  };
+  /** World time now. */
+  get w(): number {
+    return this.st.w;
+  }
+
+  /** Song time the simulation ends. */
+  get endS(): number {
+    return this.env.endS;
+  }
+
+  get done(): boolean {
+    return this.st.s >= this.env.endS;
+  }
+
+  get recorder(): Recorder {
+    return this.io.recorder;
+  }
+
+  set recorder(r: Recorder) {
+    this.io.recorder = r;
+  }
+
+  /** The keys held down now. */
+  heldKeys(): Key[] {
+    return [...this.st.held];
+  }
+
+  /** Stop the virtual player: from now on only `key` presses keys. */
+  detachPlayer(): void {
+    this.io.player = undefined;
+  }
+
+  /**
+   * Run the game rules up to song time t: every event before t happens, and
+   * the clock (and the hero and enemy samples) moves to t. Events at t itself
+   * wait for the next call, so a key at t still takes its place among them.
+   * (Within a nanosecond of one of its own stops, the clock stays just short of t.)
+   */
+  advanceTo(t: number): void {
+    const { st, env, eng } = this;
+    if (t >= env.endS) {
+      this.runToEnd();
+      return;
+    }
+    while (st.s < env.endS && eng.nextStop() < t - CLOCK_EPS) eng.step();
+    // The clock stops between the loop's own stops only well clear of them: rate changes are
+    // resolved with tolerances near 1e-11 s, and a stop just before one would see the new rate.
+    if (t - st.s > CLOCK_EPS && eng.nextStop() - t > CLOCK_EPS) eng.moveClock(t, false);
+  }
+
+  /** Run to the end of the song. */
+  runToEnd(): void {
+    const { st, env, eng } = this;
+    while (st.s < env.endS) eng.step();
+    if (!this.finished) {
+      this.finished = true;
+      eng.finish();
+    }
+  }
+
+  /** Apply a key event at its exact song time (at or after the simulation's time). */
+  key(e: KeyEvent): void {
+    this.eng.pushKey(e);
+  }
+
+  observe(): Observation {
+    return this.eng.observe();
+  }
+
+  /** The hero's position now. */
+  heroPosition(): { x: number; y: number } {
+    const p = this.eng.heroPose(this.st.w);
+    return { x: p.x, y: p.y };
+  }
+
+  /** A deep copy for rollback: it shares nothing mutable with this one, and records into `recorder`. */
+  clone(recorder: Recorder): Sim {
+    const st = deepClone(this.st, this.env.shared);
+    const c = new Sim(this.env.ctx, this.env.sch, this.env.world, this.env.rules, recorder, {}, { env: this.env, st });
+    c.finished = this.finished;
+    return c;
+  }
+}
+
+export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptions): SimResult {
+  const rec = new BatchRecorder();
+  const sim = new Sim(ctx, sch, new CorridorWorld(map, sch), DEMO_RULES, rec, opts);
+  sim.runToEnd();
+  return rec.result({ endS: sim.s, blastS: sch.blast?.s, animNames: HERO_ANIMS, heroRate: HERO_RATE });
 }

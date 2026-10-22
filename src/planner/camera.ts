@@ -12,18 +12,17 @@ const OMEGA = 5.5;
 export const VIEW_W = 960;
 export const VIEW_H = 540;
 
-/** The spring, stepped once per camera sample (1/60 world-second). */
+/** The spring, stepped once per camera sample (1/60 world-second). Samples go to a CameraRecording. */
 export class CameraRig {
   x = 0;
   y = 0;
   vx = 0;
   vy = 0;
+  /** The latest sample's zoom. */
+  zoom = 1;
   private started = false;
-  readonly xs: number[] = [];
-  readonly ys: number[] = [];
-  readonly zooms: number[] = [];
 
-  /** Advance one sample toward the target and record it. */
+  /** Advance one sample toward the target. */
   sample(tx: number, ty: number, zoom: number): void {
     if (!this.started) {
       this.x = tx;
@@ -42,18 +41,27 @@ export class CameraRig {
         this.y += this.vy * h;
       }
     }
-    this.xs.push(this.x);
-    this.ys.push(this.y);
-    this.zooms.push(zoom);
+    this.zoom = zoom;
   }
 
   /** The latest view rectangle: [minX, minY, maxX, maxY]. */
   view(): [number, number, number, number] {
-    const n = this.zooms.length;
-    const zoom = n > 0 ? this.zooms[n - 1] : 1;
-    const hw = VIEW_W / 2 / zoom;
-    const hh = VIEW_H / 2 / zoom;
+    const hw = VIEW_W / 2 / this.zoom;
+    const hh = VIEW_H / 2 / this.zoom;
     return [this.x - hw, this.y - hh, this.x + hw, this.y + hh];
+  }
+}
+
+/** The recorded camera samples. */
+export class CameraRecording {
+  readonly xs: number[] = [];
+  readonly ys: number[] = [];
+  readonly zooms: number[] = [];
+
+  push(x: number, y: number, zoom: number): void {
+    this.xs.push(x);
+    this.ys.push(y);
+    this.zooms.push(zoom);
   }
 
   track(): CameraTrack {
