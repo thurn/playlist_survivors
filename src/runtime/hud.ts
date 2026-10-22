@@ -18,6 +18,39 @@ const ratingColor = (r: string | undefined) => (r ? (RATING_COLORS[r] ?? PLAIN) 
 /** The key display: each key's place (column, row) in the cluster. */
 const KEY_PLACES: Record<KeyName, [number, number, number]> = { up: [1, 0, -Math.PI / 2], left: [0, 1, Math.PI], down: [1, 1, Math.PI / 2], right: [2, 1, 0] };
 
+/** A menu the HUD draws (the pause menu, the end card's menu). */
+export interface HudMenu {
+  title?: string;
+  items: string[];
+  selected: number;
+  /** Lines under the title. */
+  notes?: string[];
+}
+
+/** Play mode's end card: the grade, the best grade, and where the player took over. */
+export interface EndCardInfo {
+  grade: string;
+  best?: string;
+  newBest: boolean;
+  /** Song time the player took over from the virtual player (a mid-song start). */
+  startedAt?: number;
+}
+
+export interface HudOptions {
+  metronome: boolean;
+  menu?: HudMenu;
+  /** A count-in the game is waiting through (a resume or a mid-song start): it replaces the frame's own. */
+  countIn?: { count: number; of: number; fade: number; beatPhase: number };
+  end?: EndCardInfo;
+}
+
+/** A menu panel's height in HUD units. */
+function menuHeight(m: HudMenu): number {
+  return 24 + ((m.title ? 1 : 0) + (m.notes?.length ?? 0)) * 16 + m.items.length * 22;
+}
+
+const fmtTime = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+
 export class Hud {
   readonly root = new Container();
   /** Everything except the letterbox bars; it pulses with the beat. */
@@ -27,6 +60,8 @@ export class Hud {
   private texts: PixelText[] = [];
   private used = 0;
   private creditLines: { text: string; tint: number; scale: number }[] = [];
+  /** Screen rectangles of the menu's items as last drawn (for clicks). */
+  menuRects: { x: number; y: number; w: number; h: number }[] = [];
 
   constructor(
     readonly plan: Plan,
@@ -75,7 +110,7 @@ export class Hud {
     return t;
   }
 
-  draw(f: Frame, out: { x: number; y: number; w: number; h: number }, options: { metronome: boolean }): void {
+  draw(f: Frame, out: { x: number; y: number; w: number; h: number }, options: HudOptions): void {
     const g = this.g;
     g.clear();
     this.bars.clear();
@@ -83,7 +118,7 @@ export class Hud {
     const u = out.h / 540; // HUD pixels per base unit
     const px = (v: number) => out.x + v * u;
     const py = (v: number) => out.y + v * u;
-    const hud = f.hud;
+    const hud = options.countIn ? { ...f.hud, countIn: options.countIn, beatPhase: options.countIn.beatPhase } : f.hud;
     const pulse = hud.free ? 0.5 + 0.5 * Math.cos(2 * Math.PI * hud.barPhase) : Math.exp(-6 * hud.beatPhase);
     const fs = Math.max(1, Math.round(u));
     const intro = smoothstep((f.s - 0.5) / 1.5);
@@ -205,11 +240,12 @@ export class Hud {
       // The count-in before step movement: four marks count the last four beats.
       if (hud.countIn) {
         const ci = hud.countIn;
-        for (let k = 1; k <= 4; k++) {
+        const of = ci.of ?? 4;
+        for (let k = 1; k <= of; k++) {
           const lit = k <= ci.count;
           const now = k === ci.count;
           const r = (3 + (now ? 3 * Math.exp(-6 * hud.beatPhase) : 0)) * u;
-          g.circle(px(cx - 45 + (k - 1) * 30), py(cy - 22), r).fill({ color: lit ? 0xffe080 : 0x606070, alpha: (lit ? 1 : 0.5) * (0.4 + 0.6 * ci.fade) });
+          g.circle(px(cx - 15 * (of - 1) + (k - 1) * 30), py(cy - 22), r).fill({ color: lit ? 0xffe080 : 0x606070, alpha: (lit ? 1 : 0.5) * (0.4 + 0.6 * ci.fade) });
         }
         g.roundRect(px(cx - 200), py(cy - 9), 400 * u, 18 * u, 9 * u).stroke({ color: 0xffe080, width: Math.max(1, u), alpha: 0.6 * ci.fade });
       }
@@ -262,14 +298,57 @@ export class Hud {
       this.text(`GOOD ${hud.ratings.good}`, px(480), py(y0 + 126), big, RATING_COLORS.good, "center", a);
       this.text(`AVERAGE GROOVE +${Math.round(hud.end.averageGroove * this.lib.hero.groove.maxBonus * 100)}%`, px(480), py(y0 + 148), big, 0x80e0ff, "center", a);
       let y = y0 + 200;
+      // Play mode: the grade, the best grade and where the player took over.
+      const end = options.end;
+      if (end) {
+        this.text(`GRADE ${end.grade}`, px(480), py(y0 + 176), Math.max(1, Math.round(4 * u)), 0xffd040, "center", a);
+        const notes = [end.newBest ? "NEW BEST!" : end.best ? `BEST ${end.best}` : "", end.startedAt ? `STARTED AT ${fmtTime(end.startedAt)}` : ""].filter((x) => x);
+        notes.forEach((n, i) => this.text(n, px(480), py(y0 + 214 + i * 14), fs, 0xc0c0d8, "center", a));
+        y += 50 + notes.length * 14;
+      }
+      // (Above the end card's menu, when there is one.)
+      const bottom = options.menu ? 540 - menuHeight(options.menu) - 34 : 540;
       for (const line of this.creditLines) {
         const sc = Math.max(1, Math.round(line.scale * u));
-        if (py(y) > out.y - 20 && py(y) < out.y + out.h) this.text(line.text, px(480), py(y), sc, line.tint, "center", a);
+        if (py(y) > out.y - 20 && y < bottom) this.text(line.text, px(480), py(y), sc, line.tint, "center", a);
         y += 12 * line.scale + 2;
       }
     }
 
+    // A menu, over everything (the pause menu; the end card's menu at the bottom).
+    this.menuRects = [];
+    if (options.menu) this.drawMenu(options.menu, out, !!hud.end);
+
     for (let i = this.used; i < this.texts.length; i++) this.texts[i].visible = false;
+  }
+
+  private drawMenu(m: HudMenu, out: { x: number; y: number; w: number; h: number }, atBottom: boolean): void {
+    const g = this.g;
+    const u = out.h / 540;
+    const px = (v: number) => out.x + v * u;
+    const py = (v: number) => out.y + v * u;
+    const h = menuHeight(m);
+    const top = atBottom ? 540 - h - 26 : 270 - h / 2;
+    if (!atBottom) g.rect(out.x, out.y, out.w, out.h).fill({ color: 0x05040a, alpha: 0.55 });
+    g.roundRect(px(330), py(top), 300 * u, h * u, 6 * u).fill({ color: 0x0c0a16, alpha: 0.9 });
+    g.roundRect(px(330), py(top), 300 * u, h * u, 6 * u).stroke({ color: 0xffe080, width: Math.max(1, u), alpha: 0.5 });
+    let y = top + 12;
+    const fs = Math.max(1, Math.round(u));
+    if (m.title) {
+      this.text(m.title, px(480), py(y), Math.max(1, Math.round(2 * u)), 0xffe080, "center");
+      y += 20;
+    }
+    for (const n of m.notes ?? []) {
+      this.text(n, px(480), py(y), fs, 0xa0a0c0, "center");
+      y += 14;
+    }
+    m.items.forEach((item, i) => {
+      const sel = i === m.selected;
+      const iy = y + i * 22;
+      if (sel) g.roundRect(px(350), py(iy - 3), 260 * u, 18 * u, 4 * u).fill({ color: 0xffe080, alpha: 0.18 });
+      this.text(`${sel ? "> " : ""}${item}${sel ? " <" : ""}`, px(480), py(iy), Math.max(1, Math.round(2 * u)), sel ? 0xffffff : 0xb0b0c8, "center");
+      this.menuRects.push({ x: px(350), y: py(iy - 3), w: 260 * u, h: 18 * u });
+    });
   }
 
   private heart(g: Graphics, x: number, y: number, r: number, color: number) {

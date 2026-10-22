@@ -45,12 +45,23 @@ export class LiveRunner {
   readonly stats = { rollbacks: 0, replayedS: 0, lateKeys: 0 };
   /** Every key event as applied (at its time, or the settled time if it came very late). */
   readonly applied: KeyEvent[] = [];
+  /** Section start times, and the rollback point at the latest one the settled time has passed (for restarting it). */
+  private readonly sectionStarts: number[];
+  private sectionSnap?: Snapshot & { section: number };
 
   constructor(
     public sim: Sim,
     readonly recording: LiveRecording,
   ) {
+    this.sectionStarts = recording.ctx.sections.map((x) => x.s0);
     this.snap();
+    this.sectionSnap = { ...this.snaps[0], section: this.sectionAt(sim.s) };
+  }
+
+  private sectionAt(s: number): number {
+    let i = 0;
+    while (i + 1 < this.sectionStarts.length && this.sectionStarts[i + 1] <= s + 1e-9) i++;
+    return i;
   }
 
   private snap(): void {
@@ -93,11 +104,34 @@ export class LiveRunner {
     }
     this.run(now + SPECULATE_S);
     this.settled = Math.max(this.settled, now - SETTLE_S);
+    // Once the settled time is past a section's start, the newest snapshot before it is the section's restart point.
+    const sec = this.sectionAt(this.settled);
+    if (sec > (this.sectionSnap?.section ?? -1)) {
+      let i = this.snaps.length - 1;
+      while (i > 0 && this.snaps[i].s > this.sectionStarts[sec]) i--;
+      this.sectionSnap = { ...this.snaps[i], section: sec };
+    }
     // Snapshots older than the settled time go, except the newest one before it.
     let k = 0;
     while (k + 1 < this.snaps.length && this.snaps[k + 1].s <= this.settled) k++;
     if (k > 0) this.snaps.splice(0, k);
-    this.recording.commit(this.snaps[0].mark);
+    this.recording.commit(Math.min(this.snaps[0].mark, this.sectionSnap?.mark ?? Infinity));
+  }
+
+  /**
+   * Restart the current section: restore its rollback point, rewind the recording to it and
+   * forget the keys since. Returns the section's start time (play resumes there after a count-in).
+   */
+  restartSection(): number | undefined {
+    const snap = this.sectionSnap;
+    if (!snap) return undefined;
+    this.recording.rewind(snap.mark);
+    this.recording.rebuildActive();
+    this.sim = snap.sim.clone(this.recording);
+    this.snaps = [{ s: snap.s, sim: snap.sim, mark: snap.mark, applied: snap.applied }];
+    this.applied.length = snap.applied;
+    this.settled = snap.s;
+    return Math.max(snap.s, this.sectionStarts[snap.section]);
   }
 
   /** Restore the newest snapshot before song time t, and rewind the recording to it. */

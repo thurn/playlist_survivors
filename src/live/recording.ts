@@ -181,8 +181,13 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
 
   /** A point the recording can be rewound to. */
   mark(): number {
+    // Samples after a mark start a new batch, so rewinding to the mark undoes them.
+    this.sampleBatch = undefined;
     return this.jBase + this.journal.length;
   }
+
+  /** Song time the player took over from the level's virtual player (a mid-song start): the grade counts from here. */
+  playerFrom = 0;
 
   /** Undo everything recorded since `mark`. */
   rewind(mark: number): void {
@@ -317,10 +322,23 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
     e.samples![n * 2] = x;
     e.samples![n * 2 + 1] = y;
     e.sampleCount = n + 1;
-    this.undo(() => {
-      e.sampleCount = n;
-    });
+    // One undo for a whole tick of samples (hundreds of enemies at 30 Hz): it keeps the journal small
+    // enough to hold a whole section, for restarting it.
+    const at = this.jBase + this.journal.length;
+    if (this.sampleBatch && this.sampleBatchAt === at) this.sampleBatch.push(e);
+    else {
+      const batch = [e];
+      this.sampleBatch = batch;
+      this.undo(() => {
+        for (const x of batch) x.sampleCount--;
+        this.sampleBatch = undefined;
+      });
+      this.sampleBatchAt = at + 1;
+    }
   }
+
+  private sampleBatch?: EnemyRecord[];
+  private sampleBatchAt = -1;
 
   fate(id: number, fate: Fate): void {
     const e = this.plan.enemies[id];
@@ -640,7 +658,7 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
     let gN = 0;
     for (const sec of this.ctx.sections) {
       if (sec.level.movement !== "steps") continue;
-      for (let t = sec.s0; t < Math.min(sec.s1, h.s); t += 0.25) {
+      for (let t = Math.max(sec.s0, this.playerFrom); t < Math.min(sec.s1, h.s); t += 0.25) {
         gSum += grooveAt(this.grooveSeries, t);
         gN++;
       }

@@ -210,6 +210,21 @@ export class Renderer {
     this.screen.addChild(this.composite);
   }
 
+  /** Free the GPU resources (a new recording is shown in its place). */
+  destroy(): void {
+    for (const c of this.chunks.values()) {
+      c.sprite.destroy();
+      c.rt.destroy(true);
+    }
+    this.chunks.clear();
+    this.worldRT.destroy(true);
+    this.lightRT.destroy(true);
+    this.bloomRT.destroy(true);
+    this.screen.destroy({ children: true });
+    this.world.destroy({ children: true });
+    this.lights.destroy({ children: true });
+  }
+
   /** The letterboxed output rectangle on screen. */
   outputRect(): { x: number; y: number; w: number; h: number } {
     const W = this.app.renderer.width / this.app.renderer.resolution;

@@ -15,6 +15,7 @@ import { Hud } from "./hud.ts";
 import { cacheKey, loadCachedPlan, storePlan } from "./planCache.ts";
 import { Renderer } from "./renderer.ts";
 import { runLive } from "./play.ts";
+import { calibrate, loadBestGrade, titleScreen } from "./title.ts";
 import { contentFiles, landmarks, levelFile, levelResolver, songMap } from "./sources.ts";
 
 export interface Params {
@@ -135,6 +136,8 @@ export interface DemoHook {
   lastS?: number;
   frames?: number;
   audio?: () => { state: string; contextSongTime: number; stats: { scheduled: number; skippedLate: number; startedLate: number; clicks: number; ducks: number; ticks: number } };
+  /** Play mode's flow: its phase, the menu on screen, pausing, and choosing a menu item by its label. */
+  play?: { phase(): string; pause(): void; menu(): { items: string[]; selected: number } | undefined; choose(label: string): void };
   /** Play mode: the live runner and recording, and a way to press keys at exact song times. */
   live?: { runner: import("../live/runner.ts").LiveRunner; recording: import("../live/recording.ts").LiveRecording; key(e: import("../sim/player.ts").KeyEvent): void };
   /** QA listening pass: the level's mix rendered offline through the live mixing graph. */
@@ -174,21 +177,31 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
   if (params.test) (window as unknown as { __demo: DemoHook }).__demo = hook;
 
   try {
-    // 1. Content, level script and song map.
+    // 1. Content and the song map. ?player=, ?capture, ?bench (and the test hooks ?test, ?level=
+    // and ?metronome) imply the demo, so existing tools and URLs keep working; otherwise the title
+    // screen chooses, unless ?mode= has.
     progress(0.02, "Loading content");
+    let mode = params.mode ?? (params.player || params.test || params.level !== undefined || params.metronome ? "demo" : undefined);
+    const levelOf = (m: "play" | "demo" | undefined) => levelFile(params.level ?? (m === "play" ? PLAY_LEVEL : undefined));
+    const loadFor = (m: "play" | "demo" | undefined): PlannerInput => {
+      try {
+        const lf = levelOf(m);
+        const sm = songMap(levelSongName(lf, levelResolver));
+        const level = loadLevel(lf, lib, sm, levelResolver);
+        overlay.sub.textContent = m === "demo" ? `${level.title.piece} — a tech demo` : level.title.piece;
+        return { songMap: sm, level, content: lib, seed: params.seed ?? level.seed, profile: params.player ?? level.player, landmarks: landmarks(), version: __BUILD_VERSION__ };
+      } catch (e) {
+        throw e instanceof ContentError ? new Error(`Level script or content error:\n${e.message}`) : e;
+      }
+    };
     let lib: ContentLibrary;
-    let input: PlannerInput;
     try {
       lib = loadContent(contentFiles());
-      const lf = levelFile(params.level ?? (params.mode === "play" ? PLAY_LEVEL : undefined));
-      const songName = levelSongName(lf, levelResolver);
-      const sm = songMap(songName);
-      const level = loadLevel(lf, lib, sm, levelResolver);
-      overlay.sub.textContent = `${level.title.piece} — a tech demo`;
-      input = { songMap: sm, level, content: lib, seed: params.seed ?? level.seed, profile: params.player ?? level.player, landmarks: landmarks(), version: __BUILD_VERSION__ };
     } catch (e) {
       throw e instanceof ContentError ? new Error(`Level script or content error:\n${e.message}`) : e;
     }
+    // A chosen mode loads its level now, so a broken one fails before anything else loads.
+    let input = loadFor(mode);
 
     // 2. Renderer and assets.
     const app = new Application();
@@ -213,9 +226,26 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
       await audio.loadMusic(`${import.meta.env.BASE_URL}audio/${input.songMap.audio.file}`, (f) => progress(0.4 + f * 0.25, "Loading music"));
     }
 
+    // The title screen: Play, Watch the demo, or Calibrate (then the title again).
+    let begun = false;
+    while (!mode) {
+      progress(1, "");
+      overlay.root.dataset.state = "title";
+      const choice = await titleScreen(overlay, loadBestGrade(PLAY_LEVEL));
+      if (choice === "calibrate") {
+        await calibrate(overlay, audio!);
+        continue;
+      }
+      mode = choice;
+      // The choice was a click or a key: it unlocks audio, so play starts without another.
+      begun = true;
+      const chosen = loadFor(mode);
+      input = { ...chosen, heroAnims: input.heroAnims, soundOnsets: input.soundOnsets };
+    }
+
     // Play mode: the real game, live (`?mode=play&player=` plays back a precomputed run instead).
-    if (params.mode === "play" && !params.player) {
-      await runLive({ app, assets, input, props, audio, overlay, progress, hook, params, frameMs, ready: readyResolve });
+    if (mode === "play" && !params.player) {
+      await runLive({ app, assets, input, props, audio, overlay, progress, hook, params, frameMs, ready: readyResolve, begun });
       return;
     }
 
@@ -297,7 +327,8 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
     overlay.status.textContent = params.metronome ? "Metronome mode: beat flash and click track" : "Headphones recommended";
     if (params.startS > 0) overlay.status.textContent += ` · starting at ${params.startS.toFixed(1)} s`;
     if (params.player) overlay.status.textContent += ` · ${params.player} player`;
-    await clickToBegin(overlay);
+    if (begun) overlay.root.remove();
+    else await clickToBegin(overlay);
     await audio!.start(plan, params.startS);
     hook.audio = () => ({ state: audio!.ctx.state, contextSongTime: audio!.contextSongTime(), stats: { ...audio!.stats } });
     const clock: SongClock = audio!;

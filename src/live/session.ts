@@ -36,9 +36,10 @@ export function liveSim(input: PlannerInput, props: Record<string, PropInfo> | u
 }
 
 /** The hand-over at the simulation's time: the bot stops, and its held keys are released. */
-export function handOver(sim: Sim): void {
+export function handOver(sim: Sim, recording: LiveRecording): void {
   sim.detachPlayer();
   for (const key of sim.heldKeys()) sim.key({ s: sim.s, kind: "release", key });
+  recording.playerFrom = sim.s;
 }
 
 export function liveSession(input: PlannerInput, opts: LiveOptions = {}): LiveSession {
@@ -46,7 +47,7 @@ export function liveSession(input: PlannerInput, opts: LiveOptions = {}): LiveSe
   const { ctx, recording, sim } = liveSim(input, opts.props, startS > 0);
   if (startS > 0) {
     sim.advanceTo(startS);
-    handOver(sim);
+    handOver(sim, recording);
   }
   for (const k of opts.keys ?? []) if (k.s >= sim.s) sim.key(k);
   return { ctx, recording, runner: new LiveRunner(sim, recording), startS };

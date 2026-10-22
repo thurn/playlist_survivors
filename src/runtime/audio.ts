@@ -169,7 +169,12 @@ export class AudioEngine implements SongClock {
         }
       }),
     );
-    // A short synthesized click for the metronome.
+    this.makeClick();
+  }
+
+  /** A short synthesized click for the metronome and the calibration. */
+  private makeClick(): void {
+    if (this.clickBuffer) return;
     const sr = this.ctx.sampleRate;
     const click = this.ctx.createBuffer(1, Math.floor(sr * 0.03), sr);
     const d = click.getChannelData(0);
@@ -225,16 +230,16 @@ export class AudioEngine implements SongClock {
   private live?: { sounds: () => readonly SoundEvent[]; scheduler: LiveSoundScheduler };
 
   /** Start live playback (from a user gesture) `fromS` seconds into the song; sounds come from a live recording. */
-  async startLive(sounds: () => readonly SoundEvent[], fromS = 0): Promise<void> {
+  async startLive(sounds: () => readonly SoundEvent[], fromS = 0, muteBeforeS = -Infinity): Promise<void> {
     await this.ctx.resume();
     if (!this.music) throw new Error("music not loaded");
-    const offset = Math.max(0, Math.min(fromS, this.music.duration));
     const src = this.ctx.createBufferSource();
     src.buffer = this.music;
     src.connect(this.mix.musicGain);
     const when = this.ctx.currentTime + 0.1;
-    src.start(when, offset);
-    this.mix.follow(this.followCurve(), when, offset);
+    // (A count-in before song time 0 starts the music late.)
+    src.start(when + Math.max(0, -fromS), Math.max(0, Math.min(fromS, this.music.duration)));
+    this.mix.follow(this.followCurve(), when + Math.max(0, -fromS), Math.max(0, fromS), true);
     this.source = src;
     this.t0 = when - fromS;
     this.started = true;
@@ -258,8 +263,67 @@ export class AudioEngine implements SongClock {
         this.t0,
       ),
     };
+    this.live.scheduler.muteBefore = muteBeforeS;
     this.timer = setInterval(() => this.scheduleLive(), SCHEDULE_EVERY_MS);
     this.scheduleLive();
+  }
+
+  /** Pause live play: song time stops (the context is suspended), and nothing scheduled ahead plays. */
+  async pauseLive(): Promise<void> {
+    this.live?.scheduler.cancelAll();
+    if (this.timer) clearInterval(this.timer);
+    this.timer = undefined;
+    await this.ctx.suspend();
+  }
+
+  /**
+   * Play the music from `fromS` (a count-in: the bar before `muteBeforeS`), with the game's
+   * sounds silent until `muteBeforeS`.
+   */
+  async seekLive(fromS: number, muteBeforeS: number): Promise<void> {
+    if (!this.music || !this.live) return;
+    this.live.scheduler.cancelAll();
+    await this.ctx.resume();
+    this.source?.stop();
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.music;
+    src.connect(this.mix.musicGain);
+    const when = this.ctx.currentTime + 0.1;
+    src.start(when + Math.max(0, -fromS), Math.max(0, Math.min(fromS, this.music.duration)));
+    this.mix.follow(this.followCurve(), when + Math.max(0, -fromS), Math.max(0, fromS), true);
+    this.source = src;
+    this.t0 = when - fromS;
+    this.live.scheduler.t0 = this.t0;
+    this.live.scheduler.muteBefore = muteBeforeS;
+    this.smoother.reset();
+    if (!this.timer) this.timer = setInterval(() => this.scheduleLive(), SCHEDULE_EVERY_MS);
+    this.scheduleLive();
+  }
+
+  /** Calibration: `n` clicks at `bpm`, starting about a second from now. Returns their context times. */
+  async clicks(n: number, bpm: number): Promise<number[]> {
+    await this.ctx.resume();
+    this.makeClick();
+    const t = this.ctx.currentTime + 1;
+    const out: number[] = [];
+    for (let k = 0; k < n; k++) {
+      const at = t + (k * 60) / bpm;
+      out.push(at);
+      if (!this.clickBuffer) continue;
+      const src = this.ctx.createBufferSource();
+      src.buffer = this.clickBuffer;
+      const g = this.ctx.createGain();
+      g.gain.value = k % 4 === 0 ? 0.9 : 0.6;
+      src.playbackRate.value = k % 4 === 0 ? 1.5 : 1;
+      src.connect(g).connect(this.mix.musicGain);
+      src.start(at);
+    }
+    return out;
+  }
+
+  /** The context time heard at performance time `perfMs` (for calibration taps). */
+  contextTimeAt(perfMs: number): number {
+    return this.songTimeAt(perfMs) + this.t0;
   }
 
   /** Schedule (and cancel) live sounds: call it every frame, after the live recording has moved on. */
@@ -422,8 +486,9 @@ class Mix {
 
   /** Schedules the effects level over the song, starting at context time t0. */
   /** Schedules the follow curve from song time `fromS`, which plays at context time `when`. */
-  follow(curve: Float32Array | undefined, when: number, fromS = 0): void {
+  follow(curve: Float32Array | undefined, when: number, fromS = 0, replace = false): void {
     if (curve) curve = curve.subarray(Math.floor(fromS * LEVEL_RATE));
+    if (replace) this.sfxFollow.gain.cancelScheduledValues(0);
     if (!curve || curve.length < 2) return;
     this.sfxFollow.gain.setValueAtTime(curve[0], when);
     this.sfxFollow.gain.setValueCurveAtTime(curve, when, curve.length / LEVEL_RATE);

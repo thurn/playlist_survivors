@@ -150,7 +150,7 @@ export interface HudState {
   /** Free movement (the beat track is a flowing ribbon). */
   free: boolean;
   /** The count-in before step movement: which of the four count marks is lit (1–4), and how far the beat track has faded in (0–1). */
-  countIn?: { count: number; fade: number };
+  countIn?: { count: number; fade: number; of?: number };
   energy: number;
   banners: { text: string; age: number; dur: number }[];
   title?: { age: number; remaining: number };

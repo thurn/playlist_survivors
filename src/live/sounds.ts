@@ -40,6 +40,9 @@ export class LiveSoundScheduler {
   private scheduled = new Map<string, { when: number; s: number; handle?: { stop(): void } }>();
   readonly stats = { scheduled: 0, cancelled: 0, startedLate: 0, skippedLate: 0 };
 
+  /** Sounds before this song time stay silent (a count-in replays the bar before a resume). */
+  muteBefore = -Infinity;
+
   /** @param t0 Context time of song time 0. */
   constructor(
     private readonly out: SoundOutput,
@@ -58,7 +61,7 @@ export class LiveSoundScheduler {
       if (this.scheduled.has(key)) continue;
       const start = this.t0 + ev.s - (ev.lead ?? 0);
       if (start > now + lookahead) continue;
-      if (this.t0 + ev.s < now - 0.03) {
+      if (this.t0 + ev.s < now - 0.03 || ev.s < this.muteBefore) {
         // Its onset has passed (a stall, or a sound the recording only now has): never late.
         this.scheduled.set(key, { when: start, s: ev.s });
         this.stats.skippedLate++;

@@ -3,23 +3,32 @@
  * simulation through the live runner; the evaluator, renderer and HUD draw
  * the live recording like a finished plan, and the audio engine schedules its
  * sounds as they become known (and cancels the ones a rollback took back).
+ *
+ * The flow around it: a one-bar count-in before a mid-song start and after
+ * each resume; Esc (or losing focus) pauses, with Resume, Restart section,
+ * Restart song and Quit to title; the end card's grade and menu; and Watch my
+ * run, which replays the recorded key events through the engine.
  */
 import type { Application } from "pixi.js";
 import type { ContentLibrary } from "../content/loader.ts";
 import { indexSong, timeOfBeatIndex } from "../core/songmap.ts";
-import { KeyboardInput, loadInputOffset } from "../live/input.ts";
+import { KeyboardInput, keyOf, loadInputOffset } from "../live/input.ts";
+import type { LiveRecording } from "../live/recording.ts";
 import { LiveRunner } from "../live/runner.ts";
 import { handOver, liveSim } from "../live/session.ts";
 import type { PropInfo } from "../mapgen/mapgen.ts";
-import { Evaluator } from "../plan/evaluate.ts";
+import { Evaluator, type Frame } from "../plan/evaluate.ts";
+import { gradeFor, gradeRank, type Grade } from "../plan/grade.ts";
+import { beatIndexIn } from "../plan/view.ts";
 import type { PlannerInput } from "../planner/context.ts";
 import type { Key } from "../sim/movement.ts";
 import type { KeyEvent } from "../sim/player.ts";
-import { clickToBegin, runBench, type DemoHook, type Overlay, type Params } from "./app.ts";
+import { clickToBegin, PLAY_LEVEL, runBench, type DemoHook, type Overlay, type Params } from "./app.ts";
 import type { GameAssets } from "./assets.ts";
 import type { AudioEngine } from "./audio.ts";
-import { Hud } from "./hud.ts";
+import { Hud, type EndCardInfo, type HudMenu, type HudOptions } from "./hud.ts";
 import { Renderer } from "./renderer.ts";
+import { loadBestGrade, saveBestGrade } from "./title.ts";
 
 export interface LiveEnv {
   app: Application;
@@ -34,6 +43,8 @@ export interface LiveEnv {
   frameMs: number[];
   /** The page is ready (for tests): called before waiting for the first click. */
   ready: () => void;
+  /** The title screen's choice already unlocked audio: no "Click to begin". */
+  begun?: boolean;
 }
 
 const yieldToUi = () => new Promise((r) => setTimeout(r, 0));
@@ -47,57 +58,105 @@ export function paletteSamples(lib: ContentLibrary): Set<string> {
 
 const fmtTime = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
-export async function runLive(env: LiveEnv): Promise<void> {
-  const { app, assets, input, props, audio, overlay, progress, hook, params } = env;
-  const startS = params.bench ? benchFrom(input) : params.startS;
+/** A recording on screen: its evaluator, renderer and HUD. */
+interface Stage {
+  recording: LiveRecording;
+  evaluator: Evaluator;
+  renderer: Renderer;
+  hud: Hud;
+}
 
-  // The simulation; a mid-song start fast-forwards with the level's virtual player, then hands over.
-  progress(0.7, startS > 0 ? `Fast-forwarding to ${fmtTime(startS)}` : "Preparing the field");
-  const { ctx, recording, sim } = liveSim(input, props, startS > 0);
+/** A fresh live session: a mid-song start fast-forwards with the level's virtual player, then hands over. */
+async function newSession(env: LiveEnv, startS: number, onProgress?: (f: number) => void): Promise<{ recording: LiveRecording; runner: LiveRunner }> {
+  const { recording, sim } = liveSim(env.input, env.props, startS > 0);
   for (let t = 0; t < startS; ) {
     t = Math.min(startS, t + 5);
     sim.advanceTo(t);
-    progress(0.7 + (0.2 * t) / startS, `Fast-forwarding to ${fmtTime(startS)}`);
+    onProgress?.(t / startS);
     await yieldToUi();
   }
-  if (startS > 0) handOver(sim);
-  const runner = new LiveRunner(sim, recording);
-  const lib = ctx.lib;
+  if (startS > 0) handOver(sim, recording);
+  return { recording, runner: new LiveRunner(sim, recording) };
+}
+
+/**
+ * Watch my run: the recorded key events replayed through the engine in batch mode (the virtual
+ * player's part again first, after a mid-song start). The replay equals the live run.
+ */
+export function replay(input: PlannerInput, props: Record<string, PropInfo> | undefined, startS: number, keys: readonly KeyEvent[]): LiveRecording {
+  const { recording, sim } = liveSim(input, props, startS > 0);
+  if (startS > 0) {
+    sim.advanceTo(startS);
+    handOver(sim, recording);
+  }
+  for (const k of keys) sim.key(k);
+  sim.runToEnd();
+  return recording;
+}
+
+export async function runLive(env: LiveEnv): Promise<void> {
+  const { app, assets, input, audio, overlay, progress, hook, params } = env;
+  const startS = params.bench ? benchFrom(input) : params.startS;
+  const lib = input.level.hero === input.content.hero ? input.content : { ...input.content, hero: input.level.hero };
+  const level = input.level.file.split("/").pop()!.replace(/\.ya?ml$/, "") || PLAY_LEVEL;
+
+  progress(0.7, startS > 0 ? `Fast-forwarding to ${fmtTime(startS)}` : "Preparing the field");
+  let session = await newSession(env, startS, (f) => progress(0.7 + 0.2 * f, `Fast-forwarding to ${fmtTime(startS)}`));
   if (audio) {
     progress(0.92, "Loading sounds");
     await audio.loadSounds(assets.sounds, paletteSamples(lib), `${import.meta.env.BASE_URL}assets/sfx/`);
   }
 
-  const evaluator = new Evaluator(recording.plan, lib, recording);
-  const renderer = new Renderer(app, assets, recording.plan, lib);
-  const hud = new Hud(recording.plan, lib, assets.credits);
-  app.stage.addChild(renderer.screen, hud.root);
+  let stage: Stage | undefined;
+  const show = (recording: LiveRecording): Stage => {
+    if (stage) {
+      app.stage.removeChildren();
+      stage.renderer.destroy();
+    }
+    const evaluator = new Evaluator(recording.plan, lib, recording);
+    const renderer = new Renderer(app, assets, recording.plan, lib);
+    const hud = new Hud(recording.plan, lib, assets.credits);
+    app.stage.addChild(renderer.screen, hud.root);
+    stage = { recording, evaluator, renderer, hud };
+    hook.plan = recording.plan;
+    return stage;
+  };
+  show(session.recording);
   let lastStats = { alive: 0, particles: 0 };
   hook.stats = () => ({ frameMs: env.frameMs, ...lastStats });
-  const drawAt = (s: number) => {
-    recording.refresh();
-    const frame = evaluator.evaluate(s);
-    renderer.draw(frame);
-    hud.draw(frame, renderer.outputRect(), { metronome: false });
+  const draw = (s: number, opts: Partial<HudOptions> = {}): Frame => {
+    const st = stage!;
+    st.recording.refresh();
+    const frame = st.evaluator.evaluate(s);
+    st.renderer.draw(frame);
+    st.hud.draw(frame, st.renderer.outputRect(), { metronome: false, ...opts });
     app.renderer.render(app.stage);
     lastStats = { alive: frame.stats.alive, particles: frame.stats.particles };
     return frame;
   };
+
   // Keys from tests and tools, at exact song times (the next frame applies them).
   const injected: KeyEvent[] = [];
-  hook.live = { runner, recording, key: (e) => injected.push(e) };
-  hook.plan = recording.plan;
+  hook.live = {
+    get runner() {
+      return session.runner;
+    },
+    get recording() {
+      return session.recording;
+    },
+    key: (e) => injected.push(e),
+  };
   /** One live frame at song time s: apply the keys that have arrived, run ahead, draw. */
-  const liveFrame = (s: number, keys: KeyEvent[]) => {
+  const liveFrame = (s: number, keys: KeyEvent[], opts: Partial<HudOptions> = {}): Frame => {
     const t0 = performance.now();
     keys.push(...injected.splice(0));
-    runner.frame(s, keys);
+    session.runner.frame(s, keys);
     audio?.scheduleLive();
-    drawAt(s);
+    const frame = draw(s, opts);
     env.frameMs.push(performance.now() - t0);
     if (env.frameMs.length > 20000) env.frameMs.splice(0, 10000);
+    return frame;
   };
-  // Test hook: a virtual clock driven by the test driver (it must only move forward).
   hook.renderAt = async (s: number) => {
     liveFrame(s, []);
     await new Promise((r) => requestAnimationFrame(() => r(undefined)));
@@ -116,8 +175,8 @@ export async function runLive(env: LiveEnv): Promise<void> {
     // little late (so most of them roll the simulation back).
     overlay.root.remove();
     env.ready();
-    const beats = recording.plan.songBeats;
-    const toS = ctx.sections.find((x) => x.label === "climax")?.s0 ?? ctx.duration;
+    const beats = session.recording.plan.songBeats;
+    const toS = session.recording.ctx.sections.find((x) => x.label === "climax")?.s0 ?? input.songMap.audio.duration;
     const dirs: Key[] = ["right", "down", "left", "up"];
     const presses: KeyEvent[] = [];
     for (let i = 0; i < beats.length; i++) {
@@ -126,42 +185,294 @@ export async function runLive(env: LiveEnv): Promise<void> {
       presses.push({ s: beats[i] + 0.004, kind: "press", key }, { s: beats[i] + 0.064, kind: "release", key });
     }
     let next = 0;
-    hook.bench = runBench(startS, toS, (s) => {
-      const due: KeyEvent[] = [];
-      while (next < presses.length && presses[next].s + 0.012 <= s) due.push(presses[next++]);
-      liveFrame(s, due);
-    }, app);
+    hook.bench = runBench(
+      startS,
+      toS,
+      (s) => {
+        const due: KeyEvent[] = [];
+        while (next < presses.length && presses[next].s + 0.012 <= s) due.push(presses[next++]);
+        liveFrame(s, due);
+      },
+      app,
+    );
     return;
   }
   env.ready();
 
-  overlay.status.textContent = "Arrows or WASD to move · headphones recommended";
-  if (startS > 0) overlay.status.textContent += ` · starting at ${fmtTime(startS)}`;
-  await clickToBegin(overlay);
-  await audio!.startLive(() => recording.plan.events.sounds, startS);
-  hook.audio = () => ({ state: audio!.ctx.state, contextSongTime: audio!.contextSongTime(), stats: { ...audio!.stats } });
-  const keyboard = new KeyboardInput((perfMs) => audio!.songTimeAt(perfMs), loadInputOffset);
-  keyboard.attach();
-  let lastTs = 0;
-  const intervals: number[] = [];
-  let frameDur = 1000 / 60;
-  const loop = (ts: number) => {
-    if (lastTs > 0) {
-      const dt = ts - lastTs;
+  if (env.begun) overlay.root.remove();
+  else {
+    overlay.status.textContent = "Arrows or WASD to move · Esc pauses · headphones recommended";
+    if (startS > 0) overlay.status.textContent += ` · starting at ${fmtTime(startS)}`;
+    await clickToBegin(overlay);
+  }
+  void new PlayController(env, level, startS, () => session, (s) => (session = s), show, () => stage!.hud, draw, liveFrame).start();
+}
+
+/** One bar before song time s (a count-in's length), from the song map. */
+function barBefore(input: PlannerInput, s: number): { from: number; beats: number; beatLen: number } {
+  const sm = input.songMap;
+  const idx = indexSong(sm);
+  const bi = beatIndexIn(sm.beats, s);
+  let bar = 1;
+  while (bar + 1 <= idx.barCount && idx.barStart[bar + 1] <= Math.floor(bi + 1e-6)) bar++;
+  const beats = idx.beatsPerBar[bar] ?? 2;
+  return { from: timeOfBeatIndex(sm, bi - beats), beats, beatLen: (s - timeOfBeatIndex(sm, bi - beats)) / beats };
+}
+
+type Phase = "countIn" | "playing" | "paused" | "replay";
+
+/** The live flow: count-ins, the pause menu, restarts, the end card and Watch my run. */
+class PlayController {
+  private phase: Phase = "countIn";
+  /** The game waits at this song time through a count-in (or a pause). */
+  private holdS = 0;
+  private countFrom = 0;
+  private count = { beats: 2, beatLen: 0.3 };
+  private keyboard: KeyboardInput;
+  private menu?: { menu: HudMenu; actions: (() => void)[] };
+  private end?: EndCardInfo;
+  private replayRec?: LiveRecording;
+  private lastS = 0;
+  private frameDur = 1000 / 60;
+  /** The audio clock is running for the current count-in (a seek is asynchronous). */
+  private clockReady = false;
+
+  constructor(
+    private readonly env: LiveEnv,
+    private readonly level: string,
+    private readonly startS: number,
+    private readonly session: () => { recording: LiveRecording; runner: LiveRunner },
+    private readonly setSession: (s: { recording: LiveRecording; runner: LiveRunner }) => void,
+    private readonly show: (r: LiveRecording) => Stage,
+    private readonly currentHud: () => Hud,
+    private readonly draw: (s: number, opts?: Partial<HudOptions>) => Frame,
+    private readonly liveFrame: (s: number, keys: KeyEvent[], opts?: Partial<HudOptions>) => Frame,
+  ) {
+    const audio = env.audio!;
+    this.keyboard = new KeyboardInput((perfMs) => audio.songTimeAt(perfMs), loadInputOffset);
+  }
+
+  private get audio(): AudioEngine {
+    return this.env.audio!;
+  }
+
+  async start(): Promise<void> {
+    const hook = this.env.hook;
+    hook.audio = () => ({ state: this.audio.ctx.state, contextSongTime: this.audio.contextSongTime(), stats: { ...this.audio.stats } });
+    hook.play = {
+      phase: () => this.phase,
+      pause: () => this.pause(),
+      menu: () => this.menu?.menu,
+      choose: (label) => {
+        const i = this.menu?.menu.items.findIndex((x) => x.startsWith(label)) ?? -1;
+        if (i >= 0) this.menu!.actions[i]();
+      },
+    };
+    // A mid-song start begins with a one-bar count-in: the music starts a bar early.
+    if (this.startS > 0) await this.countIn(this.startS, true);
+    else {
+      this.phase = "playing";
+      await this.audio.startLive(() => this.session().recording.plan.events.sounds, 0);
+    }
+    this.keyboard.attach();
+    window.addEventListener("keydown", this.onKey);
+    window.addEventListener("pointerdown", this.onPointer);
+    window.addEventListener("blur", this.onBlur);
+    document.addEventListener("visibilitychange", this.onVisibility);
+    requestAnimationFrame(this.loop);
+  }
+
+  /** Wait at song time s through a one-bar count-in: the music plays the bar before it, the game's sounds stay silent. */
+  private async countIn(s: number, first = false): Promise<void> {
+    const bar = barBefore(this.env.input, s);
+    this.holdS = s;
+    this.countFrom = bar.from;
+    this.count = { beats: bar.beats, beatLen: bar.beatLen };
+    this.phase = "countIn";
+    this.clockReady = false;
+    this.keyboard.drain();
+    if (first) await this.audio.startLive(() => this.session().recording.plan.events.sounds, bar.from, s);
+    else await this.audio.seekLive(bar.from, s);
+    this.clockReady = true;
+  }
+
+  private readonly loop = (ts: number) => {
+    const audio = this.audio;
+    const s = audio.songTimeAtPresentation(ts, this.frameDur);
+    this.trackFrames(ts);
+    const hook = this.env.hook;
+    if (this.phase === "countIn") {
+      // Input begins on the bar line.
+      this.keyboard.drain();
+      if (!this.clockReady) this.draw(this.holdS, { countIn: { count: 0, of: this.count.beats, fade: 1, beatPhase: 0 } });
+      else if (s < this.holdS) {
+        const k = Math.min(this.count.beats, Math.max(1, Math.floor((s - this.countFrom) / this.count.beatLen) + 1));
+        const ph = Math.max(0, ((s - this.countFrom) / this.count.beatLen) % 1);
+        this.draw(this.holdS, { countIn: { count: k, of: this.count.beats, fade: 1, beatPhase: ph } });
+      } else this.phase = "playing";
+    }
+    if (this.phase === "playing") {
+      const frame = this.liveFrame(s, this.keyboard.drain(), this.hudOptions());
+      this.lastS = s;
+      if (frame.hud.end && !this.end) this.showEnd();
+    } else if (this.phase === "paused") this.draw(this.lastS, this.hudOptions());
+    else if (this.phase === "replay") {
+      const frame = this.draw(s, this.hudOptions());
+      if (frame.hud.end && !this.menu) this.menu = this.endMenu();
+    }
+    // (The song time drawn: the game waits through count-ins and pauses.)
+    hook.lastS = this.phase === "paused" ? this.lastS : this.phase === "countIn" ? Math.min(s, this.holdS) : s;
+    hook.frames = (hook.frames ?? 0) + 1;
+    requestAnimationFrame(this.loop);
+  };
+
+  /** The display's refresh period: a median of recent frame intervals. */
+  private lastTs = 0;
+  private intervals: number[] = [];
+  private trackFrames(ts: number): void {
+    if (this.lastTs > 0) {
+      const dt = ts - this.lastTs;
       if (dt > 2 && dt < 100) {
-        intervals.push(dt);
-        if (intervals.length > 31) intervals.shift();
-        frameDur = [...intervals].sort((a, b) => a - b)[intervals.length >> 1];
+        this.intervals.push(dt);
+        if (this.intervals.length > 31) this.intervals.shift();
+        this.frameDur = [...this.intervals].sort((a, b) => a - b)[this.intervals.length >> 1];
       }
     }
-    lastTs = ts;
-    const s = audio!.songTimeAtPresentation(ts, frameDur);
-    liveFrame(s, keyboard.drain());
-    hook.lastS = s;
-    hook.frames = (hook.frames ?? 0) + 1;
-    requestAnimationFrame(loop);
+    this.lastTs = ts;
+  }
+
+  private hudOptions(): Partial<HudOptions> {
+    return { menu: this.menu?.menu, end: this.end };
+  }
+
+  // ------------------------------------------------------------------ pause
+
+  private pause(): void {
+    if (this.phase !== "playing" && this.phase !== "countIn") return;
+    // Held keys are released where the game stops.
+    const at = this.phase === "countIn" ? this.holdS : this.lastS;
+    this.keyboard.releaseAll(at);
+    if (this.phase === "playing") this.session().runner.frame(at, this.keyboard.drain());
+    this.keyboard.enabled = false;
+    this.lastS = at;
+    this.phase = "paused";
+    void this.audio.pauseLive();
+    this.menu = {
+      menu: { title: "PAUSED", items: ["Resume", "Restart section", "Restart song", "Quit to title"], selected: 0 },
+      actions: [() => this.resume(), () => this.restartSection(), () => this.restartSong(), () => this.quit()],
+    };
+  }
+
+  /** Resume after a one-bar count-in: the music replays the bar before the pause point; the game resumes exactly there. */
+  private resume(): void {
+    this.menu = undefined;
+    this.keyboard.enabled = true;
+    void this.countIn(this.lastS);
+  }
+
+  private restartSection(): void {
+    const s0 = this.session().runner.restartSection();
+    this.menu = undefined;
+    this.keyboard.enabled = true;
+    this.end = undefined;
+    if (s0 === undefined) return void this.countIn(this.lastS);
+    this.lastS = s0;
+    void this.countIn(s0);
+  }
+
+  private async restartSong(): Promise<void> {
+    this.menu = { menu: { title: "RESTARTING", items: [], selected: 0, notes: this.startS > 0 ? [`fast-forwarding to ${fmtTime(this.startS)}`] : [] }, actions: [] };
+    this.draw(this.lastS, this.hudOptions());
+    await this.audio.pauseLive();
+    const session = await newSession(this.env, this.startS);
+    this.setSession(session);
+    this.show(session.recording);
+    this.menu = undefined;
+    this.end = undefined;
+    this.replayRec = undefined;
+    this.keyboard.enabled = true;
+    this.keyboard.drain();
+    this.lastS = this.startS;
+    await this.countIn(this.startS);
+  }
+
+  private quit(): void {
+    const q = new URLSearchParams(location.search);
+    q.delete("mode");
+    q.delete("start");
+    location.search = q.toString();
+  }
+
+  private watchDemo(): void {
+    const q = new URLSearchParams(location.search);
+    q.set("mode", "demo");
+    q.delete("start");
+    location.search = q.toString();
+  }
+
+  // ------------------------------------------------------------------ the end
+
+  private showEnd(): void {
+    const plan = this.session().recording.plan;
+    const grade: Grade = gradeFor(plan.stats.averageGroove);
+    const best = loadBestGrade(this.level);
+    const newBest = !best || gradeRank(grade) < gradeRank(best);
+    if (newBest) saveBestGrade(this.level, grade);
+    this.end = { grade, best: newBest ? undefined : best, newBest, startedAt: this.startS > 0 ? this.startS : undefined };
+    this.menu = this.endMenu();
+  }
+
+  private endMenu(): { menu: HudMenu; actions: (() => void)[] } {
+    return { menu: { items: ["Play again", "Watch my run", "Watch the demo"], selected: 0 }, actions: [() => void this.restartSong(), () => void this.watchMyRun(), () => this.watchDemo()] };
+  }
+
+  /** Replay the run just played, identically, and play it back like the demo. */
+  private async watchMyRun(): Promise<void> {
+    this.menu = { menu: { title: "REPLAYING", items: [], selected: 0 }, actions: [] };
+    this.draw(this.lastS, this.hudOptions());
+    await yieldToUi();
+    this.replayRec ??= replay(this.env.input, this.env.props, this.startS, this.session().runner.applied);
+    this.show(this.replayRec);
+    this.menu = undefined;
+    this.phase = "replay";
+    const from = Math.max(0, this.startS > 0 ? barBefore(this.env.input, this.startS).from : 0);
+    await this.audio.pauseLive();
+    this.audio.stop();
+    await this.audio.start(this.replayRec.plan, from);
+  }
+
+  // ------------------------------------------------------------------ input
+
+  private readonly onKey = (e: KeyboardEvent) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      if (this.phase === "paused" && this.menu) this.resume();
+      else this.pause();
+      return;
+    }
+    const m = this.menu;
+    if (!m || m.menu.items.length === 0) return;
+    const k = keyOf(e);
+    if (k === "up") m.menu.selected = (m.menu.selected + m.menu.items.length - 1) % m.menu.items.length;
+    else if (k === "down") m.menu.selected = (m.menu.selected + 1) % m.menu.items.length;
+    else if (k === "right" || e.key === "Enter" || e.key === " ") m.actions[m.menu.selected]();
+    else return;
+    e.preventDefault();
   };
-  requestAnimationFrame(loop);
+
+  private readonly onPointer = (e: PointerEvent) => {
+    const m = this.menu;
+    if (!m) return;
+    const i = this.currentHud().menuRects.findIndex((r) => e.clientX >= r.x && e.clientX <= r.x + r.w && e.clientY >= r.y && e.clientY <= r.y + r.h);
+    if (i >= 0) m.actions[i]();
+  };
+
+  /** Losing focus releases every held key and pauses. */
+  private readonly onBlur = () => this.pause();
+
+  private readonly onVisibility = () => {
+    if (document.hidden) this.pause();
+  };
 }
 
 /** The play-mode benchmark starts at theme A. */
