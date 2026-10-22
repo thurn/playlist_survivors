@@ -54,8 +54,10 @@ export function aim(hx: number, hy: number, facing: number, targets: readonly Ai
   for (let k = 0; k < AIM_DIRECTIONS; k++) {
     const dir = wrapAngle((k / AIM_DIRECTIONS) * TAU);
     const arc = swingArc(hx, hy, dir, reach);
+    // Aim counts enemies whose centre is in the arc: the swing also catches bodies overlapping
+    // its edge, so a target that moves a little before the strike is still caught.
     let score = 0;
-    for (const t of targets) if (catches(arc, t.x, t.y, t.r)) score += t.weight;
+    for (const t of targets) if (shapeContains(arc, t.x, t.y)) score += t.weight;
     if (score <= 0) continue;
     const off = Math.abs(wrapAngle(dir - toNearest));
     if (score > bestScore + 1e-9 || (Math.abs(score - bestScore) <= 1e-9 && off < bestOff - 1e-9)) {

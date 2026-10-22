@@ -37,7 +37,7 @@ Someone with a browser can download the score and confirm the bar counts below
 | Section role | Label | Bars | Bar count | Time (s) | Key | Evidence |
 |---|---|---|---|---|---|---|
 | Slow lyrical passage | `prelude` | 1–14 | 14 (4/4) | 0.15–43.2 | E major | sustained strings at ~85 BPM; phrase starts at 0.15, ~11.0, ~25.8; it fades out at ~30.3 s, then a sparse, quiet rubato transition (31.6–43.2) |
-| Galop vamp (quiet introduction) | `prelude` | 15–30 | 16 (2/4) | 43.2–54.07 | D major | soft bass-and-chord accompaniment with a crescendo; two 8-bar phrases (chroma repeats after 8 bars) |
+| Galop vamp (quiet introduction) | `galop-vamp` | 15–30 | 16 (2/4) | 43.2–54.07 | D major | soft bass-and-chord accompaniment with a crescendo; two 8-bar phrases (chroma repeats after 8 bars) |
 | Galop opening chords | `galop-opening` | 31–53 | 23 | 54.07–69.82 | D major | first fortissimo tutti at 54.066; four chord + descending-run flourishes at bars 31, 35, 39, 43 (54.07, 56.78, 59.53, 62.30); the fourth is cut short and runs into 4 bars on A (46–49) and 4 bars on D (50–53), a dominant preparation for G |
 | Theme A | `theme-a` | 54–69 | 16 | 69.82–80.23 | G major | bass alternates G/D by bar; tonic arrives at bar 54 |
 | Theme A repeat | `theme-a-repeat` | 70–85 | 16 | 80.23–90.53 | G major | bar-for-bar repeat of bars 54–69 (chroma similarity 0.98) |

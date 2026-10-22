@@ -1756,7 +1756,8 @@ start and end of the section. "New" lists what first appears there.
 
 | Section role | Feel | Moveset | Zone | Time scale | Population | New |
 |---|---|---|---|---|---|---|
-| Slow prelude | free | spinning-glide | twilight-glade | 0.5 | 0 → 60 | bats, slimes, eyeballs, title card |
+| Slow prelude | free | spinning-glide | twilight-glade | 0.5 | 0 → 48 | bats, slimes, eyeballs, title card |
+| Galop vamp (quiet introduction) | pulsed | (steps, `.x`) | twilight-glade | 1.0 | 48 → 60 | the first steps to the beat |
 | Galop opening chords | pulsed | herald-cleaves | twilight-glade | 1.0 | 60 → 120 | goblins, orbiting blades |
 | Theme A | pulsed | galop-steps | galop-woods | 1.0 | 120 → 250 | orcs |
 | Theme A repeat | pulsed | galop-dashes | galop-woods | 1.0 | 250 → 320 | chain lightning, bee formations |

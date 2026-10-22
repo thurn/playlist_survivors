@@ -686,6 +686,7 @@ The skilled player's presses for the Can-Can level:
 ```text
 section          movement  presses  why
 prelude          free      -        slow, rubato; walking
+galop-vamp       steps     .x       the quiet vamp already has the galop's pulse
 galop-opening    steps     .x       once per bar; cleaves on tutti chords
 theme-a          steps     xx       every beat (about 180 per minute)
 theme-a-repeat   steps     xx
@@ -896,10 +897,12 @@ settled during tuning (task 6). Each keeps every check passing on all seeds.
 - **Spawning:** up to 120 enemies per beat, not 12. A cleave's shockwave can
   clear a few hundred enemies in half a second, and the horde must re-flood
   from off-screen within a beat to stay on the population curve. In free
-  movement the director also runs on the off-beat eighth, because its beats
+  movement the director also runs on every sixteenth note, because its beats
   are slow. Each spawn's first recorded sample is its spawn spot.
-- **Auto-aim:** the boss weighs 200 and formation members 20 (a new weight),
-  so the sword finds them in a crowd of hundreds. A cleave aims with its
+- **Auto-aim:** the boss weighs 1000 and formation members 20 (a new weight),
+  so the sword finds them in a crowd of hundreds. Aim counts enemies whose
+  centre is in the arc, while the swing catches any body overlapping it, so a
+  target that moves a little between the wind-up and the strike is still hit. A cleave aims with its
   shockwave's reach (330 px), not just its arc.
 - **Cleave shockwave:** each band reaches everyone between the arc's edge and
   its own front, and hits each enemy at most once, so charging enemies cannot
@@ -921,13 +924,18 @@ settled during tuning (task 6). Each keeps every check passing on all seeds.
   front has reached.
 - **Groove decay** starts two bars after the last press, so pressing once per
   bar never decays.
-- **Experience:** 350, 1000 and 2000 gems for the three level-ups. The
+- **Experience:** 400, 1000 and 2000 gems for the three level-ups. The
   skilled player levels up on schedule; the casual player one to four
   seconds late.
 - **The casual profile's** timing error is normal with an 120 ms deviation,
   clamped to ±250 ms. With the accuracy table above, the 45 ms of the
   starting value earns almost the skilled player's bonus (+18%); 120 ms
   gives about +13%, against the skilled +20%.
+- **The galop vamp** (bars 15–30, 0:43.2–0:54.1) is its own pulsed section in
+  the song map, not the end of the prelude: it already has the galop's steady
+  pulse at about 176 BPM. The hero steps to it at full speed (time scale 1),
+  once per bar, and the count-in moves to the last four beats of the rubato
+  passage.
 - **Kill sounds** in free movement group per beat, not per sixteenth note,
   and use the short single-kill sound, so the quiet prelude keeps its
   dynamics.

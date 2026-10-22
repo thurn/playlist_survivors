@@ -603,6 +603,8 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
 
   const startHitStop = (len: number) => {
     if (inStop(s)) return; // No stacking.
+    // The finale blast's bands never wait for a hit-stop.
+    if (blastS !== undefined && s >= blastS - 1e-6) return;
     if (len < HITSTOP_MIN) return;
     stopStart = s;
     stopEnd = s + Math.min(len, HITSTOP_MAX);
@@ -1237,7 +1239,7 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
     if (want <= 0) return;
     const sec = sectionAt(s);
     const roster = Object.entries(sec.level.roster).filter(([t]) => lib.enemies.get(t)!.behavior === "chase");
-    const r = new Rng(ctx.seed, "spawn", Math.round(bi * 2));
+    const r = new Rng(ctx.seed, "spawn", Math.round(bi * 4));
     for (let k = 0; k < want; k++) {
       const type = r.weighted(roster.map(([t]) => t), roster.map(([, wgt]) => wgt));
       const def = lib.enemies.get(type)!;
@@ -1696,8 +1698,8 @@ export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptio
   }
   for (let bi = 0; bi < song.beats.length; bi++) {
     q.push(song.beats[bi], { kind: "beat", bi });
-    // Free movement's beats are slow: the spawn director also looks on the off-beat eighth.
-    if (bi + 1 < song.beats.length && sectionAt(song.beats[bi]).level.movement === "free") q.push(timeOfBeatIndex(song, bi + 0.5), { kind: "spawnTick", bi: bi + 0.5 });
+    // Free movement's beats are slow: the spawn director also looks on every sixteenth note.
+    if (bi + 1 < song.beats.length && sectionAt(song.beats[bi]).level.movement === "free") for (const f of [0.25, 0.5, 0.75]) q.push(timeOfBeatIndex(song, bi + f), { kind: "spawnTick", bi: bi + f });
   }
   sch.levelUps.forEach((lu, i) => q.push(lu.s, { kind: "levelDue", i }));
   sch.archerGroups.forEach((g, i) => q.push(g.s, { kind: "archers", group: i, n: g.archers }));

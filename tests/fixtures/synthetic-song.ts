@@ -1,12 +1,13 @@
 /**
- * A synthetic song map with the same form as the real Can-Can map: a free
- * prelude (4/4, then a quiet 2/4 vamp), then a 2/4 galop at about 185 quarter
- * notes per minute with a faster coda.
+ * A synthetic song map with the same form as the real Can-Can map: a free 4/4
+ * prelude, a quiet 2/4 vamp with a steady pulse, then a 2/4 galop at about 185
+ * quarter notes per minute with a faster coda.
  */
 import type { SongMap, SongSection } from "../../src/core/songmap.ts";
 
 const FORM: { label: string; bars: [number, number]; bpm: number; feel: "free" | "pulsed" }[] = [
-  { label: "prelude", bars: [1, 30], bpm: 86, feel: "free" },
+  { label: "prelude", bars: [1, 14], bpm: 86, feel: "free" },
+  { label: "galop-vamp", bars: [15, 30], bpm: 176, feel: "pulsed" },
   { label: "galop-opening", bars: [31, 53], bpm: 176, feel: "pulsed" },
   { label: "theme-a", bars: [54, 69], bpm: 185, feel: "pulsed" },
   { label: "theme-a-repeat", bars: [70, 85], bpm: 187, feel: "pulsed" },
@@ -36,7 +37,7 @@ export function syntheticSongMap(): SongMap {
   }
   barTime[178] = t;
   const sections: SongSection[] = FORM.map((f) => ({ label: f.label, bars: f.bars, feel: f.feel, key: f.feel === "free" ? "E major" : "D major" }));
-  sections[0].anchors = [0.15, 4.1, 8.2, 12.6, 16.4, 20.5, 24.4, 28.8, 33.0, 36.0, 40.5, 44.2, 47.9, 51.6].filter((x) => x < barTime[31]).map((time, i) => ({ time, strength: 0.4 + 0.04 * i }));
+  sections[0].anchors = [0.15, 4.1, 8.2, 12.6, 16.4, 20.5, 24.4, 28.8, 33.0, 36.0, 40.5, 44.2, 47.9, 51.6].filter((x) => x < barTime[15]).map((time, i) => ({ time, strength: 0.4 + 0.04 * i }));
   const phrases: [number, number][] = [];
   for (const f of FORM) {
     const len = f.label === "prelude" ? 4 : 8;

@@ -51,7 +51,7 @@ npm run bench       # whole song at real-time speed, frame-time budgets
   were pushed past two beats by the cleave's own hit-stop. Bands now keep
   their sixteenth-note slots and each reaches everyone the front has passed.
 - **The sword ignored the boss and the kick line in a crowd of hundreds.**
-  The aim weights are now 200 for the boss and 20 for formation members, and a
+  The aim weights are now 1000 for the boss and 20 for formation members, and a
   cleave aims with its shockwave's reach.
 - **Two archers' arrows could not both be near-missed by one step.** Archers
   of a volley now share a post, 20 px apart, and the virtual player judges a
@@ -80,7 +80,8 @@ npm run bench       # whole song at real-time speed, frame-time budgets
 | Item | State | Evidence |
 |---|---|---|
 | Prelude | partly verified | Unit test: the hero walks with held keys, swings by itself every two beats and cleaves on strong anchors; presses there are not rated. Check "no skating": the walk cycle advances with the distance walked. **Human:** does it feel calm? |
-| Count-in | verified, agent review | The beat track fades in and four count marks pulse on the last four beats before the galop (capture at 53.75 s). |
+| Count-in | verified, agent review | The beat track fades in and four count marks pulse on the last four beats of the rubato passage, before the galop vamp's first downbeat at 43.21 s. |
+| Galop vamp | partly verified | The quiet vamp (bars 15–30) is a pulsed section: one step and one swing per bar at full speed, at the galop's tempo. **Human:** does the first beat feel like it arrives at 0:43? |
 | Galop opening | verified | Presses once per bar; cleaves with hit-stops on the tutti chords (check "hit-stops": 34 stops within 40–150 ms). Capture `first-cleave.png`. |
 | Theme A | verified | A step and a swing on every beat; the groove sits at +20% (an orc's 1.15 health falls to one 1.2 swing). |
 | Kick line | verified | Check "signature moments": every dancer dies within two beats of the release, most to the release cleave's shockwave. Capture `kick-line-release.png`. **Human:** does the ripple read? |
@@ -108,7 +109,7 @@ npm run bench       # whole song at real-time speed, frame-time budgets
 | The corridor edge | verified | Unit test: a step toward the edge stops at it. |
 | Other seeds | verified | `check:seeds` (1859, 7, 2024) and `qa` (`?seed=1859` in the browser) pass every check; seeds 1, 2, 3, 42, 99 and 500 also pass. |
 | Determinism | verified | `check:determinism`: two runs give the same plan hash. e2e: a reload loads the cached plan with the same hash. |
-| Hidden tab | verified | `qa` switches to a real new tab in Google Chrome for 10 s during the climax: the page draws 0 frames, the audio schedules 331 sounds meanwhile, and on return the picture is 25 ms from the audio with 0 late sounds. One run in three failed to hide the tab, as in the earlier QA pass; the cause is in the test harness, not the demo. |
+| Hidden tab | verified | `qa` switches to a real new tab in Google Chrome for 10 s during the climax: the page draws 0 frames, the audio schedules 331 sounds meanwhile, and on return the picture is 25 ms from the audio with 0 late sounds. The test is flaky: in 3 of its last 6 runs Chrome never hid the page (it kept drawing frames in a tab that should have been in the background), so the check could not run. When the page is hidden, it passes. The cause is in the test harness, not the demo, and is still open. |
 | Window resize, cached plan, broken level script | verified | As before: `qa` resize letterboxing, e2e cached plan and broken level (13 broken fixtures in `check:content`). |
 
 ## Sound

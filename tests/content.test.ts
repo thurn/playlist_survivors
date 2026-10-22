@@ -16,17 +16,17 @@ describe("content", () => {
   it("loads the level script with inherited section fields", () => {
     const lib = loadRealContent();
     const level = loadLevel(readSource("levels/orpheus-galop.yaml"), lib, syntheticSongMap());
-    const opening = level.sections[1];
+    const opening = level.sections[2];
     expect(opening.zone).toBe("twilight-glade"); // inherited
     expect(opening.timeScale).toEqual({ from: 1, to: 1 }); // default, not inherited
-    expect(level.sections[2].sfxPalette).toBe("crisp-steel");
+    expect(level.sections[3].sfxPalette).toBe("crisp-steel");
     // Movement settings: presses and pace inherit; the timing grid and heavy swings do not.
-    const repeat = level.sections[3];
+    const repeat = level.sections[4];
     expect(repeat.movement).toBe("steps");
     expect(repeat.presses).toBe("xx");
     expect(repeat.pace).toBe(55);
     expect(opening.heavyOnAccents).toEqual({ minStrength: 0.7, label: "tutti-chord" });
-    expect(level.sections[2].heavyOnAccents).toEqual({ minStrength: 0.7, label: undefined });
+    expect(level.sections[3].heavyOnAccents).toEqual({ minStrength: 0.7, label: undefined });
   });
 
   it("rejects every broken fixture with a useful message", () => {

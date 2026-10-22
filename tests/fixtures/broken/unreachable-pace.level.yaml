@@ -11,17 +11,24 @@ title:
 zones: [twilight-glade, galop-woods, mushroom-grove, ember-hollow, infernal-grove]
 
 sections:
-  - bars: 1-30            # prelude — slow passage, free feel
+  - bars: 1-14            # prelude — slow passage, free feel
     section: prelude
     movement: free           # held keys walk; the sword swings by itself every two beats
     pace: 30                 # route speed, world px per world-second
     zone: twilight-glade
     timeScale: 0.5
-    population: [0, 60]
+    population: [0, 48]
     roster: { bat: 3, slime: 2, eyeball: 1 }
     camera: { zoom: 1.4, lead: 20, punchOnAccents: false }
     sfxPalette: soft-chimes
     intensity: 0.6
+  - bars: 15-30            # galop-vamp — the quiet galop accompaniment: a steady pulse
+    section: galop-vamp
+    pace: 40
+    presses: ".x"            # once per bar, building toward the opening chords
+    population: [48, 60]
+    camera: { zoom: 1.3, lead: 40 }
+    intensity: 0.7
   - bars: 31-53            # galop-opening
     section: galop-opening
     pace: 40

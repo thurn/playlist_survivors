@@ -165,10 +165,20 @@
   "label": "prelude",
   "bars": [
    1,
-   30
+   14
   ],
   "feel": "free",
   "key": "E major"
+ },
+ {
+  "op": "setSection",
+  "label": "galop-vamp",
+  "bars": [
+   15,
+   30
+  ],
+  "feel": "pulsed",
+  "key": "D major"
  },
  {
   "op": "setSection",
@@ -253,7 +263,7 @@
  },
  {
   "op": "fitOnsets",
-  "from": 88,
+  "from": 58,
   "to": 381
  },
  {
@@ -446,30 +456,6 @@
   "op": "addAnchor",
   "time": 41.773,
   "strength": 0.6,
-  "snapMs": 30
- },
- {
-  "op": "addAnchor",
-  "time": 43.208,
-  "strength": 0.8,
-  "snapMs": 30
- },
- {
-  "op": "addAnchor",
-  "time": 46.028,
-  "strength": 0.4,
-  "snapMs": 30
- },
- {
-  "op": "addAnchor",
-  "time": 49.406,
-  "strength": 0.5,
-  "snapMs": 30
- },
- {
-  "op": "addAnchor",
-  "time": 51.384,
-  "strength": 0.4,
   "snapMs": 30
  },
  {

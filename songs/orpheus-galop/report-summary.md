@@ -35,19 +35,23 @@ $A click songs/orpheus-galop/songmap.json --out $W/orpheus-galop-click.wav
    hits are 138.079, 138.551, 139.041 and 139.575 s). The beats in between are
    evenly spaced. After the final chord the beats continue at 0.2405 s through
    the held chord and the decay, so the last bar (177) is complete.
-4. **Meter and structure.** 4/4 from bar 1 and 2/4 from bar 15. Eight sections
-   and the phrases from `form.md`. A tempo change covers bars 141–168: the coda
+4. **Meter and structure.** 4/4 from bar 1 and 2/4 from bar 15. Nine sections
+   and the phrases from `form.md`. The quiet galop vamp (bars 15–30) is its own
+   pulsed section, `galop-vamp`: it already has the galop's steady pulse, so the
+   game steps to it rather than walking. A tempo change covers bars 141–168: the coda
    stringendo (about 186 to 250 BPM) and the closing hits.
-5. **`fitOnsets` (beats 88–381).** Moves galop beats onto onset peaks within
-   45 ms wherever every gap stays within 7.5% of the previous one. This raised
-   onset alignment from 68–91% to 90–98% per section without breaking
-   smoothness.
+5. **`fitOnsets` (beats 58–381).** Moves galop beats, from the vamp's third
+   beat on, onto onset peaks within 45 ms wherever every gap stays within 7.5%
+   of the previous one. This raised onset alignment from 68–91% to 90–98% per
+   section without breaking smoothness. (It starts two beats into the vamp
+   because the gap before the vamp's first beat is a slow prelude beat.)
 6. **Section starts on their hits.** Beat 88 (bar 31 beat 1, the start of
    `galop-opening`) sits exactly on the first tutti onset (54.0656 s), and
    beat 242 (bar 108, the start of `climax`) sits on the onset at 104.5476 s.
    Accent lookups by time then land in the right section.
-7. **Anchors and accents.** 15 prelude anchors, each snapped to an onset peak
-   within 30 ms. The accent candidates are replaced with 30 curated accents,
+7. **Anchors and accents.** 11 prelude anchors, each snapped to an onset peak
+   within 30 ms (the four that fell in the vamp went with it: anchors mark
+   strong moments only where there is no steady beat). The accent candidates are replaced with 30 curated accents,
    each snapped to an onset peak within 20 ms. The prelude's quiet transition
    has high *relative* onset scores but is about 25 dB below the galop, so it
    gets anchors, not accents.
@@ -102,7 +106,8 @@ follow it, and the four closing hits. The coda has four of these. The last
 
 | Section | Bars | Feel | Key | Start (s) | End (s) | Beats | BPM | Onset alignment | Max gap change | Anchors |
 |---|---|---|---|---|---|---|---|---|---|---|
-| prelude | 1–30 | free | E major | 0.149 | 54.066 | 88 | 85.7 | 60.9% (53/87, median 16.3 ms) | 55.7% | 15 (max gap 7.57 s) |
+| prelude | 1–14 | free | E major | 0.149 | 43.210 | 56 | 81.1 | 45.5% (25/55, median 28.9 ms) | 17.9% | 11 (max gap 7.57 s) |
+| galop-vamp | 15–30 | pulsed | D major | 43.210 | 54.066 | 32 | 176.5 | 96.9% (31/32, median 9.3 ms) | 5.9% |  |
 | galop-opening | 31–53 | pulsed | D major | 54.066 | 69.820 | 46 | 176.5 | 95.7% (44/46, median 10.2 ms) | 7.3% |  |
 | theme-a | 54–69 | pulsed | G major | 69.820 | 80.230 | 32 | 184.9 | 96.9% (31/32, median 11.6 ms) | 7.5% |  |
 | theme-a-repeat | 70–85 | pulsed | G major | 80.230 | 90.528 | 32 | 187.5 | 96.8% (30/31, median 10.6 ms) | 6.8% |  |
@@ -115,7 +120,8 @@ follow it, and the four closing hits. The coda has four of these. The last
 
 ```text
 $ npm run check:songmap
-prelude          bars   1-30  free      0.149-  54.066 s    85.7 bpm  anchors 15 max gap 7.57 s
+prelude          bars   1-14  free      0.149-  43.210 s    81.1 bpm  anchors 11 max gap 7.57 s
+galop-vamp       bars  15-30  pulsed   43.210-  54.066 s   176.5 bpm  align 96.9% (31/32)  max gap change 5.9%
 galop-opening    bars  31-53  pulsed   54.066-  69.820 s   176.5 bpm  align 95.7% (44/46)  max gap change 7.3%
 theme-a          bars  54-69  pulsed   69.820-  80.230 s   184.9 bpm  align 96.9% (31/32)  max gap change 7.5%
 theme-a-repeat   bars  70-85  pulsed   80.230-  90.528 s   187.5 bpm  align 96.8% (30/31)  max gap change 6.8%
@@ -127,11 +133,11 @@ accents: 30 {'tutti-chord': 8}
 check: OK
 ```
 
-The disagreement table (`report/disagreements.md`, not committed) flags 95
-beats:
+The disagreement table (`report/disagreements.md`, not committed) flags 92
+beats (this breakdown predates the vamp's split, when it flagged 95):
 
-- 57 are prelude beats, where the trackers run at different metrical levels
-  in free time.
+- 51 are prelude beats, where the trackers run at different metrical levels
+  in free time (57 when the prelude still included the vamp).
 - 23 are galop beats that sit on an onset peak, but one tracker is 40–110 ms
   away (median about 60 ms).
 - 15 are galop beats 25–80 ms from the nearest peak. These are the misses

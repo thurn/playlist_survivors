@@ -11,4 +11,4 @@ hero:
     light: { animations: [slash, backslash, halfslash], hitShape: { kind: arc, radius: 100, degrees: 150 }, damage: 1.0 }
     heavy: { animation: slash-oversize, hitShape: { kind: arc, radius: 130, degrees: 200 }, damage: 2.5, hitStopMs: 110, wave: { to: 330, band: 25, damage: 1.0 } }
   # The boss outweighs a crowd of hundreds; formation members draw a cleave to the line.
-  aimWeights: { regular: 1, elite: 2, boss: 200, formation: 20 }
+  aimWeights: { regular: 1, elite: 2, boss: 1000, formation: 20 }
