@@ -1845,10 +1845,10 @@ song maps come later.
 
 - **William Tell finale (2:43):** trumpet fanfare, galop and coda. Two joins
   skip a repeat of the galop theme and the quieter middle strain.
-- **Beethoven's Fifth (3:00):** the recapitulation and coda, uncut. It opens
-  on the full motto (G-G-G-Eb, F-F-F-D) and its fermatas and keeps the oboe
-  cadenza, which is a natural `free` passage. The exposition and coda are in different keys, so no clean
-  join between them exists.
+- **Beethoven's Fifth (3:00):** the opening motto (G-G-G-Eb, F-F-F-D) and
+  its fermatas, then one join into the recapitulation, which continues with
+  the same C minor theme, and the coda. It keeps the oboe cadenza, which is a
+  natural `free` passage, and ends on the real ending.
 - **In the Hall of the Mountain King (2:32):** the whole piece. Its
   accelerando is the reason for the song, so nothing is cut.
 - **Flight of the Bumblebee (1:16):** the whole piece.

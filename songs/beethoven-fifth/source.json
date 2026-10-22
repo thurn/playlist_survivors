@@ -13,14 +13,24 @@
   "notes": "Complete first movement, including the exposition repeat.",
   "excerpt": {
     "file": "public/audio/beethoven-fifth.flac",
-    "cropStart": 255.36,
+    "cropStart": 0.0,
     "cropEnd": 435.5,
-    "duration": 180.14,
+    "segments": [
+      [
+        0.0,
+        6.5
+      ],
+      [
+        261.75,
+        435.5
+      ]
+    ],
+    "crossfadeMs": 80.0,
+    "duration": 180.25,
     "sampleRate": 44100,
     "channels": 1,
-    "sha256": "03d5d16742c72b7ce3ad2f8db1d56c0302076452ac730ef6ef571cec707c3566",
-    "notes": "Recapitulation and coda, uncut. It starts in the brief dip just before the first G of the motto (G-G-G-Eb, then F-F-F-D at 257.6 s), with a 60 ms fade-in over the reverb of the preceding chord; keeps the oboe cadenza and ends on the real ending. If the start sounds abrupt, the previous cut (--start 260.45 --fade-in-ms 1500) skips the motto and fades in. The exposition and the coda are in different keys, so no clean join between them exists.",
-    "command": "uv run --project tools/analysis ps-analysis crop songs/beethoven-fifth/source.ogg --start 255.36 --end 435.5 --fade-in-ms 60 --out public/audio/beethoven-fifth.flac",
-    "fadeInMs": 60
+    "sha256": "2b089f831b68f7cc18c8800ae5a00b8fb1f8d8bef39a296ffa27672ca0fbcc29",
+    "notes": "The opening motto (G-G-G-Eb, F-F-F-D) from silence, then the recapitulation and coda. The join is in the near-silence as the second fermata dies away, where exposition and recapitulation continue with the same C minor theme (they align at a steady 255.1 s offset). The recapitulation's own motto is smeared by the hammered lead-in, so it is skipped. Keeps the oboe cadenza and ends on the real ending.",
+    "command": "uv run --project tools/analysis ps-analysis crop songs/beethoven-fifth/source.ogg --segment 0:6.5 --segment 261.75:435.5 --crossfade-ms 80 --out public/audio/beethoven-fifth.flac"
   }
 }
