@@ -130,7 +130,8 @@ movement and space:
 
 - **Fixed-speed strides.** The hero moves at one speed, whatever the tempo or
   press rate, in **strides**: quick eased hops like today's steps. A press
-  strides at once, and a held key strides on every beat.
+  strides at once, and a held key strides on every beat, or on every eighth
+  note when the beat is slow.
 - **Weapons fire by themselves on the beat.** Presses no longer arm swings.
 - **The groove meter sets a tier.** On-beat presses fill a meter whose
   **tier**, 0 to 3, grows the area of every attack. **Stray presses**, extra
@@ -318,7 +319,9 @@ Four quantities decide how far the hero may go:
   clock game motion runs on: it slows for slow motion and stops during a
   freeze, while song time follows the music.
 - **Stride period:** one step of the section's timing grid, halved while it is
-  longer than 0.4 s, or 0.35 s in sections with no steady beat.
+  longer than 0.4 s, or 0.35 s in sections with no steady beat. A held key
+  strides once per stride period (see
+  [When strides start](#when-strides-start)).
 - **One stride:** the walk speed times the stride period. That is 44–48 px
   through the galop, 36 px in the 230 beats-per-minute coda, and 49 px with no
   steady beat. At 78 beats per minute the period halves to an eighth note
@@ -365,8 +368,11 @@ A stride starts in exactly two situations:
   perpendicular key within 40 ms of a press bends that press's stride toward
   the diagonal instead, and an opposite key within 40 ms turns it into a stomp
   (see [Standing still: stomps](#standing-still-stomps)).
-- **On every grid time while a direction key is held,** after the first
-  stride. A player who only holds a key strides on the beat.
+- **On every step of the stride period while a direction key is held,** after
+  the first stride. The steps are the grid times, plus the points half-way
+  between them wherever the period is halved. A player who only holds a key
+  strides on the beat, or on eighth notes when the beat is slow, and walks at
+  the full walk speed either way.
 
 Strides never start on release or on key repeat events:
 
@@ -381,6 +387,17 @@ theme A repeat, beats at 80.240, 80.562 and 80.884
 80.400  press and hold Right: a full 45 px stride at once
 80.562  still held: a stride on the beat, 23 px (the ground since 80.400)
 80.884  still held: a stride on the beat, 45 px
+```
+
+In a slow section the steps fall on eighth notes, so holding still walks at
+the full speed:
+
+```text
+a section at 78 beats per minute, beats 769 ms apart: the stride period
+halves to 385 ms, and a held key strides on every eighth note
+0.000  press and hold Right: a full 54 px stride at once
+0.385  still held: a stride on the off-beat, 54 px
+0.769  still held: a stride on the beat, 54 px; 140 px/s throughout
 ```
 
 ### Stride shape and direction
@@ -427,10 +444,10 @@ moving.
 - **Opposite keys rock.** The first key's stride turns into a rock step: over
   the rest of its 110 ms the hero comes back to where it began, and the ground
   goes back to the budget.
-- **A stomp cancels the next held stride.** The first grid time after a stomp
-  passes without a held-key stride, and holding resumes on the grid time after
-  that. Holding a direction and stomping on every beat therefore never moves
-  the hero. A new direction press still strides at once.
+- **A stomp cancels the held strides of one grid step:** the next held stride
+  after the stomp, or the next two wherever the stride period is halved.
+  Holding a direction and stomping on every beat therefore never moves the
+  hero. A new direction press still strides at once.
 - **A stomp has no attack of its own:** no knockback and no damage. On an
   accent it counts like any press, so a Perfect stomp on the chord launches
   the shockwave.
@@ -1157,8 +1174,11 @@ entity involved, as today.
   in progress, a rock step or a stomp at its time.
 - **The speed cap:** over every window of time, for every player, the hero's
   displacement is at most `140 × elapsed + one stride + 1 px`.
+- **Holding keeps full speed:** a held key covers the walk speed, within 5%
+  over each bar, in every pulsed section. A unit test checks the same on a
+  grid slower than 150 beats per minute, where the stride period halves.
 - **Every movement has an input:** strides start only at a key press, or at a
-  grid time while a key is held.
+  step of the stride period while a key is held.
 - **Sounds on the grid:** every row of the table in
   [Sound on the Grid](#sound-on-the-grid), within 1 ms.
 - **The curve:** each player ends as the table in
