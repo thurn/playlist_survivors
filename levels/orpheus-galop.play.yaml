@@ -2,7 +2,9 @@
 # the differences restated. See docs/design/interactive.md.
 extends: orpheus-galop
 world: open                 # the demo's default is corridor
-rules: { oneStepPerSlot: true, accentTelegraphs: true, health: true, strides: true }
+# Press classes replace one rated press per grid slot: every press is classed against the grid,
+# and the groove meter fills, drains and sets the tier.
+rules: { oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true }
 hero:
   # Fixed-speed strides: 140 px/s at any tempo and press rate, faster than every enemy but bats and bees.
   walk: { speed: 140 }

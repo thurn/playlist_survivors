@@ -218,14 +218,17 @@ export class VirtualPlayer implements Player {
   /**
    * Strides: let go of the keys held, press the new direction (a key already down is pressed
    * again), and hold it, so the hero strides on every grid step until the next decision. In a
-   * careful moment (a threat in view, a formation dancing), tap instead: one stride, then stand.
+   * careful moment (a threat in view), tap instead: one stride, then stand.
    * When standing still would be better than the best direction, stomp (Space) to keep the beat.
    */
   private strideKeys(obs: Observation, keys: Key[], r: Rng): KeyEvent[] {
     const out: KeyEvent[] = [];
     for (const k of this.held) out.push({ s: obs.s, kind: "release", key: k });
     this.held.clear();
-    if (this.standCost(obs) < this.bestCost) {
+    // (Not while a dancing formation's middle is out of reach: walk up to the line to cleave it.)
+    const f = obs.formation;
+    const atLine = !f || Math.hypot(f.x - obs.hero.x, f.y - obs.hero.y) <= ROAM_FORMATION;
+    if (atLine && this.standCost(obs) < this.bestCost) {
       out.push({ s: obs.s, kind: "press", key: "space" }, { s: obs.s + r.range(0.06, 0.1), kind: "release", key: "space" });
       return out;
     }
@@ -234,8 +237,9 @@ export class VirtualPlayer implements Player {
       if (i > 0) s += r.range(0.002, 0.015);
       out.push({ s, kind: "press", key: keys[i] });
     }
-    // Careful moments (a threat in view, a formation dancing): tap.
-    const careful = obs.threats.length > 0 || obs.formation !== undefined;
+    // Careful moments (a threat in view): tap. (A dancing line rides with the camera: walking at it
+    // steadily keeps it a camera's lag closer, so its cleave reaches further down the line.)
+    const careful = obs.threats.length > 0;
     if (careful) for (const k of keys) out.push({ s: s + r.range(0.06, 0.1), kind: "release", key: k });
     else for (const k of keys) this.held.add(k);
     return out;
@@ -421,6 +425,9 @@ export class VirtualPlayer implements Player {
     }
     cost += 0.5 * Math.min(close, 6) * 0.5;
     cost -= 0.8 * Math.min(near, 15) / 5;
+    // Strides: walk up to a dancing line, so the cleave on its release reaches the whole line.
+    const f = obs.formation;
+    if (this.strides && f) cost += 1.5 * clamp((Math.hypot(ax - f.x, ay - f.y) - ROAM_FORMATION) / 100, 0, 3);
     return cost;
   }
 

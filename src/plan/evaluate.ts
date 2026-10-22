@@ -900,7 +900,7 @@ export class Evaluator {
       if (i.s > s) break;
       const partner = partnerPress(i);
       if (i.kind === "press" && i.steps && !partner) {
-        if (i.stumble) streak = 0;
+        if (i.stumble || i.class === "stray") streak = 0;
         else if (!i.extra) streak = i.rating === "perfect" || i.rating === "great" ? streak + 1 : 0;
       }
       if (i.kind === "release") {
@@ -909,10 +909,10 @@ export class Evaluator {
         if (lp && lp.released === undefined) lp.released = i.s;
         continue;
       }
-      // One rated press per grid slot: an extra press shows its off-beat rating on the key display
-      // (grey when it has none, red when the hero stumbled), and is not counted.
+      // An extra press (not its grid time's rated, counted press) shows its off-beat rating on the key
+      // display: grey when it has none (a double tap), red when it stumbled or strayed. It is not counted.
       if (i.extra) {
-        if (i.key !== "space") lastPress[i.key] = { s: i.s, rating: i.stumble ? "stumble" : (i.offbeat ?? "extra") };
+        if (i.key !== "space") lastPress[i.key] = { s: i.s, rating: i.stumble || i.class === "stray" ? "stumble" : (i.offbeat ?? "extra") };
         continue;
       }
       // A diagonal's second key (or a rock step's) shows the rating of the press it bent (or rocked).

@@ -31,7 +31,7 @@ import { BatchRecorder, type ArrowRecord, type PressTrace, type Recorder, type S
 import { DEMO_RULES, type Rules } from "./rules.ts";
 import { nextStepAfter, stepRate, stepSpan, type GridSlot, type Schedule } from "./schedule.ts";
 import { budgetAt, freshStrides, heldDirection, interrupt, periodAt, settle, startStride, stompCancelsUntil, strideRule, striding, type StrideState } from "./strides.ts";
-import { armedStrike, damageMultiplier, type PressRating, grooveAfterOffbeat, grooveAfterPress, grooveDecay, nearestIndex, ratePress, ratePressOnGrid, type Rating } from "./timing.ts";
+import { armedStrike, classifyPress, damageMultiplier, drainPerBeat, firstAtOrAfter, freshPressMemo, grooveAfterChange, type PressJudgement, type PressMemo, type PressRating, grooveAfterOffbeat, grooveAfterPress, grooveDecay, nearestIndex, ratePress, ratePressOnGrid, type Rating, tierFor } from "./timing.ts";
 import { CorridorWorld, OpenWorld, type World } from "./world.ts";
 
 export type { ArrowRecord, Landing, SimResult, SlamRecord } from "./recorder.ts";
@@ -441,6 +441,10 @@ interface SimState {
   facingAngle: number;
   groove: number;
   lastPressS: number;
+  /** Press classes (play mode): what earlier presses took, the tier, and the latest press that raised the groove. */
+  memo: PressMemo;
+  tier: number;
+  lastRaiseS: number;
   /** Swings that may still matter (the idle-swing rule looks back one bar). */
   swings: Swing[];
   liveSwings: Swing[];
@@ -526,6 +530,9 @@ function freshState(env: Env): SimState {
     facingAngle: 0,
     groove: 0,
     lastPressS: -Infinity,
+    memo: freshPressMemo(),
+    tier: 0,
+    lastRaiseS: -Infinity,
     swings: [],
     liveSwings: [],
     takenSlots: new Set(),
@@ -1096,6 +1103,34 @@ function engine(env: Env, st: SimState, io: Io) {
     if (!bend) input.stride = r.stride;
     return { stride: r.stride, budget: budgetAt(rule, st.strides, st.w, oneStride(st.s)), returned: r.returned };
   };
+  /**
+   * Press classes: the groove after a press's change (a press that adds to it starts the drain's
+   * bar again), and the tier it sets.
+   */
+  const meterChange = (change: number) => {
+    const before = st.groove;
+    st.groove = grooveAfterChange(st.groove, change);
+    if (change > 0) st.lastRaiseS = st.s;
+    if (st.groove !== before) rec().groove(st.s, st.groove);
+    setTier();
+  };
+  /** The tier for the groove now; a change sounds its chime on the next grid time. */
+  const setTier = () => {
+    const t = tierFor(hero, st.tier, st.groove);
+    if (t === st.tier) return;
+    st.tier = t;
+    rec().tier(st.s, st.w, t, sch.gridTimes[firstAtOrAfter(sch.gridTimes, st.s + 1e-6)] ?? st.s);
+  };
+  /** A press's class in its trace, with the tier after it. */
+  // (Its grid fields are the nearest grid time's, as for any press; an off-beat's own offset is offbeatDelta.)
+  const judgedTrace = (j: PressJudgement | undefined): Partial<PressTrace> => {
+    if (!j) return {};
+    const gi = nearestIndex(sch.gridTimes, st.s);
+    const near = { gridIndex: gi, gridS: sch.gridTimes[gi], delta: st.s - sch.gridTimes[gi] };
+    if (j.class === "offbeat") return { class: j.class, tier: st.tier, ...near, offbeatDelta: j.delta, offbeat: j.rating };
+    return { class: j.class, tier: st.tier, ...(j.class !== "partner" ? near : {}), ...(j.rating ? { rating: j.rating } : {}) };
+  };
+
   /** Strides: what a press does to the hero: a stride toward the held keys, or a stomp for Space. */
   const pressMove = (key: InputKey, input: PlanInput): Partial<PressTrace> => (key === "space" ? stompHere(input) : strideTrace(strideOff(key), input));
 
@@ -1110,6 +1145,9 @@ function engine(env: Env, st: SimState, io: Io) {
     // only the first press for a grid time is rated and arms a swing. Every press still steps, and
     // a diagonal's second key still bends the step.
     let extraGrid: number | undefined;
+    // Press classes (play mode): every press in step movement is classed against the grid, before
+    // it moves the hero (a partner bends or rocks the stride in progress).
+    const judged = env.rules.pressClasses && steps ? classifyPress(hero, sch.gridTimes, st.s, partnerOf(e.key), st.memo) : undefined;
     if (env.rules.oneStepPerSlot && steps && !partnerOf(e.key)) {
       const gi = nearestIndex(sch.gridTimes, st.s);
       if (gi === st.lastStepGrid) extraGrid = gi;
@@ -1185,15 +1223,17 @@ function engine(env: Env, st: SimState, io: Io) {
       st.step = bent;
       input.bend = true;
       const moved = strides ? strideTrace({ stride: bent.len ?? 0, returned: 0 }, input, true) : {};
+      if (judged) input.class = judged.class;
       rec().input(input);
-      if (trace) rec().press!({ ...trace, ...moved, outcome: "bend" });
+      if (trace) rec().press!({ ...trace, ...moved, ...judgedTrace(judged), outcome: "bend" });
       return;
     }
     // An opposite key just after the first makes the two one stomp: the first one's stride rocks back.
     if (rocks(e.key)) {
       const moved = stompHere(input);
+      if (judged) input.class = judged.class;
       rec().input(input);
-      if (trace) rec().press!({ ...trace, ...moved, outcome: "rock" });
+      if (trace) rec().press!({ ...trace, ...moved, ...judgedTrace(judged), outcome: "rock" });
       return;
     }
     if (trace && st.step && !st.landed) trace.midStep = true;
@@ -1223,23 +1263,39 @@ function engine(env: Env, st: SimState, io: Io) {
       }
       return;
     }
+    // Press classes: the class sets the groove change; only a counted press is rated, heals and arms the sword.
+    if (judged && judged.class !== "counted") {
+      input.class = judged.class;
+      input.extra = true;
+      if (judged.class === "offbeat") input.offbeat = judged.rating as "perfect" | "great";
+      if (judged.class === "stray") st.streak = 0;
+      meterChange(judged.change);
+      rec().input(input);
+      if (trace) rec().press!({ ...trace, ...moved, ...judgedTrace(judged), outcome: "extra", stepS: st.lastPressS, grooveAfter: st.groove });
+      return;
+    }
     // Rate the press against the timing grid (the sections' grids join end to end), and arm the sword.
     const rated = ratePressOnGrid(hero, st.s, sch.gridTimes);
     input.rating = rated.rating;
     input.accuracy = rated.accuracy;
     input.delta = rated.delta;
-    st.groove = grooveAfterPress(hero, st.groove, rated.accuracy);
     st.lastPressS = st.s;
     st.slotRating = rated.rating;
     beatHeal(rated.rating);
-    rec().groove(st.s, st.groove);
+    if (judged) {
+      input.class = judged.class;
+      meterChange(judged.change);
+    } else {
+      st.groove = grooveAfterPress(hero, st.groove, rated.accuracy);
+      rec().groove(st.s, st.groove);
+    }
     const slot = sch.gridSlots[armedStrike(hero, sch.gridTimes, st.s)];
     const taken = slot !== undefined && st.takenSlots.has(slot);
-    const sw = swingFor(slot, st.s, idx, rated.rating, env.rules.oneStepPerSlot ? rated.accuracy : 1);
+    const sw = swingFor(slot, st.s, idx, rated.rating, env.rules.oneStepPerSlot || env.rules.pressClasses ? rated.accuracy : 1);
     input.armed = sw !== undefined;
     rec().input(input);
     if (trace) {
-      Object.assign(trace, moved, { gridIndex: rated.gridIndex, gridS: sch.gridTimes[rated.gridIndex], delta: rated.delta, rating: rated.rating, accuracy: rated.accuracy, grooveAfter: st.groove, slotS: slot?.s, accent: slot?.accent });
+      Object.assign(trace, moved, { gridIndex: rated.gridIndex, gridS: sch.gridTimes[rated.gridIndex], delta: rated.delta, rating: rated.rating, accuracy: rated.accuracy, grooveAfter: st.groove, slotS: slot?.s, accent: slot?.accent }, judgedTrace(judged));
       if (sw) Object.assign(trace, { strikeS: sw.sStrike, heavy: sw.heavy });
       else trace.noSwing = !slot ? "no-slot" : taken ? "slot-taken" : "blast";
       rec().press!(trace);
@@ -2320,7 +2376,14 @@ function engine(env: Env, st: SimState, io: Io) {
           const sec = sectionAt(st.s);
           const bpb = ctx.idx.beatsPerBar[sec.song.bars[0]] ?? 2;
           const beatS = song.beats[Math.min(song.beats.length - 1, ev.bi + 1)] - song.beats[Math.max(0, Math.min(song.beats.length - 2, ev.bi))];
-          if (st.s - st.lastPressS > GROOVE_GRACE_BARS * bpb * beatS && st.groove > 0) {
+          if (env.rules.pressClasses) {
+            // The groove drains a bar after the latest press that raised it (free sections freeze it).
+            if (sec.level.movement === "steps" && st.groove > 0 && st.s - st.lastRaiseS > hero.meter.drain.afterBars * bpb * beatS + 1e-9) {
+              st.groove = Math.max(0, st.groove - drainPerBeat(hero, bpb));
+              rec().groove(st.s, st.groove);
+              setTier();
+            }
+          } else if (st.s - st.lastPressS > GROOVE_GRACE_BARS * bpb * beatS && st.groove > 0) {
             st.groove = grooveDecay(hero, st.groove, 1 / bpb);
             rec().groove(st.s, st.groove);
           }

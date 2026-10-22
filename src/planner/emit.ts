@@ -138,6 +138,16 @@ export class Emitter {
     this.sink.sound({ sample: id, s, gain: gain * sg * pal.gain, pan, rate, priority, duck, ...(lead > 0.001 ? { lead } : {}) });
   }
 
+  /**
+   * A tier change: a rising chime for a tier-up, a soft falling one for a tier-down, on the grid
+   * time s, centred (panned by the camera sample at or before the change, world time w).
+   */
+  tierChime(s: number, up: boolean, w: number): void {
+    const cam = this.cam();
+    const k = Math.max(0, Math.min(cam.x.length - 1, Math.floor((w - cam.w0) * cam.rate + 1e-9)));
+    this.sfx(up ? "tier-up" : "tier-down", s, cam.x[k], PRIORITY.hero + 0.6, up ? 0.8 : 0.5, false, 1, w);
+  }
+
   /** A swing's strike. Returns whether it earned "PERFECT" (a Perfect press striking on an accent). */
   swing(sw: PlanSwing, h: Hit, groove: number, pressRating: string | undefined): boolean {
     const heavy = sw.kind === "heavy";
@@ -348,6 +358,8 @@ export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam:
 
   // ---------------------------------------------------------- step landings
   for (const l of sim.landings) em.landing(l);
+  // Tier changes (play mode's press classes).
+  for (const c of sim.tierChimes) em.tierChime(c.s, c.up, c.w);
 
   // ------------------------------------------------- deaths and hits on enemies
   const killTimes: number[] = [];

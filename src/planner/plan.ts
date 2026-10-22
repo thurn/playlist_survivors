@@ -268,6 +268,7 @@ export function planWithSim(input: PlannerInput, opts: PlannerOptions = {}): { p
     swings: sim.swings,
     inputs: sim.inputs,
     groove: { s: Float64Array.from(sim.groove.s), v: Float32Array.from(sim.groove.v) },
+    ...(ctx.level.rules.pressClasses ? { tier: { s: Float64Array.from(sim.tier.s), v: Uint8Array.from(sim.tier.v) } } : {}),
     health: { s: Float64Array.from(sim.health.s), v: Float32Array.from(sim.health.v) },
     nearMisses: sim.threats.filter((t) => t.outcome === "near-miss").map((t) => ({ s: t.s, w: t.w, kind: t.kind })),
     threats: sim.threats.map((t) => ({ s: t.s, kind: t.kind, outcome: t.outcome })),

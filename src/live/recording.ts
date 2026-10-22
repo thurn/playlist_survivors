@@ -85,6 +85,7 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
   private camViewLen = -1;
   private readonly hud: { kills: number[]; perfect: number[]; xpTimes: number[]; xpFill: number[]; levelUps: number[]; weaponFires: Record<string, number[]> };
   private readonly grooveSeries: { s: number[]; v: number[] };
+  private readonly tierSeries: { s: number[]; v: number[] };
   private readonly healthSeries: { s: number[]; v: number[] };
   private readonly arrows: ArrowRecord[] = [];
   private readonly arrowProjectile: Projectile[] = [];
@@ -121,6 +122,7 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
     this.propsInfo = { ...DEFAULT_PROPS, ...(props ?? {}) };
     this.hud = { kills: [], perfect: [], xpTimes: [0], xpFill: [0], levelUps: [], weaponFires: {} };
     this.grooveSeries = { s: [0], v: [0] };
+    this.tierSeries = { s: [0], v: [0] };
     this.healthSeries = { s: [0], v: [1] };
     const header = planHeader(ctx, sch, map, profile);
     this.plan = {
@@ -145,6 +147,7 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
       swings: [],
       inputs: [],
       groove: this.grooveSeries,
+      tier: this.tierSeries,
       health: this.healthSeries,
       nearMisses: [],
       threats: [],
@@ -422,6 +425,13 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
   groove(s: number, v: number): void {
     this.add(this.grooveSeries.s, s);
     this.add(this.grooveSeries.v, v);
+  }
+
+  tier(s: number, w: number, tier: number, soundS: number): void {
+    const up = tier > this.tierSeries.v[this.tierSeries.v.length - 1];
+    this.add(this.tierSeries.s, s);
+    this.add(this.tierSeries.v, tier);
+    this.emitter.tierChime(soundS, up, w);
   }
 
   health(s: number, frac: number): void {
@@ -861,6 +871,9 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
     part("chains", () => p.chains.forEach((c) => c.points.forEach((q) => mix(q.w, q.x, q.y))));
     part("groove", () => {
       for (let i = 0; i < this.grooveSeries.s.length; i++) mix(this.grooveSeries.s[i], this.grooveSeries.v[i]);
+    });
+    part("tier", () => {
+      for (let i = 0; i < this.tierSeries.s.length; i++) mix(this.tierSeries.s[i], this.tierSeries.v[i]);
     });
     part("health", () => {
       for (let i = 0; i < this.healthSeries.s.length; i++) mix(this.healthSeries.s[i], this.healthSeries.v[i]);

@@ -288,6 +288,8 @@ export interface Plan {
   inputs: PlanInput[];
   /** The groove meter (0–1) after each change, at song times. */
   groove: { s: ArrayLike<number>; v: ArrayLike<number> };
+  /** Press classes (play mode): the tier (0–3) after each change, at song times; it starts at 0. */
+  tier?: { s: ArrayLike<number>; v: ArrayLike<number> };
   /** The hero's health (fraction of its maximum) after each change; it starts full and only changes when the level's rules give the hero health. */
   health: { s: ArrayLike<number>; v: ArrayLike<number> };
   /** Near misses. */
@@ -378,6 +380,8 @@ export interface PlanInput {
   armed?: boolean;
   /** Strides: the length of the stride this press started (px; absent for a bend, which keeps the stride's). */
   stride?: number;
+  /** Press classes (play mode): what the press is, judged against the grid (see PressClass in src/sim/timing.ts). */
+  class?: "partner" | "offbeat" | "counted" | "double" | "stray";
   /** Strides: the press made a stomp (Space, or the second of two opposite keys within 40 ms). */
   stomp?: boolean;
   /** Strides: the stomp turned the stride in progress into a rock step back to where it began. */

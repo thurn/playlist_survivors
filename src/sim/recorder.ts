@@ -104,6 +104,12 @@ export interface PressTrace {
   midStep?: boolean;
   grooveBefore?: number;
   grooveAfter?: number;
+  /**
+   * Press classes (play mode): partner, offbeat, counted, double (a double tap) or stray; with
+   * `rating` (loose beyond Good for a counted press), `delta` and the tier after the press.
+   */
+  class?: string;
+  tier?: number;
   /** The swing it armed: the strike's song time and whether it is a heavy cleave. */
   strikeS?: number;
   heavy?: boolean;
@@ -113,6 +119,9 @@ export interface PressTrace {
   slotS?: number;
   accent?: number;
 }
+
+/** A tier change's chime: the grid time it sounds on, whether the tier rose, and the world time of the change. */
+export type TierChime = { s: number; up: boolean; w: number };
 
 export type Attack = NonNullable<EnemyRecord["attacks"]>[number];
 export type Dance = NonNullable<EnemyRecord["dance"]>;
@@ -127,6 +136,9 @@ export interface SimResult {
   swings: PlanSwing[];
   inputs: PlanInput[];
   groove: { s: number[]; v: number[] };
+  /** Press classes (play mode): the tier after each change; it starts at 0. */
+  tier: { s: number[]; v: number[] };
+  tierChimes: TierChime[];
   /** The hero's health (fraction of its maximum) after each change; it starts full. */
   health: { s: number[]; v: number[] };
   landings: Landing[];
@@ -177,6 +189,8 @@ export interface Recorder {
   swing(sw: PlanSwing): void;
   input(i: PlanInput): void;
   groove(s: number, v: number): void;
+  /** The tier after a change at song time s (world time w), and the grid time its chime sounds on. */
+  tier(s: number, w: number, tier: number, soundS: number): void;
   /** The hero's health (fraction of its maximum) after a change. */
   health(s: number, frac: number): void;
   landing(l: Landing): void;
@@ -234,6 +248,9 @@ export class BatchRecorder implements Recorder {
   readonly inputs: PlanInput[] = [];
   readonly grooveS: number[] = [0];
   readonly grooveV: number[] = [0];
+  readonly tierS: number[] = [0];
+  readonly tierV: number[] = [0];
+  readonly tierChimes: TierChime[] = [];
   readonly healthS: number[] = [0];
   readonly healthV: number[] = [1];
   readonly landings: Landing[] = [];
@@ -300,6 +317,11 @@ export class BatchRecorder implements Recorder {
   groove(s: number, v: number): void {
     this.grooveS.push(s);
     this.grooveV.push(v);
+  }
+  tier(s: number, w: number, tier: number, soundS: number): void {
+    this.tierChimes.push({ s: soundS, up: tier > this.tierV[this.tierV.length - 1], w });
+    this.tierS.push(s);
+    this.tierV.push(tier);
   }
   health(s: number, frac: number): void {
     this.healthS.push(s);
@@ -409,6 +431,8 @@ export class BatchRecorder implements Recorder {
       swings: this.swings,
       inputs: this.inputs,
       groove: { s: this.grooveS, v: this.grooveV },
+      tier: { s: this.tierS, v: this.tierV },
+      tierChimes: this.tierChimes,
       health: { s: this.healthS, v: this.healthV },
       landings: this.landings,
       weaponsGranted: this.weaponsGranted,

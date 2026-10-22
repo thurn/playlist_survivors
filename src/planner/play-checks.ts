@@ -194,22 +194,6 @@ export function checkPlay(plan: Plan, lib: ContentLibrary, opts: PlayCheckOption
 
   results.push(...checkStrides(plan));
 
-  // One step per slot: no two rated presses share a grid time.
-  {
-    const f: string[] = [];
-    const seen = new Map<number, number>();
-    let n = 0;
-    for (const i of plan.inputs) {
-      if (i.kind !== "press" || !i.steps || partnerPress(i) || i.extra || i.rating === undefined) continue;
-      n++;
-      const g = nearest(plan.grid, i.s);
-      const prev = seen.get(g);
-      if (prev !== undefined) f.push(`presses at ${fmt(prev)} and ${fmt(i.s)} are both rated for the grid time ${fmt(plan.grid[g])}`);
-      seen.set(g, i.s);
-    }
-    add("one step per slot", f, n);
-  }
-
   // Zone waves: each starts on a downbeat and has left the screen within one bar.
   if (plan.open) {
     const f: string[] = [];

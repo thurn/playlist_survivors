@@ -22,8 +22,8 @@ describe("the play level file", () => {
     expect(play.extends).toBe("orpheus-galop");
     expect(play.world).toBe("open");
     expect(demo.world).toBe("corridor");
-    expect(play.rules).toEqual({ oneStepPerSlot: true, accentTelegraphs: true, health: true, strides: true });
-    expect(demo.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false });
+    expect(play.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true });
+    expect(demo.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false, pressClasses: false });
     expect(play.player).toBe("moderate");
     expect(play.seed).toBe(demo.seed);
     expect(play.title).toEqual(demo.title);
@@ -146,9 +146,9 @@ describe("play-mode rules", () => {
     expect(mash(demo.rules).travel).toBeGreaterThan(m.travel + 20);
   });
 
-  it("lifts the groove past full for eighth notes on the off-beat, and ignores sloppy extras", () => {
+  it("adds a little for Perfect eighth notes on the off-beat, and nothing for sloppy double taps", () => {
     const sec = ctx.sections.find((s) => s.label === "theme-a")!;
-    const grid = Array.from(sch.gridTimes).filter((g) => g > sec.s0 + 2).slice(0, 17);
+    const grid = Array.from(sch.gridTimes).filter((g) => g > sec.s0 + 2).slice(0, 7);
     const run = (offset: number) => {
       const rec = new BatchRecorder();
       const sim = new Sim(ctx, sch, new CorridorWorld(map, sch), play.rules, rec);
@@ -162,20 +162,20 @@ describe("play-mode rules", () => {
         sim.key({ s: half + offset + 0.02, kind: "release", key: k % 2 ? "left" : "right" });
       }
       sim.advanceTo(grid[grid.length - 1] - 0.01);
-      sim.runToEnd();
       const r = rec.result({ endS: sim.s, animNames: HERO_ANIMS, heroRate: HERO_RATE });
-      const extras = r.inputs.filter((i) => i.kind === "press" && i.extra && i.s > grid[0] && i.s < grid[grid.length - 1]);
+      const extras = r.inputs.filter((i) => i.kind === "press" && i.extra && i.s > grid[0]);
       return { groove: grooveAt(r.groove, grid[grid.length - 1] - 0.01), extras };
     };
+    // Six Perfect beats (+0.08 each) and six Perfect off-beats (+0.03 each).
     const onBeat = run(0);
-    expect(onBeat.extras.length).toBe(16);
-    expect(onBeat.extras.every((i) => i.offbeat === "perfect")).toBe(true);
-    expect(onBeat.groove).toBeGreaterThan(1.05);
-    // Extras outside the Great window around the half-beat are unrated: the groove stays at what the beat presses give.
+    expect(onBeat.extras.length).toBe(6);
+    expect(onBeat.extras.every((i) => i.class === "offbeat" && i.offbeat === "perfect")).toBe(true);
+    expect(onBeat.groove).toBeCloseTo(6 * 0.08 + 6 * 0.03, 6);
+    // 130 ms before the half-beat is 32 ms after the beat's press: a double tap, which changes nothing.
     const sloppy = run(-0.13);
-    expect(sloppy.extras.length).toBe(16);
-    expect(sloppy.extras.every((i) => i.offbeat === undefined)).toBe(true);
-    expect(sloppy.groove).toBeLessThanOrEqual(1);
+    expect(sloppy.extras.length).toBe(6);
+    expect(sloppy.extras.every((i) => i.class === "double" && i.offbeat === undefined)).toBe(true);
+    expect(sloppy.groove).toBeCloseTo(6 * 0.08, 6);
   });
 
   it("walks at full speed in the calm prelude", () => {

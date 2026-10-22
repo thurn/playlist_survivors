@@ -12,7 +12,9 @@ export interface Rules {
   health: boolean;
   /** Fixed-speed strides: every press strides at once, a held key strides on every step of the stride period. */
   strides: boolean;
+  /** Press classes and the groove meter: every press is classed against the grid, and the groove fills, drains and sets a tier. */
+  pressClasses: boolean;
 }
 
 /** The scripted demo's rules: today's behavior. */
-export const DEMO_RULES: Readonly<Rules> = Object.freeze({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false });
+export const DEMO_RULES: Readonly<Rules> = Object.freeze({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false, pressClasses: false });

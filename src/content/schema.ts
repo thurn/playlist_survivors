@@ -97,6 +97,22 @@ export const heroDef = z.strictObject({
      */
     stumble: unit.default(0),
   }),
+  /**
+   * Play mode's groove meter (rules.pressClasses; see "Timing and the Groove" in
+   * docs/design/gameplay-redesign.md): changes on its 0-to-1 scale by press class and rating, the
+   * drain, the tier thresholds and their hysteresis, and the double-tap window.
+   */
+  meter: z.strictObject({
+    counted: z.strictObject({ perfect: z.number(), great: z.number(), good: z.number(), loose: z.number() }),
+    offbeat: z.strictObject({ perfect: z.number(), great: z.number() }),
+    doubleTap: z.number(),
+    stray: z.number(),
+    /** One bar after the latest press that raised it, the groove falls from full to empty in emptyInBars. */
+    drain: z.strictObject({ afterBars: z.number().min(0), emptyInBars: z.number().positive() }),
+    tiers: z.array(unit).min(1),
+    hysteresis: z.number().min(0),
+    doubleTapMs: z.number().min(0),
+  }),
   swings: z.strictObject({
     /** The armed swing strikes on the first grid time at least this long after the press. */
     minLeadMs: z.number().positive(),
@@ -359,7 +375,7 @@ export const levelScript = z.strictObject({
   /** The demo's forest corridor along a route, or play mode's open field. */
   world: z.enum(["corridor", "open"]).default("corridor"),
   /** Play-mode rule changes. */
-  rules: z.strictObject({ oneStepPerSlot: z.boolean().default(false), accentTelegraphs: z.boolean().default(false), health: z.boolean().default(false), strides: z.boolean().default(false) }).optional(),
+  rules: z.strictObject({ oneStepPerSlot: z.boolean().default(false), accentTelegraphs: z.boolean().default(false), health: z.boolean().default(false), strides: z.boolean().default(false), pressClasses: z.boolean().default(false) }).optional(),
   /** Overrides merged over content/hero.yaml for this level only (checked against the hero schema). */
   hero: z.record(z.string(), z.unknown()).optional(),
   title: z.strictObject({ piece: z.string(), composer: z.string(), performer: z.string() }),

@@ -26,6 +26,8 @@ soundPalettes:
       weapon-fire: [rpg80/spell_fire_01, rpg80/spell_fire_02, rpg80/spell_fire_03]
       gem: [rpg80/item_gem_01, rpg80/item_gem_02, rpg80/item_gem_03, rpg80/item_gem_04]
       zone-sweep: [kenney/maximize_004]   # played an octave down: the open field's transform wave
+      tier-up: [kenney/confirmation_002]   # the groove's tier rises: a rising chime on the next grid time
+      tier-down: [kenney/minimize_001]     # the tier falls: a soft falling sweep
 
   # The slow prelude: pitched glass and bells, transposed to notes in the section's key.
   - id: soft-chimes

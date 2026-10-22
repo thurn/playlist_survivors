@@ -67,6 +67,6 @@ describe("calibration", () => {
 
 describe("the grade", () => {
   it("comes from the average groove", () => {
-    expect([0.978, 0.972, 0.965, 0.9, 0.8, 0.7, 0.6].map(gradeFor)).toEqual(["S", "S", "A", "A", "B", "B", "C"]);
+    expect([0.96, 0.94, 0.93, 0.85, 0.8, 0.75, 0.7].map(gradeFor)).toEqual(["S", "S", "A", "A", "B", "B", "C"]);
   });
 });
