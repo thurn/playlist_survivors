@@ -1,0 +1,5 @@
+# expect: unknown section "theme-b" in the level this extends
+extends: orpheus-galop
+sections:
+  - section: theme-b
+    pace: 60

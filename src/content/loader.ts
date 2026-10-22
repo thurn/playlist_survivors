@@ -7,6 +7,7 @@ import { LineCounter, parseDocument, type Document } from "yaml";
 import type { z } from "zod";
 import {
   contentFile,
+  heroDef,
   levelScript,
   type EffectRecipe,
   type EnemyDef,
@@ -14,6 +15,7 @@ import {
   type HeroDef,
   type LevelScriptInput,
   type MusicalRef,
+  type SkillProfileName,
   type SoundPalette,
   type WeaponDef,
   type ZoneTheme,
@@ -83,19 +85,24 @@ function pathString(path: PropertyKey[]): string {
 }
 
 function validate<S extends z.ZodType>(schema: S, p: ParsedYaml, issues: ContentIssue[]): z.infer<S> | undefined {
-  const r = schema.safeParse(p.data);
+  return validateData(schema, p.data, issues, (path) => ({ file: p.file, line: lineOf(p, path) }));
+}
+
+/** Validate data against a schema; `locate` gives the file and line that set a path. */
+function validateData<S extends z.ZodType>(schema: S, data: unknown, issues: ContentIssue[], locate: (path: (string | number)[]) => Origin, prefix: (string | number)[] = []): z.infer<S> | undefined {
+  const r = schema.safeParse(data);
   if (r.success) return r.data;
   for (const iss of r.error.issues) {
-    const path = iss.path.filter((k): k is string | number => typeof k !== "symbol");
+    const path = [...prefix, ...iss.path.filter((k): k is string | number => typeof k !== "symbol")];
     if (iss.code === "unrecognized_keys") {
       for (const key of iss.keys) {
         const kp = [...path, key];
-        issues.push({ file: p.file, line: lineOf(p, kp), path: pathString(path), message: `unknown field "${key}"` });
+        issues.push({ ...locate(kp), path: pathString(path), message: `unknown field "${key}"` });
       }
       continue;
     }
     const message = iss.code === "invalid_type" && /received undefined/.test(iss.message) ? "required field is missing" : iss.message;
-    issues.push({ file: p.file, line: lineOf(p, path), path: pathString(path), message });
+    issues.push({ ...locate(path), path: pathString(path), message });
   }
   return undefined;
 }
@@ -254,28 +261,186 @@ export type LevelEvent = LevelScriptInput["events"][number];
 export interface LevelScript {
   song: string;
   seed: number;
-  player: "perfect" | "skilled" | "casual";
+  player: SkillProfileName;
   title: LevelScriptInput["title"];
   zones: string[];
   sections: ResolvedSection[];
   events: LevelEvent[];
-  /** Source line of each event, for planner error messages. */
+  /** Source file and line of each event, for planner error messages. */
+  eventFiles: string[];
   eventLines: (number | undefined)[];
   file: string;
+  /** The level this one extends, if any. */
+  extends?: string;
+  /** The demo's forest corridor, or play mode's open field. */
+  world: "corridor" | "open";
+  rules: { oneStepPerSlot: boolean; accentTelegraphs: boolean };
+  /** The hero for this level: content/hero.yaml with the level's overrides (the same object when it has none). */
+  hero: HeroDef;
+}
+
+/** The song a level script is for (following `extends`), read before the song map is loaded. */
+export function levelSongName(f: SourceFile, resolve?: LevelResolver, depth = 0): string {
+  const own = /^song: (\S+)/m.exec(f.text)?.[1];
+  if (own) return own;
+  const parent = /^extends: (\S+)/m.exec(f.text)?.[1];
+  const pf = parent && depth < 8 ? resolve?.(parent) : undefined;
+  return pf ? levelSongName(pf, resolve, depth + 1) : "";
+}
+
+/** Finds another level script by name (`extends: orpheus-galop` names levels/orpheus-galop.yaml). */
+export type LevelResolver = (name: string) => SourceFile | undefined;
+
+/** A level script's data merged over its parent's, and where each merged value was set. */
+interface LevelSource {
+  data: unknown;
+  locate(path: (string | number)[]): Origin;
+}
+
+const EVENT_KINDS = ["levelUp", "formation", "threats", "boss", "banner", "titleCard", "landmark", "timeScale", "blast"];
+
+const isRecord = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === "object" && !Array.isArray(v);
+
+/** Plain objects merge key by key; anything else in `over` replaces. */
+function deepMerge(base: unknown, over: unknown): unknown {
+  if (!isRecord(base) || !isRecord(over)) return over;
+  const out: Record<string, unknown> = { ...base };
+  for (const [k, v] of Object.entries(over)) out[k] = k in base ? deepMerge(base[k], v) : v;
+  return out;
+}
+
+/** Field by field: `over`'s fields replace `base`'s, except that the `nested` objects merge key by key. */
+function mergeFields(base: unknown, over: Record<string, unknown>, nested: string[]): unknown {
+  if (!isRecord(base)) return over;
+  const out: Record<string, unknown> = { ...base, ...over };
+  for (const k of nested) if (isRecord(base[k]) && isRecord(over[k])) out[k] = { ...base[k], ...over[k] };
+  return out;
+}
+
+/** Does `v` have a value at `path`? */
+function hasPath(v: unknown, path: (string | number)[]): boolean {
+  let cur = v;
+  for (const k of path) {
+    if (cur === null || typeof cur !== "object" || !(k in (cur as object))) return false;
+    cur = (cur as Record<string | number, unknown>)[k];
+  }
+  return true;
+}
+
+/** A canonical string for comparing musical references. */
+function canonical(v: unknown): string {
+  if (!isRecord(v)) return JSON.stringify(v);
+  return `{${Object.keys(v)
+    .sort()
+    .map((k) => `${k}:${canonical(v[k])}`)
+    .join(",")}}`;
+}
+
+const levelName = (file: string) => file.split("/").pop()!.replace(/\.ya?ml$/, "");
+
+/**
+ * Read a level script, merged over the level it extends: top-level fields
+ * replace the parent's (the hero overrides merge), sections merge by their
+ * `section` label field by field, and events merge by their `at` and kind.
+ */
+function readLevelSource(f: SourceFile, resolve: LevelResolver | undefined, issues: ContentIssue[], stack: string[]): LevelSource | undefined {
+  const p = parseYaml(f, issues);
+  if (!p) return undefined;
+  const own: LevelSource = { data: p.data, locate: (path) => ({ file: f.name, line: lineOf(p, path) }) };
+  if (!isRecord(p.data) || typeof p.data.extends !== "string") return own;
+  const parentName = p.data.extends;
+  const here = { ...own.locate(["extends"]), path: "extends" };
+  if (stack.includes(parentName)) {
+    issues.push({ ...here, message: `circular extends: ${[...stack, parentName].join(" → ")}` });
+    return undefined;
+  }
+  const pf = resolve?.(parentName);
+  if (!pf) {
+    issues.push({ ...here, message: `unknown level "${parentName}"` });
+    return undefined;
+  }
+  const parent = readLevelSource(pf, resolve, issues, [...stack, parentName]);
+  if (!parent) return undefined;
+  if (!isRecord(parent.data)) return parent;
+  return mergeLevel(parent, parent.data, p, p.data, issues);
+}
+
+function mergeLevel(parent: LevelSource, pd: Record<string, unknown>, p: ParsedYaml, child: Record<string, unknown>, issues: ContentIssue[]): LevelSource {
+  const childLoc = (path: (string | number)[]): Origin => ({ file: p.file, line: lineOf(p, path) });
+  const out: Record<string, unknown> = { ...pd };
+  for (const [k, v] of Object.entries(child)) {
+    if (k === "sections" || k === "events") continue;
+    out[k] = k === "hero" ? deepMerge(pd[k], v) : v;
+  }
+  // Sections: by label, field by field.
+  const secs = Array.isArray(pd.sections) ? [...pd.sections] : [];
+  const secFrom: { parent?: number; child?: number }[] = secs.map((_, i) => ({ parent: i }));
+  const childSecs = Array.isArray(child.sections) ? child.sections : [];
+  childSecs.forEach((cs, ci) => {
+    const label = isRecord(cs) ? cs.section : undefined;
+    const idx = secs.findIndex((ps) => isRecord(ps) && ps.section === label);
+    if (typeof label !== "string" || idx < 0) {
+      const known = secs.map((ps) => (isRecord(ps) ? ps.section : undefined)).filter((x) => typeof x === "string");
+      issues.push({ ...childLoc(["sections", ci, "section"]), path: `sections[${ci}].section`, message: `unknown section "${String(label)}" in the level this extends (${known.join(", ")})` });
+      return;
+    }
+    secs[idx] = mergeFields(secs[idx], cs, ["camera", "heavyOnAccents"]);
+    secFrom[idx].child = ci;
+  });
+  out.sections = secs;
+  // Events: by `at` and kind; the rest are new.
+  const evs = Array.isArray(pd.events) ? [...pd.events] : [];
+  const evFrom: { parent?: number; child?: number }[] = evs.map((_, i) => ({ parent: i }));
+  const childEvs = Array.isArray(child.events) ? child.events : [];
+  childEvs.forEach((ce, ci) => {
+    if (!isRecord(ce)) return;
+    const kind = EVENT_KINDS.find((k) => k in ce);
+    const idx = evs.findIndex((pe, i) => evFrom[i].child === undefined && isRecord(pe) && canonical(pe.at) === canonical(ce.at) && (kind === undefined || kind in pe));
+    if (idx >= 0) {
+      evs[idx] = mergeFields(evs[idx], ce, []);
+      evFrom[idx].child = ci;
+    } else {
+      evs.push(ce);
+      evFrom.push({ child: ci });
+    }
+  });
+  out.events = evs;
+  const listLocate = (key: "sections" | "events", from: { parent?: number; child?: number }[], childList: unknown[], i: number, rest: (string | number)[]): Origin => {
+    const fr = from[i];
+    if (!fr) return hasPath(child, [key]) ? childLoc([key]) : parent.locate([key]);
+    if (fr.child !== undefined && (fr.parent === undefined || hasPath(childList[fr.child], rest))) return childLoc([key, fr.child, ...rest]);
+    return parent.locate([key, fr.parent!, ...rest]);
+  };
+  return {
+    data: out,
+    locate(path) {
+      const [k, i, ...rest] = path;
+      if (k === "sections" && typeof i === "number") return listLocate("sections", secFrom, childSecs, i, rest);
+      if (k === "events" && typeof i === "number") return listLocate("events", evFrom, childEvs, i, rest);
+      if (path.length > 0 && hasPath(child, path)) return childLoc(path);
+      return parent.locate(path);
+    },
+  };
 }
 
 /**
  * Validate a level script against the schema, the content library and the
  * song map, and apply field inheritance between sections.
  */
-export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap): LevelScript {
+export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap, resolve?: LevelResolver): LevelScript {
   const issues: ContentIssue[] = [];
-  const p = parseYaml(f, issues);
-  if (!p) throw new ContentError(issues);
-  const data = validate(levelScript, p, issues);
+  const src = readLevelSource(f, resolve, issues, [levelName(f.name)]);
+  if (!src || issues.length > 0) throw new ContentError(issues);
+  const data = validateData(levelScript, src.data, issues, src.locate);
   if (!data) throw new ContentError(issues);
 
-  const at = (path: (string | number)[]) => ({ file: f.name, line: lineOf(p, path), path: pathString(path) });
+  const at = (path: (string | number)[]) => ({ ...src.locate(path), path: pathString(path) });
+  // The hero: content/hero.yaml with this level's overrides, checked against the hero schema.
+  let levelHero = lib.hero;
+  if (data.hero && lib.hero) {
+    const merged = validateData(heroDef, deepMerge(lib.hero, data.hero), issues, src.locate, ["hero"]);
+    if (merged) levelHero = merged;
+  }
   const need = (path: (string | number)[], kind: Kind, value: string | undefined) => {
     if (value !== undefined && !lib[kind].has(value)) {
       issues.push({ ...at(path), message: `unknown ${kind.replace(/s$/, "")} "${value}"` });
@@ -406,8 +571,13 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap): Le
     zones: data.zones,
     sections,
     events: data.events,
-    eventLines: data.events.map((_, i) => lineOf(p, ["events", i])),
+    eventFiles: data.events.map((_, i) => src.locate(["events", i]).file),
+    eventLines: data.events.map((_, i) => src.locate(["events", i]).line),
     file: f.name,
+    extends: data.extends,
+    world: data.world,
+    rules: { oneStepPerSlot: data.rules?.oneStepPerSlot ?? false, accentTelegraphs: data.rules?.accentTelegraphs ?? false },
+    hero: levelHero,
   };
 }
 

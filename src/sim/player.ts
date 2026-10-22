@@ -19,7 +19,7 @@ export interface Observation {
    * Visible threats: an arrow's line runs from (x, y) through its aim point (ax, ay); a slam marker
    * is a circle of `radius` (already grown by the hurtbox) around (x, y).
    */
-  threats: { kind: "arrow" | "slam"; x: number; y: number; ax?: number; ay?: number; landsAt: number; radius?: number }[];
+  threats: { kind: "arrow" | "slam"; x: number; y: number; ax?: number; ay?: number; landsAt: number; radius?: number; seenAt: number }[];
   /** The boss, when it is in the fight. */
   boss?: { x: number; y: number };
   /** Where the route schedule says the hero should be now, and the route's direction there. */
@@ -41,7 +41,7 @@ export interface Player {
   decide(obs: Observation): KeyEvent[];
 }
 
-export type SkillProfile = "perfect" | "skilled" | "casual";
+export type SkillProfile = "perfect" | "skilled" | "casual" | "moderate";
 
 export interface ProfileSpec {
   /** Standard deviation and clamp of the timing error, in seconds. */
@@ -49,12 +49,25 @@ export interface ProfileSpec {
   clampS: number;
   /** Casual players press downbeats only. */
   downbeatsOnly: boolean;
+  /** Share of the section's pattern slots pressed, and of the presses that set up a cleave (seeded draws). */
+  pressRate: number;
+  accentRate: number;
+  /** Seconds a threat must have been in view before the player reacts to it. */
+  reaction: number;
+  /** Chance per press of taking the second-best direction instead of the best. */
+  sloppy: number;
 }
 
+/** The simulation shows a threat to the player this long after it appears. */
+const SIM_REACTION = 0.15;
+
 export const PROFILES: Record<SkillProfile, ProfileSpec> = {
-  perfect: { sd: 0, clampS: 0, downbeatsOnly: false },
-  skilled: { sd: 0.012, clampS: 0.04, downbeatsOnly: false },
-  casual: { sd: 0.12, clampS: 0.25, downbeatsOnly: true },
+  perfect: { sd: 0, clampS: 0, downbeatsOnly: false, pressRate: 1, accentRate: 1, reaction: SIM_REACTION, sloppy: 0 },
+  skilled: { sd: 0.012, clampS: 0.04, downbeatsOnly: false, pressRate: 1, accentRate: 1, reaction: SIM_REACTION, sloppy: 0 },
+  casual: { sd: 0.12, clampS: 0.25, downbeatsOnly: true, pressRate: 1, accentRate: 1, reaction: SIM_REACTION, sloppy: 0 },
+  // The automated stand-in for a moderately competent human (play mode's checks require it to
+  // hit the signature moments).
+  moderate: { sd: 0.03, clampS: 0.1, downbeatsOnly: false, pressRate: 0.85, accentRate: 0.8, reaction: 0.25, sloppy: 0.15 },
 };
 
 /** Sections as the player knows them: the press pattern and step movement. */
@@ -104,6 +117,7 @@ export class VirtualPlayer implements Player {
   private lastDir: { x: number; y: number } | undefined;
   private count = 0;
   private held = new Set<Key>();
+  private readonly spec: ProfileSpec;
 
   constructor(
     private readonly hero: HeroDef,
@@ -118,13 +132,15 @@ export class VirtualPlayer implements Player {
     private readonly bossChord?: number,
   ) {
     const spec = PROFILES[profile];
+    this.spec = spec;
     const grid = slots.filter((sl) => sl.kind === "grid" && sections[sl.section].steps);
     grid.forEach((sl, i) => {
       const sec = sections[sl.section];
       let pressed = spec.downbeatsOnly ? sl.slot === 0 : sec.presses[sl.slot % sec.presses.length] === "x";
+      if (pressed && spec.pressRate < 1 && new Rng(seed, "press-skip", Math.round(sl.s * 1000)).next() >= spec.pressRate) pressed = false;
       // Press one grid step before an accent strong enough for a cleave, even on a rest slot.
       const next = grid[i + 1];
-      if (next && heavyAccent(next)) pressed = true;
+      if (next && heavyAccent(next) && (spec.accentRate >= 1 || new Rng(seed, "accent-setup", Math.round(sl.s * 1000)).next() < spec.accentRate)) pressed = true;
       const r = new Rng(seed, "press-time", Math.round(sl.s * 1000));
       const err = spec.sd > 0 ? clamp(normal(r) * spec.sd, -spec.clampS, spec.clampS) : 0;
       this.plan.push({ s: sl.s + (pressed ? err : 0), kind: pressed ? "press" : "watch", beat: sl.bi });
@@ -146,7 +162,9 @@ export class VirtualPlayer implements Player {
     return this.next < this.plan.length ? this.plan[this.next].s : Infinity;
   }
 
-  decide(obs: Observation): KeyEvent[] {
+  decide(seen: Observation): KeyEvent[] {
+    // A slower player only reacts to a threat once it has been in view a while.
+    const obs = this.spec.reaction > SIM_REACTION + 1e-9 ? { ...seen, threats: seen.threats.filter((t) => seen.s >= t.seenAt + this.spec.reaction - 1e-9) } : seen;
     // The decision planned for now.
     while (this.next < this.plan.length && this.plan[this.next].s < obs.s - 1e-9) this.next++;
     if (this.next >= this.plan.length) return [];
@@ -230,6 +248,8 @@ export class VirtualPlayer implements Player {
     const ny = p.tx;
     let best: Key[] = DIRECTIONS[0];
     let bestCost = Infinity;
+    let second: Key[] = DIRECTIONS[0];
+    let secondCost = Infinity;
     const r = new Rng(this.seed, "press-noise", this.count);
     for (const keys of DIRECTIONS) {
       const d = dirVector(keys);
@@ -267,10 +287,17 @@ export class VirtualPlayer implements Player {
       // A little variety.
       cost += r.next() * 0.2;
       if (cost < bestCost) {
+        second = best;
+        secondCost = bestCost;
         bestCost = cost;
         best = keys;
+      } else if (cost < secondCost) {
+        secondCost = cost;
+        second = keys;
       }
     }
+    // A sloppy press goes the second-best way.
+    if (this.spec.sloppy > 0 && Number.isFinite(secondCost) && new Rng(this.seed, "sloppy", this.count).next() < this.spec.sloppy) best = second;
     this.lastDir = dirVector(best);
     // Which of a diagonal's two keys comes first is a matter of habit.
     if (best.length === 2 && r.next() < 0.5) return [best[1], best[0]];

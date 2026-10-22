@@ -1,7 +1,7 @@
 /** Run the planner in Node from the files on disk. */
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { loadContent, loadLevel } from "../../src/content/loader.ts";
+import { levelSongName, loadContent, loadLevel } from "../../src/content/loader.ts";
 import type { SongMap } from "../../src/core/songmap.ts";
 import type { CharacterAtlas, SoundManifest, WorldAtlas } from "../../src/assets/types.ts";
 import { plan, planWithSim } from "../../src/planner/plan.ts";
@@ -10,7 +10,7 @@ import type { PropInfo } from "../../src/mapgen/mapgen.ts";
 import type { Plan } from "../../src/plan/types.ts";
 import type { SkillProfile } from "../../src/sim/player.ts";
 import type { SimResult } from "../../src/sim/simulate.ts";
-import { ROOT, hasSongMap, readContentFiles, readSongMap, readSource } from "./files.ts";
+import { ROOT, hasSongMap, levelResolver, readContentFiles, readSongMap, readSource } from "./files.ts";
 
 export function readLandmarks(): Record<string, unknown> {
   const dir = join(ROOT, "content/landmarks");
@@ -45,10 +45,10 @@ export function soundOnsets(): Record<string, number> | undefined {
 export function plannerInput(opts: { songMap?: SongMap; seed?: number; level?: string } = {}): PlannerInput {
   const content = loadContent(readContentFiles());
   const levelSrc = readSource(opts.level ?? "levels/orpheus-galop.yaml");
-  const songName = /^song: (\S+)/m.exec(levelSrc.text)?.[1] ?? "";
+  const songName = levelSongName(levelSrc, levelResolver);
   const songMap = opts.songMap ?? (hasSongMap(songName) ? readSongMap(songName) : undefined);
   if (!songMap) throw new Error(`no song map for ${songName}`);
-  const level = loadLevel(levelSrc, content, songMap);
+  const level = loadLevel(levelSrc, content, songMap, levelResolver);
   return { songMap, level, content, seed: opts.seed ?? level.seed, heroAnims: heroAnimsFromAtlas(), landmarks: readLandmarks(), soundOnsets: soundOnsets(), version: "node" };
 }
 

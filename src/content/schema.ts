@@ -285,11 +285,23 @@ export const levelEvent = z.strictObject({
   blast: id.optional(),
 });
 
+/** The virtual players: the demo's three, and play mode's stand-in for a moderately competent human. */
+export const skillProfile = z.enum(["perfect", "skilled", "casual", "moderate"]);
+export type SkillProfileName = z.infer<typeof skillProfile>;
+
 export const levelScript = z.strictObject({
+  /** Another level script this one restates only the differences from (play mode's tuning). */
+  extends: z.string().optional(),
   song: id,
   seed: z.number().int(),
   /** The virtual player's default skill profile (`?player=` overrides it). */
-  player: z.enum(["perfect", "skilled", "casual"]).default("skilled"),
+  player: skillProfile.default("skilled"),
+  /** The demo's forest corridor along a route, or play mode's open field. */
+  world: z.enum(["corridor", "open"]).default("corridor"),
+  /** Play-mode rule changes. */
+  rules: z.strictObject({ oneStepPerSlot: z.boolean().default(false), accentTelegraphs: z.boolean().default(false) }).optional(),
+  /** Overrides merged over content/hero.yaml for this level only (checked against the hero schema). */
+  hero: z.record(z.string(), z.unknown()).optional(),
   title: z.strictObject({ piece: z.string(), composer: z.string(), performer: z.string() }),
   zones: z.array(id).min(1),
   sections: z.array(levelSection).min(1),

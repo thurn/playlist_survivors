@@ -253,7 +253,7 @@ function encounters(ctx: Ctx): Pick<Schedule, "volleys" | "archerGroups" | "boss
         const startBar = barOfBeatIndex(idx, biAt(e.s));
         const phrases = sectionPhrases(idx, ctx.sections[section].label).filter((p) => p[0] >= startBar);
         const ph = phrases[def.release.phrases - 1] ?? phrases[phrases.length - 1];
-        if (!ph) throw new PlanError(`${ctx.level.file}:${e.line}: formation ${ev.formation} has no phrase to release on`);
+        if (!ph) throw new PlanError(`${ctx.level.eventFiles?.[e.index] ?? ctx.level.file}:${e.line}: formation ${ev.formation} has no phrase to release on`);
         sRelease = phraseFinalAccent(idx, ph);
       } else sRelease = tAt(biAt(e.s) + def.entranceBeats + def.release.beats);
       formations.push({ def: ev.formation, sStart: e.s, sRelease, line: e.line });

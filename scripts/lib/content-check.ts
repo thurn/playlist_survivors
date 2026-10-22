@@ -3,7 +3,7 @@ import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { ContentError, loadContent, loadLevel, type ContentLibrary } from "../../src/content/loader.ts";
 import type { SongMap } from "../../src/core/songmap.ts";
-import { ROOT, readContentFiles, readSource } from "./files.ts";
+import { ROOT, levelResolver, readContentFiles, readSource } from "./files.ts";
 
 export interface FixtureResult {
   name: string;
@@ -24,7 +24,7 @@ export function checkBrokenFixtures(song: SongMap, dir = "tests/fixtures/broken"
       if (name.endsWith(".content.yaml")) {
         loadContent([...goodContent, src]);
       } else {
-        loadLevel(src, loadContent(goodContent), song);
+        loadLevel(src, loadContent(goodContent), song, levelResolver);
       }
       message = "(loaded without error)";
     } catch (e) {

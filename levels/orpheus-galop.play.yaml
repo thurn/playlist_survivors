@@ -1,0 +1,14 @@
+# Play mode's tuning for the Can-Can level: the demo's level script with only
+# the differences restated. See docs/design/interactive.md.
+extends: orpheus-galop
+world: open                 # the demo's default is corridor
+rules: { oneStepPerSlot: true, accentTelegraphs: true }
+hero:
+  timing: { perfectMs: 45, greatMs: 90, goodMs: 140, floor: 0.1 }
+player: moderate            # the bot used for ?start= and for checks
+sections:
+  - section: climax
+    camera: { lead: 0 }
+events:
+  - at: { section: galop-opening, point: start }
+    xp: 180

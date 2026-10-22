@@ -1,5 +1,5 @@
 /** Content, level scripts, song maps and landmarks, bundled as raw text by Vite. */
-import type { SourceFile } from "../content/loader.ts";
+import type { LevelResolver, SourceFile } from "../content/loader.ts";
 import type { SongMap } from "../core/songmap.ts";
 
 const contentRaw = import.meta.glob("/content/*.yaml", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
@@ -33,3 +33,10 @@ export function songMap(song: string): SongMap {
 export function landmarks(): Record<string, unknown> {
   return Object.fromEntries(Object.entries(landmarkRaw).map(([k, v]) => [k.split("/").pop()!.replace(/\.tmj$/, ""), JSON.parse(v)]));
 }
+
+/** Finds level scripts by name, for `extends`. */
+export const levelResolver: LevelResolver = (name) => {
+  const key = `/levels/${name}.yaml`;
+  const text = levelRaw[key];
+  return text === undefined ? undefined : { name: key.slice(1), text };
+};

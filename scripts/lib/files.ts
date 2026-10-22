@@ -1,7 +1,7 @@
 /** Node helpers for reading content, levels and song maps from disk. */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
-import type { SourceFile } from "../../src/content/loader.ts";
+import type { LevelResolver, SourceFile } from "../../src/content/loader.ts";
 import type { SongMap } from "../../src/core/songmap.ts";
 
 export const ROOT = resolve(import.meta.dirname, "../..");
@@ -30,3 +30,9 @@ export function hasSongMap(song: string): boolean {
 export function readSongMap(song: string): SongMap {
   return JSON.parse(readFileSync(songMapPath(song), "utf8")) as SongMap;
 }
+
+/** Finds level scripts by name in levels/, for `extends`. */
+export const levelResolver: LevelResolver = (name) => {
+  const path = join("levels", `${name}.yaml`);
+  return existsSync(join(ROOT, path)) ? readSource(path) : undefined;
+};

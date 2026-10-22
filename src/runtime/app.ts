@@ -3,7 +3,7 @@
  * title screen, then draws evaluatePlan(plan, s) every animation frame.
  */
 import { Application } from "pixi.js";
-import { ContentError, loadContent, loadLevel, type ContentLibrary } from "../content/loader.ts";
+import { ContentError, levelSongName, loadContent, loadLevel, type ContentLibrary } from "../content/loader.ts";
 import { Evaluator } from "../plan/evaluate.ts";
 import type { Plan } from "../plan/types.ts";
 import type { PlannerInput } from "../planner/context.ts";
@@ -14,7 +14,7 @@ import { AudioEngine, VirtualClock, type SongClock } from "./audio.ts";
 import { Hud } from "./hud.ts";
 import { cacheKey, loadCachedPlan, storePlan } from "./planCache.ts";
 import { Renderer } from "./renderer.ts";
-import { contentFiles, landmarks, levelFile, songMap } from "./sources.ts";
+import { contentFiles, landmarks, levelFile, levelResolver, songMap } from "./sources.ts";
 
 export interface Params {
   metronome: boolean;
@@ -25,7 +25,7 @@ export interface Params {
   startS: number;
   seed?: number;
   /** The virtual player's skill profile (`?player=casual`). */
-  player?: "perfect" | "skilled" | "casual";
+  player?: "perfect" | "skilled" | "casual" | "moderate";
   test: boolean;
   bench: boolean;
   checks: boolean;
@@ -43,7 +43,7 @@ export function readParams(search: string): Params {
     avOffsetMs: num("avOffsetMs") ?? 0,
     startS: parseTimestamp(q.get("start")),
     seed: num("seed"),
-    player: (["perfect", "skilled", "casual"] as const).find((p) => p === q.get("player")),
+    player: (["perfect", "skilled", "casual", "moderate"] as const).find((p) => p === q.get("player")),
     test: q.has("test") || q.has("capture") || q.has("bench"),
     bench: q.has("bench"),
     checks: q.has("checks"),
@@ -155,9 +155,9 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
     try {
       lib = loadContent(contentFiles());
       const lf = levelFile(params.level);
-      const songName = /^song: (\S+)/m.exec(lf.text)?.[1] ?? "";
+      const songName = levelSongName(lf, levelResolver);
       const sm = songMap(songName);
-      const level = loadLevel(lf, lib, sm);
+      const level = loadLevel(lf, lib, sm, levelResolver);
       overlay.sub.textContent = `${level.title.piece} — a tech demo`;
       input = { songMap: sm, level, content: lib, seed: params.seed ?? level.seed, profile: params.player ?? level.player, landmarks: landmarks(), version: __BUILD_VERSION__ };
     } catch (e) {

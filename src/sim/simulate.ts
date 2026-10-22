@@ -30,7 +30,7 @@ import type { KeyEvent, Observation, Player } from "./player.ts";
 import { BatchRecorder, type ArrowRecord, type Recorder, type SimResult } from "./recorder.ts";
 import { DEMO_RULES, type Rules } from "./rules.ts";
 import { nextStepAfter, stepRate, type GridSlot, type Schedule } from "./schedule.ts";
-import { armedStrike, damageMultiplier, grooveAfterPress, grooveDecay, ratePressOnGrid, type Rating } from "./timing.ts";
+import { armedStrike, damageMultiplier, grooveAfterPress, grooveDecay, nearestIndex, ratePressOnGrid, type Rating } from "./timing.ts";
 import { CorridorWorld, type World } from "./world.ts";
 
 export type { ArrowRecord, Landing, SimResult, SlamRecord } from "./recorder.ts";
@@ -412,6 +412,8 @@ interface SimState {
   swings: Swing[];
   liveSwings: Swing[];
   takenSlots: Set<GridSlot>;
+  /** One step per grid slot: the grid index of the latest step. */
+  lastStepGrid: number;
   lightCount: number;
   nInputs: number;
   nHits: number;
@@ -480,6 +482,7 @@ function freshState(env: Env): SimState {
     swings: [],
     liveSwings: [],
     takenSlots: new Set(),
+    lastStepGrid: -1,
     lightCount: 0,
     nInputs: 0,
     nHits: 0,
@@ -847,6 +850,20 @@ function engine(env: Env, st: SimState, io: Io) {
 
   // ---------------------------------------------------------------- input
   const press = (e: KeyEvent) => {
+    // One step per grid slot (play mode): every press belongs to its nearest grid time, and only
+    // the first press for a grid time steps, is rated and arms a swing. A diagonal's second key
+    // still bends the step.
+    if (env.rules.oneStepPerSlot && sectionAt(st.s).level.movement === "steps" && !(st.step && bendStep(hero, st.step, st.w, e.key, world.clamp))) {
+      const gi = nearestIndex(sch.gridTimes, st.s);
+      if (gi === st.lastStepGrid) {
+        // An extra press: it does nothing (the key display greys it).
+        st.nInputs++;
+        st.held.add(e.key);
+        rec().input({ s: st.s, w: st.w, kind: "press", key: e.key, steps: true, ignored: true });
+        return;
+      }
+      st.lastStepGrid = gi;
+    }
     if (inStop(st.s)) {
       // A press ends the hit-stop early: world time resumes at the press.
       st.stopEnd = st.s;
@@ -1237,16 +1254,16 @@ function engine(env: Env, st: SimState, io: Io) {
       if (s < v.sDraw + REACTION - 1e-9 || s > v.sRelease + 1e-9) continue;
       for (const f of st.alive) {
         if (!f.alive || f.archerGroup !== v.group || !f.drawing) continue;
-        out.push({ kind: "arrow", x: posX(f, st.w), y: posY(f, st.w) - 24, ax: hp.x, ay: hp.y - HURTBOX_LIFT, landsAt: v.sArrive });
+        out.push({ kind: "arrow", x: posX(f, st.w), y: posY(f, st.w) - 24, ax: hp.x, ay: hp.y - HURTBOX_LIFT, landsAt: v.sArrive, seenAt: v.sDraw });
       }
     }
     // ...arrows in flight...
     for (const a of st.flying) {
       if (s < sch.volleys[a.v].sDraw + REACTION - 1e-9) continue;
-      out.push({ kind: "arrow", x: a.x0, y: a.y0, ax: a.ax, ay: a.ay, landsAt: sch.volleys[a.v].sArrive });
+      out.push({ kind: "arrow", x: a.x0, y: a.y0, ax: a.ax, ay: a.ay, landsAt: sch.volleys[a.v].sArrive, seenAt: sch.volleys[a.v].sDraw });
     }
     // ...and slam markers.
-    for (const [k, m] of st.slamMarks) if (s >= m.sMark + REACTION - 1e-9) out.push({ kind: "slam", x: m.x, y: m.y, radius: SLAM_RADIUS + HURTBOX_RADIUS, landsAt: sch.boss!.slams[k].sLand });
+    for (const [k, m] of st.slamMarks) if (s >= m.sMark + REACTION - 1e-9) out.push({ kind: "slam", x: m.x, y: m.y, radius: SLAM_RADIUS + HURTBOX_RADIUS, landsAt: sch.boss!.slams[k].sLand, seenAt: m.sMark });
     return out;
   };
 
@@ -2050,7 +2067,7 @@ export class Sim {
 
 export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptions): SimResult {
   const rec = new BatchRecorder();
-  const sim = new Sim(ctx, sch, new CorridorWorld(map, sch), DEMO_RULES, rec, opts);
+  const sim = new Sim(ctx, sch, new CorridorWorld(map, sch), ctx.level.rules ?? DEMO_RULES, rec, opts);
   sim.runToEnd();
   return rec.result({ endS: sim.s, blastS: sch.blast?.s, animNames: HERO_ANIMS, heroRate: HERO_RATE });
 }

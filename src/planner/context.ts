@@ -3,6 +3,7 @@
  * The song schedule, the simulation and the emission stage read it.
  */
 import type { ContentLibrary, LevelScript, ResolvedSection } from "../content/loader.ts";
+import type { SkillProfileName } from "../content/schema.ts";
 import { Rng } from "../core/rng.ts";
 import { type SongIndex, type SongMap, type SongSection, indexSong, timeOfBeatIndex, beatIndexAt } from "../core/songmap.ts";
 
@@ -33,7 +34,7 @@ export interface PlannerInput {
   /** Build version, mixed into the plan hash. */
   version?: string;
   /** The virtual player's skill profile (default: the level script's). */
-  profile?: "perfect" | "skilled" | "casual";
+  profile?: SkillProfileName;
 }
 
 export interface SectionInfo {
@@ -89,7 +90,8 @@ export function makeCtx(input: PlannerInput): Ctx {
   const song = input.songMap;
   const idx = indexSong(song);
   const level = input.level;
-  const lib = input.content;
+  // The level's hero (content/hero.yaml with the level's overrides).
+  const lib = input.level.hero && input.level.hero !== input.content.hero ? { ...input.content, hero: input.level.hero } : input.content;
   const sections: SectionInfo[] = level.sections.map((ls, i) => {
     const ss = song.sections.find((x) => x.label === ls.label)!;
     const b0 = idx.barStart[ss.bars[0]];
