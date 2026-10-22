@@ -55,7 +55,7 @@ const fmtTime = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60
 
 export class Hud {
   readonly root = new Container();
-  /** Everything except the letterbox bars; it pulses with the beat. */
+  /** Everything except the letterbox bars. */
   private layer = new Container();
   private bars = new Graphics();
   private g = new Graphics();
@@ -131,23 +131,35 @@ export class Hud {
     const H = out.y * 2 + out.h;
     if (out.x > 0) this.bars.rect(0, 0, out.x, H).rect(out.x + out.w, 0, out.x + 1, H).fill(0x000000);
     if (out.y > 0) this.bars.rect(0, 0, W, out.y).rect(0, out.y + out.h, W, out.y + 1).fill(0x000000);
-    // The whole HUD scales up 3–6% on each beat (in song time), around the screen centre.
-    const hudScale = hud.end ? 1 : 1 + (0.03 + 0.03 * hud.energy) * pulse;
-    this.layer.pivot.set(out.x + out.w / 2, out.y + out.h / 2);
-    this.layer.position.set(out.x + out.w / 2, out.y + out.h / 2);
-    this.layer.scale.set(hudScale);
+    // Each panel swells 3–6% on the beat (in song time) around its own centre, by at
+    // most a few units so long bars don't stretch. Text stays put, and crisp.
+    const swell = (x: number, y: number, w: number, h: number, draw: () => void) => {
+      const amp = (0.03 + 0.03 * hud.energy) * pulse;
+      const most = (3 + 3 * hud.energy) * pulse;
+      const sx = 1 + Math.min(amp, most / w);
+      const sy = 1 + Math.min(amp, most / h);
+      const cx = px(x + w / 2);
+      const cy = py(y + h / 2);
+      g.setTransform(sx, 0, 0, sy, cx * (1 - sx), cy * (1 - sy));
+      draw();
+      g.setTransform(1, 0, 0, 1, 0, 0);
+    };
 
     if (!hud.end) {
       // XP bar along the top.
       const xpW = 520;
       const xpX = 480 - xpW / 2;
-      g.roundRect(px(xpX - 2), py(8 - 2), (xpW + 4) * u, 10 * u, 3 * u).fill({ color: 0x000000, alpha: 0.55 * intro });
-      g.roundRect(px(xpX), py(8), xpW * u * clamp(hud.xp, 0, 1), 6 * u, 2 * u).fill({ color: 0x60ffc0, alpha: intro });
+      swell(xpX - 2, 6, xpW + 4, 10, () => {
+        g.roundRect(px(xpX - 2), py(8 - 2), (xpW + 4) * u, 10 * u, 3 * u).fill({ color: 0x000000, alpha: 0.55 * intro });
+        g.roundRect(px(xpX), py(8), xpW * u * clamp(hud.xp, 0, 1), 6 * u, 2 * u).fill({ color: 0x60ffc0, alpha: intro });
+      });
       this.text(`LV ${hud.level}`, px(xpX - 8), py(7), fs, 0x60ffc0, "right", intro);
 
       // Health (always full) and weapons, top left.
-      g.roundRect(px(12), py(24), 90 * u, 7 * u, 2 * u).fill({ color: 0x000000, alpha: 0.55 * intro });
-      g.roundRect(px(13), py(25), 88 * u, 5 * u, 2 * u).fill({ color: 0xff4050, alpha: intro });
+      swell(12, 24, 90, 7, () => {
+        g.roundRect(px(12), py(24), 90 * u, 7 * u, 2 * u).fill({ color: 0x000000, alpha: 0.55 * intro });
+        g.roundRect(px(13), py(25), 88 * u, 5 * u, 2 * u).fill({ color: 0xff4050, alpha: intro });
+      });
       this.text("HP", px(12), py(14), fs, 0xff8090, "left", intro);
       hud.weapons.forEach((wp, i) => {
         const wd = this.lib.weapons.get(wp.id);
@@ -155,9 +167,11 @@ export class Hud {
         const x = px(12 + i * 22);
         const y = py(36);
         const s = 18 * u * (1 + 0.12 * wp.flash);
-        g.roundRect(x, y, s, s, 3 * u).fill({ color: 0x101018, alpha: 0.8 });
-        g.roundRect(x, y, s, s, 3 * u).stroke({ color: col, width: Math.max(1, u), alpha: 0.6 + 0.4 * wp.flash });
-        g.circle(x + s / 2, y + s / 2, (4 + 3 * wp.flash) * u).fill({ color: col, alpha: 0.5 + 0.5 * wp.flash });
+        swell(12 + i * 22, 36, 18, 18, () => {
+          g.roundRect(x, y, s, s, 3 * u).fill({ color: 0x101018, alpha: 0.8 });
+          g.roundRect(x, y, s, s, 3 * u).stroke({ color: col, width: Math.max(1, u), alpha: 0.6 + 0.4 * wp.flash });
+          g.circle(x + s / 2, y + s / 2, (4 + 3 * wp.flash) * u).fill({ color: col, alpha: 0.5 + 0.5 * wp.flash });
+        });
       });
 
       // Kills and the rated presses so far.
@@ -175,16 +189,18 @@ export class Hud {
         const kx = 26 + col * (ks + 3);
         const ky = 452 + row * (ks + 3);
         const col0 = ratingColor(key.rating);
-        g.roundRect(px(kx), py(ky), ks * u, ks * u, 4 * u).fill({ color: key.lit > 0 ? col0 : 0x101018, alpha: (0.25 + 0.65 * key.lit) * intro });
-        g.roundRect(px(kx), py(ky), ks * u, ks * u, 4 * u).stroke({ color: key.lit > 0 ? col0 : 0x606878, width: Math.max(1, u), alpha: intro });
-        // The arrow.
-        const cx0 = px(kx + ks / 2);
-        const cy0 = py(ky + ks / 2);
-        const r = 6 * u;
-        const tip = { x: cx0 + Math.cos(ang) * r, y: cy0 + Math.sin(ang) * r };
-        const l = { x: cx0 + Math.cos(ang + 2.4) * r, y: cy0 + Math.sin(ang + 2.4) * r };
-        const rr = { x: cx0 + Math.cos(ang - 2.4) * r, y: cy0 + Math.sin(ang - 2.4) * r };
-        g.poly([tip.x, tip.y, l.x, l.y, rr.x, rr.y]).fill({ color: key.lit > 0.5 ? 0x101018 : 0xd0d8e8, alpha: intro });
+        swell(kx, ky, ks, ks, () => {
+          g.roundRect(px(kx), py(ky), ks * u, ks * u, 4 * u).fill({ color: key.lit > 0 ? col0 : 0x101018, alpha: (0.25 + 0.65 * key.lit) * intro });
+          g.roundRect(px(kx), py(ky), ks * u, ks * u, 4 * u).stroke({ color: key.lit > 0 ? col0 : 0x606878, width: Math.max(1, u), alpha: intro });
+          // The arrow.
+          const cx0 = px(kx + ks / 2);
+          const cy0 = py(ky + ks / 2);
+          const r = 6 * u;
+          const tip = { x: cx0 + Math.cos(ang) * r, y: cy0 + Math.sin(ang) * r };
+          const l = { x: cx0 + Math.cos(ang + 2.4) * r, y: cy0 + Math.sin(ang + 2.4) * r };
+          const rr = { x: cx0 + Math.cos(ang - 2.4) * r, y: cy0 + Math.sin(ang - 2.4) * r };
+          g.poly([tip.x, tip.y, l.x, l.y, rr.x, rr.y]).fill({ color: key.lit > 0.5 ? 0x101018 : 0xd0d8e8, alpha: intro });
+        });
       }
 
       // Song progress line with section marks.
@@ -200,7 +216,7 @@ export class Hud {
       // Beat track: the song's beats slide toward a beating heart, and presses land on it.
       const cx = 480;
       const cy = 504;
-      g.roundRect(px(cx - 200), py(cy - 9), 400 * u, 18 * u, 9 * u).fill({ color: 0x000000, alpha: 0.45 * intro });
+      swell(cx - 200, cy - 9, 400, 18, () => g.roundRect(px(cx - 200), py(cy - 9), 400 * u, 18 * u, 9 * u).fill({ color: 0x000000, alpha: 0.45 * intro }));
       if (hud.free) {
         // Free sections: a flowing ribbon instead of hard markers.
         for (const side of [-1, 1]) {
@@ -240,8 +256,10 @@ export class Hud {
       {
         const gx = cx + 212;
         const gw = 70;
-        g.roundRect(px(gx), py(cy - 5), gw * u, 10 * u, 3 * u).fill({ color: 0x000000, alpha: 0.55 * intro });
-        g.roundRect(px(gx + 1), py(cy - 4), (gw - 2) * u * clamp(hud.groove, 0, 1), 8 * u, 3 * u).fill({ color: hud.groove > 0.85 ? 0xffd040 : 0x60c0ff, alpha: intro });
+        swell(gx, cy - 5, gw, 10, () => {
+          g.roundRect(px(gx), py(cy - 5), gw * u, 10 * u, 3 * u).fill({ color: 0x000000, alpha: 0.55 * intro });
+          g.roundRect(px(gx + 1), py(cy - 4), (gw - 2) * u * clamp(hud.groove, 0, 1), 8 * u, 3 * u).fill({ color: hud.groove > 0.85 ? 0xffd040 : 0x60c0ff, alpha: intro });
+        });
         this.text("GROOVE", px(gx), py(cy - 16), fs, 0xb0b0c0, "left", intro);
         this.text(`+${Math.round(hud.bonus * 100)}%`, px(gx + gw + 6), py(cy - 4), fs, hud.groove > 0.85 ? 0xffd040 : 0xffffff, "left", intro);
       }
@@ -255,7 +273,7 @@ export class Hud {
           const r = (3 + (now ? 3 * Math.exp(-6 * hud.beatPhase) : 0)) * u;
           g.circle(px(cx - 15 * (of - 1) + (k - 1) * 30), py(cy - 22), r).fill({ color: lit ? 0xffe080 : 0x606070, alpha: (lit ? 1 : 0.5) * (0.4 + 0.6 * ci.fade) });
         }
-        g.roundRect(px(cx - 200), py(cy - 9), 400 * u, 18 * u, 9 * u).stroke({ color: 0xffe080, width: Math.max(1, u), alpha: 0.6 * ci.fade });
+        swell(cx - 200, cy - 9, 400, 18, () => g.roundRect(px(cx - 200), py(cy - 9), 400 * u, 18 * u, 9 * u).stroke({ color: 0xffe080, width: Math.max(1, u), alpha: 0.6 * ci.fade }));
       }
       const heart = (10 + 4 * pulse) * u;
       // Over the beat before a cleave's accent, the heart glows gold.
@@ -267,8 +285,11 @@ export class Hud {
       if (hud.boss && hud.boss.remaining > -1) {
         const a = clamp(hud.boss.age * 2, 0, 1) * clamp(1 + hud.boss.remaining, 0, 1);
         const bw = 360;
-        g.roundRect(px(480 - bw / 2), py(54), bw * u, 10 * u, 3 * u).fill({ color: 0x000000, alpha: 0.65 * a });
-        g.roundRect(px(480 - bw / 2 + 1), py(55), (bw - 2) * u * clamp(hud.boss.health, 0, 1), 8 * u, 3 * u).fill({ color: 0xc02030, alpha: a });
+        const health = clamp(hud.boss.health, 0, 1);
+        swell(480 - bw / 2, 54, bw, 10, () => {
+          g.roundRect(px(480 - bw / 2), py(54), bw * u, 10 * u, 3 * u).fill({ color: 0x000000, alpha: 0.65 * a });
+          g.roundRect(px(480 - bw / 2 + 1), py(55), (bw - 2) * u * health, 8 * u, 3 * u).fill({ color: 0xc02030, alpha: a });
+        });
         this.text(hud.boss.name, px(480), py(42), fs, 0xffc0c0, "center", a);
       }
     }
