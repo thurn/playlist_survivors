@@ -11,6 +11,11 @@ import type { SoundEvent } from "../plan/types.ts";
 export const LIVE_LOOKAHEAD = 0.1;
 /** Matches the planner's MAX_SOUND_LEAD. */
 const MAX_LEAD = 0.25;
+/**
+ * Never late: a sound whose onset has passed by more than this is skipped, not started late (a
+ * stall, or a sound a late key event changed after it was due: the recording then has it only now).
+ */
+export const ONSET_TOLERANCE = 0.001;
 
 /** Where sounds play: an audio context, or a fake one in tests. */
 export interface SoundOutput {
@@ -64,7 +69,7 @@ export class LiveSoundScheduler {
       if (this.scheduled.has(key)) continue;
       const start = this.t0 + ev.s - (ev.lead ?? 0);
       if (start > now + lookahead) continue;
-      if (this.t0 + ev.s < now - 0.03 || ev.s < this.muteBefore) {
+      if (this.t0 + ev.s < now - ONSET_TOLERANCE || ev.s < this.muteBefore) {
         // Its onset has passed (a stall, or a sound the recording only now has): never late.
         this.scheduled.set(key, { when: start, s: ev.s });
         this.stats.skippedLate++;

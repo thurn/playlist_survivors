@@ -16,7 +16,12 @@ export interface Rules {
   pressClasses: boolean;
   /** Every weapon fires by itself: the sword on every grid time, presses arm nothing, and the tier sets attack area and damage. */
   selfFiring: boolean;
+  /**
+   * Every percussive gameplay sound plays on a slot of its subdivision, and never late: a sound
+   * known less than 60 ms before its slot moves to a later slot (src/planner/emit.ts).
+   */
+  gridSounds: boolean;
 }
 
 /** The scripted demo's rules: today's behavior. */
-export const DEMO_RULES: Readonly<Rules> = Object.freeze({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false, pressClasses: false, selfFiring: false });
+export const DEMO_RULES: Readonly<Rules> = Object.freeze({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false, pressClasses: false, selfFiring: false, gridSounds: false });

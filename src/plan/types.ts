@@ -132,6 +132,9 @@ export interface SoundEvent {
    * (a slow attack, a swell) is heard at `s`.
    */
   lead?: number;
+  /** Grid sounds (play mode): the emission key (kill, hit-light, weapon-blades...), and the slot it moved from when known too late for it. */
+  key?: string;
+  movedFrom?: number;
 }
 
 export interface GemEvent {
@@ -309,7 +312,7 @@ export interface Plan {
   /** Level-ups at their scheduled musical moments. */
   levelUpsDue?: { id: string; s: number }[];
   /** Play mode's rule changes (absent in the demo). */
-  rules?: { oneStepPerSlot: boolean; accentTelegraphs: boolean; health?: boolean; strides?: boolean; pressClasses?: boolean; selfFiring?: boolean };
+  rules?: { oneStepPerSlot: boolean; accentTelegraphs: boolean; health?: boolean; strides?: boolean; pressClasses?: boolean; selfFiring?: boolean; gridSounds?: boolean };
   /**
    * Play mode's fixed-speed strides (absent without the rule): the walk speed (px per world
    * second), a stride's duration and hop height, the stride period without a steady beat, and the

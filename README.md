@@ -77,8 +77,8 @@ it: the audio clock it was timed by, when the live runner applied it (and any
 rollback), and the simulation's outcome and reason (a stride with its class and
 rating, a stomp, a bend, a walk, or a key thrown away by a count-in), with the
 stride's length and the budget left, the groove before and after, and the tier.
-Frames, sound scheduling, the groove and tier over time, the meter's values and
-the hero's path are logged too. See [`src/live/log.ts`](src/live/log.ts).
+Frames, sound scheduling, the groove and tier over time, the meter's values,
+the sounds moved to a later slot and the hero's path are logged too. See [`src/live/log.ts`](src/live/log.ts).
 
 - The dev server saves it to `logs/play/<session>.json` on pause, at the end,
   on restart, every 15 s while playing and on leaving the page.
@@ -88,7 +88,8 @@ the hero's path are logged too. See [`src/live/log.ts`](src/live/log.ts).
   offsets from the grid and the beat, the input path, the audio clock and
   frames, then one row per press. It also re-rates the log's presses under the
   current groove rules (grid times from the song map, so logs from before press
-  classes re-rate too) and prints the classes and tiers beside the log's own.
+  classes re-rate too) and prints the classes and tiers beside the log's own, and
+  lists the sounds moved to a later slot (known less than 60 ms before their own).
   Pass a file, `--from`/`--to` (song seconds), `--no-table` or `--no-rerate`.
 
 ### URL parameters
@@ -123,7 +124,7 @@ Every important property is checkable by a command:
 | `npm run check:plan` | Runs the simulated playthrough with all its checks, including causality (re-simulating with the presses after a cut removed must change nothing before it), then the casual player's too, and prints a one-line summary of each (enemies, kills, presses, groove, near misses) with the two players' kills and groove side by side. `-- --seeds=1859,7` for other seeds, `-- --player=perfect` for another profile. |
 | `npm run check:determinism` | The level's seed simulated twice; plan and map hashes must match. |
 | `npm run check:seeds` | The level's seed with causality and determinism, then the checks on three more seeds (`?seed=` must still pass every check). In CI. |
-| `npm run check:play` | Play mode, headless: the `moderate` and `casual` virtual players and mashers at 4 and 8 presses a second through the open field on four seeds, and `skilled`, `eighths`, `holder` and `mash2` on two (`-- --seeds=` and `--extra-seeds=` pick others), with the checks the demo shares plus play mode's own (no dead presses, the speed cap, holding keeps full speed, transform waves off screen within a bar, the finale, and the moderate player's signature moments: 80% of cleave accents cleaved, the kick line down within two beats, 75% near misses, the boss on its chord, level-ups on time). Mashers must earn a C and fewer kills than `moderate`; every player passes the movement checks; `moderate`, `casual`, `skilled` and `eighths` must survive. The groove checks: after the galop vamp `moderate` is at tier 2 or higher for 70% of pulsed time, the holder and mashers at tier 0 for 80% of it, and `eighths` averages within 0.05 of `skilled`'s groove. Prints kills, groove, grade, time at tier 0 and at tier 2 or higher, and lowest health side by side. In CI. |
+| `npm run check:play` | Play mode, headless: the `moderate` and `casual` virtual players and mashers at 4 and 8 presses a second through the open field on four seeds, and `skilled`, `eighths`, `holder` and `mash2` on two (`-- --seeds=` and `--extra-seeds=` pick others), with the checks the demo shares plus play mode's own (every gameplay sound on its subdivision's slot within 1 ms, as the table in the design's Sound on the Grid says; no dead presses, the speed cap, holding keeps full speed, transform waves off screen within a bar, the finale, and the moderate player's signature moments: 80% of cleave accents cleaved, the kick line down within two beats, 75% near misses, the boss on its chord, level-ups on time). Mashers must earn a C and fewer kills than `moderate`; every player passes the movement checks and the sounds on the grid; `moderate`, `casual`, `skilled` and `eighths` must survive. The groove checks: after the galop vamp `moderate` is at tier 2 or higher for 70% of pulsed time, the holder and mashers at tier 0 for 80% of it, and `eighths` averages within 0.05 of `skilled`'s groove. Prints kills, groove, grade, time at tier 0 and at tier 2 or higher, and lowest health side by side. In CI. |
 | `npm run capture -- --times 12,35.2,88.31,141.5` | Headless-Chrome screenshots at exact song times into `captures/`. `--sections` captures the start of every section. |
 | `npm run bench` | Headed Chrome, whole song at real-time speed: fails if JavaScript frame time exceeds 8 ms or GPU time 10 ms at p95, or any frame exceeds 33 ms. `-- --play` benchmarks live play instead (theme A to the climax, a late-arriving press on every beat, so it includes the rollbacks). |
 | `npm run test:e2e` | Playwright: capture hook, metronome flash on the beat, broken level script shows an error and never starts, reload uses the cached plan, `?player=` re-simulates with another profile, `?mode=play&player=holder` and `mash4` plan and play back; and play mode at `?start=1:10` (a stride per press, the sword on every beat, a mashed press rated once, Esc pauses and resumes). |

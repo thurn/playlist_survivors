@@ -198,7 +198,7 @@ export function planWithSim(input: PlannerInput, opts: PlannerOptions = {}): { p
   const wEnd = warp.toWorld(ctx.duration);
   const hero = sim.hero;
   const camera = sim.camera.track();
-  const emitted = emit(ctx, sim, warp, hero, camera);
+  const emitted = emit(ctx, sim, warp, hero, camera, sch.gridTimes);
 
   // Active-entity index: per bucket of world time.
   const nb = Math.ceil((wEnd + 2) / ACTIVE_BUCKET) + 1;

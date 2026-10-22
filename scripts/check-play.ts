@@ -7,8 +7,9 @@
  * extra seeds (fewer, to keep the gate quick): the skilled and eighths players,
  * the holder and the masher at 2 a second. The moderate, casual, skilled and
  * eighths players must survive (the hero's health never runs out). Every
- * player passes the movement checks: every movement has an input, no dead
- * presses, the speed cap and holding keeps full speed. The groove tells them
+ * player passes the movement checks (every movement has an input, no dead
+ * presses, the speed cap and holding keeps full speed) and the impacts on the
+ * grid (every gameplay sound on its subdivision's slot). The groove tells them
  * apart: after the galop vamp the moderate player is at tier 2 or higher for
  * 70% of pulsed time, the holder and mashers at tier 0 for 80% of it, and the
  * eighths player's average groove is within 0.05 of the skilled player's.
@@ -65,7 +66,7 @@ function runSeed(seed: number): { ok: boolean; text: string; rows: Row[] } {
       const survives = { name: "the hero survives", failures: plan.stats.deathS === undefined ? [] : [`the hero's health ran out at s=${plan.stats.deathS.toFixed(3)}`], checked: 1 };
       results = [...checkPlan(plan, lib), ...checkPlay(plan, lib, { signature: player === "moderate" }), survives];
     } else {
-      results = [...checkPlan(plan, lib).filter((c) => c.name === "every hero movement has an input"), ...checkStrides(plan)];
+      results = [...checkPlan(plan, lib).filter((c) => c.name === "every hero movement has an input" || c.name === "impacts on the grid"), ...checkStrides(plan)];
     }
     results = results.map((c) => ({ ...c, name: `${player}: ${c.name}` }));
     // Mashing must not pay: a C, and fewer kills (while the hero lives) than playing on the beat.

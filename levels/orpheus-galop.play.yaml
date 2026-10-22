@@ -4,8 +4,9 @@ extends: orpheus-galop
 world: open                 # the demo's default is corridor
 # Press classes replace one rated press per grid slot: every press is classed against the grid,
 # and the groove meter fills, drains and sets the tier. Every weapon fires by itself (selfFiring):
-# the sword on every grid time, and the tier sets attack area and damage.
-rules: { oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true, selfFiring: true }
+# the sword on every grid time, and the tier sets attack area and damage. Every gameplay sound plays
+# on its subdivision's slot, never late (gridSounds).
+rules: { oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true, selfFiring: true, gridSounds: true }
 hero:
   # Fixed-speed strides: 140 px/s at any tempo and press rate, faster than every enemy but bats and bees.
   walk: { speed: 140 }

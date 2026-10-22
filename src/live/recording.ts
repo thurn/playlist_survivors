@@ -18,7 +18,7 @@ import { grooveAt } from "../plan/evaluate.ts";
 import type { CameraTrack, Chain, EffectEvent, EnemyRecord, Fate, GemEvent, HeroTrack, Hit, MapLayout, Plan, PlanInput, PlanSwing, Projectile, SlamMarker, SoundEvent, UiEvent } from "../plan/types.ts";
 import { beatIndexIn, type PlanIndex } from "../plan/view.ts";
 import { beatDurationAt, sectionIndexAt, type Ctx } from "../planner/context.ts";
-import { budgetSlot, Emitter, soundSlot, VOICE_BUDGET, type EmitSink } from "../planner/emit.ts";
+import { budgetSlot, Emitter, lastAtOrBefore, soundSlot, VOICE_BUDGET, type EmitSink } from "../planner/emit.ts";
 import { ACTIVE_BUCKET, DEATH_ANIM, planHeader } from "../planner/plan.ts";
 import type { ArrowRecord, Attack, BossInfo, Dance, FormationRecord, GemRecord, Landing, LandmarkRecord, PressTrace, Recorder, SlamRecord, Threat, ZoneWaveRecord } from "../sim/recorder.ts";
 import type { Schedule } from "../sim/schedule.ts";
@@ -102,7 +102,7 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
   private readonly gemsLive: GemEvent[] = [];
   private readonly arrivals = new Set<number>();
   /** Emission waiting for its slot to close: kills grouped per slot, sounds per slot (voice budget), weapon hits (until their fates are in). */
-  private readonly pendingKills = new Map<number, { s: number; x: number; n: number; big: boolean; end: number }>();
+  private readonly pendingKills = new Map<number, { s: number; x: number; n: number; big: boolean; end: number; movedFrom?: number }>();
   private readonly pendingSounds = new Map<number, SoundEvent[]>();
   private readonly closedSlots = new Map<number, number>();
   private readonly pendingWeaponHits: Hit[] = [];
@@ -157,7 +157,7 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
     };
     this.timeWarp = new Warp(this.breaks);
     this.decalRecipes = new Set([...lib.effects.values()].filter((r) => r.layers.some((l) => l.kind === "decal")).map((r) => r.id));
-    this.emitter = new Emitter(ctx, this.timeWarp, () => this.cameraTrack(), this, true);
+    this.emitter = new Emitter(ctx, this.timeWarp, () => this.cameraTrack(), this, true, { grid: sch.gridTimes, lastKeyAt: (s) => lastAtOrBefore(this.plan.inputs, s) });
     // Banners and the title card belong to the song: they are known before play starts.
     this.emitter.scriptUi();
   }
@@ -357,19 +357,24 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
     if (!kill) return;
     this.add(this.hud.kills, kill.s);
     const free = this.emitter.sectionOf(kill.s).level.movement === "free";
-    const bi = beatIndexAt(this.ctx.song, kill.s);
-    const end = timeOfBeatIndex(this.ctx.song, free ? Math.round(bi) + 0.5 : (kill.slot + 0.5) / 4);
+    const soundS = kill.soundS ?? kill.s;
+    const bi = beatIndexAt(this.ctx.song, soundS);
+    // (With grid sounds a group's kills all come at or before its slot, so it closes right after it:
+    // half a beat later would be past the simulation's lead in a slow free section.)
+    const end = kill.soundS !== undefined ? soundS : timeOfBeatIndex(this.ctx.song, free ? Math.round(bi) + 0.5 : (kill.slot + 0.5) / 4);
     const g = this.pendingKills.get(kill.slot);
     if (g) {
-      const before = { n: g.n, big: g.big };
+      const before = { n: g.n, big: g.big, movedFrom: g.movedFrom };
       g.n++;
       g.big ||= kill.big;
+      if (kill.movedFrom !== undefined) g.movedFrom = Math.min(g.movedFrom ?? Infinity, kill.movedFrom);
       this.undo(() => {
         g.n = before.n;
         g.big = before.big;
+        g.movedFrom = before.movedFrom;
       });
     } else {
-      this.pendingKills.set(kill.slot, { s: kill.s, x: kill.x, n: 1, big: kill.big, end });
+      this.pendingKills.set(kill.slot, { s: soundS, x: kill.x, n: 1, big: kill.big, end, ...(kill.movedFrom !== undefined ? { movedFrom: kill.movedFrom } : {}) });
       this.undo(() => this.pendingKills.delete(kill.slot));
     }
   }
@@ -431,7 +436,7 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
     const up = tier > this.tierSeries.v[this.tierSeries.v.length - 1];
     this.add(this.tierSeries.s, s);
     this.add(this.tierSeries.v, tier);
-    this.emitter.tierChime(soundS, up, w);
+    this.emitter.tierChime(soundS, up, w, s);
   }
 
   health(s: number, frac: number): void {

@@ -12,7 +12,8 @@
  * - sounds: the live sound scheduler's starts, late starts, skips and cancels.
  * - events: phase changes (count-ins, pauses, restarts, the end), focus, flushes.
  * - the context (play.ts): settings, the song's grid, the meter's values, the settled presses and
- *   swings, the groove and tier series, and the hero's path (heroPath) for its speed.
+ *   swings, the groove and tier series, the sounds moved to a later slot (soundMoves: known less
+ *   than 60 ms before their own), and the hero's path (heroPath) for its speed.
  *
  * The dev server saves it to logs/play/<id>.json (see vite.config.ts), and
  * `npm run log:play` summarizes it. Elsewhere, F8 downloads it.
@@ -32,9 +33,18 @@ export interface HeroPath {
 
 const r6s = (v: number) => Math.round(v * 1e6) / 1e6;
 
-/** What the log carries of a recording up to song time s: the groove and tier series and the hero's path. */
-export function recordingContext(plan: Plan, warp: Warp, s: number): { groove: { s: number[]; v: number[] }; tier?: { s: number[]; v: number[] }; heroPath: HeroPath } {
+/** A sound moved to a later slot of its subdivision (rules.gridSounds): known too late for its own. */
+export interface SoundMove {
+  key: string;
+  sample: string;
+  from: number;
+  s: number;
+}
+
+/** What the log carries of a recording up to song time s: the groove and tier series, the sounds moved to a later slot, and the hero's path. */
+export function recordingContext(plan: Plan, warp: Warp, s: number): { groove: { s: number[]; v: number[] }; tier?: { s: number[]; v: number[] }; soundMoves: SoundMove[]; heroPath: HeroPath } {
   return {
+    soundMoves: plan.events.sounds.filter((x) => x.movedFrom !== undefined).map((x) => ({ key: x.key ?? x.sample, sample: x.sample, from: r6s(x.movedFrom!), s: r6s(x.s) })),
     groove: { s: Array.from(plan.groove.s, r6s), v: Array.from(plan.groove.v, (v) => Math.round(v * 1e4) / 1e4) },
     ...(plan.tier ? { tier: { s: Array.from(plan.tier.s, r6s), v: Array.from(plan.tier.v) } } : {}),
     heroPath: heroPath(plan.hero, warp, 0, s),

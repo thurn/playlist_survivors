@@ -15,7 +15,7 @@ import { enemyPos, heroSample } from "../plan/sample.ts";
 import { aim, catches, type AimTarget } from "../sim/aim.ts";
 import { HITSTOP_MAX, HITSTOP_MIN, POP_CAP, spriteOffscreen } from "../sim/simulate.ts";
 import { viewRect } from "./camera.ts";
-import { VOICE_BUDGET } from "./emit.ts";
+import { VOICE_BUDGET, weaponSubdivision, type Subdivision } from "./emit.ts";
 
 export interface CheckResult {
   name: string;
@@ -45,6 +45,15 @@ function beatIndexFromBeats(beats: ArrayLike<number>, s: number): number {
     else hi = mid;
   }
   return lo + (s - beats[lo]) / (beats[hi] - beats[lo]);
+}
+
+/** The song time of a fractional beat index (the inverse of beatIndexFromBeats, extrapolating at the ends). */
+function timeOfBeatFromBeats(beats: ArrayLike<number>, i: number): number {
+  const n = beats.length;
+  if (i <= 0) return beats[0] + i * (beats[1] - beats[0]);
+  if (i >= n - 1) return beats[n - 1] + (i - (n - 1)) * (beats[n - 1] - beats[n - 2]);
+  const k = Math.floor(i);
+  return beats[k] + (i - k) * (beats[k + 1] - beats[k]);
 }
 
 /** Distance (song seconds) from s to the nearest time in a sorted list. */
@@ -205,6 +214,28 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
       n++;
       const bi = beatIndexFromBeats(plan.songBeats, h.s) * 4;
       if (Math.abs(bi - Math.round(bi)) > 0.004) f.push(`${h.what} hit at ${fmt(h.s)} is off its subdivision`);
+    }
+    // Grid sounds (play mode): every gameplay sound of the table in "Sound on the Grid" plays on a
+    // slot of its subdivision, within 1 ms (the timing grid's slots are beats in a free section).
+    if (plan.rules?.gridSounds) {
+      const rows = soundRows(lib);
+      const downbeats = plan.barStart.filter((b) => Number.isFinite(b)).map((b) => plan.songBeats[b]);
+      const freeAt = (t: number) => plan.sections.findLast((x) => t >= x.s0 - 1e-9)?.movement === "free";
+      const onSlot = (every: Subdivision, t: number): boolean => {
+        if (every === "grid" && !freeAt(t) && t <= plan.grid[plan.grid.length - 1] + 0.001) return distToNearest(plan.grid, t) <= 0.001;
+        if (every === "bar") return distToNearest(downbeats, t) <= 0.001;
+        const per = every === "sixteenth" ? 4 : every === "eighth" ? 2 : 1;
+        // The nearest slot, back in song time (beats extrapolate past the song map's ends, as in emission).
+        return Math.abs(t - timeOfBeatFromBeats(plan.songBeats, Math.round(beatIndexFromBeats(plan.songBeats, t) * per) / per)) <= 0.001;
+      };
+      for (const snd of plan.events.sounds) {
+        const row = snd.key !== undefined ? rows.get(snd.key) : undefined;
+        if (!row) continue;
+        n++;
+        const every = row === "kill" ? (freeAt(snd.s) ? "beat" : "sixteenth") : row;
+        if (!onSlot(every, snd.s)) f.push(`${snd.key} sound at ${fmt(snd.s)} is off its ${every === "grid" ? "grid time" : every}`);
+        if (snd.movedFrom !== undefined && !(snd.movedFrom < snd.s)) f.push(`${snd.key} sound at ${fmt(snd.s)} moved from ${fmt(snd.movedFrom)}, not to a later slot`);
+      }
     }
     add("impacts on the grid", f, n);
   }
@@ -585,4 +616,25 @@ export function summarizeChecks(results: CheckResult[]): { ok: boolean; text: st
     }
   }
   return { ok, text: lines.join("\n") };
+}
+
+/**
+ * The rows of "Sound on the Grid" that exist so far, by emission key: the subdivision each keeps to
+ * (kills: sixteenths, or beats in a free section; the timing grid: beats in a free section and past its end). The sword's impact is checked against its strike
+ * above; its whoosh is the impact's lead-in, and strides' rustle is exempt. Gem chimes play on the
+ * next sixteenth; the vacuum, orbs, chickens, hurt and shockwave bands arrive with the beads that
+ * add those rows.
+ */
+export function soundRows(lib: ContentLibrary): Map<string, Subdivision | "kill"> {
+  const rows = new Map<string, Subdivision | "kill">([
+    ["kill", "kill"],
+    ["kill-multi", "kill"],
+    ["tier-up", "grid"],
+    ["tier-down", "grid"],
+    ["level-up", "bar"],
+    ["near-miss", "beat"],
+    ["gem", "sixteenth"],
+  ]);
+  for (const wd of lib.weapons.values()) if (wd.kind !== "blast") rows.set(wd.sound, weaponSubdivision(wd));
+  return rows;
 }

@@ -178,9 +178,12 @@ describe("cancelled sounds", () => {
     sch.update([ev("level-up", 2.1, 0.2)]);
     expect(out.started[0].when).toBeCloseTo(12.0, 9);
     expect(out.started[0].offset).toBeCloseTo(0.1, 9);
-    // A sound whose onset has passed is skipped, not played late.
+    // A sound whose onset has passed is skipped, not played late, even by 20 ms (a late key event
+    // that changed it after it was due).
     sch.update([ev("kill", 1.9)]);
+    sch.update([ev("kill-multi", 1.98)]);
     expect(out.started.length).toBe(1);
+    expect(sch.stats.skippedLate).toBe(2);
   });
 });
 

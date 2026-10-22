@@ -9,7 +9,7 @@
  */
 import { Rng, hash32 } from "../core/rng.ts";
 import { clamp } from "../core/shaping.ts";
-import { beatIndexAt } from "../core/songmap.ts";
+import { beatIndexAt, timeOfBeatIndex } from "../core/songmap.ts";
 import type { Warp } from "../core/warp.ts";
 import type { CameraTrack, EffectEvent, EnemyRecord, Fate, GemEvent, HeroTrack, Hit, HudSeries, PlanSwing, Projectile, SlamMarker, SoundEvent, UiEvent } from "../plan/types.ts";
 import { grooveAt } from "../plan/evaluate.ts";
@@ -18,6 +18,7 @@ import type { ArrowRecord, BossInfo, Landing, LandmarkRecord, SimResult, SlamRec
 import type { TiledMap } from "../mapgen/mapgen.ts";
 import { stampLandmark } from "../mapgen/openfield.ts";
 import { HURTBOX_LIFT } from "../sim/simulate.ts";
+import { firstAtOrAfter } from "../sim/timing.ts";
 import { sectionIndexAt, type Ctx } from "./context.ts";
 import { cameraAt, VIEW_W } from "./camera.ts";
 import { resolveRef } from "./musical.ts";
@@ -31,6 +32,48 @@ const NOTE_NAMES: Record<string, number> = { C: 0, "C#": 1, Db: 1, D: 2, "D#": 3
 
 /** The most a sample is started ahead of its event; the audio scheduler looks this far ahead. */
 export const MAX_SOUND_LEAD = 0.25;
+
+/**
+ * Never late (rules.gridSounds): a sound plays exactly on its slot only when it is known at least
+ * this long before it; one known later moves to a later slot of its subdivision.
+ */
+export const NEVER_LATE = 0.06;
+
+/** The grid a sound keeps to: the timing grid, or a subdivision of the song map's beats (also in free sections). */
+export type Subdivision = "grid" | "sixteenth" | "eighth" | "beat" | "bar";
+
+/**
+ * What the emitter needs to keep sounds on the grid (rules.gridSounds): the timing grid, and the
+ * song time of the latest key event at or before a song time (a press or release there can still
+ * change what a sound after it is, so the sound is known only from then).
+ */
+export interface SoundTiming {
+  grid: ArrayLike<number>;
+  lastKeyAt(s: number): number;
+}
+
+/** How one sound keeps to the grid: its subdivision, and when it was known (undefined: fixed in advance). */
+export interface SoundPlacement {
+  every?: Subdivision;
+  known?: number;
+  /** Already placed (a kill group): the slot it moved from. */
+  movedFrom?: number;
+  /** A pan and a seed position of its own (a sound fixed in advance must not change with the hero). */
+  pan?: number;
+  seedX?: number;
+}
+
+/** The latest of sorted key-event times at or before s (-Infinity when none). */
+export function lastAtOrBefore(times: ArrayLike<{ s: number }>, s: number): number {
+  let lo = 0;
+  let hi = times.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (times[mid].s <= s + 1e-9) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo > 0 ? times[lo - 1].s : -Infinity;
+}
 
 export function noteToMidi(note: string): number | undefined {
   const m = /^([A-G][#b]?)(-?\d)$/.exec(note.trim());
@@ -75,6 +118,9 @@ export interface Kill {
   big: boolean;
   /** The sixteenth-note slot it is grouped in. */
   slot: number;
+  /** Grid sounds: the slot its sound plays on, and the one it would have played on when it was known too late for it. */
+  soundS?: number;
+  movedFrom?: number;
 }
 
 export class Emitter {
@@ -88,7 +134,49 @@ export class Emitter {
     private readonly cam: () => CameraTrack,
     readonly sink: EmitSink,
     readonly stableSeeds = false,
+    /** Grid sounds (rules.gridSounds): the timing grid and the key events. */
+    readonly timing?: SoundTiming,
   ) {}
+
+  /** Are sounds kept on the grid (play mode's gridSounds)? */
+  get onGrid(): boolean {
+    return this.timing !== undefined && this.ctx.level.rules.gridSounds;
+  }
+
+  /** The first slot of a subdivision at or after song time t (the timing grid's are beats in a free section and past its end). */
+  slotAt(every: Subdivision, t: number): number {
+    const song = this.ctx.song;
+    if (every === "grid") {
+      const g = this.timing!.grid;
+      const i = firstAtOrAfter(g, t - 1e-6);
+      if (this.sectionOf(t).level.movement !== "free" && i < g.length) return g[i];
+      every = "beat";
+    }
+    const bi = beatIndexAt(song, t);
+    if (every === "bar") {
+      const starts = this.ctx.idx.barStart;
+      for (let b = 1; b < starts.length; b++) if (starts[b] >= bi - 1e-6) return timeOfBeatIndex(song, starts[b]);
+      return t;
+    }
+    const per = every === "sixteenth" ? 4 : every === "eighth" ? 2 : 1;
+    return timeOfBeatIndex(song, Math.ceil(bi * per - 1e-6) / per);
+  }
+
+  /**
+   * Where a sound caused at song time s plays: the first slot of its subdivision at or after s,
+   * unless it was known less than NEVER_LATE before that slot; then the first slot at least
+   * NEVER_LATE after it was known (and the slot it moved from).
+   */
+  place(every: Subdivision, s: number, known?: number): { s: number; movedFrom?: number } {
+    const slot = this.slotAt(every, s);
+    if (known === undefined || slot - known >= NEVER_LATE - 1e-9) return { s: slot };
+    return { s: this.slotAt(every, known + NEVER_LATE), movedFrom: slot };
+  }
+
+  /** When a sound caused at song time s is known: from the latest key event at or before it. */
+  knownAt(s: number): number {
+    return this.timing!.lastKeyAt(s);
+  }
 
   private seedOf(...k: (number | string)[]): number {
     return hash32(this.ctx.seed, ...k);
@@ -105,8 +193,16 @@ export class Emitter {
   }
 
   /** A sound effect. `panW`: pan it by the camera sample at or before this world time (not between samples). */
-  sfx(key: string, s: number, x: number, priority: number, gain = 1, duck = false, rateScale = 1, panW?: number): void {
+  sfx(key: string, s: number, x: number, priority: number, gain = 1, duck = false, rateScale = 1, panW?: number, at: SoundPlacement = {}): void {
     const ctx = this.ctx;
+    // Grid sounds: on its subdivision's slot, never late.
+    let movedFrom = at.movedFrom;
+    if (this.onGrid && at.every) {
+      const p = this.place(at.every, s, at.known);
+      s = p.s;
+      movedFrom ??= p.movedFrom;
+    }
+    if (this.onGrid && at.seedX !== undefined) x = at.seedX;
     const sec = this.sectionOf(s);
     const pal = ctx.lib.soundPalettes.get(sec.level.sfxPalette);
     if (!pal) return;
@@ -132,20 +228,21 @@ export class Emitter {
     const cam = this.cam();
     const k = panW === undefined ? -1 : Math.max(0, Math.min(cam.x.length - 1, Math.floor((panW - cam.w0) * cam.rate + 1e-9)));
     const c = k < 0 ? cameraAt(cam, this.warp.toWorld(s)) : { x: cam.x[k], zoom: cam.zoom[k] };
-    const pan = clamp((x - c.x) / (VIEW_W / 2 / c.zoom), -0.8, 0.8);
+    const pan = this.onGrid && at.pan !== undefined ? at.pan : clamp((x - c.x) / (VIEW_W / 2 / c.zoom), -0.8, 0.8);
     // Start slow-attack samples early so they are heard on time.
     const lead = Math.min(MAX_SOUND_LEAD, (ctx.soundOnsets[id] ?? 0) / rate);
-    this.sink.sound({ sample: id, s, gain: gain * sg * pal.gain, pan, rate, priority, duck, ...(lead > 0.001 ? { lead } : {}) });
+    this.sink.sound({ sample: id, s, gain: gain * sg * pal.gain, pan, rate, priority, duck, ...(lead > 0.001 ? { lead } : {}), ...(this.onGrid ? { key, ...(movedFrom !== undefined ? { movedFrom } : {}) } : {}) });
   }
 
   /**
    * A tier change: a rising chime for a tier-up, a soft falling one for a tier-down, on the grid
-   * time s, centred (panned by the camera sample at or before the change, world time w).
+   * time s, centred (panned by the camera sample at or before the change, world time w). With grid
+   * sounds it is known at the change (song time `at`): one less than 60 ms before s waits a grid time.
    */
-  tierChime(s: number, up: boolean, w: number): void {
+  tierChime(s: number, up: boolean, w: number, at?: number): void {
     const cam = this.cam();
     const k = Math.max(0, Math.min(cam.x.length - 1, Math.floor((w - cam.w0) * cam.rate + 1e-9)));
-    this.sfx(up ? "tier-up" : "tier-down", s, cam.x[k], PRIORITY.hero + 0.6, up ? 0.8 : 0.5, false, 1, w);
+    this.sfx(up ? "tier-up" : "tier-down", s, cam.x[k], PRIORITY.hero + 0.6, up ? 0.8 : 0.5, false, 1, w, { every: "grid", known: at });
   }
 
   /** A swing's strike. Returns whether it earned "PERFECT" (a Perfect press striking on an accent). */
@@ -153,8 +250,14 @@ export class Emitter {
     const heavy = sw.kind === "heavy";
     // The sword's trail brightens with the groove.
     this.fx(`hit-${sw.kind}`, sw.s, sw.x, sw.y, sw.dir, Math.min(1, h.intensity * (0.55 + 0.45 * groove) + 0.25 * groove), { hit: sw.hit });
-    this.sfx("swing", sw.s - 0.04, sw.x, PRIORITY.hero + 0.5, 0.7);
-    this.sfx(`hit-${sw.kind}`, sw.s, sw.x, heavy ? PRIORITY.hero : PRIORITY.hero + 0.3, heavy ? 1.1 : 0.95, heavy);
+    // (With grid sounds both are fixed at the wind-up, where the hero was then: a press after it can't
+    // change them. The whoosh before the impact is its lead-in, exempt from the grid.)
+    const fixed = this.onGrid && sw.aim;
+    const x = fixed ? sw.aim.x : sw.x;
+    const panW = fixed ? this.warp.toWorld(sw.sWind) : undefined;
+    this.sfx("swing", sw.s - 0.04, x, PRIORITY.hero + 0.5, 0.7, false, 1, panW);
+    // (Its strike is its slot: a grid time, or a cleave's accent.)
+    this.sfx(`hit-${sw.kind}`, sw.s, x, heavy ? PRIORITY.hero : PRIORITY.hero + 0.3, heavy ? 1.1 : 0.95, heavy, 1, panW);
     if (sw.accent > 0 && pressRating === "perfect") {
       this.sink.ui({ kind: "perfect", s: sw.s, x: sw.x, y: sw.y - 40 });
       this.fx("perfect-accent", sw.s, sw.x, sw.y - 48, 0, 1);
@@ -185,34 +288,44 @@ export class Emitter {
     this.fx(recipe, h.s, f.x, f.y, h.dir, Math.max(0.4, h.intensity), { debris: def.death.debris });
     // Kill sounds group per sixteenth note; in the slow, quiet free movement, per beat.
     const free = this.sectionOf(h.s).level.movement === "free";
+    if (this.onGrid) {
+      // On the first slot at or after the kill, or a later one when the kill was known too late for it.
+      const p = this.place(free ? "beat" : "sixteenth", h.s, this.knownAt(h.s));
+      const bi = beatIndexAt(this.ctx.song, p.s);
+      return { s: h.s, soundS: p.s, x: f.x, big: def.size !== "regular", slot: free ? Math.round(bi) * 4 : Math.round(bi * 4), ...(p.movedFrom !== undefined ? { movedFrom: p.movedFrom } : {}) };
+    }
     const slot = free ? Math.round(beatIndexAt(this.ctx.song, h.s)) * 4 : Math.round(beatIndexAt(this.ctx.song, h.s) * 4);
     return { s: h.s, x: f.x, big: def.size !== "regular", slot };
   }
 
-  /** The kill sound for one slot's kills. */
-  killSound(k: { s: number; x: number; n: number }): void {
+  /** The kill sound for one slot's kills (with grid sounds already on its slot: `movedFrom` when a kill in it was known too late for its own). */
+  killSound(k: { s: number; x: number; n: number; movedFrom?: number }): void {
+    const at: SoundPlacement = k.movedFrom !== undefined ? { movedFrom: k.movedFrom } : {};
     // The slow, quiet free movement keeps to the short single-kill sound: a ringing multi-kill would fill its silences.
-    if (k.n === 1 || this.sectionOf(k.s).level.movement === "free") this.sfx("kill", k.s, k.x, PRIORITY.kill, 0.6);
-    else this.sfx("kill-multi", k.s, k.x, PRIORITY.kill, 0.5 + 0.22 * Math.log2(k.n));
+    if (k.n === 1 || this.sectionOf(k.s).level.movement === "free") this.sfx("kill", k.s, k.x, PRIORITY.kill, 0.6, false, 1, undefined, at);
+    else this.sfx("kill-multi", k.s, k.x, PRIORITY.kill, 0.5 + 0.22 * Math.log2(k.n), false, 1, undefined, at);
   }
 
   /** A weapon hit: effects and sounds where it connects (`caught`: it hit an enemy). */
   weaponHit(h: Hit, caught: boolean): void {
     const wd = this.ctx.lib.weapons.get(h.what)!;
     const at = h.shape as { x: number; y: number };
+    // Grid sounds: on the weapon's subdivision (a chain's jump step), known from the latest key event before the hit.
+    const grid: SoundPlacement = this.onGrid ? { every: weaponSubdivision(wd), known: this.knownAt(h.s) } : {};
     if (wd.kind === "chain") {
       this.fx(wd.effect, h.s, at.x, at.y, h.dir, h.intensity);
-      this.sfx(wd.sound, h.s, at.x, PRIORITY.weapon, 0.7);
+      this.sfx(wd.sound, h.s, at.x, PRIORITY.weapon, 0.7, false, 1, undefined, grid);
     } else if (caught) {
       this.fx(wd.effect, h.s, at.x, at.y, h.dir, h.intensity);
-      this.sfx(wd.sound, h.s, at.x, PRIORITY.weapon, 0.5);
+      this.sfx(wd.sound, h.s, at.x, PRIORITY.weapon, 0.5, false, 1, undefined, grid);
     }
   }
 
   levelUp(g: { id: string; s: number }, p: { x: number; y: number }): void {
     this.sink.ui({ kind: "levelUp", s: g.s, weapon: g.id });
     this.fx("level-up", g.s, p.x, p.y - 16, 0, 1);
-    this.sfx("level-up", g.s, p.x, PRIORITY.hero, 1, true);
+    // (With grid sounds it is centred, so that where the hero is can't change it: it is known in advance, on its downbeat.)
+    this.sfx("level-up", g.s, p.x, PRIORITY.hero, 1, true, 1, undefined, { every: "bar", pan: 0, seedX: 0 });
   }
 
   blast(s: number, p: { x: number; y: number }): void {
@@ -242,7 +355,8 @@ export class Emitter {
   /** The first gem to arrive at a time: the pickup sparkle and chime. */
   gemArrival(s1: number, p: { x: number; y: number }): void {
     this.fx("gem-pickup", s1, p.x, p.y - 16, 0, 0.7);
-    this.sfx("gem", s1, p.x, PRIORITY.ambient, 0.4);
+    // (With grid sounds on the next sixteenth, known from the latest key event before the arrival.)
+    this.sfx("gem", s1, p.x, PRIORITY.ambient, 0.4, false, 1, undefined, this.onGrid ? { every: "sixteenth", known: this.knownAt(s1) } : {});
   }
 
   /** An arrow's release (and its shatter, once it has touched the hero). */
@@ -265,7 +379,7 @@ export class Emitter {
   nearMiss(t: Threat): void {
     this.sink.ui({ kind: "perfect", s: t.s, x: t.x, y: t.y - 44 });
     this.fx("near-miss", t.s, t.x, t.y - HURTBOX_LIFT, 0, 1);
-    this.sfx("near-miss", t.s, t.x, PRIORITY.nearMiss, 1);
+    this.sfx("near-miss", t.s, t.x, PRIORITY.nearMiss, 1, false, 1, undefined, this.onGrid ? { every: "beat", known: this.knownAt(t.s) } : {});
   }
 
   bossLand(b: Pick<BossInfo, "landS" | "x" | "y">): void {
@@ -340,11 +454,14 @@ class ArraySink implements EmitSink {
   }
 }
 
-export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam: CameraTrack): EmitResult {
+export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam: CameraTrack, grid?: ArrayLike<number>): EmitResult {
   const song = ctx.song;
   const hits = sim.hits;
   const sink = new ArraySink();
-  const em = new Emitter(ctx, warp, () => cam, sink);
+  // (Grid sounds: the timing grid, and the key events, sorted by time.)
+  const keys = sim.inputs;
+  // (Grid sounds seed sound picks as live play does, from what they are: the batch and the live recording pick the same.)
+  const em = new Emitter(ctx, warp, () => cam, sink, ctx.level.rules.gridSounds, grid ? { grid, lastKeyAt: (s) => lastAtOrBefore(keys, s) } : undefined);
   const heroAt = (w: number) => heroSample({ hero } as never, w);
 
   // ------------------------------------------------------------ swings
@@ -359,19 +476,20 @@ export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam:
   // ---------------------------------------------------------- step landings
   for (const l of sim.landings) em.landing(l);
   // Tier changes (play mode's press classes).
-  for (const c of sim.tierChimes) em.tierChime(c.s, c.up, c.w);
+  for (const c of sim.tierChimes) em.tierChime(c.s, c.up, c.w, c.at);
 
   // ------------------------------------------------- deaths and hits on enemies
   const killTimes: number[] = [];
-  const killsBySlot = new Map<number, { s: number; x: number; n: number; big: boolean }>();
+  const killsBySlot = new Map<number, { s: number; x: number; n: number; big: boolean; movedFrom?: number }>();
   for (const e of sim.enemies) {
     for (const f of e.fates) {
       const kill = em.fate(e, f, hits[f.hit]);
       if (!kill) continue;
       killTimes.push(kill.s);
-      const k = killsBySlot.get(kill.slot) ?? { s: kill.s, x: kill.x, n: 0, big: false };
+      const k = killsBySlot.get(kill.slot) ?? { s: kill.soundS ?? kill.s, x: kill.x, n: 0, big: false };
       k.n++;
       k.big ||= kill.big;
+      if (kill.movedFrom !== undefined) k.movedFrom = Math.min(k.movedFrom ?? Infinity, kill.movedFrom);
       killsBySlot.set(kill.slot, k);
     }
   }
@@ -465,4 +583,10 @@ export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam:
     weaponFires: Object.fromEntries(Object.entries(weaponFires).map(([k, v]) => [k, Float64Array.from(v.sort((a, b) => a - b))])),
   };
   return { effects, sounds: kept, gems, ui, hud, projectiles, slams };
+}
+
+/** The subdivision a weapon's sound keeps to: its firing cadence, or for a chain its jump step. */
+export function weaponSubdivision(wd: { kind: string; fires?: { every: string }; chain?: { step: string } }): Subdivision {
+  const every = wd.kind === "chain" && wd.chain ? wd.chain.step : (wd.fires?.every ?? "sixteenth");
+  return every === "eighth" || every === "beat" || every === "bar" || every === "sixteenth" ? every : "sixteenth";
 }

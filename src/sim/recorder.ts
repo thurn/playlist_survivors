@@ -121,7 +121,8 @@ export interface PressTrace {
 }
 
 /** A tier change's chime: the grid time it sounds on, whether the tier rose, and the world time of the change. */
-export type TierChime = { s: number; up: boolean; w: number };
+/** A tier change's chime: its song time (a grid time), up or down, and the change's world and song time. */
+export type TierChime = { s: number; up: boolean; w: number; at: number };
 
 export type Attack = NonNullable<EnemyRecord["attacks"]>[number];
 export type Dance = NonNullable<EnemyRecord["dance"]>;
@@ -319,7 +320,7 @@ export class BatchRecorder implements Recorder {
     this.grooveV.push(v);
   }
   tier(s: number, w: number, tier: number, soundS: number): void {
-    this.tierChimes.push({ s: soundS, up: tier > this.tierV[this.tierV.length - 1], w });
+    this.tierChimes.push({ s: soundS, up: tier > this.tierV[this.tierV.length - 1], w, at: s });
     this.tierS.push(s);
     this.tierV.push(tier);
   }

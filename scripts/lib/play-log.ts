@@ -8,7 +8,7 @@
  * rules serve as references while the groove is tuned.
  */
 import type { HeroDef } from "../../src/content/schema.ts";
-import type { ApplyLog, ClockProbe, DropLog, HeroPath, KeyLog, SoundLog } from "../../src/live/log.ts";
+import type { ApplyLog, ClockProbe, DropLog, HeroPath, KeyLog, SoundLog, SoundMove } from "../../src/live/log.ts";
 import type { PressTrace } from "../../src/sim/recorder.ts";
 import { classifyPress, drainPerBeat, freshPressMemo, grooveAfterChange, tierFor } from "../../src/sim/timing.ts";
 
@@ -44,6 +44,8 @@ export interface PlayLogFile {
   tier?: { s: number[]; v: number[] };
   /** The hero's path every few hundredths of song time, for its speed. */
   heroPath?: HeroPath;
+  /** Grid sounds: the sounds moved to a later slot, known too late for their own. */
+  soundMoves?: SoundMove[];
   keys: KeyLog[];
   applies: ApplyLog[];
   drops: DropLog[];
@@ -294,6 +296,14 @@ export function summarize(log: PlayLogFile, opts: SummaryOptions = {}): string {
   const sk = new Map<string, number>();
   for (const x of log.sounds) if (inRange(x.s)) sk.set(x.kind, (sk.get(x.kind) ?? 0) + 1);
   if (sk.size > 0) say(`Sounds: ${[...sk].map(([k, n]) => `${k} ${n}`).join(", ")}`);
+  // Grid sounds: each sound known less than 60 ms before its slot moved to a later one.
+  const moves = (log.soundMoves ?? []).filter((m) => inRange(m.from));
+  if (moves.length > 0) {
+    const byKey = new Map<string, number>();
+    for (const m of moves) byKey.set(m.key, (byKey.get(m.key) ?? 0) + 1);
+    say(`Sounds moved to a later slot (known less than 60 ms before their own): ${moves.length} (${[...byKey].map(([k, n]) => `${k} ${n}`).join(", ")})`);
+    if (opts.table !== false) for (const m of moves) say(`  ${pad(m.key, 18)} ${lpad(f(m.from, 3), 8)} → ${f(m.s, 3)} (+${f((m.s - m.from) * 1000)} ms)`);
+  }
   const events = log.events.filter((e) => e.kind !== "flush");
   if (events.length > 0) say(`Events: ${events.map((e) => `${e.kind}${e.s !== undefined ? `@${f(e.s, 2)}` : ""}`).join(" ")}`);
 
