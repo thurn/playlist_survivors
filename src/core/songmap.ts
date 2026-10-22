@@ -43,6 +43,11 @@ export interface SongMap {
     source: string;
     cropStart: number;
     cropEnd: number;
+    /**
+     * Source ranges joined to make the excerpt, when it skips part of the
+     * source. cropStart and cropEnd are then the outer bounds.
+     */
+    segments?: [number, number][];
     sampleRate: number;
     /** Duration of the cropped file in seconds. */
     duration: number;

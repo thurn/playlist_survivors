@@ -347,7 +347,10 @@ images, because it cannot listen.
 
 - **`crop`:** cuts the excerpt from the source recording and writes it as
   FLAC. FLAC is lossless, plays in all target browsers and adds no encoder
-  delay, so song-map times stay exact.
+  delay, so song-map times stay exact. An excerpt may join several source
+  ranges (`--segment S:E`, repeated) to skip a repeat. Each join is a 30 ms
+  equal-power crossfade just before a beat where the music repeats, and the
+  crop info lists the ranges under `segments`.
 - **`analyze`:** runs several beat trackers and writes a draft song map. The
   trackers are madmom's recurrent-network beat and downbeat trackers (which
   use a dynamic Bayesian network to pick a consistent beat sequence) and
@@ -1832,8 +1835,20 @@ stresses something different.
   voice budget and whether effects on every subdivision stay readable.
 
 Each song's source recording is committed in full under `songs/<id>/`, with
-its provenance, licence and hashes in `source.json`. Choosing the excerpt and
-writing the song map come later.
+its provenance, licence and hashes in `source.json`. Its excerpt is cut to
+`public/audio/<id>.flac`, keeping only the most iconic, highest-energy part
+at roughly 2–3 minutes; `source.json` records the crop command and why. The
+song maps come later.
+
+- **William Tell finale (2:43):** trumpet fanfare, galop and coda. Two joins
+  skip a repeat of the galop theme and the quieter middle strain.
+- **Beethoven's Fifth (2:58):** the recapitulation and coda, uncut. It opens
+  on the motto and its fermata and keeps the oboe cadenza, which is a natural
+  `free` passage. The exposition and coda are in different keys, so no clean
+  join between them exists.
+- **In the Hall of the Mountain King (2:32):** the whole piece. Its
+  accelerando is the reason for the song, so nothing is cut.
+- **Flight of the Bumblebee (1:16):** the whole piece.
 
 | Song | Directory | Recording | Licence |
 |---|---|---|---|

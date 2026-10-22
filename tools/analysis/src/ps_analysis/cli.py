@@ -2,7 +2,8 @@
 
 Commands (each prints a JSON summary on stdout):
 
-- `crop SOURCE --start S --end E --out FILE.flac [--info crop.json]`
+- `crop SOURCE (--start S --end E | --segment S:E ...) --out FILE.flac
+  [--info crop.json]`
 - `analyze AUDIO --song ID --crop-info crop.json --source URL --out draft.json
   --analysis analysis.json`
 - `report SONGMAP --out DIR [--analysis analysis.json] [--seconds 8]`
@@ -52,10 +53,27 @@ def _load_trackers(path: str | None) -> dict[str, list[float]]:
         return json.load(f)["trackers"]
 
 
+def _segment(text: str) -> tuple[float, float]:
+    start, end = text.split(":")
+    return float(start), float(end)
+
+
 def cmd_crop(a: argparse.Namespace) -> int:
     from .crop import crop, sha256
 
-    info = crop(a.source, a.out, a.start, a.end, mono=not a.stereo)
+    segments = [_segment(s) for s in a.segment] if a.segment else None
+    if (segments is None) == (a.start is None or a.end is None):
+        print("crop: give --start and --end, or one or more --segment", file=sys.stderr)
+        return 2
+    info = crop(
+        a.source,
+        a.out,
+        a.start,
+        a.end,
+        mono=not a.stereo,
+        segments=segments,
+        crossfade_ms=a.crossfade_ms,
+    )
     info["source"] = a.source_url or str(a.source)
     info["sourceSha256"] = sha256(a.source)
     if a.info:
@@ -78,6 +96,8 @@ def cmd_analyze(a: argparse.Namespace) -> int:
         "sampleRate": sr,
         "duration": round(len(y) / sr, 6),
     }
+    if "segments" in crop_info:
+        audio_info["segments"] = crop_info["segments"]
     onsets = au.onset_features(y, sr)
     trackers = an.run_trackers(y, sr, (a.fast_min, a.fast_max))
     cands = au.accent_candidates(y, sr, onsets)
@@ -213,8 +233,20 @@ def build_parser() -> argparse.ArgumentParser:
 
     c = sub.add_parser("crop", help="cut the excerpt and write FLAC")
     c.add_argument("source")
-    c.add_argument("--start", type=float, required=True)
-    c.add_argument("--end", type=float, required=True)
+    c.add_argument("--start", type=float)
+    c.add_argument("--end", type=float)
+    c.add_argument(
+        "--segment",
+        action="append",
+        metavar="S:E",
+        help="a source range to keep; repeat to join several, skipping what lies between",
+    )
+    c.add_argument(
+        "--crossfade-ms",
+        type=float,
+        default=30.0,
+        help="crossfade at each join (default 30)",
+    )
     c.add_argument("--out", required=True)
     c.add_argument(
         "--stereo", action="store_true", help="keep all channels (default: mix to mono)"

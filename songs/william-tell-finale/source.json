@@ -10,5 +10,31 @@
   "sha1": "089b205580fc4ac5844333837bd9784f49811433",
   "license": "Public domain: a work of the US military (PD-USGov-Military-Marines); the composition and the 19th-century Sedlak transcription are also public domain. Credit the performance, but do not imply endorsement: the Marine Band's name is a trademark.",
   "localPath": "songs/william-tell-finale/source.ogg",
-  "notes": "Full overture. The Ranz des vaches starts at about 5:14 and the finale at about 7:30; the excerpt is the finale."
+  "notes": "Full overture. The Ranz des vaches starts at about 5:14 and the finale at about 7:30; the excerpt is the finale.",
+  "excerpt": {
+    "file": "public/audio/william-tell-finale.flac",
+    "cropStart": 431.8,
+    "cropEnd": 657.0,
+    "segments": [
+      [
+        431.8,
+        472.343991
+      ],
+      [
+        504.17,
+        518.529002
+      ],
+      [
+        548.506009,
+        657.0
+      ]
+    ],
+    "crossfadeMs": 30.0,
+    "duration": 163.396984,
+    "sampleRate": 44100,
+    "channels": 1,
+    "sha256": "53ee973c2c5f156005ca5cdd55075cd4b5e1b36c7afe7c627ba24d4db9fc08a0",
+    "notes": "Trumpet fanfare, galop and coda. Starts in the rest before the fanfare (the exact fanfare entry was not confirmed by ear, so a few seconds of the end of the pastorale may lead in). Two joins skip a repeat of the galop theme and the quieter middle strain; each lands where the music repeats (onset correlation 0.88 and 0.61).",
+    "command": "uv run --project tools/analysis ps-analysis crop songs/william-tell-finale/source.ogg --segment 431.8:472.344 --segment 504.17:518.529 --segment 548.506:657.0 --out public/audio/william-tell-finale.flac"
+  }
 }

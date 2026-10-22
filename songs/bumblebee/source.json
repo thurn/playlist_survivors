@@ -10,5 +10,16 @@
   "sha1": "a8641f3ff397c216f69b52c5321b893dbb2f2e34",
   "license": "Public domain: the arrangement, performance and recording are all works of the US Air Force (PD-USGov-Military-Air Force), from https://www.music.af.mil/Multimedia/Music/Public-Domain-Music/. Credit the performance, but do not imply endorsement.",
   "localPath": "songs/bumblebee/source.mp3",
-  "notes": "Complete piece."
+  "notes": "Complete piece.",
+  "excerpt": {
+    "file": "public/audio/bumblebee.flac",
+    "cropStart": 1.35,
+    "cropEnd": 77.5,
+    "duration": 76.15,
+    "sampleRate": 44100,
+    "channels": 1,
+    "sha256": "dd814f8f8385f4d8dba08a99856510f03bdf02c41fe2e4958b22ba28e925bf66",
+    "notes": "The whole piece, minus the lead-in silence and the reverb tail.",
+    "command": "uv run --project tools/analysis ps-analysis crop songs/bumblebee/source.mp3 --start 1.35 --end 77.5 --out public/audio/bumblebee.flac"
+  }
 }

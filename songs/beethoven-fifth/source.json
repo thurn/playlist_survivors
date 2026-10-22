@@ -10,5 +10,16 @@
   "sha1": "b0568783141c397cd4fada53bc868279bd2e4a2a",
   "license": "EFF Open Audio License 1.0 (attribution and share-alike, like CC-BY-SA); the composition is public domain. Original source: http://www-plan.cs.colorado.edu/henkel/fso/index-en.html",
   "localPath": "songs/beethoven-fifth/source.ogg",
-  "notes": "Complete first movement, including the exposition repeat."
+  "notes": "Complete first movement, including the exposition repeat.",
+  "excerpt": {
+    "file": "public/audio/beethoven-fifth.flac",
+    "cropStart": 257.45,
+    "cropEnd": 435.5,
+    "duration": 178.05,
+    "sampleRate": 44100,
+    "channels": 1,
+    "sha256": "d94475220df8dfc5a74d416e16134d8078eb0b3b884001d70b0a03be16774a7e",
+    "notes": "Recapitulation and coda, uncut: the opening motto and fermata, the oboe cadenza, and the real ending. The exposition and the coda are in different keys, so no clean join between them exists.",
+    "command": "uv run --project tools/analysis ps-analysis crop songs/beethoven-fifth/source.ogg --start 257.45 --end 435.5 --out public/audio/beethoven-fifth.flac"
+  }
 }
