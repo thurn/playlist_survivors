@@ -325,6 +325,12 @@ class Queue {
   peek(): number {
     return this.heap.length > 0 ? this.heap[0].s : Infinity;
   }
+  /** Drop every event that matches (order among the rest is kept: it rests on time, kind and push order). */
+  remove(drop: (ev: Ev) => boolean): void {
+    const kept = this.heap.filter((e) => !drop(e.ev));
+    this.heap = [];
+    for (const e of kept.sort((a, b) => (this.less(a, b) ? -1 : 1))) this.heap.push(e);
+  }
   pop(): { s: number; ev: Ev } {
     const h = this.heap;
     const top = h[0];
@@ -400,6 +406,8 @@ type Punch = { s: number; amt: number; w?: number };
 interface SimState {
   s: number;
   w: number;
+  /** Song time of the loop's latest own stop: the rate is read there (live frames stop in between). */
+  rateS: number;
   q: Queue;
   breaks: WarpBreak[];
   stopStart: number;
@@ -478,6 +486,7 @@ function freshState(env: Env): SimState {
   return {
     s: 0,
     w: 0,
+    rateS: 0,
     q: new Queue(),
     breaks: [],
     stopStart: -1,
@@ -1248,8 +1257,10 @@ function engine(env: Env, st: SimState, io: Io) {
    * hero and enemy samples are taken at their exact times from the state so
    * far, so how events split the time between fixed steps changes nothing.
    */
-  const moveClock = (t: number, fixed: boolean) => {
-    const rate = rateAt(st.s);
+  const moveClock = (t: number, fixed: boolean, between = false) => {
+    // The rate of the interval from the latest stop of the loop's own: a clock stop in between
+    // (a live frame) must not move a rate change, or the recording would depend on the frames.
+    const rate = rateAt(st.rateS);
     pushBreak(rate);
     const b = st.breaks[st.breaks.length - 1];
     const w1 = b.w + (t - b.s) * b.rate;
@@ -1273,10 +1284,12 @@ function engine(env: Env, st: SimState, io: Io) {
     }
     st.s = t;
     st.w = w1;
+    if (!between) st.rateS = t;
     if (fixed && st.w > st.lastFixedW) {
       moveFoes(st.w);
       st.lastFixedW = st.w;
     }
+    rec().clock?.(st.s, st.w, between);
   };
 
   // ---------------------------------------------------------------- events
@@ -1587,7 +1600,11 @@ function engine(env: Env, st: SimState, io: Io) {
     const vol = sch.volleys[v];
     const hp = heroPose(st.w);
     const group = st.alive.filter((f) => f.alive && f.archerGroup === vol.group);
-    for (const f of group) if (Math.hypot(posX(f, st.w) - hp.x, posY(f, st.w) - hp.y) <= ARCHER_SHOOT_RANGE) f.drawing = { w0: st.w };
+    for (const f of group) {
+      if (Math.hypot(posX(f, st.w) - hp.x, posY(f, st.w) - hp.y) > ARCHER_SHOOT_RANGE) continue;
+      f.drawing = { w0: st.w };
+      rec().drawStart?.(f.id, st.w, vol.sRelease, Math.atan2(hp.y - HURTBOX_LIFT - posY(f, st.w) + 24, hp.x - posX(f, st.w)));
+    }
     // Replacements for fallen archers walk in for the next volley.
     if (group.length < vol.archers) spawnArchers(vol.group, vol.archers - group.length);
   };
@@ -1679,6 +1696,8 @@ function engine(env: Env, st: SimState, io: Io) {
     // A marker appears at the hero's current position and grows for two beats.
     const hp = heroPose(st.w);
     st.slamMarks.set(k, { x: hp.x, y: hp.y, sMark: st.s, wMark: st.w });
+    const boss = st.bossFoe;
+    rec().slamMark?.(k, { x: hp.x, y: hp.y, sMark: st.s, wMark: st.w, sLand: sch.boss!.slams[k].sLand, boss: boss.id, dir: Math.atan2(hp.y - posY(boss, st.w), hp.x - posX(boss, st.w)) });
   };
 
   const slamLand = (k: number) => {
@@ -1768,6 +1787,7 @@ function engine(env: Env, st: SimState, io: Io) {
       f.weight = weightOf(f.def, true);
       f.slot = slot;
       f.slotUntil = fs.sRelease;
+      if (def.dance) rec().danceStart?.(f.id, timeOfBeatIndex(song, bStart + def.entranceBeats), def.dance.animation, def.dance.alternateLegs);
       members.push(f.id);
       st.formationMembers[fi].push(f);
     }
@@ -2008,7 +2028,10 @@ function engine(env: Env, st: SimState, io: Io) {
     if (e.s <= cutS + 1e-12 && e.s < endS) st.q.push(e.s, { kind: "key", e });
   };
 
-  return { init, step, nextStop, moveClock, finish, observe, pushKey, heroPose };
+  /** The player stops: its key events still waiting are dropped. */
+  const dropKeys = () => st.q.remove((ev) => ev.kind === "key" || ev.kind === "decide");
+
+  return { init, step, nextStop, moveClock, finish, observe, pushKey, heroPose, dropKeys };
 }
 
 /**
@@ -2074,9 +2097,13 @@ export class Sim {
     return [...this.st.held];
   }
 
-  /** Stop the virtual player: from now on only `key` presses keys. */
+  /**
+   * Stop the virtual player (handing over to the keyboard): its key events still waiting are
+   * dropped, and from now on only `key` presses keys. Release its held keys with `key`.
+   */
   detachPlayer(): void {
     this.io.player = undefined;
+    this.eng.dropKeys();
   }
 
   /**
@@ -2094,7 +2121,7 @@ export class Sim {
     while (st.s < env.endS && eng.nextStop() < t - CLOCK_EPS) eng.step();
     // The clock stops between the loop's own stops only well clear of them: rate changes are
     // resolved with tolerances near 1e-11 s, and a stop just before one would see the new rate.
-    if (t - st.s > CLOCK_EPS && eng.nextStop() - t > CLOCK_EPS) eng.moveClock(t, false);
+    if (t - st.s > CLOCK_EPS && eng.nextStop() - t > CLOCK_EPS) eng.moveClock(t, false, true);
   }
 
   /** Run to the end of the song. */
@@ -2131,9 +2158,14 @@ export class Sim {
   }
 }
 
+/** The level's world: the demo's corridor along the map's route, or play mode's open field. */
+export function worldFor(ctx: Ctx, sch: Schedule, map: MapLayout): World {
+  return ctx.level.world === "open" ? new OpenWorld() : new CorridorWorld(map, sch);
+}
+
 export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptions): SimResult {
   const rec = new BatchRecorder();
-  const world = ctx.level.world === "open" ? new OpenWorld() : new CorridorWorld(map, sch);
+  const world = worldFor(ctx, sch, map);
   const sim = new Sim(ctx, sch, world, ctx.level.rules ?? DEMO_RULES, rec, opts);
   sim.runToEnd();
   return rec.result({ endS: sim.s, blastS: sch.blast?.s, animNames: HERO_ANIMS, heroRate: HERO_RATE });

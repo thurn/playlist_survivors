@@ -4,7 +4,11 @@
  * GPU time with EXT_disjoint_timer_query_webgl2 where available. Fails if a
  * budget is exceeded at the 95th percentile or any frame exceeds 33 ms.
  *
- *   npm run bench [-- --headless]
+ * With --play it benchmarks live play instead: theme A to the climax with a
+ * press on every beat, each arriving a little late, so the frame time includes
+ * the live simulation, its snapshots and the rollbacks.
+ *
+ *   npm run bench [-- --headless] [-- --play]
  */
 import { chromium } from "@playwright/test";
 import { withDevServer } from "./lib/server.ts";
@@ -13,6 +17,7 @@ const JS_BUDGET_MS = 8;
 const GPU_BUDGET_MS = 10;
 const MAX_FRAME_MS = 33;
 const headless = process.argv.includes("--headless");
+const play = process.argv.includes("--play");
 
 interface Bench {
   frames: number;
@@ -31,11 +36,15 @@ const result = await withDevServer(async (base) => {
   const browser = await chromium.launch({ headless, args: ["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist", "--disable-renderer-backgrounding", "--disable-background-timer-throttling"] });
   const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
   page.on("pageerror", (e) => console.error("page error:", e.message));
-  await page.goto(`${base}/?bench`);
+  await page.goto(`${base}/?bench${play ? "&mode=play" : ""}`);
   await page.waitForFunction(() => (window as unknown as { __demo?: unknown }).__demo !== undefined, undefined, { timeout: 60_000 });
   await page.evaluate(() => (window as unknown as { __demo: { ready: Promise<void> } }).__demo.ready);
   await page.waitForFunction(() => (window as unknown as { __demo: { bench?: Promise<unknown> } }).__demo.bench !== undefined);
   const r = (await page.evaluate(() => (window as unknown as { __demo: { bench: Promise<Bench> } }).__demo.bench, undefined)) as Bench;
+  if (play) {
+    const st = await page.evaluate(() => (window as unknown as { __demo: { live: { runner: { stats: unknown } } } }).__demo.live.runner.stats);
+    console.log(`live runner: ${JSON.stringify(st)}`);
+  }
   await browser.close();
   return r;
 });

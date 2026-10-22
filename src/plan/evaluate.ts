@@ -10,6 +10,7 @@ import { beatHit, beatSwell, clamp, frac, lerp, smoothstep } from "../core/shapi
 import { Warp } from "../core/warp.ts";
 import { latestWave, waveRadius } from "../mapgen/openfield.ts";
 import { countUpTo, enemyPos, heroSample } from "./sample.ts";
+import { StaticIndex, type PlanIndex } from "./view.ts";
 import type { EffectEvent, EnemyRecord, Plan, PlanSection, UiEvent } from "./types.ts";
 
 export const DEATH_FALL = 0.5;
@@ -214,36 +215,45 @@ function param(p: number | [number, number] | undefined, intensity: number, dflt
 /** Cached per-plan helpers. */
 export class Evaluator {
   readonly warp: Warp;
-  private enemyById: Map<number, EnemyRecord>;
+  readonly index: PlanIndex;
   private recipes: Map<string, EffectRecipe>;
   private uiSorted: UiEvent[];
   private downbeats: Set<number>;
   private maxBonus: number;
 
+  /** `index` reads a growing recording (play mode); by default the plan is finished. */
   constructor(
     readonly plan: Plan,
     readonly lib: ContentLibrary,
+    index?: PlanIndex,
   ) {
     this.warp = new Warp(plan.warp);
-    this.enemyById = new Map(plan.enemies.map((e) => [e.id, e]));
+    this.index = index ?? new StaticIndex(plan, lib);
     this.recipes = lib.effects;
     this.uiSorted = plan.events.ui;
     this.downbeats = new Set(plan.barStart.filter((b) => Number.isFinite(b)));
     this.maxBonus = lib.hero.groove.maxBonus;
   }
 
-  private walkedCache = new Map<number, Float32Array>();
+  /** Prefix sums of walked distance per enemy, for the sample count and index version they were built from. */
+  private walkedCache = new Map<number, { pre: Float32Array; count: number; version: number }>();
   /** Distance an enemy has walked by world time w (prefix sums over its samples). */
   walked(e: EnemyRecord, w: number): number {
-    let pre = this.walkedCache.get(e.id);
-    const sm = this.plan.enemySamples;
-    if (!pre) {
+    const cached = this.walkedCache.get(e.id);
+    const sm = e.samples ?? this.plan.enemySamples;
+    const base = e.samples ? 0 : e.sampleOffset;
+    let pre: Float32Array;
+    if (cached && cached.count === e.sampleCount && cached.version === this.index.version) pre = cached.pre;
+    else {
+      // A grown recording extends the sums; a rewound one rebuilds them.
+      const keep = cached && cached.version === this.index.version && cached.count < e.sampleCount ? cached.count : 1;
       pre = new Float32Array(Math.max(1, e.sampleCount));
-      for (let i = 1; i < e.sampleCount; i++) {
-        const o = (e.sampleOffset + i) * 2;
+      if (keep > 1) pre.set(cached!.pre.subarray(0, keep));
+      for (let i = keep; i < e.sampleCount; i++) {
+        const o = (base + i) * 2;
         pre[i] = pre[i - 1] + Math.hypot(sm[o] - sm[o - 2], sm[o + 1] - sm[o - 1]);
       }
-      this.walkedCache.set(e.id, pre);
+      this.walkedCache.set(e.id, { pre, count: e.sampleCount, version: this.index.version });
     }
     const f = clamp((w - e.sampleW0) * this.plan.enemySampleRate, 0, Math.max(0, e.sampleCount - 1));
     const k = Math.min(pre.length - 2, Math.floor(f));
@@ -291,7 +301,7 @@ export class Evaluator {
     const plan = this.plan;
     const warp = this.warp;
     const w = warp.toWorld(s);
-    const wbi = this.beatIndex(plan.worldBeats, w);
+    const wbi = this.index.worldBeatIndex(w);
     const sbi = this.beatIndex(plan.songBeats, s);
     const si = this.sectionAt(s);
     const section = plan.sections[si];
@@ -306,7 +316,7 @@ export class Evaluator {
     // Screenshake: trauma summed over recent impacts, in song time.
     let trauma = 0;
     const effects = plan.events.effects;
-    const bucket = plan.activeEffects[clamp(Math.floor(w / plan.activeBucket), 0, plan.activeEffects.length - 1)];
+    const bucket = this.index.effectsAt(w);
 
     const particles: Particle[] = [];
     const fx: FxSprite[] = [];
@@ -358,12 +368,12 @@ export class Evaluator {
 
     // Enemies.
     const enemies: EnemySprite[] = [];
-    const ebucket = plan.activeEnemies[clamp(Math.floor(w / plan.activeBucket), 0, plan.activeEnemies.length - 1)];
+    const ebucket = this.index.enemiesAt(w);
     const tmp = { x: 0, y: 0 };
     const tmp2 = { x: 0, y: 0 };
     let alive = 0;
     for (let k = 0; k < ebucket.length; k++) {
-      const e = this.enemyById.get(ebucket[k])!;
+      const e = this.index.enemy(ebucket[k]);
       if (w < e.spawnW || w > e.deathW + DEATH_FALL || (e.recycled && w >= e.deathW)) continue;
       const def = this.lib.enemies.get(e.type)!;
       enemyPos(plan, e, Math.min(w, e.deathW), tmp);
@@ -475,7 +485,7 @@ export class Evaluator {
     // Weapons.
     const blades: Frame["blades"] = [];
     const flames: Frame["flames"] = [];
-    const end = plan.hits.find((x) => x.source === "ring")?.s ?? plan.duration;
+    const end = this.index.blastS() ?? plan.duration;
     for (const g of plan.weapons) {
       if (s < g.s || s >= end) continue;
       const wd = this.lib.weapons.get(g.id)!;
@@ -516,7 +526,7 @@ export class Evaluator {
       slams.push({ x: sl.x, y: sl.y, radius: sl.radius, progress: clamp((w - sl.w0) / (sl.w1 - sl.w0), 0, 1) });
     }
     const gems: Frame["gems"] = [];
-    for (const g of this.gemsNear(w)) {
+    for (const g of this.index.gemsAt(w)) {
       const u = (w - g.w0) / Math.max(0.05, g.w1 - g.w0);
       const r0 = rand01(g.seed, 1);
       const r1 = rand01(g.seed, 2);
@@ -596,39 +606,10 @@ export class Evaluator {
     return { x: lerp(c.x[k], c.x[k + 1], u), y: lerp(c.y[k], c.y[k + 1], u), zoom: lerp(c.zoom[k], c.zoom[k + 1], u) };
   }
 
-  private gemCache?: { w0: number; idx: number[] }[];
-  private gemsNear(w: number) {
-    const plan = this.plan;
-    if (!this.gemCache) {
-      const nb = plan.activeEnemies.length;
-      this.gemCache = Array.from({ length: nb }, (_, i) => ({ w0: i * plan.activeBucket, idx: [] as number[] }));
-      plan.events.gems.forEach((g, i) => {
-        const b0 = clamp(Math.floor(g.w0 / plan.activeBucket), 0, nb - 1);
-        const b1 = clamp(Math.floor(g.w1 / plan.activeBucket), 0, nb - 1);
-        for (let b = b0; b <= b1; b++) this.gemCache![b].idx.push(i);
-      });
-    }
-    const b = clamp(Math.floor(w / plan.activeBucket), 0, this.gemCache.length - 1);
-    const out = [];
-    for (const i of this.gemCache[b].idx) {
-      const g = plan.events.gems[i];
-      if (w >= g.w0 && w <= g.w1) out.push(g);
-    }
-    return out;
-  }
-
-  private decalIdx?: number[];
   private collectDecals(s: number, w: number, out: FxSprite[]) {
     const plan = this.plan;
-    if (!this.decalIdx) {
-      this.decalIdx = [];
-      plan.events.effects.forEach((ev, i) => {
-        const r = this.recipes.get(ev.recipe);
-        if (r?.layers.some((l) => l.kind === "decal")) this.decalIdx!.push(i);
-      });
-    }
     // Binary search the newest decal at or before w, then walk back.
-    const idx = this.decalIdx;
+    const idx = this.index.decals();
     let lo = 0;
     let hi = idx.length;
     while (lo < hi) {

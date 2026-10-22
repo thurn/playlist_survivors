@@ -3,7 +3,8 @@ import type { EnemyRecord, Plan } from "./types.ts";
 
 /** Enemy position at world time w: Catmull-Rom over the 30 Hz samples. */
 export function enemyPos(plan: Plan, e: EnemyRecord, w: number, out: { x: number; y: number }): { x: number; y: number } {
-  const s = plan.enemySamples;
+  // A live recording keeps each enemy's samples apart (with offset 0).
+  const s = e.samples ?? plan.enemySamples;
   const n = e.sampleCount;
   if (n === 0) {
     out.x = e.fates[0]?.x ?? 0;

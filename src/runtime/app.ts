@@ -14,6 +14,7 @@ import { AudioEngine, VirtualClock, type SongClock } from "./audio.ts";
 import { Hud } from "./hud.ts";
 import { cacheKey, loadCachedPlan, storePlan } from "./planCache.ts";
 import { Renderer } from "./renderer.ts";
+import { runLive } from "./play.ts";
 import { contentFiles, landmarks, levelFile, levelResolver, songMap } from "./sources.ts";
 
 export interface Params {
@@ -65,7 +66,7 @@ export function parseTimestamp(v: string | null): number {
   return parts.reduce((acc, n) => acc * 60 + n, 0);
 }
 
-interface Overlay {
+export interface Overlay {
   root: HTMLDivElement;
   sub: HTMLDivElement;
   status: HTMLDivElement;
@@ -103,6 +104,23 @@ function makeOverlay(): Overlay {
   return { root, sub, status, bar, prompt, error };
 }
 
+/** The title screen's prompt: one click (or key) unlocks audio; then the overlay fades out. */
+export async function clickToBegin(overlay: Overlay): Promise<void> {
+  overlay.prompt.style.display = "block";
+  await new Promise<void>((resolve) => {
+    const go = () => {
+      window.removeEventListener("pointerdown", go);
+      window.removeEventListener("keydown", go);
+      resolve();
+    };
+    window.addEventListener("pointerdown", go);
+    window.addEventListener("keydown", go);
+  });
+  overlay.root.style.transition = "opacity .6s";
+  overlay.root.style.opacity = "0";
+  setTimeout(() => overlay.root.remove(), 700);
+}
+
 export interface DemoHook {
   ready: Promise<void>;
   renderAt(s: number): Promise<void>;
@@ -117,6 +135,8 @@ export interface DemoHook {
   lastS?: number;
   frames?: number;
   audio?: () => { state: string; contextSongTime: number; stats: { scheduled: number; skippedLate: number; startedLate: number; clicks: number; ducks: number; ticks: number } };
+  /** Play mode: the live runner and recording, and a way to press keys at exact song times. */
+  live?: { runner: import("../live/runner.ts").LiveRunner; recording: import("../live/recording.ts").LiveRecording; key(e: import("../sim/player.ts").KeyEvent): void };
   /** QA listening pass: the level's mix rendered offline through the live mixing graph. */
   renderMix?: (parts: { music: boolean; sfx: boolean }) => Promise<AudioBuffer>;
 }
@@ -193,6 +213,12 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
       await audio.loadMusic(`${import.meta.env.BASE_URL}audio/${input.songMap.audio.file}`, (f) => progress(0.4 + f * 0.25, "Loading music"));
     }
 
+    // Play mode: the real game, live (`?mode=play&player=` plays back a precomputed run instead).
+    if (params.mode === "play" && !params.player) {
+      await runLive({ app, assets, input, props, audio, overlay, progress, hook, params, frameMs, ready: readyResolve });
+      return;
+    }
+
     // 4. Plan (cached by input hash and build version).
     progress(0.68, "Planning the choreography");
     const key = await cacheKey([input, props]);
@@ -262,28 +288,16 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
     if (params.bench) {
       overlay.root.remove();
       readyResolve();
-      hook.bench = runBench(plan.duration, drawAt, app);
+      hook.bench = runBench(0, plan.duration, drawAt, app);
       return;
     }
     readyResolve();
 
     // Title screen: one click unlocks audio.
-    overlay.prompt.style.display = "block";
     overlay.status.textContent = params.metronome ? "Metronome mode: beat flash and click track" : "Headphones recommended";
     if (params.startS > 0) overlay.status.textContent += ` · starting at ${params.startS.toFixed(1)} s`;
     if (params.player) overlay.status.textContent += ` · ${params.player} player`;
-    await new Promise<void>((resolve) => {
-      const go = () => {
-        window.removeEventListener("pointerdown", go);
-        window.removeEventListener("keydown", go);
-        resolve();
-      };
-      window.addEventListener("pointerdown", go);
-      window.addEventListener("keydown", go);
-    });
-    overlay.root.style.transition = "opacity .6s";
-    overlay.root.style.opacity = "0";
-    setTimeout(() => overlay.root.remove(), 700);
+    await clickToBegin(overlay);
     await audio!.start(plan, params.startS);
     hook.audio = () => ({ state: audio!.ctx.state, contextSongTime: audio!.contextSongTime(), stats: { ...audio!.stats } });
     const clock: SongClock = audio!;
@@ -317,8 +331,8 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
   }
 }
 
-/** Plays the whole song on a virtual clock at real-time speed and records frame times. */
-async function runBench(duration: number, drawAt: (s: number) => unknown, app: Application): Promise<BenchResult> {
+/** Plays song time `fromS` to `toS` on a virtual clock at real-time speed and records frame times. */
+export async function runBench(fromS: number, toS: number, drawAt: (s: number) => unknown, app: Application): Promise<BenchResult> {
   const gl = (app.renderer as unknown as { gl?: WebGL2RenderingContext }).gl;
   const ext = gl?.getExtension("EXT_disjoint_timer_query_webgl2") as { TIME_ELAPSED_EXT: number; GPU_DISJOINT_EXT: number } | null;
   const jsMs: number[] = [];
@@ -332,14 +346,14 @@ async function runBench(duration: number, drawAt: (s: number) => unknown, app: A
       if (start < 0) start = ts;
       if (last >= 0) intervalMs.push(ts - last);
       last = ts;
-      const s = (ts - start) / 1000;
+      const s = fromS + (ts - start) / 1000;
       let q: WebGLQuery | null = null;
       if (gl && ext) {
         q = gl.createQuery();
         if (q) gl.beginQuery(ext.TIME_ELAPSED_EXT, q);
       }
       performance.mark("frame-start");
-      drawAt(Math.min(s, duration));
+      drawAt(Math.min(s, toS));
       performance.mark("frame-end");
       jsMs.push(performance.measure("frame", "frame-start", "frame-end").duration);
       if (gl && ext && q) {
@@ -351,7 +365,7 @@ async function runBench(duration: number, drawAt: (s: number) => unknown, app: A
         if (!gl.getParameter(ext.GPU_DISJOINT_EXT)) gpuMs.push(gl.getQueryParameter(done, gl.QUERY_RESULT) / 1e6);
         gl.deleteQuery(done);
       }
-      if (s < duration) requestAnimationFrame(frame);
+      if (s < toS) requestAnimationFrame(frame);
       else resolve({ frames: jsMs.length, jsMs, gpuMs, intervalMs });
     };
     requestAnimationFrame(frame);

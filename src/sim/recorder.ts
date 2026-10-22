@@ -137,6 +137,15 @@ export interface Recorder {
   formation(f: FormationRecord): void;
   zoneWave(z: ZoneWaveRecord): void;
   landmark(l: LandmarkRecord): void;
+  /**
+   * Optional, for a live recording that is shown while it grows: the clock has moved to (s, w)
+   * (`between` the loop's own stops: a live frame);
+   * and things that will resolve later began (a slam marker, an archer's draw, a formation's dance).
+   */
+  clock?(s: number, w: number, between: boolean): void;
+  slamMark?(k: number, m: { x: number; y: number; sMark: number; wMark: number; sLand: number; boss: number; dir: number }): void;
+  drawStart?(id: number, w0: number, sRelease: number, dir: number): void;
+  danceStart?(id: number, sFrom: number, anim: string, alternate: boolean): void;
 }
 
 /** Builds the demo's SimResult, exactly as the simulation used to assemble it. */

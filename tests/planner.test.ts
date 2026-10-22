@@ -97,7 +97,7 @@ describe("simulated playthrough on the synthetic song", () => {
   it("levels up from earned experience at (or after) the scheduled moments", () => {
     const scheduled = input.level.events.filter((e) => e.levelUp).length;
     expect(plan.weapons.length).toBe(scheduled);
-    expect(plan.hud.xpFill.some((f) => f >= 1 - 1e-9)).toBe(true);
+    expect(Array.from(plan.hud.xpFill).some((f) => f >= 1 - 1e-9)).toBe(true);
   });
 });
 

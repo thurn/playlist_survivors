@@ -60,6 +60,8 @@ export interface EnemyRecord {
   sampleCount: number;
   /** World time of the first stored sample. */
   sampleW0: number;
+  /** A live recording's own samples for this enemy (sampleOffset is then 0). */
+  samples?: Float32Array;
   fates: Fate[];
   /** Formation members follow analytic paths; their samples are still baked. */
   formation?: number;
@@ -183,16 +185,16 @@ export interface Chain {
 
 export interface HudSeries {
   /** Song times of each kill (sorted). */
-  kills: Float64Array;
+  kills: ArrayLike<number>;
 
-  perfect: Float64Array;
+  perfect: ArrayLike<number>;
   /** Song time of each gem arrival and the XP bar fraction right after it. */
-  xpTimes: Float64Array;
-  xpFill: Float32Array;
+  xpTimes: ArrayLike<number>;
+  xpFill: ArrayLike<number>;
 
   levelUps: number[];
   /** Song times each weapon fired, for icon flashes. */
-  weaponFires: Record<string, Float64Array>;
+  weaponFires: Record<string, ArrayLike<number>>;
 }
 
 export interface MapProp {
@@ -285,7 +287,7 @@ export interface Plan {
   /** Every key press and release, in time order. */
   inputs: PlanInput[];
   /** The groove meter (0–1) after each change, at song times. */
-  groove: { s: Float64Array; v: Float32Array };
+  groove: { s: ArrayLike<number>; v: ArrayLike<number> };
   /** Near misses. */
   nearMisses: { s: number; w: number; kind: "arrow" | "slam" }[];
   /** Every threat (arrow or boss slam) and how it ended. */

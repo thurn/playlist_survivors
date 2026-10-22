@@ -73,6 +73,41 @@ export function prepare(input: PlannerInput, props?: Record<string, PropInfo>): 
   return { ctx, sch, map };
 }
 
+/** The parts of a plan that the song, the level and the map decide before play: a live recording has them too. */
+export function planHeader(ctx: Ctx, sch: Schedule, map: MapLayout, profile: string) {
+  return {
+    version: `${PLAN_FORMAT}:${ctx.input.version ?? "dev"}`,
+    seed: ctx.seed,
+    song: ctx.song.song,
+    duration: ctx.duration,
+    songBeats: Float64Array.from(ctx.song.beats),
+    energy: Float32Array.from(ctx.song.energy),
+    barStart: ctx.idx.barStart,
+    map,
+    sections: ctx.sections.map((s) => ({
+      label: s.label,
+      population: s.level.population,
+      s0: s.s0,
+      s1: s.s1,
+      zone: s.level.zone,
+      feel: s.song.feel,
+      movement: s.level.movement,
+      intensity: s.level.intensity,
+      sfxPalette: s.level.sfxPalette,
+      key: s.song.key,
+      banner: s.level.banner,
+    })),
+    accents: ctx.song.accents.map((a) => ({ s: a.time, strength: a.strength, punch: ctx.sections[sectionIndexAt(ctx, a.time)].level.camera.punchOnAccents })),
+    title: ctx.level.title,
+    profile,
+    pace: { rate: 120, d: Float32Array.from(sch.pace) },
+    grid: Float64Array.from(sch.strikeTimes),
+    cleaveAccents: sch.gridSlots.filter((sl) => cleaves(ctx, sl)).map((sl) => ({ s: sl.s, strength: sl.accent })),
+    levelUpsDue: sch.levelUps.map((l) => ({ id: l.id, s: l.s })),
+    ...(ctx.level.rules.oneStepPerSlot || ctx.level.rules.accentTelegraphs ? { rules: ctx.level.rules } : {}),
+  } satisfies Partial<Plan>;
+}
+
 /** Does a grid slot's accent make a cleave of a swing armed by a press rated Great or better? */
 export function cleaves(ctx: Ctx, slot: GridSlot): boolean {
   const rule = ctx.sections[slot.section].level.heavyOnAccents;
@@ -142,7 +177,7 @@ export function planWithSim(input: PlannerInput, opts: PlannerOptions = {}): { p
 
   // Stats.
   const killsPerSection: Record<string, number> = {};
-  for (const s of emitted.hud.kills) {
+  for (const s of Array.from(emitted.hud.kills)) {
     const lab = ctx.sections[sectionIndexAt(ctx, s)].label;
     killsPerSection[lab] = (killsPerSection[lab] ?? 0) + 1;
   }
@@ -183,15 +218,9 @@ export function planWithSim(input: PlannerInput, opts: PlannerOptions = {}): { p
   };
 
   const recorded: Plan = {
-    version: `${PLAN_FORMAT}:${input.version ?? "dev"}`,
-    seed: ctx.seed,
-    song: ctx.song.song,
-    duration: ctx.duration,
+    ...planHeader(ctx, sch, map, profile),
     warp: sim.warp,
     worldBeats: Float64Array.from(ctx.song.beats, (s) => warp.toWorld(s)),
-    songBeats: Float64Array.from(ctx.song.beats),
-    energy: Float32Array.from(ctx.song.energy),
-    barStart: ctx.idx.barStart,
     hero,
     camera,
     hits: sim.hits,
@@ -206,26 +235,7 @@ export function planWithSim(input: PlannerInput, opts: PlannerOptions = {}): { p
     activeEnemies: enemyBuckets.map((b) => Uint32Array.from(b)),
     activeEffects: effectBuckets.map((b) => Uint32Array.from(b)),
     hud: emitted.hud,
-    map,
-    sections: ctx.sections.map((s) => ({
-      label: s.label,
-      population: s.level.population,
-      s0: s.s0,
-      s1: s.s1,
-      zone: s.level.zone,
-      feel: s.song.feel,
-      movement: s.level.movement,
-      intensity: s.level.intensity,
-      sfxPalette: s.level.sfxPalette,
-      key: s.song.key,
-      banner: s.level.banner,
-    })),
     weapons: sim.weaponsGranted,
-    accents: ctx.song.accents.map((a) => ({ s: a.time, strength: a.strength, punch: ctx.sections[sectionIndexAt(ctx, a.time)].level.camera.punchOnAccents })),
-    title: ctx.level.title,
-    profile,
-    pace: { rate: 120, d: Float32Array.from(sch.pace) },
-    grid: Float64Array.from(sch.strikeTimes),
     swings: sim.swings,
     inputs: sim.inputs,
     groove: { s: Float64Array.from(sim.groove.s), v: Float32Array.from(sim.groove.v) },
@@ -235,9 +245,6 @@ export function planWithSim(input: PlannerInput, opts: PlannerOptions = {}): { p
     formations: sim.formations.map((f) => ({ def: f.def, sRelease: f.sRelease, members: f.members })),
     stats,
     ...(ctx.level.world === "open" ? { open: openFieldRecord(ctx, map, sim, opts.props) } : {}),
-    cleaveAccents: sch.gridSlots.filter((sl) => cleaves(ctx, sl)).map((sl) => ({ s: sl.s, strength: sl.accent })),
-    levelUpsDue: sch.levelUps.map((l) => ({ id: l.id, s: l.s })),
-    ...(ctx.level.rules.oneStepPerSlot || ctx.level.rules.accentTelegraphs ? { rules: ctx.level.rules } : {}),
   };
   return { plan: recorded, sim };
 }

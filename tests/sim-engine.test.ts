@@ -8,18 +8,15 @@ import { Sim, simulate } from "../src/sim/simulate.ts";
 import { CorridorWorld } from "../src/sim/world.ts";
 import { syntheticSongMap } from "./fixtures/synthetic-song.ts";
 
-/** A recorder that logs a hash of every event (its name and arguments). */
+/** A recorder that logs a hash of every event (its name and arguments); it has no clock. */
 function logRecorder(log: number[]): Recorder {
-  return new Proxy({} as Recorder, {
-    get:
-      (_t, name) =>
-      (...args: unknown[]) => {
-        const text = JSON.stringify([name, args]);
-        let h = 0x811c9dc5;
-        for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193);
-        log.push(h >>> 0);
-      },
-  });
+  const record = (name: string | symbol) => (...args: unknown[]) => {
+    const text = JSON.stringify([name, args]);
+    let h = 0x811c9dc5;
+    for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193);
+    log.push(h >>> 0);
+  };
+  return new Proxy({} as Recorder, { get: (_t, name) => (name === "clock" ? undefined : record(name)) });
 }
 
 /** The index of the first difference between two logs, or -1. */

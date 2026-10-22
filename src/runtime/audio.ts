@@ -4,6 +4,8 @@
  * sound cannot drift apart.
  */
 import type { SoundManifest } from "../assets/types.ts";
+import { songTimeAtPerformance } from "../live/input.ts";
+import { LiveSoundScheduler } from "../live/sounds.ts";
 import type { Plan, SoundEvent } from "../plan/types.ts";
 
 const SCHEDULE_EVERY_MS = 25;
@@ -215,7 +217,70 @@ export class AudioEngine implements SongClock {
   stop(): void {
     if (this.timer) clearInterval(this.timer);
     this.source?.stop();
+    this.live?.scheduler.cancelAll();
     this.started = false;
+  }
+
+  /** Play mode: the live recording's sounds, which can change after they are scheduled. */
+  private live?: { sounds: () => readonly SoundEvent[]; scheduler: LiveSoundScheduler };
+
+  /** Start live playback (from a user gesture) `fromS` seconds into the song; sounds come from a live recording. */
+  async startLive(sounds: () => readonly SoundEvent[], fromS = 0): Promise<void> {
+    await this.ctx.resume();
+    if (!this.music) throw new Error("music not loaded");
+    const offset = Math.max(0, Math.min(fromS, this.music.duration));
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.music;
+    src.connect(this.mix.musicGain);
+    const when = this.ctx.currentTime + 0.1;
+    src.start(when, offset);
+    this.mix.follow(this.followCurve(), when, offset);
+    this.source = src;
+    this.t0 = when - fromS;
+    this.started = true;
+    this.smoother.reset();
+    const ctx = this.ctx;
+    this.live = {
+      sounds,
+      scheduler: new LiveSoundScheduler(
+        {
+          get currentTime() {
+            return ctx.currentTime;
+          },
+          start: (ev, at, off) => {
+            const buf = this.buffers.get(ev.sample);
+            if (!buf) return undefined;
+            const r = this.mix.start(buf, at, ev, off);
+            if (r.ducked) this.stats.ducks++;
+            return r.src;
+          },
+        },
+        this.t0,
+      ),
+    };
+    this.timer = setInterval(() => this.scheduleLive(), SCHEDULE_EVERY_MS);
+    this.scheduleLive();
+  }
+
+  /** Schedule (and cancel) live sounds: call it every frame, after the live recording has moved on. */
+  scheduleLive(): void {
+    if (!this.live || !this.started) return;
+    this.stats.ticks++;
+    this.live.scheduler.update(this.live.sounds());
+  }
+
+  /** Live scheduling counters (scheduled, cancelled, started late, skipped). */
+  liveStats(): LiveSoundScheduler["stats"] | undefined {
+    return this.live?.scheduler.stats;
+  }
+
+  /**
+   * The song time heard at performance time `perfMs` (a key event's timestamp): the mapping
+   * songTimeAtPresentation uses, with the output latency and ?avOffsetMs, without smoothing.
+   */
+  songTimeAt(perfMs: number): number {
+    const ts = typeof this.ctx.getOutputTimestamp === "function" ? this.ctx.getOutputTimestamp() : undefined;
+    return songTimeAtPerformance({ contextTime: ts?.contextTime, performanceTime: ts?.performanceTime, currentTime: this.ctx.currentTime, outputLatency: this.ctx.outputLatency || this.ctx.baseLatency || 0, perfNow: performance.now() }, this.t0, perfMs, this.avOffsetMs);
   }
 
   /** Song time the audio thread is producing right now (ahead of what is heard). */
@@ -366,6 +431,11 @@ class Mix {
 
   /** Starts one sound at context time `when`; returns whether it ducked the music. */
   play(buf: AudioBuffer, when: number, ev: SoundEvent): boolean {
+    return this.start(buf, when, ev).ducked;
+  }
+
+  /** Starts one sound at context time `when`, `offset` seconds into it; returns its source and whether it ducked the music. */
+  start(buf: AudioBuffer, when: number, ev: SoundEvent, offset = 0): { src: AudioBufferSourceNode; ducked: boolean } {
     const src = this.ctx.createBufferSource();
     src.buffer = buf;
     src.playbackRate.value = ev.rate;
@@ -374,8 +444,9 @@ class Mix {
     const pan = this.ctx.createStereoPanner();
     pan.pan.value = ev.pan;
     src.connect(gain).connect(pan).connect(this.sfxBus);
-    src.start(when);
-    if (!ev.duck) return false;
+    // (The playback offset is in the sample's own seconds.)
+    src.start(when, offset * ev.rate);
+    if (!ev.duck) return { src, ducked: false };
     // Scheduled gain automation: the music dips under heavy impacts. Overlapping dips
     // extend the hold rather than restarting from full volume.
     const g = this.musicGain.gain;
@@ -389,6 +460,6 @@ class Mix {
     g.setValueAtTime(DUCK_GAIN, when + DUCK_S);
     g.linearRampToValueAtTime(1, when + DUCK_S + 0.08);
     this.duckEnd = when + DUCK_S + 0.08;
-    return true;
+    return { src, ducked: true };
   }
 }
