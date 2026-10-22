@@ -48,7 +48,7 @@ unlocks audio). Use wired headphones or speakers.
 
 | Key | In play | In menus |
 |---|---|---|
-| Arrows or WASD | Move: in step sections one step per press (one per beat slot; extra presses are ignored and grey), in free sections held keys walk. Two perpendicular keys within 40 ms step diagonally. | Up/Down (W/S) move the selection; Right chooses |
+| Arrows or WASD | Move: in step sections one step per press (one rated press per beat slot; a second, off-beat press also steps; any other extra press stumbles, shown red), in free sections held keys walk. Two perpendicular keys within 40 ms step diagonally. | Up/Down (W/S) move the selection; Right chooses |
 | Enter, Space, a click | — | Choose |
 | Esc | Pause (losing focus pauses too) | Resume |
 
@@ -110,7 +110,7 @@ Every important property is checkable by a command:
 | `npm run check:plan` | Runs the simulated playthrough with all its checks, including causality (re-simulating with the presses after a cut removed must change nothing before it), then the casual player's too, and prints a one-line summary of each (enemies, kills, presses, groove, near misses) with the two players' kills and groove side by side. `-- --seeds=1859,7` for other seeds, `-- --player=perfect` for another profile. |
 | `npm run check:determinism` | The level's seed simulated twice; plan and map hashes must match. |
 | `npm run check:seeds` | The level's seed with causality and determinism, then the checks on three more seeds (`?seed=` must still pass every check). In CI. |
-| `npm run check:play` | Play mode, headless: the `moderate` and `casual` virtual players through the open field on four seeds, with the checks the demo shares plus play mode's own (one step per slot, transform waves off screen within a bar, the finale, and the moderate player's signature moments: 80% of cleave accents cleaved, the kick line down within two beats, 75% near misses, the boss on its chord, level-ups on time). Prints kills, groove and grade side by side. In CI. |
+| `npm run check:play` | Play mode, headless: the `moderate` and `casual` virtual players through the open field on four seeds, with the checks the demo shares plus play mode's own (one step per slot, transform waves off screen within a bar, the finale, and the moderate player's signature moments: 80% of cleave accents cleaved, the kick line down within two beats, 75% near misses, the boss on its chord, level-ups on time), and mashers at 4 and 8 presses a second, which must earn a C and fewer kills than `moderate`. Prints kills, groove and grade side by side. In CI. |
 | `npm run capture -- --times 12,35.2,88.31,141.5` | Headless-Chrome screenshots at exact song times into `captures/`. `--sections` captures the start of every section. |
 | `npm run bench` | Headed Chrome, whole song at real-time speed: fails if JavaScript frame time exceeds 8 ms or GPU time 10 ms at p95, or any frame exceeds 33 ms. `-- --play` benchmarks live play instead (theme A to the climax, a late-arriving press on every beat, so it includes the rollbacks). |
 | `npm run test:e2e` | Playwright: capture hook, metronome flash on the beat, broken level script shows an error and never starts, reload uses the cached plan, `?player=` re-simulates with another profile; and play mode at `?start=1:10` (a step per press, swings, a mashed press ignored, Esc pauses and resumes). |

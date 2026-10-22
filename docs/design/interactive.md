@@ -271,21 +271,35 @@ the enemies instead:
 ### One step per grid slot
 
 In step movement, every press belongs to its nearest grid time. Only the
-first press for each grid time is rated and arms a swing, but every press
-steps: dropping a movement press feels like lost input.
+first press for each grid time is rated and arms a swing. Playing on the beat
+must beat mashing (pressing fast and ignoring the beat): `check:play` runs
+mashers at 4 and 8 presses a second, which must earn a C and fewer kills than
+the `moderate` bot.
 
-- **Extra presses:** a second press for the same grid time steps like any
-  other and arms nothing. Rated Great or better against the half-way point
-  to the neighbouring grid time (an eighth note on a beat grid), it shows
-  that rating on the key display and lifts the groove past full, up to +25%
-  damage (`offbeatBonus`; on-grid presses alone top out at +20%). Otherwise
-  it flashes grey and leaves the groove alone: a loose extra press never
-  costs anything.
+- **Timing shapes the swing:** a light swing's reach scales with its press's
+  accuracy, from 55% of the arc's radius at the timing floor to the full
+  radius at Perfect (`swings.light.minReach: 0.55` in the play level).
+  Enemies mostly die in one hit, so the groove's damage bonus barely changes
+  the kill count; reach does.
+- **Extra presses:** the first extra press for a grid time steps and arms
+  nothing when it is one of these:
+  - an **off-beat**: rated Great or better against the half-way point to
+    the neighbouring grid time (an eighth note on a beat grid), after a
+    rated press of Great or better. A Perfect off-beat shows on the key
+    display and lifts the groove past full, up to +25% damage
+    (`offbeatBonus`; on-grid presses alone top out at +20%). A Great one is
+    safe but earns nothing.
+  - a **fumble**: within 100 ms of the rated press (a slow diagonal, a
+    double tap). It flashes grey and leaves the groove alone.
+- **Stumbles:** any other extra press stumbles: it flashes red, the hero does
+  not step, the next swing that has not started its wind-up is lost (or the
+  next free grid time's swing), and the groove loses half its value
+  (`groove.stumble: 0.5`). Later extra presses for that grid time do nothing.
 - **Diagonals:** a perpendicular key within 40 ms bends the step, as
   today. It is part of the same step, not a second press.
-- **Off-beat presses are limited, never punished:** a press halfway between
-  two beats belongs to one of them. A player can step at most once per grid
-  time, about 3 steps a second in theme A.
+- **Off-beat presses are limited:** a press halfway between two beats
+  belongs to one of them. A player can step at most twice per grid time
+  (once on it, once off it), about 6 steps a second in theme A.
 - **Free movement is unchanged:** held keys walk.
 
 ### Looser timing windows
@@ -519,7 +533,8 @@ moderate   normal, sd 30 ms,     85% of the section's pattern slots       250 ms
 
 - **Accent telegraphs** on the beat track, as described above. These are
   play mode only.
-- **Extra presses** flash grey on the key display.
+- **Extra presses** flash grey on the key display, off-beats in their
+  rating's color, and stumbles red.
 - **Count marks** for resume and mid-song starts reuse the step-section
   count-in.
 - **The pause menu and end-card menu** are drawn by the HUD, in the demo's
@@ -556,8 +571,11 @@ These checks run the `moderate` bot through play mode headless, on seeds
   the screen within one bar.
 - **The reward spectrum:** the `casual` bot in play mode reaches the
   finale, and the blast clears the screen.
-- **Report:** kills, average groove and grade for `moderate` and `casual`,
-  side by side.
+- **Mashing does not pay:** mashers at 4 and 8 presses a second (steering
+  like `moderate`, ignoring the beat) earn a C and fewer kills than
+  `moderate` on the same seed.
+- **Report:** kills, average groove and grade for `moderate`, `casual` and
+  the mashers, side by side.
 
 ### Live play
 

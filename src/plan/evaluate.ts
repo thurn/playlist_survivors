@@ -864,9 +864,9 @@ export class Evaluator {
         continue;
       }
       // One rated press per grid slot: an extra press shows its off-beat rating on the key display
-      // (grey when it has none), and is not counted.
+      // (grey when it has none, red when the hero stumbled), and is not counted.
       if (i.extra) {
-        lastPress[i.key] = { s: i.s, rating: i.offbeat ?? "extra" };
+        lastPress[i.key] = { s: i.s, rating: i.stumble ? "stumble" : (i.offbeat ?? "extra") };
         continue;
       }
       // A diagonal's second key shows the rating of the press it bent.

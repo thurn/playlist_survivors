@@ -30,7 +30,7 @@ import type { KeyEvent, Observation, Player } from "./player.ts";
 import { BatchRecorder, type ArrowRecord, type PressTrace, type Recorder, type SimResult } from "./recorder.ts";
 import { DEMO_RULES, type Rules } from "./rules.ts";
 import { nextStepAfter, stepRate, stepSpan, type GridSlot, type Schedule } from "./schedule.ts";
-import { armedStrike, damageMultiplier, grooveAfterOffbeat, grooveAfterPress, grooveDecay, nearestIndex, ratePress, ratePressOnGrid, type Rating } from "./timing.ts";
+import { armedStrike, damageMultiplier, type PressRating, grooveAfterOffbeat, grooveAfterPress, grooveDecay, nearestIndex, ratePress, ratePressOnGrid, type Rating } from "./timing.ts";
 import { CorridorWorld, OpenWorld, type World } from "./world.ts";
 
 export type { ArrowRecord, Landing, SimResult, SlamRecord } from "./recorder.ts";
@@ -70,6 +70,8 @@ export const HITSTOP_MAX = 0.15;
 export const HITSTOP_MIN = 0.04;
 /** The groove only decays after this many bars without a press. */
 const GROOVE_GRACE_BARS = 2;
+/** An extra press this soon after its grid time's rated press is a fumble (a slow diagonal, a double tap), not a stumble. */
+const FUMBLE_S = 0.1;
 /** A near miss: a threat passing this close to the hurtbox's edge without touching it. */
 export const NEAR_MISS = 24;
 /** The near-miss slow-motion dip: down to 0.4 over 40 ms, held 70 ms, back up over 40 ms. */
@@ -170,6 +172,10 @@ interface Swing {
   impact: number;
   frames: number;
   press?: number;
+  /** The arming press's accuracy (automatic swings: 1); a light swing's reach scales with it. */
+  accuracy: number;
+  /** Lost to a stumble before its wind-up: it never winds up or strikes. */
+  lost?: boolean;
   accent: number;
   dir: number;
   aimed: boolean;
@@ -430,6 +436,11 @@ interface SimState {
   takenSlots: Set<GridSlot>;
   /** One rated press per grid slot: the grid index of the latest rated step. */
   lastStepGrid: number;
+  /** That grid time's rated press: its rating, and how many extra presses followed it. */
+  slotRating?: Rating;
+  slotExtras: number;
+  /** Has the hero stumbled on an extra press for that grid time? */
+  slotStumbled: boolean;
   lightCount: number;
   nInputs: number;
   nHits: number;
@@ -503,6 +514,8 @@ function freshState(env: Env): SimState {
     liveSwings: [],
     takenSlots: new Set(),
     lastStepGrid: -1,
+    slotExtras: 0,
+    slotStumbled: false,
     lightCount: 0,
     nInputs: 0,
     nHits: 0,
@@ -784,7 +797,7 @@ function engine(env: Env, st: SimState, io: Io) {
 
   // ---------------------------------------------------------------- swings
   /** Arm a swing for a slot (one swing per slot): the press's, or an automatic one. */
-  const swingFor = (slot: GridSlot | undefined, sArmed: number, press?: number, rating?: Rating): Swing | undefined => {
+  const swingFor = (slot: GridSlot | undefined, sArmed: number, press?: number, rating?: Rating, accuracy = 1): Swing | undefined => {
     if (!slot || st.takenSlots.has(slot)) return undefined;
     // The finale blast ends the sword's routine (its chord is matched to the grid within 40 ms).
     if (blastS !== undefined && slot.s >= blastS - 0.04) return undefined;
@@ -798,7 +811,7 @@ function engine(env: Env, st: SimState, io: Io) {
     const anim = heavy ? hero.swings.heavy.animation : hero.swings.light.animations[st.lightCount++ % hero.swings.light.animations.length];
     const info = anims[anim] ?? { frames: 6, impactFrame: 3 };
     const sWind = Math.max(sArmed, slot.s - hero.swings.windupMs / 1000 / Math.max(0.05, baseRate(slot.s)));
-    const sw: Swing = { sArmed, sWind, sStrike: slot.s, slot, heavy, anim, impact: info.impactFrame ?? 3, frames: info.frames, press, accent: slot.accent, dir: st.facingAngle, aimed: false, struck: false, wStrike: 0, fps: 16 };
+    const sw: Swing = { sArmed, sWind, sStrike: slot.s, slot, heavy, anim, impact: info.impactFrame ?? 3, frames: info.frames, press, accuracy, accent: slot.accent, dir: st.facingAngle, aimed: false, struck: false, wStrike: 0, fps: 16 };
     // Only swings from the last few seconds can matter to the idle-swing rule.
     if (st.swings.length > 64) st.swings = st.swings.filter((x) => x.sStrike >= st.s - 8);
     st.swings.push(sw);
@@ -823,7 +836,11 @@ function engine(env: Env, st: SimState, io: Io) {
     return out;
   };
 
+  /** A light swing's reach: its arc, shortened by a loosely timed press (it still aims with the full arc). */
+  const lightReachOf = (sw: Swing) => (sw.accuracy >= 1 ? lightReach : { ...lightReach, radius: lightReach.radius * lerp(hero.swings.light.minReach, 1, sw.accuracy) });
+
   const doWind = (sw: Swing) => {
+    if (sw.lost) return;
     const hp = heroPose(st.w);
     const reach = sw.heavy ? heavyAim : lightReach;
     const targets = aimTargets(hp.x, hp.y, reach.radius);
@@ -839,10 +856,11 @@ function engine(env: Env, st: SimState, io: Io) {
   };
 
   const doStrike = (sw: Swing) => {
+    if (sw.lost) return;
     if (!sw.aimed) doWind(sw);
     const hp = heroPose(st.w);
     const def = sw.heavy ? hero.swings.heavy : hero.swings.light;
-    const reach = sw.heavy ? heavyReach : lightReach;
+    const reach = sw.heavy ? heavyReach : lightReachOf(sw);
     const shape: Shape = swingArc(hp.x, hp.y, sw.dir, reach);
     const mult = damageMultiplier(hero, st.groove);
     const h = addHit({ source: "move", what: sw.heavy ? "cleave" : "slash", weight: sw.heavy ? "heavy" : "light", primary: true, shape, dir: sw.dir, accent: sw.accent, damage: def.damage * mult });
@@ -882,6 +900,29 @@ function engine(env: Env, st: SimState, io: Io) {
   };
 
   // ---------------------------------------------------------------- input
+  /**
+   * A stumble: the next swing that has not started its wind-up is lost (or, with none pending, the
+   * next free grid time's swing), and the groove loses a fraction.
+   */
+  const stumble = () => {
+    const pending = st.liveSwings.filter((sw) => !sw.struck && !sw.aimed && sw.sWind > st.s + 1e-9).sort((a, b) => a.sStrike - b.sStrike)[0];
+    if (pending) {
+      pending.lost = true;
+      st.liveSwings.splice(st.liveSwings.indexOf(pending), 1);
+      const punch = st.punches.findIndex((p) => p.s === pending.sStrike);
+      if (punch >= 0) st.punches.splice(punch, 1);
+    } else {
+      for (let i = armedStrike(hero, sch.gridTimes, st.s); i < sch.gridSlots.length; i++) {
+        const slot = sch.gridSlots[i];
+        if (st.takenSlots.has(slot)) continue;
+        st.takenSlots.add(slot);
+        break;
+      }
+    }
+    st.groove *= 1 - hero.groove.stumble;
+    rec().groove(st.s, st.groove);
+  };
+
   const press = (e: KeyEvent) => {
     const sec = sectionAt(st.s);
     const steps = sec.level.movement === "steps";
@@ -894,7 +935,12 @@ function engine(env: Env, st: SimState, io: Io) {
     if (env.rules.oneStepPerSlot && steps && !(st.step && bendStep(hero, st.step, st.w, e.key, world.clamp))) {
       const gi = nearestIndex(sch.gridTimes, st.s);
       if (gi === st.lastStepGrid) extraGrid = gi;
-      else st.lastStepGrid = gi;
+      else {
+        st.lastStepGrid = gi;
+        st.slotExtras = 0;
+        st.slotStumbled = false;
+        st.slotRating = undefined;
+      }
     }
     if (inStop(st.s)) {
       // A press ends the hit-stop early: world time resumes at the press.
@@ -904,6 +950,33 @@ function engine(env: Env, st: SimState, io: Io) {
     }
     const input: PlanInput = { s: st.s, w: st.w, kind: "press", key: e.key, steps };
     const idx = st.nInputs++;
+    // Extra presses for a grid time that already had its step. The first steps when it is an
+    // off-beat (rated Perfect against the half-way point to the neighbouring grid time, after a
+    // rated press of Great or better) or a fumble right after the rated press; any other extra
+    // stumbles, and once the hero has stumbled, extras for that grid time do nothing.
+    let off: PressRating | undefined;
+    let stumbling = false;
+    if (extraGrid !== undefined) {
+      const g0 = sch.gridTimes[extraGrid];
+      const g1 = sch.gridTimes[st.s >= g0 ? extraGrid + 1 : extraGrid - 1];
+      off = g1 === undefined ? undefined : ratePress(hero, st.s - (g0 + g1) / 2, Math.abs(g1 - g0) / 2);
+      const offbeat = (off?.rating === "perfect" || off?.rating === "great") && (st.slotRating === "perfect" || st.slotRating === "great");
+      const fumble = st.s - st.lastPressS <= FUMBLE_S;
+      stumbling = ++st.slotExtras > 1 || !(offbeat || fumble);
+    }
+    if (extraGrid !== undefined && stumbling) {
+      input.extra = true;
+      const g0 = sch.gridTimes[extraGrid];
+      if (!st.slotStumbled) {
+        st.slotStumbled = true;
+        input.stumble = true;
+        stumble();
+      }
+      st.held.add(e.key);
+      rec().input(input);
+      if (trace) rec().press!({ ...trace, outcome: input.stumble ? "stumble" : "ignored", gridIndex: extraGrid, gridS: g0, delta: st.s - g0, stepS: st.lastPressS, grooveAfter: st.groove });
+      return;
+    }
     st.held.add(e.key);
     // Free movement: held keys walk; presses are not rated and do not arm the sword.
     if (!steps) {
@@ -927,15 +1000,11 @@ function engine(env: Env, st: SimState, io: Io) {
     st.landed = false;
     st.facingAngle = Math.atan2(st.step.dy, st.step.dx);
     if (extraGrid !== undefined) {
-      // An extra press for a grid time that already had its step: it steps and arms nothing. Rated
-      // Great or better against the half-way point to the neighbouring grid time (an eighth note
-      // on a beat grid), it lifts the groove past full; otherwise it is unrated (the key display
-      // greys it) and leaves the groove alone.
+      // A grid time's first extra press: it steps and arms nothing. An off-beat lifts the groove
+      // past full; a fumble is unrated (the key display greys it) and leaves the groove alone.
       input.extra = true;
       const g0 = sch.gridTimes[extraGrid];
-      const g1 = sch.gridTimes[st.s >= g0 ? extraGrid + 1 : extraGrid - 1];
-      const off = g1 === undefined ? undefined : ratePress(hero, st.s - (g0 + g1) / 2, Math.abs(g1 - g0) / 2);
-      if (off?.rating === "perfect" || off?.rating === "great") {
+      if (off?.rating === "perfect" && (st.slotRating === "perfect" || st.slotRating === "great")) {
         input.offbeat = off.rating;
         st.groove = grooveAfterOffbeat(hero, st.groove, off.accuracy);
         rec().groove(st.s, st.groove);
@@ -953,10 +1022,11 @@ function engine(env: Env, st: SimState, io: Io) {
     input.delta = rated.delta;
     st.groove = grooveAfterPress(hero, st.groove, rated.accuracy);
     st.lastPressS = st.s;
+    st.slotRating = rated.rating;
     rec().groove(st.s, st.groove);
     const slot = sch.gridSlots[armedStrike(hero, sch.gridTimes, st.s)];
     const taken = slot !== undefined && st.takenSlots.has(slot);
-    const sw = swingFor(slot, st.s, idx, rated.rating);
+    const sw = swingFor(slot, st.s, idx, rated.rating, env.rules.oneStepPerSlot ? rated.accuracy : 1);
     input.armed = sw !== undefined;
     rec().input(input);
     if (trace) {

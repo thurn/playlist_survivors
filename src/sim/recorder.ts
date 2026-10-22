@@ -67,10 +67,12 @@ export interface PressTrace {
   movement: "steps" | "free";
   /**
    * extra: a step for a grid time that already had its rated step (unrated, arming nothing);
+   * stumble: a second extra press for one grid time (no step; a swing is lost and the groove drops);
+   * ignored: a later extra press for that grid time (it does nothing);
    * bend: a diagonal's second key bent the step; step: a new step (rated, and maybe arming a swing);
    * walk: free movement (held keys walk); release: a key went up.
    */
-  outcome: "extra" | "bend" | "step" | "walk" | "release";
+  outcome: "extra" | "stumble" | "ignored" | "bend" | "step" | "walk" | "release";
   /** The nearest grid time (index and song time), and the press's offset from it (song seconds). */
   gridIndex?: number;
   gridS?: number;

@@ -69,17 +69,33 @@ export const heroDef = z.strictObject({
     /** Damage bonus at full groove (0.2 is +20%). */
     maxBonus: z.number().min(0),
     /**
-     * Off-beat presses (an extra press rated Great or better against the half-way point between
-     * two grid times) lift the groove past full, up to this damage bonus (0.25 is +25%).
+     * Off-beat presses lift the groove past full, up to this damage bonus (0.25 is +25%). An
+     * off-beat is a grid time's first extra press, rated Perfect against the half-way point to
+     * the next grid time, after a rated press of Great or better.
      */
     offbeatBonus: z.number().min(0),
+    /**
+     * One rated press per grid slot: a second extra press for one grid time stumbles. The hero
+     * does not step, the next swing that has not started its wind-up is lost (or else the next
+     * free grid time's), and the groove loses this fraction. Later extras for that grid time do nothing.
+     */
+    stumble: unit.default(0),
   }),
   swings: z.strictObject({
     /** The armed swing strikes on the first grid time at least this long after the press. */
     minLeadMs: z.number().positive(),
     /** Wind-up before the impact frame, when there is time for it. */
     windupMs: z.number().positive(),
-    light: z.strictObject({ animations: z.array(z.string()).min(1), hitShape: arcShape, damage: z.number().positive() }),
+    light: z.strictObject({
+      animations: z.array(z.string()).min(1),
+      hitShape: arcShape,
+      damage: z.number().positive(),
+      /**
+       * A press's swing reaches this fraction of the arc's radius at accuracy 0, rising linearly
+       * to the full radius at accuracy 1 (Perfect). Automatic swings reach the full radius.
+       */
+      minReach: unit.default(1),
+    }),
     heavy: z.strictObject({
       animation: z.string(),
       hitShape: arcShape,

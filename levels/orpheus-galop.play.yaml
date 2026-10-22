@@ -5,6 +5,8 @@ world: open                 # the demo's default is corridor
 rules: { oneStepPerSlot: true, accentTelegraphs: true }
 hero:
   timing: { perfectMs: 45, greatMs: 90, goodMs: 140, floor: 0.1 }
+  # A loosely timed press swings short: 55% of the arc's reach at the timing floor, full at Perfect.
+  swings: { light: { minReach: 0.55 } }
 player: moderate            # the bot used for ?start= and for checks
 sections:
   # The prelude plays at full speed: a slowed world makes walking feel like wading. The music's

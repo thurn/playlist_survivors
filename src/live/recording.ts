@@ -842,7 +842,7 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
       for (const e of p.enemies) mix(JSON.stringify(e.attacks ?? []), JSON.stringify(e.dance ?? {}));
     });
     part("hits", () => p.hits.forEach((x) => mix(x.s, x.w, x.what, x.damage)));
-    part("inputs", () => p.inputs.forEach((x) => mix(x.kind, x.key, x.s, x.rating ?? "", x.extra ? 1 : 0, x.offbeat ?? "")));
+    part("inputs", () => p.inputs.forEach((x) => mix(x.kind, x.key, x.s, x.rating ?? "", x.extra ? 1 : 0, x.offbeat ?? "", x.stumble ? 1 : 0)));
     part("swings", () => p.swings.forEach((x) => mix(x.s, x.dir, x.hit)));
     part("effects", () => p.events.effects.forEach((x) => mix(x.recipe, x.s, x.w, x.x, x.y, x.seed)));
     part("sounds", () => p.events.sounds.forEach((x) => mix(x.sample, x.s, x.gain, x.pan, x.rate)));

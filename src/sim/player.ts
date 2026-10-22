@@ -333,6 +333,12 @@ export class VirtualPlayer implements Player {
     return edge <= 3 ? 50 : edge > NEAR - 4 ? 12 : 0;
   }
 
+  /** The keys the player would press now, ignoring timing (the masher borrows its sense of direction). */
+  steerKeys(obs: Observation): Key[] {
+    this.moveRoam(obs);
+    return this.chooseKeys(obs);
+  }
+
   /** Score the eight directions by where the step would leave the hero, and pick the lowest cost. */
   private chooseKeys(obs: Observation): Key[] {
     const L = this.hero.step.length;
@@ -393,5 +399,56 @@ export class VirtualPlayer implements Player {
     // Which of a diagonal's two keys comes first is a matter of habit.
     if (best.length === 2 && r.next() < 0.5) return [best[1], best[0]];
     return best;
+  }
+}
+
+/**
+ * A player who ignores the beat: in step movement it presses a key every
+ * 1/rate seconds (jittered ±30%), in the direction the virtual player would
+ * choose, and in free movement it steers like the virtual player. Play mode's
+ * checks use it to keep mashing well behind playing on the beat.
+ */
+export class MasherPlayer implements Player {
+  private t = 0;
+  private n = 0;
+
+  constructor(
+    private readonly steerer: VirtualPlayer,
+    private readonly sections: readonly PlayerSection[],
+    private readonly seed: number,
+    /** Presses per second. */
+    private readonly rate: number,
+  ) {}
+
+  private steps(s: number): boolean {
+    return (this.sections.findLast((x) => s >= x.s0 - 1e-9) ?? this.sections[0]).steps;
+  }
+
+  /** The next mash time at or after `after`, in step movement. */
+  private mashAt(after: number): number {
+    while (this.t < after - 1e-9) this.t += (1 / this.rate) * new Rng(this.seed, "mash", this.n++).range(0.7, 1.3);
+    if (this.steps(this.t)) return this.t;
+    const next = this.sections.find((x) => x.steps && x.s0 > this.t);
+    if (!next) return Infinity;
+    this.t = next.s0;
+    return this.t;
+  }
+
+  nextDecision(after: number): number {
+    // The virtual player's own decisions in step movement are skipped: only its steering counts.
+    let v = this.steerer.nextDecision(after);
+    while (Number.isFinite(v) && this.steps(v)) v = this.steerer.nextDecision(v + 1e-6);
+    return Math.min(this.mashAt(after), v);
+  }
+
+  decide(obs: Observation): KeyEvent[] {
+    if (!this.steps(obs.s)) return this.steerer.decide(obs);
+    if (Math.abs(obs.s - this.t) > 1e-6) return [];
+    const key = this.steerer.steerKeys(obs)[0];
+    this.t = obs.s + (1 / this.rate) * new Rng(this.seed, "mash", this.n++).range(0.7, 1.3);
+    return [
+      { s: obs.s, kind: "press", key },
+      { s: obs.s + 0.03, kind: "release", key },
+    ];
   }
 }

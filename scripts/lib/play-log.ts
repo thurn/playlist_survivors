@@ -41,7 +41,7 @@ export interface PressRow {
   /**
    * What happened: the keyboard's fate when it never reached the game (repeat, disabled, held),
    * dropped (a count-in or restart threw it away), unapplied (queued but never applied),
-   * or the simulation's outcome (step, extra, bend, walk).
+   * or the simulation's outcome (step, extra, stumble, ignored, bend, walk).
    */
   outcome: string;
   section?: string;
@@ -110,7 +110,7 @@ export function pressRows(log: PlayLogFile): PressRow[] {
         row.strikeS = t.strikeS;
         row.heavy = t.heavy;
         row.noSwing = t.noSwing;
-        if (t.outcome === "extra" && t.stepS !== undefined) row.sinceStepMs = (t.s - t.stepS) * 1000;
+        if ((t.outcome === "extra" || t.outcome === "stumble" || t.outcome === "ignored") && t.stepS !== undefined) row.sinceStepMs = (t.s - t.stepS) * 1000;
         if (t.outcome === "extra") {
           row.offbeat = t.offbeat;
           if (t.offbeatDelta !== undefined) row.offbeatDeltaMs = t.offbeatDelta * 1000;

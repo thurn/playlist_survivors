@@ -22,7 +22,7 @@ import { recipeLife } from "../plan/effects-life.ts";
 import { grooveAt } from "../plan/evaluate.ts";
 import { buildSchedule, paceAt, type GridSlot, type Schedule } from "../sim/schedule.ts";
 import { ENEMY_RATE, simulate, type SimResult } from "../sim/simulate.ts";
-import { VirtualPlayer, type Player, type SkillProfile } from "../sim/player.ts";
+import { MasherPlayer, VirtualPlayer, type Player, type SkillProfile } from "../sim/player.ts";
 
 export const PLAN_FORMAT = "2";
 export const ACTIVE_BUCKET = 0.5;
@@ -36,6 +36,8 @@ export interface PlannerOptions {
   now?: () => number;
   /** The virtual player's skill profile (default skilled). */
   profile?: SkillProfile;
+  /** Mash instead of playing on the beat: presses per second (see MasherPlayer). */
+  mashRate?: number;
 }
 
 export interface SimRun {
@@ -128,6 +130,12 @@ export function virtualPlayer(ctx: Ctx, sch: Schedule, profile: SkillProfile = "
   );
 }
 
+/** A player who mashes at `rate` presses per second, steering like the virtual player for `profile`. */
+export function masherPlayer(ctx: Ctx, sch: Schedule, rate: number, profile: SkillProfile = "moderate"): MasherPlayer {
+  const sections = ctx.sections.map((s) => ({ steps: s.level.movement === "steps", presses: s.level.presses, s0: s.s0, s1: s.s1, pace: s.level.pace }));
+  return new MasherPlayer(virtualPlayer(ctx, sch, profile), sections, ctx.seed, rate);
+}
+
 /** Run the simulation only (no emission): for the causality and determinism checks. */
 export function runSim(input: PlannerInput, opts: { props?: Record<string, PropInfo>; profile?: SkillProfile; player?: Player; cutS?: number; untilS?: number } = {}): SimRun {
   const { ctx, sch, map } = prepare(input, opts.props);
@@ -147,7 +155,8 @@ export function planWithSim(input: PlannerInput, opts: PlannerOptions = {}): { p
   const profile = opts.profile ?? input.profile ?? input.level.player;
   const { ctx, sch, map } = prepare(input, opts.props);
   const tSim = now();
-  const sim = simulate(ctx, sch, map, { player: virtualPlayer(ctx, sch, profile) });
+  const player = opts.mashRate ? masherPlayer(ctx, sch, opts.mashRate, profile) : virtualPlayer(ctx, sch, profile);
+  const sim = simulate(ctx, sch, map, { player });
   const simMs = now() - tSim;
   const warp = new Warp(sim.warp);
   const wEnd = warp.toWorld(ctx.duration);
@@ -217,7 +226,7 @@ export function planWithSim(input: PlannerInput, opts: PlannerOptions = {}): { p
   };
 
   const recorded: Plan = {
-    ...planHeader(ctx, sch, map, profile),
+    ...planHeader(ctx, sch, map, opts.mashRate ? `masher-${opts.mashRate}` : profile),
     warp: sim.warp,
     worldBeats: Float64Array.from(ctx.song.beats, (s) => warp.toWorld(s)),
     hero,

@@ -52,8 +52,8 @@ export function plannerInput(opts: { songMap?: SongMap; seed?: number; level?: s
   return { songMap, level, content, seed: opts.seed ?? level.seed, heroAnims: heroAnimsFromAtlas(), landmarks: readLandmarks(), soundOnsets: soundOnsets(), version: "node" };
 }
 
-export function runPlanner(opts: { songMap?: SongMap; seed?: number; level?: string; profile?: SkillProfile } = {}): Plan {
-  return plan(plannerInput(opts), { props: propsFromAtlas(), now: () => performance.now(), profile: opts.profile });
+export function runPlanner(opts: { songMap?: SongMap; seed?: number; level?: string; profile?: SkillProfile; mashRate?: number } = {}): Plan {
+  return plan(plannerInput(opts), { props: propsFromAtlas(), now: () => performance.now(), profile: opts.profile, mashRate: opts.mashRate });
 }
 
 /** The plan and its simulation, from one run. */

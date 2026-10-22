@@ -11,7 +11,7 @@ import type { Plan } from "../plan/types.ts";
 import { PixelText, textWidth } from "./font.ts";
 
 /** Press ratings: gold for Perfect, white for Great, pale blue for Good, plain for unrated. */
-const RATING_COLORS: Record<string, number> = { perfect: 0xffd040, great: 0xffffff, good: 0x9fd0ff, extra: 0x4a4a54 };
+const RATING_COLORS: Record<string, number> = { perfect: 0xffd040, great: 0xffffff, good: 0x9fd0ff, extra: 0x4a4a54, stumble: 0xe04848 };
 /** Play mode's telegraphs: the cleaves' accents and the beats to press for them. */
 const TELEGRAPH = 0xffc040;
 const PLAIN = 0x8890a8;
