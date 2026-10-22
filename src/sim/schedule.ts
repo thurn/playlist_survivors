@@ -8,6 +8,7 @@ import { smoothstep, lerp } from "../core/shaping.ts";
 import { barOfBeatIndex, beatIndexAt, beatIndexOf, timeOfBeatIndex } from "../core/songmap.ts";
 import { beatDurationAt, PlanError, sectionIndexAt, subdivisionBeats, type Ctx } from "../planner/context.ts";
 import { phraseFinalAccent, resolveRef, sectionPhrases } from "../planner/musical.ts";
+import { strideSteps, type StrideSteps } from "./strides.ts";
 
 export interface GridSlot {
   s: number;
@@ -37,6 +38,8 @@ export interface Schedule {
   /** The step sections' timing grids joined end to end: presses are rated against these and arm them. */
   gridSlots: GridSlot[];
   gridTimes: Float64Array;
+  /** Play mode's strides: the steps a held key strides on (the grid times, subdivided where the grid is slow). */
+  strideSteps: StrideSteps;
   /** Base world rate (section time scales, timeScale events), as constant steps from song time 0. */
   baseSteps: { s: number; rate: number }[];
   /** Route distance of the pace point, sampled every 1/PACE_RATE song seconds. */
@@ -312,7 +315,8 @@ export function buildSchedule(ctx: Ctx): Schedule {
     }
   }
   const gridSlots = slots.filter((x) => x.kind === "grid");
-  return { grids, slots, strikeTimes: Float64Array.from(slots, (x) => x.s), gridSlots, gridTimes: Float64Array.from(gridSlots, (x) => x.s), baseSteps: steps, pace, levelUps, blast, ...enc };
+  const gridTimes = Float64Array.from(gridSlots, (x) => x.s);
+  return { grids, slots, strikeTimes: Float64Array.from(slots, (x) => x.s), gridSlots, gridTimes, strideSteps: strideSteps(gridTimes, ctx.lib.hero.stride.maxPeriodS), baseSteps: steps, pace, levelUps, blast, ...enc };
 }
 
 /** Route distance of the pace point at song time s. */

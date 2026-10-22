@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { plannerInput, runPlanner } from "../scripts/lib/plan-node.ts";
 import { chunkContent, waveRadius, zoneAt, WAVE_BAND, WAVE_BANDS, type ZoneWave } from "../src/mapgen/openfield.ts";
 import { checkPlan, summarizeChecks } from "../src/planner/checks.ts";
-import { checkPlay } from "../src/planner/play-checks.ts";
+import { checkPlay, checkStrides } from "../src/planner/play-checks.ts";
 import { heroSample } from "../src/plan/sample.ts";
 import { Warp } from "../src/core/warp.ts";
 import { syntheticSongMap } from "./fixtures/synthetic-song.ts";
@@ -49,7 +49,7 @@ describe("a play-mode run in the open field", () => {
   it("is played by the moderate player in the open field", () => {
     expect(plan.profile).toBe("moderate");
     expect(plan.open).toBeDefined();
-    expect(plan.rules).toEqual({ oneStepPerSlot: true, accentTelegraphs: true, health: true });
+    expect(plan.rules).toEqual({ oneStepPerSlot: true, accentTelegraphs: true, health: true, strides: true });
   });
 
   it("hurts the hero, heals it on clean beats, and it survives", () => {
@@ -60,6 +60,38 @@ describe("a play-mode run in the open field", () => {
     let heals = 0;
     for (let i = 1; i < h.v.length; i++) if (h.v[i] > h.v[i - 1]) heals++;
     expect(heals).toBeGreaterThan(0);
+  });
+
+  it("catches a press that does not stride at once", () => {
+    const dead = (fake: (typeof plan.inputs)[number]) => {
+      const inputs = [...plan.inputs, fake].sort((a, b) => a.w - b.w);
+      return checkStrides({ ...plan, inputs }).find((c) => c.name === "no dead presses")!.failures;
+    };
+    expect(checkStrides(plan).find((c) => c.name === "no dead presses")!.failures).toEqual([]);
+    // A tapped press with no other press for half a second around it: the hero stands still 300 ms on.
+    const p = plan.inputs.find((i, _k, all) => i.kind === "press" && i.s > 60 && !i.bend && all.every((j) => j === i || j.kind !== "press" || Math.abs(j.s - i.s) > 0.5))!;
+    const at = (dt: number) => ({ ...p, s: p.s + dt, w: p.w + dt });
+    // An unapplied press after the stride has landed, with or without a stride recorded for it.
+    expect(dead({ ...at(0.3), stride: 10 }).length).toBe(1);
+    expect(dead({ ...at(0.3), stride: undefined }).length).toBe(1);
+    // An ignored press during the stride in progress: the hop is the earlier stride's, not its own
+    // (late in the stride, its height on the way down can match a new stride's on the way up once).
+    expect(dead({ ...at(0.03), stride: 10 }).length).toBe(1);
+    expect(dead({ ...at(0.09), stride: 10 }).length).toBe(1);
+    // A bend claimed long after the stride landed.
+    expect(dead({ ...at(0.3), bend: true, stride: undefined }).length).toBe(1);
+  });
+
+  it("holds the hero to the walk speed over windows of any length", () => {
+    // A hero track gliding steadily for 60 s: a hair over the walk speed breaks the cap in the end.
+    const glide = (speed: number) => {
+      const n = 60 * plan.hero.rate;
+      const x = Float32Array.from({ length: n }, (_, k) => (k * speed) / plan.hero.rate);
+      const hero = { ...plan.hero, x, y: new Float32Array(n), z: new Float32Array(n) };
+      return checkStrides({ ...plan, hero, inputs: [] }).find((c) => c.name === "the speed cap")!.failures;
+    };
+    expect(glide(139.9)).toEqual([]);
+    expect(glide(141).length).toBe(1);
   });
 
   it("passes the checks it shares with the demo, and play mode's own rules", () => {

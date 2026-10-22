@@ -46,6 +46,20 @@ export const heroDef = z.strictObject({
     /** A perpendicular key this soon after the first bends the step into a diagonal. */
     diagonalWindowMs: z.number().min(0),
   }),
+  /**
+   * Fixed-speed strides (play mode's `strides` rule; see docs/design/gameplay-redesign.md). The
+   * walk speed sets the hero's speed; a stride spends the ground built up since the last one.
+   */
+  stride: z.strictObject({
+    /** Stride duration in world milliseconds. */
+    durationMs: z.number().positive(),
+    /** Height of the hop arc in world pixels. */
+    hop: z.number().min(0),
+    /** The stride period is one step of the timing grid, halved while it is longer than this (seconds). */
+    maxPeriodS: z.number().positive(),
+    /** The stride period in sections without a steady beat (seconds). */
+    freePeriodS: z.number().positive(),
+  }),
   walk: z.strictObject({
     /** World pixels per world-second. */
     speed: z.number().positive(),
@@ -343,7 +357,7 @@ export const levelScript = z.strictObject({
   /** The demo's forest corridor along a route, or play mode's open field. */
   world: z.enum(["corridor", "open"]).default("corridor"),
   /** Play-mode rule changes. */
-  rules: z.strictObject({ oneStepPerSlot: z.boolean().default(false), accentTelegraphs: z.boolean().default(false), health: z.boolean().default(false) }).optional(),
+  rules: z.strictObject({ oneStepPerSlot: z.boolean().default(false), accentTelegraphs: z.boolean().default(false), health: z.boolean().default(false), strides: z.boolean().default(false) }).optional(),
   /** Overrides merged over content/hero.yaml for this level only (checked against the hero schema). */
   hero: z.record(z.string(), z.unknown()).optional(),
   title: z.strictObject({ piece: z.string(), composer: z.string(), performer: z.string() }),

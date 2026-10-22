@@ -2,8 +2,10 @@
 # the differences restated. See docs/design/interactive.md.
 extends: orpheus-galop
 world: open                 # the demo's default is corridor
-rules: { oneStepPerSlot: true, accentTelegraphs: true, health: true }
+rules: { oneStepPerSlot: true, accentTelegraphs: true, health: true, strides: true }
 hero:
+  # Fixed-speed strides: 140 px/s at any tempo and press rate, faster than every enemy but bats and bees.
+  walk: { speed: 140 }
   timing: { perfectMs: 45, greatMs: 90, goodMs: 140, floor: 0.1 }
   # A loosely timed press swings short: 55% of the arc's reach at the timing floor, full at Perfect.
   swings: { light: { minReach: 0.55 } }
@@ -23,10 +25,11 @@ sections:
   - section: climax
     camera: { lead: 0 }
 # Experience for each level-up: the moderate player fills each bar a little before its moment
-# (it collects about 355-415, 950 and 1900 by then on the checked seeds).
+# (with strides it collects about 320-360 by the first on the checked seeds: the prelude's faster
+# walk kills a little less than the old 80 px/s walk did).
 events:
   - at: { section: galop-opening, point: start }
-    xp: 340
+    xp: 300
   - at: { section: theme-a-repeat, point: start }
     xp: 850
   - at: { section: bridge, point: start }

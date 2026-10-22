@@ -71,8 +71,11 @@ export interface PressTrace {
    * ignored: a later extra press for that grid time (it does nothing);
    * bend: a diagonal's second key bent the step; step: a new step (rated, and maybe arming a swing);
    * walk: free movement (held keys walk); release: a key went up.
+   * With strides every press strides, a stumble and an ignored press too (they keep their names for
+   * what they did to the groove and the swings); stride: a new stride (in step movement rated, and
+   * maybe arming a swing, as a step; in free movement unrated, with a walk after it while the key is held).
    */
-  outcome: "extra" | "stumble" | "ignored" | "bend" | "step" | "walk" | "release";
+  outcome: "extra" | "stumble" | "ignored" | "bend" | "step" | "stride" | "walk" | "release";
   /** The nearest grid time (index and song time), and the press's offset from it (song seconds). */
   gridIndex?: number;
   gridS?: number;
@@ -84,6 +87,13 @@ export interface PressTrace {
   /** Extra presses: the offset from the half-way point between grid times, and its rating there. */
   offbeatDelta?: number;
   offbeat?: string;
+  /**
+   * Strides: the length of the stride the press started (a bend keeps the stride's), the stride
+   * budget left after it (px), and the ground an interrupted stride gave back to the budget first.
+   */
+  stride?: number;
+  budget?: number;
+  returned?: number;
   /** The press cut a hit-stop short. */
   cutHitStop?: boolean;
   /** The previous step had not landed yet (this one starts from where the hero was). */

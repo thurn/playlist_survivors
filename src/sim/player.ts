@@ -135,6 +135,10 @@ export class VirtualPlayer implements Player {
   private readonly sections: readonly PlayerSection[];
   private readonly beats: readonly number[];
   private readonly open: boolean;
+  /** Fixed-speed strides (play mode): hold the direction between presses, and let go to stand. */
+  private readonly strides: boolean;
+  /** The cost of the latest choice of keys. */
+  private bestCost = Infinity;
   /** The open field's roam point: where it is, its heading (radians), and when it last moved. */
   private roam?: { x: number; y: number; dir: number; w: number; bi: number };
 
@@ -147,13 +151,14 @@ export class VirtualPlayer implements Player {
     profile: SkillProfile = "skilled",
     /** Is a grid slot an accent the section turns into a cleave? */
     heavyAccent: (slot: GridSlot) => boolean = () => false,
-    opts: { open?: boolean } = {},
+    opts: { open?: boolean; strides?: boolean } = {},
   ) {
     const spec = PROFILES[profile];
     this.spec = spec;
     this.sections = sections;
     this.beats = beats;
     this.open = opts.open ?? false;
+    this.strides = opts.strides ?? false;
     const grid = slots.filter((sl) => sl.kind === "grid" && sections[sl.section].steps);
     grid.forEach((sl, i) => {
       const sec = sections[sl.section];
@@ -193,10 +198,11 @@ export class VirtualPlayer implements Player {
     const d = this.plan[this.next++];
     if (d.kind === "steer") return this.steer(obs, d.beat, d.release ?? false);
     // On a rest slot, press only to get out of a threat's way.
-    if (d.kind === "watch" && !this.inDanger(obs)) return [];
+    if (d.kind === "watch" && !this.inDanger(obs)) return this.strides ? this.keepHolding(obs) : [];
     const keys = this.chooseKeys(obs);
     this.count++;
     const r = new Rng(this.seed, "press-keys", this.count);
+    if (this.strides) return this.strideKeys(obs, keys, r);
     const out: KeyEvent[] = [];
     let s = obs.s;
     for (let i = 0; i < keys.length; i++) {
@@ -206,6 +212,45 @@ export class VirtualPlayer implements Player {
     }
     for (const k of keys) out.push({ s: s + r.range(0.06, 0.1), kind: "release", key: k });
     return out;
+  }
+
+  /**
+   * Strides: let go of the keys held, press the new direction (a key already down is pressed
+   * again), and hold it, so the hero strides on every grid step until the next decision. When
+   * standing still would be better than the best direction, or in a careful moment (a threat in
+   * view, a formation dancing), tap instead: one stride, then stand.
+   */
+  private strideKeys(obs: Observation, keys: Key[], r: Rng): KeyEvent[] {
+    const out: KeyEvent[] = [];
+    for (const k of this.held) out.push({ s: obs.s, kind: "release", key: k });
+    this.held.clear();
+    let s = obs.s;
+    for (let i = 0; i < keys.length; i++) {
+      if (i > 0) s += r.range(0.002, 0.015);
+      out.push({ s, kind: "press", key: keys[i] });
+    }
+    // Careful moments (a threat in view, a formation dancing) and a better spot standing still: tap.
+    const careful = obs.threats.length > 0 || obs.formation !== undefined;
+    if (careful || this.standCost(obs) < this.bestCost) for (const k of keys) out.push({ s: s + r.range(0.06, 0.1), kind: "release", key: k });
+    else for (const k of keys) this.held.add(k);
+    return out;
+  }
+
+  /** Strides, on a rest slot: keep holding while going on beats standing still, else let go. */
+  private keepHolding(obs: Observation): KeyEvent[] {
+    if (this.held.size === 0) return [];
+    const keys = [...this.held];
+    const p = this.paceFrame(obs);
+    const d = dirVector(keys);
+    const L = this.hero.step.length;
+    if (this.placeCost(obs, p, d, obs.hero.x + d.x * L, obs.hero.y + d.y * L, L) <= this.standCost(obs)) return [];
+    this.held.clear();
+    return keys.map((key) => ({ s: obs.s, kind: "release" as const, key }));
+  }
+
+  /** The cost of standing where the hero is. */
+  private standCost(obs: Observation): number {
+    return this.placeCost(obs, this.paceFrame(obs), { x: 0, y: 0 }, obs.hero.x, obs.hero.y, 0);
   }
 
   /**
@@ -339,12 +384,45 @@ export class VirtualPlayer implements Player {
     return this.chooseKeys(obs);
   }
 
+  /**
+   * What a step toward d (a unit vector, or zero to stand) costs where it leaves the hero, (ax, ay),
+   * L px away: keeping up with the pace frame p, threats, walls and the crowd.
+   */
+  private placeCost(obs: Observation, p: Observation["pacePoint"], d: { x: number; y: number }, ax: number, ay: number, L: number): number {
+    const nx = -p.ty;
+    const ny = p.tx;
+    // Keep up with the route: along the route (stay within the pace window) and across it.
+    const along = (ax - p.x) * p.tx + (ay - p.y) * p.ty;
+    const lat = (ax - p.x) * nx + (ay - p.y) * ny;
+    let cost = along > 0 ? (along / 30) ** 2 : (along / 70) ** 2;
+    cost += (lat / 160) ** 2;
+    // Leave slam markers and arrow lines, by a close shave: judged where the step has taken the
+    // hero when the threat lands.
+    for (const t of obs.threats) {
+      const u = clamp((t.landsAt - obs.s) / (this.hero.step.durationMs / 1000), 0, 1);
+      const e = easeOut(u);
+      cost += this.threatCost(t, obs.hero.x + d.x * L * e, obs.hero.y + d.y * L * e);
+    }
+    // Stay off the walls.
+    const edge = obs.edgeDistance(ax, ay);
+    cost += 2.0 * clamp(1 - edge / 60, 0, 2);
+    // Don't get buried, but stay in the fight.
+    let near = 0;
+    let close = 0;
+    for (const e of obs.enemies) {
+      const dd = Math.hypot(e.x - ax, e.y - ay);
+      if (dd < 30) close++;
+      if (dd < 100) near++;
+    }
+    cost += 0.5 * Math.min(close, 6) * 0.5;
+    cost -= 0.8 * Math.min(near, 15) / 5;
+    return cost;
+  }
+
   /** Score the eight directions by where the step would leave the hero, and pick the lowest cost. */
   private chooseKeys(obs: Observation): Key[] {
     const L = this.hero.step.length;
     const p = this.paceFrame(obs);
-    const nx = -p.ty;
-    const ny = p.tx;
     let best: Key[] = DIRECTIONS[0];
     let bestCost = Infinity;
     let second: Key[] = DIRECTIONS[0];
@@ -354,31 +432,7 @@ export class VirtualPlayer implements Player {
       const d = dirVector(keys);
       const ax = obs.hero.x + d.x * L;
       const ay = obs.hero.y + d.y * L;
-      // Keep up with the route: along the route (stay within the pace window) and across it.
-      const along = (ax - p.x) * p.tx + (ay - p.y) * p.ty;
-      const lat = (ax - p.x) * nx + (ay - p.y) * ny;
-      let cost = along > 0 ? (along / 30) ** 2 : (along / 70) ** 2;
-      cost += (lat / 160) ** 2;
-      // Leave slam markers and arrow lines, by a close shave: judged where the step has taken the
-      // hero when the threat lands.
-      for (const t of obs.threats) {
-        const u = clamp((t.landsAt - obs.s) / (this.hero.step.durationMs / 1000), 0, 1);
-        const e = easeOut(u);
-        cost += this.threatCost(t, obs.hero.x + d.x * L * e, obs.hero.y + d.y * L * e);
-      }
-      // Stay off the walls.
-      const edge = obs.edgeDistance(ax, ay);
-      cost += 2.0 * clamp(1 - edge / 60, 0, 2);
-      // Don't get buried, but stay in the fight.
-      let near = 0;
-      let close = 0;
-      for (const e of obs.enemies) {
-        const dd = Math.hypot(e.x - ax, e.y - ay);
-        if (dd < 30) close++;
-        if (dd < 100) near++;
-      }
-      cost += 0.5 * Math.min(close, 6) * 0.5;
-      cost -= 0.8 * Math.min(near, 15) / 5;
+      let cost = this.placeCost(obs, p, d, ax, ay, L);
       // Avoid back-and-forth jitter.
       if (this.lastDir && d.x * this.lastDir.x + d.y * this.lastDir.y < -0.7) cost += 0.6;
       // A little variety.
@@ -394,7 +448,11 @@ export class VirtualPlayer implements Player {
       }
     }
     // A sloppy press goes the second-best way.
-    if (this.spec.sloppy > 0 && Number.isFinite(secondCost) && new Rng(this.seed, "sloppy", this.count).next() < this.spec.sloppy) best = second;
+    this.bestCost = bestCost;
+    if (this.spec.sloppy > 0 && Number.isFinite(secondCost) && new Rng(this.seed, "sloppy", this.count).next() < this.spec.sloppy) {
+      best = second;
+      this.bestCost = secondCost;
+    }
     this.lastDir = dirVector(best);
     // Which of a diagonal's two keys comes first is a matter of habit.
     if (best.length === 2 && r.next() < 0.5) return [best[1], best[0]];

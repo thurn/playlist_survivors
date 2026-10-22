@@ -23,6 +23,7 @@ import { grooveAt } from "../plan/evaluate.ts";
 import { buildSchedule, paceAt, type GridSlot, type Schedule } from "../sim/schedule.ts";
 import { ENEMY_RATE, simulate, type SimResult } from "../sim/simulate.ts";
 import { MasherPlayer, VirtualPlayer, type Player, type SkillProfile } from "../sim/player.ts";
+import { strideRule } from "../sim/strides.ts";
 
 export const PLAN_FORMAT = "2";
 export const ACTIVE_BUCKET = 0.5;
@@ -38,6 +39,8 @@ export interface PlannerOptions {
   profile?: SkillProfile;
   /** Mash instead of playing on the beat: presses per second (see MasherPlayer). */
   mashRate?: number;
+  /** A player of the caller's own instead of the virtual player (for checks and tests). */
+  player?: Player;
 }
 
 export interface SimRun {
@@ -107,7 +110,13 @@ export function planHeader(ctx: Ctx, sch: Schedule, map: MapLayout, profile: str
     cleaveAccents: sch.gridSlots.filter((sl) => cleaves(ctx, sl)).map((sl) => ({ s: sl.s, strength: sl.accent })),
     levelUpsDue: sch.levelUps.map((l) => ({ id: l.id, s: l.s })),
     ...(ctx.level.rules.oneStepPerSlot || ctx.level.rules.accentTelegraphs ? { rules: ctx.level.rules } : {}),
+    ...(ctx.level.rules.strides ? { strides: stridesHeader(ctx, sch) } : {}),
   } satisfies Partial<Plan>;
+}
+
+function stridesHeader(ctx: Ctx, sch: Schedule): NonNullable<Plan["strides"]> {
+  const r = strideRule(ctx.lib.hero);
+  return { speed: r.speed, durationS: r.durationS, hop: r.hop, freePeriodS: r.freePeriodS, steps: Float64Array.from(sch.strideSteps.s), periods: Float64Array.from(sch.strideSteps.period) };
 }
 
 /** Does a grid slot's accent make a cleave of a swing armed by a press rated Great or better? */
@@ -126,7 +135,7 @@ export function virtualPlayer(ctx: Ctx, sch: Schedule, profile: SkillProfile = "
     ctx.song.beats,
     profile,
     (slot) => cleaves(ctx, slot),
-    { open: ctx.level.world === "open" },
+    { open: ctx.level.world === "open", strides: ctx.level.rules.strides },
   );
 }
 
@@ -166,7 +175,7 @@ export function planWithSim(input: PlannerInput, opts: PlannerOptions = {}): { p
   const profile = opts.profile ?? input.profile ?? input.level.player;
   const { ctx, sch, map } = prepare(input, opts.props);
   const tSim = now();
-  const player = opts.mashRate ? masherPlayer(ctx, sch, opts.mashRate, profile) : virtualPlayer(ctx, sch, profile);
+  const player = opts.player ?? (opts.mashRate ? masherPlayer(ctx, sch, opts.mashRate, profile) : virtualPlayer(ctx, sch, profile));
   const sim = simulate(ctx, sch, map, { player });
   const simMs = now() - tSim;
   const warp = new Warp(sim.warp);

@@ -281,7 +281,7 @@ export interface LevelScript {
   extends?: string;
   /** The demo's forest corridor, or play mode's open field. */
   world: "corridor" | "open";
-  rules: { oneStepPerSlot: boolean; accentTelegraphs: boolean; health: boolean };
+  rules: { oneStepPerSlot: boolean; accentTelegraphs: boolean; health: boolean; strides: boolean };
   /** The hero for this level: content/hero.yaml with the level's overrides (the same object when it has none). */
   hero: HeroDef;
 }
@@ -585,7 +585,7 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap, res
     file: f.name,
     extends: data.extends,
     world: data.world,
-    rules: { oneStepPerSlot: data.rules?.oneStepPerSlot ?? false, accentTelegraphs: data.rules?.accentTelegraphs ?? false, health: data.rules?.health ?? false },
+    rules: { oneStepPerSlot: data.rules?.oneStepPerSlot ?? false, accentTelegraphs: data.rules?.accentTelegraphs ?? false, health: data.rules?.health ?? false, strides: data.rules?.strides ?? false },
     hero: levelHero,
   };
 }

@@ -581,7 +581,7 @@ function logContext(env: LiveEnv, lib: ContentLibrary, level: string, startS: nu
     params: { avOffsetMs: env.params.avOffsetMs, startS, mode: env.params.mode },
     inputOffsetMs: loadInputOffset(),
     audio: ac ? { sampleRate: ac.sampleRate, baseLatency: ac.baseLatency, outputLatency: ac.outputLatency, state: ac.state, stats: env.audio!.stats, live: env.audio!.liveStats() } : undefined,
-    hero: { timing: hero.timing, step: hero.step, swings: { minLeadMs: hero.swings.minLeadMs, windupMs: hero.swings.windupMs } },
+    hero: { timing: hero.timing, step: hero.step, swings: { minLeadMs: hero.swings.minLeadMs, windupMs: hero.swings.windupMs }, stride: hero.stride, walk: { speed: hero.walk.speed } },
     rules: ctx.level.rules,
     playerFrom: recording.playerFrom,
     runner: { ...runner.stats, settled: runner.settled, simS: runner.sim.s },

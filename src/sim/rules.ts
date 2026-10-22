@@ -10,7 +10,9 @@ export interface Rules {
   accentTelegraphs: boolean;
   /** The hero has health: enemies that touch it bite, arrows and slams hurt, and at none the run is over. */
   health: boolean;
+  /** Fixed-speed strides: every press strides at once, a held key strides on every step of the stride period. */
+  strides: boolean;
 }
 
 /** The scripted demo's rules: today's behavior. */
-export const DEMO_RULES: Readonly<Rules> = Object.freeze({ oneStepPerSlot: false, accentTelegraphs: false, health: false });
+export const DEMO_RULES: Readonly<Rules> = Object.freeze({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false });

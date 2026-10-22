@@ -20,7 +20,8 @@ describe("play mode's timing log", () => {
     session.recording.pressLog = (t) => log.press(t);
     session.runner.log = log;
 
-    // A step on a grid time, a second press for the same grid time (an unrated extra step), then a step on the next.
+    // A stride on a grid time, a second press for the same grid time (an unrated extra stride, which
+    // interrupts the first), then a stride on the next.
     const [g0, g1] = grid;
     const keys: KeyEvent[] = [
       { s: g0 + 0.01, kind: "press", key: "right" },
@@ -42,7 +43,17 @@ describe("play mode's timing log", () => {
     }
 
     const traces = keys.map((k) => log.traces.get(k.id!));
-    expect(traces.map((t) => t?.outcome)).toEqual(["step", "release", "extra", "release", "step"]);
+    expect(traces.map((t) => t?.outcome)).toEqual(["stride", "release", "extra", "release", "stride"]);
+    // Strides: standing still a while, the first is a full stride (140 px/s times the grid step). The
+    // extra press 50 ms later stops it, takes back the ground it had not covered, and adds 50 ms of
+    // walking; the next press has the ground since then. Each spends the whole budget.
+    const one = 140 * (g1 - g0);
+    expect(traces[0]!.stride).toBeCloseTo(one, 6);
+    expect(traces[0]!.returned).toBe(0);
+    expect(traces[2]!.returned).toBeCloseTo(one * (1 - 0.05 / 0.11) ** 3, 6);
+    expect(traces[2]!.stride).toBeCloseTo(140 * 0.05 + traces[2]!.returned!, 6);
+    expect(traces[4]!.stride).toBeCloseTo(140 * (g1 - 0.02 - (g0 + 0.06)), 6);
+    for (const k of [0, 2, 4]) expect(traces[k]!.budget).toBe(0);
     expect(traces[0]!.gridS).toBeCloseTo(g0, 9);
     expect(traces[0]!.delta).toBeCloseTo(0.01, 9);
     expect(traces[0]!.strikeS).toBeGreaterThan(g0);
@@ -54,11 +65,13 @@ describe("play mode's timing log", () => {
     // The report, from the saved form.
     const file = JSON.parse(JSON.stringify({ ...log.toJSON(), beats: Array.from(session.recording.plan.songBeats) })) as PlayLogFile;
     const rows = pressRows(file);
-    expect(rows.map((r) => r.outcome)).toEqual(["step", "extra", "step"]);
+    expect(rows.map((r) => r.outcome)).toEqual(["stride", "extra", "stride"]);
+    expect(rows[0].stride).toBeCloseTo(one, 6);
     expect(rows[1].sinceStepMs).toBeCloseTo(50, 6);
     const text = summarize(file);
     expect(text).toContain("Presses: 3");
     expect(text).toMatch(/extra\s+1/);
+    expect(text).toContain("1 interrupted the stride before");
   });
 
   it("reports keys the keyboard never handed to the game", () => {

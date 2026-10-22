@@ -22,8 +22,8 @@ describe("the play level file", () => {
     expect(play.extends).toBe("orpheus-galop");
     expect(play.world).toBe("open");
     expect(demo.world).toBe("corridor");
-    expect(play.rules).toEqual({ oneStepPerSlot: true, accentTelegraphs: true, health: true });
-    expect(demo.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: false, health: false });
+    expect(play.rules).toEqual({ oneStepPerSlot: true, accentTelegraphs: true, health: true, strides: true });
+    expect(demo.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false });
     expect(play.player).toBe("moderate");
     expect(play.seed).toBe(demo.seed);
     expect(play.title).toEqual(demo.title);
@@ -46,7 +46,7 @@ describe("the play level file", () => {
     // Events merge by `at` and kind: the level-ups need their own experience; nothing is added.
     expect(play.events.length).toBe(demo.events.length);
     expect(play.events.filter((e) => e.levelUp).map((e) => [e.levelUp, e.xp])).toEqual([
-      ["orbiting-blades", 340],
+      ["orbiting-blades", 300],
       ["chain-lightning", 850],
       ["fire-trail", 1700],
     ]);
@@ -122,7 +122,7 @@ describe("play-mode rules", () => {
     return { travel: Math.hypot(end.x - start.x, end.y - start.y), presses, groove, grid };
   };
 
-  it("rates one press per grid slot: a mashed press still steps, a diagonal still bends", () => {
+  it("rates one press per grid slot: a mashed press still strides, a diagonal still bends", () => {
     const m = mash(play.rules);
     expect(m.presses.map((p) => [p.key, !!p.extra, !!p.bend, p.rating !== undefined])).toEqual([
       ["right", false, false, true],
@@ -133,10 +133,17 @@ describe("play-mode rules", () => {
     // The extra press is not rated and does not touch the groove; it arms nothing.
     expect(m.groove).toBe(2);
     expect(m.presses[1].armed).toBeUndefined();
-    // Three steps, as in the demo where every press steps: the mashed press moves the hero too.
-    const diag = Math.hypot(44 + 44 / Math.SQRT2, 44 / Math.SQRT2);
-    expect(m.travel).toBeGreaterThan(diag + 30);
-    expect(m.travel).toBeCloseTo(mash(demo.rules).travel, 6);
+    // Every press strides: the mashed one splits the ground with the next, so the hero is no faster
+    // than walking (140 px/s), unlike the demo's steps, where it adds a whole 44 px step.
+    const [g0, g1] = m.grid;
+    const one = 140 * (g1 - g0);
+    expect(m.presses[0].stride).toBeCloseTo(one, 6);
+    expect(m.presses[1].stride).toBeGreaterThan(140 * 0.07);
+    expect(m.presses[1].stride).toBeLessThan(one / 2);
+    expect(m.presses[2].stride).toBeCloseTo(140 * (g1 - 0.01 - (g0 + 0.07)), 6);
+    expect(m.presses[3].stride).toBeUndefined();
+    expect(m.travel).toBeLessThan(one + 140 * (g1 - g0));
+    expect(mash(demo.rules).travel).toBeGreaterThan(m.travel + 20);
   });
 
   it("lifts the groove past full for eighth notes on the off-beat, and ignores sloppy extras", () => {

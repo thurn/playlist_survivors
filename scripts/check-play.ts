@@ -4,13 +4,15 @@
  * demo shares and play mode's own, then the `casual` player for the reward
  * spectrum, then mashers (presses at 4 and 8 per second, ignoring the beat),
  * which must earn a C and fewer kills than the moderate player. The moderate
- * and casual players must survive (the hero's health never runs out). Prints
- * kills, average groove, grade and lowest health side by side.
+ * and casual players must survive (the hero's health never runs out). Every
+ * player, mashers too, passes the movement checks: every movement has an input,
+ * no dead presses, the speed cap and holding keeps full speed. Prints kills,
+ * average groove, grade and lowest health side by side.
  *
  *   npm run check:play [-- --seeds=1858,7]
  */
 import { checkPlan, summarizeChecks } from "../src/planner/checks.ts";
-import { checkPlay } from "../src/planner/play-checks.ts";
+import { checkPlay, checkStrides } from "../src/planner/play-checks.ts";
 import { planHash } from "../src/planner/plan.ts";
 import { gradeFor } from "../src/plan/grade.ts";
 import type { Plan } from "../src/plan/types.ts";
@@ -53,7 +55,8 @@ for (const seed of seeds) {
     const f: string[] = [];
     if (r.grade !== "C") f.push(`seed ${seed}: mashing ${rate}/s earned ${r.grade} (groove ${r.groove.toFixed(3)})`);
     if (r.kills >= moderate.kills) f.push(`seed ${seed}: mashing ${rate}/s killed ${r.kills}, the moderate player ${moderate.kills}`);
-    const { ok, text } = summarizeChecks([{ name: `mashing ${rate}/s does not pay`, failures: f, checked: 2 }]);
+    const moves = [...checkPlan(plan, lib).filter((c) => c.name === "every hero movement has an input"), ...checkStrides(plan)].map((c) => ({ ...c, name: `mashing ${rate}/s: ${c.name}` }));
+    const { ok, text } = summarizeChecks([...moves, { name: `mashing ${rate}/s does not pay`, failures: f, checked: 2 }]);
     failed ||= !ok;
     console.log(text);
   }

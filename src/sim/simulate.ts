@@ -25,11 +25,12 @@ import { CameraRig } from "../planner/camera.ts";
 import { sectionIndexAt, subdivisionBeats, weightFactor, type Ctx } from "../planner/context.ts";
 import { aim, catches, swingArc, type AimTarget } from "./aim.ts";
 import { deepClone, registerShared } from "./clone.ts";
-import { bendStep, startStep, stepEnd, stepPose, stepSeconds, walkFrame, walkTarget, type Key, type Step } from "./movement.ts";
+import { bendStep, movePose, startStep, stepEnd, stepPose, stepSeconds, walkFrame, walkTarget, type Key, type Step } from "./movement.ts";
 import type { KeyEvent, Observation, Player } from "./player.ts";
 import { BatchRecorder, type ArrowRecord, type PressTrace, type Recorder, type SimResult } from "./recorder.ts";
 import { DEMO_RULES, type Rules } from "./rules.ts";
 import { nextStepAfter, stepRate, stepSpan, type GridSlot, type Schedule } from "./schedule.ts";
+import { budgetAt, freshStrides, heldDirection, interrupt, periodAt, settle, startStride, strideRule, striding, type StrideState } from "./strides.ts";
 import { armedStrike, damageMultiplier, type PressRating, grooveAfterOffbeat, grooveAfterPress, grooveDecay, nearestIndex, ratePress, ratePressOnGrid, type Rating } from "./timing.ts";
 import { CorridorWorld, OpenWorld, type World } from "./world.ts";
 
@@ -193,6 +194,7 @@ interface Swing {
 type Ev =
   | { kind: "decide" }
   | { kind: "key"; e: KeyEvent }
+  | { kind: "held" }
   | { kind: "hitstopEnd" }
   | { kind: "wind"; sw: Swing }
   | { kind: "strike"; sw: Swing }
@@ -255,6 +257,8 @@ const ORDER: Record<Ev["kind"], number> = {
   archers: 4,
   decide: 5,
   key: 6,
+  // A held stride comes after a key at the same time: a press there has already stridden.
+  held: 6.5,
   draw: 7,
   release: 8,
   slamMark: 8,
@@ -424,9 +428,12 @@ interface SimState {
   stopStart: number;
   stopEnd: number;
   restPose: { x: number; y: number };
+  /** The latest step (or stride), which ends standing still at its landing spot. */
   step?: Step;
-  /** Free movement: the current walk (undefined in step movement). */
+  /** Free movement: the current walk (undefined in step movement). With strides, it may start when the stride in progress lands. */
   walk?: Walk;
+  /** Play mode's strides: the stride budget. */
+  strides: StrideState;
   held: Set<Key>;
   walked: number;
   lastSample?: { x: number; y: number };
@@ -513,6 +520,7 @@ function freshState(env: Env): SimState {
     stopEnd: -1,
     restPose: { x: p0.x, y: p0.y },
     held: new Set(),
+    strides: freshStrides(),
     walked: 0,
     landed: true,
     facingAngle: 0,
@@ -632,9 +640,107 @@ function engine(env: Env, st: SimState, io: Io) {
    * (which ends standing still at its landing spot).
    */
   const heroPose = (atW: number): { x: number; y: number; z: number; u: number; vx: number; vy: number } => {
+    if (strides) {
+      // A walk waits for the stride in progress to land.
+      if (st.walk && (!st.step || atW >= st.walk.w0 - 1e-12)) return { ...walkPose(st.walk, atW), z: 0, u: 1 };
+      if (st.step) return { ...movePose(st.step, atW, rule.durationS, rule.hop), vx: 0, vy: 0 };
+      return { x: st.restPose.x, y: st.restPose.y, z: 0, u: 1, vx: 0, vy: 0 };
+    }
     if (st.walk) return { ...walkPose(st.walk, atW), z: 0, u: 1 };
     if (st.step) return { ...stepPose(hero, st.step, atW), vx: 0, vy: 0 };
     return { x: st.restPose.x, y: st.restPose.y, z: 0, u: 1, vx: 0, vy: 0 };
+  };
+
+  // ---------------------------------------------------------------- strides
+  const strides = env.rules.strides;
+  const rule = strideRule(hero);
+  /** How long a step (or stride) takes. */
+  const stepDur = strides ? rule.durationS : stepSeconds(hero);
+  /** One stride at song time s: the walk speed times the stride period. */
+  const oneStride = (s: number) => rule.speed * (sectionAt(s).level.movement === "free" ? rule.freePeriodS : periodAt(sch.strideSteps, s));
+  /**
+   * A held stride's limit: one stride of the step just ended, the time it built up over. (On an
+   * uneven grid, a step shorter than the one before would otherwise lose ground while holding.)
+   */
+  const heldStrideLimit = () => oneStride(st.s - 1e-6);
+  /** A press's key goes down: held keys keep the order they were pressed in (the more recent of two opposite keys wins). */
+  const hold = (key: Key) => {
+    if (strides) st.held.delete(key);
+    st.held.add(key);
+  };
+  /** Would this key bend the step (or press stride) in progress into a diagonal? */
+  const bendOf = (key: Key) => (st.step ? bendStep(hero, st.step, st.w, key, world.clamp, stepDur) : undefined);
+  /** Strides, free movement: is the hero walking now (not waiting for a stride to land)? */
+  const walking = () => st.walk !== undefined && (!st.step || st.w >= st.walk.w0 - 1e-12);
+  /** Strides, free movement: the walk ends where the hero is now (a walk waiting for a landing is dropped). */
+  const stopWalk = () => {
+    if (!st.walk) return;
+    settle(rule, st.strides, st.w, oneStride(st.s));
+    st.strides.walkFrom = Infinity;
+    if (walking()) {
+      const p = heroPose(st.w);
+      st.step = undefined;
+      st.restPose = { x: p.x, y: p.y };
+    }
+    st.walk = undefined;
+  };
+  /**
+   * Strides, free movement: walk with the held keys at the walk speed, from the landing of the stride
+   * in progress, or from now (slowing to a stop when no key is held). The walk spends the refill.
+   */
+  const walkOn = () => {
+    const was = walking() ? heroPose(st.w) : undefined;
+    stopWalk();
+    const dir = heldDirection(st.held);
+    const tx = dir ? dir.x * rule.speed : 0;
+    const ty = dir ? dir.y * rule.speed : 0;
+    const accel = hero.walk.speed / (hero.walk.accelMs / 1000);
+    if (st.step && striding(rule, st.step, st.w)) {
+      if (!dir) return;
+      const land = st.step.w0 + rule.durationS;
+      const end = stepEnd(st.step);
+      st.walk = { w0: land, x0: end.x, y0: end.y, vx0: 0, vy0: 0, tx, ty, t: rule.speed / accel };
+      st.strides.walkFrom = land;
+      return;
+    }
+    if (!dir && !was) return;
+    const p = was ?? heroPose(st.w);
+    st.walk = { w0: st.w, x0: p.x, y0: p.y, vx0: p.vx, vy0: p.vy, tx, ty, t: Math.hypot(tx - p.vx, ty - p.vy) / accel };
+    st.step = undefined;
+    if (dir) {
+      st.strides.walkFrom = st.w;
+      st.facingAngle = Math.atan2(dir.y, dir.x);
+    }
+  };
+  /**
+   * Strides: stop the stride in progress where it is (its uncovered ground goes back to the budget)
+   * and set off toward the held keys with the whole budget. `key` is the press that strides
+   * (undefined for a held stride).
+   */
+  const strideOff = (key: Key | undefined): { stride: number; returned: number } => {
+    const one = key === undefined ? heldStrideLimit() : oneStride(st.s);
+    const hp = heroPose(st.w);
+    const prev = st.step && striding(rule, st.step, st.w) ? st.step : undefined;
+    const returned = prev ? interrupt(rule, st.strides, prev, st.w, hp.x, hp.y, one) : 0;
+    const dir = heldDirection(st.held) ?? { x: Math.cos(st.facingAngle), y: Math.sin(st.facingAngle) };
+    // A held stride taking over a press's stride within the diagonal window carries on that press:
+    // a perpendicular key still bends it.
+    const pressW = key === undefined && prev && !prev.held && prev.bendE === undefined ? (prev.pressW ?? prev.w0) : undefined;
+    const carried = pressW !== undefined && st.w - pressW <= hero.step.diagonalWindowMs / 1000 + 1e-9;
+    st.step = startStride(rule, st.strides, st.w, hp.x, hp.y, dir, one, { key, held: key === undefined && !carried }, world.clamp);
+    if (carried) Object.assign(st.step, { pressW, keys: prev!.keys });
+    st.landed = false;
+    st.facingAngle = Math.atan2(dir.y, dir.x);
+    return { stride: st.step.len ?? 0, returned };
+  };
+  /**
+   * Strides: a step of the stride period. A held key strides, taking over from a stride still moving
+   * as a press would (so no ground is lost), except one a press started at this very moment.
+   */
+  const heldStride = () => {
+    if (st.held.size === 0 || sectionAt(st.s).level.movement !== "steps") return;
+    if (st.step && !st.step.held && Math.abs(st.w - st.step.w0) < 1e-9) return;
+    strideOff(undefined);
   };
 
   /** Free movement: start walking toward the held keys' velocity from where the hero is now. */
@@ -649,6 +755,12 @@ function engine(env: Env, st: SimState, io: Io) {
 
   /** A section boundary: entering step movement stops any walk; entering free movement walks with the held keys. */
   const switchMode = (steps: boolean) => {
+    if (strides) {
+      // Into step movement, a walk in progress stops and held strides take over on the grid.
+      if (steps) stopWalk();
+      else walkOn();
+      return;
+    }
     if (steps) {
       if (!st.walk) return;
       const p = heroPose(st.w);
@@ -935,6 +1047,12 @@ function engine(env: Env, st: SimState, io: Io) {
     st.streak = 0;
   };
 
+  /** A stride's record on its press: its length, the budget left, and the ground an interrupted stride gave back. */
+  const strideTrace = (r: { stride: number; returned: number }, input: PlanInput, bend = false): Pick<PressTrace, "stride" | "budget" | "returned"> => {
+    if (!bend) input.stride = r.stride;
+    return { stride: r.stride, budget: budgetAt(rule, st.strides, st.w, oneStride(st.s)), returned: r.returned };
+  };
+
   const press = (e: KeyEvent) => {
     const sec = sectionAt(st.s);
     const steps = sec.level.movement === "steps";
@@ -944,7 +1062,7 @@ function engine(env: Env, st: SimState, io: Io) {
     // only the first press for a grid time is rated and arms a swing. Every press still steps, and
     // a diagonal's second key still bends the step.
     let extraGrid: number | undefined;
-    if (env.rules.oneStepPerSlot && steps && !(st.step && bendStep(hero, st.step, st.w, e.key, world.clamp))) {
+    if (env.rules.oneStepPerSlot && steps && !bendOf(e.key)) {
       const gi = nearestIndex(sch.gridTimes, st.s);
       if (gi === st.lastStepGrid) extraGrid = gi;
       else {
@@ -984,33 +1102,55 @@ function engine(env: Env, st: SimState, io: Io) {
         input.stumble = true;
         stumble();
       }
-      st.held.add(e.key);
+      hold(e.key);
+      // With strides every press strides: a stumble keeps its penalties, but not the hero still.
+      const moved = strides ? strideTrace(strideOff(e.key), input) : {};
       rec().input(input);
-      if (trace) rec().press!({ ...trace, outcome: input.stumble ? "stumble" : "ignored", gridIndex: extraGrid, gridS: g0, delta: st.s - g0, stepS: st.lastPressS, grooveAfter: st.groove });
+      if (trace) rec().press!({ ...trace, ...moved, outcome: input.stumble ? "stumble" : "ignored", gridIndex: extraGrid, gridS: g0, delta: st.s - g0, stepS: st.lastPressS, grooveAfter: st.groove });
       return;
     }
-    st.held.add(e.key);
-    // Free movement: held keys walk; presses are not rated and do not arm the sword.
+    hold(e.key);
+    // Free movement: held keys walk; presses are not rated and do not arm the sword. With strides,
+    // a press strides first (or bends the stride in progress), and the walk starts when it lands.
     if (!steps) {
+      if (strides) {
+        const bent = bendOf(e.key);
+        if (bent) {
+          st.step = bent;
+          input.bend = true;
+        } else stopWalk();
+        const moved = bent ? strideTrace({ stride: bent.len ?? 0, returned: 0 }, input, true) : strideTrace(strideOff(e.key), input);
+        walkOn();
+        rec().input(input);
+        if (trace) rec().press!({ ...trace, ...moved, outcome: bent ? "bend" : "stride" });
+        return;
+      }
       rewalk();
       rec().input(input);
       if (trace) rec().press!({ ...trace, outcome: "walk" });
       return;
     }
     // A perpendicular key just after the first bends the step into a diagonal.
-    const bent = st.step ? bendStep(hero, st.step, st.w, e.key, world.clamp) : undefined;
+    const bent = bendOf(e.key);
     if (bent) {
       st.step = bent;
       input.bend = true;
+      const moved = strides ? strideTrace({ stride: bent.len ?? 0, returned: 0 }, input, true) : {};
       rec().input(input);
-      if (trace) rec().press!({ ...trace, outcome: "bend" });
+      if (trace) rec().press!({ ...trace, ...moved, outcome: "bend" });
       return;
     }
     if (trace && st.step && !st.landed) trace.midStep = true;
-    const hp = heroPose(st.w);
-    st.step = startStep(hero, st.w, hp.x, hp.y, e.key, world.clamp);
-    st.landed = false;
-    st.facingAngle = Math.atan2(st.step.dy, st.step.dx);
+    let moved: Partial<PressTrace> = {};
+    if (strides) {
+      moved = strideTrace(strideOff(e.key), input);
+      if (trace) trace.outcome = "stride";
+    } else {
+      const hp = heroPose(st.w);
+      st.step = startStep(hero, st.w, hp.x, hp.y, e.key, world.clamp);
+      st.landed = false;
+      st.facingAngle = Math.atan2(st.step.dy, st.step.dx);
+    }
     if (extraGrid !== undefined) {
       // A grid time's first extra press: it steps and arms nothing. An off-beat lifts the groove
       // past full; a fumble is unrated (the key display greys it) and leaves the groove alone.
@@ -1023,7 +1163,7 @@ function engine(env: Env, st: SimState, io: Io) {
       }
       rec().input(input);
       if (trace) {
-        rec().press!({ ...trace, outcome: "extra", gridIndex: extraGrid, gridS: g0, delta: st.s - g0, stepS: st.lastPressS, ...(off ? { offbeatDelta: off.delta, offbeat: input.offbeat } : {}), grooveAfter: st.groove });
+        rec().press!({ ...trace, ...moved, outcome: "extra", gridIndex: extraGrid, gridS: g0, delta: st.s - g0, stepS: st.lastPressS, ...(off ? { offbeatDelta: off.delta, offbeat: input.offbeat } : {}), grooveAfter: st.groove });
       }
       return;
     }
@@ -1043,7 +1183,7 @@ function engine(env: Env, st: SimState, io: Io) {
     input.armed = sw !== undefined;
     rec().input(input);
     if (trace) {
-      Object.assign(trace, { gridIndex: rated.gridIndex, gridS: sch.gridTimes[rated.gridIndex], delta: rated.delta, rating: rated.rating, accuracy: rated.accuracy, grooveAfter: st.groove, slotS: slot?.s, accent: slot?.accent });
+      Object.assign(trace, moved, { gridIndex: rated.gridIndex, gridS: sch.gridTimes[rated.gridIndex], delta: rated.delta, rating: rated.rating, accuracy: rated.accuracy, grooveAfter: st.groove, slotS: slot?.s, accent: slot?.accent });
       if (sw) Object.assign(trace, { strikeS: sw.sStrike, heavy: sw.heavy });
       else trace.noSwing = !slot ? "no-slot" : taken ? "slot-taken" : "blast";
       rec().press!(trace);
@@ -1057,7 +1197,11 @@ function engine(env: Env, st: SimState, io: Io) {
     rec().input({ s: st.s, w: st.w, kind: "release", key: e.key, steps });
     rec().press?.({ id: e.id, s: st.s, w: st.w, kind: "release", key: e.key, section: sec.label, movement: steps ? "steps" : "free", outcome: "release" });
     st.held.delete(e.key);
-    if (!steps) rewalk();
+    // With strides a stride in progress finishes; in free movement the walk follows the keys still held.
+    if (!steps) {
+      if (strides) walkOn();
+      else rewalk();
+    }
   };
 
   /** Step movement: a bar that ended with no swing in it gets one by itself on the next downbeat. */
@@ -1395,8 +1539,8 @@ function engine(env: Env, st: SimState, io: Io) {
     const w1 = b.w + (t - b.s) * b.rate;
     if (w1 > st.w) {
       // Step landings (the dust puff).
-      if (st.step && !st.landed && st.step.w0 + stepSeconds(hero) <= w1 + 1e-12) {
-        const wl = st.step.w0 + stepSeconds(hero);
+      if (st.step && !st.landed && st.step.w0 + stepDur <= w1 + 1e-12) {
+        const wl = st.step.w0 + stepDur;
         const end = stepEnd(st.step);
         rec().landing({ s: b.s + (wl - b.w) / rate, w: wl, x: end.x, y: end.y });
         st.landed = true;
@@ -1988,6 +2132,8 @@ function engine(env: Env, st: SimState, io: Io) {
     }
     if (ctx.sections[0].level.movement === "free") st.walk = { w0: 0, x0: st.restPose.x, y0: st.restPose.y, vx0: 0, vy0: 0, tx: 0, ty: 0, t: 0 };
     for (const sl of sch.slots) if (sl.kind !== "grid") q.push(Math.max(0, windupBefore(sl.s)), { kind: "auto", slot: sl });
+    // Strides: a held key strides on every step of the stride period.
+    if (strides) for (const t of sch.strideSteps.s) q.push(t, { kind: "held" });
     let prevDown: GridSlot | undefined;
     for (const sl of sch.gridSlots) {
       if (sl.slot !== 0) continue;
@@ -2081,6 +2227,9 @@ function engine(env: Env, st: SimState, io: Io) {
           break;
         case "mode":
           switchMode(ev.steps);
+          break;
+        case "held":
+          heldStride();
           break;
         case "auto":
           swingFor(ev.slot, st.s);

@@ -76,6 +76,94 @@ export function planPaceAt(plan: Plan, s: number): number {
   return p[k] + (p[k + 1] - p[k]) * Math.min(1, f - k);
 }
 
+/** Song-time spans in which a key is held: from each press to its key's release. */
+export function heldSpans(inputs: Plan["inputs"]): [number, number][] {
+  const out: [number, number][] = [];
+  const down = new Map<string, number>();
+  for (const i of inputs) {
+    if (i.kind === "press") {
+      if (!down.has(i.key)) down.set(i.key, i.s);
+    } else if (down.has(i.key)) {
+      out.push([down.get(i.key)!, i.s]);
+      down.delete(i.key);
+    }
+  }
+  for (const s0 of down.values()) out.push([s0, Infinity]);
+  return out.sort((a, b) => a[0] - b[0]);
+}
+
+/** Is a key held at song time s (a press at s counts, a release at s does not)? */
+export const heldAt = (spans: [number, number][], s: number): boolean => spans.some(([a, b]) => a <= s + 1e-9 && b > s + 1e-9);
+
+/**
+ * One stride at song time s, at most: the walk speed times the stride period of the step s falls in
+ * or of the step just ended (a held stride's limit), whichever is longer.
+ */
+export function strideLimitAt(plan: Plan, s: number): number {
+  return plan.strides!.speed * Math.max(stridePeriodAt(plan, s), stridePeriodAt(plan, s - 1e-6));
+}
+
+/** The stride period at song time s: the step it falls in, or the free period without a steady beat. */
+export function stridePeriodAt(plan: Plan, s: number): number {
+  const st = plan.strides!;
+  const sec = plan.sections.findLast((x) => s >= x.s0 - 1e-9) ?? plan.sections[0];
+  if (sec.movement === "free" || st.steps.length === 0) return st.freePeriodS;
+  let k = 0;
+  while (k + 1 < st.steps.length && st.steps[k + 1] <= s + 1e-9) k++;
+  return st.periods[k];
+}
+
+/** The "every hero movement has an input" check under fixed-speed strides. */
+function checkStrideInputs(plan: Plan, warp: Warp, stopS: number): CheckResult {
+  const f: string[] = [];
+  const fmt = (s: number) => `s=${s.toFixed(3)}`;
+  const st = plan.strides!;
+  const t = plan.hero;
+  const spans = heldSpans(plan.inputs);
+  const movementAt = (s: number) => (plan.sections.findLast((x) => s >= x.s0 - 1e-9) ?? plan.sections[0]).movement;
+  // Every stride start: each press, and each step of the stride period (in step movement) while a key is held.
+  // (A held step at the very moment a press strides adds nothing: the press's stride stands.)
+  const all: { s: number; w: number; held: boolean }[] = [];
+  for (const i of plan.inputs) if (i.kind === "press" && !i.bend) all.push({ s: i.s, w: i.w, held: false });
+  for (const s of st.steps) if (movementAt(s) === "steps" && heldAt(spans, s)) all.push({ s, w: warp.toWorld(s), held: true });
+  all.sort((a, b) => a.w - b.w || Number(a.held) - Number(b.held) || a.s - b.s);
+  const starts: typeof all = [];
+  for (const x of all) if (!x.held || starts.length === 0 || Math.abs(x.w - starts[starts.length - 1].w) >= 1e-9) starts.push(x);
+  const startW = starts.map((x) => x.w);
+  const heldW = spans.map(([a, b]): [number, number] => [warp.toWorld(a), Number.isFinite(b) ? warp.toWorld(b) : Infinity]);
+  const walkingNear = (w0: number, w1: number) => heldW.some(([a, b]) => a <= w1 + 1e-9 && b + stopS >= w0 - 1e-9);
+  let n = 0;
+  let si = -1;
+  for (let k = 0; k + 1 < t.x.length; k++) {
+    const d = Math.hypot(t.x[k + 1] - t.x[k], t.y[k + 1] - t.y[k]);
+    if (d < 0.01) continue;
+    n++;
+    const w0 = k / t.rate;
+    const w1 = (k + 1) / t.rate;
+    while (si + 1 < startW.length && startW[si + 1] <= w1 + 1e-9) si++;
+    const sw = startW[si];
+    if (sw !== undefined && w0 <= sw + st.durationS + 1e-6) continue;
+    // Free movement walks while a key is held (stopping within accelMs of the last release).
+    const s0 = warp.toSong(w0);
+    const s1 = warp.toSong(w1);
+    if ((movementAt(s0) === "free" || movementAt(s1) === "free") && walkingNear(w0, w1)) continue;
+    f.push(`the hero moves ${d.toFixed(1)} px at w=${w0.toFixed(3)} with no stride started in the ${(st.durationS * 1000).toFixed(0)} ms before (no press, no held step) and no key held to walk`);
+  }
+  // No stride covers more than one stride: from its start to its landing, or to the next stride's start.
+  for (let i = 0; i < starts.length; i++) {
+    const p = starts[i];
+    const next = starts[i + 1]?.w ?? Infinity;
+    const end = Math.min(Math.floor((p.w + st.durationS) * t.rate + 1e-9) / t.rate, Math.floor(next * t.rate - 1e-9) / t.rate);
+    if (end <= p.w) continue;
+    const a = heroSample(plan, p.w);
+    const b = heroSample(plan, end);
+    const d = Math.hypot(b.x - a.x, b.y - a.y);
+    const one = strideLimitAt(plan, p.s);
+    if (d > one + 2) f.push(`the ${p.held ? "held stride" : "stride"} at ${fmt(p.s)} covers ${d.toFixed(1)} px (one stride is ${one.toFixed(1)})`);
+  }
+  return { name: "every hero movement has an input", failures: f, checked: n + starts.length };
+}
+
 export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
   const warp = new Warp(plan.warp);
   const hero = lib.hero;
@@ -121,7 +209,10 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
 
   // Every hero movement has an input: in step movement, a press in the 110 ms before; in free
   // movement, a held key (the hero stops within 60 ms of the last key going up). No step exceeds 44 px.
-  {
+  // With strides: a stride starts only at a press or at a step of the stride period while a key is
+  // held, and none covers more than one stride.
+  if (plan.strides) results.push(checkStrideInputs(plan, warp, hero.walk.accelMs / 1000));
+  else {
     const f: string[] = [];
     const t = plan.hero;
     const presses = plan.inputs.filter((i) => i.kind === "press" && i.steps && !i.bend);

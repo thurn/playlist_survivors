@@ -14,7 +14,14 @@ export interface PlayLogFile {
   params?: { avOffsetMs: number; startS: number; mode?: string };
   inputOffsetMs?: number;
   audio?: { sampleRate: number; baseLatency: number; outputLatency: number; state: string; live?: Record<string, number> };
-  hero?: { timing: { perfectMs: number; greatMs: number; goodMs: number }; step: { durationMs: number; diagonalWindowMs: number }; swings: { minLeadMs: number; windupMs: number } };
+  hero?: {
+    timing: { perfectMs: number; greatMs: number; goodMs: number };
+    step: { durationMs: number; diagonalWindowMs: number };
+    swings: { minLeadMs: number; windupMs: number };
+    /** Logs from play mode with strides. */
+    stride?: { durationMs: number; maxPeriodS: number; freePeriodS: number };
+    walk?: { speed: number };
+  };
   sections?: { label: string; s0: number; s1: number; movement: string }[];
   beats?: number[];
   grid?: { s: number[]; accent: number[] };
@@ -41,9 +48,13 @@ export interface PressRow {
   /**
    * What happened: the keyboard's fate when it never reached the game (repeat, disabled, held),
    * dropped (a count-in or restart threw it away), unapplied (queued but never applied),
-   * or the simulation's outcome (step, extra, stumble, ignored, bend, walk).
+   * or the simulation's outcome (stride, or step in older logs; extra, stumble, ignored, bend, walk).
    */
   outcome: string;
+  /** Strides: the stride's length, the budget left after it, and the ground an interrupted stride gave back (px). */
+  stride?: number;
+  budget?: number;
+  returned?: number;
   section?: string;
   gridDeltaMs?: number;
   rating?: string;
@@ -110,6 +121,9 @@ export function pressRows(log: PlayLogFile): PressRow[] {
         row.strikeS = t.strikeS;
         row.heavy = t.heavy;
         row.noSwing = t.noSwing;
+        row.stride = t.stride;
+        row.budget = t.budget;
+        row.returned = t.returned;
         if ((t.outcome === "extra" || t.outcome === "stumble" || t.outcome === "ignored") && t.stepS !== undefined) row.sinceStepMs = (t.s - t.stepS) * 1000;
         if (t.outcome === "extra") {
           row.offbeat = t.offbeat;
@@ -143,6 +157,9 @@ export interface SummaryOptions {
   table?: boolean;
 }
 
+/** A rated press that moved the hero: a stride, or a step in logs from before strides. */
+const counted = (outcome: string) => outcome === "stride" || outcome === "step";
+
 /** A plain-text report. */
 export function summarize(log: PlayLogFile, opts: SummaryOptions = {}): string {
   const out: string[] = [];
@@ -155,6 +172,7 @@ export function summarize(log: PlayLogFile, opts: SummaryOptions = {}): string {
   say(`  level ${log.level ?? "?"}, start ${log.params?.startS ?? 0}s, ?avOffsetMs=${log.params?.avOffsetMs ?? 0}, calibration offset ${log.inputOffsetMs ?? 0} ms`);
   if (log.audio) say(`  audio: ${log.audio.sampleRate} Hz, baseLatency ${f(log.audio.baseLatency * 1000, 1)} ms, outputLatency ${f(log.audio.outputLatency * 1000, 1)} ms`);
   if (log.hero) say(`  windows: perfect ±${log.hero.timing.perfectMs} great ±${log.hero.timing.greatMs} good ±${log.hero.timing.goodMs} ms; strike ≥${log.hero.swings.minLeadMs} ms after the press`);
+  if (log.hero?.stride) say(`  strides: ${log.hero.walk?.speed ?? "?"} px/s, ${log.hero.stride.durationMs} ms each; the stride period is the grid step, halved above ${log.hero.stride.maxPeriodS} s (${log.hero.stride.freePeriodS} s free)`);
   say();
 
   // Outcomes.
@@ -163,29 +181,31 @@ export function summarize(log: PlayLogFile, opts: SummaryOptions = {}): string {
   say(`Presses: ${rows.length}`);
   for (const [k, n] of [...counts].sort((a, b) => b[1] - a[1])) say(`  ${pad(k, 22)} ${lpad(String(n), 5)}`);
   const ratings = new Map<string, number>();
-  for (const r of rows) if (r.outcome === "step") ratings.set(r.rating ?? "(none)", (ratings.get(r.rating ?? "(none)") ?? 0) + 1);
-  if (ratings.size > 0) say(`  step ratings: ${[...ratings].map(([k, n]) => `${k} ${n}`).join(", ")}`);
+  for (const r of rows) if (counted(r.outcome) && r.rating) ratings.set(r.rating, (ratings.get(r.rating) ?? 0) + 1);
+  if (ratings.size > 0) say(`  rated presses: ${[...ratings].map(([k, n]) => `${k} ${n}`).join(", ")}`);
   const offbeats = new Map<string, number>();
   for (const r of rows) if (r.outcome === "extra") offbeats.set(r.offbeat ?? "(none)", (offbeats.get(r.offbeat ?? "(none)") ?? 0) + 1);
   if (offbeats.size > 0) say(`  extra presses' off-beat ratings: ${[...offbeats].map(([k, n]) => `${k} ${n}`).join(", ")}`);
-  const noSwing = rows.filter((r) => r.outcome === "step" && r.noSwing);
-  if (noSwing.length > 0) say(`  steps that armed no swing: ${noSwing.length} (${[...new Set(noSwing.map((r) => r.noSwing))].join(", ")})`);
+  const noSwing = rows.filter((r) => counted(r.outcome) && r.noSwing);
+  if (noSwing.length > 0) say(`  rated presses that armed no swing: ${noSwing.length} (${[...new Set(noSwing.map((r) => r.noSwing))].join(", ")})`);
+  const strides = rows.filter((r) => r.stride !== undefined && r.outcome !== "bend").map((r) => r.stride!);
+  if (strides.length > 0) say(`  strides: median ${f(median(strides), 1)} px (min ${f(Math.min(...strides), 1)}, max ${f(Math.max(...strides), 1)}); ${rows.filter((r) => (r.returned ?? 0) > 0).length} interrupted the stride before`);
   say();
 
   // Timing offsets.
   const grid = rows.filter((r) => r.gridDeltaMs !== undefined).map((r) => r.gridDeltaMs!);
-  const beat = rows.filter((r) => r.outcome === "step" && r.beatDeltaMs !== undefined).map((r) => r.beatDeltaMs!);
+  const beat = rows.filter((r) => counted(r.outcome) && r.beatDeltaMs !== undefined).map((r) => r.beatDeltaMs!);
   if (grid.length > 0) {
-    say(`Offset from the nearest grid time (rated steps and extra presses, + is late): median ${f(median(grid), 1)} ms, mean ${f(mean(grid), 1)}, sd ${f(sd(grid), 1)}`);
+    say(`Offset from the nearest grid time (rated presses and extra presses, + is late): median ${f(median(grid), 1)} ms, mean ${f(mean(grid), 1)}, sd ${f(sd(grid), 1)}`);
     const bins = [-250, -150, -100, -60, -30, 0, 30, 60, 100, 150, 250];
     const hist = new Array(bins.length + 1).fill(0);
     for (const v of grid) hist[bins.findIndex((b) => v < b) === -1 ? bins.length : bins.findIndex((b) => v < b)]++;
     const labels = ["<-250", ...bins.slice(1).map((b, i) => `${bins[i]}..${b}`), ">250"];
     say(`  ${labels.map((l, i) => `${l}: ${hist[i]}`).filter((_, i) => hist[i] > 0).join("  ")}`);
   }
-  if (beat.length > 0) say(`Offset of steps from the nearest beat: median ${f(median(beat), 1)} ms, mean ${f(mean(beat), 1)}, sd ${f(sd(beat), 1)}`);
+  if (beat.length > 0) say(`Offset of rated presses from the nearest beat: median ${f(median(beat), 1)} ms, mean ${f(mean(beat), 1)}, sd ${f(sd(beat), 1)}`);
   const extra = rows.filter((r) => r.outcome === "extra" && r.sinceStepMs !== undefined).map((r) => r.sinceStepMs!);
-  if (extra.length > 0) say(`Extra presses came ${f(median(extra))} ms (median) after the press that took their grid time`);
+  if (extra.length > 0) say(`Extra presses came ${f(median(extra))} ms (median) after the rated press for their grid time`);
   say();
 
   // Input path.
@@ -233,12 +253,13 @@ export function summarize(log: PlayLogFile, opts: SummaryOptions = {}): string {
 
   if (opts.table !== false) {
     say();
-    say("   id      s   key    beat   Δbeat  Δgrid  outcome        rating   strike  notes");
+    say("   id      s   key    beat   Δbeat  Δgrid  outcome        rating   strike  stride  notes");
     for (const r of rows) {
       const notes: string[] = [];
       if (r.noSwing) notes.push(`no swing: ${r.noSwing}`);
       if (r.heavy) notes.push("CLEAVE");
-      if (r.sinceStepMs !== undefined) notes.push(`${f(r.sinceStepMs)} ms after the slot's step`);
+      if (r.sinceStepMs !== undefined) notes.push(`${f(r.sinceStepMs)} ms after the slot's rated press`);
+      if ((r.returned ?? 0) > 0) notes.push(`interrupted a stride (${f(r.returned, 1)} px back)`);
       if (r.offbeatDeltaMs !== undefined) notes.push(`off-beat ${r.offbeat ?? "unrated"} (${f(r.offbeatDeltaMs)} ms)`);
       if (r.rollback) notes.push("rollback");
       if (r.late) notes.push("LATE (applied at settled time)");
@@ -246,7 +267,7 @@ export function summarize(log: PlayLogFile, opts: SummaryOptions = {}): string {
       if (r.handlerLagMs > 20) notes.push(`handler +${f(r.handlerLagMs)} ms`);
       if (r.section) notes.push(r.section);
       say(
-        `${lpad(String(r.id), 5)} ${lpad(f(r.s, 3), 8)}  ${pad(r.key, 5)} ${lpad(r.beat !== undefined ? String(r.beat) : "", 6)} ${lpad(f(r.beatDeltaMs), 6)} ${lpad(f(r.gridDeltaMs), 6)}  ${pad(r.outcome, 14)} ${pad(r.rating ?? "", 8)} ${lpad(f(r.strikeS, 3), 7)}  ${notes.join("; ")}`,
+        `${lpad(String(r.id), 5)} ${lpad(f(r.s, 3), 8)}  ${pad(r.key, 5)} ${lpad(r.beat !== undefined ? String(r.beat) : "", 6)} ${lpad(f(r.beatDeltaMs), 6)} ${lpad(f(r.gridDeltaMs), 6)}  ${pad(r.outcome, 14)} ${pad(r.rating ?? "", 8)} ${lpad(f(r.strikeS, 3), 7)}  ${lpad(f(r.stride, 1), 6)}  ${notes.join("; ")}`,
       );
     }
   }

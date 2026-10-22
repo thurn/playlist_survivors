@@ -47,6 +47,11 @@ export interface Step {
   /** Ease progress at which a perpendicular key bent the step toward the diagonal. */
   bendE?: number;
   keys: Key[];
+  /** Strides: the stride's length before walls (a bend keeps it), and whether a held key started it rather than a press. */
+  len?: number;
+  held?: boolean;
+  /** Strides: the press a held stride took over from within the diagonal window (its world time): the bend window counts from it. */
+  pressW?: number;
 }
 
 export interface StepPose {
@@ -75,20 +80,25 @@ export function startStep(hero: HeroDef, w: number, x: number, y: number, key: K
  * the diagonal. The step still lands one step length from where it started.
  * Returns undefined when the key does not bend this step (it starts a new one).
  */
-export function bendStep(hero: HeroDef, step: Step, w: number, key: Key, walls: Clamp = NO_WALLS): Step | undefined {
-  if (step.bendE !== undefined || w - step.w0 > hero.step.diagonalWindowMs / 1000 + 1e-9) return undefined;
+export function bendStep(hero: HeroDef, step: Step, w: number, key: Key, walls: Clamp = NO_WALLS, durationS = stepSeconds(hero)): Step | undefined {
+  if (step.bendE !== undefined || step.held || w - (step.pressW ?? step.w0) > hero.step.diagonalWindowMs / 1000 + 1e-9) return undefined;
   const d = KEY_DIR[key];
   if (Math.abs(d.x * step.dx + d.y * step.dy) > 1e-9) return undefined;
-  const u = clamp((w - step.w0) / stepSeconds(hero), 0, 1);
+  const u = clamp((w - step.w0) / durationS, 0, 1);
   const gx = (step.dx + d.x) / Math.SQRT2;
   const gy = (step.dy + d.y) / Math.SQRT2;
-  const len = walls(step.x0, step.y0, gx, gy, hero.step.length);
+  const len = walls(step.x0, step.y0, gx, gy, step.len ?? hero.step.length);
   return { ...step, ex: gx * len, ey: gy * len, bendE: easeOut(u), keys: [...step.keys, key] };
 }
 
 /** Where the step has taken the hero at world time w. */
 export function stepPose(hero: HeroDef, step: Step, w: number): StepPose {
-  const u = clamp((w - step.w0) / stepSeconds(hero), 0, 1);
+  return movePose(step, w, stepSeconds(hero), hero.step.hop);
+}
+
+/** Where a step or stride lasting durationS, with a hop of `hop` px, has taken the hero at world time w. */
+export function movePose(step: Step, w: number, durationS: number, hop: number): StepPose {
+  const u = clamp((w - step.w0) / durationS, 0, 1);
   const e = easeOut(u);
   let x = step.x0 + step.dx * step.len1 * e;
   let y = step.y0 + step.dy * step.len1 * e;
@@ -99,7 +109,7 @@ export function stepPose(hero: HeroDef, step: Step, w: number): StepPose {
     x += (step.ex - step.dx * step.len1) * g;
     y += (step.ey - step.dy * step.len1) * g;
   }
-  return { x, y, z: hero.step.hop * Math.sin(Math.PI * u), u };
+  return { x, y, z: hop * Math.sin(Math.PI * u), u };
 }
 
 /** Landing spot of a step. */

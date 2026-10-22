@@ -282,9 +282,10 @@ await withDevServer(async (base) => {
   }
 
   // ------------------------------------------------------------ play mode
-  // The Manual QA items of docs/design/interactive.md a machine can judge, in live play with
-  // real (synthetic) key presses: steps feel instant, impacts stay on the grid, mashing and
-  // holding, diagonals, pausing, losing focus, and Watch my run.
+  // The Manual QA items of docs/design/interactive.md (and the strides of
+  // docs/design/gameplay-redesign.md) a machine can judge, in live play with real (synthetic) key
+  // presses: strides start at once, impacts stay on the grid, mashing and holding, diagonals,
+  // pausing, losing focus, and Watch my run.
   {
     type PlayHook = {
       ready: Promise<void>;
@@ -293,7 +294,12 @@ await withDevServer(async (base) => {
       lastHero?: { s: number; x: number; y: number };
       stats(): { frameMs: number[] };
       play: { phase(): string; menu(): { items: string[] } | undefined; choose(label: string): void; compareReplay(): string[] };
-      live: { recording: { plan: { songBeats: ArrayLike<number>; grid: ArrayLike<number>; swings: { s: number }[]; inputs: { s: number; kind: string; steps: boolean; extra?: boolean; bend?: boolean }[]; events: { sounds: { s: number; priority: number }[] } } } };
+      live: {
+        recording: {
+          timeWarp: { toWorld(s: number): number };
+          plan: { songBeats: ArrayLike<number>; grid: ArrayLike<number>; hero: { x: ArrayLike<number>; y: ArrayLike<number> }; swings: { s: number }[]; inputs: { s: number; kind: string; steps: boolean; extra?: boolean; bend?: boolean; stride?: number }[]; events: { sounds: { s: number; priority: number }[] } };
+        };
+      };
     };
     const ph = (page: Page) => page.evaluate(() => (window as unknown as { __demo: PlayHook }).__demo.play.phase());
     const songNow = (page: Page) => page.evaluate(() => (window as unknown as { __demo: PlayHook }).__demo.lastS);
@@ -316,7 +322,7 @@ await withDevServer(async (base) => {
     const t0 = (await songNow(page)) + 0.3;
     const f0 = await page.evaluate(() => (window as unknown as { __demo: PlayHook }).__demo.frames ?? 0);
     const p0 = performance.now();
-    // A press steps at once: the first frame drawn after a key press shows the hero moving.
+    // A press strides at once: the first frame drawn after a key press shows the hero moving.
     let instant = 0;
     const onBeat = beats.filter((b) => b > t0).slice(0, 8);
     for (const [i, b] of onBeat.entries()) {
@@ -327,34 +333,40 @@ await withDevServer(async (base) => {
       const after = await page.evaluate(() => (window as unknown as { __demo: PlayHook }).__demo.lastHero!);
       if (Math.hypot(after.x - before.x, after.y - before.y) > 2) instant++;
     }
-    record("Play: a press steps at once", instant === onBeat.length, `${instant} of ${onBeat.length} presses moved the hero on the next frame drawn`);
-    // Mashing: three presses for one beat are rated once; the extra two step unrated (and greyed).
+    record("Play: a press strides at once", instant === onBeat.length, `${instant} of ${onBeat.length} presses moved the hero on the next frame drawn`);
+    // Mashing: three presses for one beat are rated once; the extra two stride unrated (and greyed).
     const mash = beats.find((b) => b > onBeat[onBeat.length - 1] + 0.3)!;
     await waitSong(page, mash - 0.01);
     for (let k = 0; k < 3; k++) await page.keyboard.press("ArrowUp");
-    // Diagonals: Up and Right together are one diagonal step.
+    // Diagonals: Up and Right together are one diagonal stride.
     const diag = beats.find((b) => b > mash + 0.3)!;
     await waitSong(page, diag - 0.01);
     await page.keyboard.down("ArrowUp");
     await page.keyboard.down("ArrowRight");
     await page.keyboard.up("ArrowUp");
     await page.keyboard.up("ArrowRight");
-    // Holding a key steps once (its repeats do nothing).
-    const hold = beats.find((b) => b > diag + 0.3)!;
+    // Holding a key presses once (its repeats do nothing) and strides on every beat.
+    const holdAt = beats.findIndex((b) => b > diag + 0.3);
+    const hold = beats[holdAt];
+    const heldBeats = [1, 2, 3].map((k) => beats[holdAt + k]);
     await waitSong(page, hold - 0.01);
     await page.keyboard.down("ArrowDown");
-    for (let k = 0; k < 10; k++) {
+    while ((await songNow(page)) < heldBeats[2] + 0.05) {
       await page.waitForTimeout(40);
       await page.keyboard.down("ArrowDown");
     }
     await page.keyboard.up("ArrowDown");
-    await waitSong(page, hold + 0.6);
+    await waitSong(page, heldBeats[2] + 0.4);
     const fps = ((await page.evaluate(() => (window as unknown as { __demo: PlayHook }).__demo.frames ?? 0)) - f0) / ((performance.now() - p0) / 1000);
     // (No named functions inside page.evaluate: the bundler would wrap them in a helper the page lacks.)
     const live = await page.evaluate(
-      ({ t0, mash, diag, hold }) => {
+      ({ t0, mash, diag, hold, heldBeats }) => {
         const d = (window as unknown as { __demo: PlayHook }).__demo;
-        const plan = d.live.recording.plan;
+        const rec = d.live.recording;
+        const plan = rec.plan;
+        // The hero's sample at or before each time (a sample at a stride's own start is drawn before
+        // it moves), in world time: a cleave's hit-stop freezes the world.
+        const ks = [hold - 0.05, ...heldBeats].map((s) => Math.floor(rec.timeWarp.toWorld(s) * 60 + 1e-6));
         const grid = Array.from(plan.grid);
         const ms = d.stats().frameMs.slice(-600).sort((a, b) => a - b);
         const strikes = new Set(plan.events.sounds.filter((x) => x.priority <= 0.3 + 1e-9).map((x) => Math.round(x.s * 1e4)));
@@ -364,18 +376,42 @@ await withDevServer(async (base) => {
           swings: swings.length,
           offGrid: swings.filter((sw) => Math.min(...grid.map((g) => Math.abs(g - sw.s))) > 0.001).length,
           silent: swings.filter((sw) => !strikes.has(Math.round(sw.s * 1e4))).length,
-          mash: steps.filter((i) => i.s >= mash - 0.2 && i.s < mash + 0.2).map((p) => !!p.extra),
-          diag: steps.filter((i) => i.s >= diag - 0.2 && i.s < diag + 0.2).map((p) => !!p.bend),
-          hold: steps.filter((i) => i.s >= hold - 0.2 && i.s < hold + 0.6).length,
+          mash: steps.filter((i) => i.s >= mash - 0.2 && i.s < mash + 0.2).map((p) => ({ extra: !!p.extra, stride: p.stride })),
+          diag: steps.filter((i) => i.s >= diag - 0.2 && i.s < diag + 0.2).map((p) => ({ bend: !!p.bend, stride: p.stride, s: p.s })),
+          hold: steps.filter((i) => i.s >= hold - 0.2 && i.s < heldBeats[2] + 0.2).length,
+          // The ground covered from just before each held beat to just before the next, and the press's own stride.
+          held: ks.slice(1).map((k, i) => Math.hypot(plan.hero.x[k] - plan.hero.x[ks[i]], plan.hero.y[k] - plan.hero.y[ks[i]])),
+          oneStride: 140 * (heldBeats[1] - heldBeats[0]),
           p95: ms[Math.floor(0.95 * (ms.length - 1))],
         };
       },
-      { t0, mash, diag, hold },
+      { t0, mash, diag, hold, heldBeats },
     );
+    const diagFirst = live.diag[0];
+    const diagMoved = diagFirst
+      ? await page.evaluate((s) => {
+          const rec = (window as unknown as { __demo: PlayHook }).__demo.live.recording;
+          const [a, b] = [0, 0.13].map((dw) => Math.floor((rec.timeWarp.toWorld(s) + dw) * 60 + 1e-6));
+          return { dx: rec.plan.hero.x[b] - rec.plan.hero.x[a], dy: rec.plan.hero.y[b] - rec.plan.hero.y[a] };
+        }, diagFirst.s)
+      : { dx: 0, dy: 0 };
     record("Play: impacts on the beat", live.swings > 8 && live.offGrid === 0 && live.silent === 0, `${live.swings} swings in live play, ${live.offGrid} off the grid, ${live.silent} without an impact sound on the strike`);
-    record("Play: mashing rates one press per beat", live.mash.length === 3 && live.mash.filter((x) => x).length === 2, `three presses for one beat: ${live.mash.map((x) => (x ? "extra" : "rated")).join(", ")}`);
-    record("Play: Up and Right together step diagonally", live.diag.length === 2 && live.diag[1], `the second key ${live.diag[1] ? "bent the step into a diagonal" : "did not bend the step"}`);
-    record("Play: holding a key steps once", live.hold === 1, `${live.hold} press recorded for a key held 0.4 s (its repeats ignored)`);
+    record(
+      "Play: mashing rates one press per beat, and every press strides",
+      live.mash.length === 3 && live.mash.filter((x) => x.extra).length === 2 && live.mash.every((x) => x.stride !== undefined),
+      `three presses for one beat: ${live.mash.map((x) => `${x.extra ? "extra" : "rated"} (${x.stride?.toFixed(1) ?? "no"} px stride)`).join(", ")}`,
+    );
+    const diagLen = Math.hypot(diagMoved.dx, diagMoved.dy);
+    record(
+      "Play: Up and Right together stride diagonally, the stride's length unchanged",
+      live.diag.length === 2 && live.diag[1].bend && Math.abs(diagLen - (diagFirst?.stride ?? -1)) < 1.5 && Math.abs(Math.abs(diagMoved.dx) - Math.abs(diagMoved.dy)) < 0.25 * diagLen,
+      `the second key ${live.diag[1]?.bend ? "bent the stride into a diagonal" : "did not bend the stride"}: it moved ${diagMoved.dx.toFixed(1)}, ${diagMoved.dy.toFixed(1)} (${diagLen.toFixed(1)} px; the press's stride ${diagFirst?.stride?.toFixed(1) ?? "?"} px)`,
+    );
+    record(
+      "Play: holding a key presses once and strides on every beat",
+      live.hold === 1 && live.held.every((d) => Math.abs(d / live.oneStride - 1) < 0.1),
+      `${live.hold} press recorded for a key held three beats (its repeats ignored); from beat to beat the hero covered ${live.held.map((d) => d.toFixed(1)).join(", ")} px (one stride is ${live.oneStride.toFixed(1)})`,
+    );
     record("Play: frame rate and frame time", fps >= 55 && live.p95 < 8, `${fps.toFixed(1)} frames per second; JavaScript frame time (simulation, rollback and drawing) p95 ${live.p95.toFixed(2)} ms`);
     // Esc pauses (song time stops) and resumes after a count-in, exactly where it stopped.
     await page.keyboard.press("Escape");

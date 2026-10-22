@@ -307,7 +307,13 @@ export interface Plan {
   /** Level-ups at their scheduled musical moments. */
   levelUpsDue?: { id: string; s: number }[];
   /** Play mode's rule changes (absent in the demo). */
-  rules?: { oneStepPerSlot: boolean; accentTelegraphs: boolean; health?: boolean };
+  rules?: { oneStepPerSlot: boolean; accentTelegraphs: boolean; health?: boolean; strides?: boolean };
+  /**
+   * Play mode's fixed-speed strides (absent without the rule): the walk speed (px per world
+   * second), a stride's duration and hop height, the stride period without a steady beat, and the
+   * steps a held key strides on (song times) with the stride period at each.
+   */
+  strides?: { speed: number; durationS: number; hop: number; freePeriodS: number; steps: Float64Array; periods: Float64Array };
 }
 
 export interface OpenFieldRecord {
@@ -369,6 +375,8 @@ export interface PlanInput {
   stumble?: boolean;
   /** Did this press arm a swing? */
   armed?: boolean;
+  /** Strides: the length of the stride this press started (px; absent for a bend, which keeps the stride's). */
+  stride?: number;
   /** Step movement (true) or free movement (false). */
   steps: boolean;
 }
