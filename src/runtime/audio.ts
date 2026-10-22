@@ -302,11 +302,21 @@ export class AudioEngine implements SongClock {
       src.connect(mix.musicGain);
       src.start(0);
     }
-    for (const ev of plan.events.sounds) {
-      const buf = this.buffers.get(ev.sample);
-      if (!buf) continue;
-      // The music ducks whenever the effects are present, whether or not the music is rendered.
-      if (parts.sfx) mix.play(buf, Math.max(0, ev.s - (ev.lead ?? 0)), ev);
+    if (!parts.sfx) return ctx.startRendering();
+    // Each sound is created a second ahead of its start, while the render is paused: the
+    // offline renderer spends time on every source in the graph, even one not yet started.
+    const events = plan.events.sounds.filter((ev) => this.buffers.has(ev.sample)).map((ev) => ({ ev, at: Math.max(0, ev.s - (ev.lead ?? 0)) }));
+    events.sort((a, b) => a.at - b.at);
+    let next = 0;
+    const scheduleUntil = (t: number) => {
+      for (; next < events.length && events[next].at < t; next++) mix.play(this.buffers.get(events[next].ev.sample)!, events[next].at, events[next].ev);
+    };
+    scheduleUntil(1);
+    for (let t = 1; t < length / sr; t++) {
+      void ctx.suspend(t).then(() => {
+        scheduleUntil(t + 1);
+        return ctx.resume();
+      });
     }
     return ctx.startRendering();
   }

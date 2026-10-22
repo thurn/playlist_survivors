@@ -57,15 +57,19 @@ Every important property is checkable by a command:
 | `npm run check:songmap` | The song map against the beat-grid acceptance thresholds. |
 | `npm run check:content` | Every content file and level script against its schema, plus the deliberately broken fixtures in `tests/fixtures/broken/` (each must fail with a useful, line-numbered message). |
 | `npm run check:assets` | Licences, credits, atlas manifests, and that every sprite/animation/sound named in content exists. |
-| `npm run check:plan` | Runs the simulated playthrough with all its checks, including causality (re-simulating with the presses after three cut times removed must change nothing before them), then the casual player's too. Prints peak population, kills per section, presses by rating, the average groove, hit-stop time and the threats, and the two players' kills and groove side by side. `-- --seed=1859` for another seed, `-- --player=perfect` for another profile. |
-| `npm run check:determinism` | Simulates twice and generates the map twice; hashes must match. |
-| `npm run check:seeds` | The checks on three more seeds (`?seed=` must still pass every check). |
+| `npm run check:plan` | Runs the simulated playthrough with all its checks, including causality (re-simulating with the presses after a cut removed must change nothing before it), then the casual player's too, and prints a one-line summary of each (enemies, kills, presses, groove, near misses) with the two players' kills and groove side by side. `-- --seeds=1859,7` for other seeds, `-- --player=perfect` for another profile. |
+| `npm run check:determinism` | The level's seed simulated twice; plan and map hashes must match. |
+| `npm run check:seeds` | The level's seed with causality and determinism, then the checks on three more seeds (`?seed=` must still pass every check). In CI. |
 | `npm run capture -- --times 12,35.2,88.31,141.5` | Headless-Chrome screenshots at exact song times into `captures/`. `--sections` captures the start of every section. |
 | `npm run bench` | Headed Chrome, whole song at real-time speed: fails if JavaScript frame time exceeds 8 ms or GPU time 10 ms at p95, or any frame exceeds 33 ms. |
 | `npm run test:e2e` | Playwright: capture hook, metronome flash on the beat, broken level script shows an error and never starts, reload uses the cached plan, `?player=` re-simulates with another profile. |
-| `npm run qa` | Real-time playback in Chromium over the design's Manual QA items a machine can judge: simulation time, stillness between steps, every profile's impacts on the grid and the reward spectrum, audio clock rate, picture/audio offset, frame rate, hidden-tab recovery (a real tab switch in the installed Google Chrome during the climax, and a 10 s main-thread stall), climax frame rate, resize letterboxing, click track, `?seed=1859`, finale clearance, and a listening pass over the offline-rendered mix (clipping, effects level, music in front, no wall of noise, effects on time); writes `captures/qa/report.md` and review frames. |
+| `npm run qa` | About 45 s of playback in Chromium over the design's Manual QA items a machine can judge: simulation time, stillness between steps, the skilled and casual players' impacts on the grid and the reward spectrum, audio clock rate, picture/audio offset, frame rate, hidden-tab recovery (a 3 s main-thread stall), resize letterboxing, click track, finale clearance, and a listening pass over the offline-rendered mix (clipping, effects level, music in front, no wall of noise, effects on time); writes `captures/qa/report.md` and review frames. |
 | `npm run check:analysis` | The analysis tool's pytest suite and ruff. |
-| `npm run check:all` | All of the above except captures and the benchmark. |
+| `npm run check:all` | All of the above except captures, QA and the benchmark. |
+
+`scripts/ci` (the Tollgate gate, about 30 s) runs `check`, `check:content`,
+`check:assets`, `check:seeds` and the build; `check:analysis` and `check:songmap`
+only when `tools/analysis/` or `songs/` differ from master.
 
 ## How it fits together
 

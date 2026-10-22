@@ -95,6 +95,11 @@ export function runSim(input: PlannerInput, opts: { props?: Record<string, PropI
 }
 
 export function plan(input: PlannerInput, opts: PlannerOptions = {}): Plan {
+  return planWithSim(input, opts).plan;
+}
+
+/** The plan and the simulation it records (the causality check compares simulations). */
+export function planWithSim(input: PlannerInput, opts: PlannerOptions = {}): { plan: Plan; sim: SimResult } {
   const now = opts.now ?? (() => 0);
   const t0 = now();
   const profile = opts.profile ?? input.profile ?? input.level.player;
@@ -169,7 +174,7 @@ export function plan(input: PlannerInput, opts: PlannerOptions = {}): Plan {
     simMs,
   };
 
-  return {
+  const recorded: Plan = {
     version: `${PLAN_FORMAT}:${input.version ?? "dev"}`,
     seed: ctx.seed,
     song: ctx.song.song,
@@ -222,6 +227,7 @@ export function plan(input: PlannerInput, opts: PlannerOptions = {}): Plan {
     formations: sim.formations.map((f) => ({ def: f.def, sRelease: f.sRelease, members: f.members })),
     stats,
   };
+  return { plan: recorded, sim };
 }
 
 /** A stable hash of the whole plan, for determinism checks and caching. */

@@ -44,7 +44,8 @@ export async function listenInPage(): Promise<ListenResult> {
     return a[Math.min(a.length - 1, Math.floor(p * a.length))];
   };
 
-  const mixBuf = await d.renderMix({ music: true, sfx: true });
+  // The three renders run at once, each on its own offline audio thread.
+  const [mixBuf, musicBuf, sfxBuf] = await Promise.all([d.renderMix({ music: true, sfx: true }), d.renderMix({ music: true, sfx: false }), d.renderMix({ music: false, sfx: true })]);
   const sr = mixBuf.sampleRate;
   let peak = 0;
   let clipped = 0;
@@ -57,8 +58,8 @@ export async function listenInPage(): Promise<ListenResult> {
     }
   }
   const mix = mono(mixBuf);
-  const music = mono(await d.renderMix({ music: true, sfx: false }));
-  const sfx = mono(await d.renderMix({ music: false, sfx: true }));
+  const music = mono(musicBuf);
+  const sfx = mono(sfxBuf);
   const HOP = 0.1;
   const mMus = rmsWindows(music, sr, 0.4, HOP);
   const mSfx = rmsWindows(sfx, sr, 0.4, HOP);

@@ -1,15 +1,23 @@
 #!/bin/sh
+# The gate: what matters, quickly (well under a minute). `npm run check:all`
+# adds the Playwright e2e tests, which Tollgate cannot run: Chromium starts its
+# own process session, which Tollgate rejects. Run `npm run test:e2e` by hand.
 set -eu
 cd "$(dirname "$0")/.."
 
-# Everything in check:all except the Playwright e2e tests: Chromium starts its
-# own process session, which Tollgate rejects. Run `npm run test:e2e` by hand.
 npm ci --no-audit --no-fund --prefer-offline
 npm run check
-npm run check:analysis
-npm run check:songmap
 npm run check:content
 npm run check:assets
-npm run check:determinism
+# The level's seed with causality and determinism, then three more seeds.
 npm run check:seeds
 npm run build
+
+# The analysis tool and the song maps change rarely, and checking them builds a
+# Python environment: only when they differ from master (or when that is unknown).
+if base=$(git merge-base origin/master HEAD 2>/dev/null) && git diff --quiet "$base" -- tools/analysis songs; then
+  echo "tools/analysis and songs/ match master: skipping check:analysis and check:songmap"
+else
+  npm run check:analysis
+  npm run check:songmap
+fi

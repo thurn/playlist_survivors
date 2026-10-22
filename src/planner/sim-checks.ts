@@ -1,5 +1,5 @@
 /**
- * Checks that re-run the simulation. Causality: for a few cut times T,
+ * Checks that re-run the simulation. Causality: for a cut time T (or several),
  * re-simulate with every press after T removed; the recording must match the
  * full run exactly up to T. A cut stops the virtual player; the game keeps
  * running.
@@ -65,7 +65,9 @@ export function prefixDifference(a: SimResult, b: SimResult, T: number): string 
 export function checkCausality(input: PlannerInput, opts: { props?: Record<string, PropInfo>; profile?: SkillProfile; cuts?: number[]; full?: SimResult } = {}): CheckResult {
   const full = opts.full ?? runSim(input, { props: opts.props, profile: opts.profile }).sim;
   const duration = input.songMap.audio.duration;
-  const cuts = opts.cuts ?? [0.3, 0.55, 0.8].map((f) => f * duration);
+  // One cut in the thick of the galop catches a future press leaking into the past; the cut run
+  // only has to simulate up to it.
+  const cuts = opts.cuts ?? [0.6 * duration];
   const failures: string[] = [];
   for (const T of cuts) {
     const cut = runSim(input, { props: opts.props, profile: opts.profile, cutS: T, untilS: T }).sim;

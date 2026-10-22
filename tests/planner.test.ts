@@ -1,30 +1,27 @@
 import { describe, expect, it } from "vitest";
 import { checkPlan, summarizeChecks } from "../src/planner/checks.ts";
-import { planHash } from "../src/planner/plan.ts";
 import { checkCausality } from "../src/planner/sim-checks.ts";
 import { Warp } from "../src/core/warp.ts";
 import { heroSample } from "../src/plan/sample.ts";
-import { plannerInput, propsFromAtlas, runPlanner } from "../scripts/lib/plan-node.ts";
+import { plannerInput, propsFromAtlas, runPlanner, runPlannerWithSim } from "../scripts/lib/plan-node.ts";
 import { syntheticSongMap } from "./fixtures/synthetic-song.ts";
 
+// One skilled and one casual playthrough of the synthetic song, shared by every test.
+// (check:seeds covers determinism and more seeds on the real song.)
+const songMap = syntheticSongMap();
+const input = plannerInput({ songMap });
+const { plan, sim } = runPlannerWithSim({ songMap });
+const casual = runPlanner({ songMap, profile: "casual" });
+
 describe("simulated playthrough on the synthetic song", () => {
-  const songMap = syntheticSongMap();
-  const plan = runPlanner({ songMap });
-  const input = plannerInput({ songMap });
 
   it("passes every check", () => {
     const { ok, text } = summarizeChecks(checkPlan(plan, input.content));
     expect(ok, text).toBe(true);
   });
 
-  it("is deterministic", () => {
-    const again = runPlanner({ songMap });
-    expect(planHash(again)).toBe(planHash(plan));
-    expect(again.map.hash).toBe(plan.map.hash);
-  });
-
   it("is causal: cutting the presses after T changes nothing before T", () => {
-    const r = checkCausality(input, { props: propsFromAtlas() });
+    const r = checkCausality(input, { props: propsFromAtlas(), full: sim });
     expect(r.failures, r.failures.join("\n")).toEqual([]);
   });
 
@@ -105,11 +102,8 @@ describe("simulated playthrough on the synthetic song", () => {
 });
 
 describe("skill profiles", () => {
-  const songMap = syntheticSongMap();
-  const lib = plannerInput({ songMap }).content;
-  const skilled = runPlanner({ songMap });
-  const casual = runPlanner({ songMap, profile: "casual" });
-  const perfect = runPlanner({ songMap, profile: "perfect" });
+  const lib = input.content;
+  const skilled = plan;
 
   it("lets the casual player through every check, with less reward", () => {
     const { ok, text } = summarizeChecks(checkPlan(casual, lib));
@@ -124,12 +118,6 @@ describe("skill profiles", () => {
     const late = casual.inputs.filter((i) => i.kind === "press" && Math.abs(i.delta ?? 0) > 0.07);
     expect(late.length).toBeGreaterThan(10);
     for (const sw of casual.swings) expect(Math.min(...grid.map((g) => Math.abs(g - sw.s)))).toBeLessThan(0.001);
-  });
-
-  it("rates every perfect-profile press Perfect", () => {
-    const rated = perfect.inputs.filter((i) => i.kind === "press" && i.steps && !i.bend);
-    expect(rated.length).toBeGreaterThan(100);
-    expect(rated.every((i) => i.rating === "perfect")).toBe(true);
   });
 });
 

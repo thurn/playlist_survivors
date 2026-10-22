@@ -14,9 +14,10 @@ still confirm them.
 To reproduce:
 
 ```bash
-npm run check:all   # lint, types, unit tests, content, assets, songmap, plan checks with causality, determinism, seeds, analysis
+npm run check:all   # lint, types, unit tests, content, assets, songmap, analysis, and check:seeds
+                    # (the level's seed with causality and determinism, then three more seeds)
 npm run test:e2e    # capture hook, metronome flash, broken level, cached plan, ?player=
-npm run qa          # real-time playback (Chromium, plus a real tab switch in Google Chrome), every profile's
+npm run qa          # about 45 s: real-time playback in Chromium, the skilled and casual players
                     # playthrough, and a measured listening pass over the offline-rendered mix;
                     # writes captures/qa/report.md and review frames
 npm run bench       # whole song at real-time speed, frame-time budgets
@@ -29,7 +30,7 @@ npm run bench       # whole song at real-time speed, frame-time budgets
 | Area | State |
 |---|---|
 | Recording checks (14 checks, skilled and casual players, 4 seeds in CI, 6 more by hand) | verified |
-| Causality: re-simulating with the presses after three cut times removed changes nothing before them | verified (every seed, both players) |
+| Causality: re-simulating with the presses after a cut removed changes nothing before it | verified (`check:seeds` on the level's seed; unit test on the synthetic song) |
 | Simulation time (budget 3 s) | verified: about 1.0–1.3 s in Node, 1.1–1.2 s in the browser worker including the checks |
 | Every strike and its impact sound on the grid, for every profile | verified |
 | Stillness between steps, no skating, every movement from an input | verified |
@@ -107,9 +108,9 @@ npm run bench       # whole song at real-time speed, frame-time budgets
 | A press during a hit-stop | verified | The simulation ends a hit-stop at a press (check "hit-stops" accepts stops shorter than 40 ms only when a press ended them). **Human:** find one by eye. |
 | A diagonal step | verified | Unit test: a perpendicular key within 40 ms bends the step smoothly onto the diagonal, landing 44 px away. The virtual player presses diagonals as two keys a few milliseconds apart. |
 | The corridor edge | verified | Unit test: a step toward the edge stops at it. |
-| Other seeds | verified | `check:seeds` (1859, 7, 2024) and `qa` (`?seed=1859` in the browser) pass every check; seeds 1, 2, 3, 42, 99 and 500 also pass. |
-| Determinism | verified | `check:determinism`: two runs give the same plan hash. e2e: a reload loads the cached plan with the same hash. |
-| Hidden tab | verified | `qa` switches to a real new tab in Google Chrome for 10 s during the climax: the page draws 0 frames, the audio schedules 331 sounds meanwhile, and on return the picture is 25 ms from the audio with 0 late sounds. The test is flaky: in 3 of its last 6 runs Chrome never hid the page (it kept drawing frames in a tab that should have been in the background), so the check could not run. When the page is hidden, it passes. The cause is in the test harness, not the demo, and is still open. |
+| Other seeds | verified | `check:seeds` (1859, 7, 2024) passes every check; seeds 1, 2, 3, 42, 99 and 500 also pass. |
+| Determinism | verified | `check:seeds`: two runs of the level's seed give the same plan hash. e2e: a reload loads the cached plan with the same hash. |
+| Hidden tab | verified | `qa` stalls the page's main thread for 3 s, which stops frames and timers as a hidden tab does, while the audio plays on. On return the picture jumps to the right moment (song time moved 3.0 s over 3.0 s, the picture within 30 ms of the audio), and the sounds that fell behind are skipped, not started late. A real tab switch in Google Chrome was dropped from `qa`: it was slow (it played to the climax in real time) and flaky (Chrome often never hid the page). A real tab switch is still worth trying by hand. |
 | Window resize, cached plan, broken level script | verified | As before: `qa` resize letterboxing, e2e cached plan and broken level (13 broken fixtures in `check:content`). |
 
 ## Sound
