@@ -13,6 +13,11 @@ import { countUpTo, enemyPos, heroSample } from "./sample.ts";
 import { StaticIndex, type PlanIndex } from "./view.ts";
 import { partnerPress, type EffectEvent, type EnemyRecord, type Plan, type PlanInput, type PlanSection, type UiEvent } from "./types.ts";
 import { orbitAt } from "../sim/tiers.ts";
+import { SWORD_TINTS } from "./tier-look.ts";
+
+/** A tier-3 swing's spin: the facings it turns through, and how long after the impact it ends (song seconds). */
+const SPIN = [2, 1, 0, 3];
+const SPIN_AFTER = 0.12;
 
 export const DEATH_FALL = 0.5;
 const FLASH_TIME = 0.05;
@@ -275,6 +280,11 @@ export interface Frame {
   energy: number;
   camera: { x: number; y: number; zoom: number; shakeX: number; shakeY: number };
   hero: { x: number; y: number; z: number; facing: number; anim: string; frame: number; afterimages: { x: number; y: number; facing: number; anim: string; frame: number; alpha: number }[]; hurt: number };
+  /**
+   * Play mode's tier now (0–3; absent in the demo): the weapons take its colours, and from tier 1 the
+   * hero has a faint aura, pulsing with the beat.
+   */
+  tier?: number;
   enemies: EnemySprite[];
   particles: Particle[];
   fx: FxSprite[];
@@ -354,6 +364,10 @@ export class Evaluator {
   }
 
   private cleaveTimes: number[] = [];
+  /** Play mode's tier: the tier each swing's wind-up read, by its hit (its arcs take that tier's colour). */
+  private swingTiers = new Map<number, number>();
+  /** The swing count and index version the map was built from (a live rewind replaces swings). */
+  private swingTiersOf = { count: -1, version: -1 };
   private pressHereTimes: number[] = [];
 
   /** Is there a time in a sorted list within 40 ms of t? */
@@ -489,9 +503,10 @@ export class Evaluator {
     if (h.trail > 0.05) {
       for (let k = 1; k <= 4; k++) {
         const hp = heroSample(plan, w - k * 0.035);
-        after.push({ x: hp.x, y: hp.y - hp.z, facing: hp.facing, anim: hp.anim, frame: hp.frame, alpha: (0.5 - k * 0.1) * h.trail });
+        after.push({ x: hp.x, y: hp.y - hp.z, facing: this.spinFacing(s - k * 0.035, hp.facing), anim: hp.anim, frame: hp.frame, alpha: (0.5 - k * 0.1) * h.trail });
       }
     }
+    const tier = plan.tier ? this.tierAt(s) : undefined;
 
     // Enemies.
     const enemies: EnemySprite[] = [];
@@ -688,7 +703,8 @@ export class Evaluator {
       sectionIndex: si,
       energy,
       camera: { x: cam.x, y: cam.y, zoom: cam.zoom, shakeX, shakeY },
-      hero: { x: h.x, y: h.y, z: h.z, facing: h.facing, anim: h.anim, frame: h.frame, afterimages: after, hurt: hurtAt(plan.health, s) },
+      hero: { x: h.x, y: h.y, z: h.z, facing: this.spinFacing(s, h.facing), anim: h.anim, frame: h.frame, afterimages: after, hurt: hurtAt(plan.health, s) },
+      ...(tier !== undefined ? { tier } : {}),
       enemies,
       particles,
       fx,
@@ -879,7 +895,9 @@ export class Evaluator {
         if (age > L.life) return;
         const u = age / L.life;
         const scale = param(L.scale, I) * (ev.scale ?? 1);
-        const tint = L.tint ? hex(L.tint) : 0xffffff;
+        // (The sword's arcs take its colour at the tier the swing was sized by.)
+        const swingTier = ev.hit !== undefined ? this.swingTierOf(ev.hit) : undefined;
+        const tint = swingTier !== undefined ? SWORD_TINTS[Math.min(3, swingTier)] : L.tint ? hex(L.tint) : 0xffffff;
         let art = L.art;
         let rot = 0;
         let sxx = scale;
@@ -954,6 +972,31 @@ export class Evaluator {
   }
 
   /** The tier at song time s (play mode's press classes; 0 without them). */
+  /**
+   * The tier is visible: at tier 3 a swing is a full spin, so through its wind-up and impact the hero
+   * turns once around (down, left, up, right), from the existing frames.
+   */
+  private spinFacing(s: number, facing: number): number {
+    if (!this.plan.tier) return facing;
+    for (const sw of this.plan.swings) {
+      if (sw.tier !== 3 || s < sw.sWind || s > sw.s + SPIN_AFTER) continue;
+      const u = (s - sw.sWind) / (sw.s + SPIN_AFTER - sw.sWind);
+      return SPIN[(SPIN.indexOf(facing) + Math.min(3, Math.floor(u * 4)) + 4) % 4];
+    }
+    return facing;
+  }
+
+  /** The tier a swing was sized by, by its hit (play mode; a live recording's swings grow as play goes, and a rewind replaces them). */
+  private swingTierOf(hit: number): number | undefined {
+    if (!this.plan.tier) return undefined;
+    if (this.swingTiersOf.count !== this.plan.swings.length || this.swingTiersOf.version !== this.index.version) {
+      this.swingTiers.clear();
+      for (const sw of this.plan.swings) if (sw.tier !== undefined) this.swingTiers.set(sw.hit, sw.tier);
+      this.swingTiersOf = { count: this.plan.swings.length, version: this.index.version };
+    }
+    return this.swingTiers.get(hit);
+  }
+
   private tierAt(s: number): number {
     const t = this.plan.tier;
     if (!t) return 0;

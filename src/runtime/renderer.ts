@@ -26,6 +26,7 @@ import { rand01 } from "../core/rng.ts";
 import { beatSwell, clamp, frac, lerp } from "../core/shaping.ts";
 import type { Frame } from "../plan/evaluate.ts";
 import { hex } from "../plan/evaluate.ts";
+import { AURA_ALPHA, AURA_TINTS, BLADE_GLOWS, BLADE_TINTS, BOLT_COLORS, FLAME_GLOWS, FLAME_TINTS, SWORD_TINTS, tierLook } from "../plan/tier-look.ts";
 import type { MapProp, Plan } from "../plan/types.ts";
 import { chunkContent, propFade, tileVariant, type ChunkContent } from "../mapgen/openfield.ts";
 import type { PropInfo } from "../mapgen/mapgen.ts";
@@ -385,7 +386,8 @@ export class Renderer {
       sp.position.set(Math.round(ai.x), Math.round(ai.y));
       sp.scale.set(1);
       sp.alpha = ai.alpha;
-      sp.tint = 0x9fd8ff;
+      // (Through a swing, in the sword's colour at the tier.)
+      sp.tint = f.tier !== undefined ? tierLook(SWORD_TINTS, f.tier) : 0x9fd8ff;
       sp.zIndex = ai.y - 0.5;
     }
     {
@@ -399,8 +401,22 @@ export class Renderer {
         ring.position.set(Math.round(h.x), Math.round(h.y));
         ring.scale.set(1.6, 0.8);
         ring.rotation = 0;
-        ring.tint = 0xfff0b0;
-        ring.alpha = 0.55;
+        // (From tier 1 in the tier's colour.)
+        const auraA = tierLook(AURA_ALPHA, f.tier);
+        ring.tint = auraA > 0 ? tierLook(AURA_TINTS, f.tier) : 0xfff0b0;
+        ring.alpha = auraA > 0 ? 0.7 : 0.55;
+        // The tier is visible: from tier 1 a faint aura in the tier's colour, swelling on the beat.
+        if (auraA > 0) {
+          const aura = this.pools.fxA.next();
+          aura.texture = proc.get("glow")!;
+          aura.anchor.set(0.5);
+          aura.position.set(Math.round(h.x), Math.round(h.y - h.z - 16));
+          const pulse = beatSwell(f.hud.beatPhase);
+          aura.scale.set(1.5 + 0.25 * pulse, 1.9 + 0.3 * pulse);
+          aura.rotation = 0;
+          aura.tint = tierLook(AURA_TINTS, f.tier);
+          aura.alpha = auraA * (0.8 + 0.2 * pulse);
+        }
         const sp = this.pools.sorted.next();
         sp.texture = t.tex;
         sp.anchor.set(t.a.anchorX / t.a.frameW, t.a.anchorY / t.a.frameH);
@@ -472,14 +488,14 @@ export class Renderer {
       sp.rotation = b.rot;
       sp.scale.set(1);
       sp.alpha = 1;
-      sp.tint = 0xffffff;
+      sp.tint = tierLook(BLADE_TINTS, f.tier);
       const g = this.pools.fxA.next();
       g.texture = proc.get("glow")!;
       g.anchor.set(0.5);
       g.position.set(b.x, b.y - 18);
-      g.scale.set(0.8);
-      g.tint = 0x80c8ff;
-      g.alpha = 0.6;
+      g.scale.set(0.8 + 0.15 * (f.tier ?? 0));
+      g.tint = tierLook(BLADE_GLOWS, f.tier);
+      g.alpha = 0.6 + 0.05 * (f.tier ?? 0);
       g.rotation = 0;
     }
     const fire = this.assets.fx.get("fire");
@@ -491,8 +507,20 @@ export class Renderer {
       sp.position.set(Math.round(fl.x), Math.round(fl.y));
       sp.scale.set(0.8);
       sp.rotation = 0;
-      sp.tint = 0xffffff;
+      sp.tint = tierLook(FLAME_TINTS, f.tier);
       sp.alpha = fl.alpha;
+      // From tier 1, a glow in the tier's colour under each flame.
+      const glow = tierLook(FLAME_GLOWS, f.tier);
+      if (glow) {
+        const g = this.pools.fxA.next();
+        g.texture = proc.get("glow")!;
+        g.anchor.set(0.5);
+        g.position.set(fl.x, fl.y - 8);
+        g.scale.set(0.7);
+        g.rotation = 0;
+        g.tint = glow;
+        g.alpha = 0.35 * fl.alpha;
+      }
     }
     for (const a of f.arrows) {
       const sp = this.pools.over.next();
@@ -527,7 +555,7 @@ export class Renderer {
           this.bolts.lineTo(lerp(p0.x, p1.x, u) + jit, lerp(p0.y, p1.y, u) + jit * 0.6);
         }
       }
-      this.bolts.stroke({ width: 3, color: 0x8fb8ff, alpha: 0.5 * b.alpha });
+      this.bolts.stroke({ width: 3 + (f.tier ?? 0), color: tierLook(BOLT_COLORS, f.tier), alpha: (0.5 + 0.08 * (f.tier ?? 0)) * b.alpha });
       for (let k = 0; k + 1 < b.points.length; k++) {
         this.bolts.moveTo(b.points[k].x, b.points[k].y);
         this.bolts.lineTo(b.points[k + 1].x, b.points[k + 1].y);
