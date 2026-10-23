@@ -176,8 +176,8 @@ export interface SimResult {
   chickens: ChickenRecord[];
   /** The XP bar after each change (fraction of the next level-up's requirement). */
   xp: { s: number; fill: number }[];
-  /** Cleave shockwaves: one hit per band (with press cleaves, the cleave that launched it). */
-  waves: ({ hits: number[] } & Partial<Cleave>)[];
+  /** Cleave shockwaves: one hit per band, and the cleave that launched it. */
+  waves: ({ hits: number[] } & Cleave)[];
   /** Formation releases (song time) and their members. */
   formations: FormationRecord[];
   /** The open field's transform waves and landmarks. */
@@ -244,8 +244,8 @@ export interface Recorder {
   chicken(c: ChickenRecord): void;
   chickenTaken(i: number, s: number, w: number, sHeal: number): void;
   xp(s: number, fill: number): void;
-  /** A cleave shockwave starts (with press cleaves, the accent's cleave that launched it); its band hits follow. */
-  wave(cleave?: Cleave): void;
+  /** A cleave shockwave starts, with the accent's cleave that launched it; its band hits follow. */
+  wave(cleave: Cleave): void;
   waveHit(wave: number, hit: number): void;
   formation(f: FormationRecord): void;
   zoneWave(z: ZoneWaveRecord): void;
@@ -301,7 +301,7 @@ export class BatchRecorder implements Recorder {
   readonly heals: HealRecord[] = [];
   readonly chickens: ChickenRecord[] = [];
   readonly xpSeries: { s: number; fill: number }[] = [{ s: 0, fill: 0 }];
-  readonly waves: ({ hits: number[] } & Partial<Cleave>)[] = [];
+  readonly waves: ({ hits: number[] } & Cleave)[] = [];
   readonly formations: FormationRecord[] = [];
   readonly zoneWaves: ZoneWaveRecord[] = [];
   readonly landmarks: LandmarkRecord[] = [];
@@ -450,7 +450,7 @@ export class BatchRecorder implements Recorder {
   xp(s: number, fill: number): void {
     this.xpSeries.push({ s, fill });
   }
-  wave(cleave?: Cleave): void {
+  wave(cleave: Cleave): void {
     this.waves.push({ hits: [], ...cleave });
   }
   waveHit(wave: number, hit: number): void {

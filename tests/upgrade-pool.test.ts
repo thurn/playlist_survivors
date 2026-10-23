@@ -156,7 +156,12 @@ describe("offers", () => {
 
   it("are recorded with the one taken at each level-up's moment, applied once its orb is taken", () => {
     const { rec } = runSeed(ctx.seed, levelUp(1) + 8);
-    expect(rec.upgrades.map((u) => u.s)).toEqual([levelUp(0), levelUp(1)]);
+    // (On the scheduled moment, or a little later when the experience comes later.)
+    expect(rec.upgrades).toHaveLength(2);
+    rec.upgrades.forEach((u, i) => {
+      expect(u.s).toBeGreaterThanOrEqual(levelUp(i));
+      expect(u.s).toBeLessThan(levelUp(i) + 4);
+    });
     let l = startingLoadout(pool.loadout);
     rec.upgrades.forEach((u, i) => {
       expect(u.offers).toEqual(offersFor(ctx.seed, i, lib, pool.offer, l));

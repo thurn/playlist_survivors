@@ -608,9 +608,9 @@ Each weapon has its own schedule, taken from the song:
 - **Wind-up and aim:** the swing starts about 190 ms before its grid time and
   aims when it starts, choosing the direction that hits the most valuable
   enemies, as today.
-- **Without a steady beat,** the sword swings on every beat of the song map,
-  and swings heavy on strong anchors (strength 0.5 or more). **Anchors** are
-  the strong moments the song map marks in free sections.
+- **Without a steady beat,** the sword swings light on every beat of the song
+  map. It never cleaves there: a heavy swing out of nowhere, with nothing the
+  player did or heard to earn it, only distracts.
 - **The other weapons** fire on their own subdivisions, as today: orbiting
   blades every eighth note, chain lightning every bar, the fire trail every
   beat.
@@ -956,8 +956,8 @@ The prelude (0:00–0:43) has no steady beat. It becomes a calm walk that
 teaches movement and collecting before the rhythm game starts:
 
 - **Calm enemies,** as in today's play mode: slower, drifting in on a spiral.
-- **Weapons as everywhere else:** the sword on every beat of the song map,
-  heavy on strong anchors, with the blades and lightning on their beats.
+- **Weapons as everywhere else:** the sword swinging light on every beat of
+  the song map, with the blades and lightning on their beats.
 - **Gems** from those kills teach walking to collect.
 - **No groove:** presses still stride, but nothing is rated and the groove
   stays at 0.
@@ -1009,7 +1009,7 @@ mashers    random presses, 2, 4 and 8 a second            fall 1:45-2:05
   works early in the song.
 
 **As shipped (hv-dtz9):** the holder and mashers fall as the table says
-(`check:play` allows 1:30–2:10, since their falls spread across seeds), and
+(`check:play` allows 1:30–2:15, since their falls spread across seeds), and
 every honest player survives. The honest players' end health is judged on its
 average over the checked seeds, and reported against its band rather than
 checked: every honest bot ends at 90–100% on average. At tier 2 and up the

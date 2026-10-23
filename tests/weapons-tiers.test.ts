@@ -100,14 +100,12 @@ describe("the blades", () => {
 });
 
 describe("the sword without a steady beat", () => {
-  it("swings on every beat of the song map, a strong anchor's cleave taking the beat within half a beat of it", () => {
+  it("swings light on every beat of the song map", () => {
     const rec = new BatchRecorder();
     const prelude = section("prelude");
     run([], [prelude.s1 - 0.01], rec);
     const beats = ctx.song.beats.filter((b) => b > prelude.s0 + 0.5 && b < prelude.s1 - 0.5);
-    const near = (b: number) => rec.swings.some((sw) => Math.abs(sw.s - b) < 1e-4);
-    const covered = beats.filter((b, k) => near(b) || rec.swings.some((sw) => sw.kind === "heavy" && Math.abs(sw.s - b) < 0.5 * ((beats[k + 1] ?? b + 1) - b)));
-    expect(covered.length).toBe(beats.length);
+    for (const b of beats) expect(rec.swings.find((sw) => Math.abs(sw.s - b) < 1e-4)?.kind, `swing on the beat at ${b}`).toBe("light");
   });
 });
 

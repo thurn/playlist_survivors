@@ -290,10 +290,10 @@ interface Wave {
   group: number;
   /** Its cleave's damage multiplier (the tier's). */
   mult: number;
-  /** Press cleaves: the heavy impact's arc at its tier, where the bands start, their half-angle, and how far the last reaches. */
-  inner?: number;
-  halfAngle?: number;
-  to?: number;
+  /** The heavy impact's arc at its tier, where the bands start, their half-angle, and how far the last reaches. */
+  inner: number;
+  halfAngle: number;
+  to: number;
 }
 
 interface ChainState {
@@ -680,10 +680,6 @@ function engine(env: Env, st: SimState, io: Io) {
   const hero: HeroDef = ctx.lib.hero;
   const song = ctx.song;
   const lib = ctx.lib;
-  const heavyReach = { radius: hero.swings.heavy.hitShape.radius, halfAngle: (hero.swings.heavy.hitShape.degrees * Math.PI) / 360 };
-  // A free section's cleave aims at what its arc and shockwave will reach, and at what will come
-  // into it, such as a kick line charging from further down the line.
-  const chargeAim = { radius: hero.swings.heavy.wave.to + CLEAVE_AIM_AHEAD, halfAngle: heavyReach.halfAngle };
   const anims = ctx.heroAnims;
   const animIdx = (name: string) => Math.max(0, HERO_ANIMS.indexOf(name));
   /** The way forward now: the hero's heading. */
@@ -1063,11 +1059,10 @@ function engine(env: Env, st: SimState, io: Io) {
     if (blastS !== undefined && slot.s >= blastS - 0.04) return undefined;
     st.takenSlots.add(slot);
     const sec = ctx.sections[slot.section];
-    // A swing striking on an eligible accent is a heavy cleave (everyone's); free movement cleaves on
-    // strong anchors.
+    // A swing striking on an eligible accent is a heavy cleave (everyone's); free movement only swings light.
     const rule = sec.level.heavyOnAccents;
     const onAccent = slot.accent > 0 && slot.accent >= rule.minStrength && (rule.label === undefined || rule.label === slot.accentLabel);
-    const heavy = slot.kind === "anchor" || (slot.kind === "grid" && onAccent);
+    const heavy = slot.kind === "grid" && onAccent;
     const anim = heavy ? hero.swings.heavy.animation : hero.swings.light.animations[st.lightCount++ % hero.swings.light.animations.length];
     const info = anims[anim] ?? { frames: 6, impactFrame: 3 };
     const sWind = Math.max(sArmed, slot.s - hero.swings.windupMs / 1000 / Math.max(0.05, baseRate(slot.s)));
@@ -1107,8 +1102,6 @@ function engine(env: Env, st: SimState, io: Io) {
     const arc = heavyArcAt(hero, tier);
     return { radius: arc.radius, halfAngle: (arc.degrees * Math.PI) / 360 };
   };
-  /** Press cleaves: is a heavy swing an eligible accent's (sized by the tier), not a free section's anchor? */
-  const accentCleave = (sw: Swing) => sw.heavy && sw.slot.kind === "grid";
   /** Where an accent's heavy swing aims (press cleaves): out to its shockwave's reach at the tier and on along a charging line. */
   const accentAimAt = (tier: number) => ({ radius: waveReachAt(hero, tier) + CLEAVE_AIM_AHEAD, halfAngle: heavyTierReach(tier).halfAngle });
 
@@ -1135,7 +1128,7 @@ function engine(env: Env, st: SimState, io: Io) {
     const hp = heroPose(st.w);
     // The tier when the wind-up starts sizes the swing, whatever comes after.
     sw.tier = st.tier;
-    const reach = sw.heavy ? (accentCleave(sw) ? accentAimAt(sw.tier) : chargeAim) : tierReach(sw.tier);
+    const reach = sw.heavy ? accentAimAt(sw.tier) : tierReach(sw.tier);
     const targets = aimTargets(hp.x, hp.y, reach.radius);
     // The snapshot is aim's whole input, so the check can re-run it.
     const snap: AimSnapshot = { x: hp.x, y: hp.y, facing: st.facingAngle, targets: [] };
@@ -1155,7 +1148,7 @@ function engine(env: Env, st: SimState, io: Io) {
     const hp = heroPose(st.w);
     const def = sw.heavy ? hero.swings.heavy : hero.swings.light;
     const tier = sw.tier!;
-    const reach = sw.heavy ? (accentCleave(sw) ? heavyTierReach(tier) : heavyReach) : tierReach(tier);
+    const reach = sw.heavy ? heavyTierReach(tier) : tierReach(tier);
     const shape: Shape = swingArc(hp.x, hp.y, sw.dir, reach);
     const mult = tierDamage(hero, tier);
     const h = addHit({ source: "move", what: sw.heavy ? "cleave" : "slash", weight: sw.heavy ? "heavy" : "light", primary: true, shape, dir: sw.dir, accent: sw.accent, damage: def.damage * mult });
@@ -1169,10 +1162,9 @@ function engine(env: Env, st: SimState, io: Io) {
     r.hit = h.id;
     rec().swing(r);
     sw.record = undefined;
-    if (accentCleave(sw)) {
+    if (sw.heavy) {
       // Press cleaves: the heavy impact is everyone's; the accent's counted press of Great or better
-      // launches its shockwave, now when it came first (with a hit-stop), or when it comes. (A free
-      // section's heavy swing on a strong anchor works as today, below.)
+      // launches its shockwave, now when it came first (with a hit-stop), or when it comes.
       const gi = nearestIndex(sch.gridTimes, sw.sStrike);
       const c: PendingCleave = { gi, s: sw.sStrike, x: hp.x, y: hp.y, dir: sw.dir, tier };
       const counted = st.memo.counted.get(gi);
@@ -1183,15 +1175,6 @@ function engine(env: Env, st: SimState, io: Io) {
         }
         st.pendingCleave = undefined;
       } else st.pendingCleave = c;
-    } else if (sw.heavy) {
-      // A free section's cleave on a strong anchor: its crescent shockwave travels outward along its
-      // aim, one band per sixteenth note, band k reaching 25 px further on the k-th sixteenth.
-      const wave: Wave = { x: hp.x, y: hp.y, dir: sw.dir, band: 0, hit: new Set(), group: st.nWaves++, mult };
-      rec().wave();
-      // (On the sixteenth-note grid, from the strike's own sixteenth or the next one.)
-      const bi0 = Math.ceil(sbiAt(st.s) * 4 - 1e-6) / 4;
-      const bands = Math.round((hero.swings.heavy.wave.to - heavyReach.radius) / hero.swings.heavy.wave.band);
-      for (let k = 0; k < bands; k++) st.q.push(timeOfBeatIndex(song, bi0 + k * 0.25), { kind: "wave", wave: { ...wave, band: k } });
     }
   };
 
@@ -1199,9 +1182,9 @@ function engine(env: Env, st: SimState, io: Io) {
     // The wave rests during a hit-stop, like the weapons: the next band covers this one's ground.
     if (inStop(st.s) && st.s > st.stopStart + 1e-9) return;
     const wd = hero.swings.heavy.wave;
-    const inner = wave.inner ?? heavyReach.radius;
-    const outer = Math.min(inner + wd.band * (wave.band + 1), wave.to ?? Infinity);
-    const shape: Shape = { kind: "arc", x: wave.x, y: wave.y, radius: outer, inner, dir: wave.dir, halfAngle: wave.halfAngle ?? heavyReach.halfAngle };
+    const inner = wave.inner;
+    const outer = Math.min(inner + wd.band * (wave.band + 1), wave.to);
+    const shape: Shape = { kind: "arc", x: wave.x, y: wave.y, radius: outer, inner, dir: wave.dir, halfAngle: wave.halfAngle };
     // Everyone the front has reached and the wave has not hit yet.
     const h = addHit({ source: "wave", what: "shockwave", weight: "medium", primary: false, shape, dir: wave.dir, accent: 0, damage: wd.damage * wave.mult, group: wave.group });
     rec().waveHit(wave.group, h.id);

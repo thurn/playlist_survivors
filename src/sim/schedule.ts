@@ -23,16 +23,15 @@ export interface GridSlot {
   accentLabel?: string;
   /**
    * grid: a step section's timing grid (presses arm swings for these);
-   * auto: a free section's automatic swing, every two beats by default;
-   * anchor: a strong song-map anchor in a free section, where the sword cleaves.
+   * auto: a free section's automatic swing, every two beats by default.
    */
-  kind: "grid" | "auto" | "anchor";
+  kind: "grid" | "auto";
 }
 
 export interface Schedule {
   /** Each section's timing grid. */
   grids: GridSlot[][];
-  /** Every section's slots in order: swings strike on these (the step grids, automatic swings and anchors). */
+  /** Every section's slots in order: swings strike on these (the step grids and automatic swings). */
   slots: GridSlot[];
   strikeTimes: Float64Array;
   /** The step sections' timing grids joined end to end: presses are rated against these and arm them. */
@@ -56,28 +55,16 @@ export interface Schedule {
   stampedes: { s: number; enemy: string; count: number; rows: number }[];
 }
 
-/** Free movement: anchors at least this strong get a cleave. */
-export const ANCHOR_CLEAVE = 0.5;
-
-/** A free section's strike times: an automatic swing every autoSwingBeats beats, and cleaves on strong anchors. */
+/** A free section's strike times: an automatic (light) swing every autoSwingBeats beats. */
 function freeGrid(ctx: Ctx, i: number): GridSlot[] {
   const sec = ctx.sections[i];
   const { idx, song } = ctx;
   const out: GridSlot[] = [];
-  const anchors = (sec.song.anchors ?? []).filter((a) => a.strength >= ANCHOR_CLEAVE && a.time >= sec.s0 && a.time < sec.s1);
-  for (const a of anchors) {
-    const bi = beatIndexAt(song, a.time);
-    out.push({ s: a.time, bi, bar: barOfBeatIndex(idx, bi), slot: 0, section: i, accent: a.strength, kind: "anchor" });
-  }
   const every = sec.level.autoSwingBeats;
   for (let bi = sec.b0 + every; bi < sec.b1 - 0.5; bi += every) {
-    // An anchor's cleave replaces the automatic swing near it (only the beat's within half a beat of
-    // it: the sword swings on every other beat).
-    const near = 0.5;
-    if (anchors.some((a) => Math.abs(beatIndexAt(song, a.time) - bi) < near)) continue;
     out.push({ s: timeOfBeatIndex(song, bi), bi, bar: barOfBeatIndex(idx, bi), slot: 0, section: i, accent: 0, kind: "auto" });
   }
-  return out.sort((a, b) => a.s - b.s);
+  return out;
 }
 
 /** Grid times of one section on its timing grid, with accents matched within 40 ms. */

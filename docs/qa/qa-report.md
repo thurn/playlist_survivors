@@ -220,7 +220,7 @@ game today.
 
 | Item | State | Evidence |
 |---|---|---|
-| Prelude | partly verified | Unit test: the hero walks with held keys, swings by itself every two beats and cleaves on strong anchors; presses there are not rated. Check "no skating": the walk cycle advances with the distance walked. **Human:** does it feel calm? |
+| Prelude | partly verified | Unit test: the hero walks with held keys, swings light by itself on its beats, with no cleaves; presses there are not rated. Check "no skating": the walk cycle advances with the distance walked. **Human:** does it feel calm? |
 | Count-in | verified, agent review | The beat track fades in and four count marks pulse on the last four beats of the rubato passage, before the galop vamp's first downbeat at 43.21 s. |
 | Galop vamp | partly verified | The quiet vamp (bars 15–30) is a pulsed section: one step and one swing per bar at full speed, at the galop's tempo. **Human:** does the first beat feel like it arrives at 0:43? |
 | Galop opening | verified | Presses once per bar; cleaves with hit-stops on the tutti chords (check "hit-stops": 34 stops within 40–150 ms). Capture `first-cleave.png`. |

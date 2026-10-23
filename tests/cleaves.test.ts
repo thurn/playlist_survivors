@@ -107,13 +107,15 @@ describe("a press on the chord", () => {
 });
 
 describe("a free section's strong anchor", () => {
-  it("keeps today's heavy swing: its aim and arc are not sized by the tier", () => {
+  it("gets no cleave: free movement swings only light, with no shockwave", () => {
     const prelude = section("prelude");
+    expect(ctx.sections.find((s) => s.label === "prelude")!.song.anchors!.some((a) => a.strength >= 0.5)).toBe(true);
     const r = new BatchRecorder();
-    run([], [prelude.s1 - 1], r);
-    const anchor = r.swings.find((sw) => sw.kind === "heavy" && sw.s > prelude.s0 + 5 && sw.s < prelude.s1)!;
-    expect(anchor.reach!.radius).toBe(hero.swings.heavy.wave.to + 160);
-    expect((r.hits[anchor.hit].shape as { radius: number }).radius).toBe(hero.swings.heavy.hitShape.radius);
+    run([], [prelude.s1 - 0.01], r);
+    const swings = r.swings.filter((sw) => sw.s > prelude.s0 && sw.s < prelude.s1);
+    expect(swings.length).toBeGreaterThan(10);
+    expect(swings.every((sw) => sw.kind === "light")).toBe(true);
+    expect(r.waves).toEqual([]);
   });
 });
 

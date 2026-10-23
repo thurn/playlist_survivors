@@ -671,10 +671,10 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
     this.add(this.hud.xpFill, fill);
   }
 
-  wave(cleave?: Cleave): void {
+  wave(cleave: Cleave): void {
     this.nWaves++;
     this.undo(() => this.nWaves--);
-    if (cleave && this.plan.cleaves) this.add(this.plan.cleaves, cleave);
+    if (this.plan.cleaves) this.add(this.plan.cleaves, cleave);
   }
 
   waveHit(_wave: number, hit: number): void {

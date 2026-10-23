@@ -33,7 +33,7 @@ describe("simulated playthrough on the synthetic song", () => {
     expect(plan.enemies.every((e) => e.deathW <= end + 1e-6)).toBe(true);
   });
 
-  it("walks in free movement, swinging by itself every two beats and cleaving on strong anchors", () => {
+  it("walks in free movement, swinging light by itself every two beats", () => {
     const prelude = plan.sections.find((x) => x.label === "prelude")!;
     expect(prelude.movement).toBe("free");
     const warp = new Warp(plan.warp);
@@ -42,7 +42,7 @@ describe("simulated playthrough on the synthetic song", () => {
     expect(walking).toBeGreaterThan(20);
     const swings = plan.swings.filter((x) => x.s < prelude.s1);
     expect(swings.length).toBeGreaterThan(10);
-    expect(swings.some((x) => x.kind === "heavy")).toBe(true);
+    expect(swings.every((x) => x.kind === "light")).toBe(true);
     // Free-movement presses are not rated.
     const presses = plan.inputs.filter((i) => i.kind === "press" && i.s < prelude.s1);
     expect(presses.length).toBeGreaterThan(0);
