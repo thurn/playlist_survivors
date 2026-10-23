@@ -1,5 +1,5 @@
 /**
- * Fixed-speed strides (play mode's `strides` rule; see "Movement: Fixed-Speed
+ * Fixed-speed strides (see "Movement: Fixed-Speed
  * Strides" in docs/design/gameplay-redesign.md). The hero moves at one speed
  * whatever the tempo or press rate: ground builds up in a budget as world time
  * passes, never above one stride, and each stride spends all of it. Pressing

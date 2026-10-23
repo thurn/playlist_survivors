@@ -199,9 +199,9 @@ export function checkPlay(plan: Plan, lib: ContentLibrary, opts: PlayCheckOption
 
   results.push(...checkStrides(plan));
 
-  // Self-firing weapons: the sword swings on every grid time of the sections with a steady beat
-  // (until the finale blast ends its routine).
-  if (plan.rules?.selfFiring) {
+  // The sword swings on every grid time of the sections with a steady beat (until the finale blast
+  // ends its routine).
+  {
     const f: string[] = [];
     const struck = new Set(plan.swings.map((sw) => Math.round(sw.s * 1e4)));
     const blast = plan.hits.find((h) => h.source === "ring")?.s ?? Infinity;
@@ -218,7 +218,7 @@ export function checkPlay(plan: Plan, lib: ContentLibrary, opts: PlayCheckOption
   }
 
   // Zone waves: each starts on a downbeat and has left the screen within one bar.
-  if (plan.open) {
+  {
     const f: string[] = [];
     const downbeats = plan.barStart.filter((b) => Number.isFinite(b)).map((b) => plan.songBeats[b]);
     const warpAt = (s: number) => {
@@ -263,10 +263,10 @@ export function checkPlay(plan: Plan, lib: ContentLibrary, opts: PlayCheckOption
     let n = 0;
     // At least 80% of the cleave-eligible accents produce a cleave: with press cleaves, a shockwave
     // its press launched (every eligible accent's swing is heavy); before them, a heavy swing.
-    const accents = plan.cleaveAccents ?? [];
+    const accents = plan.cleaveAccents;
     if (accents.length > 0) {
       n++;
-      const heavy = new Set((plan.cleaves ?? plan.swings.filter((sw) => sw.kind === "heavy")).map((x) => Math.round(x.s * 1000)));
+      const heavy = new Set(plan.cleaves.map((x) => Math.round(x.s * 1000)));
       const missed = accents.filter((a) => !heavy.has(Math.round(a.s * 1000)));
       const got = accents.length - missed.length;
       if (got < 0.8 * accents.length) f.push(`only ${got} of ${accents.length} cleave accents produce a cleave (80% needed); missed ${missed.slice(0, 6).map((a) => fmt(a.s)).join(", ")}`);
@@ -290,19 +290,18 @@ export function checkPlay(plan: Plan, lib: ContentLibrary, opts: PlayCheckOption
       const near = plan.threats.filter((t) => t.outcome === "near-miss").length;
       if (near < 0.75 * plan.threats.length) f.push(`only ${near} of ${plan.threats.length} threats end as near misses (75% needed): ${plan.threats.filter((t) => t.outcome !== "near-miss").map((t) => `${t.kind} at ${fmt(t.s)} ${t.outcome}`).join(", ")}`);
     }
-    // Every scheduled level-up happens on its scheduled moment.
-    // (With the upgrade pool, the i-th level-up is the i-th upgrade, whatever it takes.)
-    (plan.levelUpsDue ?? []).forEach((due, i) => {
+    // Every scheduled level-up happens on its scheduled moment (the i-th level-up is the i-th upgrade, whatever it takes).
+    plan.levelUpsDue.forEach((due, i) => {
       n++;
-      const name = plan.upgrades ? `level-up #${i + 1}` : `the ${due.id} level-up`;
-      const got = plan.upgrades ? plan.upgrades[i] : plan.weapons.find((g) => g.id === due.id);
+      const name = `level-up #${i + 1}`;
+      const got = plan.upgrades[i];
       if (!got) f.push(`${name} never happens (scheduled at ${fmt(due.s)})`);
       else if (Math.abs(got.s - due.s) > 0.001) f.push(`${name} happens at ${fmt(got.s)}, not on its scheduled moment at ${fmt(due.s)}`);
       // Upgrade orbs: one is walked into at each.
-      if (plan.rules?.upgradeOrbs && got && "orbs" in got && !got.walked) f.push(`${name} at ${fmt(got.s)}: no orb is walked into${got.sTaken !== undefined ? ` (the one ahead is taken at ${fmt(got.sTaken)})` : ""}`);
+      if (got?.orbs && !got.walked) f.push(`${name} at ${fmt(got.s)}: no orb is walked into${got.sTaken !== undefined ? ` (the one ahead is taken at ${fmt(got.sTaken)})` : ""}`);
     });
     // Gems on the field: at least 60% of the experience dropped is collected.
-    if (plan.rules?.fieldGems) {
+    {
       n++;
       const g = gemTotals(plan);
       if (g.collected < 0.6 * g.dropped) f.push(`only ${g.collected} of ${g.dropped} experience dropped is collected (60% needed)`);
@@ -322,8 +321,8 @@ const GROOVE_FROM = "galop-vamp";
 export function tierShare(plan: Plan, test: (tier: number) => boolean): number {
   const from = plan.sections.findIndex((sec) => sec.label === GROOVE_FROM);
   const end = plan.stats.deathS ?? Infinity;
-  const ts = plan.tier?.s ?? [];
-  const tv = plan.tier?.v ?? [];
+  const ts = plan.tier.s;
+  const tv = plan.tier.v;
   let total = 0;
   let passed = 0;
   for (const sec of plan.sections.slice(from + 1)) {

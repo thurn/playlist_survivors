@@ -115,7 +115,7 @@ npm run bench -- --play       # live play from theme A to the climax, a press on
 |---|---|---|
 | A press during a hit-stop | verified | The simulation ends a hit-stop at a press (check "hit-stops" accepts stops shorter than 40 ms only when a press ended them). **Human:** find one by eye. |
 | A diagonal step | verified | Unit test: a perpendicular key within 40 ms bends the step smoothly onto the diagonal, landing 44 px away. The virtual player presses diagonals as two keys a few milliseconds apart. |
-| The corridor edge | verified | Unit test: a step toward the edge stops at it. |
+| The corridor edge | retired | The forest corridor is gone (hv-zoon): the open field has no edge. |
 | Other seeds | verified | `check:seeds` (1859, 7, 2024) passes every check; seeds 1, 2, 3, 42, 99 and 500 also pass. |
 | Determinism | verified | `check:seeds`: two runs of the level's seed give the same plan hash. e2e: a reload loads the cached plan with the same hash. |
 | Hidden tab | verified | `qa` stalls the page's main thread for 3 s, which stops frames and timers as a hidden tab does, while the audio plays on. On return the picture jumps to the right moment (song time moved 3.0 s over 3.0 s, the picture within 30 ms of the audio), and the sounds that fell behind are skipped, not started late. A real tab switch in Google Chrome was dropped from `qa`: it was slow (it played to the climax in real time) and flaky (Chrome often never hid the page). A real tab switch is still worth trying by hand. |

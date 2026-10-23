@@ -1,17 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { loadRealContent } from "../scripts/lib/content-check.ts";
-import { levelResolver, readSource } from "../scripts/lib/files.ts";
-import { loadLevel } from "../src/content/loader.ts";
-import { syntheticSongMap } from "./fixtures/synthetic-song.ts";
 import { TAU, wrapAngle } from "../src/core/geometry.ts";
 import { aim, type AimTarget } from "../src/sim/aim.ts";
 import { stepSpan } from "../src/sim/schedule.ts";
-import { bendStep, startStep, stepEnd, stepPose, walkFrame, walkTarget, walkVelocity, type Clamp } from "../src/sim/movement.ts";
-import { armedStrike, damageMultiplier, grooveAfterOffbeat, grooveAfterPress, grooveDecay, ratePress, ratePressOnGrid, windupStart } from "../src/sim/timing.ts";
+import { bendStep, KEY_DIR, movePose, stepEnd, walkFrame, type Key, type Step } from "../src/sim/movement.ts";
+import { ratePress, ratePressOnGrid } from "../src/sim/timing.ts";
 
-// (The hero's values from before the redesign, as the legacy demo level restores them: these
-// modules' old step and walk math, until hv-zoon removes it.)
-const hero = loadLevel(readSource("tests/fixtures/legacy-demo.level.yaml"), loadRealContent(), syntheticSongMap(), levelResolver).hero;
+const hero = loadRealContent().hero;
 
 describe("hero content", () => {
   it("loads the hero settings", () => {
@@ -21,39 +16,25 @@ describe("hero content", () => {
   });
 });
 
-describe("step movement", () => {
-  it("moves one quick, firm step and then stands still", () => {
-    const st = startStep(hero, 10, 100, 200, "right");
-    expect(stepPose(hero, st, 10).x).toBe(100);
-    // Cubic ease-out: most of the distance is covered early.
-    const early = stepPose(hero, st, 10.03);
-    expect(early.x - 100).toBeGreaterThan(0.5 * 44);
-    expect(early.z).toBeGreaterThan(0);
-    const end = stepPose(hero, st, 10.11);
-    expect(end.x).toBeCloseTo(144, 6);
-    expect(end.y).toBe(200);
-    expect(end.z).toBeCloseTo(0, 6);
-    // Long after, still exactly at the landing spot.
-    expect(stepPose(hero, st, 12).x).toBeCloseTo(144, 6);
-  });
+describe("bends", () => {
+  /** A 44 px stride toward `key`, pressed at world time 0 from the origin. */
+  const stride = (key: Key): Step => {
+    const d = KEY_DIR[key];
+    return { w0: 0, x0: 0, y0: 0, dx: d.x, dy: d.y, len1: 44, ex: d.x * 44, ey: d.y * 44, keys: [key], len: 44 };
+  };
+  const durationS = hero.stride.durationMs / 1000;
 
-  it("hops 5 px at its peak", () => {
-    const st = startStep(hero, 0, 0, 0, "up");
-    expect(stepPose(hero, st, 0.055).z).toBeCloseTo(5, 6);
-    expect(stepPose(hero, st, 0.11).y).toBeCloseTo(-44, 6);
-  });
-
-  it("bends toward the diagonal for a perpendicular key in the window, landing 44 px away", () => {
-    const st = startStep(hero, 0, 0, 0, "right");
-    const bent = bendStep(hero, st, 0.012, "up")!;
+  it("bend a stride toward the diagonal for a perpendicular key in the window, landing 44 px away", () => {
+    const st = stride("right");
+    const bent = bendStep(hero, st, 0.012, "up", undefined, durationS)!;
     expect(bent).toBeDefined();
     const end = stepEnd(bent);
     expect(Math.hypot(end.x, end.y)).toBeCloseTo(44, 6);
     expect(end.x).toBeCloseTo(44 / Math.SQRT2, 6);
     expect(end.y).toBeCloseTo(-44 / Math.SQRT2, 6);
     // The path is continuous at the bend and smooth after it (no kink: small turns between samples).
-    const at = (w: number) => stepPose(hero, bent, w);
-    const before = stepPose(hero, st, 0.012);
+    const at = (w: number) => movePose(bent, w, durationS, hero.stride.hop);
+    const before = movePose(st, 0.012, durationS, hero.stride.hop);
     expect(at(0.012).x).toBeCloseTo(before.x, 6);
     let prevAng: number | undefined;
     for (let w = 0.013; w < 0.105; w += 0.002) {
@@ -64,39 +45,20 @@ describe("step movement", () => {
       prevAng = ang;
     }
     expect(at(0.2).x).toBeCloseTo(end.x, 6);
+    // It hops at its peak.
+    expect(at(durationS / 2).z).toBeCloseTo(hero.stride.hop, 6);
   });
 
-  it("does not bend for a late, parallel or second extra key", () => {
-    const st = startStep(hero, 0, 0, 0, "right");
-    expect(bendStep(hero, st, 0.05, "up")).toBeUndefined();
-    expect(bendStep(hero, st, 0.01, "left")).toBeUndefined();
-    const bent = bendStep(hero, st, 0.01, "down")!;
-    expect(bendStep(hero, bent, 0.02, "up")).toBeUndefined();
-  });
-
-  it("shortens a step that would leave the corridor", () => {
-    // A wall at y = -20.
-    const walls: Clamp = (_x, y, _dx, dy, len) => (dy < 0 ? Math.min(len, Math.max(0, (y + 20) / -dy)) : len);
-    const st = startStep(hero, 0, 0, 0, "up", walls);
-    expect(stepEnd(st).y).toBeCloseTo(-20, 6);
-    expect(stepPose(hero, st, 0.05).y).toBeGreaterThanOrEqual(-20);
+  it("leave a stride alone for a late, parallel or second extra key", () => {
+    const st = stride("right");
+    expect(bendStep(hero, st, 0.05, "up", undefined, durationS)).toBeUndefined();
+    expect(bendStep(hero, st, 0.01, "left", undefined, durationS)).toBeUndefined();
+    const bent = bendStep(hero, st, 0.01, "down", undefined, durationS)!;
+    expect(bendStep(hero, bent, 0.02, "up", undefined, durationS)).toBeUndefined();
   });
 });
 
-describe("free movement", () => {
-  it("walks at full speed within 60 ms and in eight directions", () => {
-    const t = walkTarget(hero, ["up", "right"]);
-    expect(Math.hypot(t.x, t.y)).toBeCloseTo(80, 6);
-    expect(t.x).toBeCloseTo(80 / Math.SQRT2, 6);
-    let v = { x: 0, y: 0 };
-    for (let i = 0; i < 6; i++) v = walkVelocity(hero, v.x, v.y, t.x, t.y, 0.01);
-    expect(Math.hypot(v.x, v.y)).toBeCloseTo(80, 6);
-    expect(walkTarget(hero, ["left", "right"])).toEqual({ x: 0, y: 0 });
-    let s = { x: 80, y: 0 };
-    for (let i = 0; i < 6; i++) s = walkVelocity(hero, s.x, s.y, 0, 0, 0.01);
-    expect(Math.hypot(s.x, s.y)).toBeCloseTo(0, 6);
-  });
-
+describe("walking", () => {
   it("advances the walk cycle by distance", () => {
     expect(walkFrame(hero, 0, 8)).toBe(0);
     expect(walkFrame(hero, 32, 8)).toBe(4);
@@ -106,17 +68,10 @@ describe("free movement", () => {
 
 describe("timing", () => {
   it("rates presses by their distance from the grid", () => {
-    expect(ratePress(hero, 0.02, 0.32)).toMatchObject({ rating: "perfect", accuracy: 1 });
-    expect(ratePress(hero, -0.0525, 0.32).rating).toBe("great");
-    expect(ratePress(hero, -0.0525, 0.32).accuracy).toBeCloseTo(0.875, 6);
-    expect(ratePress(hero, 0.095, 0.32).accuracy).toBeCloseTo(0.575, 6);
-    expect(ratePress(hero, 0.095, 0.32).rating).toBe("good");
-    const late = ratePress(hero, 0.14, 0.32);
-    expect(late.rating).toBeUndefined();
-    // 0.4 at 120 ms, floor at half a grid step (160 ms).
-    expect(late.accuracy).toBeCloseTo(0.25, 6);
-    expect(ratePress(hero, 0.2, 2).accuracy).toBeCloseTo(0.4 - 0.3 * (80 / 130), 6);
-    expect(ratePress(hero, 0.3, 2).accuracy).toBeCloseTo(0.1, 6);
+    expect(ratePress(hero, 0.02)).toEqual({ delta: 0.02, rating: "perfect" });
+    expect(ratePress(hero, -0.06).rating).toBe("great");
+    expect(ratePress(hero, 0.12).rating).toBe("good");
+    expect(ratePress(hero, 0.15).rating).toBeUndefined();
   });
 
   it("rates against the nearest grid time", () => {
@@ -125,43 +80,6 @@ describe("timing", () => {
     expect(r.gridIndex).toBe(2);
     expect(r.delta).toBeCloseTo(-0.008, 9);
     expect(r.rating).toBe("perfect");
-  });
-
-  it("moves the groove 30% toward each press's accuracy and halves it every 8 idle bars", () => {
-    expect(grooveAfterPress(hero, 0.5, 1)).toBeCloseTo(0.65, 9);
-    expect(grooveAfterPress(hero, 0.9, 0.4)).toBeCloseTo(0.75, 9);
-    expect(grooveDecay(hero, 0.8, 8)).toBeCloseTo(0.4, 9);
-    expect(grooveDecay(hero, 0.8, 4)).toBeCloseTo(0.8 / Math.SQRT2, 9);
-  });
-
-  it("raises damage by up to 20%", () => {
-    expect(damageMultiplier(hero, 0)).toBe(1);
-    expect(damageMultiplier(hero, 0.95)).toBeCloseTo(1.19, 9);
-    expect(damageMultiplier(hero, 1)).toBeCloseTo(1.2, 9);
-  });
-
-  it("lets off-beat presses lift the groove past full, to +25% damage, and never lower it", () => {
-    expect(grooveAfterOffbeat(hero, 1, 1)).toBeCloseTo(1.075, 9);
-    let g = 1;
-    for (let k = 0; k < 40; k++) g = grooveAfterOffbeat(hero, g, 1);
-    expect(g).toBeCloseTo(1.25, 6);
-    expect(damageMultiplier(hero, g)).toBeCloseTo(1.25, 6);
-    expect(damageMultiplier(hero, 2)).toBeCloseTo(1.25, 9);
-    // A Good off-beat (accuracy 0.4) when the groove is already high leaves it alone.
-    expect(grooveAfterOffbeat(hero, 0.9, 0.4)).toBe(0.9);
-    // On-grid presses alone pull it back toward their accuracy.
-    expect(grooveAfterPress(hero, 1.25, 1)).toBeCloseTo(1.175, 9);
-  });
-
-  it("arms the swing for the first grid time at least 90 ms after the press", () => {
-    const grid = [88.01, 88.334, 88.658];
-    // An on-time press strikes on the next beat.
-    expect(armedStrike(hero, grid, 88.002)).toBe(1);
-    // A press 250 ms late still strikes on the grid.
-    expect(armedStrike(hero, grid, 88.26)).toBe(2);
-    expect(armedStrike(hero, grid, 88.7)).toBe(3);
-    expect(windupStart(hero, 88.002, 88.334)).toBeCloseTo(88.144, 9);
-    expect(windupStart(hero, 88.2, 88.334)).toBe(88.2);
   });
 });
 

@@ -1,6 +1,6 @@
 /**
  * The virtual player: a deterministic program that plays like a highly skilled
- * human. It knows the song (the press pattern, the timing grid, the route
+ * human. It knows the song (the press pattern, the timing grid, the roam
  * pace), as a practiced player would, and sees only the current game state
  * when it acts. It never sees the future of the simulation.
  */
@@ -39,16 +39,14 @@ export interface Observation {
   levelUpAt?: number;
   /** The small health pool: chickens lying in sight. */
   chickens?: { x: number; y: number }[];
-  /** Where the route schedule says the hero should be now, and the route's direction there. */
+  /** The hero's position and heading now (what the player keeps up with before its roam point first moves). */
   pacePoint: { x: number; y: number; tx: number; ty: number };
-  /** Distance from a point to the edge of the walkable band (negative outside). */
-  edgeDistance: (x: number, y: number) => number;
 }
 
 export interface KeyEvent {
   s: number;
   kind: "press" | "release";
-  /** A direction, or Space (play mode's stomp). */
+  /** A direction, or Space (a stomp). */
   key: InputKey;
   /** Play mode's log: which keyboard event this is (the simulation only passes it on to its traces). */
   id?: number;
@@ -89,20 +87,11 @@ const SIM_REACTION = 0.15;
 export const PROFILES: Record<SkillProfile, ProfileSpec> = {
   perfect: { sd: 0, clampS: 0, downbeatsOnly: false, pressRate: 1, accentRate: 1, reaction: SIM_REACTION, sloppy: 0 },
   skilled: { sd: 0.012, clampS: 0.04, downbeatsOnly: false, pressRate: 1, accentRate: 1, reaction: SIM_REACTION, sloppy: 0 },
-  casual: { sd: 0.12, clampS: 0.25, downbeatsOnly: true, pressRate: 1, accentRate: 1, reaction: SIM_REACTION, sloppy: 0 },
+  casual: { sd: 0.06, clampS: 0.15, downbeatsOnly: true, pressRate: 1, accentRate: 1, reaction: SIM_REACTION, sloppy: 0 },
   // The automated stand-in for a moderately competent human (play mode's checks require it to
   // hit the signature moments).
   moderate: { sd: 0.03, clampS: 0.1, downbeatsOnly: false, pressRate: 0.85, accentRate: 0.8, reaction: 0.25, sloppy: 0.15 },
   eighths: { sd: 0.012, clampS: 0.04, downbeatsOnly: false, eighths: true, pressRate: 1, accentRate: 1, reaction: SIM_REACTION, sloppy: 0 },
-};
-
-/**
- * Changes to the profiles under the groove (rules.pressClasses), kept apart so the demo's players
- * stay as they are until the demo takes the groove too (hv-efvd): the casual player stands for a
- * sparse, sloppy but honest player, and at 185 beats per minute 120 ms is close to random timing.
- */
-const GROOVE_PROFILES: Partial<Record<SkillProfile, Partial<ProfileSpec>>> = {
-  casual: { sd: 0.06, clampS: 0.15 },
 };
 
 /** Sections as the player knows them: the press pattern and step movement. */
@@ -117,10 +106,10 @@ export interface PlayerSection {
 
 /** A near miss: within this many pixels of the hurtbox's edge. */
 const NEAR = 24;
-/** Free movement: the weave across the corridor (px) and its period (beats). */
+/** Free movement: the weave across the roam heading (px) and its period (beats). */
 const WEAVE = 70;
 const WEAVE_BEATS = 16;
-/** Free movement: aim this far ahead of the pace point, and stand still when this close. */
+/** Free movement: aim this far ahead of the roam point, and stand still when this close. */
 const STEER_LEAD = 16;
 const STEER_STOP = 14;
 /** The open field's roam point: it turns at most this much per bar, heads for a crowd farther than this, and stays this close to the hero. */
@@ -201,9 +190,6 @@ export class VirtualPlayer implements Player {
   private readonly spec: ProfileSpec;
   private readonly sections: readonly PlayerSection[];
   private readonly beats: readonly number[];
-  private readonly open: boolean;
-  /** Fixed-speed strides (play mode): hold the direction between presses, and let go to stand. */
-  private readonly strides: boolean;
   /** The cost of the latest choice of keys. */
   private bestCost = Infinity;
   /** The gem to seek for an observation (the same for every step it weighs). */
@@ -222,26 +208,19 @@ export class VirtualPlayer implements Player {
     profile: SkillProfile = "skilled",
     /** Is a grid slot an accent the section turns into a cleave? */
     heavyAccent: (slot: GridSlot) => boolean = () => false,
-    /** Press cleaves: press each eligible accent on the chord, instead of setting it up a grid step early. */
-    opts: { open?: boolean; strides?: boolean; groove?: boolean; pressOnAccents?: boolean } = {},
   ) {
-    const spec = opts.groove ? { ...PROFILES[profile], ...GROOVE_PROFILES[profile] } : PROFILES[profile];
+    const spec = PROFILES[profile];
     this.spec = spec;
     this.sections = sections;
     this.beats = beats;
-    this.open = opts.open ?? false;
-    this.strides = opts.strides ?? false;
     const grid = slots.filter((sl) => sl.kind === "grid" && sections[sl.section].steps);
     grid.forEach((sl, i) => {
       const sec = sections[sl.section];
       let pressed = spec.eighths || (spec.downbeatsOnly ? sl.slot === 0 : sec.presses[sl.slot % sec.presses.length] === "x");
       if (pressed && spec.pressRate < 1 && new Rng(seed, "press-skip", Math.round(sl.s * 1000)).next() >= spec.pressRate) pressed = false;
-      // Press one grid step before an accent strong enough for a cleave, even on a rest slot (with
-      // press cleaves, on the accent itself).
+      // Press each accent strong enough for a cleave on the chord, even on a rest slot.
       const next = grid[i + 1];
-      if (opts.pressOnAccents) {
-        if (heavyAccent(sl) && (spec.accentRate >= 1 || new Rng(seed, "accent-press", Math.round(sl.s * 1000)).next() < spec.accentRate)) pressed = true;
-      } else if (next && heavyAccent(next) && (spec.accentRate >= 1 || new Rng(seed, "accent-setup", Math.round(sl.s * 1000)).next() < spec.accentRate)) pressed = true;
+      if (heavyAccent(sl) && (spec.accentRate >= 1 || new Rng(seed, "accent-press", Math.round(sl.s * 1000)).next() < spec.accentRate)) pressed = true;
       const r = new Rng(seed, "press-time", Math.round(sl.s * 1000));
       const err = spec.sd > 0 ? clamp(normal(r) * spec.sd, -spec.clampS, spec.clampS) : 0;
       this.plan.push({ s: sl.s + (pressed ? err : 0), kind: pressed ? "press" : "watch", beat: sl.bi });
@@ -282,21 +261,12 @@ export class VirtualPlayer implements Player {
     if (d.kind === "steer") return this.steer(obs, d.beat, d.release ?? false);
     // On a rest slot, press only to get out of a threat's way, or toward a chosen upgrade orb (or a
     // chicken, below CHICKEN_HEALTH).
-    if (d.kind === "watch" && !this.inDanger(obs) && !obs.orbs?.length && !this.chickenTarget(obs)) return this.strides ? this.keepHolding(obs) : [];
+    if (d.kind === "watch" && !this.inDanger(obs) && !obs.orbs?.length && !this.chickenTarget(obs)) return this.keepHolding(obs);
     const keys = this.chooseKeys(obs);
     this.count++;
     const r = new Rng(this.seed, "press-keys", this.count);
-    if (this.strides && obs.levelUpAt !== undefined && obs.levelUpAt - obs.s < LEVEL_WAIT && !this.inDanger(obs)) return this.stomp(obs, r);
-    if (this.strides) return this.strideKeys(obs, keys, r);
-    const out: KeyEvent[] = [];
-    let s = obs.s;
-    for (let i = 0; i < keys.length; i++) {
-      // A diagonal's second key follows within a few milliseconds.
-      if (i > 0) s += r.range(0.002, 0.015);
-      out.push({ s, kind: "press", key: keys[i] });
-    }
-    for (const k of keys) out.push({ s: s + r.range(0.06, 0.1), kind: "release", key: k });
-    return out;
+    if (obs.levelUpAt !== undefined && obs.levelUpAt - obs.s < LEVEL_WAIT && !this.inDanger(obs)) return this.stomp(obs, r);
+    return this.strideKeys(obs, keys, r);
   }
 
   /**
@@ -318,6 +288,7 @@ export class VirtualPlayer implements Player {
     }
     let s = obs.s;
     for (let i = 0; i < keys.length; i++) {
+      // A diagonal's second key follows within a few milliseconds.
       if (i > 0) s += r.range(0.002, 0.015);
       out.push({ s, kind: "press", key: keys[i] });
     }
@@ -426,8 +397,8 @@ export class VirtualPlayer implements Player {
   }
 
   /**
-   * Free movement: hold the direction key toward the pace point plus a slow
-   * weave across the corridor.
+   * Free movement: hold the direction key toward the roam point plus a slow
+   * weave across its heading.
    */
   private steer(obs: Observation, beat: number, release: boolean): KeyEvent[] {
     let want: Key[] = [];
@@ -463,9 +434,9 @@ export class VirtualPlayer implements Player {
     return out;
   }
 
-  /** What the player keeps up with: the route's pace point, or in the open field its roam point. */
+  /** What the player keeps up with: its roam point (before the first decision, where the hero starts). */
   private paceFrame(obs: Observation): Observation["pacePoint"] {
-    if (!this.open || !this.roam) return obs.pacePoint;
+    if (!this.roam) return obs.pacePoint;
     return { x: this.roam.x, y: this.roam.y, tx: Math.cos(this.roam.dir), ty: Math.sin(this.roam.dir) };
   }
 
@@ -484,12 +455,11 @@ export class VirtualPlayer implements Player {
   }
 
   /**
-   * The open field has no pace point: the player follows a roam point instead. It starts at the
+   * The open field has no route: the player follows a roam point instead. It starts at the
    * hero and moves at the section's pace along a heading that turns slowly (seeded, at most 45
    * degrees per bar), pulled toward a dancing formation, or else the crowd, when it is more than 200 px away.
    */
   private moveRoam(obs: Observation): void {
-    if (!this.open) return;
     const bi = this.beatIndex(obs.s);
     if (!this.roam) {
       this.roam = { x: obs.hero.x, y: obs.hero.y, dir: 0, w: obs.w, bi };
@@ -569,15 +539,15 @@ export class VirtualPlayer implements Player {
 
   /**
    * What a step toward d (a unit vector, or zero to stand) costs where it leaves the hero, (ax, ay),
-   * L px away: keeping up with the pace frame p, threats, walls and the crowd.
+   * L px away: keeping up with the roam frame p, threats and the crowd.
    */
   private placeCost(obs: Observation, p: Observation["pacePoint"], d: { x: number; y: number }, ax: number, ay: number, L: number): number {
     const nx = -p.ty;
     const ny = p.tx;
-    // Keep up with the route: along the route (stay within the pace window) and across it.
+    // Keep up with the roam point: along its heading and across it.
     const along = (ax - p.x) * p.tx + (ay - p.y) * p.ty;
     const lat = (ax - p.x) * nx + (ay - p.y) * ny;
-    // (Upgrade orbs: while one is chosen, the route waits.)
+    // (Upgrade orbs: while one is chosen, the roam point waits.)
     const orb = this.orbTarget(obs);
     let cost = orb ? 0 : along > 0 ? (along / 30) ** 2 : (along / 70) ** 2;
     if (!orb) cost += (lat / 160) ** 2;
@@ -588,9 +558,6 @@ export class VirtualPlayer implements Player {
       const e = easeOut(u);
       cost += this.threatCost(t, obs.hero.x + d.x * L * e, obs.hero.y + d.y * L * e);
     }
-    // Stay off the walls.
-    const edge = obs.edgeDistance(ax, ay);
-    cost += 2.0 * clamp(1 - edge / 60, 0, 2);
     // Don't get buried, but stay in the fight.
     let near = 0;
     let close = 0;
@@ -601,10 +568,10 @@ export class VirtualPlayer implements Player {
     }
     cost += 0.5 * Math.min(close, 6) * 0.5;
     cost -= 0.8 * Math.min(near, 15) / 5;
-    // Keep away from the boss (play mode, where it hurts: the hero has health).
-    if (obs.boss && obs.hero.health !== undefined) cost += BOSS_AVOID * clamp((BOSS_KEEP - Math.hypot(ax - obs.boss.x, ay - obs.boss.y)) / BOSS_KEEP, 0, 1);
+    // Keep away from the boss (it bites, and slams where the hero stands).
+    if (obs.boss) cost += BOSS_AVOID * clamp((BOSS_KEEP - Math.hypot(ax - obs.boss.x, ay - obs.boss.y)) / BOSS_KEEP, 0, 1);
     // Strides: walk up to a dancing line, so the cleave on its release reaches the whole line.
-    const f = this.strides ? this.line(obs) : undefined;
+    const f = this.line(obs);
     if (f) cost += 3 * clamp((Math.hypot(ax - f.x, ay - f.y) - ROAM_FORMATION) / 100, 0, 3);
     // A closing ring: from tier 2 wait in its middle and cleave the chord; below it, leave through the
     // nearest gap before it closes (once outside, it no longer matters).
@@ -646,8 +613,8 @@ export class VirtualPlayer implements Player {
 
   /** Score the eight directions by where the step would leave the hero, and pick the lowest cost. */
   private chooseKeys(obs: Observation): Key[] {
-    // (With strides a press covers the budget: judge where it would leave the hero by that.)
-    const L = this.strides && obs.hero.stride !== undefined ? obs.hero.stride : this.hero.step.length;
+    // (A press covers the stride's budget: judge where it would leave the hero by that.)
+    const L = obs.hero.stride !== undefined ? obs.hero.stride : this.hero.step.length;
     const p = this.paceFrame(obs);
     let best: Key[] = DIRECTIONS[0];
     let bestCost = Infinity;

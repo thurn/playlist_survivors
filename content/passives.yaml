@@ -1,4 +1,4 @@
-# Play mode's passives (rules.upgradePool): stat bonuses a level-up can offer beside the weapon
+# Passives: stat bonuses a level-up can offer beside the weapon
 # upgrades. Each can be taken again, and the bonuses add up.
 passives:
   - id: max-health

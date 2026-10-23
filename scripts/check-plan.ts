@@ -22,7 +22,7 @@ const arg = (k: string) => args.find((a) => a.startsWith(`--${k}=`))?.split("=")
 const base = plannerInput();
 const seeds = (arg("seeds") ?? arg("seed") ?? String(base.level.seed)).split(",").map(Number);
 const profile = (arg("player") ?? base.level.player) as SkillProfile;
-const bonus = (p: Plan) => `+${(p.stats.averageGroove * base.content.hero.groove.maxBonus * 100).toFixed(0)}%`;
+const groove = (p: Plan) => `${(p.stats.averageGroove * 100).toFixed(0)}%`;
 
 let failed = false;
 /** Plan one seed and profile, run its checks, and print one summary. */
@@ -41,7 +41,7 @@ function run(seed: number, prof: SkillProfile, full: boolean): Plan {
   console.log(
     `plan ${planHash(plan)} (seed ${seed}, ${prof}) in ${(performance.now() - t0).toFixed(0)} ms: ` +
       `${st.enemies} enemies, peak ${st.peakPopulation}, ${plan.hud.kills.length} kills, ${st.presses} presses ` +
-      `(${st.ratings.perfect} perfect), groove ${bonus(plan)}, ${plan.nearMisses.length}/${plan.threats.length} near misses`,
+      `(${st.ratings.perfect} perfect), groove ${groove(plan)}, ${plan.nearMisses.length}/${plan.threats.length} near misses`,
   );
   console.log(ok ? `  all ${results.length} checks pass` : text);
   return plan;
@@ -50,7 +50,7 @@ function run(seed: number, prof: SkillProfile, full: boolean): Plan {
 const main = run(seeds[0], profile, true);
 if (args.includes("--casual") && profile !== "casual") {
   const casual = run(seeds[0], "casual", false);
-  console.log(`reward spectrum: ${profile} ${main.hud.kills.length} kills at ${bonus(main)}; casual ${casual.hud.kills.length} kills at ${bonus(casual)}`);
+  console.log(`reward spectrum: ${profile} ${main.hud.kills.length} kills at ${groove(main)}; casual ${casual.hud.kills.length} kills at ${groove(casual)}`);
 }
 for (const seed of seeds.slice(1)) run(seed, profile, false);
 if (args.includes("--determinism")) {

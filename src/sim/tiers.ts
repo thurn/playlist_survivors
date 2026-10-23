@@ -1,5 +1,5 @@
 /**
- * What a tier changes (play mode's rules.selfFiring; see "What a tier changes" in
+ * What a tier changes (see "What a tier changes" in
  * docs/design/gameplay-redesign.md): attack area, and a little damage. The
  * content gives each value at tiers 0 to 3; a tier past the last uses the last.
  */
@@ -13,13 +13,13 @@ export function swingArcAt(hero: HeroDef, tier: number): { radius: number; degre
   return { radius: arc.radius, degrees: arc.degrees };
 }
 
-/** The heavy impact's arc at a tier (rules.pressCleaves), or the heavy swing's own. */
+/** The heavy impact's arc at a tier, or the heavy swing's own. */
 export function heavyArcAt(hero: HeroDef, tier: number): { radius: number; degrees: number } {
   const arc = hero.swings.heavy.tiers ? at(hero.swings.heavy.tiers, tier) : hero.swings.heavy.hitShape;
   return { radius: arc.radius, degrees: arc.degrees };
 }
 
-/** How far a cleave's shockwave reaches at a tier (rules.pressCleaves), or the heavy swing's own. */
+/** How far a cleave's shockwave reaches at a tier, or the heavy swing's own. */
 export function waveReachAt(hero: HeroDef, tier: number): number {
   const t = hero.swings.heavy.wave.tiers;
   return t ? at(t, tier) : hero.swings.heavy.wave.to;

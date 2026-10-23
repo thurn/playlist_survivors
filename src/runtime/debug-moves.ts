@@ -85,7 +85,7 @@ export function movesReadout(plan: Plan, s: number): MovesReadout {
 
   // Speed: the path walked over a whole number of stride periods, about a second, up to now. A
   // steady walk (held, or tapped on the grid) then covers whole strides whatever the phase.
-  const period = plan.strides ? stridePeriodAt(plan, s) : 1;
+  const period = stridePeriodAt(plan, s);
   const from = Math.max(0, w - Math.max(1, Math.round(1 / period)) * period);
   let covered = 0;
   let prev = heroSample(plan, from);
@@ -143,13 +143,9 @@ export function movesReadout(plan: Plan, s: number): MovesReadout {
     return p;
   });
 
-  let tier: number | undefined;
-  if (plan.tier) {
-    let k = 0;
-    while (k + 1 < plan.tier.s.length && plan.tier.s[k + 1] <= s + 1e-9) k++;
-    tier = plan.tier.v[k];
-  }
-  return { s, speed, ...(budget !== undefined ? { budget } : {}), groove: grooveAt(plan.groove, s), ...(tier !== undefined ? { tier } : {}), presses: recent };
+  let k = 0;
+  while (k + 1 < plan.tier.s.length && plan.tier.s[k + 1] <= s + 1e-9) k++;
+  return { s, speed, ...(budget !== undefined ? { budget } : {}), groove: grooveAt(plan.groove, s), tier: plan.tier.v[k], presses: recent };
 }
 
 /** The readout as lines of text. */

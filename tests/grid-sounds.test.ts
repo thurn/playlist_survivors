@@ -1,5 +1,5 @@
 /**
- * Sound on the Grid (play mode's gridSounds; docs/design/gameplay-redesign.md): every gameplay
+ * Sound on the Grid (docs/design/gameplay-redesign.md): every gameplay
  * sound plays on a slot of its subdivision, and one known less than 60 ms before its slot moves to
  * a later slot instead of starting late, the same in live play and its replay.
  */
@@ -19,7 +19,7 @@ import { syntheticSongMap } from "./fixtures/synthetic-song.ts";
 
 const input = plannerInput({ songMap: syntheticSongMap(), level: "levels/orpheus-galop.play.yaml" });
 const props = propsFromAtlas();
-const { ctx, sch } = prepare(input, props);
+const { ctx, sch } = prepare(input);
 const section = (label: string) => ctx.sections.find((x) => x.label === label)!;
 
 describe("never late", () => {

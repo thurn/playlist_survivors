@@ -196,7 +196,7 @@ await withDevServer(async (base) => {
   if (!onlyPlay) {
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
     const page = await ctx.newPage();
-    const runs: Record<string, { bonus: number; kills: number; presses: number; ratings: Record<string, number>; offGrid: number; swings: number; failed: string[] }> = {};
+    const runs: Record<string, { groove: number; kills: number; presses: number; ratings: Record<string, number>; offGrid: number; swings: number; failed: string[] }> = {};
     for (const player of ["skilled", "casual"]) {
       await page.goto(`${base}/?test&player=${player}`);
       await waitReady(page);
@@ -206,7 +206,7 @@ await withDevServer(async (base) => {
         const grid = Array.from(p.grid);
         const offGrid = p.swings.filter((sw) => Math.min(...grid.map((g) => Math.abs(g - sw.s))) > 0.001).length;
         return {
-          bonus: p.stats.averageGroove * 0.2,
+          groove: p.stats.averageGroove,
           kills: p.hud.kills.length,
           presses: p.stats.presses,
           ratings: p.stats.ratings,
@@ -241,12 +241,12 @@ await withDevServer(async (base) => {
       }
     }
     for (const [player, r] of Object.entries(runs)) {
-      record(`?player=${player}: every check passes and every impact is on the grid`, r.failed.length === 0 && r.offGrid === 0, r.failed.length ? `failing: ${r.failed.join(", ")}` : `${r.swings} swings, ${r.offGrid} off the grid; ${r.presses} presses (perfect ${r.ratings.perfect}, great ${r.ratings.great}, good ${r.ratings.good}, unrated ${r.ratings.none}); ${r.kills} kills; average groove +${(r.bonus * 100).toFixed(0)}%`);
+      record(`?player=${player}: every check passes and every impact is on the grid`, r.failed.length === 0 && r.offGrid === 0, r.failed.length ? `failing: ${r.failed.join(", ")}` : `${r.swings} swings, ${r.offGrid} off the grid; ${r.presses} presses (perfect ${r.ratings.perfect}, great ${r.ratings.great}, good ${r.ratings.good}, unrated ${r.ratings.none}); ${r.kills} kills; average groove ${(r.groove * 100).toFixed(0)}%`);
     }
     record(
       "Reward spectrum: casual below skilled",
-      runs.casual.bonus < runs.skilled.bonus - 0.03 && runs.casual.kills < runs.skilled.kills,
-      `average groove: casual +${(runs.casual.bonus * 100).toFixed(0)}%, skilled +${(runs.skilled.bonus * 100).toFixed(0)}%; kills: casual ${runs.casual.kills}, skilled ${runs.skilled.kills}`,
+      runs.casual.groove < runs.skilled.groove - 0.15 && runs.casual.kills < runs.skilled.kills,
+      `average groove: casual ${(runs.casual.groove * 100).toFixed(0)}%, skilled ${(runs.skilled.groove * 100).toFixed(0)}%; kills: casual ${runs.casual.kills}, skilled ${runs.skilled.kills}`,
     );
     await ctx.close();
   }

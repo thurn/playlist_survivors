@@ -9,7 +9,7 @@
  * 4. Record the camera from the simulated hero (the camera runs inside the simulation).
  * 5. Emit effects, sounds, gems and HUD data.
  */
-import { DEFAULT_PROPS, generateMap, type LandmarkPlacement, type TiledMap, type PropInfo } from "../mapgen/mapgen.ts";
+import { DEFAULT_PROPS, type TiledMap, type PropInfo } from "../mapgen/mapgen.ts";
 import { openFieldLayout, stampLandmark, WAVE_BANDS, type LandmarkStamp, type ZoneWave } from "../mapgen/openfield.ts";
 import { barOfBeatIndex, beatIndexAt, timeOfBeatIndex } from "../core/songmap.ts";
 import { partnerPress, type MapLayout, type OpenFieldRecord, type Plan, type PlanStats } from "../plan/types.ts";
@@ -20,7 +20,7 @@ import { resolveEvents } from "./musical.ts";
 import { emit } from "./emit.ts";
 import { recipeLife } from "../plan/effects-life.ts";
 import { grooveAt } from "../plan/evaluate.ts";
-import { buildSchedule, paceAt, type GridSlot, type Schedule } from "../sim/schedule.ts";
+import { buildSchedule, type GridSlot, type Schedule } from "../sim/schedule.ts";
 import { ENEMY_RATE, simulate, type SimResult } from "../sim/simulate.ts";
 import { HolderPlayer, MasherPlayer, VirtualPlayer, type Player, type PlayerName, type PlayerSection, type SkillProfile } from "../sim/player.ts";
 import { strideRule } from "../sim/strides.ts";
@@ -49,31 +49,12 @@ export interface SimRun {
 }
 
 /** The song schedule and the map: everything the simulation needs before it starts. */
-export function prepare(input: PlannerInput, props?: Record<string, PropInfo>): { ctx: Ctx; sch: Schedule; map: MapLayout } {
+export function prepare(input: PlannerInput): { ctx: Ctx; sch: Schedule; map: MapLayout } {
   const ctx = makeCtx(input);
   resolveEvents(ctx);
   const sch = buildSchedule(ctx);
-  // The open field has no route: its ground is generated in chunks as it is seen.
-  if (ctx.level.world === "open") return { ctx, sch, map: openFieldLayout(ctx.level.zones) };
-  // The route length comes from the pace schedule in song time, plus a margin for hit-stops.
-  const zoneExt = new Map<string, { d0: number; d1: number }>();
-  for (const sec of ctx.sections) {
-    const d0 = paceAt(sch, sec.s0);
-    const d1 = paceAt(sch, sec.s1);
-    const z = zoneExt.get(sec.level.zone);
-    if (z) z.d1 = d1;
-    else zoneExt.set(sec.level.zone, { d0, d1 });
-  }
-  const zones = ctx.level.zones.filter((z) => zoneExt.has(z)).map((id) => ({ id, ...zoneExt.get(id)! }));
-  const landmarks: LandmarkPlacement[] = [];
-  for (const e of ctx.events) {
-    if (!e.ev.landmark) continue;
-    const map = input.landmarks?.[e.ev.landmark] as TiledMap | undefined;
-    if (!map) continue;
-    landmarks.push({ id: e.ev.landmark, d: paceAt(sch, e.s), map });
-  }
-  const map = generateMap({ seed: ctx.seed, routeLength: paceAt(sch, ctx.duration) + 400, zones, themes: ctx.lib.zones, landmarks, props });
-  return { ctx, sch, map };
+  // The open field: its ground is generated in chunks as it is seen.
+  return { ctx, sch, map: openFieldLayout(ctx.level.zones) };
 }
 
 /** The parts of a plan that the song, the level and the map decide before play: a live recording has them too. */
@@ -103,12 +84,10 @@ export function planHeader(ctx: Ctx, sch: Schedule, map: MapLayout, profile: str
     accents: ctx.song.accents.map((a) => ({ s: a.time, strength: a.strength, punch: ctx.sections[sectionIndexAt(ctx, a.time)].level.camera.punchOnAccents })),
     title: ctx.level.title,
     profile,
-    pace: { rate: 120, d: Float32Array.from(sch.pace) },
     grid: Float64Array.from(sch.strikeTimes),
     cleaveAccents: sch.gridSlots.filter((sl) => cleaves(ctx, sl)).map((sl) => ({ s: sl.s, strength: sl.accent })),
     levelUpsDue: sch.levelUps.map((l) => ({ id: l.id, s: l.s })),
-    ...(ctx.level.rules.oneStepPerSlot || ctx.level.rules.accentTelegraphs ? { rules: ctx.level.rules } : {}),
-    ...(ctx.level.rules.strides ? { strides: stridesHeader(ctx, sch) } : {}),
+    strides: stridesHeader(ctx, sch),
   } satisfies Partial<Plan>;
 }
 
@@ -138,7 +117,6 @@ export function virtualPlayer(ctx: Ctx, sch: Schedule, profile: SkillProfile = "
     ctx.song.beats,
     profile,
     (slot) => cleaves(ctx, slot),
-    { open: ctx.level.world === "open", strides: ctx.level.rules.strides, groove: ctx.level.rules.pressClasses, pressOnAccents: ctx.level.rules.pressCleaves },
   );
 }
 
@@ -174,9 +152,9 @@ export function masherPlayer(ctx: Ctx, sch: Schedule, rate: number, profile: Ski
 
 /** Run the simulation only (no emission): for the causality and determinism checks. */
 export function runSim(input: PlannerInput, opts: { props?: Record<string, PropInfo>; profile?: PlayerName; player?: Player; cutS?: number; untilS?: number } = {}): SimRun {
-  const { ctx, sch, map } = prepare(input, opts.props);
+  const { ctx, sch, map } = prepare(input);
   const player = opts.player ?? playerFor(ctx, sch, opts.profile ?? input.profile ?? input.level.player);
-  const sim = simulate(ctx, sch, map, { player, cutS: opts.cutS, untilS: opts.untilS });
+  const sim = simulate(ctx, sch, { player, cutS: opts.cutS, untilS: opts.untilS });
   return { ctx, sch, map, sim };
 }
 
@@ -189,10 +167,10 @@ export function planWithSim(input: PlannerInput, opts: PlannerOptions = {}): { p
   const now = opts.now ?? (() => 0);
   const t0 = now();
   const profile = opts.profile ?? input.profile ?? input.level.player;
-  const { ctx, sch, map } = prepare(input, opts.props);
+  const { ctx, sch, map } = prepare(input);
   const tSim = now();
   const player = opts.player ?? playerFor(ctx, sch, profile);
-  const sim = simulate(ctx, sch, map, { player });
+  const sim = simulate(ctx, sch, { player });
   const simMs = now() - tSim;
   const warp = new Warp(sim.warp);
   const wEnd = warp.toWorld(ctx.duration);
@@ -284,18 +262,21 @@ export function planWithSim(input: PlannerInput, opts: PlannerOptions = {}): { p
     swings: sim.swings,
     inputs: sim.inputs,
     groove: { s: Float64Array.from(sim.groove.s), v: Float32Array.from(sim.groove.v) },
-    ...(ctx.level.rules.pressClasses ? { tier: { s: Float64Array.from(sim.tier.s), v: Uint8Array.from(sim.tier.v) } } : {}),
-    ...(ctx.level.rules.fieldGems ? { vacuums: sim.vacuums, pickupRadius: ctx.lib.hero.pickupRadius ?? [40] } : {}),
-    ...(ctx.level.rules.upgradePool ? { upgrades: sim.upgrades } : {}),
-    ...(ctx.level.rules.healthPool ? { bites: sim.bites, heals: sim.heals, chickens: sim.chickens } : {}),
-    ...(ctx.level.rules.pressCleaves ? { cleaves: sim.waves.filter((w) => w.s !== undefined).map((w) => ({ s: w.s!, press: w.press!, band0: w.band0! })) } : {}),
+    tier: { s: Float64Array.from(sim.tier.s), v: Uint8Array.from(sim.tier.v) },
+    vacuums: sim.vacuums,
+    pickupRadius: ctx.lib.hero.pickupRadius ?? [40],
+    upgrades: sim.upgrades,
+    bites: sim.bites,
+    heals: sim.heals,
+    chickens: sim.chickens,
+    cleaves: sim.waves.filter((w) => w.s !== undefined).map((w) => ({ s: w.s!, press: w.press!, band0: w.band0! })),
     health: { s: Float64Array.from(sim.health.s), v: Float32Array.from(sim.health.v) },
     nearMisses: sim.threats.filter((t) => t.outcome === "near-miss").map((t) => ({ s: t.s, w: t.w, kind: t.kind })),
     threats: sim.threats.map((t) => ({ s: t.s, kind: t.kind, outcome: t.outcome })),
     boss: sim.boss && sch.boss ? { id: sim.boss.id, deathS: sim.boss.deathS } : undefined,
     formations: sim.formations.map((f) => ({ def: f.def, sRelease: f.sRelease, members: f.members })),
     stats,
-    ...(ctx.level.world === "open" ? { open: openFieldRecord(ctx, map, sim, opts.props) } : {}),
+    open: openFieldRecord(ctx, map, sim, opts.props),
   };
   return { plan: recorded, sim };
 }

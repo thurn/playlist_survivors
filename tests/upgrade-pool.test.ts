@@ -1,5 +1,5 @@
 /**
- * The starting loadout and the upgrade pool (play mode's upgradePool): "The starting loadout" and
+ * The starting loadout and the upgrade pool: "The starting loadout" and
  * "The upgrade pool" in docs/design/gameplay-redesign.md, as pure lookups and through the
  * simulation on the synthetic song (on a seed whose first offer is the item under test).
  */
@@ -11,7 +11,8 @@ import { liveSession } from "../src/live/session.ts";
 import { Evaluator } from "../src/plan/evaluate.ts";
 import { prepare, virtualPlayer } from "../src/planner/plan.ts";
 import { replay } from "../src/runtime/play.ts";
-import type { KeyEvent } from "../src/sim/player.ts";
+import { KEY_DIR, KEYS, type Key } from "../src/sim/movement.ts";
+import type { KeyEvent, Player } from "../src/sim/player.ts";
 import { BatchRecorder } from "../src/sim/recorder.ts";
 import { Sim, worldFor } from "../src/sim/simulate.ts";
 import { chainAt, orbitAt, tierDamage } from "../src/sim/tiers.ts";
@@ -20,7 +21,7 @@ import { syntheticSongMap } from "./fixtures/synthetic-song.ts";
 
 const input = plannerInput({ songMap: syntheticSongMap(), level: "levels/orpheus-galop.play.yaml" });
 const props = propsFromAtlas();
-const { ctx, sch, map } = prepare(input, props);
+const { ctx, sch, map } = prepare(input);
 const lib = ctx.lib;
 const pool = ctx.level.upgrades;
 const blades = lib.weapons.get("orbiting-blades")!;
@@ -28,18 +29,18 @@ const lightning = lib.weapons.get("chain-lightning")!;
 const key = (i: UpgradeItem) => `${i.kind}:${i.id}`;
 
 /**
- * The first seed whose first `items.length` level-ups each take that item: the first offer (without
- * upgrade orbs), or with `choose`, the one it picks (the virtual players' priority).
+ * The first seed whose first `items.length` level-ups each offer that item (for `choosing` to take),
+ * or with `seedChoosing`, each take that item by `choose`.
  */
 function seedTaking(...items: string[]): number {
-  return seedChoosing(() => 0, ...items);
+  return seedChoosing((offers, i) => Math.max(0, offers.findIndex((o) => key(o) === items[i])), ...items);
 }
-function seedChoosing(choose: (offers: UpgradeItem[]) => number, ...items: string[]): number {
+function seedChoosing(choose: (offers: UpgradeItem[], index: number) => number, ...items: string[]): number {
   for (let seed = 1; seed < 50_000; seed++) {
     const l = startingLoadout(pool.loadout);
     if (items.every((it, i) => {
       const offers = offersFor(seed, i, lib, pool.offer, l);
-      const taken = offers[choose(offers)];
+      const taken = offers[choose(offers, i)];
       takeItem(l, taken);
       return key(taken) === it;
     })) return seed;
@@ -48,14 +49,40 @@ function seedChoosing(choose: (offers: UpgradeItem[]) => number, ...items: strin
 }
 
 /**
- * The moderate player's run on a seed, up to song time `until`. (Without upgrade orbs unless
- * `orbs`: a level-up takes its first offer at once, so these tests see each item's effect from the
- * level-up's moment.)
+ * The moderate player, except that while a level-up's orbs are up it walks straight into the orb
+ * of the next item in `want` (by its own priority it would never take some items). With `stand`,
+ * once it has them all it lets go of every key and stands still.
  */
-function runSeed(seed: number, until: number, orbs = false) {
+function choosing(c: typeof ctx, want: readonly string[], stand = false): Player {
+  const base = virtualPlayer(c, sch, "moderate");
+  let k = 0;
+  let steering = false;
+  return {
+    nextDecision: (after) => base.nextDecision(after),
+    decide(obs) {
+      const out = base.decide(obs);
+      if (stand && k >= want.length) return KEYS.map((kk) => ({ s: obs.s, kind: "release" as const, key: kk }));
+      const orb = obs.orbs?.find((o) => key(o.item) === want[k]);
+      if (!orb) {
+        if (steering && !obs.orbs?.length) k++;
+        steering = false;
+        return out;
+      }
+      steering = true;
+      const dx = orb.x - obs.hero.x;
+      const dy = orb.y - obs.hero.y;
+      const d = Math.hypot(dx, dy) || 1;
+      const keys = KEYS.filter((kk: Key) => (KEY_DIR[kk].x * dx + KEY_DIR[kk].y * dy) / d > 0.38);
+      return [...KEYS.map((kk) => ({ s: obs.s, kind: "release" as const, key: kk })), ...keys.map((kk) => ({ s: obs.s, kind: "press" as const, key: kk }))];
+    },
+  };
+}
+
+/** The moderate player's run on a seed, up to song time `until` (with `want`, taking those items in turn; see `choosing`). */
+function runSeed(seed: number, until: number, want?: readonly string[], stand = false) {
   const c = { ...ctx, seed };
   const rec = new BatchRecorder();
-  const sim = new Sim(c, sch, worldFor(c, sch, map), { ...c.level.rules, upgradeOrbs: orbs }, rec, { player: virtualPlayer(c, sch, "moderate") });
+  const sim = new Sim(c, sch, worldFor(), rec, { player: want ? choosing(c, want, stand) : virtualPlayer(c, sch, "moderate") });
   sim.advanceTo(until);
   return { rec, sim };
 }
@@ -127,14 +154,15 @@ describe("offers", () => {
     expect([...firsts].sort()).toEqual(["evolve:chain-lightning", "evolve:orbiting-blades", "passive:armour", "passive:magnet", "passive:max-health", "passive:might", "weapon:fire-trail"]);
   });
 
-  it("are recorded with the one taken, its first, at each level-up's moment", () => {
-    const { rec } = runSeed(ctx.seed, levelUp(1) + 0.1);
+  it("are recorded with the one taken at each level-up's moment, applied once its orb is taken", () => {
+    const { rec } = runSeed(ctx.seed, levelUp(1) + 8);
     expect(rec.upgrades.map((u) => u.s)).toEqual([levelUp(0), levelUp(1)]);
     let l = startingLoadout(pool.loadout);
     rec.upgrades.forEach((u, i) => {
-      expect(u.taken).toBe(0);
       expect(u.offers).toEqual(offersFor(ctx.seed, i, lib, pool.offer, l));
-      l = loadoutAt(pool.loadout, rec.upgrades, u.s);
+      expect(u.taken).toBeGreaterThanOrEqual(0);
+      expect(u.sApply!).toBeGreaterThan(u.s);
+      l = loadoutAt(pool.loadout, rec.upgrades, u.sApply!);
     });
   });
 });
@@ -150,8 +178,8 @@ describe("evolutions", () => {
     expect(evolvedOrbit(blades, orbitAt(blades, 2), false)).toEqual({ count: 4, radius: 105 });
 
     const seed = seedTaking("evolve:orbiting-blades");
-    const { rec } = runSeed(seed, levelUp(0) + 10);
-    const s0 = rec.upgrades[0].s;
+    const { rec } = runSeed(seed, levelUp(0) + 14, ["evolve:orbiting-blades"]);
+    const s0 = rec.upgrades[0].sApply!;
     expect(rec.upgrades[0].offers[rec.upgrades[0].taken]).toEqual({ kind: "evolve", id: "orbiting-blades" });
     const firings = new Map<number, typeof rec.hits>();
     for (const h of rec.hits) if (h.what === "orbiting-blades" && h.s > s0 - 4) firings.set(h.s, [...(firings.get(h.s) ?? []), h]);
@@ -181,8 +209,9 @@ describe("evolutions", () => {
     const seed = seedTaking("evolve:chain-lightning");
     // (Well into the run, where enough enemies stand in range for the extra jump.)
     const s1 = levelUp(0) + 60;
-    const { rec } = runSeed(seed, s1);
-    const s0 = rec.upgrades[0].s;
+    const { rec } = runSeed(seed, s1, ["evolve:chain-lightning"]);
+    expect(rec.upgrades[0].offers[rec.upgrades[0].taken]).toEqual({ kind: "evolve", id: "chain-lightning" });
+    const s0 = rec.upgrades[0].sApply!;
     const fires = rec.weaponFires.filter((f) => f.weapon === "chain-lightning").map((f) => f.s);
     // Before: on the bar's downbeat only; after: on every beat but those inside a hit-stop (weapons rest in one).
     const rests = (t: number) => rec.hitStops.some(([a, b]) => t >= a - 1e-9 && t < b - 1e-9);
@@ -234,8 +263,9 @@ describe("passives", () => {
   };
 
   it("might: damage 10% higher", () => {
-    const { rec } = runSeed(seedTaking("passive:might"), levelUp(0) + 6);
-    const s0 = rec.upgrades[0].s;
+    const { rec } = runSeed(seedTaking("passive:might"), levelUp(0) + 10, ["passive:might"]);
+    expect(key(rec.upgrades[0].offers[rec.upgrades[0].taken])).toBe("passive:might");
+    const s0 = rec.upgrades[0].sApply!;
     const before = bladesDeal(rec, s0 - 6, s0, 1);
     const after = bladesDeal(rec, s0, Infinity, 1.1);
     expect(before.n).toBeGreaterThan(10);
@@ -245,19 +275,19 @@ describe("passives", () => {
   });
 
   it("stack: might taken twice deals 20% more", () => {
-    const { rec } = runSeed(seedTaking("passive:might", "passive:might"), levelUp(1) + 6);
+    const { rec } = runSeed(seedTaking("passive:might", "passive:might"), levelUp(1) + 10, ["passive:might", "passive:might"]);
     expect(rec.upgrades.map((u) => key(u.offers[u.taken]))).toEqual(["passive:might", "passive:might"]);
-    const after = bladesDeal(rec, rec.upgrades[1].s, Infinity, 1.2);
+    const after = bladesDeal(rec, rec.upgrades[1].sApply!, Infinity, 1.2);
     expect(after.n).toBeGreaterThan(10);
     expect(after.off).toEqual([]);
   });
 
   it("magnet: the pickup radius 30% wider", () => {
     const radius = lib.hero.pickupRadius!;
-    const { rec, sim } = runSeed(seedTaking("passive:magnet"), levelUp(0) - 0.5);
+    const { rec, sim } = runSeed(seedTaking("passive:magnet"), levelUp(0) - 0.5, ["passive:magnet"]);
     expect(sim.observe().hero.pickup).toBeCloseTo(radius[tierAt(rec, sim.s)], 9);
-    sim.advanceTo(levelUp(0) + 6);
-    expect(rec.upgrades[0].offers[0]).toEqual({ kind: "passive", id: "magnet" });
+    sim.advanceTo(levelUp(0) + 10);
+    expect(key(rec.upgrades[0].offers[rec.upgrades[0].taken])).toBe("passive:magnet");
     expect(sim.observe().hero.pickup).toBeCloseTo(radius[tierAt(rec, sim.s)] * 1.3, 9);
   });
 
@@ -266,23 +296,25 @@ describe("passives", () => {
     rec.healthV.map((v, i) => ({ s: rec.healthS[i], d: (v - (rec.healthV[i - 1] ?? 1)) * max(rec.healthS[i]), v })).filter((x) => x.s > 0);
 
   it("max health: 20 more, healed at once", () => {
-    const { rec } = runSeed(seedTaking("passive:max-health"), levelUp(0) + 40);
-    const s0 = rec.upgrades[0].s;
+    const { rec } = runSeed(seedTaking("passive:max-health"), levelUp(0) + 40, ["passive:max-health"], true);
+    expect(key(rec.upgrades[0].offers[rec.upgrades[0].taken])).toBe("passive:max-health");
+    const s0 = rec.upgrades[0].sApply!;
     const base = lib.hero.health.max;
     const at = rec.healthS.findIndex((s) => s === s0);
     expect(at, "a health change at the level-up").toBeGreaterThanOrEqual(0);
     const prev = rec.healthV[at - 1] ?? 1;
     expect(rec.healthV[at]).toBeCloseTo(Math.min(base + 20, prev * base + 20) / (base + 20), 6);
     expect(rec.heals.find((h) => h.s === s0)).toMatchObject({ source: "max-health" });
-    // Later bites are whole points of the larger maximum.
+    // Later bites (standing still) are whole points of the larger maximum.
     const later = healthSteps(rec, (s) => (s >= s0 ? base + 20 : base)).filter((x) => x.s > s0 && x.d < 0);
     expect(later.length).toBeGreaterThan(0);
     for (const x of later) expect(Math.abs(x.d - Math.round(x.d)), `a bite at ${x.s}`).toBeLessThan(1e-6);
   });
 
   it("armour: every bite takes 1 less", () => {
-    const { rec } = runSeed(seedTaking("passive:armour"), ctx.duration);
-    const s0 = rec.upgrades[0].s;
+    const { rec } = runSeed(seedTaking("passive:armour"), ctx.duration, ["passive:armour"]);
+    expect(key(rec.upgrades[0].offers[rec.upgrades[0].taken])).toBe("passive:armour");
+    const s0 = rec.upgrades[0].sApply!;
     const contact = new Set([...lib.enemies.values()].map((e) => e.contactDamage).filter((c) => c > 0));
     const attacks = new Set([...lib.enemies.values()].map((e) => e.attackDamage).filter((c) => c > 0));
     const bites = healthSteps(rec, () => lib.hero.health.max).filter((x) => x.d < 0).map((x) => ({ s: x.s, d: Math.round(-x.d) }));
@@ -299,27 +331,28 @@ describe("passives", () => {
 
 describe("the picture", () => {
   it("draws evolved blades, widens the pickup ring with the magnet, and shows evolutions and passive counts on the HUD", () => {
-    // (Without upgrade orbs, taking the first offers: with them, a weapon upgrade always outranks the magnet.)
-    const seed = seedTaking("evolve:orbiting-blades", "passive:magnet");
+    // (Walking into the magnet's orb: by its own priority the player takes a weapon upgrade first.)
+    const want = ["evolve:orbiting-blades", "passive:magnet"];
+    const seed = seedTaking(...want);
     const c = { ...ctx, seed };
     const recording = new LiveRecording(c, sch, map, lib, "player", props);
-    new Sim(c, sch, worldFor(c, sch, map), { ...c.level.rules, upgradeOrbs: false }, recording, { player: virtualPlayer(c, sch, "moderate") }).advanceTo(levelUp(1) + 4);
+    new Sim(c, sch, worldFor(), recording, { player: choosing(c, want) }).advanceTo(levelUp(1) + 10);
     recording.refresh();
     const plan = recording.plan;
-    const [u0, u1] = plan.upgrades!;
+    const [u0, u1] = plan.upgrades;
     expect([u0, u1].map((u) => key(u.offers[u.taken]))).toEqual(["evolve:orbiting-blades", "passive:magnet"]);
     const ev = new Evaluator(plan, lib, recording);
-    const tier = (s: number) => plan.tier!.v[Array.from(plan.tier!.s).findLastIndex((t) => t <= s)];
+    const tier = (s: number) => plan.tier.v[Array.from(plan.tier.s).findLastIndex((t) => t <= s)];
     const at = (s: number) => ({ f: ev.evaluate(s), t: tier(s) });
     const before = at(u0.s - 1);
     expect(before.f.blades.length).toBe(orbitAt(blades, before.t).count);
     expect(before.f.hud.weapons).toEqual([expect.objectContaining({ id: "orbiting-blades", evolved: false }), expect.objectContaining({ id: "chain-lightning", evolved: false })]);
     expect(before.f.hud.passives).toEqual([]);
     expect(before.f.pickup!.radius).toBeCloseTo(lib.hero.pickupRadius![before.t], 9);
-    const evolved = at(u0.s + 1);
+    const evolved = at(u0.sApply! + 1);
     expect(evolved.f.blades.length).toBe(evolvedOrbit(blades, orbitAt(blades, evolved.t), true).count);
     expect(evolved.f.hud.weapons.map((w) => w.evolved)).toEqual([true, false]);
-    const magnet = at(u1.s + 1);
+    const magnet = at(u1.sApply! + 1);
     expect(magnet.f.pickup!.radius).toBeCloseTo(lib.hero.pickupRadius![magnet.t] * 1.3, 9);
     expect(magnet.f.hud.passives).toEqual([{ id: "magnet", count: 1 }]);
   });
@@ -327,7 +360,7 @@ describe("the picture", () => {
 
 describe("watch my run", () => {
   it("replays a run across level-ups exactly, offers and orbs and all, and the live run records what a batch run does", () => {
-    const { rec } = runSeed(ctx.seed, levelUp(1) + 3, true);
+    const { rec } = runSeed(ctx.seed, levelUp(1) + 3);
     const keys: KeyEvent[] = rec.inputs.map((i) => ({ s: i.s, kind: i.kind, key: i.key }));
     const startS = levelUp(0) - 6;
     const session = liveSession(input, { props, startS });
@@ -338,7 +371,7 @@ describe("watch my run", () => {
       session.runner.frame(now, due);
     }
     session.runner.finish();
-    const live = session.recording.plan.upgrades!;
+    const live = session.recording.plan.upgrades;
     expect(live.length).toBeGreaterThanOrEqual(2);
     expect(live.every((u) => u.walked !== undefined)).toBe(true);
     // (The same offers and picks as the batch run's; where the orbs rose follows the hero, which the

@@ -1,97 +1,30 @@
 /**
- * The world: everything the map decides for the simulation. The demo plays in
- * a forest corridor along a route; play mode adds an open field.
+ * The world: the open field, generated in chunks around the hero. The hero can walk anywhere, and
+ * props never block. There is no route: spawns, the camera lead and formations follow the hero's
+ * heading instead.
  */
-import type { MapLayout } from "../plan/types.ts";
-import { RouteLookup, routeFrame, type RouteFrame } from "../mapgen/mapgen.ts";
 import { NO_WALLS, type Clamp } from "./movement.ts";
-import { paceAt, type Schedule } from "./schedule.ts";
 
-/** The walkable band: the corridor less this margin. */
-const CORRIDOR_MARGIN = 48;
+/** A point and a unit heading. */
+export interface Frame {
+  x: number;
+  y: number;
+  tx: number;
+  ty: number;
+}
 
 export interface World {
-  /** The open field: no route, no walls; the hero's heading leads instead of the route. */
-  readonly open: boolean;
-  /** Wall rule for steps: the longest straight move that stays walkable. */
+  /** Wall rule for steps: the longest straight move that stays walkable (none block in the open field). */
   readonly clamp: Clamp;
-  /** Distance from (x, y) to the edge of the walkable area (negative outside). */
-  edge(x: number, y: number): number;
-  /** The way forward at song time s: a point and a unit tangent (the route's pace point in the corridor). */
-  pacePoint(s: number): RouteFrame;
+  /** Where the hero starts: a point and a unit tangent. */
+  pacePoint(s: number): Frame;
 }
 
-/** The walkable band around the route. */
-export class Corridor {
-  private lookup: RouteLookup;
-  readonly half: number;
-  constructor(readonly map: MapLayout) {
-    this.lookup = new RouteLookup({ step: map.routeStep, x: map.routeX, y: map.routeY });
-    this.half = map.corridorHalfWidth - CORRIDOR_MARGIN;
-  }
-  /** Distance from (x, y) to the band's edge (negative outside). */
-  edge(x: number, y: number): number {
-    return this.half - Math.abs(this.lookup.nearest(x, y).lat);
-  }
-  /** Route distance and lateral offset of the nearest route point. */
-  nearest(x: number, y: number): { d: number; lat: number } {
-    return this.lookup.nearest(x, y);
-  }
-  /** Wall rule for steps: the longest straight move that stays in the band. */
-  readonly clamp: Clamp = (x, y, dx, dy, len) => {
-    if (this.edge(x + dx * len, y + dy * len) >= 0) return len;
-    if (this.edge(x, y) < 0) return 0;
-    let lo = 0;
-    let hi = len;
-    for (let i = 0; i < 12; i++) {
-      const mid = (lo + hi) / 2;
-      if (this.edge(x + dx * mid, y + dy * mid) >= 0) lo = mid;
-      else hi = mid;
-    }
-    return lo;
-  };
-}
-
-/** The demo's world: a corridor through the forest, and the route's pace point. */
-export class CorridorWorld implements World {
-  readonly open = false;
-  private corridor: Corridor;
-  private route: { step: number; x: Float32Array; y: Float32Array };
-  readonly clamp: Clamp;
-
-  constructor(
-    map: MapLayout,
-    private readonly sch: Schedule,
-  ) {
-    this.corridor = new Corridor(map);
-    this.route = { step: map.routeStep, x: map.routeX, y: map.routeY };
-    this.clamp = this.corridor.clamp;
-  }
-
-  edge(x: number, y: number): number {
-    return this.corridor.edge(x, y);
-  }
-
-  pacePoint(s: number): RouteFrame {
-    return routeFrame(this.route, paceAt(this.sch, s));
-  }
-}
-
-/**
- * Play mode's world: an open field generated in chunks around the hero. The
- * hero can walk anywhere, and props never block. There is no route: spawns,
- * the camera lead and formations follow the hero's heading instead.
- */
 export class OpenWorld implements World {
-  readonly open = true;
   readonly clamp: Clamp = NO_WALLS;
 
-  edge(): number {
-    return Infinity;
-  }
-
   /** The field's origin, heading right (where the hero starts). */
-  pacePoint(): RouteFrame {
+  pacePoint(): Frame {
     return { x: 0, y: 0, tx: 1, ty: 0 };
   }
 }

@@ -13,7 +13,7 @@ export interface Landing {
   w: number;
   x: number;
   y: number;
-  /** A stomp (play mode's strides): both feet stamp with a ring of dust, at the press, without a sound. */
+  /** A stomp: both feet stamp with a ring of dust, at the press, without a sound. */
   stomp?: boolean;
 }
 
@@ -49,11 +49,11 @@ export type Threat = { s: number; w: number; kind: "arrow" | "slam"; outcome: "n
 export type BossInfo = { id: number; landS: number; x: number; y: number; deathS?: number; killHit?: number; health: { s: number; frac: number }[] };
 /**
  * A gem: dropped at (x0, y0) at world time w0, arriving at the hero at song and world time s1, w1.
- * Gems on the field (rules.fieldGems) wait (s1 and w1 Infinity) until the hero's pickup radius
+ * Gems on the field wait (s1 and w1 Infinity) until the hero's pickup radius
  * reaches them; they take off at world time wT.
  */
 export type GemRecord = { w0: number; x0: number; y0: number; s1: number; w1: number; value: number; big: boolean; enemy: number; wT?: number };
-/** A vacuum (rules.fieldGems): dropped at (x, y) at song and world time s, w; touched at sTouch, wTouch, sending `gems` gems in view. */
+/** A vacuum: dropped at (x, y) at song and world time s, w; touched at sTouch, wTouch, sending `gems` gems in view. */
 export type VacuumRecord = { s: number; w: number; x: number; y: number; sTouch?: number; wTouch?: number; gems?: number };
 export type FormationRecord = { def: string; sStart: number; sRelease: number; members: number[] };
 /** The open field: a transform wave sweeps out from the hero on a section's first downbeat. */
@@ -75,24 +75,19 @@ export interface PressTrace {
   section: string;
   movement: "steps" | "free";
   /**
-   * extra: a step for a grid time that already had its rated step (unrated, arming nothing);
-   * stumble: a second extra press for one grid time (no step; a swing is lost and the groove drops);
-   * ignored: a later extra press for that grid time (it does nothing);
-   * bend: a diagonal's second key bent the step; step: a new step (rated, and maybe arming a swing);
-   * walk: free movement (held keys walk); release: a key went up.
-   * With strides every press strides, a stumble and an ignored press too (they keep their names for
-   * what they did to the groove and the swings); stride: a new stride (in step movement rated, and
-   * maybe arming a swing, as a step; in free movement unrated, with a walk after it while the key is held);
-   * stomp: Space, a press without moving; rock: the second of two opposite keys, which made the first
-   * one's stride a rock step back (the pair is one stomp, timed and rated by the first).
+   * stride: a new stride (in step movement rated; in free movement unrated, with a walk after it
+   * while the key is held); extra: a press that is not counted (an off-beat, a double tap or a
+   * stray press), which strides unrated; bend: a diagonal's second key bent the stride; stomp:
+   * Space, a press without moving; rock: the second of two opposite keys, which made the first
+   * one's stride a rock step back (the pair is one stomp, timed and rated by the first); release: a
+   * key went up.
    */
-  outcome: "extra" | "stumble" | "ignored" | "bend" | "step" | "stride" | "stomp" | "rock" | "walk" | "release";
+  outcome: "extra" | "bend" | "stride" | "stomp" | "rock" | "release";
   /** The nearest grid time (index and song time), and the press's offset from it (song seconds). */
   gridIndex?: number;
   gridS?: number;
   delta?: number;
   rating?: string;
-  accuracy?: number;
   /** Extra presses: the song time of the press that took this grid time's step. */
   stepS?: number;
   /** Extra presses: the offset from the half-way point between grid times, and its rating there. */
@@ -112,17 +107,12 @@ export interface PressTrace {
   grooveBefore?: number;
   grooveAfter?: number;
   /**
-   * Press classes (play mode): partner, offbeat, counted, double (a double tap) or stray; with
+   * Press classes: partner, offbeat, counted, double (a double tap) or stray; with
    * `rating` (loose beyond Good for a counted press), `delta` and the tier after the press.
    */
   class?: string;
   tier?: number;
-  /** The swing it armed: the strike's song time and whether it is a heavy cleave. */
-  strikeS?: number;
-  heavy?: boolean;
-  /** No swing armed: past the last grid slot, the slot already had a swing, or the finale blast ends the sword's routine. */
-  noSwing?: "no-slot" | "slot-taken" | "blast";
-  /** The slot it would arm (even when it did not), and that slot's accent. */
+  /** A rated press's grid slot, and that slot's accent. */
   slotS?: number;
   accent?: number;
 }
@@ -130,7 +120,7 @@ export interface PressTrace {
 /** A tier change's chime: the grid time it sounds on, whether the tier rose, and the world time of the change. */
 /** A tier change's chime: its song time (a grid time), up or down, and the change's world and song time. */
 /**
- * A cleave (rules.pressCleaves): a counted press of Great or better on an eligible accent launched
+ * A cleave: a counted press of Great or better on an eligible accent launched
  * its shockwave. The accent's song time, the press's, and the first band's (the eighth after the
  * accent, or a sixteenth later when the press came too late for it).
  */
@@ -155,7 +145,7 @@ export interface SimResult {
   swings: PlanSwing[];
   inputs: PlanInput[];
   groove: { s: number[]; v: number[] };
-  /** Press classes (play mode): the tier after each change; it starts at 0. */
+  /** The tier after each change; it starts at 0. */
   tier: { s: number[]; v: number[] };
   tierChimes: TierChime[];
   /** The hero's health (fraction of its maximum) after each change; it starts full. */

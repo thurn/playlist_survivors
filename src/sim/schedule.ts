@@ -1,6 +1,6 @@
 /**
  * The song schedule: everything the game may know in advance because it owns
- * the song. Timing grids, accents, the base time scale, the route pace,
+ * the song. Timing grids, accents, the base time scale,
  * level-ups and the finale are resolved here before the simulation starts.
  * Nothing in it depends on a press.
  */
@@ -38,12 +38,10 @@ export interface Schedule {
   /** The step sections' timing grids joined end to end: presses are rated against these and arm them. */
   gridSlots: GridSlot[];
   gridTimes: Float64Array;
-  /** Play mode's strides: the steps a held key strides on (the grid times, subdivided where the grid is slow). */
+  /** Strides: the steps a held key strides on (the grid times, subdivided where the grid is slow). */
   strideSteps: StrideSteps;
   /** Base world rate (section time scales, timeScale events), as constant steps from song time 0. */
   baseSteps: { s: number; rate: number }[];
-  /** Route distance of the pace point, sampled every 1/PACE_RATE song seconds. */
-  pace: Float64Array;
   /** Level-ups at their scheduled musical moments, with the XP each one needs. */
   levelUps: { id: string; s: number; xp: number }[];
   blast?: { s: number; weapon: string };
@@ -53,14 +51,10 @@ export interface Schedule {
   archerGroups: { s: number; archers: number; until: number }[];
   boss?: { type: string; sEnter: number; slams: { sMark: number; sLand: number }[] };
   formations: { def: string; sStart: number; sRelease: number; line?: number }[];
-  /** Play mode's set pieces: closing rings (spawn and close times) and stampedes. */
+  /** Set pieces: closing rings (spawn and close times) and stampedes. */
   rings: { s: number; sClose: number; enemy: string; count: number; gaps: number }[];
   stampedes: { s: number; enemy: string; count: number; rows: number }[];
 }
-
-export const PACE_RATE = 120;
-/** Section paces blend with this time constant (world seconds). */
-const PACE_EASE = 0.3;
 
 /** Free movement: anchors at least this strong get a cleave. */
 export const ANCHOR_CLEAVE = 0.5;
@@ -77,9 +71,9 @@ function freeGrid(ctx: Ctx, i: number): GridSlot[] {
   }
   const every = sec.level.autoSwingBeats;
   for (let bi = sec.b0 + every; bi < sec.b1 - 0.5; bi += every) {
-    // An anchor's cleave replaces the automatic swing near it (with self-firing weapons, only the
-    // beat's within half a beat of it: the sword swings on every other beat).
-    const near = ctx.level.rules.selfFiring ? 0.5 : 1;
+    // An anchor's cleave replaces the automatic swing near it (only the beat's within half a beat of
+    // it: the sword swings on every other beat).
+    const near = 0.5;
     if (anchors.some((a) => Math.abs(beatIndexAt(song, a.time) - bi) < near)) continue;
     out.push({ s: timeOfBeatIndex(song, bi), bi, bar: barOfBeatIndex(idx, bi), slot: 0, section: i, accent: 0, kind: "auto" });
   }
@@ -293,22 +287,6 @@ export function buildSchedule(ctx: Ctx): Schedule {
   const slots = grids.flat().sort((a, b) => a.s - b.s);
   const steps = baseSteps(ctx);
 
-  // The pace point: the planned route distance, from each section's pace. Song-owned,
-  // so it ignores hit-stops; it follows the base time scale.
-  const n = Math.ceil((ctx.duration + 2) * PACE_RATE) + 2;
-  const pace = new Float64Array(n);
-  const dt = 1 / PACE_RATE;
-  let v = ctx.sections[0].level.pace;
-  let d = 0;
-  for (let k = 0; k < n; k++) {
-    pace[k] = d;
-    const s = k * dt;
-    const rate = stepRate(steps, s);
-    const target = ctx.sections[sectionIndexAt(ctx, s)].level.pace;
-    v += (target - v) * Math.min(1, (dt * rate) / PACE_EASE);
-    d += v * rate * dt;
-  }
-
   const levelUps: Schedule["levelUps"] = [];
   let blast: Schedule["blast"];
   for (const e of ctx.events) {
@@ -329,13 +307,6 @@ export function buildSchedule(ctx: Ctx): Schedule {
   }
   const gridSlots = slots.filter((x) => x.kind === "grid");
   const gridTimes = Float64Array.from(gridSlots, (x) => x.s);
-  return { grids, slots, strikeTimes: Float64Array.from(slots, (x) => x.s), gridSlots, gridTimes, strideSteps: strideSteps(gridTimes, ctx.lib.hero.stride.maxPeriodS), baseSteps: steps, pace, levelUps, blast, ...enc };
+  return { grids, slots, strikeTimes: Float64Array.from(slots, (x) => x.s), gridSlots, gridTimes, strideSteps: strideSteps(gridTimes, ctx.lib.hero.stride.maxPeriodS), baseSteps: steps, levelUps, blast, ...enc };
 }
 
-/** Route distance of the pace point at song time s. */
-export function paceAt(sch: Schedule, s: number): number {
-  const p = sch.pace;
-  const f = Math.max(0, s * PACE_RATE);
-  const k = Math.min(p.length - 2, Math.floor(f));
-  return p[k] + (p[k + 1] - p[k]) * Math.min(1, f - k);
-}

@@ -6,9 +6,6 @@ import { gradeFor } from "../src/plan/grade.ts";
 import { endCardGrade, endCardLines } from "../src/runtime/hud-lines.ts";
 import { syntheticSongMap } from "./fixtures/synthetic-song.ts";
 
-/** The demo as it was before the redesign (the old step rules), until hv-zoon removes that code. */
-const LEGACY = "tests/fixtures/legacy-demo.level.yaml";
-
 const songMap = syntheticSongMap();
 const PLAY = "levels/orpheus-galop.play.yaml";
 const lib = plannerInput({ songMap, level: PLAY }).content;
@@ -16,7 +13,7 @@ const lib = plannerInput({ songMap, level: PLAY }).content;
 describe("accent telegraphs", () => {
   const plan = runPlanner({ songMap, level: PLAY });
   const ev = new Evaluator(plan, lib);
-  const accent = plan.cleaveAccents![0];
+  const accent = plan.cleaveAccents[0];
   const i = Array.from(plan.grid).findIndex((g) => Math.abs(g - accent.s) < 1e-6);
   const before = plan.grid[i - 1];
 
@@ -36,24 +33,17 @@ describe("accent telegraphs", () => {
     expect(ev.evaluate((before + accent.s) / 2).hud.heartGlow).toBeGreaterThan(0.3);
     expect(ev.evaluate(accent.s - 0.01).hud.heartGlow).toBeGreaterThan(0.9);
   });
-
-  it("keeps the old rules' HUD unchanged (the legacy demo level)", () => {
-    const demo = runPlanner({ songMap, level: LEGACY });
-    const hud = new Evaluator(demo, lib).evaluate(accent.s - 1.5).hud;
-    expect(hud.heartGlow).toBeUndefined();
-    expect(hud.ticks.every((k) => !k.cleave && !k.pressHere)).toBe(true);
-  });
 });
 
 describe("the key display", () => {
-  it("greys an extra press", () => {
+  it("greys a double tap, and counts only the counted press's rating", () => {
     const plan = runPlanner({ songMap, level: PLAY });
     // A press, then a mashed one for the same grid time.
     const s = plan.grid[200];
     plan.inputs = [
-      { s, w: s, kind: "press", key: "up", steps: true, rating: "perfect" },
+      { s, w: s, kind: "press", key: "up", steps: true, rating: "perfect", class: "counted" },
       { s: s + 0.01, w: s, kind: "release", key: "up", steps: true },
-      { s: s + 0.02, w: s, kind: "press", key: "up", steps: true, extra: true },
+      { s: s + 0.02, w: s, kind: "press", key: "up", steps: true, extra: true, class: "double" },
     ];
     const keys = new Evaluator(plan, lib).evaluate(s + 0.03).hud;
     expect(keys.keys.up.rating).toBe("extra");
@@ -66,18 +56,16 @@ describe("press classes on the HUD", () => {
 
   it("shows the tier beside the groove meter, its marks, and a flash on each tier-up", () => {
     const ev = new Evaluator(plan, lib);
-    const t = plan.tier!;
+    const t = plan.tier;
     // (A tier-up with no other change in the second after it.)
     const up = Array.from(t.v).findIndex((v, k) => k > 0 && v > t.v[k - 1] && !(t.s[k + 1] < t.s[k] + 1.1));
     expect(up).toBeGreaterThan(0);
     const at = t.s[up];
     const hud = ev.evaluate(at + 0.01).hud;
     expect(hud.tier).toMatchObject({ n: t.v[up], marks: lib.hero.meter.tiers });
-    expect(hud.tier!.flash).toBeGreaterThan(0.9);
-    expect(ev.evaluate(at + 1).hud.tier!.flash).toBe(0);
+    expect(hud.tier.flash).toBeGreaterThan(0.9);
+    expect(ev.evaluate(at + 1).hud.tier.flash).toBe(0);
     expect(ev.evaluate(1).hud.tier).toMatchObject({ n: 0, flash: 0 });
-    // The demo has no tiers: its meter keeps the damage bonus.
-    expect(new Evaluator(runPlanner({ songMap, level: LEGACY }), lib).evaluate(at).hud.tier).toBeUndefined();
   });
 
   it("styles each press class on the key display, and shows stomps as both feet", () => {
@@ -94,7 +82,7 @@ describe("press classes on the HUD", () => {
     expect(styleOf(p(0, "up", { class: "counted" })).key.rating).toBe("loose");
     expect(styleOf(p(0, "up", { class: "offbeat", offbeat: "perfect", extra: true })).key).toMatchObject({ rating: "perfect", outline: true });
     expect(styleOf(p(0, "up", { class: "double", extra: true })).key.rating).toBe("extra");
-    expect(styleOf(p(0, "up", { class: "stray", extra: true })).key.rating).toBe("stumble");
+    expect(styleOf(p(0, "up", { class: "stray", extra: true })).key.rating).toBe("stray");
     // A diagonal's partner shows the style of the press it bent; neither extra press counts.
     const bend = styleOf([...p(0, "up", { class: "counted", rating: "great" }), ...p(0.01, "right", { class: "partner", bend: true })], "right");
     expect(bend.key.rating).toBe("great");
@@ -123,9 +111,9 @@ describe("press classes on the HUD", () => {
     expect(end.strays).toBe(own.filter((i) => i.class === "stray").length);
     expect(end.loose).toBe(own.filter((i) => i.class === "counted" && !i.rating).length);
     const pulsed = plan.sections.filter((x) => x.movement === "steps").reduce((a, x) => a + Math.min(x.s1, endS) - x.s0, 0);
-    expect(end.tierTime!.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(pulsed + 1e-6);
-    expect(end.tierTime![3]).toBeGreaterThan(10);
-    const lines = endCardLines(hud, end, lib.hero.groove.maxBonus).map((l) => l.text);
+    expect(end.tierTime.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(pulsed + 1e-6);
+    expect(end.tierTime[3]).toBeGreaterThan(10);
+    const lines = endCardLines(hud, end).map((l) => l.text);
     expect(lines).toEqual([
       `KILLS ${hud.kills}`,
       `PERFECT ${hud.ratings.perfect}`,
@@ -133,18 +121,15 @@ describe("press classes on the HUD", () => {
       `GOOD ${hud.ratings.good}`,
       `LOOSE ${end.loose}   STRAY ${end.strays}`,
       `AVERAGE GROOVE ${Math.round(end.averageGroove * 100)}%`,
-      `TIME AT TIER  ${end.tierTime!.map((t, i) => `${i}: ${Math.round(t)}S`).join("  ")}`,
-      `GEMS ${end.gems!.collected} OF ${end.gems!.dropped}`,
+      `TIME AT TIER  ${end.tierTime.map((t, i) => `${i}: ${Math.round(t)}S`).join("  ")}`,
+      `GEMS ${end.gems.collected} OF ${end.gems.dropped}`,
     ]);
     // Gems on the field: the experience collected, of all that dropped.
-    expect(end.gems!.dropped).toBe(plan.events.gems.reduce((a, g) => a + g.value, 0));
-    expect(end.gems!.collected).toBeLessThan(end.gems!.dropped);
-    expect(end.gems!.collected).toBeGreaterThan(0);
-    // A recorded run of play mode (?player=) shows the grade of its average groove; the demo shows none.
-    expect(endCardGrade(end, undefined)?.grade).toBe(gradeFor(end.averageGroove));
-    expect(endCardGrade(end, { grade: "S", newBest: true })?.grade).toBe("S");
-    expect(endCardGrade({ age: 1, averageGroove: 0.9 }, undefined)).toBeUndefined();
-    // The demo's end card keeps its damage bonus.
-    expect(endCardLines(hud, { age: 1, averageGroove: 0.5 }, 0.2).map((l) => l.text).at(-1)).toBe("AVERAGE GROOVE +10%");
+    expect(end.gems.dropped).toBe(plan.events.gems.reduce((a, g) => a + g.value, 0));
+    expect(end.gems.collected).toBeLessThan(end.gems.dropped);
+    expect(end.gems.collected).toBeGreaterThan(0);
+    // A recorded run (the demo, or ?player=) shows the grade of its average groove; play mode its own.
+    expect(endCardGrade(end, undefined).grade).toBe(gradeFor(end.averageGroove));
+    expect(endCardGrade(end, { grade: "S", newBest: true }).grade).toBe("S");
   });
 });

@@ -33,7 +33,7 @@ export interface HeroPath {
 
 const r6s = (v: number) => Math.round(v * 1e6) / 1e6;
 
-/** A sound moved to a later slot of its subdivision (rules.gridSounds): known too late for its own. */
+/** A sound moved to a later slot of its subdivision: known too late for its own. */
 export interface SoundMove {
   key: string;
   sample: string;
@@ -64,7 +64,7 @@ export function gemLog(plan: Plan, w = Infinity): GemLog {
     by.set(g.s1, p);
   }
   const pickups = [...by].sort((a, b) => a[0] - b[0]).map(([t, p]) => ({ s: r6s(t), n: p.n, xp: p.xp }));
-  const vacuums = (plan.vacuums ?? []).map((v) => ({ s: r6s(v.s), ...(v.sTouch !== undefined ? { sTouch: r6s(v.sTouch), gems: v.gems ?? 0 } : {}) }));
+  const vacuums = plan.vacuums.map((v) => ({ s: r6s(v.s), ...(v.sTouch !== undefined ? { sTouch: r6s(v.sTouch), gems: v.gems ?? 0 } : {}) }));
   return { pickups, vacuums, dropped, collected };
 }
 
@@ -91,11 +91,11 @@ export function recordingContext(plan: Plan, warp: Warp, s: number): { groove: {
       ? {
           health: {
             bites: plan.bites.filter((b) => b.s <= s).map((b) => ({ s: r6s(b.s), source: b.source, enemy: b.enemy, damage: b.damage, invulnerable: r6s(b.until - b.w) })),
-            heals: (plan.heals ?? []).filter((h) => h.s <= s).map((h) => ({ s: r6s(h.s), amount: h.amount, source: h.source })),
+            heals: plan.heals.filter((h) => h.s <= s).map((h) => ({ s: r6s(h.s), amount: h.amount, source: h.source })),
           },
         }
       : {}),
-    ...(plan.rules?.fieldGems ? { gems: gemLog(plan, warp.toWorld(s)) } : {}),
+    gems: gemLog(plan, warp.toWorld(s)),
     ...(plan.upgrades
       ? {
           upgrades: plan.upgrades
@@ -105,7 +105,7 @@ export function recordingContext(plan: Plan, warp: Warp, s: number): { groove: {
       : {}),
     soundMoves: plan.events.sounds.filter((x) => x.movedFrom !== undefined).map((x) => ({ key: x.key ?? x.sample, sample: x.sample, from: r6s(x.movedFrom!), s: r6s(x.s) })),
     groove: { s: Array.from(plan.groove.s, r6s), v: Array.from(plan.groove.v, (v) => Math.round(v * 1e4) / 1e4) },
-    ...(plan.tier ? { tier: { s: Array.from(plan.tier.s, r6s), v: Array.from(plan.tier.v) } } : {}),
+    tier: { s: Array.from(plan.tier.s, r6s), v: Array.from(plan.tier.v) },
     heroPath: heroPath(plan.hero, warp, 0, s),
   };
 }

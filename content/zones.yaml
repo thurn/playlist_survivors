@@ -6,9 +6,9 @@ zones:
     props:
       - { sprite: tree-summer, density: 0.05 }
       - { sprite: bush-summer, density: 0.02 }
-      - { sprite: flower-summer, density: 0.012, corridor: true }
-      - { sprite: grass-tuft, density: 0.02, corridor: true }
-      - { sprite: rock-small, density: 0.004, corridor: true }
+      - { sprite: flower-summer, density: 0.012, underfoot: true }
+      - { sprite: grass-tuft, density: 0.02, underfoot: true }
+      - { sprite: rock-small, density: 0.004, underfoot: true }
     ambientLight: "#4a5a8c"
     colorGrade: twilight
     particles: fireflies
@@ -20,9 +20,9 @@ zones:
       - { sprite: tree-summer, density: 0.06 }
       - { sprite: bush-summer, density: 0.02 }
       - { sprite: rock-big, density: 0.004 }
-      - { sprite: flower-summer, density: 0.01, corridor: true }
-      - { sprite: grass-tuft, density: 0.015, corridor: true }
-      - { sprite: rock-small, density: 0.004, corridor: true }
+      - { sprite: flower-summer, density: 0.01, underfoot: true }
+      - { sprite: grass-tuft, density: 0.015, underfoot: true }
+      - { sprite: rock-small, density: 0.004, underfoot: true }
     ambientLight: "#d8d0c0"
     colorGrade: neutral
     particles: none
@@ -33,8 +33,8 @@ zones:
       - { sprite: tree-autumn, density: 0.05 }
       - { sprite: mushroom-big, density: 0.02 }
       - { sprite: bush-autumn, density: 0.015 }
-      - { sprite: mushroom, density: 0.014, corridor: true }
-      - { sprite: flower-autumn, density: 0.008, corridor: true }
+      - { sprite: mushroom, density: 0.014, underfoot: true }
+      - { sprite: flower-autumn, density: 0.008, underfoot: true }
     ambientLight: "#c09070"
     colorGrade: autumn
     particles: falling-leaves
@@ -45,8 +45,8 @@ zones:
       - { sprite: tree-dead, density: 0.04 }
       - { sprite: brazier, density: 0.006, light: { color: "#ff7a2e", radius: 96 } }
       - { sprite: ruin-pillar, density: 0.006 }
-      - { sprite: rock-small, density: 0.006, corridor: true }
-      - { sprite: patch-lava, density: 0.004, corridor: true }
+      - { sprite: rock-small, density: 0.006, underfoot: true }
+      - { sprite: patch-lava, density: 0.004, underfoot: true }
     ambientLight: "#a06050"
     colorGrade: ember
     particles: rising-embers
@@ -59,8 +59,8 @@ zones:
       - { sprite: lava-pool, density: 0.01 }
       - { sprite: brazier, density: 0.01, light: { color: "#ff6a1e", radius: 110 } }
       - { sprite: ruin-wall, density: 0.006 }
-      - { sprite: campfire, density: 0.004, light: { color: "#ffa040", radius: 90 }, corridor: true }
-      - { sprite: rock-small, density: 0.006, corridor: true }
+      - { sprite: campfire, density: 0.004, light: { color: "#ffa040", radius: 90 }, underfoot: true }
+      - { sprite: rock-small, density: 0.006, underfoot: true }
     ambientLight: "#8a5248"
     colorGrade: infernal
     particles: rising-embers

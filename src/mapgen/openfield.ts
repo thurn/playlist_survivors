@@ -1,5 +1,5 @@
 /**
- * Play mode's open field: ground generated in 512 px chunks around the
+ * The open field: ground generated in 512 px chunks around the
  * camera, each a deterministic function of the seed, its coordinates and its
  * zone. Zones change on the music: a transform wave sweeps out from the hero
  * in sixteenth-note bands and re-themes everything it passes. Landmarks rise
@@ -24,21 +24,7 @@ export const FADE_FAR = 120;
 /** A map layout with no ground of its own: the open field generates its ground in chunks. */
 export function openFieldLayout(zones: string[]): MapLayout {
   return {
-    originX: 0,
-    originY: 0,
-    cols: 0,
-    rows: 0,
-    tiles: new Uint16Array(0),
-    tileVariants: new Uint8Array(0),
-    tileIds: [],
-    tileZone: new Uint8Array(0),
-    routeStep: 8,
-    routeX: new Float32Array([0, 8]),
-    routeY: new Float32Array([0, 0]),
-    routeLength: 0,
-    corridorHalfWidth: Infinity,
     zones: zones.map((id) => ({ id, d0: 0, d1: 0 })),
-    props: [],
     hash: (hash32(0x0ae7, ...zones) >>> 0).toString(16).padStart(8, "0"),
   };
 }
@@ -134,8 +120,8 @@ export function tileVariant(seed: number, tx: number, ty: number): number {
 }
 
 /**
- * The props of chunk (cx, cy) in a zone. Ground props are as dense as the
- * demo's corridor; tall props are sparse, so they never hide the action for
+ * The props of chunk (cx, cy) in a zone. Underfoot decorations are the
+ * densest; tall props are sparse, so they never hide the action for
  * long (and they fade when the hero comes close).
  */
 export function chunkContent(seed: number, cx: number, cy: number, theme: ZoneTheme, info: Record<string, PropInfo> = {}): ChunkContent {
@@ -163,8 +149,8 @@ export function chunkContent(seed: number, cx: number, cy: number, theme: ZoneTh
     let chosen: ZoneTheme["props"][number] | undefined;
     for (const c of theme.props) {
       const pi = info[c.sprite] ?? DEFAULT_PROPS[c.sprite] ?? { tall: false, radius: 10 };
-      // Ground decorations as in the corridor; trees, bushes and ruins much sparser.
-      acc += c.density * (c.corridor ? 0.45 : pi.tall ? 0.1 : 0.3);
+      // Underfoot decorations thickest; trees, bushes and ruins much sparser.
+      acc += c.density * (c.underfoot ? 0.45 : pi.tall ? 0.1 : 0.3);
       if (roll < acc) {
         chosen = c;
         break;

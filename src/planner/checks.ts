@@ -9,7 +9,6 @@ import type { ContentLibrary } from "../content/loader.ts";
 import { shapeContains, wrapAngle } from "../core/geometry.ts";
 import { lerp } from "../core/shaping.ts";
 import { Warp } from "../core/warp.ts";
-import { RouteLookup } from "../mapgen/mapgen.ts";
 import { partnerPress, type EnemyRecord, type Plan } from "../plan/types.ts";
 import { enemyPos, heroSample } from "../plan/sample.ts";
 import { aim, catches, type AimTarget } from "../sim/aim.ts";
@@ -29,9 +28,6 @@ const MAX_REPORTED = 8;
 const SAMPLE_SLACK = 10;
 /** The hero track is sampled at 60 Hz and a step moves fast: interpolating mid-step is off by a few pixels. */
 const HERO_SLACK = 8;
-/** Pace window, measured along the route. */
-export const PACE_AHEAD = 60;
-export const PACE_BEHIND = 140;
 
 function beatIndexFromBeats(beats: ArrayLike<number>, s: number): number {
   const n = beats.length;
@@ -77,14 +73,6 @@ export function targetAt(plan: Plan, s: number): number {
   return last.population[1];
 }
 
-/** Pace point route distance at song time s. */
-export function planPaceAt(plan: Plan, s: number): number {
-  const p = plan.pace.d;
-  const f = Math.max(0, s * plan.pace.rate);
-  const k = Math.min(p.length - 2, Math.floor(f));
-  return p[k] + (p[k + 1] - p[k]) * Math.min(1, f - k);
-}
-
 /** Song-time spans in which a direction key is held: from each press to its key's release (Space, a stomp, moves nothing). */
 export function heldSpans(inputs: Plan["inputs"]): [number, number][] {
   const out: [number, number][] = [];
@@ -110,12 +98,12 @@ export const heldAt = (spans: [number, number][], s: number): boolean => spans.s
  * or of the step just ended (a held stride's limit), whichever is longer.
  */
 export function strideLimitAt(plan: Plan, s: number): number {
-  return plan.strides!.speed * Math.max(stridePeriodAt(plan, s), stridePeriodAt(plan, s - 1e-6));
+  return plan.strides.speed * Math.max(stridePeriodAt(plan, s), stridePeriodAt(plan, s - 1e-6));
 }
 
 /** The stride period at song time s: the step it falls in, or the free period without a steady beat. */
 export function stridePeriodAt(plan: Plan, s: number): number {
-  const st = plan.strides!;
+  const st = plan.strides;
   const sec = plan.sections.findLast((x) => s >= x.s0 - 1e-9) ?? plan.sections[0];
   if (sec.movement === "free" || st.steps.length === 0) return st.freePeriodS;
   let k = 0;
@@ -127,7 +115,7 @@ export function stridePeriodAt(plan: Plan, s: number): number {
 function checkStrideInputs(plan: Plan, warp: Warp, stopS: number): CheckResult {
   const f: string[] = [];
   const fmt = (s: number) => `s=${s.toFixed(3)}`;
-  const st = plan.strides!;
+  const st = plan.strides;
   const t = plan.hero;
   const spans = heldSpans(plan.inputs);
   const movementAt = (s: number) => (plan.sections.findLast((x) => s >= x.s0 - 1e-9) ?? plan.sections[0]).movement;
@@ -218,19 +206,19 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
     // Press cleaves: the heavy impact's sound is on the accent, and the shockwave's first band on the
     // eighth after it, or on the first sixteenth at least NEVER_LATE after a late press; the bands
     // then follow on sixteenths (checked with the weapon hits above).
-    if (plan.rules?.pressCleaves) {
+    {
       const waveHits = plan.hits.filter((h) => h.source === "wave").map((h) => h.s);
       // Every eligible accent's swing is heavy, whatever was pressed, with its sound on the accent.
       const heavySounds = plan.events.sounds.filter((snd) => snd.key === "hit-heavy").map((snd) => snd.s);
       const heavySwings = plan.swings.filter((sw) => sw.kind === "heavy").map((sw) => sw.s);
       const blastS = plan.hits.find((h) => h.source === "ring")?.s ?? Infinity;
-      for (const a of plan.cleaveAccents ?? []) {
+      for (const a of plan.cleaveAccents) {
         if (a.s >= blastS - 0.04) continue;
         n++;
         if (distToNearest(heavySwings, a.s) > 1e-6) f.push(`eligible accent at ${fmt(a.s)} has no heavy swing`);
-        else if (plan.rules.gridSounds && distToNearest(heavySounds, a.s) > 1e-6) f.push(`eligible accent at ${fmt(a.s)} has no heavy impact sound on it`);
+        else if (distToNearest(heavySounds, a.s) > 1e-6) f.push(`eligible accent at ${fmt(a.s)} has no heavy impact sound on it`);
       }
-      for (const c of plan.cleaves ?? []) {
+      for (const c of plan.cleaves) {
         n++;
         const bi = beatIndexFromBeats(plan.songBeats, c.s);
         let k = bi + 0.5;
@@ -242,9 +230,9 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
         if (!frozen && distToNearest(waveHits, c.band0) > 0.001) f.push(`cleave on ${fmt(c.s)}: no shockwave band at ${fmt(c.band0)}`);
       }
     }
-    // Grid sounds (play mode): every gameplay sound of the table in "Sound on the Grid" plays on a
-    // slot of its subdivision, within 1 ms (the timing grid's slots are beats in a free section).
-    if (plan.rules?.gridSounds) {
+    // Grid sounds: every gameplay sound of the table in "Sound on the Grid" plays on a slot of its
+    // subdivision, within 1 ms (the timing grid's slots are beats in a free section).
+    {
       const rows = soundRows(lib);
       const downbeats = plan.barStart.filter((b) => Number.isFinite(b)).map((b) => plan.songBeats[b]);
       const freeAt = (t: number) => plan.sections.findLast((x) => t >= x.s0 - 1e-9)?.movement === "free";
@@ -267,67 +255,9 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
     add("impacts on the grid", f, n);
   }
 
-  // Every hero movement has an input: in step movement, a press in the 110 ms before; in free
-  // movement, a held key (the hero stops within 60 ms of the last key going up). No step exceeds 44 px.
-  // With strides: a stride starts only at a press or at a step of the stride period while a key is
-  // held, and none covers more than one stride.
-  if (plan.strides) results.push(checkStrideInputs(plan, warp, hero.walk.accelMs / 1000));
-  else {
-    const f: string[] = [];
-    const t = plan.hero;
-    const presses = plan.inputs.filter((i) => i.kind === "press" && i.steps && !i.bend);
-    const pressW = presses.map((p) => p.w);
-    const stepS = hero.step.durationMs / 1000;
-    const stopS = hero.walk.accelMs / 1000;
-    // World-time intervals in which at least one key is held during free movement.
-    const heldSpans: [number, number][] = [];
-    {
-      const down = new Map<string, number>();
-      let open = 0;
-      let since = 0;
-      for (const i of plan.inputs) {
-        if (i.kind === "press") {
-          if (!down.has(i.key)) {
-            if (open++ === 0) since = i.w;
-            down.set(i.key, i.w);
-          }
-        } else if (down.delete(i.key) && --open === 0) heldSpans.push([since, i.w]);
-      }
-      if (open > 0) heldSpans.push([since, Infinity]);
-    }
-    const heldNear = (w0: number, w1: number) => heldSpans.some(([a, b]) => a <= w1 + 1e-9 && b + stopS >= w0 - 1e-9);
-    const movementAt = (w: number) => {
-      const s = warp.toSong(w);
-      return (plan.sections.findLast((x) => s >= x.s0 - 1e-9) ?? plan.sections[0]).movement;
-    };
-    let n = 0;
-    let pi = 0;
-    for (let k = 0; k + 1 < t.x.length; k++) {
-      const d = Math.hypot(t.x[k + 1] - t.x[k], t.y[k + 1] - t.y[k]);
-      if (d < 0.01) continue;
-      n++;
-      const w0 = k / t.rate;
-      const w1 = (k + 1) / t.rate;
-      while (pi + 1 < pressW.length && pressW[pi + 1] <= w1 + 1e-9) pi++;
-      const pw = pressW[pi];
-      const pressed = pw !== undefined && pw <= w1 + 1e-9 && w0 <= pw + stepS + 1e-6;
-      // A walk stops on the boundary into step movement; a step may still be landing after one into free movement.
-      if (pressed || (movementAt(w1) === "free" || movementAt(w0) === "free" ? heldNear(w0, w1) : false)) continue;
-      f.push(`the hero moves ${d.toFixed(1)} px at w=${w0.toFixed(3)} with no press in the 110 ms before and no key held`);
-    }
-    for (let i = 0; i < presses.length; i++) {
-      const p = presses[i];
-      // From the press to the landing, or to the last sample before the next press interrupts it.
-      const next = presses[i + 1]?.w ?? Infinity;
-      const end = p.w + stepS < next ? Math.min(Math.ceil((p.w + stepS) * t.rate) / t.rate, next) : Math.floor(next * t.rate - 1e-9) / t.rate;
-      if (end <= p.w) continue;
-      const a = heroSample(plan, p.w);
-      const b = heroSample(plan, end);
-      const d = Math.hypot(b.x - a.x, b.y - a.y);
-      if (d > hero.step.length + 2) f.push(`the step at ${fmt(p.s)} covers ${d.toFixed(1)} px (max ${hero.step.length})`);
-    }
-    add("every hero movement has an input", f, n + presses.length);
-  }
+  // Every hero movement has an input: a stride starts only at a press or at a step of the stride
+  // period while a key is held, and none covers more than one stride.
+  results.push(checkStrideInputs(plan, warp, hero.walk.accelMs / 1000));
 
   // No skating: while walking, the walk cycle advances within 10% of the rate the distance implies.
   {
@@ -464,9 +394,8 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
   {
     const f: string[] = [];
     let n = 0;
-    // With set pieces the steady stream (enemies outside any formation, ring or stampede) is held to
-    // STREAM_SHARE of the curve, and set pieces add to it: the cap is on everyone.
-    const stream = plan.rules?.setPieces ?? false;
+    // The steady stream (enemies outside any formation, ring or stampede) is held to STREAM_SHARE of
+    // the curve, and set pieces add to it: the cap is on everyone.
     const alive = (w: number, streamOnly = false) => {
       let c = 0;
       for (const id of bucketAt(w)) {
@@ -490,7 +419,7 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
       while (bar + 1 < plan.barStart.length && plan.barStart[bar + 1] <= bi) bar++;
       return bar;
     };
-    const cleaveBars = new Set((plan.cleaves ?? []).flatMap((c) => [barOf(c.s), barOf(c.s) + 1]));
+    const cleaveBars = new Set(plan.cleaves.flatMap((c) => [barOf(c.s), barOf(c.s) + 1]));
     for (let bar = 1; bar + 1 < plan.barStart.length; bar++) {
       const b0 = plan.barStart[bar];
       const b1 = plan.barStart[bar + 1];
@@ -505,8 +434,8 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
       for (let w = w0; w < w1; w += 0.1) {
         const p = alive(w);
         if (p > POP_CAP) f.push(`population ${p} exceeds ${POP_CAP} at w=${w.toFixed(1)}`);
-        pSum += stream ? alive(w, true) : p;
-        tSum += targetAt(plan, warp.toSong(w)) * (stream ? STREAM_SHARE : 1);
+        pSum += alive(w, true);
+        tSum += targetAt(plan, warp.toSong(w)) * STREAM_SHARE;
         k++;
       }
       if (k === 0) continue;
@@ -517,7 +446,7 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
       const p = pSum / k;
       const t = tSum / k;
       const tol = Math.max(0.25 * t, 6);
-      if (Math.abs(p - t) > tol) f.push(`bar ${bar}: ${stream ? "the stream's " : ""}population ${p.toFixed(0)} vs target ${t.toFixed(0)} (±${tol.toFixed(0)})`);
+      if (Math.abs(p - t) > tol) f.push(`bar ${bar}: the stream's population ${p.toFixed(0)} vs target ${t.toFixed(0)} (±${tol.toFixed(0)})`);
     }
     add("population", f, n);
   }
@@ -576,52 +505,6 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
     for (const e of plan.enemies) if (!(e.deathW <= end + 1e-6)) f.push(`#${e.id} ${e.type} is still alive after the finale`);
     if (ring.length === 0) f.push("the recording has no finale blast");
     add("clean ending", f, plan.enemies.length);
-  }
-
-  // Pace: the hero keeps up with the route (skilled and perfect players; the open field has no route).
-  if (plan.profile !== "casual" && !plan.open) {
-    const f: string[] = [];
-    let n = 0;
-    const lookup = new RouteLookup({ step: plan.map.routeStep, x: plan.map.routeX, y: plan.map.routeY });
-    const wEnd = Math.min(warp.toWorld(plan.duration), blastW);
-    let worst = { ahead: 0, behind: 0, wa: 0, wb: 0 };
-    for (let w = 0; w < wEnd; w += 0.1) {
-      const h = heroSample(plan, w);
-      const d = lookup.nearest(h.x, h.y).d - planPaceAt(plan, warp.toSong(w));
-      n++;
-      if (d > worst.ahead) worst = { ...worst, ahead: d, wa: w };
-      if (-d > worst.behind) worst = { ...worst, behind: -d, wb: w };
-    }
-    if (worst.ahead > PACE_AHEAD) f.push(`the hero runs ${worst.ahead.toFixed(0)} px ahead of the pace point at w=${worst.wa.toFixed(1)} (max ${PACE_AHEAD})`);
-    if (worst.behind > PACE_BEHIND) f.push(`the hero falls ${worst.behind.toFixed(0)} px behind the pace point at w=${worst.wb.toFixed(1)} (max ${PACE_BEHIND})`);
-    add("pace", f, n);
-  }
-
-  // Signature moments (skilled and perfect players; play mode has its own, in play-checks.ts).
-  if (plan.profile !== "casual" && !plan.open) {
-    const f: string[] = [];
-    let n = 0;
-    const beatAt = (t: number) => {
-      const bi = Math.max(0, Math.min(plan.songBeats.length - 2, Math.floor(beatIndexFromBeats(plan.songBeats, t))));
-      return plan.songBeats[bi + 1] - plan.songBeats[bi];
-    };
-    if (plan.threats.length > 0) {
-      n++;
-      const near = plan.threats.filter((t) => t.outcome === "near-miss").length;
-      if (near < 0.9 * plan.threats.length) f.push(`only ${near} of ${plan.threats.length} threats end as near misses (90% needed): ${plan.threats.filter((t) => t.outcome !== "near-miss").map((t) => `${t.kind} at ${fmt(t.s)} ${t.outcome}`).join(", ")}`);
-    }
-    for (const fm of plan.formations) {
-      if (lib.formations.get(fm.def)?.shape !== "kick-line") continue;
-      const limit = fm.sRelease + 2 * beatAt(fm.sRelease) + 0.001;
-      for (const id of fm.members) {
-        n++;
-        const e = byId.get(id)!;
-        const last = e.fates[e.fates.length - 1];
-        const ds = last?.lethal ? plan.hits[last.hit].s : Infinity;
-        if (ds > limit) f.push(`kick-line skeleton #${id} dies at ${Number.isFinite(ds) ? fmt(ds) : "never"}, more than two beats after the release at ${fmt(fm.sRelease)}`);
-      }
-    }
-    add("signature moments", f, n);
   }
 
   // Hit-stop limits.

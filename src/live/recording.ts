@@ -150,16 +150,19 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
       inputs: [],
       groove: this.grooveSeries,
       tier: this.tierSeries,
-      ...(ctx.level.rules.pressCleaves ? { cleaves: [] } : {}),
-      ...(ctx.level.rules.fieldGems ? { vacuums: [], pickupRadius: ctx.lib.hero.pickupRadius ?? [40] } : {}),
-      ...(ctx.level.rules.upgradePool ? { upgrades: [] } : {}),
-      ...(ctx.level.rules.healthPool ? { bites: [], heals: [], chickens: [] } : {}),
+      cleaves: [],
+      vacuums: [],
+      pickupRadius: ctx.lib.hero.pickupRadius ?? [40],
+      upgrades: [],
+      bites: [],
+      heals: [],
+      chickens: [],
       health: this.healthSeries,
       nearMisses: [],
       threats: [],
       formations: [],
       stats: { peakPopulation: 0, killsPerSection: {}, totalHitStop: 0, enemies: 0, hits: 0, swings: 0, presses: 0, ratings: { perfect: 0, great: 0, good: 0, none: 0 }, averageGroove: 0, minHealth: 1, planMs: 0, simMs: 0 },
-      ...(ctx.level.world === "open" ? { open: { firstZone: Math.max(0, map.zones.findIndex((z) => z.id === ctx.sections[0].level.zone)), waves: [], landmarks: [] } } : {}),
+      open: { firstZone: Math.max(0, map.zones.findIndex((z) => z.id === ctx.sections[0].level.zone)), waves: [], landmarks: [] },
     };
     this.timeWarp = new Warp(this.breaks);
     this.decalRecipes = new Set([...lib.effects.values()].filter((r) => r.layers.some((l) => l.kind === "decal")).map((r) => r.id));
@@ -209,7 +212,7 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
     this.worldBeatsFinal = Math.max(0, Math.min(this.worldBeatsFinal, Math.floor(beatIndexIn(this.plan.songBeats, this.s)) - 2));
     this.effFirst = Math.min(this.effFirst, this.plan.events.effects.length);
     // (Gems on the field live long and arrive out of order: a rewind can take an arrival back.)
-    this.gemFirst = this.ctx.level.rules.fieldGems ? 0 : Math.min(this.gemFirst, this.gemsLive.length);
+    this.gemFirst = 0;
   }
 
   /** Nothing before `mark` will be rewound: forget how to undo it. */
@@ -419,8 +422,7 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
 
   swing(sw: PlanSwing): void {
     this.add(this.plan.swings, sw);
-    const rating = sw.press !== undefined ? this.plan.inputs[sw.press]?.rating : undefined;
-    if (this.emitter.swing(sw, this.plan.hits[sw.hit], grooveAt(this.grooveSeries, sw.s), rating)) this.add(this.hud.perfect, sw.s);
+    this.emitter.swing(sw, this.plan.hits[sw.hit], grooveAt(this.grooveSeries, sw.s));
   }
 
   input(i: PlanInput): void {
@@ -457,34 +459,31 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
 
   weapon(id: string, s: number): void {
     const g = { id, s };
+    // (A level-up's fanfare is its upgrade's, and the starting loadout has none.)
     this.add(this.plan.weapons, g);
-    // (With the upgrade pool, the level-up is its upgrade's, and the starting loadout has none.)
-    if (this.plan.upgrades) return;
-    this.add(this.hud.levelUps, s);
-    this.emitter.levelUp(g, this.heroNow());
   }
 
   upgrade(u: UpgradeRecord): void {
-    this.add(this.plan.upgrades!, { ...u, offers: u.offers.map((o) => ({ ...o })), ...(u.orbs ? { orbs: u.orbs.map((p) => ({ ...p })) } : {}) });
+    this.add(this.plan.upgrades, { ...u, offers: u.offers.map((o) => ({ ...o })), ...(u.orbs ? { orbs: u.orbs.map((p) => ({ ...p })) } : {}) });
     this.add(this.hud.levelUps, u.s);
     this.emitter.levelUp({ id: u.taken >= 0 ? u.offers[u.taken].id : "", s: u.s }, this.heroNow());
   }
 
   bite(b: BiteRecord): void {
-    this.add(this.plan.bites!, { ...b });
+    this.add(this.plan.bites, { ...b });
     this.emitter.hurt(b);
   }
 
   heal(h: HealRecord): void {
-    this.add(this.plan.heals!, { ...h });
+    this.add(this.plan.heals, { ...h });
   }
 
   chicken(c: ChickenRecord): void {
-    this.add(this.plan.chickens!, { ...c });
+    this.add(this.plan.chickens, { ...c });
   }
 
   chickenTaken(i: number, s: number, w: number, sHeal: number): void {
-    const c = this.plan.chickens![i];
+    const c = this.plan.chickens[i];
     this.set(c, "sTaken", s);
     this.set(c, "wTaken", w);
     this.set(c, "sHeal", sHeal);
@@ -492,7 +491,7 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
   }
 
   upgradeTaken(i: number, k: number, s: number, w: number, sApply: number, walked: boolean): void {
-    const u = this.plan.upgrades![i];
+    const u = this.plan.upgrades[i];
     this.set(u, "taken", k);
     this.set(u, "sTaken", s);
     this.set(u, "wTaken", w);
@@ -632,10 +631,6 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
     if (this.arrivals.has(ev.s1)) return;
     this.arrivals.add(ev.s1);
     this.undo(() => this.arrivals.delete(ev.s1));
-    if (!this.ctx.level.rules.fieldGems) {
-      this.emitter.gemArrival(ev.s1, this.heroNow());
-      return;
-    }
     // One chime per sixteenth with pickups, the next degree of its run.
     const before = this.lastChime;
     const slot = Math.round(beatIndexAt(this.ctx.song, ev.s1) * 4);
@@ -660,11 +655,11 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
   }
 
   vacuum(v: VacuumRecord): void {
-    this.add(this.plan.vacuums!, { ...v });
+    this.add(this.plan.vacuums, { ...v });
   }
 
   vacuumTouch(i: number, s: number, w: number, gems: number): void {
-    const v = this.plan.vacuums![i];
+    const v = this.plan.vacuums[i];
     this.set(v, "sTouch", s);
     this.set(v, "wTouch", w);
     this.set(v, "gems", gems);
@@ -890,8 +885,7 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
   gemsAt(w: number): GemEvent[] {
     const gems = this.gemsLive;
     // (Gems on the field wait until picked up: only those that have arrived are behind.)
-    if (this.ctx.level.rules.fieldGems) while (this.gemFirst < gems.length && gems[this.gemFirst].w1 < w - 1) this.gemFirst++;
-    else while (this.gemFirst < gems.length && gems[this.gemFirst].w0 < w - 6) this.gemFirst++;
+    while (this.gemFirst < gems.length && gems[this.gemFirst].w1 < w - 1) this.gemFirst++;
     const out: GemEvent[] = [];
     for (let i = this.gemFirst; i < gems.length; i++) {
       const g = gems[i];
@@ -950,21 +944,21 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
       for (const e of p.enemies) mix(JSON.stringify(e.attacks ?? []), JSON.stringify(e.dance ?? {}));
     });
     part("hits", () => p.hits.forEach((x) => mix(x.s, x.w, x.what, x.damage)));
-    part("inputs", () => p.inputs.forEach((x) => mix(x.kind, x.key, x.s, x.rating ?? "", x.extra ? 1 : 0, x.offbeat ?? "", x.stumble ? 1 : 0)));
+    part("inputs", () => p.inputs.forEach((x) => mix(x.kind, x.key, x.s, x.rating ?? "", x.extra ? 1 : 0, x.offbeat ?? "")));
     part("swings", () => p.swings.forEach((x) => mix(x.s, x.dir, x.hit)));
     part("effects", () => p.events.effects.forEach((x) => mix(x.recipe, x.s, x.w, x.x, x.y, x.seed)));
     part("sounds", () => p.events.sounds.forEach((x) => mix(x.sample, x.s, x.gain, x.pan, x.rate)));
     part("ui", () => p.events.ui.forEach((x) => mix(x.kind, x.s)));
     part("gems", () => p.events.gems.forEach((x) => mix(x.w0, x.w1, x.s1, x.wT ?? -1, x.value, x.big ? 1 : 0)));
-    part("vacuums", () => (p.vacuums ?? []).forEach((v) => mix(v.s, v.w, v.x, v.y, v.sTouch ?? -1, v.wTouch ?? -1, v.gems ?? -1)));
+    part("vacuums", () => p.vacuums.forEach((v) => mix(v.s, v.w, v.x, v.y, v.sTouch ?? -1, v.wTouch ?? -1, v.gems ?? -1)));
     part("weapons", () => p.weapons.forEach((g) => mix(g.id, g.s)));
     part("bites and heals", () => {
-      (p.bites ?? []).forEach((b) => mix(b.s, b.w, b.source, b.enemy, b.damage, b.until));
-      (p.heals ?? []).forEach((h) => mix(h.s, h.amount, h.source));
-      (p.chickens ?? []).forEach((c) => mix(c.s, c.w, c.x, c.y, c.sTaken ?? -1, c.wTaken ?? -1, c.sHeal ?? -1));
+      p.bites.forEach((b) => mix(b.s, b.w, b.source, b.enemy, b.damage, b.until));
+      p.heals.forEach((h) => mix(h.s, h.amount, h.source));
+      p.chickens.forEach((c) => mix(c.s, c.w, c.x, c.y, c.sTaken ?? -1, c.wTaken ?? -1, c.sHeal ?? -1));
     });
     part("upgrades", () =>
-      (p.upgrades ?? []).forEach((u) => mix(u.s, u.taken, ...u.offers.flatMap((o) => [o.kind, o.id]), u.w ?? -1, ...(u.orbs ?? []).flatMap((o) => [o.x, o.y]), u.sTaken ?? -1, u.wTaken ?? -1, u.sApply ?? -1, u.walked ? 1 : 0)),
+      p.upgrades.forEach((u) => mix(u.s, u.taken, ...u.offers.flatMap((o) => [o.kind, o.id]), u.w ?? -1, ...(u.orbs ?? []).flatMap((o) => [o.x, o.y]), u.sTaken ?? -1, u.wTaken ?? -1, u.sApply ?? -1, u.walked ? 1 : 0)),
     );
     part("projectiles", () => p.projectiles.forEach((x) => mix(x.w0, x.w1, x.x1, x.y1)));
     part("slams", () => p.slams.forEach((x) => mix(x.w0, x.w1, x.x, x.y)));
@@ -983,8 +977,8 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
     });
     part("hud", () => mix(this.hud.kills.length, this.hud.perfect.length, p.weapons.length, p.threats.length));
     part("open field", () => {
-      for (const wv of p.open?.waves ?? []) mix(wv.s, wv.x, wv.y, wv.zone);
-      for (const l of p.open?.landmarks ?? []) mix(l.id, l.s, l.x, l.y);
+      for (const wv of p.open.waves ?? []) mix(wv.s, wv.x, wv.y, wv.zone);
+      for (const l of p.open.landmarks ?? []) mix(l.id, l.s, l.x, l.y);
     });
     return parts;
   }

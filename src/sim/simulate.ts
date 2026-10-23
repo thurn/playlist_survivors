@@ -20,24 +20,22 @@ import { Rng } from "../core/rng.ts";
 import { beatHit, beatSwell, clamp, frac, lerp, smoothstep } from "../core/shaping.ts";
 import { beatIndexAt, energyAt, timeOfBeatIndex, barOfBeatIndex } from "../core/songmap.ts";
 import type { WarpBreak } from "../core/warp.ts";
-import type { AimSnapshot, Fate, Hit, MapLayout, PlanInput, PlanSwing } from "../plan/types.ts";
+import type { AimSnapshot, Fate, Hit, PlanInput, PlanSwing } from "../plan/types.ts";
 import { CameraRig } from "../planner/camera.ts";
 import { sectionIndexAt, subdivisionBeats, weightFactor, type Ctx } from "../planner/context.ts";
 import { aim, catches, swingArc, type AimTarget } from "./aim.ts";
 import { deepClone, registerShared } from "./clone.ts";
-import { bendStep, movePose, opposite, startStep, stepEnd, stepPose, stepSeconds, walkFrame, walkTarget, type InputKey, type Key, type Step } from "./movement.ts";
+import { bendStep, movePose, opposite, stepEnd, walkFrame, type InputKey, type Key, type Step } from "./movement.ts";
 import type { KeyEvent, Observation, Player } from "./player.ts";
 import { BatchRecorder, type ArrowRecord, type PressTrace, type Recorder, type SimResult } from "./recorder.ts";
-import { DEMO_RULES, type Rules } from "./rules.ts";
 import { nextStepAfter, stepRate, stepSpan, type GridSlot, type Schedule } from "./schedule.ts";
 import { budgetAt, freshStrides, heldDirection, interrupt, periodAt, settle, startStride, stompCancelsUntil, strideRule, striding, type StrideState } from "./strides.ts";
 import { chainAt, heavyArcAt, orbitAt, swingArcAt, tierDamage, trailRadiusAt, waveReachAt } from "./tiers.ts";
 import { armouredBite, evolvedOrbit, offersFor, passiveBonus, startingLoadout, takeItem, type Loadout, type UpgradeItem } from "./upgrades.ts";
-import { armedStrike, classifyPress, NEVER_LATE, damageMultiplier, drainPerBeat, firstAtOrAfter, freshPressMemo, grooveAfterChange, type PressJudgement, type PressMemo, type PressRating, grooveAfterOffbeat, grooveAfterPress, grooveDecay, nearestIndex, ratePress, ratePressOnGrid, type Rating, tierFor } from "./timing.ts";
-import { CorridorWorld, OpenWorld, type World } from "./world.ts";
+import { classifyPress, NEVER_LATE, drainPerBeat, firstAtOrAfter, freshPressMemo, grooveAfterChange, type PressJudgement, type PressMemo, nearestIndex, ratePressOnGrid, tierFor } from "./timing.ts";
+import { OpenWorld, type World } from "./world.ts";
 
 export type { ArrowRecord, Landing, SimResult, SlamRecord } from "./recorder.ts";
-export { Corridor } from "./world.ts";
 
 /** Fixed simulation steps per song second. */
 export const SIM_RATE = 120;
@@ -70,7 +68,7 @@ const KNOCK_TIME = 0.12;
 const RECYCLE_VIEWS = 1.5;
 /** The hard population cap. */
 export const POP_CAP = 520;
-/** The horde's set pieces (rules.setPieces): the steady stream aims for this share of the population curve. */
+/** The horde's set pieces: the steady stream aims for this share of the population curve. */
 export const STREAM_SHARE = 0.6;
 /** A closing ring reaches this far from its centre on its accent (a tier-0 swing's reach); a second row rides this much further out. */
 export const RING_CLOSE = 100;
@@ -103,7 +101,7 @@ export const CHICKEN_HEAL = 30;
 const ORB_GRID_WAIT = 2;
 /** Gems on the field: the virtual player sees gems this far beyond the pickup radius (px). */
 const GEM_SEEN = 300;
-/** Gems on the field (rules.fieldGems): at most this many lie on the field. */
+/** Gems on the field: at most this many lie on the field. */
 export const GEM_CAP = 300;
 /** A vacuum drops this far ahead of the hero, is touched within this distance, and its gems land over one bar. */
 export const VACUUM_AHEAD = 150;
@@ -113,10 +111,6 @@ const VACUUM_SEEN = 400;
 /** Hit-stop limits (seconds). */
 export const HITSTOP_MAX = 0.15;
 export const HITSTOP_MIN = 0.04;
-/** The groove only decays after this many bars without a press. */
-const GROOVE_GRACE_BARS = 2;
-/** An extra press this soon after its grid time's rated press is a fumble (a slow diagonal, a double tap), not a stumble. */
-const FUMBLE_S = 0.1;
 /** A near miss: a threat passing this close to the hurtbox's edge without touching it. */
 export const NEAR_MISS = 24;
 /** The near-miss slow-motion dip: down to 0.4 over 40 ms, held 70 ms, back up over 40 ms. */
@@ -208,8 +202,6 @@ interface Foe {
   run?: { vx: number; vy: number };
   /** A charge (the kick line's release) runs faster until this song time. */
   chargeUntil: number;
-  /** World time of its latest bite on the hero (play mode's health). */
-  biteW: number;
   /** Archer group, and this archer's place in it (shoulder to shoulder at a shared post). */
   archerGroup?: number;
   archerSlot?: number;
@@ -237,12 +229,7 @@ interface Swing {
   anim: string;
   impact: number;
   frames: number;
-  press?: number;
-  /** The arming press's accuracy (automatic swings: 1); a light swing's reach scales with it. */
-  accuracy: number;
-  /** Lost to a stumble before its wind-up: it never winds up or strikes. */
-  lost?: boolean;
-  /** Self-firing weapons: the tier read when the wind-up started (it sizes the swing and its damage). */
+  /** The tier read when the wind-up started (it sizes the swing and its damage). */
   tier?: number;
   accent: number;
   dir: number;
@@ -301,8 +288,8 @@ interface Wave {
   hit: Set<Foe>;
   /** Index of the wave's record. */
   group: number;
-  /** Self-firing weapons: its cleave's damage multiplier. */
-  mult?: number;
+  /** Its cleave's damage multiplier (the tier's). */
+  mult: number;
   /** Press cleaves: the heavy impact's arc at its tier, where the bands start, their half-angle, and how far the last reaches. */
   inner?: number;
   halfAngle?: number;
@@ -318,9 +305,9 @@ interface ChainState {
   jumps: number;
   energy: number;
   bi: number;
-  /** Self-firing weapons: each jump's reach and damage multiplier, set by the tier when it fired. */
+  /** Each jump's reach (when the weapon has tiers) and damage multiplier, set by the tier when it fired. */
   range?: number;
-  mult?: number;
+  mult: number;
 }
 
 /** Event order at equal times. */
@@ -489,7 +476,6 @@ interface Env {
   ctx: Ctx;
   sch: Schedule;
   world: World;
-  rules: Rules;
   endS: number;
   cutS: number;
   shared: WeakSet<object>;
@@ -521,7 +507,7 @@ interface SimState {
   step?: Step;
   /** Free movement: the current walk (undefined in step movement). With strides, it may start when the stride in progress lands. */
   walk?: Walk;
-  /** Play mode's strides: the stride budget. */
+  /** Strides: the stride budget. */
   strides: StrideState;
   held: Set<Key>;
   walked: number;
@@ -530,7 +516,7 @@ interface SimState {
   facingAngle: number;
   groove: number;
   lastPressS: number;
-  /** Press classes (play mode): what earlier presses took, the tier, and the latest press that raised the groove. */
+  /** Press classes: what earlier presses took, the tier, and the latest press that raised the groove. */
   memo: PressMemo;
   tier: number;
   lastRaiseS: number;
@@ -544,13 +530,6 @@ interface SimState {
   swings: Swing[];
   liveSwings: Swing[];
   takenSlots: Set<GridSlot>;
-  /** One rated press per grid slot: the grid index of the latest rated step. */
-  lastStepGrid: number;
-  /** That grid time's rated press: its rating, and how many extra presses followed it. */
-  slotRating?: Rating;
-  slotExtras: number;
-  /** Has the hero stumbled on an extra press for that grid time? */
-  slotStumbled: boolean;
   lightCount: number;
   nInputs: number;
   nHits: number;
@@ -558,11 +537,11 @@ interface SimState {
   nChains: number;
   nArrows: number;
   nGems: number;
-  /** Gems on the field (rules.fieldGems): those lying where they dropped, by gem record; the vacuums still to touch; the stampedes in play (formation index) and whether their vacuum has dropped. */
+  /** Gems on the field: those lying where they dropped, by gem record; the vacuums still to touch; the stampedes in play (formation index) and whether their vacuum has dropped. */
   field: { gem: number; x: number; y: number; value: number; big: boolean }[];
   vacuums: { i: number; x: number; y: number }[];
   nVacuums: number;
-  /** The upgrade pool (rules.upgradePool): what the hero has beside the sword, and its passives' bonuses added up. */
+  /** The upgrade pool: what the hero has beside the sword, and its passives' bonuses added up. */
   loadout: Loadout;
   bonus: { maxHealth: number; pickup: number; damage: number; armour: number };
   /** Upgrade orbs waiting to be walked into: the upgrade record, its offers, where each orb is, and when the one ahead is taken; and items taken but not yet applied. */
@@ -585,10 +564,8 @@ interface SimState {
   rings: { x: number; y: number; s0: number; s1: number; r0: number; gaps: number[] }[];
   blasting: boolean;
   flying: { v: number; index: number; x0: number; y0: number; ax: number; ay: number; wRelease: number; ux: number; uy: number; damage: number }[];
-  /** The hero's health (play mode), in the hero's health units. */
+  /** The hero's health, in the hero's health units. */
   health: number;
-  /** Clean beats in a row (rated Great or better): they heal the hero. */
-  streak: number;
   slamMarks: Map<number, { x: number; y: number; sMark: number; wMark: number }>;
   bossFoe?: Foe;
   xpNow: number;
@@ -648,9 +625,6 @@ function freshState(env: Env): SimState {
     swings: [],
     liveSwings: [],
     takenSlots: new Set(),
-    lastStepGrid: -1,
-    slotExtras: 0,
-    slotStumbled: false,
     lightCount: 0,
     nInputs: 0,
     nHits: 0,
@@ -661,7 +635,7 @@ function freshState(env: Env): SimState {
     field: [],
     vacuums: [],
     nVacuums: 0,
-    loadout: startingLoadout(env.rules.upgradePool ? env.ctx.level.upgrades.loadout : []),
+    loadout: startingLoadout(env.ctx.level.upgrades.loadout),
     bonus: { maxHealth: 0, pickup: 0, damage: 0, armour: 0 },
     applying: [],
     invulnUntil: -Infinity,
@@ -678,7 +652,6 @@ function freshState(env: Env): SimState {
     blasting: false,
     flying: [],
     health: env.ctx.lib.hero.health.max,
-    streak: 0,
     slamMarks: new Map(),
     xpNow: 0,
     level: 0,
@@ -707,25 +680,19 @@ function engine(env: Env, st: SimState, io: Io) {
   const hero: HeroDef = ctx.lib.hero;
   const song = ctx.song;
   const lib = ctx.lib;
-  const lightReach = { radius: hero.swings.light.hitShape.radius, halfAngle: (hero.swings.light.hitShape.degrees * Math.PI) / 360 };
   const heavyReach = { radius: hero.swings.heavy.hitShape.radius, halfAngle: (hero.swings.heavy.hitShape.degrees * Math.PI) / 360 };
-  // A cleave aims at everything its arc and its shockwave will reach.
-  const heavyAim = { radius: hero.swings.heavy.wave.to, halfAngle: heavyReach.halfAngle };
-  // Self-firing weapons: a cleave also aims at what will come into its shockwave's reach, such as a
-  // kick line charging from further down the line.
+  // A free section's cleave aims at what its arc and shockwave will reach, and at what will come
+  // into it, such as a kick line charging from further down the line.
   const chargeAim = { radius: hero.swings.heavy.wave.to + CLEAVE_AIM_AHEAD, halfAngle: heavyReach.halfAngle };
   const anims = ctx.heroAnims;
   const animIdx = (name: string) => Math.max(0, HERO_ANIMS.indexOf(name));
-  const pacePoint = (s: number) => world.pacePoint(s);
-  /** The way forward now: the route's pace point in the corridor, the hero's heading in the open field. */
+  /** The way forward now: the hero's heading. */
   const forward = (): { x: number; y: number; tx: number; ty: number } => {
-    if (!world.open) return pacePoint(st.s);
     const hp = heroPose(st.w);
     return { x: hp.x, y: hp.y, tx: st.heading.x, ty: st.heading.y };
   };
-  /** The camera lead's direction at song time s: along the route, or the heading (a formation's direction while it is in play). */
+  /** The camera lead's direction at song time s: the heading (a formation's direction while it is in play). */
   const leadDir = (s: number): { tx: number; ty: number } => {
-    if (!world.open) return pacePoint(s);
     const fd = st.formationDir;
     if (fd && s < fd.until) return { tx: fd.x, ty: fd.y };
     return { tx: st.heading.x, ty: st.heading.y };
@@ -773,29 +740,16 @@ function engine(env: Env, st: SimState, io: Io) {
    * (which ends standing still at its landing spot).
    */
   const heroPose = (atW: number): { x: number; y: number; z: number; u: number; vx: number; vy: number } => {
-    if (strides) {
-      // A walk waits for the stride in progress to land.
-      if (st.walk && (!st.step || atW >= st.walk.w0 - 1e-12)) return { ...walkPose(st.walk, atW), z: 0, u: 1 };
-      if (st.step) return { ...movePose(st.step, atW, rule.durationS, rule.hop), vx: 0, vy: 0 };
-      return { x: st.restPose.x, y: st.restPose.y, z: 0, u: 1, vx: 0, vy: 0 };
-    }
-    if (st.walk) return { ...walkPose(st.walk, atW), z: 0, u: 1 };
-    if (st.step) return { ...stepPose(hero, st.step, atW), vx: 0, vy: 0 };
+    // A walk waits for the stride in progress to land.
+    if (st.walk && (!st.step || atW >= st.walk.w0 - 1e-12)) return { ...walkPose(st.walk, atW), z: 0, u: 1 };
+    if (st.step) return { ...movePose(st.step, atW, rule.durationS, rule.hop), vx: 0, vy: 0 };
     return { x: st.restPose.x, y: st.restPose.y, z: 0, u: 1, vx: 0, vy: 0 };
   };
 
   // ---------------------------------------------------------------- strides
-  const strides = env.rules.strides;
-  const selfFiring = env.rules.selfFiring;
-  const setPieces = env.rules.setPieces;
-  const fieldGems = env.rules.fieldGems;
-  const upgradePool = env.rules.upgradePool;
-  const upgradeOrbs = upgradePool && env.rules.upgradeOrbs;
-  const healthPool = env.rules.health && env.rules.healthPool;
-  const pressCleaves = env.rules.pressCleaves;
   const rule = strideRule(hero);
-  /** How long a step (or stride) takes. */
-  const stepDur = strides ? rule.durationS : stepSeconds(hero);
+  /** How long a stride takes. */
+  const stepDur = rule.durationS;
   /** One stride at song time s: the walk speed times the stride period. */
   const oneStride = (s: number) => rule.speed * (sectionAt(s).level.movement === "free" ? rule.freePeriodS : periodAt(sch.strideSteps, s));
   /**
@@ -816,7 +770,7 @@ function engine(env: Env, st: SimState, io: Io) {
   /** A press's key goes down: held keys keep the order they were pressed in (the more recent of two opposite keys wins). */
   const hold = (key: InputKey) => {
     if (key === "space") return;
-    if (strides) st.held.delete(key);
+    st.held.delete(key);
     st.held.add(key);
   };
   /** Would this key bend the step (or press stride) in progress into a diagonal? */
@@ -827,7 +781,7 @@ function engine(env: Env, st: SimState, io: Io) {
    */
   const rocks = (key: InputKey): boolean => {
     const sp = st.step;
-    if (!strides || key === "space" || !sp || sp.held || sp.rock || sp.bendE !== undefined || sp.keys.length === 0 || !striding(rule, sp, st.w)) return false;
+    if (key === "space" || !sp || sp.held || sp.rock || sp.bendE !== undefined || sp.keys.length === 0 || !striding(rule, sp, st.w)) return false;
     return st.s - (sp.press?.s ?? sp.s0 ?? -Infinity) <= rule.stompS + 1e-9 && opposite(sp.keys[0], key);
   };
   /** A press that belongs to the one before it: a diagonal's second key, or a stomp's opposite key. */
@@ -937,31 +891,10 @@ function engine(env: Env, st: SimState, io: Io) {
     strideOff(undefined);
   };
 
-  /** Free movement: start walking toward the held keys' velocity from where the hero is now. */
-  const rewalk = () => {
-    const p = heroPose(st.w);
-    const t = walkTarget(hero, st.held);
-    const accel = hero.walk.speed / (hero.walk.accelMs / 1000);
-    st.walk = { w0: st.w, x0: p.x, y0: p.y, vx0: p.vx, vy0: p.vy, tx: t.x, ty: t.y, t: Math.hypot(t.x - p.vx, t.y - p.vy) / accel };
-    st.step = undefined;
-    if (t.x !== 0 || t.y !== 0) st.facingAngle = Math.atan2(t.y, t.x);
-  };
-
-  /** A section boundary: entering step movement stops any walk; entering free movement walks with the held keys. */
+  /** A section boundary: into step movement, a walk in progress stops and held strides take over on the grid; into free movement, the hero walks with the held keys. */
   const switchMode = (steps: boolean) => {
-    if (strides) {
-      // Into step movement, a walk in progress stops and held strides take over on the grid.
-      if (steps) stopWalk();
-      else walkOn();
-      return;
-    }
-    if (steps) {
-      if (!st.walk) return;
-      const p = heroPose(st.w);
-      st.walk = undefined;
-      st.step = undefined;
-      st.restPose = { x: p.x, y: p.y };
-    } else rewalk();
+    if (steps) stopWalk();
+    else walkOn();
   };
 
   const startHitStop = (len: number) => {
@@ -1008,7 +941,6 @@ function engine(env: Env, st: SimState, io: Io) {
       weight: weightOf(def),
       slotUntil: -Infinity,
       chargeUntil: -Infinity,
-      biteW: -Infinity,
     };
     if (extra?.formation !== undefined) f.formation = extra.formation;
     // Its first sample is the spawn spot itself, at the last sample time before it appeared.
@@ -1027,27 +959,20 @@ function engine(env: Env, st: SimState, io: Io) {
     const m = SPAWN_MARGIN + SPAWN_EXTRA;
     const pp = forward();
     const fwd = Math.atan2(pp.ty, pp.tx);
-    let x = cx;
-    let y = cy;
-    for (let tries = 0; tries < 8; tries++) {
-      const forward = forwardOnly || r.next() < SPAWN_FORWARD;
-      const ang = forward ? fwd + r.range(-Math.PI / 2, Math.PI / 2) : r.range(-Math.PI, Math.PI);
-      const out = r.range(0, 40);
-      const c = Math.cos(ang);
-      const sn = Math.sin(ang);
-      // The ray from the view centre leaves the view, grown by the sprite's extents.
-      const left = cx - view[0] + ext.hx + m + out;
-      const right = view[2] - cx + ext.hx + m + out;
-      const top = cy - view[1] + ext.down + m + out;
-      const bottom = view[3] - cy + ext.up + m + out;
-      const tx = c > 1e-9 ? right / c : c < -1e-9 ? left / -c : Infinity;
-      const ty = sn > 1e-9 ? bottom / sn : sn < -1e-9 ? top / -sn : Infinity;
-      const t = Math.min(tx, ty);
-      x = cx + c * t;
-      y = cy + sn * t;
-      if (world.edge(x, y) > -20) break;
-    }
-    return { x, y };
+    const ahead = forwardOnly || r.next() < SPAWN_FORWARD;
+    const ang = ahead ? fwd + r.range(-Math.PI / 2, Math.PI / 2) : r.range(-Math.PI, Math.PI);
+    const out = r.range(0, 40);
+    const c = Math.cos(ang);
+    const sn = Math.sin(ang);
+    // The ray from the view centre leaves the view, grown by the sprite's extents.
+    const left = cx - view[0] + ext.hx + m + out;
+    const right = view[2] - cx + ext.hx + m + out;
+    const top = cy - view[1] + ext.down + m + out;
+    const bottom = view[3] - cy + ext.up + m + out;
+    const tx = c > 1e-9 ? right / c : c < -1e-9 ? left / -c : Infinity;
+    const ty = sn > 1e-9 ? bottom / sn : sn < -1e-9 ? top / -sn : Infinity;
+    const t = Math.min(tx, ty);
+    return { x: cx + c * t, y: cy + sn * t };
   };
 
   const kill = (f: Foe) => {
@@ -1076,7 +1001,7 @@ function engine(env: Env, st: SimState, io: Io) {
     if (lethal) {
       kill(f);
       onDeath(f, fate, h);
-    } else if (!(upgradeOrbs && f.knockT > 0 && (Math.hypot(f.knockX, f.knockY) * f.knockT) / KNOCK_TIME > KNOCKBACK)) {
+    } else if (!(f.knockT > 0 && (Math.hypot(f.knockX, f.knockY) * f.knockT) / KNOCK_TIME > KNOCKBACK)) {
       // A white flash and a knockback away from the hero. (Upgrade orbs: not cutting short a level-up
       // pulse's longer push still under way.)
       const hp = heroPose(st.w);
@@ -1117,23 +1042,22 @@ function engine(env: Env, st: SimState, io: Io) {
 
   // ---------------------------------------------------------------- swings
   /** Arm a swing for a slot (one swing per slot): the press's, or an automatic one. */
-  const swingFor = (slot: GridSlot | undefined, sArmed: number, press?: number, rating?: Rating, accuracy = 1): Swing | undefined => {
+  const swingFor = (slot: GridSlot | undefined, sArmed: number): Swing | undefined => {
     if (!slot || st.takenSlots.has(slot)) return undefined;
     // The finale blast ends the sword's routine (its chord is matched to the grid within 40 ms).
     if (blastS !== undefined && slot.s >= blastS - 0.04) return undefined;
     st.takenSlots.add(slot);
     const sec = ctx.sections[slot.section];
-    // A swing striking on an accent, armed by a press rated Great or better, is a heavy cleave;
-    // free movement cleaves on strong anchors.
+    // A swing striking on an eligible accent is a heavy cleave (everyone's); free movement cleaves on
+    // strong anchors.
     const rule = sec.level.heavyOnAccents;
     const onAccent = slot.accent > 0 && slot.accent >= rule.minStrength && (rule.label === undefined || rule.label === slot.accentLabel);
-    // (Self-firing weapons, until accents are reworked: an eligible accent's swing is heavy for everyone.)
-    const heavy = slot.kind === "anchor" || (slot.kind === "grid" && onAccent && (selfFiring || rating === "perfect" || rating === "great"));
+    const heavy = slot.kind === "anchor" || (slot.kind === "grid" && onAccent);
     const anim = heavy ? hero.swings.heavy.animation : hero.swings.light.animations[st.lightCount++ % hero.swings.light.animations.length];
     const info = anims[anim] ?? { frames: 6, impactFrame: 3 };
     const sWind = Math.max(sArmed, slot.s - hero.swings.windupMs / 1000 / Math.max(0.05, baseRate(slot.s)));
-    const sw: Swing = { sArmed, sWind, sStrike: slot.s, slot, heavy, anim, impact: info.impactFrame ?? 3, frames: info.frames, press, accuracy, accent: slot.accent, dir: st.facingAngle, aimed: false, struck: false, wStrike: 0, fps: 16 };
-    // Only swings from the last few seconds can matter to the idle-swing rule.
+    const sw: Swing = { sArmed, sWind, sStrike: slot.s, slot, heavy, anim, impact: info.impactFrame ?? 3, frames: info.frames, accent: slot.accent, dir: st.facingAngle, aimed: false, struck: false, wStrike: 0, fps: 16 };
+    // Only swings from the last few seconds still matter (the hit-stop and the animation look back).
     if (st.swings.length > 64) st.swings = st.swings.filter((x) => x.sStrike >= st.s - 8);
     st.swings.push(sw);
     st.liveSwings.push(sw);
@@ -1157,10 +1081,7 @@ function engine(env: Env, st: SimState, io: Io) {
     return out;
   };
 
-  /** A light swing's reach: its arc, shortened by a loosely timed press (it still aims with the full arc). */
-  const lightReachOf = (sw: Swing) => (sw.accuracy >= 1 ? lightReach : { ...lightReach, radius: lightReach.radius * lerp(hero.swings.light.minReach, 1, sw.accuracy) });
-
-  /** A light swing's arc at a tier (self-firing weapons). */
+  /** A light swing's arc at a tier. */
   const tierReach = (tier: number) => {
     const arc = swingArcAt(hero, tier);
     return { radius: arc.radius, halfAngle: (arc.degrees * Math.PI) / 360 };
@@ -1171,8 +1092,8 @@ function engine(env: Env, st: SimState, io: Io) {
     const arc = heavyArcAt(hero, tier);
     return { radius: arc.radius, halfAngle: (arc.degrees * Math.PI) / 360 };
   };
-  /** Press cleaves: is a heavy swing an eligible accent's (sized by the tier), not a free section's anchor (as today)? */
-  const accentCleave = (sw: Swing) => pressCleaves && sw.heavy && sw.slot.kind === "grid" && sw.tier !== undefined;
+  /** Press cleaves: is a heavy swing an eligible accent's (sized by the tier), not a free section's anchor? */
+  const accentCleave = (sw: Swing) => sw.heavy && sw.slot.kind === "grid";
   /** Where an accent's heavy swing aims (press cleaves): out to its shockwave's reach at the tier and on along a charging line. */
   const accentAimAt = (tier: number) => ({ radius: waveReachAt(hero, tier) + CLEAVE_AIM_AHEAD, halfAngle: heavyTierReach(tier).halfAngle });
 
@@ -1196,11 +1117,10 @@ function engine(env: Env, st: SimState, io: Io) {
   };
 
   const doWind = (sw: Swing) => {
-    if (sw.lost) return;
     const hp = heroPose(st.w);
-    // Self-firing weapons: the tier when the wind-up starts sizes the swing, whatever comes after.
-    if (selfFiring) sw.tier = st.tier;
-    const reach = sw.heavy ? (accentCleave(sw) ? accentAimAt(sw.tier!) : sw.tier !== undefined ? chargeAim : heavyAim) : sw.tier !== undefined ? tierReach(sw.tier) : lightReach;
+    // The tier when the wind-up starts sizes the swing, whatever comes after.
+    sw.tier = st.tier;
+    const reach = sw.heavy ? (accentCleave(sw) ? accentAimAt(sw.tier) : chargeAim) : tierReach(sw.tier);
     const targets = aimTargets(hp.x, hp.y, reach.radius);
     // The snapshot is aim's whole input, so the check can re-run it.
     const snap: AimSnapshot = { x: hp.x, y: hp.y, facing: st.facingAngle, targets: [] };
@@ -1208,23 +1128,21 @@ function engine(env: Env, st: SimState, io: Io) {
     sw.dir = aim(hp.x, hp.y, st.facingAngle, targets, reach);
     sw.aimed = true;
     st.facingAngle = sw.dir;
-    sw.record = { s: sw.sStrike, w: 0, sArmed: sw.sArmed, sWind: sw.sWind, kind: sw.heavy ? "heavy" : "light", anim: sw.anim, impactFrame: sw.impact, dir: sw.dir, x: 0, y: 0, hit: -1, press: sw.press, accent: sw.accent, aim: snap };
-    if (sw.tier !== undefined) {
-      sw.record.tier = sw.tier;
-      sw.record.reach = sw.heavy ? { radius: reach.radius, degrees: (reach.halfAngle * 360) / Math.PI } : swingArcAt(hero, sw.tier);
-    }
+    sw.record = { s: sw.sStrike, w: 0, sArmed: sw.sArmed, sWind: sw.sWind, kind: sw.heavy ? "heavy" : "light", anim: sw.anim, impactFrame: sw.impact, dir: sw.dir, x: 0, y: 0, hit: -1, accent: sw.accent, aim: snap };
+    sw.record.tier = sw.tier;
+    sw.record.reach = sw.heavy ? { radius: reach.radius, degrees: (reach.halfAngle * 360) / Math.PI } : swingArcAt(hero, sw.tier);
     const windW = Math.max(1 / 240, (sw.sStrike - sw.sWind) * baseRate(sw.sStrike));
     sw.fps = sw.impact / windW;
   };
 
   const doStrike = (sw: Swing) => {
-    if (sw.lost) return;
     if (!sw.aimed) doWind(sw);
     const hp = heroPose(st.w);
     const def = sw.heavy ? hero.swings.heavy : hero.swings.light;
-    const reach = sw.heavy ? (accentCleave(sw) ? heavyTierReach(sw.tier!) : heavyReach) : sw.tier !== undefined ? tierReach(sw.tier) : lightReachOf(sw);
+    const tier = sw.tier!;
+    const reach = sw.heavy ? (accentCleave(sw) ? heavyTierReach(tier) : heavyReach) : tierReach(tier);
     const shape: Shape = swingArc(hp.x, hp.y, sw.dir, reach);
-    const mult = sw.tier !== undefined ? tierDamage(hero, sw.tier) : damageMultiplier(hero, st.groove);
+    const mult = tierDamage(hero, tier);
     const h = addHit({ source: "move", what: sw.heavy ? "cleave" : "slash", weight: sw.heavy ? "heavy" : "light", primary: true, shape, dir: sw.dir, accent: sw.accent, damage: def.damage * mult });
     applyHit(h);
     sw.struck = true;
@@ -1236,12 +1154,12 @@ function engine(env: Env, st: SimState, io: Io) {
     r.hit = h.id;
     rec().swing(r);
     sw.record = undefined;
-    if (sw.heavy && pressCleaves && sw.slot.kind === "grid") {
+    if (accentCleave(sw)) {
       // Press cleaves: the heavy impact is everyone's; the accent's counted press of Great or better
       // launches its shockwave, now when it came first (with a hit-stop), or when it comes. (A free
       // section's heavy swing on a strong anchor works as today, below.)
       const gi = nearestIndex(sch.gridTimes, sw.sStrike);
-      const c: PendingCleave = { gi, s: sw.sStrike, x: hp.x, y: hp.y, dir: sw.dir, tier: sw.tier ?? 0 };
+      const c: PendingCleave = { gi, s: sw.sStrike, x: hp.x, y: hp.y, dir: sw.dir, tier };
       const counted = st.memo.counted.get(gi);
       if (counted && counted.s <= st.s + 1e-9) {
         if (counted.rating === "perfect" || counted.rating === "great") {
@@ -1251,10 +1169,9 @@ function engine(env: Env, st: SimState, io: Io) {
         st.pendingCleave = undefined;
       } else st.pendingCleave = c;
     } else if (sw.heavy) {
-      if (!selfFiring || sw.press !== undefined) startHitStop((hero.swings.heavy.hitStopMs / 1000) * (0.6 + 0.4 * sw.accent));
-      // The cleave's crescent shockwave travels outward along its aim, one band per sixteenth note.
-      // Band k reaches 25 px further on the k-th sixteenth after the strike.
-      const wave: Wave = { x: hp.x, y: hp.y, dir: sw.dir, band: 0, hit: new Set(), group: st.nWaves++, ...(sw.tier !== undefined ? { mult } : {}) };
+      // A free section's cleave on a strong anchor: its crescent shockwave travels outward along its
+      // aim, one band per sixteenth note, band k reaching 25 px further on the k-th sixteenth.
+      const wave: Wave = { x: hp.x, y: hp.y, dir: sw.dir, band: 0, hit: new Set(), group: st.nWaves++, mult };
       rec().wave();
       // (On the sixteenth-note grid, from the strike's own sixteenth or the next one.)
       const bi0 = Math.ceil(sbiAt(st.s) * 4 - 1e-6) / 4;
@@ -1271,36 +1188,12 @@ function engine(env: Env, st: SimState, io: Io) {
     const outer = Math.min(inner + wd.band * (wave.band + 1), wave.to ?? Infinity);
     const shape: Shape = { kind: "arc", x: wave.x, y: wave.y, radius: outer, inner, dir: wave.dir, halfAngle: wave.halfAngle ?? heavyReach.halfAngle };
     // Everyone the front has reached and the wave has not hit yet.
-    const h = addHit({ source: "wave", what: "shockwave", weight: "medium", primary: false, shape, dir: wave.dir, accent: 0, damage: wd.damage * (wave.mult ?? damageMultiplier(hero, st.groove)), group: wave.group });
+    const h = addHit({ source: "wave", what: "shockwave", weight: "medium", primary: false, shape, dir: wave.dir, accent: 0, damage: wd.damage * wave.mult, group: wave.group });
     rec().waveHit(wave.group, h.id);
     for (const f of applyHit(h, (f) => !wave.hit.has(f))) wave.hit.add(f);
   };
 
   // ---------------------------------------------------------------- input
-  /**
-   * A stumble: the next swing that has not started its wind-up is lost (or, with none pending, the
-   * next free grid time's swing), and the groove loses a fraction.
-   */
-  const stumble = () => {
-    const pending = st.liveSwings.filter((sw) => !sw.struck && !sw.aimed && sw.sWind > st.s + 1e-9).sort((a, b) => a.sStrike - b.sStrike)[0];
-    if (pending) {
-      pending.lost = true;
-      st.liveSwings.splice(st.liveSwings.indexOf(pending), 1);
-      const punch = st.punches.findIndex((p) => p.s === pending.sStrike);
-      if (punch >= 0) st.punches.splice(punch, 1);
-    } else {
-      for (let i = armedStrike(hero, sch.gridTimes, st.s); i < sch.gridSlots.length; i++) {
-        const slot = sch.gridSlots[i];
-        if (st.takenSlots.has(slot)) continue;
-        st.takenSlots.add(slot);
-        break;
-      }
-    }
-    st.groove *= 1 - hero.groove.stumble;
-    rec().groove(st.s, st.groove);
-    st.streak = 0;
-  };
-
   /** A stride's record on its press: its length, the budget left, and the ground an interrupted stride gave back. */
   const strideTrace = (r: { stride: number; returned: number }, input: PlanInput, bend = false): Pick<PressTrace, "stride" | "budget" | "returned"> => {
     if (!bend) input.stride = r.stride;
@@ -1338,35 +1231,19 @@ function engine(env: Env, st: SimState, io: Io) {
   const pressMove = (key: InputKey, input: PlanInput): Partial<PressTrace> => (key === "space" ? stompHere(input) : strideTrace(strideOff(key), input));
 
   const press = (e: KeyEvent) => {
-    // Space stomps only with strides; without them (the demo) it is not a gameplay key.
-    if (e.key === "space" && !strides) return;
     const sec = sectionAt(st.s);
     const steps = sec.level.movement === "steps";
     // Play mode's timing log (a no-op elsewhere): what the press did, and why.
-    const trace: PressTrace | undefined = rec().press ? { id: e.id, s: st.s, w: st.w, kind: "press", key: e.key, section: sec.label, movement: steps ? "steps" : "free", outcome: "step", grooveBefore: st.groove } : undefined;
-    // One rated press per grid slot (play mode): every press belongs to its nearest grid time, and
-    // only the first press for a grid time is rated and arms a swing. Every press still steps, and
-    // a diagonal's second key still bends the step.
-    let extraGrid: number | undefined;
-    // Press classes (play mode): every press in step movement is classed against the grid, before
-    // it moves the hero (a partner bends or rocks the stride in progress).
-    const judged = env.rules.pressClasses && steps ? classifyPress(hero, sch.gridTimes, st.s, partnerOf(e.key), st.memo) : undefined;
+    const trace: PressTrace | undefined = rec().press ? { id: e.id, s: st.s, w: st.w, kind: "press", key: e.key, section: sec.label, movement: steps ? "steps" : "free", outcome: "stride", grooveBefore: st.groove } : undefined;
+    // Press classes: every press in step movement is classed against the grid, before it moves the
+    // hero (a partner bends or rocks the stride in progress).
+    const judged = steps ? classifyPress(hero, sch.gridTimes, st.s, partnerOf(e.key), st.memo) : undefined;
     // Press cleaves: the counted press of an accent whose heavy impact has struck: Great or better
     // launches its shockwave now (a late press brings no hit-stop).
     const pc = st.pendingCleave;
-    if (pressCleaves && pc && judged?.class === "counted" && judged.gridIndex === pc.gi) {
+    if (pc && judged?.class === "counted" && judged.gridIndex === pc.gi) {
       if (judged.rating === "perfect" || judged.rating === "great") launchCleave(pc, st.s, st.s);
       st.pendingCleave = undefined;
-    }
-    if (env.rules.oneStepPerSlot && steps && !partnerOf(e.key)) {
-      const gi = nearestIndex(sch.gridTimes, st.s);
-      if (gi === st.lastStepGrid) extraGrid = gi;
-      else {
-        st.lastStepGrid = gi;
-        st.slotExtras = 0;
-        st.slotStumbled = false;
-        st.slotRating = undefined;
-      }
     }
     if (inStop(st.s)) {
       // A press ends the hit-stop early: world time resumes at the press.
@@ -1375,64 +1252,29 @@ function engine(env: Env, st: SimState, io: Io) {
       if (trace) trace.cutHitStop = true;
     }
     const input: PlanInput = { s: st.s, w: st.w, kind: "press", key: e.key, steps };
-    const idx = st.nInputs++;
-    // Extra presses for a grid time that already had its step. The first steps when it is an
-    // off-beat (rated Perfect against the half-way point to the neighbouring grid time, after a
-    // rated press of Great or better) or a fumble right after the rated press; any other extra
-    // stumbles, and once the hero has stumbled, extras for that grid time do nothing.
-    let off: PressRating | undefined;
-    let stumbling = false;
-    if (extraGrid !== undefined) {
-      const g0 = sch.gridTimes[extraGrid];
-      const g1 = sch.gridTimes[st.s >= g0 ? extraGrid + 1 : extraGrid - 1];
-      off = g1 === undefined ? undefined : ratePress(hero, st.s - (g0 + g1) / 2, Math.abs(g1 - g0) / 2);
-      const offbeat = (off?.rating === "perfect" || off?.rating === "great") && (st.slotRating === "perfect" || st.slotRating === "great");
-      const fumble = st.s - st.lastPressS <= FUMBLE_S;
-      stumbling = ++st.slotExtras > 1 || !(offbeat || fumble);
-    }
-    if (extraGrid !== undefined && stumbling) {
-      input.extra = true;
-      const g0 = sch.gridTimes[extraGrid];
-      if (!st.slotStumbled) {
-        st.slotStumbled = true;
-        input.stumble = true;
-        stumble();
-      }
-      hold(e.key);
-      // With strides every press strides (or stomps): a stumble keeps its penalties, but not the hero still.
-      const moved = strides ? pressMove(e.key, input) : {};
-      rec().input(input);
-      if (trace) rec().press!({ ...trace, ...moved, outcome: input.stumble ? "stumble" : "ignored", gridIndex: extraGrid, gridS: g0, delta: st.s - g0, stepS: st.lastPressS, grooveAfter: st.groove });
-      return;
-    }
+    st.nInputs++;
     hold(e.key);
-    // Free movement: held keys walk; presses are not rated and do not arm the sword. With strides,
-    // a press strides first (or bends the stride in progress), and the walk starts when it lands.
+    // Free movement: presses are not rated. A press strides first (or bends the stride in
+    // progress), and the walk with the held keys starts when it lands.
     if (!steps) {
-      if (strides) {
-        const bent = bendOf(e.key);
-        const rocked = !bent && rocks(e.key);
-        if (bent) {
-          st.step = bent;
-          input.bend = true;
-        } else stopWalk();
-        const moved = bent ? strideTrace({ stride: bent.len ?? 0, returned: 0 }, input, true) : rocked ? stompHere(input) : pressMove(e.key, input);
-        walkOn();
-        rec().input(input);
-        if (trace) rec().press!({ ...trace, ...moved, outcome: bent ? "bend" : rocked ? "rock" : e.key === "space" ? "stomp" : "stride" });
-        return;
-      }
-      rewalk();
+      const bent = bendOf(e.key);
+      const rocked = !bent && rocks(e.key);
+      if (bent) {
+        st.step = bent;
+        input.bend = true;
+      } else stopWalk();
+      const moved = bent ? strideTrace({ stride: bent.len ?? 0, returned: 0 }, input, true) : rocked ? stompHere(input) : pressMove(e.key, input);
+      walkOn();
       rec().input(input);
-      if (trace) rec().press!({ ...trace, outcome: "walk" });
+      if (trace) rec().press!({ ...trace, ...moved, outcome: bent ? "bend" : rocked ? "rock" : e.key === "space" ? "stomp" : "stride" });
       return;
     }
-    // A perpendicular key just after the first bends the step into a diagonal.
+    // A perpendicular key just after the first bends the stride into a diagonal.
     const bent = bendOf(e.key);
     if (bent) {
       st.step = bent;
       input.bend = true;
-      const moved = strides ? strideTrace({ stride: bent.len ?? 0, returned: 0 }, input, true) : {};
+      const moved = strideTrace({ stride: bent.len ?? 0, returned: 0 }, input, true);
       if (judged) input.class = judged.class;
       rec().input(input);
       if (trace) rec().press!({ ...trace, ...moved, ...judgedTrace(judged), outcome: "bend" });
@@ -1447,92 +1289,45 @@ function engine(env: Env, st: SimState, io: Io) {
       return;
     }
     if (trace && st.step && !st.landed) trace.midStep = true;
-    let moved: Partial<PressTrace> = {};
-    if (strides) {
-      moved = pressMove(e.key, input);
-      if (trace) trace.outcome = e.key === "space" ? "stomp" : "stride";
-    } else {
-      const hp = heroPose(st.w);
-      st.step = startStep(hero, st.w, hp.x, hp.y, e.key as Key, world.clamp);
-      st.landed = false;
-      st.facingAngle = Math.atan2(st.step.dy, st.step.dx);
-    }
-    if (extraGrid !== undefined) {
-      // A grid time's first extra press: it steps and arms nothing. An off-beat lifts the groove
-      // past full; a fumble is unrated (the key display greys it) and leaves the groove alone.
-      input.extra = true;
-      const g0 = sch.gridTimes[extraGrid];
-      if (off?.rating === "perfect" && (st.slotRating === "perfect" || st.slotRating === "great")) {
-        input.offbeat = off.rating;
-        st.groove = grooveAfterOffbeat(hero, st.groove, off.accuracy);
-        rec().groove(st.s, st.groove);
-      }
-      rec().input(input);
-      if (trace) {
-        rec().press!({ ...trace, ...moved, outcome: "extra", gridIndex: extraGrid, gridS: g0, delta: st.s - g0, stepS: st.lastPressS, ...(off ? { offbeatDelta: off.delta, offbeat: input.offbeat } : {}), grooveAfter: st.groove });
-      }
-      return;
-    }
-    // Press classes: the class sets the groove change; only a counted press is rated, heals and arms the sword.
+    const moved = pressMove(e.key, input);
+    if (trace) trace.outcome = e.key === "space" ? "stomp" : "stride";
+    // Press classes: the class sets the groove change; only a counted press is rated.
     if (judged && judged.class !== "counted") {
       input.class = judged.class;
       input.extra = true;
       if (judged.class === "offbeat") input.offbeat = judged.rating as "perfect" | "great";
-      if (judged.class === "stray") st.streak = 0;
       meterChange(judged.change);
       rec().input(input);
       if (trace) rec().press!({ ...trace, ...moved, ...judgedTrace(judged), outcome: "extra", stepS: st.lastPressS, grooveAfter: st.groove });
       return;
     }
-    // Rate the press against the timing grid (the sections' grids join end to end), and arm the sword.
+    // Rate the press against the timing grid (the sections' grids join end to end). (Presses arm
+    // nothing: the sword swings on every grid time by itself.)
     const rated = ratePressOnGrid(hero, st.s, sch.gridTimes);
     input.rating = rated.rating;
-    input.accuracy = rated.accuracy;
     input.delta = rated.delta;
     st.lastPressS = st.s;
-    st.slotRating = rated.rating;
-    beatHeal(rated.rating);
     if (judged) {
       input.class = judged.class;
       meterChange(judged.change);
-    } else {
-      st.groove = grooveAfterPress(hero, st.groove, rated.accuracy);
-      rec().groove(st.s, st.groove);
     }
-    const slot = sch.gridSlots[armedStrike(hero, sch.gridTimes, st.s)];
-    const taken = slot !== undefined && st.takenSlots.has(slot);
-    // (Self-firing weapons: presses arm nothing; the sword swings on every grid time by itself.)
-    const sw = selfFiring ? undefined : swingFor(slot, st.s, idx, rated.rating, env.rules.oneStepPerSlot || env.rules.pressClasses ? rated.accuracy : 1);
-    input.armed = sw !== undefined;
+    const slot = sch.gridSlots[rated.gridIndex];
     rec().input(input);
     if (trace) {
-      Object.assign(trace, moved, { gridIndex: rated.gridIndex, gridS: sch.gridTimes[rated.gridIndex], delta: rated.delta, rating: rated.rating, accuracy: rated.accuracy, grooveAfter: st.groove, slotS: slot?.s, accent: slot?.accent }, judgedTrace(judged));
-      if (sw) Object.assign(trace, { strikeS: sw.sStrike, heavy: sw.heavy });
-      else if (!selfFiring) trace.noSwing = !slot ? "no-slot" : taken ? "slot-taken" : "blast";
+      Object.assign(trace, moved, { gridIndex: rated.gridIndex, gridS: sch.gridTimes[rated.gridIndex], delta: rated.delta, rating: rated.rating, grooveAfter: st.groove, slotS: slot?.s, accent: slot?.accent }, judgedTrace(judged));
       rec().press!(trace);
     }
   };
 
   const release = (e: KeyEvent) => {
-    if (e.key === "space" && !strides) return;
     const sec = sectionAt(st.s);
     const steps = sec.level.movement === "steps";
     st.nInputs++;
     rec().input({ s: st.s, w: st.w, kind: "release", key: e.key, steps });
     rec().press?.({ id: e.id, s: st.s, w: st.w, kind: "release", key: e.key, section: sec.label, movement: steps ? "steps" : "free", outcome: "release" });
     if (e.key !== "space") st.held.delete(e.key);
-    // With strides a stride in progress finishes; in free movement the walk follows the keys still held.
-    if (!steps) {
-      if (strides) walkOn();
-      else rewalk();
-    }
-  };
-
-  /** Step movement: a bar that ended with no swing in it gets one by itself on the next downbeat. */
-  const idleSwing = (slot: GridSlot, prev: number) => {
-    if (st.takenSlots.has(slot)) return;
-    if (st.swings.some((sw) => sw.sStrike >= prev - 1e-9 && sw.sStrike < slot.s - 1e-9)) return;
-    swingFor(slot, st.s);
+    // A stride in progress finishes; in free movement the walk follows the keys still held.
+    if (!steps) walkOn();
   };
 
   // ---------------------------------------------------------------- sampling
@@ -1548,8 +1343,8 @@ function engine(env: Env, st: SimState, io: Io) {
       st.heroY.splice(0, drop);
       st.heroBase += drop;
     }
-    // The open field's heading: the hero's displacement over the last two beats (kept while it stands still).
-    if (world.open) {
+    // The heading: the hero's displacement over the last two beats (kept while it stands still).
+    {
       const bi = Math.max(0, Math.min(song.beats.length - 2, Math.floor(sbiAt(sk))));
       const span = HEADING_BEATS * (song.beats[bi + 1] - song.beats[bi]) * Math.max(0.05, baseRate(sk));
       const last = st.heroX.length - 1;
@@ -1679,8 +1474,7 @@ function engine(env: Env, st: SimState, io: Io) {
       } else mults[g] = (0.6 + 0.8 * beatHit(ph)) / 0.733;
     }
     const alive = st.alive;
-    const health = env.rules.health && st.health > 0;
-    const biteEvery = hero.health.biteEveryMs / 1000;
+    const health = st.health > 0;
     for (const f of alive) {
       // Bring everyone to this step's time first. Formation members follow their slots
       // (and the boss holds still while it drops in).
@@ -1811,8 +1605,7 @@ function engine(env: Env, st: SimState, io: Io) {
           f.vy = f.run.vy;
         }
         const ed = Math.hypot(f.x - hp.x, f.y - hp.y);
-        if (health && f.def.contactDamage > 0 && ed <= HURTBOX_RADIUS + f.r + CONTACT_GAP + BITE_SLACK && (healthPool ? st.w >= st.invulnUntil - 1e-9 : w1 - f.biteW >= biteEvery)) {
-          f.biteW = w1;
+        if (health && f.def.contactDamage > 0 && ed <= HURTBOX_RADIUS + f.r + CONTACT_GAP + BITE_SLACK && st.w >= st.invulnUntil - 1e-9) {
           hurt(armouredBite(f.def.contactDamage, st.bonus.armour), "bite", f.type);
         }
         continue;
@@ -1867,10 +1660,8 @@ function engine(env: Env, st: SimState, io: Io) {
         f.x = hp.x + ux * minD;
         f.y = hp.y + uy * minD;
       }
-      // An enemy at contact bites, at most once per biteEveryMs of world time (the small health pool:
-      // whenever the hero isn't invulnerable).
-      if (health && f.def.contactDamage > 0 && Math.max(ed, minD) <= minD + CONTACT_GAP + BITE_SLACK && (healthPool ? st.w >= st.invulnUntil - 1e-9 : w1 - f.biteW >= biteEvery)) {
-        f.biteW = w1;
+      // An enemy at contact bites whenever the hero isn't invulnerable.
+      if (health && f.def.contactDamage > 0 && Math.max(ed, minD) <= minD + CONTACT_GAP + BITE_SLACK && st.w >= st.invulnUntil - 1e-9) {
         hurt(armouredBite(f.def.contactDamage, st.bonus.armour), "bite", f.type);
       }
     }
@@ -1912,9 +1703,9 @@ function engine(env: Env, st: SimState, io: Io) {
     if (!between) st.rateS = t;
     if (fixed && st.w > st.lastFixedW) {
       moveFoes(st.w);
-      if (fieldGems) collectGems();
-      if (upgradeOrbs) touchOrbs();
-      if (healthPool) touchChickens();
+      collectGems();
+      touchOrbs();
+      touchChickens();
       st.lastFixedW = st.w;
     }
     rec().clock?.(st.s, st.w, between);
@@ -1959,7 +1750,6 @@ function engine(env: Env, st: SimState, io: Io) {
 
   /** Set pieces as the player sees them: the latest ring still closing, and stampede runners within 300 px. */
   const setPieceView = (hp: { x: number; y: number }): Pick<Observation, "ring" | "runners"> => {
-    if (!setPieces) return {};
     const out: Pick<Observation, "ring" | "runners"> = {};
     const ring = st.rings.findLast((r) => st.s >= r.s0 && st.s < r.s1);
     if (ring) out.ring = { x: ring.x, y: ring.y, r: lerp(ring.r0, RING_CLOSE, (st.s - ring.s0) / (ring.s1 - ring.s0)), gaps: ring.gaps };
@@ -1970,7 +1760,6 @@ function engine(env: Env, st: SimState, io: Io) {
 
   /** Gems on the field as the player sees them: those within GEM_SEEN of the pickup radius, and the nearest vacuum. */
   const gemView = (hp: { x: number; y: number }): Pick<Observation, "gems" | "vacuum"> => {
-    if (!fieldGems) return {};
     const reach = pickupRadius() + GEM_SEEN;
     const gems = st.field.filter((g) => Math.hypot(g.x - hp.x, g.y - hp.y) <= reach).map((g) => ({ x: g.x, y: g.y, value: g.value }));
     let vacuum: { x: number; y: number } | undefined;
@@ -1985,7 +1774,7 @@ function engine(env: Env, st: SimState, io: Io) {
     return {
       s: st.s,
       w: st.w,
-      hero: { x: hp.x, y: hp.y, stepping: hp.u < 1, ...(strides ? { stride: strideNow(hp) } : {}), ...(env.rules.pressClasses ? { tier: st.tier } : {}), ...(fieldGems ? { pickup: pickupRadius() } : {}), ...(env.rules.health ? { health: st.health / healthMax() } : {}) },
+      hero: { x: hp.x, y: hp.y, stepping: hp.u < 1, stride: strideNow(hp), tier: st.tier, pickup: pickupRadius(), health: st.health / healthMax() },
       enemies: st.alive.filter((f) => f.alive).map((f) => ({ x: posX(f, st.w), y: posY(f, st.w), type: f.type, health: f.health })),
       threats: visibleThreats(hp),
       boss: st.bossFoe && st.bossFoe.alive && !pinned(st.bossFoe) ? { x: posX(st.bossFoe, st.w), y: posY(st.bossFoe, st.w) } : undefined,
@@ -1994,9 +1783,8 @@ function engine(env: Env, st: SimState, io: Io) {
       ...gemView(hp),
       ...(st.orbs ? { orbs: st.orbs.pts.map((p, i) => ({ x: p.x, y: p.y, item: st.orbs!.offers[i] })) } : {}),
       ...(st.chickens.length ? { chickens: st.chickens.filter((c) => Math.hypot(c.x - hp.x, c.y - hp.y) <= VACUUM_SEEN).map((c) => ({ x: c.x, y: c.y })) } : {}),
-      ...(upgradeOrbs && st.level < sch.levelUps.length && !st.overdue && st.xpNow >= levelReq() && sch.levelUps[st.level].s >= st.s ? { levelUpAt: sch.levelUps[st.level].s } : {}),
+      ...(st.level < sch.levelUps.length && !st.overdue && st.xpNow >= levelReq() && sch.levelUps[st.level].s >= st.s ? { levelUpAt: sch.levelUps[st.level].s } : {}),
       pacePoint: { x: pp.x, y: pp.y, tx: pp.tx, ty: pp.ty },
-      edgeDistance: (x, y) => world.edge(x, y),
     };
   };
 
@@ -2010,9 +1798,9 @@ function engine(env: Env, st: SimState, io: Io) {
     if (st.blasting) return;
     const s = st.s;
     // (With set pieces the stream is thinner, and set pieces add to it: it counts only its own.)
-    const target = targetPopulation(ctx, s) * (setPieces ? STREAM_SHARE : 1);
+    const target = targetPopulation(ctx, s) * STREAM_SHARE;
     const all = st.alive.length + st.pending;
-    const living = setPieces ? st.alive.filter((f) => f.formation === undefined).length + st.pending : all;
+    const living = st.alive.filter((f) => f.formation === undefined).length + st.pending;
     const want = Math.min(SPAWN_PER_BEAT, Math.round(target) - living, POP_CAP - all);
     if (want <= 0) return;
     const sec = sectionAt(s);
@@ -2049,8 +1837,7 @@ function engine(env: Env, st: SimState, io: Io) {
     const view = st.camera.view();
     const vw = view[2] - view[0];
     const hp = heroPose(st.w);
-    const pp = forward();
-    // Behind the hero along the route; in the open field, too far away in any direction.
+    // Too far away from the hero, in any direction.
     const behind = st.alive.filter((f) => {
       const dx = posX(f, st.w) - hp.x;
       const dy = posY(f, st.w) - hp.y;
@@ -2060,7 +1847,7 @@ function engine(env: Env, st: SimState, io: Io) {
         const y = posY(f, st.w);
         return (f.run.vx > 0 && x > view[2] + STAMPEDE_ROW) || (f.run.vx < 0 && x < view[0] - STAMPEDE_ROW) || (f.run.vy > 0 && y > view[3] + STAMPEDE_ROW) || (f.run.vy < 0 && y < view[1] - STAMPEDE_ROW);
       }
-      return f.alive && Math.hypot(dx, dy) >= RECYCLE_VIEWS * vw && (world.open || dx * pp.tx + dy * pp.ty < 0);
+      return f.alive && Math.hypot(dx, dy) >= RECYCLE_VIEWS * vw;
     });
     for (const f of behind) {
       // Not a kill: it leaves the field and re-enters ahead with its health.
@@ -2117,13 +1904,13 @@ function engine(env: Env, st: SimState, io: Io) {
     rec().fire(wd.id, st.s);
     const hp = heroPose(st.w);
     const energy = energyAt(song, st.s);
-    // Self-firing weapons: the tier when it fires sets its area and damage.
-    const mult = selfFiring ? tierDamage(hero, st.tier) : damageMultiplier(hero, st.groove);
+    // The tier when it fires sets its area and damage.
+    const mult = tierDamage(hero, st.tier);
     if (wd.kind === "orbit" && wd.orbit) {
       const bar = Math.max(1, barOfBeatIndex(ctx.idx, bi));
       const bpb = ctx.idx.beatsPerBar[bar] ?? 2;
       const th0 = (TAU * bi) / (wd.orbit.periodBars * bpb);
-      const orbit = evolvedOrbit(wd, selfFiring ? orbitAt(wd, st.tier) : wd.orbit, st.loadout.evolved.includes(wd.id));
+      const orbit = evolvedOrbit(wd, orbitAt(wd, st.tier), st.loadout.evolved.includes(wd.id));
       for (let k = 0; k < orbit.count; k++) {
         const th = th0 + (k * TAU) / orbit.count;
         const x = hp.x + Math.cos(th) * orbit.radius;
@@ -2132,12 +1919,12 @@ function engine(env: Env, st: SimState, io: Io) {
         applyHit(h);
       }
     } else if (wd.kind === "chain" && wd.chain) {
-      const tiered = selfFiring ? chainAt(wd, st.tier) : undefined;
+      const tiered = chainAt(wd, st.tier);
       // An evolved chain jumps further.
       const more = st.loadout.evolved.includes(wd.id) ? (wd.evolve?.jumps ?? 0) : 0;
       const jumps = (tiered ? tiered.jumps : Math.round(lerp(wd.chain.jumps[0], wd.chain.jumps[1], energy))) + more;
       const first = { w: st.w, x: hp.x, y: hp.y - 24 };
-      const chain: ChainState = { last: first, index: st.nChains++, hit: new Set(), jumps, energy, bi, ...(tiered ? { range: tiered.range } : {}), ...(selfFiring ? { mult } : {}) };
+      const chain: ChainState = { last: first, index: st.nChains++, hit: new Set(), jumps, energy, bi, ...(tiered ? { range: tiered.range } : {}), mult };
       rec().chain(first);
       chainJump(wd, chain, 0);
     } else if (wd.kind === "trail" && wd.trail) {
@@ -2157,7 +1944,7 @@ function engine(env: Env, st: SimState, io: Io) {
         if (Math.hypot(x - lastX, y - lastY) < wd.trail.spacing) continue;
         lastX = x;
         lastY = y;
-        const h = addHit({ source: "weapon", what: wd.id, weight: wd.weight, primary: false, shape: { kind: "circle", x, y, radius: selfFiring ? trailRadiusAt(wd, st.tier) : wd.hitShape!.radius }, dir: 0, accent: 0, damage: wd.damage * mult }, energy);
+        const h = addHit({ source: "weapon", what: wd.id, weight: wd.weight, primary: false, shape: { kind: "circle", x, y, radius: trailRadiusAt(wd, st.tier) }, dir: 0, accent: 0, damage: wd.damage * mult }, energy);
         applyHit(h);
       }
     }
@@ -2189,7 +1976,7 @@ function engine(env: Env, st: SimState, io: Io) {
     const p = { w: st.w, x: bx, y: by - 16 };
     chain.last = p;
     rec().chainPoint(chain.index, p);
-    const h = addHit({ source: "weapon", what: wd.id, weight: wd.weight, primary: false, shape: { kind: "circle", x: bx, y: by, radius: wd.hitShape!.radius }, dir: Math.atan2(by - fy, bx - fx), accent: 0, damage: wd.damage * (chain.mult ?? damageMultiplier(hero, st.groove)) }, chain.energy);
+    const h = addHit({ source: "weapon", what: wd.id, weight: wd.weight, primary: false, shape: { kind: "circle", x: bx, y: by, radius: wd.hitShape!.radius }, dir: Math.atan2(by - fy, bx - fx), accent: 0, damage: wd.damage * chain.mult }, chain.energy);
     applyHit(h);
     if (j + 1 < chain.jumps) {
       const stepB = subdivisionBeats(wd.chain!.step, 2);
@@ -2234,14 +2021,14 @@ function engine(env: Env, st: SimState, io: Io) {
     // Every death drops gems, which fly to the hero on the next downbeat (a beat after the finale blast).
     const big = f.def.size !== "regular";
     const value = big ? 5 : 1;
-    if (fieldGems && !st.blasting) dropOnField(f, fate, value, big);
+    if (!st.blasting) dropOnField(f, fate, value, big);
     else {
       const s1 = st.blasting && blastS !== undefined ? timeOfBeatIndex(song, sbiAt(blastS) + 1) : downbeatAtOrAfter(st.s + 0.12);
       rec().gem({ w0: st.w, x0: fate.x, y0: fate.y, s1, w1: 0, value, big, enemy: f.id });
       st.q.push(s1, { kind: "gem", gem: st.nGems++, value });
     }
     // The small health pool: an orc elite drops a chicken half the time (seeded by the enemy), the boss two.
-    if (healthPool && !st.blasting) {
+    if (!st.blasting) {
       const n = f.def.size === "boss" ? CHICKEN_BOSS : f.def.size === "elite" && new Rng(ctx.seed, "chicken", f.id).next() < CHICKEN_CHANCE ? 1 : 0;
       for (let k = 0; k < n; k++) {
         const x = fate.x + (n > 1 ? (k - (n - 1) / 2) * CHICKEN_SPREAD : 0);
@@ -2332,34 +2119,23 @@ function engine(env: Env, st: SimState, io: Io) {
     st.vacuums.push({ i, x, y });
   };
 
-  const grant = (id: string) => {
+  const grant = () => {
     if (st.blasting) return;
     const index = st.level;
     st.level++;
     st.xpNow = 0;
     st.overdue = false;
     pushXp();
-    if (!upgradePool) {
-      // (A level script's offers, run without the upgrade pool, grant nothing.)
-      if (lib.weapons.has(id)) grantWeapon(id);
-      return;
-    }
-    // The upgrade pool: three offers from the run's seed and the level-up's index. (Without upgrade
-    // orbs, a level-up takes its first offer. With them, a choice still waiting takes its orb ahead
-    // first, and what has been taken but not yet applied counts as owned.)
-    if (upgradeOrbs && st.orbs) takeOrb(0, false);
-    const owned = upgradeOrbs ? structuredClone(st.loadout) : st.loadout;
-    if (upgradeOrbs) for (const item of st.applying) takeItem(owned, item);
+    // The upgrade pool: three offers from the run's seed and the level-up's index, as orbs. A choice
+    // still waiting takes its orb ahead first, and what has been taken but not yet applied counts
+    // as owned. The downbeat heals, offers or none.
+    if (st.orbs) takeOrb(0, false);
+    const owned = structuredClone(st.loadout);
+    for (const item of st.applying) takeItem(owned, item);
     const offers = offersFor(ctx.seed, index, lib, ctx.level.upgrades.offer, owned);
-    // (Upgrade orbs: the downbeat heals, offers or none.)
-    if (upgradeOrbs) heal(healthPool ? hero.health.levelUpHeal : LEVEL_HEAL, "level-up");
-    if (upgradeOrbs && offers.length > 0) {
-      riseOrbs(index, offers);
-      return;
-    }
-    const taken = offers.length > 0 ? 0 : -1;
-    rec().upgrade({ s: st.s, offers, taken });
-    if (taken >= 0) takeUpgrade(offers[taken]);
+    heal(hero.health.levelUpHeal, "level-up");
+    if (offers.length > 0) riseOrbs(index, offers);
+    else rec().upgrade({ s: st.s, offers, taken: -1 });
   };
 
   /**
@@ -2466,7 +2242,7 @@ function engine(env: Env, st: SimState, io: Io) {
   const levelDue = (i: number) => {
     if (i !== st.level) return;
     // A full bar waits and glows until the scheduled moment.
-    if (st.xpNow >= levelReq()) grant(sch.levelUps[i].id);
+    if (st.xpNow >= levelReq()) grant();
     else st.overdue = true;
   };
 
@@ -2523,42 +2299,28 @@ function engine(env: Env, st: SimState, io: Io) {
     }
   };
 
-  /** Play mode's maximum health, with the max-health passives. */
+  /** The maximum health, with the max-health passives. */
   const healthMax = () => hero.health.max + st.bonus.maxHealth;
 
   /**
-   * The hero takes damage (play mode's health); at none, the run is over and it takes no more. With
-   * the small health pool, nothing hurts it while it is invulnerable, and each hurt makes it so.
+   * The hero takes damage; at none, the run is over and it takes no more. Nothing hurts it while it
+   * is invulnerable, and each hurt makes it so.
    */
   const hurt = (amount: number, source: "bite" | "arrow" | "slam", enemy: string) => {
-    if (!env.rules.health || amount <= 0 || st.health <= 0) return;
-    if (healthPool) {
-      if (st.w < st.invulnUntil - 1e-9) return;
-      st.invulnUntil = st.w + hero.health.invulnerableMs / 1000;
-    }
+    if (amount <= 0 || st.health <= 0 || st.w < st.invulnUntil - 1e-9) return;
+    st.invulnUntil = st.w + hero.health.invulnerableMs / 1000;
     st.health = Math.max(0, st.health - amount);
     rec().health(st.s, st.health / healthMax());
-    if (healthPool) rec().bite({ s: st.s, w: st.w, source, enemy, damage: amount, until: st.invulnUntil });
+    rec().bite({ s: st.s, w: st.w, source, enemy, damage: amount, until: st.invulnUntil });
   };
 
   /** The hero heals (never past its maximum), from a source the play log names. */
   const heal = (amount: number, source: "chicken" | "level-up" | "max-health") => {
-    if (!env.rules.health || st.health <= 0 || st.health >= healthMax()) return;
+    if (st.health <= 0 || st.health >= healthMax()) return;
     const before = st.health;
     st.health = Math.min(healthMax(), st.health + amount);
     rec().health(st.s, st.health / healthMax());
-    if (healthPool) rec().heal({ s: st.s, amount: st.health - before, source });
-  };
-
-  /** A rated press in step movement: a clean beat (Great or better) heals, more so in a streak; anything less ends the streak. */
-  const beatHeal = (rating: Rating | undefined) => {
-    const clean = rating === "perfect" || rating === "great";
-    st.streak = clean ? st.streak + 1 : 0;
-    const h = hero.health.heal;
-    // (The small health pool has no rhythm healing.)
-    if (!clean || !env.rules.health || healthPool || st.health <= 0 || st.health >= healthMax()) return;
-    st.health = Math.min(healthMax(), st.health + h.beat + (st.streak >= h.streakFrom ? h.streak : 0));
-    rec().health(st.s, st.health / healthMax());
+    rec().heal({ s: st.s, amount: st.health - before, source });
   };
 
   /** A near miss: the slow-motion dip starts now (dips do not stack). */
@@ -2603,7 +2365,7 @@ function engine(env: Env, st: SimState, io: Io) {
     const x = hp.x + pp.tx * BOSS_LAND_AHEAD;
     const y = hp.y + pp.ty * BOSS_LAND_AHEAD;
     // (With set pieces, room under the cap first: they can fill it.)
-    if (setPieces) makeRoom(1);
+    makeRoom(1);
     const f = spawnFoe(b.type, x, y, undefined, { entrance: "land", attacks: [] });
     f.landS = b.sEnter;
     st.bossFoe = f;
@@ -2670,21 +2432,21 @@ function engine(env: Env, st: SimState, io: Io) {
     const bStart = sbiAt(fs.sStart);
     const stepB = subdivisionBeats(def.step, 2);
     const members: number[] = [];
-    // In the open field a formation keeps the heading it entered on, and the camera leads that way while it is in play.
-    const dir = world.open ? { x: 0, y: 0, tx: st.heading.x, ty: st.heading.y } : undefined;
-    if (dir) st.formationDir = { x: dir.tx, y: dir.ty, until: fs.sRelease };
-    const frame = (t: number) => dir ?? pacePoint(t);
+    // A formation keeps the heading it entered on, and the camera leads that way while it is in play.
+    const dir = { x: 0, y: 0, tx: st.heading.x, ty: st.heading.y };
+    st.formationDir = { x: dir.tx, y: dir.ty, until: fs.sRelease };
+    const frame = () => dir;
     // (With set pieces, as many as fit under the cap, after the stream makes room.)
-    const count = setPieces ? makeRoom(def.count) : def.count;
+    const count = makeRoom(def.count);
     for (let k = 0; k < count; k++) {
       let place: (t: number) => { x: number; y: number };
       let start: { x: number; y: number };
       // Places are offsets from the anchor; the entrance starts just off the camera's view.
       const a0 = formationAnchor();
       if (def.shape === "kick-line") {
-        // A line of dancers ahead of the hero, along the route.
-        place = (t) => {
-          const p = frame(t);
+        // A line of dancers ahead of the hero, along its heading.
+        place = () => {
+          const p = frame();
           const d = LINE_LEAD + def.spacing * k;
           return { x: p.tx * d, y: p.ty * d };
         };
@@ -2700,8 +2462,8 @@ function engine(env: Env, st: SimState, io: Io) {
         // A V-wedge: the leader in front, the arms trailing back.
         const arm = k === 0 ? 0 : Math.ceil(k / 2);
         const side = k === 0 ? 0 : k % 2 === 0 ? 1 : -1;
-        place = (t) => {
-          const p = frame(t);
+        place = () => {
+          const p = frame();
           const cx = p.tx * 120;
           const cy = p.ty * 120 - 70;
           return { x: cx - p.tx * arm * def.spacing - p.ty * side * arm * def.spacing, y: cy - p.ty * arm * def.spacing + p.tx * side * arm * def.spacing };
@@ -2804,7 +2566,7 @@ function engine(env: Env, st: SimState, io: Io) {
     }
     st.rings.push({ x: hp.x, y: hp.y, s0, s1, r0, gaps: gapAngles });
     // Its vacuum on the first downbeat after its accent.
-    if (fieldGems) st.q.push(downbeatAtOrAfter(s1 + 1e-6), { kind: "vacuumDrop" });
+    st.q.push(downbeatAtOrAfter(s1 + 1e-6), { kind: "vacuumDrop" });
     rec().formation({ def: "ring", sStart: s0, sRelease: s1, members });
   };
 
@@ -2843,7 +2605,7 @@ function engine(env: Env, st: SimState, io: Io) {
       }
     }
     rec().formation({ def: "stampede", sStart: st.s, sRelease: st.s, members });
-    if (fieldGems) st.stampedes.push({ fi, done: false });
+    st.stampedes.push({ fi, done: false });
   };
 
   const formationRelease = (fi: number) => {
@@ -2875,17 +2637,10 @@ function engine(env: Env, st: SimState, io: Io) {
       if (a !== b) q.push(ctx.sections[i].s0, { kind: "mode", steps: b === "steps" });
     }
     if (ctx.sections[0].level.movement === "free") st.walk = { w0: 0, x0: st.restPose.x, y0: st.restPose.y, vx0: 0, vy0: 0, tx: 0, ty: 0, t: 0 };
-    // Self-firing weapons: the sword swings by itself on every slot, the grid's too, and presses arm nothing.
-    for (const sl of sch.slots) if (sl.kind !== "grid" || selfFiring) q.push(Math.max(0, windupBefore(sl.s)), { kind: "auto", slot: sl });
-    // Strides: a held key strides on every step of the stride period.
-    if (strides) for (const t of sch.strideSteps.s) q.push(t, { kind: "held" });
-    let prevDown: GridSlot | undefined;
-    for (const sl of selfFiring ? [] : sch.gridSlots) {
-      if (sl.slot !== 0) continue;
-      // The bar before must be a step bar too.
-      if (prevDown && sl.bar === prevDown.bar + 1) q.push(Math.max(prevDown.s, windupBefore(sl.s)), { kind: "idle", slot: sl, prev: prevDown.s });
-      prevDown = sl;
-    }
+    // The sword swings by itself on every slot, the grid's too, and presses arm nothing.
+    for (const sl of sch.slots) q.push(Math.max(0, windupBefore(sl.s)), { kind: "auto", slot: sl });
+    // A held key strides on every step of the stride period.
+    for (const t of sch.strideSteps.s) q.push(t, { kind: "held" });
     for (let bi = 0; bi < song.beats.length; bi++) {
       q.push(song.beats[bi], { kind: "beat", bi });
       // Free movement's beats are slow: the spawn director also looks on every sixteenth note.
@@ -2914,11 +2669,9 @@ function engine(env: Env, st: SimState, io: Io) {
       q.push(f.sRelease, { kind: "formationRelease", f: i });
     });
     // Gems on the field: a vacuum on the first downbeat after the kick line's release.
-    if (fieldGems) for (const f of sch.formations) if (lib.formations.get(f.def)?.shape === "kick-line") q.push(downbeatAtOrAfter(f.sRelease + 1e-6), { kind: "vacuumDrop" });
-    if (env.rules.setPieces) {
-      sch.rings.forEach((r, k) => q.push(r.s, { kind: "ring", k }));
-      sch.stampedes.forEach((r, k) => q.push(r.s, { kind: "stampede", k }));
-    }
+    for (const f of sch.formations) if (lib.formations.get(f.def)?.shape === "kick-line") q.push(downbeatAtOrAfter(f.sRelease + 1e-6), { kind: "vacuumDrop" });
+    sch.rings.forEach((r, k) => q.push(r.s, { kind: "ring", k }));
+    sch.stampedes.forEach((r, k) => q.push(r.s, { kind: "stampede", k }));
     if (sch.blast && sch.blast.s < endS) {
       const wd = lib.weapons.get(sch.blast.weapon)!;
       const b = wd.blast!;
@@ -2927,7 +2680,7 @@ function engine(env: Env, st: SimState, io: Io) {
       const bi0 = sbiAt(sch.blast.s);
       for (let k = 0; k < bands; k++) q.push(timeOfBeatIndex(song, bi0 + k * stepB), { kind: "blast", band: k });
     }
-    if (world.open) {
+    {
       // A transform wave on the first downbeat of each section whose zone differs from the previous one's.
       for (let i = 1; i < ctx.sections.length; i++) {
         const z = ctx.sections[i].level.zone;
@@ -2987,9 +2740,6 @@ function engine(env: Env, st: SimState, io: Io) {
         case "auto":
           swingFor(ev.slot, st.s);
           break;
-        case "idle":
-          idleSwing(ev.slot, ev.prev);
-          break;
         case "wind":
           if (!ev.sw.aimed) doWind(ev.sw);
           break;
@@ -3011,20 +2761,14 @@ function engine(env: Env, st: SimState, io: Io) {
           break;
         case "beat": {
           spawnDirector(ev.bi);
-          // Idle decay: with no presses, the groove halves every few bars.
+          // The groove drains a bar after the latest press that raised it (free sections freeze it).
           const sec = sectionAt(st.s);
           const bpb = ctx.idx.beatsPerBar[sec.song.bars[0]] ?? 2;
           const beatS = song.beats[Math.min(song.beats.length - 1, ev.bi + 1)] - song.beats[Math.max(0, Math.min(song.beats.length - 2, ev.bi))];
-          if (env.rules.pressClasses) {
-            // The groove drains a bar after the latest press that raised it (free sections freeze it).
-            if (sec.level.movement === "steps" && st.groove > 0 && st.s - st.lastRaiseS > hero.meter.drain.afterBars * bpb * beatS + 1e-9) {
-              st.groove = Math.max(0, st.groove - drainPerBeat(hero, bpb));
-              rec().groove(st.s, st.groove);
-              setTier();
-            }
-          } else if (st.s - st.lastPressS > GROOVE_GRACE_BARS * bpb * beatS && st.groove > 0) {
-            st.groove = grooveDecay(hero, st.groove, 1 / bpb);
+          if (sec.level.movement === "steps" && st.groove > 0 && st.s - st.lastRaiseS > hero.meter.drain.afterBars * bpb * beatS + 1e-9) {
+            st.groove = Math.max(0, st.groove - drainPerBeat(hero, bpb));
             rec().groove(st.s, st.groove);
+            setTier();
           }
           break;
         }
@@ -3032,7 +2776,7 @@ function engine(env: Env, st: SimState, io: Io) {
           appear(ev.type);
           break;
         case "levelUp":
-          grant(ev.id);
+          grant();
           break;
         case "orbDefault":
           if (st.orbs?.u === ev.u) takeOrb(0, false);
@@ -3139,7 +2883,7 @@ export class Sim {
   private readonly eng: ReturnType<typeof engine>;
   private finished = false;
 
-  constructor(ctx: Ctx, sch: Schedule, world: World, rules: Rules, recorder: Recorder, opts: { player?: Player; cutS?: number; untilS?: number } = {}, from?: { env: Env; st: SimState }) {
+  constructor(ctx: Ctx, sch: Schedule, world: World, recorder: Recorder, opts: { player?: Player; cutS?: number; untilS?: number } = {}, from?: { env: Env; st: SimState }) {
     if (from) {
       this.env = from.env;
       this.st = from.st;
@@ -3148,8 +2892,7 @@ export class Sim {
       registerShared(ctx, shared);
       registerShared(sch, shared);
       shared.add(world);
-      shared.add(rules);
-      this.env = { ctx, sch, world, rules, endS: Math.min(opts.untilS ?? Infinity, ctx.duration + 1), cutS: opts.cutS ?? Infinity, shared };
+      this.env = { ctx, sch, world, endS: Math.min(opts.untilS ?? Infinity, ctx.duration + 1), cutS: opts.cutS ?? Infinity, shared };
       this.st = freshState(this.env);
     }
     this.io = { recorder, player: opts.player };
@@ -3244,21 +2987,21 @@ export class Sim {
   /** A deep copy for rollback: it shares nothing mutable with this one, and records into `recorder`. */
   clone(recorder: Recorder): Sim {
     const st = deepClone(this.st, this.env.shared);
-    const c = new Sim(this.env.ctx, this.env.sch, this.env.world, this.env.rules, recorder, {}, { env: this.env, st });
+    const c = new Sim(this.env.ctx, this.env.sch, this.env.world, recorder, {}, { env: this.env, st });
     c.finished = this.finished;
     return c;
   }
 }
 
-/** The level's world: the demo's corridor along the map's route, or play mode's open field. */
-export function worldFor(ctx: Ctx, sch: Schedule, map: MapLayout): World {
-  return ctx.level.world === "open" ? new OpenWorld() : new CorridorWorld(map, sch);
+/** The level's world: the open field. */
+export function worldFor(): World {
+  return new OpenWorld();
 }
 
-export function simulate(ctx: Ctx, sch: Schedule, map: MapLayout, opts: SimOptions): SimResult {
+export function simulate(ctx: Ctx, sch: Schedule, opts: SimOptions): SimResult {
   const rec = new BatchRecorder();
-  const world = worldFor(ctx, sch, map);
-  const sim = new Sim(ctx, sch, world, ctx.level.rules ?? DEMO_RULES, rec, opts);
+  const world = worldFor();
+  const sim = new Sim(ctx, sch, world, rec, opts);
   sim.runToEnd();
   return rec.result({ endS: sim.s, blastS: sch.blast?.s, animNames: HERO_ANIMS, heroRate: HERO_RATE });
 }

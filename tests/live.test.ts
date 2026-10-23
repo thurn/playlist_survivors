@@ -16,12 +16,12 @@ const LEVEL = "levels/orpheus-galop.play.yaml";
 const songMap = syntheticSongMap();
 const input = plannerInput({ songMap, level: LEVEL });
 const props = propsFromAtlas();
-const { ctx, sch, map } = prepare(input, props);
+const { ctx, sch, map } = prepare(input);
 
 /** A batch run (no rollback) of the given key events, into a fresh live recording, up to song time `until`. */
 function batch(keys: readonly KeyEvent[], until = Infinity): { recording: LiveRecording; sim: Sim } {
   const recording = new LiveRecording(ctx, sch, map, ctx.lib, "player", props);
-  const sim = new Sim(ctx, sch, worldFor(ctx, sch, map), ctx.level.rules, recording);
+  const sim = new Sim(ctx, sch, worldFor(), recording);
   for (const k of keys) sim.key(k);
   if (Number.isFinite(until)) sim.advanceTo(until);
   else sim.runToEnd();
@@ -32,7 +32,7 @@ function batch(keys: readonly KeyEvent[], until = Infinity): { recording: LiveRe
 // hit-stops (a press ends a hit-stop early), mashed presses, and stomps: Space, and opposite keys.
 const bot = (() => {
   const recording = new LiveRecording(ctx, sch, map, ctx.lib, "player", props);
-  const sim = new Sim(ctx, sch, worldFor(ctx, sch, map), ctx.level.rules, recording, { player: virtualPlayer(ctx, sch, "moderate") });
+  const sim = new Sim(ctx, sch, worldFor(), recording, { player: virtualPlayer(ctx, sch, "moderate") });
   sim.runToEnd();
   return recording;
 })();
@@ -84,7 +84,7 @@ describe("live play", () => {
     const plain = batch(keys, 67);
     const stopped = (() => {
       const recording = new LiveRecording(ctx, sch, map, ctx.lib, "player", props);
-      const sim = new Sim(ctx, sch, worldFor(ctx, sch, map), ctx.level.rules, recording);
+      const sim = new Sim(ctx, sch, worldFor(), recording);
       for (const k of keys) sim.key(k);
       sim.advanceTo(66.3095);
       sim.advanceTo(67);

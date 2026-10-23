@@ -588,15 +588,14 @@ function logContext(env: LiveEnv, lib: ContentLibrary, level: string, startS: nu
     params: { avOffsetMs: env.params.avOffsetMs, startS, mode: env.params.mode },
     inputOffsetMs: loadInputOffset(),
     audio: ac ? { sampleRate: ac.sampleRate, baseLatency: ac.baseLatency, outputLatency: ac.outputLatency, state: ac.state, stats: env.audio!.stats, live: env.audio!.liveStats() } : undefined,
-    hero: { timing: hero.timing, step: hero.step, swings: { minLeadMs: hero.swings.minLeadMs, windupMs: hero.swings.windupMs }, stride: hero.stride, walk: { speed: hero.walk.speed }, meter: ctx.lib.hero.meter },
-    rules: ctx.level.rules,
+    hero: { timing: hero.timing, step: hero.step, swings: { windupMs: hero.swings.windupMs }, stride: hero.stride, walk: { speed: hero.walk.speed }, meter: ctx.lib.hero.meter },
     playerFrom: recording.playerFrom,
     runner: { ...runner.stats, settled: runner.settled, simS: runner.sim.s },
     sections: ctx.sections.map((x) => ({ label: x.label, s0: round(x.s0), s1: round(x.s1), movement: x.level.movement })),
     beats: Array.from(plan.songBeats, (v) => round(v)),
     grid: { s: Array.from(sch.gridTimes, (v) => round(v)), accent: sch.gridSlots.map((x) => round(x.accent, 100)), section: sch.gridSlots.map((x) => x.section) },
     inputs: plan.inputs.map((i) => ({ ...i, s: round(i.s), w: round(i.w) })),
-    swings: plan.swings.map((w) => ({ s: round(w.s), sArmed: round(w.sArmed), kind: w.kind, press: w.press, accent: w.accent })),
+    swings: plan.swings.map((w) => ({ s: round(w.s), sArmed: round(w.sArmed), kind: w.kind, accent: w.accent })),
     ...recordingContext(plan, recording.timeWarp, recording.s),
   };
 }

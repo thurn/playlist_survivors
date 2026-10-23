@@ -13,7 +13,7 @@ const input = plannerInput({ songMap: syntheticSongMap(), level: "levels/orpheus
 const props = propsFromAtlas();
 
 /** The current rules on the synthetic song, as log:play builds them from the song map. */
-const { ctx, sch } = prepare(input, props);
+const { ctx, sch } = prepare(input);
 const rules: RerateRules = {
   hero: ctx.lib.hero,
   grid: sch.gridTimes,
@@ -68,8 +68,6 @@ describe("play mode's timing log", () => {
     for (const k of [0, 2, 4]) expect(traces[k]!.budget).toBe(0);
     expect(traces[0]!.gridS).toBeCloseTo(g0, 9);
     expect(traces[0]!.delta).toBeCloseTo(0.01, 9);
-    // (Presses arm nothing: the sword swings by itself.)
-    expect(traces[0]!.strikeS).toBeUndefined();
     expect(traces[2]!.stepS).toBeCloseTo(g0 + 0.01, 9);
     expect(traces[4]!.delta).toBeCloseTo(-0.02, 9);
     expect(log.applies.length).toBe(keys.length);

@@ -185,7 +185,7 @@ export interface KeyLight {
 /**
  * How the key display shows a press (not a partner): a counted press in its rating's colour
  * (loose beyond Good), an off-beat press outlined in its rating's, a double tap grey ("extra"),
- * a stray press red ("stumble"). Presses without a class (the demo, older plans) as before.
+ * a stray press red ("stray"). Presses without a class (free movement) by their rating.
  */
 export function pressStyle(i: PlanInput): { rating?: string; outline?: boolean } {
   switch (i.class) {
@@ -196,9 +196,8 @@ export function pressStyle(i: PlanInput): { rating?: string; outline?: boolean }
     case "double":
       return { rating: "extra" };
     case "stray":
-      return { rating: "stumble" };
+      return { rating: "stray" };
   }
-  if (i.extra) return { rating: i.stumble ? "stumble" : (i.offbeat ?? "extra") };
   return { rating: i.rating };
 }
 
@@ -224,28 +223,24 @@ export interface HudState {
   kills: number;
   /** Rated presses so far. */
   ratings: { perfect: number; great: number; good: number };
-  /** The groove meter (0–1) and the damage bonus it gives (0.19 is +19%). */
+  /** The groove meter (0–1). */
   groove: number;
-  bonus: number;
   /**
    * The arrow keys: how lit each one is (0–1) and the style of the press that lit it: a rating
-   * (perfect, great, good; loose), extra (a double tap, grey) or stumble (a stray press, red);
+   * (perfect, great, good; loose), extra (a double tap, grey) or stray (red);
    * an off-beat press is outlined.
    */
   keys: Record<KeyName, KeyLight>;
-  /** Play mode's stomps with Space: both feet, lit like a key. */
+  /** Stomps with Space: both feet, lit like a key. */
   stomp?: KeyLight;
-  /**
-   * Press classes (play mode): the tier (0–3), the groove values its marks stand at, and a flash
-   * (1 at a tier-up, fading).
-   */
-  tier?: { n: number; marks: number[]; flash: number };
+  /** The tier (0–3), the groove values its marks stand at, and a flash (1 at a tier-up, fading). */
+  tier: { n: number; marks: number[]; flash: number };
   /**
    * The beat track: upcoming beats (seconds until each) from the song, downbeats marked. Play
    * mode telegraphs the cleaves: accents that will cleave, and the beat to press for each.
    */
   ticks: { dt: number; down: boolean; cleave?: boolean; pressHere?: boolean }[];
-  /** Play mode: the heart glows (0–1) over the beat before a cleave's accent. */
+  /** The heart glows (0–1) over the beat before a cleave's accent. */
   heartGlow?: number;
   /** Presses on the beat track as they happen: seconds since, offset from the grid (seconds), rating. */
   presses: { age: number; delta: number; rating?: string; steps: boolean }[];
@@ -267,16 +262,14 @@ export interface HudState {
   title?: { age: number; remaining: number };
   boss?: { name: string; health: number; age: number; remaining: number };
   /**
-   * The end card. With press classes: loose and stray presses, and the song seconds spent at each
-   * tier in the sections with a steady beat.
+   * The end card: loose and stray presses, the song seconds spent at each tier in the sections with
+   * a steady beat, and the gems collected (their experience) against those dropped.
    */
-  end?: { age: number; averageGroove: number; loose?: number; strays?: number; tierTime?: number[]; gems?: { collected: number; dropped: number } };
-  /** The hero's health (fraction of its maximum; always full without play mode's health), its hurt flash and its heal glow (0–1). */
+  end?: { age: number; averageGroove: number; loose: number; strays: number; tierTime: number[]; gems: { collected: number; dropped: number } };
+  /** The hero's health (fraction of its maximum), its hurt flash and its heal glow (0–1). */
   health: number;
   hurt: number;
   heal: number;
-  /** Play mode's health: clean beats in a row (rated Great or better), and whether the streak heals extra. */
-  streak?: { n: number; healing: boolean };
 }
 
 export interface Frame {
@@ -294,18 +287,18 @@ export interface Frame {
   /** The small health pool: chickens lying on the field. */
   chickens?: { x: number; y: number }[];
   /**
-   * Play mode's tier now (0–3; absent in the demo): the weapons take its colours, and from tier 1 the
+   * The tier now (0–3): the weapons take its colours, and from tier 1 the
    * hero has a faint aura, pulsing with the beat.
    */
   tier?: number;
   /**
-   * Gems on the field (play mode): vacuums lying in wait, the pickup radius now, and how strongly to
+   * Gems on the field: vacuums lying in wait, the pickup radius now, and how strongly to
    * show it (a faint ring for one beat after each tier change).
    */
   vacuums?: { x: number; y: number }[];
   pickup?: { radius: number; flash: number };
   /**
-   * Upgrade orbs (play mode): each orb's place, height, size and opacity (rising, then flying into
+   * Upgrade orbs: each orb's place, height, size and opacity (rising, then flying into
    * the hero when taken, or sinking away), its colour, label, and whether it offers a weapon upgrade.
    */
   orbs?: { x: number; y: number; z: number; scale: number; alpha: number; color: number; label: string; weapon: boolean }[];
@@ -359,7 +352,6 @@ export class Evaluator {
   private recipes: Map<string, EffectRecipe>;
   private uiSorted: UiEvent[];
   private downbeats: Set<number>;
-  private maxBonus: number;
 
   /** `index` reads a growing recording (play mode); by default the plan is finished. */
   constructor(
@@ -372,23 +364,14 @@ export class Evaluator {
     this.recipes = lib.effects;
     this.uiSorted = plan.events.ui;
     this.downbeats = new Set(plan.barStart.filter((b) => Number.isFinite(b)));
-    this.maxBonus = lib.hero.groove.maxBonus;
-    // Play mode's telegraphs: the song owns the accents, so the HUD may show them in advance.
-    if (plan.rules?.accentTelegraphs && plan.cleaveAccents) {
-      this.cleaveTimes = plan.cleaveAccents.map((a) => a.s).sort((a, b) => a - b);
-      // The grid time one grid step before each accent: a Great press there arms the cleave (with
-      // press cleaves, the accent's own tick: a press on the chord launches its shockwave).
-      if (plan.rules.pressCleaves) this.pressHereTimes = [...this.cleaveTimes];
-      else for (const a of this.cleaveTimes) {
-        let i = 0;
-        while (i + 1 < plan.grid.length && plan.grid[i + 1] <= a + 1e-6) i++;
-        if (i > 0) this.pressHereTimes.push(plan.grid[i - 1]);
-      }
-    }
+    // Telegraphs: the song owns the accents, so the HUD may show them in advance; a press on the
+    // chord (the accent's own tick) launches its shockwave.
+    this.cleaveTimes = plan.cleaveAccents.map((a) => a.s).sort((a, b) => a - b);
+    this.pressHereTimes = [...this.cleaveTimes];
   }
 
   private cleaveTimes: number[] = [];
-  /** Play mode's tier: the tier each swing's wind-up read, by its hit (its arcs take that tier's colour). */
+  /** The tier each swing's wind-up read, by its hit (its arcs take that tier's colour). */
   private swingTiers = new Map<number, number>();
   /** The swing count and index version the map was built from (a live rewind replaces swings). */
   private swingTiersOf = { count: -1, version: -1 };
@@ -530,7 +513,7 @@ export class Evaluator {
         after.push({ x: hp.x, y: hp.y - hp.z, facing: this.spinFacing(s - k * 0.035, hp.facing), anim: hp.anim, frame: hp.frame, alpha: (0.5 - k * 0.1) * h.trail });
       }
     }
-    const tier = plan.tier ? this.tierAt(s) : undefined;
+    const tier = this.tierAt(s);
 
     // Enemies.
     const enemies: EnemySprite[] = [];
@@ -659,9 +642,9 @@ export class Evaluator {
         const bpb = bar.len;
         const th0 = (Math.PI * 2 * wbi) / (wd.orbit.periodBars * bpb);
         // Self-firing weapons: the blades and their orbit at the tier now.
-        const tiered = plan.rules?.selfFiring && plan.tier ? orbitAt(wd, this.tierAt(s)) : wd.orbit;
+        const tiered = orbitAt(wd, this.tierAt(s));
         // The upgrade pool: evolved blades, more of them on a wider orbit.
-        const orbit = plan.upgrades ? evolvedOrbit(wd, tiered, this.loadoutAt(s).evolved.includes(g.id)) : tiered;
+        const orbit = evolvedOrbit(wd, tiered, this.loadoutAt(s).evolved.includes(g.id));
         for (let k = 0; k < orbit.count; k++) {
           const th = th0 + (k * Math.PI * 2) / orbit.count;
           blades.push({ x: h.x + Math.cos(th) * orbit.radius, y: h.y + Math.sin(th) * orbit.radius * 0.8, rot: th * 3 });
@@ -705,7 +688,7 @@ export class Evaluator {
       const ox = (r0 - 0.5) * 30;
       const oy = (r1 - 0.5) * 20 - 6;
       const pop = smoothstep(Math.min(1, (w - g.w0) / 0.25));
-      const onField = plan.rules?.fieldGems && (g.wT !== undefined || !Number.isFinite(g.w1));
+      const onField = g.wT !== undefined || !Number.isFinite(g.w1);
       const fly = onField ? (g.wT !== undefined && w > g.wT ? smoothstep(clamp((w - g.wT) / Math.max(0.05, g.w1 - g.wT), 0, 1)) : 0) : smoothstep(clamp((u - 0.55) / 0.45, 0, 1));
       const hp = heroSample(plan, w);
       const bx = g.x0 + ox * pop;
@@ -714,8 +697,8 @@ export class Evaluator {
     }
 
     // Zone blend at the camera.
-    const open = plan.open ? this.openZone(s, sbi, w) : undefined;
-    const zone = open ? open.zone : this.zoneAt(w);
+    const open = this.openZone(s, sbi, w);
+    const zone = open.zone;
 
     const hud = this.hud(s, sbi, beatPhase, barPhase, free, energy);
     let metronome = 0;
@@ -731,11 +714,11 @@ export class Evaluator {
       sectionIndex: si,
       energy,
       camera: { x: cam.x, y: cam.y, zoom: cam.zoom, shakeX, shakeY },
-      hero: { x: h.x, y: h.y, z: h.z, facing: this.spinFacing(s, h.facing), anim: h.anim, frame: h.frame, afterimages: after, hurt: hurtAt(plan.health, s), ...(plan.bites ? { blink: this.blinkAt(w) } : {}) },
-      ...(plan.chickens ? { chickens: plan.chickens.filter((c) => w >= c.w && (c.wTaken === undefined || w < c.wTaken)).map((c) => ({ x: c.x, y: c.y })) } : {}),
-      ...(tier !== undefined ? { tier } : {}),
-      ...(plan.pickupRadius ? this.gemField(s, w, tier ?? 0) : {}),
-      ...(plan.rules?.upgradeOrbs ? { orbs: this.orbsAt(w, h) } : {}),
+      hero: { x: h.x, y: h.y, z: h.z, facing: this.spinFacing(s, h.facing), anim: h.anim, frame: h.frame, afterimages: after, hurt: hurtAt(plan.health, s), blink: this.blinkAt(w) },
+      chickens: plan.chickens.filter((c) => w >= c.w && (c.wTaken === undefined || w < c.wTaken)).map((c) => ({ x: c.x, y: c.y })),
+      tier,
+      ...this.gemField(s, w, tier),
+      orbs: this.orbsAt(w, h),
       enemies,
       particles,
       fx,
@@ -818,7 +801,7 @@ export class Evaluator {
 
   /** The open field's zones: the newest transform wave decides, and the camera blends as its ring passes. */
   private openZone(s: number, sbi: number, w: number): { zone: Frame["zone"]; base: number; wave?: NonNullable<Frame["open"]>["wave"] } {
-    const op = this.plan.open!;
+    const op = this.plan.open;
     const wv = latestWave(op.waves, s);
     if (!wv) return { zone: { a: op.firstZone, b: op.firstZone, t: 0 }, base: op.firstZone };
     if (s >= wv.endS) return { zone: { a: wv.zone, b: wv.zone, t: 0 }, base: wv.zone };
@@ -826,42 +809,6 @@ export class Evaluator {
     const cam = this.cameraAt(w);
     const d = Math.hypot(cam.x - wv.x, cam.y - wv.y);
     return { zone: { a: wv.prev, b: wv.zone, t: smoothstep((radius - d + 150) / 300) }, base: wv.prev, wave: { x: wv.x, y: wv.y, radius, prev: wv.prev, zone: wv.zone } };
-  }
-
-  private zoneAt(w: number): Frame["zone"] {
-    const plan = this.plan;
-    const zones = plan.map.zones;
-    // Route progress at the camera: nearest route sample to the camera centre.
-    const cam = this.cameraAt(w);
-    const r = plan.map;
-    let best = 0;
-    let bestD = Infinity;
-    const n = r.routeX.length;
-    const step = Math.max(1, Math.floor(n / 400));
-    for (let i = 0; i < n; i += step) {
-      const d = (r.routeX[i] - cam.x) ** 2 + (r.routeY[i] - cam.y) ** 2;
-      if (d < bestD) {
-        bestD = d;
-        best = i;
-      }
-    }
-    for (let i = Math.max(0, best - step); i < Math.min(n, best + step); i++) {
-      const d = (r.routeX[i] - cam.x) ** 2 + (r.routeY[i] - cam.y) ** 2;
-      if (d < bestD) {
-        bestD = d;
-        best = i;
-      }
-    }
-    const d = best * r.routeStep;
-    let a = zones.length - 1;
-    for (let i = 0; i < zones.length; i++)
-      if (d < zones[i].d1) {
-        a = i;
-        break;
-      }
-    const blend = 256;
-    if (a + 1 < zones.length && d > zones[a].d1 - blend / 2) return { a, b: a + 1, t: smoothstep((d - (zones[a].d1 - blend / 2)) / blend) };
-    return { a, b: a, t: 0 };
   }
 
   private layer(
@@ -1002,13 +949,11 @@ export class Evaluator {
     }
   }
 
-  /** The tier at song time s (play mode's press classes; 0 without them). */
   /**
    * The tier is visible: at tier 3 a swing is a full spin, so through its wind-up and impact the hero
    * turns once around (down, left, up, right), from the existing frames.
    */
   private spinFacing(s: number, facing: number): number {
-    if (!this.plan.tier) return facing;
     for (const sw of this.plan.swings) {
       if (sw.tier !== 3 || s < sw.sWind || s > sw.s + SPIN_AFTER) continue;
       const u = (s - sw.sWind) / (sw.s + SPIN_AFTER - sw.sWind);
@@ -1017,9 +962,8 @@ export class Evaluator {
     return facing;
   }
 
-  /** The tier a swing was sized by, by its hit (play mode; a live recording's swings grow as play goes, and a rewind replaces them). */
+  /** The tier a swing was sized by, by its hit (a live recording's swings grow as play goes, and a rewind replaces them). */
   private swingTierOf(hit: number): number | undefined {
-    if (!this.plan.tier) return undefined;
     if (this.swingTiersOf.count !== this.plan.swings.length || this.swingTiersOf.version !== this.index.version) {
       this.swingTiers.clear();
       for (const sw of this.plan.swings) if (sw.tier !== undefined) this.swingTiers.set(sw.hit, sw.tier);
@@ -1031,8 +975,8 @@ export class Evaluator {
   /** Gems on the field: the vacuums waiting at world time w, and the pickup radius (flashing for a beat after a tier change). */
   private gemField(s: number, w: number, tier: number): Pick<Frame, "vacuums" | "pickup"> {
     const plan = this.plan;
-    const radii = plan.pickupRadius!;
-    const vacuums = (plan.vacuums ?? []).filter((v) => w >= v.w && (v.wTouch === undefined || w < v.wTouch)).map((v) => ({ x: v.x, y: v.y }));
+    const radii = plan.pickupRadius;
+    const vacuums = plan.vacuums.filter((v) => w >= v.w && (v.wTouch === undefined || w < v.wTouch)).map((v) => ({ x: v.x, y: v.y }));
     let flash = 0;
     const t = plan.tier;
     if (t) {
@@ -1044,7 +988,7 @@ export class Evaluator {
       }
     }
     // (The magnet passive widens it.)
-    const magnet = plan.upgrades ? 1 + passiveBonus(this.lib, this.loadoutAt(s).passives).pickup : 1;
+    const magnet = 1 + passiveBonus(this.lib, this.loadoutAt(s).passives).pickup;
     return { vacuums, pickup: { radius: radii[Math.max(0, Math.min(radii.length - 1, tier))] * magnet, flash } };
   }
 
@@ -1055,7 +999,7 @@ export class Evaluator {
    */
   private orbsAt(w: number, h: { x: number; y: number }): NonNullable<Frame["orbs"]> {
     const out: NonNullable<Frame["orbs"]> = [];
-    for (const u of this.plan.upgrades ?? []) {
+    for (const u of this.plan.upgrades) {
       if (!u.orbs || u.w === undefined || w < u.w) continue;
       const since = u.wTaken !== undefined ? w - u.wTaken : -1;
       if (since > ORB_SINK_W) continue;
@@ -1092,13 +1036,13 @@ export class Evaluator {
 
   /** The small health pool: whether the hero's sprite is hidden at world time w, blinking every BLINK_W while it is invulnerable. */
   private blinkAt(w: number): boolean {
-    const b = this.plan.bites!.findLast((x) => x.w <= w + 1e-9);
+    const b = this.plan.bites.findLast((x) => x.w <= w + 1e-9);
     return b !== undefined && w < b.until && Math.floor((w - b.w) / BLINK_W) % 2 === 1;
   }
 
   /** The upgrade pool: what the hero has at song time s (its passives and evolutions; plan.weapons has its weapons). */
   private loadoutAt(s: number): Loadout {
-    return loadoutAt([], this.plan.upgrades ?? [], s);
+    return loadoutAt([], this.plan.upgrades, s);
   }
 
   private tierAt(s: number): number {
@@ -1123,15 +1067,9 @@ export class Evaluator {
     const lastPress: Partial<Record<KeyName | "space", { s: number; rating?: string; outline?: boolean; released?: number; via?: string }>> = {};
     let rating: string | undefined;
     let outline: boolean | undefined;
-    // The heal streak, as the simulation counts it: a rated press of Great or better extends it; a lesser one or a stumble ends it.
-    let streak = 0;
     for (const i of plan.inputs) {
       if (i.s > s) break;
       const partner = partnerPress(i);
-      if (i.kind === "press" && i.steps && !partner) {
-        if (i.stumble || i.class === "stray") streak = 0;
-        else if (!i.extra) streak = i.rating === "perfect" || i.rating === "great" ? streak + 1 : 0;
-      }
       if (i.kind === "release") {
         const lp = lastPress[i.key];
         // (Feet lit by a two-key stomp go out with its second key, not with Space.)
@@ -1195,12 +1133,9 @@ export class Evaluator {
       weapons.push({ id: g.id, flash });
     }
     // The upgrade pool: evolutions and passive counts.
-    let passives: HudState["passives"];
-    if (plan.upgrades) {
-      const l = this.loadoutAt(s);
-      for (const wp of weapons) wp.evolved = l.evolved.includes(wp.id);
-      passives = Object.entries(l.passives).map(([id, count]) => ({ id, count }));
-    }
+    const l = this.loadoutAt(s);
+    for (const wp of weapons) wp.evolved = l.evolved.includes(wp.id);
+    const passives = Object.entries(l.passives).map(([id, count]) => ({ id, count }));
     const banners: HudState["banners"] = [];
     let title: HudState["title"];
     let boss: HudState["boss"];
@@ -1211,13 +1146,16 @@ export class Evaluator {
       if (u.kind === "title" && s < u.until + 1.5) title = { age: s - u.s, remaining: u.until - s };
       if (u.kind === "bossBar" && s < u.until + 1) boss = { name: u.name, health: u.health.findLast(([t]) => t <= s)?.[1] ?? 1, age: s - u.s, remaining: u.until - s };
       if (u.kind === "end") {
-        end = { age: s - u.s, averageGroove: plan.stats.averageGroove };
-        if (plan.tier) {
-          const own = plan.inputs.filter((i) => i.kind === "press" && i.steps);
-          Object.assign(end, { loose: own.filter((i) => i.class === "counted" && !i.rating).length, strays: own.filter((i) => i.class === "stray").length, tierTime: tierTimes(plan, this.index.blastS() ?? plan.duration) });
-        }
-        // Gems on the field: the gems collected (their experience) against those dropped.
-        if (plan.rules?.fieldGems) end.gems = gemTotals(plan);
+        const own = plan.inputs.filter((i) => i.kind === "press" && i.steps);
+        end = {
+          age: s - u.s,
+          averageGroove: plan.stats.averageGroove,
+          loose: own.filter((i) => i.class === "counted" && !i.rating).length,
+          strays: own.filter((i) => i.class === "stray").length,
+          tierTime: tierTimes(plan, this.index.blastS() ?? plan.duration),
+          // Gems on the field: the gems collected (their experience) against those dropped.
+          gems: gemTotals(plan),
+        };
       }
     }
     const progress = clamp(s / plan.duration, 0, 1);
@@ -1232,16 +1170,10 @@ export class Evaluator {
     const health = healthAt(plan.health, s);
     const hurt = hurtAt(plan.health, s);
     const heal = healAt(plan.health, s);
-    // (The small health pool has no rhythm healing: no streak.)
-    const streakHud = plan.rules?.health && !plan.rules.healthPool ? { n: streak, healing: streak >= this.lib.hero.health.heal.streakFrom } : undefined;
-    let tier: HudState["tier"];
-    if (plan.tier) {
-      const k = countUpTo(plan.tier.s, s) - 1;
-      const n = plan.tier.v[Math.max(0, k)];
-      const up = k > 0 && plan.tier.v[k] > plan.tier.v[k - 1];
-      tier = { n, marks: this.lib.hero.meter.tiers, flash: up ? clamp(1 - (s - plan.tier.s[k]) / TIER_FLASH, 0, 1) : 0 };
-    }
-    return { kills, ratings, groove, bonus: this.maxBonus * groove, keys, stomp, tier, ticks, heartGlow, presses, xp, level, weapons, ...(passives ? { passives } : {}), progress, elapsed: s, beatPhase, barPhase, free, countIn, energy, banners, title, boss, end, health, hurt, heal, streak: streakHud };
+    const k = countUpTo(plan.tier.s, s) - 1;
+    const up = k > 0 && plan.tier.v[k] > plan.tier.v[k - 1];
+    const tier = { n: plan.tier.v[Math.max(0, k)], marks: this.lib.hero.meter.tiers, flash: up ? clamp(1 - (s - plan.tier.s[k]) / TIER_FLASH, 0, 1) : 0 };
+    return { kills, ratings, groove, keys, stomp, tier, ticks, heartGlow, presses, xp, level, weapons, ...(passives ? { passives } : {}), progress, elapsed: s, beatPhase, barPhase, free, countIn, energy, banners, title, boss, end, health, hurt, heal };
   }
 }
 

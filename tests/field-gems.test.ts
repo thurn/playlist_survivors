@@ -1,5 +1,5 @@
 /**
- * Gems on the field (play mode's fieldGems; "Gems", "Gem chimes" and "Vacuum" in
+ * Gems on the field ("Gems", "Gem chimes" and "Vacuum" in
  * docs/design/gameplay-redesign.md), on the real song: gems wait where they drop, the pickup radius
  * grows with the tier, collection is on sixteenths, chimes climb the scale, and vacuums follow set
  * pieces.
@@ -20,12 +20,12 @@ const input = plannerInput({ level: PLAY });
 const { ctx } = prepare(input);
 const song = input.songMap;
 const sixteenthAtOrAfter = (t: number) => timeOfBeatIndex(song, Math.ceil(beatIndexAt(song, t) * 4 - 1e-6) / 4);
-const tierAt = (p: Plan, s: number) => p.tier!.v[Math.max(0, Array.from(p.tier!.s).findLastIndex((t) => t <= s))];
+const tierAt = (p: Plan, s: number) => p.tier.v[Math.max(0, Array.from(p.tier.s).findLastIndex((t) => t <= s))];
 const moderate = runPlanner({ level: PLAY, profile: "moderate" });
 
 describe("gems on the field", () => {
   const warp = new Warp(moderate.warp);
-  const vacuumTouches = new Set((moderate.vacuums ?? []).map((v) => v.wTouch));
+  const vacuumTouches = new Set(moderate.vacuums.map((v) => v.wTouch));
   const picked = moderate.events.gems.filter((g) => g.wT !== undefined && !vacuumTouches.has(g.wT));
 
   it("wait where they drop until the pickup radius, 40 to 120 px by tier, reaches them", () => {
@@ -37,7 +37,7 @@ describe("gems on the field", () => {
       const d = Math.hypot(hp.x - g.x0, hp.y - g.y0);
       // (The magnet passive, if a level-up took it, widens it.)
       const s = warp.toSong(g.wT!);
-      const r = moderate.pickupRadius![tierAt(moderate, s)] * (1 + passiveBonus(ctx.lib, loadoutAt([], moderate.upgrades ?? [], s).passives).pickup);
+      const r = moderate.pickupRadius[tierAt(moderate, s)] * (1 + passiveBonus(ctx.lib, loadoutAt([], moderate.upgrades, s).passives).pickup);
       // (Taken off on the fixed step it came within the radius: the hero moves up to a step's length past it.)
       expect(d, `gem dropped at w=${g.w0.toFixed(2)}`).toBeLessThanOrEqual(r + 6);
       if (d > 45) far++;
@@ -105,7 +105,7 @@ describe("gem chimes", () => {
 describe("a vacuum", () => {
   it("drops on the first downbeat after the first ring's accent, ahead of the hero, and its gems land over one bar of sixteenths", () => {
     // The first ring closes on the chord at 62.30; the next downbeat is 62.98.
-    const v = moderate.vacuums![0];
+    const v = moderate.vacuums[0];
     const bar = ctx.idx.barStart.findIndex((b, k) => k > 0 && timeOfBeatIndex(song, b) > 62.3 + 1e-6);
     expect(v.s).toBeCloseTo(timeOfBeatIndex(song, ctx.idx.barStart[bar]), 6);
     expect(v.s).toBeCloseTo(62.98, 1);
@@ -124,7 +124,7 @@ describe("a vacuum", () => {
     expect(Math.abs(timeOfBeatIndex(song, beatIndexAt(song, first) + 7 / 4) - 64.09)).toBeLessThan(0.03);
     // Every touched vacuum: the gems in view fly at the touch and land from the first sixteenth at
     // least 60 ms away, on at most one bar of sixteenths (eight in a 2/4 bar).
-    const touched = moderate.vacuums!.filter((x) => x.wTouch !== undefined);
+    const touched = moderate.vacuums.filter((x) => x.wTouch !== undefined);
     expect(touched.length).toBeGreaterThan(2);
     for (const t of touched) {
       const gems = moderate.events.gems.filter((g) => g.wT === t.wTouch);

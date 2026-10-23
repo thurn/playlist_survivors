@@ -4,17 +4,6 @@
 song: orpheus-galop
 seed: 1858
 player: skilled            # the virtual player's skill profile; ?player= overrides it
-world: open                # the open field: terrain in chunks around the hero, zones in waves
-# Every press is classed against the grid, and the groove meter fills, drains and sets the tier.
-# Every weapon fires by itself (selfFiring): the sword on every grid time, and the tier sets attack
-# area and damage. Every gameplay sound plays on its subdivision's slot, never late (gridSounds). An
-# eligible accent's swing is heavy for everyone, and a press on the chord launches its shockwave
-# (pressCleaves). The steady stream aims for 60% of the population curve, and set pieces (the
-# closing rings and stampedes below) bring the rest (setPieces). Gems wait where they drop,
-# collected inside a pickup radius that grows with the tier, and a vacuum follows each set piece
-# (fieldGems). Level-ups offer upgrade orbs from a pool (upgradePool, upgradeOrbs), and the hero has
-# a small health pool with chickens (health, healthPool).
-rules: { oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true, selfFiring: true, gridSounds: true, pressCleaves: true, setPieces: true, fieldGems: true, upgradePool: true, upgradeOrbs: true, healthPool: true }
 # An arrow takes 15 (the boss's slam keeps its 25).
 enemies: { skeleton-archer: { attackDamage: 15 } }
 # The upgrade pool: the run starts with the blades and lightning beside the sword, and the fire
@@ -30,7 +19,7 @@ sections:
   - bars: 1-14            # prelude — slow passage, free feel
     section: prelude
     movement: free           # held keys walk; the sword swings by itself on every beat
-    pace: 30                 # route speed, world px per world-second
+    pace: 30                 # the virtual player's roam speed, world px per world-second
     zone: twilight-glade
     # Full speed: a slowed world makes walking feel like wading. The music's calm goes to the
     # enemies instead, which drift in slowly on a spiral.

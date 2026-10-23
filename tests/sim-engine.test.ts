@@ -1,11 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { plannerInput, propsFromAtlas } from "../scripts/lib/plan-node.ts";
+import { plannerInput } from "../scripts/lib/plan-node.ts";
 import { prepare, virtualPlayer } from "../src/planner/plan.ts";
 import type { KeyEvent } from "../src/sim/player.ts";
 import type { Recorder } from "../src/sim/recorder.ts";
-import { DEMO_RULES } from "../src/sim/rules.ts";
-import { Sim, simulate } from "../src/sim/simulate.ts";
-import { CorridorWorld } from "../src/sim/world.ts";
+import { Sim, simulate, worldFor } from "../src/sim/simulate.ts";
 import { syntheticSongMap } from "./fixtures/synthetic-song.ts";
 
 /** A recorder that logs a hash of every event (its name and arguments); it has no clock. */
@@ -26,18 +24,16 @@ function firstDifference(a: number[], b: number[]): number {
 }
 
 describe("the steppable engine", () => {
-  // (The old demo's rules in the corridor, the legacy demo level, which DEMO_RULES and
-  // CorridorWorld stand for until hv-zoon removes them.)
-  const input = plannerInput({ songMap: syntheticSongMap(), level: "tests/fixtures/legacy-demo.level.yaml" });
-  const { ctx, sch, map } = prepare(input, propsFromAtlas());
-  const world = new CorridorWorld(map, sch);
-  const batch = simulate(ctx, sch, map, { player: virtualPlayer(ctx, sch) });
+  const input = plannerInput({ songMap: syntheticSongMap() });
+  const { ctx, sch } = prepare(input);
+  const world = worldFor();
+  const batch = simulate(ctx, sch, { player: virtualPlayer(ctx, sch) });
   const keys: KeyEvent[] = batch.inputs.map((i) => ({ s: i.s, kind: i.kind, key: i.key }));
 
   /** The whole run's log, with the player's presses fed in as key events. */
   const scriptedLog = (advance: (sim: Sim) => void) => {
     const log: number[] = [];
-    const sim = new Sim(ctx, sch, world, DEMO_RULES, logRecorder(log));
+    const sim = new Sim(ctx, sch, world, logRecorder(log));
     for (const k of keys) sim.key(k);
     advance(sim);
     return log;
@@ -46,7 +42,7 @@ describe("the steppable engine", () => {
 
   it("records the same run from the player's key events as from the player", () => {
     const log: number[] = [];
-    const sim = new Sim(ctx, sch, world, DEMO_RULES, logRecorder(log), { player: virtualPlayer(ctx, sch) });
+    const sim = new Sim(ctx, sch, world, logRecorder(log), { player: virtualPlayer(ctx, sch) });
     sim.runToEnd();
     expect(firstDifference(log, whole)).toBe(-1);
   });
@@ -61,7 +57,7 @@ describe("the steppable engine", () => {
 
   it("applies keys pushed just in time like keys known in advance", () => {
     const log: number[] = [];
-    const sim = new Sim(ctx, sch, world, DEMO_RULES, logRecorder(log));
+    const sim = new Sim(ctx, sch, world, logRecorder(log));
     let next = 0;
     for (let t = 0; !sim.done; t += 1 / 60) {
       // Every key whose time falls in this frame arrives at the frame's start.
@@ -74,7 +70,7 @@ describe("the steppable engine", () => {
 
   it("clones a snapshot that runs on exactly like the original and shares nothing with it", () => {
     const head: number[] = [];
-    const a = new Sim(ctx, sch, world, DEMO_RULES, logRecorder(head));
+    const a = new Sim(ctx, sch, world, logRecorder(head));
     for (const k of keys) a.key(k);
     const cuts = [40, 95, 130];
     const clones: { tail: number[]; sim: Sim; at: number }[] = [];

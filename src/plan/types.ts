@@ -76,7 +76,7 @@ export interface EnemyRecord {
 /** The sword (a swing), an automatic weapon, a cleave's shockwave band, or a finale-blast band. */
 export type HitSource = "move" | "weapon" | "wave" | "ring";
 
-/** The small health pool (play mode): a hurt (a bite, an arrow or a slam), and the world time the hero is invulnerable until after it. */
+/** The small health pool: a hurt (a bite, an arrow or a slam), and the world time the hero is invulnerable until after it. */
 export interface BiteRecord {
   s: number;
   w: number;
@@ -104,13 +104,13 @@ export interface ChickenRecord {
   sHeal?: number;
 }
 
-/** The upgrade pool (play mode): one item, a new weapon, an owned weapon's evolution, or a passive. */
+/** The upgrade pool: one item, a new weapon, an owned weapon's evolution, or a passive. */
 export interface UpgradeItem {
   kind: "weapon" | "evolve" | "passive";
   id: string;
 }
 
-/** The upgrade pool (play mode): a level-up's offers and the one taken (an index into them, -1 if none), at song time s. */
+/** The upgrade pool: a level-up's offers and the one taken (an index into them, -1 if none), at song time s. */
 export interface UpgradeRecord {
   s: number;
   offers: UpgradeItem[];
@@ -183,7 +183,7 @@ export interface SoundEvent {
    * (a slow attack, a swell) is heard at `s`.
    */
   lead?: number;
-  /** Grid sounds (play mode): the emission key (kill, hit-light, weapon-blades...), and the slot it moved from when known too late for it. */
+  /** Grid sounds: the emission key (kill, hit-light, weapon-blades...), and the slot it moved from when known too late for it. */
   key?: string;
   movedFrom?: number;
 }
@@ -199,7 +199,7 @@ export interface GemEvent {
   value: number;
   big: boolean;
   seed: number;
-  /** Gems on the field (play mode): when it took off for the hero (world time). */
+  /** Gems on the field: when it took off for the hero (world time). */
   wT?: number;
 }
 
@@ -270,27 +270,9 @@ export interface MapZone {
   d1: number;
 }
 
+/** The level's map: the open field's zones in order (its ground is generated in chunks as it is seen). */
 export interface MapLayout {
-  /** Tile grid origin in world pixels and size in tiles. */
-  originX: number;
-  originY: number;
-  cols: number;
-  rows: number;
-  /** Tile id index per tile (into tileIds), and variant. */
-  tiles: Uint16Array;
-  tileVariants: Uint8Array;
-  tileIds: string[];
-  /** Zone index (into zones) for each tile, for tinting. */
-  tileZone: Uint8Array;
-  /** Route polyline sampled every routeStep pixels of distance. */
-  routeStep: number;
-  routeX: Float32Array;
-  routeY: Float32Array;
-  routeLength: number;
-  corridorHalfWidth: number;
   zones: MapZone[];
-  /** Ground patches and short props (drawn on the ground layer), and tall props (depth-sorted). */
-  props: MapProp[];
   hash: string;
 }
 
@@ -334,8 +316,6 @@ export interface Plan {
   title: { piece: string; composer: string; performer: string };
   /** The virtual player's skill profile. */
   profile: string;
-  /** The pace point's route distance, sampled `rate` times per song second. */
-  pace: { rate: number; d: Float32Array };
   /** Every timing-grid time (song time): swings strike on these. */
   grid: Float64Array;
   /** Sword swings in strike order. */
@@ -344,20 +324,20 @@ export interface Plan {
   inputs: PlanInput[];
   /** The groove meter (0–1) after each change, at song times. */
   groove: { s: ArrayLike<number>; v: ArrayLike<number> };
-  /** Gems on the field (play mode): the vacuums that follow set pieces, and the pickup radius by tier (px). */
-  vacuums?: { s: number; w: number; x: number; y: number; sTouch?: number; wTouch?: number; gems?: number }[];
-  pickupRadius?: number[];
-  /** The upgrade pool (play mode): each level-up's offers and the one taken. */
-  upgrades?: UpgradeRecord[];
-  /** The small health pool (play mode): every hurt, every heal, and the chickens. */
-  bites?: BiteRecord[];
-  heals?: HealRecord[];
-  chickens?: ChickenRecord[];
-  /** Press cleaves (play mode): each cleave a press on an eligible accent launched (see Cleave in src/sim/recorder.ts). */
-  cleaves?: { s: number; press: number; band0: number }[];
-  /** Press classes (play mode): the tier (0–3) after each change, at song times; it starts at 0. */
-  tier?: { s: ArrayLike<number>; v: ArrayLike<number> };
-  /** The hero's health (fraction of its maximum) after each change; it starts full and only changes when the level's rules give the hero health. */
+  /** Gems on the field: the vacuums that follow set pieces, and the pickup radius by tier (px). */
+  vacuums: { s: number; w: number; x: number; y: number; sTouch?: number; wTouch?: number; gems?: number }[];
+  pickupRadius: number[];
+  /** The upgrade pool: each level-up's offers and the one taken. */
+  upgrades: UpgradeRecord[];
+  /** The small health pool: every hurt, every heal, and the chickens. */
+  bites: BiteRecord[];
+  heals: HealRecord[];
+  chickens: ChickenRecord[];
+  /** Press cleaves: each cleave a press on an eligible accent launched (see Cleave in src/sim/recorder.ts). */
+  cleaves: { s: number; press: number; band0: number }[];
+  /** The tier (0–3) after each change, at song times; it starts at 0. */
+  tier: { s: ArrayLike<number>; v: ArrayLike<number> };
+  /** The hero's health (fraction of its maximum) after each change; it starts full. */
   health: { s: ArrayLike<number>; v: ArrayLike<number> };
   /** Near misses. */
   nearMisses: { s: number; w: number; kind: "arrow" | "slam" }[];
@@ -369,21 +349,18 @@ export interface Plan {
   formations: { def: string; sRelease: number; members: number[] }[];
   /** Song-time beat index of every sixteenth slot is beatIndex × 4. */
   stats: PlanStats;
-  /** Play mode's open field (absent in the demo's corridor): its transform waves and landmarks. */
-  open?: OpenFieldRecord;
-  /** Grid times whose accent a swing armed by a press rated Great or better turns into a cleave (song time, strength). */
-  cleaveAccents?: { s: number; strength: number }[];
+  /** The open field: its transform waves and landmarks. */
+  open: OpenFieldRecord;
+  /** Grid times whose accent a counted press of Great or better turns into a cleave (song time, strength). */
+  cleaveAccents: { s: number; strength: number }[];
   /** Level-ups at their scheduled musical moments. */
-  levelUpsDue?: { id: string; s: number }[];
-  /** Play mode's rule changes (absent in the demo). */
-  rules?: { oneStepPerSlot: boolean; accentTelegraphs: boolean; health?: boolean; strides?: boolean; pressClasses?: boolean; selfFiring?: boolean; gridSounds?: boolean; pressCleaves?: boolean; setPieces?: boolean; fieldGems?: boolean; upgradePool?: boolean; upgradeOrbs?: boolean; healthPool?: boolean };
+  levelUpsDue: { id: string; s: number }[];
   /**
-   * Play mode's fixed-speed strides (absent without the rule): the walk speed (px per world
-   * second), a stride's duration and hop height, the stride period without a steady beat, and the
-   * steps a held key strides on (song times) with the stride period at each and how many steps
-   * their grid step has (a stomp cancels that many).
+   * Fixed-speed strides: the walk speed (px per world second), a stride's duration and hop height,
+   * the stride period without a steady beat, and the steps a held key strides on (song times) with
+   * the stride period at each and how many steps their grid step has (a stomp cancels that many).
    */
-  strides?: { speed: number; durationS: number; hop: number; freePeriodS: number; steps: Float64Array; periods: Float64Array; per?: Uint8Array };
+  strides: { speed: number; durationS: number; hop: number; freePeriodS: number; steps: Float64Array; periods: Float64Array; per?: Uint8Array };
 }
 
 export interface OpenFieldRecord {
@@ -406,7 +383,7 @@ export interface PlanSwing {
   /** Song and world time of the strike (on the grid). */
   s: number;
   w: number;
-  /** Song time the swing was armed (its press, or the automatic trigger) and its wind-up began. */
+  /** Song time the swing was armed (by itself) and its wind-up began. */
   sArmed: number;
   sWind: number;
   kind: "light" | "heavy";
@@ -419,12 +396,10 @@ export interface PlanSwing {
   y: number;
   /** Index into Plan.hits. */
   hit: number;
-  /** Index into Plan.inputs of the press that armed it (undefined for automatic swings). */
-  press?: number;
   /** Accent strength at the strike (0 if none). */
   accent: number;
   aim: AimSnapshot;
-  /** Self-firing weapons (play mode): the tier read when the wind-up started, and the reach its aim used (a light swing's arc; a cleave's aim, past its shockwave). */
+  /** The tier read when the wind-up started, and the reach its aim used (a light swing's arc; a cleave's aim, past its shockwave). */
   tier?: number;
   reach?: { radius: number; degrees: number };
 }
@@ -435,23 +410,18 @@ export interface PlanInput {
   kind: "press" | "release";
   /** A direction, or Space (a stomp). */
   key: "up" | "down" | "left" | "right" | "space";
-  /** Rated presses (step movement): the rating, accuracy and offset from the grid (song seconds). */
+  /** Rated presses (step movement): the rating and offset from the grid (song seconds). */
   rating?: "perfect" | "great" | "good";
-  accuracy?: number;
   delta?: number;
   /** A diagonal's second key, which bent the step instead of starting a new one. */
   bend?: boolean;
-  /** One rated press per grid slot: an extra press for a grid time that already has its step (it steps, unrated, and arms nothing). */
+  /** A press that is not counted (an off-beat, a double tap or a stray press): it strides, unrated. */
   extra?: boolean;
-  /** An off-beat: an extra press rated against the half-way point between grid times (it lifts the groove past full). */
+  /** An off-beat: a press rated against the half-way point between grid times. */
   offbeat?: "perfect" | "great";
-  /** A second extra press for one grid time: the hero stumbles (no step, a swing lost, the groove drops). */
-  stumble?: boolean;
-  /** Did this press arm a swing? */
-  armed?: boolean;
   /** Strides: the length of the stride this press started (px; absent for a bend, which keeps the stride's). */
   stride?: number;
-  /** Press classes (play mode): what the press is, judged against the grid (see PressClass in src/sim/timing.ts). */
+  /** Press classes: what the press is, judged against the grid (see PressClass in src/sim/timing.ts). */
   class?: "partner" | "offbeat" | "counted" | "double" | "stray";
   /** Strides: the press made a stomp (Space, or the second of two opposite keys within 40 ms). */
   stomp?: boolean;

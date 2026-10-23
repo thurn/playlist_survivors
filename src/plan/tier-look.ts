@@ -1,5 +1,5 @@
 /**
- * The tier is visible (play mode; "What a tier changes" in docs/design/gameplay-redesign.md): each
+ * The tier is visible ("What a tier changes" in docs/design/gameplay-redesign.md): each
  * tier has its own weapon colours, and from tier 1 the hero has a faint aura. Index by tier, 0 to 3;
  * tier 0 is today's look.
  */

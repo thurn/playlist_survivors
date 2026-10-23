@@ -34,20 +34,18 @@ export type HitShapeDef = z.infer<typeof hitShapeDef>;
 
 const arcShape = z.strictObject({ kind: z.literal("arc"), radius: z.number().positive(), degrees: z.number().positive().max(360) });
 
-/** The movement model, timing windows, groove and swings. See docs/design/beat-steps.md. */
+/** The movement model, timing windows, groove meter and swings. See docs/design/gameplay-redesign.md. */
 export const heroDef = z.strictObject({
   step: z.strictObject({
     /** Step length in world pixels. */
     length: z.number().positive(),
     /** Step duration in world milliseconds. */
     durationMs: z.number().positive(),
-    /** Height of the hop arc in world pixels. */
-    hop: z.number().min(0),
     /** A perpendicular key this soon after the first bends the step into a diagonal. */
     diagonalWindowMs: z.number().min(0),
   }),
   /**
-   * Fixed-speed strides (play mode's `strides` rule; see docs/design/gameplay-redesign.md). The
+   * Fixed-speed strides (see docs/design/gameplay-redesign.md). The
    * walk speed sets the hero's speed; a stride spends the ground built up since the last one.
    */
   stride: z.strictObject({
@@ -70,37 +68,16 @@ export const heroDef = z.strictObject({
     /** World pixels travelled per full walk cycle. */
     strideCycle: z.number().positive(),
   }),
+  /** The rating windows around each grid time (ms either side): Perfect, Great and Good. */
   timing: z.strictObject({
     perfectMs: z.number().positive(),
     greatMs: z.number().positive(),
     goodMs: z.number().positive(),
-    /** The lowest accuracy any press earns. */
-    floor: unit,
-  }),
-  groove: z.strictObject({
-    /** Each rated press moves the groove this fraction of the way toward its accuracy. */
-    follow: unit,
-    /** With no presses in step movement, the groove halves every this many bars. */
-    idleHalfLifeBars: z.number().positive(),
-    /** Damage bonus at full groove (0.2 is +20%). */
-    maxBonus: z.number().min(0),
-    /**
-     * Off-beat presses lift the groove past full, up to this damage bonus (0.25 is +25%). An
-     * off-beat is a grid time's first extra press, rated Perfect against the half-way point to
-     * the next grid time, after a rated press of Great or better.
-     */
-    offbeatBonus: z.number().min(0),
-    /**
-     * One rated press per grid slot: a second extra press for one grid time stumbles. The hero
-     * does not step, the next swing that has not started its wind-up is lost (or else the next
-     * free grid time's), and the groove loses this fraction. Later extras for that grid time do nothing.
-     */
-    stumble: unit.default(0),
   }),
   /**
-   * Play mode's groove meter (rules.pressClasses; see "Timing and the Groove" in
-   * docs/design/gameplay-redesign.md): changes on its 0-to-1 scale by press class and rating, the
-   * drain, the tier thresholds and their hysteresis, and the double-tap window.
+   * The groove meter (see "Timing and the Groove" in docs/design/gameplay-redesign.md): changes on
+   * its 0-to-1 scale by press class and rating, the drain, the tier thresholds and their
+   * hysteresis, and the double-tap window.
    */
   meter: z.strictObject({
     counted: z.strictObject({ perfect: z.number(), great: z.number(), good: z.number(), loose: z.number() }),
@@ -112,24 +89,17 @@ export const heroDef = z.strictObject({
     tiers: z.array(unit).min(1),
     hysteresis: z.number().min(0),
     doubleTapMs: z.number().min(0),
-    /** Every hero attack's damage is multiplied by its tier's (rules.selfFiring), in place of the groove's bonus. */
+    /** Every hero attack's damage is multiplied by its tier's. */
     damage: z.array(z.number().positive()).min(1),
   }),
   swings: z.strictObject({
-    /** The armed swing strikes on the first grid time at least this long after the press. */
-    minLeadMs: z.number().positive(),
     /** Wind-up before the impact frame, when there is time for it. */
     windupMs: z.number().positive(),
     light: z.strictObject({
       animations: z.array(z.string()).min(1),
       hitShape: arcShape,
       damage: z.number().positive(),
-      /**
-       * A press's swing reaches this fraction of the arc's radius at accuracy 0, rising linearly
-       * to the full radius at accuracy 1 (Perfect). Automatic swings reach the full radius.
-       */
-      minReach: unit.default(1),
-      /** Play mode's tiers (rules.selfFiring): the light swing's arc at tiers 0 to 3. */
+      /** The light swing's arc at tiers 0 to 3. */
       tiers: z.array(arcShape).min(1).optional(),
     }),
     heavy: z.strictObject({
@@ -142,30 +112,22 @@ export const heroDef = z.strictObject({
         to: z.number().positive(),
         band: z.number().positive(),
         damage: z.number().positive(),
-        /** Play mode's tiers (rules.pressCleaves): how far the shockwave reaches at tiers 0 to 3. */
+        /** How far the shockwave reaches at tiers 0 to 3. */
         tiers: z.array(z.number().positive()).min(1).optional(),
       }),
-      /** Play mode's tiers (rules.pressCleaves): the heavy impact's arc at tiers 0 to 3 (360 is a full spin). */
+      /** The heavy impact's arc at tiers 0 to 3 (360 is a full spin). */
       tiers: z.array(arcShape).min(1).optional(),
     }),
   }),
-  /** Play mode's gems on the field (rules.fieldGems): the pickup radius (px) at tiers 0 to 3. */
+  /** Gems on the field: the pickup radius (px) at tiers 0 to 3. */
   pickupRadius: z.array(z.number().positive()).min(1).optional(),
   /**
-   * Health, when the level's rules give the hero health (play mode). Enemies touching the hero
-   * bite for their contactDamage, each at most once per biteEveryMs of world time; arrows and
-   * slams deal their attacker's attackDamage.
+   * The hero's small health pool. Enemies touching the hero bite for their contactDamage; arrows
+   * and slams deal their attacker's attackDamage. After a hurt the hero is invulnerable for
+   * invulnerableMs (world ms), and a level-up heals levelUpHeal.
    */
   health: z.strictObject({
     max: z.number().positive(),
-    biteEveryMs: z.number().positive(),
-    /**
-     * Rhythm heals. A clean beat (a rated press of Great or better in step movement) heals
-     * `beat`; from the `streakFrom`-th clean beat in a row, each heals `streak` more. A rated
-     * press below Great, or a stumble, ends the streak; grid times without a press do not.
-     */
-    heal: z.strictObject({ beat: z.number().min(0), streakFrom: z.number().int().min(1), streak: z.number().min(0) }),
-    /** The small health pool (rules.healthPool): after a bite the hero is invulnerable this long (world ms), and a level-up heals levelUpHeal. */
     invulnerableMs: z.number().positive().default(500),
     levelUpHeal: z.number().min(0).default(20),
   }),
@@ -210,7 +172,7 @@ export const weaponDef = z.strictObject({
   name: z.string(),
   kind: z.enum(["orbit", "chain", "trail", "blast"]),
   fires: z.strictObject({ every: subdivision }),
-  /** Play mode's tiers (rules.selfFiring): each kind's area at tiers 0 to 3 replaces its count and radius, jumps and range, or hit radius. */
+  /** Tiers: each kind's area at tiers 0 to 3 replaces its count and radius, jumps and range, or hit radius. */
   orbit: z.strictObject({ count: z.number().int().positive(), radius: z.number().positive(), periodBars: z.number().positive(), tiers: z.array(z.strictObject({ count: z.number().int().positive(), radius: z.number().positive() })).min(1).optional() }).optional(),
   chain: z.strictObject({ jumps: range, step: subdivision, range: z.number().positive().default(110), tiers: z.array(z.strictObject({ jumps: z.number().int().positive(), range: z.number().positive() })).min(1).optional() }).optional(),
   trail: z.strictObject({ beats: z.number().positive(), spacing: z.number().positive().default(18), tiers: z.array(z.strictObject({ radius: z.number().positive() })).min(1).optional() }).optional(),
@@ -224,7 +186,7 @@ export const weaponDef = z.strictObject({
   icon: z.string(),
   color: color,
   /**
-   * Play mode's evolution (rules.upgradePool), a weapon upgrade a level-up can offer once the weapon
+   * Evolution: a weapon upgrade a level-up can offer once the weapon
    * is owned: orbiting blades gain `count` more blades and an orbit `radiusScale` times as wide at
    * every tier; chain lightning fires `every` subdivision instead and gains `jumps` more jumps.
    */
@@ -243,7 +205,7 @@ export type WeaponDef = z.infer<typeof weaponDef>;
 // ------------------------------------------------------------------ passives
 
 /**
- * Play mode's passives (rules.upgradePool): stat bonuses a level-up can offer, each taken any number
+ * Passives: stat bonuses a level-up can offer, each taken any number
  * of times, the bonuses adding up. Max health also heals that much at once; armour takes from every
  * bite, never below 1.
  */
@@ -326,7 +288,8 @@ export const zoneTheme = z.strictObject({
   id,
   name: z.string(),
   terrain: z.strictObject({ ground: z.string(), path: z.string(), patch: z.string() }),
-  props: z.array(z.strictObject({ sprite: z.string(), density: z.number().min(0), light: z.strictObject({ color, radius: z.number().positive() }).optional(), corridor: z.boolean().default(false) })),
+  /** Props by density per tile; underfoot props are small ground decorations, scattered thicker than the rest. */
+  props: z.array(z.strictObject({ sprite: z.string(), density: z.number().min(0), light: z.strictObject({ color, radius: z.number().positive() }).optional(), underfoot: z.boolean().default(false) })),
   ambientLight: color,
   colorGrade: z.enum(["twilight", "neutral", "autumn", "ember", "infernal"]),
   particles: z.enum(["fireflies", "none", "falling-leaves", "rising-embers"]),
@@ -377,7 +340,7 @@ export const levelSection = z.strictObject({
   section: z.string().optional(),
   /** Step movement (one step per press) or free movement (held keys walk); defaults from the song map's feel. */
   movement: z.enum(["steps", "free"]).optional(),
-  /** Route speed of the pace point, in world pixels per world-second. Inherited from the previous section. */
+  /** How fast the virtual player roams the open field, in world pixels per world-second. Inherited from the previous section. */
   pace: z.number().min(0).optional(),
   /** The skilled player's presses: one character per timing-grid slot of each bar, x presses and . rests. Inherited. */
   presses: z.string().regex(/^[x.]+$/, "presses use x and .").optional(),
@@ -401,19 +364,19 @@ export const levelSection = z.strictObject({
 
 export const levelEvent = z.strictObject({
   at: musicalRef,
-  /** The weapon a level-up grants, or (rules.upgradePool) `offer`: three items from the upgrade pool. */
-  levelUp: id.optional(),
+  /** A level-up: `offer`, three items from the upgrade pool. */
+  levelUp: z.literal("offer").optional(),
   /** Experience the level-up needs (gems collected since the previous one). */
   xp: z.number().positive().optional(),
   formation: id.optional(),
   /**
-   * Play mode's closing ring (rules.setPieces): `count` enemies evenly spaced on a circle just outside
+   * A closing ring: `count` enemies evenly spaced on a circle just outside
    * the view, around where the hero stands, with `gaps` gaps of three missing places (two rows past
    * 40); it closes at a steady speed to 100 px from its centre on `closesOn`, then its members chase.
    */
   ring: z.strictObject({ enemy: id, count: z.number().int().positive(), gaps: z.number().int().min(0).max(6).default(3), closesOn: musicalRef }).optional(),
   /**
-   * Play mode's stampede (rules.setPieces): `count` enemies at 2.5 times their speed run straight
+   * A stampede: `count` enemies at 2.5 times their speed run straight
    * across the view from one side, in `rows` rows with a gap in each, ignoring the hero.
    */
   stampede: z.strictObject({ enemy: id, count: z.number().int().positive(), rows: z.number().int().min(1).max(4).default(3) }).optional(),
@@ -444,17 +407,13 @@ export const levelScript = z.strictObject({
   seed: z.number().int(),
   /** The virtual player's default skill profile (`?player=` overrides it). */
   player: skillProfile.default("skilled"),
-  /** The demo's forest corridor along a route, or play mode's open field. */
-  world: z.enum(["corridor", "open"]).default("corridor"),
-  /** Play-mode rule changes. */
   /**
-   * Play mode's upgrade pool (rules.upgradePool): the weapons the run starts with beside the sword,
-   * and the new weapons a level-up can offer (owned weapons' evolutions and the passives join them).
+   * The upgrade pool: the weapons the run starts with beside the sword, and the new weapons a
+   * level-up can offer (owned weapons' evolutions and the passives join them).
    */
   upgrades: z.strictObject({ loadout: z.array(id).default([]), offer: z.array(id).default([]) }).optional(),
   /** Overrides of enemies' damage for this level only (play mode's values). */
   enemies: z.record(id, z.strictObject({ contactDamage: z.number().min(0).optional(), attackDamage: z.number().min(0).optional() })).optional(),
-  rules: z.strictObject({ oneStepPerSlot: z.boolean().default(false), accentTelegraphs: z.boolean().default(false), health: z.boolean().default(false), strides: z.boolean().default(false), pressClasses: z.boolean().default(false), selfFiring: z.boolean().default(false), gridSounds: z.boolean().default(false), pressCleaves: z.boolean().default(false), setPieces: z.boolean().default(false), fieldGems: z.boolean().default(false), upgradePool: z.boolean().default(false), upgradeOrbs: z.boolean().default(false), healthPool: z.boolean().default(false) }).optional(),
   /** Overrides merged over content/hero.yaml for this level only (checked against the hero schema). */
   hero: z.record(z.string(), z.unknown()).optional(),
   title: z.strictObject({ piece: z.string(), composer: z.string(), performer: z.string() }),

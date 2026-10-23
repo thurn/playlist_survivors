@@ -174,7 +174,7 @@ describe("stomps on a slow grid", () => {
 
 describe("the stomp window", () => {
   const { ctx, sch, run } = play(syntheticSongMap());
-  // A cleave's hit-stop: a Perfect press one grid step before an accent the level cleaves.
+  // A cleave's hit-stop: a Perfect counted press just before an accent the level cleaves brings one at the impact.
   const i = sch.gridSlots.findIndex((g) => g.s > 60 && cleaves(ctx, g));
   const accent = sch.gridSlots[i].s;
   const before = sch.gridSlots[i - 1].s;
@@ -182,8 +182,7 @@ describe("the stomp window", () => {
   it("counts song time: opposite keys 60 ms apart are no stomp, though a hit-stop froze the world between them", () => {
     const rec = new BatchRecorder();
     const keys: KeyEvent[] = [...tap(before), { s: accent - 0.03, kind: "press", key: "left" }, { s: accent + 0.03, kind: "press", key: "right" }];
-    // (With presses arming swings: a self-firing cleave brings no hit-stop.)
-    const r = run(keys, [accent + 0.3], rec, { selfFiring: false });
+    const r = run(keys, [accent + 0.3], rec);
     expect(rec.hitStops.some(([s0]) => Math.abs(s0 - accent) < 0.02)).toBe(true);
     const right = r.inputs.find((k) => k.key === "right" && k.s > accent)!;
     expect(right.rock).toBeUndefined();

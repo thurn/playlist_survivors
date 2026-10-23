@@ -119,7 +119,6 @@ export class Renderer {
   private lights = new Container();
   private bolts = new Graphics();
   private chunks = new Map<string, { sprite: Sprite; rt: RenderTexture; used: number }>();
-  private propGrid = new Map<number, MapProp[]>();
   private composite: Mesh<MeshGeometry, Shader>;
   private compositeUniforms: { uniforms: Record<string, unknown> };
   private brightSprite: Sprite;
@@ -165,13 +164,6 @@ export class Renderer {
     };
     this.textPool = new Pool(this.textLayer, () => new PixelText());
 
-    for (const p of plan.map.props) {
-      if (!p.tall && !p.light) continue;
-      const k = Math.floor(p.x / 256) * 65536 + Math.floor(p.y / 256);
-      let l = this.propGrid.get(k);
-      if (!l) this.propGrid.set(k, (l = []));
-      l.push(p);
-    }
     this.themes = plan.map.zones.map((z) => lib.zones.get(z.id)!);
 
     // Bloom: bright pass then blur, at half resolution.
@@ -238,70 +230,6 @@ export class Renderer {
     return { x: (W - w) / 2, y: (H - h) / 2, w, h };
   }
 
-  private chunkFor(cx: number, cy: number): Sprite {
-    const key = `${cx},${cy}`;
-    const c = this.chunks.get(key);
-    if (c) {
-      c.used = this.frameCounter;
-      return c.sprite;
-    }
-    if (this.chunks.size >= MAX_CHUNKS) {
-      let oldest: string | undefined;
-      let ou = Infinity;
-      for (const [k, v] of this.chunks)
-        if (v.used < ou) {
-          ou = v.used;
-          oldest = k;
-        }
-      const o = this.chunks.get(oldest!)!;
-      o.sprite.destroy();
-      o.rt.destroy(true);
-      this.chunks.delete(oldest!);
-    }
-    const map = this.plan.map;
-    const rt = RenderTexture.create({ width: CHUNK, height: CHUNK, scaleMode: "nearest" });
-    const tmp = new Container();
-    const x0 = cx * CHUNK;
-    const y0 = cy * CHUNK;
-    const t0x = Math.floor((x0 - map.originX) / 32);
-    const t0y = Math.floor((y0 - map.originY) / 32);
-    for (let ty = t0y - 1; ty <= t0y + CHUNK / 32; ty++) {
-      for (let tx = t0x - 1; tx <= t0x + CHUNK / 32; tx++) {
-        const cxl = clamp(tx, 0, map.cols - 1);
-        const cyl = clamp(ty, 0, map.rows - 1);
-        const k = cyl * map.cols + cxl;
-        const id = map.tileIds[map.tiles[k]];
-        const vars = this.assets.tiles.get(id) ?? this.assets.tiles.get("grass-summer")!;
-        const s = new Sprite(vars[map.tileVariants[k] % vars.length]);
-        s.x = map.originX + tx * 32 - x0;
-        s.y = map.originY + ty * 32 - y0;
-        const theme = this.themes[map.tileZone[k]];
-        s.tint = hex(theme?.tint ?? "#ffffff");
-        tmp.addChild(s);
-      }
-    }
-    // Ground props (patches, flowers) are baked into the chunk.
-    for (const p of map.props) {
-      if (p.tall || p.x < x0 - 128 || p.x > x0 + CHUNK + 128 || p.y < y0 - 128 || p.y > y0 + CHUNK + 128) continue;
-      const def = this.assets.props.get(p.sprite);
-      if (!def || def.variants[0].frames) continue;
-      const v = def.variants[p.variant % def.variants.length];
-      const s = new Sprite(v.tex);
-      s.x = Math.round(p.x - x0 - (p.flip ? -v.ax : v.ax));
-      s.y = Math.round(p.y - y0 - v.ay);
-      if (p.flip) s.scale.x = -1;
-      tmp.addChild(s);
-    }
-    this.app.renderer.render({ container: tmp, target: rt, clear: true });
-    tmp.destroy({ children: true });
-    const sprite = new Sprite(rt);
-    sprite.x = x0;
-    sprite.y = y0;
-    this.ground.addChild(sprite);
-    this.chunks.set(key, { sprite, rt, used: this.frameCounter });
-    return sprite;
-  }
-
   private charTexture(sprite: string, anim: string, facing: number, frame: number, flash: boolean) {
     const a = this.assets.chars.get(sprite)?.get(anim) ?? this.assets.chars.get(sprite)?.get("walk");
     if (!a) return undefined;
@@ -333,10 +261,7 @@ export class Renderer {
 
     // Ground chunks.
     for (const c of this.chunks.values()) c.sprite.visible = false;
-    if (f.open) this.drawOpenGround(f, left, top, viewW, viewH);
-    else
-      for (let cy = Math.floor(top / CHUNK); cy <= Math.floor((top + viewH) / CHUNK); cy++)
-        for (let cx = Math.floor(left / CHUNK); cx <= Math.floor((left + viewW) / CHUNK); cx++) this.chunkFor(cx, cy).visible = true;
+    this.drawOpenGround(f, left, top, viewW, viewH);
 
     // Decals and slam markers.
     const proc = this.assets.proc;
@@ -460,38 +385,7 @@ export class Renderer {
     }
     // Tall props, swaying with the bar.
     const sway = (free ? beatSwell(frac(f.sbi / 4)) : beatSwell(f.hud.barPhase)) - 0.5;
-    if (f.open) this.drawOpenProps(f, left, top, viewW, viewH, sway);
-    else for (let gy = Math.floor((top - 160) / 256); gy <= Math.floor((top + viewH + 160) / 256); gy++) {
-      for (let gx = Math.floor((left - 160) / 256); gx <= Math.floor((left + viewW + 160) / 256); gx++) {
-        const list = this.propGrid.get(gx * 65536 + gy);
-        if (!list) continue;
-        for (const p of list) {
-          const def = this.assets.props.get(p.sprite);
-          if (!def) continue;
-          const v = def.variants[p.variant % def.variants.length];
-          if (!p.tall && !v.frames) continue;
-          const sp = this.pools.sorted.next();
-          sp.texture = v.frames ? v.frames[Math.floor(s * def.fps + p.x) % v.frames.length] : v.tex;
-          sp.anchor.set(v.ax / v.tex.width, v.ay / v.tex.height);
-          sp.position.set(p.x, p.y);
-          sp.scale.set(p.flip ? -1 : 1, 1);
-          sp.skew.x = p.sprite.startsWith("tree") || p.sprite.startsWith("bush") || p.sprite.startsWith("mushroom") ? sway * 0.06 * (0.6 + 0.4 * rand01(p.x, p.y)) : 0;
-          sp.alpha = 1;
-          sp.tint = 0xffffff;
-          sp.zIndex = p.y;
-          if (p.light) {
-            const l = this.pools.light.next();
-            l.texture = proc.get("light")!;
-            l.anchor.set(0.5);
-            l.position.set(p.x, p.y - 20);
-            const flick = 0.85 + 0.15 * Math.sin(s * 9 + p.x);
-            l.scale.set(((p.light.radius * 2) / 64) * flick);
-            l.tint = hex(p.light.color);
-            l.alpha = 0.8;
-          }
-        }
-      }
-    }
+    this.drawOpenProps(f, left, top, viewW, viewH, sway);
     for (const c of this.sorted.children) if (c.visible === false) c.zIndex = -1e9;
 
     // Weapons and projectiles.
@@ -929,7 +823,7 @@ export class Renderer {
     const op = f.open!;
     const wv = op.wave;
     const s = f.s;
-    const landmarks = (this.plan.open?.landmarks ?? []).filter((l) => s >= l.s);
+    const landmarks = (this.plan.open.landmarks ?? []).filter((l) => s >= l.s);
     const draw = (p: MapProp, alpha: number, rise = 1) => {
       const def = this.assets.props.get(p.sprite);
       if (!def) return;

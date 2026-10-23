@@ -51,7 +51,6 @@ describe("a play-mode run in the open field", () => {
   it("is played by the moderate player in the open field", () => {
     expect(plan.profile).toBe("moderate");
     expect(plan.open).toBeDefined();
-    expect(plan.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true, selfFiring: true, gridSounds: true, pressCleaves: true, setPieces: true, fieldGems: true, upgradePool: true, upgradeOrbs: true, healthPool: true });
   });
 
   it("hurts the hero, heals it (level-ups and chickens), and it survives", () => {
@@ -142,16 +141,28 @@ describe("a play-mode run in the open field", () => {
     expect(own.ok, own.text).toBe(true);
   });
 
+  it("asks a level-up to have an orb walked into only when it raised orbs", () => {
+    const orbFailures = (upgrades: typeof plan.upgrades) =>
+      checkPlay({ ...plan, upgrades }, input.content, { signature: true })
+        .flatMap((r) => r.failures)
+        .filter((f) => f.startsWith("level-up #1 ") && f.includes("no orb is walked into"));
+    const first = plan.upgrades[0];
+    expect(orbFailures(plan.upgrades)).toEqual([]);
+    // Orbs that rose and were left for two bars fail it; a level-up with nothing to offer raises none, and passes.
+    expect(orbFailures([{ ...first, walked: false }, ...plan.upgrades.slice(1)]).length).toBe(1);
+    expect(orbFailures([{ s: first.s, offers: [], taken: -1 }, ...plan.upgrades.slice(1)])).toEqual([]);
+  });
+
   it("sweeps a transform wave out from the hero for each zone change, and raises the landmarks around the hero", () => {
     const warp = new Warp(plan.warp);
     const zones = plan.sections.map((s) => s.zone).filter((z, i, a) => i > 0 && z !== a[i - 1]);
-    expect(plan.open!.waves.length).toBe(zones.length);
-    for (const wv of plan.open!.waves) {
+    expect(plan.open.waves.length).toBe(zones.length);
+    for (const wv of plan.open.waves) {
       const h = heroSample(plan, warp.toWorld(wv.s));
       expect(Math.hypot(h.x - wv.x, h.y - wv.y)).toBeLessThan(8);
     }
-    expect(plan.open!.landmarks.map((l) => l.id)).toEqual(["standing-stones", "ruined-shrine"]);
-    for (const l of plan.open!.landmarks) {
+    expect(plan.open.landmarks.map((l) => l.id)).toEqual(["standing-stones", "ruined-shrine"]);
+    for (const l of plan.open.landmarks) {
       const h = heroSample(plan, warp.toWorld(l.s));
       expect(Math.hypot(h.x - l.x, h.y - l.y)).toBeLessThan(8);
     }

@@ -10,7 +10,7 @@ import { chainAt, orbitAt, swingArcAt, tierDamage, trailRadiusAt } from "../src/
 import { evolvedOrbit, loadoutAt, passiveBonus } from "../src/sim/upgrades.ts";
 import { Sim, worldFor } from "../src/sim/simulate.ts";
 import { prepare } from "../src/planner/plan.ts";
-import { plannerInput, propsFromAtlas } from "../scripts/lib/plan-node.ts";
+import { plannerInput } from "../scripts/lib/plan-node.ts";
 import { play, tap } from "./fixtures/play-sim.ts";
 import { syntheticSongMap } from "./fixtures/synthetic-song.ts";
 
@@ -47,13 +47,11 @@ describe("the self-firing sword", () => {
   const sec = section("theme-a");
   const beats = Array.from(sch.gridTimes).filter((g) => g > sec.s0 + 0.5 && g < sec.s0 + 9);
 
-  it("swings on every grid time by itself, and presses arm nothing", () => {
+  it("swings on every grid time by itself", () => {
     const rec = new BatchRecorder();
     run(beats.slice(0, 4).flatMap((b) => tap(b)), [beats[12] + 0.01], rec);
     const struck = new Set(rec.swings.map((sw) => Math.round(sw.s * 1e4)));
     for (const b of beats.slice(0, 13)) expect(struck.has(Math.round(b * 1e4)), `a swing on ${b}`).toBe(true);
-    expect(rec.inputs.filter((i) => i.kind === "press").every((i) => !i.armed)).toBe(true);
-    expect(rec.swings.every((sw) => sw.press === undefined)).toBe(true);
   });
 
   it("is sized by the tier when its wind-up starts, whatever the tier does before it strikes", () => {
@@ -82,8 +80,7 @@ describe("the blades", () => {
     const sec = section("galop-opening");
     const beats = Array.from(sch.gridTimes).filter((g) => g > sec.s0 + 0.5 && g < sec.s0 + 9);
     const rec = new BatchRecorder();
-    // (Today's gems, which all fly in: a hero standing through the prelude collects no gems on the field.)
-    run(beats.slice(0, 14).flatMap((b) => tap(b)), [beats[18]], rec, { fieldGems: false });
+    run(beats.slice(0, 14).flatMap((b) => tap(b)), [beats[18]], rec);
     const tierAt = (s: number) => rec.tierV[rec.tierS.findLastIndex((x) => x <= s)];
     const firings = new Map<number, typeof rec.hits>();
     for (const h of rec.hits) if (h.what === "orbiting-blades") firings.set(h.s, [...(firings.get(h.s) ?? []), h]);
@@ -117,11 +114,11 @@ describe("the sword without a steady beat", () => {
 describe("the virtual player's sense of its stride", () => {
   it("counts the ground a press would take back from a stride still moving", () => {
     const input = plannerInput({ songMap: syntheticSongMap(), level: "levels/orpheus-galop.play.yaml" });
-    const { ctx: c, sch: sc, map } = prepare(input, propsFromAtlas());
+    const { ctx: c, sch: sc } = prepare(input);
     const sec = c.sections.find((s) => s.label === "theme-a")!;
     const b = Array.from(sc.gridTimes).filter((g) => g > sec.s0 + 0.5);
     const rec = new BatchRecorder();
-    const sim = new Sim(c, sc, worldFor(c, sc, map), c.level.rules, rec);
+    const sim = new Sim(c, sc, worldFor(), rec);
     sim.advanceTo(b[0] - 0.01);
     sim.key({ s: b[0], kind: "press", key: "right" });
     // 40 ms into the held stride on the next beat, a press would take its uncovered ground back.

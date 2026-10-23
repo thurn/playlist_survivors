@@ -1,5 +1,5 @@
 /**
- * Upgrade orbs (play mode's upgradeOrbs): "Level-ups and upgrade orbs" in
+ * Upgrade orbs: "Level-ups and upgrade orbs" in
  * docs/design/gameplay-redesign.md, on the real song, following the design's trace from the
  * galop opening's level-up downbeat at 54.07: the moderate player plays up to a moment, then
  * scripted keys take over.
@@ -18,14 +18,14 @@ import { LOW_HEALTH, preferredOffer } from "../src/sim/upgrades.ts";
 
 const input = plannerInput({ level: "levels/orpheus-galop.play.yaml" });
 const props = propsFromAtlas();
-const { ctx, sch, map } = prepare(input, props);
+const { ctx, sch, map } = prepare(input);
 const lib = ctx.lib;
 const LEVEL_UP = sch.levelUps[0].s;
 
 // The moderate player's keys, from a headless run.
 const botKeys: KeyEvent[] = (() => {
   const rec = new BatchRecorder();
-  new Sim(ctx, sch, worldFor(ctx, sch, map), ctx.level.rules, rec, { player: virtualPlayer(ctx, sch, "moderate") }).advanceTo(LEVEL_UP + 10);
+  new Sim(ctx, sch, worldFor(), rec, { player: virtualPlayer(ctx, sch, "moderate") }).advanceTo(LEVEL_UP + 10);
   return rec.inputs.map((i) => ({ s: i.s, kind: i.kind, key: i.key }));
 })();
 
@@ -35,7 +35,7 @@ const botKeys: KeyEvent[] = (() => {
  */
 function takeOver(until: number, resume = Infinity, schedule = sch, c = ctx) {
   const recording = new LiveRecording(c, schedule, map, c.lib, "player", props);
-  const sim = new Sim(c, schedule, worldFor(c, schedule, map), c.level.rules, recording);
+  const sim = new Sim(c, schedule, worldFor(), recording);
   for (const k of botKeys) if (k.s < until || k.s >= resume) sim.key(k);
   // (A key the player still held is let go.)
   const held = new Set<string>();
@@ -75,7 +75,7 @@ describe("a level-up's downbeat", () => {
     sim.advanceTo(L + 0.5);
     recording.refresh();
     const plan = recording.plan;
-    const u = plan.upgrades!.find((x) => x.s === L)!;
+    const u = plan.upgrades.find((x) => x.s === L)!;
     expect(u.s).toBe(L);
     // The orbs. (Three orbs 120° apart around the hero: their middle is where it stood; its sample
     // there is interpolated, a few px off.)
@@ -118,12 +118,12 @@ describe("a level-up's downbeat", () => {
     sim.advanceTo(LEVEL_UP + 0.2);
     recording.refresh();
     const plan = recording.plan;
-    expect(plan.upgrades![0].s).toBe(LEVEL_UP);
+    expect(plan.upgrades[0].s).toBe(LEVEL_UP);
     const at = Array.from(plan.health.s).findIndex((s) => s === LEVEL_UP);
     const before = plan.health.v[at - 1];
     expect(before * lib.hero.health.max).toBeLessThan(lib.hero.health.max - lib.hero.health.levelUpHeal);
     expect(plan.health.v[at] * lib.hero.health.max - before * lib.hero.health.max).toBeCloseTo(lib.hero.health.levelUpHeal, 3);
-    expect(plan.heals!.find((h) => h.s === LEVEL_UP)).toMatchObject({ source: "level-up" });
+    expect(plan.heals.find((h) => h.s === LEVEL_UP)).toMatchObject({ source: "level-up" });
   });
 });
 
@@ -133,7 +133,7 @@ describe("walking into an orb", () => {
     // steers there on each beat until it reaches it.
     const { recording, sim } = takeOver(LEVEL_UP - 0.1);
     sim.advanceTo(LEVEL_UP + 0.01);
-    const u = recording.plan.upgrades![0];
+    const u = recording.plan.upgrades[0];
     const want = preferredOffer(u.offers);
     const orb = u.orbs![want];
     let held: Key[] = [];
@@ -180,7 +180,7 @@ describe("walking into an orb", () => {
     const { recording, sim } = takeOver(LEVEL_UP - 0.1);
     sim.advanceTo(LEVEL_UP + 6);
     recording.refresh();
-    const u = recording.plan.upgrades![0];
+    const u = recording.plan.upgrades[0];
     const bar = ctx.idx.barStart.findIndex((b) => Math.abs(ctx.song.beats[b] - LEVEL_UP) < 1e-6);
     const deadline = ctx.song.beats[ctx.idx.barStart[bar + 2]];
     expect(u.walked).toBe(false);
@@ -200,7 +200,7 @@ describe("level-ups close together", () => {
     const { recording, sim } = takeOver(LEVEL_UP + 20, Infinity, bunched);
     sim.advanceTo(LEVEL_UP + 20);
     recording.refresh();
-    const ups = recording.plan.upgrades!;
+    const ups = recording.plan.upgrades;
     // (Standing still, a bar can wait a downbeat for its one gem.)
     expect(ups.length).toBeGreaterThanOrEqual(4);
     const taken = ups.map((u) => `${u.offers[u.taken].kind}:${u.offers[u.taken].id}`);

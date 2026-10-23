@@ -12,7 +12,7 @@ import type { HeroDef } from "../content/schema.ts";
 import { clamp, smoothstep } from "../core/shaping.ts";
 
 export type Key = "up" | "down" | "left" | "right";
-/** A gameplay key: a direction, or Space (play mode's stomp). */
+/** A gameplay key: a direction, or Space (a stomp). */
 export type InputKey = Key | "space";
 
 /** Two keys on opposite sides (Left and Right, or Up and Down)? */
@@ -85,13 +85,6 @@ export const stepSeconds = (hero: HeroDef): number => hero.step.durationMs / 100
 /** Cubic ease-out: the hero leaves fast and lands firmly. */
 export const easeOut = (u: number): number => 1 - (1 - u) ** 3;
 
-/** Start a step on a key press, from the hero's current position. */
-export function startStep(hero: HeroDef, w: number, x: number, y: number, key: Key, walls: Clamp = NO_WALLS): Step {
-  const d = KEY_DIR[key];
-  const len = walls(x, y, d.x, d.y, hero.step.length);
-  return { w0: w, x0: x, y0: y, dx: d.x, dy: d.y, len1: len, ex: d.x * len, ey: d.y * len, keys: [key] };
-}
-
 /**
  * A perpendicular key soon after the first bends the rest of the step toward
  * the diagonal. The step still lands one step length from where it started.
@@ -106,11 +99,6 @@ export function bendStep(hero: HeroDef, step: Step, w: number, key: Key, walls: 
   const gy = (step.dy + d.y) / Math.SQRT2;
   const len = walls(step.x0, step.y0, gx, gy, step.len ?? hero.step.length);
   return { ...step, ex: gx * len, ey: gy * len, bendE: easeOut(u), keys: [...step.keys, key] };
-}
-
-/** Where the step has taken the hero at world time w. */
-export function stepPose(hero: HeroDef, step: Step, w: number): StepPose {
-  return movePose(step, w, stepSeconds(hero), hero.step.hop);
 }
 
 /** Where a step or stride lasting durationS, with a hop of `hop` px, has taken the hero at world time w. */
@@ -141,32 +129,6 @@ export function stepEnd(step: Step): { x: number; y: number } {
 }
 
 // ------------------------------------------------------------------ walking
-
-/** Target walking velocity for a set of held keys: eight directions, opposite keys cancel. */
-export function walkTarget(hero: HeroDef, held: Iterable<Key>): { x: number; y: number } {
-  let x = 0;
-  let y = 0;
-  for (const k of held) {
-    x += KEY_DIR[k].x;
-    y += KEY_DIR[k].y;
-  }
-  const l = Math.hypot(x, y);
-  if (l < 1e-9) return { x: 0, y: 0 };
-  return { x: (x / l) * hero.walk.speed, y: (y / l) * hero.walk.speed };
-}
-
-/**
- * Move a walking velocity toward its target over dt world seconds. Speed
- * changes at a constant rate: full speed (or a stop) within accelMs.
- */
-export function walkVelocity(hero: HeroDef, vx: number, vy: number, tx: number, ty: number, dt: number): { x: number; y: number } {
-  const maxDv = (hero.walk.speed / (hero.walk.accelMs / 1000)) * dt;
-  const ddx = tx - vx;
-  const ddy = ty - vy;
-  const d = Math.hypot(ddx, ddy);
-  if (d <= maxDv) return { x: tx, y: ty };
-  return { x: vx + (ddx / d) * maxDv, y: vy + (ddy / d) * maxDv };
-}
 
 /** Walk-cycle frame for the distance walked: one full cycle per strideCycle pixels, so the feet never slide. */
 export function walkFrame(hero: HeroDef, distance: number, frames: number): number {

@@ -10,7 +10,7 @@ import type { Frame, KeyLight, KeyName } from "../plan/evaluate.ts";
 import type { Plan } from "../plan/types.ts";
 import { PixelText, textWidth } from "./font.ts";
 import { endCardGrade, endCardLines, RATING_COLORS, TIER_COLORS, tierLabel } from "./hud-lines.ts";
-/** Play mode's telegraphs: the cleaves' accents and the beats to press for them. */
+/** Telegraphs: the cleaves' accents and the beats to press for them. */
 const TELEGRAPH = 0xffc040;
 const PLAIN = 0x8890a8;
 const ratingColor = (r: string | undefined) => (r ? (RATING_COLORS[r] ?? PLAIN) : PLAIN);
@@ -224,7 +224,7 @@ export class Hud {
           g.poly([tip.x, tip.y, l.x, l.y, rr.x, rr.y]).fill({ color: key.lit > 0.5 && !key.outline ? 0x101018 : 0xd0d8e8, alpha: intro });
         });
       }
-      if (hud.stomp || this.plan.rules?.strides) {
+      {
         // Both feet, beside the arrows: a stomp (Space) stamps them.
         const foot = hud.stomp ?? { lit: 0 };
         for (const [i, fx] of [104, 117].entries()) swell(fx, 479 + (i ? 0 : 2), 10, 18, () => keyFace(foot, fx, 479 + (i ? 0 : 2), 10, 18));
@@ -279,24 +279,20 @@ export class Hud {
         g.circle(px(x), py(cy - 20), r).stroke({ color: ratingColor(pr.rating), width: 2 * u, alpha: a });
         g.circle(px(x), py(cy - 20), 2.5 * u).fill({ color: ratingColor(pr.rating), alpha: a });
       }
-      // The groove meter beside the heart: with press classes, its tier marks and the tier (a
-      // tier-up flashes it); otherwise the damage bonus.
+      // The groove meter beside the heart: its tier marks and the tier (a tier-up flashes it).
       {
         const gx = cx + 212;
         const gw = 70;
         const tier = hud.tier;
-        const barColor = tier ? TIER_COLORS[Math.min(TIER_COLORS.length - 1, tier.n)] : hud.groove > 0.85 ? 0xffd040 : 0x60c0ff;
+        const barColor = TIER_COLORS[Math.min(TIER_COLORS.length - 1, tier.n)];
         swell(gx, cy - 5, gw, 10, () => {
-          if (tier && tier.flash > 0) g.roundRect(px(gx - 3), py(cy - 8), (gw + 6) * u, 16 * u, 5 * u).fill({ color: barColor, alpha: 0.45 * tier.flash * intro });
+          if (tier.flash > 0) g.roundRect(px(gx - 3), py(cy - 8), (gw + 6) * u, 16 * u, 5 * u).fill({ color: barColor, alpha: 0.45 * tier.flash * intro });
           g.roundRect(px(gx), py(cy - 5), gw * u, 10 * u, 3 * u).fill({ color: 0x000000, alpha: 0.55 * intro });
           g.roundRect(px(gx + 1), py(cy - 4), (gw - 2) * u * clamp(hud.groove, 0, 1), 8 * u, 3 * u).fill({ color: barColor, alpha: intro });
-          for (const m of tier?.marks ?? []) g.rect(px(gx + 1 + (gw - 2) * m) - Math.max(1, u) / 2, py(cy - 6), Math.max(1, u), 12 * u).fill({ color: 0xffffff, alpha: 0.7 * intro });
+          for (const m of tier.marks) g.rect(px(gx + 1 + (gw - 2) * m) - Math.max(1, u) / 2, py(cy - 6), Math.max(1, u), 12 * u).fill({ color: 0xffffff, alpha: 0.7 * intro });
         });
         this.text("GROOVE", px(gx), py(cy - 16), fs, 0xb0b0c0, "left", intro);
-        if (tier) this.text(tierLabel(tier.n), px(gx + gw + 6), py(cy - 4 - 2 * tier.flash), Math.max(1, Math.round((1 + tier.flash) * u)), tier.flash > 0 ? 0xffffff : barColor, "left", intro);
-        else this.text(`+${Math.round(hud.bonus * 100)}%`, px(gx + gw + 6), py(cy - 4), fs, hud.groove > 0.85 ? 0xffd040 : 0xffffff, "left", intro);
-        // Play mode's heal streak: clean beats in a row, green once each one heals extra.
-        if (hud.streak && hud.streak.n >= 2) this.text(`STREAK ${hud.streak.n}`, px(gx), py(cy + 8), fs, hud.streak.healing ? 0x60ff90 : 0xb0b0c0, "left", intro);
+        this.text(tierLabel(tier.n), px(gx + gw + 6), py(cy - 4 - 2 * tier.flash), Math.max(1, Math.round((1 + tier.flash) * u)), tier.flash > 0 ? 0xffffff : barColor, "left", intro);
       }
       // The count-in before step movement: four marks count the last four beats.
       if (hud.countIn) {
@@ -359,19 +355,17 @@ export class Hud {
       const y0 = 120 - scroll;
       this.text("ENCORE!", px(480), py(y0), Math.max(1, Math.round(5 * u)), 0xffe080, "center", a);
       const big = Math.max(1, Math.round(2 * u));
-      const lines = endCardLines(hud, hud.end, this.lib.hero.groove.maxBonus);
+      const lines = endCardLines(hud, hud.end);
       lines.forEach((l, i) => this.text(l.text, px(480), py(y0 + 60 + 22 * i), big, l.color, "center", a));
       const after = y0 + 60 + 22 * lines.length;
       let y = after + 30;
-      // Play mode: the grade, the best grade and where the player took over (a recorded run of play
-      // mode, such as ?player=, shows its grade from the average groove).
-      const end: EndCardInfo | undefined = endCardGrade(hud.end, options.end);
-      if (end) {
-        this.text(`GRADE ${end.grade}`, px(480), py(after + 6), Math.max(1, Math.round(4 * u)), 0xffd040, "center", a);
-        const notes = [end.newBest ? "NEW BEST!" : end.best ? `BEST ${end.best}` : "", end.startedAt ? `STARTED AT ${fmtTime(end.startedAt)}` : ""].filter((x) => x);
-        notes.forEach((n, i) => this.text(n, px(480), py(after + 44 + i * 14), fs, 0xc0c0d8, "center", a));
-        y += 50 + notes.length * 14;
-      }
+      // The grade; in play mode the best grade and where the player took over (a recorded run, such
+      // as the demo or ?player=, shows its grade from the average groove).
+      const end: EndCardInfo = endCardGrade(hud.end, options.end);
+      this.text(`GRADE ${end.grade}`, px(480), py(after + 6), Math.max(1, Math.round(4 * u)), 0xffd040, "center", a);
+      const notes = [end.newBest ? "NEW BEST!" : end.best ? `BEST ${end.best}` : "", end.startedAt ? `STARTED AT ${fmtTime(end.startedAt)}` : ""].filter((x) => x);
+      notes.forEach((n, i) => this.text(n, px(480), py(after + 44 + i * 14), fs, 0xc0c0d8, "center", a));
+      y += 50 + notes.length * 14;
       // (Above the end card's menu, when there is one.)
       const bottom = options.menu ? 540 - menuHeight(options.menu) - 34 : 540;
       for (const line of this.creditLines) {

@@ -29,9 +29,9 @@ export interface LiveOptions {
 
 /** A live simulation and its recording, before play starts. With `bot`, the level's virtual player drives it until the hand-over. */
 export function liveSim(input: PlannerInput, props: Record<string, PropInfo> | undefined, bot: boolean): { ctx: Ctx; recording: LiveRecording; sim: Sim } {
-  const { ctx, sch, map } = prepare(input, props);
+  const { ctx, sch, map } = prepare(input);
   const recording = new LiveRecording(ctx, sch, map, ctx.lib, "player", props);
-  const sim = new Sim(ctx, sch, worldFor(ctx, sch, map), ctx.level.rules, recording, bot ? { player: playerFor(ctx, sch, ctx.level.player) } : {});
+  const sim = new Sim(ctx, sch, worldFor(), recording, bot ? { player: playerFor(ctx, sch, ctx.level.player) } : {});
   return { ctx, recording, sim };
 }
 

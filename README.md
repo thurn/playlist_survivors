@@ -18,8 +18,8 @@ It has two modes:
   same rules, in the same open field.
 
 The original tech demo's design is in [docs/design/tech-demo.md](docs/design/tech-demo.md)
-(the forest corridor and its step gameplay, [docs/design/beat-steps.md](docs/design/beat-steps.md)),
-which today's rules in the gameplay redesign replace. Both modes run one **simulated playthrough**
+(its step gameplay, [docs/design/beat-steps.md](docs/design/beat-steps.md), is gone: the gameplay
+redesign replaced it). Both modes run one **simulated playthrough**
 engine: the game rules run forward in time, driven by key presses, and never
 read a press before it happens. The demo records its simulation at load, then
 plays it back (each frame a pure function of the audio clock's song time).
@@ -51,7 +51,7 @@ unlocks audio). Use wired headphones or speakers.
 
 | Key | In play | In menus |
 |---|---|---|
-| Arrows or WASD | Move in fixed-speed strides, 140 px/s however you press: every press strides at once with the ground built up since the last stride (a full stride, about 45 px, after a beat's pause), and a held key strides on every beat (every eighth note when the beat is slow). Each press is classed against the beat: the first for its beat is counted and rated (Perfect, Great, Good or loose), an eighth note on the off-beat after a Great one adds a little, a quick double tap is grey and changes nothing, and any other extra press is stray, shown red: it still strides but takes a chunk off the groove. The groove (0 to 1) drains a bar after the last press that raised it, and its tier (0 to 3, at 0.30, 0.60 and 0.85) chimes when it changes. In free sections held keys walk. Two perpendicular keys within 40 ms make one diagonal stride. | Up/Down (W/S) move the selection; Right chooses |
+| Arrows or WASD | Move in fixed-speed strides, 140 px/s however you press: every press strides at once with the ground built up since the last stride (a full stride, about 45 px, after a beat's pause), and a held key strides on every beat (every eighth note when the beat is slow). Each press is classed against the beat: the first for its beat is counted and rated (Perfect, Great, Good or loose), an eighth note on the off-beat after a Great one adds a little, a quick double tap is grey and changes nothing, and any other extra press is stray, shown red: it still strides but takes a chunk off the groove. The groove (0 to 1) drains a bar after the last press that raised it, and its tier (0 to 3, at 0.45, 0.60 and 0.85) chimes when it changes. In free sections held keys walk. Two perpendicular keys within 40 ms make one diagonal stride. | Up/Down (W/S) move the selection; Right chooses |
 | Space, or two opposite keys within 40 ms | Stomp: press without moving, rated like any press. Opposite keys rock the first key's stride out and back. While a direction is held, a stomp skips the next held stride (the next two when the beat is slow), so holding and stomping on every beat stands still. | (Space chooses, below) |
 | Enter, Space, a click | — | Choose |
 | Esc | Pause (losing focus pauses too) | Resume |
@@ -59,9 +59,9 @@ unlocks audio). Use wired headphones or speakers.
 The pause menu has **Resume**, **Restart section**, **Restart song** and **Quit
 to title**; play resumes after a one-bar count-in. Enemies that touch the hero
 bite, and arrows and slams hurt: when the HP bar runs out, the game stops on a
-**YOU FELL** menu (Restart section, Restart song, Quit to title). Clean beats
-(Great or better) heal, and a streak of them (STREAK under the groove meter)
-heals more; a sloppy press or a stumble ends the streak. The end card shows a letter
+**YOU FELL** menu (Restart section, Restart song, Quit to title). After a hurt
+the hero blinks, safe for half a second; a level-up heals 20, and chickens
+(dropped by half the elites, and two by the boss) heal 30. The end card shows a letter
 grade from the average groove (S, A, B, C), the best grade so far (saved in
 this browser), and **Play again**, **Watch my run** (an exact replay) and
 **Watch the demo**.
@@ -161,18 +161,18 @@ play: levels/orpheus-galop.play.yaml (extends the demo's) ──Sim(open field, 
 - `content/` — the hero (movement, timing, groove, swings, aim), enemies, weapons, formations, effect recipes,
   sound palettes, zone themes and Tiled landmarks (`content/landmarks/*.tmj`).
 - `levels/` — level scripts (bars and beats, never seconds). `orpheus-galop.play.yaml`
-  extends the demo's level with play mode's world, rules, timing windows and tuning.
+  extends the demo's level with the moderate player; both modes share one set of rules.
 - `src/core/` — song map maths, the time warp, geometry, seeded randomness.
 - `src/content/` — schemas and YAML loaders with line-numbered errors.
 - `src/sim/` — the simulation: the song schedule, the movement model, timing and groove, auto-aim, the
-  virtual players and the steppable, cloneable game loop (`Sim`), behind the `World` (corridor or
-  open field), `Rules` and `Recorder` interfaces.
+  virtual players and the steppable, cloneable game loop (`Sim`), behind the `World` (the open
+  field) and `Recorder` interfaces.
 - `src/live/` — live play: the rewindable live recording, the runner (snapshots, speculation and
   rollback), keyboard input and the latency mapping, and cancellable sound scheduling.
 - `src/planner/` — the pipeline (schedule, map, simulation, emission), the recording checks and the
   causality check.
-- `src/mapgen/` — the forest generator (route, corridor, zones, props, landmarks), and play mode's
-  open field (chunks, transform waves, landmarks stamped around the hero).
+- `src/mapgen/` — the open field (chunks, zones, props, transform waves, landmarks stamped around
+  the hero).
 - `src/plan/` — the plan format and stateless frame evaluation.
 - `src/runtime/` — audio clock and sound scheduling, renderer, HUD, the title screen and calibration,
   the app shell and play mode's flow (count-ins, pause, restarts, the end card, Watch my run).

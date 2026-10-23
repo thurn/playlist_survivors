@@ -1,18 +1,17 @@
-# The hero: movement model, timing windows, groove and swings.
-# See docs/design/beat-steps.md. Animations name baked hero animations in
+# The hero: movement model, timing windows, groove meter and swings.
+# See docs/design/gameplay-redesign.md. Animations name baked hero animations in
 # public/assets/characters.json.
 hero:
-  step: { length: 44, durationMs: 110, hop: 5, diagonalWindowMs: 40 }
-  # Play mode's fixed-speed strides (rules.strides; see docs/design/gameplay-redesign.md): the hero
+  step: { length: 44, durationMs: 110, diagonalWindowMs: 40 }
+  # Fixed-speed strides (see docs/design/gameplay-redesign.md): the hero
   # moves at the walk speed, a stride lasting durationMs. The stride period is one step of the
   # timing grid, halved while longer than maxPeriodS, or freePeriodS without a steady beat. Two
   # opposite keys within stompMs (or Space) stomp: the hero stays put.
   stride: { durationMs: 110, hop: 5, maxPeriodS: 0.4, freePeriodS: 0.35, stompMs: 40 }
   # Fixed-speed strides: 140 px/s at any tempo and press rate, faster than every enemy but bats and bees.
   walk: { speed: 140, accelMs: 60, strideCycle: 64 }
-  timing: { perfectMs: 45, greatMs: 90, goodMs: 140, floor: 0.1 }
-  groove: { follow: 0.3, idleHalfLifeBars: 8, maxBonus: 0.2, offbeatBonus: 0.25, stumble: 0.5 }
-  # Play mode's groove meter (rules.pressClasses; see docs/design/gameplay-redesign.md): each press
+  timing: { perfectMs: 45, greatMs: 90, goodMs: 140 }
+  # The groove meter (see docs/design/gameplay-redesign.md): each press
   # class changes the groove on its 0-to-1 scale; a bar after the latest press that raised it, it
   # drains from full to empty in 8 bars. The tiers rise at these values and drop 0.05 below them.
   # Tuned against the groove checks in check:play (from the design's starting values: good -0.05,
@@ -29,17 +28,14 @@ hero:
     tiers: [0.45, 0.6, 0.85]
     hysteresis: 0.05
     doubleTapMs: 100
-    damage: [1.0, 1.1, 1.2, 1.3]   # every attack's damage by tier (rules.selfFiring)
+    damage: [1.0, 1.1, 1.2, 1.3]   # every attack's damage by tier
   swings:
-    minLeadMs: 90
     windupMs: 190
     light:
       animations: [slash, backslash, halfslash]
       hitShape: { kind: arc, radius: 100, degrees: 150 }
       damage: 1.0
-      # A loosely timed press swings short: 55% of the arc's reach at the timing floor, full at Perfect.
-      minReach: 0.55
-      # Play mode's tiers (rules.selfFiring): tier 0 is today's swing; tier 3 a full spin.
+      # By tier: tier 0 is the base swing; tier 3 a full spin.
       tiers:
         - { kind: arc, radius: 100, degrees: 150 }
         - { kind: arc, radius: 130, degrees: 180 }
@@ -50,20 +46,18 @@ hero:
       hitShape: { kind: arc, radius: 130, degrees: 200 }
       damage: 2.5
       hitStopMs: 110
-      # Play mode's tiers (rules.pressCleaves): the shockwave reaches 260-380 px.
+      # By tier: the shockwave reaches 260-380 px.
       wave: { to: 330, band: 25, damage: 1.0, tiers: [260, 300, 340, 380] }
-      # Play mode's heavy impact on an accent, by tier: always 50 degrees wider than that tier's light
+      # The heavy impact on an accent, by tier: always 50 degrees wider than that tier's light
       # swing, a full spin at tier 3.
       tiers:
         - { kind: arc, radius: 130, degrees: 200 }
         - { kind: arc, radius: 160, degrees: 230 }
         - { kind: arc, radius: 190, degrees: 290 }
         - { kind: arc, radius: 220, degrees: 360 }
-  # Gems on the field (rules.fieldGems): a gem inside this radius (px, by tier) flies in.
+  # Gems on the field: a gem inside this radius (px, by tier) flies in.
   pickupRadius: [40, 65, 95, 120]
-  # Health (rules.health and healthPool): 100; after a bite the hero is invulnerable for 0.5 s, and a
-  # level-up heals 20. (Without the small pool, each enemy bites at most once per biteEveryMs, and
-  # clean beats heal: `beat`, and `streak` more from the 4th in a row.)
-  health: { max: 100, biteEveryMs: 600, heal: { beat: 15, streakFrom: 4, streak: 15 }, invulnerableMs: 500, levelUpHeal: 20 }
+  # Health: 100; after a bite the hero is invulnerable for 0.5 s, and a level-up heals 20.
+  health: { max: 100, invulnerableMs: 500, levelUpHeal: 20 }
   # The boss outweighs a crowd of hundreds; formation members draw a cleave to the line.
   aimWeights: { regular: 1, elite: 2, boss: 1000, formation: 20 }

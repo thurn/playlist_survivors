@@ -7,34 +7,27 @@ import { prepare, runSim, virtualPlayer } from "../src/planner/plan.ts";
 import type { KeyEvent } from "../src/sim/player.ts";
 import { grooveAt } from "../src/plan/evaluate.ts";
 import { BatchRecorder } from "../src/sim/recorder.ts";
-import { Sim, HERO_ANIMS, HERO_RATE } from "../src/sim/simulate.ts";
+import { Sim, HERO_ANIMS, HERO_RATE, worldFor } from "../src/sim/simulate.ts";
 import { ratePress } from "../src/sim/timing.ts";
-import { CorridorWorld } from "../src/sim/world.ts";
 import { syntheticSongMap } from "./fixtures/synthetic-song.ts";
 
 const lib = loadRealContent();
 const song = syntheticSongMap();
 const demo = loadLevel(readSource("levels/orpheus-galop.yaml"), lib, song, levelResolver);
 const play = loadLevel(readSource("levels/orpheus-galop.play.yaml"), lib, song, levelResolver);
-/** The demo as it was before the redesign (the old step rules, in the corridor), until hv-zoon removes that code. */
-const LEGACY = "tests/fixtures/legacy-demo.level.yaml";
-const legacy = loadLevel(readSource(LEGACY), lib, song, levelResolver);
 
 describe("the play level file", () => {
-  it("is the demo's level script with the moderate player: play and Watch the demo share one set of rules", () => {
+  it("is the demo's level script with the moderate player", () => {
     expect(play.extends).toBe("orpheus-galop");
     expect(play.player).toBe("moderate");
     expect(demo.player).toBe("skilled");
-    expect(demo.world).toBe("open");
-    expect(demo.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true, selfFiring: true, gridSounds: true, pressCleaves: true, setPieces: true, fieldGems: true, upgradePool: true, upgradeOrbs: true, healthPool: true });
-    for (const k of ["seed", "title", "world", "rules", "sections", "events", "upgrades", "enemies", "zones"] as const) expect(play[k], k).toEqual(demo[k]);
+    for (const k of ["seed", "title", "sections", "events", "upgrades", "enemies", "zones"] as const) expect(play[k], k).toEqual(demo[k]);
     expect(play.hero).toBe(demo.hero);
     // The prelude plays at full speed, with calm enemies instead.
     const prelude = demo.sections[0];
     expect(prelude.timeScale).toEqual({ from: 1, to: 1 });
     expect(prelude.calm).toBe(0.5);
     expect(prelude.autoSwingBeats).toBe(1);
-    expect(legacy.sections[0].autoSwingBeats).toBe(2);
     // The galop starts in the woods (the vamp sets it; the opening inherits it).
     expect(demo.sections.find((s) => s.label === "galop-opening")!.zone).toBe("galop-woods");
     // Level-ups offer items from the upgrade pool; the set pieces join the demo's events.
@@ -50,15 +43,18 @@ describe("the play level file", () => {
 
   it("uses content/hero.yaml's values, which a level's hero overrides still change for that level only", () => {
     expect(demo.hero).toBe(lib.hero);
-    expect(lib.hero.timing).toEqual({ perfectMs: 45, greatMs: 90, goodMs: 140, floor: 0.1 });
+    expect(lib.hero.timing).toEqual({ perfectMs: 45, greatMs: 90, goodMs: 140 });
     expect(lib.hero.walk.speed).toBe(140);
     expect(lib.hero.health).toMatchObject({ max: 100, invulnerableMs: 500, levelUpHeal: 20 });
-    // The legacy demo level restores the old values.
-    expect(legacy.hero.timing.perfectMs).toBe(35);
-    expect(legacy.hero.step).toEqual(lib.hero.step);
-    // 80 ms off is Great today, Good under the old windows.
-    expect(ratePress(lib.hero, 0.08, 0.3).rating).toBe("great");
-    expect(ratePress(legacy.hero, 0.08, 0.3).rating).toBe("good");
+    // A level with narrower windows: only the values it names change.
+    const resolve: LevelResolver = (name) => (name === "parent" ? { name: "levels/parent.yaml", text: readSource("levels/orpheus-galop.yaml").text } : levelResolver(name));
+    const narrow = loadLevel({ name: "levels/narrow.yaml", text: "extends: parent\nhero:\n  timing: { perfectMs: 35, greatMs: 70, goodMs: 120 }\n" }, lib, song, resolve);
+    expect(narrow.hero.timing.perfectMs).toBe(35);
+    expect(narrow.hero.step).toEqual(lib.hero.step);
+    expect(lib.hero.timing.perfectMs).toBe(45);
+    // 80 ms off is Great here, Good under the narrower windows.
+    expect(ratePress(lib.hero, 0.08).rating).toBe("great");
+    expect(ratePress(narrow.hero, 0.08).rating).toBe("good");
   });
 
   it("merges a level over the one it extends: sections field by field, events by `at` and kind", () => {
@@ -97,7 +93,7 @@ describe("the play level file", () => {
     const files: Record<string, string> = {
       // A parent with a bad section (its first section's pace is negative), and a child that is fine.
       parent: base.text.replace("    pace: 30 ", "    pace: -30 "),
-      child: "extends: parent\nworld: open\n",
+      child: "extends: parent\nplayer: casual\n",
       // A child that breaks a value the parent set correctly.
       typo: "extends: orpheus-galop\nsections:\n  - section: theme-a\n    presses: \"xo\"\n",
     };
@@ -115,19 +111,14 @@ describe("the play level file", () => {
     expect(fail("typo")).toMatch(/^levels\/typo\.yaml:4: sections\[3\]\.presses: presses use x and \./);
   });
 
-  it("checks the upgrade pool: level-ups offer with it and only with it, and its weapons", () => {
+  it("checks the upgrade pool: level-ups offer from it, and its weapons", () => {
     const play = readSource("levels/orpheus-galop.yaml").text;
     const files: Record<string, string> = {
       // With the upgrade pool, a level-up that names a weapon is an error: it must offer.
       named: play.replace("levelUp: offer", "levelUp: orbiting-blades"),
-      offerless: play.replace(", upgradePool: true, upgradeOrbs: true,", ","),
-      healthless: play.replace("health: true,", "health: false,"),
-      poolless: play.replace(", upgradePool: true, upgradeOrbs: true,", ", upgradeOrbs: true,").replace(/^upgrades: .*$/m, ""),
       blast: play.replace("offer: [fire-trail]", "offer: [fire-trail, finale-blast]"),
       twice: play.replace("offer: [fire-trail]", "offer: [chain-lightning]"),
       unknown: play.replace("offer: [fire-trail]", "offer: [fire-trial]"),
-      // (The legacy demo level has none of the play rules.)
-      ruleless: `${readSource(LEGACY).text}\nupgrades: { loadout: [orbiting-blades] }\n`,
     };
     const resolve: LevelResolver = (name) => (files[name] !== undefined ? { name: `levels/${name}.yaml`, text: files[name] } : levelResolver(name));
     const fail = (name: string) => {
@@ -139,25 +130,21 @@ describe("the play level file", () => {
       }
       throw new Error(`${name} loaded`);
     };
-    expect(fail("named")).toMatch(/events\[0\]\.levelUp: with rules\.upgradePool a level-up offers items from the pool: write "levelUp: offer", not "orbiting-blades"/);
-    expect(fail("offerless")).toMatch(/events\[0\]\.levelUp: "levelUp: offer" needs rules\.upgradePool/);
-    expect(fail("poolless")).toMatch(/rules: rules\.upgradeOrbs needs rules\.upgradePool/);
-    expect(fail("healthless")).toMatch(/rules: rules\.healthPool needs rules\.health/);
+    expect(fail("named")).toMatch(/events\[0\]\.levelUp: /);
     expect(fail("blast")).toMatch(/upgrades\.offer\[1\]: the finale blast "finale-blast" can't be in the upgrade pool/);
     expect(fail("twice")).toMatch(/upgrades\.offer\[0\]: weapon "chain-lightning" is named twice in upgrades/);
     expect(fail("unknown")).toMatch(/upgrades\.offer\[0\]: unknown weapon "fire-trial"/);
-    expect(fail("ruleless")).toMatch(/upgrades: upgrades need rules\.upgradePool/);
   });
 });
 
-describe("play-mode rules", () => {
+describe("the rules", () => {
   const input = plannerInput({ songMap: song, level: "levels/orpheus-galop.play.yaml" });
-  const { ctx, sch, map } = prepare(input, propsFromAtlas());
+  const { ctx, sch } = prepare(input);
 
   /** The hero's travel and the recorded presses for a few key events in theme A. */
-  const mash = (rules: typeof play.rules) => {
+  const mash = () => {
     const rec = new BatchRecorder();
-    const sim = new Sim(ctx, sch, new CorridorWorld(map, sch), rules, rec);
+    const sim = new Sim(ctx, sch, worldFor(), rec);
     const sec = ctx.sections.find((s) => s.label === "theme-a")!;
     const grid = sch.gridSlots.filter((g) => g.s > sec.s0 + 2).slice(0, 3).map((g) => g.s);
     const keys: KeyEvent[] = [
@@ -186,18 +173,17 @@ describe("play-mode rules", () => {
   };
 
   it("rates one press per grid slot: a mashed press still strides, a diagonal still bends", () => {
-    const m = mash(play.rules);
+    const m = mash();
     expect(m.presses.map((p) => [p.key, !!p.extra, !!p.bend, p.rating !== undefined])).toEqual([
       ["right", false, false, true],
       ["right", true, false, false],
       ["right", false, false, true],
       ["down", false, true, false],
     ]);
-    // The extra press is not rated and does not touch the groove; it arms nothing.
+    // The extra press is not rated and does not touch the groove.
     expect(m.groove).toBe(2);
-    expect(m.presses[1].armed).toBeUndefined();
     // Every press strides: the mashed one splits the ground with the next, so the hero is no faster
-    // than walking (140 px/s), unlike the old rules' steps, where it adds a whole 44 px step.
+    // than walking (140 px/s).
     const [g0, g1] = m.grid;
     const one = 140 * (g1 - g0);
     expect(m.presses[0].stride).toBeCloseTo(one, 6);
@@ -206,7 +192,6 @@ describe("play-mode rules", () => {
     expect(m.presses[2].stride).toBeCloseTo(140 * (g1 - 0.01 - (g0 + 0.07)), 6);
     expect(m.presses[3].stride).toBeUndefined();
     expect(m.travel).toBeLessThan(one + 140 * (g1 - g0));
-    expect(mash(legacy.rules).travel).toBeGreaterThan(m.travel + 20);
   });
 
   it("classes eighth notes on the off-beat apart, and sloppy double taps as doubles that change nothing", () => {
@@ -214,7 +199,7 @@ describe("play-mode rules", () => {
     const grid = Array.from(sch.gridTimes).filter((g) => g > sec.s0 + 2).slice(0, 7);
     const run = (offset: number) => {
       const rec = new BatchRecorder();
-      const sim = new Sim(ctx, sch, new CorridorWorld(map, sch), play.rules, rec);
+      const sim = new Sim(ctx, sch, worldFor(), rec);
       sim.advanceTo(grid[0] - 0.5);
       for (let k = 0; k + 1 < grid.length; k++) {
         const half = (grid[k] + grid[k + 1]) / 2;
@@ -243,7 +228,7 @@ describe("play-mode rules", () => {
   });
 
   it("walks at full speed in the calm prelude", () => {
-    const sim = new Sim(ctx, sch, new CorridorWorld(map, sch), play.rules, new BatchRecorder());
+    const sim = new Sim(ctx, sch, worldFor(), new BatchRecorder());
     sim.advanceTo(2);
     sim.key({ s: 2, kind: "press", key: "right" });
     sim.advanceTo(2.5);
@@ -253,18 +238,12 @@ describe("play-mode rules", () => {
     expect(Math.hypot(b.x - a.x, b.y - a.y)).toBeCloseTo(play.hero.walk.speed, -1);
   });
 
-  it("swings by itself on every beat in the prelude, twice the old demo's rate", () => {
-    const autos = (s: typeof sch) => s.slots.filter((x) => x.kind === "auto" && x.section === 0);
-    const demoSch = prepare(plannerInput({ songMap: song, level: LEGACY }), propsFromAtlas()).sch;
-    const gaps = autos(sch).slice(1).map((x, i) => x.bi - autos(sch)[i].bi);
+  it("swings by itself on every beat in the prelude", () => {
+    const autos = sch.slots.filter((x) => x.kind === "auto" && x.section === 0);
+    const gaps = autos.slice(1).map((x, i) => x.bi - autos[i].bi);
+    expect(autos.length).toBeGreaterThan(10);
     expect(Math.min(...gaps)).toBe(1);
-    expect(autos(sch).length).toBeGreaterThan(1.8 * autos(demoSch).length);
-  });
-
-  it("leaves the old rules alone: there, every press steps", () => {
-    const m = mash(legacy.rules);
-    expect(m.presses.filter((p) => p.extra).length).toBe(0);
-    expect(m.groove).toBe(3);
+    expect(gaps.filter((g) => g === 1).length).toBeGreaterThanOrEqual(0.8 * gaps.length);
   });
 });
 
@@ -293,9 +272,9 @@ describe("the moderate virtual player", () => {
   });
 
   it("reacts to threats later than the skilled player", () => {
-    const { ctx, sch } = prepare(input, propsFromAtlas());
+    const { ctx, sch } = prepare(input);
     const v = sch.volleys[0];
-    const obs = { s: v.sDraw + 0.2, w: v.sDraw + 0.2, hero: { x: 0, y: 0, stepping: false }, enemies: [], pacePoint: { x: 0, y: 0, tx: 1, ty: 0 }, edgeDistance: () => 100, threats: [{ kind: "slam" as const, x: 0, y: 0, radius: 38, landsAt: v.sArrive, seenAt: v.sDraw }] };
+    const obs = { s: v.sDraw + 0.2, w: v.sDraw + 0.2, hero: { x: 0, y: 0, stepping: false }, enemies: [], pacePoint: { x: 0, y: 0, tx: 1, ty: 0 }, threats: [{ kind: "slam" as const, x: 0, y: 0, radius: 38, landsAt: v.sArrive, seenAt: v.sDraw }] };
     // Both players stand on a slam marker on a rest slot: the skilled one steps away, the moderate one has not reacted yet.
     const watch = (p: ReturnType<typeof virtualPlayer>) => {
       p.nextDecision(obs.s);

@@ -1,5 +1,5 @@
 /**
- * Play mode's upgrade pool (rules.upgradePool): what a level-up offers, the loadout the hero builds
+ * The upgrade pool: what a level-up offers, the loadout the hero builds
  * from what it takes, and what that loadout changes. Pure, so the simulation, the evaluator and the
  * HUD read the same answers from the same records.
  */

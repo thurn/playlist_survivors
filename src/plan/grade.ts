@@ -1,5 +1,5 @@
 /**
- * Play mode's letter grade: from the average groove over the step sections.
+ * The letter grade: from the average groove over the step sections.
  * The thresholds are tuned to the groove meter (press classes) so the design's
  * players earn their grades: on the checked seeds the perfect, skilled and
  * eighths players average 0.94–0.98 (an S), the `moderate` player 0.90–0.93

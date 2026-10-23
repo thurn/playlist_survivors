@@ -21,7 +21,7 @@ import {
   type WeaponDef,
   type ZoneTheme,
 } from "./schema.ts";
-import { indexSong, type SongMap } from "../core/songmap.ts";
+import type { SongMap } from "../core/songmap.ts";
 
 export interface SourceFile {
   name: string;
@@ -252,7 +252,7 @@ export interface ResolvedSection {
   bars: [number, number];
   /** Step movement (one step per press) or free movement (held keys walk). */
   movement: "steps" | "free";
-  /** Route speed of the pace point, world pixels per world-second. */
+  /** How fast the virtual player roams the open field, world pixels per world-second. */
   pace: number;
   /** The skilled player's presses per timing-grid slot of each bar: x presses, . rests. */
   presses: string;
@@ -288,12 +288,9 @@ export interface LevelScript {
   file: string;
   /** The level this one extends, if any. */
   extends?: string;
-  /** The demo's forest corridor, or play mode's open field. */
-  world: "corridor" | "open";
-  rules: { oneStepPerSlot: boolean; accentTelegraphs: boolean; health: boolean; strides: boolean; pressClasses: boolean; selfFiring: boolean; gridSounds: boolean; pressCleaves: boolean; setPieces: boolean; fieldGems: boolean; upgradePool: boolean; upgradeOrbs: boolean; healthPool: boolean };
   /** The hero for this level: content/hero.yaml with the level's overrides (the same object when it has none). */
   hero: HeroDef;
-  /** Play mode's upgrade pool (rules.upgradePool): the starting loadout beside the sword, and the new weapons a level-up can offer. */
+  /** The upgrade pool: the starting loadout beside the sword, and the new weapons a level-up can offer. */
   upgrades: { loadout: string[]; offer: string[] };
   /** Overrides of enemies' damage for this level only. */
   enemies: Record<string, { contactDamage?: number; attackDamage?: number }>;
@@ -524,13 +521,6 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap, res
     if (pace === undefined) issues.push({ ...at(path), message: "the first section must set pace" });
     if (presses === undefined && movement === "steps") issues.push({ ...at(path), message: "a step section needs presses (set here or on an earlier section)" });
     const timingGrid = s.timingGrid ?? "beat";
-    if (pace !== undefined && presses !== undefined && movement === "steps") {
-      const err = paceError(song, bars, timingGrid, presses, pace, (timeScale.from + timeScale.to) / 2, lib.hero?.step.length ?? 44);
-      if (err) issues.push({ ...at(s.pace !== undefined ? [...path, "pace"] : path), path: "", message: `section ${label}: ${err}` });
-    }
-    if (pace !== undefined && movement === "free" && lib.hero && pace > 0.9 * lib.hero.walk.speed) {
-      issues.push({ ...at(s.pace !== undefined ? [...path, "pace"] : path), path: "", message: `section ${label}: pace ${pace} is more than 90% of the walking speed (${lib.hero.walk.speed})` });
-    }
     const r: ResolvedSection = {
       label,
       bars,
@@ -564,11 +554,6 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap, res
   data.events.forEach((e, i) => {
     const path = ["events", i];
     checkRef(song, e.at, [...path, "at"]);
-    // With the upgrade pool, a level-up offers three items instead of naming a weapon.
-    if (data.rules?.upgradePool) {
-      if (e.levelUp !== undefined && e.levelUp !== "offer") issues.push({ ...at([...path, "levelUp"]), message: `with rules.upgradePool a level-up offers items from the pool: write "levelUp: offer", not "${e.levelUp}"` });
-    } else if (e.levelUp === "offer") issues.push({ ...at([...path, "levelUp"]), message: `"levelUp: offer" needs rules.upgradePool` });
-    else need([...path, "levelUp"], "weapons", e.levelUp);
     need([...path, "formation"], "formations", e.formation);
     if (e.ring) {
       need([...path, "ring", "enemy"], "enemies", e.ring.enemy);
@@ -590,10 +575,7 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap, res
 
   for (const k of Object.keys(data.enemies ?? {})) need(["enemies", k], "enemies", k);
 
-  // The upgrade pool's weapons: known, not the finale blast, and each named once; only with its rule.
-  if (data.upgrades && !data.rules?.upgradePool) issues.push({ ...at(["upgrades"]), message: "upgrades need rules.upgradePool" });
-  if (data.rules?.upgradeOrbs && !data.rules.upgradePool) issues.push({ ...at(["rules"]), message: "rules.upgradeOrbs needs rules.upgradePool" });
-  if (data.rules?.healthPool && !data.rules.health) issues.push({ ...at(["rules"]), message: "rules.healthPool needs rules.health" });
+  // The upgrade pool's weapons: known, not the finale blast, and each named once.
   const named = new Set<string>();
   for (const key of ["loadout", "offer"] as const) {
     (data.upgrades?.[key] ?? []).forEach((w, i) => {
@@ -623,35 +605,10 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap, res
     eventLines: data.events.map((_, i) => src.locate(["events", i]).line),
     file: f.name,
     extends: data.extends,
-    world: data.world,
-    rules: { oneStepPerSlot: data.rules?.oneStepPerSlot ?? false, accentTelegraphs: data.rules?.accentTelegraphs ?? false, health: data.rules?.health ?? false, strides: data.rules?.strides ?? false, pressClasses: data.rules?.pressClasses ?? false, selfFiring: data.rules?.selfFiring ?? false, gridSounds: data.rules?.gridSounds ?? false, pressCleaves: data.rules?.pressCleaves ?? false, setPieces: data.rules?.setPieces ?? false, fieldGems: data.rules?.fieldGems ?? false, upgradePool: data.rules?.upgradePool ?? false, upgradeOrbs: data.rules?.upgradeOrbs ?? false, healthPool: data.rules?.healthPool ?? false },
     hero: levelHero,
     upgrades: { loadout: data.upgrades?.loadout ?? [], offer: data.upgrades?.offer ?? [] },
     enemies: data.enemies ?? {},
   };
-}
-
-/** At most this fraction of a skilled player's steps go forward along the route. */
-export const FORWARD_SHARE = 0.8;
-
-/**
- * Why a step section's pace is out of reach, or undefined: forward progress
- * can be at most 80% of the step length times the press rate.
- */
-export function paceError(song: SongMap, bars: [number, number], grid: "eighth" | "beat" | "bar", presses: string, pace: number, timeScale: number, stepLength: number): string | undefined {
-  const idx = indexSong(song);
-  const b0 = idx.barStart[bars[0]];
-  const b1 = bars[1] + 1 <= idx.barCount ? idx.barStart[bars[1] + 1] : song.beats.length - 1;
-  if (!(b1 > b0) || b1 > song.beats.length - 1) return undefined;
-  const beatS = (song.beats[b1] - song.beats[b0]) / (b1 - b0);
-  const bpb = idx.beatsPerBar[bars[0]] ?? 2;
-  const slotsPerBeat = grid === "eighth" ? 2 : grid === "beat" ? 1 : 1 / bpb;
-  const share = [...presses].filter((c) => c === "x").length / presses.length;
-  // Presses per world-second: slow motion stretches the music over more world time.
-  const rate = (share * slotsPerBeat) / beatS / Math.max(0.05, timeScale);
-  const needed = pace / (FORWARD_SHARE * stepLength);
-  if (needed <= rate + 1e-9) return undefined;
-  return `pace ${pace} needs ${needed.toFixed(2)} presses per second (at most ${Math.round(FORWARD_SHARE * 100)}% of ${stepLength} px steps go forward), but "${presses}" presses only ${rate.toFixed(2)} times per second`;
 }
 
 /** Why a musical reference cannot resolve against this song map, or undefined. */

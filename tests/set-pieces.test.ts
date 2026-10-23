@@ -1,5 +1,5 @@
 /**
- * The horde's set pieces (play mode's setPieces; "The Horde" in docs/design/gameplay-redesign.md), on
+ * The horde's set pieces ("The Horde" in docs/design/gameplay-redesign.md), on
  * the real song: a closing ring around where the hero stood, closing to 100 px on its accent, and a
  * stampede running across the view; and the steady stream held to 60% of the population curve.
  */

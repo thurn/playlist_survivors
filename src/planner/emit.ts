@@ -39,7 +39,7 @@ export { NEVER_LATE } from "../sim/timing.ts";
 export type Subdivision = "grid" | "sixteenth" | "eighth" | "beat" | "bar";
 
 /**
- * What the emitter needs to keep sounds on the grid (rules.gridSounds): the timing grid, and the
+ * What the emitter needs to keep sounds on the grid: the timing grid, and the
  * song time of the latest key event at or before a song time (a press or release there can still
  * change what a sound after it is, so the sound is known only from then).
  */
@@ -143,13 +143,13 @@ export class Emitter {
     private readonly cam: () => CameraTrack,
     readonly sink: EmitSink,
     readonly stableSeeds = false,
-    /** Grid sounds (rules.gridSounds): the timing grid and the key events. */
+    /** Grid sounds: the timing grid and the key events. */
     readonly timing?: SoundTiming,
   ) {}
 
-  /** Are sounds kept on the grid (play mode's gridSounds)? */
+  /** Are sounds kept on the grid (with the timing grid known)? */
   get onGrid(): boolean {
-    return this.timing !== undefined && this.ctx.level.rules.gridSounds;
+    return this.timing !== undefined;
   }
 
   /** The first slot of a subdivision at or after song time t (the timing grid's are beats in a free section and past its end). */
@@ -282,8 +282,8 @@ export class Emitter {
     this.sfx("orb", s, cam.x[k], PRIORITY.hero + 0.6, 0.9, false, 1, w, { every: "grid", known });
   }
 
-  /** A swing's strike. Returns whether it earned "PERFECT" (a Perfect press striking on an accent). */
-  swing(sw: PlanSwing, h: Hit, groove: number, pressRating: string | undefined): boolean {
+  /** A swing's strike. */
+  swing(sw: PlanSwing, h: Hit, groove: number): void {
     const heavy = sw.kind === "heavy";
     // The sword's trail brightens with the groove.
     this.fx(`hit-${sw.kind}`, sw.s, sw.x, sw.y, sw.dir, Math.min(1, h.intensity * (0.55 + 0.45 * groove) + 0.25 * groove), { hit: sw.hit });
@@ -295,12 +295,6 @@ export class Emitter {
     this.sfx("swing", sw.s - 0.04, x, PRIORITY.hero + 0.5, 0.7, false, 1, panW);
     // (Its strike is its slot: a grid time, or a cleave's accent.)
     this.sfx(`hit-${sw.kind}`, sw.s, x, heavy ? PRIORITY.hero : PRIORITY.hero + 0.3, heavy ? 1.1 : 0.95, heavy, 1, panW);
-    if (sw.accent > 0 && pressRating === "perfect") {
-      this.sink.ui({ kind: "perfect", s: sw.s, x: sw.x, y: sw.y - 40 });
-      this.fx("perfect-accent", sw.s, sw.x, sw.y - 48, 0, 1);
-      return true;
-    }
-    return false;
   }
 
   landing(l: Landing): void {
@@ -510,21 +504,19 @@ export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam:
   // (Grid sounds: the timing grid, and the key events, sorted by time.)
   const keys = sim.inputs;
   // (Grid sounds seed sound picks as live play does, from what they are: the batch and the live recording pick the same.)
-  const em = new Emitter(ctx, warp, () => cam, sink, ctx.level.rules.gridSounds, grid ? { grid, lastKeyAt: (s) => lastAtOrBefore(keys, s) } : undefined);
+  const em = new Emitter(ctx, warp, () => cam, sink, true, grid ? { grid, lastKeyAt: (s) => lastAtOrBefore(keys, s) } : undefined);
   const heroAt = (w: number) => heroSample({ hero } as never, w);
 
   // ------------------------------------------------------------ swings
   const perfect: number[] = [];
   const levelUps: number[] = [];
   for (const sw of sim.swings) {
-    const g = grooveAt({ s: sim.groove.s, v: sim.groove.v }, sw.s);
-    const pressRating = sw.press !== undefined ? sim.inputs[sw.press].rating : undefined;
-    if (em.swing(sw, hits[sw.hit], g, pressRating)) perfect.push(sw.s);
+    em.swing(sw, hits[sw.hit], grooveAt({ s: sim.groove.s, v: sim.groove.v }, sw.s));
   }
 
   // ---------------------------------------------------------- step landings
   for (const l of sim.landings) em.landing(l);
-  // Tier changes (play mode's press classes).
+  // Tier changes.
   for (const c of sim.tierChimes) em.tierChime(c.s, c.up, c.w, c.at);
 
   // ------------------------------------------------- deaths and hits on enemies
@@ -553,9 +545,9 @@ export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam:
   for (const h of hits) if (h.source === "weapon") em.weaponHit(h, caught.has(h.id));
 
   // ------------------------------------------------------- moments and UI
-  // (With the upgrade pool, each level-up is its upgrade, and the starting loadout has none.)
-  // (With upgrade orbs, nothing is taken yet at the level-up, as in live play.)
-  const fanfares = ctx.level.rules.upgradePool ? sim.upgrades.map((u) => ({ id: u.taken >= 0 && !u.orbs ? u.offers[u.taken].id : "", s: u.s })) : sim.weaponsGranted;
+  // (Each level-up is its upgrade, and the starting loadout has none. Nothing is taken yet at the
+  // level-up, as in live play.)
+  const fanfares = sim.upgrades.map((u) => ({ id: u.taken >= 0 && !u.orbs ? u.offers[u.taken].id : "", s: u.s }));
   for (const g of fanfares) {
     levelUps.push(g.s);
     em.levelUp(g, heroAt(warp.toWorld(g.s)));
@@ -570,8 +562,7 @@ export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam:
   // ---------------------------------------------------------------- gems
   // Gems fly to the hero; the XP bar fills from the ones collected (the simulation levels up).
   const gems: GemEvent[] = sim.gems.map((g) => em.gem(g));
-  const arrivals = new Set<number>();
-  if (ctx.level.rules.fieldGems) {
+  {
     // Gems on the field: one chime per sixteenth with pickups, climbing the scale through a run.
     const firsts = new Map<number, GemEvent>();
     for (const g of gems) if (Number.isFinite(g.w1) && g.w1 > 0 && !firsts.has(g.s1)) firsts.set(g.s1, g);
@@ -582,12 +573,7 @@ export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam:
       em.gemArrival(g.s1, heroAt(g.w1), prev.degree);
     }
     for (const v of sim.vacuums) em.vacuumTouch(v);
-  } else
-    for (const g of gems) {
-      if (arrivals.has(g.s1) || g.w1 === 0) continue;
-      arrivals.add(g.s1);
-      em.gemArrival(g.s1, heroAt(g.w1));
-    }
+  }
   const arrived = gems.filter((g) => Number.isFinite(g.s1) && g.w1 > 0).map((g) => g.s1);
   const finalArrival = arrived.length ? Math.max(...arrived) : ctx.duration;
   if (sim.blastS !== undefined) sink.ui({ kind: "end", s: finalArrival + 1.6 });

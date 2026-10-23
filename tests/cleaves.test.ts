@@ -1,5 +1,5 @@
 /**
- * Accents and cleaves (play mode's pressCleaves; "Accents and cleaves" in
+ * Accents and cleaves ("Accents and cleaves" in
  * docs/design/gameplay-redesign.md), on the real song: an eligible accent's
  * swing is heavy for everyone, and a press on the chord launches its
  * shockwave from the eighth after it.

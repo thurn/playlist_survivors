@@ -2,17 +2,15 @@
  * Play mode driven by scripted key events, for the movement tests: a simulation on a song, the
  * hero probed at song times, and a copy of the synthetic song with one section slowed down.
  */
-import { plannerInput, propsFromAtlas } from "../../scripts/lib/plan-node.ts";
+import { plannerInput } from "../../scripts/lib/plan-node.ts";
 import type { SongMap } from "../../src/core/songmap.ts";
 import { prepare } from "../../src/planner/plan.ts";
 import type { InputKey } from "../../src/sim/movement.ts";
 import type { KeyEvent } from "../../src/sim/player.ts";
 import { BatchRecorder } from "../../src/sim/recorder.ts";
-import type { Rules } from "../../src/sim/rules.ts";
 import { Sim, worldFor } from "../../src/sim/simulate.ts";
 
 const LEVEL = "levels/orpheus-galop.play.yaml";
-const props = propsFromAtlas();
 
 /** A copy of the synthetic song with one section slowed to `bpm` (later times shift with it). */
 export function slowSection(song: SongMap, label: string, bpm: number): SongMap {
@@ -30,11 +28,10 @@ export function slowSection(song: SongMap, label: string, bpm: number): SongMap 
 
 /** A simulation of play mode on a song, with the hero driven by `keys`; probe the hero at song times. */
 export function play(song: SongMap) {
-  const { ctx, sch, map } = prepare(plannerInput({ songMap: song, level: LEVEL }), props);
+  const { ctx, sch } = prepare(plannerInput({ songMap: song, level: LEVEL }));
   const section = (label: string) => ctx.sections.find((s) => s.label === label)!;
-  /** (`rules` overrides the level's rule switches, such as selfFiring off to arm a cleave with a press.) */
-  const run = (keys: KeyEvent[], probes: number[], rec = new BatchRecorder(), rules: Partial<Rules> = {}) => {
-    const sim = new Sim(ctx, sch, worldFor(ctx, sch, map), { ...ctx.level.rules, ...rules }, rec);
+  const run = (keys: KeyEvent[], probes: number[], rec = new BatchRecorder()) => {
+    const sim = new Sim(ctx, sch, worldFor(), rec);
     const t0 = Math.min(...keys.map((k) => k.s), ...probes) - 0.01;
     sim.advanceTo(t0);
     for (const k of keys) sim.key(k);

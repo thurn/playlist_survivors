@@ -1,19 +1,14 @@
 /**
- * The tier is visible ("What a tier changes" in docs/design/gameplay-redesign.md): play mode's
- * frames carry the tier for the weapons' colours and the hero's aura, a tier-3 swing is a spin, and
- * the sword's arcs take the colour of the tier the swing was sized by. The demo's frames are as today.
+ * The tier is visible ("What a tier changes" in docs/design/gameplay-redesign.md): every frame
+ * carries the tier for the weapons' colours and the hero's aura, a tier-3 swing is a spin, and the
+ * sword's arcs take the colour of the tier the swing was sized by.
  */
 import { describe, expect, it } from "vitest";
 import { plannerInput, runPlanner } from "../scripts/lib/plan-node.ts";
-import { Warp } from "../src/core/warp.ts";
 import { Evaluator } from "../src/plan/evaluate.ts";
-import { heroSample } from "../src/plan/sample.ts";
 import { StaticIndex } from "../src/plan/view.ts";
 import { SWORD_TINTS, tierLook, AURA_ALPHA } from "../src/plan/tier-look.ts";
 import { syntheticSongMap } from "./fixtures/synthetic-song.ts";
-
-/** The demo as it was before the redesign (the old step rules), until hv-zoon removes that code. */
-const LEGACY = "tests/fixtures/legacy-demo.level.yaml";
 
 const songMap = syntheticSongMap();
 const PLAY = "levels/orpheus-galop.play.yaml";
@@ -72,19 +67,5 @@ describe("the tier on screen", () => {
     version = 1;
     expect(tintAt()).toContain(SWORD_TINTS[1]);
     expect(tintAt()).not.toContain(SWORD_TINTS[3]);
-  });
-
-  it("leaves the old rules' frames as they were (the legacy demo level)", () => {
-    const demo = runPlanner({ songMap, level: LEGACY });
-    const dev = new Evaluator(demo, lib);
-    const sw = demo.swings[40];
-    const f = dev.evaluate(sw.s + 0.02);
-    expect(f.tier).toBeUndefined();
-    // The hero faces as its recorded track has it, swings included.
-    const warp = new Warp(demo.warp);
-    for (let k = 0; k < 6; k++) {
-      const t = sw.sWind + k * 0.03;
-      expect(dev.evaluate(t).hero.facing).toBe(heroSample(demo, warp.toWorld(t)).facing);
-    }
   });
 });
