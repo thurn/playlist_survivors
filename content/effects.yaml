@@ -182,7 +182,9 @@ effects:
       - { kind: burst, art: "proc:spark", count: 4, speed: [30, 80], life: 0.2, clock: world, tint: "#fff0c0" }
   - id: gem-pickup
     layers:
-      - { kind: burst, art: "proc:glow", count: [4, 10], speed: [30, 90], life: 0.35, clock: song, drag: 2, tint: "#80ffd0" }
+      # Under the characters: at the top tier gems pour in many times a second, and over the hero
+      # their glows would bury it.
+      - { kind: burst, art: "proc:glow", count: [4, 10], speed: [30, 90], life: 0.35, clock: song, drag: 2, tint: "#80ffd0", under: true }
   - id: accent-flash
     layers:
       - { kind: flash, opacity: [0.2, 0.4], life: 0.18 }

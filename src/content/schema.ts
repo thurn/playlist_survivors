@@ -255,7 +255,7 @@ export type FormationDef = z.infer<typeof formationDef>;
 const clock = z.enum(["world", "song"]);
 export const effectLayer = z.discriminatedUnion("kind", [
   z.strictObject({ kind: z.literal("sprite"), art: z.string(), clock, life: z.number().positive(), align: z.enum(["hitShape", "none", "up"]).default("none"), scale: param.default(1), additive: z.boolean().default(false), tint: color.optional() }),
-  z.strictObject({ kind: z.literal("burst"), art: z.string(), clock, count: param, speed: param, life: z.number().positive(), gravity: z.number().default(0), spread: z.number().default(360), size: param.default(1), additive: z.boolean().default(true), tint: z.union([color, z.literal("debris")]).optional(), drag: z.number().min(0).default(0) }),
+  z.strictObject({ kind: z.literal("burst"), art: z.string(), clock, count: param, speed: param, life: z.number().positive(), gravity: z.number().default(0), spread: z.number().default(360), size: param.default(1), additive: z.boolean().default(true), under: z.boolean().default(false), tint: z.union([color, z.literal("debris")]).optional(), drag: z.number().min(0).default(0) }),
   z.strictObject({ kind: z.literal("decal"), art: z.string(), clock: clock.default("world"), life: z.number().positive().default(20), size: param.default(1), tint: z.union([color, z.literal("debris")]).optional() }),
   z.strictObject({ kind: z.literal("light"), color, radius: param, life: z.number().positive(), clock, strength: param.default(1) }),
   z.strictObject({ kind: z.literal("shake"), trauma: param, clock: z.literal("song").default("song") }),

@@ -106,12 +106,16 @@ export class Renderer {
   private groundOver = new Container();
   private decalLayer = new Container();
   private shadowLayer = new Container();
+  /** Additive glows under the characters (the hero's aura), so they never wash out a sprite. */
+  private underAdd = new Container();
   private sorted = new Container({ sortableChildren: true });
   private overLayer = new Container();
   private fxNormal = new Container();
   private fxAdd = new Container();
   private partNormal: ParticleContainer;
   private partAdd: ParticleContainer;
+  /** Additive particles under the characters (bursts with `under`). */
+  private partUnder: ParticleContainer;
   private textLayer = new Container();
   private lights = new Container();
   private bolts = new Graphics();
@@ -125,6 +129,7 @@ export class Renderer {
   private textPool: Pool<PixelText>;
   private particlePoolN: Particle[] = [];
   private particlePoolA: Particle[] = [];
+  private particlePoolU: Particle[] = [];
   private themes: ZoneTheme[];
   private frameCounter = 0;
 
@@ -140,8 +145,11 @@ export class Renderer {
     this.partNormal = new ParticleContainer({ dynamicProperties: { position: true, rotation: true, color: true, vertex: true, uvs: true }, texture: new Texture({ source: assets.procSource }) });
     this.partAdd = new ParticleContainer({ dynamicProperties: { position: true, rotation: true, color: true, vertex: true, uvs: true }, texture: new Texture({ source: assets.procSource }) });
     this.partAdd.blendMode = "add";
+    this.partUnder = new ParticleContainer({ dynamicProperties: { position: true, rotation: true, color: true, vertex: true, uvs: true }, texture: new Texture({ source: assets.procSource }) });
+    this.partUnder.blendMode = "add";
     this.fxAdd.blendMode = "add";
-    this.world.addChild(this.ground, this.groundOver, this.decalLayer, this.shadowLayer, this.sorted, this.overLayer, this.fxNormal, this.partNormal, this.bolts, this.fxAdd, this.partAdd, this.textLayer);
+    this.underAdd.blendMode = "add";
+    this.world.addChild(this.ground, this.groundOver, this.decalLayer, this.shadowLayer, this.underAdd, this.partUnder, this.sorted, this.overLayer, this.fxNormal, this.partNormal, this.bolts, this.fxAdd, this.partAdd, this.textLayer);
     this.bolts.blendMode = "add";
 
     const sp = (_parent: Container, blend?: "add" | "normal") => () => {
@@ -152,6 +160,7 @@ export class Renderer {
     this.pools = {
       decal: new Pool(this.decalLayer, sp(this.decalLayer)),
       shadow: new Pool(this.shadowLayer, sp(this.shadowLayer)),
+      underA: new Pool(this.underAdd, sp(this.underAdd)),
       sorted: new Pool(this.sorted, sp(this.sorted)),
       over: new Pool(this.overLayer, sp(this.overLayer)),
       fxN: new Pool(this.fxNormal, sp(this.fxNormal)),
@@ -338,8 +347,9 @@ export class Renderer {
         ring.tint = auraA > 0 ? tierLook(AURA_TINTS, f.tier) : 0xfff0b0;
         ring.alpha = auraA > 0 ? 0.7 : 0.55;
         // The tier is visible: from tier 1 a faint aura in the tier's colour, swelling on the beat.
+        // (Behind the hero, so the hero stays clear at the brightest tier.)
         if (auraA > 0) {
-          const aura = this.pools.fxA.next();
+          const aura = this.pools.underA.next();
           aura.texture = proc.get("glow")!;
           aura.anchor.set(0.5);
           aura.position.set(Math.round(h.x), Math.round(h.y - h.z - 16));
@@ -885,10 +895,14 @@ export class Renderer {
     const proc = this.assets.proc;
     let nN = 0;
     let nA = 0;
+    let nU = 0;
     for (const p of f.particles) {
       const tex = proc.get(p.tex) ?? proc.get("spark")!;
       let part: Particle;
-      if (p.additive) {
+      if (p.additive && p.under) {
+        part = this.particlePoolU[nU] ?? (this.particlePoolU[nU] = new Particle({ texture: tex }));
+        nU++;
+      } else if (p.additive) {
         part = this.particlePoolA[nA] ?? (this.particlePoolA[nA] = new Particle({ texture: tex }));
         nA++;
       } else {
@@ -908,6 +922,7 @@ export class Renderer {
     }
     this.syncParticles(this.partNormal, this.particlePoolN, nN);
     this.syncParticles(this.partAdd, this.particlePoolA, nA);
+    this.syncParticles(this.partUnder, this.particlePoolU, nU);
   }
 
   private syncParticles(c: ParticleContainer, pool: Particle[], n: number) {

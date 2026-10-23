@@ -123,6 +123,8 @@ export interface Particle {
   alpha: number;
   tint: number;
   additive: boolean;
+  /** Drawn beneath the characters (a glow on the hero that must not hide it). */
+  under: boolean;
 }
 
 export interface FxSprite {
@@ -940,7 +942,7 @@ export class Evaluator {
           else if (tex === "bone") tex = `fx-bone-${1 + Math.floor(r3 * 4)}`;
           const tint = L.tint === "debris" ? hex(ev.debris?.[Math.floor(r3 * (ev.debris?.length ?? 1))] ?? "#ffffff") : L.tint ? hex(L.tint) : 0xffffff;
           if (art === "proc:ember" || art === "proc:dust") x += Math.sin(age * 3 + r3 * 6) * 4;
-          particles.push({ tex, x, y, rot: tex.startsWith("fx-") ? r3 * 6 + age * 8 * (1 - u) : 0, scale: sizeBase * (0.7 + 0.6 * r3) * (art === "proc:dust" ? 1 + u : 1), alpha: (1 - u) ** (art === "proc:spark" ? 1.5 : 1), tint, additive: L.additive && !tex.startsWith("fx-") });
+          particles.push({ tex, x, y, rot: tex.startsWith("fx-") ? r3 * 6 + age * 8 * (1 - u) : 0, scale: sizeBase * (0.7 + 0.6 * r3) * (art === "proc:dust" ? 1 + u : 1), alpha: (1 - u) ** (art === "proc:spark" ? 1.5 : 1), tint, additive: L.additive && !tex.startsWith("fx-"), under: L.under });
         }
         return;
       }

@@ -1,7 +1,8 @@
 /**
  * The tier is visible ("What a tier changes" in docs/design/gameplay-redesign.md): every frame
- * carries the tier for the weapons' colours and the hero's aura, a tier-3 swing is a spin, and the
- * sword's arcs take the colour of the tier the swing was sized by.
+ * carries the tier for the weapons' colours and the hero's aura, a tier-3 swing is a spin, the
+ * sword's arcs take the colour of the tier the swing was sized by, and the glows that pile onto the
+ * hero as gems pour in are drawn under it.
  */
 import { describe, expect, it } from "vitest";
 import { plannerInput, runPlanner } from "../scripts/lib/plan-node.ts";
@@ -23,6 +24,14 @@ describe("the tier on screen", () => {
     expect(ev.evaluate(1).tier).toBe(0);
     expect(tierLook(AURA_ALPHA, 0)).toBe(0);
     expect([1, 2, 3].every((t) => tierLook(AURA_ALPHA, t) > tierLook(AURA_ALPHA, t - 1))).toBe(true);
+  });
+
+  it("keeps the gem pickup's glows under the hero, where a stream of them can't bury it", () => {
+    // At the top tier gems pour in many times a second, each a burst of glows on the hero.
+    const t3 = plan.swings.filter((sw) => sw.tier === 3);
+    const pickups = t3.flatMap((sw) => ev.evaluate(sw.s).particles.filter((p) => p.tex === "glow" && p.tint === 0x80ffd0));
+    expect(pickups.length).toBeGreaterThan(0);
+    expect(pickups.every((p) => p.additive && p.under)).toBe(true);
   });
 
   it("turns a tier-3 swing into a spin: the hero faces all four ways through its wind-up and impact", () => {
