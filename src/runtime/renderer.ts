@@ -25,7 +25,7 @@ import type { ZoneTheme } from "../content/schema.ts";
 import { rand01 } from "../core/rng.ts";
 import { beatSwell, clamp, frac, lerp } from "../core/shaping.ts";
 import type { Frame } from "../plan/evaluate.ts";
-import { hex } from "../plan/evaluate.ts";
+import { hex, pulsed, pulseScale } from "../plan/evaluate.ts";
 import { AURA_ALPHA, AURA_TINTS, BLADE_GLOWS, BLADE_TINTS, BOLT_COLORS, FLAME_GLOWS, FLAME_TINTS, SWORD_TINTS, tierLook } from "../plan/tier-look.ts";
 import type { MapProp, Plan } from "../plan/types.ts";
 import { chunkContent, propFade, tileVariant, type ChunkContent } from "../mapgen/openfield.ts";
@@ -254,9 +254,12 @@ export class Renderer {
     const s = f.s;
     const w = f.w;
     const sec = f.section;
-    const free = sec.feel === "free";
-    const beatPulse = free ? beatSwell(frac(f.sbi / 4)) : Math.exp(-6 * frac(f.sbi));
-    const barPulse = free ? beatSwell(frac(f.sbi / 4)) : Math.exp(-6 * ((f.hud.barPhase * 1) % 1));
+    // (Reactive mode: free while the beat is unclear; pulses faded by the evidence, or following the presses.)
+    const free = f.reactive ? f.hud.free : sec.feel === "free";
+    const beatPulse = pulsed(f.reactive, free ? beatSwell(frac(f.sbi / 4)) : Math.exp(-6 * frac(f.sbi)));
+    const barPulse = pulsed(f.reactive, free ? beatSwell(frac(f.sbi / 4)) : Math.exp(-6 * ((f.hud.barPhase * 1) % 1)));
+    // Reactive mode: effect intensity from the loudness, smoothed.
+    const intensity = f.reactive ? 0.4 + 0.6 * f.reactive.loudness : sec.intensity;
 
     for (const p of Object.values(this.pools)) p.begin();
     this.textPool.begin();
@@ -353,7 +356,7 @@ export class Renderer {
           aura.texture = proc.get("glow")!;
           aura.anchor.set(0.5);
           aura.position.set(Math.round(h.x), Math.round(h.y - h.z - 16));
-          const pulse = beatSwell(f.hud.beatPhase);
+          const pulse = pulsed(f.reactive, beatSwell(f.hud.beatPhase));
           aura.scale.set(1.5 + 0.25 * pulse, 1.9 + 0.3 * pulse);
           aura.rotation = 0;
           aura.tint = tierLook(AURA_TINTS, f.tier);
@@ -387,7 +390,7 @@ export class Renderer {
       sp.zIndex = e.y;
     }
     // Tall props, swaying with the bar.
-    const sway = (free ? beatSwell(frac(f.sbi / 4)) : beatSwell(f.hud.barPhase)) - 0.5;
+    const sway = ((free ? beatSwell(frac(f.sbi / 4)) : beatSwell(f.hud.barPhase)) - 0.5) * pulseScale(f.reactive);
     this.drawOpenProps(f, left, top, viewW, viewH, sway);
     for (const c of this.sorted.children) if (c.visible === false) c.zIndex = -1e9;
 
@@ -446,7 +449,7 @@ export class Renderer {
     }
     // Gems on the field: vacuums waiting to be touched, pulsing on the beat.
     for (const v of f.vacuums ?? []) {
-      const pulse = beatSwell(f.hud.beatPhase);
+      const pulse = pulsed(f.reactive, beatSwell(f.hud.beatPhase));
       const g = this.pools.fxA.next();
       g.texture = proc.get("glow")!;
       g.anchor.set(0.5);
@@ -466,7 +469,7 @@ export class Renderer {
     }
     // The small health pool: chickens lying in wait, glowing warm and bobbing on the beat.
     for (const c of f.chickens ?? []) {
-      const pulse = beatSwell(f.hud.beatPhase);
+      const pulse = pulsed(f.reactive, beatSwell(f.hud.beatPhase));
       addShadow(c.x, c.y + 3, 0.7, 1);
       const g = this.pools.fxA.next();
       g.texture = proc.get("glow")!;
@@ -643,9 +646,11 @@ export class Renderer {
     (u.uViewSize as Float32Array).set([viewW, viewH]);
     (u.uOffset as Float32Array).set([left - ix, top - iy]);
     (u.uScale as Float32Array).set([out.w / viewW, out.h / viewH]);
-    const pulseAmt = (0.05 + 0.1 * f.energy) * sec.intensity;
+    const pulseAmt = (0.05 + 0.1 * f.energy) * intensity;
     u.uLightPulse = 1 + pulseAmt * beatPulse;
-    (u.uAmbient as Float32Array).set(amb.map((v) => Math.min(1.2, v * 1.1 + 0.08)));
+    // (Reactive mode: the ambient light follows the loudness.)
+    const ambK = f.reactive ? 0.8 + 0.4 * f.reactive.loudness : 1;
+    (u.uAmbient as Float32Array).set(amb.map((v) => Math.min(1.2, v * 1.1 * ambK + 0.08)));
     const waves = u.uWaves as Float32Array;
     waves.fill(0);
     f.shockwaves.slice(0, MAX_WAVES).forEach((sw, i) => waves.set([sw.x - left, sw.y - top, sw.radius, sw.strength], i * 4));
@@ -658,7 +663,7 @@ export class Renderer {
     u.uContrast = lerp(ga.contrast, gb.contrast, t);
     u.uSaturation = lerp(ga.saturation, gb.saturation, t);
     // The vignette tightens on downbeats.
-    u.uVignette = 0.45 + 0.25 * barPulse * sec.intensity;
+    u.uVignette = 0.45 + 0.25 * barPulse * intensity;
     const fl = Math.max(f.flash.alpha, f.metronome * 0.55);
     (u.uFlash as Float32Array).set([...rgb(f.metronome > f.flash.alpha ? 0xffffff : f.flash.tint), fl]);
     u.uHaze = za.heatHaze || zb.heatHaze ? 1 : 0;
@@ -939,7 +944,8 @@ export class Renderer {
     const kind = f.zone.t < 0.5 ? za.particles : zb.particles;
     if (kind === "none") return;
     const s = f.s;
-    const n = kind === "fireflies" ? 40 : 60;
+    // (Reactive mode: as many as the loudness calls for.)
+    const n = Math.round((kind === "fireflies" ? 40 : 60) * (f.reactive ? 0.4 + 0.9 * f.reactive.loudness : 1));
     for (let i = 0; i < n; i++) {
       const sp = (kind === "falling-leaves" ? this.pools.fxN : this.pools.fxA).next();
       sp.texture = this.assets.proc.get(kind === "falling-leaves" ? "leaf" : kind === "fireflies" ? "glow" : "ember")!;

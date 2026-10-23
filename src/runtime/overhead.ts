@@ -6,7 +6,7 @@
  * without a renderer.
  */
 import { beatHit, beatSwell, clamp, smoothstep } from "../core/shaping.ts";
-import type { Frame, HudState } from "../plan/evaluate.ts";
+import { pulsed, type Frame, type HudState } from "../plan/evaluate.ts";
 import { worldToScreen } from "./view.ts";
 
 /** The top of the hero's head over its feet (world pixels; the sprites stand 64 tall, the head ~50 up). */
@@ -72,11 +72,11 @@ export function overheadState(f: Pick<Frame, "s" | "camera"> & { hero: Pick<Fram
     marks: hud.tier.marks,
     tierFlash: hud.tier.flash,
     step: hud.free ? (hud.countIn?.fade ?? 0) : 1,
-    hit: beatHit(hud.beatPhase),
+    hit: pulsed(hud.pulse, beatHit(hud.beatPhase)),
     beatPhase: hud.beatPhase,
     next: next?.pressHere || next?.cleave ? "press" : next?.down ? "down" : "beat",
     glow: hud.heartGlow ?? 0,
-    breathe: beatSwell(hud.barPhase),
+    breathe: pulsed(hud.pulse, beatSwell(hud.barPhase)),
     spin: hud.barPhase,
   };
 }

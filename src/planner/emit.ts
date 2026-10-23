@@ -73,10 +73,21 @@ export const GATE_EXEMPT_SOUNDS = new Set(["hurt", "level-up", "tier-up", "tier-
  * beat committed below the gate (the latest committed beat at or before it)?
  */
 export function gatedSound(ctx: Ctx, key: string, s: number): boolean {
+  return soundFade(ctx, key, s) <= 0;
+}
+
+/**
+ * Reactive mode (stage 3): a percussive gameplay sound's volume by the evidence of the beat its slot
+ * belongs to, from full at twice the gate to silent at the gate (1 outside reactive mode and for the
+ * exempt sounds).
+ */
+export function soundFade(ctx: Ctx, key: string, s: number): number {
   const stream = ctx.reactive;
-  if (!stream || GATE_EXEMPT_SOUNDS.has(key)) return false;
+  if (!stream || GATE_EXEMPT_SOUNDS.has(key)) return 1;
   const i = beatIndexAtOrBefore(stream, s);
-  return i < 0 || stream.beats[i].evidence < stream.params.gate;
+  if (i < 0) return 0;
+  const gate = stream.params.gate;
+  return Math.min(1, Math.max(0, (stream.beats[i].evidence - gate) / gate));
 }
 
 /** A run of gem chimes climbs at most this many scale degrees (two octaves), then starts again. */
@@ -230,7 +241,9 @@ export class Emitter {
       movedFrom ??= p.movedFrom;
     }
     if (this.onGrid && at.seedX !== undefined) x = at.seedX;
-    if (gatedSound(ctx, key, at.owner ?? s)) return;
+    const fade = soundFade(ctx, key, at.owner ?? s);
+    if (fade <= 0) return;
+    gain *= fade;
     const sec = this.sectionOf(s);
     const pal = ctx.lib.soundPalettes.get(sec.level.sfxPalette);
     if (!pal) return;

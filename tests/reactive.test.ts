@@ -3,7 +3,7 @@ import { loadContent, loadLevel } from "../src/content/loader.ts";
 import type { Director } from "../src/content/schema.ts";
 import { checkReactiveCausality, checkReactiveSounds, checkSettleTiming, perturbStream, smokeTest } from "../src/planner/reactive-checks.ts";
 import { formatParity, parityRows, pressesRatedSame, strikesOnBeat, timeAtTier } from "../src/planner/parity.ts";
-import { gatedSound } from "../src/planner/emit.ts";
+import { GATE_EXEMPT_SOUNDS, gatedSound, soundFade } from "../src/planner/emit.ts";
 import { planWithSim, playerFor, prepare } from "../src/planner/plan.ts";
 import { directorPopulation, directorRoster } from "../src/reactive/director.ts";
 import { judgedAverageGroove, REACTIVE_END_DELAY, REACTIVE_TITLE } from "../src/reactive/grade.ts";
@@ -11,7 +11,7 @@ import { reactivePlayerFor } from "../src/reactive/players.ts";
 import { reactiveSongMap } from "../src/reactive/songmap.ts";
 import { effectiveDownbeat, evidenceAt, firstBeatAtOrAfter, parseStream, splitStream, type StreamFile } from "../src/reactive/stream.ts";
 import type { KeyEvent, Observation, Player } from "../src/sim/player.ts";
-import { grooveAt, settledStyle } from "../src/plan/evaluate.ts";
+import { Evaluator, grooveAt, pulsed, settledStyle } from "../src/plan/evaluate.ts";
 import { readContentFiles } from "../scripts/lib/files.ts";
 import { inputForStream } from "../scripts/lib/reactive-node.ts";
 
@@ -192,14 +192,13 @@ describe("the gate in the simulation", () => {
     expect(g8).toBeGreaterThan(0.3);
     expect(grooveAt(plan.groove, 15.99)).toBe(g8);
     expect(grooveAt(plan.groove, 29)).toBeLessThan(g8);
-    // The latest raise was at the last judged press (7.5 s): half a second of the drain's bar
-    // (afterBars 1: two 0.5 s beats) had passed at 8 s, so the first drain comes on the beat at
-    // least another half second of judged time after 16 s, not at 16 s.
-    const lastRaise = Math.max(...presses.filter((p) => !p.unjudged).map((p) => p.s));
-    const judgedBefore = 8 - lastRaise;
+    // Through the unclear stretch the hero moves freely (stage 3), which freezes the groove; the first
+    // drain comes once strides are back (2 s into the clear beat), after the drain's grace bar (1 s) again.
+    const back = plan.modes?.find((m) => !m.free)?.s ?? Infinity;
+    expect(back).toBeGreaterThanOrEqual(18 - 1e-6);
     const firstDrain = Array.from(plan.groove.s).find((t, i) => t > 8 && plan.groove.v[i] < g8)!;
-    expect(firstDrain).toBeGreaterThan(16 + (1 - judgedBefore) - 1e-6);
-    expect(firstDrain).toBeLessThan(16 + (1 - judgedBefore) + 0.5 + 1e-6);
+    expect(firstDrain).toBeGreaterThan(back + 1 + 1e-6);
+    expect(firstDrain).toBeLessThan(back + 2.5);
   });
 
   it("queues the starting weapons' fires on every slot of their subdivision, beat by beat", () => {
@@ -384,5 +383,134 @@ describe("the settled groove (stage 2)", () => {
     expect(settledStyle("offbeat-great")).toBe("great");
     expect(settledStyle("unjudged")).toBe("extra");
     expect(settledStyle("stray")).toBe("stray");
+  });
+});
+
+describe("the world follows the music and the player (stage 3)", () => {
+  // Clear for 8 s, unclear to 16 s, clear again; presses on every beat for the first 12 s.
+  const file = synthStream({ until: 30, evidence: (t) => (t >= 8 && t < 16 ? 0 : t >= 16 && t < 17 ? 0.3 : 0.8) });
+  const input = inputForStream(splitStream(file).stream, { checks: { noHeroDamage: true } });
+  const presses = file.beats.map((b) => b.t + 0.01).filter((t) => t < 12);
+  const { plan } = planWithSim(input, { player: new KeyPlayer(presses) });
+  const ev = new Evaluator(plan, input.content);
+
+  it("fades the beat's pulse by the evidence, and follows the presses while the beat is unclear", () => {
+    const clear = ev.evaluate(5.2).reactive!;
+    expect(clear.mix).toBe(1);
+    expect(clear.amp).toBe(1);
+    const p = presses.find((t) => t > 11)!;
+    const unclear = ev.evaluate(p + 0.05).reactive!;
+    expect(unclear.mix).toBe(0);
+    expect(unclear.amp).toBe(0);
+    expect(unclear.press).toBeCloseTo(Math.exp(-0.05 / 0.25), 6);
+    expect(pulsed(unclear, 1)).toBeCloseTo(unclear.press, 9);
+    // Evidence 0.3 (between the gate and twice it): half the amplitude.
+    expect(ev.evaluate(16.6).reactive!.amp).toBeCloseTo(0.5, 6);
+  });
+
+  it("sends a ripple from each press, and shows nothing of a later one", () => {
+    const p = presses[4];
+    expect(ev.evaluate(p + 0.1).rings.length).toBeGreaterThan(0);
+    expect(ev.evaluate(p - 0.005).rings.some((r) => r.radius < 14.5)).toBe(false);
+  });
+
+  it("walks freely after 2 s of an unclear beat, on a committed downbeat, and strides again after 2 s clear", () => {
+    const modes = plan.modes!;
+    expect(modes.map((m) => m.free)).toEqual([true, false]);
+    expect(modes[0].s).toBeGreaterThanOrEqual(10 - 1e-6);
+    expect(modes[1].s).toBeGreaterThanOrEqual(18 - 1e-6);
+    const beatIdx = (s: number) => file.beats.findIndex((b) => Math.abs(b.t - s) < 1e-9);
+    for (const m of modes) expect(beatIdx(m.s) % 2).toBe(0);
+    expect(ev.evaluate(12.5).hud.free).toBe(true);
+  });
+
+  it("settles presses in free movement unjudged, so the readings still see them when strides resume", () => {
+    // With hindsight: one run with the stretch unclear, one clear throughout; presses on every beat.
+    const run = (ev: (t: number) => number) => {
+      const f = synthStream({ until: 30, hindsight: true, evidence: ev });
+      const times = f.beats.map((b) => b.t + 0.01).filter((t) => t < 28);
+      return { times, plan: planWithSim(inputForStream(splitStream(f).stream, { checks: { noHeroDamage: true } }), { player: new KeyPlayer(times) }).plan };
+    };
+    const unclear = run((t) => (t >= 8 && t < 16 ? 0 : 0.8));
+    const clear = run(() => 0.8);
+    const modes = unclear.plan.modes!;
+    expect(modes.map((m) => m.free)).toEqual([true, false]);
+    const settles = unclear.plan.settles!;
+    expect(settles.length).toBe(unclear.times.length);
+    const inFree = settles.filter((x) => x.p >= modes[0].s && x.p < modes[1].s);
+    expect(inFree.length).toBeGreaterThan(10);
+    for (const x of inFree) {
+      expect(x.settled).toBe("unjudged");
+      expect(x.change).toBe(0);
+    }
+    // Once the hindsight window has passed the unclear stretch, the readings and labels match the clear run.
+    const after = (p: { settles?: { p: number; reading: string; settled: string }[] }) => p.settles!.filter((x) => x.p > modes[1].s + 8).map((x) => `${x.reading} ${x.settled}`);
+    expect(after(unclear.plan)).toEqual(after(clear.plan));
+  });
+
+  it("does not switch to free movement past the stream's last tick", () => {
+    // Clear to 10 s, then no ticks at all: neither side of the gate.
+    const f = synthStream({ until: 20, evidence: () => 0.8 });
+    const cut = parseStream({ ...f, ticks: f.ticks.filter((t) => t.t <= 10) } as unknown as StreamFile);
+    const { plan } = planWithSim(inputForStream(splitStream(cut).stream, { checks: { noHeroDamage: true } }), { player: new KeyPlayer([]) });
+    expect(plan.modes ?? []).toEqual([]);
+  });
+
+  it("draws the pulse, the flash, the punch, the ripples and the light from nothing after s", () => {
+    // A plan whose stream effects and inputs after C are changed shows the same frames up to C.
+    const C = 9.3;
+    const fx = plan.reactiveFx!;
+    const flashes = Float64Array.from([2.1, 5.4, 9.2, 9.4, 12]);
+    const base = new Evaluator({ ...plan, reactiveFx: { ...fx, flashes } }, input.content);
+    const changed = new Evaluator(
+      {
+        ...plan,
+        reactiveFx: { ...fx, evidence: fx.evidence.map((e, i) => (fx.tickT[i] > C ? 1 - e : e)), energy: fx.energy.map((e, i) => (fx.tickT[i] > C ? 0 : e)), flashes: Float64Array.from([2.1, 5.4, 9.2, 9.31, 9.35]) },
+        inputs: [...plan.inputs.filter((i) => i.s <= C), { s: C + 0.001, w: C + 0.001, kind: "press", key: "left", steps: true, rating: "perfect" }],
+      },
+      input.content,
+    );
+    const pick = (e: Evaluator, s: number) => {
+      const f = e.evaluate(s);
+      return JSON.stringify({ reactive: f.reactive, rings: f.rings, lights: f.lights, flash: f.flash, camera: f.camera });
+    };
+    for (let s = 0.5; s <= C + 1e-9; s += 0.05) expect(pick(changed, s)).toBe(pick(base, s));
+    expect(pick(changed, C + 0.04)).not.toBe(pick(base, C + 0.04));
+  });
+
+  it("scales the emitted sounds' gain by the fade", () => {
+    // The same run at evidence 0.8 and at 0.3 (half the fade): only the percussive sounds' gain changes.
+    const run = (e: number) => {
+      const f = synthStream({ until: 20, evidence: () => e });
+      const times = f.beats.map((b) => b.t + 0.01).filter((t) => t < 18);
+      return planWithSim(inputForStream(splitStream(f).stream, { checks: { noHeroDamage: true } }), { player: new KeyPlayer(times) }).plan.events.sounds;
+    };
+    const full = run(0.8);
+    const half = run(0.3);
+    expect(half.length).toBe(full.length);
+    let faded = 0;
+    for (let k = 0; k < full.length; k++) {
+      expect(half[k].s).toBe(full[k].s);
+      const percussive = full[k].key !== undefined && !GATE_EXEMPT_SOUNDS.has(full[k].key!);
+      expect(half[k].gain / full[k].gain, `${full[k].key} at ${full[k].s}`).toBeCloseTo(percussive ? 0.5 : 1, 9);
+      if (percussive) faded++;
+    }
+    expect(faded).toBeGreaterThan(10);
+  });
+
+  it("caps accent flashes at one per 0.5 s, each from when its onset is known", () => {
+    const f = synthStream({ until: 10 });
+    const onsets = [1, 1.2, 1.6, 1.7, 3].map((t) => ({ t: t - 0.1, knownAt: t, strong: true, strength: 1 }));
+    const s2 = parseStream({ ...f, onsets } as unknown as StreamFile);
+    const { plan: p } = planWithSim(inputForStream(splitStream(s2).stream, { checks: { noHeroDamage: true } }), { player: new KeyPlayer([]) });
+    expect(Array.from(p.reactiveFx!.flashes)).toEqual([1, 1.6, 3]);
+  });
+
+  it("fades percussive sounds from full at twice the gate to silent at the gate", () => {
+    const { ctx } = prepare(input);
+    const at = (e: number) => file.beats.find((b) => Math.abs(b.evidence - e) < 1e-9)!.t;
+    expect(soundFade(ctx, "hit-light", at(0.8))).toBe(1);
+    expect(soundFade(ctx, "hit-light", at(0))).toBe(0);
+    expect(soundFade(ctx, "level-up", at(0))).toBe(1);
   });
 });

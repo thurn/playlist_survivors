@@ -186,6 +186,7 @@ export interface SimResult {
   zoneWaves: ZoneWaveRecord[];
   landmarks: LandmarkRecord[];
   settles?: SettleRecord[];
+  modes?: { s: number; free: boolean }[];
 }
 
 /**
@@ -266,6 +267,8 @@ export interface Recorder {
   press?(t: PressTrace): void;
   /** Reactive mode: a press's settled judgment. */
   settle?(r: SettleRecord): void;
+  /** Reactive mode: movement switched to free (or back to strides) at song time s. */
+  movement?(s: number, free: boolean): void;
 }
 
 /** Builds the demo's SimResult, exactly as the simulation used to assemble it. */
@@ -465,6 +468,10 @@ export class BatchRecorder implements Recorder {
     this.formations.push(f);
   }
   readonly settles: SettleRecord[] = [];
+  readonly modes: { s: number; free: boolean }[] = [];
+  movement(s: number, free: boolean): void {
+    this.modes.push({ s, free });
+  }
   settle(r: SettleRecord): void {
     this.settles.push(r);
   }
@@ -538,6 +545,7 @@ export class BatchRecorder implements Recorder {
       zoneWaves: this.zoneWaves,
       landmarks: this.landmarks,
       ...(this.settles.length ? { settles: this.settles } : {}),
+      ...(this.modes.length ? { modes: this.modes } : {}),
     };
   }
 }

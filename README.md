@@ -87,8 +87,13 @@ judgment changes the groove, so the groove bar moves 2 s after the presses that
 move it, and a flash at its end marks a settled rating that differs from the
 first. Where the beat is unclear (the evidence below 0.2, as
 in the Galop's slow prelude), presses are unjudged (grey), the groove neither rises
-nor drains, and the percussive gameplay sounds are muted (a hurt, a level-up, the
-tier chimes and an orb taken still play). The horde, rosters, level-ups and zone
+nor drains, the percussive gameplay sounds fade out (a hurt, a level-up, the tier
+chimes and an orb taken still play), and after 2 s the hero walks freely with the
+held keys until the beat has been clear for 2 s. The world breathes with the
+music: beat pulses fade with how clearly the beat is heard and follow your presses
+where it is not, strong hits flash, the light, effects and ambient particles follow
+the loudness, every press sends out a ripple in its rating's colour, and the ground
+glows as your presses land Great or better. The horde, rosters, level-ups and zone
 waves come from `levels/reactive.yaml`'s director rather than the song map's
 sections, and there are no set pieces, cleaves or finale yet: those return stage by
 stage. The run ends when the audio does, graded on the average groove over the

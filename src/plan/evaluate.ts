@@ -205,6 +205,35 @@ export function pressStyle(i: PlanInput): { rating?: string; outline?: boolean }
   return { rating: i.rating };
 }
 
+/**
+ * Reactive mode (stage 3): the frame's pulse state. Beat-synced pulses blend the committed beats'
+ * pulse at the evidence's amplitude (where the beat is clear, `mix` 1) with the player's latest press
+ * (where it is not); `loudness` is the energy smoothed over 0.5 s.
+ */
+export interface PulseState {
+  amp: number;
+  press: number;
+  mix: number;
+  loudness: number;
+}
+
+/** A beat-synced pulse value (0 to 1) as reactive mode shows it: unchanged elsewhere. */
+export function pulsed(p: PulseState | undefined, v: number): number {
+  return p ? p.mix * p.amp * v + (1 - p.mix) * p.press : v;
+}
+
+/** How strongly a beat-synced motion (a sway about its middle) shows in reactive mode: 1 elsewhere. */
+export function pulseScale(p: PulseState | undefined): number {
+  return p ? p.mix * p.amp + (1 - p.mix) * p.press : 1;
+}
+
+/** Reactive mode's knobs for the frames: smoothing, the press pulse, ripples and the glow's window. */
+const SMOOTH_S = 0.5;
+const PRESS_PULSE_S = 0.25;
+const RIPPLE_S = 0.45;
+const GLOW_S = 2;
+const RIPPLE_TINTS: Record<string, string> = { perfect: "#ffd040", great: "#ffffff", good: "#9fd0ff", loose: "#6a7080", extra: "#8a8a96", stray: "#e04848" };
+
 /** Reactive mode: how long a settled rating's correction shows on the groove bar. */
 export const CORRECTION_SHOW = 0.5;
 
@@ -239,6 +268,8 @@ export interface HudState {
   ratings: { perfect: number; great: number; good: number };
   /** The groove meter (0–1). */
   groove: number;
+  /** Reactive mode (stage 3): the pulse state (see PulseState). */
+  pulse?: PulseState;
   /**
    * Reactive mode (stage 2): a settled rating that differs from the press's provisional one flashes
    * the groove bar in its colour (the key display's name for it), for a moment after it settles.
@@ -345,6 +376,8 @@ export interface Frame {
    */
   open?: { base: number; wave?: { x: number; y: number; radius: number; prev: number; zone: number } };
   hud: HudState;
+  /** Reactive mode (stage 3): the pulse state, also on the HUD. */
+  reactive?: PulseState;
   metronome: number;
   stats: { alive: number; particles: number };
 }
@@ -464,6 +497,84 @@ export class Evaluator {
     return { bar: lo, start: bs[lo], len: next - bs[lo] };
   }
 
+  /**
+   * Reactive mode (stage 3), at song time s from the stream's ticks known by then: the beat pulse's
+   * amplitude (the evidence, 0 at the gate to 1 at twice it), the pulse of the player's latest press
+   * (decaying over 250 ms), how much the pulse follows the committed beats rather than the presses
+   * (the share of the last 0.5 s with the beat clear), the energy smoothed over 0.5 s; an accent flash
+   * and camera punch from each strong onset as it becomes known; a ripple from each press, tinted by
+   * its provisional rating; and the ground's glow with the share of the last 2 s of presses rated
+   * Great or better.
+   */
+  private reactiveFx(s: number, h: { x: number; y: number }, fx: NonNullable<Plan["reactiveFx"]>): { state: PulseState; flash: number; punch: number; rings: Ring[]; lights: Light[] } {
+    const t = fx.tickT;
+    // The latest tick at or before s.
+    let lo = 0;
+    let hi = t.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (t[mid] <= s + 1e-9) lo = mid + 1;
+      else hi = mid;
+    }
+    const i = lo - 1;
+    const ev = i >= 0 ? fx.evidence[i] : 0;
+    const amp = clamp((ev - fx.gate) / fx.gate, 0, 1);
+    let n = 0;
+    let clear = 0;
+    let energy = 0;
+    for (let k = i; k >= 0 && t[k] > s - SMOOTH_S + 1e-9; k--) {
+      n++;
+      if (fx.evidence[k] >= fx.gate) clear++;
+      energy += fx.energy[k];
+    }
+    const mix = n ? clear / n : 0;
+    const loudness = n ? energy / n : 0;
+    // The player's presses (key downs, partners included): the pulse, the ripples and the glow.
+    const rings: Ring[] = [];
+    let lastPress = -Infinity;
+    let recent = 0;
+    let good = 0;
+    const inputs = this.plan.inputs;
+    // The latest input at or before s.
+    lo = 0;
+    hi = inputs.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (inputs[mid].s <= s) lo = mid + 1;
+      else hi = mid;
+    }
+    for (let k = lo - 1; k >= 0; k--) {
+      const ip = inputs[k];
+      if (s - ip.s > GLOW_S) break;
+      if (ip.kind !== "press") continue;
+      if (lastPress === -Infinity) lastPress = ip.s;
+      const age = s - ip.s;
+      if (age < RIPPLE_S) {
+        const style = pressStyle(ip);
+        rings.push({ x: h.x, y: h.y - 12, radius: 14 + 150 * age, width: 3 * (1 - age / RIPPLE_S) + 1, alpha: 0.7 * (1 - age / RIPPLE_S), tint: hex(RIPPLE_TINTS[style.rating ?? "extra"] ?? "#8a8a96"), additive: true });
+      }
+      if (!partnerPress(ip)) {
+        recent++;
+        if (!ip.unjudged && (ip.rating === "perfect" || ip.rating === "great" || ip.offbeat !== undefined)) good++;
+      }
+    }
+    const press = Number.isFinite(lastPress) ? Math.exp(-(s - lastPress) / PRESS_PULSE_S) : 0;
+    const glow = recent ? good / recent : 0;
+    const lights: Light[] = glow > 0 ? [{ x: h.x, y: h.y + 6, radius: 90 + 60 * glow, tint: 0xfff0b0, strength: 0.55 * glow }] : [];
+    // The latest accent flash known by now.
+    let flash = 0;
+    let punch = 0;
+    for (let k = fx.flashes.length - 1; k >= 0; k--) {
+      const age = s - fx.flashes[k];
+      if (age < 0) continue;
+      if (age > 0.6) break;
+      flash = 0.22 * Math.exp(-age / 0.07);
+      punch = 0.018 * Math.exp(-age / 0.16);
+      break;
+    }
+    return { state: { amp, press, mix, loudness }, flash, punch, rings, lights };
+  }
+
   evaluate(s: number, opts: { metronome?: boolean } = {}): Frame {
     const plan = this.plan;
     const warp = this.warp;
@@ -472,7 +583,8 @@ export class Evaluator {
     const sbi = this.beatIndex(plan.songBeats, s);
     const si = this.sectionAt(s);
     const section = plan.sections[si];
-    const free = section.movement === "free";
+    // (Reactive mode switches to free movement while the beat is unclear.)
+    const free = section.movement === "free" || (plan.modes?.findLast((m) => m.s <= s + 1e-9)?.free ?? false);
     const bar = this.barAt(Math.max(0, sbi));
     const beatPhase = frac(sbi);
     const barPhase = clamp((sbi - bar.start) / bar.len, 0, 0.9999);
@@ -719,7 +831,20 @@ export class Evaluator {
     const open = this.openZone(s, sbi, w);
     const zone = open.zone;
 
-    const hud = this.hud(s, sbi, beatPhase, barPhase, free, energy);
+    // Reactive mode (stage 3): the world breathes with the music and answers the player.
+    const reactive = plan.reactiveFx ? this.reactiveFx(s, h, plan.reactiveFx) : undefined;
+    let camZoom = cam.zoom;
+    if (reactive) {
+      if (reactive.flash > flashA) {
+        flashA = reactive.flash;
+        flashTint = 0xffffff;
+      }
+      camZoom *= 1 + reactive.punch;
+      rings.push(...reactive.rings);
+      lights.push(...reactive.lights);
+    }
+    const hud = this.hud(s, sbi, beatPhase, barPhase, free, reactive ? reactive.state.loudness : energy);
+    if (reactive) hud.pulse = reactive.state;
     let metronome = 0;
     if (opts.metronome) metronome = Math.exp(-10 * beatPhase * (this.beatLenAt(sbi) || 0.5));
 
@@ -731,8 +856,9 @@ export class Evaluator {
       sbi,
       section,
       sectionIndex: si,
-      energy,
-      camera: { x: cam.x, y: cam.y, zoom: cam.zoom, shakeX, shakeY },
+      energy: reactive ? reactive.state.loudness : energy,
+      ...(reactive ? { reactive: reactive.state } : {}),
+      camera: { x: cam.x, y: cam.y, zoom: camZoom, shakeX, shakeY },
       hero: { x: h.x, y: h.y, z: h.z, facing: this.spinFacing(s, h.facing), anim: h.anim, frame: h.frame, afterimages: after, hurt: hurtAt(plan.health, s), blink: this.blinkAt(w) },
       chickens: plan.chickens.filter((c) => w >= c.w && (c.wTaken === undefined || w < c.wTaken)).map((c) => ({ x: c.x, y: c.y })),
       tier,

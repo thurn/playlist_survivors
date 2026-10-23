@@ -58,6 +58,22 @@ export function prepare(input: PlannerInput): { ctx: Ctx; sch: Schedule; map: Ma
   return { ctx, sch, map: openFieldLayout(ctx.level.zones) };
 }
 
+/** Reactive mode (stage 3): accent flashes come at most this often. */
+export const FLASH_GAP = 0.5;
+
+/** The stream's ticks and accent flashes, as the frames read them (each only from when it is known). */
+function reactiveFx(stream: NonNullable<Ctx["reactive"]>): NonNullable<Plan["reactiveFx"]> {
+  const flashes: number[] = [];
+  for (const o of stream.onsets) if (o.strong && (flashes.length === 0 || o.knownAt - flashes[flashes.length - 1] >= FLASH_GAP - 1e-9)) flashes.push(o.knownAt);
+  return {
+    gate: stream.params.gate,
+    tickT: Float64Array.from(stream.ticks, (k) => k.t),
+    evidence: Float32Array.from(stream.ticks, (k) => k.evidence),
+    energy: Float32Array.from(stream.ticks, (k) => k.energy),
+    flashes: Float64Array.from(flashes),
+  };
+}
+
 /** The parts of a plan that the song, the level and the map decide before play: a live recording has them too. */
 export function planHeader(ctx: Ctx, sch: Schedule, map: MapLayout, profile: string) {
   return {
@@ -88,7 +104,7 @@ export function planHeader(ctx: Ctx, sch: Schedule, map: MapLayout, profile: str
     grid: Float64Array.from(sch.strikeTimes),
     cleaveAccents: sch.gridSlots.filter((sl) => cleaves(ctx, sl)).map((sl) => ({ s: sl.s, strength: sl.accent })),
     levelUpsDue: sch.levelUps.map((l) => ({ id: l.id, s: l.s })),
-    ...(ctx.reactive ? { beatsKnownAt: Float64Array.from(ctx.reactive.beats, (b) => b.knownAt), progressS: ctx.input.knownLength ?? ctx.duration } : {}),
+    ...(ctx.reactive ? { beatsKnownAt: Float64Array.from(ctx.reactive.beats, (b) => b.knownAt), progressS: ctx.input.knownLength ?? ctx.duration, reactiveFx: reactiveFx(ctx.reactive) } : {}),
     strides: stridesHeader(ctx, sch),
   } satisfies Partial<Plan>;
 }
@@ -275,6 +291,7 @@ export function planWithSim(input: PlannerInput, opts: PlannerOptions = {}): { p
     chickens: sim.chickens,
     cleaves: sim.waves.map((w) => ({ s: w.s, press: w.press, band0: w.band0 })),
     ...(sim.settles ? { settles: sim.settles } : {}),
+    ...(sim.modes ? { modes: sim.modes } : {}),
     health: { s: Float64Array.from(sim.health.s), v: Float32Array.from(sim.health.v) },
     nearMisses: sim.threats.filter((t) => t.outcome === "near-miss").map((t) => ({ s: t.s, w: t.w, kind: t.kind })),
     threats: sim.threats.map((t) => ({ s: t.s, kind: t.kind, outcome: t.outcome })),

@@ -6,7 +6,7 @@ import { Container, Graphics } from "pixi.js";
 import type { CreditsFile } from "../assets/types.ts";
 import type { ContentLibrary } from "../content/loader.ts";
 import { clamp, smoothstep } from "../core/shaping.ts";
-import { CORRECTION_SHOW, type Frame, type KeyLight, type KeyName } from "../plan/evaluate.ts";
+import { CORRECTION_SHOW, pulsed, type Frame, type KeyLight, type KeyName } from "../plan/evaluate.ts";
 import type { Plan } from "../plan/types.ts";
 import { PixelText, textWidth } from "./font.ts";
 import { endCardGrade, endCardLines, RATING_COLORS, TIER_COLORS, tierLabel } from "./hud-lines.ts";
@@ -126,7 +126,7 @@ export class Hud {
     const px = (v: number) => out.x + v * u;
     const py = (v: number) => out.y + v * u;
     const hud = options.countIn ? { ...f.hud, countIn: options.countIn, beatPhase: options.countIn.beatPhase } : f.hud;
-    const pulse = hud.free ? 0.5 + 0.5 * Math.cos(2 * Math.PI * hud.barPhase) : Math.exp(-6 * hud.beatPhase);
+    const pulse = pulsed(hud.pulse, hud.free ? 0.5 + 0.5 * Math.cos(2 * Math.PI * hud.barPhase) : Math.exp(-6 * hud.beatPhase));
     const fs = Math.max(1, Math.round(u));
     const intro = smoothstep((f.s - 0.5) / 1.5);
     this.root.alpha = 1;

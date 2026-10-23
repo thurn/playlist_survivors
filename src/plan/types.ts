@@ -355,6 +355,13 @@ export interface Plan {
   cleaveAccents: { s: number; strength: number }[];
   /** Level-ups at their scheduled musical moments. */
   levelUpsDue: { id: string; s: number }[];
+  /**
+   * Reactive mode (stage 3): the stream's ticks (time, evidence, energy, each known at its time) and
+   * the accent flashes (strong onsets' known-at times, at most one every 0.5 s), for the frames.
+   */
+  reactiveFx?: { gate: number; tickT: Float64Array; evidence: Float32Array; energy: Float32Array; flashes: Float64Array };
+  /** Reactive mode (stage 3): switches to free movement (and back) while the beat is unclear. */
+  modes?: { s: number; free: boolean }[];
   /** Reactive mode with hindsight grids: each press's settled judgment, 2 s after it. */
   settles?: SettleRecord[];
   /** Reactive mode: when each song beat (a committed beat) became known; the HUD shows a beat only from then. */

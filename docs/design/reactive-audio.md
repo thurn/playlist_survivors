@@ -1733,3 +1733,35 @@ random presses   keep offline "as tracked" in 66% of settles (mash4), 66% (mash8
   (44.5% in stage 1); time at tier 2 or higher 79.3% (62.1%); average groove
   0.81, grade B (0.69, B).
 
+### Measured: stage 3
+
+Recorded by `hv-s4pt.5`.
+
+- **The perturbation check with frames** passes on `causality-mix` (318 cuts):
+  the frames compared include the pulse state, the accent flashes and camera
+  punches, the press ripples and the agreement glow.
+- **Captures** of the Galop's prelude (22.97 s, 23.75 s, 25.5 s) and of
+  `house-128` (31.5 s, 31.62 s) with `reactive-moderate` show free walking and a
+  grey ripple from an unjudged press in the prelude, and a rated ripple at tier 3
+  on `house-128`. They are in the main checkout's `captures/reactive-stage3/`.
+- **Free movement** on `reactive-moderate`'s runs: the Galop walks freely from
+  3.8 s to 45.4 s (the prelude), and briefly in theme A's repeat, the kick line
+  and the coda; `pop-arrangement` from 84.4 s to 100 s (the pads-only breakdown);
+  `house-128` never.
+- **Choices:** the crossfade between the press pulse and the beat pulse is the
+  share of the last 0.5 s with the beat clear; the camera punch on an accent is
+  drawn by the evaluator (the simulation's camera, which sets where enemies
+  spawn, does not punch); effect intensity is 0.4 plus 0.6 times the loudness;
+  ambient light scales by 0.8 plus 0.4 times it, and ambient particles by 0.4 plus
+  0.9 times it; a press in free movement while the beat is unclear shows unjudged.
+- **Free movement and the settled groove:** every press in free movement still
+  settles 2 s later, as unjudged (changing nothing), so the hindsight readings
+  keep seeing the player's presses through it; without that, the reading on
+  resuming strides came from a nearly empty window and the stage 2 numbers fell
+  (the Galop's `reactive-moderate` to 33.8% at tier 2 or higher). With it they
+  hold: the Galop's `reactive-moderate` 70.3% at tier 2 or higher (target 40%),
+  `pop-arrangement`'s `reactive-human` 94.1% (50%) and `reactive-moderate` 96.0%
+  (60%), and 85.4% of the breakdown's 41 presses settle unjudged (80%).
+  Free movement holds the drain's clock: back on strides, the drain waits its
+  grace bar again.
+

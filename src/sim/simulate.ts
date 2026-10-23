@@ -40,6 +40,9 @@ import { judgementLabel, READING, SETTLE_DELAY, Settler, type Settled, type Sett
 
 export type { ArrowRecord, Landing, SimResult, SlamRecord } from "./recorder.ts";
 
+/** Reactive mode: the beat unclear (or clear) this long switches to free movement (or back), on a downbeat. */
+export const FREE_AFTER_S = 2;
+
 /** Fixed simulation steps per song second. */
 export const SIM_RATE = 120;
 /** Hero and camera samples per world-second. */
@@ -567,6 +570,12 @@ interface SimState {
    */
   settler?: Settler;
   provMemo: PressMemo;
+  /**
+   * Reactive mode (stage 3): free movement while the beat has been unclear for 2 s (held keys walk),
+   * switching on committed downbeats; the switches so far.
+   */
+  free: boolean;
+  modes: { s: number; free: boolean }[];
   pressLog: { s: number; partner: boolean }[];
   applying: UpgradeItem[];
   /** The small health pool: world time the hero's invulnerability lasts until, and the chickens lying on the field. */
@@ -663,6 +672,8 @@ function freshState(env: Env): SimState {
     fireSpecs: [],
     ...(env.ctx.reactive?.hindsight ? { settler: new Settler() } : {}),
     provMemo: freshPressMemo(),
+    free: false,
+    modes: [],
     pressLog: [],
     invulnUntil: -Infinity,
     chickens: [],
@@ -833,7 +844,7 @@ function engine(env: Env, st: SimState, io: Io) {
   /** How long a stride takes. */
   const stepDur = rule.durationS;
   /** One stride at song time s: the walk speed times the stride period. */
-  const oneStride = (s: number) => rule.speed * (sectionAt(s).level.movement === "free" ? rule.freePeriodS : periodAt(sch.strideSteps, s));
+  const oneStride = (s: number) => rule.speed * (sectionAt(s).level.movement === "free" || st.free ? rule.freePeriodS : periodAt(sch.strideSteps, s));
   /**
    * A held stride's limit: one stride of the step just ended, the time it built up over. (On an
    * uneven grid, a step shorter than the one before would otherwise lose ground while holding.)
@@ -960,7 +971,7 @@ function engine(env: Env, st: SimState, io: Io) {
     }
     rec().landing({ s: st.s, w: st.w, x: hp.x, y: hp.y, stomp: true });
     // (A stomp just before a pulsed section's first grid time, which counts there, cancels its held stride too.)
-    if (pressSectionAt(st.s).level.movement === "steps") st.strides.stompUntil = stompCancelsUntil(sch.strideSteps, st.s);
+    if (stepsIn(pressSectionAt(st.s))) st.strides.stompUntil = stompCancelsUntil(sch.strideSteps, st.s);
     return { budget: budgetAt(rule, st.strides, st.w, oneStride(st.s)), returned };
   };
   /**
@@ -969,7 +980,7 @@ function engine(env: Env, st: SimState, io: Io) {
    * cancels the held strides of one grid step.
    */
   const heldStride = () => {
-    if (st.held.size === 0 || sectionAt(st.s).level.movement !== "steps" || st.s <= st.strides.stompUntil + 1e-9) return;
+    if (st.held.size === 0 || !stepsIn(sectionAt(st.s)) || st.s <= st.strides.stompUntil + 1e-9) return;
     if (st.step && !st.step.held && Math.abs(st.w - st.step.w0) < 1e-9) return;
     strideOff(undefined);
   };
@@ -978,6 +989,40 @@ function engine(env: Env, st: SimState, io: Io) {
   const switchMode = (steps: boolean) => {
     if (steps) stopWalk();
     else walkOn();
+  };
+
+  /** Step movement in a section now: its own, unless reactive mode has switched to free movement. */
+  const stepsIn = (sec: { level: { movement: "steps" | "free" } }) => sec.level.movement === "steps" && !st.free;
+  /** Reactive mode: free movement at song time t (by the switches so far). */
+  const freeAt = (t: number) => st.modes.findLast((m) => m.s <= t + 1e-9)?.free ?? false;
+  /** Reactive mode: has the evidence been on one side of the gate (below: `below`) for all of the last `secs`? */
+  const unclearFor = (secs: number, below: boolean) => {
+    if (!stream || st.s < secs) return false;
+    const ticks = stream.ticks;
+    let i = tickIndexAt(stream, st.s);
+    if (i < 0) return false;
+    let seen = false;
+    for (; i >= 0 && ticks[i].t > st.s - secs - 1e-9; i--) {
+      if (ticks[i].evidence < gate !== below) return false;
+      seen = true;
+    }
+    // (No tick in the window, past the stream's last: neither side.)
+    return seen;
+  };
+  /**
+   * Reactive mode (stage 3), on each committed downbeat: after the beat has been unclear for 2 s,
+   * free movement (held keys walk, the sword swings by itself); after 2 s clear, strides again.
+   */
+  const reactiveMode = (bi: number) => {
+    if (bi % 2 !== 0) return;
+    const want = st.free ? !unclearFor(FREE_AFTER_S, false) : unclearFor(FREE_AFTER_S, true);
+    if (want === st.free) return;
+    st.free = want;
+    st.modes.push({ s: st.s, free: want });
+    // Back on strides, the drain waits its bars again from here (free movement holds the meter).
+    if (!want) st.lastRaiseS = Math.max(st.lastRaiseS, st.s);
+    rec().movement?.(st.s, want);
+    switchMode(!want);
   };
 
   const startHitStop = (len: number) => {
@@ -1307,18 +1352,19 @@ function engine(env: Env, st: SimState, io: Io) {
 
   /**
    * Stage 2: a press (in step movement) settles 2 s after it; partners settle as partners, changing
-   * nothing, and do not choose readings. It settles unjudged if the beat was unclear at it.
+   * nothing, and do not choose readings. It settles unjudged if the beat was unclear at it, or if it
+   * came in free movement (`free`): such a press changes nothing, but the readings still see it.
    */
-  const queueSettle = (key: InputKey, partner: boolean, judged: PressJudgement | undefined) => {
+  const queueSettle = (key: InputKey, partner: boolean, judged: PressJudgement | undefined, free = false) => {
     if (!settling) return;
     st.pressLog.push({ s: st.s, partner });
-    const unclear = !clearAt(st.s);
+    const unclear = free || !clearAt(st.s);
     st.q.push(st.s + SETTLE_DELAY, { kind: "settle", press: { s: st.s, partner, group: keyGroup(key), unclear, provisional: unclear ? "unjudged" : partner ? "partner" : judgementLabel(judged) } });
   };
 
   const press = (e: KeyEvent) => {
     const sec = pressSectionAt(st.s);
-    const steps = sec.level.movement === "steps";
+    const steps = stepsIn(sec);
     // Play mode's timing log (a no-op elsewhere): what the press did, and why.
     const trace: PressTrace | undefined = rec().press ? { id: e.id, s: st.s, w: st.w, kind: "press", key: e.key, section: sec.label, movement: steps ? "steps" : "free", outcome: "stride", grooveBefore: st.groove } : undefined;
     // Press classes: every press in step movement is classed against the grid, before it moves the
@@ -1350,6 +1396,8 @@ function engine(env: Env, st: SimState, io: Io) {
     // Free movement: presses are not rated. A press strides first (or bends the stride in
     // progress), and the walk with the held keys starts when it lands.
     if (!steps) {
+      // (Reactive mode's free movement comes while the beat is unclear: such a press shows unjudged.)
+      if (st.free && !clearAt(st.s)) input.unjudged = true;
       const bent = bendOf(e.key);
       const rocked = !bent && rocks(e.key);
       if (bent) {
@@ -1357,6 +1405,7 @@ function engine(env: Env, st: SimState, io: Io) {
         input.bend = true;
       } else stopWalk();
       const moved = bent ? strideTrace({ stride: bent.len ?? 0, returned: 0 }, input, true) : rocked ? stompHere(input) : pressMove(e.key, input);
+      if (st.free) queueSettle(e.key, bent !== undefined || rocked, undefined, true);
       walkOn();
       rec().input(input);
       if (trace) rec().press!({ ...trace, ...moved, outcome: bent ? "bend" : rocked ? "rock" : e.key === "space" ? "stomp" : "stride" });
@@ -1452,7 +1501,7 @@ function engine(env: Env, st: SimState, io: Io) {
 
   const release = (e: KeyEvent) => {
     const sec = sectionAt(st.s);
-    const steps = sec.level.movement === "steps";
+    const steps = stepsIn(sec);
     st.nInputs++;
     rec().input({ s: st.s, w: st.w, kind: "release", key: e.key, steps });
     rec().press?.({ id: e.id, s: st.s, w: st.w, kind: "release", key: e.key, section: sec.label, movement: steps ? "steps" : "free", outcome: "release" });
@@ -2950,7 +2999,7 @@ function engine(env: Env, st: SimState, io: Io) {
           const bpb = ctx.idx.beatsPerBar[sec.song.bars[0]] ?? 2;
           // (Reactive mode: the bar's length from the last two committed beats, the next being perhaps not yet committed.)
           const beatS = stream ? (ev.bi > 0 ? song.beats[ev.bi] - song.beats[ev.bi - 1] : stream.beats[0].period) : song.beats[Math.min(song.beats.length - 1, ev.bi + 1)] - song.beats[Math.max(0, Math.min(song.beats.length - 2, ev.bi))];
-          if (sec.level.movement === "steps" && st.groove > 0 && clearAt(st.s) && judgedSince(st.lastRaiseS) > hero.meter.drain.afterBars * bpb * beatS + 1e-9) {
+          if (sec.level.movement === "steps" && !st.free && st.groove > 0 && clearAt(st.s) && judgedSince(st.lastRaiseS) > hero.meter.drain.afterBars * bpb * beatS + 1e-9) {
             st.groove = Math.max(0, st.groove - drainPerBeat(hero, bpb));
             rec().groove(st.s, st.groove);
             setTier();
@@ -3038,7 +3087,7 @@ function engine(env: Env, st: SimState, io: Io) {
           const sec = sectionAt(ev.b);
           const bpb = ctx.idx.beatsPerBar[sec.song.bars[0]] ?? 2;
           const beatS = ev.bi > 0 ? song.beats[ev.bi] - song.beats[ev.bi - 1] : stream!.beats[0].period;
-          if (sec.level.movement === "steps" && st.groove > 0 && clearAt(ev.b) && judgedClock(ev.b) - judgedClock(st.lastRaiseS) > hero.meter.drain.afterBars * bpb * beatS + 1e-9) {
+          if (sec.level.movement === "steps" && !freeAt(ev.b) && st.groove > 0 && clearAt(ev.b) && judgedClock(ev.b) - judgedClock(st.lastRaiseS) > hero.meter.drain.afterBars * bpb * beatS + 1e-9) {
             st.groove = Math.max(0, st.groove - drainPerBeat(hero, bpb));
             rec().groove(st.s, st.groove);
             setTier();
@@ -3046,6 +3095,7 @@ function engine(env: Env, st: SimState, io: Io) {
           break;
         }
         case "reactiveBeat": {
+          reactiveMode(ev.bi);
           // An upgrade orb's deadline, counted in committed beats; then the weapons' slots of this beat.
           if (st.orbs?.deadlineBeat !== undefined && ev.bi >= st.orbs.deadlineBeat) takeOrb(0, false);
           for (const f of st.fireSpecs) fireBeat(lib.weapons.get(f.weapon)!, f.every, f.skip, ev.bi, st.s);

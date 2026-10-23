@@ -417,7 +417,9 @@ export function checkReactiveSounds(plan: Plan, stream: ReactiveStream, lib: Pla
       if (every === "bar") ok = i >= 0 && i % 2 === 0 && Math.abs(beats[i] - snd.s) <= 0.001;
       else {
         const per = every === "sixteenth" ? 4 : every === "eighth" ? 2 : 1;
-        const bi = i + (i >= 0 && i + 1 < beats.length ? (snd.s - beats[i]) / (beats[i + 1] - beats[i]) : 0);
+        // (Past the last committed beat the grid extrapolates, as the emitter's does.)
+        const next = i + 1 < beats.length ? beats[i + 1] - beats[i] : i > 0 ? beats[i] - beats[i - 1] : 0;
+        const bi = i + (i >= 0 && next > 0 ? (snd.s - beats[i]) / next : 0);
         ok = i >= 0 && Math.abs(timeAt(Math.round(bi * per) / per) - snd.s) <= 0.001;
       }
       if (!ok) failures.push(`${snd.key} sound at s=${snd.s.toFixed(3)} is off its ${every} slot of the committed beats`);
