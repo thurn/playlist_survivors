@@ -15,7 +15,7 @@ import { Warp, type WarpBreak } from "../core/warp.ts";
 import { DEFAULT_PROPS, type PropInfo, type TiledMap } from "../mapgen/mapgen.ts";
 import { stampLandmark, type ZoneWave } from "../mapgen/openfield.ts";
 import { grooveAt } from "../plan/evaluate.ts";
-import type { CameraTrack, Chain, EffectEvent, EnemyRecord, Fate, GemEvent, HeroTrack, Hit, MapLayout, Plan, PlanInput, PlanSwing, Projectile, SlamMarker, SoundEvent, UiEvent, UpgradeRecord, BiteRecord, HealRecord, ChickenRecord } from "../plan/types.ts";
+import type { CameraTrack, Chain, EffectEvent, EnemyRecord, Fate, GemEvent, HeroTrack, Hit, MapLayout, Plan, PlanInput, PlanSwing, Projectile, SettleRecord, SlamMarker, SoundEvent, UiEvent, UpgradeRecord, BiteRecord, HealRecord, ChickenRecord } from "../plan/types.ts";
 import { beatIndexIn, type PlanIndex } from "../plan/view.ts";
 import { beatDurationAt, sectionIndexAt, type Ctx } from "../planner/context.ts";
 import { budgetSlot, chimeDegree, Emitter, lastAtOrBefore, soundSlot, VOICE_BUDGET, type EmitSink } from "../planner/emit.ts";
@@ -434,9 +434,22 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
 
   /** Play mode's timing log: what each key did in the simulation (outside the journal: a rollback's re-run replaces it). */
   pressLog?: (t: PressTrace) => void;
+  /** Play mode's timing log: each press's settled judgment (reactive mode, stage 2). */
+  settleLog?: (r: SettleRecord) => void;
 
   press(t: PressTrace): void {
     this.pressLog?.(t);
+  }
+
+  settle(r: SettleRecord): void {
+    if (!this.plan.settles) {
+      this.plan.settles = [];
+      this.undo(() => {
+        delete this.plan.settles;
+      });
+    }
+    this.add(this.plan.settles, r);
+    this.settleLog?.(r);
   }
 
   groove(s: number, v: number): void {

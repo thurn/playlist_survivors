@@ -6,7 +6,7 @@ import { Container, Graphics } from "pixi.js";
 import type { CreditsFile } from "../assets/types.ts";
 import type { ContentLibrary } from "../content/loader.ts";
 import { clamp, smoothstep } from "../core/shaping.ts";
-import type { Frame, KeyLight, KeyName } from "../plan/evaluate.ts";
+import { CORRECTION_SHOW, type Frame, type KeyLight, type KeyName } from "../plan/evaluate.ts";
 import type { Plan } from "../plan/types.ts";
 import { PixelText, textWidth } from "./font.ts";
 import { endCardGrade, endCardLines, RATING_COLORS, TIER_COLORS, tierLabel } from "./hud-lines.ts";
@@ -301,6 +301,9 @@ export class Hud {
           g.roundRect(px(gx), py(cy - 5), gw * u, 10 * u, 3 * u).fill({ color: 0x000000, alpha: 0.55 * intro });
           g.roundRect(px(gx + 1), py(cy - 4), (gw - 2) * u * clamp(hud.groove, 0, 1), 8 * u, 3 * u).fill({ color: barColor, alpha: intro });
           for (const m of tier.marks) g.rect(px(gx + 1 + (gw - 2) * m) - Math.max(1, u) / 2, py(cy - 6), Math.max(1, u), 12 * u).fill({ color: 0xffffff, alpha: 0.7 * intro });
+          // Reactive mode: a settled rating that corrects the provisional one flashes the bar's end in its colour.
+          const c = hud.correction;
+          if (c) g.roundRect(px(gx + gw - 12), py(cy - 7), 14 * u, 14 * u, 4 * u).fill({ color: ratingColor(c.rating), alpha: 0.85 * clamp(1 - c.age / CORRECTION_SHOW, 0, 1) * intro });
         });
         this.text("GROOVE", px(gx), py(cy - 16), fs, 0xb0b0c0, "left", intro);
         this.text(tierLabel(tier.n), px(gx + gw + 6), py(cy - 4 - 2 * tier.flash), Math.max(1, Math.round((1 + tier.flash) * u)), tier.flash > 0 ? 0xffffff : barColor, "left", intro);

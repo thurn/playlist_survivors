@@ -133,9 +133,11 @@ export function countedRating(hero: HeroDef, delta: number): CountedRating {
 /**
  * Class a press at song time s (after the calibration offset) against a sorted grid, in the
  * design's order, and remember what it takes. `partner`: the press bends or rocks the one before.
- * The press is judged at s less its key group's drift.
+ * The press is judged at s less its key group's drift. `keyOf` maps a grid index to the key the
+ * memory keeps it by (the index itself, unless the grid changes from press to press: reactive mode's
+ * settled judgment keeps beats by identity).
  */
-export function classifyPress(hero: HeroDef, grid: ArrayLike<number>, s: number, partner: boolean, memo: PressMemo, group: KeyGroup = "direction"): PressJudgement {
+export function classifyPress(hero: HeroDef, grid: ArrayLike<number>, s: number, partner: boolean, memo: PressMemo, group: KeyGroup = "direction", keyOf: (gi: number) => number = (gi) => gi): PressJudgement {
   const m = hero.meter;
   const drift = driftOf(hero, memo, group);
   const sj = s - drift;
@@ -148,18 +150,18 @@ export function classifyPress(hero: HeroDef, grid: ArrayLike<number>, s: number,
   if (near(i - 1) < near(i)) i--;
   if (i >= 0 && i + 1 < grid.length) {
     const off = sj - (grid[i] + grid[i + 1]) / 2;
-    const counted = memo.counted.get(i);
-    if (Math.abs(off) * 1000 <= hero.timing.greatMs && !memo.offbeats.has(i) && counted && counted.rating !== "loose") {
-      memo.offbeats.add(i);
+    const counted = memo.counted.get(keyOf(i));
+    if (Math.abs(off) * 1000 <= hero.timing.greatMs && !memo.offbeats.has(keyOf(i)) && counted && counted.rating !== "loose") {
+      memo.offbeats.add(keyOf(i));
       const rating = Math.abs(off) * 1000 <= hero.timing.perfectMs ? "perfect" : "great";
       return { class: "offbeat", rating, delta: off, gridIndex: i, change: m.offbeat[rating], drift };
     }
   }
   const delta = sj - grid[gi];
-  const counted = memo.counted.get(gi);
+  const counted = memo.counted.get(keyOf(gi));
   if (!counted) {
     const rating = countedRating(hero, delta);
-    memo.counted.set(gi, { s, rating });
+    memo.counted.set(keyOf(gi), { s, rating });
     // A loose press is too far off to say how late the player runs (it may be a slip to the next beat).
     if (rating !== "loose") {
       const r = memo.recent[group];

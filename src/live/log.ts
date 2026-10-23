@@ -19,7 +19,7 @@
  * `npm run log:play` summarizes it. Elsewhere, F8 downloads it.
  */
 import type { Warp } from "../core/warp.ts";
-import type { HeroTrack, Plan } from "../plan/types.ts";
+import type { HeroTrack, Plan, SettleRecord } from "../plan/types.ts";
 import type { PressTrace } from "../sim/recorder.ts";
 
 /** The hero's path sampled every `dt` of song time from s0: world time and position (px). */
@@ -230,6 +230,8 @@ export class PlayLog {
   readonly applies: ApplyLog[] = [];
   readonly drops: DropLog[] = [];
   readonly traces = new Map<number, PressTrace & { runs: number }>();
+  /** Reactive mode: each press's settled judgment, by its press time (a rollback settles it again). */
+  readonly settles = new Map<number, SettleRecord>();
   readonly frames = new Frames();
   readonly sounds: SoundLog[] = [];
   readonly events: EventLog[] = [];
@@ -268,6 +270,10 @@ export class PlayLog {
     this.traces.set(t.id, { ...t, runs: (prev?.runs ?? 0) + 1 });
   }
 
+  settle(r: SettleRecord): void {
+    this.settles.set(Math.round(r.p * 1e6), r);
+  }
+
   frame(f: { ts: number; perf: number; s: number; raw: number; phase: string; dur: number; keys: number; ms: number; simS: number }): void {
     const fr = this.frames;
     fr.ts.push(r3(f.ts));
@@ -302,6 +308,7 @@ export class PlayLog {
       applies: this.applies,
       drops: this.drops,
       traces: [...this.traces.values()],
+      ...(this.settles.size ? { settles: [...this.settles.values()].sort((a, b) => a.p - b.p) } : {}),
       events: this.events,
       sounds: this.sounds,
       frames: { phases: PHASES, ...this.frames },

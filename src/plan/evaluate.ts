@@ -205,6 +205,16 @@ export function pressStyle(i: PlanInput): { rating?: string; outline?: boolean }
   return { rating: i.rating };
 }
 
+/** Reactive mode: how long a settled rating's correction shows on the groove bar. */
+export const CORRECTION_SHOW = 0.5;
+
+/** A settled judgment's style on the key display's scale (an off-beat by its rating, a double tap grey, unjudged grey). */
+export function settledStyle(label: string): string {
+  if (label.startsWith("offbeat-")) return label.slice(8);
+  if (label === "double" || label === "unjudged" || label === "partner") return "extra";
+  return label;
+}
+
 /** Song seconds spent at each tier, over the sections with a steady beat, up to song time `until`. */
 export function tierTimes(plan: Plan, until: number): number[] {
   const t = plan.tier;
@@ -229,6 +239,11 @@ export interface HudState {
   ratings: { perfect: number; great: number; good: number };
   /** The groove meter (0–1). */
   groove: number;
+  /**
+   * Reactive mode (stage 2): a settled rating that differs from the press's provisional one flashes
+   * the groove bar in its colour (the key display's name for it), for a moment after it settles.
+   */
+  correction?: { rating: string; age: number };
   /**
    * The arrow keys: how lit each one is (0–1) and the style of the press that lit it: a rating
    * (perfect, great, good; loose), extra (a double tap, grey) or stray (red);
@@ -1128,6 +1143,16 @@ export class Evaluator {
       }
     }
     const groove = grooveAt(plan.groove, s);
+    let correction: HudState["correction"];
+    if (plan.settles) {
+      for (let i = plan.settles.length - 1; i >= 0 && plan.settles[i].s > s - CORRECTION_SHOW; i--) {
+        const x = plan.settles[i];
+        if (x.s <= s && x.settled !== x.provisional) {
+          correction = { rating: settledStyle(x.settled), age: s - x.s };
+          break;
+        }
+      }
+    }
     const weapons: HudState["weapons"] = [];
     for (const g of plan.weapons) {
       if (g.s > s) continue;
@@ -1180,7 +1205,7 @@ export class Evaluator {
     const k = countUpTo(plan.tier.s, s) - 1;
     const up = k > 0 && plan.tier.v[k] > plan.tier.v[k - 1];
     const tier = { n: plan.tier.v[Math.max(0, k)], marks: this.lib.hero.meter.tiers, flash: up ? clamp(1 - (s - plan.tier.s[k]) / TIER_FLASH, 0, 1) : 0 };
-    return { kills, ratings, groove, keys, stomp, tier, ticks, heartGlow, presses, xp, level, weapons, ...(passives ? { passives } : {}), progress, elapsed: s, beatPhase, barPhase, free, countIn, energy, banners, title, boss, end, health, hurt, heal };
+    return { kills, ratings, groove, ...(correction ? { correction } : {}), keys, stomp, tier, ticks, heartGlow, presses, xp, level, weapons, ...(passives ? { passives } : {}), progress, elapsed: s, beatPhase, barPhase, free, countIn, energy, banners, title, boss, end, health, hurt, heal };
   }
 }
 

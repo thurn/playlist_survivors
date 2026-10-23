@@ -39,7 +39,7 @@ import numpy as np
 
 #: Bumped whenever the stream's output changes, so stale shipped streams fail
 #: `check:reactive`.
-TOOL_VERSION = 2
+TOOL_VERSION = 3
 
 SR = 44100
 FPS = 100
@@ -84,6 +84,13 @@ class Params:
     onset_bias_s: float = -0.010
     strong_percentile: float = 98.0
     strong_window_s: float = 30.0
+    #: Hindsight grids: every `hindsight_every_s`, madmom's offline model decodes the
+    #: last `hindsight_window_s` of audio; each entry keeps the beats of its last
+    #: `hindsight_keep_s`, the offline decode's with `hindsight_bias_s`.
+    hindsight_every_s: float = 1.0
+    hindsight_window_s: float = 20.0
+    hindsight_keep_s: float = 8.0
+    hindsight_bias_s: float = 0.0
 
     def to_json(self) -> dict[str, Any]:
         return {
@@ -111,6 +118,12 @@ class Params:
                 "biasS": self.onset_bias_s,
                 "strongPercentile": self.strong_percentile,
                 "strongWindowS": self.strong_window_s,
+            },
+            "hindsight": {
+                "everyS": self.hindsight_every_s,
+                "windowS": self.hindsight_window_s,
+                "keepS": self.hindsight_keep_s,
+                "biasS": self.hindsight_bias_s,
             },
             "biasS": self.bias_s,
             "toolVersion": TOOL_VERSION,
@@ -339,6 +352,59 @@ def detect_onsets(y: np.ndarray, p: Params) -> list[dict[str, Any]]:
     return out
 
 
+# --- hindsight grids -----------------------------------------------------------
+
+
+def online_beats(beliefs: Beliefs, p: Params) -> list[tuple[float, int]]:
+    """The causal tracker's believed beats as it went: (time with biasS, the frame it was believed at).
+
+    A beat is believed when the most likely state passes it (the time since the
+    last beat starts again).
+    """
+    since = beliefs.since
+    return [
+        (n / FPS - float(since[n]) + p.bias_s, n)
+        for n in range(1, len(since))
+        if since[n] < since[n - 1] - 1e-9
+    ]
+
+
+def hindsight_entries(
+    y: np.ndarray, beliefs: Beliefs, p: Params
+) -> list[dict[str, Any]]:
+    """Every `everyS` at T: the offline decode of the audio from T - windowS to T, and the
+    causal tracker's believed beats, each kept from T - keepS to T. Known at T."""
+    from madmom.audio.signal import Signal
+    from madmom.features.beats import DBNBeatTrackingProcessor, RNNBeatProcessor
+
+    rnn = RNNBeatProcessor(fps=FPS)
+    dbn = DBNBeatTrackingProcessor(fps=FPS, min_bpm=p.min_bpm, max_bpm=p.max_bpm)
+    online = online_beats(beliefs, p)
+    duration = len(y) / SR
+    out: list[dict[str, Any]] = []
+    k = 1
+    while k * p.hindsight_every_s <= duration + 1e-9:
+        t_known = round(k * p.hindsight_every_s, 6)
+        a = max(0.0, t_known - p.hindsight_window_s)
+        seg = y[round(a * SR) : round(t_known * SR)]
+        offline: list[float] = []
+        if len(seg) >= SR:
+            act = rnn(Signal(seg, sample_rate=SR, num_channels=1))
+            if len(act) > 100:
+                offline = [float(b) + a + p.hindsight_bias_s for b in dbn(act)]
+        lo = t_known - p.hindsight_keep_s
+        frame = round(t_known * FPS)
+        out.append(
+            {
+                "knownAt": t_known,
+                "offline": [b for b in offline if lo <= b <= t_known],
+                "online": [b for b, n in online if n <= frame and lo <= b <= t_known],
+            }
+        )
+        k += 1
+    return out
+
+
 # --- the stream --------------------------------------------------------------
 
 
@@ -374,7 +440,12 @@ def build_stream(
         {"t": float(t), "evidence": float(e), "energy": float(g)}
         for t, e, g in zip(tick_times, tick_evidence, energy)
     ]
-    return {"beats": beats, "ticks": ticks, "onsets": detect_onsets(y, p)}
+    return {
+        "beats": beats,
+        "ticks": ticks,
+        "onsets": detect_onsets(y, p),
+        "hindsight": hindsight_entries(y, beliefs, p),
+    }
 
 
 # --- references ----------------------------------------------------------------
@@ -537,6 +608,15 @@ def to_document(
             for o in stream["onsets"]
         ],
     }
+    if "hindsight" in stream:
+        doc["hindsight"] = [
+            {
+                "knownAt": _r(h["knownAt"], 2),
+                "offline": [_r(b) for b in h["offline"]],
+                "online": [_r(b) for b in h["online"]],
+            }
+            for h in stream["hindsight"]
+        ]
     if reference:
         ref: dict[str, Any] = {
             "source": reference["source"],

@@ -5,7 +5,7 @@
  * as play goes on and can be rewound for rollback.
  */
 import type { WarpBreak } from "../core/warp.ts";
-import type { BiteRecord, Chain, ChickenRecord, EnemyRecord, Fate, HealRecord, HeroTrack, Hit, PlanInput, PlanSwing, UpgradeRecord } from "../plan/types.ts";
+import type { BiteRecord, Chain, ChickenRecord, EnemyRecord, Fate, HealRecord, HeroTrack, Hit, PlanInput, PlanSwing, SettleRecord, UpgradeRecord } from "../plan/types.ts";
 import { CameraRecording } from "../planner/camera.ts";
 
 export interface Landing {
@@ -185,6 +185,7 @@ export interface SimResult {
   /** The open field's transform waves and landmarks. */
   zoneWaves: ZoneWaveRecord[];
   landmarks: LandmarkRecord[];
+  settles?: SettleRecord[];
 }
 
 /**
@@ -263,6 +264,8 @@ export interface Recorder {
   danceStart?(id: number, sFrom: number, anim: string, alternate: boolean): void;
   /** Optional, for play mode's timing log: what a key event did, and why. */
   press?(t: PressTrace): void;
+  /** Reactive mode: a press's settled judgment. */
+  settle?(r: SettleRecord): void;
 }
 
 /** Builds the demo's SimResult, exactly as the simulation used to assemble it. */
@@ -461,6 +464,11 @@ export class BatchRecorder implements Recorder {
   formation(f: FormationRecord): void {
     this.formations.push(f);
   }
+  readonly settles: SettleRecord[] = [];
+  settle(r: SettleRecord): void {
+    this.settles.push(r);
+  }
+
   zoneWave(z: ZoneWaveRecord): void {
     this.zoneWaves.push(z);
   }
@@ -529,6 +537,7 @@ export class BatchRecorder implements Recorder {
       formations: this.formations,
       zoneWaves: this.zoneWaves,
       landmarks: this.landmarks,
+      ...(this.settles.length ? { settles: this.settles } : {}),
     };
   }
 }

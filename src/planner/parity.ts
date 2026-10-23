@@ -85,7 +85,7 @@ export function soundsOnSlot(plan: Plan, ref: Reference, lib: ContentLibrary): n
 
 /**
  * Share of a reactive run's presses in the pulsed sections rated as the authored grid would rate
- * them: its own class and rating (unjudged, off-beat, Perfect ...) against the counted rating of
+ * them: its own class and rating (settled, with hindsight grids; unjudged, off-beat, Perfect ...) against the counted rating of
  * the same press time at the nearest reference beat.
  */
 export function pressesRatedSame(plan: Plan, ref: Reference, lib: ContentLibrary): { share: number; n: number } {
@@ -93,9 +93,11 @@ export function pressesRatedSame(plan: Plan, ref: Reference, lib: ContentLibrary
   const presses = plan.inputs.filter((i) => i.kind === "press" && i.steps && i.class !== "partner" && inRanges(i.s, ranges));
   // The authored grid's judgement of the same presses, in order (its memory and drift its own).
   const memo = freshPressMemo();
+  // (With hindsight grids, a press's own rating is its settled one.)
+  const settled = new Map((plan.settles ?? []).map((x) => [Math.round(x.p * 1e6), x.settled]));
   let same = 0;
   for (const p of presses) {
-    const own = p.unjudged ? "unjudged" : p.class === "counted" ? (p.rating ?? "loose") : p.class === "offbeat" ? `offbeat-${p.offbeat}` : (p.class ?? "none");
+    const own = settled.get(Math.round(p.s * 1e6)) ?? (p.unjudged ? "unjudged" : p.class === "counted" ? (p.rating ?? "loose") : p.class === "offbeat" ? `offbeat-${p.offbeat}` : (p.class ?? "none"));
     const j = classifyPress(lib.hero, ref.beats, p.s, false, memo, keyGroup(p.key));
     const authored = j.class === "counted" ? (j.rating ?? "loose") : j.class === "offbeat" ? `offbeat-${j.rating}` : j.class;
     if (own === authored) same++;

@@ -33,7 +33,11 @@ def full(excerpt: np.ndarray) -> dict[str, list[dict[str, Any]]]:
 def known_by(
     entries: list[dict[str, Any]], x: float, margin: float = MARGIN_S
 ) -> list[dict[str, Any]]:
-    return [e for e in entries if e.get("knownAt", e["t"]) <= x - margin + 1e-9]
+    return [
+        e
+        for e in entries
+        if (e["knownAt"] if "knownAt" in e else e["t"]) <= x - margin + 1e-9
+    ]
 
 
 def assert_same(a: dict[str, Any], b: dict[str, Any], what: str) -> None:
@@ -41,6 +45,10 @@ def assert_same(a: dict[str, Any], b: dict[str, Any], what: str) -> None:
     for k, v in a.items():
         if isinstance(v, bool):
             assert v == b[k], f"{what}.{k}"
+        elif isinstance(v, list):
+            assert len(v) == len(b[k]), f"{what}.{k}: {len(v)} vs {len(b[k])} entries"
+            for x, y in zip(v, b[k], strict=True):
+                assert math.isclose(x, y, abs_tol=1e-6), f"{what}.{k}: {x} vs {y}"
         else:
             # 1 µs for times, 1e-6 for values.
             assert math.isclose(v, b[k], abs_tol=1e-6), f"{what}.{k}: {v} vs {b[k]}"
@@ -51,14 +59,14 @@ def assert_same(a: dict[str, Any], b: dict[str, Any], what: str) -> None:
     [(3.0, MARGIN_S), (6.37, MARGIN_S), (8.5, MARGIN_S), (10.91, MARGIN_S)]
     # Cuts between frames with no margin: an entry stamped even a little
     # before the audio it needs would differ here.
-    + [(4.123457, 0.0), (7.777731, 0.0), (9.005013, 0.0)],
+    + [(4.123457, 0.0), (7.777731, 0.0), (9.005013, 0.0), (5.0, 0.0)],
 )
 def test_stream_is_causal(
     excerpt: np.ndarray, full: dict[str, Any], cut: float, margin: float
 ) -> None:
     """The stream of the audio cut at X holds exactly the full stream's entries known by X - margin."""
     part = st.build_stream(excerpt[: round(cut * synth.SR)])
-    for field in ("beats", "ticks", "onsets"):
+    for field in ("beats", "ticks", "onsets", "hindsight"):
         want = known_by(full[field], cut, margin)
         got = known_by(part[field], cut, margin)
         assert len(got) == len(want), f"{field} at {cut}: {len(got)} vs {len(want)}"
@@ -79,6 +87,20 @@ def test_beat_evidence_is_the_latest_tick_at_its_commit(full: dict[str, Any]) ->
         frame = round(b["knownAt"] * st.FPS)
         tick = frame - frame % st.TICK_FRAMES
         assert b["evidence"] == ticks.get(tick, 0.0)
+
+
+def test_hindsight_entries_hold_the_last_8_s_of_both_decodes(
+    full: dict[str, Any],
+) -> None:
+    h = full["hindsight"]
+    assert len(h) == int(EXCERPT_S)
+    assert any(e["offline"] for e in h) and any(e["online"] for e in h)
+    for e in h:
+        for kind in ("offline", "online"):
+            assert all(
+                e["knownAt"] - 8 - 1e-9 <= b <= e["knownAt"] + 1e-9 for b in e[kind]
+            )
+            assert e[kind] == sorted(e[kind])
 
 
 def test_excerpt_exercises_every_field(full: dict[str, Any]) -> None:
@@ -287,6 +309,7 @@ def test_file_format(tmp_path: Path, excerpt: np.ndarray, full: dict[str, Any]) 
         "beats",
         "ticks",
         "onsets",
+        "hindsight",
         "reference",
     ]
     assert back["version"] == 1
@@ -309,7 +332,16 @@ def test_file_format(tmp_path: Path, excerpt: np.ndarray, full: dict[str, Any]) 
     assert all(b["knownAt"] < b["t"] for b in back["beats"])
     assert [k["t"] for k in back["ticks"][:3]] == [0.05, 0.1, 0.15]
     assert back["reference"] == ref
-    assert "hindsight" not in back and "structure" not in back
+    assert "structure" not in back
+    h = back["hindsight"]
+    assert [e["knownAt"] for e in h] == [float(k) for k in range(1, len(h) + 1)]
+    assert set(h[0]) == {"knownAt", "offline", "online"}
+    assert params["hindsight"] == {
+        "everyS": 1.0,
+        "windowS": 20.0,
+        "keepS": 8.0,
+        "biasS": 0.0,
+    }
     # One entry per line keeps regenerated streams diffable.
     assert len(out.read_text().splitlines()) > len(beats) + len(back["ticks"])
 

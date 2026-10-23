@@ -34,8 +34,9 @@ import { chainAt, heavyArcAt, orbitAt, swingArcAt, tierDamage, trailRadiusAt, wa
 import { armouredBite, evolvedOrbit, offersFor, passiveBonus, startingLoadout, takeItem, type Loadout, type UpgradeItem } from "./upgrades.ts";
 import { classifyPress, NEVER_LATE, drainPerBeat, firstAtOrAfter, freshPressMemo, grooveAfterChange, keyGroup, type PressJudgement, type PressMemo, nearestIndex, ratePressOnGrid, tierFor } from "./timing.ts";
 import { OpenWorld, type World } from "./world.ts";
-import { energyAt as streamEnergyAt, evidenceAt, firstBeatAtOrAfter, tickIndexAt } from "../reactive/stream.ts";
+import { energyAt as streamEnergyAt, evidenceAt, firstBeatAtOrAfter, hindsightAt, tickIndexAt } from "../reactive/stream.ts";
 import { directorPopulation, directorRoster } from "../reactive/director.ts";
+import { judgementLabel, READING, SETTLE_DELAY, Settler, type Settled, type SettlePress } from "../reactive/settle.ts";
 
 export type { ArrowRecord, Landing, SimResult, SlamRecord } from "./recorder.ts";
 
@@ -281,7 +282,9 @@ type Ev =
   | { kind: "chickenHeal" }
   | { kind: "zoneWave"; zone: string }
   | { kind: "landmark"; id: string }
-  | { kind: "reactiveBeat"; bi: number };
+  | { kind: "reactiveBeat"; bi: number }
+  | { kind: "settle"; press: SettlePress & { provisional: string } }
+  | { kind: "drain"; bi: number; b: number };
 
 interface Wave {
   x: number;
@@ -357,6 +360,10 @@ const ORDER: Record<Ev["kind"], number> = {
   landmark: 4,
   // Reactive mode: a committed beat arrives (before an upgrade orb's default at the same moment).
   reactiveBeat: 2.4,
+  // Stage 2: a press settles 2 s after it, and the drain runs 2 s after each beat, as of the beat;
+  // a settle comes before a drain at the same moment, as a press before its beat.
+  settle: 6.1,
+  drain: 21,
 };
 
 /** Events that point at mutable state; the rest are frozen, so snapshots share them. */
@@ -553,6 +560,14 @@ interface SimState {
   orbs?: { u: number; offers: UpgradeItem[]; pts: { x: number; y: number }[]; deadline: number; deadlineBeat?: number };
   /** Reactive mode: the weapons firing on the beat (each beat queues its own slots as it arrives). */
   fireSpecs: { weapon: string; every: WeaponDef["fires"]["every"]; skip?: WeaponDef["fires"]["every"] }[];
+  /**
+   * Reactive mode with hindsight grids (stage 2): the settle step's state (the beat registry, the
+   * settled memory, the incumbent reading), the provisional judgment's own memory, and the presses
+   * of the last seconds (the readings choose from them).
+   */
+  settler?: Settler;
+  provMemo: PressMemo;
+  pressLog: { s: number; partner: boolean }[];
   applying: UpgradeItem[];
   /** The small health pool: world time the hero's invulnerability lasts until, and the chickens lying on the field. */
   invulnUntil: number;
@@ -646,6 +661,9 @@ function freshState(env: Env): SimState {
     bonus: { maxHealth: 0, pickup: 0, damage: 0, armour: 0 },
     applying: [],
     fireSpecs: [],
+    ...(env.ctx.reactive?.hindsight ? { settler: new Settler() } : {}),
+    provMemo: freshPressMemo(),
+    pressLog: [],
     invulnUntil: -Infinity,
     chickens: [],
     nChickens: 0,
@@ -745,8 +763,9 @@ function engine(env: Env, st: SimState, io: Io) {
    * Song time judged since t0: only time whose evidence is at or above the gate counts (the drain
    * clock stops while the beat is unclear). Read up to now only.
    */
-  const judgedSince = (() => {
-    if (!stream) return (t0: number) => st.s - t0;
+  /** Judged time from song time 0 to t (all of it outside reactive mode). */
+  const judgedClock = (() => {
+    if (!stream) return (t: number) => t;
     const ticks = stream.ticks;
     // cum[j]: judged time up to tick j, each tick's evidence holding from it to the next.
     const cum = new Float64Array(ticks.length + 1);
@@ -758,8 +777,11 @@ function engine(env: Env, st: SimState, io: Io) {
       if (j < 0) return 0;
       return cum[j] + (ticks[j].evidence >= gate ? t - ticks[j].t : 0);
     };
-    return (t0: number) => at(st.s) - at(t0);
+    return at;
   })();
+  const judgedSince = (t0: number) => judgedClock(st.s) - judgedClock(t0);
+  /** Stage 2: presses settle 2 s late against hindsight readings; the groove follows the settled judgments. */
+  const settling = stream?.hindsight !== undefined;
 
   // ---------------------------------------------------------------- time
   const baseRate = (t: number) => stepRate(sch.baseSteps, t);
@@ -1217,7 +1239,8 @@ function engine(env: Env, st: SimState, io: Io) {
       // launches its shockwave, now when it came first (with a hit-stop), or when it comes.
       const gi = nearestIndex(sch.gridTimes, sw.sStrike);
       const c: PendingCleave = { gi, s: sw.sStrike, x: hp.x, y: hp.y, dir: sw.dir, tier };
-      const counted = st.memo.counted.get(gi);
+      // (Stage 2: the provisional judgment's memory, which drives the instant feedback.)
+      const counted = (settling ? st.provMemo : st.memo).counted.get(gi);
       if (counted && counted.s <= st.s + 1e-9) {
         if (counted.rating === "perfect" || counted.rating === "great") {
           startHitStop(Math.min(0.15, (hero.swings.heavy.hitStopMs / 1000) * (0.6 + 0.4 * sw.accent)));
@@ -1282,6 +1305,17 @@ function engine(env: Env, st: SimState, io: Io) {
   /** Strides: what a press does to the hero: a stride toward the held keys, or a stomp for Space. */
   const pressMove = (key: InputKey, input: PlanInput): Partial<PressTrace> => (key === "space" ? stompHere(input) : strideTrace(strideOff(key), input));
 
+  /**
+   * Stage 2: a press (in step movement) settles 2 s after it; partners settle as partners, changing
+   * nothing, and do not choose readings. It settles unjudged if the beat was unclear at it.
+   */
+  const queueSettle = (key: InputKey, partner: boolean, judged: PressJudgement | undefined) => {
+    if (!settling) return;
+    st.pressLog.push({ s: st.s, partner });
+    const unclear = !clearAt(st.s);
+    st.q.push(st.s + SETTLE_DELAY, { kind: "settle", press: { s: st.s, partner, group: keyGroup(key), unclear, provisional: unclear ? "unjudged" : partner ? "partner" : judgementLabel(judged) } });
+  };
+
   const press = (e: KeyEvent) => {
     const sec = pressSectionAt(st.s);
     const steps = sec.level.movement === "steps";
@@ -1295,7 +1329,8 @@ function engine(env: Env, st: SimState, io: Io) {
     // (So is one before any beat is committed: there is nothing to judge it against.)
     const grid = gridKnownAt(st.s);
     const unjudged = steps && (!clearAt(st.s) || grid.length === 0);
-    const judged = steps && !unjudged ? classifyPress(hero, grid, st.s, partnerOf(e.key), st.memo, keyGroup(e.key)) : undefined;
+    // (Stage 2: the press's provisional judgment, with its own memory: only the settled one changes the groove.)
+    const judged = steps && !unjudged ? classifyPress(hero, grid, st.s, partnerOf(e.key), settling ? st.provMemo : st.memo, keyGroup(e.key)) : undefined;
     // Press cleaves: the counted press of an accent whose heavy impact has struck: Great or better
     // launches its shockwave now (a late press brings no hit-stop).
     const pc = st.pendingCleave;
@@ -1336,6 +1371,7 @@ function engine(env: Env, st: SimState, io: Io) {
       st.step = bent;
       input.bend = true;
       const moved = strideTrace({ stride: bent.len ?? 0, returned: 0 }, input, true);
+      queueSettle(e.key, true, judged);
       if (judged) input.class = judged.class;
       if (unjudged) input.unjudged = true;
       rec().input(input);
@@ -1345,6 +1381,7 @@ function engine(env: Env, st: SimState, io: Io) {
     // An opposite key just after the first makes the two one stomp: the first one's stride rocks back.
     if (rocks(e.key)) {
       const moved = stompHere(input);
+      queueSettle(e.key, true, judged);
       if (judged) input.class = judged.class;
       if (unjudged) input.unjudged = true;
       rec().input(input);
@@ -1354,6 +1391,7 @@ function engine(env: Env, st: SimState, io: Io) {
     if (trace && st.step && !st.landed) trace.midStep = true;
     const moved = pressMove(e.key, input);
     if (trace) trace.outcome = e.key === "space" ? "stomp" : "stride";
+    queueSettle(e.key, false, judged);
     if (unjudged) {
       input.unjudged = true;
       rec().input(input);
@@ -1365,9 +1403,10 @@ function engine(env: Env, st: SimState, io: Io) {
       input.class = judged.class;
       input.extra = true;
       if (judged.class === "offbeat") input.offbeat = judged.rating as "perfect" | "great";
-      meterChange(judged.change);
+      if (!settling) meterChange(judged.change);
       rec().input(input);
-      if (trace) rec().press!({ ...trace, ...moved, ...judgedTrace(judged), outcome: "extra", stepS: st.lastPressS, grooveAfter: st.groove });
+      // (Stage 2: the groove changes when the press settles, not here.)
+      if (trace) rec().press!({ ...trace, ...moved, ...judgedTrace(judged), outcome: "extra", stepS: st.lastPressS, ...(settling ? {} : { grooveAfter: st.groove }) });
       return;
     }
     // Rate the press against the timing grid (the sections' grids join end to end), less its drift
@@ -1378,14 +1417,37 @@ function engine(env: Env, st: SimState, io: Io) {
     st.lastPressS = st.s;
     if (judged) {
       input.class = judged.class;
-      meterChange(judged.change);
+      if (!settling) meterChange(judged.change);
     }
     const slot = sch.gridSlots[rated.gridIndex];
     rec().input(input);
     if (trace) {
-      Object.assign(trace, moved, { gridIndex: rated.gridIndex, gridS: sch.gridTimes[rated.gridIndex], delta: st.s - sch.gridTimes[rated.gridIndex], rating: rated.rating, grooveAfter: st.groove, slotS: slot?.s, accent: slot?.accent }, judgedTrace(judged));
+      Object.assign(trace, moved, { gridIndex: rated.gridIndex, gridS: sch.gridTimes[rated.gridIndex], delta: st.s - sch.gridTimes[rated.gridIndex], rating: rated.rating, ...(settling ? {} : { grooveAfter: st.groove }), slotS: slot?.s, accent: slot?.accent }, judgedTrace(judged));
       rec().press!(trace);
     }
+  };
+
+  /**
+   * Stage 2: a press settles, 2 s after it: the reading of the latest hindsight entry chosen from the
+   * window's presses, then play mode's classes against its grid. Its groove change applies now, but a
+   * raise starts the drain's bar at the press, so the meter runs on the presses' timeline 2 s late.
+   */
+  const settlePress = (pr: SettlePress & { provisional: string }) => {
+    const entry = hindsightAt(stream!, st.s);
+    let res: Settled | undefined;
+    if (entry) {
+      const window = st.pressLog.filter((x) => !x.partner && x.s !== pr.s && x.s >= entry.knownAt - READING.windowS - 1e-9 && x.s <= entry.knownAt + 1e-9).map((x) => x.s);
+      res = st.settler!.settle(hero, pr, entry, window);
+    }
+    const change = res?.judgement?.change ?? 0;
+    const before = st.groove;
+    st.groove = grooveAfterChange(st.groove, change);
+    if (change > 0) st.lastRaiseS = Math.max(st.lastRaiseS, pr.s);
+    if (st.groove !== before) rec().groove(st.s, st.groove);
+    setTier();
+    const reading = res ? `${res.reading.chosen.source} ${res.reading.chosen.reading}` : "none";
+    rec().settle?.({ s: st.s, p: pr.s, provisional: pr.provisional, settled: judgementLabel(res?.judgement), change, reading, switched: res?.reading.switched ?? false, knownAt: entry?.knownAt ?? -1, evidence: evidenceAt(stream!, pr.s) });
+    while (st.pressLog.length > 0 && st.pressLog[0].s < st.s - READING.windowS - SETTLE_DELAY - 2) st.pressLog.shift();
   };
 
   const release = (e: KeyEvent) => {
@@ -2878,6 +2940,11 @@ function engine(env: Env, st: SimState, io: Io) {
           break;
         case "beat": {
           spawnDirector(ev.bi);
+          // (Stage 2: the drain runs 2 s later, as of this beat, on the settled groove's timeline.)
+          if (settling) {
+            st.q.push(st.s + SETTLE_DELAY, { kind: "drain", bi: ev.bi, b: st.s });
+            break;
+          }
           // The groove drains a bar after the latest press that raised it (free sections freeze it).
           const sec = sectionAt(st.s);
           const bpb = ctx.idx.beatsPerBar[sec.song.bars[0]] ?? 2;
@@ -2962,6 +3029,20 @@ function engine(env: Env, st: SimState, io: Io) {
         case "landmark": {
           const hp = heroPose(st.w);
           rec().landmark({ id: ev.id, s: st.s, w: st.w, x: hp.x, y: hp.y });
+          break;
+        }
+        case "settle":
+          settlePress(ev.press);
+          break;
+        case "drain": {
+          const sec = sectionAt(ev.b);
+          const bpb = ctx.idx.beatsPerBar[sec.song.bars[0]] ?? 2;
+          const beatS = ev.bi > 0 ? song.beats[ev.bi] - song.beats[ev.bi - 1] : stream!.beats[0].period;
+          if (sec.level.movement === "steps" && st.groove > 0 && clearAt(ev.b) && judgedClock(ev.b) - judgedClock(st.lastRaiseS) > hero.meter.drain.afterBars * bpb * beatS + 1e-9) {
+            st.groove = Math.max(0, st.groove - drainPerBeat(hero, bpb));
+            rec().groove(st.s, st.groove);
+            setTier();
+          }
           break;
         }
         case "reactiveBeat": {

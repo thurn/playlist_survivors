@@ -17,7 +17,9 @@ import { LiveRunner, SPECULATE_S } from "../live/runner.ts";
 import { handOver, liveSim, type BotFor } from "../live/session.ts";
 import { Evaluator } from "../plan/evaluate.ts";
 import type { Plan } from "../plan/types.ts";
-import type { StreamBeat, StreamOnset, ReactiveStream, Reference } from "../reactive/stream.ts";
+import { evidenceAt, type StreamBeat, type StreamOnset, type ReactiveStream, type Reference } from "../reactive/stream.ts";
+import { JUDGED_FROM_S } from "../reactive/grade.ts";
+import { SETTLE_DELAY } from "../reactive/settle.ts";
 import type { KeyEvent, Player } from "../sim/player.ts";
 import { Sim, worldFor } from "../sim/simulate.ts";
 import type { CheckResult } from "./checks.ts";
@@ -80,7 +82,25 @@ export function perturbStream(stream: ReactiveStream, C: number, seed: string): 
     o.knownAt = Math.max(lastKnown, o.knownAt);
     lastKnown = o.knownAt;
   }
-  return { ...stream, audio: { ...stream.audio, duration }, beats, ticks, onsets };
+  // Hindsight entries: their beats move by up to 35% of a period, every fifth loses half of them,
+  // and each becomes known up to 0.3 s later (staying in order).
+  let m = 0;
+  let lastH = C;
+  const hindsight = stream.hindsight?.map((h) => {
+    if (h.knownAt <= C) return h;
+    const knownAt = Math.max(lastH + 1e-4, h.knownAt + r.range(0, 0.3));
+    lastH = knownAt;
+    const halve = m++ % 5 === 4;
+    const move = (l: number[]) => {
+      const period = l.length > 1 ? (l[l.length - 1] - l[0]) / (l.length - 1) : 0.5;
+      return l
+        .filter((_, i) => !halve || i % 2 === 0)
+        .map((b) => b + r.range(-0.35, 0.35) * period)
+        .sort((a, b) => a - b);
+    };
+    return { knownAt, offline: move(h.offline), online: move(h.online) };
+  });
+  return { ...stream, audio: { ...stream.audio, duration }, beats, ticks, onsets, ...(hindsight ? { hindsight } : {}) };
 }
 
 // ------------------------------------------------------------------ runs
@@ -168,6 +188,7 @@ export function reactivePrefixDifference(ra: LiveRun, rb: LiveRun, C: number): s
     ["near misses", pa.nearMisses, pb.nearMisses],
     ["threats", pa.threats, pb.threats],
     ["landmarks", pa.open.landmarks, pb.open.landmarks],
+    ["settled judgments", pa.settles ?? [], pb.settles ?? []],
   ];
   for (const [name, x, y] of lists) if (!same(before(x), before(y))) return `${name} before s=${C.toFixed(3)} differ`;
   const series: [string, { s: ArrayLike<number>; v: ArrayLike<number> } | undefined, { s: ArrayLike<number>; v: ArrayLike<number> } | undefined][] = [
@@ -268,14 +289,15 @@ export interface CausalityResult extends CheckResult {
   ms: number;
 }
 
-/** The feature classes stage 1 has: each must fire before a cut, or the check proves nothing about it. */
-export const STAGE1_FEATURES = ["level-ups", "zone waves"] as const;
+/** The feature classes so far (stages 1 and 2): each must fire before a cut, or the check proves nothing about it. */
+export const FEATURES = ["level-ups", "zone waves", "reading switches"] as const;
 
-/** Default cuts: just before each committed beat's and strong onset's knownAt, and just after each level-up and zone wave. */
+/** Default cuts: just before each committed beat's, strong onset's and hindsight entry's knownAt, and just after each level-up and zone wave. */
 export function defaultCuts(stream: ReactiveStream, truePlan: Plan, until: number): number[] {
   const raw = [
     ...stream.beats.map((b) => b.knownAt - 0.001),
     ...stream.onsets.filter((o) => o.strong).map((o) => o.knownAt - 0.001),
+    ...(stream.hindsight ?? []).map((h) => h.knownAt - 0.001),
     ...truePlan.upgrades.map((u) => u.s + 0.001),
     ...truePlan.open.waves.map((w) => w.s + 0.001),
   ].filter((c) => c > 0.05 && c < until);
@@ -301,6 +323,7 @@ export function checkReactiveCausality(c: CausalityCase): CausalityResult {
     const last = cuts[cuts.length - 1] ?? 0;
     if (truthPlan.upgrades.some((u) => u.s < last)) firedBefore.add("level-ups");
     if (truthPlan.open.waves.some((w) => w.s < last)) firedBefore.add("zone waves");
+    if ((truthPlan.settles ?? []).some((x) => x.switched && x.s < last)) firedBefore.add("reading switches");
     let prev = 0;
     for (const C of cuts) {
       checked++;
@@ -316,7 +339,8 @@ export function checkReactiveCausality(c: CausalityCase): CausalityResult {
     }
     if (c.stopAtFirst && failures.length) break;
   }
-  const missing = STAGE1_FEATURES.filter((f) => !firedBefore.has(f));
+  // (Reading switches need hindsight grids: a stream without them has none to fire.)
+  const missing = FEATURES.filter((f) => !firedBefore.has(f) && (f !== "reading switches" || c.stream.hindsight !== undefined));
   for (const f of missing) failures.push(`no ${f} fired before a cut: the check proves nothing about them`);
   return { name: `causality (${c.track})`, failures, checked, fired: [...firedBefore], missing, ms: performance.now() - t0 };
 }
@@ -447,4 +471,39 @@ export function smokeTest(input: PlannerInput, props: Record<string, PropInfo> |
     failures.push(`error: ${e instanceof Error ? (e.stack ?? e.message) : String(e)}`);
   }
   return { name: "smoke test (live runner)", failures, checked: 1 };
+}
+
+/** Share of judged time (after the first 16 s, the evidence at or above the gate) at which the tier passes `test`. */
+export function judgedTierShare(plan: Plan, stream: ReactiveStream, test: (tier: number) => boolean): number {
+  let total = 0;
+  let passed = 0;
+  const ts = plan.tier.s;
+  const tv = plan.tier.v;
+  let i = 0;
+  for (let t = JUDGED_FROM_S; t < plan.duration; t += 0.05) {
+    if (evidenceAt(stream, t) < stream.params.gate) continue;
+    while (i < ts.length && ts[i] <= t) i++;
+    total++;
+    if (test(i > 0 ? tv[i - 1] : 0)) passed++;
+  }
+  return total ? passed / total : 0;
+}
+
+/**
+ * Stage 2's timing gate: no groove change happens less than 2 s after the press it belongs to.
+ * Every settle comes 2 s after its press, and every change of the groove falls on a settle or on a
+ * drain (2 s after a committed beat).
+ */
+export function checkSettleTiming(plan: Plan, stream: ReactiveStream): CheckResult {
+  const failures: string[] = [];
+  const settles = plan.settles ?? [];
+  for (const x of settles) if (x.s - x.p < SETTLE_DELAY - 1e-9) failures.push(`the press at s=${x.p.toFixed(3)} settled at s=${x.s.toFixed(3)}, under 2 s after it`);
+  const settleTimes = new Set(settles.map((x) => Math.round(x.s * 1e6)));
+  const drainTimes = new Set(stream.beats.map((b) => Math.round((b.t + SETTLE_DELAY) * 1e6)));
+  const g = plan.groove;
+  for (let i = 1; i < g.s.length; i++) {
+    const k = Math.round(g.s[i] * 1e6);
+    if (!settleTimes.has(k) && !drainTimes.has(k)) failures.push(`the groove changed at s=${g.s[i].toFixed(3)}, neither a settle nor a drain`);
+  }
+  return { name: "groove changes 2 s after their presses", failures: failures.slice(0, 10).concat(failures.length > 10 ? [`… and ${failures.length - 10} more`] : []), checked: settles.length + g.s.length };
 }

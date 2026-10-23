@@ -40,6 +40,8 @@ export interface PlayLogFile {
   /** When the player took over from the virtual player (song time). */
   playerFrom?: number;
   sections?: { label: string; s0: number; s1: number; movement: string }[];
+  /** Reactive mode: each press's settled judgment (see SettleRecord in src/plan/types.ts). */
+  settles?: { s: number; p: number; provisional: string; settled: string; change: number; reading: string; switched: boolean; knownAt: number; evidence: number }[];
   beats?: number[];
   grid?: { s: number[]; accent: number[] };
   /** The recording's settled presses (the virtual player's before the hand-over too). */
@@ -233,6 +235,20 @@ export function summarize(log: PlayLogFile, opts: SummaryOptions = {}): string {
   if (log.hero) say(`  windows: perfect ±${log.hero.timing.perfectMs} great ±${log.hero.timing.greatMs} good ±${log.hero.timing.goodMs} ms`);
   if (log.hero?.stride) say(`  strides: ${log.hero.walk?.speed ?? "?"} px/s, ${log.hero.stride.durationMs} ms each; the stride period is the grid step, halved above ${log.hero.stride.maxPeriodS} s (${log.hero.stride.freePeriodS} s free)`);
   say();
+
+  // Reactive mode: the settled judgments, 2 s after their presses.
+  const settles = (log.settles ?? []).filter((x) => inRange(x.p));
+  if (settles.length) {
+    const by = new Map<string, number>();
+    for (const x of settles) by.set(x.settled, (by.get(x.settled) ?? 0) + 1);
+    const agree = settles.filter((x) => x.settled === x.provisional).length;
+    const readings = new Map<string, number>();
+    for (const x of settles) readings.set(x.reading, (readings.get(x.reading) ?? 0) + 1);
+    say(`Settled (reactive mode, 2 s after each press): ${settles.length} presses; provisional and settled ratings agree on ${agree} (${f((100 * agree) / settles.length, 0)}%)`);
+    say(`  by settled class: ${[...by].sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} ${n}`).join(", ")}`);
+    say(`  readings: ${[...readings].sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} ${n}`).join(", ")}; ${settles.filter((x) => x.switched).length} switches`);
+    say();
+  }
 
   // Outcomes.
   const counts = new Map<string, number>();

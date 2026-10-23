@@ -1679,3 +1679,57 @@ Kills, enemies alive by section (authored / reactive):
   prelude's presses are unjudged by design, so 10 s from the start would make no
   judged presses.
 
+### Measured: stage 2
+
+Recorded by `hv-s4pt.4` (`toolVersion` 3, hindsight entries every second).
+
+- **The hindsight grids** on the synthetic tracks, % of reference beats within
+  45 ms of the entry's beats, over each entry's last 8 s: `house-128` offline
+  100 / online 98.8; `dnb-174` 89.6 / 100; `pop-arrangement` 90.5 / 89.9. The
+  offline decode needs no calibration (median error 0 to 1.4 ms):
+  `hindsight.biasS` is 0. The stream takes about 0.8 s of analysis per second of
+  audio.
+- **Gates:** no groove change less than 2 s after its press (house-128's and the
+  Galop's `reactive-moderate`, house-128's `mash8`); the readings' unit tests
+  (half-tempo grid chooses double, double-tempo grid chooses the half holding the
+  beats, shifted grid chooses off-beat, each with 85% or more of the presses
+  settling Perfect or Great); on `house-128`, damage off, over judged time,
+  `reactive-moderate` at tier 2 or higher 100% of the time, `mash4` and `mash8`
+  at tier 0 100%. Causality on `causality-mix`: 318 cuts (cuts also before each
+  hindsight entry), with reading switches among the features fired.
+- **Targets** (damage off, judged time), all met but one:
+
+```text
+dnb-174          reactive-moderate 2+ 100%, reactive-human 2+ 100%, reactive-offbeat 2+ 100%,
+                 reactive-half 2+ 100%, mash4 0 100%, mash8 0 100%
+pop-arrangement  reactive-moderate 2+ 100%, reactive-human 2+ 94%, reactive-offbeat 2+ 94%,
+                 reactive-half 2+ 82%, mash4 0 97%, mash8 0 100%
+orpheus-galop    reactive-moderate 2+ 60% (target 40%), mash4 0 100%, mash8 0 100%
+pop's breakdown  89% of reactive-moderate's presses settle unjudged; the settled groove
+                 1.00 at its start, 1.00 at its end
+random presses   keep offline "as tracked" in 66% of settles (mash4), 66% (mash8): missed
+```
+
+  The missed target measures the label, but the incumbent is found by its beats,
+  not its label (as the design asks): when an offline re-decode moves its beats,
+  the same beats may hold under the online list's reading, which no press chose.
+  Random presses switched the reading in 2 of 1610 settles (`mash4`) and 2 of
+  3180 (`mash8`).
+- **Knobs tuned:**
+  - The hit window is 70 ms, not 45 ms. At 120 beats a minute only about 14
+    presses fall in the 8 s window, and `reactive-moderate`'s 30 ms spread lands
+    only about 77% of them within 45 ms of the true grid, so against a
+    double-tempo grid the half reading's lead (0.18) never cleared the
+    significance test (about 0.3). With 70 ms the hit shares are about 0.98 and
+    it clears easily; the significance factor stays 3.
+  - The incumbent is the candidate agreeing best with the previous grid, its
+    beats within the tolerance less those not: a grid holding the previous beats
+    and as many more no longer ties with it. Of candidates agreeing about as well
+    (within 10%), the previous source and reading is kept.
+  - Densities for the chance term are per second of the entry's window, which is
+    shorter than 8 s in the first seconds: without that, random presses switched
+    `dnb-174` to double at 4 s.
+- **Parity rows** (stage 2): presses rated as the authored grid would 61.4%
+  (44.5% in stage 1); time at tier 2 or higher 79.3% (62.1%); average groove
+  0.81, grade B (0.69, B).
+

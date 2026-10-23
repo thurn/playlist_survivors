@@ -22,7 +22,15 @@
  * - every shipped track simulates end to end with reactive-moderate and reactive-human at the
  *   level's own difficulty, their runs pass play mode's plan checks that apply to a reactive plan,
  *   and reactive-moderate lives to the end.
+ * Gates (stage 2):
+ * - timing: no groove change less than 2 s after its press (house-128's and the Galop's
+ *   reactive-moderate, house-128's mash8);
+ * - on house-128, damage off, over judged time: reactive-moderate at tier 2 or higher 60% of the
+ *   time, mash4 and mash8 at tier 0 80% of it. (The readings' gates are unit tests:
+ *   tests/reactive-settle.test.ts.)
  * Targets (stage 1): committed-beat accuracy on every track, and the Galop's pulsed sections by section.
+ * Targets (stage 2): the players' tiers on dnb-174, pop-arrangement and the Galop; random presses
+ * keeping offline "as tracked"; pop-arrangement's pads-only breakdown settling unjudged.
  *
  *   npm run check:reactive [-- --full]
  *
@@ -33,7 +41,10 @@ import { join } from "node:path";
 import type { CheckResult } from "../src/planner/checks.ts";
 import type { PlannerInput } from "../src/planner/context.ts";
 import { planWithSim, prepare } from "../src/planner/plan.ts";
-import { belowGateShare, beatsWithin, checkDeterminism, checkReactiveCausality, checkReactiveSounds, liveRun, smokeTest, type CausalityCase } from "../src/planner/reactive-checks.ts";
+import { belowGateShare, beatsWithin, checkDeterminism, checkReactiveCausality, checkReactiveSounds, checkSettleTiming, judgedTierShare, liveRun, smokeTest, type CausalityCase } from "../src/planner/reactive-checks.ts";
+import { SETTLE_DELAY } from "../src/reactive/settle.ts";
+import { grooveAt } from "../src/plan/evaluate.ts";
+import type { Plan } from "../src/plan/types.ts";
 import { reactivePlayerFor } from "../src/reactive/players.ts";
 import { checkReactivePlan } from "../src/reactive/plan-checks.ts";
 import type { ReactiveStream, Reference, StreamFile } from "../src/reactive/stream.ts";
@@ -156,6 +167,79 @@ const causalityCase = (id: string, level: string | undefined, cuts?: number[]): 
       lines.push(`causality --full on ${id}: ${rf.checked} cuts, ${failures.length} failing (${(rf.ms / 1000).toFixed(1)} s)`);
     }
   }
+}
+
+// ---------------------------------------------------------------- stage 2: the settled groove
+{
+  type Run = { plan: Plan; stream: ReactiveStream };
+  const runs = new Map<string, Run>();
+  const run = (id: string, name: SkillProfileName): Run => {
+    const key = `${id} ${name}`;
+    if (!runs.has(key)) {
+      const r = reactiveInput(file(id), { checks: CHECKS });
+      runs.set(key, { plan: planWithSim(r.input, { props, player: playerOn(r.reference!, name)(r.input) }).plan, stream: r.stream });
+    }
+    return runs.get(key)!;
+  };
+  const tier2 = (id: string, name: SkillProfileName) => judgedTierShare(run(id, name).plan, run(id, name).stream, (t) => t >= 2);
+  const tier0 = (id: string, name: SkillProfileName) => judgedTierShare(run(id, name).plan, run(id, name).stream, (t) => t === 0);
+  // Gates on house-128.
+  const failures: string[] = [];
+  const m = tier2("house-128", "reactive-moderate");
+  if (m < 0.6) failures.push(`house-128: reactive-moderate at tier 2 or higher for ${pct(m)} of judged time, under 60%`);
+  for (const name of ["mash4", "mash8"] as const) {
+    const z = tier0("house-128", name);
+    if (z < 0.8) failures.push(`house-128: ${name} at tier 0 for ${pct(z)} of judged time, under 80%`);
+  }
+  lines.push(`the settled groove on house-128 (damage off, judged time): reactive-moderate at tier 2+ ${pct(m)} (gate 60%), mash4 at tier 0 ${pct(tier0("house-128", "mash4"))}, mash8 ${pct(tier0("house-128", "mash8"))} (gate 80%)`);
+  results.push({ name: "the settled groove on house-128", failures, checked: 3 });
+  for (const [id, name] of [["house-128", "reactive-moderate"], ["orpheus-galop", "reactive-moderate"], ["house-128", "mash8"]] as const) {
+    const r = checkSettleTiming(run(id, name).plan, run(id, name).stream);
+    results.push({ ...r, name: `${r.name} (${id}, ${name})` });
+  }
+  // Targets.
+  lines.push("targets (stage 2, damage off, shares of judged time):");
+  const want: [SkillProfileName, "2+" | "0", number][] = [
+    ["reactive-moderate", "2+", 0.6],
+    ["reactive-human", "2+", 0.5],
+    ["reactive-offbeat", "2+", 0.5],
+    ["reactive-half", "2+", 0.4],
+    ["mash4", "0", 0.8],
+    ["mash8", "0", 0.8],
+  ];
+  for (const id of ["dnb-174", "pop-arrangement"]) {
+    const cells = want.map(([name, at, target]) => {
+      const v = at === "2+" ? tier2(id, name) : tier0(id, name);
+      return `${name} tier ${at} ${pct(v)} (${pct(target)}${v >= target ? "" : ", missed"})`;
+    });
+    lines.push(`  ${id}: ${cells.join(", ")}`);
+  }
+  const gm = tier2("orpheus-galop", "reactive-moderate");
+  lines.push(`  orpheus-galop: reactive-moderate tier 2+ ${pct(gm)} (40%${gm >= 0.4 ? "" : ", missed"}), mash4 tier 0 ${pct(tier0("orpheus-galop", "mash4"))}, mash8 tier 0 ${pct(tier0("orpheus-galop", "mash8"))} (80%)`);
+  const kept: string[] = [];
+  for (const name of ["mash4", "mash8"] as const) {
+    let n = 0;
+    let k = 0;
+    let unswitched = 0;
+    for (const id of ["house-128", "dnb-174", "pop-arrangement", "orpheus-galop"]) {
+      for (const x of run(id, name).plan.settles ?? []) {
+        n++;
+        if (x.reading === "offline as tracked") k++;
+        if (!x.switched) unswitched++;
+      }
+    }
+    kept.push(`${name} ${pct(k / Math.max(1, n))} (presses switched the reading in ${n - unswitched} of ${n})`);
+  }
+  // (The incumbent follows its beats, not its label: when an offline re-decode moves, the same beats
+  // may hold under the online list's reading, which no press chose.)
+  lines.push(`  random presses keep offline "as tracked" in: ${kept.join(", ")} of settles (90%)`);
+  const pop = run("pop-arrangement", "reactive-moderate");
+  const brk = file("pop-arrangement").reference!.sections!.find((x) => x.label === "breakdown-pads-only")!;
+  const inBrk = (pop.plan.settles ?? []).filter((x) => x.p >= brk.s0 && x.p < brk.s1);
+  const unj = inBrk.filter((x) => x.settled === "unjudged").length / Math.max(1, inBrk.length);
+  const g0 = grooveAt(pop.plan.groove, brk.s0 + SETTLE_DELAY);
+  const g1 = grooveAt(pop.plan.groove, brk.s1 + SETTLE_DELAY);
+  lines.push(`  pop-arrangement's pads-only breakdown: ${pct(unj)} of reactive-moderate's ${inBrk.length} presses settle unjudged (80%); the settled groove ${g0.toFixed(2)} at its start, ${g1.toFixed(2)} at its end (at least ${(g0 - 0.1).toFixed(2)})`);
 }
 
 // ---------------------------------------------------------------- determinism, sounds and every track end to end

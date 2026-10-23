@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { loadContent, loadLevel } from "../src/content/loader.ts";
 import type { Director } from "../src/content/schema.ts";
-import { checkReactiveCausality, checkReactiveSounds, perturbStream, smokeTest } from "../src/planner/reactive-checks.ts";
+import { checkReactiveCausality, checkReactiveSounds, checkSettleTiming, perturbStream, smokeTest } from "../src/planner/reactive-checks.ts";
 import { formatParity, parityRows, pressesRatedSame, strikesOnBeat, timeAtTier } from "../src/planner/parity.ts";
 import { gatedSound } from "../src/planner/emit.ts";
 import { planWithSim, playerFor, prepare } from "../src/planner/plan.ts";
@@ -11,16 +11,16 @@ import { reactivePlayerFor } from "../src/reactive/players.ts";
 import { reactiveSongMap } from "../src/reactive/songmap.ts";
 import { effectiveDownbeat, evidenceAt, firstBeatAtOrAfter, parseStream, splitStream, type StreamFile } from "../src/reactive/stream.ts";
 import type { KeyEvent, Observation, Player } from "../src/sim/player.ts";
-import { grooveAt } from "../src/plan/evaluate.ts";
+import { grooveAt, settledStyle } from "../src/plan/evaluate.ts";
 import { readContentFiles } from "../scripts/lib/files.ts";
 import { inputForStream } from "../scripts/lib/reactive-node.ts";
 
 /** A synthetic stream: beats every `period` from 0.5 s, each committed `lead` before it, and ticks with the given evidence. */
-function synthStream(o: { until: number; period?: number; lead?: number; evidence?: (t: number) => number }): StreamFile {
+function synthStream(o: { until: number; period?: number; lead?: number; evidence?: (t: number) => number; hindsight?: boolean }): StreamFile {
   const period = o.period ?? 0.5;
   const lead = o.lead ?? 0.85;
   const ev = o.evidence ?? (() => 0.6);
-  const beats = [];
+  const beats: { t: number; knownAt: number; period: number; evidence: number }[] = [];
   for (let t = 0.5; t < o.until; t += period) {
     const knownAt = Math.max(0, Math.round((t - lead) * 100) / 100);
     beats.push({ t, knownAt, period, evidence: ev(knownAt) });
@@ -34,6 +34,16 @@ function synthStream(o: { until: number; period?: number; lead?: number; evidenc
     beats,
     ticks,
     onsets: [],
+    // Hindsight grids that decode the beats exactly: every second, the last 8 s of them.
+    ...(o.hindsight
+      ? {
+          hindsight: Array.from({ length: Math.floor(o.until) }, (_, k) => {
+            const T = k + 1;
+            const keep = beats.map((b) => b.t).filter((t) => t >= T - 8 && t <= T);
+            return { knownAt: T, offline: keep, online: keep };
+          }),
+        }
+      : {}),
     reference: { source: "exact", beats: beats.map((b) => b.t), sections: [{ label: "all", s0: 0.5, s1: o.until }] },
   });
 }
@@ -337,5 +347,42 @@ describe("the reactive run's end", () => {
       ["title", REACTIVE_TITLE.s],
       ["end", 40 + REACTIVE_END_DELAY],
     ]);
+  });
+});
+
+
+describe("the settled groove (stage 2)", () => {
+  const file = synthStream({ until: 30, hindsight: true, evidence: () => 0.8 });
+  const { stream } = splitStream(file);
+  const input = inputForStream(stream, { checks: { noHeroDamage: true } });
+  // Every beat for the first 12 s, then nothing.
+  const presses = file.beats.map((b) => b.t + 0.01).filter((t) => t < 12);
+  const { plan } = planWithSim(input, { player: new KeyPlayer(presses) });
+
+  it("judges each press provisionally at once and settles it 2 s later", () => {
+    const settles = plan.settles ?? [];
+    expect(settles.length).toBe(presses.length);
+    for (const x of settles) expect(x.s - x.p).toBeCloseTo(2, 9);
+    expect(settles.filter((x) => x.settled === "perfect").length).toBeGreaterThan(0.8 * settles.length);
+    // The provisional judgment shows on the press (its class), and changes nothing.
+    const first = plan.inputs.find((i) => i.kind === "press")!;
+    expect(first.class).toBe("counted");
+  });
+
+  it("changes the groove only on settles and on drains 2 s after each beat", () => {
+    expect(checkSettleTiming(plan, stream).failures).toEqual([]);
+    const firstChange = Array.from(plan.groove.s).find((_, i) => i > 0 && plan.groove.v[i] !== plan.groove.v[i - 1])!;
+    expect(firstChange).toBeGreaterThanOrEqual(presses[0] + 2 - 1e-9);
+    // The last raise was the press before 12 s: the drain starts a bar (1 s) of judged time after it, 2 s later.
+    const last = presses[presses.length - 1];
+    const peak = grooveAt(plan.groove, last + 2 + 0.01);
+    expect(grooveAt(plan.groove, last + 2 + 0.9)).toBe(peak);
+    expect(grooveAt(plan.groove, last + 2 + 1.6)).toBeLessThan(peak);
+  });
+
+  it("shows a settled rating that corrects the provisional one in its colour", () => {
+    expect(settledStyle("offbeat-great")).toBe("great");
+    expect(settledStyle("unjudged")).toBe("extra");
+    expect(settledStyle("stray")).toBe("stray");
   });
 });

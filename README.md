@@ -78,8 +78,14 @@ Reactive mode plays to music the game has not analysed in advance
 causal analysis would know of the music moment by moment (committed beats, how
 clearly the beat is heard, loudness and onsets), every entry stamped with the time
 it becomes known, and the game reads nothing early (`npm run check:reactive` proves
-it). Strikes, weapons and their sounds follow the committed beats; presses are
-judged at once against them. Where the beat is unclear (the evidence below 0.2, as
+it). Strikes, weapons and their sounds follow the committed beats. Each press is
+judged twice: at once against the committed beats (the rating on the keys), and
+2 s later against a hindsight grid (a re-decode of the last 20 s), in the reading
+your own recent presses fit best (as tracked, off-beat, double or half tempo), so
+a tracker on the wrong tempo or the off-beat is corrected. Only the settled
+judgment changes the groove, so the groove bar moves 2 s after the presses that
+move it, and a flash at its end marks a settled rating that differs from the
+first. Where the beat is unclear (the evidence below 0.2, as
 in the Galop's slow prelude), presses are unjudged (grey), the groove neither rises
 nor drains, and the percussive gameplay sounds are muted (a hurt, a level-up, the
 tier chimes and an orb taken still play). The horde, rosters, level-ups and zone
@@ -124,7 +130,9 @@ hero's path are logged too. See [`src/live/log.ts`](src/live/log.ts).
   current groove rules (grid times from the song map, so logs from before press
   classes re-rate too) and prints the classes and tiers beside the log's own, and
   lists the sounds moved to a later slot (known less than 60 ms before their own),
-  and the gems collected against dropped, with each vacuum.
+  and the gems collected against dropped, with each vacuum. In reactive mode it
+  also prints the settled judgments: their classes, how often they agree with the
+  provisional ones, and the readings chosen.
   Pass a file, `--from`/`--to` (song seconds), `--no-table` or `--no-rerate`.
 
 ### URL parameters

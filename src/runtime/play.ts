@@ -82,6 +82,7 @@ async function newSession(env: LiveEnv, startS: number, log: PlayLog, onProgress
   if (startS > 0) handOver(sim, recording);
   // (The virtual player's presses before the hand-over have no key ids: the log skips them.)
   recording.pressLog = (t) => log.press(t);
+  recording.settleLog = (r) => log.settle(r);
   const runner = new LiveRunner(sim, recording);
   runner.log = log;
   return { recording, runner };

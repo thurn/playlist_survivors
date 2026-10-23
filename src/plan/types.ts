@@ -355,6 +355,8 @@ export interface Plan {
   cleaveAccents: { s: number; strength: number }[];
   /** Level-ups at their scheduled musical moments. */
   levelUpsDue: { id: string; s: number }[];
+  /** Reactive mode with hindsight grids: each press's settled judgment, 2 s after it. */
+  settles?: SettleRecord[];
   /** Reactive mode: when each song beat (a committed beat) became known; the HUD shows a beat only from then. */
   beatsKnownAt?: Float64Array;
   /** Reactive mode: the audio file's length for the progress bar, given apart from the stream (its song map's duration ends the run). */
@@ -435,6 +437,26 @@ export interface PlanInput {
   rock?: boolean;
   /** Step movement (true) or free movement (false). */
   steps: boolean;
+}
+
+/**
+ * Reactive mode: a press's settled judgment (docs/design/reactive-audio.md, "Stage 2"). Ratings are
+ * labels as the key display names them: perfect, great, good, loose, offbeat-perfect,
+ * offbeat-great, double, stray, partner or unjudged.
+ */
+export interface SettleRecord {
+  /** When it settled (the press's time plus 2 s), and the press's time. */
+  s: number;
+  p: number;
+  provisional: string;
+  settled: string;
+  /** The groove change it made, and the reading it settled on (source and name), with whether it switched. */
+  change: number;
+  reading: string;
+  switched: boolean;
+  /** The hindsight entry's time, and the evidence at the press. */
+  knownAt: number;
+  evidence: number;
 }
 
 export interface PlanSection {

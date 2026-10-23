@@ -27,6 +27,8 @@ export const StreamFileSchema = z.object({
   beats: z.array(beat).min(2),
   ticks: z.array(tick),
   onsets: z.array(onset),
+  /** Stage 2: every second, the offline decode of the last 20 s and the causal tracker's believed beats, each over the last 8 s. */
+  hindsight: z.array(z.object({ knownAt: z.number(), offline: z.array(z.number()), online: z.array(z.number()) })).optional(),
   reference: ReferenceSchema.optional(),
 });
 
@@ -110,4 +112,18 @@ export function effectiveDownbeat(stream: ReactiveStream, k: number, beatsPerBar
   let i = beatIndexAtOrBefore(stream, k + DOWNBEAT_NOTICE - 2e-6) + 1;
   if (i % beatsPerBar !== 0) i += beatsPerBar - (i % beatsPerBar);
   return i < stream.beats.length ? i : -1;
+}
+
+/** The latest hindsight entry known at song time s (undefined before the first, or without hindsight). */
+export function hindsightAt(stream: ReactiveStream, s: number): NonNullable<ReactiveStream["hindsight"]>[number] | undefined {
+  const h = stream.hindsight;
+  if (!h) return undefined;
+  let lo = 0;
+  let hi = h.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (h[mid].knownAt <= s + 1e-9) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo > 0 ? h[lo - 1] : undefined;
 }
