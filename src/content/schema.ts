@@ -89,6 +89,13 @@ export const heroDef = z.strictObject({
     tiers: z.array(unit).min(1),
     hysteresis: z.number().min(0),
     doubleTapMs: z.number().min(0),
+    /**
+     * The drift: each press is judged less the median offset of its key group's latest `presses`
+     * counted presses (once there are `minPresses`), less `deadMs` toward 0, within ±maxMs.
+     */
+    drift: z
+      .strictObject({ presses: z.number().int().positive(), minPresses: z.number().int().min(1), deadMs: z.number().min(0), maxMs: z.number().min(0) })
+      .refine((d) => d.minPresses <= d.presses, "drift.minPresses must be at most drift.presses (the drift keeps only that many)"),
     /** Every hero attack's damage is multiplied by its tier's. */
     damage: z.array(z.number().positive()).min(1),
   }),
@@ -393,10 +400,11 @@ export const levelEvent = z.strictObject({
 
 /**
  * The virtual players: the demo's three, play mode's stand-in for a moderately competent human, the
- * eighths player (every eighth note), and the players the groove must not reward: the holder (holds
- * directions, never taps) and mashers at 2, 4 and 8 presses a second.
+ * eighths player (every eighth note), the human and late players (timed like real play logs, the
+ * late one with an uncalibrated slow key), and the players the groove must not reward: the holder
+ * (holds directions, never taps) and mashers at 2, 4 and 8 presses a second.
  */
-export const PLAYER_NAMES = ["perfect", "skilled", "casual", "moderate", "eighths", "holder", "mash2", "mash4", "mash8"] as const;
+export const PLAYER_NAMES = ["perfect", "skilled", "casual", "moderate", "eighths", "human", "late", "holder", "mash2", "mash4", "mash8"] as const;
 export const skillProfile = z.enum(PLAYER_NAMES);
 export type SkillProfileName = z.infer<typeof skillProfile>;
 

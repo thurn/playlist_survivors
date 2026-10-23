@@ -5,6 +5,7 @@
  */
 import type { HeroDef } from "../content/schema.ts";
 import { clamp } from "../core/shaping.ts";
+import type { InputKey } from "./movement.ts";
 
 export type Rating = "perfect" | "great" | "good";
 
@@ -68,7 +69,7 @@ export type CountedRating = Rating | "loose";
 /**
  * What a press is, judged against the grid. A partner belongs to the press before it (a
  * diagonal's second key, a stomp's opposite key); an off-beat press is near the half-way point
- * after a grid time whose counted press was Great or better; a counted press is the first for its
+ * after a grid time whose counted press was Good or better; a counted press is the first for its
  * nearest grid time; a double tap comes soon after the counted press; anything else is stray.
  */
 export type PressClass = "partner" | "offbeat" | "counted" | "double" | "stray";
@@ -77,21 +78,50 @@ export interface PressJudgement {
   class: PressClass;
   /** Counted presses: the rating (loose beyond Good); off-beat presses: Perfect or Great. */
   rating?: CountedRating;
-  /** Offset (song seconds) from the nearest grid time, or for an off-beat press from the off-beat. */
+  /** Offset (song seconds, after the drift) from the nearest grid time, or for an off-beat press from the off-beat. */
   delta: number;
   /** The grid time the press counts for (counted, double tap and stray presses) or follows (off-beat). */
   gridIndex: number;
   /** The groove change it makes. */
   change: number;
+  /** The drift taken off the press's time before it was judged (song seconds, + for a late player). */
+  drift: number;
 }
 
-/** What the classes remember of earlier presses: each grid time's counted press, and the off-beats taken. */
+/** The keys that drift together: the directions, and the stomp key (Space or Z), which a thumb or a long key may press later. */
+export type KeyGroup = "direction" | "stomp";
+export const keyGroup = (key: InputKey): KeyGroup => (key === "space" ? "stomp" : "direction");
+
+/**
+ * What the classes remember of earlier presses: each grid time's counted press (at its own time,
+ * before the drift), the off-beats taken, and each key group's latest counted offsets (song
+ * seconds, oldest first: the drift).
+ */
 export interface PressMemo {
   counted: Map<number, { s: number; rating: CountedRating }>;
   offbeats: Set<number>;
+  recent: Record<KeyGroup, number[]>;
 }
 
-export const freshPressMemo = (): PressMemo => ({ counted: new Map(), offbeats: new Set() });
+export const freshPressMemo = (): PressMemo => ({ counted: new Map(), offbeats: new Set(), recent: { direction: [], stomp: [] } });
+
+/**
+ * The drift: how late a key group's presses have been landing, so a player who runs steadily late
+ * (a slow key, or a song that speeds up) is judged against their own beat. The median of the
+ * group's latest counted offsets, once there are enough of them, less a dead zone (a median within
+ * it is a few presses' scatter, not lateness), within ±maxMs; 0 before. Only earlier presses feed
+ * it, so a recording re-rates the same.
+ */
+export function driftOf(hero: HeroDef, memo: PressMemo, group: KeyGroup): number {
+  const d = hero.meter.drift;
+  const r = memo.recent[group];
+  if (r.length < Math.max(1, d.minPresses)) return 0;
+  const sorted = [...r].sort((a, b) => a - b);
+  const m = sorted.length >> 1;
+  const median = sorted.length % 2 ? sorted[m] : (sorted[m - 1] + sorted[m]) / 2;
+  const beyond = Math.sign(median) * Math.max(0, Math.abs(median) - d.deadMs / 1000);
+  return clamp(beyond, -d.maxMs / 1000, d.maxMs / 1000);
+}
 
 /** A counted press's rating from its offset to the grid, with the hero's timing windows. */
 export function countedRating(hero: HeroDef, delta: number): CountedRating {
@@ -103,34 +133,43 @@ export function countedRating(hero: HeroDef, delta: number): CountedRating {
 /**
  * Class a press at song time s (after the calibration offset) against a sorted grid, in the
  * design's order, and remember what it takes. `partner`: the press bends or rocks the one before.
+ * The press is judged at s less its key group's drift.
  */
-export function classifyPress(hero: HeroDef, grid: ArrayLike<number>, s: number, partner: boolean, memo: PressMemo): PressJudgement {
+export function classifyPress(hero: HeroDef, grid: ArrayLike<number>, s: number, partner: boolean, memo: PressMemo, group: KeyGroup = "direction"): PressJudgement {
   const m = hero.meter;
-  const gi = nearestIndex(grid, s);
-  if (partner) return { class: "partner", delta: s - grid[gi], gridIndex: gi, change: 0 };
+  const drift = driftOf(hero, memo, group);
+  const sj = s - drift;
+  const gi = nearestIndex(grid, sj);
+  if (partner) return { class: "partner", delta: sj - grid[gi], gridIndex: gi, change: 0, drift };
   // The off-beat nearest the press: half-way between the grid time at or before it and the next.
   let i = gi;
-  if (grid[i] > s && i > 0) i--;
-  const near = (k: number) => (k >= 0 && k + 1 < grid.length ? Math.abs(s - (grid[k] + grid[k + 1]) / 2) : Infinity);
+  if (grid[i] > sj && i > 0) i--;
+  const near = (k: number) => (k >= 0 && k + 1 < grid.length ? Math.abs(sj - (grid[k] + grid[k + 1]) / 2) : Infinity);
   if (near(i - 1) < near(i)) i--;
   if (i >= 0 && i + 1 < grid.length) {
-    const off = s - (grid[i] + grid[i + 1]) / 2;
+    const off = sj - (grid[i] + grid[i + 1]) / 2;
     const counted = memo.counted.get(i);
-    if (Math.abs(off) * 1000 <= hero.timing.greatMs && !memo.offbeats.has(i) && (counted?.rating === "perfect" || counted?.rating === "great")) {
+    if (Math.abs(off) * 1000 <= hero.timing.greatMs && !memo.offbeats.has(i) && counted && counted.rating !== "loose") {
       memo.offbeats.add(i);
       const rating = Math.abs(off) * 1000 <= hero.timing.perfectMs ? "perfect" : "great";
-      return { class: "offbeat", rating, delta: off, gridIndex: i, change: m.offbeat[rating] };
+      return { class: "offbeat", rating, delta: off, gridIndex: i, change: m.offbeat[rating], drift };
     }
   }
-  const delta = s - grid[gi];
+  const delta = sj - grid[gi];
   const counted = memo.counted.get(gi);
   if (!counted) {
     const rating = countedRating(hero, delta);
     memo.counted.set(gi, { s, rating });
-    return { class: "counted", rating, delta, gridIndex: gi, change: m.counted[rating] };
+    // A loose press is too far off to say how late the player runs (it may be a slip to the next beat).
+    if (rating !== "loose") {
+      const r = memo.recent[group];
+      r.push(s - grid[gi]);
+      if (r.length > m.drift.presses) r.shift();
+    }
+    return { class: "counted", rating, delta, gridIndex: gi, change: m.counted[rating], drift };
   }
-  if (s - counted.s <= m.doubleTapMs / 1000 + 1e-9) return { class: "double", delta, gridIndex: gi, change: m.doubleTap };
-  return { class: "stray", delta, gridIndex: gi, change: m.stray };
+  if (s - counted.s <= m.doubleTapMs / 1000 + 1e-9) return { class: "double", delta, gridIndex: gi, change: m.doubleTap, drift };
+  return { class: "stray", delta, gridIndex: gi, change: m.stray, drift };
 }
 
 /**

@@ -83,10 +83,12 @@ export interface PressTrace {
    * key went up.
    */
   outcome: "extra" | "bend" | "stride" | "stomp" | "rock" | "release";
-  /** The nearest grid time (index and song time), and the press's offset from it (song seconds). */
+  /** The grid time nearest the press less its drift (index and song time), and the press's own offset from it (song seconds, before the drift). */
   gridIndex?: number;
   gridS?: number;
   delta?: number;
+  /** The drift taken off the press before it was judged (song seconds, + late); absent when 0. The rating is for delta less it. */
+  drift?: number;
   rating?: string;
   /** Extra presses: the song time of the press that took this grid time's step. */
   stepS?: number;

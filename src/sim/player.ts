@@ -60,7 +60,7 @@ export interface Player {
 }
 
 /** The players that press a pattern on the grid (the holder and mashers steer with one of them). */
-export type SkillProfile = "perfect" | "skilled" | "casual" | "moderate" | "eighths";
+export type SkillProfile = "perfect" | "skilled" | "casual" | "moderate" | "eighths" | "human" | "late";
 /** Every virtual player `?player=` names: a skill profile, the holder, or a masher. */
 export type PlayerName = SkillProfileName;
 
@@ -68,6 +68,8 @@ export interface ProfileSpec {
   /** Standard deviation and clamp of the timing error, in seconds. */
   sd: number;
   clampS: number;
+  /** How late every press lands on average (seconds), on top of the error. */
+  bias?: number;
   /** Casual players press downbeats only. */
   downbeatsOnly: boolean;
   /** The eighths player presses every grid time and every off-beat (half-way to the next grid time). */
@@ -92,6 +94,10 @@ export const PROFILES: Record<SkillProfile, ProfileSpec> = {
   // hit the signature moments).
   moderate: { sd: 0.03, clampS: 0.1, downbeatsOnly: false, pressRate: 0.85, accentRate: 0.8, reaction: 0.25, sloppy: 0.15 },
   eighths: { sd: 0.012, clampS: 0.04, downbeatsOnly: false, eighths: true, pressRate: 1, accentRate: 1, reaction: SIM_REACTION, sloppy: 0 },
+  // Timed like a person's play logs: the moderate player's choices, a 50 ms spread and 35 ms late
+  // on average; and the same 100 ms late, as with a slow key that isn't calibrated.
+  human: { sd: 0.05, clampS: 0.15, bias: 0.035, downbeatsOnly: false, pressRate: 0.85, accentRate: 0.8, reaction: 0.25, sloppy: 0.15 },
+  late: { sd: 0.05, clampS: 0.15, bias: 0.1, downbeatsOnly: false, pressRate: 0.85, accentRate: 0.8, reaction: 0.25, sloppy: 0.15 },
 };
 
 /** Sections as the player knows them: the press pattern and step movement. */
@@ -222,7 +228,7 @@ export class VirtualPlayer implements Player {
       const next = grid[i + 1];
       if (heavyAccent(sl) && (spec.accentRate >= 1 || new Rng(seed, "accent-press", Math.round(sl.s * 1000)).next() < spec.accentRate)) pressed = true;
       const r = new Rng(seed, "press-time", Math.round(sl.s * 1000));
-      const err = spec.sd > 0 ? clamp(normal(r) * spec.sd, -spec.clampS, spec.clampS) : 0;
+      const err = (spec.sd > 0 ? clamp(normal(r) * spec.sd, -spec.clampS, spec.clampS) : 0) + (spec.bias ?? 0);
       this.plan.push({ s: sl.s + (pressed ? err : 0), kind: pressed ? "press" : "watch", beat: sl.bi });
       // The eighths player's off-beat, half-way to the next grid time: in the same section, or in
       // the pulsed section right after it.
@@ -230,7 +236,7 @@ export class VirtualPlayer implements Player {
       if (spec.eighths && next && joined) {
         const off = (sl.s + next.s) / 2;
         const ro = new Rng(seed, "offbeat-time", Math.round(off * 1000));
-        this.plan.push({ s: off + (spec.sd > 0 ? clamp(normal(ro) * spec.sd, -spec.clampS, spec.clampS) : 0), kind: "press", beat: sl.bi });
+        this.plan.push({ s: off + (spec.sd > 0 ? clamp(normal(ro) * spec.sd, -spec.clampS, spec.clampS) : 0) + (spec.bias ?? 0), kind: "press", beat: sl.bi });
       }
     });
     // Free movement: change the held keys at most once per beat; let go before step movement.

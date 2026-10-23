@@ -1,9 +1,11 @@
 /**
  * The title screen: Play (the default), Watch the demo and Calibrate. Up and
  * Down (or W and S) move the selection; Enter, Space, Right or a click
- * chooses (which also unlocks audio). And the optional tap-along calibration.
+ * chooses (which also unlocks audio). And the optional tap-along calibration,
+ * for the direction keys or the stomp key, whichever the player taps with.
  */
-import { keyOf, loadInputOffset, saveInputOffset } from "../live/input.ts";
+import { gameKeyOf, keyOf, savedInputOffset, saveInputOffset } from "../live/input.ts";
+import { keyGroup, type KeyGroup } from "../sim/timing.ts";
 import type { Grade } from "../plan/grade.ts";
 import type { AudioEngine } from "./audio.ts";
 import type { Overlay } from "./app.ts";
@@ -80,8 +82,10 @@ export function overlayMenu(overlay: Overlay, items: string[], initial = 0): Pro
 /** The title screen's choice. */
 export async function titleScreen(overlay: Overlay, best: Grade | undefined): Promise<TitleChoice> {
   overlay.status.textContent = "Arrows or WASD · Enter to choose · headphones recommended";
-  const offset = loadInputOffset();
-  const items = [`Play${best ? `   best ${best}` : ""}`, "Watch the demo", `Calibrate${offset ? `   (${offset > 0 ? "+" : ""}${offset} ms)` : ""}`];
+  const ms = (v: number) => `${v > 0 ? "+" : ""}${v} ms`;
+  const offsets = [savedInputOffset("direction"), savedInputOffset("stomp")];
+  const shown = [offsets[0] ? ms(offsets[0]) : undefined, offsets[1] !== undefined ? `stomp ${ms(offsets[1])}` : undefined].filter(Boolean);
+  const items = [`Play${best ? `   best ${best}` : ""}`, "Watch the demo", `Calibrate${shown.length ? `   (${shown.join(" · ")})` : ""}`];
   const i = await overlayMenu(overlay, items);
   return (["play", "demo", "calibrate"] as const)[i];
 }
@@ -105,24 +109,39 @@ export function calibrationOffset(taps: number[], clicks: number[]): number | un
   return errs.length % 2 ? errs[m] : (errs[m - 1] + errs[m]) / 2;
 }
 
-/** The tap-along calibration: tap any arrow along to 8 clicks; the offset is saved. */
+/** Which keys a calibration's taps were made with: the group most of them came from (the directions on a tie). */
+export function calibrationGroup(groups: readonly KeyGroup[]): KeyGroup {
+  const stomps = groups.filter((g) => g === "stomp").length;
+  return stomps > groups.length - stomps ? "stomp" : "direction";
+}
+
+/**
+ * The tap-along calibration: tap along to 8 clicks with an arrow or with the stomp key (Z or
+ * Space); the offset is saved for the kind of key tapped with.
+ */
 export async function calibrate(overlay: Overlay, audio: AudioEngine): Promise<void> {
-  overlay.status.textContent = `Tap any arrow along with the ${CALIBRATION_CLICKS} clicks`;
-  const taps: number[] = [];
+  overlay.status.textContent = `Tap along with the ${CALIBRATION_CLICKS} clicks, with the key you play with: an arrow, or the stomp key (Z or Space)`;
+  const taps: { t: number; group: KeyGroup }[] = [];
   const onKey = (e: KeyboardEvent) => {
-    if (!keyOf(e) || e.repeat) return;
+    const k = gameKeyOf(e);
+    if (!k || e.repeat) return;
     e.preventDefault();
-    taps.push(audio.contextTimeAt(e.timeStamp));
+    taps.push({ t: audio.contextTimeAt(e.timeStamp), group: keyGroup(k) });
   };
   window.addEventListener("keydown", onKey);
   const clicks = await audio.clicks(CALIBRATION_CLICKS, CALIBRATION_BPM);
   await new Promise((r) => setTimeout(r, (clicks[clicks.length - 1] - audio.ctx.currentTime + 0.6) * 1000));
   window.removeEventListener("keydown", onKey);
-  const offset = calibrationOffset(taps, clicks);
-  if (offset === undefined) overlay.status.textContent = "Not enough taps on the clicks: the offset is unchanged.";
+  const group = calibrationGroup(taps.map((x) => x.group));
+  const offset = calibrationOffset(
+    taps.filter((x) => x.group === group).map((x) => x.t),
+    clicks,
+  );
+  const which = group === "stomp" ? "stomp-key" : "arrow";
+  if (offset === undefined) overlay.status.textContent = `Not enough ${which} taps on the clicks: the offset is unchanged.`;
   else {
-    saveInputOffset(offset);
-    overlay.status.textContent = `Your taps land ${Math.abs(Math.round(offset))} ms ${offset >= 0 ? "late" : "early"}: play mode allows for it.`;
+    saveInputOffset(offset, group);
+    overlay.status.textContent = `Your ${which} taps land ${Math.abs(Math.round(offset))} ms ${offset >= 0 ? "late" : "early"}: play mode allows for it.`;
   }
   await overlayMenu(overlay, ["Back"]);
 }

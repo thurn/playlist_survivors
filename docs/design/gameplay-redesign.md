@@ -180,7 +180,7 @@ These decisions were settled before this document was written:
 - **Accents (big marked chords):** the chord's heavy impact is the same for
   everyone. A press on the chord launches a shockwave, which starts on the
   eighth note after the chord.
-- **Standing still:** a stomp (Space, or two opposite keys together) keeps the
+- **Standing still:** a stomp (Z or Space, or two opposite keys together) keeps the
   groove without moving.
 - **Curve:** tier 0 falls in the climax. A sparse, sloppy but honest player
   survives.
@@ -436,8 +436,8 @@ Vampire Survivors lets a player stand still for free. Here, standing still
 without pressing drains the groove, so the player can **stomp**: press without
 moving.
 
-- **Input:** Space, or two opposite direction keys (Left and Right, or Up and
-  Down) pressed within 40 ms of each other.
+- **Input:** Z or Space (the stomp key), or two opposite direction keys (Left
+  and Right, or Up and Down) pressed within 40 ms of each other.
 - **Judged like any press.** A stomp on the beat fills the groove, and an extra
   stomp is a stray press. A stomp made of two keys is timed by the first. See
   [Press classes](#press-classes) below.
@@ -476,7 +476,12 @@ Each press in a pulsed section is rated by how far it lands from the nearest
 grid time:
 
 - **Delta:** a press's time minus the nearest grid time, after the player's
-  calibration offset (the input delay measured on the title screen), as today.
+  calibration offset (the input delay measured on the title screen) and the
+  [drift](#drift). The tap-along saves one offset for the direction keys and
+  one for the stomp key, whichever the player taps with: a spacebar can land
+  50 ms later than an arrow. The stomp key's is kept as its difference from
+  the directions', so recalibrating with the arrows (new headphones) moves
+  both. Until the stomp key has its own, it uses the directions'.
 - **Ratings,** with today's play-mode windows: Perfect within 45 ms, Great
   within 90 ms, Good within 140 ms, and **loose** beyond that.
 - **The off-beat** of a grid time is the point half-way to the next one: the
@@ -493,9 +498,11 @@ classes are checked in this order:
    bends that stride, or the opposite key within 40 ms, which makes a stomp. It
    belongs to the previous press and isn't judged on its own.
 2. **Off-beat press:** within 90 ms of the off-beat after a grid time whose
-   counted press was Great or better, and the first such press for that
+   counted press was Good or better, and the first such press for that
    off-beat. A Perfect one (within 45 ms) adds to the groove; a Great one is
-   safe and changes nothing.
+   safe and changes nothing. (In play mode's tuning a Perfect one is free and a
+   Great one costs a little: see `content/hero.yaml`.) After a loose counted
+   press, a press near the off-beat is stray.
 3. **Counted press:** the first press for its nearest grid time. Its rating
    changes the groove.
 4. **Double tap:** a second press within 100 ms after the counted press, such
@@ -515,6 +522,31 @@ beats at 10.000 and 10.325; the off-beat between them is at 10.1625
 10.120  Right  off-beat press, 43 ms early: Perfect               +0.03
 10.150  Right  stray: 10.000's counted press and off-beat are taken -0.10
 10.400  Right  counted press for 10.325, 75 ms late: Great        +0.02
+```
+
+### Drift
+
+Players run late in steady ways the calibration can't see: a slow key, or a
+song that speeds up (the coda's beats shrink from 310 to 222 ms, and players
+following it by ear fall 40 to 70 ms behind). A fixed window would turn all of
+that into Goods, and a press late enough would be judged early for the next
+beat, making the press after it stray. So each press is judged against the
+player's own beat:
+
+- **The drift** is the median offset of the latest 8 counted presses made with
+  the same group of keys (the direction keys, or the stomp key), once there
+  are 8. Loose presses are left out: one may be a slip to the next beat.
+- **A dead zone:** a median within 20 ms of the grid counts as none, so a few
+  presses' scatter doesn't move anyone's windows. The rest is taken off, up to
+  80 ms.
+- **Every class and rating** uses the press's time less the drift. The play log
+  keeps each press's own offset and the drift beside it.
+- **It only reads earlier presses,** so a recording re-rates the same, and
+  mashing (whose median offset is about 0) gains nothing.
+
+```text
+a player 75 ms late on every press, after the first 8
+  drift 75 - 20 = 55 ms; judged 20 ms late: Perfect, where it was Great
 ```
 
 ### Drain
@@ -1201,7 +1233,10 @@ entity involved, as today.
 - **Groove:** after the galop vamp, the moderate player is at tier 2 or higher
   for at least 70% of pulsed time, and holders and mashers are at tier 0 for at
   least 80% of it. The eighths player's average groove is within 0.05 of the
-  skilled player's.
+  skilled player's. Two players timed like real play logs (a 50 ms spread, and
+  35 ms late, or 100 ms late as with an uncalibrated slow key) are at tier 2
+  or higher for at least 50% and 40% of it: the bots are far tidier than
+  people, and these keep the tuning honest for them.
 - **Signature moments** for the moderate player:
   - at least 80% of eligible accents cleave;
   - every kick-line skeleton dies within two beats of the release;
@@ -1274,8 +1309,11 @@ A) and spend two bars on each of these:
   Off-beat presses show outlined, and the groove rises.
 - **Mash.** The same speed, with a tiny stride on every press. Stray presses
   show red, and the groove falls to tier 0.
-- **Stomp with Space on the beat.** The hero doesn't move, and the groove
-  rises.
+- **Stomp with Z or Space on the beat.** The hero doesn't move, and the
+  groove rises.
+- **Run late.** Tap on the beat but steadily 70 ms late (or stomp with a
+  spacebar you haven't calibrated). After about two bars the ratings turn
+  from Great and Good to Perfect, and the groove climbs.
 - **Throughout:** the sword swings on every beat at the tier's size, and every
   impact sounds on the beat.
 
@@ -1323,7 +1361,7 @@ These trigger the rules most likely to go wrong:
 - **A diagonal:** two perpendicular keys within 40 ms make one diagonal stride
   of the same length.
 - **Opposite keys together:** a rock step out and back, counted as one stomp.
-- **Space while holding a direction:** the held stride on the next grid time
+- **The stomp key while holding a direction:** the held stride on the next grid time
   is skipped, so holding and stomping on every beat never moves the hero.
 - **The tier threshold:** keep the groove hovering around 0.6, and check that
   the tier doesn't flicker.
@@ -1333,6 +1371,9 @@ These trigger the rules most likely to go wrong:
   offers.
 - **Watch the demo:** the skilled bot plays the new rules in the open field.
 - **Calibration:** with a known offset (Bluetooth headphones), calibrate, and
-  check that Perfect ratings become reachable.
+  check that Perfect ratings become reachable. Calibrate again tapping Z or
+  Space: the title screen shows both offsets, and stomps use the stomp key's.
 - **The play log:** press F8, run `npm run log:play` on the file, and check
-  the press classes, the time at each tier and the bites per section.
+  the press classes, the time at each tier and the bites per section, and each
+  key's and each section's offset and drift. `--meter try.yaml --mash`
+  re-rates the log under other meter values beside mashing under them.

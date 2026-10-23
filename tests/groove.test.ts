@@ -10,7 +10,8 @@ import { checkPlan, summarizeChecks } from "../src/planner/checks.ts";
 import { checkPlay } from "../src/planner/play-checks.ts";
 import type { KeyEvent } from "../src/sim/player.ts";
 import { BatchRecorder, type PressTrace } from "../src/sim/recorder.ts";
-import { classifyPress, freshPressMemo, grooveAfterChange, tierFor } from "../src/sim/timing.ts";
+import { heroDef } from "../src/content/schema.ts";
+import { classifyPress, driftOf, freshPressMemo, grooveAfterChange, tierFor } from "../src/sim/timing.ts";
 import { play, tap } from "./fixtures/play-sim.ts";
 import { syntheticSongMap } from "./fixtures/synthetic-song.ts";
 
@@ -36,14 +37,82 @@ describe("press classes", () => {
     expect(got.map((j) => j.change)).toEqual([m.counted.perfect, 0, m.doubleTap, m.offbeat.perfect, m.stray, m.counted.great]);
   });
 
-  it("rates counted presses Perfect, Great, Good and loose, and lets only a Great or better one have an off-beat", () => {
+  it("rates counted presses Perfect, Great, Good and loose, and lets a Good or better one have an off-beat", () => {
     const grid = [0, 0.325, 0.65, 0.975];
     const rate = (s: number) => classifyPress(hero, grid, s, false, freshPressMemo());
     expect([0.04, 0.08, 0.13, 0.15].map((s) => rate(0.325 + s).rating)).toEqual(["perfect", "great", "good", "loose"]);
-    // A Good counted press (120 ms early): a press near its off-beat is stray, not an off-beat.
+    // A Good counted press (120 ms early): a press near its off-beat is an off-beat, not stray.
+    const good = freshPressMemo();
+    classifyPress(hero, grid, 0.325 - 0.12, false, good);
+    expect(classifyPress(hero, grid, 0.4875, false, good).class).toBe("offbeat");
+    // A loose one (150 ms early): the press near its off-beat is stray.
+    const loose = freshPressMemo();
+    classifyPress(hero, grid, 0.325 - 0.15, false, loose);
+    expect(classifyPress(hero, grid, 0.4875 - 0.03, false, loose).class).toBe("stray");
+  });
+
+  it("costs a Great off-beat less than a Good counted press, so eighth notes stay near the beat-only groove", () => {
+    expect(m.offbeat.perfect).toBe(0);
+    expect(m.offbeat.great).toBeLessThan(0);
+    expect(m.offbeat.great).toBeGreaterThan(m.counted.good);
+  });
+});
+
+describe("the drift", () => {
+  // Beats every 0.3 s: a player 100 ms late on every press.
+  const grid = Array.from({ length: 40 }, (_, i) => i * 0.3);
+  const late = (n: number, group: "direction" | "stomp" = "direction", memo = freshPressMemo()): { memo: ReturnType<typeof freshPressMemo>; got: ReturnType<typeof classifyPress>[] } => ({ memo, got: Array.from({ length: n }, (_, i) => classifyPress(hero, grid, 0.3 * (i + 1) + 0.1, false, memo, group)) });
+
+  it("judges a steadily late player against their own beat, after the first few presses", () => {
+    const { got } = late(12);
+    const d = m.drift;
+    // Until there are enough presses, no drift: 100 ms late is Good.
+    expect(got.slice(0, d.minPresses).map((j) => [j.rating, j.drift])).toEqual(Array.from({ length: d.minPresses }, () => ["good", 0]));
+    // Then the drift (less its dead zone, capped) takes most of it off: 100 ms late is Perfect.
+    for (const j of got.slice(d.minPresses)) {
+      expect(j.drift).toBeCloseTo(Math.min(0.1 - d.deadMs / 1000, d.maxMs / 1000), 9);
+      expect(j.rating).toBe("perfect");
+    }
+  });
+
+  it("leaves a player's scatter alone: a median within the dead zone is no drift", () => {
     const memo = freshPressMemo();
-    classifyPress(hero, grid, 0.325 - 0.12, false, memo);
-    expect(classifyPress(hero, grid, 0.4875, false, memo).class).toBe("stray");
+    const offsets = [0.03, -0.02, 0.015, -0.03, 0.01, 0.018, -0.01, 0.019];
+    offsets.forEach((o, i) => classifyPress(hero, grid, 0.3 * (i + 1) + o, false, memo));
+    expect(driftOf(hero, memo, "direction")).toBe(0);
+  });
+
+  it("keeps a player falling behind a fast beat on the beat they were late for, where a slip would take the next one", () => {
+    // A 0.24 s grid, the player 40 ms late and 10 ms later each beat: from 130 ms late a press is
+    // nearer the next beat, which without the drift it would take (and the next press be stray).
+    const fast = Array.from({ length: 40 }, (_, i) => i * 0.24);
+    const lateBy = (i: number) => 0.04 + 0.01 * i;
+    const judge = (memo: ReturnType<typeof freshPressMemo>, drift: boolean) =>
+      Array.from({ length: 14 }, (_, i) => classifyPress(drift ? hero : { ...hero, meter: { ...m, drift: { ...m.drift, maxMs: 0 } } }, fast, 0.24 * (i + 1) + lateBy(i), false, memo));
+    const without = judge(freshPressMemo(), false);
+    expect(without.slice(9).some((j) => j.class !== "counted" || j.rating === "loose")).toBe(true);
+    const got = judge(freshPressMemo(), true);
+    for (const [i, j] of got.entries()) expect([i, j.class, j.gridIndex]).toEqual([i, "counted", i + 1]);
+    expect(got.slice(9).map((j) => j.rating)).not.toContain("loose");
+  });
+
+  it("is each key group's own: the stomp key's lateness leaves the directions alone", () => {
+    const { memo } = late(8, "stomp");
+    expect(driftOf(hero, memo, "stomp")).toBeGreaterThan(0);
+    expect(driftOf(hero, memo, "direction")).toBe(0);
+    expect(classifyPress(hero, grid, 0.3 * 20 + 0.1, false, memo, "direction").rating).toBe("good");
+  });
+
+  it("can't be set to need more presses than it keeps", () => {
+    expect(heroDef.shape.meter.safeParse({ ...m, drift: { ...m.drift, presses: 6, minPresses: 8 } }).success).toBe(false);
+    expect(heroDef.shape.meter.safeParse(m).success).toBe(true);
+  });
+
+  it("is learned from earlier presses only, and leaves out loose ones", () => {
+    const memo = freshPressMemo();
+    for (let i = 1; i <= 8; i++) classifyPress(hero, grid, 0.3 * i + 0.15, false, memo);
+    expect(memo.recent.direction).toEqual([]);
+    expect(driftOf(hero, memo, "direction")).toBe(0);
   });
 });
 

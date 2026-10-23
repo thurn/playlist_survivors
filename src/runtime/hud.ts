@@ -204,7 +204,7 @@ export class Hud {
       this.text(`GOOD ${hud.ratings.good}`, px(948), py(64), fs, RATING_COLORS.good, "right", intro);
 
       // The key display: four arrow keys, lit while pressed, tinted by the press's style (an off-beat
-      // press outlined in its rating's colour), and both feet for a stomp with Space.
+      // press outlined in its rating's colour), and both feet for a stomp with the stomp key (Z or Space).
       const keyFace = (key: KeyLight, x: number, y: number, w: number, h: number) => {
         const col0 = ratingColor(key.rating);
         const solid = key.lit > 0 && !key.outline;
@@ -230,7 +230,7 @@ export class Hud {
         });
       }
       {
-        // Both feet, beside the arrows: a stomp (Space) stamps them.
+        // Both feet, beside the arrows: a stomp (Z or Space) stamps them.
         const foot = hud.stomp ?? { lit: 0 };
         for (const [i, fx] of [104, 117].entries()) swell(fx, 479 + (i ? 0 : 2), 10, 18, () => keyFace(foot, fx, 479 + (i ? 0 : 2), 10, 18));
       }

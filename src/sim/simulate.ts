@@ -32,7 +32,7 @@ import { nextStepAfter, stepRate, stepSpan, type GridSlot, type Schedule } from 
 import { budgetAt, freshStrides, heldDirection, interrupt, periodAt, settle, startStride, stompCancelsUntil, strideRule, striding, type StrideState } from "./strides.ts";
 import { chainAt, heavyArcAt, orbitAt, swingArcAt, tierDamage, trailRadiusAt, waveReachAt } from "./tiers.ts";
 import { armouredBite, evolvedOrbit, offersFor, passiveBonus, startingLoadout, takeItem, type Loadout, type UpgradeItem } from "./upgrades.ts";
-import { classifyPress, NEVER_LATE, drainPerBeat, firstAtOrAfter, freshPressMemo, grooveAfterChange, type PressJudgement, type PressMemo, nearestIndex, ratePressOnGrid, tierFor } from "./timing.ts";
+import { classifyPress, NEVER_LATE, drainPerBeat, firstAtOrAfter, freshPressMemo, grooveAfterChange, keyGroup, type PressJudgement, type PressMemo, nearestIndex, ratePressOnGrid, tierFor } from "./timing.ts";
 import { OpenWorld, type World } from "./world.ts";
 
 export type { ArrowRecord, Landing, SimResult, SlamRecord } from "./recorder.ts";
@@ -1216,11 +1216,13 @@ function engine(env: Env, st: SimState, io: Io) {
     rec().tier(st.s, st.w, t, sch.gridTimes[firstAtOrAfter(sch.gridTimes, st.s + 1e-6)] ?? st.s);
   };
   /** A press's class in its trace, with the tier after it. */
-  // (Its grid fields are the nearest grid time's, as for any press; an off-beat's own offset is offbeatDelta.)
+  // (Its grid fields are the grid time nearest the press less its drift, as for any press, and its
+  // delta the press's own offset from it, before the drift; an off-beat's own offset, after the
+  // drift, is offbeatDelta.)
   const judgedTrace = (j: PressJudgement | undefined): Partial<PressTrace> => {
     if (!j) return {};
-    const gi = nearestIndex(sch.gridTimes, st.s);
-    const near = { gridIndex: gi, gridS: sch.gridTimes[gi], delta: st.s - sch.gridTimes[gi] };
+    const gi = nearestIndex(sch.gridTimes, st.s - j.drift);
+    const near = { gridIndex: gi, gridS: sch.gridTimes[gi], delta: st.s - sch.gridTimes[gi], ...(j.drift !== 0 ? { drift: j.drift } : {}) };
     if (j.class === "offbeat") return { class: j.class, tier: st.tier, ...near, offbeatDelta: j.delta, offbeat: j.rating };
     return { class: j.class, tier: st.tier, ...(j.class !== "partner" ? near : {}), ...(j.rating ? { rating: j.rating } : {}) };
   };
@@ -1235,7 +1237,8 @@ function engine(env: Env, st: SimState, io: Io) {
     const trace: PressTrace | undefined = rec().press ? { id: e.id, s: st.s, w: st.w, kind: "press", key: e.key, section: sec.label, movement: steps ? "steps" : "free", outcome: "stride", grooveBefore: st.groove } : undefined;
     // Press classes: every press in step movement is classed against the grid, before it moves the
     // hero (a partner bends or rocks the stride in progress).
-    const judged = steps ? classifyPress(hero, sch.gridTimes, st.s, partnerOf(e.key), st.memo) : undefined;
+    // The press is judged less its key group's drift (how late the player's latest presses ran).
+    const judged = steps ? classifyPress(hero, sch.gridTimes, st.s, partnerOf(e.key), st.memo, keyGroup(e.key)) : undefined;
     // Press cleaves: the counted press of an accent whose heavy impact has struck: Great or better
     // launches its shockwave now (a late press brings no hit-stop).
     const pc = st.pendingCleave;
@@ -1302,9 +1305,9 @@ function engine(env: Env, st: SimState, io: Io) {
       if (trace) rec().press!({ ...trace, ...moved, ...judgedTrace(judged), outcome: "extra", stepS: st.lastPressS, grooveAfter: st.groove });
       return;
     }
-    // Rate the press against the timing grid (the sections' grids join end to end). (Presses arm
-    // nothing: the sword swings on every grid time by itself.)
-    const rated = ratePressOnGrid(hero, st.s, sch.gridTimes);
+    // Rate the press against the timing grid (the sections' grids join end to end), less its drift
+    // as its class was. (Presses arm nothing: the sword swings on every grid time by itself.)
+    const rated = ratePressOnGrid(hero, st.s - (judged?.drift ?? 0), sch.gridTimes);
     input.rating = rated.rating;
     input.delta = rated.delta;
     st.lastPressS = st.s;
@@ -1315,7 +1318,7 @@ function engine(env: Env, st: SimState, io: Io) {
     const slot = sch.gridSlots[rated.gridIndex];
     rec().input(input);
     if (trace) {
-      Object.assign(trace, moved, { gridIndex: rated.gridIndex, gridS: sch.gridTimes[rated.gridIndex], delta: rated.delta, rating: rated.rating, grooveAfter: st.groove, slotS: slot?.s, accent: slot?.accent }, judgedTrace(judged));
+      Object.assign(trace, moved, { gridIndex: rated.gridIndex, gridS: sch.gridTimes[rated.gridIndex], delta: st.s - sch.gridTimes[rated.gridIndex], rating: rated.rating, grooveAfter: st.groove, slotS: slot?.s, accent: slot?.accent }, judgedTrace(judged));
       rec().press!(trace);
     }
   };

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { plannerInput, propsFromAtlas } from "../scripts/lib/plan-node.ts";
-import { classesBySection, pressRows, rerate, speedPerSecond, summarize, tierTime, type PlayLogFile, type RerateRules } from "../scripts/lib/play-log.ts";
+import { classesBySection, latenessReport, mashBaseline, pressRows, rerate, speedPerSecond, summarize, tierTime, type PlayLogFile, type PressRow, type RerateRules } from "../scripts/lib/play-log.ts";
 import { PlayLog, recordingContext } from "../src/live/log.ts";
 import { grooveAt } from "../src/plan/evaluate.ts";
 import { liveSession } from "../src/live/session.ts";
@@ -115,6 +115,57 @@ describe("play mode's timing log", () => {
     // The speed over each second, from the hero's path.
     expect(file.heroPath!.x.length).toBeGreaterThan(10);
     expect(text).toMatch(/Speed \(px per world second/);
+  });
+
+  it("re-rates a late stomper's presses as the simulation judged them, the drift included", () => {
+    const probe = liveSession(input, { props });
+    const sec = probe.ctx.sections.find((x) => x.level.movement === "steps" && x.s0 > 5 && x.s1 - x.s0 > 8)!;
+    const grid = Array.from(probe.recording.sch.gridTimes).filter((g) => g > sec.s0 + 0.5 && g < sec.s1 - 0.5).slice(0, 14);
+    expect(grid.length).toBe(14);
+    const startS = grid[0] - 0.5;
+    const session = liveSession(input, { props, startS });
+    const log = new PlayLog(new Date(0));
+    session.recording.pressLog = (t) => log.press(t);
+    session.runner.log = log;
+    // Twelve stomps 100 ms late, then two presses of an arrow as late.
+    const keys: KeyEvent[] = grid.flatMap((g, i): KeyEvent[] => {
+      const key = i < 12 ? "space" : "right";
+      return [
+        { s: g + 0.1, kind: "press", key },
+        { s: g + 0.15, kind: "release", key },
+      ];
+    });
+    for (const k of keys) {
+      k.id = log.newKeyId();
+      log.key({ id: k.id, type: k.kind === "press" ? "down" : "up", key: k.key, code: k.key === "space" ? "KeyZ" : "ArrowRight", timeStamp: k.s * 1000, handledAt: k.s * 1000 + 2, repeat: false, fate: "queued", s: k.s });
+    }
+    let next = 0;
+    for (let now = startS; now < grid[13] + 0.5; now += 1 / 60) {
+      const due: KeyEvent[] = [];
+      while (next < keys.length && keys[next].s + 1 / 60 <= now) due.push(keys[next++]);
+      session.runner.frame(now, due);
+    }
+    const rec = session.recording;
+    rec.refresh();
+    const context = { beats: Array.from(rec.plan.songBeats), grid: { s: Array.from(rec.sch.gridTimes), accent: [] }, sections: rules.sections, playerFrom: rec.playerFrom, hero: { timing: ctx.lib.hero.timing, step: ctx.lib.hero.step, swings: ctx.lib.hero.swings, walk: { speed: ctx.lib.hero.walk.speed }, meter: ctx.lib.hero.meter }, inputs: rec.plan.inputs, ...recordingContext(rec.plan, rec.timeWarp, rec.s) };
+    const file = JSON.parse(JSON.stringify({ ...log.toJSON(), ...context })) as PlayLogFile;
+    const rows = pressRows(file);
+    const d = ctx.lib.hero.meter.drift;
+    // The stomps: Good until the drift has its presses, then judged less it (100 ms less the dead
+    // zone, capped): Perfect, the trace keeping the press's own 100 ms beside the drift.
+    const stomps = rows.filter((r) => r.key === "space");
+    expect(stomps.map((r) => r.rating)).toEqual([...Array(d.minPresses).fill("good"), ...Array(12 - d.minPresses).fill("perfect")]);
+    for (const r of stomps) expect(r.gridDeltaMs).toBeCloseTo(100, 6);
+    expect(stomps.at(-1)!.driftMs).toBeCloseTo(Math.min(100 - d.deadMs, d.maxMs), 6);
+    // The HUD's rating and offset are the judged ones.
+    const shown = rec.plan.inputs.filter((i) => i.kind === "press" && i.key === "space" && i.s > startS);
+    expect(shown.at(-1)!.rating).toBe("perfect");
+    expect(shown.at(-1)!.delta! * 1000).toBeCloseTo(100 - Math.min(100 - d.deadMs, d.maxMs), 6);
+    // Re-rated under the same rules, every press gets the class and rating the simulation gave it.
+    const re = new Map(rerate(file, rules).presses.map((p) => [p.id, p]));
+    expect(rows.map((r) => [r.class, r.rating])).toEqual(rows.map((r) => [re.get(r.id)!.class, re.get(r.id)!.rating]));
+    // The report: each key's offset and the drift per section.
+    expect(latenessReport(file, rows)[0]).toContain("KeyZ 100 ms (12), ArrowRight 100 ms (2)");
   });
 
   it("reports keys the keyboard never handed to the game", () => {
@@ -348,5 +399,53 @@ describe("re-rating where a run is interrupted", () => {
     const log = logOf([[g[0], "space", "stomp", 1000]]);
     (log.traces[0] as { budget?: number }).budget = 47.7;
     expect(summarize(log, { table: true })).toMatch(/\/47\.7/);
+  });
+});
+
+describe("how late the presses ran", () => {
+  const grid = Array.from({ length: 20 }, (_, i) => 10 + i * 0.3);
+  const log = { sections: [{ label: "a", s0: 10, s1: 13, movement: "steps" }, { label: "b", s0: 13, s1: 16, movement: "steps" }], grid: { s: grid, accent: grid.map(() => 0) } } as unknown as PlayLogFile;
+  let id = 1;
+  const row = (gi: number, deltaMs: number, extra: Partial<PressRow> = {}): PressRow => ({ id: id++, key: "right", code: "ArrowRight", timeStamp: 0, handlerLagMs: 0, s: grid[gi] + deltaMs / 1000, outcome: "stride", class: "counted", gridIndex: gi, gridDeltaMs: deltaMs, section: grid[gi] < 13 ? "a" : "b", ...extra });
+
+  it("by physical key and by section, with the drift", () => {
+    const rows = [row(1, 10), row(2, 20), row(3, 30), row(12, 70, { key: "space", code: "Space", driftMs: 50 }), row(13, 90, { key: "space", code: "Space", driftMs: 50 })];
+    const text = latenessReport(log, rows).join("\n");
+    expect(text).toContain("by key (before the drift, + late): ArrowRight 20 ms (3), Space 80 ms (2)");
+    expect(text).toMatch(/\n {2}a\s+3\s+20\s+8\s+0\n {2}b\s+2\s+80\s+10\s+50/);
+  });
+
+  it("counts slips a third of a grid step out after the drift, and the strays right after them", () => {
+    // 0.3 s steps: a third is 100 ms. One 110 ms late press followed by a stray for its grid time;
+    // one 130 ms late with a 60 ms drift, which isn't a slip.
+    const rows = [row(1, 110), { ...row(1, 210), class: "stray" }, row(4, 130, { driftMs: 60 }), row(6, -105)];
+    expect(latenessReport(log, rows).at(-1)).toBe("Slips (counted presses more than a third of a grid step from their grid time, after the drift): 2, 1 followed by a stray for the same grid time");
+  });
+});
+
+describe("mashing baselines", () => {
+  const theme = rules.sections.find((x) => x.label === "theme-a")!;
+  const end = theme.s0 + 30;
+  const log = {
+    id: "m",
+    savedAt: "",
+    params: { avOffsetMs: 0, startS: theme.s0 },
+    keys: [],
+    applies: [],
+    drops: [],
+    traces: [],
+    events: [],
+    sounds: [],
+    frames: { phases: ["countIn", "playing", "paused", "replay"], ts: [0, 1], perf: [0, 1], s: [theme.s0, end], raw: [theme.s0, end], phase: [1, 1], dur: [8, 8], keys: [0, 0], ms: [1, 1], simS: [theme.s0, end] },
+    sections: rules.sections,
+  } as unknown as PlayLogFile;
+
+  it("re-rate random presses over the log's span under the same rules, the same each time", () => {
+    const four = mashBaseline(log, rules, 4);
+    expect(four).toEqual(mashBaseline(log, rules, 4));
+    expect(four.groove).toBeLessThan(0.3);
+    // With a meter that gives every press a lift, the mashers climb: the baseline follows the rules.
+    const generous = { ...rules, hero: { ...rules.hero, meter: { ...rules.hero.meter, counted: { perfect: 0.1, great: 0.1, good: 0.1, loose: 0.1 }, stray: 0.1 } } };
+    expect(mashBaseline(log, generous, 4).aboveTier0).toBeGreaterThan(0.8);
   });
 });

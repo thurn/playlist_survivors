@@ -8,9 +8,11 @@
  * rules serve as references while the groove is tuned.
  */
 import type { HeroDef } from "../../src/content/schema.ts";
+import { Rng } from "../../src/core/rng.ts";
 import type { ApplyLog, ClockProbe, DropLog, GemLog, HealthLog, HeroPath, KeyLog, SoundLog, SoundMove, UpgradeLog } from "../../src/live/log.ts";
+import type { InputKey } from "../../src/sim/movement.ts";
 import type { PressTrace } from "../../src/sim/recorder.ts";
-import { classifyPress, drainPerBeat, freshPressMemo, grooveAfterChange, tierFor } from "../../src/sim/timing.ts";
+import { classifyPress, drainPerBeat, freshPressMemo, grooveAfterChange, keyGroup, tierFor } from "../../src/sim/timing.ts";
 
 export interface PlayLogFile {
   id: string;
@@ -19,6 +21,8 @@ export interface PlayLogFile {
   level?: string;
   params?: { avOffsetMs: number; startS: number; mode?: string };
   inputOffsetMs?: number;
+  /** The stomp key's calibration offset (logs from when it had its own). */
+  stompOffsetMs?: number;
   audio?: { sampleRate: number; baseLatency: number; outputLatency: number; state: string; live?: Record<string, number> };
   hero?: {
     timing: { perfectMs: number; greatMs: number; goodMs: number };
@@ -66,6 +70,8 @@ export interface PlayLogFile {
 export interface PressRow {
   id: number;
   key: string;
+  /** The physical key (KeyboardEvent.code), when the log has it. */
+  code?: string;
   /** The DOM event: performance time, and how long until the handler ran (ms). */
   timeStamp: number;
   handlerLagMs: number;
@@ -91,7 +97,11 @@ export interface PressRow {
   budget?: number;
   returned?: number;
   section?: string;
+  /** The grid time the press counted for (or was nearest), and the press's offset from it (ms, before the drift). */
+  gridIndex?: number;
   gridDeltaMs?: number;
+  /** The drift taken off the press before it was judged (ms, + late). */
+  driftMs?: number;
   rating?: string;
   /** Extra presses: ms since the press that took the slot, and the off-beat rating and offset. */
   sinceStepMs?: number;
@@ -127,7 +137,7 @@ export function pressRows(log: PlayLogFile): PressRow[] {
   const rows: PressRow[] = [];
   for (const k of log.keys) {
     if (k.type !== "down") continue;
-    const row: PressRow = { id: k.id, key: k.key, timeStamp: k.timeStamp, handlerLagMs: k.handledAt - k.timeStamp, s: k.s, outcome: k.fate, clock: k.clock };
+    const row: PressRow = { id: k.id, key: k.key, ...(k.code ? { code: k.code } : {}), timeStamp: k.timeStamp, handlerLagMs: k.handledAt - k.timeStamp, s: k.s, outcome: k.fate, clock: k.clock };
     if (k.s !== undefined && beats.length > 0) {
       const b = nearest(beats, k.s);
       row.beat = b;
@@ -149,6 +159,8 @@ export function pressRows(log: PlayLogFile): PressRow[] {
         row.section = t.section;
         row.runs = t.runs;
         if (t.delta !== undefined) row.gridDeltaMs = t.delta * 1000;
+        if (t.gridIndex !== undefined) row.gridIndex = t.gridIndex;
+        if (t.drift !== undefined) row.driftMs = t.drift * 1000;
         row.rating = t.rating;
         row.stride = t.stride;
         row.budget = t.budget;
@@ -192,6 +204,8 @@ export interface SummaryOptions {
   table?: boolean;
   /** Re-rate the presses under these rules (the current game's), beside what the log recorded. */
   rerate?: RerateRules;
+  /** With re-rating: mashing baselines at these presses per second under the same rules. */
+  mash?: number[];
 }
 
 /** A press rated on its own: a stride or a stomp, or a step in logs from before strides. */
@@ -214,7 +228,7 @@ export function summarize(log: PlayLogFile, opts: SummaryOptions = {}): string {
 
   say(`Play log ${log.id} (saved ${log.savedAt})`);
   if (log.userAgent) say(`  browser: ${log.userAgent}`);
-  say(`  level ${log.level ?? "?"}, start ${log.params?.startS ?? 0}s, ?avOffsetMs=${log.params?.avOffsetMs ?? 0}, calibration offset ${log.inputOffsetMs ?? 0} ms`);
+  say(`  level ${log.level ?? "?"}, start ${log.params?.startS ?? 0}s, ?avOffsetMs=${log.params?.avOffsetMs ?? 0}, calibration offset ${log.inputOffsetMs ?? 0} ms${log.stompOffsetMs !== undefined && log.stompOffsetMs !== log.inputOffsetMs ? ` (stomp key ${log.stompOffsetMs} ms)` : ""}`);
   if (log.audio) say(`  audio: ${log.audio.sampleRate} Hz, baseLatency ${f(log.audio.baseLatency * 1000, 1)} ms, outputLatency ${f(log.audio.outputLatency * 1000, 1)} ms`);
   if (log.hero) say(`  windows: perfect ±${log.hero.timing.perfectMs} great ±${log.hero.timing.greatMs} good ±${log.hero.timing.goodMs} ms`);
   if (log.hero?.stride) say(`  strides: ${log.hero.walk?.speed ?? "?"} px/s, ${log.hero.stride.durationMs} ms each; the stride period is the grid step, halved above ${log.hero.stride.maxPeriodS} s (${log.hero.stride.freePeriodS} s free)`);
@@ -243,7 +257,7 @@ export function summarize(log: PlayLogFile, opts: SummaryOptions = {}): string {
   const grid = rows.filter((r) => r.gridDeltaMs !== undefined).map((r) => r.gridDeltaMs!);
   const beat = rows.filter((r) => counted(r.outcome) && r.beatDeltaMs !== undefined).map((r) => r.beatDeltaMs!);
   if (grid.length > 0) {
-    say(`Offset from the nearest grid time (rated presses and extra presses, + is late): median ${f(median(grid), 1)} ms, mean ${f(mean(grid), 1)}, sd ${f(sd(grid), 1)}`);
+    say(`Offset from each press's grid time (rated presses and extra presses, before the drift, + is late): median ${f(median(grid), 1)} ms, mean ${f(mean(grid), 1)}, sd ${f(sd(grid), 1)}`);
     const bins = [-250, -150, -100, -60, -30, 0, 30, 60, 100, 150, 250];
     const hist = new Array(bins.length + 1).fill(0);
     for (const v of grid) hist[bins.findIndex((b) => v < b) === -1 ? bins.length : bins.findIndex((b) => v < b)]++;
@@ -253,6 +267,7 @@ export function summarize(log: PlayLogFile, opts: SummaryOptions = {}): string {
   if (beat.length > 0) say(`Offset of rated presses from the nearest beat: median ${f(median(beat), 1)} ms, mean ${f(mean(beat), 1)}, sd ${f(sd(beat), 1)}`);
   const extra = rows.filter((r) => r.outcome === "extra" && r.sinceStepMs !== undefined).map((r) => r.sinceStepMs!);
   if (extra.length > 0) say(`Extra presses came ${f(median(extra))} ms (median) after the rated press for their grid time`);
+  for (const line of latenessReport(log, rows)) say(line);
   say();
 
   // Input path.
@@ -350,6 +365,7 @@ export function summarize(log: PlayLogFile, opts: SummaryOptions = {}): string {
       if (r.sinceStepMs !== undefined) notes.push(`${f(r.sinceStepMs)} ms after the slot's rated press`);
       if ((r.returned ?? 0) > 0) notes.push(`interrupted a stride (${f(r.returned, 1)} px back)`);
       if (r.offbeatDeltaMs !== undefined) notes.push(`off-beat ${r.offbeat ?? "unrated"} (${f(r.offbeatDeltaMs)} ms)`);
+      if (r.driftMs) notes.push(`judged less a ${f(r.driftMs)} ms drift`);
       if (r.rollback) notes.push("rollback");
       if (r.late) notes.push("LATE (applied at settled time)");
       if (r.runs !== undefined && r.runs > 1) notes.push(`ran ${r.runs}×`);
@@ -366,8 +382,76 @@ export function summarize(log: PlayLogFile, opts: SummaryOptions = {}): string {
   return out.join("\n");
 }
 
+/**
+ * How late the counted presses ran (before the drift, + late): by physical key, and by section
+ * with the drift taken off them; and the slips, counted presses more than a third of a grid step
+ * from their grid time after the drift (nearer the beat before or after than a late or early
+ * press should be), with the strays that came right after them for the same grid time.
+ */
+export function latenessReport(log: PlayLogFile, rows: readonly PressRow[]): string[] {
+  const out: string[] = [];
+  const counted = rows.filter((r) => r.class === "counted" && r.gridDeltaMs !== undefined);
+  if (counted.length === 0) return out;
+  const byKey = new Map<string, number[]>();
+  for (const r of counted) {
+    const k = r.code || r.key;
+    byKey.set(k, [...(byKey.get(k) ?? []), r.gridDeltaMs!]);
+  }
+  out.push(`Counted presses' offset by key (before the drift, + late): ${[...byKey].sort((a, b) => b[1].length - a[1].length).map(([k, v]) => `${k} ${f(median(v))} ms (${v.length})`).join(", ")}`);
+  out.push(`  ${pad("section", 16)} ${lpad("presses", 7)} ${lpad("median", 7)} ${lpad("sd", 5)} ${lpad("drift", 6)}  (ms)`);
+  const order = (label: string) => (log.sections ?? []).findIndex((x) => x.label === label);
+  const bySection = new Map<string, PressRow[]>();
+  for (const r of counted) if (r.section) bySection.set(r.section, [...(bySection.get(r.section) ?? []), r]);
+  for (const [label, v] of [...bySection].sort((a, b) => order(a[0]) - order(b[0]))) {
+    const d = v.map((r) => r.gridDeltaMs!);
+    out.push(`  ${pad(label, 16)} ${lpad(String(v.length), 7)} ${lpad(f(median(d)), 7)} ${lpad(f(sd(d)), 5)} ${lpad(f(median(v.map((r) => r.driftMs ?? 0))), 6)}`);
+  }
+  const grid = log.grid?.s;
+  if (grid && grid.length > 1) {
+    // A grid time's step: the mean of the gaps either side of it.
+    const step = (i: number) => (grid[Math.min(grid.length - 1, i + 1)] - grid[Math.max(0, i - 1)]) / (i > 0 && i + 1 < grid.length ? 2 : 1);
+    const pressed = rows.filter((r) => r.class !== undefined && r.class !== "partner").sort((a, b) => (a.s ?? 0) - (b.s ?? 0));
+    let slips = 0;
+    let strays = 0;
+    pressed.forEach((r, n) => {
+      if (r.class !== "counted" || r.gridIndex === undefined || r.gridDeltaMs === undefined) return;
+      if (Math.abs(r.gridDeltaMs - (r.driftMs ?? 0)) <= (step(r.gridIndex) * 1000) / 3) return;
+      slips++;
+      const next = pressed[n + 1];
+      if (next?.class === "stray" && next.gridIndex === r.gridIndex) strays++;
+    });
+    out.push(`Slips (counted presses more than a third of a grid step from their grid time, after the drift): ${slips}, ${strays} followed by a stray for the same grid time`);
+  }
+  return out;
+}
+
+/**
+ * A mashing baseline for re-rating rules: presses at `rate` a second, each gap 0.7–1.3 of the
+ * average (as the virtual masher has them), over the log's span, re-rated as if they were the
+ * log's own. The share of pulsed time above tier 0 (the worst of the seeds) and the average groove.
+ */
+export function mashBaseline(log: PlayLogFile, rules: RerateRules, rate: number, seeds = 10): { aboveTier0: number; groove: number } {
+  const { from, to } = playSpan(log);
+  let worst = 0;
+  let groove = 0;
+  for (let seed = 1; seed <= seeds; seed++) {
+    const r = new Rng(seed, "mash-baseline", rate);
+    const traces: PlayLogFile["traces"] = [];
+    for (let s = from + r.next() / rate, id = 1; s < to; s += (1 / rate) * (0.7 + 0.6 * r.next()), id++) traces.push({ id, s, w: s, kind: "press", key: "right", section: "", movement: "steps", outcome: "stride", runs: 1 });
+    const fake: PlayLogFile = { ...log, traces, inputs: undefined, groove: undefined, tier: undefined, keys: [], events: [] };
+    const out = rerate(fake, rules);
+    const tiers = [...tierTime(out.tier, rules.sections, from, to).values()].reduce((a, v) => a.map((x, i) => x + v[i]), [0, 0, 0, 0]);
+    const total = tiers.reduce((a, b) => a + b, 0);
+    if (total > 0) worst = Math.max(worst, 1 - tiers[0] / total);
+    groove += (averageOver(out.groove, rules.sections, from, to) ?? 0) / seeds;
+  }
+  return { aboveTier0: worst, groove };
+}
+
 /** What re-rating needs from the current game: the hero (its timing and meter) and the song's grid, beats and sections. */
 export interface RerateRules {
+  /** What the report calls them (default "the current rules"). */
+  name?: string;
   hero: Pick<HeroDef, "timing" | "meter">;
   /** Grid times (song seconds, sorted), from the song map. */
   grid: ArrayLike<number>;
@@ -516,12 +600,13 @@ export function rerate(log: PlayLogFile, rules: RerateRules): Rerated {
       out.tier.v.push(t);
     }
   };
-  // The classes remember the virtual player's last presses before the hand-over (a press of the
-  // player's soon after one of them can be a double tap or an off-beat).
+  // The classes remember the virtual player's presses before the hand-over, as the simulation's do (a
+  // press of the player's soon after one of them can be a double tap or an off-beat, and the drift
+  // starts from the virtual player's latest counted presses).
   const memo = freshPressMemo();
   for (const i of log.inputs ?? []) {
-    if (i.kind !== "press" || i.s >= from - 1e-9 || i.s < from - 2 || pressSectionAt(i.s).movement !== "steps") continue;
-    classifyPress(hero as HeroDef, grid, i.s, i.class === "partner", memo);
+    if (i.kind !== "press" || i.s >= from - 1e-9 || pressSectionAt(i.s).movement !== "steps") continue;
+    classifyPress(hero as HeroDef, grid, i.s, i.class === "partner", memo, keyGroup((i.key ?? "right") as InputKey));
   }
   let bi = 0;
   while (bi < beats.length && beats[bi] < from - 1e-9) bi++;
@@ -536,7 +621,7 @@ export function rerate(log: PlayLogFile, rules: RerateRules): Rerated {
     if (pi === presses.length) break;
     const p = presses[pi];
     const partner = p.class === "partner" || p.outcome === "bend" || p.outcome === "rock";
-    const j = classifyPress(hero as HeroDef, grid, p.s, partner, memo);
+    const j = classifyPress(hero as HeroDef, grid, p.s, partner, memo, keyGroup(p.key as InputKey));
     if (j.change > 0) lastRaise = p.s;
     set(p.s, grooveAfterChange(groove, j.change));
     out.presses.push({ id: p.id, s: p.s, section: pressSectionAt(p.s).label, key: p.key, class: j.class, ...(j.rating ? { rating: j.rating } : {}), change: j.change, groove, tier });
@@ -642,7 +727,7 @@ function grooveReport(log: PlayLogFile, rows: readonly PressRow[], rerated: Rera
     out.push("");
     const presses = rerated.presses.filter((p) => p.s >= from - 1e-9 && p.s <= to + 1e-9);
     table(
-      `Re-rated under the current rules (Perfect ±${t.perfectMs}, Great ±${t.greatMs}, Good ±${t.goodMs} ms; counted ${m.counted.perfect}/${m.counted.great}/${m.counted.good}/${m.counted.loose}, off-beat ${m.offbeat.perfect}/${m.offbeat.great}, stray ${m.stray}; tiers at ${m.tiers.join("/")}), from groove ${f(rerated.groove0, 2)} at ${f(rerated.from, 1)} s:`,
+      `Re-rated under ${opts.rerate.name ?? "the current rules"} (Perfect ±${t.perfectMs}, Great ±${t.greatMs}, Good ±${t.goodMs} ms; counted ${m.counted.perfect}/${m.counted.great}/${m.counted.good}/${m.counted.loose}, off-beat ${m.offbeat.perfect}/${m.offbeat.great}, stray ${m.stray}; drift over ${m.drift ? `${m.drift.presses} presses from ${m.drift.minPresses}, dead ${m.drift.deadMs} ms, max ${m.drift.maxMs} ms` : "none"}; tiers at ${m.tiers.join("/")}), from groove ${f(rerated.groove0, 2)} at ${f(rerated.from, 1)} s:`,
       classesBySection(presses),
       tierTime(rerated.tier, sections, from, to),
     );
@@ -651,6 +736,10 @@ function grooveReport(log: PlayLogFile, rows: readonly PressRow[], rerated: Rera
     const changed = new Map<string, number>();
     for (const r of mine) if (r.rerated && r.class && r.rerated.class !== r.class) changed.set(`${r.class}→${r.rerated.class}`, (changed.get(`${r.class}→${r.rerated.class}`) ?? 0) + 1);
     if (changed.size > 0) out.push(`  classes changed: ${[...changed].map(([k, n]) => `${k} ${n}`).join(", ")}`);
+    if (opts.mash?.length) {
+      const base = opts.mash.map((rate) => ({ rate, ...mashBaseline(log, opts.rerate!, rate) }));
+      out.push(`  mashing under the same rules (above tier 0, the worst of 10 seeds; average groove): ${base.map((b) => `${b.rate}/s ${f(b.aboveTier0 * 100)}% (${f(b.groove, 2)})`).join(", ")}`);
+    }
   }
   // The hero's speed over each second.
   if (log.heroPath) {

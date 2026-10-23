@@ -345,9 +345,15 @@ export function tierShare(plan: Plan, test: (tier: number) => boolean): number {
   return total > 0 ? passed / total : 0;
 }
 
-/** Each player the groove check knows: the moderate player climbs, the holder and mashers stay at tier 0. */
+/**
+ * Each player the groove check knows: the moderate player climbs, and so do the human and late
+ * players (timed like real play logs: a 50 ms spread, and 35 or 100 ms late, which the drift
+ * mostly takes off); the holder and mashers stay at tier 0.
+ */
 const TIER_RULES: { match: (player: string) => boolean; what: string; test: (tier: number) => boolean; min: number }[] = [
   { match: (p) => p === "moderate", what: "at tier 2 or higher", test: (t) => t >= 2, min: 0.7 },
+  { match: (p) => p === "human", what: "at tier 2 or higher", test: (t) => t >= 2, min: 0.5 },
+  { match: (p) => p === "late", what: "at tier 2 or higher", test: (t) => t >= 2, min: 0.4 },
   { match: (p) => p === "holder" || /^mash\d+$/.test(p), what: "at tier 0", test: (t) => t === 0, min: 0.8 },
 ];
 
@@ -356,7 +362,8 @@ const EIGHTHS_GROOVE = 0.05;
 
 /**
  * The groove tells the players apart, on one seed's runs (by player name): after the galop vamp
- * the moderate player is at tier 2 or higher for at least 70% of pulsed time, and the holder and
+ * the moderate player is at tier 2 or higher for at least 70% of pulsed time (the human player 50%,
+ * the late player 40%), and the holder and
  * mashers are at tier 0 for at least 80% of it; the eighths player's average groove is within
  * 0.05 of the skilled player's.
  */

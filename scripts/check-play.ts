@@ -5,14 +5,16 @@
  * `casual` player for the reward spectrum, and mashers at 4 and 8 presses a
  * second, which must earn a C and fewer kills than the moderate player. On the
  * extra seeds (fewer, to keep the gate quick): the skilled and eighths players,
- * the holder and the masher at 2 a second. The moderate, casual, skilled and
+ * the human and late players (timed like real play logs), the holder and the
+ * masher at 2 a second. The moderate, casual, skilled and
  * eighths players must survive (the hero's health never runs out). Every
  * player passes the movement checks (every movement has an input, no dead
  * presses, the speed cap and holding keeps full speed) and the impacts on the
  * grid (every gameplay sound on its subdivision's slot). The groove tells them
  * apart: after the galop vamp the moderate player is at tier 2 or higher for
- * 70% of pulsed time, the holder and mashers at tier 0 for 80% of it, and the
- * eighths player's average groove is within 0.05 of the skilled player's.
+ * 70% of pulsed time, the human player for 50% and the late player for 40%,
+ * the holder and mashers at tier 0 for 80% of it, and the eighths player's
+ * average groove is within 0.05 of the skilled player's.
  * Prints kills, average groove, grade, time at tier 0 and at tier 2 or higher,
  * and lowest health side by side. Each seed runs in its own process, in parallel.
  *
@@ -36,7 +38,7 @@ const extraSeeds = list("extra-seeds", "1858,7");
 
 /** Every seed's players, and the extra seeds'. */
 const PLAYERS: PlayerName[] = ["moderate", "casual", "mash4", "mash8"];
-const EXTRA_PLAYERS: PlayerName[] = ["perfect", "skilled", "eighths", "holder", "mash2"];
+const EXTRA_PLAYERS: PlayerName[] = ["perfect", "skilled", "eighths", "human", "late", "holder", "mash2"];
 /** The players the game is tuned for: the full checks, and they live to the end. */
 const HONEST = new Set<PlayerName>(["moderate", "casual", "perfect", "skilled", "eighths"]);
 

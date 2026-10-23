@@ -12,7 +12,7 @@
 import type { Application } from "pixi.js";
 import type { ContentLibrary } from "../content/loader.ts";
 import { indexSong, timeOfBeatIndex } from "../core/songmap.ts";
-import { KeyboardInput, keyOf, loadInputOffset } from "../live/input.ts";
+import { inputOffsetFor, KeyboardInput, keyOf, loadInputOffset } from "../live/input.ts";
 import { PlayLog, recordingContext } from "../live/log.ts";
 import type { LiveRecording } from "../live/recording.ts";
 import { LiveRunner } from "../live/runner.ts";
@@ -216,7 +216,7 @@ export async function runLive(env: LiveEnv): Promise<void> {
 
   if (env.begun) overlay.root.remove();
   else {
-    overlay.status.textContent = "Arrows or WASD to move · Esc pauses · headphones recommended";
+    overlay.status.textContent = "Arrows or WASD to move · Z or Space stomps · Esc pauses · headphones recommended";
     if (startS > 0) overlay.status.textContent += ` · starting at ${fmtTime(startS)}`;
     await clickToBegin(overlay);
   }
@@ -268,7 +268,7 @@ class PlayController {
     private readonly liveFrame: (s: number, keys: KeyEvent[], opts?: Partial<HudOptions>) => Frame,
   ) {
     const audio = env.audio!;
-    this.keyboard = new KeyboardInput((perfMs) => audio.songTimeAt(perfMs), loadInputOffset);
+    this.keyboard = new KeyboardInput((perfMs) => audio.songTimeAt(perfMs), inputOffsetFor);
     this.keyboard.log = log;
     this.keyboard.clock = () => audio.clockProbe();
     audio.soundLog = (e) => log.sound(e);
@@ -587,6 +587,7 @@ function logContext(env: LiveEnv, lib: ContentLibrary, level: string, startS: nu
     seed: env.input.seed,
     params: { avOffsetMs: env.params.avOffsetMs, startS, mode: env.params.mode },
     inputOffsetMs: loadInputOffset(),
+    stompOffsetMs: loadInputOffset("stomp"),
     audio: ac ? { sampleRate: ac.sampleRate, baseLatency: ac.baseLatency, outputLatency: ac.outputLatency, state: ac.state, stats: env.audio!.stats, live: env.audio!.liveStats() } : undefined,
     hero: { timing: hero.timing, step: hero.step, swings: { windupMs: hero.swings.windupMs }, stride: hero.stride, walk: { speed: hero.walk.speed }, meter: ctx.lib.hero.meter },
     playerFrom: recording.playerFrom,
