@@ -1,5 +1,12 @@
 # Beat Steps and a Simulated Playthrough: Implementation Plan
 
+> **History.** This plan describes the tech demo's step gameplay in the forest
+> corridor, which [the gameplay redesign](gameplay-redesign.md) replaced. The
+> simulated playthrough itself (one engine, causality, determinism, recording
+> and playback) still holds; the sections marked *Superseded* point to the
+> rules that replaced them, and the forest corridor, its route and its pace
+> checks are gone.
+
 ## Introduction
 
 Playlist Survivors is meant to be a rhythm game. The player presses the arrow
@@ -146,6 +153,10 @@ song 88.334  impact exactly on the beat, damage 1.0 x 1.19 = 1.19
 
 ## Movement Model
 
+> **Superseded** by [Movement: Fixed-Speed
+> Strides](gameplay-redesign.md#movement-fixed-speed-strides) in the gameplay
+> redesign.
+
 The movement model is the only thing that moves the hero. It is a pure
 function of the input so far, so the same code can later read a real
 keyboard.
@@ -158,6 +169,12 @@ the default comes from the song map's `feel` for that section:
   walk continuously.
 
 ### Step movement
+
+> **Superseded** by [The stride
+> budget](gameplay-redesign.md#the-stride-budget), [When strides
+> start](gameplay-redesign.md#when-strides-start) and [Stride shape and
+> direction](gameplay-redesign.md#stride-shape-and-direction) in the gameplay
+> redesign.
 
 A **step** is one quick move of fixed length in one of eight directions,
 started by a key press. Between steps the hero stands completely still. This
@@ -196,6 +213,9 @@ z = 5 * Math.sin(Math.PI * u);              // hop arc
 
 ### Free movement
 
+> **Superseded** by [Without a steady
+> beat](gameplay-redesign.md#without-a-steady-beat) in the gameplay redesign.
+
 In free movement, the hero walks while direction keys are held, like a
 Vampire Survivors character.
 
@@ -208,6 +228,9 @@ Vampire Survivors character.
 - **Presses are not rated** for timing in free movement.
 
 ### Switching modes
+
+> **Superseded** by [Without a steady
+> beat](gameplay-redesign.md#without-a-steady-beat) in the gameplay redesign.
 
 A section boundary can switch the mode. The player needs warning before the
 beat starts to matter.
@@ -232,11 +255,18 @@ The hero's animation follows directly from the movement model and swings:
 
 ## Timing, Groove and Damage
 
+> **Superseded** by [Timing and the
+> Groove](gameplay-redesign.md#timing-and-the-groove) in the gameplay
+> redesign.
+
 Accurate timing raises damage a little, never a lot. Nothing about timing
 punishes the player. There is no "miss" rating, no damage taken and no
 combo that resets.
 
 ### Rating a press
+
+> **Superseded** by [Ratings](gameplay-redesign.md#ratings) and [Press
+> classes](gameplay-redesign.md#press-classes) in the gameplay redesign.
 
 Every press in step movement is rated against the nearest point on the
 section's **timing grid**. That grid is the beat by default; a section may
@@ -259,6 +289,10 @@ The swing strikes on the grid either way. See
 
 ### The groove meter
 
+> **Superseded** by [Press classes](gameplay-redesign.md#press-classes),
+> [Drain](gameplay-redesign.md#drain) and [Tiers](gameplay-redesign.md#tiers)
+> in the gameplay redesign.
+
 The **groove meter** is a number from 0 to 1 that tracks recent timing
 accuracy. It is the player's running skill score.
 
@@ -273,6 +307,9 @@ accuracy. It is the player's running skill score.
 - **Starts at 0** at the beginning of the song.
 
 ### Damage
+
+> **Superseded** by [What a tier
+> changes](gameplay-redesign.md#what-a-tier-changes) in the gameplay redesign.
 
 All hero damage is multiplied by the groove:
 
@@ -303,6 +340,9 @@ blocks progress.
 
 ### Heavy swings on accents
 
+> **Superseded** by [Accents and
+> cleaves](gameplay-redesign.md#accents-and-cleaves) in the gameplay redesign.
+
 An **accent** is a loud, marked moment in the song map, such as a tutti
 chord. When a swing strikes on an accent, and the press that armed it was
 rated Great or better, it becomes a **cleave**, a heavy swing. A skilled
@@ -329,6 +369,9 @@ The sword is an automatic weapon. The player triggers it by pressing, or the
 game triggers it on a timer, and the game always picks the direction.
 
 ### When the sword strikes
+
+> **Superseded** by [Firing](gameplay-redesign.md#firing) in the gameplay
+> redesign.
 
 Every swing strikes exactly on a time from the song's grid. The game knows
 those times in advance, because they come from the song, so every swing can
@@ -357,6 +400,9 @@ strike                       88.334        88.658
 ```
 
 ### Swings in each mode
+
+> **Superseded** by [Firing](gameplay-redesign.md#firing) and [What a tier
+> changes](gameplay-redesign.md#what-a-tier-changes) in the gameplay redesign.
 
 - **Step movement:** every press arms one swing, as above.
 - **Idle swings in step movement:** if a bar ends with no swing in it, the
@@ -408,6 +454,10 @@ things happen, and the game state decides where.
 
 ### Spawning
 
+> **Superseded** by [The steady
+> stream](gameplay-redesign.md#the-steady-stream) and [Set
+> pieces](gameplay-redesign.md#set-pieces) in the gameplay redesign.
+
 The **spawn director** keeps the living population near the level's target
 curve. It knows the curve in advance because the level script defines it.
 
@@ -440,6 +490,9 @@ Regular enemies chase the hero with the current demo's rhythmic motion:
 - **Walk cycles** advance by distance, like the hero's.
 
 ### Archers
+
+> **Superseded** by [Health and
+> Damage](gameplay-redesign.md#health-and-damage) in the gameplay redesign.
 
 Archers keep their distance and shoot on scheduled beats.
 
@@ -540,6 +593,9 @@ the camera is causal. The camera does not look at future hero positions.
 
 ## The Virtual Player
 
+> **Superseded** by [Virtual Players](gameplay-redesign.md#virtual-players) in
+> the gameplay redesign.
+
 The virtual player is a deterministic program that plays like a highly
 skilled human. It knows the song, as a practiced player would. Each time it
 acts, it receives only a snapshot of the current game state:
@@ -578,6 +634,9 @@ It cannot see the future of the simulation.
 
 ### Where it steps
 
+> **Superseded** by [Virtual Players](gameplay-redesign.md#virtual-players) in
+> the gameplay redesign.
+
 For each press, the virtual player scores the eight directions by where the
 step would leave the hero, and picks the lowest cost:
 
@@ -604,6 +663,10 @@ most once per beat.
 
 ### Skill profiles
 
+> **Superseded** by [Virtual Players](gameplay-redesign.md#virtual-players)
+> and [The Difficulty Curve](gameplay-redesign.md#the-difficulty-curve) in the
+> gameplay redesign.
+
 A **skill profile** sets how the virtual player presses. The level script
 names the default, and the `?player=` URL parameter overrides it for
 review:
@@ -628,6 +691,10 @@ Moves, movesets and per-section choreography are replaced by hero settings,
 enemy health and per-section movement settings.
 
 ### Hero settings
+
+> **Superseded** by [Migration and
+> Compatibility](gameplay-redesign.md#migration-and-compatibility) in the
+> gameplay redesign.
 
 A new hero content file holds the movement model, timing windows, groove and
 swings:
@@ -711,6 +778,10 @@ second forward, but ".x" presses only 1.47 times per second
 
 ### Level-ups and experience
 
+> **Superseded** by [Gems, Pickups and
+> Level-Ups](gameplay-redesign.md#gems-pickups-and-level-ups) in the gameplay
+> redesign.
+
 Level-ups stay on the musical moments the level script names, such as the
 start of a section. Experience must be earned honestly:
 
@@ -764,6 +835,8 @@ The planning pipeline becomes:
 
 ## HUD
 
+> **Superseded** by [HUD](gameplay-redesign.md#hud) in the gameplay redesign.
+
 The HUD should make it obvious that a player is pressing keys to the beat.
 
 - **Key display:** four arrow keys at the bottom left. Each lights up when
@@ -783,6 +856,9 @@ The HUD should make it obvious that a player is pressing keys to the beat.
   the credits roll.
 
 ## Automated Checks
+
+> **Superseded** by [Automated Checks](gameplay-redesign.md#automated-checks)
+> in the gameplay redesign.
 
 The planner's output checks are replaced by simulation checks. They run when
 the recording is built and in the test suite, and every failure names the
@@ -894,6 +970,10 @@ review in the browser.
 
 ## Tuning Notes
 
+> **Superseded** by [Starting values](gameplay-redesign.md#starting-values)
+> and [The Difficulty Curve](gameplay-redesign.md#the-difficulty-curve) in the
+> gameplay redesign.
+
 The implementation follows this document, with these values and rules
 settled during tuning (task 6). Each keeps every check passing on all seeds.
 
@@ -944,6 +1024,9 @@ settled during tuning (task 6). Each keeps every check passing on all seeds.
   dynamics.
 
 ## Manual QA
+
+> **Superseded** by [Manual QA](gameplay-redesign.md#manual-qa) in the
+> gameplay redesign.
 
 Run the dev server from a worktree (`npm run dev`, port from `npm run port`),
 open it in desktop Chrome and click to begin. `?start=`, `?player=`,

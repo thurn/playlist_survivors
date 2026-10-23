@@ -1,5 +1,11 @@
 # Interactive Play: Implementation Plan
 
+> **History.** This plan added play mode. Its engine, live loop, rollback,
+> input latency, open field, flow and menus still hold, but [the gameplay
+> redesign](gameplay-redesign.md) replaced its rules, and Watch the demo now
+> runs those rules too: the demo is no longer frozen. The sections marked
+> *Superseded* point to their replacements.
+
 ## Introduction
 
 The tech demo plays itself. A virtual player presses keys, the
@@ -96,6 +102,10 @@ play:  level.play.yaml ─► Sim(OpenWorld, keyboard) ─live, per frame─► 
 ```
 
 ### One engine, a frozen demo
+
+> **Superseded** by [Watch the Demo and Watch My
+> Run](gameplay-redesign.md#watch-the-demo-and-watch-my-run) in the gameplay
+> redesign.
 
 Today `simulate()` is a single function that runs to the end of the song.
 It becomes a steppable class, and `simulate()` becomes a thin loop over it:
@@ -251,6 +261,9 @@ demo never sees it.
 
 ### A calm prelude, not a slow one
 
+> **Superseded** by [The Prelude](gameplay-redesign.md#the-prelude) in the
+> gameplay redesign.
+
 The demo plays its prelude in slow motion (`timeScale: 0.5`). Played, that
 halves the hero's walking speed, and walking through molasses feels awful.
 Play mode keeps the world at full speed there and gives the music's calm to
@@ -269,6 +282,10 @@ the enemies instead:
   still keeps the field clear.
 
 ### One step per grid slot
+
+> **Superseded** by [Movement: Fixed-Speed
+> Strides](gameplay-redesign.md#movement-fixed-speed-strides) in the gameplay
+> redesign.
 
 In step movement, every press belongs to its nearest grid time. Only the
 first press for each grid time is rated and arms a swing. Playing on the beat
@@ -304,6 +321,9 @@ the `moderate` bot.
 
 ### Looser timing windows
 
+> **Superseded** by [Ratings](gameplay-redesign.md#ratings) in the gameplay
+> redesign.
+
 Starting values, to be tuned:
 
 ```yaml
@@ -315,6 +335,9 @@ hero:
 Cleaves still need a press rated Great or better.
 
 ### Health
+
+> **Superseded** by [Health and
+> Damage](gameplay-redesign.md#health-and-damage) in the gameplay redesign.
 
 Play mode gives the hero health (`rules.health` in the play level), in the
 manner of Vampire Survivors: the crowd hurts by touching.
@@ -406,6 +429,9 @@ function zoneAt(p: Vec, s: number): ZoneId {
 
 ### Spawning and recycling
 
+> **Superseded** by [The steady
+> stream](gameplay-redesign.md#the-steady-stream) in the gameplay redesign.
+
 The spawn director's counts, types and timing do not change. Only the
 placement does:
 
@@ -427,6 +453,9 @@ placement does:
 
 ### Accent telegraphs
 
+> **Superseded** by [Accents and
+> cleaves](gameplay-redesign.md#accents-and-cleaves) in the gameplay redesign.
+
 A first-time player must be able to see the cleaves coming. The song owns
 the accents, so the HUD may show them in advance:
 
@@ -441,6 +470,10 @@ the accents, so the HUD may show them in advance:
 
 ### Level-ups, the boss and the finale
 
+> **Superseded** by [Level-ups and upgrade
+> orbs](gameplay-redesign.md#level-ups-and-upgrade-orbs) and [The upgrade
+> pool](gameplay-redesign.md#the-upgrade-pool) in the gameplay redesign.
+
 The rules are unchanged. Play mode only tunes the numbers:
 
 - **XP requirements** in the play level file are set so the `moderate` bot
@@ -451,6 +484,11 @@ The rules are unchanged. Play mode only tunes the numbers:
   the player has done.
 
 ## The Play Level File
+
+> **Superseded** by [Watch the Demo and Watch My
+> Run](gameplay-redesign.md#watch-the-demo-and-watch-my-run) and [Migration
+> and Compatibility](gameplay-redesign.md#migration-and-compatibility) in the
+> gameplay redesign.
 
 `levels/orpheus-galop.play.yaml` extends the demo's level script. It
 restates only what differs:
@@ -484,6 +522,9 @@ events:
 - **`hero:` overrides** merge over `content/hero.yaml` for this level only.
 
 ## The `moderate` Virtual Player
+
+> **Superseded** by [Virtual Players](gameplay-redesign.md#virtual-players) in
+> the gameplay redesign.
 
 The `moderate` profile is the automated stand-in for a moderately competent
 human. It drives play mode through the same `KeyEvent` path as the
@@ -556,6 +597,10 @@ moderate   normal, sd 30 ms,     85% of the section's pattern slots       250 ms
 
 ### End of run
 
+> **Superseded** by [The grade](gameplay-redesign.md#the-grade) and [Watch the
+> Demo and Watch My Run](gameplay-redesign.md#watch-the-demo-and-watch-my-run)
+> in the gameplay redesign.
+
 - **The end card:** kills, Perfect, Great and Good counts, average groove,
   and a letter grade, then the credits roll.
 - **Grade:** from the average groove over step sections. Starting
@@ -569,6 +614,8 @@ moderate   normal, sd 30 ms,     85% of the section's pattern slots       250 ms
   live run (see [Automated checks](#automated-checks)).
 
 ## HUD Changes
+
+> **Superseded** by [HUD](gameplay-redesign.md#hud) in the gameplay redesign.
 
 - **Accent telegraphs** on the beat track, as described above. These are
   play mode only.
@@ -585,6 +632,10 @@ moderate   normal, sd 30 ms,     85% of the section's pattern slots       250 ms
 
 ### The frozen demo
 
+> **Superseded** by [Watch the Demo and Watch My
+> Run](gameplay-redesign.md#watch-the-demo-and-watch-my-run) in the gameplay
+> redesign.
+
 - **Golden hashes:** `planHash` for seeds 1858, 1859, 7 and 2024 under
   every demo profile matches the fixture recorded before any refactor. This
   runs in `npm run test`.
@@ -592,6 +643,9 @@ moderate   normal, sd 30 ms,     85% of the section's pattern slots       250 ms
   are unchanged and still pass.
 
 ### Play mode (`npm run check:play`)
+
+> **Superseded** by [Automated Checks](gameplay-redesign.md#automated-checks)
+> in the gameplay redesign.
 
 These checks run the `moderate` bot through play mode headless, on seeds
 1858, 1859, 7 and 2024. Every failure names the time and entity involved.
@@ -727,6 +781,11 @@ open it in desktop Chrome with wired headphones, and choose **Play**.
 
 ### Feel
 
+> **Superseded** by [First assembled
+> check](gameplay-redesign.md#first-assembled-check) and [Full
+> playthroughs](gameplay-redesign.md#full-playthroughs) in the gameplay
+> redesign.
+
 - **A press steps at once.** There is no perceptible delay between a key
   and the hop.
 - **Impacts are on the beat** to the ear, however sloppy the presses.
@@ -737,6 +796,10 @@ open it in desktop Chrome with wired headphones, and choose **Play**.
 - **Holding a key** in step movement does nothing after the first step.
 
 ### The set pieces, played
+
+> **Superseded** by [Set pieces and
+> pickups](gameplay-redesign.md#set-pieces-and-pickups) in the gameplay
+> redesign.
 
 - **Prelude:** held keys walk smoothly, at full speed, across the open
   field. The sword swings by itself, and the enemies drift in calmly.

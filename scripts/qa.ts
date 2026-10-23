@@ -10,6 +10,7 @@ import { join } from "node:path";
 import { chromium, type Page } from "@playwright/test";
 import sharp from "sharp";
 import { ROOT } from "./lib/files.ts";
+import { runPlanner } from "./lib/plan-node.ts";
 import { withDevServer } from "./lib/server.ts";
 import { listenInPage, type ListenResult } from "./lib/listen.ts";
 
@@ -41,7 +42,7 @@ interface Hook {
   planSource?: string;
   audio?: () => AudioState;
   renderAt(s: number): Promise<void>;
-  checks?: () => { name: string; failures: string[] }[];
+  checks?: () => { name: string; failures: string[]; checked?: number }[];
   stats?: () => { alive: number; particles: number };
   plan: {
     duration: number;
@@ -190,13 +191,13 @@ await withDevServer(async (base) => {
     await ctx.close();
   }
 
-  // ------------------------------------------- step movement and the reward spectrum
-  // Each profile's playthrough, simulated in the browser: stillness between steps, every
-  // impact on the grid, and how the groove and kills differ between players.
+  // ---------------------------------------------- sound on the grid and the reward spectrum
+  // Each profile's playthrough, simulated in the browser: every check (sound on the grid among
+  // them), every impact on the grid, and how the groove and kills differ between players.
   if (!onlyPlay) {
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
     const page = await ctx.newPage();
-    const runs: Record<string, { groove: number; kills: number; presses: number; ratings: Record<string, number>; offGrid: number; swings: number; failed: string[] }> = {};
+    const runs: Record<string, { groove: number; kills: number; presses: number; ratings: Record<string, number>; offGrid: number; swings: number; failed: string[]; grid?: { failures: number; checked: number } }> = {};
     for (const player of ["skilled", "casual"]) {
       await page.goto(`${base}/?test&player=${player}`);
       await waitReady(page);
@@ -213,34 +214,13 @@ await withDevServer(async (base) => {
           offGrid,
           swings: p.swings.length,
           failed: d.checks!().filter((c) => c.failures.length > 0).map((c) => c.name),
+          grid: d.checks!().filter((c) => c.name === "impacts on the grid").map((c) => ({ failures: c.failures.length, checked: c.checked ?? 0 }))[0],
         };
       });
-      if (player === "skilled") {
-        // The hero stands still between steps: two moments inside one beat gap of theme A.
-        const warp = await page.evaluate(() => (window as unknown as { __demo: Hook }).__demo.plan.warp);
-        const rate = await page.evaluate(() => (window as unknown as { __demo: Hook }).__demo.plan.hero.rate);
-        const toWorld = (t: number) => {
-          let b = warp[0];
-          for (const x of warp) if (x.s <= t) b = x;
-          return b.w + (t - b.s) * b.rate;
-        };
-        const at = async (t: number) => {
-          const f = toWorld(t) * rate;
-          const k = Math.floor(f);
-          const xy = await page.evaluate((i) => {
-            const h = (window as unknown as { __demo: Hook }).__demo.plan.hero;
-            return [h.x[i], h.y[i], h.x[i + 1], h.y[i + 1]];
-          }, k);
-          const u = f - k;
-          return { x: xy[0] + (xy[2] - xy[0]) * u, y: xy[1] + (xy[3] - xy[1]) * u };
-        };
-        const a = await at(75.2);
-        const b = await at(75.3);
-        const still = Math.hypot(a.x - b.x, a.y - b.y);
-        record("Theme A: the hero stands still between steps", still < 0.01, `the hero moves ${still.toFixed(3)} px between 75.20 s and 75.30 s (inside one beat gap)`);
-      }
     }
     for (const [player, r] of Object.entries(runs)) {
+      // Sound on the grid: every row of the table (impacts, kills, chimes, level-up sounds...), within 1 ms.
+      record(`?player=${player}: every sound on its grid slot`, r.grid !== undefined && r.grid.failures === 0 && r.grid.checked > 1000, r.grid ? `${r.grid.checked} sounds and impacts checked against the Sound on the Grid table, ${r.grid.failures} off their slot` : "no grid-sound check ran");
       record(`?player=${player}: every check passes and every impact is on the grid`, r.failed.length === 0 && r.offGrid === 0, r.failed.length ? `failing: ${r.failed.join(", ")}` : `${r.swings} swings, ${r.offGrid} off the grid; ${r.presses} presses (perfect ${r.ratings.perfect}, great ${r.ratings.great}, good ${r.ratings.good}, unrated ${r.ratings.none}); ${r.kills} kills; average groove ${(r.groove * 100).toFixed(0)}%`);
     }
     record(
@@ -282,10 +262,10 @@ await withDevServer(async (base) => {
   }
 
   // ------------------------------------------------------------ play mode
-  // The Manual QA items of docs/design/interactive.md (and the strides of
-  // docs/design/gameplay-redesign.md) a machine can judge, in live play with real (synthetic) key
-  // presses: strides start at once, impacts stay on the grid, mashing and holding, diagonals,
-  // pausing, losing focus, and Watch my run.
+  // The Manual QA items of docs/design/gameplay-redesign.md (and docs/design/interactive.md's flow) a
+  // machine can judge, in live play with real (synthetic) key presses: strides start at once,
+  // impacts stay on the grid, the same speed however you press, mashing and holding, diagonals,
+  // stomps, pausing, losing focus, and Watch my run after a level-up.
   {
     type PlayHook = {
       ready: Promise<void>;
@@ -297,8 +277,9 @@ await withDevServer(async (base) => {
       live: {
         recording: {
           timeWarp: { toWorld(s: number): number };
-          plan: { songBeats: ArrayLike<number>; grid: ArrayLike<number>; hero: { x: ArrayLike<number>; y: ArrayLike<number> }; swings: { s: number }[]; inputs: { s: number; kind: string; key: string; steps: boolean; extra?: boolean; bend?: boolean; stride?: number; stomp?: boolean; rock?: boolean; rating?: string }[]; events: { sounds: { s: number; priority: number }[] } };
+          plan: { upgrades: { s: number; offers: unknown[]; taken: number }[]; songBeats: ArrayLike<number>; grid: ArrayLike<number>; hero: { x: ArrayLike<number>; y: ArrayLike<number> }; swings: { s: number }[]; inputs: { s: number; kind: string; key: string; steps: boolean; extra?: boolean; bend?: boolean; stride?: number; stomp?: boolean; rock?: boolean; rating?: string }[]; events: { sounds: { s: number; priority: number }[] } };
         };
+        key(e: { s: number; kind: "press" | "release"; key: string }): void;
       };
     };
     const ph = (page: Page) => page.evaluate(() => (window as unknown as { __demo: PlayHook }).__demo.play.phase());
@@ -472,27 +453,94 @@ await withDevServer(async (base) => {
     await page.evaluate(() => window.dispatchEvent(new Event("blur")));
     record("Play: losing focus pauses", (await ph(page)) === "paused", `after a window blur the game is ${await ph(page)}`);
     record("Play: no page errors", errors.length === 0, errors.length ? errors.join("; ") : "none during live play");
-    // Watch my run: play to the end from late in the song, then replay it.
-    await openPlay(page, "2:15");
-    const rest = await page.evaluate(() => Array.from((window as unknown as { __demo: PlayHook }).__demo.live.recording.plan.songBeats));
-    const from = (await songNow(page)) + 0.3;
-    for (const [i, b] of rest.filter((x) => x > from && x < from + 4).entries()) {
-      await waitSong(page, b - 0.01);
-      await page.keyboard.press(["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp"][i % 4]);
+    // The first assembled check: holding Right, tapping quarter notes, tapping eighth notes and
+    // mashing all move the hero at the walk speed (140 px/s). Each pattern runs three seconds; the
+    // speed is read over its last two, in world time (a hit-stop freezes the world), once the first
+    // press's full budget is spent.
+    await openPlay(page, "1:24");
+    const sb = await page.evaluate(() => Array.from((window as unknown as { __demo: PlayHook }).__demo.live.recording.plan.songBeats));
+    const windows: { name: string; a: number; b: number }[] = [];
+    let at = (await songNow(page)) + 0.3;
+    for (const name of ["hold", "quarters", "eighths", "mash"]) {
+      const end = at + 3;
+      const pattern = sb.filter((b) => b > at && b < end);
+      await waitSong(page, pattern[0] - 0.01);
+      if (name === "hold") {
+        await page.keyboard.down("ArrowRight");
+        while ((await songNow(page)) < end) {
+          await page.waitForTimeout(40);
+          await page.keyboard.down("ArrowRight");
+        }
+        await page.keyboard.up("ArrowRight");
+      } else if (name === "mash") {
+        while ((await songNow(page)) < end) {
+          await page.keyboard.press("ArrowRight");
+          await page.waitForTimeout(55);
+        }
+      } else {
+        const times = name === "quarters" ? pattern : pattern.flatMap((b, i) => (i + 1 < pattern.length ? [b, (b + pattern[i + 1]) / 2] : [b]));
+        for (const t of times) {
+          await waitSong(page, t - 0.01);
+          await page.keyboard.press("ArrowRight");
+        }
+      }
+      windows.push({ name, a: pattern[0] + 1, b: end });
+      at = end + 0.6;
+      await waitSong(page, at);
     }
-    await page.waitForFunction(() => (window as unknown as { __demo: PlayHook }).__demo.play.menu()?.items.includes("Watch my run") ?? false, undefined, { timeout: 30_000 });
-    const differ = await page.evaluate(() => (window as unknown as { __demo: PlayHook }).__demo.play.compareReplay());
-    await page.locator("canvas").screenshot({ path: join(OUT, "play-end-card.png") });
-    record("Play: Watch my run replays the run identically", differ.length === 0, differ.length ? `the replay differs in: ${differ.join(", ")}` : "the replay's recording equals the live run's, part by part");
-    // Chosen at once (the live run's music-follow curve still scheduled), the replay plays.
-    const before = errors.length;
-    await page.evaluate(() => (window as unknown as { __demo: PlayHook }).__demo.play.choose("Watch my run"));
-    await page.waitForFunction(() => (window as unknown as { __demo: PlayHook }).__demo.play.phase() === "replay", undefined, { timeout: 30_000 });
-    const r0 = await songNow(page);
-    await page.waitForTimeout(1500);
-    const r1 = await songNow(page);
-    const replayErrors = errors.slice(before);
-    record("Play: Watch my run chosen at once plays the replay", replayErrors.length === 0 && r1 > r0 + 1, `song time ${r0.toFixed(2)} → ${r1.toFixed(2)} s over 1.5 s; ${replayErrors.length ? replayErrors.join("; ") : "no page errors"}`);
+    const speeds = await page.evaluate((ws) => {
+      const rec = (window as unknown as { __demo: PlayHook }).__demo.live.recording;
+      const plan = rec.plan;
+      return ws.map(({ name, a, b }) => {
+        const [ka, kb] = [a, b].map((s) => Math.floor(rec.timeWarp.toWorld(s) * 60 + 1e-6));
+        return { name, speed: Math.hypot(plan.hero.x[kb] - plan.hero.x[ka], plan.hero.y[kb] - plan.hero.y[ka]) / ((kb - ka) / 60) };
+      });
+    }, windows);
+    record(
+      "Play: holding, quarter notes, eighth notes and mashing all move at the walk speed",
+      speeds.length === 4 && speeds.every((x) => Math.abs(x.speed / 140 - 1) < 0.15),
+      `px per world second over two seconds of each: ${speeds.map((x) => `${x.name} ${x.speed.toFixed(0)}`).join(", ")} (the walk speed is 140)`,
+    );
+    // Watch my run after a level-up: from 1:37 (the moderate player has played up to there), the
+    // moderate player's own keys go on through the bridge's level-up at 1:40.7 to the end, each
+    // injected just before its time; then the replay is compared with the live run, offers and orbs
+    // included.
+    const LATE = 97;
+    const botKeys = runPlanner({ level: "levels/orpheus-galop.play.yaml", profile: "moderate" })
+      .inputs.filter((i) => i.s > LATE + 0.2)
+      .map((i) => ({ s: i.s, kind: i.kind, key: i.key }));
+    await openPlay(page, "1:37");
+    for (const k of botKeys) {
+      if ((await ph(page)) !== "playing") break;
+      await waitSong(page, k.s - 0.03);
+      await page.evaluate((e) => (window as unknown as { __demo: PlayHook }).__demo.live.key(e), k);
+    }
+    const ended = await page
+      .waitForFunction(() => (window as unknown as { __demo: PlayHook }).__demo.play.menu()?.items.includes("Watch my run") ?? false, undefined, { timeout: 30_000 })
+      .then(() => true)
+      .catch(() => false);
+    if (!ended) {
+      const menu = await page.evaluate(() => (window as unknown as { __demo: PlayHook }).__demo.play.menu()?.items ?? []);
+      record("Play: Watch my run replays a run with a level-up identically", false, `the run from 1:37 never reached the end card (phase ${await ph(page)}, menu ${menu.join(", ") || "none"})`);
+    } else {
+      const ups = await page.evaluate((late) => (window as unknown as { __demo: PlayHook }).__demo.live.recording.plan.upgrades.filter((u) => u.s > late).map((u) => ({ s: u.s, offers: u.offers.length, taken: u.taken })), LATE);
+      const differ = await page.evaluate(() => (window as unknown as { __demo: PlayHook }).__demo.play.compareReplay());
+      await page.locator("canvas").screenshot({ path: join(OUT, "play-end-card.png") });
+      record(
+        "Play: Watch my run replays a run with a level-up identically",
+        ups.length > 0 && ups.every((u) => u.offers > 0 && u.taken >= 0) && differ.length === 0,
+        `${ups.map((u) => `level-up at ${u.s.toFixed(2)} s: ${u.offers} offers, took #${u.taken}`).join("; ") || "no level-up in the run"}; ${differ.length ? `the replay differs in: ${differ.join(", ")}` : "the replay's recording equals the live run's, part by part"}`,
+      );
+      // Chosen at once (the live run's music-follow curve still scheduled), the replay plays.
+      const before = errors.length;
+      await page.evaluate(() => (window as unknown as { __demo: PlayHook }).__demo.play.choose("Watch my run"));
+      await page.waitForFunction(() => (window as unknown as { __demo: PlayHook }).__demo.play.phase() === "replay", undefined, { timeout: 30_000 });
+      const r0 = await songNow(page);
+      await page.waitForTimeout(1500);
+      const r1 = await songNow(page);
+      const replayErrors = errors.slice(before);
+      record("Play: Watch my run chosen at once plays the replay", replayErrors.length === 0 && r1 > r0 + 1, `song time ${r0.toFixed(2)} → ${r1.toFixed(2)} s over 1.5 s; ${replayErrors.length ? replayErrors.join("; ") : "no page errors"}`);
+    }
     // A mid-song start: the bot played up to the climax, and the field is busy.
     await openPlay(page, "1:50");
     await page.waitForTimeout(800);
