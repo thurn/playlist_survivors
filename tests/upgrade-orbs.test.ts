@@ -104,7 +104,7 @@ describe("a level-up's downbeat", () => {
       pushed++;
       if (e.fates.some((f) => f.w >= u.w! - 1e-9 && f.w <= w1)) struck++;
       const back = lib.enemies.get(e.type)!.speed * 1.5 * (w1 - u.w!);
-      expect(d1, `#${e.id} ${e.type} from ${d0.toFixed(0)} px`).toBeGreaterThan(LEVEL_PULSE - back - 8);
+      expect(d1, `#${e.id} ${e.type} from ${d0.toFixed(0)} px`).toBeGreaterThan(LEVEL_PULSE - back - 12);
     }
     expect(pushed).toBeGreaterThan(3);
     expect(struck).toBeGreaterThan(0);

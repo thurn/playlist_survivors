@@ -41,7 +41,7 @@ describe("the play level file", () => {
     expect(demo.sections[0].autoSwingBeats).toBe(2);
     expect(demo.sections[0].calm).toBe(0);
     expect(play.sections.find((s) => s.label === "galop-vamp")!.calm).toBe(0); // not inherited
-    const changed = ["prelude", "climax", "galop-vamp", "galop-opening"];
+    const changed = ["prelude", "climax", "galop-vamp", "galop-opening", "theme-a", "theme-a-repeat", "kick-line", "bridge", "coda"];
     for (const [i, s] of play.sections.entries()) if (!changed.includes(s.label)) expect(s).toEqual(demo.sections[i]);
     // Events merge by `at` and kind: the level-ups offer items from the upgrade pool and need their
     // own experience; the set pieces (rings and stampedes) are play mode's own, added to the demo's.

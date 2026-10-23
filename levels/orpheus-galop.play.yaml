@@ -37,8 +37,25 @@ sections:
   # right after the count-in.
   - section: galop-vamp
     zone: galop-woods
+  # The difficulty curve: a tier-0 player starts taking hits in theme A, bleeds in the kick line and
+  # bridge, and falls in the climax, so theme A, its repeat and the kick line are thinner than the
+  # demo's, and the climax and coda denser (within the 520 cap). Healing is rare (rules.healthPool):
+  # fewer orc elites, so fewer chickens, than the demo's horde.
+  - section: theme-a
+    population: [120, 200]
+  - section: theme-a-repeat
+    population: [200, 280]
+    roster: { goblin: 4, orc: 2, slime: 1, bee: 1, orc-elite: 0.05 }
+  - section: kick-line
+    population: [280, 280]
+  - section: bridge
+    roster: { skeleton: 2, orc-ember: 3, goblin: 2, bat: 1, orc-elite: 0.05 }
   - section: climax
     camera: { lead: 0 }
+    roster: { orc-ember: 3, skeleton-ember: 3, goblin: 2, bat: 1, orc-elite: 0.03 }
+    population: [480, 520]
+  - section: coda
+    population: [520, 480]
 # Level-ups offer three items from the upgrade pool (rules.upgradePool). Experience for each: the
 # moderate player fills each bar a little before its moment (with gems on the field it collects
 # them only where it walks: about 110-125 by the first, 540-740 between the first and second, and

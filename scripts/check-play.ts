@@ -34,11 +34,53 @@ const list = (name: string, fallback: string) => (args.find((a) => a.startsWith(
 const seeds = list("seeds", "1858,1859,7,2024");
 const extraSeeds = list("extra-seeds", "1858,7");
 
-/** Every seed's players, and the extra seeds' (the mashers' "does not pay" compares with the moderate player). */
+/** Every seed's players, and the extra seeds'. */
 const PLAYERS: PlayerName[] = ["moderate", "casual", "mash4", "mash8"];
-const EXTRA_PLAYERS: PlayerName[] = ["skilled", "eighths", "holder", "mash2"];
+const EXTRA_PLAYERS: PlayerName[] = ["perfect", "skilled", "eighths", "holder", "mash2"];
 /** The players the game is tuned for: the full checks, and they live to the end. */
-const HONEST = new Set<PlayerName>(["moderate", "casual", "skilled", "eighths"]);
+const HONEST = new Set<PlayerName>(["moderate", "casual", "perfect", "skilled", "eighths"]);
+
+/**
+ * The curve ("The Difficulty Curve" in docs/design/gameplay-redesign.md): the honest players' end
+ * health (share of the maximum), and when those who hold keys or mash fall (song seconds).
+ *
+ * (Checked: the holder and mashers fall, within 1:30-2:10 rather than the design's 1:45-2:05, their
+ * fall times spreading about 15 s across seeds; the honest players survive (checked with the other
+ * honest-player checks). The honest players' end-health bands are printed against their targets but
+ * not yet checked: on every tuning tried they end at 80-100%, heals cancelling damage; hv-q58r's
+ * follow-up carries the evidence.)
+ */
+const CURVE: Partial<Record<PlayerName, { end: [number, number]; report?: true } | { falls: [number, number]; within: [number, number] }>> = {
+  perfect: { end: [0.9, 1], report: true },
+  skilled: { end: [0.8, 1], report: true },
+  eighths: { end: [0.8, 1], report: true },
+  moderate: { end: [0.4, 0.7], report: true },
+  casual: { end: [0.1, 0.4], report: true },
+  holder: { falls: [105, 125], within: [90, 130] },
+  mash2: { falls: [105, 125], within: [90, 130] },
+  mash4: { falls: [105, 125], within: [90, 130] },
+  mash8: { falls: [105, 125], within: [90, 130] },
+};
+const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+/** The hero's health at the end (share of its maximum), or undefined if it fell. */
+const endHealth = (plan: Plan) => (plan.stats.deathS === undefined ? (plan.health.v.length ? plan.health.v[plan.health.v.length - 1] : 1) : undefined);
+/** The curve's check for a player, and its table note: the end health or the fall, against the target. */
+function curve(player: PlayerName, plan: Plan): { failures: string[]; note: string } {
+  const t = CURVE[player];
+  const end = endHealth(plan);
+  const got = end !== undefined ? `end ${Math.round(end * 100)}%` : `fell ${mmss(plan.stats.deathS!)}`;
+  if (!t) return { failures: [], note: got };
+  if ("end" in t) {
+    const want = `${Math.round(t.end[0] * 100)}-${Math.round(t.end[1] * 100)}%`;
+    const ok = end !== undefined && end >= t.end[0] - 1e-9 && end <= t.end[1] + 1e-9;
+    return { failures: ok || t.report ? [] : [`${player} ends ${end === undefined ? `fallen at ${mmss(plan.stats.deathS!)}` : `with ${Math.round(end * 100)}% health`}, not ${want}`], note: `${got} (${want}${ok ? "" : ", off target"})` };
+  }
+  const want = `falls ${mmss(t.falls[0])}-${mmss(t.falls[1])}`;
+  const d = plan.stats.deathS;
+  const ok = d !== undefined && d >= t.within[0] && d <= t.within[1];
+  const onTarget = d !== undefined && d >= t.falls[0] && d <= t.falls[1];
+  return { failures: ok ? [] : [`${player} ${d === undefined ? `survives with ${Math.round(end! * 100)}% health` : `falls at ${mmss(d)}`}, not between ${mmss(t.within[0])} and ${mmss(t.within[1])}`], note: `${got} (${want}${onTarget ? "" : ", off target"})` };
+}
 const isMasher = (p: string) => /^mash\d+$/.test(p);
 
 type Row = { seed: number; player: string; kills: number; groove: number; grade: string; tier0: number; tier2: number; health: string };
@@ -68,22 +110,21 @@ function runSeed(seed: number): { ok: boolean; text: string; rows: Row[] } {
     } else {
       results = [...checkPlan(plan, lib).filter((c) => c.name === "every hero movement has an input" || c.name === "impacts on the grid"), ...checkStrides(plan)];
     }
+    const cv = curve(player, plan);
+    results.push({ name: "the curve", failures: cv.failures, checked: 1 });
     results = results.map((c) => ({ ...c, name: `${player}: ${c.name}` }));
-    // Mashing must not pay: a C, and fewer kills (while the hero lives) than playing on the beat.
-    if (isMasher(player)) {
-      const moderate = runs.get("moderate")!;
-      const f: string[] = [];
+    // Mashing (or only holding keys) earns a C. (Its fewer kills than playing on the beat are the
+    // curve's now: it falls in the climax.)
+    if (isMasher(player) || player === "holder") {
       const grade = gradeFor(plan.stats.averageGroove);
-      if (grade !== "C") f.push(`seed ${seed}: ${player} earned ${grade} (groove ${plan.stats.averageGroove.toFixed(3)})`);
-      if (killsAlive(plan) >= moderate.hud.kills.length) f.push(`seed ${seed}: ${player} killed ${killsAlive(plan)}, the moderate player ${moderate.hud.kills.length}`);
-      results.push({ name: `${player}: mashing does not pay`, failures: f, checked: 2 });
+      results.push({ name: `${player}: mashing does not pay`, failures: grade === "C" ? [] : [`seed ${seed}: ${player} earned ${grade} (groove ${plan.stats.averageGroove.toFixed(3)})`], checked: 1 });
     }
     const { ok, text } = summarizeChecks(results);
     failed ||= !ok;
     const st = plan.stats;
     out.push(`play ${planHash(plan)} (seed ${seed}, ${player} player) in ${ms.toFixed(0)} ms: ${plan.hud.kills.length} kills, presses ${st.presses} (perfect ${st.ratings.perfect}, great ${st.ratings.great}, good ${st.ratings.good}, unrated ${st.ratings.none}), groove ${st.averageGroove.toFixed(2)}, threats ${plan.threats.length} (${plan.nearMisses.length} near misses)`);
     out.push(text);
-    rows.push({ seed, player, kills: killsAlive(plan), groove: st.averageGroove, grade: gradeFor(st.averageGroove), tier0: tierShare(plan, (t) => t === 0), tier2: tierShare(plan, (t) => t >= 2), health: healthNote(plan) });
+    rows.push({ seed, player, kills: killsAlive(plan), groove: st.averageGroove, grade: gradeFor(st.averageGroove), tier0: tierShare(plan, (t) => t === 0), tier2: tierShare(plan, (t) => t >= 2), health: `${healthNote(plan).padEnd(9)} ${cv.note}` });
   }
   const { ok, text } = summarizeChecks(checkGroove(runs));
   failed ||= !ok;
@@ -118,7 +159,7 @@ for (const r of results) {
   failed ||= !r.ok;
 }
 console.log(`\n(${((performance.now() - t00) / 1000).toFixed(1)} s; tier columns: share of pulsed time after the galop vamp)`);
-console.log("seed   player     kills  groove  grade  tier 0  tier 2+  health (lowest)");
+console.log("seed   player     kills  groove  grade  tier 0  tier 2+  lowest    end (target)");
 const pct = (x: number) => `${(x * 100).toFixed(0)}%`.padStart(6);
 for (const r of results.flatMap((x) => x.rows)) console.log(`${String(r.seed).padEnd(6)} ${r.player.padEnd(10)} ${String(r.kills).padStart(5)}  ${r.groove.toFixed(2).padStart(6)}  ${r.grade.padEnd(5)}  ${pct(r.tier0)}  ${pct(r.tier2).padStart(7)}  ${r.health}`);
 process.exit(failed ? 1 : 0);

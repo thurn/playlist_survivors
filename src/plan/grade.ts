@@ -1,10 +1,10 @@
 /**
  * Play mode's letter grade: from the average groove over the step sections.
- * The thresholds are tuned to the groove meter (press classes): on the checked
- * seeds the perfect and skilled players average 0.94–0.95, the `moderate`
- * player 0.89–0.92 (an A), and mashers 0.11–0.70 (a C). The casual player
- * (downbeats only, 120 ms deviation) averages 0.08–0.13, a C until its profile
- * and the groove values are retuned (the design wants a B).
+ * The thresholds are tuned to the groove meter (press classes) so the design's
+ * players earn their grades: on the checked seeds the perfect, skilled and
+ * eighths players average 0.94–0.98 (an S), the `moderate` player 0.90–0.93
+ * (an A), the casual player (downbeats only, 60 ms deviation) 0.63–0.83 (a B),
+ * and the holder and mashers 0.03–0.16 (a C).
  */
 
 export type Grade = "S" | "A" | "B" | "C";
@@ -12,7 +12,7 @@ export type Grade = "S" | "A" | "B" | "C";
 export const GRADE_THRESHOLDS: { grade: Grade; min: number }[] = [
   { grade: "S", min: 0.94 },
   { grade: "A", min: 0.85 },
-  { grade: "B", min: 0.75 },
+  { grade: "B", min: 0.5 },
 ];
 
 export function gradeFor(averageGroove: number): Grade {

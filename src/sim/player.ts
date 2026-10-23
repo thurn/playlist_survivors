@@ -160,6 +160,9 @@ const VACUUM_PULL = 4;
  */
 const ORB_PULL = 6;
 const ORB_AIM = 4;
+/** The boss: a step leaving the hero within BOSS_KEEP px of it costs up to BOSS_AVOID (it bites, and slams where the hero stands). */
+const BOSS_KEEP = 110;
+const BOSS_AVOID = 4;
 /** The small health pool: below this share of its health the player walks to the nearest chicken in sight. */
 const CHICKEN_HEALTH = 0.6;
 /** A decision this close before a glowing bar's level-up (s) waits for its orbs: it stomps on the beat instead of striding off. */
@@ -598,6 +601,8 @@ export class VirtualPlayer implements Player {
     }
     cost += 0.5 * Math.min(close, 6) * 0.5;
     cost -= 0.8 * Math.min(near, 15) / 5;
+    // Keep away from the boss (play mode, where it hurts: the hero has health).
+    if (obs.boss && obs.hero.health !== undefined) cost += BOSS_AVOID * clamp((BOSS_KEEP - Math.hypot(ax - obs.boss.x, ay - obs.boss.y)) / BOSS_KEEP, 0, 1);
     // Strides: walk up to a dancing line, so the cleave on its release reaches the whole line.
     const f = this.strides ? this.line(obs) : undefined;
     if (f) cost += 3 * clamp((Math.hypot(ax - f.x, ay - f.y) - ROAM_FORMATION) / 100, 0, 3);

@@ -5,7 +5,8 @@ import { liveSession } from "../src/live/session.ts";
 import { gradeFor } from "../src/plan/grade.ts";
 import type { KeyEvent } from "../src/sim/player.ts";
 import { replay } from "../src/runtime/play.ts";
-import { calibrationOffset } from "../src/runtime/title.ts";
+import { bestGradeKey, calibrationOffset, loadBestGrade, saveBestGrade } from "../src/runtime/title.ts";
+import { INPUT_OFFSET_KEY } from "../src/live/input.ts";
 import { syntheticSongMap } from "./fixtures/synthetic-song.ts";
 
 const input = plannerInput({ songMap: syntheticSongMap(), level: "levels/orpheus-galop.play.yaml" });
@@ -67,6 +68,25 @@ describe("calibration", () => {
 
 describe("the grade", () => {
   it("comes from the average groove", () => {
-    expect([0.96, 0.94, 0.93, 0.85, 0.8, 0.75, 0.7].map(gradeFor)).toEqual(["S", "S", "A", "A", "B", "B", "C"]);
+    expect([0.96, 0.94, 0.93, 0.85, 0.8, 0.75, 0.5, 0.49, 0.1].map(gradeFor)).toEqual(["S", "S", "A", "A", "B", "B", "B", "C", "C"]);
+  });
+
+  it("is saved under a new key: a best grade from before the redesign is ignored, and the calibration offset kept", () => {
+    const store = new Map<string, string>();
+    const fake = { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v), removeItem: (k: string) => void store.delete(k), clear: () => store.clear(), key: () => null, length: 0 };
+    const was = (globalThis as { localStorage?: unknown }).localStorage;
+    (globalThis as { localStorage?: unknown }).localStorage = fake;
+    try {
+      store.set("ps.best.orpheus-galop.play", "S");
+      store.set(INPUT_OFFSET_KEY, "42");
+      expect(loadBestGrade("orpheus-galop.play")).toBeUndefined();
+      saveBestGrade("orpheus-galop.play", "B");
+      expect(loadBestGrade("orpheus-galop.play")).toBe("B");
+      expect(store.get(bestGradeKey("orpheus-galop.play"))).toBe("B");
+      expect(store.get("ps.best.orpheus-galop.play")).toBe("S");
+      expect(store.get(INPUT_OFFSET_KEY)).toBe("42");
+    } finally {
+      (globalThis as { localStorage?: unknown }).localStorage = was;
+    }
   });
 });

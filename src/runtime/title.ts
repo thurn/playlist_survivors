@@ -10,10 +10,16 @@ import type { Overlay } from "./app.ts";
 
 export type TitleChoice = "play" | "demo" | "calibrate";
 
+/**
+ * Where a level's best grade is saved. (Grades from before the gameplay redesign were saved under
+ * `ps.best.<level>`; they aren't comparable with today's, so they are left behind.)
+ */
+export const bestGradeKey = (level: string) => `ps.grade.v2.${level}`;
+
 /** The best grade for a level, saved per browser (storage may be blocked: then there is none). */
 export function loadBestGrade(level: string): Grade | undefined {
   try {
-    const g = localStorage.getItem(`ps.best.${level}`);
+    const g = localStorage.getItem(bestGradeKey(level));
     return g === "S" || g === "A" || g === "B" || g === "C" ? g : undefined;
   } catch {
     return undefined;
@@ -22,7 +28,7 @@ export function loadBestGrade(level: string): Grade | undefined {
 
 export function saveBestGrade(level: string, g: Grade): void {
   try {
-    localStorage.setItem(`ps.best.${level}`, g);
+    localStorage.setItem(bestGradeKey(level), g);
   } catch {
     // Storage blocked: the best grade lasts this session only.
   }
