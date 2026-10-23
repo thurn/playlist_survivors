@@ -17,6 +17,7 @@ import {
   type MusicalRef,
   type SkillProfileName,
   type SoundPalette,
+  type PassiveDef,
   type WeaponDef,
   type ZoneTheme,
 } from "./schema.ts";
@@ -118,6 +119,7 @@ export interface ContentLibrary {
   hero: HeroDef;
   enemies: Map<string, EnemyDef>;
   weapons: Map<string, WeaponDef>;
+  passives: Map<string, PassiveDef>;
   formations: Map<string, FormationDef>;
   effects: Map<string, EffectRecipe>;
   soundPalettes: Map<string, SoundPalette>;
@@ -125,7 +127,7 @@ export interface ContentLibrary {
 }
 
 type Kind = Exclude<keyof ContentLibrary, "hero">;
-const KINDS: Kind[] = ["enemies", "weapons", "formations", "effects", "soundPalettes", "zones"];
+const KINDS: Kind[] = ["enemies", "weapons", "passives", "formations", "effects", "soundPalettes", "zones"];
 
 function resolveExtends<T extends { id: string; extends?: string }>(
   kind: string,
@@ -223,6 +225,13 @@ export function loadContent(files: SourceFile[]): ContentLibrary {
     const need = { orbit: w.orbit, chain: w.chain, trail: w.trail, blast: w.blast }[w.kind];
     if (!need) issues.push({ ...o, path: `weapons.${k}.${w.kind}`, message: `${w.kind} weapons need a "${w.kind}" block` });
     if (w.kind !== "blast" && !w.hitShape) issues.push({ ...o, path: `weapons.${k}.hitShape`, message: "weapons need a hitShape" });
+    // An evolution changes what its kind has: an orbit's blades, a chain's jumps, or (but not a blast's) how often it fires.
+    const e = w.evolve;
+    if (e) {
+      if (w.kind === "blast") issues.push({ ...o, path: `weapons.${k}.evolve`, message: "the finale blast can't evolve" });
+      if (w.kind !== "orbit" && (e.count !== 0 || e.radiusScale !== 1)) issues.push({ ...o, path: `weapons.${k}.evolve`, message: "only orbit weapons evolve their count and radiusScale" });
+      if (w.kind !== "chain" && e.jumps !== 0) issues.push({ ...o, path: `weapons.${k}.evolve.jumps`, message: "only chain weapons evolve their jumps" });
+    }
   }
   for (const [k, f] of lib.formations) {
     ref("formations", k, "enemy", "enemies", f.enemy);
@@ -281,9 +290,11 @@ export interface LevelScript {
   extends?: string;
   /** The demo's forest corridor, or play mode's open field. */
   world: "corridor" | "open";
-  rules: { oneStepPerSlot: boolean; accentTelegraphs: boolean; health: boolean; strides: boolean; pressClasses: boolean; selfFiring: boolean; gridSounds: boolean; pressCleaves: boolean; setPieces: boolean; fieldGems: boolean };
+  rules: { oneStepPerSlot: boolean; accentTelegraphs: boolean; health: boolean; strides: boolean; pressClasses: boolean; selfFiring: boolean; gridSounds: boolean; pressCleaves: boolean; setPieces: boolean; fieldGems: boolean; upgradePool: boolean };
   /** The hero for this level: content/hero.yaml with the level's overrides (the same object when it has none). */
   hero: HeroDef;
+  /** Play mode's upgrade pool (rules.upgradePool): the starting loadout beside the sword, and the new weapons a level-up can offer. */
+  upgrades: { loadout: string[]; offer: string[] };
 }
 
 /** The song a level script is for (following `extends`), read before the song map is loaded. */
@@ -551,7 +562,11 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap, res
   data.events.forEach((e, i) => {
     const path = ["events", i];
     checkRef(song, e.at, [...path, "at"]);
-    need([...path, "levelUp"], "weapons", e.levelUp);
+    // With the upgrade pool, a level-up offers three items instead of naming a weapon.
+    if (data.rules?.upgradePool) {
+      if (e.levelUp !== undefined && e.levelUp !== "offer") issues.push({ ...at([...path, "levelUp"]), message: `with rules.upgradePool a level-up offers items from the pool: write "levelUp: offer", not "${e.levelUp}"` });
+    } else if (e.levelUp === "offer") issues.push({ ...at([...path, "levelUp"]), message: `"levelUp: offer" needs rules.upgradePool` });
+    else need([...path, "levelUp"], "weapons", e.levelUp);
     need([...path, "formation"], "formations", e.formation);
     if (e.ring) {
       need([...path, "ring", "enemy"], "enemies", e.ring.enemy);
@@ -570,6 +585,19 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap, res
     const kinds = EVENT_KINDS.filter((k) => (e as Record<string, unknown>)[k] !== undefined);
     if (kinds.length === 0) issues.push({ ...at(path), message: "event does nothing (add levelUp, formation, ring, stampede, threats, boss, banner, titleCard, landmark, timeScale or blast)" });
   });
+
+  // The upgrade pool's weapons: known, not the finale blast, and each named once; only with its rule.
+  if (data.upgrades && !data.rules?.upgradePool) issues.push({ ...at(["upgrades"]), message: "upgrades need rules.upgradePool" });
+  const named = new Set<string>();
+  for (const key of ["loadout", "offer"] as const) {
+    (data.upgrades?.[key] ?? []).forEach((w, i) => {
+      const path = ["upgrades", key, i];
+      need(path, "weapons", w);
+      if (lib.weapons.get(w)?.kind === "blast") issues.push({ ...at(path), message: `the finale blast "${w}" can't be in the upgrade pool` });
+      if (named.has(w)) issues.push({ ...at(path), message: `weapon "${w}" is named twice in upgrades` });
+      named.add(w);
+    });
+  }
 
   function checkRef(map: SongMap, r: MusicalRef, path: (string | number)[]) {
     const err = refError(map, r);
@@ -590,8 +618,9 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap, res
     file: f.name,
     extends: data.extends,
     world: data.world,
-    rules: { oneStepPerSlot: data.rules?.oneStepPerSlot ?? false, accentTelegraphs: data.rules?.accentTelegraphs ?? false, health: data.rules?.health ?? false, strides: data.rules?.strides ?? false, pressClasses: data.rules?.pressClasses ?? false, selfFiring: data.rules?.selfFiring ?? false, gridSounds: data.rules?.gridSounds ?? false, pressCleaves: data.rules?.pressCleaves ?? false, setPieces: data.rules?.setPieces ?? false, fieldGems: data.rules?.fieldGems ?? false },
+    rules: { oneStepPerSlot: data.rules?.oneStepPerSlot ?? false, accentTelegraphs: data.rules?.accentTelegraphs ?? false, health: data.rules?.health ?? false, strides: data.rules?.strides ?? false, pressClasses: data.rules?.pressClasses ?? false, selfFiring: data.rules?.selfFiring ?? false, gridSounds: data.rules?.gridSounds ?? false, pressCleaves: data.rules?.pressCleaves ?? false, setPieces: data.rules?.setPieces ?? false, fieldGems: data.rules?.fieldGems ?? false, upgradePool: data.rules?.upgradePool ?? false },
     hero: levelHero,
+    upgrades: { loadout: data.upgrades?.loadout ?? [], offer: data.upgrades?.offer ?? [] },
   };
 }
 

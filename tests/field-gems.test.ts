@@ -13,6 +13,7 @@ import type { CameraTrack, Plan, SoundEvent } from "../src/plan/types.ts";
 import { chimeDegree, Emitter, type EmitSink } from "../src/planner/emit.ts";
 import { prepare } from "../src/planner/plan.ts";
 import { GEM_CAP, VACUUM_AHEAD } from "../src/sim/simulate.ts";
+import { loadoutAt, passiveBonus } from "../src/sim/upgrades.ts";
 
 const PLAY = "levels/orpheus-galop.play.yaml";
 const input = plannerInput({ level: PLAY });
@@ -34,7 +35,9 @@ describe("gems on the field", () => {
     for (const g of picked) {
       const hp = heroSample(moderate, g.wT!);
       const d = Math.hypot(hp.x - g.x0, hp.y - g.y0);
-      const r = moderate.pickupRadius![tierAt(moderate, warp.toSong(g.wT!))];
+      // (The magnet passive, if a level-up took it, widens it.)
+      const s = warp.toSong(g.wT!);
+      const r = moderate.pickupRadius![tierAt(moderate, s)] * (1 + passiveBonus(ctx.lib, loadoutAt([], moderate.upgrades ?? [], s).passives).pickup);
       // (Taken off on the fixed step it came within the radius: the hero moves up to a step's length past it.)
       expect(d, `gem dropped at w=${g.w0.toFixed(2)}`).toBeLessThanOrEqual(r + 6);
       if (d > 45) far++;

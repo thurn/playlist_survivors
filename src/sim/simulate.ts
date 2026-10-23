@@ -32,6 +32,7 @@ import { DEMO_RULES, type Rules } from "./rules.ts";
 import { nextStepAfter, stepRate, stepSpan, type GridSlot, type Schedule } from "./schedule.ts";
 import { budgetAt, freshStrides, heldDirection, interrupt, periodAt, settle, startStride, stompCancelsUntil, strideRule, striding, type StrideState } from "./strides.ts";
 import { chainAt, heavyArcAt, orbitAt, swingArcAt, tierDamage, trailRadiusAt, waveReachAt } from "./tiers.ts";
+import { armouredBite, evolvedOrbit, offersFor, passiveBonus, startingLoadout, takeItem, type Loadout, type UpgradeItem } from "./upgrades.ts";
 import { armedStrike, classifyPress, NEVER_LATE, damageMultiplier, drainPerBeat, firstAtOrAfter, freshPressMemo, grooveAfterChange, type PressJudgement, type PressMemo, type PressRating, grooveAfterOffbeat, grooveAfterPress, grooveDecay, nearestIndex, ratePress, ratePressOnGrid, type Rating, tierFor } from "./timing.ts";
 import { CorridorWorld, OpenWorld, type World } from "./world.ts";
 
@@ -77,6 +78,8 @@ const RING_ROW = 32;
 /** A stampede runs at this times its enemy's speed, in rows this far apart. */
 export const STAMPEDE_SPEED = 2.5;
 const STAMPEDE_ROW = 48;
+/** Gems on the field: the virtual player sees gems this far beyond the pickup radius (px). */
+const GEM_SEEN = 300;
 /** Gems on the field (rules.fieldGems): at most this many lie on the field. */
 export const GEM_CAP = 300;
 /** A vacuum drops this far ahead of the hero, is touched within this distance, and its gems land over one bar. */
@@ -528,6 +531,9 @@ interface SimState {
   field: { gem: number; x: number; y: number; value: number; big: boolean }[];
   vacuums: { i: number; x: number; y: number }[];
   nVacuums: number;
+  /** The upgrade pool (rules.upgradePool): what the hero has beside the sword, and its passives' bonuses added up. */
+  loadout: Loadout;
+  bonus: { maxHealth: number; pickup: number; damage: number; armour: number };
   stampedes: { fi: number; done: boolean }[];
   /** Camera punches: song time, strength, and world time once it has happened (it freezes in a hit-stop). */
   punches: Punch[];
@@ -617,6 +623,8 @@ function freshState(env: Env): SimState {
     field: [],
     vacuums: [],
     nVacuums: 0,
+    loadout: startingLoadout(env.rules.upgradePool ? env.ctx.level.upgrades.loadout : []),
+    bonus: { maxHealth: 0, pickup: 0, damage: 0, armour: 0 },
     stampedes: [],
     punches,
     alive: [],
@@ -739,6 +747,7 @@ function engine(env: Env, st: SimState, io: Io) {
   const selfFiring = env.rules.selfFiring;
   const setPieces = env.rules.setPieces;
   const fieldGems = env.rules.fieldGems;
+  const upgradePool = env.rules.upgradePool;
   const pressCleaves = env.rules.pressCleaves;
   const rule = strideRule(hero);
   /** How long a step (or stride) takes. */
@@ -1040,7 +1049,9 @@ function engine(env: Env, st: SimState, io: Io) {
 
   const addHit = (h: Omit<Hit, "id" | "intensity" | "s" | "w" | "section" | "energy">, energy = energyAt(song, st.s)): Hit => {
     const section = sectionIndexAt(ctx, st.s);
-    const hit: Hit = { ...h, id: st.nHits++, s: st.s, w: st.w, section, energy, intensity: intensityOf(section, energy, h.weight, h.accent) };
+    // The might passive: the hero's hits deal more (the finale blast kills anything anyway).
+    const damage = st.bonus.damage > 0 && h.source !== "ring" ? h.damage * (1 + st.bonus.damage) : h.damage;
+    const hit: Hit = { ...h, damage, id: st.nHits++, s: st.s, w: st.w, section, energy, intensity: intensityOf(section, energy, h.weight, h.accent) };
     rec().hit(hit);
     return hit;
   };
@@ -1757,7 +1768,7 @@ function engine(env: Env, st: SimState, io: Io) {
         const ed = Math.hypot(f.x - hp.x, f.y - hp.y);
         if (health && f.def.contactDamage > 0 && ed <= HURTBOX_RADIUS + f.r + CONTACT_GAP + BITE_SLACK && w1 - f.biteW >= biteEvery) {
           f.biteW = w1;
-          hurt(f.def.contactDamage);
+          hurt(armouredBite(f.def.contactDamage, st.bonus.armour));
         }
         continue;
       }
@@ -1814,7 +1825,7 @@ function engine(env: Env, st: SimState, io: Io) {
       // An enemy at contact bites, at most once per biteEveryMs of world time.
       if (health && f.def.contactDamage > 0 && Math.max(ed, minD) <= minD + CONTACT_GAP + BITE_SLACK && w1 - f.biteW >= biteEvery) {
         f.biteW = w1;
-        hurt(f.def.contactDamage);
+        hurt(armouredBite(f.def.contactDamage, st.bonus.armour));
       }
     }
   };
@@ -1909,10 +1920,10 @@ function engine(env: Env, st: SimState, io: Io) {
     return out;
   };
 
-  /** Gems on the field as the player sees them: those within a stride or two of the pickup radius, and the nearest vacuum. */
+  /** Gems on the field as the player sees them: those within GEM_SEEN of the pickup radius, and the nearest vacuum. */
   const gemView = (hp: { x: number; y: number }): Pick<Observation, "gems" | "vacuum"> => {
     if (!fieldGems) return {};
-    const reach = pickupRadius() + 150;
+    const reach = pickupRadius() + GEM_SEEN;
     const gems = st.field.filter((g) => Math.hypot(g.x - hp.x, g.y - hp.y) <= reach).map((g) => ({ x: g.x, y: g.y, value: g.value }));
     let vacuum: { x: number; y: number } | undefined;
     // (A vacuum the player sees: within VACUUM_SEEN of the hero; one left far behind no longer draws it.)
@@ -2023,12 +2034,22 @@ function engine(env: Env, st: SimState, io: Io) {
     rec().weapon(id, st.s);
     const wd = lib.weapons.get(id)!;
     if (wd.kind === "blast") return;
+    scheduleFires(wd, wd.fires.every);
+  };
+
+  /**
+   * A weapon fires on every slot of a subdivision after now, up to the finale blast; an evolution's
+   * faster subdivision skips the slots the weapon's own already fires on.
+   */
+  const scheduleFires = (wd: WeaponDef, every: WeaponDef["fires"]["every"], skip?: WeaponDef["fires"]["every"]) => {
     const end = blastS ?? ctx.duration;
     const startBar = Math.max(1, barOfBeatIndex(ctx.idx, sbiAt(st.s)));
     for (let bar = startBar; bar <= ctx.idx.barCount; bar++) {
       const bpb = ctx.idx.beatsPerBar[bar];
-      const stepB = subdivisionBeats(wd.fires.every, bpb);
+      const stepB = subdivisionBeats(every, bpb);
+      const skipB = skip ? subdivisionBeats(skip, bpb) : undefined;
       for (let off = 0; off < bpb - 1e-9; off += stepB) {
+        if (skipB !== undefined && Math.abs(off / skipB - Math.round(off / skipB)) < 1e-6) continue;
         const bi = ctx.idx.barStart[bar] + off;
         if (bi > song.beats.length - 1) continue;
         const t = timeOfBeatIndex(song, bi);
@@ -2051,7 +2072,7 @@ function engine(env: Env, st: SimState, io: Io) {
       const bar = Math.max(1, barOfBeatIndex(ctx.idx, bi));
       const bpb = ctx.idx.beatsPerBar[bar] ?? 2;
       const th0 = (TAU * bi) / (wd.orbit.periodBars * bpb);
-      const orbit = selfFiring ? orbitAt(wd, st.tier) : wd.orbit;
+      const orbit = evolvedOrbit(wd, selfFiring ? orbitAt(wd, st.tier) : wd.orbit, st.loadout.evolved.includes(wd.id));
       for (let k = 0; k < orbit.count; k++) {
         const th = th0 + (k * TAU) / orbit.count;
         const x = hp.x + Math.cos(th) * orbit.radius;
@@ -2061,7 +2082,9 @@ function engine(env: Env, st: SimState, io: Io) {
       }
     } else if (wd.kind === "chain" && wd.chain) {
       const tiered = selfFiring ? chainAt(wd, st.tier) : undefined;
-      const jumps = tiered ? tiered.jumps : Math.round(lerp(wd.chain.jumps[0], wd.chain.jumps[1], energy));
+      // An evolved chain jumps further.
+      const more = st.loadout.evolved.includes(wd.id) ? (wd.evolve?.jumps ?? 0) : 0;
+      const jumps = (tiered ? tiered.jumps : Math.round(lerp(wd.chain.jumps[0], wd.chain.jumps[1], energy))) + more;
       const first = { w: st.w, x: hp.x, y: hp.y - 24 };
       const chain: ChainState = { last: first, index: st.nChains++, hit: new Set(), jumps, energy, bi, ...(tiered ? { range: tiered.range } : {}), ...(selfFiring ? { mult } : {}) };
       rec().chain(first);
@@ -2178,7 +2201,8 @@ function engine(env: Env, st: SimState, io: Io) {
   /** Gems on the field: the pickup radius at the tier now. */
   const pickupRadius = () => {
     const r = hero.pickupRadius ?? [40];
-    return r[Math.max(0, Math.min(r.length - 1, st.tier))];
+    // The magnet passive widens it.
+    return r[Math.max(0, Math.min(r.length - 1, st.tier))] * (1 + st.bonus.pickup);
   };
   /** The first sixteenth note at or after song time t. */
   const sixteenthAtOrAfter = (t: number) => timeOfBeatIndex(song, Math.ceil(sbiAt(t) * 4 - 1e-6) / 4);
@@ -2250,11 +2274,40 @@ function engine(env: Env, st: SimState, io: Io) {
 
   const grant = (id: string) => {
     if (st.blasting) return;
+    const index = st.level;
     st.level++;
     st.xpNow = 0;
     st.overdue = false;
     pushXp();
-    grantWeapon(id);
+    if (!upgradePool) {
+      // (A level script's offers, run without the upgrade pool, grant nothing.)
+      if (lib.weapons.has(id)) grantWeapon(id);
+      return;
+    }
+    // The upgrade pool: three offers from the run's seed and the level-up's index. (Until upgrade
+    // orbs, a level-up takes its first offer.)
+    const offers = offersFor(ctx.seed, index, lib, ctx.level.upgrades.offer, st.loadout);
+    const taken = offers.length > 0 ? 0 : -1;
+    rec().upgrade({ s: st.s, offers, taken });
+    if (taken >= 0) takeUpgrade(offers[taken]);
+  };
+
+  /** The hero takes an item: a new weapon starts firing, an evolution applies from now, a passive adds its bonus. */
+  const takeUpgrade = (item: UpgradeItem) => {
+    takeItem(st.loadout, item);
+    st.bonus = passiveBonus(lib, st.loadout.passives);
+    if (item.kind === "weapon") grantWeapon(item.id);
+    else if (item.kind === "evolve") {
+      const wd = lib.weapons.get(item.id)!;
+      if (wd.evolve?.every) scheduleFires(wd, wd.evolve.every, wd.fires.every);
+    } else {
+      // Max health also heals that much at once.
+      const p = lib.passives.get(item.id)!;
+      if (env.rules.health && p.maxHealth > 0 && st.health > 0) {
+        st.health = Math.min(healthMax(), st.health + p.maxHealth);
+        rec().health(st.s, st.health / healthMax());
+      }
+    }
   };
 
   const gemArrives = (i: number, value: number) => {
@@ -2333,11 +2386,14 @@ function engine(env: Env, st: SimState, io: Io) {
     }
   };
 
+  /** Play mode's maximum health, with the max-health passives. */
+  const healthMax = () => hero.health.max + st.bonus.maxHealth;
+
   /** The hero takes damage (play mode's health); at none, the run is over and it takes no more. */
   const hurt = (amount: number) => {
     if (!env.rules.health || amount <= 0 || st.health <= 0) return;
     st.health = Math.max(0, st.health - amount);
-    rec().health(st.s, st.health / hero.health.max);
+    rec().health(st.s, st.health / healthMax());
   };
 
   /** A rated press in step movement: a clean beat (Great or better) heals, more so in a streak; anything less ends the streak. */
@@ -2345,9 +2401,9 @@ function engine(env: Env, st: SimState, io: Io) {
     const clean = rating === "perfect" || rating === "great";
     st.streak = clean ? st.streak + 1 : 0;
     const h = hero.health.heal;
-    if (!clean || !env.rules.health || st.health <= 0 || st.health >= hero.health.max) return;
-    st.health = Math.min(hero.health.max, st.health + h.beat + (st.streak >= h.streakFrom ? h.streak : 0));
-    rec().health(st.s, st.health / hero.health.max);
+    if (!clean || !env.rules.health || st.health <= 0 || st.health >= healthMax()) return;
+    st.health = Math.min(healthMax(), st.health + h.beat + (st.streak >= h.streakFrom ? h.streak : 0));
+    rec().health(st.s, st.health / healthMax());
   };
 
   /** A near miss: the slow-motion dip starts now (dips do not stack). */
@@ -2681,6 +2737,8 @@ function engine(env: Env, st: SimState, io: Io) {
       if (bi + 1 < song.beats.length && sectionAt(song.beats[bi]).level.movement === "free") for (const f of [0.25, 0.5, 0.75]) q.push(timeOfBeatIndex(song, bi + f), { kind: "spawnTick", bi: bi + f });
     }
     sch.levelUps.forEach((lu, i) => q.push(lu.s, { kind: "levelDue", i }));
+    // The upgrade pool: the starting loadout fires from the start, without a level-up.
+    for (const id of st.loadout.weapons) grantWeapon(id);
     sch.archerGroups.forEach((g, i) => q.push(g.s, { kind: "archers", group: i, n: g.archers }));
     sch.volleys.forEach((v, i) => {
       q.push(v.sDraw, { kind: "draw", v: i });

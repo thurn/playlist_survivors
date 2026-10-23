@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import type { KeyEvent } from "../src/sim/player.ts";
 import { BatchRecorder } from "../src/sim/recorder.ts";
 import { chainAt, orbitAt, swingArcAt, tierDamage, trailRadiusAt } from "../src/sim/tiers.ts";
+import { evolvedOrbit, loadoutAt, passiveBonus } from "../src/sim/upgrades.ts";
 import { Sim, worldFor } from "../src/sim/simulate.ts";
 import { prepare } from "../src/planner/plan.ts";
 import { plannerInput, propsFromAtlas } from "../scripts/lib/plan-node.ts";
@@ -76,7 +77,8 @@ describe("the self-firing sword", () => {
 
 describe("the blades", () => {
   it("circle in their tier's number, and hit for their tier's damage", () => {
-    // The blades arrive with the first level-up (the galop opening); Perfect presses then climb to tier 3.
+    // The blades are in the starting loadout (evolved, if a level-up takes their evolution); from the
+    // galop opening, Perfect presses climb to tier 3.
     const sec = section("galop-opening");
     const beats = Array.from(sch.gridTimes).filter((g) => g > sec.s0 + 0.5 && g < sec.s0 + 9);
     const rec = new BatchRecorder();
@@ -90,8 +92,11 @@ describe("the blades", () => {
     for (const [s, hits] of firings) {
       const t = tierAt(s);
       seen.add(t);
-      expect(hits.length, `blades firing at ${s} (tier ${t})`).toBe(orbitAt(weapon("orbiting-blades"), t).count);
-      for (const h of hits) expect(h.damage).toBeCloseTo(weapon("orbiting-blades").damage * tierDamage(hero, t), 9);
+      // (With what level-ups took by then: evolved blades, and the might passive's damage.)
+      const l = loadoutAt([], rec.upgrades, s);
+      expect(hits.length, `blades firing at ${s} (tier ${t})`).toBe(evolvedOrbit(weapon("orbiting-blades"), orbitAt(weapon("orbiting-blades"), t), l.evolved.includes("orbiting-blades")).count);
+      const might = 1 + passiveBonus(ctx.lib, l.passives).damage;
+      for (const h of hits) expect(h.damage).toBeCloseTo(weapon("orbiting-blades").damage * tierDamage(hero, t) * might, 9);
     }
     expect(seen.has(0) && seen.has(3)).toBe(true);
   });

@@ -1,0 +1,19 @@
+# Play mode's passives (rules.upgradePool): stat bonuses a level-up can offer beside the weapon
+# upgrades. Each can be taken again, and the bonuses add up.
+passives:
+  - id: max-health
+    name: Max Health
+    maxHealth: 20                # and heals 20 at once
+    color: "#ff6070"
+  - id: magnet
+    name: Magnet
+    pickup: 0.3                  # the pickup radius 30% wider
+    color: "#60ffc0"
+  - id: might
+    name: Might
+    damage: 0.1                  # damage 10% higher
+    color: "#ffb040"
+  - id: armour
+    name: Armour
+    armour: 1                    # bites take 1 less, at least 1
+    color: "#c0c8d8"

@@ -8,7 +8,7 @@
  * rules serve as references while the groove is tuned.
  */
 import type { HeroDef } from "../../src/content/schema.ts";
-import type { ApplyLog, ClockProbe, DropLog, GemLog, HeroPath, KeyLog, SoundLog, SoundMove } from "../../src/live/log.ts";
+import type { ApplyLog, ClockProbe, DropLog, GemLog, HeroPath, KeyLog, SoundLog, SoundMove, UpgradeLog } from "../../src/live/log.ts";
 import type { PressTrace } from "../../src/sim/recorder.ts";
 import { classifyPress, drainPerBeat, freshPressMemo, grooveAfterChange, tierFor } from "../../src/sim/timing.ts";
 
@@ -48,6 +48,8 @@ export interface PlayLogFile {
   soundMoves?: SoundMove[];
   /** Gems on the field: pickups per sixteenth, vacuums, and the experience dropped and collected. */
   gems?: GemLog;
+  /** The upgrade pool: each level-up's offers and the one taken. */
+  upgrades?: UpgradeLog[];
   keys: KeyLog[];
   applies: ApplyLog[];
   drops: DropLog[];
@@ -305,6 +307,8 @@ export function summarize(log: PlayLogFile, opts: SummaryOptions = {}): string {
     say(`Gems: ${gl.collected} of ${gl.dropped} experience dropped collected (${gl.dropped ? Math.round((100 * gl.collected) / gl.dropped) : 0}%), on ${pick.length} sixteenths (most on one: ${Math.max(0, ...pick.map((p) => p.n))} gems)`);
     for (const v of gl.vacuums.filter((x) => inRange(x.s))) say(`  vacuum at ${f(v.s, 2)}: ${v.sTouch !== undefined ? `touched at ${f(v.sTouch, 2)}, ${v.gems ?? 0} gems in view flew in` : "never touched"}`);
   }
+  // The upgrade pool: what each level-up offered and took.
+  for (const u of (log.upgrades ?? []).filter((x) => inRange(x.s))) say(`Level-up at ${f(u.s, 2)}: took ${u.offers[u.taken] ?? "nothing"} (offered ${u.offers.join(", ")})`);
   // Grid sounds: each sound known less than 60 ms before its slot moved to a later one.
   const moves = (log.soundMoves ?? []).filter((m) => inRange(m.from));
   if (moves.length > 0) {

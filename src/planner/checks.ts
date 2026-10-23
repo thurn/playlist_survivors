@@ -383,8 +383,9 @@ export function checkPlan(plan: Plan, lib: ContentLibrary): CheckResult[] {
       for (const id of bucketAt(ww)) {
         const e = byId.get(id)!;
         // (In a hit-stop world time stands still: an enemy dying at the wind-up's world time was still
-        // alive at it when its death came later in song time.)
-        const diesLater = Math.abs(ww - e.deathW) <= 1e-9 && (plan.hits[e.fates[e.fates.length - 1]?.hit]?.s ?? -Infinity) > sw.sWind + 1e-9;
+        // alive at it when its death came later in song time, or at the same instant, after the
+        // wind-up looked: a weapon firing on the wind-up's own slot.)
+        const diesLater = Math.abs(ww - e.deathW) <= 1e-9 && (plan.hits[e.fates[e.fates.length - 1]?.hit]?.s ?? -Infinity) >= sw.sWind - 1e-9;
         if (ww < e.spawnW || (ww >= e.deathW && !diesLater)) continue;
         enemyPos(plan, e, ww, tmp);
         near.push({ x: tmp.x, y: tmp.y });

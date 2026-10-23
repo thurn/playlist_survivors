@@ -16,6 +16,7 @@ weapons:
     sound: weapon-blades
     icon: blades
     color: "#bfe8ff"
+    evolve: { name: Blades Evolve, count: 2, radiusScale: 1.2 }   # play mode: two more blades, an orbit 20% wider
   - id: chain-lightning
     name: Chain Lightning
     kind: chain
@@ -32,6 +33,7 @@ weapons:
     sound: weapon-lightning
     icon: lightning
     color: "#a8c8ff"
+    evolve: { name: Lightning Evolves, every: beat, jumps: 1 }    # play mode: every beat, one more jump
   - id: fire-trail
     name: Fire Trail
     kind: trail

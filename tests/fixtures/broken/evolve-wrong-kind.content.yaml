@@ -1,0 +1,15 @@
+# expect: weapons.broken-evolve.evolve.jumps: only chain weapons evolve their jumps
+weapons:
+  - id: broken-evolve
+    name: Broken Evolve
+    kind: orbit
+    fires: { every: eighth }
+    orbit: { count: 3, radius: 72, periodBars: 1 }
+    hitShape: { kind: circle, radius: 14 }
+    damage: 0.6
+    weight: light
+    effect: blades-hit
+    sound: weapon-blades
+    icon: blades
+    color: "#bfe8ff"
+    evolve: { name: Broken, count: 2, jumps: 1 }

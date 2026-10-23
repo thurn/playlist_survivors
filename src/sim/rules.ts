@@ -37,7 +37,13 @@ export interface Rules {
    * with the tier, on sixteenth notes, with a chime that climbs the scale; vacuums follow set pieces.
    */
   fieldGems: boolean;
+  /**
+   * The starting loadout and the upgrade pool: the run starts with the level's loadout beside the
+   * sword, and each level-up offers three items (weapon upgrades and stackable passives) drawn from
+   * the run's seed and the level-up's index. Until upgrade orbs, a level-up takes its first offer.
+   */
+  upgradePool: boolean;
 }
 
 /** The scripted demo's rules: today's behavior. */
-export const DEMO_RULES: Readonly<Rules> = Object.freeze({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false, pressClasses: false, selfFiring: false, gridSounds: false, pressCleaves: false, setPieces: false, fieldGems: false });
+export const DEMO_RULES: Readonly<Rules> = Object.freeze({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false, pressClasses: false, selfFiring: false, gridSounds: false, pressCleaves: false, setPieces: false, fieldGems: false, upgradePool: false });

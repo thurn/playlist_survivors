@@ -220,8 +220,44 @@ export const weaponDef = z.strictObject({
   sound: z.string(),
   icon: z.string(),
   color: color,
+  /**
+   * Play mode's evolution (rules.upgradePool), a weapon upgrade a level-up can offer once the weapon
+   * is owned: orbiting blades gain `count` more blades and an orbit `radiusScale` times as wide at
+   * every tier; chain lightning fires `every` subdivision instead and gains `jumps` more jumps.
+   */
+  evolve: z
+    .strictObject({
+      name: z.string(),
+      every: subdivision.optional(),
+      count: z.number().int().min(0).default(0),
+      radiusScale: z.number().positive().default(1),
+      jumps: z.number().int().min(0).default(0),
+    })
+    .optional(),
 });
 export type WeaponDef = z.infer<typeof weaponDef>;
+
+// ------------------------------------------------------------------ passives
+
+/**
+ * Play mode's passives (rules.upgradePool): stat bonuses a level-up can offer, each taken any number
+ * of times, the bonuses adding up. Max health also heals that much at once; armour takes from every
+ * bite, never below 1.
+ */
+export const passiveDef = z.strictObject({
+  id,
+  name: z.string(),
+  /** Max health this much higher (and healed this much at once). */
+  maxHealth: z.number().min(0).default(0),
+  /** The pickup radius this fraction wider. */
+  pickup: z.number().min(0).default(0),
+  /** Weapon and sword damage this fraction higher. */
+  damage: z.number().min(0).default(0),
+  /** Each enemy's bite takes this much less, at least 1. */
+  armour: z.number().min(0).default(0),
+  color: color,
+});
+export type PassiveDef = z.infer<typeof passiveDef>;
 
 // ---------------------------------------------------------------- formations
 
@@ -303,6 +339,7 @@ export const contentFile = z.strictObject({
   hero: heroDef.optional(),
   enemies: z.array(enemyDef).optional(),
   weapons: z.array(weaponDef).optional(),
+  passives: z.array(passiveDef).optional(),
   formations: z.array(formationDef).optional(),
   effects: z.array(effectRecipe).optional(),
   soundPalettes: z.array(soundPalette).optional(),
@@ -361,6 +398,7 @@ export const levelSection = z.strictObject({
 
 export const levelEvent = z.strictObject({
   at: musicalRef,
+  /** The weapon a level-up grants, or (rules.upgradePool) `offer`: three items from the upgrade pool. */
   levelUp: id.optional(),
   /** Experience the level-up needs (gems collected since the previous one). */
   xp: z.number().positive().optional(),
@@ -406,7 +444,12 @@ export const levelScript = z.strictObject({
   /** The demo's forest corridor along a route, or play mode's open field. */
   world: z.enum(["corridor", "open"]).default("corridor"),
   /** Play-mode rule changes. */
-  rules: z.strictObject({ oneStepPerSlot: z.boolean().default(false), accentTelegraphs: z.boolean().default(false), health: z.boolean().default(false), strides: z.boolean().default(false), pressClasses: z.boolean().default(false), selfFiring: z.boolean().default(false), gridSounds: z.boolean().default(false), pressCleaves: z.boolean().default(false), setPieces: z.boolean().default(false), fieldGems: z.boolean().default(false) }).optional(),
+  /**
+   * Play mode's upgrade pool (rules.upgradePool): the weapons the run starts with beside the sword,
+   * and the new weapons a level-up can offer (owned weapons' evolutions and the passives join them).
+   */
+  upgrades: z.strictObject({ loadout: z.array(id).default([]), offer: z.array(id).default([]) }).optional(),
+  rules: z.strictObject({ oneStepPerSlot: z.boolean().default(false), accentTelegraphs: z.boolean().default(false), health: z.boolean().default(false), strides: z.boolean().default(false), pressClasses: z.boolean().default(false), selfFiring: z.boolean().default(false), gridSounds: z.boolean().default(false), pressCleaves: z.boolean().default(false), setPieces: z.boolean().default(false), fieldGems: z.boolean().default(false), upgradePool: z.boolean().default(false) }).optional(),
   /** Overrides merged over content/hero.yaml for this level only (checked against the hero schema). */
   hero: z.record(z.string(), z.unknown()).optional(),
   title: z.strictObject({ piece: z.string(), composer: z.string(), performer: z.string() }),

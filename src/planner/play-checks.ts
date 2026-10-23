@@ -291,12 +291,14 @@ export function checkPlay(plan: Plan, lib: ContentLibrary, opts: PlayCheckOption
       if (near < 0.75 * plan.threats.length) f.push(`only ${near} of ${plan.threats.length} threats end as near misses (75% needed): ${plan.threats.filter((t) => t.outcome !== "near-miss").map((t) => `${t.kind} at ${fmt(t.s)} ${t.outcome}`).join(", ")}`);
     }
     // Every scheduled level-up happens on its scheduled moment.
-    for (const due of plan.levelUpsDue ?? []) {
+    // (With the upgrade pool, the i-th level-up is the i-th upgrade, whatever it takes.)
+    (plan.levelUpsDue ?? []).forEach((due, i) => {
       n++;
-      const got = plan.weapons.find((g) => g.id === due.id);
-      if (!got) f.push(`the ${due.id} level-up never happens (scheduled at ${fmt(due.s)})`);
-      else if (Math.abs(got.s - due.s) > 0.001) f.push(`the ${due.id} level-up happens at ${fmt(got.s)}, not on its scheduled moment at ${fmt(due.s)}`);
-    }
+      const name = plan.upgrades ? `level-up #${i + 1}` : `the ${due.id} level-up`;
+      const got = plan.upgrades ? plan.upgrades[i] : plan.weapons.find((g) => g.id === due.id);
+      if (!got) f.push(`${name} never happens (scheduled at ${fmt(due.s)})`);
+      else if (Math.abs(got.s - due.s) > 0.001) f.push(`${name} happens at ${fmt(got.s)}, not on its scheduled moment at ${fmt(due.s)}`);
+    });
     // Gems on the field: at least 60% of the experience dropped is collected.
     if (plan.rules?.fieldGems) {
       n++;

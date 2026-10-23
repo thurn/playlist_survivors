@@ -170,7 +170,25 @@ export class Hud {
           g.roundRect(x, y, s, s, 3 * u).fill({ color: 0x101018, alpha: 0.8 });
           g.roundRect(x, y, s, s, 3 * u).stroke({ color: col, width: Math.max(1, u), alpha: 0.6 + 0.4 * wp.flash });
           g.circle(x + s / 2, y + s / 2, (4 + 3 * wp.flash) * u).fill({ color: col, alpha: 0.5 + 0.5 * wp.flash });
+          // An evolved weapon: a second, inner border and a gold corner.
+          if (wp.evolved) {
+            g.roundRect(x + 2 * u, y + 2 * u, s - 4 * u, s - 4 * u, 2 * u).stroke({ color: col, width: Math.max(1, u), alpha: 0.9 });
+            g.poly([x + s - 7 * u, y, x + s, y, x + s, y + 7 * u]).fill({ color: 0xffd860, alpha: intro });
+          }
         });
+      });
+      // The passives, after the weapons: each one's colour and how many the hero has.
+      const p0 = 12 + hud.weapons.length * 22 + (hud.weapons.length > 0 ? 4 : 0);
+      (hud.passives ?? []).forEach((ps, i) => {
+        const pd = this.lib.passives.get(ps.id);
+        const col = pd ? parseInt(pd.color.slice(1), 16) : 0xffffff;
+        const bx = p0 + i * 20;
+        swell(bx, 39, 12, 12, () => {
+          g.roundRect(px(bx), py(39), 12 * u, 12 * u, 6 * u).fill({ color: 0x101018, alpha: 0.8 });
+          g.roundRect(px(bx), py(39), 12 * u, 12 * u, 6 * u).stroke({ color: col, width: Math.max(1, u), alpha: 0.9 });
+          g.circle(px(bx + 6), py(45), 3 * u).fill({ color: col, alpha: 0.9 });
+        });
+        if (ps.count > 1) this.text(`${ps.count}`, px(bx + 13), py(48), fs, col, "left", intro);
       });
 
       // Kills and the rated presses so far.

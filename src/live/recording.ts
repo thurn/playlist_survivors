@@ -15,7 +15,7 @@ import { Warp, type WarpBreak } from "../core/warp.ts";
 import { DEFAULT_PROPS, type PropInfo, type TiledMap } from "../mapgen/mapgen.ts";
 import { stampLandmark, WAVE_BANDS, type ZoneWave } from "../mapgen/openfield.ts";
 import { grooveAt } from "../plan/evaluate.ts";
-import type { CameraTrack, Chain, EffectEvent, EnemyRecord, Fate, GemEvent, HeroTrack, Hit, MapLayout, Plan, PlanInput, PlanSwing, Projectile, SlamMarker, SoundEvent, UiEvent } from "../plan/types.ts";
+import type { CameraTrack, Chain, EffectEvent, EnemyRecord, Fate, GemEvent, HeroTrack, Hit, MapLayout, Plan, PlanInput, PlanSwing, Projectile, SlamMarker, SoundEvent, UiEvent, UpgradeRecord } from "../plan/types.ts";
 import { beatIndexIn, type PlanIndex } from "../plan/view.ts";
 import { beatDurationAt, sectionIndexAt, type Ctx } from "../planner/context.ts";
 import { budgetSlot, chimeDegree, Emitter, lastAtOrBefore, soundSlot, VOICE_BUDGET, type EmitSink } from "../planner/emit.ts";
@@ -152,6 +152,7 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
       tier: this.tierSeries,
       ...(ctx.level.rules.pressCleaves ? { cleaves: [] } : {}),
       ...(ctx.level.rules.fieldGems ? { vacuums: [], pickupRadius: ctx.lib.hero.pickupRadius ?? [40] } : {}),
+      ...(ctx.level.rules.upgradePool ? { upgrades: [] } : {}),
       health: this.healthSeries,
       nearMisses: [],
       threats: [],
@@ -456,8 +457,16 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
   weapon(id: string, s: number): void {
     const g = { id, s };
     this.add(this.plan.weapons, g);
+    // (With the upgrade pool, the level-up is its upgrade's, and the starting loadout has none.)
+    if (this.plan.upgrades) return;
     this.add(this.hud.levelUps, s);
     this.emitter.levelUp(g, this.heroNow());
+  }
+
+  upgrade(u: UpgradeRecord): void {
+    this.add(this.plan.upgrades!, { s: u.s, offers: u.offers.map((o) => ({ ...o })), taken: u.taken });
+    this.add(this.hud.levelUps, u.s);
+    this.emitter.levelUp({ id: u.taken >= 0 ? u.offers[u.taken].id : "", s: u.s }, this.heroNow());
   }
 
   fire(weapon: string, s: number): void {
@@ -916,6 +925,8 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
     part("ui", () => p.events.ui.forEach((x) => mix(x.kind, x.s)));
     part("gems", () => p.events.gems.forEach((x) => mix(x.w0, x.w1, x.s1, x.wT ?? -1, x.value, x.big ? 1 : 0)));
     part("vacuums", () => (p.vacuums ?? []).forEach((v) => mix(v.s, v.w, v.x, v.y, v.sTouch ?? -1, v.wTouch ?? -1, v.gems ?? -1)));
+    part("weapons", () => p.weapons.forEach((g) => mix(g.id, g.s)));
+    part("upgrades", () => (p.upgrades ?? []).forEach((u) => mix(u.s, u.taken, ...u.offers.flatMap((o) => [o.kind, o.id]))));
     part("projectiles", () => p.projectiles.forEach((x) => mix(x.w0, x.w1, x.x1, x.y1)));
     part("slams", () => p.slams.forEach((x) => mix(x.w0, x.w1, x.x, x.y)));
     part("chains", () => p.chains.forEach((c) => c.points.forEach((q) => mix(q.w, q.x, q.y))));

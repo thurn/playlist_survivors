@@ -5,7 +5,7 @@
  * as play goes on and can be rewound for rollback.
  */
 import type { WarpBreak } from "../core/warp.ts";
-import type { Chain, EnemyRecord, Fate, HeroTrack, Hit, PlanInput, PlanSwing } from "../plan/types.ts";
+import type { Chain, EnemyRecord, Fate, HeroTrack, Hit, PlanInput, PlanSwing, UpgradeRecord } from "../plan/types.ts";
 import { CameraRecording } from "../planner/camera.ts";
 
 export interface Landing {
@@ -178,6 +178,8 @@ export interface SimResult {
   gems: GemRecord[];
   /** Gems on the field: the vacuums that follow set pieces. */
   vacuums: VacuumRecord[];
+  /** The upgrade pool: each level-up's offers and the one taken. */
+  upgrades: UpgradeRecord[];
   /** The XP bar after each change (fraction of the next level-up's requirement). */
   xp: { s: number; fill: number }[];
   /** Cleave shockwaves: one hit per band (with press cleaves, the cleave that launched it). */
@@ -238,6 +240,8 @@ export interface Recorder {
   gemGrow(gem: number, value: number, big: boolean): void;
   vacuum(v: VacuumRecord): void;
   vacuumTouch(i: number, s: number, w: number, gems: number): void;
+  /** The upgrade pool: a level-up's offers and the one taken. */
+  upgrade(u: UpgradeRecord): void;
   xp(s: number, fill: number): void;
   /** A cleave shockwave starts (with press cleaves, the accent's cleave that launched it); its band hits follow. */
   wave(cleave?: Cleave): void;
@@ -291,6 +295,7 @@ export class BatchRecorder implements Recorder {
   bossInfo?: BossInfo;
   readonly gems: GemRecord[] = [];
   readonly vacuums: VacuumRecord[] = [];
+  readonly upgrades: UpgradeRecord[] = [];
   readonly xpSeries: { s: number; fill: number }[] = [{ s: 0, fill: 0 }];
   readonly waves: ({ hits: number[] } & Partial<Cleave>)[] = [];
   readonly formations: FormationRecord[] = [];
@@ -420,6 +425,9 @@ export class BatchRecorder implements Recorder {
     this.vacuums[i].wTouch = w;
     this.vacuums[i].gems = gems;
   }
+  upgrade(u: UpgradeRecord): void {
+    this.upgrades.push(u);
+  }
   xp(s: number, fill: number): void {
     this.xpSeries.push({ s, fill });
   }
@@ -491,6 +499,7 @@ export class BatchRecorder implements Recorder {
       boss: this.bossInfo,
       gems: this.gems,
       vacuums: this.vacuums,
+      upgrades: this.upgrades,
       xp: this.xpSeries,
       waves: this.waves,
       formations: this.formations,

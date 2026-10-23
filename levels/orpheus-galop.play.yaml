@@ -10,13 +10,16 @@ world: open                 # the demo's default is corridor
 # the population curve, and set pieces (the closing rings and stampedes below) bring the rest (setPieces).
 # Gems wait where they drop, collected inside a pickup radius that grows with the tier, and a vacuum
 # follows each set piece (fieldGems).
-rules: { oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true, selfFiring: true, gridSounds: true, pressCleaves: true, setPieces: true, fieldGems: true }
+rules: { oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true, selfFiring: true, gridSounds: true, pressCleaves: true, setPieces: true, fieldGems: true, upgradePool: true }
 hero:
   # Fixed-speed strides: 140 px/s at any tempo and press rate, faster than every enemy but bats and bees.
   walk: { speed: 140 }
   timing: { perfectMs: 45, greatMs: 90, goodMs: 140, floor: 0.1 }
   # A loosely timed press swings short: 55% of the arc's reach at the timing floor, full at Perfect.
   swings: { light: { minReach: 0.55 } }
+# The upgrade pool (rules.upgradePool): the run starts with the blades and lightning beside the
+# sword, and the fire trail is one of the weapon upgrades a level-up can offer.
+upgrades: { loadout: [orbiting-blades, chain-lightning], offer: [fire-trail] }
 player: moderate            # the bot used for ?start= and for checks
 sections:
   # The prelude plays at full speed: a slowed world makes walking feel like wading. The music's
@@ -32,16 +35,20 @@ sections:
     zone: galop-woods
   - section: climax
     camera: { lead: 0 }
-# Experience for each level-up: the moderate player fills each bar a little before its moment
-# (with gems on the field it collects them only where it walks: about 110-130 by the first, 500-630
-# between the first and second, and 930-1210 between the second and third on the checked seeds).
+# Level-ups offer three items from the upgrade pool (rules.upgradePool). Experience for each: the
+# moderate player fills each bar a little before its moment (with gems on the field it collects
+# them only where it walks: about 110-125 by the first, 540-740 between the first and second, and
+# 870-1250 between the second and third on the checked seeds).
 events:
   - at: { section: galop-opening, point: start }
+    levelUp: offer
     xp: 100
   - at: { section: theme-a-repeat, point: start }
+    levelUp: offer
     xp: 470
   - at: { section: bridge, point: start }
-    xp: 880
+    levelUp: offer
+    xp: 800
   # Set pieces (rules.setPieces): closing rings around where the hero stands, each closing on an
   # accent a cleave can meet, and stampedes running across the view.
   - at: { accent: tutti-chord, fromEnd: 6 }           # 0:59.5

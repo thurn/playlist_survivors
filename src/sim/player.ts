@@ -135,6 +135,16 @@ const RUNNER_CLOSE = 70;
 /** Gems on the field: what each point of experience in reach is worth to a step (up to a cap). */
 const GEM_PULL = 0.12;
 const GEM_PULL_MAX = 15;
+/**
+ * Gems on the field, in step movement: the most valuable gem in sight beyond the pickup radius (for
+ * its distance) draws each step this strongly per point of its experience (up to GEM_SEEK_MAX), per
+ * GEM_SEEK_SCALE px closer, so the player goes back for gems that have grown past the cap.
+ */
+const GEM_SEEK = 0.05;
+const GEM_SEEK_MAX = 60;
+const GEM_SEEK_SCALE = 100;
+/** Free movement walks to gems within this much of the pickup radius. */
+const GEM_WALK = 150;
 /** A vacuum in sight draws the player to touch it, this strongly. */
 const VACUUM_PULL = 4;
 
@@ -176,6 +186,8 @@ export class VirtualPlayer implements Player {
   private readonly strides: boolean;
   /** The cost of the latest choice of keys. */
   private bestCost = Infinity;
+  /** The gem to seek for an observation (the same for every step it weighs). */
+  private seekMemo?: { obs: Observation; at?: { x: number; y: number; value: number } };
   /** Strides: the latest dancing formation's middle, and when it was seen (a line's charge follows its dance). */
   private lastLine?: { x: number; y: number; s: number };
   /** The open field's roam point: where it is, its heading (radians), and when it last moved. */
@@ -331,6 +343,22 @@ export class VirtualPlayer implements Player {
     return { x: ring.x + Math.cos(g) * (ring.r + RING_OUT), y: ring.y + Math.sin(g) * (ring.r + RING_OUT), near: 30 };
   }
 
+  /** Step movement, gems on the field: the gem in sight beyond the pickup radius worth most for its distance. */
+  private gemSeek(obs: Observation): { x: number; y: number; value: number } | undefined {
+    let best: { x: number; y: number; value: number } | undefined;
+    let bestScore = 0;
+    for (const g of obs.gems ?? []) {
+      const d = Math.hypot(g.x - obs.hero.x, g.y - obs.hero.y);
+      if (d <= (obs.hero.pickup ?? 0)) continue;
+      const score = g.value / (d + 30);
+      if (score > bestScore) {
+        bestScore = score;
+        best = g;
+      }
+    }
+    return best;
+  }
+
   /** Free movement, gems on the field: a vacuum to touch, or else the gem in reach worth most for its distance. */
   private gemTarget(obs: Observation): { x: number; y: number } | undefined {
     if (obs.vacuum) return obs.vacuum;
@@ -338,7 +366,7 @@ export class VirtualPlayer implements Player {
     let bestScore = 0;
     for (const g of obs.gems ?? []) {
       const d = Math.hypot(g.x - obs.hero.x, g.y - obs.hero.y);
-      if (d <= (obs.hero.pickup ?? 0) * 0.5) continue;
+      if (d <= (obs.hero.pickup ?? 0) * 0.5 || d > (obs.hero.pickup ?? 0) + GEM_WALK) continue;
       const score = g.value / (d + 30);
       if (score > bestScore) {
         bestScore = score;
@@ -539,6 +567,9 @@ export class VirtualPlayer implements Player {
       let value = 0;
       for (const g of obs.gems) if (Math.hypot(ax - g.x, ay - g.y) <= obs.hero.pickup) value += g.value;
       cost -= GEM_PULL * Math.min(value, GEM_PULL_MAX);
+      if (this.seekMemo?.obs !== obs) this.seekMemo = { obs, at: this.gemSeek(obs) };
+      const seek = this.seekMemo.at;
+      if (seek) cost += GEM_SEEK * Math.min(seek.value, GEM_SEEK_MAX) * clamp(Math.hypot(ax - seek.x, ay - seek.y) / GEM_SEEK_SCALE, 0, 3);
     }
     if (obs.vacuum) cost += VACUUM_PULL * clamp((Math.hypot(ax - obs.vacuum.x, ay - obs.vacuum.y) - 10) / 100, 0, 3);
     // A stampede: keep out of its runners' way (its gaps are where none are).

@@ -532,7 +532,9 @@ export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam:
   for (const h of hits) if (h.source === "weapon") em.weaponHit(h, caught.has(h.id));
 
   // ------------------------------------------------------- moments and UI
-  for (const g of sim.weaponsGranted) {
+  // (With the upgrade pool, each level-up is its upgrade, and the starting loadout has none.)
+  const fanfares = ctx.level.rules.upgradePool ? sim.upgrades.map((u) => ({ id: u.taken >= 0 ? u.offers[u.taken].id : "", s: u.s })) : sim.weaponsGranted;
+  for (const g of fanfares) {
     levelUps.push(g.s);
     em.levelUp(g, heroAt(warp.toWorld(g.s)));
   }

@@ -13,6 +13,7 @@ import { countUpTo, enemyPos, heroSample } from "./sample.ts";
 import { StaticIndex, type PlanIndex } from "./view.ts";
 import { partnerPress, type EffectEvent, type EnemyRecord, type Plan, type PlanInput, type PlanSection, type UiEvent } from "./types.ts";
 import { orbitAt } from "../sim/tiers.ts";
+import { evolvedOrbit, loadoutAt, passiveBonus, type Loadout } from "../sim/upgrades.ts";
 import { SWORD_TINTS } from "./tier-look.ts";
 
 /** A tier-3 swing's spin: the facings it turns through, and how long after the impact it ends (song seconds). */
@@ -243,7 +244,9 @@ export interface HudState {
   presses: { age: number; delta: number; rating?: string; steps: boolean }[];
   xp: number;
   level: number;
-  weapons: { id: string; flash: number }[];
+  /** The weapons beside the sword (with the upgrade pool, whether each has evolved), and the passives taken with how many of each. */
+  weapons: { id: string; flash: number; evolved?: boolean }[];
+  passives?: { id: string; count: number }[];
   progress: number;
   elapsed: number;
   beatPhase: number;
@@ -641,7 +644,9 @@ export class Evaluator {
         const bpb = bar.len;
         const th0 = (Math.PI * 2 * wbi) / (wd.orbit.periodBars * bpb);
         // Self-firing weapons: the blades and their orbit at the tier now.
-        const orbit = plan.rules?.selfFiring && plan.tier ? orbitAt(wd, this.tierAt(s)) : wd.orbit;
+        const tiered = plan.rules?.selfFiring && plan.tier ? orbitAt(wd, this.tierAt(s)) : wd.orbit;
+        // The upgrade pool: evolved blades, more of them on a wider orbit.
+        const orbit = plan.upgrades ? evolvedOrbit(wd, tiered, this.loadoutAt(s).evolved.includes(g.id)) : tiered;
         for (let k = 0; k < orbit.count; k++) {
           const th = th0 + (k * Math.PI * 2) / orbit.count;
           blades.push({ x: h.x + Math.cos(th) * orbit.radius, y: h.y + Math.sin(th) * orbit.radius * 0.8, rot: th * 3 });
@@ -1021,7 +1026,14 @@ export class Evaluator {
         if (since < beat) flash = 1 - since / beat;
       }
     }
-    return { vacuums, pickup: { radius: radii[Math.max(0, Math.min(radii.length - 1, tier))], flash } };
+    // (The magnet passive widens it.)
+    const magnet = plan.upgrades ? 1 + passiveBonus(this.lib, this.loadoutAt(s).passives).pickup : 1;
+    return { vacuums, pickup: { radius: radii[Math.max(0, Math.min(radii.length - 1, tier))] * magnet, flash } };
+  }
+
+  /** The upgrade pool: what the hero has at song time s (its passives and evolutions; plan.weapons has its weapons). */
+  private loadoutAt(s: number): Loadout {
+    return loadoutAt([], this.plan.upgrades ?? [], s);
   }
 
   private tierAt(s: number): number {
@@ -1117,6 +1129,13 @@ export class Evaluator {
       }
       weapons.push({ id: g.id, flash });
     }
+    // The upgrade pool: evolutions and passive counts.
+    let passives: HudState["passives"];
+    if (plan.upgrades) {
+      const l = this.loadoutAt(s);
+      for (const wp of weapons) wp.evolved = l.evolved.includes(wp.id);
+      passives = Object.entries(l.passives).map(([id, count]) => ({ id, count }));
+    }
     const banners: HudState["banners"] = [];
     let title: HudState["title"];
     let boss: HudState["boss"];
@@ -1156,7 +1175,7 @@ export class Evaluator {
       const up = k > 0 && plan.tier.v[k] > plan.tier.v[k - 1];
       tier = { n, marks: this.lib.hero.meter.tiers, flash: up ? clamp(1 - (s - plan.tier.s[k]) / TIER_FLASH, 0, 1) : 0 };
     }
-    return { kills, ratings, groove, bonus: this.maxBonus * groove, keys, stomp, tier, ticks, heartGlow, presses, xp, level, weapons, progress, elapsed: s, beatPhase, barPhase, free, countIn, energy, banners, title, boss, end, health, hurt, heal, streak: streakHud };
+    return { kills, ratings, groove, bonus: this.maxBonus * groove, keys, stomp, tier, ticks, heartGlow, presses, xp, level, weapons, ...(passives ? { passives } : {}), progress, elapsed: s, beatPhase, barPhase, free, countIn, energy, banners, title, boss, end, health, hurt, heal, streak: streakHud };
   }
 }
 
