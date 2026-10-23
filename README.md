@@ -132,11 +132,12 @@ Every important property is checkable by a command:
 | `npm run bench` | Headed Chrome, whole song at real-time speed: fails if JavaScript frame time exceeds 8 ms or GPU time 10 ms at p95, or any frame exceeds 33 ms. `-- --play` benchmarks live play instead (theme A to the climax, a late-arriving press on every beat, so it includes the rollbacks). |
 | `npm run test:e2e` | Playwright: Watch the demo is the skilled player's run in the open field with tiers and upgrade orbs, capture hook, metronome flash on the beat, broken level script shows an error and never starts, reload uses the cached plan, `?player=` re-simulates with another profile, `?mode=play&player=holder` and `mash4` plan and play back; and play mode at `?start=1:10` (a stride per press, the sword on every beat, a mashed press rated once, Esc pauses and resumes). |
 | `npm run qa` | Playback in Chromium over the Manual QA items a machine can judge: simulation time, the skilled and casual players' sounds on the grid (every row of the design's Sound on the Grid table), impacts on the grid and the reward spectrum, audio clock rate, picture/audio offset, frame rate, hidden-tab recovery (a 3 s main-thread stall), resize letterboxing, click track, finale clearance, and a listening pass over the offline-rendered mix (clipping, effects level, music in front, no wall of noise, effects on time); then live play mode with synthetic key presses (a press strides at once, impacts on the grid, mashing, diagonals, held keys striding on the beat, stomps and rock steps, the same 140 px/s holding, tapping quarter or eighth notes and mashing, frame time, Esc and losing focus, Watch my run identical across a level-up, a mid-song start); writes `captures/qa/report.md` and review frames. `-- --play` runs only the play-mode items. |
+| `npm run check:reactive` | Reactive mode ([design](docs/design/reactive-audio.md)): the causality check (on `causality-mix`, every stream entry known after a cut is changed and the song map, simulation, sounds and frames must match the true run before it, with reactive-moderate's and mash4's presses; a negative control that reads the evidence a second ahead must fail), determinism, fresh streams (each shipped stream's `toolVersion` is the tool's), stream quality on `house-128` and `dnb-174`, the gate on the Galop's prelude, sounds on committed beats, and every shipped track end to end; prints committed-beat accuracy per track. `-- --full` adds the causality check on every shipped track, a cut every 10 s. In CI. |
 | `npm run check:analysis` | The analysis tool's pytest suite and ruff. |
 | `npm run check:all` | All of the above except captures, QA and the benchmark. |
 
-`scripts/ci` (the Tollgate gate, about 40 s) runs `check`, `check:content`,
-`check:assets`, `check:seeds`, `check:play` and the build; `check:analysis` and
+`scripts/ci` (the Tollgate gate, about a minute) runs `check`, `check:content`,
+`check:assets`, `check:seeds`, `check:play`, `check:reactive` and the build; `check:analysis` and
 `check:songmap` only when `tools/analysis/` or `songs/` differ from master. The
 golden demo hashes (`tests/golden/`) are part of `check`: the demo's plan for
 every seed and demo profile must stay byte-identical.
@@ -170,6 +171,10 @@ play: levels/orpheus-galop.play.yaml (extends the demo's) ──Sim(open field, 
   sound palettes, zone themes and Tiled landmarks (`content/landmarks/*.tmj`).
 - `levels/` — level scripts (bars and beats, never seconds). `orpheus-galop.play.yaml`
   extends the demo's level with the moderate player; both modes share one set of rules.
+- `src/reactive/` — reactive mode: the belief stream's types, the reactive song map built from its
+  committed beats, the director's rules, the reactive virtual players (pressing on a track's
+  reference beats) and the track indexes. `levels/reactive.yaml` is its level;
+  `src/planner/reactive-checks.ts` its causality check.
 - `src/core/` — song map maths, the time warp, geometry, seeded randomness.
 - `src/content/` — schemas and YAML loaders with line-numbered errors.
 - `src/sim/` — the simulation: the song schedule, the movement model, timing and groove, auto-aim, the

@@ -190,6 +190,8 @@ export interface KeyLight {
  * a stray press red ("stray"). Presses without a class (free movement) by their rating.
  */
 export function pressStyle(i: PlanInput): { rating?: string; outline?: boolean } {
+  // Reactive mode: a press while the beat is unclear shows grey.
+  if (i.unjudged) return { rating: "extra" };
   switch (i.class) {
     case "counted":
       return { rating: i.rating ?? "loose" };
@@ -1103,8 +1105,11 @@ export class Evaluator {
     const stomp = lastPress.space ? light(lastPress.space) : undefined;
     const ticks: HudState["ticks"] = [];
     const bs = plan.songBeats;
+    const known = plan.beatsKnownAt;
     for (let bi = Math.max(0, Math.floor(sbi)); bi < bs.length && bs[bi] - s <= TRACK_AHEAD; bi++) {
       if (bs[bi] < s - 0.12) continue;
+      // Reactive mode: a beat shows once it is committed.
+      if (known && known[bi] > s + 1e-9) break;
       const tick: HudState["ticks"][number] = { dt: bs[bi] - s, down: this.downbeats.has(bi) };
       if (this.cleaveTimes.length) {
         if (this.near(this.cleaveTimes, bs[bi])) tick.cleave = true;
@@ -1160,7 +1165,7 @@ export class Evaluator {
         };
       }
     }
-    const progress = clamp(s / plan.duration, 0, 1);
+    const progress = clamp(s / (plan.progressS ?? plan.duration), 0, 1);
     // The count-in: four count marks pulse on the last four beats before step movement.
     let countIn: HudState["countIn"];
     const si = this.sectionAt(s);

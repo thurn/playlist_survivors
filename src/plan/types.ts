@@ -355,6 +355,10 @@ export interface Plan {
   cleaveAccents: { s: number; strength: number }[];
   /** Level-ups at their scheduled musical moments. */
   levelUpsDue: { id: string; s: number }[];
+  /** Reactive mode: when each song beat (a committed beat) became known; the HUD shows a beat only from then. */
+  beatsKnownAt?: Float64Array;
+  /** Reactive mode: the audio file's length for the progress bar, given apart from the stream (its song map's duration ends the run). */
+  progressS?: number;
   /**
    * Fixed-speed strides: the walk speed (px per world second), a stride's duration and hop height,
    * the stride period without a steady beat, and the steps a held key strides on (song times) with
@@ -423,6 +427,8 @@ export interface PlanInput {
   stride?: number;
   /** Press classes: what the press is, judged against the grid (see PressClass in src/sim/timing.ts). */
   class?: "partner" | "offbeat" | "counted" | "double" | "stray";
+  /** Reactive mode: pressed while the beat was unclear (evidence below the gate), so not judged; it strides and changes nothing. */
+  unjudged?: true;
   /** Strides: the press made a stomp (Space, or the second of two opposite keys within 40 ms). */
   stomp?: boolean;
   /** Strides: the stomp turned the stride in progress into a rock step back to where it began. */

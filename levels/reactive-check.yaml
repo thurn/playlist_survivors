@@ -1,0 +1,13 @@
+# check:reactive's compressed director (docs/design/reactive-audio.md, "Cuts"): every rule of the
+# reactive level made small enough that each feature fires within the ~45 s causality-mix track, so
+# the causality check exercises it. Check-only: the game never plays it.
+extends: reactive
+director:
+  population: { start: 40, perMinute: 120, max: 480, energyScale: [0.7, 1.3] }
+  roster:
+    - { from: 0,  enemies: { slime: 2, bat: 1 } }
+    - { from: 10, enemies: { goblin: 3, slime: 2, bat: 1 } }
+    - { from: 20, enemies: { goblin: 3, orc: 2, skeleton: 1, orc-elite: 0.03 } }
+    - { from: 30, enemies: { orc-ember: 3, skeleton-ember: 2, goblin: 2, orc-elite: 0.03 } }
+  levelUps: [{ at: 5, xp: 5 }, { at: 10, xp: 10 }, { at: 15, xp: 15 }]
+  zoneEvery: 8

@@ -6,6 +6,7 @@ import type { ContentLibrary, LevelScript, ResolvedSection } from "../content/lo
 import type { SkillProfileName } from "../content/schema.ts";
 import { Rng } from "../core/rng.ts";
 import { type SongIndex, type SongMap, type SongSection, indexSong, timeOfBeatIndex, beatIndexAt } from "../core/songmap.ts";
+import type { ReactiveStream } from "../reactive/stream.ts";
 
 export class PlanError extends Error {
   constructor(message: string) {
@@ -35,6 +36,22 @@ export interface PlannerInput {
   version?: string;
   /** The virtual player's skill profile (default: the level script's). */
   profile?: SkillProfileName;
+  /** Reactive mode: the belief stream (without its reference) the song map was built from. */
+  reactive?: ReactiveStream;
+  /**
+   * Reactive mode: the audio file's length as learned at load, given apart from the stream (whose
+   * song length the causality check changes), for the progress bar.
+   */
+  knownLength?: number;
+  /** Check-only options (never set in play). */
+  checks?: CheckOptions;
+}
+
+export interface CheckOptions {
+  /** Damage to the hero is off, so an untuned director cannot end a run early. */
+  noHeroDamage?: boolean;
+  /** The negative control: the spawn count reads the evidence of the tick 1 s ahead, which the causality check must catch. */
+  leakFutureEvidence?: boolean;
 }
 
 export interface SectionInfo {
@@ -70,6 +87,12 @@ export interface Ctx {
   soundOnsets: Record<string, number>;
   /** Level-script events, resolved to song time and sorted. */
   events: ResolvedEvent[];
+  /**
+   * Reactive mode: the belief stream (the song map's beats are its committed beats). The simulation
+   * may read an entry only from its knownAt on; check:reactive proves it.
+   */
+  reactive?: ReactiveStream;
+  checks: CheckOptions;
 }
 
 export const DEFAULT_HERO_ANIMS: Record<string, AnimInfo> = {
@@ -88,6 +111,7 @@ export const DEFAULT_HERO_ANIMS: Record<string, AnimInfo> = {
 
 export function makeCtx(input: PlannerInput): Ctx {
   const song = input.songMap;
+  if (Boolean(input.level.reactive) !== (input.reactive !== undefined)) throw new PlanError(input.level.reactive ? `${input.level.file} is a reactive level: it needs a belief stream` : `${input.level.file} is not a reactive level, but a belief stream was given`);
   const idx = indexSong(song);
   const level = input.level;
   // The level's hero (content/hero.yaml with the level's overrides), and its enemies' damage.
@@ -116,6 +140,8 @@ export function makeCtx(input: PlannerInput): Ctx {
     heroAnims: { ...DEFAULT_HERO_ANIMS, ...(input.heroAnims ?? {}) },
     soundOnsets: input.soundOnsets ?? {},
     events: [],
+    ...(input.reactive ? { reactive: input.reactive } : {}),
+    checks: input.checks ?? {},
   };
 }
 

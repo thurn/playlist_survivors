@@ -87,6 +87,7 @@ export function planHeader(ctx: Ctx, sch: Schedule, map: MapLayout, profile: str
     grid: Float64Array.from(sch.strikeTimes),
     cleaveAccents: sch.gridSlots.filter((sl) => cleaves(ctx, sl)).map((sl) => ({ s: sl.s, strength: sl.accent })),
     levelUpsDue: sch.levelUps.map((l) => ({ id: l.id, s: l.s })),
+    ...(ctx.reactive ? { beatsKnownAt: Float64Array.from(ctx.reactive.beats, (b) => b.knownAt), progressS: ctx.input.knownLength ?? ctx.duration } : {}),
     strides: stridesHeader(ctx, sch),
   } satisfies Partial<Plan>;
 }
@@ -125,6 +126,7 @@ const STEERER: SkillProfile = "moderate";
 
 /** The player a name stands for: a skill profile's virtual player, the holder, or a masher (mash2, mash4, mash8). */
 export function playerFor(ctx: Ctx, sch: Schedule, name: PlayerName): Player {
+  if (ctx.reactive || name.startsWith("reactive-")) throw new Error(`reactive levels' players press on a track's reference beats: use reactivePlayerFor (src/reactive/players.ts), not ${name}`);
   const mash = /^mash(\d+)$/.exec(name);
   if (mash) return masherPlayer(ctx, sch, Number(mash[1]));
   if (name === "holder") {
@@ -281,6 +283,18 @@ export function planWithSim(input: PlannerInput, opts: PlannerOptions = {}): { p
   return { plan: recorded, sim };
 }
 
+/**
+ * When a transform wave starting on song beat index sbi has swept out (WAVE_BANDS sixteenths on).
+ * Reactive mode extrapolates it from the last two committed beats: the beats it spans are not
+ * committed yet when it starts.
+ */
+export function zoneWaveEnd(ctx: Ctx, sbi: number): number {
+  if (!ctx.reactive) return timeOfBeatIndex(ctx.song, sbi + WAVE_BANDS / 4);
+  const b = ctx.song.beats;
+  const k = Math.max(1, Math.min(b.length - 1, Math.floor(sbi + 1e-9)));
+  return timeOfBeatIndex(ctx.song, sbi) + (WAVE_BANDS / 4) * (b[k] - b[k - 1]);
+}
+
 /** The open field's transform waves and landmarks, from the simulation's records. */
 export function openFieldRecord(ctx: Ctx, map: MapLayout, sim: Pick<SimResult, "zoneWaves" | "landmarks">, props?: Record<string, PropInfo>): OpenFieldRecord {
   const zoneIndex = (id: string) => Math.max(0, map.zones.findIndex((z) => z.id === id));
@@ -288,7 +302,7 @@ export function openFieldRecord(ctx: Ctx, map: MapLayout, sim: Pick<SimResult, "
   let prev = firstZone;
   const waves: ZoneWave[] = sim.zoneWaves.map((z) => {
     const sbi = beatIndexAt(ctx.song, z.s);
-    const wv: ZoneWave = { s: z.s, w: z.w, x: z.x, y: z.y, sbi, prev, zone: zoneIndex(z.zone), endS: timeOfBeatIndex(ctx.song, sbi + WAVE_BANDS / 4) };
+    const wv: ZoneWave = { s: z.s, w: z.w, x: z.x, y: z.y, sbi, prev, zone: zoneIndex(z.zone), endS: zoneWaveEnd(ctx, sbi) };
     prev = wv.zone;
     return wv;
   });

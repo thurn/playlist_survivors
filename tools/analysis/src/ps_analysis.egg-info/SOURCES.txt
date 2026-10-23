@@ -9,6 +9,8 @@ src/ps_analysis/crop.py
 src/ps_analysis/edit.py
 src/ps_analysis/report.py
 src/ps_analysis/songmap.py
+src/ps_analysis/stream.py
+src/ps_analysis/synth.py
 src/ps_analysis.egg-info/PKG-INFO
 src/ps_analysis.egg-info/SOURCES.txt
 src/ps_analysis.egg-info/dependency_links.txt
@@ -20,3 +22,4 @@ tests/test_crop.py
 tests/test_edit.py
 tests/test_smoke.py
 tests/test_songmap.py
+tests/test_stream.py

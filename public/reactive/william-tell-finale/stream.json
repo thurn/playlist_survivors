@@ -1,7 +1,7 @@
 {
  "version": 1,
  "audio": {"file":"../../audio/william-tell-finale.flac","duration":163.396984,"sampleRate":44100},
- "params": {"fps":100,"minBpm":55,"maxBpm":215,"numTempi":null,"period":{"windowS":2.0,"band":0.1},"commit":{"periods":1.0,"extraS":0.35,"minLeadS":0.1},"gate":0.2,"tickS":0.05,"evidence":{"beats":4,"halfS":0.03},"energy":{"windowS":0.5,"decayDbPerS":0.2,"rangeDb":30.0,"floorDb":-60.0},"onsets":{"threshold":1.5,"biasS":-0.01,"strongPercentile":98.0,"strongWindowS":30.0},"biasS":-0.013,"toolVersion":1},
+ "params": {"fps":100,"minBpm":55,"maxBpm":215,"numTempi":null,"period":{"windowS":2.0,"band":0.1},"commit":{"periods":1.0,"extraS":0.35,"minLeadS":0.1},"gate":0.2,"tickS":0.05,"evidence":{"beats":4,"halfS":0.03},"energy":{"windowS":0.5,"decayDbPerS":0.2,"rangeDb":30.0,"floorDb":-60.0},"onsets":{"threshold":1.5,"biasS":-0.01,"strongPercentile":98.0,"strongWindowS":30.0},"biasS":-0.013,"toolVersion":2},
  "beats": [
   {"t":0.247,"knownAt":0.0,"period":0.28,"evidence":0.0},
   {"t":0.527,"knownAt":0.0,"period":0.28,"evidence":0.0},
@@ -25,7 +25,7 @@
   {"t":14.917,"knownAt":13.61,"period":0.96,"evidence":0.0622},
   {"t":15.8782,"knownAt":14.57,"period":0.9606,"evidence":0.0624},
   {"t":16.7529,"knownAt":15.46,"period":0.9529,"evidence":0.0334},
-  {"t":18.158,"knownAt":16.85,"period":0.9655,"evidence":0.0623},
+  {"t":18.151,"knownAt":16.75,"period":0.962,"evidence":0.0556},
   {"t":19.4365,"knownAt":18.04,"period":1.0547,"evidence":0.0967},
   {"t":20.4417,"knownAt":19.03,"period":1.0673,"evidence":0.029},
   {"t":21.4995,"knownAt":20.1,"period":1.0562,"evidence":0.0785},
@@ -69,7 +69,7 @@
   {"t":52.0188,"knownAt":50.87,"period":0.8059,"evidence":0.2738},
   {"t":52.4337,"knownAt":51.68,"period":0.8067,"evidence":0.2883},
   {"t":52.8703,"knownAt":52.12,"period":0.4067,"evidence":0.2716},
-  {"t":54.0571,"knownAt":52.9,"period":0.8101,"evidence":0.3321},
+  {"t":54.0571,"knownAt":52.87,"period":0.8101,"evidence":0.3321},
   {"t":54.5161,"knownAt":53.76,"period":0.4096,"evidence":0.2893},
   {"t":54.9265,"knownAt":54.17,"period":0.4097,"evidence":0.289},
   {"t":55.337,"knownAt":54.58,"period":0.41,"evidence":0.289},

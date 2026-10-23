@@ -13,13 +13,13 @@ import { hash32 } from "../core/rng.ts";
 import { beatIndexAt, timeOfBeatIndex } from "../core/songmap.ts";
 import { Warp, type WarpBreak } from "../core/warp.ts";
 import { DEFAULT_PROPS, type PropInfo, type TiledMap } from "../mapgen/mapgen.ts";
-import { stampLandmark, WAVE_BANDS, type ZoneWave } from "../mapgen/openfield.ts";
+import { stampLandmark, type ZoneWave } from "../mapgen/openfield.ts";
 import { grooveAt } from "../plan/evaluate.ts";
 import type { CameraTrack, Chain, EffectEvent, EnemyRecord, Fate, GemEvent, HeroTrack, Hit, MapLayout, Plan, PlanInput, PlanSwing, Projectile, SlamMarker, SoundEvent, UiEvent, UpgradeRecord, BiteRecord, HealRecord, ChickenRecord } from "../plan/types.ts";
 import { beatIndexIn, type PlanIndex } from "../plan/view.ts";
 import { beatDurationAt, sectionIndexAt, type Ctx } from "../planner/context.ts";
 import { budgetSlot, chimeDegree, Emitter, lastAtOrBefore, soundSlot, VOICE_BUDGET, type EmitSink } from "../planner/emit.ts";
-import { ACTIVE_BUCKET, DEATH_ANIM, planHeader } from "../planner/plan.ts";
+import { ACTIVE_BUCKET, DEATH_ANIM, planHeader, zoneWaveEnd } from "../planner/plan.ts";
 import type { ArrowRecord, Attack, BossInfo, Cleave, Dance, FormationRecord, GemRecord, Landing, LandmarkRecord, PressTrace, Recorder, SlamRecord, Threat, VacuumRecord, ZoneWaveRecord } from "../sim/recorder.ts";
 import type { Schedule } from "../sim/schedule.ts";
 import { ENEMY_RATE, HERO_ANIMS, HERO_RATE, SLAM_RADIUS } from "../sim/simulate.ts";
@@ -692,7 +692,7 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
     const zoneIndex = (id: string) => Math.max(0, zones.findIndex((x) => x.id === id));
     const prev = op.waves.length ? op.waves[op.waves.length - 1].zone : op.firstZone;
     const sbi = beatIndexAt(this.ctx.song, z.s);
-    const wv: ZoneWave = { s: z.s, w: z.w, x: z.x, y: z.y, sbi, prev, zone: zoneIndex(z.zone), endS: timeOfBeatIndex(this.ctx.song, sbi + WAVE_BANDS / 4) };
+    const wv: ZoneWave = { s: z.s, w: z.w, x: z.x, y: z.y, sbi, prev, zone: zoneIndex(z.zone), endS: zoneWaveEnd(this.ctx, sbi) };
     this.add(op.waves, wv);
     this.emitter.zoneWave(z);
   }

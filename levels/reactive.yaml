@@ -1,0 +1,27 @@
+# Reactive mode's level (docs/design/reactive-audio.md, "The reactive level"): one section over the
+# reactive song map that a track's belief stream builds (committed beats in 2-beat bars), and a
+# director in place of the song map's sections. Stage 1: no level-script events, accent punches,
+# cleaves, set pieces, finale blast or time-scale changes. The numbers are starting values to tune.
+song: reactive
+seed: 2026
+player: reactive-moderate
+reactive: true
+upgrades: { loadout: [orbiting-blades, chain-lightning], offer: [fire-trail] }
+zones: [twilight-glade, galop-woods, mushroom-grove, ember-hollow, infernal-grove]
+sections:
+  - section: reactive
+    bars: all
+    pace: 50
+    presses: "xx"
+    zone: twilight-glade
+    camera: { zoom: 1.2, lead: 50, punchOnAccents: false }
+    sfxPalette: crisp-steel
+director:
+  population: { start: 40, perMinute: 120, max: 480, energyScale: [0.7, 1.3] }
+  roster:
+    - { from: 0,   enemies: { slime: 2, bat: 1 } }
+    - { from: 45,  enemies: { goblin: 3, slime: 2, bat: 1 } }
+    - { from: 90,  enemies: { goblin: 3, orc: 2, skeleton: 1, orc-elite: 0.03 } }
+    - { from: 150, enemies: { orc-ember: 3, skeleton-ember: 2, goblin: 2, orc-elite: 0.03 } }
+  levelUps: [{ at: 30, xp: 100 }, { at: 90, xp: 470 }, { at: 150, xp: 800 }]
+  zoneEvery: 40

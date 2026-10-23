@@ -1,7 +1,7 @@
 {
  "version": 1,
  "audio": {"file":"dnb-174.ogg","duration":62.5,"sampleRate":44100},
- "params": {"fps":100,"minBpm":55,"maxBpm":215,"numTempi":null,"period":{"windowS":2.0,"band":0.1},"commit":{"periods":1.0,"extraS":0.35,"minLeadS":0.1},"gate":0.2,"tickS":0.05,"evidence":{"beats":4,"halfS":0.03},"energy":{"windowS":0.5,"decayDbPerS":0.2,"rangeDb":30.0,"floorDb":-60.0},"onsets":{"threshold":1.5,"biasS":-0.01,"strongPercentile":98.0,"strongWindowS":30.0},"biasS":-0.013,"toolVersion":1},
+ "params": {"fps":100,"minBpm":55,"maxBpm":215,"numTempi":null,"period":{"windowS":2.0,"band":0.1},"commit":{"periods":1.0,"extraS":0.35,"minLeadS":0.1},"gate":0.2,"tickS":0.05,"evidence":{"beats":4,"halfS":0.03},"energy":{"windowS":0.5,"decayDbPerS":0.2,"rangeDb":30.0,"floorDb":-60.0},"onsets":{"threshold":1.5,"biasS":-0.01,"strongPercentile":98.0,"strongWindowS":30.0},"biasS":-0.013,"toolVersion":2},
  "beats": [
   {"t":0.247,"knownAt":0.0,"period":0.28,"evidence":0.0},
   {"t":0.527,"knownAt":0.0,"period":0.28,"evidence":0.0},

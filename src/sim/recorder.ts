@@ -82,7 +82,7 @@ export interface PressTrace {
    * one's stride a rock step back (the pair is one stomp, timed and rated by the first); release: a
    * key went up.
    */
-  outcome: "extra" | "bend" | "stride" | "stomp" | "rock" | "release";
+  outcome: "extra" | "bend" | "stride" | "stomp" | "rock" | "release" | "unjudged";
   /** The grid time nearest the press less its drift (index and song time), and the press's own offset from it (song seconds, before the drift). */
   gridIndex?: number;
   gridS?: number;

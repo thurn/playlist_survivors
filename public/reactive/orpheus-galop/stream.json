@@ -1,7 +1,7 @@
 {
  "version": 1,
  "audio": {"file":"../../audio/orpheus-galop.flac","duration":144.6,"sampleRate":44100},
- "params": {"fps":100,"minBpm":55,"maxBpm":215,"numTempi":null,"period":{"windowS":2.0,"band":0.1},"commit":{"periods":1.0,"extraS":0.35,"minLeadS":0.1},"gate":0.2,"tickS":0.05,"evidence":{"beats":4,"halfS":0.03},"energy":{"windowS":0.5,"decayDbPerS":0.2,"rangeDb":30.0,"floorDb":-60.0},"onsets":{"threshold":1.5,"biasS":-0.01,"strongPercentile":98.0,"strongWindowS":30.0},"biasS":-0.013,"toolVersion":1},
+ "params": {"fps":100,"minBpm":55,"maxBpm":215,"numTempi":null,"period":{"windowS":2.0,"band":0.1},"commit":{"periods":1.0,"extraS":0.35,"minLeadS":0.1},"gate":0.2,"tickS":0.05,"evidence":{"beats":4,"halfS":0.03},"energy":{"windowS":0.5,"decayDbPerS":0.2,"rangeDb":30.0,"floorDb":-60.0},"onsets":{"threshold":1.5,"biasS":-0.01,"strongPercentile":98.0,"strongWindowS":30.0},"biasS":-0.013,"toolVersion":2},
  "beats": [
   {"t":0.247,"knownAt":0.0,"period":0.28,"evidence":0.0},
   {"t":0.527,"knownAt":0.0,"period":0.28,"evidence":0.0},
@@ -31,8 +31,7 @@
   {"t":16.0599,"knownAt":14.69,"period":1.0215,"evidence":0.0409},
   {"t":16.9291,"knownAt":15.59,"period":0.9961,"evidence":0.0402},
   {"t":17.4964,"knownAt":16.39,"period":0.7597,"evidence":0.0437},
-  {"t":17.996,"knownAt":17.65,"period":0.999,"evidence":0.0528},
-  {"t":18.995,"knownAt":17.65,"period":0.999,"evidence":0.0528},
+  {"t":18.9802,"knownAt":17.49,"period":0.9916,"evidence":0.0528},
   {"t":20.0524,"knownAt":18.69,"period":1.0177,"evidence":0.0548},
   {"t":20.5942,"knownAt":19.5,"period":1.0136,"evidence":0.0589},
   {"t":21.1314,"knownAt":20.17,"period":1.0122,"evidence":0.0629},

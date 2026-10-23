@@ -338,7 +338,7 @@ export const musicalRef = z.union([
 ]);
 export type MusicalRef = z.infer<typeof musicalRef>;
 
-const barRange = z.string().regex(/^\d+-\d+$/, 'bar ranges look like "9-16"');
+const barRange = z.string().regex(/^(\d+-\d+|all)$/, 'bar ranges look like "9-16" (or "all", for a reactive level\'s one section)');
 
 const timeScale = z.union([z.number().min(0.25).max(1), z.strictObject({ from: z.number().min(0.25).max(1), to: z.number().min(0.25).max(1) })]);
 
@@ -361,7 +361,8 @@ export const levelSection = z.strictObject({
   calm: unit.max(0.9).optional(),
   /** Free movement: the sword swings by itself every this many beats (default 2). Not inherited. */
   autoSwingBeats: z.number().int().min(1).max(8).optional(),
-  population: z.tuple([z.number().int().min(0).max(520), z.number().int().min(0).max(520)]),
+  /** The population range over the section (a reactive level's director sets it instead). */
+  population: z.tuple([z.number().int().min(0).max(520), z.number().int().min(0).max(520)]).optional(),
   roster: z.record(z.string(), z.number().positive()).optional(),
   camera: z.strictObject({ zoom: z.number().min(0.7).max(1.4).optional(), lead: z.number().optional(), punchOnAccents: z.boolean().optional() }).optional(),
   sfxPalette: id.optional(),
@@ -399,14 +400,42 @@ export const levelEvent = z.strictObject({
 });
 
 /**
+ * Reactive mode's virtual players: play mode's moderate and human profiles pressing on a track's
+ * reference beats (as a person hears the music), and the moderate profile on every other reference
+ * beat or on every off-beat. They need a reactive track's reference (docs/design/reactive-audio.md,
+ * "Virtual Players"); the holder and mashers play reactive levels too.
+ */
+export const REACTIVE_PLAYERS = ["reactive-moderate", "reactive-human", "reactive-half", "reactive-offbeat"] as const;
+
+/**
  * The virtual players: the demo's three, play mode's stand-in for a moderately competent human, the
  * eighths player (every eighth note), the human and late players (timed like real play logs, the
  * late one with an uncalibrated slow key), and the players the groove must not reward: the holder
  * (holds directions, never taps) and mashers at 2, 4 and 8 presses a second.
  */
-export const PLAYER_NAMES = ["perfect", "skilled", "casual", "moderate", "eighths", "human", "late", "holder", "mash2", "mash4", "mash8"] as const;
+export const PLAYER_NAMES = ["perfect", "skilled", "casual", "moderate", "eighths", "human", "late", "holder", "mash2", "mash4", "mash8", ...REACTIVE_PLAYERS] as const;
 export const skillProfile = z.enum(PLAYER_NAMES);
 export type SkillProfileName = z.infer<typeof skillProfile>;
+
+/**
+ * A reactive level's director (docs/design/reactive-audio.md, "The reactive level"): the target
+ * population at song time s is min(max, (start + perMinute * s / 60) * scale), with the energy at s
+ * mapped into energyScale; the roster is the entry with the latest `from` (song seconds) at or
+ * before s; each level-up falls due on the first committed beat at or after its `at`; and a zone
+ * wave sweeps every zoneEvery seconds, on the first committed beat at or after it.
+ */
+export const director = z.strictObject({
+  population: z.strictObject({
+    start: z.number().min(0),
+    perMinute: z.number().min(0),
+    max: z.number().int().min(0).max(520),
+    energyScale: z.tuple([z.number().min(0), z.number().min(0)]),
+  }),
+  roster: z.array(z.strictObject({ from: z.number().min(0), enemies: z.record(z.string(), z.number().positive()) })).min(1),
+  levelUps: z.array(z.strictObject({ at: z.number().positive(), xp: z.number().positive() })).default([]),
+  zoneEvery: z.number().positive(),
+});
+export type Director = z.infer<typeof director>;
 
 export const levelScript = z.strictObject({
   /** Another level script this one restates only the differences from (play mode's tuning). */
@@ -424,9 +453,14 @@ export const levelScript = z.strictObject({
   enemies: z.record(id, z.strictObject({ contactDamage: z.number().min(0).optional(), attackDamage: z.number().min(0).optional() })).optional(),
   /** Overrides merged over content/hero.yaml for this level only (checked against the hero schema). */
   hero: z.record(z.string(), z.unknown()).optional(),
-  title: z.strictObject({ piece: z.string(), composer: z.string(), performer: z.string() }),
+  /** A reactive level's title comes from its track. */
+  title: z.strictObject({ piece: z.string(), composer: z.string(), performer: z.string() }).optional(),
   zones: z.array(id).min(1),
   sections: z.array(levelSection).min(1),
   events: z.array(levelEvent).default([]),
+  /** Reactive mode: the level plays to a belief stream's reactive song map (docs/design/reactive-audio.md). */
+  reactive: z.boolean().default(false),
+  /** Reactive levels only: what drives the horde, the rosters, level-ups and zone waves. */
+  director: director.optional(),
 });
 export type LevelScriptInput = z.infer<typeof levelScript>;

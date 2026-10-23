@@ -149,7 +149,8 @@ def test_committed_beats_are_never_revised_and_skip_late_ones() -> None:
 
 def test_commit_rule_skips_a_beat_less_than_min_lead_ahead() -> None:
     # Until 1.0 s the next believed beat (2.0 s) lies beyond the 0.3 s horizon;
-    # at 1.0 s the belief jumps to beats at 0.05 + k * 0.5, and 1.05 is too close.
+    # at 1.0 s the belief jumps to beats at 0.05 + k * 0.5, and 1.05 is too close. (2.05
+    # is committed when 1.55 arrives, inside its horizon or not.)
     since = [n / st.FPS for n in range(100)] + [
         ((n / st.FPS) - 0.05) % 0.5 for n in range(100, 200)
     ]
@@ -158,7 +159,7 @@ def test_commit_rule_skips_a_beat_less_than_min_lead_ahead() -> None:
     beats = st.commit_beats(beliefs(since, period), lambda n: 1.0, p)
     assert [(round(x["t"], 6), x["knownAt"]) for x in beats][:2] == [
         (1.55, 1.25),
-        (2.05, 1.75),
+        (2.05, 1.55),
     ]
 
 
@@ -347,3 +348,22 @@ def test_run_can_play_the_analysed_samples(tmp_path: Path) -> None:
     played, sr = sf.read(flac)
     assert sr == 44100
     assert len(played) / sr == pytest.approx(doc["audio"]["duration"], abs=1e-6)
+
+
+def test_the_next_beat_is_committed_by_the_time_a_beat_arrives() -> None:
+    """Even when the horizon is shorter than a period, the next beat is known at the latest at the beat before it."""
+    b = steady(0.5, 0.25, 600)
+    beats = st.commit_beats(
+        b, lambda n: 1.0, st.Params(bias_s=0.0, commit_periods=0.0, commit_extra_s=0.12)
+    )
+    assert len(beats) > 8
+    for a, nxt in itertools.pairwise(beats):
+        assert nxt["knownAt"] <= a["t"] + 1e-9
+
+
+def test_the_excerpt_commits_each_next_beat_by_the_beat_before(
+    full: dict[str, Any],
+) -> None:
+    beats = full["beats"]
+    for a, nxt in itertools.pairwise(beats):
+        assert nxt["knownAt"] <= a["t"] + 1e-9

@@ -22,6 +22,7 @@ import { firstAtOrAfter, NEVER_LATE } from "../sim/timing.ts";
 import { sectionIndexAt, type Ctx } from "./context.ts";
 import { cameraAt, VIEW_W } from "./camera.ts";
 import { resolveRef } from "./musical.ts";
+import { beatIndexAtOrBefore } from "../reactive/stream.ts";
 
 export const VOICE_BUDGET = 4;
 
@@ -59,6 +60,22 @@ export interface SoundPlacement {
   seedX?: number;
   /** A gem chime (gems on the field): the scale degree from the section's tonic it plays (0 is the tonic). */
   degree?: number;
+  /** Reactive mode's gate: the song time whose committed beat the sound belongs to, if not its own (a swing's whoosh, its strike's). */
+  owner?: number;
+}
+
+/** Reactive mode: sounds that carry information play while the beat is unclear too. */
+export const GATE_EXEMPT_SOUNDS = new Set(["hurt", "level-up", "tier-up", "tier-down", "orb"]);
+
+/**
+ * Reactive mode's gate: is a percussive gameplay sound at song time s muted, its slot belonging to a
+ * beat committed below the gate (the latest committed beat at or before it)?
+ */
+export function gatedSound(ctx: Ctx, key: string, s: number): boolean {
+  const stream = ctx.reactive;
+  if (!stream || GATE_EXEMPT_SOUNDS.has(key)) return false;
+  const i = beatIndexAtOrBefore(stream, s);
+  return i < 0 || stream.beats[i].evidence < stream.params.gate;
 }
 
 /** A run of gem chimes climbs at most this many scale degrees (two octaves), then starts again. */
@@ -212,6 +229,7 @@ export class Emitter {
       movedFrom ??= p.movedFrom;
     }
     if (this.onGrid && at.seedX !== undefined) x = at.seedX;
+    if (gatedSound(ctx, key, at.owner ?? s)) return;
     const sec = this.sectionOf(s);
     const pal = ctx.lib.soundPalettes.get(sec.level.sfxPalette);
     if (!pal) return;
@@ -292,7 +310,7 @@ export class Emitter {
     const fixed = this.onGrid && sw.aim;
     const x = fixed ? sw.aim.x : sw.x;
     const panW = fixed ? this.warp.toWorld(sw.sWind) : undefined;
-    this.sfx("swing", sw.s - 0.04, x, PRIORITY.hero + 0.5, 0.7, false, 1, panW);
+    this.sfx("swing", sw.s - 0.04, x, PRIORITY.hero + 0.5, 0.7, false, 1, panW, { owner: sw.s });
     // (Its strike is its slot: a grid time, or a cleave's accent.)
     this.sfx(`hit-${sw.kind}`, sw.s, x, heavy ? PRIORITY.hero : PRIORITY.hero + 0.3, heavy ? 1.1 : 0.95, heavy, 1, panW);
   }

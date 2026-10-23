@@ -338,8 +338,10 @@ figure in the bead's notes and continues: the parity report tracks it.
 pulsed-section committed beats fell within 45 ms of a song-map beat, under
 79%, so the stream commits at 1 period plus 0.35 s (67%, still under 79%:
 recorded and tracked). The synthetic gate passed either way. `hv-s4pt.2`
-therefore makes the extrapolation rewrites listed above. See
-[Measured: stage 1](#measured-stage-1).
+therefore makes the extrapolation rewrites listed above, and has the stream
+commit each next beat at the latest when the beat before it arrives, so the
+beat the game is in always has its end known. See
+[Measured: stage 1](#measured-stage-1) and the section after it.
 
 ### Ticks, onsets and energy
 
@@ -1499,7 +1501,9 @@ The checks above, not this appendix, decide whether each stage meets its goals.
 ### Measured: stage 1
 
 Recorded by `hv-s4pt.1` from the shipped streams (`toolVersion` 1), with the
-commit horizon at the fallback's 1 period plus 0.35 s. Each row gives, after
+commit horizon at the fallback's 1 period plus 0.35 s. (`toolVersion` 2, which
+commits each next beat by the beat before it, moves these by at most 0.2
+points: the Galop to 58.1% within 45 ms.) Each row gives, after
 the first 4 s and within the reference's span, % of committed beats within
 20 ms / within 45 ms / on the off-beat / elsewhere, then the share of all
 committed beats below the gate. The four classical tracks other than the Galop
@@ -1563,3 +1567,71 @@ climax 81, coda 54 (29)
   written as FLAC, so a compressed file's encoder delay cannot shift them.
   Synthetic tracks keep their exact reference beside their Ogg
   (`reference.json`), rendered with it.
+
+### Measured: stage 1, the simulation and the check
+
+Recorded by `hv-s4pt.2` from `npm run check:reactive` (11 s on the developer's
+machine, against the 60 s budget; nothing trimmed):
+
+- **Gates:** stream quality 100% on `house-128` (120 beats) and `dnb-174`
+  (163); the Galop's prelude 95% below the gate (60 beats); causality on
+  `causality-mix` 228 cuts passing for `reactive-moderate` and `mash4`, with
+  level-ups and zone waves fired before a cut; the negative control caught at
+  its first cut; determinism; fresh streams; sounds on committed beats (253 on
+  `causality-mix`, 898 on the Galop); every shipped track end to end.
+- **`--full`:** passes on all ten shipped tracks (12 to 34 cuts each, 97 s in
+  all).
+- **The horizon fallback's Galop figure:** 66.9% of the pulsed sections'
+  committed beats within 45 ms (see the stage 1 measurements above).
+
+How the check meets the design, where it had to choose:
+
+- **Cuts** fall just before each committed beat's and strong onset's
+  `knownAt` (1 ms), and just after each level-up and zone wave. A cut just
+  before an entry's `knownAt` perturbs that entry, so it catches a read of the
+  next beat to be committed made any time since the previous cut, which a cut
+  just after the previous `knownAt` would miss. Frames are compared from the
+  previous cut on.
+- **Frames** are taken as live play draws them: the evaluator runs on the
+  recording as it stands with the simulation 0.2 s ahead (the runner's
+  speculation), so the changed run, stopped at `C`, has frames up to
+  `C − 0.2 s`. A finished recording read afterwards would show records
+  completed later, such as a gem that grew.
+- **Sounds** are compared up to `C − 0.25 s`: the live recording closes a
+  sixteenth-note slot half a slot plus 60 ms after its centre.
+- **Records completed later** (an orb taken, a chicken eaten, a gem's value)
+  are compared as they stood at `C`. The frame's section record is compared
+  without its bounds, which no frame reads (the reactive section ends at the
+  file's length).
+- **The file's length** reaches the progress bar as its own input
+  (`knownLength`), as the finale's window will, so perturbing the song's length
+  changes nothing before `C`.
+
+What the check found and the simulation now does:
+
+- the HUD's beat lane shows a committed beat only from its `knownAt`
+  (`beatsKnownAt` in the plan header);
+- a zone wave's end is extrapolated from the last two committed beats;
+- an automatic swing starts no earlier than its beat's `knownAt`.
+
+The fallback's rewrites, made although the check passed without them: presses
+are judged against the committed beats known at the press (one before any is
+committed is unjudged), and the groove drain's bar length comes from the last
+two committed beats.
+
+The simulation, the emitter and the evaluator read the length of the beat they
+are in, the next committed beat, wherever they interpolate beat positions
+(beat phase, strides, sixteenth slots, the heading's span). The horizon keeps
+that beat known almost always, but not always: after a sudden belief change,
+the Galop's beat at 17.496 s had its successor committed only at 17.65 s, and
+William Tell had two such gaps. The cold review of `hv-s4pt.2` caught this
+with cuts just before those commits; `causality-mix` has no such gap and
+`--full`'s 10 s cuts missed them. So the stream commits each next beat at the
+latest when the beat before it arrives (`toolVersion` 2; accuracy unchanged:
+the Galop's pulsed sections stay at 66.9%), and `check:reactive` gates that on
+every shipped stream. The other reads the fallback names schedule an event at
+a later beat, which reads nothing early: the off-beat midpoint (judging
+considers only the off-beat after the beat at or before the press), the 2-beat
+bar's second beat (downbeats only schedule events), and the boss and volleys
+(stage 6).
+

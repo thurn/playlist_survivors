@@ -34,6 +34,8 @@ import { chainAt, heavyArcAt, orbitAt, swingArcAt, tierDamage, trailRadiusAt, wa
 import { armouredBite, evolvedOrbit, offersFor, passiveBonus, startingLoadout, takeItem, type Loadout, type UpgradeItem } from "./upgrades.ts";
 import { classifyPress, NEVER_LATE, drainPerBeat, firstAtOrAfter, freshPressMemo, grooveAfterChange, keyGroup, type PressJudgement, type PressMemo, nearestIndex, ratePressOnGrid, tierFor } from "./timing.ts";
 import { OpenWorld, type World } from "./world.ts";
+import { energyAt as streamEnergyAt, evidenceAt, firstBeatAtOrAfter, tickIndexAt } from "../reactive/stream.ts";
+import { directorPopulation, directorRoster } from "../reactive/director.ts";
 
 export type { ArrowRecord, Landing, SimResult, SlamRecord } from "./recorder.ts";
 
@@ -278,7 +280,8 @@ type Ev =
   | { kind: "orbApply"; item: UpgradeItem }
   | { kind: "chickenHeal" }
   | { kind: "zoneWave"; zone: string }
-  | { kind: "landmark"; id: string };
+  | { kind: "landmark"; id: string }
+  | { kind: "reactiveBeat"; bi: number };
 
 interface Wave {
   x: number;
@@ -352,6 +355,8 @@ const ORDER: Record<Ev["kind"], number> = {
   appear: 22,
   zoneWave: 4,
   landmark: 4,
+  // Reactive mode: a committed beat arrives (before an upgrade orb's default at the same moment).
+  reactiveBeat: 2.4,
 };
 
 /** Events that point at mutable state; the rest are frozen, so snapshots share them. */
@@ -545,7 +550,9 @@ interface SimState {
   loadout: Loadout;
   bonus: { maxHealth: number; pickup: number; damage: number; armour: number };
   /** Upgrade orbs waiting to be walked into: the upgrade record, its offers, where each orb is, and when the one ahead is taken; and items taken but not yet applied. */
-  orbs?: { u: number; offers: UpgradeItem[]; pts: { x: number; y: number }[]; deadline: number };
+  orbs?: { u: number; offers: UpgradeItem[]; pts: { x: number; y: number }[]; deadline: number; deadlineBeat?: number };
+  /** Reactive mode: the weapons firing on the beat (each beat queues its own slots as it arrives). */
+  fireSpecs: { weapon: string; every: WeaponDef["fires"]["every"]; skip?: WeaponDef["fires"]["every"] }[];
   applying: UpgradeItem[];
   /** The small health pool: world time the hero's invulnerability lasts until, and the chickens lying on the field. */
   invulnUntil: number;
@@ -638,6 +645,7 @@ function freshState(env: Env): SimState {
     loadout: startingLoadout(env.ctx.level.upgrades.loadout),
     bonus: { maxHealth: 0, pickup: 0, damage: 0, armour: 0 },
     applying: [],
+    fireSpecs: [],
     invulnUntil: -Infinity,
     chickens: [],
     nChickens: 0,
@@ -710,6 +718,48 @@ function engine(env: Env, st: SimState, io: Io) {
   };
   const blastS = sch.blast?.s;
   const rec = () => io.recorder;
+  // ---------------------------------------------------------------- reactive mode
+  // (docs/design/reactive-audio.md) The song map's beats are the stream's committed beats; nothing
+  // here reads a stream entry before its knownAt.
+  const stream = ctx.reactive;
+  const director = stream ? ctx.level.director : undefined;
+  const gate = stream?.params.gate ?? 0;
+  /**
+   * The timing grid as known at song time s: reactive mode's grid times are its committed beats,
+   * and only those already committed may be judged against (committed in time order, so a prefix).
+   */
+  const gridKnownAt = (s: number): Float64Array => {
+    if (!stream) return sch.gridTimes;
+    let lo = 0;
+    let hi = stream.beats.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (stream.beats[mid].knownAt <= s + 1e-9) lo = mid + 1;
+      else hi = mid;
+    }
+    return sch.gridTimes.subarray(0, Math.min(lo, sch.gridTimes.length));
+  };
+  /** Is the beat clear at song time s (the evidence at or above the gate)? Always, outside reactive mode. */
+  const clearAt = (s: number) => !stream || evidenceAt(stream, s) >= gate;
+  /**
+   * Song time judged since t0: only time whose evidence is at or above the gate counts (the drain
+   * clock stops while the beat is unclear). Read up to now only.
+   */
+  const judgedSince = (() => {
+    if (!stream) return (t0: number) => st.s - t0;
+    const ticks = stream.ticks;
+    // cum[j]: judged time up to tick j, each tick's evidence holding from it to the next.
+    const cum = new Float64Array(ticks.length + 1);
+    ticks.forEach((k, j) => (cum[j + 1] = cum[j] + (j + 1 < ticks.length && k.evidence >= gate ? ticks[j + 1].t - k.t : 0)));
+    // Judged time from 0 to t: up to the latest tick at or before t, and on from it while its evidence holds.
+    const at = (t: number) => {
+      if (!Number.isFinite(t)) return t;
+      const j = tickIndexAt(stream, t);
+      if (j < 0) return 0;
+      return cum[j] + (ticks[j].evidence >= gate ? t - ticks[j].t : 0);
+    };
+    return (t0: number) => at(st.s) - at(t0);
+  })();
 
   // ---------------------------------------------------------------- time
   const baseRate = (t: number) => stepRate(sch.baseSteps, t);
@@ -1213,7 +1263,8 @@ function engine(env: Env, st: SimState, io: Io) {
     const t = tierFor(hero, st.tier, st.groove);
     if (t === st.tier) return;
     st.tier = t;
-    rec().tier(st.s, st.w, t, sch.gridTimes[firstAtOrAfter(sch.gridTimes, st.s + 1e-6)] ?? st.s);
+    const grid = gridKnownAt(st.s);
+    rec().tier(st.s, st.w, t, grid[firstAtOrAfter(grid, st.s + 1e-6)] ?? st.s);
   };
   /** A press's class in its trace, with the tier after it. */
   // (Its grid fields are the grid time nearest the press less its drift, as for any press, and its
@@ -1221,8 +1272,9 @@ function engine(env: Env, st: SimState, io: Io) {
   // drift, is offbeatDelta.)
   const judgedTrace = (j: PressJudgement | undefined): Partial<PressTrace> => {
     if (!j) return {};
-    const gi = nearestIndex(sch.gridTimes, st.s - j.drift);
-    const near = { gridIndex: gi, gridS: sch.gridTimes[gi], delta: st.s - sch.gridTimes[gi], ...(j.drift !== 0 ? { drift: j.drift } : {}) };
+    const grid = gridKnownAt(st.s);
+    const gi = nearestIndex(grid, st.s - j.drift);
+    const near = { gridIndex: gi, gridS: grid[gi], delta: st.s - grid[gi], ...(j.drift !== 0 ? { drift: j.drift } : {}) };
     if (j.class === "offbeat") return { class: j.class, tier: st.tier, ...near, offbeatDelta: j.delta, offbeat: j.rating };
     return { class: j.class, tier: st.tier, ...(j.class !== "partner" ? near : {}), ...(j.rating ? { rating: j.rating } : {}) };
   };
@@ -1238,7 +1290,12 @@ function engine(env: Env, st: SimState, io: Io) {
     // Press classes: every press in step movement is classed against the grid, before it moves the
     // hero (a partner bends or rocks the stride in progress).
     // The press is judged less its key group's drift (how late the player's latest presses ran).
-    const judged = steps ? classifyPress(hero, sch.gridTimes, st.s, partnerOf(e.key), st.memo, keyGroup(e.key)) : undefined;
+    // Reactive mode: a press while the beat is unclear (the evidence below the gate) is unjudged:
+    // it strides, and changes nothing.
+    // (So is one before any beat is committed: there is nothing to judge it against.)
+    const grid = gridKnownAt(st.s);
+    const unjudged = steps && (!clearAt(st.s) || grid.length === 0);
+    const judged = steps && !unjudged ? classifyPress(hero, grid, st.s, partnerOf(e.key), st.memo, keyGroup(e.key)) : undefined;
     // Press cleaves: the counted press of an accent whose heavy impact has struck: Great or better
     // launches its shockwave now (a late press brings no hit-stop).
     const pc = st.pendingCleave;
@@ -1280,6 +1337,7 @@ function engine(env: Env, st: SimState, io: Io) {
       input.bend = true;
       const moved = strideTrace({ stride: bent.len ?? 0, returned: 0 }, input, true);
       if (judged) input.class = judged.class;
+      if (unjudged) input.unjudged = true;
       rec().input(input);
       if (trace) rec().press!({ ...trace, ...moved, ...judgedTrace(judged), outcome: "bend" });
       return;
@@ -1288,6 +1346,7 @@ function engine(env: Env, st: SimState, io: Io) {
     if (rocks(e.key)) {
       const moved = stompHere(input);
       if (judged) input.class = judged.class;
+      if (unjudged) input.unjudged = true;
       rec().input(input);
       if (trace) rec().press!({ ...trace, ...moved, ...judgedTrace(judged), outcome: "rock" });
       return;
@@ -1295,6 +1354,12 @@ function engine(env: Env, st: SimState, io: Io) {
     if (trace && st.step && !st.landed) trace.midStep = true;
     const moved = pressMove(e.key, input);
     if (trace) trace.outcome = e.key === "space" ? "stomp" : "stride";
+    if (unjudged) {
+      input.unjudged = true;
+      rec().input(input);
+      if (trace) rec().press!({ ...trace, ...moved, outcome: "unjudged" });
+      return;
+    }
     // Press classes: the class sets the groove change; only a counted press is rated.
     if (judged && judged.class !== "counted") {
       input.class = judged.class;
@@ -1307,7 +1372,7 @@ function engine(env: Env, st: SimState, io: Io) {
     }
     // Rate the press against the timing grid (the sections' grids join end to end), less its drift
     // as its class was. (Presses arm nothing: the sword swings on every grid time by itself.)
-    const rated = ratePressOnGrid(hero, st.s - (judged?.drift ?? 0), sch.gridTimes);
+    const rated = ratePressOnGrid(hero, st.s - (judged?.drift ?? 0), grid);
     input.rating = rated.rating;
     input.delta = rated.delta;
     st.lastPressS = st.s;
@@ -1798,17 +1863,20 @@ function engine(env: Env, st: SimState, io: Io) {
     if (t <= cutS && t < endS) st.q.push(Math.max(t, after), { kind: "decide" });
   };
 
+  /** Reactive mode's population at song time s (the negative control, check-only, reads the evidence a second ahead instead of the energy). */
+  const directorTarget = (s: number) => directorPopulation(director!, s, ctx.checks.leakFutureEvidence ? evidenceAt(stream!, s + 1) : streamEnergyAt(stream!, s));
+
   const spawnDirector = (bi: number) => {
     if (st.blasting) return;
     const s = st.s;
     // (With set pieces the stream is thinner, and set pieces add to it: it counts only its own.)
-    const target = targetPopulation(ctx, s) * STREAM_SHARE;
+    const target = (director ? directorTarget(s) : targetPopulation(ctx, s)) * STREAM_SHARE;
     const all = st.alive.length + st.pending;
     const living = st.alive.filter((f) => f.formation === undefined).length + st.pending;
     const want = Math.min(SPAWN_PER_BEAT, Math.round(target) - living, POP_CAP - all);
     if (want <= 0) return;
     const sec = sectionAt(s);
-    const roster = Object.entries(sec.level.roster).filter(([t]) => lib.enemies.get(t)!.behavior === "chase");
+    const roster = Object.entries(director ? directorRoster(director, s) : sec.level.roster).filter(([t]) => lib.enemies.get(t)!.behavior === "chase");
     const r = new Rng(ctx.seed, "spawn", Math.round(bi * 4));
     for (let k = 0; k < want; k++) {
       const type = r.weighted(roster.map(([t]) => t), roster.map(([, wgt]) => wgt));
@@ -1880,10 +1948,36 @@ function engine(env: Env, st: SimState, io: Io) {
   };
 
   /**
+   * Reactive mode: a weapon's slots within committed beat bi (from it to the next), from song time
+   * `after` on. Each beat queues its own as it arrives, never to the end of the song at once.
+   */
+  const fireBeat = (wd: WeaponDef, every: WeaponDef["fires"]["every"], skip: WeaponDef["fires"]["every"] | undefined, bi: number, after: number) => {
+    if (bi + 1 > song.beats.length - 1) return;
+    const bar = Math.max(1, barOfBeatIndex(ctx.idx, bi + 1e-6));
+    const b0 = ctx.idx.barStart[bar];
+    const bpb = ctx.idx.beatsPerBar[bar] ?? 2;
+    const stepB = subdivisionBeats(every, bpb);
+    const skipB = skip ? subdivisionBeats(skip, bpb) : undefined;
+    for (let off = Math.ceil((bi - b0) / stepB - 1e-9) * stepB; off < bi + 1 - b0 - 1e-9; off += stepB) {
+      if (skipB !== undefined && Math.abs(off / skipB - Math.round(off / skipB)) < 1e-6) continue;
+      const t = timeOfBeatIndex(song, b0 + off);
+      if (t < after - 1e-9 || t > endS) continue;
+      st.q.push(t, { kind: "fire", weapon: wd, bi: b0 + off });
+    }
+  };
+
+  /**
    * A weapon fires on every slot of a subdivision after now, up to the finale blast; an evolution's
    * faster subdivision skips the slots the weapon's own already fires on.
    */
   const scheduleFires = (wd: WeaponDef, every: WeaponDef["fires"]["every"], skip?: WeaponDef["fires"]["every"]) => {
+    if (stream) {
+      // The rest of the current beat now; each later beat queues its own as it arrives.
+      st.fireSpecs.push({ weapon: wd.id, every, ...(skip ? { skip } : {}) });
+      const bi = Math.floor(sbiAt(st.s) + 1e-9);
+      if (bi >= 0 && st.s > 0) fireBeat(wd, every, skip, bi, st.s + 0.01);
+      return;
+    }
     const end = blastS ?? ctx.duration;
     const startBar = Math.max(1, barOfBeatIndex(ctx.idx, sbiAt(st.s)));
     for (let bar = startBar; bar <= ctx.idx.barCount; bar++) {
@@ -2166,8 +2260,14 @@ function engine(env: Env, st: SimState, io: Io) {
     });
     const bar = Math.max(1, barOfBeatIndex(ctx.idx, sbiAt(st.s)));
     const last = bar + ORB_BARS;
-    const deadline = last <= ctx.idx.barCount ? timeOfBeatIndex(song, ctx.idx.barStart[last]) : ctx.duration;
     rec().upgrade({ s: st.s, offers, taken: -1, w: st.w, orbs: pts.map((p) => ({ ...p })) });
+    if (stream) {
+      // Reactive mode: the deadline is counted in committed beats as they arrive (see reactiveBeat).
+      // (Two bars of beats on from this bar's downbeat, without the song's bar count: none is a fallback.)
+      st.orbs = { u, offers, pts, deadline: Infinity, deadlineBeat: ctx.idx.barStart[bar] + ORB_BARS * (ctx.idx.beatsPerBar[bar] ?? 2) };
+      return;
+    }
+    const deadline = last <= ctx.idx.barCount ? timeOfBeatIndex(song, ctx.idx.barStart[last]) : ctx.duration;
     st.orbs = { u, offers, pts, deadline };
     st.q.push(deadline, { kind: "orbDefault", u });
   };
@@ -2311,7 +2411,7 @@ function engine(env: Env, st: SimState, io: Io) {
    * is invulnerable, and each hurt makes it so.
    */
   const hurt = (amount: number, source: "bite" | "arrow" | "slam", enemy: string) => {
-    if (amount <= 0 || st.health <= 0 || st.w < st.invulnUntil - 1e-9) return;
+    if (amount <= 0 || st.health <= 0 || st.w < st.invulnUntil - 1e-9 || ctx.checks.noHeroDamage) return;
     st.invulnUntil = st.w + hero.health.invulnerableMs / 1000;
     st.health = Math.max(0, st.health - amount);
     rec().health(st.s, st.health / healthMax());
@@ -2630,6 +2730,8 @@ function engine(env: Env, st: SimState, io: Io) {
 
   // ---------------------------------------------------------------- the loop
   const windupBefore = (t: number) => t - hero.swings.windupMs / 1000 / Math.max(0.05, baseRate(t));
+  /** Reactive mode: when a slot's committed beat (the latest at or before it) became known. */
+  const knownAtOfSlot = (sl: GridSlot) => stream!.beats[Math.max(0, Math.min(stream!.beats.length - 1, Math.floor(sl.bi + 1e-9)))].knownAt;
 
   /** Song-owned events and the first samples: a fresh simulation's song time 0. */
   const init = () => {
@@ -2642,7 +2744,8 @@ function engine(env: Env, st: SimState, io: Io) {
     }
     if (ctx.sections[0].level.movement === "free") st.walk = { w0: 0, x0: st.restPose.x, y0: st.restPose.y, vx0: 0, vy0: 0, tx: 0, ty: 0, t: 0 };
     // The sword swings by itself on every slot, the grid's too, and presses arm nothing.
-    for (const sl of sch.slots) q.push(Math.max(0, windupBefore(sl.s)), { kind: "auto", slot: sl });
+    // (Reactive mode: never before the slot's beat is known.)
+    for (const sl of sch.slots) q.push(Math.max(0, windupBefore(sl.s), stream ? knownAtOfSlot(sl) : 0), { kind: "auto", slot: sl });
     // A held key strides on every step of the stride period.
     for (const t of sch.strideSteps.s) q.push(t, { kind: "held" });
     for (let bi = 0; bi < song.beats.length; bi++) {
@@ -2683,6 +2786,16 @@ function engine(env: Env, st: SimState, io: Io) {
       const bands = Math.max(1, Math.round(b.beats / stepB));
       const bi0 = sbiAt(sch.blast.s);
       for (let k = 0; k < bands; k++) q.push(timeOfBeatIndex(song, bi0 + k * stepB), { kind: "blast", band: k });
+    }
+    if (stream) {
+      // Reactive mode: each committed beat arrives; a zone wave every zoneEvery seconds, on the first
+      // committed beat at or after it, through the level's zones in order.
+      stream.beats.forEach((b, bi) => q.push(b.t, { kind: "reactiveBeat", bi }));
+      const zones = ctx.level.zones;
+      for (let k = 1; director && k * director.zoneEvery < ctx.duration; k++) {
+        const b = firstBeatAtOrAfter(stream, k * director.zoneEvery);
+        if (b && b.t < endS) q.push(b.t, { kind: "zoneWave", zone: zones[k % zones.length] });
+      }
     }
     {
       // A transform wave on the first downbeat of each section whose zone differs from the previous one's.
@@ -2768,8 +2881,9 @@ function engine(env: Env, st: SimState, io: Io) {
           // The groove drains a bar after the latest press that raised it (free sections freeze it).
           const sec = sectionAt(st.s);
           const bpb = ctx.idx.beatsPerBar[sec.song.bars[0]] ?? 2;
-          const beatS = song.beats[Math.min(song.beats.length - 1, ev.bi + 1)] - song.beats[Math.max(0, Math.min(song.beats.length - 2, ev.bi))];
-          if (sec.level.movement === "steps" && st.groove > 0 && st.s - st.lastRaiseS > hero.meter.drain.afterBars * bpb * beatS + 1e-9) {
+          // (Reactive mode: the bar's length from the last two committed beats, the next being perhaps not yet committed.)
+          const beatS = stream ? (ev.bi > 0 ? song.beats[ev.bi] - song.beats[ev.bi - 1] : stream.beats[0].period) : song.beats[Math.min(song.beats.length - 1, ev.bi + 1)] - song.beats[Math.max(0, Math.min(song.beats.length - 2, ev.bi))];
+          if (sec.level.movement === "steps" && st.groove > 0 && clearAt(st.s) && judgedSince(st.lastRaiseS) > hero.meter.drain.afterBars * bpb * beatS + 1e-9) {
             st.groove = Math.max(0, st.groove - drainPerBeat(hero, bpb));
             rec().groove(st.s, st.groove);
             setTier();
@@ -2848,6 +2962,12 @@ function engine(env: Env, st: SimState, io: Io) {
         case "landmark": {
           const hp = heroPose(st.w);
           rec().landmark({ id: ev.id, s: st.s, w: st.w, x: hp.x, y: hp.y });
+          break;
+        }
+        case "reactiveBeat": {
+          // An upgrade orb's deadline, counted in committed beats; then the weapons' slots of this beat.
+          if (st.orbs?.deadlineBeat !== undefined && ev.bi >= st.orbs.deadlineBeat) takeOrb(0, false);
+          for (const f of st.fireSpecs) fireBeat(lib.weapons.get(f.weapon)!, f.every, f.skip, ev.bi, st.s);
           break;
         }
       }

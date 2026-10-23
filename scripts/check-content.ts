@@ -8,6 +8,9 @@ import { join } from "node:path";
 import { ContentError, levelSongName, loadLevel } from "../src/content/loader.ts";
 import { ROOT, hasSongMap, levelResolver, readSongMap, readSource } from "./lib/files.ts";
 import { checkBrokenFixtures, loadRealContent } from "./lib/content-check.ts";
+import { readStreamFile } from "./lib/reactive-node.ts";
+import { REACTIVE_SONG, reactiveSongMap } from "../src/reactive/songmap.ts";
+import { splitStream } from "../src/reactive/stream.ts";
 
 let failed = false;
 try {
@@ -19,6 +22,12 @@ try {
   for (const name of readdirSync(join(ROOT, "levels")).filter((f) => f.endsWith(".yaml"))) {
     const src = readSource(join("levels", name));
     const song = levelSongName(src, levelResolver);
+    // A reactive level plays to any track's reactive song map: checked against the Galop's stream.
+    if (song === REACTIVE_SONG) {
+      const level = loadLevel(src, lib, reactiveSongMap(splitStream(readStreamFile("orpheus-galop")).stream), levelResolver);
+      console.log(`level ok: ${src.name}${level.extends ? ` (extends ${level.extends})` : ""} (reactive, ${level.director?.roster.length} rosters, ${level.director?.levelUps.length} level-ups)`);
+      continue;
+    }
     if (!hasSongMap(song)) {
       console.error(`${src.name}: no song map at songs/${song}/songmap.json`);
       failed = true;

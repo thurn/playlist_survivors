@@ -13,6 +13,8 @@ npm run check:assets
 npm run check:seeds
 # Play mode on four seeds: the moderate player's signature moments, and the casual player's finale.
 npm run check:play
+# Reactive mode: causality, determinism, the shipped streams and sounds on committed beats.
+npm run check:reactive
 npm run build
 
 # The analysis tool and the song maps change rarely, and checking them builds a

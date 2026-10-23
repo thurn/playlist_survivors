@@ -14,6 +14,7 @@ import {
   type FormationDef,
   type HeroDef,
   type LevelScriptInput,
+  type Director,
   type MusicalRef,
   type SkillProfileName,
   type SoundPalette,
@@ -278,7 +279,10 @@ export interface LevelScript {
   song: string;
   seed: number;
   player: SkillProfileName;
-  title: LevelScriptInput["title"];
+  title: NonNullable<LevelScriptInput["title"]>;
+  /** Reactive mode: the level plays to a belief stream's reactive song map, with its director. */
+  reactive: boolean;
+  director?: Director;
   zones: string[];
   sections: ResolvedSection[];
   events: LevelEvent[];
@@ -474,7 +478,16 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap, res
     const path = ["sections", i];
     let label: string | undefined;
     let bars: [number, number] | undefined;
-    if (s.bars) {
+    if (s.bars === "all") {
+      // A reactive level's one section covers the reactive song map's one section.
+      if (!data.reactive || song.sections.length !== 1) {
+        issues.push({ ...at([...path, "bars"]), message: `bars "all" is only for a reactive level's one section` });
+        return;
+      }
+      label = song.sections[0].label;
+      bars = [...song.sections[0].bars];
+      if (s.section && s.section !== label) issues.push({ ...at([...path, "section"]), message: `bars all are section "${label}", not "${s.section}"` });
+    } else if (s.bars) {
       const [a, b] = s.bars.split("-").map(Number);
       if (a < 1 || b > lastBar || a > b) {
         issues.push({ ...at([...path, "bars"]), message: `bar range ${s.bars} is outside the song (bars 1-${lastBar})` });
@@ -509,7 +522,7 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap, res
     const roster = s.roster ?? prev?.roster;
     const sfx = s.sfxPalette ?? prev?.sfxPalette;
     if (!zone) issues.push({ ...at(path), message: "the first section must set zone" });
-    if (!roster) issues.push({ ...at(path), message: "the first section must set roster" });
+    if (!roster && !data.reactive) issues.push({ ...at(path), message: "the first section must set roster" });
     if (!sfx) issues.push({ ...at(path), message: "the first section must set sfxPalette" });
     const ts = s.timeScale ?? 1;
     const timeScale = typeof ts === "number" ? { from: ts, to: ts } : ts;
@@ -521,6 +534,7 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap, res
     if (pace === undefined) issues.push({ ...at(path), message: "the first section must set pace" });
     if (presses === undefined && movement === "steps") issues.push({ ...at(path), message: "a step section needs presses (set here or on an earlier section)" });
     const timingGrid = s.timingGrid ?? "beat";
+    if (!s.population && !data.reactive) issues.push({ ...at([...path, "population"]), message: "required field is missing" });
     const r: ResolvedSection = {
       label,
       bars,
@@ -533,7 +547,7 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap, res
       timeScale,
       calm: s.calm ?? 0,
       autoSwingBeats: s.autoSwingBeats ?? AUTO_SWING_BEATS,
-      population: s.population,
+      population: s.population ?? [0, 0],
       roster: roster ?? {},
       camera: cam,
       sfxPalette: sfx ?? "",
@@ -575,6 +589,27 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap, res
 
   for (const k of Object.keys(data.enemies ?? {})) need(["enemies", k], "enemies", k);
 
+  // Reactive levels: a director, one section and no level-script events (stage 1 turns them off).
+  if (!data.title && !data.reactive) issues.push({ ...at([]), message: "a level needs a title" });
+  if (data.director && !data.reactive) issues.push({ ...at(["director"]), message: "only a reactive level (reactive: true) has a director" });
+  if (data.reactive) {
+    if (!data.director) issues.push({ ...at([]), message: "a reactive level needs a director" });
+    if (data.sections.length !== 1) issues.push({ ...at(["sections"]), message: "a reactive level has one section" });
+    if (data.events.length > 0) issues.push({ ...at(["events"]), message: "a reactive level has no level-script events" });
+    // Its section is step movement on the committed beats at the base rate (play mode's free
+    // movement, other grids and time scales read the song map's sections and ends).
+    data.sections.forEach((sec, i) => {
+      for (const k of ["timeScale", "timingGrid", "movement", "autoSwingBeats", "population", "roster", "heavyOnAccents"] as const) {
+        if (sec[k] !== undefined && !(k === "timingGrid" && sec[k] === "beat") && !(k === "movement" && sec[k] === "steps")) issues.push({ ...at(["sections", i, k]), message: `a reactive level's section has no ${k} (its director and the committed beats decide it)` });
+      }
+    });
+    data.director?.roster.forEach((r, i) => {
+      for (const t of Object.keys(r.enemies)) need(["director", "roster", i, "enemies", t], "enemies", t);
+      if (i === 0 && r.from !== 0) issues.push({ ...at(["director", "roster", i, "from"]), message: "the director's first roster starts from 0" });
+      if (i > 0 && r.from <= data.director!.roster[i - 1].from) issues.push({ ...at(["director", "roster", i, "from"]), message: "the director's rosters go in order of from" });
+    });
+  }
+
   // The upgrade pool's weapons: known, not the finale blast, and each named once.
   const named = new Set<string>();
   for (const key of ["loadout", "offer"] as const) {
@@ -597,7 +632,9 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap, res
     song: data.song,
     seed: data.seed,
     player: data.player,
-    title: data.title,
+    title: data.title ?? { piece: "", composer: "", performer: "" },
+    reactive: data.reactive,
+    ...(data.director ? { director: data.director } : {}),
     zones: data.zones,
     sections,
     events: data.events,

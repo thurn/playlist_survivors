@@ -10,8 +10,9 @@ whole file.
   each activation frame's window ending at its own time) and the forward
   algorithm of its beat-tracking network give a believed grid at every
   activation frame. The next beat is committed, and never revised, once its
-  forecast falls within 1 period plus 0.35 s (the design's fallback horizon);
-  one that a sudden belief change puts less than 0.1 s ahead is skipped. The
+  forecast falls within 1 period plus 0.35 s (the design's fallback horizon),
+  or at the latest when the beat before it arrives; one that a sudden belief
+  change puts less than 0.1 s ahead is skipped. The
   forecast extrapolates with the period smoothed over the past 2 s, and each
   beat time includes `biasS`.
 - **Ticks** every 50 ms: `evidence` (the mean peak activation within ±30 ms of
@@ -38,7 +39,7 @@ import numpy as np
 
 #: Bumped whenever the stream's output changes, so stale shipped streams fail
 #: `check:reactive`.
-TOOL_VERSION = 1
+TOOL_VERSION = 2
 
 SR = 44100
 FPS = 100
@@ -232,8 +233,10 @@ def commit_beats(
 
     At each frame the next beat after the last committed one (at least half a
     period after it, and at least `minLeadS` ahead) is committed while its
-    forecast lies within `periods` periods plus `extraS` of now.
-    `evidence_of_frame(n)` gives the evidence known at frame n.
+    forecast lies within `periods` periods plus `extraS` of now, and in any case
+    by the last frame at or before the last committed beat: when a committed
+    beat arrives, the next is always known, so the game may read the length of
+    the beat it is in. `evidence_of_frame(n)` gives the evidence known at frame n.
     """
     out: list[dict[str, float]] = []
     c = -math.inf
@@ -247,7 +250,9 @@ def commit_beats(
                 (max(c + 0.5 * per, t + p.commit_min_lead_s) - last) / per - 1e-9
             )
             cand = last + k * per
-            if cand - t > horizon + 1e-9:
+            # The last frame at or before the last committed beat commits the next one regardless.
+            due = c - 1 / FPS < t <= c + 1e-9
+            if cand - t > horizon + 1e-9 and not due:
                 break
             out.append(
                 {
