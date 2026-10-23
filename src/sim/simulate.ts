@@ -698,6 +698,20 @@ function engine(env: Env, st: SimState, io: Io) {
     return { tx: st.heading.x, ty: st.heading.y };
   };
   const sectionAt = (s: number) => ctx.sections[sectionIndexAt(ctx, s)];
+  /** Each section's first grid time (pulsed sections only). */
+  const firstGrid = new Map<number, number>();
+  for (const g of sch.gridSlots) if (!firstGrid.has(g.section)) firstGrid.set(g.section, g.s);
+  /**
+   * The section a press belongs to: its own, or, up to the Good window before a pulsed section's
+   * first grid time, that section (the press is that grid time's counted press, as mid-section).
+   */
+  const pressSectionAt = (s: number) => {
+    const i = sectionIndexAt(ctx, s);
+    const next = ctx.sections[i + 1];
+    if (ctx.sections[i].level.movement === "steps" || next?.level.movement !== "steps") return ctx.sections[i];
+    const g = firstGrid.get(i + 1);
+    return g !== undefined && g - s <= hero.timing.goodMs / 1000 + 1e-9 ? next : ctx.sections[i];
+  };
   const blastS = sch.blast?.s;
   const rec = () => io.recorder;
 
@@ -877,7 +891,8 @@ function engine(env: Env, st: SimState, io: Io) {
       st.landed = true;
     }
     rec().landing({ s: st.s, w: st.w, x: hp.x, y: hp.y, stomp: true });
-    if (sectionAt(st.s).level.movement === "steps") st.strides.stompUntil = stompCancelsUntil(sch.strideSteps, st.s);
+    // (A stomp just before a pulsed section's first grid time, which counts there, cancels its held stride too.)
+    if (pressSectionAt(st.s).level.movement === "steps") st.strides.stompUntil = stompCancelsUntil(sch.strideSteps, st.s);
     return { budget: budgetAt(rule, st.strides, st.w, oneStride(st.s)), returned };
   };
   /**
@@ -1231,7 +1246,7 @@ function engine(env: Env, st: SimState, io: Io) {
   const pressMove = (key: InputKey, input: PlanInput): Partial<PressTrace> => (key === "space" ? stompHere(input) : strideTrace(strideOff(key), input));
 
   const press = (e: KeyEvent) => {
-    const sec = sectionAt(st.s);
+    const sec = pressSectionAt(st.s);
     const steps = sec.level.movement === "steps";
     // Play mode's timing log (a no-op elsewhere): what the press did, and why.
     const trace: PressTrace | undefined = rec().press ? { id: e.id, s: st.s, w: st.w, kind: "press", key: e.key, section: sec.label, movement: steps ? "steps" : "free", outcome: "stride", grooveBefore: st.groove } : undefined;
@@ -1269,6 +1284,9 @@ function engine(env: Env, st: SimState, io: Io) {
       if (trace) rec().press!({ ...trace, ...moved, outcome: bent ? "bend" : rocked ? "rock" : e.key === "space" ? "stomp" : "stride" });
       return;
     }
+    // (A press just before a pulsed section's first grid time, still in the free section: the walk
+    // stops here, as it would on the boundary, and the press strides as in step movement.)
+    if (sectionAt(st.s).level.movement !== "steps") stopWalk();
     // A perpendicular key just after the first bends the stride into a diagonal.
     const bent = bendOf(e.key);
     if (bent) {

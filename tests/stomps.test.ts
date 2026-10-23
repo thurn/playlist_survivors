@@ -189,3 +189,19 @@ describe("the stomp window", () => {
     expect(right.stride).toBeGreaterThan(0);
   });
 });
+
+describe("a stomp just before a pulsed section", () => {
+  const { sch, section, run } = play(syntheticSongMap());
+
+  it("counts at its first grid time and cancels the held stride there, as mid-section", () => {
+    // Right held through the end of the prelude (walking), Space 20 ms before the galop vamp's first grid time.
+    const vamp = section("galop-vamp");
+    const g = Array.from(sch.gridTimes).filter((t) => t >= vamp.s0 - 1e-6);
+    const keys: KeyEvent[] = [{ s: g[0] - 1, kind: "press", key: "right" }, ...space(g[0] - 0.02)];
+    const r = run(keys, [g[0] - 0.01, g[0] + 0.2, g[1] + 0.2]);
+    expect(r.inputs.find((i) => i.key === "space")).toMatchObject({ steps: true, class: "counted", rating: "perfect", stomp: true });
+    // The walk stopped at the stomp, the held stride on the first grid time is cancelled, and the next one strides.
+    expect(Math.hypot(r.at[1].x - r.at[0].x, r.at[1].y - r.at[0].y)).toBeLessThan(eps);
+    expect(r.at[2].x - r.at[1].x).toBeGreaterThan(20);
+  });
+});

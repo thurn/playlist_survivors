@@ -242,6 +242,23 @@ describe("re-rating where a run is interrupted", () => {
     } as PlayLogFile;
   };
 
+  it("counts a press just before a pulsed section's first grid time, as the simulation does", () => {
+    const vamp = rules.sections.find((x) => x.label === "galop-vamp")!;
+    const v = Array.from(sch.gridTimes).filter((t) => t >= vamp.s0 - 1e-6).slice(0, 2);
+    const log = logOf(
+      [
+        [v[0] - 0.012, "right", "stride", 1000],
+        [v[1] - 0.012, "right", "stride", 1300],
+      ],
+      { params: { avOffsetMs: 0, startS: vamp.s0 - 2 } },
+    );
+    const re = rerate(log, rules);
+    expect(re.presses.map((p) => [p.id, p.class, p.rating, p.section])).toEqual([
+      [1, "counted", "perfect", "galop-vamp"],
+      [2, "counted", "perfect", "galop-vamp"],
+    ]);
+  });
+
   it("re-rates only the final timeline after a restart", () => {
     // The same press on g[0] before and after a song restart: both counted, not a double tap.
     const log = logOf(

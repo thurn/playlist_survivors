@@ -105,7 +105,7 @@ export function movesReadout(plan: Plan, s: number): MovesReadout {
   if (st) {
     const spans = heldSpans(plan.inputs.filter((i) => i.s <= s + 1e-9));
     const steps = { s: st.steps, period: st.periods, per: st.per ?? new Uint8Array(st.steps.length).fill(1) };
-    const cancels = presses.filter((p) => p.stomp && movementAt(p.s) === "steps").map((p) => [p.s, stompCancelsUntil(steps, p.s)]);
+    const cancels = presses.filter((p) => p.stomp && p.steps).map((p) => [p.s, stompCancelsUntil(steps, p.s)]);
     let startS = -Infinity;
     for (let k = presses.length - 1; k >= 0; k--) {
       if (partnerPress(presses[k]) || presses[k].key === "space") continue;

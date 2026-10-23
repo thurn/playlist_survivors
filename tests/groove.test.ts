@@ -4,7 +4,10 @@
  * simulation on the synthetic song (theme A at 185 beats per minute).
  */
 import { describe, expect, it } from "vitest";
+import { plannerInput, runPlanner } from "../scripts/lib/plan-node.ts";
 import { grooveAt } from "../src/plan/evaluate.ts";
+import { checkPlan, summarizeChecks } from "../src/planner/checks.ts";
+import { checkPlay } from "../src/planner/play-checks.ts";
 import type { KeyEvent } from "../src/sim/player.ts";
 import { BatchRecorder, type PressTrace } from "../src/sim/recorder.ts";
 import { classifyPress, freshPressMemo, grooveAfterChange, tierFor } from "../src/sim/timing.ts";
@@ -41,6 +44,43 @@ describe("press classes", () => {
     const memo = freshPressMemo();
     classifyPress(hero, grid, 0.325 - 0.12, false, memo);
     expect(classifyPress(hero, grid, 0.4875, false, memo).class).toBe("stray");
+  });
+});
+
+describe("a pulsed section's first grid time", () => {
+  it("counts a press just before it, so eighth notes from there have no loose presses and no strays", () => {
+    // Perfect presses on every eighth note from 12 ms before the galop vamp's first grid time: the
+    // first press still lands in the prelude, a free section.
+    const vamp = section("galop-vamp");
+    const grid = Array.from(sch.gridTimes).filter((g) => g >= vamp.s0 - 1e-6).slice(0, 9);
+    expect(grid[0] - 0.012).toBeLessThan(vamp.s0);
+    const times = grid.slice(0, -1).flatMap((g, i) => [g - 0.012, (g + grid[i + 1]) / 2 - 0.012]);
+    const r = run(times.flatMap((s) => tap(s)), [grid[8] + 0.05]);
+    const presses = r.inputs.filter((i) => i.s < grid[8]);
+    expect(presses.length).toBe(16);
+    expect(presses[0]).toMatchObject({ steps: true, class: "counted", rating: "perfect" });
+    expect(presses.filter((i) => i.class === "counted").map((i) => i.rating)).toEqual(Array(8).fill("perfect"));
+    expect(presses.filter((i) => i.class === "offbeat").length).toBe(8);
+    expect(presses.filter((i) => i.class === "stray" || (i.class === "counted" && !i.rating))).toEqual([]);
+  });
+
+  it("passes every check on the eighths player's run, whose first vamp press comes just before it", () => {
+    const songMap = syntheticSongMap();
+    const level = "levels/orpheus-galop.play.yaml";
+    const plan = runPlanner({ songMap, level, profile: "eighths" });
+    const early = plan.inputs.filter((i) => i.kind === "press" && i.steps && plan.sections.findLast((x) => i.s >= x.s0 - 1e-9)!.movement === "free");
+    expect(early.map((i) => [i.class, i.rating])).toEqual([["counted", "perfect"]]);
+    const lib = plannerInput({ songMap, level }).content;
+    const { ok, text } = summarizeChecks([...checkPlan(plan, lib), ...checkPlay(plan, lib, { signature: false })]);
+    expect(ok, text).toBe(true);
+  }, 60_000);
+
+  it("leaves a press earlier than the Good window in the free section, unclassed", () => {
+    const vamp = section("galop-vamp");
+    const first = Array.from(sch.gridTimes).find((g) => g >= vamp.s0 - 1e-6)!;
+    const r = run(tap(first - (hero.timing.goodMs + 30) / 1000), [first + 0.05]);
+    expect(r.inputs[0]).toMatchObject({ steps: false });
+    expect(r.inputs[0].class).toBeUndefined();
   });
 });
 

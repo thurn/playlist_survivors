@@ -475,8 +475,18 @@ export function rerate(log: PlayLogFile, rules: RerateRules): Rerated {
   const { hero, grid, beats } = rules;
   const { from, to } = playSpan(log);
   const sectionAt = (s: number) => rules.sections.findLast((x) => s >= x.s0 - 1e-9) ?? rules.sections[0];
+  // A press up to the Good window before a pulsed section's first grid time belongs to that section,
+  // as the simulation has it.
+  const pressSectionAt = (s: number) => {
+    const i = rules.sections.findLastIndex((x) => s >= x.s0 - 1e-9);
+    const sec = rules.sections[Math.max(0, i)];
+    const next = rules.sections[i + 1];
+    if (sec.movement === "steps" || next?.movement !== "steps") return sec;
+    const first = Array.from(grid).find((g) => g >= next.s0 - 1e-6);
+    return first !== undefined && first - s <= hero.timing.goodMs / 1000 + 1e-9 ? next : sec;
+  };
   const { kept } = finalPresses(log);
-  const presses = log.traces.filter((t) => t.kind === "press" && t.id !== undefined && kept.has(t.id) && t.s >= from - 1e-9 && sectionAt(t.s).movement === "steps").sort((a, b) => a.s - b.s);
+  const presses = log.traces.filter((t) => t.kind === "press" && t.id !== undefined && kept.has(t.id) && t.s >= from - 1e-9 && pressSectionAt(t.s).movement === "steps").sort((a, b) => a.s - b.s);
   const groove0 = log.groove ? stepAt(log.groove, from) : 0;
   let groove = groove0;
   // (From the tier the log had at the hand-over: a tier drops only below its hysteresis.)
@@ -510,7 +520,7 @@ export function rerate(log: PlayLogFile, rules: RerateRules): Rerated {
   // player's soon after one of them can be a double tap or an off-beat).
   const memo = freshPressMemo();
   for (const i of log.inputs ?? []) {
-    if (i.kind !== "press" || i.s >= from - 1e-9 || i.s < from - 2 || sectionAt(i.s).movement !== "steps") continue;
+    if (i.kind !== "press" || i.s >= from - 1e-9 || i.s < from - 2 || pressSectionAt(i.s).movement !== "steps") continue;
     classifyPress(hero as HeroDef, grid, i.s, i.class === "partner", memo);
   }
   let bi = 0;
@@ -529,7 +539,7 @@ export function rerate(log: PlayLogFile, rules: RerateRules): Rerated {
     const j = classifyPress(hero as HeroDef, grid, p.s, partner, memo);
     if (j.change > 0) lastRaise = p.s;
     set(p.s, grooveAfterChange(groove, j.change));
-    out.presses.push({ id: p.id, s: p.s, section: sectionAt(p.s).label, key: p.key, class: j.class, ...(j.rating ? { rating: j.rating } : {}), change: j.change, groove, tier });
+    out.presses.push({ id: p.id, s: p.s, section: pressSectionAt(p.s).label, key: p.key, class: j.class, ...(j.rating ? { rating: j.rating } : {}), change: j.change, groove, tier });
   }
   return out;
 }
