@@ -17,7 +17,7 @@ describe("content", () => {
     const lib = loadRealContent();
     const level = loadLevel(readSource("levels/orpheus-galop.yaml"), lib, syntheticSongMap());
     const opening = level.sections[2];
-    expect(opening.zone).toBe("twilight-glade"); // inherited
+    expect(opening.zone).toBe("galop-woods"); // inherited from the galop vamp
     expect(opening.timeScale).toEqual({ from: 1, to: 1 }); // default, not inherited
     expect(level.sections[3].sfxPalette).toBe("crisp-steel");
     // Movement settings: presses and pace inherit; the timing grid and heavy swings do not.

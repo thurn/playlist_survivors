@@ -26,7 +26,9 @@ function firstDifference(a: number[], b: number[]): number {
 }
 
 describe("the steppable engine", () => {
-  const input = plannerInput({ songMap: syntheticSongMap() });
+  // (The old demo's rules in the corridor, the legacy demo level, which DEMO_RULES and
+  // CorridorWorld stand for until hv-zoon removes them.)
+  const input = plannerInput({ songMap: syntheticSongMap(), level: "tests/fixtures/legacy-demo.level.yaml" });
   const { ctx, sch, map } = prepare(input, propsFromAtlas());
   const world = new CorridorWorld(map, sch);
   const batch = simulate(ctx, sch, map, { player: virtualPlayer(ctx, sch) });

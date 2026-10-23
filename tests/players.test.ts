@@ -10,6 +10,9 @@ import type { Plan } from "../src/plan/types.ts";
 import { readParams } from "../src/runtime/app.ts";
 import { syntheticSongMap } from "./fixtures/synthetic-song.ts";
 
+/** The demo as it was before the redesign (the old step rules), until hv-zoon removes that code. */
+const LEGACY = "tests/fixtures/legacy-demo.level.yaml";
+
 const songMap = syntheticSongMap();
 const PLAY = "levels/orpheus-galop.play.yaml";
 const lib = plannerInput({ songMap, level: PLAY }).content;
@@ -93,14 +96,14 @@ describe("each new player in play mode", () => {
 });
 
 describe("the casual player under the groove", () => {
-  it("presses downbeats with 60 ms timing in play mode, and keeps the demo's 120 ms", () => {
+  it("presses downbeats with 60 ms timing in play mode, and keeps the old rules' 120 ms", () => {
     const spread = (plan: Plan) => {
       const d = plan.inputs.filter((i) => i.kind === "press" && i.steps && i.delta !== undefined && (i.class === undefined || i.class === "counted")).map((i) => i.delta!);
       const mean = d.reduce((a, x) => a + x, 0) / d.length;
       return Math.sqrt(d.reduce((a, x) => a + (x - mean) ** 2, 0) / d.length);
     };
     const play = spread(runPlanner({ songMap, level: PLAY, profile: "casual" }));
-    const demo = spread(runPlanner({ songMap, profile: "casual" }));
+    const demo = spread(runPlanner({ songMap, level: LEGACY, profile: "casual" }));
     expect(play).toBeGreaterThan(0.04);
     expect(play).toBeLessThan(0.075);
     expect(demo).toBeGreaterThan(play + 0.015);

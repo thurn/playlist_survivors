@@ -1,9 +1,10 @@
 /**
- * The frozen demo: the scripted demo's plan hash for every seed and demo
- * profile, recorded before the engine was refactored for play mode. A change
- * that shifts event order, random draws or float rounding fails here. Fix the
- * change; never update the fixture. (One test file per seed, so they run in
- * parallel.)
+ * The frozen demo: Watch the demo's plan hash for every seed and demo profile,
+ * under the redesign's rules in the open field (re-recorded once, with
+ * PLAN_FORMAT 3, when the demo moved onto them). A change that shifts event
+ * order, random draws or float rounding fails here. Fix the change; never
+ * update the fixture unless a change of the game's rules means to. (One test
+ * file per seed, so they run in parallel.)
  */
 import { describe, expect, it } from "vitest";
 import { planHash } from "../../src/planner/plan.ts";

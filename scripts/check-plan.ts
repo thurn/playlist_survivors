@@ -10,6 +10,7 @@
  * --determinism plans the first seed twice and compares the hashes (and the maps').
  */
 import { checkPlan, summarizeChecks, type CheckResult } from "../src/planner/checks.ts";
+import { checkPlay } from "../src/planner/play-checks.ts";
 import { planHash } from "../src/planner/plan.ts";
 import { checkCausality } from "../src/planner/sim-checks.ts";
 import type { SkillProfile } from "../src/sim/player.ts";
@@ -29,7 +30,10 @@ function run(seed: number, prof: SkillProfile, full: boolean): Plan {
   const t0 = performance.now();
   const input = plannerInput({ seed });
   const { plan, sim } = runPlannerWithSim({ seed, profile: prof });
-  const results: CheckResult[] = checkPlan(plan, input.content);
+  // (The redesign's checks too: no dead presses, the speed cap, sounds on the grid and, for the
+  // level's own player, the signature moments.)
+  const survives: CheckResult = { name: "the hero survives", failures: plan.stats.deathS === undefined ? [] : [`the hero's health ran out at s=${plan.stats.deathS.toFixed(3)}`], checked: 1 };
+  const results: CheckResult[] = [...checkPlan(plan, input.content), ...checkPlay(plan, input.content, { signature: prof === base.level.player }), survives];
   if (full) results.push(checkCausality(input, { props: propsFromAtlas(), profile: prof, full: sim }));
   const { ok, text } = summarizeChecks(results);
   failed ||= !ok;

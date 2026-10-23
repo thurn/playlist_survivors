@@ -12,13 +12,14 @@ It has two modes:
 
 - **Play** — the real game. The keyboard drives the game rules live, in an
   open field that re-themes itself in transform waves on the music. Designed in
-  [docs/design/interactive.md](docs/design/interactive.md).
-- **Watch the demo** — the original tech demo, unchanged: a virtual player
-  presses the keys along a forest corridor.
+  [docs/design/interactive.md](docs/design/interactive.md), with today's rules in
+  [docs/design/gameplay-redesign.md](docs/design/gameplay-redesign.md).
+- **Watch the demo** — a recorded run of the skilled virtual player under the
+  same rules, in the same open field.
 
-The demo's design is in [docs/design/tech-demo.md](docs/design/tech-demo.md),
-with the gameplay in [docs/design/beat-steps.md](docs/design/beat-steps.md),
-which supersedes parts of it. Both modes run one **simulated playthrough**
+The original tech demo's design is in [docs/design/tech-demo.md](docs/design/tech-demo.md)
+(the forest corridor and its step gameplay, [docs/design/beat-steps.md](docs/design/beat-steps.md)),
+which today's rules in the gameplay redesign replace. Both modes run one **simulated playthrough**
 engine: the game rules run forward in time, driven by key presses, and never
 read a press before it happens. The demo records its simulation at load, then
 plays it back (each frame a pure function of the audio clock's song time).
@@ -98,7 +99,7 @@ hero's path are logged too. See [`src/live/log.ts`](src/live/log.ts).
 
 | Parameter | Effect |
 |---|---|
-| `?mode=play` / `?mode=demo` | Skip the title screen's choice (the one click to unlock audio is still needed). |
+| `?mode=play` / `?mode=demo` | Skip the title screen's choice (the one click to unlock audio is still needed). Watch the demo is the skilled virtual player's run under play mode's rules, in the open field (one level script, `levels/orpheus-galop.yaml`, drives both; the play level only sets the moderate player). |
 | `?mode=play&player=moderate` | Plan a play-mode run with a virtual player and play it back like the demo (captures, QA, tuning). |
 | `?metronome` | Full-screen flash on every beat plus a click track over the music (the sync check). |
 | `?mode=play&debug=moves` | Play mode with a movement overlay: the hero's speed over the last second, the stride budget, the groove and tier, and the last eight presses with their class and offset (for the Manual QA of docs/design/gameplay-redesign.md). |
@@ -108,7 +109,7 @@ hero's path are logged too. See [`src/live/log.ts`](src/live/log.ts).
 | `?seed=1859` | Re-simulate, and regenerate the map, with a different seed. |
 | `?player=casual` | Re-simulate with another virtual player: `perfect`, `skilled` (the demo level's default), `casual` (downbeats only), `moderate` (play mode's stand-in for a moderately competent human), `eighths` (every eighth note, 12 ms deviation), `holder` (holds the direction it steers, changing it at most once a bar, and never taps), or `mash2`, `mash4` and `mash8` (random presses at 2, 4 or 8 a second). |
 | `?test` | Expose the `window.__demo` test hook (`ready`, `renderAt(s)`, `stats()`; in play mode also `live` and `play`). |
-| `?bench` | Play the whole song on a virtual clock and record frame times (`&mode=play`: live play from theme A to the climax). |
+| `?bench` | Play the whole song (Watch the demo) on a virtual clock and record frame times (`&mode=play`: live play from theme A to the climax). |
 
 `?player=`, `?capture`, `?bench`, `?test` and `?metronome` imply the demo, so
 existing tools and URLs keep working.
@@ -196,11 +197,11 @@ and lists what is still open.
 5. **Juice** — review captures of the biggest moments (first galop chord,
    the kick line's release cleave, boss slams, boss death, finale blast).
 6. **Sound** — listen to the whole level.
-7. **Step movement** — open `?start=1:10` (theme A) and confirm the first
-   assembled check in [beat-steps.md](docs/design/beat-steps.md#first-assembled-check):
-   still between steps, quick firm steps, swings toward the crowd, every impact on the beat.
+7. **Watch the demo** — `?mode=demo`: the skilled virtual player plays the new rules in the open
+   field, the prelude at full speed with calm enemies.
 8. **Reward spectrum** — compare `?player=skilled` with `?player=casual` (and `?player=perfect`).
-9. **Full QA** — the checklists in the *Manual QA* sections of both design documents.
+9. **Full QA** — the checklists in the *Manual QA* sections of
+   [interactive.md](docs/design/interactive.md) and [gameplay-redesign.md](docs/design/gameplay-redesign.md).
 10. **Play mode** — `?mode=play&player=moderate` from the start, at `?start=1:10` and at the climax
     (the open field, transform waves, landmarks); then play theme A by hand at `?mode=play&start=1:10`
     with headphones (steps feel instant, impacts on the beat); then the *Manual QA* playthrough in

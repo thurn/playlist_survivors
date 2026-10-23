@@ -29,7 +29,7 @@ soundPalettes:
       # section's scale (any palette tunes it), and the vacuum's pickup.
       chime: [{ id: kenney/impactGlass_light_003, rootNote: G6 }, { id: kenney/impactGlass_light_004, rootNote: G6 }]
       vacuum: [kenney/maximize_004]
-      zone-sweep: [kenney/maximize_004]   # played an octave down: the open field's transform wave
+      zone-sweep: [rpgpack/spell]          # played an octave down: the open field's transform wave (a swell whose onset an octave down still fits the 250 ms lead)
       tier-up: [kenney/confirmation_002]   # the groove's tier rises: a rising chime on the next grid time
       tier-down: [kenney/minimize_001]     # the tier falls: a soft falling sweep
       orb: [kenney/confirmation_004]       # an upgrade orb taken: on the next grid time, as it applies
@@ -40,7 +40,7 @@ soundPalettes:
   - id: soft-chimes
     extends: crisp-steel
     tuned: true
-    gain: 0.5               # quiet enough to keep the prelude's dynamics
+    gain: 0.15              # quiet enough to keep the prelude's dynamics (its sword swings on every beat)
     sounds:
       hit-light: [{ id: kenney/glass_001, rootNote: C6 }, { id: kenney/glass_002, rootNote: C6 }, { id: kenney/glass_003, rootNote: C6 }]
       hit-medium: [{ id: kenney/impactGlass_medium_000, rootNote: E6 }, { id: kenney/impactGlass_medium_001, rootNote: E6 }, { id: kenney/impactGlass_medium_002, rootNote: E6 }]

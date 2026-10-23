@@ -196,7 +196,7 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
         const lf = levelOf(m);
         const sm = songMap(levelSongName(lf, levelResolver));
         const level = loadLevel(lf, lib, sm, levelResolver);
-        overlay.sub.textContent = m === "demo" ? `${level.title.piece} — a tech demo` : level.title.piece;
+        overlay.sub.textContent = m === "demo" ? `${level.title.piece} — Watch the demo` : level.title.piece;
         return { songMap: sm, level, content: lib, seed: params.seed ?? level.seed, profile: params.player ?? level.player, landmarks: landmarks(), version: __BUILD_VERSION__ };
       } catch (e) {
         throw e instanceof ContentError ? new Error(`Level script or content error:\n${e.message}`) : e;

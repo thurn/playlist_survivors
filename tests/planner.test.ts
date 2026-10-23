@@ -6,12 +6,14 @@ import { heroSample } from "../src/plan/sample.ts";
 import { plannerInput, propsFromAtlas, runPlanner, runPlannerWithSim } from "../scripts/lib/plan-node.ts";
 import { syntheticSongMap } from "./fixtures/synthetic-song.ts";
 
-// One skilled and one casual playthrough of the synthetic song, shared by every test.
-// (check:seeds covers determinism and more seeds on the real song.)
+// One skilled and one casual playthrough of the synthetic song, shared by every test, under the
+// old step rules in the forest corridor (the legacy demo level, until hv-zoon removes that code).
+// (check:seeds covers the demo, under today's rules, on more seeds of the real song.)
+const LEVEL = "tests/fixtures/legacy-demo.level.yaml";
 const songMap = syntheticSongMap();
-const input = plannerInput({ songMap });
-const { plan, sim } = runPlannerWithSim({ songMap });
-const casual = runPlanner({ songMap, profile: "casual" });
+const input = plannerInput({ songMap, level: LEVEL });
+const { plan, sim } = runPlannerWithSim({ songMap, level: LEVEL });
+const casual = runPlanner({ songMap, level: LEVEL, profile: "casual" });
 
 describe("simulated playthrough on the synthetic song", () => {
 

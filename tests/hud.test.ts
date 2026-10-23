@@ -6,6 +6,9 @@ import { gradeFor } from "../src/plan/grade.ts";
 import { endCardGrade, endCardLines } from "../src/runtime/hud-lines.ts";
 import { syntheticSongMap } from "./fixtures/synthetic-song.ts";
 
+/** The demo as it was before the redesign (the old step rules), until hv-zoon removes that code. */
+const LEGACY = "tests/fixtures/legacy-demo.level.yaml";
+
 const songMap = syntheticSongMap();
 const PLAY = "levels/orpheus-galop.play.yaml";
 const lib = plannerInput({ songMap, level: PLAY }).content;
@@ -34,8 +37,8 @@ describe("accent telegraphs", () => {
     expect(ev.evaluate(accent.s - 0.01).hud.heartGlow).toBeGreaterThan(0.9);
   });
 
-  it("keeps the demo's HUD unchanged", () => {
-    const demo = runPlanner({ songMap });
+  it("keeps the old rules' HUD unchanged (the legacy demo level)", () => {
+    const demo = runPlanner({ songMap, level: LEGACY });
     const hud = new Evaluator(demo, lib).evaluate(accent.s - 1.5).hud;
     expect(hud.heartGlow).toBeUndefined();
     expect(hud.ticks.every((k) => !k.cleave && !k.pressHere)).toBe(true);
@@ -74,7 +77,7 @@ describe("press classes on the HUD", () => {
     expect(ev.evaluate(at + 1).hud.tier!.flash).toBe(0);
     expect(ev.evaluate(1).hud.tier).toMatchObject({ n: 0, flash: 0 });
     // The demo has no tiers: its meter keeps the damage bonus.
-    expect(new Evaluator(runPlanner({ songMap }), lib).evaluate(at).hud.tier).toBeUndefined();
+    expect(new Evaluator(runPlanner({ songMap, level: LEGACY }), lib).evaluate(at).hud.tier).toBeUndefined();
   });
 
   it("styles each press class on the key display, and shows stomps as both feet", () => {

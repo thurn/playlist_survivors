@@ -7,7 +7,7 @@ const BASE = `http://localhost:${devPort()}`;
 interface Hook {
   ready: Promise<void>;
   renderAt(s: number): Promise<void>;
-  plan: { songBeats: Float64Array; barStart: number[]; duration: number; profile: string; stats: { averageGroove: number } };
+  plan: { songBeats: Float64Array; barStart: number[]; duration: number; profile: string; stats: { averageGroove: number }; open?: unknown; rules?: { selfFiring?: boolean; healthPool?: boolean } };
   planHash: string;
   planSource: string;
 }
@@ -28,6 +28,15 @@ async function brightness(page: Page): Promise<number> {
 }
 
 test.describe.configure({ mode: "serial" });
+
+test("Watch the demo is the skilled player's run under play's rules, in the open field", async ({ page }) => {
+  await openDemo(page, "");
+  const plan = await page.evaluate(() => {
+    const p = (window as unknown as { __demo: Hook }).__demo.plan;
+    return { profile: p.profile, open: p.open !== undefined, rules: p.rules };
+  });
+  expect(plan).toMatchObject({ profile: "skilled", open: true, rules: { selfFiring: true, healthPool: true } });
+});
 
 test("renders any song time through the capture hook", async ({ page }) => {
   await openDemo(page, "");

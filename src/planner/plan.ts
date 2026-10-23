@@ -25,7 +25,7 @@ import { ENEMY_RATE, simulate, type SimResult } from "../sim/simulate.ts";
 import { HolderPlayer, MasherPlayer, VirtualPlayer, type Player, type PlayerName, type PlayerSection, type SkillProfile } from "../sim/player.ts";
 import { strideRule } from "../sim/strides.ts";
 
-export const PLAN_FORMAT = "2";
+export const PLAN_FORMAT = "3";
 export const ACTIVE_BUCKET = 0.5;
 /** Enemies stay drawable this long after death (the fall animation). */
 export const DEATH_ANIM = 0.55;

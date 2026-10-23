@@ -16,56 +16,80 @@ const lib = loadRealContent();
 const song = syntheticSongMap();
 const demo = loadLevel(readSource("levels/orpheus-galop.yaml"), lib, song, levelResolver);
 const play = loadLevel(readSource("levels/orpheus-galop.play.yaml"), lib, song, levelResolver);
+/** The demo as it was before the redesign (the old step rules, in the corridor), until hv-zoon removes that code. */
+const LEGACY = "tests/fixtures/legacy-demo.level.yaml";
+const legacy = loadLevel(readSource(LEGACY), lib, song, levelResolver);
 
 describe("the play level file", () => {
-  it("extends the demo's level script, restating only what differs", () => {
+  it("is the demo's level script with the moderate player: play and Watch the demo share one set of rules", () => {
     expect(play.extends).toBe("orpheus-galop");
-    expect(play.world).toBe("open");
-    expect(demo.world).toBe("corridor");
-    expect(play.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true, selfFiring: true, gridSounds: true, pressCleaves: true, setPieces: true, fieldGems: true, upgradePool: true, upgradeOrbs: true, healthPool: true });
-    expect(demo.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false, pressClasses: false, selfFiring: false, gridSounds: false, pressCleaves: false, setPieces: false, fieldGems: false, upgradePool: false, upgradeOrbs: false, healthPool: false });
     expect(play.player).toBe("moderate");
-    expect(play.seed).toBe(demo.seed);
-    expect(play.title).toEqual(demo.title);
-    // Sections merge field by field: the climax keeps its zoom and loses its camera lead.
-    const climax = play.sections.find((s) => s.label === "climax")!;
-    expect(climax.camera).toEqual({ ...demo.sections.find((s) => s.label === "climax")!.camera, lead: 0 });
-    // The galop starts in the woods (the vamp sets it; the opening inherits it).
-    expect(play.sections.find((s) => s.label === "galop-vamp")!.zone).toBe("galop-woods");
-    expect(play.sections.find((s) => s.label === "galop-opening")!.zone).toBe("galop-woods");
+    expect(demo.player).toBe("skilled");
+    expect(demo.world).toBe("open");
+    expect(demo.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true, selfFiring: true, gridSounds: true, pressCleaves: true, setPieces: true, fieldGems: true, upgradePool: true, upgradeOrbs: true, healthPool: true });
+    for (const k of ["seed", "title", "world", "rules", "sections", "events", "upgrades", "enemies", "zones"] as const) expect(play[k], k).toEqual(demo[k]);
+    expect(play.hero).toBe(demo.hero);
     // The prelude plays at full speed, with calm enemies instead.
-    const prelude = play.sections.find((s) => s.label === "prelude")!;
+    const prelude = demo.sections[0];
     expect(prelude.timeScale).toEqual({ from: 1, to: 1 });
     expect(prelude.calm).toBe(0.5);
     expect(prelude.autoSwingBeats).toBe(1);
-    expect(demo.sections[0].autoSwingBeats).toBe(2);
-    expect(demo.sections[0].calm).toBe(0);
-    expect(play.sections.find((s) => s.label === "galop-vamp")!.calm).toBe(0); // not inherited
-    const changed = ["prelude", "climax", "galop-vamp", "galop-opening", "theme-a", "theme-a-repeat", "kick-line", "bridge", "coda"];
-    for (const [i, s] of play.sections.entries()) if (!changed.includes(s.label)) expect(s).toEqual(demo.sections[i]);
-    // Events merge by `at` and kind: the level-ups offer items from the upgrade pool and need their
-    // own experience; the set pieces (rings and stampedes) are play mode's own, added to the demo's.
-    const pieces = play.events.filter((e) => e.ring || e.stampede);
-    expect(pieces.map((e) => (e.ring ? `ring ${e.ring.count}` : `stampede ${e.stampede!.count}`))).toEqual(["ring 30", "stampede 40", "ring 60", "stampede 60", "ring 80"]);
-    expect(play.events.length).toBe(demo.events.length + pieces.length);
-    expect(play.events.filter((e) => e.levelUp).map((e) => [e.levelUp, e.xp])).toEqual([
+    expect(legacy.sections[0].autoSwingBeats).toBe(2);
+    // The galop starts in the woods (the vamp sets it; the opening inherits it).
+    expect(demo.sections.find((s) => s.label === "galop-opening")!.zone).toBe("galop-woods");
+    // Level-ups offer items from the upgrade pool; the set pieces join the demo's events.
+    expect(demo.events.filter((e) => e.levelUp).map((e) => [e.levelUp, e.xp])).toEqual([
       ["offer", 100],
       ["offer", 470],
       ["offer", 800],
     ]);
-    expect(play.upgrades).toEqual({ loadout: ["orbiting-blades", "chain-lightning"], offer: ["fire-trail"] });
-    expect(demo.upgrades).toEqual({ loadout: [], offer: [] });
-    expect(play.events.filter((e) => !e.levelUp && !e.ring && !e.stampede)).toEqual(demo.events.filter((e) => !e.levelUp));
+    const pieces = demo.events.filter((e) => e.ring || e.stampede);
+    expect(pieces.map((e) => (e.ring ? `ring ${e.ring.count}` : `stampede ${e.stampede!.count}`))).toEqual(["ring 30", "stampede 40", "ring 60", "stampede 60", "ring 80"]);
+    expect(demo.upgrades).toEqual({ loadout: ["orbiting-blades", "chain-lightning"], offer: ["fire-trail"] });
   });
 
-  it("merges its hero overrides over content/hero.yaml for this level only", () => {
-    expect(play.hero.timing).toEqual({ perfectMs: 45, greatMs: 90, goodMs: 140, floor: 0.1 });
-    expect(play.hero.step).toEqual(lib.hero.step);
-    expect(lib.hero.timing.perfectMs).toBe(35);
+  it("uses content/hero.yaml's values, which a level's hero overrides still change for that level only", () => {
     expect(demo.hero).toBe(lib.hero);
-    // Looser timing windows: 80 ms off is Great in play mode, Good in the demo.
-    expect(ratePress(play.hero, 0.08, 0.3).rating).toBe("great");
-    expect(ratePress(lib.hero, 0.08, 0.3).rating).toBe("good");
+    expect(lib.hero.timing).toEqual({ perfectMs: 45, greatMs: 90, goodMs: 140, floor: 0.1 });
+    expect(lib.hero.walk.speed).toBe(140);
+    expect(lib.hero.health).toMatchObject({ max: 100, invulnerableMs: 500, levelUpHeal: 20 });
+    // The legacy demo level restores the old values.
+    expect(legacy.hero.timing.perfectMs).toBe(35);
+    expect(legacy.hero.step).toEqual(lib.hero.step);
+    // 80 ms off is Great today, Good under the old windows.
+    expect(ratePress(lib.hero, 0.08, 0.3).rating).toBe("great");
+    expect(ratePress(legacy.hero, 0.08, 0.3).rating).toBe("good");
+  });
+
+  it("merges a level over the one it extends: sections field by field, events by `at` and kind", () => {
+    const base = readSource("levels/orpheus-galop.yaml");
+    const child = [
+      "extends: parent",
+      "sections:",
+      "  - section: climax",
+      "    camera: { lead: 7 }",
+      "  - section: prelude",
+      "    calm: 0.25",
+      "events:",
+      "  - at: { section: galop-opening, point: start }",
+      "    levelUp: offer",
+      "    xp: 55",
+      "  - at: { bar: 60, beat: 1 }",
+      "    stampede: { enemy: goblin, count: 12, rows: 2 }",
+      "",
+    ].join("\n");
+    const resolve: LevelResolver = (name) => (name === "parent" ? { name: "levels/parent.yaml", text: base.text } : levelResolver(name));
+    const merged = loadLevel({ name: "levels/child.yaml", text: child }, lib, song, resolve);
+    // A section's override changes only its own fields (the climax keeps its zoom), and a field set
+    // on one section is not inherited by the next (calm).
+    const climax = merged.sections.find((s) => s.label === "climax")!;
+    expect(climax.camera).toEqual({ ...demo.sections.find((s) => s.label === "climax")!.camera, lead: 7 });
+    expect(merged.sections[0].calm).toBe(0.25);
+    expect(merged.sections[1].calm).toBe(0);
+    // An event at the same `at` and of the same kind replaces the parent's fields; a new one is added.
+    expect(merged.events.filter((e) => e.levelUp).map((e) => e.xp)).toEqual([55, 470, 800]);
+    expect(merged.events.length).toBe(demo.events.length + 1);
+    expect(merged.events.filter((e) => e.stampede).map((e) => e.stampede!.count)).toEqual([40, 60, 12]);
   });
 
   it("points each error at the file that set the value", () => {
@@ -92,17 +116,18 @@ describe("the play level file", () => {
   });
 
   it("checks the upgrade pool: level-ups offer with it and only with it, and its weapons", () => {
-    const play = readSource("levels/orpheus-galop.play.yaml").text;
+    const play = readSource("levels/orpheus-galop.yaml").text;
     const files: Record<string, string> = {
-      // The demo's level-ups name weapons; with the upgrade pool they must offer.
-      named: "extends: orpheus-galop\nrules: { upgradePool: true }\n",
+      // With the upgrade pool, a level-up that names a weapon is an error: it must offer.
+      named: play.replace("levelUp: offer", "levelUp: orbiting-blades"),
       offerless: play.replace(", upgradePool: true, upgradeOrbs: true,", ","),
       healthless: play.replace("health: true,", "health: false,"),
       poolless: play.replace(", upgradePool: true, upgradeOrbs: true,", ", upgradeOrbs: true,").replace(/^upgrades: .*$/m, ""),
       blast: play.replace("offer: [fire-trail]", "offer: [fire-trail, finale-blast]"),
       twice: play.replace("offer: [fire-trail]", "offer: [chain-lightning]"),
       unknown: play.replace("offer: [fire-trail]", "offer: [fire-trial]"),
-      ruleless: "extends: orpheus-galop\nupgrades: { loadout: [orbiting-blades] }\n",
+      // (The legacy demo level has none of the play rules.)
+      ruleless: `${readSource(LEGACY).text}\nupgrades: { loadout: [orbiting-blades] }\n`,
     };
     const resolve: LevelResolver = (name) => (files[name] !== undefined ? { name: `levels/${name}.yaml`, text: files[name] } : levelResolver(name));
     const fail = (name: string) => {
@@ -172,7 +197,7 @@ describe("play-mode rules", () => {
     expect(m.groove).toBe(2);
     expect(m.presses[1].armed).toBeUndefined();
     // Every press strides: the mashed one splits the ground with the next, so the hero is no faster
-    // than walking (140 px/s), unlike the demo's steps, where it adds a whole 44 px step.
+    // than walking (140 px/s), unlike the old rules' steps, where it adds a whole 44 px step.
     const [g0, g1] = m.grid;
     const one = 140 * (g1 - g0);
     expect(m.presses[0].stride).toBeCloseTo(one, 6);
@@ -181,7 +206,7 @@ describe("play-mode rules", () => {
     expect(m.presses[2].stride).toBeCloseTo(140 * (g1 - 0.01 - (g0 + 0.07)), 6);
     expect(m.presses[3].stride).toBeUndefined();
     expect(m.travel).toBeLessThan(one + 140 * (g1 - g0));
-    expect(mash(demo.rules).travel).toBeGreaterThan(m.travel + 20);
+    expect(mash(legacy.rules).travel).toBeGreaterThan(m.travel + 20);
   });
 
   it("classes eighth notes on the off-beat apart, and sloppy double taps as doubles that change nothing", () => {
@@ -228,16 +253,16 @@ describe("play-mode rules", () => {
     expect(Math.hypot(b.x - a.x, b.y - a.y)).toBeCloseTo(play.hero.walk.speed, -1);
   });
 
-  it("swings by itself on every beat in the prelude, twice the demo's rate", () => {
+  it("swings by itself on every beat in the prelude, twice the old demo's rate", () => {
     const autos = (s: typeof sch) => s.slots.filter((x) => x.kind === "auto" && x.section === 0);
-    const demoSch = prepare(plannerInput({ songMap: song }), propsFromAtlas()).sch;
+    const demoSch = prepare(plannerInput({ songMap: song, level: LEGACY }), propsFromAtlas()).sch;
     const gaps = autos(sch).slice(1).map((x, i) => x.bi - autos(sch)[i].bi);
     expect(Math.min(...gaps)).toBe(1);
     expect(autos(sch).length).toBeGreaterThan(1.8 * autos(demoSch).length);
   });
 
-  it("leaves the demo's rules alone: there, every press steps", () => {
-    const m = mash(demo.rules);
+  it("leaves the old rules alone: there, every press steps", () => {
+    const m = mash(legacy.rules);
     expect(m.presses.filter((p) => p.extra).length).toBe(0);
     expect(m.groove).toBe(3);
   });

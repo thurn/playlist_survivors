@@ -1,8 +1,25 @@
-# Level script for the Can-Can level. Sections are keyed by song-map section;
-# every musical reference is a bar/beat or a named musical moment, never seconds.
+# Level script for the Can-Can level, for play and Watch the demo alike (the demo is the skilled
+# virtual player's run). Sections are keyed by song-map section; every musical reference is a
+# bar/beat or a named musical moment, never seconds. See docs/design/gameplay-redesign.md.
 song: orpheus-galop
 seed: 1858
 player: skilled            # the virtual player's skill profile; ?player= overrides it
+world: open                # the open field: terrain in chunks around the hero, zones in waves
+# Every press is classed against the grid, and the groove meter fills, drains and sets the tier.
+# Every weapon fires by itself (selfFiring): the sword on every grid time, and the tier sets attack
+# area and damage. Every gameplay sound plays on its subdivision's slot, never late (gridSounds). An
+# eligible accent's swing is heavy for everyone, and a press on the chord launches its shockwave
+# (pressCleaves). The steady stream aims for 60% of the population curve, and set pieces (the
+# closing rings and stampedes below) bring the rest (setPieces). Gems wait where they drop,
+# collected inside a pickup radius that grows with the tier, and a vacuum follows each set piece
+# (fieldGems). Level-ups offer upgrade orbs from a pool (upgradePool, upgradeOrbs), and the hero has
+# a small health pool with chickens (health, healthPool).
+rules: { oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true, selfFiring: true, gridSounds: true, pressCleaves: true, setPieces: true, fieldGems: true, upgradePool: true, upgradeOrbs: true, healthPool: true }
+# An arrow takes 15 (the boss's slam keeps its 25).
+enemies: { skeleton-archer: { attackDamage: 15 } }
+# The upgrade pool: the run starts with the blades and lightning beside the sword, and the fire
+# trail is one of the weapon upgrades a level-up can offer.
+upgrades: { loadout: [orbiting-blades, chain-lightning], offer: [fire-trail] }
 title:
   piece: "Orpheus in the Underworld — Overture"
   composer: "Jacques Offenbach"
@@ -12,10 +29,14 @@ zones: [twilight-glade, galop-woods, mushroom-grove, ember-hollow, infernal-grov
 sections:
   - bars: 1-14            # prelude — slow passage, free feel
     section: prelude
-    movement: free           # held keys walk; the sword swings by itself every two beats
+    movement: free           # held keys walk; the sword swings by itself on every beat
     pace: 30                 # route speed, world px per world-second
     zone: twilight-glade
-    timeScale: 0.5
+    # Full speed: a slowed world makes walking feel like wading. The music's calm goes to the
+    # enemies instead, which drift in slowly on a spiral.
+    timeScale: 1
+    calm: 0.5
+    autoSwingBeats: 1
     population: [0, 48]
     roster: { bat: 3, slime: 2, eyeball: 1 }
     camera: { zoom: 1.4, lead: 20, punchOnAccents: false }
@@ -24,6 +45,7 @@ sections:
   - bars: 15-30            # galop-vamp — the quiet galop accompaniment: a steady pulse
     section: galop-vamp
     pace: 40
+    zone: galop-woods        # the first transform wave sweeps out on its first downbeat
     presses: ".x"            # once per bar, building toward the opening chords
     population: [48, 60]
     camera: { zoom: 1.3, lead: 40 }
@@ -42,19 +64,21 @@ sections:
     pace: 50
     presses: "xx"            # every beat of the 2/4 bar (about 180 per minute)
     zone: galop-woods
-    population: [120, 250]
+    # The difficulty curve: a tier-0 player starts taking hits in theme A, bleeds in the kick line
+    # and bridge, and falls in the climax; healing is rare (few orc elites, so few chickens).
+    population: [120, 200]
     roster: { goblin: 4, slime: 2, orc: 1, bat: 1 }
   - bars: 70-85            # theme-a-repeat
     section: theme-a-repeat
     pace: 55
-    population: [250, 320]
-    roster: { goblin: 4, orc: 2, slime: 1, bee: 1, orc-elite: 0.15 }
+    population: [200, 280]
+    roster: { goblin: 4, orc: 2, slime: 1, bee: 1, orc-elite: 0.05 }
   - bars: 86-101            # kick-line
     section: kick-line
     pace: 45
     presses: ".x"            # once per bar while the line dances
     zone: mushroom-grove
-    population: [320, 350]
+    population: [280, 280]
     roster: { goblin: 3, skeleton: 3, orc: 1, slime: 1 }
     camera: { zoom: 1.0, lead: 230 }
   - bars: 102-107            # bridge
@@ -63,30 +87,34 @@ sections:
     presses: "xx"
     zone: ember-hollow
     population: [350, 420]
-    roster: { skeleton: 2, orc-ember: 3, goblin: 2, bat: 1, orc-elite: 0.2 }
+    roster: { skeleton: 2, orc-ember: 3, goblin: 2, bat: 1, orc-elite: 0.05 }
     camera: { zoom: 1.05, lead: 60 }
     sfxPalette: heavy-infernal
   - bars: 108-139            # climax
     section: climax
     pace: 20
     zone: infernal-grove
-    population: [420, 500]
-    roster: { orc-ember: 3, skeleton-ember: 3, goblin: 2, bat: 1, orc-elite: 0.25 }
+    population: [480, 520]
+    roster: { orc-ember: 3, skeleton-ember: 3, goblin: 2, bat: 1, orc-elite: 0.03 }
     camera: { zoom: 0.9, lead: 0 }
   - bars: 140-177            # coda
     section: coda
     pace: 15
     presses: ".x"            # about 115 per minute at 230 BPM
-    population: [500, 450]
+    population: [520, 480]
     intensity: 1
 
+# Level-ups offer three items from the upgrade pool. Experience for each: the moderate player fills
+# each bar a little before its moment (with gems on the field it collects them only where it walks:
+# about 110-125 by the first, 540-740 between the first and second, and 870-1250 between the second
+# and third on the checked seeds).
 events:
   - at: { section: galop-opening, point: start }
-    levelUp: orbiting-blades
-    xp: 400                 # gems: the skilled player fills the bar a little before
+    levelUp: offer
+    xp: 100
   - at: { section: theme-a-repeat, point: start }
-    levelUp: chain-lightning
-    xp: 1000
+    levelUp: offer
+    xp: 470
   - at: { section: theme-a-repeat, point: start, offsetBeats: 4 }
     formation: bee-wedge
   - at: { section: theme-a-repeat, phrase: 2, point: start }
@@ -95,8 +123,8 @@ events:
     formation: skeleton-kick-line
     threats: { kind: archer-volley, every: 2 bars, until: { section: kick-line, phrase: 2, point: finalAccent, offsetBeats: -4 }, archers: 2 }
   - at: { section: bridge, point: start }
-    levelUp: fire-trail
-    xp: 2000
+    levelUp: offer
+    xp: 800
   - at: { section: climax, point: start }
     boss: { type: minotaur, slams: 4, slamsUntil: { accent: tutti-chord, fromEnd: 2 } }
     landmark: standing-stones
@@ -105,3 +133,15 @@ events:
   - at: { accent: tutti-chord, fromEnd: 1 }
     blast: finale-blast
     landmark: ruined-shrine
+  # Set pieces: closing rings around where the hero stands, each closing on an accent a cleave can
+  # meet, and stampedes running across the view.
+  - at: { accent: tutti-chord, fromEnd: 6 }           # 0:59.5
+    ring: { enemy: goblin, count: 30, gaps: 3, closesOn: { accent: tutti-chord, fromEnd: 5 } }   # 1:02.3
+  - at: { bar: 104, beat: 1 }                         # 1:42.0, after the bridge's level-up
+    stampede: { enemy: goblin, count: 40, rows: 2 }
+  - at: { bar: 118, beat: 2 }                         # 1:51.2
+    ring: { enemy: goblin, count: 60, gaps: 3, closesOn: { bar: 126, beat: 2 } }                 # 1:56.2
+  - at: { section: coda, point: start }               # 2:04.6
+    stampede: { enemy: goblin, count: 60, rows: 3 }
+  - at: { bar: 147, beat: 1 }                         # 2:08.8
+    ring: { enemy: goblin, count: 80, gaps: 3, closesOn: { bar: 154, beat: 2 } }                 # 2:13.0

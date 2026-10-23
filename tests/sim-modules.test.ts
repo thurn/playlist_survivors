@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { loadRealContent } from "../scripts/lib/content-check.ts";
+import { levelResolver, readSource } from "../scripts/lib/files.ts";
+import { loadLevel } from "../src/content/loader.ts";
+import { syntheticSongMap } from "./fixtures/synthetic-song.ts";
 import { TAU, wrapAngle } from "../src/core/geometry.ts";
 import { aim, type AimTarget } from "../src/sim/aim.ts";
 import { stepSpan } from "../src/sim/schedule.ts";
 import { bendStep, startStep, stepEnd, stepPose, walkFrame, walkTarget, walkVelocity, type Clamp } from "../src/sim/movement.ts";
 import { armedStrike, damageMultiplier, grooveAfterOffbeat, grooveAfterPress, grooveDecay, ratePress, ratePressOnGrid, windupStart } from "../src/sim/timing.ts";
 
-const hero = loadRealContent().hero;
+// (The hero's values from before the redesign, as the legacy demo level restores them: these
+// modules' old step and walk math, until hv-zoon removes it.)
+const hero = loadLevel(readSource("tests/fixtures/legacy-demo.level.yaml"), loadRealContent(), syntheticSongMap(), levelResolver).hero;
 
 describe("hero content", () => {
   it("loads the hero settings", () => {

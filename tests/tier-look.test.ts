@@ -12,6 +12,9 @@ import { StaticIndex } from "../src/plan/view.ts";
 import { SWORD_TINTS, tierLook, AURA_ALPHA } from "../src/plan/tier-look.ts";
 import { syntheticSongMap } from "./fixtures/synthetic-song.ts";
 
+/** The demo as it was before the redesign (the old step rules), until hv-zoon removes that code. */
+const LEGACY = "tests/fixtures/legacy-demo.level.yaml";
+
 const songMap = syntheticSongMap();
 const PLAY = "levels/orpheus-galop.play.yaml";
 const lib = plannerInput({ songMap, level: PLAY }).content;
@@ -71,8 +74,8 @@ describe("the tier on screen", () => {
     expect(tintAt()).not.toContain(SWORD_TINTS[3]);
   });
 
-  it("leaves the demo's frames as they were", () => {
-    const demo = runPlanner({ songMap });
+  it("leaves the old rules' frames as they were (the legacy demo level)", () => {
+    const demo = runPlanner({ songMap, level: LEGACY });
     const dev = new Evaluator(demo, lib);
     const sw = demo.swings[40];
     const f = dev.evaluate(sw.s + 0.02);
