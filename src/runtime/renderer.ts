@@ -33,11 +33,8 @@ import type { PropInfo } from "../mapgen/mapgen.ts";
 import type { GameAssets } from "./assets.ts";
 import { PixelText } from "./font.ts";
 import { brightFrag, compositeFrag, compositeVert, MAX_WAVES } from "./shaders.ts";
+import { RT_H, RT_W, VIEW_H, VIEW_W, viewRect } from "./view.ts";
 
-export const VIEW_W = 960;
-export const VIEW_H = 540;
-const RT_W = 1400;
-const RT_H = 790;
 const CHUNK = 512;
 const MAX_CHUNKS = 40;
 
@@ -240,11 +237,7 @@ export class Renderer {
   draw(f: Frame): void {
     this.frameCounter++;
     const r = this.app.renderer;
-    const zoom = f.camera.zoom;
-    const viewW = Math.min(RT_W - 2, VIEW_W / zoom);
-    const viewH = Math.min(RT_H - 2, VIEW_H / zoom);
-    const left = f.camera.x + f.camera.shakeX / zoom - viewW / 2;
-    const top = f.camera.y + f.camera.shakeY / zoom - viewH / 2;
+    const { left, top, viewW, viewH } = viewRect(f.camera);
     const ix = Math.floor(left);
     const iy = Math.floor(top);
     this.world.position.set(-ix, -iy);

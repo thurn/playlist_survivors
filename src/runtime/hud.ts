@@ -10,6 +10,7 @@ import type { Frame, KeyLight, KeyName } from "../plan/evaluate.ts";
 import type { Plan } from "../plan/types.ts";
 import { PixelText, textWidth } from "./font.ts";
 import { endCardGrade, endCardLines, RATING_COLORS, TIER_COLORS, tierLabel } from "./hud-lines.ts";
+import { OVERHEAD_SCALE, overheadState, type OverheadState } from "./overhead.ts";
 /** Telegraphs: the cleaves' accents and the beats to press for them. */
 const TELEGRAPH = 0xffc040;
 const PLAIN = 0x8890a8;
@@ -142,6 +143,10 @@ export class Hud {
       draw();
       g.setTransform(1, 0, 0, 1, 0, 0);
     };
+
+    // Life and groove over the hero's head, under the rest of the HUD.
+    const over = overheadState(f, hud, out);
+    if (over) this.overhead(g, over, u, options.metronome);
 
     if (!hud.end) {
       // XP bar along the top.
@@ -409,6 +414,78 @@ export class Hud {
       this.text(`${sel ? "> " : ""}${item}${sel ? " <" : ""}`, px(480), py(iy), Math.max(1, Math.round(2 * u)), sel ? 0xffffff : 0xb0b0c8, "center");
       this.menuRects.push({ x: px(350), y: py(iy - 3), w: 260 * u, h: 18 * u });
     });
+  }
+
+  /**
+   * The overhead display: life to the left of the gem, draining toward it, and groove to the right,
+   * growing from it. With a steady beat a ring closes on the gem over each beat (gold before the
+   * beat to press for a cleave, pale on a downbeat) and the gem strikes it with a burst; in free
+   * movement the gem breathes with the bar and two sparks orbit it, a turn a bar.
+   */
+  private overhead(g: Graphics, o: OverheadState, hudUnit: number, metronome: boolean): void {
+    const a = o.alpha;
+    if (a <= 0) return;
+    const { x, y } = o;
+    const u = OVERHEAD_SCALE * hudUnit;
+    const tierColor = TIER_COLORS[Math.min(TIER_COLORS.length - 1, o.tier)];
+    const line = Math.max(1, u);
+    const gap = 8 * u;
+    const len = 26 * u;
+    const h = 4 * u;
+
+    // The wings: a dark trough each, filled from the gem outward.
+    const trough = (x0: number, w: number) => g.roundRect(x0 - line, y - h / 2 - line, w + 2 * line, h + 2 * line, 2 * u).fill({ color: 0x05040a, alpha: 0.65 * a });
+    trough(x - gap - len, len);
+    trough(x + gap, len);
+    // Life: white on a bite, green on a heal, and when low it throbs on the beat (or the breath).
+    const throb = o.danger * (o.step * o.hit + (1 - o.step) * o.breathe);
+    const lifeColor = o.hurt > 0.5 ? 0xffffff : o.heal > 0.3 ? 0x60ff90 : throb > 0.5 ? 0xff9098 : 0xff4050;
+    if (o.health > 0) g.roundRect(x - gap - len * o.health, y - h / 2, len * o.health, h, 1.5 * u).fill({ color: lifeColor, alpha: a });
+    // Groove, in the tier's colour with the tier marks; a tier-up flashes the wing.
+    if (o.tierFlash > 0) g.roundRect(x + gap - 2 * u, y - h / 2 - 2 * u, len + 4 * u, h + 4 * u, 3 * u).fill({ color: tierColor, alpha: 0.5 * o.tierFlash * a });
+    if (o.groove > 0) g.roundRect(x + gap, y - h / 2, len * o.groove, h, 1.5 * u).fill({ color: tierColor, alpha: a });
+    for (const m of o.marks) g.rect(x + gap + len * m - line / 2, y - h / 2 - u, line, h + 2 * u).fill({ color: 0xffffff, alpha: 0.6 * a });
+
+    const diamond = (r: number, rx = r) => [x, y - r, x + rx, y, x, y + r, x - rx, y];
+    // The beat: the cleave's glow, the closing ring, the gem and its burst.
+    const sa = o.step * a;
+    if (sa > 0.01) {
+      if (o.glow > 0) g.circle(x, y, (9 + 4 * o.glow) * u).fill({ color: TELEGRAPH, alpha: 0.3 * o.glow * sa });
+      const ringColor = o.next === "press" ? TELEGRAPH : o.next === "down" ? 0xffe8b0 : 0xd8e4ff;
+      const ring = (5 + 13 * (1 - o.beatPhase)) * u;
+      g.circle(x, y, ring).stroke({ color: ringColor, width: (o.next === "beat" ? 1 : 1.75) * line, alpha: 0.85 * smoothstep(o.beatPhase / 0.55) * sa });
+      const burst = Math.max(0, 1 - o.beatPhase * 2);
+      if (burst > 0) {
+        const b2 = burst * burst;
+        const r = (6 + 12 * (1 - b2)) * u;
+        g.poly(diamond(r * 0.9)).fill({ color: tierColor, alpha: 0.3 * b2 * sa });
+        g.poly(diamond(r)).stroke({ color: tierColor, width: 2 * line, alpha: b2 * sa });
+        g.poly(diamond(r * 0.7, r * 1.4)).stroke({ color: 0xffffff, width: line, alpha: 0.7 * b2 * sa });
+      }
+      const r = (4.5 + 2 * o.hit) * u;
+      g.poly(diamond(r + line)).fill({ color: 0x05040a, alpha: 0.8 * sa });
+      g.poly(diamond(r)).fill({ color: metronome || o.hit > 0.6 ? 0xffffff : o.glow > 0.5 ? 0xffa040 : tierColor, alpha: sa });
+      g.poly(diamond(r * 0.45)).fill({ color: 0xffffff, alpha: (0.35 + 0.65 * o.hit) * sa });
+    }
+    // Free movement: the gem breathes, and two sparks orbit it with fading trails.
+    const fa = (1 - o.step) * a;
+    if (fa > 0.01) {
+      const free = 0x9fb8ff;
+      const rx = 13 * u;
+      const ry = 7 * u;
+      g.ellipse(x, y, rx, ry).stroke({ color: free, width: line, alpha: 0.2 * fa });
+      const r = (3.5 + 1.5 * o.breathe) * u;
+      g.circle(x, y, r + 3 * u * o.breathe).fill({ color: free, alpha: 0.25 * fa });
+      g.circle(x, y, r + line).fill({ color: 0x05040a, alpha: 0.8 * fa });
+      g.circle(x, y, r).fill({ color: free, alpha: fa });
+      g.circle(x, y, r * 0.45).fill({ color: 0xffffff, alpha: (0.4 + 0.4 * o.breathe) * fa });
+      for (const side of [0, 0.5]) {
+        for (let k = 0; k < 7; k++) {
+          const ang = 2 * Math.PI * (o.spin + side) - k * 0.2;
+          g.circle(x + Math.cos(ang) * rx, y + Math.sin(ang) * ry, (2.2 - k * 0.25) * u).fill({ color: k === 0 ? 0xffffff : free, alpha: (1 - k / 7) * fa });
+        }
+      }
+    }
   }
 
   private heart(g: Graphics, x: number, y: number, r: number, color: number) {
