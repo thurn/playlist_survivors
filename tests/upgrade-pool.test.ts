@@ -4,8 +4,9 @@
  * simulation on the synthetic song (on a seed whose first offer is the item under test).
  */
 import { describe, expect, it } from "vitest";
-import { plannerInput, propsFromAtlas, runPlanner } from "../scripts/lib/plan-node.ts";
+import { plannerInput, propsFromAtlas } from "../scripts/lib/plan-node.ts";
 import { recordingContext } from "../src/live/log.ts";
+import { LiveRecording } from "../src/live/recording.ts";
 import { liveSession } from "../src/live/session.ts";
 import { Evaluator } from "../src/plan/evaluate.ts";
 import { prepare, virtualPlayer } from "../src/planner/plan.ts";
@@ -26,24 +27,35 @@ const blades = lib.weapons.get("orbiting-blades")!;
 const lightning = lib.weapons.get("chain-lightning")!;
 const key = (i: UpgradeItem) => `${i.kind}:${i.id}`;
 
-/** The first seed whose first `items.length` level-ups each offer that item first (taking it). */
+/**
+ * The first seed whose first `items.length` level-ups each take that item: the first offer (without
+ * upgrade orbs), or with `choose`, the one it picks (the virtual players' priority).
+ */
 function seedTaking(...items: string[]): number {
+  return seedChoosing(() => 0, ...items);
+}
+function seedChoosing(choose: (offers: UpgradeItem[]) => number, ...items: string[]): number {
   for (let seed = 1; seed < 50_000; seed++) {
     const l = startingLoadout(pool.loadout);
     if (items.every((it, i) => {
-      const first = offersFor(seed, i, lib, pool.offer, l)[0];
-      takeItem(l, first);
-      return key(first) === it;
+      const offers = offersFor(seed, i, lib, pool.offer, l);
+      const taken = offers[choose(offers)];
+      takeItem(l, taken);
+      return key(taken) === it;
     })) return seed;
   }
   throw new Error(`no seed takes ${items.join(", ")}`);
 }
 
-/** The moderate player's run on a seed, up to song time `until`. */
-function runSeed(seed: number, until: number) {
+/**
+ * The moderate player's run on a seed, up to song time `until`. (Without upgrade orbs unless
+ * `orbs`: a level-up takes its first offer at once, so these tests see each item's effect from the
+ * level-up's moment.)
+ */
+function runSeed(seed: number, until: number, orbs = false) {
   const c = { ...ctx, seed };
   const rec = new BatchRecorder();
-  const sim = new Sim(c, sch, worldFor(c, sch, map), c.level.rules, rec, { player: virtualPlayer(c, sch, "moderate") });
+  const sim = new Sim(c, sch, worldFor(c, sch, map), { ...c.level.rules, upgradeOrbs: orbs }, rec, { player: virtualPlayer(c, sch, "moderate") });
   sim.advanceTo(until);
   return { rec, sim };
 }
@@ -268,7 +280,7 @@ describe("passives", () => {
   });
 
   it("armour: every bite takes 1 less", () => {
-    const { rec } = runSeed(seedTaking("passive:armour"), levelUp(0) + 60);
+    const { rec } = runSeed(seedTaking("passive:armour"), ctx.duration);
     const s0 = rec.upgrades[0].s;
     const contact = new Set([...lib.enemies.values()].map((e) => e.contactDamage).filter((c) => c > 0));
     const attacks = new Set([...lib.enemies.values()].map((e) => e.attackDamage).filter((c) => c > 0));
@@ -286,11 +298,16 @@ describe("passives", () => {
 
 describe("the picture", () => {
   it("draws evolved blades, widens the pickup ring with the magnet, and shows evolutions and passive counts on the HUD", () => {
+    // (Without upgrade orbs, taking the first offers: with them, a weapon upgrade always outranks the magnet.)
     const seed = seedTaking("evolve:orbiting-blades", "passive:magnet");
-    const plan = runPlanner({ songMap: syntheticSongMap(), level: "levels/orpheus-galop.play.yaml", seed, profile: "moderate" });
+    const c = { ...ctx, seed };
+    const recording = new LiveRecording(c, sch, map, lib, "player", props);
+    new Sim(c, sch, worldFor(c, sch, map), { ...c.level.rules, upgradeOrbs: false }, recording, { player: virtualPlayer(c, sch, "moderate") }).advanceTo(levelUp(1) + 4);
+    recording.refresh();
+    const plan = recording.plan;
     const [u0, u1] = plan.upgrades!;
     expect([u0, u1].map((u) => key(u.offers[u.taken]))).toEqual(["evolve:orbiting-blades", "passive:magnet"]);
-    const ev = new Evaluator(plan, lib);
+    const ev = new Evaluator(plan, lib, recording);
     const tier = (s: number) => plan.tier!.v[Array.from(plan.tier!.s).findLastIndex((t) => t <= s)];
     const at = (s: number) => ({ f: ev.evaluate(s), t: tier(s) });
     const before = at(u0.s - 1);
@@ -308,8 +325,8 @@ describe("the picture", () => {
 });
 
 describe("watch my run", () => {
-  it("replays a run across level-ups exactly, offers and all, and the live run records what a batch run does", () => {
-    const { rec } = runSeed(ctx.seed, levelUp(1) + 3);
+  it("replays a run across level-ups exactly, offers and orbs and all, and the live run records what a batch run does", () => {
+    const { rec } = runSeed(ctx.seed, levelUp(1) + 3, true);
     const keys: KeyEvent[] = rec.inputs.map((i) => ({ s: i.s, kind: i.kind, key: i.key }));
     const startS = levelUp(0) - 6;
     const session = liveSession(input, { props, startS });
@@ -322,12 +339,17 @@ describe("watch my run", () => {
     session.runner.finish();
     const live = session.recording.plan.upgrades!;
     expect(live.length).toBeGreaterThanOrEqual(2);
-    expect(live).toEqual(rec.upgrades.filter((u) => u.s <= levelUp(1) + 2));
+    expect(live.every((u) => u.walked !== undefined)).toBe(true);
+    // (The same offers and picks as the batch run's; where the orbs rose follows the hero, which the
+    // mid-song hand-over may leave a stride from where the batch run had it.)
+    const picks = (us: typeof live) => us.map((u) => ({ s: u.s, offers: u.offers, taken: u.taken }));
+    expect(picks(live)).toEqual(picks(rec.upgrades.filter((u) => u.s <= levelUp(1) + 2)));
     const again = replay(input, props, startS, session.runner.applied);
     expect(again.hashParts()).toEqual(session.recording.hashParts());
     expect(again.plan.upgrades).toEqual(live);
-    // The play log carries each level-up's offers and the one taken.
+    // The play log carries each level-up's offers, the one taken, when and how, and when it applied.
     const r = session.recording;
-    expect(recordingContext(r.plan, r.timeWarp, r.s).upgrades).toEqual(live.map((u) => ({ s: Math.round(u.s * 1e6) / 1e6, offers: u.offers.map(key), taken: 0 })));
+    const r6 = (v: number) => Math.round(v * 1e6) / 1e6;
+    expect(recordingContext(r.plan, r.timeWarp, r.s).upgrades).toEqual(live.map((u) => ({ s: r6(u.s), offers: u.offers.map(key), taken: u.taken, sTaken: r6(u.sTaken!), sApply: r6(u.sApply!), walked: u.walked })));
   }, 120_000);
 });

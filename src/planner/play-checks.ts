@@ -298,6 +298,8 @@ export function checkPlay(plan: Plan, lib: ContentLibrary, opts: PlayCheckOption
       const got = plan.upgrades ? plan.upgrades[i] : plan.weapons.find((g) => g.id === due.id);
       if (!got) f.push(`${name} never happens (scheduled at ${fmt(due.s)})`);
       else if (Math.abs(got.s - due.s) > 0.001) f.push(`${name} happens at ${fmt(got.s)}, not on its scheduled moment at ${fmt(due.s)}`);
+      // Upgrade orbs: one is walked into at each.
+      if (plan.rules?.upgradeOrbs && got && "orbs" in got && !got.walked) f.push(`${name} at ${fmt(got.s)}: no orb is walked into${got.sTaken !== undefined ? ` (the one ahead is taken at ${fmt(got.sTaken)})` : ""}`);
     });
     // Gems on the field: at least 60% of the experience dropped is collected.
     if (plan.rules?.fieldGems) {

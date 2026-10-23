@@ -464,9 +464,19 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
   }
 
   upgrade(u: UpgradeRecord): void {
-    this.add(this.plan.upgrades!, { s: u.s, offers: u.offers.map((o) => ({ ...o })), taken: u.taken });
+    this.add(this.plan.upgrades!, { ...u, offers: u.offers.map((o) => ({ ...o })), ...(u.orbs ? { orbs: u.orbs.map((p) => ({ ...p })) } : {}) });
     this.add(this.hud.levelUps, u.s);
     this.emitter.levelUp({ id: u.taken >= 0 ? u.offers[u.taken].id : "", s: u.s }, this.heroNow());
+  }
+
+  upgradeTaken(i: number, k: number, s: number, w: number, sApply: number, walked: boolean): void {
+    const u = this.plan.upgrades![i];
+    this.set(u, "taken", k);
+    this.set(u, "sTaken", s);
+    this.set(u, "wTaken", w);
+    this.set(u, "sApply", sApply);
+    this.set(u, "walked", walked);
+    this.emitter.orbTaken(sApply, w, s);
   }
 
   fire(weapon: string, s: number): void {
@@ -926,7 +936,9 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
     part("gems", () => p.events.gems.forEach((x) => mix(x.w0, x.w1, x.s1, x.wT ?? -1, x.value, x.big ? 1 : 0)));
     part("vacuums", () => (p.vacuums ?? []).forEach((v) => mix(v.s, v.w, v.x, v.y, v.sTouch ?? -1, v.wTouch ?? -1, v.gems ?? -1)));
     part("weapons", () => p.weapons.forEach((g) => mix(g.id, g.s)));
-    part("upgrades", () => (p.upgrades ?? []).forEach((u) => mix(u.s, u.taken, ...u.offers.flatMap((o) => [o.kind, o.id]))));
+    part("upgrades", () =>
+      (p.upgrades ?? []).forEach((u) => mix(u.s, u.taken, ...u.offers.flatMap((o) => [o.kind, o.id]), u.w ?? -1, ...(u.orbs ?? []).flatMap((o) => [o.x, o.y]), u.sTaken ?? -1, u.wTaken ?? -1, u.sApply ?? -1, u.walked ? 1 : 0)),
+    );
     part("projectiles", () => p.projectiles.forEach((x) => mix(x.w0, x.w1, x.x1, x.y1)));
     part("slams", () => p.slams.forEach((x) => mix(x.w0, x.w1, x.x, x.y)));
     part("chains", () => p.chains.forEach((c) => c.points.forEach((q) => mix(q.w, q.x, q.y))));

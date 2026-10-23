@@ -32,6 +32,7 @@ soundPalettes:
       zone-sweep: [kenney/maximize_004]   # played an octave down: the open field's transform wave
       tier-up: [kenney/confirmation_002]   # the groove's tier rises: a rising chime on the next grid time
       tier-down: [kenney/minimize_001]     # the tier falls: a soft falling sweep
+      orb: [kenney/confirmation_004]       # an upgrade orb taken: on the next grid time, as it applies
 
   # The slow prelude: pitched glass and bells, transposed to notes in the section's key.
   - id: soft-chimes

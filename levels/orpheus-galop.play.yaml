@@ -10,7 +10,7 @@ world: open                 # the demo's default is corridor
 # the population curve, and set pieces (the closing rings and stampedes below) bring the rest (setPieces).
 # Gems wait where they drop, collected inside a pickup radius that grows with the tier, and a vacuum
 # follows each set piece (fieldGems).
-rules: { oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true, selfFiring: true, gridSounds: true, pressCleaves: true, setPieces: true, fieldGems: true, upgradePool: true }
+rules: { oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true, selfFiring: true, gridSounds: true, pressCleaves: true, setPieces: true, fieldGems: true, upgradePool: true, upgradeOrbs: true }
 hero:
   # Fixed-speed strides: 140 px/s at any tempo and press rate, faster than every enemy but bats and bees.
   walk: { speed: 140 }

@@ -87,6 +87,16 @@ export interface UpgradeRecord {
   s: number;
   offers: UpgradeItem[];
   taken: number;
+  /**
+   * Upgrade orbs: where each offer's orb rose (world time w), when one was taken (song and world
+   * time; walked into, or else the one ahead after two bars), and the grid time it applied.
+   */
+  w?: number;
+  orbs?: { x: number; y: number }[];
+  sTaken?: number;
+  wTaken?: number;
+  sApply?: number;
+  walked?: boolean;
 }
 
 export interface Hit {
@@ -334,7 +344,7 @@ export interface Plan {
   /** Level-ups at their scheduled musical moments. */
   levelUpsDue?: { id: string; s: number }[];
   /** Play mode's rule changes (absent in the demo). */
-  rules?: { oneStepPerSlot: boolean; accentTelegraphs: boolean; health?: boolean; strides?: boolean; pressClasses?: boolean; selfFiring?: boolean; gridSounds?: boolean; pressCleaves?: boolean; setPieces?: boolean; fieldGems?: boolean; upgradePool?: boolean };
+  rules?: { oneStepPerSlot: boolean; accentTelegraphs: boolean; health?: boolean; strides?: boolean; pressClasses?: boolean; selfFiring?: boolean; gridSounds?: boolean; pressCleaves?: boolean; setPieces?: boolean; fieldGems?: boolean; upgradePool?: boolean; upgradeOrbs?: boolean };
   /**
    * Play mode's fixed-speed strides (absent without the rule): the walk speed (px per world
    * second), a stride's duration and hop height, the stride period without a steady beat, and the

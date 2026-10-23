@@ -449,7 +449,7 @@ export const levelScript = z.strictObject({
    * and the new weapons a level-up can offer (owned weapons' evolutions and the passives join them).
    */
   upgrades: z.strictObject({ loadout: z.array(id).default([]), offer: z.array(id).default([]) }).optional(),
-  rules: z.strictObject({ oneStepPerSlot: z.boolean().default(false), accentTelegraphs: z.boolean().default(false), health: z.boolean().default(false), strides: z.boolean().default(false), pressClasses: z.boolean().default(false), selfFiring: z.boolean().default(false), gridSounds: z.boolean().default(false), pressCleaves: z.boolean().default(false), setPieces: z.boolean().default(false), fieldGems: z.boolean().default(false), upgradePool: z.boolean().default(false) }).optional(),
+  rules: z.strictObject({ oneStepPerSlot: z.boolean().default(false), accentTelegraphs: z.boolean().default(false), health: z.boolean().default(false), strides: z.boolean().default(false), pressClasses: z.boolean().default(false), selfFiring: z.boolean().default(false), gridSounds: z.boolean().default(false), pressCleaves: z.boolean().default(false), setPieces: z.boolean().default(false), fieldGems: z.boolean().default(false), upgradePool: z.boolean().default(false), upgradeOrbs: z.boolean().default(false) }).optional(),
   /** Overrides merged over content/hero.yaml for this level only (checked against the hero schema). */
   hero: z.record(z.string(), z.unknown()).optional(),
   title: z.strictObject({ piece: z.string(), composer: z.string(), performer: z.string() }),

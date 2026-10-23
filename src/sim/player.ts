@@ -10,13 +10,14 @@ import { wrapAngle } from "../core/geometry.ts";
 import { clamp } from "../core/shaping.ts";
 import { easeOut, KEY_DIR, type InputKey, type Key } from "./movement.ts";
 import type { GridSlot } from "./schedule.ts";
+import { preferredOffer, type UpgradeItem } from "./upgrades.ts";
 
 export interface Observation {
   /** Song and world time now. */
   s: number;
   w: number;
   /** The hero; with strides, how far a press would stride now (the budget); with press classes, the tier; with gems on the field, the pickup radius. */
-  hero: { x: number; y: number; stepping: boolean; stride?: number; tier?: number; pickup?: number };
+  hero: { x: number; y: number; stepping: boolean; stride?: number; tier?: number; pickup?: number; health?: number };
   enemies: { x: number; y: number; type: string; health: number }[];
   /**
    * Visible threats: an arrow's line runs from (x, y) through its aim point (ax, ay); a slam marker
@@ -33,6 +34,9 @@ export interface Observation {
   /** Gems on the field near the hero (with their experience), and the nearest vacuum waiting to be touched. */
   gems?: { x: number; y: number; value: number }[];
   vacuum?: { x: number; y: number };
+  /** Upgrade orbs waiting to be walked into, and what each offers; and, with a full experience bar glowing, the song time its level-up raises them. */
+  orbs?: { x: number; y: number; item: UpgradeItem }[];
+  levelUpAt?: number;
   /** Where the route schedule says the hero should be now, and the route's direction there. */
   pacePoint: { x: number; y: number; tx: number; ty: number };
   /** Distance from a point to the edge of the walkable band (negative outside). */
@@ -140,13 +144,22 @@ const GEM_PULL_MAX = 15;
  * its distance) draws each step this strongly per point of its experience (up to GEM_SEEK_MAX), per
  * GEM_SEEK_SCALE px closer, so the player goes back for gems that have grown past the cap.
  */
-const GEM_SEEK = 0.05;
-const GEM_SEEK_MAX = 60;
+const GEM_SEEK = 0.15;
+const GEM_SEEK_MAX = 200;
 const GEM_SEEK_SCALE = 100;
 /** Free movement walks to gems within this much of the pickup radius. */
 const GEM_WALK = 150;
 /** A vacuum in sight draws the player to touch it, this strongly. */
 const VACUUM_PULL = 4;
+/**
+ * Upgrade orbs: the chosen orb draws each step this strongly per 100 px closer (up to 300 px), and
+ * by ORB_AIM for how far its direction turns from the orb (a held key keeps striding that way until
+ * the next press, however short the stride left now).
+ */
+const ORB_PULL = 6;
+const ORB_AIM = 4;
+/** A decision this close before a glowing bar's level-up (s) waits for its orbs: it stomps on the beat instead of striding off. */
+const LEVEL_WAIT = 0.1;
 
 /** The eight step directions: one key, or two perpendicular keys for a diagonal. */
 const DIRECTIONS: Key[][] = [["right"], ["right", "down"], ["down"], ["down", "left"], ["left"], ["left", "up"], ["up"], ["up", "right"]];
@@ -260,11 +273,12 @@ export class VirtualPlayer implements Player {
     if (this.next >= this.plan.length) return [];
     const d = this.plan[this.next++];
     if (d.kind === "steer") return this.steer(obs, d.beat, d.release ?? false);
-    // On a rest slot, press only to get out of a threat's way.
-    if (d.kind === "watch" && !this.inDanger(obs)) return this.strides ? this.keepHolding(obs) : [];
+    // On a rest slot, press only to get out of a threat's way, or toward a chosen upgrade orb.
+    if (d.kind === "watch" && !this.inDanger(obs) && !obs.orbs?.length) return this.strides ? this.keepHolding(obs) : [];
     const keys = this.chooseKeys(obs);
     this.count++;
     const r = new Rng(this.seed, "press-keys", this.count);
+    if (this.strides && obs.levelUpAt !== undefined && obs.levelUpAt - obs.s < LEVEL_WAIT && !this.inDanger(obs)) return this.stomp(obs, r);
     if (this.strides) return this.strideKeys(obs, keys, r);
     const out: KeyEvent[] = [];
     let s = obs.s;
@@ -304,6 +318,14 @@ export class VirtualPlayer implements Player {
     const careful = obs.threats.length > 0;
     if (careful) for (const k of keys) out.push({ s: s + r.range(0.06, 0.1), kind: "release", key: k });
     else for (const k of keys) this.held.add(k);
+    return out;
+  }
+
+  /** Strides: let go of the keys held and stomp (Space), keeping the beat standing still. */
+  private stomp(obs: Observation, r: Rng): KeyEvent[] {
+    const out: KeyEvent[] = [...this.held].map((key) => ({ s: obs.s, kind: "release" as const, key }));
+    this.held.clear();
+    out.push({ s: obs.s, kind: "press", key: "space" }, { s: obs.s + r.range(0.06, 0.1), kind: "release", key: "space" });
     return out;
   }
 
@@ -359,8 +381,16 @@ export class VirtualPlayer implements Player {
     return best;
   }
 
-  /** Free movement, gems on the field: a vacuum to touch, or else the gem in reach worth most for its distance. */
+  /** Upgrade orbs: the orb the player chooses, by its fixed priority. */
+  private orbTarget(obs: Observation): { x: number; y: number } | undefined {
+    if (!obs.orbs?.length) return undefined;
+    return obs.orbs[preferredOffer(obs.orbs.map((o) => o.item), obs.hero.health ?? 1)];
+  }
+
+  /** Free movement, gems on the field: the chosen upgrade orb, a vacuum to touch, or else the gem in reach worth most for its distance. */
   private gemTarget(obs: Observation): { x: number; y: number } | undefined {
+    const orb = this.orbTarget(obs);
+    if (orb) return orb;
     if (obs.vacuum) return obs.vacuum;
     let best: { x: number; y: number } | undefined;
     let bestScore = 0;
@@ -533,8 +563,10 @@ export class VirtualPlayer implements Player {
     // Keep up with the route: along the route (stay within the pace window) and across it.
     const along = (ax - p.x) * p.tx + (ay - p.y) * p.ty;
     const lat = (ax - p.x) * nx + (ay - p.y) * ny;
-    let cost = along > 0 ? (along / 30) ** 2 : (along / 70) ** 2;
-    cost += (lat / 160) ** 2;
+    // (Upgrade orbs: while one is chosen, the route waits.)
+    const orb = this.orbTarget(obs);
+    let cost = orb ? 0 : along > 0 ? (along / 30) ** 2 : (along / 70) ** 2;
+    if (!orb) cost += (lat / 160) ** 2;
     // Leave slam markers and arrow lines, by a close shave: judged where the step has taken the
     // hero when the threat lands.
     for (const t of obs.threats) {
@@ -563,15 +595,27 @@ export class VirtualPlayer implements Player {
     const way = this.ringWay(obs);
     if (way) cost += 3 * clamp((Math.hypot(ax - way.x, ay - way.y) - way.near) / 120, 0, 3);
     // Gems on the field: the experience a step would bring inside the pickup radius, and a vacuum.
-    if (obs.gems && obs.hero.pickup) {
+    // (Not while walking to a chosen upgrade orb.)
+    if (obs.gems && obs.hero.pickup && !orb) {
       let value = 0;
       for (const g of obs.gems) if (Math.hypot(ax - g.x, ay - g.y) <= obs.hero.pickup) value += g.value;
       cost -= GEM_PULL * Math.min(value, GEM_PULL_MAX);
-      if (this.seekMemo?.obs !== obs) this.seekMemo = { obs, at: this.gemSeek(obs) };
+      // (A vacuum in sight sends every gem in view: it comes first.)
+      if (this.seekMemo?.obs !== obs) this.seekMemo = { obs, at: obs.vacuum ? undefined : this.gemSeek(obs) };
       const seek = this.seekMemo.at;
       if (seek) cost += GEM_SEEK * Math.min(seek.value, GEM_SEEK_MAX) * clamp(Math.hypot(ax - seek.x, ay - seek.y) / GEM_SEEK_SCALE, 0, 3);
     }
     if (obs.vacuum) cost += VACUUM_PULL * clamp((Math.hypot(ax - obs.vacuum.x, ay - obs.vacuum.y) - 10) / 100, 0, 3);
+    // Upgrade orbs: walk into the chosen one. (Both it and a vacuum draw the step's direction too.)
+    if (orb) cost += ORB_PULL * clamp(Math.hypot(ax - orb.x, ay - orb.y) / 100, 0, 3);
+    const aim = orb ?? obs.vacuum;
+    if (aim) {
+      const ox = aim.x - obs.hero.x;
+      const oy = aim.y - obs.hero.y;
+      const ol = Math.hypot(ox, oy) || 1;
+      const dl = Math.hypot(d.x, d.y);
+      cost += ORB_AIM * (dl > 0 ? 1 - (d.x * ox + d.y * oy) / (dl * ol) : 1);
+    }
     // A stampede: keep out of its runners' way (its gaps are where none are).
     for (const rn of obs.runners ?? []) {
       const d = Math.hypot(ax - (rn.x + rn.vx * RUNNER_LOOK), ay - (rn.y + rn.vy * RUNNER_LOOK));
@@ -610,9 +654,9 @@ export class VirtualPlayer implements Player {
         second = keys;
       }
     }
-    // A sloppy press goes the second-best way.
+    // A sloppy press goes the second-best way (not while walking to a chosen upgrade orb).
     this.bestCost = bestCost;
-    if (this.spec.sloppy > 0 && Number.isFinite(secondCost) && new Rng(this.seed, "sloppy", this.count).next() < this.spec.sloppy) {
+    if (this.spec.sloppy > 0 && !obs.orbs?.length && Number.isFinite(secondCost) && new Rng(this.seed, "sloppy", this.count).next() < this.spec.sloppy) {
       best = second;
       this.bestCost = secondCost;
     }

@@ -13,8 +13,13 @@ import { countUpTo, enemyPos, heroSample } from "./sample.ts";
 import { StaticIndex, type PlanIndex } from "./view.ts";
 import { partnerPress, type EffectEvent, type EnemyRecord, type Plan, type PlanInput, type PlanSection, type UiEvent } from "./types.ts";
 import { orbitAt } from "../sim/tiers.ts";
-import { evolvedOrbit, loadoutAt, passiveBonus, type Loadout } from "../sim/upgrades.ts";
+import { evolvedOrbit, itemName, loadoutAt, passiveBonus, type Loadout } from "../sim/upgrades.ts";
 import { SWORD_TINTS } from "./tier-look.ts";
+
+/** Upgrade orbs: how long (world seconds) one takes to rise, the taken one to fly into the hero, and the others to sink. */
+const ORB_RISE_W = 0.3;
+const ORB_TAKE_W = 0.25;
+const ORB_SINK_W = 0.4;
 
 /** A tier-3 swing's spin: the facings it turns through, and how long after the impact it ends (song seconds). */
 const SPIN = [2, 1, 0, 3];
@@ -294,6 +299,11 @@ export interface Frame {
    */
   vacuums?: { x: number; y: number }[];
   pickup?: { radius: number; flash: number };
+  /**
+   * Upgrade orbs (play mode): each orb's place, height, size and opacity (rising, then flying into
+   * the hero when taken, or sinking away), its colour, label, and whether it offers a weapon upgrade.
+   */
+  orbs?: { x: number; y: number; z: number; scale: number; alpha: number; color: number; label: string; weapon: boolean }[];
   enemies: EnemySprite[];
   particles: Particle[];
   fx: FxSprite[];
@@ -719,6 +729,7 @@ export class Evaluator {
       hero: { x: h.x, y: h.y, z: h.z, facing: this.spinFacing(s, h.facing), anim: h.anim, frame: h.frame, afterimages: after, hurt: hurtAt(plan.health, s) },
       ...(tier !== undefined ? { tier } : {}),
       ...(plan.pickupRadius ? this.gemField(s, w, tier ?? 0) : {}),
+      ...(plan.rules?.upgradeOrbs ? { orbs: this.orbsAt(w, h) } : {}),
       enemies,
       particles,
       fx,
@@ -1029,6 +1040,48 @@ export class Evaluator {
     // (The magnet passive widens it.)
     const magnet = plan.upgrades ? 1 + passiveBonus(this.lib, this.loadoutAt(s).passives).pickup : 1;
     return { vacuums, pickup: { radius: radii[Math.max(0, Math.min(radii.length - 1, tier))] * magnet, flash } };
+  }
+
+  /**
+   * Upgrade orbs at world time w: each rises over ORB_RISE_W from where the hero stood, bobbing; once
+   * one is taken, it flies into the hero (hero now at h) over ORB_TAKE_W and the others sink away over
+   * ORB_SINK_W.
+   */
+  private orbsAt(w: number, h: { x: number; y: number }): NonNullable<Frame["orbs"]> {
+    const out: NonNullable<Frame["orbs"]> = [];
+    for (const u of this.plan.upgrades ?? []) {
+      if (!u.orbs || u.w === undefined || w < u.w) continue;
+      const since = u.wTaken !== undefined ? w - u.wTaken : -1;
+      if (since > ORB_SINK_W) continue;
+      const w0 = u.w;
+      const rise = smoothstep(clamp((w - w0) / ORB_RISE_W, 0, 1));
+      const hx = heroSample(this.plan, w0);
+      u.orbs.forEach((o, i) => {
+        const item = u.offers[i];
+        const wd = item.kind === "passive" ? undefined : this.lib.weapons.get(item.id);
+        const color = parseInt((wd?.color ?? this.lib.passives.get(item.id)?.color ?? "#ffffff").slice(1), 16);
+        let x = lerp(hx.x, o.x, rise);
+        let y = lerp(hx.y, o.y, rise);
+        let scale = 0.4 + 0.6 * rise;
+        let alpha = rise;
+        let z = 10 + 3 * Math.sin((w - w0) * 6 + i * 2);
+        if (since >= 0 && i === u.taken) {
+          if (since > ORB_TAKE_W) return;
+          const k = smoothstep(since / ORB_TAKE_W);
+          x = lerp(o.x, h.x, k);
+          y = lerp(o.y, h.y, k);
+          scale *= 1 + 0.4 * k;
+          alpha = 1 - k;
+        } else if (since >= 0) {
+          const k = since / ORB_SINK_W;
+          z *= 1 - k;
+          scale *= 1 - 0.5 * k;
+          alpha *= 1 - k;
+        }
+        out.push({ x, y, z, scale, alpha, color, label: itemName(this.lib, item), weapon: item.kind !== "passive" });
+      });
+    }
+    return out;
   }
 
   /** The upgrade pool: what the hero has at song time s (its passives and evolutions; plan.weapons has its weapons). */

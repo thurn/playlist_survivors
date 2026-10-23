@@ -58,11 +58,29 @@ export function takeItem(l: Loadout, item: UpgradeItem): void {
   else l.passives[item.id] = (l.passives[item.id] ?? 0) + 1;
 }
 
-/** The loadout at song time s: the starting weapons with every upgrade taken by then. */
+/** The loadout at song time s: the starting weapons with every upgrade applied by then (an orb's on its grid time). */
 export function loadoutAt(loadout: readonly string[], upgrades: readonly UpgradeRecord[], s: number): Loadout {
   const l = startingLoadout(loadout);
-  for (const u of upgrades) if (u.s <= s && u.taken >= 0) takeItem(l, u.offers[u.taken]);
+  for (const u of upgrades) if ((u.sApply ?? u.s) <= s && u.taken >= 0) takeItem(l, u.offers[u.taken]);
   return l;
+}
+
+/** Upgrade orbs: the virtual players' fixed priority (below LOW_HEALTH, max health comes first). */
+export const ORB_PRIORITY = ["evolve:orbiting-blades", "evolve:chain-lightning", "passive:might", "weapon:fire-trail", "passive:magnet", "passive:max-health", "passive:armour"];
+export const LOW_HEALTH = 0.5;
+
+/** The offer a virtual player chooses: the first by ORB_PRIORITY (max health first below LOW_HEALTH), else the first offered. */
+export function preferredOffer(offers: readonly UpgradeItem[], health = 1): number {
+  const order = health < LOW_HEALTH ? ["passive:max-health", ...ORB_PRIORITY.filter((x) => x !== "passive:max-health")] : ORB_PRIORITY;
+  const rank = (o: UpgradeItem) => {
+    const r = order.indexOf(`${o.kind}:${o.id}`);
+    return r < 0 ? order.length : r;
+  };
+  let best = 0;
+  offers.forEach((o, i) => {
+    if (rank(o) < rank(offers[best])) best = i;
+  });
+  return best;
 }
 
 /** The passives' bonuses added up: max health, pickup radius and damage fractions, and armour. */

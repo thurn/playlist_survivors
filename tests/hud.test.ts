@@ -64,7 +64,8 @@ describe("press classes on the HUD", () => {
   it("shows the tier beside the groove meter, its marks, and a flash on each tier-up", () => {
     const ev = new Evaluator(plan, lib);
     const t = plan.tier!;
-    const up = Array.from(t.v).findIndex((v, k) => k > 0 && v > t.v[k - 1]);
+    // (A tier-up with no other change in the second after it.)
+    const up = Array.from(t.v).findIndex((v, k) => k > 0 && v > t.v[k - 1] && !(t.s[k + 1] < t.s[k] + 1.1));
     expect(up).toBeGreaterThan(0);
     const at = t.s[up];
     const hud = ev.evaluate(at + 0.01).hud;

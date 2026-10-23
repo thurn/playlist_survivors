@@ -290,7 +290,7 @@ export interface LevelScript {
   extends?: string;
   /** The demo's forest corridor, or play mode's open field. */
   world: "corridor" | "open";
-  rules: { oneStepPerSlot: boolean; accentTelegraphs: boolean; health: boolean; strides: boolean; pressClasses: boolean; selfFiring: boolean; gridSounds: boolean; pressCleaves: boolean; setPieces: boolean; fieldGems: boolean; upgradePool: boolean };
+  rules: { oneStepPerSlot: boolean; accentTelegraphs: boolean; health: boolean; strides: boolean; pressClasses: boolean; selfFiring: boolean; gridSounds: boolean; pressCleaves: boolean; setPieces: boolean; fieldGems: boolean; upgradePool: boolean; upgradeOrbs: boolean };
   /** The hero for this level: content/hero.yaml with the level's overrides (the same object when it has none). */
   hero: HeroDef;
   /** Play mode's upgrade pool (rules.upgradePool): the starting loadout beside the sword, and the new weapons a level-up can offer. */
@@ -588,6 +588,7 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap, res
 
   // The upgrade pool's weapons: known, not the finale blast, and each named once; only with its rule.
   if (data.upgrades && !data.rules?.upgradePool) issues.push({ ...at(["upgrades"]), message: "upgrades need rules.upgradePool" });
+  if (data.rules?.upgradeOrbs && !data.rules.upgradePool) issues.push({ ...at(["rules"]), message: "rules.upgradeOrbs needs rules.upgradePool" });
   const named = new Set<string>();
   for (const key of ["loadout", "offer"] as const) {
     (data.upgrades?.[key] ?? []).forEach((w, i) => {
@@ -618,7 +619,7 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap, res
     file: f.name,
     extends: data.extends,
     world: data.world,
-    rules: { oneStepPerSlot: data.rules?.oneStepPerSlot ?? false, accentTelegraphs: data.rules?.accentTelegraphs ?? false, health: data.rules?.health ?? false, strides: data.rules?.strides ?? false, pressClasses: data.rules?.pressClasses ?? false, selfFiring: data.rules?.selfFiring ?? false, gridSounds: data.rules?.gridSounds ?? false, pressCleaves: data.rules?.pressCleaves ?? false, setPieces: data.rules?.setPieces ?? false, fieldGems: data.rules?.fieldGems ?? false, upgradePool: data.rules?.upgradePool ?? false },
+    rules: { oneStepPerSlot: data.rules?.oneStepPerSlot ?? false, accentTelegraphs: data.rules?.accentTelegraphs ?? false, health: data.rules?.health ?? false, strides: data.rules?.strides ?? false, pressClasses: data.rules?.pressClasses ?? false, selfFiring: data.rules?.selfFiring ?? false, gridSounds: data.rules?.gridSounds ?? false, pressCleaves: data.rules?.pressCleaves ?? false, setPieces: data.rules?.setPieces ?? false, fieldGems: data.rules?.fieldGems ?? false, upgradePool: data.rules?.upgradePool ?? false, upgradeOrbs: data.rules?.upgradeOrbs ?? false },
     hero: levelHero,
     upgrades: { loadout: data.upgrades?.loadout ?? [], offer: data.upgrades?.offer ?? [] },
   };

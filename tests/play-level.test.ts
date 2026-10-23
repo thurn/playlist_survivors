@@ -22,8 +22,8 @@ describe("the play level file", () => {
     expect(play.extends).toBe("orpheus-galop");
     expect(play.world).toBe("open");
     expect(demo.world).toBe("corridor");
-    expect(play.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true, selfFiring: true, gridSounds: true, pressCleaves: true, setPieces: true, fieldGems: true, upgradePool: true });
-    expect(demo.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false, pressClasses: false, selfFiring: false, gridSounds: false, pressCleaves: false, setPieces: false, fieldGems: false, upgradePool: false });
+    expect(play.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true, selfFiring: true, gridSounds: true, pressCleaves: true, setPieces: true, fieldGems: true, upgradePool: true, upgradeOrbs: true });
+    expect(demo.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false, pressClasses: false, selfFiring: false, gridSounds: false, pressCleaves: false, setPieces: false, fieldGems: false, upgradePool: false, upgradeOrbs: false });
     expect(play.player).toBe("moderate");
     expect(play.seed).toBe(demo.seed);
     expect(play.title).toEqual(demo.title);
@@ -96,7 +96,8 @@ describe("the play level file", () => {
     const files: Record<string, string> = {
       // The demo's level-ups name weapons; with the upgrade pool they must offer.
       named: "extends: orpheus-galop\nrules: { upgradePool: true }\n",
-      offerless: play.replace(", upgradePool: true }", " }"),
+      offerless: play.replace(", upgradePool: true, upgradeOrbs: true }", " }"),
+      poolless: play.replace(", upgradePool: true, upgradeOrbs: true }", ", upgradeOrbs: true }").replace(/^upgrades: .*$/m, ""),
       blast: play.replace("offer: [fire-trail]", "offer: [fire-trail, finale-blast]"),
       twice: play.replace("offer: [fire-trail]", "offer: [chain-lightning]"),
       unknown: play.replace("offer: [fire-trail]", "offer: [fire-trial]"),
@@ -114,6 +115,7 @@ describe("the play level file", () => {
     };
     expect(fail("named")).toMatch(/events\[0\]\.levelUp: with rules\.upgradePool a level-up offers items from the pool: write "levelUp: offer", not "orbiting-blades"/);
     expect(fail("offerless")).toMatch(/events\[0\]\.levelUp: "levelUp: offer" needs rules\.upgradePool/);
+    expect(fail("poolless")).toMatch(/rules: rules\.upgradeOrbs needs rules\.upgradePool/);
     expect(fail("blast")).toMatch(/upgrades\.offer\[1\]: the finale blast "finale-blast" can't be in the upgrade pool/);
     expect(fail("twice")).toMatch(/upgrades\.offer\[0\]: weapon "chain-lightning" is named twice in upgrades/);
     expect(fail("unknown")).toMatch(/upgrades\.offer\[0\]: unknown weapon "fire-trial"/);

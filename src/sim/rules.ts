@@ -43,7 +43,13 @@ export interface Rules {
    * the run's seed and the level-up's index. Until upgrade orbs, a level-up takes its first offer.
    */
   upgradePool: boolean;
+  /**
+   * Upgrade orbs (with the upgrade pool): a level-up's downbeat pushes nearby enemies out to 160 px,
+   * heals 20 and raises three orbs 120 px from the hero (its offers: ahead, and 120° to each side);
+   * walking into one takes it, applied on the next grid time; after two bars the one ahead is taken.
+   */
+  upgradeOrbs: boolean;
 }
 
 /** The scripted demo's rules: today's behavior. */
-export const DEMO_RULES: Readonly<Rules> = Object.freeze({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false, pressClasses: false, selfFiring: false, gridSounds: false, pressCleaves: false, setPieces: false, fieldGems: false, upgradePool: false });
+export const DEMO_RULES: Readonly<Rules> = Object.freeze({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false, pressClasses: false, selfFiring: false, gridSounds: false, pressCleaves: false, setPieces: false, fieldGems: false, upgradePool: false, upgradeOrbs: false });

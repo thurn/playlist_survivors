@@ -78,6 +78,19 @@ const RING_ROW = 32;
 /** A stampede runs at this times its enemy's speed, in rows this far apart. */
 export const STAMPEDE_SPEED = 2.5;
 const STAMPEDE_ROW = 48;
+/**
+ * Upgrade orbs: a level-up's pulse pushes enemies within LEVEL_PULSE of the hero out to it (px) and
+ * heals LEVEL_HEAL; its orbs rise ORB_RISE from the hero, one ahead and one ORB_SPREAD to each side;
+ * walking within ORB_TOUCH takes one, and after ORB_BARS bars the one ahead is taken.
+ */
+export const LEVEL_PULSE = 160;
+export const LEVEL_HEAL = 20;
+export const ORB_RISE = 120;
+export const ORB_SPREAD = (2 * Math.PI) / 3;
+export const ORB_TOUCH = 24;
+export const ORB_BARS = 2;
+/** Upgrade orbs: a taken orb applies on a grid time at most this far away (s), else on the next beat. */
+const ORB_GRID_WAIT = 2;
 /** Gems on the field: the virtual player sees gems this far beyond the pickup radius (px). */
 const GEM_SEEN = 300;
 /** Gems on the field (rules.fieldGems): at most this many lie on the field. */
@@ -264,6 +277,8 @@ type Ev =
   | { kind: "vacuumDrop" }
   | { kind: "levelDue"; i: number }
   | { kind: "levelUp"; id: string }
+  | { kind: "orbDefault"; u: number }
+  | { kind: "orbApply"; item: UpgradeItem }
   | { kind: "zoneWave"; zone: string }
   | { kind: "landmark"; id: string };
 
@@ -303,7 +318,11 @@ const ORDER: Record<Ev["kind"], number> = {
   hitstopEnd: 0,
   mode: 1,
   levelDue: 2,
+  // (A level-up still waiting for its orbs at a new one's moment takes its orb ahead then (see grant);
+  // an upgrade applies before the weapons fire on its grid time.)
+  orbDefault: 2.5,
   levelUp: 3,
+  orbApply: 3.5,
   formation: 4,
   ring: 4,
   stampede: 4,
@@ -534,6 +553,9 @@ interface SimState {
   /** The upgrade pool (rules.upgradePool): what the hero has beside the sword, and its passives' bonuses added up. */
   loadout: Loadout;
   bonus: { maxHealth: number; pickup: number; damage: number; armour: number };
+  /** Upgrade orbs waiting to be walked into: the upgrade record, its offers, where each orb is, and when the one ahead is taken; and items taken but not yet applied. */
+  orbs?: { u: number; offers: UpgradeItem[]; pts: { x: number; y: number }[]; deadline: number };
+  applying: UpgradeItem[];
   stampedes: { fi: number; done: boolean }[];
   /** Camera punches: song time, strength, and world time once it has happened (it freezes in a hit-stop). */
   punches: Punch[];
@@ -625,6 +647,7 @@ function freshState(env: Env): SimState {
     nVacuums: 0,
     loadout: startingLoadout(env.rules.upgradePool ? env.ctx.level.upgrades.loadout : []),
     bonus: { maxHealth: 0, pickup: 0, damage: 0, armour: 0 },
+    applying: [],
     stampedes: [],
     punches,
     alive: [],
@@ -748,6 +771,7 @@ function engine(env: Env, st: SimState, io: Io) {
   const setPieces = env.rules.setPieces;
   const fieldGems = env.rules.fieldGems;
   const upgradePool = env.rules.upgradePool;
+  const upgradeOrbs = upgradePool && env.rules.upgradeOrbs;
   const pressCleaves = env.rules.pressCleaves;
   const rule = strideRule(hero);
   /** How long a step (or stride) takes. */
@@ -1032,8 +1056,9 @@ function engine(env: Env, st: SimState, io: Io) {
     if (lethal) {
       kill(f);
       onDeath(f, fate, h);
-    } else {
-      // A white flash and a knockback away from the hero.
+    } else if (!(upgradeOrbs && f.knockT > 0 && (Math.hypot(f.knockX, f.knockY) * f.knockT) / KNOCK_TIME > KNOCKBACK)) {
+      // A white flash and a knockback away from the hero. (Upgrade orbs: not cutting short a level-up
+      // pulse's longer push still under way.)
       const hp = heroPose(st.w);
       const dx = fate.x - hp.x;
       const dy = fate.y - hp.y;
@@ -1867,6 +1892,7 @@ function engine(env: Env, st: SimState, io: Io) {
     if (fixed && st.w > st.lastFixedW) {
       moveFoes(st.w);
       if (fieldGems) collectGems();
+      if (upgradeOrbs) touchOrbs();
       st.lastFixedW = st.w;
     }
     rec().clock?.(st.s, st.w, between);
@@ -1937,13 +1963,15 @@ function engine(env: Env, st: SimState, io: Io) {
     return {
       s: st.s,
       w: st.w,
-      hero: { x: hp.x, y: hp.y, stepping: hp.u < 1, ...(strides ? { stride: strideNow(hp) } : {}), ...(env.rules.pressClasses ? { tier: st.tier } : {}), ...(fieldGems ? { pickup: pickupRadius() } : {}) },
+      hero: { x: hp.x, y: hp.y, stepping: hp.u < 1, ...(strides ? { stride: strideNow(hp) } : {}), ...(env.rules.pressClasses ? { tier: st.tier } : {}), ...(fieldGems ? { pickup: pickupRadius() } : {}), ...(env.rules.health ? { health: st.health / healthMax() } : {}) },
       enemies: st.alive.filter((f) => f.alive).map((f) => ({ x: posX(f, st.w), y: posY(f, st.w), type: f.type, health: f.health })),
       threats: visibleThreats(hp),
       boss: st.bossFoe && st.bossFoe.alive && !pinned(st.bossFoe) ? { x: posX(st.bossFoe, st.w), y: posY(st.bossFoe, st.w) } : undefined,
       formation: dancingFormation(),
       ...setPieceView(hp),
       ...gemView(hp),
+      ...(st.orbs ? { orbs: st.orbs.pts.map((p, i) => ({ x: p.x, y: p.y, item: st.orbs!.offers[i] })) } : {}),
+      ...(upgradeOrbs && st.level < sch.levelUps.length && !st.overdue && st.xpNow >= levelReq() && sch.levelUps[st.level].s >= st.s ? { levelUpAt: sch.levelUps[st.level].s } : {}),
       pacePoint: { x: pp.x, y: pp.y, tx: pp.tx, ty: pp.ty },
       edgeDistance: (x, y) => world.edge(x, y),
     };
@@ -2284,12 +2312,81 @@ function engine(env: Env, st: SimState, io: Io) {
       if (lib.weapons.has(id)) grantWeapon(id);
       return;
     }
-    // The upgrade pool: three offers from the run's seed and the level-up's index. (Until upgrade
-    // orbs, a level-up takes its first offer.)
-    const offers = offersFor(ctx.seed, index, lib, ctx.level.upgrades.offer, st.loadout);
+    // The upgrade pool: three offers from the run's seed and the level-up's index. (Without upgrade
+    // orbs, a level-up takes its first offer. With them, a choice still waiting takes its orb ahead
+    // first, and what has been taken but not yet applied counts as owned.)
+    if (upgradeOrbs && st.orbs) takeOrb(0, false);
+    const owned = upgradeOrbs ? structuredClone(st.loadout) : st.loadout;
+    if (upgradeOrbs) for (const item of st.applying) takeItem(owned, item);
+    const offers = offersFor(ctx.seed, index, lib, ctx.level.upgrades.offer, owned);
+    if (upgradeOrbs && offers.length > 0) {
+      riseOrbs(index, offers);
+      return;
+    }
     const taken = offers.length > 0 ? 0 : -1;
     rec().upgrade({ s: st.s, offers, taken });
     if (taken >= 0) takeUpgrade(offers[taken]);
+  };
+
+  /**
+   * Upgrade orbs, on the level-up's downbeat: the pulse pushes nearby enemies out, the hero heals,
+   * and the offers rise as orbs around the hero (the first ahead along its heading, then to the left
+   * and right).
+   */
+  const riseOrbs = (u: number, offers: UpgradeItem[]) => {
+    const hp = heroPose(st.w);
+    for (const f of st.alive) {
+      if (!f.alive || f === st.bossFoe || pinned(f)) continue;
+      const dx = posX(f, st.w) - hp.x;
+      const dy = posY(f, st.w) - hp.y;
+      const d = Math.hypot(dx, dy);
+      if (d >= LEVEL_PULSE || d < 1e-6) continue;
+      f.knockX = (dx / d) * (LEVEL_PULSE - d);
+      f.knockY = (dy / d) * (LEVEL_PULSE - d);
+      f.knockT = KNOCK_TIME;
+    }
+    if (env.rules.health && st.health > 0 && st.health < healthMax()) {
+      st.health = Math.min(healthMax(), st.health + LEVEL_HEAL);
+      rec().health(st.s, st.health / healthMax());
+    }
+    const a0 = Math.atan2(st.heading.y, st.heading.x);
+    const pts = offers.map((_, i) => {
+      const a = a0 + [0, -ORB_SPREAD, ORB_SPREAD][i];
+      return { x: hp.x + Math.cos(a) * ORB_RISE, y: hp.y + Math.sin(a) * ORB_RISE };
+    });
+    const bar = Math.max(1, barOfBeatIndex(ctx.idx, sbiAt(st.s)));
+    const last = bar + ORB_BARS;
+    const deadline = last <= ctx.idx.barCount ? timeOfBeatIndex(song, ctx.idx.barStart[last]) : ctx.duration;
+    rec().upgrade({ s: st.s, offers, taken: -1, w: st.w, orbs: pts.map((p) => ({ ...p })) });
+    st.orbs = { u, offers, pts, deadline };
+    st.q.push(deadline, { kind: "orbDefault", u });
+  };
+
+  /** On every fixed step: an orb within ORB_TOUCH of the hero is taken (the nearest, if two are). */
+  const touchOrbs = () => {
+    const o = st.orbs;
+    if (!o) return;
+    const hp = heroPose(st.w);
+    let k = -1;
+    o.pts.forEach((p, i) => {
+      const d = Math.hypot(p.x - hp.x, p.y - hp.y);
+      if (d <= ORB_TOUCH && (k < 0 || d < Math.hypot(o.pts[k].x - hp.x, o.pts[k].y - hp.y))) k = i;
+    });
+    if (k >= 0) takeOrb(k, true);
+  };
+
+  /** An orb is taken (walked into, or the one ahead at the deadline): it applies on the first grid time at least NEVER_LATE away, with its sound there. */
+  const takeOrb = (k: number, walked: boolean) => {
+    const o = st.orbs!;
+    st.orbs = undefined;
+    // (Without a grid time within ORB_GRID_WAIT, as before a free section or past the last one, it
+    // applies on the next beat at least NEVER_LATE away, or at once at the song's end.)
+    const g = sch.gridTimes[firstAtOrAfter(sch.gridTimes, st.s + NEVER_LATE - 1e-9)];
+    const b = song.beats[firstAtOrAfter(song.beats, st.s + NEVER_LATE - 1e-9)];
+    const sApply = g !== undefined && g - st.s <= ORB_GRID_WAIT ? g : (b ?? st.s);
+    rec().upgradeTaken(o.u, k, st.s, st.w, sApply, walked);
+    st.applying.push(o.offers[k]);
+    st.q.push(sApply, { kind: "orbApply", item: o.offers[k] });
   };
 
   /** The hero takes an item: a new weapon starts firing, an evolution applies from now, a passive adds its bonus. */
@@ -2878,6 +2975,13 @@ function engine(env: Env, st: SimState, io: Io) {
           break;
         case "levelUp":
           grant(ev.id);
+          break;
+        case "orbDefault":
+          if (st.orbs?.u === ev.u) takeOrb(0, false);
+          break;
+        case "orbApply":
+          st.applying.splice(st.applying.findIndex((x) => x.kind === ev.item.kind && x.id === ev.item.id), 1);
+          takeUpgrade(ev.item);
           break;
         case "levelDue":
           levelDue(ev.i);

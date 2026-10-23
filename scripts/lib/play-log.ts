@@ -308,7 +308,10 @@ export function summarize(log: PlayLogFile, opts: SummaryOptions = {}): string {
     for (const v of gl.vacuums.filter((x) => inRange(x.s))) say(`  vacuum at ${f(v.s, 2)}: ${v.sTouch !== undefined ? `touched at ${f(v.sTouch, 2)}, ${v.gems ?? 0} gems in view flew in` : "never touched"}`);
   }
   // The upgrade pool: what each level-up offered and took.
-  for (const u of (log.upgrades ?? []).filter((x) => inRange(x.s))) say(`Level-up at ${f(u.s, 2)}: took ${u.offers[u.taken] ?? "nothing"} (offered ${u.offers.join(", ")})`);
+  for (const u of (log.upgrades ?? []).filter((x) => inRange(x.s))) {
+    const how = u.sTaken === undefined ? "" : u.walked ? `, walked into at ${f(u.sTaken, 2)}, applied at ${f(u.sApply!, 2)}` : `, the orb ahead after two bars, applied at ${f(u.sApply!, 2)}`;
+    say(`Level-up at ${f(u.s, 2)}: took ${u.offers[u.taken] ?? "nothing yet"}${how} (offered ${u.offers.join(", ")})`);
+  }
   // Grid sounds: each sound known less than 60 ms before its slot moved to a later one.
   const moves = (log.soundMoves ?? []).filter((m) => inRange(m.from));
   if (moves.length > 0) {

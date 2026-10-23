@@ -68,18 +68,27 @@ export function gemLog(plan: Plan, w = Infinity): GemLog {
   return { pickups, vacuums, dropped, collected };
 }
 
-/** The upgrade pool (play mode): each level-up's song time, its offers (kind:id) and the one taken. */
+/** The upgrade pool (play mode): each level-up's song time, its offers (kind:id) and the one taken; with orbs, when it was taken (walked into, or the one ahead after two bars) and the grid time it applied. */
 export interface UpgradeLog {
   s: number;
   offers: string[];
   taken: number;
+  sTaken?: number;
+  sApply?: number;
+  walked?: boolean;
 }
 
 /** What the log carries of a recording up to song time s: the groove and tier series, the sounds moved to a later slot, gems on the field, the level-ups' offers, and the hero's path. */
 export function recordingContext(plan: Plan, warp: Warp, s: number): { groove: { s: number[]; v: number[] }; tier?: { s: number[]; v: number[] }; soundMoves: SoundMove[]; gems?: GemLog; upgrades?: UpgradeLog[]; heroPath: HeroPath } {
   return {
     ...(plan.rules?.fieldGems ? { gems: gemLog(plan, warp.toWorld(s)) } : {}),
-    ...(plan.upgrades ? { upgrades: plan.upgrades.filter((u) => u.s <= s).map((u) => ({ s: r6s(u.s), offers: u.offers.map((o) => `${o.kind}:${o.id}`), taken: u.taken })) } : {}),
+    ...(plan.upgrades
+      ? {
+          upgrades: plan.upgrades
+            .filter((u) => u.s <= s)
+            .map((u) => ({ s: r6s(u.s), offers: u.offers.map((o) => `${o.kind}:${o.id}`), taken: u.taken, ...(u.sTaken !== undefined && u.sTaken <= s ? { sTaken: r6s(u.sTaken), sApply: r6s(u.sApply!), walked: !!u.walked } : {}) })),
+        }
+      : {}),
     soundMoves: plan.events.sounds.filter((x) => x.movedFrom !== undefined).map((x) => ({ key: x.key ?? x.sample, sample: x.sample, from: r6s(x.movedFrom!), s: r6s(x.s) })),
     groove: { s: Array.from(plan.groove.s, r6s), v: Array.from(plan.groove.v, (v) => Math.round(v * 1e4) / 1e4) },
     ...(plan.tier ? { tier: { s: Array.from(plan.tier.s, r6s), v: Array.from(plan.tier.v) } } : {}),

@@ -261,6 +261,13 @@ export class Emitter {
     this.sfx(up ? "tier-up" : "tier-down", s, cam.x[k], PRIORITY.hero + 0.6, up ? 0.8 : 0.5, false, 1, w, { every: "grid", known: at });
   }
 
+  /** Upgrade orbs: an orb taken (at song time `known`, world time w) applies on grid time s, with its sound there. */
+  orbTaken(s: number, w: number, known: number): void {
+    const cam = this.cam();
+    const k = Math.max(0, Math.min(cam.x.length - 1, Math.floor((w - cam.w0) * cam.rate + 1e-9)));
+    this.sfx("orb", s, cam.x[k], PRIORITY.hero + 0.6, 0.9, false, 1, w, { every: "grid", known });
+  }
+
   /** A swing's strike. Returns whether it earned "PERFECT" (a Perfect press striking on an accent). */
   swing(sw: PlanSwing, h: Hit, groove: number, pressRating: string | undefined): boolean {
     const heavy = sw.kind === "heavy";
@@ -533,11 +540,13 @@ export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam:
 
   // ------------------------------------------------------- moments and UI
   // (With the upgrade pool, each level-up is its upgrade, and the starting loadout has none.)
-  const fanfares = ctx.level.rules.upgradePool ? sim.upgrades.map((u) => ({ id: u.taken >= 0 ? u.offers[u.taken].id : "", s: u.s })) : sim.weaponsGranted;
+  // (With upgrade orbs, nothing is taken yet at the level-up, as in live play.)
+  const fanfares = ctx.level.rules.upgradePool ? sim.upgrades.map((u) => ({ id: u.taken >= 0 && !u.orbs ? u.offers[u.taken].id : "", s: u.s })) : sim.weaponsGranted;
   for (const g of fanfares) {
     levelUps.push(g.s);
     em.levelUp(g, heroAt(warp.toWorld(g.s)));
   }
+  for (const u of sim.upgrades) if (u.sApply !== undefined && u.wTaken !== undefined) em.orbTaken(u.sApply, u.wTaken, u.sTaken!);
   if (sim.blastS !== undefined) em.blast(sim.blastS, heroAt(warp.toWorld(sim.blastS)));
   for (const a of song.accents) em.accent(a);
   em.scriptUi();

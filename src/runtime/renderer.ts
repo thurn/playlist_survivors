@@ -566,6 +566,40 @@ export class Renderer {
       sp.alpha = 1;
       sp.tint = 0xc0fff0;
     }
+    // Upgrade orbs: a glowing orb in the item's colour with a glyph (a blade for a weapon upgrade, a
+    // spark for a passive), labelled above.
+    for (const o of f.orbs ?? []) {
+      const g = this.pools.fxA.next();
+      g.texture = proc.get("glow")!;
+      g.anchor.set(0.5);
+      g.position.set(Math.round(o.x), Math.round(o.y - o.z));
+      g.scale.set(1.6 * o.scale);
+      g.rotation = 0;
+      g.tint = o.color;
+      g.alpha = 0.8 * o.alpha;
+      const sp = this.pools.over.next();
+      sp.texture = proc.get("gem-big")!;
+      sp.anchor.set(0.5);
+      sp.position.set(Math.round(o.x), Math.round(o.y - o.z));
+      sp.rotation = 0;
+      sp.scale.set(2.2 * o.scale);
+      sp.alpha = o.alpha;
+      sp.tint = o.color;
+      const gl = this.pools.over.next();
+      gl.texture = proc.get(o.weapon ? "blade" : "spark")!;
+      gl.anchor.set(0.5);
+      gl.position.set(Math.round(o.x), Math.round(o.y - o.z));
+      gl.rotation = o.weapon ? -Math.PI / 4 : 0;
+      gl.scale.set(0.7 * o.scale);
+      gl.alpha = o.alpha;
+      gl.tint = 0xffffff;
+      if (o.alpha > 0.05) {
+        const pt = this.textPool.next();
+        pt.set(o.label, 1, o.color, true);
+        pt.position.set(Math.round(o.x - pt.textWidth / 2), Math.round(o.y - o.z - 26));
+        pt.alpha = o.alpha;
+      }
+    }
     for (const g of f.gems) {
       const sp = this.pools.over.next();
       sp.texture = proc.get(g.big ? "gem-big" : "gem")!;

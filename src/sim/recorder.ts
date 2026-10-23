@@ -242,6 +242,8 @@ export interface Recorder {
   vacuumTouch(i: number, s: number, w: number, gems: number): void;
   /** The upgrade pool: a level-up's offers and the one taken. */
   upgrade(u: UpgradeRecord): void;
+  /** Upgrade orbs: upgrade record i's orb k is taken at song time s (world time w), applying at song time sApply. */
+  upgradeTaken(i: number, k: number, s: number, w: number, sApply: number, walked: boolean): void;
   xp(s: number, fill: number): void;
   /** A cleave shockwave starts (with press cleaves, the accent's cleave that launched it); its band hits follow. */
   wave(cleave?: Cleave): void;
@@ -427,6 +429,9 @@ export class BatchRecorder implements Recorder {
   }
   upgrade(u: UpgradeRecord): void {
     this.upgrades.push(u);
+  }
+  upgradeTaken(i: number, k: number, s: number, w: number, sApply: number, walked: boolean): void {
+    Object.assign(this.upgrades[i], { taken: k, sTaken: s, wTaken: w, sApply, walked });
   }
   xp(s: number, fill: number): void {
     this.xpSeries.push({ s, fill });
