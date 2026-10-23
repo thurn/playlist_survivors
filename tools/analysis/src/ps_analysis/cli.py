@@ -10,6 +10,10 @@ Commands (each prints a JSON summary on stdout):
 - `edit SONGMAP EDITS.json --out OUT.json [--analysis analysis.json]`
 - `check SONGMAP` (exit status 1 on failure; human-readable lines on stderr)
 - `click SONGMAP --out click.wav`
+- `stream AUDIO --out stream.json [--songmap SONGMAP | --reference REF.json |
+  --offline-reference] [--write-audio FILE.flac]`: the belief stream for
+  reactive mode
+- `synth NAME --out FILE.ogg [--reference FILE.json]`: a synthetic test track
 
 Commands that need the excerpt find it as `public/audio/<audio.file>` in a
 parent directory of the song map or of the working directory, unless
@@ -228,6 +232,60 @@ def cmd_click(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_stream(a: argparse.Namespace) -> int:
+    from . import stream as st
+
+    reference = None
+    if a.songmap:
+        reference = st.songmap_reference(a.songmap)
+    elif a.reference:
+        reference = json.loads(Path(a.reference).read_text())
+    job = st.StreamJob(
+        Path(a.audio),
+        Path(a.out),
+        reference,
+        a.offline_reference,
+        Path(a.write_audio) if a.write_audio else None,
+    )
+    _emit(st.run(job))
+    return 0
+
+
+def cmd_synth(a: argparse.Namespace) -> int:
+    import soundfile as sf
+
+    from . import synth
+
+    y, reference = synth.track(a.name)
+    out = Path(a.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    if out.suffix == ".ogg":
+        # libsndfile's Vorbis encoder crashes on long single writes: write in blocks.
+        with sf.SoundFile(
+            out,
+            "w",
+            synth.SR,
+            1,
+            format="OGG",
+            subtype="VORBIS",
+            compression_level=a.compression,
+        ) as f:
+            for i in range(0, len(y), synth.SR):
+                f.write(y[i : i + synth.SR])
+    else:
+        sf.write(out, y, synth.SR)
+    if a.reference:
+        Path(a.reference).write_text(json.dumps(reference, indent=1) + "\n")
+    _emit(
+        {
+            "out": str(out),
+            "duration": round(len(y) / synth.SR, 3),
+            "beats": len(reference["beats"]),
+        }
+    )
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="ps-analysis", description=__doc__.split("\n")[0])
     sub = p.add_subparsers(dest="command", required=True)
@@ -306,6 +364,41 @@ def build_parser() -> argparse.ArgumentParser:
     common(c)
     c.add_argument("--out", required=True)
     c.set_defaults(func=cmd_click)
+
+    c = sub.add_parser("stream", help="write a reactive belief stream")
+    c.add_argument("audio")
+    c.add_argument("--out", required=True)
+    ref = c.add_mutually_exclusive_group()
+    ref.add_argument(
+        "--songmap", help="reference beats, sections and accents from a song map"
+    )
+    ref.add_argument(
+        "--reference",
+        help="a reference JSON, such as the exact one `synth --reference` writes",
+    )
+    ref.add_argument(
+        "--offline-reference",
+        action="store_true",
+        help="reference beats from madmom's offline whole-song decode",
+    )
+    c.add_argument(
+        "--write-audio",
+        metavar="FILE.flac",
+        help="write the analysed samples (44.1 kHz mono) here and play them instead",
+    )
+    c.set_defaults(func=cmd_stream)
+
+    c = sub.add_parser("synth", help="render a synthetic test track")
+    c.add_argument("name")
+    c.add_argument("--out", required=True, help=".ogg (Vorbis) or .wav")
+    c.add_argument("--reference", help="also write the exact reference JSON here")
+    c.add_argument(
+        "--compression",
+        type=float,
+        default=0.6,
+        help="Vorbis compression level, 0 (best quality) to 1 (smallest; default 0.6)",
+    )
+    c.set_defaults(func=cmd_synth)
     return p
 
 

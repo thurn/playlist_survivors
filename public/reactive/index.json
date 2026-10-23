@@ -1,0 +1,85 @@
+{
+ "version": 1,
+ "tracks": [
+  {
+   "id": "orpheus-galop",
+   "title": "Orpheus in the Underworld: Galop",
+   "artist": "Offenbach",
+   "group": "classical",
+   "stream": "orpheus-galop/stream.json",
+   "audio": "../audio/orpheus-galop.flac"
+  },
+  {
+   "id": "william-tell-finale",
+   "title": "William Tell Overture: Finale",
+   "artist": "Rossini",
+   "group": "classical",
+   "stream": "william-tell-finale/stream.json",
+   "audio": "../audio/william-tell-finale.flac"
+  },
+  {
+   "id": "mountain-king",
+   "title": "In the Hall of the Mountain King",
+   "artist": "Grieg",
+   "group": "classical",
+   "stream": "mountain-king/stream.json",
+   "audio": "../audio/mountain-king.flac"
+  },
+  {
+   "id": "bumblebee",
+   "title": "Flight of the Bumblebee",
+   "artist": "Rimsky-Korsakov",
+   "group": "classical",
+   "stream": "bumblebee/stream.json",
+   "audio": "../audio/bumblebee.flac"
+  },
+  {
+   "id": "beethoven-fifth",
+   "title": "Symphony No. 5: Allegro con brio",
+   "artist": "Beethoven",
+   "group": "classical",
+   "stream": "beethoven-fifth/stream.json",
+   "audio": "../audio/beethoven-fifth.flac"
+  },
+  {
+   "id": "house-128",
+   "title": "House at 128",
+   "artist": "Synthetic",
+   "group": "synthetic",
+   "stream": "house-128/stream.json",
+   "audio": "house-128/house-128.ogg"
+  },
+  {
+   "id": "dnb-174",
+   "title": "Drum and Bass at 174",
+   "artist": "Synthetic",
+   "group": "synthetic",
+   "stream": "dnb-174/stream.json",
+   "audio": "dnb-174/dnb-174.ogg"
+  },
+  {
+   "id": "hiphop-92-swing",
+   "title": "Swung Hip-Hop at 92",
+   "artist": "Synthetic",
+   "group": "synthetic",
+   "stream": "hiphop-92-swing/stream.json",
+   "audio": "hiphop-92-swing/hiphop-92-swing.ogg"
+  },
+  {
+   "id": "accelerando-100-140",
+   "title": "Accelerando, 100 to 140",
+   "artist": "Synthetic",
+   "group": "synthetic",
+   "stream": "accelerando-100-140/stream.json",
+   "audio": "accelerando-100-140/accelerando-100-140.ogg"
+  },
+  {
+   "id": "pop-arrangement",
+   "title": "Pop Arrangement",
+   "artist": "Synthetic",
+   "group": "synthetic",
+   "stream": "pop-arrangement/stream.json",
+   "audio": "pop-arrangement/pop-arrangement.ogg"
+  }
+ ]
+}

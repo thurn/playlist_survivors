@@ -145,6 +145,7 @@ every seed and demo profile must stay byte-identical.
 
 ```text
 recording ──ps-analysis (crop, analyze, report, edit, check, click)──► songs/orpheus-galop/songmap.json
+audio ──ps-analysis stream (npm run reactive:streams, reactive:add)──► public/reactive/<id>/stream.json (reactive mode)
 LPC packs ──tools/baker (npm run bake)──► public/assets/ (atlases, effects, sounds, credits)
 content/*.yaml + levels/orpheus-galop.yaml + song map ──simulation + virtual player (web worker)──► recorded plan
 audio clock → song time s → evaluatePlan(plan, s) → PixiJS renderer + HUD
@@ -155,6 +156,13 @@ play: levels/orpheus-galop.play.yaml (extends the demo's) ──Sim(open field, 
 
 - `tools/analysis/` — the Python audio analysis tool (madmom, librosa). The
   beat-map workflow, edit list and report live in `songs/orpheus-galop/`.
+- `public/reactive/` — reactive mode's tracks ([design](docs/design/reactive-audio.md)):
+  each track's belief stream (what a causal analysis knows of the music, every
+  entry stamped with the time it becomes known), the synthetic tracks' Ogg audio
+  (`ps-analysis synth`) and `index.json`. `npm run reactive:streams` regenerates
+  them all whenever the stream code changes. `npm run reactive:add -- <audio file>
+  [--id <id>] [--title <title>]` adds your own track under the gitignored
+  `reactive-local/`, which the dev server serves at `/reactive-local/`.
 - `tools/baker/`, `assets-src/` — the asset baker: ULPC character compositing,
   the scripted kick animation, white hit-flash frames, terrain and props,
   effects, loudness-normalized sounds, the licence manifest and credits.

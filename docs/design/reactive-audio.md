@@ -334,6 +334,13 @@ The perturbation check verifies the rewrites.
 If the Galop is still under 79% after the fallback, the executor records the
 figure in the bead's notes and continues: the parity report tracks it.
 
+**Taken in `hv-s4pt.1`.** At 2 periods plus 0.35 s, 54% of the Galop's
+pulsed-section committed beats fell within 45 ms of a song-map beat, under
+79%, so the stream commits at 1 period plus 0.35 s (67%, still under 79%:
+recorded and tracked). The synthetic gate passed either way. `hv-s4pt.2`
+therefore makes the extrapolation rewrites listed above. See
+[Measured: stage 1](#measured-stage-1).
+
 ### Ticks, onsets and energy
 
 - **Ticks** every 50 ms, each with `knownAt = t`:
@@ -430,10 +437,10 @@ figure in the bead's notes and continues: the parity report tracks it.
   "audio": { "file": "../../audio/orpheus-galop.flac", "duration": 144.6, "sampleRate": 44100 },
   "params": {
     "fps": 100, "minBpm": 55, "maxBpm": 215,
-    "commit": { "periods": 2, "extraS": 0.35, "minLeadS": 0.1 },
+    "commit": { "periods": 1, "extraS": 0.35, "minLeadS": 0.1 },
     "gate": 0.2, "tickS": 0.05,
     "hindsight": { "everyS": 1.0, "windowS": 20, "keepS": 8 },
-    "biasS": -0.010, "toolVersion": 1
+    "biasS": -0.013, "toolVersion": 1
   },
   "beats": [{ "t": 0.512, "knownAt": 0.0, "period": 0.469, "evidence": 0.0 }],
   "ticks": [{ "t": 0.05, "evidence": 0.0, "energy": 0.0, "level": "quiet", "key": "D major" }],
@@ -1488,3 +1495,71 @@ strong onset rule                    curated found   tutti found   strong per mi
   open-ended set pieces were not run.
 
 The checks above, not this appendix, decide whether each stage meets its goals.
+
+### Measured: stage 1
+
+Recorded by `hv-s4pt.1` from the shipped streams (`toolVersion` 1), with the
+commit horizon at the fallback's 1 period plus 0.35 s. Each row gives, after
+the first 4 s and within the reference's span, % of committed beats within
+20 ms / within 45 ms / on the off-beat / elsewhere, then the share of all
+committed beats below the gate. The four classical tracks other than the Galop
+are scored against the offline decode.
+
+```text
+house-128            100.0 / 100.0 /  0.0 /  0.0    below gate  5%
+dnb-174               99.4 / 100.0 /  0.0 /  0.0    below gate  3%
+hiphop-92-swing       42.9 /  50.6 / 49.4 /  0.0    below gate 28%   (double tempo)
+accelerando-100-140   76.3 /  79.8 / 20.2 /  0.0    below gate  4%
+pop-arrangement       81.2 /  84.4 /  8.4 /  7.2    below gate 12%
+orpheus-galop         29.1 /  57.9 /  7.5 / 34.6    below gate 30%   pulsed sections: 66.9% within 45 ms
+william-tell-finale   43.2 /  77.8 /  6.4 / 15.8    below gate 29%
+mountain-king         34.4 /  61.8 / 16.3 / 21.9    below gate 21%
+bumblebee             49.2 /  76.0 /  2.2 / 21.8    below gate 34%
+beethoven-fifth       25.9 /  47.5 /  5.0 / 47.5    below gate 69%
+causality-mix         84.2 /  86.8 /  4.0 /  9.2    below gate 31%
+```
+
+The Galop by section, % within 45 ms (and % below the gate):
+
+```text
+prelude 8 (95 below the gate), vamp 69 (31), opening 93 (2), theme A 69 (19),
+theme A repeat 24 (39; 24 on the off-beat), kick line 58 (21), bridge 100,
+climax 81, coda 54 (29)
+```
+
+- **Gates this data bears on** (`hv-s4pt.2` computes its own in the check):
+  stream quality on `house-128` and `dnb-174` 100%, against 95%; the Galop's
+  prelude 95% below the gate, against 80%.
+- **The horizon:** at 2 periods plus 0.35 s the Galop's pulsed sections were
+  54% within 45 ms; at 1 period plus 0.35 s, 67%; at the experiment's 0.25 s
+  lead, 83% (the experiment measured 84%). The loss comes from rubato and
+  tempo changes over the longer extrapolation, not from timing noise: the
+  bridge stays at 100% and the opening at 93%.
+- **Forecast period:** the tracker's states have whole-frame beat intervals,
+  and it alternates between the two around the true one (34 and 35 frames at
+  174 beats per minute). Forecasting a period ahead from either is off by up
+  to a frame per period, and commits fell more often on the longer one: at
+  2 periods with no bias, `dnb-174`'s committed beats ran a median 32 ms late
+  and 44% fell within 20 ms. The forecast uses the period averaged over the
+  past 2 s (only frames within 10% of the current period, so a tempo change
+  takes effect at once); with it and `biasS`, 99% fall within 20 ms.
+- **`biasS`:** −13 ms, the committed beats' median lateness on the steady
+  synthetic tracks without it (house-128 15 ms, dnb-174 11 ms,
+  pop-arrangement 10 ms).
+- **Energy:** the running maximum never falls below −60 dBFS, so leading
+  silence reads 0 rather than full loudness.
+- **Strong onsets** per minute: the Galop 24 (the experiment's rule gave about
+  33), `house-128` 16, `pop-arrangement` 10. As the rule is worded, the window
+  includes the onset itself, so the first onset of a track or after a silence
+  is always strong.
+- **Evidence** averages the last 4 believed beats heard in full: just after a
+  beat, before its ±30 ms window has passed, the beat before the oldest takes
+  its place.
+- **Resampling:** files not at 44.1 kHz (`mountain-king` is 48 kHz) are
+  resampled with a symmetric filter that hears about 2 ms ahead, an accepted
+  lookahead well under one 10 ms frame. The stream causality test also cuts
+  between frames with no margin.
+- **Local tracks** (`reactive:add`) play the samples the analysis decoded,
+  written as FLAC, so a compressed file's encoder delay cannot shift them.
+  Synthetic tracks keep their exact reference beside their Ogg
+  (`reference.json`), rendered with it.

@@ -10,3 +10,4 @@ __pycache__/
 tools/analysis/work/
 .worktrees/
 logs/
+reactive-local/
