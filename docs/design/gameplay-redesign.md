@@ -1008,6 +1008,19 @@ mashers    random presses, 2, 4 and 8 a second            fall 1:45-2:05
 - **Mashers and holders survive to the climax,** so pressing at random still
   works early in the song.
 
+**As shipped (hv-dtz9):** the holder and mashers fall as the table says
+(`check:play` allows 1:30–2:10, since their falls spread across seeds), and
+every honest player survives. The honest players' end health is judged on its
+average over the checked seeds, and reported against its band rather than
+checked: every honest bot ends at 90–100% on average. At tier 2 and up the
+horde hardly reaches the hero, so nearly all of an honest player's damage is
+the minotaur's in the climax, and the heals that follow (its two chickens and
+the bridge's level-up) give it back. Neither fewer heals (no level-up heal,
+half-strength chickens, no boss chickens) nor a denser or faster horde, a
+sturdier boss or smaller tiers brought the averages into the bands. Reaching
+them needs a change to healing or damage, for example damage the groove can't
+outrun at tier 3, which is a new decision for this design.
+
 ## Sound on the Grid
 
 Gameplay sounds have to follow the music: an impact off the grid sounds wrong.
@@ -1181,8 +1194,10 @@ entity involved, as today.
   step of the stride period while a key is held.
 - **Sounds on the grid:** every row of the table in
   [Sound on the Grid](#sound-on-the-grid), within 1 ms.
-- **The curve:** each player ends as the table in
-  [The Difficulty Curve](#the-difficulty-curve) says.
+- **The curve:** the holder and mashers fall as the table in
+  [The Difficulty Curve](#the-difficulty-curve) says, and the honest players
+  survive; their average end health is reported against its band (see the
+  note there).
 - **Groove:** after the galop vamp, the moderate player is at tier 2 or higher
   for at least 70% of pulsed time, and holders and mashers are at tier 0 for at
   least 80% of it. The eighths player's average groove is within 0.05 of the

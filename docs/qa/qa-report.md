@@ -40,7 +40,7 @@ npm run bench -- --play       # live play from theme A to the climax, a press on
 | The self-firing sword and weapons, sized by the tier; every sound on its grid slot | verified (every row of the Sound on the Grid table, every player) |
 | Accents and cleaves, set pieces, gems and vacuums, chickens, level-ups and upgrade orbs | verified by unit tests and `check:play`; playing them is a human gate |
 | The difficulty curve: holders and mashers fall in the kick line, bridge or climax | verified within 1:30–2:10 (the design's 1:45–2:05 is missed on some seeds) |
-| The difficulty curve: honest players' end health | **off target**: every honest bot ends at 90–100% (follow-up hv-dtz9) |
+| The difficulty curve: honest players' end health | **off target**, reported not gated: every honest bot ends at 90–100% on average (the design's note on the curve records why) |
 | Watch my run after level-ups; Watch the demo on the new rules | verified |
 | Audio clock, picture/audio offset, hidden tab, resize, cached plan, broken level | verified |
 | Sound mix: clipping, effects level, music in front, no wall of noise, effects on time | verified by measurement; listening still needed |
@@ -63,7 +63,7 @@ npm run bench -- --play       # live play from theme A to the climax, a press on
 
 | Item | State | Evidence |
 |---|---|---|
-| An honest run: about half health at the end, tier 2 or 3 through most of the galop | partly verified, **off target** | `check:play`: the moderate player is at tier 2 or higher for 100% of pulsed time after the galop vamp on all four seeds, grade A (average groove 0.90–0.93), lowest health 50–80%, but it ends at 100% (target 40–70%): heals cancel its damage. The casual player ends at 90–100% (target 10–40%). Follow-up hv-dtz9 carries the evidence. **Human:** play it. |
+| An honest run: about half health at the end, tier 2 or 3 through most of the galop | partly verified, **off target** | `check:play`: the moderate player is at tier 2 or higher for 100% of pulsed time after the galop vamp on all four seeds, grade A (average groove 0.90–0.93), lowest health 50–80%, but it ends at 100% (target 40–70%): heals cancel its damage. The casual player ends at 90–100% (target 10–40%). The design now judges this on the average over the checked seeds and reports it: nearly all honest damage is the minotaur's, healed back by its chickens and the bridge's level-up (hv-dtz9). **Human:** play it. |
 | A mashing run: survive theme A, lose health in the kick line and bridge, fall in the climax | verified | `check:play`: the mashers at 2, 4 and 8 presses a second fall at 1:35–2:05 on every seed (the check allows 1:30–2:10; on seed 7 the masher at 4 falls at 1:35, in the kick line, and on seed 2024 at 2:05). **Human:** mash a run. |
 | A holding run: the same fate | verified | `check:play`: the holder falls at 1:37 (seed 7) and 1:54 (seed 1858). **Human:** hold through a run. |
 | Watch the bots against the difficulty curve | verified | `check:play` prints every bot's kills, groove, grade, time at tier, lowest health and end against its target (above). The e2e tests plan and play back the holder and a masher. **Human:** watch `?mode=play&player=moderate`, `casual`, `holder`, `mash4` and `eighths`. |
@@ -155,8 +155,9 @@ including its checks, then the plan cache makes reloads instant.
   an A (0.90–0.93), the casual player a B (0.67–0.83), and the holder and
   mashers a C (0.03–0.16). The best grade is stored under a new key.
 - **Timing windows:** 45, 90 and 140 ms.
-- **The curve:** the honest players' end health is still off target (above);
-  hv-dtz9.
+- **The curve:** the honest players' end health is off target (above); it is
+  reported on its average over the seeds, and reaching the bands needs a change
+  to the design's healing or damage.
 
 ## What a person still has to do
 

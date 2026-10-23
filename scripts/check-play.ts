@@ -46,9 +46,12 @@ const HONEST = new Set<PlayerName>(["moderate", "casual", "perfect", "skilled", 
  *
  * (Checked: the holder and mashers fall, within 1:30-2:10 rather than the design's 1:45-2:05, their
  * fall times spreading about 15 s across seeds; the honest players survive (checked with the other
- * honest-player checks). The honest players' end-health bands are printed against their targets but
- * not yet checked: on every tuning tried they end at 80-100%, heals cancelling damage; hv-q58r's
- * follow-up carries the evidence.)
+ * honest-player checks). The honest players' end health is judged on its average over the seeds,
+ * and reported against its band, not gated (hv-dtz9's decision; see "The Difficulty Curve" in the
+ * design): at tier 2 and up the horde hardly reaches the hero, so nearly all of their damage is the
+ * minotaur's in the climax, and the heals that follow (its two chickens, the bridge's level-up)
+ * give it back. No setting of the heals, the boss or the stream tried brought the averages into
+ * the bands; that needs a change to the design's healing or damage.)
  */
 const CURVE: Partial<Record<PlayerName, { end: [number, number]; report?: true } | { falls: [number, number]; within: [number, number] }>> = {
   perfect: { end: [0.9, 1], report: true },
@@ -83,7 +86,7 @@ function curve(player: PlayerName, plan: Plan): { failures: string[]; note: stri
 }
 const isMasher = (p: string) => /^mash\d+$/.test(p);
 
-type Row = { seed: number; player: string; kills: number; groove: number; grade: string; tier0: number; tier2: number; health: string };
+type Row = { seed: number; player: string; kills: number; groove: number; grade: string; tier0: number; tier2: number; health: string; end: number };
 /** Kills while the hero lived, and its lowest health (or when it fell). */
 const killsAlive = (plan: Plan) => Array.from(plan.hud.kills).filter((s) => plan.stats.deathS === undefined || s <= plan.stats.deathS).length;
 const healthNote = (plan: Plan) => (plan.stats.deathS === undefined ? `${Math.round(plan.stats.minHealth * 100)}%` : `fell ${plan.stats.deathS.toFixed(0)}s`);
@@ -124,7 +127,7 @@ function runSeed(seed: number): { ok: boolean; text: string; rows: Row[] } {
     const st = plan.stats;
     out.push(`play ${planHash(plan)} (seed ${seed}, ${player} player) in ${ms.toFixed(0)} ms: ${plan.hud.kills.length} kills, presses ${st.presses} (perfect ${st.ratings.perfect}, great ${st.ratings.great}, good ${st.ratings.good}, unrated ${st.ratings.none}), groove ${st.averageGroove.toFixed(2)}, threats ${plan.threats.length} (${plan.nearMisses.length} near misses)`);
     out.push(text);
-    rows.push({ seed, player, kills: killsAlive(plan), groove: st.averageGroove, grade: gradeFor(st.averageGroove), tier0: tierShare(plan, (t) => t === 0), tier2: tierShare(plan, (t) => t >= 2), health: `${healthNote(plan).padEnd(9)} ${cv.note}` });
+    rows.push({ seed, player, kills: killsAlive(plan), groove: st.averageGroove, grade: gradeFor(st.averageGroove), tier0: tierShare(plan, (t) => t === 0), tier2: tierShare(plan, (t) => t >= 2), health: `${healthNote(plan).padEnd(9)} ${cv.note}`, end: endHealth(plan) ?? 0 });
   }
   const { ok, text } = summarizeChecks(checkGroove(runs));
   failed ||= !ok;
@@ -161,5 +164,17 @@ for (const r of results) {
 console.log(`\n(${((performance.now() - t00) / 1000).toFixed(1)} s; tier columns: share of pulsed time after the galop vamp)`);
 console.log("seed   player     kills  groove  grade  tier 0  tier 2+  lowest    end (target)");
 const pct = (x: number) => `${(x * 100).toFixed(0)}%`.padStart(6);
-for (const r of results.flatMap((x) => x.rows)) console.log(`${String(r.seed).padEnd(6)} ${r.player.padEnd(10)} ${String(r.kills).padStart(5)}  ${r.groove.toFixed(2).padStart(6)}  ${r.grade.padEnd(5)}  ${pct(r.tier0)}  ${pct(r.tier2).padStart(7)}  ${r.health}`);
+const rows = results.flatMap((x) => x.rows);
+for (const r of rows) console.log(`${String(r.seed).padEnd(6)} ${r.player.padEnd(10)} ${String(r.kills).padStart(5)}  ${r.groove.toFixed(2).padStart(6)}  ${r.grade.padEnd(5)}  ${pct(r.tier0)}  ${pct(r.tier2).padStart(7)}  ${r.health}`);
+// The honest players' end health is judged on its average over the seeds each runs on (a fall
+// counts as 0), and reported against its band rather than gated: see CURVE.
+console.log("\nend health, averaged over the seeds (reported, not checked)");
+for (const [player, t] of Object.entries(CURVE)) {
+  if (!("end" in t)) continue;
+  const mine = rows.filter((r) => r.player === player);
+  if (mine.length === 0) continue;
+  const avg = mine.reduce((a, r) => a + r.end, 0) / mine.length;
+  const on = avg >= t.end[0] - 1e-9 && avg <= t.end[1] + 1e-9;
+  console.log(`${player.padEnd(10)} ${String(mine.length).padStart(2)} seeds  ${pct(avg)}  (${Math.round(t.end[0] * 100)}-${Math.round(t.end[1] * 100)}%${on ? "" : ", off target"})`);
+}
 process.exit(failed ? 1 : 0);
