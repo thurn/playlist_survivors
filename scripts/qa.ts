@@ -484,6 +484,15 @@ await withDevServer(async (base) => {
     const differ = await page.evaluate(() => (window as unknown as { __demo: PlayHook }).__demo.play.compareReplay());
     await page.locator("canvas").screenshot({ path: join(OUT, "play-end-card.png") });
     record("Play: Watch my run replays the run identically", differ.length === 0, differ.length ? `the replay differs in: ${differ.join(", ")}` : "the replay's recording equals the live run's, part by part");
+    // Chosen at once (the live run's music-follow curve still scheduled), the replay plays.
+    const before = errors.length;
+    await page.evaluate(() => (window as unknown as { __demo: PlayHook }).__demo.play.choose("Watch my run"));
+    await page.waitForFunction(() => (window as unknown as { __demo: PlayHook }).__demo.play.phase() === "replay", undefined, { timeout: 30_000 });
+    const r0 = await songNow(page);
+    await page.waitForTimeout(1500);
+    const r1 = await songNow(page);
+    const replayErrors = errors.slice(before);
+    record("Play: Watch my run chosen at once plays the replay", replayErrors.length === 0 && r1 > r0 + 1, `song time ${r0.toFixed(2)} → ${r1.toFixed(2)} s over 1.5 s; ${replayErrors.length ? replayErrors.join("; ") : "no page errors"}`);
     // A mid-song start: the bot played up to the climax, and the field is busy.
     await openPlay(page, "1:50");
     await page.waitForTimeout(800);

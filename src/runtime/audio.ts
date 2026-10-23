@@ -207,7 +207,8 @@ export class AudioEngine implements SongClock {
     src.connect(this.mix.musicGain);
     const when = this.ctx.currentTime + 0.1;
     src.start(when, offset);
-    this.mix.follow(this.followCurve(), when, offset);
+    // (Replacing what is scheduled: Watch my run starts while the live run's curve still runs.)
+    this.mix.follow(this.followCurve(), when, offset, true);
     this.source = src;
     // Song time 0 is in the past; the scheduler skips every event before the offset.
     this.t0 = when - offset;
