@@ -51,10 +51,10 @@ describe("a play-mode run in the open field", () => {
   it("is played by the moderate player in the open field", () => {
     expect(plan.profile).toBe("moderate");
     expect(plan.open).toBeDefined();
-    expect(plan.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true, selfFiring: true, gridSounds: true, pressCleaves: true, setPieces: true, fieldGems: true, upgradePool: true, upgradeOrbs: true });
+    expect(plan.rules).toEqual({ oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true, selfFiring: true, gridSounds: true, pressCleaves: true, setPieces: true, fieldGems: true, upgradePool: true, upgradeOrbs: true, healthPool: true });
   });
 
-  it("hurts the hero, heals it on clean beats, and it survives", () => {
+  it("hurts the hero, heals it (level-ups and chickens), and it survives", () => {
     expect(plan.stats.minHealth).toBeLessThan(1);
     expect(plan.stats.minHealth).toBeGreaterThan(0);
     expect(plan.stats.deathS).toBeUndefined();

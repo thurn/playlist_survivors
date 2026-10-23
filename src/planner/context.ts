@@ -90,8 +90,10 @@ export function makeCtx(input: PlannerInput): Ctx {
   const song = input.songMap;
   const idx = indexSong(song);
   const level = input.level;
-  // The level's hero (content/hero.yaml with the level's overrides).
-  const lib = input.level.hero && input.level.hero !== input.content.hero ? { ...input.content, hero: input.level.hero } : input.content;
+  // The level's hero (content/hero.yaml with the level's overrides), and its enemies' damage.
+  const heroLib = input.level.hero && input.level.hero !== input.content.hero ? { ...input.content, hero: input.level.hero } : input.content;
+  const over = Object.entries(input.level.enemies ?? {});
+  const lib = over.length === 0 ? heroLib : { ...heroLib, enemies: new Map([...heroLib.enemies].map(([k, e]) => [k, input.level.enemies[k] ? { ...e, ...input.level.enemies[k] } : e])) };
   const sections: SectionInfo[] = level.sections.map((ls, i) => {
     const ss = song.sections.find((x) => x.label === ls.label)!;
     const b0 = idx.barStart[ss.bars[0]];

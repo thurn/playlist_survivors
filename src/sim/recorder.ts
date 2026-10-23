@@ -5,7 +5,7 @@
  * as play goes on and can be rewound for rollback.
  */
 import type { WarpBreak } from "../core/warp.ts";
-import type { Chain, EnemyRecord, Fate, HeroTrack, Hit, PlanInput, PlanSwing, UpgradeRecord } from "../plan/types.ts";
+import type { BiteRecord, Chain, ChickenRecord, EnemyRecord, Fate, HealRecord, HeroTrack, Hit, PlanInput, PlanSwing, UpgradeRecord } from "../plan/types.ts";
 import { CameraRecording } from "../planner/camera.ts";
 
 export interface Landing {
@@ -180,6 +180,10 @@ export interface SimResult {
   vacuums: VacuumRecord[];
   /** The upgrade pool: each level-up's offers and the one taken. */
   upgrades: UpgradeRecord[];
+  /** The small health pool: hurts, heals and chickens. */
+  bites: BiteRecord[];
+  heals: HealRecord[];
+  chickens: ChickenRecord[];
   /** The XP bar after each change (fraction of the next level-up's requirement). */
   xp: { s: number; fill: number }[];
   /** Cleave shockwaves: one hit per band (with press cleaves, the cleave that launched it). */
@@ -244,6 +248,11 @@ export interface Recorder {
   upgrade(u: UpgradeRecord): void;
   /** Upgrade orbs: upgrade record i's orb k is taken at song time s (world time w), applying at song time sApply. */
   upgradeTaken(i: number, k: number, s: number, w: number, sApply: number, walked: boolean): void;
+  /** The small health pool: a hurt, a heal, a chicken dropped, and chicken i eaten at song time s (world time w), healing at sHeal. */
+  bite(b: BiteRecord): void;
+  heal(h: HealRecord): void;
+  chicken(c: ChickenRecord): void;
+  chickenTaken(i: number, s: number, w: number, sHeal: number): void;
   xp(s: number, fill: number): void;
   /** A cleave shockwave starts (with press cleaves, the accent's cleave that launched it); its band hits follow. */
   wave(cleave?: Cleave): void;
@@ -298,6 +307,9 @@ export class BatchRecorder implements Recorder {
   readonly gems: GemRecord[] = [];
   readonly vacuums: VacuumRecord[] = [];
   readonly upgrades: UpgradeRecord[] = [];
+  readonly bites: BiteRecord[] = [];
+  readonly heals: HealRecord[] = [];
+  readonly chickens: ChickenRecord[] = [];
   readonly xpSeries: { s: number; fill: number }[] = [{ s: 0, fill: 0 }];
   readonly waves: ({ hits: number[] } & Partial<Cleave>)[] = [];
   readonly formations: FormationRecord[] = [];
@@ -433,6 +445,18 @@ export class BatchRecorder implements Recorder {
   upgradeTaken(i: number, k: number, s: number, w: number, sApply: number, walked: boolean): void {
     Object.assign(this.upgrades[i], { taken: k, sTaken: s, wTaken: w, sApply, walked });
   }
+  bite(b: BiteRecord): void {
+    this.bites.push(b);
+  }
+  heal(h: HealRecord): void {
+    this.heals.push(h);
+  }
+  chicken(c: ChickenRecord): void {
+    this.chickens.push(c);
+  }
+  chickenTaken(i: number, s: number, w: number, sHeal: number): void {
+    Object.assign(this.chickens[i], { sTaken: s, wTaken: w, sHeal });
+  }
   xp(s: number, fill: number): void {
     this.xpSeries.push({ s, fill });
   }
@@ -505,6 +529,9 @@ export class BatchRecorder implements Recorder {
       gems: this.gems,
       vacuums: this.vacuums,
       upgrades: this.upgrades,
+      bites: this.bites,
+      heals: this.heals,
+      chickens: this.chickens,
       xp: this.xpSeries,
       waves: this.waves,
       formations: this.formations,

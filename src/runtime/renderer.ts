@@ -436,7 +436,8 @@ export class Renderer {
         sp.anchor.set(t.a.anchorX / t.a.frameW, t.a.anchorY / t.a.frameH);
         sp.position.set(Math.round(h.x), Math.round(h.y - h.z));
         sp.scale.set(1);
-        sp.alpha = 1;
+        // (Blinking while invulnerable after a hurt.)
+        sp.alpha = h.blink ? 0.15 : 1;
         // A bite flashes the hero red.
         const gb = Math.round(255 * (1 - 0.7 * h.hurt));
         sp.tint = (0xff << 16) | (gb << 8) | gb;
@@ -565,6 +566,27 @@ export class Renderer {
       sp.scale.set(1.6);
       sp.alpha = 1;
       sp.tint = 0xc0fff0;
+    }
+    // The small health pool: chickens lying in wait, glowing warm and bobbing on the beat.
+    for (const c of f.chickens ?? []) {
+      const pulse = beatSwell(f.hud.beatPhase);
+      addShadow(c.x, c.y + 3, 0.7, 1);
+      const g = this.pools.fxA.next();
+      g.texture = proc.get("glow")!;
+      g.anchor.set(0.5);
+      g.position.set(Math.round(c.x), Math.round(c.y - 6));
+      g.scale.set(0.9 + 0.2 * pulse);
+      g.rotation = 0;
+      g.tint = 0xffc070;
+      g.alpha = 0.6;
+      const sp = this.pools.over.next();
+      sp.texture = proc.get("chicken")!;
+      sp.anchor.set(0.5);
+      sp.position.set(Math.round(c.x), Math.round(c.y - 6 - 2 * pulse));
+      sp.rotation = 0;
+      sp.scale.set(2.2);
+      sp.alpha = 1;
+      sp.tint = 0xffffff;
     }
     // Upgrade orbs: a glowing orb in the item's colour with a glyph (a blade for a weapon upgrade, a
     // spark for a passive), labelled above.

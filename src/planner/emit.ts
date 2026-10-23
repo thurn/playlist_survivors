@@ -261,6 +261,20 @@ export class Emitter {
     this.sfx(up ? "tier-up" : "tier-down", s, cam.x[k], PRIORITY.hero + 0.6, up ? 0.8 : 0.5, false, 1, w, { every: "grid", known: at });
   }
 
+  /** The small health pool: a hurt sounds on the first sixteenth at least NEVER_LATE after it. */
+  hurt(b: { s: number; w: number }): void {
+    const cam = this.cam();
+    const k = Math.max(0, Math.min(cam.x.length - 1, Math.floor((b.w - cam.w0) * cam.rate + 1e-9)));
+    this.sfx("hurt", this.slotAt("sixteenth", b.s + NEVER_LATE), cam.x[k], PRIORITY.hero + 0.5, 0.8, false, 1, b.w, { every: "sixteenth", known: b.s });
+  }
+
+  /** The small health pool: a chicken eaten sounds as it heals, on its sixteenth. */
+  chickenEaten(c: { sTaken?: number; wTaken?: number; sHeal?: number }): void {
+    const cam = this.cam();
+    const k = Math.max(0, Math.min(cam.x.length - 1, Math.floor((c.wTaken! - cam.w0) * cam.rate + 1e-9)));
+    this.sfx("chicken", c.sHeal!, cam.x[k], PRIORITY.hero + 0.5, 0.9, false, 1, c.wTaken, { every: "sixteenth", known: c.sTaken });
+  }
+
   /** Upgrade orbs: an orb taken (at song time `known`, world time w) applies on grid time s, with its sound there. */
   orbTaken(s: number, w: number, known: number): void {
     const cam = this.cam();
@@ -547,6 +561,8 @@ export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam:
     em.levelUp(g, heroAt(warp.toWorld(g.s)));
   }
   for (const u of sim.upgrades) if (u.sApply !== undefined && u.wTaken !== undefined) em.orbTaken(u.sApply, u.wTaken, u.sTaken!);
+  for (const b of sim.bites) em.hurt(b);
+  for (const c of sim.chickens) if (c.sHeal !== undefined) em.chickenEaten(c);
   if (sim.blastS !== undefined) em.blast(sim.blastS, heroAt(warp.toWorld(sim.blastS)));
   for (const a of song.accents) em.accent(a);
   em.scriptUi();

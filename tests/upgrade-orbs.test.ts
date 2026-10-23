@@ -13,7 +13,7 @@ import { prepare, virtualPlayer } from "../src/planner/plan.ts";
 import type { Key } from "../src/sim/movement.ts";
 import type { KeyEvent } from "../src/sim/player.ts";
 import { BatchRecorder } from "../src/sim/recorder.ts";
-import { LEVEL_HEAL, LEVEL_PULSE, ORB_RISE, ORB_SPREAD, ORB_TOUCH, Sim, worldFor } from "../src/sim/simulate.ts";
+import { LEVEL_PULSE, ORB_RISE, ORB_SPREAD, ORB_TOUCH, Sim, worldFor } from "../src/sim/simulate.ts";
 import { LOW_HEALTH, preferredOffer } from "../src/sim/upgrades.ts";
 
 const input = plannerInput({ level: "levels/orpheus-galop.play.yaml" });
@@ -111,18 +111,19 @@ describe("a level-up's downbeat", () => {
   });
 
   it("heals 20", () => {
-    // The hero stands still for the last 16 beats before the level-up, so it is bitten. (Bites take
-    // 20 times as much here, so the heal isn't cut short by a full bar.)
-    const sore = { ...ctx, lib: { ...lib, enemies: new Map([...lib.enemies].map(([k, e]) => [k, { ...e, contactDamage: e.contactDamage * 20 }])) } };
-    const { recording, sim } = takeOver(ctx.song.beats[beat(LEVEL_UP) - 16], LEVEL_UP, easy, sore);
+    // The hero stands still for the last 16 beats before the level-up without blades or
+    // lightning, so it is bitten (more than 20 short of its 100: the heal isn't cut short by a full bar).
+    const unarmed = { ...ctx, level: { ...ctx.level, upgrades: { ...ctx.level.upgrades, loadout: [] } } };
+    const { recording, sim } = takeOver(ctx.song.beats[beat(LEVEL_UP) - 16], LEVEL_UP, easy, unarmed);
     sim.advanceTo(LEVEL_UP + 0.2);
     recording.refresh();
     const plan = recording.plan;
     expect(plan.upgrades![0].s).toBe(LEVEL_UP);
     const at = Array.from(plan.health.s).findIndex((s) => s === LEVEL_UP);
     const before = plan.health.v[at - 1];
-    expect(before * lib.hero.health.max).toBeLessThan(lib.hero.health.max - LEVEL_HEAL);
-    expect(plan.health.v[at] * lib.hero.health.max - before * lib.hero.health.max).toBeCloseTo(LEVEL_HEAL, 6);
+    expect(before * lib.hero.health.max).toBeLessThan(lib.hero.health.max - lib.hero.health.levelUpHeal);
+    expect(plan.health.v[at] * lib.hero.health.max - before * lib.hero.health.max).toBeCloseTo(lib.hero.health.levelUpHeal, 3);
+    expect(plan.heals!.find((h) => h.s === LEVEL_UP)).toMatchObject({ source: "level-up" });
   });
 });
 

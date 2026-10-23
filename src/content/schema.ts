@@ -165,6 +165,9 @@ export const heroDef = z.strictObject({
      * press below Great, or a stumble, ends the streak; grid times without a press do not.
      */
     heal: z.strictObject({ beat: z.number().min(0), streakFrom: z.number().int().min(1), streak: z.number().min(0) }),
+    /** The small health pool (rules.healthPool): after a bite the hero is invulnerable this long (world ms), and a level-up heals levelUpHeal. */
+    invulnerableMs: z.number().positive().default(500),
+    levelUpHeal: z.number().min(0).default(20),
   }),
   /** What the sword aims for: the summed weight of the enemies a swing (or a cleave's shockwave) would catch. */
   aimWeights: z.strictObject({ regular: z.number().positive(), elite: z.number().positive(), boss: z.number().positive(), formation: z.number().positive() }),
@@ -449,7 +452,9 @@ export const levelScript = z.strictObject({
    * and the new weapons a level-up can offer (owned weapons' evolutions and the passives join them).
    */
   upgrades: z.strictObject({ loadout: z.array(id).default([]), offer: z.array(id).default([]) }).optional(),
-  rules: z.strictObject({ oneStepPerSlot: z.boolean().default(false), accentTelegraphs: z.boolean().default(false), health: z.boolean().default(false), strides: z.boolean().default(false), pressClasses: z.boolean().default(false), selfFiring: z.boolean().default(false), gridSounds: z.boolean().default(false), pressCleaves: z.boolean().default(false), setPieces: z.boolean().default(false), fieldGems: z.boolean().default(false), upgradePool: z.boolean().default(false), upgradeOrbs: z.boolean().default(false) }).optional(),
+  /** Overrides of enemies' damage for this level only (play mode's values). */
+  enemies: z.record(id, z.strictObject({ contactDamage: z.number().min(0).optional(), attackDamage: z.number().min(0).optional() })).optional(),
+  rules: z.strictObject({ oneStepPerSlot: z.boolean().default(false), accentTelegraphs: z.boolean().default(false), health: z.boolean().default(false), strides: z.boolean().default(false), pressClasses: z.boolean().default(false), selfFiring: z.boolean().default(false), gridSounds: z.boolean().default(false), pressCleaves: z.boolean().default(false), setPieces: z.boolean().default(false), fieldGems: z.boolean().default(false), upgradePool: z.boolean().default(false), upgradeOrbs: z.boolean().default(false), healthPool: z.boolean().default(false) }).optional(),
   /** Overrides merged over content/hero.yaml for this level only (checked against the hero schema). */
   hero: z.record(z.string(), z.unknown()).optional(),
   title: z.strictObject({ piece: z.string(), composer: z.string(), performer: z.string() }),

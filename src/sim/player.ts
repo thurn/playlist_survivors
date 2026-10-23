@@ -37,6 +37,8 @@ export interface Observation {
   /** Upgrade orbs waiting to be walked into, and what each offers; and, with a full experience bar glowing, the song time its level-up raises them. */
   orbs?: { x: number; y: number; item: UpgradeItem }[];
   levelUpAt?: number;
+  /** The small health pool: chickens lying in sight. */
+  chickens?: { x: number; y: number }[];
   /** Where the route schedule says the hero should be now, and the route's direction there. */
   pacePoint: { x: number; y: number; tx: number; ty: number };
   /** Distance from a point to the edge of the walkable band (negative outside). */
@@ -158,6 +160,8 @@ const VACUUM_PULL = 4;
  */
 const ORB_PULL = 6;
 const ORB_AIM = 4;
+/** The small health pool: below this share of its health the player walks to the nearest chicken in sight. */
+const CHICKEN_HEALTH = 0.6;
 /** A decision this close before a glowing bar's level-up (s) waits for its orbs: it stomps on the beat instead of striding off. */
 const LEVEL_WAIT = 0.1;
 
@@ -273,8 +277,9 @@ export class VirtualPlayer implements Player {
     if (this.next >= this.plan.length) return [];
     const d = this.plan[this.next++];
     if (d.kind === "steer") return this.steer(obs, d.beat, d.release ?? false);
-    // On a rest slot, press only to get out of a threat's way, or toward a chosen upgrade orb.
-    if (d.kind === "watch" && !this.inDanger(obs) && !obs.orbs?.length) return this.strides ? this.keepHolding(obs) : [];
+    // On a rest slot, press only to get out of a threat's way, or toward a chosen upgrade orb (or a
+    // chicken, below CHICKEN_HEALTH).
+    if (d.kind === "watch" && !this.inDanger(obs) && !obs.orbs?.length && !this.chickenTarget(obs)) return this.strides ? this.keepHolding(obs) : [];
     const keys = this.chooseKeys(obs);
     this.count++;
     const r = new Rng(this.seed, "press-keys", this.count);
@@ -381,6 +386,12 @@ export class VirtualPlayer implements Player {
     return best;
   }
 
+  /** The small health pool: below CHICKEN_HEALTH, the nearest chicken in sight. */
+  private chickenTarget(obs: Observation): { x: number; y: number } | undefined {
+    if (!obs.chickens?.length || (obs.hero.health ?? 1) >= CHICKEN_HEALTH) return undefined;
+    return obs.chickens.reduce((a, c) => (Math.hypot(c.x - obs.hero.x, c.y - obs.hero.y) < Math.hypot(a.x - obs.hero.x, a.y - obs.hero.y) ? c : a));
+  }
+
   /** Upgrade orbs: the orb the player chooses, by its fixed priority. */
   private orbTarget(obs: Observation): { x: number; y: number } | undefined {
     if (!obs.orbs?.length) return undefined;
@@ -389,7 +400,7 @@ export class VirtualPlayer implements Player {
 
   /** Free movement, gems on the field: the chosen upgrade orb, a vacuum to touch, or else the gem in reach worth most for its distance. */
   private gemTarget(obs: Observation): { x: number; y: number } | undefined {
-    const orb = this.orbTarget(obs);
+    const orb = this.orbTarget(obs) ?? this.chickenTarget(obs);
     if (orb) return orb;
     if (obs.vacuum) return obs.vacuum;
     let best: { x: number; y: number } | undefined;
@@ -606,9 +617,12 @@ export class VirtualPlayer implements Player {
       if (seek) cost += GEM_SEEK * Math.min(seek.value, GEM_SEEK_MAX) * clamp(Math.hypot(ax - seek.x, ay - seek.y) / GEM_SEEK_SCALE, 0, 3);
     }
     if (obs.vacuum) cost += VACUUM_PULL * clamp((Math.hypot(ax - obs.vacuum.x, ay - obs.vacuum.y) - 10) / 100, 0, 3);
-    // Upgrade orbs: walk into the chosen one. (Both it and a vacuum draw the step's direction too.)
-    if (orb) cost += ORB_PULL * clamp(Math.hypot(ax - orb.x, ay - orb.y) / 100, 0, 3);
-    const aim = orb ?? obs.vacuum;
+    // Upgrade orbs: walk into the chosen one; below CHICKEN_HEALTH, to the nearest chicken. (They and
+    // a vacuum draw the step's direction too.)
+    const chicken = orb ? undefined : this.chickenTarget(obs);
+    const goal = orb ?? chicken;
+    if (goal) cost += ORB_PULL * clamp(Math.hypot(ax - goal.x, ay - goal.y) / 100, 0, 3);
+    const aim = goal ?? obs.vacuum;
     if (aim) {
       const ox = aim.x - obs.hero.x;
       const oy = aim.y - obs.hero.y;

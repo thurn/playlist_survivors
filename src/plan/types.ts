@@ -76,6 +76,34 @@ export interface EnemyRecord {
 /** The sword (a swing), an automatic weapon, a cleave's shockwave band, or a finale-blast band. */
 export type HitSource = "move" | "weapon" | "wave" | "ring";
 
+/** The small health pool (play mode): a hurt (a bite, an arrow or a slam), and the world time the hero is invulnerable until after it. */
+export interface BiteRecord {
+  s: number;
+  w: number;
+  source: "bite" | "arrow" | "slam";
+  enemy: string;
+  damage: number;
+  until: number;
+}
+
+/** The small health pool: a heal (the health it gave, after the maximum) and where it came from. */
+export interface HealRecord {
+  s: number;
+  amount: number;
+  source: "chicken" | "level-up" | "max-health";
+}
+
+/** The small health pool: a chicken dropped (song and world time, place), and when it was eaten and healed. */
+export interface ChickenRecord {
+  s: number;
+  w: number;
+  x: number;
+  y: number;
+  sTaken?: number;
+  wTaken?: number;
+  sHeal?: number;
+}
+
 /** The upgrade pool (play mode): one item, a new weapon, an owned weapon's evolution, or a passive. */
 export interface UpgradeItem {
   kind: "weapon" | "evolve" | "passive";
@@ -321,6 +349,10 @@ export interface Plan {
   pickupRadius?: number[];
   /** The upgrade pool (play mode): each level-up's offers and the one taken. */
   upgrades?: UpgradeRecord[];
+  /** The small health pool (play mode): every hurt, every heal, and the chickens. */
+  bites?: BiteRecord[];
+  heals?: HealRecord[];
+  chickens?: ChickenRecord[];
   /** Press cleaves (play mode): each cleave a press on an eligible accent launched (see Cleave in src/sim/recorder.ts). */
   cleaves?: { s: number; press: number; band0: number }[];
   /** Press classes (play mode): the tier (0–3) after each change, at song times; it starts at 0. */
@@ -344,7 +376,7 @@ export interface Plan {
   /** Level-ups at their scheduled musical moments. */
   levelUpsDue?: { id: string; s: number }[];
   /** Play mode's rule changes (absent in the demo). */
-  rules?: { oneStepPerSlot: boolean; accentTelegraphs: boolean; health?: boolean; strides?: boolean; pressClasses?: boolean; selfFiring?: boolean; gridSounds?: boolean; pressCleaves?: boolean; setPieces?: boolean; fieldGems?: boolean; upgradePool?: boolean; upgradeOrbs?: boolean };
+  rules?: { oneStepPerSlot: boolean; accentTelegraphs: boolean; health?: boolean; strides?: boolean; pressClasses?: boolean; selfFiring?: boolean; gridSounds?: boolean; pressCleaves?: boolean; setPieces?: boolean; fieldGems?: boolean; upgradePool?: boolean; upgradeOrbs?: boolean; healthPool?: boolean };
   /**
    * Play mode's fixed-speed strides (absent without the rule): the walk speed (px per world
    * second), a stride's duration and hop height, the stride period without a steady beat, and the

@@ -686,6 +686,8 @@ export function soundRows(lib: ContentLibrary): Map<string, Subdivision | "kill"
     ["tier-up", "grid"],
     ["tier-down", "grid"],
     ["orb", "grid"],
+    ["hurt", "sixteenth"],
+    ["chicken", "sixteenth"],
     ["level-up", "bar"],
     ["near-miss", "beat"],
     ["gem", "sixteenth"],

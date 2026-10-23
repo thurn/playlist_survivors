@@ -15,7 +15,7 @@ import { Warp, type WarpBreak } from "../core/warp.ts";
 import { DEFAULT_PROPS, type PropInfo, type TiledMap } from "../mapgen/mapgen.ts";
 import { stampLandmark, WAVE_BANDS, type ZoneWave } from "../mapgen/openfield.ts";
 import { grooveAt } from "../plan/evaluate.ts";
-import type { CameraTrack, Chain, EffectEvent, EnemyRecord, Fate, GemEvent, HeroTrack, Hit, MapLayout, Plan, PlanInput, PlanSwing, Projectile, SlamMarker, SoundEvent, UiEvent, UpgradeRecord } from "../plan/types.ts";
+import type { CameraTrack, Chain, EffectEvent, EnemyRecord, Fate, GemEvent, HeroTrack, Hit, MapLayout, Plan, PlanInput, PlanSwing, Projectile, SlamMarker, SoundEvent, UiEvent, UpgradeRecord, BiteRecord, HealRecord, ChickenRecord } from "../plan/types.ts";
 import { beatIndexIn, type PlanIndex } from "../plan/view.ts";
 import { beatDurationAt, sectionIndexAt, type Ctx } from "../planner/context.ts";
 import { budgetSlot, chimeDegree, Emitter, lastAtOrBefore, soundSlot, VOICE_BUDGET, type EmitSink } from "../planner/emit.ts";
@@ -153,6 +153,7 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
       ...(ctx.level.rules.pressCleaves ? { cleaves: [] } : {}),
       ...(ctx.level.rules.fieldGems ? { vacuums: [], pickupRadius: ctx.lib.hero.pickupRadius ?? [40] } : {}),
       ...(ctx.level.rules.upgradePool ? { upgrades: [] } : {}),
+      ...(ctx.level.rules.healthPool ? { bites: [], heals: [], chickens: [] } : {}),
       health: this.healthSeries,
       nearMisses: [],
       threats: [],
@@ -467,6 +468,27 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
     this.add(this.plan.upgrades!, { ...u, offers: u.offers.map((o) => ({ ...o })), ...(u.orbs ? { orbs: u.orbs.map((p) => ({ ...p })) } : {}) });
     this.add(this.hud.levelUps, u.s);
     this.emitter.levelUp({ id: u.taken >= 0 ? u.offers[u.taken].id : "", s: u.s }, this.heroNow());
+  }
+
+  bite(b: BiteRecord): void {
+    this.add(this.plan.bites!, { ...b });
+    this.emitter.hurt(b);
+  }
+
+  heal(h: HealRecord): void {
+    this.add(this.plan.heals!, { ...h });
+  }
+
+  chicken(c: ChickenRecord): void {
+    this.add(this.plan.chickens!, { ...c });
+  }
+
+  chickenTaken(i: number, s: number, w: number, sHeal: number): void {
+    const c = this.plan.chickens![i];
+    this.set(c, "sTaken", s);
+    this.set(c, "wTaken", w);
+    this.set(c, "sHeal", sHeal);
+    this.emitter.chickenEaten(c);
   }
 
   upgradeTaken(i: number, k: number, s: number, w: number, sApply: number, walked: boolean): void {
@@ -936,6 +958,11 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
     part("gems", () => p.events.gems.forEach((x) => mix(x.w0, x.w1, x.s1, x.wT ?? -1, x.value, x.big ? 1 : 0)));
     part("vacuums", () => (p.vacuums ?? []).forEach((v) => mix(v.s, v.w, v.x, v.y, v.sTouch ?? -1, v.wTouch ?? -1, v.gems ?? -1)));
     part("weapons", () => p.weapons.forEach((g) => mix(g.id, g.s)));
+    part("bites and heals", () => {
+      (p.bites ?? []).forEach((b) => mix(b.s, b.w, b.source, b.enemy, b.damage, b.until));
+      (p.heals ?? []).forEach((h) => mix(h.s, h.amount, h.source));
+      (p.chickens ?? []).forEach((c) => mix(c.s, c.w, c.x, c.y, c.sTaken ?? -1, c.wTaken ?? -1, c.sHeal ?? -1));
+    });
     part("upgrades", () =>
       (p.upgrades ?? []).forEach((u) => mix(u.s, u.taken, ...u.offers.flatMap((o) => [o.kind, o.id]), u.w ?? -1, ...(u.orbs ?? []).flatMap((o) => [o.x, o.y]), u.sTaken ?? -1, u.wTaken ?? -1, u.sApply ?? -1, u.walked ? 1 : 0)),
     );

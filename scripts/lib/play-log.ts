@@ -8,7 +8,7 @@
  * rules serve as references while the groove is tuned.
  */
 import type { HeroDef } from "../../src/content/schema.ts";
-import type { ApplyLog, ClockProbe, DropLog, GemLog, HeroPath, KeyLog, SoundLog, SoundMove, UpgradeLog } from "../../src/live/log.ts";
+import type { ApplyLog, ClockProbe, DropLog, GemLog, HealthLog, HeroPath, KeyLog, SoundLog, SoundMove, UpgradeLog } from "../../src/live/log.ts";
 import type { PressTrace } from "../../src/sim/recorder.ts";
 import { classifyPress, drainPerBeat, freshPressMemo, grooveAfterChange, tierFor } from "../../src/sim/timing.ts";
 
@@ -50,6 +50,8 @@ export interface PlayLogFile {
   gems?: GemLog;
   /** The upgrade pool: each level-up's offers and the one taken. */
   upgrades?: UpgradeLog[];
+  /** The small health pool: hurts and heals. */
+  health?: HealthLog;
   keys: KeyLog[];
   applies: ApplyLog[];
   drops: DropLog[];
@@ -306,6 +308,30 @@ export function summarize(log: PlayLogFile, opts: SummaryOptions = {}): string {
     const pick = gl.pickups.filter((p) => inRange(p.s));
     say(`Gems: ${gl.collected} of ${gl.dropped} experience dropped collected (${gl.dropped ? Math.round((100 * gl.collected) / gl.dropped) : 0}%), on ${pick.length} sixteenths (most on one: ${Math.max(0, ...pick.map((p) => p.n))} gems)`);
     for (const v of gl.vacuums.filter((x) => inRange(x.s))) say(`  vacuum at ${f(v.s, 2)}: ${v.sTouch !== undefined ? `touched at ${f(v.sTouch, 2)}, ${v.gems ?? 0} gems in view flew in` : "never touched"}`);
+  }
+  // The small health pool: hurts and heals per section, and the heals by source.
+  if (log.health) {
+    const secOf = (s: number) => (log.sections ?? []).findLast((x) => s >= x.s0 - 1e-9)?.label ?? "?";
+    const by = new Map<string, { bites: number; damage: number; heal: number }>();
+    for (const b of log.health.bites.filter((x) => inRange(x.s))) {
+      const r = by.get(secOf(b.s)) ?? { bites: 0, damage: 0, heal: 0 };
+      r.bites++;
+      r.damage += b.damage;
+      by.set(secOf(b.s), r);
+    }
+    for (const h of log.health.heals.filter((x) => inRange(x.s))) {
+      const r = by.get(secOf(h.s)) ?? { bites: 0, damage: 0, heal: 0 };
+      r.heal += h.amount;
+      by.set(secOf(h.s), r);
+    }
+    const bites = log.health.bites.filter((x) => inRange(x.s));
+    say(`Health: ${bites.length} hurts for ${bites.reduce((a, b) => a + b.damage, 0)} damage; healed ${log.health.heals.filter((x) => inRange(x.s)).reduce((a, h) => a + h.amount, 0)}`);
+    // (In song order.)
+    const order = (label: string) => (log.sections ?? []).findIndex((x) => x.label === label);
+    for (const [label, r] of [...by].sort((a, b) => order(a[0]) - order(b[0]))) say(`  ${label}: ${r.bites} hurts, ${r.damage} damage, ${r.heal} healed`);
+    const src = new Map<string, number>();
+    for (const h of log.health.heals.filter((x) => inRange(x.s))) src.set(h.source, (src.get(h.source) ?? 0) + h.amount);
+    if (src.size > 0) say(`  heals by source: ${[...src].map(([k, v]) => `${k} ${v}`).join(", ")}`);
   }
   // The upgrade pool: what each level-up offered and took.
   for (const u of (log.upgrades ?? []).filter((x) => inRange(x.s))) {

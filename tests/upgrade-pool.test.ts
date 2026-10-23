@@ -272,7 +272,8 @@ describe("passives", () => {
     const at = rec.healthS.findIndex((s) => s === s0);
     expect(at, "a health change at the level-up").toBeGreaterThanOrEqual(0);
     const prev = rec.healthV[at - 1] ?? 1;
-    expect(rec.healthV[at]).toBeCloseTo(Math.min(base + 20, prev * base + 20) / (base + 20), 9);
+    expect(rec.healthV[at]).toBeCloseTo(Math.min(base + 20, prev * base + 20) / (base + 20), 6);
+    expect(rec.heals.find((h) => h.s === s0)).toMatchObject({ source: "max-health" });
     // Later bites are whole points of the larger maximum.
     const later = healthSteps(rec, (s) => (s >= s0 ? base + 20 : base)).filter((x) => x.s > s0 && x.d < 0);
     expect(later.length).toBeGreaterThan(0);

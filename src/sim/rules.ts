@@ -49,7 +49,13 @@ export interface Rules {
    * walking into one takes it, applied on the next grid time; after two bars the one ahead is taken.
    */
   upgradeOrbs: boolean;
+  /**
+   * The small health pool: a bite (any enemy at contact) leaves the hero invulnerable for the hero's
+   * invulnerableMs of world time, blocking bites, arrows and slams; no rhythm healing; orc elites
+   * drop a chicken half the time and the boss two, healing 30 on the next sixteenth once touched.
+   */
+  healthPool: boolean;
 }
 
 /** The scripted demo's rules: today's behavior. */
-export const DEMO_RULES: Readonly<Rules> = Object.freeze({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false, pressClasses: false, selfFiring: false, gridSounds: false, pressCleaves: false, setPieces: false, fieldGems: false, upgradePool: false, upgradeOrbs: false });
+export const DEMO_RULES: Readonly<Rules> = Object.freeze({ oneStepPerSlot: false, accentTelegraphs: false, health: false, strides: false, pressClasses: false, selfFiring: false, gridSounds: false, pressCleaves: false, setPieces: false, fieldGems: false, upgradePool: false, upgradeOrbs: false, healthPool: false });

@@ -78,9 +78,23 @@ export interface UpgradeLog {
   walked?: boolean;
 }
 
-/** What the log carries of a recording up to song time s: the groove and tier series, the sounds moved to a later slot, gems on the field, the level-ups' offers, and the hero's path. */
-export function recordingContext(plan: Plan, warp: Warp, s: number): { groove: { s: number[]; v: number[] }; tier?: { s: number[]; v: number[] }; soundMoves: SoundMove[]; gems?: GemLog; upgrades?: UpgradeLog[]; heroPath: HeroPath } {
+/** The small health pool (play mode): each hurt (song time, source, enemy, damage, and world seconds of invulnerability) and each heal (song time, health given, source). */
+export interface HealthLog {
+  bites: { s: number; source: string; enemy: string; damage: number; invulnerable: number }[];
+  heals: { s: number; amount: number; source: string }[];
+}
+
+/** What the log carries of a recording up to song time s: the groove and tier series, the sounds moved to a later slot, gems on the field, the level-ups' offers, hurts and heals, and the hero's path. */
+export function recordingContext(plan: Plan, warp: Warp, s: number): { groove: { s: number[]; v: number[] }; tier?: { s: number[]; v: number[] }; soundMoves: SoundMove[]; gems?: GemLog; upgrades?: UpgradeLog[]; health?: HealthLog; heroPath: HeroPath } {
   return {
+    ...(plan.bites
+      ? {
+          health: {
+            bites: plan.bites.filter((b) => b.s <= s).map((b) => ({ s: r6s(b.s), source: b.source, enemy: b.enemy, damage: b.damage, invulnerable: r6s(b.until - b.w) })),
+            heals: (plan.heals ?? []).filter((h) => h.s <= s).map((h) => ({ s: r6s(h.s), amount: h.amount, source: h.source })),
+          },
+        }
+      : {}),
     ...(plan.rules?.fieldGems ? { gems: gemLog(plan, warp.toWorld(s)) } : {}),
     ...(plan.upgrades
       ? {

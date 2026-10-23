@@ -258,6 +258,18 @@ const PROC: Record<string, [number, number, Draw]> = {
     g.fillStyle = "#ffffff";
     g.fillRect(2, 2, 1, 3);
   }],
+  // The small health pool's chicken: a roast drumstick.
+  chicken: [12, 10, (g) => {
+    g.fillStyle = "#f4ecd8";
+    g.fillRect(0, 7, 3, 2);
+    g.fillRect(1, 6, 4, 2);
+    g.fillStyle = "#b8662a";
+    g.beginPath();
+    g.ellipse(7.5, 4, 4.5, 3.5, -0.5, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = "#e09048";
+    g.fillRect(6, 2, 3, 2);
+  }],
   arrow: [16, 3, (g) => {
     g.fillStyle = "#d8c8a0";
     g.fillRect(0, 1, 13, 1);

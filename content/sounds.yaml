@@ -33,6 +33,8 @@ soundPalettes:
       tier-up: [kenney/confirmation_002]   # the groove's tier rises: a rising chime on the next grid time
       tier-down: [kenney/minimize_001]     # the tier falls: a soft falling sweep
       orb: [kenney/confirmation_004]       # an upgrade orb taken: on the next grid time, as it applies
+      hurt: [kenney/impactPunch_medium_000, kenney/impactPunch_medium_001]   # the hero hurt: on the next sixteenth
+      chicken: [rpgpack/bite-small]        # a chicken eaten: on the sixteenth it heals
 
   # The slow prelude: pitched glass and bells, transposed to notes in the section's key.
   - id: soft-chimes

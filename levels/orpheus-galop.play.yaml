@@ -10,13 +10,17 @@ world: open                 # the demo's default is corridor
 # the population curve, and set pieces (the closing rings and stampedes below) bring the rest (setPieces).
 # Gems wait where they drop, collected inside a pickup radius that grows with the tier, and a vacuum
 # follows each set piece (fieldGems).
-rules: { oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true, selfFiring: true, gridSounds: true, pressCleaves: true, setPieces: true, fieldGems: true, upgradePool: true, upgradeOrbs: true }
+rules: { oneStepPerSlot: false, accentTelegraphs: true, health: true, strides: true, pressClasses: true, selfFiring: true, gridSounds: true, pressCleaves: true, setPieces: true, fieldGems: true, upgradePool: true, upgradeOrbs: true, healthPool: true }
 hero:
   # Fixed-speed strides: 140 px/s at any tempo and press rate, faster than every enemy but bats and bees.
   walk: { speed: 140 }
   timing: { perfectMs: 45, greatMs: 90, goodMs: 140, floor: 0.1 }
   # A loosely timed press swings short: 55% of the arc's reach at the timing floor, full at Perfect.
   swings: { light: { minReach: 0.55 } }
+  # The small health pool (rules.healthPool): 100, invulnerable for 0.5 s after a bite, 20 from a level-up.
+  health: { max: 100, invulnerableMs: 500, levelUpHeal: 20 }
+# Play mode's damage: an arrow takes 15 (the boss's slam keeps its 25).
+enemies: { skeleton-archer: { attackDamage: 15 } }
 # The upgrade pool (rules.upgradePool): the run starts with the blades and lightning beside the
 # sword, and the fire trail is one of the weapon upgrades a level-up can offer.
 upgrades: { loadout: [orbiting-blades, chain-lightning], offer: [fire-trail] }

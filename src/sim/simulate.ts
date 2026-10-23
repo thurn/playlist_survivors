@@ -89,6 +89,16 @@ export const ORB_RISE = 120;
 export const ORB_SPREAD = (2 * Math.PI) / 3;
 export const ORB_TOUCH = 24;
 export const ORB_BARS = 2;
+/**
+ * The small health pool: an orc elite drops a chicken with probability CHICKEN_CHANCE and the boss
+ * CHICKEN_BOSS of them (CHICKEN_SPREAD px apart); touched within CHICKEN_TOUCH, one heals
+ * CHICKEN_HEAL on the first sixteenth at least NEVER_LATE away.
+ */
+export const CHICKEN_CHANCE = 0.5;
+export const CHICKEN_BOSS = 2;
+export const CHICKEN_SPREAD = 28;
+export const CHICKEN_TOUCH = 24;
+export const CHICKEN_HEAL = 30;
 /** Upgrade orbs: a taken orb applies on a grid time at most this far away (s), else on the next beat. */
 const ORB_GRID_WAIT = 2;
 /** Gems on the field: the virtual player sees gems this far beyond the pickup radius (px). */
@@ -279,6 +289,7 @@ type Ev =
   | { kind: "levelUp"; id: string }
   | { kind: "orbDefault"; u: number }
   | { kind: "orbApply"; item: UpgradeItem }
+  | { kind: "chickenHeal" }
   | { kind: "zoneWave"; zone: string }
   | { kind: "landmark"; id: string };
 
@@ -323,6 +334,7 @@ const ORDER: Record<Ev["kind"], number> = {
   orbDefault: 2.5,
   levelUp: 3,
   orbApply: 3.5,
+  chickenHeal: 20,
   formation: 4,
   ring: 4,
   stampede: 4,
@@ -556,6 +568,10 @@ interface SimState {
   /** Upgrade orbs waiting to be walked into: the upgrade record, its offers, where each orb is, and when the one ahead is taken; and items taken but not yet applied. */
   orbs?: { u: number; offers: UpgradeItem[]; pts: { x: number; y: number }[]; deadline: number };
   applying: UpgradeItem[];
+  /** The small health pool: world time the hero's invulnerability lasts until, and the chickens lying on the field. */
+  invulnUntil: number;
+  chickens: { i: number; x: number; y: number }[];
+  nChickens: number;
   stampedes: { fi: number; done: boolean }[];
   /** Camera punches: song time, strength, and world time once it has happened (it freezes in a hit-stop). */
   punches: Punch[];
@@ -648,6 +664,9 @@ function freshState(env: Env): SimState {
     loadout: startingLoadout(env.rules.upgradePool ? env.ctx.level.upgrades.loadout : []),
     bonus: { maxHealth: 0, pickup: 0, damage: 0, armour: 0 },
     applying: [],
+    invulnUntil: -Infinity,
+    chickens: [],
+    nChickens: 0,
     stampedes: [],
     punches,
     alive: [],
@@ -772,6 +791,7 @@ function engine(env: Env, st: SimState, io: Io) {
   const fieldGems = env.rules.fieldGems;
   const upgradePool = env.rules.upgradePool;
   const upgradeOrbs = upgradePool && env.rules.upgradeOrbs;
+  const healthPool = env.rules.health && env.rules.healthPool;
   const pressCleaves = env.rules.pressCleaves;
   const rule = strideRule(hero);
   /** How long a step (or stride) takes. */
@@ -1791,9 +1811,9 @@ function engine(env: Env, st: SimState, io: Io) {
           f.vy = f.run.vy;
         }
         const ed = Math.hypot(f.x - hp.x, f.y - hp.y);
-        if (health && f.def.contactDamage > 0 && ed <= HURTBOX_RADIUS + f.r + CONTACT_GAP + BITE_SLACK && w1 - f.biteW >= biteEvery) {
+        if (health && f.def.contactDamage > 0 && ed <= HURTBOX_RADIUS + f.r + CONTACT_GAP + BITE_SLACK && (healthPool ? st.w >= st.invulnUntil - 1e-9 : w1 - f.biteW >= biteEvery)) {
           f.biteW = w1;
-          hurt(armouredBite(f.def.contactDamage, st.bonus.armour));
+          hurt(armouredBite(f.def.contactDamage, st.bonus.armour), "bite", f.type);
         }
         continue;
       }
@@ -1847,10 +1867,11 @@ function engine(env: Env, st: SimState, io: Io) {
         f.x = hp.x + ux * minD;
         f.y = hp.y + uy * minD;
       }
-      // An enemy at contact bites, at most once per biteEveryMs of world time.
-      if (health && f.def.contactDamage > 0 && Math.max(ed, minD) <= minD + CONTACT_GAP + BITE_SLACK && w1 - f.biteW >= biteEvery) {
+      // An enemy at contact bites, at most once per biteEveryMs of world time (the small health pool:
+      // whenever the hero isn't invulnerable).
+      if (health && f.def.contactDamage > 0 && Math.max(ed, minD) <= minD + CONTACT_GAP + BITE_SLACK && (healthPool ? st.w >= st.invulnUntil - 1e-9 : w1 - f.biteW >= biteEvery)) {
         f.biteW = w1;
-        hurt(armouredBite(f.def.contactDamage, st.bonus.armour));
+        hurt(armouredBite(f.def.contactDamage, st.bonus.armour), "bite", f.type);
       }
     }
   };
@@ -1893,6 +1914,7 @@ function engine(env: Env, st: SimState, io: Io) {
       moveFoes(st.w);
       if (fieldGems) collectGems();
       if (upgradeOrbs) touchOrbs();
+      if (healthPool) touchChickens();
       st.lastFixedW = st.w;
     }
     rec().clock?.(st.s, st.w, between);
@@ -1971,6 +1993,7 @@ function engine(env: Env, st: SimState, io: Io) {
       ...setPieceView(hp),
       ...gemView(hp),
       ...(st.orbs ? { orbs: st.orbs.pts.map((p, i) => ({ x: p.x, y: p.y, item: st.orbs!.offers[i] })) } : {}),
+      ...(st.chickens.length ? { chickens: st.chickens.filter((c) => Math.hypot(c.x - hp.x, c.y - hp.y) <= VACUUM_SEEN).map((c) => ({ x: c.x, y: c.y })) } : {}),
       ...(upgradeOrbs && st.level < sch.levelUps.length && !st.overdue && st.xpNow >= levelReq() && sch.levelUps[st.level].s >= st.s ? { levelUpAt: sch.levelUps[st.level].s } : {}),
       pacePoint: { x: pp.x, y: pp.y, tx: pp.tx, ty: pp.ty },
       edgeDistance: (x, y) => world.edge(x, y),
@@ -2217,6 +2240,15 @@ function engine(env: Env, st: SimState, io: Io) {
       rec().gem({ w0: st.w, x0: fate.x, y0: fate.y, s1, w1: 0, value, big, enemy: f.id });
       st.q.push(s1, { kind: "gem", gem: st.nGems++, value });
     }
+    // The small health pool: an orc elite drops a chicken half the time (seeded by the enemy), the boss two.
+    if (healthPool && !st.blasting) {
+      const n = f.def.size === "boss" ? CHICKEN_BOSS : f.def.size === "elite" && new Rng(ctx.seed, "chicken", f.id).next() < CHICKEN_CHANCE ? 1 : 0;
+      for (let k = 0; k < n; k++) {
+        const x = fate.x + (n > 1 ? (k - (n - 1) / 2) * CHICKEN_SPREAD : 0);
+        rec().chicken({ s: st.s, w: st.w, x, y: fate.y });
+        st.chickens.push({ i: st.nChickens++, x, y: fate.y });
+      }
+    }
     if (f === st.bossFoe) {
       rec().bossDeath(st.s, h.id);
       // Slams it had marked never land.
@@ -2319,6 +2351,8 @@ function engine(env: Env, st: SimState, io: Io) {
     const owned = upgradeOrbs ? structuredClone(st.loadout) : st.loadout;
     if (upgradeOrbs) for (const item of st.applying) takeItem(owned, item);
     const offers = offersFor(ctx.seed, index, lib, ctx.level.upgrades.offer, owned);
+    // (Upgrade orbs: the downbeat heals, offers or none.)
+    if (upgradeOrbs) heal(healthPool ? hero.health.levelUpHeal : LEVEL_HEAL, "level-up");
     if (upgradeOrbs && offers.length > 0) {
       riseOrbs(index, offers);
       return;
@@ -2345,10 +2379,6 @@ function engine(env: Env, st: SimState, io: Io) {
       f.knockY = (dy / d) * (LEVEL_PULSE - d);
       f.knockT = KNOCK_TIME;
     }
-    if (env.rules.health && st.health > 0 && st.health < healthMax()) {
-      st.health = Math.min(healthMax(), st.health + LEVEL_HEAL);
-      rec().health(st.s, st.health / healthMax());
-    }
     const a0 = Math.atan2(st.heading.y, st.heading.x);
     const pts = offers.map((_, i) => {
       const a = a0 + [0, -ORB_SPREAD, ORB_SPREAD][i];
@@ -2360,6 +2390,19 @@ function engine(env: Env, st: SimState, io: Io) {
     rec().upgrade({ s: st.s, offers, taken: -1, w: st.w, orbs: pts.map((p) => ({ ...p })) });
     st.orbs = { u, offers, pts, deadline };
     st.q.push(deadline, { kind: "orbDefault", u });
+  };
+
+  /** On every fixed step: a chicken within CHICKEN_TOUCH of the hero is eaten, healing on the first sixteenth at least NEVER_LATE away. */
+  const touchChickens = () => {
+    if (st.chickens.length === 0) return;
+    const hp = heroPose(st.w);
+    st.chickens = st.chickens.filter((c) => {
+      if (Math.hypot(c.x - hp.x, c.y - hp.y) > CHICKEN_TOUCH) return true;
+      const sHeal = sixteenthAtOrAfter(st.s + NEVER_LATE);
+      rec().chickenTaken(c.i, st.s, st.w, sHeal);
+      st.q.push(sHeal, { kind: "chickenHeal" });
+      return false;
+    });
   };
 
   /** On every fixed step: an orb within ORB_TOUCH of the hero is taken (the nearest, if two are). */
@@ -2400,10 +2443,7 @@ function engine(env: Env, st: SimState, io: Io) {
     } else {
       // Max health also heals that much at once.
       const p = lib.passives.get(item.id)!;
-      if (env.rules.health && p.maxHealth > 0 && st.health > 0) {
-        st.health = Math.min(healthMax(), st.health + p.maxHealth);
-        rec().health(st.s, st.health / healthMax());
-      }
+      if (p.maxHealth > 0) heal(p.maxHealth, "max-health");
     }
   };
 
@@ -2486,11 +2526,28 @@ function engine(env: Env, st: SimState, io: Io) {
   /** Play mode's maximum health, with the max-health passives. */
   const healthMax = () => hero.health.max + st.bonus.maxHealth;
 
-  /** The hero takes damage (play mode's health); at none, the run is over and it takes no more. */
-  const hurt = (amount: number) => {
+  /**
+   * The hero takes damage (play mode's health); at none, the run is over and it takes no more. With
+   * the small health pool, nothing hurts it while it is invulnerable, and each hurt makes it so.
+   */
+  const hurt = (amount: number, source: "bite" | "arrow" | "slam", enemy: string) => {
     if (!env.rules.health || amount <= 0 || st.health <= 0) return;
+    if (healthPool) {
+      if (st.w < st.invulnUntil - 1e-9) return;
+      st.invulnUntil = st.w + hero.health.invulnerableMs / 1000;
+    }
     st.health = Math.max(0, st.health - amount);
     rec().health(st.s, st.health / healthMax());
+    if (healthPool) rec().bite({ s: st.s, w: st.w, source, enemy, damage: amount, until: st.invulnUntil });
+  };
+
+  /** The hero heals (never past its maximum), from a source the play log names. */
+  const heal = (amount: number, source: "chicken" | "level-up" | "max-health") => {
+    if (!env.rules.health || st.health <= 0 || st.health >= healthMax()) return;
+    const before = st.health;
+    st.health = Math.min(healthMax(), st.health + amount);
+    rec().health(st.s, st.health / healthMax());
+    if (healthPool) rec().heal({ s: st.s, amount: st.health - before, source });
   };
 
   /** A rated press in step movement: a clean beat (Great or better) heals, more so in a streak; anything less ends the streak. */
@@ -2498,7 +2555,8 @@ function engine(env: Env, st: SimState, io: Io) {
     const clean = rating === "perfect" || rating === "great";
     st.streak = clean ? st.streak + 1 : 0;
     const h = hero.health.heal;
-    if (!clean || !env.rules.health || st.health <= 0 || st.health >= healthMax()) return;
+    // (The small health pool has no rhythm healing.)
+    if (!clean || !env.rules.health || healthPool || st.health <= 0 || st.health >= healthMax()) return;
     st.health = Math.min(healthMax(), st.health + h.beat + (st.streak >= h.streakFrom ? h.streak : 0));
     rec().health(st.s, st.health / healthMax());
   };
@@ -2527,7 +2585,7 @@ function engine(env: Env, st: SimState, io: Io) {
       const speed = len / Math.max(1e-3, st.w - a.wRelease);
       if (outcome === "touch") {
         // It shatters on the hero (and hurts, when the hero has health).
-        hurt(a.damage);
+        hurt(a.damage, "arrow", "skeleton-archer");
         rec().arrowEnd(a.index, { wArrive, outcome, x1: a.x0 + a.ux * t, y1: a.y0 + a.uy * t, w1: a.wRelease + t / speed });
       } else {
         rec().arrowEnd(a.index, { wArrive, outcome, x1: a.ax + a.ux * ARROW_OVERSHOOT, y1: a.ay + a.uy * ARROW_OVERSHOOT, w1: st.w + ARROW_OVERSHOOT / speed });
@@ -2589,7 +2647,7 @@ function engine(env: Env, st: SimState, io: Io) {
     rec().slam({ sMark: m.sMark, wMark: m.wMark, sLand: st.s, wLand: st.w, x: m.x, y: m.y, radius: SLAM_RADIUS, outcome });
     rec().attack(boss.id, { w0: Math.max(m.wMark, st.w - 0.6), w: st.w, kind: "slam", dir: Math.atan2(m.y - posY(boss, st.w), m.x - posX(boss, st.w)) });
     rec().threat({ s: st.s, w: st.w, kind: "slam", outcome, x: hp.x, y: hp.y });
-    if (outcome === "touch") hurt(boss.def.attackDamage);
+    if (outcome === "touch") hurt(boss.def.attackDamage, "slam", boss.type);
     if (outcome === "near-miss") nearMiss();
   };
 
@@ -2978,6 +3036,9 @@ function engine(env: Env, st: SimState, io: Io) {
           break;
         case "orbDefault":
           if (st.orbs?.u === ev.u) takeOrb(0, false);
+          break;
+        case "chickenHeal":
+          heal(CHICKEN_HEAL, "chicken");
           break;
         case "orbApply":
           st.applying.splice(st.applying.findIndex((x) => x.kind === ev.item.kind && x.id === ev.item.id), 1);

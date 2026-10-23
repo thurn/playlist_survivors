@@ -20,6 +20,8 @@ import { SWORD_TINTS } from "./tier-look.ts";
 const ORB_RISE_W = 0.3;
 const ORB_TAKE_W = 0.25;
 const ORB_SINK_W = 0.4;
+/** The small health pool: an invulnerable hero blinks off and on this often (world seconds each). */
+const BLINK_W = 0.06;
 
 /** A tier-3 swing's spin: the facings it turns through, and how long after the impact it ends (song seconds). */
 const SPIN = [2, 1, 0, 3];
@@ -287,7 +289,10 @@ export interface Frame {
   sectionIndex: number;
   energy: number;
   camera: { x: number; y: number; zoom: number; shakeX: number; shakeY: number };
-  hero: { x: number; y: number; z: number; facing: number; anim: string; frame: number; afterimages: { x: number; y: number; facing: number; anim: string; frame: number; alpha: number }[]; hurt: number };
+  /** (The small health pool: `blink` while the hero is invulnerable after a hurt, its sprite on or off.) */
+  hero: { x: number; y: number; z: number; facing: number; anim: string; frame: number; afterimages: { x: number; y: number; facing: number; anim: string; frame: number; alpha: number }[]; hurt: number; blink?: boolean };
+  /** The small health pool: chickens lying on the field. */
+  chickens?: { x: number; y: number }[];
   /**
    * Play mode's tier now (0–3; absent in the demo): the weapons take its colours, and from tier 1 the
    * hero has a faint aura, pulsing with the beat.
@@ -726,7 +731,8 @@ export class Evaluator {
       sectionIndex: si,
       energy,
       camera: { x: cam.x, y: cam.y, zoom: cam.zoom, shakeX, shakeY },
-      hero: { x: h.x, y: h.y, z: h.z, facing: this.spinFacing(s, h.facing), anim: h.anim, frame: h.frame, afterimages: after, hurt: hurtAt(plan.health, s) },
+      hero: { x: h.x, y: h.y, z: h.z, facing: this.spinFacing(s, h.facing), anim: h.anim, frame: h.frame, afterimages: after, hurt: hurtAt(plan.health, s), ...(plan.bites ? { blink: this.blinkAt(w) } : {}) },
+      ...(plan.chickens ? { chickens: plan.chickens.filter((c) => w >= c.w && (c.wTaken === undefined || w < c.wTaken)).map((c) => ({ x: c.x, y: c.y })) } : {}),
       ...(tier !== undefined ? { tier } : {}),
       ...(plan.pickupRadius ? this.gemField(s, w, tier ?? 0) : {}),
       ...(plan.rules?.upgradeOrbs ? { orbs: this.orbsAt(w, h) } : {}),
@@ -1084,6 +1090,12 @@ export class Evaluator {
     return out;
   }
 
+  /** The small health pool: whether the hero's sprite is hidden at world time w, blinking every BLINK_W while it is invulnerable. */
+  private blinkAt(w: number): boolean {
+    const b = this.plan.bites!.findLast((x) => x.w <= w + 1e-9);
+    return b !== undefined && w < b.until && Math.floor((w - b.w) / BLINK_W) % 2 === 1;
+  }
+
   /** The upgrade pool: what the hero has at song time s (its passives and evolutions; plan.weapons has its weapons). */
   private loadoutAt(s: number): Loadout {
     return loadoutAt([], this.plan.upgrades ?? [], s);
@@ -1220,7 +1232,8 @@ export class Evaluator {
     const health = healthAt(plan.health, s);
     const hurt = hurtAt(plan.health, s);
     const heal = healAt(plan.health, s);
-    const streakHud = plan.rules?.health ? { n: streak, healing: streak >= this.lib.hero.health.heal.streakFrom } : undefined;
+    // (The small health pool has no rhythm healing: no streak.)
+    const streakHud = plan.rules?.health && !plan.rules.healthPool ? { n: streak, healing: streak >= this.lib.hero.health.heal.streakFrom } : undefined;
     let tier: HudState["tier"];
     if (plan.tier) {
       const k = countUpTo(plan.tier.s, s) - 1;
