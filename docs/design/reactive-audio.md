@@ -857,8 +857,9 @@ person:
 
 ## Implementation Plan
 
-Tracked by epic `EPIC-ID` (filled in at filing). Each bead delivers through
-its own Tollgate worktree and keeps `scripts/ci` green.
+Tracked by epic `hv-s4pt`, one child bead per step below (`hv-s4pt.1` to
+`hv-s4pt.5`). Each bead delivers through its own Tollgate worktree and keeps
+`scripts/ci` green.
 
 1. **Belief stream and tracks** (Python):
    - the `stream` and `synth` commands (including `causality-mix`);
