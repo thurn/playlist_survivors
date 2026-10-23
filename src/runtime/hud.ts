@@ -10,7 +10,7 @@ import type { Frame, KeyLight, KeyName } from "../plan/evaluate.ts";
 import type { Plan } from "../plan/types.ts";
 import { PixelText, textWidth } from "./font.ts";
 import { endCardGrade, endCardLines, RATING_COLORS, TIER_COLORS, tierLabel } from "./hud-lines.ts";
-import { OVERHEAD_SCALE, overheadState, type OverheadState } from "./overhead.ts";
+import { OVERHEAD_BAR_W, OVERHEAD_SCALE, overheadState, type OverheadState } from "./overhead.ts";
 /** Telegraphs: the cleaves' accents and the beats to press for them. */
 const TELEGRAPH = 0xffc040;
 const PLAIN = 0x8890a8;
@@ -417,9 +417,9 @@ export class Hud {
   }
 
   /**
-   * The overhead display: life to the left of the gem, draining toward it, and groove to the right,
-   * growing from it. With a steady beat a ring closes on the gem over each beat (gold before the
-   * beat to press for a cleave, pale on a downbeat) and the gem strikes it with a burst; in free
+   * The overhead display: life over groove, two bars stacked, with the gem over their middle. With
+   * a steady beat a ring closes on the gem over each beat (gold before the beat to press for a
+   * cleave, pale on a downbeat) and the gem strikes it with a burst; in free
    * movement the gem breathes with the bar and two sparks orbit it, a turn a bar.
    */
   private overhead(g: Graphics, o: OverheadState, hudUnit: number, metronome: boolean): void {
@@ -429,22 +429,21 @@ export class Hud {
     const u = OVERHEAD_SCALE * hudUnit;
     const tierColor = TIER_COLORS[Math.min(TIER_COLORS.length - 1, o.tier)];
     const line = Math.max(1, u);
-    const gap = 8 * u;
-    const len = 26 * u;
+    const half = OVERHEAD_BAR_W * u;
     const h = 4 * u;
+    const lifeY = y - h - u;
+    const grooveY = y + u;
 
-    // The wings: a dark trough each, filled from the gem outward.
-    const trough = (x0: number, w: number) => g.roundRect(x0 - line, y - h / 2 - line, w + 2 * line, h + 2 * line, 2 * u).fill({ color: 0x05040a, alpha: 0.65 * a });
-    trough(x - gap - len, len);
-    trough(x + gap, len);
+    // The bars, stacked: a dark trough behind both, life on top and groove under it, filled from the left.
+    g.roundRect(x - half - line, lifeY - line, 2 * (half + line), 2 * h + 2 * u + 2 * line, 2 * u).fill({ color: 0x05040a, alpha: 0.65 * a });
     // Life: white on a bite, green on a heal, and when low it throbs on the beat (or the breath).
     const throb = o.danger * (o.step * o.hit + (1 - o.step) * o.breathe);
     const lifeColor = o.hurt > 0.5 ? 0xffffff : o.heal > 0.3 ? 0x60ff90 : throb > 0.5 ? 0xff9098 : 0xff4050;
-    if (o.health > 0) g.roundRect(x - gap - len * o.health, y - h / 2, len * o.health, h, 1.5 * u).fill({ color: lifeColor, alpha: a });
-    // Groove, in the tier's colour with the tier marks; a tier-up flashes the wing.
-    if (o.tierFlash > 0) g.roundRect(x + gap - 2 * u, y - h / 2 - 2 * u, len + 4 * u, h + 4 * u, 3 * u).fill({ color: tierColor, alpha: 0.5 * o.tierFlash * a });
-    if (o.groove > 0) g.roundRect(x + gap, y - h / 2, len * o.groove, h, 1.5 * u).fill({ color: tierColor, alpha: a });
-    for (const m of o.marks) g.rect(x + gap + len * m - line / 2, y - h / 2 - u, line, h + 2 * u).fill({ color: 0xffffff, alpha: 0.6 * a });
+    if (o.health > 0) g.roundRect(x - half, lifeY, 2 * half * o.health, h, 1.5 * u).fill({ color: lifeColor, alpha: a });
+    // Groove, in the tier's colour with the tier marks; a tier-up flashes the bar.
+    if (o.tierFlash > 0) g.roundRect(x - half - 2 * u, grooveY - 2 * u, 2 * half + 4 * u, h + 4 * u, 3 * u).fill({ color: tierColor, alpha: 0.5 * o.tierFlash * a });
+    if (o.groove > 0) g.roundRect(x - half, grooveY, 2 * half * o.groove, h, 1.5 * u).fill({ color: tierColor, alpha: a });
+    for (const m of o.marks) g.rect(x - half + 2 * half * m - line / 2, grooveY - u, line, h + 2 * u).fill({ color: 0xffffff, alpha: 0.6 * a });
 
     const diamond = (r: number, rx = r) => [x, y - r, x + rx, y, x, y + r, x - rx, y];
     // The beat: the cleave's glow, the closing ring, the gem and its burst.

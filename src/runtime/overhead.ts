@@ -1,8 +1,8 @@
 /**
- * The display floating over the hero's head: life and groove as two wings
- * around a gem that keeps the beat (a ring closes on each beat and the gem
- * strikes it), or breathes with the bar with sparks orbiting it in free
- * movement. What it shows, apart from how the HUD draws it, so tests read it
+ * The display floating over the hero's head: life over groove, two bars
+ * stacked, with a gem over their middle that keeps the beat (a ring closes on
+ * each beat and the gem strikes it), or breathes with the bar with sparks
+ * orbiting it in free movement. What it shows, apart from how the HUD draws it, so tests read it
  * without a renderer.
  */
 import { beatHit, beatSwell, clamp, smoothstep } from "../core/shaping.ts";
@@ -15,8 +15,10 @@ export const HEAD_HEIGHT = 50;
 export const OVERHEAD_SCALE = 1.3;
 /** The display's centre over the head (HUD units). */
 export const OVERHEAD_GAP = 16;
+/** Half the bars' width (before the scale). */
+export const OVERHEAD_BAR_W = 26;
 /** Half the display's width (HUD units): it stays this far inside the view's edges. */
-export const OVERHEAD_HALF_W = 36 * OVERHEAD_SCALE;
+export const OVERHEAD_HALF_W = (OVERHEAD_BAR_W + 4) * OVERHEAD_SCALE;
 
 export interface OverheadState {
   /** The screen point the display centres on. */
