@@ -3,6 +3,9 @@
  * targets are printed beside their values, for each stage's bead to record.
  *
  * Gates (stage 1):
+ * - playable: the Galop through the live runner for 10 s with synthetic key presses (after a
+ *   hand-over at 50 s, the prelude being unjudged), with no errors and with strikes, sounds and
+ *   judged presses;
  * - fresh streams: every shipped stream's toolVersion is the stream tool's, and each next committed
  *   beat is known by the time the beat before it arrives;
  * - stream quality: on house-128 and dnb-174, after the first 4 s, 95% of committed beats within
@@ -16,7 +19,9 @@
  * - sounds: every percussive gameplay sound of causality-mix's and the Galop's live recordings lies
  *   on a committed-beat slot of its subdivision within 1 ms, none on a beat committed below the gate
  *   (the exempt sounds apart);
- * - every shipped track simulates end to end with reactive-moderate (damage off).
+ * - every shipped track simulates end to end with reactive-moderate and reactive-human at the
+ *   level's own difficulty, their runs pass play mode's plan checks that apply to a reactive plan,
+ *   and reactive-moderate lives to the end.
  * Targets (stage 1): committed-beat accuracy on every track, and the Galop's pulsed sections by section.
  *
  *   npm run check:reactive [-- --full]
@@ -28,8 +33,9 @@ import { join } from "node:path";
 import type { CheckResult } from "../src/planner/checks.ts";
 import type { PlannerInput } from "../src/planner/context.ts";
 import { planWithSim, prepare } from "../src/planner/plan.ts";
-import { belowGateShare, beatsWithin, checkDeterminism, checkReactiveCausality, checkReactiveSounds, liveRun, type CausalityCase } from "../src/planner/reactive-checks.ts";
+import { belowGateShare, beatsWithin, checkDeterminism, checkReactiveCausality, checkReactiveSounds, liveRun, smokeTest, type CausalityCase } from "../src/planner/reactive-checks.ts";
 import { reactivePlayerFor } from "../src/reactive/players.ts";
+import { checkReactivePlan } from "../src/reactive/plan-checks.ts";
 import type { ReactiveStream, Reference, StreamFile } from "../src/reactive/stream.ts";
 import type { SkillProfileName } from "../src/content/schema.ts";
 import { ROOT } from "./lib/files.ts";
@@ -45,6 +51,8 @@ const pct = (x: number) => `${(100 * x).toFixed(1)}%`;
 const CHECKS = { noHeroDamage: true } as const;
 const CHECK_LEVEL = "levels/reactive-check.yaml";
 const PLAYERS: SkillProfileName[] = ["reactive-moderate", "mash4"];
+/** The smoke test hands over to its synthetic keys here: the Galop's opening, where the beat is clear. */
+const SMOKE_FROM_S = 50;
 
 const files = new Map<string, StreamFile>();
 const file = (id: string) => {
@@ -154,6 +162,9 @@ const causalityCase = (id: string, level: string | undefined, cuts?: number[]): 
 {
   const galop = reactiveInput(file("orpheus-galop"), { checks: CHECKS });
   results.push(checkDeterminism(galop.input, () => playerOn(galop.reference!, "reactive-moderate")(galop.input), props));
+  // Playable: the Galop through the live runner, handed over at the galop's opening (the prelude is unjudged).
+  const play = reactiveInput(file("orpheus-galop"));
+  results.push(smokeTest(play.input, props, (ctx) => reactivePlayerFor(ctx, play.reference!, "reactive-moderate"), SMOKE_FROM_S));
   const soundFailures: CheckResult[] = [];
   for (const [id, level] of [["causality-mix", CHECK_LEVEL], ["orpheus-galop", undefined]] as const) {
     const run = reactiveInput(file(id), { level, checks: CHECKS });
@@ -162,21 +173,35 @@ const causalityCase = (id: string, level: string | undefined, cuts?: number[]): 
     soundFailures.push({ ...r, name: `${r.name} (${id})` });
   }
   results.push(...soundFailures);
+  // Every shipped track end to end as it plays: the level's own difficulty (damage on), the honest
+  // players' runs (as ?player= plans them) passing play mode's plan checks that apply, and
+  // reactive-moderate living to the end.
   const failures: string[] = [];
-  lines.push("every shipped track end to end, reactive-moderate, damage off:");
+  const planFailures: string[] = [];
+  const survival: string[] = [];
+  lines.push("every shipped track end to end (damage on):");
   for (const id of tracks) {
-    const run = reactiveInput(file(id), { checks: CHECKS });
-    try {
-      const { plan } = planWithSim(run.input, { props, player: playerOn(run.reference!, "reactive-moderate")(run.input) });
-      const presses = plan.inputs.filter((i) => i.kind === "press");
-      const unjudged = presses.filter((i) => i.unjudged).length;
-      lines.push(`  ${id.padEnd(22)} ${plan.hud.kills.length} kills, ${presses.length} presses (${unjudged} unjudged), average groove ${plan.stats.averageGroove?.toFixed?.(2) ?? "-"}, ${plan.upgrades.length} level-ups, ${plan.open.waves.length} zone waves`);
-      if (plan.inputs.length === 0 || plan.events.sounds.length === 0) failures.push(`${id}: no presses or no sounds`);
-    } catch (e) {
-      failures.push(`${id}: ${e instanceof Error ? e.message : String(e)}`);
+    const cells: string[] = [];
+    for (const name of ["reactive-moderate", "reactive-human"] as const) {
+      const run = reactiveInput(file(id));
+      try {
+        const { plan } = planWithSim(run.input, { props, player: playerOn(run.reference!, name)(run.input) });
+        const presses = plan.inputs.filter((i) => i.kind === "press");
+        const unjudged = presses.filter((i) => i.unjudged).length;
+        const health = plan.stats.deathS === undefined ? `${Math.round(plan.stats.minHealth * 100)}% lowest health` : `fell at ${plan.stats.deathS.toFixed(0)} s`;
+        cells.push(`${name}: ${plan.hud.kills.length} kills, ${presses.length} presses (${unjudged} unjudged), groove ${plan.stats.averageGroove.toFixed(2)}, ${health}`);
+        if (plan.inputs.length === 0 || plan.events.sounds.length === 0) failures.push(`${id}, ${name}: no presses or no sounds`);
+        for (const c of checkReactivePlan(plan, run.input.content)) for (const f of c.failures.slice(0, 2)) planFailures.push(`${id}, ${name}: ${c.name}: ${f}`);
+        if (name === "reactive-moderate" && plan.stats.deathS !== undefined) survival.push(`${id}: reactive-moderate fell at ${plan.stats.deathS.toFixed(1)} s`);
+      } catch (e) {
+        failures.push(`${id}, ${name}: ${e instanceof Error ? e.message : String(e)}`);
+      }
     }
+    lines.push(`  ${id.padEnd(22)} ${cells.join(" | ")}`);
   }
-  results.push({ name: "every shipped track simulates end to end", failures, checked: tracks.length });
+  results.push({ name: "every shipped track simulates end to end", failures, checked: 2 * tracks.length });
+  results.push({ name: "the honest players' runs pass the plan checks", failures: planFailures, checked: 2 * tracks.length });
+  results.push({ name: "reactive-moderate lives to the end of every shipped track", failures: survival, checked: tracks.length });
 }
 
 for (const l of lines) console.log(l);

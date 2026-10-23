@@ -23,6 +23,7 @@ import { sectionIndexAt, type Ctx } from "./context.ts";
 import { cameraAt, VIEW_W } from "./camera.ts";
 import { resolveRef } from "./musical.ts";
 import { beatIndexAtOrBefore } from "../reactive/stream.ts";
+import { REACTIVE_END_DELAY, REACTIVE_TITLE } from "../reactive/grade.ts";
 
 export const VOICE_BUDGET = 4;
 
@@ -389,6 +390,8 @@ export class Emitter {
   /** Banners and the title card: song-owned, known before play starts. */
   scriptUi(): void {
     const ctx = this.ctx;
+    // Reactive mode: the track's title card (its title is the level's, from the track index).
+    if (ctx.reactive) this.sink.ui({ kind: "title", s: REACTIVE_TITLE.s, until: REACTIVE_TITLE.until });
     for (const sec of ctx.sections) if (sec.level.banner) this.sink.ui({ kind: "banner", s: sec.s0, text: sec.level.banner, dur: 2.6 });
     for (const e of ctx.events) {
       if (e.ev.banner) this.sink.ui({ kind: "banner", s: e.s, text: e.ev.banner, dur: 2.6 });
@@ -595,6 +598,8 @@ export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam:
   const arrived = gems.filter((g) => Number.isFinite(g.s1) && g.w1 > 0).map((g) => g.s1);
   const finalArrival = arrived.length ? Math.max(...arrived) : ctx.duration;
   if (sim.blastS !== undefined) sink.ui({ kind: "end", s: finalArrival + 1.6 });
+  // Reactive mode: the run ends when the audio does.
+  else if (ctx.reactive) sink.ui({ kind: "end", s: ctx.duration + REACTIVE_END_DELAY });
   const xpTimes = sim.xp.map((x) => x.s);
   const xpFill = sim.xp.map((x) => x.fill);
 

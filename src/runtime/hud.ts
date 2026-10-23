@@ -77,9 +77,15 @@ export class Hud {
     push("CREDITS", 0xffe080, 2);
     push("");
     push("MUSIC", 0xa0d0ff);
-    push(`${r.composer} — ${r.title}`);
-    push(`${r.performer}`);
-    push(`${r.licence}`, 0xb0b0b0);
+    if (plan.beatsKnownAt) {
+      // Reactive mode: the track played, from its index entry (the credits file is the Galop's recording).
+      const t = plan.title;
+      push(t.composer ? `${t.composer} — ${t.piece}` : t.piece);
+    } else {
+      push(`${r.composer} — ${r.title}`);
+      push(`${r.performer}`);
+      push(`${r.licence}`, 0xb0b0b0);
+    }
     push("");
     push("ART AND SOUND", 0xa0d0ff);
     for (const e of credits.entries) {

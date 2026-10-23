@@ -31,7 +31,8 @@
     "qa": "tsx scripts/qa.ts",
     "log:play": "tsx scripts/play-log.ts",
     "reactive:add": "tsx scripts/reactive-add.ts",
-    "reactive:streams": "tsx scripts/reactive-streams.ts"
+    "reactive:streams": "tsx scripts/reactive-streams.ts",
+    "reactive:parity": "tsx scripts/reactive-parity.ts"
   },
   "dependencies": {
     "pixi.js": "^8.22.0",

@@ -6,7 +6,8 @@
 import type { PropInfo } from "../mapgen/mapgen.ts";
 import type { Ctx, PlannerInput } from "../planner/context.ts";
 import { playerFor, prepare } from "../planner/plan.ts";
-import type { KeyEvent } from "../sim/player.ts";
+import type { KeyEvent, Player } from "../sim/player.ts";
+import type { Schedule } from "../sim/schedule.ts";
 import { Sim, worldFor } from "../sim/simulate.ts";
 import { LiveRecording } from "./recording.ts";
 import { LiveRunner } from "./runner.ts";
@@ -25,13 +26,21 @@ export interface LiveOptions {
   startS?: number;
   /** Key events known in advance (a replay): applied at their times. */
   keys?: readonly KeyEvent[];
+  /** The virtual player before the hand-over (default: the level's; reactive mode's needs the track's reference). */
+  bot?: BotFor;
 }
 
-/** A live simulation and its recording, before play starts. With `bot`, the level's virtual player drives it until the hand-over. */
-export function liveSim(input: PlannerInput, props: Record<string, PropInfo> | undefined, bot: boolean): { ctx: Ctx; recording: LiveRecording; sim: Sim } {
+/** The virtual player for a session's level. */
+export type BotFor = (ctx: Ctx, sch: Schedule) => Player;
+
+/**
+ * A live simulation and its recording, before play starts. With `bot`, a virtual player drives it
+ * until the hand-over: the level's, or `botFor`'s.
+ */
+export function liveSim(input: PlannerInput, props: Record<string, PropInfo> | undefined, bot: boolean, botFor?: BotFor): { ctx: Ctx; recording: LiveRecording; sim: Sim } {
   const { ctx, sch, map } = prepare(input);
   const recording = new LiveRecording(ctx, sch, map, ctx.lib, "player", props);
-  const sim = new Sim(ctx, sch, worldFor(), recording, bot ? { player: playerFor(ctx, sch, ctx.level.player) } : {});
+  const sim = new Sim(ctx, sch, worldFor(), recording, bot ? { player: botFor ? botFor(ctx, sch) : playerFor(ctx, sch, ctx.level.player) } : {});
   return { ctx, recording, sim };
 }
 
@@ -44,7 +53,7 @@ export function handOver(sim: Sim, recording: LiveRecording): void {
 
 export function liveSession(input: PlannerInput, opts: LiveOptions = {}): LiveSession {
   const startS = Math.max(0, opts.startS ?? 0);
-  const { ctx, recording, sim } = liveSim(input, opts.props, startS > 0);
+  const { ctx, recording, sim } = liveSim(input, opts.props, startS > 0, opts.bot);
   if (startS > 0) {
     sim.advanceTo(startS);
     handOver(sim, recording);

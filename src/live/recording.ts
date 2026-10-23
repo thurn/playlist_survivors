@@ -20,6 +20,7 @@ import { beatIndexIn, type PlanIndex } from "../plan/view.ts";
 import { beatDurationAt, sectionIndexAt, type Ctx } from "../planner/context.ts";
 import { budgetSlot, chimeDegree, Emitter, lastAtOrBefore, soundSlot, VOICE_BUDGET, type EmitSink } from "../planner/emit.ts";
 import { ACTIVE_BUCKET, DEATH_ANIM, planHeader, zoneWaveEnd } from "../planner/plan.ts";
+import { judgedAverageGroove, REACTIVE_END_DELAY } from "../reactive/grade.ts";
 import type { ArrowRecord, Attack, BossInfo, Cleave, Dance, FormationRecord, GemRecord, Landing, LandmarkRecord, PressTrace, Recorder, SlamRecord, Threat, VacuumRecord, ZoneWaveRecord } from "../sim/recorder.ts";
 import type { Schedule } from "../sim/schedule.ts";
 import { ENEMY_RATE, HERO_ANIMS, HERO_RATE, SLAM_RADIUS } from "../sim/simulate.ts";
@@ -111,6 +112,8 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
   private readonly caught = new Set<number>();
   private accentIdx = 0;
   private blastSeen?: number;
+  /** Reactive mode: the audio has ended (the end card is due). */
+  private reactiveEnded = false;
   private readonly propsInfo: Record<string, PropInfo>;
 
   constructor(
@@ -718,6 +721,15 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
     });
     // Emission only at the simulation's own stops: a live frame between them must change nothing.
     if (between) return;
+    // Reactive mode: the run ends when the audio does; the end card grades the groove over judged time.
+    if (this.ctx.reactive && !this.reactiveEnded && s >= this.ctx.duration) {
+      this.reactiveEnded = true;
+      this.undo(() => {
+        this.reactiveEnded = false;
+      });
+      this.set(this.plan.stats, "averageGroove", judgedAverageGroove(this.grooveSeries, this.ctx.reactive, this.playerFrom, this.ctx.duration));
+      this.ui({ kind: "end", s: this.ctx.duration + REACTIVE_END_DELAY });
+    }
     // Song-owned flashes on strong accents, as the music passes them.
     const accents = this.ctx.song.accents;
     if (this.accentIdx < accents.length && accents[this.accentIdx].time <= s) {

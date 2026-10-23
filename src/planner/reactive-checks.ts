@@ -13,7 +13,8 @@ import type { PropInfo } from "../mapgen/mapgen.ts";
 import { Rng } from "../core/rng.ts";
 import { Warp } from "../core/warp.ts";
 import { LiveRecording } from "../live/recording.ts";
-import { SPECULATE_S } from "../live/runner.ts";
+import { LiveRunner, SPECULATE_S } from "../live/runner.ts";
+import { handOver, liveSim, type BotFor } from "../live/session.ts";
 import { Evaluator } from "../plan/evaluate.ts";
 import type { Plan } from "../plan/types.ts";
 import type { StreamBeat, StreamOnset, ReactiveStream, Reference } from "../reactive/stream.ts";
@@ -403,4 +404,47 @@ export function checkReactiveSounds(plan: Plan, stream: ReactiveStream, lib: Pla
     if (!GATE_EXEMPT_SOUNDS.has(snd.key) && (j < 0 || stream.beats[j].evidence < stream.params.gate)) failures.push(`${snd.key} sound at s=${snd.s.toFixed(3)} plays on a beat committed below the gate`);
   }
   return { name: "sounds on committed beats", failures: failures.slice(0, 20).concat(failures.length > 20 ? [`… and ${failures.length - 20} more`] : []), checked };
+}
+
+/**
+ * The headless smoke test: a reactive session through the live runner, as the browser plays it.
+ * The level's virtual player fast-forwards to `fromS` (as `?start=` does) and hands over; then 10 s
+ * of song time run a frame at a time with synthetic key presses on the committed beats. No errors,
+ * and strikes, sounds and judged presses come out.
+ */
+export function smokeTest(input: PlannerInput, props: Record<string, PropInfo> | undefined, botFor: BotFor, fromS: number, seconds = 10): CheckResult {
+  const failures: string[] = [];
+  try {
+    const { recording, sim } = liveSim(input, props, fromS > 0, botFor);
+    sim.advanceTo(fromS);
+    handOver(sim, recording);
+    const runner = new LiveRunner(sim, recording);
+    const beats = (input.reactive?.beats ?? []).map((b) => b.t).filter((t) => t > fromS + 0.5 && t < fromS + seconds - 0.5);
+    const keys: KeyEvent[] = beats.flatMap((t, i) => {
+      const key = (["right", "down", "left", "up"] as const)[i % 4];
+      return [
+        { s: t + 0.01, kind: "press" as const, key, id: 2 * i },
+        { s: t + 0.09, kind: "release" as const, key, id: 2 * i + 1 },
+      ];
+    });
+    for (let k = 1; k * (1 / 60) <= seconds; k++) {
+      const now = fromS + k / 60;
+      // Keys arrive at the frame after their time, as the keyboard delivers them.
+      const due = keys.filter((e) => e.s <= now - 1 / 60 && e.s > now - 2 / 60);
+      runner.frame(now, due);
+      recording.refresh();
+    }
+    const plan = recording.plan;
+    const inWindow = <T extends { s: number }>(l: readonly T[]) => l.filter((x) => x.s > fromS && x.s < fromS + seconds);
+    const strikes = inWindow(plan.swings).length;
+    const sounds = inWindow(plan.events.sounds).length;
+    const judged = inWindow(plan.inputs).filter((i) => i.kind === "press" && !i.unjudged && i.class !== undefined).length;
+    if (strikes === 0) failures.push("no strikes");
+    if (sounds === 0) failures.push("no sounds");
+    if (judged === 0) failures.push(`no judged presses (of ${inWindow(plan.inputs).filter((i) => i.kind === "press").length})`);
+    if (failures.length === 0 && runner.applied.length < keys.length) failures.push(`${runner.applied.length} of ${keys.length} key events applied`);
+  } catch (e) {
+    failures.push(`error: ${e instanceof Error ? (e.stack ?? e.message) : String(e)}`);
+  }
+  return { name: "smoke test (live runner)", failures, checked: 1 };
 }

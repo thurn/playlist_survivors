@@ -16,7 +16,7 @@ import { inputOffsetFor, KeyboardInput, keyOf, loadInputOffset } from "../live/i
 import { PlayLog, recordingContext } from "../live/log.ts";
 import type { LiveRecording } from "../live/recording.ts";
 import { LiveRunner } from "../live/runner.ts";
-import { handOver, liveSim } from "../live/session.ts";
+import { handOver, liveSim, type BotFor } from "../live/session.ts";
 import type { PropInfo } from "../mapgen/mapgen.ts";
 import { Evaluator, type Frame } from "../plan/evaluate.ts";
 import { gradeFor, gradeRank, type Grade } from "../plan/grade.ts";
@@ -47,6 +47,8 @@ export interface LiveEnv {
   ready: () => void;
   /** The title screen's choice already unlocked audio: no "Click to begin". */
   begun?: boolean;
+  /** Reactive mode: the track's best-grade key, and the virtual player before a mid-song hand-over. */
+  reactive?: { gradeKey: string; botFor?: BotFor };
 }
 
 const yieldToUi = () => new Promise((r) => setTimeout(r, 0));
@@ -70,7 +72,7 @@ interface Stage {
 
 /** A fresh live session: a mid-song start fast-forwards with the level's virtual player, then hands over. */
 async function newSession(env: LiveEnv, startS: number, log: PlayLog, onProgress?: (f: number) => void): Promise<{ recording: LiveRecording; runner: LiveRunner }> {
-  const { recording, sim } = liveSim(env.input, env.props, startS > 0);
+  const { recording, sim } = liveSim(env.input, env.props, startS > 0, env.reactive?.botFor);
   for (let t = 0; t < startS; ) {
     t = Math.min(startS, t + 5);
     sim.advanceTo(t);
@@ -89,8 +91,8 @@ async function newSession(env: LiveEnv, startS: number, log: PlayLog, onProgress
  * Watch my run: the recorded key events replayed through the engine in batch mode (the virtual
  * player's part again first, after a mid-song start). The replay equals the live run.
  */
-export function replay(input: PlannerInput, props: Record<string, PropInfo> | undefined, startS: number, keys: readonly KeyEvent[], untilS?: number): LiveRecording {
-  const { recording, sim } = liveSim(input, props, startS > 0);
+export function replay(input: PlannerInput, props: Record<string, PropInfo> | undefined, startS: number, keys: readonly KeyEvent[], untilS?: number, botFor?: BotFor): LiveRecording {
+  const { recording, sim } = liveSim(input, props, startS > 0, botFor);
   if (startS > 0) {
     sim.advanceTo(startS);
     handOver(sim, recording);
@@ -105,7 +107,8 @@ export async function runLive(env: LiveEnv): Promise<void> {
   const { app, assets, input, audio, overlay, progress, hook, params } = env;
   const startS = params.bench ? benchFrom(input) : params.startS;
   const lib = input.level.hero === input.content.hero ? input.content : { ...input.content, hero: input.level.hero };
-  const level = input.level.file.split("/").pop()!.replace(/\.ya?ml$/, "") || PLAY_LEVEL;
+  // (Reactive mode keeps each track's best grade apart.)
+  const level = env.reactive?.gradeKey ?? (input.level.file.split("/").pop()!.replace(/\.ya?ml$/, "") || PLAY_LEVEL);
 
   progress(0.7, startS > 0 ? `Fast-forwarding to ${fmtTime(startS)}` : "Preparing the field");
   const log = new PlayLog();
@@ -299,7 +302,7 @@ class PlayController {
         const live = this.session();
         // (Up to where the live run has got.)
         const sim = live.runner.sim;
-        const again = replay(this.env.input, this.env.props, this.startS, live.runner.applied, sim.done ? undefined : sim.s);
+        const again = replay(this.env.input, this.env.props, this.startS, live.runner.applied, sim.done ? undefined : sim.s, this.env.reactive?.botFor);
         const a = live.recording.hashParts();
         const b = again.hashParts();
         return Object.keys(a).filter((k) => a[k] !== b[k]);
@@ -444,6 +447,8 @@ class PlayController {
   }
 
   private restartSection(): void {
+    // Reactive mode has one section: restarting it restarts the song.
+    if (this.env.reactive) return void this.restartSong();
     this.fallen = false;
     const s0 = this.session().runner.restartSection();
     this.log.event("restartSection", s0);
@@ -478,6 +483,7 @@ class PlayController {
     const q = new URLSearchParams(location.search);
     q.delete("mode");
     q.delete("start");
+    q.delete("track");
     location.search = q.toString();
   }
 
@@ -503,6 +509,8 @@ class PlayController {
   }
 
   private endMenu(): { menu: HudMenu; actions: (() => void)[] } {
+    // (Reactive mode has no demo yet: stage 7 records one.)
+    if (this.env.reactive) return { menu: { items: ["Play again", "Watch my run", "Quit to title"], selected: 0 }, actions: [() => void this.restartSong(), () => void this.watchMyRun(), () => this.quit()] };
     return { menu: { items: ["Play again", "Watch my run", "Watch the demo"], selected: 0 }, actions: [() => void this.restartSong(), () => void this.watchMyRun(), () => this.watchDemo()] };
   }
 
@@ -511,7 +519,7 @@ class PlayController {
     this.menu = { menu: { title: "REPLAYING", items: [], selected: 0 }, actions: [] };
     this.draw(this.lastS, this.hudOptions());
     await yieldToUi();
-    this.replayRec ??= replay(this.env.input, this.env.props, this.startS, this.session().runner.applied);
+    this.replayRec ??= replay(this.env.input, this.env.props, this.startS, this.session().runner.applied, undefined, this.env.reactive?.botFor);
     this.show(this.replayRec);
     this.menu = undefined;
     this.phase = "replay";

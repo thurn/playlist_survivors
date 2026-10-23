@@ -1,5 +1,6 @@
 /**
- * The title screen: Play (the default), Watch the demo and Calibrate. Up and
+ * The title screen: Play (the default), Watch the demo, Reactive (experimental: a track list) and
+ * Calibrate. Up and
  * Down (or W and S) move the selection; Enter, Space, Right or a click
  * chooses (which also unlocks audio). And the optional tap-along calibration,
  * for the direction keys or the stomp key, whichever the player taps with.
@@ -10,7 +11,7 @@ import type { Grade } from "../plan/grade.ts";
 import type { AudioEngine } from "./audio.ts";
 import type { Overlay } from "./app.ts";
 
-export type TitleChoice = "play" | "demo" | "calibrate";
+export type TitleChoice = "play" | "demo" | "reactive" | "calibrate";
 
 /**
  * Where a level's best grade is saved. (Grades from before the gameplay redesign were saved under
@@ -85,9 +86,9 @@ export async function titleScreen(overlay: Overlay, best: Grade | undefined): Pr
   const ms = (v: number) => `${v > 0 ? "+" : ""}${v} ms`;
   const offsets = [savedInputOffset("direction"), savedInputOffset("stomp")];
   const shown = [offsets[0] ? ms(offsets[0]) : undefined, offsets[1] !== undefined ? `stomp ${ms(offsets[1])}` : undefined].filter(Boolean);
-  const items = [`Play${best ? `   best ${best}` : ""}`, "Watch the demo", `Calibrate${shown.length ? `   (${shown.join(" · ")})` : ""}`];
+  const items = [`Play${best ? `   best ${best}` : ""}`, "Watch the demo", "Reactive (experimental)", `Calibrate${shown.length ? `   (${shown.join(" · ")})` : ""}`];
   const i = await overlayMenu(overlay, items);
-  return (["play", "demo", "calibrate"] as const)[i];
+  return (["play", "demo", "reactive", "calibrate"] as const)[i];
 }
 
 /** Clicks for the calibration: 8 at 120 BPM; the first two taps are dropped. */

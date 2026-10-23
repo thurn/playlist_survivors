@@ -1635,3 +1635,47 @@ considers only the off-beat after the beat at or before the press), the 2-beat
 bar's second beat (downbeats only schedule events), and the boss and volleys
 (stage 6).
 
+### Measured: stage 1, the mode in the app
+
+Recorded by `hv-s4pt.3`. `npm run reactive:parity -- --track orpheus-galop`
+(seed 1858, `reactive-moderate`'s presses on the song map's beats in both runs,
+damage off; the authored run is play mode's level):
+
+```text
+Row                                                             Authored   Reactive      Gap
+Strikes within 20 ms of a reference beat (pulsed sections)        100.0%      34.1%   -65.9%
+Gameplay sounds within 20 ms of their reference slot (pulsed)     100.0%      54.2%   -45.8%
+Presses rated as the authored grid would (301 presses)                 —      44.5%
+Time at tier 2 or higher (pulsed sections)                         96.5%      62.1%   -34.4%
+Average groove and grade                                        0.96 (S)   0.69 (B)    -0.27
+Kills                                                               7260       3421    -3839
+Kills, enemies alive by section (authored / reactive):
+  prelude 76, 14 / 172, 18        galop-vamp 144, 32 / 136, 45
+  galop-opening 410, 57 / 323, 59 theme-a 432, 93 / 278, 76
+  theme-a-repeat 778, 138 / 337, 86   kick-line 721, 173 / 292, 80
+  bridge 268, 243 / 149, 99       climax 2225, 303 / 816, 114
+  coda 2206, 250 / 906, 130
+```
+
+- **"Presses rated the same"** is measured on the reactive run's presses in the
+  pulsed sections: its own class and rating (unjudged, an off-beat, Perfect ...)
+  against the class and rating the song map's beats would give the same
+  presses (`classifyPress` with its own memory and drift; an unjudged press
+  always differs). The two runs' presses differ, so they are not paired.
+  Enemies alive are counted in world time; the "grid" sounds (tier chimes, orbs)
+  are measured on whole beats, the timing grid both levels use.
+- **Difficulty for playability:** with the stage 1 director's starting values the
+  hero fell in the Galop's prelude at 30 s, even with `reactive-moderate`: through
+  long unclear stretches it is at tier 0 and, striding only on committed beats,
+  cannot outpace the horde. So that every shipped track plays to the end,
+  `levels/reactive.yaml` gives the hero 600 health and grows the horde from
+  nothing (`start` 0, `perMinute` 80, `max` 360). `reactive-moderate` and
+  `reactive-human` then survive every shipped track (the closest, Beethoven's
+  Fifth, at 51% and 8%); stage 7 tunes the real curve. `check:reactive` gates
+  `reactive-moderate`'s survival on every shipped track, and both players' runs
+  passing play mode's plan checks that apply to a reactive plan (the `?player=`
+  path's own check).
+- **The smoke test** hands over at 50 s, where the Galop's beat is clear: the
+  prelude's presses are unjudged by design, so 10 s from the start would make no
+  judged presses.
+

@@ -18,6 +18,10 @@ import { Renderer } from "./renderer.ts";
 import { runLive } from "./play.ts";
 import { calibrate, loadBestGrade, titleScreen } from "./title.ts";
 import { contentFiles, landmarks, levelFile, levelResolver, songMap } from "./sources.ts";
+import { loadReactiveTrack, loadTracks, reactiveGradeKey, trackMenu, type ReactiveTrackRun, type TrackEntry } from "./reactive.ts";
+import { reactivePlayerFor } from "../reactive/players.ts";
+import { checkReactivePlan } from "../reactive/plan-checks.ts";
+import type { Ctx } from "../planner/context.ts";
 
 export interface Params {
   metronome: boolean;
@@ -34,8 +38,10 @@ export interface Params {
   checks: boolean;
   /** Test hook: a level script name (levels/ or the broken fixtures). */
   level?: string;
-  /** `?mode=play` plays the real game (the play level file); `?mode=demo` the scripted demo. */
-  mode?: "play" | "demo";
+  /** `?mode=play` plays the real game (the play level file); `?mode=demo` the scripted demo; `?mode=reactive` reactive mode (with `?track=`). */
+  mode?: "play" | "demo" | "reactive";
+  /** Reactive mode: the track's id (`?track=orpheus-galop`). */
+  track?: string;
   /** `?debug=moves`: play mode's movement and groove overlay (src/runtime/debug-moves.ts). */
   debugMoves: boolean;
 }
@@ -58,7 +64,8 @@ export function readParams(search: string): Params {
     bench: q.has("bench"),
     checks: q.has("checks"),
     level: q.get("level") ?? undefined,
-    mode: (["play", "demo"] as const).find((m) => m === q.get("mode")),
+    mode: (["play", "demo", "reactive"] as const).find((m) => m === q.get("mode")),
+    track: q.get("track") ?? undefined,
     debugMoves: q.get("debug") === "moves",
   };
 }
@@ -190,8 +197,8 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
     // screen chooses, unless ?mode= has.
     progress(0.02, "Loading content");
     let mode = params.mode ?? (params.player || params.test || params.level !== undefined || params.metronome ? "demo" : undefined);
-    const levelOf = (m: "play" | "demo" | undefined) => levelFile(params.level ?? (m === "play" ? PLAY_LEVEL : undefined));
-    const loadFor = (m: "play" | "demo" | undefined): PlannerInput => {
+    const levelOf = (m: "play" | "demo" | "reactive" | undefined) => levelFile(params.level ?? (m === "play" ? PLAY_LEVEL : undefined));
+    const loadFor = (m: "play" | "demo" | "reactive" | undefined): PlannerInput => {
       try {
         const lf = levelOf(m);
         const sm = songMap(levelSongName(lf, levelResolver));
@@ -209,7 +216,21 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
       throw e instanceof ContentError ? new Error(`Level script or content error:\n${e.message}`) : e;
     }
     // A chosen mode loads its level now, so a broken one fails before anything else loads.
-    let input = loadFor(mode);
+    // (Reactive mode loads its track's stream: `?track=` now, or the track list's choice.)
+    let input = loadFor(mode === "reactive" ? undefined : mode);
+    let reactive: ReactiveTrackRun | undefined;
+    let tracks: TrackEntry[] | undefined;
+    const loadReactive = async (track: TrackEntry) => {
+      reactive = await loadReactiveTrack(track, lib, { seed: params.seed, player: params.player });
+      overlay.sub.textContent = `${track.title} — reactive mode (experimental)`;
+      return reactive.input;
+    };
+    if (mode === "reactive" && params.track) {
+      tracks = await loadTracks();
+      const track = tracks.find((t) => t.id === params.track);
+      if (!track) throw new Error(`no reactive track "${params.track}" (tracks: ${tracks.map((t) => t.id).join(", ")})`);
+      input = await loadReactive(track);
+    }
 
     // 2. Renderer and assets.
     const app = new Application();
@@ -229,20 +250,45 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
 
     // 3. Audio.
     const audio = params.capture || params.bench ? undefined : new AudioEngine(params.avOffsetMs, params.metronome);
+    const musicUrl = () => reactive?.audioUrl ?? `${import.meta.env.BASE_URL}audio/${input.songMap.audio.file}`;
     if (audio) {
       progress(0.4, "Loading music");
-      await audio.loadMusic(`${import.meta.env.BASE_URL}audio/${input.songMap.audio.file}`, (f) => progress(0.4 + f * 0.25, "Loading music"));
+      await audio.loadMusic(musicUrl(), (f) => progress(0.4 + f * 0.25, "Loading music"));
     }
 
-    // The title screen: Play, Watch the demo, or Calibrate (then the title again).
+    // The title screen: Play, Watch the demo, Reactive (a track list), or Calibrate (then the title again).
     let begun = false;
-    while (!mode) {
+    while (!mode || (mode === "reactive" && !reactive)) {
       progress(1, "");
       overlay.root.dataset.state = "title";
-      const choice = await titleScreen(overlay, loadBestGrade(PLAY_LEVEL));
+      const choice = mode === "reactive" ? "reactive" : await titleScreen(overlay, loadBestGrade(PLAY_LEVEL));
       if (choice === "calibrate") {
         await calibrate(overlay, audio!);
         continue;
+      }
+      if (choice === "reactive") {
+        tracks ??= await loadTracks();
+        const track = await trackMenu(overlay, tracks);
+        if (!track) {
+          mode = undefined;
+          continue;
+        }
+        overlay.status.textContent = "Loading the track";
+        let chosen: PlannerInput;
+        try {
+          chosen = await loadReactive(track);
+        } catch (e) {
+          // A local track that fails to load: back to the list, saying why.
+          console.error(e);
+          overlay.status.textContent = `Cannot load ${track.title}: ${e instanceof Error ? e.message.split("\n")[0] : String(e)}`;
+          await new Promise((r) => setTimeout(r, 2500));
+          continue;
+        }
+        input = { ...chosen, heroAnims: input.heroAnims, soundOnsets: input.soundOnsets };
+        if (audio) await audio.loadMusic(musicUrl(), (f) => progress(f, "Loading music"));
+        mode = "reactive";
+        begun = true;
+        break;
       }
       mode = choice;
       // The choice was a click or a key: it unlocks audio, so play starts without another.
@@ -256,10 +302,21 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
       await runLive({ app, assets, input, props, audio, overlay, progress, hook, params, frameMs, ready: readyResolve, begun });
       return;
     }
+    // Reactive mode: live too, its virtual player (for ?start=) pressing on the track's reference beats.
+    if (mode === "reactive" && reactive) {
+      const r = reactive;
+      input = { ...r.input, heroAnims: input.heroAnims, soundOnsets: input.soundOnsets };
+      r.input = input;
+      if (!params.player) {
+        const botFor = (ctx: Ctx) => reactivePlayerFor(ctx, r.reference!, "reactive-moderate");
+        await runLive({ app, assets, input, props, audio, overlay, progress, hook, params, frameMs, ready: readyResolve, begun, reactive: { gradeKey: reactiveGradeKey(r.track.id), botFor: r.reference ? botFor : undefined } });
+        return;
+      }
+    }
 
     // 4. Plan (cached by input hash and build version).
     progress(0.68, "Planning the choreography");
-    const key = await cacheKey([input, props]);
+    const key = await cacheKey([input, props, reactive?.reference ?? null]);
     const tPlan = performance.now();
     let plan = await loadCachedPlan(key);
     hook.planSource = plan ? "cache" : "planner";
@@ -272,14 +329,14 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
           else reject(new Error(`Planner error: ${e.data.error}`));
         };
         worker.onerror = (e) => reject(new Error(`Planner crashed: ${e.message}`));
-        worker.postMessage({ input, props });
+        worker.postMessage({ input, props, reference: reactive?.reference });
       });
       await storePlan(key, plan);
     }
     hook.plan = plan;
     hook.planMs = performance.now() - tPlan;
     hook.planHash = planHash(plan);
-    hook.checks = () => checkPlan(plan!, lib);
+    hook.checks = () => (input.reactive ? checkReactivePlan(plan!, lib) : checkPlan(plan!, lib));
     if (audio) {
       progress(0.9, "Loading sounds");
       await audio.loadSounds(assets.sounds, new Set(plan.events.sounds.map((e) => e.sample)), `${import.meta.env.BASE_URL}assets/sfx/`);

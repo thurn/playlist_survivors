@@ -6,6 +6,12 @@ song: reactive
 seed: 2026
 player: reactive-moderate
 reactive: true
+# Stage 1's difficulty, tuned only so that the honest reactive players (reactive-moderate and
+# reactive-human) live to the end of every shipped track (hv-s4pt.3): at tier 0 through the long
+# unclear stretches (the Galop's prelude, most of Beethoven's Fifth) the hero cannot outpace the
+# horde, so it has six times play mode's health and the horde grows from nothing. Stage 7 tunes
+# the real curve.
+hero: { health: { max: 600 } }
 upgrades: { loadout: [orbiting-blades, chain-lightning], offer: [fire-trail] }
 zones: [twilight-glade, galop-woods, mushroom-grove, ember-hollow, infernal-grove]
 sections:
@@ -17,7 +23,7 @@ sections:
     camera: { zoom: 1.2, lead: 50, punchOnAccents: false }
     sfxPalette: crisp-steel
 director:
-  population: { start: 40, perMinute: 120, max: 480, energyScale: [0.7, 1.3] }
+  population: { start: 0, perMinute: 80, max: 360, energyScale: [0.7, 1.3] }
   roster:
     - { from: 0,   enemies: { slime: 2, bat: 1 } }
     - { from: 45,  enemies: { goblin: 3, slime: 2, bat: 1 } }

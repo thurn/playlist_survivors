@@ -158,7 +158,12 @@ function checkStrideInputs(plan: Plan, warp: Warp, stopS: number): CheckResult {
     const b = heroSample(plan, end);
     const d = Math.hypot(b.x - a.x, b.y - a.y);
     const one = strideLimitAt(plan, p.s);
-    if (d > one + 2) f.push(`the ${p.held ? "held stride" : "stride"} at ${fmt(p.s)} covers ${d.toFixed(1)} px (one stride is ${one.toFixed(1)})`);
+    // (The start is interpolated between the hero's samples: when a stride was already moving there,
+    // as a held stride that a press takes over a few milliseconds in, it may be off by up to the
+    // ground covered between those samples.)
+    const k = Math.floor(p.w * t.rate + 1e-9);
+    const slack = k + 1 < t.x.length ? Math.hypot(t.x[k + 1] - t.x[k], t.y[k + 1] - t.y[k]) : 0;
+    if (d > one + 2 + slack) f.push(`the ${p.held ? "held stride" : "stride"} at ${fmt(p.s)} covers ${d.toFixed(1)} px (one stride is ${one.toFixed(1)})`);
   }
   return { name: "every hero movement has an input", failures: f, checked: n + starts.length };
 }

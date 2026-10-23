@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { loadContent, loadLevel } from "../src/content/loader.ts";
 import type { Director } from "../src/content/schema.ts";
-import { checkReactiveCausality, checkReactiveSounds, perturbStream } from "../src/planner/reactive-checks.ts";
+import { checkReactiveCausality, checkReactiveSounds, perturbStream, smokeTest } from "../src/planner/reactive-checks.ts";
+import { formatParity, parityRows, pressesRatedSame, strikesOnBeat, timeAtTier } from "../src/planner/parity.ts";
 import { gatedSound } from "../src/planner/emit.ts";
 import { planWithSim, playerFor, prepare } from "../src/planner/plan.ts";
 import { directorPopulation, directorRoster } from "../src/reactive/director.ts";
+import { judgedAverageGroove, REACTIVE_END_DELAY, REACTIVE_TITLE } from "../src/reactive/grade.ts";
 import { reactivePlayerFor } from "../src/reactive/players.ts";
 import { reactiveSongMap } from "../src/reactive/songmap.ts";
 import { effectiveDownbeat, evidenceAt, firstBeatAtOrAfter, parseStream, splitStream, type StreamFile } from "../src/reactive/stream.ts";
@@ -284,5 +286,56 @@ describe("the director's schedule", () => {
     const bar0 = i - (i % 2);
     expect(u!.walked).toBe(false);
     expect(u!.sTaken).toBeCloseTo(beats[bar0 + 4], 6);
+  });
+});
+
+describe("the parity report and the smoke test", () => {
+  const file = synthStream({ until: 20 });
+  const { stream } = splitStream(file);
+  const input = inputForStream(stream, { checks: { noHeroDamage: true } });
+  const ref = file.reference!;
+  const { plan } = planWithSim(input, { player: new KeyPlayer(ref.beats.map((b) => b + 0.01)) });
+
+  it("measures strikes, ratings and tiers against the reference", () => {
+    // The synthetic stream's committed beats are its reference beats.
+    expect(strikesOnBeat(plan, ref)).toBe(1);
+    const same = pressesRatedSame(plan, ref, input.content);
+    expect(same.n).toBeGreaterThan(20);
+    expect(same.share).toBeGreaterThan(0.9);
+    expect(timeAtTier(plan, ref, 0)).toBe(1);
+    const rows = parityRows(undefined, plan, ref, input.content);
+    expect(rows[0].authored).toBe("—");
+    expect(formatParity(rows)).toContain("Strikes within 20 ms");
+  });
+
+  it("plays 10 s through the live runner with judged presses, and fails when nothing can be judged", () => {
+    const bot = (ctx: Parameters<typeof reactivePlayerFor>[0]) => reactivePlayerFor(ctx, ref, "reactive-moderate");
+    expect(smokeTest(input, undefined, bot, 5).failures).toEqual([]);
+    const unclear = splitStream(synthStream({ until: 20, evidence: () => 0 })).stream;
+    expect(smokeTest(inputForStream(unclear), undefined, bot, 5).failures.some((f) => f.startsWith("no judged presses"))).toBe(true);
+  });
+});
+
+describe("the reactive run's end", () => {
+  // Clear only from 20 s to 30 s: judged time starts at 16 s and skips the unclear stretch.
+  const file = synthStream({ until: 40, evidence: (t) => (t >= 20 && t < 30 ? 0.8 : 0) });
+  const { stream } = splitStream(file);
+
+  it("grades the groove over judged time only", () => {
+    const groove = { s: [0, 25, 35], v: [0.2, 0.8, 1] };
+    // From 20 to 25 s at 0.2, from 25 to 30 s at 0.8: 0.5.
+    expect(judgedAverageGroove(groove, stream, 0, 40)).toBeCloseTo(0.5, 2);
+    expect(judgedAverageGroove(groove, stream, 26, 40)).toBeCloseTo(0.8, 6);
+    expect(judgedAverageGroove(groove, stream, 0, 19)).toBe(0);
+  });
+
+  it("shows the track's title card and the end card when the audio ends", () => {
+    const input = inputForStream(stream, { checks: { noHeroDamage: true } });
+    const { plan } = planWithSim(input, { player: new KeyPlayer([]) });
+    const ui = plan.events.ui.filter((u) => u.kind === "title" || u.kind === "end").map((u) => [u.kind, u.s]);
+    expect(ui).toEqual([
+      ["title", REACTIVE_TITLE.s],
+      ["end", 40 + REACTIVE_END_DELAY],
+    ]);
   });
 });
