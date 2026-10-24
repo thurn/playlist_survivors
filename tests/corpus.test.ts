@@ -43,6 +43,17 @@ describe("the corpus", () => {
     expect(index.tracks.slice(0, REGRESSION_TRACKS.filter((t) => t.listed).length).every((t) => t.split === undefined)).toBe(true);
   });
 
+  it("streams every corpus track with the fitted reference beside it", () => {
+    // (Structure only: whether a held-out track fitted is not for a gate to read.)
+    for (const t of manifest) {
+      const fitted = JSON.parse(readFileSync(join(ROOT, "public/reactive", t.id, "reference.json"), "utf8")) as { source: string; fit: string };
+      const stream = JSON.parse(readFileSync(join(ROOT, "public/reactive", t.id, "stream.json"), "utf8")) as { reference?: { source: string; fit?: string; beats: number[] } };
+      expect(fitted.source, t.id).toBe("fitted");
+      expect(["constant", "piecewise", "failed"], t.id).toContain(fitted.fit);
+      expect(stream.reference, t.id).toEqual(fitted);
+    }
+  });
+
   it("credits every track", () => {
     const credits = readFileSync(join(ROOT, "corpus/CREDITS.md"), "utf8");
     for (const t of manifest) expect(credits, t.id).toContain(`\`${t.id}\``);

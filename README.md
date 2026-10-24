@@ -116,7 +116,13 @@ restarts the song (there is one section), each track keeps its own best grade, a
   ingests the corpus listed in `corpus/manifest.yaml` (the one source for each
   track's iteration or held-out split; credits in `corpus/CREDITS.md`): each
   missing track encoded to Ogg Vorbis, its stream written, and the index updated.
-  A second run changes nothing.
+  A second run changes nothing. A new track is fitted too (below).
+- `npm run reactive:fit-grid [-- <id> ...] [--jobs <n>]` fits each corpus track's
+  ground-truth grid (`public/reactive/<id>/reference.json`: a constant or piecewise
+  beat grid at the level a player taps, the meter and downbeats, approximate
+  sections and accents, or `fit: "failed"`) with a click overlay in the gitignored
+  `captures/corpus/<id>-click.ogg`, and prints the corpus table (held-out tracks as
+  counts only). Restream with `npm run reactive:streams` afterwards.
 - `npm run reactive:parity -- --track orpheus-galop` compares the reactive Galop
   with the authored one, row by row (strikes and sounds on the song map's beats,
   ratings, time at tier 2 and up, groove and grade, kills and enemies per section,

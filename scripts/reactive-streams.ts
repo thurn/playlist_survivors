@@ -12,14 +12,14 @@
  * reference, so it always matches the audio. causality-mix is check-only and
  * stays out of the index. The corpus's tracks (corpus/manifest.yaml, ingested
  * with npm run reactive:corpus-add) are restreamed from their shipped Ogg files
- * too. `--jobs` runs that many at once (default: two thirds of the cores), the
+ * too, with their fitted references (npm run reactive:fit-grid). `--jobs` runs that many at once (default: two thirds of the cores), the
  * longest first.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { ROOT } from "./lib/files.ts";
-import { analysis, corpusAudio, jobsOption, readManifest, REACTIVE_DIR, REGRESSION_TRACKS, regressionAudio, runJobs, writeIndex } from "./lib/corpus.ts";
+import { analysis, corpusAudio, corpusReferenceArgs, jobsOption, readManifest, REACTIVE_DIR, REGRESSION_TRACKS, regressionAudio, runJobs, writeIndex } from "./lib/corpus.ts";
 
 const { values, positionals } = parseArgs({ allowPositionals: true, options: { resynth: { type: "boolean" }, jobs: { type: "string" } } });
 const corpus = readManifest();
@@ -67,7 +67,7 @@ for (const t of corpus) {
     if (positionals.includes(t.id)) console.error(`${t.id} is not ingested yet (npm run reactive:corpus-add)`);
     continue;
   }
-  todo.push({ id: t.id, quiet: t.split === "held-out", run: () => analysis("stream", audio, "--out", join(REACTIVE_DIR, t.id, "stream.json"), "--offline-reference") });
+  todo.push({ id: t.id, quiet: t.split === "held-out", run: () => analysis("stream", audio, "--out", join(REACTIVE_DIR, t.id, "stream.json"), ...corpusReferenceArgs(t)) });
 }
 
 // The longest tracks first (by their current streams' lengths, a track without one first), so the

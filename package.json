@@ -33,6 +33,7 @@
     "reactive:add": "tsx scripts/reactive-add.ts",
     "reactive:streams": "tsx scripts/reactive-streams.ts",
     "reactive:corpus-add": "tsx scripts/reactive-corpus-add.ts",
+    "reactive:fit-grid": "tsx scripts/reactive-fit-grid.ts",
     "reactive:parity": "tsx scripts/reactive-parity.ts",
     "reactive:replay": "tsx scripts/reactive-replay.ts"
   },

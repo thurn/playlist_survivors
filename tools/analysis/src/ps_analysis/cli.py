@@ -16,6 +16,9 @@ Commands (each prints a JSON summary on stdout):
 - `synth NAME --out FILE.ogg [--reference FILE.json]`: a synthetic test track
 - `encode AUDIO --out FILE.ogg [--compression 0.6]`: a track for the corpus, as
   Ogg Vorbis (the default is libvorbis quality 4)
+- `fit-grid AUDIO --out reference.json [--click FILE.ogg|.wav] [--quiet]`: a
+  corpus track's fitted reference (beats, meter, downbeats, approximate sections,
+  accents), and a click overlay to check it by ear
 
 Commands that need the excerpt find it as `public/audio/<audio.file>` in a
 parent directory of the song map or of the working directory, unless
@@ -291,6 +294,43 @@ def cmd_encode(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_fit_grid(a: argparse.Namespace) -> int:
+    import soundfile as sf
+
+    from . import fitgrid as fg
+    from . import stream as st
+    from .click import render_click_at
+
+    y, _ = st.load_audio(a.audio)
+    ref = fg.fit_reference(y)
+    out = Path(a.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(ref, indent=1) + "\n")
+    if a.click:
+        beats = ref["beats"]
+        index = {round(t, 6): i for i, t in enumerate(beats)}
+        downs = {
+            index[round(t, 6)] for t in ref.get("downbeats", []) if round(t, 6) in index
+        }
+        starts = {
+            index[round(s["s0"], 6)]
+            for s in ref.get("sections", [])
+            if round(s["s0"], 6) in index
+        }
+        # (Over the file as it is, at its own rate and channels.)
+        full, sr = sf.read(a.audio, dtype="float32", always_2d=False)
+        click = render_click_at(full, sr, beats, downs, starts)
+        path = Path(a.click)
+        if path.suffix == ".ogg":
+            write_vorbis(path, click, sr, 0.6)
+        else:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            sf.write(path, click, sr)
+    # (A held-out track's numbers are not for study: --quiet prints only whether it fitted.)
+    _emit({"fit": ref["fit"]} if a.quiet else fg.summary(ref))
+    return 0
+
+
 def cmd_synth(a: argparse.Namespace) -> int:
     import soundfile as sf
 
@@ -444,6 +484,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="Vorbis compression level, 0 (best quality) to 1 (smallest; default 0.6, quality 4)",
     )
     c.set_defaults(func=cmd_encode)
+
+    c = sub.add_parser("fit-grid", help="fit a corpus track's reference grid")
+    c.add_argument("audio")
+    c.add_argument("--out", required=True, help="the reference JSON to write")
+    c.add_argument("--click", help="also write a click overlay (.ogg or .wav)")
+    c.add_argument("--quiet", action="store_true", help="print only whether it fitted")
+    c.set_defaults(func=cmd_fit_grid)
     return p
 
 

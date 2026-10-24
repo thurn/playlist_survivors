@@ -5,8 +5,10 @@
  *
  * For each track of corpus/manifest.yaml missing its audio, encodes the source
  * as Ogg Vorbis (quality 4) to public/reactive/<id>/<id>.ogg; for each just
- * encoded or missing its stream, writes the belief stream from that Ogg file
- * with an offline reference; then rewrites public/reactive/index.json. A second run changes nothing. A source
+ * encoded or missing its reference, fits it (reference.json, and a click
+ * overlay in captures/corpus/); for each just fitted or missing its stream,
+ * writes the belief stream from that Ogg file with that reference; then
+ * rewrites public/reactive/index.json. A second run changes nothing. A source
  * inside a zip ("archive.zip:path") is extracted into a fresh temporary
  * directory first. Held-out tracks are ingested and never studied, so nothing
  * of their analysis is printed. npm run reactive:streams restreams them all.
@@ -16,7 +18,7 @@ import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import { parseArgs, promisify } from "node:util";
-import { analysis, corpusAudio, jobsOption, readManifest, REACTIVE_DIR, runJobs, writeIndex, type CorpusTrack } from "./lib/corpus.ts";
+import { analysis, corpusAudio, corpusReference, corpusReferenceArgs, fitCorpusTrack, jobsOption, readManifest, REACTIVE_DIR, runJobs, writeIndex, type CorpusTrack } from "./lib/corpus.ts";
 
 const { values, positionals } = parseArgs({ allowPositionals: true, options: { source: { type: "string" }, jobs: { type: "string" } } });
 const corpus = readManifest();
@@ -61,9 +63,14 @@ await runJobs(todo, jobs, async (t) => {
     encoded++;
     did.push("encoded");
   }
-  // (A fresh encode always gets a fresh stream: the stream must come from the shipped Ogg file.)
+  // (A fresh encode gets a fresh fit and stream: both must come from the shipped Ogg file.)
+  if (did.length || !existsSync(corpusReference(t))) {
+    const fit = await fitCorpusTrack(t);
+    // (Whether a held-out track fitted is reported only as a count, by npm run reactive:fit-grid.)
+    did.push(t.split === "held-out" ? "fitted" : `fitted (${String(fit.fit)})`);
+  }
   if (did.length || !existsSync(stream)) {
-    await analysis("stream", audio, "--out", stream, "--offline-reference");
+    await analysis("stream", audio, "--out", stream, ...corpusReferenceArgs(t));
     streamed++;
     did.push("streamed");
   }

@@ -754,6 +754,11 @@ def to_document(
             ]
         if "accents" in reference:
             ref["accents"] = [{**a, "t": _r(a["t"])} for a in reference["accents"]]
+        # (A fitted reference's other fields: its fit, tempo, residuals, meter and downbeats.)
+        for key, value in reference.items():
+            if key in ref:
+                continue
+            ref[key] = [_r(t) for t in value] if key == "downbeats" else value
         doc["reference"] = ref
     return doc
 

@@ -30,6 +30,18 @@ def render_click(
         for s in m["sections"]
         if s["bars"][0] <= idx.bar_count
     }
+    return render_click_at(y, sr, m["beats"], downbeats, sec_starts, music_gain)
+
+
+def render_click_at(
+    y: np.ndarray,
+    sr: int,
+    beats: list[float],
+    downbeats: set[int],
+    section_starts: set[int],
+    music_gain: float = 0.6,
+) -> np.ndarray:
+    """The click over `y` (mono, or frames x channels): beats by time, accents by beat index."""
     peak = float(np.max(np.abs(y))) or 1.0
     out = (y / peak * music_gain).astype(np.float32)
     clicks = {
@@ -37,12 +49,14 @@ def render_click(
         "down": _click(sr, 1600, 0.7),
         "section": _click(sr, 2400, 0.9, 60),
     }
-    for i, t in enumerate(m["beats"]):
-        kind = "section" if i in sec_starts else "down" if i in downbeats else "beat"
+    for i, t in enumerate(beats):
+        kind = (
+            "section" if i in section_starts else "down" if i in downbeats else "beat"
+        )
         c = clicks[kind]
         s = round(t * sr)
-        if s >= len(out):
+        if s < 0 or s >= len(out):
             continue
         e = min(len(out), s + len(c))
-        out[s:e] += c[: e - s]
+        out[s:e] += c[: e - s] if out.ndim == 1 else c[: e - s, None]
     return np.clip(out, -1, 1)

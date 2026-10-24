@@ -12,13 +12,33 @@ const beat = z.object({ t: z.number(), knownAt: z.number(), period: z.number().p
 /** Stage 4 adds each tick's loudness level and, from 10 s on, its key (such as "D major"). */
 const tick = z.object({ t: z.number(), evidence: z.number(), energy: z.number(), level: z.enum(["quiet", "medium", "loud"]).optional(), key: z.string().optional() });
 const onset = z.object({ t: z.number(), knownAt: z.number(), strength: z.number(), strong: z.boolean() });
-const section = z.object({ label: z.string(), s0: z.number(), s1: z.number(), feel: z.enum(["pulsed", "free"]).optional() });
+/** (A fitted reference's sections are approximate: an offline segmentation snapped to downbeats.) */
+const section = z.object({ label: z.string(), s0: z.number(), s1: z.number(), feel: z.enum(["pulsed", "free"]).optional(), approximate: z.boolean().optional() });
 
 export const ReferenceSchema = z.object({
-  source: z.enum(["songmap", "exact", "offline"]),
+  source: z.enum(["songmap", "exact", "offline", "fitted"]),
   beats: z.array(z.number()),
   sections: z.array(section).optional(),
   accents: z.array(z.object({ t: z.number(), label: z.string() })).optional(),
+  /**
+   * A fitted reference (docs/design/reactive-feel.md, "Ground Truth"): a constant grid, up to four
+   * constant pieces, or failed (its beats then the raw offline decode, left out of beat metrics);
+   * its tempo at the tapped level, residuals against the decode, the meter in grid beats (low
+   * confidence: downbeat metrics skip it) and the downbeats.
+   */
+  fit: z.enum(["constant", "piecewise", "failed"]).optional(),
+  bpm: z.number().optional(),
+  residualMs: z.object({ median: z.number(), p90: z.number() }).optional(),
+  within45: z.number().optional(),
+  level: z.number().optional(),
+  meter: z.number().int().optional(),
+  meterConfidence: z.enum(["high", "low"]).optional(),
+  meterAgreement: z.number().optional(),
+  downbeats: z.array(z.number()).optional(),
+  pieces: z.array(z.object({ s0: z.number(), s1: z.number(), bpm: z.number() })).optional(),
+  reason: z.string().optional(),
+  /** "narrow tempo": fitted after a failed first fit, decoded again with the tempo held near its median. */
+  decode: z.string().optional(),
 });
 
 export const StreamFileSchema = z.object({

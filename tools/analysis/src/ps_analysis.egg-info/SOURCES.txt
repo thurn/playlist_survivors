@@ -8,6 +8,7 @@ src/ps_analysis/cli.py
 src/ps_analysis/click.py
 src/ps_analysis/crop.py
 src/ps_analysis/edit.py
+src/ps_analysis/fitgrid.py
 src/ps_analysis/report.py
 src/ps_analysis/songmap.py
 src/ps_analysis/stream.py

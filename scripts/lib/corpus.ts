@@ -75,6 +75,24 @@ export const corpusGroup = (t: CorpusTrack): "notjam" | "cc" => (t.id.startsWith
 /** A corpus track's audio, relative to public/reactive/. */
 export const corpusAudio = (t: CorpusTrack) => `${t.id}/${t.id}.ogg`;
 export const familyOf = (t: CorpusTrack) => t.family ?? t.id;
+/** A corpus track's fitted reference (npm run reactive:fit-grid). */
+export const corpusReference = (t: CorpusTrack) => join(REACTIVE_DIR, t.id, "reference.json");
+/** Where the fits' click overlays go (gitignored), to check a fit by ear. */
+export const CLICK_DIR = join(ROOT, "captures/corpus");
+
+/** The stream command's reference for a corpus track: its fitted reference, else madmom's offline decode. */
+export function corpusReferenceArgs(t: CorpusTrack): string[] {
+  return existsSync(corpusReference(t)) ? ["--reference", corpusReference(t)] : ["--offline-reference"];
+}
+
+/**
+ * Fits a corpus track's reference and writes its click overlay; the summary is returned, a
+ * held-out track's being only whether it fitted (docs/design/reactive-feel.md, "Held-out Protocol").
+ */
+export async function fitCorpusTrack(t: CorpusTrack): Promise<Record<string, unknown>> {
+  const quiet = t.split === "held-out" ? ["--quiet"] : [];
+  return JSON.parse(await analysis("fit-grid", join(REACTIVE_DIR, corpusAudio(t)), "--out", corpusReference(t), "--click", join(CLICK_DIR, `${t.id}-click.ogg`), ...quiet)) as Record<string, unknown>;
+}
 
 /** The index: the listed regression tracks, then the corpus tracks ingested so far (audio and stream present), in manifest order. */
 export function buildIndex(corpus: readonly CorpusTrack[]): ReactiveIndex {
