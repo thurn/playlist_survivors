@@ -186,9 +186,13 @@ as fixed.
 - **The held-out set is scored only at milestones, as numbers only.** No
   change may cite a held-out track as its reason
   ([Held-out Protocol](#held-out-protocol)).
-- **Extra CC music:** about 12 CC0 or CC-BY tracks in genres NotJam lacks. An
-  early bead shortlists them, and the user approves the list before anything
-  is downloaded.
+- **No approval points.** The user approved the whole plan up front
+  (2026-10-23). Executors never stop to ask. Every choice this document once
+  left to the user is now the executor's: the CC shortlist, the spike's
+  verdict, and what to do when the loop overfits or plateaus. Each such
+  choice is recorded with its reasons in the bead's notes.
+- **Extra CC music:** about 12 CC0 or CC-BY tracks in genres NotJam lacks,
+  chosen, verified and ingested by the executor.
 - **The rubric** has 10 dimensions with written anchors and paired metrics,
   and is calibrated against the authored Galop.
 - **Rounds are beads.** Raters run **one after another**, never in parallel,
@@ -366,7 +370,7 @@ Each change is small and hand-wired. G1 migrates them into the matrix later.
 - **Excluded:**
   - every `_Loopable` file: these duplicate the standalone tracks;
   - `let_us_begin` (3 s) and `you_died` (8 s), which are jingles.
-- **CC tracks:** about 12, from bead F3's approved shortlist
+- **CC tracks:** about 12, picked by bead F3
   ([CC music](#cc-music)).
 
 The NotJam tracks are all chiptune by one composer, mostly at a steady tempo
@@ -452,8 +456,8 @@ A round rates the Galop. The other regression tracks feed the metrics only.
 
 ### CC music
 
-Bead F3 researches and shortlists about 12 tracks, then stops for the user's
-approval. Bead F3b ingests only the approved ones.
+Bead F3 researches and picks about 12 tracks, verifying each licence on its
+source page. Bead F3b downloads and ingests them. There is no approval step.
 
 - **Licences:** CC0 or CC-BY only, because the repository is public under
   Apache 2.0. Every CC-BY track is credited in `corpus/CREDITS.md` and in the
@@ -469,7 +473,7 @@ approval. Bead F3b ingests only the approved ones.
   - beatless ambient;
   - odd meter (5/4 or 7/8);
   - metal.
-- **The shortlist** gives, for each track:
+- **The list,** recorded in F3's notes, gives for each track:
   - the source page;
   - the licence, with a link to it on that page;
   - the artist, title and length;
@@ -477,12 +481,13 @@ approval. Bead F3b ingests only the approved ones.
   - why it was picked.
 - **The split:** about half iteration, half held-out, balanced across the genre
   slots.
-- **Downloading** happens only in F3b, after approval. Each file goes into its
-  own new, empty scratch directory before ingest.
+- **Downloading** happens in F3b. Each file goes into its own new, empty
+  scratch directory before ingest. A track whose licence can't be confirmed on
+  its source page is skipped and replaced.
 
-The same shortlist covers **extra SFX packs** for the
+The same list covers **extra SFX packs** for the
 [SFX library](#the-sfx-library): CC0 or CC-BY sound packs, such as Kenney's
-CC0 audio packs, approved by the user the same way.
+CC0 audio packs, chosen and verified the same way.
 
 ### Where the corpus lives
 
@@ -519,8 +524,7 @@ CC0 audio packs, approved by the user the same way.
   - Held-out tracks are playable: the music is public and the split is about
     tuning, not secrecy.
   - If the user reports how a held-out track felt, that report goes into the
-    next milestone's notes, not a fix bead, unless the user
-    [burns](#held-out-protocol) the track.
+    next milestone's notes, not a fix bead.
 - **Ingest:** `npm run reactive:corpus-add -- --manifest corpus/manifest.yaml --source ~/Downloads`
   does the following:
   - encodes each missing track;
@@ -577,8 +581,9 @@ npm run analysis -- fit-grid public/reactive/notjam-victory-lap/notjam-victory-l
      each piece. Accept it under the same limits per piece, with at most 4
      pieces.
    - **Failed:** write the reference with `fit: "failed"` and the raw decode.
-     The track is left out of beat metrics. The corpus report lists it for
-     the user, with its click overlay.
+     The track is left out of beat metrics. The corpus report lists it with its
+     click overlay. The executor may retry with other fit parameters, and
+     records the outcome.
 5. **Fit the meter:** downbeats come from the downbeat decode's phase, voted
    over the fitted grid. A meter with under 70% agreement is marked
    `meterConfidence: "low"`, and downbeat metrics skip it.
@@ -687,7 +692,7 @@ separate, aesthetic layer.
 - **Streaming shape:** a new group's per-frame work and memory must be bounded
   regardless of song length. No whole-song passes and no growing buffers. The
   test is "an optimised Rust rewrite could run this live". A design that fails
-  it needs the user's agreement first.
+  it is reworked into a streaming form, or dropped with the reason recorded.
 - **No song-wide data in the game.** New game code reads only stream entries
   with `knownAt <= s`, and never `audio.duration`, except for the run's end
   ([Length-blind pacing](#length-blind-pacing)).
@@ -815,7 +820,7 @@ look:
   come from:
   - the existing sounds;
   - the 42 NotJam SFX;
-  - any approved packs.
+  - the packs F3 picked.
 - **Features:** a new `npm run analysis -- sfx-features` command writes each
   sample's brightness, attack time, pitch (f0, if pitched), flatness and
   duration into the library, offline.
@@ -835,10 +840,14 @@ A time-boxed experiment, one bead, two days at most:
   plus the analysis time.
 - In file mode the game slices the decoded buffer and uses the slices as
   strike sounds, pitched and filtered to sit under the song.
-- **Output:** a mixed-audio file of three iteration tracks, so the user can
-  judge it by ear.
-- **Kept only if the user approves.** Otherwise the bead records what was
-  learned and leaves the code behind a level flag that defaults to off.
+- **Output:** a mixed-audio file of three iteration tracks, for the record.
+- **The executor decides** whether to keep it, from measurements:
+  - slices land within 20 ms of their slots;
+  - no clipping or clicks at slice edges;
+  - sampled strikes sit at least 6 dB under the song's loudness.
+
+  If it passes, its level flag defaults to on. Otherwise the flag defaults to
+  off and the bead records what was learned.
 
 ### Length-blind pacing
 
@@ -1097,25 +1106,28 @@ triage doesn't file new fix beads.
   - No fix bead may cite a held-out track.
 - **The overfitting rule:** for each dimension, compare the iteration mean
   minus the held-out mean against the same gap at **milestone 0**, which R0
-  runs on Round 0's untouched engine. The loop stops and reports to
-  the user if:
+  runs on Round 0's untouched engine. The rule trips if:
   - any dimension's gap grows by 0.75 or more; or
   - the mean gap across dimensions grows by 0.4 or more.
-- **Burning:** only the user may move a held-out track into iteration. The
-  move is recorded in the manifest and in this document, and it is
-  permanent.
+- **When it trips,** the loop continues. The next round becomes a
+  generalisation round:
+  - Its triage finds which changes since the previous milestone are most
+    track-specific, judged only from iteration-side evidence: tuning keyed to
+    a few tracks, or metrics that rose on some tracks and fell on others.
+  - It reverts or broadens those changes, then scores the held-out set again
+    as an extra milestone.
+- **No burning:** held-out tracks stay held out for the whole plan.
 
 ### Stopping
 
-The loop stops and reports to the user when any of these happens:
+The loop ends when two consecutive rounds raise no dimension's iteration mean
+by 0.2 or more and newly meet no metric target. A generalisation round
+doesn't count towards the two.
 
-- two consecutive rounds raise no dimension's iteration mean by 0.2 or more,
-  and newly meet no metric target;
-- the overfitting rule trips;
-- the user calls it.
-
-The report is a short summary, published for the user: the start against the
-end per dimension, the held-out results, and what remains weak.
+- **On ending,** the last round bead runs a final milestone and publishes a
+  short summary: the start against the end per dimension, the held-out
+  results, and what remains weak.
+- **Then** the epic is closed, with no approval step.
 
 ## Mechanics Targets
 
@@ -1248,8 +1260,8 @@ worktree and keeps `scripts/ci` green.
 | Q | `hv-jtsz.16` | 0 | The fast lane: mini-corpus, beat sheets, enemy beat motion, onset texture, key colour, stand-in identity, legible reward | — |
 | F1 | `hv-jtsz.1` | A | Corpus manifest, NotJam ingest to Ogg, index groups and splits, `corpus/CREDITS.md`, `--jobs` parallel regeneration, gated against corpus track lists, NotJam streams | Q |
 | F2 | `hv-jtsz.2` | A | `fit-grid`: fitted references, meter, approximate sections, click overlays; corpus beat-metric table | F1 (serialized: streams) |
-| F3 | `hv-jtsz.3` | A | Shortlist about 12 CC tracks and extra SFX packs; stop for user approval | Q |
-| F3b | `hv-jtsz.4` | A | Ingest the approved CC tracks with fitted references (filed unselectable until approval) | F2, F3 |
+| F3 | `hv-jtsz.3` | A | Pick about 12 CC tracks and extra SFX packs, licences verified | Q |
+| F3b | `hv-jtsz.4` | A | Download and ingest F3's tracks with fitted references | F2, F3 |
 | F4 | `hv-jtsz.5` | A | `reactive:dossier`, `reactive:corpus`, metrics, timeline, contact sheets, `mix.ogg`, reactive capture, the authored Galop anchor | F2 |
 | F5 | `hv-jtsz.6` | A | `docs/feel/rubric.md`, rater brief, scores schema, `reactive:feel aggregate`, milestone numbers-only export | F4 |
 | R0 | `hv-jtsz.7` | B | Round 0 baseline, milestone 0 (held-out baseline, numbers only) and seeded-work triage | F5, `hv-s4pt.11` |
@@ -1259,7 +1271,7 @@ worktree and keeps `scripts/ci` green.
 | G2 | `hv-jtsz.11` | D | Identity: listening look, reveal, families, evolution; musical-bar and phrase signals | G1, E2 |
 | G3 | `hv-jtsz.12` | D | Length-blind pacing, confirmed endings and encore; Galop regression | R0 |
 | G4 | `hv-jtsz.13` | D | Key and mode pitching, ducking, SFX library and `sfx-features`, per-role picks, NotJam SFX | G2 |
-| G5 | `hv-jtsz.14` | D | Song-sampling spike, time-boxed, user-judged | G4 |
+| G5 | `hv-jtsz.14` | D | Song-sampling spike, time-boxed, kept or flagged off by measurement | G4 |
 | R1 | `hv-jtsz.15` | E | Round 1 (later rounds and milestones are filed by the round before) | G1–G4 |
 
 - **Serialization:**
