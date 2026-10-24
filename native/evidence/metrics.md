@@ -44,6 +44,12 @@ the `review-churn` minutes and the `review.findings` counts of the next 5 review
 written after the review, hv-t8o8.54) with that mean, aiming at half. The baseline's records carry
 `review`: ES 6 findings, F3 10, F4 9, F2 11 (mean 9).
 
+The step cut the counts a little in phase A (A1 8 findings and 20 min, A2 5 and 10, A3 5 and 15:
+mean 6 and 15), but the review-churn trigger fired on those three: nearly every finding asked for
+a parity test tied more tightly to the upstream, not a fix. hv-t8o8.56 adds a parity-bead
+checklist to the step; the baseline for the next 3 reviewed parity beads is A1–A3's mean (6
+findings, 15 min), aiming at half.
+
 ## Batch jobs below Tollgate (hv-t8o8.55)
 
 A gate (`scripts/ci-gate`, every section) took 43–44 s idle, and 64–67 s with a 10-job oracle
