@@ -64,6 +64,8 @@ pub enum Moment {
     /// or unjudged (the beat unclear), and whether it was a stomp (Space).
     Press {
         rating: Option<&'static str>,
+        /// How far off the grid (s): early negative.
+        delta: f64,
         unjudged: bool,
         stomp: bool,
     },
@@ -88,6 +90,13 @@ pub struct LiveView {
     pub health: f64,
     pub groove: f64,
     pub tier: f64,
+    /// The experience bar's fill, 0-1, and the level (1 and up).
+    pub xp: f64,
+    pub level: u32,
+    /// Enemies killed (not those that left the field).
+    pub kills: usize,
+    /// Presses rated perfect, great and good.
+    pub ratings: [usize; 3],
     /// Moments since the drawer last took them.
     pub moments: Vec<Moment>,
 }
@@ -172,6 +181,7 @@ impl Recorder for LiveRecorder {
             y: f.y,
         };
         v.moments.push(moment);
+        v.kills += 1;
         // Keep the dead only briefly (the drawer fades them).
         let dead: Vec<usize> = v
             .foes
@@ -197,8 +207,16 @@ impl Recorder for LiveRecorder {
 
     fn input(&mut self, i: PlanInput) {
         if i.kind == "press" {
-            self.0.borrow_mut().moments.push(Moment::Press {
+            let mut v = self.0.borrow_mut();
+            match i.rating {
+                Some("perfect") => v.ratings[0] += 1,
+                Some("great") => v.ratings[1] += 1,
+                Some("good") => v.ratings[2] += 1,
+                _ => {}
+            }
+            v.moments.push(Moment::Press {
                 rating: i.rating,
+                delta: i.delta.unwrap_or(0.0),
                 unjudged: i.unjudged == Some(true),
                 stomp: i.stomp == Some(true) || i.key == "space",
             });
@@ -211,6 +229,14 @@ impl Recorder for LiveRecorder {
 
     fn tier(&mut self, _s: f64, _w: f64, tier: f64, _sound_s: f64) {
         self.0.borrow_mut().tier = tier;
+    }
+
+    fn xp(&mut self, _s: f64, fill: f64) {
+        self.0.borrow_mut().xp = fill;
+    }
+
+    fn upgrade(&mut self, _u: sim::upgrades::UpgradeRecord) {
+        self.0.borrow_mut().level += 1;
     }
 
     fn health(&mut self, _s: f64, frac: f64) {
@@ -254,6 +280,7 @@ impl Engine {
         let input = SimInput::new(level, lib, hero_anims, gate, settling);
         let view = Rc::new(RefCell::new(LiveView {
             health: 1.0,
+            level: 1,
             camera: (0.0, 0.0, 1.0),
             ..LiveView::default()
         }));

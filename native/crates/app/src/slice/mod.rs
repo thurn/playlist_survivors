@@ -16,6 +16,7 @@
 mod coreaudio;
 mod feed;
 mod gfx;
+mod hud;
 mod keys;
 mod live;
 #[allow(
@@ -56,6 +57,7 @@ use winit::window::{Window, WindowId};
 
 use coreaudio::now_s;
 use gfx::Gfx;
+use hud::{HudState, KeyLight, PressMark};
 use live::{Msg, Source};
 use output::{Click, Output};
 use scene::{Look, Scene};
@@ -255,6 +257,8 @@ pub fn run(args: &[String]) -> Result<(), String> {
         over: None,
         title_at: 0.0,
         cue_at: f64::NEG_INFINITY,
+        keys: [KeyLight::default(); 5],
+        presses: VecDeque::new(),
     };
     let result = event_loop.run_app(&mut app).map_err(|e| e.to_string());
     stop.store(true, Ordering::Relaxed);
@@ -298,7 +302,7 @@ fn still(path: &Path) -> Result<(), String> {
     let upcoming: Vec<f64> = beats
         .iter()
         .map(|b| b - end)
-        .filter(|d| d.abs() < 2.0)
+        .filter(|d| d.abs() < 2.5)
         .collect();
     let (w, h) = (960, 640);
     let mut sprites = Vec::new();
@@ -307,7 +311,36 @@ fn still(path: &Path) -> Result<(), String> {
         &art,
         &world.looks,
         end,
-        &upcoming,
+        w as f32,
+        h as f32,
+        &mut sprites,
+    );
+    let last = beats
+        .iter()
+        .copied()
+        .filter(|&b| b <= end)
+        .fold(0.0, f64::max);
+    let mut keys = [KeyLight::default(); 5];
+    keys[3] = KeyLight {
+        held: true,
+        rating: Some("perfect"),
+    };
+    let presses = [PressMark {
+        age: 0.1,
+        delta: -0.012,
+        rating: Some("great"),
+    }];
+    let state = HudState {
+        keys,
+        presses: &presses,
+        beats: &upcoming,
+        beat_phase: (end - last) / 0.47,
+        elapsed: end,
+        bitten_ago: f64::INFINITY,
+    };
+    hud::draw(
+        &engine.view.borrow(),
+        &state,
         w as f32,
         h as f32,
         &mut sprites,
@@ -354,6 +387,10 @@ struct App {
     title_at: f64,
     /// When the last swing or kill sound started (host s), so a burst plays once.
     cue_at: f64,
+    /// The key display: up, left, down, right, stomp.
+    keys: [KeyLight; 5],
+    /// Recent presses for the beat track: when (host s), how far off, their rating.
+    presses: VecDeque<(f64, f64, Option<&'static str>)>,
 }
 
 impl App {
@@ -449,11 +486,41 @@ impl App {
             &self.art,
             &self.world.looks,
             now,
-            &upcoming,
             w,
             h,
             &mut sprites,
         );
+        // The beat phase from the last beat heard and the gap to the next.
+        let phase = song.map_or(1.0, |s| {
+            let last = self
+                .beats
+                .iter()
+                .copied()
+                .filter(|&b| b <= s)
+                .fold(f64::NEG_INFINITY, f64::max);
+            match self.beats.iter().copied().find(|&b| b > s) {
+                Some(n) if last.is_finite() => (s - last) / (n - last).max(1e-3),
+                _ => 1.0,
+            }
+        });
+        let presses: Vec<PressMark> = self
+            .presses
+            .iter()
+            .map(|&(t, delta, rating)| PressMark {
+                age: now - t,
+                delta,
+                rating,
+            })
+            .collect();
+        let state = HudState {
+            keys: self.keys,
+            presses: &presses,
+            beats: &upcoming,
+            beat_phase: phase,
+            elapsed: song.map_or(0.0, |s| s - self.run_start),
+            bitten_ago: now - self.scene.bitten(),
+        };
+        hud::draw(&self.engine.view.borrow(), &state, w, h, &mut sprites);
         if let Some((t, fell, seconds)) = self.over {
             scene::end_card(w, h, now - t, seconds.max(0.0) as u64, fell, &mut sprites);
         }
@@ -469,6 +536,18 @@ impl App {
 
     /// The sounds the view's new moments make: kills, swings, bites.
     fn cues(&mut self, moments: &[Moment], now: f64) {
+        for m in moments {
+            if let Moment::Press { rating, delta, .. } = m {
+                self.presses.push_back((now, *delta, *rating));
+                // (The keys held show the press's rating.)
+                for k in self.keys.iter_mut().filter(|k| k.held) {
+                    k.rating = *rating;
+                }
+            }
+        }
+        while self.presses.front().is_some_and(|p| now - p.0 > 1.0) {
+            self.presses.pop_front();
+        }
         let kills = moments
             .iter()
             .filter(|m| matches!(m, Moment::Death { .. }))
@@ -546,6 +625,14 @@ impl App {
         if repeat {
             return;
         }
+        let slot = match key {
+            InputKey::Up => 0,
+            InputKey::Left => 1,
+            InputKey::Down => 2,
+            InputKey::Right => 3,
+            InputKey::Space => 4,
+        };
+        self.keys[slot].held = pressed;
         if let Some(s) = self.song_at(now) {
             self.engine.key(s - self.run_start, key, pressed);
         }

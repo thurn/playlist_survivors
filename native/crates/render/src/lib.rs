@@ -7,4 +7,5 @@
 
 pub mod atlas;
 pub mod capture;
+pub mod font;
 pub mod sprites;

@@ -39,6 +39,11 @@ pub struct Scene {
 }
 
 impl Scene {
+    /// When the hero was last bitten (host s).
+    pub fn bitten(&self) -> f64 {
+        self.bitten
+    }
+
     /// Turns the view's new moments into effects, heard now (host time `now`).
     pub fn moments(&mut self, moments: &[Moment], now: f64) {
         for m in moments {
@@ -74,8 +79,7 @@ impl Scene {
         self.fx.retain(|f| now - f.at < 2.0);
     }
 
-    /// Draws `view` at host time `now` into a `w` x `h` window. `beats` are the nearby committed
-    /// beats' times from now (s), for the beat marker.
+    /// Draws `view` at host time `now` into a `w` x `h` window (the HUD is `hud`'s).
     #[allow(clippy::too_many_arguments, clippy::single_match_else)]
     pub fn draw(
         &self,
@@ -83,7 +87,6 @@ impl Scene {
         art: &Atlases,
         looks: &HashMap<String, Look>,
         now: f64,
-        beats: &[f64],
         w: f32,
         h: f32,
         out: &mut Vec<Sprite>,
@@ -212,54 +215,6 @@ impl Scene {
         if now - self.bitten < 0.6 {
             let a = (1.0 - (now - self.bitten) / 0.6) as f32;
             out.push(rect(0.0, 0.0, w, h, [0.8, 0.1, 0.1, 0.25 * a]));
-        }
-        // The HUD: health, the groove, and the next beats approaching a marker.
-        let ui = (w / VIEW_W).min(h / VIEW_H);
-        let health = view.health.clamp(0.0, 1.0) as f32;
-        out.push(rect(
-            16.0 * ui,
-            16.0 * ui,
-            200.0 * ui,
-            14.0 * ui,
-            [0.2, 0.1, 0.12, 0.9],
-        ));
-        out.push(rect(
-            16.0 * ui,
-            16.0 * ui,
-            200.0 * ui * health,
-            14.0 * ui,
-            [0.95, 0.3, 0.4, 1.0],
-        ));
-        let groove = view.groove.clamp(0.0, 1.0) as f32;
-        out.push(rect(
-            16.0 * ui,
-            36.0 * ui,
-            200.0 * ui,
-            8.0 * ui,
-            [0.15, 0.15, 0.2, 0.9],
-        ));
-        out.push(rect(
-            16.0 * ui,
-            36.0 * ui,
-            200.0 * ui * groove,
-            8.0 * ui,
-            [1.0, 0.85, 0.35, 1.0],
-        ));
-        let (mx, my) = (w / 2.0, 24.0 * ui);
-        out.push(rect(
-            mx - 2.0 * ui,
-            my - 14.0 * ui,
-            4.0 * ui,
-            28.0 * ui,
-            [1.0, 1.0, 1.0, 0.9],
-        ));
-        for &dt in beats {
-            let dx = dt as f32 * 300.0 * ui;
-            if dx.abs() < w / 2.0 {
-                let a = if dx < 0.0 { 0.3 } else { 1.0 };
-                out.push(square(mx + dx, my, 12.0 * ui, [1.0, 0.8, 0.3, a]));
-                out.push(square(mx - dx, my, 12.0 * ui, [1.0, 0.8, 0.3, a]));
-            }
         }
     }
 }
