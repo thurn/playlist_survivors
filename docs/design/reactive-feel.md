@@ -75,8 +75,9 @@ meanings.
 
 ### Where reactive mode stands
 
-Gameplay as of master `1529eef`, the fair-judging revision (`hv-s4pt.12`).
-This plan builds on these rules, not the ones before them:
+Gameplay as of master `505adf7`: the fair-judging revision (`hv-s4pt.12`)
+and the beatless-credit revision (`hv-s4pt.13`). This plan builds on these
+rules, not the ones before them:
 
 - **No free movement.** Strides and the beat display stay on throughout.
   While the beat is unclear, presses stride unjudged and the groove holds.
@@ -92,9 +93,34 @@ This plan builds on these rules, not the ones before them:
   at the gate to all of it at evidence 0.55. A non-steady player's raises
   scale the same way, so random pressing gains nothing where the tracker is
   unsure.
+- **Beatless credit** (`hv-s4pt.13`): each committed beat 2 s or more into a
+  stretch without judging raises the groove by a Perfect's worth (0.08). A
+  full meter takes about 13 beats, and the credit doesn't count as a raise for
+  the drain.
+- **The lock-on grace** (`hv-s4pt.13`): for the first 8 s of judged time after
+  4 s or more without judging, a steady player loses nothing. Anyone else's
+  settled penalties count half.
+- **The grade** averages the meter as shown from 16 s on, judged or not, with
+  beatless stretches filled by the credit.
+- **A new gate: mashing never beats playing.** On every shipped track, with
+  damage off, no masher and not the holder beats `reactive-moderate`'s average
+  groove or its judged time at tier 2 or higher.
+  - A side effect: the credit carries a masher into each judged stretch at a
+    full meter.
+  - So the Galop's stage 2 target, mashers at tier 0 for 80% of judged time,
+    now misses (76% and 79%).
 - **Rings close in world time.**
 - **`npm run reactive:replay`** replays a play log's presses under the
   current rules: a fast way to test mechanics against real playtests.
+
+Stage 7 (`hv-s4pt.11`) is in progress again, in `.worktrees/reactive-stage7`:
+
+- It sweeps hero health and the director's population (`start`, `perMinute`,
+  `max`) in `levels/reactive.yaml`.
+- It edits `src/content/schema.ts`, `src/reactive/players.ts` and
+  `src/sim/player.ts`.
+- Its remaining work: reactive grade thresholds, Watch the demo, the parity
+  pass and stage 7's targets.
 
 Already reacting to the music, for the fast lane to build on:
 
@@ -314,9 +340,12 @@ Each change is small and hand-wired. G1 migrates them into the matrix later.
 ### Constraints
 
 - **No stream changes and no simulation changes.**
-  - Stage 7 is tuning in `src/sim/`; its released worktree edits
+  - Stage 7 is active in `.worktrees/reactive-stage7`. It edits
     `src/sim/player.ts`, `src/reactive/players.ts` and
-    `src/content/schema.ts`. Stay out of those where possible.
+    `src/content/schema.ts`, and tunes the `hero` and `director` keys of
+    `levels/reactive.yaml`. Stay out of all of those.
+  - Put the fast lane's knobs in code constants, or in a new top-level key of
+    `levels/reactive.yaml` (an additive edit).
   - Small textual collisions are rebased with `tg update`.
 - **Causal:** every new frame effect reads only stream entries known at the
   frame's time. The existing perturbation check compares frames and enforces
@@ -845,6 +874,9 @@ G3 rewrites these in musical units:
   section change, a set piece and its finale, even if the boss never comes.
 - **The Galop regression:** stage 7's recorded Galop results (survival, the
   masher fall window, grades, set-piece times) are G3's regression targets.
+  Stage 7 is retuning `population.start`, `perMinute` and `max` right now. G3
+  converts its final values into per-bar growth, rather than the ones in this
+  document.
   G3 holds them, or retunes knowingly and records the before and after in its
   notes.
 
@@ -943,7 +975,8 @@ with a rubric dimension.
 - **Breakdowns (A6):** in stretches below the gate:
   - the percussive sounds played (should be none);
   - motion following the press fallback;
-  - the visual intensity drop.
+  - the visual intensity drop;
+  - whether the groove holds or is credited, and is never drained.
 
 ### The rubric
 
@@ -1086,12 +1119,23 @@ end per dimension, the held-out results, and what remains weak.
 
 ## Mechanics Targets
 
-Printed by `reactive:corpus` as targets, not gates.
+Printed by `reactive:corpus` as targets, not gates. The corpus is kept out
+of `check:reactive`'s gates on purpose ([CI budget](#causality-determinism-and-checks)).
 
-- **Per track with damage off, over judged time:**
+- **First priority, per track with damage off: mashing never beats
+  playing.** No masher (`mash2`, `mash4`, `mash8`) and not the holder has a
+  higher average groove, or more judged time at tier 2 or higher, than
+  `reactive-moderate`. This is `hv-s4pt.13`'s gate, measured on the corpus.
+- **Then, per track with damage off, over judged time:**
   - `reactive-moderate` at tier 2 or higher for at least 60%;
-  - `mash4` and `mash8` at tier 0 for at least 80%;
-  - honest damage dealt at least 2× masher damage dealt.
+  - honest damage dealt at least 2× masher damage dealt;
+  - `mash4` and `mash8` at tier 0 for at least 80%.
+    - This is the lowest priority. Beatless credit carries mashers into judged
+      stretches at a full meter, so it misses on tracks with many beatless
+      stretches, as it does on the Galop.
+- **Beatless-heavy tracks** give everyone the same credit, so their reward
+  shows only in judged stretches. The reward metrics (M2) report judged time
+  alone.
 - **With damage on:** the honest players survive every track with at least
   30 s of clear beat.
 - **The Galop:** stage 7's recorded results, as regression targets
@@ -1126,11 +1170,23 @@ This plan extends it:
   deterministic; plan hashes repeat.
 - **Play mode is unchanged:** `npm test` with the golden hashes, `check:play`
   and `check:seeds` pass without changing any fixture.
-- **CI budget:**
-  - `check:reactive` covers the corpus only through the fresh-streams gate
-    and a smoke run of one corpus track, which keeps it inside its 60 s
-    budget.
-  - `reactive:corpus`, the dossiers and the rounds run outside CI.
+- **CI budget, and keeping the corpus out of the gates:**
+  - Today `check:reactive` runs every per-track gate over every track in
+    `public/reactive/index.json` (`shippedTrackIds()`):
+    - the end-to-end runs;
+    - the mashing gate, which simulates 5 players per track;
+    - the stream checks.
+  - Listing 39 corpus tracks there would multiply CI time, which is already
+    about 80 s for 10 tracks. It would also make held-out tracks gates, and a
+    failure would force a fix that cites a held-out track.
+  - So F1 splits the list:
+    - `gatedTrackIds()`: the regression set's classical and synthetic groups;
+      every per-track gate uses it;
+    - `corpusTrackIds()`: the `notjam` and `cc` groups.
+  - The fresh-streams gate covers both lists, since it's cheap. Apart from
+    that, the only corpus check is a smoke run of one iteration track.
+  - `reactive:corpus`, the dossiers and the rounds run outside CI. Held-out
+    tracks go through `reactive:corpus` only with `--milestone`.
 - **Index check:** a unit test checks the manifest, families, splits,
   licences and credits.
 
@@ -1190,7 +1246,7 @@ worktree and keeps `scripts/ci` green.
 | Key | Bead | Phase | Work | Needs |
 |---|---|---|---|---|
 | Q | `hv-jtsz.16` | 0 | The fast lane: mini-corpus, beat sheets, enemy beat motion, onset texture, key colour, stand-in identity, legible reward | — |
-| F1 | `hv-jtsz.1` | A | Corpus manifest, NotJam ingest to Ogg, index groups and splits, `corpus/CREDITS.md`, `--jobs` parallel regeneration, NotJam streams | Q |
+| F1 | `hv-jtsz.1` | A | Corpus manifest, NotJam ingest to Ogg, index groups and splits, `corpus/CREDITS.md`, `--jobs` parallel regeneration, gated against corpus track lists, NotJam streams | Q |
 | F2 | `hv-jtsz.2` | A | `fit-grid`: fitted references, meter, approximate sections, click overlays; corpus beat-metric table | F1 (serialized: streams) |
 | F3 | `hv-jtsz.3` | A | Shortlist about 12 CC tracks and extra SFX packs; stop for user approval | Q |
 | F3b | `hv-jtsz.4` | A | Ingest the approved CC tracks with fitted references (filed unselectable until approval) | F2, F3 |
