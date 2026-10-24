@@ -71,6 +71,8 @@ export interface EnemyRecord {
   attacks?: { w0: number; w: number; kind: "shoot" | "slam"; dir: number }[];
   /** Planned dance (kick) times for formation members. */
   dance?: { w0: number; w1: number; anim: string; alternate: boolean; phase: number };
+  /** Beat steps (src/sim/gait.ts), in time order: each from world time w lasting dur, or (dur 0) the return to gliding. */
+  steps?: { w: number; dur: number }[];
 }
 
 /** The sword (a swing), an automatic weapon, a cleave's shockwave band, or a finale-blast band. */

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { propsFromAtlas } from "../scripts/lib/plan-node.ts";
 import { reactiveInput, readStreamFile } from "../scripts/lib/reactive-node.ts";
 import { Warp } from "../src/core/warp.ts";
+import { Evaluator } from "../src/plan/evaluate.ts";
 import { enemyPos } from "../src/plan/sample.ts";
 import { planWithSim, prepare } from "../src/planner/plan.ts";
 import { reactivePlayerFor } from "../src/reactive/players.ts";
@@ -49,5 +50,26 @@ describe("beat steps in reactive mode", () => {
     }
     expect(stepping).toBeGreaterThan(1000);
     expect(standing / (stepping + standing)).toBeLessThan(0.25);
+  });
+
+  it("plants a stepping enemy's feet between its recorded steps", () => {
+    // Walk frames 0 and 4 are the cycle's footfalls; 1-3 and 5-7 swing a leg through.
+    const ev = new Evaluator(plan, lib);
+    const byId = new Map(plan.enemies.map((e) => [e.id, e]));
+    let n = 0;
+    let swinging = 0;
+    for (let s = 60; s < 90; s += 0.013) {
+      const w = warp.toWorld(s);
+      for (const x of ev.evaluate(s).enemies) {
+        const steps = byId.get(x.id)!.steps;
+        if (x.anim !== "walk" || !steps) continue;
+        const g = steps.findLast((st) => st.w <= w);
+        if (!g || g.dur === 0 || w < g.w + g.dur + 0.01) continue;
+        n++;
+        if (x.frame % 4 !== 0) swinging++;
+      }
+    }
+    expect(n).toBeGreaterThan(1000);
+    expect(swinging / n).toBeLessThan(0.02);
   });
 });

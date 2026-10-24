@@ -124,9 +124,11 @@ describe("the fast lane's frames", () => {
   it("makes the horde squash on committed beats and hop between them while the beat is clear", () => {
     const clear = frames.filter((f) => f.reactive && f.reactive.mix * f.reactive.amp > 0.9 && f.enemies.length > 10);
     expect(clear.length).toBeGreaterThan(20);
-    // Across one beat, each walking enemy squashes (its width over height swinging) and hops.
+    // Across two beats, each walking enemy squashes (its width over height swinging) and hops (a
+    // stepping one steps, though one held up in the crowd may not, some beats).
     const k = Math.floor(clear[clear.length >> 1].sbi);
-    const span = Array.from({ length: 10 }, (_, i) => ev.evaluate(plan.songBeats[k] + (i / 10) * (plan.songBeats[k + 1] - plan.songBeats[k])));
+    const b = plan.songBeats;
+    const span = Array.from({ length: 20 }, (_, i) => ev.evaluate(b[k + (i >= 10 ? 1 : 0)] + ((i % 10) / 10) * (b[k + (i >= 10 ? 2 : 1)] - b[k + (i >= 10 ? 1 : 0)])));
     let squashed = 0;
     let hopped = 0;
     let walking = 0;

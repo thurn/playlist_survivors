@@ -12,6 +12,7 @@ import { latestWave, waveRadius } from "../mapgen/openfield.ts";
 import { countUpTo, enemyPos, heroSample } from "./sample.ts";
 import { StaticIndex, type PlanIndex } from "./view.ts";
 import { partnerPress, type EffectEvent, type EnemyRecord, type Plan, type PlanInput, type PlanSection, type UiEvent } from "./types.ts";
+import { easeOut } from "../sim/movement.ts";
 import { orbitAt } from "../sim/tiers.ts";
 import { evolvedOrbit, itemName, loadoutAt, passiveBonus, type Loadout } from "../sim/upgrades.ts";
 import { SWORD_TINTS } from "./tier-look.ts";
@@ -92,6 +93,8 @@ function healthFlash(h: { s: ArrayLike<number>; v: ArrayLike<number> }, s: numbe
 
 /** World pixels per full walk cycle for a regular-sized enemy (two strides). */
 const ENEMY_STRIDE = 56;
+/** Beat steps (src/sim/gait.ts): a stepping enemy lifts this far (px) over each step. */
+const STEP_LIFT = 4;
 /** An enemy this close to the hero (plus its radius), standing still, is in melee. */
 const MELEE_REACH = 20;
 
@@ -492,6 +495,30 @@ export class Evaluator {
     return lerp(pre[k], pre[k + 1], f - k);
   }
 
+  /**
+   * A stepping enemy's walk at world time w, from the steps the simulation recorded (src/sim/gait.ts):
+   * the walk frame, going from one footfall of the cycle (frames 0 and 4) to the other over its
+   * latest step as the step's ease covers the ground, then planted; and its lift, 0 to 1 and back over
+   * the step. Undefined before its first step and while it glides.
+   */
+  stepPose(e: EnemyRecord, w: number): { frame: number; lift: number } | undefined {
+    const st = e.steps;
+    if (!st || st.length === 0 || st[0].w > w) return undefined;
+    let lo = 0;
+    let hi = st.length - 1;
+    while (hi > lo) {
+      const mid = (lo + hi + 1) >> 1;
+      if (st[mid].w <= w) lo = mid;
+      else hi = mid - 1;
+    }
+    const g = st[lo];
+    if (g.dur === 0) return undefined;
+    const u = clamp((w - g.w) / g.dur, 0, 1);
+    // Each step swings the other leg through, and neighbours step off on opposite feet.
+    const foot = (lo + e.id) % 2 === 0 ? 0 : 4;
+    return { frame: (foot + Math.min(4, Math.floor(easeOut(u) * 4))) % 8, lift: Math.sin(Math.PI * u) };
+  }
+
   sectionAt(s: number): number {
     const secs = this.plan.sections;
     for (let i = secs.length - 1; i >= 0; i--) if (s >= secs[i].s0) return i;
@@ -811,6 +838,9 @@ export class Evaluator {
       // Walk cycles advance by distance, like the hero's: the feet never slide.
       const stride = ENEMY_STRIDE * def.scale * (def.radius / 12);
       frame = Math.floor(frac(this.walked(e, Math.min(w, e.deathW)) / stride + (e.id % 7) * 0.13) * 8);
+      // A stepping enemy's feet follow its steps instead: a stride of the cycle per step, planted on landing.
+      const step = dying ? undefined : this.stepPose(e, w);
+      if (step) frame = step.frame;
       // At the hero, melee enemies attack on their movement group's subdivision (it never hurts).
       const contact = Math.hypot(h.x - x, h.y - y) <= MELEE_REACH + def.radius;
       if (contact && !moving && !dying && def.behavior === "chase") {
@@ -832,10 +862,11 @@ export class Evaluator {
       if (def.hover > 0) z += 3 * Math.sin((wbi * Math.PI * 2) / Math.max(0.5, def.walkCycleBeats));
       // Reactive mode (the fast lane): a hop between committed beats landing in a squash on each,
       // each type a step later than the last so the horde ripples; a flinch at each onset.
+      // (A stepping enemy's steps are its bob, and its squash lands on each beat, whether it steps there or not.)
       if (reactive && !dying && !(e.dance && w >= e.dance.w0 && w < e.dance.w1)) {
-        const u = frac(sbi - this.typePhase(e.type));
+        const u = frac(sbi - (step ? 0 : this.typePhase(e.type)));
         const land = beatHit(u);
-        z += ENEMY_BOB * groove * Math.sin(Math.PI * u);
+        if (!step) z += ENEMY_BOB * groove * Math.sin(Math.PI * u);
         sx *= (1 + ENEMY_SQUASH * groove * land) * (1 - 0.5 * ENEMY_FLINCH * reactive.flinch);
         sy *= (1 - ENEMY_SQUASH * groove * land) * (1 + ENEMY_FLINCH * reactive.flinch);
       }
@@ -896,6 +927,7 @@ export class Evaluator {
         alpha = 1 - smoothstep((age - DEATH_FALL * 0.5) / (DEATH_FALL * 0.5));
         z = def.hover * Math.max(0, 1 - age * 4);
       }
+      if (step && anim === "walk") z += STEP_LIFT * step.lift;
       if (anim === "walk" && def.atlas === "slime") frame = Math.floor(frac(wbi) * 4);
       else if (anim === "walk" && def.walkCycleBeats > 0 && (def.atlas === "bat" || def.atlas === "bee" || def.atlas === "eyeball")) frame = Math.floor(frac(wbi / def.walkCycleBeats) * 4);
       enemies.push({ id: e.id, type: e.type, x, y, z, anim, facing, frame, flash, alpha, scaleX: sx * def.scale, scaleY: sy * def.scale, shadow: def.scale });

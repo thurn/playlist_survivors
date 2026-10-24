@@ -4,8 +4,8 @@
  * `share` of the time to the next, and stands still in between (in play mode and the demo it glides). A step covers the enemy's speed times that time, so over
  * a beat it walks as far as it would gliding.
  *
- * Pure functions of the song's beat index, so the simulation (which moves the enemies) and the
- * renderer (which plants their feet) agree on when each step starts.
+ * Pure functions of the song's beat index. The simulation records each step it takes, and the
+ * renderer plants the feet from those.
  */
 import type { EnemyDef } from "../content/schema.ts";
 

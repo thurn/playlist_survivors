@@ -596,6 +596,12 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
     this.add(e.attacks!, a);
   }
 
+  enemyStep(id: number, w: number, dur: number): void {
+    const e = this.plan.enemies[id];
+    if (!e.steps) this.set(e, "steps", []);
+    this.add(e.steps!, { w, dur });
+  }
+
   danceStart(id: number, sFrom: number, anim: string, alternate: boolean): void {
     this.set(this.plan.enemies[id], "dance", { w0: this.predictW(sFrom), w1: Infinity, anim, alternate, phase: 0 });
   }

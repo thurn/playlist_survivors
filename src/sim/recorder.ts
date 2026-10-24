@@ -264,6 +264,8 @@ export interface Recorder {
   clock?(s: number, w: number, between: boolean): void;
   slamMark?(k: number, m: { x: number; y: number; sMark: number; wMark: number; sLand: number; boss: number; dir: number }): void;
   drawStart?(id: number, w0: number, sRelease: number, dir: number): void;
+  /** Beat steps: an enemy's step from world time w lasting dur (world seconds), or (dur 0) its return to gliding. */
+  enemyStep?(id: number, w: number, dur: number): void;
   danceStart?(id: number, sFrom: number, anim: string, alternate: boolean): void;
   /** Optional, for play mode's timing log: what a key event did, and why. */
   press?(t: PressTrace): void;
@@ -338,6 +340,9 @@ export class BatchRecorder implements Recorder {
   }
   fate(id: number, fate: Fate): void {
     this.enemies[id].fates.push(fate);
+  }
+  enemyStep(id: number, w: number, dur: number): void {
+    (this.enemies[id].steps ??= []).push({ w, dur });
   }
   death(id: number, w: number, recycled: boolean): void {
     const rec = this.enemies[id];

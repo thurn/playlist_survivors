@@ -74,6 +74,8 @@ const FORECAST_CONFIDENCE = 0.6;
 const FORECAST_WINDOW = 0.05;
 /** Reactive mode (stage 4): the camera punch that marks a detected section's start. */
 const SECTION_PUNCH = 0.035;
+/** Beat steps shorter than this (px) are not recorded: the renderer leaves the enemy planted. */
+const STEP_SEEN = 0.5;
 /** An enemy this much farther than its stopping point still bites. */
 const BITE_SLACK = 2;
 /** At most this many spawns per beat. */
@@ -1826,8 +1828,17 @@ function engine(env: Env, st: SimState, io: Io) {
     const at = (bi: number) => (stream ? knownTimeOfBeat(bi) : timeOfBeatIndex(song, bi));
     return at(gaitBeat(gait, k + 1)) - (joins ? s : at(gaitBeat(gait, k)));
   };
+  /** A step from world time w: recorded for the renderer if it goes anywhere. */
   const startStep = (f: Foe, gait: Gait, w: number, dx: number, dy: number, span: number) => {
-    f.step = { w0: w, dur: Math.max(1 / SIM_RATE, gait.share * span), dx, dy, span };
+    const dur = Math.max(1 / SIM_RATE, gait.share * span);
+    f.step = { w0: w, dur, dx, dy, span };
+    if (Math.hypot(dx, dy) >= STEP_SEEN) rec().enemyStep?.(f.id, w, dur);
+  };
+  /** The enemy stops stepping (it glides, or a set piece holds it) at world time w: recorded once. */
+  const stopStepping = (f: Foe, w: number) => {
+    if (f.stepK !== undefined) rec().enemyStep?.(f.id, w, 0);
+    f.stepK = undefined;
+    f.step = undefined;
   };
   /** A stepping enemy's velocity at world time w (the slope of its ease; still between steps), for the extrapolation between fixed steps. */
   const stepVelocity = (f: Foe, w: number) => {
@@ -2021,7 +2032,9 @@ function engine(env: Env, st: SimState, io: Io) {
       f.lastW = w1;
       // Set pieces keep their course (a ring's circle, a stampede's run), whatever the hero does, and
       // bite whoever they run into.
+      // (A set piece's member is not stepping: it joins the steps once released.)
       if ((f.at && s < f.slotUntil) || f.run) {
+        stopStepping(f, w1);
         if (f.run) {
           f.vx = f.run.vx;
           f.vy = f.run.vy;
@@ -2032,7 +2045,10 @@ function engine(env: Env, st: SimState, io: Io) {
         }
         continue;
       }
-      if (pinned(f)) continue;
+      if (pinned(f)) {
+        stopStepping(f, w1);
+        continue;
+      }
       if (f.archerGroup !== undefined) {
         const p = posts.get(f.archerGroup)!;
         const cx = p.x / p.n - hp.x;
@@ -2051,8 +2067,7 @@ function engine(env: Env, st: SimState, io: Io) {
           stepVelocity(f, w1);
           continue;
         }
-        f.stepK = undefined;
-        f.step = undefined;
+        stopStepping(f, w1);
         const sp = f.def.speed * calmSpeed * (mults[f.def.group] ?? 1) * clamp(tl / 20, 0, 1);
         const kk = Math.min(1, dt * 12);
         f.vx += ((tx / tl) * sp - f.vx) * kk;
@@ -2078,8 +2093,7 @@ function engine(env: Env, st: SimState, io: Io) {
         }
         stepVelocity(f, w1);
       } else {
-        f.stepK = undefined;
-        f.step = undefined;
+        stopStepping(f, w1);
         const m = (mults[f.def.group] ?? 1) * calmSpeed;
         // Archers keep their distance; everyone else closes to contact.
         const speed =
