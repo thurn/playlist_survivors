@@ -12,7 +12,12 @@ The goal was always to play along to *any* audio on the computer. This plan
 builds that as a **native macOS app written in Rust**:
 
 - It **listens to system audio** through a Core Audio process tap, excluding its
-  own sounds, and never mutes, delays or replays what the player hears.
+  own sounds. By default it never mutes, delays or replays what the player
+  hears.
+- As an opt-in, **it can delay the music**: the tap mutes one app, and the app
+  plays that audio itself a few seconds late, so committed beats come from
+  hindsight instead of forecasts ([Phase E](#phase-e-delayed-listening)).
+  Parity does not wait for it.
 - It **analyses the audio live**, with a streaming Rust port of every belief
   stream group, hindsight included.
 - It **runs reactive mode as a faithful Rust port** of the TypeScript game at a
@@ -43,8 +48,15 @@ terms:
   began listening. Every timestamp in the app (captured samples, key presses,
   stream arrivals, display presents, sound output) is converted to it.
 - **Heard time:** the session-clock time at which the player hears a given
-  sample: its capture time plus the output latency. The sim's song time is
-  heard time.
+  sample: its capture time plus the output latency, plus the music delay `M`
+  in Delayed listening. The sim's song time is heard time.
+- **Direct listening:** the default. The player hears the source app as it
+  plays, and the tap only listens.
+- **Delayed listening:** the opt-in mode of [Phase E](#phase-e-delayed-listening).
+  The tap mutes one app the player picks, and the app plays that app's audio
+  through its own output `M` seconds late.
+- **Music delay `M`:** how late Delayed listening plays the music, a constant
+  set in E1 by rule (about 2–4 s).
 - **Arrival stamp:** the session-clock time at which a live stream entry
   becomes available to the game. Live, it *is* the entry's `knownAt`.
 - **Source:** where audio comes from: **System** (the process tap), **File**
@@ -67,9 +79,12 @@ terms:
 | B. Sim (parallel with A) | Content, schedule, sim, judging, director, set pieces, evaluator, virtual players, causality checks, all streaming | Rust sim matches TS bit for bit |
 | C. Convergence | Renderer, audio output, app shell, live runner; playable in File mode, then System mode | The game plays, natively, live |
 | D. Live parity | Run detection, live exceptions, calibration, session recording, latency report, QA checklist, TS tree removed | Done |
+| E. Delayed listening (not needed for parity) | Committed beats from hindsight under a music delay; the tap mutes the picked app and the app plays its audio late | Lookahead buys measurably better beats, safely |
 
 Phases A and B run in parallel after phase 1. Phase C starts when B's sim and
-evaluator are green; its live steps also need A.
+evaluator are green; its live steps also need A. Phase E's analyzer bead can
+start once A is done. Its app bead follows D's calibration and timing logs.
+Neither blocks D5 or D6.
 
 ### Decisions
 
@@ -113,6 +128,13 @@ fixed.
   (a CLI flag and a debug menu), never on the player's title screen.
 - **Outputs:** built-in speakers and wired headphones first. Bluetooth is
   best-effort: Core Audio's reported latency plus a per-device calibration.
+- **Delayed listening is an opt-in output mode, macOS only, and parity does not
+  wait for it.** The user reversed reactive-audio.md's "never delay the music"
+  for the native app, because the tap can mute one app safely
+  (`CATapMutedWhenTapped`, released with the tap). Direct listening stays the
+  default and the mode the oracle and parity are defined against. Delayed
+  listening taps only the app the player picks, never all output, so other
+  apps' sounds are neither muted nor delayed.
 - **No approval points.** The user named none and wants none. Latency targets
   are set by the spike's executor from its measurements, by the rules in
   [Setting the targets](#setting-the-targets). Every other open choice is the
@@ -148,6 +170,9 @@ fixed.
   ported causality checks, and live by construction.
 - The latency chain is measured end to end and reported every session.
 - Any live session can be replayed headlessly, bit for bit.
+- After parity: in Delayed listening, committed beats are measurably more
+  accurate than Direct listening's across the corpus. Quitting or crashing
+  always gives the player back the muted app's sound.
 
 ### Non-goals
 
@@ -157,8 +182,11 @@ fixed.
 - An endless session across songs, a restarted feel loop, press fusion (see
   [Beyond This Plan](#beyond-this-plan)).
 - Play mode, the authored Galop and the song-map toolchain.
-- Delaying or muting the source audio (rejected in reactive-audio.md's
-  [Decisions](reactive-audio.md#decisions)).
+- Delaying or muting by default, tapping every app for Delayed listening, or a
+  delayed mode on any platform but macOS.
+- Using Delayed listening's lookahead for anything but committed beats, such
+  as accents detected rather than forecast or structure events on time (see
+  [Beyond This Plan](#beyond-this-plan)).
 - Track identity for live audio, such as reading Now Playing metadata. Live
   runs have no per-track best grade.
 - Gamepad input. The TS game is keyboard-only.
@@ -208,6 +236,8 @@ fixed.
                                                                                  │
                                          recording ─► evaluator(state, s) ─► renderer (wgpu) ─► display
                                                   └─► sound events ─► mixer (output callback) ─► speakers
+                                                                        ▲
+ Delayed listening only: captured stereo ─► delay line (M s) ───────────┘
 ```
 
 The pure crates (`stream`, `analysis`, `sim`, `eval`, `players`) have no I/O, no
@@ -292,6 +322,13 @@ speakers into the built-in microphone), and the app carries two constants,
 A useful consequence: the analyzer hears each sample `L` before the player
 does. On built-in speakers that is 10–30 ms of free lookahead, and on Bluetooth
 much more.
+
+**In Delayed listening** the app plays the music itself, so a sample captured
+at `h` is heard at `h + M + L_out`. The music and the game's sounds then leave
+through the same output unit and share `L_out` exactly, with no hypothesis to
+measure. `L_tap` no longer affects what the player hears. The analyzer's
+lookahead becomes `M + L_out`, and [Phase E](#phase-e-delayed-listening) spends
+it on committed beats.
 
 ### The stream, live
 
@@ -992,6 +1029,159 @@ After D5:
 - `tools/analysis`, `content/`, `levels/`, `public/assets`, `public/reactive`
   and `corpus/` stay. They are the app's content and the analyzer's oracle.
 
+## Phase E: Delayed Listening
+
+An opt-in output mode that trades a few seconds of delay for better beats.
+Parity does not wait for it: D5 and D6 never depend on its beads, and E2 may
+land before or after them.
+
+### Why
+
+In Direct listening, committed beats are forecasts. They must be known at
+least the commit horizon `H` (1 period plus 0.35 s) before they are heard, and
+the analyzer has only `L` of audio past the present. On the Galop's pulsed
+sections that put 67% of committed beats within 45 ms of the song map, against
+84% when the experiment's forecast was only 0.25 s ahead. Hindsight grids,
+which hear both sides of each beat, matched 92% (online) and 97% (offline) on
+steady beat-driven tracks ([reactive-audio.md](reactive-audio.md#measured-stage-1)
+and its appendix).
+
+Delaying the music by `M` lets the analyzer hear about `M − H` seconds past
+each beat before it must be committed. With `M` near 3 s that is the 0.5–2 s
+of hindsight where the measured accuracy plateaus.
+
+What it does not fix: tempo-octave ambiguity. The offline decode settles on
+half tempo on the Galop and on much orchestral music. Readings chosen from
+presses still decide that, exactly as in Direct listening.
+
+### What the player sees and hears
+
+- On the listening screen, **Listening: Direct / Delayed**. Delayed shows the
+  apps currently producing audio and taps the one the player picks; the
+  default is the app that most recently started playing.
+- Entering Delayed listening gives `M` seconds of silence, then the music
+  resumes from the app, late. A note says the music is delayed by `M` s.
+- Leaving it unmutes the app live. The `M` seconds still in the delay line are
+  dropped with a 50 ms fade.
+- Switching mode, or switching the picked app, ends the run, as a device
+  change does: heard times jump by `M`.
+- When the picked app is a browser, a notice warns that its video will run `M`
+  ahead of its sound.
+- Pausing, skipping or seeking in the source app is heard `M` late. That is the
+  accepted cost of the mode.
+- Other apps are not tapped. They are heard live and not analysed.
+
+### Capture and mute
+
+- A **per-process tap** (`CATapDescription` over the picked app's process
+  objects) with `muteBehavior = CATapMutedWhenTapped`. The app is muted only
+  while the tap's IOProc runs, and macOS unmutes it when the tap is destroyed,
+  including when the process exits (E2 verifies both).
+- The app changes no volumes and stores no mute state. So nothing can stay
+  muted after a quit, a crash or a relaunch; E2 proves this with `SIGKILL`.
+- **Watchdog:** if the delay line underruns for 0.5 s, or the main thread has
+  not checked in for 2 s, a watchdog thread destroys the tap, which unmutes the
+  app. The app falls back to Direct listening, ends the run, and logs why. So
+  a hang never leaves the app muted for more than about 2 s.
+
+### Playback
+
+- The tap's IOProc writes the full-quality stereo capture into a second
+  lock-free ring, the **delay line**, beside the analyzer's ring. The delay
+  line is sized `M` plus 1 s, so about 2 MB at 48 kHz.
+- The mixer plays the sample captured at host time `h` at output time `h + M`,
+  through the two clocks' delay-locked loops. When the tap's device and the
+  output device differ (AirPods, say), a drift-correcting resampler (`rubato`)
+  holds the delay at `M`.
+- The music and the game's sounds then share `L_out` exactly. Calibration's
+  output latency only matters for presses. On Bluetooth, the game's sounds are
+  in sync with the music by construction; only presses need the per-device
+  correction.
+- **File source:** Delayed listening also works with the File source. The
+  mixer plays the file `M` late, and the analyzer reads it as it is decoded.
+  That tests everything but the tap, without the capture permission.
+
+### Stamps: every group as Python stamps it, except committed beats
+
+In Direct listening, an entry's `known_at` is its arrival stamp. With `M` of
+lookahead that would hand the sim ticks, onsets and structure seconds before
+the audio they describe is heard. The sim's readers were never written for
+that.
+
+So in Delayed listening, each entry's `known_at` is the **heard time of the
+analysis position that produced it**, which is exactly Python's `knownAt`
+semantics. It is always later than the entry's arrival, so the stream is
+Replay, live. Hindsight keeps its fixed delay `D`. If a stall makes an entry
+arrive after its stamp, the runner uses the arrival, as it does for very late
+keys, and logs it.
+
+**Committed beats are the one exception.** They are stamped `M − A` earlier
+than the analysis position that produced them, which is how they spend the
+lookahead (`A` is defined in [E1](#committed-beats-from-hindsight-e1)). The stamp stays a pure function of the samples, so session replay
+and the causality checks keep working.
+
+The sim, the evaluator and the oracle do not change. The sim reads every entry
+by `known_at` as before. Beats simply arrive with better times.
+
+### Committed beats from hindsight (E1)
+
+The analyzer gains `Listening::Delayed { m }`. In it:
+
+- **Source of beats:** when a hindsight decode of the window ending at sample
+  time `T` becomes usable (at `T + D`), it is stamped
+  `k = T + D − M + A`, where `A` is the capture → arrival target from
+  [Targets](#targets), so the stamp is never earlier than the decode's
+  arrival. Its beats with `k + H <= t < k + 1 + H` that come at least half a
+  period after the last committed beat are committed with `known_at = k`.
+  Each is known at least `H` before it is heard. The analyzer has already
+  heard between `M − A − D − H − 1` and `M − A − D − H` seconds past it.
+- **Which grid:** online hindsight, offline hindsight, or online with the
+  phase check's offline phase. E1 measures all three across the corpus and
+  picks the best in aggregate that is no worse than Direct listening on any
+  corpus category. It records the table in the bead and the appendix.
+- **Fields:** `period` from the chosen grid's local spacing; `evidence` from the
+  beliefs around `t`, which the analyzer has already heard. The gate and
+  judging read them as before.
+- **Fallback:** if a band has no beat from the decode (a beatless stretch, low
+  evidence, or a decode stall), its beats come from the online tracker's
+  forecasts, committed as in Direct listening and stamped by the same rule. So
+  the beat stream never stalls.
+- **Choosing `M`:** E1 measures committed-beat accuracy (within 45 ms of each
+  track's reference grid) at `M` ∈ {1.5, 2, 2.5, 3, 4, 5} s over the corpus.
+  `M` is the smallest value within 1 point of the best aggregate, rounded to
+  0.5 s. It is a constant: players don't tune it.
+- **Headless:** `ps analysis-parity --delayed <m>` runs the analyzer in Delayed
+  listening and reports accuracy per track and category against Direct
+  listening and Python.
+- **No Python oracle.** Python has no delayed rule. Stage parity covers the
+  pieces E1 reuses (hindsight, the forecast commits), and corpus accuracy
+  against the reference grids judges the rule itself.
+
+### Checks
+
+- **Lead:** every committed beat in a Delayed stream has
+  `t − known_at >= H` at the period believed at commit time. This runs in the
+  gate on three tracks.
+- **Stream causality:** the ported test compares the stream of audio cut at
+  `X` with the full stream, matching entries by the audio position that
+  produced them (`known_at`, or `known_at + M − A` for committed beats), not by
+  `known_at`.
+- **Sim causality:** perturbation, truncation and streaming-equals-batch also
+  run on a Delayed stream of the Galop. They need no change, because the sim
+  only reads by `known_at`.
+- **Sessions:** a Delayed session in File mode replays bit-exactly. `meta.json`
+  records the listening mode, `M` and the picked app, and `ps replay`'s
+  re-analysis takes the mode from it.
+- **Timing logs** gain the delay line's fill level and underruns, the watchdog's
+  trips, and the measured delay against `M`.
+
+### The beads
+
+| Bead | Work | Done when |
+|---|---|---|
+| E1 | `Listening::Delayed` in the analyzer: hindsight commits, stamps, fallback, the grid choice and `M` by rule, `--delayed` in `ps analysis-parity`, the lead and causality checks | `M` set and recorded; Delayed accuracy beats Direct in aggregate and is no worse on any category; checks in the gate |
+| E2 | The mode in the app: per-process muting tap, delay line, drift-correcting playback, watchdog, the listening-screen choice and notices, File-source Delayed, session meta, timing-log fields, QA items 14–19 | QA items pass, or are recorded as pending the capture grant; a `SIGKILL` leaves the source audible |
+
 ## Targets
 
 Filled in by the spike's executor ([Setting the targets](#setting-the-targets)).
@@ -1007,6 +1197,8 @@ Until then every latency number is report-only.
 | Sim + evaluate + encode per frame (p99, 120 Hz) | | | |
 | Rollback re-simulation per second | | | |
 | Committed beat → heard beat (steady tracks) | | | report (set by the commit horizon) |
+| Delayed listening: committed-beat accuracy against Direct, per corpus category (E1) | | | report; E1's rule |
+| Delayed listening: measured music delay against `M`, over an hour (E2) | | | gate at ±2 ms |
 
 ## Automated Checks
 
@@ -1022,6 +1214,9 @@ Until then every latency number is report-only.
 - **Playability:** the honest player and the masher on the Galop.
 - **Sessions:** a small committed session (recorded by the executor in File
   mode) replays bit-exactly with its recorded stream.
+- **Delayed listening (from E1 and E2):** the lead check on three tracks; the
+  stream causality test by audio position; sim causality on a Delayed Galop
+  stream; a small Delayed File-mode session replays bit-exactly.
 - **Renderer:** visual parity stills, rendered headlessly.
 - A release build of the app.
 
@@ -1030,6 +1225,8 @@ Until then every latency number is report-only.
 - Corpus parity on every track, with the per-track table.
 - The oracle on every fixture.
 - `ps bench`: sim, evaluator and rollback costs on the Galop's busiest minute.
+- `ps analysis-parity --delayed <M>` over every track, with the per-category
+  table against Direct listening.
 
 ## Risks
 
@@ -1051,6 +1248,11 @@ Until then every latency number is report-only.
 | An output device change mid-run shifts the grid | The run ends; the next run uses the new latency |
 | Oracle inputs (streams, content, assets) change under the fixtures | Input hashes in fixture metadata; a freeze rule in AGENTS.md until D6 |
 | Thread timing leaks into analysis results | Hindsight usable at a fixed sample-time delay `D`; the analyzer is a pure function of its samples |
+| Delayed listening leaves an app muted | The mute exists only while the tap does (`CATapMutedWhenTapped`); no volume or mute state is stored; a watchdog destroys the tap on underrun or a stalled main thread; E2 proves a `SIGKILL` restores the sound |
+| Delayed listening's lookahead buys less than hoped | E1 measures it before any app work; `M` set by rule; if Delayed is not better than Direct in aggregate, E1 records that and E2 is cancelled |
+| Delayed listening confuses a browser's video or transport controls | Taps only the app the player picks; a notice for browsers; the delay is the accepted cost of an opt-in mode |
+| The tap's and output's clocks drift apart over a long session | The delay line is played through both clocks' fits with a drift-correcting resampler; the measured delay is gated |
+| Streaming services' terms on capturing playback | The delayed audio stays in memory and is never saved beyond the session recording's analyzer input, which Direct listening already keeps; the app runs only on the developer's machine |
 
 ## Alternatives Considered
 
@@ -1071,7 +1273,16 @@ Until then every latency number is report-only.
   sequences, any stream), but Node and the TS tree would stay forever.
 - **Reimagining the rules during the port.** Faster to write, but nothing to
   diff against.
-- **Delaying the music for lookahead.** Rejected in reactive-audio.md.
+- **Delaying the music for lookahead.** Rejected in reactive-audio.md for the
+  browser game. Adopted here as the opt-in [Delayed listening](#phase-e-delayed-listening),
+  because the tap's mute is released with the tap, so a crash can't leave an
+  app silent.
+- **Always delaying, or tapping all output for Delayed listening.** Rejected:
+  a browser's video would run ahead of its sound, every notification would be
+  delayed, and transport controls would always feel late.
+- **Committing beats from a fixed lookback instead of hindsight decodes.**
+  Rejected: the decodes already exist and are measured. A new lookback model
+  would have no oracle.
 
 ## QA Checklist
 
@@ -1106,6 +1317,23 @@ pending, not waited for.
     reproduces the run.
 12. Watch my run replays the run with its music.
 13. Calibrate (input and visual) changes judging and the flash as expected.
+
+Delayed listening (E2):
+
+14. Choose Delayed and pick Music. Music goes silent for `M` seconds, then
+    plays from the app, late. Another app (a system sound, a browser) is heard
+    live and unchanged.
+15. A run in Delayed listening on a steady track: strikes and sounds land on
+    the beat as heard. The play log's committed-beat offsets are tighter than a
+    Direct run's on the same track.
+16. `kill -9` the app mid-run: Music is audible again at once. Relaunch: no
+    app is muted.
+17. Stall the main thread (a debug-menu item): within about 2 s the watchdog
+    unmutes Music, the run ends, and the log says why.
+18. Pick a browser: the video notice shows. Switch back to Direct: the run
+    ends, and the browser is heard live.
+19. AirPods in Delayed listening: the game's sounds are in sync with the music
+    by ear without calibration, and the measured delay holds at `M`.
 
 ## Implementation Plan
 
@@ -1144,11 +1372,17 @@ worktree and keeps `scripts/ci` green.
 | D4 | `hv-t8o8.28` | D | Timing logs and `ps log` | D3 |
 | D5 | `hv-t8o8.29` | D | Latency report against targets; the QA checklist | D2, D4 |
 | D6 | `hv-t8o8.30` | D | Remove the TS game | D5 |
+| E1 | `hv-t8o8.31` | E | Delayed listening in the analyzer: hindsight commits, stamps, fallback, grid choice and `M` by rule, `--delayed`, lead and causality checks | A7 |
+| E2 | `hv-t8o8.32` | E | Delayed listening in the app: muting tap, delay line, playback, watchdog, listening-screen choice, File-source Delayed, session meta, timing logs, QA items 14–19 | E1, D2, D4 |
 
 - **Parallelism:** after F4, the A and B tracks run in parallel; they touch
   different crates. Within each track, beads run in order. C2 can run
   alongside B. D1 comes first; D2 and D3 then run in parallel; D4 follows D3
   (the session directory and the runner).
+- **Phase E is off the parity path.** E1 needs only A7 and can run alongside
+  B, C and D, since it touches only the analyzer and CLI. E2 follows D2 and D4,
+  which change the same app code (settings, the runner, the log). D5 and D6
+  wait for neither. If E2 lands after D5, it runs its own QA items.
 - **Review:** the repository's rules apply. Most beads exceed 300 lines of
   code, so each gets one cold warden review. Fixture and model files are data,
   not code, for that count.
@@ -1171,7 +1405,13 @@ Named so this plan does not block them. Each needs its own design.
 - **Track identity** from Now Playing metadata, for per-song best grades.
 - **Our own beat models,** if the app is ever distributed (madmom's models are
   non-commercial).
-- **Other platforms:** WASAPI loopback on Windows.
+- **Other platforms:** WASAPI loopback on Windows. Process loopback captures
+  one app but cannot mute it, so a Windows Delayed listening needs its own
+  design.
+- **More from Delayed listening's lookahead:** accents detected rather than
+  forecast, structure events and the boss entry on time, and judging that
+  needs no provisional rating. Each changes the sim's rules, so it waits for
+  the post-parity rule changes.
 
 ## Appendix: Measurements
 

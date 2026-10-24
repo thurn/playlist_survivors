@@ -103,6 +103,8 @@ them as settled.
   replaying its audio late would buy real lookahead, but the user rejected it
   as too risky. No stage captures audio in a way that changes what the player
   hears.
+  The native app later reversed this, as an opt-in mode only: see
+  [Delayed listening](native-app.md#phase-e-delayed-listening).
 
 ### Goals
 
