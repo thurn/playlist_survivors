@@ -1,0 +1,157 @@
+#!/usr/bin/env -S uv run --quiet --script
+# /// script
+# requires-python = ">=3.11"
+# ///
+"""The native workspace's crates, from `cargo metadata` (docs/design/native-app.md, F4).
+
+    native/scripts/crates purity              # fail if a pure crate depends on an impure one
+    native/scripts/crates affected FILE [all] # the crates a list of changed paths touches,
+                                              # with their dependents ("all" for every crate)
+
+- **purity:** the pure crates (stream, analysis, sim, eval, players) carry
+  `#![forbid(unsafe_code)]` at the top of each target's root file and never depend,
+  directly or transitively (normal or build dependencies, every feature enabled),
+  on audio, render or app, or on objc2, winit or wgpu.
+- **affected:** a changed file under `native/crates/<crate>/` touches that crate;
+  every crate that depends on it, transitively (dev-dependencies included, since
+  their tests can break), is affected too. A change to the workspace's own files
+  (Cargo.toml, Cargo.lock, the toolchain, rustfmt), to the data under native/ the
+  crates read (models/, oracle/) or to the content they read (content/,
+  levels/reactive.yaml, public/assets, public/reactive) affects every crate.
+"""
+
+from __future__ import annotations
+
+import json
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+NATIVE = Path(__file__).resolve().parents[1]
+PURE = ("stream", "analysis", "sim", "eval", "players")
+#: Packages a pure crate must never reach: the impure crates and the platform's bindings.
+FORBIDDEN = re.compile(r"^(audio|render|app|objc2(-.*)?|winit|wgpu(-.*)?)$")
+FORBID_LINE = re.compile(r"^#!\[forbid\(unsafe_code\)\]", re.MULTILINE)
+WORKSPACE_FILES = re.compile(
+    r"^native/(Cargo\.toml|Cargo\.lock|rust-toolchain\.toml|rustfmt\.toml|\.cargo/"
+    r"|models/|oracle/)"
+    r"|^(content/|levels/reactive\.yaml$|public/assets/|public/reactive/)"
+)
+CRATE_FILE = re.compile(r"^native/crates/([^/]+)/")
+
+
+def metadata(all_features: bool = False) -> dict:
+    features = ["--all-features"] if all_features else []
+    out = subprocess.run(
+        ["cargo", "metadata", "--format-version", "1", "--locked", *features],
+        cwd=NATIVE,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return json.loads(out.stdout)
+
+
+def graph(meta: dict, dev: bool = False) -> tuple[dict[str, str], dict[str, set[str]]]:
+    """Package names by id, and each package id's normal and build dependencies (ids), and its
+    dev-dependencies too with `dev`."""
+    names = {p["id"]: p["name"] for p in meta["packages"]}
+    kinds = (None, "build", "dev") if dev else (None, "build")
+    deps: dict[str, set[str]] = {}
+    for node in meta["resolve"]["nodes"]:
+        deps[node["id"]] = {
+            d["pkg"]
+            for d in node["deps"]
+            if any(k["kind"] in kinds for k in d["dep_kinds"])
+        }
+    return names, deps
+
+
+def reach(start: str, deps: dict[str, set[str]]) -> set[str]:
+    seen: set[str] = set()
+    todo = [start]
+    while todo:
+        for d in deps.get(todo.pop(), ()):
+            if d not in seen:
+                seen.add(d)
+                todo.append(d)
+    return seen
+
+
+def purity_errors(meta: dict, sources: dict[str, str]) -> list[str]:
+    """Every way a pure crate breaks purity; `sources` maps a crate to its targets' root files'
+    text (each must forbid unsafe code)."""
+    names, deps = graph(meta)
+    members = {names[m]: m for m in meta["workspace_members"]}
+    errors = []
+    for crate in PURE:
+        if crate not in members:
+            errors.append(f"{crate}: pure crate missing from the workspace")
+            continue
+        roots = sources.get(crate, [])
+        if isinstance(roots, str):
+            roots = [roots]
+        if not roots or not all(FORBID_LINE.search(text) for text in roots):
+            errors.append(f"{crate}: a target lacks #![forbid(unsafe_code)]")
+        reached = {names[d] for d in reach(members[crate], deps)}
+        bad = sorted(n for n in reached if FORBIDDEN.match(n))
+        if bad:
+            errors.append(f"{crate}: depends on {', '.join(bad)}")
+    return errors
+
+
+def affected(meta: dict, changed: list[str]) -> list[str] | None:
+    """The workspace crates the changed paths touch and their dependents; None for all of them."""
+    if any(WORKSPACE_FILES.match(p) for p in changed):
+        return None
+    names, deps = graph(meta, dev=True)
+    members = {m: names[m] for m in meta["workspace_members"]}
+    by_dir = {}
+    for p in meta["packages"]:
+        if p["id"] in members:
+            by_dir[Path(p["manifest_path"]).parent.name] = p["name"]
+    touched = set()
+    for path in changed:
+        m = CRATE_FILE.match(path)
+        if m and m.group(1) in by_dir:
+            touched.add(by_dir[m.group(1)])
+    out = set(touched)
+    for mid, name in members.items():
+        if {names[d] for d in reach(mid, deps)} & touched:
+            out.add(name)
+    return sorted(out)
+
+
+def main(argv: list[str]) -> int:
+    if argv[:1] == ["purity"]:
+        meta = metadata(all_features=True)
+        sources = {
+            p["name"]: [Path(t["src_path"]).read_text() for t in p["targets"]]
+            for p in meta["packages"]
+            if p["name"] in PURE and p["id"] in meta["workspace_members"]
+        }
+        errors = purity_errors(meta, sources)
+        for e in errors:
+            print(f"crates purity: {e}", file=sys.stderr)
+        if not errors:
+            print(f"crates purity: {', '.join(PURE)} pure")
+        return 1 if errors else 0
+    if argv[:1] == ["affected"] and len(argv) in (2, 3):
+        if len(argv) == 3 and argv[2] == "all":
+            print("all")
+            return 0
+        changed = [
+            line.strip()
+            for line in Path(argv[1]).read_text().splitlines()
+            if line.strip()
+        ]
+        result = affected(metadata(), changed)
+        print("all" if result is None else " ".join(result))
+        return 0
+    print(__doc__, file=sys.stderr)
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

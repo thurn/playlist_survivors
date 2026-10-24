@@ -12,6 +12,9 @@ enabled = true
 name = "gate"
 run = "./scripts/ci-gate"
 timeout = "15m"
+# The native section builds into a persistent target directory outside the slots, so a run
+# recompiles only the workspace's own crates (S0 measured no gain from sccache).
+environment = { CARGO_TARGET_DIR = "/Users/dthurn/Library/Caches/playlist-survivors/target-gate" }
 
 # The release stage runs on the newest `staging` tip and moves `release` and remote master.
 # Each section is its own step, so a ci-fix bead is keyed by the section that failed.
@@ -28,3 +31,11 @@ run = "./scripts/ci-full analysis"
 stage = "release"
 needs = []
 timeout = "30m"
+
+[[step]]
+name = "ci-full-native"
+run = "./scripts/ci-full native"
+stage = "release"
+needs = []
+timeout = "30m"
+environment = { CARGO_TARGET_DIR = "/Users/dthurn/Library/Caches/playlist-survivors/target-release" }

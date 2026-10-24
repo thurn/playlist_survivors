@@ -4,17 +4,17 @@
 # waits for it. Run it locally only when a change touches CI scripts, the Tollgate policy,
 # workspace-wide configuration or shared test infrastructure.
 #
-#   scripts/ci-full [ts|analysis]    # one section (a Tollgate release step each), or all
+#   scripts/ci-full [ts|analysis|native]    # one section (a Tollgate release step each), or all
 #
 # The Playwright e2e tests stay out: Chromium starts its own process session, which Tollgate
-# rejects. Run `npm run test:e2e` by hand. F4 adds the native section.
+# rejects. Run `npm run test:e2e` by hand.
 set -eu
 cd "$(dirname "$0")/.."
 section="${1:-all}"
 
 case "$section" in
-  all|ts|analysis) ;;
-  *) echo "usage: scripts/ci-full [ts|analysis]" >&2; exit 2 ;;
+  all|ts|analysis|native) ;;
+  *) echo "usage: scripts/ci-full [ts|analysis|native]" >&2; exit 2 ;;
 esac
 
 if [ "$section" = all ] || [ "$section" = ts ]; then
@@ -39,4 +39,23 @@ if [ "$section" = all ] || [ "$section" = analysis ]; then
   scripts/friction validate
   uv run --directory tools/analysis ruff check ../../scripts/friction ../../scripts/test_friction.py
   uv run --no-project python -m unittest scripts/test_friction.py
+fi
+
+# The native workspace: every crate's clippy and tests, the pure crates' purity, unused
+# dependencies, and a release build of the app. Each phase adds its release-stage checks here
+# (docs/design/native-app.md, "Automated Checks"): stage and corpus parity (A), the oracle sweep,
+# causality and playability (B), visual parity (C1), sessions (D3), `ps bench`, Delayed listening
+# (E). Tollgate's ci-full-native step sets CARGO_TARGET_DIR to a persistent directory.
+if [ "$section" = all ] || [ "$section" = native ]; then
+  uv run --directory tools/analysis ruff check ../../native/scripts/crates ../../native/scripts/test_crates.py
+  uv run --no-project python -m unittest native/scripts/test_crates.py
+  (
+    cd native
+    cargo fmt --all --check
+    scripts/crates purity
+    cargo clippy --locked --workspace --all-targets -- -D warnings
+    cargo test --locked --workspace
+    cargo machete
+    cargo build --locked --release -p app
+  )
 fi

@@ -32,7 +32,8 @@ changes_init() {
     return
   fi
   {
-    git diff --name-only "$CHANGES_BASE"
+    # (No rename detection: a moved file's old path matters as much as its new one.)
+    git diff --name-only --no-renames "$CHANGES_BASE"
     git ls-files --others --exclude-standard
   } | sort -u > "$CHANGES_FILE"
   echo "changes: $(wc -l < "$CHANGES_FILE" | tr -d ' ') paths since $(git rev-parse --short "$CHANGES_BASE")"
@@ -59,10 +60,13 @@ changes_friction() {
   changes_match '^(native/evidence/|scripts/friction$|scripts/test_friction\.py$)'
 }
 
-# The native workspace (F4 adds the content it reads), but not the friction ledger in
-# native/evidence/, which every bead writes.
+# The native workspace and the content it reads (content/, levels/reactive.yaml, the baked
+# assets, the shipped streams), but not the friction ledger in native/evidence/, which every
+# bead writes.
 changes_native() {
-  [ "$CHANGES_UNKNOWN" = 1 ] || grep -E '^native/' "$CHANGES_FILE" | grep -Evq '^native/evidence/'
+  [ "$CHANGES_UNKNOWN" = 1 ] \
+    || grep -E '^(native/|content/|levels/reactive\.yaml$|public/assets/|public/reactive/)' "$CHANGES_FILE" \
+      | grep -Evq '^native/evidence/'
 }
 
 # The changed files that still exist and match the extended regular expression $1, one per line.

@@ -1,0 +1,46 @@
+#!/bin/sh
+# The native half of the fast check (budget 60 s warm), and the gate stage's native section:
+# diff-aware, from the paths that differ from the branch's base (scripts/lib/changes.sh).
+#
+#   native/scripts/check-fast
+#
+# - rustfmt over the workspace, and the pure crates' purity (native/scripts/crates purity);
+# - clippy (-D warnings) and the tests of the crates the diff touches and their dependents
+#   (every crate when the workspace's files or the content it reads changed);
+# - native/scripts/crates' own tests when that script changed.
+# Set CARGO_TARGET_DIR to build elsewhere (Tollgate's steps use persistent directories).
+# The oracle and causality smokes join the gate stage when the sim has them (B7, B8).
+set -eu
+cd "$(dirname "$0")/../.."
+. scripts/lib/changes.sh
+started=$(date +%s)
+changes_init
+trap 'rm -f "$CHANGES_FILE"' EXIT
+
+if changes_match '^native/scripts/(crates|test_crates\.py)$'; then
+  uv run --directory tools/analysis ruff check ../../native/scripts/crates ../../native/scripts/test_crates.py
+  uv run --no-project python -m unittest native/scripts/test_crates.py
+fi
+
+if [ "$CHANGES_UNKNOWN" = 1 ]; then
+  crates=all
+else
+  crates=$(native/scripts/crates affected "$CHANGES_FILE")
+fi
+
+cd native
+cargo fmt --all --check
+scripts/crates purity
+if [ "$crates" = all ]; then
+  echo "native check-fast: every crate"
+  cargo clippy --locked --workspace --all-targets -- -D warnings
+  cargo test --locked --workspace --quiet
+elif [ -n "$crates" ]; then
+  echo "native check-fast: $crates"
+  for c in $crates; do set -- "$@" -p "$c"; done
+  cargo clippy --locked "$@" --all-targets -- -D warnings
+  cargo test --locked "$@" --quiet
+else
+  echo "native check-fast: no crate changed"
+fi
+echo "native check-fast: passed in $(( $(date +%s) - started )) s"

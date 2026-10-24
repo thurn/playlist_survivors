@@ -596,7 +596,9 @@ stage-parity test.
     --check`, `clippy -D warnings` and the unit tests of the crates the diff
     touches and their dependents, plus the cheapest oracle and causality
     smoke (one core track, two cuts);
-  - **release stage:** the whole workspace's clippy and tests, every check in
+  - **release stage** (unconditionally, on every `staging` tip: it is
+    asynchronous, and a skipped section could hide a break): the whole
+    workspace's clippy and tests, every check in
     [Automated Checks](#automated-checks) (the full corpus parity and oracle
     sweep included; nothing is left to run by hand), `ps bench`, and a release
     build of the app.
@@ -617,6 +619,10 @@ stage-parity test.
 - **Test runner:** F4 times `cargo-nextest` against `cargo test` on the
   workspace and adopts it only for the stages where it is measurably faster,
   recording the numbers in `metrics.md`.
+- **The spike is gone:** F4 deleted `native/spike/`. Its code and README (the S0 and ES
+  commands the appendix cites) are in history at `f37435a`
+  (`git show f37435a:native/spike/README.md`); the ES evidence stays in
+  `native/evidence/es/`.
 - **Locally,** `native/scripts/check-fast` is the native half of the fast check
   ([Validation](#validation)): format, clippy and tests for the crates the diff
   touches, under 60 s warm.
