@@ -120,3 +120,13 @@ time in 6 of 10 records (B1 160 against 43 min, B2 150 against 24, .59 25 agains
 against 4, .61 10 against under 1, .64 10 against 2): AGENTS.md never defined it. It is now the
 wall time from the bead's worktree creation, less parked time, printed by `scripts/friction minutes`
 from the branch's reflog; those six records carry Tollgate's times, and B1's `fast` its notes' 14 s.
+
+## check-fast in a fresh worktree (hv-t8o8.69)
+
+Since V1 made the app crate (wgpu, objc2) a dependent of `analysis`, a fresh worktree's first
+`scripts/check-fast` for an analysis change built wgpu cold into its own `native/target`: 45 s (a
+sim-only change, which the app doesn't depend on, 15 s); warm, 2.5 s. `native/scripts/check-fast`
+now builds into one persistent directory shared by the local worktrees
+(`~/Library/Caches/playlist-survivors/check-fast-target`, unless `CARGO_TARGET_DIR` is set), so a
+fresh worktree reuses the dependencies' builds: 11 s for an analysis change in a second fresh
+worktree (load 12), 76% less. Cargo serializes concurrent builds on that directory's lock.

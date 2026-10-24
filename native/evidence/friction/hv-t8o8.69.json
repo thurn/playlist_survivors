@@ -1,0 +1,1 @@
+{"bead":"hv-t8o8.69","phase":"R","recorded":"2026-10-24T21:37:53Z","implementMin":4,"localValidationS":{"fast":11},"hostLoad":10.52,"friction":[{"tag":"host-load-noise","minutes":0,"note":"measured at load 11-15 (peer executors building); before and after taken back to back at similar load"}]}
