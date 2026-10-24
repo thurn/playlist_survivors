@@ -451,9 +451,12 @@ class Queue {
   private heap: Entry[] = [];
   private seq = 0;
   push(s: number, ev: Ev): void {
-    const h = this.heap;
     const entry: Entry = { s, o: ORDER[ev.kind], seq: this.seq++, ev };
     if (!MUTABLE_EVENTS.has(ev.kind)) Object.freeze(entry);
+    this.insert(entry);
+  }
+  private insert(entry: Entry): void {
+    const h = this.heap;
     h.push(entry);
     let c = h.length - 1;
     while (c > 0) {
@@ -475,7 +478,22 @@ class Queue {
     this.heap = [];
     for (const e of kept.sort((a, b) => (this.less(a, b) ? -1 : 1))) this.heap.push(e);
   }
-  pop(): { s: number; ev: Ev } {
+  /**
+   * The next of the events due by song time `limit`. They all happen at the clock's moment, so they
+   * go in kind and push order, however their times differ by a hair: a player's decision a hair after
+   * an earlier event's time comes ahead of it, as its keys (stamped with the clock's time) would.
+   */
+  popDue(limit: number): { s: number; ev: Ev } {
+    const first = this.pop();
+    if (this.peek() > limit) return first;
+    const due = [first];
+    while (this.peek() <= limit) due.push(this.pop());
+    let best = 0;
+    for (let i = 1; i < due.length; i++) if (due[i].o < due[best].o || (due[i].o === due[best].o && due[i].seq < due[best].seq)) best = i;
+    for (let i = 0; i < due.length; i++) if (i !== best) this.insert(due[i]);
+    return due[best];
+  }
+  pop(): Entry {
     const h = this.heap;
     const top = h[0];
     const last = h.pop()!;
@@ -3227,7 +3245,7 @@ function engine(env: Env, st: SimState, io: Io) {
     }
     const q = st.q;
     while (q.peek() <= st.s + 1e-12) {
-      const { ev } = q.pop();
+      const { ev } = q.popDue(st.s + 1e-12);
       switch (ev.kind) {
         case "hitstopEnd":
           break;
