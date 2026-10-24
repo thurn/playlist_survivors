@@ -9,7 +9,7 @@
                                               # with their dependents ("all" for every crate)
 
 - **purity:** the pure crates (stream, analysis, sim, eval, players) carry
-  `#![forbid(unsafe_code)]` at the top of each target's root file and never depend,
+  `#![forbid(unsafe_code)]` at the top of each library and binary target's root file and never depend,
   directly or transitively (normal or build dependencies, every feature enabled),
   on audio, render or app, or on objc2, winit or wgpu.
 - **affected:** a changed file under `native/crates/<crate>/` touches that crate;
@@ -79,6 +79,18 @@ def reach(start: str, deps: dict[str, set[str]]) -> set[str]:
     return seen
 
 
+def root_files(meta: dict) -> dict[str, list[str]]:
+    """Each pure crate's library and binary root files (tests and benches may use unsafe to
+    check the crate)."""
+    return {
+        p["name"]: [
+            t["src_path"] for t in p["targets"] if set(t["kind"]) & {"lib", "bin"}
+        ]
+        for p in meta["packages"]
+        if p["name"] in PURE and p["id"] in meta["workspace_members"]
+    }
+
+
 def purity_errors(meta: dict, sources: dict[str, str]) -> list[str]:
     """Every way a pure crate breaks purity; `sources` maps a crate to its targets' root files'
     text (each must forbid unsafe code)."""
@@ -127,9 +139,8 @@ def main(argv: list[str]) -> int:
     if argv[:1] == ["purity"]:
         meta = metadata(all_features=True)
         sources = {
-            p["name"]: [Path(t["src_path"]).read_text() for t in p["targets"]]
-            for p in meta["packages"]
-            if p["name"] in PURE and p["id"] in meta["workspace_members"]
+            name: [Path(path).read_text() for path in paths]
+            for name, paths in root_files(meta).items()
         }
         errors = purity_errors(meta, sources)
         for e in errors:

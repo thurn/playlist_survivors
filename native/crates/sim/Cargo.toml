@@ -4,5 +4,15 @@ version = "0.0.0"
 edition.workspace = true
 publish = false
 
+[dependencies]
+indexmap = { version = "2", features = ["serde"] }
+libm = "0.2"
+serde = { version = "1", features = ["derive"] }
+serde-saphyr = "2"
+serde_json = { version = "1", features = ["preserve_order"] }
+
+[dev-dependencies]
+flate2 = "1"
+
 [lints]
 workspace = true

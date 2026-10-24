@@ -96,6 +96,20 @@ class Purity(unittest.TestCase):
         self.assertEqual(errors, ["sim: a target lacks #![forbid(unsafe_code)]"])
 
 
+class RootFiles(unittest.TestCase):
+    def test_only_library_and_binary_targets_must_forbid_unsafe(self) -> None:
+        m = meta(WORKSPACE, MEMBERS)
+        for p in m["packages"]:
+            p["targets"] = [
+                {"kind": ["lib"], "src_path": f"/w/{p['name']}/src/lib.rs"},
+                {"kind": ["test"], "src_path": f"/w/{p['name']}/tests/t.rs"},
+                {"kind": ["bench"], "src_path": f"/w/{p['name']}/benches/b.rs"},
+            ]
+        roots = crates.root_files(m)
+        self.assertEqual(sorted(roots), sorted(crates.PURE))
+        self.assertEqual(roots["sim"], ["/w/sim/src/lib.rs"])
+
+
 class Affected(unittest.TestCase):
     def test_a_crate_and_its_dependents(self) -> None:
         got = crates.affected(
