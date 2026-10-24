@@ -24,6 +24,8 @@ mkdir -p "$APP/Contents/Resources/assets"
 cp ../public/assets/characters.json ../public/assets/characters-0.png \
   ../public/assets/effects.json ../public/assets/effects-0.png \
   ../public/assets/world.json ../public/assets/world-0.png "$APP/Contents/Resources/assets/"
+rm -rf "$APP/Contents/Resources/sfx"
+cp -R ../public/assets/sfx "$APP/Contents/Resources/sfx"
 cat >"$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">

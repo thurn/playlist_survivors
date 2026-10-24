@@ -25,6 +25,7 @@ mod live;
     dead_code
 )]
 mod output;
+mod sfx;
 #[allow(
     clippy::pedantic,
     clippy::explicit_counter_loop,
@@ -52,6 +53,7 @@ use game::{End, Game, Input, Judgement};
 use gfx::Gfx;
 use live::{Msg, Source};
 use output::{Click, Output};
+use sfx::{Cue, Sfx};
 
 /// The tap's timeline runs this far behind the output's render timeline (phase 0, built-in
 /// speakers); `PS_TAP_MINUS_RENDER_MS` overrides it.
@@ -106,7 +108,17 @@ pub fn run(args: &[String]) -> Result<(), String> {
         None => None,
     };
     // Output first: our process object must exist before the tap can exclude it.
-    let mut out = Output::start(music.clone(), opts.volume)?;
+    let (sfx, bank) = match Sfx::load(
+        &live::resource("sfx", "../../../public/assets/sfx"),
+        Output::device_rate(),
+    ) {
+        Ok((sfx, bank)) => (Some(sfx), bank),
+        Err(e) => {
+            eprintln!("slice: no sound effects, blips instead: {e}");
+            (None, Vec::new())
+        }
+    };
+    let mut out = Output::start(music.clone(), opts.volume, bank)?;
     let l_out = Output::reported_latency_s();
     let (source, heard_after, mode) = match music {
         Some(samples) => (
@@ -146,6 +158,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
     )?;
     let mut app = App {
         gfx: None,
+        sfx,
         art,
         rx,
         out,
@@ -203,6 +216,7 @@ struct Beat {
 
 struct App {
     gfx: Option<Gfx>,
+    sfx: Option<Sfx>,
     art: Atlases,
     rx: mpsc::Receiver<Msg>,
     out: Output,
@@ -288,7 +302,11 @@ impl App {
         self.game.update(shown, dt, self.input);
         if self.game.hurt_since(self.hurt_seen) {
             self.hurt_seen = shown;
-            self.sound(220.0);
+            if self.game.over.is_some() {
+                self.cue(Cue::Death, 150.0);
+            } else {
+                self.cue(Cue::Hurt, 220.0);
+            }
         }
         match self.game.over {
             None if self.last_sound.is_finite() && shown - self.last_sound > SILENCE_S => {
@@ -316,9 +334,16 @@ impl App {
         g.draw([0.02, 0.02, 0.03], &rects);
     }
 
-    /// A short blip now (hits and hurts).
-    fn sound(&mut self, freq: f32) {
-        let _ = self.out.clicks.push(Click { at: now_s(), freq });
+    /// A sound effect now (or, without the samples, a blip at `freq`).
+    fn cue(&mut self, cue: Cue, freq: f32) {
+        match self.sfx.as_mut().and_then(|s| s.next(cue)) {
+            Some(play) => {
+                let _ = self.out.plays.push(play);
+            }
+            None => {
+                let _ = self.out.clicks.push(Click { at: now_s(), freq });
+            }
+        }
     }
 
     /// A new run, fed the committed beats still to come.
@@ -344,8 +369,11 @@ impl App {
             }
             KeyCode::Space | KeyCode::KeyJ | KeyCode::KeyK if pressed && !repeat => {
                 let j = self.game.attack(now_s());
-                if let Judgement::Hit { killed, .. } = j {
-                    self.sound(if killed > 0 { 1500.0 } else { 1000.0 });
+                match j {
+                    Judgement::Hit { killed: 0, .. } => self.cue(Cue::Swing, 1000.0),
+                    Judgement::Hit { killed: 1, .. } => self.cue(Cue::Kill, 1500.0),
+                    Judgement::Hit { .. } => self.cue(Cue::KillMulti, 1500.0),
+                    Judgement::Miss => self.cue(Cue::Miss, 400.0),
                 }
                 if std::env::var_os("PS_SLICE_LOG").is_some() {
                     eprintln!("attack {j:?}");

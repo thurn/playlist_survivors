@@ -21,6 +21,8 @@ objc2-foundation = { version = "0.3", features = ["NSArray", "NSValue", "NSStrin
 pollster = "1"
 render = { path = "../render" }
 rtrb = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 wgpu = "30"
 winit = "0.30"
 

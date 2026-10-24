@@ -31,6 +31,14 @@ pub enum Event {
     Late { at: f64, buffer: f64 },
 }
 
+/// A sound effect to start now: an index into the bank, from a sample offset, at a gain.
+#[derive(Clone, Copy, Debug)]
+pub struct Play {
+    pub sound: usize,
+    pub from: usize,
+    pub gain: f32,
+}
+
 struct Voice {
     pos: u32,
     freq: f32,
@@ -42,6 +50,10 @@ struct Ctx {
     music: Option<(Arc<[f32]>, rtrb::Producer<Meta>)>,
     music_gain: f32,
     music_pos: u64,
+    /// Sound effects (mono at the output's rate), the requests to play them, and those playing.
+    bank: Vec<Arc<[f32]>>,
+    plays: rtrb::Consumer<Play>,
+    playing: [Option<Play>; 16],
     clicks: rtrb::Consumer<Click>,
     events: rtrb::Producer<Event>,
     pending: [Option<Click>; 32],
@@ -58,6 +70,8 @@ pub struct Output {
     pub events: rtrb::Consumer<Event>,
     /// The played file's buffer timing (`--file`).
     pub music_meta: Option<rtrb::Consumer<Meta>>,
+    /// Sound effects to start.
+    pub plays: rtrb::Producer<Play>,
 }
 
 unsafe impl Send for Output {}
@@ -89,6 +103,13 @@ unsafe extern "C-unwind" fn render(
         unsafe { std::slice::from_raw_parts_mut(bufs[0].mData as *mut f32, frames as usize * 2) };
     out.fill(0.0);
     let rate = ctx.rate;
+    while let Ok(p) = ctx.plays.pop() {
+        if p.sound < ctx.bank.len()
+            && let Some(slot) = ctx.playing.iter_mut().find(|v| v.is_none())
+        {
+            *slot = Some(p);
+        }
+    }
     if let Some((music, meta)) = &mut ctx.music {
         let first = ctx.music_pos;
         let mut peak = 0.0f32;
@@ -148,6 +169,21 @@ unsafe extern "C-unwind" fn render(
         out[2 * i as usize] += s;
         out[2 * i as usize + 1] += s;
     }
+    for slot in ctx.playing.iter_mut() {
+        if let Some(p) = slot {
+            let sound = &ctx.bank[p.sound];
+            let n = (frames as usize).min(sound.len().saturating_sub(p.from));
+            for i in 0..n {
+                let x = sound[p.from + i] * p.gain;
+                out[2 * i] += x;
+                out[2 * i + 1] += x;
+            }
+            p.from += n;
+            if p.from >= sound.len() {
+                *slot = None;
+            }
+        }
+    }
     0
 }
 
@@ -158,7 +194,11 @@ impl Output {
     }
 
     /// Starts the output, playing `music` (mono at `device_rate`) from the start if given.
-    pub fn start(music: Option<Arc<[f32]>>, music_gain: f32) -> Result<Output, String> {
+    pub fn start(
+        music: Option<Arc<[f32]>>,
+        music_gain: f32,
+        bank: Vec<Arc<[f32]>>,
+    ) -> Result<Output, String> {
         let desc = AudioComponentDescription {
             componentType: kAudioUnitType_Output,
             componentSubType: kAudioUnitSubType_DefaultOutput,
@@ -209,7 +249,11 @@ impl Output {
             }
             None => (None, None),
         };
+        let (pp, pc) = rtrb::RingBuffer::new(64);
         let ctx = Box::new(UnsafeCell::new(Ctx {
+            bank,
+            plays: pc,
+            playing: [None; 16],
             music,
             music_gain,
             music_pos: 0,
@@ -249,6 +293,7 @@ impl Output {
             clicks: cp,
             events: ec,
             music_meta,
+            plays: pp,
         })
     }
 
