@@ -93,7 +93,14 @@ export interface Judging {
   judged: Uint8Array;
   /** Per judged tick: when its run of judged ticks began. */
   since: Float64Array;
+  /** Per tick: when the latest run of judging that followed a stretch of `LOCK_GAP_S` or more without it began (NaN before any). */
+  lockOn: Float64Array;
+  /** Per unjudged tick: when its stretch without judging began. */
+  unjudgedSince: Float64Array;
 }
+
+/** A stretch without judging this long or longer makes the next run of judging a lock-on. */
+export const LOCK_GAP_S = 4;
 
 const judgingMemo = new WeakMap<ReactiveStream, Judging>();
 
@@ -109,7 +116,11 @@ export function judging(stream: ReactiveStream): Judging {
   const gate = stream.params.gate;
   const judged = new Uint8Array(ticks.length);
   const since = new Float64Array(ticks.length).fill(NaN);
+  const lockOn = new Float64Array(ticks.length).fill(NaN);
+  const unjudgedSince = new Float64Array(ticks.length).fill(NaN);
   let clearFrom = NaN;
+  let lastJudged = 0;
+  let lock = NaN;
   for (let j = 0; j < ticks.length; j++) {
     if (ticks[j].evidence < gate) {
       clearFrom = NaN;
@@ -118,10 +129,15 @@ export function judging(stream: ReactiveStream): Judging {
     if (Number.isNaN(clearFrom)) clearFrom = ticks[j].t;
     if (ticks[j].t - clearFrom >= JUDGE_AFTER_S - 1e-9) {
       judged[j] = 1;
-      since[j] = j > 0 && judged[j - 1] ? since[j - 1] : ticks[j].t;
+      const run = j > 0 && judged[j - 1] === 1;
+      since[j] = run ? since[j - 1] : ticks[j].t;
+      if (!run && ticks[j].t - lastJudged >= LOCK_GAP_S - 1e-9) lock = ticks[j].t;
     }
+    if (judged[j]) lastJudged = j + 1 < ticks.length ? ticks[j + 1].t : ticks[j].t;
+    lockOn[j] = lock;
   }
-  const out = { judged, since };
+  for (let j = 0; j < ticks.length; j++) if (!judged[j]) unjudgedSince[j] = j > 0 && !judged[j - 1] ? unjudgedSince[j - 1] : j > 0 ? ticks[j].t : 0;
+  const out = { judged, since, lockOn, unjudgedSince };
   judgingMemo.set(stream, out);
   return out;
 }
@@ -136,6 +152,18 @@ export function judgedAt(stream: ReactiveStream, s: number): boolean {
 export function judgedSinceAt(stream: ReactiveStream, s: number): number {
   const i = tickIndexAt(stream, s);
   return i >= 0 ? judging(stream).since[i] : NaN;
+}
+
+/** When the latest lock-on (a run of judging after LOCK_GAP_S or more without) began, as of song time s (NaN before any). */
+export function lockOnAt(stream: ReactiveStream, s: number): number {
+  const i = tickIndexAt(stream, s);
+  return i >= 0 ? judging(stream).lockOn[i] : NaN;
+}
+
+/** When the stretch without judging that song time s falls in began (NaN when judged; 0 before the first tick). */
+export function unjudgedSinceAt(stream: ReactiveStream, s: number): number {
+  const i = tickIndexAt(stream, s);
+  return i >= 0 ? judging(stream).unjudgedSince[i] : 0;
 }
 
 /** The evidence at song time s: the latest tick's at or before it (0 before the first). */

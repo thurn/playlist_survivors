@@ -28,6 +28,8 @@
  * - on house-128, damage off, over judged time: reactive-moderate at tier 2 or higher 60% of the
  *   time, mash4 and mash8 at tier 0 80% of it. (The readings' gates are unit tests:
  *   tests/reactive-settle.test.ts.)
+ * Gate (hv-s4pt.13): on every shipped track, no masher or holder beats reactive-moderate's average
+ * groove or its judged time at tier 2+ (damage off).
  * Targets (stage 1): committed-beat accuracy on every track, and the Galop's pulsed sections by section.
  * Targets (stage 2): the players' tiers on dnb-174, pop-arrangement and the Galop; random presses
  * keeping offline "as tracked"; pop-arrangement's pads-only breakdown settling unjudged.
@@ -246,6 +248,32 @@ const causalityCase = (id: string, level: string | undefined, cuts?: number[]): 
   const g0 = grooveAt(pop.plan.groove, brk.s0 + SETTLE_DELAY);
   const g1 = grooveAt(pop.plan.groove, brk.s1 + SETTLE_DELAY);
   lines.push(`  pop-arrangement's pads-only breakdown: ${pct(unj)} of reactive-moderate's ${inBrk.length} presses settle unjudged (80%); the settled groove ${g0.toFixed(2)} at its start, ${g1.toFixed(2)} at its end (at least ${(g0 - 0.1).toFixed(2)})`);
+}
+
+// ---------------------------------------------------------------- gate: mashing never beats playing (hv-s4pt.13)
+{
+  // On every shipped track, damage off: no masher or holder ends with a higher average groove (the
+  // grade's), or more judged time at tier 2 or higher, than reactive-moderate.
+  const failures: string[] = [];
+  const rows: string[] = [];
+  for (const id of tracks) {
+    const run = reactiveInput(file(id), { checks: CHECKS });
+    const measure = (name: SkillProfileName) => {
+      const { plan } = planWithSim(run.input, { props, player: playerOn(run.reference!, name)(run.input) });
+      return { groove: plan.stats.averageGroove, high: judgedTierShare(plan, run.stream, (t) => t >= 2) };
+    };
+    const honest = measure("reactive-moderate");
+    const cells = [`moderate ${honest.groove.toFixed(2)}/${pct(honest.high)}`];
+    for (const name of ["mash2", "mash4", "mash8", "holder"] as const) {
+      const m = measure(name);
+      cells.push(`${name} ${m.groove.toFixed(2)}/${pct(m.high)}`);
+      if (m.groove > honest.groove + 1e-9) failures.push(`${id}: ${name}'s average groove ${m.groove.toFixed(3)} beats reactive-moderate's ${honest.groove.toFixed(3)}`);
+      if (m.high > honest.high + 1e-9) failures.push(`${id}: ${name} spends ${pct(m.high)} of judged time at tier 2+, reactive-moderate ${pct(honest.high)}`);
+    }
+    rows.push(`  ${id.padEnd(22)} ${cells.join(" | ")}`);
+  }
+  lines.push("mashing never beats playing (damage off; average groove / judged time at tier 2+):", ...rows);
+  results.push({ name: "mashing never beats playing", failures, checked: tracks.length * 8 });
 }
 
 // ---------------------------------------------------------------- targets: structure (stage 4)

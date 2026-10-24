@@ -8,11 +8,12 @@ import { reactiveFinale, reactiveSetPieces } from "../src/reactive/setpieces.ts"
 import { GATE_EXEMPT_SOUNDS, gatedSound, soundFade } from "../src/planner/emit.ts";
 import { planWithSim, playerFor, prepare } from "../src/planner/plan.ts";
 import { directorPopulation, keyAt, levelBlend, paletteLevelAt, paletteSwitches, sectionRoster, zoneWavePlan } from "../src/reactive/director.ts";
-import { judgedAverageGroove, REACTIVE_TITLE } from "../src/reactive/grade.ts";
+import { gradedAverageGroove, REACTIVE_TITLE } from "../src/reactive/grade.ts";
 import { reactivePlayerFor } from "../src/reactive/players.ts";
 import { reactiveSongMap } from "../src/reactive/songmap.ts";
-import { effectiveDownbeat, evidenceAt, firstBeatAtOrAfter, judgedAt, judging, parseStream, splitStream, type StreamFile, type StreamStructure, type TickLevel } from "../src/reactive/stream.ts";
+import { effectiveDownbeat, evidenceAt, firstBeatAtOrAfter, judgedAt, judging, lockOnAt, parseStream, splitStream, type StreamFile, type StreamStructure, type TickLevel, unjudgedSinceAt } from "../src/reactive/stream.ts";
 import { Warp } from "../src/core/warp.ts";
+import { BEATLESS } from "../src/sim/simulate.ts";
 import type { KeyEvent, Observation, Player } from "../src/sim/player.ts";
 import { Evaluator, grooveAt, pulsed, settledStyle } from "../src/plan/evaluate.ts";
 import { readContentFiles } from "../scripts/lib/files.ts";
@@ -780,12 +781,11 @@ describe("the reactive run's end", () => {
   const file = synthStream({ until: 40, evidence: (t) => (t >= 20 && t < 30 ? 0.8 : 0) });
   const { stream } = splitStream(file);
 
-  it("grades the groove over judged time only", () => {
+  it("grades the groove as the meter shows it, from 16 s on", () => {
     const groove = { s: [0, 25, 35], v: [0.2, 0.8, 1] };
-    // Judged from 21 s (a second into the clear beat): from 21 to 25 s at 0.2, from 25 to 30 s at 0.8.
-    expect(judgedAverageGroove(groove, stream, 0, 40)).toBeCloseTo((4 * 0.2 + 5 * 0.8) / 9, 2);
-    expect(judgedAverageGroove(groove, stream, 26, 40)).toBeCloseTo(0.8, 6);
-    expect(judgedAverageGroove(groove, stream, 0, 19)).toBe(0);
+    expect(gradedAverageGroove(groove, 0, 40)).toBeCloseTo((9 * 0.2 + 10 * 0.8 + 5) / 24, 2);
+    expect(gradedAverageGroove(groove, 26, 40)).toBeCloseTo((9 * 0.8 + 5) / 14, 2);
+    expect(gradedAverageGroove(groove, 0, 15)).toBe(0);
   });
 
   it("shows the track's title card, and the end card once the finale's epilogue has played out", () => {
@@ -834,6 +834,68 @@ describe("the settled groove (stage 2)", () => {
     expect(settledStyle("offbeat-great")).toBe("great");
     expect(settledStyle("unjudged")).toBe("extra");
     expect(settledStyle("stray")).toBe("stray");
+  });
+});
+
+describe("beatless credit and the lock-on grace (hv-s4pt.13)", () => {
+  // Clear but for 8 to 16 s; the player presses on every beat to 6 s, then stops.
+  const run = (ev: (t: number) => number, grace?: Partial<typeof BEATLESS>, extra: number[] = []) => {
+    const saved = { ...BEATLESS };
+    Object.assign(BEATLESS, grace);
+    try {
+      const f = synthStream({ until: 40, hindsight: true, evidence: ev });
+      const { stream } = splitStream(f);
+      const times = [...f.beats.map((b) => b.t + 0.01).filter((t) => t < 6), ...extra];
+      return { stream, plan: planWithSim(inputForStream(stream, { checks: { noHeroDamage: true } }), { player: new KeyPlayer(times) }).plan };
+    } finally {
+      Object.assign(BEATLESS, saved);
+    }
+  };
+  const gap = (t: number) => (t >= 8 && t < 16 ? 0 : 0.8);
+
+  it("marks lock-ons after 4 s or more without judging, and when each stretch without judging began", () => {
+    const { stream } = run(gap);
+    // Judging starts at 1 s (not a lock-on: 1 s without), stops at 8 s, and locks on again at 17 s.
+    expect(lockOnAt(stream, 5)).toBeNaN();
+    expect(lockOnAt(stream, 17.5)).toBeCloseTo(17, 6);
+    expect(lockOnAt(stream, 39)).toBeCloseTo(17, 6);
+    expect(unjudgedSinceAt(stream, 12)).toBeCloseTo(8, 6);
+    expect(unjudgedSinceAt(stream, 0.5)).toBe(0);
+    expect(unjudgedSinceAt(stream, 18)).toBeNaN();
+    // A flicker shorter than 4 s keeps the lock-on it interrupts.
+    const flicker = run((t) => (gap(t) === 0 || (t >= 25 && t < 26) ? 0 : 0.8)).stream;
+    expect(lockOnAt(flicker, 30)).toBeCloseTo(17, 6);
+  });
+
+  it("raises the groove a Perfect's worth for each beat 2 s or more into a stretch without judging", () => {
+    const { plan } = run(gap);
+    const low = grooveAt(plan.groove, 10.4);
+    expect(low).toBeLessThan(0.9);
+    // Beats from 10 s earn (each 2 s later): a Perfect's worth (0.08) each, to the full meter.
+    expect(grooveAt(plan.groove, 12.4)).toBeCloseTo(Math.min(1, low + BEATLESS.perBeat), 6);
+    expect(grooveAt(plan.groove, 18.6)).toBe(1);
+    // A stretch shorter than 2 s earns nothing.
+    const flicker = run((t) => (t >= 8 && t < 8.8 ? 0 : 0.8)).plan;
+    for (let t = 8; t < 14; t += 0.1) expect(grooveAt(flicker.groove, t + 0.1)).toBeLessThanOrEqual(grooveAt(flicker.groove, t) + 1e-9);
+  });
+
+  it("waives the drain in the grace only for a steady player still pressing", () => {
+    const { plan, stream } = run(gap);
+    // Steady (to 6 s) but no longer pressing: locked on at 17 s, the drain waits its grace bar (1 s) and
+    // comes 2 s after its beat.
+    expect(grooveAt(plan.groove, 19.9)).toBe(1);
+    expect(grooveAt(plan.groove, 21)).toBeLessThan(1);
+    expect(checkSettleTiming(plan, stream).failures).toEqual([]);
+  });
+
+  it("forgives part of an unsteady player's penalties in the grace", () => {
+    // Off the beat (a quarter beat late) from 17.5 to 21 s, in the grace.
+    const off = Array.from({ length: 7 }, (_, k) => 17.5 + 0.125 + 0.5 * k);
+    const after = (u: number) => grooveAt(run(gap, { unsteadyGrace: u }, off).plan.groove, 23.5);
+    const [none, half, full] = [after(0), after(0.5), after(1)];
+    // (Unsteady, the player drains as usual; only the presses' penalties shrink.)
+    expect(half).toBeGreaterThan(full + 0.01);
+    expect(none).toBeGreaterThan(half + 0.01);
   });
 });
 

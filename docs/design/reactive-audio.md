@@ -614,7 +614,8 @@ director:
     arrive, with no fallback to `duration` (`riseOrbs`).
 - **The run ends** when the audio ends, or from stage 6 when the finale's
   epilogue ends, whichever is later. The end card shows the letter grade from
-  the average groove over judged time (the settled groove from stage 2).
+  the average groove from 16 s on (the settled groove from stage 2, judged
+  or not, `hv-s4pt.13`).
   Settles that would fall after the run's end are dropped.
 
 ## Stage 1: Foundation
@@ -817,6 +818,32 @@ These rules start in stage 1 and apply to the settled judgment from stage 2.
 - **The drain clock stops:** the time since the latest raise counts only judged
   time. A stretch without judging neither drains the groove nor brings the next
   drain closer. When judging resumes, the drain waits its grace bar again.
+- **Beatless credit** (`hv-s4pt.13`): when the song has no beat the game can
+  hear, the player gets credit automatically.
+  - Each committed beat that falls 2 s or more into a stretch without judging
+    raises the groove by a Perfect's worth (0.08), on its drain event 2 s later.
+    A full meter takes about 13 beats.
+  - The first 2 s of a stretch earn nothing, so a flicker in the confidence
+    gives nothing away.
+  - A credit does not count as a raise for the drain.
+  - **Why:** the playtests started every run at 0. The Galop's 16 s prelude has
+    no beat to play to, and the meter then took about 20 s of the vamp to fill.
+    Quiet stretches mid-song cost the same.
+- **The lock-on grace** (`hv-s4pt.13`):
+  - **When:** for the first 8 s of judged time after a lock-on. A lock-on is a
+    run of judging that follows 4 s or more without judging.
+  - **Flickers:** a shorter stretch without judging inside the 8 s neither ends
+    the grace nor starts a new one.
+  - **Steady players:** a steady player (as for the benefit of the doubt) loses
+    nothing to settled penalties in the grace. While they have pressed within
+    the last bar, they lose nothing to the drain either.
+  - **Anyone else:** settled penalties count half their usual share, and the
+    drain runs as usual.
+  - **Why:** the tracker's first beats after it locks on are often off. In the
+    third playtest they turned steady presses in the vamp into loose and stray
+    ones.
+- **The grade** averages the meter as shown from 16 s on, judged or not, with
+  stretches without judging filled by the credit.
 - **The benefit of the doubt** (`hv-s4pt.12`):
   - **Steady players:** a settle may not lower the provisional judgment of a
     press from a steady player. Steady means the press and the three judged
@@ -1271,6 +1298,11 @@ From stage 2:
   `mash4` and `mash8` are at tier 0 at least 80% of the time. The experiment
   rated about 92% of an honest player's presses Perfect on these tracks, and
   mashers gained little.
+- **Mashing never beats playing** (`hv-s4pt.13`): on every shipped track, with
+  damage off, no masher (`mash2`, `mash4`, `mash8`) and not the holder has a
+  higher average groove (the grade's) than `reactive-moderate`. None spends
+  more of judged time at tier 2 or higher either. Mashing doing worse than
+  playing is the second priority: measured, not gated.
 
 ### Targets
 
@@ -2248,3 +2280,96 @@ under the new rules. Each cell is average groove, with the lowest in brackets.
 - **The review's ring finding:** a reactive ring's members now re-solve their
   pace each step for what is left of the close. They reach their inner radius
   by its end, after any hit-stop's pause.
+
+### Measured: beatless credit and the lock-on grace
+
+Recorded by `hv-s4pt.13`.
+
+**What the third playtest showed** (log `2026-10-24T04-30-07-695Z`):
+
+- **The prelude.** The meter sat at 0 through the Galop's 16 s prelude.
+- **The vamp.** It then took about 20 s of the vamp to fill.
+- **Unearned losses.** Quiet stretches mid-song lost groove the player could not
+  have earned.
+
+**The playtests replayed** (`npm run reactive:replay`). Each cell is average
+groove, with the lowest in brackets. "Before" is the `hv-s4pt.12` rules. The
+first run ended before the coda.
+
+| Run | 0–16 s | 16–43 s | Vamp 43–55 s, before | Vamp 43–55 s, now | Kick line 88–96 s | Coda 130–138 s |
+|---|---|---|---|---|---|---|
+| First | 0.51 (0.00) | 1.00 (0.99) | 0.02 (0.00) | 1.00 (0.98) | 0.93 (0.85) | — |
+| Second | 0.51 (0.00) | 1.00 (1.00) | 0.04 (0.00) | 1.00 (0.99) | 0.90 (0.79) | 1.00 (0.99) |
+| Third | 0.51 (0.00) | 1.00 (0.99) | 0.01 (0.00), as recorded | 0.94 (0.81) | 0.95 (0.90) | 0.89 (0.66) |
+
+- **Average groove over each run:** 0.90, 0.94 and 0.93. As recorded, it was
+  0.45, 0.51 and 0.57.
+- **Filling up.** The meter is half full 8 s in and full by 12 s, while the
+  title card is still fading.
+- **The third run's vamp** still dips to 0.81 at 46–53 s. Judging flickers back
+  there with the tracker's beats a quarter beat off. The player's presses (every
+  0.33 s, steady to ±20%) settle loose and stray, and they are not yet steady
+  in the game's sense, so their penalties count half.
+
+**The players**, with damage off. Each cell is average groove / share of judged
+time at tier 2 or higher; the best masher per track is in bold.
+
+| Track | `reactive-moderate` | mash2 | mash4 | mash8 | holder |
+|---|---|---|---|---|---|
+| Galop | 0.99 / 100% | 0.60 / 42% | 0.49 / 23% | 0.42 / 18% | **0.64 / 57%** |
+| William Tell | 0.99 / 100% | 0.52 / 39% | **0.55 / 51%** | 0.32 / 23% | 0.52 / 43% |
+| Mountain King | 0.99 / 100% | 0.23 / 11% | **0.27 / 14%** | 0.11 / 2% | 0.20 / 11% |
+| Bumblebee | 1.00 / 100% | 0.47 / 27% | **0.78 / 97%** | 0.20 / 12% | 0.58 / 53% |
+| Beethoven | 1.00 / 100% | 0.78 / 47% | 0.69 / 35% | 0.65 / 23% | **0.80 / 55%** |
+| house-128 | 1.00 / 100% | 0.06 / 0% | **0.07 / 0%** | 0.00 / 0% | 0.01 / 0% |
+| dnb-174 | 1.00 / 100% | 0.05 / 0% | **0.06 / 0%** | 0.01 / 0% | 0.02 / 0% |
+| hiphop-92-swing | 0.97 / 100% | **0.10 / 0%** | 0.03 / 0% | 0.00 / 0% | 0.00 / 0% |
+| accelerando | 0.97 / 100% | **0.09 / 0%** | 0.06 / 0% | 0.00 / 0% | 0.02 / 0% |
+| pop-arrangement | 1.00 / 100% | 0.14 / 3% | **0.25 / 12%** | 0.08 / 2% | 0.12 / 4% |
+
+- **The new gate holds on every track:** mashing never beats playing.
+- **Mashers do worse on every track,** most narrowly on Bumblebee and
+  Beethoven's Fifth. Both are mostly beatless (Beethoven's `reactive-moderate`
+  has 270 of 369 presses unjudged), so everyone gets the same credit there.
+  Bumblebee's mash4 spends nearly as much judged time at tier 2 or higher (97%)
+  because its judged stretches are short, and it reaches them at a full meter.
+- **The Galop's stage 2 target misses.** mash4 is at tier 0 76% of judged time
+  and mash8 79% (target 80%; 97% and 100% before). The credit carries a masher
+  into each judged stretch at a full meter.
+- **Unchanged:** the house-128 gate holds at 100%, and pop-arrangement's mash4
+  is at tier 0 84% (87% before).
+- **End to end with damage on,** `reactive-moderate`'s grade-average groove is
+  0.97–1.00 on every track, and its lowest health rises on the Galop from 58%
+  to 71%.
+
+**The review's findings, fixed:**
+
+- **The grade first counted all time without judging as 1,** flickers included,
+  while the meter showed something else. It now averages the meter as shown.
+- **The drain grace trusted a stale steady run,** so a player could stop
+  pressing and keep it. It now needs a press within the last bar.
+- **Beatless credit** applies only in step sections, as the drain does.
+
+**Four findings along the way:**
+
+- **Credit for every unjudged beat let the holder tie playing.** On
+  hiphop-92-swing the holder, which never presses, reached 1.00 / 100%. Two
+  causes:
+  - a confidence flicker earned credit;
+  - the credit counted as a raise, which kept the drain away.
+  Credit from 2 s into a stretch, and not counting as a raise, brings it to
+  0.00 / 0%.
+- **A grace after every short gap** let flickers restart it. Lock-ons after
+  4 s or more without judging, with flickers inside the grace ignored, fix
+  that.
+- **A grace for everyone, penalties and drain alike,** lifted mash4 on
+  Bumblebee to 0.92 / 100%, a tie with playing.
+- **A grace for steady players only** left the third run's vamp at 0.48. The
+  player's presses there were not steady in the game's sense, because the
+  tracker's beats were off. Counting an unsteady player's penalties at half in
+  the grace is the compromise:
+
+| Unsteady player's penalties in the grace | 0 | 0.25 | 0.5 | 1 (none forgiven) |
+|---|---|---|---|---|
+| Third run's vamp, lowest | 1.00 | 0.91 | 0.81 | 0.48 |
+| Bumblebee mash4, judged time at tier 2+ | 100% | 98% | 96% | 49% |

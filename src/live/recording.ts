@@ -20,7 +20,7 @@ import { beatIndexIn, type PlanIndex } from "../plan/view.ts";
 import { beatDurationAt, sectionIndexAt, type Ctx } from "../planner/context.ts";
 import { budgetSlot, chimeDegree, Emitter, lastAtOrBefore, soundSlot, VOICE_BUDGET, type EmitSink } from "../planner/emit.ts";
 import { ACTIVE_BUCKET, DEATH_ANIM, planHeader, zoneWaveEnd } from "../planner/plan.ts";
-import { judgedAverageGroove, REACTIVE_END_DELAY } from "../reactive/grade.ts";
+import { gradedAverageGroove, REACTIVE_END_DELAY } from "../reactive/grade.ts";
 import { reactiveRunEnd } from "../reactive/setpieces.ts";
 import type { ArrowRecord, Attack, BossInfo, Cleave, Dance, FormationRecord, GemRecord, Landing, LandmarkRecord, PressTrace, Recorder, SlamRecord, Threat, VacuumRecord, ZoneWaveRecord } from "../sim/recorder.ts";
 import type { Schedule } from "../sim/schedule.ts";
@@ -742,7 +742,7 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
       this.undo(() => {
         this.reactiveEnded = false;
       });
-      this.set(this.plan.stats, "averageGroove", judgedAverageGroove(this.grooveSeries, this.ctx.reactive, this.playerFrom, this.ctx.duration));
+      this.set(this.plan.stats, "averageGroove", gradedAverageGroove(this.grooveSeries, this.playerFrom, this.ctx.duration));
       this.ui({ kind: "end", s: reactiveRunEnd(this.ctx.reactive, this.ctx.level.director, this.ctx.input.knownLength ?? this.ctx.duration, this.ctx.duration, REACTIVE_END_DELAY) });
     }
     // Song-owned flashes on strong accents, as the music passes them.

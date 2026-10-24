@@ -24,7 +24,7 @@ import { buildSchedule, type GridSlot, type Schedule } from "../sim/schedule.ts"
 import { ENEMY_RATE, simulate, type SimResult } from "../sim/simulate.ts";
 import { HolderPlayer, MasherPlayer, VirtualPlayer, type Player, type PlayerName, type PlayerSection, type SkillProfile } from "../sim/player.ts";
 import { strideRule } from "../sim/strides.ts";
-import { judgedAverageGroove } from "../reactive/grade.ts";
+import { gradedAverageGroove } from "../reactive/grade.ts";
 
 export const PLAN_FORMAT = "3";
 export const ACTIVE_BUCKET = 0.5;
@@ -255,7 +255,7 @@ export function planWithSim(input: PlannerInput, opts: PlannerOptions = {}): { p
     presses: presses.length,
     ratings,
     // (Reactive mode grades the groove over judged time.)
-    averageGroove: ctx.reactive ? judgedAverageGroove(sim.groove, ctx.reactive, 0, ctx.duration) : gN > 0 ? gSum / gN : 0,
+    averageGroove: ctx.reactive ? gradedAverageGroove(sim.groove, 0, ctx.duration) : gN > 0 ? gSum / gN : 0,
     ...healthStats(sim.health),
     planMs: now() - t0,
     simMs,

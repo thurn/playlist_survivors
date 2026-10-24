@@ -34,7 +34,7 @@ import { chainAt, heavyArcAt, orbitAt, swingArcAt, tierDamage, trailRadiusAt, wa
 import { armouredBite, evolvedOrbit, offersFor, passiveBonus, startingLoadout, takeItem, type Loadout, type UpgradeItem } from "./upgrades.ts";
 import { classifyPress, NEVER_LATE, drainPerBeat, firstAtOrAfter, freshPressMemo, grooveAfterChange, keyGroup, type PressJudgement, type PressMemo, nearestIndex, ratePressOnGrid, tierFor } from "./timing.ts";
 import { OpenWorld, type World } from "./world.ts";
-import { evidenceAt, hindsightAt, judgedAt, judgedSinceAt, judging, tickIndexAt, type TickLevel } from "../reactive/stream.ts";
+import { evidenceAt, hindsightAt, judgedAt, judgedSinceAt, judging, lockOnAt, tickIndexAt, unjudgedSinceAt, type TickLevel } from "../reactive/stream.ts";
 import { directorPopulation, levelBlend, sectionRoster, zoneWavePlan } from "../reactive/director.ts";
 import { detectedSections } from "../reactive/sections.ts";
 import { judgementLabel, READING, SETTLE_DELAY, Settler, type Settled, type SettlePress } from "../reactive/settle.ts";
@@ -59,6 +59,15 @@ const CONTACT_GAP = 4;
  * it from the confidence (evidence) `fullAt`.
  */
 export const FAIR = { benefitOfDoubt: true, steadyRun: 4, floor: 0, fullAt: 0.55 };
+
+/**
+ * Reactive mode's beatless credit (hv-s4pt.13): each committed beat in a stretch that has gone
+ * `afterS` or more without judging raises the groove by `perBeat` (a Perfect's worth); and for the
+ * first `graceS` of judged time after a lock-on (a run of judging after LOCK_GAP_S or more without,
+ * short flickers neither ending nor restarting it) a steady player cannot lose groove (no penalties,
+ * no drain) and anyone else's penalties count `unsteadyGrace` of their usual share.
+ */
+export const BEATLESS = { perBeat: 0.08, afterS: 2, graceS: 8, unsteadyGrace: 0.5 };
 /** Reactive mode (stage 5): the least confidence of a forecast accent that makes a heavy swing, and how near a strong onset it counts as forecast. */
 const FORECAST_CONFIDENCE = 0.6;
 const FORECAST_WINDOW = 0.05;
@@ -851,6 +860,30 @@ function engine(env: Env, st: SimState, io: Io) {
    * ones and the drain) by the tracker's confidence, FAIR.floor of it at the gate and all from FAIR.fullAt.
    */
   const penaltyScale = (t: number) => (stream ? FAIR.floor + (1 - FAIR.floor) * clamp((evidenceAt(stream, t) - stream.params.gate) / Math.max(1e-6, FAIR.fullAt - stream.params.gate), 0, 1) : 1);
+  /** (hv-s4pt.13) Is song time t in the lock-on grace: the first BEATLESS.graceS of judged time after the latest lock-on? */
+  const inGrace = (t: number) => {
+    if (!stream) return false;
+    const lock = lockOnAt(stream, t);
+    return !Number.isNaN(lock) && judgedClock(t) - judgedClock(lock) < BEATLESS.graceS - 1e-9;
+  };
+  /** (hv-s4pt.13) Is the drain at beat time b (a bar of barS) waived: the lock-on grace for a steady player who pressed within the bar? */
+  const drainGraced = (b: number, barS: number) => inGrace(b) && st.steadyRun >= FAIR.steadyRun && st.lastPressS >= b - barS - 1e-9;
+  /**
+   * (hv-s4pt.13) A beat (at b) whose presses are not judged earns the groove a Perfect's worth once
+   * its stretch without judging has lasted BEATLESS.afterS (a flicker earns nothing). True if the
+   * beat went unjudged (it neither earns nor drains then).
+   */
+  const beatlessCredit = (b: number) => {
+    if (!stream || clearAt(b)) return false;
+    if (b - unjudgedSinceAt(stream, b) < BEATLESS.afterS - 1e-9) return true;
+    const before = st.groove;
+    st.groove = Math.min(1, st.groove + BEATLESS.perBeat);
+    if (st.groove !== before) {
+      rec().groove(st.s, st.groove);
+      setTier();
+    }
+    return true;
+  };
   /**
    * Judged time at song time t since the latest raise, or since judging last resumed if later: after
    * an unclear stretch, the drain waits its grace bar again.
@@ -1607,7 +1640,8 @@ function engine(env: Env, st: SimState, io: Io) {
     const raw = kept ? pr.provisionalChange : settledChange;
     // (A raise counts in full for a steady player; anyone else's scales as a penalty does, so pressing
     // at random gains nothing where the tracker is unsure.)
-    const change = raw < 0 || !pr.steady ? raw * penaltyScale(pr.s) : raw;
+    // (In the lock-on grace a steady player loses nothing, anyone else part of a penalty.)
+    const change = raw < 0 && inGrace(pr.s) ? (pr.steady ? 0 : raw * penaltyScale(pr.s) * BEATLESS.unsteadyGrace) : raw < 0 || !pr.steady ? raw * penaltyScale(pr.s) : raw;
     const before = st.groove;
     st.groove = grooveAfterChange(st.groove, change);
     if (change > 0) st.lastRaiseS = Math.max(st.lastRaiseS, pr.s);
@@ -3248,10 +3282,13 @@ function engine(env: Env, st: SimState, io: Io) {
           }
           // The groove drains a bar after the latest press that raised it (free sections freeze it).
           const sec = sectionAt(st.s);
+          // (Reactive mode: a beat without judging earns its credit instead.)
+          if (sec.level.movement === "steps" && beatlessCredit(st.s)) break;
           const bpb = ctx.idx.beatsPerBar[sec.song.bars[0]] ?? 2;
           // (Reactive mode: the bar's length from the last two committed beats, the next being perhaps not yet committed.)
           const beatS = stream ? (ev.bi > 0 ? song.beats[ev.bi] - song.beats[ev.bi - 1] : stream.beats[0].period) : song.beats[Math.min(song.beats.length - 1, ev.bi + 1)] - song.beats[Math.max(0, Math.min(song.beats.length - 2, ev.bi))];
-          if (sec.level.movement === "steps" && st.groove > 0 && clearAt(st.s) && judgedSinceRaise(st.s) > hero.meter.drain.afterBars * bpb * beatS + 1e-9) {
+          const graced = drainGraced(st.s, bpb * beatS);
+          if (sec.level.movement === "steps" && st.groove > 0 && clearAt(st.s) && !graced && judgedSinceRaise(st.s) > hero.meter.drain.afterBars * bpb * beatS + 1e-9) {
             st.groove = Math.max(0, st.groove - drainPerBeat(hero, bpb) * penaltyScale(st.s));
             rec().groove(st.s, st.groove);
             setTier();
@@ -3363,9 +3400,13 @@ function engine(env: Env, st: SimState, io: Io) {
           break;
         case "drain": {
           const sec = sectionAt(ev.b);
+          // (A beat without judging earns its credit instead.)
+          if (sec.level.movement === "steps" && beatlessCredit(ev.b)) break;
           const bpb = ctx.idx.beatsPerBar[sec.song.bars[0]] ?? 2;
           const beatS = ev.bi > 0 ? song.beats[ev.bi] - song.beats[ev.bi - 1] : stream!.beats[0].period;
-          if (sec.level.movement === "steps" && st.groove > 0 && clearAt(ev.b) && judgedSinceRaise(ev.b) > hero.meter.drain.afterBars * bpb * beatS + 1e-9) {
+          // (No drain in the lock-on grace while the player is steady and still pressing.)
+          const graced = drainGraced(ev.b, bpb * beatS);
+          if (sec.level.movement === "steps" && st.groove > 0 && clearAt(ev.b) && !graced && judgedSinceRaise(ev.b) > hero.meter.drain.afterBars * bpb * beatS + 1e-9) {
             st.groove = Math.max(0, st.groove - drainPerBeat(hero, bpb) * penaltyScale(ev.b));
             rec().groove(st.s, st.groove);
             setTier();
