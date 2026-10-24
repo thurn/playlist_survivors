@@ -35,6 +35,12 @@ and each slot's worktree path leaves its own copy of the workspace crates, with 
 the directory. Watch the gate's native time as the crates grow: key the directory by slot, or
 prune it, if the wait shows.
 
+## Review churn (hv-t8o8.46)
+
+Review findings cost 20, 20 and 15 minutes in ES, F3 and F4 (mean 18), about 8 findings per
+reviewed bead. The self-review step in AGENTS.md targets them; the next retrospective compares
+the `review-churn` minutes of the next 5 reviewed beads with that mean, aiming at half.
+
 ## Revisions
 
 - 2026-10-24, W2: first budgets, from W1's and S0's measurements.
