@@ -19,6 +19,9 @@ Commands (each prints a JSON summary on stdout):
 - `fit-grid AUDIO --out reference.json [--click FILE.ogg|.wav] [--quiet]`: a
   corpus track's fitted reference (beats, meter, downbeats, approximate sections,
   accents), and a click overlay to check it by ear
+- `delayed-payoff [STREAM.json ...] [--index index.json] [--markdown OUT.md] [--json OUT.json]`:
+  Delayed listening's commit rule replayed over committed streams' hindsight entries,
+  against Direct listening (every `public/reactive/*/stream.json` by default)
 
 Commands that need the excerpt find it as `public/audio/<audio.file>` in a
 parent directory of the song map or of the working directory, unless
@@ -355,6 +358,30 @@ def cmd_synth(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_delayed_payoff(a: argparse.Namespace) -> int:
+    from . import delayed as dl
+
+    if a.streams:
+        paths, index = [Path(x) for x in a.streams], Path(a.index) if a.index else None
+    else:
+        paths, index = dl.default_streams()
+        index = Path(a.index) if a.index else index
+    result = dl.run(paths, index)
+    if a.json:
+        Path(a.json).write_text(json.dumps(result, indent=1) + "\n")
+    if a.markdown:
+        Path(a.markdown).write_text(dl.markdown(result))
+    _emit(
+        {
+            "tracks": len(result["tracks"]),
+            "skipped": result["skipped"],
+            "aggregate": result["aggregate"],
+            "proposal": result["proposal"],
+        }
+    )
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="ps-analysis", description=__doc__.split("\n")[0])
     sub = p.add_subparsers(dest="command", required=True)
@@ -491,6 +518,18 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--click", help="also write a click overlay (.ogg or .wav)")
     c.add_argument("--quiet", action="store_true", help="print only whether it fitted")
     c.set_defaults(func=cmd_fit_grid)
+
+    c = sub.add_parser(
+        "delayed-payoff",
+        help="measure Delayed listening's payoff from committed streams",
+    )
+    c.add_argument(
+        "streams", nargs="*", help="stream.json files (default: public/reactive)"
+    )
+    c.add_argument("--index", help="index.json naming each track's category")
+    c.add_argument("--markdown", help="write the appendix tables here")
+    c.add_argument("--json", help="write the full result here")
+    c.set_defaults(func=cmd_delayed_payoff)
     return p
 
 

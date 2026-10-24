@@ -1274,7 +1274,7 @@ Set by the spike's executor from the phase 0 numbers
 | Rollback re-simulation per second | no sim yet | ≤ 250 ms of CPU per second, provisional | report until C4 measures it, then a gate at its p95 + 50% |
 | Committed beat → heard beat (steady tracks) | house-128: clicks at the ear +4.7 ms median, \|e\| p95 9.7 ms, max 11 | — | report (set by the commit horizon) |
 | Output latency | built-in speakers 16.6 ms reported (27.3 with the 512-frame buffer); wired and AirPods not yet measured | — | report (hardware) |
-| Delayed listening: committed-beat accuracy against Direct, per corpus category (E1) | | | report; E1's rule |
+| Delayed listening: committed-beat accuracy against Direct, per corpus category (E1) | E0, replayed from Python's hindsight entries: offline grid at `M = 3 s` 86.1% within 45 ms against Direct's 79.0%, every category better ([appendix](#measured-e0-delayed-listenings-payoff)) | | report; E1's rule |
 | Delayed listening: measured music delay against `M`, over an hour (E2) | | | gate at ±2 ms |
 
 ## Automated Checks
@@ -1779,3 +1779,164 @@ spike's dependency tree (wgpu, winit, objc2), well inside Tollgate's 15 minutes.
   link: `objc2-core-video` (`CVDisplayLink`); key timestamps: `objc2-app-kit`
   local event monitor.
 - The spike resamples 48 kHz to 44.1 kHz linearly. A1 uses `rubato`, as planned.
+
+### Measured: E0, Delayed listening's payoff
+
+Measured by `hv-t8o8.35` on 2026-10-24 with `npm run analysis -- delayed-payoff`
+over all 62 committed `public/reactive/*/stream.json` files (the frozen
+streams at `ts-freeze`), with S0's `D = 0.67 s` and `A = 0.048 s`. Each
+hindsight entry's grid commits the beats in its band `[k + H, k + 1 + H)`,
+stamped `k = T + D − M + A`, as [E1](#committed-beats-from-hindsight-e1)
+specifies. Choices made in the replay (recorded on the bead):
+
+- **Fallback:** within a band, Direct listening's committed beats fill every
+  stretch where the grid has no beat: all of the band when the entry has fewer
+  than 2 beats, and every gap of more than 1.5 periods, the band's ends
+  counting as beats half a period outside it. Past the last entry, Direct's
+  beats continue. Python's entries carry no evidence, so the rule's
+  low-evidence trigger is not modelled.
+- **Fallback stamps:** a forecast committed at analysis position `x` is stamped
+  `x − (M − A)`, without `D`, since a forecast needs no decode. That keeps every
+  committed beat at least `H` ahead of its stamp at every `M` (checked over all
+  259,278 replayed beats). E1 should stamp forecasts the same way.
+- **`H`** is 1 period plus 0.35 s at the grid's local period (its median
+  spacing), or Direct's believed period where the grid has fewer than 2 beats.
+- **`phased`** shifts the causal tracker's believed beats (`online`) by the
+  stream's own phase check (`phase_shift`, two agreeing entries).
+- **Accuracy** is the stream's own: committed beats at t ≥ 4 s within 45 ms of
+  the reference, averaged per track. Recall (the share of reference beats at
+  t ≥ 4 s with a committed beat within 45 ms) is reported beside it, because a
+  grid at half tempo can be precise and miss half the beats.
+- **Categories** are `index.json`'s groups. `causality-mix` is not listed
+  there, so it is a one-track category (`unlisted`). It could veto a grid on
+  its own under E1's rule; here it vetoed nothing the other categories didn't.
+  Every committed stream counts, held-out tracks included: these are stream
+  accuracy numbers, not feel dossiers.
+
+**Within 45 ms, per category (%, mean of tracks)**
+
+| Category | Tracks | Direct | online 1.5 | online 2 | online 2.5 | online 3 | online 4 | online 5 | offline 1.5 | offline 2 | offline 2.5 | offline 3 | offline 4 | offline 5 | phased 1.5 | phased 2 | phased 2.5 | phased 3 | phased 4 | phased 5 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| all | 62 | 79.0 | 78.9 | 77.0 | 74.9 | 75.1 | 75.1 | 75.2 | 79.2 | 80.4 | 84.4 | 86.1 | 86.6 | 86.9 | 78.8 | 78.3 | 78.3 | 78.6 | 78.4 | 78.4 |
+| cc | 12 | 75.9 | 76.0 | 76.8 | 79.2 | 80.1 | 80.4 | 80.5 | 76.0 | 77.5 | 82.3 | 85.5 | 87.1 | 88.1 | 76.0 | 76.1 | 77.8 | 78.6 | 78.9 | 78.8 |
+| classical | 5 | 63.4 | 63.8 | 69.6 | 76.0 | 77.4 | 77.3 | 77.1 | 63.9 | 68.9 | 79.6 | 84.4 | 84.8 | 85.5 | 63.8 | 68.2 | 73.0 | 73.7 | 73.8 | 73.8 |
+| notjam | 39 | 81.2 | 81.0 | 77.0 | 72.0 | 72.0 | 71.9 | 72.0 | 81.3 | 82.1 | 84.1 | 84.6 | 84.9 | 84.9 | 80.9 | 79.5 | 78.6 | 78.6 | 78.3 | 78.4 |
+| synthetic | 5 | 83.0 | 82.8 | 82.6 | 82.0 | 81.7 | 81.6 | 81.5 | 83.0 | 82.9 | 94.9 | 98.9 | 98.4 | 98.6 | 82.8 | 81.7 | 80.3 | 80.1 | 79.9 | 79.8 |
+| unlisted | 1 | 90.1 | 90.1 | 90.2 | 91.7 | 93.9 | 93.9 | 93.9 | 90.1 | 92.4 | 94.7 | 95.5 | 97.8 | 99.2 | 90.1 | 90.2 | 90.2 | 91.6 | 92.4 | 91.6 |
+
+**Within 45 ms by reference source (%).** The `offline` references are
+madmom's whole-song offline decode, and the `fitted` ones are grids fitted
+through it, so on 55 of the 62 tracks the offline grid is partly graded
+against its own model. Only the `exact` (synthetic) and `songmap` (the Galop)
+references are independent of it.
+
+| Reference | Tracks | Direct | offline 1.5 | offline 2 | offline 2.5 | offline 3 | offline 4 | offline 5 |
+|---|---|---|---|---|---|---|---|---|
+| exact | 6 | 84.2 | 84.2 | 84.5 | 94.8 | 98.3 | 98.3 | 98.7 |
+| fitted | 51 | 79.9 | 80.1 | 81.0 | 83.7 | 84.8 | 85.4 | 85.7 |
+| offline | 4 | 64.8 | 65.3 | 70.9 | 81.6 | 86.2 | 86.7 | 87.5 |
+| songmap | 1 | 58.2 | 58.5 | 60.9 | 71.5 | 77.1 | 77.1 | 77.3 |
+
+**Recall at the proposal (%)**: Direct 84.6, offline at 3 s 87.0 overall;
+cc 75.8 → 80.9, classical 64.4 → 79.0, notjam 87.9 → 88.7, synthetic
+98.7 → 95.2, unlisted 88.8 → 94.0. On the offline grid, aggregated over all
+tracks, the fallback supplies 99% of beats at 1.5 s (the bands lie past each
+entry's window), 60% at 2 s, 12% at 2.5 s and 4–5% from 3 s. The other grids
+are within a few points of that, and categories vary more (cc 68% at 2 s).
+
+**Proposal, by E1's rules**
+
+- **Grid: offline.** At its own `M` it is the best in aggregate (86.1% against
+  Direct's 79.0%) and no worse than Direct on any category. `online` and
+  `phased` never beat Direct in aggregate (best 78.9% and 78.8%, both at 1.5 s,
+  which is almost all fallback) and are worse on notjam, synthetic and
+  unlisted: the believed beats are the causal tracker's own, jitter and phase
+  included, and hearing past them does not correct them.
+- **`M = 3 s`:** the smallest value within 1 point of the offline grid's best
+  aggregate (86.9% at 5 s; 86.1% at 3 s; 84.4% at 2.5 s). The independent
+  references agree (98.3% at 3 s against 98.7% at 5 s on `exact`, 77.1%
+  against 77.3% on the Galop). At 3 s the analyzer has heard 0.4–1.4 s past
+  each committed beat (`M − A − D − H − 1` to `M − A − D − H` at a 0.5 s
+  period).
+
+**Verdict: Delayed listening pays.** On the independent references alone,
+the offline grid at 3 s gains 14.1 points on the synthetic tracks
+(84.2 → 98.3%) and 18.9 on the Galop (58.2 → 77.1%). Over every track it gains
+7.1 points in aggregate, with every category better (classical +21.0,
+synthetic +15.9, cc +9.6, notjam +3.4) and recall up 2.4 points. The gains on
+madmom-derived references (fitted +4.9, offline +21.4) are an upper bound. E1
+goes ahead from the offline grid at `M = 3 s` and confirms both with the Rust
+analyzer. What it does not fix, as [Why](#why) says, is the tempo octave: the
+offline decode settles on half tempo on parts of dnb-174 (recall 100 → 83%)
+and cc-alex-beroza-good-day (95 → 57%), which is where recall falls, and the
+Galop's recall stays at 54% while its accuracy rises from 58 to 77%.
+notjam-locrian-chipdoom gets worse (47.6 → 31.7%) and notjam-baroque-chips
+drops from 100 to 91.7%. E1 should watch those tracks and report recall beside
+accuracy.
+
+**Per track, Direct against offline at 3 s (%)**
+
+| Track | Category | Reference | Direct within 45 ms | Direct recall | offline 3 within 45 ms | recall | fallback |
+|---|---|---|---|---|---|---|---|
+| accelerando-100-140 | synthetic | exact | 79.8 | 100.0 | 100.0 | 100.0 | 4.0 |
+| beethoven-fifth | classical | offline | 47.3 | 47.1 | 85.1 | 82.4 | 2.5 |
+| bumblebee | classical | offline | 75.4 | 69.6 | 97.8 | 89.7 | 2.2 |
+| causality-mix | unlisted | exact | 90.1 | 88.8 | 95.5 | 94.0 | 3.9 |
+| cc-alex-beroza-good-day | cc | fitted | 96.3 | 94.9 | 97.8 | 56.9 | 1.4 |
+| cc-benjamin-orth-where-you-are-now | cc | fitted | 99.7 | 100.0 | 97.5 | 98.7 | 1.8 |
+| cc-hairy-larry-and-the-flying-hungarians-ride-me-to-heaven | cc | fitted | 91.8 | 94.4 | 100.0 | 100.0 | 1.5 |
+| cc-josh-woodward-swansong | cc | fitted | 89.8 | 73.1 | 93.0 | 88.4 | 1.3 |
+| cc-kevin-macleod-black-vortex | cc | fitted | 52.8 | 64.2 | 73.9 | 72.5 | 4.1 |
+| cc-kevin-macleod-go-cart | cc | fitted | 89.0 | 89.0 | 88.9 | 88.5 | 1.7 |
+| cc-kevin-macleod-long-stroll | cc | fitted | 99.3 | 99.3 | 99.3 | 98.8 | 1.7 |
+| cc-kevin-macleod-mirage | cc | fitted | 9.7 | 11.7 | 24.2 | 21.8 | 21.5 |
+| cc-kimiko-ishizaka-aria | cc | fitted | 32.1 | 32.7 | 78.5 | 77.9 | 1.2 |
+| cc-maelstrom-i-dreamt-for-a-brighter-sky | cc | fitted | 77.7 | 86.4 | 85.4 | 85.0 | 1.0 |
+| cc-the-crypts-no-life-after-crypts | cc | fitted | 72.6 | 64.2 | 88.2 | 82.2 | 1.2 |
+| cc-zep-hurme-hang-low | cc | fitted | 99.8 | 100.0 | 100.0 | 100.0 | 1.0 |
+| dnb-174 | synthetic | exact | 100.0 | 100.0 | 100.0 | 83.4 | 5.8 |
+| hiphop-92-swing | synthetic | exact | 50.6 | 100.0 | 100.0 | 100.0 | 7.1 |
+| house-128 | synthetic | exact | 100.0 | 100.0 | 100.0 | 100.0 | 5.1 |
+| mountain-king | classical | offline | 61.8 | 81.8 | 80.5 | 92.7 | 2.9 |
+| notjam-baroque-chips | notjam | fitted | 100.0 | 100.0 | 91.7 | 91.7 | 10.3 |
+| notjam-battle-ceases | notjam | fitted | 75.0 | 81.8 | 100.0 | 100.0 | 6.2 |
+| notjam-battle-commences | notjam | fitted | 100.0 | 100.0 | 100.0 | 100.0 | 2.8 |
+| notjam-breakbeat-chips | notjam | fitted | 50.0 | 100.0 | 50.0 | 100.0 | 6.0 |
+| notjam-chill-menu | notjam | fitted | 80.2 | 80.7 | 89.8 | 87.1 | 3.4 |
+| notjam-crashing-out | notjam | fitted | 100.0 | 100.0 | 100.0 | 100.0 | 5.8 |
+| notjam-critical-theme | notjam | fitted | 99.5 | 100.0 | 100.0 | 100.0 | 1.5 |
+| notjam-crystal-caverns | notjam | fitted | 3.6 | 3.6 | 12.0 | 12.0 | 6.4 |
+| notjam-dark-cavern-phone-home | notjam | fitted | 85.6 | 88.9 | 91.1 | 77.8 | 2.8 |
+| notjam-descend-gameplay | notjam | fitted | 96.8 | 97.2 | 96.4 | 96.8 | 2.7 |
+| notjam-drag-and-dread-theme | notjam | fitted | 75.4 | 75.4 | 93.1 | 91.0 | 3.5 |
+| notjam-grumpy-shopkeep | notjam | fitted | 100.0 | 100.0 | 100.0 | 100.0 | 9.1 |
+| notjam-harold-paranormal-instigator-theme | notjam | fitted | 67.8 | 98.5 | 69.4 | 86.1 | 3.4 |
+| notjam-klepto-linda-caverns-a | notjam | fitted | 63.1 | 63.7 | 74.6 | 75.2 | 1.6 |
+| notjam-klepto-linda-caverns-b | notjam | fitted | 38.6 | 38.9 | 44.4 | 45.3 | 2.0 |
+| notjam-klepto-linda-credits | notjam | fitted | 100.0 | 100.0 | 100.0 | 99.0 | 5.4 |
+| notjam-klepto-linda-mountain-a | notjam | fitted | 63.5 | 63.5 | 81.6 | 83.5 | 10.4 |
+| notjam-klepto-linda-mountain-b | notjam | fitted | 100.0 | 100.0 | 100.0 | 100.0 | 2.7 |
+| notjam-klepto-linda-titles | notjam | fitted | 100.0 | 100.0 | 100.0 | 100.0 | 4.7 |
+| notjam-lazy-river-rally | notjam | fitted | 50.0 | 100.0 | 50.0 | 100.0 | 2.9 |
+| notjam-leading-the-charge | notjam | fitted | 51.5 | 68.4 | 60.7 | 60.3 | 2.7 |
+| notjam-lich-king-ascendant | notjam | fitted | 41.5 | 41.1 | 50.4 | 50.0 | 3.7 |
+| notjam-locrian-chipdoom | notjam | fitted | 47.6 | 95.3 | 31.7 | 43.8 | 2.7 |
+| notjam-meltdown-theme | notjam | fitted | 97.1 | 97.4 | 97.7 | 97.1 | 1.2 |
+| notjam-peak-performance | notjam | fitted | 100.0 | 100.0 | 100.0 | 100.0 | 2.6 |
+| notjam-pitcher-perfect-theme | notjam | fitted | 100.0 | 100.0 | 100.0 | 100.0 | 2.6 |
+| notjam-pool-party | notjam | fitted | 100.0 | 100.0 | 100.0 | 100.0 | 2.6 |
+| notjam-rainy-foothills | notjam | fitted | 100.0 | 100.0 | 100.0 | 100.0 | 5.0 |
+| notjam-really-long-arms | notjam | fitted | 100.0 | 100.0 | 100.0 | 100.0 | 9.8 |
+| notjam-safe-space | notjam | fitted | 100.0 | 100.0 | 100.0 | 100.0 | 6.6 |
+| notjam-seeing-double | notjam | fitted | 95.6 | 94.8 | 96.5 | 95.7 | 3.2 |
+| notjam-solemn-advance | notjam | fitted | 50.0 | 100.0 | 50.0 | 100.0 | 4.6 |
+| notjam-switch-with-me-theme | notjam | fitted | 100.0 | 100.0 | 99.5 | 99.5 | 2.5 |
+| notjam-the-wall | notjam | fitted | 100.0 | 100.0 | 100.0 | 100.0 | 4.4 |
+| notjam-title-theme-phone-home | notjam | fitted | 100.0 | 100.0 | 100.0 | 100.0 | 3.8 |
+| notjam-type-cast-theme | notjam | fitted | 73.2 | 75.2 | 74.1 | 73.4 | 4.3 |
+| notjam-untitled-track-01 | notjam | fitted | 89.6 | 85.6 | 100.0 | 100.0 | 4.9 |
+| notjam-victory-lap | notjam | fitted | 100.0 | 100.0 | 100.0 | 99.2 | 3.0 |
+| notjam-waltz-of-the-lich-king | notjam | fitted | 71.2 | 78.6 | 94.5 | 94.5 | 2.6 |
+| orpheus-galop | classical | songmap | 58.2 | 53.7 | 77.1 | 54.5 | 2.2 |
+| pop-arrangement | synthetic | exact | 84.4 | 93.6 | 94.4 | 92.3 | 2.8 |
+| william-tell-finale | classical | offline | 74.5 | 69.8 | 81.3 | 75.5 | 2.7 |
