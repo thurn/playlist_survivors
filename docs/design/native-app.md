@@ -1289,7 +1289,7 @@ Set by the spike's executor from the phase 0 numbers
 | Committed beat → heard beat (steady tracks) | house-128: clicks at the ear +4.7 ms median, \|e\| p95 9.7 ms, max 11 | — | report (set by the commit horizon) |
 | Output latency | built-in speakers 16.6 ms reported (27.3 with the 512-frame buffer); wired and AirPods not yet measured | — | report (hardware) |
 | Delayed listening: committed-beat accuracy against Direct, per corpus category (E1) | E0, replayed from Python's hindsight entries: offline grid at `M = 3 s` 86.1% within 45 ms against Direct's 79.0%, every category better ([appendix](#measured-e0-delayed-listenings-payoff)) | | report; E1's rule |
-| Delayed listening: measured music delay against `M`, over an hour (E2) | ES, the spike's delay line at `M = 3 s`: per-minute medians spread 0.02 ms over 60 minutes, no underruns (stability only: `M + 23 ms` absolute on the tap timeline, cause unconfirmed; loopback pending, [appendix](#measured-es-delayed-listenings-tap-and-delay-line)) | | gate at ±2 ms |
+| Delayed listening: measured music delay against `M`, over an hour (E2) | ES, the spike's delay line at `M = 3 s`: per-minute medians spread 0.02 ms over 60 minutes, no underruns (stability; heard `M + 23 ms` late, phase 0's tap-versus-render offset, which E2 subtracts; loopback pending, [appendix](#measured-es-delayed-listenings-tap-and-delay-line)) | | gate at ±2 ms |
 
 ## Automated Checks
 
@@ -2130,11 +2130,18 @@ process's audio before its mute.
   to the onset bookkeeping gave 3,022.99 ms. Both ends are Core Audio
   host-time stamps on the same timelines the render callback places frames
   by, so this shows the delay line is **stable** (spread 0.02 ms, inside E2's
-  ±2 ms) and consistent with its own bookkeeping. It does not show the
-  absolute delay: on the tap timeline the music is `M + 23 ms` late, and the
-  23 ms is unexplained (the speakers report 16.6 ms of output latency plus
-  the buffer). E2 must measure the absolute delay by loopback and correct the
-  offset so the music is heard `M` late. The acoustic delay is **pending**.
+  ±2 ms) and consistent with its own bookkeeping.
+- **The 23 ms is phase 0's tap-versus-render offset**
+  ([Measured: phase 0](#measured-phase-0)): the tap stamps an instant 23 ms
+  later than the render timeline does, so `L_tap = L_out − 23 ms`. A frame
+  captured at tap time `h` would have been heard at `h + L_tap`; played at
+  render time `h + M`, it is heard at `h + M + L_out`. So the music is heard
+  `M + (L_out − L_tap)` = `M + 23 ms` late, which is what the global tap
+  measured (it hears our output 23 ms after its render time). To be heard
+  exactly `M` late, E2 plays the frame captured at `h` at render time
+  `h + M − (L_out − L_tap)`, with the offset measured per device (D2's
+  calibration, as phase 0 says). Confirming it acoustically by loopback is
+  **pending**.
 - **Two devices:** only the built-in speakers and microphone were connected,
   so the drift-correcting resampler is **pending** (E2, with AirPods or a USB
   device).
@@ -2150,8 +2157,10 @@ process's audio before its mute.
 - The watchdog can destroy the devices from its own thread while the main
   thread is stuck: within 2.06 s here, both calls succeeding.
 - The delay line's design holds: host-time anchors from the tap's buffers, a
-  ring of `M + 2` s, no resampler on one device clock. Its absolute delay was
-  `M + 23 ms` on the tap timeline: measure it acoustically and correct it.
+  ring of `M + 2` s, no resampler on one device clock. Played at `h + M`, the
+  music is heard `M + (L_out − L_tap)` late (`M + 23 ms` here): subtract the
+  device's tap-versus-render offset from the read time, and confirm by
+  loopback.
 - Before E2 ships the mode, loopback must confirm, with the speakers on, that a
   tapped app is silent, that it is audible after the tap is destroyed, after
   `SIGKILL` (private tap) and after the watchdog fires. These are QA items, run
