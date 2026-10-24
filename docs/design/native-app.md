@@ -753,6 +753,11 @@ and ends, their times are bit-equal (the change strengths within tolerance),
 from the stage and from the whole analyzer; a change on real music is first
 met in A7's corpus parity.
 
+A6 measured ([native/evidence/a6/](../../native/evidence/a6/README.md)): fed
+every committed stream's beats and onsets a frame at a time, the forecasts are
+Python's to the bit (75 on 24 of 62 streams), as are those of synthetic cases
+at the rule's edges and of a 40 s accented pulse through the whole analyzer.
+
 - librosa's chroma and MFCC use librosa's own matrices, exported with the models
   (`librosa.chroma`, `librosa.mel` and `librosa.dct` in `madmom.bin`), so the
   features differ from librosa's only by summation order (A5).

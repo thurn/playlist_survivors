@@ -1,12 +1,13 @@
 //! The live analyzer (docs/design/native-app.md, "Phase A: The Analyzer"): every stage, frame by
 //! frame, with bounded memory. Feed 44.1 kHz mono samples; it returns the stream's entries as
-//! they are finished: committed beats, ticks (with their keys), onsets, hindsight entries and
-//! structure's changes, jumps and ends so far (accents, bands and timbre join in later beads).
+//! they are finished: committed beats, ticks (with their keys), onsets, hindsight entries,
+//! structure's changes, jumps and ends, and accent forecasts (bands and timbre join in A7).
 //!
 //! Per frame, in this order: the online ensemble's activation, the DBN's belief, the onset
 //! function and its peak picking, a tick every `tickS` (its evidence then holds for the commits
 //! until the next) with the structure it finishes, the hindsight decodes due at this frame (requested when a window ends,
-//! usable `D` later), and the commit rule with the phase check's shift.
+//! usable `D` later), the commit rule with the phase check's shift, and the accent forecasts
+//! the frame's onset and commits complete.
 //!
 //! The hindsight decode runs inline (`Analyzer::new`), or on a worker thread
 //! (`Analyzer::with_hindsight_worker`, the app's) that the analyzer waits for when an entry is
@@ -18,6 +19,7 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, Instant};
 
+use crate::accents::{AccentParams, Accents, Forecast};
 use crate::beats::{BeatParams, Belief, Beliefs, Commit, Committer, Evidence};
 use crate::dbn::OnlineDbn;
 use crate::frontend::{HOP, OnlineFrontEnd, SAMPLE_RATE};
@@ -40,6 +42,7 @@ pub enum Entry {
     Change(Change),
     Jump(Jump),
     End(End),
+    Forecast(Forecast),
 }
 
 /// The analyzer's parameters (the stream's: `manifest.json`'s `streamParams`, and `D`).
@@ -50,6 +53,7 @@ pub struct Params {
     pub onsets: OnsetParams,
     pub hindsight: HindsightParams,
     pub structure: StructureParams,
+    pub accents: AccentParams,
 }
 
 /// The hindsight worker thread and its channels.
@@ -266,6 +270,8 @@ struct Stages {
     energy: Energy,
     levels: Levels,
     structure: Structure,
+    accents: Accents,
+    forecasts: Vec<Forecast>,
     hindsight: Hindsight,
     /// The latest tick's evidence, which the commits carry.
     tick_evidence: f64,
@@ -358,6 +364,8 @@ impl Analyzer {
                 f64::from(SAMPLE_RATE),
                 p.beats.fps / p.beats.tick_frames as f64,
             )?,
+            accents: Accents::new(&p.accents),
+            forecasts: Vec::new(),
             hindsight,
             nn,
             dbn,
@@ -434,7 +442,9 @@ impl Stages {
         self.hindsight.online.push(n, state.since);
         let odf = self.superflux.step(spectrum);
         if let Some(time) = self.picker.step(odf) {
-            out.push(Entry::Onset(self.strengths.onset(time, odf)));
+            let onset = self.strengths.onset(time, odf);
+            self.accents.push_onset(&onset);
+            out.push(Entry::Onset(onset));
         }
         let tf = self.params.beats.tick_frames;
         let fps = self.params.beats.fps;
@@ -460,6 +470,12 @@ impl Stages {
         self.committer
             .step(&belief, shift, self.tick_evidence, &mut self.commits);
         out.extend(self.commits.iter().copied().map(Entry::Beat));
+        for c in &self.commits {
+            self.accents.push_beat(c);
+        }
+        self.forecasts.clear();
+        self.accents.take(&mut self.forecasts);
+        out.extend(self.forecasts.iter().copied().map(Entry::Forecast));
         self.last_belief = Some(belief);
     }
 
