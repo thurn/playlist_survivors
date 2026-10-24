@@ -32,7 +32,8 @@
  * Targets (stage 2): the players' tiers on dnb-174, pop-arrangement and the Galop; random presses
  * keeping offline "as tracked"; pop-arrangement's pads-only breakdown settling unjudged.
  * Targets (stage 4): the Galop's detected section starts against its song map's section starts.
- * Targets (stage 5): accent forecasts on every track, and their precision against strong onsets.
+ * Targets (stage 5): accent forecasts on every track, and their precision against strong onsets; the
+ * Galop's heavy swings on its song map's tutti chords.
  *
  *   npm run check:reactive [-- --full]
  *
@@ -45,7 +46,7 @@ import type { PlannerInput } from "../src/planner/context.ts";
 import { planWithSim, prepare } from "../src/planner/plan.ts";
 import { belowGateShare, beatsWithin, checkDeterminism, forecastPrecision, checkReactiveCausality, checkReactiveSounds, checkSettleTiming, judgedTierShare, liveRun, smokeTest, type CausalityCase } from "../src/planner/reactive-checks.ts";
 import { SETTLE_DELAY } from "../src/reactive/settle.ts";
-import { sectionDetection } from "../src/planner/parity.ts";
+import { heavyOnAccents, sectionDetection } from "../src/planner/parity.ts";
 import { detectedSections } from "../src/reactive/sections.ts";
 import { grooveAt } from "../src/plan/evaluate.ts";
 import type { Plan } from "../src/plan/types.ts";
@@ -263,8 +264,14 @@ const causalityCase = (id: string, level: string | undefined, cuts?: number[]): 
   }
 }
 
-// ---------------------------------------------------------------- targets: accent forecasts (stage 5)
+// ---------------------------------------------------------------- targets: accent forecasts and heavy swings (stage 5)
 {
+  {
+    const galop = reactiveInput(file("orpheus-galop"), { checks: CHECKS });
+    const { plan } = planWithSim(galop.input, { props, player: playerOn(galop.reference!, "reactive-moderate")(galop.input) });
+    const h = heavyOnAccents(plan, galop.reference!, "tutti-chord");
+    lines.push(`target (stage 5): the Galop's heavy swings within 50 ms of a song-map tutti chord, reactive-moderate, damage off: ${h.on} of ${h.all} heavy swings (at least 3${h.on >= 3 ? "" : ", missed"}); ${plan.cleaves.length} cleaves launched`);
+  }
   lines.push("targets (stage 5, accent forecasts with confidence at least 0.6, and their share within 50 ms of a strong onset):");
   for (const id of [...tracks, "causality-mix"]) {
     const f = forecastPrecision(streamOf(id));

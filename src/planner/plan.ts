@@ -290,7 +290,7 @@ export function planWithSim(input: PlannerInput, opts: PlannerOptions = {}): { p
     bites: sim.bites,
     heals: sim.heals,
     chickens: sim.chickens,
-    cleaves: sim.waves.map((w) => ({ s: w.s, press: w.press, band0: w.band0 })),
+    cleaves: sim.waves.map((w) => ({ s: w.s, press: w.press, band0: w.band0, ...(w.launch !== undefined ? { launch: w.launch } : {}), ...(w.onset ? { onset: w.onset } : {}) })),
     ...(sim.settles ? { settles: sim.settles } : {}),
     ...(sim.modes ? { modes: sim.modes } : {}),
     health: { s: Float64Array.from(sim.health.s), v: Float32Array.from(sim.health.v) },

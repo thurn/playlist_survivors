@@ -1974,3 +1974,50 @@ Recorded by `hv-s4pt.8` (stream `toolVersion` 5).
     cycles and confidences replaced, every third deleted, one inserted between
     pairs) and cuts before each: 361 cuts on `causality-mix`.
   - `check:reactive --full` passes on every shipped track.
+
+### Measured: stage 5, heavy swings and cleaves
+
+Recorded by `hv-s4pt.9`.
+
+- **Implementation:**
+  - A reactive swing is decided at its wind-up, not when it is armed. It is
+    heavy when its slot is a committed beat in step movement carrying a
+    forecast accent with confidence 0.6 or more, known by the wind-up.
+  - The swing's accent is the forecast's confidence. Its animation and its
+    camera punch (0.035, with play mode's 50 ms lead-in) are chosen there too.
+  - A strong onset known with the beat clear, in step movement, and with no
+    heavy swing within 50 ms of it, becomes a pending cleave at its `knownAt`,
+    where the hero stands.
+  - A counted press of Great or better within play mode's Great window (90
+    ms) of the onset launches it: at the onset's `knownAt` if the press came
+    first, or at the press.
+  - One press launches at most one cleave, forecast or onset. A forecast
+    cleave whose press came first launches at the strike.
+  - These cleaves have no heavy impact and no hit-stop: the stage 3 accent
+    flash and the bands only.
+  - Every reactive cleave's bands start on the first eighth-note slot at
+    least 0.06 s after the launch, then sixteenths.
+- **The Galop with `reactive-moderate`** (seed 1858, damage off):
+  - Heavy swings: 2, 1 of them within 50 ms of a song-map accent. Authored:
+    23, 22 on accents.
+  - Within 50 ms of a tutti chord: 0, against a target of at least 3
+    (missed). This follows from stage 5's forecast miss: the stream forecasts
+    only 2 accents on the Galop, neither on a tutti chord.
+  - Cleaves launched: 16 in the parity run, against 18 authored (17 in
+    `check:reactive`'s batch run). The perturbation check runs 361 cuts. Nearly all come from the unforecast path,
+    on strong onsets.
+- **Causality:**
+  - The perturbation check passes on `causality-mix`, 362 cuts. Every feature
+    class fired before a cut, now including forecasts (heavy swings) and
+    cleaves.
+  - The proof now counts forecast cleaves and onset cleaves separately.
+  - Reactive cleave records carry their exact launch time, and the prefix
+    comparison compares them as of it.
+  - A cleave's bands are all queued at its launch. A band's slot may then
+    interpolate a committed beat up to about 1.75 beats ahead that is not yet
+    known at the launch. No band falls before that beat is known, by the rule
+    that each next beat is committed by the beat before it, so the play is
+    causal, as the precomputed automatic swings already are. A live analyzer
+    would need the bands scheduled as their beats arrive.
+  - `check:reactive --full` passes on every shipped track.
+  - The sound check passes on `causality-mix` and the Galop.

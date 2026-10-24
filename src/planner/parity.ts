@@ -174,6 +174,13 @@ export function sectionDetection(stream: ReactiveStream, ref: Reference, rule: S
   };
 }
 
+/** Stage 5: heavy swings striking within 50 ms of a reference accent (with this label, when given), and all heavy swings. */
+export function heavyOnAccents(plan: Plan, ref: Reference, label?: string): { on: number; all: number } {
+  const accents = (ref.accents ?? []).filter((a) => label === undefined || a.label === label).map((a) => a.t);
+  const heavy = plan.swings.filter((w) => w.kind === "heavy").map((w) => w.s);
+  return { on: heavy.filter((t) => accents.some((a) => Math.abs(a - t) <= 0.05 + 1e-9)).length, all: heavy.length };
+}
+
 /** Zone waves: how many, how many within 8 s after a reference section start, and how many on none. */
 export function zoneWaves(plan: Plan, ref: Reference): { n: number; on: number; off: number } {
   const starts = (ref.sections ?? []).slice(1).map((x) => x.s0);
@@ -217,6 +224,12 @@ export function parityRows(authored: Plan | undefined, reactive: Plan, ref: Refe
     }
     rows.push({ row: "False zone waves (on no reference section start)", authored: wa ? String(wa.off) : "—", reactive: String(wr.off), stage: "4" });
   }
+  if (ref.accents?.length) {
+    const ha = authored ? heavyOnAccents(authored, ref) : undefined;
+    const hr = heavyOnAccents(reactive, ref);
+    rows.push({ row: "Heavy swings within 50 ms of a reference accent (of all heavy swings)", authored: ha ? `${ha.on} (${ha.all})` : "—", reactive: `${hr.on} (${hr.all})`, stage: "5" });
+  }
+  rows.push({ row: "Cleaves launched", authored: authored ? String(authored.cleaves.length) : "—", reactive: String(reactive.cleaves.length), stage: "5" });
   return rows;
 }
 

@@ -334,7 +334,7 @@ export interface Plan {
   heals: HealRecord[];
   chickens: ChickenRecord[];
   /** Press cleaves: each cleave a press on an eligible accent launched (see Cleave in src/sim/recorder.ts). */
-  cleaves: { s: number; press: number; band0: number }[];
+  cleaves: { s: number; press: number; band0: number; launch?: number; onset?: true }[];
   /** The tier (0–3) after each change, at song times; it starts at 0. */
   tier: { s: ArrayLike<number>; v: ArrayLike<number> };
   /** The hero's health (fraction of its maximum) after each change; it starts full. */

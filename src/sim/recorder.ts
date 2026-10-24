@@ -130,6 +130,9 @@ export interface Cleave {
   s: number;
   press: number;
   band0: number;
+  /** Reactive mode (stage 5): when it launched, and whether it was a strong onset's that was not forecast. */
+  launch?: number;
+  onset?: true;
 }
 
 export type TierChime = { s: number; up: boolean; w: number; at: number };

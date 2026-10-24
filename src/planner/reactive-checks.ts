@@ -230,6 +230,8 @@ export function reactivePrefixDifference(ra: LiveRun, rb: LiveRun, C: number): s
     ["threats", pa.threats, pb.threats],
     ["landmarks", pa.open.landmarks, pb.open.landmarks],
     ["settled judgments", pa.settles ?? [], pb.settles ?? []],
+    // (A cleave as of its launch.)
+    ["cleaves", pa.cleaves.map((c) => ({ ...c, s: c.launch ?? Math.max(c.s, c.press) })), pb.cleaves.map((c) => ({ ...c, s: c.launch ?? Math.max(c.s, c.press) }))],
   ];
   for (const [name, x, y] of lists) if (!same(before(x), before(y))) return `${name} before s=${C.toFixed(3)} differ`;
   const series: [string, { s: ArrayLike<number>; v: ArrayLike<number> } | undefined, { s: ArrayLike<number>; v: ArrayLike<number> } | undefined][] = [
@@ -340,8 +342,8 @@ export function forecastPrecision(stream: ReactiveStream, minConfidence = 0.6, w
   return { n: sure.length, hits: sure.filter((f) => strong.some((t) => Math.abs(t - f.t) <= windowS + 1e-9)).length, all: stream.accents?.forecast.length ?? 0 };
 }
 
-/** The feature classes so far (stages 1 to 4): each must fire before a cut, or the check proves nothing about it. */
-export const FEATURES = ["level-ups", "zone waves", "section starts", "reading switches"] as const;
+/** The feature classes so far (stages 1 to 5): each must fire before a cut, or the check proves nothing about it. */
+export const FEATURES = ["level-ups", "zone waves", "section starts", "reading switches", "forecasts", "forecast cleaves", "onset cleaves"] as const;
 
 /** Default cuts: just before each committed beat's, strong onset's, hindsight entry's, structural event's and accent forecast's knownAt, and just after each level-up and zone wave. */
 export function defaultCuts(stream: ReactiveStream, truePlan: Plan, until: number): number[] {
@@ -377,6 +379,9 @@ export function checkReactiveCausality(c: CausalityCase): CausalityResult {
     if (truthPlan.upgrades.some((u) => u.s < last)) firedBefore.add("level-ups");
     if (truthPlan.open.waves.some((w) => w.s < last)) firedBefore.add("zone waves");
     if (truthPlan.open.waves.some((w) => w.section !== undefined && w.s < last)) firedBefore.add("section starts");
+    if (truthPlan.swings.some((w) => w.kind === "heavy" && w.s < last)) firedBefore.add("forecasts");
+    if (truthPlan.cleaves.some((c) => !c.onset && (c.launch ?? c.s) < last)) firedBefore.add("forecast cleaves");
+    if (truthPlan.cleaves.some((c) => c.onset && (c.launch ?? c.s) < last)) firedBefore.add("onset cleaves");
     if ((truthPlan.settles ?? []).some((x) => x.switched && x.s < last)) firedBefore.add("reading switches");
     let prev = 0;
     for (const C of cuts) {

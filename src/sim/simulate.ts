@@ -55,6 +55,9 @@ export const HURTBOX_RADIUS = 10;
 export const HURTBOX_LIFT = 20;
 /** Enemies stop this far beyond touching the hero. */
 const CONTACT_GAP = 4;
+/** Reactive mode (stage 5): the least confidence of a forecast accent that makes a heavy swing, and how near a strong onset it counts as forecast. */
+const FORECAST_CONFIDENCE = 0.6;
+const FORECAST_WINDOW = 0.05;
 /** Reactive mode (stage 4): the camera punch that marks a detected section's start. */
 const SECTION_PUNCH = 0.035;
 /** An enemy this much farther than its stopping point still bites. */
@@ -245,6 +248,8 @@ interface Swing {
   aimed: boolean;
   struck: boolean;
   wStrike: number;
+  /** Reactive mode (stage 5): heavy or light is decided at the wind-up, from the forecasts known by then. */
+  undecided?: boolean;
   /** Follow-through frames per world-second. */
   fps: number;
   record?: PlanSwing;
@@ -288,6 +293,7 @@ type Ev =
   | { kind: "chickenHeal" }
   | { kind: "zoneWave"; zone: string; section?: number }
   | { kind: "levelWait"; level: number }
+  | { kind: "accentOnset"; i: number }
   | { kind: "landmark"; id: string }
   | { kind: "reactiveBeat"; bi: number }
   | { kind: "settle"; press: SettlePress & { provisional: string } }
@@ -365,6 +371,8 @@ const ORDER: Record<Ev["kind"], number> = {
   appear: 22,
   zoneWave: 4,
   levelWait: 4.5,
+  // Stage 5: a strong onset becomes known (before a press at the same moment; either launches its cleave then).
+  accentOnset: 4.6,
   landmark: 4,
   // Reactive mode: a committed beat arrives (before an upgrade orb's default at the same moment).
   reactiveBeat: 2.4,
@@ -546,6 +554,13 @@ interface SimState {
    * the hero stood and aimed, and the tier.
    */
   pendingCleave?: PendingCleave;
+  /**
+   * Reactive mode (stage 5): a cleave on a strong onset that was not forecast, waiting for a
+   * counted press of Great or better within the Great window of the onset; and the latest such
+   * press (whether it has launched a cleave already).
+   */
+  onsetCleave?: { c: PendingCleave; t: number };
+  lastGreat?: { s: number; used: boolean };
   /** Swings that may still matter (the idle-swing rule looks back one bar). */
   swings: Swing[];
   liveSwings: Swing[];
@@ -762,6 +777,11 @@ function engine(env: Env, st: SimState, io: Io) {
   // here reads a stream entry before its knownAt.
   const stream = ctx.reactive;
   const director = stream ? ctx.level.director : undefined;
+  /** Stage 5: forecast accents with confidence at least FORECAST_CONFIDENCE, and the strong onsets. */
+  const forecasts = (stream?.accents?.forecast ?? []).filter((f) => f.confidence >= FORECAST_CONFIDENCE - 1e-9);
+  const accentOnsets = (stream?.onsets ?? []).filter((o) => o.strong);
+  /** A forecast accent within `within` of song time t, known by `now`. */
+  const forecastAt = (t: number, now: number, within = 1e-3) => forecasts.find((f) => Math.abs(f.t - t) <= within + 1e-9 && f.knownAt <= now + 1e-9);
   /** Stage 4: the stream's detected section starts (each read only from its downbeat on). */
   const sectionStarts = stream && director ? detectedSections(stream, director.sectionRule) : [];
   /** Stage 4: the loudness level's effect on a director value, blended over the director's smoothing time. */
@@ -1194,19 +1214,36 @@ function engine(env: Env, st: SimState, io: Io) {
     const rule = sec.level.heavyOnAccents;
     const onAccent = slot.accent > 0 && slot.accent >= rule.minStrength && (rule.label === undefined || rule.label === slot.accentLabel);
     const heavy = slot.kind === "grid" && onAccent;
-    const anim = heavy ? hero.swings.heavy.animation : hero.swings.light.animations[st.lightCount++ % hero.swings.light.animations.length];
+    // (Reactive mode: decided at the wind-up instead, from the forecasts known by then.)
+    const anim = stream ? "" : heavy ? hero.swings.heavy.animation : hero.swings.light.animations[st.lightCount++ % hero.swings.light.animations.length];
     const info = anims[anim] ?? { frames: 6, impactFrame: 3 };
     const sWind = Math.max(sArmed, slot.s - hero.swings.windupMs / 1000 / Math.max(0.05, baseRate(slot.s)));
-    const sw: Swing = { sArmed, sWind, sStrike: slot.s, slot, heavy, anim, impact: info.impactFrame ?? 3, frames: info.frames, accent: slot.accent, dir: st.facingAngle, aimed: false, struck: false, wStrike: 0, fps: 16 };
+    const sw: Swing = { sArmed, sWind, sStrike: slot.s, slot, heavy, anim, impact: info.impactFrame ?? 3, frames: info.frames, accent: slot.accent, dir: st.facingAngle, aimed: false, struck: false, wStrike: 0, fps: 16, ...(stream ? { undecided: true } : {}) };
     // Only swings from the last few seconds still matter (the hit-stop and the animation look back).
     if (st.swings.length > 64) st.swings = st.swings.filter((x) => x.sStrike >= st.s - 8);
     st.swings.push(sw);
     st.liveSwings.push(sw);
     st.q.push(sWind, { kind: "wind", sw });
     st.q.push(slot.s, { kind: "strike", sw });
-    const amt = (heavy ? 0.035 : 0.014) * sec.level.intensity;
-    st.punches.push({ s: slot.s, amt });
+    if (!stream) st.punches.push({ s: slot.s, amt: (heavy ? 0.035 : 0.014) * sec.level.intensity });
     return sw;
+  };
+
+  /**
+   * Reactive mode (stage 5), at a swing's wind-up: it is heavy when its slot is a committed beat in
+   * step movement carrying a forecast accent known by now; its accent is the forecast's confidence.
+   * Its animation and its camera punch (with the punch's lead-in) follow.
+   */
+  const decideSwing = (sw: Swing) => {
+    sw.undecided = undefined;
+    const f = sw.slot.kind === "grid" && stepsIn(sectionAt(sw.sStrike)) ? forecastAt(sw.sStrike, st.s) : undefined;
+    sw.heavy = f !== undefined;
+    sw.accent = f?.confidence ?? 0;
+    sw.anim = sw.heavy ? hero.swings.heavy.animation : hero.swings.light.animations[st.lightCount++ % hero.swings.light.animations.length];
+    const info = anims[sw.anim] ?? { frames: 6, impactFrame: 3 };
+    sw.impact = info.impactFrame ?? 3;
+    sw.frames = info.frames;
+    st.punches.push({ s: sw.sStrike, amt: (sw.heavy ? 0.035 : 0.014) * ctx.sections[sw.slot.section].level.intensity });
   };
 
   const aimTargets = (x: number, y: number, reach: number): AimTarget[] => {
@@ -1246,16 +1283,42 @@ function engine(env: Env, st: SimState, io: Io) {
     const wd = hero.swings.heavy.wave;
     const reach = heavyTierReach(c.tier);
     let bi0 = sbiAt(c.s) + 0.5;
-    while (timeOfBeatIndex(song, bi0) - known < NEVER_LATE - 1e-9) bi0 += 0.25;
+    if (stream) {
+      // Reactive mode (stage 5): the first eighth-note slot at least NEVER_LATE after the launch.
+      bi0 = Math.ceil(sbiAt(known) * 2 - 1e-9) / 2;
+      while (timeOfBeatIndex(song, bi0) - known < NEVER_LATE - 1e-9) bi0 += 0.5;
+    } else while (timeOfBeatIndex(song, bi0) - known < NEVER_LATE - 1e-9) bi0 += 0.25;
     // (Enough bands to reach it: the last one stops at the reach.)
     const to = waveReachAt(hero, c.tier);
     const bands = Math.ceil((to - reach.radius) / wd.band - 1e-9);
     const wave: Wave = { x: c.x, y: c.y, dir: c.dir, band: 0, hit: new Set(), group: st.nWaves++, mult: tierDamage(hero, c.tier), inner: reach.radius, halfAngle: reach.halfAngle, to };
-    rec().wave({ s: c.s, press, band0: timeOfBeatIndex(song, bi0) });
+    rec().wave({ s: c.s, press, band0: timeOfBeatIndex(song, bi0), ...(stream ? { launch: st.s, ...(c.gi < 0 ? { onset: true as const } : {}) } : {}) });
     for (let k = 0; k < bands; k++) st.q.push(timeOfBeatIndex(song, bi0 + k * 0.25), { kind: "wave", wave: { ...wave, band: k } });
   };
 
+  /**
+   * Reactive mode (stage 5): a strong onset becomes known (with the beat clear, in step movement).
+   * Unless a heavy swing on a forecast accent within 50 ms of it has the cleave, it is a cleave
+   * waiting where the hero stands: a counted press of Great or better within the Great window of the onset launches it,
+   * now if one came already, or when it comes. No heavy impact: the flash and the bands only.
+   */
+  const onsetAccent = (i: number) => {
+    const o = accentOnsets[i];
+    // (A heavy swing decided within 50 ms of it has the cleave; nothing below the gate, or in free movement.)
+    const heavyNear = st.swings.some((sw) => sw.heavy && !sw.undecided && Math.abs(sw.sStrike - o.t) <= FORECAST_WINDOW + 1e-9);
+    if (heavyNear || !clearAt(st.s) || !stepsIn(sectionAt(st.s))) return;
+    const hp = heroPose(st.w);
+    const c: PendingCleave = { gi: -1, s: o.t, x: hp.x, y: hp.y, dir: st.facingAngle, tier: st.tier };
+    const lg = st.lastGreat;
+    if (lg && !lg.used && Math.abs(lg.s - o.t) <= hero.timing.greatMs / 1000 + 1e-9) {
+      lg.used = true;
+      launchCleave(c, st.s, lg.s);
+      st.onsetCleave = undefined;
+    } else st.onsetCleave = { c, t: o.t };
+  };
+
   const doWind = (sw: Swing) => {
+    if (sw.undecided) decideSwing(sw);
     const hp = heroPose(st.w);
     // The tier when the wind-up starts sizes the swing, whatever comes after.
     sw.tier = st.tier;
@@ -1301,9 +1364,13 @@ function engine(env: Env, st: SimState, io: Io) {
       // (Stage 2: the provisional judgment's memory, which drives the instant feedback.)
       const counted = (settling ? st.provMemo : st.memo).counted.get(gi);
       if (counted && counted.s <= st.s + 1e-9) {
-        if (counted.rating === "perfect" || counted.rating === "great") {
+        // (Reactive mode: one cleave a press; and the cleave launches now, at the strike.)
+        const lg = stream ? st.lastGreat : undefined;
+        const spent = lg !== undefined && Math.abs(lg.s - counted.s) < 1e-9 && lg.used;
+        if ((counted.rating === "perfect" || counted.rating === "great") && !spent) {
           startHitStop(Math.min(0.15, (hero.swings.heavy.hitStopMs / 1000) * (0.6 + 0.4 * sw.accent)));
-          launchCleave(c, counted.s, counted.s);
+          launchCleave(c, stream ? st.s : counted.s, counted.s);
+          if (lg && Math.abs(lg.s - counted.s) < 1e-9) lg.used = true;
         }
         st.pendingCleave = undefined;
       } else st.pendingCleave = c;
@@ -1394,9 +1461,25 @@ function engine(env: Env, st: SimState, io: Io) {
     // Press cleaves: the counted press of an accent whose heavy impact has struck: Great or better
     // launches its shockwave now (a late press brings no hit-stop).
     const pc = st.pendingCleave;
+    const great = judged?.class === "counted" && (judged.rating === "perfect" || judged.rating === "great");
+    let launched = false;
     if (pc && judged?.class === "counted" && judged.gridIndex === pc.gi) {
-      if (judged.rating === "perfect" || judged.rating === "great") launchCleave(pc, st.s, st.s);
+      if (great) {
+        launchCleave(pc, st.s, st.s);
+        launched = true;
+      }
       st.pendingCleave = undefined;
+    }
+    // Reactive mode (stage 5): a counted press of Great or better within the Great window of a
+    // strong onset that was not forecast launches its cleave (one cleave a press).
+    if (stream && great) {
+      const oc = st.onsetCleave;
+      if (oc && !launched && Math.abs(st.s - oc.t) <= hero.timing.greatMs / 1000 + 1e-9) {
+        launchCleave(oc.c, st.s, st.s);
+        launched = true;
+        st.onsetCleave = undefined;
+      }
+      st.lastGreat = { s: st.s, used: launched };
     }
     if (inStop(st.s)) {
       // A press ends the hit-stop early: world time resumes at the press.
@@ -1553,7 +1636,8 @@ function engine(env: Env, st: SimState, io: Io) {
     let winding: Swing | undefined;
     let following: Swing | undefined;
     for (const c of st.liveSwings) {
-      if (c.sWind > sk + 1e-9) continue;
+      // (Reactive mode: a swing shows once its wind-up has decided it.)
+      if (c.sWind > sk + 1e-9 || c.undecided) continue;
       if (!c.struck) {
         if (!winding || c.sStrike < winding.sStrike) winding = c;
       } else if (c.impact + (wk - c.wStrike) * c.fps < c.frames && (!following || c.sStrike > following.sStrike)) following = c;
@@ -2930,6 +3014,7 @@ function engine(env: Env, st: SimState, io: Io) {
       // one after the director's fallback time without one), through the level's zones in order,
       // each section start marked by a camera punch.
       stream.beats.forEach((b, bi) => q.push(b.t, { kind: "reactiveBeat", bi }));
+      accentOnsets.forEach((o, i) => q.push(o.knownAt, { kind: "accentOnset", i }));
       const zones = ctx.level.zones;
       if (director) {
         zoneWavePlan(stream, sectionStarts, director.zoneFallbackS, endS).forEach((zw, k) => {
@@ -3112,6 +3197,9 @@ function engine(env: Env, st: SimState, io: Io) {
           }
           break;
         }
+        case "accentOnset":
+          onsetAccent(ev.i);
+          break;
         case "levelWait":
           // No section started in the director's wait since the experience was reached: the level-up
           // falls due on the next downbeat (the bar stays ready until it is granted).

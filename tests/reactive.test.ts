@@ -18,7 +18,7 @@ import { readContentFiles } from "../scripts/lib/files.ts";
 import { inputForStream, reactiveInput, readStreamFile } from "../scripts/lib/reactive-node.ts";
 
 /** A synthetic stream: beats every `period` from 0.5 s, each committed `lead` before it, and ticks with the given evidence. */
-function synthStream(o: { until: number; period?: number; lead?: number; evidence?: (t: number) => number; hindsight?: boolean; level?: (t: number) => TickLevel; key?: (t: number) => string | undefined; structure?: StreamStructure }): StreamFile {
+function synthStream(o: { until: number; period?: number; lead?: number; evidence?: (t: number) => number; hindsight?: boolean; level?: (t: number) => TickLevel; key?: (t: number) => string | undefined; structure?: StreamStructure; onsets?: StreamFile["onsets"]; forecast?: { t: number; knownAt: number; cycle: number; confidence: number }[] }): StreamFile {
   const period = o.period ?? 0.5;
   const lead = o.lead ?? 0.85;
   const ev = o.evidence ?? (() => 0.6);
@@ -39,7 +39,8 @@ function synthStream(o: { until: number; period?: number; lead?: number; evidenc
     params: { gate: 0.2, tickS: 0.05, toolVersion: 1 },
     beats,
     ticks,
-    onsets: [],
+    onsets: o.onsets ?? [],
+    ...(o.forecast ? { accents: { forecast: o.forecast } } : {}),
     // Hindsight grids that decode the beats exactly: every second, the last 8 s of them.
     ...(o.hindsight
       ? {
@@ -576,6 +577,93 @@ describe("level-ups on the shipped tracks (stage 4)", () => {
       }
     });
   }
+});
+
+describe("heavy swings and cleaves on accents (stage 5)", () => {
+  // Beats every 0.5 s, clear; the player presses right 10 ms after every beat (Perfect).
+  const base = { until: 30, evidence: () => 0.8 };
+  const plan5 = (o: { onsets?: StreamFile["onsets"]; forecast?: { t: number; knownAt: number; cycle: number; confidence: number }[] }, presses?: number[]) => {
+    const f = synthStream({ ...base, ...o });
+    const times = presses ?? f.beats.map((b) => b.t + 0.01).filter((t) => t > 2);
+    return { file: f, plan: planWithSim(inputForStream(splitStream(f).stream, { checks: { noHeroDamage: true } }), { player: new KeyPlayer(times) }).plan };
+  };
+  const strong = (t: number) => ({ t, knownAt: Math.round((t + 0.02) * 100) / 100, strength: 100, strong: true });
+
+  it("swings heavy on a beat with a forecast accent of confidence 0.6 or more known by the wind-up", () => {
+    const forecast = [
+      { t: 10.5, knownAt: 9.8, cycle: 8, confidence: 0.75 },
+      { t: 14.5, knownAt: 13.8, cycle: 8, confidence: 0.5 },
+      // (Known after the wind-up: too late to swing heavy.)
+      { t: 18.5, knownAt: 18.45, cycle: 8, confidence: 1 },
+    ];
+    const { plan } = plan5({ forecast });
+    const heavy = plan.swings.filter((w) => w.kind === "heavy");
+    expect(heavy.map((w) => w.s)).toEqual([10.5]);
+    expect(heavy[0].accent).toBe(0.75);
+    // Its pending cleave: the Perfect press launches it.
+    expect(plan.cleaves.map((c) => c.s)).toEqual([10.5]);
+  });
+
+  it("cleaves on a strong onset that was not forecast, launched by a Great press in its window", () => {
+    const { plan } = plan5({ onsets: [strong(10.5), strong(14.5)] });
+    expect(plan.swings.some((w) => w.kind === "heavy")).toBe(false);
+    expect(plan.cleaves.map((c) => c.s)).toEqual([10.5, 14.5]);
+    for (const c of plan.cleaves) {
+      // The press (10 ms after the onset) came before the onset was known: launched when it was.
+      expect(c.press).toBeCloseTo(c.s + 0.01, 6);
+      const launch = c.s + 0.02;
+      // The bands start on the first eighth-note slot at least 0.06 s after the launch.
+      expect(c.band0).toBeGreaterThanOrEqual(launch + 0.06 - 1e-6);
+      expect(Math.abs((c.band0 - 0.5) / 0.25 - Math.round((c.band0 - 0.5) / 0.25))).toBeLessThan(1e-6);
+      expect(c.band0 - (launch + 0.06)).toBeLessThan(0.25 + 1e-6);
+    }
+  });
+
+  it("launches an onset's cleave with a press after it is known, but not a Good one", () => {
+    const later = plan5({ onsets: [strong(10.5)] }, [10.58]);
+    expect(later.plan.cleaves.map((c) => [c.s, c.press])).toEqual([[10.5, 10.58]]);
+    // 130 ms late: Good, and outside the Great window.
+    expect(plan5({ onsets: [strong(10.5)] }, [10.63]).plan.cleaves).toEqual([]);
+  });
+
+  it("starts a forecast cleave's bands after the strike when the press came first", () => {
+    const { plan } = plan5({ forecast: [{ t: 10.5, knownAt: 9.8, cycle: 8, confidence: 1 }] }, [10.43]);
+    expect(plan.cleaves.map((c) => [c.s, c.press, c.launch])).toEqual([[10.5, 10.43, 10.5]]);
+    expect(plan.cleaves[0].band0).toBeCloseTo(10.75, 6);
+  });
+
+  it("launches one cleave a press", () => {
+    const fc = [{ t: 10.5, knownAt: 9.8, cycle: 8, confidence: 1 }];
+    // The press launches the forecast cleave at the strike; an onset 70 ms later finds it spent.
+    const a = plan5({ forecast: fc, onsets: [strong(10.57)] }, [10.49]).plan;
+    expect(a.cleaves.map((c) => [c.s, c.press])).toEqual([[10.5, 10.49]]);
+    // The press launches an onset's cleave; the strike after it finds it spent.
+    const b = plan5({ forecast: fc, onsets: [strong(10.42)] }, [10.47]).plan;
+    expect(b.cleaves.map((c) => [c.s, c.press])).toEqual([[10.42, 10.47]]);
+  });
+
+  it("needs the Great press within 90 ms of the onset", () => {
+    // A Perfect press on the beat, 130 ms after the onset.
+    expect(plan5({ onsets: [strong(10.38)] }, [10.51]).plan.cleaves).toEqual([]);
+  });
+
+  it("swings light on a forecast accent while the beat is unclear", () => {
+    const f = synthStream({ until: 30, evidence: (t) => (t >= 6 && t < 14 ? 0 : 0.8), forecast: [{ t: 10.5, knownAt: 9.8, cycle: 8, confidence: 1 }] });
+    const { plan } = planWithSim(inputForStream(splitStream(f).stream, { checks: { noHeroDamage: true } }), { player: new KeyPlayer(f.beats.map((b) => b.t + 0.01)) });
+    expect(plan.swings.some((w) => w.kind === "heavy")).toBe(false);
+  });
+
+  it("leaves an onset its cleave when the forecast near it came too late to swing heavy", () => {
+    const { plan } = plan5({ forecast: [{ t: 18.5, knownAt: 18.45, cycle: 8, confidence: 1 }], onsets: [strong(18.51)] }, [18.51]);
+    expect(plan.swings.some((w) => w.kind === "heavy")).toBe(false);
+    expect(plan.cleaves.map((c) => [c.s, c.onset])).toEqual([[18.51, true]]);
+  });
+
+  it("leaves a forecast accent's onset to its heavy swing", () => {
+    const { plan } = plan5({ onsets: [strong(10.51)], forecast: [{ t: 10.5, knownAt: 9.8, cycle: 8, confidence: 1 }] });
+    expect(plan.cleaves.length).toBe(1);
+    expect(plan.swings.filter((w) => w.kind === "heavy").map((w) => w.s)).toEqual([10.5]);
+  });
 });
 
 describe("the parity report and the smoke test", () => {
