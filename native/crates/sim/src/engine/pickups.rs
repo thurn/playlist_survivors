@@ -21,15 +21,34 @@ use crate::upgrades::{ItemKind, UpgradeItem, UpgradeRecord, offers_for, passive_
 pub const ORB_SPREAD: f64 = (2.0 * PI) / 3.0;
 
 impl Sim {
-    pub(super) fn on_death(&mut self, fi: usize, fate: Fate, _h: &Hit) {
+    pub(super) fn on_death(&mut self, fi: usize, fate: Fate, h: &Hit) {
         let env = Rc::clone(&self.env);
         let f = &self.st.foes[fi];
         let def = &env.input.lib.enemies[f.def];
-        // Every death drops gems.
+        // Every death drops gems; during the finale blast they fly to the hero a beat after it.
         let big = def.size != Size::Regular;
         let value = if big { 5.0 } else { 1.0 };
         if self.st.blasting {
-            unimplemented!("the finale blast's gems arrive with B6");
+            let blast_s = self.blast_s().expect("the finale's blast");
+            let s1 = self.known_time_of_beat(self.known_beat_at(blast_s) + 1.0);
+            self.rec.gem(GemRecord {
+                w0: self.st.w,
+                x0: fate.x,
+                y0: fate.y,
+                s1,
+                w1: 0.0,
+                value,
+                big,
+                enemy: fi as f64,
+                w_t: None,
+            });
+            let gem = self.st.n_gems;
+            self.st.n_gems += 1;
+            self.st.q.push(s1, Ev::Gem { gem, value });
+            if self.st.boss_foe == Some(fi) {
+                self.boss_died(h.id, h.source);
+            }
+            return;
         }
         self.drop_on_field(fi, fate, value, big);
         // The small health pool: an orc elite drops a chicken half the time (seeded by the enemy), the boss two.
@@ -70,10 +89,14 @@ impl Sim {
             self.st.chickens.push(Spot { i, x, y: fate.y });
             k += 1.0;
         }
-        assert!(
-            self.st.boss_foe != Some(fi),
-            "the boss's death arrives with B6"
-        );
+        if self.st.boss_foe == Some(fi) {
+            self.boss_died(h.id, h.source);
+        }
+    }
+
+    /// The finale blast's song time, once the finale is known.
+    pub(super) fn blast_s(&self) -> Option<f64> {
+        self.st.plan.finale.as_ref().map(|f| f.s)
     }
 
     /// The pickup radius at the tier now, widened by the magnet passive.

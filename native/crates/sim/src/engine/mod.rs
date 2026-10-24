@@ -29,6 +29,8 @@ mod foes;
 mod hero;
 mod judge;
 mod pickups;
+mod pieces;
+mod plan;
 
 use std::collections::HashSet;
 use std::rc::Rc;
@@ -247,10 +249,8 @@ impl SimInput {
 #[derive(Debug)]
 struct Env {
     input: SimInput,
-    end_s: f64,
     cut_s: f64,
     rule: StrideRule,
-    /// Stage 4: the director's detected section starts (B6) are not known yet: none.
     director: crate::content::level::Director,
 }
 
@@ -273,6 +273,17 @@ mod phase {
     pub const HELD: u16 = 3;
     pub const BEAT: u16 = 4;
     pub const LEVEL_DUE: u16 = 5;
+    pub const ARCHERS: u16 = 6;
+    pub const VOLLEYS: u16 = 7;
+    pub const BOSS: u16 = 8;
+    pub const FORMATIONS: u16 = 9;
+    pub const KICK_VACUUM: u16 = 10;
+    pub const RINGS: u16 = 11;
+    pub const STAMPEDES: u16 = 12;
+    pub const BLAST: u16 = 13;
+    pub const LANDMARK: u16 = 22;
+    pub const RETREAT: u16 = 23;
+    pub const ZONE: u16 = 24;
     pub const REACTIVE_BEAT: u16 = 20;
     pub const ONSET: u16 = 21;
     pub const RUNTIME: u16 = u16::MAX;
@@ -346,6 +357,60 @@ enum Ev {
         bi: usize,
         b: f64,
     },
+    ZoneWave {
+        zone: usize,
+        section: Option<usize>,
+    },
+    ZoneFallback {
+        at: f64,
+    },
+    Blast {
+        band: usize,
+    },
+    Landmark {
+        id: String,
+    },
+    BossSpawn,
+    BossLand,
+    BossRetreat,
+    SlamCheck {
+        i: usize,
+    },
+    SlamLand {
+        k: usize,
+    },
+    Ring {
+        k: usize,
+    },
+    RingClose {
+        k: usize,
+    },
+    Formation {
+        f: usize,
+    },
+    FormationRelease {
+        f: usize,
+    },
+    DanceStart {
+        f: usize,
+    },
+    Stampede {
+        k: usize,
+    },
+    Archers {
+        group: usize,
+    },
+    DrawCheck {
+        group: usize,
+        i: usize,
+    },
+    Release {
+        v: usize,
+    },
+    Arrive {
+        v: usize,
+    },
+    VacuumDrop,
 }
 
 impl Ev {
@@ -371,6 +436,24 @@ impl Ev {
             Ev::Gem { .. } | Ev::ChickenHeal => 20.0,
             Ev::Beat { .. } | Ev::Drain { .. } => 21.0,
             Ev::Appear { .. } => 22.0,
+            Ev::ZoneWave { .. }
+            | Ev::ZoneFallback { .. }
+            | Ev::Landmark { .. }
+            | Ev::BossSpawn
+            | Ev::Ring { .. }
+            | Ev::Formation { .. }
+            | Ev::Stampede { .. }
+            | Ev::Archers { .. }
+            | Ev::VacuumDrop => 4.0,
+            Ev::RingClose { .. } => 4.7,
+            Ev::DanceStart { .. } => 4.75,
+            Ev::BossRetreat => 4.8,
+            Ev::DrawCheck { .. } => 7.0,
+            Ev::Release { .. } | Ev::SlamCheck { .. } => 8.0,
+            Ev::BossLand => 13.0,
+            Ev::FormationRelease { .. } => 14.0,
+            Ev::Blast { .. } => 18.0,
+            Ev::Arrive { .. } | Ev::SlamLand { .. } => 19.0,
         }
     }
 }
@@ -406,6 +489,17 @@ impl Queue {
         };
         self.seq += 1;
         self.insert(Entry { key, ev });
+    }
+
+    /// Drops every event that matches (the order among the rest rests on their keys).
+    fn remove(&mut self, drop: &dyn Fn(&Ev) -> bool) {
+        let kept: Vec<Entry> = std::mem::take(&mut self.heap)
+            .into_iter()
+            .filter(|e| !drop(&e.ev))
+            .collect();
+        for e in kept {
+            self.insert(e);
+        }
     }
 
     /// A place in push order, for an event whose time is known only later (`push_reserved`).
@@ -522,6 +616,7 @@ struct FoeStep {
 
 /// Per-enemy simulation state (`Foe`); its id is its index in the state's arena.
 #[derive(Clone, Debug)]
+#[allow(clippy::struct_excessive_bools)]
 struct Foe {
     id: usize,
     /// The enemy's index in the library's enemies.
@@ -537,7 +632,6 @@ struct Foe {
     final_sample: bool,
     death_w: f64,
     last_fate: Option<crate::recorder::Fate>,
-    formation: Option<usize>,
     sx: f64,
     sy: f64,
     knock_x: f64,
@@ -548,6 +642,81 @@ struct Foe {
     land_s: Option<f64>,
     step_k: Option<f64>,
     step: Option<FoeStep>,
+    health0: f64,
+    /// A set piece's member: a formation's, a ring's or a stampede's.
+    member: Option<Member>,
+    /// A formation member's slot, followed until `slot_until`.
+    slot: Option<FoeSlot>,
+    slot_until: f64,
+    /// A ring member (pinned while its ring holds), and its path on the ring's circle.
+    has_at: bool,
+    ring_path: Option<RingPath>,
+    /// A stampede's runner (or the retreating boss): its fixed velocity.
+    run: Option<(f64, f64)>,
+    retreat: bool,
+    archer_group: Option<usize>,
+    archer_slot: Option<usize>,
+    /// An archer drawing since this world time.
+    drawing: Option<f64>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Member {
+    Formation(usize),
+    Ring(usize),
+    Stampede(usize),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum SlotPlace {
+    KickLine { d: f64 },
+    Wedge { arm: f64, side: f64, spacing: f64 },
+}
+
+/// A formation member's slot: an offset from the formation's anchor by song time.
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct FoeSlot {
+    place: SlotPlace,
+    dir: (f64, f64),
+    start: (f64, f64),
+    b_start: f64,
+    entrance_beats: f64,
+    steps: f64,
+}
+
+/// A ring member on its circle about (x, y), from radius `from` to `to`, `u` of the way.
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct RingPath {
+    x: f64,
+    y: f64,
+    c: f64,
+    sn: f64,
+    from: f64,
+    to: f64,
+    u: f64,
+    du: f64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct FormationDir {
+    x: f64,
+    y: f64,
+    until: f64,
+    fi: usize,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Flying {
+    v: usize,
+    index: usize,
+    x0: f64,
+    y0: f64,
+    ax: f64,
+    ay: f64,
+    w_release: f64,
+    ux: f64,
+    uy: f64,
+    damage: f64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -651,8 +820,17 @@ struct FireSpec {
 struct Deferred {
     /// The fractional beat index whose song time the event is at.
     bi: f64,
-    seq: u64,
+    /// A later beat the event reads: it waits for that beat too, and fires no earlier than its knownAt.
+    need: Option<usize>,
+    slot: Slot,
     then: Then,
+}
+
+/// A deferred event's place in the queue: in push order, or an init phase and index.
+#[derive(Clone, Copy, Debug)]
+enum Slot {
+    Runtime(u64),
+    Init(u16, u64),
 }
 
 /// What a deferred beat time is for.
@@ -786,6 +964,26 @@ struct SimState {
     /// The latest stomp's cancelled held strides: up to the stride step at this index (its time read
     /// when a held stride asks, since TS read it from the whole stream's steps), or a time.
     stomp_target: Option<StompTarget>,
+    /// The ingestion horizon: every entry known by then has been taken in.
+    horizon: f64,
+    /// The run's end (unbounded live until a confirmed end's finale), and the caller's stop.
+    end_s: f64,
+    until_s: f64,
+    /// Set pieces: the planner, and the pieces in play.
+    plan: plan::Plan,
+    swell_steps: Option<Vec<crate::schedule::RateStep>>,
+    swelling: bool,
+    formation_dir: Option<FormationDir>,
+    formation_members: Vec<Vec<usize>>,
+    rings: Vec<pieces::RingState>,
+    ring_members: Vec<(usize, f64, Vec<usize>)>,
+    stampedes: Vec<(usize, bool)>,
+    n_arrows: usize,
+    flying: Vec<Flying>,
+    slam_marks: Vec<(usize, f64, f64, f64, f64)>,
+    n_vacuums: usize,
+    /// Set pieces in the order they entered (their ids in the recording).
+    piece_ids: Vec<Member>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -828,17 +1026,21 @@ impl Sim {
             .director
             .clone()
             .expect("a reactive level has a director");
-        // (Reactive mode: the run plays on until the finale's epilogue has ended (B6).)
-        let end_s = min(until_s.unwrap_or(f64::INFINITY), input.duration() + 1.0);
+        // The run plays on until the finale's epilogue has ended (a confirmed end's); live it is
+        // unbounded until then. (With the stream's end known, as in the oracle replays, it stops a
+        // second after the audio at the latest.)
+        let until_s = until_s.unwrap_or(f64::INFINITY);
+        let end_s = min(until_s, input.duration() + 1.0);
         let rule = stride_rule(&input.lib.hero);
         let env = Rc::new(Env {
             input,
-            end_s,
             cut_s: f64::INFINITY,
             rule,
             director,
         });
-        let st = fresh_state(&env);
+        let mut st = fresh_state(&env);
+        st.end_s = end_s;
+        st.until_s = until_s;
         let mut sim = Sim {
             env,
             st,
@@ -859,11 +1061,11 @@ impl Sim {
     }
 
     pub fn end_s(&self) -> f64 {
-        self.env.end_s
+        self.st.end_s
     }
 
     pub fn done(&self) -> bool {
-        self.st.s >= self.env.end_s
+        self.st.s >= self.st.end_s
     }
 
     /// A copy of the simulation's state for rollback (the stream and the recorder are not part of it).
@@ -888,7 +1090,7 @@ impl Sim {
             e.s,
             self.st.s
         );
-        if e.s <= self.env.cut_s + 1e-12 && e.s < self.env.end_s {
+        if e.s <= self.env.cut_s + 1e-12 {
             self.st.q.push(e.s, Ev::Key(e));
         }
     }
@@ -900,11 +1102,11 @@ impl Sim {
 
     /// Runs the game rules up to song time t: every event before t happens, and the clock moves to t.
     pub fn advance_to(&mut self, t: f64) {
-        if t >= self.env.end_s {
+        if t >= self.st.end_s {
             self.run_to_end();
             return;
         }
-        while self.st.s < self.env.end_s && self.next_stop() < t - CLOCK_EPS {
+        while self.st.s < self.st.end_s && self.next_stop() < t - CLOCK_EPS {
             self.step();
         }
         if t - self.st.s > CLOCK_EPS && self.next_stop() - t > CLOCK_EPS {
@@ -914,7 +1116,7 @@ impl Sim {
 
     /// Runs to the end.
     pub fn run_to_end(&mut self) {
-        while self.st.s < self.env.end_s {
+        while self.st.s < self.st.end_s {
             self.step();
         }
         if !self.finished {
@@ -927,6 +1129,13 @@ impl Sim {
 
     /// Takes in every entry known by song time `t` (within the readers' 1e-9) that has not been yet.
     fn ingest(&mut self, t: f64) {
+        self.ingest_entries(t);
+        self.st.horizon = max(self.st.horizon, t + 1e-9);
+        // What the entries taken in decide: sections, zone waves, set pieces, the finale.
+        self.plan();
+    }
+
+    fn ingest_entries(&mut self, t: f64) {
         let env = Rc::clone(&self.env);
         let log = Rc::clone(&self.log);
         let log = &*log;
@@ -1046,18 +1255,74 @@ impl Sim {
 
     /// Does `then` at the song time of beat index bi as the whole stream gives it, now or once known.
     fn defer_at_beat(&mut self, bi: f64, then: Then) {
-        let seq = self.st.q.reserve();
-        if self.beat_time_known(bi) {
-            let t = crate::core::songmap::time_of_beat_index(&self.st.song, bi);
-            self.run_then(t, seq, then);
-        } else {
-            self.st.deferred.push(Deferred { bi, seq, then });
+        let slot = Slot::Runtime(self.st.q.reserve());
+        self.defer_slot(bi, slot, then);
+    }
+
+    /// Queues an event at a beat time with an init key, now or once the beat is known.
+    fn push_init_at_beat(&mut self, bi: f64, ev: Ev, phase: u16, index: u64) {
+        self.defer_slot(bi, Slot::Init(phase, index), Then::Push(ev));
+    }
+
+    /// Queues an event with an init key at beat bi's time, or at beat `need`'s knownAt if that is
+    /// later, once both are known: a decision there that reads beat `need`.
+    fn push_init_at_beat_needing(&mut self, bi: f64, need: usize, ev: Ev, phase: u16, index: u64) {
+        let d = Deferred {
+            bi,
+            need: Some(need),
+            slot: Slot::Init(phase, index),
+            then: Then::Push(ev),
+        };
+        match self.deferred_time(&d) {
+            Some(t) => self.run_then(t, d.slot, d.then),
+            None => self.st.deferred.push(d),
         }
     }
 
-    fn run_then(&mut self, t: f64, seq: u64, then: Then) {
+    /// A deferred event's time, once what it waits for is known.
+    fn deferred_time(&self, d: &Deferred) -> Option<f64> {
+        if !self.beat_time_known(d.bi) {
+            return None;
+        }
+        let t = crate::core::songmap::time_of_beat_index(&self.st.song, d.bi);
+        match d.need {
+            None => Some(t),
+            Some(k) if k < self.st.ingested.beats => Some(max(t, self.log.beats[k].known_at)),
+            Some(_) => None,
+        }
+    }
+
+    /// Queues an event with an init key on the first downbeat at or after t, once known.
+    fn push_init_at_downbeat(&mut self, t: f64, ev: Ev, phase: u16, index: u64) {
+        match self.downbeat_index_at_or_after(t) {
+            Some(k) => self.push_init_at_beat(k as f64, ev, phase, index),
+            None => self.st.q.push_init(t, ev, phase, index),
+        }
+    }
+
+    fn defer_slot(&mut self, bi: f64, slot: Slot, then: Then) {
+        let d = Deferred {
+            bi,
+            need: None,
+            slot,
+            then,
+        };
+        match self.deferred_time(&d) {
+            Some(t) => self.run_then(t, d.slot, d.then),
+            None => self.st.deferred.push(d),
+        }
+    }
+
+    fn push_slot(&mut self, t: f64, ev: Ev, slot: Slot) {
+        match slot {
+            Slot::Runtime(seq) => self.st.q.push_reserved(t, ev, seq),
+            Slot::Init(phase, index) => self.st.q.push_init(t, ev, phase, index),
+        }
+    }
+
+    fn run_then(&mut self, t: f64, slot: Slot, then: Then) {
         match then {
-            Then::Push(ev) => self.st.q.push_reserved(t, ev, seq),
+            Then::Push(ev) => self.push_slot(t, ev, slot),
             Then::OrbTaken {
                 u,
                 k,
@@ -1067,7 +1332,7 @@ impl Sim {
                 item,
             } => {
                 self.rec.upgrade_taken(u, k, s, w, t, walked);
-                self.st.q.push_reserved(t, Ev::OrbApply { item }, seq);
+                self.push_slot(t, Ev::OrbApply { item }, slot);
             }
             Then::Cleave {
                 s,
@@ -1089,11 +1354,9 @@ impl Sim {
     fn release_deferred(&mut self) {
         let waiting = std::mem::take(&mut self.st.deferred);
         for d in waiting {
-            if self.beat_time_known(d.bi) {
-                let t = crate::core::songmap::time_of_beat_index(&self.st.song, d.bi);
-                self.run_then(t, d.seq, d.then);
-            } else {
-                self.st.deferred.push(d);
+            match self.deferred_time(&d) {
+                Some(t) => self.run_then(t, d.slot, d.then),
+                None => self.st.deferred.push(d),
             }
         }
     }
@@ -1105,8 +1368,16 @@ impl Sim {
 
     // -------------------------------------------------------------- time
 
+    /// The base time scale's steps: the finale's swell's once it is swelling.
+    fn base_steps(&self) -> &[crate::schedule::RateStep] {
+        match (&self.st.swell_steps, self.st.swelling) {
+            (Some(s), true) => s,
+            _ => &self.st.sch.base_steps,
+        }
+    }
+
     fn base_rate(&self, t: f64) -> f64 {
-        step_rate(&self.st.sch.base_steps, t)
+        step_rate(self.base_steps(), t)
     }
 
     fn in_stop(&self, t: f64) -> bool {
@@ -1194,7 +1465,7 @@ impl Sim {
         let t_fixed = self.st.fixed_k / SIM_RATE;
         let t_rate = min(
             min(
-                next_step_after(&self.st.sch.base_steps, self.st.s),
+                next_step_after(self.base_steps(), self.st.s),
                 if self.in_stop(self.st.s) {
                     self.st.stop_end
                 } else {
@@ -1203,7 +1474,7 @@ impl Sim {
             ),
             self.next_dip_cut(self.st.s),
         );
-        min(min(min(self.st.q.peek(), t_fixed), t_rate), self.env.end_s)
+        min(min(min(self.st.q.peek(), t_fixed), t_rate), self.st.end_s)
     }
 
     /// The next stop, with every stream entry known by then taken in first (taking one in may queue
@@ -1393,6 +1664,38 @@ impl Sim {
             }
             Ev::Settle(p) => self.settle_press(&p),
             Ev::Drain { bi, b } => self.drain(bi, b),
+            Ev::ZoneWave { zone, section } => self.zone_wave(zone, section),
+            Ev::ZoneFallback { at } => self.zone_fallback(at),
+            Ev::Blast { band } => {
+                if band == 0 {
+                    self.st.blasting = true;
+                    // The finale's swell starts now.
+                    if self.st.swell_steps.is_some() {
+                        self.st.swelling = true;
+                    }
+                }
+                self.blast_band(band);
+            }
+            Ev::Landmark { id } => self.landmark(&id),
+            Ev::BossSpawn => self.boss_spawn(),
+            Ev::BossLand => self.boss_land(),
+            Ev::BossRetreat => self.boss_retreat(),
+            Ev::SlamCheck { i } => self.slam_check(i),
+            Ev::SlamLand { k } => self.slam_land(k),
+            Ev::Ring { k } => self.ring_enter(k),
+            Ev::RingClose { k } => self.ring_close(k),
+            Ev::Formation { f } => self.formation_enter(f),
+            Ev::FormationRelease { f } => self.formation_release(f),
+            Ev::DanceStart { f } => self.dance_start(f),
+            Ev::Stampede { k } => self.stampede_enter(k),
+            Ev::Archers { group } => {
+                let n = self.st.plan.archer_groups[group].archers;
+                self.spawn_archers(group, n);
+            }
+            Ev::DrawCheck { group, i } => self.draw_check(group, i),
+            Ev::Release { v } => self.loose(v),
+            Ev::Arrive { v } => self.arrive(v),
+            Ev::VacuumDrop => self.vacuum_drop(),
             Ev::ReactiveBeat { bi } => {
                 // An upgrade orb's deadline, counted in committed beats; then the weapons' slots of this beat.
                 if self
@@ -1514,6 +1817,22 @@ fn fresh_state(env: &Env) -> SimState {
         held_queued: 0,
         deferred: Vec::new(),
         stomp_target: None,
+        horizon: 0.0,
+        end_s: f64::INFINITY,
+        until_s: f64::INFINITY,
+        plan: plan::Plan::new(),
+        swell_steps: None,
+        swelling: false,
+        formation_dir: None,
+        formation_members: Vec::new(),
+        rings: Vec::new(),
+        ring_members: Vec::new(),
+        stampedes: Vec::new(),
+        n_arrows: 0,
+        flying: Vec::new(),
+        slam_marks: Vec::new(),
+        n_vacuums: 0,
+        piece_ids: Vec::new(),
     }
 }
 

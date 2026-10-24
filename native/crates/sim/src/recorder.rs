@@ -10,7 +10,7 @@ use serde::Serialize;
 use serde_json::{Value, json};
 
 use crate::core::geometry::Shape;
-use crate::core::warp::WarpBreak;
+use crate::core::warp::{Warp, WarpBreak};
 use crate::upgrades::UpgradeRecord;
 
 /// A hit shape as the plan writes it (`{kind: "arc", ...}`).
@@ -141,6 +141,12 @@ pub struct EnemyRecord {
     pub formation: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub entrance: Option<String>,
+    /// Boss slams or archer releases: wind-up (or draw) start and release, as world times.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub attacks: Option<Vec<AttackRecord>>,
+    /// A formation member's dance.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dance: Option<DanceRecord>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub steps: Option<Vec<EnemyStep>>,
 }
@@ -311,6 +317,115 @@ pub struct SettleRecord {
     pub kept: Option<String>,
 }
 
+/// An enemy's attack: its wind-up from w0, released at w (provisional while only predicted).
+#[derive(Clone, Copy, Debug, PartialEq, Serialize)]
+pub struct AttackRecord {
+    pub w0: f64,
+    pub w: f64,
+    pub kind: &'static str,
+    pub dir: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub provisional: Option<bool>,
+}
+
+/// A formation member's dance: world times, its animation, and whether its legs alternate.
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct DanceRecord {
+    pub w0: f64,
+    pub w1: f64,
+    pub anim: String,
+    pub alternate: bool,
+    pub phase: f64,
+}
+
+/// A set piece's release (a formation's, a ring's close, a stampede's entrance) and its members.
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FormationRecord {
+    pub def: String,
+    pub s_start: f64,
+    pub s_release: f64,
+    pub members: Vec<f64>,
+}
+
+/// A transform wave sweeping out from the hero into the next zone (on a detected section, or a fallback).
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct ZoneWaveRecord {
+    pub s: f64,
+    pub w: f64,
+    pub x: f64,
+    pub y: f64,
+    pub zone: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub section: Option<f64>,
+}
+
+/// A landmark rising centred on the hero.
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct LandmarkRecord {
+    pub id: String,
+    pub s: f64,
+    pub w: f64,
+    pub x: f64,
+    pub y: f64,
+}
+
+/// A boss slam's marker appearing under the hero.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SlamMarkRecord {
+    pub x: f64,
+    pub y: f64,
+    pub s_mark: f64,
+    pub w_mark: f64,
+    pub s_land: f64,
+    pub boss: usize,
+    pub dir: f64,
+}
+
+/// A boss slam landing, and how it ended for the hero.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SlamRecord {
+    pub s_mark: f64,
+    pub w_mark: f64,
+    pub s_land: f64,
+    pub w_land: f64,
+    pub x: f64,
+    pub y: f64,
+    pub radius: f64,
+    pub outcome: &'static str,
+}
+
+/// An arrow: released, aimed at the hero's hurtbox, and (once it arrives) where its flight ends.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ArrowRecord {
+    pub s_release: f64,
+    pub w_release: f64,
+    pub s_arrive: f64,
+    pub w_arrive: f64,
+    pub x0: f64,
+    pub y0: f64,
+    pub ax: f64,
+    pub ay: f64,
+    pub x1: f64,
+    pub y1: f64,
+    pub w1: f64,
+    pub outcome: &'static str,
+}
+
+/// A threat (an arrow or a slam) and how it ended.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize)]
+pub struct ThreatRecord {
+    pub s: f64,
+    pub w: f64,
+    pub kind: &'static str,
+    pub outcome: &'static str,
+    pub x: f64,
+    pub y: f64,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Serialize)]
 pub struct ChainPoint {
     pub w: f64,
@@ -364,6 +479,208 @@ pub trait Recorder {
     /// Beat steps: an enemy's step from world time w lasting dur, or (dur 0) its return to gliding.
     fn enemy_step(&mut self, id: usize, w: f64, dur: f64) {}
     fn settle(&mut self, r: SettleRecord) {}
+    /// A set piece released (or a ring closing, a stampede entering), with its members.
+    fn formation(&mut self, f: FormationRecord) {}
+    fn zone_wave(&mut self, z: ZoneWaveRecord) {}
+    fn landmark(&mut self, l: LandmarkRecord) {}
+    /// A formation member's dance starts at song time `s_from`; its whole dance at its release.
+    fn dance_start(&mut self, id: usize, s_from: f64, anim: &str, alternate: bool) {}
+    fn dance(&mut self, id: usize, d: DanceRecord) {}
+    /// An archer starts drawing at world time w0 for a release at song time `s_release`.
+    fn draw_start(&mut self, id: usize, w0: f64, s_release: f64, dir: f64) {}
+    fn attack(&mut self, id: usize, a: AttackRecord) {}
+    fn arrow(&mut self, a: ArrowRecord) {}
+    /// Arrow `arrow` arrives at world time `w_arrive`: its outcome and where its flight ends.
+    #[allow(clippy::too_many_arguments)]
+    fn arrow_end(
+        &mut self,
+        arrow: usize,
+        w_arrive: f64,
+        outcome: &'static str,
+        x1: f64,
+        y1: f64,
+        w1: f64,
+    ) {
+    }
+    fn threat(&mut self, t: ThreatRecord) {}
+    /// The boss appears (enemy `id`), landing at song time `land_s`.
+    fn boss(&mut self, id: usize, land_s: f64, x: f64, y: f64, s: f64) {}
+    fn boss_health(&mut self, s: f64, frac: f64) {}
+    fn boss_death(&mut self, s: f64, kill_hit: f64) {}
+    fn slam_mark(&mut self, k: usize, m: SlamMarkRecord) {}
+    fn slam(&mut self, s: SlamRecord) {}
+}
+
+/// A recorder shared with its reader: the app (or a test) keeps one handle and gives the sim another.
+impl<R: Recorder + ?Sized> Recorder for std::rc::Rc<std::cell::RefCell<R>> {
+    fn warp(&mut self, b: WarpBreak, replace_last: bool) {
+        self.borrow_mut().warp(b, replace_last);
+    }
+    fn hero(&mut self, x: f64, y: f64, z: f64, facing: f64, anim: f64, frame: f64) {
+        self.borrow_mut().hero(x, y, z, facing, anim, frame);
+    }
+    fn camera(&mut self, x: f64, y: f64, zoom: f64) {
+        self.borrow_mut().camera(x, y, zoom);
+    }
+    fn spawn(&mut self, rec: EnemyRecord) {
+        self.borrow_mut().spawn(rec);
+    }
+    fn sample(&mut self, id: usize, x: f64, y: f64) {
+        self.borrow_mut().sample(id, x, y);
+    }
+    fn fate(&mut self, id: usize, fate: Fate) {
+        self.borrow_mut().fate(id, fate);
+    }
+    fn death(&mut self, id: usize, w: f64, recycled: bool) {
+        self.borrow_mut().death(id, w, recycled);
+    }
+    fn hit(&mut self, h: Hit) {
+        self.borrow_mut().hit(h);
+    }
+    fn swing(&mut self, sw: PlanSwing) {
+        self.borrow_mut().swing(sw);
+    }
+    fn input(&mut self, i: PlanInput) {
+        self.borrow_mut().input(i);
+    }
+    fn groove(&mut self, s: f64, v: f64) {
+        self.borrow_mut().groove(s, v);
+    }
+    fn tier(&mut self, s: f64, w: f64, tier: f64, sound_s: f64) {
+        self.borrow_mut().tier(s, w, tier, sound_s);
+    }
+    fn health(&mut self, s: f64, frac: f64) {
+        self.borrow_mut().health(s, frac);
+    }
+    fn landing(&mut self, l: Landing) {
+        self.borrow_mut().landing(l);
+    }
+    fn weapon(&mut self, id: &str, s: f64) {
+        self.borrow_mut().weapon(id, s);
+    }
+    fn fire(&mut self, weapon: &str, s: f64) {
+        self.borrow_mut().fire(weapon, s);
+    }
+    fn chain(&mut self, p: ChainPoint) {
+        self.borrow_mut().chain(p);
+    }
+    fn chain_point(&mut self, chain: usize, p: ChainPoint) {
+        self.borrow_mut().chain_point(chain, p);
+    }
+    fn hit_stop(&mut self, s0: f64, s1: f64) {
+        self.borrow_mut().hit_stop(s0, s1);
+    }
+    fn hit_stop_cut(&mut self, s: f64) {
+        self.borrow_mut().hit_stop_cut(s);
+    }
+    fn bite(&mut self, b: BiteRecord) {
+        self.borrow_mut().bite(b);
+    }
+    fn heal(&mut self, h: HealRecord) {
+        self.borrow_mut().heal(h);
+    }
+    fn chicken(&mut self, c: ChickenRecord) {
+        self.borrow_mut().chicken(c);
+    }
+    fn chicken_taken(&mut self, i: usize, s: f64, w: f64, s_heal: f64) {
+        self.borrow_mut().chicken_taken(i, s, w, s_heal);
+    }
+    fn gem(&mut self, g: GemRecord) {
+        self.borrow_mut().gem(g);
+    }
+    fn gem_arrive(&mut self, gem: usize, w: f64) {
+        self.borrow_mut().gem_arrive(gem, w);
+    }
+    fn gem_fly(&mut self, gem: usize, w: f64, s1: f64) {
+        self.borrow_mut().gem_fly(gem, w, s1);
+    }
+    fn gem_grow(&mut self, gem: usize, value: f64, big: bool) {
+        self.borrow_mut().gem_grow(gem, value, big);
+    }
+    fn vacuum(&mut self, v: VacuumRecord) {
+        self.borrow_mut().vacuum(v);
+    }
+    fn vacuum_touch(&mut self, i: usize, s: f64, w: f64, gems: f64) {
+        self.borrow_mut().vacuum_touch(i, s, w, gems);
+    }
+    fn upgrade(&mut self, u: UpgradeRecord) {
+        self.borrow_mut().upgrade(u);
+    }
+    fn upgrade_taken(&mut self, i: usize, k: usize, s: f64, w: f64, s_apply: f64, walked: bool) {
+        self.borrow_mut().upgrade_taken(i, k, s, w, s_apply, walked);
+    }
+    fn xp(&mut self, s: f64, fill: f64) {
+        self.borrow_mut().xp(s, fill);
+    }
+    fn wave(&mut self, cleave: Cleave) {
+        self.borrow_mut().wave(cleave);
+    }
+    fn wave_hit(&mut self, wave: usize, hit: usize) {
+        self.borrow_mut().wave_hit(wave, hit);
+    }
+    fn clock(&mut self, s: f64, w: f64, between: bool) {
+        self.borrow_mut().clock(s, w, between);
+    }
+    fn enemy_step(&mut self, id: usize, w: f64, dur: f64) {
+        self.borrow_mut().enemy_step(id, w, dur);
+    }
+    fn settle(&mut self, r: SettleRecord) {
+        self.borrow_mut().settle(r);
+    }
+    fn formation(&mut self, f: FormationRecord) {
+        self.borrow_mut().formation(f);
+    }
+    fn zone_wave(&mut self, z: ZoneWaveRecord) {
+        self.borrow_mut().zone_wave(z);
+    }
+    fn landmark(&mut self, l: LandmarkRecord) {
+        self.borrow_mut().landmark(l);
+    }
+    fn dance_start(&mut self, id: usize, s_from: f64, anim: &str, alternate: bool) {
+        self.borrow_mut().dance_start(id, s_from, anim, alternate);
+    }
+    fn dance(&mut self, id: usize, d: DanceRecord) {
+        self.borrow_mut().dance(id, d);
+    }
+    fn draw_start(&mut self, id: usize, w0: f64, s_release: f64, dir: f64) {
+        self.borrow_mut().draw_start(id, w0, s_release, dir);
+    }
+    fn attack(&mut self, id: usize, a: AttackRecord) {
+        self.borrow_mut().attack(id, a);
+    }
+    fn arrow(&mut self, a: ArrowRecord) {
+        self.borrow_mut().arrow(a);
+    }
+    fn arrow_end(
+        &mut self,
+        arrow: usize,
+        w_arrive: f64,
+        outcome: &'static str,
+        x1: f64,
+        y1: f64,
+        w1: f64,
+    ) {
+        self.borrow_mut()
+            .arrow_end(arrow, w_arrive, outcome, x1, y1, w1);
+    }
+    fn threat(&mut self, t: ThreatRecord) {
+        self.borrow_mut().threat(t);
+    }
+    fn boss(&mut self, id: usize, land_s: f64, x: f64, y: f64, s: f64) {
+        self.borrow_mut().boss(id, land_s, x, y, s);
+    }
+    fn boss_health(&mut self, s: f64, frac: f64) {
+        self.borrow_mut().boss_health(s, frac);
+    }
+    fn boss_death(&mut self, s: f64, kill_hit: f64) {
+        self.borrow_mut().boss_death(s, kill_hit);
+    }
+    fn slam_mark(&mut self, k: usize, m: SlamMarkRecord) {
+        self.borrow_mut().slam_mark(k, m);
+    }
+    fn slam(&mut self, s: SlamRecord) {
+        self.borrow_mut().slam(s);
+    }
 }
 
 /// A recorder that keeps nothing.
@@ -400,6 +717,13 @@ pub struct LogRecorder {
     /// `hud.weaponFires`: each weapon's fire times, by weapon id.
     pub fires: std::collections::BTreeMap<String, Vec<f64>>,
     pub xp: (Vec<f64>, Vec<f64>),
+    pub formations: Vec<FormationRecord>,
+    pub zone_waves: Vec<ZoneWaveRecord>,
+    pub landmarks: Vec<LandmarkRecord>,
+    pub threats: Vec<ThreatRecord>,
+    pub slams: Vec<SlamRecord>,
+    pub arrows: Vec<ArrowRecord>,
+    pub boss: Option<(usize, f64)>,
 }
 
 impl Default for LogRecorder {
@@ -424,6 +748,13 @@ impl Default for LogRecorder {
             chains: Vec::new(),
             fires: std::collections::BTreeMap::new(),
             xp: (vec![0.0], vec![0.0]),
+            formations: Vec::new(),
+            zone_waves: Vec::new(),
+            landmarks: Vec::new(),
+            threats: Vec::new(),
+            slams: Vec::new(),
+            arrows: Vec::new(),
+            boss: None,
         }
     }
 }
@@ -535,6 +866,93 @@ impl Recorder for LogRecorder {
     }
     fn settle(&mut self, r: SettleRecord) {
         self.settles.push(to_value(&r));
+    }
+    fn formation(&mut self, f: FormationRecord) {
+        self.formations.push(f);
+    }
+    fn zone_wave(&mut self, z: ZoneWaveRecord) {
+        self.zone_waves.push(z);
+    }
+    fn landmark(&mut self, l: LandmarkRecord) {
+        self.landmarks.push(l);
+    }
+    fn dance_start(&mut self, id: usize, s_from: f64, anim: &str, alternate: bool) {
+        let w0 = Warp::new(self.breaks.clone()).to_world(s_from);
+        self.enemies[id].dance = Some(DanceRecord {
+            w0,
+            w1: f64::INFINITY,
+            anim: anim.to_string(),
+            alternate,
+            phase: 0.0,
+        });
+    }
+    fn dance(&mut self, id: usize, d: DanceRecord) {
+        self.enemies[id].dance = Some(d);
+    }
+    fn draw_start(&mut self, id: usize, w0: f64, s_release: f64, dir: f64) {
+        let w = Warp::new(self.breaks.clone()).to_world(s_release);
+        self.enemies[id]
+            .attacks
+            .get_or_insert_with(Vec::new)
+            .push(AttackRecord {
+                w0,
+                w,
+                kind: "shoot",
+                dir,
+                provisional: Some(true),
+            });
+    }
+    fn attack(&mut self, id: usize, a: AttackRecord) {
+        let list = self.enemies[id].attacks.get_or_insert_with(Vec::new);
+        // The attack replaces its provisional wind-up.
+        match list
+            .iter()
+            .rposition(|x| x.provisional == Some(true) && x.kind == a.kind)
+        {
+            Some(i) => list[i] = a,
+            None => list.push(a),
+        }
+    }
+    fn arrow(&mut self, a: ArrowRecord) {
+        self.arrows.push(a);
+    }
+    fn arrow_end(
+        &mut self,
+        arrow: usize,
+        w_arrive: f64,
+        outcome: &'static str,
+        x1: f64,
+        y1: f64,
+        w1: f64,
+    ) {
+        let a = &mut self.arrows[arrow];
+        a.w_arrive = w_arrive;
+        a.outcome = outcome;
+        a.x1 = x1;
+        a.y1 = y1;
+        a.w1 = w1;
+    }
+    fn threat(&mut self, t: ThreatRecord) {
+        self.threats.push(t);
+    }
+    fn boss(&mut self, id: usize, land_s: f64, _x: f64, _y: f64, _s: f64) {
+        self.boss = Some((id, land_s));
+    }
+    fn slam_mark(&mut self, _k: usize, m: SlamMarkRecord) {
+        let w_land = Warp::new(self.breaks.clone()).to_world(m.s_land);
+        self.enemies[m.boss]
+            .attacks
+            .get_or_insert_with(Vec::new)
+            .push(AttackRecord {
+                w0: m.w_mark.max(w_land - 0.6),
+                w: w_land,
+                kind: "slam",
+                dir: m.dir,
+                provisional: Some(true),
+            });
+    }
+    fn slam(&mut self, s: SlamRecord) {
+        self.slams.push(s);
     }
 }
 

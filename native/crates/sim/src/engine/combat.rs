@@ -51,6 +51,10 @@ impl Sim {
         if self.in_stop(s) {
             return;
         }
+        // The finale blast's bands never wait for a hit-stop.
+        if self.blast_s().is_some_and(|b| s >= b - 1e-6) {
+            return;
+        }
         // A swing already armed strikes on time: the stop ends a sample before its strike.
         let mut end = s + min(len, HITSTOP_MAX);
         for &i in &self.st.swings {
@@ -100,6 +104,11 @@ impl Sim {
         };
         f.last_fate = Some(fate);
         self.rec.fate(fi, fate);
+        if self.st.boss_foe == Some(fi) {
+            let f = &self.st.foes[fi];
+            let frac = max(0.0, f.health) / f.health0;
+            self.rec.boss_health(self.st.s, frac);
+        }
         if lethal {
             self.kill(fi);
             self.on_death(fi, fate, h);
@@ -201,6 +210,13 @@ impl Sim {
     /// Arms a swing for a slot (one swing per slot): an automatic one (`swingFor`).
     pub(super) fn swing_for(&mut self, slot: usize, s_armed: f64) -> Option<usize> {
         if self.st.taken_slots.contains(&slot) {
+            return None;
+        }
+        // The finale blast ends the sword's routine (once the finale is known and has fired).
+        if self
+            .blast_s()
+            .is_some_and(|b| self.st.sch.grid_slots[slot].s >= b - 0.04 && self.st.s >= b - 1e-9)
+        {
             return None;
         }
         self.st.taken_slots.insert(slot);
@@ -668,7 +684,7 @@ impl Sim {
             let skipped = skip_b.is_some_and(|sb| abs(off / sb - round(off / sb)) < 1e-6);
             if !skipped {
                 let t = time_of_beat_index(song, b0 + off);
-                if !(t < after - 1e-9 || t > self.env.end_s) {
+                if !(t < after - 1e-9 || t > self.st.end_s) {
                     pushes.push((t, b0 + off));
                 }
             }

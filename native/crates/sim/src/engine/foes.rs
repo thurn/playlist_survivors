@@ -58,15 +58,18 @@ impl Sim {
         )
     }
 
-    /// Can this enemy be hit now? (The boss is out of reach while it drops in, B6.)
+    /// Can this enemy be hit now? (The boss is out of reach while it drops in.)
     pub(super) fn hittable(&self, fi: usize) -> bool {
         let f = &self.st.foes[fi];
         f.alive && f.land_s.is_none_or(|l| self.st.s >= l - 1e-9)
     }
 
-    /// The boss dropping in holds its place (formations and rings join with B6).
+    /// Formation members on their slots, ring members while their ring holds, and the boss dropping
+    /// in hold their places.
     pub(super) fn pinned(&self, fi: usize) -> bool {
-        self.st.foes[fi].land_s.is_some_and(|l| self.st.s < l)
+        let f = &self.st.foes[fi];
+        ((f.slot.is_some() || f.has_at) && self.st.s < f.slot_until)
+            || f.land_s.is_some_and(|l| self.st.s < l)
     }
 
     pub(super) fn kill(&mut self, fi: usize) {
@@ -79,6 +82,35 @@ impl Sim {
     }
 
     pub(super) fn spawn_foe(&mut self, def_i: usize, x: f64, y: f64, health: Option<f64>) -> usize {
+        self.spawn_with(def_i, x, y, health, None, false)
+    }
+
+    /// A set piece's member: recorded with its set piece's id.
+    pub(super) fn spawn_member(
+        &mut self,
+        def_i: usize,
+        x: f64,
+        y: f64,
+        member: super::Member,
+    ) -> usize {
+        self.spawn_with(def_i, x, y, None, Some(member), false)
+    }
+
+    /// The boss: it lands (an entrance), with its attacks recorded.
+    pub(super) fn spawn_entrance(&mut self, def_i: usize, x: f64, y: f64) -> usize {
+        self.spawn_with(def_i, x, y, None, None, true)
+    }
+
+    fn spawn_with(
+        &mut self,
+        def_i: usize,
+        x: f64,
+        y: f64,
+        health: Option<f64>,
+        member: Option<super::Member>,
+        entrance: bool,
+    ) -> usize {
+        let piece = member.map(|m| self.piece_id(m));
         let env = Rc::clone(&self.env);
         let def = &env.input.lib.enemies[def_i];
         let id = self.st.foes.len();
@@ -103,7 +135,6 @@ impl Sim {
             final_sample: false,
             death_w: f64::INFINITY,
             last_fate: None,
-            formation: None,
             sx: 0.0,
             sy: 0.0,
             knock_x: 0.0,
@@ -114,6 +145,17 @@ impl Sim {
             land_s: None,
             step_k,
             step: None,
+            health0: h0,
+            member,
+            slot: None,
+            slot_until: f64::NEG_INFINITY,
+            has_at: false,
+            ring_path: None,
+            run: None,
+            retreat: false,
+            archer_group: None,
+            archer_slot: None,
+            drawing: None,
         });
         // Its first sample is the spawn spot itself, at the last sample time before it appeared.
         self.rec.spawn(EnemyRecord {
@@ -126,8 +168,10 @@ impl Sim {
             sample_count: 0.0,
             sample_w0: max(0.0, self.st.next_foe_k - 1.0) / ENEMY_RATE,
             fates: Vec::new(),
-            formation: None,
-            entrance: None,
+            formation: piece.map(|p| p as f64),
+            entrance: entrance.then(|| "land".to_string()),
+            attacks: entrance.then(Vec::new),
+            dance: None,
             steps: None,
         });
         self.rec.sample(id, x, y);
@@ -142,7 +186,12 @@ impl Sim {
         (hp.x, hp.y, self.st.heading.0, self.st.heading.1)
     }
 
-    fn spawn_point(&self, def: &EnemyDef, r: &mut Rng, forward_only: bool) -> (f64, f64) {
+    pub(super) fn spawn_point(
+        &self,
+        def: &EnemyDef,
+        r: &mut Rng,
+        forward_only: bool,
+    ) -> (f64, f64) {
         let view = self.st.camera.view();
         let cx = (view[0] + view[2]) / 2.0;
         let cy = (view[1] + view[3]) / 2.0;
@@ -293,6 +342,10 @@ impl Sim {
         let alive = self.st.alive.clone();
         // Bring everyone to this step's time first.
         for &fi in &alive {
+            // Set pieces' members follow their circles and slots.
+            if self.move_pinned(fi, w1) {
+                continue;
+            }
             let f = &mut self.st.foes[fi];
             let dt = w1 - f.last_w;
             if f.land_s.is_some_and(|l| s < l) {
@@ -379,8 +432,9 @@ impl Sim {
                             let dd = if dd == 0.0 || dd.is_nan() { 0.01 } else { dd };
                             let ux = if dd > 0.01 { ox / dd } else { 1.0 };
                             let uy = if dd > 0.01 { oy / dd } else { 0.0 };
-                            let pa = self.pinned(ai);
-                            let pb = self.pinned(bi);
+                            // Members, the landing boss and runners hold their places or course.
+                            let pa = self.pinned(ai) || self.st.foes[ai].run.is_some();
+                            let pb = self.pinned(bi) || self.st.foes[bi].run.is_some();
                             if pa && pb {
                                 j = next;
                                 continue;
@@ -419,6 +473,20 @@ impl Sim {
                 }
             }
         }
+        // Archer groups share a post: on the line from the hero toward the group, at their range.
+        let mut posts: Vec<(usize, f64, f64, f64)> = Vec::new();
+        for &fi in &alive {
+            let f = &self.st.foes[fi];
+            let Some(g) = f.archer_group else { continue };
+            match posts.iter_mut().find(|p| p.0 == g) {
+                Some(p) => {
+                    p.1 += f.x;
+                    p.2 += f.y;
+                    p.3 += 1.0;
+                }
+                None => posts.push((g, f.x, f.y, 1.0)),
+            }
+        }
         for &fi in &alive {
             let dt = {
                 let f = &mut self.st.foes[fi];
@@ -426,11 +494,70 @@ impl Sim {
                 f.last_w = w1;
                 dt
             };
+            // Set pieces keep their course (a ring's circle, a stampede's run) and bite whoever they run into.
+            let (on_course, run) = {
+                let f = &self.st.foes[fi];
+                (
+                    (f.has_at || f.ring_path.is_some()) && s < f.slot_until,
+                    f.run,
+                )
+            };
+            if on_course || run.is_some() {
+                self.stop_stepping(fi, w1);
+                let def = &lib.enemies[self.st.foes[fi].def];
+                let f = &mut self.st.foes[fi];
+                if let Some((vx, vy)) = run {
+                    f.vx = vx;
+                    f.vy = vy;
+                }
+                let ed = hypot(f.x - hp.x, f.y - hp.y);
+                if health
+                    && def.contact_damage > 0.0
+                    && ed <= HURTBOX_RADIUS + f.r + CONTACT_GAP + BITE_SLACK
+                    && self.st.w >= self.st.invuln_until - 1e-9
+                {
+                    let amount = armoured_bite(def.contact_damage, self.st.bonus.armour);
+                    self.hurt(amount, "bite", &def.id);
+                }
+                continue;
+            }
             if self.pinned(fi) {
                 self.stop_stepping(fi, w1);
                 continue;
             }
             let def = &lib.enemies[self.st.foes[fi].def];
+            if let Some(g) = self.st.foes[fi].archer_group {
+                let p = posts
+                    .iter()
+                    .find(|p| p.0 == g)
+                    .copied()
+                    .expect("the group's post");
+                let f = &self.st.foes[fi];
+                let cx = p.1 / p.3 - hp.x;
+                let cy = p.2 / p.3 - hp.y;
+                let cl = hypot(cx, cy);
+                let cl = if cl == 0.0 { 1.0 } else { cl };
+                let off = (f.archer_slot.unwrap_or(0) as f64 - 0.5) * super::pieces::ARCHER_GAP;
+                let tx = hp.x + (cx / cl) * super::ARCHER_RANGE - (cy / cl) * off - f.x;
+                let ty = hp.y + (cy / cl) * super::ARCHER_RANGE + (cx / cl) * off - f.y;
+                let tl = hypot(tx, ty);
+                let tl = if tl == 0.0 { 1.0 } else { tl };
+                if let Some(gait) = def.gait.as_ref().filter(|_| stepping) {
+                    if let Some(due) = self.step_due(fi, gait, step_b, s) {
+                        let len = min(def.speed * calm_speed * due.0, tl);
+                        self.start_step(fi, w1, (tx / tl) * len, (ty / tl) * len, due);
+                    }
+                    self.step_velocity(fi, w1);
+                    continue;
+                }
+                self.stop_stepping(fi, w1);
+                let sp = def.speed * calm_speed * mult(def.group) * clamp(tl / 20.0, 0.0, 1.0);
+                let kk = min(1.0, dt * 12.0);
+                let f = &mut self.st.foes[fi];
+                f.vx += ((tx / tl) * sp - f.vx) * kk;
+                f.vy += ((ty / tl) * sp - f.vy) * kk;
+                continue;
+            }
             let (fx, fy, fr, fid, charge_until) = {
                 let f = &self.st.foes[fi];
                 (f.x, f.y, f.r, f.id, f.charge_until)
@@ -543,7 +670,16 @@ impl Sim {
             .copied()
             .filter(|&fi| {
                 let (x, y) = self.pos(fi, w);
-                self.st.foes[fi].alive && hypot(x - hp.x, y - hp.y) >= RECYCLE_VIEWS * vw
+                let f = &self.st.foes[fi];
+                // A stampede's runner, once it has left the view on the side it runs to.
+                if let Some((vx, vy)) = f.run.filter(|_| f.alive) {
+                    let row = super::pieces::STAMPEDE_ROW;
+                    return (vx > 0.0 && x > view[2] + row)
+                        || (vx < 0.0 && x < view[0] - row)
+                        || (vy > 0.0 && y > view[3] + row)
+                        || (vy < 0.0 && y < view[1] - row);
+                }
+                f.alive && hypot(x - hp.x, y - hp.y) >= RECYCLE_VIEWS * vw
             })
             .collect();
         let env = Rc::clone(&self.env);
@@ -552,8 +688,12 @@ impl Sim {
             f.alive = false;
             f.final_sample = true;
             f.death_w = w;
-            let (def_i, health, id) = (f.def, f.health, f.id);
+            let (def_i, health, id, retreat) = (f.def, f.health, f.id, f.retreat);
             self.rec.death(fi, w, true);
+            // (A retreating boss leaves for good.)
+            if retreat {
+                continue;
+            }
             let mut r = Rng::new(&[
                 Part::Num(env.input.seed),
                 Part::Str("recycle"),
@@ -564,6 +704,19 @@ impl Sim {
         }
         let foes = &self.st.foes;
         self.st.alive.retain(|&i| foes[i].alive);
+        // A stampede whose runners have all left the view (or died): its vacuum on the next downbeat.
+        for i in 0..self.st.stampedes.len() {
+            let (k, done) = self.st.stampedes[i];
+            let running = self.st.alive.iter().any(|&fi| {
+                let f = &self.st.foes[fi];
+                f.member == Some(super::Member::Stampede(k)) && f.run.is_some()
+            });
+            if done || running {
+                continue;
+            }
+            self.st.stampedes[i].1 = true;
+            self.push_at_downbeat(self.st.s + 1e-6, Ev::VacuumDrop);
+        }
     }
 
     /// The director's population at song time s, scaled by the loudness level.
@@ -589,7 +742,7 @@ impl Sim {
             .st
             .alive
             .iter()
-            .filter(|&&fi| self.st.foes[fi].formation.is_none())
+            .filter(|&&fi| self.st.foes[fi].member.is_none())
             .count() as f64
             + self.st.pending;
         let want = min(min(SPAWN_PER_BEAT, round(target) - living), POP_CAP - all);
@@ -717,7 +870,7 @@ impl Sim {
     /// The first downbeat at or after song time t as the whole stream gives it (`downbeatAtOrAfter`):
     /// its beat index, or None past the stream's last bar (TS then takes t itself). A downbeat not
     /// known yet lies ahead. (The reactive song map's bars are two beats from the first.)
-    fn downbeat_index_at_or_after(&self, t: f64) -> Option<usize> {
+    pub(super) fn downbeat_index_at_or_after(&self, t: f64) -> Option<usize> {
         let mut bar = max(1.0, bar_of_beat_index(&self.st.idx, self.sbi_at(t)));
         loop {
             let k = (2.0 * (bar - 1.0)) as usize;

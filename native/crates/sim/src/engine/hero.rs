@@ -565,11 +565,6 @@ impl Sim {
         }
     }
 
-    /// The camera lead's direction at song time s: the heading (a formation's while one is in play, B6).
-    fn lead_dir(&self) -> (f64, f64) {
-        self.st.heading
-    }
-
     /// A director value blended over the loudness levels known by song time s (`byLevel`).
     pub(super) fn by_level(&self, s: f64, value: &dyn Fn(stream::Level) -> f64) -> f64 {
         level_blend(
@@ -664,7 +659,7 @@ impl Sim {
             } else {
                 let to_impact_w = max(
                     1e-6 * (sw.s_strike - sk),
-                    step_span(&self.st.sch.base_steps, sk, sw.s_strike),
+                    step_span(self.base_steps(), sk, sw.s_strike),
                 );
                 if to_impact_w <= half + 1e-9 {
                     sw.impact
@@ -694,7 +689,7 @@ impl Sim {
         }
         self.rec.hero(p.x, p.y, p.z, facing, anim, frame);
         // The camera follows the hero with the loudness level's lead along the heading.
-        let (tx, ty) = self.lead_dir();
+        let (tx, ty) = self.lead_dir_at(sk);
         let d = &env.director;
         let lead = self.by_level(sk, &|l| by_level(&d.camera, l).lead);
         let mut zoom = self.by_level(sk, &|l| by_level(&d.camera, l).zoom);

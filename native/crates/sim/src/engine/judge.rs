@@ -49,7 +49,7 @@ impl Sim {
     }
 
     /// Judged time from song time 0 to t (`judgedClock`).
-    fn judged_clock(&self, t: f64) -> f64 {
+    pub(super) fn judged_clock(&self, t: f64) -> f64 {
         self.st.judging.clock(
             t,
             if t.is_finite() {
