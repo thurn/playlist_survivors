@@ -46,8 +46,20 @@ changes_match() {
 
 # The TS game and its tooling: everything except the native workspace, the analysis tool, the
 # friction ledger's script, documentation and the Tollgate policy.
+TS_EXCLUDE='^(native/|tools/analysis/|scripts/friction$|scripts/test_friction\.py$|docs/|\.tollgate/|[^/]*\.md$)'
 changes_ts() {
-  [ "$CHANGES_UNKNOWN" = 1 ] || grep -Evq '^(native/|tools/analysis/|scripts/friction$|scripts/test_friction\.py$|docs/|\.tollgate/|[^/]*\.md$)' "$CHANGES_FILE"
+  [ "$CHANGES_UNKNOWN" = 1 ] || grep -Evq "$TS_EXCLUDE" "$CHANGES_FILE"
+}
+
+# A hash of the TS section's inputs at HEAD: every TS path's blob, and the node and npm versions.
+# Empty when the tree has uncommitted changes, whose inputs HEAD doesn't describe.
+ts_inputs_hash() {
+  if [ -n "$(git status --porcelain --untracked-files=no)" ]; then return 0; fi
+  {
+    git ls-tree -r HEAD | awk -F '\t' -v re="$TS_EXCLUDE" '$2 !~ re'
+    node --version
+    npm --version
+  } | shasum -a 256 | cut -d ' ' -f 1
 }
 
 # The Python analysis tool and the song maps it checks.

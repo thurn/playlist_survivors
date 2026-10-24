@@ -41,6 +41,14 @@ Review findings cost 20, 20 and 15 minutes in ES, F3 and F4 (mean 18), about 8 f
 reviewed bead. The self-review step in AGENTS.md targets them; the next retrospective compares
 the `review-churn` minutes of the next 5 reviewed beads with that mean, aiming at half.
 
+## Skipping an unchanged TS section (hv-t8o8.51)
+
+`scripts/ci-full ts` skips when a commit with the same TS inputs (every TS path's blob at HEAD,
+node and npm) passed it before, keyed by their hash under
+`~/Library/Caches/playlist-survivors/ci-stamps/`. Measured on the change's own commit: the first
+run 414 s (host load about 20), the second 0.2 s. Release history before it: `ci-full-ts`
+235–375 s on every run, 4 of 9 with no TS change. `PS_CI_FULL_FORCE=1` runs it regardless.
+
 ## Revisions
 
 - 2026-10-24, W2: first budgets, from W1's and S0's measurements.

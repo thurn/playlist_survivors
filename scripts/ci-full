@@ -10,26 +10,42 @@
 # rejects. Run `npm run test:e2e` by hand.
 set -eu
 cd "$(dirname "$0")/.."
+. scripts/lib/changes.sh
 section="${1:-all}"
+# Pass stamps for the TS section, keyed by its inputs' hash (outside the slots, so they persist).
+STAMPS="${PS_CI_STAMPS:-$HOME/Library/Caches/playlist-survivors/ci-stamps}"
 
 case "$section" in
   all|ts|analysis|native) ;;
   *) echo "usage: scripts/ci-full [ts|analysis|native]" >&2; exit 2 ;;
 esac
 
+# The TS section is skipped when its inputs (every TS path at HEAD, node and npm) are identical
+# to a commit that passed it before: the TS game is frozen, and native-only commits would rerun
+# about 250 s of checks on the same inputs. PS_CI_FULL_FORCE=1 runs it regardless.
 if [ "$section" = all ] || [ "$section" = ts ]; then
-  npm ci --no-audit --no-fund --prefer-offline
-  npm run check
-  npm run check:content
-  npm run check:assets
-  # The level's seed with causality and determinism, then three more seeds.
-  npm run check:seeds
-  # Play mode on four seeds (the moderate player's signature moments, the casual player's
-  # finale), and the curve and groove averaged over eight.
-  npm run check:play
-  # Reactive mode: causality, determinism, the shipped streams and sounds on committed beats.
-  npm run check:reactive
-  npm run build
+  hash=$(ts_inputs_hash)
+  if [ -n "$hash" ] && [ -f "$STAMPS/ts-$hash" ] && [ "${PS_CI_FULL_FORCE:-0}" != 1 ]; then
+    echo "ci-full ts: inputs $hash passed at $(cat "$STAMPS/ts-$hash"); skipping"
+  else
+    echo "ci-full ts: inputs ${hash:-(uncommitted changes)}"
+    npm ci --no-audit --no-fund --prefer-offline
+    npm run check
+    npm run check:content
+    npm run check:assets
+    # The level's seed with causality and determinism, then three more seeds.
+    npm run check:seeds
+    # Play mode on four seeds (the moderate player's signature moments, the casual player's
+    # finale), and the curve and groove averaged over eight.
+    npm run check:play
+    # Reactive mode: causality, determinism, the shipped streams and sounds on committed beats.
+    npm run check:reactive
+    npm run build
+    if [ -n "$hash" ]; then
+      mkdir -p "$STAMPS"
+      echo "$(git rev-parse --short HEAD) $(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$STAMPS/ts-$hash"
+    fi
+  fi
 fi
 
 # The Python tooling: the analysis tool and the friction ledger.
@@ -40,6 +56,7 @@ if [ "$section" = all ] || [ "$section" = analysis ]; then
   uv run --directory tools/analysis ruff check ../../scripts/friction ../../scripts/test_friction.py
   uv run --no-project python -m unittest scripts/test_friction.py
   uv run --no-project python -m unittest scripts/test_check_conflict_markers.py
+  uv run --no-project python -m unittest scripts/test_changes.py
 fi
 
 # The native workspace: every crate's clippy and tests, the pure crates' purity, unused

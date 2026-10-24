@@ -29,6 +29,9 @@ fi
 if changes_match '^scripts/(check-conflict-markers|test_check_conflict_markers\.py)$'; then
   uv run --no-project python -m unittest scripts/test_check_conflict_markers.py
 fi
+if changes_match '^scripts/(lib/changes\.sh|test_changes\.py)$'; then
+  uv run --no-project python -m unittest scripts/test_changes.py
+fi
 
 if changes_ts; then
   if [ ! -d node_modules ]; then
