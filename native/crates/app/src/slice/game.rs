@@ -15,6 +15,17 @@ const STEP: f32 = 46.0;
 /// How long a step's slide takes.
 const STEP_S: f64 = 0.09;
 const ATTACK_RADIUS: f32 = 150.0;
+pub const HEALTH: u32 = 5;
+/// After a hit the player can't be hurt again for this long.
+const INVULNERABLE_S: f64 = 0.8;
+
+/// Why a run ended.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum End {
+    Died,
+    /// The audio stopped.
+    Silence,
+}
 
 /// The movement keys held.
 #[allow(clippy::struct_excessive_bools)]
@@ -70,6 +81,10 @@ pub struct Game {
     rng: u64,
     last_attack: Option<(f64, Judgement)>,
     last_beat: f64,
+    pub health: u32,
+    hurt_at: f64,
+    /// When and why the run ended.
+    pub over: Option<(f64, End)>,
 }
 
 impl Default for Game {
@@ -92,6 +107,9 @@ impl Game {
             rng: seed | 1,
             last_attack: None,
             last_beat: f64::NEG_INFINITY,
+            health: HEALTH,
+            hurt_at: f64::NEG_INFINITY,
+            over: None,
         }
     }
 
@@ -111,6 +129,9 @@ impl Game {
     /// Advances to `now`, moving the player by `input` over `dt` seconds; every beat heard by
     /// `now` steps the enemies and may spawn more.
     pub fn update(&mut self, now: f64, dt: f32, input: Input) {
+        if self.over.is_some() {
+            return;
+        }
         let dx = f32::from(i8::from(input.right) - i8::from(input.left));
         let dy = f32::from(i8::from(input.down) - i8::from(input.up));
         let len = (dx * dx + dy * dy).sqrt().max(1.0);
@@ -122,6 +143,39 @@ impl Game {
             self.recent.push(b);
         }
         self.recent.retain(|&b| b > now - 1.0);
+        self.contact(now);
+    }
+
+    /// Enemies touching the player cost a health each (then vanish), unless just hurt.
+    fn contact(&mut self, now: f64) {
+        let reach = f32::midpoint(PLAYER_SIZE, ENEMY_SIZE);
+        let (px, py) = (self.x, self.y);
+        let touching = |e: &Enemy| (e.x - px).abs() < reach && (e.y - py).abs() < reach;
+        if !self.enemies.iter().any(touching) {
+            return;
+        }
+        self.enemies.retain(|e| !touching(e));
+        if now - self.hurt_at < INVULNERABLE_S {
+            return;
+        }
+        self.hurt_at = now;
+        self.combo = 0;
+        self.health = self.health.saturating_sub(1);
+        if self.health == 0 {
+            self.over = Some((now, End::Died));
+        }
+    }
+
+    /// Ends the run (the audio stopped).
+    pub fn end(&mut self, now: f64, why: End) {
+        if self.over.is_none() {
+            self.over = Some((now, why));
+        }
+    }
+
+    /// Whether the player was hurt since `since`.
+    pub fn hurt_since(&self, since: f64) -> bool {
+        self.hurt_at > since
     }
 
     fn step(&mut self, at: f64) {
@@ -168,6 +222,9 @@ impl Game {
 
     /// The attack key, pressed at `now`: judged against the nearest committed beat.
     pub fn attack(&mut self, now: f64) -> Judgement {
+        if self.over.is_some() {
+            return Judgement::Miss;
+        }
         let nearest = self
             .recent
             .iter()
@@ -242,12 +299,37 @@ impl Game {
             ));
         }
         let (px, py) = at(self.x, self.y);
-        out.push(Rect::centered(
-            px,
-            py,
-            PLAYER_SIZE * scale,
-            [0.4, 0.85, 1.0, 1.0],
-        ));
+        let hurt = now - self.hurt_at < INVULNERABLE_S;
+        let blink = hurt && ((now - self.hurt_at) * 12.0) as i64 % 2 == 0;
+        if !blink {
+            out.push(Rect::centered(
+                px,
+                py,
+                PLAYER_SIZE * scale,
+                [0.4, 0.85, 1.0, 1.0],
+            ));
+        }
+        if hurt {
+            let a = (1.0 - (now - self.hurt_at) / INVULNERABLE_S) as f32;
+            out.push(Rect::new(
+                fx,
+                fy,
+                WIDTH * scale,
+                HEIGHT * scale,
+                [0.8, 0.1, 0.1, 0.25 * a],
+            ));
+        }
+        for i in 0..HEALTH {
+            let (hx, hy) = at(24.0 + i as f32 * 22.0, 24.0);
+            let color = if i < self.health {
+                [0.95, 0.3, 0.4, 1.0]
+            } else {
+                [0.3, 0.2, 0.25, 1.0]
+            };
+            out.push(Rect::centered(hx, hy, 16.0 * scale, color));
+        }
+        let (sx, sy) = at(WIDTH - 20.0, 12.0);
+        digits(self.score, sx, sy, 24.0 * scale, [1.0, 1.0, 1.0, 0.9], out);
         // The next beats approach a marker at the top: press on the marker.
         let (mx, my) = at(WIDTH * 0.5, 22.0);
         out.push(Rect::new(
@@ -280,6 +362,76 @@ impl Game {
             let (cx, cy) = at(20.0 + i as f32 * 14.0, HEIGHT - 20.0);
             out.push(Rect::centered(cx, cy, 10.0 * scale, [1.0, 0.9, 0.4, 1.0]));
         }
+        if let Some((t, why)) = self.over {
+            let a = ((now - t) / 0.5).clamp(0.0, 1.0) as f32;
+            out.push(Rect::new(
+                fx,
+                fy,
+                WIDTH * scale,
+                HEIGHT * scale,
+                [0.0, 0.0, 0.0, 0.7 * a],
+            ));
+            let color = match why {
+                End::Died => [0.95, 0.3, 0.4, a],
+                End::Silence => [0.6, 0.7, 0.9, a],
+            };
+            let (cx, cy) = at(WIDTH / 2.0, HEIGHT / 2.0 - 40.0);
+            out.push(Rect::centered(cx, cy - 70.0 * scale, 40.0 * scale, color));
+            let size = 80.0 * scale;
+            let width = digit_count(self.score) as f32 * size * 0.75;
+            digits(
+                self.score,
+                cx + width / 2.0,
+                cy,
+                size,
+                [1.0, 1.0, 1.0, a],
+                out,
+            );
+        }
+    }
+}
+
+fn digit_count(mut n: u64) -> usize {
+    let mut k = 1;
+    while n >= 10 {
+        n /= 10;
+        k += 1;
+    }
+    k
+}
+
+/// `n` in seven-segment digits of height `size`, right-aligned at `right`, top at `top`.
+fn digits(n: u64, right: f32, top: f32, size: f32, color: [f32; 4], out: &mut Vec<Rect>) {
+    // Segments a-g, as bits of each digit.
+    const SEGMENTS: [u8; 10] = [
+        0b011_1111, 0b000_0110, 0b101_1011, 0b100_1111, 0b110_0110, 0b110_1101, 0b111_1101,
+        0b000_0111, 0b111_1111, 0b110_1111,
+    ];
+    let (w, t) = (size * 0.5, size * 0.1);
+    let half = size / 2.0;
+    let mut n = n;
+    let mut x = right - w;
+    loop {
+        let seg = SEGMENTS[(n % 10) as usize];
+        let bars = [
+            (x, top, w, t),
+            (x + w - t, top, t, half),
+            (x + w - t, top + half, t, half),
+            (x, top + size - t, w, t),
+            (x, top + half, t, half),
+            (x, top, t, half),
+            (x, top + half - t / 2.0, w, t),
+        ];
+        for (i, &(bx, by, bw, bh)) in bars.iter().enumerate() {
+            if seg & (1 << i) != 0 {
+                out.push(Rect::new(bx, by, bw, bh, color));
+            }
+        }
+        n /= 10;
+        if n == 0 {
+            break;
+        }
+        x -= size * 0.75;
     }
 }
 
@@ -328,6 +480,49 @@ mod tests {
         assert_eq!(g.combo, 2);
         assert_eq!(g.attack(10.2), Judgement::Miss);
         assert_eq!(g.combo, 0);
+    }
+
+    #[test]
+    fn contact_costs_health_until_the_run_ends() {
+        let mut g = Game::new(3);
+        for k in 0..HEALTH {
+            g.enemies.push(Enemy {
+                x: g.x + 5.0,
+                y: g.y,
+                from: (0.0, 0.0),
+                stepped_at: 0.0,
+            });
+            g.update(f64::from(k), 0.0, none());
+            assert_eq!(g.health, HEALTH - k - 1);
+            assert!(g.enemies.is_empty());
+        }
+        assert_eq!(g.over, Some((f64::from(HEALTH - 1), End::Died)));
+        assert_eq!(g.attack(10.0), Judgement::Miss);
+    }
+
+    #[test]
+    fn a_second_touch_right_after_a_hit_is_free() {
+        let mut g = Game::new(3);
+        for t in [1.0, 1.3] {
+            g.enemies.push(Enemy {
+                x: g.x,
+                y: g.y + 5.0,
+                from: (0.0, 0.0),
+                stepped_at: 0.0,
+            });
+            g.update(t, 0.0, none());
+        }
+        assert_eq!(g.health, HEALTH - 1);
+    }
+
+    #[test]
+    fn scores_draw_one_digit_each() {
+        let mut out = Vec::new();
+        digits(1088, 100.0, 0.0, 20.0, [1.0; 4], &mut out);
+        // 1 (2 bars), 0 (6), 8 (7), 8 (7).
+        assert_eq!(out.len(), 22);
+        assert_eq!(digit_count(1088), 4);
+        assert_eq!(digit_count(0), 1);
     }
 
     #[test]
