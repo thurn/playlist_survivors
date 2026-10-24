@@ -968,20 +968,25 @@ is warmed up before a run starts.
 ### Live exceptions
 
 Every deliberate difference from the TS game, with what the oracle compares.
-Phase 1's inventory completes this list from the freeze commit.
+F1 completed this list from the freeze commit (`ts-freeze`, `e97ef4a`); the
+file-by-file inventory behind it is in the
+[appendix](#measured-f1-the-inventory-at-ts-freeze).
 
 | Behaviour | TS at the freeze (as written now) | Native | Oracle compares |
 |---|---|---|---|
-| Finale | `reactiveFinale` picks an end within the last `windowS` of the known length | Fires on a confirmed end (D1): the horde clears and the end card follows | Everything, in Replay with `StreamEnd`; live finales are on the QA checklist |
-| Run end | `reactiveRunEnd` and `ctx.duration` | A confirmed end, YOU FELL, pause, a device change, or manual End | Everything, in Replay with `StreamEnd` |
-| Song length and stream-end reads | `knownLength`, `audio.duration`, `ctx.duration`, `progressS`, the last section's `s1`, clamps to the last entry | `StreamEnd` absent: progress shows elapsed time, the last section is open-ended, and each read F1 lists gets a stated live behaviour | Everything, in Replay with `StreamEnd` provided |
-| Effects ducking | `followCurve`, centred smoothing and the whole song's 90th percentile | A causal envelope follower on the energy ticks | Excluded (audio only) |
-| Run start | The song's start, song time 0 | Any time; rebased history (above) | Replay and File runs start at 0, as TS |
-| Pause | Freezes the music and the game; resumes after a count-in | Ends the run (D1) | — |
+| Finale | `reactiveFinale` (`setpieces.ts:93`): the first `structure.ends` entry with `knownAt` within the last `windowS` (10 s) of `knownLength`, firing at its `knownAt`, else at `knownLength` itself; no evidence gate. reactive-feel's confirmed endings (G3) never landed | Fires on a confirmed end (D1): the horde clears and the end card follows | Everything, in Replay with `StreamEnd`; live finales are on the QA checklist |
+| Run end | `reactiveRunEnd` = `max(duration + 0.5, finale.endS)`, emitted once song time reaches `ctx.duration` (`recording.ts:746`); the sim runs to `max(duration + 1, finale.endS)`; the grade covers `[playerFrom, duration)`. YOU FELL is a pause menu with restarts, not an end | A confirmed end, YOU FELL, pause, a device change, or manual End; the grade covers the run's own span | Everything, in Replay with `StreamEnd` |
+| Song length and stream-end reads | `knownLength`, `audio.duration`, `ctx.duration`, `progressS`, the last section's `s1`, the bar count from every beat, clamps to the last entry (listed in the appendix) | `StreamEnd` absent: progress shows elapsed time, the section marks go, the last section is open-ended, `endS` is unbounded until the run ends, and every clamp uses the latest known entry | Everything, in Replay with `StreamEnd` provided |
+| Events past the last committed beat | Dropped: a section start, a set-piece candidate or a palette switch whose beat isn't in the stream (`sections.ts:46`, `setpieces.ts:141`, `director.ts:78`) | Pending until that beat arrives | Everything, in Replay (the full stream holds every beat the TS game sees) |
+| Extrapolation past the last beat | `core/songmap.ts` extrapolates from the last two beats' gap; `knownTimeOfBeat` from the last beat's `period` | Live: the latest beat's `period` everywhere | Everything, in Replay with `StreamEnd` (TS's rule kept there) |
+| Scheduling | `init` enqueues every beat, slot and set piece up front (`simulate.ts:3253`) | Each entry is enqueued when it arrives ([streaming without changing results](#streaming-without-changing-results)) | Everything: streaming equals batch |
+| Effects ducking | `followCurve` (`audio.ts:36`): a centred 0.4 s RMS window, centred 1 s smoothing and the whole song's 90th percentile (the music ducking under SFX is causal and kept) | A causal envelope follower on the energy ticks | Excluded (audio only) |
+| Run start | The song's start, song time 0, or `?start=` (the reference-beat bot plays until the hand-over) | Any time; rebased history (above). The judged-from time (16 s) and the title card count from the run's start | Replay and File runs start at 0, as TS |
+| Pause | Freezes the music and the game; resumes after a one-bar count-in (`play.ts:407`) | Ends the run (D1) | — |
 | Output device change | — (the browser handles it) | Ends the run (D1) | — |
-| Restart section, Restart song | Restart the audio | Removed: the game doesn't control the music | — |
-| Best grade | Per track, in local storage | Kept for Replay and File tracks only; live runs have none | — |
-| Watch my run | Re-simulates with the full stream | Replays the saved session (stream with arrival stamps, keys, audio) | — |
+| Restart section, Restart song | Restart the audio (in reactive mode Restart section is Restart song) | Removed: the game doesn't control the music | — |
+| Best grade | Per track, in local storage (`ps.grade.v2.reactive.<trackId>`) | Kept for Replay and File tracks only; live runs have none | — |
+| Watch my run | Re-simulates with the full stream (`play.ts:95`), the bot's part before a hand-over included | Replays the saved session (stream with arrival stamps, keys, audio) | — |
 
 ### Calibration (D2)
 
@@ -1949,3 +1954,106 @@ accuracy.
 | orpheus-galop | classical | songmap | 58.2 | 53.7 | 77.1 | 54.5 | 2.2 |
 | pop-arrangement | synthetic | exact | 84.4 | 93.6 | 94.4 | 92.3 | 2.8 |
 | william-tell-finale | classical | offline | 74.5 | 69.8 | 81.3 | 75.5 | 2.7 |
+
+### Measured: F1, the inventory at ts-freeze
+
+`ts-freeze` (annotated tag, pushed) is `e97ef4a`. Files and lines below are at
+the tag. The frozen numbers are committed beside the friction ledger:
+`native/evidence/ts-freeze/check-reactive.txt` (the whole `check:reactive`
+output, 203 s, every gate passing) and
+`native/evidence/ts-freeze/golden-plan-hashes.json` (Watch the demo's plan
+hashes for seeds 7, 1858, 1859 and 2024 and the perfect, skilled and casual
+players, as in `tests/fixtures`).
+
+**Stream groups** (schema `src/reactive/stream.ts:58-86`, writer
+`tools/analysis/src/ps_analysis/stream.py`):
+
+| Group | Carries | Stamp | Read by the game |
+|---|---|---|---|
+| `audio`, `params` | The file's length; `gate`, `tickS` and every analyzer knob | — | `knownLength` (`runtime/reactive.ts:81`), the song map, `gate` throughout |
+| `beats` | Committed beats `{t, knownAt, period, evidence}`, phase-checked (the phase check shifts them; it has no group of its own) | `knownAt` | Everywhere: judging, sections, director, set pieces, sim, emit, evaluator |
+| `ticks` | Every 0.05 s: `evidence`, `energy`, `level`, `key` (from 10 s), `bands`, `brightness` | None: found by `t` | Judging, director, set pieces, sim, effects; **`bands` and `brightness` are unread** |
+| `onsets` | `{t, knownAt, strength, strong, band}` | `knownAt` | Accent onsets, set pieces, flashes; `band` is unread |
+| `hindsight` | Every 1 s: the offline decode and the online beats over the last 8 s | `knownAt` | Settling (`simulate.ts:755,924,1653`) |
+| `timbre` | Every 1 s: brightness, flatness, percussive share, density | `knownAt` | **Unread** (only the checks perturb it) |
+| `structure.changes`, `.jumps` | Novelty peaks (known 6 s late); loudness jumps | `knownAt` | Sections; stampedes |
+| `structure.ends` | Candidate endings: 20 dB below the past 30 s's loudest second, held 1.5 s | `knownAt` | Only the finale (`setpieces.ts:106`) |
+| `accents.forecast` | `{t, knownAt, cycle, confidence}` | `knownAt` | Sim accents, set pieces |
+| `reference` | Offline beats and sections | — | Stripped from the sim's input; virtual players and checks only |
+
+The analyzer port keeps every group, read or not, so the stream stays
+comparable with Python's. **The commit invariant is load-bearing:** when a beat
+arrives, the next is already known (`stream.py:404-409`; all 14,530 shipped
+beats have `knownAt <= t`). The evaluator and the live recording read the beat
+after `s` without checking its `knownAt` (`evaluate.ts:732-740`,
+`recording.ts:257-259`), so the native analyzer's commit rule must keep it.
+
+**Song length and stream-end reads, with their live behaviour** (all on
+reactive play's path unless noted):
+
+- Inputs: `knownLength = stream.audio.duration` (`runtime/reactive.ts:81`); the
+  song map's bar count, crop end and one section from every beat
+  (`reactive/songmap.ts:17-25`); the last section's `s1` and `ctx.duration`
+  (`planner/context.ts:124-139`). Live: absent, and the song map grows with an
+  open-ended last section.
+- Extrapolation: `beatIndexAt` and `timeOfBeatIndex` past the last beat use the
+  last gap, `energyAt` clamps to the last value (`core/songmap.ts:84-163`),
+  `beatDurationAt` clamps to `length - 2` (`context.ts:154`). Live: the latest
+  beat's `period`.
+- Schedule: rate cuts capped at `ctx.duration + 1` (inert in reactive mode);
+  the beat grid over every bar (`schedule.ts:89-163`, `strides.ts:52`); the
+  finale's landmark, blast, swell and `endS` (`schedule.ts:284-304`). Live: the
+  grid grows, no cap, the finale added on a confirmed end.
+- Dropped past the last beat: `effectiveDownbeat`, `firstBeatAtOrAfter`
+  (`stream.ts:234-251`), section starts (`sections.ts:46`), set-piece
+  candidates (`setpieces.ts:141-148`), palette switches and the zone-wave
+  fallback (`director.ts:78-109`). Live: pending until the beat arrives.
+- Clamped to the last beat: rings, formation release, kick lines, boss slams,
+  volleys (`setpieces.ts:249-318`); `knownAtOfSlot` (`simulate.ts:3238`); bar
+  entries and `moveFoes` to `barCount` (`:2294`, `:1880`); `downbeatAtOrAfter`
+  (`:2515`); `takeOrb`'s "at the song's end" (`:2739`); headings and trails
+  (`:1712`, `:2435`, `:3218`). Live: decided as beats arrive, with the latest
+  known interval.
+- The sim's end: `endS = min(untilS, max(ctx.duration + 1, reactive.endS))`
+  (`simulate.ts:3587`), bounding decisions, keys, fires, blasts and landmarks
+  (`:2264-3555`); `fireBeat` skips the final beat (`:2360`). Live: unbounded
+  until the run ends; the commit invariant makes the final-beat case moot.
+- `judging()` takes the last judged time from the next tick, or the last tick
+  at the end (`stream.ts:171`). Live: `t + tickS`.
+- Live recording: the end at `s >= ctx.duration`, the grade over
+  `[playerFrom, ctx.duration)` (`recording.ts:746-752`); landmark bars, world
+  beats, zone-wave end and slot settling from every beat (`:257-779`). Live:
+  run end, latest known beat.
+- Plan header: `duration`, sections, every beat, `progressS = knownLength ??
+  duration` (`plan.ts:107-132`); the batch grade over `[0, duration)`
+  (`plan.ts:220,282`, the demo and checks only); `soundFade` from `knownLength`
+  (`emit.ts:91`). Live: it grows; no `progressS`; the fade from the confirmed
+  end.
+- HUD and renderer: the progress bar (`evaluate.ts:1517`, `hud.ts:248`) and
+  section marks (`hud.ts:249`); tier times and weapons until `blastS ??
+  plan.duration` (`evaluate.ts:280-295,939`); `beatIndex`, `barAt`,
+  `beatLenAt`, `energyAt` clamps (`evaluate.ts:528-557,1065-1077`). Live:
+  elapsed time only, no marks, until run end, latest known beat.
+- Runtime: count-ins from `barBefore` (`play.ts:232`), Watch my run's
+  `runToEnd` (`play.ts:95-104,532`), offsets clamped to `music.duration`
+  (`audio.ts:192-295`). Live: removed with pause, session replay, and the game
+  doesn't play the music. `JUDGED_FROM_S = 16` and the title card at 0.5–5 s
+  assume the run starts at 0 (`reactive/grade.ts:9-13`). Live: relative to the
+  run's start.
+- Not live: `reactive/players.ts` (virtual players and the `?start=` bot) and
+  `audio.ts:440` `renderOffline` (QA).
+
+**Non-causal outside the sim:** only `followCurve` (`runtime/audio.ts:36-67`):
+a centred 0.4 s RMS window, centred 1 s smoothing and the whole song's 90th
+percentile as the reference, scheduled to the end as automation by
+`Mix.follow` (`:504-511`). `reactiveFx` copies every tick and onset, but its
+readers look back only (a trailing 0.5 s window, a decaying peak, the dominant
+key so far). Nothing else in the renderer, HUD or audio reads ahead.
+
+**Confirmed endings did not land.** reactive-feel's G3 (`hv-jtsz.12`: an
+`ends` entry after at least 16 bars with the beat clear, its quiet lasting 3 s,
+an encore) is not in the code; `levels/reactive.yaml` still has `afterS: 90`,
+`zoneFallbackS: 60`, `levelUpWaitS: 20`, `gapS: 6` and `windowS: 10`. The
+finale at the freeze is `reactiveFinale` above, keyed to the file's length, so
+D1's confirmed-end rule is the native app's own and is compared live only on
+the QA checklist.

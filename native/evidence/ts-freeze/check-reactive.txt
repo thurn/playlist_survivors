@@ -1,0 +1,100 @@
+# npm run check:reactive at ts-freeze (e97ef4a), run 2026-10-24 on the TS tree identical to the tag
+stream quality house-128: 100.0% of 120 committed beats within 45 ms after 4 s (gate 95%)
+stream quality dnb-174: 100.0% of 163 committed beats within 45 ms after 4 s (gate 95%)
+the Galop's prelude: 94.9% of 59 committed beats below the gate (gate 80%)
+target: committed-beat accuracy after 4 s (within 45 ms of a reference beat; the experiment's Galop: 84% of pulsed beats at a 0.25 s lead)
+  orpheus-galop           58.2% of 347 (songmap reference)
+  william-tell-finale     74.8% of 329 (offline reference)
+  mountain-king           61.8% of 343 (offline reference)
+  bumblebee               75.4% of 179 (offline reference)
+  beethoven-fifth         47.3% of 277 (offline reference)
+  house-128              100.0% of 120 (exact reference)
+  dnb-174                100.0% of 163 (exact reference)
+  hiphop-92-swing         50.6% of 170 (exact reference)
+  accelerando-100-140     79.8% of 173 (exact reference)
+  pop-arrangement         84.4% of 346 (exact reference)
+  causality-mix           90.2% of 132 (exact reference)
+  the Galop's pulsed sections: 67.0% of 297 (the horizon fallback's trigger is 79%)
+  by section: prelude 8.5%, galop-vamp 68.8%, galop-opening 93.2%, theme-a 68.8%, theme-a-repeat 26.5%, kick-line 57.6%, bridge 100.0%, climax 81.0%, coda 54.0%
+causality on causality-mix: 580 cuts, 0 failing, features fired: level-ups, zone waves, section starts, forecasts, forecast cleaves, onset cleaves, rings, stampedes, volleys, bee wedges, kick lines, the boss, the finale, reading switches (84.8 s)
+negative control: caught (reactive-moderate, cut at s=0.319: enemy #14 sample at w=0.267 differs)
+the settled groove on house-128 (damage off, judged time): reactive-moderate at tier 2+ 100.0% (gate 60%), mash4 at tier 0 100.0%, mash8 100.0% (gate 80%)
+targets (stage 2, damage off, shares of judged time):
+  dnb-174: reactive-moderate tier 2+ 100.0% (60.0%), reactive-human tier 2+ 100.0% (50.0%), reactive-offbeat tier 2+ 100.0% (50.0%), reactive-half tier 2+ 100.0% (40.0%), mash4 tier 0 100.0% (80.0%), mash8 tier 0 100.0% (80.0%)
+  pop-arrangement: reactive-moderate tier 2+ 100.0% (60.0%), reactive-human tier 2+ 99.2% (50.0%), reactive-offbeat tier 2+ 79.3% (50.0%), reactive-half tier 2+ 96.6% (40.0%), mash4 tier 0 83.9% (80.0%), mash8 tier 0 97.7% (80.0%)
+  orpheus-galop: reactive-moderate tier 2+ 100.0% (40%), mash4 tier 0 76.1%, mash8 tier 0 78.7% (80%)
+  random presses keep offline "as tracked" in: mash4 68.5% (presses switched the reading in 6 of 1643), mash8 68.3% (presses switched the reading in 1 of 3243) of settles (90%)
+  pop-arrangement's pads-only breakdown: 84.2% of reactive-moderate's 38 presses settle unjudged (80%); the settled groove 1.00 at its start, 1.00 at its end (at least 0.90)
+mashing never beats playing (damage off; average groove / judged time at tier 2+):
+  orpheus-galop          moderate 0.99/100.0% | mash2 0.60/42.3% | mash4 0.49/22.5% | mash8 0.42/17.8% | holder 0.59/37.2%
+  william-tell-finale    moderate 0.99/100.0% | mash2 0.52/39.3% | mash4 0.55/50.8% | mash8 0.32/23.3% | holder 0.51/39.0%
+  mountain-king          moderate 0.99/100.0% | mash2 0.23/11.2% | mash4 0.27/14.4% | mash8 0.11/2.0% | holder 0.19/11.4%
+  bumblebee              moderate 1.00/100.0% | mash2 0.47/26.5% | mash4 0.78/96.5% | mash8 0.20/12.3% | holder 0.41/24.4%
+  beethoven-fifth        moderate 1.00/100.0% | mash2 0.78/47.4% | mash4 0.69/34.7% | mash8 0.64/23.3% | holder 0.80/54.2%
+  house-128              moderate 1.00/100.0% | mash2 0.06/0.0% | mash4 0.07/0.0% | mash8 0.00/0.0% | holder 0.02/0.0%
+  dnb-174                moderate 1.00/100.0% | mash2 0.05/0.0% | mash4 0.06/0.0% | mash8 0.01/0.0% | holder 0.02/0.0%
+  hiphop-92-swing        moderate 0.97/100.0% | mash2 0.10/0.0% | mash4 0.03/0.0% | mash8 0.00/0.0% | holder 0.00/0.0%
+  accelerando-100-140    moderate 0.97/100.0% | mash2 0.09/0.0% | mash4 0.06/0.0% | mash8 0.00/0.0% | holder 0.02/0.0%
+  pop-arrangement        moderate 0.99/100.0% | mash2 0.14/3.0% | mash4 0.25/12.1% | mash8 0.08/2.2% | holder 0.12/4.4%
+targets (stage 4, the Galop's detected section starts):
+  within 8 s after 4 of the 8 song-map section starts from the vamp to the coda, matched one to one (at least 4)
+  1 in the galop more than 8 s from every song-map section start (at most 3), 1 in the prelude (at most 1)
+  at 36.6, 50.7, 58.9, 97.1, 108.1, 141.5 s; song-map starts at 43.2, 54.1, 69.8, 80.2, 90.5, 100.7, 104.5, 124.6 s
+structure per track (changes, jumps, candidate endings, detected section starts):
+  orpheus-galop          9 changes, 11 jumps, ends at 29.9, 142.8 s, 6 section starts
+  william-tell-finale    11 changes, 12 jumps, no ending, 8 section starts
+  mountain-king          11 changes, 9 jumps, ends at 150.2 s, 9 section starts
+  bumblebee              7 changes, 3 jumps, no ending, 4 section starts
+  beethoven-fifth        10 changes, 18 jumps, ends at 23.6, 26.9, 166.0 s, 5 section starts
+  house-128              5 changes, 2 jumps, ends at 60.5 s, 5 section starts
+  dnb-174                6 changes, 2 jumps, no ending, 5 section starts
+  hiphop-92-swing        9 changes, 2 jumps, ends at 60.7 s, 6 section starts
+  accelerando-100-140    8 changes, 2 jumps, ends at 73.5 s, 7 section starts
+  pop-arrangement        9 changes, 5 jumps, ends at 168.7 s, 8 section starts
+  causality-mix          3 changes, 12 jumps, ends at 16.5, 46.0, 64.8 s, 5 section starts
+target (stage 5): the Galop's heavy swings within 50 ms of a song-map tutti chord, reactive-moderate, damage off: 0 of 1 heavy swings (at least 3, missed); 16 cleaves launched
+targets (stage 6, the Galop): set pieces stampedes 0, rings 2, volleys 40, the boss 1 (missed: stampedes), kick lines 1, bee wedges 1; the finale at 144.30 s, 4.72 s after the last tutti chord (within 6); 0 candidate endings earlier in the galop (none)
+targets (stage 5, accent forecasts with confidence at least 0.6, and their share within 50 ms of a strong onset):
+  orpheus-galop          2 of 2 forecasts, 1 (50.0%) on a strong onset (at least 5, missed; at least 70%, missed)
+  william-tell-finale    2 of 2 forecasts, 0 (0.0%) on a strong onset
+  mountain-king          15 of 15 forecasts, 6 (40.0%) on a strong onset
+  bumblebee              0 of 0 forecasts, 0 (0.0%) on a strong onset
+  beethoven-fifth        0 of 0 forecasts, 0 (0.0%) on a strong onset
+  house-128              0 of 0 forecasts, 0 (0.0%) on a strong onset
+  dnb-174                0 of 0 forecasts, 0 (0.0%) on a strong onset
+  hiphop-92-swing        0 of 0 forecasts, 0 (0.0%) on a strong onset
+  accelerando-100-140    3 of 3 forecasts, 1 (33.3%) on a strong onset
+  pop-arrangement        2 of 2 forecasts, 0 (0.0%) on a strong onset
+  causality-mix          3 of 3 forecasts, 0 (0.0%) on a strong onset
+every shipped track end to end (damage on):
+  orpheus-galop          reactive-moderate: 10034 kills, 467 presses (177 unjudged), groove 0.99, 58% lowest health | reactive-human: 9561 kills, 470 presses (185 unjudged), groove 0.96, 79% lowest health | reactive-skilled: 10240 kills, 515 presses (191 unjudged), groove 0.99, 55% lowest health
+  william-tell-finale    reactive-moderate: 11555 kills, 473 presses (153 unjudged), groove 0.99, 49% lowest health | reactive-human: 11427 kills, 475 presses (160 unjudged), groove 0.98, 76% lowest health | reactive-skilled: 11992 kills, 529 presses (171 unjudged), groove 0.99, 70% lowest health
+  mountain-king          reactive-moderate: 12932 kills, 333 presses (78 unjudged), groove 0.99, 96% lowest health | reactive-human: 12094 kills, 336 presses (78 unjudged), groove 0.93, 53% lowest health | reactive-skilled: 13275 kills, 394 presses (94 unjudged), groove 1.00, 90% lowest health
+  bumblebee              reactive-moderate: 3008 kills, 255 presses (108 unjudged), groove 1.00, 84% lowest health | reactive-human: 2989 kills, 252 presses (105 unjudged), groove 0.99, 94% lowest health | reactive-skilled: 3032 kills, 300 presses (133 unjudged), groove 1.00, 78% lowest health
+  beethoven-fifth        reactive-moderate: 11651 kills, 357 presses (260 unjudged), groove 1.00, 87% lowest health | reactive-human: 11693 kills, 353 presses (258 unjudged), groove 1.00, 67% lowest health | reactive-skilled: 11904 kills, 407 presses (299 unjudged), groove 1.00, 80% lowest health
+  house-128              reactive-moderate: 2386 kills, 162 presses (3 unjudged), groove 1.00, 100% lowest health | reactive-human: 2167 kills, 149 presses (3 unjudged), groove 0.87, 89% lowest health | reactive-skilled: 2373 kills, 185 presses (3 unjudged), groove 1.00, 98% lowest health
+  dnb-174                reactive-moderate: 2182 kills, 221 presses (3 unjudged), groove 1.00, 100% lowest health | reactive-human: 2241 kills, 215 presses (3 unjudged), groove 0.96, 97% lowest health | reactive-skilled: 2295 kills, 242 presses (4 unjudged), groove 1.00, 100% lowest health
+  hiphop-92-swing        reactive-moderate: 2268 kills, 109 presses (51 unjudged), groove 0.97, 96% lowest health | reactive-human: 2099 kills, 116 presses (64 unjudged), groove 0.63, 83% lowest health | reactive-skilled: 2294 kills, 141 presses (65 unjudged), groove 0.99, 98% lowest health
+  accelerando-100-140    reactive-moderate: 3092 kills, 166 presses (2 unjudged), groove 0.97, 98% lowest health | reactive-human: 2744 kills, 166 presses (2 unjudged), groove 0.81, 91% lowest health | reactive-skilled: 3329 kills, 213 presses (2 unjudged), groove 1.00, 98% lowest health
+  pop-arrangement        reactive-moderate: 11942 kills, 399 presses (47 unjudged), groove 0.99, 72% lowest health | reactive-human: 11583 kills, 412 presses (56 unjudged), groove 0.96, 52% lowest health | reactive-skilled: 11635 kills, 459 presses (56 unjudged), groove 1.00, 69% lowest health
+the corpus's smoke run (notjam-breakbeat-chips, reactive-moderate, damage on): 721 kills, 56 presses, groove 0.95
+ok   fresh streams (62 checked)
+ok   each next beat committed by the beat before it (11 checked)
+ok   stream quality (2 checked)
+ok   the gate on the Galop's prelude (1 checked)
+ok   causality (causality-mix) (580 checked)
+ok   the negative control fails (1 checked)
+ok   the settled groove on house-128 (3 checked)
+ok   groove changes 2 s after their presses (house-128, reactive-moderate) (191 checked)
+ok   groove changes 2 s after their presses (orpheus-galop, reactive-moderate) (524 checked)
+ok   groove changes 2 s after their presses (house-128, mash8) (527 checked)
+ok   mashing never beats playing (80 checked)
+ok   determinism (1 checked)
+ok   smoke test (live runner) (1 checked)
+ok   sounds on committed beats (causality-mix) (460 checked)
+ok   sounds on committed beats (orpheus-galop) (1080 checked)
+ok   every shipped track simulates end to end (30 checked)
+ok   the honest players' runs pass the plan checks (30 checked)
+ok   reactive-moderate lives to the end of every shipped track (10 checked)
+ok   the corpus's smoke run (1 checked)
+check:reactive passed in 203.3 s
