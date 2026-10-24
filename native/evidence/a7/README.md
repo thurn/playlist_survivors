@@ -9,6 +9,8 @@ Measured by `hv-t8o8.12` on 2026-10-24 on macOS arm64 (Mac17,6).
 Python's `stream.build_stream` on the golden excerpts' PCM):
 
 ```text
+galop-29997: bands within 8.66e-7, brightness 2.93e-8, timbre 2.98e-8; 0 onset bands differ
+concat42: bands within 9.25e-7, brightness 1.21e-8, timbre 2.98e-8; 0 onset bands differ
 house-128: bands within 2.25e-7, brightness 2.46e-9, timbre 9.15e-10; 0 onset bands differ
 orpheus-galop: bands within 4.19e-7, brightness 4.20e-8, timbre 2.11e-9; 0 onset bands differ
 orpheus-galop-hindsight: bands within 8.66e-7, brightness 2.93e-8, timbre 2.98e-8; 0 onset bands differ
@@ -44,3 +46,33 @@ jumps, ends, forecasts, timbre), and with no margin at cuts between frames (4.12
 s, 22.5 s, 27.7 s, 33.333331 s), fed in uneven blocks: on the Galop's 30 s at eight cuts, on A5's
 synthetic piece at four (its changes, jumps and end) and on A6's accented pulse at three (its
 forecasts). The gate runs 6 s of the house excerpt at two cuts.
+
+## Corpus comparison
+
+`ps analysis-parity` (native/crates/cli/src/parity.rs) runs the analyzer over a track's audio,
+from Python's own decoded samples (`ps_analysis.pcm`), in 512-sample blocks, twice: as Python runs
+it (D = 0) and at the live hindsight delay (D = 0.67 s). It reports, per track and in aggregate,
+committed-beat hit rates within 20, 45 and 70 ms of the reference beats (as `stream.py`'s
+`accuracy`) for Rust and Python, the beat F-measure within 70 ms against Python's committed beats,
+per-group summaries (tick energy, bands, keys, onsets matched within 10 ms, structure events within
+0.1 s, forecasts, timbre), real-time factors per group and each group's arrival lag (audio time
+from an entry's `knownAt` to its emission). Accuracy is judged statistically (the plan's revision
+of 2026-10-24): about as accurate as Python's across the corpus.
+
+On three tracks (house-128, the Galop, cc-kevin-macleod-go-cart; 420 s):
+
+```text
+| cc-kevin-macleod-go-cart | 213 | 411/411 | 0.890/0.890 | 0.890 | ...
+| house-128 | 62 | 136/136 | 1.000/1.000 | 1.000 | ...
+| orpheus-galop | 145 | 358/358 | 0.582/0.582 | 0.576 | ...
+| **All** | 420 | | 0.782/0.782 | 0.780 | ...
+```
+
+At D = 0 the committed beats are as accurate as Python's on every track (the same counts and
+hit rates); the live delay costs 0.6 points on the Galop and none on the others. Every onset is
+matched within 10 ms, every key equal, structure counts equal, tick values within stream.json's
+rounding (about 2e-5). The full corpus table follows in [corpus.md](corpus.md).
+
+The release stage runs `--all --no-live` (the margins only) at utility QoS when its inputs
+change, about 12 minutes on an idle host; background QoS keeps to the efficiency cores and took
+over an hour.

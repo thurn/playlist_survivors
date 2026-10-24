@@ -30,8 +30,17 @@ def golden_pcm(name: str) -> np.ndarray:
 
 
 out = {"generated": "tools/analysis: stream.build_stream on golden PCM", "excerpts": {}}
-for name in ("house-128", "orpheus-galop", "orpheus-galop-hindsight"):
-    s = st.build_stream(golden_pcm(name))
+# The golden excerpts, the 30 s one cut to 29.997 s (not a whole number of hops), and 42 s.
+cases = {
+    name: golden_pcm(name)
+    for name in ("house-128", "orpheus-galop", "orpheus-galop-hindsight")
+}
+galop = cases["orpheus-galop-hindsight"]
+cases["galop-29997"] = galop[: int(29.997 * 44100)]
+# 42 s, past brightness's 30 s of past means (600 ticks), so its window evicts.
+cases["concat42"] = np.concatenate([cases["house-128"], galop])
+for name, y in cases.items():
+    s = st.build_stream(y)
     out["excerpts"][name] = {
         "ticks": [
             [bits(t["bands"][b]) for b in ("kick", "snare", "hat", "bass")]
@@ -40,10 +49,21 @@ for name in ("house-128", "orpheus-galop", "orpheus-galop-hindsight"):
         ],
         "onsets": [[bits(o["knownAt"]), o["band"]] for o in s["onsets"]],
         "timbre": [
-            [bits(e[k]) for k in ("knownAt", "brightness", "flatness", "percussive", "density")]
+            [
+                bits(e[k])
+                for k in ("knownAt", "brightness", "flatness", "percussive", "density")
+            ]
             for e in s["timbre"]
         ],
     }
-    print(name, len(s["ticks"]), "ticks", len(s["onsets"]), "onsets", len(s["timbre"]), "timbre")
+    print(
+        name,
+        len(s["ticks"]),
+        "ticks",
+        len(s["onsets"]),
+        "onsets",
+        len(s["timbre"]),
+        "timbre",
+    )
 dest = ROOT / "native/crates/analysis/tests/fixtures/a7-bands.json"
 dest.write_text(json.dumps(out, separators=(",", ":")))

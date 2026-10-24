@@ -21,6 +21,24 @@ fn golden(name: &str) -> Tensors {
     Tensors::load(&root().join(format!("native/models/golden/{name}.bin"))).unwrap()
 }
 
+/// A fixture case's samples: a golden excerpt, the 30 s one cut to 29.997 s, or the house
+/// excerpt followed by the 30 s one (42 s, past brightness's 30 s window).
+fn samples(name: &str) -> Vec<f32> {
+    match name {
+        "galop-29997" => {
+            let mut y = golden("orpheus-galop-hindsight").f32("pcm").unwrap();
+            y.truncate((29.997 * 44100.0) as usize);
+            y
+        }
+        "concat42" => {
+            let mut y = golden("house-128").f32("pcm").unwrap();
+            y.extend(golden("orpheus-galop-hindsight").f32("pcm").unwrap());
+            y
+        }
+        _ => golden(name).f32("pcm").unwrap(),
+    }
+}
+
 fn fbits(v: &serde_json::Value) -> f64 {
     f64::from_bits(v.as_u64().unwrap())
 }
@@ -39,7 +57,7 @@ struct Worst {
 }
 
 fn run(name: &str, want: &serde_json::Value) -> Worst {
-    let pcm = golden(name).f32("pcm").unwrap();
+    let pcm = samples(name);
     let ticks = want["ticks"].as_array().unwrap();
     let onsets = want["onsets"].as_array().unwrap();
     let timbre = want["timbre"].as_array().unwrap();
@@ -137,7 +155,7 @@ fn the_analyzer_from_pcm_carries_pythons_bands() {
     for (name, want) in fixture["excerpts"].as_object().unwrap() {
         let mut an = Analyzer::new(&models, Params::default()).unwrap();
         let mut out = Vec::new();
-        for block in golden(name).f32("pcm").unwrap().chunks(777) {
+        for block in samples(name).chunks(777) {
             an.push(block, &mut out);
         }
         an.finish(&mut out);
@@ -216,5 +234,41 @@ fn the_analyzer_from_pcm_carries_pythons_bands() {
         println!(
             "{name}: analyzer's bands, brightness and timbre within {worst:.2e}; onset bands equal"
         );
+    }
+}
+
+#[test]
+fn very_short_audio_gives_its_few_entries() {
+    // Shorter than a bands frame's window (0.03 s), and than the first tick's (0.04 s): no panic,
+    // the ticks Python's count gives (floor(len / 2205)), and every tick's values in range.
+    let models = Tensors::load(&root().join("native/models/madmom.bin")).unwrap();
+    let y = samples("orpheus-galop");
+    for n in [100, 1323, 4000, 13230] {
+        let mut an = Analyzer::new(&models, Params::default()).unwrap();
+        let mut out = Vec::new();
+        an.push(&y[..n], &mut out);
+        an.finish(&mut out);
+        let ticks: Vec<_> = out
+            .iter()
+            .filter_map(|e| {
+                if let Entry::Tick(t) = e {
+                    Some(*t)
+                } else {
+                    None
+                }
+            })
+            .collect();
+        assert_eq!(ticks.len(), n / 2205, "{n} samples");
+        for t in ticks {
+            for v in [
+                t.bands.kick,
+                t.bands.snare,
+                t.bands.hat,
+                t.bands.bass,
+                t.brightness,
+            ] {
+                assert!((0.0..=1.0).contains(&v), "{n} samples: {v}");
+            }
+        }
     }
 }

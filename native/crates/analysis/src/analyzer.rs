@@ -48,6 +48,46 @@ pub enum Entry {
     Timbre(Timbre),
 }
 
+/// The time each group took on the analysis thread (the hindsight worker's decodes aside), for
+/// real-time factors: `frontend` is everything else, the framing and spectra feeding the online
+/// ensemble included.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Timings {
+    pub total: Duration,
+    pub rnn: Duration,
+    pub beats: Duration,
+    pub onsets: Duration,
+    pub bands: Duration,
+    pub structure: Duration,
+    pub hindsight: Duration,
+    pub accents: Duration,
+}
+
+impl Timings {
+    /// What the groups' own timers leave: the front end.
+    pub fn frontend(&self) -> Duration {
+        self.total.saturating_sub(
+            self.rnn
+                + self.beats
+                + self.onsets
+                + self.bands
+                + self.structure
+                + self.hindsight
+                + self.accents,
+        )
+    }
+}
+
+/// Times `$e` into `$field`.
+macro_rules! timed {
+    ($field:expr, $e:expr) => {{
+        let started = Instant::now();
+        let value = $e;
+        $field += started.elapsed();
+        value
+    }};
+}
+
 /// The analyzer's parameters (the stream's: `manifest.json`'s `streamParams`, and `D`).
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Params {
@@ -283,6 +323,7 @@ struct Stages {
     last_belief: Option<Belief>,
     commits: Vec<Commit>,
     params: Params,
+    timings: Timings,
 }
 
 /// The streaming analyzer.
@@ -380,6 +421,7 @@ impl Analyzer {
             last_belief: None,
             commits: Vec::new(),
             params,
+            timings: Timings::default(),
         };
         Ok(Analyzer {
             fe,
@@ -392,6 +434,7 @@ impl Analyzer {
     /// Feeds samples; appends the entries they finish to `out`, in order.
     pub fn push(&mut self, samples: &[f32], out: &mut Vec<Entry>) {
         assert!(!self.finished, "samples pushed after the stream's end");
+        let started = Instant::now();
         // (A hop at a time, so the energy's and hindsight's windows are still kept when read.)
         for chunk in samples.chunks(HOP) {
             self.stages.energy.push(chunk);
@@ -404,6 +447,12 @@ impl Analyzer {
                 stages.frame(frame.index, frame.features, frame.spectrum, out);
             });
         }
+        self.stages.timings.total += started.elapsed();
+    }
+
+    /// The time each group has taken so far.
+    pub fn timings(&self) -> Timings {
+        self.stages.timings
     }
 
     /// The stream's end (Replay with `StreamEnd`): the ticks and hindsight windows Python takes
@@ -412,6 +461,7 @@ impl Analyzer {
         if std::mem::replace(&mut self.finished, true) {
             return;
         }
+        let started = Instant::now();
         let s = &mut self.stages;
         let Some(belief) = s.last_belief else { return };
         let tf = s.params.beats.tick_frames;
@@ -438,6 +488,7 @@ impl Analyzer {
         s.timbre.clear();
         b.timbre(duration, &mut s.timbre);
         out.extend(s.timbre.iter().copied().map(Entry::Timbre));
+        s.timings.total += started.elapsed();
     }
 
     /// The times the analyzer waited for the hindsight worker (an entry due before its decode was
@@ -449,21 +500,31 @@ impl Analyzer {
 
 impl Stages {
     fn frame(&mut self, n: usize, features: &[f32], spectrum: &[f32], out: &mut Vec<Entry>) {
-        let act = self.nn.step(features);
-        let state = self.dbn.step(act);
-        let belief = self.beliefs.step(state);
-        self.evidence.push(act);
+        let act = timed!(self.timings.rnn, self.nn.step(features));
+        let (state, belief) = timed!(self.timings.beats, {
+            let state = self.dbn.step(act);
+            let belief = self.beliefs.step(state);
+            self.evidence.push(act);
+            (state, belief)
+        });
         self.hindsight.online.push(n, state.since);
-        let odf = self.superflux.step(spectrum);
+        let picked = timed!(self.timings.onsets, {
+            let odf = self.superflux.step(spectrum);
+            self.picker
+                .step(odf)
+                .map(|time| self.strengths.onset(time, odf))
+        });
         // (The bands' frame n holds the samples before n * HOP, all heard by this frame.)
-        self.bands.advance_to(n);
-        if let Some(time) = self.picker.step(odf) {
-            let mut onset = self.strengths.onset(time, odf);
-            onset.band = self.bands.onset(
-                (onset.known_at * self.params.beats.fps).round() as usize,
-                onset.known_at,
+        timed!(self.timings.bands, self.bands.advance_to(n));
+        if let Some(mut onset) = picked {
+            onset.band = timed!(
+                self.timings.bands,
+                self.bands.onset(
+                    (onset.known_at * self.params.beats.fps).round_ties_even() as usize,
+                    onset.known_at,
+                )
             );
-            self.accents.push_onset(&onset);
+            timed!(self.timings.accents, self.accents.push_onset(&onset));
             out.push(Entry::Onset(onset));
         }
         let tf = self.params.beats.tick_frames;
@@ -472,9 +533,13 @@ impl Stages {
             self.tick(&belief, n, out);
         }
         self.timbre.clear();
-        self.bands.timbre(n as f64 / fps, &mut self.timbre);
+        timed!(
+            self.timings.bands,
+            self.bands.timbre(n as f64 / fps, &mut self.timbre)
+        );
         out.extend(self.timbre.iter().copied().map(Entry::Timbre));
         // The windows ended by this frame are decoded, then each entry due by now becomes usable.
+        let started = Instant::now();
         let h = &mut self.hindsight;
         h.request_due(n, fps);
         h.ingest(n as f64 / fps, out);
@@ -489,15 +554,21 @@ impl Stages {
                 &h.p,
             )
         };
+        self.timings.hindsight += started.elapsed();
         self.commits.clear();
-        self.committer
-            .step(&belief, shift, self.tick_evidence, &mut self.commits);
+        timed!(
+            self.timings.beats,
+            self.committer
+                .step(&belief, shift, self.tick_evidence, &mut self.commits)
+        );
         out.extend(self.commits.iter().copied().map(Entry::Beat));
-        for c in &self.commits {
-            self.accents.push_beat(c);
-        }
-        self.forecasts.clear();
-        self.accents.take(&mut self.forecasts);
+        timed!(self.timings.accents, {
+            for c in &self.commits {
+                self.accents.push_beat(c);
+            }
+            self.forecasts.clear();
+            self.accents.take(&mut self.forecasts);
+        });
         out.extend(self.forecasts.iter().copied().map(Entry::Forecast));
         self.last_belief = Some(belief);
     }
@@ -509,10 +580,12 @@ impl Stages {
         let energy = self.energy.at(t);
         let level = self.levels.step(energy);
         self.tick_evidence = evidence;
-        let form = self.structure.tick_at(t, f * HOP);
+        let form = timed!(self.timings.structure, self.structure.tick_at(t, f * HOP));
         // (Past the stream's end, the last frame the samples allow.)
-        self.bands.advance_to(f.min(self.bands.received() / HOP));
-        let (bands, brightness) = self.bands.tick(f, self.params.beats.tick_frames);
+        let (bands, brightness) = timed!(self.timings.bands, {
+            self.bands.advance_to(f.min(self.bands.received() / HOP));
+            self.bands.tick(f, self.params.beats.tick_frames)
+        });
         out.push(Entry::Tick(Tick {
             t,
             evidence,

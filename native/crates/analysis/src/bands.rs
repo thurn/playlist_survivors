@@ -16,7 +16,6 @@
 //! flatness, NEP 50's float32 comparisons with Python floats, scipy's medians.
 
 use std::collections::VecDeque;
-use std::f64::consts::PI;
 use std::sync::Arc;
 
 use realfft::num_complex::Complex;
@@ -88,11 +87,11 @@ struct FrameValues {
     percussive: f32,
 }
 
-/// numpy's `np.hanning(n)` as float32.
+/// numpy's `np.hanning(n)` cast to float32 (`frontend::hanning`, pinned).
 fn hanning32(n: usize) -> Vec<f32> {
-    let m = n as f64;
-    (0..n)
-        .map(|k| (0.5 + 0.5 * (PI * (1.0 - m + 2.0 * k as f64) / (m - 1.0)).cos()) as f32)
+    crate::frontend::hanning(n)
+        .into_iter()
+        .map(|w| w as f32)
         .collect()
 }
 
@@ -100,6 +99,55 @@ fn hanning32(n: usize) -> Vec<f32> {
 fn median(values: &mut [f32]) -> f32 {
     let mid = values.len() / 2;
     *values.select_nth_unstable_by(mid, f32::total_cmp).1
+}
+
+/// The median of each bin over the frames in `history` (scipy's `median_filter` along time, as
+/// `percussive_share` applies it: the window of the frame and the 16 before it).
+pub(crate) fn time_median(history: &VecDeque<Vec<f32>>, out: &mut [f32]) {
+    let mut column = vec![0.0f32; history.len()];
+    for (k, h) in out.iter_mut().enumerate() {
+        for (c, frame) in column.iter_mut().zip(history) {
+            *c = frame[k];
+        }
+        *h = median(&mut column);
+    }
+}
+
+/// The median over HPSS_FREQ neighbouring bins of each bin (scipy's `median_filter` along
+/// frequency, its default 'reflect' edges: d c b a | a b c d | d c b a).
+pub(crate) fn freq_median(power: &[f32], out: &mut [f32]) {
+    let n = power.len() as isize;
+    let half = (HPSS_FREQ / 2) as isize;
+    let mut row = vec![0.0f32; HPSS_FREQ];
+    for (k, p) in out.iter_mut().enumerate() {
+        for (j, r) in row.iter_mut().enumerate() {
+            let mut i = k as isize + j as isize - half;
+            if i < 0 {
+                i = -i - 1;
+            }
+            if i >= n {
+                i = 2 * n - i - 1;
+            }
+            *r = power[i as usize];
+        }
+        *p = median(&mut row);
+    }
+}
+
+/// CPython's built-in `sum` of floats (3.12 on): Neumaier's compensated summation, the
+/// compensation added at the end when it is finite and non-zero.
+pub(crate) fn python_sum(values: impl IntoIterator<Item = f64>) -> f64 {
+    let (mut s, mut c) = (0.0f64, 0.0f64);
+    for x in values {
+        let t = s + x;
+        if s.abs() >= x.abs() {
+            c += (s - t) + x;
+        } else {
+            c += (x - t) + s;
+        }
+        s = t;
+    }
+    if c != 0.0 && c.is_finite() { s + c } else { s }
 }
 
 /// The bands group, frame by frame from samples.
@@ -307,31 +355,10 @@ impl Bands {
         while self.history.len() > HPSS_TIME {
             self.history.pop_front();
         }
-        let mut column = vec![0.0f32; HPSS_TIME];
         let mut harm = vec![0.0f32; BINS];
-        for (k, h) in harm.iter_mut().enumerate() {
-            for (c, frame) in column.iter_mut().zip(&self.history) {
-                *c = frame[k];
-            }
-            *h = median(&mut column);
-        }
-        let half = (HPSS_FREQ / 2) as isize;
-        let mut row = vec![0.0f32; HPSS_FREQ];
+        time_median(&self.history, &mut harm);
         let mut perc = vec![0.0f32; BINS];
-        for (k, p) in perc.iter_mut().enumerate() {
-            for (j, r) in row.iter_mut().enumerate() {
-                let mut i = k as isize + j as isize - half;
-                // scipy's 'reflect': d c b a | a b c d | d c b a.
-                if i < 0 {
-                    i = -i - 1;
-                }
-                if i >= BINS as isize {
-                    i = 2 * BINS as isize - i - 1;
-                }
-                *r = power[i as usize];
-            }
-            *p = median(&mut row);
-        }
+        freq_median(&power, &mut perc);
         let (hp, pp) = (pairwise_sum_f32(&harm), pairwise_sum_f32(&perc));
         let percussive = if hp + pp > 1e-10f32 {
             pp / (hp + pp).max(1e-10f32)
@@ -396,12 +423,9 @@ impl Bands {
             self.bright_past.pop_front();
         }
         let len = self.bright_past.len() as f64;
-        let mean = self.bright_past.iter().fold(0.0, |s, x| s + x) / len;
-        let var = self
-            .bright_past
-            .iter()
-            .fold(0.0, |s, x| s + (x - mean).powi(2))
-            / len;
+        // (Python's `sum`, compensated since 3.12.)
+        let mean = python_sum(self.bright_past.iter().copied()) / len;
+        let var = python_sum(self.bright_past.iter().map(|x| (x - mean) * (x - mean))) / len;
         let sd = var.powf(0.5);
         let z = if sd > 1e-9 { (m - mean) / sd } else { 0.0 };
         (bands, 1.0 / (1.0 + (-z).exp()))

@@ -77,4 +77,31 @@ if [ "$section" = all ] || [ "$section" = native ]; then
     cargo machete
     cargo build --locked --release -p app
   )
+  # Corpus parity (A7, docs/design/native-app.md "Corpus parity"): the Rust analyzer over every
+  # track against Python's committed streams (the margins, at D = 0; the live delay's cost is
+  # measured by hand into the design's appendix), in the utility QoS class (about 12 minutes; the
+  # background class keeps to the efficiency cores and took over an hour; a warm gate check under
+  # it took 14.8 s against 11 s, hv-t8o8.12), and
+  # skipped when its inputs (the analyzer, the CLI, the models, the workspace's build files, the
+  # streams and audio, Python's decoding and its lock file)
+  # match a commit that passed it.
+  parity=$(
+    git ls-tree -r HEAD native/crates/analysis native/crates/cli native/models native/Cargo.toml \
+      native/Cargo.lock native/rust-toolchain.toml public/reactive public/audio \
+      tools/analysis/src/ps_analysis/stream.py tools/analysis/src/ps_analysis/pcm.py \
+      tools/analysis/uv.lock |
+      shasum -a 256 | cut -d ' ' -f 1
+  )
+  if [ -z "$(git status --porcelain --untracked-files=no)" ] && [ -f "$STAMPS/parity-$parity" ] &&
+    [ "${PS_CI_FULL_FORCE:-0}" != 1 ]; then
+    echo "ci-full native: corpus parity inputs $parity passed at $(cat "$STAMPS/parity-$parity"); skipping"
+  else
+    out="$HOME/Library/Caches/playlist-survivors/parity/$(git rev-parse --short HEAD)"
+    (cd native && taskpolicy -c utility cargo run --locked --release -p cli -- analysis-parity --all --no-live --jobs 8 --check --out "$out")
+    mkdir -p "$STAMPS"
+    # (Only a clean tree's pass vouches for HEAD's inputs.)
+    if [ -z "$(git status --porcelain --untracked-files=no)" ]; then
+      echo "$(git rev-parse --short HEAD) $(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$STAMPS/parity-$parity"
+    fi
+  fi
 fi

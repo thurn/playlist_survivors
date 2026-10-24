@@ -8,5 +8,9 @@ publish = false
 name = "ps"
 path = "src/main.rs"
 
+[dependencies]
+analysis = { path = "../analysis" }
+serde_json = "1"
+
 [lints]
 workspace = true
