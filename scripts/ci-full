@@ -72,7 +72,8 @@ if [ "$section" = all ] || [ "$section" = native ]; then
     cargo fmt --all --check
     scripts/crates purity
     cargo clippy --locked --workspace --all-targets -- -D warnings
-    cargo test --locked --workspace
+    # (With the release-only stage parity tests the gate skips: #[ignore = "release: ..."].)
+    cargo test --locked --workspace -- --include-ignored
     cargo machete
     cargo build --locked --release -p app
   )

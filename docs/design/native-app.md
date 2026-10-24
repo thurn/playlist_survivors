@@ -719,7 +719,10 @@ parity runs with the real `D` and reports its cost.
 
 `ps analysis-parity` (in the CLI) runs the Rust analyzer over every track's
 audio at faster than real time, in blocks the size of capture buffers, and
-compares the result with the committed `stream.json`:
+compares the result with the committed `stream.json`. It runs in the release
+stage only, with tracks in parallel (one track at a time decodes hindsight in
+order, about 3.5 times real time), as a long batch job; a local command over
+three tracks, outside `check-fast`, serves the bead while it iterates:
 
 - committed-beat accuracy against each track's reference grid (as
   `stream.py`'s `accuracy` computes it): per track at most 1 point worse than
@@ -1336,7 +1339,11 @@ Set by the spike's executor from the phase 0 numbers
 - An oracle smoke: one core-track fixture (event log and frame hashes).
 - A causality smoke: perturbation and truncation at two cuts on the Galop.
 - Whatever else fits the budget, as F4 and the retrospectives measure it.
-  Anything that pushes the gate stage over budget moves to the release stage.
+  Anything that pushes the gate stage over budget moves to the release stage:
+  tests that run whole excerpts through slow stages carry
+  `#[ignore = "release: ..."]`, and the gate keeps a short smoke test of each
+  such path (hv-t8o8.59: the analyzer's hindsight-decoding parity tests moved,
+  taking the analysis crate's gate check from about 34 s to 3 s).
 
 ### Release stage (asynchronous, moves `release`)
 

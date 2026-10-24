@@ -50,6 +50,15 @@ a parity test tied more tightly to the upstream, not a fix. hv-t8o8.56 adds a pa
 checklist to the step; the baseline for the next 3 reviewed parity beads is A1–A3's mean (6
 findings, 15 min), aiming at half.
 
+## The analysis crate's gate tests (hv-t8o8.59)
+
+`native/scripts/check-fast` with the analysis crate changed (warm, a recompile of the crate):
+33.6 and 35.3 s before, when every stage parity test ran in the gate (A4's inline hindsight
+decodes, about 30 s); 2.8 and 3.1 s after the tests that decode hindsight windows moved to the
+release stage (`#[ignore = "release: ..."]`, run by `scripts/ci-full native` with
+`--include-ignored`), with a 4 s smoke test of the same path kept in the gate. The release stage's
+analysis tests take 22 s (A4's from 26 to 13 s, its inline analyses cached once per binary).
+
 ## Batch jobs below Tollgate (hv-t8o8.55)
 
 A gate (`scripts/ci-gate`, every section) took 43–44 s idle, and 64–67 s with a 10-job oracle
@@ -67,5 +76,7 @@ run 414 s (host load about 20), the second 0.2 s. Release history before it: `ci
 235–375 s on every run, 4 of 9 with no TS change. `PS_CI_FULL_FORCE=1` runs it regardless.
 
 ## Revisions
+
+- 2026-10-24, hv-t8o8.59: the analysis crate's slow stage parity tests run in the release stage only.
 
 - 2026-10-24, W2: first budgets, from W1's and S0's measurements.

@@ -300,6 +300,7 @@ fn onsets_from_pythons_function_match_to_the_bit() {
 }
 
 #[test]
+#[ignore = "release: stage parity, decodes hindsight windows (scripts/ci-full native runs it)"]
 fn the_analyzer_from_pcm_matches_python() {
     // The whole chain: Rust's activations and onset function (each within float32 rounding of
     // Python's) feeding the later stages. The commits, energies, levels and onsets are Python's to
@@ -412,6 +413,7 @@ fn the_analyzer_from_pcm_matches_python() {
 }
 
 #[test]
+#[ignore = "release: stage parity, decodes hindsight windows (scripts/ci-full native runs it)"]
 fn the_analyzer_is_independent_of_block_sizes() {
     let models = models();
     let pcm = golden("orpheus-galop").f32("pcm").unwrap();
