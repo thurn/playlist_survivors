@@ -916,6 +916,43 @@ covered by the truncation check, D1's tests and the QA checklist, not the oracle
 B4 to B6 split `simulate.ts` by area. They touch one crate in sequence, so they
 run one after another, not in parallel.
 
+### Source modules
+
+Every TS source file at `ts-freeze` (tests aside) and the bead that ports it, so no module falls
+between beads (hv-t8o8.68, from the cadence retrospective: B1 and B2 lost time to files no bead
+named). "Landed" means on `staging`. Line counts are at the tag.
+
+| File (`src/`) | Lines | Bead | Notes |
+|---|---|---|---|
+| `core/geometry.ts`, `rng.ts`, `shaping.ts`, `songmap.ts`, `warp.ts` | 650 | B1, landed | |
+| `content/schema.ts`, `content/loader.ts` | 1200 | B1, landed | B2 added the level loader |
+| `reactive/stream.ts`, `reactive/songmap.ts`, `planner/context.ts` | 477 | B2, landed | `judging()` with B5 if B2 left it |
+| `sim/schedule.ts`, `sim/strides.ts`, `planner/musical.ts` | 580 | B2, landed | |
+| `sim/timing.ts`, `movement.ts`, `aim.ts`, `gait.ts`, `tiers.ts`, `upgrades.ts`, `world.ts` | 650 | B3 | |
+| `sim/player.ts` | 781 | B3 (key handling), B8 (skill profiles) | |
+| `sim/simulate.ts` | 3699 | B4, B5, B6 | Split by area, as above |
+| `sim/clone.ts` | 73 | Not ported | Rollback snapshots are Rust's `Clone` (B4) |
+| `reactive/settle.ts` | 230 | B5 | |
+| `reactive/director.ts`, `sections.ts`, `setpieces.ts` | 498 | B6 | |
+| `sim/recorder.ts`, `planner/emit.ts`, `planner/camera.ts` | 1332 | B7 | The camera is recorded state |
+| `plan/evaluate.ts`, `reactive-look.ts`, `types.ts`, `view.ts`, `sample.ts`, `tier-look.ts`, `effects-life.ts` | 2442 | B7 | |
+| `reactive/grade.ts` | 24 | B7 | Read by emit and the recording |
+| `mapgen/mapgen.ts`, `mapgen/openfield.ts` | 235 | B7 | The open field's ground, read by the evaluator and C1's ground mesh |
+| `planner/plan.ts` | 390 | B8 | `planWithSim`: the oracle and virtual-player runs |
+| `reactive/players.ts` | 76 | B8 | |
+| `planner/checks.ts`, `reactive-checks.ts`, `parity.ts`, `reactive/plan-checks.ts` | 1486 | B8 | What `check:reactive` runs |
+| `planner/play-checks.ts`, `planner/sim-checks.ts` | 572 | Not ported | `check:play` and `check:plan`'s own checks; reactive play's are B8's |
+| `assets/types.ts`, `runtime/assets.ts` | 488 | C1 | V2's `render::atlas` covers the atlases |
+| `runtime/renderer.ts`, `shaders.ts`, `font.ts`, `hud.ts`, `hud-lines.ts`, `overhead.ts`, `view.ts` | 1897 | C1 | |
+| `runtime/audio.ts`, `live/sounds.ts` | 651 | C2 | |
+| `runtime/app.ts`, `title.ts`, `play.ts`, `reactive.ts`, `sources.ts`, `reactive/tracks.ts`, `plan/grade.ts` | 1476 | C3 | Menus, the title, the HUD's grade |
+| `live/input.ts`, `live/runner.ts` | 341 | C3 | |
+| `live/recording.ts`, `live/session.ts` | 1083 | C3 (the growing recording the runner rewinds), D3 (sessions) | |
+| `live/log.ts` | 352 | D4 | |
+| `runtime/planCache.ts`, `runtime/planWorker.ts` | 78 | Not ported | IndexedDB and the web worker; the native app plans on its own threads |
+| `runtime/debug-moves.ts` | 188 | Not ported | A web QA overlay; D5 decides if its numbers belong in the QA checklist |
+| `main.ts`, `vite-env.d.ts` | 5 | Not ported | The web entry point |
+
 ### Causality checks
 
 Ported from `scripts/check-reactive.ts`, run on the Galop and one synthetic
