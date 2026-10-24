@@ -133,6 +133,13 @@ impl RunningMean {
     }
 }
 
+/// `madmom.utils.combine_events(..., "left")` as a stream: an event is kept unless it lies within
+/// `delta` of the last kept one, where madmom widens `delta` by 1e-12 against float error.
+pub(crate) fn kept_after(last_kept: Option<f64>, t: f64, delta: f64) -> bool {
+    let delta = delta + 1e-12;
+    !last_kept.is_some_and(|last| t - last <= delta)
+}
+
 /// madmom's online peak picking, frame by frame.
 pub struct PeakPicker {
     threshold: f32,
@@ -181,10 +188,7 @@ impl PeakPicker {
             return None;
         }
         let t = frame as f64 / self.fps;
-        // (combine_events, 'left': keep it only past `combine` from the last kept onset; madmom
-        // widens `combine` by 1e-12 against float error.)
-        let delta = self.combine + 1e-12;
-        if self.last_onset.is_some_and(|last| t - last <= delta) {
+        if !kept_after(self.last_onset, t, self.combine) {
             return None;
         }
         self.last_onset = Some(t);
@@ -244,97 +248,5 @@ impl Strengths {
             strength,
             strong,
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn superflux_is_madmoms() {
-        // scipy's maximum_filter(size=(1, 3)) (reflect), the positive differences against the
-        // frame before, np.sum over each frame in float32: Python's bits for the same spectra.
-        let mut spec: Vec<Vec<f32>> = (0..4u64)
-            .map(|f| {
-                (0..1024u64)
-                    .map(|b| {
-                        ((((f * 1031 + b * 7919) % 997) as f64 / 997.0).powf(3.0) * 50.0) as f32
-                    })
-                    .collect()
-            })
-            .collect();
-        spec[2][..3].copy_from_slice(&[60.0, 0.0, 5.0]);
-        spec[2][1021..].copy_from_slice(&[1.0, 70.0, 2.0]);
-        let mut sf = Superflux::new(&OnsetParams::default(), 1);
-        let got: Vec<u32> = spec.iter().map(|s| sf.step(s).to_bits()).collect();
-        assert_eq!(got, [0x0, 0x42e7_46d0, 0x4338_905c, 0x42fe_b9de]);
-    }
-
-    #[test]
-    fn the_running_mean_is_scipys_even_after_a_spike() {
-        // scipy.ndimage.uniform_filter(size 11, origin 5, constant) over madmom's buffer (three
-        // zeros, then these values): the 1e20 spike's rounding stays in the running sum.
-        let values: [f32; 20] = [
-            0.5, 1e9, 3.25, 0.0, 7.0, 1e20, 2.0, 0.125, 9.0, 4.0, 1.0, 0.0, 6.5, 3.0, 2.5, 1e-3,
-            8.0, 0.75, 5.0, 1.5,
-        ];
-        let scipy: [u32; 20] = [
-            0x3d3a_2e8c,
-            0x4cad_6534,
-            0x4cad_6534,
-            0x4cad_6534,
-            0x4cad_6534,
-            0x5efc_52cc,
-            0x5efc_52cc,
-            0x5efc_52cc,
-            0x5efc_52cc,
-            0x5efc_52cc,
-            0x5efc_52cc,
-            0x5efc_52cc,
-            0x5efc_52cc,
-            0x5efc_52cc,
-            0x5efc_52cc,
-            0x5efc_52cc,
-            0x0,
-            0xbde8_ba2f,
-            0x3ea8_ba2f,
-            0xbeb4_5d17,
-        ];
-        let mut mean = RunningMean::new(11);
-        for _ in 0..3 {
-            mean.step(0.0);
-        }
-        let got: Vec<u32> = values.iter().map(|&v| mean.step(v).to_bits()).collect();
-        assert_eq!(got, scipy);
-    }
-
-    #[test]
-    fn strong_flags_follow_numpys_percentile_over_the_window() {
-        // detect_onsets' strong rule in Python over 152 onsets: the one at 104.5 s is exactly 30 s
-        // after the one at 74.5 s, which stays in its window (and keeps it from being strong).
-        let times: Vec<f64> = (0..150)
-            .map(|i| f64::from(i) * 0.5)
-            .chain([104.5, 104.75])
-            .collect();
-        let mut strengths: Vec<f64> = (0..152u32)
-            .map(|i| f64::from((i * 7) % 23) + f64::from((i * 13) % 5) * 0.5)
-            .collect();
-        strengths[149] = 20.0;
-        strengths[150] = 10.0;
-        let python = "11110000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000100000000000000000000001";
-        let mut st = Strengths::new(&OnsetParams::default());
-        let got: String = times
-            .iter()
-            .zip(&strengths)
-            .map(|(&t, &s)| {
-                if st.onset(t, s as f32).strong {
-                    '1'
-                } else {
-                    '0'
-                }
-            })
-            .collect();
-        assert_eq!(got, python);
     }
 }

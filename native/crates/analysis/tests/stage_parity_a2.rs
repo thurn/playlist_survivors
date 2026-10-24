@@ -5,7 +5,7 @@
 
 use std::path::{Path, PathBuf};
 
-use analysis::beats::{BeatParams, Beliefs, Commit, Committer, Evidence, pairwise_sum};
+use analysis::beats::{BeatParams, Beliefs, Commit, Committer, Evidence};
 use analysis::dbn::OnlineDbn;
 use analysis::tensors::Tensors;
 
@@ -215,33 +215,6 @@ fn the_next_beat_is_known_when_a_beat_arrives() {
             );
             assert!(w[1].t > w[0].t, "{excerpt}: beats strictly increase");
         }
-    }
-}
-
-#[test]
-fn pairwise_sum_is_numpys() {
-    // np.sum of the same values (numpy 2.2, tools/analysis), at lengths across every branch: under
-    // 8 (sequential), 8 to 128 (eight accumulators), above 128 (halved recursively).
-    let v: Vec<f64> = (0..300)
-        .map(|i| f64::from(27 + (i * 37) % 83) / 100.0)
-        .collect();
-    let numpy: [(usize, u64); 9] = [
-        (5, 0x400b_1eb8_51eb_851e),
-        (8, 0x4014_3333_3333_3334),
-        (9, 0x4017_28f5_c28f_5c2a),
-        (17, 0x4025_d70a_3d70_a3d7),
-        (64, 0x4045_6147_ae14_7ae1),
-        (128, 0x4055_928f_5c28_f5c3),
-        (129, 0x4055_a70a_3d70_a3d7),
-        (200, 0x4060_ed1e_b851_eb86),
-        (300, 0x4069_6a3d_70a3_d70a),
-    ];
-    for (n, want) in numpy {
-        assert_eq!(
-            pairwise_sum(&v[..n]).to_bits(),
-            want,
-            "np.sum of {n} values"
-        );
     }
 }
 

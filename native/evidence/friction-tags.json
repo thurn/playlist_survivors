@@ -17,7 +17,8 @@
     "merge-conflict": "A Tollgate collision or rebase onto a peer's change.",
     "review-churn": "Review findings that took long to verify or fix.",
     "host-load-noise": "Measurements disturbed by other work on the shared machine.",
-    "loopback-unavailable": "A loopback measurement (speakers into the built-in microphone) couldn't run: the speakers were muted or the device was missing, so audibility results stayed pending."
+    "loopback-unavailable": "A loopback measurement (speakers into the built-in microphone) couldn't run: the speakers were muted or the device was missing, so audibility results stayed pending.",
+    "library-arithmetic": "A numpy, scipy, madmom or Python arithmetic detail had to be found by experiment to match Python (add it to native/crates/analysis/LIBRARY-ARITHMETIC.md and the probe)."
   },
   "aliases": {
     "flake": "flaky-test",

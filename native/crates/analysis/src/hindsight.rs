@@ -400,8 +400,7 @@ impl OfflineDbn {
         bt.clear();
         bt.resize(frames * states, 0);
         for (f, &a) in acts.iter().enumerate() {
-            let non_beat = f64::from(((1.0f32 - a) / (self.lambda - 1.0)).ln());
-            let beat = f64::from(a.ln());
+            let (non_beat, beat) = crate::dbn::log_densities(a, self.lambda);
             for s in 0..states {
                 let density = if self.beat_state[s] { beat } else { non_beat };
                 let mut best = f64::NEG_INFINITY;
@@ -578,7 +577,7 @@ impl OnlineBeats {
 
 /// numpy's `np.exp(2j * np.pi * x / period)` for real `x` (the division by `period` as a
 /// complex: multiplied by its reciprocal), as (cos, sin).
-fn unit(x: f64, period: f64) -> (f64, f64) {
+pub(crate) fn unit(x: f64, period: f64) -> (f64, f64) {
     let two_pi = 2.0 * PI;
     // (0 + 2πi)(x + 0i), then Smith's division by (period + 0i).
     let re = 0.0 * x - two_pi * 0.0;
@@ -591,7 +590,7 @@ fn unit(x: f64, period: f64) -> (f64, f64) {
 }
 
 /// numpy's complex mean: the pairwise sum of (re, im) pairs, times `1 / n` (Smith's division).
-fn complex_mean(z: &[(f64, f64)]) -> (f64, f64) {
+pub(crate) fn complex_mean(z: &[(f64, f64)]) -> (f64, f64) {
     fn pairwise(a: &[f64]) -> (f64, f64) {
         let n = a.len();
         if n < 8 {
@@ -689,59 +688,5 @@ pub fn phase_shift(entries: &[HindsightEntry], last: f64, period: f64, p: &Hinds
         shift * period
     } else {
         0.0
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn bits(v: (f64, f64)) -> (u64, u64) {
-        (v.0.to_bits(), v.1.to_bits())
-    }
-
-    #[test]
-    fn the_phase_arithmetic_is_numpys() {
-        // np.exp(2j * np.pi * xs / period), its means, abs and angle (numpy 2.2, tools/analysis).
-        let xs = [-3.7, -0.123_456_789, 0.0, 0.5, 1.75, 2.333_333, 7.9];
-        let period = 0.4637;
-        let numpy: [(u64, u64); 7] = [
-            (0x3fef_bac9_f834_7fac, 0x3fc0_9a7c_1760_5753),
-            (0xbfba_14c6_2cd6_a0c0, 0xbfef_d55f_fd61_c2ff),
-            (0x3ff0_0000_0000_0000, 0x0),
-            (0x3fec_34da_4b89_ca86, 0x3fde_39bd_1bc4_7945),
-            (0x3fc3_38ec_8bbb_b88d, 0xbfef_a319_33ef_9f4d),
-            (0x3fef_5b17_9f6e_9aa6, 0x3fc9_8dbf_4d24_2907),
-            (0x3fef_2513_666d_c814, 0x3fcd_64d0_6048_daf3),
-        ];
-        let z: Vec<(f64, f64)> = xs.iter().map(|&x| unit(x, period)).collect();
-        assert_eq!(z.iter().map(|&v| bits(v)).collect::<Vec<_>>(), numpy);
-        for (n, re, im, abs, angle) in [
-            (
-                3,
-                0x3fe4_2810_6633_3931u64,
-                0xbfd2_7480_a506_7371u64,
-                0x3fe6_2b13_8ebc_11ecu64,
-                0xbfdb_79ef_21f1_e1b0u64,
-            ),
-            (
-                7,
-                0x3fe6_487d_f346_aeb4,
-                0xbfc1_6956_aefd_9ac3,
-                0x3fe6_b44f_de4a_c860,
-                0xbfc8_b168_452d_8e01,
-            ),
-        ] {
-            let m = complex_mean(&z[..n]);
-            assert_eq!(bits(m), (re, im), "mean of {n}");
-            assert_eq!(m.0.hypot(m.1).to_bits(), abs, "abs of {n}");
-            assert_eq!(m.1.atan2(m.0).to_bits(), angle, "angle of {n}");
-        }
-        // Forty values: past the eight accumulators' first block.
-        let big: Vec<(f64, f64)> = (0..40).map(|i| unit(f64::from(i) * 0.37, period)).collect();
-        assert_eq!(
-            bits(complex_mean(&big)),
-            (0x3f84_ab0b_c1f5_00b0, 0x3f70_413e_6e1b_14a7)
-        );
     }
 }

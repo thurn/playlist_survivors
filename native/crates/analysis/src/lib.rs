@@ -8,6 +8,8 @@ pub mod frontend;
 pub mod hindsight;
 pub mod numeric;
 pub mod onsets;
+#[cfg(test)]
+mod pinned;
 pub mod rnn;
 pub mod tensors;
 pub mod ticks;

@@ -74,43 +74,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn long_sums_are_numpys_chunked_ones() {
-        // np.sum of the same values (numpy 2.2, tools/analysis) across the 8192-element chunks.
-        let v: Vec<f64> = (0..30000u64)
-            .map(|i| ((i * 7919) % 1_000_003) as f64 / 1_000_003.0)
-            .map(|x| x * x)
-            .collect();
-        let numpy: [(usize, u64); 5] = [
-            (8192, 0x40a5_4294_cd85_da18),
-            (8193, 0x40a5_441a_5880_f1ad),
-            (16385, 0x40b5_4727_3148_5b30),
-            (22050, 0x40bc_a5b3_f36b_e594),
-            (30000, 0x40c3_7ff7_6680_7bf2),
-        ];
-        for (n, want) in numpy {
-            assert_eq!(
-                pairwise_sum(&v[..n]).to_bits(),
-                want,
-                "np.sum of {n} float64"
-            );
-        }
-        let v32: Vec<f32> = (0..20000u64)
-            .map(|i| (((i * 7919) % 1_000_003) as f64 / 1_000_003.0) as f32)
-            .collect();
-        for (n, want) in [
-            (1024, 0x43fc_e286u32),
-            (8200, 0x457f_f837),
-            (20000, 0x461c_043c),
-        ] {
-            assert_eq!(
-                pairwise_sum_f32(&v32[..n]).to_bits(),
-                want,
-                "np.sum of {n} float32"
-            );
-        }
-    }
-
-    #[test]
     fn percentiles_at_the_ends() {
         assert_eq!(percentile_linear(&[3.0], 98.0), 3.0);
         assert_eq!(percentile_linear(&[1.0, 2.0], 0.0), 1.0);

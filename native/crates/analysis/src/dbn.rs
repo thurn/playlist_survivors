@@ -19,6 +19,17 @@
 
 use crate::tensors::{TensorError, Tensors};
 
+/// madmom's `RNNBeatTrackingObservationModel.log_densities` for one float32 activation: the
+/// non-beat states' `log((1 - a) / (lambda - 1))` and the beat states' `log(a)`, in float32 as numpy
+/// computes them for float32 activations, then stored as float64 (the forward step takes their
+/// `exp` in float64, the Viterbi decode uses them as they are).
+pub(crate) fn log_densities(activation: f32, lambda: f32) -> (f64, f64) {
+    (
+        f64::from(((1.0f32 - activation) / (lambda - 1.0)).ln()),
+        f64::from(activation.ln()),
+    )
+}
+
 /// The online DBN with its forward variables.
 pub struct OnlineDbn {
     /// CSR: state `s`'s transitions are `indptr[s]..indptr[s + 1]`.
@@ -127,8 +138,8 @@ impl OnlineDbn {
     /// One forward step for an activation frame; returns the most likely state.
     pub fn step(&mut self, activation: f32) -> State {
         // (numpy: float32 activations, float32 log, cast to float64, exp in float64.)
-        let non_beat = f64::from(((1.0f32 - activation) / (self.lambda - 1.0)).ln()).exp();
-        let beat = f64::from(activation.ln()).exp();
+        let (non_beat, beat) = log_densities(activation, self.lambda);
+        let (non_beat, beat) = (non_beat.exp(), beat.exp());
         let mut sum = 0.0f64;
         for s in 0..self.fwd.len() {
             let mut v = 0.0f64;
