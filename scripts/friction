@@ -27,13 +27,15 @@ Inputs, under the evidence directory (native/evidence, or --evidence DIR):
   or {"trigger": ..., "reason": ...}, and retrospectives {"retrospective": <bead id>,
   "date": <YYYY-MM-DD>, "covers": [<bead ids>]}.
 
-The window is every record no retrospective covers. A tag trigger fires when one tag (aliases
+The window is every record no retrospective covers (a retrospective's own record included: it is
+written after its covers line, so it covers itself). A tag trigger fires when one tag (aliases
 resolved) appears in triggerBeads or more records of the window. A budget trigger fires when
 triggerBeads consecutive records of the window that carry a budgeted field (by `recorded`) all
 exceed 1.5 times its budget; their host loads are printed, and a disposition's reason says so when
 they weren't comparable. A trigger is
 disposed by a disposition line after the last retrospective line. A cadence retrospective is due
-when the window holds retrospectiveCadence records; its duty key is
+when the window holds retrospectiveCadence plan records (any phase but R: retrospectives and
+improvement beads still count for triggers, not toward the cadence); its duty key is
 retrospective=hv-t8o8/since-<last retrospective's bead>.
 
 `stages` reads Tollgate, not the records (which are committed before their gate runs): every
@@ -299,6 +301,7 @@ def _field(data: dict, path: str):
 
 def report(evidence: Evidence) -> dict:
     covered = {bead for retro in evidence.retrospectives for bead in retro["covers"]}
+    covered |= {retro["retrospective"] for retro in evidence.retrospectives}
     window = sorted((r for r in evidence.records if r.bead not in covered), key=lambda r: r.recorded)
     triggers = []
     by_tag: dict[str, list[str]] = {}
@@ -327,12 +330,14 @@ def report(evidence: Evidence) -> dict:
                 "disposition": evidence.dispositions.get(trigger),
             })
     last_retro = evidence.retrospectives[-1]["retrospective"] if evidence.retrospectives else "start"
+    plan = [r.bead for r in window if r.phase != "R"]
     return {
         "records": len(evidence.records),
         "window": [r.bead for r in window],
+        "planRecords": plan,
         "triggers": triggers,
         "retrospective": {
-            "due": len(window) >= evidence.cadence,
+            "due": len(plan) >= evidence.cadence,
             "cadence": evidence.cadence,
             "key": f"retrospective={EPIC}/since-{last_retro}",
         },
@@ -341,7 +346,11 @@ def report(evidence: Evidence) -> dict:
 
 def print_report(result: dict) -> None:
     window = result["window"]
-    print(f"friction: {result['records']} records, {len(window)} since the last retrospective")
+    plan = result["planRecords"]
+    print(
+        f"friction: {result['records']} records, {len(window)} since the last retrospective"
+        f" ({len(plan)} outside phase R)"
+    )
     for trigger in result["triggers"]:
         disposition = trigger["disposition"]
         state = "disposed" if disposition else "NEEDS A DISPOSITION"
@@ -353,7 +362,10 @@ def print_report(result: dict) -> None:
             print(f"  -> {disposition.get('bead') or disposition.get('reason')}")
     retro = result["retrospective"]
     if retro["due"]:
-        print(f"cadence retrospective due ({len(window)} >= {retro['cadence']} records): file it keyed {retro['key']}")
+        print(
+            f"cadence retrospective due ({len(plan)} >= {retro['cadence']} plan records):"
+            f" file it keyed {retro['key']}"
+        )
     if not result["triggers"] and not retro["due"]:
         print("friction: no triggers fired, no retrospective due")
 

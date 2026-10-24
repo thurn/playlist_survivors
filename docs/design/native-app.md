@@ -1688,9 +1688,12 @@ repository).
   table), one at the end of each phase. Each blocks the next phase's beads, and
   the next phase starts only after every bead it files as blocking has closed.
 - **Cadence retrospectives:** whenever `scripts/friction` reports 8 closed
-  beads since the last retrospective of either kind, the session that sees it
-  files one, keyed `retrospective=<epic>/since-<last retrospective's bead>`,
-  after searching for the key. It blocks nothing.
+  plan beads (any phase but R) since the last retrospective of either kind,
+  the session that sees it files one, keyed
+  `retrospective=<epic>/since-<last retrospective's bead>`, after searching for
+  the key. It blocks nothing. Retrospectives and improvement beads (phase R)
+  count for triggers but not toward the cadence, so a retrospective's own
+  fixes don't bring the next one due (hv-t8o8.74).
 
 Each retrospective reads the friction records, `metrics.md`, bead notes,
 Tollgate history (gate times, release-run failures, CI repair cycles), review

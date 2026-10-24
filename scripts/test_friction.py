@@ -200,6 +200,28 @@ class FrictionTest(unittest.TestCase):
         _, out, _ = self.run_cli()
         self.assertNotIn("retrospective due (", out)
 
+    def test_a_retrospectives_own_record_is_covered(self):
+        for i in range(1, 4):
+            self.write(record(f"hv-t8o8.{i}", i))
+        self.write(record("hv-t8o8.37", 4, phase="R"))
+        self.ledger({"retrospective": "hv-t8o8.37", "date": "2026-10-04", "covers": ["hv-t8o8.1", "hv-t8o8.2", "hv-t8o8.3"]})
+        self.assertEqual(self.report()["window"], [])
+
+    def test_only_plan_records_count_toward_the_cadence(self):
+        for i in range(1, 4):
+            self.write(record(f"hv-t8o8.{i}", i))
+        for i in range(4, 9):
+            self.write(record(f"hv-t8o8.{i}", i, phase="R"))
+        report = self.report()
+        self.assertEqual(len(report["window"]), 8)
+        self.assertEqual(len(report["planRecords"]), 3)
+        self.assertFalse(report["retrospective"]["due"])
+        self.write(record("hv-t8o8.9", 9, phase="B"))
+        self.assertTrue(self.report()["retrospective"]["due"])
+        _, out, _ = self.run_cli()
+        self.assertIn("(4 outside phase R)", out)
+        self.assertIn("4 >= 4 plan records", out)
+
     def test_an_earlier_run_of_overruns_stays_fired_after_a_record_under_budget(self):
         for i in range(1, 4):
             self.write(record(f"hv-t8o8.{i}", i, fast=100))
