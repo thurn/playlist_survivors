@@ -282,6 +282,10 @@ def test_causality_mix_has_every_ingredient() -> None:
         "cut-to-150",
         "pads-only",
         "drums",
+        "medium",
+        "faint",
+        "rise",
+        "loud",
         "final-chord",
     ]
     sec = {s["label"]: s for s in ref["sections"]}
@@ -294,7 +298,11 @@ def test_causality_mix_has_every_ingredient() -> None:
     assert db(e["s0"], e["s0"] + 2) - db(q["s0"] + 1, q["s1"]) > 12
     end = sec["final-chord"]["s0"]
     assert db(len(y) / synth.SR - 1, len(y) / synth.SR) < db(end, end + 1) - 40
-    assert 40 < len(y) / synth.SR < 50
+    # The set pieces' stretch: a faint beat well under the medium stretches around it, and a loud close.
+    f, r, lo = sec["faint"], sec["rise"], sec["loud"]
+    assert db(r["s0"] + 0.5, r["s1"]) - db(f["s0"] + 0.5, f["s1"]) > 8
+    assert db(lo["s0"] + 0.5, lo["s1"]) - db(r["s0"] + 0.5, r["s1"]) > 6
+    assert 60 < len(y) / synth.SR < 70
 
 
 def test_file_format(tmp_path: Path, excerpt: np.ndarray, full: dict[str, Any]) -> None:

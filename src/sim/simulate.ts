@@ -212,6 +212,8 @@ interface Foe {
   at?: (t: number) => { x: number; y: number };
   /** A stampede's runner (set pieces): its fixed velocity straight across the view (px per world second). */
   run?: { vx: number; vy: number };
+  /** Reactive mode (stage 6): the boss retreating off the field (it does not come back). */
+  retreat?: true;
   /** A charge (the kick line's release) runs faster until this song time. */
   chargeUntil: number;
   /** Archer group, and this archer's place in it (shoulder to shoulder at a shared post). */
@@ -294,6 +296,9 @@ type Ev =
   | { kind: "zoneWave"; zone: string; section?: number }
   | { kind: "levelWait"; level: number }
   | { kind: "accentOnset"; i: number }
+  | { kind: "ringClose"; k: number }
+  | { kind: "danceStart"; f: number }
+  | { kind: "bossRetreat" }
   | { kind: "landmark"; id: string }
   | { kind: "reactiveBeat"; bi: number }
   | { kind: "settle"; press: SettlePress & { provisional: string } }
@@ -373,6 +378,10 @@ const ORDER: Record<Ev["kind"], number> = {
   levelWait: 4.5,
   // Stage 5: a strong onset becomes known (before a press at the same moment; either launches its cleave then).
   accentOnset: 4.6,
+  // Stage 6: a ring's close starts (when its trigger is known); the boss retreats.
+  ringClose: 4.7,
+  danceStart: 4.75,
+  bossRetreat: 4.8,
   landmark: 4,
   // Reactive mode: a committed beat arrives (before an upgrade orb's default at the same moment).
   reactiveBeat: 2.4,
@@ -560,6 +569,10 @@ interface SimState {
    * press (whether it has launched a cleave already).
    */
   onsetCleave?: { c: PendingCleave; t: number };
+  /** Reactive mode (stage 6): each ring's members and start, recorded when its close starts. */
+  ringMembers: Map<number, { s0: number; members: number[] }>;
+  /** Reactive mode (stage 6): the finale has come, and the base rate takes its swell. */
+  swelling: boolean;
   lastGreat?: { s: number; used: boolean };
   /** Swings that may still matter (the idle-swing rule looks back one bar). */
   swings: Swing[];
@@ -612,7 +625,8 @@ interface SimState {
   foeSamples: Foe[];
   formationMembers: Foe[][];
   /** Set pieces: each closing ring, its centre, when it spawned and closes, and the angles of its gaps. */
-  rings: { x: number; y: number; s0: number; s1: number; r0: number; gaps: number[] }[];
+  /** (k1: when the close starts, s0 outside reactive mode.) */
+  rings: { x: number; y: number; s0: number; k1: number; s1: number; r0: number; gaps: number[] }[];
   blasting: boolean;
   flying: { v: number; index: number; x0: number; y0: number; ax: number; ay: number; wRelease: number; ux: number; uy: number; damage: number }[];
   /** The hero's health, in the hero's health units. */
@@ -627,7 +641,7 @@ interface SimState {
   levelReady: boolean;
   /** The open field: the hero's heading (a unit vector), and a formation's direction while it is in play. */
   heading: { x: number; y: number };
-  formationDir?: { x: number; y: number; until: number };
+  formationDir?: { x: number; y: number; until: number; fi?: number };
   /** Recent hero samples (for the fire trail): sample index heroBase onward. */
   heroX: number[];
   heroY: number[];
@@ -718,6 +732,8 @@ function freshState(env: Env): SimState {
     overdue: false,
     section: 0,
     levelReady: false,
+    ringMembers: new Map(),
+    swelling: false,
     heading: { x: 1, y: 0 },
     heroX: [],
     heroY: [],
@@ -829,7 +845,9 @@ function engine(env: Env, st: SimState, io: Io) {
   const settling = stream?.hindsight !== undefined;
 
   // ---------------------------------------------------------------- time
-  const baseRate = (t: number) => stepRate(sch.baseSteps, t);
+  /** The base rate's steps: reactive mode's take the finale's swell from when the finale comes. */
+  const baseSteps = () => (st.swelling ? sch.reactive!.swellSteps! : sch.baseSteps);
+  const baseRate = (t: number) => stepRate(baseSteps(), t);
   const inStop = (t: number) => t >= st.stopStart - 1e-12 && t < st.stopEnd - 1e-12;
   const DIP_STEPS = [0, 0.25, 0.5, 0.75, 1].map((k) => k * DIP_RAMP);
   const dipCuts = () => [...DIP_STEPS, ...DIP_STEPS.map((d) => DIP_RAMP + DIP_HOLD + d)];
@@ -1207,7 +1225,8 @@ function engine(env: Env, st: SimState, io: Io) {
   const swingFor = (slot: GridSlot | undefined, sArmed: number): Swing | undefined => {
     if (!slot || st.takenSlots.has(slot)) return undefined;
     // The finale blast ends the sword's routine (its chord is matched to the grid within 40 ms).
-    if (blastS !== undefined && slot.s >= blastS - 0.04) return undefined;
+    // (Reactive mode: only once the finale is known.)
+    if (blastS !== undefined && slot.s >= blastS - 0.04 && (!stream || st.s >= blastS - 1e-9)) return undefined;
     st.takenSlots.add(slot);
     const sec = ctx.sections[slot.section];
     // A swing striking on an eligible accent is a heavy cleave (everyone's); free movement only swings light.
@@ -1652,7 +1671,7 @@ function engine(env: Env, st: SimState, io: Io) {
       let fr: number;
       if (!sw.struck) {
         // Across the rate steps to the strike: a ramp (such as a timeScale event's) changes the rate on the way.
-        const toImpactW = Math.max(1e-6 * (sw.sStrike - sk), stepSpan(sch.baseSteps, sk, sw.sStrike));
+        const toImpactW = Math.max(1e-6 * (sw.sStrike - sk), stepSpan(baseSteps(), sk, sw.sStrike));
         if (toImpactW <= half + 1e-9) fr = sw.impact;
         else fr = clamp(Math.floor((sw.impact * (sk - sw.sWind)) / Math.max(1e-6, sw.sStrike - sw.sWind)), 0, sw.impact - 1);
       } else {
@@ -1764,9 +1783,11 @@ function engine(env: Env, st: SimState, io: Io) {
         // A closing ring's member: on its circle, closing in song time.
         const p = f.at(s);
         const rate = rateAt(s);
-        const q2 = f.at(s + 1 / SIM_RATE);
-        f.vx = rate > 0 ? ((q2.x - p.x) * SIM_RATE) / rate : 0;
-        f.vy = rate > 0 ? ((q2.y - p.y) * SIM_RATE) / rate : 0;
+        // (Reactive mode: from the step behind, since its close is known only when it starts.)
+        const q2 = stream ? f.at(s - 1 / SIM_RATE) : f.at(s + 1 / SIM_RATE);
+        const dir = stream ? -1 : 1;
+        f.vx = rate > 0 ? (dir * (q2.x - p.x) * SIM_RATE) / rate : 0;
+        f.vy = rate > 0 ? (dir * (q2.y - p.y) * SIM_RATE) / rate : 0;
         f.x = p.x;
         f.y = p.y;
         continue;
@@ -2033,7 +2054,7 @@ function engine(env: Env, st: SimState, io: Io) {
   const setPieceView = (hp: { x: number; y: number }): Pick<Observation, "ring" | "runners"> => {
     const out: Pick<Observation, "ring" | "runners"> = {};
     const ring = st.rings.findLast((r) => st.s >= r.s0 && st.s < r.s1);
-    if (ring) out.ring = { x: ring.x, y: ring.y, r: lerp(ring.r0, RING_CLOSE, (st.s - ring.s0) / (ring.s1 - ring.s0)), gaps: ring.gaps };
+    if (ring) out.ring = { x: ring.x, y: ring.y, r: lerp(ring.r0, RING_CLOSE, clamp((st.s - ring.k1) / (ring.s1 - ring.k1), 0, 1)), gaps: ring.gaps };
     const runners = st.alive.filter((f) => f.alive && f.run && Math.hypot(posX(f, st.w) - hp.x, posY(f, st.w) - hp.y) < 300);
     if (runners.length > 0) out.runners = runners.map((f) => ({ x: posX(f, st.w), y: posY(f, st.w), vx: f.run!.vx, vy: f.run!.vy }));
     return out;
@@ -2137,11 +2158,12 @@ function engine(env: Env, st: SimState, io: Io) {
       return f.alive && Math.hypot(dx, dy) >= RECYCLE_VIEWS * vw;
     });
     for (const f of behind) {
-      // Not a kill: it leaves the field and re-enters ahead with its health.
+      // Not a kill: it leaves the field and re-enters ahead with its health (a retreating boss leaves for good).
       f.alive = false;
       f.finalSample = true;
       f.deathW = st.w;
       rec().death(f.id, st.w, true);
+      if (f.retreat) continue;
       const r = new Rng(ctx.seed, "recycle", f.id);
       const p2 = spawnPoint(f.def, r, true);
       spawnFoe(f.type, p2.x, p2.y, f.health);
@@ -2336,7 +2358,7 @@ function engine(env: Env, st: SimState, io: Io) {
     const value = big ? 5 : 1;
     if (!st.blasting) dropOnField(f, fate, value, big);
     else {
-      const s1 = st.blasting && blastS !== undefined ? timeOfBeatIndex(song, sbiAt(blastS) + 1) : downbeatAtOrAfter(st.s + 0.12);
+      const s1 = st.blasting && blastS !== undefined ? knownTimeOfBeat(knownBeatAt(blastS) + 1) : downbeatAtOrAfter(st.s + 0.12);
       rec().gem({ w0: st.w, x0: fate.x, y0: fate.y, s1, w1: 0, value, big, enemy: f.id });
       st.q.push(s1, { kind: "gem", gem: st.nGems++, value });
     }
@@ -2365,7 +2387,32 @@ function engine(env: Env, st: SimState, io: Io) {
     return r[Math.max(0, Math.min(r.length - 1, st.tier))] * (1 + st.bonus.pickup);
   };
   /** The first sixteenth note at or after song time t. */
-  const sixteenthAtOrAfter = (t: number) => timeOfBeatIndex(song, Math.ceil(sbiAt(t) * 4 - 1e-6) / 4);
+  /**
+   * Reactive mode: song time of fractional beat index bi, and the beat index of song time t, from the
+   * beats committed by now (past the last of them, its period on), so nothing scheduled now reads a
+   * beat not yet known. Play mode reads the song map.
+   */
+  const lastKnownBeat = () => {
+    let lo = 0;
+    let hi = stream!.beats.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (stream!.beats[mid].knownAt <= st.s + 1e-9) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo - 1;
+  };
+  const knownTimeOfBeat = (bi: number) => {
+    const k = stream ? lastKnownBeat() : -1;
+    if (k < 1 || Math.ceil(bi - 1e-9) <= k) return timeOfBeatIndex(song, bi);
+    return stream!.beats[k].t + (bi - k) * stream!.beats[k].period;
+  };
+  const knownBeatAt = (t: number) => {
+    const k = stream ? lastKnownBeat() : -1;
+    if (k < 1 || t <= stream!.beats[k].t + 1e-9) return sbiAt(t);
+    return k + (t - stream!.beats[k].t) / stream!.beats[k].period;
+  };
+  const sixteenthAtOrAfter = (t: number) => knownTimeOfBeat(Math.ceil(knownBeatAt(t) * 4 - 1e-6) / 4);
 
   /** A death's gem waits where it dropped; past the cap, its value goes to the nearest gem, which grows. */
   const dropOnField = (f: Foe, fate: Fate, value: number, big: boolean) => {
@@ -2414,11 +2461,11 @@ function engine(env: Env, st: SimState, io: Io) {
     rec().vacuumTouch(v.i, st.s, st.w, inView.length);
     if (inView.length === 0) return;
     // Over one bar of sixteenths from the first at least NEVER_LATE away, nearest first.
-    const bi0 = sbiAt(sixteenthAtOrAfter(st.s + NEVER_LATE));
+    const bi0 = knownBeatAt(sixteenthAtOrAfter(st.s + NEVER_LATE));
     const bpb = ctx.idx.beatsPerBar[Math.max(1, barOfBeatIndex(ctx.idx, sbiAt(st.s)))] ?? 2;
     const n = 4 * bpb;
     const taken = new Set(inView);
-    inView.forEach((g, k) => takeOff(g, timeOfBeatIndex(song, bi0 + Math.floor((k * n) / inView.length) / 4)));
+    inView.forEach((g, k) => takeOff(g, knownTimeOfBeat(bi0 + Math.floor((k * n) / inView.length) / 4)));
     st.field = st.field.filter((g) => !taken.has(g));
   };
 
@@ -2701,6 +2748,15 @@ function engine(env: Env, st: SimState, io: Io) {
   const bossLand = () => {
     const boss = st.bossFoe;
     if (!boss || !boss.alive) return;
+    // (Reactive mode: one dropping in as the finale comes leaves with the blast.)
+    if (stream && st.blasting) {
+      boss.alive = false;
+      boss.finalSample = true;
+      boss.deathW = st.w;
+      rec().death(boss.id, st.w, true);
+      st.alive = st.alive.filter((f) => f.alive);
+      return;
+    }
     // It lands on the downbeat, knocking nearby enemies back.
     for (const f of st.alive) {
       if (f === boss || !f.alive || pinned(f)) continue;
@@ -2760,7 +2816,8 @@ function engine(env: Env, st: SimState, io: Io) {
     const members: number[] = [];
     // A formation keeps the heading it entered on, and the camera leads that way while it is in play.
     const dir = { x: 0, y: 0, tx: st.heading.x, ty: st.heading.y };
-    st.formationDir = { x: dir.tx, y: dir.ty, until: fs.sRelease };
+    // (Reactive mode: its release is known only when it comes.)
+    st.formationDir = { x: dir.tx, y: dir.ty, until: stream ? Infinity : fs.sRelease, ...(stream ? { fi } : {}) };
     const frame = () => dir;
     // (With set pieces, as many as fit under the cap, after the stream makes room.)
     const count = makeRoom(def.count);
@@ -2812,12 +2869,15 @@ function engine(env: Env, st: SimState, io: Io) {
       const f = spawnFoe(def.enemy, a0.x + p.x, a0.y + p.y, undefined, { formation: fi });
       f.weight = weightOf(f.def, true);
       f.slot = slot;
-      f.slotUntil = fs.sRelease;
-      if (def.dance) rec().danceStart?.(f.id, timeOfBeatIndex(song, bStart + def.entranceBeats), def.dance.animation, def.dance.alternateLegs);
+      f.slotUntil = stream ? Infinity : fs.sRelease;
+      // (Reactive mode: recorded when the entrance ends, its beat known by then.)
+      if (def.dance && !stream) rec().danceStart?.(f.id, timeOfBeatIndex(song, bStart + def.entranceBeats), def.dance.animation, def.dance.alternateLegs);
       members.push(f.id);
       st.formationMembers[fi].push(f);
     }
-    rec().formation({ def: fs.def, sStart: fs.sStart, sRelease: fs.sRelease, members });
+    // (Reactive mode: recorded at its release.)
+    if (!stream) rec().formation({ def: fs.def, sStart: fs.sStart, sRelease: fs.sRelease, members });
+    if (stream && def.dance) st.q.push(timeOfBeatIndex(song, bStart + def.entranceBeats), { kind: "danceStart", f: fi });
   };
 
   /**
@@ -2861,6 +2921,8 @@ function engine(env: Env, st: SimState, io: Io) {
     const members: number[] = [];
     const s0 = st.s;
     const s1 = ring.sClose;
+    // (Reactive mode: the members hold their radius until the close starts at kClose, then close by s1.)
+    const k1 = ring.kClose ?? s0;
     const gapAngles: number[] = [];
     for (let row = 0; row < rows; row++) {
       const n = row === 0 ? Math.ceil(ring.count / rows) : Math.floor(ring.count / rows);
@@ -2879,7 +2941,7 @@ function engine(env: Env, st: SimState, io: Io) {
         const c = Math.cos(th);
         const sn = Math.sin(th);
         const at = (t: number) => {
-          const rad = lerp(from, to, clamp((t - s0) / (s1 - s0), 0, 1));
+          const rad = lerp(from, to, clamp((t - k1) / (s1 - k1), 0, 1));
           return { x: hp.x + c * rad, y: hp.y + sn * rad };
         };
         const p = at(s0);
@@ -2890,10 +2952,44 @@ function engine(env: Env, st: SimState, io: Io) {
         members.push(f.id);
       }
     }
-    st.rings.push({ x: hp.x, y: hp.y, s0, s1, r0, gaps: gapAngles });
+    if (ring.kClose !== undefined) {
+      // Reactive mode: the close's end is known only when it starts.
+      st.rings.push({ x: hp.x, y: hp.y, s0, k1, s1: Infinity, r0, gaps: gapAngles });
+      st.ringMembers.set(k, { s0, members });
+      st.q.push(ring.kClose, { kind: "ringClose", k });
+      return;
+    }
+    st.rings.push({ x: hp.x, y: hp.y, s0, k1: s0, s1, r0, gaps: gapAngles });
     // Its vacuum on the first downbeat after its accent.
     st.q.push(downbeatAtOrAfter(s1 + 1e-6), { kind: "vacuumDrop" });
     rec().formation({ def: "ring", sStart: s0, sRelease: s1, members });
+  };
+
+  /** Reactive mode (stage 6): a ring's close starts; it ends on its downbeat, with its vacuum after it. */
+  const ringClose = (k: number) => {
+    const m = st.ringMembers.get(k);
+    if (!m) return;
+    st.ringMembers.delete(k);
+    // (The finale's blast has ended it.)
+    if (st.blasting) return;
+    const s1 = sch.rings[k].sClose;
+    const r = st.rings.findLast((x) => x.s0 === m.s0);
+    if (r) r.s1 = s1;
+    st.q.push(downbeatAtOrAfter(s1 + 1e-6), { kind: "vacuumDrop" });
+    rec().formation({ def: "ring", sStart: m.s0, sRelease: s1, members: m.members });
+  };
+
+  /** Reactive mode (stage 6): the boss, still alive at its retreat, runs off the field the way it faces away from the hero. */
+  const bossRetreat = () => {
+    const f = st.bossFoe;
+    if (!f || !f.alive || st.blasting) return;
+    const hp = heroPose(st.w);
+    const dx = posX(f, st.w) - hp.x;
+    const dy = posY(f, st.w) - hp.y;
+    const d = Math.hypot(dx, dy) || 1;
+    const speed = f.def.speed * STAMPEDE_SPEED;
+    f.run = { vx: (dx / d) * speed, vy: (dy / d) * speed };
+    f.retreat = true;
   };
 
   /**
@@ -2940,8 +3036,14 @@ function engine(env: Env, st: SimState, io: Io) {
     const s = st.s;
     const wEnter = worldOf(timeOfBeatIndex(song, sbiAt(fs.sStart) + def.entranceBeats));
     const beat = (song.beats[Math.min(song.beats.length - 1, Math.floor(sbiAt(s)) + 1)] ?? s) - (song.beats[Math.floor(sbiAt(s))] ?? s);
+    if (stream) {
+      rec().formation({ def: fs.def, sStart: fs.sStart, sRelease: s, members: st.formationMembers[fi].map((f) => f.id) });
+      if (st.formationDir?.fi === fi) st.formationDir.until = s;
+    }
     for (const f of st.formationMembers[fi]) {
-      if (def.dance) rec().dance(f.id, { w0: wEnter, w1: f.alive ? st.w : f.deathW, anim: def.dance.animation, alternate: def.dance.alternateLegs, phase: 0 });
+      // (Reactive mode: only those that were dancing, alive when the entrance ended.)
+      const danced = !stream || f.alive || f.deathW > wEnter + 1e-9;
+      if (def.dance && danced) rec().dance(f.id, { w0: wEnter, w1: f.alive ? st.w : f.deathW, anim: def.dance.animation, alternate: def.dance.alternateLegs, phase: 0 });
       if (!f.alive) continue;
       // The survivors become chasers; a charge rushes the hero first.
       f.slotUntil = s;
@@ -3015,6 +3117,9 @@ function engine(env: Env, st: SimState, io: Io) {
       // each section start marked by a camera punch.
       stream.beats.forEach((b, bi) => q.push(b.t, { kind: "reactiveBeat", bi }));
       accentOnsets.forEach((o, i) => q.push(o.knownAt, { kind: "accentOnset", i }));
+      // Stage 6: the set pieces' landmarks, and the boss's retreat.
+      for (const lm of sch.reactive?.landmarks ?? []) if (lm.s < endS) q.push(lm.s, { kind: "landmark", id: lm.id });
+      if (sch.boss?.sRetreat !== undefined && sch.boss.sRetreat < endS) q.push(sch.boss.sRetreat, { kind: "bossRetreat" });
       const zones = ctx.level.zones;
       if (director) {
         zoneWavePlan(stream, sectionStarts, director.zoneFallbackS, endS).forEach((zw, k) => {
@@ -3045,7 +3150,7 @@ function engine(env: Env, st: SimState, io: Io) {
   /** Song time of the loop's next stop: the next event, fixed step or rate change. */
   const nextStop = () => {
     const tFixed = st.fixedK / SIM_RATE;
-    const tRate = Math.min(nextStepAfter(sch.baseSteps, st.s), inStop(st.s) ? st.stopEnd : Infinity, nextDipCut(st.s));
+    const tRate = Math.min(nextStepAfter(baseSteps(), st.s), inStop(st.s) ? st.stopEnd : Infinity, nextDipCut(st.s));
     return Math.min(st.q.peek(), tFixed, tRate, endS);
   };
 
@@ -3096,7 +3201,11 @@ function engine(env: Env, st: SimState, io: Io) {
           chainJump(ev.weapon, ev.chain, ev.jump);
           break;
         case "blast":
-          if (ev.band === 0) st.blasting = true;
+          if (ev.band === 0) {
+            st.blasting = true;
+            // (Reactive mode: the finale's swell starts now.)
+            if (sch.reactive?.swellSteps) st.swelling = true;
+          }
           blastBand(ev.band);
           break;
         case "spawnTick":
@@ -3200,6 +3309,17 @@ function engine(env: Env, st: SimState, io: Io) {
         case "accentOnset":
           onsetAccent(ev.i);
           break;
+        case "ringClose":
+          ringClose(ev.k);
+          break;
+        case "danceStart": {
+          const def = lib.formations.get(sch.formations[ev.f].def)!;
+          for (const f of st.formationMembers[ev.f]) if (f.alive) rec().danceStart?.(f.id, st.s, def.dance!.animation, def.dance!.alternateLegs);
+          break;
+        }
+        case "bossRetreat":
+          bossRetreat();
+          break;
         case "levelWait":
           // No section started in the director's wait since the experience was reached: the level-up
           // falls due on the next downbeat (the bar stays ready until it is granted).
@@ -3277,7 +3397,8 @@ export class Sim {
       registerShared(ctx, shared);
       registerShared(sch, shared);
       shared.add(world);
-      this.env = { ctx, sch, world, endS: Math.min(opts.untilS ?? Infinity, ctx.duration + 1), cutS: opts.cutS ?? Infinity, shared };
+      // (Reactive mode: the run plays on until the finale's epilogue has ended.)
+      this.env = { ctx, sch, world, endS: Math.min(opts.untilS ?? Infinity, Math.max(ctx.duration + 1, sch.reactive?.endS ?? 0)), cutS: opts.cutS ?? Infinity, shared };
       this.st = freshState(this.env);
     }
     this.io = { recorder, player: opts.player };

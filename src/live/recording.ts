@@ -21,6 +21,7 @@ import { beatDurationAt, sectionIndexAt, type Ctx } from "../planner/context.ts"
 import { budgetSlot, chimeDegree, Emitter, lastAtOrBefore, soundSlot, VOICE_BUDGET, type EmitSink } from "../planner/emit.ts";
 import { ACTIVE_BUCKET, DEATH_ANIM, planHeader, zoneWaveEnd } from "../planner/plan.ts";
 import { judgedAverageGroove, REACTIVE_END_DELAY } from "../reactive/grade.ts";
+import { reactiveRunEnd } from "../reactive/setpieces.ts";
 import type { ArrowRecord, Attack, BossInfo, Cleave, Dance, FormationRecord, GemRecord, Landing, LandmarkRecord, PressTrace, Recorder, SlamRecord, Threat, VacuumRecord, ZoneWaveRecord } from "../sim/recorder.ts";
 import type { Schedule } from "../sim/schedule.ts";
 import { ENEMY_RATE, HERO_ANIMS, HERO_RATE, SLAM_RADIUS } from "../sim/simulate.ts";
@@ -620,7 +621,8 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
   boss(info: BossInfo): void {
     this.set(this.plan, "boss", { id: info.id, deathS: undefined });
     this.emitter.bossLand(info);
-    const bar = this.emitter.bossBar(info, this.sch.blast?.s ?? this.ctx.duration) as Extract<UiEvent, { kind: "bossBar" }>;
+    // (Reactive mode: until its retreat, the one end known when it lands.)
+    const bar = this.emitter.bossBar(info, this.ctx.reactive ? (this.sch.boss?.sRetreat ?? Infinity) : (this.sch.blast?.s ?? this.ctx.duration)) as Extract<UiEvent, { kind: "bossBar" }>;
     this.ui(bar);
     const before = this.bossState;
     this.bossState = { info, bar };
@@ -640,7 +642,7 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
     const b = this.bossState;
     if (!b) return;
     this.set(this.plan.boss!, "deathS", s);
-    this.set(b.bar, "until", s);
+    this.set(b.bar, "until", Math.min(b.bar.until, s));
     this.emitter.bossKill(this.plan.hits[killHit]);
   }
 
@@ -751,7 +753,7 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
         this.reactiveEnded = false;
       });
       this.set(this.plan.stats, "averageGroove", judgedAverageGroove(this.grooveSeries, this.ctx.reactive, this.playerFrom, this.ctx.duration));
-      this.ui({ kind: "end", s: this.ctx.duration + REACTIVE_END_DELAY });
+      this.ui({ kind: "end", s: reactiveRunEnd(this.ctx.reactive, this.ctx.level.director, this.ctx.input.knownLength ?? this.ctx.duration, this.ctx.duration, REACTIVE_END_DELAY) });
     }
     // Song-owned flashes on strong accents, as the music passes them.
     const accents = this.ctx.song.accents;
@@ -795,6 +797,8 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
       this.blastSeen = undefined;
     });
     this.emitter.blast(h.s, this.heroNow());
+    // (Reactive mode: its end card and grade come when the audio ends.)
+    if (this.ctx.reactive) return;
     const end = timeOfBeatIndex(this.ctx.song, beatIndexAt(this.ctx.song, h.s) + 1) + 1.6;
     this.ui({ kind: "end", s: end });
     let gSum = 0;

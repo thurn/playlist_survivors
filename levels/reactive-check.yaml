@@ -21,3 +21,12 @@ director:
   palettes: { quiet: soft-chimes, medium: crisp-steel, loud: heavy-infernal }
   paletteHoldS: 2
   calm: { quiet: 0.5, medium: 0, loud: 0 }
+  setPieces:
+    gapS: 2
+    stampede: { enemy: goblin, count: 20, rows: 2, jumpDb: 6, quietS: 3 }
+    ring: { enemy: goblin, count: 20, gaps: 3, afterS: 1, maxBeats: 6 }
+    volleys: { archers: 2, everyBeats: 4 }
+    wedge: bee-wedge
+    kickLine: { formation: skeleton-kick-line, mediumBeats: 4, minDanceBeats: 4, maxDanceBeats: 8 }
+    boss: { type: minotaur, afterS: 45, landAfterS: 0.6, slamBeats: 4, retreatS: 4, landmark: standing-stones }
+    finale: { blast: finale-blast, landmark: ruined-shrine, windowS: 10, swell: 0.4, swellS: 1.5, epilogueS: 3 }

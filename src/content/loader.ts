@@ -607,6 +607,16 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap, res
       for (const t of Object.keys(r)) need(["director", "sections", i, t], "enemies", t);
     });
     for (const [lv, pal] of Object.entries(data.director?.palettes ?? {})) need(["director", "palettes", lv], "soundPalettes", pal);
+    const sp = data.director?.setPieces;
+    if (sp) {
+      need(["director", "setPieces", "stampede", "enemy"], "enemies", sp.stampede.enemy);
+      need(["director", "setPieces", "ring", "enemy"], "enemies", sp.ring.enemy);
+      need(["director", "setPieces", "wedge"], "formations", sp.wedge);
+      need(["director", "setPieces", "kickLine", "formation"], "formations", sp.kickLine.formation);
+      need(["director", "setPieces", "boss", "type"], "enemies", sp.boss.type);
+      need(["director", "setPieces", "finale", "blast"], "weapons", sp.finale.blast);
+      if (lib.weapons.get(sp.finale.blast) && lib.weapons.get(sp.finale.blast)!.kind !== "blast") issues.push({ ...at(["director", "setPieces", "finale", "blast"]), message: "the finale needs a blast weapon" });
+    }
   }
 
   // The upgrade pool's weapons: known, not the finale blast, and each named once.

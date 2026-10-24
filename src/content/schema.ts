@@ -451,6 +451,30 @@ export const director = z.strictObject({
   palettes: byLevel(id),
   paletteHoldS: z.number().positive().default(2),
   calm: byLevel(unit.max(0.9)),
+  /**
+   * Stage 6: set pieces triggered by the music, each on the effective downbeat after its trigger is
+   * known and never within `gapS` of another's start (the boss first, then a ring, a stampede, a
+   * formation and volleys). Absent: none, and no finale.
+   */
+  setPieces: z
+    .strictObject({
+      gapS: z.number().positive().default(6),
+      /** On a rising jump of `jumpDb` after at least `quietS` that were not loud. */
+      stampede: z.strictObject({ enemy: id, count: z.number().int().positive(), rows: z.number().int().min(1).max(4).default(2), jumpDb: z.number().positive().default(6), quietS: z.number().positive().default(8) }),
+      /** On a loud detected section start: closes from the first accent at least `afterS` in, or after `maxBeats` committed beats. */
+      ring: z.strictObject({ enemy: id, count: z.number().int().positive(), gaps: z.number().int().min(0).max(6).default(3), afterS: z.number().positive().default(3), maxBeats: z.number().int().positive().default(12) }),
+      /** While loud: a group of archers, a volley every `everyBeats` committed beats. */
+      volleys: z.strictObject({ archers: z.number().int().positive().default(2), everyBeats: z.number().int().positive().default(4) }),
+      /** On a detected section start. */
+      wedge: id,
+      /** After `mediumBeats` committed beats at medium level; releases on a strong onset after `minDanceBeats`, or after `maxDanceBeats`. */
+      kickLine: z.strictObject({ formation: id, mediumBeats: z.number().int().positive().default(16), minDanceBeats: z.number().int().positive().default(8), maxDanceBeats: z.number().int().positive().default(32) }),
+      /** On the first loud detected section start after `afterS`; slams every `slamBeats` committed beats while loud; retreats after `retreatS`. */
+      boss: z.strictObject({ type: id, afterS: z.number().min(0).default(90), landAfterS: z.number().min(0).default(0.6), slamBeats: z.number().int().positive().default(4), retreatS: z.number().positive().default(90), landmark: id.optional() }),
+      /** On the first candidate ending known in the last `windowS` of the audio, or at its end. */
+      finale: z.strictObject({ blast: id, landmark: id.optional(), windowS: z.number().positive().default(10), swell: z.number().min(0.25).max(1).default(0.4), swellS: z.number().positive().default(1.5), epilogueS: z.number().positive().default(3) }),
+    })
+    .optional(),
 });
 export type Director = z.infer<typeof director>;
 

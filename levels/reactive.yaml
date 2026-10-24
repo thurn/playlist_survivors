@@ -47,3 +47,14 @@ director:
   palettes: { quiet: soft-chimes, medium: crisp-steel, loud: heavy-infernal }
   paletteHoldS: 2
   calm: { quiet: 0.5, medium: 0, loud: 0 }
+  # Stage 6: set pieces triggered by the music, at least 6 s apart; the finale on the first candidate
+  # ending in the last 10 s of the audio, or at its end.
+  setPieces:
+    gapS: 6
+    stampede: { enemy: goblin, count: 40, rows: 2, jumpDb: 6, quietS: 8 }
+    ring: { enemy: goblin, count: 40, gaps: 3, afterS: 3, maxBeats: 12 }
+    volleys: { archers: 2, everyBeats: 4 }
+    wedge: bee-wedge
+    kickLine: { formation: skeleton-kick-line, mediumBeats: 16, minDanceBeats: 8, maxDanceBeats: 32 }
+    boss: { type: minotaur, afterS: 90, landAfterS: 0.6, slamBeats: 4, retreatS: 90, landmark: standing-stones }
+    finale: { blast: finale-blast, landmark: ruined-shrine, windowS: 10, swell: 0.4, swellS: 1.5, epilogueS: 3 }

@@ -181,6 +181,24 @@ export function heavyOnAccents(plan: Plan, ref: Reference, label?: string): { on
   return { on: heavy.filter((t) => accents.some((a) => Math.abs(a - t) <= 0.05 + 1e-9)).length, all: heavy.length };
 }
 
+/** Stage 6: when each set piece and the finale showed in a plan (a formation's record comes at its release, a volley's at its arrival). */
+export function setPieceTimes(p: Plan): Record<"rings" | "stampedes" | "volleys" | "bee wedges" | "kick lines" | "the boss" | "the finale", number[]> {
+  const warp = new Warp(p.warp);
+  const of = (def: string) => p.formations.filter((f) => f.def === def).map((f) => f.sRelease);
+  return {
+    rings: of("ring"),
+    stampedes: of("stampede"),
+    volleys: p.threats.filter((t) => t.kind === "arrow").map((t) => t.s),
+    "bee wedges": of("bee-wedge"),
+    "kick lines": of("skeleton-kick-line"),
+    "the boss": p.enemies.filter((e) => e.type === "minotaur").map((e) => warp.toSong(e.spawnW)),
+    "the finale": p.hits.filter((h) => h.source === "ring").map((h) => h.s),
+  };
+}
+
+/** Groups of times at least `gap` apart: the first of each (a volley group's first arrow). */
+const firstOfGroups = (ts: number[], gap: number) => ts.filter((t, i) => i === 0 || t - ts[i - 1] >= gap);
+
 /** Zone waves: how many, how many within 8 s after a reference section start, and how many on none. */
 export function zoneWaves(plan: Plan, ref: Reference): { n: number; on: number; off: number } {
   const starts = (ref.sections ?? []).slice(1).map((x) => x.s0);
@@ -230,6 +248,14 @@ export function parityRows(authored: Plan | undefined, reactive: Plan, ref: Refe
     rows.push({ row: "Heavy swings within 50 ms of a reference accent (of all heavy swings)", authored: ha ? `${ha.on} (${ha.all})` : "—", reactive: `${hr.on} (${hr.all})`, stage: "5" });
   }
   rows.push({ row: "Cleaves launched", authored: authored ? String(authored.cleaves.length) : "—", reactive: String(reactive.cleaves.length), stage: "5" });
+  // Stage 6: each set piece and when it showed (a ring at its close, a formation at its release, volleys at their first arrow).
+  const ta = authored ? setPieceTimes(authored) : undefined;
+  const tr = setPieceTimes(reactive);
+  const list = (ts: number[]) => (ts.length ? ts.map((t) => t.toFixed(1)).join(", ") : "none");
+  for (const k of Object.keys(tr) as (keyof typeof tr)[]) {
+    const pick = (ts: number[]) => (k === "volleys" ? firstOfGroups(ts, 6) : k === "the finale" ? ts.slice(0, 1) : ts);
+    rows.push({ row: `  ${k}`, authored: ta ? list(pick(ta[k])) : "—", reactive: list(pick(tr[k])), stage: "6" });
+  }
   return rows;
 }
 

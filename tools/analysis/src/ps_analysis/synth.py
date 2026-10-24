@@ -15,7 +15,8 @@ Tracks:
   chorus, then a hard cut from 120 to 96 beats per minute.
 - `causality-mix`: a short check-only track on which every reactive feature
   fires: steady drums with an accent every 8 beats, a quiet stretch and a loud
-  entrance, a hard tempo cut, a few seconds of pads only, and a final chord
+  entrance, a hard tempo cut, a few seconds of pads only, the set pieces'
+  stretch (medium, a faint beat, a rise to medium, loud), and a final chord
   ringing out into silence.
 """
 
@@ -303,8 +304,12 @@ def _render(name: str) -> tuple[Synth, np.ndarray, list[Section]]:
         )
     if name == "causality-mix":
         # 120 BPM: steady 32 beats, quiet 8, a loud entrance 16; then 150 BPM:
-        # drums 16, pads only 8, drums 4 and the final chord on the next beat.
-        beats, end = beat_times([(32 + 8 + 16, 120, 120), (16 + 8 + 4 + 1, 150, 150)])
+        # drums 16, pads only 8, drums 4; then the set pieces' stretch: a medium
+        # 16 (the kick line), quiet 8 with a faint beat, a rise to medium 16 (a
+        # stampede), loud 16 (the boss), and the final chord on the next beat.
+        beats, end = beat_times(
+            [(32 + 8 + 16, 120, 120), (16 + 8 + 4 + 16 + 8 + 16 + 16 + 1, 150, 150)]
+        )
         m = Synth(end + 4.0, 6)
         drums(m, beats, 0, 32, "house")
         harmony(m, beats, 0, 32)
@@ -319,7 +324,16 @@ def _render(name: str) -> tuple[Synth, np.ndarray, list[Section]]:
         harmony(m, beats, 72, 80, bass=False, chords=False, pads=True)
         drums(m, beats, 80, 84, "house")
         harmony(m, beats, 80, 84)
-        last = float(beats[84])
+        drums(m, beats, 84, 100, "house", gain=0.25)
+        harmony(m, beats, 84, 100, gain=0.25)
+        drums(m, beats, 100, 108, "house", gain=0.05)
+        harmony(m, beats, 100, 108, bass=False, chords=False, pads=True, gain=0.08)
+        drums(m, beats, 108, 124, "house", gain=0.3)
+        harmony(m, beats, 108, 124, gain=0.3)
+        drums(m, beats, 124, 140, "house", gain=1.3)
+        harmony(m, beats, 124, 140, gain=1.3)
+        accents(m, beats, 124, 140, gain=1.4)
+        last = float(beats[140])
         m.add(last, m.crash(1.2), jitter=0)
         m.add(last, m.kick(), jitter=0)
         for f in CHORDS[0]:
@@ -334,7 +348,11 @@ def _render(name: str) -> tuple[Synth, np.ndarray, list[Section]]:
                 ("cut-to-150", 56, 72),
                 ("pads-only", 72, 80),
                 ("drums", 80, 84),
-                ("final-chord", 84, 85),
+                ("medium", 84, 100),
+                ("faint", 100, 108),
+                ("rise", 108, 124),
+                ("loud", 124, 140),
+                ("final-chord", 140, 141),
             ],
         )
     raise ValueError(f"unknown synthetic track {name}; known: {', '.join(TRACKS)}")

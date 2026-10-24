@@ -4,10 +4,11 @@ import type { Director } from "../src/content/schema.ts";
 import { checkReactiveCausality, checkReactiveSounds, checkSettleTiming, perturbStream, smokeTest } from "../src/planner/reactive-checks.ts";
 import { formatParity, parityRows, pressesRatedSame, sectionDetection, strikesOnBeat, timeAtTier } from "../src/planner/parity.ts";
 import { detectedSections } from "../src/reactive/sections.ts";
+import { reactiveFinale, reactiveSetPieces } from "../src/reactive/setpieces.ts";
 import { GATE_EXEMPT_SOUNDS, gatedSound, soundFade } from "../src/planner/emit.ts";
 import { planWithSim, playerFor, prepare } from "../src/planner/plan.ts";
 import { directorPopulation, keyAt, levelBlend, paletteLevelAt, paletteSwitches, sectionRoster, zoneWavePlan } from "../src/reactive/director.ts";
-import { judgedAverageGroove, REACTIVE_END_DELAY, REACTIVE_TITLE } from "../src/reactive/grade.ts";
+import { judgedAverageGroove, REACTIVE_TITLE } from "../src/reactive/grade.ts";
 import { reactivePlayerFor } from "../src/reactive/players.ts";
 import { reactiveSongMap } from "../src/reactive/songmap.ts";
 import { effectiveDownbeat, evidenceAt, firstBeatAtOrAfter, parseStream, splitStream, type StreamFile, type StreamStructure, type TickLevel } from "../src/reactive/stream.ts";
@@ -457,7 +458,9 @@ describe("the director's schedule (stage 4)", () => {
   });
 
   it("steps the roster on each start", () => {
-    const types = (a: number, b: number) => new Set(plan.enemies.filter((e) => warp.toSong(e.spawnW) >= a && warp.toSong(e.spawnW) < b).map((e) => e.type));
+    // (The horde's own enemies, not the set pieces' formations, rings and archers.)
+    const inSetPiece = new Set(plan.formations.flatMap((f) => f.members));
+    const types = (a: number, b: number) => new Set(plan.enemies.filter((e) => !inSetPiece.has(e.id) && e.type !== "skeleton-archer" && warp.toSong(e.spawnW) >= a && warp.toSong(e.spawnW) < b).map((e) => e.type));
     for (const t of types(0, starts[0])) expect(["slime", "bat"]).toContain(t);
     for (const t of types(starts[0] + 0.5, starts[1])) expect(["goblin", "slime", "bat"]).toContain(t);
     expect(types(starts[0] + 0.5, starts[1]).has("goblin")).toBe(true);
@@ -666,6 +669,87 @@ describe("heavy swings and cleaves on accents (stage 5)", () => {
   });
 });
 
+describe("set pieces (stage 6)", () => {
+  const checkLevel = inputForStream(splitStream(synthStream({ until: 10 })).stream, { level: "levels/reactive-check.yaml" }).level.director!;
+  const sp0 = checkLevel.setPieces!;
+  const d = { ...checkLevel, setPieces: { ...sp0, gapS: 6, ring: { ...sp0.ring, afterS: 3, maxBeats: 12 }, stampede: { ...sp0.stampede, quietS: 8 } } } as Director;
+  const beats = (b: { t: number }) => b.t;
+  const fb = (id: string) => (id === "bee-wedge" ? { entranceBeats: 4, releaseBeats: 6 } : { entranceBeats: 8 });
+  const loud = (from: number) => (t: number) => (t >= from ? "loud" : "quiet") as TickLevel;
+
+  it("fires the finale on the first candidate ending known in the audio's last 10 s, or at its end, once", () => {
+    const st = (ends: { t: number; knownAt: number }[]) => splitStream(synthStream({ until: 60, structure: { changes: [], jumps: [], ends } })).stream;
+    expect(reactiveFinale(st([{ t: 20, knownAt: 21.5 }, { t: 52, knownAt: 53.5 }, { t: 55, knownAt: 56.5 }]), d, 60)).toMatchObject({ s: 53.5, endS: 56.5 });
+    expect(reactiveFinale(st([{ t: 20, knownAt: 21.5 }]), d, 60)).toMatchObject({ s: 60, endS: 63 });
+  });
+
+  it("starts each on the effective downbeat after its trigger, 6 s apart, the boss first", () => {
+    // Loud from 20 s: a ring and (after 45 s) the boss on loud section starts; a wedge on the medium one.
+    const changes = [10, 30, 34, 50].map((k) => ({ t: k - 6, knownAt: k, strength: 1 }));
+    const stream = splitStream(synthStream({ until: 70, level: loud(20), structure: { changes, jumps: [], ends: [] } })).stream;
+    const sp = reactiveSetPieces(stream, d, 70, Infinity, fb);
+    const at = (k: number) => stream.beats[effectiveDownbeat(stream, k)].t;
+    // (30 s: a ring; 34 s is within 6 s of it, dropped; 50 s: the boss, which outranks the ring.)
+    expect(sp.starts.filter((x) => x.kind !== "volleys")).toEqual([
+      { kind: "wedge", s: at(10) },
+      { kind: "ring", s: at(30) },
+      { kind: "boss", s: at(50) },
+    ]);
+    expect(sp.boss!.sEnter).toBeGreaterThanOrEqual(50 + 0.6 - 1e-9);
+    for (const sl of sp.boss!.slams) expect(sl.sLand - sl.sMark).toBeCloseTo(0.5, 6);
+    // Volleys from the loud stretch's start, blocking none of the others.
+    expect(sp.starts[1]).toEqual({ kind: "volleys", s: at(20) });
+    expect(sp.volleys.length).toBeGreaterThan(3);
+  });
+
+  it("closes a ring from the first accent known 3 s in, on a downbeat known by then", () => {
+    const changes = [{ t: 4, knownAt: 30, strength: 1 }];
+    const onsets = [{ t: 31, knownAt: 31.01, strength: 9, strong: true }, { t: 34, knownAt: 34.01, strength: 9, strong: true }];
+    const stream = splitStream(synthStream({ until: 60, level: loud(20), onsets, structure: { changes, jumps: [], ends: [] } })).stream;
+    const r = reactiveSetPieces(stream, d, 60, Infinity, fb).rings[0];
+    expect(r.kClose).toBe(34.01);
+    const known = stream.beats.filter((b) => b.knownAt <= 34.01).map(beats);
+    expect(known).toContain(r.sClose);
+    expect(r.sClose).toBeGreaterThanOrEqual(34.01 + 0.35 - 1e-9);
+  });
+
+  it("starts a stampede on a rising jump after a stretch that was not loud, a 5% blip of loud aside", () => {
+    const jumps = [{ t: 30, knownAt: 31, db: 8 }];
+    const blip = (t: number) => (t >= 25 && t < 25.3 ? "loud" : "quiet") as TickLevel;
+    const mk = (level: (t: number) => TickLevel) => reactiveSetPieces(splitStream(synthStream({ until: 60, level, structure: { changes: [], jumps, ends: [] } })).stream, d, 60, Infinity, fb).stampedes;
+    expect(mk(blip).length).toBe(1);
+    expect(mk((t) => (t >= 24 && t < 26 ? "loud" : "quiet")).length).toBe(0);
+  });
+
+  it("drops the boss if the finale comes before it would drop in", () => {
+    const changes = [{ t: 44, knownAt: 50, strength: 1 }];
+    const st = (endKnown: number) => splitStream(synthStream({ until: 60, level: loud(20), structure: { changes, jumps: [], ends: [{ t: endKnown - 1.5, knownAt: endKnown }] } })).stream;
+    expect(reactiveSetPieces(st(58), d, 60, Infinity, fb).boss).toBeDefined();
+    expect(reactiveSetPieces(st(50.1), d, 60, Infinity, fb).boss).toBeUndefined();
+  });
+
+  it("decides each set piece from the stream known by its trigger (the perturbation)", () => {
+    const run = reactiveInput(readStreamFile("causality-mix"), { level: "levels/reactive-check.yaml" });
+    const dd = run.input.level.director!;
+    const len = run.stream.audio.duration;
+    const full = reactiveSetPieces(run.stream, dd, len, Infinity, fb);
+    const upTo = (sp: typeof full, C: number) => ({
+      starts: sp.starts.filter((x) => x.s < C),
+      rings: sp.rings.filter((r) => r.s < C).map((r) => ({ ...r, kClose: r.kClose < C ? r.kClose : undefined, sClose: r.kClose < C ? r.sClose : undefined })),
+      // (A volley is decided at its draw; its arrival is read at its release, its beat committed by then.)
+      volleys: sp.volleys.filter((v) => v.sDraw < C).map((v) => ({ ...v, sArrive: v.sRelease < C ? v.sArrive : undefined })),
+      formations: sp.formations.filter((f) => f.sStart < C).map((f) => ({ ...f, sRelease: f.sRelease < C ? f.sRelease : undefined })),
+      boss: sp.boss && sp.boss.sEnter - 0.55 < C ? { ...sp.boss, slams: sp.boss.slams.filter((x) => x.sMark < C) } : undefined,
+      finale: sp.finale && sp.finale.s < C ? sp.finale : undefined,
+    });
+    expect(full.starts.length).toBeGreaterThan(8);
+    for (let C = 5; C < len; C += 1.7) {
+      const cut = reactiveSetPieces(perturbStream(run.stream, C, "test"), dd, len, Infinity, fb);
+      expect(upTo(cut, C), `at ${C.toFixed(1)}`).toEqual(upTo(full, C));
+    }
+  });
+});
+
 describe("the parity report and the smoke test", () => {
   const file = synthStream({ until: 20 });
   const { stream } = splitStream(file);
@@ -706,13 +790,14 @@ describe("the reactive run's end", () => {
     expect(judgedAverageGroove(groove, stream, 0, 19)).toBe(0);
   });
 
-  it("shows the track's title card and the end card when the audio ends", () => {
+  it("shows the track's title card, and the end card once the finale's epilogue has played out", () => {
     const input = inputForStream(stream, { checks: { noHeroDamage: true } });
     const { plan } = planWithSim(input, { player: new KeyPlayer([]) });
     const ui = plan.events.ui.filter((u) => u.kind === "title" || u.kind === "end").map((u) => [u.kind, u.s]);
+    // (No candidate ending: the finale comes at the audio's end, the epilogue 3 s after it.)
     expect(ui).toEqual([
       ["title", REACTIVE_TITLE.s],
-      ["end", 40 + REACTIVE_END_DELAY],
+      ["end", 40 + 3],
     ]);
   });
 });
@@ -859,7 +944,8 @@ describe("the world follows the music and the player (stage 3)", () => {
     let faded = 0;
     for (let k = 0; k < full.length; k++) {
       expect(half[k].s).toBe(full[k].s);
-      const percussive = full[k].key !== undefined && !GATE_EXEMPT_SOUNDS.has(full[k].key!);
+      // (From the finale, at the audio's end, its sounds are exempt.)
+      const percussive = full[k].key !== undefined && !GATE_EXEMPT_SOUNDS.has(full[k].key!) && full[k].s < 20 - 1e-9;
       expect(half[k].gain / full[k].gain, `${full[k].key} at ${full[k].s}`).toBeCloseTo(percussive ? 0.5 : 1, 9);
       if (percussive) faded++;
     }

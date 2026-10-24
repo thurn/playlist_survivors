@@ -34,6 +34,7 @@
  * Targets (stage 4): the Galop's detected section starts against its song map's section starts.
  * Targets (stage 5): accent forecasts on every track, and their precision against strong onsets; the
  * Galop's heavy swings on its song map's tutti chords.
+ * Targets (stage 6): the Galop's set pieces, and its finale against its last tutti chord.
  *
  *   npm run check:reactive [-- --full]
  *
@@ -46,7 +47,7 @@ import type { PlannerInput } from "../src/planner/context.ts";
 import { planWithSim, prepare } from "../src/planner/plan.ts";
 import { belowGateShare, beatsWithin, checkDeterminism, forecastPrecision, checkReactiveCausality, checkReactiveSounds, checkSettleTiming, judgedTierShare, liveRun, smokeTest, type CausalityCase } from "../src/planner/reactive-checks.ts";
 import { SETTLE_DELAY } from "../src/reactive/settle.ts";
-import { heavyOnAccents, sectionDetection } from "../src/planner/parity.ts";
+import { heavyOnAccents, sectionDetection, setPieceTimes } from "../src/planner/parity.ts";
 import { detectedSections } from "../src/reactive/sections.ts";
 import { grooveAt } from "../src/plan/evaluate.ts";
 import type { Plan } from "../src/plan/types.ts";
@@ -271,6 +272,16 @@ const causalityCase = (id: string, level: string | undefined, cuts?: number[]): 
     const { plan } = planWithSim(galop.input, { props, player: playerOn(galop.reference!, "reactive-moderate")(galop.input) });
     const h = heavyOnAccents(plan, galop.reference!, "tutti-chord");
     lines.push(`target (stage 5): the Galop's heavy swings within 50 ms of a song-map tutti chord, reactive-moderate, damage off: ${h.on} of ${h.all} heavy swings (at least 3${h.on >= 3 ? "" : ", missed"}); ${plan.cleaves.length} cleaves launched`);
+    // Stage 6: each set piece occurs; the finale within 6 s after the last tutti chord, with no candidate ending earlier in the galop.
+    const t = setPieceTimes(plan);
+    const need = ["stampedes", "rings", "volleys", "the boss"] as const;
+    const missing = need.filter((k) => t[k].length === 0);
+    const tutti = (galop.reference!.accents ?? []).filter((a) => a.label === "tutti-chord").map((a) => a.t);
+    const lastTutti = Math.max(...tutti);
+    const finale = t["the finale"][0];
+    const galopFrom = galop.reference!.sections!.find((x) => x.feel !== "free")!.s0;
+    const early = (galop.stream.structure?.ends ?? []).filter((e) => e.t >= galopFrom && e.t < lastTutti);
+    lines.push(`targets (stage 6, the Galop): set pieces ${need.map((k) => `${k} ${t[k].length}`).join(", ")}${missing.length ? ` (missed: ${missing.join(", ")})` : ""}, kick lines ${t["kick lines"].length}, bee wedges ${t["bee wedges"].length}; the finale at ${finale?.toFixed(2)} s, ${finale !== undefined ? (finale - lastTutti).toFixed(2) : "—"} s after the last tutti chord (within 6${finale !== undefined && finale - lastTutti >= 0 && finale - lastTutti <= 6 ? "" : ", missed"}); ${early.length} candidate endings earlier in the galop (none${early.length ? ", missed" : ""})`);
   }
   lines.push("targets (stage 5, accent forecasts with confidence at least 0.6, and their share within 50 ms of a strong onset):");
   for (const id of [...tracks, "causality-mix"]) {

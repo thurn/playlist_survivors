@@ -9,6 +9,7 @@ import { barOfBeatIndex, beatIndexAt, beatIndexOf, timeOfBeatIndex } from "../co
 import { beatDurationAt, PlanError, sectionIndexAt, subdivisionBeats, type Ctx } from "../planner/context.ts";
 import { phraseFinalAccent, resolveRef, sectionPhrases } from "../planner/musical.ts";
 import { strideSteps, type StrideSteps } from "./strides.ts";
+import { reactiveSetPieces } from "../reactive/setpieces.ts";
 
 export interface GridSlot {
   s: number;
@@ -48,11 +49,18 @@ export interface Schedule {
   volleys: { sDraw: number; sRelease: number; sArrive: number; archers: number; group: number }[];
   /** Archer groups: when they enter, how many, and when their last volley flies. */
   archerGroups: { s: number; archers: number; until: number }[];
-  boss?: { type: string; sEnter: number; slams: { sMark: number; sLand: number }[] };
+  /** (Reactive mode: it retreats at sRetreat if the finale has not killed it.) */
+  boss?: { type: string; sEnter: number; slams: { sMark: number; sLand: number }[]; sRetreat?: number };
   formations: { def: string; sStart: number; sRelease: number; line?: number }[];
-  /** Set pieces: closing rings (spawn and close times) and stampedes. */
-  rings: { s: number; sClose: number; enemy: string; count: number; gaps: number }[];
+  /** Set pieces: closing rings (spawn and close times; reactive mode's hold their radius until kClose) and stampedes. */
+  rings: { s: number; sClose: number; kClose?: number; enemy: string; count: number; gaps: number }[];
   stampedes: { s: number; enemy: string; count: number; rows: number }[];
+  /**
+   * Reactive mode (stage 6): landmarks the set pieces raise, the finale's end of the run, every set
+   * piece's start, and the base rate with the finale's swell (the simulation switches to it when the
+   * finale comes, since nothing may read the swell before it is known).
+   */
+  reactive?: { landmarks: { s: number; id: string }[]; endS?: number; starts: { kind: string; s: number }[]; swellSteps?: { s: number; rate: number }[] };
 }
 
 /** A free section's strike times: an automatic (light) swing every autoSwingBeats beats. */
@@ -269,10 +277,53 @@ function encounters(ctx: Ctx): Pick<Schedule, "volleys" | "archerGroups" | "boss
   return { volleys, archerGroups, boss, formations, rings, stampedes };
 }
 
+/** Reactive mode (stage 6): the director's set pieces on the stream, in the schedule's terms. */
+function reactiveEncounters(ctx: Ctx): (Pick<Schedule, "volleys" | "archerGroups" | "boss" | "formations" | "rings" | "stampedes"> & { blast?: Schedule["blast"]; reactive: NonNullable<Schedule["reactive"]>; swell?: { s: number; rate: number; dur: number } }) | undefined {
+  const d = ctx.level.director;
+  if (!ctx.reactive || !d?.setPieces) return undefined;
+  const knownLength = ctx.input.knownLength ?? ctx.duration;
+  const formationBeats = (id: string) => {
+    const f = ctx.lib.formations.get(id)!;
+    return { entranceBeats: f.entranceBeats, ...(f.release.at === "afterBeats" ? { releaseBeats: f.release.beats } : {}) };
+  };
+  const sp = reactiveSetPieces(ctx.reactive, d, knownLength, Infinity, formationBeats);
+  const landmarks: { s: number; id: string }[] = [];
+  if (sp.boss?.landmark) landmarks.push({ s: sp.boss.sEnter, id: sp.boss.landmark });
+  if (sp.finale?.landmark) landmarks.push({ s: sp.finale.s, id: sp.finale.landmark });
+  return {
+    volleys: sp.volleys,
+    archerGroups: sp.archerGroups,
+    ...(sp.boss ? { boss: { type: sp.boss.type, sEnter: sp.boss.sEnter, slams: sp.boss.slams, sRetreat: sp.boss.sRetreat } } : {}),
+    formations: sp.formations,
+    rings: sp.rings,
+    stampedes: sp.stampedes,
+    ...(sp.finale ? { blast: { s: sp.finale.s, weapon: sp.finale.blast }, swell: { s: sp.finale.s, rate: sp.finale.swell, dur: sp.finale.swellS } } : {}),
+    reactive: { landmarks, ...(sp.finale ? { endS: sp.finale.endS } : {}), starts: sp.starts },
+  };
+}
+
+/** Reactive mode's finale swell: the rate falls to `rate` and back over `dur` from s, as short steps over the base rate. */
+function withSwell(steps: { s: number; rate: number }[], sw: { s: number; rate: number; dur: number }): { s: number; rate: number }[] {
+  const n = 16;
+  const base = (t: number) => stepRate(steps, t);
+  const out = steps.filter((x) => x.s < sw.s - 1e-9);
+  for (let k = 0; k < n; k++) {
+    const a = sw.s + (sw.dur * k) / n;
+    const u = (k + 0.5) / n;
+    out.push({ s: a, rate: Math.round(base(a) * (1 - (1 - sw.rate) * Math.sin(Math.PI * u)) * 1e6) / 1e6 });
+  }
+  const after = sw.s + sw.dur;
+  out.push({ s: after, rate: base(after) });
+  for (const x of steps) if (x.s > after + 1e-9) out.push(x);
+  return out;
+}
+
 export function buildSchedule(ctx: Ctx): Schedule {
   const grids = ctx.sections.map((_, i) => sectionGrid(ctx, i));
   const slots = grids.flat().sort((a, b) => a.s - b.s);
+  const renc = reactiveEncounters(ctx);
   const steps = baseSteps(ctx);
+  if (renc?.swell) renc.reactive.swellSteps = withSwell(steps, renc.swell);
 
   const levelUps: Schedule["levelUps"] = [];
   let blast: Schedule["blast"];
@@ -284,9 +335,10 @@ export function buildSchedule(ctx: Ctx): Schedule {
   // detected section start once its experience is reached, decided as the run goes).
   if (ctx.reactive) for (const lu of ctx.level.director?.levelUps ?? []) levelUps.push({ id: "offer", s: Infinity, xp: lu.xp });
   levelUps.sort((a, b) => a.s - b.s);
-  const enc = encounters(ctx);
+  if (renc?.blast) blast = renc.blast;
+  const enc = renc ? { volleys: renc.volleys, archerGroups: renc.archerGroups, boss: renc.boss, formations: renc.formations, rings: renc.rings, stampedes: renc.stampedes } : encounters(ctx);
   // A charging formation's release is an accent: the skilled player meets it with a cleave.
-  for (const f of enc.formations) {
+  for (const f of renc ? [] : enc.formations) {
     const def = ctx.lib.formations.get(f.def)!;
     if (def.release.mode !== "charge") continue;
     const sl = slots.find((x) => x.kind === "grid" && Math.abs(x.s - f.sRelease) <= 0.04);
@@ -297,6 +349,6 @@ export function buildSchedule(ctx: Ctx): Schedule {
   }
   const gridSlots = slots.filter((x) => x.kind === "grid");
   const gridTimes = Float64Array.from(gridSlots, (x) => x.s);
-  return { grids, slots, strikeTimes: Float64Array.from(slots, (x) => x.s), gridSlots, gridTimes, strideSteps: strideSteps(gridTimes, ctx.lib.hero.stride.maxPeriodS), baseSteps: steps, levelUps, blast, ...enc };
+  return { grids, slots, strikeTimes: Float64Array.from(slots, (x) => x.s), gridSlots, gridTimes, strideSteps: strideSteps(gridTimes, ctx.lib.hero.stride.maxPeriodS), baseSteps: steps, levelUps, blast, ...enc, ...(renc ? { reactive: renc.reactive } : {}) };
 }
 

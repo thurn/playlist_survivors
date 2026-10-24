@@ -24,6 +24,7 @@ import { cameraAt, VIEW_W } from "./camera.ts";
 import { resolveRef } from "./musical.ts";
 import { beatIndexAtOrBefore } from "../reactive/stream.ts";
 import { keyAt, paletteLevelAt } from "../reactive/director.ts";
+import { reactiveFinale, reactiveRunEnd } from "../reactive/setpieces.ts";
 import { REACTIVE_END_DELAY, REACTIVE_TITLE } from "../reactive/grade.ts";
 
 export const VOICE_BUDGET = 4;
@@ -85,6 +86,10 @@ export function gatedSound(ctx: Ctx, key: string, s: number): boolean {
 export function soundFade(ctx: Ctx, key: string, s: number): number {
   const stream = ctx.reactive;
   if (!stream || GATE_EXEMPT_SOUNDS.has(key)) return 1;
+  // (Stage 6: from the finale on, every sound is exempt: its own, and the epilogue's past the audio.)
+  const director = ctx.level.director;
+  const finale = director ? reactiveFinale(stream, director, ctx.input.knownLength ?? ctx.duration) : undefined;
+  if (finale && s >= finale.s - 1e-9) return 1;
   const i = beatIndexAtOrBefore(stream, s);
   if (i < 0) return 0;
   const gate = stream.params.gate;
@@ -473,7 +478,7 @@ export class Emitter {
   /** The boss's health bar. */
   bossBar(b: BossInfo, until: number): UiEvent {
     const bossEvent = this.ctx.events.find((e) => e.ev.boss);
-    const name = bossEvent?.ev.banner ?? bossEvent?.ev.boss?.type.toUpperCase() ?? "BOSS";
+    const name = bossEvent?.ev.banner ?? (bossEvent?.ev.boss?.type ?? this.ctx.level.director?.setPieces?.boss.type)?.toUpperCase() ?? "BOSS";
     return { kind: "bossBar", s: b.landS, until, health: b.health.map((h) => [h.s, h.frac] as [number, number]), name };
   }
 
@@ -617,9 +622,9 @@ export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam:
   }
   const arrived = gems.filter((g) => Number.isFinite(g.s1) && g.w1 > 0).map((g) => g.s1);
   const finalArrival = arrived.length ? Math.max(...arrived) : ctx.duration;
-  if (sim.blastS !== undefined) sink.ui({ kind: "end", s: finalArrival + 1.6 });
-  // Reactive mode: the run ends when the audio does.
-  else if (ctx.reactive) sink.ui({ kind: "end", s: ctx.duration + REACTIVE_END_DELAY });
+  // Reactive mode: the run ends when the audio does, or after the finale's epilogue.
+  if (ctx.reactive) sink.ui({ kind: "end", s: reactiveRunEnd(ctx.reactive, ctx.level.director, ctx.input.knownLength ?? ctx.duration, ctx.duration, REACTIVE_END_DELAY) });
+  else if (sim.blastS !== undefined) sink.ui({ kind: "end", s: finalArrival + 1.6 });
   const xpTimes = sim.xp.map((x) => x.s);
   const xpFill = sim.xp.map((x) => x.fill);
 
@@ -646,7 +651,9 @@ export function emit(ctx: Ctx, sim: SimResult, warp: Warp, hero: HeroTrack, cam:
   if (sim.boss) {
     const b = sim.boss;
     em.bossLand(b);
-    sink.ui(em.bossBar(b, b.deathS ?? sim.blastS ?? ctx.duration));
+    // (Reactive mode: until its retreat, the one end known when it lands.)
+    const retreatS = ctx.reactive ? ctx.level.director?.setPieces?.boss.retreatS : undefined;
+    sink.ui(em.bossBar(b, b.deathS ?? (ctx.reactive ? b.landS + (retreatS ?? Infinity) : (sim.blastS ?? ctx.duration))));
     if (b.deathS !== undefined && b.killHit !== undefined) em.bossKill(hits[b.killHit]);
   }
   // Cleave shockwaves: a crescent per band, on its sixteenth note.

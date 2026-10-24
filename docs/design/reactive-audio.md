@@ -2021,3 +2021,107 @@ Recorded by `hv-s4pt.9`.
     would need the bands scheduled as their beats arrive.
   - `check:reactive --full` passes on every shipped track.
   - The sound check passes on `causality-mix` and the Galop.
+
+### Measured: stage 6, set pieces and the finale
+
+Recorded by `hv-s4pt.10`.
+
+- **Implementation:**
+  - `src/reactive/setpieces.ts` derives every set piece from the stream: its
+    trigger, its start on the effective downbeat after it, the 6 s spacing,
+    and the priority order (the boss, then a ring, a stampede, a formation and
+    volleys).
+  - The schedule takes them in play mode's terms, and the simulation reuses
+    play mode's handlers.
+  - A set piece starts only on stream entries known by its trigger. Its
+    open-ended parts are read only from when they are known.
+- **Choices beyond the design:**
+  - Stampedes allow loud ticks in the quiet stretch before the jump, up to 5%
+    of them, so a blip does not cancel one.
+  - A volley group starts on the level turning loud with the beat clear, and
+    re-arms only after 4 s without that. Each volley is decided at its draw.
+  - Volleys, the least of the set pieces, wait the 6 s after any start, but
+    their own start blocks none of the others: archers keep volleying under a
+    later set piece.
+  - Turned away by the spacing, volleys try again on the first downbeat the
+    spacing allows, while the level is still loud with the beat clear.
+  - The boss is dropped if the finale comes before it would drop in. One
+    landing as the finale comes leaves with the blast.
+  - A ring the finale has ended records no close.
+  - From the finale on, every sound is exempt from the gate: the finale's own,
+    and the epilogue's past the audio.
+  - The kick line counts medium beats whatever the evidence, but needs the
+    beat clear on the beat that triggers it. It comes at most once, as the
+    boss does.
+  - A bee wedge releases after its entrance and release beats, counted in
+    committed beats as they arrive.
+  - The boss's slams are marked one beat ahead, not two, so the landing's beat
+    is committed when its marker appears.
+  - The boss retreats by running off the field with its walk.
+- **Rules a live run needs, found by the perturbation check:**
+  - A ring's members get their velocity from the step behind, since the
+    forward look-ahead read the close early.
+  - A ring's close ends on the first downbeat known when it starts, or one bar
+    of the latest committed period after it. Its pace depends on that end,
+    which the effective downbeat could leave unknown.
+  - Gems flying on sixteenths, and a vacuum's bar of them, are timed from the
+    beats committed by their takeoff. Past the last committed beat they use
+    its period. This was an older early read: the extended `causality-mix`
+    exposed it.
+  - The finale's swell joins the base rate only when the finale comes. Swings
+    winding up for a slot near it would otherwise read the swell early.
+  - The boss's bar ends at its retreat, the one end known when it lands.
+  - The players' view of a closing ring follows its members, from the close's
+    start.
+  - The kick line's dance start is recorded when its entrance ends, its beat
+    known by then.
+  - The prefix comparison now also compares enemies' attacks and dances, as
+    they stood at the cut.
+  - In the prefix comparison, the boss bar's health series and a slam
+    marker's predicted landing are compared as they stood at the cut.
+- **`causality-mix` extended:** after its first 42 s, a medium stretch (the
+  kick line), a faint quiet beat, a rise to medium (a stampede that does not
+  fall on a loud section start), and a loud close (the boss). Then the final
+  chord rings out at 62.1 s. The track is now 68 s long.
+- **The check level** compresses the set pieces:
+  - gaps of 2 s;
+  - rings close from an accent 1 s in, or after 6 beats;
+  - a stampede after 3 s that were not loud;
+  - the kick line after 4 medium beats, dancing 4 to 8 beats;
+  - the boss after 45 s, retreating after 4 s.
+- **The Galop with `reactive-moderate`** (seed 1858, damage off), each set
+  piece as it showed, against authored:
+
+  | Set piece | Reactive (s) | Authored (s) | How it is timed |
+  |---|---|---|---|
+  | Rings | 54.7, 63.0 | 62.3, 116.2, 133.0 | the close |
+  | Stampedes | none | 101.9, 124.6 | the start |
+  | Volleys | 48.8, 108.7, 114.9 | 92.1 | the first arrow of each group |
+  | Bee wedge | 43.9 | 84.8, 88.6 | the release |
+  | Kick line | 104.6 | 100.0 | the release |
+  | Boss | 107.8 | 104.0 | the entry |
+  | Finale | 144.3 | 139.6 | the blast |
+
+  - A third ring starts at 141.0 s, and the finale ends it before it
+    closes.
+  - Cleaves launched: 15.
+- **Targets:**
+  - Each set piece occurs: missed for the stampede. The only rising jump that
+    qualifies is the bridge's at 100.65 s, known with the beat clear after a
+    stretch that was not loud. It falls within 6 s of the kick line's start
+    at 96.8 s.
+  - The finale lands 4.72 s after the last tutti chord (target within 6 s).
+  - No candidate ending comes earlier in the galop (the one at 29.9 s is in
+    the prelude).
+- **Causality:**
+  - The perturbation check on `causality-mix` passes: 578 cuts, 0 failing.
+    Every feature class fired before a cut: each set piece and the finale
+    (rings, stampedes, volleys, bee wedges, kick lines, the boss, the finale)
+    as well as the earlier stages' classes.
+  - The finale's window comes from the audio's length, passed apart from the
+    stream.
+  - `check:reactive --full` passes with no failing cut on every shipped
+    track: the Galop 28, William Tell 32, Mountain King 30, Bumblebee 14,
+    Beethoven 34, the synthetic tracks 12 to 32.
+  - `check:reactive` now takes about 80 s, 61 s of it for the causality check
+    on the longer track.

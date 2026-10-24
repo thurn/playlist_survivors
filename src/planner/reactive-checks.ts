@@ -12,6 +12,7 @@
 import type { PropInfo } from "../mapgen/mapgen.ts";
 import { Rng } from "../core/rng.ts";
 import { Warp } from "../core/warp.ts";
+import { setPieceTimes } from "./parity.ts";
 import { LiveRecording } from "../live/recording.ts";
 import { LiveRunner, SPECULATE_S } from "../live/runner.ts";
 import { handOver, liveSim, type BotFor } from "../live/session.ts";
@@ -189,6 +190,11 @@ export function keysOf(plan: Plan): KeyEvent[] {
 const SOUND_SETTLE = 0.25;
 const FRAME_RATE = 30;
 
+/** A UI event as it stood at song time C (the boss's bar grows its health series, and ends, as the run goes). */
+function uiAtC(u: Plan["events"]["ui"][number], C: number): Plan["events"]["ui"][number] {
+  return u.kind === "bossBar" ? { ...u, health: u.health.filter(([t]) => t < C), until: Math.min(u.until, C) } : u;
+}
+
 /** The first difference between two runs before song time C, or undefined. Frames are compared wherever both runs took one. */
 export function reactivePrefixDifference(ra: LiveRun, rb: LiveRun, C: number): string | undefined {
   const pa = ra.recording.plan;
@@ -223,7 +229,8 @@ export function reactivePrefixDifference(ra: LiveRun, rb: LiveRun, C: number): s
     ["bites", pa.bites, pb.bites],
     ["heals", pa.heals, pb.heals],
     ["chickens", chickensAtC(pa), chickensAtC(pb)],
-    ["ui events", pa.events.ui, pb.events.ui],
+    // (The boss's bar as it stood at C: its health so far, and its end only if it has come.)
+    ["ui events", pa.events.ui.map((u) => uiAtC(u, C)), pb.events.ui.map((u) => uiAtC(u, C))],
     ["effects", pa.events.effects, pb.events.effects],
     ["vacuums", vacuumsAtC(pa), vacuumsAtC(pb)],
     ["near misses", pa.nearMisses, pb.nearMisses],
@@ -253,7 +260,8 @@ export function reactivePrefixDifference(ra: LiveRun, rb: LiveRun, C: number): s
   // Arrows and slam markers as they started; lightning chains' points so far.
   const projectiles = (p: Plan) => p.projectiles.filter((x) => x.w0 < wC).map((x) => [x.kind, x.w0, x.x0, x.y0]);
   if (!same(projectiles(pa), projectiles(pb))) return `projectiles before w=${wC.toFixed(3)} differ`;
-  const slams = (p: Plan) => p.slams.filter((x) => x.w0 < wC);
+  // (A marker's landing, predicted until it lands, as it stood at C.)
+  const slams = (p: Plan) => p.slams.filter((x) => x.w0 < wC).map((x) => (x.w1 < wC ? x : { ...x, w1: undefined }));
   if (!same(slams(pa), slams(pb))) return `slam markers before w=${wC.toFixed(3)} differ`;
   const chains = (p: Plan) => p.chains.map((c) => c.points.filter((q) => q.w < wC)).filter((pts) => pts.length > 0);
   if (!same(chains(pa), chains(pb))) return `lightning chains before w=${wC.toFixed(3)} differ`;
@@ -275,6 +283,13 @@ export function reactivePrefixDifference(ra: LiveRun, rb: LiveRun, C: number): s
     if (!eb || eb.type !== ea.type || eb.spawnW !== ea.spawnW) return `enemy #${ea.id} spawns differently`;
     if (!same(ea.fates.filter((f) => f.w < wC), eb.fates.filter((f) => f.w < wC))) return `enemy #${ea.id}'s hits before w=${wC.toFixed(2)} differ`;
     if ((ea.deathW < wC || eb.deathW < wC) && ea.deathW !== eb.deathW) return `enemy #${ea.id} dies at a different time`;
+    // Its attacks and its dance as they stood at C (stage 6: archers' shots, the boss's slams, the kick line).
+    const attacks = (e: typeof ea) => (e.attacks ?? []).filter((x) => x.w < wC);
+    if (!same(attacks(ea), attacks(eb))) return `enemy #${ea.id}'s attacks before w=${wC.toFixed(2)} differ`;
+    // (Its start, predicted when the entrance ends and taken from the warp at the release, to 1 µs;
+    // its end is written at the release, a death's already compared.)
+    const dance = (e: typeof ea) => (e.dance && e.dance.w0 < wC ? { ...e.dance, w0: Math.round(e.dance.w0 * 1e6), w1: undefined } : undefined);
+    if (!same(dance(ea), dance(eb))) return `enemy #${ea.id}'s dance before w=${wC.toFixed(2)} differs`;
     const k0 = Math.round(ea.sampleW0 * rate);
     if (Math.round(eb.sampleW0 * rate) !== k0) return `enemy #${ea.id}'s samples start differently`;
     const sa = samplesOf(pa, ea);
@@ -342,8 +357,9 @@ export function forecastPrecision(stream: ReactiveStream, minConfidence = 0.6, w
   return { n: sure.length, hits: sure.filter((f) => strong.some((t) => Math.abs(t - f.t) <= windowS + 1e-9)).length, all: stream.accents?.forecast.length ?? 0 };
 }
 
-/** The feature classes so far (stages 1 to 5): each must fire before a cut, or the check proves nothing about it. */
-export const FEATURES = ["level-ups", "zone waves", "section starts", "reading switches", "forecasts", "forecast cleaves", "onset cleaves"] as const;
+/** The feature classes so far (stages 1 to 6): each must fire before a cut, or the check proves nothing about it. */
+export const FEATURES = ["level-ups", "zone waves", "section starts", "reading switches", "forecasts", "forecast cleaves", "onset cleaves", "rings", "stampedes", "volleys", "bee wedges", "kick lines", "the boss", "the finale"] as const;
+
 
 /** Default cuts: just before each committed beat's, strong onset's, hindsight entry's, structural event's and accent forecast's knownAt, and just after each level-up and zone wave. */
 export function defaultCuts(stream: ReactiveStream, truePlan: Plan, until: number): number[] {
@@ -354,6 +370,8 @@ export function defaultCuts(stream: ReactiveStream, truePlan: Plan, until: numbe
     ...(stream.structure ? [...stream.structure.changes, ...stream.structure.jumps, ...stream.structure.ends] : []).map((e) => e.knownAt - 0.001),
     ...(stream.accents?.forecast ?? []).map((e) => e.knownAt - 0.001),
     ...truePlan.upgrades.map((u) => u.s + 0.001),
+    // (Stage 6: just after each set piece shows.)
+    ...Object.values(setPieceTimes(truePlan)).flatMap((ts) => ts.slice(0, 4).map((t) => t + 0.001)),
     ...truePlan.open.waves.map((w) => w.s + 0.001),
   ].filter((c) => c > 0.05 && c < until);
   raw.sort((a, b) => a - b);
@@ -382,6 +400,7 @@ export function checkReactiveCausality(c: CausalityCase): CausalityResult {
     if (truthPlan.swings.some((w) => w.kind === "heavy" && w.s < last)) firedBefore.add("forecasts");
     if (truthPlan.cleaves.some((c) => !c.onset && (c.launch ?? c.s) < last)) firedBefore.add("forecast cleaves");
     if (truthPlan.cleaves.some((c) => c.onset && (c.launch ?? c.s) < last)) firedBefore.add("onset cleaves");
+    for (const [name, times] of Object.entries(setPieceTimes(truthPlan))) if (times.some((t) => t < last)) firedBefore.add(name);
     if ((truthPlan.settles ?? []).some((x) => x.switched && x.s < last)) firedBefore.add("reading switches");
     let prev = 0;
     for (const C of cuts) {
@@ -451,6 +470,8 @@ export function checkReactiveSounds(plan: Plan, stream: ReactiveStream, lib: Pla
   const beats = stream.beats.map((b) => b.t);
   const failures: string[] = [];
   let checked = 0;
+  // (Stage 6: the finale's sounds, from its first band on, are exempt from the gate.)
+  const finaleS = Math.min(Infinity, ...plan.hits.filter((h) => h.source === "ring").map((h) => h.s));
   const owner = (s: number) => {
     let lo = -1;
     let hi = beats.length;
@@ -486,7 +507,7 @@ export function checkReactiveSounds(plan: Plan, stream: ReactiveStream, lib: Pla
     // A swing's whoosh belongs to its strike's beat (it leads the strike by 40 ms).
     const ownerS = snd.key === "swing" ? snd.s + 0.04 : snd.s;
     const j = owner(ownerS);
-    if (!GATE_EXEMPT_SOUNDS.has(snd.key) && (j < 0 || stream.beats[j].evidence < stream.params.gate)) failures.push(`${snd.key} sound at s=${snd.s.toFixed(3)} plays on a beat committed below the gate`);
+    if (!GATE_EXEMPT_SOUNDS.has(snd.key) && snd.s < finaleS - 1e-9 && (j < 0 || stream.beats[j].evidence < stream.params.gate)) failures.push(`${snd.key} sound at s=${snd.s.toFixed(3)} plays on a beat committed below the gate`);
   }
   return { name: "sounds on committed beats", failures: failures.slice(0, 20).concat(failures.length > 20 ? [`… and ${failures.length - 20} more`] : []), checked };
 }
