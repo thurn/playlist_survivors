@@ -257,6 +257,36 @@ class Minutes(unittest.TestCase):
 
 
 class Stages(unittest.TestCase):
+    def test_since_takes_dates_datetimes_and_the_retrospective(self):
+        ev = friction.Evidence(3, 8, set(), {}, {}, [])
+        self.assertIsNone(friction.parse_since(None, ev))
+        self.assertEqual(
+            friction.parse_since("2026-10-24", ev).isoformat(), "2026-10-24T00:00:00+00:00"
+        )
+        self.assertEqual(
+            friction.parse_since("2026-10-24T14:12:45-07:00", ev).isoformat(),
+            "2026-10-24T21:12:45+00:00",
+        )
+        with self.assertRaises(friction.Malformed):
+            friction.parse_since("retrospective", ev)
+        with self.assertRaises(friction.Malformed):
+            friction.parse_since("yesterday", ev)
+
+    def test_release_rows_since_a_time_drop_older_runs(self):
+        old, new = "01a16f03-ae4b-7163-9176-622fa552e0cd", "01a16fd2-6dd2-7371-b1b5-ac88c067f768"
+        release = {
+            "runs": [
+                {"item_id": new, "target_oid": {"bytes": "b" * 40}, "state": "succeeded",
+                 "elapsed_ms": 1000, "steps": []},
+                {"item_id": old, "target_oid": {"bytes": "a" * 40}, "state": "failed",
+                 "elapsed_ms": 2000, "steps": []},
+            ]
+        }
+        cut = friction.uuid7_time(new)
+        rows = friction.release_rows(release, cut)
+        self.assertEqual([r["target"] for r in rows], ["bbbbbbbbbb"])
+        self.assertEqual(len(friction.release_rows(release)), 2)
+
     def test_tollgate_and_uuid7_times(self):
         self.assertEqual(
             friction.tollgate_time(

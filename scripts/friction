@@ -11,7 +11,7 @@
     scripts/friction minutes [--parked MIN]
                                 # implementMin for the record being written: whole minutes since
                                 # this worktree's branch was created, less MIN parked
-    scripts/friction stages [--since YYYY-MM-DD] [--json]
+    scripts/friction stages [--since DATE|DATETIME|retrospective] [--json]
                                 # Tollgate's gate time per candidate and release time per run and
                                 # step, against metrics.md's gateS and releaseS budgets
 
@@ -37,7 +37,8 @@ when the window holds retrospectiveCadence records; its duty key is
 retrospective=hv-t8o8/since-<last retrospective's bead>.
 
 `stages` reads Tollgate, not the records (which are committed before their gate runs): every
-candidate since --since (default: the last retrospective's date, else all), from the
+candidate and release run since --since (a date, an ISO date-time, or `retrospective`; default:
+the last retrospective's record, else all), from the
 refs/tollgate/sources/<item-id> refs (time-ordered UUIDv7 ids) and `tg status <id> --json`, and
 the release runs Tollgate keeps (`tg release status --json`). A stage over 1.5 times its budget on
 triggerBeads consecutive runs is reported as an overrun, for the retrospective to dispose of.
@@ -431,10 +432,13 @@ def gate_row(status: dict) -> dict:
     return row
 
 
-def release_rows(release: dict) -> list[dict]:
-    """The release runs Tollgate keeps, oldest first: target, state, time and each step's time."""
+def release_rows(release: dict, since: datetime | None = None) -> list[dict]:
+    """The release runs Tollgate keeps since `since` (by their UUIDv7 ids), oldest first: target,
+    state, time and each step's time."""
     rows = []
     for run in reversed(release.get("runs", [])):
+        if since and run.get("item_id") and uuid7_time(run["item_id"]) < since:
+            continue
         rows.append(
             {
                 "target": run["target_oid"]["bytes"][:10],
@@ -485,6 +489,22 @@ def retrospective_time(evidence: Evidence) -> datetime:
         if record.bead == last["retrospective"]:
             return record.recorded.astimezone(UTC)
     return datetime.fromisoformat(last["date"]).replace(tzinfo=UTC)
+
+
+def parse_since(value: str | None, evidence: Evidence) -> datetime | None:
+    """--since: a date (its start, UTC), an ISO date-time (naive ones UTC), or `retrospective`;
+    without one, the last retrospective's time, else None (everything)."""
+    if value in (None, "retrospective"):
+        if evidence.retrospectives:
+            return retrospective_time(evidence)
+        if value is None:
+            return None
+        raise Malformed("--since retrospective: no retrospective yet")
+    try:
+        t = datetime.fromisoformat(value)
+    except ValueError as error:
+        raise Malformed(f"--since {value!r}: {error}") from error
+    return t.replace(tzinfo=UTC) if t.tzinfo is None else t.astimezone(UTC)
 
 
 def tg_json(*args: str) -> dict:
@@ -554,7 +574,10 @@ def main(argv: list[str]) -> int:
     parser.add_argument(
         "--parked", type=float, default=0.0, help="minutes: time the bead was parked"
     )
-    parser.add_argument("--since", help="stages: from this date (YYYY-MM-DD)")
+    parser.add_argument(
+        "--since",
+        help="stages: from a date, an ISO date-time or 'retrospective' (the default)",
+    )
     parser.add_argument("--json", action="store_true", help="print the report as JSON")
     parser.add_argument("--evidence", type=Path, default=DEFAULT_EVIDENCE)
     args = parser.parse_args(argv)
@@ -574,18 +597,17 @@ def main(argv: list[str]) -> int:
         print(f"friction: {len(evidence.records)} records valid")
         return 0
     if args.command == "stages":
-        if args.since:
-            since = datetime.fromisoformat(args.since).replace(tzinfo=UTC)
-        elif evidence.retrospectives:
-            since = retrospective_time(evidence)
-        else:
-            since = None
+        try:
+            since = parse_since(args.since, evidence)
+        except Malformed as error:
+            print(f"friction: {error}", file=sys.stderr)
+            return 2
         statuses = [tg_json("status", i) for i in candidate_ids(since)]
         # (Release runs are queue items too; only candidates go through the gate.)
         gates = [gate_row(st) for st in statuses if st["item"].get("kind") == "gate"]
         result = stages(
             gates,
-            release_rows(tg_json("release", "status")),
+            release_rows(tg_json("release", "status"), since),
             evidence.budgets,
             evidence.trigger_beads,
         )
