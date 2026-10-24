@@ -245,3 +245,111 @@ tracks:
     artist: NotJam
     licence: CC0-1.0
     split: held-out
+# The Creative Commons tracks bead F3 picked (licences checked on each page): sources are
+# relative to `--source <dir>` where each file was downloaded into its own <id>/ directory.
+  - id: cc-benjamin-orth-where-you-are-now
+    source: "cc-benjamin-orth-where-you-are-now/Benjamin_Orth_-_Where_You_Are_Now.mp3"
+    title: "Where You Are Now (feat. Wolf Fly)"
+    artist: "Benjamin Orth"
+    licence: CC-BY-3.0
+    credit: '"Where You Are Now" by Benjamin Orth (feat. Wolf Fly), vocals by Rhiannon Delpero via Ascension, licensed under CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/), https://ccmixter.org/files/Benjamin_Orth/33036'
+    page: "https://ccmixter.org/files/Benjamin_Orth/33036"
+    url: "https://ccmixter.org/content/Benjamin_Orth/Benjamin_Orth_-_Where_You_Are_Now.mp3"
+    split: iteration
+  - id: cc-the-crypts-no-life-after-crypts
+    source: "cc-the-crypts-no-life-after-crypts/04 No Life After Crypts.flac"
+    title: "No Life After Crypts"
+    artist: "The Crypts!"
+    licence: CC-BY-4.0
+    credit: '"No Life After Crypts" by The Crypts!, licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/), https://archive.org/details/NoLifeAfterCrypts_201504'
+    page: "https://archive.org/details/NoLifeAfterCrypts_201504"
+    url: "https://archive.org/download/NoLifeAfterCrypts_201504/04%20No%20Life%20After%20Crypts.flac"
+    split: iteration
+  - id: cc-alex-beroza-good-day
+    source: "cc-alex-beroza-good-day/AlexBeroza_-_Good_Day.mp3"
+    title: "Good Day (feat. DonnieOzone)"
+    artist: "Alex Beroza"
+    licence: CC-BY-3.0
+    credit: '"Good Day" by Alex (AlexBeroza, feat. DonnieOzone), licensed under CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/), https://ccmixter.org/files/AlexBeroza/36122'
+    page: "https://ccmixter.org/files/AlexBeroza/36122"
+    url: "https://ccmixter.org/content/AlexBeroza/AlexBeroza_-_Good_Day.mp3"
+    split: iteration
+  - id: cc-zep-hurme-hang-low
+    source: "cc-zep-hurme-hang-low/zep_hurme_-_Hang_Low.mp3"
+    title: "Hang Low (feat. Liv Mircea)"
+    artist: "Zep Hurme"
+    licence: CC-BY-3.0
+    credit: '"Hang Low" by Zep Hurme (feat. Liv Mircea), licensed under CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/), https://ccmixter.org/files/zep_hurme/60074'
+    page: "https://ccmixter.org/files/zep_hurme/60074"
+    url: "https://ccmixter.org/content/zep_hurme/zep_hurme_-_Hang_Low.mp3"
+    split: iteration
+  - id: cc-kevin-macleod-long-stroll
+    source: "cc-kevin-macleod-long-stroll/Long Stroll.mp3"
+    title: "Long Stroll"
+    artist: "Kevin MacLeod"
+    licence: CC-BY-4.0
+    credit: '"Long Stroll" Kevin MacLeod (incompetech.com), licensed under Creative Commons: By Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/)'
+    page: "https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100174"
+    url: "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Long%20Stroll.mp3"
+    split: iteration
+  - id: cc-kevin-macleod-black-vortex
+    source: "cc-kevin-macleod-black-vortex/Black Vortex.mp3"
+    title: "Black Vortex"
+    artist: "Kevin MacLeod"
+    licence: CC-BY-4.0
+    credit: '"Black Vortex" Kevin MacLeod (incompetech.com), licensed under Creative Commons: By Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/)'
+    page: "https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1300037"
+    url: "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Black%20Vortex.mp3"
+    split: iteration
+  - id: cc-josh-woodward-swansong
+    source: "cc-josh-woodward-swansong/JoshWoodward-Breadcrumbs-01-Swansong.mp3"
+    title: "Swansong"
+    artist: "Josh Woodward"
+    licence: CC-BY-4.0
+    credit: 'Music: "Swansong" by Josh Woodward, free download at https://www.joshwoodward.com/, licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)'
+    page: "https://joshwoodward.com/song/Swansong"
+    url: "https://www.joshwoodward.com/mp3/Breadcrumbs/JoshWoodward-Breadcrumbs-01-Swansong.mp3"
+    split: held-out
+  - id: cc-hairy-larry-and-the-flying-hungarians-ride-me-to-heaven
+    source: "cc-hairy-larry-and-the-flying-hungarians-ride-me-to-heaven/1-Hairy_Larry_and_The_Flying_Hungarians-Blues_For_Peace-Ride_Me_To_Heaven.flac"
+    title: "Ride Me To Heaven"
+    artist: "Hairy Larry and The Flying Hungarians"
+    licence: CC-BY-3.0
+    credit: '"Ride Me To Heaven" by Hairy Larry and The Flying Hungarians, licensed under CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/), https://archive.org/details/blues_for_peace_cd'
+    page: "https://archive.org/details/blues_for_peace_cd"
+    url: "https://archive.org/download/blues_for_peace_cd/1-Hairy_Larry_and_The_Flying_Hungarians-Blues_For_Peace-Ride_Me_To_Heaven.flac"
+    split: held-out
+  - id: cc-kevin-macleod-go-cart
+    source: "cc-kevin-macleod-go-cart/Go Cart.mp3"
+    title: "Go Cart"
+    artist: "Kevin MacLeod"
+    licence: CC-BY-4.0
+    credit: '"Go Cart" Kevin MacLeod (incompetech.com), licensed under Creative Commons: By Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/)'
+    page: "https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1300006"
+    url: "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Go%20Cart.mp3"
+    split: held-out
+  - id: cc-kimiko-ishizaka-aria
+    source: "cc-kimiko-ishizaka-aria/Kimiko_Ishizaka_-_01_-_Aria.mp3"
+    title: "Goldberg Variations: Aria"
+    artist: "Kimiko Ishizaka"
+    licence: CC0-1.0
+    page: "https://freemusicarchive.org/music/Kimiko_Ishizaka/The_Open_Goldberg_Variations/KIMIKO_ISHIZAKA_-_Goldberg_Variations_BWV_988_-_01_-_Aria__44k-24b/"
+    url: "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Kimiko_Ishizaka/The_Open_Goldberg_Variations/Kimiko_Ishizaka_-_01_-_Aria.mp3"
+    split: held-out
+  - id: cc-kevin-macleod-mirage
+    source: "cc-kevin-macleod-mirage/Mirage.mp3"
+    title: "Mirage"
+    artist: "Kevin MacLeod"
+    licence: CC-BY-4.0
+    credit: '"Mirage" Kevin MacLeod (incompetech.com), licensed under Creative Commons: By Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/)'
+    page: "https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100877"
+    url: "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Mirage.mp3"
+    split: held-out
+  - id: cc-maelstrom-i-dreamt-for-a-brighter-sky
+    source: "cc-maelstrom-i-dreamt-for-a-brighter-sky/02-Maelstrom-IDreamtForABrighterSky.mp3"
+    title: "I Dreamt for a Brighter Sky"
+    artist: "Maelstrom"
+    licence: CC0-1.0
+    page: "https://archive.org/details/gt536Maelstrom-ThePassage"
+    url: "https://archive.org/download/gt536Maelstrom-ThePassage/02-Maelstrom-IDreamtForABrighterSky.mp3"
+    split: held-out

@@ -59,4 +59,17 @@ By NotJam, dedicated to the public domain under
 
 ## Creative Commons tracks
 
-None yet: bead F3 picks them and F3b ingests them.
+Picked by bead F3, licences checked on each track's own page.
+
+- `cc-benjamin-orth-where-you-are-now` (iteration, CC-BY-3.0): "Where You Are Now" by Benjamin Orth (feat. Wolf Fly), vocals by Rhiannon Delpero via Ascension, licensed under CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/), https://ccmixter.org/files/Benjamin_Orth/33036
+- `cc-the-crypts-no-life-after-crypts` (iteration, CC-BY-4.0): "No Life After Crypts" by The Crypts!, licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/), https://archive.org/details/NoLifeAfterCrypts_201504
+- `cc-alex-beroza-good-day` (iteration, CC-BY-3.0): "Good Day" by Alex (AlexBeroza, feat. DonnieOzone), licensed under CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/), https://ccmixter.org/files/AlexBeroza/36122
+- `cc-zep-hurme-hang-low` (iteration, CC-BY-3.0): "Hang Low" by Zep Hurme (feat. Liv Mircea), licensed under CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/), https://ccmixter.org/files/zep_hurme/60074
+- `cc-kevin-macleod-long-stroll` (iteration, CC-BY-4.0): "Long Stroll" Kevin MacLeod (incompetech.com), licensed under Creative Commons: By Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/)
+- `cc-kevin-macleod-black-vortex` (iteration, CC-BY-4.0): "Black Vortex" Kevin MacLeod (incompetech.com), licensed under Creative Commons: By Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/)
+- `cc-josh-woodward-swansong` (held-out, CC-BY-4.0): Music: "Swansong" by Josh Woodward, free download at https://www.joshwoodward.com/, licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+- `cc-hairy-larry-and-the-flying-hungarians-ride-me-to-heaven` (held-out, CC-BY-3.0): "Ride Me To Heaven" by Hairy Larry and The Flying Hungarians, licensed under CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/), https://archive.org/details/blues_for_peace_cd
+- `cc-kevin-macleod-go-cart` (held-out, CC-BY-4.0): "Go Cart" Kevin MacLeod (incompetech.com), licensed under Creative Commons: By Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/)
+- `cc-kimiko-ishizaka-aria` (held-out, CC0-1.0): "Goldberg Variations: Aria" by Kimiko Ishizaka, dedicated to the public domain under CC0 1.0, https://freemusicarchive.org/music/Kimiko_Ishizaka/The_Open_Goldberg_Variations/KIMIKO_ISHIZAKA_-_Goldberg_Variations_BWV_988_-_01_-_Aria__44k-24b/
+- `cc-kevin-macleod-mirage` (held-out, CC-BY-4.0): "Mirage" Kevin MacLeod (incompetech.com), licensed under Creative Commons: By Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/)
+- `cc-maelstrom-i-dreamt-for-a-brighter-sky` (held-out, CC0-1.0): "I Dreamt for a Brighter Sky" by Maelstrom, dedicated to the public domain under CC0 1.0, https://archive.org/details/gt536Maelstrom-ThePassage

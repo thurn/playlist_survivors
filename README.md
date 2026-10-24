@@ -103,7 +103,8 @@ is tuned so honest players live and mashers fall in the Galop's climax.
 
 **Reactive (experimental)** on the title screen opens the track list, by group:
 the Galop and the four other classical excerpts, five synthetic tracks with exact
-beats, the reactive feel corpus (39 CC0 NotJam tracks, the held-out ones marked;
+beats, the reactive feel corpus (39 CC0 NotJam tracks and 12 CC0 or CC-BY tracks
+across other genres, credited in `corpus/CREDITS.md`, the held-out ones marked;
 [design](docs/design/reactive-feel.md)), and your own. The pause menu and the end card work as in play mode; **Restart section**
 restarts the song (there is one section), each track keeps its own best grade, and
 **Watch the demo** plays the track's run by `reactive-skilled`.

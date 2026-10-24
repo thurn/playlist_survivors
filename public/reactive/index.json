@@ -470,6 +470,136 @@
    "audio": "notjam-solemn-advance/notjam-solemn-advance.ogg",
    "split": "held-out",
    "licence": "CC0-1.0"
+  },
+  {
+   "id": "cc-benjamin-orth-where-you-are-now",
+   "title": "Where You Are Now (feat. Wolf Fly)",
+   "artist": "Benjamin Orth",
+   "group": "cc",
+   "stream": "cc-benjamin-orth-where-you-are-now/stream.json",
+   "audio": "cc-benjamin-orth-where-you-are-now/cc-benjamin-orth-where-you-are-now.ogg",
+   "split": "iteration",
+   "licence": "CC-BY-3.0",
+   "credit": "\"Where You Are Now\" by Benjamin Orth (feat. Wolf Fly), vocals by Rhiannon Delpero via Ascension, licensed under CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/), https://ccmixter.org/files/Benjamin_Orth/33036"
+  },
+  {
+   "id": "cc-the-crypts-no-life-after-crypts",
+   "title": "No Life After Crypts",
+   "artist": "The Crypts!",
+   "group": "cc",
+   "stream": "cc-the-crypts-no-life-after-crypts/stream.json",
+   "audio": "cc-the-crypts-no-life-after-crypts/cc-the-crypts-no-life-after-crypts.ogg",
+   "split": "iteration",
+   "licence": "CC-BY-4.0",
+   "credit": "\"No Life After Crypts\" by The Crypts!, licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/), https://archive.org/details/NoLifeAfterCrypts_201504"
+  },
+  {
+   "id": "cc-alex-beroza-good-day",
+   "title": "Good Day (feat. DonnieOzone)",
+   "artist": "Alex Beroza",
+   "group": "cc",
+   "stream": "cc-alex-beroza-good-day/stream.json",
+   "audio": "cc-alex-beroza-good-day/cc-alex-beroza-good-day.ogg",
+   "split": "iteration",
+   "licence": "CC-BY-3.0",
+   "credit": "\"Good Day\" by Alex (AlexBeroza, feat. DonnieOzone), licensed under CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/), https://ccmixter.org/files/AlexBeroza/36122"
+  },
+  {
+   "id": "cc-zep-hurme-hang-low",
+   "title": "Hang Low (feat. Liv Mircea)",
+   "artist": "Zep Hurme",
+   "group": "cc",
+   "stream": "cc-zep-hurme-hang-low/stream.json",
+   "audio": "cc-zep-hurme-hang-low/cc-zep-hurme-hang-low.ogg",
+   "split": "iteration",
+   "licence": "CC-BY-3.0",
+   "credit": "\"Hang Low\" by Zep Hurme (feat. Liv Mircea), licensed under CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/), https://ccmixter.org/files/zep_hurme/60074"
+  },
+  {
+   "id": "cc-kevin-macleod-long-stroll",
+   "title": "Long Stroll",
+   "artist": "Kevin MacLeod",
+   "group": "cc",
+   "stream": "cc-kevin-macleod-long-stroll/stream.json",
+   "audio": "cc-kevin-macleod-long-stroll/cc-kevin-macleod-long-stroll.ogg",
+   "split": "iteration",
+   "licence": "CC-BY-4.0",
+   "credit": "\"Long Stroll\" Kevin MacLeod (incompetech.com), licensed under Creative Commons: By Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/)"
+  },
+  {
+   "id": "cc-kevin-macleod-black-vortex",
+   "title": "Black Vortex",
+   "artist": "Kevin MacLeod",
+   "group": "cc",
+   "stream": "cc-kevin-macleod-black-vortex/stream.json",
+   "audio": "cc-kevin-macleod-black-vortex/cc-kevin-macleod-black-vortex.ogg",
+   "split": "iteration",
+   "licence": "CC-BY-4.0",
+   "credit": "\"Black Vortex\" Kevin MacLeod (incompetech.com), licensed under Creative Commons: By Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/)"
+  },
+  {
+   "id": "cc-josh-woodward-swansong",
+   "title": "Swansong",
+   "artist": "Josh Woodward",
+   "group": "cc",
+   "stream": "cc-josh-woodward-swansong/stream.json",
+   "audio": "cc-josh-woodward-swansong/cc-josh-woodward-swansong.ogg",
+   "split": "held-out",
+   "licence": "CC-BY-4.0",
+   "credit": "Music: \"Swansong\" by Josh Woodward, free download at https://www.joshwoodward.com/, licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)"
+  },
+  {
+   "id": "cc-hairy-larry-and-the-flying-hungarians-ride-me-to-heaven",
+   "title": "Ride Me To Heaven",
+   "artist": "Hairy Larry and The Flying Hungarians",
+   "group": "cc",
+   "stream": "cc-hairy-larry-and-the-flying-hungarians-ride-me-to-heaven/stream.json",
+   "audio": "cc-hairy-larry-and-the-flying-hungarians-ride-me-to-heaven/cc-hairy-larry-and-the-flying-hungarians-ride-me-to-heaven.ogg",
+   "split": "held-out",
+   "licence": "CC-BY-3.0",
+   "credit": "\"Ride Me To Heaven\" by Hairy Larry and The Flying Hungarians, licensed under CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/), https://archive.org/details/blues_for_peace_cd"
+  },
+  {
+   "id": "cc-kevin-macleod-go-cart",
+   "title": "Go Cart",
+   "artist": "Kevin MacLeod",
+   "group": "cc",
+   "stream": "cc-kevin-macleod-go-cart/stream.json",
+   "audio": "cc-kevin-macleod-go-cart/cc-kevin-macleod-go-cart.ogg",
+   "split": "held-out",
+   "licence": "CC-BY-4.0",
+   "credit": "\"Go Cart\" Kevin MacLeod (incompetech.com), licensed under Creative Commons: By Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/)"
+  },
+  {
+   "id": "cc-kimiko-ishizaka-aria",
+   "title": "Goldberg Variations: Aria",
+   "artist": "Kimiko Ishizaka",
+   "group": "cc",
+   "stream": "cc-kimiko-ishizaka-aria/stream.json",
+   "audio": "cc-kimiko-ishizaka-aria/cc-kimiko-ishizaka-aria.ogg",
+   "split": "held-out",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "cc-kevin-macleod-mirage",
+   "title": "Mirage",
+   "artist": "Kevin MacLeod",
+   "group": "cc",
+   "stream": "cc-kevin-macleod-mirage/stream.json",
+   "audio": "cc-kevin-macleod-mirage/cc-kevin-macleod-mirage.ogg",
+   "split": "held-out",
+   "licence": "CC-BY-4.0",
+   "credit": "\"Mirage\" Kevin MacLeod (incompetech.com), licensed under Creative Commons: By Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/)"
+  },
+  {
+   "id": "cc-maelstrom-i-dreamt-for-a-brighter-sky",
+   "title": "I Dreamt for a Brighter Sky",
+   "artist": "Maelstrom",
+   "group": "cc",
+   "stream": "cc-maelstrom-i-dreamt-for-a-brighter-sky/stream.json",
+   "audio": "cc-maelstrom-i-dreamt-for-a-brighter-sky/cc-maelstrom-i-dreamt-for-a-brighter-sky.ogg",
+   "split": "held-out",
+   "licence": "CC0-1.0"
   }
  ]
 }

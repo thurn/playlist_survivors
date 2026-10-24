@@ -57,6 +57,9 @@ const CorpusTrackSchema = z.object({
   artist: z.string().min(1),
   licence: z.enum(["CC0-1.0", "CC-BY-3.0", "CC-BY-4.0"]),
   credit: z.string().min(1).optional(),
+  /** The page whose licence was checked, and the file downloaded from it (tracks fetched from the web). */
+  page: z.string().url().optional(),
+  url: z.string().url().optional(),
   split: z.enum(TRACK_SPLITS),
   /** Near-duplicates share a family, and a family has a single split (absent: its own family). */
   family: z.string().min(1).optional(),

@@ -187,6 +187,21 @@ entries:
     licences: [CC0]
     authors: [Kenney (www.kenney.nl)]
     urls: [https://kenney.nl/assets/interface-sounds]
+  - files: ["dl:kenney-ui-audio/**"]
+    title: UI Audio
+    licences: [CC0]
+    authors: [Kenney (www.kenney.nl)]
+    urls: [https://kenney.nl/assets/ui-audio]
+  - files: ["dl:subspace-512-sfx/**"]
+    title: 512 Sound Effects (8-bit style)
+    licences: [CC0]
+    authors: [SubspaceAudio]
+    urls: [https://opengameart.org/content/512-sound-effects-8-bit-style]
+  - files: ["dl:swishes/**"]
+    title: Swishes Sound Pack
+    licences: [CC0]
+    authors: [artisticdude]
+    urls: [https://opengameart.org/content/swishes-sound-pack]
   - files: ["dl:rpg80/**"]
     title: 80 CC0 RPG SFX
     licences: [CC0]
