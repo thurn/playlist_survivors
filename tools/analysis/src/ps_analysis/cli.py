@@ -558,6 +558,14 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
+# Commands over the whole corpus or every model: run below Tollgate's checks (batch.py).
+BATCH_COMMANDS = {"export-models", "delayed-payoff"}
+
+
 def main(argv: list[str] | None = None) -> None:
     args = build_parser().parse_args(argv)
+    if argv is None and args.command in BATCH_COMMANDS:
+        from .batch import run_as_batch
+
+        run_as_batch()
     sys.exit(args.func(args))

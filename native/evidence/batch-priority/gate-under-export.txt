@@ -1,0 +1,19 @@
+# Gate time under a concurrent 10-job oracle export (hv-t8o8.55), 2026-10-24
+# scripts/ci-gate forced to every section (CHANGES_BASE=866d95c^), 20 long export runs started 25 s before it.
+# Scripts: measure.sh (nice -n 0 vs 10) and measure2.sh (plain vs taskpolicy -b).
+
+## nice
+warm rc=0 66.3 s load={ 6.71 7.30 10.69 }
+idle rc=0 44.6 s load={ 11.08 8.51 10.97 }
+idle rc=0 43.8 s load={ 13.43 9.57 11.23 }
+export-nice0 rc=0 63.6 s load={ 23.76 14.33 12.90 }
+export-nice10 rc=0 67.5 s load={ 22.57 16.35 13.81 }
+export-nice0 rc=0 66.9 s load={ 21.52 17.62 14.57 }
+export-nice10 rc=0 64.5 s load={ 21.60 18.57 15.24 }
+
+## taskpolicy -b
+warm rc=0 42.6 s load={ 15.84 17.42 15.01 }
+export-plain rc=0 65.5 s load={ 19.11 18.14 15.54 }
+export-bg rc=0 43.4 s load={ 23.37 19.57 16.28 }
+export-plain rc=0 63.8 s load={ 23.88 20.67 17.03 }
+export-bg rc=0 42.9 s load={ 23.00 21.04 17.47 }

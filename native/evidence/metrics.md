@@ -43,6 +43,14 @@ the `review-churn` minutes and the `review.findings` counts of the next 5 review
 written after the review, hv-t8o8.54) with that mean, aiming at half. The baseline's records carry
 `review`: ES 6 findings, F3 10, F4 9, F2 11 (mean 9).
 
+## Batch jobs below Tollgate (hv-t8o8.55)
+
+A gate (`scripts/ci-gate`, every section) took 43–44 s idle, and 64–67 s with a 10-job oracle
+export running at normal priority. With the export under `nice -n 10` it took 64–68 s (no
+change); under `taskpolicy -b` (background QoS) 43 s, as idle: 33% faster, so long batch jobs
+run in the background class (`scripts/lib/batch.ts`, `ps_analysis/batch.py`). Raw numbers:
+[batch-priority/](batch-priority/gate-under-export.txt).
+
 ## Skipping an unchanged TS section (hv-t8o8.51)
 
 `scripts/ci-full ts` skips when a commit with the same TS inputs (every TS path's blob at HEAD,

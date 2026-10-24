@@ -37,6 +37,7 @@ import type { ReactiveStream, Reference } from "../src/reactive/stream.ts";
 import type { KeyEvent, Player } from "../src/sim/player.ts";
 import { Sim, worldFor } from "../src/sim/simulate.ts";
 import { ROOT, readContentFiles } from "./lib/files.ts";
+import { runAsBatch } from "./lib/batch.ts";
 import { propsFromAtlas } from "./lib/plan-node.ts";
 import { REACTIVE_DIR, REACTIVE_LEVEL, corpusTrackIds, gatedTrackIds, inputForStream, reactiveInput, readStreamFile } from "./lib/reactive-node.ts";
 
@@ -792,6 +793,8 @@ async function runAll(only: string[] | undefined, jobs: number): Promise<void> {
 }
 
 async function main(): Promise<void> {
+  // (A long batch job: below Tollgate's gate and release steps.)
+  runAsBatch();
   const args = process.argv.slice(2);
   const command = args[0] && !args[0].startsWith("--") ? args[0] : "all";
   const opt = (k: string) => {
