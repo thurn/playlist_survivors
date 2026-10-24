@@ -1,5 +1,6 @@
 pyproject.toml
 src/ps_analysis/__init__.py
+src/ps_analysis/accents.py
 src/ps_analysis/analyze.py
 src/ps_analysis/audio.py
 src/ps_analysis/check.py

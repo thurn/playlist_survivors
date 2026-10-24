@@ -391,7 +391,7 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument(
         "--params",
         metavar="JSON",
-        help='parameter overrides by field name, such as \'{"change_stats_s": 20}\'',
+        help="parameter overrides by field name, such as '{\"change_stats_s\": 20}'",
     )
     c.set_defaults(func=cmd_stream)
 

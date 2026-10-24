@@ -1,7 +1,7 @@
 {
  "version": 1,
  "audio": {"file":"../../audio/beethoven-fifth.flac","duration":180.25,"sampleRate":44100},
- "params": {"fps":100,"minBpm":55,"maxBpm":215,"numTempi":null,"period":{"windowS":2.0,"band":0.1},"commit":{"periods":1.0,"extraS":0.35,"minLeadS":0.1},"gate":0.2,"tickS":0.05,"evidence":{"beats":4,"halfS":0.03},"energy":{"windowS":0.5,"decayDbPerS":0.2,"rangeDb":30.0,"floorDb":-60.0},"onsets":{"threshold":1.5,"biasS":-0.01,"strongPercentile":98.0,"strongWindowS":30.0},"hindsight":{"everyS":1.0,"windowS":20.0,"keepS":8.0,"biasS":0.0},"structure":{"change":{"pastS":8.0,"nextS":2.0,"statsS":30.0,"peakS":4.0,"thresholdS":60.0,"k":0.5,"minPrior":20},"jump":{"db":6.0,"recentS":1.0,"beforeS":6.0,"gapS":4.0},"level":{"loudIn":0.8,"loudOut":0.7,"quietIn":0.4,"quietOut":0.5},"key":{"windowS":20.0,"afterS":10.0},"end":{"dropDb":20.0,"holdS":1.5,"afterS":10.0,"windowS":30.0,"smoothS":1.0}},"biasS":-0.013,"toolVersion":4},
+ "params": {"fps":100,"minBpm":55,"maxBpm":215,"numTempi":null,"period":{"windowS":2.0,"band":0.1},"commit":{"periods":1.0,"extraS":0.35,"minLeadS":0.1},"gate":0.2,"tickS":0.05,"evidence":{"beats":4,"halfS":0.03},"energy":{"windowS":0.5,"decayDbPerS":0.2,"rangeDb":30.0,"floorDb":-60.0},"onsets":{"threshold":1.5,"biasS":-0.01,"strongPercentile":98.0,"strongWindowS":30.0},"hindsight":{"everyS":1.0,"windowS":20.0,"keepS":8.0,"biasS":0.0},"structure":{"change":{"pastS":8.0,"nextS":2.0,"statsS":30.0,"peakS":4.0,"thresholdS":60.0,"k":0.5,"minPrior":20},"jump":{"db":6.0,"recentS":1.0,"beforeS":6.0,"gapS":4.0},"level":{"loudIn":0.8,"loudOut":0.7,"quietIn":0.4,"quietOut":0.5},"key":{"windowS":20.0,"afterS":10.0},"end":{"dropDb":20.0,"holdS":1.5,"afterS":10.0,"windowS":30.0,"smoothS":1.0}},"accents":{"cycles":[2,4,8],"confirm":3,"windowS":0.05,"minLeadS":0.54,"history":4},"biasS":-0.013,"toolVersion":5},
  "beats": [
   {"t":0.247,"knownAt":0.0,"period":0.28,"evidence":0.0},
   {"t":0.527,"knownAt":0.0,"period":0.28,"evidence":0.0},
@@ -6169,6 +6169,9 @@
   "changes": [{"t":18.4536,"knownAt":24.45,"strength":1.267},{"t":32.3536,"knownAt":38.35,"strength":1.0683},{"t":50.3536,"knownAt":56.35,"strength":1.1183},{"t":104.0036,"knownAt":110.0,"strength":1.5174},{"t":112.3536,"knownAt":118.35,"strength":1.2134},{"t":119.4536,"knownAt":125.45,"strength":0.9705},{"t":136.6036,"knownAt":142.6,"strength":0.9375},{"t":144.5036,"knownAt":150.5,"strength":1.0129},{"t":154.9036,"knownAt":160.9,"strength":0.9711},{"t":165.2536,"knownAt":171.25,"strength":1.3347}],
   "jumps": [{"t":6.0,"knownAt":7.0,"db":-13.05},{"t":15.35,"knownAt":16.35,"db":6.03},{"t":19.4,"knownAt":20.4,"db":-9.54},{"t":24.45,"knownAt":25.45,"db":-6.01},{"t":28.8,"knownAt":29.8,"db":6.39},{"t":32.85,"knownAt":33.85,"db":16.22},{"t":47.85,"knownAt":48.85,"db":-6.26},{"t":51.9,"knownAt":52.9,"db":-6.88},{"t":71.75,"knownAt":72.75,"db":6.1},{"t":103.55,"knownAt":104.55,"db":-6.48},{"t":107.6,"knownAt":108.6,"db":10.17},{"t":136.65,"knownAt":137.65,"db":-6.23},{"t":155.1,"knownAt":156.1,"db":-6.13},{"t":159.75,"knownAt":160.75,"db":6.02},{"t":164.8,"knownAt":165.8,"db":-6.65},{"t":168.85,"knownAt":169.85,"db":-8.2},{"t":172.9,"knownAt":173.9,"db":10.5},{"t":177.95,"knownAt":178.95,"db":-6.8}],
   "ends": [{"t":23.55,"knownAt":25.05},{"t":26.9,"knownAt":28.4},{"t":166.0,"knownAt":167.5}]
+ },
+ "accents": {
+  "forecast": []
  },
  "reference": {
   "source": "offline",

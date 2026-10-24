@@ -1,7 +1,7 @@
 {
  "version": 1,
  "audio": {"file":"house-128.ogg","duration":62.5,"sampleRate":44100},
- "params": {"fps":100,"minBpm":55,"maxBpm":215,"numTempi":null,"period":{"windowS":2.0,"band":0.1},"commit":{"periods":1.0,"extraS":0.35,"minLeadS":0.1},"gate":0.2,"tickS":0.05,"evidence":{"beats":4,"halfS":0.03},"energy":{"windowS":0.5,"decayDbPerS":0.2,"rangeDb":30.0,"floorDb":-60.0},"onsets":{"threshold":1.5,"biasS":-0.01,"strongPercentile":98.0,"strongWindowS":30.0},"hindsight":{"everyS":1.0,"windowS":20.0,"keepS":8.0,"biasS":0.0},"structure":{"change":{"pastS":8.0,"nextS":2.0,"statsS":30.0,"peakS":4.0,"thresholdS":60.0,"k":0.5,"minPrior":20},"jump":{"db":6.0,"recentS":1.0,"beforeS":6.0,"gapS":4.0},"level":{"loudIn":0.8,"loudOut":0.7,"quietIn":0.4,"quietOut":0.5},"key":{"windowS":20.0,"afterS":10.0},"end":{"dropDb":20.0,"holdS":1.5,"afterS":10.0,"windowS":30.0,"smoothS":1.0}},"biasS":-0.013,"toolVersion":4},
+ "params": {"fps":100,"minBpm":55,"maxBpm":215,"numTempi":null,"period":{"windowS":2.0,"band":0.1},"commit":{"periods":1.0,"extraS":0.35,"minLeadS":0.1},"gate":0.2,"tickS":0.05,"evidence":{"beats":4,"halfS":0.03},"energy":{"windowS":0.5,"decayDbPerS":0.2,"rangeDb":30.0,"floorDb":-60.0},"onsets":{"threshold":1.5,"biasS":-0.01,"strongPercentile":98.0,"strongWindowS":30.0},"hindsight":{"everyS":1.0,"windowS":20.0,"keepS":8.0,"biasS":0.0},"structure":{"change":{"pastS":8.0,"nextS":2.0,"statsS":30.0,"peakS":4.0,"thresholdS":60.0,"k":0.5,"minPrior":20},"jump":{"db":6.0,"recentS":1.0,"beforeS":6.0,"gapS":4.0},"level":{"loudIn":0.8,"loudOut":0.7,"quietIn":0.4,"quietOut":0.5},"key":{"windowS":20.0,"afterS":10.0},"end":{"dropDb":20.0,"holdS":1.5,"afterS":10.0,"windowS":30.0,"smoothS":1.0}},"accents":{"cycles":[2,4,8],"confirm":3,"windowS":0.05,"minLeadS":0.54,"history":4},"biasS":-0.013,"toolVersion":5},
  "beats": [
   {"t":0.247,"knownAt":0.0,"period":0.28,"evidence":0.0},
   {"t":0.527,"knownAt":0.0,"period":0.28,"evidence":0.0},
@@ -1975,6 +1975,9 @@
   "changes": [{"t":19.2536,"knownAt":25.25,"strength":0.3182},{"t":30.5036,"knownAt":36.5,"strength":0.3483},{"t":38.0036,"knownAt":44.0,"strength":0.3492},{"t":45.5036,"knownAt":51.5,"strength":0.3541},{"t":53.0036,"knownAt":59.0,"strength":0.3477}],
   "jumps": [{"t":6.0,"knownAt":7.0,"db":6.9},{"t":59.65,"knownAt":60.65,"db":-7.45}],
   "ends": [{"t":60.55,"knownAt":62.05}]
+ },
+ "accents": {
+  "forecast": []
  },
  "reference": {
   "source": "exact",

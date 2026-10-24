@@ -163,6 +163,12 @@ describe("the perturbation", () => {
     expect(after.some((k) => k.level !== "medium")).toBe(true);
     expect(after.some((k) => k.key !== "G major")).toBe(true);
     expect(q.ticks.filter((k) => k.t <= C)).toEqual(ticks.filter((k) => k.t <= C));
+    // Accent forecasts: the same rules.
+    const forecast = [6, 10, 14, 18, 22].map((t) => ({ t, knownAt: t - 1, cycle: 8, confidence: 0.75 }));
+    const fq = perturbStream({ ...stream, accents: { forecast } }, C, "test").accents!.forecast;
+    expect(fq.filter((e) => e.knownAt <= C)).toEqual(forecast.filter((e) => e.knownAt <= C));
+    expect(fq.filter((e) => e.knownAt > C)).not.toEqual(forecast.filter((e) => e.knownAt > C));
+    expect(fq.filter((e) => e.knownAt > C).some((e) => e.confidence !== 0.75)).toBe(true);
     // With no entry left after C, one is added.
     const lone = perturbStream({ ...stream, structure: { changes: [{ t: 3, knownAt: 9, strength: 1 }], jumps: [], ends: [] } }, C, "test");
     expect(lone.structure!.changes.filter((e) => e.knownAt > C).length).toBeGreaterThan(0);

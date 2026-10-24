@@ -9,6 +9,7 @@ from typing import Any
 import numpy as np
 import pytest
 
+from ps_analysis import accents as acc
 from ps_analysis import stream as st
 from ps_analysis import structure as stc
 from ps_analysis import synth
@@ -67,7 +68,16 @@ def test_stream_is_causal(
 ) -> None:
     """The stream of the audio cut at X holds exactly the full stream's entries known by X - margin."""
     part = st.build_stream(excerpt[: round(cut * synth.SR)])
-    for field in ("beats", "ticks", "onsets", "hindsight", "changes", "jumps", "ends"):
+    for field in (
+        "beats",
+        "ticks",
+        "onsets",
+        "hindsight",
+        "forecasts",
+        "changes",
+        "jumps",
+        "ends",
+    ):
         want = known_by(full[field], cut, margin)
         got = known_by(part[field], cut, margin)
         assert len(got) == len(want), f"{field} at {cut}: {len(got)} vs {len(want)}"
@@ -312,6 +322,7 @@ def test_file_format(tmp_path: Path, excerpt: np.ndarray, full: dict[str, Any]) 
         "onsets",
         "hindsight",
         "structure",
+        "accents",
         "reference",
     ]
     assert back["version"] == 1
@@ -336,6 +347,14 @@ def test_file_format(tmp_path: Path, excerpt: np.ndarray, full: dict[str, Any]) 
     assert [k["t"] for k in back["ticks"][:3]] == [0.05, 0.1, 0.15]
     assert back["reference"] == ref
     assert set(back["structure"]) == {"changes", "jumps", "ends"}
+    assert set(back["accents"]) == {"forecast"}
+    assert params["accents"] == {
+        "cycles": [2, 4, 8],
+        "confirm": 3,
+        "windowS": 0.05,
+        "minLeadS": 0.54,
+        "history": 4,
+    }
     assert set(params["structure"]) == {"change", "jump", "level", "key", "end"}
     assert params["structure"]["change"]["k"] == 0.5
     h = back["hindsight"]
@@ -590,3 +609,109 @@ def test_keys_match_the_major_and_minor_profiles() -> None:
     assert stc._key_name(chord(0, 4, 7, 2, 5, 9, 11)) == "C major"
     assert stc._key_name(chord(9, 0, 4, 2, 11)) == "A minor"
     assert stc._key_name(chord(2, 6, 9)) == "D major"
+
+
+# --- accent forecasts (stage 5) -----------------------------------------------------
+
+
+def grid(n: int, lead: float = 0.85) -> list[dict[str, Any]]:
+    """Committed beats every 0.5 s from 0.5 s, each known `lead` before it."""
+    return [
+        {"t": 0.5 + 0.5 * i, "knownAt": max(0.0, 0.5 + 0.5 * i - lead)}
+        for i in range(n)
+    ]
+
+
+def hits_on(
+    beats: list[dict[str, Any]], idx: list[int], late: float = 0.02
+) -> list[dict[str, Any]]:
+    """A strong onset 10 ms after each of the beats, known `late` after it."""
+    return [
+        {"t": beats[i]["t"] + 0.01, "knownAt": beats[i]["t"] + late, "strong": True}
+        for i in idx
+    ]
+
+
+P = st.Params()
+
+
+def test_a_repeating_hit_is_forecast_after_three_cycles() -> None:
+    beats = grid(60)
+    f = acc.forecasts(beats, hits_on(beats, list(range(0, 60, 8))), P)
+    assert [(round((x["t"] - 0.5) / 0.5), x["cycle"]) for x in f] == [
+        (24, 8),
+        (32, 8),
+        (40, 8),
+        (48, 8),
+        (56, 8),
+    ]
+    # The share of the last 4 cycles with the hit: the first has only 3 behind it.
+    assert [x["confidence"] for x in f] == [0.75, 1.0, 1.0, 1.0, 1.0]
+    # Known when the beat is (it was committed after the confirming hit was heard).
+    assert all(x["knownAt"] == pytest.approx(x["t"] - 0.85) for x in f)
+
+
+def test_a_failed_forecast_needs_three_more_cycles() -> None:
+    beats = grid(80)
+    idx = [i for i in range(0, 80, 8) if i != 32]
+    f = acc.forecasts(beats, hits_on(beats, idx), P)
+    # 32 is forecast and misses; 40, 48 and 56 confirm it again before 64.
+    assert [round((x["t"] - 0.5) / 0.5) for x in f] == [24, 32, 64, 72]
+    assert f[2]["confidence"] == 0.75
+
+
+def test_a_forecast_is_known_when_both_its_beat_and_its_hits_are() -> None:
+    # Beats known 2 s ahead: the confirming onsets are heard after the beat is committed.
+    beats = grid(20, lead=2.0)
+    f = acc.forecasts(beats, hits_on(beats, list(range(0, 20, 2))), P)
+    assert f
+    for x in f:
+        i = round((x["t"] - 0.5) / 0.5)
+        last = beats[i - x["cycle"]]["t"] + 0.02
+        assert x["knownAt"] == pytest.approx(max(beats[i]["knownAt"], last))
+
+
+def test_no_forecast_without_the_wind_up_and_0_35_s_ahead() -> None:
+    beats = grid(60, lead=0.5)
+    assert acc.forecasts(beats, hits_on(beats, list(range(0, 60, 8))), P) == []
+
+
+def test_one_forecast_per_beat_the_earliest_known() -> None:
+    beats = grid(40, lead=2.0)
+    f = acc.forecasts(beats, hits_on(beats, list(range(40))), P)
+    ts = [x["t"] for x in f]
+    assert ts == sorted(set(ts))
+    # With every beat a hit, each cycle forecasts each beat; the longest cycle's last
+    # confirming hit is heard first, so it is the one kept once 3 of its cycles are in.
+    for x in f:
+        i = round((x["t"] - 0.5) / 0.5)
+        longest = max(c for c in (2, 4, 8) if i - 3 * c >= 0)
+        assert x["cycle"] == longest, i
+
+
+def test_onsets_must_be_strong_and_within_50_ms() -> None:
+    beats = grid(60)
+    weak = [{**o, "strong": False} for o in hits_on(beats, list(range(0, 60, 8)))]
+    assert acc.forecasts(beats, weak, P) == []
+    far = [{**o, "t": o["t"] + 0.05} for o in hits_on(beats, list(range(0, 60, 8)))]
+    assert acc.forecasts(beats, far, P) == []
+
+
+def test_forecasts_read_only_entries_known_by_then() -> None:
+    """Forecasts from the beats and onsets known by X are the full forecasts known by X."""
+    rng = np.random.default_rng(5)
+    beats = grid(120, lead=0.9)
+    # Hits every 8 beats with gaps, every 4 beats in a stretch, and strong onsets off the beat.
+    idx = [i for i in range(0, 120, 8) if rng.random() > 0.15]
+    idx += list(range(60, 90, 4))
+    onsets = hits_on(beats, sorted(set(idx)), late=0.03)
+    onsets += [
+        {"t": float(t), "knownAt": float(t) + 0.02, "strong": True}
+        for t in rng.uniform(0, 60, 15)
+    ]
+    onsets.sort(key=lambda o: o["knownAt"])
+    full = acc.forecasts(beats, onsets, P)
+    assert len(full) >= 5
+    for cut in sorted({x["knownAt"] for x in full} | {10.0, 33.33, 47.5}):
+        part = acc.forecasts(known_by(beats, cut, 0.0), known_by(onsets, cut, 0.0), P)
+        assert known_by(part, cut, 0.0) == known_by(full, cut, 0.0), cut

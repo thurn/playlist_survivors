@@ -107,14 +107,15 @@ export function perturbStream(stream: ReactiveStream, C: number, seed: string): 
     jumps: perturbEvents(stream.structure.jumps, C, r, (e) => ({ ...e, db: r.pick([-1, 1]) * r.range(2, 20) })),
     ends: perturbEvents(stream.structure.ends, C, r, (e) => e),
   };
-  return { ...stream, audio: { ...stream.audio, duration }, beats, ticks, onsets, ...(hindsight ? { hindsight } : {}), ...(structure ? { structure } : {}) };
+  const accents = stream.accents && { forecast: perturbEvents(stream.accents.forecast, C, r, (e) => ({ ...e, cycle: r.pick([2, 4, 8]), confidence: r.next() })) };
+  return { ...stream, audio: { ...stream.audio, duration }, beats, ticks, onsets, ...(hindsight ? { hindsight } : {}), ...(structure ? { structure } : {}), ...(accents ? { accents } : {}) };
 }
 
 const LEVELS = ["quiet", "medium", "loud"] as const;
 const KEYS = ["C major", "A minor", "D major", "Bb major", "F# minor", "E major"];
 
 /**
- * Structure entries known after C: times move by up to ±2 s (knownAt staying after C and in order,
+ * Structure and accent entries known after C: times move by up to ±2 s (knownAt staying after C and in order,
  * t at or before it), their values are replaced (`change`), every third is deleted, and an extra
  * one is inserted between every pair (and after C when fewer than two are left, so that a later
  * event always appears or moves).
@@ -329,16 +330,27 @@ export interface CausalityResult extends CheckResult {
   ms: number;
 }
 
+/**
+ * Stage 5: forecasts with confidence at least `minConfidence`, and how many of them have a strong
+ * onset within `windowS` (the forecast's precision).
+ */
+export function forecastPrecision(stream: ReactiveStream, minConfidence = 0.6, windowS = 0.05): { n: number; hits: number; all: number } {
+  const strong = stream.onsets.filter((o) => o.strong).map((o) => o.t);
+  const sure = (stream.accents?.forecast ?? []).filter((f) => f.confidence >= minConfidence - 1e-9);
+  return { n: sure.length, hits: sure.filter((f) => strong.some((t) => Math.abs(t - f.t) <= windowS + 1e-9)).length, all: stream.accents?.forecast.length ?? 0 };
+}
+
 /** The feature classes so far (stages 1 to 4): each must fire before a cut, or the check proves nothing about it. */
 export const FEATURES = ["level-ups", "zone waves", "section starts", "reading switches"] as const;
 
-/** Default cuts: just before each committed beat's, strong onset's, hindsight entry's and structural event's knownAt, and just after each level-up and zone wave. */
+/** Default cuts: just before each committed beat's, strong onset's, hindsight entry's, structural event's and accent forecast's knownAt, and just after each level-up and zone wave. */
 export function defaultCuts(stream: ReactiveStream, truePlan: Plan, until: number): number[] {
   const raw = [
     ...stream.beats.map((b) => b.knownAt - 0.001),
     ...stream.onsets.filter((o) => o.strong).map((o) => o.knownAt - 0.001),
     ...(stream.hindsight ?? []).map((h) => h.knownAt - 0.001),
     ...(stream.structure ? [...stream.structure.changes, ...stream.structure.jumps, ...stream.structure.ends] : []).map((e) => e.knownAt - 0.001),
+    ...(stream.accents?.forecast ?? []).map((e) => e.knownAt - 0.001),
     ...truePlan.upgrades.map((u) => u.s + 0.001),
     ...truePlan.open.waves.map((w) => w.s + 0.001),
   ].filter((c) => c > 0.05 && c < until);

@@ -41,8 +41,9 @@ const TRACKS: Track[] = [
   { id: "hiphop-92-swing", title: "Swung Hip-Hop at 92", artist: "Synthetic", group: "synthetic", listed: true },
   { id: "accelerando-100-140", title: "Accelerando, 100 to 140", artist: "Synthetic", group: "synthetic", listed: true },
   { id: "pop-arrangement", title: "Pop Arrangement", artist: "Synthetic", group: "synthetic", listed: true },
-  // The check's short track: 20 s statistics windows (docs/design/reactive-audio.md, "Cuts").
-  { id: "causality-mix", title: "Causality Mix", artist: "Synthetic", group: "synthetic", listed: false, params: { change_stats_s: 20, change_threshold_s: 20, end_window_s: 20 } },
+  // The check's short track: 20 s statistics windows (docs/design/reactive-audio.md, "Cuts"), and
+  // strong onsets from the 95th percentile, since its accents (every 4 s) outnumber the top 2%.
+  { id: "causality-mix", title: "Causality Mix", artist: "Synthetic", group: "synthetic", listed: false, params: { change_stats_s: 20, change_threshold_s: 20, end_window_s: 20, strong_percentile: 95 } },
 ];
 
 const { values, positionals } = parseArgs({ allowPositionals: true, options: { resynth: { type: "boolean" } } });

@@ -32,6 +32,7 @@
  * Targets (stage 2): the players' tiers on dnb-174, pop-arrangement and the Galop; random presses
  * keeping offline "as tracked"; pop-arrangement's pads-only breakdown settling unjudged.
  * Targets (stage 4): the Galop's detected section starts against its song map's section starts.
+ * Targets (stage 5): accent forecasts on every track, and their precision against strong onsets.
  *
  *   npm run check:reactive [-- --full]
  *
@@ -42,7 +43,7 @@ import { join } from "node:path";
 import type { CheckResult } from "../src/planner/checks.ts";
 import type { PlannerInput } from "../src/planner/context.ts";
 import { planWithSim, prepare } from "../src/planner/plan.ts";
-import { belowGateShare, beatsWithin, checkDeterminism, checkReactiveCausality, checkReactiveSounds, checkSettleTiming, judgedTierShare, liveRun, smokeTest, type CausalityCase } from "../src/planner/reactive-checks.ts";
+import { belowGateShare, beatsWithin, checkDeterminism, forecastPrecision, checkReactiveCausality, checkReactiveSounds, checkSettleTiming, judgedTierShare, liveRun, smokeTest, type CausalityCase } from "../src/planner/reactive-checks.ts";
 import { SETTLE_DELAY } from "../src/reactive/settle.ts";
 import { sectionDetection } from "../src/planner/parity.ts";
 import { detectedSections } from "../src/reactive/sections.ts";
@@ -259,6 +260,17 @@ const causalityCase = (id: string, level: string | undefined, cuts?: number[]): 
     const st = streamOf(id);
     const x = st.structure!;
     lines.push(`  ${id.padEnd(22)} ${x.changes.length} changes, ${x.jumps.length} jumps, ${x.ends.length ? `ends at ${x.ends.map((e) => e.t.toFixed(1)).join(", ")} s` : "no ending"}, ${detectedSections(st, reactiveInput(file(id)).input.level.director?.sectionRule).length} section starts`);
+  }
+}
+
+// ---------------------------------------------------------------- targets: accent forecasts (stage 5)
+{
+  lines.push("targets (stage 5, accent forecasts with confidence at least 0.6, and their share within 50 ms of a strong onset):");
+  for (const id of [...tracks, "causality-mix"]) {
+    const f = forecastPrecision(streamOf(id));
+    const share = f.n ? f.hits / f.n : 0;
+    const target = id === "orpheus-galop" ? ` (at least 5${f.n >= 5 ? "" : ", missed"}; at least 70%${share >= 0.7 ? "" : ", missed"})` : "";
+    lines.push(`  ${id.padEnd(22)} ${f.n} of ${f.all} forecasts, ${f.hits} (${pct(share)}) on a strong onset${target}`);
   }
 }
 

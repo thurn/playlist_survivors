@@ -1921,3 +1921,56 @@ Recorded by `hv-s4pt.7`.
   - `check:reactive --full` passes with no failing cut on every shipped
     track: the Galop 28, William Tell 32, Mountain King 30, Bumblebee 14,
     Beethoven 34, the synthetic tracks 12 to 32.
+
+### Measured: stage 5, accent forecasts in the stream
+
+Recorded by `hv-s4pt.8` (stream `toolVersion` 5).
+
+- **Implementation:**
+  - A committed beat is hit when a strong onset lies within 50 ms of it, as
+    of the first such onset's `knownAt`.
+  - Three hits in a row at one position of a 2-, 4- or 8-beat cycle forecast
+    the next cycle's beat. It is known at the later of that beat's `knownAt`
+    and the hits, and only with at least 0.54 s left: the swing's 0.19 s
+    wind-up plus 0.35 s.
+  - Where several cycles forecast the same beat, the one known first is kept
+    (then the most confident, then the shortest cycle).
+  - A miss breaks the run, so a failed forecast needs 3 more hits.
+  - Every rule constant is a stream parameter. `causality-mix` takes strong
+    onsets from the 95th percentile instead of the 98th, because its accents,
+    every 4 s, outnumber the top 2% of its onsets. It now has 5 forecasts.
+- **Target missed on the Galop:**
+  - 2 forecasts at confidence 0.6 or more, against at least 5. They are 62.66
+    s (confidence 0.75) and 65.39 s (1.0), both on the 8-beat cycle.
+  - 1 of them (50%) lies within 50 ms of a strong onset, against at least 70%.
+  - None falls on a song-map tutti chord.
+  - The design's example, the opening tutti chords every 8 beats (54.07,
+    56.78, 59.53 and 62.30 s), does not hold in committed beats. The chords
+    fall on committed beats 75, 80, 88 and 96, because the tracker's beats in
+    the vamp and the opening drift and skip. And the chord at 59.53 s is not
+    a strong onset (strength 74.5, below the 98th percentile).
+  - Heavy swings in stage 5 therefore rest mostly on the unforecast-accent
+    path, which cleaves on detected strong onsets.
+- **Other tracks:** forecasts at confidence 0.6 or more, and their share
+  within 50 ms of a strong onset.
+
+  | Track | Forecasts | Within 50 ms |
+  |---|---|---|
+  | Mountain King | 15 | 40% |
+  | accelerando-100-140 | 3 | 33% |
+  | William Tell | 2 | 0% |
+  | pop-arrangement | 2 | 0% |
+  | causality-mix | 5 | 20% |
+  | Bumblebee, Beethoven, house-128, dnb-174, hiphop-92-swing | none | — |
+
+  The low precision comes from committed-beat timing: a forecast sits on its
+  committed beat, which is often more than 50 ms from the onset it predicts.
+- **Causality:**
+  - The Python test proves forecasts read only beats and onsets known by
+    their `knownAt`, at cuts at every forecast's `knownAt`. Stamping a
+    forecast before its beat is known fails it.
+  - The full-stream causality test compares forecasts too.
+  - The perturbation check changes forecasts after the cut (times ±2 s,
+    cycles and confidences replaced, every third deleted, one inserted between
+    pairs) and cuts before each: 361 cuts on `causality-mix`.
+  - `check:reactive --full` passes on every shipped track.

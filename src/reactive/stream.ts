@@ -41,6 +41,12 @@ export const StreamFileSchema = z.object({
       ends: z.array(z.object({ t: z.number(), knownAt: z.number() })),
     })
     .optional(),
+  /**
+   * Stage 5: accent forecasts, strong onsets repeating on a 2-, 4- or 8-beat cycle of committed
+   * beats, forecast on the next cycle's beat; `confidence` is the share of the last 4 cycles with
+   * the hit.
+   */
+  accents: z.object({ forecast: z.array(z.object({ t: z.number(), knownAt: z.number(), cycle: z.number().int().positive(), confidence: z.number() })) }).optional(),
   reference: ReferenceSchema.optional(),
 });
 
@@ -50,6 +56,7 @@ export type StreamOnset = z.infer<typeof onset>;
 export type Reference = z.infer<typeof ReferenceSchema>;
 export type StreamStructure = NonNullable<z.infer<typeof StreamFileSchema>["structure"]>;
 export type TickLevel = NonNullable<StreamTick["level"]>;
+export type StreamForecast = NonNullable<z.infer<typeof StreamFileSchema>["accents"]>["forecast"][number];
 export type StreamFile = z.infer<typeof StreamFileSchema>;
 
 /** The stream the simulation sees: the file without its reference (which only players, reports and checks read). */

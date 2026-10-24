@@ -22,6 +22,8 @@ whole file.
   least the 98th percentile of the onsets of the past 30 s.
 - **Structure** (stage 4, `structure.py`): changes, loudness jumps and
   candidate endings, and each tick's `level` and `key`.
+- **Accent forecasts** (stage 5, `accents.py`): strong onsets repeating on a
+  2-, 4- or 8-beat cycle of committed beats, forecast a cycle ahead.
 - **Reference** (optional): beats and sections for the virtual players and the
   checks, never for the simulation.
 
@@ -39,11 +41,11 @@ from typing import Any
 
 import numpy as np
 
-from . import structure
+from . import accents, structure
 
 #: Bumped whenever the stream's output changes, so stale shipped streams fail
 #: `check:reactive`.
-TOOL_VERSION = 4
+TOOL_VERSION = 5
 
 SR = 44100
 FPS = 100
@@ -119,6 +121,14 @@ class Params:
     end_after_s: float = 10.0
     end_window_s: float = 30.0
     end_smooth_s: float = 1.0
+    #: Accent forecasts (stage 5): cycles of committed beats, the confirming cycles, the onset
+    #: window, the least lead (a swing's 0.19 s wind-up plus 0.35 s) and the cycles behind the
+    #: confidence.
+    forecast_cycles: tuple[int, ...] = (2, 4, 8)
+    forecast_confirm: int = 3
+    forecast_window_s: float = 0.05
+    forecast_min_lead_s: float = 0.54
+    forecast_history: int = 4
 
     def to_json(self) -> dict[str, Any]:
         return {
@@ -183,6 +193,13 @@ class Params:
                     "windowS": self.end_window_s,
                     "smoothS": self.end_smooth_s,
                 },
+            },
+            "accents": {
+                "cycles": list(self.forecast_cycles),
+                "confirm": self.forecast_confirm,
+                "windowS": self.forecast_window_s,
+                "minLeadS": self.forecast_min_lead_s,
+                "history": self.forecast_history,
             },
             "biasS": self.bias_s,
             "toolVersion": TOOL_VERSION,
@@ -468,9 +485,10 @@ def hindsight_entries(
 
 
 def build_stream(
-    y: np.ndarray, p: Params | None = None
+    y: np.ndarray, p: Params | None = None, hindsight: bool = True
 ) -> dict[str, list[dict[str, Any]]]:
-    """Beats, ticks and onsets of 44.1 kHz mono audio, unrounded."""
+    """Beats, ticks, onsets, hindsight grids (unless `hindsight` is off, for tests),
+    structure and accent forecasts of 44.1 kHz mono audio, unrounded."""
     p = p or Params()
     act = activations(y)
     beliefs = forward_beliefs(act, p)
@@ -509,11 +527,13 @@ def build_stream(
         if key is not None:
             tick["key"] = key
         ticks.append(tick)
+    onsets = detect_onsets(y, p)
     return {
         "beats": beats,
         "ticks": ticks,
-        "onsets": detect_onsets(y, p),
-        "hindsight": hindsight_entries(y, beliefs, p),
+        "onsets": onsets,
+        **({"hindsight": hindsight_entries(y, beliefs, p)} if hindsight else {}),
+        "forecasts": accents.forecasts(beats, onsets, p),
         "changes": form["changes"],
         "jumps": form["jumps"],
         "ends": form["ends"],
@@ -710,6 +730,18 @@ def to_document(
                 for e in stream["ends"]
             ],
         }
+    if "forecasts" in stream:
+        doc["accents"] = {
+            "forecast": [
+                {
+                    "t": _r(f["t"]),
+                    "knownAt": _r(f["knownAt"], 2),
+                    "cycle": f["cycle"],
+                    "confidence": _r(f["confidence"]),
+                }
+                for f in stream["forecasts"]
+            ]
+        }
     if reference:
         ref: dict[str, Any] = {
             "source": reference["source"],
@@ -742,7 +774,7 @@ def write_document(doc: dict[str, Any], out: str | Path) -> None:
                     + ("," if j < len(value) - 1 else "")
                 )
             lines.append(" ]" + comma)
-        elif key in ("reference", "structure"):
+        elif key in ("reference", "structure", "accents"):
             lines.append(f' "{key}": {{')
             sub = list(value)
             for j, sk in enumerate(sub):
