@@ -1,5 +1,5 @@
 # The Galop trailer: 30 seconds of the Infernal Galop, filmed from the perfect virtual player's run
-# (every press Perfect, the hero never hurt) with the game's own camera and no HUD.
+# (every press Perfect, the hero never hurt) as the game draws it: its camera and its HUD.
 # Build it with `npm run trailer -- trailer/galop.yaml` (scripts/trailer.ts documents the options).
 #
 # Song positions are seconds, or "bar" / "bar:beat" in the song map's bars (songs/orpheus-galop/

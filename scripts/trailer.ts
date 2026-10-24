@@ -1,6 +1,6 @@
 /**
  * A gameplay trailer from a spec (trailer/<name>.yaml): films a planned run in headless Chrome
- * with the game's own camera and no HUD, one frame per output frame of the edit, and cuts the
+ * as the game draws it (its camera and HUD), one frame per output frame of the edit, and cuts the
  * run's mix (music and sound effects) to the same edit.
  *
  *   npm run trailer -- trailer/galop.yaml                  (captures/trailer/galop/galop.mp4, and a 720p copy under 30 MB)
@@ -74,7 +74,6 @@ if (missing.length > 0 || needAudio || !existsSync(songFile)) {
       writeFileSync(mixFile, wavBytes(await renderMix(game, { music: true, sfx: true })));
       writeFileSync(musicFile, wavBytes(await renderMix(game, { music: true, sfx: false })));
     }
-    await game.page.evaluate(() => ((window as unknown as { __demo: { hideHud?: boolean } }).__demo.hideHud = true));
     const t0 = performance.now();
     for (const [i, w] of missing.entries()) {
       await game.page.evaluate((s) => (window as unknown as { __demo: { renderAt(s: number): Promise<void> } }).__demo.renderAt(s), w.s);
