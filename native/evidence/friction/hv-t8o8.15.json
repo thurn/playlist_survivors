@@ -1,0 +1,1 @@
+{"bead":"hv-t8o8.15","phase":"B","recorded":"2026-10-24T21:39:56Z","implementMin":15,"localValidationS":{"fast":17,"focused":10},"hostLoad":7.52,"review":{"findings":6,"fixed":6},"friction":[{"tag":"review-churn","minutes":10,"note":"the generator lacked startStride inputs, ratePressOnGrid ratings and s0; fractional gait slots; key_of as FnMut"}]}
