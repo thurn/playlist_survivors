@@ -25,7 +25,13 @@ system's math library there, as Rust does. On x86 with AVX512, numpy's own vecto
 | Complex phase | numpy | `2j * pi * x / period`: complex multiply, then Smith's division by `(period + 0j)` (times the reciprocal); `exp` gives `(cos, sin)`; the mean is a pairwise sum of (re, im) pairs times `1 / n`; `abs` is C `hypot` (not Python's `math.hypot`); `angle` is `atan2` | Means of 3, 7 and 40 | `hindsight::unit`, `complex_mean` | `the_phase_arithmetic_is_numpys` |
 | Hann window | numpy `np.hanning` | `0.5 + 0.5 cos(pi n / (m - 1))` for `n = 1 - m, 3 - m, ...`, float64 | `m` = 8 and 2048 | `frontend::hanning` | `hanning_is_numpys` |
 | Observation densities | madmom `RNNBeatTrackingObservationModel.log_densities` | `log((1 - a) / (lambda - 1))` and `log(a)` in float32 (numpy on float32 activations), stored as float64; the forward step takes their float64 `exp` | 0, 1e-7, 1 | `dbn::log_densities` | `log_densities_are_madmoms` |
+| Axis mean | numpy `np.mean(a, axis=0)` on a C-ordered 2D array | Each column added row by row in order (the reduction runs over the outer axis), not pairwise; over n | 4096 × 3 float64 | `structure::frame_loudness_db` | `the_axis_mean_is_numpys` |
+| Correlation | numpy `np.corrcoef` (structure's keys) | Each row less its pairwise mean; `cov`'s dot product through BLAS (Accelerate's dgemm, 2 x 12): two fused multiply-add accumulators over alternate elements, then their sum; times `1 / (n - 1)`; over the two standard deviations in turn; clipped | 40 chroma-like rows against rolled key profiles; 20000 random cases while porting | `structure::cov_dot`, `corrcoef` | `the_key_correlation_is_numpys` |
+| Median | numpy `np.median` | The middle value, or `(a + b) / 2` of the middle two | 20, 21, 600, 1199, 1200 values | `structure::median_sorted` | `the_key_correlation_is_numpys` |
 | Rounding | Python `round` | Ties to even | 0.5, 1.5, 2.5, 1199.5 | `f64::round_ties_even` | `rounding_is_pythons` |
+
+Not reproduced: `np.linalg.norm` (a BLAS `ddot`; no simple accumulator pattern matched it), used
+by structure's novelty, whose features are within summation order of Python's anyway (A5).
 
 Behaviours checked through the golden data rather than the probe (each stage's parity test):
 

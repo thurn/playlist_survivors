@@ -1,11 +1,11 @@
 //! The live analyzer (docs/design/native-app.md, "Phase A: The Analyzer"): every stage, frame by
 //! frame, with bounded memory. Feed 44.1 kHz mono samples; it returns the stream's entries as
-//! they are finished: committed beats, ticks, onsets and hindsight entries so far (structure,
-//! accents, bands and timbre join in later beads).
+//! they are finished: committed beats, ticks (with their keys), onsets, hindsight entries and
+//! structure's changes, jumps and ends so far (accents, bands and timbre join in later beads).
 //!
 //! Per frame, in this order: the online ensemble's activation, the DBN's belief, the onset
 //! function and its peak picking, a tick every `tickS` (its evidence then holds for the commits
-//! until the next), the hindsight decodes due at this frame (requested when a window ends,
+//! until the next) with the structure it finishes, the hindsight decodes due at this frame (requested when a window ends,
 //! usable `D` later), and the commit rule with the phase check's shift.
 //!
 //! The hindsight decode runs inline (`Analyzer::new`), or on a worker thread
@@ -26,6 +26,7 @@ use crate::hindsight::{
 };
 use crate::onsets::{Onset, OnsetParams, PeakPicker, Strengths, Superflux};
 use crate::rnn::OnlineEnsemble;
+use crate::structure::{Change, End, Jump, Structure, StructureParams};
 use crate::tensors::{TensorError, Tensors};
 use crate::ticks::{Energy, Levels, Tick, TickParams};
 
@@ -36,6 +37,9 @@ pub enum Entry {
     Tick(Tick),
     Onset(Onset),
     Hindsight(HindsightEntry),
+    Change(Change),
+    Jump(Jump),
+    End(End),
 }
 
 /// The analyzer's parameters (the stream's: `manifest.json`'s `streamParams`, and `D`).
@@ -45,6 +49,7 @@ pub struct Params {
     pub ticks: TickParams,
     pub onsets: OnsetParams,
     pub hindsight: HindsightParams,
+    pub structure: StructureParams,
 }
 
 /// The hindsight worker thread and its channels.
@@ -260,6 +265,7 @@ struct Stages {
     strengths: Strengths,
     energy: Energy,
     levels: Levels,
+    structure: Structure,
     hindsight: Hindsight,
     /// The latest tick's evidence, which the commits carry.
     tick_evidence: f64,
@@ -346,6 +352,12 @@ impl Analyzer {
             // (Samples are fed a hop at a time, so a tick's energy is taken at most a hop late.)
             energy: Energy::new(&p.ticks, HOP),
             levels: Levels::new(&p.ticks),
+            structure: Structure::new(
+                models,
+                &p.structure,
+                f64::from(SAMPLE_RATE),
+                p.beats.fps / p.beats.tick_frames as f64,
+            )?,
             hindsight,
             nn,
             dbn,
@@ -368,6 +380,7 @@ impl Analyzer {
         // (A hop at a time, so the energy's and hindsight's windows are still kept when read.)
         for chunk in samples.chunks(HOP) {
             self.stages.energy.push(chunk);
+            self.stages.structure.push_samples(chunk);
             self.stages.hindsight.push_samples(chunk);
             self.samples += chunk.len();
             let stages = &mut self.stages;
@@ -457,11 +470,16 @@ impl Stages {
         let energy = self.energy.at(t);
         let level = self.levels.step(energy);
         self.tick_evidence = evidence;
+        let form = self.structure.tick_at(t, f * HOP);
         out.push(Entry::Tick(Tick {
             t,
             evidence,
             energy,
             level,
+            key: form.key,
         }));
+        out.extend(form.change.map(Entry::Change));
+        out.extend(form.jump.map(Entry::Jump));
+        out.extend(form.end.map(Entry::End));
     }
 }

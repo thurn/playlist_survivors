@@ -181,6 +181,45 @@ def log_densities() -> dict[str, Any]:
     }
 
 
+def axis_mean() -> dict[str, Any]:
+    """np.mean(a, axis=0) over a C-ordered 2D array (structure's frame loudness): each column's
+    values added row by row in order, not pairwise, over n; then 20 log10(sqrt + 1e-6)."""
+    fr = _values64(4096 * 3).reshape(4096, 3) - 0.3
+    mean = np.mean(fr * fr, axis=0)
+    ldb = 20 * np.log10(np.sqrt(mean) + 1e-6)
+    return {
+        "rows": 4096,
+        "cols": 3,
+        "mean": [_f64(x) for x in mean],
+        "loudness_db": [_f64(x) for x in ldb],
+        "pairwise": [_f64(np.sum(fr[:, j] * fr[:, j]) / 4096) for j in range(3)],
+    }
+
+
+def correlation() -> dict[str, Any]:
+    """structure's keys: np.corrcoef (cov's dot product is a BLAS dgemm, two FMA accumulators
+    over alternate elements on Accelerate), the even-length np.median of the change threshold, and
+    _key_name over chroma-like vectors."""
+    from . import structure
+
+    v = _values64(12 * 40).reshape(40, 12)
+    cases = []
+    for k in range(40):
+        profile = structure.MAJOR if k % 2 == 0 else structure.MINOR
+        r = (k * 5) % 12
+        cases.append(
+            [k, r, _f64(np.corrcoef(v[k], np.roll(profile, r))[0, 1])]
+        )
+    medians = [
+        [n, _f64(np.median(_values64(n)))] for n in (20, 21, 600, 1199, 1200)
+    ]
+    return {
+        "corrcoef": cases,
+        "keys": [structure._key_name(v[k]) for k in range(40)],
+        "medians": medians,
+    }
+
+
 def rounding() -> list[Any]:
     """Python's round(x): to the nearest integer, ties to even (frame times, window bounds)."""
     xs = [0.5, 1.5, 2.5, -0.5, -1.5, 3.4999999, 1199.5, 44100.5, 0.67 * 100, 1.3 * 44100]
@@ -207,6 +246,8 @@ def probe() -> dict[str, Any]:
         "hanning": hanning(),
         "log_densities": log_densities(),
         "rounding": rounding(),
+        "axis_mean": axis_mean(),
+        "correlation": correlation(),
     }
 
 

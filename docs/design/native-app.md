@@ -745,8 +745,17 @@ Python's upstream with D = 0, the offline beats, the hindsight entries and the
 phase-checked commits are bit-equal; the whole analyzer from PCM too, inline or
 on the worker; a full 20 s decode takes about 280 ms, well inside D = 670 ms.
 
-- librosa's chroma and MFCC are reproduced from their definitions (filterbanks
-  computed once and compared against librosa's matrices in a test).
+A5 measured ([native/evidence/a5/](../../native/evidence/a5/README.md)): the
+features are within 1e-10 (1 + |value|) of Python's (the loudness bit-equal), every
+tick's key equals Python's (to the bit from Python's chroma, with numpy's BLAS
+`corrcoef` reproduced), and on synthetic pieces up to 150 s with changes, jumps
+and ends, their times are bit-equal (the change strengths within tolerance),
+from the stage and from the whole analyzer; a change on real music is first
+met in A7's corpus parity.
+
+- librosa's chroma and MFCC use librosa's own matrices, exported with the models
+  (`librosa.chroma`, `librosa.mel` and `librosa.dct` in `madmom.bin`), so the
+  features differ from librosa's only by summation order (A5).
 - Python resamples non-44.1 kHz files with a symmetric filter (about 2 ms of
   lookahead). Replay of a 44.1 kHz file needs no resampling. Live capture
   resamples 48 kHz causally with `rubato`. The difference is measured, not

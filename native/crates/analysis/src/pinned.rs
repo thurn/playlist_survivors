@@ -10,6 +10,7 @@ use crate::frontend::hanning;
 use crate::hindsight::{complex_mean, unit};
 use crate::numeric::{pairwise_sum, pairwise_sum_f32, percentile_linear};
 use crate::onsets::{OnsetParams, RunningMean, Strengths, Superflux, kept_after};
+use crate::structure::{corrcoef, frame_loudness_db, key_name, median_sorted};
 
 fn fixture() -> Value {
     serde_json::from_str(include_str!("../tests/fixtures/library-arithmetic.json"))
@@ -239,5 +240,87 @@ fn rounding_is_pythons() {
     for case in fixture()["rounding"].as_array().unwrap() {
         let (x, want) = (case[0].as_f64().unwrap(), case[1].as_i64().unwrap());
         assert_eq!(x.round_ties_even() as i64, want, "round({x})");
+    }
+}
+
+#[test]
+fn the_axis_mean_is_numpys() {
+    let f = fixture();
+    let am = &f["axis_mean"];
+    let (rows, cols) = (am["rows"].as_u64().unwrap(), am["cols"].as_u64().unwrap());
+    let v = values64(rows * cols);
+    let (mean, ldb, pairwise) = (
+        u64s(&am["mean"]),
+        u64s(&am["loudness_db"]),
+        u64s(&am["pairwise"]),
+    );
+    for j in 0..cols as usize {
+        let column: Vec<f64> = v
+            .iter()
+            .skip(j)
+            .step_by(cols as usize)
+            .map(|x| x - 0.3)
+            .collect();
+        let squares: Vec<f64> = column.iter().map(|x| x * x).collect();
+        // (The probe's input tells the orders apart: numpy's pairwise mean differs.)
+        assert_ne!(mean[j], pairwise[j], "column {j}");
+        assert_eq!(
+            (pairwise_sum(&squares) / rows as f64).to_bits(),
+            pairwise[j],
+            "column {j}"
+        );
+        let sequential = squares.iter().fold(0.0, |s, x| s + x) / rows as f64;
+        assert_eq!(
+            sequential.to_bits(),
+            mean[j],
+            "np.mean(axis=0) of column {j}"
+        );
+        assert_eq!(
+            frame_loudness_db(&column).to_bits(),
+            ldb[j],
+            "column {j}'s loudness"
+        );
+    }
+}
+
+#[test]
+fn the_key_correlation_is_numpys() {
+    let fix = fixture();
+    let corr = &fix["correlation"];
+    let v = values64(12 * 40);
+    let row = |k: usize| -> [f64; 12] { std::array::from_fn(|j| v[12 * k + j]) };
+    for case in corr["corrcoef"].as_array().unwrap() {
+        let (k, r) = (
+            case[0].as_u64().unwrap() as usize,
+            case[1].as_u64().unwrap() as usize,
+        );
+        let profile = if k % 2 == 0 {
+            crate::structure::MAJOR
+        } else {
+            crate::structure::MINOR
+        };
+        let rolled: [f64; 12] = std::array::from_fn(|j| profile[(j + 12 - r) % 12]);
+        assert_eq!(
+            corrcoef(&row(k), &rolled).to_bits(),
+            case[2].as_u64().unwrap(),
+            "np.corrcoef of row {k} and a profile rolled {r}"
+        );
+    }
+    for (k, key) in corr["keys"].as_array().unwrap().iter().enumerate() {
+        assert_eq!(
+            key_name(&row(k)),
+            key.as_str().unwrap(),
+            "_key_name of row {k}"
+        );
+    }
+    for case in corr["medians"].as_array().unwrap() {
+        let n = case[0].as_u64().unwrap();
+        let mut values = values64(n);
+        values.sort_by(f64::total_cmp);
+        assert_eq!(
+            median_sorted(&values).to_bits(),
+            case[1].as_u64().unwrap(),
+            "np.median of {n}"
+        );
     }
 }

@@ -11,5 +11,6 @@ pub mod onsets;
 #[cfg(test)]
 mod pinned;
 pub mod rnn;
+pub mod structure;
 pub mod tensors;
 pub mod ticks;

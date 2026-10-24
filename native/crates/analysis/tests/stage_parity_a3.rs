@@ -65,6 +65,7 @@ fn ticks(models: &Tensors, acts: &[f32], pcm: &[f32]) -> Vec<Tick> {
             evidence: evidence.at(last, period, t),
             energy: e,
             level: levels.step(e),
+            key: None,
         });
     };
     let mut last = None;

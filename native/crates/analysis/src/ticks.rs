@@ -66,6 +66,8 @@ pub struct Tick {
     pub evidence: f64,
     pub energy: f64,
     pub level: Level,
+    /// The key of the past `key.windowS` (from `key.afterS` on).
+    pub key: Option<&'static str>,
 }
 
 /// The energy over the samples heard so far, keeping only the window it reads.
