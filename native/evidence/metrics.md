@@ -23,9 +23,9 @@ Per-crate focused tests (`cargo test -p <crate>`) get a row each, keyed
 |---|---|---|
 | F4 scaffold (no tests yet), three runs | 0.2, 0.2, 0.2 s | 0.2, 0.1, 0.1 s |
 
-No measurable difference with no tests, so every stage keeps `cargo test`. R1 re-times both
-once the first crates have tests (A1, B1) and adopts nextest for any stage it speeds up by at
-least 10%.
+No measurable difference with no tests, so every stage keeps `cargo test`. R1 ran before any
+crate had tests, so A1 and B1 re-time both (and A1 re-baselines the cold build and the gate
+target directory's contention), and R2 adopts nextest for any stage it speeds up by at least 10%.
 
 ## Gate target directory (F4)
 
