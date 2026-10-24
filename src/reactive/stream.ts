@@ -9,7 +9,8 @@
 import { z } from "zod";
 
 const beat = z.object({ t: z.number(), knownAt: z.number(), period: z.number().positive(), evidence: z.number() });
-const tick = z.object({ t: z.number(), evidence: z.number(), energy: z.number() });
+/** Stage 4 adds each tick's loudness level and, from 10 s on, its key (such as "D major"). */
+const tick = z.object({ t: z.number(), evidence: z.number(), energy: z.number(), level: z.enum(["quiet", "medium", "loud"]).optional(), key: z.string().optional() });
 const onset = z.object({ t: z.number(), knownAt: z.number(), strength: z.number(), strong: z.boolean() });
 const section = z.object({ label: z.string(), s0: z.number(), s1: z.number(), feel: z.enum(["pulsed", "free"]).optional() });
 
@@ -29,6 +30,17 @@ export const StreamFileSchema = z.object({
   onsets: z.array(onset),
   /** Stage 2: every second, the offline decode of the last 20 s and the causal tracker's believed beats, each over the last 8 s. */
   hindsight: z.array(z.object({ knownAt: z.number(), offline: z.array(z.number()), online: z.array(z.number()) })).optional(),
+  /**
+   * Stage 4: changes (novelty peaks, known 6 s late), loudness jumps of 6 dB or more (known at the
+   * end of their second) and candidate endings (known 1.5 s into the quiet).
+   */
+  structure: z
+    .object({
+      changes: z.array(z.object({ t: z.number(), knownAt: z.number(), strength: z.number() })),
+      jumps: z.array(z.object({ t: z.number(), knownAt: z.number(), db: z.number() })),
+      ends: z.array(z.object({ t: z.number(), knownAt: z.number() })),
+    })
+    .optional(),
   reference: ReferenceSchema.optional(),
 });
 
@@ -36,6 +48,8 @@ export type StreamBeat = z.infer<typeof beat>;
 export type StreamTick = z.infer<typeof tick>;
 export type StreamOnset = z.infer<typeof onset>;
 export type Reference = z.infer<typeof ReferenceSchema>;
+export type StreamStructure = NonNullable<z.infer<typeof StreamFileSchema>["structure"]>;
+export type TickLevel = NonNullable<StreamTick["level"]>;
 export type StreamFile = z.infer<typeof StreamFileSchema>;
 
 /** The stream the simulation sees: the file without its reference (which only players, reports and checks read). */

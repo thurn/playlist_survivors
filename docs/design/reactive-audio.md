@@ -1765,3 +1765,100 @@ Recorded by `hv-s4pt.5`.
   Free movement holds the drain's clock: back on strides, the drain waits its
   grace bar again.
 
+
+### Measured: stage 4, structure in the stream
+
+Recorded by `hv-s4pt.6` (stream `toolVersion` 4).
+
+- **Implementation choices:**
+  - Feature frames end at their tick: each holds the 4096 samples before it.
+  - Chroma uses a fixed tuning, and the MFCCs' dB scale has no top-dB clip,
+    since both would otherwise read the whole file.
+  - A change's `t` is the middle of the boundary tick's frame.
+  - Jumps need the full 7 s of history.
+  - Levels start at medium.
+  - Keys use the Krumhansl-Kessler profiles.
+  - Every parameter is a stream parameter, and `ps-analysis stream --params`
+    overrides them. `causality-mix` is generated with 20 s statistics windows
+    for the change spread, the change threshold and the end window.
+- **Changes on the Galop:** 9, at 10.4, 18.5, 29.8, 37.7, 43.5, 54.1, 90.8,
+  101.4 and 134.6 s.
+  - In the galop they fall on the vamp, the opening, the kick line and the
+    bridge, with one false alarm at 134.6 s (10 s after the coda's start).
+  - The experiment, with the same rule, found 4 with no false alarm: the
+    opening, the kick line, the climax and the coda. The difference comes from
+    the causal frames, the fixed tuning and the unclipped MFCCs.
+- **Jumps on the Galop:** 11.
+  - The vamp's is at 45.0 s, 1.8 s after the song map's start.
+  - The opening's is at 53.5 s, the kick line's at 90.2 s and the bridge's at
+    100.7 s.
+  - Five fall in the prelude (6.0, 24.7, 29.1, 33.5 and 40.9 s), all known
+    below the gate.
+  - The vamp's and the kick line's jumps are known below the gate too (0.15
+    and 0.05), so they start no section.
+- **Candidate endings on the Galop:** two.
+  - The real ending has `t` 142.8 s and is known at 144.3 s; the experiment
+    found it at 144.2 s.
+  - The real ending is known with the evidence at 0.03, below the gate. Stage
+    6's finale must not gate candidate endings the way section starts are
+    gated.
+  - A second one, at 29.9 s in the free prelude, is below the gate. The
+    experiment's centred frames did not find it.
+- **Keys on the Galop:**
+  - The prelude reads E major, as the song map says.
+  - The galop reads A major from 46 s (the vamp) and D major from 61 s, with
+    brief A major spells.
+  - Theme A's G major is never reached: the 20 s window lags its 21 s.
+- **Levels on the Galop:** 66% of ticks loud, 30% medium, 4% quiet.
+- **Detected section starts** on the Galop (the stage 4 rule over the stream:
+  gate, 8 s apart, effective downbeat): 36.6, 50.7, 58.9, 97.5, 107.8 and
+  141.0 s.
+  - They come from the changes at 29.8, 43.5, 90.8, 101.4 and 134.6 s and the
+    jump at 57.5 s.
+  - The prelude's start comes from the change at 29.8 s, known at 35.8 s with
+    the evidence just above the gate (0.22).
+  - The opening's jump at 53.5 s falls within 8 s of the vamp's start, so it
+    starts nothing.
+  - Within 8 s after 4 of the 8 song-map section starts from the vamp to the
+    coda (target at least 4), exactly at the target.
+    - Matching is one to one: the start at 107.8 s falls within 8 s after both
+      the bridge (100.7 s) and the climax (104.5 s), but counts once.
+  - 1 in the galop more than 8 s from every section start, before or after
+    it (target at most 3).
+  - 1 in the prelude (target at most 1).
+- **Parity rows** (`npm run reactive:parity`), with stage 1's timer waves still
+  in place:
+  - Zone waves: authored 4 (4 on a section start), reactive 3 (0).
+  - Detected section starts within 8 s after a section start: 4 of 8.
+  - In free sections: 1.
+  - In pulsed sections more than 8 s from every start: 1.
+  - False zone waves: authored 0, reactive 3.
+- **Every track's structure** (changes, jumps, candidate endings, detected
+  starts):
+
+  | Track | Changes | Jumps | Candidate endings | Detected starts |
+  |---|---|---|---|---|
+  | William Tell | 11 | 12 | none | 8 |
+  | Mountain King | 11 | 9 | 150.2 s | 9 |
+  | Bumblebee | 7 | 3 | none | 4 |
+  | Beethoven | 10 | 18 | 23.6, 26.9 and 166.0 s | 5 |
+  | house-128 | 5 | 2 | 60.5 s | 5 |
+  | dnb-174 | 6 | 2 | none | 5 |
+  | hiphop-92-swing | 9 | 2 | 60.7 s | 6 |
+  | accelerando-100-140 | 8 | 2 | 73.5 s | 7 |
+  | pop-arrangement | 9 | 5 | 168.7 s | 8 |
+  | causality-mix | 2 | 7 | 16.5 and 42.5 s | 3 |
+
+- **Causality:** the Python stream test covers every structure field on
+  `causality-mix`, where each fires.
+  - It cuts exactly at every structure entry's `knownAt` with no margin, plus
+    8 fixed cuts.
+  - A prefix check requires the feature frames of cut audio to equal the full
+    audio's.
+  - Injected leaks are caught: centred frames, a change stamped a tick early,
+    and a jump stamped a tick early.
+  - The perturbation check changes structure entries, levels and keys, and
+    cuts before each structural event: 338 cuts on `causality-mix`.
+  - `check:reactive --full` passes with no failing cut on any shipped track.
+    The simulation does not read structure until the next bead, so these cuts
+    prove nothing about structure yet.

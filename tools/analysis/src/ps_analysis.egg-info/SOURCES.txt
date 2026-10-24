@@ -10,6 +10,7 @@ src/ps_analysis/edit.py
 src/ps_analysis/report.py
 src/ps_analysis/songmap.py
 src/ps_analysis/stream.py
+src/ps_analysis/structure.py
 src/ps_analysis/synth.py
 src/ps_analysis.egg-info/PKG-INFO
 src/ps_analysis.egg-info/SOURCES.txt

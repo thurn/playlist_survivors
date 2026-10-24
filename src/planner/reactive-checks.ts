@@ -63,7 +63,9 @@ export function perturbStream(stream: ReactiveStream, C: number, seed: string): 
     push(b.t + r.range(-0.35, 0.35) * b.period, b.knownAt + r.range(-0.3, 0.3), b.period);
   });
   const duration = C + r.range(10, 60);
-  const ticks = stream.ticks.filter((k) => k.t <= duration + 1e-9).map((k) => (k.t <= C ? k : { t: k.t, evidence: r.next(), energy: r.next() }));
+  const ticks = stream.ticks
+    .filter((k) => k.t <= duration + 1e-9)
+    .map((k) => (k.t <= C ? k : { t: k.t, evidence: r.next(), energy: r.next(), ...(k.level ? { level: r.pick(LEVELS) } : {}), ...(k.level && r.next() < 0.8 ? { key: r.pick(KEYS) } : {}) }));
   const maxStrength = Math.max(1, ...stream.onsets.map((o) => o.strength));
   const onsets: StreamOnset[] = [];
   let n = 0;
@@ -100,7 +102,45 @@ export function perturbStream(stream: ReactiveStream, C: number, seed: string): 
     };
     return { knownAt, offline: move(h.offline), online: move(h.online) };
   });
-  return { ...stream, audio: { ...stream.audio, duration }, beats, ticks, onsets, ...(hindsight ? { hindsight } : {}) };
+  const structure = stream.structure && {
+    changes: perturbEvents(stream.structure.changes, C, r, (e) => ({ ...e, strength: r.range(0, 3) })),
+    jumps: perturbEvents(stream.structure.jumps, C, r, (e) => ({ ...e, db: r.pick([-1, 1]) * r.range(2, 20) })),
+    ends: perturbEvents(stream.structure.ends, C, r, (e) => e),
+  };
+  return { ...stream, audio: { ...stream.audio, duration }, beats, ticks, onsets, ...(hindsight ? { hindsight } : {}), ...(structure ? { structure } : {}) };
+}
+
+const LEVELS = ["quiet", "medium", "loud"] as const;
+const KEYS = ["C major", "A minor", "D major", "Bb major", "F# minor", "E major"];
+
+/**
+ * Structure entries known after C: times move by up to ±2 s (knownAt staying after C and in order,
+ * t at or before it), their values are replaced (`change`), every third is deleted, and an extra
+ * one is inserted between every pair (and after C when fewer than two are left, so that a later
+ * event always appears or moves).
+ */
+function perturbEvents<E extends { t: number; knownAt: number }>(list: E[], C: number, r: Rng, change: (e: E) => E): E[] {
+  const keep = list.filter((e) => e.knownAt <= C);
+  const later = list.filter((e) => e.knownAt > C).filter((_, i) => i % 3 !== 2);
+  const like = later[0] ?? list[list.length - 1];
+  if (later.length < 2 && like) {
+    const knownAt = C + r.range(1, 8);
+    later.unshift({ ...like, knownAt, t: knownAt - r.range(0, 6) });
+    later.sort((a, b) => a.knownAt - b.knownAt);
+  }
+  const moved: E[] = [];
+  for (const [i, e] of later.entries()) {
+    const next = later[i + 1];
+    moved.push(e);
+    if (next) moved.push({ ...e, t: (e.t + next.t) / 2, knownAt: (e.knownAt + next.knownAt) / 2 });
+  }
+  let last = C;
+  const out = moved.map((e) => {
+    const knownAt = Math.max(last + 1e-4, e.knownAt + r.range(-2, 2));
+    last = knownAt;
+    return change({ ...e, knownAt, t: Math.min(knownAt, e.t + r.range(-2, 2)) });
+  });
+  return [...keep, ...out];
 }
 
 // ------------------------------------------------------------------ runs
@@ -292,12 +332,13 @@ export interface CausalityResult extends CheckResult {
 /** The feature classes so far (stages 1 and 2): each must fire before a cut, or the check proves nothing about it. */
 export const FEATURES = ["level-ups", "zone waves", "reading switches"] as const;
 
-/** Default cuts: just before each committed beat's, strong onset's and hindsight entry's knownAt, and just after each level-up and zone wave. */
+/** Default cuts: just before each committed beat's, strong onset's, hindsight entry's and structural event's knownAt, and just after each level-up and zone wave. */
 export function defaultCuts(stream: ReactiveStream, truePlan: Plan, until: number): number[] {
   const raw = [
     ...stream.beats.map((b) => b.knownAt - 0.001),
     ...stream.onsets.filter((o) => o.strong).map((o) => o.knownAt - 0.001),
     ...(stream.hindsight ?? []).map((h) => h.knownAt - 0.001),
+    ...(stream.structure ? [...stream.structure.changes, ...stream.structure.jumps, ...stream.structure.ends] : []).map((e) => e.knownAt - 0.001),
     ...truePlan.upgrades.map((u) => u.s + 0.001),
     ...truePlan.open.waves.map((w) => w.s + 0.001),
   ].filter((c) => c > 0.05 && c < until);

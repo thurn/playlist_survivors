@@ -31,6 +31,7 @@
  * Targets (stage 1): committed-beat accuracy on every track, and the Galop's pulsed sections by section.
  * Targets (stage 2): the players' tiers on dnb-174, pop-arrangement and the Galop; random presses
  * keeping offline "as tracked"; pop-arrangement's pads-only breakdown settling unjudged.
+ * Targets (stage 4): the Galop's detected section starts against its song map's section starts.
  *
  *   npm run check:reactive [-- --full]
  *
@@ -43,6 +44,8 @@ import type { PlannerInput } from "../src/planner/context.ts";
 import { planWithSim, prepare } from "../src/planner/plan.ts";
 import { belowGateShare, beatsWithin, checkDeterminism, checkReactiveCausality, checkReactiveSounds, checkSettleTiming, judgedTierShare, liveRun, smokeTest, type CausalityCase } from "../src/planner/reactive-checks.ts";
 import { SETTLE_DELAY } from "../src/reactive/settle.ts";
+import { sectionDetection } from "../src/planner/parity.ts";
+import { detectedSections } from "../src/reactive/sections.ts";
 import { grooveAt } from "../src/plan/evaluate.ts";
 import type { Plan } from "../src/plan/types.ts";
 import { reactivePlayerFor } from "../src/reactive/players.ts";
@@ -240,6 +243,22 @@ const causalityCase = (id: string, level: string | undefined, cuts?: number[]): 
   const g0 = grooveAt(pop.plan.groove, brk.s0 + SETTLE_DELAY);
   const g1 = grooveAt(pop.plan.groove, brk.s1 + SETTLE_DELAY);
   lines.push(`  pop-arrangement's pads-only breakdown: ${pct(unj)} of reactive-moderate's ${inBrk.length} presses settle unjudged (80%); the settled groove ${g0.toFixed(2)} at its start, ${g1.toFixed(2)} at its end (at least ${(g0 - 0.1).toFixed(2)})`);
+}
+
+// ---------------------------------------------------------------- targets: structure (stage 4)
+{
+  const galop = file("orpheus-galop");
+  const d = sectionDetection(streamOf("orpheus-galop"), galop.reference!);
+  lines.push("targets (stage 4, the Galop's detected section starts):");
+  lines.push(`  within 8 s after ${d.found} of the ${d.of} song-map section starts from the vamp to the coda, matched one to one (at least 4${d.found >= 4 ? "" : ", missed"})`);
+  lines.push(`  ${d.falseStarts} in the galop more than 8 s from every song-map section start (at most 3${d.falseStarts <= 3 ? "" : ", missed"}), ${d.free} in the prelude (at most 1${d.free <= 1 ? "" : ", missed"})`);
+  lines.push(`  at ${d.times.map((t) => t.toFixed(1)).join(", ")} s; song-map starts at ${galop.reference!.sections!.slice(1).map((x) => x.s0.toFixed(1)).join(", ")} s`);
+  lines.push("structure per track (changes, jumps, candidate endings, detected section starts):");
+  for (const id of [...tracks, "causality-mix"]) {
+    const st = streamOf(id);
+    const x = st.structure!;
+    lines.push(`  ${id.padEnd(22)} ${x.changes.length} changes, ${x.jumps.length} jumps, ${x.ends.length ? `ends at ${x.ends.map((e) => e.t.toFixed(1)).join(", ")} s` : "no ending"}, ${detectedSections(st).length} section starts`);
+  }
 }
 
 // ---------------------------------------------------------------- determinism, sounds and every track end to end

@@ -10,6 +10,7 @@ import numpy as np
 import pytest
 
 from ps_analysis import stream as st
+from ps_analysis import structure as stc
 from ps_analysis import synth
 
 EXCERPT_S = 12.0
@@ -43,7 +44,7 @@ def known_by(
 def assert_same(a: dict[str, Any], b: dict[str, Any], what: str) -> None:
     assert a.keys() == b.keys(), what
     for k, v in a.items():
-        if isinstance(v, bool):
+        if isinstance(v, (bool, str)):
             assert v == b[k], f"{what}.{k}"
         elif isinstance(v, list):
             assert len(v) == len(b[k]), f"{what}.{k}: {len(v)} vs {len(b[k])} entries"
@@ -66,7 +67,7 @@ def test_stream_is_causal(
 ) -> None:
     """The stream of the audio cut at X holds exactly the full stream's entries known by X - margin."""
     part = st.build_stream(excerpt[: round(cut * synth.SR)])
-    for field in ("beats", "ticks", "onsets", "hindsight"):
+    for field in ("beats", "ticks", "onsets", "hindsight", "changes", "jumps", "ends"):
         want = known_by(full[field], cut, margin)
         got = known_by(part[field], cut, margin)
         assert len(got) == len(want), f"{field} at {cut}: {len(got)} vs {len(want)}"
@@ -310,6 +311,7 @@ def test_file_format(tmp_path: Path, excerpt: np.ndarray, full: dict[str, Any]) 
         "ticks",
         "onsets",
         "hindsight",
+        "structure",
         "reference",
     ]
     assert back["version"] == 1
@@ -325,14 +327,17 @@ def test_file_format(tmp_path: Path, excerpt: np.ndarray, full: dict[str, Any]) 
         params["gate"] == 0.2 and params["tickS"] == 0.05 and params["biasS"] == -0.013
     )
     assert set(back["beats"][0]) == {"t", "knownAt", "period", "evidence"}
-    assert set(back["ticks"][0]) == {"t", "evidence", "energy"}
+    assert set(back["ticks"][0]) == {"t", "evidence", "energy", "level"}
+    assert set(back["ticks"][-1]) == {"t", "evidence", "energy", "level", "key"}
     assert set(back["onsets"][0]) == {"t", "knownAt", "strength", "strong"}
     beats = [b["t"] for b in back["beats"]]
     assert all(b > a for a, b in itertools.pairwise(beats))
     assert all(b["knownAt"] < b["t"] for b in back["beats"])
     assert [k["t"] for k in back["ticks"][:3]] == [0.05, 0.1, 0.15]
     assert back["reference"] == ref
-    assert "structure" not in back
+    assert set(back["structure"]) == {"changes", "jumps", "ends"}
+    assert set(params["structure"]) == {"change", "jump", "level", "key", "end"}
+    assert params["structure"]["change"]["k"] == 0.5
     h = back["hindsight"]
     assert [e["knownAt"] for e in h] == [float(k) for k in range(1, len(h) + 1)]
     assert set(h[0]) == {"knownAt", "offline", "online"}
@@ -399,3 +404,189 @@ def test_the_excerpt_commits_each_next_beat_by_the_beat_before(
     beats = full["beats"]
     for a, nxt in itertools.pairwise(beats):
         assert nxt["knownAt"] <= a["t"] + 1e-9
+
+
+# --- structure (stage 4) ---------------------------------------------------------
+
+HOP = st.SR * st.TICK_FRAMES // st.FPS
+
+
+@pytest.fixture(scope="module")
+def mix() -> np.ndarray:
+    return synth.track("causality-mix")[0]
+
+
+def form(y: np.ndarray, p: st.Params | None = None) -> dict[str, list[dict[str, Any]]]:
+    """The structure entries of the audio, with each tick's level and key as entries known at the tick."""
+    p = p or st.Params()
+    n = math.floor(len(y) / st.SR * st.FPS / st.TICK_FRAMES + 1e-9)
+    times = np.arange(1, n + 1) * st.TICK_FRAMES / st.FPS
+    f = stc.structure(y, times, st.energies(y, times, p), p, HOP, st.SR)
+    ticks = [
+        {"t": float(t), "level": lv, **({"key": k} if k else {})}
+        for t, lv, k in zip(times, f["levels"], f["keys"], strict=True)
+    ]
+    return {
+        "changes": f["changes"],
+        "jumps": f["jumps"],
+        "ends": f["ends"],
+        "ticks": ticks,
+    }
+
+
+@pytest.fixture(scope="module")
+def mix_form(mix: np.ndarray) -> dict[str, list[dict[str, Any]]]:
+    return form(mix)
+
+
+@pytest.mark.parametrize(
+    ("cut", "margin"),
+    [
+        (18.0, MARGIN_S),
+        (22.63, MARGIN_S),
+        (31.1, MARGIN_S),
+        (41.12, MARGIN_S),
+        (44.1, MARGIN_S),
+    ]
+    + [(17.987654, 0.0), (24.811111, 0.0), (43.2, 0.0)],
+)
+def test_structure_is_causal(
+    mix: np.ndarray, mix_form: dict[str, Any], cut: float, margin: float
+) -> None:
+    """On causality-mix, whose every structure field fires: the cut audio's entries equal the full's known by X."""
+    part = form(mix[: round(cut * synth.SR)])
+    for field in ("changes", "jumps", "ends", "ticks"):
+        want = known_by(mix_form[field], cut, margin)
+        got = known_by(part[field], cut, margin)
+        assert len(got) == len(want), f"{field} at {cut}: {len(got)} vs {len(want)}"
+        for i, (g, w) in enumerate(zip(got, want, strict=True)):
+            assert_same(g, w, f"{field}[{i}] at {cut}")
+
+
+def test_structure_is_causal_at_every_entry_it_knows(
+    mix: np.ndarray, mix_form: dict[str, Any]
+) -> None:
+    """Cut exactly at each entry's knownAt, with no margin: an entry stamped even a tick before
+    the audio it needs is missing or different in the cut audio's structure."""
+    cuts = sorted(
+        {e["knownAt"] for k in ("changes", "jumps", "ends") for e in mix_form[k]}
+    )
+    assert len(cuts) >= 8
+    for cut in cuts:
+        part = form(mix[: round(cut * synth.SR)])
+        for field in ("changes", "jumps", "ends", "ticks"):
+            want = known_by(mix_form[field], cut, 0.0)
+            got = known_by(part[field], cut, 0.0)
+            assert len(got) == len(want), f"{field} at {cut}: {len(got)} vs {len(want)}"
+            for i, (g, w) in enumerate(zip(got, want, strict=True)):
+                assert_same(g, w, f"{field}[{i}] at {cut}")
+
+
+@pytest.mark.parametrize("cut", [17.987654, 24.811111, 31.1, 43.2])
+def test_feature_frames_of_cut_audio_are_a_prefix(mix: np.ndarray, cut: float) -> None:
+    """Each tick's features read only the audio before the tick."""
+    n = math.floor(len(mix) / st.SR * st.FPS / st.TICK_FRAMES + 1e-9)
+    m = math.floor(cut * st.FPS / st.TICK_FRAMES + 1e-9)
+    full = stc.features(mix, n, HOP, st.SR)
+    part = stc.features(mix[: round(cut * synth.SR)], m, HOP, st.SR)
+    for a, b in zip(part, full, strict=True):
+        np.testing.assert_allclose(a, b[:m], atol=1e-9)
+
+
+def test_causality_mix_exercises_every_structure_field(
+    mix_form: dict[str, Any],
+) -> None:
+    f = mix_form
+    assert len(f["changes"]) >= 2
+    assert any(j["db"] > 0 for j in f["jumps"]) and any(j["db"] < 0 for j in f["jumps"])
+    # The final chord rings out into silence: a candidate ending after it.
+    assert any(e["t"] > 40 for e in f["ends"])
+    assert {k["level"] for k in f["ticks"]} == {"quiet", "medium", "loud"}
+    assert len({k.get("key") for k in f["ticks"]}) > 2
+
+
+def test_changes_are_known_after_the_next_window_and_the_peak_window(
+    mix_form: dict[str, Any],
+) -> None:
+    p = st.Params()
+    for c in mix_form["changes"]:
+        lead = c["knownAt"] - c["t"]
+        assert lead == pytest.approx(p.change_next_s + p.change_peak_s, abs=0.1)
+        assert c["strength"] > 0
+
+
+def test_the_structure_parameters_are_configurable(mix: np.ndarray) -> None:
+    """A compressed setting (for the check's short track) detects changes sooner."""
+    p = st.Params(
+        change_past_s=4, change_next_s=1, change_peak_s=2, key_after_s=3, end_after_s=3
+    )
+    f = form(mix[: 20 * synth.SR], p)
+    assert next(k["t"] for k in f["ticks"] if "key" in k) == pytest.approx(3.0)
+    assert f["changes"]
+    assert all(
+        c["knownAt"] - c["t"] == pytest.approx(3.0, abs=0.1) for c in f["changes"]
+    )
+    # (The default setting knows the quiet stretch's change at 16.5 s only 6 s later.)
+    assert form(mix[: 20 * synth.SR])["changes"] == []
+
+
+def sine(segments: list[tuple[float, float]], freq: float = 440.0) -> np.ndarray:
+    """A sine in (seconds, dB) segments."""
+    parts = []
+    for secs, db in segments:
+        t = np.arange(round(secs * st.SR)) / st.SR
+        parts.append(10 ** (db / 20) * np.sqrt(2) * np.sin(2 * np.pi * freq * t))
+    return np.concatenate(parts)
+
+
+def test_a_loudness_jump_is_reported_at_the_end_of_its_second() -> None:
+    p = st.Params()
+    f = form(sine([(10.0, -30.0), (8.0, -18.0)]), p)
+    (j,) = f["jumps"]
+    # The rise of 12 dB at 10 s: 6 dB is reached once about half of the last second is louder.
+    assert 10.3 < j["knownAt"] < 10.8
+    assert j["t"] == pytest.approx(j["knownAt"] - 1.0)
+    assert j["db"] >= 6
+
+
+def test_jumps_need_the_full_seven_seconds_and_are_four_seconds_apart() -> None:
+    f = form(
+        sine([(3.0, -40.0), (5.0, -20.0), (3.0, -40.0), (3.0, -20.0), (8.0, -40.0)])
+    )
+    times = [j["knownAt"] for j in f["jumps"]]
+    assert all(t >= 7.0 - 1e-9 for t in times)
+    assert all(b - a > 4.0 for a, b in itertools.pairwise(times))
+
+
+def test_an_ending_is_20_db_below_the_loudest_second_held_for_1_5_s() -> None:
+    f = form(sine([(12.0, -20.0), (4.0, -45.0)]))
+    (e,) = f["ends"]
+    assert e["t"] == pytest.approx(12.0, abs=0.1)
+    assert e["knownAt"] == pytest.approx(e["t"] + 1.5)
+    # Not before 10 s of audio, and not for a drop of less than 20 dB.
+    assert form(sine([(5.0, -20.0), (4.0, -45.0)]))["ends"] == []
+    assert form(sine([(12.0, -20.0), (4.0, -35.0)]))["ends"] == []
+
+
+def test_levels_follow_the_energy_with_hysteresis() -> None:
+    p = st.Params()
+    e = np.array([0.5, 0.85, 0.75, 0.69, 0.45, 0.39, 0.45, 0.5, 0.79, 0.8])
+    assert stc.levels(e, p) == [
+        "medium",
+        "loud",
+        "loud",
+        "medium",
+        "medium",
+        "quiet",
+        "quiet",
+        "medium",
+        "medium",
+        "loud",
+    ]
+
+
+def test_keys_match_the_major_and_minor_profiles() -> None:
+    chord = lambda *pcs: np.array([1.0 if i in pcs else 0.1 for i in range(12)])
+    assert stc._key_name(chord(0, 4, 7, 2, 5, 9, 11)) == "C major"
+    assert stc._key_name(chord(9, 0, 4, 2, 11)) == "A minor"
+    assert stc._key_name(chord(2, 6, 9)) == "D major"

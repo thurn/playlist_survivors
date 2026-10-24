@@ -32,4 +32,4 @@ if (AUTHORED[track]) {
   authored = liveRun(input, props, { player: player(input) }).recording.plan;
 }
 console.log(`Parity report: ${track}, seed ${seed}, reactive-moderate's presses on the ${ref.source} reference, damage off\n`);
-console.log(formatParity(parityRows(authored, reactive, ref, run.input.content)));
+console.log(formatParity(parityRows(authored, reactive, ref, run.input.content, run.input.reactive)));

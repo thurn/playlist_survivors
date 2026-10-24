@@ -7,7 +7,8 @@ import type { ContentLibrary } from "../content/loader.ts";
 import { grooveAt } from "../plan/evaluate.ts";
 import { gradeFor } from "../plan/grade.ts";
 import type { Plan } from "../plan/types.ts";
-import type { Reference } from "../reactive/stream.ts";
+import { detectedSections } from "../reactive/sections.ts";
+import type { ReactiveStream, Reference } from "../reactive/stream.ts";
 import { Warp } from "../core/warp.ts";
 import { classifyPress, freshPressMemo, keyGroup } from "../sim/timing.ts";
 import { soundRows } from "./checks.ts";
@@ -137,8 +138,52 @@ export function perSection(plan: Plan, ref: Reference): { label: string; kills: 
   });
 }
 
-/** The report's rows (stage 1). */
-export function parityRows(authored: Plan | undefined, reactive: Plan, ref: Reference, lib: ContentLibrary): ParityRow[] {
+/** How long after a reference section's start a detected start or a zone wave still counts as on it. */
+export const SECTION_TOLERANCE_S = 8;
+
+/** Is t within SECTION_TOLERANCE_S after one of the starts? */
+const onStart = (t: number, starts: readonly number[]) => starts.some((s0) => t >= s0 - 1e-6 && t <= s0 + SECTION_TOLERANCE_S + 1e-6);
+
+/**
+ * Stage 4: the stream's detected section starts against the reference's section starts (those after
+ * the first): how many starts have their own detected start within 8 s after them (matched one to
+ * one, each start taking the earliest unmatched detected start in its window), how many detected
+ * starts fall in free sections, and how many in pulsed sections are more than 8 s from every start
+ * (before or after it: the stage 4 target's "false" starts).
+ */
+export function sectionDetection(stream: ReactiveStream, ref: Reference): { found: number; of: number; free: number; falseStarts: number; times: number[] } {
+  const secs = ref.sections ?? [];
+  const starts = secs.slice(1).map((x) => x.s0);
+  const det = detectedSections(stream).map((d) => d.s);
+  const free = secs.filter((x) => x.feel === "free").map((x): [number, number] => [x.s0, x.s1]);
+  const used = new Set<number>();
+  let found = 0;
+  for (const s0 of starts) {
+    const k = det.findIndex((t, i) => !used.has(i) && onStart(t, [s0]));
+    if (k < 0) continue;
+    used.add(k);
+    found++;
+  }
+  const near = (t: number) => starts.some((s0) => Math.abs(t - s0) <= SECTION_TOLERANCE_S + 1e-6);
+  return {
+    found,
+    of: starts.length,
+    free: det.filter((t) => inRanges(t, free)).length,
+    falseStarts: det.filter((t) => !inRanges(t, free) && !near(t)).length,
+    times: det,
+  };
+}
+
+/** Zone waves: how many, how many within 8 s after a reference section start, and how many on none. */
+export function zoneWaves(plan: Plan, ref: Reference): { n: number; on: number; off: number } {
+  const starts = (ref.sections ?? []).slice(1).map((x) => x.s0);
+  const waves = plan.open.waves.map((w) => w.s);
+  const on = waves.filter((t) => onStart(t, starts)).length;
+  return { n: waves.length, on, off: waves.length - on };
+}
+
+/** The report's rows (the stage 4 rows from the stream's structure, when given). */
+export function parityRows(authored: Plan | undefined, reactive: Plan, ref: Reference, lib: ContentLibrary, stream?: ReactiveStream): ParityRow[] {
   const both = (f: (p: Plan) => number, fmt: (x: number) => string, stage: string, row: string): ParityRow => {
     const r = f(reactive);
     const a = authored ? f(authored) : undefined;
@@ -160,6 +205,18 @@ export function parityRows(authored: Plan | undefined, reactive: Plan, ref: Refe
     const a = ka?.[i];
     rows.push({ row: `  ${r.label}: kills, enemies alive`, authored: a ? `${a.kills}, ${a.alive.toFixed(0)}` : "—", reactive: `${r.kills}, ${r.alive.toFixed(0)}`, stage: "1" });
   });
+  if (ref.sections && ref.sections.length > 1) {
+    const wa = authored ? zoneWaves(authored, ref) : undefined;
+    const wr = zoneWaves(reactive, ref);
+    rows.push({ row: "Zone waves (within 8 s after a reference section start)", authored: wa ? `${wa.n} (${wa.on})` : "—", reactive: `${wr.n} (${wr.on})`, stage: "4" });
+    if (stream?.structure) {
+      const d = sectionDetection(stream, ref);
+      rows.push({ row: "Detected section starts within 8 s after a reference section start", authored: "—", reactive: `${d.found} of ${d.of}`, stage: "4" });
+      rows.push({ row: "Detected section starts in free sections", authored: "—", reactive: String(d.free), stage: "4" });
+      rows.push({ row: "Detected section starts in pulsed sections more than 8 s from every start", authored: "—", reactive: String(d.falseStarts), stage: "4" });
+    }
+    rows.push({ row: "False zone waves (on no reference section start)", authored: wa ? String(wa.off) : "—", reactive: String(wr.off), stage: "4" });
+  }
   return rows;
 }
 

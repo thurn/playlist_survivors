@@ -26,6 +26,8 @@ interface Track {
   group: "classical" | "synthetic";
   /** Listed in the index (false for check-only tracks). */
   listed: boolean;
+  /** Stream parameter overrides (ps-analysis stream --params), by the tool's field names. */
+  params?: Record<string, number>;
 }
 
 const TRACKS: Track[] = [
@@ -39,7 +41,8 @@ const TRACKS: Track[] = [
   { id: "hiphop-92-swing", title: "Swung Hip-Hop at 92", artist: "Synthetic", group: "synthetic", listed: true },
   { id: "accelerando-100-140", title: "Accelerando, 100 to 140", artist: "Synthetic", group: "synthetic", listed: true },
   { id: "pop-arrangement", title: "Pop Arrangement", artist: "Synthetic", group: "synthetic", listed: true },
-  { id: "causality-mix", title: "Causality Mix", artist: "Synthetic", group: "synthetic", listed: false },
+  // The check's short track: 20 s statistics windows (docs/design/reactive-audio.md, "Cuts").
+  { id: "causality-mix", title: "Causality Mix", artist: "Synthetic", group: "synthetic", listed: false, params: { change_stats_s: 20, change_threshold_s: 20, end_window_s: 20 } },
 ];
 
 const { values, positionals } = parseArgs({ allowPositionals: true, options: { resynth: { type: "boolean" } } });
@@ -63,15 +66,16 @@ for (const t of TRACKS) {
   if (positionals.length && !positionals.includes(t.id)) continue;
   const audio = join(reactive, audioOf(t));
   const out = join(reactive, t.id, "stream.json");
+  const params = t.params ? ["--params", JSON.stringify(t.params)] : [];
   console.log(`== ${t.id}`);
   if (t.group === "synthetic") {
     const reference = join(reactive, t.id, "reference.json");
     if (values.resynth || !existsSync(audio) || !existsSync(reference)) analysis("synth", t.id, "--out", audio, "--reference", reference);
-    analysis("stream", audio, "--out", out, "--reference", reference);
+    analysis("stream", audio, "--out", out, "--reference", reference, ...params);
   } else if (existsSync(join(ROOT, "songs", t.id, "songmap.json"))) {
-    analysis("stream", audio, "--out", out, "--songmap", join(ROOT, "songs", t.id, "songmap.json"));
+    analysis("stream", audio, "--out", out, "--songmap", join(ROOT, "songs", t.id, "songmap.json"), ...params);
   } else {
-    analysis("stream", audio, "--out", out, "--offline-reference");
+    analysis("stream", audio, "--out", out, "--offline-reference", ...params);
   }
 }
 

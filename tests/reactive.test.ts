@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { loadContent, loadLevel } from "../src/content/loader.ts";
 import type { Director } from "../src/content/schema.ts";
 import { checkReactiveCausality, checkReactiveSounds, checkSettleTiming, perturbStream, smokeTest } from "../src/planner/reactive-checks.ts";
-import { formatParity, parityRows, pressesRatedSame, strikesOnBeat, timeAtTier } from "../src/planner/parity.ts";
+import { formatParity, parityRows, pressesRatedSame, sectionDetection, strikesOnBeat, timeAtTier } from "../src/planner/parity.ts";
+import { detectedSections } from "../src/reactive/sections.ts";
 import { GATE_EXEMPT_SOUNDS, gatedSound, soundFade } from "../src/planner/emit.ts";
 import { planWithSim, playerFor, prepare } from "../src/planner/plan.ts";
 import { directorPopulation, directorRoster } from "../src/reactive/director.ts";
@@ -127,6 +128,109 @@ describe("the perturbation", () => {
     expect(p.audio.duration).toBeLessThanOrEqual(C + 60);
     expect(perturbStream(stream, C, "test")).toEqual(p);
     expect(perturbStream(stream, C, "other")).not.toEqual(p);
+  });
+
+  it("changes the structure and the ticks' levels and keys after C", () => {
+    const ticks = stream.ticks.map((k) => ({ ...k, level: "medium" as const, ...(k.t >= 10 ? { key: "G major" } : {}) }));
+    const ev = (t: number) => ({ t, knownAt: t + 1 });
+    const structure = {
+      changes: [3, 9, 14, 18, 22, 26].map((t) => ({ t, knownAt: t + 6, strength: 1 })),
+      jumps: [5, 13, 17, 21, 25].map((t) => ({ ...ev(t), db: 7 })),
+      ends: [11, 15, 19, 23].map(ev),
+    };
+    const q = perturbStream({ ...stream, ticks, structure }, C, "test");
+    for (const kind of ["changes", "jumps", "ends"] as const) {
+      const before = structure[kind].filter((e) => e.knownAt <= C);
+      const got = q.structure![kind];
+      expect(got.filter((e) => e.knownAt <= C)).toEqual(before);
+      const later = got.filter((e) => e.knownAt > C);
+      expect(later).not.toEqual(structure[kind].filter((e) => e.knownAt > C));
+      expect(later.length).toBeGreaterThan(0);
+      for (const [i, e] of later.entries()) {
+        expect(e.t).toBeLessThanOrEqual(e.knownAt);
+        if (i > 0) expect(e.knownAt).toBeGreaterThan(later[i - 1].knownAt);
+      }
+    }
+    expect(q.structure!.changes.filter((e) => e.knownAt > C).some((e) => e.strength !== 1)).toBe(true);
+    expect(q.structure!.jumps.filter((e) => e.knownAt > C).some((e) => e.db !== 7)).toBe(true);
+    const after = q.ticks.filter((k) => k.t > C);
+    expect(after.some((k) => k.level !== "medium")).toBe(true);
+    expect(after.some((k) => k.key !== "G major")).toBe(true);
+    expect(q.ticks.filter((k) => k.t <= C)).toEqual(ticks.filter((k) => k.t <= C));
+    // With no entry left after C, one is added.
+    const lone = perturbStream({ ...stream, structure: { changes: [{ t: 3, knownAt: 9, strength: 1 }], jumps: [], ends: [] } }, C, "test");
+    expect(lone.structure!.changes.filter((e) => e.knownAt > C).length).toBeGreaterThan(0);
+  });
+});
+
+describe("detected sections (stage 4)", () => {
+  // Clear from 4 s on, the first 4 s below the gate.
+  const { stream } = splitStream(synthStream({ until: 60, evidence: (t) => (t < 4 ? 0 : 0.8) }));
+  const at = (structure: NonNullable<typeof stream.structure>) => detectedSections({ ...stream, structure });
+
+  it("start on a change or a jump of 6 dB or more, known with the beat clear, at least 8 s apart", () => {
+    const d = at({
+      changes: [
+        { t: 0.5, knownAt: 3, strength: 1 }, // below the gate
+        { t: 4, knownAt: 10, strength: 1 },
+        { t: 9, knownAt: 15, strength: 1 }, // 5 s after the last start
+        { t: 20, knownAt: 26, strength: 1 },
+      ],
+      jumps: [
+        { t: 16, knownAt: 17, db: -5 }, // too small
+        { t: 18, knownAt: 19, db: -8 },
+        { t: 40, knownAt: 41, db: 6 },
+      ],
+      ends: [],
+    });
+    expect(d.map((x) => [x.source, x.knownAt])).toEqual([
+      ["change", 10],
+      ["jump", 19],
+      ["jump", 41],
+    ]);
+  });
+
+  it("take effect on the effective downbeat after the event is known", () => {
+    const d = at({ changes: [{ t: 4, knownAt: 10.2, strength: 1 }], jumps: [], ends: [] });
+    expect(d[0].beat).toBe(effectiveDownbeat(stream, 10.2));
+    expect(d[0].s).toBe(stream.beats[d[0].beat].t);
+    expect(d[0].s).toBeGreaterThanOrEqual(10.2 + 0.35);
+    expect(d[0].beat % 2).toBe(0);
+  });
+
+  it("are none without structure", () => {
+    expect(detectedSections(stream)).toEqual([]);
+  });
+
+  it("count against the reference's section starts", () => {
+    const structure = {
+      changes: [{ t: 9, knownAt: 15, strength: 1 }],
+      jumps: [
+        { t: 2, knownAt: 3, db: 9 },
+        { t: 39, knownAt: 40, db: 9 },
+      ],
+      ends: [],
+    };
+    const ref = {
+      source: "exact" as const,
+      beats: [],
+      sections: [
+        { label: "intro", s0: 0.5, s1: 10, feel: "free" as const },
+        { label: "a", s0: 10, s1: 30, feel: "pulsed" as const },
+        { label: "b", s0: 30, s1: 60, feel: "pulsed" as const },
+      ],
+    };
+    // (The jump at 3 s is below the gate; the change takes effect at 15.5 s, within 8 s of a's start;
+    // the jump at 40 s is on no start.)
+    const d = sectionDetection({ ...stream, structure }, ref);
+    expect([d.found, d.of, d.free, d.falseStarts]).toEqual([1, 2, 0, 1]);
+    // One detected start counts for one section start only, however close two starts are; one just
+    // before a start (within 8 s of it) is not false.
+    const close = { ...ref, sections: [ref.sections[0], { label: "a", s0: 13, s1: 15, feel: "pulsed" as const }, { label: "b", s0: 15, s1: 60, feel: "pulsed" as const }] };
+    const once = sectionDetection({ ...stream, structure: { changes: [{ t: 9, knownAt: 15, strength: 1 }], jumps: [], ends: [] } }, close);
+    expect([once.found, once.falseStarts]).toEqual([1, 0]);
+    const early = sectionDetection({ ...stream, structure: { changes: [{ t: 9, knownAt: 25, strength: 1 }], jumps: [], ends: [] } }, { ...ref, sections: [ref.sections[0], { label: "a", s0: 30, s1: 60, feel: "pulsed" as const }] });
+    expect([early.found, early.falseStarts]).toEqual([0, 0]);
   });
 });
 

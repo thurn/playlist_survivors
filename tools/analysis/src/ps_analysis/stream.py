@@ -20,6 +20,8 @@ whole file.
   a running maximum that falls by 0.2 dB a second, 0 at 30 dB below it).
 - **Onsets:** online superflux onsets, with `strong` when the strength is at
   least the 98th percentile of the onsets of the past 30 s.
+- **Structure** (stage 4, `structure.py`): changes, loudness jumps and
+  candidate endings, and each tick's `level` and `key`.
 - **Reference** (optional): beats and sections for the virtual players and the
   checks, never for the simulation.
 
@@ -37,9 +39,11 @@ from typing import Any
 
 import numpy as np
 
+from . import structure
+
 #: Bumped whenever the stream's output changes, so stale shipped streams fail
 #: `check:reactive`.
-TOOL_VERSION = 3
+TOOL_VERSION = 4
 
 SR = 44100
 FPS = 100
@@ -91,6 +95,30 @@ class Params:
     hindsight_window_s: float = 20.0
     hindsight_keep_s: float = 8.0
     hindsight_bias_s: float = 0.0
+    #: Structure (stage 4): changes, jumps, levels, keys and ends.
+    change_past_s: float = 8.0
+    change_next_s: float = 2.0
+    change_stats_s: float = 30.0
+    change_peak_s: float = 4.0
+    change_threshold_s: float = 60.0
+    change_k: float = 0.5
+    #: Novelty values needed before a change can be declared.
+    change_min_prior: int = 20
+    jump_db: float = 6.0
+    jump_recent_s: float = 1.0
+    jump_before_s: float = 6.0
+    jump_gap_s: float = 4.0
+    level_loud_in: float = 0.8
+    level_loud_out: float = 0.7
+    level_quiet_in: float = 0.4
+    level_quiet_out: float = 0.5
+    key_window_s: float = 20.0
+    key_after_s: float = 10.0
+    end_drop_db: float = 20.0
+    end_hold_s: float = 1.5
+    end_after_s: float = 10.0
+    end_window_s: float = 30.0
+    end_smooth_s: float = 1.0
 
     def to_json(self) -> dict[str, Any]:
         return {
@@ -124,6 +152,37 @@ class Params:
                 "windowS": self.hindsight_window_s,
                 "keepS": self.hindsight_keep_s,
                 "biasS": self.hindsight_bias_s,
+            },
+            "structure": {
+                "change": {
+                    "pastS": self.change_past_s,
+                    "nextS": self.change_next_s,
+                    "statsS": self.change_stats_s,
+                    "peakS": self.change_peak_s,
+                    "thresholdS": self.change_threshold_s,
+                    "k": self.change_k,
+                    "minPrior": self.change_min_prior,
+                },
+                "jump": {
+                    "db": self.jump_db,
+                    "recentS": self.jump_recent_s,
+                    "beforeS": self.jump_before_s,
+                    "gapS": self.jump_gap_s,
+                },
+                "level": {
+                    "loudIn": self.level_loud_in,
+                    "loudOut": self.level_loud_out,
+                    "quietIn": self.level_quiet_in,
+                    "quietOut": self.level_quiet_out,
+                },
+                "key": {"windowS": self.key_window_s, "afterS": self.key_after_s},
+                "end": {
+                    "dropDb": self.end_drop_db,
+                    "holdS": self.end_hold_s,
+                    "afterS": self.end_after_s,
+                    "windowS": self.end_window_s,
+                    "smoothS": self.end_smooth_s,
+                },
             },
             "biasS": self.bias_s,
             "toolVersion": TOOL_VERSION,
@@ -436,15 +495,28 @@ def build_stream(
 
     beats = commit_beats(beliefs, evidence_of_frame, p)
     energy = energies(y, tick_times, p)
-    ticks = [
-        {"t": float(t), "evidence": float(e), "energy": float(g)}
-        for t, e, g in zip(tick_times, tick_evidence, energy)
-    ]
+    form = structure.structure(y, tick_times, energy, p, SR * TICK_FRAMES // FPS, SR)
+    ticks = []
+    for t, e, g, level, key in zip(
+        tick_times, tick_evidence, energy, form["levels"], form["keys"], strict=True
+    ):
+        tick: dict[str, Any] = {
+            "t": float(t),
+            "evidence": float(e),
+            "energy": float(g),
+            "level": level,
+        }
+        if key is not None:
+            tick["key"] = key
+        ticks.append(tick)
     return {
         "beats": beats,
         "ticks": ticks,
         "onsets": detect_onsets(y, p),
         "hindsight": hindsight_entries(y, beliefs, p),
+        "changes": form["changes"],
+        "jumps": form["jumps"],
+        "ends": form["ends"],
     }
 
 
@@ -595,6 +667,8 @@ def to_document(
                 "t": _r(k["t"], 2),
                 "evidence": _r(k["evidence"]),
                 "energy": _r(k["energy"]),
+                **({"level": k["level"]} if "level" in k else {}),
+                **({"key": k["key"]} if "key" in k else {}),
             }
             for k in stream["ticks"]
         ],
@@ -617,6 +691,25 @@ def to_document(
             }
             for h in stream["hindsight"]
         ]
+    if "changes" in stream:
+        doc["structure"] = {
+            "changes": [
+                {
+                    "t": _r(c["t"]),
+                    "knownAt": _r(c["knownAt"], 2),
+                    "strength": _r(c["strength"]),
+                }
+                for c in stream["changes"]
+            ],
+            "jumps": [
+                {"t": _r(j["t"]), "knownAt": _r(j["knownAt"], 2), "db": _r(j["db"], 2)}
+                for j in stream["jumps"]
+            ],
+            "ends": [
+                {"t": _r(e["t"]), "knownAt": _r(e["knownAt"], 2)}
+                for e in stream["ends"]
+            ],
+        }
     if reference:
         ref: dict[str, Any] = {
             "source": reference["source"],
@@ -649,7 +742,7 @@ def write_document(doc: dict[str, Any], out: str | Path) -> None:
                     + ("," if j < len(value) - 1 else "")
                 )
             lines.append(" ]" + comma)
-        elif key == "reference":
+        elif key in ("reference", "structure"):
             lines.append(f' "{key}": {{')
             sub = list(value)
             for j, sk in enumerate(sub):

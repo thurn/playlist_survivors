@@ -11,7 +11,7 @@ Commands (each prints a JSON summary on stdout):
 - `check SONGMAP` (exit status 1 on failure; human-readable lines on stderr)
 - `click SONGMAP --out click.wav`
 - `stream AUDIO --out stream.json [--songmap SONGMAP | --reference REF.json |
-  --offline-reference] [--write-audio FILE.flac]`: the belief stream for
+  --offline-reference] [--write-audio FILE.flac] [--params JSON]`: the belief stream for
   reactive mode
 - `synth NAME --out FILE.ogg [--reference FILE.json]`: a synthetic test track
 
@@ -240,12 +240,14 @@ def cmd_stream(a: argparse.Namespace) -> int:
         reference = st.songmap_reference(a.songmap)
     elif a.reference:
         reference = json.loads(Path(a.reference).read_text())
+    params = st.Params(**json.loads(a.params)) if a.params else st.Params()
     job = st.StreamJob(
         Path(a.audio),
         Path(a.out),
         reference,
         a.offline_reference,
         Path(a.write_audio) if a.write_audio else None,
+        params,
     )
     _emit(st.run(job))
     return 0
@@ -385,6 +387,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--write-audio",
         metavar="FILE.flac",
         help="write the analysed samples (44.1 kHz mono) here and play them instead",
+    )
+    c.add_argument(
+        "--params",
+        metavar="JSON",
+        help='parameter overrides by field name, such as \'{"change_stats_s": 20}\'',
     )
     c.set_defaults(func=cmd_stream)
 
