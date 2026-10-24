@@ -10,7 +10,7 @@ trigger. A retrospective may revise a budget; record the reason under Revisions.
 | Fast local check (`scripts/check-fast`) | `localValidationS.fast` | 60 | 25 s on a `src/sim` diff, 3 s on a leaf file, 27–29 s when the toolchain's configuration changes (W1) | each bead's record |
 | Gate stage (`scripts/ci-gate`) | `gateS` | 60 | 44 s TS section, 59 s TS and analysis, 1 s docs or native only (W1); before W1 the gate was the full suite, 276–397 s. Native section (`native/scripts/check-fast`, persistent target dir): 2.9 s cold, 0.8 s warm on the scaffold's empty crates (F4) | each bead's record, checked against Tollgate's history at retrospectives |
 | Release stage (`scripts/ci-full`) | `releaseS` | 1800 | 293–325 s: gate step 44, `ci-full-ts` 241, `ci-full-analysis` 40 (W1); `ci-full-native` 3.2 s cold, 0.7 s warm on the scaffold (F4) | Tollgate's release runs (`tg release status --json`), at retrospectives |
-| Cold worktree build | `coldBuildS` | 60 | 28–34 s, cold `cargo build --release -p spike` in a fresh worktree (S0, the spike's wgpu and objc2 tree; the F4 scaffold builds in under 2 s, so re-baseline once the crates carry their dependencies) | beads that build native crates in a fresh worktree |
+| Cold worktree build | `coldBuildS` | 60 | 28–34 s, cold `cargo build --release -p spike` in a fresh worktree (S0, the spike's wgpu and objc2 tree; the F4 scaffold builds in under 2 s). A1 (realfft, serde): cold `cargo test --workspace --no-run` 8.7 s, cold release build 6.0 s ([a1/](a1/README.md)); re-baseline as render and audio add wgpu and objc2 | beads that build native crates in a fresh worktree |
 
 Per-crate focused tests (`cargo test -p <crate>`) get a row each, keyed
 `localValidationS.test-<crate>`, as F4 and the crates' beads add them.
@@ -22,6 +22,7 @@ Per-crate focused tests (`cargo test -p <crate>`) get a row each, keyed
 | Run | `cargo test --workspace` | `cargo nextest run --workspace` |
 |---|---|---|
 | F4 scaffold (no tests yet), three runs | 0.2, 0.2, 0.2 s | 0.2, 0.1, 0.1 s |
+| A1 (the analysis crate's 7 tests), three runs | 0.31, 0.32, 0.31 s | 0.26, 0.25, 0.25 s |
 
 No measurable difference with no tests, so every stage keeps `cargo test`. R1 ran before any
 crate had tests, so A1 and B1 re-time both (and A1 re-baselines the cold build and the gate

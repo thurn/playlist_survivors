@@ -4,5 +4,10 @@ version = "0.0.0"
 edition.workspace = true
 publish = false
 
+[dependencies]
+realfft = "3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
 [lints]
 workspace = true

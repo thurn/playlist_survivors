@@ -676,6 +676,12 @@ cascade into a downstream mismatch.
 | A6 | Accent forecasts | Forecasts |
 | A7 | Bands, brightness, timbre, and every other group the freeze has | Those groups |
 
+A1 measured ([native/evidence/a1/](../../native/evidence/a1/README.md)): on both
+golden excerpts, fed in uneven blocks, the online log spectra are within 0.52 of
+their tolerance and the activations within 0.27; the positive differences are
+checked exactly as `max(now - back, 0)` on both sides, since a difference of
+near-equal spectra inherits their float32 rounding.
+
 - librosa's chroma and MFCC are reproduced from their definitions (filterbanks
   computed once and compared against librosa's matrices in a test).
 - Python resamples non-44.1 kHz files with a symmetric filter (about 2 ms of
@@ -1820,7 +1826,7 @@ spike's dependency tree (wgpu, winit, objc2), well inside Tollgate's 15 minutes.
   `matrixmultiply`; window and GPU: `winit` 0.30 and `wgpu` 30 (Metal); display
   link: `objc2-core-video` (`CVDisplayLink`); key timestamps: `objc2-app-kit`
   local event monitor.
-- The spike resamples 48 kHz to 44.1 kHz linearly. A1 uses `rubato`, as planned.
+- The spike resamples 48 kHz to 44.1 kHz linearly. The analyzer runs at 44.1 kHz (A1); live capture resamples with `rubato`, as planned, where the live input is built (C4).
 
 ### Measured: E0, Delayed listening's payoff
 
