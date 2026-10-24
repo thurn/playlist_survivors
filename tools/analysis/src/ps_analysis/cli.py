@@ -19,6 +19,8 @@ Commands (each prints a JSON summary on stdout):
 - `fit-grid AUDIO --out reference.json [--click FILE.ogg|.wav] [--quiet]`: a
   corpus track's fitted reference (beats, meter, downbeats, approximate sections,
   accents), and a click overlay to check it by ear
+- `export-models [--out native/models]`: madmom's models, librosa's matrices and golden
+  data for the native analyzer
 - `delayed-payoff [STREAM.json ...] [--index index.json] [--markdown OUT.md] [--json OUT.json]`:
   Delayed listening's commit rule replayed over committed streams' hindsight entries,
   against Direct listening (every `public/reactive/*/stream.json` by default)
@@ -358,6 +360,23 @@ def cmd_synth(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_export_models(a: argparse.Namespace) -> int:
+    from . import models
+
+    root = models_root()
+    out = Path(a.out) if a.out else root / "native" / "models"
+    _emit(models.export(root, out))
+    return 0
+
+
+def models_root() -> Path:
+    """The repository root: the first parent of the working directory with public/reactive."""
+    for d in [Path.cwd(), *Path.cwd().parents]:
+        if (d / "public" / "reactive").is_dir():
+            return d
+    raise SystemExit("cannot find the repository root above the working directory")
+
+
 def cmd_delayed_payoff(a: argparse.Namespace) -> int:
     from . import delayed as dl
 
@@ -518,6 +537,12 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--click", help="also write a click overlay (.ogg or .wav)")
     c.add_argument("--quiet", action="store_true", help="print only whether it fitted")
     c.set_defaults(func=cmd_fit_grid)
+
+    c = sub.add_parser(
+        "export-models", help="export models and golden data for native/"
+    )
+    c.add_argument("--out", help="the directory to write (default: native/models)")
+    c.set_defaults(func=cmd_export_models)
 
     c = sub.add_parser(
         "delayed-payoff",
