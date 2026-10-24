@@ -1,25 +1,27 @@
 /**
- * A gameplay trailer from a spec (trailer/<name>.yaml): films a planned run in headless Chrome
- * as the game draws it (its camera and HUD), one frame per output frame of the edit, and cuts the
- * run's mix (music and sound effects) to the same edit.
+ * A gameplay trailer from a spec (trailer/<name>.yaml): films planned runs in headless Chrome as
+ * the game draws them (its camera and HUD), one frame per output frame of the edit, and cuts the
+ * runs' mixes (music and sound effects) to the same edit.
  *
  *   npm run trailer -- trailer/galop.yaml                  (captures/trailer/galop/galop.mp4, and a 720p copy under 30 MB)
  *   npm run trailer -- trailer/galop.yaml --draft          (30 fps, quicker to encode)
  *   npm run trailer -- trailer/galop.yaml --stills 1.4,12  (frames at output seconds)
  *   npm run trailer -- trailer/galop.yaml --fresh          (films again, ignoring the cache)
  *
- * Captured frames and the run's audio are cached in captures/trailer/<name>/cache, keyed by the
- * game's sources (committed and working tree), the query and each frame's song time: changing the
- * edit films only the song time it adds, and the mix or the fades film nothing.
+ * A spec can film several runs (play mode's, a reactive track's) and cut or crossfade between them.
+ * Captured frames and each run's audio are cached in captures/trailer/<name>/cache, keyed by the
+ * game's sources (committed and working tree), the run's query and each frame's song time:
+ * changing the edit films only the song time it adds, and the mix or the fades film nothing.
  */
 import { execFileSync, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import { closeBrowser, openGame, type GamePage } from "./lib/capture.ts";
 import { ROOT, readSongMap } from "./lib/files.ts";
 import { withDevServer } from "./lib/server.ts";
-import { Timeline, editAudio, readTrailerSpec, readWav, wavBytes, type Stereo } from "./lib/trailer.ts";
+import sharp from "sharp";
+import { Timeline, editAudio, readTrailerSpec, readWav, wavBytes, type Layer, type Stereo } from "./lib/trailer.ts";
 
 const args = process.argv.slice(2);
 const arg = (k: string) => {
@@ -37,63 +39,86 @@ const draft = args.includes("--draft");
 const fresh = args.includes("--fresh");
 const stills = arg("--stills")?.split(",").map(Number);
 
-const timeline = new Timeline(spec, readSongMap(spec.song));
+const timeline = new Timeline(spec, Object.fromEntries(Object.values(spec.runs).flatMap((r) => (r.songMap ? [[r.songMap, readSongMap(r.songMap)]] : []))));
 const fps = draft ? 30 : spec.fps;
 const frames = Math.round(timeline.duration * fps);
 
-// The run's identity: the game's sources as the dev server serves them (the committed trees, the
-// working tree's changes and untracked files) and the query.
+// A run's identity: the game's sources as the dev server serves them (the committed trees, the
+// working tree's changes and untracked files) and its query.
 const GAME = ["src", "content", "levels", "songs", "public", "index.html", "vite.config.ts", "package-lock.json"];
 const git = (...a: string[]) => execFileSync("git", a, { cwd: ROOT, encoding: "utf8", maxBuffer: 1 << 30 });
 const sources = [git("rev-parse", ...GAME.map((p) => `HEAD:${p}`)), git("diff", "HEAD", "--binary", "--", ...GAME), git("ls-files", "--others", "--exclude-standard", "-s", "--", ...GAME)];
 const hash = (...parts: unknown[]) => createHash("sha1").update(JSON.stringify(parts)).digest("hex").slice(0, 16);
-const runKey = hash(sources, spec.query, spec.width, spec.height);
+const runKey = (run: string) => hash(sources, spec.runs[run].query, spec.width, spec.height);
 
 console.log(`${spec.title}: ${timeline.duration.toFixed(2)} s, ${frames} frames at ${fps} fps`);
-for (const c of timeline.cuts) console.log(`  ${c.t0.toFixed(2).padStart(6)}  song ${c.from.toFixed(2)}–${c.to.toFixed(2)}`);
+for (const c of timeline.cuts) console.log(`  ${c.t0.toFixed(2).padStart(6)}  ${c.run} ${c.from.toFixed(2)}–${c.to.toFixed(2)}${c.half ? ` (crossfade ${(c.half * 2).toFixed(2)} s)` : ""}`);
 
-type Want = { t: number; s: number; file: string };
-const want: Want[] = (stills ?? Array.from({ length: frames }, (_, i) => i / fps)).map((t) => {
-  const s = timeline.songAt(t);
-  return { t, s, file: join(cache, "frames", `${hash(runKey, s.toFixed(5))}.jpg`) };
+const frameFile = (l: Layer) => join(cache, "frames", `${hash(runKey(l.run), l.s.toFixed(5))}.jpg`);
+type Want = { t: number; layers: Layer[] };
+const want: Want[] = (stills ?? Array.from({ length: frames }, (_, i) => i / fps)).map((t) => ({ t, layers: timeline.layersAt(t) }));
+const audioFiles = (run: string) => ({ mix: join(cache, `mix-${runKey(run)}.wav`), music: join(cache, `music-${runKey(run)}.wav`) });
+
+const plans = Object.keys(spec.runs).map((run) => {
+  const layers = want.flatMap((w) => w.layers.filter((l) => l.run === run));
+  const af = audioFiles(run);
+  return {
+    run,
+    missing: [...new Map(layers.filter((l) => fresh || !existsSync(frameFile(l))).map((l) => [frameFile(l), l])).values()],
+    needAudio: !stills && (fresh || !existsSync(af.mix) || !existsSync(af.music)),
+    checked: join(cache, `checked-${runKey(run)}`),
+  };
 });
-const songFile = join(cache, `song-${runKey}.txt`);
-const mixFile = join(cache, `mix-${runKey}.wav`);
-const musicFile = join(cache, `music-${runKey}.wav`);
-const missing = want.filter((w) => fresh || !existsSync(w.file));
-const needAudio = !stills && (fresh || !existsSync(mixFile) || !existsSync(musicFile));
 
-if (missing.length > 0 || needAudio || !existsSync(songFile)) {
+if (plans.some((p) => p.missing.length > 0 || p.needAudio || !existsSync(p.checked))) {
   await withDevServer(async (base) => {
-    const game = await openGame(base, spec.query, { width: spec.width, height: spec.height });
-    const song = await game.page.evaluate(() => (window as unknown as { __demo: { plan: { song: string } } }).__demo.plan.song);
-    if (song !== spec.song) throw new Error(`the spec's song is ${spec.song}, but the run filmed (${spec.query}) plays ${song}`);
-    writeFileSync(songFile, song);
-    if (needAudio) {
-      console.log("rendering the run's mix and music");
-      writeFileSync(mixFile, wavBytes(await renderMix(game, { music: true, sfx: true })));
-      writeFileSync(musicFile, wavBytes(await renderMix(game, { music: true, sfx: false })));
-    }
-    const t0 = performance.now();
-    for (const [i, w] of missing.entries()) {
-      await game.page.evaluate((s) => (window as unknown as { __demo: { renderAt(s: number): Promise<void> } }).__demo.renderAt(s), w.s);
-      writeFileSync(w.file, await game.page.locator("canvas").screenshot({ type: "jpeg", quality: 95 }));
-      if (i % 60 === 59) console.log(`filmed ${i + 1}/${missing.length} (${((performance.now() - t0) / (i + 1)).toFixed(0)} ms a frame)`);
+    for (const p of plans) {
+      if (p.missing.length === 0 && !p.needAudio && existsSync(p.checked)) continue;
+      const r = spec.runs[p.run];
+      console.log(`run ${p.run}: ${r.query}`);
+      const game = await openGame(base, r.query, { width: spec.width, height: spec.height });
+      const song = await game.page.evaluate(() => (window as unknown as { __demo: { plan: { song: string } } }).__demo.plan.song);
+      const track = new URLSearchParams(r.query).get("track");
+      if (r.songMap && song !== r.songMap && track !== r.songMap) throw new Error(`run ${p.run}'s song map is ${r.songMap}, but its run (${r.query}) plays ${track ?? song}`);
+      writeFileSync(p.checked, song);
+      if (p.needAudio) {
+        console.log("rendering the run's mix and music");
+        const af = audioFiles(p.run);
+        writeFileSync(af.mix, wavBytes(await renderMix(game, { music: true, sfx: true })));
+        writeFileSync(af.music, wavBytes(await renderMix(game, { music: true, sfx: false })));
+      }
+      const t0 = performance.now();
+      for (const [i, l] of p.missing.entries()) {
+        await game.page.evaluate((s) => (window as unknown as { __demo: { renderAt(s: number): Promise<void> } }).__demo.renderAt(s), l.s);
+        writeFileSync(frameFile(l), await game.page.locator("canvas").screenshot({ type: "jpeg", quality: 95 }));
+        if (i % 60 === 59) console.log(`filmed ${i + 1}/${p.missing.length} (${((performance.now() - t0) / (i + 1)).toFixed(0)} ms a frame)`);
+      }
+      await game.close();
     }
     await closeBrowser();
   });
 }
 
+/** A frame of the edit as JPEG: one run's frame, or a dissolve between two. */
+async function picture(w: Want): Promise<Buffer> {
+  const [base, ...over] = w.layers;
+  if (over.length === 0) return readFileSync(frameFile(base));
+  const layers = await Promise.all(over.map(async (l) => ({ input: await sharp(frameFile(l)).ensureAlpha(clamp(l.w)).png().toBuffer() })));
+  return sharp(frameFile(base)).composite(layers).jpeg({ quality: 95 }).toBuffer();
+}
+const clamp = (x: number) => Math.min(1, Math.max(0, x));
+
 if (stills) {
   mkdirSync(join(out, "stills"), { recursive: true });
   for (const w of want) {
     const file = join(out, "stills", `t-${w.t.toFixed(2).padStart(6, "0")}.jpg`);
-    copyFileSync(w.file, file);
-    console.log(`still ${file} (song ${w.s.toFixed(2)})`);
+    writeFileSync(file, await picture(w));
+    console.log(`still ${file} (${w.layers.map((l) => `${l.run} ${l.s.toFixed(2)}`).join(" under ")})`);
   }
 } else {
   const audioFile = join(out, `${name}.wav`);
-  writeFileSync(audioFile, wavBytes(editAudio(timeline, readWav(readFileSync(mixFile)), readWav(readFileSync(musicFile)))));
+  const runAudio = Object.fromEntries(Object.keys(spec.runs).map((run) => [run, { mix: readWav(readFileSync(audioFiles(run).mix)), music: readWav(readFileSync(audioFiles(run).music)) }]));
+  writeFileSync(audioFile, wavBytes(editAudio(timeline, runAudio)));
   const video = join(out, `${name}${draft ? "-draft" : ""}.mp4`);
   const fades = [spec.fadeIn > 0 ? `fade=t=in:d=${spec.fadeIn}` : "", spec.fadeOut > 0 ? `fade=t=out:st=${timeline.duration - spec.fadeOut}:d=${spec.fadeOut}` : ""].filter(Boolean);
   const ff = spawn(
@@ -114,7 +139,7 @@ if (stills) {
   ff.stdin.on("error", () => undefined);
   for (const w of want) {
     if (failed) break;
-    if (!ff.stdin.write(readFileSync(w.file)))
+    if (!ff.stdin.write(await picture(w)))
       await new Promise<void>((r) => {
         const go = () => (ff.stdin.off("drain", go), ff.off("close", go), r());
         ff.stdin.once("drain", go);
