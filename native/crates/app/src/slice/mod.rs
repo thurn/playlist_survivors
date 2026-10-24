@@ -16,6 +16,7 @@
 mod coreaudio;
 mod feed;
 mod gfx;
+mod keys;
 mod live;
 #[allow(
     clippy::pedantic,
@@ -233,7 +234,9 @@ pub fn run(args: &[String]) -> Result<(), String> {
         stop.clone(),
     )?;
     let engine = world.engine()?;
+    let key_times = keys::KeyTimes::install();
     let mut app = App {
+        key_times,
         gfx: None,
         sfx,
         art,
@@ -324,6 +327,8 @@ fn still(path: &Path) -> Result<(), String> {
 }
 
 struct App {
+    /// Key press times from the window server.
+    key_times: keys::KeyTimes,
     gfx: Option<Gfx>,
     sfx: Option<Sfx>,
     art: Atlases,
@@ -515,7 +520,12 @@ impl App {
     }
 
     fn key(&mut self, code: KeyCode, pressed: bool, repeat: bool) {
-        let now = now_s();
+        // (Each press and release at the window server's time, not the event loop's.)
+        let now = if repeat {
+            now_s()
+        } else {
+            self.key_times.take(pressed, now_s())
+        };
         if self.over.is_some() {
             if pressed
                 && matches!(code, KeyCode::Enter | KeyCode::Space)
