@@ -61,12 +61,12 @@ terms:
 | Phase | What it delivers | Proves |
 |---|---|---|
 | 0. Spike | Capture → online RNN → DBN → a window flashing on committed beats; latency chain measured; build times measured | The risky native parts work in Rust on this machine |
-| **Checkpoint** | The user sets latency targets from the spike's numbers | — |
+| 0. Targets | The spike's executor sets latency targets from its own numbers, by fixed rules | — |
 | 1. Freeze and foundations | `ts-freeze` tag, oracle fixtures, exported model weights, Cargo workspace, gate sections, AGENTS.md | The oracles exist and CI runs Rust |
 | A. Analyzer (parallel with B) | Every stream group as streaming Rust, stage-parity tests, corpus parity report | Rust streams match Python |
 | B. Sim (parallel with A) | Content, schedule, sim, judging, director, set pieces, evaluator, virtual players, causality checks, all streaming | Rust sim matches TS bit for bit |
 | C. Convergence | Renderer, audio output, app shell, live runner; playable in File mode, then System mode | The game plays, natively, live |
-| D. Live parity | Run detection, live exceptions, calibration, session recording, latency report, manual QA, TS tree removed | Done |
+| D. Live parity | Run detection, live exceptions, calibration, session recording, latency report, QA checklist, TS tree removed | Done |
 
 Phases A and B run in parallel after phase 1. Phase C starts when B's sim and
 evaluator are green; its live steps also need A.
@@ -113,9 +113,12 @@ fixed.
   (a CLI flag and a debug menu), never on the player's title screen.
 - **Outputs:** built-in speakers and wired headphones first. Bluetooth is
   best-effort: Core Audio's reported latency plus a per-device calibration.
-- **No hard latency targets yet.** Every link of the latency chain is
-  instrumented. The spike measures it, and at the [checkpoint](#the-checkpoint)
-  the user sets targets.
+- **No approval points.** The user named none and wants none. Latency targets
+  are set by the spike's executor from its measurements, by the rules in
+  [Setting the targets](#setting-the-targets). Every other open choice is the
+  executor's, recorded with its reasons in the bead's notes. The only outside
+  input is the freeze commit's hash, which the user supplies when the TS work
+  wraps up.
 - **Every session is saved:** captured audio, the stream with arrival stamps and
   the key events, with a rolling cap of the last 20 sessions.
 - **Tooling ported:** causality checks, virtual players, headless frame capture
@@ -247,7 +250,7 @@ native/
   analyzer thread, so the analyzer's frame rate never stalls. To keep the
   analyzer a pure function of its samples, a hindsight entry for a window
   ending at sample time `T` becomes usable inside the analyzer (by the phase
-  check) at sample time `T + D`, a fixed delay set at the checkpoint from the
+  check) at sample time `T + D`, a fixed delay set in phase 0 from the
   spike's decode times. If a decode isn't done by then, the analyzer waits for
   it and the play log records the stall.
 - **Main thread.** winit's event loop: it drains arrivals and keys, runs the
@@ -416,26 +419,36 @@ phase 1.
   with `cpal` as the fallback).
 
 The spike writes its numbers into this document's
-[appendix](#appendix-measurements) and stops.
+[appendix](#appendix-measurements), then sets the targets.
 
-### The checkpoint
+### Setting the targets
 
-The one point in this plan where the executor stops for the user. The user
-reads the spike's numbers and sets:
+The spike's executor fills in [Targets](#targets) from its own measurements,
+by these rules, and records its reasoning in the bead. Nobody stops to approve
+them.
 
-- latency targets, gate or report-only, for each link of the chain;
-- the analyzer's real-time-factor budget, hindsight included;
-- whether anything measured changes the plan (for example, hindsight too slow
-  to run live at all).
-
-Their answers are recorded in this document's [Targets](#targets), and the
-executor continues without further approval points.
+- **Links the app controls** (capture → arrival, key → main thread, main
+  thread → present, per-frame cost, rollback re-simulation): a gate at the
+  measured p95 plus 50% headroom, rounded up to a whole millisecond. A gate
+  that later proves too tight on unrelated work may be loosened once, with the
+  measurement that justifies it.
+- **Links set by hardware** (output latency, Bluetooth): report-only.
+- **The analyzer's real-time factor:** a gate at 0.5 for all groups together,
+  hindsight included, on one core.
+- **Hindsight's delay `D`:** the p99.9 of the spike's decode time, doubled and
+  rounded up to 10 ms.
+- **If hindsight cannot run live** (one decode takes longer than its 1 s
+  period, even after obvious optimisation), the executor chooses the nearest
+  workable form (decoding every 2 s, or a shorter window), records the cost to
+  accuracy against Python, and updates this document. A4 then implements that
+  form.
 
 ## Phase 1: Freeze and Foundations
 
 ### The freeze
 
-1. The user names the freeze commit. Tag it `ts-freeze` and push the tag.
+1. Once the user has supplied the freeze commit's hash, tag it `ts-freeze`
+   and push the tag. (F1's bead becomes selectable only then.)
 2. Inventory the reactive features at the freeze: every stream group, every
    behaviour that reads `audio.duration`, `knownLength` or `ctx.duration`, and
    anything non-causal outside the sim (like `followCurve`). The
@@ -538,7 +551,7 @@ stage-parity test.
   each phase is called done, and its report is recorded in the bead.
 - AGENTS.md gains a native section: `npm ci` only for TS changes; focused
   checks are `cargo test -p <crate>`; the native app needs no dev-server port;
-  agents cannot grant the capture permission, so System mode is manual QA;
+  the capture permission needs one click from the user the first time, and agents record System-mode checks as pending until then;
   and the oracle's inputs stay frozen until D6 (see
   [Oracle fixtures](#oracle-fixtures)).
 
@@ -719,7 +732,7 @@ the stream as it arrives, and still produces the same events.
 
 Replay provides `StreamEnd`, so the oracle compares whole runs. The live
 exceptions are the behaviours that differ when `StreamEnd` is absent; those are
-covered by the truncation check, D1's tests and manual QA, not the oracle.
+covered by the truncation check, D1's tests and the QA checklist, not the oracle.
 
 ### The beads
 
@@ -887,7 +900,7 @@ Phase 1's inventory completes this list from the freeze commit.
 
 | Behaviour | TS at the freeze (as written now) | Native | Oracle compares |
 |---|---|---|---|
-| Finale | `reactiveFinale` picks an end within the last `windowS` of the known length | Fires on a confirmed end (D1): the horde clears and the end card follows | Everything, in Replay with `StreamEnd`; live finales are manual QA |
+| Finale | `reactiveFinale` picks an end within the last `windowS` of the known length | Fires on a confirmed end (D1): the horde clears and the end card follows | Everything, in Replay with `StreamEnd`; live finales are on the QA checklist |
 | Run end | `reactiveRunEnd` and `ctx.duration` | A confirmed end, YOU FELL, pause, a device change, or manual End | Everything, in Replay with `StreamEnd` |
 | Song length and stream-end reads | `knownLength`, `audio.duration`, `ctx.duration`, `progressS`, the last section's `s1`, clamps to the last entry | `StreamEnd` absent: progress shows elapsed time, the last section is open-ended, and each read F1 lists gets a stated live behaviour | Everything, in Replay with `StreamEnd` provided |
 | Effects ducking | `followCurve`, centred smoothing and the whole song's 90th percentile | A causal envelope follower on the energy ticks | Excluded (audio only) |
@@ -958,11 +971,13 @@ and extended with the latency chain, per frame or per event:
 `ps log [<path>] [--from s] [--to s] [--no-table]` summarises one, like
 `npm run log:play`. F8 saves the current log beside the session.
 
-### The latency report and manual QA (D5)
+### The latency report and QA (D5)
 
 `ps report <session>` prints the latency chain's distributions for a session
-against the [targets](#targets). D5 runs the manual QA below with the user and
-records the results.
+against the [targets](#targets). D5 runs the [QA checklist](#qa-checklist) as
+far as an agent can and records the results. It never waits for a person:
+anything that needs one (an AirPods test, judging sync by ear) is noted for the
+user's ordinary play.
 
 ### Removing the TS game (D6)
 
@@ -979,8 +994,8 @@ After D5:
 
 ## Targets
 
-Filled in at [the checkpoint](#the-checkpoint). Until then every latency number
-is report-only.
+Filled in by the spike's executor ([Setting the targets](#setting-the-targets)).
+Until then every latency number is report-only.
 
 | Link | Measured in phase 0 | Target | Gate or report |
 |---|---|---|---|
@@ -1023,7 +1038,7 @@ is report-only.
 | The tap's API isn't covered by Rust bindings | The spike proves it; a hand-written `objc2` binding is small |
 | The capture permission resets every rebuild | A stable self-signed identity signs every bundle (phase 0) |
 | madmom's front end has undocumented details (frame origin, filterbank normalisation, padding) | Stage parity against Python per stage, with Python's upstream fed in |
-| Hindsight too slow live, or too late for the phase check | Measured in the spike; its own worker; the checkpoint can change the plan |
+| Hindsight too slow live, or too late for the phase check | Measured in the spike; its own worker; the spike's executor picks a workable form by rule |
 | A V8 Math function differs from `libm` in the last bit | V8 test vectors for every function used; shims |
 | TS orderings that are hard to reproduce while streaming (queue ties, memo order, object key order) | The derived queue key; first-divergence reports; never tolerances for discrete events |
 | Rollback on every arrival costs too much | Measured in C4; two fallbacks named |
@@ -1058,9 +1073,13 @@ is report-only.
   diff against.
 - **Delaying the music for lookahead.** Rejected in reactive-audio.md.
 
-## Manual QA
+## QA Checklist
 
-Run with the user in D5, on the developer's Mac:
+Run by D5's executor on the developer's Mac, as far as an agent can. Audio for
+System mode can come from another app driven from the shell (`afplay`, or Music
+through AppleScript). The capture permission needs one click from the user the
+first time; until it has been granted, System-mode items are recorded as
+pending, not waited for.
 
 1. First launch: the capture permission prompt appears once. After a rebuild,
    it doesn't appear again.
@@ -1090,51 +1109,51 @@ Run with the user in D5, on the developer's Mac:
 
 ## Implementation Plan
 
-Beads are filed under a new epic after the user approves this document. Each
-bead delivers through its own Tollgate worktree and keeps `scripts/ci` green.
+Tracked by epic `hv-t8o8`. Each bead delivers through its own Tollgate
+worktree and keeps `scripts/ci` green.
 
 | Key | Bead | Phase | Work | Needs |
 |---|---|---|---|---|
-| S0 | — | 0 | The spike: tap, permission and signing identity, online RNN and DBN, beat flash and click, latency and build-time measurements, crate choices; numbers into the appendix | — |
-| CK | — | — | The checkpoint: the user sets [targets](#targets) | S0 |
-| F1 | — | 1 | `ts-freeze` tag, the inventory, live exceptions completed | The user names the freeze commit |
-| F2 | — | 1 | `oracle-export.ts`, fixtures, reference stills, V8 math vectors, content hash, `FORMAT.md` | F1 |
-| F3 | — | 1 | `export-models`, golden activations | F1 |
-| F4 | — | 1 | Workspace scaffold, gate sections, `full-check`, bundle script, AGENTS.md | S0 (build-time result), F1 |
-| A1 | — | A | Front end and online LSTM ensemble, stage parity | F3, F4 |
-| A2 | — | A | DBN forward, period smoothing, commit rule | A1 |
-| A3 | — | A | Ticks (evidence uses the beliefs), energy, levels, onsets, strong flags | A2 |
-| A4 | — | A | Hindsight (offline features, BiLSTM, Viterbi), worker, the phase check | A2 |
-| A5 | — | A | Structure: changes, jumps, keys, ends | A3 |
-| A6 | — | A | Accent forecasts (on the phase-checked beats) | A3, A4 |
-| A7 | — | A | Bands, brightness, timbre and remaining groups; corpus parity report; stream causality test | A4, A5, A6 |
-| B1 | — | B | Core, `jsmath`, content loader | F2, F4 |
-| B2 | — | B | Stream store, Replay feeding, growable song map, context, schedule | B1 |
-| B3 | — | B | `sim/*` modules | B1 |
-| B4 | — | B | `simulate.ts` part 1: state, queue keys, enemies, weapons, damage | B2, B3 |
-| B5 | — | B | Judging and settling | B4 |
-| B6 | — | B | Director, sections, set pieces, finale and run end | B5 |
-| B7 | — | B | Recorder, emit, evaluator; frame hashes | B6 |
-| B8 | — | B | Virtual players, causality checks, playability check | B7 |
-| C1 | — | C | Renderer, offscreen capture, visual parity | B7 |
-| C2 | — | C | Audio output, mixer, SFX, causal ducking | F4 |
-| C3 | — | C | App shell, input, runner with arrivals, menus; File mode on Python streams | C1, C2, B8 |
-| C4 | — | C | File mode on the Rust analyzer, then System mode; latency instrumentation; rollback profiling | C3, A7 |
-| D1 | — | D | Run detection, rebasing, pause, live exceptions | C4 |
-| D2 | — | D | Calibration, per-device settings, device changes | C4 |
-| D3 | — | D | Session recording, `ps replay`, Watch my run | C4 |
-| D4 | — | D | Timing logs and `ps log` | C4 |
-| D5 | — | D | Latency report against targets; manual QA with the user | D1–D4 |
-| D6 | — | D | Remove the TS game | D5 |
+| S0 | `hv-t8o8.1` | 0 | The spike: tap, permission and signing identity, online RNN and DBN, beat flash and click, latency and build-time measurements, crate choices; numbers into the appendix; targets set by rule | — |
+| F1 | `hv-t8o8.2` | 1 | `ts-freeze` tag, the inventory, live exceptions completed | The freeze commit's hash from the user (the bead lacks `hive_project` until then) |
+| F2 | `hv-t8o8.3` | 1 | `oracle-export.ts`, fixtures, reference stills, V8 math vectors, content hash, `FORMAT.md` | F1 |
+| F3 | `hv-t8o8.4` | 1 | `export-models`, golden activations | F1 |
+| F4 | `hv-t8o8.5` | 1 | Workspace scaffold, gate sections, `full-check`, bundle script, AGENTS.md | S0 (build-time result), F1 |
+| A1 | `hv-t8o8.6` | A | Front end and online LSTM ensemble, stage parity | F3, F4 |
+| A2 | `hv-t8o8.7` | A | DBN forward, period smoothing, commit rule | A1 |
+| A3 | `hv-t8o8.8` | A | Ticks (evidence uses the beliefs), energy, levels, onsets, strong flags | A2 |
+| A4 | `hv-t8o8.9` | A | Hindsight (offline features, BiLSTM, Viterbi), worker, the phase check | A2 |
+| A5 | `hv-t8o8.10` | A | Structure: changes, jumps, keys, ends | A3 |
+| A6 | `hv-t8o8.11` | A | Accent forecasts (on the phase-checked beats) | A3, A4 |
+| A7 | `hv-t8o8.12` | A | Bands, brightness, timbre and remaining groups; corpus parity report; stream causality test | A4, A5, A6 |
+| B1 | `hv-t8o8.13` | B | Core, `jsmath`, content loader | F2, F4 |
+| B2 | `hv-t8o8.14` | B | Stream store, Replay feeding, growable song map, context, schedule | B1 |
+| B3 | `hv-t8o8.15` | B | `sim/*` modules | B1 |
+| B4 | `hv-t8o8.16` | B | `simulate.ts` part 1: state, queue keys, enemies, weapons, damage | B2, B3 |
+| B5 | `hv-t8o8.17` | B | Judging and settling | B4 |
+| B6 | `hv-t8o8.18` | B | Director, sections, set pieces, finale and run end | B5 |
+| B7 | `hv-t8o8.19` | B | Recorder, emit, evaluator; frame hashes | B6 |
+| B8 | `hv-t8o8.20` | B | Virtual players, causality checks, playability check | B7 |
+| C1 | `hv-t8o8.21` | C | Renderer, offscreen capture, visual parity | B7 |
+| C2 | `hv-t8o8.22` | C | Audio output, mixer, SFX, causal ducking | F4 |
+| C3 | `hv-t8o8.23` | C | App shell, input, runner with arrivals, menus; File mode on Python streams | C1, C2, B8 |
+| C4 | `hv-t8o8.24` | C | File mode on the Rust analyzer, then System mode; latency instrumentation; rollback profiling | C3, A7 |
+| D1 | `hv-t8o8.25` | D | Run detection, rebasing, pause, live exceptions | C4 |
+| D2 | `hv-t8o8.26` | D | Calibration, per-device settings, device changes | D1 |
+| D3 | `hv-t8o8.27` | D | Session recording, `ps replay`, Watch my run | D1 |
+| D4 | `hv-t8o8.28` | D | Timing logs and `ps log` | D3 |
+| D5 | `hv-t8o8.29` | D | Latency report against targets; the QA checklist | D2, D4 |
+| D6 | `hv-t8o8.30` | D | Remove the TS game | D5 |
 
 - **Parallelism:** after F4, the A and B tracks run in parallel; they touch
   different crates. Within each track, beads run in order. C2 can run
-  alongside B. D1 to D4 can run in parallel if they keep to their own modules.
+  alongside B. D1 comes first; D2 and D3 then run in parallel; D4 follows D3
+  (the session directory and the runner).
 - **Review:** the repository's rules apply. Most beads exceed 300 lines of
   code, so each gets one cold warden review. Fixture and model files are data,
   not code, for that count.
-- **The checkpoint** is the only stop for the user. After it, executors record
-  choices and reasons in bead notes and continue, as in reactive-feel.md.
+- **No stops for the user.** Executors record choices and reasons in bead
+  notes and continue. The freeze commit's hash is the only outside input.
 
 ## Beyond This Plan
 
