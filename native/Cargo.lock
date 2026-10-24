@@ -108,6 +108,8 @@ name = "app"
 version = "0.0.0"
 dependencies = [
  "analysis",
+ "eval",
+ "indexmap",
  "libc",
  "objc2 0.6.5",
  "objc2-audio-toolbox",
@@ -120,6 +122,8 @@ dependencies = [
  "rtrb",
  "serde",
  "serde_json",
+ "sim",
+ "stream",
  "wgpu",
  "winit",
 ]

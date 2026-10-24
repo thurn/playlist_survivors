@@ -1,20 +1,20 @@
-//! The playable slice (docs/design/native-app.md, "Phase V: The Playable Slice"): a rough game
-//! on live audio, deleted by C3 when the real runner lands. The tap (or a `--file` played through
-//! the output) feeds the analyzer on a thread; committed beats arrive with the host time they are
-//! heard. The game (`game`): move with the arrows or WASD, enemies step toward you on each beat,
-//! and Space (or J, K) attacks around you, landing only on a beat. Five touches end the run, as
-//! do 3 s of silence; Space or Enter starts the next (and after silence, the music returning).
+//! The app (docs/design/native-app.md, "Phase G: Grow the Slice"): the game on live audio. The tap
+//! (or a `--file` played through the output) feeds the analyzer on a thread; its entries go into
+//! the sim's stream, stamped with their arrival, and the sim engine (`eval::live::Engine`) steps to
+//! the song time being heard every frame (G1's runner; G5 adds rollback). Arrow keys or WASD stride
+//! on the beat, Space stomps. The run ends when the hero falls or after 3 s of silence (until G2
+//! brings the finale); Enter or Space starts the next.
 //!
 //!     playlist-survivors               # System mode: whatever the Mac is playing
 //!     playlist-survivors --file <path> # plays the file and listens to it
 //!     playlist-survivors --click       # also clicks on each committed beat
 //!     playlist-survivors --file <path> --volume 0.3  # the file quieter (0: silent, still heard)
-//!     playlist-survivors --still <png>  # a scene 8 s into a run at 120 bpm, drawn offscreen
+//!     playlist-survivors --still <png>  # 20 s of the house track's stream through the engine, drawn offscreen
 
 // The tap and output are the phase 0 spike's (57e846a^:native/spike), kept as they were.
 #[allow(clippy::pedantic, unused_qualifications, dead_code)]
 mod coreaudio;
-mod game;
+mod feed;
 mod gfx;
 mod live;
 #[allow(
@@ -25,6 +25,7 @@ mod live;
     dead_code
 )]
 mod output;
+mod scene;
 mod sfx;
 #[allow(
     clippy::pedantic,
@@ -35,13 +36,17 @@ mod sfx;
 )]
 mod tap;
 
-use std::collections::VecDeque;
-use std::path::PathBuf;
+use std::collections::{HashMap, VecDeque};
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
 
+use analysis::analyzer::Entry;
+use eval::live::{Engine, Moment};
 use render::atlas::Atlases;
+use sim::content::{ContentLibrary, SourceFile, load_content};
+use sim::movement::InputKey;
 use winit::application::ApplicationHandler;
 use winit::event::{ElementState, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
@@ -49,10 +54,10 @@ use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::{Window, WindowId};
 
 use coreaudio::now_s;
-use game::{End, Game, Input, Judgement};
 use gfx::Gfx;
 use live::{Msg, Source};
 use output::{Click, Output};
+use scene::{Look, Scene};
 use sfx::{Cue, Sfx};
 
 /// The tap's timeline runs this far behind the output's render timeline (phase 0, built-in
@@ -62,6 +67,8 @@ const TAP_MINUS_RENDER_S: f64 = 0.023;
 const SOUND_PEAK: f32 = 0.01;
 /// This long without sound ends the run.
 const SILENCE_S: f64 = 3.0;
+/// The analyzer's evidence gate (`manifest.json`'s `streamParams.gate`).
+const GATE: f64 = 0.2;
 
 struct Options {
     file: Option<PathBuf>,
@@ -97,12 +104,81 @@ fn options(args: &[String]) -> Result<Options, String> {
     Ok(o)
 }
 
+/// The game's content: the library, the reactive level, and each enemy kind's look.
+struct World {
+    lib: ContentLibrary,
+    level: SourceFile,
+    looks: HashMap<String, Look>,
+}
+
+impl World {
+    fn load() -> Result<World, String> {
+        let dir = live::resource("content", "../../../content");
+        let mut names: Vec<PathBuf> = std::fs::read_dir(&dir)
+            .map_err(|e| format!("{}: {e}", dir.display()))?
+            .filter_map(Result::ok)
+            .map(|e| e.path())
+            .filter(|p| p.extension().is_some_and(|x| x == "yaml"))
+            .collect();
+        names.sort();
+        let read = |p: &Path, name: String| -> Result<SourceFile, String> {
+            Ok(SourceFile {
+                name,
+                text: std::fs::read_to_string(p).map_err(|e| format!("{}: {e}", p.display()))?,
+            })
+        };
+        let files = names
+            .iter()
+            .map(|p| {
+                read(
+                    p,
+                    format!(
+                        "content/{}",
+                        p.file_name().unwrap_or_default().to_string_lossy()
+                    ),
+                )
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let lib = load_content(&files).map_err(|e| format!("content: {e:?}"))?;
+        let level_path = live::resource("levels", "../../../levels").join("reactive.yaml");
+        let level = read(&level_path, "levels/reactive.yaml".into())?;
+        let looks = lib
+            .enemies
+            .values()
+            .map(|d| {
+                (
+                    d.id.clone(),
+                    Look {
+                        atlas: d.atlas.clone(),
+                        scale: d.scale as f32,
+                    },
+                )
+            })
+            .collect();
+        Ok(World { lib, level, looks })
+    }
+
+    /// A new run's engine (live: the stream's length unknown).
+    fn engine(&self) -> Result<Engine, String> {
+        Engine::new(
+            &self.level,
+            &self.lib,
+            &indexmap::IndexMap::new(),
+            GATE,
+            true,
+            f64::INFINITY,
+        )
+        .map_err(|e| format!("level: {e:?}"))
+    }
+}
+
 #[allow(clippy::single_match_else)]
 pub fn run(args: &[String]) -> Result<(), String> {
     let opts = options(args)?;
     if let Some(path) = &opts.still {
         return still(path);
     }
+    let world = World::load()?;
     let music = match &opts.file {
         Some(p) => Some(Arc::<[f32]>::from(live::decode(p, Output::device_rate())?)),
         None => None,
@@ -156,24 +232,26 @@ pub fn run(args: &[String]) -> Result<(), String> {
         event_loop.create_proxy(),
         stop.clone(),
     )?;
+    let engine = world.engine()?;
     let mut app = App {
         gfx: None,
         sfx,
         art,
+        world,
         rx,
         out,
         l_out,
         click: opts.click,
+        clock: None,
+        engine,
+        run_start: 0.0,
+        scene: Scene::default(),
         beats: VecDeque::new(),
         peak: 0.0,
-        committed: 0,
-        title_at: 0.0,
-        game: Game::new(now_s().to_bits()),
-        input: Input::default(),
-        last_frame: now_s(),
         last_sound: f64::NEG_INFINITY,
-        hurt_seen: 0.0,
-        logged_over: None,
+        over: None,
+        title_at: 0.0,
+        cue_at: f64::NEG_INFINITY,
     };
     let result = event_loop.run_app(&mut app).map_err(|e| e.to_string());
     stop.store(true, Ordering::Relaxed);
@@ -181,90 +259,122 @@ pub fn run(args: &[String]) -> Result<(), String> {
     result
 }
 
-/// Draws a run 8 s in (beats every 0.5 s, the player standing, then attacking) to a PNG.
-fn still(path: &std::path::Path) -> Result<(), String> {
+/// 20 s of the house track's committed stream through the engine (a stride on each beat), drawn
+/// offscreen to a PNG.
+fn still(path: &Path) -> Result<(), String> {
+    let world = World::load()?;
     let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
-    let mut game = Game::new(12345);
-    for k in 0..40 {
-        game.beat(0.5 + f64::from(k) * 0.5);
+    let stream_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../public/reactive/house-128/stream.json");
+    let text = std::fs::read_to_string(&stream_path)
+        .map_err(|e| format!("{}: {e}", stream_path.display()))?;
+    let file = stream::StreamFile::parse(&text).map_err(|e| e.0)?;
+    let mut engine = world.engine()?;
+    let mut replay = stream::Replay::new(file.log.clone());
+    let beats: Vec<f64> = file.log.beats.iter().map(|b| b.t).collect();
+    let mut scene = Scene::default();
+    let mut next = 0;
+    let end = 20.0;
+    for frame in 1..=(end as usize * 60) {
+        let s = frame as f64 / 60.0;
+        replay.feed_to(engine.log(), s);
+        while next < beats.len() && beats[next] <= s {
+            let key = if next % 4 < 2 {
+                InputKey::Right
+            } else {
+                InputKey::Down
+            };
+            engine.key(beats[next], key, true);
+            engine.key(beats[next] + 0.08, key, false);
+            next += 1;
+        }
+        engine.advance_to(s);
+        let moments = engine.view.borrow_mut().take_moments();
+        scene.moments(&moments, s);
     }
-    let mut t = 0.0;
-    while t < 8.0 {
-        t += 1.0 / 60.0;
-        game.update(t, 1.0 / 60.0, Input::default());
-    }
-    game.attack(8.0);
-    let now = 8.06;
-    game.update(now, 0.06, Input::default());
+    let upcoming: Vec<f64> = beats
+        .iter()
+        .map(|b| b - end)
+        .filter(|d| d.abs() < 2.0)
+        .collect();
     let (w, h) = (960, 640);
     let mut sprites = Vec::new();
-    game.draw(&art, now, w as f32, h as f32, &mut sprites);
+    scene.draw(
+        &engine.view.borrow(),
+        &art,
+        &world.looks,
+        end,
+        &upcoming,
+        w as f32,
+        h as f32,
+        &mut sprites,
+    );
     let rgba = render::capture::render(&art.pages, w, h, [0.02, 0.02, 0.03], &sprites)?;
     render::capture::write_png(path, w, h, &rgba)?;
+    let v = engine.view.borrow();
     eprintln!(
-        "slice: wrote {} ({} sprites)",
+        "slice: wrote {} ({} sprites; {} enemies, health {:.2}, groove {:.2})",
         path.display(),
-        sprites.len()
+        sprites.len(),
+        v.alive().count(),
+        v.health,
+        v.groove
     );
     Ok(())
-}
-
-struct Beat {
-    heard: f64,
-    period: f64,
 }
 
 struct App {
     gfx: Option<Gfx>,
     sfx: Option<Sfx>,
     art: Atlases,
+    world: World,
     rx: mpsc::Receiver<Msg>,
     out: Output,
     l_out: f64,
     click: bool,
-    /// Recent and upcoming committed beats, by heard time.
-    beats: VecDeque<Beat>,
+    /// Song time heard at a host time (the analysis thread's latest anchor).
+    clock: Option<(f64, f64)>,
+    engine: Engine,
+    /// The song time the run began at (the engine's song time 0).
+    run_start: f64,
+    scene: Scene,
+    /// Committed beats' song times, recent and upcoming.
+    beats: VecDeque<f64>,
     /// The loudest sample heard in the last moments.
     peak: f32,
-    committed: usize,
-    title_at: f64,
-    game: Game,
-    input: Input,
-    last_frame: f64,
     /// When sound was last heard (host s).
     last_sound: f64,
-    /// The last time the hurt sound played for.
-    hurt_seen: f64,
-    logged_over: Option<f64>,
+    /// When the run ended (host s), and whether the hero fell.
+    over: Option<(f64, bool, f64)>,
+    title_at: f64,
+    /// When the last swing or kill sound started (host s), so a burst plays once.
+    cue_at: f64,
 }
 
 impl App {
+    /// The song time heard at host time `now`, once the analysis has begun.
+    fn song_at(&self, now: f64) -> Option<f64> {
+        self.clock.map(|(song, heard)| song + (now - heard))
+    }
+
     fn drain(&mut self) {
         let now = now_s();
         while let Ok(m) = self.rx.try_recv() {
             match m {
-                Msg::Beat { commit, heard } => {
-                    if self.click {
-                        let _ = self.out.clicks.push(Click {
-                            at: heard - self.l_out,
-                            freq: 1800.0,
-                        });
+                Msg::Clock { song, heard } => self.clock = Some((song, heard)),
+                Msg::Entry(e) => {
+                    let arrived = self.song_at(now).unwrap_or(0.0);
+                    if let Entry::Beat(c) = &e {
+                        if self.click {
+                            let heard = self.clock.map_or(now, |(song, h)| h + (c.t - song));
+                            let _ = self.out.clicks.push(Click {
+                                at: heard - self.l_out,
+                                freq: 1800.0,
+                            });
+                        }
+                        self.beats.push_back(c.t);
                     }
-                    self.committed += 1;
-                    if std::env::var_os("PS_SLICE_LOG").is_some() {
-                        eprintln!(
-                            "beat t {:.3} known {:.3} period {:.3} heard in {:+.0} ms",
-                            commit.t,
-                            commit.known_at,
-                            commit.period,
-                            (heard - now) * 1e3
-                        );
-                    }
-                    self.beats.push_back(Beat {
-                        heard,
-                        period: commit.period,
-                    });
-                    self.game.beat(heard);
+                    feed::append(self.engine.log(), &e, arrived, self.run_start);
                 }
                 Msg::Level { peak, heard } => {
                     if heard <= now + 0.5 {
@@ -276,8 +386,10 @@ impl App {
                 }
             }
         }
-        while self.beats.front().is_some_and(|b| b.heard < now - 2.0) {
-            self.beats.pop_front();
+        if let Some(song) = self.song_at(now) {
+            while self.beats.front().is_some_and(|&b| b < song - 2.0) {
+                self.beats.pop_front();
+            }
         }
         while self.out.events.pop().is_ok() {}
     }
@@ -285,53 +397,94 @@ impl App {
     fn render(&mut self) {
         let now = now_s();
         self.peak *= 0.97;
+        let song = self.song_at(now);
+        if self.over.is_none()
+            && let Some(s) = song
+        {
+            self.engine.advance_to(s - self.run_start);
+            let moments = self.engine.view.borrow_mut().take_moments();
+            self.cues(&moments, now);
+            self.scene.moments(&moments, now);
+            let fell = self.engine.fallen();
+            if fell || (self.last_sound.is_finite() && now - self.last_sound > SILENCE_S) {
+                if fell {
+                    self.cue(Cue::Death, 150.0);
+                }
+                self.over = Some((now, fell, s - self.run_start));
+                eprintln!(
+                    "slice: run over ({}), {:.0} s",
+                    if fell { "fell" } else { "silence" },
+                    s - self.run_start
+                );
+            }
+        }
+        if let Some((t, false, _)) = self.over
+            && self.last_sound > t
+            && now > t + 1.0
+        {
+            self.restart();
+        }
         if now > self.title_at {
             self.title_at = now + 0.5;
             if let Some(g) = &self.gfx {
-                let bpm = self.beats.back().map_or(0.0, |b| 60.0 / b.period);
                 g.window.set_title(&format!(
-                    "Playlist Survivors (slice) - {} beats, {bpm:.0} bpm",
-                    self.committed
+                    "Playlist Survivors - {} enemies, health {:.0}%",
+                    self.engine.view.borrow().alive().count(),
+                    self.engine.view.borrow().health * 100.0
                 ));
             }
         }
-        // Shown at about the next vsync.
-        let shown = now + 1.0 / 60.0;
-        let dt = (now - self.last_frame).clamp(0.0, 0.1) as f32;
-        self.last_frame = now;
-        self.game.update(shown, dt, self.input);
-        if self.game.hurt_since(self.hurt_seen) {
-            self.hurt_seen = shown;
-            if self.game.over.is_some() {
-                self.cue(Cue::Death, 150.0);
-            } else {
-                self.cue(Cue::Hurt, 220.0);
-            }
-        }
-        match self.game.over {
-            None if self.last_sound.is_finite() && shown - self.last_sound > SILENCE_S => {
-                self.game.end(shown, End::Silence);
-            }
-            Some((t, why)) if self.logged_over != Some(t) => {
-                self.logged_over = Some(t);
-                eprintln!("slice: run over ({why:?}), score {}", self.game.score);
-            }
-            Some((t, End::Silence)) if self.last_sound > t && shown > t + 1.0 => self.restart(),
-            _ => {}
-        }
         let Some(g) = self.gfx.as_mut() else { return };
         let (w, h) = g.logical_size();
-        let mut rects = Vec::new();
-        self.game.draw(&self.art, shown, w, h, &mut rects);
-        // The level meter along the bottom.
-        rects.push(gfx::rect(
+        let mut sprites = Vec::new();
+        let upcoming: Vec<f64> =
+            song.map_or_else(Vec::new, |s| self.beats.iter().map(|b| b - s).collect());
+        self.scene.draw(
+            &self.engine.view.borrow(),
+            &self.art,
+            &self.world.looks,
+            now,
+            &upcoming,
+            w,
+            h,
+            &mut sprites,
+        );
+        if let Some((t, fell, seconds)) = self.over {
+            scene::end_card(w, h, now - t, seconds.max(0.0) as u64, fell, &mut sprites);
+        }
+        sprites.push(gfx::rect(
             0.0,
             h - 4.0,
             w * self.peak.min(1.0),
             4.0,
             [0.3, 0.8, 0.4, 0.8],
         ));
-        g.draw([0.02, 0.02, 0.03], &rects);
+        g.draw([0.02, 0.02, 0.03], &sprites);
+    }
+
+    /// The sounds the view's new moments make: kills, swings, bites.
+    fn cues(&mut self, moments: &[Moment], now: f64) {
+        let kills = moments
+            .iter()
+            .filter(|m| matches!(m, Moment::Death { .. }))
+            .count();
+        let swung = moments.iter().any(|m| matches!(m, Moment::Swing { .. }));
+        if moments.iter().any(|m| matches!(m, Moment::Bite { .. })) {
+            self.cue(Cue::Hurt, 220.0);
+        }
+        // (A burst of kills or swings in one frame plays once, and at most every 80 ms.)
+        if now - self.cue_at > 0.08 {
+            if kills >= 3 {
+                self.cue(Cue::KillMulti, 1500.0);
+                self.cue_at = now;
+            } else if kills > 0 {
+                self.cue(Cue::Kill, 1500.0);
+                self.cue_at = now;
+            } else if swung {
+                self.cue(Cue::Swing, 1000.0);
+                self.cue_at = now;
+            }
+        }
     }
 
     /// A sound effect now (or, without the samples, a blip at `freq`).
@@ -346,40 +499,45 @@ impl App {
         }
     }
 
-    /// A new run, fed the committed beats still to come.
+    /// A new run from the song time heard now, with a fresh engine and stream.
     fn restart(&mut self) {
         let now = now_s();
-        self.game = Game::new(now.to_bits());
-        for b in self.beats.iter().filter(|b| b.heard > now) {
-            self.game.beat(b.heard);
+        match self.world.engine() {
+            Ok(engine) => self.engine = engine,
+            Err(e) => {
+                eprintln!("slice: can't restart: {e}");
+                return;
+            }
         }
-        self.hurt_seen = now;
+        self.run_start = self.song_at(now).unwrap_or(0.0);
+        self.scene = Scene::default();
+        self.over = None;
     }
 
     fn key(&mut self, code: KeyCode, pressed: bool, repeat: bool) {
-        match code {
-            KeyCode::ArrowLeft | KeyCode::KeyA => self.input.left = pressed,
-            KeyCode::ArrowRight | KeyCode::KeyD => self.input.right = pressed,
-            KeyCode::ArrowUp | KeyCode::KeyW => self.input.up = pressed,
-            KeyCode::ArrowDown | KeyCode::KeyS => self.input.down = pressed,
-            KeyCode::Space | KeyCode::Enter
-                if pressed && self.game.over.is_some_and(|(t, _)| now_s() > t + 1.0) =>
+        let now = now_s();
+        if self.over.is_some() {
+            if pressed
+                && matches!(code, KeyCode::Enter | KeyCode::Space)
+                && self.over.is_some_and(|(t, _, _)| now > t + 1.0)
             {
                 self.restart();
             }
-            KeyCode::Space | KeyCode::KeyJ | KeyCode::KeyK if pressed && !repeat => {
-                let j = self.game.attack(now_s());
-                match j {
-                    Judgement::Hit { killed: 0, .. } => self.cue(Cue::Swing, 1000.0),
-                    Judgement::Hit { killed: 1, .. } => self.cue(Cue::Kill, 1500.0),
-                    Judgement::Hit { .. } => self.cue(Cue::KillMulti, 1500.0),
-                    Judgement::Miss => self.cue(Cue::Miss, 400.0),
-                }
-                if std::env::var_os("PS_SLICE_LOG").is_some() {
-                    eprintln!("attack {j:?}");
-                }
-            }
-            _ => {}
+            return;
+        }
+        let key = match code {
+            KeyCode::ArrowLeft | KeyCode::KeyA => InputKey::Left,
+            KeyCode::ArrowRight | KeyCode::KeyD => InputKey::Right,
+            KeyCode::ArrowUp | KeyCode::KeyW => InputKey::Up,
+            KeyCode::ArrowDown | KeyCode::KeyS => InputKey::Down,
+            KeyCode::Space => InputKey::Space,
+            _ => return,
+        };
+        if repeat {
+            return;
+        }
+        if let Some(s) = self.song_at(now) {
+            self.engine.key(s - self.run_start, key, pressed);
         }
     }
 }

@@ -10,7 +10,6 @@ use std::sync::mpsc;
 use std::time::Duration;
 
 use analysis::analyzer::{Analyzer, Entry, Params};
-use analysis::beats::Commit;
 use analysis::hindsight::HindsightParams;
 use analysis::tensors::Tensors;
 use winit::event_loop::EventLoopProxy;
@@ -21,10 +20,12 @@ use super::tap::{Meta, Tap};
 const SR: f64 = 44100.0;
 
 /// What the analysis thread tells the game.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub enum Msg {
-    /// A committed beat, heard at host time `heard` (s).
-    Beat { commit: Commit, heard: f64 },
+    /// An analyzer entry, as soon as it is final (times in song seconds: the analysed stream's).
+    Entry(Entry),
+    /// Song time `song` (the samples analysed so far) is heard at host time `heard` (s).
+    Clock { song: f64, heard: f64 },
     /// The loudest sample of a captured buffer and the host time it is heard.
     Level { peak: f32, heard: f64 },
 }
@@ -159,6 +160,7 @@ pub fn spawn(
             let mut metas: VecDeque<Meta> = VecDeque::new();
             let (mut raw, mut y, mut new_metas, mut out) =
                 (Vec::new(), Vec::new(), Vec::new(), Vec::new());
+            let mut analysed = 0usize;
             while !stop.load(Ordering::Relaxed) {
                 raw.clear();
                 new_metas.clear();
@@ -181,15 +183,16 @@ pub fn spawn(
                 rs.push(&raw, &mut y);
                 out.clear();
                 an.push(&y, &mut out);
-                for e in &out {
-                    if let Entry::Beat(c) = e
-                        && let Some(h) = host_of(&metas, rate, c.t * SR * rs.ratio)
-                    {
-                        let _ = tx.send(Msg::Beat {
-                            commit: *c,
-                            heard: h + heard_after,
-                        });
-                    }
+                analysed += y.len();
+                let song = analysed as f64 / SR;
+                if let Some(h) = host_of(&metas, rate, song * SR * rs.ratio) {
+                    let _ = tx.send(Msg::Clock {
+                        song,
+                        heard: h + heard_after,
+                    });
+                }
+                for e in out.drain(..) {
+                    let _ = tx.send(Msg::Entry(e));
                 }
                 let _ = proxy.send_event(());
             }

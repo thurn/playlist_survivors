@@ -5,7 +5,6 @@
 #
 # Every build is signed by the stable identity from scripts/signing-identity: the grant is keyed
 # on the signature's designated requirement (bundle ID plus certificate), so it survives rebuilds.
-# C3 adds the content (content/, levels/reactive.yaml, public/assets) to Resources.
 set -eu
 cd "$(dirname "$0")/.."
 IDENTITY="${PS_SIGNING_IDENTITY:-Playlist Survivors Dev}"
@@ -24,6 +23,11 @@ mkdir -p "$APP/Contents/Resources/assets"
 cp ../public/assets/characters.json ../public/assets/characters-0.png \
   ../public/assets/effects.json ../public/assets/effects-0.png \
   ../public/assets/world.json ../public/assets/world-0.png "$APP/Contents/Resources/assets/"
+# The game's content and its reactive level (the sim engine, G1).
+rm -rf "$APP/Contents/Resources/content" "$APP/Contents/Resources/levels"
+cp -R ../content "$APP/Contents/Resources/content"
+mkdir -p "$APP/Contents/Resources/levels"
+cp ../levels/reactive.yaml "$APP/Contents/Resources/levels/"
 rm -rf "$APP/Contents/Resources/sfx"
 cp -R ../public/assets/sfx "$APP/Contents/Resources/sfx"
 cat >"$APP/Contents/Info.plist" <<PLIST
