@@ -45,7 +45,7 @@ from . import accents, bands, structure
 
 #: Bumped whenever the stream's output changes, so stale shipped streams fail
 #: `check:reactive`.
-TOOL_VERSION = 6
+TOOL_VERSION = 7
 
 SR = 44100
 FPS = 100
@@ -97,6 +97,25 @@ class Params:
     hindsight_window_s: float = 20.0
     hindsight_keep_s: float = 8.0
     hindsight_bias_s: float = 0.0
+    #: The phase check (reactive-feel hv-jtsz.18): the causal tracker can lock half or a quarter
+    #: of a beat off (its activations peak on off-beats), where the offline model, hearing both
+    #: sides of each beat, does not. At each frame, the latest hindsight entry's offline beats
+    #: at least `phase_settle_s` before its knownAt (the end of its window is as unsure as the
+    #: online model) give their phase on the believed grid; when at least `phase_min_beats` of
+    #: them agree (resultant length `phase_min_r`) on a phase at least `phase_min_shift`
+    #: periods off, the committed grid takes their phase. Only a decode at the believed
+    #: tempo counts (`phase_level_share` of its intervals within `phase_level_tol` of the
+    #: period: across a tempo change, or at another level, the phase means nothing), and only
+    #: when the `phase_persist` latest entries agree on the shift (within `phase_agree`
+    #: resultant length): on expressive orchestral music a 20 s decode wanders.
+    phase_settle_s: float = 1.0
+    phase_min_beats: int = 4
+    phase_min_r: float = 0.6
+    phase_min_shift: float = 0.2
+    phase_level_tol: float = 0.06
+    phase_level_share: float = 0.9
+    phase_persist: int = 2
+    phase_agree: float = 0.95
     #: Structure (stage 4): changes, jumps, levels, keys and ends.
     change_past_s: float = 8.0
     change_next_s: float = 2.0
@@ -162,6 +181,16 @@ class Params:
                 "windowS": self.hindsight_window_s,
                 "keepS": self.hindsight_keep_s,
                 "biasS": self.hindsight_bias_s,
+            },
+            "phase": {
+                "settleS": self.phase_settle_s,
+                "minBeats": self.phase_min_beats,
+                "minR": self.phase_min_r,
+                "minShift": self.phase_min_shift,
+                "levelTol": self.phase_level_tol,
+                "levelShare": self.phase_level_share,
+                "persist": self.phase_persist,
+                "agree": self.phase_agree,
             },
             "structure": {
                 "change": {
@@ -327,8 +356,48 @@ def evidence_at(
     return float(np.mean(vals)) if vals else 0.0
 
 
+def offline_phase(
+    entry: dict[str, Any], last: float, period: float, p: Params
+) -> float | None:
+    """The phase (in periods, -0.5 to 0.5) of a hindsight entry's settled offline beats on the believed grid (a beat at `last`), or None unless they agree on one at the believed tempo."""
+    settled = np.asarray(
+        [b for b in entry["offline"] if b <= entry["knownAt"] - p.phase_settle_s]
+    )
+    if len(settled) < p.phase_min_beats:
+        return None
+    gaps = np.diff(settled) / period
+    if np.mean(np.abs(gaps - 1) <= p.phase_level_tol) < p.phase_level_share:
+        return None
+    z = np.exp(2j * np.pi * (settled - last) / period).mean()
+    if abs(z) < p.phase_min_r:
+        return None
+    return float(np.angle(z)) / (2 * np.pi)
+
+
+def phase_shift(
+    entries: list[dict[str, Any]], k: int, last: float, period: float, p: Params
+) -> float:
+    """The shift (s) that puts the believed grid on the phase of entry k and the `phase_persist` - 1 before it, or 0 while they do not agree on one at least `phase_min_shift` off."""
+    if k + 1 < p.phase_persist:
+        return 0.0
+    phases = [
+        offline_phase(entries[j], last, period, p)
+        for j in range(k + 1 - p.phase_persist, k + 1)
+    ]
+    if any(ph is None for ph in phases):
+        return 0.0
+    if abs(np.exp(2j * np.pi * np.asarray(phases)).mean()) < p.phase_agree:
+        return 0.0
+    shift = phases[-1]
+    assert shift is not None
+    return shift * period if abs(shift) >= p.phase_min_shift else 0.0
+
+
 def commit_beats(
-    beliefs: Beliefs, evidence_of_frame: Any, p: Params
+    beliefs: Beliefs,
+    evidence_of_frame: Any,
+    p: Params,
+    hindsight: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, float]]:
     """Committed beats: each forecast fixed once within the horizon, never revised.
 
@@ -337,14 +406,22 @@ def commit_beats(
     forecast lies within `periods` periods plus `extraS` of now, and in any case
     by the last frame at or before the last committed beat: when a committed
     beat arrives, the next is always known, so the game may read the length of
-    the beat it is in. `evidence_of_frame(n)` gives the evidence known at frame n.
+    the beat it is in. `evidence_of_frame(n)` gives the evidence known at frame n. With
+    `hindsight` entries, the grid takes the phase of the latest one known (see `phase_shift`).
     """
     out: list[dict[str, float]] = []
     c = -math.inf
+    entries = hindsight or []
+    # (The latest hindsight entry known.)
+    h = -1
     for n in range(len(beliefs.since)):
         t = n / FPS
         last = beliefs.last_beat(n) + p.bias_s
         per = float(beliefs.period[n])
+        while h + 1 < len(entries) and entries[h + 1]["knownAt"] <= t + 1e-9:
+            h += 1
+        if h >= 0:
+            last += phase_shift(entries, h, last, per, p)
         horizon = p.commit_periods * per + p.commit_extra_s
         while True:
             k = math.ceil(
@@ -523,7 +600,9 @@ def build_stream(
         k = n // TICK_FRAMES
         return tick_evidence[k - 1] if 1 <= k <= len(tick_evidence) else 0.0
 
-    beats = commit_beats(beliefs, evidence_of_frame, p)
+    # (The hindsight grids come first: the committed beats take their phase.)
+    grids = hindsight_entries(y, beliefs, p) if hindsight else None
+    beats = commit_beats(beliefs, evidence_of_frame, p, grids)
     energy = energies(y, tick_times, p)
     form = structure.structure(y, tick_times, energy, p, SR * TICK_FRAMES // FPS, SR)
     ticks = []
@@ -558,7 +637,7 @@ def build_stream(
         "onsets": onsets,
         "timbre": group["timbre"],
         "rtf": group["rtf"],
-        **({"hindsight": hindsight_entries(y, beliefs, p)} if hindsight else {}),
+        **({"hindsight": grids} if grids is not None else {}),
         "forecasts": accents.forecasts(beats, onsets, p),
         "changes": form["changes"],
         "jumps": form["jumps"],

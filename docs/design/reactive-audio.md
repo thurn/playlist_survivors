@@ -307,6 +307,20 @@ within the **commit horizon** and never revised:
   - times are strictly increasing.
 - **Warm-up:** beats committed before the tracker locks carry low evidence, so
   they are muted and unjudged like any other unclear beat.
+- **Phase check** (reactive-feel, `hv-jtsz.18`): the causal model can lock half
+  or a quarter of a beat off, where its activations peak on off-beats. The
+  offline model hears both sides of each beat and rarely does. So the committed
+  grid takes the phase of the [hindsight grids](#hindsight-grids-stage-2) when:
+  - the last two entries' offline beats, settled (at least 1 s before the
+    entry's `knownAt`), agree on a phase at least 0.2 periods off the believed
+    one;
+  - each entry has at least 4 such beats, 90% of its intervals within 6% of
+    the believed period (a decode at another tempo or level, or across a tempo
+    change, says nothing about the phase).
+
+  It is causal: a frame reads only entries known by then. On the iteration
+  corpus this raised strict beat F from 0.73 to 0.84. It left the Galop's and
+  the steady synthetic tracks' accuracy unchanged.
 
 The experiment measured commit leads of only 0.25 s and 0.5 s. On steady
 beat-driven music, going from 0.25 s to 0.5 s cost under a point. The 1.35 s

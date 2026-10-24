@@ -272,6 +272,72 @@ def test_commit_rule_skips_a_beat_less_than_min_lead_ahead() -> None:
     ]
 
 
+def entry(known_at: float, offline: list[float]) -> dict[str, Any]:
+    return {"knownAt": known_at, "offline": offline, "online": []}
+
+
+def beats_at(phase: float, period: float, lo: float, hi: float) -> list[float]:
+    k0 = math.ceil((max(lo, 0.0) - phase) / period - 1e-9)
+    return [phase + period * k for k in range(k0, 1000) if phase + period * k <= hi]
+
+
+def test_the_phase_check_takes_the_offline_phase_when_two_entries_agree() -> None:
+    p = NO_BIAS
+    # The believed grid has beats at 0.0 + 0.5k; the offline decode hears them at 0.375 + 0.5k
+    # (a quarter beat early).
+    off = [entry(t, beats_at(0.375, 0.5, t - 8, t)) for t in (9.0, 10.0)]
+    assert st.phase_shift(off, 1, 10.0, 0.5, p) == pytest.approx(-0.125)
+    # Half a beat off: either way round.
+    anti = [entry(t, beats_at(0.25, 0.5, t - 8, t)) for t in (9.0, 10.0)]
+    assert abs(st.phase_shift(anti, 1, 10.0, 0.5, p)) == pytest.approx(0.25)
+    # One entry is not enough; nor is an entry whose settled beats are fewer than 4.
+    assert st.phase_shift(off, 0, 10.0, 0.5, p) == 0.0
+    short = [off[0], entry(10.0, beats_at(0.375, 0.5, 7.6, 10.0))]
+    assert st.phase_shift(short, 1, 10.0, 0.5, p) == 0.0
+    # The last second of a window is unsettled: beats there alone decide nothing.
+    late = [
+        off[0],
+        entry(10.0, beats_at(0.25, 0.5, 9.1, 10.0) + beats_at(0.0, 0.5, 2, 9.0)),
+    ]
+    assert st.phase_shift(late, 1, 10.0, 0.5, p) == 0.0
+    # A shift under minShift (0.2 periods) is left alone.
+    near = [entry(t, beats_at(0.05, 0.5, t - 8, t)) for t in (9.0, 10.0)]
+    assert st.phase_shift(near, 1, 10.0, 0.5, p) == 0.0
+    # Entries disagreeing with each other change nothing.
+    split = [
+        entry(9.0, beats_at(0.25, 0.5, 1, 9)),
+        entry(10.0, beats_at(0.0, 0.5, 2, 10)),
+    ]
+    assert st.phase_shift(split, 1, 10.0, 0.5, p) == 0.0
+
+
+def test_the_phase_check_ignores_a_decode_at_another_tempo() -> None:
+    p = NO_BIAS
+    # Half time, and a decode 10% slower: neither runs at the believed tempo.
+    for period in (1.0, 0.55):
+        off = [entry(t, beats_at(0.25, period, t - 8, t)) for t in (9.0, 10.0)]
+        assert st.phase_shift(off, 1, 10.0, 0.5, p) == 0.0
+
+
+def test_committed_beats_take_the_hindsight_phase_from_when_it_is_known() -> None:
+    b = steady(0.5, 0.0, 1500)
+    known = [entry(float(t), beats_at(0.25, 0.5, t - 8, t)) for t in range(1, 16)]
+    beats = st.commit_beats(b, lambda n: 1.0, NO_BIAS, known)
+    times = [x["t"] for x in beats]
+    assert all(b2 > a + 0.25 - 1e-9 for a, b2 in itertools.pairwise(times))
+    # Until two entries in a row hold 4 settled beats (at 3.0 s: 0.25 ... 1.75; then 4.0 s),
+    # the believed phase.
+    early = [x["t"] for x in beats if x["knownAt"] < 4.0]
+    assert all(abs(t / 0.5 - round(t / 0.5)) < 1e-9 for t in early)
+    late = [x["t"] for x in beats if x["knownAt"] >= 4.0]
+    assert late and all(
+        abs((t - 0.25) / 0.5 - round((t - 0.25) / 0.5)) < 1e-9 for t in late
+    )
+    # Without hindsight, the believed phase throughout.
+    plain = st.commit_beats(b, lambda n: 1.0, NO_BIAS)
+    assert all(abs(x["t"] / 0.5 - round(x["t"] / 0.5)) < 1e-9 for x in plain)
+
+
 def test_smoothed_period_averages_alternating_whole_frames_and_follows_jumps() -> None:
     raw = np.array([0.34, 0.35] * 150 + [0.5] * 100)
     out = st.smooth_periods(raw, st.Params())

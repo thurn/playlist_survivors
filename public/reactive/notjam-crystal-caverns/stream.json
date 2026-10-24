@@ -1,7 +1,7 @@
 {
  "version": 1,
  "audio": {"file":"notjam-crystal-caverns.ogg","duration":47.5,"sampleRate":44100},
- "params": {"fps":100,"minBpm":55,"maxBpm":215,"numTempi":null,"period":{"windowS":2.0,"band":0.1},"commit":{"periods":1.0,"extraS":0.35,"minLeadS":0.1},"gate":0.2,"tickS":0.05,"evidence":{"beats":4,"halfS":0.03},"energy":{"windowS":0.5,"decayDbPerS":0.2,"rangeDb":30.0,"floorDb":-60.0},"onsets":{"threshold":1.5,"biasS":-0.01,"strongPercentile":98.0,"strongWindowS":30.0},"hindsight":{"everyS":1.0,"windowS":20.0,"keepS":8.0,"biasS":0.0},"structure":{"change":{"pastS":8.0,"nextS":2.0,"statsS":30.0,"peakS":4.0,"thresholdS":60.0,"k":0.5,"minPrior":20},"jump":{"db":6.0,"recentS":1.0,"beforeS":6.0,"gapS":4.0},"level":{"loudIn":0.8,"loudOut":0.7,"quietIn":0.4,"quietOut":0.5},"key":{"windowS":20.0,"afterS":10.0},"end":{"dropDb":20.0,"holdS":1.5,"afterS":10.0,"windowS":30.0,"smoothS":1.0}},"accents":{"cycles":[2,4,8],"confirm":3,"windowS":0.05,"minLeadS":0.54,"history":4},"bands":{"version":2,"fftSize":2048,"decayDbPerS":0.2,"rangeDb":30.0,"floorDb":-60.0,"peakHalfS":8.0,"fluxFloorDb":6.0,"brightnessStatsS":30.0,"timbreEveryS":1.0,"timbrePastS":10.0},"biasS":-0.013,"toolVersion":6},
+ "params": {"fps":100,"minBpm":55,"maxBpm":215,"numTempi":null,"period":{"windowS":2.0,"band":0.1},"commit":{"periods":1.0,"extraS":0.35,"minLeadS":0.1},"gate":0.2,"tickS":0.05,"evidence":{"beats":4,"halfS":0.03},"energy":{"windowS":0.5,"decayDbPerS":0.2,"rangeDb":30.0,"floorDb":-60.0},"onsets":{"threshold":1.5,"biasS":-0.01,"strongPercentile":98.0,"strongWindowS":30.0},"hindsight":{"everyS":1.0,"windowS":20.0,"keepS":8.0,"biasS":0.0},"phase":{"settleS":1.0,"minBeats":4,"minR":0.6,"minShift":0.2,"levelTol":0.06,"levelShare":0.9,"persist":2,"agree":0.95},"structure":{"change":{"pastS":8.0,"nextS":2.0,"statsS":30.0,"peakS":4.0,"thresholdS":60.0,"k":0.5,"minPrior":20},"jump":{"db":6.0,"recentS":1.0,"beforeS":6.0,"gapS":4.0},"level":{"loudIn":0.8,"loudOut":0.7,"quietIn":0.4,"quietOut":0.5},"key":{"windowS":20.0,"afterS":10.0},"end":{"dropDb":20.0,"holdS":1.5,"afterS":10.0,"windowS":30.0,"smoothS":1.0}},"accents":{"cycles":[2,4,8],"confirm":3,"windowS":0.05,"minLeadS":0.54,"history":4},"bands":{"version":2,"fftSize":2048,"decayDbPerS":0.2,"rangeDb":30.0,"floorDb":-60.0,"peakHalfS":8.0,"fluxFloorDb":6.0,"brightnessStatsS":30.0,"timbreEveryS":1.0,"timbrePastS":10.0},"biasS":-0.013,"toolVersion":7},
  "beats": [
   {"t":0.247,"knownAt":0.0,"period":0.28,"evidence":0.0},
   {"t":0.527,"knownAt":0.0,"period":0.28,"evidence":0.0},
@@ -13,8 +13,9 @@
   {"t":3.4919,"knownAt":2.63,"period":0.5174,"evidence":0.61},
   {"t":4.017,"knownAt":3.15,"period":0.52,"evidence":0.6595},
   {"t":4.537,"knownAt":3.67,"period":0.52,"evidence":0.6336},
-  {"t":5.057,"knownAt":4.19,"period":0.52,"evidence":0.6125},
-  {"t":5.5872,"knownAt":4.72,"period":0.5201,"evidence":0.5696},
+  {"t":4.8,"knownAt":4.0,"period":0.52,"evidence":0.6336},
+  {"t":5.32,"knownAt":4.45,"period":0.52,"evidence":0.6125},
+  {"t":5.8409,"knownAt":4.98,"period":0.5201,"evidence":0.5696},
   {"t":6.1073,"knownAt":5.24,"period":0.5201,"evidence":0.5537},
   {"t":6.6273,"knownAt":5.76,"period":0.5201,"evidence":0.5628},
   {"t":7.1591,"knownAt":6.29,"period":0.521,"evidence":0.5648},
@@ -96,7 +97,7 @@
   {"t":46.8478,"knownAt":45.97,"period":0.5304,"evidence":0.2497},
   {"t":47.3808,"knownAt":46.5,"period":0.5319,"evidence":0.1253},
   {"t":47.687,"knownAt":47.03,"period":0.48,"evidence":0.1247},
-  {"t":47.9592,"knownAt":47.44,"period":0.5361,"evidence":0.0545}
+  {"t":48.1948,"knownAt":47.32,"period":0.5286,"evidence":0.0545}
  ],
  "ticks": [
   {"t":0.05,"evidence":0.0,"energy":0.0,"level":"quiet","bands":{"kick":0.0,"snare":0.0,"hat":0.0,"bass":0.0},"brightness":0.5},
