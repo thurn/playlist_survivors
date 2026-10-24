@@ -44,6 +44,8 @@ export interface Params {
   track?: string;
   /** `?debug=moves`: play mode's movement and groove overlay (src/runtime/debug-moves.ts). */
   debugMoves: boolean;
+  /** `?nodamage` with `?player=`: the planned run's hero takes no damage, so it plays to the end (the feel dossiers' captures). Live play ignores it. */
+  noDamage: boolean;
 }
 
 /** The level a mode plays. */
@@ -67,6 +69,7 @@ export function readParams(search: string): Params {
     mode: (["play", "demo", "reactive"] as const).find((m) => m === q.get("mode")),
     track: q.get("track") ?? undefined,
     debugMoves: q.get("debug") === "moves",
+    noDamage: q.has("nodamage") && PLAYER_NAMES.some((p) => p === q.get("player")),
   };
 }
 
@@ -204,7 +207,7 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
         const sm = songMap(levelSongName(lf, levelResolver));
         const level = loadLevel(lf, lib, sm, levelResolver);
         overlay.sub.textContent = m === "demo" ? `${level.title.piece} — Watch the demo` : level.title.piece;
-        return { songMap: sm, level, content: lib, seed: params.seed ?? level.seed, profile: params.player ?? level.player, landmarks: landmarks(), version: __BUILD_VERSION__ };
+        return { songMap: sm, level, content: lib, seed: params.seed ?? level.seed, profile: params.player ?? level.player, landmarks: landmarks(), version: __BUILD_VERSION__, ...(params.noDamage ? { checks: { noHeroDamage: true } } : {}) };
       } catch (e) {
         throw e instanceof ContentError ? new Error(`Level script or content error:\n${e.message}`) : e;
       }
@@ -221,7 +224,7 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
     let reactive: ReactiveTrackRun | undefined;
     let tracks: TrackEntry[] | undefined;
     const loadReactive = async (track: TrackEntry) => {
-      reactive = await loadReactiveTrack(track, lib, { seed: params.seed, player: params.player });
+      reactive = await loadReactiveTrack(track, lib, { seed: params.seed, player: params.player, noDamage: params.noDamage });
       overlay.sub.textContent = `${track.title} — reactive mode (experimental)`;
       return reactive.input;
     };

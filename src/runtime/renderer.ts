@@ -25,7 +25,7 @@ import type { ZoneTheme } from "../content/schema.ts";
 import { rand01 } from "../core/rng.ts";
 import { beatSwell, clamp, frac, lerp } from "../core/shaping.ts";
 import type { Frame } from "../plan/evaluate.ts";
-import { hex, pulsed, pulseScale } from "../plan/evaluate.ts";
+import { beatPulseOf, hex, pulsed, pulseScale } from "../plan/evaluate.ts";
 import { NEUTRAL_LOOK } from "../plan/reactive-look.ts";
 import { AURA_ALPHA, AURA_TINTS, BLADE_GLOWS, BLADE_TINTS, BOLT_COLORS, FLAME_GLOWS, FLAME_TINTS, SWORD_TINTS, tierLook } from "../plan/tier-look.ts";
 import type { MapProp, Plan } from "../plan/types.ts";
@@ -257,7 +257,7 @@ export class Renderer {
     const sec = f.section;
     // (Reactive mode: free while the beat is unclear; pulses faded by the evidence, or following the presses.)
     const free = f.reactive ? f.hud.free : sec.feel === "free";
-    const beatPulse = pulsed(f.reactive, free ? beatSwell(frac(f.sbi / 4)) : Math.exp(-6 * frac(f.sbi)));
+    const beatPulse = beatPulseOf(f);
     const barPulse = pulsed(f.reactive, free ? beatSwell(frac(f.sbi / 4)) : Math.exp(-6 * ((f.hud.barPhase * 1) % 1)));
     // Reactive mode: effect intensity from the loudness, smoothed.
     const intensity = f.reactive ? 0.4 + 0.6 * f.reactive.loudness : sec.intensity;

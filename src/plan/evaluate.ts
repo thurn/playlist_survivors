@@ -223,6 +223,15 @@ export function pulsed(p: PulseState | undefined, v: number): number {
   return p ? p.mix * p.amp * v + (1 - p.mix) * p.press : v;
 }
 
+/**
+ * The beat pulse the renderer shows (the lights' pulse): decaying from each beat, or a slow swell over
+ * four beats where the music is free (in reactive mode, while the beat is unclear).
+ */
+export function beatPulseOf(f: Frame): number {
+  const free = f.reactive ? f.hud.free : f.section.feel === "free";
+  return pulsed(f.reactive, free ? beatSwell(frac(f.sbi / 4)) : Math.exp(-6 * frac(f.sbi)));
+}
+
 /** How strongly a beat-synced motion (a sway about its middle) shows in reactive mode: 1 elsewhere. */
 export function pulseScale(p: PulseState | undefined): number {
   return p ? p.mix * p.amp + (1 - p.mix) * p.press : 1;

@@ -27,6 +27,15 @@ describe("?player=", () => {
   });
 });
 
+describe("?nodamage", () => {
+  it("spares a planned run's hero, never live play's", () => {
+    expect(readParams("?mode=play&player=moderate&nodamage").noDamage).toBe(true);
+    expect(readParams("?mode=reactive&track=x&player=mash4&nodamage").noDamage).toBe(true);
+    expect(readParams("?mode=play&nodamage").noDamage).toBe(false);
+    expect(readParams("?mode=play&player=moderate").noDamage).toBe(false);
+  });
+});
+
 describe("each new player in play mode", () => {
   const plans = new Map(NEW.map((p) => [p, runPlanner({ songMap, level: PLAY, profile: p })]));
 

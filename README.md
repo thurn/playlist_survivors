@@ -124,6 +124,20 @@ restarts the song (there is one section), each track keeps its own best grade, a
   sections and accents, or `fit: "failed"`) with a click overlay in the gitignored
   `captures/corpus/<id>-click.ogg`, and prints the corpus table (held-out tracks as
   counts only). Restream with `npm run reactive:streams` afterwards.
+- `npm run reactive:corpus -- --split iteration` measures the reactive feel metrics
+  ([design](docs/design/reactive-feel.md#metrics)) on every iteration track (or
+  `--track <id>,...`, or `--split regression`): beat F-measure and lock-in, sound
+  sync, reward and the mashing gate, fairness, pacing, reaction coverage, visual
+  sync, structure, hierarchy and breakdowns, n/a where a later bead adds what it
+  needs; prints a row per track, the split's means and the mechanics targets, and
+  writes `captures/feel/corpus.json`. The held-out split runs only with
+  `--milestone <n>`, printing its means alone.
+- `npm run reactive:dossier -- --track <id> --round <n>` (or `--split iteration`,
+  or `--anchor` for the authored Galop in play mode) writes a feel dossier to
+  `captures/feel/round-<n>/<id>/`: `metrics.json`/`.md`, `frames.json` (the frame
+  state at 240 Hz), `timeline.png`, section, phrase, moments and
+  honest-against-masher contact sheets, and `mix.ogg` (the track with the honest
+  run's sounds; `--no-mix` skips it).
 - `npm run reactive:parity -- --track orpheus-galop` compares the reactive Galop
   with the authored one, row by row (strikes and sounds on the song map's beats,
   ratings, time at tier 2 and up, groove and grade, kills and enemies per section,
@@ -168,6 +182,7 @@ hero's path are logged too. See [`src/live/log.ts`](src/live/log.ts).
 | `?mode=play&debug=moves` | Play mode with a movement overlay: the hero's speed over the last second, the stride budget, the groove and tier, and the last eight presses with their class and offset (for the Manual QA of docs/design/gameplay-redesign.md). |
 | `?start=1:35` | Start from a song time, in seconds (`?start=95.5`) or `m:ss`. In play mode the level's virtual player plays up to there headless, then hands over after a one-bar count-in. |
 | `?capture&t=88.31` | Render one frozen frame at song time 88.31 s, without audio. |
+| `?nodamage` | The hero takes no damage, so a planned run plays to the end (the feel dossiers' captures). |
 | `?avOffsetMs=-40` | Shift the picture relative to the audio (e.g. Bluetooth latency). |
 | `?seed=1859` | Re-simulate, and regenerate the map, with a different seed. |
 | `?player=casual` | Re-simulate with another virtual player: `perfect`, `skilled` (the demo level's default), `casual` (downbeats only), `moderate` (play mode's stand-in for a moderately competent human), `eighths` (every eighth note, 12 ms deviation), `holder` (holds the direction it steers, changing it at most once a bar, and never taps), or `mash2`, `mash4` and `mash8` (random presses at 2, 4 or 8 a second). |

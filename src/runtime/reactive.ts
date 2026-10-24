@@ -57,7 +57,7 @@ export interface ReactiveTrackRun {
 }
 
 /** Fetch a track's stream and build the reactive level's planner input on it. */
-export async function loadReactiveTrack(track: TrackEntry, lib: ContentLibrary, opts: { seed?: number; player?: SkillProfileName }): Promise<ReactiveTrackRun> {
+export async function loadReactiveTrack(track: TrackEntry, lib: ContentLibrary, opts: { seed?: number; player?: SkillProfileName; noDamage?: boolean }): Promise<ReactiveTrackRun> {
   const res = await fetch(track.streamUrl);
   if (!res.ok) throw new Error(`${track.streamUrl}: HTTP ${res.status}`);
   const { stream, reference } = splitStream(parseStream(await res.json()));
@@ -79,6 +79,7 @@ export async function loadReactiveTrack(track: TrackEntry, lib: ContentLibrary, 
     version: __BUILD_VERSION__,
     reactive: stream,
     knownLength: stream.audio.duration,
+    ...(opts.noDamage ? { checks: { noHeroDamage: true } } : {}),
   };
   return { track, input, reference, audioUrl: new URL(stream.audio.file, track.streamUrl).href };
 }
