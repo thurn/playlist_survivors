@@ -7,6 +7,7 @@
 import type { ContentLibrary } from "../content/loader.ts";
 import { waveRadius } from "../mapgen/openfield.ts";
 import { gemTotals } from "../plan/evaluate.ts";
+import { enemyPos, heroSample } from "../plan/sample.ts";
 import { partnerPress, type Plan } from "../plan/types.ts";
 import { viewRect } from "./camera.ts";
 import { heldAt, heldSpans, type CheckResult } from "./checks.ts";
@@ -38,6 +39,12 @@ function nearest(times: ArrayLike<number>, s: number): number {
   }
   return Math.abs(times[hi] - s) < Math.abs(times[lo] - s) ? hi : lo;
 }
+
+/** A kick-line skeleton standing a beat after the release has closed at least this far on the hero (px): it charges. (Charging, they close 36 px or more; held still, the crowd still shoves them up to about 15.) */
+const KICK_CHARGE = 24;
+/** At least this share of the kick-line skeletons standing at the release are dead within KICK_PAYOFF_BEATS of it. */
+const KICK_PAYOFF = 1 / 2;
+const KICK_PAYOFF_BEATS = 6;
 
 /** A bend comes at most this long after the press whose stride it bends (the diagonal window, with room for a held stride taking over). */
 const BEND_WINDOW = 0.05;
@@ -271,18 +278,39 @@ export function checkPlay(plan: Plan, lib: ContentLibrary, opts: PlayCheckOption
       const got = accents.length - missed.length;
       if (got < 0.8 * accents.length) f.push(`only ${got} of ${accents.length} cleave accents produce a cleave (80% needed); missed ${missed.slice(0, 6).map((a) => fmt(a.s)).join(", ")}`);
     }
-    // Every kick-line skeleton dies within two beats of the release.
+    // The kick line's release pays off: the line charges at the hero, and most of it falls at once.
+    // Each skeleton still standing a beat after the release has closed on the hero (toward where
+    // the hero stood at the release), and at least half of those standing at the release are dead
+    // within six beats of it. (Over 64 seeds the moderate player cuts down 3 to 9 of the 12 while
+    // the line dances; of the rest, all are dead within six beats on all but one seed, 2 of 3 on that.)
     const byId = new Map(plan.enemies.map((e) => [e.id, e]));
+    const warp = new Warp(plan.warp);
     for (const fm of plan.formations) {
       if (lib.formations.get(fm.def)?.shape !== "kick-line") continue;
-      const limit = fm.sRelease + 2 * beatLen(fm.sRelease) + 0.001;
+      const beat = beatLen(fm.sRelease);
+      const w0 = warp.toWorld(fm.sRelease);
+      const w1 = warp.toWorld(fm.sRelease + beat);
+      const h = heroSample(plan, w0);
+      let standing = 0;
+      let dead = 0;
       for (const id of fm.members) {
-        n++;
         const e = byId.get(id)!;
+        if (e.deathW <= w0 || e.spawnW > w0) continue;
+        standing++;
         const last = e.fates[e.fates.length - 1];
         const ds = last?.lethal ? plan.hits[last.hit].s : Infinity;
-        if (ds > limit) f.push(`kick-line skeleton #${id} dies at ${Number.isFinite(ds) ? fmt(ds) : "never"}, more than two beats after the release at ${fmt(fm.sRelease)}`);
+        if (ds <= fm.sRelease + KICK_PAYOFF_BEATS * beat + 0.001) dead++;
+        if (e.deathW <= w1) continue;
+        n++;
+        const p0 = enemyPos(plan, e, w0, { x: 0, y: 0 });
+        const p1 = enemyPos(plan, e, w1, { x: 0, y: 0 });
+        const d = Math.hypot(h.x - p0.x, h.y - p0.y);
+        const closed = d > 0 ? ((p1.x - p0.x) * (h.x - p0.x) + (p1.y - p0.y) * (h.y - p0.y)) / d : Infinity;
+        if (closed < KICK_CHARGE) f.push(`kick-line skeleton #${id} closes ${closed.toFixed(0)} px on the hero in the beat after the release at ${fmt(fm.sRelease)} (at least ${KICK_CHARGE} px)`);
       }
+      if (standing === 0) continue;
+      n++;
+      if (dead < KICK_PAYOFF * standing - 1e-9) f.push(`only ${dead} of the ${standing} kick-line skeletons standing at the release at ${fmt(fm.sRelease)} are dead ${KICK_PAYOFF_BEATS} beats later (half needed)`);
     }
     // At least 75% of threats end as near misses.
     if (plan.threats.length > 0) {
@@ -348,30 +376,109 @@ export function tierShare(plan: Plan, test: (tier: number) => boolean): number {
 /**
  * Each player the groove check knows: the moderate player climbs, and so do the human and late
  * players (timed like real play logs: a 50 ms spread, and 35 or 100 ms late, which the drift
- * mostly takes off); the holder and mashers stay at tier 0.
+ * mostly takes off); the holder and mashers stay at tier 0. The moderate player's rule holds on
+ * every seed. The others' shares move by tens of points from seed to seed (the late player's
+ * between about 20% and 85%), so theirs are judged on the average over the seeds each runs on.
  */
-const TIER_RULES: { match: (player: string) => boolean; what: string; test: (tier: number) => boolean; min: number }[] = [
+const TIER_RULES: { match: (player: string) => boolean; what: string; test: (tier: number) => boolean; min: number; averaged?: true }[] = [
   { match: (p) => p === "moderate", what: "at tier 2 or higher", test: (t) => t >= 2, min: 0.7 },
-  { match: (p) => p === "human", what: "at tier 2 or higher", test: (t) => t >= 2, min: 0.5 },
-  { match: (p) => p === "late", what: "at tier 2 or higher", test: (t) => t >= 2, min: 0.4 },
-  { match: (p) => p === "holder" || /^mash\d+$/.test(p), what: "at tier 0", test: (t) => t === 0, min: 0.8 },
+  { match: (p) => p === "human", what: "at tier 2 or higher", test: (t) => t >= 2, min: 0.5, averaged: true },
+  { match: (p) => p === "late", what: "at tier 2 or higher", test: (t) => t >= 2, min: 0.4, averaged: true },
+  { match: (p) => p === "holder" || /^mash\d+$/.test(p), what: "at tier 0", test: (t) => t === 0, min: 0.8, averaged: true },
 ];
+
+/** A player's share of pulsed time after the galop vamp passing its groove rule, if it has an averaged one. */
+export function averagedGrooveShare(player: string, plan: Plan): number | undefined {
+  const rule = TIER_RULES.find((r) => r.match(player));
+  return rule?.averaged ? tierShare(plan, rule.test) : undefined;
+}
+
+/**
+ * The averaged groove rules, on each player's shares (from averagedGrooveShare) over the seeds it
+ * ran on: the human player is at tier 2 or higher for at least 50% of pulsed time after the galop
+ * vamp on average, the late player for 40%, and the holder and mashers at tier 0 for 80%.
+ */
+export function checkGrooveAverages(shares: ReadonlyMap<string, readonly number[]>): CheckResult[] {
+  const out: CheckResult[] = [];
+  for (const [player, xs] of shares) {
+    const rule = TIER_RULES.find((r) => r.match(player));
+    if (!rule?.averaged || xs.length === 0) continue;
+    const avg = xs.reduce((a, x) => a + x, 0) / xs.length;
+    const failures = avg >= rule.min ? [] : [`the ${player} player was ${rule.what} for ${(avg * 100).toFixed(0)}% of pulsed time after the galop vamp on average over ${xs.length} seeds (at least ${rule.min * 100}%; by seed ${xs.map((x) => `${(x * 100).toFixed(0)}%`).join(", ")})`];
+    out.push({ name: `groove: the ${player} player is ${rule.what} for at least ${rule.min * 100}% of pulsed time, on average`, failures, checked: xs.length });
+  }
+  return out;
+}
+
+/** Song time as m:ss (rounded down). */
+export const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+
+/** A holder's or masher's run, for the curve: when the hero fell, or the song's end if it survived (song seconds). */
+export interface CurveRun {
+  player: string;
+  seed: number;
+  alive: number;
+  fell: boolean;
+}
+
+/** Those who hold keys or mash, and the bands their time alive averages within: each one's, and the four's together. */
+export const FALLERS = ["holder", "mash2", "mash4", "mash8"];
+export const FALL_EACH: [number, number] = [95, 140];
+export const FALL_ALL: [number, number] = [105, 125];
+
+/**
+ * The curve ("The Difficulty Curve" in docs/design/gameplay-redesign.md): the holder and mashers
+ * fall in the climax, judged on their time alive averaged over the seeds they ran on (a run they
+ * survive counts as the song's end, past FALL_EACH): each one's average within FALL_EACH, which
+ * catches one of them becoming immortal or helpless, and the four together within the design's
+ * 1:45-2:05, which catches a shift of the whole curve. (Measured on master over 64 seeds: the
+ * four average 1:56 together, from the 2-a-second masher's 1:51 to the 8-a-second masher's 2:03,
+ * which survives about one seed in five; a single run's fall spreads over about 40 s. Over 8
+ * seeds, one player's average moves about 4.5 s either way and the four's about 3 s, so each band
+ * sits about three standard deviations or more from master's average.) No runs at all fail: the
+ * curve is never passed unchecked.
+ */
+export function checkCurve(runs: readonly CurveRun[]): CheckResult[] {
+  const out: CheckResult[] = [];
+  const all: number[] = [];
+  const mean = (xs: readonly number[]) => xs.reduce((a, x) => a + x, 0) / xs.length;
+  const within = (x: number, [lo, hi]: [number, number]) => x >= lo - 1e-9 && x <= hi + 1e-9;
+  const avgNote = (x: number) => `${mmss(x)} (${x.toFixed(1)} s)`;
+  for (const player of FALLERS) {
+    const mine = runs.filter((r) => r.player === player);
+    if (mine.length === 0) continue;
+    const alive = mine.map((r) => r.alive);
+    all.push(...alive);
+    const avg = mean(alive);
+    const by = mine.map((r) => `${r.seed} ${r.fell ? mmss(r.alive) : "survived"}`).join(", ");
+    out.push({
+      name: `the curve: the ${player} player falls between ${mmss(FALL_EACH[0])} and ${mmss(FALL_EACH[1])} on average`,
+      failures: within(avg, FALL_EACH) ? [] : [`the ${player} player's time alive averages ${avgNote(avg)} over ${mine.length} seeds (${by})`],
+      checked: mine.length,
+    });
+  }
+  out.push({
+    name: `the curve: the holder and mashers fall between ${mmss(FALL_ALL[0])} and ${mmss(FALL_ALL[1])} on average`,
+    failures: all.length === 0 ? ["no holder or masher ran (no average seeds)"] : within(mean(all), FALL_ALL) ? [] : [`their time alive averages ${avgNote(mean(all))} over ${all.length} runs`],
+    checked: all.length,
+  });
+  return out;
+}
 
 /** The eighths player's average groove is within this of the skilled player's. */
 const EIGHTHS_GROOVE = 0.05;
 
 /**
  * The groove tells the players apart, on one seed's runs (by player name): after the galop vamp
- * the moderate player is at tier 2 or higher for at least 70% of pulsed time (the human player 50%,
- * the late player 40%), and the holder and
- * mashers are at tier 0 for at least 80% of it; the eighths player's average groove is within
- * 0.05 of the skilled player's.
+ * the moderate player is at tier 2 or higher for at least 70% of pulsed time, and the eighths
+ * player's average groove is within 0.05 of the skilled player's. (The other players' rules are
+ * averaged over the seeds: checkGrooveAverages.)
  */
 export function checkGroove(runs: ReadonlyMap<string, Plan>): CheckResult[] {
   const out: CheckResult[] = [];
   for (const [player, plan] of runs) {
     const rule = TIER_RULES.find((r) => r.match(player));
-    if (!rule) continue;
+    if (!rule || rule.averaged) continue;
     const share = tierShare(plan, rule.test);
     const failures = share >= rule.min ? [] : [`seed ${plan.seed}: the ${player} player was ${rule.what} for ${(share * 100).toFixed(0)}% of pulsed time after the galop vamp (at least ${rule.min * 100}%)`];
     out.push({ name: `groove: the ${player} player is ${rule.what} for at least ${rule.min * 100}% of pulsed time`, failures, checked: 1 });

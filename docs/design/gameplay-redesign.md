@@ -1040,18 +1040,28 @@ mashers    random presses, 2, 4 and 8 a second            fall 1:45-2:05
 - **Mashers and holders survive to the climax,** so pressing at random still
   works early in the song.
 
-**As shipped (hv-dtz9):** the holder and mashers fall as the table says
-(`check:play` allows 1:30–2:15, since their falls spread across seeds), and
-every honest player survives. The honest players' end health is judged on its
-average over the checked seeds, and reported against its band rather than
-checked: every honest bot ends at 90–100% on average. At tier 2 and up the
-horde hardly reaches the hero, so nearly all of an honest player's damage is
-the minotaur's in the climax, and the heals that follow (its two chickens and
-the bridge's level-up) give it back. Neither fewer heals (no level-up heal,
-half-strength chickens, no boss chickens) nor a denser or faster horde, a
-sturdier boss or smaller tiers brought the averages into the bands. Reaching
-them needs a change to healing or damage, for example damage the groove can't
-outrun at tier 3, which is a new decision for this design.
+**As shipped (hv-dtz9):** the holder and mashers fall as the table says, on
+average, and every honest player survives. The simulation is chaotic: a small,
+unrelated change reshuffles any one seed's run, and over 64 seeds a single
+fall spreads from about 1:25 to past the song's end (the 8-a-second masher
+survives about one seed in five). So `check:play` judges the falls on time
+alive (a run survived counts as the song's end) averaged over eight seeds:
+each player's average within 1:35–2:20, and the four together within the
+table's 1:45–2:05. Measured over eight disjoint sets of eight seeds, the
+four's average spreads about 3 s either way of master's 1:56, so the band
+sits about three standard deviations out on each side, while a 20% cut in
+the damage the hero takes already moves it past 2:05.
+
+The honest players' end health is judged on its average over the checked
+seeds, and reported against its band rather than checked: every honest bot
+ends at 90–100% on average. At tier 2 and up the horde hardly reaches the
+hero, so nearly all of an honest player's damage is the minotaur's in the
+climax, and the heals that follow (its two chickens and the bridge's
+level-up) give it back. Neither fewer heals (no level-up heal, half-strength
+chickens, no boss chickens) nor a denser or faster horde, a sturdier boss or
+smaller tiers brought the averages into the bands. Reaching them needs a
+change to healing or damage, for example damage the groove can't outrun at
+tier 3, which is a new decision for this design.
 
 ## Sound on the Grid
 
@@ -1209,7 +1219,11 @@ hero:
 
 `check:play`, `check:plan`, `check:determinism` and `check:seeds` run these
 rules on seeds 1858, 1859, 7 and 2024. Every failure names the time and the
-entity involved, as today.
+entity involved, as today. Rules that are game rules hold on every run.
+Tuning numbers that a small, unrelated change can push across a threshold on
+one seed (when the holder and mashers fall, and the groove of the players
+timed like play logs, the holder and mashers) are judged on their average
+over eight seeds: those four and 1, 2, 3 and 4.
 
 - **Kept:** causality, determinism, auto-aim, damage adds up, spacing, a clean
   ending, off-screen spawns for the steady stream, live play equal to replay,
@@ -1226,20 +1240,29 @@ entity involved, as today.
   step of the stride period while a key is held.
 - **Sounds on the grid:** every row of the table in
   [Sound on the Grid](#sound-on-the-grid), within 1 ms.
-- **The curve:** the holder and mashers fall as the table in
-  [The Difficulty Curve](#the-difficulty-curve) says, and the honest players
-  survive; their average end health is reported against its band (see the
-  note there).
+- **The curve:** the honest players survive every run; their average end
+  health is reported against its band. The holder and mashers fall as the
+  table in [The Difficulty Curve](#the-difficulty-curve) says, on average
+  over the eight seeds: each one's time alive averages 1:35–2:20, and the
+  four together 1:45–2:05 (see the note there).
 - **Groove:** after the galop vamp, the moderate player is at tier 2 or higher
-  for at least 70% of pulsed time, and holders and mashers are at tier 0 for at
-  least 80% of it. The eighths player's average groove is within 0.05 of the
-  skilled player's. Two players timed like real play logs (a 50 ms spread, and
-  35 ms late, or 100 ms late as with an uncalibrated slow key) are at tier 2
-  or higher for at least 50% and 40% of it: the bots are far tidier than
-  people, and these keep the tuning honest for them.
+  for at least 70% of pulsed time on every seed, and the eighths player's
+  average groove is within 0.05 of the skilled player's. Averaged over the
+  eight seeds, holders and mashers are at tier 0 for at least 80% of it, and
+  two players timed like real play logs (a 50 ms spread, and 35 ms late, or
+  100 ms late as with an uncalibrated slow key) are at tier 2 or higher for
+  at least 50% and 40% of it: the bots are far tidier than people, and these
+  keep the tuning honest for them. (The late player's share alone ranges from
+  about 20% to 85% across seeds.)
+- **Mashing does not pay:** the holder and mashers earn a C on every run.
 - **Signature moments** for the moderate player:
   - at least 80% of eligible accents cleave;
-  - every kick-line skeleton dies within two beats of the release;
+  - the kick line's release pays off: every skeleton still standing a beat
+    after the release has closed at least 24 px on the hero (the line
+    charges; held still, the crowd shoves a skeleton 15 px at most), and at
+    least half of the skeletons standing at the release are dead within six
+    beats of it (the moderate player cuts down most of the line while it
+    dances, so those that don't count);
   - at least 75% of threats end as near misses;
   - every level-up happens on its moment, and an orb is walked into at each;
   - at least 60% of the experience dropped is collected.

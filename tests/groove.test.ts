@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { plannerInput, runPlanner } from "../scripts/lib/plan-node.ts";
 import { grooveAt } from "../src/plan/evaluate.ts";
 import { checkPlan, summarizeChecks } from "../src/planner/checks.ts";
-import { checkPlay } from "../src/planner/play-checks.ts";
+import { checkCurve, checkGrooveAverages, checkPlay } from "../src/planner/play-checks.ts";
 import type { KeyEvent } from "../src/sim/player.ts";
 import { BatchRecorder, type PressTrace } from "../src/sim/recorder.ts";
 import { heroDef } from "../src/content/schema.ts";
@@ -249,5 +249,38 @@ describe("the groove in play", () => {
     const r = run([3, 4, 5, 6].flatMap((s) => tap(s)), [8], rec);
     expect(r.inputs.every((i) => i.class === undefined && i.rating === undefined)).toBe(true);
     expect(rec.grooveS).toEqual([0]);
+  });
+});
+
+describe("the checks judged on averages", () => {
+  it("judges the human, late, holder and masher players on their average share over the seeds, not one seed's", () => {
+    const failing = (shares: Record<string, number[]>) =>
+      checkGrooveAverages(new Map(Object.entries(shares)))
+        .filter((r) => r.failures.length > 0)
+        .map((r) => r.name);
+    // One poor seed among good ones passes; a poor average fails, whatever the best seed.
+    expect(failing({ human: [0.3, 0.7, 0.8], late: [0.2, 0.6, 0.7], mash4: [0.7, 0.95, 1] })).toEqual([]);
+    expect(failing({ human: [0.9, 0.3, 0.2], late: [0.45, 0.3, 0.3], holder: [0.9, 0.6, 0.7], moderate: [0] })).toEqual([
+      "groove: the human player is at tier 2 or higher for at least 50% of pulsed time, on average",
+      "groove: the late player is at tier 2 or higher for at least 40% of pulsed time, on average",
+      "groove: the holder player is at tier 0 for at least 80% of pulsed time, on average",
+    ]);
+  });
+
+  it("judges when the holder and mashers fall on their average time alive, a survived run counting as the song's end", () => {
+    const run = (player: string, alive: number[]) => alive.map((a, seed) => ({ player, seed, alive: a === 0 ? 144.6 : a, fell: a !== 0 }));
+    const failing = (runs: ReturnType<typeof run>) =>
+      checkCurve(runs)
+        .filter((r) => r.failures.length > 0)
+        .map((r) => r.name.replace(/ falls? between .*/, ""));
+    // Master's spread: one early fall and one survival among the 8-a-second masher's runs pass.
+    const master = [...run("holder", [111, 109, 119, 120]), ...run("mash2", [95, 100, 113, 110]), ...run("mash4", [114, 115, 91, 120]), ...run("mash8", [113, 0, 127, 122])];
+    expect(failing(master)).toEqual([]);
+    // An immortal 8-a-second masher fails its own band, though the four's average stays within 1:45-2:05.
+    expect(failing([...master.filter((r) => r.player !== "mash8"), ...run("mash8", [0, 0, 0, 0])])).toEqual(["the curve: the mash8 player"]);
+    // Everyone a little sturdier: each within its own band, the four together past 2:05.
+    expect(failing(master.map((r) => ({ ...r, alive: Math.min(144.6, r.alive + 14) })))).toEqual(["the curve: the holder and mashers"]);
+    // No runs: the curve is never passed unchecked.
+    expect(failing([])).toEqual(["the curve: the holder and mashers"]);
   });
 });

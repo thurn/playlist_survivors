@@ -153,6 +153,26 @@ describe("a play-mode run in the open field", () => {
     expect(orbFailures([{ s: first.s, offers: [], taken: -1 }, ...plan.upgrades.slice(1)])).toEqual([]);
   });
 
+  it("asks the kick line's release to pay off: the line charges at the hero, and most of it falls at once", () => {
+    const kick = (p: typeof plan) => checkPlay(p, input.content, { signature: true }).flatMap((r) => r.failures).filter((f) => f.includes("kick-line"));
+    const fm = plan.formations.find((f) => input.content.formations.get(f.def)?.shape === "kick-line")!;
+    expect(fm).toBeDefined();
+    expect(kick(plan)).toEqual([]);
+    // Released skeletons that stand still: each holds its place from the release on.
+    const wR = new Warp(plan.warp).toWorld(fm.sRelease);
+    const samples = Float32Array.from(plan.enemySamples);
+    const standing = plan.enemies.filter((e) => fm.members.includes(e.id) && e.deathW > wR);
+    for (const e of standing) {
+      const k0 = Math.max(0, Math.round((wR - e.sampleW0) * plan.enemySampleRate));
+      for (let k = k0; k < e.sampleCount; k++) samples.copyWithin((e.sampleOffset + k) * 2, (e.sampleOffset + k0) * 2, (e.sampleOffset + k0) * 2 + 2);
+    }
+    expect(standing.length).toBeGreaterThan(0);
+    expect(kick({ ...plan, enemySamples: samples }).filter((f) => f.includes("closes")).length).toBeGreaterThan(0);
+    // A release that doesn't pay off: those cut down while the line danced still die, and no one standing at the release does.
+    const enemies = plan.enemies.map((e) => (fm.members.includes(e.id) && e.deathW > wR ? { ...e, fates: e.fates.map((x) => ({ ...x, lethal: false })) } : e));
+    expect(kick({ ...plan, enemies }).filter((f) => f.startsWith(`only 0 of the ${standing.length} kick-line skeletons standing`))).toHaveLength(1);
+  });
+
   it("sweeps a transform wave out from the hero for each zone change, and raises the landmarks around the hero", () => {
     const warp = new Warp(plan.warp);
     const zones = plan.sections.map((s) => s.zone).filter((z, i, a) => i > 0 && z !== a[i - 1]);
