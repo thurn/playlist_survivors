@@ -1,0 +1,247 @@
+# The reactive feel corpus (docs/design/reactive-feel.md, "The Corpus"): the one source for each
+# track's split. Sources are relative to `npm run reactive:corpus-add -- --source <dir>` (default
+# ~/Downloads); "archive.zip:path" names a file inside a zip. Near-duplicates share a family, and a
+# family has a single split. Held-out tracks are ingested, never studied (see "Held-out Protocol").
+tracks:
+  - id: notjam-breakbeat-chips
+    source: "NotJamMusicPack/Standalone/BreakbeatChips.wav"
+    title: "Breakbeat Chips"
+    artist: NotJam
+    licence: CC0-1.0
+    split: iteration
+  - id: notjam-chill-menu
+    source: "NotJamMusicPack/Standalone/ChillMenu.wav"
+    title: "Chill Menu"
+    artist: NotJam
+    licence: CC0-1.0
+    split: iteration
+  - id: notjam-critical-theme
+    source: "NotJamMusicPack/Standalone/CriticalTheme.wav"
+    title: "Critical Theme"
+    artist: NotJam
+    licence: CC0-1.0
+    split: iteration
+  - id: notjam-dark-cavern-phone-home
+    source: "NotJamMusicPack/Standalone/DarkCavern_PhoneHome.wav"
+    title: "Dark Cavern (Phone Home)"
+    artist: NotJam
+    licence: CC0-1.0
+    split: iteration
+  - id: notjam-drag-and-dread-theme
+    source: "NotJamMusicPack/Standalone/DragAndDreadTheme.wav"
+    title: "Drag and Dread Theme"
+    artist: NotJam
+    licence: CC0-1.0
+    split: iteration
+  - id: notjam-klepto-linda-caverns-a
+    source: "NotJamMusicPack/Standalone/KleptoLindaCavernsA.wav"
+    title: "Klepto Linda: Caverns A"
+    artist: NotJam
+    licence: CC0-1.0
+    split: iteration
+    family: klepto-linda-caverns
+  - id: notjam-klepto-linda-caverns-b
+    source: "NotJamMusicPack/Standalone/KleptoLindaCavernsB.wav"
+    title: "Klepto Linda: Caverns B"
+    artist: NotJam
+    licence: CC0-1.0
+    split: iteration
+    family: klepto-linda-caverns
+  - id: notjam-klepto-linda-titles
+    source: "NotJamMusicPack/Standalone/KleptoLindaTitles.wav"
+    title: "Klepto Linda: Titles"
+    artist: NotJam
+    licence: CC0-1.0
+    split: iteration
+  - id: notjam-meltdown-theme
+    source: "NotJamMusicPack/Standalone/MeltdownTheme.wav"
+    title: "Meltdown Theme"
+    artist: NotJam
+    licence: CC0-1.0
+    split: iteration
+  - id: notjam-pitcher-perfect-theme
+    source: "NotJamMusicPack/Standalone/PitcherPerfectTheme.wav"
+    title: "Pitcher Perfect Theme"
+    artist: NotJam
+    licence: CC0-1.0
+    split: iteration
+  - id: notjam-switch-with-me-theme
+    source: "NotJamMusicPack/Standalone/SwitchWithMeTheme.wav"
+    title: "Switch With Me Theme"
+    artist: NotJam
+    licence: CC0-1.0
+    split: iteration
+  - id: notjam-type-cast-theme
+    source: "NotJamMusicPack/Standalone/TypeCastTheme.wav"
+    title: "Type Cast Theme"
+    artist: NotJam
+    licence: CC0-1.0
+    split: iteration
+  - id: notjam-untitled-track-01
+    source: "NotJamMusicPack/Standalone/UntitledTrack01.wav"
+    title: "Untitled Track 01"
+    artist: NotJam
+    licence: CC0-1.0
+    split: iteration
+  - id: notjam-crashing-out
+    source: "NotJamMusicPack/Standalone/CrashingOut.wav"
+    title: "Crashing Out"
+    artist: NotJam
+    licence: CC0-1.0
+    split: held-out
+  - id: notjam-descend-gameplay
+    source: "NotJamMusicPack/Standalone/DescendGameplay.wav"
+    title: "Descend Gameplay"
+    artist: NotJam
+    licence: CC0-1.0
+    split: held-out
+  - id: notjam-harold-paranormal-instigator-theme
+    source: "NotJamMusicPack/Standalone/HaroldParanormalInstigatorTheme.wav"
+    title: "Harold: Paranormal Instigator Theme"
+    artist: NotJam
+    licence: CC0-1.0
+    split: held-out
+  - id: notjam-klepto-linda-credits
+    source: "NotJamMusicPack/Standalone/KleptoLindaCredits.wav"
+    title: "Klepto Linda: Credits"
+    artist: NotJam
+    licence: CC0-1.0
+    split: held-out
+  - id: notjam-klepto-linda-mountain-a
+    source: "NotJamMusicPack/Standalone/KleptoLindaMountainA.wav"
+    title: "Klepto Linda: Mountain A"
+    artist: NotJam
+    licence: CC0-1.0
+    split: held-out
+    family: klepto-linda-mountain
+  - id: notjam-klepto-linda-mountain-b
+    source: "NotJamMusicPack/Standalone/KleptoLindaMountainB.wav"
+    title: "Klepto Linda: Mountain B"
+    artist: NotJam
+    licence: CC0-1.0
+    split: held-out
+    family: klepto-linda-mountain
+  - id: notjam-seeing-double
+    source: "NotJamMusicPack/Standalone/SeeingDouble.wav"
+    title: "Seeing Double"
+    artist: NotJam
+    licence: CC0-1.0
+    split: held-out
+  - id: notjam-title-theme-phone-home
+    source: "NotJamMusicPack/Standalone/TitleTheme_PhoneHome.wav"
+    title: "Title Theme (Phone Home)"
+    artist: NotJam
+    licence: CC0-1.0
+    split: held-out
+  - id: notjam-victory-lap
+    source: "NotJamMusicPack/Standalone/VictoryLap.wav"
+    title: "Victory Lap"
+    artist: NotJam
+    licence: CC0-1.0
+    split: held-out
+  - id: notjam-battle-commences
+    source: "not-jam-music-pack-2-wav.zip:WAV/Standalone/battle_commences.wav"
+    title: "Battle Commences"
+    artist: NotJam
+    licence: CC0-1.0
+    split: iteration
+    family: battle
+  - id: notjam-battle-ceases
+    source: "not-jam-music-pack-2-wav.zip:WAV/Standalone/battle_ceases.wav"
+    title: "Battle Ceases"
+    artist: NotJam
+    licence: CC0-1.0
+    split: iteration
+    family: battle
+  - id: notjam-lazy-river-rally
+    source: "not-jam-music-pack-2-wav.zip:WAV/Standalone/lazy_river_rally.wav"
+    title: "Lazy River Rally"
+    artist: NotJam
+    licence: CC0-1.0
+    split: iteration
+  - id: notjam-leading-the-charge
+    source: "not-jam-music-pack-2-wav.zip:WAV/Standalone/leading_the_charge.wav"
+    title: "Leading the Charge"
+    artist: NotJam
+    licence: CC0-1.0
+    split: iteration
+  - id: notjam-lich-king-ascendant
+    source: "not-jam-music-pack-2-wav.zip:WAV/Standalone/lich_king_ascendant.wav"
+    title: "Lich King Ascendant"
+    artist: NotJam
+    licence: CC0-1.0
+    split: iteration
+    family: lich-king
+  - id: notjam-waltz-of-the-lich-king
+    source: "not-jam-music-pack-2-wav.zip:WAV/Standalone/waltz_of_the_lich_king.wav"
+    title: "Waltz of the Lich King"
+    artist: NotJam
+    licence: CC0-1.0
+    split: iteration
+    family: lich-king
+  - id: notjam-locrian-chipdoom
+    source: "not-jam-music-pack-2-wav.zip:WAV/Standalone/locrian_chipdoom.wav"
+    title: "Locrian Chipdoom"
+    artist: NotJam
+    licence: CC0-1.0
+    split: iteration
+  - id: notjam-rainy-foothills
+    source: "not-jam-music-pack-2-wav.zip:WAV/Standalone/rainy_foothills.wav"
+    title: "Rainy Foothills"
+    artist: NotJam
+    licence: CC0-1.0
+    split: iteration
+  - id: notjam-safe-space
+    source: "not-jam-music-pack-2-wav.zip:WAV/Standalone/safe_space.wav"
+    title: "Safe Space"
+    artist: NotJam
+    licence: CC0-1.0
+    split: iteration
+  - id: notjam-the-wall
+    source: "not-jam-music-pack-2-wav.zip:WAV/Standalone/the_wall.wav"
+    title: "The Wall"
+    artist: NotJam
+    licence: CC0-1.0
+    split: iteration
+  - id: notjam-baroque-chips
+    source: "not-jam-music-pack-2-wav.zip:WAV/Standalone/baroque_chips.wav"
+    title: "Baroque Chips"
+    artist: NotJam
+    licence: CC0-1.0
+    split: held-out
+  - id: notjam-crystal-caverns
+    source: "not-jam-music-pack-2-wav.zip:WAV/Standalone/crystal_caverns.wav"
+    title: "Crystal Caverns"
+    artist: NotJam
+    licence: CC0-1.0
+    split: held-out
+  - id: notjam-grumpy-shopkeep
+    source: "not-jam-music-pack-2-wav.zip:WAV/Standalone/grumpy_shopkeep.wav"
+    title: "Grumpy Shopkeep"
+    artist: NotJam
+    licence: CC0-1.0
+    split: held-out
+  - id: notjam-peak-performance
+    source: "not-jam-music-pack-2-wav.zip:WAV/Standalone/peak_performance.wav"
+    title: "Peak Performance"
+    artist: NotJam
+    licence: CC0-1.0
+    split: held-out
+  - id: notjam-pool-party
+    source: "not-jam-music-pack-2-wav.zip:WAV/Standalone/pool_party.wav"
+    title: "Pool Party"
+    artist: NotJam
+    licence: CC0-1.0
+    split: held-out
+  - id: notjam-really-long-arms
+    source: "not-jam-music-pack-2-wav.zip:WAV/Standalone/really_long_arms.wav"
+    title: "Really Long Arms"
+    artist: NotJam
+    licence: CC0-1.0
+    split: held-out
+  - id: notjam-solemn-advance
+    source: "not-jam-music-pack-2-wav.zip:WAV/Standalone/solemn_advance.wav"
+    title: "Solemn Advance"
+    artist: NotJam
+    licence: CC0-1.0
+    split: held-out

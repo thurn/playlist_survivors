@@ -43,7 +43,8 @@ const SELECTED_CSS = "border-color:#ffe08099;color:#fff;background:#ffe08014;";
 /** Show a menu in the overlay; resolves with the chosen index. */
 export function overlayMenu(overlay: Overlay, items: string[], initial = 0): Promise<number> {
   const box = document.createElement("div");
-  box.style.cssText = "display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:6px;";
+  // (A long list scrolls, keeping the selected item in view.)
+  box.style.cssText = "display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:6px;max-height:60vh;overflow-y:auto;";
   box.dataset.menu = "title";
   let selected = initial;
   const els = items.map((label, i) => {
@@ -54,9 +55,11 @@ export function overlayMenu(overlay: Overlay, items: string[], initial = 0): Pro
     box.appendChild(el);
     return el;
   });
-  const select = (i: number) => {
+  const select = (i: number, scroll = false) => {
     selected = (i + items.length) % items.length;
     els.forEach((el, k) => (el.style.cssText = ITEM_CSS + (k === selected ? SELECTED_CSS : "")));
+    // (Keys scroll the selection into view; the pointer, already over it, doesn't.)
+    if (scroll) els[selected].scrollIntoView?.({ block: "nearest" });
   };
   select(initial);
   overlay.prompt.style.display = "none";
@@ -69,8 +72,8 @@ export function overlayMenu(overlay: Overlay, items: string[], initial = 0): Pro
     };
     const onKey = (e: KeyboardEvent) => {
       const k = keyOf(e);
-      if (k === "up") select(selected - 1);
-      else if (k === "down") select(selected + 1);
+      if (k === "up") select(selected - 1, true);
+      else if (k === "down") select(selected + 1, true);
       else if (k === "right" || e.key === "Enter" || e.key === " ") done(selected);
       else return;
       e.preventDefault();

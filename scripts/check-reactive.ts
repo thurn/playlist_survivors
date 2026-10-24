@@ -6,8 +6,8 @@
  * - playable: the Galop through the live runner for 10 s with synthetic key presses (after a
  *   hand-over at 50 s, the prelude being unjudged), with no errors and with strikes, sounds and
  *   judged presses;
- * - fresh streams: every shipped stream's toolVersion is the stream tool's, and each next committed
- *   beat is known by the time the beat before it arrives;
+ * - fresh streams: every shipped stream's toolVersion is the stream tool's (the corpus's too), and
+ *   each next committed beat is known by the time the beat before it arrives;
  * - stream quality: on house-128 and dnb-174, after the first 4 s, 95% of committed beats within
  *   45 ms of a reference beat;
  * - the gate on the Galop: 80% of the prelude's committed beats below the gate;
@@ -30,6 +30,11 @@
  *   tests/reactive-settle.test.ts.)
  * Gate (hv-s4pt.13): on every shipped track, no masher or holder beats reactive-moderate's average
  * groove or its judged time at tier 2+ (damage off).
+ * Gate (the reactive feel corpus): one iteration track simulates end to end with reactive-moderate.
+ *
+ * "Every shipped track" is the regression set (gatedTrackIds: the classical and synthetic groups).
+ * The corpus (docs/design/reactive-feel.md, "The Corpus") stays out of the per-track gates: it would
+ * multiply CI time, and a held-out track must never be a gate.
  * Targets (stage 1): committed-beat accuracy on every track, and the Galop's pulsed sections by section.
  * Targets (stage 2): the players' tiers on dnb-174, pop-arrangement and the Galop; random presses
  * keeping offline "as tracked"; pop-arrangement's pads-only breakdown settling unjudged.
@@ -63,7 +68,7 @@ import type { ReactiveStream, Reference, StreamFile } from "../src/reactive/stre
 import type { SkillProfileName } from "../src/content/schema.ts";
 import { ROOT } from "./lib/files.ts";
 import { propsFromAtlas } from "./lib/plan-node.ts";
-import { inputForStream, reactiveInput, readStreamFile, shippedTrackIds } from "./lib/reactive-node.ts";
+import { corpusTrackIds, gatedTrackIds, inputForStream, reactiveInput, readStreamFile } from "./lib/reactive-node.ts";
 
 const full = process.argv.includes("--full");
 const t0 = performance.now();
@@ -76,13 +81,16 @@ const CHECK_LEVEL = "levels/reactive-check.yaml";
 const PLAYERS: SkillProfileName[] = ["reactive-moderate", "mash4"];
 /** The smoke test hands over to its synthetic keys here: the Galop's opening, where the beat is clear. */
 const SMOKE_FROM_S = 50;
+/** The corpus's smoke run: its shortest iteration track. */
+const CORPUS_SMOKE = "notjam-breakbeat-chips";
 
 const files = new Map<string, StreamFile>();
 const file = (id: string) => {
   if (!files.has(id)) files.set(id, readStreamFile(id));
   return files.get(id)!;
 };
-const tracks = shippedTrackIds();
+const tracks = gatedTrackIds();
+const corpus = corpusTrackIds();
 
 /** A player for an input, on a reference. */
 const playerOn = (ref: Reference, name: SkillProfileName) => (input: PlannerInput) => reactivePlayerFor(prepare(input).ctx, ref, name);
@@ -90,8 +98,9 @@ const playerOn = (ref: Reference, name: SkillProfileName) => (input: PlannerInpu
 // ---------------------------------------------------------------- fresh streams
 {
   const tool = Number(/^TOOL_VERSION = (\d+)/m.exec(readFileSync(join(ROOT, "tools/analysis/src/ps_analysis/stream.py"), "utf8"))?.[1]);
-  const failures = [...tracks, "causality-mix"].filter((id) => file(id).params.toolVersion !== tool).map((id) => `${id}: toolVersion ${file(id).params.toolVersion}, the tool's is ${tool} (npm run reactive:streams)`);
-  results.push({ name: "fresh streams", failures, checked: tracks.length + 1 });
+  const all = [...tracks, "causality-mix", ...corpus];
+  const failures = all.filter((id) => file(id).params.toolVersion !== tool).map((id) => `${id}: toolVersion ${file(id).params.toolVersion}, the tool's is ${tool} (npm run reactive:streams)`);
+  results.push({ name: "fresh streams", failures, checked: all.length });
   // The simulation reads the length of the beat it is in (the next committed beat) wherever it
   // interpolates beats: each next beat must be committed by the time the beat before it arrives.
   const late: string[] = [];
@@ -368,6 +377,25 @@ const causalityCase = (id: string, level: string | undefined, cuts?: number[]): 
   results.push({ name: "every shipped track simulates end to end", failures, checked: 3 * tracks.length });
   results.push({ name: "the honest players' runs pass the plan checks", failures: planFailures, checked: 3 * tracks.length });
   results.push({ name: "reactive-moderate lives to the end of every shipped track", failures: survival, checked: tracks.length });
+}
+
+// ---------------------------------------------------------------- gate: the corpus's smoke run
+{
+  // One iteration track end to end as it plays (damage on): no errors, presses and sounds.
+  const failures: string[] = [];
+  if (!corpusTrackIds("iteration").includes(CORPUS_SMOKE)) failures.push(`${CORPUS_SMOKE} is not a shipped iteration track (npm run reactive:corpus-add)`);
+  else {
+    const run = reactiveInput(file(CORPUS_SMOKE));
+    try {
+      const { plan } = planWithSim(run.input, { props, player: playerOn(run.reference!, "reactive-moderate")(run.input) });
+      const presses = plan.inputs.filter((i) => i.kind === "press").length;
+      lines.push(`the corpus's smoke run (${CORPUS_SMOKE}, reactive-moderate, damage on): ${plan.hud.kills.length} kills, ${presses} presses, groove ${plan.stats.averageGroove.toFixed(2)}`);
+      if (presses === 0 || plan.events.sounds.length === 0) failures.push(`${CORPUS_SMOKE}: no presses or no sounds`);
+    } catch (e) {
+      failures.push(`${CORPUS_SMOKE}: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+  results.push({ name: "the corpus's smoke run", failures, checked: 1 });
 }
 
 // ---------------------------------------------------------------- targets: the difficulty curve and the grade (stage 7)

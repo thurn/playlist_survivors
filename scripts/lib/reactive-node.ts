@@ -12,9 +12,24 @@ import { heroAnimsFromAtlas, readLandmarks, soundOnsets } from "./plan-node.ts";
 export const REACTIVE_DIR = join(ROOT, "public/reactive");
 export const REACTIVE_LEVEL = "levels/reactive.yaml";
 
-/** The playable shipped tracks' ids, from public/reactive/index.json. */
-export function shippedTrackIds(): string[] {
-  return parseReactiveIndex(JSON.parse(readFileSync(join(REACTIVE_DIR, "index.json"), "utf8"))).tracks.map((t) => t.id);
+const shippedTracks = () => parseReactiveIndex(JSON.parse(readFileSync(join(REACTIVE_DIR, "index.json"), "utf8"))).tracks;
+
+/**
+ * The shipped tracks every per-track check:reactive gate runs over: the regression set's classical
+ * and synthetic groups. The corpus stays out (docs/design/reactive-feel.md, "Causality,
+ * Determinism and Checks"): it would multiply CI time, and a held-out track must never be a gate.
+ */
+export function gatedTrackIds(): string[] {
+  return shippedTracks()
+    .filter((t) => t.group === "classical" || t.group === "synthetic")
+    .map((t) => t.id);
+}
+
+/** The reactive feel corpus's shipped tracks (the notjam and cc groups), optionally of one split. */
+export function corpusTrackIds(split?: "iteration" | "held-out"): string[] {
+  return shippedTracks()
+    .filter((t) => (t.group === "notjam" || t.group === "cc") && (split === undefined || t.split === split))
+    .map((t) => t.id);
 }
 
 /** A shipped track's stream file (the check-only causality-mix too). */

@@ -23,9 +23,13 @@ function readStream(rel: string): StreamFile {
 
 describe("shipped reactive tracks", () => {
   const index = parseReactiveIndex(JSON.parse(readFileSync(join(REACTIVE, "index.json"), "utf8")));
+  // The regression set; the corpus (tests/corpus.test.ts) is checked for its structure only, so a
+  // held-out track's content never gates anything (docs/design/reactive-feel.md, "Held-out Protocol").
+  const regression = index.tracks.filter((t) => t.group === "classical" || t.group === "synthetic");
+  const corpus = index.tracks.filter((t) => t.group === "notjam" || t.group === "cc");
 
-  it("lists the ten playable tracks, without the check-only causality-mix", () => {
-    expect(index.tracks.map((t) => t.id).sort()).toEqual(
+  it("lists the ten playable regression tracks, without the check-only causality-mix", () => {
+    expect(regression.map((t) => t.id).sort()).toEqual(
       [
         "accelerando-100-140",
         "beethoven-fifth",
@@ -43,7 +47,7 @@ describe("shipped reactive tracks", () => {
     expect(existsSync(join(REACTIVE, "causality-mix/causality-mix.ogg"))).toBe(true);
   });
 
-  it.each([...index.tracks.map((t) => [t.id, t] as const), ["causality-mix", undefined] as const])(
+  it.each([...regression.map((t) => [t.id, t] as const), ["causality-mix", undefined] as const])(
     "%s has a well-formed stream whose audio exists",
     (id, track?: ReactiveTrack) => {
       const rel = track?.stream ?? `${id}/stream.json`;
@@ -62,8 +66,19 @@ describe("shipped reactive tracks", () => {
   );
 
   it("shares one tool version", () => {
-    const versions = new Set([...index.tracks.map((t) => t.stream), "causality-mix/stream.json"].map((r) => readStream(r).params.toolVersion));
+    const versions = new Set([...regression.map((t) => t.stream), "causality-mix/stream.json"].map((r) => readStream(r).params.toolVersion));
     expect(versions.size).toBe(1);
+  });
+
+  it("ships each corpus track's stream beside its audio", () => {
+    expect(corpus.length).toBeGreaterThan(0);
+    for (const t of corpus) {
+      const s = readStream(t.stream);
+      expect(s.version, t.id).toBe(1);
+      const audio = resolve(dirname(join(REACTIVE, t.stream)), s.audio.file);
+      expect(resolve(REACTIVE, t.audio), t.id).toBe(audio);
+      expect(existsSync(audio), t.id).toBe(true);
+    }
   });
 
   it("reuses the Galop's audio and takes its reference from the song map", () => {

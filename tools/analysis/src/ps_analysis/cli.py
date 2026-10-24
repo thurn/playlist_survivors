@@ -14,6 +14,8 @@ Commands (each prints a JSON summary on stdout):
   --offline-reference] [--write-audio FILE.flac] [--params JSON]`: the belief stream for
   reactive mode
 - `synth NAME --out FILE.ogg [--reference FILE.json]`: a synthetic test track
+- `encode AUDIO --out FILE.ogg [--compression 0.6]`: a track for the corpus, as
+  Ogg Vorbis (the default is libvorbis quality 4)
 
 Commands that need the excerpt find it as `public/audio/<audio.file>` in a
 parent directory of the song map or of the working directory, unless
@@ -253,6 +255,42 @@ def cmd_stream(a: argparse.Namespace) -> int:
     return 0
 
 
+def write_vorbis(out: Path, y: Any, sr: int, compression: float) -> None:
+    """Writes samples (frames, or frames x channels) as Ogg Vorbis.
+
+    The file appears only once complete (written beside it, then renamed), so an
+    interrupted encode never leaves a short file that looks finished.
+    """
+    import soundfile as sf
+
+    channels = 1 if y.ndim == 1 else y.shape[1]
+    out.parent.mkdir(parents=True, exist_ok=True)
+    part = out.with_name(out.name + ".part")
+    # libsndfile's Vorbis encoder crashes on long single writes: write in blocks.
+    with sf.SoundFile(
+        part,
+        "w",
+        sr,
+        channels,
+        format="OGG",
+        subtype="VORBIS",
+        compression_level=compression,
+    ) as f:
+        for i in range(0, len(y), sr):
+            f.write(y[i : i + sr])
+    part.replace(out)
+
+
+def cmd_encode(a: argparse.Namespace) -> int:
+    import soundfile as sf
+
+    y, sr = sf.read(a.audio, dtype="float32", always_2d=False)
+    out = Path(a.out)
+    write_vorbis(out, y, sr, a.compression)
+    _emit({"out": str(out), "seconds": round(len(y) / sr, 3), "sampleRate": sr})
+    return 0
+
+
 def cmd_synth(a: argparse.Namespace) -> int:
     import soundfile as sf
 
@@ -262,18 +300,7 @@ def cmd_synth(a: argparse.Namespace) -> int:
     out = Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     if out.suffix == ".ogg":
-        # libsndfile's Vorbis encoder crashes on long single writes: write in blocks.
-        with sf.SoundFile(
-            out,
-            "w",
-            synth.SR,
-            1,
-            format="OGG",
-            subtype="VORBIS",
-            compression_level=a.compression,
-        ) as f:
-            for i in range(0, len(y), synth.SR):
-                f.write(y[i : i + synth.SR])
+        write_vorbis(out, y, synth.SR, a.compression)
     else:
         sf.write(out, y, synth.SR)
     if a.reference:
@@ -406,6 +433,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Vorbis compression level, 0 (best quality) to 1 (smallest; default 0.6)",
     )
     c.set_defaults(func=cmd_synth)
+
+    c = sub.add_parser("encode", help="encode a corpus track as Ogg Vorbis")
+    c.add_argument("audio")
+    c.add_argument("--out", required=True, help="the .ogg to write")
+    c.add_argument(
+        "--compression",
+        type=float,
+        default=0.6,
+        help="Vorbis compression level, 0 (best quality) to 1 (smallest; default 0.6, quality 4)",
+    )
+    c.set_defaults(func=cmd_encode)
     return p
 
 

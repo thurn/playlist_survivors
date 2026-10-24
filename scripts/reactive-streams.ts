@@ -2,7 +2,7 @@
  * Regenerates every shipped reactive track's belief stream and
  * public/reactive/index.json:
  *
- *   npm run reactive:streams [-- <id> ...]
+ *   npm run reactive:streams [-- <id> ...] [--jobs <n>] [--resynth]
  *
  * Run it whenever the stream code changes (and bump its TOOL_VERSION). The
  * synthetic tracks' Ogg audio and exact reference (reference.json beside it)
@@ -10,81 +10,88 @@
  * Vorbis files differ byte for byte between encodes; their streams always come
  * from the Ogg files, so encoder delay cannot shift them, and from that saved
  * reference, so it always matches the audio. causality-mix is check-only and
- * stays out of the index.
+ * stays out of the index. The corpus's tracks (corpus/manifest.yaml, ingested
+ * with npm run reactive:corpus-add) are restreamed from their shipped Ogg files
+ * too. `--jobs` runs that many at once (default: two thirds of the cores), the
+ * longest first.
  */
-import { execFileSync } from "node:child_process";
-import { existsSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
-import type { ReactiveIndex, ReactiveTrack } from "../src/reactive/tracks.ts";
 import { ROOT } from "./lib/files.ts";
+import { analysis, corpusAudio, jobsOption, readManifest, REACTIVE_DIR, REGRESSION_TRACKS, regressionAudio, runJobs, writeIndex } from "./lib/corpus.ts";
 
-interface Track {
-  id: string;
-  title: string;
-  artist: string;
-  group: "classical" | "synthetic";
-  /** Listed in the index (false for check-only tracks). */
-  listed: boolean;
-  /** Stream parameter overrides (ps-analysis stream --params), by the tool's field names. */
-  params?: Record<string, number>;
-}
-
-const TRACKS: Track[] = [
-  { id: "orpheus-galop", title: "Orpheus in the Underworld: Galop", artist: "Offenbach", group: "classical", listed: true },
-  { id: "william-tell-finale", title: "William Tell Overture: Finale", artist: "Rossini", group: "classical", listed: true },
-  { id: "mountain-king", title: "In the Hall of the Mountain King", artist: "Grieg", group: "classical", listed: true },
-  { id: "bumblebee", title: "Flight of the Bumblebee", artist: "Rimsky-Korsakov", group: "classical", listed: true },
-  { id: "beethoven-fifth", title: "Symphony No. 5: Allegro con brio", artist: "Beethoven", group: "classical", listed: true },
-  { id: "house-128", title: "House at 128", artist: "Synthetic", group: "synthetic", listed: true },
-  { id: "dnb-174", title: "Drum and Bass at 174", artist: "Synthetic", group: "synthetic", listed: true },
-  { id: "hiphop-92-swing", title: "Swung Hip-Hop at 92", artist: "Synthetic", group: "synthetic", listed: true },
-  { id: "accelerando-100-140", title: "Accelerando, 100 to 140", artist: "Synthetic", group: "synthetic", listed: true },
-  { id: "pop-arrangement", title: "Pop Arrangement", artist: "Synthetic", group: "synthetic", listed: true },
-  // The check's short track: 20 s statistics windows (docs/design/reactive-audio.md, "Cuts"), and
-  // strong onsets from the 95th percentile, since its accents (every 4 s) outnumber the top 2%.
-  { id: "causality-mix", title: "Causality Mix", artist: "Synthetic", group: "synthetic", listed: false, params: { change_stats_s: 20, change_threshold_s: 20, end_window_s: 20, strong_percentile: 95 } },
-];
-
-const { values, positionals } = parseArgs({ allowPositionals: true, options: { resynth: { type: "boolean" } } });
-const unknown = positionals.filter((id) => !TRACKS.some((t) => t.id === id));
+const { values, positionals } = parseArgs({ allowPositionals: true, options: { resynth: { type: "boolean" }, jobs: { type: "string" } } });
+const corpus = readManifest();
+const known = [...REGRESSION_TRACKS.map((t) => t.id), ...corpus.map((t) => t.id)];
+const unknown = positionals.filter((id) => !known.includes(id));
 if (unknown.length) {
   console.error(`unknown tracks: ${unknown.join(", ")}`);
   process.exit(2);
 }
-const reactive = join(ROOT, "public/reactive");
+const jobs = jobsOption(values.jobs);
+const wanted = (id: string) => positionals.length === 0 || positionals.includes(id);
 
-function analysis(...args: string[]): void {
-  execFileSync("uv", ["run", "--project", join(ROOT, "tools/analysis"), "ps-analysis", ...args], { stdio: "inherit", cwd: ROOT });
+interface Job {
+  id: string;
+  /** Held-out tracks print nothing of their analysis (docs/design/reactive-feel.md, "Held-out Protocol"). */
+  quiet: boolean;
+  run(): Promise<string>;
 }
 
-/** The audio path relative to public/reactive/. */
-function audioOf(t: Track): string {
-  return t.group === "synthetic" ? `${t.id}/${t.id}.ogg` : `../audio/${t.id}.flac`;
-}
-
-for (const t of TRACKS) {
-  if (positionals.length && !positionals.includes(t.id)) continue;
-  const audio = join(reactive, audioOf(t));
-  const out = join(reactive, t.id, "stream.json");
+const todo: Job[] = [];
+for (const t of REGRESSION_TRACKS) {
+  if (!wanted(t.id)) continue;
+  const audio = join(REACTIVE_DIR, regressionAudio(t));
+  const out = join(REACTIVE_DIR, t.id, "stream.json");
   const params = t.params ? ["--params", JSON.stringify(t.params)] : [];
-  console.log(`== ${t.id}`);
-  if (t.group === "synthetic") {
-    const reference = join(reactive, t.id, "reference.json");
-    if (values.resynth || !existsSync(audio) || !existsSync(reference)) analysis("synth", t.id, "--out", audio, "--reference", reference);
-    analysis("stream", audio, "--out", out, "--reference", reference, ...params);
-  } else if (existsSync(join(ROOT, "songs", t.id, "songmap.json"))) {
-    analysis("stream", audio, "--out", out, "--songmap", join(ROOT, "songs", t.id, "songmap.json"), ...params);
-  } else {
-    analysis("stream", audio, "--out", out, "--offline-reference", ...params);
+  todo.push({
+    id: t.id,
+    quiet: false,
+    run: async () => {
+      if (t.group === "synthetic") {
+        const reference = join(REACTIVE_DIR, t.id, "reference.json");
+        if (values.resynth || !existsSync(audio) || !existsSync(reference)) await analysis("synth", t.id, "--out", audio, "--reference", reference);
+        return analysis("stream", audio, "--out", out, "--reference", reference, ...params);
+      }
+      const songmap = join(ROOT, "songs", t.id, "songmap.json");
+      if (existsSync(songmap)) return analysis("stream", audio, "--out", out, "--songmap", songmap, ...params);
+      return analysis("stream", audio, "--out", out, "--offline-reference", ...params);
+    },
+  });
+}
+for (const t of corpus) {
+  if (!wanted(t.id)) continue;
+  const audio = join(REACTIVE_DIR, corpusAudio(t));
+  if (!existsSync(audio)) {
+    if (positionals.includes(t.id)) console.error(`${t.id} is not ingested yet (npm run reactive:corpus-add)`);
+    continue;
   }
+  todo.push({ id: t.id, quiet: t.split === "held-out", run: () => analysis("stream", audio, "--out", join(REACTIVE_DIR, t.id, "stream.json"), "--offline-reference") });
 }
 
-const index: ReactiveIndex = {
-  version: 1,
-  tracks: TRACKS.filter((t) => t.listed).map(
-    (t): ReactiveTrack => ({ id: t.id, title: t.title, artist: t.artist, group: t.group, stream: `${t.id}/stream.json`, audio: audioOf(t) }),
-  ),
+// The longest tracks first (by their current streams' lengths, a track without one first), so the
+// last to finish are short.
+const lengthOf = (id: string) => {
+  try {
+    return (JSON.parse(readFileSync(join(REACTIVE_DIR, id, "stream.json"), "utf8")) as { audio: { duration: number } }).audio.duration;
+  } catch {
+    return Number.MAX_VALUE;
+  }
 };
-writeFileSync(join(reactive, "index.json"), `${JSON.stringify(index, null, 1)}\n`);
-console.log(`wrote public/reactive/index.json (${index.tracks.length} tracks)`);
+const lengths = new Map(todo.map((j) => [j.id, lengthOf(j.id)]));
+todo.sort((a, b) => lengths.get(b.id)! - lengths.get(a.id)!);
+
+const t0 = performance.now();
+let failed = false;
+await runJobs(todo, jobs, async (j) => {
+  const s0 = performance.now();
+  const summary = await j.run();
+  console.log(`== ${j.id} (${((performance.now() - s0) / 1000).toFixed(1)} s)${j.quiet ? "" : `\n${summary.trim()}`}`);
+}).catch((e: Error) => {
+  failed = true;
+  console.error(e.message);
+});
+const index = writeIndex(corpus);
+console.log(`restreamed ${todo.length} tracks in ${((performance.now() - t0) / 1000).toFixed(0)} s with ${jobs} jobs; wrote public/reactive/index.json (${index.tracks.length} tracks)`);
+if (failed) process.exit(1);

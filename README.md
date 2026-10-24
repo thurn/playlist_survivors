@@ -101,9 +101,10 @@ the audio does (or after the finale), graded on the average groove after the fir
 16 s by reactive mode's own thresholds (an honest run sits near 1). The difficulty
 is tuned so honest players live and mashers fall in the Galop's climax.
 
-**Reactive (experimental)** on the title screen opens the track list: the Galop,
-the four other classical excerpts, five synthetic tracks with exact beats, and your
-own. The pause menu and the end card work as in play mode; **Restart section**
+**Reactive (experimental)** on the title screen opens the track list, by group:
+the Galop and the four other classical excerpts, five synthetic tracks with exact
+beats, the reactive feel corpus (39 CC0 NotJam tracks, the held-out ones marked;
+[design](docs/design/reactive-feel.md)), and your own. The pause menu and the end card work as in play mode; **Restart section**
 restarts the song (there is one section), each track keeps its own best grade, and
 **Watch the demo** plays the track's run by `reactive-skilled`.
 
@@ -111,6 +112,11 @@ restarts the song (there is one section), each track keeps its own best grade, a
   one of your own audio files (a few seconds of analysis per minute of music)
   into the gitignored `reactive-local/<id>/`, which the dev server serves; it
   joins the track list as a local track. Builds never include it.
+- `npm run reactive:corpus-add [-- <id> ...] [--source ~/Downloads] [--jobs <n>]`
+  ingests the corpus listed in `corpus/manifest.yaml` (the one source for each
+  track's iteration or held-out split; credits in `corpus/CREDITS.md`): each
+  missing track encoded to Ogg Vorbis, its stream written, and the index updated.
+  A second run changes nothing.
 - `npm run reactive:parity -- --track orpheus-galop` compares the reactive Galop
   with the authored one, row by row (strikes and sounds on the song map's beats,
   ratings, time at tier 2 and up, groove and grade, kills and enemies per section,
@@ -182,7 +188,7 @@ Every important property is checkable by a command:
 | `npm run bench` | Headed Chrome, whole song at real-time speed: fails if JavaScript frame time exceeds 8 ms or GPU time 10 ms at p95, or any frame exceeds 33 ms. `-- --play` benchmarks live play instead (theme A to the climax, a late-arriving press on every beat, so it includes the rollbacks). |
 | `npm run test:e2e` | Playwright: Watch the demo is the skilled player's run in the open field with tiers and upgrade orbs, capture hook, metronome flash on the beat, broken level script shows an error and never starts, reload uses the cached plan, `?player=` re-simulates with another profile, `?mode=play&player=holder` and `mash4` plan and play back; play mode at `?start=1:10` (a stride per press, the sword on every beat, a mashed press rated once, Esc pauses and resumes); and reactive mode on the Galop's stream from 0:55 (strikes on committed beats, sounds, judged presses, Watch my run replaying exactly) and its demo (`reactive-skilled` planned and played back). |
 | `npm run qa` | Playback in Chromium over the Manual QA items a machine can judge: simulation time, the skilled and casual players' sounds on the grid (every row of the design's Sound on the Grid table), impacts on the grid and the reward spectrum, audio clock rate, picture/audio offset, frame rate, hidden-tab recovery (a 3 s main-thread stall), resize letterboxing, click track, finale clearance, and a listening pass over the offline-rendered mix (clipping, effects level, music in front, no wall of noise, effects on time); then live play mode with synthetic key presses (a press strides at once, impacts on the grid, mashing, diagonals, held keys striding on the beat, stomps and rock steps, the same 140 px/s holding, tapping quarter or eighth notes and mashing, frame time, Esc and losing focus, Watch my run identical across a level-up, a mid-song start); writes `captures/qa/report.md` and review frames. `-- --play` runs only the play-mode items. |
-| `npm run check:reactive` | Reactive mode ([design](docs/design/reactive-audio.md)): the causality check (on `causality-mix`, every stream entry known after a cut is changed and the song map, simulation, sounds and frames must match the true run before it, with reactive-moderate's and mash4's presses; a negative control that reads the evidence a second ahead must fail), determinism, fresh streams (each shipped stream's `toolVersion` is the tool's), stream quality on `house-128` and `dnb-174`, the gate on the Galop's prelude, sounds on committed beats, and a headless smoke test (the Galop through the live runner for 10 s with synthetic presses), and every shipped track end to end; prints committed-beat accuracy per track. `-- --full` adds the causality check on every shipped track, a cut every 10 s, and stage 7's difficulty and grade targets. In CI. |
+| `npm run check:reactive` | Reactive mode ([design](docs/design/reactive-audio.md)): the causality check (on `causality-mix`, every stream entry known after a cut is changed and the song map, simulation, sounds and frames must match the true run before it, with reactive-moderate's and mash4's presses; a negative control that reads the evidence a second ahead must fail), determinism, fresh streams (each shipped stream's `toolVersion` is the tool's), stream quality on `house-128` and `dnb-174`, the gate on the Galop's prelude, sounds on committed beats, and a headless smoke test (the Galop through the live runner for 10 s with synthetic presses), and every shipped track end to end, plus a smoke run of one corpus iteration track; prints committed-beat accuracy per track. "Every shipped track" is the regression set: the corpus stays out of the per-track gates (only fresh streams covers it). `-- --full` adds the causality check on every shipped track, a cut every 10 s, and stage 7's difficulty and grade targets. In CI. |
 | `npm run check:analysis` | The analysis tool's pytest suite and ruff. |
 | `npm run check:all` | All of the above except captures, QA and the benchmark. |
 
@@ -210,8 +216,9 @@ play: levels/orpheus-galop.play.yaml (extends the demo's) ──Sim(open field, 
 - `public/reactive/` — reactive mode's tracks ([design](docs/design/reactive-audio.md)):
   each track's belief stream (what a causal analysis knows of the music, every
   entry stamped with the time it becomes known), the synthetic tracks' Ogg audio
-  (`ps-analysis synth`) and `index.json`. `npm run reactive:streams` regenerates
-  them all whenever the stream code changes. `npm run reactive:add -- <audio file>
+  (`ps-analysis synth`), the corpus's Ogg audio (`notjam-*`, `cc-*`) and
+  `index.json`. `npm run reactive:streams [-- --jobs <n>]` regenerates them all,
+  in parallel (default: two thirds of the cores), whenever the stream code changes. `npm run reactive:add -- <audio file>
   [--id <id>] [--title <title>]` adds your own track under the gitignored
   `reactive-local/`, which the dev server serves at `/reactive-local/`.
 - `tools/baker/`, `assets-src/` — the asset baker: ULPC character compositing,

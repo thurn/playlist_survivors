@@ -32,6 +32,7 @@
     "log:play": "tsx scripts/play-log.ts",
     "reactive:add": "tsx scripts/reactive-add.ts",
     "reactive:streams": "tsx scripts/reactive-streams.ts",
+    "reactive:corpus-add": "tsx scripts/reactive-corpus-add.ts",
     "reactive:parity": "tsx scripts/reactive-parity.ts",
     "reactive:replay": "tsx scripts/reactive-replay.ts"
   },

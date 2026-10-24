@@ -723,3 +723,29 @@ def test_forecasts_read_only_entries_known_by_then() -> None:
     for cut in sorted({x["knownAt"] for x in full} | {10.0, 33.33, 47.5}):
         part = acc.forecasts(known_by(beats, cut, 0.0), known_by(onsets, cut, 0.0), P)
         assert known_by(part, cut, 0.0) == known_by(full, cut, 0.0), cut
+
+
+def test_encode_writes_stereo_vorbis(tmp_path: Path) -> None:
+    import soundfile as sf
+
+    from ps_analysis import cli
+
+    sr = 44100
+    t = np.arange(int(2.5 * sr)) / sr
+    y = np.stack([np.sin(2 * math.pi * 440 * t), np.sin(2 * math.pi * 660 * t)], axis=1)
+    src = tmp_path / "in.wav"
+    sf.write(src, (0.5 * y).astype(np.float32), sr)
+    out = tmp_path / "out" / "track.ogg"
+    with pytest.raises(SystemExit) as done:
+        cli.main(["encode", str(src), "--out", str(out)])
+    assert done.value.code == 0
+    info = sf.info(out)
+    assert (info.format, info.subtype, info.channels, info.samplerate) == (
+        "OGG",
+        "VORBIS",
+        2,
+        sr,
+    )
+    assert info.duration == pytest.approx(2.5, abs=0.01)
+    # (Written beside it, then renamed: nothing partial is left.)
+    assert sorted(p.name for p in out.parent.iterdir()) == ["track.ogg"]

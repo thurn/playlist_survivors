@@ -80,6 +80,396 @@
    "group": "synthetic",
    "stream": "pop-arrangement/stream.json",
    "audio": "pop-arrangement/pop-arrangement.ogg"
+  },
+  {
+   "id": "notjam-breakbeat-chips",
+   "title": "Breakbeat Chips",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-breakbeat-chips/stream.json",
+   "audio": "notjam-breakbeat-chips/notjam-breakbeat-chips.ogg",
+   "split": "iteration",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-chill-menu",
+   "title": "Chill Menu",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-chill-menu/stream.json",
+   "audio": "notjam-chill-menu/notjam-chill-menu.ogg",
+   "split": "iteration",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-critical-theme",
+   "title": "Critical Theme",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-critical-theme/stream.json",
+   "audio": "notjam-critical-theme/notjam-critical-theme.ogg",
+   "split": "iteration",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-dark-cavern-phone-home",
+   "title": "Dark Cavern (Phone Home)",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-dark-cavern-phone-home/stream.json",
+   "audio": "notjam-dark-cavern-phone-home/notjam-dark-cavern-phone-home.ogg",
+   "split": "iteration",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-drag-and-dread-theme",
+   "title": "Drag and Dread Theme",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-drag-and-dread-theme/stream.json",
+   "audio": "notjam-drag-and-dread-theme/notjam-drag-and-dread-theme.ogg",
+   "split": "iteration",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-klepto-linda-caverns-a",
+   "title": "Klepto Linda: Caverns A",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-klepto-linda-caverns-a/stream.json",
+   "audio": "notjam-klepto-linda-caverns-a/notjam-klepto-linda-caverns-a.ogg",
+   "split": "iteration",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-klepto-linda-caverns-b",
+   "title": "Klepto Linda: Caverns B",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-klepto-linda-caverns-b/stream.json",
+   "audio": "notjam-klepto-linda-caverns-b/notjam-klepto-linda-caverns-b.ogg",
+   "split": "iteration",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-klepto-linda-titles",
+   "title": "Klepto Linda: Titles",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-klepto-linda-titles/stream.json",
+   "audio": "notjam-klepto-linda-titles/notjam-klepto-linda-titles.ogg",
+   "split": "iteration",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-meltdown-theme",
+   "title": "Meltdown Theme",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-meltdown-theme/stream.json",
+   "audio": "notjam-meltdown-theme/notjam-meltdown-theme.ogg",
+   "split": "iteration",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-pitcher-perfect-theme",
+   "title": "Pitcher Perfect Theme",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-pitcher-perfect-theme/stream.json",
+   "audio": "notjam-pitcher-perfect-theme/notjam-pitcher-perfect-theme.ogg",
+   "split": "iteration",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-switch-with-me-theme",
+   "title": "Switch With Me Theme",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-switch-with-me-theme/stream.json",
+   "audio": "notjam-switch-with-me-theme/notjam-switch-with-me-theme.ogg",
+   "split": "iteration",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-type-cast-theme",
+   "title": "Type Cast Theme",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-type-cast-theme/stream.json",
+   "audio": "notjam-type-cast-theme/notjam-type-cast-theme.ogg",
+   "split": "iteration",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-untitled-track-01",
+   "title": "Untitled Track 01",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-untitled-track-01/stream.json",
+   "audio": "notjam-untitled-track-01/notjam-untitled-track-01.ogg",
+   "split": "iteration",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-crashing-out",
+   "title": "Crashing Out",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-crashing-out/stream.json",
+   "audio": "notjam-crashing-out/notjam-crashing-out.ogg",
+   "split": "held-out",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-descend-gameplay",
+   "title": "Descend Gameplay",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-descend-gameplay/stream.json",
+   "audio": "notjam-descend-gameplay/notjam-descend-gameplay.ogg",
+   "split": "held-out",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-harold-paranormal-instigator-theme",
+   "title": "Harold: Paranormal Instigator Theme",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-harold-paranormal-instigator-theme/stream.json",
+   "audio": "notjam-harold-paranormal-instigator-theme/notjam-harold-paranormal-instigator-theme.ogg",
+   "split": "held-out",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-klepto-linda-credits",
+   "title": "Klepto Linda: Credits",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-klepto-linda-credits/stream.json",
+   "audio": "notjam-klepto-linda-credits/notjam-klepto-linda-credits.ogg",
+   "split": "held-out",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-klepto-linda-mountain-a",
+   "title": "Klepto Linda: Mountain A",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-klepto-linda-mountain-a/stream.json",
+   "audio": "notjam-klepto-linda-mountain-a/notjam-klepto-linda-mountain-a.ogg",
+   "split": "held-out",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-klepto-linda-mountain-b",
+   "title": "Klepto Linda: Mountain B",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-klepto-linda-mountain-b/stream.json",
+   "audio": "notjam-klepto-linda-mountain-b/notjam-klepto-linda-mountain-b.ogg",
+   "split": "held-out",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-seeing-double",
+   "title": "Seeing Double",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-seeing-double/stream.json",
+   "audio": "notjam-seeing-double/notjam-seeing-double.ogg",
+   "split": "held-out",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-title-theme-phone-home",
+   "title": "Title Theme (Phone Home)",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-title-theme-phone-home/stream.json",
+   "audio": "notjam-title-theme-phone-home/notjam-title-theme-phone-home.ogg",
+   "split": "held-out",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-victory-lap",
+   "title": "Victory Lap",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-victory-lap/stream.json",
+   "audio": "notjam-victory-lap/notjam-victory-lap.ogg",
+   "split": "held-out",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-battle-commences",
+   "title": "Battle Commences",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-battle-commences/stream.json",
+   "audio": "notjam-battle-commences/notjam-battle-commences.ogg",
+   "split": "iteration",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-battle-ceases",
+   "title": "Battle Ceases",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-battle-ceases/stream.json",
+   "audio": "notjam-battle-ceases/notjam-battle-ceases.ogg",
+   "split": "iteration",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-lazy-river-rally",
+   "title": "Lazy River Rally",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-lazy-river-rally/stream.json",
+   "audio": "notjam-lazy-river-rally/notjam-lazy-river-rally.ogg",
+   "split": "iteration",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-leading-the-charge",
+   "title": "Leading the Charge",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-leading-the-charge/stream.json",
+   "audio": "notjam-leading-the-charge/notjam-leading-the-charge.ogg",
+   "split": "iteration",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-lich-king-ascendant",
+   "title": "Lich King Ascendant",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-lich-king-ascendant/stream.json",
+   "audio": "notjam-lich-king-ascendant/notjam-lich-king-ascendant.ogg",
+   "split": "iteration",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-waltz-of-the-lich-king",
+   "title": "Waltz of the Lich King",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-waltz-of-the-lich-king/stream.json",
+   "audio": "notjam-waltz-of-the-lich-king/notjam-waltz-of-the-lich-king.ogg",
+   "split": "iteration",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-locrian-chipdoom",
+   "title": "Locrian Chipdoom",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-locrian-chipdoom/stream.json",
+   "audio": "notjam-locrian-chipdoom/notjam-locrian-chipdoom.ogg",
+   "split": "iteration",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-rainy-foothills",
+   "title": "Rainy Foothills",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-rainy-foothills/stream.json",
+   "audio": "notjam-rainy-foothills/notjam-rainy-foothills.ogg",
+   "split": "iteration",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-safe-space",
+   "title": "Safe Space",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-safe-space/stream.json",
+   "audio": "notjam-safe-space/notjam-safe-space.ogg",
+   "split": "iteration",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-the-wall",
+   "title": "The Wall",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-the-wall/stream.json",
+   "audio": "notjam-the-wall/notjam-the-wall.ogg",
+   "split": "iteration",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-baroque-chips",
+   "title": "Baroque Chips",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-baroque-chips/stream.json",
+   "audio": "notjam-baroque-chips/notjam-baroque-chips.ogg",
+   "split": "held-out",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-crystal-caverns",
+   "title": "Crystal Caverns",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-crystal-caverns/stream.json",
+   "audio": "notjam-crystal-caverns/notjam-crystal-caverns.ogg",
+   "split": "held-out",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-grumpy-shopkeep",
+   "title": "Grumpy Shopkeep",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-grumpy-shopkeep/stream.json",
+   "audio": "notjam-grumpy-shopkeep/notjam-grumpy-shopkeep.ogg",
+   "split": "held-out",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-peak-performance",
+   "title": "Peak Performance",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-peak-performance/stream.json",
+   "audio": "notjam-peak-performance/notjam-peak-performance.ogg",
+   "split": "held-out",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-pool-party",
+   "title": "Pool Party",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-pool-party/stream.json",
+   "audio": "notjam-pool-party/notjam-pool-party.ogg",
+   "split": "held-out",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-really-long-arms",
+   "title": "Really Long Arms",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-really-long-arms/stream.json",
+   "audio": "notjam-really-long-arms/notjam-really-long-arms.ogg",
+   "split": "held-out",
+   "licence": "CC0-1.0"
+  },
+  {
+   "id": "notjam-solemn-advance",
+   "title": "Solemn Advance",
+   "artist": "NotJam",
+   "group": "notjam",
+   "stream": "notjam-solemn-advance/stream.json",
+   "audio": "notjam-solemn-advance/notjam-solemn-advance.ogg",
+   "split": "held-out",
+   "licence": "CC0-1.0"
   }
  ]
 }

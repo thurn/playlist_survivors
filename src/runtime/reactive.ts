@@ -9,7 +9,7 @@ import type { SkillProfileName } from "../content/schema.ts";
 import type { PlannerInput } from "../planner/context.ts";
 import { reactiveSongMap } from "../reactive/songmap.ts";
 import { parseStream, splitStream, type Reference } from "../reactive/stream.ts";
-import { parseReactiveIndex, type ReactiveTrack } from "../reactive/tracks.ts";
+import { parseReactiveIndex, TRACK_GROUPS, type ReactiveTrack } from "../reactive/tracks.ts";
 import type { Overlay } from "./app.ts";
 import { landmarks, levelFile, levelResolver } from "./sources.ts";
 import { loadBestGrade, overlayMenu } from "./title.ts";
@@ -83,13 +83,31 @@ export async function loadReactiveTrack(track: TrackEntry, lib: ContentLibrary, 
   return { track, input, reference, audioUrl: new URL(stream.audio.file, track.streamUrl).href };
 }
 
-/** The track list: each track with its best grade, and Back. Resolves with the chosen track, or undefined for Back. */
+/** The track groups' names on the title screen. */
+const GROUP_NAMES: Record<ReactiveTrack["group"], string> = { classical: "Classical", synthetic: "Synthetic", notjam: "NotJam (the corpus)", cc: "Creative Commons (the corpus)", local: "Your tracks" };
+
+/**
+ * The track list: with tracks in more than one group, the groups first (Back to the title), then a
+ * group's tracks, each with its best grade (Back to the groups). Resolves with the chosen track, or
+ * undefined for Back.
+ */
 export async function trackMenu(overlay: Overlay, tracks: readonly TrackEntry[]): Promise<TrackEntry | undefined> {
   overlay.status.textContent = "Reactive mode (experimental): the game hears the music only as it plays";
-  const items = tracks.map((t) => {
-    const best = loadBestGrade(reactiveGradeKey(t.id));
-    return `${t.title}${t.artist ? ` — ${t.artist}` : ""}${t.group === "local" ? "   (local)" : ""}${best ? `   best ${best}` : ""}`;
-  });
-  const i = await overlayMenu(overlay, [...items, "Back"]);
-  return tracks[i];
+  const groups = TRACK_GROUPS.filter((g) => tracks.some((t) => t.group === g));
+  let g = 0;
+  for (;;) {
+    let shown = tracks;
+    if (groups.length > 1) {
+      g = await overlayMenu(overlay, [...groups.map((x) => `${GROUP_NAMES[x]}   (${tracks.filter((t) => t.group === x).length})`), "Back"], g);
+      if (g === groups.length) return undefined;
+      shown = tracks.filter((t) => t.group === groups[g]);
+    }
+    const items = shown.map((t) => {
+      const best = loadBestGrade(reactiveGradeKey(t.id));
+      return `${t.title}${t.artist ? ` — ${t.artist}` : ""}${t.split === "held-out" ? "   (held out)" : ""}${best ? `   best ${best}` : ""}`;
+    });
+    const i = await overlayMenu(overlay, [...items, "Back"]);
+    if (i < shown.length) return shown[i];
+    if (groups.length <= 1) return undefined;
+  }
 }

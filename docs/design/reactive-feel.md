@@ -525,7 +525,7 @@ CC0 audio packs, chosen and verified the same way.
     tuning, not secrecy.
   - If the user reports how a held-out track felt, that report goes into the
     next milestone's notes, not a fix bead.
-- **Ingest:** `npm run reactive:corpus-add -- --manifest corpus/manifest.yaml --source ~/Downloads`
+- **Ingest:** `npm run reactive:corpus-add -- --source ~/Downloads` (always from `corpus/manifest.yaml`)
   does the following:
   - encodes each missing track;
   - writes its stream;
@@ -545,8 +545,10 @@ Every stream-changing bead regenerates every shipped stream.
     does not hold for these tracks.
   - All of NotJam (about 46 minutes) is about 30 minutes in serial.
 - **F1 adds `--jobs <n>`** to `reactive:streams` and `reactive:corpus-add`,
-  defaulting to the number of performance cores. A full regeneration then
-  takes about 5 minutes.
+  defaulting to two thirds of the cores, longest tracks first. Measured on
+  2026-10-23 over all 50 shipped streams (an 18-core M-series Mac): 601 s with
+  the 6 performance cores, 358 s with 12 jobs. Under parallel load a track
+  streams at about 1.1× real time, not 0.65×.
 - **No cache.** Revisit only if a later group makes regeneration take longer
   than 15 minutes in parallel.
 
