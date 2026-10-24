@@ -777,6 +777,13 @@ every committed stream's beats and onsets a frame at a time, the forecasts are
 Python's to the bit (75 on 24 of 62 streams), as are those of synthetic cases
 at the rule's edges and of a 40 s accented pulse through the whole analyzer.
 
+A7 measured ([native/evidence/a7/](../../native/evidence/a7/README.md)): bands,
+brightness and timbre within 1e-6 of Python's (onset bands equal); the stream
+of audio cut at any point holds exactly the full stream's entries known by then,
+in all nine groups; across 47 corpus tracks the committed beats are as accurate
+as Python's at D = 0 (46 equal, one 0.8 points under), and the live D costs up to
+3 points on 10 tracks. `ps analysis-parity` reports the comparison.
+
 - librosa's chroma and MFCC use librosa's own matrices, exported with the models
   (`librosa.chroma`, `librosa.mel` and `librosa.dct` in `madmom.bin`), so the
   features differ from librosa's only by summation order (A5).
