@@ -205,6 +205,9 @@ pub struct Onset {
     pub known_at: f64,
     pub strength: f64,
     pub strong: bool,
+    /// The band with the largest rise at its frame (`bands.py`; set by the analyzer, empty from
+    /// `Strengths` alone).
+    pub band: &'static str,
 }
 
 /// Strengths and strong flags over the past `strongWindowS`.
@@ -247,6 +250,7 @@ impl Strengths {
             known_at,
             strength,
             strong,
+            band: "",
         }
     }
 }

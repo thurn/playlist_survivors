@@ -68,6 +68,8 @@ pub struct Tick {
     pub level: Level,
     /// The key of the past `key.windowS` (from `key.afterS` on).
     pub key: Option<&'static str>,
+    pub bands: crate::bands::TickBands,
+    pub brightness: f64,
 }
 
 /// The energy over the samples heard so far, keeping only the window it reads.

@@ -46,6 +46,7 @@ fn forecasts(stream: &serde_json::Value) -> Vec<Forecast> {
             known_at: f(o, "knownAt"),
             strength: f(o, "strength"),
             strong: o["strong"].as_bool().unwrap(),
+            band: "",
         };
         inputs.push((onset.known_at, Input::Onset(onset)));
     }

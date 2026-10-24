@@ -66,6 +66,8 @@ fn ticks(models: &Tensors, acts: &[f32], pcm: &[f32]) -> Vec<Tick> {
             energy: e,
             level: levels.step(e),
             key: None,
+            bands: analysis::bands::TickBands::default(),
+            brightness: 0.0,
         });
     };
     let mut last = None;

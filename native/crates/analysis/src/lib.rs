@@ -3,6 +3,7 @@
 
 pub mod accents;
 pub mod analyzer;
+pub mod bands;
 pub mod beats;
 pub mod dbn;
 pub mod frontend;

@@ -1,7 +1,8 @@
 //! The live analyzer (docs/design/native-app.md, "Phase A: The Analyzer"): every stage, frame by
 //! frame, with bounded memory. Feed 44.1 kHz mono samples; it returns the stream's entries as
 //! they are finished: committed beats, ticks (with their keys), onsets, hindsight entries,
-//! structure's changes, jumps and ends, and accent forecasts (bands and timbre join in A7).
+//! structure's changes, jumps and ends, accent forecasts, and timbre entries; ticks carry their
+//! bands and brightness, onsets their band.
 //!
 //! Per frame, in this order: the online ensemble's activation, the DBN's belief, the onset
 //! function and its peak picking, a tick every `tickS` (its evidence then holds for the commits
@@ -20,6 +21,7 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use crate::accents::{AccentParams, Accents, Forecast};
+use crate::bands::{Bands, Timbre};
 use crate::beats::{BeatParams, Belief, Beliefs, Commit, Committer, Evidence};
 use crate::dbn::OnlineDbn;
 use crate::frontend::{HOP, OnlineFrontEnd, SAMPLE_RATE};
@@ -43,6 +45,7 @@ pub enum Entry {
     Jump(Jump),
     End(End),
     Forecast(Forecast),
+    Timbre(Timbre),
 }
 
 /// The analyzer's parameters (the stream's: `manifest.json`'s `streamParams`, and `D`).
@@ -272,6 +275,8 @@ struct Stages {
     structure: Structure,
     accents: Accents,
     forecasts: Vec<Forecast>,
+    bands: Bands,
+    timbre: Vec<Timbre>,
     hindsight: Hindsight,
     /// The latest tick's evidence, which the commits carry.
     tick_evidence: f64,
@@ -366,6 +371,8 @@ impl Analyzer {
             )?,
             accents: Accents::new(&p.accents),
             forecasts: Vec::new(),
+            bands: Bands::new(),
+            timbre: Vec::new(),
             hindsight,
             nn,
             dbn,
@@ -389,6 +396,7 @@ impl Analyzer {
         for chunk in samples.chunks(HOP) {
             self.stages.energy.push(chunk);
             self.stages.structure.push_samples(chunk);
+            self.stages.bands.push_samples(chunk);
             self.stages.hindsight.push_samples(chunk);
             self.samples += chunk.len();
             let stages = &mut self.stages;
@@ -424,6 +432,12 @@ impl Analyzer {
             h.next += 1;
         }
         h.ingest(f64::INFINITY, out);
+        // The timbre entries through the stream's end, from every frame its samples allow.
+        let b = &mut s.bands;
+        b.advance_to(b.received() / HOP);
+        s.timbre.clear();
+        b.timbre(duration, &mut s.timbre);
+        out.extend(s.timbre.iter().copied().map(Entry::Timbre));
     }
 
     /// The times the analyzer waited for the hindsight worker (an entry due before its decode was
@@ -441,8 +455,14 @@ impl Stages {
         self.evidence.push(act);
         self.hindsight.online.push(n, state.since);
         let odf = self.superflux.step(spectrum);
+        // (The bands' frame n holds the samples before n * HOP, all heard by this frame.)
+        self.bands.advance_to(n);
         if let Some(time) = self.picker.step(odf) {
-            let onset = self.strengths.onset(time, odf);
+            let mut onset = self.strengths.onset(time, odf);
+            onset.band = self.bands.onset(
+                (onset.known_at * self.params.beats.fps).round() as usize,
+                onset.known_at,
+            );
             self.accents.push_onset(&onset);
             out.push(Entry::Onset(onset));
         }
@@ -451,6 +471,9 @@ impl Stages {
         if n > 0 && n.is_multiple_of(tf) {
             self.tick(&belief, n, out);
         }
+        self.timbre.clear();
+        self.bands.timbre(n as f64 / fps, &mut self.timbre);
+        out.extend(self.timbre.iter().copied().map(Entry::Timbre));
         // The windows ended by this frame are decoded, then each entry due by now becomes usable.
         let h = &mut self.hindsight;
         h.request_due(n, fps);
@@ -487,12 +510,17 @@ impl Stages {
         let level = self.levels.step(energy);
         self.tick_evidence = evidence;
         let form = self.structure.tick_at(t, f * HOP);
+        // (Past the stream's end, the last frame the samples allow.)
+        self.bands.advance_to(f.min(self.bands.received() / HOP));
+        let (bands, brightness) = self.bands.tick(f, self.params.beats.tick_frames);
         out.push(Entry::Tick(Tick {
             t,
             evidence,
             energy,
             level,
             key: form.key,
+            bands,
+            brightness,
         }));
         out.extend(form.change.map(Entry::Change));
         out.extend(form.jump.map(Entry::Jump));
