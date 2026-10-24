@@ -11,7 +11,7 @@ import { directorPopulation, keyAt, levelBlend, paletteLevelAt, paletteSwitches,
 import { judgedAverageGroove, REACTIVE_TITLE } from "../src/reactive/grade.ts";
 import { reactivePlayerFor } from "../src/reactive/players.ts";
 import { reactiveSongMap } from "../src/reactive/songmap.ts";
-import { effectiveDownbeat, evidenceAt, firstBeatAtOrAfter, parseStream, splitStream, type StreamFile, type StreamStructure, type TickLevel } from "../src/reactive/stream.ts";
+import { effectiveDownbeat, evidenceAt, firstBeatAtOrAfter, judgedAt, judging, parseStream, splitStream, type StreamFile, type StreamStructure, type TickLevel } from "../src/reactive/stream.ts";
 import { Warp } from "../src/core/warp.ts";
 import type { KeyEvent, Observation, Player } from "../src/sim/player.ts";
 import { Evaluator, grooveAt, pulsed, settledStyle } from "../src/plan/evaluate.ts";
@@ -331,9 +331,10 @@ describe("the gate in the simulation", () => {
   const { plan } = planWithSim(input, { player: new KeyPlayer(beats) });
   const presses = plan.inputs.filter((i) => i.kind === "press");
 
-  it("leaves presses while the beat is unclear unjudged, and judges the rest", () => {
+  it("leaves presses unjudged while the beat is unclear and for a second after, and judges the rest", () => {
+    const { stream } = splitStream(file);
     for (const p of presses) {
-      if (p.s >= 8 && p.s < 16) expect(p.unjudged, `press at ${p.s}`).toBe(true);
+      if (!judgedAt(stream, p.s)) expect(p.unjudged, `press at ${p.s}`).toBe(true);
       else {
         expect(p.unjudged).toBeUndefined();
         expect(p.class).toBeDefined();
@@ -347,13 +348,10 @@ describe("the gate in the simulation", () => {
     expect(g8).toBeGreaterThan(0.3);
     expect(grooveAt(plan.groove, 15.99)).toBe(g8);
     expect(grooveAt(plan.groove, 29)).toBeLessThan(g8);
-    // Through the unclear stretch the hero moves freely (stage 3), which freezes the groove; the first
-    // drain comes once strides are back (2 s into the clear beat), after the drain's grace bar (1 s) again.
-    const back = plan.modes?.find((m) => !m.free)?.s ?? Infinity;
-    expect(back).toBeGreaterThanOrEqual(18 - 1e-6);
+    // Judging resumes a second into the clear beat (17 s); the first drain waits the grace bar (1 s) after it.
     const firstDrain = Array.from(plan.groove.s).find((t, i) => t > 8 && plan.groove.v[i] < g8)!;
-    expect(firstDrain).toBeGreaterThan(back + 1 + 1e-6);
-    expect(firstDrain).toBeLessThan(back + 2.5);
+    expect(firstDrain).toBeGreaterThan(17 + 1 + 1e-6);
+    expect(firstDrain).toBeLessThan(17 + 2.5);
   });
 
   it("queues the starting weapons' fires on every slot of their subdivision, beat by beat", () => {
@@ -784,8 +782,8 @@ describe("the reactive run's end", () => {
 
   it("grades the groove over judged time only", () => {
     const groove = { s: [0, 25, 35], v: [0.2, 0.8, 1] };
-    // From 20 to 25 s at 0.2, from 25 to 30 s at 0.8: 0.5.
-    expect(judgedAverageGroove(groove, stream, 0, 40)).toBeCloseTo(0.5, 2);
+    // Judged from 21 s (a second into the clear beat): from 21 to 25 s at 0.2, from 25 to 30 s at 0.8.
+    expect(judgedAverageGroove(groove, stream, 0, 40)).toBeCloseTo((4 * 0.2 + 5 * 0.8) / 9, 2);
     expect(judgedAverageGroove(groove, stream, 26, 40)).toBeCloseTo(0.8, 6);
     expect(judgedAverageGroove(groove, stream, 0, 19)).toBe(0);
   });
@@ -816,8 +814,8 @@ describe("the settled groove (stage 2)", () => {
     expect(settles.length).toBe(presses.length);
     for (const x of settles) expect(x.s - x.p).toBeCloseTo(2, 9);
     expect(settles.filter((x) => x.settled === "perfect").length).toBeGreaterThan(0.8 * settles.length);
-    // The provisional judgment shows on the press (its class), and changes nothing.
-    const first = plan.inputs.find((i) => i.kind === "press")!;
+    // The provisional judgment shows on the press (its class), and changes nothing (judging starts a second in).
+    const first = plan.inputs.find((i) => i.kind === "press" && i.s >= 1.5)!;
     expect(first.class).toBe("counted");
   });
 
@@ -867,46 +865,104 @@ describe("the world follows the music and the player (stage 3)", () => {
     expect(ev.evaluate(p - 0.005).rings.some((r) => r.radius < 14.5)).toBe(false);
   });
 
-  it("walks freely after 2 s of an unclear beat, on a committed downbeat, and strides again after 2 s clear", () => {
-    const modes = plan.modes!;
-    expect(modes.map((m) => m.free)).toEqual([true, false]);
-    expect(modes[0].s).toBeGreaterThanOrEqual(10 - 1e-6);
-    expect(modes[1].s).toBeGreaterThanOrEqual(18 - 1e-6);
-    const beatIdx = (s: number) => file.beats.findIndex((b) => Math.abs(b.t - s) < 1e-9);
-    for (const m of modes) expect(beatIdx(m.s) % 2).toBe(0);
-    expect(ev.evaluate(12.5).hud.free).toBe(true);
+  it("strides through an unclear stretch: there is no free movement", () => {
+    expect(ev.evaluate(12.5).hud.free).toBe(false);
+    const unclear = plan.inputs.filter((i) => i.kind === "press" && i.s >= 9 && i.s < 12);
+    expect(unclear.length).toBeGreaterThan(3);
+    for (const i of unclear) {
+      expect(i.steps).toBe(true);
+      expect(i.unjudged).toBe(true);
+      expect(i.stride).toBeGreaterThan(0);
+    }
   });
 
-  it("settles presses in free movement unjudged, so the readings still see them when strides resume", () => {
-    // With hindsight: one run with the stretch unclear, one clear throughout; presses on every beat.
+  it("judges again only after the beat has been clear for a second, whatever the wobble", () => {
+    // Clear, then a wobble around the gate (0.25 / 0.15 every 0.3 s), then clear.
+    const f = synthStream({ until: 20, evidence: (t) => (t >= 6 - 1e-9 && t < 10 ? (Math.floor((t - 6 + 1e-9) / 0.3) % 2 ? 0.25 : 0.15) : 0.8) });
+    const j = judging(splitStream(f).stream);
+    const at = (t: number) => j.judged[Math.round(t / 0.05) - 1] === 1;
+    expect(at(5.9)).toBe(true);
+    for (let t = 6.05; t < 10; t += 0.05) expect(at(t), `at ${t.toFixed(2)}`).toBe(false);
+    // (The wobble's last 0.1 s is clear: judged a second after 9.9 s.)
+    expect(at(10.8)).toBe(false);
+    expect(at(10.95)).toBe(true);
+  });
+
+  it("chooses readings from judged presses only, restarting from as tracked after an unclear stretch", () => {
     const run = (ev: (t: number) => number) => {
       const f = synthStream({ until: 30, hindsight: true, evidence: ev });
       const times = f.beats.map((b) => b.t + 0.01).filter((t) => t < 28);
-      return { times, plan: planWithSim(inputForStream(splitStream(f).stream, { checks: { noHeroDamage: true } }), { player: new KeyPlayer(times) }).plan };
+      return planWithSim(inputForStream(splitStream(f).stream, { checks: { noHeroDamage: true } }), { player: new KeyPlayer(times) }).plan;
     };
     const unclear = run((t) => (t >= 8 && t < 16 ? 0 : 0.8));
     const clear = run(() => 0.8);
-    const modes = unclear.plan.modes!;
-    expect(modes.map((m) => m.free)).toEqual([true, false]);
-    const settles = unclear.plan.settles!;
-    expect(settles.length).toBe(unclear.times.length);
-    const inFree = settles.filter((x) => x.p >= modes[0].s && x.p < modes[1].s);
-    expect(inFree.length).toBeGreaterThan(10);
-    for (const x of inFree) {
-      expect(x.settled).toBe("unjudged");
-      expect(x.change).toBe(0);
-    }
-    // Once the hindsight window has passed the unclear stretch, the readings and labels match the clear run.
-    const after = (p: { settles?: { p: number; reading: string; settled: string }[] }) => p.settles!.filter((x) => x.p > modes[1].s + 8).map((x) => `${x.reading} ${x.settled}`);
-    expect(after(unclear.plan)).toEqual(after(clear.plan));
+    // Back from the stretch (judged from 17 s), it starts from offline "as tracked".
+    const back = unclear.settles!.filter((x) => x.p >= 17 - 1e-9);
+    expect(back[0].reading).toBe("offline as tracked");
+    // Even from a reading the presses chose before the stretch: grids at half tempo, the player on
+    // every beat, read "double" before it; after it, "as tracked" again until 12 presses choose.
+    const half = (() => {
+      const f = synthStream({ until: 40, hindsight: true, evidence: (t) => (t >= 12 && t < 18 ? 0 : 0.8) });
+      const h = f.hindsight!.map((e) => ({ ...e, offline: e.offline.filter((_, i) => i % 2 === 0), online: e.online.filter((_, i) => i % 2 === 0) }));
+      const times = f.beats.map((b) => b.t + 0.005).filter((t) => t > 1.5 && t < 38);
+      return planWithSim(inputForStream(splitStream({ ...f, hindsight: h }).stream, { checks: { noHeroDamage: true } }), { player: new KeyPlayer(times) }).plan.settles!;
+    })();
+    expect(half.filter((x) => x.p > 8 && x.p < 12).every((x) => x.reading === "offline double")).toBe(true);
+    const resumed = half.filter((x) => x.p >= 19 - 1e-9);
+    expect(resumed[0].reading).toBe("offline as tracked");
+    expect(resumed.some((x) => x.reading === "offline double")).toBe(true);
+    // Once the window holds only presses after it, the readings and labels match the clear run.
+    const after = (p: typeof clear) => p.settles!.filter((x) => x.p > 17 + 8).map((x) => `${x.reading} ${x.settled}`);
+    expect(after(unclear)).toEqual(after(clear));
   });
 
-  it("does not switch to free movement past the stream's last tick", () => {
-    // Clear to 10 s, then no ticks at all: neither side of the gate.
-    const f = synthStream({ until: 20, evidence: () => 0.8 });
-    const cut = parseStream({ ...f, ticks: f.ticks.filter((t) => t.t <= 10) } as unknown as StreamFile);
-    const { plan } = planWithSim(inputForStream(splitStream(cut).stream, { checks: { noHeroDamage: true } }), { player: new KeyPlayer([]) });
-    expect(plan.modes ?? []).toEqual([]);
+  it("never lets a settle lower a steady player's provisional judgment, and scales penalties by the confidence", () => {
+    // Hindsight grids a quarter of a beat late: settled against them, on-beat presses would rate worse.
+    const late = (o: { evidence: number }) => {
+      const f = synthStream({ until: 24, hindsight: true, evidence: () => o.evidence });
+      const h = f.hindsight!.map((e) => ({ ...e, offline: e.offline.map((b) => b + 0.12), online: e.online.map((b) => b + 0.12) }));
+      const times = f.beats.map((b) => b.t + 0.005).filter((t) => t < 22);
+      return planWithSim(inputForStream(splitStream({ ...f, hindsight: h }).stream, { checks: { noHeroDamage: true } }), { player: new KeyPlayer(times) }).plan;
+    };
+    const p = late({ evidence: 0.8 });
+    const judgedSettles = p.settles!.filter((x) => x.provisional !== "unjudged");
+    expect(judgedSettles.some((x) => x.kept !== undefined)).toBe(true);
+    for (const x of judgedSettles) if (x.kept) expect(x.settled).toBe(x.provisional);
+    // (Once the player is steady: four judged presses in a row provisionally Perfect or Great.)
+    expect(judgedSettles.slice(3).every((x) => x.change >= 0)).toBe(true);
+    // Presses a third of a beat off: penalties, scaled to none at the gate and in full from 0.55.
+    const off = (e: number) => {
+      const f = synthStream({ until: 24, hindsight: true, evidence: () => e });
+      const times = f.beats.map((b) => b.t + 0.16).filter((t) => t < 22);
+      return planWithSim(inputForStream(splitStream(f).stream, { checks: { noHeroDamage: true } }), { player: new KeyPlayer(times) }).plan.settles!.filter((x) => x.change < 0);
+    };
+    const sure = off(0.8);
+    const unsure = off(0.3);
+    expect(sure.length).toBeGreaterThan(5);
+    const mean = (l: { change: number }[]) => l.reduce((a, x) => a + x.change, 0) / l.length;
+    expect(mean(unsure) / mean(sure)).toBeCloseTo((0.3 - 0.2) / (0.55 - 0.2), 1);
+  });
+
+  it("keeps the provisional judgment only for a steady run of four", () => {
+    // Every other press a third of a beat off: never four good ones in a row, so nothing is kept.
+    const f = synthStream({ until: 24, hindsight: true, evidence: () => 0.8 });
+    const h = f.hindsight!.map((e) => ({ ...e, offline: e.offline.map((b) => b + 0.12), online: e.online.map((b) => b + 0.12) }));
+    const times = f.beats.map((b, i) => b.t + (i % 2 ? 0.16 : 0.005)).filter((t) => t > 1.5 && t < 22);
+    const { plan: p } = planWithSim(inputForStream(splitStream({ ...f, hindsight: h }).stream, { checks: { noHeroDamage: true } }), { player: new KeyPlayer(times) });
+    expect(p.settles!.filter((x) => x.kept !== undefined)).toEqual([]);
+    expect(p.settles!.some((x) => x.change < 0)).toBe(true);
+  });
+
+  it("scales the drain by the confidence, and an unsteady player's raises too", () => {
+    // A bar of presses, then none: the drain at evidence 0.3 takes (0.3 - 0.2) / (0.55 - 0.2) of each step.
+    const drained = (e: number) => {
+      const f = synthStream({ until: 24, evidence: () => e });
+      const times = f.beats.map((b) => b.t + 0.005).filter((t) => t > 1.5 && t < 8);
+      const { plan: p } = planWithSim(inputForStream(splitStream(f).stream, { checks: { noHeroDamage: true } }), { player: new KeyPlayer(times) });
+      return grooveAt(p.groove, 12) - grooveAt(p.groove, 16);
+    };
+    expect(drained(0.8)).toBeGreaterThan(0);
+    expect(drained(0.3) / drained(0.8)).toBeCloseTo((0.3 - 0.2) / (0.55 - 0.2), 1);
   });
 
   it("draws the pulse, the flash, the punch, the ripples and the light from nothing after s", () => {

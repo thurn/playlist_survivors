@@ -34,15 +34,12 @@ import { chainAt, heavyArcAt, orbitAt, swingArcAt, tierDamage, trailRadiusAt, wa
 import { armouredBite, evolvedOrbit, offersFor, passiveBonus, startingLoadout, takeItem, type Loadout, type UpgradeItem } from "./upgrades.ts";
 import { classifyPress, NEVER_LATE, drainPerBeat, firstAtOrAfter, freshPressMemo, grooveAfterChange, keyGroup, type PressJudgement, type PressMemo, nearestIndex, ratePressOnGrid, tierFor } from "./timing.ts";
 import { OpenWorld, type World } from "./world.ts";
-import { evidenceAt, hindsightAt, tickIndexAt, type TickLevel } from "../reactive/stream.ts";
+import { evidenceAt, hindsightAt, judgedAt, judgedSinceAt, judging, tickIndexAt, type TickLevel } from "../reactive/stream.ts";
 import { directorPopulation, levelBlend, sectionRoster, zoneWavePlan } from "../reactive/director.ts";
 import { detectedSections } from "../reactive/sections.ts";
 import { judgementLabel, READING, SETTLE_DELAY, Settler, type Settled, type SettlePress } from "../reactive/settle.ts";
 
 export type { ArrowRecord, Landing, SimResult, SlamRecord } from "./recorder.ts";
-
-/** Reactive mode: the beat unclear (or clear) this long switches to free movement (or back), on a downbeat. */
-export const FREE_AFTER_S = 2;
 
 /** Fixed simulation steps per song second. */
 export const SIM_RATE = 120;
@@ -55,6 +52,13 @@ export const HURTBOX_RADIUS = 10;
 export const HURTBOX_LIFT = 20;
 /** Enemies stop this far beyond touching the hero. */
 const CONTACT_GAP = 4;
+/**
+ * Reactive mode's fair judging (hv-s4pt.12): whether a settle may not lower a press's provisional
+ * judgment when the player is steady (the press and the `steadyRun` - 1 judged presses before it
+ * provisionally Perfect or Great); the share of a penalty that counts at the gate, rising to all of
+ * it from the confidence (evidence) `fullAt`.
+ */
+export const FAIR = { benefitOfDoubt: true, steadyRun: 4, floor: 0, fullAt: 0.55 };
 /** Reactive mode (stage 5): the least confidence of a forecast accent that makes a heavy swing, and how near a strong onset it counts as forecast. */
 const FORECAST_CONFIDENCE = 0.6;
 const FORECAST_WINDOW = 0.05;
@@ -212,6 +216,12 @@ interface Foe {
   at?: (t: number) => { x: number; y: number };
   /** A stampede's runner (set pieces): its fixed velocity straight across the view (px per world second). */
   run?: { vx: number; vy: number };
+  /**
+   * Reactive mode (hv-s4pt.12): a closing ring's member, on its circle about (x, y) at angle (c, sn),
+   * from radius `from` to `to`: `u` of the way, advancing `du` per world second once the close has
+   * started (frozen in a hit-stop, as every other enemy is).
+   */
+  ringPath?: { x: number; y: number; c: number; sn: number; from: number; to: number; u: number; du: number };
   /** Reactive mode (stage 6): the boss retreating off the field (it does not come back). */
   retreat?: true;
   /** A charge (the kick line's release) runs faster until this song time. */
@@ -301,7 +311,7 @@ type Ev =
   | { kind: "bossRetreat" }
   | { kind: "landmark"; id: string }
   | { kind: "reactiveBeat"; bi: number }
-  | { kind: "settle"; press: SettlePress & { provisional: string } }
+  | { kind: "settle"; press: SettlePress & { provisional: string; provisionalChange: number; steady: boolean } }
   | { kind: "drain"; bi: number; b: number };
 
 interface Wave {
@@ -603,13 +613,11 @@ interface SimState {
    */
   settler?: Settler;
   provMemo: PressMemo;
-  /**
-   * Reactive mode (stage 3): free movement while the beat has been unclear for 2 s (held keys walk),
-   * switching on committed downbeats; the switches so far.
-   */
-  free: boolean;
-  modes: { s: number; free: boolean }[];
   pressLog: { s: number; partner: boolean }[];
+  /** (hv-s4pt.12) When the run of judging the latest settled press fell in began: a new one restarts the reading. */
+  settleRun: number;
+  /** (hv-s4pt.12) How many judged presses in a row (partners aside) have been provisionally Perfect or Great. */
+  steadyRun: number;
   applying: UpgradeItem[];
   /** The small health pool: world time the hero's invulnerability lasts until, and the chickens lying on the field. */
   invulnUntil: number;
@@ -709,9 +717,9 @@ function freshState(env: Env): SimState {
     fireSpecs: [],
     ...(env.ctx.reactive?.hindsight ? { settler: new Settler() } : {}),
     provMemo: freshPressMemo(),
-    free: false,
-    modes: [],
     pressLog: [],
+    settleRun: NaN,
+    steadyRun: 0,
     invulnUntil: -Infinity,
     chickens: [],
     nChickens: 0,
@@ -802,7 +810,6 @@ function engine(env: Env, st: SimState, io: Io) {
   const sectionStarts = stream && director ? detectedSections(stream, director.sectionRule) : [];
   /** Stage 4: the loudness level's effect on a director value, blended over the director's smoothing time. */
   const byLevel = (s: number, value: (l: TickLevel) => number) => levelBlend(stream!, s, director!.smoothS, value);
-  const gate = stream?.params.gate ?? 0;
   /**
    * The timing grid as known at song time s: reactive mode's grid times are its committed beats,
    * and only those already committed may be judged against (committed in time order, so a prefix).
@@ -818,29 +825,40 @@ function engine(env: Env, st: SimState, io: Io) {
     }
     return sch.gridTimes.subarray(0, Math.min(lo, sch.gridTimes.length));
   };
-  /** Is the beat clear at song time s (the evidence at or above the gate)? Always, outside reactive mode. */
-  const clearAt = (s: number) => !stream || evidenceAt(stream, s) >= gate;
   /**
-   * Song time judged since t0: only time whose evidence is at or above the gate counts (the drain
-   * clock stops while the beat is unclear). Read up to now only.
+   * Are presses judged at song time s? Always, outside reactive mode; in it, while the beat has been
+   * clear for a second at least (see judging in src/reactive/stream.ts).
    */
-  /** Judged time from song time 0 to t (all of it outside reactive mode). */
+  const clearAt = (s: number) => !stream || judgedAt(stream, s);
+  /** Judged time from song time 0 to t (all of it outside reactive mode): the drain clock stops while presses are not judged. */
   const judgedClock = (() => {
     if (!stream) return (t: number) => t;
     const ticks = stream.ticks;
-    // cum[j]: judged time up to tick j, each tick's evidence holding from it to the next.
+    const ok = judging(stream).judged;
+    // cum[j]: judged time up to tick j, each tick holding from it to the next.
     const cum = new Float64Array(ticks.length + 1);
-    ticks.forEach((k, j) => (cum[j + 1] = cum[j] + (j + 1 < ticks.length && k.evidence >= gate ? ticks[j + 1].t - k.t : 0)));
-    // Judged time from 0 to t: up to the latest tick at or before t, and on from it while its evidence holds.
+    ticks.forEach((k, j) => (cum[j + 1] = cum[j] + (j + 1 < ticks.length && ok[j] ? ticks[j + 1].t - k.t : 0)));
     const at = (t: number) => {
       if (!Number.isFinite(t)) return t;
       const j = tickIndexAt(stream, t);
       if (j < 0) return 0;
-      return cum[j] + (ticks[j].evidence >= gate ? t - ticks[j].t : 0);
+      return cum[j] + (ok[j] ? t - ticks[j].t : 0);
     };
     return at;
   })();
-  const judgedSince = (t0: number) => judgedClock(st.s) - judgedClock(t0);
+  /**
+   * (hv-s4pt.12) How much of a penalty counts at song time t: reactive mode scales penalties (settled
+   * ones and the drain) by the tracker's confidence, FAIR.floor of it at the gate and all from FAIR.fullAt.
+   */
+  const penaltyScale = (t: number) => (stream ? FAIR.floor + (1 - FAIR.floor) * clamp((evidenceAt(stream, t) - stream.params.gate) / Math.max(1e-6, FAIR.fullAt - stream.params.gate), 0, 1) : 1);
+  /**
+   * Judged time at song time t since the latest raise, or since judging last resumed if later: after
+   * an unclear stretch, the drain waits its grace bar again.
+   */
+  const judgedSinceRaise = (t: number) => {
+    const resumed = stream ? judgedSinceAt(stream, t) : NaN;
+    return judgedClock(t) - judgedClock(Number.isNaN(resumed) ? st.lastRaiseS : Math.max(st.lastRaiseS, resumed));
+  };
   /** Stage 2: presses settle 2 s late against hindsight readings; the groove follows the settled judgments. */
   const settling = stream?.hindsight !== undefined;
 
@@ -896,7 +914,7 @@ function engine(env: Env, st: SimState, io: Io) {
   /** How long a stride takes. */
   const stepDur = rule.durationS;
   /** One stride at song time s: the walk speed times the stride period. */
-  const oneStride = (s: number) => rule.speed * (sectionAt(s).level.movement === "free" || st.free ? rule.freePeriodS : periodAt(sch.strideSteps, s));
+  const oneStride = (s: number) => rule.speed * (sectionAt(s).level.movement === "free" ? rule.freePeriodS : periodAt(sch.strideSteps, s));
   /**
    * A held stride's limit: one stride of the step just ended, the time it built up over. (On an
    * uneven grid, a step shorter than the one before would otherwise lose ground while holding.)
@@ -1043,39 +1061,8 @@ function engine(env: Env, st: SimState, io: Io) {
     else walkOn();
   };
 
-  /** Step movement in a section now: its own, unless reactive mode has switched to free movement. */
-  const stepsIn = (sec: { level: { movement: "steps" | "free" } }) => sec.level.movement === "steps" && !st.free;
-  /** Reactive mode: free movement at song time t (by the switches so far). */
-  const freeAt = (t: number) => st.modes.findLast((m) => m.s <= t + 1e-9)?.free ?? false;
-  /** Reactive mode: has the evidence been on one side of the gate (below: `below`) for all of the last `secs`? */
-  const unclearFor = (secs: number, below: boolean) => {
-    if (!stream || st.s < secs) return false;
-    const ticks = stream.ticks;
-    let i = tickIndexAt(stream, st.s);
-    if (i < 0) return false;
-    let seen = false;
-    for (; i >= 0 && ticks[i].t > st.s - secs - 1e-9; i--) {
-      if (ticks[i].evidence < gate !== below) return false;
-      seen = true;
-    }
-    // (No tick in the window, past the stream's last: neither side.)
-    return seen;
-  };
-  /**
-   * Reactive mode (stage 3), on each committed downbeat: after the beat has been unclear for 2 s,
-   * free movement (held keys walk, the sword swings by itself); after 2 s clear, strides again.
-   */
-  const reactiveMode = (bi: number) => {
-    if (bi % 2 !== 0) return;
-    const want = st.free ? !unclearFor(FREE_AFTER_S, false) : unclearFor(FREE_AFTER_S, true);
-    if (want === st.free) return;
-    st.free = want;
-    st.modes.push({ s: st.s, free: want });
-    // Back on strides, the drain waits its bars again from here (free movement holds the meter).
-    if (!want) st.lastRaiseS = Math.max(st.lastRaiseS, st.s);
-    rec().movement?.(st.s, want);
-    switchMode(!want);
-  };
+  /** Step movement in a section now. */
+  const stepsIn = (sec: { level: { movement: "steps" | "free" } }) => sec.level.movement === "steps";
 
   const startHitStop = (len: number) => {
     if (inStop(st.s)) return; // No stacking.
@@ -1255,7 +1242,8 @@ function engine(env: Env, st: SimState, io: Io) {
    */
   const decideSwing = (sw: Swing) => {
     sw.undecided = undefined;
-    const f = sw.slot.kind === "grid" && stepsIn(sectionAt(sw.sStrike)) ? forecastAt(sw.sStrike, st.s) : undefined;
+    // (hv-s4pt.12: with the beat judged, as a cleave needs.)
+    const f = sw.slot.kind === "grid" && stepsIn(sectionAt(sw.sStrike)) && clearAt(st.s) ? forecastAt(sw.sStrike, st.s) : undefined;
     sw.heavy = f !== undefined;
     sw.accent = f?.confidence ?? 0;
     sw.anim = sw.heavy ? hero.swings.heavy.animation : hero.swings.light.animations[st.lightCount++ % hero.swings.light.animations.length];
@@ -1452,14 +1440,17 @@ function engine(env: Env, st: SimState, io: Io) {
 
   /**
    * Stage 2: a press (in step movement) settles 2 s after it; partners settle as partners, changing
-   * nothing, and do not choose readings. It settles unjudged if the beat was unclear at it, or if it
-   * came in free movement (`free`): such a press changes nothing, but the readings still see it.
+   * nothing, and do not choose readings. It settles unjudged if presses were not judged at it; only
+   * judged presses choose readings (hv-s4pt.12).
    */
-  const queueSettle = (key: InputKey, partner: boolean, judged: PressJudgement | undefined, free = false) => {
+  const queueSettle = (key: InputKey, partner: boolean, judged: PressJudgement | undefined) => {
     if (!settling) return;
-    st.pressLog.push({ s: st.s, partner });
-    const unclear = free || !clearAt(st.s);
-    st.q.push(st.s + SETTLE_DELAY, { kind: "settle", press: { s: st.s, partner, group: keyGroup(key), unclear, provisional: unclear ? "unjudged" : partner ? "partner" : judgementLabel(judged) } });
+    const unclear = !clearAt(st.s);
+    if (!unclear) st.pressLog.push({ s: st.s, partner });
+    // A steady run: this press and those before it provisionally Perfect or Great (counted).
+    if (!unclear && !partner) st.steadyRun = judged?.class === "counted" && (judged.rating === "perfect" || judged.rating === "great") ? st.steadyRun + 1 : 0;
+    const steady = !unclear && !partner && st.steadyRun >= FAIR.steadyRun;
+    st.q.push(st.s + SETTLE_DELAY, { kind: "settle", press: { s: st.s, partner, group: keyGroup(key), unclear, provisional: unclear ? "unjudged" : partner ? "partner" : judgementLabel(judged), provisionalChange: unclear || partner ? 0 : (judged?.change ?? 0), steady } });
   };
 
   const press = (e: KeyEvent) => {
@@ -1512,8 +1503,6 @@ function engine(env: Env, st: SimState, io: Io) {
     // Free movement: presses are not rated. A press strides first (or bends the stride in
     // progress), and the walk with the held keys starts when it lands.
     if (!steps) {
-      // (Reactive mode's free movement comes while the beat is unclear: such a press shows unjudged.)
-      if (st.free && !clearAt(st.s)) input.unjudged = true;
       const bent = bendOf(e.key);
       const rocked = !bent && rocks(e.key);
       if (bent) {
@@ -1521,7 +1510,6 @@ function engine(env: Env, st: SimState, io: Io) {
         input.bend = true;
       } else stopWalk();
       const moved = bent ? strideTrace({ stride: bent.len ?? 0, returned: 0 }, input, true) : rocked ? stompHere(input) : pressMove(e.key, input);
-      if (st.free) queueSettle(e.key, bent !== undefined || rocked, undefined, true);
       walkOn();
       rec().input(input);
       if (trace) rec().press!({ ...trace, ...moved, outcome: bent ? "bend" : rocked ? "rock" : e.key === "space" ? "stomp" : "stride" });
@@ -1597,21 +1585,36 @@ function engine(env: Env, st: SimState, io: Io) {
    * window's presses, then play mode's classes against its grid. Its groove change applies now, but a
    * raise starts the drain's bar at the press, so the meter runs on the presses' timeline 2 s late.
    */
-  const settlePress = (pr: SettlePress & { provisional: string }) => {
+  const settlePress = (pr: SettlePress & { provisional: string; provisionalChange: number; steady: boolean }) => {
     const entry = hindsightAt(stream!, st.s);
+    // (hv-s4pt.12) After an unclear stretch the reading starts again from offline "as tracked", and
+    // only presses since judging resumed choose it.
+    const resumed = pr.unclear ? NaN : judgedSinceAt(stream!, pr.s);
+    if (!pr.unclear && resumed !== st.settleRun) {
+      st.settleRun = resumed;
+      st.settler!.restart();
+    }
     let res: Settled | undefined;
     if (entry) {
-      const window = st.pressLog.filter((x) => !x.partner && x.s !== pr.s && x.s >= entry.knownAt - READING.windowS - 1e-9 && x.s <= entry.knownAt + 1e-9).map((x) => x.s);
+      const from = Math.max(entry.knownAt - READING.windowS, Number.isNaN(resumed) ? -Infinity : resumed);
+      const window = st.pressLog.filter((x) => !x.partner && x.s !== pr.s && x.s >= from - 1e-9 && x.s <= entry.knownAt + 1e-9).map((x) => x.s);
       res = st.settler!.settle(hero, pr, entry, window);
     }
-    const change = res?.judgement?.change ?? 0;
+    // The benefit of the doubt: a settle may raise a press's provisional judgment, never lower it.
+    const settledChange = res?.judgement?.change ?? 0;
+    const kept = FAIR.benefitOfDoubt && pr.steady && res?.judgement !== undefined && pr.provisionalChange > settledChange;
+    // And a penalty scales with the tracker's confidence at the press: FAIR.floor of it at the gate, all of it from FAIR.fullAt.
+    const raw = kept ? pr.provisionalChange : settledChange;
+    // (A raise counts in full for a steady player; anyone else's scales as a penalty does, so pressing
+    // at random gains nothing where the tracker is unsure.)
+    const change = raw < 0 || !pr.steady ? raw * penaltyScale(pr.s) : raw;
     const before = st.groove;
     st.groove = grooveAfterChange(st.groove, change);
     if (change > 0) st.lastRaiseS = Math.max(st.lastRaiseS, pr.s);
     if (st.groove !== before) rec().groove(st.s, st.groove);
     setTier();
     const reading = res ? `${res.reading.chosen.source} ${res.reading.chosen.reading}` : "none";
-    rec().settle?.({ s: st.s, p: pr.s, provisional: pr.provisional, settled: judgementLabel(res?.judgement), change, reading, switched: res?.reading.switched ?? false, knownAt: entry?.knownAt ?? -1, evidence: evidenceAt(stream!, pr.s) });
+    rec().settle?.({ s: st.s, p: pr.s, provisional: pr.provisional, settled: kept ? pr.provisional : judgementLabel(res?.judgement), change, reading, switched: res?.reading.switched ?? false, knownAt: entry?.knownAt ?? -1, evidence: evidenceAt(stream!, pr.s), ...(kept ? { kept: judgementLabel(res?.judgement) } : {}) });
     while (st.pressLog.length > 0 && st.pressLog[0].s < st.s - READING.windowS - SETTLE_DELAY - 2) st.pressLog.shift();
   };
 
@@ -1779,15 +1782,28 @@ function engine(env: Env, st: SimState, io: Io) {
       // Bring everyone to this step's time first. Formation members follow their slots
       // (and the boss holds still while it drops in).
       const dt = w1 - f.lastW;
+      if (f.ringPath && s < f.slotUntil) {
+        // Reactive mode's closing ring member: on its circle, closing in world time.
+        // (Its pace re-solved each step for what is left of the close by its end in song time, so a
+        // hit-stop's pause is made up after it.)
+        const rp = f.ringPath;
+        if (rp.du > 0) rp.du = (1 - rp.u) / Math.max(1 / SIM_RATE, f.slotUntil - s);
+        rp.u = Math.min(1, rp.u + dt * rp.du);
+        const rad = lerp(rp.from, rp.to, rp.u);
+        f.x = rp.x + rp.c * rad;
+        f.y = rp.y + rp.sn * rad;
+        const v = rp.u < 1 ? rp.du * (rp.to - rp.from) : 0;
+        f.vx = rp.c * v;
+        f.vy = rp.sn * v;
+        continue;
+      }
       if (f.at && s < f.slotUntil) {
         // A closing ring's member: on its circle, closing in song time.
         const p = f.at(s);
         const rate = rateAt(s);
-        // (Reactive mode: from the step behind, since its close is known only when it starts.)
-        const q2 = stream ? f.at(s - 1 / SIM_RATE) : f.at(s + 1 / SIM_RATE);
-        const dir = stream ? -1 : 1;
-        f.vx = rate > 0 ? (dir * (q2.x - p.x) * SIM_RATE) / rate : 0;
-        f.vy = rate > 0 ? (dir * (q2.y - p.y) * SIM_RATE) / rate : 0;
+        const q2 = f.at(s + 1 / SIM_RATE);
+        f.vx = rate > 0 ? ((q2.x - p.x) * SIM_RATE) / rate : 0;
+        f.vy = rate > 0 ? ((q2.y - p.y) * SIM_RATE) / rate : 0;
         f.x = p.x;
         f.y = p.y;
         continue;
@@ -2949,6 +2965,11 @@ function engine(env: Env, st: SimState, io: Io) {
         f.weight = weightOf(def, true);
         f.at = at;
         f.slotUntil = s1;
+        // (Reactive mode: it holds its radius until the close, whose end it learns then.)
+        if (ring.kClose !== undefined) {
+          f.ringPath = { x: hp.x, y: hp.y, c, sn, from, to, u: 0, du: 0 };
+          f.slotUntil = Infinity;
+        }
         members.push(f.id);
       }
     }
@@ -2975,6 +2996,13 @@ function engine(env: Env, st: SimState, io: Io) {
     const s1 = sch.rings[k].sClose;
     const r = st.rings.findLast((x) => x.s0 === m.s0);
     if (r) r.s1 = s1;
+    // The members close from now, reaching their inner radius by the close's end (in world time).
+    const fi = sch.formations.length + k;
+    for (const f of st.alive) {
+      if (!f.alive || f.formation !== fi || !f.ringPath) continue;
+      f.ringPath.du = 1 / Math.max(1e-3, s1 - st.s);
+      f.slotUntil = s1;
+    }
     st.q.push(downbeatAtOrAfter(s1 + 1e-6), { kind: "vacuumDrop" });
     rec().formation({ def: "ring", sStart: m.s0, sRelease: s1, members: m.members });
   };
@@ -3223,8 +3251,8 @@ function engine(env: Env, st: SimState, io: Io) {
           const bpb = ctx.idx.beatsPerBar[sec.song.bars[0]] ?? 2;
           // (Reactive mode: the bar's length from the last two committed beats, the next being perhaps not yet committed.)
           const beatS = stream ? (ev.bi > 0 ? song.beats[ev.bi] - song.beats[ev.bi - 1] : stream.beats[0].period) : song.beats[Math.min(song.beats.length - 1, ev.bi + 1)] - song.beats[Math.max(0, Math.min(song.beats.length - 2, ev.bi))];
-          if (sec.level.movement === "steps" && !st.free && st.groove > 0 && clearAt(st.s) && judgedSince(st.lastRaiseS) > hero.meter.drain.afterBars * bpb * beatS + 1e-9) {
-            st.groove = Math.max(0, st.groove - drainPerBeat(hero, bpb));
+          if (sec.level.movement === "steps" && st.groove > 0 && clearAt(st.s) && judgedSinceRaise(st.s) > hero.meter.drain.afterBars * bpb * beatS + 1e-9) {
+            st.groove = Math.max(0, st.groove - drainPerBeat(hero, bpb) * penaltyScale(st.s));
             rec().groove(st.s, st.groove);
             setTier();
           }
@@ -3337,15 +3365,14 @@ function engine(env: Env, st: SimState, io: Io) {
           const sec = sectionAt(ev.b);
           const bpb = ctx.idx.beatsPerBar[sec.song.bars[0]] ?? 2;
           const beatS = ev.bi > 0 ? song.beats[ev.bi] - song.beats[ev.bi - 1] : stream!.beats[0].period;
-          if (sec.level.movement === "steps" && !freeAt(ev.b) && st.groove > 0 && clearAt(ev.b) && judgedClock(ev.b) - judgedClock(st.lastRaiseS) > hero.meter.drain.afterBars * bpb * beatS + 1e-9) {
-            st.groove = Math.max(0, st.groove - drainPerBeat(hero, bpb));
+          if (sec.level.movement === "steps" && st.groove > 0 && clearAt(ev.b) && judgedSinceRaise(ev.b) > hero.meter.drain.afterBars * bpb * beatS + 1e-9) {
+            st.groove = Math.max(0, st.groove - drainPerBeat(hero, bpb) * penaltyScale(ev.b));
             rec().groove(st.s, st.groove);
             setTier();
           }
           break;
         }
         case "reactiveBeat": {
-          reactiveMode(ev.bi);
           // An upgrade orb's deadline, counted in committed beats; then the weapons' slots of this beat.
           if (st.orbs?.deadlineBeat !== undefined && ev.bi >= st.orbs.deadlineBeat) takeOrb(0, false);
           for (const f of st.fireSpecs) fireBeat(lib.weapons.get(f.weapon)!, f.every, f.skip, ev.bi, st.s);

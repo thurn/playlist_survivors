@@ -707,8 +707,15 @@ beat lists `D` (`offline` and `online`):
 - **half A** and **half B:** every other beat of `D`, starting with the first or
   the second
 
-The presses that choose are every press in the window except partner presses
-(a diagonal's or a rock's second key), whatever their class.
+The presses that choose are every judged press in the window except partner
+presses (a diagonal's or a rock's second key), whatever their class. Since the
+fair-judging revision (`hv-s4pt.12`):
+
+- **Judged presses only:** presses made while unjudged, the beat unclear, do
+  not choose. In two playtests the Galop's rubato prelude left a half-tempo
+  reading that its presses had chosen.
+- **A fresh start:** after an unclear stretch the reading starts again from
+  offline "as tracked". Only presses since judging resumed choose it.
 
 The reading used to settle a press `p` is chosen from the entry used for it
 (time `T`) and the presses in `[T − 8 s, T]`, **leaving out `p` itself**:
@@ -722,7 +729,9 @@ the incumbent is the candidate whose beats best match the grid chosen for the
 previous settle (most beats within the match tolerance where they overlap);
 at the first settle, or with no overlap, it is offline "as tracked"
 the best-scoring candidate c replaces the incumbent i only if
-  d = score(c) − score(i) > 0.10   and   d > 3 × sqrt((h_c(1 − h_c) + h_i(1 − h_i)) / n)
+  d = score(c) − score(i) > 0.10   and   d > k × sqrt((h_c(1 − h_c) + h_i(1 − h_i)) / n)
+with k = 1 when c reads the grid "as tracked" and k = 2 otherwise;
+switching away from "as tracked" needs at least 12 presses
 where h are the candidates' hit shares and n the number of presses;
 with fewer than 8 presses the incumbent stays
 ```
@@ -732,16 +741,19 @@ with fewer than 8 presses the incumbent stays
   presses a second picked the double-tempo grid and doubled its Perfect share
   (see the [appendix](#appendix-evidence)).
 - **Leaving out `p`** stops a press from choosing the grid that rates it.
-- **The significance test** stops the reading from wandering on noise. For 32
-  random presses `3 × sqrt(...)` is about 0.34, far above their typical score
-  differences, while an honest player's switch from a half-tempo grid to the
-  double reading (d = 0.36, both hit shares near 0.95) clears it easily:
-  `3 × sqrt(2 × 0.95 × 0.05 / 32) ≈ 0.16`.
+- **The significance test** stops the reading from wandering on noise, and
+  leans towards "as tracked": switching back to it takes one standard error,
+  and switching away from it takes two.
+  - The original factor of 3 kept a wrong incumbent in play for 6 s or more of
+    a steady player's presses on the Galop. The right reading led by about 0.20
+    against a required 0.38.
+  - Switching away from "as tracked" also needs at least 12 presses: right after
+    a restart, a handful of random presses can look like a reading.
 - **The incumbent is found by matching beats** because the labels "half A" and
   "half B" depend on which beat opens the 8 s window, which changes as the
   window slides.
-- **Knobs:** the window (8 s), the margin (0.10), the significance factor (3)
-  and the 45 ms hit window may be tuned.
+- **Knobs:** the window (8 s), the margin (0.10), the significance factors (2,
+  and 1 back to "as tracked") and the hit window may be tuned.
 - **The chosen grid goes to `classifyPress` unchanged,** so every class and
   rating works as in play mode: off-beats, loose counted presses and strays
   included. The press settles unjudged only if the chosen grid has no beat
@@ -795,13 +807,31 @@ settle delay:
 
 These rules start in stage 1 and apply to the settled judgment from stage 2.
 
-- **Unjudged presses:** a press whose evidence at `p` is below the gate is
-  unjudged. It shows grey, changes nothing and does not count as raising the
-  groove.
-- **The drain clock stops:** the time since the latest raise counts only time
-  whose evidence is at or above the gate. A stretch below the gate neither
-  drains the groove nor brings the next drain closer, much as play mode's free
-  sections freeze the groove.
+- **Unjudged presses:** a press is unjudged while the evidence is below the gate,
+  and for 1 s after it returns (the fair-judging revision, `hv-s4pt.12`).
+  - Judging stops at the first tick below the gate and resumes once the beat has
+    been clear for 1 s. A wobble around the gate does not flip presses between
+    judged and unjudged.
+  - An unjudged press still strides, shows grey, changes nothing and does not
+    count as raising the groove.
+- **The drain clock stops:** the time since the latest raise counts only judged
+  time. A stretch without judging neither drains the groove nor brings the next
+  drain closer. When judging resumes, the drain waits its grace bar again.
+- **The benefit of the doubt** (`hv-s4pt.12`):
+  - **Steady players:** a settle may not lower the provisional judgment of a
+    press from a steady player. Steady means the press and the three judged
+    presses before it were all provisionally Perfect or Great.
+  - **Why:** a hindsight reading the game is unsure of could otherwise turn good
+    playing into stray presses. A masher almost never strings four together, so
+    its lucky ratings stay open to the settle.
+- **Penalties scale with confidence** (`hv-s4pt.12`):
+  - Every settled penalty, and the drain, counts in proportion to the
+    evidence: none of it at the gate, all of it from 0.55.
+  - A steady player's raises count in full. Anyone else's scale like a
+    penalty, so pressing at random gains nothing where the tracker is unsure.
+  - **Why:** in the Galop's kick line the tracker's beats ran 115–210 ms late
+    with the evidence near 0.27. Both judgments rated a steady player's presses
+    loose.
 - In the experiment, this gate muted 91% of the pads-only breakdown and 95% of
   the Galop's free prelude, while playing everything in steady beat-driven
   sections.
@@ -852,11 +882,14 @@ follows loudness, and every press ripples outward.
 - **Sound fades:** instead of cutting out at the gate, percussive gameplay
   sounds fade from full volume at twice the gate to silent at the gate, using
   the evidence of the beat their slot belongs to.
-- **Free movement when unclear:** after the evidence has stayed below the gate
-  for 2 s, movement switches to play mode's free movement (held keys walk, the
-  sword swings by itself every beat), as in the Galop's authored prelude. It
-  switches back to strides after 2 s at or above the gate. Each switch takes
-  effect on the next committed downbeat.
+- **No free movement** (the fair-judging revision, `hv-s4pt.12`, superseding
+  this stage's free movement while unclear):
+  - Strides and the beat display stay on throughout.
+  - While the beat is unclear, presses stride unjudged and the groove holds.
+  - The beat track's ticks soften with the share of the last half second with
+    the beat clear, down to 30% but never gone.
+  - **Why:** in playtests the switch flipped controls and display on confidence
+    dips the player could not hear, stretched by its 2 s rules.
 
 ## Stage 4: Structure
 
@@ -2131,3 +2164,87 @@ Recorded by `hv-s4pt.10`.
     Beethoven 34, the synthetic tracks 12 to 32.
   - `check:reactive` now takes about 80 s, 61 s of it for the causality check
     on the longer track.
+
+### Measured: fair judging, after two playtests
+
+Recorded by `hv-s4pt.12`.
+
+**What the playtests showed.** The source was two playtests of the reactive
+Galop (logs `2026-10-24T03-13-03-551Z` and `2026-10-24T03-19-24-149Z`).
+
+- **Wrong readings.** The settle picked half-tempo readings in the vamp
+  (46–54 s) and around the kick line (89–92 s), and an off-beat reading in the
+  coda (131–136 s). Good presses settled as stray, loose or good: the coda
+  crashed from 100% to 5%, and the vamp stayed at 0.
+- **Free movement.** It also switched on confidence dips the player could not
+  hear: 81.6–89.3 s, 92.5–94.7 s and 137.4–140.9 s, besides the prelude.
+- **The tracker itself.** In the kick line its committed beats ran 115–210 ms
+  behind the song map's, at evidence near 0.27, while the player pressed 25–90
+  ms after the song map's beats.
+
+**The revision.**
+
+- No free movement.
+- Judging resumes only after 1 s clear, with the drain's grace bar after an
+  unclear stretch.
+- Readings are chosen from judged presses since judging resumed, restarting
+  from offline "as tracked".
+- The reading choice leans towards "as tracked": significance factors 2 away
+  from it, 1 back to it.
+- The benefit of the doubt applies to steady players (4 provisionally Perfect or
+  Great presses in a row), and only when the settle has a judgment of its own.
+- Penalties, the drain and an unsteady player's raises scale with the
+  evidence: none of them at the gate, all of them from 0.55.
+- Switching away from "as tracked" needs at least 12 presses.
+
+**Three findings along the way:**
+
+- **Unconditional benefit of the doubt lifted the mashers.** On the Galop they
+  stayed at tier 0 only 24–45% of judged time. Requiring a steady run restores
+  it.
+- **Full penalties from 0.65 let mash4 out of tier 0** on the Galop (78%). From
+  0.55 every masher stays at or above 82%.
+- **A reactive ring's members now close in world time,** frozen in hit-stops.
+  Closing in song time moved them across a hit-stop, and the plan check failed
+  on Beethoven's Fifth.
+
+**The playtests replayed** (`npm run reactive:replay`), with each log's presses
+under the new rules. Each cell is average groove, with the lowest in brackets.
+
+| Run | Vamp 43–55 s, recorded | Vamp, replayed | Kick line 88–96 s, recorded | Kick line, replayed | Coda 130–138 s, recorded | Coda, replayed |
+|---|---|---|---|---|---|---|
+| First | 0.00 (0.00) | 0.02 (0.00) | 0.81 (0.60) | 0.84 (0.74) | ended before the coda | ended before the coda |
+| Second | 0.01 (0.00) | 0.04 (0.00) | 0.81 (0.59) | 0.78 (0.65) | 0.62 (0.03) | 1.00 (0.99) |
+
+- **Presses rated well at first but settled stray, loose or good:** 12 → 3
+  and 20 → 7.
+- **Average groove:** 0.45 → 0.42 and 0.51 → 0.59.
+- **The vamp stays low**, lower still once an unsteady player's raises scale,
+  for two reasons:
+  - the evidence dips under the gate at 45.4–46.4 s and 48.0–48.8 s;
+  - the tracker's beats there are 50–90 ms off, so steady presses rate Great
+    (+0.02) rather than Perfect.
+- **The recorded kick line hid its presses in free movement.** The replayed one
+  judges them, softly.
+
+**The players**, with damage off, as shares of judged time:
+
+| Track | Player | Before | After |
+|---|---|---|---|
+| Galop | `reactive-moderate` at tier 2 or higher | 70.3% | 86.2% |
+| Galop | `reactive-human` at tier 2 or higher | about 66% | 75% |
+| Galop | mash4 at tier 0 | 100% | 97% |
+| Galop | mash8 at tier 0 | 100% | 100% |
+| pop-arrangement | mash4 at tier 0 | 99.7% | 87% |
+
+- The house-128 gate holds at 100% for both mashers.
+- **Judged time** in these shares and in the stage 2 gates is now the judged
+  time the grade uses, so the second after each resume no longer counts.
+- **pop-arrangement's mash4 reaches tier 2 or higher 9% of the time.** At 120
+  beats per minute, 4 presses a second is exactly eighth notes, so after the
+  breakdown its presses really do fit the double reading.
+- **Random presses on offline "as tracked":** the stage 2 target of 90% stays
+  missed, at 68% (66% before).
+- **The review's ring finding:** a reactive ring's members now re-solve their
+  pace each step for what is left of the close. They reach their inner radius
+  by its end, after any hit-stop's pause.

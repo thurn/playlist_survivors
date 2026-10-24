@@ -1,10 +1,10 @@
 /**
  * Reactive mode's grade (docs/design/reactive-audio.md, "The reactive level"): the run ends when
  * the audio does, and its end card grades the average groove over judged time, the song time after
- * the first 16 s at which the evidence is at or above the gate.
+ * the first 16 s at which presses are judged (the beat clear, for a second at least).
  */
 import { grooveAt } from "../plan/evaluate.ts";
-import { evidenceAt, type ReactiveStream } from "./stream.ts";
+import { judgedAt, type ReactiveStream } from "./stream.ts";
 
 /** Judged time starts this far into the song. */
 export const JUDGED_FROM_S = 16;
@@ -18,7 +18,7 @@ export function judgedAverageGroove(groove: { s: ArrayLike<number>; v: ArrayLike
   let sum = 0;
   let n = 0;
   for (let t = Math.max(JUDGED_FROM_S, from); t < to; t += 0.25) {
-    if (evidenceAt(stream, t) < stream.params.gate) continue;
+    if (!judgedAt(stream, t)) continue;
     sum += grooveAt(groove, t);
     n++;
   }

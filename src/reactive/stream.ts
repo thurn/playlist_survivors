@@ -85,6 +85,59 @@ export function tickIndexAt(stream: ReactiveStream, s: number): number {
   return lo - 1;
 }
 
+/** How long the beat must have been clear before presses are judged again (hv-s4pt.12). */
+export const JUDGE_AFTER_S = 1;
+
+export interface Judging {
+  /** Per tick: is the beat judged from it to the next (clear at it and at every tick of the JUDGE_AFTER_S before)? */
+  judged: Uint8Array;
+  /** Per judged tick: when its run of judged ticks began. */
+  since: Float64Array;
+}
+
+const judgingMemo = new WeakMap<ReactiveStream, Judging>();
+
+/**
+ * When the beat is judged: judging stops at the first tick below the gate and resumes once the beat
+ * has been clear for JUDGE_AFTER_S, so a wobble around the gate does not flip presses between judged
+ * and unjudged. Each tick's answer reads only ticks at or before it.
+ */
+export function judging(stream: ReactiveStream): Judging {
+  const memo = judgingMemo.get(stream);
+  if (memo) return memo;
+  const ticks = stream.ticks;
+  const gate = stream.params.gate;
+  const judged = new Uint8Array(ticks.length);
+  const since = new Float64Array(ticks.length).fill(NaN);
+  let clearFrom = NaN;
+  for (let j = 0; j < ticks.length; j++) {
+    if (ticks[j].evidence < gate) {
+      clearFrom = NaN;
+      continue;
+    }
+    if (Number.isNaN(clearFrom)) clearFrom = ticks[j].t;
+    if (ticks[j].t - clearFrom >= JUDGE_AFTER_S - 1e-9) {
+      judged[j] = 1;
+      since[j] = j > 0 && judged[j - 1] ? since[j - 1] : ticks[j].t;
+    }
+  }
+  const out = { judged, since };
+  judgingMemo.set(stream, out);
+  return out;
+}
+
+/** Is the beat judged at song time s (see judging)? */
+export function judgedAt(stream: ReactiveStream, s: number): boolean {
+  const i = tickIndexAt(stream, s);
+  return i >= 0 && judging(stream).judged[i] === 1;
+}
+
+/** When the run of judging that song time s falls in began (NaN when not judged). */
+export function judgedSinceAt(stream: ReactiveStream, s: number): number {
+  const i = tickIndexAt(stream, s);
+  return i >= 0 ? judging(stream).since[i] : NaN;
+}
+
 /** The evidence at song time s: the latest tick's at or before it (0 before the first). */
 export function evidenceAt(stream: ReactiveStream, s: number): number {
   const i = tickIndexAt(stream, s);

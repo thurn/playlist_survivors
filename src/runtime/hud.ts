@@ -266,8 +266,9 @@ export class Hud {
           g.stroke({ color: 0x9fb8ff, width: 2 * u, alpha: 0.7 });
         }
       }
-      // Ticks fade in with the count-in before step movement.
-      const trackA = hud.free ? (hud.countIn?.fade ?? 0) : 1;
+      // Ticks fade in with the count-in before step movement; reactive mode's soften while the beat is
+      // unclear (the share of the last half second with it clear), never vanishing.
+      const trackA = (hud.free ? (hud.countIn?.fade ?? 0) : 1) * (hud.pulse ? 0.3 + 0.7 * hud.pulse.mix : 1);
       for (const t of hud.ticks) {
         const d = t.dt * 90;
         if (d > 186) continue;

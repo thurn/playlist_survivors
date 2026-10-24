@@ -442,16 +442,6 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
     this.pressLog?.(t);
   }
 
-  movement(s: number, free: boolean): void {
-    if (!this.plan.modes) {
-      this.plan.modes = [];
-      this.undo(() => {
-        delete this.plan.modes;
-      });
-    }
-    this.add(this.plan.modes, { s, free });
-  }
-
   settle(r: SettleRecord): void {
     if (!this.plan.settles) {
       this.plan.settles = [];

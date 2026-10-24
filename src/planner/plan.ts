@@ -292,7 +292,6 @@ export function planWithSim(input: PlannerInput, opts: PlannerOptions = {}): { p
     chickens: sim.chickens,
     cleaves: sim.waves.map((w) => ({ s: w.s, press: w.press, band0: w.band0, ...(w.launch !== undefined ? { launch: w.launch } : {}), ...(w.onset ? { onset: w.onset } : {}) })),
     ...(sim.settles ? { settles: sim.settles } : {}),
-    ...(sim.modes ? { modes: sim.modes } : {}),
     health: { s: Float64Array.from(sim.health.s), v: Float32Array.from(sim.health.v) },
     nearMisses: sim.threats.filter((t) => t.outcome === "near-miss").map((t) => ({ s: t.s, w: t.w, kind: t.kind })),
     threats: sim.threats.map((t) => ({ s: t.s, kind: t.kind, outcome: t.outcome })),

@@ -101,16 +101,11 @@ export function strideLimitAt(plan: Plan, s: number): number {
   return plan.strides.speed * Math.max(stridePeriodAt(plan, s), stridePeriodAt(plan, s - 1e-6));
 }
 
-/** Reactive mode: has the plan switched to free movement at song time s (while the beat is unclear)? */
-export function modeFreeAt(plan: Pick<Plan, "modes">, s: number): boolean {
-  return plan.modes?.findLast((m) => m.s <= s + 1e-9)?.free ?? false;
-}
-
 /** The stride period at song time s: the step it falls in, or the free period without a steady beat. */
 export function stridePeriodAt(plan: Plan, s: number): number {
   const st = plan.strides;
   const sec = plan.sections.findLast((x) => s >= x.s0 - 1e-9) ?? plan.sections[0];
-  if (sec.movement === "free" || st.steps.length === 0 || modeFreeAt(plan, s)) return st.freePeriodS;
+  if (sec.movement === "free" || st.steps.length === 0) return st.freePeriodS;
   let k = 0;
   while (k + 1 < st.steps.length && st.steps[k + 1] <= s + 1e-9) k++;
   return st.periods[k];
@@ -123,7 +118,7 @@ function checkStrideInputs(plan: Plan, warp: Warp, stopS: number): CheckResult {
   const st = plan.strides;
   const t = plan.hero;
   const spans = heldSpans(plan.inputs);
-  const movementAt = (s: number) => (modeFreeAt(plan, s) ? "free" : (plan.sections.findLast((x) => s >= x.s0 - 1e-9) ?? plan.sections[0]).movement);
+  const movementAt = (s: number) => (plan.sections.findLast((x) => s >= x.s0 - 1e-9) ?? plan.sections[0]).movement;
   // Every stride start: each press, and each step of the stride period (in step movement) while a key is held.
   // (A held step at the very moment a press strides adds nothing: the press's stride stands. A stomp
   // with Space starts no movement: a rock step back belongs to the stride it rocks.)

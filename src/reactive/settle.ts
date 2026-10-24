@@ -15,7 +15,11 @@ export const READING = {
   /** Presses from this long before the entry's time choose. */
   windowS: 8,
   margin: 0.1,
-  significance: 3,
+  /** Presses needed to switch away from "as tracked" (more than minPresses: right after a restart, random presses can look like a reading). */
+  minAway: 12,
+  /** Switching away from "as tracked" (or between other readings) must beat the incumbent by this many standard errors; back to "as tracked", by backSignificance. */
+  significance: 2,
+  backSignificance: 1,
   hitS: 0.07,
   /** With fewer presses than this, the incumbent stays. */
   minPresses: 8,
@@ -106,8 +110,9 @@ export interface Reading {
 
 /**
  * The reading a press settles on: the incumbent (the candidate agreeing best with the previous
- * settle's grid; offline "as tracked" at first or with no overlap), replaced by the best-scoring candidate
- * only when it beats it by more than the margin and the significance test, with enough presses.
+ * settle's grid; offline "as tracked" at first, after a restart, or with no overlap), replaced by the
+ * best-scoring candidate only when it beats it by more than the margin and the significance test
+ * (a looser one back to "as tracked"), with enough presses.
  */
 export function chooseReading(entry: HindsightEntry, presses: readonly number[], previous: readonly number[] | undefined, previousLabel?: string): Reading {
   const cands = candidates(entry);
@@ -136,8 +141,11 @@ export function chooseReading(entry: HindsightEntry, presses: readonly number[],
     }
   }
   if (top === incumbent) return { chosen: incumbent, switched: false };
+  if (incumbent.reading === "as tracked" && n < READING.minAway) return { chosen: incumbent, switched: false };
   const d = st.score - si.score;
-  const sig = READING.significance * Math.sqrt((st.hits * (1 - st.hits) + si.hits * (1 - si.hits)) / n);
+  // (hv-s4pt.12) Back to "as tracked" is easy, away from it needs the stricter test.
+  const factor = top.reading === "as tracked" ? READING.backSignificance : READING.significance;
+  const sig = factor * Math.sqrt((st.hits * (1 - st.hits) + si.hits * (1 - si.hits)) / n);
   return d > READING.margin && d > sig ? { chosen: top, switched: true } : { chosen: incumbent, switched: false };
 }
 
@@ -167,6 +175,12 @@ export class Settler {
   memo: PressMemo = freshPressMemo();
   incumbent?: number[];
   incumbentLabel?: string;
+
+  /** Start the reading again from offline "as tracked" (after an unclear stretch). */
+  restart(): void {
+    this.incumbent = undefined;
+    this.incumbentLabel = undefined;
+  }
 
   /** The identity of a grid time: a registered beat within the tolerance, or a new one. */
   identity(t: number, tol: number): number {

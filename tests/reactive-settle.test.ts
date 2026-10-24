@@ -123,3 +123,32 @@ describe("beat identity", () => {
     expect(settler.settle(hero, { s: 2.5, partner: false, group: "direction", unclear: true }, e, []).judgement).toBeUndefined();
   });
 });
+
+describe("leaning towards as tracked (hv-s4pt.12)", () => {
+  // A player on every beat, against a grid as tracked, from a half-tempo incumbent and from an as-tracked one.
+  const entry = entries(beats, until)[30];
+  const window = presses.filter((q) => q >= entry.knownAt - 8 && q <= entry.knownAt);
+  const half = beats.filter((_, i) => i % 2 === 0);
+
+  it("switches back to as tracked from a wrong reading at once", () => {
+    const r = chooseReading(entry, window, half.filter((b) => b >= entry.knownAt - 8 && b <= entry.knownAt), "offline half A");
+    expect(r.switched).toBe(true);
+    expect(r.chosen.reading).toBe("as tracked");
+  });
+
+  it("switches away from as tracked only on the stricter test", () => {
+    // Presses on the off-beats: the off-beat reading wins, but needs READING.significance standard errors.
+    const offbeat = window.map((p) => p + 0.25);
+    const r = chooseReading(entry, offbeat, entry.offline, "offline as tracked");
+    expect(r.chosen.reading).toBe("off-beat");
+    expect(READING.significance).toBeGreaterThan(READING.backSignificance);
+  });
+
+  it("restarts from as tracked", () => {
+    const settler = new Settler();
+    settler.incumbent = half;
+    settler.incumbentLabel = "offline half A";
+    settler.restart();
+    expect(chooseReading(entry, [], settler.incumbent, settler.incumbentLabel).chosen.reading).toBe("as tracked");
+  });
+});

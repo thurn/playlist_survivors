@@ -18,7 +18,7 @@ import { LiveRunner, SPECULATE_S } from "../live/runner.ts";
 import { handOver, liveSim, type BotFor } from "../live/session.ts";
 import { Evaluator } from "../plan/evaluate.ts";
 import type { Plan } from "../plan/types.ts";
-import { evidenceAt, type StreamBeat, type StreamOnset, type ReactiveStream, type Reference } from "../reactive/stream.ts";
+import { judgedAt, type StreamBeat, type StreamOnset, type ReactiveStream, type Reference } from "../reactive/stream.ts";
 import { JUDGED_FROM_S } from "../reactive/grade.ts";
 import { SETTLE_DELAY } from "../reactive/settle.ts";
 import type { KeyEvent, Player } from "../sim/player.ts";
@@ -563,7 +563,7 @@ export function judgedTierShare(plan: Plan, stream: ReactiveStream, test: (tier:
   const tv = plan.tier.v;
   let i = 0;
   for (let t = JUDGED_FROM_S; t < plan.duration; t += 0.05) {
-    if (evidenceAt(stream, t) < stream.params.gate) continue;
+    if (!judgedAt(stream, t)) continue;
     while (i < ts.length && ts[i] <= t) i++;
     total++;
     if (test(i > 0 ? tv[i - 1] : 0)) passed++;

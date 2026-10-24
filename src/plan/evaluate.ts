@@ -583,8 +583,7 @@ export class Evaluator {
     const sbi = this.beatIndex(plan.songBeats, s);
     const si = this.sectionAt(s);
     const section = plan.sections[si];
-    // (Reactive mode switches to free movement while the beat is unclear.)
-    const free = section.movement === "free" || (plan.modes?.findLast((m) => m.s <= s + 1e-9)?.free ?? false);
+    const free = section.movement === "free";
     const bar = this.barAt(Math.max(0, sbi));
     const beatPhase = frac(sbi);
     const barPhase = clamp((sbi - bar.start) / bar.len, 0, 0.9999);
