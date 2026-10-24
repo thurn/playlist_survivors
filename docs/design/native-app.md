@@ -692,6 +692,11 @@ Python's upstream, ticks (evidence, energy, level) and onsets are bit-equal; the
 whole analyzer from PCM reproduces Python's beats, energies, levels, onset times
 and strong flags to the bit, with evidence and strengths within tolerance.
 
+A4 measured ([native/evidence/a4/](../../native/evidence/a4/README.md)): fed
+Python's upstream with D = 0, the offline beats, the hindsight entries and the
+phase-checked commits are bit-equal; the whole analyzer from PCM too, inline or
+on the worker; a full 20 s decode takes about 280 ms, well inside D = 670 ms.
+
 - librosa's chroma and MFCC are reproduced from their definitions (filterbanks
   computed once and compared against librosa's matrices in a test).
 - Python resamples non-44.1 kHz files with a symmetric filter (about 2 ms of

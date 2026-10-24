@@ -18,7 +18,7 @@ use crate::tensors::{TensorError, Tensors};
 const MAX_UNITS: usize = 64;
 
 /// A float32 tensor that must hold exactly `len` values.
-fn sized(t: &Tensors, name: &str, len: usize) -> Result<Vec<f32>, TensorError> {
+pub(crate) fn sized(t: &Tensors, name: &str, len: usize) -> Result<Vec<f32>, TensorError> {
     let v = t.f32(name)?;
     if v.len() == len {
         Ok(v)
@@ -31,12 +31,12 @@ fn sized(t: &Tensors, name: &str, len: usize) -> Result<Vec<f32>, TensorError> {
 }
 
 #[inline]
-fn sigmoid(x: f32) -> f32 {
+pub(crate) fn sigmoid(x: f32) -> f32 {
     1.0 / (1.0 + (-x).exp())
 }
 
 /// `x W` for a row vector `x` and a row-major `inputs x outputs` matrix, plus `b`, into `out`.
-fn affine(x: &[f32], w: &[f32], b: &[f32], out: &mut [f32]) {
+pub(crate) fn affine(x: &[f32], w: &[f32], b: &[f32], out: &mut [f32]) {
     let outputs = out.len();
     debug_assert_eq!(w.len(), x.len() * outputs);
     let mut acc = [0.0f64; MAX_UNITS];
@@ -115,8 +115,8 @@ impl Gate {
 }
 
 /// One LSTM layer with peephole gates.
-struct Lstm {
-    hidden: usize,
+pub(crate) struct Lstm {
+    pub(crate) hidden: usize,
     input: Gate,
     forget: Gate,
     cell: Gate,
@@ -124,8 +124,8 @@ struct Lstm {
 }
 
 /// An LSTM layer's state: the previous output and cell state, and scratch.
-struct LstmState {
-    h: Vec<f32>,
+pub(crate) struct LstmState {
+    pub(crate) h: Vec<f32>,
     c: Vec<f32>,
     ig: Vec<f32>,
     fg: Vec<f32>,
@@ -134,7 +134,7 @@ struct LstmState {
 }
 
 impl LstmState {
-    fn new(hidden: usize) -> Self {
+    pub(crate) fn new(hidden: usize) -> Self {
         let z = || vec![0.0; hidden];
         LstmState {
             h: z(),
@@ -149,7 +149,7 @@ impl LstmState {
 
 impl Lstm {
     /// The layer at `prefix`, taking `inputs` values per frame (checked against every tensor).
-    fn load(t: &Tensors, prefix: &str, inputs: usize) -> Result<Lstm, TensorError> {
+    pub(crate) fn load(t: &Tensors, prefix: &str, inputs: usize) -> Result<Lstm, TensorError> {
         let hidden = match t.shape(&format!("{prefix}.cell.b"))? {
             &[h] if (1..=MAX_UNITS).contains(&h) => h,
             other => {
@@ -168,7 +168,7 @@ impl Lstm {
     }
 
     /// One time step: `st.h` becomes this frame's output.
-    fn step(&self, x: &[f32], st: &mut LstmState) {
+    pub(crate) fn step(&self, x: &[f32], st: &mut LstmState) {
         let LstmState {
             h,
             c,
