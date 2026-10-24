@@ -780,9 +780,9 @@ at the rule's edges and of a 40 s accented pulse through the whole analyzer.
 A7 measured ([native/evidence/a7/](../../native/evidence/a7/README.md)): bands,
 brightness and timbre within 1e-6 of Python's (onset bands equal); the stream
 of audio cut at any point holds exactly the full stream's entries known by then,
-in all nine groups; across 47 corpus tracks the committed beats are as accurate
-as Python's at D = 0 (46 equal, one 0.8 points under), and the live D costs up to
-3 points on 10 tracks. `ps analysis-parity` reports the comparison.
+in all nine groups; across all 61 corpus tracks the committed beats match
+Python's within 70 ms at D = 0 (hit rates equal on 60, one 0.8 points under),
+and the live D costs up to 3 points on 10 of 47 tracks measured. `ps analysis-parity` reports the comparison.
 
 - librosa's chroma and MFCC use librosa's own matrices, exported with the models
   (`librosa.chroma`, `librosa.mel` and `librosa.dct` in `madmom.bin`), so the

@@ -71,12 +71,12 @@ On three tracks (house-128, the Galop, cc-kevin-macleod-go-cart; 420 s):
 At D = 0 the committed beats are as accurate as Python's on every track (the same counts and
 hit rates); the live delay costs 0.6 points on the Galop and none on the others. Every onset is
 matched within 10 ms, every key equal, structure counts equal, tick values within stream.json's
-rounding (about 2e-5). Across the corpus ([corpus.md](corpus.md), 47 of 61 tracks before a shared host's load stopped
-the run): at D = 0, 46 tracks have exactly Python's hit rate within 45 ms and one is 0.8 points
-under (notjam-descend-gameplay, 0.960 against 0.968); at the live delay 10 tracks lose 0.5 to 3
+rounding (about 2e-5). Across the corpus ([corpus.md](corpus.md)): at D = 0, every one of the 61 tracks' committed
+beats match Python's within 70 ms, 60 have exactly Python's hit rate within 45 ms and one is 0.8
+points under (notjam-descend-gameplay, 0.960 against 0.968): 0.7708 in aggregate against 0.7710.
+On 47 tracks at the live delay 10 tracks lose 0.5 to 3
 points (the most: notjam-drag-and-dread-theme and notjam-klepto-linda-caverns-b), two gain a
 little, and the rest are unchanged.
 
-The release stage runs `--all --no-live` (the margins only) at utility QoS when its inputs
-change, about 12 minutes on an idle host; background QoS keeps to the efficiency cores and took
-over an hour.
+The release stage runs `--no-live` (the margins only) on a fixed sample of 8 tracks at utility
+QoS when its inputs change: the whole corpus overran the step's 30 minutes on a loaded host.

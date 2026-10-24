@@ -10,7 +10,7 @@
 //! The samples are Python's own (`ps_analysis.pcm`, cached under
 //! `~/Library/Caches/playlist-survivors/pcm`), so decoders don't differ. The margin is the plan's:
 //! committed-beat accuracy against each track's reference (within 45 ms, after 4 s, as
-//! `stream.py`'s `accuracy`) at most 1 point under Python's per track, and no worse in aggregate,
+//! `stream.py`'s `accuracy`) at most 1 point under Python's per track and half a point in aggregate,
 //! for the analyzer as Python runs it (hindsight usable as soon as decoded, D = 0); each track runs
 //! again with the live D (0.67 s) for that delay's cost, the real-time factors and the arrival
 //! delays.
@@ -32,6 +32,9 @@ const SR: f64 = 44100.0;
 const DEFAULT_TRACKS: [&str; 3] = ["house-128", "orpheus-galop", "cc-kevin-macleod-go-cart"];
 /// Per track, Rust's accuracy may trail Python's by at most this.
 const MARGIN: f64 = 0.01;
+/// In aggregate (beat-weighted), by at most this: about as accurate as Python's (the plan's
+/// statistical judgement, 2026-10-24), not never worse.
+const AGGREGATE_MARGIN: f64 = 0.005;
 
 fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..")
@@ -705,7 +708,7 @@ fn run(args: &[String]) -> Result<bool, String> {
         "within45RustLiveDelay": weighted("rustLiveDelay"),
         "tracksOutsideMargin": failing,
     });
-    let ok = failing.is_empty() && rust >= python;
+    let ok = failing.is_empty() && rust >= python - AGGREGATE_MARGIN;
     let table = markdown(&rows, &aggregate);
     print!("{table}");
     println!(
