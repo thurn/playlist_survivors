@@ -10,6 +10,7 @@ import numpy as np
 import pytest
 
 from ps_analysis import accents as acc
+from ps_analysis import bands as bd
 from ps_analysis import stream as st
 from ps_analysis import structure as stc
 from ps_analysis import synth
@@ -47,6 +48,8 @@ def assert_same(a: dict[str, Any], b: dict[str, Any], what: str) -> None:
     for k, v in a.items():
         if isinstance(v, (bool, str)):
             assert v == b[k], f"{what}.{k}"
+        elif isinstance(v, dict):
+            assert_same(v, b[k], f"{what}.{k}")
         elif isinstance(v, list):
             assert len(v) == len(b[k]), f"{what}.{k}: {len(v)} vs {len(b[k])} entries"
             for x, y in zip(v, b[k], strict=True):
@@ -77,12 +80,85 @@ def test_stream_is_causal(
         "changes",
         "jumps",
         "ends",
+        "timbre",
     ):
         want = known_by(full[field], cut, margin)
         got = known_by(part[field], cut, margin)
         assert len(got) == len(want), f"{field} at {cut}: {len(got)} vs {len(want)}"
         for i, (g, w) in enumerate(zip(got, want, strict=True)):
             assert_same(g, w, f"{field}[{i}] at {cut}")
+
+
+def test_band_frames_read_no_audio_after_their_time() -> None:
+    """A click at sample k changes no frame-level value at a frame n with n * HOP <= k (frame n's window ends there)."""
+    rng = np.random.default_rng(1)
+    base = (rng.standard_normal(3 * bd.SR) * 0.05).astype(np.float32)
+    k = 150 * bd.HOP + 17
+    click = base.copy()
+    click[k : k + 64] += 0.9
+    a, b = bd.spectra(base), bd.spectra(click)
+    first = k // bd.HOP + 1
+    assert np.array_equal(a.power[:first], b.power[:first])
+    assert not np.array_equal(a.power[first], b.power[first])
+    fa, fb = (
+        bd.band_flux(bd.band_levels(bd.band_energy(a))),
+        bd.band_flux(bd.band_levels(bd.band_energy(b))),
+    )
+    for name in bd.BANDS:
+        assert np.array_equal(fa[name][:first], fb[name][:first]), name
+    for f in (bd.percussive_share, bd.flatness, bd.centroids):
+        x, y = f(a), f(b)
+        assert np.array_equal(x[:first], y[:first]), f.__name__
+        assert not np.array_equal(x[first : first + 3], y[first : first + 3]), (
+            f.__name__
+        )
+
+
+@pytest.mark.parametrize("cut", [3.0, 6.0, 7.53, 10.0])
+def test_bands_are_causal_at_frame_aligned_cuts(
+    excerpt: np.ndarray, cut: float
+) -> None:
+    """The bands group of the audio cut at a frame time, with no margin, equals the full audio's up to it: a value reading even one frame ahead differs."""
+    ticks = list(range(bd.FPS // 20, len(excerpt) // bd.HOP + 1, bd.FPS // 20))
+    onsets = list(range(7, len(excerpt) // bd.HOP, 23))
+    known = [n / bd.FPS for n in onsets]
+    n_cut = round(cut * bd.FPS)
+    full = bd.analyse(excerpt, ticks, onsets, known)
+    part_ticks = [f for f in ticks if f <= n_cut]
+    part_onsets = [n for n in onsets if n <= n_cut]
+    part = bd.analyse(
+        excerpt[: n_cut * bd.HOP], part_ticks, part_onsets, known[: len(part_onsets)]
+    )
+    assert part["bands"] == full["bands"][: len(part_ticks)]
+    assert part["brightness"] == full["brightness"][: len(part_ticks)]
+    assert part["onsetBands"] == full["onsetBands"][: len(part_onsets)]
+    assert part["timbre"] == [e for e in full["timbre"] if e["knownAt"] <= cut + 1e-9]
+
+
+@pytest.mark.parametrize("n", [0, 1, 500, 881, 2000])
+def test_bands_survive_very_short_audio(n: int) -> None:
+    out = bd.analyse(np.zeros(n, dtype=np.float32), [0, 1, 5], [0], [0.0])
+    assert out["bands"] == [{"kick": 0.0, "snare": 0.0, "hat": 0.0, "bass": 0.0}] * 3
+
+
+def test_silence_reads_zero_bands() -> None:
+    out = bd.analyse(
+        np.zeros(3 * bd.SR, dtype=np.float32), list(range(5, 300, 5)), [], []
+    )
+    assert all(v == 0.0 for b in out["bands"] for v in b.values())
+    assert all(
+        e["flatness"] == 0.0 and e["percussive"] == 0.0 and e["density"] == 0.0
+        for e in out["timbre"]
+    )
+
+
+def test_real_time_factors_are_reported(
+    full: dict[str, Any], rtf_report: dict[str, dict[str, float]]
+) -> None:
+    rtf = st.statistics(full, st.Params().gate)["realTimeFactor"]
+    assert set(rtf) == {"bands", "brightness", "timbre"}
+    assert all(0 < v < 0.2 for v in rtf.values()), rtf
+    rtf_report["pop-arrangement excerpt"] = rtf
 
 
 def test_onsets_are_stamped_at_their_detection_frame(full: dict[str, Any]) -> None:
@@ -331,6 +407,7 @@ def test_file_format(tmp_path: Path, excerpt: np.ndarray, full: dict[str, Any]) 
         "hindsight",
         "structure",
         "accents",
+        "timbre",
         "reference",
     ]
     assert back["version"] == 1
@@ -346,9 +423,22 @@ def test_file_format(tmp_path: Path, excerpt: np.ndarray, full: dict[str, Any]) 
         params["gate"] == 0.2 and params["tickS"] == 0.05 and params["biasS"] == -0.013
     )
     assert set(back["beats"][0]) == {"t", "knownAt", "period", "evidence"}
-    assert set(back["ticks"][0]) == {"t", "evidence", "energy", "level"}
-    assert set(back["ticks"][-1]) == {"t", "evidence", "energy", "level", "key"}
-    assert set(back["onsets"][0]) == {"t", "knownAt", "strength", "strong"}
+    tick = {"t", "evidence", "energy", "level", "bands", "brightness"}
+    assert set(back["ticks"][0]) == tick
+    assert set(back["ticks"][-1]) == tick | {"key"}
+    assert set(back["ticks"][0]["bands"]) == {"kick", "snare", "hat", "bass"}
+    assert set(back["onsets"][0]) == {"t", "knownAt", "strength", "strong", "band"}
+    assert back["onsets"][0]["band"] in {"kick", "snare", "hat", "bass"}
+    assert set(back["timbre"][0]) == {
+        "knownAt",
+        "brightness",
+        "flatness",
+        "percussive",
+        "density",
+    }
+    assert [e["knownAt"] for e in back["timbre"][:3]] == [1.0, 2.0, 3.0]
+    assert params["bands"]["version"] == 2
+    assert "rtf" not in back and "realTimeFactor" not in back
     beats = [b["t"] for b in back["beats"]]
     assert all(b > a for a, b in itertools.pairwise(beats))
     assert all(b["knownAt"] < b["t"] for b in back["beats"])

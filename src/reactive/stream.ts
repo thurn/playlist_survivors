@@ -10,8 +10,22 @@ import { z } from "zod";
 
 const beat = z.object({ t: z.number(), knownAt: z.number(), period: z.number().positive(), evidence: z.number() });
 /** Stage 4 adds each tick's loudness level and, from 10 s on, its key (such as "D major"). */
-const tick = z.object({ t: z.number(), evidence: z.number(), energy: z.number(), level: z.enum(["quiet", "medium", "loud"]).optional(), key: z.string().optional() });
-const onset = z.object({ t: z.number(), knownAt: z.number(), strength: z.number(), strong: z.boolean() });
+/** The reactive feel plan (E1) adds each tick's band envelopes (0-1, each against its own running maximum) and brightness (0-1). */
+const bandEnvelopes = z.object({ kick: z.number(), snare: z.number(), hat: z.number(), bass: z.number() });
+export const BAND_NAMES = ["kick", "snare", "hat", "bass"] as const;
+const tick = z.object({
+  t: z.number(),
+  evidence: z.number(),
+  energy: z.number(),
+  level: z.enum(["quiet", "medium", "loud"]).optional(),
+  key: z.string().optional(),
+  bands: bandEnvelopes.optional(),
+  brightness: z.number().optional(),
+});
+/** E1: an onset's band, the one with the largest share of its spectral flux. */
+const onset = z.object({ t: z.number(), knownAt: z.number(), strength: z.number(), strong: z.boolean(), band: z.enum(BAND_NAMES).optional() });
+/** E1: every second, the past 10 s's timbre: brightness, flatness (noisy against tonal), percussive share and onsets per second. */
+const timbre = z.object({ knownAt: z.number(), brightness: z.number(), flatness: z.number(), percussive: z.number(), density: z.number() });
 /** (A fitted reference's sections are approximate: an offline segmentation snapped to downbeats.) */
 const section = z.object({ label: z.string(), s0: z.number(), s1: z.number(), feel: z.enum(["pulsed", "free"]).optional(), approximate: z.boolean().optional() });
 
@@ -50,6 +64,7 @@ export const StreamFileSchema = z.object({
   onsets: z.array(onset),
   /** Stage 2: every second, the offline decode of the last 20 s and the causal tracker's believed beats, each over the last 8 s. */
   hindsight: z.array(z.object({ knownAt: z.number(), offline: z.array(z.number()), online: z.array(z.number()) })).optional(),
+  timbre: z.array(timbre).optional(),
   /**
    * Stage 4: changes (novelty peaks, known 6 s late), loudness jumps of 6 dB or more (known at the
    * end of their second) and candidate endings (known 1.5 s into the quiet).

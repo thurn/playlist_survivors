@@ -41,11 +41,11 @@ from typing import Any
 
 import numpy as np
 
-from . import accents, structure
+from . import accents, bands, structure
 
 #: Bumped whenever the stream's output changes, so stale shipped streams fail
 #: `check:reactive`.
-TOOL_VERSION = 5
+TOOL_VERSION = 6
 
 SR = 44100
 FPS = 100
@@ -200,6 +200,18 @@ class Params:
                 "windowS": self.forecast_window_s,
                 "minLeadS": self.forecast_min_lead_s,
                 "history": self.forecast_history,
+            },
+            "bands": {
+                "version": bands.GROUP_VERSION,
+                "fftSize": bands.N_FFT,
+                "decayDbPerS": bands.DECAY_DB_PER_S,
+                "rangeDb": bands.RANGE_DB,
+                "floorDb": bands.FLOOR_DB,
+                "peakHalfS": bands.PEAK_HALF_S,
+                "fluxFloorDb": bands.FLUX_FLOOR_DB,
+                "brightnessStatsS": bands.BRIGHT_STATS_S,
+                "timbreEveryS": bands.TIMBRE_EVERY_S,
+                "timbrePastS": bands.TIMBRE_PAST_S,
             },
             "biasS": self.bias_s,
             "toolVersion": TOOL_VERSION,
@@ -528,10 +540,24 @@ def build_stream(
             tick["key"] = key
         ticks.append(tick)
     onsets = detect_onsets(y, p)
+    # Bands, brightness and timbre (reactive-feel E1).
+    group = bands.analyse(
+        y,
+        tick_frames,
+        [round(o["knownAt"] * FPS) for o in onsets],
+        [o["knownAt"] for o in onsets],
+    )
+    for tick, b, br in zip(ticks, group["bands"], group["brightness"], strict=True):
+        tick["bands"] = b
+        tick["brightness"] = br
+    for o, b in zip(onsets, group["onsetBands"], strict=True):
+        o["band"] = b
     return {
         "beats": beats,
         "ticks": ticks,
         "onsets": onsets,
+        "timbre": group["timbre"],
+        "rtf": group["rtf"],
         **({"hindsight": hindsight_entries(y, beliefs, p)} if hindsight else {}),
         "forecasts": accents.forecasts(beats, onsets, p),
         "changes": form["changes"],
@@ -623,6 +649,8 @@ def statistics(stream: dict[str, Any], gate: float) -> dict[str, Any]:
         "ticks": len(stream["ticks"]),
         "onsets": len(stream["onsets"]),
         "strongOnsets": sum(1 for o in stream["onsets"] if o["strong"]),
+        # (Each new group's analysis seconds per audio second: the design's live-readiness target is under 0.2.)
+        **({"realTimeFactor": stream["rtf"]} if "rtf" in stream else {}),
     }
     if not ref:
         return stats
@@ -689,6 +717,12 @@ def to_document(
                 "energy": _r(k["energy"]),
                 **({"level": k["level"]} if "level" in k else {}),
                 **({"key": k["key"]} if "key" in k else {}),
+                **(
+                    {"bands": {b: _r(v) for b, v in k["bands"].items()}}
+                    if "bands" in k
+                    else {}
+                ),
+                **({"brightness": _r(k["brightness"])} if "brightness" in k else {}),
             }
             for k in stream["ticks"]
         ],
@@ -698,6 +732,7 @@ def to_document(
                 "knownAt": _r(o["knownAt"], 2),
                 "strength": _r(o["strength"]),
                 "strong": o["strong"],
+                **({"band": o["band"]} if "band" in o else {}),
             }
             for o in stream["onsets"]
         ],
@@ -742,6 +777,11 @@ def to_document(
                 for f in stream["forecasts"]
             ]
         }
+    if "timbre" in stream:
+        doc["timbre"] = [
+            {k: _r(v, 2) if k == "knownAt" else _r(v) for k, v in e.items()}
+            for e in stream["timbre"]
+        ]
     if reference:
         ref: dict[str, Any] = {
             "source": reference["source"],

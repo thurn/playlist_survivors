@@ -176,6 +176,26 @@ describe("the perturbation", () => {
     const lone = perturbStream({ ...stream, structure: { changes: [{ t: 3, knownAt: 9, strength: 1 }], jumps: [], ends: [] } }, C, "test");
     expect(lone.structure!.changes.filter((e) => e.knownAt > C).length).toBeGreaterThan(0);
   });
+
+  it("changes the bands, brightness, onset bands and timbre after C (E1)", () => {
+    const bands = { kick: 0.5, snare: 0.5, hat: 0.5, bass: 0.5 };
+    const ticks = stream.ticks.map((k) => ({ ...k, bands, brightness: 0.5 }));
+    const onsets = Array.from({ length: 50 }, (_, i) => ({ t: 0.5 + i * 0.5, knownAt: 0.52 + i * 0.5, strength: 1, strong: false, band: "kick" as const }));
+    const timbre = Array.from({ length: 30 }, (_, i) => ({ knownAt: i + 1, brightness: 0.5, flatness: 0.5, percussive: 0.5, density: 2 }));
+    const q = perturbStream({ ...stream, ticks, onsets, timbre }, C, "test");
+    expect(q.ticks.filter((k) => k.t <= C)).toEqual(ticks.filter((k) => k.t <= C));
+    const after = q.ticks.filter((k) => k.t > C);
+    expect(after.every((k) => k.bands && k.brightness !== undefined)).toBe(true);
+    expect(after.some((k) => k.bands!.kick !== 0.5 && k.bands!.bass !== 0.5)).toBe(true);
+    expect(after.some((k) => k.brightness !== 0.5)).toBe(true);
+    expect(q.onsets.filter((o) => o.knownAt <= C)).toEqual(onsets.filter((o) => o.knownAt <= C));
+    expect(q.onsets.filter((o) => o.knownAt > C).every((o) => o.band !== "kick")).toBe(true);
+    expect(q.timbre!.filter((e) => e.knownAt <= C)).toEqual(timbre.filter((e) => e.knownAt <= C));
+    expect(q.timbre!.filter((e) => e.knownAt > C).every((e) => e.brightness !== 0.5)).toBe(true);
+    // A stream without the fields gains none.
+    expect(p.timbre).toBeUndefined();
+    expect(p.ticks.some((k) => "bands" in k || "brightness" in k)).toBe(false);
+  });
 });
 
 describe("detected sections (stage 4)", () => {

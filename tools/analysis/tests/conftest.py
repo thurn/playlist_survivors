@@ -33,6 +33,23 @@ def make_map(
     }
 
 
+#: The real-time factors the stream tests measure, printed after the run (the design's live-readiness report).
+RTF_KEY = pytest.StashKey[dict[str, dict[str, float]]]()
+
+
+@pytest.fixture
+def rtf_report(request: pytest.FixtureRequest) -> dict[str, dict[str, float]]:
+    return request.config.stash.setdefault(RTF_KEY, {})
+
+
+def pytest_terminal_summary(terminalreporter: Any, config: pytest.Config) -> None:
+    for name, rtf in config.stash.get(RTF_KEY, {}).items():
+        parts = ", ".join(f"{k} {v:.4f}" for k, v in rtf.items())
+        terminalreporter.write_line(
+            f"real-time factors ({name}): {parts} (target under 0.2)"
+        )
+
+
 @pytest.fixture
 def grid_map() -> dict[str, Any]:
     """16 beats, 0.5 s apart from 1.0 s, 2/4: 8 bars in two pulsed sections."""

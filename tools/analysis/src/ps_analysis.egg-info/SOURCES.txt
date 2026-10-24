@@ -3,6 +3,7 @@ src/ps_analysis/__init__.py
 src/ps_analysis/accents.py
 src/ps_analysis/analyze.py
 src/ps_analysis/audio.py
+src/ps_analysis/bands.py
 src/ps_analysis/check.py
 src/ps_analysis/cli.py
 src/ps_analysis/click.py
@@ -23,6 +24,7 @@ src/ps_analysis.egg-info/top_level.txt
 tests/test_check.py
 tests/test_crop.py
 tests/test_edit.py
+tests/test_fitgrid.py
 tests/test_smoke.py
 tests/test_songmap.py
 tests/test_stream.py

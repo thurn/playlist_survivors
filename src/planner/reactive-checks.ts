@@ -18,7 +18,7 @@ import { LiveRunner, SPECULATE_S } from "../live/runner.ts";
 import { handOver, liveSim, type BotFor } from "../live/session.ts";
 import { Evaluator } from "../plan/evaluate.ts";
 import type { Plan } from "../plan/types.ts";
-import { judgedAt, type StreamBeat, type StreamOnset, type ReactiveStream, type Reference } from "../reactive/stream.ts";
+import { BAND_NAMES, judgedAt, type StreamBeat, type StreamOnset, type ReactiveStream, type Reference } from "../reactive/stream.ts";
 import { JUDGED_FROM_S } from "../reactive/grade.ts";
 import { SETTLE_DELAY } from "../reactive/settle.ts";
 import type { KeyEvent, Player } from "../sim/player.ts";
@@ -36,8 +36,9 @@ import { planHash, planWithSim, prepare } from "./plan.ts";
  * check prescribes: committed beats lose every fifth, gain one in every seventh gap and move by up
  * to 35% of their period, with every field changed and each staying strictly increasing and later
  * than both max(knownAt, C) + 0.1 s and the last unchanged beat plus a quarter period; ticks get
- * seeded evidence and energy; onsets move by up to 50 ms, get seeded strengths and strong flags,
- * and lose every third; and the song lasts C plus 10 to 60 s.
+ * seeded evidence and energy (and bands and brightness); onsets move by up to 50 ms, get seeded
+ * strengths, strong flags and bands, and lose every third; timbre entries get seeded values; and the
+ * song lasts C plus 10 to 60 s.
  */
 export function perturbStream(stream: ReactiveStream, C: number, seed: string): ReactiveStream {
   const r = new Rng(0x5eed, "perturb", seed, Math.round(C * 1e6));
@@ -66,7 +67,20 @@ export function perturbStream(stream: ReactiveStream, C: number, seed: string): 
   const duration = C + r.range(10, 60);
   const ticks = stream.ticks
     .filter((k) => k.t <= duration + 1e-9)
-    .map((k) => (k.t <= C ? k : { t: k.t, evidence: r.next(), energy: r.next(), ...(k.level ? { level: r.pick(LEVELS) } : {}), ...(k.level && r.next() < 0.8 ? { key: r.pick(KEYS) } : {}) }));
+    .map((k) =>
+      k.t <= C
+        ? k
+        : {
+            t: k.t,
+            evidence: r.next(),
+            energy: r.next(),
+            ...(k.level ? { level: r.pick(LEVELS) } : {}),
+            ...(k.level && r.next() < 0.8 ? { key: r.pick(KEYS) } : {}),
+            // (E1: band envelopes and brightness replaced.)
+            ...(k.bands ? { bands: { kick: r.next(), snare: r.next(), hat: r.next(), bass: r.next() } } : {}),
+            ...(k.brightness !== undefined ? { brightness: r.next() } : {}),
+          },
+    );
   const maxStrength = Math.max(1, ...stream.onsets.map((o) => o.strength));
   const onsets: StreamOnset[] = [];
   let n = 0;
@@ -76,7 +90,7 @@ export function perturbStream(stream: ReactiveStream, C: number, seed: string): 
       continue;
     }
     if (n++ % 3 === 2) continue;
-    onsets.push({ t: o.t + r.range(-0.05, 0.05), knownAt: o.knownAt + r.range(-0.02, 0.02), strength: r.range(0, maxStrength), strong: r.next() < 0.3 });
+    onsets.push({ t: o.t + r.range(-0.05, 0.05), knownAt: o.knownAt + r.range(-0.02, 0.02), strength: r.range(0, maxStrength), strong: r.next() < 0.3, ...(o.band ? { band: r.pick(BAND_NAMES.filter((b) => b !== o.band)) } : {}) });
   }
   // (Every field changes, knownAt too, staying after C and in order.)
   let lastKnown = C + 1e-4;
@@ -109,7 +123,9 @@ export function perturbStream(stream: ReactiveStream, C: number, seed: string): 
     ends: perturbEvents(stream.structure.ends, C, r, (e) => e),
   };
   const accents = stream.accents && { forecast: perturbEvents(stream.accents.forecast, C, r, (e) => ({ ...e, cycle: r.pick([2, 4, 8]), confidence: r.next() })) };
-  return { ...stream, audio: { ...stream.audio, duration }, beats, ticks, onsets, ...(hindsight ? { hindsight } : {}), ...(structure ? { structure } : {}), ...(accents ? { accents } : {}) };
+  // E1: timbre entries known after C get new values.
+  const timbre = stream.timbre?.filter((e) => e.knownAt <= duration + 1e-9).map((e) => (e.knownAt <= C ? e : { knownAt: e.knownAt, brightness: r.next(), flatness: r.next(), percussive: r.next(), density: r.range(0, 12) }));
+  return { ...stream, audio: { ...stream.audio, duration }, beats, ticks, onsets, ...(hindsight ? { hindsight } : {}), ...(structure ? { structure } : {}), ...(accents ? { accents } : {}), ...(timbre ? { timbre } : {}) };
 }
 
 const LEVELS = ["quiet", "medium", "loud"] as const;
@@ -361,7 +377,7 @@ export function forecastPrecision(stream: ReactiveStream, minConfidence = 0.6, w
 export const FEATURES = ["level-ups", "zone waves", "section starts", "reading switches", "forecasts", "forecast cleaves", "onset cleaves", "rings", "stampedes", "volleys", "bee wedges", "kick lines", "the boss", "the finale"] as const;
 
 
-/** Default cuts: just before each committed beat's, strong onset's, hindsight entry's, structural event's and accent forecast's knownAt, and just after each level-up and zone wave. */
+/** Default cuts: just before each committed beat's, strong onset's, hindsight entry's, structural event's, accent forecast's and timbre entry's knownAt, and just after each level-up and zone wave. */
 export function defaultCuts(stream: ReactiveStream, truePlan: Plan, until: number): number[] {
   const raw = [
     ...stream.beats.map((b) => b.knownAt - 0.001),
@@ -369,6 +385,8 @@ export function defaultCuts(stream: ReactiveStream, truePlan: Plan, until: numbe
     ...(stream.hindsight ?? []).map((h) => h.knownAt - 0.001),
     ...(stream.structure ? [...stream.structure.changes, ...stream.structure.jumps, ...stream.structure.ends] : []).map((e) => e.knownAt - 0.001),
     ...(stream.accents?.forecast ?? []).map((e) => e.knownAt - 0.001),
+    // (E1: timbre entries, every second, as the hindsight entries.)
+    ...(stream.timbre ?? []).map((e) => e.knownAt - 0.001),
     ...truePlan.upgrades.map((u) => u.s + 0.001),
     // (Stage 6: just after each set piece shows.)
     ...Object.values(setPieceTimes(truePlan)).flatMap((ts) => ts.slice(0, 4).map((t) => t + 0.001)),

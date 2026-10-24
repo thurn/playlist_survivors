@@ -445,8 +445,8 @@ beat the game is in always has its end known. See
     "biasS": -0.013, "toolVersion": 1
   },
   "beats": [{ "t": 0.512, "knownAt": 0.0, "period": 0.469, "evidence": 0.0 }],
-  "ticks": [{ "t": 0.05, "evidence": 0.0, "energy": 0.0, "level": "quiet", "key": "D major" }],
-  "onsets": [{ "t": 0.503, "knownAt": 0.51, "strength": 4.2, "strong": false }],
+  "ticks": [{ "t": 0.05, "evidence": 0.0, "energy": 0.0, "level": "quiet", "key": "D major", "bands": { "kick": 0.0, "snare": 0.0, "hat": 0.0, "bass": 0.0 }, "brightness": 0.5 }],
+  "onsets": [{ "t": 0.503, "knownAt": 0.51, "strength": 4.2, "strong": false, "band": "snare" }],
   "hindsight": [{ "knownAt": 1.0, "offline": [], "online": [] }],
   "structure": {
     "changes": [{ "t": 54.07, "knownAt": 60.1, "strength": 1.4 }],
@@ -454,6 +454,7 @@ beat the game is in always has its end known. See
     "ends": [{ "t": 142.8, "knownAt": 144.2 }]
   },
   "accents": { "forecast": [{ "t": 65.03, "knownAt": 63.1, "cycle": 8, "confidence": 0.75 }] },
+  "timbre": [{ "knownAt": 1.0, "brightness": 0.42, "flatness": 0.18, "percussive": 0.35, "density": 3.0 }],
   "reference": {
     "source": "songmap",
     "beats": [0.149, 0.54],
