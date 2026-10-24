@@ -2,7 +2,9 @@
 //! committed beat, and an attack that only lands on a beat. All times are host seconds of when
 //! things are heard; the arena is a fixed 960 x 640 field.
 
-use super::gfx::Rect;
+use render::atlas::{Atlases, Facing};
+
+use super::gfx::{Sprite, rect, square};
 
 pub const WIDTH: f32 = 960.0;
 pub const HEIGHT: f32 = 640.0;
@@ -15,6 +17,19 @@ const STEP: f32 = 46.0;
 /// How long a step's slide takes.
 const STEP_S: f64 = 0.09;
 const ATTACK_RADIUS: f32 = 150.0;
+/// The enemy kinds: a character sprite and the scale it is drawn at.
+const KINDS: [(&str, f32); 6] = [
+    ("goblin", 1.0),
+    ("bat", 1.5),
+    ("eyeball", 1.4),
+    ("slime", 1.5),
+    ("skeleton", 1.0),
+    ("orc", 1.0),
+];
+/// The world's tile size.
+const TILE: f32 = 32.0;
+/// How long the hero's slash plays.
+const SLASH_S: f64 = 0.24;
 pub const HEALTH: u32 = 5;
 /// After a hit the player can't be hurt again for this long.
 const INVULNERABLE_S: f64 = 0.8;
@@ -44,12 +59,34 @@ pub struct Enemy {
     /// Where the current step started, and when.
     from: (f32, f32),
     stepped_at: f64,
+    /// Index into `KINDS`.
+    pub kind: usize,
+    /// Steps taken (the walk cycle advances with them).
+    steps: u32,
+    facing: Facing,
 }
 
 impl Enemy {
+    fn at(x: f32, y: f32, kind: usize) -> Enemy {
+        Enemy {
+            x,
+            y,
+            from: (x, y),
+            stepped_at: f64::NEG_INFINITY,
+            kind,
+            steps: 0,
+            facing: Facing::Down,
+        }
+    }
+
+    /// How far through its current step (0 to 1).
+    fn progress(&self, now: f64) -> f32 {
+        ((now - self.stepped_at) / STEP_S).clamp(0.0, 1.0) as f32
+    }
+
     /// The drawn position: sliding from the last step's start.
     fn shown(&self, now: f64) -> (f32, f32) {
-        let k = (((now - self.stepped_at) / STEP_S).clamp(0.0, 1.0)) as f32;
+        let k = self.progress(now);
         let k = 1.0 - (1.0 - k) * (1.0 - k);
         (
             self.from.0 + (self.x - self.from.0) * k,
@@ -85,6 +122,8 @@ pub struct Game {
     hurt_at: f64,
     /// When and why the run ended.
     pub over: Option<(f64, End)>,
+    facing: Facing,
+    moving: bool,
 }
 
 impl Default for Game {
@@ -110,6 +149,8 @@ impl Game {
             health: HEALTH,
             hurt_at: f64::NEG_INFINITY,
             over: None,
+            facing: Facing::Down,
+            moving: false,
         }
     }
 
@@ -135,6 +176,10 @@ impl Game {
         let dx = f32::from(i8::from(input.right) - i8::from(input.left));
         let dy = f32::from(i8::from(input.down) - i8::from(input.up));
         let len = (dx * dx + dy * dy).sqrt().max(1.0);
+        self.moving = dx != 0.0 || dy != 0.0;
+        if self.moving {
+            self.facing = Facing::toward(dx, dy);
+        }
         self.x = (self.x + dx / len * PLAYER_SPEED * dt).clamp(PLAYER_SIZE, WIDTH - PLAYER_SIZE);
         self.y = (self.y + dy / len * PLAYER_SPEED * dt).clamp(PLAYER_SIZE, HEIGHT - PLAYER_SIZE);
         while self.pending.first().is_some_and(|&b| b <= now) {
@@ -185,7 +230,9 @@ impl Game {
         for e in &mut self.enemies {
             e.from = (e.x, e.y);
             e.stepped_at = at;
+            e.steps += 1;
             let (dx, dy) = (px - e.x, py - e.y);
+            e.facing = Facing::toward(dx, dy);
             let d = (dx * dx + dy * dy).sqrt();
             let s = STEP.min(d);
             if d > 0.0 {
@@ -212,12 +259,10 @@ impl Game {
             2 => (-ENEMY_SIZE, t * HEIGHT),
             _ => (WIDTH + ENEMY_SIZE, t * HEIGHT),
         };
-        self.enemies.push(Enemy {
-            x,
-            y,
-            from: (x, y),
-            stepped_at: at,
-        });
+        let kind = ((self.random() * KINDS.len() as f32) as usize).min(KINDS.len() - 1);
+        let mut e = Enemy::at(x, y, kind);
+        e.stepped_at = at;
+        self.enemies.push(e);
     }
 
     /// The attack key, pressed at `now`: judged against the nearest committed beat.
@@ -253,26 +298,70 @@ impl Game {
         j
     }
 
+    /// The hero: walking or idle, slashing just after an attack, flashing white while hurt.
+    fn draw_hero(
+        &self,
+        art: &Atlases,
+        now: f64,
+        at: &dyn Fn(f32, f32) -> (f32, f32),
+        scale: f32,
+        hurt: bool,
+        out: &mut Vec<Sprite>,
+    ) {
+        let (px, py) = at(self.x, self.y + PLAYER_SIZE / 2.0);
+        let slash = self
+            .last_attack
+            .filter(|&(t, _)| now - t < SLASH_S)
+            .map(|(t, _)| now - t);
+        let (anim, frame) = match slash {
+            Some(age) => ("slash", (age / SLASH_S * 6.0) as usize),
+            None if self.moving => ("walk", (now * 12.0) as usize),
+            None => ("idle", (now * 2.0) as usize),
+        };
+        let flash = hurt && ((now - self.hurt_at) * 12.0) as i64 % 2 == 0;
+        match art.animation("hero", anim) {
+            Some(a) => out.push(Sprite::anchored(
+                a.frame(self.facing, frame, flash),
+                px,
+                py,
+                (a.anchor_x, a.anchor_y),
+                1.2 * scale,
+            )),
+            None => out.push(square(px, py, PLAYER_SIZE * scale, [0.4, 0.85, 1.0, 1.0])),
+        }
+    }
+
     /// The scene at `now`, scaled into a `w` x `h` window.
-    pub fn draw(&self, now: f64, w: f32, h: f32, out: &mut Vec<Rect>) {
+    pub fn draw(&self, art: &Atlases, now: f64, w: f32, h: f32, out: &mut Vec<Sprite>) {
         let scale = (w / WIDTH).min(h / HEIGHT);
         let (ox, oy) = ((w - WIDTH * scale) / 2.0, (h - HEIGHT * scale) / 2.0);
         let at = |x: f32, y: f32| (ox + x * scale, oy + y * scale);
         let (fx, fy) = at(0.0, 0.0);
-        // The field pulses on each beat.
+        // The ground: grass tiles, the same every run; it brightens on each beat.
         let pulse = (1.0 - (now - self.last_beat) / 0.15).clamp(0.0, 1.0) as f32;
-        out.push(Rect::new(
-            fx,
-            fy,
-            WIDTH * scale,
-            HEIGHT * scale,
-            [
-                0.08 + 0.10 * pulse,
-                0.07 + 0.08 * pulse,
-                0.12 + 0.05 * pulse,
-                1.0,
-            ],
-        ));
+        let shade = 0.8 + 0.2 * pulse;
+        if let Some(grass) = art.tiles.get("grass-summer") {
+            for j in 0..(HEIGHT / TILE) as u32 {
+                for i in 0..(WIDTH / TILE) as u32 {
+                    let hash = (i.wrapping_mul(73_856_093) ^ j.wrapping_mul(19_349_663)) as usize;
+                    let (tx, ty) = at(i as f32 * TILE, j as f32 * TILE);
+                    // (A hair over a tile, so scaled tiles leave no seams.)
+                    let mut t =
+                        Sprite::anchored(grass[hash % grass.len()], tx, ty, (0.0, 0.0), scale);
+                    t.w += 0.5;
+                    t.h += 0.5;
+                    out.push(t.tinted([shade, shade, shade, 1.0]));
+                }
+            }
+        } else {
+            out.push(rect(
+                fx,
+                fy,
+                WIDTH * scale,
+                HEIGHT * scale,
+                [0.1, 0.2, 0.1, 1.0],
+            ));
+        }
         if let Some((t, j)) = self.last_attack {
             let age = (now - t) as f32;
             if age < 0.25 {
@@ -285,33 +374,46 @@ impl Game {
                     Judgement::Hit { .. } => ATTACK_RADIUS * (0.6 + 0.4 * age / 0.25),
                     Judgement::Miss => 30.0,
                 };
-                out.push(Rect::centered(cx, cy, 2.0 * r * scale, color));
+                out.push(square(cx, cy, 2.0 * r * scale, color));
             }
         }
-        for e in &self.enemies {
-            let (x, y) = e.shown(now);
-            let (sx, sy) = at(x, y);
-            out.push(Rect::centered(
-                sx,
-                sy,
-                ENEMY_SIZE * scale,
-                [0.9, 0.25, 0.3, 1.0],
-            ));
-        }
-        let (px, py) = at(self.x, self.y);
+        // Characters from back to front.
+        let mut order: Vec<usize> = (0..self.enemies.len()).collect();
+        order.sort_by(|&a, &b| self.enemies[a].y.total_cmp(&self.enemies[b].y));
+        let mut hero_drawn = false;
         let hurt = now - self.hurt_at < INVULNERABLE_S;
-        let blink = hurt && ((now - self.hurt_at) * 12.0) as i64 % 2 == 0;
-        if !blink {
-            out.push(Rect::centered(
-                px,
-                py,
-                PLAYER_SIZE * scale,
-                [0.4, 0.85, 1.0, 1.0],
-            ));
+        for k in order {
+            let enemy = &self.enemies[k];
+            if !hero_drawn && enemy.y > self.y {
+                self.draw_hero(art, now, &at, scale, hurt, out);
+                hero_drawn = true;
+            }
+            let (x, y) = enemy.shown(now);
+            let (sx, sy) = at(x, y);
+            let (sprite, size) = KINDS[enemy.kind];
+            if let Some(walk) = art.animation(sprite, "walk") {
+                // Half a walk cycle per step, played through the step's slide.
+                let half = walk.len().div_ceil(2) as f32;
+                let frame = (enemy.steps.saturating_sub(1) as f32 * half
+                    + enemy.progress(now) * half) as usize;
+                out.push(Sprite::anchored(
+                    walk.frame(enemy.facing, frame, false),
+                    sx,
+                    sy + ENEMY_SIZE * scale / 2.0,
+                    (walk.anchor_x, walk.anchor_y),
+                    size * scale,
+                ));
+            } else {
+                out.push(square(sx, sy, ENEMY_SIZE * scale, [0.9, 0.25, 0.3, 1.0]));
+            }
+        }
+        if !hero_drawn {
+            self.draw_hero(art, now, &at, scale, hurt, out);
         }
         if hurt {
             let a = (1.0 - (now - self.hurt_at) / INVULNERABLE_S) as f32;
-            out.push(Rect::new(
+            let (fx, fy) = at(0.0, 0.0);
+            out.push(rect(
                 fx,
                 fy,
                 WIDTH * scale,
@@ -326,45 +428,29 @@ impl Game {
             } else {
                 [0.3, 0.2, 0.25, 1.0]
             };
-            out.push(Rect::centered(hx, hy, 16.0 * scale, color));
+            out.push(square(hx, hy, 16.0 * scale, color));
         }
         let (sx, sy) = at(WIDTH - 20.0, 12.0);
         digits(self.score, sx, sy, 24.0 * scale, [1.0, 1.0, 1.0, 0.9], out);
         // The next beats approach a marker at the top: press on the marker.
         let (mx, my) = at(WIDTH * 0.5, 22.0);
-        out.push(Rect::new(
-            mx - 2.0,
-            my - 14.0,
-            4.0,
-            28.0,
-            [1.0, 1.0, 1.0, 0.9],
-        ));
+        out.push(rect(mx - 2.0, my - 14.0, 4.0, 28.0, [1.0, 1.0, 1.0, 0.9]));
         for &b in self.recent.iter().chain(&self.pending) {
             let dx = (b - now) as f32 * 300.0 * scale;
             if dx.abs() < WIDTH * scale * 0.5 {
                 let a = if dx < 0.0 { 0.3 } else { 1.0 };
-                out.push(Rect::centered(
-                    mx + dx,
-                    my,
-                    12.0 * scale,
-                    [1.0, 0.8, 0.3, a],
-                ));
-                out.push(Rect::centered(
-                    mx - dx,
-                    my,
-                    12.0 * scale,
-                    [1.0, 0.8, 0.3, a],
-                ));
+                out.push(square(mx + dx, my, 12.0 * scale, [1.0, 0.8, 0.3, a]));
+                out.push(square(mx - dx, my, 12.0 * scale, [1.0, 0.8, 0.3, a]));
             }
         }
         // Combo pips.
         for i in 0..self.combo.min(16) {
             let (cx, cy) = at(20.0 + i as f32 * 14.0, HEIGHT - 20.0);
-            out.push(Rect::centered(cx, cy, 10.0 * scale, [1.0, 0.9, 0.4, 1.0]));
+            out.push(square(cx, cy, 10.0 * scale, [1.0, 0.9, 0.4, 1.0]));
         }
         if let Some((t, why)) = self.over {
             let a = ((now - t) / 0.5).clamp(0.0, 1.0) as f32;
-            out.push(Rect::new(
+            out.push(rect(
                 fx,
                 fy,
                 WIDTH * scale,
@@ -376,7 +462,7 @@ impl Game {
                 End::Silence => [0.6, 0.7, 0.9, a],
             };
             let (cx, cy) = at(WIDTH / 2.0, HEIGHT / 2.0 - 40.0);
-            out.push(Rect::centered(cx, cy - 70.0 * scale, 40.0 * scale, color));
+            out.push(square(cx, cy - 70.0 * scale, 40.0 * scale, color));
             let size = 80.0 * scale;
             let width = digit_count(self.score) as f32 * size * 0.75;
             digits(
@@ -401,7 +487,7 @@ fn digit_count(mut n: u64) -> usize {
 }
 
 /// `n` in seven-segment digits of height `size`, right-aligned at `right`, top at `top`.
-fn digits(n: u64, right: f32, top: f32, size: f32, color: [f32; 4], out: &mut Vec<Rect>) {
+fn digits(n: u64, right: f32, top: f32, size: f32, color: [f32; 4], out: &mut Vec<Sprite>) {
     // Segments a-g, as bits of each digit.
     const SEGMENTS: [u8; 10] = [
         0b011_1111, 0b000_0110, 0b101_1011, 0b100_1111, 0b110_0110, 0b110_1101, 0b111_1101,
@@ -424,7 +510,7 @@ fn digits(n: u64, right: f32, top: f32, size: f32, color: [f32; 4], out: &mut Ve
         ];
         for (i, &(bx, by, bw, bh)) in bars.iter().enumerate() {
             if seg & (1 << i) != 0 {
-                out.push(Rect::new(bx, by, bw, bh, color));
+                out.push(rect(bx, by, bw, bh, color));
             }
         }
         n /= 10;
@@ -465,12 +551,7 @@ mod tests {
     fn an_attack_lands_only_on_a_beat() {
         let mut g = Game::new(7);
         g.beat(10.0);
-        g.enemies.push(Enemy {
-            x: g.x + 50.0,
-            y: g.y,
-            from: (0.0, 0.0),
-            stepped_at: 0.0,
-        });
+        g.enemies.push(Enemy::at(g.x + 50.0, g.y, 0));
         assert_eq!(g.attack(9.8), Judgement::Miss);
         assert_eq!(g.enemies.len(), 1);
         // Early by 80 ms (the beat still pending), then late after it has stepped.
@@ -486,12 +567,7 @@ mod tests {
     fn contact_costs_health_until_the_run_ends() {
         let mut g = Game::new(3);
         for k in 0..HEALTH {
-            g.enemies.push(Enemy {
-                x: g.x + 5.0,
-                y: g.y,
-                from: (0.0, 0.0),
-                stepped_at: 0.0,
-            });
+            g.enemies.push(Enemy::at(g.x + 5.0, g.y, 0));
             g.update(f64::from(k), 0.0, none());
             assert_eq!(g.health, HEALTH - k - 1);
             assert!(g.enemies.is_empty());
@@ -504,12 +580,7 @@ mod tests {
     fn a_second_touch_right_after_a_hit_is_free() {
         let mut g = Game::new(3);
         for t in [1.0, 1.3] {
-            g.enemies.push(Enemy {
-                x: g.x,
-                y: g.y + 5.0,
-                from: (0.0, 0.0),
-                stepped_at: 0.0,
-            });
+            g.enemies.push(Enemy::at(g.x, g.y + 5.0, 0));
             g.update(t, 0.0, none());
         }
         assert_eq!(g.health, HEALTH - 1);

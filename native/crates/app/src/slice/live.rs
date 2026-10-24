@@ -69,19 +69,28 @@ impl Source {
     }
 }
 
+/// A resource: `PS_<NAME>` (upper case), the bundle's `Resources/<name>`, or `fallback` relative
+/// to this crate in the checkout.
+pub fn resource(name: &str, fallback: &str) -> PathBuf {
+    if let Ok(p) = std::env::var(format!("PS_{}", name.replace('.', "_").to_uppercase())) {
+        return PathBuf::from(p);
+    }
+    if let Some(res) = std::env::current_exe()
+        .ok()
+        .and_then(|e| Some(e.parent()?.parent()?.join("Resources").join(name)))
+        && res.exists()
+    {
+        return res;
+    }
+    Path::new(env!("CARGO_MANIFEST_DIR")).join(fallback)
+}
+
 /// The analyzer's models: `PS_MODELS`, the bundle's Resources, or the checkout's.
 pub fn models_path() -> PathBuf {
     if let Ok(p) = std::env::var("PS_MODELS") {
         return PathBuf::from(p);
     }
-    if let Some(res) = std::env::current_exe()
-        .ok()
-        .and_then(|e| Some(e.parent()?.parent()?.join("Resources/madmom.bin")))
-        && res.exists()
-    {
-        return res;
-    }
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../models/madmom.bin")
+    resource("madmom.bin", "../../models/madmom.bin")
 }
 
 /// Linear resampler from the source's rate to 44.1 kHz.

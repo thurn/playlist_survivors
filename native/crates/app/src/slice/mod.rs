@@ -9,6 +9,7 @@
 //!     playlist-survivors --file <path> # plays the file and listens to it
 //!     playlist-survivors --click       # also clicks on each committed beat
 //!     playlist-survivors --file <path> --volume 0.3  # the file quieter (0: silent, still heard)
+//!     playlist-survivors --still <png>  # a scene 8 s into a run at 120 bpm, drawn offscreen
 
 // The tap and output are the phase 0 spike's (57e846a^:native/spike), kept as they were.
 #[allow(clippy::pedantic, unused_qualifications, dead_code)]
@@ -39,6 +40,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
 
+use render::atlas::Atlases;
 use winit::application::ApplicationHandler;
 use winit::event::{ElementState, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
@@ -47,7 +49,7 @@ use winit::window::{Window, WindowId};
 
 use coreaudio::now_s;
 use game::{End, Game, Input, Judgement};
-use gfx::{Gfx, Rect};
+use gfx::Gfx;
 use live::{Msg, Source};
 use output::{Click, Output};
 
@@ -61,6 +63,7 @@ const SILENCE_S: f64 = 3.0;
 
 struct Options {
     file: Option<PathBuf>,
+    still: Option<PathBuf>,
     volume: f32,
     click: bool,
 }
@@ -68,6 +71,7 @@ struct Options {
 fn options(args: &[String]) -> Result<Options, String> {
     let mut o = Options {
         file: None,
+        still: None,
         volume: 1.0,
         click: false,
     };
@@ -76,6 +80,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         match a.as_str() {
             "--file" => o.file = Some(it.next().ok_or("--file needs a path")?.into()),
             "--click" => o.click = true,
+            "--still" => o.still = Some(it.next().ok_or("--still needs a path")?.into()),
             "--volume" => {
                 o.volume = it
                     .next()
@@ -93,6 +98,9 @@ fn options(args: &[String]) -> Result<Options, String> {
 #[allow(clippy::single_match_else)]
 pub fn run(args: &[String]) -> Result<(), String> {
     let opts = options(args)?;
+    if let Some(path) = &opts.still {
+        return still(path);
+    }
     let music = match &opts.file {
         Some(p) => Some(Arc::<[f32]>::from(live::decode(p, Output::device_rate())?)),
         None => None,
@@ -125,6 +133,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
         l_out * 1e3,
         heard_after * 1e3
     );
+    let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
     let event_loop = EventLoop::new().map_err(|e| e.to_string())?;
     let stop = Arc::new(AtomicBool::new(false));
     let (tx, rx) = mpsc::channel();
@@ -137,6 +146,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
     )?;
     let mut app = App {
         gfx: None,
+        art,
         rx,
         out,
         l_out,
@@ -158,6 +168,34 @@ pub fn run(args: &[String]) -> Result<(), String> {
     result
 }
 
+/// Draws a run 8 s in (beats every 0.5 s, the player standing, then attacking) to a PNG.
+fn still(path: &std::path::Path) -> Result<(), String> {
+    let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
+    let mut game = Game::new(12345);
+    for k in 0..40 {
+        game.beat(0.5 + f64::from(k) * 0.5);
+    }
+    let mut t = 0.0;
+    while t < 8.0 {
+        t += 1.0 / 60.0;
+        game.update(t, 1.0 / 60.0, Input::default());
+    }
+    game.attack(8.0);
+    let now = 8.06;
+    game.update(now, 0.06, Input::default());
+    let (w, h) = (960, 640);
+    let mut sprites = Vec::new();
+    game.draw(&art, now, w as f32, h as f32, &mut sprites);
+    let rgba = render::capture::render(&art.pages, w, h, [0.02, 0.02, 0.03], &sprites)?;
+    render::capture::write_png(path, w, h, &rgba)?;
+    eprintln!(
+        "slice: wrote {} ({} sprites)",
+        path.display(),
+        sprites.len()
+    );
+    Ok(())
+}
+
 struct Beat {
     heard: f64,
     period: f64,
@@ -165,6 +203,7 @@ struct Beat {
 
 struct App {
     gfx: Option<Gfx>,
+    art: Atlases,
     rx: mpsc::Receiver<Msg>,
     out: Output,
     l_out: f64,
@@ -265,9 +304,9 @@ impl App {
         let Some(g) = self.gfx.as_mut() else { return };
         let (w, h) = g.logical_size();
         let mut rects = Vec::new();
-        self.game.draw(shown, w, h, &mut rects);
+        self.game.draw(&self.art, shown, w, h, &mut rects);
         // The level meter along the bottom.
-        rects.push(Rect::new(
+        rects.push(gfx::rect(
             0.0,
             h - 4.0,
             w * self.peak.min(1.0),
@@ -329,7 +368,7 @@ impl ApplicationHandler for App {
         );
         match window
             .map_err(|e| e.to_string())
-            .and_then(|w| Gfx::new(Arc::new(w)))
+            .and_then(|w| Gfx::new(Arc::new(w), &self.art.pages))
         {
             Ok(g) => self.gfx = Some(g),
             Err(e) => {
