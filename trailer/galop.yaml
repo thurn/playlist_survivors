@@ -1,0 +1,24 @@
+# The Galop trailer: 30 seconds of the Infernal Galop, filmed from the perfect virtual player's run
+# (every press Perfect, the hero never hurt) with the game's own camera and no HUD.
+# Build it with `npm run trailer -- trailer/galop.yaml` (scripts/trailer.ts documents the options).
+#
+# Song positions are seconds, or "bar" / "bar:beat" in the song map's bars (songs/orpheus-galop/
+# form.md has the form).
+title: Playlist Survivors — Infernal Galop trailer
+song: orpheus-galop
+query: mode=play&player=perfect&nodamage
+width: 1920
+height: 1080
+fps: 60
+
+# Theme A once, from the beat before its first downbeat, then the kick line's second half (the
+# skeleton line dancing, its crescendo), the bridge and the climax's first statement of the theme,
+# ending on its cadence. Bar 69 into bar 94 sounds as written: theme A's repeat ends at bar 85 the
+# same way, and bar 94 repeats the kick line's idea from bar 86.
+cuts:
+  - { from: "53:2", to: "70" }
+  - { from: "94", to: "124" }
+crossfadeMs: 24
+fadeIn: 0.15
+fadeOut: 1.2
+audio: { sfx: 0.9, gain: 1 }

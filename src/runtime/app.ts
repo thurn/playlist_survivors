@@ -160,6 +160,8 @@ export interface DemoHook {
   playLog?: import("../live/log.ts").PlayLog;
   /** QA listening pass: the level's mix rendered offline through the live mixing graph. */
   renderMix?: (parts: { music: boolean; sfx: boolean }) => Promise<AudioBuffer>;
+  /** The trailer's footage (scripts/trailer.ts): frames drawn without the HUD while set. */
+  hideHud?: boolean;
 }
 
 export interface BenchResult {
@@ -357,6 +359,7 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
       const frame = evaluator.evaluate(s, { metronome: params.metronome });
       renderer.draw(frame);
       hud.draw(frame, renderer.outputRect(), { metronome: params.metronome });
+      hud.root.visible = !hook.hideHud;
       app.renderer.render(app.stage);
       const dt = performance.now() - t0;
       frameMs.push(dt);
