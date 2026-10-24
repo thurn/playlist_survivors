@@ -20,14 +20,26 @@ builds that as a **native macOS app written in Rust**:
   Parity does not wait for it.
 - It **analyses the audio live**, with a streaming Rust port of every belief
   stream group, hindsight included.
-- It **runs reactive mode as a faithful Rust port** of the TypeScript game at a
-  pinned commit: same rules, tunings, content and look.
+- It **runs reactive mode in Rust, grown from a playable slice.** It starts
+  from the TypeScript game's rules, content and art and keeps what plays well,
+  but the TS game is a prototype to learn from, not a specification to
+  reproduce.
 - It **renders natively** with winit and wgpu.
 
-The TypeScript game ends at that pinned commit (play mode included). It lives on
-only as an **oracle**: its outputs, exported once and committed, are what the
-Rust sim must reproduce bit for bit. The Python analysis tool stays, as the
-oracle for the Rust analyzer.
+TypeScript development ends at that pinned commit (play mode included). The
+TS game stays playable at the tag, as a reference to read and to play side by
+side. The Python analysis tool stays, as the reference for the Rust analyzer's
+accuracy.
+
+**Revised 2026-10-24: prototype, not specification.** The plan began as a
+bit-exact port, with the TS game's exported outputs as an oracle. After the
+playable slice (Phase V) worked end to end in 40 minutes, the user dropped
+bit-exactness: the TS game was a prototype for trying ideas, and the native
+game is where ideas get tried from now on. B1 to B5 (the core, content, stream
+store, schedule, the sim's modules, its engine and judging) landed bit-exact
+and stay as the sim's code. Everything after them is planned in
+[Phase G](#phase-g-grow-the-slice) without an oracle. Sections that describe
+the oracle are kept as the record of how B1 to B5 were built.
 
 Only reactive mode is in scope. Only macOS on Apple Silicon is in scope, and
 the app runs only on the developer's own machine.
@@ -63,10 +75,9 @@ terms:
   (the app plays a file itself; developer only) or **Replay** (headless, no
   audio device).
 - **Run:** one game from start to its end card. In this plan, one run per song.
-- **Live exception:** a behaviour that must differ from the TS game because the
+- **Live rule:** a behaviour that must differ from the TS game because the
   game no longer controls the music, such as the finale. Each is listed in
-  [Live Exceptions](#live-exceptions) and excluded from the oracle comparison
-  only where it applies.
+  [Live exceptions](#live-exceptions).
 
 ### The plan in brief
 
@@ -76,20 +87,19 @@ terms:
 | 0. Targets | The spike's executor sets latency targets from its own numbers, by fixed rules | — |
 | W. Workflow (now, alongside the TS wrap-up) | Staged validation (a gate stage of about 60 s, a release stage for everything else), fast local checks, `ci-fix` beads, the friction ledger and its triggers | CI stays fast and tool failures get fixed |
 | 1. Freeze and foundations | `ts-freeze` tag, oracle fixtures, exported model weights, Cargo workspace, both stages' native sections, AGENTS.md | The oracles exist and CI runs Rust |
-| V. Playable slice (now, by 19:00 on 2026-10-24) | A rough game in a native window on live system audio: the Rust analyzer's committed beats drive enemies and judging. Not the TS game | Capture, analysis, input, render and output work end to end before fidelity work goes further |
-| A. Analyzer (parallel with B) | Every stream group as streaming Rust, stage-parity tests, corpus parity report | Rust streams match Python |
-| B. Sim (parallel with A) | Content, schedule, sim, judging, director, set pieces, evaluator, virtual players, causality checks, all streaming | Rust sim matches TS bit for bit |
-| C. Convergence | Renderer, audio output, app shell, live runner; playable in File mode, then System mode | The game plays, natively, live |
-| D. Live parity | Run detection, live exceptions, calibration, session recording, latency report, QA checklist, TS tree removed | Done |
-| E. Delayed listening (not needed for parity) | E0 and ES now: the payoff measured offline from committed streams, and the muting tap and delay line spiked. Later E1 and E2: committed beats from hindsight under a music delay; the tap mutes the picked app and the app plays its audio late | Lookahead buys measurably better beats, safely |
-| R. Retrospectives | One at the end of each phase, and one after every 8 closed beads in between | The workflow's costs are found and fixed while the plan runs |
+| V. Playable slice (landed 2026-10-24) | A rough game in a native window on live system audio, then the game's real sprites, effects and sounds (V1, V2) | Capture, analysis, input, render and output work end to end |
+| A. Analyzer | Every stream group as streaming Rust; A1–A6 at stage parity, A7 and later judged by corpus accuracy | Rust beats are as accurate as Python's |
+| B. Sim (B1–B5, landed) | Core, content, stream store, schedule, the sim's modules, its engine and judging, ported bit-exact | The sim's foundations, as code to grow |
+| G. Grow the slice | The slice runs on the `sim` engine, then gains the director and set pieces, the game's look, its sound, the rollback runner, runs on live audio and checks without an oracle. The app stays playable after every bead | The game plays well, natively, live |
+| D. Live play | Calibration, session recording and replay, timing logs, latency report, QA checklist, TS tree removed | Done |
+| E. Delayed listening (not needed for live play) | E0 and ES now: the payoff measured offline from committed streams, and the muting tap and delay line spiked. Later E1 and E2: committed beats from hindsight under a music delay; the tap mutes the picked app and the app plays its audio late | Lookahead buys measurably better beats, safely |
+| R. Retrospectives | R1 ran; phase and cadence retrospectives are paused from 2026-10-24, with R5 at the end | — |
 
-Phase V runs first, alongside B1: one executor builds the slice while the
-other continues the sim. Phases A and B run in parallel after phase 1. Phase C starts when B's sim and
-evaluator are green; its live steps also need A. Phase E's first two beads, E0
-and ES, need nothing and run now, alongside the TS wrap-up and phase W. Its
-analyzer bead E1 can start once A is done, and its app bead E2 follows D's
-calibration and timing logs. No phase E bead blocks D5 or D6.
+Phase G follows the slice, on two executors: one grows the app, the other the
+sim. Phases A and B ran in parallel after phase 1. Phase D's tools follow G's runner and runs.
+Phase E's E0 and ES ran early. Its analyzer bead E1 can start once A is done,
+and its app bead E2 follows D's calibration and timing logs. No phase E bead
+blocks D5 or D6.
 
 ### Decisions
 
@@ -99,29 +109,35 @@ fixed.
 - **A full Rust rewrite now,** not a webview shell around the TS game. The user
   weighed the sizing (a port of about 17k lines plus tooling, against about 3–4k
   lines changed for an incremental TS refactor) and chose the rewrite.
-- **Velocity first: a playable slice before fidelity.** On 2026-10-24 the
-  user moved a rough end-to-end game ahead of the faithful port, due by
-  19:00 that day ([Phase V](#phase-v-the-playable-slice)). It need not match
-  the TS game and gets no cold review. Its purpose is to validate capture,
-  analysis, input, rendering and output together, and to find what matters
-  for feel, before investing further in complete fidelity. The faithful port
-  below stays the goal; C3 replaces the slice.
-- **A faithful port.** Same rules, tunings, content and look as the TS reactive
-  mode at the freeze commit. Rule changes come after parity, in later plans.
-  The only deliberate differences are the [live exceptions](#live-exceptions).
-- **TS development ends at the freeze commit,** play mode included. The user
-  names the commit when the TS work in flight has wrapped up. Nothing on master
-  changes the TS game afterwards.
-- **Two oracles, kept separate:**
-  - **Analyzer vs Python** — tiered: near-exact per stage on fixed inputs,
-    statistical across the corpus.
-  - **Sim vs TS** — bit-exact event logs and frame hashes, both sides fed the
-    same Python `stream.json` and the same key events.
-
-  Keeping them separate means a one-frame difference in a committed beat never
-  shows up as a sim mismatch.
-- **Oracle fixtures are committed,** generated once at the freeze. Rust CI needs
-  no Node.
+- **Velocity first: a playable game before fidelity.** On 2026-10-24 the user
+  moved a rough end-to-end game ahead of the port
+  ([Phase V](#phase-v-the-playable-slice)). It landed the same afternoon, with
+  the game's art and sounds, and it is the trunk the rest of the plan grows.
+- **Prototype, not specification** (2026-10-24, replacing "a faithful port"
+  and "two oracles"). The TS game was a prototype for trying ideas. The native
+  game starts from its rules, tunings, content and art, read from the TS code
+  as a reference, and is free to change them. Nothing is checked against the
+  TS game's outputs from here on:
+  - B1 to B5, already bit-exact, stay as the sim's code. Their oracle tests
+    stay while they pass. A deliberate rule change deletes or rewrites the
+    oracle tests it breaks; it never bends the sim back to match TS.
+  - The sim must still match **itself**: the same stream and keys always give
+    the same recording. Rollback and session replay depend on it.
+  - The causality rule is unchanged: the game never reads a stream entry before
+    its `knownAt`.
+  - Each change is judged by playing it, by the causality checks, by a
+    virtual-player smoke test and by the operator's play.
+- **The analyzer is judged by accuracy, not bits.** A1 to A6 landed at stage
+  parity with Python and keep those tests while they pass. From A7 on, the bar
+  is corpus accuracy: committed beats about as accurate as Python's (hit rate
+  within 45 and 70 ms of the reference beats), with the stream's causality
+  test. No new library-arithmetic pins.
+- **TS development ends at the freeze commit,** play mode included. The TS
+  game stays runnable at `ts-freeze` as a reference to play side by side; new
+  ideas are tried in the native game.
+- **Oracle fixtures stay committed** as reference data (`native/oracle/`), no
+  longer frozen: content, levels and streams may change, and a test that
+  depends on a fixture's hash is updated or deleted with the change.
 - **The analyzer is a streaming Rust port of every stream group,** with madmom's
   weights exported once by a Python script. madmom's model licence
   (CC BY-NC-SA 4.0) is acceptable: the app runs only on the developer's machine.
@@ -140,11 +156,11 @@ fixed.
   (a CLI flag and a debug menu), never on the player's title screen.
 - **Outputs:** built-in speakers and wired headphones first. Bluetooth is
   best-effort: Core Audio's reported latency plus a per-device calibration.
-- **Delayed listening is an opt-in output mode, macOS only, and parity does not
-  wait for it.** The user reversed reactive-audio.md's "never delay the music"
+- **Delayed listening is an opt-in output mode, macOS only, and live play does
+  not wait for it.** The user reversed reactive-audio.md's "never delay the music"
   for the native app, because the tap can mute one app safely
   (`CATapMutedWhenTapped`, released with the tap). Direct listening stays the
-  default and the mode the oracle and parity are defined against. Delayed
+  default. Delayed
   listening taps only the app the player picks, never all output, so other
   apps' sounds are neither muted nor delayed.
 - **No approval points.** The user named none and wants none. Latency targets
@@ -155,9 +171,9 @@ fixed.
   wraps up.
 - **Every session is saved:** captured audio, the stream with arrival stamps and
   the key events, with a rolling cap of the last 20 sessions.
-- **Tooling ported:** causality checks, virtual players, headless frame capture
-  and play timing logs. The parity report against play mode and the feel
-  dossiers and raters are not ported in this plan.
+- **Tooling ported:** causality checks, a virtual-player smoke test, headless
+  frame capture and play timing logs. The parity report against play mode and
+  the feel dossiers and raters are not ported in this plan.
 - **Content stays where it is.** The app reads `content/`, `levels/reactive.yaml`
   and the baked `public/assets` from the repository, the single source of
   truth, and bundles them into the `.app`.
@@ -171,33 +187,34 @@ fixed.
   by a `ci-fix` bead, filed by the first session to see it, which preempts all
   other ready work. Locally, an executor runs focused checks and one fast check
   of under 60 s before submitting. See [Workflow](#workflow).
-- **Continuous introspection** (as in `~/dreamtides_web`, decision D42 there).
-  Every bead records its friction and timings. Recurring friction, or a budget
-  overrun, files an improvement bead that preempts other work. A retrospective
-  bead ends every phase and follows every 8 closed beads. A tool failure is
-  never silently worked around: it is filed as a bead at once. See
-  [Introspection](#introspection).
+- **Introspection is paused** (2026-10-24). The friction ledger, its triggers
+  and the phase and cadence retrospectives ran through phase B and are paused
+  while the plan favours velocity; R5 still closes the epic. A tool failure is
+  still never silently worked around: it is filed as a `tooling` bead at once.
+  See [Introspection](#introspection).
 - **The gate is path-gated:** a native section when `native/` differs from
   master, the TS section when TS paths differ. Phase 0 measured no consistent
   gain from sccache in fresh worktrees, so the gate builds without it
   ([appendix](#measured-phase-0)).
-- **Scope ends at live parity.** Follow-ons are named, not designed.
+- **Scope ends when the native game plays a full run live,** with the D phase's
+  tools, and the TS tree is removed. Follow-ons are named, not designed.
 
 ### Goals
 
 - On the developer's Mac, the app listens to any app's audio (Music, Spotify, a
   browser) and plays a full reactive run to it, from song start to end card.
-- The Rust sim, fed the same stream and key events, produces exactly the TS
-  game's event log and frame hashes on every oracle run, outside the listed
-  live exceptions.
-- The Rust analyzer matches the Python stream per stage within tight
-  tolerances, and its end-to-end accuracy across the corpus is within a small
-  margin of Python's.
+- The game plays well to live music: the operator's play is the judge. It
+  starts from the TS game's rules, content and art, and keeps or changes them
+  by feel.
+- The Rust sim is deterministic: the same stream and key events always give the
+  same recording.
+- The Rust analyzer's committed beats are about as accurate across the corpus
+  as Python's.
 - The game never reads a stream entry before its `knownAt`, enforced by the
   ported causality checks, and live by construction.
 - The latency chain is measured end to end and reported every session.
 - Any live session can be replayed headlessly, bit for bit.
-- After parity: in Delayed listening, committed beats are measurably more
+- In Delayed listening, committed beats are measurably more
   accurate than Direct listening's across the corpus. Quitting or crashing
   always gives the player back the muted app's sound.
 
@@ -205,7 +222,6 @@ fixed.
 
 - Windows, Linux, Intel Macs, the App Store, signing for distribution, or
   notarization.
-- Changing the game's rules, tuning or look. That waits for parity.
 - An endless session across songs, a restarted feel loop, press fusion (see
   [Beyond This Plan](#beyond-this-plan)).
 - Play mode, the authored Galop and the song-map toolchain.
@@ -431,7 +447,7 @@ already speculated past `a`.
   Speculation only ever assumes the absence of new input.
 - **Cost:** ticks arrive 20 times a second. Each rollback re-simulates about
   one lead (0.2 s or more), so the sim does about 4 s of simulation per second
-  or more. Phase C measures this. The Rust sim should be far faster than real
+  or more. G5 measures this. The Rust sim should be far faster than real
   time. If profiling disagrees, the fallbacks, in order:
   1. optimise the sim's step and the snapshot clone, guided by `ps bench`;
   2. snapshot more often, so each rollback replays less;
@@ -655,9 +671,9 @@ Bead V1 (`hv-t8o8.62`). One executor, about five hours, landing on `staging` by 
 
 - **Where:** a `slice` module in the `app` crate, so `native/scripts/bundle`
   and the existing System Audio Recording grant apply unchanged. Game rules
-  live in the slice, never in `sim`, `render` or `eval`, which stay
-  oracle-faithful. The pure crates' purity rules still hold; the slice may
-  depend on `analysis`. C3 deletes the slice when the real runner lands.
+  lived in the slice, not in `sim` or `render`. The pure crates' purity rules
+  still hold; the slice may depend on `analysis`. G1 replaces the slice's own
+  rules with the `sim` engine, and the slice becomes the app.
 - **Reuse:** the phase 0 spike, deleted by F4 and still in history
   (`git show 57e846a^:native/spike/src/...`): the process tap (`tap.rs`,
   `coreaudio.rs`), the winit + wgpu window (`app.rs`) and output (`output.rs`).
@@ -683,9 +699,12 @@ Bead V1 (`hv-t8o8.62`). One executor, about five hours, landing on `staging` by 
   and any check needing the speakers go in `operator-pending.md` as usual.
 - **Run it:** `native/scripts/bundle`, then open the `.app`; the bead's notes
   and `operator-pending.md` give the exact command.
-- **After 19:00:** fixes and improvements from the operator's play are filed
-  as follow-up beads under `hv-t8o8` with the label `velocity`, and take
-  priority over the plan beads until the operator says otherwise.
+- **Landed:** V1 (`hv-t8o8.62`) at 14:00, about 15 minutes of work, and V2
+  (`hv-t8o8.63`, the atlases, effects and SFX, with `render::atlas` and
+  `render::sprites` for the rest of the plan) at 14:21. Still:
+  [native/evidence/v2/](../../native/evidence/v2/README.md).
+- **The operator's feedback** is filed as beads under `hv-t8o8` with the label
+  `velocity`; they come before plan beads (after `ci-fix`).
 
 ## Phase A: The Analyzer
 
@@ -807,6 +826,13 @@ whole-buffer normalisation.
 
 ## Phase B: The Sim
 
+**Status (2026-10-24):** B1 to B5 landed bit-exact against the TS oracle and
+are the sim's code from here on. B6 to B8 are replaced by
+[Phase G](#phase-g-grow-the-slice): B6's director and set pieces become G2,
+B7's evaluator becomes part of G3, and B8's checks become K1 without the
+oracle. B6's unfinished work is on branch `b6-set-pieces` (`cb17679`) for G2 to
+reuse. The rest of this section records how B1 to B5 were built.
+
 A faithful port, written to be compared. The TS code is the specification:
 each Rust module names the TS file and functions it ports, and keeps their
 structure where that helps a reader compare them.
@@ -914,9 +940,9 @@ covered by the truncation check, D1's tests and the QA checklist, not the oracle
 | B3 | `sim/*` modules: timing, strides, movement, aim, tiers, upgrades, world, the player's key handling | Unit parity on per-module fixtures |
 | B4 | `simulate.ts`: state, the event queue with `QKey`, enemies, weapons, strikes, damage, healing, orbs | Oracle event logs match up to the first judging-dependent event |
 | B5 | Judging: provisional ratings, `settle.ts` readings and settled groove, the gate, beatless credit | Oracle event logs match through judging on all core tracks |
-| B6 | Director, detected sections, zone waves, set pieces as a state machine, finale and run end (with their exceptions) | Full oracle event logs match on the core set |
-| B7 | Recorder, emit (sounds, UI events), the evaluator (`evaluate.ts`, `reactive-look.ts`) | Frame hashes match on the core set; the corpus hash chains match |
-| B8 | Virtual players; the causality checks | Players' key logs equal the fixtures' keys; the checks below pass |
+| B6 (superseded by G2) | Director, detected sections, zone waves, set pieces as a state machine, finale and run end (with their exceptions) | Full oracle event logs match on the core set |
+| B7 (superseded by G1, G3) | Recorder, emit (sounds, UI events), the evaluator (`evaluate.ts`, `reactive-look.ts`) | Frame hashes match on the core set; the corpus hash chains match |
+| B8 (superseded by K1) | Virtual players; the causality checks | Players' key logs equal the fixtures' keys; the checks below pass |
 
 B4 to B6 split `simulate.ts` by area. They touch one crate in sequence, so they
 run one after another, not in parallel.
@@ -930,7 +956,7 @@ length, and without hindsight on three TS runs ([evidence](../../native/evidence
 
 ### Source modules
 
-Every TS source file at `ts-freeze` (tests aside) and the bead that ports it, so no module falls
+Every TS source file at `ts-freeze` (tests aside) and the bead that ports it (or, after B5, reads it as a reference), so no module falls
 between beads (hv-t8o8.68, from the cadence retrospective: B1 and B2 lost time to files no bead
 named). "Landed" means on `staging`. Line counts are at the tag.
 
@@ -941,25 +967,25 @@ named). "Landed" means on `staging`. Line counts are at the tag.
 | `reactive/stream.ts`, `reactive/songmap.ts`, `planner/context.ts` | 477 | B2, landed | `judging()` landed with B4 (`sim::reactive::judging`, growing tick by tick) |
 | `sim/schedule.ts`, `sim/strides.ts`, `planner/musical.ts` | 580 | B2, landed | |
 | `sim/timing.ts`, `movement.ts`, `aim.ts`, `gait.ts`, `tiers.ts`, `upgrades.ts`, `world.ts` | 650 | B3, landed | |
-| `sim/player.ts` | 781 | B3 (key handling), landed; B8 (skill profiles) | |
-| `sim/simulate.ts` | 3699 | B4, B5, B6 | B4 ported everything but set pieces, archers, the boss, zone waves, landmarks and the finale (B6); judging and the settled groove came with it |
+| `sim/player.ts` | 781 | B3 (key handling), landed; K1 (skill profiles) | |
+| `sim/simulate.ts` | 3699 | B4, B5, G2 | B4 ported everything but set pieces, archers, the boss, zone waves, landmarks and the finale (G2); judging and the settled groove came with it |
 | `sim/clone.ts` | 73 | Not ported | Rollback snapshots are Rust's `Clone` (B4) |
 | `reactive/settle.ts` | 230 | B4, landed (ported with the engine); B5 verified it over whole runs | |
-| `reactive/director.ts`, `sections.ts`, `setpieces.ts` | 498 | B6 | B4 took the population, roster and loudness blend |
-| `sim/recorder.ts`, `planner/emit.ts`, `planner/camera.ts` | 1332 | B7 | B4 took the camera rig (simulation state) and the recorder's simulation records |
-| `plan/evaluate.ts`, `reactive-look.ts`, `types.ts`, `view.ts`, `sample.ts`, `tier-look.ts`, `effects-life.ts` | 2442 | B7 | |
-| `reactive/grade.ts` | 24 | B7 | Read by emit and the recording |
-| `mapgen/mapgen.ts`, `mapgen/openfield.ts` | 235 | B7 | The open field's ground, read by the evaluator and C1's ground mesh |
-| `planner/plan.ts` | 390 | B8 | `planWithSim`: the oracle and virtual-player runs |
-| `reactive/players.ts` | 76 | B8 | |
-| `planner/checks.ts`, `reactive-checks.ts`, `parity.ts`, `reactive/plan-checks.ts` | 1486 | B8 | What `check:reactive` runs |
-| `planner/play-checks.ts`, `planner/sim-checks.ts` | 572 | Not ported | `check:play` and `check:plan`'s own checks; reactive play's are B8's |
-| `assets/types.ts`, `runtime/assets.ts` | 488 | C1 | V2's `render::atlas` covers the atlases |
-| `runtime/renderer.ts`, `shaders.ts`, `font.ts`, `hud.ts`, `hud-lines.ts`, `overhead.ts`, `view.ts` | 1897 | C1 | |
-| `runtime/audio.ts`, `live/sounds.ts` | 651 | C2 | |
-| `runtime/app.ts`, `title.ts`, `play.ts`, `reactive.ts`, `sources.ts`, `reactive/tracks.ts`, `plan/grade.ts` | 1476 | C3 | Menus, the title, the HUD's grade |
-| `live/input.ts`, `live/runner.ts` | 341 | C3 | |
-| `live/recording.ts`, `live/session.ts` | 1083 | C3 (the growing recording the runner rewinds), D3 (sessions) | |
+| `reactive/director.ts`, `sections.ts`, `setpieces.ts` | 498 | G2 | B4 took the population, roster and loudness blend |
+| `sim/recorder.ts`, `planner/emit.ts`, `planner/camera.ts` | 1332 | G1, G3 | B4 took the camera rig (simulation state) and the recorder's simulation records |
+| `plan/evaluate.ts`, `reactive-look.ts`, `types.ts`, `view.ts`, `sample.ts`, `tier-look.ts`, `effects-life.ts` | 2442 | G1, G3 | |
+| `reactive/grade.ts` | 24 | G1, G3 | Read by emit and the recording |
+| `mapgen/mapgen.ts`, `mapgen/openfield.ts` | 235 | G1, G3 | The open field's ground, read by the evaluator and G3's ground |
+| `planner/plan.ts` | 390 | K1 | `planWithSim`: the virtual-player runs |
+| `reactive/players.ts` | 76 | K1 | |
+| `planner/checks.ts`, `reactive-checks.ts`, `parity.ts`, `reactive/plan-checks.ts` | 1486 | K1 | What `check:reactive` runs |
+| `planner/play-checks.ts`, `planner/sim-checks.ts` | 572 | Not ported | `check:play` and `check:plan`'s own checks; reactive play's are K1's |
+| `assets/types.ts`, `runtime/assets.ts` | 488 | G3 | V2's `render::atlas` covers the atlases |
+| `runtime/renderer.ts`, `shaders.ts`, `font.ts`, `hud.ts`, `hud-lines.ts`, `overhead.ts`, `view.ts` | 1897 | G3 | |
+| `runtime/audio.ts`, `live/sounds.ts` | 651 | G4 | |
+| `runtime/app.ts`, `title.ts`, `play.ts`, `reactive.ts`, `sources.ts`, `reactive/tracks.ts`, `plan/grade.ts` | 1476 | G1, G6 | Menus, the title, the HUD's grade |
+| `live/input.ts`, `live/runner.ts` | 341 | G1, G6 | |
+| `live/recording.ts`, `live/session.ts` | 1083 | G5 (the growing recording the runner rewinds), D3 (sessions) | |
 | `live/log.ts` | 352 | D4 | |
 | `runtime/planCache.ts`, `runtime/planWorker.ts` | 78 | Not ported | IndexedDB and the web worker; the native app plans on its own threads |
 | `runtime/debug-moves.ts` | 188 | Not ported | A web QA overlay; D5 decides if its numbers belong in the QA checklist |
@@ -992,79 +1018,122 @@ honest player and the masher on the Galop and asserts the frozen outcomes (the
 honest player lives, the masher falls, grade bands), so the checks keep their
 meaning once rules change after parity.
 
-## Phase C: Convergence
+## Phase G: Grow the Slice
 
-### The renderer (C1)
+The slice (Phase V) is the app. Phase G grows it into the game, one playable
+step at a time. Every bead:
 
-- A wgpu renderer drawing the evaluator's frame state, as `renderer.ts` draws it
-  today:
-  - sprite batches from the baked atlases (`public/assets/*.png` and their JSON),
-    instanced, in the same layer order;
-  - particle buffers for the three particle containers;
-  - the ground mesh;
-  - the custom filter and the blur, ported from `shaders.ts` to WGSL;
-  - shapes for `Graphics` uses;
-  - the bitmap pixel font, HUD, overhead display and menus.
-- **Offscreen capture:** `ps capture --track <id> --t <s>` renders a still
-  headlessly from a Replay, deterministically. Contact sheets are a grid of
-  stills.
-- **Visual parity:** stills at the phase 1 reference moments are compared with
-  the TS reference PNGs by a perceptual metric (SSIM above an agreed threshold,
-  with a diff image written on failure). Pixel identity is not expected:
-  different rasterisers. Differences the executor judges deliberate are listed
-  in the bead.
-- **Frame pacing:** present timing from the display link, at the display's
-  native rate (120 Hz on ProMotion). The evaluator is called for the predicted
-  heard time of the present, minus the calibrated visual offset.
+- **keeps the app playable** and lands in small candidates, each passing the
+  gate, and writes the exact run command in its notes;
+- **reads the TS code as a reference** (`git show ts-freeze:src/...`), porting
+  what plays well and simplifying freely. No oracle comparison, no bit-exact
+  arithmetic: `jsmath` stays where B1 to B5 use it, and new code uses Rust's
+  `f64` functions;
+- **keeps the sim deterministic and causal:** pure functions of the stream and
+  the keys, never reading an entry before its `knownAt`;
+- **is verified** in File mode by the executor (a still from `--still`, a
+  short muted run, the virtual-player smoke once K1 lands), and by the
+  operator's play. What only the operator can check goes in
+  `operator-pending.md`.
 
-### Audio output (C2)
+### The engine in the app (G1)
 
-- A Core Audio output unit renders a mixer of scheduled voices. All SFX are
-  decoded at startup (`symphonia`) to the device's rate.
-- Sound events carry heard times. The mixer places them at
-  `heard − L` on the output timeline, sample-accurately, and accepts cancel or
-  move until the voice starts.
-- The TS game's sound rules port as they are, including the percussive fade
-  below the gate. `followCurve`'s whole-song ducking becomes a causal envelope
-  follower ([live exceptions](#live-exceptions)).
-- In File mode, the mixer also plays the file, and the samples it renders feed
-  the analyzer, so File mode runs the same path as System from the ring buffer
-  on.
+- The app runs the `sim` engine (B4, B5) in place of the slice's own rules,
+  which are deleted.
+- The analyzer's entries go into a `stream::StreamLog`, each stamped with its
+  arrival time as `known_at`; key presses go into the sim's key queue with
+  their `NSEvent` times converted to heard time.
+- The first runner is the simplest that plays well: the sim steps to the
+  current heard time every frame, and keys and arrivals apply at their times
+  when they are not yet past. G5 adds speculation and rollback.
+- The sim's state is drawn with `render`'s atlases and sprites, from a minimal
+  view of the state (hero, enemies, projectiles, pickups), by a function in
+  `eval`. G3 grows it into the full look.
+- The SFX that V2 plays move onto the sim's sound events where the sim has
+  them.
+- The rules the sim lacks until G2 (set pieces, the finale, the run's end) get
+  the simplest stand-in: the run ends on death or the slice's silence rule.
 
-### The app shell and the live runner (C3)
+### Director, sections and set pieces (G2)
 
-- winit window with native fullscreen. Keyboard input with `NSEvent`
-  timestamps; the per-key-group input calibration from `src/live/input.ts`.
-- The runner ported from `src/live/runner.ts`: snapshots every 1/30 s by
-  cloning the sim state; rollback on late keys **and** arrivals; the recording's
-  undo journal.
-- Menus and flow from `title.ts` and `play.ts`, adapted:
-  - a **listening screen** in place of the title screen and track list;
-  - pause (Esc or losing focus), the end card, YOU FELL;
-  - **Calibrate** as today, plus the visual offset test (below);
-  - a debug menu (developer builds, or a flag) with File mode and Watch the
-    demo.
-- **First playable: File mode on Python streams.** The app plays a corpus file
-  and feeds the sim the committed `stream.json`, not the Rust analyzer. This
-  proves renderer, output, input and runner against a known stream, before any
-  live analysis.
+Ports `reactive/director.ts`, `sections.ts`, `setpieces.ts` and the rest of
+`simulate.ts` (archers, the boss, zone waves, landmarks, the finale), starting
+from B6's branch. Live first:
 
-### Live (C4)
+- every decision is made when the entries it reads have arrived, and nothing
+  reads the stream's end or the song's length (no `StreamEnd`): the
+  [live exceptions](#live-exceptions) table gives each live rule;
+- the finale fires on a confirmed end (G6's rule), and the run ends there;
+- no oracle tests. B4's and B5's oracle tests that this breaks are deleted.
 
-- File mode with the **Rust analyzer** in place of the Python stream.
-- Then **System mode:** the tap, the analyzer thread, the hindsight worker and
-  arrival stamps.
-- The latency chain is measured on every frame and written to the play log
-  ([Timing logs](#timing-logs)).
-- The rollback cost of arrivals is profiled (see
-  [Arrivals roll back like late keys](#arrivals-roll-back-like-late-keys)), and
-  the fallback taken only if needed.
+### The look (G3)
 
-## Phase D: Live Parity
+Ports the evaluator and the renderer from `plan/evaluate.ts`,
+`reactive-look.ts`, `runtime/renderer.ts`, `shaders.ts`, `font.ts`, `hud.ts`
+and `overhead.ts`, in order of what the player notices:
+
+1. the HUD with the bitmap pixel font: health, grade, the groove, the beat
+   marker;
+2. the open-field ground (`mapgen/openfield.ts`) and the camera;
+3. particles and effects; the tier and palette look;
+4. the custom filter and the blur, in WGSL;
+5. overhead text and the menus' styling.
+
+Offscreen capture (`--still`, and later `ps capture`) renders stills for the
+bead's notes. Visual comparison with the TS game is by eye, side by side, not
+by a metric.
+
+### Sound (G4)
+
+- A Core Audio output unit renders a mixer of scheduled voices, from SFX
+  decoded at startup to the device's rate.
+- Sound events carry heard times; the mixer places them at `heard − L` on the
+  output timeline, sample-accurately, and accepts cancel or move until a voice
+  starts.
+- The TS game's sound rules as a reference, including the percussive fade below
+  the gate; the whole-song ducking becomes a causal envelope follower.
+- In File mode the mixer plays the file, and the samples it renders feed the
+  analyzer, so File mode runs the same path as System from the ring buffer on.
+
+### The runner (G5)
+
+- Speculation with rollback, as `src/live/runner.ts` and
+  [Arrivals roll back like late keys](#arrivals-roll-back-like-late-keys)
+  describe: snapshots by cloning the sim state, rollback on late keys and
+  arrivals, sounds scheduled from speculated state and moved or cancelled.
+- The per-key-group input calibration from `src/live/input.ts`.
+- The rollback cost measured against the [targets](#targets), and the fallback
+  taken only if needed.
+- Taken only when G1's simple runner shows a problem the operator can feel
+  (late sounds, presses judged against stale state), or before D3, whose
+  replays need the settled recording.
+
+### Runs on live audio (G6)
+
+D1's rules ([Runs on live audio](#runs-on-live-audio-d1)): the listening
+screen, automatic start and confirmed end, rebasing a run to its start, pause
+ending the run, a device change ending the run, the end card and YOU FELL, and
+a debug menu with File mode.
+
+### Checks without an oracle (K1)
+
+Ported from `scripts/check-reactive.ts`, on the Rust sim alone:
+
+- **Causality:** perturbation and truncation at cuts on the Galop and one
+  synthetic track, with the negative control
+  ([Causality checks](#causality-checks)).
+- **Determinism:** the same Replay twice gives the identical recording; the
+  same Replay with arrivals in random-sized bursts gives the identical
+  recording (streaming equals batch).
+- **A virtual-player smoke test:** the honest player and the masher on the
+  Galop, asserting broad outcomes (the honest player usually lives, the masher
+  usually falls) that a rule change may retune with a reason in the commit.
+
+## Phase D: Live Play
 
 ### Runs on live audio (D1)
 
-The app idles on the listening screen. The analyzer always runs, so the tracker
+Built by G6 (bead `hv-t8o8.25`). The app idles on the listening screen. The analyzer always runs, so the tracker
 is warmed up before a run starts.
 
 - **Start:** automatically when the evidence has stayed at or above the gate
@@ -1110,27 +1179,28 @@ is warmed up before a run starts.
 
 ### Live exceptions
 
-Every deliberate difference from the TS game, with what the oracle compares.
-F1 completed this list from the freeze commit (`ts-freeze`, `e97ef4a`); the
+The differences from the TS game that live play forces, because the game no
+longer controls the music. Other differences are free choices (see
+[Decisions](#decisions)) and need no entry here. F1 completed this list from the freeze commit (`ts-freeze`, `e97ef4a`); the
 file-by-file inventory behind it is in the
 [appendix](#measured-f1-the-inventory-at-ts-freeze).
 
-| Behaviour | TS at the freeze (as written now) | Native | Oracle compares |
-|---|---|---|---|
-| Finale | `reactiveFinale` (`setpieces.ts:93`): the first `structure.ends` entry with `knownAt` within the last `windowS` (10 s) of `knownLength`, firing at its `knownAt`, else at `knownLength` itself; no evidence gate. reactive-feel's confirmed endings (G3) never landed | Fires on a confirmed end (D1): the horde clears and the end card follows | Everything, in Replay with `StreamEnd`; live finales are on the QA checklist |
-| Run end | `reactiveRunEnd` = `max(duration + 0.5, finale.endS)`, emitted once song time reaches `ctx.duration` (`recording.ts:746`); the sim runs to `max(duration + 1, finale.endS)`; the grade covers `[playerFrom, duration)`. YOU FELL is a pause menu with restarts, not an end | A confirmed end, YOU FELL, pause, a device change, or manual End; the grade covers the run's own span | Everything, in Replay with `StreamEnd` |
-| Song length and stream-end reads | `knownLength`, `audio.duration`, `ctx.duration`, `progressS`, the last section's `s1`, the bar count from every beat, clamps to the last entry (listed in the appendix) | `StreamEnd` absent: progress shows elapsed time, the section marks go, the last section is open-ended, `endS` is unbounded until the run ends, and every clamp uses the latest known entry | Everything, in Replay with `StreamEnd` provided |
-| Events past the last committed beat | Dropped or brought forward: a section start, a set-piece candidate or a palette switch whose beat isn't in the stream is dropped (`sections.ts:46`, `setpieces.ts:141`, `director.ts:78`), so a boss whose drop-in downbeat (`sEnter`, `setpieces.ts:155`) isn't committed yet loses its slot to a ring; `downbeatAtOrAfter` (`simulate.ts:2515`) returns the time itself past the last bar, so a vacuum drop or a level-up waiting for the next downbeat fires at once; the kick line reads the beats of its entrance ahead. F2's truncation check exposed each of these | Pending until that beat arrives | Everything, in Replay (the full stream holds every beat the TS game sees) |
-| Extrapolation past the last beat | `core/songmap.ts` extrapolates from the last two beats' gap; `knownTimeOfBeat` from the last beat's `period` | Live: the latest beat's `period` everywhere | Everything, in Replay with `StreamEnd` (TS's rule kept there) |
-| Archer groups' end | `volleyGroup` (`setpieces.ts:313`) sets a group's `until` from its whole volley run at its start, reading the beats, levels and evidence of every later draw, and drops a volley drawn before the stream's end whose arrival beat (`beats[i + 1]`) isn't in it: the spawn mix and the archers' shots before a cut change when later entries are deleted (F2's truncation check) | Live: the group lasts while its volleys continue, each draw deciding the next, and ends at the first draw that fails (a beat or more after TS's `until`, which knows the failure in advance) or at a run end. Replay keeps TS's rule by reading the stream file ahead, the one oracle-only look-ahead (B6) | Everything, in Replay |
-| Scheduling | `init` enqueues every beat, slot and set piece up front (`simulate.ts:3253`) | Each entry is enqueued when it arrives ([streaming without changing results](#streaming-without-changing-results)) | Everything: streaming equals batch |
-| Effects ducking | `followCurve` (`audio.ts:36`): a centred 0.4 s RMS window, centred 1 s smoothing and the whole song's 90th percentile (the music ducking under SFX is causal and kept) | A causal envelope follower on the energy ticks | Excluded (audio only) |
-| Run start | The song's start, song time 0, or `?start=` (the reference-beat bot plays until the hand-over) | Any time; rebased history (above). The judged-from time (16 s) and the title card count from the run's start | Replay and File runs start at 0, as TS |
-| Pause | Freezes the music and the game; resumes after a one-bar count-in (`play.ts:407`) | Ends the run (D1) | — |
-| Output device change | — (the browser handles it) | Ends the run (D1) | — |
-| Restart section, Restart song | Restart the audio (in reactive mode Restart section is Restart song) | Removed: the game doesn't control the music | — |
-| Best grade | Per track, in local storage (`ps.grade.v2.reactive.<trackId>`) | Kept for Replay and File tracks only; live runs have none | — |
-| Watch my run | Re-simulates with the full stream (`play.ts:95`), the bot's part before a hand-over included | Replays the saved session (stream with arrival stamps, keys, audio) | — |
+| Behaviour | TS at the freeze (as written now) | Native |
+|---|---|---|
+| Finale | `reactiveFinale` (`setpieces.ts:93`): the first `structure.ends` entry with `knownAt` within the last `windowS` (10 s) of `knownLength`, firing at its `knownAt`, else at `knownLength` itself; no evidence gate. reactive-feel's confirmed endings (G3) never landed | Fires on a confirmed end (D1): the horde clears and the end card follows |
+| Run end | `reactiveRunEnd` = `max(duration + 0.5, finale.endS)`, emitted once song time reaches `ctx.duration` (`recording.ts:746`); the sim runs to `max(duration + 1, finale.endS)`; the grade covers `[playerFrom, duration)`. YOU FELL is a pause menu with restarts, not an end | A confirmed end, YOU FELL, pause, a device change, or manual End; the grade covers the run's own span |
+| Song length and stream-end reads | `knownLength`, `audio.duration`, `ctx.duration`, `progressS`, the last section's `s1`, the bar count from every beat, clamps to the last entry (listed in the appendix) | `StreamEnd` absent: progress shows elapsed time, the section marks go, the last section is open-ended, `endS` is unbounded until the run ends, and every clamp uses the latest known entry |
+| Events past the last committed beat | Dropped or brought forward: a section start, a set-piece candidate or a palette switch whose beat isn't in the stream is dropped (`sections.ts:46`, `setpieces.ts:141`, `director.ts:78`), so a boss whose drop-in downbeat (`sEnter`, `setpieces.ts:155`) isn't committed yet loses its slot to a ring; `downbeatAtOrAfter` (`simulate.ts:2515`) returns the time itself past the last bar, so a vacuum drop or a level-up waiting for the next downbeat fires at once; the kick line reads the beats of its entrance ahead. F2's truncation check exposed each of these | Pending until that beat arrives |
+| Extrapolation past the last beat | `core/songmap.ts` extrapolates from the last two beats' gap; `knownTimeOfBeat` from the last beat's `period` | Live: the latest beat's `period` everywhere |
+| Archer groups' end | `volleyGroup` (`setpieces.ts:313`) sets a group's `until` from its whole volley run at its start, reading the beats, levels and evidence of every later draw, and drops a volley drawn before the stream's end whose arrival beat (`beats[i + 1]`) isn't in it: the spawn mix and the archers' shots before a cut change when later entries are deleted (F2's truncation check) | Live: the group lasts while its volleys continue, each draw deciding the next, and ends at the first draw that fails (a beat or more after TS's `until`, which knows the failure in advance) or at a run end. |
+| Scheduling | `init` enqueues every beat, slot and set piece up front (`simulate.ts:3253`) | Each entry is enqueued when it arrives ([streaming without changing results](#streaming-without-changing-results)) |
+| Effects ducking | `followCurve` (`audio.ts:36`): a centred 0.4 s RMS window, centred 1 s smoothing and the whole song's 90th percentile (the music ducking under SFX is causal and kept) | A causal envelope follower on the energy ticks |
+| Run start | The song's start, song time 0, or `?start=` (the reference-beat bot plays until the hand-over) | Any time; rebased history (above). The judged-from time (16 s) and the title card count from the run's start |
+| Pause | Freezes the music and the game; resumes after a one-bar count-in (`play.ts:407`) | Ends the run (D1) |
+| Output device change | — (the browser handles it) | Ends the run (D1) |
+| Restart section, Restart song | Restart the audio (in reactive mode Restart section is Restart song) | Removed: the game doesn't control the music |
+| Best grade | Per track, in local storage (`ps.grade.v2.reactive.<trackId>`) | Kept for Replay and File tracks only; live runs have none |
+| Watch my run | Re-simulates with the full stream (`play.ts:95`), the bot's part before a hand-over included | Replays the saved session (stream with arrival stamps, keys, audio) |
 
 ### Calibration (D2)
 
@@ -1428,9 +1498,9 @@ Set by the spike's executor from the phase 0 numbers
 | Hindsight decode → arrival | decode median 146 ms, p95 240, p99.9 332 (1000 decodes); beside the live app p95 131–188 (three runs, 20–40 decodes each) | decode ≤ 360 ms; entries usable at `T + D`, `D = 670 ms` | gate on the decode (240 + 50%); `D` fixed (332 × 2, rounded up) |
 | Analyzer real-time factor (all groups) | beat group only: online path 0.005 (bench), 0.010–0.015 live; hindsight 0.146; together about 0.16. Ticks, onsets, structure, accents, bands: not yet ported | ≤ 0.5, hindsight included, one core | gate |
 | Key event → main thread | median 5.1 ms, p95 30.5, max 41.7 (n = 185 events posted from a thread; real presses pending) | ≤ 46 ms | gate (30.5 + 50%); D5 re-measures on real presses |
-| Main thread → present | to the first vsync after the present: median 15.6 ms, p95 15.7, p99 23.8 (120 Hz, Fifo, frame latency 1; a vsync extrapolated from the display link, not a measured present time) | ≤ 24 ms | gate (15.7 + 50%); C1 re-measures with the drawable's presented time and may loosen it once |
-| Sim + evaluate + encode per frame (p99, 120 Hz) | no sim yet | ≤ 4 ms (half a frame), provisional | report until C4 measures it, then a gate at its p95 + 50% |
-| Rollback re-simulation per second | no sim yet | ≤ 250 ms of CPU per second, provisional | report until C4 measures it, then a gate at its p95 + 50% |
+| Main thread → present | to the first vsync after the present: median 15.6 ms, p95 15.7, p99 23.8 (120 Hz, Fifo, frame latency 1; a vsync extrapolated from the display link, not a measured present time) | ≤ 24 ms | gate (15.7 + 50%); G3 re-measures with the drawable's presented time and may loosen it once |
+| Sim + evaluate + encode per frame (p99, 120 Hz) | no sim yet | ≤ 4 ms (half a frame), provisional | report until G5 measures it, then a gate at its p95 + 50% |
+| Rollback re-simulation per second | no sim yet | ≤ 250 ms of CPU per second, provisional | report until G5 measures it, then a gate at its p95 + 50% |
 | Committed beat → heard beat (steady tracks) | house-128: clicks at the ear +4.7 ms median, \|e\| p95 9.7 ms, max 11 | — | report (set by the commit horizon) |
 | Output latency | built-in speakers 16.6 ms reported (27.3 with the 512-frame buffer); wired and AirPods not yet measured | — | report (hardware) |
 | Delayed listening: committed-beat accuracy against Direct, per corpus category (E1) | E0, replayed from Python's hindsight entries: offline grid at `M = 3 s` 86.1% within 45 ms against Direct's 79.0%, every category better ([appendix](#measured-e0-delayed-listenings-payoff)) | | report; E1's rule |
@@ -1442,8 +1512,10 @@ Set by the spike's executor from the phase 0 numbers
 
 - `cargo fmt --check`; clippy and unit tests for the crates the diff touches
   and their dependents.
-- An oracle smoke: one core-track fixture (event log and frame hashes).
-- A causality smoke: perturbation and truncation at two cuts on the Galop.
+- B1 to B5's oracle smoke while it passes (a deliberate rule change deletes
+  it).
+- A causality smoke: perturbation and truncation at two cuts on the Galop
+  (from K1).
 - Whatever else fits the budget, as F4 and the retrospectives measure it.
   Anything that pushes the gate stage over budget moves to the release stage:
   tests that run whole excerpts through slow stages carry
@@ -1454,20 +1526,21 @@ Set by the spike's executor from the phase 0 numbers
 ### Release stage (asynchronous, moves `release`)
 
 - The whole workspace's clippy and tests.
-- **Analyzer:** stage parity on fixed excerpts; corpus parity on every track,
-  with the per-track table; the stream causality test.
-- **Sim:** the oracle on every fixture (event logs, frame hashes, corpus hash
-  chains); `jsmath` against the V8 vectors.
-- **Causality:** perturbation, truncation, negative control, streaming equals
-  batch, on the Galop and one synthetic track.
-- **Playability:** the honest player and the masher on the Galop.
+- **Analyzer:** A1 to A6's stage parity while it passes; corpus accuracy on
+  every track against the reference beats and Python's, with the per-track
+  table; the stream causality test.
+- **Sim:** B1 to B5's oracle tests while they pass; determinism (the same
+  Replay twice, and in random-sized bursts, gives the identical recording).
+- **Causality:** perturbation, truncation and the negative control on the
+  Galop and one synthetic track.
+- **Playability:** the virtual-player smoke test on the Galop (K1).
 - **Sessions:** a small committed session (recorded by the executor in File
   mode) replays bit-exactly with its recorded stream.
 - **Delayed listening (from E1 and E2):** the lead check; the stream causality
   test by audio position; sim causality on a Delayed Galop stream; a small
   Delayed File-mode session replays bit-exactly; `ps analysis-parity --delayed
   <M>` over every track against Direct listening.
-- **Renderer:** visual parity stills, rendered headlessly.
+- **Renderer:** a still renders headlessly without error.
 - `ps bench`: sim, evaluator and rollback costs on the Galop's busiest minute.
 - A release build of the app.
 - The TS checks, while the TS game exists.
@@ -1480,17 +1553,15 @@ Set by the spike's executor from the phase 0 numbers
 | The capture permission resets every rebuild | A stable self-signed identity signs every bundle (phase 0) |
 | madmom's front end has undocumented details (frame origin, filterbank normalisation, padding) | Stage parity against Python per stage, with Python's upstream fed in |
 | Hindsight too slow live, or too late for the phase check | Measured in the spike; its own worker; the spike's executor picks a workable form by rule |
-| A V8 Math function differs from `libm` in the last bit | V8 test vectors for every function used; shims |
-| TS orderings that are hard to reproduce while streaming (queue ties, memo order, object key order) | The derived queue key; first-divergence reports; never tolerances for discrete events |
-| Rollback on every arrival costs too much | Measured in C4; two fallbacks named |
+| Rollback on every arrival costs too much | Measured in G5; two fallbacks named |
 | Bluetooth latency reported wrongly | Best-effort with per-device calibration, as decided |
-| The TS game moves before the freeze | Nothing starts before the tag; the inventory runs at the tag |
-| `simulate.ts` is large and dense | Split by area across B4–B6, each with its own oracle milestone |
+| `simulate.ts` is large and dense | B4 and B5 ported its core bit-exact; G2 ports the rest from B6's branch, live first |
+| Without an oracle, port mistakes go unnoticed | The app stays playable after every bead and the operator plays it; causality, determinism and virtual-player checks (K1); the TS game stays runnable at `ts-freeze` to compare by eye and ear |
+| The game drifts away from what made the TS game feel good | Tunings and content stay data in `content/` and `levels/`; the TS code is the first reference for every system G ports; feel problems are filed as `velocity` beads |
 | TS reads the stream's end or the song's length in ways the perturbation check never tested | `StreamEnd` in Replay; the truncation check run once on TS in F2; each read listed with a live behaviour |
 | False ends from silent breakdowns | A confirmation window and a minimum judged time (D1); logged when they happen |
 | The tap's latency differs from the output's | Measured separately by loopback in phase 0; two constants |
 | An output device change mid-run shifts the grid | The run ends; the next run uses the new latency |
-| Oracle inputs (streams, content, assets) change under the fixtures | Input hashes in fixture metadata; a freeze rule in AGENTS.md until D6 |
 | Thread timing leaks into analysis results | Hindsight usable at a fixed sample-time delay `D`; the analyzer is a pure function of its samples |
 | Delayed listening leaves an app muted | The mute exists only while the tap does (`CATapMutedWhenTapped`); no volume or mute state is stored; a watchdog destroys the tap on underrun or a stalled main thread; E2 proves a `SIGKILL` restores the sound |
 | Delayed listening's lookahead buys less than hoped | E1 measures it before any app work; `M` set by rule; if Delayed is not better than Direct in aggregate, E1 records that and E2 is cancelled |
@@ -1513,10 +1584,13 @@ Set by the spike's executor from the phase 0 numbers
   the developer's machine, but hindsight runs slower than real time in Python,
   and the sidecar would be thrown away.
 - **ONNX for the nets.** A heavy native dependency for very small LSTMs.
-- **Running the frozen TS game live in the harness.** More flexible (fuzzed key
-  sequences, any stream), but Node and the TS tree would stay forever.
-- **Reimagining the rules during the port.** Faster to write, but nothing to
-  diff against.
+- **A bit-exact port against a TS oracle.** Chosen at first, and B1 to B5 were
+  built that way: the oracle caught real port mistakes, but V8-exact maths,
+  UTF-16 hashing, queue-key orderings and frame hashes reproduced accidents of
+  the prototype, and parity gaps drove most review findings (about 70 across
+  the parity beads). Abandoned on 2026-10-24, once the playable slice showed
+  the end-to-end path worked, in favour of growing the slice with the TS code
+  as a reference.
 - **Delaying the music for lookahead.** Rejected in reactive-audio.md for the
   browser game. Adopted here as the opt-in [Delayed listening](#phase-e-delayed-listening),
   because the tap's mute is released with the tap, so a crash can't leave an
@@ -1615,13 +1689,11 @@ Cheapest first:
   Every later run on a newer tip fails the same way until the fix lands, so the
   key is the step, not the run.
 - **A `ci-fix` bead preempts all other ready work** in this epic: an executor
-  choosing its next bead picks `ci-fix` beads first, then introspection and
-  retrospective beads, then plan beads in table order.
+  choosing its next bead picks `ci-fix` beads first, then `velocity` beads
+  (the operator's feedback), then plan beads in table order.
 - **Release lag:** the Tollgate policy sets `max_release_lag` (5 to start), so
   `staging` can't run far ahead of a broken `release`.
-- **Phase boundaries** require `release` to contain every commit of the phase
-  before its retrospective closes. The end of the plan requires `release` to
-  equal `staging`.
+- **The end of the plan** requires `release` to equal `staging`.
 
 ### Measurements
 
@@ -1642,7 +1714,6 @@ bug, the executor:
 - files a bead for it at once, with the label `tooling`, the exact command, its
   output and how often it has happened (or adds a note to the open bead for
   the same failure);
-- records it in its friction record (below);
 - continues its own bead if it can, or makes the tooling bead a prerequisite if
   it can't.
 
@@ -1650,6 +1721,12 @@ Defects in other repositories (Tollgate, Hive) are filed and fixed under
 Hive's tooling-fix rule, at their cause, as their own beads.
 
 ### Introspection
+
+**Paused on 2026-10-24.** Beads no longer write friction records, and
+`scripts/friction`'s triggers and cadence retrospectives are not acted on; R2
+to R4 are cancelled and R5 closes the epic. The machinery stays in the
+repository and the records written so far stay as evidence. What follows
+describes it as it ran through phase B.
 
 **Friction ledger.** Every bead writes one compact record,
 `native/evidence/friction/<bead-id>.json`, in its own commit:
@@ -1713,77 +1790,57 @@ has covered, records a summary in the epic's notes, and appends a line to
 ## Implementation Plan
 
 Tracked by epic `hv-t8o8`. Each bead delivers through its own Tollgate
-worktree, passes the gate stage, writes its friction record, and follows
-[Workflow](#workflow).
+worktree, passes the gate stage and follows [Workflow](#workflow). Revised on
+2026-10-24: Phase G replaces B6 to B8 and phase C; R2 to R4 are cancelled.
+
+**Landed:** W1 (`hv-t8o8.33`), W2 (`.34`), E0 (`.35`), ES (`.36`), S0 (`.1`),
+F1 to F4 (`.2` to `.5`), R1 (`.37`), V1 (`.62`), V2 (`.63`), A1 to A6 (`.6`
+to `.11`), B1 to B5 (`.13` to `.17`). A7 (`.12`) is finishing with corpus
+accuracy in place of bit-level parity.
+
+**Superseded:** B7 (`.19`) and C1 (`.21`) by G3; C3 (`.23`) by G1, G5 and G6;
+C4 (`.24`) by V1 and G1 (the app already runs the Rust analyzer live) and G5
+(rollback profiling). R2 to R4 (`.38` to `.40`) cancelled.
 
 | Key | Bead | Phase | Work | Needs |
 |---|---|---|---|---|
-| W1 | `hv-t8o8.33` | W | Staged validation: `check-fast`, `ci-gate`, `ci-full`, the Tollgate release stage, AGENTS.md (ladder, `ci-fix`, tooling, selection order) | — |
-| W2 | `hv-t8o8.34` | W | Friction ledger, tags, budgets in `metrics.md`, `scripts/friction`, AGENTS.md | W1 |
-| E0 | `hv-t8o8.35` | E | Delayed listening's payoff measured offline from committed streams; `M`, grid and verdict | — |
-| ES | `hv-t8o8.36` | E | Spike: muting tap, delay line over an hour, `SIGKILL`, watchdog | — |
-| S0 | `hv-t8o8.1` | 0 | The spike: tap, permission and signing identity, online RNN and DBN, beat flash and click, latency and build-time measurements, crate choices; numbers into the appendix; targets set by rule | — |
-| F1 | `hv-t8o8.2` | 1 | `ts-freeze` tag on `e97ef4a`, the inventory, live exceptions completed | — |
-| F2 | `hv-t8o8.3` | 1 | `oracle-export.ts`, fixtures, reference stills, V8 math vectors, content hash, `FORMAT.md` | F1 |
-| F3 | `hv-t8o8.4` | 1 | `export-models`, golden activations | F1 |
-| F4 | `hv-t8o8.5` | 1 | Workspace scaffold, native sections in both stages, persistent target directories, `check-fast`, bundle script, AGENTS.md; deletes the spike | S0, F1, W1, ES |
-| R1 | `hv-t8o8.37` | R | Retrospective: phases W, 0 and 1 | W1, W2, F1–F4 |
-| V1 | `hv-t8o8.62` | V | The playable slice on live system audio, by 19:00 on 2026-10-24 | A4, F4 |
-| A1 | `hv-t8o8.6` | A | Front end and online LSTM ensemble, stage parity | F3, F4, R1 |
-| A2 | `hv-t8o8.7` | A | DBN forward, period smoothing, commit rule | A1 |
-| A3 | `hv-t8o8.8` | A | Ticks (evidence uses the beliefs), energy, levels, onsets, strong flags | A2 |
-| A4 | `hv-t8o8.9` | A | Hindsight (offline features, BiLSTM, Viterbi), worker, the phase check | A2 |
-| A5 | `hv-t8o8.10` | A | Structure: changes, jumps, keys, ends | A3 |
-| A6 | `hv-t8o8.11` | A | Accent forecasts (on the phase-checked beats) | A3, A4 |
-| A7 | `hv-t8o8.12` | A | Bands, brightness, timbre and remaining groups; corpus parity report; stream causality test | A4, A5, A6 |
-| B1 | `hv-t8o8.13` | B | Core, `jsmath`, content loader | F2, F4, R1 |
-| B2 | `hv-t8o8.14` | B | Stream store, Replay feeding, growable song map, context, schedule | B1 |
-| B3 | `hv-t8o8.15` | B | `sim/*` modules | B1 |
-| B4 | `hv-t8o8.16` | B | `simulate.ts` part 1: state, queue keys, enemies, weapons, damage | B2, B3 |
-| B5 | `hv-t8o8.17` | B | Judging and settling | B4 |
-| B6 | `hv-t8o8.18` | B | Director, sections, set pieces, finale and run end | B5 |
-| B7 | `hv-t8o8.19` | B | Recorder, emit, evaluator; frame hashes | B6 |
-| B8 | `hv-t8o8.20` | B | Virtual players, causality checks, playability check | B7 |
-| R2 | `hv-t8o8.38` | R | Retrospective: phases A and B | A7, B8 |
-| C1 | `hv-t8o8.21` | C | Renderer, offscreen capture, visual parity | B7 |
-| C2 | `hv-t8o8.22` | C | Audio output, mixer, SFX, causal ducking | F4, R1 |
-| C3 | `hv-t8o8.23` | C | App shell, input, runner with arrivals, menus; File mode on Python streams | C1, C2, B8, R2 |
-| C4 | `hv-t8o8.24` | C | File mode on the Rust analyzer, then System mode; latency instrumentation; rollback profiling | C3, A7, R2 |
-| R3 | `hv-t8o8.39` | R | Retrospective: phase C | C4 |
-| D1 | `hv-t8o8.25` | D | Run detection, rebasing, pause, live exceptions | C4, R3 |
-| D2 | `hv-t8o8.26` | D | Calibration, per-device settings, device changes | D1 |
-| D3 | `hv-t8o8.27` | D | Session recording, `ps replay`, Watch my run | D1 |
+| A7 | `hv-t8o8.12` | A | Bands, brightness, timbre and remaining groups; corpus accuracy report; stream causality test | A4, A5, A6 |
+| G1 | `hv-t8o8.75` | G | The app runs the `sim` engine: analyzer entries into a `StreamLog`, keys into the sim, the simplest runner, sim state drawn with `render`'s sprites; the slice's own rules deleted | B5, V2 |
+| G2 | `hv-t8o8.18` | G | Director, sections, zone waves, set pieces, the boss, archers, landmarks, finale and run end, live first, from B6's branch (was B6) | B5 |
+| G3 | `hv-t8o8.76` | G | The look: HUD and pixel font, ground and camera, particles and effects, tier and palette look, WGSL filter and blur, overhead text | G1 |
+| G4 | `hv-t8o8.22` | G | Sound: the mixer, sample-accurate scheduled SFX from sim events, the game's sound rules, causal ducking (was C2) | V2 |
+| K1 | `hv-t8o8.20` | G | Checks without an oracle: causality, determinism, the virtual-player smoke test (was B8) | G2 |
+| G5 | `hv-t8o8.77` | G | The rollback runner, input calibration, sounds from speculated state; rollback cost measured | G1, G4 |
+| G6 | `hv-t8o8.25` | G | Runs on live audio: listening screen, start, confirmed end, rebasing, pause, end card, debug menu (was D1) | G1, G2 |
+| D2 | `hv-t8o8.26` | D | Calibration, per-device settings, device changes | G6 |
+| D3 | `hv-t8o8.27` | D | Session recording, `ps replay`, Watch my run | G5, G6 |
 | D4 | `hv-t8o8.28` | D | Timing logs and `ps log` | D3 |
 | D5 | `hv-t8o8.29` | D | Latency report against targets; the QA checklist | D2, D4 |
-| R4 | `hv-t8o8.40` | R | Retrospective: phase D through D5 | D5 |
-| D6 | `hv-t8o8.30` | D | Remove the TS game | D5, R4 |
+| D6 | `hv-t8o8.30` | D | Remove the TS game | D5 |
 | E1 | `hv-t8o8.31` | E | Delayed listening in the analyzer: hindsight commits, stamps, fallback, grid choice and `M` by rule, `--delayed`, lead and causality checks | A7, E0 |
 | E2 | `hv-t8o8.32` | E | Delayed listening in the app: muting tap, delay line, playback, watchdog, listening-screen choice, File-source Delayed, session meta, timing logs, QA items 14–19 | E1, ES, D2, D4 |
 | R5 | `hv-t8o8.41` | R | Final retrospective | D6, E2 |
 
-- **Now (2026-10-24 afternoon):** V1 first, on one executor; the other
-  continues B1 and the B track. `velocity` beads preempt every bead except
-  `ci-fix`, including introspection, retrospective and cadence beads, which
-  wait until the slice is played. A5 is parked until V1 lands.
-- **Originally:** F1, W1, E0 and ES are ready and independent. W2 follows W1. F2 and
-  F3 follow F1; F4 follows F1, W1 and ES (it deletes the spike).
-- **Retrospectives** sit at every phase boundary and block the next phase
-  (R1 to R4); R5 closes the epic after D6 and E2. Cadence retrospectives and
-  `ci-fix`, `tooling` and improvement beads are filed as the work runs, and
-  preempt plan beads ([Workflow](#workflow)).
-- **Parallelism:** after R1, the A and B tracks run in parallel; they touch
-  different crates. Within each track, beads run in order. C2 can run
-  alongside B. D1 comes first; D2 and D3 then run in parallel; D4 follows D3
-  (the session directory and the runner).
-- **Phase E is off the parity path.** E1 needs A7 and E0 and can run alongside
-  B, C and D, since it touches only the analyzer and CLI. E2 follows D2 and D4,
-  which change the same app code (settings, the runner, the log). D5 and D6
-  wait for neither. If E2 lands after D5, it runs its own QA items.
-- **Review:** the repository's rules apply. Most beads exceed 300 lines of
-  code, so each gets one cold warden review. Fixture and model files are data,
-  not code, for that count.
+- **Now (2026-10-24, evening):** two executors. The app executor finishes A7,
+  then takes G1, then G3 and G4. The sim executor takes G2 (it touches only
+  the `sim` crate, so it runs alongside G1), then K1. G5 and G6 follow, then
+  D2 to D6.
+- **Order between ready beads:** `ci-fix`, then `velocity` (the operator's
+  feedback, filed from their play), then this table's order. G1 comes before
+  anything else on the app side: until it lands, the app runs the slice's own
+  rules.
+- **Conflicts:** G1, G3, G4, G5 and G6 all change the `app` crate; one executor
+  holds the app side at a time, and the other works in `sim`, `analysis` or
+  `audio`. G2 and K1 change only `sim` (and `cli` for K1).
+- **The app stays playable** after every candidate. The operator plays
+  whatever is on staging; `native/scripts/bundle && open
+  native/target/PlaylistSurvivors.app`.
+- **Review:** no cold review, except G5 (rollback correctness). The parity
+  checklist in AGENTS.md no longer applies.
+- **No friction records, no triggers, no cadence retrospectives** until R5
+  ([Introspection](#introspection)).
 - **No stops for the user.** Executors record choices and reasons in bead
-  notes and continue. The freeze commit (`e97ef4a`) was the last outside input.
+  notes and continue. Feel questions go to the operator's play, not to a stop.
 
 ## Beyond This Plan
 
@@ -1796,8 +1853,6 @@ Named so this plan does not block them. Each needs its own design.
   rebuilt on `ps capture`, and the reactive-feel rounds restarted.
 - **Press fusion:** the player's presses feed the beat forecast, so strikes
   follow a player who keeps time through a breakdown.
-- **Rule changes after parity,** including anything the live exceptions
-  suggest, such as a finale that anticipates the end.
 - **Track identity** from Now Playing metadata, for per-song best grades.
 - **Our own beat models,** if the app is ever distributed (madmom's models are
   non-commercial).
@@ -1806,8 +1861,7 @@ Named so this plan does not block them. Each needs its own design.
   design.
 - **More from Delayed listening's lookahead:** accents detected rather than
   forecast, structure events and the boss entry on time, and judging that
-  needs no provisional rating. Each changes the sim's rules, so it waits for
-  the post-parity rule changes.
+  needs no provisional rating.
 
 ## Appendix: Measurements
 
@@ -1962,7 +2016,7 @@ spike's dependency tree (wgpu, winit, objc2), well inside Tollgate's 15 minutes.
   `matrixmultiply`; window and GPU: `winit` 0.30 and `wgpu` 30 (Metal); display
   link: `objc2-core-video` (`CVDisplayLink`); key timestamps: `objc2-app-kit`
   local event monitor.
-- The spike resamples 48 kHz to 44.1 kHz linearly. The analyzer runs at 44.1 kHz (A1); live capture resamples with `rubato`, as planned, where the live input is built (C4).
+- The spike resamples 48 kHz to 44.1 kHz linearly. The analyzer runs at 44.1 kHz (A1); live capture resamples with `rubato`, as planned, where the live input is built (V1).
 
 ### Measured: E0, Delayed listening's payoff
 
