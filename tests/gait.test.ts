@@ -115,6 +115,25 @@ describe("beat steps in reactive mode", () => {
     expect(onTime / n).toBeGreaterThan(0.9);
   });
 
+  it("freeze a step in a hit-stop, as the world stands still", () => {
+    const ev = new Evaluator(plan, lib);
+    const stops = warp.hitStops().filter(([s0, s1]) => s1 - s0 > 0.03);
+    expect(stops.length).toBeGreaterThan(0);
+    let checked = 0;
+    for (const [s0, s1] of stops) {
+      // (Positions and walk frames: the fast lane's squash and bob follow the music, which plays on.)
+      const before = ev.evaluate(s0 + 0.005).enemies;
+      const after = new Map(ev.evaluate(s1 - 0.005).enemies.map((x) => [x.id, x]));
+      for (const x of before) {
+        const y = after.get(x.id);
+        if (!y || x.anim !== "walk" || !lib.enemies.get(x.type)!.gait) continue;
+        checked++;
+        expect([y.x, y.y, y.frame]).toEqual([x.x, x.y, x.frame]);
+      }
+    }
+    expect(checked).toBeGreaterThan(100);
+  });
+
   it("glide in play mode", () => {
     const play = runPlanner({ songMap: syntheticSongMap() });
     expect(play.enemies.some((e) => e.steps?.length)).toBe(false);

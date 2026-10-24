@@ -25,7 +25,7 @@ import { CameraRig } from "../planner/camera.ts";
 import { sectionIndexAt, subdivisionBeats, weightFactor, type Ctx } from "../planner/context.ts";
 import { aim, catches, swingArc, type AimTarget } from "./aim.ts";
 import { deepClone, registerShared } from "./clone.ts";
-import { gaitBeat, gaitGround, gaitSlot, gaitStepAfter, gaitSteps, type Gait } from "./gait.ts";
+import { gaitBeat, gaitGround, gaitSlot, gaitStepAfter, gaitStepAtOrBefore, type Gait } from "./gait.ts";
 import { bendStep, easeOut, movePose, opposite, stepEnd, walkFrame, type InputKey, type Key, type Step } from "./movement.ts";
 import type { KeyEvent, Observation, Player } from "./player.ts";
 import { BatchRecorder, type ArrowRecord, type PressTrace, type Recorder, type SimResult } from "./recorder.ts";
@@ -1818,20 +1818,24 @@ function engine(env: Env, st: SimState, io: Io) {
 
   /**
    * Beat steps: whether the enemy is due a step at beat index b, song time s (a gait time it steps on
-   * has come since its latest step), and if so its ground (song seconds of its speed it covers) and
-   * duration. An enemy that was not stepping (released from a set piece, or out of a stretch without a
+   * has come since its latest step, even one passed while the world stood still in a hit-stop), and
+   * if so its ground (world seconds of its speed it covers) and duration (world seconds). Both follow
+   * the time scale, so a stepper keeps a glider's pace and each step takes its share of the beat as
+   * heard. An enemy that was not stepping (released from a set piece, or out of a stretch without a
    * steady beat) steps at once, as far as the time left to its next step carries it.
    */
   const stepDue = (f: Foe, gait: Gait, b: number, s: number): { ground: number; dur: number } | undefined => {
     const k = gaitSlot(gait, b);
     const joins = f.stepK === undefined;
-    const due = joins || (k > f.stepK! && gaitSteps(gait, k));
-    f.stepK = k;
+    const due = joins || (k > f.stepK! && gaitStepAfter(gait, f.stepK!) <= k);
+    f.stepK = joins ? k : Math.max(f.stepK!, k);
     if (!due) return undefined;
     const at = (bi: number) => (stream ? knownTimeOfBeat(bi) : timeOfBeatIndex(song, bi));
-    const t0 = at(gaitBeat(gait, k));
-    const ground = joins ? at(gaitBeat(gait, gaitStepAfter(gait, k))) - s : at(gaitBeat(gait, k + gaitGround(gait))) - t0;
-    return { ground, dur: Math.min(ground, gait.share * (at(gaitBeat(gait, k + 1)) - t0)) };
+    const kk = joins ? k : gaitStepAtOrBefore(gait, k);
+    const t0 = at(gaitBeat(gait, kk));
+    const r = baseRate(s);
+    const ground = r * (joins ? at(gaitBeat(gait, gaitStepAfter(gait, k))) - s : at(gaitBeat(gait, kk + gaitGround(gait))) - t0);
+    return { ground, dur: Math.min(ground, r * gait.share * (at(gaitBeat(gait, kk + 1)) - t0)) };
   };
   /** A step from world time w: recorded for the renderer if it goes anywhere. */
   const startStep = (f: Foe, w: number, dx: number, dy: number, due: { ground: number; dur: number }) => {
