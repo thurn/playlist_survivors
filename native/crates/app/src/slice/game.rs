@@ -95,6 +95,17 @@ impl Enemy {
     }
 }
 
+/// A one-shot effect from the effects atlas, started at `at`, drawn at (x, y) in the field.
+#[derive(Clone, Copy, Debug)]
+struct Fx {
+    name: &'static str,
+    x: f32,
+    y: f32,
+    at: f64,
+    scale: f32,
+    tint: [f32; 4],
+}
+
 /// How an attack was judged.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Judgement {
@@ -124,6 +135,7 @@ pub struct Game {
     pub over: Option<(f64, End)>,
     facing: Facing,
     moving: bool,
+    effects: Vec<Fx>,
 }
 
 impl Default for Game {
@@ -151,6 +163,7 @@ impl Game {
             over: None,
             facing: Facing::Down,
             moving: false,
+            effects: Vec::new(),
         }
     }
 
@@ -189,6 +202,8 @@ impl Game {
         }
         self.recent.retain(|&b| b > now - 1.0);
         self.contact(now);
+        // (Every effect is over within 2 s.)
+        self.effects.retain(|fx| now - fx.at < 2.0);
     }
 
     /// Enemies touching the player cost a health each (then vanish), unless just hurt.
@@ -199,11 +214,29 @@ impl Game {
         if !self.enemies.iter().any(touching) {
             return;
         }
+        for e in self.enemies.iter().filter(|e| touching(e)) {
+            self.effects.push(Fx {
+                name: "smoke",
+                x: e.x,
+                y: e.y,
+                at: now,
+                scale: 1.5,
+                tint: [1.0; 4],
+            });
+        }
         self.enemies.retain(|e| !touching(e));
         if now - self.hurt_at < INVULNERABLE_S {
             return;
         }
         self.hurt_at = now;
+        self.effects.push(Fx {
+            name: "sparks",
+            x: self.x,
+            y: self.y,
+            at: now,
+            scale: 2.0,
+            tint: [1.0, 0.35, 0.35, 1.0],
+        });
         self.combo = 0;
         self.health = self.health.saturating_sub(1);
         if self.health == 0 {
@@ -280,6 +313,30 @@ impl Game {
             Some(off) if off.abs() <= ON_BEAT_S => {
                 let (px, py) = (self.x, self.y);
                 let before = self.enemies.len();
+                let reach = ATTACK_RADIUS * ATTACK_RADIUS;
+                for e in &self.enemies {
+                    let (dx, dy) = (e.x - px, e.y - py);
+                    if dx * dx + dy * dy <= reach {
+                        for (name, scale) in [("explosion-small", 2.0), ("sparks", 1.6)] {
+                            self.effects.push(Fx {
+                                name,
+                                x: e.x,
+                                y: e.y,
+                                at: now,
+                                scale,
+                                tint: [1.0; 4],
+                            });
+                        }
+                    }
+                }
+                self.effects.push(Fx {
+                    name: "slash-sweep",
+                    x: px,
+                    y: py,
+                    at: now,
+                    scale: 2.4,
+                    tint: [1.0, 1.0, 1.0, 0.9],
+                });
                 self.enemies.retain(|e| {
                     let (dx, dy) = (e.x - px, e.y - py);
                     dx * dx + dy * dy > ATTACK_RADIUS * ATTACK_RADIUS
@@ -291,6 +348,14 @@ impl Game {
             }
             _ => {
                 self.combo = 0;
+                self.effects.push(Fx {
+                    name: "slash-streak",
+                    x: self.x,
+                    y: self.y,
+                    at: now,
+                    scale: 1.0,
+                    tint: [0.6, 0.6, 0.7, 0.5],
+                });
                 Judgement::Miss
             }
         };
@@ -362,21 +427,6 @@ impl Game {
                 [0.1, 0.2, 0.1, 1.0],
             ));
         }
-        if let Some((t, j)) = self.last_attack {
-            let age = (now - t) as f32;
-            if age < 0.25 {
-                let (cx, cy) = at(self.x, self.y);
-                let color = match j {
-                    Judgement::Hit { .. } => [1.0, 0.9, 0.4, 0.5 * (1.0 - age / 0.25)],
-                    Judgement::Miss => [0.6, 0.6, 0.7, 0.3 * (1.0 - age / 0.25)],
-                };
-                let r = match j {
-                    Judgement::Hit { .. } => ATTACK_RADIUS * (0.6 + 0.4 * age / 0.25),
-                    Judgement::Miss => 30.0,
-                };
-                out.push(square(cx, cy, 2.0 * r * scale, color));
-            }
-        }
         // Characters from back to front.
         let mut order: Vec<usize> = (0..self.enemies.len()).collect();
         order.sort_by(|&a, &b| self.enemies[a].y.total_cmp(&self.enemies[b].y));
@@ -409,6 +459,25 @@ impl Game {
         }
         if !hero_drawn {
             self.draw_hero(art, now, &at, scale, hurt, out);
+        }
+        for fx in &self.effects {
+            let Some(anim) = art.effects.get(fx.name) else {
+                continue;
+            };
+            let frame = ((now - fx.at) * f64::from(anim.fps)).max(0.0) as usize;
+            if let Some(&region) = anim.frames.get(frame) {
+                let (x, y) = at(fx.x, fx.y);
+                out.push(
+                    Sprite::anchored(
+                        region,
+                        x,
+                        y,
+                        (anim.anchor_x, anim.anchor_y),
+                        fx.scale * scale,
+                    )
+                    .tinted(fx.tint),
+                );
+            }
         }
         if hurt {
             let a = (1.0 - (now - self.hurt_at) / INVULNERABLE_S) as f32;
