@@ -25,7 +25,8 @@ import { CameraRig } from "../planner/camera.ts";
 import { sectionIndexAt, subdivisionBeats, weightFactor, type Ctx } from "../planner/context.ts";
 import { aim, catches, swingArc, type AimTarget } from "./aim.ts";
 import { deepClone, registerShared } from "./clone.ts";
-import { bendStep, movePose, opposite, stepEnd, walkFrame, type InputKey, type Key, type Step } from "./movement.ts";
+import { gaitBeat, gaitSlot, type Gait } from "./gait.ts";
+import { bendStep, easeOut, movePose, opposite, stepEnd, walkFrame, type InputKey, type Key, type Step } from "./movement.ts";
 import type { KeyEvent, Observation, Player } from "./player.ts";
 import { BatchRecorder, type ArrowRecord, type PressTrace, type Recorder, type SimResult } from "./recorder.ts";
 import { nextStepAfter, stepRate, stepSpan, type GridSlot, type Schedule } from "./schedule.ts";
@@ -46,7 +47,7 @@ export const SIM_RATE = 120;
 /** Hero and camera samples per world-second. */
 export const HERO_RATE = 60;
 /** Enemy position samples per world-second. */
-export const ENEMY_RATE = 30;
+export const ENEMY_RATE = 60;
 /** The hero's body radius (the hurtbox) and its height above the feet. */
 export const HURTBOX_RADIUS = 10;
 export const HURTBOX_LIFT = 20;
@@ -241,6 +242,13 @@ interface Foe {
   drawing?: { w0: number };
   /** The boss lands at landS (out of reach while it drops in). */
   landS?: number;
+  /**
+   * Beat steps (an enemy with a gait, src/sim/gait.ts): the gait time of its latest step, and that
+   * step: from world time w0, easing out over dur, it covers (dx, dy) plus the separation push
+   * over `span`, the song seconds to the next gait time.
+   */
+  stepK?: number;
+  step?: { w0: number; dur: number; dx: number; dy: number; span: number };
 }
 
 /** A heavy impact on an accent, as its shockwave would launch from it. */
@@ -1803,6 +1811,38 @@ function engine(env: Env, st: SimState, io: Io) {
     return ph < 0 ? ph + 1 : ph;
   };
 
+  /**
+   * Beat steps: the song seconds the enemy's step at beat index b, song time s, has to the next gait
+   * time if it is due one (its gait time has come since its latest step), else 0. An enemy that was
+   * not stepping (just spawned, released from a set piece, or out of a stretch without a steady
+   * beat) steps at once, as far as the time left to its next gait time carries it.
+   */
+  const stepDue = (f: Foe, gait: Gait, b: number, s: number): number => {
+    const k = gaitSlot(gait, b);
+    const joins = f.stepK === undefined;
+    const due = joins || k > f.stepK!;
+    f.stepK = k;
+    if (!due) return 0;
+    const at = (bi: number) => (stream ? knownTimeOfBeat(bi) : timeOfBeatIndex(song, bi));
+    return at(gaitBeat(gait, k + 1)) - (joins ? s : at(gaitBeat(gait, k)));
+  };
+  const startStep = (f: Foe, gait: Gait, w: number, dx: number, dy: number, span: number) => {
+    f.step = { w0: w, dur: Math.max(1 / SIM_RATE, gait.share * span), dx, dy, span };
+  };
+  /** A stepping enemy's velocity at world time w (the slope of its ease; still between steps), for the extrapolation between fixed steps. */
+  const stepVelocity = (f: Foe, w: number) => {
+    const g = f.step;
+    const u = g ? (w - g.w0) / g.dur : 1;
+    if (!g || u >= 1) {
+      f.vx = 0;
+      f.vy = 0;
+      return;
+    }
+    const slope = (3 * (1 - u) ** 2) / g.dur;
+    f.vx = (g.dx + f.sx * g.span) * slope;
+    f.vy = (g.dy + f.sy * g.span) * slope;
+  };
+
   /** Integrate every enemy to world time w1 (a fixed step). */
   const moveFoes = (w1: number) => {
     const hp = heroPose(w1);
@@ -1828,6 +1868,10 @@ function engine(env: Env, st: SimState, io: Io) {
         mults[g] = 0.6 + 0.8 * beatSwell(ph);
       } else mults[g] = (0.6 + 0.8 * beatHit(ph)) / 0.733;
     }
+    // Beat steps are reactive mode's, on the committed beats known so far, and need a steady beat:
+    // enemies with a gait glide while the beat is unclear (and always in play mode and the demo).
+    const stepping = stream !== undefined && !free && clearAt(s);
+    const stepB = stepping ? knownBeatAt(s) : 0;
     const alive = st.alive;
     const health = st.health > 0;
     for (const f of alive) {
@@ -1875,6 +1919,14 @@ function engine(env: Env, st: SimState, io: Io) {
       if (f.landS !== undefined && s < f.landS) {
         f.vx = 0;
         f.vy = 0;
+        continue;
+      }
+      if (f.step) {
+        // A beat step: along its ease, whatever the length of the fixed step.
+        const g = f.step;
+        const de = easeOut(clamp((w1 - g.w0) / g.dur, 0, 1)) - easeOut(clamp((f.lastW - g.w0) / g.dur, 0, 1));
+        f.x += (g.dx + f.sx * g.span) * de;
+        f.y += (g.dy + f.sy * g.span) * de;
         continue;
       }
       f.x += f.vx * dt;
@@ -1990,6 +2042,17 @@ function engine(env: Env, st: SimState, io: Io) {
         const tx = hp.x + (cx / cl) * ARCHER_RANGE - (cy / cl) * off - f.x;
         const ty = hp.y + (cy / cl) * ARCHER_RANGE + (cx / cl) * off - f.y;
         const tl = Math.hypot(tx, ty) || 1;
+        if (stepping && f.def.gait) {
+          const span = stepDue(f, f.def.gait, stepB, s);
+          if (span > 0) {
+            const len = Math.min(f.def.speed * calmSpeed * span, tl);
+            startStep(f, f.def.gait, w1, (tx / tl) * len, (ty / tl) * len, span);
+          }
+          stepVelocity(f, w1);
+          continue;
+        }
+        f.stepK = undefined;
+        f.step = undefined;
         const sp = f.def.speed * calmSpeed * (mults[f.def.group] ?? 1) * clamp(tl / 20, 0, 1);
         const kk = Math.min(1, dt * 12);
         f.vx += ((tx / tl) * sp - f.vx) * kk;
@@ -2001,18 +2064,32 @@ function engine(env: Env, st: SimState, io: Io) {
       const dy = hp.y - f.y;
       const d = Math.hypot(dx, dy) || 0.01;
       const contact = HURTBOX_RADIUS + f.r + CONTACT_GAP;
-      const m = (mults[f.def.group] ?? 1) * calmSpeed;
       const charge = s < f.chargeUntil ? CHARGE_SPEED : 1;
-      // Archers keep their distance; everyone else closes to contact.
-      const speed =
-        f.def.behavior === "archer" ? f.def.speed * m * clamp((d - ARCHER_RANGE) / 30, -0.5, 1) : f.def.speed * m * charge * clamp((d - contact) / 16, 0, 1);
       // The curl turns half the enemies clockwise and half counterclockwise.
       const cs = f.id % 2 === 0 ? curlSin : -curlSin;
-      const tvx = ((dx * curlCos - dy * cs) / d) * speed + f.sx;
-      const tvy = ((dy * curlCos + dx * cs) / d) * speed + f.sy;
-      // The new velocity carries the enemy to the next step (positions are extrapolated with it).
-      f.vx += (tvx - f.vx) * k;
-      f.vy += (tvy - f.vy) * k;
+      if (stepping && f.def.gait) {
+        // A beat step on each gait time, aimed where the hero is then: as far as its speed carries
+        // it to the next, stopping at contact (an archer at its range, backing off at half its pace).
+        const span = stepDue(f, f.def.gait, stepB, s);
+        if (span > 0) {
+          const reach = f.def.speed * calmSpeed * span;
+          const len = f.def.behavior === "archer" ? clamp(d - ARCHER_RANGE, -0.5 * reach, reach) : clamp(d - contact, 0, reach * charge);
+          startStep(f, f.def.gait, w1, ((dx * curlCos - dy * cs) / d) * len, ((dy * curlCos + dx * cs) / d) * len, span);
+        }
+        stepVelocity(f, w1);
+      } else {
+        f.stepK = undefined;
+        f.step = undefined;
+        const m = (mults[f.def.group] ?? 1) * calmSpeed;
+        // Archers keep their distance; everyone else closes to contact.
+        const speed =
+          f.def.behavior === "archer" ? f.def.speed * m * clamp((d - ARCHER_RANGE) / 30, -0.5, 1) : f.def.speed * m * charge * clamp((d - contact) / 16, 0, 1);
+        const tvx = ((dx * curlCos - dy * cs) / d) * speed + f.sx;
+        const tvy = ((dy * curlCos + dx * cs) / d) * speed + f.sy;
+        // The new velocity carries the enemy to the next step (positions are extrapolated with it).
+        f.vx += (tvx - f.vx) * k;
+        f.vy += (tvy - f.vy) * k;
+      }
       if (f.knockT > 0) {
         const used = Math.min(dt, f.knockT);
         f.x += (f.knockX * used) / KNOCK_TIME;
