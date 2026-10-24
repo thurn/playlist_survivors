@@ -75,6 +75,22 @@ Raw finding counts ignore a bead's size. Changed non-test lines are additions pl
 Mean 0.92 per 100 lines. The next reviewed beads record their own row; R2 compares them with this
 baseline (aiming at half), alongside the review-churn minutes.
 
+The review-churn trigger fired a third time on the next three reviewed beads (hv-t8o8.64):
+
+| Bead | Commit | Lines | Findings | Per 100 lines | Review minutes |
+|---|---|---|---|---|---|
+| B1 hv-t8o8.13 | b31b4a5 | 4244 | 9 | 0.21 | 15 |
+| A5 hv-t8o8.10 | 16269e2 | 914 | 5 | 0.55 | 8 |
+| B2 hv-t8o8.14 | 5fb5f1d | 2443 | 7 | 0.29 | 20 |
+
+Mean 0.35 per 100 lines, under half the baseline, so the self-review and parity checklists are
+working by that measure; the minutes (mean 14) are not down from A1–A3's 15. The trigger counts
+beads, not rates. What remains is mostly behaviour of an external call the port assumed (numpy's
+BLAS `corrcoef` in A5; V8's `pow` fast path, YAML 1.1 booleans and merge keys, zod defaults in B1)
+and inputs shorter than a stage's windows (A5): the parity checklist now asks for an inventory of
+the source's external calls before porting and a fixture past the longest window. The next three
+reviewed parity beads are compared on review minutes, aiming under 10.
+
 ## Batch jobs below Tollgate (hv-t8o8.55)
 
 A gate (`scripts/ci-gate`, every section) took 43–44 s idle, and 64–67 s with a 10-job oracle
