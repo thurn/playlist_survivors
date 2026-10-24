@@ -4,8 +4,8 @@
 
 [reactive-audio.md](reactive-audio.md) builds reactive mode: a mode that plays
 to music the game has not analysed in advance, staged towards the authored
-Galop. Its stages 1 to 6 have landed. Stage 7, `hv-s4pt.11`, is tuning the
-reactive Galop's difficulty, and `hv-s4pt.12` is fixing its judging.
+Galop. Its stages 1 to 6 have landed, and so has a fair-judging revision.
+Stage 7, `hv-s4pt.11`, is tuning the reactive Galop's difficulty.
 
 That plan measures everything against one song, the Galop. This plan runs
 **alongside** it and asks a wider question: does reactive mode work on songs
@@ -20,7 +20,11 @@ computer and build a complete rhythm game from it:
   song. The UI, particles, sounds, combat, movement, animations and the hero
   all move with the music and form one harmonious whole.
 
-This plan gets closer to that through a measured **improvement loop**:
+This plan gets there in two steps. First comes a **fast lane**
+([The Fast Lane](#the-fast-lane)): one session of visible fixes using data the
+stream already has, checked by rendering frames in seconds, with no rating
+pipeline. Then comes a measured **improvement loop**, re-ranked by what the
+fast lane shows:
 
 1. **A corpus** of new songs: the CC0 NotJam Music Packs, plus about 12
    CC0/CC-BY tracks in other genres. Each track is either an **iteration**
@@ -69,24 +73,79 @@ meanings.
 - **Musical bar:** a bar of the song's detected meter (2, 3 or 4 beats). This
   is separate from the simulation's fixed 2-beat bars, which stay as they are.
 
+### Where reactive mode stands
+
+Gameplay as of master `1529eef`, the fair-judging revision (`hv-s4pt.12`).
+This plan builds on these rules, not the ones before them:
+
+- **No free movement.** Strides and the beat display stay on throughout.
+  While the beat is unclear, presses stride unjudged and the groove holds.
+  The beat track's ticks soften with the beat's clarity, down to 30%.
+- **Judging pauses and resumes.** It stops at the first tick below the gate
+  and resumes after 1 s of clear beat. The drain then waits its grace bar
+  again.
+- **Readings** come only from judged presses since judging resumed, restart
+  from "as tracked" after an unclear stretch, and lean towards "as tracked".
+- **The benefit of the doubt:** a settle never lowers a steady player's
+  provisional rating.
+- **Penalties and the drain scale with the tracker's confidence,** from none
+  at the gate to all of it at evidence 0.55. A non-steady player's raises
+  scale the same way, so random pressing gains nothing where the tracker is
+  unsure.
+- **Rings close in world time.**
+- **`npm run reactive:replay`** replays a play log's presses under the
+  current rules: a fast way to test mechanics against real playtests.
+
+Already reacting to the music, for the fast lane to build on:
+
+- **Pulses on committed beats:** the hero's aura, props, gems, light, the
+  vignette and the HUD.
+- **Strong onsets:** a flash and a camera punch.
+- **Forecast accents:** heavy strikes and their punches.
+- **The loudness level:** camera, sound palette, population and calm.
+- **Detected sections:** zone waves, rosters and banners.
+
+Not reacting yet:
+
+- **Enemies' bodies:** only formations dance.
+- **Onsets in general:** non-strong onsets and onset strength drive nothing.
+- **The key:** it colours only the gem chimes.
+- **Per-song look:** none. Every song gets the same zones, palettes and
+  constants.
+
 ### The plan in brief
 
 | Phase | Beads | Can start | What it adds |
 |---|---|---|---|
-| A. Corpus and measurement | F1–F5 | Now, alongside `hv-s4pt.12` and `.11` | NotJam corpus, fitted grids, CC shortlist, dossiers and metrics, rubric and round tooling |
-| B. Baseline | R0 | After `.11` and F5 | Round 0 rates today's engine untouched |
-| C. Music signals | E1, E2 | Now, after F2 | Bands, brightness, timbre; causal meter, downbeats and phrases |
+| 0. Fast lane | Q | Now, alongside `hv-s4pt.11` | Enemy beat motion, onset texture, key colour, a stand-in identity, legible reward; a mini-corpus of 6 tracks |
+| A. Corpus and measurement | F1–F5 | After Q | NotJam corpus, fitted grids, CC shortlist, dossiers and metrics, rubric and round tooling |
+| B. Baseline | R0 | After `.11` and F5 | Round 0 rates the engine as the fast lane left it |
+| C. Music signals | E1, E2 | After F2 | Bands, brightness, timbre; causal meter, downbeats and phrases |
 | D. Feel foundation | G1–G5 | After `.11` | Signal bus and matrix, identity, length-blind pacing, sounds, a song-sampling spike |
 | E. Rounds | R1, R2, … and milestones | After phase D | Rater-driven fixes until the rubric plateaus |
 
-Phase D's beads are seeded from known gaps, but Round 0 re-ranks and rescopes
-them before they start ([Seeded work](#seeded-work)).
+Phase D's beads are seeded from known gaps. The fast lane's findings, then
+Round 0's, re-rank and rescope them before they start
+([Seeded work](#seeded-work)).
+
+**How long:** the fast lane is one session, with no step waiting more than a
+couple of minutes. Phases A to D are several days of beads, and each rating
+round takes about an hour, because raters run one at a time. The fast lane
+exists so that useful changes land before any of that.
 
 ### Decisions
 
 These were settled with the user while designing. The executor treats them
 as fixed.
 
+- **A fast lane comes first** (bead Q). It makes code-only changes from data
+  the stream already has, checked with rendered frames, before the corpus,
+  the raters and the new analysis. Every other bead waits for it, so its
+  findings can re-rank them.
+- **Analysis is cheap enough to run in parallel.** The stream command runs at
+  about 0.65× real time on one core, so the corpus regenerates in minutes
+  across cores. No cache is needed ([Stream regeneration
+  cost](#stream-regeneration-cost)).
 - **Scope:** corpus, engine and feel. Live audio capture stays out of scope.
   This plan stays out of the director's difficulty, healing, grade and demo
   until stage 7 lands, then coordinates through serialization edges.
@@ -192,6 +251,82 @@ as fixed.
     19 tracks.
   - `not-jam-music-pack-2-sfx.zip`: 42 CC0 sound effects.
   - The folder `NotJamMusicPack 2` is a copy of pack 1, not pack 2. Ignore it.
+
+## The Fast Lane
+
+One bead, Q, of about a session. It makes the changes that are visible in
+seconds and need no new analysis, no corpus tooling and no raters.
+
+### Mini-corpus
+
+- **Six iteration tracks** chosen to span the corpus:
+  - `BreakbeatChips`: slow breakbeat;
+  - `KleptoLindaTitles`: fast;
+  - `TypeCastTheme`: very wide dynamics;
+  - `waltz_of_the_lich_king`: 3/4;
+  - `DarkCavern_PhoneHome`: sparse and ambient;
+  - `lazy_river_rally`: the fastest.
+- **Plus the Galop,** which keeps its song map.
+- **Added as local tracks** with the existing `npm run reactive:add`, which
+  writes a stream with an offline reference to gitignored `reactive-local/`.
+  - Run the six at once in parallel shells. That takes about 2 minutes.
+  - These are iteration tracks, so they don't touch the held-out protocol.
+
+### The feedback loop
+
+- **Beat sheets:** a `--beat-sheet <t>` option for `npm run capture` that
+  renders 16 frames, at phases 0, 0.25, 0.5 and 0.75 of 4 consecutive committed
+  beats from `t`, tiled into one captioned image with `sharp`.
+  - Each sheet takes about 20 to 30 s.
+  - If capture does not yet work with `?mode=reactive&track=<id>`, making it
+    work is the bead's first step.
+- **The executor looks at the sheets itself,** comparing before and after. There
+  is no rater pipeline in the fast lane.
+- **Mechanics:** use `reactive:parity` and `reactive:replay` (on the user's
+  newest play log) after any change that could touch the reward.
+
+### The changes
+
+Each change is small and hand-wired. G1 migrates them into the matrix later.
+
+1. **Enemy beat motion:**
+   - a squash and bob on committed beats, faded by evidence;
+   - a flinch on onsets, scaled by strength;
+   - phases staggered by enemy type, so the horde reads as dancing rather than
+     vibrating.
+2. **Onset texture:** every onset, not only strong ones, gives a small
+   particle burst and light flicker, scaled by strength and faded by evidence.
+   Strong onsets keep their flash.
+3. **Key and mode colour:**
+   - the light grading's hue follows the detected key, around the circle of
+     fifths;
+   - minor keys grade darker and cooler;
+   - the colour changes only at detected section starts, so it never
+     flickers.
+4. **A stand-in identity:** at the first detected section start, or at 30 s,
+   choose a zone-order rotation and a palette tint from a hash of the key,
+   the mode and a tempo band. It uses no new stream data, and G2 replaces it.
+5. **A legible reward:** compare `reactive-moderate` and `mash4` at the same
+   moments in beat sheets. If the tiers don't read, scale strike trails and
+   impact effects by tier in the renderer. The simulation's weapon sizes
+   don't change.
+
+### Constraints
+
+- **No stream changes and no simulation changes.**
+  - Stage 7 is tuning in `src/sim/`; its released worktree edits
+    `src/sim/player.ts`, `src/reactive/players.ts` and
+    `src/content/schema.ts`. Stay out of those where possible.
+  - Small textual collisions are rebased with `tg update`.
+- **Causal:** every new frame effect reads only stream entries known at the
+  frame's time. The existing perturbation check compares frames and enforces
+  this.
+- **Play mode unchanged:** golden hashes, `check:play` and `check:seeds`.
+- **Deliverable:**
+  - before and after beat sheets for three tracks, attached in the bead's
+    notes;
+  - a per-track list of what still looks wrong;
+  - suggested re-ranking of this epic's beads, written into the epic's notes.
 
 ## The Corpus
 
@@ -368,29 +503,19 @@ CC0 audio packs, approved by the user the same way.
 
 ### Stream regeneration cost
 
-Every stream-changing bead regenerates every shipped stream. Hindsight grids
-cost one to two minutes of analysis per minute of audio, so about 90 minutes
-of corpus audio would take hours per change.
+Every stream-changing bead regenerates every shipped stream.
 
-- **F1 adds a per-group cache.** The stream command splits its output into
-  groups:
-  - beats, ticks and onsets;
-  - hindsight;
-  - structure;
-  - accents;
-  - bands (E1);
-  - bars (E2).
-
-  Each group has its own version. The cache key is the audio file's hash plus
-  that group's version and parameters. Cached groups live in
-  `tools/analysis/work/cache/`, which is gitignored and in the main checkout.
-- **Only changed groups are recomputed.**
-  - A change to bands leaves hindsight cached.
-  - A worktree reads the main checkout's cache by absolute path and writes new
-    entries back. Entries are content-addressed, so concurrent writers
-    cannot conflict.
-- **`params.toolVersion` becomes `params.toolVersions`,** one per group. The
-  fresh-streams gate compares each.
+- **Measured** on 2026-10-23: the stream command, hindsight included, took
+  23 s for the 36 s `BreakbeatChips`. That is about 0.65× real time on one
+  core.
+  - reactive-audio.md's estimate of one to two minutes per minute of music
+    does not hold for these tracks.
+  - All of NotJam (about 46 minutes) is about 30 minutes in serial.
+- **F1 adds `--jobs <n>`** to `reactive:streams` and `reactive:corpus-add`,
+  defaulting to the number of performance cores. A full regeneration then
+  takes about 5 minutes.
+- **No cache.** Revisit only if a later group makes regeneration take longer
+  than 15 minutes in parallel.
 
 ## Ground Truth
 
@@ -916,7 +1041,8 @@ stay in gitignored `captures/`.
 
 ### Seeded work
 
-Round 0 runs before phase D. It also runs milestone 0: the held-out steps
+The fast lane's findings come first: its notes on the epic re-rank and rescope
+the seeded beads. Round 0 then runs before phase D. It also runs milestone 0: the held-out steps
 on the same untouched engine, giving the overfitting rule its baseline. Its
 triage doesn't file new fix beads.
 
@@ -1040,18 +1166,20 @@ This plan extends it:
 
 For the user, never blocking a bead:
 
-1. **After F2:** listen to two or three click overlays from
+1. **After Q:** play two or three of the mini-corpus tracks. Does the horde
+   move with the music? Do the songs look different from each other?
+2. **After F2:** listen to two or three click overlays from
    `captures/corpus/`. Does the click sit on the beat and accent the bar?
-2. **After G1:** play an iteration track. Does more of the world move with the
+3. **After G1:** play an iteration track. Does more of the world move with the
    kick, snare and hats?
-3. **After G2:** play two contrasting iteration tracks. Do the reveals land on
+4. **After G2:** play two contrasting iteration tracks. Do the reveals land on
    a downbeat? Do the two songs feel like different videos?
-4. **After G3:** play a sub-60 s track and the Galop. Does each get a
+5. **After G3:** play a sub-60 s track and the Galop. Does each get a
    complete arc, and does the finale come at the end and not in a mid-song
    silence?
-5. **After G4 and G5:** listen to `mix.ogg` for three tracks. Do the game
+6. **After G4 and G5:** listen to `mix.ogg` for three tracks. Do the game
    sounds sit inside the song? Judge the spike's sampled strikes.
-6. **At each milestone:** play one held-out track of your choice. Your
+7. **At each milestone:** play one held-out track of your choice. Your
    impressions go into the milestone's notes.
 
 ## Implementation Plan
@@ -1061,9 +1189,10 @@ worktree and keeps `scripts/ci` green.
 
 | Key | Bead | Phase | Work | Needs |
 |---|---|---|---|---|
-| F1 | `hv-jtsz.1` | A | Corpus manifest, NotJam ingest to Ogg, index groups and splits, `corpus/CREDITS.md`, per-group stream cache and `toolVersions`, NotJam streams | — |
+| Q | `hv-jtsz.16` | 0 | The fast lane: mini-corpus, beat sheets, enemy beat motion, onset texture, key colour, stand-in identity, legible reward | — |
+| F1 | `hv-jtsz.1` | A | Corpus manifest, NotJam ingest to Ogg, index groups and splits, `corpus/CREDITS.md`, `--jobs` parallel regeneration, NotJam streams | Q |
 | F2 | `hv-jtsz.2` | A | `fit-grid`: fitted references, meter, approximate sections, click overlays; corpus beat-metric table | F1 (serialized: streams) |
-| F3 | `hv-jtsz.3` | A | Shortlist about 12 CC tracks and extra SFX packs; stop for user approval | — |
+| F3 | `hv-jtsz.3` | A | Shortlist about 12 CC tracks and extra SFX packs; stop for user approval | Q |
 | F3b | `hv-jtsz.4` | A | Ingest the approved CC tracks with fitted references (filed unselectable until approval) | F2, F3 |
 | F4 | `hv-jtsz.5` | A | `reactive:dossier`, `reactive:corpus`, metrics, timeline, contact sheets, `mix.ogg`, reactive capture, the authored Galop anchor | F2 |
 | F5 | `hv-jtsz.6` | A | `docs/feel/rubric.md`, rater brief, scores schema, `reactive:feel aggregate`, milestone numbers-only export | F4 |
@@ -1087,8 +1216,10 @@ worktree and keeps `scripts/ci` green.
   - G2 and G4 follow G1 because they extend its matrix.
   - Every game-side bead (G1–G5 and fix beads) waits for `hv-s4pt.11`, which
     itself follows `hv-s4pt.12`.
-- **Tonight:** F1, F3 and then F2 can run while stage 7 finishes. F4 and F5
-  follow. R0 runs once stage 7 lands.
+- **The fast lane first:** Q runs now, alongside stage 7. Every other bead
+  waits for it, through F1 and F3. Then F1, F3 and F2 run, F4 and F5 follow,
+  and R0 runs once stage 7 has landed too.
+- **Q is game-side but avoids `src/sim/`,** so it doesn't wait for stage 7.
 - **Review:** the repository's rules apply. G1, G2, G3, E1 and E2 likely
   touch simulation determinism or exceed 300 lines, so each gets one cold
   warden review.
