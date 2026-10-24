@@ -1310,6 +1310,12 @@ Named here so this plan does not block them. Each needs its own design.
   Windows. It only listens: it captures other applications' audio, excluding
   the game's own sounds, and never mutes, delays or replays that audio (see
   [Decisions](#decisions)).
+- **Generalising beyond the Galop:**
+  [reactive-feel.md](reactive-feel.md) runs alongside stage 7. It adds a corpus
+  of new songs with a held-out set, a rater-driven improvement loop, richer
+  music signals, a signal bus and modulation matrix, per-song identity, and
+  pacing that does not depend on the song's length. That pacing supersedes
+  stage 6's absolute-second constants.
 - **Press fusion:** feeding the player's presses into the beat forecast, so
   strikes follow a player who keeps a steady beat through a breakdown.
 
