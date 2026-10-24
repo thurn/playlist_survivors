@@ -1,2 +1,0 @@
-[console_scripts]
-ps-analysis = ps_analysis.cli:main

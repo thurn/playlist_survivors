@@ -11,3 +11,4 @@ tools/analysis/work/
 .worktrees/
 logs/
 reactive-local/
+*.egg-info/
