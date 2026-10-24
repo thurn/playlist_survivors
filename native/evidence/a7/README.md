@@ -27,3 +27,20 @@ orpheus-galop-hindsight: analyzer's bands, brightness and timbre within 8.66e-7;
   floats, scipy's exact medians, Python's `** 0.5`). numpy's array `exp`, `log`, `log10` and
   `log2` were checked equal to the C library's on 100000 values each before porting (the
   inventory step in AGENTS.md).
+
+## The stream's own causality
+
+`cargo test -p analysis --release --test stream_causality -- --include-ignored --nocapture`
+(native/crates/analysis/tests/stream_causality.rs):
+
+```text
+entries known by the last cut: beats 78, ticks 523, onsets 274, hindsight 26, changes 0, jumps 0, ends 0, forecasts 0, timbre 26
+sections: 2 changes, 3 jumps, 1 ends; pulse: 16 forecasts
+```
+
+The analyzer's stream of audio cut at X holds exactly (bit for bit, in order) the full stream's
+entries known by X less 0.05 s, in all nine groups (beats, ticks, onsets, hindsight, changes,
+jumps, ends, forecasts, timbre), and with no margin at cuts between frames (4.123457 s, 9.005013
+s, 22.5 s, 27.7 s, 33.333331 s), fed in uneven blocks: on the Galop's 30 s at eight cuts, on A5's
+synthetic piece at four (its changes, jumps and end) and on A6's accented pulse at three (its
+forecasts). The gate runs 6 s of the house excerpt at two cuts.
