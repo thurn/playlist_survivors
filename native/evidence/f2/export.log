@@ -1,0 +1,282 @@
+{"run":"house-128/reactive-moderate","ms":31000,"frames":3903,"events":14682}
+{"run":"house-128/reactive-human","ms":24965,"frames":3903,"events":13688}
+{"run":"house-128/reactive-half","ms":26902,"frames":3903,"events":13298}
+{"run":"orpheus-galop/mash2","ms":106774,"frames":8838,"events":44875}
+{"run":"orpheus-galop/mash4","ms":107335,"frames":8838,"events":45658}
+{"run":"orpheus-galop/holder","ms":108446,"frames":8838,"events":46005}
+{"run":"orpheus-galop/mash8","ms":109224,"frames":8838,"events":48673}
+{"run":"house-128/reactive-offbeat","ms":26285,"frames":3903,"events":14025}
+{"run":"orpheus-galop/reactive-offbeat","ms":111220,"frames":8838,"events":49593}
+{"run":"orpheus-galop/reactive-human","ms":112073,"frames":8838,"events":46449}
+{"run":"orpheus-galop/reactive-half","ms":113459,"frames":8838,"events":47060}
+{"run":"orpheus-galop/reactive-moderate","ms":114004,"frames":8838,"events":48538}
+{"run":"orpheus-galop/reactive-skilled","ms":114601,"frames":8838,"events":48229}
+{"run":"house-128/mash2","ms":21266,"frames":3903,"events":11825}
+{"run":"house-128/mash4","ms":20560,"frames":3903,"events":13818}
+{"run":"house-128/reactive-skilled","ms":23167,"frames":3903,"events":15027}
+{"run":"house-128/mash8","ms":21155,"frames":3903,"events":13236}
+{"run":"house-128/holder","ms":20407,"frames":3903,"events":12251}
+{"run":"dnb-174/reactive-moderate","ms":23127,"frames":3930,"events":15961}
+{"run":"dnb-174/reactive-human","ms":23327,"frames":3930,"events":16000}
+{"run":"dnb-174/reactive-half","ms":22724,"frames":3930,"events":15701}
+{"run":"dnb-174/reactive-offbeat","ms":22662,"frames":3930,"events":16133}
+{"run":"dnb-174/reactive-skilled","ms":23699,"frames":3930,"events":16206}
+{"run":"dnb-174/mash2","ms":24895,"frames":3930,"events":14762}
+{"run":"dnb-174/mash4","ms":25244,"frames":3930,"events":16010}
+{"run":"dnb-174/holder","ms":25367,"frames":3930,"events":14865}
+{"run":"dnb-174/mash8","ms":27469,"frames":3930,"events":16165}
+{"run":"hiphop-92-swing/reactive-moderate","ms":28193,"frames":3912,"events":15636}
+{"run":"hiphop-92-swing/reactive-human","ms":30456,"frames":3912,"events":15811}
+{"run":"hiphop-92-swing/reactive-half","ms":31073,"frames":3912,"events":15871}
+{"run":"hiphop-92-swing/reactive-offbeat","ms":31478,"frames":3912,"events":16635}
+{"run":"hiphop-92-swing/reactive-skilled","ms":32272,"frames":3912,"events":16571}
+{"run":"hiphop-92-swing/mash2","ms":32453,"frames":3912,"events":15902}
+{"run":"hiphop-92-swing/holder","ms":30763,"frames":3912,"events":14136}
+{"run":"hiphop-92-swing/mash4","ms":33139,"frames":3912,"events":16201}
+{"run":"hiphop-92-swing/mash8","ms":33236,"frames":3912,"events":16419}
+{"run":"accelerando-100-140/reactive-human","ms":38295,"frames":4683,"events":19092}
+{"run":"accelerando-100-140/reactive-moderate","ms":40169,"frames":4683,"events":20362}
+{"run":"accelerando-100-140/reactive-offbeat","ms":35197,"frames":4683,"events":19353}
+{"run":"accelerando-100-140/reactive-half","ms":37565,"frames":4683,"events":18558}
+{"run":"accelerando-100-140/mash2","ms":34346,"frames":4683,"events":17655}
+{"run":"accelerando-100-140/mash4","ms":33938,"frames":4683,"events":17612}
+{"run":"accelerando-100-140/reactive-skilled","ms":37737,"frames":4683,"events":20397}
+{"run":"accelerando-100-140/holder","ms":30411,"frames":4683,"events":17855}
+{"run":"accelerando-100-140/mash8","ms":33331,"frames":4683,"events":20018}
+{"run":"causality-mix/reactive-moderate","ms":34978,"frames":4170,"events":13971}
+{"run":"causality-mix/reactive-human","ms":27535,"frames":4170,"events":13787}
+{"run":"causality-mix/reactive-half","ms":24320,"frames":4170,"events":12963}
+{"run":"pop-arrangement/reactive-moderate","ms":125988,"frames":10392,"events":54486}
+{"run":"pop-arrangement/reactive-half","ms":124623,"frames":10392,"events":55098}
+{"run":"pop-arrangement/reactive-human","ms":125150,"frames":10392,"events":53709}
+{"run":"pop-arrangement/reactive-offbeat","ms":122916,"frames":10392,"events":52056}
+{"run":"pop-arrangement/mash2","ms":121417,"frames":10392,"events":49510}
+{"run":"pop-arrangement/mash4","ms":122842,"frames":10392,"events":52404}
+{"run":"pop-arrangement/reactive-skilled","ms":125904,"frames":10392,"events":55022}
+{"run":"pop-arrangement/mash8","ms":123672,"frames":10392,"events":53422}
+{"run":"causality-mix/reactive-offbeat","ms":20951,"frames":4170,"events":13311}
+{"run":"pop-arrangement/holder","ms":116675,"frames":10392,"events":50372}
+{"run":"notjam-breakbeat-chips/reactive-moderate","ms":8091,"frames":2301,"events":5992}
+{"run":"notjam-breakbeat-chips/reactive-human","ms":8119,"frames":2301,"events":5663}
+{"run":"notjam-breakbeat-chips/reactive-offbeat","ms":8142,"frames":2301,"events":5817}
+{"run":"notjam-breakbeat-chips/reactive-half","ms":8366,"frames":2301,"events":5289}
+{"run":"causality-mix/reactive-skilled","ms":24921,"frames":4170,"events":14355}
+{"run":"notjam-breakbeat-chips/reactive-skilled","ms":7980,"frames":2301,"events":6033}
+{"run":"notjam-breakbeat-chips/mash2","ms":7884,"frames":2301,"events":5464}
+{"run":"causality-mix/mash2","ms":21811,"frames":4170,"events":11404}
+{"run":"causality-mix/mash4","ms":22272,"frames":4170,"events":13355}
+{"run":"notjam-breakbeat-chips/mash4","ms":7979,"frames":2301,"events":5917}
+{"run":"notjam-breakbeat-chips/holder","ms":7344,"frames":2301,"events":5139}
+{"run":"causality-mix/holder","ms":21136,"frames":4170,"events":11806}
+{"run":"causality-mix/mash8","ms":21219,"frames":4170,"events":13905}
+{"run":"notjam-breakbeat-chips/mash8","ms":8382,"frames":2301,"events":6426}
+{"run":"notjam-waltz-of-the-lich-king/reactive-moderate","ms":32158,"frames":4983,"events":16794}
+{"run":"notjam-waltz-of-the-lich-king/reactive-human","ms":31221,"frames":4983,"events":17616}
+{"run":"notjam-waltz-of-the-lich-king/holder","ms":28947,"frames":4983,"events":15506}
+{"run":"notjam-waltz-of-the-lich-king/reactive-offbeat","ms":30791,"frames":4983,"events":17537}
+{"run":"notjam-waltz-of-the-lich-king/reactive-half","ms":31498,"frames":4983,"events":16125}
+{"run":"notjam-waltz-of-the-lich-king/mash2","ms":30843,"frames":4983,"events":16231}
+{"run":"notjam-waltz-of-the-lich-king/mash4","ms":30651,"frames":4983,"events":16881}
+{"run":"notjam-chill-menu/reactive-moderate","ms":30491,"frames":4860,"events":20591}
+{"run":"notjam-waltz-of-the-lich-king/reactive-skilled","ms":31872,"frames":4983,"events":16845}
+{"run":"notjam-waltz-of-the-lich-king/mash8","ms":31253,"frames":4983,"events":18095}
+{"run":"notjam-chill-menu/reactive-human","ms":29902,"frames":4860,"events":19906}
+{"run":"notjam-chill-menu/mash2","ms":28040,"frames":4860,"events":17677}
+{"run":"notjam-chill-menu/reactive-half","ms":30878,"frames":4860,"events":17880}
+{"run":"notjam-chill-menu/mash4","ms":28758,"frames":4860,"events":19468}
+{"run":"notjam-chill-menu/holder","ms":27993,"frames":4860,"events":17786}
+{"run":"notjam-chill-menu/mash8","ms":29219,"frames":4860,"events":20002}
+{"run":"notjam-chill-menu/reactive-skilled","ms":30567,"frames":4860,"events":19454}
+{"run":"notjam-chill-menu/reactive-offbeat","ms":30748,"frames":4860,"events":20053}
+{"run":"cc-hairy-larry-and-the-flying-hungarians-ride-me-to-heaven/reactive-moderate","ms":134955,"frames":11326,"events":64767}
+{"run":"cc-kimiko-ishizaka-aria/reactive-moderate","ms":207359,"frames":18032,"events":94279}
+{"run":"cc-kimiko-ishizaka-aria/reactive-human","ms":211325,"frames":18032,"events":95558}
+{"run":"cc-kimiko-ishizaka-aria/holder","ms":220413,"frames":18032,"events":92669}
+{"run":"cc-kimiko-ishizaka-aria/reactive-half","ms":226124,"frames":18032,"events":89134}
+{"run":"cc-kimiko-ishizaka-aria/reactive-offbeat","ms":224208,"frames":18032,"events":90810}
+{"run":"cc-kimiko-ishizaka-aria/mash4","ms":229976,"frames":18032,"events":92430}
+{"run":"cc-kimiko-ishizaka-aria/reactive-skilled","ms":231321,"frames":18032,"events":95969}
+{"run":"cc-kimiko-ishizaka-aria/mash2","ms":232838,"frames":18032,"events":92291}
+{"run":"cc-kimiko-ishizaka-aria/mash8","ms":233037,"frames":18032,"events":96170}
+{"run":"cc-hairy-larry-and-the-flying-hungarians-ride-me-to-heaven/reactive-human","ms":172547,"frames":11326,"events":63569}
+{"run":"cc-hairy-larry-and-the-flying-hungarians-ride-me-to-heaven/reactive-offbeat","ms":153540,"frames":11326,"events":56809}
+{"run":"cc-kevin-macleod-black-vortex/reactive-human","ms":114580,"frames":10251,"events":54259}
+{"run":"cc-hairy-larry-and-the-flying-hungarians-ride-me-to-heaven/reactive-half","ms":171295,"frames":11326,"events":62136}
+{"run":"cc-kevin-macleod-black-vortex/reactive-moderate","ms":117952,"frames":10251,"events":54636}
+{"run":"cc-hairy-larry-and-the-flying-hungarians-ride-me-to-heaven/mash2","ms":146862,"frames":11326,"events":57197}
+{"run":"cc-hairy-larry-and-the-flying-hungarians-ride-me-to-heaven/mash4","ms":148049,"frames":11326,"events":54134}
+{"run":"cc-hairy-larry-and-the-flying-hungarians-ride-me-to-heaven/holder","ms":145346,"frames":11326,"events":52711}
+{"run":"cc-hairy-larry-and-the-flying-hungarians-ride-me-to-heaven/mash8","ms":154502,"frames":11326,"events":59331}
+{"run":"cc-hairy-larry-and-the-flying-hungarians-ride-me-to-heaven/reactive-skilled","ms":164629,"frames":11326,"events":66045}
+{"run":"cc-kevin-macleod-black-vortex/reactive-half","ms":121977,"frames":10251,"events":52222}
+{"run":"cc-kevin-macleod-black-vortex/reactive-offbeat","ms":117451,"frames":10251,"events":51904}
+{"run":"cc-kevin-macleod-black-vortex/mash2","ms":110541,"frames":10251,"events":51566}
+{"run":"cc-kevin-macleod-black-vortex/mash4","ms":114093,"frames":10251,"events":52616}
+{"run":"cc-kevin-macleod-black-vortex/reactive-skilled","ms":119752,"frames":10251,"events":58517}
+{"run":"cc-kevin-macleod-black-vortex/holder","ms":101861,"frames":10251,"events":49915}
+{"run":"cc-kevin-macleod-black-vortex/mash8","ms":108182,"frames":10251,"events":55399}
+{"run":"bumblebee/reactive-moderate","ms":29318,"frames":4749,"events":19716}
+{"run":"william-tell-finale/reactive-moderate","ms":113184,"frames":9984,"events":52832}
+{"run":"bumblebee/mash4","ms":29961,"frames":4749,"events":19125}
+{"run":"william-tell-finale/mash4","ms":111429,"frames":9984,"events":53941}
+{"run":"mountain-king/reactive-moderate","ms":124002,"frames":9282,"events":55897}
+{"run":"notjam-drag-and-dread-theme/reactive-moderate","ms":29205,"frames":4725,"events":16383}
+{"run":"notjam-drag-and-dread-theme/mash4","ms":28918,"frames":4725,"events":15341}
+{"run":"notjam-critical-theme/reactive-moderate","ms":56640,"frames":6702,"events":30671}
+{"run":"notjam-critical-theme/mash4","ms":53328,"frames":6702,"events":26321}
+{"run":"mountain-king/mash4","ms":104188,"frames":9282,"events":51557}
+{"run":"notjam-klepto-linda-titles/reactive-moderate","ms":12630,"frames":2906,"events":8654}
+{"run":"notjam-klepto-linda-titles/mash4","ms":11074,"frames":2906,"events":7800}
+{"run":"notjam-klepto-linda-caverns-a/reactive-moderate","ms":49534,"frames":6246,"events":30994}
+{"run":"beethoven-fifth/reactive-moderate","ms":99040,"frames":10995,"events":50609}
+{"run":"beethoven-fifth/mash4","ms":96945,"frames":10995,"events":48328}
+{"run":"notjam-klepto-linda-caverns-a/mash4","ms":47895,"frames":6246,"events":26937}
+{"run":"notjam-klepto-linda-caverns-b/reactive-moderate","ms":49372,"frames":6246,"events":30832}
+{"run":"notjam-klepto-linda-caverns-b/mash4","ms":47498,"frames":6246,"events":25770}
+{"run":"notjam-type-cast-theme/reactive-moderate","ms":19890,"frames":3691,"events":13180}
+{"run":"notjam-dark-cavern-phone-home/mash4","ms":107427,"frames":10773,"events":54204}
+{"run":"notjam-dark-cavern-phone-home/reactive-moderate","ms":112539,"frames":10773,"events":58772}
+{"run":"notjam-pitcher-perfect-theme/reactive-moderate","ms":36794,"frames":5060,"events":21491}
+{"run":"notjam-type-cast-theme/mash4","ms":19132,"frames":3691,"events":12233}
+{"run":"notjam-pitcher-perfect-theme/mash4","ms":34927,"frames":5060,"events":22161}
+{"run":"notjam-crashing-out/mash4","ms":8859,"frames":2628,"events":6669}
+{"run":"notjam-crashing-out/reactive-moderate","ms":9503,"frames":2628,"events":7206}
+{"run":"notjam-switch-with-me-theme/reactive-moderate","ms":41570,"frames":5665,"events":23041}
+{"run":"notjam-untitled-track-01/reactive-moderate","ms":13077,"frames":2973,"events":9223}
+{"run":"notjam-untitled-track-01/mash4","ms":12273,"frames":2973,"events":8677}
+{"run":"notjam-switch-with-me-theme/mash4","ms":40206,"frames":5665,"events":22311}
+{"run":"notjam-klepto-linda-credits/mash4","ms":14931,"frames":3265,"events":9633}
+{"run":"notjam-klepto-linda-credits/reactive-moderate","ms":16071,"frames":3265,"events":11010}
+{"run":"notjam-klepto-linda-mountain-a/reactive-moderate","ms":19849,"frames":3906,"events":10759}
+{"run":"notjam-klepto-linda-mountain-a/mash4","ms":21297,"frames":3906,"events":11707}
+{"run":"notjam-meltdown-theme/mash4","ms":108799,"frames":9060,"events":45706}
+{"run":"notjam-meltdown-theme/reactive-moderate","ms":114511,"frames":9060,"events":50670}
+{"run":"notjam-seeing-double/mash4","ms":28228,"frames":3463,"events":11762}
+{"run":"notjam-seeing-double/reactive-moderate","ms":30400,"frames":3463,"events":12227}
+{"run":"notjam-harold-paranormal-instigator-theme/mash4","ms":55211,"frames":5898,"events":20907}
+{"run":"notjam-harold-paranormal-instigator-theme/reactive-moderate","ms":57272,"frames":5898,"events":21150}
+{"run":"notjam-klepto-linda-mountain-b/mash4","ms":44976,"frames":4566,"events":15209}
+{"run":"notjam-klepto-linda-mountain-b/reactive-moderate","ms":46549,"frames":4566,"events":17900}
+{"run":"notjam-battle-ceases/reactive-moderate","ms":9427,"frames":2433,"events":7100}
+{"run":"notjam-title-theme-phone-home/reactive-moderate","ms":24186,"frames":4091,"events":15022}
+{"run":"notjam-battle-ceases/mash4","ms":10211,"frames":2433,"events":6584}
+{"run":"notjam-victory-lap/mash4","ms":20133,"frames":3594,"events":11168}
+{"run":"notjam-victory-lap/reactive-moderate","ms":22382,"frames":3594,"events":12241}
+{"run":"notjam-descend-gameplay/mash4","ms":84372,"frames":6948,"events":34855}
+{"run":"notjam-title-theme-phone-home/mash4","ms":25744,"frames":4091,"events":14067}
+{"run":"notjam-descend-gameplay/reactive-moderate","ms":95793,"frames":6948,"events":37111}
+{"run":"notjam-battle-commences/mash4","ms":32221,"frames":4251,"events":15183}
+{"run":"notjam-battle-commences/reactive-moderate","ms":33909,"frames":4251,"events":16798}
+{"run":"notjam-lazy-river-rally/reactive-moderate","ms":23765,"frames":3240,"events":11081}
+{"run":"notjam-lazy-river-rally/mash4","ms":22752,"frames":3240,"events":10990}
+{"run":"notjam-lich-king-ascendant/reactive-moderate","ms":20769,"frames":3093,"events":10155}
+{"run":"notjam-lich-king-ascendant/mash4","ms":19960,"frames":3093,"events":10193}
+{"run":"notjam-rainy-foothills/mash4","ms":11262,"frames":2736,"events":7194}
+{"run":"notjam-rainy-foothills/reactive-moderate","ms":11617,"frames":2736,"events":7452}
+{"run":"notjam-safe-space/mash4","ms":7874,"frames":2433,"events":5236}
+{"run":"notjam-safe-space/reactive-moderate","ms":8455,"frames":2433,"events":5706}
+{"run":"notjam-baroque-chips/mash4","ms":5436,"frames":1914,"events":4109}
+{"run":"notjam-baroque-chips/reactive-moderate","ms":5688,"frames":1914,"events":4165}
+{"run":"notjam-the-wall/reactive-moderate","ms":14381,"frames":3159,"events":8753}
+{"run":"notjam-the-wall/mash4","ms":13807,"frames":3159,"events":8002}
+{"run":"notjam-grumpy-shopkeep/mash4","ms":4427,"frames":1815,"events":3469}
+{"run":"notjam-grumpy-shopkeep/reactive-moderate","ms":4577,"frames":1815,"events":3593}
+{"run":"notjam-crystal-caverns/mash4","ms":11621,"frames":2928,"events":7696}
+{"run":"notjam-crystal-caverns/reactive-moderate","ms":11885,"frames":2928,"events":7875}
+{"run":"notjam-really-long-arms/mash4","ms":2629,"frames":1530,"events":2534}
+{"run":"notjam-really-long-arms/reactive-moderate","ms":2862,"frames":1530,"events":2683}
+{"run":"notjam-solemn-advance/mash4","ms":12485,"frames":2769,"events":9566}
+{"run":"notjam-solemn-advance/reactive-moderate","ms":13252,"frames":2769,"events":9653}
+{"run":"notjam-peak-performance/mash4","ms":21980,"frames":4200,"events":13316}
+{"run":"notjam-peak-performance/reactive-moderate","ms":23476,"frames":4200,"events":12854}
+{"run":"notjam-leading-the-charge/mash4","ms":64053,"frames":6746,"events":31633}
+{"run":"notjam-leading-the-charge/reactive-moderate","ms":64596,"frames":6746,"events":28830}
+{"run":"notjam-pool-party/mash4","ms":43921,"frames":5637,"events":26035}
+{"run":"notjam-pool-party/reactive-moderate","ms":46561,"frames":5637,"events":27750}
+{"run":"notjam-locrian-chipdoom/reactive-moderate","ms":93753,"frames":8307,"events":46505}
+{"run":"notjam-locrian-chipdoom/mash4","ms":88779,"frames":8307,"events":47826}
+{"run":"cc-benjamin-orth-where-you-are-now/mash4","ms":156971,"frames":11817,"events":56770}
+{"run":"cc-alex-beroza-good-day/mash4","ms":160446,"frames":12019,"events":65088}
+{"run":"cc-benjamin-orth-where-you-are-now/reactive-moderate","ms":175164,"frames":11817,"events":60461}
+{"run":"cc-alex-beroza-good-day/reactive-moderate","ms":174323,"frames":12019,"events":74406}
+{"run":"cc-the-crypts-no-life-after-crypts/mash4","ms":219423,"frames":15381,"events":88305}
+{"run":"cc-the-crypts-no-life-after-crypts/reactive-moderate","ms":225987,"frames":15381,"events":95772}
+{"run":"cc-kevin-macleod-long-stroll/mash4","ms":216990,"frames":15341,"events":81875}
+{"run":"cc-kevin-macleod-long-stroll/reactive-moderate","ms":229655,"frames":15341,"events":89436}
+{"run":"cc-zep-hurme-hang-low/mash4","ms":260003,"frames":17571,"events":102632}
+{"run":"cc-zep-hurme-hang-low/reactive-moderate","ms":266487,"frames":17571,"events":105223}
+{"run":"cc-kevin-macleod-go-cart/mash4","ms":150895,"frames":12876,"events":70192}
+{"run":"cc-kevin-macleod-go-cart/reactive-moderate","ms":162390,"frames":12876,"events":76612}
+{"run":"cc-kevin-macleod-mirage/reactive-moderate","ms":119673,"frames":14464,"events":61095}
+{"run":"cc-kevin-macleod-mirage/mash4","ms":123189,"frames":14464,"events":65692}
+{"run":"cc-josh-woodward-swansong/mash4","ms":194861,"frames":15751,"events":92445}
+{"run":"cc-josh-woodward-swansong/reactive-moderate","ms":213345,"frames":15751,"events":95353}
+{"run":"cc-maelstrom-i-dreamt-for-a-brighter-sky/mash4","ms":208273,"frames":17736,"events":97581}
+{"run":"cc-maelstrom-i-dreamt-for-a-brighter-sky/reactive-moderate","ms":220801,"frames":17736,"events":105486}
+math: 17 functions (abs, atan2, ceil, cos, exp, floor, hypot, imul, log, log2, max, min, pow, round, sign, sin, sqrt), 17168 vectors
+content: 99bee67636d7fdbf
+FORMAT.md                    0.01 MB
+README.md                    0.00 MB
+content.json                 0.00 MB
+content.json.gz              0.01 MB
+fixtures                     29.54 MB
+math-functions.json          0.00 MB
+math-vectors.jsonl.gz        0.23 MB
+stills                       26.42 MB
+truncation.json              0.00 MB
+total                        56.21 MB
+truncation causality-mix: 580 cuts, 25 failing
+  reactive-moderate C=7.649: upgrades before s=7.649 differ
+  reactive-moderate C=25.999: enemy #528 spawns differently
+  reactive-moderate C=26.009: enemy #528 spawns differently
+  reactive-moderate C=26.139: enemy #528 spawns differently
+  reactive-moderate C=27.999: enemy #588 spawns differently
+  reactive-moderate C=28.009: enemy #588 spawns differently
+  reactive-moderate C=28.139: enemy #588 spawns differently
+  reactive-moderate C=33.709: enemy #755 spawns differently
+  reactive-moderate C=33.759: enemy #755 spawns differently
+  reactive-moderate C=48.508: vacuums before s=48.508 differ
+  reactive-moderate C=48.559: vacuums before s=48.559 differ
+  reactive-moderate C=56.498: enemy #1462 spawns differently
+  reactive-moderate C=56.549: enemy #1431 sample at w=56.283 differs
+  reactive-moderate C=61.709: enemy #1775 spawns differently
+  reactive-moderate C=61.749: enemy #1775 spawns differently
+  reactive-moderate C=62.098: vacuums before s=62.098 differ
+  reactive-moderate C=62.149: vacuums before s=62.149 differ
+  reactive-moderate C=63.349: enemy #1888 spawns differently
+  mash4 C=30.149: enemy #453 spawns differently
+  mash4 C=48.508: vacuums before s=48.508 differ
+  mash4 C=48.559: vacuums before s=48.559 differ
+  mash4 C=56.498: enemy #1044 spawns differently
+  mash4 C=56.549: enemy #1018 sample at w=56.033 differs
+  mash4 C=62.098: vacuums before s=62.098 differ
+  mash4 C=62.149: vacuums before s=62.149 differ
+truncation orpheus-galop: 1171 cuts, 25 failing
+  reactive-moderate C=47.739: frame at s=47.467: enemies.34.anim ("shoot" vs "walk") differs
+  reactive-moderate C=50.299: frame at s=50.067: enemies.4.anim ("shoot" vs "walk") differs
+  reactive-moderate C=50.369: frame at s=50.067: enemies.4.anim ("shoot" vs "walk") differs
+  reactive-moderate C=54.725: vacuums before s=54.725 differ
+  reactive-moderate C=54.769: vacuums before s=54.769 differ
+  reactive-moderate C=54.829: vacuums before s=54.829 differ
+  reactive-moderate C=54.999: vacuums before s=54.999 differ
+  reactive-moderate C=55.069: vacuums before s=55.069 differ
+  reactive-moderate C=55.809: enemy #1383 spawns differently
+  reactive-moderate C=61.289: enemy #1894 spawns differently
+  reactive-moderate C=97.109: camera sample 5799 differs
+  mash4 C=47.589: enemy #879 sample at w=47.483 differs
+  mash4 C=47.739: enemy #879 sample at w=47.483 differs
+  mash4 C=50.299: frame at s=50.067: enemies.35.anim ("shoot" vs "walk") differs
+  mash4 C=50.369: frame at s=50.067: enemies.35.anim ("shoot" vs "walk") differs
+  mash4 C=52.749: enemy #1298 spawns differently
+  mash4 C=52.999: effects before s=52.999 differ
+  mash4 C=53.059: effects before s=53.059 differ
+  mash4 C=54.725: vacuums before s=54.725 differ
+  mash4 C=54.769: vacuums before s=54.769 differ
+  mash4 C=54.829: vacuums before s=54.829 differ
+  mash4 C=54.999: vacuums before s=54.999 differ
+  mash4 C=55.069: vacuums before s=55.069 differ
+  mash4 C=55.809: enemy #1299 sample at w=55.317 differs
+  mash4 C=97.109: camera sample 5787 differs
+truncation causality-mix (negative control): 2 cuts, 1 failing
+  reactive-moderate C=0.319: enemy #15 spawns differently
+exit=0 elapsed=2424s

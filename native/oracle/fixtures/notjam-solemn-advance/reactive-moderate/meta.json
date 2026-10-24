@@ -1,0 +1,53 @@
+{
+  "format": 1,
+  "tag": "ts-freeze",
+  "track": "notjam-solemn-advance",
+  "profile": "reactive-moderate",
+  "core": false,
+  "full": false,
+  "seed": 2026,
+  "frameRate": 60,
+  "speculateS": 0.2,
+  "frames": 2769,
+  "events": 9653,
+  "keys": 155,
+  "planHash": "54143132",
+  "playerRunIdentical": true,
+  "lastFrameHash": "7ab92c8fe47671cb",
+  "stats": {
+    "peakPopulation": 0,
+    "killsPerSection": {},
+    "totalHitStop": 0,
+    "enemies": 0,
+    "hits": 0,
+    "swings": 0,
+    "presses": 0,
+    "ratings": {
+      "perfect": 0,
+      "great": 0,
+      "good": 0,
+      "none": 0
+    },
+    "averageGroove": 0.9663006225425953,
+    "minHealth": 1
+  },
+  "inputs": {
+    "stream": {
+      "path": "public/reactive/notjam-solemn-advance/stream.json",
+      "sha256": "1b7255cba15edce486f0e5590d42feb274c9e06ec12abb42a9bb98f21a8e2554"
+    },
+    "content": {
+      "path": "content",
+      "tree": "4953c7c51a7857390fa6ff1f6b8fe2ac49ab2dcaa9d76ad9e30a57b18a44da81"
+    },
+    "level": {
+      "path": "levels/reactive.yaml",
+      "sha256": "912febdec5914ce7553ba7f5aaf3dfc3b436f325159f1b7b37ef2f19e1d07952"
+    },
+    "assets": {
+      "path": "public/assets",
+      "tree": "dd847e5673b98f8fb919c44f56ad9aa64f7b5d60727bc996ca5070fe99995b60"
+    }
+  },
+  "levelHash": "71309407bf381a0e"
+}

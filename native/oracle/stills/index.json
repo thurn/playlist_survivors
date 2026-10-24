@@ -1,0 +1,140 @@
+{
+  "tag": "ts-freeze",
+  "width": 1920,
+  "height": 1080,
+  "stills": [
+    {
+      "file": "orpheus-galop-reactive-moderate-20.00.png",
+      "track": "orpheus-galop",
+      "profile": "reactive-moderate",
+      "t": 20,
+      "query": "mode=reactive&track=orpheus-galop&player=reactive-moderate"
+    },
+    {
+      "file": "orpheus-galop-reactive-moderate-47.00.png",
+      "track": "orpheus-galop",
+      "profile": "reactive-moderate",
+      "t": 47,
+      "query": "mode=reactive&track=orpheus-galop&player=reactive-moderate"
+    },
+    {
+      "file": "orpheus-galop-reactive-moderate-58.00.png",
+      "track": "orpheus-galop",
+      "profile": "reactive-moderate",
+      "t": 58,
+      "query": "mode=reactive&track=orpheus-galop&player=reactive-moderate"
+    },
+    {
+      "file": "orpheus-galop-reactive-moderate-72.00.png",
+      "track": "orpheus-galop",
+      "profile": "reactive-moderate",
+      "t": 72,
+      "query": "mode=reactive&track=orpheus-galop&player=reactive-moderate"
+    },
+    {
+      "file": "orpheus-galop-reactive-moderate-92.00.png",
+      "track": "orpheus-galop",
+      "profile": "reactive-moderate",
+      "t": 92,
+      "query": "mode=reactive&track=orpheus-galop&player=reactive-moderate"
+    },
+    {
+      "file": "orpheus-galop-reactive-moderate-104.00.png",
+      "track": "orpheus-galop",
+      "profile": "reactive-moderate",
+      "t": 104,
+      "query": "mode=reactive&track=orpheus-galop&player=reactive-moderate"
+    },
+    {
+      "file": "orpheus-galop-reactive-moderate-118.00.png",
+      "track": "orpheus-galop",
+      "profile": "reactive-moderate",
+      "t": 118,
+      "query": "mode=reactive&track=orpheus-galop&player=reactive-moderate"
+    },
+    {
+      "file": "orpheus-galop-reactive-moderate-132.00.png",
+      "track": "orpheus-galop",
+      "profile": "reactive-moderate",
+      "t": 132,
+      "query": "mode=reactive&track=orpheus-galop&player=reactive-moderate"
+    },
+    {
+      "file": "orpheus-galop-reactive-moderate-144.80.png",
+      "track": "orpheus-galop",
+      "profile": "reactive-moderate",
+      "t": 144.8,
+      "query": "mode=reactive&track=orpheus-galop&player=reactive-moderate"
+    },
+    {
+      "file": "orpheus-galop-mash4-80.00.png",
+      "track": "orpheus-galop",
+      "profile": "mash4",
+      "t": 80,
+      "query": "mode=reactive&track=orpheus-galop&player=mash4"
+    },
+    {
+      "file": "house-128-reactive-moderate-20.00.png",
+      "track": "house-128",
+      "profile": "reactive-moderate",
+      "t": 20,
+      "query": "mode=reactive&track=house-128&player=reactive-moderate"
+    },
+    {
+      "file": "house-128-reactive-moderate-50.00.png",
+      "track": "house-128",
+      "profile": "reactive-moderate",
+      "t": 50,
+      "query": "mode=reactive&track=house-128&player=reactive-moderate"
+    },
+    {
+      "file": "dnb-174-reactive-moderate-35.00.png",
+      "track": "dnb-174",
+      "profile": "reactive-moderate",
+      "t": 35,
+      "query": "mode=reactive&track=dnb-174&player=reactive-moderate"
+    },
+    {
+      "file": "pop-arrangement-reactive-moderate-70.00.png",
+      "track": "pop-arrangement",
+      "profile": "reactive-moderate",
+      "t": 70,
+      "query": "mode=reactive&track=pop-arrangement&player=reactive-moderate"
+    },
+    {
+      "file": "pop-arrangement-reactive-moderate-150.00.png",
+      "track": "pop-arrangement",
+      "profile": "reactive-moderate",
+      "t": 150,
+      "query": "mode=reactive&track=pop-arrangement&player=reactive-moderate"
+    },
+    {
+      "file": "notjam-breakbeat-chips-reactive-moderate-40.00.png",
+      "track": "notjam-breakbeat-chips",
+      "profile": "reactive-moderate",
+      "t": 40,
+      "query": "mode=reactive&track=notjam-breakbeat-chips&player=reactive-moderate"
+    },
+    {
+      "file": "notjam-waltz-of-the-lich-king-reactive-moderate-60.00.png",
+      "track": "notjam-waltz-of-the-lich-king",
+      "profile": "reactive-moderate",
+      "t": 60,
+      "query": "mode=reactive&track=notjam-waltz-of-the-lich-king&player=reactive-moderate"
+    },
+    {
+      "file": "cc-kimiko-ishizaka-aria-reactive-moderate-60.00.png",
+      "track": "cc-kimiko-ishizaka-aria",
+      "profile": "reactive-moderate",
+      "t": 60,
+      "query": "mode=reactive&track=cc-kimiko-ishizaka-aria&player=reactive-moderate"
+    },
+    {
+      "file": "cc-kevin-macleod-black-vortex-reactive-moderate-90.00.png",
+      "track": "cc-kevin-macleod-black-vortex",
+      "profile": "reactive-moderate",
+      "t": 90,
+      "query": "mode=reactive&track=cc-kevin-macleod-black-vortex&player=reactive-moderate"
+    }
+  ]
+}

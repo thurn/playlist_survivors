@@ -1,0 +1,53 @@
+{
+  "format": 1,
+  "tag": "ts-freeze",
+  "track": "notjam-klepto-linda-caverns-a",
+  "profile": "reactive-moderate",
+  "core": false,
+  "full": false,
+  "seed": 2026,
+  "frameRate": 60,
+  "speculateS": 0.2,
+  "frames": 6246,
+  "events": 30994,
+  "keys": 600,
+  "planHash": "d7f47cdb",
+  "playerRunIdentical": true,
+  "lastFrameHash": "e476853c379dfa21",
+  "stats": {
+    "peakPopulation": 0,
+    "killsPerSection": {},
+    "totalHitStop": 0,
+    "enemies": 0,
+    "hits": 0,
+    "swings": 0,
+    "presses": 0,
+    "ratings": {
+      "perfect": 0,
+      "great": 0,
+      "good": 0,
+      "none": 0
+    },
+    "averageGroove": 0.9984853172329102,
+    "minHealth": 1
+  },
+  "inputs": {
+    "stream": {
+      "path": "public/reactive/notjam-klepto-linda-caverns-a/stream.json",
+      "sha256": "7562e471f4ebf79964a98fb5e5a1f556d36f3d9b3f029d90495b4933805c26de"
+    },
+    "content": {
+      "path": "content",
+      "tree": "4953c7c51a7857390fa6ff1f6b8fe2ac49ab2dcaa9d76ad9e30a57b18a44da81"
+    },
+    "level": {
+      "path": "levels/reactive.yaml",
+      "sha256": "912febdec5914ce7553ba7f5aaf3dfc3b436f325159f1b7b37ef2f19e1d07952"
+    },
+    "assets": {
+      "path": "public/assets",
+      "tree": "dd847e5673b98f8fb919c44f56ad9aa64f7b5d60727bc996ca5070fe99995b60"
+    }
+  },
+  "levelHash": "2e6b54e8c560bbe9"
+}

@@ -1,0 +1,7 @@
+{
+  "hash": "99bee67636d7fdbf",
+  "inputs": {
+    "content": "4953c7c51a7857390fa6ff1f6b8fe2ac49ab2dcaa9d76ad9e30a57b18a44da81"
+  },
+  "note": "FNV-1a 64 of the canonical serialization of loadContent(content/*.yaml) (Maps as objects keyed by their keys as strings, Sets as arrays in insertion order)"
+}

@@ -1,0 +1,53 @@
+{
+  "format": 1,
+  "tag": "ts-freeze",
+  "track": "notjam-klepto-linda-credits",
+  "profile": "reactive-moderate",
+  "core": false,
+  "full": false,
+  "seed": 2026,
+  "frameRate": 60,
+  "speculateS": 0.2,
+  "frames": 3265,
+  "events": 11010,
+  "keys": 258,
+  "planHash": "a2e3dc55",
+  "playerRunIdentical": true,
+  "lastFrameHash": "3d1c485810673184",
+  "stats": {
+    "peakPopulation": 0,
+    "killsPerSection": {},
+    "totalHitStop": 0,
+    "enemies": 0,
+    "hits": 0,
+    "swings": 0,
+    "presses": 0,
+    "ratings": {
+      "perfect": 0,
+      "great": 0,
+      "good": 0,
+      "none": 0
+    },
+    "averageGroove": 0.9995110663983903,
+    "minHealth": 1
+  },
+  "inputs": {
+    "stream": {
+      "path": "public/reactive/notjam-klepto-linda-credits/stream.json",
+      "sha256": "400edf54e8b5172d8996a8fe8466a07feb308efa9edbe332510e99b20dbac24b"
+    },
+    "content": {
+      "path": "content",
+      "tree": "4953c7c51a7857390fa6ff1f6b8fe2ac49ab2dcaa9d76ad9e30a57b18a44da81"
+    },
+    "level": {
+      "path": "levels/reactive.yaml",
+      "sha256": "912febdec5914ce7553ba7f5aaf3dfc3b436f325159f1b7b37ef2f19e1d07952"
+    },
+    "assets": {
+      "path": "public/assets",
+      "tree": "dd847e5673b98f8fb919c44f56ad9aa64f7b5d60727bc996ca5070fe99995b60"
+    }
+  },
+  "levelHash": "ef4efd32038e27da"
+}

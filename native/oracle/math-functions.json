@@ -1,0 +1,24 @@
+{
+  "engine": "node v24.16.0 (V8 13.6.233.17-node.49)",
+  "functions": [
+    "abs",
+    "atan2",
+    "ceil",
+    "cos",
+    "exp",
+    "floor",
+    "hypot",
+    "imul",
+    "log",
+    "log2",
+    "max",
+    "min",
+    "pow",
+    "round",
+    "sign",
+    "sin",
+    "sqrt"
+  ],
+  "vectorsPerFunction": "at least 1000 (every pair of specials for two-argument functions)",
+  "note": "the ** operator has Math.pow's semantics: jsmath::pow covers it"
+}

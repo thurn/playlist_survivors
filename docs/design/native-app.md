@@ -571,6 +571,13 @@ pass unchanged with it in place.
 - **Reproducible:** `native/oracle/README.md` names the tag and the command.
   Regenerating fixtures means checking out `ts-freeze` plus the exporter commit.
 
+F2 measured ([native/evidence/f2/](../../native/evidence/f2/README.md)): 215
+runs (the 13 core tracks × 9 profiles, the other 49 tracks × 2), 15 with full
+logs and the rest with per-second hash chains, 29.5 MB of fixtures plus 26.4 MB
+of stills. The keys-only assertion holds on every run, but the TS sim depends
+on where it stops in two reads (a sound's pan, one warp break), which B7 must
+pin. The truncation check exposed three non-causal reads, now live exceptions.
+
 ### Models
 
 `tools/analysis` gains `ps-analysis export-models`, which writes madmom's online
@@ -983,8 +990,9 @@ file-by-file inventory behind it is in the
 | Finale | `reactiveFinale` (`setpieces.ts:93`): the first `structure.ends` entry with `knownAt` within the last `windowS` (10 s) of `knownLength`, firing at its `knownAt`, else at `knownLength` itself; no evidence gate. reactive-feel's confirmed endings (G3) never landed | Fires on a confirmed end (D1): the horde clears and the end card follows | Everything, in Replay with `StreamEnd`; live finales are on the QA checklist |
 | Run end | `reactiveRunEnd` = `max(duration + 0.5, finale.endS)`, emitted once song time reaches `ctx.duration` (`recording.ts:746`); the sim runs to `max(duration + 1, finale.endS)`; the grade covers `[playerFrom, duration)`. YOU FELL is a pause menu with restarts, not an end | A confirmed end, YOU FELL, pause, a device change, or manual End; the grade covers the run's own span | Everything, in Replay with `StreamEnd` |
 | Song length and stream-end reads | `knownLength`, `audio.duration`, `ctx.duration`, `progressS`, the last section's `s1`, the bar count from every beat, clamps to the last entry (listed in the appendix) | `StreamEnd` absent: progress shows elapsed time, the section marks go, the last section is open-ended, `endS` is unbounded until the run ends, and every clamp uses the latest known entry | Everything, in Replay with `StreamEnd` provided |
-| Events past the last committed beat | Dropped: a section start, a set-piece candidate or a palette switch whose beat isn't in the stream (`sections.ts:46`, `setpieces.ts:141`, `director.ts:78`) | Pending until that beat arrives | Everything, in Replay (the full stream holds every beat the TS game sees) |
+| Events past the last committed beat | Dropped or brought forward: a section start, a set-piece candidate or a palette switch whose beat isn't in the stream is dropped (`sections.ts:46`, `setpieces.ts:141`, `director.ts:78`), so a boss whose drop-in downbeat (`sEnter`, `setpieces.ts:155`) isn't committed yet loses its slot to a ring; `downbeatAtOrAfter` (`simulate.ts:2515`) returns the time itself past the last bar, so a vacuum drop or a level-up waiting for the next downbeat fires at once; the kick line reads the beats of its entrance ahead. F2's truncation check exposed each of these | Pending until that beat arrives | Everything, in Replay (the full stream holds every beat the TS game sees) |
 | Extrapolation past the last beat | `core/songmap.ts` extrapolates from the last two beats' gap; `knownTimeOfBeat` from the last beat's `period` | Live: the latest beat's `period` everywhere | Everything, in Replay with `StreamEnd` (TS's rule kept there) |
+| Archer groups' end | `volleyGroup` (`setpieces.ts:313`) sets a group's `until` from its whole volley run at its start, reading the beats, levels and evidence of every later draw, and drops a volley drawn before the stream's end whose arrival beat (`beats[i + 1]`) isn't in it: the spawn mix and the archers' shots before a cut change when later entries are deleted (F2's truncation check) | Live: the group lasts while its volleys continue, each draw deciding the next, and ends at the first draw that fails (a beat or more after TS's `until`, which knows the failure in advance) or at a run end. Replay keeps TS's rule by reading the stream file ahead, the one oracle-only look-ahead (B6) | Everything, in Replay |
 | Scheduling | `init` enqueues every beat, slot and set piece up front (`simulate.ts:3253`) | Each entry is enqueued when it arrives ([streaming without changing results](#streaming-without-changing-results)) | Everything: streaming equals batch |
 | Effects ducking | `followCurve` (`audio.ts:36`): a centred 0.4 s RMS window, centred 1 s smoothing and the whole song's 90th percentile (the music ducking under SFX is causal and kept) | A causal envelope follower on the energy ticks | Excluded (audio only) |
 | Run start | The song's start, song time 0, or `?start=` (the reference-beat bot plays until the hand-over) | Any time; rebased history (above). The judged-from time (16 s) and the title card count from the run's start | Replay and File runs start at 0, as TS |

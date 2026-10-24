@@ -1,0 +1,293 @@
+[
+  {
+    "track": "causality-mix",
+    "level": "levels/reactive-check.yaml",
+    "negativeControl": false,
+    "players": [
+      "reactive-moderate",
+      "mash4"
+    ],
+    "cuts": 580,
+    "failures": [
+      {
+        "player": "reactive-moderate",
+        "C": 7.649,
+        "diff": "upgrades before s=7.649 differ"
+      },
+      {
+        "player": "reactive-moderate",
+        "C": 25.999,
+        "diff": "enemy #528 spawns differently"
+      },
+      {
+        "player": "reactive-moderate",
+        "C": 26.009,
+        "diff": "enemy #528 spawns differently"
+      },
+      {
+        "player": "reactive-moderate",
+        "C": 26.139,
+        "diff": "enemy #528 spawns differently"
+      },
+      {
+        "player": "reactive-moderate",
+        "C": 27.999,
+        "diff": "enemy #588 spawns differently"
+      },
+      {
+        "player": "reactive-moderate",
+        "C": 28.009,
+        "diff": "enemy #588 spawns differently"
+      },
+      {
+        "player": "reactive-moderate",
+        "C": 28.139,
+        "diff": "enemy #588 spawns differently"
+      },
+      {
+        "player": "reactive-moderate",
+        "C": 33.709,
+        "diff": "enemy #755 spawns differently"
+      },
+      {
+        "player": "reactive-moderate",
+        "C": 33.759,
+        "diff": "enemy #755 spawns differently"
+      },
+      {
+        "player": "reactive-moderate",
+        "C": 48.507999999999996,
+        "diff": "vacuums before s=48.508 differ"
+      },
+      {
+        "player": "reactive-moderate",
+        "C": 48.559000000000005,
+        "diff": "vacuums before s=48.559 differ"
+      },
+      {
+        "player": "reactive-moderate",
+        "C": 56.498,
+        "diff": "enemy #1462 spawns differently"
+      },
+      {
+        "player": "reactive-moderate",
+        "C": 56.549,
+        "diff": "enemy #1431 sample at w=56.283 differs"
+      },
+      {
+        "player": "reactive-moderate",
+        "C": 61.709,
+        "diff": "enemy #1775 spawns differently"
+      },
+      {
+        "player": "reactive-moderate",
+        "C": 61.749,
+        "diff": "enemy #1775 spawns differently"
+      },
+      {
+        "player": "reactive-moderate",
+        "C": 62.098,
+        "diff": "vacuums before s=62.098 differ"
+      },
+      {
+        "player": "reactive-moderate",
+        "C": 62.149,
+        "diff": "vacuums before s=62.149 differ"
+      },
+      {
+        "player": "reactive-moderate",
+        "C": 63.349000000000004,
+        "diff": "enemy #1888 spawns differently"
+      },
+      {
+        "player": "mash4",
+        "C": 30.148999999999997,
+        "diff": "enemy #453 spawns differently"
+      },
+      {
+        "player": "mash4",
+        "C": 48.507999999999996,
+        "diff": "vacuums before s=48.508 differ"
+      },
+      {
+        "player": "mash4",
+        "C": 48.559000000000005,
+        "diff": "vacuums before s=48.559 differ"
+      },
+      {
+        "player": "mash4",
+        "C": 56.498,
+        "diff": "enemy #1044 spawns differently"
+      },
+      {
+        "player": "mash4",
+        "C": 56.549,
+        "diff": "enemy #1018 sample at w=56.033 differs"
+      },
+      {
+        "player": "mash4",
+        "C": 62.098,
+        "diff": "vacuums before s=62.098 differ"
+      },
+      {
+        "player": "mash4",
+        "C": 62.149,
+        "diff": "vacuums before s=62.149 differ"
+      }
+    ]
+  },
+  {
+    "track": "orpheus-galop",
+    "level": "levels/reactive.yaml",
+    "negativeControl": false,
+    "players": [
+      "reactive-moderate",
+      "mash4"
+    ],
+    "cuts": 1171,
+    "failures": [
+      {
+        "player": "reactive-moderate",
+        "C": 47.739000000000004,
+        "diff": "frame at s=47.467: enemies.34.anim (\"shoot\" vs \"walk\") differs"
+      },
+      {
+        "player": "reactive-moderate",
+        "C": 50.299,
+        "diff": "frame at s=50.067: enemies.4.anim (\"shoot\" vs \"walk\") differs"
+      },
+      {
+        "player": "reactive-moderate",
+        "C": 50.369,
+        "diff": "frame at s=50.067: enemies.4.anim (\"shoot\" vs \"walk\") differs"
+      },
+      {
+        "player": "reactive-moderate",
+        "C": 54.724799999999995,
+        "diff": "vacuums before s=54.725 differ"
+      },
+      {
+        "player": "reactive-moderate",
+        "C": 54.769000000000005,
+        "diff": "vacuums before s=54.769 differ"
+      },
+      {
+        "player": "reactive-moderate",
+        "C": 54.829,
+        "diff": "vacuums before s=54.829 differ"
+      },
+      {
+        "player": "reactive-moderate",
+        "C": 54.999,
+        "diff": "vacuums before s=54.999 differ"
+      },
+      {
+        "player": "reactive-moderate",
+        "C": 55.069,
+        "diff": "vacuums before s=55.069 differ"
+      },
+      {
+        "player": "reactive-moderate",
+        "C": 55.809000000000005,
+        "diff": "enemy #1383 spawns differently"
+      },
+      {
+        "player": "reactive-moderate",
+        "C": 61.289,
+        "diff": "enemy #1894 spawns differently"
+      },
+      {
+        "player": "reactive-moderate",
+        "C": 97.109,
+        "diff": "camera sample 5799 differs"
+      },
+      {
+        "player": "mash4",
+        "C": 47.589000000000006,
+        "diff": "enemy #879 sample at w=47.483 differs"
+      },
+      {
+        "player": "mash4",
+        "C": 47.739000000000004,
+        "diff": "enemy #879 sample at w=47.483 differs"
+      },
+      {
+        "player": "mash4",
+        "C": 50.299,
+        "diff": "frame at s=50.067: enemies.35.anim (\"shoot\" vs \"walk\") differs"
+      },
+      {
+        "player": "mash4",
+        "C": 50.369,
+        "diff": "frame at s=50.067: enemies.35.anim (\"shoot\" vs \"walk\") differs"
+      },
+      {
+        "player": "mash4",
+        "C": 52.749,
+        "diff": "enemy #1298 spawns differently"
+      },
+      {
+        "player": "mash4",
+        "C": 52.999,
+        "diff": "effects before s=52.999 differ"
+      },
+      {
+        "player": "mash4",
+        "C": 53.059000000000005,
+        "diff": "effects before s=53.059 differ"
+      },
+      {
+        "player": "mash4",
+        "C": 54.724799999999995,
+        "diff": "vacuums before s=54.725 differ"
+      },
+      {
+        "player": "mash4",
+        "C": 54.769000000000005,
+        "diff": "vacuums before s=54.769 differ"
+      },
+      {
+        "player": "mash4",
+        "C": 54.829,
+        "diff": "vacuums before s=54.829 differ"
+      },
+      {
+        "player": "mash4",
+        "C": 54.999,
+        "diff": "vacuums before s=54.999 differ"
+      },
+      {
+        "player": "mash4",
+        "C": 55.069,
+        "diff": "vacuums before s=55.069 differ"
+      },
+      {
+        "player": "mash4",
+        "C": 55.809000000000005,
+        "diff": "enemy #1299 sample at w=55.317 differs"
+      },
+      {
+        "player": "mash4",
+        "C": 97.109,
+        "diff": "camera sample 5787 differs"
+      }
+    ]
+  },
+  {
+    "track": "causality-mix",
+    "level": "levels/reactive-check.yaml",
+    "negativeControl": true,
+    "players": [
+      "reactive-moderate",
+      "mash4"
+    ],
+    "cuts": 2,
+    "failures": [
+      {
+        "player": "reactive-moderate",
+        "C": 0.319,
+        "diff": "enemy #15 spawns differently"
+      }
+    ]
+  }
+]

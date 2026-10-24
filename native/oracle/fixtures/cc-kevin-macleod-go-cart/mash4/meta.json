@@ -1,0 +1,53 @@
+{
+  "format": 1,
+  "tag": "ts-freeze",
+  "track": "cc-kevin-macleod-go-cart",
+  "profile": "mash4",
+  "core": false,
+  "full": false,
+  "seed": 2026,
+  "frameRate": 60,
+  "speculateS": 0.2,
+  "frames": 12876,
+  "events": 70192,
+  "keys": 1720,
+  "planHash": "027771d1",
+  "playerRunIdentical": true,
+  "lastFrameHash": "3affa6afd19c1c67",
+  "stats": {
+    "peakPopulation": 0,
+    "killsPerSection": {},
+    "totalHitStop": 0,
+    "enemies": 0,
+    "hits": 0,
+    "swings": 0,
+    "presses": 0,
+    "ratings": {
+      "perfect": 0,
+      "great": 0,
+      "good": 0,
+      "none": 0
+    },
+    "averageGroove": 0.07755162527193618,
+    "minHealth": 1
+  },
+  "inputs": {
+    "stream": {
+      "path": "public/reactive/cc-kevin-macleod-go-cart/stream.json",
+      "sha256": "3bbc03828077ec280967addb73600d39cf96932fdfd0bee566d879acf78b8d4f"
+    },
+    "content": {
+      "path": "content",
+      "tree": "4953c7c51a7857390fa6ff1f6b8fe2ac49ab2dcaa9d76ad9e30a57b18a44da81"
+    },
+    "level": {
+      "path": "levels/reactive.yaml",
+      "sha256": "912febdec5914ce7553ba7f5aaf3dfc3b436f325159f1b7b37ef2f19e1d07952"
+    },
+    "assets": {
+      "path": "public/assets",
+      "tree": "dd847e5673b98f8fb919c44f56ad9aa64f7b5d60727bc996ca5070fe99995b60"
+    }
+  },
+  "levelHash": "5500a08a4821bcff"
+}
