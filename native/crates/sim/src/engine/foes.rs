@@ -781,20 +781,12 @@ impl Sim {
                 if def.group == Subdivision::TwoBar && (nb - 1.0) % 2.0 == 1.0 {
                     nb += 1.0;
                 }
-                // (The whole stream's bars, two beats each from the first.)
-                let total = self.total_beats();
-                let bar_count = if total == usize::MAX {
-                    f64::INFINITY
+                // (Bars are two beats each from the first.)
+                let start = 2.0 * (nb - 1.0);
+                if self.beat_time_known(start) {
+                    s_appear = time_of_beat_index(&self.st.song, start);
                 } else {
-                    ceil(total as f64 / 2.0)
-                };
-                let start = 2.0 * (min(bar_count, nb) - 1.0);
-                if start < total as f64 {
-                    if self.beat_time_known(start) {
-                        s_appear = time_of_beat_index(&self.st.song, start);
-                    } else {
-                        appear_at = Some(start);
-                    }
+                    appear_at = Some(start);
                 }
             }
             self.st.pending += 1.0;
@@ -867,28 +859,22 @@ impl Sim {
         self.known_time_of_beat(ceil(self.known_beat_at(t) * 4.0 - 1e-6) / 4.0)
     }
 
-    /// The first downbeat at or after song time t as the whole stream gives it (`downbeatAtOrAfter`):
-    /// its beat index, or None past the stream's last bar (TS then takes t itself). A downbeat not
-    /// known yet lies ahead. (The reactive song map's bars are two beats from the first.)
-    pub(super) fn downbeat_index_at_or_after(&self, t: f64) -> Option<usize> {
+    /// The first downbeat at or after song time t (`downbeatAtOrAfter`): its beat index. A downbeat
+    /// not known yet lies ahead. (The reactive song map's bars are two beats from the first.)
+    pub(super) fn downbeat_index_at_or_after(&self, t: f64) -> usize {
         let mut bar = max(1.0, bar_of_beat_index(&self.st.idx, self.sbi_at(t)));
         loop {
             let k = (2.0 * (bar - 1.0)) as usize;
-            if k >= self.total_beats() {
-                return None;
-            }
             match self.st.song.beats.get(k) {
                 Some(&b) if b < t - 1e-9 => bar += 1.0,
-                _ => return Some(k),
+                _ => return k,
             }
         }
     }
 
-    /// Queues an event on the first downbeat at or after song time t (t itself past the last bar).
+    /// Queues an event on the first downbeat at or after song time t, once that beat is known.
     pub(super) fn push_at_downbeat(&mut self, t: f64, ev: Ev) {
-        match self.downbeat_index_at_or_after(t) {
-            Some(k) => self.push_at_beat(k as f64, ev),
-            None => self.st.q.push(t, ev),
-        }
+        let k = self.downbeat_index_at_or_after(t);
+        self.push_at_beat(k as f64, ev);
     }
 }

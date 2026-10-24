@@ -36,7 +36,7 @@ use std::collections::HashSet;
 use std::rc::Rc;
 
 use indexmap::IndexMap;
-use stream::{StreamEnd, StreamLog};
+use stream::StreamLog;
 
 use crate::camera::CameraRig;
 use crate::content::ContentLibrary;
@@ -182,7 +182,8 @@ pub fn default_hero_anims() -> IndexMap<String, AnimInfo> {
 }
 
 /// What a simulation is built from: the reactive level, the content library with the level's hero
-/// and enemy overrides, the hero atlas's animations, the stream's gate and, in Replay, its end.
+/// and enemy overrides, the hero atlas's animations and the stream's gate. (Never the stream's end:
+/// the sim runs live.)
 #[derive(Clone, Debug)]
 pub struct SimInput {
     pub level: LevelScript,
@@ -191,8 +192,7 @@ pub struct SimInput {
     pub seed: f64,
     /// The stream's evidence gate (`params.gate`).
     pub gate: f64,
-    /// The stream's end, known in Replay: its duration and final counts.
-    pub end: Option<StreamEnd>,
+
     /// Check-only: damage to the hero is off.
     pub no_hero_damage: bool,
     /// Stage 2: the stream has hindsight entries, so presses settle 2 s late.
@@ -208,7 +208,6 @@ impl SimInput {
         atlas: &IndexMap<String, AnimInfo>,
         gate: f64,
         settling: bool,
-        end: Option<StreamEnd>,
     ) -> SimInput {
         let mut lib = content.clone();
         lib.hero = level.hero.clone();
@@ -233,15 +232,9 @@ impl SimInput {
             hero_anims,
             seed,
             gate,
-            end,
             no_hero_damage: false,
             settling,
         }
-    }
-
-    /// The song's length, known in Replay (`ctx.duration`); infinite live.
-    pub fn duration(&self) -> f64 {
-        self.end.map_or(f64::INFINITY, |e| e.duration)
     }
 }
 
@@ -1026,11 +1019,9 @@ impl Sim {
             .director
             .clone()
             .expect("a reactive level has a director");
-        // The run plays on until the finale's epilogue has ended (a confirmed end's); live it is
-        // unbounded until then. (With the stream's end known, as in the oracle replays, it stops a
-        // second after the audio at the latest.)
+        // The run plays on until the finale's epilogue has ended (a confirmed end's), or `until_s`.
         let until_s = until_s.unwrap_or(f64::INFINITY);
-        let end_s = min(until_s, input.duration() + 1.0);
+        let end_s = until_s;
         let rule = stride_rule(&input.lib.hero);
         let env = Rc::new(Env {
             input,
@@ -1216,13 +1207,8 @@ impl Sim {
             );
         }
         // A held key strides on every step of the stride period: the last grid time's steps wait for
-        // the next beat, or the stream's end.
-        let whole = env.input.end.is_some_and(|e| st.ingested.beats >= e.beats);
-        let upto = if whole {
-            st.sch.stride_steps.s.len()
-        } else {
-            st.sch.stride_steps.tail()
-        };
+        // the next beat.
+        let upto = st.sch.stride_steps.tail();
         for k in st.held_queued..upto {
             st.q.push_init(st.sch.stride_steps.s[k], Ev::Held, phase::HELD, k as u64);
         }
@@ -1230,21 +1216,15 @@ impl Sim {
         self.release_deferred();
     }
 
-    /// Whether the song map as grown gives fractional beat index bi the time the whole stream's
-    /// does: it holds that beat (at a whole index) or the beat after it, or every beat.
+    /// Whether the song map as grown gives fractional beat index bi its final time: it holds that
+    /// beat (at a whole index) or the beat after it.
     fn beat_time_known(&self, bi: f64) -> bool {
         let n = self.st.song.beats.len() as f64;
-        let whole = self
-            .env
-            .input
-            .end
-            .is_some_and(|e| self.st.ingested.beats >= e.beats);
-        whole
-            || n >= if bi.fract() == 0.0 {
-                bi + 1.0
-            } else {
-                floor(bi) + 2.0
-            }
+        n >= if bi.fract() == 0.0 {
+            bi + 1.0
+        } else {
+            floor(bi) + 2.0
+        }
     }
 
     /// Queues an event at the song time of beat index bi as the whole stream gives it: now when the
@@ -1294,10 +1274,8 @@ impl Sim {
 
     /// Queues an event with an init key on the first downbeat at or after t, once known.
     fn push_init_at_downbeat(&mut self, t: f64, ev: Ev, phase: u16, index: u64) {
-        match self.downbeat_index_at_or_after(t) {
-            Some(k) => self.push_init_at_beat(k as f64, ev, phase, index),
-            None => self.st.q.push_init(t, ev, phase, index),
-        }
+        let k = self.downbeat_index_at_or_after(t);
+        self.push_init_at_beat(k as f64, ev, phase, index);
     }
 
     fn defer_slot(&mut self, bi: f64, slot: Slot, then: Then) {
@@ -1359,11 +1337,6 @@ impl Sim {
                 None => self.st.deferred.push(d),
             }
         }
-    }
-
-    /// The stream's whole beat count when known (Replay), else unbounded.
-    fn total_beats(&self) -> usize {
-        self.env.input.end.map_or(usize::MAX, |e| e.beats)
     }
 
     // -------------------------------------------------------------- time
@@ -1727,7 +1700,7 @@ impl Sim {
 
 fn fresh_state(env: &Env) -> SimState {
     let level = &env.input.level;
-    let sch = ReactiveSchedule::new(level, env.input.duration());
+    let sch = ReactiveSchedule::new(level, f64::INFINITY);
     let song = sch.song.clone();
     let idx = index_song(&song);
     SimState {
@@ -1841,7 +1814,7 @@ mod tests {
     use std::path::Path;
     use std::rc::Rc;
 
-    use stream::{Audio, Beat, Params, StreamEnd, StreamFile, StreamLog, Tick};
+    use stream::{Audio, Beat, Params, StreamFile, StreamLog, Tick};
 
     use super::{Ev, Sim, SimInput};
     use crate::content::level::load_level;
@@ -1929,18 +1902,12 @@ mod tests {
         let mut song = reactive_song_map(file.audio.duration);
         grow_song_map(&mut song, &file.log, file.log.beats.len());
         let level = load_level(&source("levels/reactive.yaml"), &lib, &song, None).unwrap();
-        let end = Some(StreamEnd {
-            duration: file.audio.duration,
-            beats: file.log.beats.len(),
-            ticks: file.log.ticks.len(),
-        });
         let input = SimInput::new(
             level,
             &lib,
             &indexmap::IndexMap::new(),
             file.params.gate,
             false,
-            end,
         );
         Sim::new(
             input,
@@ -1978,7 +1945,7 @@ mod tests {
     }
 
     #[test]
-    fn past_the_last_bar_a_downbeat_is_the_time_itself() {
+    fn past_the_last_bar_a_downbeat_waits_for_its_beat() {
         let file = stream();
         let mut sim = sim(&file);
         sim.advance_to(6.6);
@@ -1992,6 +1959,8 @@ mod tests {
             .filter(|e| matches!(e.ev, Ev::LevelUp { .. }))
             .map(|e| e.key.s)
             .collect();
-        assert_eq!(queued, vec![s]);
+        // (Live: the stream's end is never known, so the next downbeat is pending, never now.)
+        assert!(queued.is_empty(), "queued at {queued:?}");
+        assert_eq!(sim.st.deferred.len(), 1);
     }
 }

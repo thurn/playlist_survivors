@@ -525,7 +525,6 @@ fn check_run(
         anims,
         file.params.gate,
         file.log.hindsight.is_some(),
-        Some(file.end()),
     );
     let rec = Rc::new(RefCell::new(LogRecorder::default()));
     let mut sim = Sim::new(
@@ -744,7 +743,6 @@ fn keyed_sim(track: &str, until: f64, calls: &Calls) -> Sim {
         &atlas(),
         file.params.gate,
         file.log.hindsight.is_some(),
-        Some(file.end()),
     );
     let mut sim = Sim::new(
         input,
@@ -869,20 +867,14 @@ fn judging_without_hindsight_matches_ts() {
         let mut song = reactive_song_map(file.audio.duration);
         grow_song_map(&mut song, &file.log, file.log.beats.len());
         let level = load_level(&source("levels/reactive.yaml"), &lib, &song, None).unwrap();
-        let input = SimInput::new(
-            level,
-            &lib,
-            &anims,
-            file.params.gate,
-            false,
-            Some(file.end()),
-        );
+        let input = SimInput::new(level, &lib, &anims, file.params.gate, false);
         let rec = Rc::new(RefCell::new(LogRecorder::default()));
         let mut sim = Sim::new(
             input,
             Rc::new(file.log.clone()),
             Box::new(Shared(Rc::clone(&rec))),
-            None,
+            // (Live runs end on a confirmed end; this one is bounded where TS's ran to at least.)
+            Some(file.audio.duration + 1.0),
         );
         let dir = root().join(format!("native/oracle/fixtures/{track}/{profile}"));
         for k in gz_lines(&dir.join("keys.jsonl.gz")) {

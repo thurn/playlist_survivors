@@ -251,7 +251,7 @@ impl Engine {
     ) -> Result<Engine, LevelError> {
         let song = reactive_song_map(file_duration);
         let level = load_level(level, lib, &song, None)?;
-        let input = SimInput::new(level, lib, hero_anims, gate, settling, None);
+        let input = SimInput::new(level, lib, hero_anims, gate, settling);
         let view = Rc::new(RefCell::new(LiveView {
             health: 1.0,
             camera: (0.0, 0.0, 1.0),

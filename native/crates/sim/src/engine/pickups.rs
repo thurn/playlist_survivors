@@ -387,13 +387,13 @@ impl Sim {
         let s = self.st.s;
         let item = o.offers[k].clone();
         self.st.applying.push(item.clone());
-        // The first grid time (a committed beat) at least NEVER_LATE away, within ORB_GRID_WAIT; past
-        // the stream's last beat, at once. It may be a beat not known yet: then it applies, and is
+        // The first grid time (a committed beat) at least NEVER_LATE away, within ORB_GRID_WAIT. It
+        // may be a beat not known yet: then it applies, and is
         // recorded, once that beat arrives (before its time).
         let beats = &self.st.song.beats;
         let i = first_at_or_after(beats, s + NEVER_LATE - 1e-9);
         let w = self.st.w;
-        if i < beats.len() || i >= self.total_beats() {
+        if i < beats.len() {
             let s_apply = match beats.get(i).copied() {
                 Some(g) if g - s <= ORB_GRID_WAIT => g,
                 Some(b) => b,

@@ -1,4 +1,4 @@
-//! G2: whole live runs (no `StreamEnd`) with a fixture's keys: the director's set pieces, the
+//! G2: whole live runs with a fixture's keys: the director's set pieces, the
 //! finale on a confirmed end and the run's end, deterministic for the same stream and keys.
 #![allow(clippy::float_cmp, clippy::case_sensitive_file_extension_comparisons)]
 
@@ -121,7 +121,7 @@ fn stream_file(track: &str) -> StreamFile {
     .unwrap()
 }
 
-/// A live run (no `StreamEnd`) on `log` with `track`'s gate and `profile`'s keys, advanced to `until`
+/// A live run on `log` with `track`'s gate and `profile`'s keys, advanced to `until`
 /// (or its end, if sooner).
 fn live_run(
     track: &str,
@@ -141,7 +141,6 @@ fn live_run(
         &atlas(),
         file.params.gate,
         file.log.hindsight.is_some(),
-        None,
     );
     let rec = Rc::new(RefCell::new(LogRecorder::default()));
     let mut sim = Sim::new(input, Rc::new(log.clone()), Box::new(Rc::clone(&rec)), None);

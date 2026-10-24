@@ -16,8 +16,8 @@
 //!   close (the first accent known after it starts, or its last beat), the kick line's release (the
 //!   first strong onset after its dance), each boss slam and each archer volley (decided at its mark
 //!   or draw, at the key TS gave that slam or volley), a fallback zone wave (decided at its beat).
-//! - **The finale** fires on the first candidate ending known in the audio's last `windowS`, or at
-//!   the audio's end (Replay: `StreamEnd`); it ends the run `epilogueS` later. Nothing starts at or
+//! - **The finale** fires on a confirmed end: an `ends` entry once 3 s of quiet below the gate have
+//!   followed it, after 30 s of judged time; it ends the run `epilogueS` later. Nothing starts at or
 //!   after it: a set piece accepted before the finale was known that would start after it is revoked.
 
 use std::rc::Rc;

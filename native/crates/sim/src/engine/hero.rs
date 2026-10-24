@@ -308,23 +308,16 @@ impl Sim {
         }
     }
 
-    /// The song time held strides are cancelled until, as the whole stream's steps give it: a step
-    /// not known yet lies past every step a held stride is queued at.
+    /// The song time held strides are cancelled until: a step not known yet lies past every step a
+    /// held stride is queued at.
     fn stomp_until(&self) -> f64 {
         match self.st.stomp_target {
             None => self.st.strides.stomp_until,
             Some(super::StompTarget::Time(t)) => t,
             Some(super::StompTarget::Index(k)) => {
                 let t = &self.st.sch.stride_steps.s;
-                let whole = self
-                    .env
-                    .input
-                    .end
-                    .is_some_and(|e| self.st.ingested.beats >= e.beats);
-                if k < t.len() && (whole || k < self.st.sch.stride_steps.tail()) {
+                if k < self.st.sch.stride_steps.tail() {
                     t[k]
-                } else if whole {
-                    t[t.len() - 1]
                 } else {
                     f64::INFINITY
                 }
