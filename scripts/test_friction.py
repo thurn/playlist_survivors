@@ -90,12 +90,29 @@ class FrictionTest(unittest.TestCase):
             "bad phase": {**record("hv-t8o8.1", 1), "phase": "Z"},
             "no offset": {**record("hv-t8o8.1", 1), "recorded": "2026-10-01T12:00:00"},
             "missing friction": {k: v for k, v in record("hv-t8o8.1", 1).items() if k != "friction"},
+            "review without fixed": record("hv-t8o8.1", 1, review={"findings": 3}),
+            "review not an integer": record("hv-t8o8.1", 1, review={"findings": 2.5, "fixed": 2}),
+            "review fixing more than it found": record("hv-t8o8.1", 1, review={"findings": 2, "fixed": 3}),
         }
         for name, data in cases.items():
             with self.subTest(name):
                 self.write(data)
                 code, _, err = self.run_cli("validate")
                 self.assertEqual(code, 2, err)
+
+    def test_a_review_counts_its_findings(self):
+        self.write(record("hv-t8o8.1", 1, review={"findings": 8, "fixed": 6}))
+        self.assertEqual(self.run_cli("validate")[0], 0)
+
+    def test_review_churn_needs_the_review_field(self):
+        tags = dict(TAGS, tags={**TAGS["tags"], "review-churn": "Review findings."})
+        (self.dir / "friction-tags.json").write_text(json.dumps(tags))
+        self.write(record("hv-t8o8.1", 1, tags=["review-churn"]))
+        code, _, err = self.run_cli("validate")
+        self.assertEqual(code, 2)
+        self.assertIn("review", err)
+        self.write(record("hv-t8o8.1", 1, tags=["review-churn"], review={"findings": 4, "fixed": 4}))
+        self.assertEqual(self.run_cli("validate")[0], 0)
 
     def test_record_must_match_its_file_name(self):
         self.write(record("hv-t8o8.1", 1), name="hv-t8o8.9")

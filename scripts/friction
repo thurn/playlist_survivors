@@ -13,7 +13,9 @@
                                 # step, against metrics.md's gateS and releaseS budgets
 
 Inputs, under the evidence directory (native/evidence, or --evidence DIR):
-- friction/<bead-id>.json: one record per bead (fields in RECORD_FIELDS);
+- friction/<bead-id>.json: one record per bead (fields in RECORD_FIELDS), written last, after its review
+  fixes and any rebase; `review` {findings, fixed} counts a cold review's findings and is required
+  whenever a friction entry is review-churn;
 - friction-tags.json: {triggerBeads, retrospectiveCadence, tags: {tag: meaning},
   aliases: {alias: tag}};
 - metrics.md: the budgets, the table rows whose Key cell is a backticked record field path (such as
@@ -65,7 +67,7 @@ OVERRUN = 1.5
 # Unknown fields are malformed, so a misspelt field never goes unread.
 RECORD_FIELDS = {
     "bead", "phase", "recorded", "implementMin", "localValidationS", "gateS", "releaseS",
-    "coldBuildS", "hostLoad", "friction",
+    "coldBuildS", "hostLoad", "review", "friction",
 }
 
 
@@ -197,6 +199,16 @@ def load_record(path: Path, tags: set[str], aliases: dict[str, str]) -> Record:
     for name in ("gateS", "releaseS", "coldBuildS", "hostLoad"):
         if name in data:
             _number(data[name], f"{where}: {name}")
+    review = data.get("review")
+    if review is not None:
+        if not isinstance(review, dict) or set(review) != {"findings", "fixed"}:
+            raise Malformed(f"{where}: review must be {{findings, fixed}}")
+        for name in ("findings", "fixed"):
+            value = review[name]
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise Malformed(f"{where}: review.{name} must be a non-negative integer")
+        if review["fixed"] > review["findings"]:
+            raise Malformed(f"{where}: review.fixed exceeds review.findings")
     friction = data.get("friction")
     if not isinstance(friction, list):
         raise Malformed(f"{where}: friction must be a list (empty when there was none)")
@@ -212,6 +224,8 @@ def load_record(path: Path, tags: set[str], aliases: dict[str, str]) -> Record:
         _number(entry.get("minutes"), f"{at}.minutes")
         _string(entry.get("note"), f"{at}.note")
         resolved.append(tag)
+    if "review-churn" in resolved and review is None:
+        raise Malformed(f"{where}: a review-churn entry needs the review field ({{findings, fixed}})")
     return Record(bead, phase, recorded, resolved, data)
 
 

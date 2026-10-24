@@ -39,7 +39,9 @@ prune it, if the wait shows.
 
 Review findings cost 20, 20 and 15 minutes in ES, F3 and F4 (mean 18), about 8 findings per
 reviewed bead. The self-review step in AGENTS.md targets them; the next retrospective compares
-the `review-churn` minutes of the next 5 reviewed beads with that mean, aiming at half.
+the `review-churn` minutes and the `review.findings` counts of the next 5 reviewed beads (records
+written after the review, hv-t8o8.54) with that mean, aiming at half. The baseline's records carry
+`review`: ES 6 findings, F3 10, F4 9, F2 11 (mean 9).
 
 ## Skipping an unchanged TS section (hv-t8o8.51)
 
