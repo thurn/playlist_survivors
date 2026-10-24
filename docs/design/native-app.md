@@ -36,8 +36,8 @@ Terms from reactive-audio.md keep their meanings: belief stream, `knownAt`,
 committed beat, evidence, the gate, hindsight grid, reading, settle delay. New
 terms:
 
-- **The freeze commit:** the last TS commit, named by the user before work
-  starts and tagged `ts-freeze`. Everything the port reproduces is defined by
+- **The freeze commit:** the last TS commit, `e97ef4a` (named by the user on
+  2026-10-24), tagged `ts-freeze`. Everything the port reproduces is defined by
   the tree at that tag.
 - **Oracle fixtures:** files exported once from the TS game at the freeze
   commit and committed under `native/oracle/`: key events, event logs and frame
@@ -74,17 +74,20 @@ terms:
 |---|---|---|
 | 0. Spike | Capture → online RNN → DBN → a window flashing on committed beats; latency chain measured; build times measured | The risky native parts work in Rust on this machine |
 | 0. Targets | The spike's executor sets latency targets from its own numbers, by fixed rules | — |
-| 1. Freeze and foundations | `ts-freeze` tag, oracle fixtures, exported model weights, Cargo workspace, gate sections, AGENTS.md | The oracles exist and CI runs Rust |
+| W. Workflow (now, alongside the TS wrap-up) | Staged validation (a gate stage of about 60 s, a release stage for everything else), fast local checks, `ci-fix` beads, the friction ledger and its triggers | CI stays fast and tool failures get fixed |
+| 1. Freeze and foundations | `ts-freeze` tag, oracle fixtures, exported model weights, Cargo workspace, both stages' native sections, AGENTS.md | The oracles exist and CI runs Rust |
 | A. Analyzer (parallel with B) | Every stream group as streaming Rust, stage-parity tests, corpus parity report | Rust streams match Python |
 | B. Sim (parallel with A) | Content, schedule, sim, judging, director, set pieces, evaluator, virtual players, causality checks, all streaming | Rust sim matches TS bit for bit |
 | C. Convergence | Renderer, audio output, app shell, live runner; playable in File mode, then System mode | The game plays, natively, live |
 | D. Live parity | Run detection, live exceptions, calibration, session recording, latency report, QA checklist, TS tree removed | Done |
-| E. Delayed listening (not needed for parity) | Committed beats from hindsight under a music delay; the tap mutes the picked app and the app plays its audio late | Lookahead buys measurably better beats, safely |
+| E. Delayed listening (not needed for parity) | E0 and ES now: the payoff measured offline from committed streams, and the muting tap and delay line spiked. Later E1 and E2: committed beats from hindsight under a music delay; the tap mutes the picked app and the app plays its audio late | Lookahead buys measurably better beats, safely |
+| R. Retrospectives | One at the end of each phase, and one after every 8 closed beads in between | The workflow's costs are found and fixed while the plan runs |
 
 Phases A and B run in parallel after phase 1. Phase C starts when B's sim and
-evaluator are green; its live steps also need A. Phase E's analyzer bead can
-start once A is done. Its app bead follows D's calibration and timing logs.
-Neither blocks D5 or D6.
+evaluator are green; its live steps also need A. Phase E's first two beads, E0
+and ES, need nothing and run now, alongside the TS wrap-up and phase W. Its
+analyzer bead E1 can start once A is done, and its app bead E2 follows D's
+calibration and timing logs. No phase E bead blocks D5 or D6.
 
 ### Decisions
 
@@ -151,6 +154,20 @@ fixed.
   truth, and bundles them into the `.app`.
 - **Layout:** a Cargo workspace in `native/`, split into crates as in
   [Workspace](#workspace).
+- **Validation is staged** (as in `~/dreamtides_web`, decision D44 there). A
+  gate stage of about 60 s blocks promotion to `staging`. A release stage runs
+  everything else asynchronously on the newest `staging` tip and moves
+  `release` and remote `master`. A bead is done when its commit is on
+  `staging`, and never waits for the release stage. A red release run is fixed
+  by a `ci-fix` bead, filed by the first session to see it, which preempts all
+  other ready work. Locally, an executor runs focused checks and one fast check
+  of under 60 s before submitting. See [Workflow](#workflow).
+- **Continuous introspection** (as in `~/dreamtides_web`, decision D42 there).
+  Every bead records its friction and timings. Recurring friction, or a budget
+  overrun, files an improvement bead that preempts other work. A retrospective
+  bead ends every phase and follows every 8 closed beads. A tool failure is
+  never silently worked around: it is filed as a bead at once. See
+  [Introspection](#introspection).
 - **The gate is path-gated:** a native section when `native/` differs from
   master, the TS section when TS paths differ. Phase 0 measured no consistent
   gain from sccache in fresh worktrees, so the gate builds without it
@@ -264,7 +281,7 @@ native/
     cli/       # `ps`: replay, oracle, causality, capture, log summaries, bench
   models/      # exported madmom weights
   oracle/      # committed TS fixtures (gzipped)
-  scripts/     # bundle (the .app), full-check
+  scripts/     # bundle (the .app), check-fast
   logs/        # gitignored: play logs and saved sessions
 ```
 
@@ -493,8 +510,8 @@ them.
 
 ### The freeze
 
-1. Once the user has supplied the freeze commit's hash, tag it `ts-freeze`
-   and push the tag. (F1's bead becomes selectable only then.)
+1. Tag the freeze commit, `e97ef4a47c246b4654dc1e628499b9b8d983ce57`,
+   `ts-freeze` and push the tag.
 2. Inventory the reactive features at the freeze: every stream group, every
    behaviour that reads `audio.duration`, `knownLength` or `ctx.duration`, and
    anything non-causal outside the sim (like `followCurve`). The
@@ -566,40 +583,39 @@ tensor's shape and dtype, followed by little-endian f32 data. It also writes
 golden activations for a 12 s excerpt of a synthetic track, for the first
 stage-parity test.
 
-### Workspace and gate
+### Workspace and both stages
 
 - Scaffold the workspace with the crates above, `rustfmt.toml`, workspace
   lints (`clippy::pedantic` where it helps), and `rust-toolchain.toml`
   pinning the toolchain.
-- `scripts/ci` gains a **native section**, run when `native/` (or
-  `content/`, `levels/reactive.yaml`, `public/assets`, `public/reactive`)
-  differs from master:
-
-  ```sh
-  cargo fmt --check
-  cargo clippy --workspace --all-targets -- -D warnings
-  cargo test --workspace            # unit, stage parity, core-set oracle, causality, playability
-  cargo build --release -p app
-  ```
-
-  The TS section becomes path-gated the same way, so after the freeze it
-  almost never runs.
-- **The gate's budget** is set in F4 from phase 0's build timings, inside
-  Tollgate's 15-minute step timeout with room to spare. Every Tollgate worktree
-  builds cold, and the section compiles twice (tests and the release app), so:
-  `[profile.test]` and `[profile.dev.package."*"]` use `opt-level = 2` (the
-  causality and oracle runs simulate whole songs); the gate runs a reduced set
-  of causality cuts and oracle runs; and B4 re-times the section once a real
-  sim workload exists, trimming the gate's runs into `full-check` if it is
-  over budget.
-- `native/scripts/full-check` runs what doesn't fit the gate: the whole
-  corpus's analysis parity and the full oracle sweep. It is run by hand before
-  each phase is called done, and its report is recorded in the bead.
+- Phase W's staged validation already exists ([Workflow](#workflow)). F4 adds a
+  **native section to each stage**, run when `native/` (or `content/`,
+  `levels/reactive.yaml`, `public/assets`, `public/reactive`) differs from the
+  stage's base:
+  - **gate stage (about 60 s with the TS section, at most):** `cargo fmt
+    --check`, `clippy -D warnings` and the unit tests of the crates the diff
+    touches and their dependents, plus the cheapest oracle and causality
+    smoke (one core track, two cuts);
+  - **release stage:** the whole workspace's clippy and tests, every check in
+    [Automated Checks](#automated-checks) (the full corpus parity and oracle
+    sweep included; nothing is left to run by hand), `ps bench`, and a release
+    build of the app.
+- **Builds:** S0 measured a cold build at about 30 s and the native section at
+  about 90 s in a fresh worktree, with no consistent gain from sccache. The gate
+  stage therefore builds into a **persistent target directory** outside the
+  worktrees (`CARGO_TARGET_DIR` in the Tollgate step's environment), so a gate
+  run recompiles only the workspace's own crates. The release stage uses its
+  own persistent directory. F4 measures both against their budgets.
+- `[profile.test]` and `[profile.dev.package."*"]` use `opt-level = 2`: the
+  causality and oracle runs simulate whole songs.
+- **Locally,** `native/scripts/check-fast` is the native half of the fast check
+  ([Validation](#validation)): format, clippy and tests for the crates the diff
+  touches, under 60 s warm.
 - AGENTS.md gains a native section: `npm ci` only for TS changes; focused
   checks are `cargo test -p <crate>`; the native app needs no dev-server port;
-  the capture permission needs one click from the user the first time, and agents record System-mode checks as pending until then;
-  and the oracle's inputs stay frozen until D6 (see
-  [Oracle fixtures](#oracle-fixtures)).
+  the capture permission needs one click from the user the first time, and
+  agents record System-mode checks as pending until then; and the oracle's
+  inputs stay frozen until D6 (see [Oracle fixtures](#oracle-fixtures)).
 
 ## Phase A: The Analyzer
 
@@ -670,8 +686,9 @@ compares the result with the committed `stream.json`:
 - the real-time factor of each group and of the whole analyzer;
 - the arrival delay of each group.
 
-The gate runs it on three tracks (a synthetic track, the Galop and one corpus
-track). `full-check` runs all of them.
+The release stage runs it on every track. The gate stage runs no corpus
+parity at all; a bead changing the analyzer runs it locally on three tracks (a
+synthetic track, the Galop and one corpus track).
 
 ### The stream's own causality
 
@@ -799,7 +816,7 @@ run one after another, not in parallel.
 ### Causality checks
 
 Ported from `scripts/check-reactive.ts`, run on the Galop and one synthetic
-track in the gate:
+track in the release stage (the gate stage runs two cuts on the Galop):
 
 - **Perturbation:** for each cut `C`, change every entry known after `C`. The
   run up to `C` must be identical.
@@ -818,7 +835,7 @@ track in the gate:
 
 The reactive players port from `src/reactive/players.ts` and the player
 profiles in `src/sim/player.ts`. They read the stream's reference and are
-available only in Replay and File. The gate's playability check runs the
+available only in Replay and File. The release stage's playability check runs the
 honest player and the masher on the Galop and asserts the frozen outcomes (the
 honest player lives, the masher falls, grade bands), so the checks keep their
 meaning once rules change after parity.
@@ -1032,7 +1049,7 @@ After D5:
 - Remove the web game: `src/`, the TS tests, `index.html`, Vite and Playwright
   configuration, and the TS scripts. First port any script still needed (corpus
   ingest moves to the Python tool or the `ps` CLI).
-- `scripts/ci` loses its TS section. AGENTS.md drops the web workflow (dev
+- `scripts/ci-gate`, `scripts/ci-full` and `scripts/check-fast` lose their TS sections. AGENTS.md drops the web workflow (dev
   ports, play logs from the browser).
 - The `ts-freeze` tag keeps the TS game reproducible, and with it the fixtures.
 - `tools/analysis`, `content/`, `levels/`, `public/assets`, `public/reactive`
@@ -1132,6 +1149,52 @@ and the causality checks keep working.
 The sim, the evaluator and the oracle do not change. The sim reads every entry
 by `known_at` as before. Beats simply arrive with better times.
 
+### Testing it now (E0 and ES)
+
+Two beads test phase E's two big unknowns before anything waits on them. Both
+need nothing else in this plan, so they run now, alongside the TS wrap-up.
+
+**E0: the payoff, measured offline.** Every committed `stream.json` already
+holds its track's hindsight entries (online and offline grids, each with its
+`knownAt`) and a reference grid. So the delayed commit rule of
+[E1](#committed-beats-from-hindsight-e1) can be replayed in Python over those
+entries, with no audio and no Rust:
+
+- for each `M` in {1.5, 2, 2.5, 3, 4, 5} s, and each grid (online, offline, and
+  online with the phase check's offline phase), commit beats from each
+  hindsight entry stamped `k = T + D − M + A`, using S0's `D` (670 ms) and `A`
+  (48 ms), with the online forecasts as the fallback, exactly as E1 specifies;
+- score committed-beat accuracy (within 45 ms of the reference) per track and
+  per corpus category, against Direct listening's committed beats in the same
+  stream;
+- write the table to the appendix, propose `M` and the grid by E1's rules, and
+  give a verdict.
+
+E0 lives in `tools/analysis` (`ps-analysis delayed-payoff`), adding a module
+and a subcommand without changing the stream code. **If Delayed listening is
+not better than Direct in aggregate,** E0 records that, and E1 and E2 are
+cancelled with that reason. Otherwise E1 starts from E0's `M` and grid and
+confirms them with the Rust analyzer (Python's hindsight entries carry no
+decode delay, which E0 models only through `D`).
+
+**ES: the platform, spiked.** A throwaway extension of S0's spike in
+`native/spike/` (F4 deletes the directory after ES closes):
+
+- a per-process tap with `CATapMutedWhenTapped` over Music, `afplay` and a
+  browser: the app goes silent while tapped and audible when the tap is
+  destroyed;
+- `SIGKILL` of the spike while tapping: the source app becomes audible again,
+  checked by loopback (speakers into the built-in microphone);
+- the delay line: the captured stereo played `M` late through AUHAL, the delay
+  measured by loopback once a minute over an hour on built-in speakers, with
+  and without a drift-correcting resampler between two devices if a second
+  device is available;
+- the watchdog: a stalled main thread destroys the tap within 2 s.
+
+ES records the numbers in the appendix and turns what it learns into notes on
+E2's bead. If muting proves unsafe (the app can stay muted after a crash), ES
+says so and E2 is rescoped before anyone builds it.
+
 ### Committed beats from hindsight (E1)
 
 The analyzer gains `Listening::Delayed { m }`. In it:
@@ -1170,7 +1233,7 @@ The analyzer gains `Listening::Delayed { m }`. In it:
 
 - **Lead:** every committed beat in a Delayed stream has
   `t − known_at >= H` at the period believed at commit time. This runs in the
-  gate on three tracks.
+  release stage on every track.
 - **Stream causality:** the ported test compares the stream of audio cut at
   `X` with the full stream, matching entries by the audio position that
   produced them (`known_at`, or `known_at + M − A` for committed beats), not by
@@ -1188,7 +1251,9 @@ The analyzer gains `Listening::Delayed { m }`. In it:
 
 | Bead | Work | Done when |
 |---|---|---|
-| E1 | `Listening::Delayed` in the analyzer: hindsight commits, stamps, fallback, the grid choice and `M` by rule, `--delayed` in `ps analysis-parity`, the lead and causality checks | `M` set and recorded; Delayed accuracy beats Direct in aggregate and is no worse on any category; checks in the gate |
+| E0 | `ps-analysis delayed-payoff`: E1's commit rule replayed in Python over every committed stream's hindsight entries; accuracy by `M`, grid and category against Direct listening | Table in the appendix; `M` and grid proposed by E1's rules; a verdict, with E1 and E2 cancelled if Delayed is not better in aggregate |
+| ES | The muting tap, the delay line over an hour, `SIGKILL` and watchdog behaviour, in the spike | Numbers in the appendix; muting proven safe, or E2 rescoped |
+| E1 | `Listening::Delayed` in the analyzer: hindsight commits, stamps, fallback, the grid choice and `M` by rule, `--delayed` in `ps analysis-parity`, the lead and causality checks | `M` set and recorded; Delayed accuracy beats Direct in aggregate and is no worse on any category; checks in the release stage |
 | E2 | The mode in the app: per-process muting tap, delay line, drift-correcting playback, watchdog, the listening-screen choice and notices, File-source Delayed, session meta, timing-log fields, QA items 14–19 | QA items pass, or are recorded as pending the capture grant; a `SIGKILL` leaves the source audible |
 
 ## Targets
@@ -1214,31 +1279,35 @@ Set by the spike's executor from the phase 0 numbers
 
 ## Automated Checks
 
-### In the gate
+### Gate stage (about 60 s, blocks promotion)
 
-- `cargo fmt`, `clippy -D warnings`, unit tests in every crate.
-- **Analyzer:** stage parity on fixed excerpts; corpus parity on three tracks;
-  the stream causality test.
-- **Sim:** the oracle on the core set (event logs and frame hashes); the corpus
-  hash chains for a handful of tracks; `jsmath` against the V8 vectors.
+- `cargo fmt --check`; clippy and unit tests for the crates the diff touches
+  and their dependents.
+- An oracle smoke: one core-track fixture (event log and frame hashes).
+- A causality smoke: perturbation and truncation at two cuts on the Galop.
+- Whatever else fits the budget, as F4 and the retrospectives measure it.
+  Anything that pushes the gate stage over budget moves to the release stage.
+
+### Release stage (asynchronous, moves `release`)
+
+- The whole workspace's clippy and tests.
+- **Analyzer:** stage parity on fixed excerpts; corpus parity on every track,
+  with the per-track table; the stream causality test.
+- **Sim:** the oracle on every fixture (event logs, frame hashes, corpus hash
+  chains); `jsmath` against the V8 vectors.
 - **Causality:** perturbation, truncation, negative control, streaming equals
   batch, on the Galop and one synthetic track.
 - **Playability:** the honest player and the masher on the Galop.
 - **Sessions:** a small committed session (recorded by the executor in File
   mode) replays bit-exactly with its recorded stream.
-- **Delayed listening (from E1 and E2):** the lead check on three tracks; the
-  stream causality test by audio position; sim causality on a Delayed Galop
-  stream; a small Delayed File-mode session replays bit-exactly.
+- **Delayed listening (from E1 and E2):** the lead check; the stream causality
+  test by audio position; sim causality on a Delayed Galop stream; a small
+  Delayed File-mode session replays bit-exactly; `ps analysis-parity --delayed
+  <M>` over every track against Direct listening.
 - **Renderer:** visual parity stills, rendered headlessly.
-- A release build of the app.
-
-### In `full-check`
-
-- Corpus parity on every track, with the per-track table.
-- The oracle on every fixture.
 - `ps bench`: sim, evaluator and rollback costs on the Galop's busiest minute.
-- `ps analysis-parity --delayed <M>` over every track, with the per-category
-  table against Direct listening.
+- A release build of the app.
+- The TS checks, while the TS game exists.
 
 ## Risks
 
@@ -1347,26 +1416,150 @@ Delayed listening (E2):
 19. AirPods in Delayed listening: the game's sounds are in sync with the music
     by ear without calibration, and the measured delay holds at `M`.
 
+## Workflow
+
+This plan's beads follow AGENTS.md, plus the rules below. They are modelled on
+`~/dreamtides_web`'s plan (its decisions D42 and D44, and its workflow's
+Validation ladder and Introspection sections), scaled down. Phase W builds
+what they need, and AGENTS.md is updated to match.
+
+### Validation
+
+Cheapest first:
+
+1. **While iterating:** focused checks: `cargo test -p <crate> <filter>`,
+   `npm test -- <file>`, `npm run typecheck`.
+2. **Before submitting:** `scripts/check-fast`, once, on the final tree. It is
+   diff-aware: lint and typecheck for changed TS files and their related tests,
+   and `native/scripts/check-fast` for changed crates. Its budget is **60 s**.
+   It replaces running the whole `scripts/ci` locally.
+3. **Only when the change touches** CI scripts, the Tollgate policy,
+   workspace-wide configuration or shared test infrastructure: the release
+   stage's checks locally too (`scripts/ci-full`).
+4. **Tollgate's gate stage** (`scripts/ci-gate`, budget **about 60 s**) runs on
+   every candidate and blocks promotion to `staging`. The executor waits for it
+   (`tg approve <id> --wait`), then moves on.
+5. **Tollgate's release stage** (`scripts/ci-full`) runs the rest
+   asynchronously on the newest `staging` tip. A pass moves `release` and remote
+   `master` to that commit. Nobody waits for it.
+
+### `ci-fix` beads
+
+- **A red release run** is fixed by a follow-up commit, never a revert. The
+  first session to see it (`tg release`, or a candidate's report) files a
+  `ci-fix` bead at once, keyed by the failing release step (metadata
+  `release_step=<step>`), after searching for an open one with the same key.
+  Every later run on a newer tip fails the same way until the fix lands, so the
+  key is the step, not the run.
+- **A `ci-fix` bead preempts all other ready work** in this epic: an executor
+  choosing its next bead picks `ci-fix` beads first, then introspection and
+  retrospective beads, then plan beads in table order.
+- **Release lag:** the Tollgate policy sets `max_release_lag` (5 to start), so
+  `staging` can't run far ahead of a broken `release`.
+- **Phase boundaries** require `release` to contain every commit of the phase
+  before its retrospective closes. The end of the plan requires `release` to
+  equal `staging`.
+
+### Tool failures
+
+Nobody works around a broken tool silently. When Tollgate, Hive, Beads, cargo,
+uv, a flaky test or a check script fails in a way that is not the bead's own
+bug, the executor:
+
+- files a bead for it at once, with the label `tooling`, the exact command, its
+  output and how often it has happened (or adds a note to the open bead for
+  the same failure);
+- records it in its friction record (below);
+- continues its own bead if it can, or makes the tooling bead a prerequisite if
+  it can't.
+
+Defects in other repositories (Tollgate, Hive) are filed and fixed under
+Hive's tooling-fix rule, at their cause, as their own beads.
+
+### Introspection
+
+**Friction ledger.** Every bead writes one compact record,
+`native/evidence/friction/<bead-id>.json`, in its own commit:
+
+```json
+{"bead":"hv-t8o8.14","phase":"B","implementMin":140,"localValidationS":{"fast":41,"focused":95},"gateS":58,"friction":[{"tag":"oracle-diff-unreadable","minutes":30,"note":"first divergence printed 4 MB of state"}]}
+```
+
+Tags come from `native/evidence/friction-tags.json`, which maps aliases to
+canonical tags. `scripts/friction` (phase W, written in Python so it outlives
+the TS tree) validates records, reports fired triggers and due
+retrospectives, and fails on a malformed record. Gate and release times are
+taken from Tollgate's history at retrospective time, not trusted from the
+record.
+
+**Budgets** live in `native/evidence/metrics.md`: the fast local check (60 s),
+the gate stage (about 60 s), the release stage (30 min to start), a cold
+worktree build, and the per-crate focused test times. A retrospective may
+revise a budget, with its reason recorded there.
+
+**Triggers.** An **improvement bead** (label `introspection`) is filed as soon
+as either holds:
+
+- the same friction tag appears in **3 beads** of the epic since the last
+  retrospective;
+- a budget is exceeded by **more than 50% on 3 consecutive beads** at
+  comparable host load.
+
+An improvement bead names its evidence (friction files, bead IDs,
+measurements), targets the cause (a faster check, a fixed flaky test, a missing
+tool, a simpler abstraction, a structural refactor), shows before and after
+numbers for a speed change (reverted if the metric doesn't improve by at least
+10%), and preserves behaviour: it never changes the oracle's expectations or
+this plan's decisions. It preempts plan beads, after `ci-fix` beads. Each fired
+trigger gets one line in `native/evidence/introspection.jsonl`: the bead that
+fixed it, or the reason it wasn't fixed (such as a harness problem outside the
+repository).
+
+**Retrospectives.** Two kinds, both run by a read-only subagent using the
+`sage` skill, scoped to this epic since the last retrospective:
+
+- **Phase retrospectives** are explicit beads in the plan (R1 to R5 in the
+  table), one at the end of each phase. Each blocks the next phase's beads, and
+  the next phase starts only after every bead it files as blocking has closed.
+- **Cadence retrospectives:** whenever `scripts/friction` reports 8 closed
+  beads since the last retrospective of either kind, the session that sees it
+  files one, keyed `retrospective=<epic>/since-<last retrospective's bead>`,
+  after searching for the key. It blocks nothing.
+
+Each retrospective reads the friction records, `metrics.md`, bead notes,
+Tollgate history (gate times, release-run failures, CI repair cycles), review
+dispositions, `tooling` beads and waiting time (on the gate, on prerequisites,
+on usage limits). It compares the current stage times and check budgets with
+their targets, files an improvement bead for every recurring cost no trigger
+has covered, records a summary in the epic's notes, and appends a line to
+`introspection.jsonl` listing the friction records it covered.
+
 ## Implementation Plan
 
 Tracked by epic `hv-t8o8`. Each bead delivers through its own Tollgate
-worktree and keeps `scripts/ci` green.
+worktree, passes the gate stage, writes its friction record, and follows
+[Workflow](#workflow).
 
 | Key | Bead | Phase | Work | Needs |
 |---|---|---|---|---|
+| W1 | `hv-t8o8.33` | W | Staged validation: `check-fast`, `ci-gate`, `ci-full`, the Tollgate release stage, AGENTS.md (ladder, `ci-fix`, tooling, selection order) | — |
+| W2 | `hv-t8o8.34` | W | Friction ledger, tags, budgets in `metrics.md`, `scripts/friction`, AGENTS.md | W1 |
+| E0 | `hv-t8o8.35` | E | Delayed listening's payoff measured offline from committed streams; `M`, grid and verdict | — |
+| ES | `hv-t8o8.36` | E | Spike: muting tap, delay line over an hour, `SIGKILL`, watchdog | — |
 | S0 | `hv-t8o8.1` | 0 | The spike: tap, permission and signing identity, online RNN and DBN, beat flash and click, latency and build-time measurements, crate choices; numbers into the appendix; targets set by rule | — |
-| F1 | `hv-t8o8.2` | 1 | `ts-freeze` tag, the inventory, live exceptions completed | The freeze commit's hash from the user (the bead lacks `hive_project` until then) |
+| F1 | `hv-t8o8.2` | 1 | `ts-freeze` tag on `e97ef4a`, the inventory, live exceptions completed | — |
 | F2 | `hv-t8o8.3` | 1 | `oracle-export.ts`, fixtures, reference stills, V8 math vectors, content hash, `FORMAT.md` | F1 |
 | F3 | `hv-t8o8.4` | 1 | `export-models`, golden activations | F1 |
-| F4 | `hv-t8o8.5` | 1 | Workspace scaffold, gate sections, `full-check`, bundle script, AGENTS.md | S0 (build-time result), F1 |
-| A1 | `hv-t8o8.6` | A | Front end and online LSTM ensemble, stage parity | F3, F4 |
+| F4 | `hv-t8o8.5` | 1 | Workspace scaffold, native sections in both stages, persistent target directories, `check-fast`, bundle script, AGENTS.md; deletes the spike | S0, F1, W1, ES |
+| R1 | `hv-t8o8.37` | R | Retrospective: phases W, 0 and 1 | W1, W2, F1–F4 |
+| A1 | `hv-t8o8.6` | A | Front end and online LSTM ensemble, stage parity | F3, F4, R1 |
 | A2 | `hv-t8o8.7` | A | DBN forward, period smoothing, commit rule | A1 |
 | A3 | `hv-t8o8.8` | A | Ticks (evidence uses the beliefs), energy, levels, onsets, strong flags | A2 |
 | A4 | `hv-t8o8.9` | A | Hindsight (offline features, BiLSTM, Viterbi), worker, the phase check | A2 |
 | A5 | `hv-t8o8.10` | A | Structure: changes, jumps, keys, ends | A3 |
 | A6 | `hv-t8o8.11` | A | Accent forecasts (on the phase-checked beats) | A3, A4 |
 | A7 | `hv-t8o8.12` | A | Bands, brightness, timbre and remaining groups; corpus parity report; stream causality test | A4, A5, A6 |
-| B1 | `hv-t8o8.13` | B | Core, `jsmath`, content loader | F2, F4 |
+| B1 | `hv-t8o8.13` | B | Core, `jsmath`, content loader | F2, F4, R1 |
 | B2 | `hv-t8o8.14` | B | Stream store, Replay feeding, growable song map, context, schedule | B1 |
 | B3 | `hv-t8o8.15` | B | `sim/*` modules | B1 |
 | B4 | `hv-t8o8.16` | B | `simulate.ts` part 1: state, queue keys, enemies, weapons, damage | B2, B3 |
@@ -1374,24 +1567,34 @@ worktree and keeps `scripts/ci` green.
 | B6 | `hv-t8o8.18` | B | Director, sections, set pieces, finale and run end | B5 |
 | B7 | `hv-t8o8.19` | B | Recorder, emit, evaluator; frame hashes | B6 |
 | B8 | `hv-t8o8.20` | B | Virtual players, causality checks, playability check | B7 |
+| R2 | `hv-t8o8.38` | R | Retrospective: phases A and B | A7, B8 |
 | C1 | `hv-t8o8.21` | C | Renderer, offscreen capture, visual parity | B7 |
-| C2 | `hv-t8o8.22` | C | Audio output, mixer, SFX, causal ducking | F4 |
-| C3 | `hv-t8o8.23` | C | App shell, input, runner with arrivals, menus; File mode on Python streams | C1, C2, B8 |
-| C4 | `hv-t8o8.24` | C | File mode on the Rust analyzer, then System mode; latency instrumentation; rollback profiling | C3, A7 |
-| D1 | `hv-t8o8.25` | D | Run detection, rebasing, pause, live exceptions | C4 |
+| C2 | `hv-t8o8.22` | C | Audio output, mixer, SFX, causal ducking | F4, R1 |
+| C3 | `hv-t8o8.23` | C | App shell, input, runner with arrivals, menus; File mode on Python streams | C1, C2, B8, R2 |
+| C4 | `hv-t8o8.24` | C | File mode on the Rust analyzer, then System mode; latency instrumentation; rollback profiling | C3, A7, R2 |
+| R3 | `hv-t8o8.39` | R | Retrospective: phase C | C4 |
+| D1 | `hv-t8o8.25` | D | Run detection, rebasing, pause, live exceptions | C4, R3 |
 | D2 | `hv-t8o8.26` | D | Calibration, per-device settings, device changes | D1 |
 | D3 | `hv-t8o8.27` | D | Session recording, `ps replay`, Watch my run | D1 |
 | D4 | `hv-t8o8.28` | D | Timing logs and `ps log` | D3 |
 | D5 | `hv-t8o8.29` | D | Latency report against targets; the QA checklist | D2, D4 |
-| D6 | `hv-t8o8.30` | D | Remove the TS game | D5 |
-| E1 | `hv-t8o8.31` | E | Delayed listening in the analyzer: hindsight commits, stamps, fallback, grid choice and `M` by rule, `--delayed`, lead and causality checks | A7 |
-| E2 | `hv-t8o8.32` | E | Delayed listening in the app: muting tap, delay line, playback, watchdog, listening-screen choice, File-source Delayed, session meta, timing logs, QA items 14–19 | E1, D2, D4 |
+| R4 | `hv-t8o8.40` | R | Retrospective: phase D through D5 | D5 |
+| D6 | `hv-t8o8.30` | D | Remove the TS game | D5, R4 |
+| E1 | `hv-t8o8.31` | E | Delayed listening in the analyzer: hindsight commits, stamps, fallback, grid choice and `M` by rule, `--delayed`, lead and causality checks | A7, E0 |
+| E2 | `hv-t8o8.32` | E | Delayed listening in the app: muting tap, delay line, playback, watchdog, listening-screen choice, File-source Delayed, session meta, timing logs, QA items 14–19 | E1, ES, D2, D4 |
+| R5 | `hv-t8o8.41` | R | Final retrospective | D6, E2 |
 
-- **Parallelism:** after F4, the A and B tracks run in parallel; they touch
+- **Now:** F1, W1, E0 and ES are ready and independent. W2 follows W1. F2 and
+  F3 follow F1; F4 follows F1, W1 and ES (it deletes the spike).
+- **Retrospectives** sit at every phase boundary and block the next phase
+  (R1 to R4); R5 closes the epic after D6 and E2. Cadence retrospectives and
+  `ci-fix`, `tooling` and improvement beads are filed as the work runs, and
+  preempt plan beads ([Workflow](#workflow)).
+- **Parallelism:** after R1, the A and B tracks run in parallel; they touch
   different crates. Within each track, beads run in order. C2 can run
   alongside B. D1 comes first; D2 and D3 then run in parallel; D4 follows D3
   (the session directory and the runner).
-- **Phase E is off the parity path.** E1 needs only A7 and can run alongside
+- **Phase E is off the parity path.** E1 needs A7 and E0 and can run alongside
   B, C and D, since it touches only the analyzer and CLI. E2 follows D2 and D4,
   which change the same app code (settings, the runner, the log). D5 and D6
   wait for neither. If E2 lands after D5, it runs its own QA items.
@@ -1399,7 +1602,7 @@ worktree and keeps `scripts/ci` green.
   code, so each gets one cold warden review. Fixture and model files are data,
   not code, for that count.
 - **No stops for the user.** Executors record choices and reasons in bead
-  notes and continue. The freeze commit's hash is the only outside input.
+  notes and continue. The freeze commit (`e97ef4a`) was the last outside input.
 
 ## Beyond This Plan
 
