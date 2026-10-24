@@ -1,7 +1,8 @@
 //! The playable slice (docs/design/native-app.md, "Phase V: The Playable Slice"): a rough game
 //! on live audio, deleted by C3 when the real runner lands. The tap (or a `--file` played through
 //! the output) feeds the analyzer on a thread; committed beats arrive with the host time they are
-//! heard, and the window flashes on them.
+//! heard. The game (`game`): move with the arrows or WASD, enemies step toward you on each beat,
+//! and Space (or J, K) attacks around you, landing only on a beat.
 //!
 //!     playlist-survivors               # System mode: whatever the Mac is playing
 //!     playlist-survivors --file <path> # plays the file and listens to it
@@ -11,6 +12,7 @@
 // The tap and output are the phase 0 spike's (57e846a^:native/spike), kept as they were.
 #[allow(clippy::pedantic, unused_qualifications, dead_code)]
 mod coreaudio;
+mod game;
 mod gfx;
 mod live;
 #[allow(
@@ -37,11 +39,13 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
 
 use winit::application::ApplicationHandler;
-use winit::event::WindowEvent;
+use winit::event::{ElementState, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
+use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::{Window, WindowId};
 
 use coreaudio::now_s;
+use game::{Game, Input};
 use gfx::{Gfx, Rect};
 use live::{Msg, Source};
 use output::{Click, Output};
@@ -136,6 +140,9 @@ pub fn run(args: &[String]) -> Result<(), String> {
         peak: 0.0,
         committed: 0,
         title_at: 0.0,
+        game: Game::default(),
+        input: Input::default(),
+        last_frame: now_s(),
     };
     let result = event_loop.run_app(&mut app).map_err(|e| e.to_string());
     stop.store(true, Ordering::Relaxed);
@@ -160,6 +167,9 @@ struct App {
     peak: f32,
     committed: usize,
     title_at: f64,
+    game: Game,
+    input: Input,
+    last_frame: f64,
 }
 
 impl App {
@@ -188,6 +198,7 @@ impl App {
                         heard,
                         period: commit.period,
                     });
+                    self.game.beat(heard);
                 }
                 Msg::Level { peak, heard } => {
                     if heard <= now + 0.5 {
@@ -218,33 +229,37 @@ impl App {
         let Some(g) = self.gfx.as_mut() else { return };
         // Shown at about the next vsync.
         let shown = now + 1.0 / 60.0;
-        let mut flash = 0.0f64;
-        for b in &self.beats {
-            let d = shown - b.heard;
-            if (0.0..0.12).contains(&d) {
-                flash = flash.max(1.0 - d / 0.12);
-            }
-        }
+        let dt = (now - self.last_frame).clamp(0.0, 0.1) as f32;
+        self.last_frame = now;
+        self.game.update(shown, dt, self.input);
         let (w, h) = g.logical_size();
         let mut rects = Vec::new();
-        // The level meter, and the next beats approaching a line.
+        self.game.draw(shown, w, h, &mut rects);
+        // The level meter along the bottom.
         rects.push(Rect::new(
             0.0,
-            h - 6.0,
+            h - 4.0,
             w * self.peak.min(1.0),
-            6.0,
-            [0.3, 0.8, 0.4, 1.0],
+            4.0,
+            [0.3, 0.8, 0.4, 0.8],
         ));
-        let line = w * 0.2;
-        rects.push(Rect::new(line - 1.0, 0.0, 2.0, 24.0, [1.0, 1.0, 1.0, 0.8]));
-        for b in &self.beats {
-            let x = line + (b.heard - shown) as f32 * w * 0.4;
-            if (0.0..w).contains(&x) {
-                rects.push(Rect::centered(x, 12.0, 10.0, [1.0, 0.8, 0.3, 1.0]));
+        g.draw([0.02, 0.02, 0.03], &rects);
+    }
+
+    fn key(&mut self, code: KeyCode, pressed: bool, repeat: bool) {
+        match code {
+            KeyCode::ArrowLeft | KeyCode::KeyA => self.input.left = pressed,
+            KeyCode::ArrowRight | KeyCode::KeyD => self.input.right = pressed,
+            KeyCode::ArrowUp | KeyCode::KeyW => self.input.up = pressed,
+            KeyCode::ArrowDown | KeyCode::KeyS => self.input.down = pressed,
+            KeyCode::Space | KeyCode::KeyJ | KeyCode::KeyK if pressed && !repeat => {
+                let j = self.game.attack(now_s());
+                if std::env::var_os("PS_SLICE_LOG").is_some() {
+                    eprintln!("attack {j:?}");
+                }
             }
+            _ => {}
         }
-        let c = 0.05 + 0.9 * flash;
-        g.draw([c, c * 0.8, c * 0.3], &rects);
     }
 }
 
@@ -280,6 +295,11 @@ impl ApplicationHandler for App {
             WindowEvent::Resized(s) => {
                 if let Some(g) = self.gfx.as_mut() {
                     g.resize(s.width, s.height);
+                }
+            }
+            WindowEvent::KeyboardInput { event, .. } => {
+                if let PhysicalKey::Code(code) = event.physical_key {
+                    self.key(code, event.state == ElementState::Pressed, event.repeat);
                 }
             }
             WindowEvent::RedrawRequested => {
