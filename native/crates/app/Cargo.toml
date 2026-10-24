@@ -8,5 +8,20 @@ publish = false
 name = "playlist-survivors"
 path = "src/main.rs"
 
+[dependencies]
+analysis = { path = "../analysis" }
+bytemuck = { version = "1", features = ["derive"] }
+libc = "0.2"
+objc2 = "0.6"
+objc2-audio-toolbox = "0.3"
+objc2-core-audio = "0.3"
+objc2-core-audio-types = "0.3"
+objc2-core-foundation = "0.3"
+objc2-foundation = { version = "0.3", features = ["NSArray", "NSValue", "NSString", "NSDictionary", "NSUUID", "NSEnumerator", "NSObject"] }
+pollster = "1"
+rtrb = "0.4"
+wgpu = "30"
+winit = "0.30"
+
 [lints]
 workspace = true
