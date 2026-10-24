@@ -23,6 +23,7 @@ import { sectionIndexAt, type Ctx } from "./context.ts";
 import { cameraAt, VIEW_W } from "./camera.ts";
 import { resolveRef } from "./musical.ts";
 import { beatIndexAtOrBefore } from "../reactive/stream.ts";
+import { keyAt, paletteLevelAt } from "../reactive/director.ts";
 import { REACTIVE_END_DELAY, REACTIVE_TITLE } from "../reactive/grade.ts";
 
 export const VOICE_BUDGET = 4;
@@ -89,6 +90,9 @@ export function soundFade(ctx: Ctx, key: string, s: number): number {
   const gate = stream.params.gate;
   return Math.min(1, Math.max(0, (stream.beats[i].evidence - gate) / gate));
 }
+
+/** Reactive mode (stage 4): how long a detected section's start banner shows (song seconds). */
+const SECTION_BANNER_S = 1.6;
 
 /** A run of gem chimes climbs at most this many scale degrees (two octaves), then starts again. */
 const CHIME_RANGE = 14;
@@ -245,7 +249,9 @@ export class Emitter {
     if (fade <= 0) return;
     gain *= fade;
     const sec = this.sectionOf(s);
-    const pal = ctx.lib.soundPalettes.get(sec.level.sfxPalette);
+    // (Reactive mode, stage 4: the loudness level's palette, and chimes in the key detected when the sound is caused.)
+    const director = ctx.reactive ? ctx.level.director : undefined;
+    const pal = ctx.lib.soundPalettes.get(director ? director.palettes[paletteLevelAt(ctx.reactive!, director.paletteHoldS, at.owner ?? s)] : sec.level.sfxPalette);
     if (!pal) return;
     const list = pal.sounds[key];
     if (!list) return;
@@ -255,7 +261,7 @@ export class Emitter {
     const root = typeof pick === "string" ? undefined : pick.rootNote;
     const sg = typeof pick === "string" ? 1 : (pick.gain ?? 1);
     let rate = Math.pow(2, r.range(-1, 1) / 12);
-    const scale = keyScale(sec.song.key);
+    const scale = at.degree === undefined ? undefined : keyScale(ctx.reactive ? keyAt(ctx.reactive, at.owner ?? s) : sec.song.key);
     if (at.degree !== undefined && root && scale && noteToMidi(root) !== undefined) {
       // A gem chime: the scale degree from the tonic at or below the sample's root note.
       const rm = noteToMidi(root)!;
@@ -479,9 +485,10 @@ export class Emitter {
     this.sfx("finisher", h.s, at.x, PRIORITY.hero, 1.2, true);
   }
 
-  /** A transform wave: a low sweep on the downbeat, under the music. */
+  /** A transform wave: a low sweep on the downbeat, under the music (and a detected section's start, a short banner with its zone's name). */
   zoneWave(z: ZoneWaveRecord): void {
     this.sfx("zone-sweep", z.s, z.x, PRIORITY.ambient, 0.45, false, 0.5);
+    if (z.section !== undefined) this.sink.ui({ kind: "banner", s: z.s, text: this.ctx.lib.zones.get(z.zone)?.name ?? z.zone, dur: SECTION_BANNER_S });
   }
 
   /** A landmark rises from the ground: dust at each of its props on the downbeat. */

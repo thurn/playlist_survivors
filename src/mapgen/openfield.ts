@@ -43,6 +43,8 @@ export interface ZoneWave {
   zone: number;
   /** Song time it has left the screen: from then on, everywhere is in the new zone. */
   endS: number;
+  /** Reactive mode (stage 4): the detected section it starts (1 for the first), absent for a fallback wave. */
+  section?: number;
 }
 
 /** The ring's radius at song beat index sbi: one band per sixteenth note, from the downbeat's own. */

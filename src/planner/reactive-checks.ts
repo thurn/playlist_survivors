@@ -329,8 +329,8 @@ export interface CausalityResult extends CheckResult {
   ms: number;
 }
 
-/** The feature classes so far (stages 1 and 2): each must fire before a cut, or the check proves nothing about it. */
-export const FEATURES = ["level-ups", "zone waves", "reading switches"] as const;
+/** The feature classes so far (stages 1 to 4): each must fire before a cut, or the check proves nothing about it. */
+export const FEATURES = ["level-ups", "zone waves", "section starts", "reading switches"] as const;
 
 /** Default cuts: just before each committed beat's, strong onset's, hindsight entry's and structural event's knownAt, and just after each level-up and zone wave. */
 export function defaultCuts(stream: ReactiveStream, truePlan: Plan, until: number): number[] {
@@ -364,6 +364,7 @@ export function checkReactiveCausality(c: CausalityCase): CausalityResult {
     const last = cuts[cuts.length - 1] ?? 0;
     if (truthPlan.upgrades.some((u) => u.s < last)) firedBefore.add("level-ups");
     if (truthPlan.open.waves.some((w) => w.s < last)) firedBefore.add("zone waves");
+    if (truthPlan.open.waves.some((w) => w.section !== undefined && w.s < last)) firedBefore.add("section starts");
     if ((truthPlan.settles ?? []).some((x) => x.switched && x.s < last)) firedBefore.add("reading switches");
     let prev = 0;
     for (const C of cuts) {

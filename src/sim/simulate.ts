@@ -34,8 +34,9 @@ import { chainAt, heavyArcAt, orbitAt, swingArcAt, tierDamage, trailRadiusAt, wa
 import { armouredBite, evolvedOrbit, offersFor, passiveBonus, startingLoadout, takeItem, type Loadout, type UpgradeItem } from "./upgrades.ts";
 import { classifyPress, NEVER_LATE, drainPerBeat, firstAtOrAfter, freshPressMemo, grooveAfterChange, keyGroup, type PressJudgement, type PressMemo, nearestIndex, ratePressOnGrid, tierFor } from "./timing.ts";
 import { OpenWorld, type World } from "./world.ts";
-import { energyAt as streamEnergyAt, evidenceAt, firstBeatAtOrAfter, hindsightAt, tickIndexAt } from "../reactive/stream.ts";
-import { directorPopulation, directorRoster } from "../reactive/director.ts";
+import { evidenceAt, hindsightAt, tickIndexAt, type TickLevel } from "../reactive/stream.ts";
+import { directorPopulation, levelBlend, sectionRoster, zoneWavePlan } from "../reactive/director.ts";
+import { detectedSections } from "../reactive/sections.ts";
 import { judgementLabel, READING, SETTLE_DELAY, Settler, type Settled, type SettlePress } from "../reactive/settle.ts";
 
 export type { ArrowRecord, Landing, SimResult, SlamRecord } from "./recorder.ts";
@@ -54,6 +55,8 @@ export const HURTBOX_RADIUS = 10;
 export const HURTBOX_LIFT = 20;
 /** Enemies stop this far beyond touching the hero. */
 const CONTACT_GAP = 4;
+/** Reactive mode (stage 4): the camera punch that marks a detected section's start. */
+const SECTION_PUNCH = 0.035;
 /** An enemy this much farther than its stopping point still bites. */
 const BITE_SLACK = 2;
 /** At most this many spawns per beat. */
@@ -279,11 +282,12 @@ type Ev =
   | { kind: "gem"; gem: number; value: number }
   | { kind: "vacuumDrop" }
   | { kind: "levelDue"; i: number }
-  | { kind: "levelUp"; id: string }
+  | { kind: "levelUp"; id: string; level?: number }
   | { kind: "orbDefault"; u: number }
   | { kind: "orbApply"; item: UpgradeItem }
   | { kind: "chickenHeal" }
-  | { kind: "zoneWave"; zone: string }
+  | { kind: "zoneWave"; zone: string; section?: number }
+  | { kind: "levelWait"; level: number }
   | { kind: "landmark"; id: string }
   | { kind: "reactiveBeat"; bi: number }
   | { kind: "settle"; press: SettlePress & { provisional: string } }
@@ -360,6 +364,7 @@ const ORDER: Record<Ev["kind"], number> = {
   beat: 21,
   appear: 22,
   zoneWave: 4,
+  levelWait: 4.5,
   landmark: 4,
   // Reactive mode: a committed beat arrives (before an upgrade orb's default at the same moment).
   reactiveBeat: 2.4,
@@ -602,6 +607,9 @@ interface SimState {
   xpNow: number;
   level: number;
   overdue: boolean;
+  /** Reactive mode (stage 4): the detected sections started so far, and whether the next level-up's experience is reached (it falls due at the next start, or after the director's wait). */
+  section: number;
+  levelReady: boolean;
   /** The open field: the hero's heading (a unit vector), and a formation's direction while it is in play. */
   heading: { x: number; y: number };
   formationDir?: { x: number; y: number; until: number };
@@ -693,6 +701,8 @@ function freshState(env: Env): SimState {
     xpNow: 0,
     level: 0,
     overdue: false,
+    section: 0,
+    levelReady: false,
     heading: { x: 1, y: 0 },
     heroX: [],
     heroY: [],
@@ -752,6 +762,10 @@ function engine(env: Env, st: SimState, io: Io) {
   // here reads a stream entry before its knownAt.
   const stream = ctx.reactive;
   const director = stream ? ctx.level.director : undefined;
+  /** Stage 4: the stream's detected section starts (each read only from its downbeat on). */
+  const sectionStarts = stream && director ? detectedSections(stream, director.sectionRule) : [];
+  /** Stage 4: the loudness level's effect on a director value, blended over the director's smoothing time. */
+  const byLevel = (s: number, value: (l: TickLevel) => number) => levelBlend(stream!, s, director!.smoothS, value);
   const gate = stream?.params.gate ?? 0;
   /**
    * The timing grid as known at song time s: reactive mode's grid times are its committed beats,
@@ -1582,8 +1596,9 @@ function engine(env: Env, st: SimState, io: Io) {
     // The camera follows the hero with the section's lead along the route.
     const sec = sectionAt(sk);
     const f = leadDir(sk);
-    const lead = sec.level.camera.lead;
-    let zoom = sec.level.camera.zoom;
+    // (Reactive mode: the loudness level's camera, blended.)
+    const lead = director ? byLevel(sk, (l) => director.camera[l].lead) : sec.level.camera.lead;
+    let zoom = director ? byLevel(sk, (l) => director.camera[l].zoom) : sec.level.camera.zoom;
     if (sec.index > 0) {
       const bpb = ctx.idx.beatsPerBar[sec.song.bars[0]] ?? 2;
       const u = smoothstep((sbiAt(sk) - sec.b0) / bpb);
@@ -1637,9 +1652,11 @@ function engine(env: Env, st: SimState, io: Io) {
     const sec = sectionAt(s);
     const free = sec.song.feel === "free";
     // A calm section slows the enemies (not the hero) and curls their approach into a lazy spiral.
-    const calmSpeed = 1 - sec.level.calm;
-    const curlCos = Math.cos(sec.level.calm * CALM_CURL);
-    const curlSin = Math.sin(sec.level.calm * CALM_CURL);
+    // (Reactive mode: the loudness level's calm, blended.)
+    const calm = director ? byLevel(s, (l) => director.calm[l]) : sec.level.calm;
+    const calmSpeed = 1 - calm;
+    const curlCos = Math.cos(calm * CALM_CURL);
+    const curlSin = Math.sin(calm * CALM_CURL);
     const sbi = sbiAt(s);
     const bar = Math.max(1, barOfBeatIndex(ctx.idx, sbi));
     const bpb = ctx.idx.beatsPerBar[Math.min(ctx.idx.barCount, bar)] ?? 2;
@@ -1974,8 +1991,11 @@ function engine(env: Env, st: SimState, io: Io) {
     if (t <= cutS && t < endS) st.q.push(Math.max(t, after), { kind: "decide" });
   };
 
-  /** Reactive mode's population at song time s (the negative control, check-only, reads the evidence a second ahead instead of the energy). */
-  const directorTarget = (s: number) => directorPopulation(director!, s, ctx.checks.leakFutureEvidence ? evidenceAt(stream!, s + 1) : streamEnergyAt(stream!, s));
+  /**
+   * Reactive mode's population at song time s, scaled by the loudness level (the negative control,
+   * check-only, scales it by the evidence a second ahead instead).
+   */
+  const directorTarget = (s: number) => directorPopulation(director!, s, ctx.checks.leakFutureEvidence ? 0.6 + 0.7 * evidenceAt(stream!, s + 1) : byLevel(s, (l) => director!.population.levelScale[l]));
 
   const spawnDirector = (bi: number) => {
     if (st.blasting) return;
@@ -1987,7 +2007,7 @@ function engine(env: Env, st: SimState, io: Io) {
     const want = Math.min(SPAWN_PER_BEAT, Math.round(target) - living, POP_CAP - all);
     if (want <= 0) return;
     const sec = sectionAt(s);
-    const roster = Object.entries(director ? directorRoster(director, s) : sec.level.roster).filter(([t]) => lib.enemies.get(t)!.behavior === "chase");
+    const roster = Object.entries(director ? sectionRoster(director, st.section) : sec.level.roster).filter(([t]) => lib.enemies.get(t)!.behavior === "chase");
     const r = new Rng(ctx.seed, "spawn", Math.round(bi * 4));
     for (let k = 0; k < want; k++) {
       const type = r.weighted(roster.map(([t]) => t), roster.map(([, wgt]) => wgt));
@@ -2330,6 +2350,7 @@ function engine(env: Env, st: SimState, io: Io) {
 
   const grant = () => {
     if (st.blasting) return;
+    st.levelReady = false;
     const index = st.level;
     st.level++;
     st.xpNow = 0;
@@ -2447,6 +2468,12 @@ function engine(env: Env, st: SimState, io: Io) {
     }
     st.xpNow += value;
     pushXp();
+    // Reactive mode (stage 4): a full bar waits for the next detected section start, or the director's wait.
+    if (director && !st.levelReady && st.xpNow >= levelReq()) {
+      st.levelReady = true;
+      st.q.push(st.s + director.levelUpWaitS, { kind: "levelWait", level: st.level });
+      return;
+    }
     // A bar that fills after its scheduled moment levels up on the first downbeat after it fills.
     if (st.overdue && st.xpNow >= levelReq()) {
       st.overdue = false;
@@ -2634,7 +2661,7 @@ function engine(env: Env, st: SimState, io: Io) {
 
   /** Formations ride with the camera-smoothed hero: the camera centre less its lead. */
   const formationAnchor = () => {
-    const lead = sectionAt(st.s).level.camera.lead;
+    const lead = director ? byLevel(st.s, (l) => director.camera[l].lead) : sectionAt(st.s).level.camera.lead;
     const pp = leadDir(st.s);
     const cam = st.camera;
     return { x: cam.x - pp.tx * lead, y: cam.y - pp.ty * lead + 12, vx: cam.vx, vy: cam.vy };
@@ -2899,13 +2926,16 @@ function engine(env: Env, st: SimState, io: Io) {
       for (let k = 0; k < bands; k++) q.push(timeOfBeatIndex(song, bi0 + k * stepB), { kind: "blast", band: k });
     }
     if (stream) {
-      // Reactive mode: each committed beat arrives; a zone wave every zoneEvery seconds, on the first
-      // committed beat at or after it, through the level's zones in order.
+      // Reactive mode: each committed beat arrives; a zone wave on each detected section start (and
+      // one after the director's fallback time without one), through the level's zones in order,
+      // each section start marked by a camera punch.
       stream.beats.forEach((b, bi) => q.push(b.t, { kind: "reactiveBeat", bi }));
       const zones = ctx.level.zones;
-      for (let k = 1; director && k * director.zoneEvery < ctx.duration; k++) {
-        const b = firstBeatAtOrAfter(stream, k * director.zoneEvery);
-        if (b && b.t < endS) q.push(b.t, { kind: "zoneWave", zone: zones[k % zones.length] });
+      if (director) {
+        zoneWavePlan(stream, sectionStarts, director.zoneFallbackS, endS).forEach((zw, k) => {
+          q.push(zw.s, { kind: "zoneWave", zone: zones[(k + 1) % zones.length], ...(zw.section !== undefined ? { section: zw.section } : {}) });
+          if (zw.section !== undefined) st.punches.push({ s: zw.s, amt: SECTION_PUNCH });
+        });
       }
     }
     {
@@ -3010,7 +3040,8 @@ function engine(env: Env, st: SimState, io: Io) {
           appear(ev.type);
           break;
         case "levelUp":
-          grant();
+          // (Reactive mode: a level-up queued for a level already granted, at a section start since, drops itself.)
+          if (ev.level === undefined || ev.level === st.level) grant();
           break;
         case "orbDefault":
           if (st.orbs?.u === ev.u) takeOrb(0, false);
@@ -3072,9 +3103,20 @@ function engine(env: Env, st: SimState, io: Io) {
           break;
         case "zoneWave": {
           const hp = heroPose(st.w);
-          rec().zoneWave({ s: st.s, w: st.w, x: hp.x, y: hp.y, zone: ev.zone });
+          rec().zoneWave({ s: st.s, w: st.w, x: hp.x, y: hp.y, zone: ev.zone, ...(ev.section !== undefined ? { section: ev.section } : {}) });
+          // Reactive mode (stage 4): a detected section starts: the roster steps, and a level-up
+          // whose experience is reached falls due now.
+          if (ev.section !== undefined) {
+            st.section = ev.section;
+            if (st.levelReady) grant();
+          }
           break;
         }
+        case "levelWait":
+          // No section started in the director's wait since the experience was reached: the level-up
+          // falls due on the next downbeat (the bar stays ready until it is granted).
+          if (ev.level === st.level && st.levelReady) st.q.push(downbeatAtOrAfter(st.s), { kind: "levelUp", id: sch.levelUps[st.level].id, level: st.level });
+          break;
         case "landmark": {
           const hp = heroPose(st.w);
           rec().landmark({ id: ev.id, s: st.s, w: st.w, x: hp.x, y: hp.y });

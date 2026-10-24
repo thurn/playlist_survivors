@@ -248,7 +248,8 @@ const causalityCase = (id: string, level: string | undefined, cuts?: number[]): 
 // ---------------------------------------------------------------- targets: structure (stage 4)
 {
   const galop = file("orpheus-galop");
-  const d = sectionDetection(streamOf("orpheus-galop"), galop.reference!);
+  // (By the reactive level's own rule.)
+  const d = sectionDetection(streamOf("orpheus-galop"), galop.reference!, reactiveInput(galop).input.level.director?.sectionRule);
   lines.push("targets (stage 4, the Galop's detected section starts):");
   lines.push(`  within 8 s after ${d.found} of the ${d.of} song-map section starts from the vamp to the coda, matched one to one (at least 4${d.found >= 4 ? "" : ", missed"})`);
   lines.push(`  ${d.falseStarts} in the galop more than 8 s from every song-map section start (at most 3${d.falseStarts <= 3 ? "" : ", missed"}), ${d.free} in the prelude (at most 1${d.free <= 1 ? "" : ", missed"})`);
@@ -257,7 +258,7 @@ const causalityCase = (id: string, level: string | undefined, cuts?: number[]): 
   for (const id of [...tracks, "causality-mix"]) {
     const st = streamOf(id);
     const x = st.structure!;
-    lines.push(`  ${id.padEnd(22)} ${x.changes.length} changes, ${x.jumps.length} jumps, ${x.ends.length ? `ends at ${x.ends.map((e) => e.t.toFixed(1)).join(", ")} s` : "no ending"}, ${detectedSections(st).length} section starts`);
+    lines.push(`  ${id.padEnd(22)} ${x.changes.length} changes, ${x.jumps.length} jumps, ${x.ends.length ? `ends at ${x.ends.map((e) => e.t.toFixed(1)).join(", ")} s` : "no ending"}, ${detectedSections(st, reactiveInput(file(id)).input.level.director?.sectionRule).length} section starts`);
   }
 }
 

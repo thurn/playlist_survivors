@@ -9,7 +9,6 @@ import { barOfBeatIndex, beatIndexAt, beatIndexOf, timeOfBeatIndex } from "../co
 import { beatDurationAt, PlanError, sectionIndexAt, subdivisionBeats, type Ctx } from "../planner/context.ts";
 import { phraseFinalAccent, resolveRef, sectionPhrases } from "../planner/musical.ts";
 import { strideSteps, type StrideSteps } from "./strides.ts";
-import { firstBeatAtOrAfter } from "../reactive/stream.ts";
 
 export interface GridSlot {
   s: number;
@@ -281,13 +280,9 @@ export function buildSchedule(ctx: Ctx): Schedule {
     if (e.ev.levelUp) levelUps.push({ id: e.ev.levelUp, s: e.s, xp: e.ev.xp ?? 1 });
     if (e.ev.blast) blast = { s: e.s, weapon: e.ev.blast };
   }
-  // A reactive level's director: each level-up falls due on the first committed beat at or after its time.
-  if (ctx.reactive) {
-    for (const lu of ctx.level.director?.levelUps ?? []) {
-      const b = firstBeatAtOrAfter(ctx.reactive, lu.at);
-      if (b) levelUps.push({ id: "offer", s: b.t, xp: lu.xp });
-    }
-  }
+  // A reactive level's director: its level-ups have no fixed moment (each falls due at the next
+  // detected section start once its experience is reached, decided as the run goes).
+  if (ctx.reactive) for (const lu of ctx.level.director?.levelUps ?? []) levelUps.push({ id: "offer", s: Infinity, xp: lu.xp });
   levelUps.sort((a, b) => a.s - b.s);
   const enc = encounters(ctx);
   // A charging formation's release is an accent: the skilled player meets it with a cleave.

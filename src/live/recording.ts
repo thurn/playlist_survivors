@@ -718,7 +718,7 @@ export class LiveRecording implements Recorder, PlanIndex, EmitSink {
     const zoneIndex = (id: string) => Math.max(0, zones.findIndex((x) => x.id === id));
     const prev = op.waves.length ? op.waves[op.waves.length - 1].zone : op.firstZone;
     const sbi = beatIndexAt(this.ctx.song, z.s);
-    const wv: ZoneWave = { s: z.s, w: z.w, x: z.x, y: z.y, sbi, prev, zone: zoneIndex(z.zone), endS: zoneWaveEnd(this.ctx, sbi) };
+    const wv: ZoneWave = { s: z.s, w: z.w, x: z.x, y: z.y, sbi, prev, zone: zoneIndex(z.zone), endS: zoneWaveEnd(this.ctx, sbi), ...(z.section !== undefined ? { section: z.section } : {}) };
     this.add(op.waves, wv);
     this.emitter.zoneWave(z);
   }

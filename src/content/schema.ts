@@ -417,23 +417,40 @@ export const PLAYER_NAMES = ["perfect", "skilled", "casual", "moderate", "eighth
 export const skillProfile = z.enum(PLAYER_NAMES);
 export type SkillProfileName = z.infer<typeof skillProfile>;
 
+/** A value for each loudness level of reactive mode's stream. */
+const byLevel = <T extends z.ZodType>(t: T) => z.strictObject({ quiet: t, medium: t, loud: t });
+
 /**
- * A reactive level's director (docs/design/reactive-audio.md, "The reactive level"): the target
- * population at song time s is min(max, (start + perMinute * s / 60) * scale), with the energy at s
- * mapped into energyScale; the roster is the entry with the latest `from` (song seconds) at or
- * before s; each level-up falls due on the first committed beat at or after its `at`; and a zone
- * wave sweeps every zoneEvery seconds, on the first committed beat at or after it.
+ * A reactive level's director (docs/design/reactive-audio.md, "The reactive level" and "Stage 4:
+ * Structure"): what drives the horde in place of the song map's sections.
+ * - Detected sections (a change, or a loudness jump of at least `sectionRule.jumpDb`, known with the
+ *   beat clear, at least `sectionRule.minGapS` after the previous start) each sweep in the next zone
+ *   and step the roster to the next entry of `sections` (holding the last); after `zoneFallbackS`
+ *   without a zone wave, one runs anyway.
+ * - Each level-up falls due at the next detected section start once its XP is reached, or
+ *   `levelUpWaitS` after the XP is reached if no section starts in that time.
+ * - The loudness level sets the population's scale, the camera and the calm, each blended over the
+ *   last `smoothS`; and the sound palette, switching on the next committed downbeat after a level
+ *   change that lasts `paletteHoldS`.
+ * The target population at song time s is min(max, (start + perMinute * s / 60) * scale).
  */
 export const director = z.strictObject({
   population: z.strictObject({
     start: z.number().min(0),
     perMinute: z.number().min(0),
     max: z.number().int().min(0).max(520),
-    energyScale: z.tuple([z.number().min(0), z.number().min(0)]),
+    levelScale: byLevel(z.number().min(0)),
   }),
-  roster: z.array(z.strictObject({ from: z.number().min(0), enemies: z.record(z.string(), z.number().positive()) })).min(1),
-  levelUps: z.array(z.strictObject({ at: z.number().positive(), xp: z.number().positive() })).default([]),
-  zoneEvery: z.number().positive(),
+  sections: z.array(z.record(z.string(), z.number().positive())).min(1),
+  sectionRule: z.strictObject({ jumpDb: z.number().positive().default(6), minGapS: z.number().positive().default(8) }).default({ jumpDb: 6, minGapS: 8 }),
+  levelUps: z.array(z.strictObject({ xp: z.number().positive() })).default([]),
+  levelUpWaitS: z.number().positive().default(20),
+  zoneFallbackS: z.number().positive().default(60),
+  smoothS: z.number().positive().default(2),
+  camera: byLevel(z.strictObject({ zoom: z.number().min(0.7).max(1.4), lead: z.number() })),
+  palettes: byLevel(id),
+  paletteHoldS: z.number().positive().default(2),
+  calm: byLevel(unit.max(0.9)),
 });
 export type Director = z.infer<typeof director>;
 

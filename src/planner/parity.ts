@@ -7,7 +7,7 @@ import type { ContentLibrary } from "../content/loader.ts";
 import { grooveAt } from "../plan/evaluate.ts";
 import { gradeFor } from "../plan/grade.ts";
 import type { Plan } from "../plan/types.ts";
-import { detectedSections } from "../reactive/sections.ts";
+import { detectedSections, SECTION_RULE, type SectionRule } from "../reactive/sections.ts";
 import type { ReactiveStream, Reference } from "../reactive/stream.ts";
 import { Warp } from "../core/warp.ts";
 import { classifyPress, freshPressMemo, keyGroup } from "../sim/timing.ts";
@@ -151,10 +151,10 @@ const onStart = (t: number, starts: readonly number[]) => starts.some((s0) => t 
  * starts fall in free sections, and how many in pulsed sections are more than 8 s from every start
  * (before or after it: the stage 4 target's "false" starts).
  */
-export function sectionDetection(stream: ReactiveStream, ref: Reference): { found: number; of: number; free: number; falseStarts: number; times: number[] } {
+export function sectionDetection(stream: ReactiveStream, ref: Reference, rule: SectionRule = SECTION_RULE): { found: number; of: number; free: number; falseStarts: number; times: number[] } {
   const secs = ref.sections ?? [];
   const starts = secs.slice(1).map((x) => x.s0);
-  const det = detectedSections(stream).map((d) => d.s);
+  const det = detectedSections(stream, rule).map((d) => d.s);
   const free = secs.filter((x) => x.feel === "free").map((x): [number, number] => [x.s0, x.s1]);
   const used = new Set<number>();
   let found = 0;
@@ -183,7 +183,7 @@ export function zoneWaves(plan: Plan, ref: Reference): { n: number; on: number; 
 }
 
 /** The report's rows (the stage 4 rows from the stream's structure, when given). */
-export function parityRows(authored: Plan | undefined, reactive: Plan, ref: Reference, lib: ContentLibrary, stream?: ReactiveStream): ParityRow[] {
+export function parityRows(authored: Plan | undefined, reactive: Plan, ref: Reference, lib: ContentLibrary, stream?: ReactiveStream, rule?: SectionRule): ParityRow[] {
   const both = (f: (p: Plan) => number, fmt: (x: number) => string, stage: string, row: string): ParityRow => {
     const r = f(reactive);
     const a = authored ? f(authored) : undefined;
@@ -210,7 +210,7 @@ export function parityRows(authored: Plan | undefined, reactive: Plan, ref: Refe
     const wr = zoneWaves(reactive, ref);
     rows.push({ row: "Zone waves (within 8 s after a reference section start)", authored: wa ? `${wa.n} (${wa.on})` : "—", reactive: `${wr.n} (${wr.on})`, stage: "4" });
     if (stream?.structure) {
-      const d = sectionDetection(stream, ref);
+      const d = sectionDetection(stream, ref, rule);
       rows.push({ row: "Detected section starts within 8 s after a reference section start", authored: "—", reactive: `${d.found} of ${d.of}`, stage: "4" });
       rows.push({ row: "Detected section starts in free sections", authored: "—", reactive: String(d.free), stage: "4" });
       rows.push({ row: "Detected section starts in pulsed sections more than 8 s from every start", authored: "—", reactive: String(d.falseStarts), stage: "4" });

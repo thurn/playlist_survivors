@@ -103,7 +103,8 @@ export function planHeader(ctx: Ctx, sch: Schedule, map: MapLayout, profile: str
     profile,
     grid: Float64Array.from(sch.strikeTimes),
     cleaveAccents: sch.gridSlots.filter((sl) => cleaves(ctx, sl)).map((sl) => ({ s: sl.s, strength: sl.accent })),
-    levelUpsDue: sch.levelUps.map((l) => ({ id: l.id, s: l.s })),
+    // (Reactive level-ups have no fixed moment.)
+    levelUpsDue: sch.levelUps.filter((l) => Number.isFinite(l.s)).map((l) => ({ id: l.id, s: l.s })),
     ...(ctx.reactive ? { beatsKnownAt: Float64Array.from(ctx.reactive.beats, (b) => b.knownAt), progressS: ctx.input.knownLength ?? ctx.duration, reactiveFx: reactiveFx(ctx.reactive) } : {}),
     strides: stridesHeader(ctx, sch),
   } satisfies Partial<Plan>;
@@ -322,7 +323,7 @@ export function openFieldRecord(ctx: Ctx, map: MapLayout, sim: Pick<SimResult, "
   let prev = firstZone;
   const waves: ZoneWave[] = sim.zoneWaves.map((z) => {
     const sbi = beatIndexAt(ctx.song, z.s);
-    const wv: ZoneWave = { s: z.s, w: z.w, x: z.x, y: z.y, sbi, prev, zone: zoneIndex(z.zone), endS: zoneWaveEnd(ctx, sbi) };
+    const wv: ZoneWave = { s: z.s, w: z.w, x: z.x, y: z.y, sbi, prev, zone: zoneIndex(z.zone), endS: zoneWaveEnd(ctx, sbi), ...(z.section !== undefined ? { section: z.section } : {}) };
     prev = wv.zone;
     return wv;
   });

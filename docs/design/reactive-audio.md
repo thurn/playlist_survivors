@@ -1862,3 +1862,62 @@ Recorded by `hv-s4pt.6` (stream `toolVersion` 4).
   - `check:reactive --full` passes with no failing cut on any shipped track.
     The simulation does not read structure until the next bead, so these cuts
     prove nothing about structure yet.
+
+### Measured: stage 4, scenes
+
+Recorded by `hv-s4pt.7`.
+
+- **The director's stage 4 block** replaces stage 1's `roster` (by time),
+  `levelUps` (by time), `energyScale` and `zoneEvery`:
+  - `sections`: six rosters on `levels/reactive.yaml`, one per detected
+    section, holding the last.
+  - `sectionRule`: jumps of 6 dB, starts at least 8 s apart.
+  - `levelUps`: by experience only, with `levelUpWaitS` 20.
+  - `zoneFallbackS` 60.
+  - `smoothS` 2.
+  - `population.levelScale`: quiet 0.6, medium 1.0, loud 1.3.
+  - `camera`: quiet zoom 1.3 and lead 30, medium 1.2 and 50, loud 1.05 and
+    60.
+  - `palettes`: soft-chimes, crisp-steel and heavy-infernal, with
+    `paletteHoldS` 2.
+  - `calm`: quiet 0.5.
+  - The check level compresses them: starts 4 s apart, level-ups 4 s after
+    their experience, and a fallback wave after 12 s.
+- **Choices:**
+  - The population scale, the camera and the calm are each the mean of their
+    level values over the last 2 s of ticks. That changes them smoothly and
+    reads only the past.
+  - The sound palette starts at medium.
+  - A detected section's start shows a 1.6 s banner with the new zone's name
+    and a camera punch of 0.035.
+  - The negative control now scales the population by the evidence a second
+    ahead.
+  - Reactive level-ups have no fixed moment, so the plan's `levelUpsDue` is
+    empty and the plan check on scheduled level-ups does not apply to them.
+  - A full bar stays ready until it is granted. A level-up queued by the wait
+    drops itself if a section start granted that level first, so each
+    level-up happens once.
+  - A fallback zone wave is skipped when a section start is already known by
+    its beat.
+  - The sound palette and the chime key are read at the time a sound is
+    caused.
+- **The Galop with `reactive-moderate`** (parity, seed 1858, damage off):
+  - Zone waves: 6, 4 of them within 8 s after a song-map section start, and 2
+    false: the prelude's start at 36.6 s and the coda's late start at 141.0 s.
+  - Authored: 4, all on section starts.
+  - Detected section starts within 8 s after 4 of the 8 song-map starts from
+    the vamp to the coda. Targets: at least 4; at most 3 in the galop more
+    than 8 s from every start (1); at most 1 in the prelude (1).
+  - Kills: 3028.
+  - Lowest health with damage on: 78%. Survival holds on every shipped
+    track.
+- **Captures** of the Galop's reactive run are in the main checkout's
+  `captures/reactive-stage4/`: 20 s (quiet prelude, zoomed in), 50.8 s and
+  51.4 s (the section start's wave and its "Mushroom Grove" banner), and 110 s
+  (loud climax, zoomed out).
+- **Causality:**
+  - The perturbation check on `causality-mix` passes: 337 cuts, every feature
+    class fired, including section starts.
+  - `check:reactive --full` passes with no failing cut on every shipped
+    track: the Galop 28, William Tell 32, Mountain King 30, Bumblebee 14,
+    Beethoven 34, the synthetic tracks 12 to 32.

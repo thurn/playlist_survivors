@@ -6,18 +6,19 @@ import { formatParity, parityRows, pressesRatedSame, sectionDetection, strikesOn
 import { detectedSections } from "../src/reactive/sections.ts";
 import { GATE_EXEMPT_SOUNDS, gatedSound, soundFade } from "../src/planner/emit.ts";
 import { planWithSim, playerFor, prepare } from "../src/planner/plan.ts";
-import { directorPopulation, directorRoster } from "../src/reactive/director.ts";
+import { directorPopulation, keyAt, levelBlend, paletteLevelAt, paletteSwitches, sectionRoster, zoneWavePlan } from "../src/reactive/director.ts";
 import { judgedAverageGroove, REACTIVE_END_DELAY, REACTIVE_TITLE } from "../src/reactive/grade.ts";
 import { reactivePlayerFor } from "../src/reactive/players.ts";
 import { reactiveSongMap } from "../src/reactive/songmap.ts";
-import { effectiveDownbeat, evidenceAt, firstBeatAtOrAfter, parseStream, splitStream, type StreamFile } from "../src/reactive/stream.ts";
+import { effectiveDownbeat, evidenceAt, firstBeatAtOrAfter, parseStream, splitStream, type StreamFile, type StreamStructure, type TickLevel } from "../src/reactive/stream.ts";
+import { Warp } from "../src/core/warp.ts";
 import type { KeyEvent, Observation, Player } from "../src/sim/player.ts";
 import { Evaluator, grooveAt, pulsed, settledStyle } from "../src/plan/evaluate.ts";
 import { readContentFiles } from "../scripts/lib/files.ts";
-import { inputForStream } from "../scripts/lib/reactive-node.ts";
+import { inputForStream, reactiveInput, readStreamFile } from "../scripts/lib/reactive-node.ts";
 
 /** A synthetic stream: beats every `period` from 0.5 s, each committed `lead` before it, and ticks with the given evidence. */
-function synthStream(o: { until: number; period?: number; lead?: number; evidence?: (t: number) => number; hindsight?: boolean }): StreamFile {
+function synthStream(o: { until: number; period?: number; lead?: number; evidence?: (t: number) => number; hindsight?: boolean; level?: (t: number) => TickLevel; key?: (t: number) => string | undefined; structure?: StreamStructure }): StreamFile {
   const period = o.period ?? 0.5;
   const lead = o.lead ?? 0.85;
   const ev = o.evidence ?? (() => 0.6);
@@ -27,7 +28,11 @@ function synthStream(o: { until: number; period?: number; lead?: number; evidenc
     beats.push({ t, knownAt, period, evidence: ev(knownAt) });
   }
   const ticks = [];
-  for (let k = 1; k * 0.05 <= o.until + 1e-9; k++) ticks.push({ t: Math.round(k * 5) / 100, evidence: ev(k * 0.05), energy: 0.8 });
+  for (let k = 1; k * 0.05 <= o.until + 1e-9; k++) {
+    const t = Math.round(k * 5) / 100;
+    const key = o.key?.(t);
+    ticks.push({ t, evidence: ev(k * 0.05), energy: 0.8, ...(o.level ? { level: o.level(t) } : {}), ...(key ? { key } : {}) });
+  }
   return parseStream({
     version: 1,
     audio: { file: "x.ogg", duration: o.until, sampleRate: 44100 },
@@ -45,6 +50,7 @@ function synthStream(o: { until: number; period?: number; lead?: number; evidenc
           }),
         }
       : {}),
+    ...(o.structure ? { structure: o.structure } : {}),
     reference: { source: "exact", beats: beats.map((b) => b.t), sections: [{ label: "all", s0: 0.5, s1: o.until }] },
   });
 }
@@ -235,15 +241,50 @@ describe("detected sections (stage 4)", () => {
 });
 
 describe("the director", () => {
-  const d: Director = { population: { start: 40, perMinute: 120, max: 480, energyScale: [0.7, 1.3] }, roster: [{ from: 0, enemies: { slime: 1 } }, { from: 45, enemies: { goblin: 1 } }], levelUps: [], zoneEvery: 40 };
-  it("grows the population with time and scales it by the energy, up to the maximum", () => {
-    expect(directorPopulation(d, 0, 0)).toBeCloseTo(28);
-    expect(directorPopulation(d, 60, 1)).toBeCloseTo(208);
+  const d = { population: { start: 40, perMinute: 120, max: 480 }, sections: [{ slime: 1 }, { goblin: 1 }] } as unknown as Director;
+  const { stream } = splitStream(synthStream({ until: 30, level: (t) => (t < 10 ? "quiet" : t < 20 ? "loud" : "medium"), key: (t) => (t >= 10 ? (t < 20 ? "D major" : "G major") : undefined) }));
+
+  it("grows the population with time and scales it, up to the maximum", () => {
+    expect(directorPopulation(d, 0, 0.7)).toBeCloseTo(28);
+    expect(directorPopulation(d, 60, 1.3)).toBeCloseTo(208);
     expect(directorPopulation(d, 600, 1)).toBe(480);
   });
-  it("takes the roster with the latest start at or before the time", () => {
-    expect(directorRoster(d, 44.9)).toEqual({ slime: 1 });
-    expect(directorRoster(d, 45)).toEqual({ goblin: 1 });
+
+  it("steps the roster with each detected section, holding the last", () => {
+    expect(sectionRoster(d, 0)).toEqual({ slime: 1 });
+    expect(sectionRoster(d, 1)).toEqual({ goblin: 1 });
+    expect(sectionRoster(d, 5)).toEqual({ goblin: 1 });
+  });
+
+  it("blends a level's value over the last window of ticks, from nothing later", () => {
+    const v = (l: TickLevel) => ({ quiet: 0, medium: 1, loud: 2 })[l];
+    expect(levelBlend(stream, 9.9, 2, v)).toBeCloseTo(0, 9);
+    expect(levelBlend(stream, 11, 2, v)).toBeCloseTo(1, 1);
+    expect(levelBlend(stream, 12.5, 2, v)).toBeCloseTo(2, 9);
+    // Before any tick: medium.
+    expect(levelBlend(stream, 0.01, 2, v)).toBe(1);
+  });
+
+  it("reads the key of the latest tick that has one", () => {
+    expect(keyAt(stream, 9.9)).toBeUndefined();
+    expect(keyAt(stream, 15)).toBe("D major");
+    expect(keyAt(stream, 25)).toBe("G major");
+  });
+
+  it("switches the palette on the effective downbeat after a level holds for 2 s", () => {
+    const sw = paletteSwitches(stream, 2);
+    expect(sw.map((x) => x.level)).toEqual(["quiet", "loud", "medium"]);
+    for (const [x, held] of [[sw[0], 2.05], [sw[1], 12], [sw[2], 22]] as const) expect(x.s).toBe(stream.beats[effectiveDownbeat(stream, held)].t);
+    expect(paletteLevelAt(stream, 2, sw[1].s - 0.01)).toBe("quiet");
+    expect(paletteLevelAt(stream, 2, sw[1].s)).toBe("loud");
+  });
+
+  it("runs a zone wave on each section start and one after the fallback time without one", () => {
+    const starts = [10.5, 30.5].map((s) => ({ s, beat: 0, knownAt: s - 0.5, source: "change" as const, eventT: s - 6 }));
+    expect(zoneWavePlan(stream, starts, 12, 29.9)).toEqual([{ s: 10.5, section: 1 }, { s: 22.5 }]);
+    expect(zoneWavePlan(stream, starts, 12, 100)).toEqual([{ s: 10.5, section: 1 }, { s: 22.5 }, { s: 30.5, section: 2 }]);
+    // A start on the fallback's own beat is the wave.
+    expect(zoneWavePlan(stream, [{ ...starts[0], s: 12 }], 12, 20)).toEqual([{ s: 12, section: 1 }]);
   });
 });
 
@@ -254,7 +295,9 @@ describe("reactive levels", () => {
     name: "levels/test.yaml",
     text: `song: reactive\nseed: 1\nreactive: true\nzones: [twilight-glade]\nsections:\n  - section: reactive\n    bars: all\n    pace: 50\n    presses: "x"\n    zone: twilight-glade\n    sfxPalette: crisp-steel\n${extra}`,
   });
-  const director = "director:\n  population: { start: 1, perMinute: 1, max: 10, energyScale: [1, 1] }\n  roster: [{ from: 0, enemies: { slime: 1 } }]\n  zoneEvery: 10\n";
+  const director =
+    "director:\n  population: { start: 1, perMinute: 1, max: 10, levelScale: { quiet: 1, medium: 1, loud: 1 } }\n  sections: [{ slime: 1 }]\n" +
+    "  camera: { quiet: { zoom: 1.2, lead: 50 }, medium: { zoom: 1.2, lead: 50 }, loud: { zoom: 1.2, lead: 50 } }\n  palettes: { quiet: crisp-steel, medium: crisp-steel, loud: crisp-steel }\n  calm: { quiet: 0, medium: 0, loud: 0 }\n";
 
   it("loads with a director", () => {
     const l = loadLevel(level(director), content, song);
@@ -372,9 +415,14 @@ describe("reactive players", () => {
 });
 
 
-describe("the director's schedule", () => {
-  const file = synthStream({ until: 40, evidence: () => 0.8 });
-  const input = inputForStream(splitStream(file).stream, { level: "levels/reactive-check.yaml", checks: { noHeroDamage: true } });
+describe("the director's schedule (stage 4)", () => {
+  // Detected sections from changes known at 14 s and 30 s (the check level: at least 4 s apart, a
+  // fallback wave after 12 s without one, level-ups at most 4 s after their experience); quiet to
+  // 20 s, then loud.
+  const structure = { changes: [{ t: 8, knownAt: 14, strength: 1 }, { t: 24, knownAt: 30, strength: 1 }], jumps: [], ends: [] };
+  const file = synthStream({ until: 60, evidence: () => 0.8, structure, level: (t) => (t < 20 ? "quiet" : "loud") });
+  const { stream } = splitStream(file);
+  const input = inputForStream(stream, { level: "levels/reactive-check.yaml", checks: { noHeroDamage: true } });
   const beats = file.beats.map((b) => b.t);
   const first = (t: number) => beats.find((b) => b >= t - 1e-9)!;
   // A player who stomps on every beat: the hero stands still, so it never walks into an orb.
@@ -386,10 +434,84 @@ describe("the director's schedule", () => {
     ],
   };
   const { plan } = planWithSim(input, { player: stomper });
+  const warp = new Warp(plan.warp);
+  const starts = [14, 30].map((k) => beats[effectiveDownbeat(stream, k)]);
 
-  it("puts level-ups and zone waves on the first committed beat at or after their times", () => {
-    expect(plan.levelUpsDue.map((l) => l.s)).toEqual([5, 10, 15].map(first));
-    expect(plan.open.waves.map((w) => w.s)).toEqual([8, 16, 24, 32].map(first));
+  it("sweeps a zone wave on each detected section start, and one after 12 s without one", () => {
+    const waves = plan.open.waves;
+    expect(waves.filter((w) => w.section !== undefined).map((w) => [w.s, w.section])).toEqual([
+      [starts[0], 1],
+      [starts[1], 2],
+    ]);
+    expect(waves.map((w) => w.s)).toEqual(zoneWavePlan(stream, detectedSections(stream, { jumpDb: 6, minGapS: 4 }), 12, plan.duration).map((w) => w.s));
+    expect(waves.some((w) => w.section === undefined)).toBe(true);
+    // Each start shows a short banner with its zone's name.
+    expect(plan.events.ui.filter((u) => u.kind === "banner").map((b) => b.s)).toEqual(starts);
+  });
+
+  it("steps the roster on each start", () => {
+    const types = (a: number, b: number) => new Set(plan.enemies.filter((e) => warp.toSong(e.spawnW) >= a && warp.toSong(e.spawnW) < b).map((e) => e.type));
+    for (const t of types(0, starts[0])) expect(["slime", "bat"]).toContain(t);
+    for (const t of types(starts[0] + 0.5, starts[1])) expect(["goblin", "slime", "bat"]).toContain(t);
+    expect(types(starts[0] + 0.5, starts[1]).has("goblin")).toBe(true);
+    for (const t of types(starts[1] + 0.5, 60)) expect(["goblin", "orc", "skeleton", "orc-elite"]).toContain(t);
+  });
+
+  it("lets a level-up fall due at the next section start once its experience is reached, or 4 s later", () => {
+    // A player walking back and forth on every beat, collecting gems.
+    const walker: Player = {
+      nextDecision: (after) => first(after + 0.01) + 0.01,
+      decide: (obs) => {
+        const key = Math.floor(obs.s / 4) % 2 ? "left" : "right";
+        return [
+          { s: obs.s, kind: "press", key },
+          { s: obs.s + 0.06, kind: "release", key },
+        ];
+      },
+    };
+    const walked = planWithSim(input, { player: walker }).plan;
+    expect(walked.levelUpsDue).toEqual([]);
+    const ups = walked.upgrades.map((u) => u.s);
+    // Both ways happen: at a section start, and after the wait with none.
+    expect(ups.some((u) => starts.includes(u))).toBe(true);
+    expect(ups.some((u) => !starts.includes(u))).toBe(true);
+    const fill = Array.from(walked.hud.xpFill);
+    const times = Array.from(walked.hud.xpTimes);
+    let from = 0;
+    for (const u of walked.upgrades) {
+      const k = times.findIndex((t, i) => t >= from - 1e-9 && fill[i] >= 1 - 1e-9);
+      const full = times[k];
+      const start = starts.find((x) => x >= full - 1e-9);
+      const due = start !== undefined && start <= full + 4 + 1e-9 ? start : beats.find((b, i) => i % 2 === 0 && b >= full + 4 - 1e-9)!;
+      expect(u.s, `level-up after the bar filled at ${full}`).toBeCloseTo(due, 6);
+      from = u.s;
+    }
+  });
+
+  it("zooms in while quiet and out while loud, blending over 2 s", () => {
+    // (Punches only zoom in, and the stomps' punches never quite die away: the least zoom over a
+    // stretch is the camera's own, give or take a little.)
+    const zoomOver = (a: number, b: number) => Math.min(...Array.from(plan.camera.zoom).slice(Math.round(warp.toWorld(a) * plan.hero.rate), Math.round(warp.toWorld(b) * plan.hero.rate)));
+    expect(zoomOver(6, 9.5)).toBeGreaterThanOrEqual(1.3 - 1e-6);
+    expect(zoomOver(6, 9.5)).toBeLessThan(1.31);
+    expect(zoomOver(25, 28)).toBeGreaterThanOrEqual(1.05 - 1e-6);
+    expect(zoomOver(25, 28)).toBeLessThan(1.06);
+    expect(zoomOver(20.9, 21.1)).toBeGreaterThan(1.06);
+    expect(zoomOver(20.9, 21.1)).toBeLessThan(1.29);
+  });
+
+  it("plays the quiet palette while quiet and the loud one while loud", () => {
+    const lib = input.content.soundPalettes;
+    const only = (pal: string) => new Set(Object.values(lib.get(pal)!.sounds).flat().map((x) => (typeof x === "string" ? x : x.id)));
+    const switchS = paletteSwitches(stream, 2).find((x) => x.level === "loud")!.s;
+    const soft = only("soft-chimes");
+    const heavy = only("heavy-infernal");
+    const quietSounds = plan.events.sounds.filter((x) => x.s > 3 && x.s < 20 && x.key);
+    const loudSounds = plan.events.sounds.filter((x) => x.s >= switchS && x.key);
+    expect(quietSounds.length).toBeGreaterThan(5);
+    expect(loudSounds.length).toBeGreaterThan(5);
+    for (const x of quietSounds) expect(soft.has(x.sample), x.sample).toBe(true);
+    for (const x of loudSounds) expect(heavy.has(x.sample), x.sample).toBe(true);
   });
 
   it("takes the orb ahead two bars of committed beats after the level-up's bar, counted as they arrive", () => {
@@ -400,6 +522,54 @@ describe("the director's schedule", () => {
     expect(u!.walked).toBe(false);
     expect(u!.sTaken).toBeCloseTo(beats[bar0 + 4], 6);
   });
+});
+
+describe("the loudness level and the key in the simulation (stage 4)", () => {
+  const run = (o: { level?: (t: number) => TickLevel; key?: (t: number) => string | undefined }) => {
+    const f = synthStream({ until: 40, evidence: () => 0.8, ...o });
+    const times = f.beats.map((b) => b.t + 0.01);
+    return planWithSim(inputForStream(splitStream(f).stream, { checks: { noHeroDamage: true } }), { player: new KeyPlayer(times) }).plan;
+  };
+
+  it("scales the population by the level", () => {
+    const quiet = run({ level: () => "quiet" });
+    const loud = run({ level: () => "loud" });
+    expect(loud.enemies.length).toBeGreaterThan(1.5 * quiet.enemies.length);
+  });
+
+  it("pitches gem chimes in the key detected when each is caused", () => {
+    const c = run({ key: (t) => (t >= 10 ? "C major" : undefined) });
+    const fs = run({ key: (t) => (t >= 10 ? "F# major" : undefined) });
+    const chimes = (p: typeof c) => p.events.sounds.filter((x) => x.key === "chime");
+    expect(chimes(c).length).toBeGreaterThan(5);
+    expect(chimes(c).map((x) => x.s)).toEqual(chimes(fs).map((x) => x.s));
+    // Before 10 s, no key: the same; after it, the keys pitch them differently.
+    expect(chimes(c).filter((x) => x.s < 10).map((x) => x.rate)).toEqual(chimes(fs).filter((x) => x.s < 10).map((x) => x.rate));
+    const later = chimes(c).filter((x) => x.s > 11);
+    expect(later.some((x, i) => x.rate !== chimes(fs).filter((y) => y.s > 11)[i].rate)).toBe(true);
+  });
+});
+
+describe("level-ups on the shipped tracks (stage 4)", () => {
+  // The check level's compressed director, where a gem can arrive between the wait's end and the
+  // level-up's downbeat: each level-up happens once, at most a bar after its wait.
+  for (const [track, seed] of [["orpheus-galop", 7], ["william-tell-finale", 1858], ["william-tell-finale", 7]] as const) {
+    it(`grants each level-up once, by its wait at the latest (${track}, seed ${seed})`, () => {
+      const run = reactiveInput(readStreamFile(track), { seed, level: "levels/reactive-check.yaml", checks: { noHeroDamage: true } });
+      const { plan } = planWithSim(run.input, { player: reactivePlayerFor(prepare(run.input).ctx, run.reference!, "reactive-moderate") });
+      const d = run.input.level.director!;
+      expect(plan.upgrades.length).toBeLessThanOrEqual(d.levelUps.length);
+      const fill = Array.from(plan.hud.xpFill);
+      const times = Array.from(plan.hud.xpTimes);
+      let from = 0;
+      for (const u of plan.upgrades) {
+        const full = times.find((t, i) => t >= from - 1e-9 && fill[i] >= 1 - 1e-9)!;
+        // (A bar of committed beats is at most about 2 s.)
+        expect(u.s, `level-up after the bar filled at ${full}`).toBeLessThanOrEqual(full + d.levelUpWaitS + 2);
+        from = u.s;
+      }
+    });
+  }
 });
 
 describe("the parity report and the smoke test", () => {

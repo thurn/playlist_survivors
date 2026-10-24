@@ -57,7 +57,7 @@ export type GemRecord = { w0: number; x0: number; y0: number; s1: number; w1: nu
 export type VacuumRecord = { s: number; w: number; x: number; y: number; sTouch?: number; wTouch?: number; gems?: number };
 export type FormationRecord = { def: string; sStart: number; sRelease: number; members: number[] };
 /** The open field: a transform wave sweeps out from the hero on a section's first downbeat. */
-export type ZoneWaveRecord = { s: number; w: number; x: number; y: number; zone: string };
+export type ZoneWaveRecord = { s: number; w: number; x: number; y: number; zone: string; section?: number };
 /** The open field: a landmark rises centred on the hero. */
 export type LandmarkRecord = { id: string; s: number; w: number; x: number; y: number };
 /**

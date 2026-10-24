@@ -603,11 +603,10 @@ export function loadLevel(f: SourceFile, lib: ContentLibrary, song: SongMap, res
         if (sec[k] !== undefined && !(k === "timingGrid" && sec[k] === "beat") && !(k === "movement" && sec[k] === "steps")) issues.push({ ...at(["sections", i, k]), message: `a reactive level's section has no ${k} (its director and the committed beats decide it)` });
       }
     });
-    data.director?.roster.forEach((r, i) => {
-      for (const t of Object.keys(r.enemies)) need(["director", "roster", i, "enemies", t], "enemies", t);
-      if (i === 0 && r.from !== 0) issues.push({ ...at(["director", "roster", i, "from"]), message: "the director's first roster starts from 0" });
-      if (i > 0 && r.from <= data.director!.roster[i - 1].from) issues.push({ ...at(["director", "roster", i, "from"]), message: "the director's rosters go in order of from" });
+    data.director?.sections.forEach((r, i) => {
+      for (const t of Object.keys(r)) need(["director", "sections", i, t], "enemies", t);
     });
+    for (const [lv, pal] of Object.entries(data.director?.palettes ?? {})) need(["director", "palettes", lv], "soundPalettes", pal);
   }
 
   // The upgrade pool's weapons: known, not the finale blast, and each named once.

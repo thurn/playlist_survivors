@@ -25,7 +25,7 @@ try {
     // A reactive level plays to any track's reactive song map: checked against the Galop's stream.
     if (song === REACTIVE_SONG) {
       const level = loadLevel(src, lib, reactiveSongMap(splitStream(readStreamFile("orpheus-galop")).stream), levelResolver);
-      console.log(`level ok: ${src.name}${level.extends ? ` (extends ${level.extends})` : ""} (reactive, ${level.director?.roster.length} rosters, ${level.director?.levelUps.length} level-ups)`);
+      console.log(`level ok: ${src.name}${level.extends ? ` (extends ${level.extends})` : ""} (reactive, ${level.director?.sections.length} section rosters, ${level.director?.levelUps.length} level-ups)`);
       continue;
     }
     if (!hasSongMap(song)) {

@@ -22,12 +22,28 @@ sections:
     zone: twilight-glade
     camera: { zoom: 1.2, lead: 50, punchOnAccents: false }
     sfxPalette: crisp-steel
+# Stage 4: detected sections (changes and loudness jumps in the stream) sweep in the next zone and
+# step the roster; level-ups fall due at the next section start once their experience is reached;
+# the loudness level (quiet, medium, loud) scales the population and sets the camera, the calm and
+# the sound palette.
 director:
-  population: { start: 0, perMinute: 80, max: 360, energyScale: [0.7, 1.3] }
-  roster:
-    - { from: 0,   enemies: { slime: 2, bat: 1 } }
-    - { from: 45,  enemies: { goblin: 3, slime: 2, bat: 1 } }
-    - { from: 90,  enemies: { goblin: 3, orc: 2, skeleton: 1, orc-elite: 0.03 } }
-    - { from: 150, enemies: { orc-ember: 3, skeleton-ember: 2, goblin: 2, orc-elite: 0.03 } }
-  levelUps: [{ at: 30, xp: 100 }, { at: 90, xp: 470 }, { at: 150, xp: 800 }]
-  zoneEvery: 40
+  population: { start: 0, perMinute: 80, max: 360, levelScale: { quiet: 0.6, medium: 1.0, loud: 1.3 } }
+  sections:
+    - { slime: 2, bat: 1 }
+    - { goblin: 2, slime: 2, bat: 1 }
+    - { goblin: 3, orc: 1, slime: 1, bat: 1 }
+    - { goblin: 3, orc: 2, skeleton: 1, orc-elite: 0.03 }
+    - { goblin: 2, orc: 2, skeleton: 2, orc-ember: 1, orc-elite: 0.03 }
+    - { orc-ember: 3, skeleton-ember: 2, goblin: 2, orc-elite: 0.03 }
+  sectionRule: { jumpDb: 6, minGapS: 8 }
+  levelUps: [{ xp: 100 }, { xp: 470 }, { xp: 800 }]
+  levelUpWaitS: 20
+  zoneFallbackS: 60
+  smoothS: 2
+  camera:
+    quiet: { zoom: 1.3, lead: 30 }
+    medium: { zoom: 1.2, lead: 50 }
+    loud: { zoom: 1.05, lead: 60 }
+  palettes: { quiet: soft-chimes, medium: crisp-steel, loud: heavy-infernal }
+  paletteHoldS: 2
+  calm: { quiet: 0.5, medium: 0, loud: 0 }
