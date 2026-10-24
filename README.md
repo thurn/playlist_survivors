@@ -137,7 +137,7 @@ restarts the song (there is one section), each track keeps its own best grade, a
   `captures/feel/round-<n>/<id>/`: `metrics.json`/`.md`, `frames.json` (the frame
   state at 240 Hz), `timeline.png`, section, phrase, moments and
   honest-against-masher contact sheets, and `mix.ogg` (the track with the honest
-  run's sounds; `--no-mix` skips it). `--split held-out --milestone <m>` builds a
+  run's sounds; `--no-mix` skips it; `--resume` skips tracks already written). `--split held-out --milestone <m>` builds a
   milestone's held-out dossiers in `captures/heldout/milestone-<m>/`, printing
   nothing of any track.
 - `npm run reactive:feel -- <command>` runs a rating round

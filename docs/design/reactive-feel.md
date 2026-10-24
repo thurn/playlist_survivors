@@ -1300,3 +1300,5 @@ One row per round and milestone, added by each round bead.
 
 | Round | Date | M1 | M2 | M3 | M4 | A1 | A2 | A3 | A4 | A5 | A6 | Key metrics | Fix beads |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 2026-10-24 | 3.14 | 3.14 | 3.48 | 3.10 | 3.03 | 2.52 | 1.81 | 2.33 | 2.14 | 2.45 | beat F 0.73 (any 0.84), lock-in 11.3 s, sound sync 0.92, honest tier 2+ 97%, mash4 tier 0 86%, damage ×1.33, coverage 7.3/12, visual sync 0.41, hierarchy -0.09; rater noise ≤ 0.53 | hv-jtsz.17, hv-jtsz.18, hv-jtsz.19, hv-jtsz.20 (findings mapped onto E1, E2, G1–G4) |
+| M0 | 2026-10-24 | 3.41 | 3.36 | 3.54 | 3.09 | 3.27 | 2.86 | 2.09 | 2.32 | 2.27 | 2.91 | held-out, numbers only (22 tracks): beat F 0.86 (any 0.93), honest tier 2+ 95%, mash4 tier 0 86%, damage ×1.41, coverage 7.6/12, visual sync 0.49; the overfitting rule's baseline | none (milestones file none) |

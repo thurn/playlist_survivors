@@ -9,13 +9,14 @@
  * Writes captures/feel/round-<n>/<id>/ (gitignored): metrics.json and metrics.md, frames.json (the
  * evaluator's frame state at 240 Hz), timeline.png, up to 4 section sheets, a phrase sheet, an
  * honest-against-masher sheet, a moments sheet, and mix.ogg (the track with the honest run's sounds,
- * for the user: raters never get audio). Seed 1858, damage off. `--no-mix` skips the mix. Held-out
+ * for the user: raters never get audio). Seed 1858, damage off. `--no-mix` skips the mix; `--resume`
+ * skips tracks whose dossier is already written. Held-out
  * tracks get dossiers only with --milestone <m> (the whole held-out split, into
  * captures/heldout/milestone-<m>/, printing nothing of any track: docs/design/reactive-feel.md,
  * "Held-out Protocol").
  */
 import { execFileSync } from "node:child_process";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { closeBrowser, openGame, sheet, tile, type GamePage, type Hook } from "./lib/capture.ts";
@@ -38,6 +39,7 @@ const { values } = parseArgs({
     rate: { type: "string", default: "240" },
     "no-mix": { type: "boolean" },
     milestone: { type: "string" },
+    resume: { type: "boolean" },
   },
 });
 const heldOut = new Set(corpusTrackIds("held-out"));
@@ -172,9 +174,14 @@ async function dossier(base: string, r: TrackRuns, metrics: TrackMetrics, dir: s
     for (const m of kept) tiles.push(await tile(await honest.shoot(m.s + 0.25), `${t(m.s + 0.25)} ${m.label}`));
     await sheet(tiles, 4, `${r.id} — moments (0.25 s after each)`, out("moments.png"));
   }
-  // Honest against masher: the same 4 moments, side by side (left honest, right mash4).
-  {
-    const masher = await openGame(base, queryFor("mash4"), { seed: String(FEEL_SEED) });
+  // Honest against masher: the same 4 moments, side by side (left honest, right mash4). A page whose plan
+  // fails the planner's checks skips the sheet, with a note (in a milestone, without the error's details).
+  const masher = await openGame(base, queryFor("mash4"), { seed: String(FEEL_SEED) }).catch((e: unknown) => {
+    metrics.notes.push(`no honest-against-masher sheet: the mash4 page failed (${quiet ? "details withheld: held-out track" : e instanceof Error ? e.message.split("\n").slice(0, 2).join(" ") : String(e)})`);
+    if (!quiet) console.warn(`warning: ${r.id}'s mash4 page failed: ${e instanceof Error ? e.message.split("\n")[0] : String(e)}`);
+    return undefined;
+  });
+  if (masher) {
     sameRun(masher, r.plans.mash4, `${r.id} mash4`, metrics);
     const dur = r.run.stream.audio.duration;
     const at = [0.2, 0.4, 0.6, 0.8].map((f) => beats.reduce((best, b) => (Math.abs(b - f * dur) < Math.abs(best - f * dur) ? b : best), beats[0]) + 0.03);
@@ -297,6 +304,7 @@ await withDevServer(async (base) => {
   for (const id of ids) {
     const t0 = performance.now();
     const dir = join(roundDir, id);
+    if (values.resume && existsSync(join(dir, "metrics.json"))) continue;
     mkdirSync(dir, { recursive: true });
     const r = trackRuns(id, props);
     const frames = sampleFrames(r.plans["reactive-moderate"], r.lib, rate);
@@ -305,7 +313,12 @@ await withDevServer(async (base) => {
     const plan = r.plans["reactive-moderate"];
     const firstSection = plan.open.waves.find((w) => w.section !== undefined);
     await renderTimeline(r, frames, firstSection && firstSection.s < IDENTITY_BY_S ? firstSection.s : IDENTITY_BY_S, join(dir, "timeline.png"));
-    const sheets = await dossier(base, r, metrics, dir, false);
+    // (A page whose plan fails the planner's checks leaves the dossier without its sheets, noted.)
+    const sheets = await dossier(base, r, metrics, dir, false).catch((e: unknown) => {
+      metrics.notes.push(`no sheets: the honest page failed (${quiet ? "details withheld: held-out track" : e instanceof Error ? e.message.split("\n").slice(0, 2).join(" ") : String(e)})`);
+      console.warn(quiet ? `warning: dossier ${ids.indexOf(id) + 1}'s honest page failed (details in its notes)` : `warning: ${id}'s honest page failed: ${e instanceof Error ? e.message.split("\n")[0] : String(e)}`);
+      return [] as string[];
+    });
     writeMetrics(metrics, dir);
     if (quiet) console.log(`milestone ${milestone}: dossier ${ids.indexOf(id) + 1} of ${ids.length} written`);
     else console.log(`${id}: ${["metrics.json", "metrics.md", "frames.json", "timeline.png", ...sheets.map((f) => f.slice(dir.length + 1))].join(", ")} (${((performance.now() - t0) / 1000).toFixed(0)} s)`);

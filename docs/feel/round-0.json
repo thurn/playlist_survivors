@@ -1,0 +1,2297 @@
+{
+ "round": 0,
+ "means": {
+  "M1": 3.138,
+  "M2": 3.138,
+  "M3": 3.483,
+  "M4": 3.103,
+  "A1": 3.034,
+  "A2": 2.517,
+  "A3": 1.81,
+  "A4": 2.328,
+  "A5": 2.138,
+  "A6": 2.448
+ },
+ "tracks": {
+  "anchor-orpheus-galop": {
+   "first": {
+    "M1": 5,
+    "M2": 5,
+    "M3": 4,
+    "M4": 5,
+    "A1": 4,
+    "A2": 5,
+    "A3": 4,
+    "A4": 5,
+    "A5": 4,
+    "A6": 3
+   },
+   "second": {
+    "M1": 5,
+    "M2": 5,
+    "M3": 4,
+    "M4": 5,
+    "A1": 4,
+    "A2": 5,
+    "A3": 5,
+    "A4": 5,
+    "A5": 4,
+    "A6": 3
+   },
+   "scores": {
+    "M1": 5,
+    "M2": 5,
+    "M3": 4,
+    "M4": 5,
+    "A1": 4,
+    "A2": 5,
+    "A3": 4.5,
+    "A4": 5,
+    "A5": 4,
+    "A6": 3
+   },
+   "metrics": {
+    "M1": null,
+    "M2": 1.524,
+    "M3": 0.705,
+    "M4": null,
+    "A1": 5,
+    "A2": 0.841,
+    "A3": null,
+    "A4": 0.625,
+    "A5": 0.659,
+    "A6": -206
+   }
+  },
+  "notjam-klepto-linda-caverns-a": {
+   "first": {
+    "M1": 1,
+    "M2": 2,
+    "M3": 3,
+    "M4": 3,
+    "A1": 3,
+    "A2": 1,
+    "A3": 1,
+    "A4": 2,
+    "A5": 2,
+    "A6": 3
+   },
+   "second": {
+    "M1": 1,
+    "M2": 2,
+    "M3": 3,
+    "M4": 3,
+    "A1": 3,
+    "A2": 1,
+    "A3": 2,
+    "A4": 3,
+    "A5": 2,
+    "A6": 3
+   },
+   "scores": {
+    "M1": 1,
+    "M2": 2,
+    "M3": 3,
+    "M4": 3,
+    "A1": 3,
+    "A2": 1,
+    "A3": 1.5,
+    "A4": 2.5,
+    "A5": 2,
+    "A6": 3
+   },
+   "metrics": {
+    "M1": 0.008,
+    "M2": 1.316,
+    "M3": 0.983,
+    "M4": null,
+    "A1": 7,
+    "A2": 0.015,
+    "A3": null,
+    "A4": 1,
+    "A5": -0.494,
+    "A6": 0
+   }
+  },
+  "notjam-critical-theme": {
+   "first": {
+    "M1": 4,
+    "M2": 4,
+    "M3": 4,
+    "M4": 3,
+    "A1": 3,
+    "A2": 3,
+    "A3": 2,
+    "A4": 2,
+    "A5": 3,
+    "A6": 3
+   },
+   "second": {
+    "M1": 4,
+    "M2": 4,
+    "M3": 4,
+    "M4": 4,
+    "A1": 3,
+    "A2": 3,
+    "A3": 3,
+    "A4": 3,
+    "A5": 3,
+    "A6": 3
+   },
+   "scores": {
+    "M1": 4,
+    "M2": 4,
+    "M3": 4,
+    "M4": 3.5,
+    "A1": 3,
+    "A2": 3,
+    "A3": 2.5,
+    "A4": 2.5,
+    "A5": 3,
+    "A6": 3
+   },
+   "metrics": {
+    "M1": 0.982,
+    "M2": 1.435,
+    "M3": 0.99,
+    "M4": null,
+    "A1": 7,
+    "A2": 0.457,
+    "A3": null,
+    "A4": 0.5,
+    "A5": 0.05,
+    "A6": 0
+   }
+  },
+  "notjam-leading-the-charge": {
+   "first": {
+    "M1": 2,
+    "M2": 2,
+    "M3": 2,
+    "M4": 3,
+    "A1": 3,
+    "A2": 2,
+    "A3": 1,
+    "A4": 2,
+    "A5": 2,
+    "A6": 3
+   },
+   "second": {
+    "M1": 2,
+    "M2": 2,
+    "M3": 2,
+    "M4": 3,
+    "A1": 3,
+    "A2": 2,
+    "A3": 2,
+    "A4": 2,
+    "A5": 2,
+    "A6": 3
+   },
+   "scores": {
+    "M1": 2,
+    "M2": 2,
+    "M3": 2,
+    "M4": 3,
+    "A1": 3,
+    "A2": 2,
+    "A3": 1.5,
+    "A4": 2,
+    "A5": 2,
+    "A6": 3
+   },
+   "metrics": {
+    "M1": 0.578,
+    "M2": 1.246,
+    "M3": 0.904,
+    "M4": null,
+    "A1": 5,
+    "A2": 0.238,
+    "A3": null,
+    "A4": 1,
+    "A5": -0.165,
+    "A6": 0
+   }
+  },
+  "notjam-breakbeat-chips": {
+   "first": {
+    "M1": 3,
+    "M2": 3,
+    "M3": 3,
+    "M4": 3,
+    "A1": 3,
+    "A2": 2,
+    "A3": 2,
+    "A4": 2,
+    "A5": 2,
+    "A6": 3
+   },
+   "second": {
+    "M1": 3,
+    "M2": 3,
+    "M3": 3,
+    "M4": 3,
+    "A1": 3,
+    "A2": 3,
+    "A3": 2,
+    "A4": 3,
+    "A5": 2,
+    "A6": 3
+   },
+   "scores": {
+    "M1": 3,
+    "M2": 3,
+    "M3": 3,
+    "M4": 3,
+    "A1": 3,
+    "A2": 2.5,
+    "A3": 2,
+    "A4": 2.5,
+    "A5": 2,
+    "A6": 3
+   },
+   "metrics": {
+    "M1": 0.658,
+    "M2": 1.27,
+    "M3": 0.933,
+    "M4": null,
+    "A1": 8,
+    "A2": 0.299,
+    "A3": null,
+    "A4": 1,
+    "A5": -0.622,
+    "A6": 0
+   }
+  },
+  "notjam-switch-with-me-theme": {
+   "first": {
+    "M1": 5,
+    "M2": 4,
+    "M3": 5,
+    "M4": 3,
+    "A1": 4,
+    "A2": 3,
+    "A3": 2,
+    "A4": 3,
+    "A5": 3,
+    "A6": 3
+   },
+   "scores": {
+    "M1": 5,
+    "M2": 4,
+    "M3": 5,
+    "M4": 3,
+    "A1": 4,
+    "A2": 3,
+    "A3": 2,
+    "A4": 3,
+    "A5": 3,
+    "A6": 3
+   },
+   "metrics": {
+    "M1": 0.985,
+    "M2": 1.29,
+    "M3": 0.985,
+    "M4": null,
+    "A1": 8,
+    "A2": 0.53,
+    "A3": null,
+    "A4": 0.8,
+    "A5": 0.585,
+    "A6": 0
+   }
+  },
+  "cc-benjamin-orth-where-you-are-now": {
+   "first": {
+    "M1": 5,
+    "M2": 4,
+    "M3": 5,
+    "M4": 3,
+    "A1": 4,
+    "A2": 2,
+    "A3": 2,
+    "A4": 2,
+    "A5": 2,
+    "A6": 3
+   },
+   "scores": {
+    "M1": 5,
+    "M2": 4,
+    "M3": 5,
+    "M4": 3,
+    "A1": 4,
+    "A2": 2,
+    "A3": 2,
+    "A4": 2,
+    "A5": 2,
+    "A6": 3
+   },
+   "metrics": {
+    "M1": 0.988,
+    "M2": 1.438,
+    "M3": 0.981,
+    "M4": null,
+    "A1": 8,
+    "A2": 0.469,
+    "A3": null,
+    "A4": 0.714,
+    "A5": 0.037,
+    "A6": 0
+   }
+  },
+  "notjam-battle-commences": {
+   "first": {
+    "M1": 5,
+    "M2": 4,
+    "M3": 5,
+    "M4": 3,
+    "A1": 4,
+    "A2": 3,
+    "A3": 2,
+    "A4": 2,
+    "A5": 2,
+    "A6": 2
+   },
+   "scores": {
+    "M1": 5,
+    "M2": 4,
+    "M3": 5,
+    "M4": 3,
+    "A1": 4,
+    "A2": 3,
+    "A3": 2,
+    "A4": 2,
+    "A5": 2,
+    "A6": 2
+   },
+   "metrics": {
+    "M1": 0.98,
+    "M2": 1.454,
+    "M3": 0.949,
+    "M4": null,
+    "A1": 8,
+    "A2": 0.615,
+    "A3": null,
+    "A4": 0.333,
+    "A5": -0.006,
+    "A6": 0
+   }
+  },
+  "notjam-waltz-of-the-lich-king": {
+   "first": {
+    "M1": 2,
+    "M2": 3,
+    "M3": 3,
+    "M4": 3,
+    "A1": 3,
+    "A2": 2,
+    "A3": 2,
+    "A4": 2,
+    "A5": 2,
+    "A6": 2
+   },
+   "second": {
+    "M1": 2,
+    "M2": 3,
+    "M3": 3,
+    "M4": 3,
+    "A1": 3,
+    "A2": 2,
+    "A3": 1,
+    "A4": 2,
+    "A5": 2,
+    "A6": 2
+   },
+   "scores": {
+    "M1": 2,
+    "M2": 3,
+    "M3": 3,
+    "M4": 3,
+    "A1": 3,
+    "A2": 2,
+    "A3": 1.5,
+    "A4": 2,
+    "A5": 2,
+    "A6": 2
+   },
+   "metrics": {
+    "M1": 0.677,
+    "M2": 1.414,
+    "M3": 0.861,
+    "M4": null,
+    "A1": 6,
+    "A2": 0.329,
+    "A3": null,
+    "A4": 1,
+    "A5": -0.096,
+    "A6": 0
+   }
+  },
+  "notjam-klepto-linda-titles": {
+   "first": {
+    "M1": 4,
+    "M2": 4,
+    "M3": 5,
+    "M4": 3,
+    "A1": 4,
+    "A2": 2,
+    "A3": 2,
+    "A4": 3,
+    "A5": 2,
+    "A6": 3
+   },
+   "second": {
+    "M1": 4,
+    "M2": 4,
+    "M3": 4,
+    "M4": 3,
+    "A1": 3,
+    "A2": 3,
+    "A3": 2,
+    "A4": 3,
+    "A5": 2,
+    "A6": 2
+   },
+   "scores": {
+    "M1": 4,
+    "M2": 4,
+    "M3": 4.5,
+    "M4": 3,
+    "A1": 3.5,
+    "A2": 2.5,
+    "A3": 2,
+    "A4": 3,
+    "A5": 2,
+    "A6": 2.5
+   },
+   "metrics": {
+    "M1": 0.967,
+    "M2": 1.481,
+    "M3": 0.981,
+    "M4": null,
+    "A1": 8,
+    "A2": 0.655,
+    "A3": null,
+    "A4": 1,
+    "A5": -0.372,
+    "A6": 0
+   }
+  },
+  "notjam-pitcher-perfect-theme": {
+   "first": {
+    "M1": 5,
+    "M2": 4,
+    "M3": 4,
+    "M4": 3,
+    "A1": 3,
+    "A2": 4,
+    "A3": 2,
+    "A4": 2,
+    "A5": 2,
+    "A6": 3
+   },
+   "second": {
+    "M1": 4,
+    "M2": 4,
+    "M3": 4,
+    "M4": 3,
+    "A1": 3,
+    "A2": 4,
+    "A3": 1,
+    "A4": 3,
+    "A5": 2,
+    "A6": 3
+   },
+   "scores": {
+    "M1": 4.5,
+    "M2": 4,
+    "M3": 4,
+    "M4": 3,
+    "A1": 3,
+    "A2": 4,
+    "A3": 1.5,
+    "A4": 2.5,
+    "A5": 2,
+    "A6": 3
+   },
+   "metrics": {
+    "M1": 0.982,
+    "M2": 1.39,
+    "M3": 0.964,
+    "M4": null,
+    "A1": 8,
+    "A2": 0.519,
+    "A3": null,
+    "A4": 1,
+    "A5": 0.02,
+    "A6": 0
+   }
+  },
+  "notjam-meltdown-theme": {
+   "first": {
+    "M1": 2,
+    "M2": 3,
+    "M3": 4,
+    "M4": 3,
+    "A1": 2,
+    "A2": 2,
+    "A3": 2,
+    "A4": 2,
+    "A5": 2,
+    "A6": 3
+   },
+   "second": {
+    "M1": 2,
+    "M2": 2,
+    "M3": 3,
+    "M4": 3,
+    "A1": 2,
+    "A2": 1,
+    "A3": 2,
+    "A4": 2,
+    "A5": 2,
+    "A6": 2
+   },
+   "scores": {
+    "M1": 2,
+    "M2": 2.5,
+    "M3": 3.5,
+    "M4": 3,
+    "A1": 2,
+    "A2": 1.5,
+    "A3": 2,
+    "A4": 2,
+    "A5": 2,
+    "A6": 2.5
+   },
+   "metrics": {
+    "M1": 0.351,
+    "M2": 1.365,
+    "M3": 0.937,
+    "M4": null,
+    "A1": 5,
+    "A2": 0.21,
+    "A3": null,
+    "A4": 1,
+    "A5": -0.302,
+    "A6": 0
+   }
+  },
+  "notjam-lich-king-ascendant": {
+   "first": {
+    "M1": 2,
+    "M2": 1,
+    "M3": 2,
+    "M4": 3,
+    "A1": 2,
+    "A2": 2,
+    "A3": 2,
+    "A4": 2,
+    "A5": 2,
+    "A6": 3
+   },
+   "scores": {
+    "M1": 2,
+    "M2": 1,
+    "M3": 2,
+    "M4": 3,
+    "A1": 2,
+    "A2": 2,
+    "A3": 2,
+    "A4": 2,
+    "A5": 2,
+    "A6": 3
+   },
+   "metrics": {
+    "M1": null,
+    "M2": 0.962,
+    "M3": null,
+    "M4": null,
+    "A1": null,
+    "A2": null,
+    "A3": null,
+    "A4": null,
+    "A5": null,
+    "A6": 0
+   }
+  },
+  "notjam-battle-ceases": {
+   "first": {
+    "M1": 3,
+    "M2": 2,
+    "M3": 3,
+    "M4": 3,
+    "A1": 3,
+    "A2": 3,
+    "A3": 2,
+    "A4": 2,
+    "A5": 3,
+    "A6": 2
+   },
+   "scores": {
+    "M1": 3,
+    "M2": 2,
+    "M3": 3,
+    "M4": 3,
+    "A1": 3,
+    "A2": 3,
+    "A3": 2,
+    "A4": 2,
+    "A5": 3,
+    "A6": 2
+   },
+   "metrics": {
+    "M1": 0.715,
+    "M2": 1.084,
+    "M3": 0.633,
+    "M4": null,
+    "A1": 8,
+    "A2": 0.49,
+    "A3": null,
+    "A4": null,
+    "A5": 0.421,
+    "A6": 0
+   }
+  },
+  "cc-zep-hurme-hang-low": {
+   "first": {
+    "M1": 3,
+    "M2": 4,
+    "M3": 5,
+    "M4": 4,
+    "A1": 3,
+    "A2": 3,
+    "A3": 2,
+    "A4": 3,
+    "A5": 2,
+    "A6": 2
+   },
+   "second": {
+    "M1": 4,
+    "M2": 3,
+    "M3": 4,
+    "M4": 3,
+    "A1": 3,
+    "A2": 3,
+    "A3": 2,
+    "A4": 2,
+    "A5": 2,
+    "A6": 2
+   },
+   "scores": {
+    "M1": 3.5,
+    "M2": 3.5,
+    "M3": 4.5,
+    "M4": 3.5,
+    "A1": 3,
+    "A2": 3,
+    "A3": 2,
+    "A4": 2.5,
+    "A5": 2,
+    "A6": 2
+   },
+   "metrics": {
+    "M1": 0.984,
+    "M2": 1.23,
+    "M3": 0.997,
+    "M4": null,
+    "A1": 8,
+    "A2": 0.555,
+    "A3": null,
+    "A4": 0.692,
+    "A5": -0.045,
+    "A6": 0
+   }
+  },
+  "notjam-dark-cavern-phone-home": {
+   "first": {
+    "M1": 4,
+    "M2": 2,
+    "M3": 3,
+    "M4": 3,
+    "A1": 3,
+    "A2": 3,
+    "A3": 3,
+    "A4": 2,
+    "A5": 2,
+    "A6": 2
+   },
+   "scores": {
+    "M1": 4,
+    "M2": 2,
+    "M3": 3,
+    "M4": 3,
+    "A1": 3,
+    "A2": 3,
+    "A3": 3,
+    "A4": 2,
+    "A5": 2,
+    "A6": 2
+   },
+   "metrics": {
+    "M1": 0.862,
+    "M2": 1.376,
+    "M3": 0.779,
+    "M4": null,
+    "A1": 8,
+    "A2": 0.477,
+    "A3": null,
+    "A4": 0.556,
+    "A5": -0.024,
+    "A6": 0
+   }
+  },
+  "cc-kevin-macleod-black-vortex": {
+   "first": {
+    "M1": 2,
+    "M2": 3,
+    "M3": 3,
+    "M4": 3,
+    "A1": 3,
+    "A2": 2,
+    "A3": 2,
+    "A4": 2,
+    "A5": 2,
+    "A6": 2
+   },
+   "scores": {
+    "M1": 2,
+    "M2": 3,
+    "M3": 3,
+    "M4": 3,
+    "A1": 3,
+    "A2": 2,
+    "A3": 2,
+    "A4": 2,
+    "A5": 2,
+    "A6": 2
+   },
+   "metrics": {
+    "M1": null,
+    "M2": 1.429,
+    "M3": null,
+    "M4": null,
+    "A1": null,
+    "A2": null,
+    "A3": null,
+    "A4": null,
+    "A5": null,
+    "A6": 0
+   }
+  },
+  "cc-kevin-macleod-long-stroll": {
+   "first": {
+    "M1": 4,
+    "M2": 4,
+    "M3": 5,
+    "M4": 2,
+    "A1": 3,
+    "A2": 3,
+    "A3": 1,
+    "A4": 2,
+    "A5": 2,
+    "A6": 3
+   },
+   "scores": {
+    "M1": 4,
+    "M2": 4,
+    "M3": 5,
+    "M4": 2,
+    "A1": 3,
+    "A2": 3,
+    "A3": 1,
+    "A4": 2,
+    "A5": 2,
+    "A6": 3
+   },
+   "metrics": {
+    "M1": 0.978,
+    "M2": 1.461,
+    "M3": 0.929,
+    "M4": null,
+    "A1": 8,
+    "A2": 0.529,
+    "A3": null,
+    "A4": 0.6,
+    "A5": -0.253,
+    "A6": 0
+   }
+  },
+  "notjam-lazy-river-rally": {
+   "first": {
+    "M1": 3,
+    "M2": 3,
+    "M3": 2,
+    "M4": 3,
+    "A1": 3,
+    "A2": 2,
+    "A3": 2,
+    "A4": 2,
+    "A5": 3,
+    "A6": 3
+   },
+   "second": {
+    "M1": 3,
+    "M2": 3,
+    "M3": 3,
+    "M4": 3,
+    "A1": 3,
+    "A2": 2,
+    "A3": 2,
+    "A4": 2,
+    "A5": 3,
+    "A6": 3
+   },
+   "scores": {
+    "M1": 3,
+    "M2": 3,
+    "M3": 2.5,
+    "M4": 3,
+    "A1": 3,
+    "A2": 2,
+    "A3": 2,
+    "A4": 2,
+    "A5": 3,
+    "A6": 3
+   },
+   "metrics": {
+    "M1": 0.654,
+    "M2": 1.12,
+    "M3": 0.985,
+    "M4": null,
+    "A1": 9,
+    "A2": 0.318,
+    "A3": null,
+    "A4": 0.333,
+    "A5": 0.398,
+    "A6": 0
+   }
+  },
+  "notjam-type-cast-theme": {
+   "first": {
+    "M1": 2,
+    "M2": 3,
+    "M3": 3,
+    "M4": 3,
+    "A1": 2,
+    "A2": 2,
+    "A3": 2,
+    "A4": 2,
+    "A5": 2,
+    "A6": 2
+   },
+   "second": {
+    "M1": 2,
+    "M2": 3,
+    "M3": 3,
+    "M4": 3,
+    "A1": 3,
+    "A2": 2,
+    "A3": 1,
+    "A4": 1,
+    "A5": 2,
+    "A6": 2
+   },
+   "scores": {
+    "M1": 2,
+    "M2": 3,
+    "M3": 3,
+    "M4": 3,
+    "A1": 2.5,
+    "A2": 2,
+    "A3": 1.5,
+    "A4": 1.5,
+    "A5": 2,
+    "A6": 2
+   },
+   "metrics": {
+    "M1": 0.542,
+    "M2": 1.425,
+    "M3": 0.836,
+    "M4": null,
+    "A1": 6,
+    "A2": 0.309,
+    "A3": null,
+    "A4": 1,
+    "A5": -0.373,
+    "A6": 0
+   }
+  },
+  "notjam-chill-menu": {
+   "first": {
+    "M1": 2,
+    "M2": 3,
+    "M3": 4,
+    "M4": 4,
+    "A1": 3,
+    "A2": 1,
+    "A3": 1,
+    "A4": 3,
+    "A5": 2,
+    "A6": 2
+   },
+   "scores": {
+    "M1": 2,
+    "M2": 3,
+    "M3": 4,
+    "M4": 4,
+    "A1": 3,
+    "A2": 1,
+    "A3": 1,
+    "A4": 3,
+    "A5": 2,
+    "A6": 2
+   },
+   "metrics": {
+    "M1": 0.05,
+    "M2": 1.293,
+    "M3": 0.962,
+    "M4": null,
+    "A1": 8,
+    "A2": 0.05,
+    "A3": null,
+    "A4": 0.25,
+    "A5": -0.273,
+    "A6": 0
+   }
+  },
+  "notjam-untitled-track-01": {
+   "first": {
+    "M1": 3,
+    "M2": 4,
+    "M3": 3,
+    "M4": 3,
+    "A1": 3,
+    "A2": 2,
+    "A3": 2,
+    "A4": 4,
+    "A5": 2,
+    "A6": 2
+   },
+   "second": {
+    "M1": 3,
+    "M2": 3,
+    "M3": 3,
+    "M4": 3,
+    "A1": 3,
+    "A2": 2,
+    "A3": 2,
+    "A4": 4,
+    "A5": 2,
+    "A6": 3
+   },
+   "scores": {
+    "M1": 3,
+    "M2": 3.5,
+    "M3": 3,
+    "M4": 3,
+    "A1": 3,
+    "A2": 2,
+    "A3": 2,
+    "A4": 4,
+    "A5": 2,
+    "A6": 2.5
+   },
+   "metrics": {
+    "M1": 0.812,
+    "M2": 1.486,
+    "M3": 0.967,
+    "M4": null,
+    "A1": 8,
+    "A2": 0.562,
+    "A3": null,
+    "A4": 1,
+    "A5": -0.282,
+    "A6": 0
+   }
+  },
+  "cc-the-crypts-no-life-after-crypts": {
+   "first": {
+    "M1": 3,
+    "M2": 3,
+    "M3": 3,
+    "M4": 3,
+    "A1": 3,
+    "A2": 3,
+    "A3": 1,
+    "A4": 2,
+    "A5": 2,
+    "A6": 2
+   },
+   "scores": {
+    "M1": 3,
+    "M2": 3,
+    "M3": 3,
+    "M4": 3,
+    "A1": 3,
+    "A2": 3,
+    "A3": 1,
+    "A4": 2,
+    "A5": 2,
+    "A6": 2
+   },
+   "metrics": {
+    "M1": null,
+    "M2": 1.392,
+    "M3": null,
+    "M4": null,
+    "A1": null,
+    "A2": null,
+    "A3": null,
+    "A4": null,
+    "A5": null,
+    "A6": 0
+   }
+  },
+  "notjam-klepto-linda-caverns-b": {
+   "first": {
+    "M1": 2,
+    "M2": 2,
+    "M3": 2,
+    "M4": 3,
+    "A1": 3,
+    "A2": 1,
+    "A3": 1,
+    "A4": 3,
+    "A5": 2,
+    "A6": 2
+   },
+   "scores": {
+    "M1": 2,
+    "M2": 2,
+    "M3": 2,
+    "M4": 3,
+    "A1": 3,
+    "A2": 1,
+    "A3": 1,
+    "A4": 3,
+    "A5": 2,
+    "A6": 2
+   },
+   "metrics": {
+    "M1": null,
+    "M2": 1.339,
+    "M3": null,
+    "M4": null,
+    "A1": null,
+    "A2": null,
+    "A3": null,
+    "A4": null,
+    "A5": null,
+    "A6": 0
+   }
+  },
+  "cc-alex-beroza-good-day": {
+   "first": {
+    "M1": 4,
+    "M2": 3,
+    "M3": 3,
+    "M4": 4,
+    "A1": 3,
+    "A2": 3,
+    "A3": 2,
+    "A4": 2,
+    "A5": 2,
+    "A6": 3
+   },
+   "scores": {
+    "M1": 4,
+    "M2": 3,
+    "M3": 3,
+    "M4": 4,
+    "A1": 3,
+    "A2": 3,
+    "A3": 2,
+    "A4": 2,
+    "A5": 2,
+    "A6": 3
+   },
+   "metrics": {
+    "M1": 0.944,
+    "M2": 1.4,
+    "M3": 0.821,
+    "M4": null,
+    "A1": 7,
+    "A2": 0.508,
+    "A3": null,
+    "A4": 0.231,
+    "A5": -0.077,
+    "A6": 0
+   }
+  },
+  "notjam-locrian-chipdoom": {
+   "first": {
+    "M1": 3,
+    "M2": 3,
+    "M3": 4,
+    "M4": 4,
+    "A1": 3,
+    "A2": 3,
+    "A3": 2,
+    "A4": 2,
+    "A5": 2,
+    "A6": 2
+   },
+   "scores": {
+    "M1": 3,
+    "M2": 3,
+    "M3": 4,
+    "M4": 4,
+    "A1": 3,
+    "A2": 3,
+    "A3": 2,
+    "A4": 2,
+    "A5": 2,
+    "A6": 2
+   },
+   "metrics": {
+    "M1": 0.656,
+    "M2": 1.112,
+    "M3": 0.938,
+    "M4": null,
+    "A1": 6,
+    "A2": 0.265,
+    "A3": null,
+    "A4": 0.714,
+    "A5": -0.163,
+    "A6": 0
+   }
+  },
+  "notjam-drag-and-dread-theme": {
+   "first": {
+    "M1": 1,
+    "M2": 4,
+    "M3": 2,
+    "M4": 3,
+    "A1": 3,
+    "A2": 2,
+    "A3": 2,
+    "A4": 2,
+    "A5": 2,
+    "A6": 2
+   },
+   "second": {
+    "M1": 1,
+    "M2": 3,
+    "M3": 2,
+    "M4": 3,
+    "A1": 3,
+    "A2": 1,
+    "A3": 2,
+    "A4": 2,
+    "A5": 2,
+    "A6": 3
+   },
+   "scores": {
+    "M1": 1,
+    "M2": 3.5,
+    "M3": 2,
+    "M4": 3,
+    "A1": 3,
+    "A2": 1.5,
+    "A3": 2,
+    "A4": 2,
+    "A5": 2,
+    "A6": 2.5
+   },
+   "metrics": {
+    "M1": 0.007,
+    "M2": 1.333,
+    "M3": 0.986,
+    "M4": null,
+    "A1": 8,
+    "A2": 0.154,
+    "A3": null,
+    "A4": 0.5,
+    "A5": 0.074,
+    "A6": 0
+   }
+  },
+  "notjam-rainy-foothills": {
+   "first": {
+    "M1": 4,
+    "M2": 4,
+    "M3": 4,
+    "M4": 3,
+    "A1": 3,
+    "A2": 4,
+    "A3": 2,
+    "A4": 3,
+    "A5": 2,
+    "A6": 2
+   },
+   "scores": {
+    "M1": 4,
+    "M2": 4,
+    "M3": 4,
+    "M4": 3,
+    "A1": 3,
+    "A2": 4,
+    "A3": 2,
+    "A4": 3,
+    "A5": 2,
+    "A6": 2
+   },
+   "metrics": {
+    "M1": 0.98,
+    "M2": 1.33,
+    "M3": 0.969,
+    "M4": null,
+    "A1": 7,
+    "A2": 0.625,
+    "A3": null,
+    "A4": 1,
+    "A5": -0.347,
+    "A6": 0
+   }
+  },
+  "notjam-safe-space": {
+   "first": {
+    "M1": 4,
+    "M2": 4,
+    "M3": 4,
+    "M4": 3,
+    "A1": 3,
+    "A2": 4,
+    "A3": 2,
+    "A4": 3,
+    "A5": 2,
+    "A6": 2
+   },
+   "scores": {
+    "M1": 4,
+    "M2": 4,
+    "M3": 4,
+    "M4": 3,
+    "A1": 3,
+    "A2": 4,
+    "A3": 2,
+    "A4": 3,
+    "A5": 2,
+    "A6": 2
+   },
+   "metrics": {
+    "M1": 0.973,
+    "M2": 1.452,
+    "M3": 0.973,
+    "M4": null,
+    "A1": 7,
+    "A2": 0.595,
+    "A3": null,
+    "A4": 1,
+    "A5": -0.082,
+    "A6": 0
+   }
+  },
+  "notjam-the-wall": {
+   "first": {
+    "M1": 4,
+    "M2": 4,
+    "M3": 4,
+    "M4": 3,
+    "A1": 3,
+    "A2": 4,
+    "A3": 2,
+    "A4": 2,
+    "A5": 2,
+    "A6": 2
+   },
+   "second": {
+    "M1": 4,
+    "M2": 4,
+    "M3": 4,
+    "M4": 3,
+    "A1": 3,
+    "A2": 4,
+    "A3": 1,
+    "A4": 1,
+    "A5": 2,
+    "A6": 2
+   },
+   "scores": {
+    "M1": 4,
+    "M2": 4,
+    "M3": 4,
+    "M4": 3,
+    "A1": 3,
+    "A2": 4,
+    "A3": 1.5,
+    "A4": 1.5,
+    "A5": 2,
+    "A6": 2
+   },
+   "metrics": {
+    "M1": 0.95,
+    "M2": 1.387,
+    "M3": 0.965,
+    "M4": null,
+    "A1": 7,
+    "A2": 0.394,
+    "A3": null,
+    "A4": null,
+    "A5": 0.051,
+    "A6": 0
+   }
+  }
+ },
+ "anchor": {
+  "scores": {
+   "M1": 5,
+   "M2": 5,
+   "M3": 4,
+   "M4": 5,
+   "A1": 4,
+   "A2": 5,
+   "A3": 4,
+   "A4": 5,
+   "A5": 4,
+   "A6": 3
+  },
+  "calibrated": true,
+  "low": [],
+  "rater": "batch-1"
+ },
+ "contradictions": [
+  {
+   "id": "cc-zep-hurme-hang-low",
+   "dim": "M2",
+   "score": 4,
+   "metric": 1.23,
+   "quartile": "bottom"
+  },
+  {
+   "id": "notjam-lazy-river-rally",
+   "dim": "M3",
+   "score": 2,
+   "metric": 0.985,
+   "quartile": "top"
+  },
+  {
+   "id": "notjam-drag-and-dread-theme",
+   "dim": "M3",
+   "score": 2,
+   "metric": 0.986,
+   "quartile": "top"
+  },
+  {
+   "id": "notjam-untitled-track-01",
+   "dim": "A2",
+   "score": 2,
+   "metric": 0.562,
+   "quartile": "top"
+  },
+  {
+   "id": "notjam-klepto-linda-titles",
+   "dim": "A2",
+   "score": 2,
+   "metric": 0.655,
+   "quartile": "top"
+  },
+  {
+   "id": "notjam-klepto-linda-caverns-a",
+   "dim": "A4",
+   "score": 2,
+   "metric": 1,
+   "quartile": "top"
+  },
+  {
+   "id": "notjam-leading-the-charge",
+   "dim": "A4",
+   "score": 2,
+   "metric": 1,
+   "quartile": "top"
+  },
+  {
+   "id": "notjam-breakbeat-chips",
+   "dim": "A4",
+   "score": 2,
+   "metric": 1,
+   "quartile": "top"
+  },
+  {
+   "id": "notjam-waltz-of-the-lich-king",
+   "dim": "A4",
+   "score": 2,
+   "metric": 1,
+   "quartile": "top"
+  },
+  {
+   "id": "notjam-pitcher-perfect-theme",
+   "dim": "A4",
+   "score": 2,
+   "metric": 1,
+   "quartile": "top"
+  },
+  {
+   "id": "notjam-meltdown-theme",
+   "dim": "A4",
+   "score": 2,
+   "metric": 1,
+   "quartile": "top"
+  },
+  {
+   "id": "notjam-type-cast-theme",
+   "dim": "A4",
+   "score": 2,
+   "metric": 1,
+   "quartile": "top"
+  },
+  {
+   "id": "notjam-the-wall",
+   "dim": "A5",
+   "score": 2,
+   "metric": 0.051,
+   "quartile": "top"
+  },
+  {
+   "id": "notjam-drag-and-dread-theme",
+   "dim": "A5",
+   "score": 2,
+   "metric": 0.074,
+   "quartile": "top"
+  }
+ ],
+ "noise": {
+  "n": 15,
+  "dims": {
+   "M1": 0.133,
+   "M2": 0.267,
+   "M3": 0.267,
+   "M4": 0.133,
+   "A1": 0.133,
+   "A2": 0.267,
+   "A3": 0.533,
+   "A4": 0.467,
+   "A5": 0,
+   "A6": 0.267
+  }
+ },
+ "issues": [
+  {
+   "dim": "A6",
+   "t": 30,
+   "evidence": "timeline.png, game lanes 0-43 s",
+   "issue": "through the quiet, unjudged prelude the swing, hit-light and step sounds keep firing on every beat (206 percussive sounds, 15 groove drains), so the quiet is not allowed to breathe",
+   "area": "sound gating",
+   "id": "anchor-orpheus-galop",
+   "rater": "batch-1"
+  },
+  {
+   "dim": "A5",
+   "t": 62.3,
+   "evidence": "section-2.png, rows 1-2",
+   "issue": "in galop-opening, stacked yellow-green rings and glow nearly wash out the frame, crowding out the climax that comes later",
+   "area": "ring and glow budget",
+   "id": "anchor-orpheus-galop",
+   "rater": "batch-1"
+  },
+  {
+   "dim": "A1",
+   "t": 114,
+   "evidence": "section-3.png, all rows",
+   "issue": "only the rings, hero and beat pulse change across phases; the lights, particles and grading hold steady (coverage 5 of 12)",
+   "area": "lights and grading",
+   "id": "anchor-orpheus-galop",
+   "rater": "batch-1"
+  },
+  {
+   "dim": "M1",
+   "t": 10.44,
+   "evidence": "section-1.png, all rows (also section-2/3/4.png)",
+   "issue": "strikes and rings land at phase 0.5-0.75 in every section sheet while phase 0 shows only fading arcs: the game is locked half a beat off the reference beat (strictF 0.008, beatTier 0.015)",
+   "area": "beat tracking",
+   "id": "notjam-klepto-linda-caverns-a",
+   "rater": "batch-1"
+  },
+  {
+   "dim": "M2",
+   "t": 41.11,
+   "evidence": "honest-vs-masher.png, rows 2-4",
+   "issue": "on the beat, the masher's crescent and white bursts look bigger than the honest player's faded ring, because the honest strikes come half a beat late; the HUD also shows the honest player with Perfect 0",
+   "area": "weapon scale / beat phase",
+   "id": "notjam-klepto-linda-caverns-a",
+   "rater": "batch-1"
+  },
+  {
+   "dim": "A4",
+   "t": 48.72,
+   "evidence": "moments.png, row 2",
+   "issue": "zones change at detected sections 8-10 s after each reference start and 8 times in 103 s (Twilight Glade arrives mid section 3), so the game keeps changing inside sections",
+   "area": "zone waves",
+   "id": "notjam-klepto-linda-caverns-a",
+   "rater": "batch-1"
+  },
+  {
+   "dim": "A4",
+   "t": 57.42,
+   "evidence": "moments.png, row 2 col 4 and row 3",
+   "issue": "zones change at detected sections that fall mid reference section (57.4 s, 76.7 s), while reference sections 4 (43.8 s), 5 (67.6 s) and 6 (84.6 s) bring no visible change",
+   "area": "zone waves",
+   "id": "notjam-critical-theme",
+   "rater": "batch-1"
+  },
+  {
+   "dim": "A2",
+   "t": 25.61,
+   "evidence": "section-2.png, rows 1-2; section-3.png, rows 1-2",
+   "issue": "the ring peaks at phase 0.25 with only a soft glow on phase 0, so the pulses read late in sections 2 and 4",
+   "area": "ring timing",
+   "id": "notjam-critical-theme",
+   "rater": "batch-1"
+  },
+  {
+   "dim": "A5",
+   "t": 76.42,
+   "evidence": "section-4.png, row 1; timeline.png",
+   "issue": "the song's energy is flat throughout, so the game's intensity tracks level-ups and zone hops rather than the music (spearman 0.05)",
+   "area": "intensity response",
+   "id": "notjam-critical-theme",
+   "rater": "batch-1"
+  },
+  {
+   "dim": "M3",
+   "t": 93,
+   "evidence": "timeline.png, reactive-moderate lane; section-4.png, all rows",
+   "issue": "the groove drains to tier 0 from about 89-100 s while the evidence is high and the level is loud, and the hero is swamped at tier 0 in a plainly beat-driven stretch",
+   "area": "beat tracking / judging",
+   "id": "notjam-leading-the-charge",
+   "rater": "batch-1"
+  },
+  {
+   "dim": "M1",
+   "t": 12.09,
+   "evidence": "section-1.png, rows 1 and 3; section-4.png, all rows",
+   "issue": "strikes land at phase 0.25 in section 1 and at phase 0.5 in section 4, so the phase drifts between sections (strictF 0.578, lock-in 17.4 s)",
+   "area": "beat tracking",
+   "id": "notjam-leading-the-charge",
+   "rater": "batch-1"
+  },
+  {
+   "dim": "A4",
+   "t": 38.21,
+   "evidence": "moments.png, rows 2-3; section-2.png, row 3",
+   "issue": "zones change at 29.6, 38.2, 46.2, 58.4 and 73.7 s inside reference sections 2 and 3 (7 stray changes), so they don't follow the music's structure",
+   "area": "zone waves",
+   "id": "notjam-leading-the-charge",
+   "rater": "batch-1"
+  },
+  {
+   "dim": "M1",
+   "t": 6.38,
+   "evidence": "section-1.png and section-2.png, phase 0 and 0.5 columns",
+   "issue": "strikes and rings fire equally on phase 0 and phase 0.5: locked at twice the reference tempo (level 2, strictF 0.658)",
+   "area": "beat tracking (metrical level)",
+   "id": "notjam-breakbeat-chips",
+   "rater": "batch-1"
+  },
+  {
+   "dim": "M4",
+   "t": 18.57,
+   "evidence": "moments.png, row 1; timeline.png",
+   "issue": "in a 36 s song, the identity and first zone wave come at 18.6 s (6.5 s after reference section 2), the set piece at 66% and the level-up at 82%, and tier 3 only from about 21 s, so the arc arrives late",
+   "area": "pacing / zone waves",
+   "id": "notjam-breakbeat-chips",
+   "rater": "batch-1"
+  },
+  {
+   "dim": "M2",
+   "t": 7.49,
+   "evidence": "honest-vs-masher.png, rows 1-2",
+   "issue": "through section 1 the honest player is still at tier 0-1 and its crescents look like the masher's; the reward shows only in section 2",
+   "area": "groove ramp",
+   "id": "notjam-breakbeat-chips",
+   "rater": "batch-1"
+  },
+  {
+   "dim": "A4",
+   "t": 81,
+   "evidence": "timeline.png, zone waves row; moments.png, row 2",
+   "issue": "zone waves land 3 to 6 s after reference sections 3, 5 and 6 (34, 63, 81 s against 30, 60, 75 s), and a stray one at 71.5 s falls in the middle of section 5",
+   "area": "zone waves",
+   "id": "notjam-switch-with-me-theme",
+   "rater": "batch-2"
+  },
+  {
+   "dim": "M4",
+   "t": 40.9,
+   "evidence": "timeline.png, set pieces row",
+   "issue": "all three set pieces (11, 19, 41 s) come in the first 45% of the song, and loud sections 4 to 6 get none",
+   "area": "set pieces",
+   "id": "notjam-switch-with-me-theme",
+   "rater": "batch-2"
+  },
+  {
+   "dim": "A2",
+   "t": 52.5,
+   "evidence": "section-3.png, row 1",
+   "issue": "beat 1 has no ring at phase 0 and its ring first shows at phase 0.25, so the downbeat is never stronger than the other beats",
+   "area": "beat rings",
+   "id": "notjam-switch-with-me-theme",
+   "rater": "batch-2"
+  },
+  {
+   "dim": "A4",
+   "t": 76.5,
+   "evidence": "timeline.png, zone waves row; moments.png, row 3",
+   "issue": "13 zone waves cycle through all five zones three times regardless of the 8 sections: Galop Woods arrives in the middle of section 4, and sections 2 (19.4 s) and 4 (57.6 s) see no change until 32 s and 65.6 s",
+   "area": "zone waves",
+   "id": "cc-benjamin-orth-where-you-are-now",
+   "rater": "batch-2"
+  },
+  {
+   "dim": "A2",
+   "t": 182.55,
+   "evidence": "section-4.png, all rows",
+   "issue": "the beat ring shows at phase 0.25 in every row while the phase 0 frames are dim, so visual pulses land a quarter beat late (the same happens on beat 1 in section-1.png and section-2.png)",
+   "area": "beat rings",
+   "id": "cc-benjamin-orth-where-you-are-now",
+   "rater": "batch-2"
+  },
+  {
+   "dim": "A5",
+   "t": 158.4,
+   "evidence": "section-3.png, rows 1-4",
+   "issue": "the orange zone's grading plus the rings wash the screen yellow in every phase, while the hierarchy is flat (0.037) and the boss lands in the energy dip at about 95 s",
+   "area": "grading / response budget",
+   "id": "cc-benjamin-orth-where-you-are-now",
+   "rater": "batch-2"
+  },
+  {
+   "dim": "A5",
+   "t": 26.2,
+   "evidence": "section-2.png, rows 1-4; moments.png, row 1",
+   "issue": "the identity, a zone wave and a level-up stack up at 25 s, and Mushroom Grove turns the screen into a yellow wash with no phase standing out",
+   "area": "grading / response budget",
+   "id": "notjam-battle-commences",
+   "rater": "batch-2"
+  },
+  {
+   "dim": "A4",
+   "t": 47.7,
+   "evidence": "timeline.png, zone waves row; moments.png, rows 1-3",
+   "issue": "sections 2 (17 s) and 4 (47.7 s) get their zone waves 8 s and 11 s late (25.3 s, 59.1 s); only section 3 is caught on time",
+   "area": "zone waves",
+   "id": "notjam-battle-commences",
+   "rater": "batch-2"
+  },
+  {
+   "dim": "A6",
+   "t": 66,
+   "evidence": "timeline.png, punches row",
+   "issue": "camera punches cluster at 64-68 s in the fading outro, where evidence drops below the gate and the level turns quiet",
+   "area": "camera punch",
+   "id": "notjam-battle-commences",
+   "rater": "batch-2"
+  },
+  {
+   "dim": "M1",
+   "t": 14.07,
+   "evidence": "section-1.png, rows 1-3",
+   "issue": "the swing arc shows at phase 0, then 0.75, 0.5 and 0.25 down the rows, so strikes slide across the waltz's beat (lock-in 23.6 s, strict F 0.68)",
+   "area": "beat tracking",
+   "id": "notjam-waltz-of-the-lich-king",
+   "rater": "batch-2"
+  },
+  {
+   "dim": "A2",
+   "t": 34.77,
+   "evidence": "section-2.png, rows 1-3",
+   "issue": "rings fill every phase and beat 1's ring is bigger at phase 0.75 than at phase 0, so the pulses are mushy",
+   "area": "beat rings",
+   "id": "notjam-waltz-of-the-lich-king",
+   "rater": "batch-2"
+  },
+  {
+   "dim": "A6",
+   "t": 76,
+   "evidence": "timeline.png, punches row",
+   "issue": "camera punches cluster at 74-80 s in the quiet outro, where the level is blue and evidence is under the gate, and the groove drains 3 times",
+   "area": "camera punch",
+   "id": "notjam-waltz-of-the-lich-king",
+   "rater": "batch-2"
+  },
+  {
+   "dim": "A2",
+   "t": 30.86,
+   "evidence": "section-2.png, rows 1, 3 and 4",
+   "issue": "the ring appears at phase 0.25 while phase 0 shows only the hero, so pulses land a quarter beat late despite the high beatTier metric (0.655)",
+   "area": "beat rings",
+   "id": "notjam-klepto-linda-titles",
+   "rater": "batch-2"
+  },
+  {
+   "dim": "A5",
+   "t": 8.57,
+   "evidence": "phrase.png, all bars; section-1.png",
+   "issue": "section 1 is the loudest section yet the calmest visually (tier ramping from 0, no rings), giving a negative hierarchy (-0.372)",
+   "area": "groove ramp / intensity",
+   "id": "notjam-klepto-linda-titles",
+   "rater": "batch-2"
+  },
+  {
+   "dim": "A4",
+   "t": 28.1,
+   "evidence": "timeline.png, zone waves row; moments.png, row 2",
+   "issue": "two stray zone waves (28.1 s, 38.4 s) fire inside the single reference section 2; only the 17.4 s section start is a real change",
+   "area": "zone waves",
+   "id": "notjam-klepto-linda-titles",
+   "rater": "batch-2"
+  },
+  {
+   "dim": "A4",
+   "t": 62.56,
+   "evidence": "phrase.png, bar 7",
+   "issue": "the zone flips from Infernal Grove to Twilight Glade in the middle of reference section 4, and 9 zone waves land against 5 reference sections",
+   "area": "zone waves",
+   "id": "notjam-pitcher-perfect-theme",
+   "rater": "batch-3"
+  },
+  {
+   "dim": "A5",
+   "t": 74.39,
+   "evidence": "section-4.png, row 1 against section-1.png, row 1",
+   "issue": "visual density just grows with run time (spearman 0.02): the final section is the busiest whatever the loudness, with no calm bars anywhere",
+   "area": "enemy spawns",
+   "id": "notjam-pitcher-perfect-theme",
+   "rater": "batch-3"
+  },
+  {
+   "dim": "M4",
+   "t": 28.58,
+   "evidence": "timeline.png, set pieces lane",
+   "issue": "both set pieces (rings at 12.5 s, bee wedges at 28.6 s) arrive in the first 35% of the song, and the later louder sections get none",
+   "area": "set piece scheduling",
+   "id": "notjam-pitcher-perfect-theme",
+   "rater": "batch-3"
+  },
+  {
+   "dim": "M1",
+   "t": 22.83,
+   "evidence": "section-1.png, column 4 (phase .75) in every row; section-2.png, column 2",
+   "issue": "the strike rings peak at phase .75 in sections 1 and 3 and at phase .25 in sections 2 and 5, so the game is locked off the reference beat (strictF 0.35, lock-in 55 s)",
+   "area": "beat tracking",
+   "id": "notjam-meltdown-theme",
+   "rater": "batch-3"
+  },
+  {
+   "dim": "A5",
+   "t": 7.83,
+   "evidence": "phrase.png, bars 1-8",
+   "issue": "the loudest section (section 1) is the calmest picture in the run, an empty dark-teal field, while quieter later sections are packed (spearman -0.30)",
+   "area": "intensity response",
+   "id": "notjam-meltdown-theme",
+   "rater": "batch-3"
+  },
+  {
+   "dim": "A4",
+   "t": 31.29,
+   "evidence": "moments.png, row 1 column 4 (detected section 2) and timeline.png, zone waves lane",
+   "issue": "12 zone waves cycle every 10-15 s through 5 long reference sections, so zones change inside sections rather than at them",
+   "area": "zone waves",
+   "id": "notjam-meltdown-theme",
+   "rater": "batch-3"
+  },
+  {
+   "dim": "M2",
+   "t": 19.96,
+   "evidence": "honest-vs-masher.png, rows 1-2",
+   "issue": "honest and masher look the same (both tier 0, same thin arcs), and mash4 holds tier 2+ 77% of the time with a damage ratio of 0.96",
+   "area": "groove judging",
+   "id": "notjam-lich-king-ascendant",
+   "rater": "batch-3"
+  },
+  {
+   "dim": "M1",
+   "t": 31.09,
+   "evidence": "section-3.png, column 3 (phase .5) in every row; section-1.png, column 4",
+   "issue": "strike rings peak at phase .5 in quarter 3 and swings fall on phase .75 in quarter 1, so pulses sit off the decoded beat (the reference fit failed)",
+   "area": "beat tracking",
+   "id": "notjam-lich-king-ascendant",
+   "rater": "batch-3"
+  },
+  {
+   "dim": "M3",
+   "t": 15,
+   "evidence": "timeline.png, reactive-moderate lane",
+   "issue": "the honest groove sits at tier 0 from 9 s to 21 s while energy is steady and evidence hovers at the gate, then drains again at 41 s",
+   "area": "beat tracking",
+   "id": "notjam-lich-king-ascendant",
+   "rater": "batch-3"
+  },
+  {
+   "dim": "M1",
+   "t": 4,
+   "evidence": "timeline.png, strikes and swing lanes; section-1.png, rows 3-4 column 2",
+   "issue": "swings stop from about 2 s to 6 s, lock-in takes 18.8 s, and in the section sheet beats 3-4 peak at phase .25 rather than 0",
+   "area": "beat tracking",
+   "id": "notjam-battle-ceases",
+   "rater": "batch-3"
+  },
+  {
+   "dim": "M2",
+   "t": 15.03,
+   "evidence": "honest-vs-masher.png, rows 1-2",
+   "issue": "the masher matches the honest player's tier and arc size in the first half (mash4 tier 2+ 100% of judged time, damage ratio 1.08)",
+   "area": "groove judging",
+   "id": "notjam-battle-ceases",
+   "rater": "batch-3"
+  },
+  {
+   "dim": "A6",
+   "t": 36,
+   "evidence": "timeline.png, punches lane against stream lane",
+   "issue": "a cluster of camera punches fires during the quiet outro (34-38 s) where the stream drops to quiet blue, and the groove drains twice",
+   "area": "camera response",
+   "id": "notjam-battle-ceases",
+   "rater": "batch-3"
+  },
+  {
+   "dim": "A2",
+   "t": 130.59,
+   "evidence": "section-3.png (section 6), column 2 in every row; section-4.png (section 14), column 2; phrase.png, all bars",
+   "issue": "in later sections the strike ring is absent at phase 0 and peaks at phase .25, and no beat-1 frame of the loudest section shows a pulse, so the pulse drifts late despite strictF 0.98",
+   "area": "beat tracking",
+   "id": "cc-zep-hurme-hang-low",
+   "rater": "batch-3"
+  },
+  {
+   "dim": "A6",
+   "t": 118,
+   "evidence": "timeline.png, punches lane at 115-122 s and 277-290 s",
+   "issue": "dense camera-punch flurries fire in the song's only dip and in the fading outro, so the quiet parts are the most jolting (intensityDrop 0.06)",
+   "area": "camera response",
+   "id": "cc-zep-hurme-hang-low",
+   "rater": "batch-3"
+  },
+  {
+   "dim": "A4",
+   "t": 238.11,
+   "evidence": "phrase.png, bar 5",
+   "issue": "the zone switches from Galop Woods to Mushroom Grove halfway through the loudest section's phrase, as 18 zone waves cycle on a timer through 14 sections",
+   "area": "zone waves",
+   "id": "cc-zep-hurme-hang-low",
+   "rater": "batch-3"
+  },
+  {
+   "dim": "M2",
+   "t": 71,
+   "evidence": "honest-vs-masher.png, rows 1-2; timeline.png, mash4 lane 0-85 s",
+   "issue": "the first half (reference beats steady, stream evidence under the gate) is left unjudged, so the masher sits at tier 3 and looks identical to the honest player for half the song",
+   "area": "beat tracking",
+   "id": "notjam-dark-cavern-phone-home",
+   "rater": "batch-4"
+  },
+  {
+   "dim": "A5",
+   "t": 75.7,
+   "evidence": "section-1.png, rows 2-4",
+   "issue": "a quiet, low-evidence bar in section 5 is a white wash of level-up burst, zone banner and stacked rings, busier than the loud section 7 phrase",
+   "area": "level-up effects",
+   "id": "notjam-dark-cavern-phone-home",
+   "rater": "batch-4"
+  },
+  {
+   "dim": "A6",
+   "t": 9,
+   "evidence": "timeline.png, punches lane 7-35 s against stream energy gaps",
+   "issue": "bursts of camera punches fire inside the near-silent energy gaps of the intro (about 7-11 s, 19-23 s, 30-34 s) where there is no music to hit",
+   "area": "camera punch",
+   "id": "notjam-dark-cavern-phone-home",
+   "rater": "batch-4"
+  },
+  {
+   "dim": "A2",
+   "t": 23.7,
+   "evidence": "section-1.png, rows 1-4; section-3.png, rows 1-2",
+   "issue": "the ring pulse lands on phase 0.25, 0.5 or 0.75 from beat to beat rather than phase 0, so the visual beat wanders against the (failed-fit) grid",
+   "area": "beat tracking",
+   "id": "cc-kevin-macleod-black-vortex",
+   "rater": "batch-4"
+  },
+  {
+   "dim": "M1",
+   "t": 20,
+   "evidence": "timeline.png, strikes and sounds lanes 0-52 s",
+   "issue": "for the first 52 s the stream energy is loud but strikes are sparse and irregular and almost no swing or kill sounds play, so the opening third has no audible lock",
+   "area": "beat tracking",
+   "id": "cc-kevin-macleod-black-vortex",
+   "rater": "batch-4"
+  },
+  {
+   "dim": "A6",
+   "t": 125,
+   "evidence": "timeline.png, punches lane 113-135 s",
+   "issue": "a long continuous run of camera punches covers the medium-to-quiet dip around 113-135 s, jolting the screen in the calmest stretch of the song",
+   "area": "camera punch",
+   "id": "cc-kevin-macleod-black-vortex",
+   "rater": "batch-4"
+  },
+  {
+   "dim": "M4",
+   "t": 135,
+   "evidence": "timeline.png, set pieces, level-ups and boss sounds lanes",
+   "issue": "all three set pieces, the boss and all level-ups land before 135 s, leaving the last two minutes of a 255 s song with only zone waves until the finale",
+   "area": "set pieces",
+   "id": "cc-kevin-macleod-long-stroll",
+   "rater": "batch-4"
+  },
+  {
+   "dim": "A4",
+   "t": 29.7,
+   "evidence": "moments.png, rows 1-3",
+   "issue": "zones change roughly every 10 s (22 waves, Mushroom to Ember to Infernal to Twilight to Galop within the first minute) regardless of the reference sections, inventing structure the music lacks",
+   "area": "zone waves",
+   "id": "cc-kevin-macleod-long-stroll",
+   "rater": "batch-4"
+  },
+  {
+   "dim": "A3",
+   "t": 57.8,
+   "evidence": "metrics.md identity zones; moments.png",
+   "issue": "the run cycles through every zone in the same order four-plus times, so it looks like every other track in the batch, only longer",
+   "area": "zone waves",
+   "id": "cc-kevin-macleod-long-stroll",
+   "rater": "batch-4"
+  },
+  {
+   "dim": "A2",
+   "t": 17.8,
+   "evidence": "section-1.png and section-2.png, rows 1-2",
+   "issue": "slash arcs and rings fire on phase 0.5 as strongly as on phase 0 (the game runs at the doubled level), so the off-beat pulses look as big as the beat",
+   "area": "beat tracking",
+   "id": "notjam-lazy-river-rally",
+   "rater": "batch-4"
+  },
+  {
+   "dim": "M3",
+   "t": 30.4,
+   "evidence": "timeline.png, reactive-moderate lane 22-51 s; section-3.png",
+   "issue": "with evidence high and steady all song, the honest player's groove falls back to tier 2 from about 22 s onward and never returns to tier 3",
+   "area": "judging",
+   "id": "notjam-lazy-river-rally",
+   "rater": "batch-4"
+  },
+  {
+   "dim": "A4",
+   "t": 22.1,
+   "evidence": "moments.png, row 1; timeline.png, zone waves lane",
+   "issue": "each zone change arrives about 10 s after its reference section start (12, 24, 36 s), so the colour changes sit mid-section rather than on them",
+   "area": "zone waves",
+   "id": "notjam-lazy-river-rally",
+   "rater": "batch-4"
+  },
+  {
+   "dim": "M1",
+   "t": 15.2,
+   "evidence": "section-1.png, rows 1, 3 and 4",
+   "issue": "the strike arc appears at phase 0.75 rather than phase 0 in section 1, and lock-in takes 32 s of a 60 s song",
+   "area": "beat tracking",
+   "id": "notjam-type-cast-theme",
+   "rater": "batch-4"
+  },
+  {
+   "dim": "A4",
+   "t": 15.8,
+   "evidence": "moments.png; section-1.png, row 2",
+   "issue": "seven zone waves in a two-section song, with the Ember Hollow change landing mid-bar in section 1 rather than at a reference section start",
+   "area": "zone waves",
+   "id": "notjam-type-cast-theme",
+   "rater": "batch-4"
+  },
+  {
+   "dim": "A6",
+   "t": 36,
+   "evidence": "timeline.png, punches lane 35-39 s against the stream energy dropouts",
+   "issue": "camera punches fire through the energy dropouts at the start of section 2 and again in the quiet stretch near 54-58 s",
+   "area": "camera punch",
+   "id": "notjam-type-cast-theme",
+   "rater": "batch-4"
+  },
+  {
+   "dim": "A2",
+   "t": 23.8,
+   "evidence": "section-2.png, every row (also section-1/3/4)",
+   "issue": "the bright double ring and strike fire at phase 0.5-0.75 in every row while phase 0 shows only a fading ring, so the whole run pulses on the off-beat (strictF 0.05, beatTier 0.05)",
+   "area": "beat tracking",
+   "id": "notjam-chill-menu",
+   "rater": "batch-5"
+  },
+  {
+   "dim": "A6",
+   "t": 75,
+   "evidence": "timeline.png, punches lane 74-78 s",
+   "issue": "camera punches and the finale blast land in the quiet outro where the level drops to quiet blue",
+   "area": "camera response",
+   "id": "notjam-chill-menu",
+   "rater": "batch-5"
+  },
+  {
+   "dim": "A3",
+   "t": 14.7,
+   "evidence": "moments.png, all rows",
+   "issue": "zone order Ember Hollow, Infernal Grove, Twilight Glade, Galop Woods, Mushroom Grove is identical to the crypts and klepto runs, and the busy red/yellow look ignores this calm constant-energy track",
+   "area": "zone waves",
+   "id": "notjam-chill-menu",
+   "rater": "batch-5"
+  },
+  {
+   "dim": "A2",
+   "t": 23.1,
+   "evidence": "section-2.png rows 1, 3, 4; section-3.png rows 1, 4",
+   "issue": "the ring peaks a quarter beat late (phase 0.25) in about half the rows, and section 1 strikes peak at phase 0.5",
+   "area": "beat tracking",
+   "id": "notjam-untitled-track-01",
+   "rater": "batch-5"
+  },
+  {
+   "dim": "M3",
+   "t": 8,
+   "evidence": "timeline.png, reactive-moderate lane 0-13 s",
+   "issue": "the beat is clear from the first second (evidence well above the gate) but the groove stays empty until about 8 s and tier only rises at 13 s, 28% into a 47 s song",
+   "area": "beat tracking",
+   "id": "notjam-untitled-track-01",
+   "rater": "batch-5"
+  },
+  {
+   "dim": "A6",
+   "t": 45,
+   "evidence": "timeline.png, punches lane 44-47 s",
+   "issue": "punches and the finale blast fire as the music fades out in the last two seconds",
+   "area": "camera response",
+   "id": "notjam-untitled-track-01",
+   "rater": "batch-5"
+  },
+  {
+   "dim": "A5",
+   "t": 159,
+   "evidence": "section-3.png and section-4.png, all rows",
+   "issue": "the back half is a saturated yellow wash where every phase looks alike, though the stream's evidence is lower after 180 s than in the first half",
+   "area": "particle budget",
+   "id": "cc-the-crypts-no-life-after-crypts",
+   "rater": "batch-5"
+  },
+  {
+   "dim": "A4",
+   "t": 122,
+   "evidence": "timeline.png, zone waves lane; moments.png row 3",
+   "issue": "16 zone waves arrive every 10-20 s through a steady stream, cycling all five zones three times with no matching change in the music (stray 22)",
+   "area": "zone waves",
+   "id": "cc-the-crypts-no-life-after-crypts",
+   "rater": "batch-5"
+  },
+  {
+   "dim": "M4",
+   "t": 110,
+   "evidence": "timeline.png, set pieces and level-ups lanes",
+   "issue": "all level-ups land before 90 s and the last set piece is the boss at 110 s, so the final 140 s of a 255 s song only cycles zones",
+   "area": "pacing",
+   "id": "cc-the-crypts-no-life-after-crypts",
+   "rater": "batch-5"
+  },
+  {
+   "dim": "A2",
+   "t": 13.7,
+   "evidence": "section-1.png and section-2.png, every row",
+   "issue": "the bright double ring peaks at phase 0.5 in every row while phase 0 shows only a faint ring, so pulses sit on the off-beat (no ground truth exists since the fit failed, but the sheets agree)",
+   "area": "beat tracking",
+   "id": "notjam-klepto-linda-caverns-b",
+   "rater": "batch-5"
+  },
+  {
+   "dim": "A6",
+   "t": 58,
+   "evidence": "timeline.png, punches and zone waves lanes 55-72 s; moments.png 1:06.37",
+   "issue": "the breakdown, where energy drops in and out, gets camera punches, a zone wave and a level-up flash, and strikes then stop at 72-75 s just as the beat returns",
+   "area": "camera response",
+   "id": "notjam-klepto-linda-caverns-b",
+   "rater": "batch-5"
+  },
+  {
+   "dim": "M2",
+   "t": 61.7,
+   "evidence": "honest-vs-masher.png, rows 1-4",
+   "issue": "the masher's big white bursts and slashes look as strong as or stronger than the honest player's faint rings in rows 1-3",
+   "area": "weapon scale",
+   "id": "notjam-klepto-linda-caverns-b",
+   "rater": "batch-5"
+  },
+  {
+   "dim": "A4",
+   "t": 28.2,
+   "evidence": "moments.png, row 1 col 1 and row 2 cols 1-3",
+   "issue": "reference sections 2-5 (13.4, 28.2, 41.4, 54.5 s) show no zone or colour change, and later zone waves land about 5 s before sections 6 and 7",
+   "area": "zone waves",
+   "id": "cc-alex-beroza-good-day",
+   "rater": "batch-5"
+  },
+  {
+   "dim": "M3",
+   "t": 35,
+   "evidence": "timeline.png, mash4 lane 20-45 s and 118-122 s",
+   "issue": "the mash4 player holds tier 3 for about 25 s in a clear stretch, so mashing is rewarded where the beat is plain",
+   "area": "beat judging",
+   "id": "cc-alex-beroza-good-day",
+   "rater": "batch-5"
+  },
+  {
+   "dim": "A2",
+   "t": 186,
+   "evidence": "section-4.png rows 1-4; section-3.png rows 2-4",
+   "issue": "late in the song the ring peaks at phase 0.25 instead of phase 0, a quarter beat late",
+   "area": "beat tracking",
+   "id": "cc-alex-beroza-good-day",
+   "rater": "batch-5"
+  },
+  {
+   "dim": "M1",
+   "t": 66.26,
+   "evidence": "section-2.png, row 2",
+   "issue": "the game tracks the beat at double time (level 2, strictF 0.656), so the largest crescents land at phases 0.5 and 0.75 instead of phase 0",
+   "area": "beat tracking",
+   "id": "notjam-locrian-chipdoom",
+   "rater": "batch-6"
+  },
+  {
+   "dim": "A5",
+   "t": 84.8,
+   "evidence": "section-3.png, rows 1-2",
+   "issue": "section 6 is the quiet blue stretch of the stream lane, yet its sheet is the busiest of the song with full-screen golden rings and a dense camera-punch run (spearman -0.163)",
+   "area": "intensity scaling",
+   "id": "notjam-locrian-chipdoom",
+   "rater": "batch-6"
+  },
+  {
+   "dim": "A4",
+   "t": 25.75,
+   "evidence": "moments.png, row 2, column 1",
+   "issue": "zone waves arrive mid-section (25.75 s inside section 2, 52.9 s before section 5 at 55.5 s) with 10 stray changes against 8 reference sections",
+   "area": "zone waves",
+   "id": "notjam-locrian-chipdoom",
+   "rater": "batch-6"
+  },
+  {
+   "dim": "M1",
+   "t": 45.62,
+   "evidence": "section-2.png, every row, column 4",
+   "issue": "fresh strike rings appear at phase 0.75 and are already fading at phase 0 in every row, so the game's grid sits about a quarter beat off the music (strictF 0.007)",
+   "area": "beat tracking",
+   "id": "notjam-drag-and-dread-theme",
+   "rater": "batch-6"
+  },
+  {
+   "dim": "M3",
+   "t": 45.22,
+   "evidence": "timeline.png, reactive-moderate lane",
+   "issue": "presses are judged 99% of the time against an offset grid, so a player pressing on the audible beat in this plainly periodic song would be misjudged",
+   "area": "beat tracking",
+   "id": "notjam-drag-and-dread-theme",
+   "rater": "batch-6"
+  },
+  {
+   "dim": "A6",
+   "t": 70,
+   "evidence": "timeline.png, punches row",
+   "issue": "a run of camera punches fires through the quiet blue outro after 68 s, where the energy has collapsed",
+   "area": "camera response",
+   "id": "notjam-drag-and-dread-theme",
+   "rater": "batch-6"
+  },
+  {
+   "dim": "A5",
+   "t": 37.36,
+   "evidence": "section-2.png, rows 2-4",
+   "issue": "section 2 is the quieter, falling section in the stream lane, yet it shows the largest stacked rings and brightest grading of the song (spearman -0.347)",
+   "area": "intensity scaling",
+   "id": "notjam-rainy-foothills",
+   "rater": "batch-6"
+  },
+  {
+   "dim": "A6",
+   "t": 40,
+   "evidence": "timeline.png, punches row",
+   "issue": "camera punches keep firing every beat through the quiet blue tail from 36 s to 43 s",
+   "area": "camera response",
+   "id": "notjam-rainy-foothills",
+   "rater": "batch-6"
+  },
+  {
+   "dim": "A4",
+   "t": 17.61,
+   "evidence": "moments.png, row 1, column 4",
+   "issue": "zone waves at 8.5 s, 17.6 s and 39.4 s change the world inside reference sections, while only the 31.3 s wave follows a real section start",
+   "area": "zone waves",
+   "id": "notjam-rainy-foothills",
+   "rater": "batch-6"
+  },
+  {
+   "dim": "A2",
+   "t": 8.48,
+   "evidence": "section-1.png, row 1",
+   "issue": "the zone-wave flash peaks at phase 0.25 and 0.5 while phase 0 is a dim frame, so the bar's biggest pulse is off the beat",
+   "area": "zone waves",
+   "id": "notjam-safe-space",
+   "rater": "batch-6"
+  },
+  {
+   "dim": "A6",
+   "t": 36,
+   "evidence": "timeline.png, punches row",
+   "issue": "camera punches cluster in the quiet blue ending from 34 s to 38 s, where the energy has dropped out",
+   "area": "camera response",
+   "id": "notjam-safe-space",
+   "rater": "batch-6"
+  },
+  {
+   "dim": "M4",
+   "t": 12,
+   "evidence": "timeline.png, reactive-moderate lane",
+   "issue": "in a 38 s song the groove takes until about 12 s to reach tier 3 and the first level-up lands at 62% of the song, so most of the run is spent ramping",
+   "area": "pacing",
+   "id": "notjam-safe-space",
+   "rater": "batch-6"
+  },
+  {
+   "dim": "A4",
+   "t": 24.58,
+   "evidence": "moments.png, row 2",
+   "issue": "the reference has one section, yet the game swaps zones five times at about 8 s intervals, so the changes are invented rather than following the music",
+   "area": "zone waves",
+   "id": "notjam-the-wall",
+   "rater": "batch-6"
+  },
+  {
+   "dim": "A6",
+   "t": 47,
+   "evidence": "timeline.png, punches row",
+   "issue": "camera punches fire through the quiet blue fade-out from 44 s to 50 s",
+   "area": "camera response",
+   "id": "notjam-the-wall",
+   "rater": "batch-6"
+  },
+  {
+   "dim": "M1",
+   "t": 3,
+   "evidence": "timeline.png, strikes row",
+   "issue": "the opening strikes are irregular and lock-in takes 6.8 s, about 13% of this short song",
+   "area": "beat tracking",
+   "id": "notjam-the-wall",
+   "rater": "batch-6"
+  }
+ ],
+ "metricMeans": {
+  "strictF": 0.731,
+  "anyLevelF": 0.845,
+  "lockInS": 11.308,
+  "soundSync": 0.921,
+  "honestTier2": 0.972,
+  "mash4Tier0": 0.863,
+  "damageRatio": 1.335,
+  "judgedBeatDriven": 0.928,
+  "perfectOrGreat": 0.964,
+  "coverage": 7.32,
+  "visualSync": 0.407,
+  "structure": 0.749,
+  "hierarchy": -0.094,
+  "breakdownSounds": 0
+ }
+}
