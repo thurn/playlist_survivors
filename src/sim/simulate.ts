@@ -25,7 +25,7 @@ import { CameraRig } from "../planner/camera.ts";
 import { sectionIndexAt, subdivisionBeats, weightFactor, type Ctx } from "../planner/context.ts";
 import { aim, catches, swingArc, type AimTarget } from "./aim.ts";
 import { deepClone, registerShared } from "./clone.ts";
-import { gaitBeat, gaitSlot, type Gait } from "./gait.ts";
+import { gaitBeat, gaitGround, gaitSlot, gaitStepAfter, gaitSteps, type Gait } from "./gait.ts";
 import { bendStep, easeOut, movePose, opposite, stepEnd, walkFrame, type InputKey, type Key, type Step } from "./movement.ts";
 import type { KeyEvent, Observation, Player } from "./player.ts";
 import { BatchRecorder, type ArrowRecord, type PressTrace, type Recorder, type SimResult } from "./recorder.ts";
@@ -247,7 +247,7 @@ interface Foe {
   /**
    * Beat steps (an enemy with a gait, src/sim/gait.ts): the gait time of its latest step, and that
    * step: from world time w0, easing out over dur, it covers (dx, dy) plus the separation push
-   * over `span`, the song seconds to the next gait time.
+   * over `span`, the song seconds of ground the step covers.
    */
   stepK?: number;
   step?: { w0: number; dur: number; dx: number; dy: number; span: number };
@@ -1171,6 +1171,9 @@ function engine(env: Env, st: SimState, io: Io) {
       chargeUntil: -Infinity,
     };
     if (extra?.formation !== undefined) f.formation = extra.formation;
+    // A stepping enemy takes its first step on its next step's gait time (a step at once could carry
+    // it into view).
+    if (def.gait && stream) f.stepK = gaitSlot(def.gait, knownBeatAt(st.s));
     // Its first sample is the spawn spot itself, at the last sample time before it appeared.
     rec().spawn({ id, type, health: h0, spawnW: st.w, deathW: Infinity, sampleOffset: 0, sampleCount: 0, sampleW0: Math.max(0, st.nextFoeK - 1) / ENEMY_RATE, fates: [], ...extra });
     rec().sample(id, x, y);
@@ -1814,24 +1817,26 @@ function engine(env: Env, st: SimState, io: Io) {
   };
 
   /**
-   * Beat steps: the song seconds the enemy's step at beat index b, song time s, has to the next gait
-   * time if it is due one (its gait time has come since its latest step), else 0. An enemy that was
-   * not stepping (just spawned, released from a set piece, or out of a stretch without a steady
-   * beat) steps at once, as far as the time left to its next gait time carries it.
+   * Beat steps: whether the enemy is due a step at beat index b, song time s (a gait time it steps on
+   * has come since its latest step), and if so its ground (song seconds of its speed it covers) and
+   * duration. An enemy that was not stepping (released from a set piece, or out of a stretch without a
+   * steady beat) steps at once, as far as the time left to its next step carries it.
    */
-  const stepDue = (f: Foe, gait: Gait, b: number, s: number): number => {
+  const stepDue = (f: Foe, gait: Gait, b: number, s: number): { ground: number; dur: number } | undefined => {
     const k = gaitSlot(gait, b);
     const joins = f.stepK === undefined;
-    const due = joins || k > f.stepK!;
+    const due = joins || (k > f.stepK! && gaitSteps(gait, k));
     f.stepK = k;
-    if (!due) return 0;
+    if (!due) return undefined;
     const at = (bi: number) => (stream ? knownTimeOfBeat(bi) : timeOfBeatIndex(song, bi));
-    return at(gaitBeat(gait, k + 1)) - (joins ? s : at(gaitBeat(gait, k)));
+    const t0 = at(gaitBeat(gait, k));
+    const ground = joins ? at(gaitBeat(gait, gaitStepAfter(gait, k))) - s : at(gaitBeat(gait, k + gaitGround(gait))) - t0;
+    return { ground, dur: Math.min(ground, gait.share * (at(gaitBeat(gait, k + 1)) - t0)) };
   };
   /** A step from world time w: recorded for the renderer if it goes anywhere. */
-  const startStep = (f: Foe, gait: Gait, w: number, dx: number, dy: number, span: number) => {
-    const dur = Math.max(1 / SIM_RATE, gait.share * span);
-    f.step = { w0: w, dur, dx, dy, span };
+  const startStep = (f: Foe, w: number, dx: number, dy: number, due: { ground: number; dur: number }) => {
+    const dur = Math.max(1 / SIM_RATE, due.dur);
+    f.step = { w0: w, dur, dx, dy, span: due.ground };
     if (Math.hypot(dx, dy) >= STEP_SEEN) rec().enemyStep?.(f.id, w, dur);
   };
   /** The enemy stops stepping (it glides, or a set piece holds it) at world time w: recorded once. */
@@ -2059,10 +2064,10 @@ function engine(env: Env, st: SimState, io: Io) {
         const ty = hp.y + (cy / cl) * ARCHER_RANGE + (cx / cl) * off - f.y;
         const tl = Math.hypot(tx, ty) || 1;
         if (stepping && f.def.gait) {
-          const span = stepDue(f, f.def.gait, stepB, s);
-          if (span > 0) {
-            const len = Math.min(f.def.speed * calmSpeed * span, tl);
-            startStep(f, f.def.gait, w1, (tx / tl) * len, (ty / tl) * len, span);
+          const due = stepDue(f, f.def.gait, stepB, s);
+          if (due) {
+            const len = Math.min(f.def.speed * calmSpeed * due.ground, tl);
+            startStep(f, w1, (tx / tl) * len, (ty / tl) * len, due);
           }
           stepVelocity(f, w1);
           continue;
@@ -2085,11 +2090,11 @@ function engine(env: Env, st: SimState, io: Io) {
       if (stepping && f.def.gait) {
         // A beat step on each gait time, aimed where the hero is then: as far as its speed carries
         // it to the next, stopping at contact (an archer at its range, backing off at half its pace).
-        const span = stepDue(f, f.def.gait, stepB, s);
-        if (span > 0) {
-          const reach = f.def.speed * calmSpeed * span;
+        const due = stepDue(f, f.def.gait, stepB, s);
+        if (due) {
+          const reach = f.def.speed * calmSpeed * due.ground;
           const len = f.def.behavior === "archer" ? clamp(d - ARCHER_RANGE, -0.5 * reach, reach) : clamp(d - contact, 0, reach * charge);
-          startStep(f, f.def.gait, w1, ((dx * curlCos - dy * cs) / d) * len, ((dy * curlCos + dx * cs) / d) * len, span);
+          startStep(f, w1, ((dx * curlCos - dy * cs) / d) * len, ((dy * curlCos + dx * cs) / d) * len, due);
         }
         stepVelocity(f, w1);
       } else {

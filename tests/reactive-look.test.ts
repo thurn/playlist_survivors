@@ -125,7 +125,7 @@ describe("the fast lane's frames", () => {
     const clear = frames.filter((f) => f.reactive && f.reactive.mix * f.reactive.amp > 0.9 && f.enemies.length > 10);
     expect(clear.length).toBeGreaterThan(20);
     // Across two beats, each walking enemy squashes (its width over height swinging) and hops (a
-    // stepping one steps, though one held up in the crowd may not, some beats).
+    // stepping one steps, which some do every other beat).
     const k = Math.floor(clear[clear.length >> 1].sbi);
     const b = plan.songBeats;
     const span = Array.from({ length: 20 }, (_, i) => ev.evaluate(b[k + (i >= 10 ? 1 : 0)] + ((i % 10) / 10) * (b[k + (i >= 10 ? 2 : 1)] - b[k + (i >= 10 ? 1 : 0)])));

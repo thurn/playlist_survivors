@@ -161,7 +161,6 @@ describe("chickens", () => {
     const eaten = run.chickens.filter((c) => c.sTaken !== undefined);
     expect(eaten.length).toBeGreaterThan(1);
     const sounds = run.events.sounds.filter((x) => x.key === "chicken");
-    const max = lib.hero.health.max;
     let full = 0;
     for (const c of eaten) {
       // Touched: the hero within 24 px (a step's slack) when it was eaten.
@@ -171,10 +170,12 @@ describe("chickens", () => {
       expect(sounds.some((x) => Math.abs(x.s - c.sHeal!) < 1e-6 && x.movedFrom === undefined)).toBe(true);
       const heal = run.heals.find((x) => x.source === "chicken" && Math.abs(x.s - c.sHeal!) < 1e-9);
       if (!heal) continue;
-      // (Never past the maximum.)
-      const before = run.health.v[Array.from(run.health.s).findIndex((s) => s === c.sHeal) - 1] * max;
-      // (Health is kept as a 32-bit fraction of the maximum.)
-      expect(heal.amount).toBeCloseTo(Math.min(CHICKEN_HEAL, max - before), 3);
+      // (Never past the maximum, which upgrades can raise: a heal short of 30 fills the health. The
+      // health is kept as a 32-bit fraction of the maximum.)
+      const at = Array.from(run.health.s).findIndex((s, i) => Math.abs(s - c.sHeal!) < 1e-9 && i > 0 && run.health.v[i] > run.health.v[i - 1]);
+      expect(run.health.v[at]).toBeLessThanOrEqual(1 + 1e-6);
+      if (heal.amount < CHICKEN_HEAL - 1e-3) expect(run.health.v[at]).toBeCloseTo(1, 5);
+      else expect(heal.amount).toBeCloseTo(CHICKEN_HEAL, 3);
       if (heal.amount === CHICKEN_HEAL) full++;
     }
     expect(full).toBeGreaterThan(0);

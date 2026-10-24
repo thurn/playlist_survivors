@@ -165,11 +165,17 @@ export const enemyDef = z.strictObject({
   /** Hop locomotion with squash and stretch (slimes). */
   hop: z.boolean().optional(),
   /**
-   * Beat steps (src/sim/gait.ts), in reactive mode: the enemy walks in quick steps that start on
-   * every `every` and ease out over `share` of the time to the next, standing still in between.
-   * Without one (or in play mode) it glides.
+   * Beat steps (src/sim/gait.ts), in reactive mode: the enemy walks in quick steps on the gait times
+   * (every `every`) that its repeating pattern marks "x", each easing out over `share` of the time to
+   * the next gait time, standing still in between. Without one (or in play mode) it glides.
    */
-  gait: z.strictObject({ every: z.enum(["eighth", "beat"]).default("beat"), share: z.number().positive().max(1).default(0.4) }).optional(),
+  gait: z
+    .strictObject({
+      every: z.enum(["eighth", "beat"]).default("beat"),
+      pattern: z.string().regex(/^[x.]*x[x.]*$/).default("x"),
+      share: z.number().positive().max(1).default(0.4),
+    })
+    .optional(),
   death: z.strictObject({ recipe: id, debris: z.array(color).min(1) }),
   /** Health a touch takes from the hero (see the hero's health). */
   contactDamage: z.number().min(0).default(0),

@@ -4,7 +4,9 @@
 # contactDamage is what a touch takes from the hero's health (5000, play mode),
 # attackDamage what an arrow or the boss's slam takes when it lands.
 # A gait (src/sim/gait.ts) makes an enemy walk in reactive mode in beat steps, NecroDancer style:
-# quick steps on its gait's times, standing still in between.
+# quick steps on the gait times its pattern marks, standing still in between.
+# Each type has its own rhythm, so a mixed horde moves in layers; share is the
+# part of a gait time a step takes.
 enemies:
   - id: slime
     atlas: slime
@@ -58,7 +60,8 @@ enemies:
     health: 1.0
     size: regular
     contactDamage: 4
-    gait: { every: beat }
+    # Scurries: a quick step on every eighth note.
+    gait: { every: eighth, share: 0.5 }
     death: { recipe: death-humanoid, debris: ["#5a8f3a", "#8b1a1a"] }
   - id: orc
     atlas: orc
@@ -68,7 +71,8 @@ enemies:
     health: 1.15
     size: regular
     contactDamage: 5
-    gait: { every: beat }
+    # Stomps: a long step on every other beat, the bar's downbeat.
+    gait: { every: beat, pattern: "x.", share: 0.35 }
     death: { recipe: death-humanoid, debris: ["#6a8a4a", "#8b1a1a"] }
   - id: orc-elite
     atlas: orc-elite
@@ -78,7 +82,8 @@ enemies:
     health: 3.0
     size: elite
     contactDamage: 8
-    gait: { every: beat }
+    # Two steps, then it stands for two beats.
+    gait: { every: beat, pattern: "xx.." }
     death: { recipe: death-elite, debris: ["#6a8a4a", "#8b1a1a", "#a0a0a8"] }
   - id: orc-ember
     atlas: orc-ember
@@ -88,7 +93,8 @@ enemies:
     health: 1.15
     size: regular
     contactDamage: 6
-    gait: { every: beat }
+    # Stomps on the backbeat, against the orcs.
+    gait: { every: beat, pattern: ".x", share: 0.35 }
     death: { recipe: death-ember, debris: ["#ff7a2e", "#5a1a1a"] }
   - id: skeleton
     atlas: skeleton
@@ -98,6 +104,7 @@ enemies:
     health: 1.0
     size: regular
     contactDamage: 4
+    # Marches: a step on every beat.
     gait: { every: beat }
     death: { recipe: death-skeleton, debris: ["#e8e0d0", "#a89880"] }
   - id: skeleton-ember
@@ -108,7 +115,8 @@ enemies:
     health: 1.1
     size: regular
     contactDamage: 6
-    gait: { every: beat }
+    # Skips on the off-beat eighth notes, a snappy step on each "and".
+    gait: { every: eighth, pattern: ".x", share: 0.6 }
     death: { recipe: death-ember, debris: ["#ffb060", "#e8e0d0"] }
   - id: skeleton-archer
     atlas: skeleton-archer
