@@ -608,6 +608,15 @@ stage-parity test.
   own persistent directory. F4 measures both against their budgets.
 - `[profile.test]` and `[profile.dev.package."*"]` use `opt-level = 2`: the
   causality and oracle runs simulate whole songs.
+- **Purity is enforced, not hoped for.** The pure crates (`stream`,
+  `analysis`, `sim`, `eval`, `players`) carry `#![forbid(unsafe_code)]`. A gate
+  stage check reads `cargo metadata` and fails if any of them depends, directly
+  or transitively, on `audio`, `render` or `app`, or on `objc2`, `winit` or
+  `wgpu`.
+- **Unused dependencies:** `cargo-machete` runs in the release stage.
+- **Test runner:** F4 times `cargo-nextest` against `cargo test` on the
+  workspace and adopts it only for the stages where it is measurably faster,
+  recording the numbers in `metrics.md`.
 - **Locally,** `native/scripts/check-fast` is the native half of the fast check
   ([Validation](#validation)): format, clippy and tests for the crates the diff
   touches, under 60 s warm.
