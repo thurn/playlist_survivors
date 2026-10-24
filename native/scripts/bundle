@@ -1,0 +1,44 @@
+#!/bin/sh
+# Builds the spike and wraps it in a signed .app, so TCC can grant it System
+# Audio Recording (and the microphone, for the loopback test).
+#
+#   native/scripts/bundle            # -> native/target/Spike.app
+#
+# Every build is signed by the stable identity from scripts/signing-identity:
+# the grant is keyed on the signature's designated requirement (bundle ID plus
+# certificate), so it survives rebuilds.
+set -eu
+cd "$(dirname "$0")/.."
+IDENTITY="${PS_SIGNING_IDENTITY:-Playlist Survivors Dev}"
+scripts/signing-identity >/dev/null
+
+cargo build --release -p spike
+APP=target/Spike.app
+rm -rf "$APP"
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+cp target/release/spike "$APP/Contents/MacOS/spike"
+if [ -d spike/models ]; then
+  cp -R spike/models "$APP/Contents/Resources/models"
+fi
+cat >"$APP/Contents/Info.plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleIdentifier</key><string>ca.thurn.playlist-survivors.spike</string>
+  <key>CFBundleName</key><string>PS Spike</string>
+  <key>CFBundleDisplayName</key><string>Playlist Survivors Spike</string>
+  <key>CFBundleExecutable</key><string>spike</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleVersion</key><string>0</string>
+  <key>CFBundleShortVersionString</key><string>0.0</string>
+  <key>LSMinimumSystemVersion</key><string>14.2</string>
+  <key>NSHighResolutionCapable</key><true/>
+  <key>NSAudioCaptureUsageDescription</key><string>Playlist Survivors listens to the music you play to find its beat.</string>
+  <key>NSMicrophoneUsageDescription</key><string>The latency test listens to the speakers through the microphone.</string>
+</dict>
+</plist>
+PLIST
+codesign --force --sign "$IDENTITY" --identifier ca.thurn.playlist-survivors.spike "$APP"
+codesign -dr - "$APP" 2>&1 | grep designated
+echo "built $APP"

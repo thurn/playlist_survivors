@@ -1,0 +1,31 @@
+#!/bin/sh
+# Creates, once, the stable self-signed code-signing identity that signs every
+# native bundle. TCC keys the System Audio Recording grant on the code
+# signature's designated requirement (bundle ID plus this certificate), so the
+# grant survives rebuilds; an ad-hoc signature would re-prompt every build.
+# Idempotent: does nothing when the identity is already in the login keychain.
+set -eu
+NAME="${PS_SIGNING_IDENTITY:-Playlist Survivors Dev}"
+KEYCHAIN="$HOME/Library/Keychains/login.keychain-db"
+
+if security find-certificate -c "$NAME" "$KEYCHAIN" >/dev/null 2>&1; then
+  echo "signing identity '$NAME' already present"
+  exit 0
+fi
+
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+openssl req -x509 -newkey rsa:2048 -nodes -days 3650 \
+  -keyout "$tmp/key.pem" -out "$tmp/cert.pem" -subj "/CN=$NAME" \
+  -addext "basicConstraints=critical,CA:false" \
+  -addext "keyUsage=critical,digitalSignature" \
+  -addext "extendedKeyUsage=critical,codeSigning" 2>/dev/null
+# A throwaway transport password: security(1) will not import an unprotected p12.
+pass=$(openssl rand -hex 16)
+openssl pkcs12 -export -legacy -inkey "$tmp/key.pem" -in "$tmp/cert.pem" \
+  -name "$NAME" -out "$tmp/id.p12" -passout "pass:$pass" 2>/dev/null ||
+  openssl pkcs12 -export -inkey "$tmp/key.pem" -in "$tmp/cert.pem" \
+    -name "$NAME" -out "$tmp/id.p12" -passout "pass:$pass"
+# -T lets codesign use the key without a keychain prompt.
+security import "$tmp/id.p12" -k "$KEYCHAIN" -P "$pass" -T /usr/bin/codesign >/dev/null
+echo "created signing identity '$NAME'"

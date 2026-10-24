@@ -152,8 +152,9 @@ fixed.
 - **Layout:** a Cargo workspace in `native/`, split into crates as in
   [Workspace](#workspace).
 - **The gate is path-gated:** a native section when `native/` differs from
-  master, the TS section when TS paths differ. Whether sccache helps
-  fresh-worktree builds is measured in phase 0, not assumed.
+  master, the TS section when TS paths differ. Phase 0 measured no consistent
+  gain from sccache in fresh worktrees, so the gate builds without it
+  ([appendix](#measured-phase-0)).
 - **Scope ends at live parity.** Follow-ons are named, not designed.
 
 ### Goals
@@ -281,7 +282,7 @@ native/
   analyzer a pure function of its samples, a hindsight entry for a window
   ending at sample time `T` becomes usable inside the analyzer (by the phase
   check) at sample time `T + D`, a fixed delay set in phase 0 from the
-  spike's decode times. If a decode isn't done by then, the analyzer waits for
+  spike's decode times: `D = 670 ms` (see [Targets](#targets)). If a decode isn't done by then, the analyzer waits for
   it and the play log records the stall.
 - **Main thread.** winit's event loop: it drains arrivals and keys, runs the
   live runner, evaluates the frame, encodes and presents it. It posts sound
@@ -319,9 +320,16 @@ offset and the output's offset separately with a loopback test (built-in
 speakers into the built-in microphone), and the app carries two constants,
 `L_tap` and `L_out`, wherever they differ.
 
-A useful consequence: the analyzer hears each sample `L` before the player
-does. On built-in speakers that is 10–30 ms of free lookahead, and on Bluetooth
-much more.
+Measured in phase 0 ([appendix](#measured-phase-0)), this hope of free
+lookahead did not hold on built-in speakers. The tap stamps a sample 23 ms
+later than the output's render timeline stamps the same instant, so
+`L_tap = L_out - 23 ms`, about -6 ms: the tap's timestamp falls after the
+sample is heard. Its IOProc then runs 31 ms after that timestamp. The analyzer
+sees each sample about 33 ms (median) after the player heard it. Committed
+beats are still forecast about 0.78 s ahead of their heard times, so beats,
+clicks and flashes land on time; ticks and onsets simply arrive after their
+`t`, which [Arrivals roll back like late keys](#arrivals-roll-back-like-late-keys)
+already handles. Bluetooth is unmeasured.
 
 **In Delayed listening** the app plays the music itself, so a sample captured
 at `h` is heard at `h + M + L_out`. The music and the game's sounds then leave
@@ -420,7 +428,8 @@ phase 1.
 
 - **Capture:** a process tap on all output, excluding the app's own process
   (`kAudioHardwarePropertyTranslatePIDToProcessObject`), through an aggregate
-  device. Prove the tap hears Music and a browser, and does not hear the app's
+  device. (Measured: the exclusion only works when the app's output unit is
+  started before the tap is created. The app starts the mixer first.) Prove the tap hears Music and a browser, and does not hear the app's
   own test click.
 - **Permission:** the tap needs the "System Audio Recording" permission
   (`NSAudioCaptureUsageDescription`), which needs a bundle with an
@@ -1184,19 +1193,22 @@ The analyzer gains `Listening::Delayed { m }`. In it:
 
 ## Targets
 
-Filled in by the spike's executor ([Setting the targets](#setting-the-targets)).
-Until then every latency number is report-only.
+Set by the spike's executor from the phase 0 numbers
+([appendix](#measured-phase-0)), by the rules in
+[Setting the targets](#setting-the-targets). Gates are p95 unless stated.
 
 | Link | Measured in phase 0 | Target | Gate or report |
 |---|---|---|---|
-| Capture → arrival (beats, ticks, onsets) | | | |
-| Hindsight decode → arrival | | | |
-| Analyzer real-time factor (all groups) | | | |
-| Key event → main thread | | | |
-| Main thread → present | | | |
-| Sim + evaluate + encode per frame (p99, 120 Hz) | | | |
-| Rollback re-simulation per second | | | |
-| Committed beat → heard beat (steady tracks) | | | report (set by the commit horizon) |
+| Capture → arrival (beats, ticks, onsets): the app's share, IOProc run → published | median 0.58 ms, p95 0.97, max 28 | ≤ 2 ms | gate (0.97 + 50%) |
+| Capture → arrival, from the tap's timestamp | median 26.9 ms, p95 31.8, max 78; Core Audio delivers each buffer 31.3 ms after its timestamp (512-frame buffers) | ≤ 48 ms (31.8 + 50%); this is E1's `A` | report (the device and its buffer size set most of it; a later arrival falls back to its arrival stamp) |
+| Hindsight decode → arrival | decode median 146 ms, p95 240, p99.9 332 (1000 decodes); beside the live app p95 131–188 (three runs, 20–40 decodes each) | decode ≤ 360 ms; entries usable at `T + D`, `D = 670 ms` | gate on the decode (240 + 50%); `D` fixed (332 × 2, rounded up) |
+| Analyzer real-time factor (all groups) | beat group only: online path 0.005 (bench), 0.010–0.015 live; hindsight 0.146; together about 0.16. Ticks, onsets, structure, accents, bands: not yet ported | ≤ 0.5, hindsight included, one core | gate |
+| Key event → main thread | median 5.1 ms, p95 30.5, max 41.7 (n = 185 events posted from a thread; real presses pending) | ≤ 46 ms | gate (30.5 + 50%); D5 re-measures on real presses |
+| Main thread → present | to the first vsync after the present: median 15.6 ms, p95 15.7, p99 23.8 (120 Hz, Fifo, frame latency 1; a vsync extrapolated from the display link, not a measured present time) | ≤ 24 ms | gate (15.7 + 50%); C1 re-measures with the drawable's presented time and may loosen it once |
+| Sim + evaluate + encode per frame (p99, 120 Hz) | no sim yet | ≤ 4 ms (half a frame), provisional | report until C4 measures it, then a gate at its p95 + 50% |
+| Rollback re-simulation per second | no sim yet | ≤ 250 ms of CPU per second, provisional | report until C4 measures it, then a gate at its p95 + 50% |
+| Committed beat → heard beat (steady tracks) | house-128: clicks at the ear +4.7 ms median, \|e\| p95 9.7 ms, max 11 | — | report (set by the commit horizon) |
+| Output latency | built-in speakers 16.6 ms reported (27.3 with the 512-frame buffer); wired and AirPods not yet measured | — | report (hardware) |
 | Delayed listening: committed-beat accuracy against Direct, per corpus category (E1) | | | report; E1's rule |
 | Delayed listening: measured music delay against `M`, over an hour (E2) | | | gate at ±2 ms |
 
@@ -1419,4 +1431,148 @@ Filled in by phase 0, then by each phase that measures something.
 
 ### Measured: phase 0
 
-(Empty until the spike runs.)
+Measured by `hv-t8o8.1` with `native/spike/` on 2026-10-24, on the
+developer's MacBook Pro (Apple M5 Max, 18 cores, macOS 26.5.2, built-in
+speakers at 48 kHz, 512-frame buffers, 120 Hz display). The machine was shared
+with other agent sessions (load average 14–39), so tails are pessimistic.
+Commands: `spike check`, `spike bench 1000`, `spike tap`, `spike loopback`,
+`spike app` (in the signed bundle from `native/scripts/bundle`), then
+`native/spike/align.py` and `native/spike/time-builds.sh`.
+
+**Capture and permission**
+
+- The tap (`CATapDescription` stereo global tap excluding our process, through
+  a private aggregate device on the default output) hears `afplay` and does not
+  hear our own AUHAL clicks: tap peak 0.000 with only our clicks playing, 0.49
+  with a tap that includes us. The exclusion works only when the output unit is
+  started **before** the tap is created. The other way round, our own process
+  object is not yet the one that plays, and the tap hears our clicks (peak 0.58).
+- Permission: the first launch prompted for System Audio Recording, and the
+  user granted it. After three rebuilds (each a new binary) there was no prompt
+  (`tccd` logged no `AUTHREQ_PROMPTING`) and capture still worked. The bundle is
+  signed by the self-signed identity "Playlist Survivors Dev"
+  (`native/scripts/signing-identity`, login keychain, imported with
+  `-T /usr/bin/codesign` so signing never prompts). Designated requirement:
+  `identifier "ca.thurn.playlist-survivors.spike" and certificate leaf = H"6d57…55fd"`.
+  The microphone (loopback test) did not prompt.
+- Capture buffers: 512 frames at 48 kHz, every 10.667 ms (p95 10.672, max 10.69).
+- The tap's IOProc runs 31.30 ms (p95 31.31, max 31.33) after its buffer's
+  input timestamp.
+
+**The latency chain (ms; median / p95 / max)**
+
+| Link | Measured |
+|---|---|
+| Capture → arrival, every activation frame | 26.8 / 31.7 / 78.4 (n = 4007) |
+| Capture → arrival, committed beats | 27.4 / 32.0 / 78.4 (n = 88) |
+| IOProc run → arrival (the app's share; a later 40 s run) | 0.58 / 0.97 / 28.2 (n = 4005), p99 1.08 |
+| Committed beat's heard time − its arrival (lead) | 783 / 789 / 1117 |
+| Online analyzer, per 512-sample block | 0.049 / 0.102 / 0.29; real-time factor 0.005 |
+| Hindsight decode of 20 s, 1000 runs | 146 / 240 / 345; p99 294, p99.9 332 |
+| — front end / nets / Viterbi | 40 / 84 / 22 (medians) |
+| Hindsight decode beside the live app | 126 / 131 / 133 (60 s run, n = 40); 150 / 188 / 188 and 130 / 133 / 133 (40 s runs, n = 20 each) |
+| Key event → main thread (NSEvent.timestamp) | 5.1 / 30.5 / 41.7 (n = 185, events posted from a thread) |
+| Main thread → display link's target | 7.2 / 7.4 / 12.0 |
+| Main thread → first vsync after present | 15.6 / 15.7 / 24.1 (p99 23.8) |
+| Flash frame's vsync − beat's heard time | 4.4 / 14.4 / 26.1 (n = 86) |
+
+- The analyzer's real-time factor live (online path only, beside the window)
+  was 0.010–0.015, against 0.005 in the bench.
+- Key events: winit drops `NSEvent.timestamp`, so a local event monitor reads
+  it, and winit's `KeyboardInput` arrives with the same latency. Synthetic
+  presses through `CGEventPostToPid` are dropped without Accessibility
+  permission, so these are `NSEvent`s posted from a thread at random phases.
+  They measure the main thread's pickup, not the HID and window-server path.
+  Real presses: pending (record in D5).
+- The clicks hit their targets: 86 played, 0 late. The flash is drawn for the
+  vsync the frame actually reaches. With Fifo and frame latency 1 the present
+  blocks about one period, so that is the first vsync after `now` plus the
+  previous frame's blocking time. It matched the first vsync after the present
+  in 95% of frames. (The warden review caught a first version that timed the
+  flash one vsync too early.) "Present" here is a vsync extrapolated from the
+  display link: wgpu hides the drawable, so the compositor's delay after that
+  vsync was not observed.
+- The app's share of capture → arrival (IOProc run → published, including a
+  0.5 ms poll) is under 1 ms at p95. The rest is Core Audio's delivery: a
+  constant 31.3 ms after the buffer's timestamp at 512-frame buffers. That part
+  depends on the device and its buffer size, so it is report-only. The gate is
+  on the app's share.
+
+**Output latency and the loopback test**
+
+- Reported by Core Audio on the built-in speakers: device 60 + safety 48 +
+  stream 690 frames = 16.6 ms, plus the 512-frame buffer = 27.3 ms. Wired
+  headphones and AirPods were not connected: **pending**, report-only.
+- Loopback (built-in speakers into the built-in microphone; `afplay` plays
+  1 kHz clicks, which the tap hears; we play 3 kHz clicks through AUHAL):
+  mic − tap = 23.9 ms (n = 10, spread under 0.1 ms) and mic − render = 46.2 ms
+  (n = 12). So `L_tap − L_out = −22.3 ms`. Independently, a tap that includes
+  us hears our clicks 23.0 ms after their render time (n = 12). The tap's
+  timeline runs 23 ms behind the output's render timeline.
+- The microphone's reported input latency (51.5 ms, mostly a 2399-frame stream
+  latency) cannot be the microphone's real offset: it would make `L_out`
+  negative. So absolute values anchor on the reported output latency:
+  `L_out = 16.6 ms`, `L_tap = L_out − 23.0 ms ≈ −6.4 ms`. The app carries the
+  two constants. The analyzer sees each sample about 33 ms after it is heard.
+- House-128 played by `afplay` into the live spike (40 s): committed beats are
+  +4.7 ms late against the track's reference grid (|e| median 4.7, p95 9.7,
+  max 11.0, after 5 s). The clicks at the ear land at the same offset: +4.7 ms
+  using the tap's 23.0 ms, +4.0 using the microphone's 22.3 (`L_out` cancels
+  in that comparison). The flash adds the frame offset above (+4.4 ms median),
+  so it reaches its vsync about 9 ms after the beat. Add the compositor's
+  delay, and note that its absolute time rests on the reported `L_out`, which
+  the loopback could not verify. By ear: **pending** (needs the user).
+- The 23 ms tap-versus-render offset was measured at 512-frame buffers on the
+  built-in speakers only. It likely depends on the buffer size and the device,
+  so D2's calibration should measure it per device.
+
+**Analysis port**
+
+- The Rust port of madmom's online front end, LSTM ensemble and forward
+  algorithm, and of the offline front end, BiLSTM ensemble and Viterbi, matches
+  madmom on the golden house-128 excerpts. Features agree within 1e-6 and
+  activations within 3e-7. Forward states, the committed beats (29 of 29, times
+  within 4e-7 s) and the offline beats (42 of 42) are identical
+  (`spike check`). The commit golden runs without the hindsight phase check,
+  and its evidence is not compared (the spike computes evidence per frame,
+  `stream.py` per tick). The test skips when the gitignored models are
+  absent, so the gate never runs it.
+- Weights and tables come from `native/spike/export_models.py` (5.3 MB,
+  gitignored). The online and offline DBNs both have 5617 states (55–215 BPM,
+  every whole-frame interval).
+- Hindsight's cost fits its planned form: one 20 s decode takes 146 ms
+  median and 332 ms at p99.9, far inside its 1 s period. `D = 670 ms`. The
+  spike times the live decodes but does not feed them to a phase check.
+
+**Build times (s; fresh worktree, warm cargo registry)**
+
+| | Cold `cargo build --release -p spike` | Native gate section (fmt, clippy, test, release build) |
+|---|---|---|
+| Without sccache | 33.8, 27.5 | 87.5, 79.9 |
+| `RUSTC_WRAPPER=sccache` (cache warmed by another worktree) | 38.5, 28.2 | 69.7, 103.4 |
+
+sccache hit 86% of compilations, the dependencies, under their stable registry
+paths. It still won no consistent time: the cold builds were equal or slower,
+and the gate ran 18 s faster in one run and 23 s slower in the other, under the
+shared machine's load. **F4 builds without sccache**: it adds a daemon and
+a cache for no measured gain. The gate's budget starts from about 90 s for the
+spike's dependency tree (wgpu, winit, objc2), well inside Tollgate's 15 minutes.
+
+**Crate choices**
+
+- `objc2-core-audio` 0.3.2 covers everything the tap needs:
+  `CATapDescription`, `AudioHardwareCreateProcessTap`, the aggregate device and
+  sub-tap keys, `kAudioTapPropertyFormat` and
+  `kAudioHardwarePropertyTranslatePIDToProcessObject`. No hand-written binding.
+- Output: AUHAL (the default output unit) via `objc2-audio-toolbox` works, with
+  sample-accurate clicks scheduled on the render timestamps. `cpal` is not
+  needed.
+- YAML: `serde-saphyr` 2. It parses all 12 files in `content/` and `levels/`
+  to exactly what the TS loader's `yaml` package produces (compared as JSON).
+  (`serde_yaml` is unmaintained; `serde_yaml_ng` has not been released since
+  2024.)
+- Ring: `rtrb` 0.4; FFT: `realfft` 3; batched input projections:
+  `matrixmultiply`; window and GPU: `winit` 0.30 and `wgpu` 30 (Metal); display
+  link: `objc2-core-video` (`CVDisplayLink`); key timestamps: `objc2-app-kit`
+  local event monitor.
+- The spike resamples 48 kHz to 44.1 kHz linearly. A1 uses `rubato`, as planned.

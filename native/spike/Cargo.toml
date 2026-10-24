@@ -1,0 +1,27 @@
+[package]
+name = "spike"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", features = ["NSArray", "NSValue", "NSString", "NSDictionary", "NSUUID", "NSEnumerator", "NSObject"] }
+objc2-core-foundation = "0.3"
+objc2-core-audio = "0.3"
+objc2-core-audio-types = "0.3"
+objc2-audio-toolbox = "0.3"
+realfft = "3"
+matrixmultiply = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+libc = "0.2"
+block2 = "0.6"
+rtrb = "0.4"
+winit = "0.30"
+wgpu = "30"
+pollster = "1"
+objc2-app-kit = { version = "0.3", features = ["NSEvent", "NSApplication", "NSResponder", "NSGraphics", "NSGraphicsContext"] }
+objc2-core-video = "0.3"
+objc2-core-graphics = { version = "0.3", features = ["CGEvent", "CGEventTypes", "CGRemoteOperation"] }
+serde-saphyr = "2"
