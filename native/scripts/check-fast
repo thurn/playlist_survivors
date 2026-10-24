@@ -7,6 +7,9 @@
 # - rustfmt over the workspace, and the pure crates' purity (native/scripts/crates purity);
 # - clippy (-D warnings) and the tests of the crates the diff touches and their dependents
 #   (every crate when the workspace's files or the content it reads changed);
+# - unused dependencies (cargo machete, a fraction of a second) whenever a crate changed: a code
+#   removal can leave one, and the release stage would otherwise be the first to fail
+#   (hv-t8o8.70);
 # - native/scripts/crates' own tests when that script changed.
 # Set CARGO_TARGET_DIR to build elsewhere (Tollgate's steps use persistent directories).
 # The oracle and causality smokes join the gate stage when the sim has them (B7, B8).
@@ -35,11 +38,13 @@ if [ "$crates" = all ]; then
   echo "native check-fast: every crate"
   cargo clippy --locked --workspace --all-targets -- -D warnings
   cargo test --locked --workspace --quiet
+  cargo machete
 elif [ -n "$crates" ]; then
   echo "native check-fast: $crates"
   for c in $crates; do set -- "$@" -p "$c"; done
   cargo clippy --locked "$@" --all-targets -- -D warnings
   cargo test --locked "$@" --quiet
+  cargo machete
 else
   echo "native check-fast: no crate changed"
 fi

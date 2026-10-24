@@ -631,7 +631,7 @@ stage-parity test.
   stage check reads `cargo metadata` and fails if any of them depends, directly
   or transitively, on `audio`, `render` or `app`, or on `objc2`, `winit` or
   `wgpu`.
-- **Unused dependencies:** `cargo-machete` runs in the release stage.
+- **Unused dependencies:** `cargo-machete` runs in the gate whenever a crate changes (a fraction of a second; hv-t8o8.70), and in the release stage.
 - **Test runner:** F4 times `cargo-nextest` against `cargo test` on the
   workspace and adopts it only for the stages where it is measurably faster,
   recording the numbers in `metrics.md`.
