@@ -4,12 +4,15 @@
  *   npm run reactive:dossier -- --track notjam-breakbeat-chips --round 0
  *   npm run reactive:dossier -- --split iteration --round 0     (every iteration track, one after another)
  *   npm run reactive:dossier -- --anchor --round 0              (the authored Galop, play mode)
+ *   npm run reactive:dossier -- --split held-out --milestone 0  (a milestone's held-out dossiers)
  *
  * Writes captures/feel/round-<n>/<id>/ (gitignored): metrics.json and metrics.md, frames.json (the
  * evaluator's frame state at 240 Hz), timeline.png, up to 4 section sheets, a phrase sheet, an
  * honest-against-masher sheet, a moments sheet, and mix.ogg (the track with the honest run's sounds,
  * for the user: raters never get audio). Seed 1858, damage off. `--no-mix` skips the mix. Held-out
- * tracks are refused: their dossiers are a milestone's (docs/design/reactive-feel.md, "Held-out Protocol").
+ * tracks get dossiers only with --milestone <m> (the whole held-out split, into
+ * captures/heldout/milestone-<m>/, printing nothing of any track: docs/design/reactive-feel.md,
+ * "Held-out Protocol").
  */
 import { execFileSync } from "node:child_process";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
@@ -34,15 +37,21 @@ const { values } = parseArgs({
     round: { type: "string", default: "0" },
     rate: { type: "string", default: "240" },
     "no-mix": { type: "boolean" },
+    milestone: { type: "string" },
   },
 });
 const heldOut = new Set(corpusTrackIds("held-out"));
-const ids = values.track ? values.track.split(",") : values.split === "iteration" ? corpusTrackIds("iteration") : [];
-if (values.split && values.split !== "iteration") {
-  console.error("dossiers cover the iteration split (held-out dossiers are a milestone's)");
+const milestone = values.milestone;
+if (milestone !== undefined && (values.split !== "held-out" || values.track !== undefined)) {
+  console.error("--milestone builds the whole held-out split's dossiers (and, with --anchor, the anchor's): --split held-out, without --track");
   process.exit(2);
 }
-if (ids.some((id) => heldOut.has(id))) {
+const ids = values.track ? values.track.split(",") : values.split === "iteration" ? corpusTrackIds("iteration") : milestone !== undefined ? corpusTrackIds("held-out") : [];
+if (values.split && values.split !== "iteration" && milestone === undefined) {
+  console.error("dossiers cover the iteration split (held-out dossiers are a milestone's: --milestone <m>)");
+  process.exit(2);
+}
+if (milestone === undefined && ids.some((id) => heldOut.has(id))) {
   console.error("held-out tracks get no dossier outside a milestone");
   process.exit(2);
 }
@@ -50,7 +59,9 @@ if (!ids.length && !values.anchor) {
   console.error("usage: npm run reactive:dossier -- (--track <id>[,<id>…] | --split iteration | --anchor) [--round <n>]");
   process.exit(2);
 }
-const roundDir = join(ROOT, `captures/feel/round-${values.round}`);
+const roundDir = milestone !== undefined ? join(ROOT, `captures/heldout/milestone-${milestone}`) : join(ROOT, `captures/feel/round-${values.round}`);
+/** A milestone prints nothing of any held-out track. */
+const quiet = milestone !== undefined;
 const rate = Number(values.rate);
 if (!(rate >= 60)) {
   console.error("--rate takes a frame rate of at least 60 Hz");
@@ -205,7 +216,8 @@ function sameRun(game: GamePage, plan: Plan, what: string, metrics: TrackMetrics
     sameRunCheck(game, plan).then((d) => {
       if (!d) return;
       metrics.notes.push(`the sheets' ${what} run differs from the metrics' (${d})`);
-      console.warn(`warning: the sheets' ${what} run differs from the metrics': ${d}`);
+      if (!quiet) console.warn(`warning: the sheets' ${what} run differs from the metrics': ${d}`);
+      else console.warn("warning: a sheet's run differs from its metrics' (see the dossier's notes)");
     }),
   );
 }
@@ -295,9 +307,8 @@ await withDevServer(async (base) => {
     await renderTimeline(r, frames, firstSection && firstSection.s < IDENTITY_BY_S ? firstSection.s : IDENTITY_BY_S, join(dir, "timeline.png"));
     const sheets = await dossier(base, r, metrics, dir, false);
     writeMetrics(metrics, dir);
-    console.log(
-      `${id}: ${["metrics.json", "metrics.md", "frames.json", "timeline.png", ...sheets.map((f) => f.slice(dir.length + 1))].join(", ")} (${((performance.now() - t0) / 1000).toFixed(0)} s)`,
-    );
+    if (quiet) console.log(`milestone ${milestone}: dossier ${ids.indexOf(id) + 1} of ${ids.length} written`);
+    else console.log(`${id}: ${["metrics.json", "metrics.md", "frames.json", "timeline.png", ...sheets.map((f) => f.slice(dir.length + 1))].join(", ")} (${((performance.now() - t0) / 1000).toFixed(0)} s)`);
   }
   if (values.anchor) {
     const { anchorRuns } = await import("./lib/feel-anchor.ts");

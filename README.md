@@ -137,7 +137,23 @@ restarts the song (there is one section), each track keeps its own best grade, a
   `captures/feel/round-<n>/<id>/`: `metrics.json`/`.md`, `frames.json` (the frame
   state at 240 Hz), `timeline.png`, section, phrase, moments and
   honest-against-masher contact sheets, and `mix.ogg` (the track with the honest
-  run's sounds; `--no-mix` skips it).
+  run's sounds; `--no-mix` skips it). `--split held-out --milestone <m>` builds a
+  milestone's held-out dossiers in `captures/heldout/milestone-<m>/`, printing
+  nothing of any track.
+- `npm run reactive:feel -- <command>` runs a rating round
+  ([rubric](docs/feel/rubric.md), [rater brief](docs/feel/rater-brief.md)):
+  `batches --round <n>` splits the iteration set into batches of about 5 (the
+  authored Galop's dossier first, as the anchor); `brief --round <n> --batch <k>`
+  prints a rater's prompt; `aggregate --round <n>` merges the raters' scores into
+  `docs/feel/round-<n>.json` (means, contradictions with the paired metrics, the
+  anchor's calibration, rater noise, issues); `milestone --milestone <m> --round <n>`
+  exports a milestone's held-out scores and metrics as numbers only to
+  `docs/feel/milestone-<m>.json`; `overfit --milestone <m>` applies the
+  overfitting rule against milestone 0. A re-rating (after a failed calibration)
+  replaces its batch's `scores.json`; a second rater writes `second-<name>/`.
+  `batches --milestone <m>` and `brief --milestone <m> --batch <k>` do the same for
+  a milestone's held-out batches (the anchor in the first), whose raters reply
+  with no scores.
 - `npm run reactive:parity -- --track orpheus-galop` compares the reactive Galop
   with the authored one, row by row (strikes and sounds on the song map's beats,
   ratings, time at tier 2 and up, groove and grade, kills and enemies per section,

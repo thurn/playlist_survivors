@@ -36,6 +36,7 @@
     "reactive:fit-grid": "tsx scripts/reactive-fit-grid.ts",
     "reactive:corpus": "tsx scripts/reactive-corpus.ts",
     "reactive:dossier": "tsx scripts/reactive-dossier.ts",
+    "reactive:feel": "tsx scripts/reactive-feel.ts",
     "reactive:parity": "tsx scripts/reactive-parity.ts",
     "reactive:replay": "tsx scripts/reactive-replay.ts"
   },
