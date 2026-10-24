@@ -76,6 +76,7 @@ terms:
 | 0. Targets | The spike's executor sets latency targets from its own numbers, by fixed rules | — |
 | W. Workflow (now, alongside the TS wrap-up) | Staged validation (a gate stage of about 60 s, a release stage for everything else), fast local checks, `ci-fix` beads, the friction ledger and its triggers | CI stays fast and tool failures get fixed |
 | 1. Freeze and foundations | `ts-freeze` tag, oracle fixtures, exported model weights, Cargo workspace, both stages' native sections, AGENTS.md | The oracles exist and CI runs Rust |
+| V. Playable slice (now, by 19:00 on 2026-10-24) | A rough game in a native window on live system audio: the Rust analyzer's committed beats drive enemies and judging. Not the TS game | Capture, analysis, input, render and output work end to end before fidelity work goes further |
 | A. Analyzer (parallel with B) | Every stream group as streaming Rust, stage-parity tests, corpus parity report | Rust streams match Python |
 | B. Sim (parallel with A) | Content, schedule, sim, judging, director, set pieces, evaluator, virtual players, causality checks, all streaming | Rust sim matches TS bit for bit |
 | C. Convergence | Renderer, audio output, app shell, live runner; playable in File mode, then System mode | The game plays, natively, live |
@@ -83,7 +84,8 @@ terms:
 | E. Delayed listening (not needed for parity) | E0 and ES now: the payoff measured offline from committed streams, and the muting tap and delay line spiked. Later E1 and E2: committed beats from hindsight under a music delay; the tap mutes the picked app and the app plays its audio late | Lookahead buys measurably better beats, safely |
 | R. Retrospectives | One at the end of each phase, and one after every 8 closed beads in between | The workflow's costs are found and fixed while the plan runs |
 
-Phases A and B run in parallel after phase 1. Phase C starts when B's sim and
+Phase V runs first, alongside B1: one executor builds the slice while the
+other continues the sim. Phases A and B run in parallel after phase 1. Phase C starts when B's sim and
 evaluator are green; its live steps also need A. Phase E's first two beads, E0
 and ES, need nothing and run now, alongside the TS wrap-up and phase W. Its
 analyzer bead E1 can start once A is done, and its app bead E2 follows D's
@@ -97,6 +99,13 @@ fixed.
 - **A full Rust rewrite now,** not a webview shell around the TS game. The user
   weighed the sizing (a port of about 17k lines plus tooling, against about 3–4k
   lines changed for an incremental TS refactor) and chose the rewrite.
+- **Velocity first: a playable slice before fidelity.** On 2026-10-24 the
+  user moved a rough end-to-end game ahead of the faithful port, due by
+  19:00 that day ([Phase V](#phase-v-the-playable-slice)). It need not match
+  the TS game and gets no cold review. Its purpose is to validate capture,
+  analysis, input, rendering and output together, and to find what matters
+  for feel, before investing further in complete fidelity. The faithful port
+  below stays the goal; C3 replaces the slice.
 - **A faithful port.** Same rules, tunings, content and look as the TS reactive
   mode at the freeze commit. Rule changes come after parity, in later plans.
   The only deliberate differences are the [live exceptions](#live-exceptions).
@@ -638,6 +647,45 @@ stage-parity test.
   the capture permission needs one click from the user the first time, and
   agents record System-mode checks as pending until then; and the oracle's
   inputs stay frozen until D6 (see [Oracle fixtures](#oracle-fixtures)).
+
+## Phase V: The Playable Slice
+
+Bead V1 (`hv-t8o8.62`). One executor, about five hours, landing on `staging` by 18:30 on
+2026-10-24 so the operator can play it at 19:00. Deliberately rough.
+
+- **Where:** a `slice` module in the `app` crate, so `native/scripts/bundle`
+  and the existing System Audio Recording grant apply unchanged. Game rules
+  live in the slice, never in `sim`, `render` or `eval`, which stay
+  oracle-faithful. The pure crates' purity rules still hold; the slice may
+  depend on `analysis`. C3 deletes the slice when the real runner lands.
+- **Reuse:** the phase 0 spike, deleted by F4 and still in history
+  (`git show 57e846a^:native/spike/src/...`): the process tap (`tap.rs`,
+  `coreaudio.rs`), the winit + wgpu window (`app.rs`) and output (`output.rs`).
+  Live beats come from the `analysis` crate (A1 to A4), not the spike's
+  analyzer.
+- **The game:** the player moves with the keys; enemies approach and step on
+  committed beats; a key pressed on a beat attacks, judged against the
+  committed beat (an on-beat window of about ±90 ms); contact costs health; a
+  score, a combo and a beat flash; the run ends on death or when audio stops
+  for a few seconds, then restarts. Simple shapes are fine. No TS content,
+  director, set pieces or exact tunings.
+- **Order:** end to end first, then polish. Land early and often: each step
+  is its own candidate.
+  1. The tap feeds the analyzer on a thread; the window flashes on committed
+     beats (about 15:30).
+  2. Player, enemies stepping on beats, attacks and judging (about 17:00).
+  3. Health, score, run end and restart; tuning by feel (about 18:30).
+- **Fallback:** if System mode is blocked (permission, a device), a
+  `--file <path>` flag plays a file through the app's output and taps it the
+  same way. Record which mode was verified.
+- **Process for V1:** no cold review; the gate stage must pass; one friction
+  record with the last candidate. The operator's System Audio Recording click
+  and any check needing the speakers go in `operator-pending.md` as usual.
+- **Run it:** `native/scripts/bundle`, then open the `.app`; the bead's notes
+  and `operator-pending.md` give the exact command.
+- **After 19:00:** fixes and improvements from the operator's play are filed
+  as follow-up beads under `hv-t8o8` with the label `velocity`, and take
+  priority over the plan beads until the operator says otherwise.
 
 ## Phase A: The Analyzer
 
@@ -1619,6 +1667,7 @@ worktree, passes the gate stage, writes its friction record, and follows
 | F3 | `hv-t8o8.4` | 1 | `export-models`, golden activations | F1 |
 | F4 | `hv-t8o8.5` | 1 | Workspace scaffold, native sections in both stages, persistent target directories, `check-fast`, bundle script, AGENTS.md; deletes the spike | S0, F1, W1, ES |
 | R1 | `hv-t8o8.37` | R | Retrospective: phases W, 0 and 1 | W1, W2, F1–F4 |
+| V1 | `hv-t8o8.62` | V | The playable slice on live system audio, by 19:00 on 2026-10-24 | A4, F4 |
 | A1 | `hv-t8o8.6` | A | Front end and online LSTM ensemble, stage parity | F3, F4, R1 |
 | A2 | `hv-t8o8.7` | A | DBN forward, period smoothing, commit rule | A1 |
 | A3 | `hv-t8o8.8` | A | Ticks (evidence uses the beliefs), energy, levels, onsets, strong flags | A2 |
@@ -1651,7 +1700,11 @@ worktree, passes the gate stage, writes its friction record, and follows
 | E2 | `hv-t8o8.32` | E | Delayed listening in the app: muting tap, delay line, playback, watchdog, listening-screen choice, File-source Delayed, session meta, timing logs, QA items 14–19 | E1, ES, D2, D4 |
 | R5 | `hv-t8o8.41` | R | Final retrospective | D6, E2 |
 
-- **Now:** F1, W1, E0 and ES are ready and independent. W2 follows W1. F2 and
+- **Now (2026-10-24 afternoon):** V1 first, on one executor; the other
+  continues B1 and the B track. `velocity` beads preempt every bead except
+  `ci-fix`, including introspection, retrospective and cadence beads, which
+  wait until the slice is played. A5 is parked until V1 lands.
+- **Originally:** F1, W1, E0 and ES are ready and independent. W2 follows W1. F2 and
   F3 follow F1; F4 follows F1, W1 and ES (it deletes the spike).
 - **Retrospectives** sit at every phase boundary and block the next phase
   (R1 to R4); R5 closes the epic after D6 and E2. Cadence retrospectives and
