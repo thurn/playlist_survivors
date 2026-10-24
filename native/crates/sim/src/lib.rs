@@ -5,3 +5,5 @@ pub mod canonical;
 pub mod content;
 pub mod core;
 pub mod jsmath;
+pub mod schedule;
+pub mod strides;

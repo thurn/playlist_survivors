@@ -5,25 +5,25 @@ use serde_json::{Value, json};
 
 use super::zod::{Field, Num, Schema, Str, def, opt, req};
 
-fn num() -> Schema {
+pub(crate) fn num() -> Schema {
     Schema::Number(Num::default())
 }
 
-fn positive() -> Schema {
+pub(crate) fn positive() -> Schema {
     Schema::Number(Num {
         positive: true,
         ..Num::default()
     })
 }
 
-fn min(m: f64) -> Schema {
+pub(crate) fn min(m: f64) -> Schema {
     Schema::Number(Num {
         min: Some(m),
         ..Num::default()
     })
 }
 
-fn int_positive() -> Schema {
+pub(crate) fn int_positive() -> Schema {
     Schema::Number(Num {
         int: true,
         positive: true,
@@ -31,7 +31,7 @@ fn int_positive() -> Schema {
     })
 }
 
-fn int_min(m: f64) -> Schema {
+pub(crate) fn int_min(m: f64) -> Schema {
     Schema::Number(Num {
         int: true,
         min: Some(m),
@@ -39,7 +39,7 @@ fn int_min(m: f64) -> Schema {
     })
 }
 
-fn positive_max(m: f64) -> Schema {
+pub(crate) fn positive_max(m: f64) -> Schema {
     Schema::Number(Num {
         positive: true,
         max: Some(m),
@@ -47,7 +47,7 @@ fn positive_max(m: f64) -> Schema {
     })
 }
 
-fn min_max(lo: f64, hi: f64) -> Schema {
+pub(crate) fn min_max(lo: f64, hi: f64) -> Schema {
     Schema::Number(Num {
         min: Some(lo),
         max: Some(hi),
@@ -56,19 +56,19 @@ fn min_max(lo: f64, hi: f64) -> Schema {
 }
 
 /// `z.number().min(0).max(1)`.
-fn unit() -> Schema {
+pub(crate) fn unit() -> Schema {
     min_max(0.0, 1.0)
 }
 
-fn string() -> Schema {
+pub(crate) fn string() -> Schema {
     Schema::String(Str::default())
 }
 
-fn bool() -> Schema {
+pub(crate) fn bool() -> Schema {
     Schema::Bool
 }
 
-fn is_id(s: &str) -> bool {
+pub(crate) fn is_id(s: &str) -> bool {
     let b = s.as_bytes();
     !b.is_empty()
         && (b[0].is_ascii_lowercase() || b[0].is_ascii_digit())
@@ -86,57 +86,57 @@ fn is_gait_pattern(s: &str) -> bool {
     !s.is_empty() && s.bytes().all(|c| c == b'x' || c == b'.') && s.contains('x')
 }
 
-fn id() -> Schema {
+pub(crate) fn id() -> Schema {
     Schema::String(Str {
         check: Some((is_id, "ids are lower-case kebab-case")),
     })
 }
 
-fn color() -> Schema {
+pub(crate) fn color() -> Schema {
     Schema::String(Str {
         check: Some((is_color, "colors are #rrggbb")),
     })
 }
 
 /// `z.tuple([z.number(), z.number()])`.
-fn range() -> Schema {
+pub(crate) fn range() -> Schema {
     Schema::Tuple(vec![num(), num()])
 }
 
 /// A number, or a [low, high] range interpolated by intensity.
-fn param() -> Schema {
+pub(crate) fn param() -> Schema {
     Schema::Union(vec![num(), range()])
 }
 
-fn array(item: Schema) -> Schema {
+pub(crate) fn array(item: Schema) -> Schema {
     Schema::Array {
         item: Box::new(item),
         min: 0,
     }
 }
 
-fn array1(item: Schema) -> Schema {
+pub(crate) fn array1(item: Schema) -> Schema {
     Schema::Array {
         item: Box::new(item),
         min: 1,
     }
 }
 
-fn object(fields: Vec<Field>) -> Schema {
+pub(crate) fn object(fields: Vec<Field>) -> Schema {
     Schema::Object(fields)
 }
 
-fn lit(s: &'static str) -> Schema {
+pub(crate) fn lit(s: &'static str) -> Schema {
     Schema::Literal(s)
 }
 
-fn en(options: &[&'static str]) -> Schema {
+pub(crate) fn en(options: &[&'static str]) -> Schema {
     Schema::Enum(options.to_vec())
 }
 
 const SUBDIVISION: [&str; 5] = ["sixteenth", "eighth", "beat", "bar", "two-bar"];
 
-fn subdivision() -> Schema {
+pub(crate) fn subdivision() -> Schema {
     en(&SUBDIVISION)
 }
 
@@ -594,7 +594,13 @@ pub fn sound_palette() -> Schema {
         opt("extends", id()),
         def("tuned", bool(), json!(false)),
         def("gain", num(), json!(1)),
-        req("sounds", Schema::Record(Box::new(array1(sample)))),
+        req(
+            "sounds",
+            Schema::Record {
+                key: None,
+                value: Box::new(array1(sample)),
+            },
+        ),
     ])
 }
 

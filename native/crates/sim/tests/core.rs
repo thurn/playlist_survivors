@@ -330,6 +330,9 @@ fn galop() -> SongMap {
             .collect()
     };
     SongMap {
+        song: v["song"].as_str().unwrap().to_string(),
+        duration: v["audio"]["duration"].as_f64().unwrap(),
+        phrases: Vec::new(),
         meter: v["meter"]
             .as_array()
             .unwrap()

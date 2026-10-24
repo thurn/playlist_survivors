@@ -59,7 +59,13 @@ pub enum Schema {
         key: &'static str,
         variants: Vec<(&'static str, Schema)>,
     },
-    Record(Box<Schema>),
+    /// `z.record(key, value)`; a key check stands for an id-like key schema.
+    Record {
+        key: Option<StrCheck>,
+        value: Box<Schema>,
+    },
+    /// `z.unknown()`: anything, passed through.
+    Any,
     /// A schema with an extra check of the parsed value.
     Refine(Box<Schema>, fn(&Value) -> Option<String>),
 }
@@ -365,7 +371,8 @@ fn parse_at(
                 None
             }
         }
-        Schema::Record(value) => {
+        Schema::Any => Some(v.clone()),
+        Schema::Record { key, value } => {
             let Some(obj) = v.as_object() else {
                 return issue(
                     path,
@@ -377,6 +384,13 @@ fn parse_at(
             let mut out = Map::new();
             for (k, x) in obj {
                 path.push(PathPart::Key(k.clone()));
+                if let Some((check, message)) = key
+                    && !check(k)
+                {
+                    issue(path, issues, *message);
+                    path.pop();
+                    continue;
+                }
                 if let Some(parsed) = parse_at(value, x, path, issues) {
                     out.insert(k.clone(), parsed);
                 }
