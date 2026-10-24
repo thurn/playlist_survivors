@@ -55,7 +55,7 @@ fn click_wav(path: &std::path::Path, rate: u32, secs: f64, freq: f32) {
 }
 
 /// RBJ band-pass (0 dB peak), then a 1 ms envelope.
-fn envelope(x: &[f32], rate: f64, freq: f32) -> Vec<f32> {
+pub(crate) fn envelope(x: &[f32], rate: f64, freq: f32) -> Vec<f32> {
     let w0 = std::f64::consts::TAU * freq as f64 / rate;
     let q = 4.0;
     let alpha = w0.sin() / (2.0 * q);
@@ -81,7 +81,7 @@ fn envelope(x: &[f32], rate: f64, freq: f32) -> Vec<f32> {
 
 /// Onsets (sample indices): each event's first sample above 30% of its own
 /// peak, events separated by at least 0.3 s, ignoring events under `floor`.
-fn onsets(env: &[f32], rate: f64, floor: f32) -> Vec<usize> {
+pub(crate) fn onsets(env: &[f32], rate: f64, floor: f32) -> Vec<usize> {
     let gap = (0.3 * rate) as usize;
     let mut out = Vec::new();
     let mut i = 0;
@@ -108,7 +108,7 @@ fn onsets(env: &[f32], rate: f64, floor: f32) -> Vec<usize> {
 }
 
 /// Host time (s) of sample `i` of a capture.
-fn host_of(metas: &[Meta], rate: f64, i: usize) -> Option<f64> {
+pub(crate) fn host_of(metas: &[Meta], rate: f64, i: usize) -> Option<f64> {
     let i = i as u64;
     let m = metas.iter().rev().find(|m| m.first <= i)?;
     Some(host_s(m.input_host) + (i - m.first) as f64 / rate)

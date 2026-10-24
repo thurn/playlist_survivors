@@ -15,6 +15,7 @@ mod frontend;
 mod loopback;
 mod lstm;
 mod models;
+mod mute;
 mod output;
 mod stats;
 mod tap;
@@ -44,6 +45,18 @@ fn main() {
         ),
         Some("yaml") => yaml(&args[2..]),
         Some("tap") => tap_test(&args[2..]),
+        Some("procs") => mute::procs(),
+        Some("taps") => mute::taps(),
+        Some("cleanup") => mute::cleanup(),
+        Some("mute") => mute::mute_test(std::path::Path::new(&args[2]), &args[3..]),
+        Some("hold") => mute::hold(&args[2..]),
+        Some("sigkill") => mute::sigkill_test(std::path::Path::new(&args[2])),
+        Some("watchdog") => mute::watchdog_test(std::path::Path::new(&args[2])),
+        Some("delay") => mute::delay_test(
+            std::path::Path::new(&args[2]),
+            args.get(3).and_then(|s| s.parse().ok()).unwrap_or(3.0),
+            args.get(4).and_then(|s| s.parse().ok()).unwrap_or(60.0),
+        ),
         Some("bench") => bench(args.get(2).and_then(|s| s.parse().ok()).unwrap_or(300)),
         _ => {
             eprintln!("usage: spike check | bench [decodes]");

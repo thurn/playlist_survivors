@@ -1289,7 +1289,7 @@ Set by the spike's executor from the phase 0 numbers
 | Committed beat → heard beat (steady tracks) | house-128: clicks at the ear +4.7 ms median, \|e\| p95 9.7 ms, max 11 | — | report (set by the commit horizon) |
 | Output latency | built-in speakers 16.6 ms reported (27.3 with the 512-frame buffer); wired and AirPods not yet measured | — | report (hardware) |
 | Delayed listening: committed-beat accuracy against Direct, per corpus category (E1) | E0, replayed from Python's hindsight entries: offline grid at `M = 3 s` 86.1% within 45 ms against Direct's 79.0%, every category better ([appendix](#measured-e0-delayed-listenings-payoff)) | | report; E1's rule |
-| Delayed listening: measured music delay against `M`, over an hour (E2) | | | gate at ±2 ms |
+| Delayed listening: measured music delay against `M`, over an hour (E2) | ES, the spike's delay line at `M = 3 s`: per-minute medians spread 0.02 ms over 60 minutes, no underruns (stability only: `M + 23 ms` absolute on the tap timeline, cause unconfirmed; loopback pending, [appendix](#measured-es-delayed-listenings-tap-and-delay-line)) | | gate at ±2 ms |
 
 ## Automated Checks
 
@@ -2057,3 +2057,102 @@ an encore) is not in the code; `levels/reactive.yaml` still has `afterS: 90`,
 finale at the freeze is `reactiveFinale` above, keyed to the file's length, so
 D1's confirmed-end rule is the native app's own and is compared live only on
 the QA checklist.
+
+### Measured: ES, Delayed listening's tap and delay line
+
+Measured by `hv-t8o8.36` on 2026-10-24 with `native/spike/` (`spike procs`,
+`mute`, `sigkill`, `watchdog`, `delay`, `taps`, `cleanup`; see its README), in
+the signed bundle on the same MacBook Pro. Each run's output is kept in
+`native/evidence/es/` (F4 deletes the spike, not the evidence). **The
+operator's speakers were muted** (output volume 25, muted), and the spike does not unmute them. So
+every result that needs loopback (speakers into the built-in microphone) to
+tell whether an app is audible is **pending**. A global tap cannot stand in
+for it: it hears a muted app at full level (1.000 of its level before the
+tap, in every phase: `mute-afplay-global-tap.txt`), because taps read a
+process's audio before its mute.
+
+**The muting tap**
+
+- A per-process tap (`initStereoMixdownOfProcesses` over the app's process
+  objects, `muteBehavior = CATapMutedWhenTapped`, private) read by an IOProc
+  on a private aggregate device on the default output. Over `afplay` it
+  captures the app (peak 0.15 of a 0.15 tone). Creating the tap, the aggregate
+  and starting the IOProc takes 12–22 ms; stopping and destroying them 7–14 ms.
+- Silent while tapped, audible after destroy, and what stopping the IOProc
+  alone does: **pending** loopback (`spike mute`).
+- **Which process:** Core Audio's process objects are per process, not per
+  app. Chrome plays from `com.google.Chrome.helper` processes; Safari from one
+  of five `com.apple.WebKit.GPU` processes (shared with other WebKit apps; the
+  one playing had `IsRunningOutput` set). A tap over that one process captured
+  a Safari tab (peak 0.50). Music plays from its own process (`com.apple.Music`,
+  pid of the app); it was not tapped, since that would play the operator's
+  library.
+
+**`SIGKILL`**
+
+- A child process tapped `afplay` and was killed with `SIGKILL` while
+  tapping. A **public** tap and aggregate (made public only for this test)
+  outlive the process: both are still listed 4 s later, until `spike cleanup`
+  destroys them, though no IOProc runs on the aggregate any more
+  (`DeviceIsRunningSomewhere` 1 → 0).
+- A **private** tap and aggregate are invisible to other processes even by
+  their object IDs (`'!obj'` while the child lives and after), so their
+  cleanup cannot be observed from outside.
+- Whether the source is audible after the kill: **pending** loopback
+  (`spike sigkill`, with `PS_CHILD_PRIVATE=1` for the private case).
+  `CATapMutedWhenTapped` mutes only while the tap is read, and nothing reads it
+  after the kill (Apple's documented behaviour; the spike's IOProc-stopped
+  phase would test it, also pending), which is what loopback must confirm.
+
+**The watchdog**
+
+- The main thread stalls for 6 s while tapping. A watchdog thread polling
+  every 50 ms destroys the aggregate and the tap from its own thread **2,028
+  and 2,056 ms after the stall began** in two runs (2 s plus at most one
+  poll). Both destroy calls return 0, and both objects are gone afterwards
+  (`'!obj'`). Audible again afterwards: **pending** loopback
+  (`spike watchdog`).
+
+**The delay line**
+
+- The tap's IOProc writes full-quality stereo into a ring of `M + 2` s; the
+  AUHAL render callback plays the frame captured at its buffer's host time
+  minus `M`, located from the latest tap buffer's host-time anchor. The tap's
+  aggregate runs on the output device's clock, so no resampling is needed: the
+  read position is corrected only if it drifts more than 2 frames from where
+  the anchors put it.
+- **An hour at `M = 3 s`** (`afplay` clicks every 1.3 s, tapped and muted,
+  played late; the delay measured from the tap's onset of each click to a
+  global tap's onset of our late copy): median 3,023.00 ms over 2,770 clicks,
+  every click within 3,022.99–3,023.02 ms, per-minute medians spread 0.02 ms
+  (first minute 3,023.00, last 3,023.00). Read-position error at most 0.23
+  frames, no corrections, no underruns. A 2-minute rerun after a review fix
+  to the onset bookkeeping gave 3,022.99 ms. Both ends are Core Audio
+  host-time stamps on the same timelines the render callback places frames
+  by, so this shows the delay line is **stable** (spread 0.02 ms, inside E2's
+  ±2 ms) and consistent with its own bookkeeping. It does not show the
+  absolute delay: on the tap timeline the music is `M + 23 ms` late, and the
+  23 ms is unexplained (the speakers report 16.6 ms of output latency plus
+  the buffer). E2 must measure the absolute delay by loopback and correct the
+  offset so the music is heard `M` late. The acoustic delay is **pending**.
+- **Two devices:** only the built-in speakers and microphone were connected,
+  so the drift-correcting resampler is **pending** (E2, with AirPods or a USB
+  device).
+
+**What E2 takes from this** (also in its notes)
+
+- Taps and aggregates are always private: a killed public one leaks until
+  someone destroys it. At launch, destroy any leftover public tap or aggregate
+  with the app's names (`spike cleanup` shows how).
+- The picker lists apps, not processes: group process objects by their
+  responsible app (the Chrome helpers with Chrome, WebKit's GPU process with
+  the app it serves) and tap all of an app's playing processes.
+- The watchdog can destroy the devices from its own thread while the main
+  thread is stuck: within 2.06 s here, both calls succeeding.
+- The delay line's design holds: host-time anchors from the tap's buffers, a
+  ring of `M + 2` s, no resampler on one device clock. Its absolute delay was
+  `M + 23 ms` on the tap timeline: measure it acoustically and correct it.
+- Before E2 ships the mode, loopback must confirm, with the speakers on, that a
+  tapped app is silent, that it is audible after the tap is destroyed, after
+  `SIGKILL` (private tap) and after the watchdog fires. These are QA items, run
+  with the spike's commands until E2 replaces them.

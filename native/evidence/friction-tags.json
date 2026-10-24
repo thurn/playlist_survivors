@@ -16,7 +16,8 @@
     "capture-permission-pending": "A System-mode check waited on the user's capture permission.",
     "merge-conflict": "A Tollgate collision or rebase onto a peer's change.",
     "review-churn": "Review findings that took long to verify or fix.",
-    "host-load-noise": "Measurements disturbed by other work on the shared machine."
+    "host-load-noise": "Measurements disturbed by other work on the shared machine.",
+    "loopback-unavailable": "A loopback measurement (speakers into the built-in microphone) couldn't run: the speakers were muted or the device was missing, so audibility results stayed pending."
   },
   "aliases": {
     "flake": "flaky-test",

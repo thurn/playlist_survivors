@@ -1,0 +1,15 @@
+tapping process objects [121]
+926227.985  start
+926230.987  create
+926231.009  tapping
+926236.012  pause
+926239.023  resume
+926242.026  destroy
+926242.040  destroyed
+baseline 1 kHz level 0.00028 (50 windows)
+tap capture peak while tapped: 0.502
+level while tapped (create + 0.5 s .. pause): 0.970 of baseline
+mute: below 10% never after the create call (it returned after 22 ms)
+IOProc stopped: level 0.980 of baseline; above 50% 17 ms after the stop
+IOProc restarted: level 0.962; below 10% never after the start
+destroyed: level 1.003; above 50% 3 ms after the destroy call (it took 14 ms)

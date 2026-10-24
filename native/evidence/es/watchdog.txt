@@ -1,0 +1,12 @@
+926647.825  start
+926650.829  create
+926650.840  tapping
+926653.845  stall
+926659.847  unstall
+watchdog: destroy aggregate status 0, destroy tap status 0
+after the watchdog: object 122 class Err("get \"clas\" on 122: OSStatus 560947818 '!obj'")
+after the watchdog: object 121 class Err("get \"clas\" on 121: OSStatus 560947818 '!obj'")
+baseline 1 kHz level 0.00029 (50 windows)
+level while tapped: 0.927 of baseline
+watchdog fired 2028 ms after the stall began
+audible (above 50%) 14 ms after the stall began, 36 ms after the watchdog fired

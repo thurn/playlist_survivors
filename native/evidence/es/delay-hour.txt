@@ -1,0 +1,66 @@
+listening through a global tap
+tap 48000 Hz 2 ch, output 48000 Hz, M = 3 s
+{"maxMs":3023.008583346382,"maxReadErrFrames":0.219999,"medianMs":3023.001749883406,"micPeak":0.19683662056922913,"minMs":3022.9968749918044,"minute":1.0,"pairs":44,"slips":0,"underruns":0}
+{"maxMs":3023.009124910459,"maxReadErrFrames":0.191999,"medianMs":3023.0032083345577,"micPeak":0.196833997964859,"minMs":3023.0018333531916,"minute":2.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.012249963358,"maxReadErrFrames":0.200001,"medianMs":3023.0080417823046,"micPeak":0.19682830572128296,"minMs":3023.007250041701,"minute":3.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.0145000386983,"maxReadErrFrames":0.074004,"medianMs":3023.010874981992,"micPeak":0.19682633876800537,"minMs":3023.0053749401122,"minute":4.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.0170832946897,"maxReadErrFrames":0.012004,"medianMs":3023.0127499671653,"micPeak":0.19682101905345917,"minMs":3023.0087499367073,"minute":5.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.0179165955633,"maxReadErrFrames":0.204,"medianMs":3023.013916797936,"micPeak":0.1968197226524353,"minMs":3023.009624914266,"minute":6.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.018708336167,"maxReadErrFrames":0.204,"medianMs":3023.0127916438505,"micPeak":0.19682815670967102,"minMs":3023.001916706562,"minute":7.0,"pairs":47,"slips":0,"underruns":0}
+{"maxMs":3023.0116667225957,"maxReadErrFrames":0.065995,"medianMs":3023.007624899037,"micPeak":0.19682778418064117,"minMs":3023.0067499214783,"minute":8.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.0076250154525,"maxReadErrFrames":0.218004,"medianMs":3023.001958266832,"micPeak":0.19683735072612762,"minMs":3022.9944583261386,"minute":9.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.014208301902,"maxReadErrFrames":0.206001,"medianMs":3023.0087916133925,"micPeak":0.1968303918838501,"minMs":3023.0025416240096,"minute":10.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.015124956146,"maxReadErrFrames":0.227995,"medianMs":3023.012458346784,"micPeak":0.19682197272777557,"minMs":3023.007541662082,"minute":11.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.018416715786,"maxReadErrFrames":0.211997,"medianMs":3023.013000143692,"micPeak":0.19683033227920532,"minMs":3023.0022500036284,"minute":12.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.0020000599325,"maxReadErrFrames":0.210002,"medianMs":3022.9988750070333,"micPeak":0.19683951139450073,"minMs":3022.993625025265,"minute":13.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.001083289273,"maxReadErrFrames":0.207996,"medianMs":3022.997416672297,"micPeak":0.19684253633022308,"minMs":3022.99141662661,"minute":14.0,"pairs":47,"slips":0,"underruns":0}
+{"maxMs":3023.0016249697655,"maxReadErrFrames":0.210002,"medianMs":3022.997416788712,"micPeak":0.19684122502803802,"minMs":3022.9945415630937,"minute":15.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.0089999968186,"maxReadErrFrames":0.202,"medianMs":3023.003875045106,"micPeak":0.1968403160572052,"minMs":3022.9974582325667,"minute":16.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.012499907054,"maxReadErrFrames":0.208001,"medianMs":3023.0080833425745,"micPeak":0.19682903587818146,"minMs":3023.0036249849945,"minute":17.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.010083241388,"maxReadErrFrames":0.211997,"medianMs":3023.0054582934827,"micPeak":0.1968318074941635,"minMs":3022.999541601166,"minute":18.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.008291842416,"maxReadErrFrames":0.210002,"medianMs":3023.0027500074357,"micPeak":0.1968337446451187,"minMs":3022.997958236374,"minute":19.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.0118749896064,"maxReadErrFrames":0.202,"medianMs":3023.0083749629557,"micPeak":0.1968289315700531,"minMs":3023.0031249811873,"minute":20.0,"pairs":47,"slips":0,"underruns":0}
+{"maxMs":3023.0088335229084,"maxReadErrFrames":0.205995,"medianMs":3023.0078332824633,"micPeak":0.19682613015174866,"minMs":3023.0042501352727,"minute":21.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.004624992609,"maxReadErrFrames":0.178001,"medianMs":3022.9977916460484,"micPeak":0.19684195518493652,"minMs":3022.990458528511,"minute":22.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3022.999875014648,"maxReadErrFrames":0.032004,"medianMs":3022.995416657068,"micPeak":0.19684381783008575,"minMs":3022.99037494231,"minute":23.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.0040833121166,"maxReadErrFrames":0.196,"medianMs":3022.9978333227336,"micPeak":0.19684343039989471,"minMs":3022.99466682598,"minute":24.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.007250041701,"maxReadErrFrames":0.192004,"medianMs":3023.0025416240096,"micPeak":0.19683504104614258,"minMs":3022.9975833790377,"minute":25.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.007999989204,"maxReadErrFrames":0.206001,"medianMs":3023.002916597761,"micPeak":0.1968340277671814,"minMs":3022.998333442956,"minute":26.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.009624914266,"maxReadErrFrames":0.206001,"medianMs":3023.0049582896754,"micPeak":0.19683241844177246,"minMs":3023.0003749020398,"minute":27.0,"pairs":47,"slips":0,"underruns":0}
+{"maxMs":3023.013291764073,"maxReadErrFrames":0.200001,"medianMs":3023.007208481431,"micPeak":0.1968279331922531,"minMs":3023.004375048913,"minute":28.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.0119166662917,"maxReadErrFrames":0.202,"medianMs":3023.0111250421032,"micPeak":0.19682367146015167,"minMs":3023.0074167484418,"minute":29.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.017833242193,"maxReadErrFrames":0.204002,"medianMs":3023.0130000272766,"micPeak":0.196820467710495,"minMs":3023.008208256215,"minute":30.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.018875042908,"maxReadErrFrames":0.176001,"medianMs":3023.014166741632,"micPeak":0.1968185007572174,"minMs":3023.0094583239406,"minute":31.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.0192083399743,"maxReadErrFrames":0.203996,"medianMs":3023.015333339572,"micPeak":0.19681693613529205,"minMs":3023.011374985799,"minute":32.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.0199582874775,"maxReadErrFrames":0.199999,"medianMs":3023.014958249405,"micPeak":0.1968211978673935,"minMs":3023.007041658275,"minute":33.0,"pairs":47,"slips":0,"underruns":0}
+{"maxMs":3023.004833376035,"maxReadErrFrames":0.202,"medianMs":3023.0027083307505,"micPeak":0.19683603942394257,"minMs":3022.9959583375603,"minute":34.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.01041665487,"maxReadErrFrames":0.132,"medianMs":3023.00595829729,"micPeak":0.1968315690755844,"minMs":3023.0017916765064,"minute":35.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.0100416811183,"maxReadErrFrames":0.213997,"medianMs":3023.0051666731015,"micPeak":0.19683010876178741,"minMs":3023.001041612588,"minute":36.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.0089583201334,"maxReadErrFrames":0.213997,"medianMs":3023.0040833121166,"micPeak":0.19683127105236053,"minMs":3023.0038332520053,"minute":37.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.008916643448,"maxReadErrFrames":0.127999,"medianMs":3023.003416717984,"micPeak":0.19683337211608887,"minMs":3023.0015832930803,"minute":38.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.007291601971,"maxReadErrFrames":0.035999,"medianMs":3022.99254166428,"micPeak":0.196846604347229,"minMs":3022.9899582918733,"minute":39.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.006208357401,"maxReadErrFrames":0.205995,"medianMs":3022.997458348982,"micPeak":0.19684666395187378,"minMs":3022.989916615188,"minute":40.0,"pairs":47,"slips":0,"underruns":0}
+{"maxMs":3023.00479169935,"maxReadErrFrames":0.035999,"medianMs":3023.0028750374913,"micPeak":0.19683963060379028,"minMs":3022.993291611783,"minute":41.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3022.9951250366867,"maxReadErrFrames":0.224,"medianMs":3022.9909166228026,"micPeak":0.19684679806232452,"minMs":3022.9899999685585,"minute":42.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3022.9959583375603,"maxReadErrFrames":0.232001,"medianMs":3022.9939999990165,"micPeak":0.1968439221382141,"minMs":3022.992958314717,"minute":43.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3022.996583255008,"maxReadErrFrames":0.058004,"medianMs":3022.9938332922757,"micPeak":0.19684329628944397,"minMs":3022.99037494231,"minute":44.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3022.9984583565965,"maxReadErrFrames":0.211997,"medianMs":3022.9944583261386,"micPeak":0.19684331119060516,"minMs":3022.9901666752994,"minute":45.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.000333458185,"maxReadErrFrames":0.211997,"medianMs":3022.996250074357,"micPeak":0.1968410760164261,"minMs":3022.991791833192,"minute":46.0,"pairs":47,"slips":0,"underruns":0}
+{"maxMs":3022.9966251645237,"maxReadErrFrames":0.023996,"medianMs":3022.996374987997,"micPeak":0.19683924317359924,"minMs":3022.996083367616,"minute":47.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3022.9991666274145,"maxReadErrFrames":0.219999,"medianMs":3022.995916660875,"micPeak":0.1968403160572052,"minMs":3022.9918332770467,"minute":48.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3022.997625055723,"maxReadErrFrames":0.209996,"medianMs":3022.9960000142455,"micPeak":0.19684046506881714,"minMs":3022.99237519037,"minute":49.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3023.000124958344,"maxReadErrFrames":0.211997,"medianMs":3022.99587498419,"micPeak":0.19684027135372162,"minMs":3022.9917083634064,"minute":50.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3022.996583255008,"maxReadErrFrames":0.190004,"medianMs":3022.9953333036974,"micPeak":0.19684135913848877,"minMs":3022.9911250062287,"minute":51.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3022.9988750070333,"maxReadErrFrames":0.219999,"medianMs":3022.9948334163055,"micPeak":0.1968419849872589,"minMs":3022.9906250024214,"minute":52.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3022.997916676104,"maxReadErrFrames":0.218004,"medianMs":3022.9943334124982,"micPeak":0.19684216380119324,"minMs":3022.990041761659,"minute":53.0,"pairs":47,"slips":0,"underruns":0}
+{"maxMs":3022.998624946922,"maxReadErrFrames":0.224,"medianMs":3022.994333296083,"micPeak":0.19684217870235443,"minMs":3022.990124882199,"minute":54.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3022.996833315119,"maxReadErrFrames":0.022001,"medianMs":3022.9943334124982,"micPeak":0.1968419849872589,"minMs":3022.9899999685585,"minute":55.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3022.9981666198,"maxReadErrFrames":0.213997,"medianMs":3022.9941667057574,"micPeak":0.19684189558029175,"minMs":3022.990999976173,"minute":56.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3022.998333326541,"maxReadErrFrames":0.219999,"medianMs":3022.994083352387,"micPeak":0.1968425065279007,"minMs":3022.99037494231,"minute":57.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3022.998375003226,"maxReadErrFrames":0.193998,"medianMs":3022.99370826222,"micPeak":0.19684262573719025,"minMs":3022.9903750587255,"minute":58.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3022.9980000294745,"maxReadErrFrames":0.182001,"medianMs":3022.9938332922757,"micPeak":0.19684283435344696,"minMs":3022.990541649051,"minute":59.0,"pairs":47,"slips":0,"underruns":0}
+{"maxMs":3022.9961667209864,"maxReadErrFrames":0.219999,"medianMs":3022.994374972768,"micPeak":0.19684158265590668,"minMs":3022.993625025265,"minute":60.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3022.996250190772,"maxReadErrFrames":0.020001,"medianMs":3022.9962082812563,"micPeak":0.1968393176794052,"minMs":3022.992291720584,"minute":60.0,"pairs":3,"slips":0,"underruns":0}
+all clicks, delay ms: n=2770 median=3023.002 p95=3023.014 p99=3023.016 max=3023.020
+per-minute medians: 61 minutes, 3022.99 .. 3023.02 ms (spread 0.02 ms); first 3023.00, last 3023.00
+underruns 0, slips 0

@@ -1,0 +1,17 @@
+before: spike aggregates and taps visible (0, 0)
+926636.508  start
+926639.511  spawn
+926639.573  tapped
+child 83008 says: tapped 122 123
+while tapped: spike aggregates and taps visible (0, 0)
+while tapped: object 122 class Err("get \"clas\" on 122: OSStatus 560947818 '!obj'") running somewhere Err("get \"gone\" on 122: OSStatus 560947818 '!obj'")
+while tapped: object 123 class Err("get \"clas\" on 123: OSStatus 560947818 '!obj'") running somewhere Err("get \"gone\" on 123: OSStatus 560947818 '!obj'")
+926643.577  kill
+926643.578  reaped
+child exit: ExitStatus(unix_wait_status(9))
+4 s after SIGKILL: object 122 class Err("get \"clas\" on 122: OSStatus 560947818 '!obj'") running somewhere Err("get \"gone\" on 122: OSStatus 560947818 '!obj'")
+4 s after SIGKILL: object 123 class Err("get \"clas\" on 123: OSStatus 560947818 '!obj'") running somewhere Err("get \"gone\" on 123: OSStatus 560947818 '!obj'")
+after: spike aggregates and taps visible (0, 0)
+baseline 1 kHz level 0.00027 (50 windows)
+level while the child taps: 1.005 of baseline
+after SIGKILL: level 1.041; above 50% 17 ms after the kill

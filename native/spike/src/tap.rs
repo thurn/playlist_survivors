@@ -72,6 +72,15 @@ impl std::ops::DerefMut for Tap {
 
 impl Capture {
     pub fn start(device: Id, fmt: AudioStreamBasicDescription) -> Result<Capture, String> {
+        Capture::start_with(device, fmt, 4.0)
+    }
+
+    /// As `start`, with a ring of `ring_s` seconds (long enough to ride out a stalled reader).
+    pub fn start_with(
+        device: Id,
+        fmt: AudioStreamBasicDescription,
+        ring_s: f64,
+    ) -> Result<Capture, String> {
         let channels = fmt.mChannelsPerFrame as usize;
         let interleaved = fmt.mFormatFlags & kAudioFormatFlagIsNonInterleaved == 0;
         if fmt.mFormatID != kAudioFormatLinearPCM
@@ -80,7 +89,7 @@ impl Capture {
         {
             return Err(format!("unexpected input format {fmt:?}"));
         }
-        let (sp, sc) = rtrb::RingBuffer::new(fmt.mSampleRate as usize * 4);
+        let (sp, sc) = rtrb::RingBuffer::new((fmt.mSampleRate * ring_s) as usize);
         let (mp, mc) = rtrb::RingBuffer::new(4096);
         let ctx = Box::new(UnsafeCell::new(Ctx {
             samples: sp,
@@ -119,6 +128,10 @@ impl Capture {
 
     /// The default input device (the built-in microphone), for the loopback test.
     pub fn microphone() -> Result<Capture, String> {
+        Capture::microphone_with(4.0)
+    }
+
+    pub fn microphone_with(ring_s: f64) -> Result<Capture, String> {
         let dev = coreaudio::default_input();
         let streams: Vec<Id> = coreaudio::get_vec(
             dev,
@@ -130,7 +143,22 @@ impl Capture {
             kAudioStreamPropertyVirtualFormat,
             kAudioObjectPropertyScopeGlobal,
         )?;
-        Capture::start(dev, fmt)
+        Capture::start_with(dev, fmt, ring_s)
+    }
+
+    /// Stops the IOProc, leaving the device (and any tap it reads) in place.
+    pub fn pause(&self) -> Result<(), String> {
+        check(
+            unsafe { AudioDeviceStop(self.device, self.proc_id) },
+            "AudioDeviceStop",
+        )
+    }
+
+    pub fn resume(&self) -> Result<(), String> {
+        check(
+            unsafe { AudioDeviceStart(self.device, self.proc_id) },
+            "AudioDeviceStart",
+        )
     }
 
     /// Drain everything captured so far.
@@ -255,97 +283,7 @@ impl Tap {
                 &excluded,
             )
         };
-        unsafe {
-            desc.setName(&NSString::from_str("Playlist Survivors spike tap"));
-            desc.setPrivate(true);
-        }
-        let mut tap: Id = 0;
-        check(
-            unsafe { AudioHardwareCreateProcessTap(Some(&desc), &mut tap) },
-            "AudioHardwareCreateProcessTap",
-        )?;
-        let tap_uid = unsafe { desc.UUID().UUIDString() };
-        let out_uid = coreaudio::get_string(
-            coreaudio::default_output(),
-            kAudioDevicePropertyDeviceUID,
-            kAudioObjectPropertyScopeGlobal,
-        )?;
-
-        let agg_uid = NSString::from_str(&format!("ps-spike-aggregate-{}", std::process::id()));
-        let sub: Retained<NSDictionary<NSString, AnyObject>> = NSDictionary::from_retained_objects(
-            &[&*ns(kAudioSubDeviceUIDKey)],
-            &[Retained::into_super(Retained::into_super(out_uid.clone()))],
-        );
-        let tap_entry: Retained<NSDictionary<NSString, AnyObject>> =
-            NSDictionary::from_retained_objects(
-                &[
-                    &*ns(kAudioSubTapUIDKey),
-                    &*ns(kAudioSubTapDriftCompensationKey),
-                ],
-                &[
-                    Retained::into_super(Retained::into_super(tap_uid)),
-                    Retained::into_super(Retained::into_super(Retained::into_super(
-                        NSNumber::new_bool(true),
-                    ))),
-                ],
-            );
-        let d: Retained<NSMutableDictionary<NSString, AnyObject>> = NSMutableDictionary::new();
-        let put = |k: &std::ffi::CStr, v: Retained<AnyObject>| unsafe {
-            d.setObject_forKey(&v, objc2::runtime::ProtocolObject::from_ref(&*ns(k)));
-        };
-        put(
-            kAudioAggregateDeviceNameKey,
-            Retained::into_super(Retained::into_super(NSString::from_str("PS spike tap"))),
-        );
-        put(
-            kAudioAggregateDeviceUIDKey,
-            Retained::into_super(Retained::into_super(agg_uid)),
-        );
-        put(
-            kAudioAggregateDeviceMainSubDeviceKey,
-            Retained::into_super(Retained::into_super(out_uid)),
-        );
-        put(
-            kAudioAggregateDeviceIsPrivateKey,
-            Retained::into_super(Retained::into_super(Retained::into_super(
-                NSNumber::new_bool(true),
-            ))),
-        );
-        put(
-            kAudioAggregateDeviceIsStackedKey,
-            Retained::into_super(Retained::into_super(Retained::into_super(
-                NSNumber::new_bool(false),
-            ))),
-        );
-        put(
-            kAudioAggregateDeviceTapAutoStartKey,
-            Retained::into_super(Retained::into_super(Retained::into_super(
-                NSNumber::new_bool(true),
-            ))),
-        );
-        put(
-            kAudioAggregateDeviceSubDeviceListKey,
-            Retained::into_super(Retained::into_super(NSArray::from_retained_slice(&[sub]))),
-        );
-        put(
-            kAudioAggregateDeviceTapListKey,
-            Retained::into_super(Retained::into_super(NSArray::from_retained_slice(&[
-                tap_entry,
-            ]))),
-        );
-
-        let mut aggregate: Id = 0;
-        let cf: &CFDictionary = unsafe { &*(Retained::as_ptr(&d) as *const CFDictionary) };
-        check(
-            unsafe { AudioHardwareCreateAggregateDevice(cf, NonNull::from(&mut aggregate)) },
-            "AudioHardwareCreateAggregateDevice",
-        )?;
-
-        let fmt: AudioStreamBasicDescription = coreaudio::get(
-            tap,
-            kAudioTapPropertyFormat,
-            kAudioObjectPropertyScopeGlobal,
-        )?;
+        let (tap, aggregate, fmt) = aggregate_for(&desc)?;
         let capture = Capture::start(aggregate, fmt)?;
         Ok(Tap {
             tap,
@@ -353,6 +291,114 @@ impl Tap {
             capture,
         })
     }
+}
+
+/// `PS_PUBLIC=1` makes taps and aggregates visible to other processes (so a parent can see a
+/// killed child's go away).
+fn public() -> bool {
+    std::env::var("PS_PUBLIC").as_deref() == Ok("1")
+}
+
+/// Creates the tap a description describes and a private aggregate device on the default
+/// output that reads it: (tap, aggregate, the tap's format).
+pub fn aggregate_for(
+    desc: &CATapDescription,
+) -> Result<(Id, Id, AudioStreamBasicDescription), String> {
+    unsafe {
+        desc.setName(&NSString::from_str("Playlist Survivors spike tap"));
+        desc.setPrivate(!public());
+    }
+    let mut tap: Id = 0;
+    check(
+        unsafe { AudioHardwareCreateProcessTap(Some(desc), &mut tap) },
+        "AudioHardwareCreateProcessTap",
+    )?;
+    let tap_uid = unsafe { desc.UUID().UUIDString() };
+    let out_uid = coreaudio::get_string(
+        coreaudio::default_output(),
+        kAudioDevicePropertyDeviceUID,
+        kAudioObjectPropertyScopeGlobal,
+    )?;
+
+    // (Unique per aggregate: one process may hold several.)
+    static NEXT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+    let n = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let agg_uid = NSString::from_str(&format!("ps-spike-aggregate-{}-{n}", std::process::id()));
+    let sub: Retained<NSDictionary<NSString, AnyObject>> = NSDictionary::from_retained_objects(
+        &[&*ns(kAudioSubDeviceUIDKey)],
+        &[Retained::into_super(Retained::into_super(out_uid.clone()))],
+    );
+    let tap_entry: Retained<NSDictionary<NSString, AnyObject>> =
+        NSDictionary::from_retained_objects(
+            &[
+                &*ns(kAudioSubTapUIDKey),
+                &*ns(kAudioSubTapDriftCompensationKey),
+            ],
+            &[
+                Retained::into_super(Retained::into_super(tap_uid)),
+                Retained::into_super(Retained::into_super(Retained::into_super(
+                    NSNumber::new_bool(true),
+                ))),
+            ],
+        );
+    let d: Retained<NSMutableDictionary<NSString, AnyObject>> = NSMutableDictionary::new();
+    let put = |k: &std::ffi::CStr, v: Retained<AnyObject>| unsafe {
+        d.setObject_forKey(&v, objc2::runtime::ProtocolObject::from_ref(&*ns(k)));
+    };
+    put(
+        kAudioAggregateDeviceNameKey,
+        Retained::into_super(Retained::into_super(NSString::from_str("PS spike tap"))),
+    );
+    put(
+        kAudioAggregateDeviceUIDKey,
+        Retained::into_super(Retained::into_super(agg_uid)),
+    );
+    put(
+        kAudioAggregateDeviceMainSubDeviceKey,
+        Retained::into_super(Retained::into_super(out_uid)),
+    );
+    put(
+        kAudioAggregateDeviceIsPrivateKey,
+        Retained::into_super(Retained::into_super(Retained::into_super(
+            NSNumber::new_bool(!public()),
+        ))),
+    );
+    put(
+        kAudioAggregateDeviceIsStackedKey,
+        Retained::into_super(Retained::into_super(Retained::into_super(
+            NSNumber::new_bool(false),
+        ))),
+    );
+    put(
+        kAudioAggregateDeviceTapAutoStartKey,
+        Retained::into_super(Retained::into_super(Retained::into_super(
+            NSNumber::new_bool(true),
+        ))),
+    );
+    put(
+        kAudioAggregateDeviceSubDeviceListKey,
+        Retained::into_super(Retained::into_super(NSArray::from_retained_slice(&[sub]))),
+    );
+    put(
+        kAudioAggregateDeviceTapListKey,
+        Retained::into_super(Retained::into_super(NSArray::from_retained_slice(&[
+            tap_entry,
+        ]))),
+    );
+
+    let mut aggregate: Id = 0;
+    let cf: &CFDictionary = unsafe { &*(Retained::as_ptr(&d) as *const CFDictionary) };
+    check(
+        unsafe { AudioHardwareCreateAggregateDevice(cf, NonNull::from(&mut aggregate)) },
+        "AudioHardwareCreateAggregateDevice",
+    )?;
+
+    let fmt: AudioStreamBasicDescription = coreaudio::get(
+        tap,
+        kAudioTapPropertyFormat,
+        kAudioObjectPropertyScopeGlobal,
+    )?;
+    Ok((tap, aggregate, fmt))
 }
 
 impl Drop for Tap {

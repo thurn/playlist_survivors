@@ -1,0 +1,8 @@
+listening through a global tap
+tap 48000 Hz 2 ch, output 48000 Hz, M = 3 s
+{"maxMs":3022.9978333227336,"maxReadErrFrames":0.230002,"medianMs":3022.9928750777617,"micPeak":0.1968497484922409,"minMs":3022.9904582956806,"minute":1.0,"pairs":44,"slips":0,"underruns":0}
+{"maxMs":3022.9980832664296,"maxReadErrFrames":0.222001,"medianMs":3022.994333296083,"micPeak":0.19684721529483795,"minMs":3022.990041761659,"minute":2.0,"pairs":46,"slips":0,"underruns":0}
+{"maxMs":3022.9945415630937,"maxReadErrFrames":0.025998,"medianMs":3022.9944583261386,"micPeak":0.1968456357717514,"minMs":3022.9943750891834,"minute":2.0,"pairs":3,"slips":0,"underruns":0}
+all clicks, delay ms: n=93 median=3022.994 p95=3022.995 p99=3022.998 max=3022.998
+per-minute medians: 3 minutes, 3022.99 .. 3022.99 ms (spread 0.00 ms); first 3022.99, last 3022.99
+underruns 0, slips 0
