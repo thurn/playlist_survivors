@@ -1520,8 +1520,8 @@ Tags come from `native/evidence/friction-tags.json`, which maps aliases to
 canonical tags. `scripts/friction` (phase W, written in Python so it outlives
 the TS tree) validates records, reports fired triggers and due
 retrospectives, and fails on a malformed record. Gate and release times are
-taken from Tollgate's history at retrospective time, not trusted from the
-record.
+taken from Tollgate at retrospective time (`scripts/friction stages`), not
+trusted from the record.
 
 **Budgets** live in `native/evidence/metrics.md`: the fast local check (60 s),
 the gate stage (about 60 s), the release stage (30 min to start), a cold

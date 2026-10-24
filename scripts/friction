@@ -8,6 +8,9 @@
     scripts/friction validate   # parse every input; exit 2 on a malformed one (the gate runs it)
     scripts/friction [report] [--json]
                                 # fired triggers, their dispositions, and a due cadence retrospective
+    scripts/friction stages [--since YYYY-MM-DD] [--json]
+                                # Tollgate's gate time per candidate and release time per run and
+                                # step, against metrics.md's gateS and releaseS budgets
 
 Inputs, under the evidence directory (native/evidence, or --evidence DIR):
 - friction/<bead-id>.json: one record per bead (fields in RECORD_FIELDS);
@@ -28,6 +31,12 @@ disposed by a disposition line after the last retrospective line. A cadence retr
 when the window holds retrospectiveCadence records; its duty key is
 retrospective=hv-t8o8/since-<last retrospective's bead>.
 
+`stages` reads Tollgate, not the records (which are committed before their gate runs): every
+candidate since --since (default: the last retrospective's date, else all), from the
+refs/tollgate/sources/<item-id> refs (time-ordered UUIDv7 ids) and `tg status <id> --json`, and
+the release runs Tollgate keeps (`tg release status --json`). A stage over 1.5 times its budget on
+triggerBeads consecutive runs is reported as an overrun, for the retrospective to dispose of.
+
 Exit codes: 0 fine, 1 a fired trigger lacks a disposition, 2 malformed input.
 """
 
@@ -36,9 +45,11 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import statistics
+import subprocess
 import sys
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 EPIC = "hv-t8o8"
@@ -329,9 +340,176 @@ def print_report(result: dict) -> None:
         print("friction: no triggers fired, no retrospective due")
 
 
+# --- stage times ------------------------------------------------------------
+
+
+def uuid7_time(item_id: str) -> datetime:
+    """A UUIDv7's timestamp (its first 48 bits, milliseconds since the epoch)."""
+    return datetime.fromtimestamp(int(item_id.replace("-", "")[:12], 16) / 1000, UTC)
+
+
+def tollgate_time(t) -> datetime | None:
+    """Tollgate's timestamps: [year, day of year, hour, minute, second, nanosecond, offset h, m, s]."""
+    if not t:
+        return None
+    year, day, hour, minute, second, nano = t[:6]
+    offset = (
+        timedelta(hours=t[6], minutes=t[7], seconds=t[8])
+        if len(t) >= 9
+        else timedelta()
+    )
+    return (
+        datetime(year, 1, 1, tzinfo=UTC)
+        + timedelta(
+            days=day - 1,
+            hours=hour,
+            minutes=minute,
+            seconds=second,
+            microseconds=nano // 1000,
+        )
+        - offset
+    )
+
+
+def gate_row(status: dict) -> dict:
+    """One candidate's gate: its subject, state and the time of its latest attempt's steps."""
+    item = status["item"]
+    attempts = [a for a in status.get("attempts", []) if a.get("step_results")]
+    row = {
+        "item": item["id"],
+        "subject": (item.get("metadata") or {}).get("subject", ""),
+        "state": item.get("state"),
+        "gateS": None,
+        "at": None,
+    }
+    if attempts:
+        last = attempts[-1]
+        row["gateS"] = round(
+            sum(r["elapsed_ms"] for r in last["step_results"]) / 1000, 1
+        )
+        started = tollgate_time(last.get("started_at"))
+        row["at"] = started.isoformat() if started else None
+    return row
+
+
+def release_rows(release: dict) -> list[dict]:
+    """The release runs Tollgate keeps, oldest first: target, state, time and each step's time."""
+    rows = []
+    for run in reversed(release.get("runs", [])):
+        rows.append(
+            {
+                "target": run["target_oid"]["bytes"][:10],
+                "state": run["state"],
+                "releaseS": round(run["elapsed_ms"] / 1000, 1)
+                if run.get("elapsed_ms")
+                else None,
+                "steps": {
+                    s["name"]: round(s["elapsed_ms"] / 1000, 1)
+                    for s in run.get("steps", [])
+                    if s.get("elapsed_ms") is not None
+                },
+            }
+        )
+    return rows
+
+
+def summarize(values: list[float], budget: float | None, n: int) -> dict:
+    out = {"runs": len(values), "budget": budget}
+    if values:
+        out |= {"median": statistics.median(values), "max": max(values)}
+    if budget:
+        out["overBudget"] = sum(v > budget for v in values)
+        runs = [values[i : i + n] for i in range(len(values) - n + 1)]
+        out["overrun"] = any(all(v > OVERRUN * budget for v in run) for run in runs)
+    return out
+
+
+def stages(
+    gates: list[dict], releases: list[dict], budgets: dict[str, float], n: int
+) -> dict:
+    gate_values = [g["gateS"] for g in gates if g["gateS"] is not None]
+    done = [
+        r for r in releases if r["releaseS"] is not None and r["state"] != "superseded"
+    ]
+    return {
+        "gates": gates,
+        "releases": releases,
+        "gate": summarize(gate_values, budgets.get("gateS"), n),
+        "release": summarize([r["releaseS"] for r in done], budgets.get("releaseS"), n),
+    }
+
+
+def retrospective_time(evidence: Evidence) -> datetime:
+    """When the last retrospective ran: its own friction record's time, else the start of its date."""
+    last = evidence.retrospectives[-1]
+    for record in evidence.records:
+        if record.bead == last["retrospective"]:
+            return record.recorded.astimezone(UTC)
+    return datetime.fromisoformat(last["date"]).replace(tzinfo=UTC)
+
+
+def tg_json(*args: str) -> dict:
+    out = subprocess.run(
+        ["tg", *args, "--json"], cwd=ROOT, check=True, capture_output=True, text=True
+    )
+    return json.loads(out.stdout)
+
+
+def candidate_ids(since: datetime | None) -> list[str]:
+    out = subprocess.run(
+        [
+            "git",
+            "for-each-ref",
+            "--format=%(refname:lstrip=3)",
+            "refs/tollgate/sources/",
+        ],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    ids = [line for line in out.stdout.split() if line]
+    if since:
+        ids = [i for i in ids if uuid7_time(i) >= since]
+    return sorted(ids, key=uuid7_time)
+
+
+def print_stages(result: dict) -> None:
+    for g in result["gates"]:
+        flag = ""
+        budget = result["gate"]["budget"]
+        if budget and g["gateS"] is not None and g["gateS"] > budget:
+            flag = "  OVER" if g["gateS"] <= OVERRUN * budget else "  OVER 1.5x"
+        gate = f"{g['gateS']:>6.1f} s" if g["gateS"] is not None else "     -  "
+        print(
+            f"gate {gate}  {g['state']:<10} {g['item'][:13]}  {g['subject'][:70]}{flag}"
+        )
+    for r in result["releases"]:
+        total = f"{r['releaseS']:>6.1f} s" if r["releaseS"] is not None else "     -  "
+        steps = ", ".join(f"{k} {v:g}" for k, v in r["steps"].items())
+        print(f"release {total}  {r['state']:<12} {r['target']}  {steps}")
+    for name in ("gate", "release"):
+        s = result[name]
+        if not s["runs"]:
+            print(f"{name}: no runs in the window")
+            continue
+        print(
+            f"{name}: {s['runs']} runs, median {s['median']:g} s, max {s['max']:g} s"
+            + (
+                f" against {s['budget']:g} s: {s['overBudget']} over budget"
+                if s.get("budget")
+                else ""
+            )
+            + ("; OVERRUN: 3 consecutive over 1.5x" if s.get("overrun") else "")
+        )
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(prog="scripts/friction", description=__doc__.splitlines()[0])
-    parser.add_argument("command", nargs="?", default="report", choices=["report", "validate"])
+    parser.add_argument(
+        "command", nargs="?", default="report", choices=["report", "validate", "stages"]
+    )
+    parser.add_argument("--since", help="stages: from this date (YYYY-MM-DD)")
     parser.add_argument("--json", action="store_true", help="print the report as JSON")
     parser.add_argument("--evidence", type=Path, default=DEFAULT_EVIDENCE)
     args = parser.parse_args(argv)
@@ -343,6 +521,31 @@ def main(argv: list[str]) -> int:
     if args.command == "validate":
         print(f"friction: {len(evidence.records)} records valid")
         return 0
+    if args.command == "stages":
+        if args.since:
+            since = datetime.fromisoformat(args.since).replace(tzinfo=UTC)
+        elif evidence.retrospectives:
+            since = retrospective_time(evidence)
+        else:
+            since = None
+        statuses = [tg_json("status", i) for i in candidate_ids(since)]
+        # (Release runs are queue items too; only candidates go through the gate.)
+        gates = [gate_row(st) for st in statuses if st["item"].get("kind") == "gate"]
+        result = stages(
+            gates,
+            release_rows(tg_json("release", "status")),
+            evidence.budgets,
+            evidence.trigger_beads,
+        )
+        if args.json:
+            print(json.dumps(result, indent=2))
+        else:
+            print_stages(result)
+        return (
+            1
+            if result["gate"].get("overrun") or result["release"].get("overrun")
+            else 0
+        )
     result = report(evidence)
     if args.json:
         print(json.dumps(result, indent=2, default=str))

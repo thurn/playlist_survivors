@@ -1,0 +1,1 @@
+{"bead":"hv-t8o8.48","phase":"R","recorded":"2026-10-24T17:58:46Z","implementMin":35,"localValidationS":{"fast":2,"focused":12},"hostLoad":30.82,"friction":[{"tag":"tool-failure","minutes":5,"note":"tg history keeps only 500 events and tg queue lists only active items, so candidates come from refs/tollgate/sources (hv-t8o8.49 tracks history paging)"}]}

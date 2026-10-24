@@ -206,5 +206,103 @@ class FrictionTest(unittest.TestCase):
         self.assertIn("gateS", evidence.budgets)
 
 
+def status(item_id, subject, elapsed_ms, state="promoted", kind="gate"):
+    """`tg status --json` for one candidate, trimmed to what stages reads."""
+    attempts = []
+    if elapsed_ms is not None:
+        attempts = [
+            {"step_results": [], "started_at": None},
+            {
+                "step_results": [{"name": "gate", "elapsed_ms": elapsed_ms}],
+                "started_at": [2026, 297, 17, 44, 36, 238548000, 0, 0, 0],
+            },
+        ]
+    return {
+        "item": {
+            "id": item_id,
+            "kind": kind,
+            "state": state,
+            "metadata": {"subject": subject},
+        },
+        "attempts": attempts,
+    }
+
+
+class Stages(unittest.TestCase):
+    def test_tollgate_and_uuid7_times(self):
+        self.assertEqual(
+            friction.tollgate_time(
+                [2026, 297, 17, 44, 36, 238548000, 0, 0, 0]
+            ).isoformat(),
+            "2026-10-24T17:44:36.238548+00:00",
+        )
+        self.assertIsNone(friction.tollgate_time(None))
+        # 0x01a16f03ae4b ms since the epoch.
+        self.assertEqual(
+            friction.uuid7_time("01a16f03-ae4b-7163-9176-622fa552e0cd").strftime(
+                "%Y-%m-%d"
+            ),
+            "2026-10-24",
+        )
+
+    def test_a_gate_row_reads_the_latest_attempt_with_results(self):
+        row = friction.gate_row(status("01a16f03-ae4b-7163", "build: x", 76955))
+        self.assertEqual(row["gateS"], 77.0)
+        self.assertEqual(row["subject"], "build: x")
+        self.assertTrue(row["at"].startswith("2026-10-24T17:44:36"))
+        self.assertIsNone(
+            friction.gate_row(status("01a1", "y", None, "queued"))["gateS"]
+        )
+
+    def test_release_rows_are_oldest_first_with_step_times(self):
+        release = {
+            "runs": [
+                {
+                    "target_oid": {"bytes": "b" * 40},
+                    "state": "running",
+                    "elapsed_ms": None,
+                    "steps": [],
+                },
+                {
+                    "target_oid": {"bytes": "a" * 40},
+                    "state": "check-passed",
+                    "elapsed_ms": 534676,
+                    "steps": [
+                        {"name": "gate", "elapsed_ms": 73308},
+                        {"name": "ci-full-native", "elapsed_ms": 4560},
+                    ],
+                },
+            ]
+        }
+        rows = friction.release_rows(release)
+        self.assertEqual([r["target"] for r in rows], ["a" * 10, "b" * 10])
+        self.assertEqual(rows[0]["releaseS"], 534.7)
+        self.assertEqual(rows[0]["steps"], {"gate": 73.3, "ci-full-native": 4.6})
+
+    def test_stages_flags_three_consecutive_overruns(self):
+        gates = [
+            friction.gate_row(status(f"id{i}", "x", ms))
+            for i, ms in enumerate([2000, 95000, 91000, 99000, 1000])
+        ]
+        result = friction.stages(gates, [], {"gateS": 60, "releaseS": 1800}, 3)
+        self.assertEqual(result["gate"]["overBudget"], 3)
+        self.assertTrue(result["gate"]["overrun"])
+        self.assertEqual(result["release"]["runs"], 0)
+        calm = friction.stages(gates[:2] + gates[3:], [], {"gateS": 60}, 3)
+        self.assertFalse(calm["gate"]["overrun"])
+
+    def test_the_window_starts_at_the_retrospectives_record(self):
+        evidence = friction.load(friction.DEFAULT_EVIDENCE)
+        if not evidence.retrospectives:
+            self.skipTest("no retrospective yet")
+        last = evidence.retrospectives[-1]["retrospective"]
+        mine = [r for r in evidence.records if r.bead == last]
+        if mine:
+            self.assertEqual(
+                friction.retrospective_time(evidence),
+                mine[0].recorded.astimezone(friction.UTC),
+            )
+
+
 if __name__ == "__main__":
     unittest.main()
