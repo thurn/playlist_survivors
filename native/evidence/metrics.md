@@ -59,6 +59,22 @@ release stage (`#[ignore = "release: ..."]`, run by `scripts/ci-full native` wit
 `--include-ignored`), with a 4 s smoke test of the same path kept in the gate. The release stage's
 analysis tests take 22 s (A4's from 26 to 13 s, its inline analyses cached once per binary).
 
+## Review findings per 100 changed lines (hv-t8o8.61)
+
+Raw finding counts ignore a bead's size. Changed non-test lines are additions plus deletions in
+`.rs`, `.py`, `.ts` and `.sh` files outside `tests/` and `test_*` (`git show --numstat`; in-file
+`#[cfg(test)]` modules count, a known overcount kept for consistency):
+
+| Bead | Commit | Lines | Findings | Per 100 lines |
+|---|---|---|---|---|
+| A1 hv-t8o8.6 | 8ca3467 | 694 | 8 | 1.15 |
+| A2 hv-t8o8.7 | 5a5a5e7 | 446 | 5 | 1.12 |
+| A3 hv-t8o8.8 | b59ed25 | 875 | 5 | 0.57 |
+| A4 hv-t8o8.9 | c243528 | 1093 | 9 | 0.82 |
+
+Mean 0.92 per 100 lines. The next reviewed beads record their own row; R2 compares them with this
+baseline (aiming at half), alongside the review-churn minutes.
+
 ## Batch jobs below Tollgate (hv-t8o8.55)
 
 A gate (`scripts/ci-gate`, every section) took 43–44 s idle, and 64–67 s with a 10-job oracle
