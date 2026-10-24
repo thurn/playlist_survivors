@@ -823,3 +823,273 @@ fn a_restored_snapshot_runs_on_the_same() {
         b.len()
     );
 }
+
+/// B5: judging over whole runs. With the keys replayed, presses' judgments, the settled judgments
+/// and the groove and tier they drive depend on the stream and the keys alone, not on set pieces
+/// (B6), so they are compared to each run's end: every `settle`, `groove` and `tier` line, and each
+/// input's judging fields (its world time and stride, which hit-stops move, aside).
+#[test]
+fn judging_matches_over_whole_runs() {
+    let lib = library();
+    let anims = atlas();
+    let fixtures = root().join("native/oracle/fixtures");
+    let mut failures = Vec::new();
+    let mut runs = 0;
+    for t in std::fs::read_dir(&fixtures).unwrap() {
+        let t = t.unwrap();
+        for p in std::fs::read_dir(t.path()).unwrap() {
+            let p = p.unwrap();
+            if !p.path().join("events.jsonl.gz").exists() {
+                continue;
+            }
+            runs += 1;
+            let (track, profile) = (
+                t.file_name().to_string_lossy().into_owned(),
+                p.file_name().to_string_lossy().into_owned(),
+            );
+            match judging_run(&track, &profile, &lib, &anims) {
+                Ok(n) => eprintln!("{track}/{profile}: {n} judging lines match"),
+                Err(e) => failures.push(e),
+            }
+        }
+    }
+    assert!(runs >= 15);
+    assert!(
+        failures.is_empty(),
+        "{} of {runs} runs differ:\n{}",
+        failures.len(),
+        failures.join("\n")
+    );
+}
+
+/// An input's judging fields: what the press was and how it was judged.
+fn judging_fields(v: &Value) -> Value {
+    let mut out = serde_json::Map::new();
+    for k in [
+        "s", "kind", "key", "rating", "delta", "class", "extra", "offbeat", "unjudged", "stomp",
+        "rock", "bend", "steps",
+    ] {
+        if let Some(x) = v.get(k) {
+            out.insert(k.into(), x.clone());
+        }
+    }
+    Value::Object(out)
+}
+
+fn judging_run(
+    track: &str,
+    profile: &str,
+    lib: &ContentLibrary,
+    anims: &IndexMap<String, AnimInfo>,
+) -> Result<usize, String> {
+    let dir = root().join(format!("native/oracle/fixtures/{track}/{profile}"));
+    let file = StreamFile::parse(
+        &std::fs::read_to_string(root().join(format!("public/reactive/{track}/stream.json")))
+            .unwrap(),
+    )
+    .unwrap();
+    let mut song = reactive_song_map(file.audio.duration);
+    grow_song_map(&mut song, &file.log, file.log.beats.len());
+    let level = load_level(&source("levels/reactive.yaml"), lib, &song, None).unwrap();
+    let events = gz_lines(&dir.join("events.jsonl.gz"));
+    let input = SimInput::new(
+        level,
+        lib,
+        anims,
+        file.params.gate,
+        file.log.hindsight.is_some(),
+        Some(file.end()),
+    );
+    let rec = Rc::new(RefCell::new(LogRecorder::default()));
+    let mut sim = Sim::new(
+        input,
+        Rc::new(file.log.clone()),
+        Box::new(Shared(Rc::clone(&rec))),
+        None,
+    );
+    for k in gz_lines(&dir.join("keys.jsonl.gz")) {
+        sim.key(KeyEvent {
+            s: k["s"].as_f64().unwrap(),
+            kind: if k["kind"] == "press" {
+                KeyEventKind::Press
+            } else {
+                KeyEventKind::Release
+            },
+            key: key(k["key"].as_str().unwrap()),
+            id: None,
+        });
+    }
+    sim.run_to_end();
+    // (TS's run plays on through the finale's epilogue, B6's: compared to this run's end.)
+    let end = sim.end_s();
+    let rec = rec.borrow();
+    let series = |s: &(Vec<f64>, Vec<f64>)| {
+        s.0.iter()
+            .zip(&s.1)
+            .map(|(&t, &v)| json!([t, v]))
+            .collect::<Vec<_>>()
+    };
+    let ours: Vec<(&str, Vec<Value>)> = vec![
+        ("settle", rec.settles.clone()),
+        ("groove", series(&rec.groove)),
+        ("tier", series(&rec.tier)),
+        ("input", rec.inputs.iter().map(judging_fields).collect()),
+    ];
+    let mut n = 0;
+    for (k, list) in ours {
+        let theirs: Vec<Value> = events
+            .iter()
+            .filter(|e| e["k"] == k && e["t"].as_f64().is_some_and(|t| t < end))
+            .map(|e| {
+                if k == "input" {
+                    judging_fields(&e["v"])
+                } else {
+                    e["v"].clone()
+                }
+            })
+            .collect();
+        for (i, (a, b)) in list.iter().zip(&theirs).enumerate() {
+            if !same(a, b) {
+                return Err(format!(
+                    "{track}/{profile}: {k} #{i} differs\n  ours {a}\n  TS   {b}\n  {}",
+                    diff(a, b, "v").unwrap_or_default()
+                ));
+            }
+        }
+        if list.len() != theirs.len() {
+            return Err(format!(
+                "{track}/{profile}: {} {k} lines, TS {}",
+                list.len(),
+                theirs.len()
+            ));
+        }
+        n += list.len();
+    }
+    Ok(n)
+}
+
+/// B5: judging without hindsight (presses change the groove when pressed; the drain runs on each
+/// beat), which no shipped stream exercises: against TS runs of three streams with their hindsight
+/// removed (`judging-vectors.json.gz`, from `gen-judging-vectors.mts`).
+#[test]
+fn judging_without_hindsight_matches_ts() {
+    let raw = std::fs::read(
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/judging-vectors.json.gz"),
+    )
+    .unwrap();
+    let mut text = String::new();
+    flate2::read::GzDecoder::new(&raw[..])
+        .read_to_string(&mut text)
+        .unwrap();
+    let vectors: Value = serde_json::from_str(&text).unwrap();
+    let lib = library();
+    let anims = atlas();
+    for run in vectors["runs"].as_array().unwrap() {
+        let (track, profile) = (
+            run["track"].as_str().unwrap(),
+            run["profile"].as_str().unwrap(),
+        );
+        assert_eq!(run["settles"], 0);
+        let mut file = StreamFile::parse(
+            &std::fs::read_to_string(root().join(format!("public/reactive/{track}/stream.json")))
+                .unwrap(),
+        )
+        .unwrap();
+        file.log.hindsight = None;
+        let mut song = reactive_song_map(file.audio.duration);
+        grow_song_map(&mut song, &file.log, file.log.beats.len());
+        let level = load_level(&source("levels/reactive.yaml"), &lib, &song, None).unwrap();
+        let input = SimInput::new(
+            level,
+            &lib,
+            &anims,
+            file.params.gate,
+            false,
+            Some(file.end()),
+        );
+        let rec = Rc::new(RefCell::new(LogRecorder::default()));
+        let mut sim = Sim::new(
+            input,
+            Rc::new(file.log.clone()),
+            Box::new(Shared(Rc::clone(&rec))),
+            None,
+        );
+        let dir = root().join(format!("native/oracle/fixtures/{track}/{profile}"));
+        for k in gz_lines(&dir.join("keys.jsonl.gz")) {
+            sim.key(KeyEvent {
+                s: k["s"].as_f64().unwrap(),
+                kind: if k["kind"] == "press" {
+                    KeyEventKind::Press
+                } else {
+                    KeyEventKind::Release
+                },
+                key: key(k["key"].as_str().unwrap()),
+                id: None,
+            });
+        }
+        sim.run_to_end();
+        let end = sim.end_s();
+        let rec = rec.borrow();
+        assert!(rec.settles.is_empty());
+        let before = |v: &Value| v[0].as_f64().is_some_and(|t| t < end);
+        let series = |s: &(Vec<f64>, Vec<f64>)| {
+            s.0.iter()
+                .zip(&s.1)
+                .map(|(&t, &v)| json!([t, v]))
+                .collect::<Vec<_>>()
+        };
+        let inputs_before = |list: Vec<Value>| {
+            list.into_iter()
+                .filter(|v| v["s"].as_f64().is_some_and(|t| t < end))
+                .collect::<Vec<_>>()
+        };
+        let cases: Vec<(&str, Vec<Value>, Vec<Value>)> = vec![
+            (
+                "groove",
+                series(&rec.groove),
+                run["groove"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .filter(|v| before(v))
+                    .cloned()
+                    .collect(),
+            ),
+            (
+                "tier",
+                series(&rec.tier),
+                run["tier"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .filter(|v| before(v))
+                    .cloned()
+                    .collect(),
+            ),
+            (
+                "input",
+                inputs_before(rec.inputs.iter().map(judging_fields).collect()),
+                inputs_before(run["inputs"].as_array().unwrap().clone()),
+            ),
+        ];
+        for (k, ours, theirs) in cases {
+            for (i, (a, b)) in ours.iter().zip(&theirs).enumerate() {
+                assert!(
+                    same(a, b),
+                    "{track}/{profile} without hindsight: {k} #{i} differs\n  ours {a}\n  TS   {b}\n  {}",
+                    diff(a, b, "v").unwrap_or_default()
+                );
+            }
+            assert_eq!(
+                ours.len(),
+                theirs.len(),
+                "{track}/{profile} without hindsight: {k} lines"
+            );
+            assert!(
+                ours.len() > 3,
+                "{track}/{profile}: {k} has {} lines",
+                ours.len()
+            );
+        }
+    }
+}

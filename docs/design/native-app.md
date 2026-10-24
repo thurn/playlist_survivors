@@ -925,6 +925,8 @@ run one after another, not in parallel.
 line on all 15 full core runs, up to the first judging-dependent moment and, with judging and the
 settled groove ported alongside, up to B6's first event (to 53 s on one corpus track); the gate
 takes 5 s warm on a sim change ([evidence](../../native/evidence/b4/README.md)).
+**Measured (B5):** judging, the settled groove and the tier match over every full core run's whole
+length, and without hindsight on three TS runs ([evidence](../../native/evidence/b5/README.md)).
 
 ### Source modules
 
@@ -942,7 +944,7 @@ named). "Landed" means on `staging`. Line counts are at the tag.
 | `sim/player.ts` | 781 | B3 (key handling), landed; B8 (skill profiles) | |
 | `sim/simulate.ts` | 3699 | B4, B5, B6 | B4 ported everything but set pieces, archers, the boss, zone waves, landmarks and the finale (B6); judging and the settled groove came with it |
 | `sim/clone.ts` | 73 | Not ported | Rollback snapshots are Rust's `Clone` (B4) |
-| `reactive/settle.ts` | 230 | B4 (ported with the engine); B5 verifies | |
+| `reactive/settle.ts` | 230 | B4, landed (ported with the engine); B5 verified it over whole runs | |
 | `reactive/director.ts`, `sections.ts`, `setpieces.ts` | 498 | B6 | B4 took the population, roster and loudness blend |
 | `sim/recorder.ts`, `planner/emit.ts`, `planner/camera.ts` | 1332 | B7 | B4 took the camera rig (simulation state) and the recorder's simulation records |
 | `plan/evaluate.ts`, `reactive-look.ts`, `types.ts`, `view.ts`, `sample.ts`, `tier-look.ts`, `effects-life.ts` | 2442 | B7 | |

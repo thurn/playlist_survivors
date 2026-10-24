@@ -160,3 +160,79 @@ impl Judging {
             }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use stream::Tick;
+
+    use super::Judging;
+
+    fn tick(t: f64, evidence: f64) -> Tick {
+        Tick {
+            t,
+            known_at: t,
+            evidence,
+            energy: 0.5,
+            level: None,
+            key: None,
+            bands: None,
+            brightness: None,
+        }
+    }
+
+    /// Evidence that crosses the gate several ways: clear for under and over a second, a long gap
+    /// (a lock-on after it), a one-tick wobble.
+    fn ticks() -> Vec<Tick> {
+        (0..400)
+            .map(|j| {
+                let t = 0.05 * f64::from(j);
+                let e = match j {
+                    0..=9 => 0.2,
+                    10..=25 => 0.8,
+                    26 => 0.3,
+                    27..=120 => 0.9,
+                    121..=220 => 0.1,
+                    221..=300 => 0.7,
+                    301 => 0.49,
+                    _ => 0.95,
+                };
+                tick(t, e)
+            })
+            .collect()
+    }
+
+    #[test]
+    fn extended_tick_by_tick_equals_extended_at_once() {
+        let all = ticks();
+        let mut once = Judging::new(0.5);
+        once.extend(&all);
+        let mut grown = Judging::new(0.5);
+        for n in 1..=all.len() {
+            grown.extend(&all[..n]);
+        }
+        // (Compared as written out: the NaNs of unjudged ticks never equal themselves.)
+        assert_eq!(format!("{grown:?}"), format!("{once:?}"));
+        let mut chunks = Judging::new(0.5);
+        for n in (0..=all.len()).step_by(37).chain([all.len()]) {
+            chunks.extend(&all[..n]);
+        }
+        assert_eq!(format!("{chunks:?}"), format!("{once:?}"));
+        // The cases are there: judged runs, unjudged stretches and a lock-on after the long gap.
+        assert!(once.judged.iter().any(|&j| j) && once.judged.iter().any(|&j| !j));
+        // (The first run starts within LOCK_GAP_S of the start; the run after the 5 s gap, clear from
+        // tick 221 and judged a second later, is the lock-on.)
+        let locks: std::collections::BTreeSet<u64> = once
+            .lock_on
+            .iter()
+            .filter(|x| !x.is_nan())
+            .map(|x| x.to_bits())
+            .collect();
+        assert_eq!(
+            locks.into_iter().map(f64::from_bits).collect::<Vec<_>>(),
+            vec![all[241].t]
+        );
+        // The judged-time clock counts judged spans only.
+        let i = (all.len() - 1) as isize;
+        assert!(once.clock(all[all.len() - 1].t, i) < all[all.len() - 1].t);
+    }
+}
