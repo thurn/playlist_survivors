@@ -399,7 +399,7 @@ describe("reactive players", () => {
   const input = inputForStream(splitStream(file).stream, { checks: { noHeroDamage: true } });
   const { ctx, sch } = prepare(input);
   const ref = file.reference!;
-  const pressesOf = (name: "reactive-moderate" | "reactive-half" | "reactive-offbeat") =>
+  const pressesOf = (name: "reactive-moderate" | "reactive-half" | "reactive-offbeat" | "reactive-skilled") =>
     planWithSim(input, { player: reactivePlayerFor(ctx, ref, name) })
       .plan.inputs.filter((i) => i.kind === "press" && i.key !== "space")
       .map((i) => i.s);
@@ -414,6 +414,14 @@ describe("reactive players", () => {
     expect(near(moderate, beats)).toBeGreaterThan(0.8);
     expect(near(off, mids)).toBeGreaterThan(0.8);
     expect(half.length).toBeLessThan(0.7 * moderate.length);
+  });
+
+  it("include the reactive demo's skilled player, every beat and tighter than moderate", () => {
+    const beats = ref.beats;
+    const spread = (times: number[]) => times.reduce((a, t) => a + Math.min(...beats.map((b) => Math.abs(b - t))), 0) / times.length;
+    const skilled = pressesOf("reactive-skilled");
+    expect(near(skilled, beats)).toBeGreaterThan(0.9);
+    expect(spread(skilled)).toBeLessThan(spread(pressesOf("reactive-moderate")));
   });
 
   it("are the only players of a reactive level", () => {

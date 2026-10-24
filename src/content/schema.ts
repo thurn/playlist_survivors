@@ -405,7 +405,7 @@ export const levelEvent = z.strictObject({
  * beat or on every off-beat. They need a reactive track's reference (docs/design/reactive-audio.md,
  * "Virtual Players"); the holder and mashers play reactive levels too.
  */
-export const REACTIVE_PLAYERS = ["reactive-moderate", "reactive-human", "reactive-half", "reactive-offbeat"] as const;
+export const REACTIVE_PLAYERS = ["reactive-moderate", "reactive-human", "reactive-half", "reactive-offbeat", "reactive-skilled"] as const;
 
 /**
  * The virtual players: the demo's three, play mode's stand-in for a moderately competent human, the

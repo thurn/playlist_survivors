@@ -2,18 +2,19 @@
  * Reactive mode's virtual players (docs/design/reactive-audio.md, "Virtual Players"): they press
  * against the track's reference beats, as a person hears the music, never against committed
  * beats. Play mode's moderate and human profiles press every reference beat; reactive-half the
- * moderate profile on every other one, reactive-offbeat on every off-beat. On a track whose
+ * moderate profile on every other one, reactive-offbeat on every off-beat, and reactive-skilled
+ * (the reactive demo's) every beat with a 20 ms spread. On a track whose
  * reference has free sections (the Galop's prelude) they press only in its pulsed sections and roam
  * elsewhere, as play mode's players do. The holder and mashers steer like reactive-moderate.
  */
 import type { SkillProfileName as PlayerName } from "../content/schema.ts";
 import type { Ctx } from "../planner/context.ts";
-import { HolderPlayer, MasherPlayer, VirtualPlayer, type Player, type PlayerSection, type SkillProfile } from "../sim/player.ts";
+import { HolderPlayer, MasherPlayer, PROFILES, VirtualPlayer, type Player, type PlayerSection, type ProfileSpec, type SkillProfile } from "../sim/player.ts";
 import type { GridSlot } from "../sim/schedule.ts";
 import type { Reference } from "./stream.ts";
 
 interface Spec {
-  profile: SkillProfile;
+  profile: SkillProfile | ProfileSpec;
   /** Press every beat ("x") or every other ("x."), on the beats or on the off-beats. */
   presses: string;
   offbeat?: boolean;
@@ -24,6 +25,9 @@ const SPECS: Partial<Record<PlayerName, Spec>> = {
   "reactive-human": { profile: "human", presses: "x" },
   "reactive-half": { profile: "moderate", presses: "x." },
   "reactive-offbeat": { profile: "moderate", presses: "x", offbeat: true },
+  // The reactive demo's player: every reference beat, a 20 ms spread, accents cleaved (play mode's
+  // skilled player, a little less exact).
+  "reactive-skilled": { profile: { ...PROFILES.skilled, sd: 0.02, clampS: 0.06 }, presses: "x" },
 };
 
 /** The reference's sections as the players know them: pulsed ones press, free ones roam. */

@@ -78,3 +78,19 @@ test("reactive mode plays the Galop from its stream: strikes and sounds on commi
   // Watch my run replays the recorded keys through the engine: the same recording.
   expect(r.replay).toEqual([]);
 });
+
+test("Watch the demo in reactive mode plans the track with reactive-skilled and renders it", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto(`${BASE}/?mode=reactive&track=orpheus-galop&player=reactive-skilled&test`);
+  await page.waitForFunction(() => (window as unknown as { __demo?: unknown }).__demo !== undefined, undefined, { timeout: 120_000 });
+  await page.evaluate(() => (window as unknown as { __demo: { ready: Promise<void> } }).__demo.ready);
+  const r = await page.evaluate(async () => {
+    const d = (window as unknown as { __demo: { plan: { profile: string; stats: { averageGroove: number; deathS?: number }; reactiveFx?: unknown }; renderAt(s: number): Promise<void> } }).__demo;
+    await d.renderAt(60);
+    return { profile: d.plan.profile, reactive: d.plan.reactiveFx !== undefined, groove: d.plan.stats.averageGroove, fell: d.plan.stats.deathS !== undefined };
+  });
+  expect(errors).toEqual([]);
+  expect(r).toMatchObject({ profile: "reactive-skilled", reactive: true, fell: false });
+  expect(r.groove).toBeGreaterThan(0.9);
+});

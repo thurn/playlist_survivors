@@ -146,7 +146,7 @@ it arrives.
 | Press classes and ratings | The grid | Instant on committed beats (stage 1), settled against hindsight grids (stage 2) | 1, 2 |
 | Drift, calibration | Presses | Exact | 1 |
 | Groove, tiers, weapon sizes | Ratings | Exact rules on settled ratings, 2 s later | 2 |
-| Free sections (the prelude) | The song map's feel | The gate: unclear stretches are not judged (stage 1) and switch to free movement (stage 3) | 1, 3 |
+| Free sections (the prelude) | The song map's feel | The gate: unclear stretches are not judged (stage 1) and fill the meter with beatless credit (`hv-s4pt.13`); free movement (stage 3) was dropped by `hv-s4pt.12` | 1, 3 |
 | Horde stream, population curve | Section ranges | Elapsed time and loudness (stage 1); loudness level and detected sections (stage 4) | 1, 4 |
 | Rosters per section | Sections | Roster steps on detected sections | 4 |
 | Beat pulses, aura, sway, bobs | Beats | Committed beats, faded by evidence | 3 |
@@ -1079,6 +1079,53 @@ Watch my run work as in play mode.
   [Experience Map](#the-experience-map), close what can be closed, and record
   in this document what remains different and why.
 
+### What remains different (`hv-s4pt.11`)
+
+**Closed in stage 7:**
+
+- The difficulty curve and its healing.
+- The grade.
+- Watch the demo.
+- The parity report's survival row. It runs the same presses with damage on,
+  since the rest of the report runs with damage off.
+
+The tuning:
+
+- **Health and horde.** The hero has 200 health, and the horde grows from
+  nothing at 240 a minute.
+- **Fewer chickens.** Orc elites make up 1% of a roster, so chickens are rare,
+  as play mode intends.
+- **A gentler boss.** It slams every 8 beats rather than every 4. Its slams
+  landed on honest players and mashers alike, so they hid the difference the
+  horde makes.
+
+Each row below compares play mode with reactive mode on the Galop (parity
+report, seed 1858):
+
+| Row | Play mode | Reactive | Why it stays different |
+|---|---|---|---|
+| Strikes within 20 ms of a song-map beat | 100% | 34% | Strikes land on committed beats. The causal tracker's beats on the Galop are within 45 ms of the song map's 58% of the time (stage 1). Nothing here can close that without the tracker hearing ahead. |
+| Gameplay sounds on their slot | 100% | 48% | The same cause. |
+| Presses rated as the authored grid would | — | 53% | The settle rates against hindsight readings. The benefit of the doubt and beatless credit then let the meter disagree with the grid in the player's favour. |
+| Tier 2 or higher, pulsed sections | 97% | 100% | Beatless credit and the benefit of the doubt (`hv-s4pt.12`, `.13`). |
+| Average groove and grade | 0.96 (S) | 0.99 (A) | Reactive mode grades the meter as shown, beatless stretches included, so honest players sit near 1. Its thresholds differ (S 0.995, A 0.85, B 0.70). |
+| Kills | 7,260 | 10,190 | The horde grows with elapsed time and loudness, not per section. The prelude and the vamp hold several times the authored population (532 and 523 kills, against 76 and 144). |
+| Zone waves, false ones | 4, 0 | 6, 2 | Detected sections (stage 4): 4 of 8 song-map starts found, 1 false start in the galop and 1 in the prelude. |
+| Heavy swings on accents | 22 of 23 | 0 of 1 | Only 2 accent forecasts on the Galop reach 0.6 confidence: its tutti chords do not repeat at a cycle the forecaster finds (stage 5). |
+| Cleaves | 18 | 15 | 14 of the 15 are onset cleaves, on detected strong onsets, for want of forecasts. |
+| Set pieces | rings 3, stampedes 2, volleys 1 run, bee wedges 2, kick line 1, boss 104 s, finale 139.6 s | rings 2, stampedes 0, volleys 4 runs, bee wedges 1, kick line 1, boss 108 s, finale 144.3 s | Triggered by the music, not by script (stage 6). No stampede: no loudness jump of 6 dB after 8 quiet seconds. |
+| Lowest health, survival | 75%, lives | 71%, lives | Close. On seed 2026: 70% against 37%. |
+
+**The Experience Map, row by row:**
+
+- **Every row has its counterpart.** The difficulty, healing and grade row and
+  the Watch the demo row are now closed.
+- **Free movement in unclear stretches** (stage 3) was dropped by `hv-s4pt.12`.
+  Beatless credit (`hv-s4pt.13`) takes its place.
+- **Sounds on the grid, beat pulses, camera punches** and the other rows that
+  ride on committed beats carry the tracker's error. The strikes and sounds
+  rows above measure it.
+
 ## Mode and Flow
 
 - **Choosing it:** the title screen gains **Reactive (experimental)**, which
@@ -1102,10 +1149,13 @@ Watch my run work as in play mode.
 Reactive players press against the stream's reference beats, as a human hears
 the music, never against committed beats or hindsight grids:
 
-- `reactive-moderate`, `reactive-human` and `reactive-skilled` (stage 7) use
-  play mode's `moderate`, `human` and `skilled` profiles unchanged (timing
-  spread, bias, press rate and sloppiness), pressing on the reference beats.
-  `reactive-skilled` also presses on each reference accent.
+- `reactive-moderate` and `reactive-human` use play mode's `moderate` and
+  `human` profiles unchanged (timing spread, bias, press rate and sloppiness),
+  pressing on the reference beats.
+- `reactive-skilled` (stage 7, the reactive demo's player) uses play mode's
+  `skilled` profile with a 20 ms standard deviation (clamped at 60 ms). It
+  presses every reference beat, so it presses on every accent that falls on a
+  beat.
 - `reactive-half`: `moderate`'s profile on every other reference beat.
 - `reactive-offbeat`: `moderate`'s profile on every reference off-beat.
 - `mash4`, `mash8` and `holder`: as in play mode.
@@ -2373,3 +2423,61 @@ time at tier 2 or higher; the best masher per track is in bold.
 |---|---|---|---|---|
 | Third run's vamp, lowest | 1.00 | 0.91 | 0.81 | 0.48 |
 | Bumblebee mash4, judged time at tier 2+ | 100% | 98% | 96% | 49% |
+
+### Measured: stage 7, the difficulty curve and the grade
+
+Recorded by `hv-s4pt.11`, after beatless credit (`hv-s4pt.13`).
+
+**The Galop with damage on** (`check:reactive -- --full`). Each cell is the
+lowest health for a run that lives, or when the hero fell, then the average
+groove and grade.
+
+| Player | Seed 1858 | Seed 2026 |
+|---|---|---|
+| `reactive-moderate` | 71%, 0.992 A | 37%, 0.991 A |
+| `reactive-human` | 77%, 0.899 A | 50%, 0.964 A |
+| `reactive-skilled` | 64%, 0.993 A | 55%, 0.993 A |
+| holder | falls at 2:07, 0.571 C | falls at 2:06, 0.562 C |
+| mash2 | falls at 1:55, 0.628 C | falls at 1:57, 0.603 C |
+| mash4 | falls at 1:53, 0.505 C | falls at 2:00, 0.489 C |
+| mash8 | falls at 1:52, 0.389 C | falls at 2:03, 0.420 C |
+
+- **Both targets are met:**
+  - the honest players live, and all 8 masher and holder runs fall between
+    1:30 and 2:10;
+  - `reactive-moderate` earns an A and the mashers a C.
+- **No S.** `reactive-skilled` (0.993) also earns an A. An S takes a
+  near-flawless 0.995, and separating 0.991 from 0.993 would be noise.
+- **Four more seeds** (7, 42, 99, 314):
+  - every honest run lives, at 38–76% lowest health;
+  - 15 of the 16 masher and holder runs fall, 13 of them by 2:10 and the
+    other 2 by 2:15;
+  - mash4 lives on seed 42, at 15%.
+- **Every shipped track, seed 2026:** every honest run lives, with
+  `reactive-moderate` at 37–100% lowest health.
+  - The holder and mash4 fall on 7 of the 10 tracks: Galop, William Tell,
+    Mountain King, Beethoven's Fifth, house-128, accelerando and
+    pop-arrangement.
+  - They live on Bumblebee, dnb-174 and hiphop-92-swing, which are short or
+    beatless.
+- **Where the danger came from before the tuning:**
+  - **The boss's slams.** With 300 health and slams every 4 beats, they took
+    `reactive-moderate` from 96% to 31%: 8 of its 16 slams landed. Mashers
+    did no worse.
+  - **Chickens.** At 3% elites, 7–14 chickens healed mashers 30 each, so
+    most of them lived.
+
+**Tunings tried** (seeds 1858 and 2026):
+
+| Health | Horde a minute | Slam every | Elites | Honest lowest | Masher and holder runs that fall (of 8) |
+|---|---|---|---|---|---|
+| 600 | 80 | 4 beats | 3% | 56–75% | 0 |
+| 400 | 120 | 4 beats | 3% | 42–80% | 3 |
+| 300 | 120 | 4 beats | 3% | 30–73% | 7, at 2:05–2:21 |
+| 200 | 160 | 8 beats | 3% | 35–82% | 2 |
+| 200 | 240 | 8 beats | 3% | 50–87% | 3 |
+| 200 | 160 | 8 beats | 1% | 27–83% | 8, at 1:54–2:15 |
+| **200** | **240** | **8 beats** | **1%** | **37–77%** | **8, at 1:52–2:07** |
+
+The horde's cap (`max`) never bound: the population stays under 440 on the
+Galop.

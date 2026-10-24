@@ -309,7 +309,7 @@ export async function runApp(container: HTMLElement, params: Params): Promise<vo
       r.input = input;
       if (!params.player) {
         const botFor = (ctx: Ctx) => reactivePlayerFor(ctx, r.reference!, "reactive-moderate");
-        await runLive({ app, assets, input, props, audio, overlay, progress, hook, params, frameMs, ready: readyResolve, begun, reactive: { gradeKey: reactiveGradeKey(r.track.id), botFor: r.reference ? botFor : undefined } });
+        await runLive({ app, assets, input, props, audio, overlay, progress, hook, params, frameMs, ready: readyResolve, begun, reactive: { track: r.track.id, gradeKey: reactiveGradeKey(r.track.id), botFor: r.reference ? botFor : undefined } });
         return;
       }
     }

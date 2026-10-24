@@ -1,17 +1,19 @@
 # Reactive mode's level (docs/design/reactive-audio.md, "The reactive level"): one section over the
 # reactive song map that a track's belief stream builds (committed beats in 2-beat bars), and a
 # director in place of the song map's sections. Stage 1: no level-script events, accent punches,
-# cleaves, set pieces, finale blast or time-scale changes. The numbers are starting values to tune.
+# cleaves, set pieces, finale blast or time-scale changes; later stages add them below.
 song: reactive
 seed: 2026
 player: reactive-moderate
 reactive: true
-# Stage 1's difficulty, tuned only so that the honest reactive players (reactive-moderate and
-# reactive-human) live to the end of every shipped track (hv-s4pt.3): at tier 0 through the long
-# unclear stretches (the Galop's prelude, most of Beethoven's Fifth) the hero cannot outpace the
-# horde, so it has six times play mode's health and the horde grows from nothing. Stage 7 tunes
-# the real curve.
-hero: { health: { max: 600 } }
+# The difficulty curve (stage 7, tuned on the Galop over two seeds): the honest reactive players
+# (reactive-moderate, reactive-human, reactive-skilled) live, at 37–77% lowest health, and the holder
+# and mashers fall at 1:52–2:07, as play mode's curve has them fall in the climax. The hero has
+# twice play mode's health and the horde grows from nothing at 240 a minute, so a high tier keeps
+# it down and tier 0 bleeds; orc elites are rare (1%), so chickens (30 health each) are too; the
+# boss slams every 8 beats, since its slams land on everyone alike. Beatless stretches fill the
+# meter (hv-s4pt.13), so every player is strong there.
+hero: { health: { max: 200 } }
 upgrades: { loadout: [orbiting-blades, chain-lightning], offer: [fire-trail] }
 zones: [twilight-glade, galop-woods, mushroom-grove, ember-hollow, infernal-grove]
 sections:
@@ -27,14 +29,14 @@ sections:
 # the loudness level (quiet, medium, loud) scales the population and sets the camera, the calm and
 # the sound palette.
 director:
-  population: { start: 0, perMinute: 80, max: 360, levelScale: { quiet: 0.6, medium: 1.0, loud: 1.3 } }
+  population: { start: 0, perMinute: 240, max: 520, levelScale: { quiet: 0.6, medium: 1.0, loud: 1.3 } }
   sections:
     - { slime: 2, bat: 1 }
     - { goblin: 2, slime: 2, bat: 1 }
     - { goblin: 3, orc: 1, slime: 1, bat: 1 }
-    - { goblin: 3, orc: 2, skeleton: 1, orc-elite: 0.03 }
-    - { goblin: 2, orc: 2, skeleton: 2, orc-ember: 1, orc-elite: 0.03 }
-    - { orc-ember: 3, skeleton-ember: 2, goblin: 2, orc-elite: 0.03 }
+    - { goblin: 3, orc: 2, skeleton: 1, orc-elite: 0.01 }
+    - { goblin: 2, orc: 2, skeleton: 2, orc-ember: 1, orc-elite: 0.01 }
+    - { orc-ember: 3, skeleton-ember: 2, goblin: 2, orc-elite: 0.01 }
   sectionRule: { jumpDb: 6, minGapS: 8 }
   levelUps: [{ xp: 100 }, { xp: 470 }, { xp: 800 }]
   levelUpWaitS: 20
@@ -56,5 +58,5 @@ director:
     volleys: { archers: 2, everyBeats: 4 }
     wedge: bee-wedge
     kickLine: { formation: skeleton-kick-line, mediumBeats: 16, minDanceBeats: 8, maxDanceBeats: 32 }
-    boss: { type: minotaur, afterS: 90, landAfterS: 0.6, slamBeats: 4, retreatS: 90, landmark: standing-stones }
+    boss: { type: minotaur, afterS: 90, landAfterS: 0.6, slamBeats: 8, retreatS: 90, landmark: standing-stones }
     finale: { blast: finale-blast, landmark: ruined-shrine, windowS: 10, swell: 0.4, swellS: 1.5, epilogueS: 3 }

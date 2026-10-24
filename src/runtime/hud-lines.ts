@@ -39,7 +39,7 @@ export function endCardLines(hud: Pick<HudState, "kills" | "ratings">, end: NonN
  * for a recorded run (the demo, or ?player=) the grade of its average groove.
  */
 export function endCardGrade<T extends { grade: string; newBest: boolean }>(end: NonNullable<HudState["end"]>, given: T | undefined): T | { grade: string; newBest: false } {
-  return given ?? { grade: gradeFor(end.averageGroove), newBest: false };
+  return given ?? { grade: gradeFor(end.averageGroove, end.reactive), newBest: false };
 }
 
 /** The tier's label beside the groove meter. */

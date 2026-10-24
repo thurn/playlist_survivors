@@ -95,14 +95,17 @@ where it is not, strong hits flash, the light, effects and ambient particles fol
 the loudness, every press sends out a ripple in its rating's colour, and the ground
 glows as your presses land Great or better. The horde, rosters, level-ups and zone
 waves come from `levels/reactive.yaml`'s director rather than the song map's
-sections, and there are no set pieces, cleaves or finale yet: those return stage by
-stage. The run ends when the audio does, graded on the average groove over the
-time the beat was clear after the first 16 s.
+sections, and set pieces, cleaves and the finale come from the music. When the song
+has no beat the game can hear, the groove meter fills by itself. The run ends when
+the audio does (or after the finale), graded on the average groove after the first
+16 s by reactive mode's own thresholds (an honest run sits near 1). The difficulty
+is tuned so honest players live and mashers fall in the Galop's climax.
 
 **Reactive (experimental)** on the title screen opens the track list: the Galop,
 the four other classical excerpts, five synthetic tracks with exact beats, and your
 own. The pause menu and the end card work as in play mode; **Restart section**
-restarts the song (there is one section), and each track keeps its own best grade.
+restarts the song (there is one section), each track keeps its own best grade, and
+**Watch the demo** plays the track's run by `reactive-skilled`.
 
 - `npm run reactive:add -- <audio file> [--id <id>] [--title <title>]` analyses
   one of your own audio files (a few seconds of analysis per minute of music)
@@ -110,8 +113,9 @@ restarts the song (there is one section), and each track keeps its own best grad
   joins the track list as a local track. Builds never include it.
 - `npm run reactive:parity -- --track orpheus-galop` compares the reactive Galop
   with the authored one, row by row (strikes and sounds on the song map's beats,
-  ratings, time at tier 2 and up, groove and grade, kills and enemies per section),
-  with reactive-moderate's presses, seed 1858 and damage off. A measuring tool,
+  ratings, time at tier 2 and up, groove and grade, kills and enemies per section,
+  set pieces, and survival with damage on), with reactive-moderate's presses, seed
+  1858 and damage off. A measuring tool,
   not a gate.
 
 ### Timing log
@@ -144,7 +148,7 @@ hero's path are logged too. See [`src/live/log.ts`](src/live/log.ts).
 
 | Parameter | Effect |
 |---|---|
-| `?mode=reactive&track=orpheus-galop` | Reactive mode on a track, by its id in `public/reactive/index.json` (or a local track's). With `&player=reactive-moderate` (or `reactive-human`, `reactive-half`, `reactive-offbeat`, `holder`, `mash4` ...) it plans that virtual player's run and plays it back; the reactive players press on the track's reference beats (the Galop's song map). `&start=` hands over after `reactive-moderate` plays up to it. |
+| `?mode=reactive&track=orpheus-galop` | Reactive mode on a track, by its id in `public/reactive/index.json` (or a local track's). With `&player=reactive-moderate` (or `reactive-human`, `reactive-skilled` (the reactive demo), `reactive-half`, `reactive-offbeat`, `holder`, `mash4` ...) it plans that virtual player's run and plays it back; the reactive players press on the track's reference beats (the Galop's song map). `&start=` hands over after `reactive-moderate` plays up to it. |
 | `?mode=play` / `?mode=demo` | Skip the title screen's choice (the one click to unlock audio is still needed). Watch the demo is the skilled virtual player's run under play mode's rules, in the open field (one level script, `levels/orpheus-galop.yaml`, drives both; the play level only sets the moderate player). |
 | `?mode=play&player=moderate` | Plan a play-mode run with a virtual player and play it back like the demo (captures, QA, tuning). |
 | `?metronome` | Full-screen flash on every beat plus a click track over the music (the sync check). |
@@ -176,9 +180,9 @@ Every important property is checkable by a command:
 | `npm run check:play` | Play mode, headless: the `moderate` and `casual` virtual players and mashers at 4 and 8 presses a second through the open field on four seeds, and `perfect`, `skilled`, `eighths`, `holder` and `mash2` on two (`-- --seeds=` and `--extra-seeds=` pick others), with the checks the demo shares plus play mode's own (every gameplay sound on its subdivision's slot within 1 ms, as the table in the design's Sound on the Grid says; no dead presses, the speed cap, holding keeps full speed, transform waves off screen within a bar, the finale, and the moderate player's signature moments: 80% of eligible accents cleaved (a shockwave its press on the chord launched), the kick line down within two beats, 75% near misses, the boss on its chord, level-ups on time with an orb walked into at each, 60% of the experience dropped collected). Mashers must earn a C and fewer kills than `moderate`; every player passes the movement checks and the sounds on the grid; the honest players (`perfect`, `skilled`, `eighths`, `moderate`, `casual`) must survive, and the holder and mashers must fall between 1:30 and 2:10 (the design's difficulty curve; the honest players' end health, averaged over the seeds, is printed against its band but not gated, as the design's note on the curve records). The groove checks: after the galop vamp `moderate` is at tier 2 or higher for 70% of pulsed time, the holder and mashers at tier 0 for 80% of it, and `eighths` averages within 0.05 of `skilled`'s groove. Prints kills, groove, grade, time at tier 0 and at tier 2 or higher, and lowest health side by side. In CI. |
 | `npm run capture -- --times 12,35.2,88.31,141.5` | Headless-Chrome screenshots at exact song times into `captures/`. `--sections` captures the start of every section. |
 | `npm run bench` | Headed Chrome, whole song at real-time speed: fails if JavaScript frame time exceeds 8 ms or GPU time 10 ms at p95, or any frame exceeds 33 ms. `-- --play` benchmarks live play instead (theme A to the climax, a late-arriving press on every beat, so it includes the rollbacks). |
-| `npm run test:e2e` | Playwright: Watch the demo is the skilled player's run in the open field with tiers and upgrade orbs, capture hook, metronome flash on the beat, broken level script shows an error and never starts, reload uses the cached plan, `?player=` re-simulates with another profile, `?mode=play&player=holder` and `mash4` plan and play back; play mode at `?start=1:10` (a stride per press, the sword on every beat, a mashed press rated once, Esc pauses and resumes); and reactive mode on the Galop's stream from 0:55 (strikes on committed beats, sounds, judged presses, Watch my run replaying exactly). |
+| `npm run test:e2e` | Playwright: Watch the demo is the skilled player's run in the open field with tiers and upgrade orbs, capture hook, metronome flash on the beat, broken level script shows an error and never starts, reload uses the cached plan, `?player=` re-simulates with another profile, `?mode=play&player=holder` and `mash4` plan and play back; play mode at `?start=1:10` (a stride per press, the sword on every beat, a mashed press rated once, Esc pauses and resumes); and reactive mode on the Galop's stream from 0:55 (strikes on committed beats, sounds, judged presses, Watch my run replaying exactly) and its demo (`reactive-skilled` planned and played back). |
 | `npm run qa` | Playback in Chromium over the Manual QA items a machine can judge: simulation time, the skilled and casual players' sounds on the grid (every row of the design's Sound on the Grid table), impacts on the grid and the reward spectrum, audio clock rate, picture/audio offset, frame rate, hidden-tab recovery (a 3 s main-thread stall), resize letterboxing, click track, finale clearance, and a listening pass over the offline-rendered mix (clipping, effects level, music in front, no wall of noise, effects on time); then live play mode with synthetic key presses (a press strides at once, impacts on the grid, mashing, diagonals, held keys striding on the beat, stomps and rock steps, the same 140 px/s holding, tapping quarter or eighth notes and mashing, frame time, Esc and losing focus, Watch my run identical across a level-up, a mid-song start); writes `captures/qa/report.md` and review frames. `-- --play` runs only the play-mode items. |
-| `npm run check:reactive` | Reactive mode ([design](docs/design/reactive-audio.md)): the causality check (on `causality-mix`, every stream entry known after a cut is changed and the song map, simulation, sounds and frames must match the true run before it, with reactive-moderate's and mash4's presses; a negative control that reads the evidence a second ahead must fail), determinism, fresh streams (each shipped stream's `toolVersion` is the tool's), stream quality on `house-128` and `dnb-174`, the gate on the Galop's prelude, sounds on committed beats, and a headless smoke test (the Galop through the live runner for 10 s with synthetic presses), and every shipped track end to end; prints committed-beat accuracy per track. `-- --full` adds the causality check on every shipped track, a cut every 10 s. In CI. |
+| `npm run check:reactive` | Reactive mode ([design](docs/design/reactive-audio.md)): the causality check (on `causality-mix`, every stream entry known after a cut is changed and the song map, simulation, sounds and frames must match the true run before it, with reactive-moderate's and mash4's presses; a negative control that reads the evidence a second ahead must fail), determinism, fresh streams (each shipped stream's `toolVersion` is the tool's), stream quality on `house-128` and `dnb-174`, the gate on the Galop's prelude, sounds on committed beats, and a headless smoke test (the Galop through the live runner for 10 s with synthetic presses), and every shipped track end to end; prints committed-beat accuracy per track. `-- --full` adds the causality check on every shipped track, a cut every 10 s, and stage 7's difficulty and grade targets. In CI. |
 | `npm run check:analysis` | The analysis tool's pytest suite and ruff. |
 | `npm run check:all` | All of the above except captures, QA and the benchmark. |
 

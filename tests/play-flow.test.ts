@@ -139,7 +139,11 @@ describe("the stomp key", () => {
 
 describe("the grade", () => {
   it("comes from the average groove", () => {
-    expect([0.96, 0.94, 0.93, 0.85, 0.8, 0.75, 0.5, 0.49, 0.1].map(gradeFor)).toEqual(["S", "S", "A", "A", "B", "B", "B", "C", "C"]);
+    expect([0.96, 0.94, 0.93, 0.85, 0.8, 0.75, 0.5, 0.49, 0.1].map((g) => gradeFor(g))).toEqual(["S", "S", "A", "A", "B", "B", "B", "C", "C"]);
+  });
+
+  it("has reactive mode's own thresholds, beatless stretches filling its meter", () => {
+    expect([1, 0.995, 0.992, 0.85, 0.8, 0.7, 0.65, 0.4].map((g) => gradeFor(g, true))).toEqual(["S", "S", "A", "A", "B", "B", "C", "C"]);
   });
 
   it("is saved under a new key: a best grade from before the redesign is ignored, and the calibration offset kept", () => {

@@ -37,10 +37,13 @@
  * Targets (stage 5): accent forecasts on every track, and their precision against strong onsets; the
  * Galop's heavy swings on its song map's tutti chords.
  * Targets (stage 6): the Galop's set pieces, and its finale against its last tutti chord.
+ * Targets (stage 7, with `--full`): on the Galop over two seeds, the honest players survive and the
+ * holder and mashers fall between 1:30 and 2:10; reactive-moderate earns an A and the mashers a C.
  *
  *   npm run check:reactive [-- --full]
  *
- * `--full` adds the perturbation check on the Galop and every shipped track, a cut every 10 s.
+ * `--full` adds the perturbation check on the Galop and every shipped track, a cut every 10 s, and
+ * stage 7's targets.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -55,6 +58,7 @@ import { grooveAt } from "../src/plan/evaluate.ts";
 import type { Plan } from "../src/plan/types.ts";
 import { reactivePlayerFor } from "../src/reactive/players.ts";
 import { checkReactivePlan } from "../src/reactive/plan-checks.ts";
+import { gradeFor } from "../src/plan/grade.ts";
 import type { ReactiveStream, Reference, StreamFile } from "../src/reactive/stream.ts";
 import type { SkillProfileName } from "../src/content/schema.ts";
 import { ROOT } from "./lib/files.ts";
@@ -344,7 +348,7 @@ const causalityCase = (id: string, level: string | undefined, cuts?: number[]): 
   lines.push("every shipped track end to end (damage on):");
   for (const id of tracks) {
     const cells: string[] = [];
-    for (const name of ["reactive-moderate", "reactive-human"] as const) {
+    for (const name of ["reactive-moderate", "reactive-human", "reactive-skilled"] as const) {
       const run = reactiveInput(file(id));
       try {
         const { plan } = planWithSim(run.input, { props, player: playerOn(run.reference!, name)(run.input) });
@@ -361,9 +365,26 @@ const causalityCase = (id: string, level: string | undefined, cuts?: number[]): 
     }
     lines.push(`  ${id.padEnd(22)} ${cells.join(" | ")}`);
   }
-  results.push({ name: "every shipped track simulates end to end", failures, checked: 2 * tracks.length });
-  results.push({ name: "the honest players' runs pass the plan checks", failures: planFailures, checked: 2 * tracks.length });
+  results.push({ name: "every shipped track simulates end to end", failures, checked: 3 * tracks.length });
+  results.push({ name: "the honest players' runs pass the plan checks", failures: planFailures, checked: 3 * tracks.length });
   results.push({ name: "reactive-moderate lives to the end of every shipped track", failures: survival, checked: tracks.length });
+}
+
+// ---------------------------------------------------------------- targets: the difficulty curve and the grade (stage 7)
+if (full) {
+  lines.push("targets (stage 7, the Galop, damage on): honest players survive, the holder and mashers fall between 1:30 and 2:10; reactive-moderate an A, mashers a C");
+  for (const seed of [1858, 2026]) {
+    const cells: string[] = [];
+    for (const name of ["reactive-moderate", "reactive-human", "reactive-skilled", "holder", "mash2", "mash4", "mash8"] as const) {
+      const run = reactiveInput(file("orpheus-galop"), { seed });
+      const { plan } = planWithSim(run.input, { props, player: playerOn(run.reference!, name)(run.input) });
+      const d = plan.stats.deathS;
+      const honest = name.startsWith("reactive-");
+      const miss = honest ? d !== undefined : d === undefined || d < 90 || d > 130;
+      cells.push(`${name} ${d === undefined ? `lives (${Math.round(plan.stats.minHealth * 100)}%)` : `falls at ${Math.floor(d / 60)}:${String(Math.floor(d % 60)).padStart(2, "0")}`}${miss ? " (missed)" : ""}, ${plan.stats.averageGroove.toFixed(3)} ${gradeFor(plan.stats.averageGroove, true)}`);
+    }
+    lines.push(`  seed ${seed}: ${cells.join(" | ")}`);
+  }
 }
 
 for (const l of lines) console.log(l);

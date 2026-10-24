@@ -211,11 +211,12 @@ export class VirtualPlayer implements Player {
     slots: readonly GridSlot[],
     sections: readonly PlayerSection[],
     beats: readonly number[],
-    profile: SkillProfile = "skilled",
+    /** A profile's name, or (reactive mode's demo player) its spec. */
+    profile: SkillProfile | ProfileSpec = "skilled",
     /** Is a grid slot an accent the section turns into a cleave? */
     heavyAccent: (slot: GridSlot) => boolean = () => false,
   ) {
-    const spec = PROFILES[profile];
+    const spec = typeof profile === "string" ? PROFILES[profile] : profile;
     this.spec = spec;
     this.sections = sections;
     this.beats = beats;

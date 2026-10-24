@@ -48,7 +48,7 @@ export interface LiveEnv {
   /** The title screen's choice already unlocked audio: no "Click to begin". */
   begun?: boolean;
   /** Reactive mode: the track's best-grade key, and the virtual player before a mid-song hand-over. */
-  reactive?: { gradeKey: string; botFor?: BotFor };
+  reactive?: { track: string; gradeKey: string; botFor?: BotFor };
 }
 
 const yieldToUi = () => new Promise((r) => setTimeout(r, 0));
@@ -495,11 +495,21 @@ class PlayController {
     location.search = q.toString();
   }
 
+  /** Reactive mode's demo: the track planned and played back with reactive-skilled. */
+  private watchReactiveDemo(): void {
+    const q = new URLSearchParams(location.search);
+    q.set("mode", "reactive");
+    q.set("track", this.env.reactive!.track);
+    q.set("player", "reactive-skilled");
+    q.delete("start");
+    location.search = q.toString();
+  }
+
   // ------------------------------------------------------------------ the end
 
   private showEnd(): void {
     const plan = this.session().recording.plan;
-    const grade: Grade = gradeFor(plan.stats.averageGroove);
+    const grade: Grade = gradeFor(plan.stats.averageGroove, this.env.reactive !== undefined);
     const best = loadBestGrade(this.level);
     const newBest = !best || gradeRank(grade) < gradeRank(best);
     if (newBest) saveBestGrade(this.level, grade);
@@ -510,8 +520,7 @@ class PlayController {
   }
 
   private endMenu(): { menu: HudMenu; actions: (() => void)[] } {
-    // (Reactive mode has no demo yet: stage 7 records one.)
-    if (this.env.reactive) return { menu: { items: ["Play again", "Watch my run", "Quit to title"], selected: 0 }, actions: [() => void this.restartSong(), () => void this.watchMyRun(), () => this.quit()] };
+    if (this.env.reactive) return { menu: { items: ["Play again", "Watch my run", "Watch the demo"], selected: 0 }, actions: [() => void this.restartSong(), () => void this.watchMyRun(), () => this.watchReactiveDemo()] };
     return { menu: { items: ["Play again", "Watch my run", "Watch the demo"], selected: 0 }, actions: [() => void this.restartSong(), () => void this.watchMyRun(), () => this.watchDemo()] };
   }
 

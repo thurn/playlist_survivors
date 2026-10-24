@@ -208,7 +208,7 @@ export function zoneWaves(plan: Plan, ref: Reference): { n: number; on: number; 
 }
 
 /** The report's rows (the stage 4 rows from the stream's structure, when given). */
-export function parityRows(authored: Plan | undefined, reactive: Plan, ref: Reference, lib: ContentLibrary, stream?: ReactiveStream, rule?: SectionRule): ParityRow[] {
+export function parityRows(authored: Plan | undefined, reactive: Plan, ref: Reference, lib: ContentLibrary, stream?: ReactiveStream, rule?: SectionRule, damaged?: { authored?: Plan; reactive: Plan }): ParityRow[] {
   const both = (f: (p: Plan) => number, fmt: (x: number) => string, stage: string, row: string): ParityRow => {
     const r = f(reactive);
     const a = authored ? f(authored) : undefined;
@@ -221,7 +221,7 @@ export function parityRows(authored: Plan | undefined, reactive: Plan, ref: Refe
   const same = pressesRatedSame(reactive, ref, lib);
   rows.push({ row: `Presses rated the same as the authored grid would (${same.n} presses)`, authored: "—", reactive: pct(same.share), stage: "1, 2" });
   rows.push(both((p) => timeAtTier(p, ref, 2), pct, "1, 2", "Time at tier 2 or higher (pulsed sections)"));
-  const grade = (p: Plan) => `${p.stats.averageGroove.toFixed(2)} (${gradeFor(p.stats.averageGroove)})`;
+  const grade = (p: Plan) => `${p.stats.averageGroove.toFixed(2)} (${gradeFor(p.stats.averageGroove, p.reactiveFx !== undefined)})`;
   rows.push({ row: "Average groove and grade", authored: authored ? grade(authored) : "—", reactive: grade(reactive), gap: authored ? (reactive.stats.averageGroove - authored.stats.averageGroove).toFixed(2) : undefined, stage: "1, 2" });
   const ka = authored ? perSection(authored, ref) : undefined;
   const kr = perSection(reactive, ref);
@@ -256,7 +256,15 @@ export function parityRows(authored: Plan | undefined, reactive: Plan, ref: Refe
     const pick = (ts: number[]) => (k === "volleys" ? firstOfGroups(ts, 6) : k === "the finale" ? ts.slice(0, 1) : ts);
     rows.push({ row: `  ${k}`, authored: ta ? list(pick(ta[k])) : "—", reactive: list(pick(tr[k])), stage: "6" });
   }
+  // Stage 7: the same player's runs with damage on.
+  if (damaged) rows.push({ row: "Lowest health, survival (damage on)", authored: damaged.authored ? survival(damaged.authored) : "—", reactive: survival(damaged.reactive), stage: "7" });
   return rows;
+}
+
+/** A run's lowest health and whether the hero lived, or when it fell (m:ss). */
+export function survival(p: Plan): string {
+  const d = p.stats.deathS;
+  return d === undefined ? `${Math.round(p.stats.minHealth * 100)}%, lives` : `falls at ${Math.floor(d / 60)}:${String(Math.floor(d % 60)).padStart(2, "0")}`;
 }
 
 /** The rows as a text table. */

@@ -315,7 +315,7 @@ export interface HudState {
    * The end card: loose and stray presses, the song seconds spent at each tier in the sections with
    * a steady beat, and the gems collected (their experience) against those dropped.
    */
-  end?: { age: number; averageGroove: number; loose: number; strays: number; tierTime: number[]; gems: { collected: number; dropped: number } };
+  end?: { age: number; averageGroove: number; loose: number; strays: number; tierTime: number[]; gems: { collected: number; dropped: number }; reactive?: true };
   /** The hero's health (fraction of its maximum), its hurt flash and its heal glow (0–1). */
   health: number;
   hurt: number;
@@ -1312,6 +1312,8 @@ export class Evaluator {
           tierTime: tierTimes(plan, this.index.blastS() ?? plan.duration),
           // Gems on the field: the gems collected (their experience) against those dropped.
           gems: gemTotals(plan),
+          // (Reactive mode grades by its own thresholds.)
+          ...(plan.reactiveFx ? { reactive: true as const } : {}),
         };
       }
     }
