@@ -1,0 +1,19 @@
+#!/bin/sh
+# Fails if any named text file holds a merge-conflict marker line (<<<<<<<, |||||||, =======,
+# >>>>>>>), as a rebase can leave behind. Binary files and missing paths are skipped.
+#
+#   scripts/check-conflict-markers FILE...
+set -eu
+status=0
+for f in "$@"; do
+  [ -f "$f" ] || continue
+  # (grep -I skips binary files.)
+  if grep -InE '^(<{7}|\|{7}|>{7})( |$)|^={7}$' -- "$f" >/dev/null 2>&1; then
+    grep -InE '^(<{7}|\|{7}|>{7})( |$)|^={7}$' -- "$f" | sed "s|^|$f:|" >&2
+    status=1
+  fi
+done
+if [ "$status" = 1 ]; then
+  echo "check-conflict-markers: resolve the conflict markers above" >&2
+fi
+exit "$status"

@@ -5,6 +5,7 @@
 # - TS: install, lint, typecheck, unit tests, content and assets, the level's seeds with causality
 #   and determinism, the build.
 # - The analysis tool: ruff and the song map's check.
+# - Every section: conflict markers in the changed files.
 # - The friction ledger (native/evidence/, scripts/friction): its records and its tests.
 # - Native (native/, and the content it reads): native/scripts/check-fast, which formats, checks
 #   the pure crates' purity, and runs clippy and the tests of the crates the diff touches and
@@ -15,7 +16,16 @@ cd "$(dirname "$0")/.."
 . scripts/lib/changes.sh
 started=$(date +%s)
 changes_init
-trap 'rm -f "$CHANGES_FILE"' EXIT
+trap 'rm -f "$CHANGES_FILE" "${list:-}"' EXIT
+
+# Conflict markers a rebase left in any changed file, whatever the section.
+list=$(mktemp)
+changes_existing '.' > "$list"
+if [ -s "$list" ]; then
+  while IFS= read -r f; do set -- "$@" "$f"; done < "$list"
+  scripts/check-conflict-markers "$@"
+  set --
+fi
 
 if changes_ts; then
   echo "ci-gate: TS section"

@@ -2,6 +2,7 @@
 # The fast local check (budget 60 s): run it once, on the final tree, before `tg candidate`.
 # It replaces running the whole suite locally. Diff-aware, from the paths that differ from the
 # branch's base (scripts/lib/changes.sh), committed or not:
+# - Conflict markers in any changed file (scripts/check-conflict-markers).
 # - TS: eslint on the changed TS and JS files, the typecheck, and vitest's tests related to the
 #   changed files (all of `npm run check` when the toolchain's configuration changed);
 #   check:content and check:assets when their inputs changed.
@@ -17,6 +18,17 @@ started=$(date +%s)
 changes_init
 trap 'rm -f "$CHANGES_FILE" "${list:-}"' EXIT
 list=$(mktemp)
+
+# Conflict markers a rebase left in any changed file.
+changes_existing '.' > "$list"
+if [ -s "$list" ]; then
+  while IFS= read -r f; do set -- "$@" "$f"; done < "$list"
+  scripts/check-conflict-markers "$@"
+  set --
+fi
+if changes_match '^scripts/(check-conflict-markers|test_check_conflict_markers\.py)$'; then
+  uv run --no-project python -m unittest scripts/test_check_conflict_markers.py
+fi
 
 if changes_ts; then
   if [ ! -d node_modules ]; then

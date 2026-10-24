@@ -39,6 +39,7 @@ if [ "$section" = all ] || [ "$section" = analysis ]; then
   scripts/friction validate
   uv run --directory tools/analysis ruff check ../../scripts/friction ../../scripts/test_friction.py
   uv run --no-project python -m unittest scripts/test_friction.py
+  uv run --no-project python -m unittest scripts/test_check_conflict_markers.py
 fi
 
 # The native workspace: every crate's clippy and tests, the pure crates' purity, unused

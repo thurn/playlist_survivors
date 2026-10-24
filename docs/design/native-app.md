@@ -1230,7 +1230,8 @@ The analyzer gains `Listening::Delayed { m }`. In it:
 - **Which grid:** online hindsight, offline hindsight, or online with the
   phase check's offline phase. E1 measures all three across the corpus and
   picks the best in aggregate that is no worse than Direct listening on any
-  corpus category. It records the table in the bead and the appendix.
+  corpus category. It records the table in the bead and in
+  `native/evidence/e1/` ([Measurements](#measurements)).
 - **Fields:** `period` from the chosen grid's local spacing; `evidence` from the
   beliefs around `t`, which the analyzer has already heard. The gate and
   judging read them as before.
@@ -1480,6 +1481,16 @@ Cheapest first:
   before its retrospective closes. The end of the plan requires `release` to
   equal `staging`.
 
+### Measurements
+
+Each bead writes its measurements, tables and raw outputs to
+`native/evidence/<plan-key>/` (for example `native/evidence/a1/`), and puts a
+short summary with a link in its own section of this plan (its phase, or the
+Targets table). Nothing is appended to the end of this document or its
+appendix: beads running in parallel collided there (the cadence retrospective
+`hv-t8o8.47`). The fast check and the gate fail on a conflict marker left by a
+rebase.
+
 ### Tool failures
 
 Nobody works around a broken tool silently. When Tollgate, Hive, Beads, cargo,
@@ -1650,7 +1661,10 @@ Named so this plan does not block them. Each needs its own design.
 
 ## Appendix: Measurements
 
-Filled in by phase 0, then by each phase that measures something.
+Phase 0, F1, E0 and ES recorded their measurements here. From the first
+cadence retrospective on, each bead writes them to `native/evidence/<plan-key>/`
+and links them from its own section ([Measurements](#measurements)); these
+sections are not extended.
 
 ### Measured: phase 0
 
