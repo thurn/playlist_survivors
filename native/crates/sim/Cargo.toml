@@ -9,7 +9,7 @@ indexmap = { version = "2", features = ["serde"] }
 libm = "0.2"
 serde = { version = "1", features = ["derive"] }
 serde-saphyr = "2"
-serde_json = { version = "1", features = ["preserve_order"] }
+serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
 stream = { path = "../stream" }
 
 [dev-dependencies]

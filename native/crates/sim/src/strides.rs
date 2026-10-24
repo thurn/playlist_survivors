@@ -21,6 +21,11 @@ pub struct StrideSteps {
 }
 
 impl StrideSteps {
+    /// Where the last grid time's (provisional) steps start.
+    pub fn tail(&self) -> usize {
+        self.tail
+    }
+
     /// The steps for `grid`, which extends the grid these steps were built from (`from` is its old
     /// length): the provisional last grid time's steps are rebuilt, then the new ones appended.
     pub fn extend(&mut self, grid: &[f64], from: usize, max_period_s: f64) {

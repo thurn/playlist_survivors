@@ -921,6 +921,11 @@ covered by the truncation check, D1's tests and the QA checklist, not the oracle
 B4 to B6 split `simulate.ts` by area. They touch one crate in sequence, so they
 run one after another, not in parallel.
 
+**Measured (B4):** the Rust simulation's own event-log categories match the TS oracle line for
+line on all 15 full core runs, up to the first judging-dependent moment and, with judging and the
+settled groove ported alongside, up to B6's first event (to 53 s on one corpus track); the gate
+takes 5 s warm on a sim change ([evidence](../../native/evidence/b4/README.md)).
+
 ### Source modules
 
 Every TS source file at `ts-freeze` (tests aside) and the bead that ports it, so no module falls
@@ -931,15 +936,15 @@ named). "Landed" means on `staging`. Line counts are at the tag.
 |---|---|---|---|
 | `core/geometry.ts`, `rng.ts`, `shaping.ts`, `songmap.ts`, `warp.ts` | 650 | B1, landed | |
 | `content/schema.ts`, `content/loader.ts` | 1200 | B1, landed | B2 added the level loader |
-| `reactive/stream.ts`, `reactive/songmap.ts`, `planner/context.ts` | 477 | B2, landed | `judging()` with B5 if B2 left it |
+| `reactive/stream.ts`, `reactive/songmap.ts`, `planner/context.ts` | 477 | B2, landed | `judging()` landed with B4 (`sim::reactive::judging`, growing tick by tick) |
 | `sim/schedule.ts`, `sim/strides.ts`, `planner/musical.ts` | 580 | B2, landed | |
-| `sim/timing.ts`, `movement.ts`, `aim.ts`, `gait.ts`, `tiers.ts`, `upgrades.ts`, `world.ts` | 650 | B3 | |
-| `sim/player.ts` | 781 | B3 (key handling), B8 (skill profiles) | |
-| `sim/simulate.ts` | 3699 | B4, B5, B6 | Split by area, as above |
+| `sim/timing.ts`, `movement.ts`, `aim.ts`, `gait.ts`, `tiers.ts`, `upgrades.ts`, `world.ts` | 650 | B3, landed | |
+| `sim/player.ts` | 781 | B3 (key handling), landed; B8 (skill profiles) | |
+| `sim/simulate.ts` | 3699 | B4, B5, B6 | B4 ported everything but set pieces, archers, the boss, zone waves, landmarks and the finale (B6); judging and the settled groove came with it |
 | `sim/clone.ts` | 73 | Not ported | Rollback snapshots are Rust's `Clone` (B4) |
-| `reactive/settle.ts` | 230 | B5 | |
-| `reactive/director.ts`, `sections.ts`, `setpieces.ts` | 498 | B6 | |
-| `sim/recorder.ts`, `planner/emit.ts`, `planner/camera.ts` | 1332 | B7 | The camera is recorded state |
+| `reactive/settle.ts` | 230 | B4 (ported with the engine); B5 verifies | |
+| `reactive/director.ts`, `sections.ts`, `setpieces.ts` | 498 | B6 | B4 took the population, roster and loudness blend |
+| `sim/recorder.ts`, `planner/emit.ts`, `planner/camera.ts` | 1332 | B7 | B4 took the camera rig (simulation state) and the recorder's simulation records |
 | `plan/evaluate.ts`, `reactive-look.ts`, `types.ts`, `view.ts`, `sample.ts`, `tier-look.ts`, `effects-life.ts` | 2442 | B7 | |
 | `reactive/grade.ts` | 24 | B7 | Read by emit and the recording |
 | `mapgen/mapgen.ts`, `mapgen/openfield.ts` | 235 | B7 | The open field's ground, read by the evaluator and C1's ground mesh |

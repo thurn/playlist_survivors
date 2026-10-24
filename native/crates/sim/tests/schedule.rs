@@ -59,7 +59,7 @@ fn resolve(name: &str) -> Option<SourceFile> {
 /// The reactive level, loaded against a stream's whole reactive song map.
 fn level_for(lib: &ContentLibrary, file: &StreamFile) -> LevelScript {
     let mut song = reactive_song_map(file.audio.duration);
-    grow_song_map(&mut song, &file.log);
+    grow_song_map(&mut song, &file.log, file.log.beats.len());
     load_level(&source("levels/reactive.yaml"), lib, &song, Some(&resolve))
         .unwrap_or_else(|e| panic!("{e}"))
 }
@@ -96,7 +96,7 @@ fn level_errors_name_the_file_and_path() {
     let lib = library();
     let file = stream("orpheus-galop");
     let mut song = reactive_song_map(file.audio.duration);
-    grow_song_map(&mut song, &file.log);
+    grow_song_map(&mut song, &file.log, file.log.beats.len());
     let bad = |text: &str| {
         let f = SourceFile {
             name: "levels/bad.yaml".into(),
@@ -283,7 +283,7 @@ fn growing_schedule_equals_ts_batch_schedule() {
         );
         // ...and the batch one.
         let mut batch = reactive_song_map(file.audio.duration);
-        grow_song_map(&mut batch, &file.log);
+        grow_song_map(&mut batch, &file.log, file.log.beats.len());
         assert_eq!(sc.song, batch, "{track}: song map");
     }
 }
@@ -307,7 +307,7 @@ fn extends_merges_sections_by_label_and_hero_deeply() {
     let lib = library();
     let file = stream("orpheus-galop");
     let mut song = reactive_song_map(file.audio.duration);
-    grow_song_map(&mut song, &file.log);
+    grow_song_map(&mut song, &file.log, file.log.beats.len());
     let child = SourceFile {
         name: "levels/child.yaml".into(),
         text: "extends: reactive\nseed: 7\nhero: { walk: { speed: 150 } }\nsections:\n  - section: reactive\n    pace: 60\n    camera: { zoom: 1.1 }\n".into(),
@@ -369,7 +369,7 @@ fn hero_errors_and_empty_section_labels_read_as_ts() {
     let lib = library();
     let file = stream("orpheus-galop");
     let mut song = reactive_song_map(file.audio.duration);
-    grow_song_map(&mut song, &file.log);
+    grow_song_map(&mut song, &file.log, file.log.beats.len());
     let base = std::fs::read_to_string(root().join("levels/reactive.yaml")).unwrap();
     let load = |text: String| {
         let f = SourceFile {
@@ -397,7 +397,7 @@ fn extends_matches_events_whatever_their_number_spelling() {
     let lib = library();
     let file = stream("orpheus-galop");
     let mut song = reactive_song_map(file.audio.duration);
-    grow_song_map(&mut song, &file.log);
+    grow_song_map(&mut song, &file.log, file.log.beats.len());
     let enemy = lib.enemies.keys().next().unwrap();
     let parent = format!(
         "song: reactive\nseed: 1\ntitle: {{ piece: p, composer: c, performer: q }}\nzones: [twilight-glade]\nsections:\n  - section: reactive\n    pace: 50\n    presses: xx\n    zone: twilight-glade\n    sfxPalette: crisp-steel\n    roster: {{ {enemy}: 1 }}\n    population: [1, 2]\nevents:\n  - {{ at: {{ bar: 3 }}, banner: one }}\n"

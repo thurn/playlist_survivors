@@ -104,8 +104,8 @@ pub fn reactive_song_map(file_duration: f64) -> SongMap {
 /// A beat's energy is read once, when it is taken in, from the ticks in the log by then. Replay
 /// feeds every group to a moment together, so that is TS's energy. A live source must append a
 /// tick before a beat it knew no later than the tick, or the beat keeps an older energy.
-pub fn grow_song_map(song: &mut SongMap, log: &StreamLog) {
-    for b in &log.beats[song.beats.len()..] {
+pub fn grow_song_map(song: &mut SongMap, log: &StreamLog, upto: usize) {
+    for b in &log.beats[song.beats.len()..upto] {
         song.beats.push(b.t);
         song.energy.push(log.energy_at(b.known_at));
     }
@@ -172,13 +172,18 @@ impl ReactiveSchedule {
 
     /// Takes in the log's newly committed beats.
     pub fn grow(&mut self, log: &StreamLog) {
+        self.grow_to(log, log.beats.len());
+    }
+
+    /// Takes in the log's committed beats up to `upto` (those the simulation has ingested).
+    pub fn grow_to(&mut self, log: &StreamLog, upto: usize) {
         let from = self.song.beats.len();
-        if log.beats.len() == from {
+        if upto <= from {
             return;
         }
-        grow_song_map(&mut self.song, log);
-        self.latest_period = log.beats[log.beats.len() - 1].period;
-        for i in from..self.song.beats.len() {
+        grow_song_map(&mut self.song, log, upto);
+        self.latest_period = log.beats[upto - 1].period;
+        for i in from..upto {
             let bi = i as f64;
             // (TS walks the bars: bar b's beats are 2(b - 1) and 2(b - 1) + 1, slots 0 and 1.)
             let bar = (i / 2 + 1) as f64;
@@ -222,4 +227,50 @@ impl ReactiveSchedule {
             b1,
         }
     }
+}
+
+/// Rate of a step function at song time s (`stepRate`).
+#[allow(clippy::manual_midpoint)] // (the TS binary search, as written)
+pub fn step_rate(steps: &[RateStep], s: f64) -> f64 {
+    let (mut lo, mut hi) = (0usize, steps.len() - 1);
+    while lo < hi {
+        let mid = (lo + hi + 1) >> 1;
+        if steps[mid].s <= s {
+            lo = mid;
+        } else {
+            hi = mid - 1;
+        }
+    }
+    steps[lo].rate
+}
+
+/// Song time of the next step boundary after s, infinite if none (`nextStepAfter`).
+#[allow(clippy::manual_midpoint)]
+pub fn next_step_after(steps: &[RateStep], s: f64) -> f64 {
+    let (mut lo, mut hi) = (0usize, steps.len());
+    while lo < hi {
+        let mid = (lo + hi) >> 1;
+        if steps[mid].s <= s + 1e-12 {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if lo < steps.len() {
+        steps[lo].s
+    } else {
+        f64::INFINITY
+    }
+}
+
+/// World time between song times s0 and s1 (s0 <= s1) at the steps' rates (`stepSpan`).
+pub fn step_span(steps: &[RateStep], s0: f64, s1: f64) -> f64 {
+    let mut w = 0.0;
+    let mut a = s0;
+    while a < s1 {
+        let b = crate::jsmath::min(s1, next_step_after(steps, a));
+        w += (b - a) * step_rate(steps, a);
+        a = b;
+    }
+    w
 }
