@@ -1,27 +1,5 @@
 #!/bin/sh
-# The gate: what matters, quickly (well under a minute). `npm run check:all`
-# adds the Playwright e2e tests, which Tollgate cannot run: Chromium starts its
-# own process session, which Tollgate rejects. Run `npm run test:e2e` by hand.
-set -eu
-cd "$(dirname "$0")/.."
-
-npm ci --no-audit --no-fund --prefer-offline
-npm run check
-npm run check:content
-npm run check:assets
-# The level's seed with causality and determinism, then three more seeds.
-npm run check:seeds
-# Play mode on four seeds (the moderate player's signature moments, the casual player's finale), and the curve and groove averaged over eight.
-npm run check:play
-# Reactive mode: causality, determinism, the shipped streams and sounds on committed beats.
-npm run check:reactive
-npm run build
-
-# The analysis tool and the song maps change rarely, and checking them builds a
-# Python environment: only when they differ from master (or when that is unknown).
-if base=$(git merge-base origin/master HEAD 2>/dev/null) && git diff --quiet "$base" -- tools/analysis songs; then
-  echo "tools/analysis and songs/ match master: skipping check:analysis and check:songmap"
-else
-  npm run check:analysis
-  npm run check:songmap
-fi
+# The whole suite: an alias of scripts/ci-full, kept while TS executors wrap up. Validation is
+# staged now (AGENTS.md): scripts/check-fast before submitting, scripts/ci-gate in Tollgate's gate
+# stage, scripts/ci-full in its release stage.
+exec "$(dirname "$0")/ci-full" "$@"

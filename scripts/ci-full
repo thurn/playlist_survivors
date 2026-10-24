@@ -1,0 +1,38 @@
+#!/bin/sh
+# Tollgate's release stage: every check, on the newest `staging` tip, asynchronously. A pass moves
+# `release` and remote master; a failure is fixed forward by a ci-fix bead (AGENTS.md). Nobody
+# waits for it. Run it locally only when a change touches CI scripts, the Tollgate policy,
+# workspace-wide configuration or shared test infrastructure.
+#
+#   scripts/ci-full [ts|analysis]    # one section (a Tollgate release step each), or all
+#
+# The Playwright e2e tests stay out: Chromium starts its own process session, which Tollgate
+# rejects. Run `npm run test:e2e` by hand. F4 adds the native section.
+set -eu
+cd "$(dirname "$0")/.."
+section="${1:-all}"
+
+case "$section" in
+  all|ts|analysis) ;;
+  *) echo "usage: scripts/ci-full [ts|analysis]" >&2; exit 2 ;;
+esac
+
+if [ "$section" = all ] || [ "$section" = ts ]; then
+  npm ci --no-audit --no-fund --prefer-offline
+  npm run check
+  npm run check:content
+  npm run check:assets
+  # The level's seed with causality and determinism, then three more seeds.
+  npm run check:seeds
+  # Play mode on four seeds (the moderate player's signature moments, the casual player's
+  # finale), and the curve and groove averaged over eight.
+  npm run check:play
+  # Reactive mode: causality, determinism, the shipped streams and sounds on committed beats.
+  npm run check:reactive
+  npm run build
+fi
+
+if [ "$section" = all ] || [ "$section" = analysis ]; then
+  npm run check:analysis
+  npm run check:songmap
+fi

@@ -1,0 +1,76 @@
+#!/bin/sh
+# The fast local check (budget 60 s): run it once, on the final tree, before `tg candidate`.
+# It replaces running the whole suite locally. Diff-aware, from the paths that differ from the
+# branch's base (scripts/lib/changes.sh), committed or not:
+# - TS: eslint on the changed TS and JS files, the typecheck, and vitest's tests related to the
+#   changed files (all of `npm run check` when the toolchain's configuration changed);
+#   check:content and check:assets when their inputs changed.
+# - The analysis tool: ruff on the changed Python files, the test modules of the changed modules,
+#   and check:songmap when the song maps changed.
+# - native/scripts/check-fast when native/ changed and the workspace has one (F4 adds it).
+# Tollgate's gate stage (scripts/ci-gate) and release stage (scripts/ci-full) run the rest.
+set -eu
+cd "$(dirname "$0")/.."
+. scripts/lib/changes.sh
+started=$(date +%s)
+changes_init
+trap 'rm -f "$CHANGES_FILE" "${list:-}"' EXIT
+list=$(mktemp)
+
+if changes_ts; then
+  if [ ! -d node_modules ]; then
+    echo "check-fast: node_modules is missing; run npm ci first" >&2
+    exit 1
+  fi
+  if changes_match '^(package(-lock)?\.json|tsconfig[^/]*\.json|vite\.config\.ts|eslint\.config\.js|scripts/lib/changes\.sh)$'; then
+    echo "check-fast: the toolchain's configuration changed; running npm run check"
+    npm run check
+  else
+    changes_existing '^(src|tests|scripts|tools|trailer)/.*\.(ts|tsx|js|mjs)$|^[^/]*\.(ts|js)$' > "$list"
+    if [ -s "$list" ]; then
+      echo "check-fast: eslint on $(wc -l < "$list" | tr -d ' ') files"
+      while IFS= read -r f; do set -- "$@" "$f"; done < "$list"
+      npx eslint --no-warn-ignored -- "$@"
+      set --
+    fi
+    npm run typecheck
+    changes_existing '\.(ts|tsx|js|mjs|json|yaml)$' | grep -v '^native/' > "$list" || true
+    if [ -s "$list" ]; then
+      while IFS= read -r f; do set -- "$@" "$f"; done < "$list"
+      npx vitest related --run --passWithNoTests "$@"
+      set --
+    fi
+  fi
+  if changes_match '^(content|levels)/'; then npm run check:content; fi
+  if changes_match '^(public/assets|assets-src|tools/baker)/'; then npm run check:assets; fi
+fi
+
+if changes_analysis && [ "$CHANGES_UNKNOWN" = 1 ]; then
+  npm run check:analysis
+  npm run check:songmap
+elif changes_analysis; then
+  changes_existing '^tools/analysis/.*\.py$' | sed 's|^tools/analysis/||' > "$list"
+  if [ -s "$list" ]; then
+    while IFS= read -r f; do set -- "$@" "$f"; done < "$list"
+    uv run --directory tools/analysis ruff check -- "$@"
+    set --
+    # Each changed test module, and the test module named after each changed module.
+    while IFS= read -r f; do
+      case "$f" in
+        tests/test_*.py) set -- "$@" "$f" ;;
+        src/ps_analysis/*.py)
+          t="tests/test_$(basename "$f")"
+          [ -f "tools/analysis/$t" ] && set -- "$@" "$t" ;;
+      esac
+    done < "$list"
+    if [ $# -gt 0 ]; then uv run --directory tools/analysis pytest -q -- "$@"; fi
+    set --
+  fi
+  if changes_match '^songs/'; then npm run check:songmap; fi
+fi
+
+if changes_native && [ -x native/scripts/check-fast ]; then
+  native/scripts/check-fast
+fi
+
+echo "check-fast: passed in $(( $(date +%s) - started )) s"

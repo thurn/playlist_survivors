@@ -1,0 +1,37 @@
+#!/bin/sh
+# Tollgate's gate stage (budget about 60 s): it runs on every candidate and blocks promotion to
+# `staging`. Path-gated (scripts/lib/changes.sh): each section runs when its paths differ from the
+# base, and every section when the base is unknown.
+# - TS: install, lint, typecheck, unit tests, content and assets, the level's seeds with causality
+#   and determinism, the build.
+# - The analysis tool: ruff and the song map's check.
+# - Native: F4 adds its section here.
+# The release stage (scripts/ci-full) runs everything, the slow checks included, on `staging`.
+set -eu
+cd "$(dirname "$0")/.."
+. scripts/lib/changes.sh
+started=$(date +%s)
+changes_init
+trap 'rm -f "$CHANGES_FILE"' EXIT
+
+if changes_ts; then
+  echo "ci-gate: TS section"
+  npm ci --no-audit --no-fund --prefer-offline
+  npm run check
+  npm run check:content
+  npm run check:assets
+  npm run check:seeds
+  npm run build
+else
+  echo "ci-gate: no TS paths changed; skipping the TS section"
+fi
+
+if changes_analysis; then
+  echo "ci-gate: analysis section"
+  uv run --directory tools/analysis ruff check .
+  npm run check:songmap
+else
+  echo "ci-gate: tools/analysis and songs/ unchanged; skipping the analysis section"
+fi
+
+echo "ci-gate: passed in $(( $(date +%s) - started )) s"

@@ -231,9 +231,12 @@ Every important property is checkable by a command:
 | `npm run check:analysis` | The analysis tool's pytest suite and ruff. |
 | `npm run check:all` | All of the above except captures, QA and the benchmark. |
 
-`scripts/ci` (the Tollgate gate, about a minute) runs `check`, `check:content`,
-`check:assets`, `check:seeds`, `check:play`, `check:reactive` and the build; `check:analysis` and
-`check:songmap` only when `tools/analysis/` or `songs/` differ from master. The
+Validation is staged (see AGENTS.md). `scripts/check-fast` (under a minute) is the local check
+before submitting: lint, typecheck and related tests for the changed files only. `scripts/ci-gate`
+(Tollgate's gate stage, about a minute) runs `check`, `check:content`, `check:assets`,
+`check:seeds` and the build when TS paths changed, and ruff and `check:songmap` when
+`tools/analysis/` or `songs/` changed. `scripts/ci-full` (Tollgate's release stage, on `staging`,
+and `scripts/ci`) runs everything, `check:play`, `check:reactive` and `check:analysis` included. The
 golden demo hashes (`tests/golden/`) are part of `check`: the demo's plan for
 every seed and demo profile must stay byte-identical.
 

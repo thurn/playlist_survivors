@@ -1,9 +1,30 @@
 version = 1
 
+[resources]
+# Promotion pauses while `release` trails `staging` by more than this after a failed release run.
+max_release_lag = 5
+
 [remote]
 enabled = true
 
+# The gate stage (about 60 s, path-gated by the script) blocks promotion to `staging`.
 [[step]]
-name = "ci"
-run = "./scripts/ci"
+name = "gate"
+run = "./scripts/ci-gate"
 timeout = "15m"
+
+# The release stage runs on the newest `staging` tip and moves `release` and remote master.
+# Each section is its own step, so a ci-fix bead is keyed by the section that failed.
+[[step]]
+name = "ci-full-ts"
+run = "./scripts/ci-full ts"
+stage = "release"
+needs = []
+timeout = "30m"
+
+[[step]]
+name = "ci-full-analysis"
+run = "./scripts/ci-full analysis"
+stage = "release"
+needs = []
+timeout = "30m"
