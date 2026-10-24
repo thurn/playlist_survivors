@@ -8,7 +8,7 @@ trigger. A retrospective may revise a budget; record the reason under Revisions.
 | Budget | Key | Seconds | Baseline | Measured by |
 |---|---|---|---|---|
 | Fast local check (`scripts/check-fast`) | `localValidationS.fast` | 60 | 25 s on a `src/sim` diff, 3 s on a leaf file, 27–29 s when the toolchain's configuration changes (W1) | each bead's record |
-| Gate stage (`scripts/ci-gate`) | `gateS` | 60 | 44 s TS section, 59 s TS and analysis, 1 s docs or native only (W1); before W1 the gate was the full suite, 276–397 s. Native section (`native/scripts/check-fast`, persistent target dir): 2.9 s cold, 0.8 s warm on the scaffold's empty crates (F4) | each bead's record, checked against Tollgate's history at retrospectives |
+| Gate stage (`scripts/ci-gate`) | `gateS` | 60 | 44 s TS section, 59 s TS and analysis, 1 s docs or native only (W1); before W1 the gate was the full suite, 276–397 s. Native section (`native/scripts/check-fast`, persistent target dir): 2.9 s cold, 0.8 s warm on the scaffold's empty crates (F4) | `scripts/friction stages` (Tollgate's history), at retrospectives: a record is committed before its gate runs, so it can't carry `gateS` |
 | Release stage (`scripts/ci-full`) | `releaseS` | 1800 | 293–325 s: gate step 44, `ci-full-ts` 241, `ci-full-analysis` 40 (W1); `ci-full-native` 3.2 s cold, 0.7 s warm on the scaffold (F4) | Tollgate's release runs (`tg release status --json`), at retrospectives |
 | Cold worktree build | `coldBuildS` | 60 | 28–34 s, cold `cargo build --release -p spike` in a fresh worktree (S0, the spike's wgpu and objc2 tree; the F4 scaffold builds in under 2 s). A1 (realfft, serde): cold `cargo test --workspace --no-run` 8.7 s, cold release build 6.0 s ([a1/](a1/README.md)); re-baseline as render and audio add wgpu and objc2 | beads that build native crates in a fresh worktree |
 
@@ -112,3 +112,11 @@ run 414 s (host load about 20), the second 0.2 s. Release history before it: `ci
 - 2026-10-24, hv-t8o8.59: the analysis crate's slow stage parity tests run in the release stage only.
 
 - 2026-10-24, W2: first budgets, from W1's and S0's measurements.
+
+## implementMin (hv-t8o8.72)
+
+The cadence retrospective hv-t8o8.65 found `implementMin` 4–9 times Tollgate's worktree-to-candidate
+time in 6 of 10 records (B1 160 against 43 min, B2 150 against 24, .59 25 against 6, .60 35
+against 4, .61 10 against under 1, .64 10 against 2): AGENTS.md never defined it. It is now the
+wall time from the bead's worktree creation, less parked time, printed by `scripts/friction minutes`
+from the branch's reflog; those six records carry Tollgate's times, and B1's `fast` its notes' 14 s.

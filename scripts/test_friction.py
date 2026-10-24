@@ -245,6 +245,17 @@ def status(item_id, subject, elapsed_ms, state="promoted", kind="gate"):
     }
 
 
+class Minutes(unittest.TestCase):
+    def test_minutes_count_from_the_branch_creation_rounded_up(self):
+        reflog = "1000600 commit: x\n1000000 branch: Created from abc\n"
+        self.assertEqual(friction.branch_minutes(reflog, 1000000 + 61), 2)
+        self.assertEqual(friction.branch_minutes(reflog, 1000000 + 600), 10)
+        self.assertEqual(friction.branch_minutes(reflog, 1000000 + 1500, parked=20), 5)
+        self.assertEqual(friction.branch_minutes(reflog, 1000000 + 5), 1)
+        with self.assertRaises(friction.Malformed):
+            friction.branch_minutes("", 0)
+
+
 class Stages(unittest.TestCase):
     def test_tollgate_and_uuid7_times(self):
         self.assertEqual(

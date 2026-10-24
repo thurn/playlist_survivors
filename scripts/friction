@@ -8,6 +8,9 @@
     scripts/friction validate   # parse every input; exit 2 on a malformed one (the gate runs it)
     scripts/friction [report] [--json]
                                 # fired triggers, their dispositions, and a due cadence retrospective
+    scripts/friction minutes [--parked MIN]
+                                # implementMin for the record being written: whole minutes since
+                                # this worktree's branch was created, less MIN parked
     scripts/friction stages [--since YYYY-MM-DD] [--json]
                                 # Tollgate's gate time per candidate and release time per run and
                                 # step, against metrics.md's gateS and releaseS budgets
@@ -354,6 +357,28 @@ def print_report(result: dict) -> None:
         print("friction: no triggers fired, no retrospective due")
 
 
+# --- implementMin ------------------------------------------------------------
+
+
+def branch_minutes(reflog: str, now: float, parked: float = 0.0) -> int:
+    """implementMin: whole minutes (rounded up, at least 1) from a branch's creation, the last line
+    of `git reflog show --format=%ct <branch>`, to `now` (Unix seconds), less `parked` minutes."""
+    times = [int(line.split()[0]) for line in reflog.splitlines() if line.strip()]
+    if not times:
+        raise Malformed("the branch has no reflog")
+    minutes = (now - times[-1]) / 60 - parked
+    return max(1, -int(-minutes // 1))
+
+
+def current_branch_minutes(parked: float) -> int:
+    run = lambda *a: subprocess.run(
+        a, cwd=Path.cwd(), check=True, capture_output=True, text=True
+    ).stdout.strip()
+    branch = run("git", "symbolic-ref", "--short", "HEAD")
+    reflog = run("git", "reflog", "show", "--format=%ct", f"refs/heads/{branch}")
+    return branch_minutes(reflog, datetime.now(UTC).timestamp(), parked)
+
+
 # --- stage times ------------------------------------------------------------
 
 
@@ -521,12 +546,25 @@ def print_stages(result: dict) -> None:
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(prog="scripts/friction", description=__doc__.splitlines()[0])
     parser.add_argument(
-        "command", nargs="?", default="report", choices=["report", "validate", "stages"]
+        "command",
+        nargs="?",
+        default="report",
+        choices=["report", "validate", "stages", "minutes"],
+    )
+    parser.add_argument(
+        "--parked", type=float, default=0.0, help="minutes: time the bead was parked"
     )
     parser.add_argument("--since", help="stages: from this date (YYYY-MM-DD)")
     parser.add_argument("--json", action="store_true", help="print the report as JSON")
     parser.add_argument("--evidence", type=Path, default=DEFAULT_EVIDENCE)
     args = parser.parse_args(argv)
+    if args.command == "minutes":
+        try:
+            print(current_branch_minutes(args.parked))
+        except (Malformed, subprocess.CalledProcessError) as error:
+            print(f"friction: {error}", file=sys.stderr)
+            return 2
+        return 0
     try:
         evidence = load(args.evidence)
     except (Malformed, OSError) as error:
