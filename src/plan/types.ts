@@ -359,7 +359,18 @@ export interface Plan {
    * Reactive mode (stage 3): the stream's ticks (time, evidence, energy, each known at its time) and
    * the accent flashes (strong onsets' known-at times, at most one every 0.5 s), for the frames.
    */
-  reactiveFx?: { gate: number; tickT: Float64Array; evidence: Float32Array; energy: Float32Array; flashes: Float64Array };
+  reactiveFx?: {
+    gate: number;
+    tickT: Float64Array;
+    evidence: Float32Array;
+    energy: Float32Array;
+    flashes: Float64Array;
+    /** The fast lane: each tick's key (keyCode, -1 for none). */
+    tickKey: Int8Array;
+    /** The fast lane: when each onset became known, and its strength against the loudest onsets known before it (0–1). */
+    onsetT: Float64Array;
+    onsetN: Float32Array;
+  };
   /** Reactive mode with hindsight grids: each press's settled judgment, 2 s after it. */
   settles?: SettleRecord[];
   /** Reactive mode: when each song beat (a committed beat) became known; the HUD shows a beat only from then. */

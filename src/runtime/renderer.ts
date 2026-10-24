@@ -26,6 +26,7 @@ import { rand01 } from "../core/rng.ts";
 import { beatSwell, clamp, frac, lerp } from "../core/shaping.ts";
 import type { Frame } from "../plan/evaluate.ts";
 import { hex, pulsed, pulseScale } from "../plan/evaluate.ts";
+import { NEUTRAL_LOOK } from "../plan/reactive-look.ts";
 import { AURA_ALPHA, AURA_TINTS, BLADE_GLOWS, BLADE_TINTS, BOLT_COLORS, FLAME_GLOWS, FLAME_TINTS, SWORD_TINTS, tierLook } from "../plan/tier-look.ts";
 import type { MapProp, Plan } from "../plan/types.ts";
 import { chunkContent, propFade, tileVariant, type ChunkContent } from "../mapgen/openfield.ts";
@@ -658,10 +659,12 @@ export class Renderer {
     const ga = GRADES[za.colorGrade];
     const gb = GRADES[zb.colorGrade];
     const t = f.zone.t;
-    (u.uGradeMul as Float32Array).set(ga.mul.map((v, i) => lerp(v, gb.mul[i], t)));
-    (u.uGradeLift as Float32Array).set(ga.lift.map((v, i) => lerp(v, gb.lift[i], t)));
+    // (Reactive mode's fast lane: the key's and the identity's look on top of the zone's grade.)
+    const look = f.look ?? NEUTRAL_LOOK;
+    (u.uGradeMul as Float32Array).set(ga.mul.map((v, i) => lerp(v, gb.mul[i], t) * look.mul[i]));
+    (u.uGradeLift as Float32Array).set(ga.lift.map((v, i) => lerp(v, gb.lift[i], t) + look.lift[i]));
     u.uContrast = lerp(ga.contrast, gb.contrast, t);
-    u.uSaturation = lerp(ga.saturation, gb.saturation, t);
+    u.uSaturation = lerp(ga.saturation, gb.saturation, t) * look.sat;
     // The vignette tightens on downbeats.
     u.uVignette = 0.45 + 0.25 * barPulse * intensity;
     const fl = Math.max(f.flash.alpha, f.metronome * 0.55);

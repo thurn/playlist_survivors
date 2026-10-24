@@ -5,7 +5,7 @@
  */
 import type { ContentLibrary } from "../content/loader.ts";
 import type { EffectLayer, EffectRecipe } from "../content/schema.ts";
-import { rand01, noise1 } from "../core/rng.ts";
+import { hash32, rand01, noise1 } from "../core/rng.ts";
 import { beatHit, beatSwell, clamp, frac, lerp, smoothstep } from "../core/shaping.ts";
 import { Warp } from "../core/warp.ts";
 import { latestWave, waveRadius } from "../mapgen/openfield.ts";
@@ -15,6 +15,7 @@ import { partnerPress, type EffectEvent, type EnemyRecord, type Plan, type PlanI
 import { orbitAt } from "../sim/tiers.ts";
 import { evolvedOrbit, itemName, loadoutAt, passiveBonus, type Loadout } from "../sim/upgrades.ts";
 import { SWORD_TINTS } from "./tier-look.ts";
+import { blendLook, combineLook, dominantKey, identity, IDENTITY_BY_S, IDENTITY_KEY_WINDOW_S, keyLook, keyTint, NEUTRAL_LOOK, tempoBand, type Look } from "./reactive-look.ts";
 
 /** Upgrade orbs: how long (world seconds) one takes to rise, the taken one to fly into the hero, and the others to sink. */
 const ORB_RISE_W = 0.3;
@@ -234,6 +235,25 @@ const RIPPLE_S = 0.45;
 const GLOW_S = 2;
 const RIPPLE_TINTS: Record<string, string> = { perfect: "#ffd040", great: "#ffffff", good: "#9fd0ff", loose: "#6a7080", extra: "#8a8a96", stray: "#e04848" };
 
+/**
+ * Reactive mode's fast lane (docs/design/reactive-feel.md, "The Fast Lane"): the horde's squash
+ * (scale), bob (px) and flinch (scale) on the committed beats and onsets, each enemy type's phase
+ * step (beats), how long an onset's burst and its flinch last (song seconds), the share of an onset
+ * burst left with the beat unclear, how long a section's key colour and the identity fade in (song
+ * seconds), and how strongly impact effects show at each tier.
+ */
+const ENEMY_SQUASH = 0.16;
+const ENEMY_BOB = 4;
+const ENEMY_FLINCH = 0.14;
+const TYPE_PHASE_STEP = 0.12;
+const BURST_LIFE = 0.4;
+const FLINCH_S = 0.07;
+const BURST_FLOOR = 0.35;
+const LOOK_FADE_S = 1;
+const IDENTITY_FADE_S = 1.5;
+const TIER_ALPHA = [0.5, 0.7, 0.88, 1];
+const TIER_COUNT = [0.5, 0.75, 1, 1.3];
+
 /** Reactive mode: how long a settled rating's correction shows on the groove bar. */
 export const CORRECTION_SHOW = 0.5;
 
@@ -378,6 +398,8 @@ export interface Frame {
   hud: HudState;
   /** Reactive mode (stage 3): the pulse state, also on the HUD. */
   reactive?: PulseState;
+  /** Reactive mode (the fast lane): the light grading's tweak from the key and the identity. */
+  look?: Look;
   metronome: number;
   stats: { alive: number; particles: number };
 }
@@ -504,9 +526,11 @@ export class Evaluator {
    * (the share of the last 0.5 s with the beat clear), the energy smoothed over 0.5 s; an accent flash
    * and camera punch from each strong onset as it becomes known; a ripple from each press, tinted by
    * its provisional rating; and the ground's glow with the share of the last 2 s of presses rated
-   * Great or better.
+   * Great or better. The fast lane adds each onset as it becomes known: a burst of sparks and a
+   * flicker of light (in the song's tint) somewhere around the hero, scaled by its strength and faded
+   * with the beat unclear, and the horde's flinch from the latest.
    */
-  private reactiveFx(s: number, h: { x: number; y: number }, fx: NonNullable<Plan["reactiveFx"]>): { state: PulseState; flash: number; punch: number; rings: Ring[]; lights: Light[] } {
+  private reactiveFx(s: number, h: { x: number; y: number }, fx: NonNullable<Plan["reactiveFx"]>, tint: number): { state: PulseState; flash: number; punch: number; rings: Ring[]; lights: Light[]; particles: Particle[]; flinch: number } {
     const t = fx.tickT;
     // The latest tick at or before s.
     let lo = 0;
@@ -572,7 +596,97 @@ export class Evaluator {
       punch = 0.018 * Math.exp(-age / 0.16);
       break;
     }
-    return { state: { amp, press, mix, loudness }, flash, punch, rings, lights };
+    // Onsets: bursts and flickers, newest first.
+    const particles: Particle[] = [];
+    let flinch = 0;
+    const fade = BURST_FLOOR + (1 - BURST_FLOOR) * amp * mix;
+    const latest = countUpTo(fx.onsetT, s) - 1;
+    for (let j = latest; j >= 0 && s - fx.onsetT[j] < BURST_LIFE; j--) {
+      const age = s - fx.onsetT[j];
+      const n = fx.onsetN[j];
+      const u = age / BURST_LIFE;
+      if (j === latest) flinch = n * Math.exp(-age / FLINCH_S);
+      const ang = rand01(j, 1, 0x0b5e7) * Math.PI * 2;
+      const r = 50 + 120 * rand01(j, 2, 0x0b5e7);
+      const cx = h.x + Math.cos(ang) * r;
+      const cy = h.y - 10 + Math.sin(ang) * r * 0.75;
+      const count = Math.round(3 + 7 * n);
+      const spread = 1 - (1 - u) ** 2;
+      // A soft glow where it lands, and sparks flying out from it.
+      particles.push({ tex: "glow", x: cx, y: cy, rot: 0, scale: 0.5 + 0.9 * n, alpha: fade * 0.6 * n * (1 - u) ** 2, tint, additive: true, under: false });
+      for (let k = 0; k < count; k++) {
+        const a = rand01(j, k, 0x0b5e8) * Math.PI * 2;
+        const d = (10 + 30 * rand01(j, k, 0x0b5e9)) * (0.5 + n) * spread;
+        particles.push({ tex: "spark", x: cx + Math.cos(a) * d, y: cy + Math.sin(a) * d * 0.75, rot: 0, scale: 0.8 + 0.8 * n, alpha: fade * (0.5 + 0.5 * n) * (1 - u) ** 1.5, tint, additive: true, under: false });
+      }
+      lights.push({ x: cx, y: cy, radius: 30 + 50 * n, tint, strength: 0.4 * n * fade * (1 - u) ** 2 });
+    }
+    return { state: { amp, press, mix, loudness }, flash, punch, rings, lights, particles, flinch };
+  }
+
+  /** The fast lane's caches: each detected section start's key (by its song time), and the identity (by when it was chosen). */
+  private keyAtStart = new Map<number, number>();
+  private identityOf?: { s: number; rotation: number; tint: Look };
+
+  private keyAt(fx: NonNullable<Plan["reactiveFx"]>, s0: number): number {
+    let k = this.keyAtStart.get(s0);
+    if (k === undefined) {
+      k = dominantKey(fx.tickT, fx.tickKey, s0);
+      this.keyAtStart.set(s0, k);
+    }
+    return k;
+  }
+
+  /** The identity chosen at song time s0: from the key then and the tempo band of the last 8 beats known by then. */
+  private identityAt(fx: NonNullable<Plan["reactiveFx"]>, s0: number): { s: number; rotation: number; tint: Look } {
+    if (this.identityOf?.s === s0) return this.identityOf;
+    const b = this.plan.songBeats;
+    const known = this.plan.beatsKnownAt;
+    const gaps: number[] = [];
+    for (let k = b.length - 1; k > 0 && gaps.length < 8; k--) if (b[k] <= s0 && (!known || known[k] <= s0)) gaps.push(b[k] - b[k - 1]);
+    gaps.sort((x, y) => x - y);
+    const id = identity(dominantKey(fx.tickT, fx.tickKey, s0, IDENTITY_KEY_WINDOW_S), tempoBand(gaps[gaps.length >> 1] ?? 0), this.plan.map.zones.length);
+    this.identityOf = { s: s0, rotation: id.rotation, tint: id.tint };
+    return this.identityOf;
+  }
+
+  /**
+   * Reactive mode's fast lane, at song time s from the zone waves started by then: the grading's look
+   * (the key at the latest detected section start, fading in from the one before, and the identity's
+   * tint from its choice on), the song's tint for effects, and the identity (chosen at the first
+   * detected section start, or at IDENTITY_BY_S) with how far it rotates the zones' order.
+   */
+  private reactiveLook(s: number, fx: NonNullable<Plan["reactiveFx"]>): { look: Look; tint: number; identity?: { s: number; rotation: number } } {
+    let first: number | undefined;
+    let prev: number | undefined;
+    let cur: number | undefined;
+    for (const wv of this.plan.open.waves) {
+      if (wv.section === undefined || wv.s > s + 1e-9) continue;
+      first ??= wv.s;
+      prev = cur;
+      cur = wv.s;
+    }
+    let look = NEUTRAL_LOOK;
+    let key = -1;
+    if (cur !== undefined) {
+      key = this.keyAt(fx, cur);
+      look = blendLook(prev !== undefined ? keyLook(this.keyAt(fx, prev)) : NEUTRAL_LOOK, keyLook(key), (s - cur) / LOOK_FADE_S);
+    }
+    const idS = first !== undefined && first < IDENTITY_BY_S ? first : s >= IDENTITY_BY_S ? IDENTITY_BY_S : undefined;
+    if (idS === undefined) return { look, tint: keyTint(key) };
+    const id = this.identityAt(fx, idS);
+    return { look: combineLook(look, blendLook(NEUTRAL_LOOK, id.tint, (s - idS) / IDENTITY_FADE_S)), tint: keyTint(key), identity: { s: idS, rotation: id.rotation } };
+  }
+
+  /** Each enemy type's beat phase offset (beats): a step of 0, 1 or 2 by a hash of its name. */
+  private typePhases = new Map<string, number>();
+  private typePhase(type: string): number {
+    let v = this.typePhases.get(type);
+    if (v === undefined) {
+      v = ((hash32(0x7e9a, type) >>> 0) % 3) * TYPE_PHASE_STEP;
+      this.typePhases.set(type, v);
+    }
+    return v;
   }
 
   evaluate(s: number, opts: { metronome?: boolean } = {}): Frame {
@@ -645,6 +759,14 @@ export class Evaluator {
     }
     const tier = this.tierAt(s);
 
+    // Reactive mode (stage 3): the world breathes with the music and answers the player; the fast
+    // lane colours it by the song.
+    const fxr = plan.reactiveFx;
+    const song = fxr ? this.reactiveLook(s, fxr) : undefined;
+    const reactive = fxr ? this.reactiveFx(s, h, fxr, song!.tint) : undefined;
+    // (The horde dances as strongly as the beat pulses follow the committed beats.)
+    const groove = reactive ? reactive.state.mix * reactive.state.amp : 0;
+
     // Enemies.
     const enemies: EnemySprite[] = [];
     const ebucket = this.index.enemiesAt(w);
@@ -699,6 +821,15 @@ export class Evaluator {
         sy = 1 - 0.2 * land * (1 - hopH) + 0.12 * hopH;
       }
       if (def.hover > 0) z += 3 * Math.sin((wbi * Math.PI * 2) / Math.max(0.5, def.walkCycleBeats));
+      // Reactive mode (the fast lane): a hop between committed beats landing in a squash on each,
+      // each type a step later than the last so the horde ripples; a flinch at each onset.
+      if (reactive && !dying && !(e.dance && w >= e.dance.w0 && w < e.dance.w1)) {
+        const u = frac(sbi - this.typePhase(e.type));
+        const land = beatHit(u);
+        z += ENEMY_BOB * groove * Math.sin(Math.PI * u);
+        sx *= (1 + ENEMY_SQUASH * groove * land) * (1 - 0.5 * ENEMY_FLINCH * reactive.flinch);
+        sy *= (1 - ENEMY_SQUASH * groove * land) * (1 + ENEMY_FLINCH * reactive.flinch);
+      }
       // Entrances: the boss lands from above.
       if (e.entrance === "land") {
         const landW = e.spawnW + 0.55;
@@ -826,12 +957,10 @@ export class Evaluator {
       gems.push({ x: lerp(bx, hp.x, fly), y: lerp(by, hp.y - 16, fly) - 30 * Math.sin(Math.PI * fly), big: g.big });
     }
 
-    // Zone blend at the camera.
-    const open = this.openZone(s, sbi, w);
+    // Zone blend at the camera (the fast lane's identity rotating the zones' order from its choice on).
+    const open = this.openZone(s, sbi, w, song?.identity);
     const zone = open.zone;
 
-    // Reactive mode (stage 3): the world breathes with the music and answers the player.
-    const reactive = plan.reactiveFx ? this.reactiveFx(s, h, plan.reactiveFx) : undefined;
     let camZoom = cam.zoom;
     if (reactive) {
       if (reactive.flash > flashA) {
@@ -841,9 +970,13 @@ export class Evaluator {
       camZoom *= 1 + reactive.punch;
       rings.push(...reactive.rings);
       lights.push(...reactive.lights);
+      particles.push(...reactive.particles);
     }
     const hud = this.hud(s, sbi, beatPhase, barPhase, free, reactive ? reactive.state.loudness : energy);
     if (reactive) hud.pulse = reactive.state;
+    // (A detected section's banner names its zone as the identity rotated it.)
+    const id = song?.identity;
+    if (id) hud.banners = hud.banners.map((b) => (s - b.age >= id.s - 1e-9 ? { ...b, text: this.rotatedZoneName(b.text, id.rotation) } : b));
     let metronome = 0;
     if (opts.metronome) metronome = Math.exp(-10 * beatPhase * (this.beatLenAt(sbi) || 0.5));
 
@@ -857,6 +990,7 @@ export class Evaluator {
       sectionIndex: si,
       energy: reactive ? reactive.state.loudness : energy,
       ...(reactive ? { reactive: reactive.state } : {}),
+      ...(song ? { look: song.look } : {}),
       camera: { x: cam.x, y: cam.y, zoom: camZoom, shakeX, shakeY },
       hero: { x: h.x, y: h.y, z: h.z, facing: this.spinFacing(s, h.facing), anim: h.anim, frame: h.frame, afterimages: after, hurt: hurtAt(plan.health, s), blink: this.blinkAt(w) },
       chickens: plan.chickens.filter((c) => w >= c.w && (c.wTaken === undefined || w < c.wTaken)).map((c) => ({ x: c.x, y: c.y })),
@@ -943,16 +1077,34 @@ export class Evaluator {
     void s;
   }
 
-  /** The open field's zones: the newest transform wave decides, and the camera blends as its ring passes. */
-  private openZone(s: number, sbi: number, w: number): { zone: Frame["zone"]; base: number; wave?: NonNullable<Frame["open"]>["wave"] } {
+  /**
+   * The open field's zones: the newest transform wave decides, and the camera blends as its ring
+   * passes. (Reactive mode's fast lane: waves from the identity's choice on go `rotation` zones
+   * further round the level's zones.)
+   */
+  private openZone(s: number, sbi: number, w: number, id?: { s: number; rotation: number }): { zone: Frame["zone"]; base: number; wave?: NonNullable<Frame["open"]>["wave"] } {
     const op = this.plan.open;
     const wv = latestWave(op.waves, s);
     if (!wv) return { zone: { a: op.firstZone, b: op.firstZone, t: 0 }, base: op.firstZone };
-    if (s >= wv.endS) return { zone: { a: wv.zone, b: wv.zone, t: 0 }, base: wv.zone };
+    const n = this.plan.map.zones.length;
+    const turn = (z: number, at: number) => (id && at >= id.s - 1e-9 ? (z + id.rotation) % n : z);
+    const k = op.waves.indexOf(wv);
+    const to = turn(wv.zone, wv.s);
+    const from = turn(wv.prev, k > 0 ? op.waves[k - 1].s : -Infinity);
+    if (s >= wv.endS) return { zone: { a: to, b: to, t: 0 }, base: to };
     const radius = waveRadius(wv, sbi);
     const cam = this.cameraAt(w);
     const d = Math.hypot(cam.x - wv.x, cam.y - wv.y);
-    return { zone: { a: wv.prev, b: wv.zone, t: smoothstep((radius - d + 150) / 300) }, base: wv.prev, wave: { x: wv.x, y: wv.y, radius, prev: wv.prev, zone: wv.zone } };
+    return { zone: { a: from, b: to, t: smoothstep((radius - d + 150) / 300) }, base: from, wave: { x: wv.x, y: wv.y, radius, prev: from, zone: to } };
+  }
+
+  /** A zone's name `rotation` zones further round the level's zones (other text unchanged). */
+  private rotatedZoneName(text: string, rotation: number): string {
+    const zones = this.plan.map.zones;
+    const k = zones.findIndex((z) => (this.lib.zones.get(z.id)?.name ?? z.id) === text);
+    if (k < 0) return text;
+    const z = zones[(k + rotation) % zones.length];
+    return this.lib.zones.get(z.id)?.name ?? z.id;
   }
 
   private layer(
@@ -1057,12 +1209,16 @@ export class Evaluator {
         }
         let frame = 0;
         if (art.startsWith("fx:")) frame = Math.floor(age * 12);
-        fx.push({ art, frame, x, y, rot, scaleX: sxx, scaleY: syy, alpha: 1 - u * u, tint, additive: L.additive });
+        // (Reactive mode's fast lane: a swing's arcs show more strongly at higher tiers.)
+        const tierA = this.plan.reactiveFx && swingTier !== undefined ? TIER_ALPHA[Math.min(3, swingTier)] : 1;
+        fx.push({ art, frame, x, y, rot, scaleX: sxx, scaleY: syy, alpha: (1 - u * u) * tierA, tint, additive: L.additive });
         return;
       }
       case "burst": {
         if (age > L.life) return;
-        const count = Math.round(param(L.count, I));
+        // (Reactive mode's fast lane: a swing's impact bursts are fuller at higher tiers.)
+        const hitTier = this.plan.reactiveFx && ev.hit !== undefined ? this.swingTierOf(ev.hit) : undefined;
+        const count = Math.round(param(L.count, I) * (hitTier !== undefined ? TIER_COUNT[Math.min(3, hitTier)] : 1));
         const u = age / L.life;
         const art = L.art;
         const sizeBase = param(L.size, I);

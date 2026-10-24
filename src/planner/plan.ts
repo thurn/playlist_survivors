@@ -19,6 +19,7 @@ import { beatDurationAt, makeCtx, sectionIndexAt, type Ctx, type PlannerInput } 
 import { resolveEvents } from "./musical.ts";
 import { emit } from "./emit.ts";
 import { recipeLife } from "../plan/effects-life.ts";
+import { keyCode } from "../plan/reactive-look.ts";
 import { grooveAt } from "../plan/evaluate.ts";
 import { buildSchedule, type GridSlot, type Schedule } from "../sim/schedule.ts";
 import { ENEMY_RATE, simulate, type SimResult } from "../sim/simulate.ts";
@@ -61,7 +62,27 @@ export function prepare(input: PlannerInput): { ctx: Ctx; sch: Schedule; map: Ma
 /** Reactive mode (stage 3): accent flashes come at most this often. */
 export const FLASH_GAP = 0.5;
 
-/** The stream's ticks and accent flashes, as the frames read them (each only from when it is known). */
+/** The fast lane: an onset's strength is measured against the loudest known before it, a peak halving over this long (song seconds). */
+export const ONSET_PEAK_HALF_S = 8;
+
+/**
+ * Each onset's strength (0–1), causally: the square root of its share of a running peak that
+ * decays by half every ONSET_PEAK_HALF_S and includes the onset itself (raw strengths differ tenfold
+ * between tracks).
+ */
+export function onsetShares(onsets: readonly { knownAt: number; strength: number }[]): Float32Array {
+  const out = new Float32Array(onsets.length);
+  let peak = 0;
+  let at = 0;
+  onsets.forEach((o, i) => {
+    peak = Math.max(o.strength, peak * 0.5 ** (Math.max(0, o.knownAt - at) / ONSET_PEAK_HALF_S));
+    at = o.knownAt;
+    out[i] = peak > 0 ? Math.sqrt(o.strength / peak) : 0;
+  });
+  return out;
+}
+
+/** The stream's ticks, accent flashes and onsets, as the frames read them (each only from when it is known). */
 function reactiveFx(stream: NonNullable<Ctx["reactive"]>): NonNullable<Plan["reactiveFx"]> {
   const flashes: number[] = [];
   for (const o of stream.onsets) if (o.strong && (flashes.length === 0 || o.knownAt - flashes[flashes.length - 1] >= FLASH_GAP - 1e-9)) flashes.push(o.knownAt);
@@ -71,6 +92,9 @@ function reactiveFx(stream: NonNullable<Ctx["reactive"]>): NonNullable<Plan["rea
     evidence: Float32Array.from(stream.ticks, (k) => k.evidence),
     energy: Float32Array.from(stream.ticks, (k) => k.energy),
     flashes: Float64Array.from(flashes),
+    tickKey: Int8Array.from(stream.ticks, (k) => keyCode(k.key)),
+    onsetT: Float64Array.from(stream.onsets, (o) => o.knownAt),
+    onsetN: onsetShares(stream.onsets),
   };
 }
 
