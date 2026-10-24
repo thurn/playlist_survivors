@@ -5,6 +5,7 @@
 # - TS: install, lint, typecheck, unit tests, content and assets, the level's seeds with causality
 #   and determinism, the build.
 # - The analysis tool: ruff and the song map's check.
+# - The friction ledger (native/evidence/, scripts/friction): its records and its tests.
 # - Native: F4 adds its section here.
 # The release stage (scripts/ci-full) runs everything, the slow checks included, on `staging`.
 set -eu
@@ -32,6 +33,13 @@ if changes_analysis; then
   npm run check:songmap
 else
   echo "ci-gate: tools/analysis and songs/ unchanged; skipping the analysis section"
+fi
+
+if changes_friction; then
+  echo "ci-gate: friction section"
+  scripts/friction validate
+  uv run --directory tools/analysis ruff check ../../scripts/friction ../../scripts/test_friction.py
+  uv run --no-project python -m unittest scripts/test_friction.py
 fi
 
 echo "ci-gate: passed in $(( $(date +%s) - started )) s"

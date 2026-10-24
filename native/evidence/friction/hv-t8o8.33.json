@@ -1,0 +1,1 @@
+{"bead":"hv-t8o8.33","phase":"W","recorded":"2026-10-24T16:03:44Z","implementMin":25,"localValidationS":{"fast":29,"ciFull":301},"releaseS":325,"friction":[{"tag":"tollgate-config-main-checkout","minutes":5,"note":"the staged policy could only be validated by copying it into the main checkout, and only applied after promotion synced local master"}]}

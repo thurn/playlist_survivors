@@ -1491,7 +1491,7 @@ Hive's tooling-fix rule, at their cause, as their own beads.
 `native/evidence/friction/<bead-id>.json`, in its own commit:
 
 ```json
-{"bead":"hv-t8o8.14","phase":"B","implementMin":140,"localValidationS":{"fast":41,"focused":95},"gateS":58,"friction":[{"tag":"oracle-diff-unreadable","minutes":30,"note":"first divergence printed 4 MB of state"}]}
+{"bead":"hv-t8o8.14","phase":"B","recorded":"2026-11-20T14:05:00Z","implementMin":140,"localValidationS":{"fast":41,"focused":95},"gateS":58,"friction":[{"tag":"oracle-diff-unreadable","minutes":30,"note":"first divergence printed 4 MB of state"}]}
 ```
 
 Tags come from `native/evidence/friction-tags.json`, which maps aliases to

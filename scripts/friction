@@ -1,0 +1,355 @@
+#!/usr/bin/env -S uv run --quiet --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
+"""The native app epic's friction ledger (docs/design/native-app.md, "Introspection").
+
+    scripts/friction validate   # parse every input; exit 2 on a malformed one (the gate runs it)
+    scripts/friction [report] [--json]
+                                # fired triggers, their dispositions, and a due cadence retrospective
+
+Inputs, under the evidence directory (native/evidence, or --evidence DIR):
+- friction/<bead-id>.json: one record per bead (fields in RECORD_FIELDS);
+- friction-tags.json: {triggerBeads, retrospectiveCadence, tags: {tag: meaning},
+  aliases: {alias: tag}};
+- metrics.md: the budgets, the table rows whose Key cell is a backticked record field path (such as
+  `localValidationS.fast`) and whose Seconds cell is a number;
+- introspection.jsonl, append-only: dispositions {"trigger": <tag or budget:<key>>, "bead": <id>}
+  or {"trigger": ..., "reason": ...}, and retrospectives {"retrospective": <bead id>,
+  "date": <YYYY-MM-DD>, "covers": [<bead ids>]}.
+
+The window is every record no retrospective covers. A tag trigger fires when one tag (aliases
+resolved) appears in triggerBeads or more records of the window. A budget trigger fires when
+triggerBeads consecutive records of the window that carry a budgeted field (by `recorded`) all
+exceed 1.5 times its budget; their host loads are printed, and a disposition's reason says so when
+they weren't comparable. A trigger is
+disposed by a disposition line after the last retrospective line. A cadence retrospective is due
+when the window holds retrospectiveCadence records; its duty key is
+retrospective=hv-t8o8/since-<last retrospective's bead>.
+
+Exit codes: 0 fine, 1 a fired trigger lacks a disposition, 2 malformed input.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+from dataclasses import dataclass, field
+from datetime import datetime
+from pathlib import Path
+
+EPIC = "hv-t8o8"
+ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_EVIDENCE = ROOT / "native" / "evidence"
+PHASES = {"W", "0", "1", "A", "B", "C", "D", "E", "R"}
+BEAD_ID = re.compile(r"^hv-[a-z0-9]+(\.[0-9]+)*$")
+TAG = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
+BUDGET_ROW = re.compile(r"^\|[^|]*\|\s*`([A-Za-z0-9_.-]+)`\s*\|([^|]*)\|")
+SECONDS = re.compile(r"^[0-9]+(?:\.[0-9]+)?$")
+OVERRUN = 1.5
+
+# Unknown fields are malformed, so a misspelt field never goes unread.
+RECORD_FIELDS = {
+    "bead", "phase", "recorded", "implementMin", "localValidationS", "gateS", "releaseS",
+    "coldBuildS", "hostLoad", "friction",
+}
+
+
+class Malformed(Exception):
+    pass
+
+
+@dataclass
+class Record:
+    bead: str
+    phase: str
+    recorded: datetime
+    tags: list[str]
+    data: dict
+
+
+@dataclass
+class Evidence:
+    trigger_beads: int
+    cadence: int
+    tags: set[str]
+    aliases: dict[str, str]
+    budgets: dict[str, float]
+    records: list[Record]
+    retrospectives: list[dict] = field(default_factory=list)
+    # Dispositions after the last retrospective line, by trigger.
+    dispositions: dict[str, dict] = field(default_factory=dict)
+
+
+def _number(value, where: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or value < 0:
+        raise Malformed(f"{where}: expected a non-negative number")
+    return float(value)
+
+
+def _string(value, where: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise Malformed(f"{where}: expected a non-empty string")
+    return value
+
+
+def _bead(value, where: str) -> str:
+    if not isinstance(value, str) or not BEAD_ID.match(value):
+        raise Malformed(f"{where}: expected a bead id such as hv-t8o8.34")
+    return value
+
+
+def _json(path: Path):
+    try:
+        return json.loads(path.read_text())
+    except json.JSONDecodeError as error:
+        raise Malformed(f"{path}: invalid JSON ({error})") from error
+
+
+def load_tags(path: Path) -> tuple[int, int, set[str], dict[str, str]]:
+    data = _json(path)
+    if not isinstance(data, dict):
+        raise Malformed(f"{path}: expected an object")
+    unknown = set(data) - {"triggerBeads", "retrospectiveCadence", "tags", "aliases"}
+    if unknown:
+        raise Malformed(f"{path}: unknown fields {sorted(unknown)}")
+    trigger_beads = data.get("triggerBeads")
+    cadence = data.get("retrospectiveCadence")
+    for name, value in (("triggerBeads", trigger_beads), ("retrospectiveCadence", cadence)):
+        if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+            raise Malformed(f"{path}: {name} must be a positive integer")
+    tags = data.get("tags")
+    if not isinstance(tags, dict) or not tags:
+        raise Malformed(f"{path}: tags must map each canonical tag to its meaning")
+    for tag, meaning in tags.items():
+        if not TAG.match(tag):
+            raise Malformed(f"{path}: tag {tag!r} is not kebab-case")
+        _string(meaning, f"{path}: tags.{tag}")
+    aliases = data.get("aliases", {})
+    if not isinstance(aliases, dict):
+        raise Malformed(f"{path}: aliases must be an object")
+    for alias, tag in aliases.items():
+        if alias in tags:
+            raise Malformed(f"{path}: alias {alias!r} is also a canonical tag")
+        if tag not in tags:
+            raise Malformed(f"{path}: alias {alias!r} names unknown tag {tag!r}")
+    return trigger_beads, cadence, set(tags), dict(aliases)
+
+
+def load_budgets(path: Path) -> dict[str, float]:
+    budgets: dict[str, float] = {}
+    for line in path.read_text().splitlines():
+        match = BUDGET_ROW.match(line.strip())
+        if match:
+            key, seconds = match.groups()
+            seconds = seconds.strip()
+            if not SECONDS.match(seconds):
+                raise Malformed(f"{path}: budget {key}'s Seconds cell {seconds!r} is not a number")
+            if key in budgets:
+                raise Malformed(f"{path}: budget {key} appears twice")
+            budgets[key] = float(seconds)
+    if not budgets:
+        raise Malformed(f"{path}: no budget rows (| name | `field.path` | seconds | ...)")
+    return budgets
+
+
+def load_record(path: Path, tags: set[str], aliases: dict[str, str]) -> Record:
+    where = str(path)
+    data = _json(path)
+    if not isinstance(data, dict):
+        raise Malformed(f"{where}: expected an object")
+    unknown = set(data) - RECORD_FIELDS
+    if unknown:
+        raise Malformed(f"{where}: unknown fields {sorted(unknown)}")
+    bead = _bead(data.get("bead"), f"{where}: bead")
+    if path.stem != bead:
+        raise Malformed(f"{where}: bead {bead} does not match the file name")
+    phase = data.get("phase")
+    if not isinstance(phase, str) or phase not in PHASES:
+        raise Malformed(f"{where}: phase must be one of {sorted(PHASES)}")
+    recorded_text = _string(data.get("recorded"), f"{where}: recorded")
+    try:
+        recorded = datetime.fromisoformat(recorded_text)
+    except ValueError as error:
+        raise Malformed(f"{where}: recorded must be an ISO-8601 date-time with an offset") from error
+    if recorded.tzinfo is None:
+        raise Malformed(f"{where}: recorded must carry an offset (Z or +hh:mm)")
+    _number(data.get("implementMin"), f"{where}: implementMin")
+    local = data.get("localValidationS")
+    if not isinstance(local, dict) or not local:
+        raise Malformed(f"{where}: localValidationS must map each check (fast, focused, ...) to seconds")
+    for name, seconds in local.items():
+        _number(seconds, f"{where}: localValidationS.{name}")
+    for name in ("gateS", "releaseS", "coldBuildS", "hostLoad"):
+        if name in data:
+            _number(data[name], f"{where}: {name}")
+    friction = data.get("friction")
+    if not isinstance(friction, list):
+        raise Malformed(f"{where}: friction must be a list (empty when there was none)")
+    resolved: list[str] = []
+    for index, entry in enumerate(friction):
+        at = f"{where}: friction[{index}]"
+        if not isinstance(entry, dict) or set(entry) - {"tag", "minutes", "note"}:
+            raise Malformed(f"{at}: expected {{tag, minutes, note}}")
+        tag = _string(entry.get("tag"), f"{at}.tag")
+        tag = aliases.get(tag, tag)
+        if tag not in tags:
+            raise Malformed(f"{at}: unknown tag {entry['tag']!r}; add it (or an alias) to friction-tags.json")
+        _number(entry.get("minutes"), f"{at}.minutes")
+        _string(entry.get("note"), f"{at}.note")
+        resolved.append(tag)
+    return Record(bead, phase, recorded, resolved, data)
+
+
+def load(evidence: Path) -> Evidence:
+    trigger_beads, cadence, tags, aliases = load_tags(evidence / "friction-tags.json")
+    budgets = load_budgets(evidence / "metrics.md")
+    friction_dir = evidence / "friction"
+    paths = sorted(friction_dir.glob("*.json")) if friction_dir.is_dir() else []
+    records = [load_record(path, tags, aliases) for path in paths]
+    result = Evidence(trigger_beads, cadence, tags, aliases, budgets, records)
+    ledger = evidence / "introspection.jsonl"
+    lines = ledger.read_text().splitlines() if ledger.exists() else []
+    for number, line in enumerate(lines, 1):
+        if not line.strip():
+            continue
+        where = f"{ledger}:{number}"
+        try:
+            entry = json.loads(line)
+        except json.JSONDecodeError as error:
+            raise Malformed(f"{where}: invalid JSON ({error})") from error
+        if not isinstance(entry, dict):
+            raise Malformed(f"{where}: expected an object")
+        if "retrospective" in entry:
+            if set(entry) != {"retrospective", "date", "covers"}:
+                raise Malformed(f"{where}: a retrospective is {{retrospective, date, covers}}")
+            _bead(entry["retrospective"], f"{where}: retrospective")
+            try:
+                datetime.strptime(entry["date"], "%Y-%m-%d")
+            except (TypeError, ValueError) as error:
+                raise Malformed(f"{where}: date must be YYYY-MM-DD") from error
+            if not isinstance(entry["covers"], list):
+                raise Malformed(f"{where}: covers must list bead ids")
+            for bead in entry["covers"]:
+                _bead(bead, f"{where}: covers")
+            result.retrospectives.append(entry)
+            result.dispositions.clear()
+        elif "trigger" in entry:
+            keys = set(entry) - {"trigger"}
+            if keys not in ({"bead"}, {"reason"}):
+                raise Malformed(f"{where}: a disposition is {{trigger, bead}} or {{trigger, reason}}")
+            trigger = _string(entry["trigger"], f"{where}: trigger")
+            if trigger.startswith("budget:"):
+                if trigger[len("budget:"):] not in budgets:
+                    raise Malformed(f"{where}: unknown budget {trigger}")
+            elif aliases.get(trigger, trigger) not in tags:
+                raise Malformed(f"{where}: unknown tag {trigger!r}")
+            else:
+                trigger = aliases.get(trigger, trigger)
+            if "bead" in entry:
+                _bead(entry["bead"], f"{where}: bead")
+            else:
+                _string(entry["reason"], f"{where}: reason")
+            result.dispositions[trigger] = entry
+        else:
+            raise Malformed(f"{where}: expected a disposition or a retrospective")
+    return result
+
+
+def _field(data: dict, path: str):
+    value = data
+    for part in path.split("."):
+        if not isinstance(value, dict) or part not in value:
+            return None
+        value = value[part]
+    return value
+
+
+def report(evidence: Evidence) -> dict:
+    covered = {bead for retro in evidence.retrospectives for bead in retro["covers"]}
+    window = sorted((r for r in evidence.records if r.bead not in covered), key=lambda r: r.recorded)
+    triggers = []
+    by_tag: dict[str, list[str]] = {}
+    for record in window:
+        for tag in dict.fromkeys(record.tags):
+            by_tag.setdefault(tag, []).append(record.bead)
+    for tag, beads in sorted(by_tag.items()):
+        if len(beads) >= evidence.trigger_beads:
+            triggers.append({"trigger": tag, "beads": beads, "disposition": evidence.dispositions.get(tag)})
+    for key, budget in sorted(evidence.budgets.items()):
+        carrying = [r for r in window if isinstance(_field(r.data, key), (int, float))]
+        n = evidence.trigger_beads
+        # The newest run of n consecutive overruns anywhere in the window, so a later record
+        # under budget doesn't hide a trigger nobody has disposed of yet.
+        runs = [carrying[i:i + n] for i in range(len(carrying) - n + 1)]
+        overruns = [run for run in runs if all(_field(r.data, key) > OVERRUN * budget for r in run)]
+        if overruns:
+            last = overruns[-1]
+            trigger = f"budget:{key}"
+            triggers.append({
+                "trigger": trigger,
+                "budget": budget,
+                "beads": [r.bead for r in last],
+                "values": [_field(r.data, key) for r in last],
+                "hostLoads": [r.data.get("hostLoad") for r in last],
+                "disposition": evidence.dispositions.get(trigger),
+            })
+    last_retro = evidence.retrospectives[-1]["retrospective"] if evidence.retrospectives else "start"
+    return {
+        "records": len(evidence.records),
+        "window": [r.bead for r in window],
+        "triggers": triggers,
+        "retrospective": {
+            "due": len(window) >= evidence.cadence,
+            "cadence": evidence.cadence,
+            "key": f"retrospective={EPIC}/since-{last_retro}",
+        },
+    }
+
+
+def print_report(result: dict) -> None:
+    window = result["window"]
+    print(f"friction: {result['records']} records, {len(window)} since the last retrospective")
+    for trigger in result["triggers"]:
+        disposition = trigger["disposition"]
+        state = "disposed" if disposition else "NEEDS A DISPOSITION"
+        detail = ""
+        if "values" in trigger:
+            detail = f" (budget {trigger['budget']:g} s: {trigger['values']}, host loads {trigger['hostLoads']})"
+        print(f"trigger {trigger['trigger']}: {', '.join(trigger['beads'])}{detail}: {state}")
+        if disposition:
+            print(f"  -> {disposition.get('bead') or disposition.get('reason')}")
+    retro = result["retrospective"]
+    if retro["due"]:
+        print(f"cadence retrospective due ({len(window)} >= {retro['cadence']} records): file it keyed {retro['key']}")
+    if not result["triggers"] and not retro["due"]:
+        print("friction: no triggers fired, no retrospective due")
+
+
+def main(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(prog="scripts/friction", description=__doc__.splitlines()[0])
+    parser.add_argument("command", nargs="?", default="report", choices=["report", "validate"])
+    parser.add_argument("--json", action="store_true", help="print the report as JSON")
+    parser.add_argument("--evidence", type=Path, default=DEFAULT_EVIDENCE)
+    args = parser.parse_args(argv)
+    try:
+        evidence = load(args.evidence)
+    except (Malformed, OSError) as error:
+        print(f"friction: {error}", file=sys.stderr)
+        return 2
+    if args.command == "validate":
+        print(f"friction: {len(evidence.records)} records valid")
+        return 0
+    result = report(evidence)
+    if args.json:
+        print(json.dumps(result, indent=2, default=str))
+    else:
+        print_report(result)
+    return 1 if any(t["disposition"] is None for t in result["triggers"]) else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

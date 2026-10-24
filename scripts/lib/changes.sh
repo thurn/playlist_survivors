@@ -4,7 +4,8 @@
 #   changes_init  sets CHANGES_BASE and writes the changed paths, one per line, to $CHANGES_FILE
 #                 (committed since the base, staged, unstaged and untracked). With no base it
 #                 sets CHANGES_UNKNOWN=1, and every section runs.
-#   changes_ts / changes_analysis / changes_native   succeed when that section must run.
+#   changes_ts / changes_analysis / changes_friction / changes_native   succeed when that section
+#                 must run.
 #
 # The base is where the branch left `staging` (Tollgate bases worktrees and speculative
 # checkouts on it), else `origin/master`, else the parent commit. Set CHANGES_BASE to a revision
@@ -42,10 +43,10 @@ changes_match() {
   [ "$CHANGES_UNKNOWN" = 1 ] || grep -Eq "$1" "$CHANGES_FILE"
 }
 
-# The TS game and its tooling: everything except the native workspace, the analysis tool,
-# documentation and the Tollgate policy.
+# The TS game and its tooling: everything except the native workspace, the analysis tool, the
+# friction ledger's script, documentation and the Tollgate policy.
 changes_ts() {
-  [ "$CHANGES_UNKNOWN" = 1 ] || grep -Evq '^(native/|tools/analysis/|docs/|\.tollgate/|[^/]*\.md$)' "$CHANGES_FILE"
+  [ "$CHANGES_UNKNOWN" = 1 ] || grep -Evq '^(native/|tools/analysis/|scripts/friction$|scripts/test_friction\.py$|docs/|\.tollgate/|[^/]*\.md$)' "$CHANGES_FILE"
 }
 
 # The Python analysis tool and the song maps it checks.
@@ -53,9 +54,15 @@ changes_analysis() {
   changes_match '^(tools/analysis/|songs/)'
 }
 
-# The native workspace (F4 adds the content it reads).
+# The native app epic's friction ledger and its script.
+changes_friction() {
+  changes_match '^(native/evidence/|scripts/friction$|scripts/test_friction\.py$)'
+}
+
+# The native workspace (F4 adds the content it reads), but not the friction ledger in
+# native/evidence/, which every bead writes.
 changes_native() {
-  changes_match '^native/'
+  [ "$CHANGES_UNKNOWN" = 1 ] || grep -E '^native/' "$CHANGES_FILE" | grep -Evq '^native/evidence/'
 }
 
 # The changed files that still exist and match the extended regular expression $1, one per line.

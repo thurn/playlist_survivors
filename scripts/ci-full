@@ -32,7 +32,11 @@ if [ "$section" = all ] || [ "$section" = ts ]; then
   npm run build
 fi
 
+# The Python tooling: the analysis tool and the friction ledger.
 if [ "$section" = all ] || [ "$section" = analysis ]; then
   npm run check:analysis
   npm run check:songmap
+  scripts/friction validate
+  uv run --directory tools/analysis ruff check ../../scripts/friction ../../scripts/test_friction.py
+  uv run --no-project python -m unittest scripts/test_friction.py
 fi

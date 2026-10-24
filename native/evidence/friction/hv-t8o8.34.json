@@ -1,0 +1,1 @@
+{"bead":"hv-t8o8.34","phase":"W","recorded":"2026-10-24T16:10:26Z","implementMin":7,"localValidationS":{"fast":27,"focused":1,"ciGate":43,"ciFullAnalysis":62},"hostLoad":9.3,"friction":[{"tag":"tool-failure","minutes":3,"note":"check:analysis rewrote the tracked ps_analysis.egg-info/SOURCES.txt, dirtying the tree and widening ci-gate's changed paths (hv-t8o8.43)"}]}

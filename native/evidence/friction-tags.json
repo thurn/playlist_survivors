@@ -1,0 +1,30 @@
+{
+  "triggerBeads": 3,
+  "retrospectiveCadence": 8,
+  "tags": {
+    "flaky-test": "A test or check failed and then passed with no change.",
+    "gate-wait": "Waiting on Tollgate's gate stage or its queue longer than the gate's budget.",
+    "release-red": "A red release run, one's own or inherited, cost time.",
+    "tool-failure": "Tollgate, Hive, Beads, cargo, uv or a check script failed in a way that was not the bead's own bug (file a tooling bead too).",
+    "tollgate-config-main-checkout": "Tollgate reads .tollgate/config.toml only from the main checkout, so a policy change can't be validated or applied from the worktree.",
+    "slow-check": "A focused or fast check took long enough to slow iteration.",
+    "slow-build": "A cargo or npm build took long enough to slow iteration.",
+    "oracle-diff-unreadable": "An oracle or parity mismatch was hard to locate from its output.",
+    "plan-unclear": "The plan or bead left a choice open, or contradicted the code, and it took time to settle.",
+    "prerequisite-wait": "Waiting on another bead, a peer or a missing input.",
+    "usage-limit-wait": "Waiting on a model usage limit.",
+    "capture-permission-pending": "A System-mode check waited on the user's capture permission.",
+    "merge-conflict": "A Tollgate collision or rebase onto a peer's change.",
+    "review-churn": "Review findings that took long to verify or fix.",
+    "host-load-noise": "Measurements disturbed by other work on the shared machine."
+  },
+  "aliases": {
+    "flake": "flaky-test",
+    "flaky": "flaky-test",
+    "ci-red": "release-red",
+    "tooling": "tool-failure",
+    "rebase": "merge-conflict",
+    "conflict": "merge-conflict",
+    "noisy-host": "host-load-noise"
+  }
+}

@@ -7,6 +7,7 @@
 #   check:content and check:assets when their inputs changed.
 # - The analysis tool: ruff on the changed Python files, the test modules of the changed modules,
 #   and check:songmap when the song maps changed.
+# - The friction ledger: its records and scripts/friction's tests, when either changed.
 # - native/scripts/check-fast when native/ changed and the workspace has one (F4 adds it).
 # Tollgate's gate stage (scripts/ci-gate) and release stage (scripts/ci-full) run the rest.
 set -eu
@@ -67,6 +68,12 @@ elif changes_analysis; then
     set --
   fi
   if changes_match '^songs/'; then npm run check:songmap; fi
+fi
+
+if changes_friction; then
+  scripts/friction validate
+  uv run --directory tools/analysis ruff check ../../scripts/friction ../../scripts/test_friction.py
+  uv run --no-project python -m unittest scripts/test_friction.py
 fi
 
 if changes_native && [ -x native/scripts/check-fast ]; then
