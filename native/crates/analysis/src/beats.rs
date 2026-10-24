@@ -47,32 +47,7 @@ impl Default for BeatParams {
     }
 }
 
-/// numpy's pairwise summation of float64 (`np.add.reduce`): eight accumulators per block of up
-/// to 128 values, halved recursively above that.
-pub fn pairwise_sum(a: &[f64]) -> f64 {
-    let n = a.len();
-    if n < 8 {
-        return a.iter().fold(0.0, |s, &x| s + x);
-    }
-    if n <= 128 {
-        let mut r = [0.0f64; 8];
-        r.copy_from_slice(&a[..8]);
-        let whole = n - n % 8;
-        for block in a[8..whole].as_chunks::<8>().0 {
-            for (rj, x) in r.iter_mut().zip(block) {
-                *rj += x;
-            }
-        }
-        let mut res = ((r[0] + r[1]) + (r[2] + r[3])) + ((r[4] + r[5]) + (r[6] + r[7]));
-        for &x in &a[whole..] {
-            res += x;
-        }
-        return res;
-    }
-    let mut half = n / 2;
-    half -= half % 8;
-    pairwise_sum(&a[..half]) + pairwise_sum(&a[half..])
-}
+pub use crate::numeric::pairwise_sum;
 
 /// Each frame's period: the mean of the past window's believed periods within the band of its own.
 pub struct PeriodSmoother {

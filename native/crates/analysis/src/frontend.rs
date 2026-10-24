@@ -42,6 +42,16 @@ pub fn hanning(m: usize) -> Vec<f64> {
         .collect()
 }
 
+/// One frame the front end completes.
+pub struct Frame<'a> {
+    /// The frame's index (frame `n` ends at sample `n * 441`).
+    pub index: usize,
+    /// The online model's 162 features.
+    pub features: &'a [f32],
+    /// The magnitude spectrum the features filter (1024 bins, float32): superflux reads it.
+    pub spectrum: &'a [f32],
+}
+
 /// The streaming online front end: feed samples, get one 162-wide feature frame per 10 ms.
 pub struct OnlineFrontEnd {
     window: Vec<f64>,
@@ -59,6 +69,8 @@ pub struct OnlineFrontEnd {
     next_frame: usize,
     /// The last `diff_frames` log spectra, oldest first.
     history: VecDeque<Vec<f32>>,
+    /// The frame's magnitude spectrum (the first 1024 bins).
+    magnitudes: Vec<f32>,
     acc: Vec<f64>,
     spec: Vec<f32>,
     features: Vec<f32>,
@@ -110,6 +122,7 @@ impl OnlineFrontEnd {
             received: 0,
             next_frame: 0,
             history: VecDeque::with_capacity(diff_frames as usize + 1),
+            magnitudes: vec![0.0; FRAME_SIZE / 2],
             acc: vec![0.0; bands],
             spec: vec![0.0; bands],
             features: vec![0.0; 2 * bands],
@@ -119,6 +132,11 @@ impl OnlineFrontEnd {
     /// Features per frame: the log spectrum's bands, then their positive differences.
     pub fn width(&self) -> usize {
         2 * self.bands
+    }
+
+    /// The distance of the positive differences, in frames (superflux uses the same).
+    pub fn diff_frames(&self) -> usize {
+        self.diff_frames
     }
 
     /// Frames emitted so far.
@@ -135,16 +153,19 @@ impl OnlineFrontEnd {
         }
     }
 
-    /// Feeds samples (mono, 44.1 kHz) and calls `emit(frame, features)` for each frame they
-    /// complete, in order.
-    pub fn push(&mut self, samples: &[f32], mut emit: impl FnMut(usize, &[f32])) {
+    /// Feeds samples (mono, 44.1 kHz) and calls `emit` with each frame they complete, in order.
+    pub fn push(&mut self, samples: &[f32], mut emit: impl FnMut(Frame<'_>)) {
         for &s in samples {
             self.ring[self.received % FRAME_SIZE] = s;
             self.received += 1;
             // Frame n ends at sample n * HOP: complete once that sample is in.
             while self.next_frame * HOP < self.received {
                 self.compute_frame();
-                emit(self.next_frame, &self.features);
+                emit(Frame {
+                    index: self.next_frame,
+                    features: &self.features,
+                    spectrum: &self.magnitudes,
+                });
                 self.next_frame += 1;
             }
         }
@@ -171,14 +192,12 @@ impl OnlineFrontEnd {
             .expect("FFT buffers are sized by the plan");
         // The filtered spectrum: complex64 bins, float32 magnitudes, weighted sums (accumulated
         // in float64 and rounded once), then log10(x + 1).
+        for (m, c) in self.magnitudes.iter_mut().zip(&self.fft_out) {
+            *m = (c.re as f32).hypot(c.im as f32);
+        }
         let acc = &mut self.acc;
         acc.fill(0.0);
-        for (bin, row) in self.filterbank.iter().enumerate() {
-            if row.is_empty() {
-                continue;
-            }
-            let c = self.fft_out[bin];
-            let mag = (c.re as f32).hypot(c.im as f32);
+        for (row, &mag) in self.filterbank.iter().zip(&self.magnitudes) {
             for &(band, w) in row {
                 acc[band] += f64::from(mag * w);
             }

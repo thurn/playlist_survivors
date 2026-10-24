@@ -255,7 +255,7 @@ fn from_pcm_the_whole_chain_commits_pythons_beats() {
         let mut fe = analysis::frontend::OnlineFrontEnd::new(&models).unwrap();
         let mut nn = analysis::rnn::OnlineEnsemble::new(&models).unwrap();
         let mut acts = Vec::new();
-        fe.push(&g.f32("pcm").unwrap(), |_, f| acts.push(nn.step(f)));
+        fe.push(&g.f32("pcm").unwrap(), |fr| acts.push(nn.step(fr.features)));
         let r = run(&models, &acts);
         let states: Vec<usize> = g
             .i32("online.states")

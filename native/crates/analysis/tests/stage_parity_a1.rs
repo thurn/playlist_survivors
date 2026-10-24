@@ -49,7 +49,8 @@ fn run(models: &Tensors, pcm: &[f32]) -> (Vec<Vec<f32>>, Vec<f32>) {
     let mut nn = OnlineEnsemble::new(models).expect("ensemble");
     let (mut frames, mut acts) = (Vec::new(), Vec::new());
     for block in blocks(pcm) {
-        fe.push(block, |n, f| {
+        fe.push(block, |fr| {
+            let (n, f) = (fr.index, fr.features);
             assert_eq!(n, frames.len(), "frames in order");
             frames.push(f.to_vec());
             acts.push(nn.step(f));
@@ -118,7 +119,7 @@ fn frames_are_cut_as_madmom_cuts_them() {
         let mut seen = Vec::new();
         // (Sample by sample, so each frame's raw samples can be read as it completes.)
         for s in &pcm[..=60 * HOP] {
-            fe.push(std::slice::from_ref(s), |_, _| {});
+            fe.push(std::slice::from_ref(s), |_| {});
             if let Some(raw) = fe.last_frame_samples() {
                 seen.push((fe.frames() - 1, raw));
             }
@@ -187,7 +188,7 @@ fn the_stream_is_independent_of_block_sizes() {
     let mut fe = OnlineFrontEnd::new(&models).unwrap();
     let mut nn = OnlineEnsemble::new(&models).unwrap();
     let mut whole = Vec::new();
-    fe.push(&pcm, |_, f| whole.push(nn.step(f)));
+    fe.push(&pcm, |fr| whole.push(nn.step(fr.features)));
     assert_eq!(streamed, whole);
 }
 

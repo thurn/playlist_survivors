@@ -687,6 +687,11 @@ Python's activations, the DBN's states, the smoothed periods, the evidence and
 the committed beats are bit-equal to Python's on all three golden excerpts; fed
 from PCM through A1, no state flips on the 12 s excerpts.
 
+A3 measured ([native/evidence/a3/](../../native/evidence/a3/README.md)): fed
+Python's upstream, ticks (evidence, energy, level) and onsets are bit-equal; the
+whole analyzer from PCM reproduces Python's beats, energies, levels, onset times
+and strong flags to the bit, with evidence and strengths within tolerance.
+
 - librosa's chroma and MFCC are reproduced from their definitions (filterbanks
   computed once and compared against librosa's matrices in a test).
 - Python resamples non-44.1 kHz files with a symmetric filter (about 2 ms of
