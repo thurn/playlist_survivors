@@ -1097,10 +1097,26 @@ field's tiles and chunk props (`eval::field`); the content's effect recipes
 `render::post`'s passes (soft lights from the hero, lamps and effects; a bloom;
 the zone's grade; vignette on bars, ambient pulse on beats, heat haze,
 aberration and shockwaves); the overhead display and an end card in the pixel
-font. Not yet: the reactive loudness and key look on the grade (a mid loudness
-and a neutral look stand in), decals, prop sway, zone tints mixing at a sweep,
-and the free-movement count-in. The frame-time re-measure with the drawable's
-presented time stays with D5.
+font. The frame-time re-measure with the drawable's presented time stays with
+D5.
+
+**Corrected** by the VFX parity bead (`hv-t8o8.84`, stills and the condensed TS
+spec in [`native/evidence/vfx/`](../../native/evidence/vfx/)). G3 drew the
+recipes' layers, but not as the TS game fires and draws them: no recipe per
+cause, nearest-sampled rings, no procedural textures, and none of the fast lane,
+the tier look, the weapons or the gems. In seven parts it added the open field's
+zones and transform waves; the procedural textures (`render::proc`, smooth
+sampled) with sprite rotation, skew and additive blending; the recipe each cause
+fires (swings by kind and tier, hits by weight, deaths by kind with debris,
+weapons, cleave bands, landings, level-ups, decals); the reactive fast lane
+(`slice/lane.rs`: the pulse from the ticks' evidence, accent flash and punch,
+onset bursts in the key's tint, press ripples, the ground glow, the horde's
+squash and flinch, and the key's look on the grade); the tier look and the
+weapons (`slice/tier.rs`); the gem field (`slice/gems.rs`); and enemies'
+hit flash, knockback and fall, and the props' sway on the bar. Not done: the
+free-movement count-in has no moment in the native flow (a run starts on music
+already playing, with nothing held), the upgrade orbs' look, and arrows and slam
+markers.
 
 ### Sound (G4)
 

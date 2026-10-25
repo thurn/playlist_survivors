@@ -22,6 +22,8 @@ pub struct Sprite {
     pub tint: [f32; 4],
     pub rot: f32,
     pub additive: bool,
+    /// A shear about its bottom edge: the top moves left by this times its height (a sway).
+    pub skew: f32,
 }
 
 impl Sprite {
@@ -42,6 +44,7 @@ impl Sprite {
             tint: color,
             rot: 0.0,
             additive: false,
+            skew: 0.0,
         }
     }
 
@@ -56,6 +59,7 @@ impl Sprite {
             tint: [1.0; 4],
             rot: 0.0,
             additive: false,
+            skew: 0.0,
         }
     }
 
@@ -70,6 +74,7 @@ impl Sprite {
             tint: [1.0; 4],
             rot: 0.0,
             additive: false,
+            skew: 0.0,
         }
     }
 
@@ -77,6 +82,12 @@ impl Sprite {
     #[must_use]
     pub fn rotated(self, rot: f32) -> Sprite {
         Sprite { rot, ..self }
+    }
+
+    /// The same sprite sheared about its bottom edge (`skew` of its height).
+    #[must_use]
+    pub fn skewed(self, skew: f32) -> Sprite {
+        Sprite { skew, ..self }
     }
 
     /// The same sprite drawn additively.
@@ -114,7 +125,7 @@ struct Instance {
     page: u32,
     additive: u32,
     rot: f32,
-    _pad: u32,
+    skew: f32,
 }
 
 const SHADER: &str = r"
@@ -136,9 +147,11 @@ struct Out {
 @vertex
 fn vs(@builtin(vertex_index) v: u32, @location(0) rect: vec4<f32>, @location(1) uv: vec4<f32>,
       @location(2) tint: vec4<f32>, @location(3) page: u32, @location(4) additive: u32,
-      @location(5) rot: f32) -> Out {
+      @location(5) rot: f32, @location(6) skew: f32) -> Out {
     let corner = vec2<f32>(f32(v & 1u), f32((v >> 1u) & 1u));
-    let local = (corner - 0.5) * rect.zw;
+    var local = (corner - 0.5) * rect.zw;
+    // (A sway shears it about its bottom edge.)
+    local.x = local.x + skew * (local.y - 0.5 * rect.w);
     let c = cos(rot);
     let s = sin(rot);
     let p = rect.xy + 0.5 * rect.zw + vec2<f32>(c * local.x - s * local.y, s * local.x + c * local.y);
@@ -305,7 +318,7 @@ impl SpriteRenderer {
                     step_mode: wgpu::VertexStepMode::Instance,
                     attributes: &wgpu::vertex_attr_array![
                         0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Uint32, 4 => Uint32,
-                        5 => Float32
+                        5 => Float32, 6 => Float32
                     ],
                 })],
             },
@@ -437,7 +450,7 @@ impl SpriteRenderer {
                 },
                 additive: u32::from(s.additive),
                 rot: s.rot,
-                _pad: 0,
+                skew: s.skew,
             });
         }
         let pipeline = self.pipeline(device, format);

@@ -51,7 +51,15 @@ pub struct Scene {
     trail: std::collections::VecDeque<(f64, f64, f64)>,
     /// The last tier change: when (host s), and whether up.
     tier_change: Option<(f64, bool)>,
+    /// Each enemy's last hit: when (host s), and whether it killed.
+    struck: HashMap<usize, (f64, bool)>,
 }
+
+/// A hit flashes an enemy white this long; a killing blow knocks it back over this long, and it
+/// falls and fades over this long (s).
+const HIT_FLASH_S: f64 = 0.05;
+const KNOCK_S: f64 = 0.22;
+const DEATH_FALL_S: f64 = 0.5;
 
 /// The tier change's ring lasts about a beat, and the groove meter flashes this long on a tier up
 /// (s).
@@ -282,6 +290,7 @@ impl Scene {
             }
         };
         let groove = view.groove.clamp(0.0, 1.0);
+        self.struck.retain(|_, s| now - s.0 < 1.0);
         // (The hero's places, for the fire trail.)
         if let Some(h) = view.hero {
             self.trail.push_back((now, h.x, h.y));
@@ -291,6 +300,10 @@ impl Scene {
         }
         let view_tier = (view.tier.max(0.0) as usize).min(3);
         for m in moments {
+            // (Each enemy's last hit, for its flash, knockback and fall.)
+            if let Moment::Hit { foe, lethal, .. } = m {
+                self.struck.insert(*foe, (now, *lethal));
+            }
             match m {
                 // (As emit.ts fires them; native/evidence/vfx/ts-spec.md.) A swing's arc by its
                 // kind, brighter with the groove, in its tier's colour and fitted to its hit.
@@ -543,12 +556,25 @@ impl Scene {
         }
         // (A prop shows where its own zone is: the wave's inside its ring, the old one outside.)
         let shows = |zone: &str, p: &FieldProp| ground.zone_at(p.x, p.y).id == zone;
+        // Trees, bushes and mushrooms sway with the bar, as strongly as the pulse shows (each a
+        // little differently).
+        let swell = 0.5 + 0.5 * (std::f64::consts::TAU * pulse.bar.clamp(0.0, 1.0)).cos();
+        let sway = (swell - 0.5) * (fast.groove() + (1.0 - fast.mix) * fast.press);
         let prop = |p: &FieldProp, tint: [f32; 4], out: &mut Vec<Sprite>| {
             if let Some(variants) = art.props.get(&p.sprite).filter(|v| !v.is_empty()) {
                 let v = variants[p.variant % variants.len()];
                 let (sx, sy) = at(p.x, p.y);
+                let sways = ["tree", "bush", "mushroom"]
+                    .iter()
+                    .any(|k| p.sprite.starts_with(k));
+                let skew = if sways {
+                    sway * 0.06 * (0.6 + 0.4 * rand01(p.x.to_bits(), p.y.to_bits(), 0x5a7))
+                } else {
+                    0.0
+                };
                 let s = Sprite::anchored(v.region, sx, sy, (v.anchor_x, v.anchor_y), scale)
-                    .tinted(tint);
+                    .tinted(tint)
+                    .skewed(skew as f32);
                 out.push(if p.flip { s.mirrored() } else { s });
             }
         };
@@ -654,18 +680,55 @@ impl Scene {
                             * (1.0 - 0.5 * ENEMY_FLINCH * fast.flinch);
                         ky = (1.0 - ENEMY_SQUASH * g * land) * (1.0 + ENEMY_FLINCH * fast.flinch);
                     }
-                    let (sx, sy) = at(f.x, f.y - bob);
-                    let tint = if dead {
-                        [1.0, 1.0, 1.0, 0.35]
-                    } else {
-                        [1.0; 4]
+                    // A hit flashes it white; the killing blow knocks the body back from the
+                    // hero, squashed, and it falls (its hurt frames) and fades.
+                    let struck = self.struck.get(&id).map(|&(t, lethal)| (now - t, lethal));
+                    let flash = struck.is_some_and(|(age, _)| (0.0..HIT_FLASH_S).contains(&age));
+                    let (mut x, mut y) = (f.x, f.y - bob);
+                    if let (Some((age, true)), Some(h)) = (struck, view.hero)
+                        && (0.0..KNOCK_S).contains(&age)
+                    {
+                        let left = 1.0 - age / KNOCK_S;
+                        let (dx, dy) = (f.x - h.x, f.y - h.y);
+                        let d = dx.hypot(dy).max(1e-6);
+                        x += dx / d * left * left * 10.0;
+                        y += dy / d * left * left * 10.0;
+                        kx *= 1.0 + 0.15 * left;
+                        ky *= 1.0 - 0.12 * left;
+                    }
+                    let (sx, sy) = at(x, y);
+                    // (A body whose killing blow went unseen is gone.)
+                    let fall = match struck {
+                        Some((age, true)) if dead => Some(age.max(0.0)),
+                        _ if dead => None,
+                        _ => Some(-1.0),
                     };
-                    if let Some(walk) = art.animation(sprite, "walk") {
-                        // (Enemies are sampled 60 times a second; a walk frame every 6 samples.)
-                        let frame = f.samples / 6;
+                    let Some(fall) = fall else {
+                        continue;
+                    };
+                    let alpha = if fall >= 0.0 {
+                        let u =
+                            ((fall - DEATH_FALL_S * 0.5) / (DEATH_FALL_S * 0.5)).clamp(0.0, 1.0);
+                        (1.0 - u * u * (3.0 - 2.0 * u)) as f32
+                    } else {
+                        1.0
+                    };
+                    if alpha <= 0.0 {
+                        continue;
+                    }
+                    let tint = [1.0, 1.0, 1.0, alpha];
+                    let hurt = art.animation(sprite, "hurt").filter(|_| fall >= 0.0);
+                    if let Some(walk) = hurt.or_else(|| art.animation(sprite, "walk")) {
+                        // (Enemies are sampled 60 times a second; a walk frame every 6 samples;
+                        // a fall's six frames over its length.)
+                        let frame = if hurt.is_some() {
+                            ((fall / DEATH_FALL_S * 6.0) as usize).min(5)
+                        } else {
+                            f.samples / 6
+                        };
                         out.push(stretch(
                             Sprite::anchored(
-                                walk.frame(facing, frame, false),
+                                walk.frame(facing, frame, flash),
                                 sx,
                                 sy,
                                 (walk.anchor_x, walk.anchor_y),
