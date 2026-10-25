@@ -1,5 +1,5 @@
 # The reactive feel corpus (docs/design/reactive-feel.md, "The Corpus"): the one source for each
-# track's split. Sources are relative to `npm run reactive:corpus-add -- --source <dir>` (default
+# track's split. Sources are relative to `ps-analysis corpus-add --source <dir>` (default
 # ~/Downloads); "archive.zip:path" names a file inside a zip. Near-duplicates share a family, and a
 # family has a single split. Held-out tracks are ingested, never studied (see "Held-out Protocol").
 tracks:

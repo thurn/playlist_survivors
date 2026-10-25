@@ -538,6 +538,48 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--quiet", action="store_true", help="print only whether it fitted")
     c.set_defaults(func=cmd_fit_grid)
 
+    from . import corpus
+
+    c = sub.add_parser(
+        "corpus-add",
+        help="ingest corpus/manifest.yaml's tracks: encode, fit, stream; rewrite the index",
+    )
+    c.add_argument("ids", nargs="*", help="only these tracks (default: all)")
+    c.add_argument(
+        "--source",
+        default="~/Downloads",
+        help="where the manifest's sources are (default: ~/Downloads)",
+    )
+    c.add_argument("--jobs", type=_jobs, default=None, help="parallel jobs")
+    c.set_defaults(
+        func=lambda a: corpus.cmd_corpus_add(
+            a.ids, Path(a.source).expanduser(), a.jobs or corpus.default_jobs()
+        )
+    )
+
+    c = sub.add_parser(
+        "streams", help="regenerate every shipped track's stream and the index"
+    )
+    c.add_argument("ids", nargs="*", help="only these tracks (default: all)")
+    c.add_argument("--jobs", type=_jobs, default=None, help="parallel jobs")
+    c.add_argument(
+        "--resynth", action="store_true", help="render the synthetic tracks again"
+    )
+    c.set_defaults(
+        func=lambda a: corpus.cmd_streams(
+            a.ids, a.jobs or corpus.default_jobs(), a.resynth
+        )
+    )
+
+    c = sub.add_parser(
+        "fit-corpus", help="fit the corpus's reference grids and print the table"
+    )
+    c.add_argument("ids", nargs="*", help="only these tracks (default: all)")
+    c.add_argument("--jobs", type=_jobs, default=None, help="parallel jobs")
+    c.set_defaults(
+        func=lambda a: corpus.cmd_fit_corpus(a.ids, a.jobs or corpus.default_jobs())
+    )
+
     c = sub.add_parser(
         "export-models", help="export models and golden data for native/"
     )
@@ -559,7 +601,21 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 # Commands over the whole corpus or every model: run below Tollgate's checks (batch.py).
-BATCH_COMMANDS = {"export-models", "delayed-payoff"}
+BATCH_COMMANDS = {
+    "export-models",
+    "delayed-payoff",
+    "corpus-add",
+    "streams",
+    "fit-corpus",
+}
+
+
+def _jobs(value: str) -> int:
+    """--jobs: a positive whole number."""
+    n = int(value)
+    if n < 1:
+        raise argparse.ArgumentTypeError("--jobs takes a positive whole number")
+    return n
 
 
 def main(argv: list[str] | None = None) -> None:

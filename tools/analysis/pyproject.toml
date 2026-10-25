@@ -10,6 +10,7 @@ dependencies = [
   "soundfile",
   "matplotlib",
   "madmom @ git+https://github.com/CPJKU/madmom.git",
+  "pyyaml>=6",
 ]
 
 [project.scripts]
