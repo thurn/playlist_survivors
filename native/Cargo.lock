@@ -519,6 +519,7 @@ dependencies = [
 name = "eval"
 version = "0.0.0"
 dependencies = [
+ "analysis",
  "indexmap",
  "serde",
  "serde_json",

@@ -1,7 +1,11 @@
 //! `ps replay <session>`: re-runs a recorded listening session headlessly with its recorded
 //! stream (docs/design/native-app.md, "Session recording (D3)"): each run's arrivals fed as they
 //! arrived and its keys as the live engine applied them; its settled records must hash as the live
-//! run's did. This is the test that the live runner's rollbacks settled correctly.
+//! run's did. This is the test that the live runner's rollbacks settled correctly. With
+//! `--reanalyse`, the session's audio goes through the current analyzer instead (live hindsight
+//! timing, each entry arriving as known) and each run is replayed on that stream with the recorded
+//! keys: a regression test for analyzer changes on real sessions, reported, not judged (the audio
+//! was stored at 16 bits, so this is close to, not the same as, what the analyzer heard live).
 
 use std::path::{Path, PathBuf};
 
@@ -89,6 +93,85 @@ pub fn engine() -> Result<Engine, String> {
     .map_err(|e| format!("level: {e:?}"))
 }
 
+/// The analyzer's input, decoded from the session's audio (FLAC, or the WAV before conversion).
+fn audio(dir: &Path) -> Result<Vec<f32>, String> {
+    let src = ["audio.flac", "audio.wav"]
+        .iter()
+        .map(|n| dir.join(n))
+        .find(|p| p.exists())
+        .ok_or("the session has no audio")?;
+    let tmp = std::env::temp_dir().join(format!("ps-replay-{}.wav", std::process::id()));
+    let status = std::process::Command::new("/usr/bin/afconvert")
+        .args(["-f", "WAVE", "-d", "LEF32@44100", "-c", "1"])
+        .arg(&src)
+        .arg(&tmp)
+        .status()
+        .map_err(|e| format!("afconvert: {e}"))?;
+    if !status.success() {
+        return Err(format!("afconvert failed on {}", src.display()));
+    }
+    let bytes = std::fs::read(&tmp).map_err(|e| e.to_string())?;
+    let _ = std::fs::remove_file(&tmp);
+    // (The data chunk's float32 samples.)
+    let mut at = 12;
+    while at + 8 <= bytes.len() {
+        let len = u32::from_le_bytes(bytes[at + 4..at + 8].try_into().unwrap_or_default()) as usize;
+        if &bytes[at..at + 4] == b"data" {
+            let end = (at + 8 + len).min(bytes.len());
+            return Ok(bytes[at + 8..end]
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|b| f32::from_le_bytes(*b))
+                .collect());
+        }
+        at += 8 + len + (len & 1);
+    }
+    Err("afconvert wrote an unexpected WAV".into())
+}
+
+/// The session's audio through the current analyzer, each entry arriving as it is known.
+fn reanalyse(dir: &Path) -> Result<Vec<Arrival>, String> {
+    use analysis::analyzer::{Analyzer, Params};
+    use analysis::hindsight::HindsightParams;
+    let y = audio(dir)?;
+    let models = analysis::tensors::Tensors::load(&root().join("native/models/madmom.bin"))
+        .map_err(|e| e.to_string())?;
+    let params = Params {
+        hindsight: HindsightParams::live(),
+        ..Params::default()
+    };
+    let mut an = Analyzer::with_hindsight_worker(&models, params).map_err(|e| e.to_string())?;
+    let mut out = Vec::new();
+    for block in y.chunks(4096) {
+        an.push(block, &mut out);
+    }
+    an.finish(&mut out);
+    let mut arrivals: Vec<Arrival> = out
+        .iter()
+        .map(|e| {
+            let entry = eval::session::from_analyzer(e);
+            Arrival {
+                arrived: entry.known_at(),
+                entry,
+            }
+        })
+        .collect();
+    // (In the order they become known, as a live session records them.)
+    arrivals.sort_by(|a, b| a.arrived.total_cmp(&b.arrived));
+    Ok(arrivals)
+}
+
+/// How a replayed run went.
+fn outcome(e: &Engine) -> String {
+    let v = e.view.borrow();
+    let [p, g, ok] = v.ratings;
+    format!(
+        "{} kills, {p} perfect, {g} great, {ok} good, health {:.2}",
+        v.kills, v.health
+    )
+}
+
 /// Replays every recorded run of the session in `dir`; whether each settled as it did live.
 pub fn replay(dir: &Path) -> Result<bool, String> {
     let meta: Value = serde_json::from_str(
@@ -108,20 +191,68 @@ pub fn replay(dir: &Path) -> Result<bool, String> {
         let same = got.hash == Some(run.hash);
         ok &= same;
         println!(
-            "run {}: {:.1}-{:.1} s, {} records settled live, {} in the replay ({} rollbacks): {}",
+            "run {}: {:.1}-{:.1} s, {} records settled live, {} in the replay ({} rollbacks): {}; {}",
             run.index,
             run.s0,
             run.end,
             run.records,
             got.settled,
             got.rollbacks,
-            if same { "the same" } else { "DIFFERENT" }
+            if same { "the same" } else { "DIFFERENT" },
+            outcome(&e)
         );
     }
     Ok(ok)
 }
 
+/// Replays every recorded run on the re-analysed stream (a report).
+pub fn replay_reanalysed(dir: &Path) -> Result<bool, String> {
+    let meta: Value = serde_json::from_str(
+        &std::fs::read_to_string(dir.join("meta.json")).map_err(|e| format!("meta.json: {e}"))?,
+    )
+    .map_err(|e| e.to_string())?;
+    let recorded: Vec<Arrival> = lines(&dir.join("stream.jsonl"))?;
+    let arrivals = reanalyse(dir)?;
+    let keys: Vec<AppliedKey> = lines(&dir.join("keys.jsonl"))?;
+    let count = |a: &[Arrival], group: &str| {
+        a.iter()
+            .filter(|x| {
+                serde_json::to_value(&x.entry)
+                    .ok()
+                    .and_then(|v| v["group"].as_str().map(str::to_string))
+                    == Some(group.to_string())
+            })
+            .count()
+    };
+    for g in ["beat", "tick", "onset", "change", "end"] {
+        println!(
+            "{g}: {} recorded live, {} re-analysed",
+            count(&recorded, g),
+            count(&arrivals, g)
+        );
+    }
+    for run in &runs(&meta) {
+        let mut e = engine()?;
+        // (Its hash can't be the live run's: compare outcomes.)
+        let got = replay_run(&mut e, &arrivals, &keys, run, RECENT_S);
+        println!(
+            "run {} re-analysed: {} records settled; {}",
+            run.index,
+            got.settled,
+            outcome(&e)
+        );
+    }
+    Ok(true)
+}
+
 fn run(args: &[String]) -> Result<bool, String> {
-    let dir = args.first().ok_or("usage: ps replay <session folder>")?;
-    replay(Path::new(dir))
+    let dir = args
+        .iter()
+        .find(|a| !a.starts_with("--"))
+        .ok_or("usage: ps replay <session folder> [--reanalyse]")?;
+    if args.iter().any(|a| a == "--reanalyse") {
+        replay_reanalysed(Path::new(dir))
+    } else {
+        replay(Path::new(dir))
+    }
 }

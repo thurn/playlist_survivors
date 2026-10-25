@@ -23,7 +23,6 @@ mod calibration;
 // The tap and output are the phase 0 spike's (57e846a^:native/spike), kept as they were.
 #[allow(clippy::pedantic, unused_qualifications, dead_code)]
 mod coreaudio;
-mod feed;
 mod fx;
 mod gfx;
 mod hud;
@@ -977,7 +976,7 @@ impl App {
                     if let Entry::Tick(t) = &e {
                         self.listen.tick(t.t, t.evidence);
                     }
-                    let entry = feed::convert(&e).stamped(arrived);
+                    let entry = eval::session::from_analyzer(&e).stamped(arrived);
                     if self.running {
                         let start = self.run_start;
                         self.engine

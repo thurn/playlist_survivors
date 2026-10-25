@@ -62,6 +62,85 @@ impl Entry {
     }
 }
 
+/// An analyzer's entry as the session's stream has it (session song time, the analyzer's own
+/// `known_at`; [`Entry::stamped`] adds the arrival).
+pub fn from_analyzer(e: &analysis::analyzer::Entry) -> Entry {
+    use analysis::analyzer::Entry as A;
+    use analysis::ticks::Level;
+    match e {
+        A::Beat(c) => Entry::Beat(Beat {
+            t: c.t,
+            known_at: c.known_at,
+            period: c.period,
+            evidence: c.evidence,
+        }),
+        A::Tick(t) => Entry::Tick(Tick {
+            t: t.t,
+            known_at: t.t,
+            evidence: t.evidence,
+            energy: t.energy,
+            level: Some(match t.level {
+                Level::Quiet => stream::Level::Quiet,
+                Level::Medium => stream::Level::Medium,
+                Level::Loud => stream::Level::Loud,
+            }),
+            key: t.key.map(str::to_string),
+            bands: Some(stream::Bands {
+                kick: t.bands.kick,
+                snare: t.bands.snare,
+                hat: t.bands.hat,
+                bass: t.bands.bass,
+            }),
+            brightness: Some(t.brightness),
+        }),
+        A::Onset(o) => Entry::Onset(Onset {
+            t: o.t,
+            known_at: o.known_at,
+            strength: o.strength,
+            strong: o.strong,
+            band: match o.band {
+                "kick" => Some(stream::Band::Kick),
+                "snare" => Some(stream::Band::Snare),
+                "hat" => Some(stream::Band::Hat),
+                "bass" => Some(stream::Band::Bass),
+                _ => None,
+            },
+        }),
+        A::Hindsight(h) => Entry::Hindsight(Hindsight {
+            known_at: h.known_at,
+            offline: h.offline.clone(),
+            online: h.online.clone(),
+        }),
+        A::Change(c) => Entry::Change(Change {
+            t: c.t,
+            known_at: c.known_at,
+            strength: c.strength,
+        }),
+        A::Jump(j) => Entry::Jump(Jump {
+            t: j.t,
+            known_at: j.known_at,
+            db: j.db,
+        }),
+        A::End(x) => Entry::End(End {
+            t: x.t,
+            known_at: x.known_at,
+        }),
+        A::Forecast(f) => Entry::Forecast(Forecast {
+            t: f.t,
+            known_at: f.known_at,
+            cycle: f.cycle as f64,
+            confidence: f.confidence,
+        }),
+        A::Timbre(t) => Entry::Timbre(Timbre {
+            known_at: t.known_at,
+            brightness: t.brightness,
+            flatness: t.flatness,
+            percussive: t.percussive,
+            density: t.density,
+        }),
+    }
+}
+
 /// Appends `e` (in session time) to the log of a run that began at session time `s0`.
 pub fn rebase_append(log: &mut StreamLog, e: &Entry, s0: f64) {
     let at = |t: f64| t - s0;

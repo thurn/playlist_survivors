@@ -13,7 +13,7 @@ fn main() {
         Some("replay") => replay::main(&args[1..]),
         _ => {
             eprintln!(
-                "usage: ps analysis-parity [--tracks ID,ID | --all] [--jobs N] [--out DIR] [--check]\n       ps runner-bench [--seconds S] [--check]\n       ps replay <session folder>"
+                "usage: ps analysis-parity [--tracks ID,ID | --all] [--jobs N] [--out DIR] [--check]\n       ps runner-bench [--seconds S] [--check]\n       ps replay <session folder> [--reanalyse]"
             );
             2
         }

@@ -5,6 +5,7 @@ edition.workspace = true
 publish = false
 
 [dependencies]
+analysis = { path = "../analysis" }
 indexmap = "2"
 serde = { version = "1", features = ["derive"] }
 sim = { path = "../sim" }
