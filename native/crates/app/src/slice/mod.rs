@@ -478,6 +478,9 @@ impl App {
                     }
                     feed::append(self.engine.log(), &e, arrived, self.run_start);
                 }
+                Msg::Follow(g) => {
+                    let _ = self.out.commands.push(Command::Follow(g));
+                }
                 Msg::Level { peak, heard } => {
                     if heard <= now + 0.5 {
                         self.peak = self.peak.max(peak);

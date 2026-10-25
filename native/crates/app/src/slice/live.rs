@@ -12,6 +12,7 @@ use std::time::Duration;
 use analysis::analyzer::{Analyzer, Entry, Params};
 use analysis::hindsight::HindsightParams;
 use analysis::tensors::Tensors;
+use audio::follow::Follower;
 use winit::event_loop::EventLoopProxy;
 
 use super::coreaudio::host_s;
@@ -28,6 +29,8 @@ pub enum Msg {
     Clock { song: f64, heard: f64 },
     /// The loudest sample of a captured buffer and the host time it is heard.
     Level { peak: f32, heard: f64 },
+    /// The effects' gain, following the music's loudness (`audio::follow`).
+    Follow(f32),
 }
 
 /// Where the analyzed samples come from.
@@ -161,6 +164,7 @@ pub fn spawn(
             let (mut raw, mut y, mut new_metas, mut out) =
                 (Vec::new(), Vec::new(), Vec::new(), Vec::new());
             let mut analysed = 0usize;
+            let mut follower = Follower::new(rate);
             while !stop.load(Ordering::Relaxed) {
                 raw.clear();
                 new_metas.clear();
@@ -178,6 +182,9 @@ pub fn spawn(
                 if raw.is_empty() {
                     std::thread::sleep(Duration::from_millis(1));
                     continue;
+                }
+                if let Some(g) = follower.push(&raw) {
+                    let _ = tx.send(Msg::Follow(g));
                 }
                 y.clear();
                 rs.push(&raw, &mut y);
