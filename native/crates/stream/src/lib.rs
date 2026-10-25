@@ -9,10 +9,10 @@
 //! checks interpret, so the sim cannot name it.
 #![forbid(unsafe_code)]
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Beat {
     pub t: f64,
@@ -21,7 +21,7 @@ pub struct Beat {
     pub evidence: f64,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum Level {
     Quiet,
@@ -29,7 +29,7 @@ pub enum Level {
     Loud,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
 pub struct Bands {
     pub kick: f64,
     pub snare: f64,
@@ -37,7 +37,7 @@ pub struct Bands {
     pub bass: f64,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum Band {
     Kick,
@@ -48,7 +48,8 @@ pub enum Band {
 
 /// One tick (every `tick_s`). In TS a tick has no `known_at`: readers find it by `t`. Here it does:
 /// its own `t` in Replay, its arrival live.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Tick {
     pub t: f64,
     pub known_at: f64,
@@ -60,7 +61,7 @@ pub struct Tick {
     pub brightness: Option<f64>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 struct FileTick {
     t: f64,
     evidence: f64,
@@ -71,7 +72,7 @@ struct FileTick {
     brightness: Option<f64>,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Onset {
     pub t: f64,
@@ -81,7 +82,7 @@ pub struct Onset {
     pub band: Option<Band>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Hindsight {
     pub known_at: f64,
@@ -89,7 +90,7 @@ pub struct Hindsight {
     pub online: Vec<f64>,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Timbre {
     pub known_at: f64,
@@ -99,7 +100,7 @@ pub struct Timbre {
     pub density: f64,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Change {
     pub t: f64,
@@ -107,7 +108,7 @@ pub struct Change {
     pub strength: f64,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Jump {
     pub t: f64,
@@ -115,14 +116,14 @@ pub struct Jump {
     pub db: f64,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct End {
     pub t: f64,
     pub known_at: f64,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Forecast {
     pub t: f64,
@@ -131,7 +132,7 @@ pub struct Forecast {
     pub confidence: f64,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Audio {
     pub file: String,

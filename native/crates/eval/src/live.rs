@@ -540,6 +540,10 @@ pub struct Engine {
     /// The level's seed and zones (the open field's ground).
     pub seed: f64,
     pub zones: Vec<String>,
+    /// The FNV-1a hash of the records settled so far (each as `{stamp:?} {record:?}`), and how
+    /// many: a session keeps it, and a replay must settle the same.
+    pub settled_hash: u64,
+    pub settled_count: usize,
     /// Every record as it settles, and every key as applied, when kept (for determinism tests).
     pub settled_log: Option<Vec<(f64, Record)>>,
     pub key_log: Option<Vec<KeyEvent>>,
@@ -607,6 +611,8 @@ impl Engine {
             stats: RunnerStats::default(),
             seed,
             zones,
+            settled_hash: FNV_OFFSET,
+            settled_count: 0,
             settled_log: None,
             key_log: None,
         })
@@ -799,6 +805,8 @@ impl Engine {
         {
             self.settled_view.apply(*s, rec);
             self.final_stamp = *s;
+            self.settled_hash = fnv(self.settled_hash, format!("{s:?} {rec:?}").as_bytes());
+            self.settled_count += 1;
             fresh.extend(self.settled_view.moments.drain(..).map(|m| (*s, m)));
             if let Some(log) = &mut self.settled_log {
                 log.push((*s, rec.clone()));
@@ -884,6 +892,17 @@ impl Cause {
             | Cause::LevelUp { s } => *s,
         }
     }
+}
+
+const FNV_OFFSET: u64 = 0xcbf2_9ce4_8422_2325;
+
+/// FNV-1a over `bytes`, from `h`.
+fn fnv(mut h: u64, bytes: &[u8]) -> u64 {
+    for &b in bytes {
+        h ^= u64::from(b);
+        h = h.wrapping_mul(0x0100_0000_01b3);
+    }
+    h
 }
 
 /// Each stream group's length.

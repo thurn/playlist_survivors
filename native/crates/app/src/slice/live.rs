@@ -31,6 +31,8 @@ pub enum Msg {
     Level { peak: f32, heard: f64 },
     /// The effects' gain, following the music's loudness (`audio::follow`).
     Follow(f32),
+    /// The analyzer's input (44.1 kHz), for the session's record.
+    Audio(Vec<f32>),
 }
 
 /// Where the analyzed samples come from.
@@ -192,6 +194,7 @@ pub fn spawn(
                 rs.push(&raw, &mut y);
                 out.clear();
                 an.push(&y, &mut out);
+                let _ = tx.send(Msg::Audio(y.clone()));
                 analysed += y.len();
                 let song = analysed as f64 / SR;
                 if let Some(h) = host_of(&metas, rate, song * SR * rs.ratio) {

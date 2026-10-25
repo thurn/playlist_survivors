@@ -38,6 +38,7 @@ mod live;
 )]
 mod output;
 mod scene;
+mod session;
 mod sounds;
 #[allow(
     clippy::pedantic,
@@ -69,11 +70,13 @@ use winit::window::{Window, WindowId};
 use audio::mixer::{Command, Report, Source as Voiced, Voice};
 use calibration::{Calibration, Settings};
 use coreaudio::now_s;
+use eval::session::Arrival;
 use gfx::Gfx;
 use hud::{HudState, KeyLight, PressMark};
 use live::{Msg, Source};
 use output::{Event, Output};
 use scene::{End, Look, Scene};
+use session::Session;
 use sounds::Sounds;
 
 /// The tap's timeline runs this far behind the output's render timeline (phase 0, built-in
@@ -329,6 +332,8 @@ pub fn run(args: &[String]) -> Result<(), String> {
         bluetooth: bluetooth(&coreaudio::device(coreaudio::default_output())),
         settings,
         screen: None,
+        session: None,
+        run_index: 0,
         overrides,
         gfx: None,
         sounds,
@@ -374,6 +379,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
         presses: VecDeque::new(),
     };
     app.engine.settle_s = app.settle_s();
+    app.session = app.new_session();
     event_loop.run_app(&mut app).map_err(|e| e.to_string())
 }
 
@@ -863,6 +869,9 @@ struct App {
     /// The saved settings, the output device's UID and whether it is Bluetooth, and the command
     /// line's offsets (kept over each device's).
     settings: Settings,
+    /// The session's record, and the index of its run going.
+    session: Option<Session>,
+    run_index: usize,
     /// A calibration screen showing, if any.
     screen: Option<Screen>,
     device_uid: String,
@@ -898,7 +907,7 @@ struct App {
     running: bool,
     /// The entries of the last moments with their arrival (song s), to feed a run that starts
     /// now; and the start rule's state.
-    recent: VecDeque<(f64, Entry)>,
+    recent: VecDeque<(f64, eval::session::Entry)>,
     listen: Listen,
     start_at: f64,
     /// When the run ended (host s), and whether the hero fell.
@@ -959,12 +968,17 @@ impl App {
                     if let Entry::Tick(t) = &e {
                         self.listen.tick(t.t, t.evidence);
                     }
+                    let entry = feed::convert(&e).stamped(arrived);
                     if self.running {
                         let start = self.run_start;
                         self.engine
-                            .feed(|log| feed::append(log, &e, arrived, start));
+                            .feed(|log| eval::session::rebase_append(log, &entry, start));
                     }
-                    self.recent.push_back((arrived, e));
+                    let arrival = Arrival { arrived, entry };
+                    if let Some(s) = self.session.as_mut() {
+                        s.arrival(&arrival);
+                    }
+                    self.recent.push_back((arrival.arrived, arrival.entry));
                     while self
                         .recent
                         .front()
@@ -975,6 +989,11 @@ impl App {
                 }
                 Msg::Follow(g) => {
                     let _ = self.audio.out.commands.push(Command::Follow(g));
+                }
+                Msg::Audio(samples) => {
+                    if let Some(s) = self.session.as_mut() {
+                        s.audio(&samples);
+                    }
                 }
                 Msg::Level { peak, heard } => {
                     if heard <= now + 0.5 {
@@ -1018,6 +1037,7 @@ impl App {
             // like late keys").
             let lead = 0.2f64.max(self.audio.l_out + self.ahead.max(0.0) + 0.02);
             self.engine.frame(s - self.run_start, lead);
+            self.record_keys();
             let moments = self.engine.view.borrow_mut().take_moments();
             self.cues(&moments, now);
             self.schedule_sounds();
@@ -1346,12 +1366,44 @@ impl App {
         eval::live::SETTLE_S + KEY_LATE_S + offset + self.calibration.visual_s().max(0.0)
     }
 
+    /// A new session's record, for the source and device now.
+    fn new_session(&self) -> Option<Session> {
+        Session::start(session::Meta {
+            version: env!("CARGO_PKG_VERSION").to_string(),
+            started_unix: session::unix_now(),
+            file: self.audio.file.as_ref().map(|p| p.display().to_string()),
+            device: coreaudio::device(self.device).name,
+            l_out_ms: self.audio.l_out * 1e3,
+            calibration: self.calibration,
+            runs: Vec::new(),
+        })
+    }
+
+    /// The keys the engine applied since the last call, into the session's record.
+    fn record_keys(&mut self) {
+        let run = self.run_index;
+        if let (Some(log), Some(session)) = (self.engine.key_log.as_mut(), self.session.as_mut()) {
+            for k in log.drain(..) {
+                session.key(&session::Key::of(run, &k));
+            }
+        }
+    }
+
     /// Ends the run (host time `now`) for `end`: the end card shows, listening goes on.
     fn end_run(&mut self, end: End, now: f64) {
         if self.over.is_some() {
             return;
         }
         let seconds = self.song_at(now).map_or(0.0, |s| s - self.run_start);
+        self.record_keys();
+        if let Some(s) = self.session.as_mut() {
+            s.run_ended(
+                self.run_start + seconds,
+                &format!("{end:?}"),
+                self.engine.settled_hash,
+                self.engine.settled_count,
+            );
+        }
         self.over = Some((now, end, seconds));
         self.running = false;
         self.listen.reset(true);
@@ -1587,6 +1639,9 @@ impl App {
         self.beats.clear();
         self.listen = Listen::default();
         self.device = coreaudio::default_output();
+        // (A new source is a new session: its song time starts again.)
+        self.session = None;
+        self.session = self.new_session();
     }
 
     /// The debug menu's lines.
@@ -1651,9 +1706,12 @@ impl App {
         self.over = None;
         self.voices = [0; 4];
         let s0 = self.run_start;
-        for (arrived, e) in &self.recent {
-            self.engine.feed(|log| feed::append(log, e, *arrived, s0));
+        for (_, e) in &self.recent {
+            self.engine
+                .feed(|log| eval::session::rebase_append(log, e, s0));
         }
+        self.engine.key_log = Some(Vec::new());
+        self.run_index = self.session.as_mut().map_or(0, |s| s.run_started(s0));
         self.running = true;
         self.listen.reset(false);
         eprintln!("slice: run started at song time {s0:.1}");
