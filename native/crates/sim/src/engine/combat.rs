@@ -429,6 +429,11 @@ impl Sim {
             dir: self.st.facing_angle,
             tier: self.st.tier,
         };
+        if self.env.input.zen {
+            let s = self.st.s;
+            self.launch_cleave(c, s, o.t);
+            return;
+        }
         let great_ms = self.env.input.lib.hero.timing.great_ms;
         match self.st.last_great {
             Some((lg_s, false)) if abs(lg_s - o.t) <= great_ms / 1000.0 + 1e-9 => {
@@ -570,6 +575,12 @@ impl Sim {
             };
             let counted = memo.counted.get(&(gi as i64)).copied();
             let s = self.st.s;
+            // Zen mode: nothing is judged, and every accent's cleave launches as it strikes (with no
+            // hit-stop, which would freeze a stride off the beat).
+            if env.input.zen {
+                self.launch_cleave(c, s, s);
+                return;
+            }
             match counted {
                 Some(counted) if counted.s <= s + 1e-9 => {
                     let lg = self.st.last_great;

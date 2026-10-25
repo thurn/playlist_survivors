@@ -186,6 +186,7 @@ pub fn default_hero_anims() -> IndexMap<String, AnimInfo> {
 /// and enemy overrides, the hero atlas's animations and the stream's gate. (Never the stream's end:
 /// the sim runs live.)
 #[derive(Clone, Debug)]
+#[allow(clippy::struct_excessive_bools)] // (independent switches)
 pub struct SimInput {
     pub level: LevelScript,
     pub lib: ContentLibrary,
@@ -201,6 +202,9 @@ pub struct SimInput {
     pub leak_future_evidence: bool,
     /// Stage 2: the stream has hindsight entries, so presses settle 2 s late.
     pub settling: bool,
+    /// Zen mode: nothing is judged. Presses and held keys move the hero only on the stride steps,
+    /// the groove stays full, and every accent's cleave launches by itself.
+    pub zen: bool,
 }
 
 impl SimInput {
@@ -239,6 +243,7 @@ impl SimInput {
             no_hero_damage: false,
             leak_future_evidence: false,
             settling,
+            zen: false,
         }
     }
 }
@@ -881,6 +886,10 @@ struct SimState {
     strides: StrideState,
     /// The keys held, in the order they were pressed.
     held: Vec<Key>,
+    /// Zen mode: the direction keys pressed since the last held stride (a tap released before the
+    /// next stride step still strides on it), and a stomp waiting for the next stride step.
+    zen_taps: Vec<Key>,
+    zen_stomp: bool,
     walked: f64,
     last_sample: Option<(f64, f64)>,
     landed: bool,
@@ -1545,6 +1554,12 @@ impl Sim {
         self.st.next_hero_k = 1.0;
         self.record_foes(0.0);
         self.st.next_foe_k = 1.0;
+        // Zen mode: the groove is full from the start, at the top tier.
+        if self.env.input.zen {
+            self.st.groove = 1.0;
+            self.rec.groove(0.0, 1.0);
+            self.set_tier();
+        }
     }
 
     /// One turn of the loop: move to the next stop, then run every event due there.
@@ -1725,6 +1740,8 @@ fn fresh_state(env: &Env) -> SimState {
         step: None,
         strides: fresh_strides(),
         held: Vec::new(),
+        zen_taps: Vec::new(),
+        zen_stomp: false,
         walked: 0.0,
         last_sample: None,
         landed: true,
@@ -1829,6 +1846,8 @@ mod tests {
     use super::{Ev, Sim, SimInput};
     use crate::content::level::load_level;
     use crate::content::{SourceFile, load_content};
+    use crate::movement::InputKey;
+    use crate::player::{KeyEvent, KeyEventKind};
     use crate::recorder::NullRecorder;
     use crate::schedule::{grow_song_map, reactive_song_map};
 
@@ -1895,6 +1914,14 @@ mod tests {
     }
 
     fn sim(file: &StreamFile) -> Sim {
+        sim_in(file, false)
+    }
+
+    fn sim_in(file: &StreamFile, zen: bool) -> Sim {
+        sim_with(file, zen, false)
+    }
+
+    fn sim_with(file: &StreamFile, zen: bool, settling: bool) -> Sim {
         let mut names: Vec<String> =
             std::fs::read_dir(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../content"))
                 .unwrap()
@@ -1917,8 +1944,9 @@ mod tests {
             &lib,
             &indexmap::IndexMap::new(),
             file.params.gate,
-            false,
+            settling,
         );
+        let input = SimInput { zen, ..input };
         Sim::new(
             input,
             Rc::new(file.log.clone()),
@@ -1972,5 +2000,179 @@ mod tests {
         // (Live: the stream's end is never known, so the next downbeat is pending, never now.)
         assert!(queued.is_empty(), "queued at {queued:?}");
         assert_eq!(sim.st.deferred.len(), 1);
+    }
+
+    fn key(sim: &mut Sim, s: f64, kind: KeyEventKind, key: InputKey) {
+        sim.advance_to(s);
+        sim.key(KeyEvent {
+            s,
+            kind,
+            key,
+            id: None,
+        });
+    }
+
+    /// Song time the stride in progress started, if any.
+    fn stride_s0(sim: &Sim) -> Option<f64> {
+        sim.st.step.as_ref().and_then(|st| st.s0)
+    }
+
+    fn on_a_step(sim: &Sim, s: f64) -> bool {
+        sim.st
+            .sch
+            .stride_steps
+            .s
+            .iter()
+            .any(|t| (t - s).abs() < 1e-9)
+    }
+
+    #[test]
+    fn zen_mode_judges_nothing_and_keeps_the_groove_full() {
+        let file = stream();
+        let mut sim = sim_in(&file, true);
+        let top = crate::timing::tier_for(&sim.env.input.lib.hero, 0.0, 1.0);
+        assert!(top > 0.0);
+        // Presses all over the place, on and off the beat.
+        for k in 0..40u32 {
+            let s = 0.3 + 0.137 * f64::from(k);
+            let pressed = [InputKey::Right, InputKey::Up, InputKey::Space][k as usize % 3];
+            key(&mut sim, s, KeyEventKind::Press, pressed);
+            key(&mut sim, s + 0.05, KeyEventKind::Release, pressed);
+            assert_eq!(sim.st.groove, 1.0, "the groove at {s}");
+            assert_eq!(sim.st.tier, top, "the tier at {s}");
+        }
+        sim.advance_to(6.9);
+        assert_eq!(sim.st.groove, 1.0);
+        assert!(sim.st.memo.counted.is_empty(), "no press was counted");
+        assert!(
+            !sim.st.q.heap.iter().any(|e| matches!(e.ev, Ev::Settle(_))),
+            "no press settles"
+        );
+    }
+
+    #[test]
+    fn a_zen_press_moves_on_the_next_stride_step_and_a_tap_strides_once() {
+        let file = stream();
+        let mut sim = sim_in(&file, true);
+        // Off the beat (1.5 and 2.0 are beats): nothing moves at the press.
+        key(&mut sim, 1.62, KeyEventKind::Press, InputKey::Right);
+        sim.advance_to(1.63);
+        assert_eq!(stride_s0(&sim), None, "the hero waits for the beat");
+        key(&mut sim, 1.66, KeyEventKind::Release, InputKey::Right);
+        sim.advance_to(2.01);
+        let s0 = stride_s0(&sim).expect("the tap strides on the next step");
+        assert!(s0 > 1.62 && on_a_step(&sim, s0), "strode at {s0}");
+        // Released: no more strides.
+        sim.advance_to(3.6);
+        assert_eq!(stride_s0(&sim), Some(s0));
+    }
+
+    #[test]
+    fn a_held_key_in_zen_mode_strides_on_every_step() {
+        let file = stream();
+        let mut sim = sim_in(&file, true);
+        key(&mut sim, 1.62, KeyEventKind::Press, InputKey::Right);
+        let mut starts = Vec::new();
+        let mut s = 1.62;
+        while s < 4.0 {
+            s += 0.01;
+            sim.advance_to(s);
+            if let Some(s0) = stride_s0(&sim)
+                && starts.last() != Some(&s0)
+            {
+                starts.push(s0);
+            }
+        }
+        assert!(starts.len() >= 4, "strides at {starts:?}");
+        assert!(starts.iter().all(|&t| on_a_step(&sim, t)), "{starts:?}");
+    }
+
+    #[test]
+    fn zen_mode_judges_nothing_while_settling_either() {
+        let file = stream();
+        let mut sim = sim_with(&file, true, true);
+        for k in 0..30u32 {
+            let s = 0.3 + 0.171 * f64::from(k);
+            key(&mut sim, s, KeyEventKind::Press, InputKey::Left);
+            key(&mut sim, s + 0.05, KeyEventKind::Release, InputKey::Left);
+            assert_eq!(sim.st.groove, 1.0, "the groove at {s}");
+        }
+        sim.advance_to(6.9);
+        assert_eq!(sim.st.groove, 1.0);
+        assert!(sim.st.prov_memo.counted.is_empty() && sim.st.memo.counted.is_empty());
+        assert!(!sim.st.q.heap.iter().any(|e| matches!(e.ev, Ev::Settle(_))));
+    }
+
+    #[test]
+    fn a_zen_tap_bends_a_held_stride_into_a_diagonal() {
+        let file = stream();
+        let mut sim = sim_in(&file, true);
+        key(&mut sim, 1.2, KeyEventKind::Press, InputKey::Right);
+        sim.advance_to(1.51);
+        key(&mut sim, 1.62, KeyEventKind::Press, InputKey::Up);
+        key(&mut sim, 1.66, KeyEventKind::Release, InputKey::Up);
+        let s0 = stride_s0(&sim);
+        while stride_s0(&sim) == s0 && sim.st.s < 6.0 {
+            let s = sim.st.s + 0.01;
+            sim.advance_to(s);
+        }
+        let st = sim.st.step.as_ref().unwrap();
+        assert!(st.dx > 0.5 && st.dy < -0.5, "({}, {})", st.dx, st.dy);
+    }
+
+    #[test]
+    fn a_zen_stomp_waits_for_the_step_and_stamps_in_place() {
+        let file = stream();
+        let mut sim = sim_in(&file, true);
+        key(&mut sim, 1.2, KeyEventKind::Press, InputKey::Right);
+        sim.advance_to(1.62);
+        key(&mut sim, 1.62, KeyEventKind::Release, InputKey::Right);
+        key(&mut sim, 1.63, KeyEventKind::Press, InputKey::Space);
+        key(&mut sim, 1.66, KeyEventKind::Release, InputKey::Space);
+        key(&mut sim, 1.67, KeyEventKind::Press, InputKey::Down);
+        key(&mut sim, 1.69, KeyEventKind::Release, InputKey::Down);
+        let before = stride_s0(&sim);
+        assert!(sim.st.zen_stomp, "the stomp waits");
+        while (!sim.st.landed || stride_s0(&sim) == before) && sim.st.s < 6.0 {
+            let s = sim.st.s + 0.01;
+            sim.advance_to(s);
+        }
+        let st = sim.st.step.as_ref().unwrap();
+        let at = st.s0.unwrap();
+        assert!(on_a_step(&sim, at), "stomped at {at}");
+        assert!(st.rock.is_none() && st.len == Some(0.0), "stamped in place");
+        // The tap strides after the stomp's grid step.
+        while stride_s0(&sim) == Some(at) && sim.st.s < 6.0 {
+            let s = sim.st.s + 0.01;
+            sim.advance_to(s);
+        }
+        let st = sim.st.step.as_ref().unwrap();
+        assert!(st.dy > 0.9 && on_a_step(&sim, st.s0.unwrap()));
+    }
+
+    #[test]
+    fn a_zen_wait_survives_a_snapshot() {
+        let file = stream();
+        let mut a = sim_in(&file, true);
+        key(&mut a, 1.62, KeyEventKind::Press, InputKey::Right);
+        key(&mut a, 1.64, KeyEventKind::Press, InputKey::Space);
+        key(&mut a, 1.66, KeyEventKind::Release, InputKey::Right);
+        let snap = a.snapshot();
+        a.advance_to(4.0);
+        let mut b = sim_in(&file, true);
+        b.advance_to(0.5);
+        b.restore(&snap);
+        b.advance_to(4.0);
+        assert_eq!(format!("{:?}", a.st.step), format!("{:?}", b.st.step));
+        assert_eq!(a.st.zen_taps, b.st.zen_taps);
+    }
+
+    #[test]
+    fn without_zen_mode_a_press_moves_at_once() {
+        let file = stream();
+        let mut sim = sim(&file);
+        key(&mut sim, 1.62, KeyEventKind::Press, InputKey::Right);
+        sim.advance_to(1.63);
+        assert_eq!(stride_s0(&sim), Some(1.62));
     }
 }

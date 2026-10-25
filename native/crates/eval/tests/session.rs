@@ -47,6 +47,7 @@ fn engine() -> Engine {
         &IndexMap::new(),
         0.2,
         true,
+        false,
         f64::INFINITY,
     )
     .unwrap()

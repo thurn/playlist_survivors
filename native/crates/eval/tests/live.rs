@@ -50,6 +50,7 @@ fn the_engine_plays_a_growing_stream() {
         &IndexMap::new(),
         file.params.gate,
         file.log.hindsight.is_some(),
+        false,
         f64::INFINITY,
     )
     .unwrap();
@@ -136,7 +137,7 @@ fn run(
     keys: &Arrivals,
     feed: impl FnMut(&mut Engine, f64),
 ) -> (Vec<(f64, Record)>, Engine) {
-    run_with(frames, lead, keys, feed, false)
+    run_with(frames, lead, keys, feed, false, false)
 }
 
 fn run_with(
@@ -145,6 +146,7 @@ fn run_with(
     keys: &Arrivals,
     mut feed: impl FnMut(&mut Engine, f64),
     keep_keys: bool,
+    zen: bool,
 ) -> (Vec<(f64, Record)>, Engine) {
     let file = house();
     let mut e = Engine::new(
@@ -153,6 +155,7 @@ fn run_with(
         &IndexMap::new(),
         file.params.gate,
         file.log.hindsight.is_some(),
+        zen,
         f64::INFINITY,
     )
     .unwrap();
@@ -185,7 +188,7 @@ fn run_keeping(
     applied: &mut Vec<sim::player::KeyEvent>,
     feed: impl FnMut(&mut Engine, f64),
 ) -> (Vec<(f64, Record)>, Engine) {
-    let (log, mut e) = run_with(frames, lead, keys, feed, true);
+    let (log, mut e) = run_with(frames, lead, keys, feed, true, false);
     *applied = e.key_log.take().unwrap();
     (log, e)
 }
@@ -246,6 +249,40 @@ fn speculation_settles_as_a_run_fed_its_keys_in_time() {
         e.stats.rollbacks,
         e.stats.replayed_s
     );
+}
+
+/// Zen mode's waiting taps and stomps roll back as cleanly: late presses settle as presses fed in
+/// time.
+#[test]
+fn zen_speculation_settles_as_a_run_fed_its_keys_in_time() {
+    let file = house();
+    let end = 20.0;
+    let mut r = Rng::new(&[Part::Str("zen late")]);
+    let late = presses(&file, end, || r.range(0.0, SETTLE_S - 0.001));
+    let mut replay = Replay::new(file.log.clone());
+    let (ahead, e) = run_with(
+        &bursty(end, "zen frames"),
+        0.2,
+        &late,
+        |e, now| e.feed(|log| replay.feed_to(log, now)),
+        false,
+        true,
+    );
+    assert!(e.stats.rollbacks > 50, "{:?}", e.stats);
+    let in_time = presses(&file, end, || 0.0);
+    let even: Vec<f64> = (1..=(end * 60.0) as usize)
+        .map(|k| k as f64 / 60.0)
+        .collect();
+    let mut replay = Replay::new(file.log.clone());
+    let (plain, _) = run_with(
+        &even,
+        0.0,
+        &in_time,
+        |e, now| e.feed(|log| replay.feed_to(log, now)),
+        false,
+        true,
+    );
+    assert_same(&ahead, &plain);
 }
 
 /// Keys later than the settling time are applied at the settled time, and the run settles as a
@@ -355,6 +392,7 @@ fn a_restored_snapshot_carries_on_as_the_run_would() {
             &IndexMap::new(),
             file.params.gate,
             file.log.hindsight.is_some(),
+            false,
             f64::INFINITY,
         )
         .unwrap();

@@ -62,8 +62,8 @@ pub fn runs(meta: &Value) -> Vec<RecordedRun> {
         .unwrap_or_default()
 }
 
-/// The engine as the app builds it.
-pub fn engine() -> Result<Engine, String> {
+/// The engine as the app builds it, in zen mode or not.
+pub fn engine(zen: bool) -> Result<Engine, String> {
     let mut names: Vec<String> = std::fs::read_dir(root().join("content"))
         .map_err(|e| e.to_string())?
         .filter_map(Result::ok)
@@ -88,6 +88,7 @@ pub fn engine() -> Result<Engine, String> {
         &IndexMap::new(),
         GATE,
         true,
+        zen,
         f64::INFINITY,
     )
     .map_err(|e| format!("level: {e:?}"))
@@ -128,6 +129,11 @@ fn audio(dir: &Path) -> Result<Vec<f32>, String> {
         at += 8 + len + (len & 1);
     }
     Err("afconvert wrote an unexpected WAV".into())
+}
+
+/// Whether run `index` of a session ran in zen mode (`meta.json`'s run `zen`; not when absent).
+pub fn zen_of(meta: &Value, index: usize) -> bool {
+    meta["runs"][index]["zen"].as_bool().unwrap_or(false)
 }
 
 /// The listening mode a session ran in (`meta.json`'s `listening` and `m`; Direct when absent).
@@ -200,7 +206,7 @@ pub fn replay(dir: &Path) -> Result<bool, String> {
     }
     let mut ok = true;
     for run in &runs {
-        let mut e = engine()?;
+        let mut e = engine(zen_of(&meta, run.index))?;
         let got = replay_run(&mut e, &arrivals, &keys, run, RECENT_S);
         let same = got.hash == Some(run.hash);
         ok &= same;
@@ -246,7 +252,7 @@ pub fn replay_reanalysed(dir: &Path) -> Result<bool, String> {
         );
     }
     for run in &runs(&meta) {
-        let mut e = engine()?;
+        let mut e = engine(zen_of(&meta, run.index))?;
         // (Its hash can't be the live run's: compare outcomes.)
         let got = replay_run(&mut e, &arrivals, &keys, run, RECENT_S);
         println!(
@@ -282,5 +288,12 @@ mod tests {
         assert!(matches!(delayed, Listening::Delayed(d) if (d.m - 2.5).abs() < 1e-12));
         // (Sessions from before Delayed listening ran Direct.)
         assert_eq!(listening_of(&serde_json::json!({})), Listening::Direct);
+    }
+
+    #[test]
+    fn a_zen_run_replays_in_zen_mode() {
+        let meta = serde_json::json!({"runs": [{"s0": 0.0}, {"s0": 9.0, "zen": true}]});
+        assert!(!zen_of(&meta, 0));
+        assert!(zen_of(&meta, 1));
     }
 }

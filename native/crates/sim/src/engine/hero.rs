@@ -154,7 +154,16 @@ impl Sim {
         if let Some(prev) = &prev {
             interrupt(&rule, &mut self.st.strides, prev, w, hp.x, hp.y, one, 0.0);
         }
-        let dir = held_direction(&self.st.held).unwrap_or(Dir {
+        // (Zen mode: a tap released before its stride step still strides on it; a held key on its
+        // axis wins.)
+        let keys: Vec<Key> = self
+            .st
+            .zen_taps
+            .iter()
+            .chain(&self.st.held)
+            .copied()
+            .collect();
+        let dir = held_direction(&keys).unwrap_or(Dir {
             x: cos(self.st.facing_angle),
             y: sin(self.st.facing_angle),
         });
@@ -215,12 +224,14 @@ impl Sim {
             .step
             .clone()
             .filter(|sp| striding(&rule, Some(sp), w));
-        let rocking = moving.as_ref().is_some_and(|m| {
-            (m.held == Some(true) || !m.keys.is_empty())
-                && m.rock.is_none()
-                && s - m.press.map(|p| p.s).or(m.s0).unwrap_or(f64::NEG_INFINITY)
-                    <= rule.stomp_s + 1e-9
-        });
+        // (Zen mode's stomps land on stride steps, just after a stride starts: they stamp in place.)
+        let rocking = !self.env.input.zen
+            && moving.as_ref().is_some_and(|m| {
+                (m.held == Some(true) || !m.keys.is_empty())
+                    && m.rock.is_none()
+                    && s - m.press.map(|p| p.s).or(m.s0).unwrap_or(f64::NEG_INFINITY)
+                        <= rule.stomp_s + 1e-9
+            });
         let home = moving
             .as_ref()
             .map(|m| m.press.map_or((m.x0, m.y0), |p| (p.x, p.y)));
@@ -328,6 +339,10 @@ impl Sim {
     /// A step of the stride period: a held key strides, except over one a press started at this very
     /// moment; a stomp cancels the held strides of one grid step.
     pub(super) fn held_stride(&mut self) {
+        if self.env.input.zen {
+            self.zen_step();
+            return;
+        }
         if self.st.held.is_empty() || self.st.s <= self.stomp_until() + 1e-9 {
             return;
         }
@@ -338,6 +353,65 @@ impl Sim {
             return;
         }
         self.stride_off(None);
+    }
+
+    /// Zen mode, on a step of the stride period: a waiting stomp stamps, else the held (or tapped)
+    /// keys stride, unless a stomp has this grid step (taps then wait for the step after it).
+    fn zen_step(&mut self) {
+        if self.st.zen_stomp {
+            self.st.zen_stomp = false;
+            // (Its press was recorded when it came.)
+            self.stomp_here(&mut PlanInput::default());
+            return;
+        }
+        if (self.st.held.is_empty() && self.st.zen_taps.is_empty())
+            || self.st.s <= self.stomp_until() + 1e-9
+        {
+            return;
+        }
+        self.stride_off(None);
+        self.st.zen_taps.clear();
+    }
+
+    /// Is a stride step known after song time s (a beat to move on)? The last grid time's own step
+    /// is known, though its subdivisions wait for the next beat. (Its stride is queued only once
+    /// the next beat arrives: if none ever does, a press waiting for it never moves, as there is
+    /// no beat to move on.)
+    fn step_ahead(&self, s: f64) -> bool {
+        let steps = &self.st.sch.stride_steps;
+        steps.s.get(steps.tail()).is_some_and(|&t| t > s + 1e-9)
+    }
+
+    /// Zen mode: a press is never judged. It waits for the next stride step, or, with no beat to
+    /// move on, moves at once.
+    fn zen_press(&mut self, e: &KeyEvent) {
+        let s = self.st.s;
+        if self.in_stop(s) {
+            self.st.stop_end = s;
+            self.rec.hit_stop_cut(s);
+        }
+        let mut input = PlanInput {
+            s,
+            w: self.st.w,
+            kind: "press",
+            key: key_name(e.key),
+            steps: true,
+            unjudged: Some(true),
+            ..PlanInput::default()
+        };
+        self.st.n_inputs += 1;
+        self.hold(e.key);
+        let ahead = self.step_ahead(s);
+        match e.key.direction() {
+            None if ahead => self.st.zen_stomp = true,
+            None => self.stomp_here(&mut input),
+            Some(k) if ahead => {
+                self.st.zen_taps.retain(|x| *x != k);
+                self.st.zen_taps.push(k);
+            }
+            Some(k) => input.stride = Some(self.stride_off(Some(k))),
+        }
+        self.rec.input(input);
     }
 
     /// The budget left after a stride (`strideTrace`, for the press's trace) is not recorded.
@@ -405,6 +479,10 @@ impl Sim {
     }
 
     pub(super) fn press(&mut self, e: &KeyEvent) {
+        if self.env.input.zen {
+            self.zen_press(e);
+            return;
+        }
         let env = Rc::clone(&self.env);
         let hero = &env.input.lib.hero;
         let settling = env.input.settling;

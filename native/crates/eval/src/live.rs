@@ -907,19 +907,22 @@ pub struct Engine {
 
 impl Engine {
     /// The reactive level `level` over `lib`, for a stream of evidence gate `gate`, with hindsight
-    /// entries (`settling`) or not, of `file_duration` seconds (infinite live).
+    /// entries (`settling`) or not, in zen mode (`zen`: nothing judged) or not, of `file_duration`
+    /// seconds (infinite live).
     pub fn new(
         level: &SourceFile,
         lib: &ContentLibrary,
         hero_anims: &IndexMap<String, AnimInfo>,
         gate: f64,
         settling: bool,
+        zen: bool,
         file_duration: f64,
     ) -> Result<Engine, LevelError> {
         let song = reactive_song_map(file_duration);
         let level = load_level(level, lib, &song, None)?;
         let (seed, zones) = (level.seed, level.zones.clone());
-        let input = SimInput::new(level, lib, hero_anims, gate, settling);
+        let mut input = SimInput::new(level, lib, hero_anims, gate, settling);
+        input.zen = zen;
         let fresh = LiveView {
             health: 1.0,
             level: 1,

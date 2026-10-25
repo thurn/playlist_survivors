@@ -92,6 +92,7 @@ fn run(args: &[String]) -> Result<bool, String> {
         &IndexMap::new(),
         file.params.gate,
         file.log.hindsight.is_some(),
+        false,
         f64::INFINITY,
     )
     .map_err(|e| format!("{e:?}"))?;

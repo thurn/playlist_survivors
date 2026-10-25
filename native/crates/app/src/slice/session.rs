@@ -38,6 +38,9 @@ pub struct Run {
     /// The FNV-1a hash of its settled records (hex) and how many there were.
     pub settled_hash: Option<String>,
     pub settled_records: usize,
+    /// Whether it ran in zen mode (nothing judged).
+    #[serde(default)]
+    pub zen: bool,
 }
 
 /// `meta.json`.
@@ -160,10 +163,11 @@ impl Session {
         self.samples = self.samples.saturating_add(samples.len() as u32);
     }
 
-    /// A run started at session time `s0`; returns its index.
-    pub fn run_started(&mut self, s0: f64) -> usize {
+    /// A run started at session time `s0`, in zen mode or not; returns its index.
+    pub fn run_started(&mut self, s0: f64, zen: bool) -> usize {
         self.meta.runs.push(Run {
             s0,
+            zen,
             ..Run::default()
         });
         self.write_meta();

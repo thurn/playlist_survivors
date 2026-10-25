@@ -21,9 +21,10 @@
 //!     playlist-survivors --file <path> --headless --seconds 30 [--start-at S] [--switch-at S] [--press-beats] [--watch]  # no window, no Dock icon, muted:
 //!                                     # the whole live path on a timer, for checks (then exits)
 //!     playlist-survivors --input-offset-ms 30 --stomp-extra-ms 10  # calibration for this session
+//!     playlist-survivors --zen         # zen mode (Z between runs): nothing judged, held keys move on the beat
 //!     (F1 in the app: the debug menu; F2 plays the next bundled track, F3 listens to the Mac;
 //!     F8 saves the timing log)
-//!     playlist-survivors --still <png> [--still-track <id> --still-at <s>]  # 20 s of the house
+//!     playlist-survivors --still <png> [--still-track <id> --still-at <s>] [--zen]  # 20 s of the house
 //!                                     # track (or a track to a time) through the engine, offscreen
 //!     playlist-survivors --bench [--check]  # the frame's work (sim, evaluate, encode) over 60 s of it, offscreen
 
@@ -165,6 +166,8 @@ struct Options {
     switch_at: Option<f64>,
     /// Press on every committed beat, 20 ms late (a stand-in player, for checks).
     press_beats: bool,
+    /// Zen mode: nothing judged, every move on the beat (Z between runs).
+    zen: bool,
     /// Watch each run as soon as it ends (for checks).
     watch: bool,
     /// Delayed listening: the music heard `M` late, beats from hindsight; in System mode, the app
@@ -202,6 +205,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         start_at: None,
         switch_at: None,
         press_beats: false,
+        zen: false,
         watch: false,
         delayed: false,
         app: None,
@@ -224,6 +228,7 @@ fn options(args: &[String]) -> Result<Options, String> {
                 o.mute = true;
             }
             "--press-beats" => o.press_beats = true,
+            "--zen" => o.zen = true,
             "--watch" => o.watch = true,
             "--delayed" => o.delayed = true,
             "--app" => o.app = Some(it.next().ok_or("--app needs an app's name")?.clone()),
@@ -399,13 +404,15 @@ impl World {
         })
     }
 
-    fn engine(&self) -> Result<Engine, String> {
+    /// The engine for a run, in zen mode (nothing judged) or not.
+    fn engine(&self, zen: bool) -> Result<Engine, String> {
         Engine::new(
             &self.level,
             &self.lib,
             &indexmap::IndexMap::new(),
             GATE,
             true,
+            zen,
             f64::INFINITY,
         )
         .map_err(|e| format!("level: {e:?}"))
@@ -444,7 +451,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
         };
     }
     if let Some(path) = &opts.still {
-        return still(path, opts.still_track.as_deref(), opts.still_at);
+        return still(path, opts.still_track.as_deref(), opts.still_at, opts.zen);
     }
     if opts.bench {
         return bench(opts.check);
@@ -520,7 +527,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
         use std::io::Write;
         writeln!(stdin, "go").map_err(|e| format!("the tap child: {e}"))?;
     }
-    let engine = world.engine()?;
+    let engine = world.engine(opts.zen)?;
     let key_times = keys::KeyTimes::install();
     let mut app = App {
         key_times,
@@ -542,6 +549,8 @@ pub fn run(args: &[String]) -> Result<(), String> {
         watch: None,
         run_kills: 0,
         auto_watch: opts.watch,
+        zen: opts.zen,
+        run_zen: opts.zen,
         listening,
         tap_target,
         child,
@@ -961,7 +970,7 @@ fn bench(check: bool) -> Result<(), String> {
     let text = std::fs::read_to_string(&stream_path)
         .map_err(|e| format!("{}: {e}", stream_path.display()))?;
     let file = stream::StreamFile::parse(&text).map_err(|e| e.0)?;
-    let mut engine = world.engine()?;
+    let mut engine = world.engine(false)?;
     let mut replay = stream::Replay::new(file.log.clone());
     let beats: Vec<f64> = file.log.beats.iter().map(|b| b.t).collect();
     let (w, h) = (1920u32, 1080u32);
@@ -1033,6 +1042,7 @@ fn bench(check: bool) -> Result<(), String> {
             next_down: false,
             tier_flash: scene.tier_flash(s),
             delayed: 0.0,
+            zen: false,
         };
         let mut overlay = Vec::new();
         hud::draw(
@@ -1074,8 +1084,8 @@ fn bench(check: bool) -> Result<(), String> {
 }
 
 /// 20 s of the house track's committed stream through the engine (a stride on each beat), drawn
-/// offscreen to a PNG.
-fn still(path: &Path, track: Option<&str>, at: Option<f64>) -> Result<(), String> {
+/// offscreen to a PNG, in zen mode or not.
+fn still(path: &Path, track: Option<&str>, at: Option<f64>, zen: bool) -> Result<(), String> {
     let world = World::load()?;
     let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
     let stream_path = Path::new(env!("CARGO_MANIFEST_DIR")).join(format!(
@@ -1085,7 +1095,7 @@ fn still(path: &Path, track: Option<&str>, at: Option<f64>) -> Result<(), String
     let text = std::fs::read_to_string(&stream_path)
         .map_err(|e| format!("{}: {e}", stream_path.display()))?;
     let file = stream::StreamFile::parse(&text).map_err(|e| e.0)?;
-    let mut engine = world.engine()?;
+    let mut engine = world.engine(zen)?;
     let mut replay = stream::Replay::new(file.log.clone());
     let beats: Vec<f64> = file.log.beats.iter().map(|b| b.t).collect();
     let mut scene = Scene::default();
@@ -1182,6 +1192,7 @@ fn still(path: &Path, track: Option<&str>, at: Option<f64>) -> Result<(), String
         next_down: bar == 3,
         tier_flash: scene.tier_flash(end),
         delayed: 0.0,
+        zen,
     };
     let mut overlay = Vec::new();
     hud::draw(
@@ -1334,6 +1345,9 @@ struct App {
     /// The run's kills when it ended, and whether to watch each run as it ends (`--watch`).
     run_kills: usize,
     auto_watch: bool,
+    /// Zen mode for the next run (`--zen`, Z between runs), and whether the run (or the last) is in it.
+    zen: bool,
+    run_zen: bool,
     /// The listening mode asked for, and the app Delayed listening taps in System mode (without
     /// one, System mode listens Direct); the tap check's child; when to stall, for the check.
     listening: Listening,
@@ -1783,6 +1797,7 @@ impl App {
             next_down: bar >= 0.75,
             tier_flash: self.scene.tier_flash(now),
             delayed: delay_of(self.audio.listening),
+            zen: self.run_zen,
         };
         let mut overlay = Vec::new();
         if self.running || self.over.is_some() {
@@ -1806,6 +1821,7 @@ impl App {
                     .is_some_and(apps::AudioApp::browser),
                 others,
                 note: self.note.as_ref().map(|n| n.0.as_str()),
+                zen: self.zen,
             };
             scene::listening_card(
                 w,
@@ -2035,7 +2051,7 @@ impl App {
         let Some((_, _, seconds)) = self.over else {
             return;
         };
-        let Ok(mut engine) = self.world.engine() else {
+        let Ok(mut engine) = self.world.engine(self.run_zen) else {
             return;
         };
         engine.settle_s = self.settle_s();
@@ -2245,6 +2261,10 @@ impl App {
                     clicks,
                     taps: Vec::new(),
                 });
+                true
+            }
+            None if pressed && !self.running && code == KeyCode::KeyZ => {
+                self.zen = !self.zen;
                 true
             }
             None if pressed && !self.running && code == KeyCode::KeyL => {
@@ -2522,7 +2542,8 @@ impl App {
     /// the last moments go in first, rebased to its start.
     fn start(&mut self) {
         let now = now_s();
-        match self.world.engine() {
+        self.run_zen = self.zen;
+        match self.world.engine(self.zen) {
             Ok(mut engine) => {
                 engine.settle_s = self.settle_s();
                 self.engine = engine;
@@ -2557,7 +2578,8 @@ impl App {
         self.run_keys.clear();
         self.run_audio.clear();
         self.stop_watch();
-        self.run_index = self.session.as_mut().map_or(0, |s| s.run_started(s0));
+        let zen = self.zen;
+        self.run_index = self.session.as_mut().map_or(0, |s| s.run_started(s0, zen));
         self.running = true;
         self.listen.reset(false);
         eprintln!("slice: run started at song time {s0:.1}");

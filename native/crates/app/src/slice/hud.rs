@@ -79,6 +79,8 @@ pub struct HudState<'a> {
     pub tier_flash: f64,
     /// How late Delayed listening hears the music (s; 0 in Direct), tagged under health.
     pub delayed: f64,
+    /// Zen mode (nothing judged), tagged under health.
+    pub zen: bool,
 }
 
 /// A small heart, 7 x 6 font pixels.
@@ -153,6 +155,10 @@ pub fn draw(view: &LiveView, st: &HudState, w: f32, h: f32, out: &mut Vec<Sprite
             out,
         );
     }
+    if st.zen {
+        let y = if st.delayed > 0.0 { 46.0 } else { 36.0 };
+        font::text("ZEN", px(12.0), py(y), fs, Align::Left, rgb(0xc8f7c5), out);
+    }
     // Kills and the rated presses, top right.
     font::text(
         "KILLS",
@@ -172,10 +178,13 @@ pub fn draw(view: &LiveView, st: &HudState, w: f32, h: f32, out: &mut Vec<Sprite
         rgb(0xffffff),
         out,
     );
-    for (i, (name, color)) in [("PERFECT", PERFECT), ("GREAT", GREAT), ("GOOD", GOOD)]
-        .into_iter()
-        .enumerate()
-    {
+    // (Zen mode judges nothing: no rated presses, no press marks on the beat track.)
+    let rated: &[(&str, [f32; 4])] = if st.zen {
+        &[]
+    } else {
+        &[("PERFECT", PERFECT), ("GREAT", GREAT), ("GOOD", GOOD)]
+    };
+    for (i, &(name, color)) in rated.iter().enumerate() {
         let line = format!("{name} {}", view.ratings[i]);
         font::text(
             &line,
@@ -240,7 +249,7 @@ pub fn draw(view: &LiveView, st: &HudState, w: f32, h: f32, out: &mut Vec<Sprite
             ));
         }
     }
-    for p in st.presses {
+    for p in st.presses.iter().filter(|_| !st.zen) {
         let a = (1.0 - p.age / 0.6).clamp(0.0, 1.0) as f32;
         if a <= 0.0 {
             continue;

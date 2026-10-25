@@ -808,7 +808,8 @@ impl Scene {
 
 /// How the app is listening, for the listening screen: Delayed or Direct, how late Delayed
 /// hears the music (s), whether the music is a file, the app tapped (System mode, Delayed) and
-/// whether it is a browser, how many other apps are playing, and a passing note.
+/// whether it is a browser, how many other apps are playing, a passing note, and zen mode.
+#[allow(clippy::struct_excessive_bools)]
 pub struct ListeningMode<'a> {
     pub delayed: bool,
     pub m: f64,
@@ -817,6 +818,8 @@ pub struct ListeningMode<'a> {
     pub browser: bool,
     pub others: usize,
     pub note: Option<&'a str>,
+    /// Zen mode: nothing judged, every move on the beat.
+    pub zen: bool,
 }
 
 /// The listening screen, between runs: the title, the evidence of a beat against the gate (clear
@@ -930,8 +933,17 @@ pub fn listening_card(
         tint,
         out,
     );
+    let (line, tint) = if mode.zen {
+        (
+            "ZEN MODE: HOLD THE KEYS, EVERY MOVE ON THE BEAT   Z OFF",
+            [0.78, 0.97, 0.77, 1.0],
+        )
+    } else {
+        ("Z ZEN MODE: NOTHING JUDGED", [0.6, 0.6, 0.7, 1.0])
+    };
+    font::text(line, cx, top + 195.0 * u, px(2.0), Align::Centre, tint, out);
     let warning = [1.0, 0.75, 0.4, 1.0];
-    let mut y = top + 195.0 * u;
+    let mut y = top + 220.0 * u;
     if mode.delayed && mode.browser {
         let app = mode.app.unwrap_or("THE BROWSER").to_uppercase();
         let text = format!("{app}'S VIDEO WILL RUN {m} S AHEAD OF ITS SOUND");

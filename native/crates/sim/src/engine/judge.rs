@@ -256,6 +256,10 @@ impl Sim {
     /// The drain as of beat bi at song time b: a bar after the latest press that raised the groove,
     /// while presses are judged (stage 2 runs it 2 s late, on the settled groove's timeline).
     pub(super) fn drain(&mut self, bi: usize, b: f64) {
+        // (Zen mode: the groove stays full.)
+        if self.env.input.zen {
+            return;
+        }
         // (A beat without judging earns its credit instead.)
         if self.beatless_credit(b) {
             return;
