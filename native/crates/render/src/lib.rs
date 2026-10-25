@@ -10,4 +10,5 @@ pub mod atlas;
 pub mod capture;
 pub mod font;
 pub mod post;
+pub mod proc;
 pub mod sprites;

@@ -10,7 +10,8 @@ pub const MAX_PAGES: usize = 4;
 pub const SOLID: u32 = u32::MAX;
 
 /// One quad: where it goes (logical pixels, origin top left), what it shows, and its tint
-/// (multiplied, with alpha). `flash` mixes the texel toward the tint's colour (0 to 1).
+/// (multiplied, with alpha); turned `rot` radians about its centre, and drawn additively (light
+/// added to what is below) or over it.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Sprite {
     pub x: f32,
@@ -19,6 +20,8 @@ pub struct Sprite {
     pub h: f32,
     pub region: Region,
     pub tint: [f32; 4],
+    pub rot: f32,
+    pub additive: bool,
 }
 
 impl Sprite {
@@ -37,6 +40,8 @@ impl Sprite {
                 h: 0,
             },
             tint: color,
+            rot: 0.0,
+            additive: false,
         }
     }
 
@@ -49,6 +54,37 @@ impl Sprite {
             h: region.h as f32 * scale,
             region,
             tint: [1.0; 4],
+            rot: 0.0,
+            additive: false,
+        }
+    }
+
+    /// `region` drawn `w` x `h`, centred on (x, y).
+    pub fn centred(region: Region, x: f32, y: f32, w: f32, h: f32) -> Sprite {
+        Sprite {
+            x: x - w / 2.0,
+            y: y - h / 2.0,
+            w,
+            h,
+            region,
+            tint: [1.0; 4],
+            rot: 0.0,
+            additive: false,
+        }
+    }
+
+    /// The same sprite turned `rot` radians about its centre.
+    #[must_use]
+    pub fn rotated(self, rot: f32) -> Sprite {
+        Sprite { rot, ..self }
+    }
+
+    /// The same sprite drawn additively.
+    #[must_use]
+    pub fn additive(self) -> Sprite {
+        Sprite {
+            additive: true,
+            ..self
         }
     }
 
@@ -76,7 +112,9 @@ struct Instance {
     uv: [f32; 4],
     tint: [f32; 4],
     page: u32,
-    _pad: [u32; 3],
+    additive: u32,
+    rot: f32,
+    _pad: u32,
 }
 
 const SHADER: &str = r"
@@ -92,17 +130,23 @@ struct Out {
     @location(0) uv: vec2<f32>,
     @location(1) tint: vec4<f32>,
     @location(2) @interpolate(flat) page: u32,
+    @location(3) @interpolate(flat) additive: u32,
 };
 @vertex
 fn vs(@builtin(vertex_index) v: u32, @location(0) rect: vec4<f32>, @location(1) uv: vec4<f32>,
-      @location(2) tint: vec4<f32>, @location(3) page: u32) -> Out {
+      @location(2) tint: vec4<f32>, @location(3) page: u32, @location(4) additive: u32,
+      @location(5) rot: f32) -> Out {
     let corner = vec2<f32>(f32(v & 1u), f32((v >> 1u) & 1u));
-    let p = rect.xy + corner * rect.zw;
+    let local = (corner - 0.5) * rect.zw;
+    let c = cos(rot);
+    let s = sin(rot);
+    let p = rect.xy + 0.5 * rect.zw + vec2<f32>(c * local.x - s * local.y, s * local.x + c * local.y);
     var o: Out;
     o.pos = vec4<f32>(p.x / view.size.x * 2.0 - 1.0, 1.0 - p.y / view.size.y * 2.0, 0.0, 1.0);
     o.uv = uv.xy + corner * uv.zw;
     o.tint = tint;
     o.page = page;
+    o.additive = additive;
     return o;
 }
 @fragment
@@ -114,7 +158,8 @@ fn fs(i: Out) -> @location(0) vec4<f32> {
     else if i.page == 3u { t = textureSampleLevel(page3, samp, i.uv, 0.0); }
     let c = t * i.tint;
     if c.a < 0.004 { discard; }
-    return c;
+    // (Premultiplied: an additive sprite leaves what is below it, adding its light.)
+    return vec4<f32>(c.rgb * c.a, select(c.a, 0.0, i.additive == 1u));
 }
 ";
 
@@ -244,7 +289,8 @@ impl SpriteRenderer {
                     array_stride: size_of::<Instance>() as u64,
                     step_mode: wgpu::VertexStepMode::Instance,
                     attributes: &wgpu::vertex_attr_array![
-                        0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Uint32
+                        0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Uint32, 4 => Uint32,
+                        5 => Float32
                     ],
                 })],
             },
@@ -254,7 +300,7 @@ impl SpriteRenderer {
                 compilation_options: Default::default(),
                 targets: &[Some(wgpu::ColorTargetState {
                     format,
-                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                    blend: Some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING),
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
             }),
@@ -370,7 +416,9 @@ impl SpriteRenderer {
                 } else {
                     SOLID
                 },
-                _pad: [0; 3],
+                additive: u32::from(s.additive),
+                rot: s.rot,
+                _pad: 0,
             });
         }
         let pipeline = self.pipeline(device, format);

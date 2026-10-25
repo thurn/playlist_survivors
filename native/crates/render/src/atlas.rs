@@ -109,6 +109,8 @@ pub struct Atlases {
     pub effects: HashMap<String, Effect>,
     pub tiles: HashMap<String, Vec<Region>>,
     pub props: HashMap<String, Vec<Prop>>,
+    /// The procedural textures (`crate::proc`), on the last page.
+    pub proc: HashMap<String, Region>,
 }
 
 #[derive(Deserialize)]
@@ -318,12 +320,15 @@ impl Atlases {
                 .collect::<Result<Vec<_>, String>>()?;
             props.insert(name, list);
         }
+        let (proc_page, proc) = crate::proc::page(pages.len() as u32);
+        pages.push(proc_page);
         Ok(Atlases {
             pages,
             characters,
             effects: fx,
             tiles,
             props,
+            proc,
         })
     }
 
@@ -344,7 +349,8 @@ mod tests {
     #[test]
     fn the_baked_atlases_load() {
         let a = Atlases::load(&assets()).unwrap();
-        assert_eq!(a.pages.len(), 3);
+        // (The three baked atlases and the procedural textures.)
+        assert_eq!(a.pages.len(), 4);
         assert_eq!((a.pages[0].width, a.pages[0].height), (4096, 2560));
         let walk = a.animation("hero", "walk").unwrap();
         assert_eq!((walk.frame_w, walk.frame_h, walk.len()), (64, 64, 8));
