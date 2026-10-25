@@ -135,10 +135,8 @@ pub struct LiveView {
     pub moments: Vec<Moment>,
     /// Sounds caused since the mixer's scheduler last took them.
     pub sounds: Vec<Caused>,
-    /// The simulation's song time (the latest clock).
+    /// The song time shown (the latest record's).
     pub s: f64,
-    /// Recent hits (id, song time, source, weapon, where): fates name them.
-    hits: VecDeque<(f64, f64, HitSource, String, f64)>,
 }
 
 impl LiveView {
@@ -152,78 +150,222 @@ impl LiveView {
         std::mem::take(&mut self.sounds)
     }
 
-    fn sound(&mut self, cause: Cause) {
-        let known = self.s;
-        self.sounds.push(Caused { cause, known });
-    }
-
     /// The living enemies.
     pub fn alive(&self) -> impl Iterator<Item = (&usize, &Foe)> {
         self.foes.iter().filter(|(_, f)| f.death_w.is_none())
     }
 }
 
-/// The recorder that keeps a [`LiveView`] (shared with the drawer).
-pub struct LiveRecorder(pub Rc<RefCell<LiveView>>);
+impl LiveView {
+    /// Applies a record reported at song time `s`.
+    pub fn apply(&mut self, s: f64, rec: &Record) {
+        self.s = s;
+        match rec {
+            Record::Hero(p) => self.hero = Some(*p),
+            Record::Camera(x, y, zoom) => self.camera = (*x, *y, *zoom),
+            Record::Spawn { id, kind } => {
+                self.foes.insert(
+                    *id,
+                    Foe {
+                        kind: kind.clone(),
+                        x: f64::NAN,
+                        y: f64::NAN,
+                        prev: (f64::NAN, f64::NAN),
+                        samples: 0,
+                        death_w: None,
+                    },
+                );
+            }
+            Record::Sample { id, x, y } => {
+                if let Some(f) = self.foes.get_mut(id) {
+                    f.prev = if f.samples == 0 { (*x, *y) } else { (f.x, f.y) };
+                    f.x = *x;
+                    f.y = *y;
+                    f.samples += 1;
+                }
+            }
+            Record::Death { id, w, recycled } => self.death(*id, *w, *recycled),
+            Record::Moment(m) => {
+                if let Moment::Press { rating, .. } = m {
+                    match *rating {
+                        Some("perfect") => self.ratings[0] += 1,
+                        Some("great") => self.ratings[1] += 1,
+                        Some("good") => self.ratings[2] += 1,
+                        _ => {}
+                    }
+                }
+                self.moments.push(m.clone());
+            }
+            Record::Groove(v) => self.groove = *v,
+            Record::Tier(v) => self.tier = *v,
+            Record::Xp(v) => self.xp = *v,
+            Record::LevelUp => self.level += 1,
+            Record::Health(v) => self.health = *v,
+            Record::Sound(c) => self.sounds.push(c.clone()),
+        }
+    }
+
+    fn death(&mut self, id: usize, w: f64, recycled: bool) {
+        let Some(f) = self.foes.get_mut(&id) else {
+            return;
+        };
+        if recycled {
+            // (It leaves the field and comes back elsewhere as a new spawn.)
+            self.foes.remove(&id);
+            return;
+        }
+        f.death_w = Some(w);
+        let moment = Moment::Death {
+            kind: f.kind.clone(),
+            x: f.x,
+            y: f.y,
+        };
+        self.moments.push(moment);
+        self.kills += 1;
+        // Keep the dead only briefly (the drawer fades them).
+        self.foes
+            .retain(|_, f| !f.death_w.is_some_and(|d| d < w - 2.0));
+    }
+}
+
+/// What the simulation reported, as the view applies it.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Record {
+    Hero(HeroPose),
+    Camera(f64, f64, f64),
+    Spawn { id: usize, kind: String },
+    Sample { id: usize, x: f64, y: f64 },
+    Death { id: usize, w: f64, recycled: bool },
+    Moment(Moment),
+    Groove(f64),
+    Tier(f64),
+    Xp(f64),
+    LevelUp,
+    Health(f64),
+    Sound(Caused),
+}
+
+/// What later reports refer back to: the clock, recent hits (id, song time, source, weapon,
+/// where), the tier. A mark carries a copy, so a rollback restores it with the records.
+#[derive(Clone, Debug, Default, PartialEq)]
+struct Notes {
+    s: f64,
+    hits: VecDeque<(f64, f64, HitSource, String, f64)>,
+    tier: f64,
+    hero_x: f64,
+}
+
+/// The simulation's records in the order reported, each with the song time of the clock then.
+/// Records the view has applied and no rollback can reach are forgotten.
+#[derive(Debug, Default)]
+pub struct Journal {
+    records: VecDeque<(f64, Record)>,
+    /// The absolute index of the first record kept.
+    base: usize,
+    notes: Notes,
+}
+
+/// A point in the journal to rewind to.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Mark {
+    len: usize,
+    notes: Notes,
+}
+
+impl Journal {
+    /// Where the journal is now.
+    pub fn mark(&self) -> Mark {
+        Mark {
+            len: self.end(),
+            notes: self.notes.clone(),
+        }
+    }
+
+    /// Drops the records after `m` and restores the notes then.
+    pub fn rewind(&mut self, m: &Mark) {
+        assert!(m.len >= self.base, "rewound past a forgotten record");
+        self.records.truncate(m.len - self.base);
+        self.notes = m.notes.clone();
+    }
+
+    /// The absolute index after the last record.
+    pub fn end(&self) -> usize {
+        self.base + self.records.len()
+    }
+
+    /// The record at absolute index `k`, if kept.
+    pub fn get(&self, k: usize) -> Option<&(f64, Record)> {
+        self.records.get(k.checked_sub(self.base)?)
+    }
+
+    /// Forgets the records before absolute index `k`.
+    pub fn forget(&mut self, k: usize) {
+        let n = k.saturating_sub(self.base).min(self.records.len());
+        self.records.drain(..n);
+        self.base += n;
+    }
+
+    fn push(&mut self, r: Record) {
+        self.records.push_back((self.notes.s, r));
+    }
+
+    fn sound(&mut self, cause: Cause) {
+        let known = self.notes.s;
+        self.push(Record::Sound(Caused { cause, known }));
+    }
+}
+
+/// The recorder that writes the [`Journal`].
+pub struct LiveRecorder(pub Rc<RefCell<Journal>>);
 
 impl Recorder for LiveRecorder {
     fn hero(&mut self, x: f64, y: f64, z: f64, facing: f64, anim: f64, frame: f64) {
         let anim = HERO_ANIMS.get(anim as usize).copied().unwrap_or("idle");
-        self.0.borrow_mut().hero = Some(HeroPose {
+        let mut j = self.0.borrow_mut();
+        j.notes.hero_x = x;
+        j.push(Record::Hero(HeroPose {
             x,
             y,
             z,
             facing: (facing as usize).min(3),
             anim,
             frame: frame.max(0.0) as usize,
-        });
+        }));
     }
 
     fn camera(&mut self, x: f64, y: f64, zoom: f64) {
-        self.0.borrow_mut().camera = (x, y, zoom);
+        self.0.borrow_mut().push(Record::Camera(x, y, zoom));
     }
 
     fn spawn(&mut self, rec: EnemyRecord) {
-        self.0.borrow_mut().foes.insert(
-            rec.id as usize,
-            Foe {
-                kind: rec.kind,
-                x: f64::NAN,
-                y: f64::NAN,
-                prev: (f64::NAN, f64::NAN),
-                samples: 0,
-                death_w: None,
-            },
-        );
+        self.0.borrow_mut().push(Record::Spawn {
+            id: rec.id as usize,
+            kind: rec.kind,
+        });
     }
 
     fn sample(&mut self, id: usize, x: f64, y: f64) {
-        if let Some(f) = self.0.borrow_mut().foes.get_mut(&id) {
-            f.prev = if f.samples == 0 { (x, y) } else { (f.x, f.y) };
-            f.x = x;
-            f.y = y;
-            f.samples += 1;
-        }
+        self.0.borrow_mut().push(Record::Sample { id, x, y });
     }
 
     fn fate(&mut self, _id: usize, fate: Fate) {
-        let mut v = self.0.borrow_mut();
-        v.moments.push(Moment::Hit {
+        let mut j = self.0.borrow_mut();
+        j.push(Record::Moment(Moment::Hit {
             x: fate.x,
             y: fate.y,
             lethal: fate.lethal,
-        });
-        let Some(k) = v.hits.iter().position(|h| h.0 == fate.hit) else {
+        }));
+        let Some(k) = j.notes.hits.iter().position(|h| h.0 == fate.hit) else {
             return;
         };
-        let (_, s, source, what, _) = v.hits[k].clone();
+        let (_, s, source, what, _) = j.notes.hits[k].clone();
         if fate.lethal {
-            v.sound(Cause::Kill { s, x: fate.x });
+            j.sound(Cause::Kill { s, x: fate.x });
         }
         // (A weapon sounds on the first enemy it catches; the hit is forgotten after.)
         if source == HitSource::Weapon {
-            v.hits.remove(k);
-            v.sound(Cause::Weapon {
+            j.notes.hits.remove(k);
+            j.sound(Cause::Weapon {
                 s,
                 x: fate.x,
                 what,
@@ -233,54 +375,28 @@ impl Recorder for LiveRecorder {
     }
 
     fn death(&mut self, id: usize, w: f64, recycled: bool) {
-        let mut v = self.0.borrow_mut();
-        let Some(f) = v.foes.get_mut(&id) else {
-            return;
-        };
-        if recycled {
-            // (It leaves the field and comes back elsewhere as a new spawn.)
-            v.foes.remove(&id);
-            return;
-        }
-        f.death_w = Some(w);
-        let moment = Moment::Death {
-            kind: f.kind.clone(),
-            x: f.x,
-            y: f.y,
-        };
-        v.moments.push(moment);
-        v.kills += 1;
-        // Keep the dead only briefly (the drawer fades them).
-        let dead: Vec<usize> = v
-            .foes
-            .iter()
-            .filter(|(_, f)| f.death_w.is_some_and(|d| d < w - 2.0))
-            .map(|(&i, _)| i)
-            .collect();
-        for i in dead {
-            v.foes.remove(&i);
-        }
+        self.0.borrow_mut().push(Record::Death { id, w, recycled });
     }
 
     fn hit(&mut self, h: Hit) {
-        let mut v = self.0.borrow_mut();
+        let mut j = self.0.borrow_mut();
         let x = match h.shape {
             Shape::Arc { x, .. } | Shape::Circle { x, .. } | Shape::Ring { x, .. } => x,
             Shape::Capsule { x1, .. } => x1,
             #[allow(unreachable_patterns)]
-            _ => v.hero.map_or(0.0, |p| p.x),
+            _ => j.notes.hero_x,
         };
         if h.source == HitSource::Weapon {
-            v.sound(Cause::Weapon {
+            j.sound(Cause::Weapon {
                 s: h.s,
                 x,
                 what: h.what.clone(),
                 caught: false,
             });
         }
-        v.hits.push_back((h.id, h.s, h.source, h.what, x));
-        if v.hits.len() > 64 {
-            v.hits.pop_front();
+        j.notes.hits.push_back((h.id, h.s, h.source, h.what, x));
+        if j.notes.hits.len() > 64 {
+            j.notes.hits.pop_front();
         }
     }
 
@@ -291,79 +407,74 @@ impl Recorder for LiveRecorder {
     }
 
     fn clock(&mut self, s: f64, _w: f64, _between: bool) {
-        self.0.borrow_mut().s = s;
+        self.0.borrow_mut().notes.s = s;
     }
 
     fn swing(&mut self, sw: PlanSwing) {
-        self.0.borrow_mut().sound(Cause::Swing {
+        let mut j = self.0.borrow_mut();
+        j.sound(Cause::Swing {
             s: sw.s,
             x: sw.x,
             kind: sw.kind,
         });
-        self.0.borrow_mut().moments.push(Moment::Swing {
+        j.push(Record::Moment(Moment::Swing {
             x: sw.x,
             y: sw.y,
             dir: sw.dir,
             kind: sw.kind,
-        });
+        }));
     }
 
     fn input(&mut self, i: PlanInput) {
         if i.kind == "press" {
-            let mut v = self.0.borrow_mut();
-            match i.rating {
-                Some("perfect") => v.ratings[0] += 1,
-                Some("great") => v.ratings[1] += 1,
-                Some("good") => v.ratings[2] += 1,
-                _ => {}
-            }
-            v.moments.push(Moment::Press {
+            self.0.borrow_mut().push(Record::Moment(Moment::Press {
                 rating: i.rating,
                 delta: i.delta.unwrap_or(0.0),
                 unjudged: i.unjudged == Some(true),
                 stomp: i.stomp == Some(true) || i.key == "space",
-            });
+            }));
         }
     }
 
     fn groove(&mut self, _s: f64, v: f64) {
-        self.0.borrow_mut().groove = v;
+        self.0.borrow_mut().push(Record::Groove(v));
     }
 
     fn tier(&mut self, _s: f64, _w: f64, tier: f64, sound_s: f64) {
-        let mut v = self.0.borrow_mut();
-        let up = tier > v.tier;
-        if tier != v.tier {
-            v.sound(Cause::Tier { s: sound_s, up });
+        let mut j = self.0.borrow_mut();
+        if tier != j.notes.tier {
+            let up = tier > j.notes.tier;
+            j.sound(Cause::Tier { s: sound_s, up });
         }
-        v.tier = tier;
+        j.notes.tier = tier;
+        j.push(Record::Tier(tier));
     }
 
     fn xp(&mut self, _s: f64, fill: f64) {
-        self.0.borrow_mut().xp = fill;
+        self.0.borrow_mut().push(Record::Xp(fill));
     }
 
     fn upgrade(&mut self, u: sim::upgrades::UpgradeRecord) {
-        let mut v = self.0.borrow_mut();
-        v.level += 1;
-        v.sound(Cause::LevelUp { s: u.s });
+        let mut j = self.0.borrow_mut();
+        j.push(Record::LevelUp);
+        j.sound(Cause::LevelUp { s: u.s });
     }
 
     fn health(&mut self, _s: f64, frac: f64) {
-        self.0.borrow_mut().health = frac;
+        self.0.borrow_mut().push(Record::Health(frac));
     }
 
     fn settle(&mut self, r: SettleRecord) {
-        self.0.borrow_mut().moments.push(Moment::Settled {
+        self.0.borrow_mut().push(Record::Moment(Moment::Settled {
             provisional: r.provisional,
             settled: r.settled,
-        });
+        }));
     }
 
     fn bite(&mut self, b: BiteRecord) {
-        let mut v = self.0.borrow_mut();
-        v.moments.push(Moment::Bite { damage: b.damage });
-        v.sound(Cause::Hurt { s: b.s });
+        let mut j = self.0.borrow_mut();
+        j.push(Record::Moment(Moment::Bite { damage: b.damage }));
+        j.sound(Cause::Hurt { s: b.s });
     }
 }
 
@@ -371,6 +482,9 @@ impl Recorder for LiveRecorder {
 pub struct Engine {
     pub sim: Sim,
     pub view: Rc<RefCell<LiveView>>,
+    /// What the simulation reported, and how much of it the view has applied (an absolute index).
+    pub journal: Rc<RefCell<Journal>>,
+    shown: usize,
     /// The level's seed and zones (the open field's ground).
     pub seed: f64,
     pub zones: Vec<String>,
@@ -397,6 +511,7 @@ impl Engine {
             camera: (0.0, 0.0, 1.0),
             ..LiveView::default()
         }));
+        let journal = Rc::new(RefCell::new(Journal::default()));
         let sim = Sim::new(
             input,
             Rc::new(StreamLog {
@@ -408,12 +523,14 @@ impl Engine {
                 forecasts: Some(Vec::new()),
                 ..StreamLog::default()
             }),
-            Box::new(LiveRecorder(Rc::clone(&view))),
+            Box::new(LiveRecorder(Rc::clone(&journal))),
             None,
         );
         Ok(Engine {
             sim,
             view,
+            journal,
+            shown: 0,
             seed,
             zones,
         })
@@ -439,10 +556,26 @@ impl Engine {
         });
     }
 
-    /// Runs the rules to song time `s`.
+    /// Runs the rules to song time `s` and shows what they reported up to it.
     pub fn advance_to(&mut self, s: f64) {
         if s > self.sim.s() {
             self.sim.advance_to(s);
+        }
+        self.show(s);
+        let shown = self.shown;
+        self.journal.borrow_mut().forget(shown);
+    }
+
+    /// Applies the records reported up to song time `now` to the view.
+    pub fn show(&mut self, now: f64) {
+        let j = self.journal.borrow();
+        let mut v = self.view.borrow_mut();
+        while let Some((s, rec)) = j.get(self.shown) {
+            if *s > now + 1e-9 {
+                break;
+            }
+            v.apply(*s, rec);
+            self.shown += 1;
         }
     }
 
