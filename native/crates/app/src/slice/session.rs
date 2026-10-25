@@ -47,10 +47,30 @@ pub struct Meta {
     pub version: String,
     pub started_unix: u64,
     pub file: Option<String>,
+    /// Direct or Delayed listening (`direct`, `delayed`), how late Delayed hears the music (s),
+    /// and the app it taps (System mode).
+    #[serde(default = "direct")]
+    pub listening: String,
+    #[serde(default)]
+    pub m: Option<f64>,
+    #[serde(default)]
+    pub app: Option<String>,
     pub device: String,
     pub l_out_ms: f64,
     pub calibration: Calibration,
     pub runs: Vec<Run>,
+}
+
+fn direct() -> String {
+    "direct".to_string()
+}
+
+/// A listening mode's name in `meta.json`.
+pub fn listening_name(l: analysis::delayed::Listening) -> &'static str {
+    match l {
+        analysis::delayed::Listening::Direct => "direct",
+        analysis::delayed::Listening::Delayed(_) => "delayed",
+    }
 }
 
 /// `keys.jsonl`: a key as applied, in run time.

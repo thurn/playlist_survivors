@@ -10,6 +10,7 @@
 //!     playlist-survivors               # System mode: whatever the Mac is playing
 //!     playlist-survivors --file <path> # plays the file and listens to it
 //!     playlist-survivors --click       # also clicks on each committed beat
+//!     playlist-survivors --file <path> --delayed  # Delayed listening: heard 3 s late, beats from hindsight
 //!     playlist-survivors --file <path> --volume 0.3  # the file quieter (0: silent, still heard)
 //!     playlist-survivors --file <path> --mute  # everything runs, the device gets silence
 //!     playlist-survivors --file <path> --headless --seconds 30 [--start-at S] [--switch-at S] [--press-beats] [--watch]  # no window, no Dock icon, muted:
@@ -61,6 +62,7 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc;
 
 use analysis::analyzer::Entry;
+use analysis::delayed::{DelayedParams, Listening};
 use eval::live::{Engine, Moment};
 use render::atlas::Atlases;
 use render::post::Frame;
@@ -156,6 +158,8 @@ struct Options {
     press_beats: bool,
     /// Watch each run as soon as it ends (for checks).
     watch: bool,
+    /// Delayed listening: the music heard `M` late, beats from hindsight (File source for now).
+    delayed: bool,
     /// Calibration offsets for this session (ms), over the saved ones.
     input_offset_ms: Option<f64>,
     stomp_extra_ms: Option<f64>,
@@ -178,6 +182,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         switch_at: None,
         press_beats: false,
         watch: false,
+        delayed: false,
         input_offset_ms: None,
         stomp_extra_ms: None,
     };
@@ -193,6 +198,7 @@ fn options(args: &[String]) -> Result<Options, String> {
             }
             "--press-beats" => o.press_beats = true,
             "--watch" => o.watch = true,
+            "--delayed" => o.delayed = true,
             "--switch-at" => {
                 o.switch_at = Some(
                     it.next()
@@ -398,8 +404,14 @@ pub fn run(args: &[String]) -> Result<(), String> {
         &coreaudio::device(coreaudio::default_output()),
         overrides,
     );
+    let listening = if opts.delayed {
+        Listening::Delayed(DelayedParams::chosen())
+    } else {
+        Listening::Direct
+    };
     let audio = Audio::start(
         opts.file.as_deref(),
+        listening,
         opts.volume,
         opts.mute,
         calibration.latency_correction_s(),
@@ -428,6 +440,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
         watch: None,
         run_kills: 0,
         auto_watch: opts.watch,
+        listening,
         overrides,
         gfx: None,
         sounds,
@@ -528,6 +541,14 @@ fn calibration_for(
     c
 }
 
+/// How late Delayed listening hears the music (s; 0 in Direct).
+fn delay_of(listening: Listening) -> f64 {
+    match listening {
+        Listening::Direct => 0.0,
+        Listening::Delayed(d) => d.m,
+    }
+}
+
 /// Whether a device is Bluetooth (its latency is long and varies: sync is best-effort).
 fn bluetooth(d: &coreaudio::Device) -> bool {
     d.transport.starts_with("blue") || d.transport.starts_with("blea")
@@ -547,13 +568,17 @@ struct Audio {
     heard_offset: f64,
     /// The file played, in File mode.
     file: Option<PathBuf>,
+    /// Direct or Delayed listening, as it runs.
+    listening: Listening,
 }
 
 impl Audio {
     /// The output and the analysis thread: on `file` played through the output (File mode), or
-    /// on the tap of everything else the Mac plays (System mode).
+    /// on the tap of everything else the Mac plays (System mode); in `listening` (Delayed: the
+    /// file is heard `M` after the analyzer reads it).
     fn start(
         file: Option<&Path>,
+        listening: Listening,
         volume: f32,
         mute: bool,
         correction: f64,
@@ -564,7 +589,16 @@ impl Audio {
             Some(p) => Some(Arc::<[f32]>::from(live::decode(p, Output::device_rate())?)),
             None => None,
         };
-        let mut out = Output::start(music.clone(), volume, bank.clone(), mute)?;
+        // (Delayed listening on the system's audio needs the app tap and its delay line, which
+        // aren't in yet: System mode listens Direct.)
+        let listening = if music.is_none() && listening != Listening::Direct {
+            eprintln!("slice: Delayed listening needs the File source for now; listening Direct");
+            Listening::Direct
+        } else {
+            listening
+        };
+        let m = delay_of(listening);
+        let mut out = Output::start(music.clone(), volume, m, bank.clone(), mute)?;
         // (The device's reported latency, corrected by the player's calibration for it.)
         let l_out = Output::reported_latency_s() + correction;
         #[allow(clippy::single_match_else)]
@@ -575,7 +609,7 @@ impl Audio {
                     metas: out.music_meta.take().ok_or("no music timing")?,
                     rate: out.rate,
                 },
-                l_out,
+                l_out + m,
                 "file",
             ),
             None => {
@@ -588,8 +622,13 @@ impl Audio {
             }
         };
         eprintln!(
-            "slice: {mode} mode{}, output {} Hz, L_out {:.1} ms, heard {:.1} ms after capture",
+            "slice: {mode} mode{}{}, output {} Hz, L_out {:.1} ms, heard {:.1} ms after capture",
             file.map_or(String::new(), |p| format!(" ({})", p.display())),
+            if m > 0.0 {
+                format!(", Delayed listening (M = {m} s)")
+            } else {
+                String::new()
+            },
             out.rate,
             l_out * 1e3,
             heard_after * 1e3
@@ -598,7 +637,14 @@ impl Audio {
         let (tx, rx) = mpsc::channel();
         let heard_offset = heard_after - l_out;
         let heard_after = Arc::new(AtomicU64::new(heard_after.to_bits()));
-        let analyzer = live::spawn(source, Arc::clone(&heard_after), tx, proxy, stop.clone())?;
+        let analyzer = live::spawn(
+            source,
+            listening,
+            Arc::clone(&heard_after),
+            tx,
+            proxy,
+            stop.clone(),
+        )?;
         Ok(Audio {
             out,
             rx,
@@ -608,6 +654,7 @@ impl Audio {
             heard_after,
             heard_offset,
             file: file.map(Path::to_path_buf),
+            listening,
         })
     }
 
@@ -1034,6 +1081,8 @@ struct App {
     /// The run's kills when it ended, and whether to watch each run as it ends (`--watch`).
     run_kills: usize,
     auto_watch: bool,
+    /// The listening mode asked for (System mode listens Direct until the app tap is in).
+    listening: Listening,
     /// A calibration screen showing, if any.
     screen: Option<Screen>,
     device_uid: String,
@@ -1637,7 +1686,9 @@ impl App {
         self.timing = self.session.as_ref().and_then(|s| Timing::open(s.dir()));
         let name = coreaudio::device(self.device).name;
         let heard_after = f64::from_bits(self.audio.heard_after.load(Ordering::Relaxed));
-        self.log(serde_json::json!({"k": "dev", "name": name, "lOut": self.audio.l_out * 1e3, "heardAfter": heard_after * 1e3}));
+        let listening = session::listening_name(self.audio.listening);
+        let m = delay_of(self.audio.listening);
+        self.log(serde_json::json!({"k": "dev", "name": name, "lOut": self.audio.l_out * 1e3, "heardAfter": heard_after * 1e3, "listening": listening, "m": m}));
     }
 
     /// A timing event.
@@ -1672,6 +1723,9 @@ impl App {
             version: env!("CARGO_PKG_VERSION").to_string(),
             started_unix: session::unix_now(),
             file: self.audio.file.as_ref().map(|p| p.display().to_string()),
+            listening: session::listening_name(self.audio.listening).to_string(),
+            m: (self.audio.listening != Listening::Direct).then(|| delay_of(self.audio.listening)),
+            app: None,
             device: coreaudio::device(self.device).name,
             l_out_ms: self.audio.l_out * 1e3,
             calibration: self.calibration,
@@ -2006,6 +2060,7 @@ impl App {
         let start = |file: Option<&Path>| {
             Audio::start(
                 file,
+                self.listening,
                 self.volume,
                 self.mute,
                 self.calibration.latency_correction_s(),

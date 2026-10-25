@@ -10,6 +10,7 @@ use std::sync::mpsc;
 use std::time::Duration;
 
 use analysis::analyzer::{Analyzer, Entry, Params};
+use analysis::delayed::Listening;
 use analysis::hindsight::HindsightParams;
 use analysis::tensors::Tensors;
 use audio::follow::Follower;
@@ -142,6 +143,7 @@ fn host_of(metas: &VecDeque<Meta>, rate: f64, i: f64) -> Option<f64> {
 /// is heard (the tap's offset from the output, or the output latency for a played file).
 pub fn spawn(
     mut source: Source,
+    listening: Listening,
     heard_after: Arc<AtomicU64>,
     tx: mpsc::Sender<Msg>,
     proxy: EventLoopProxy<()>,
@@ -150,6 +152,7 @@ pub fn spawn(
     let models = Tensors::load(&models_path()).map_err(|e| format!("models: {e}"))?;
     let params = Params {
         hindsight: HindsightParams::live(),
+        listening,
         ..Params::default()
     };
     let mut an = Analyzer::with_hindsight_worker(&models, params).map_err(|e| e.to_string())?;

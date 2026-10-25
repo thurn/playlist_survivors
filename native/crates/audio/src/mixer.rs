@@ -161,6 +161,9 @@ pub struct Mixer {
     music: Option<Arc<[f32]>>,
     music_gain: f32,
     music_pos: u64,
+    /// How far the heard file trails `music_pos`, the position the analyzer reads (frames:
+    /// Delayed listening's `M`).
+    music_delay: u64,
     /// A replay's music, when it is due (host s), and whether it has started.
     replay: Option<(Arc<[f32]>, f64, bool)>,
     /// Frames rendered so far.
@@ -198,6 +201,7 @@ impl Mixer {
             music,
             music_gain,
             music_pos: 0,
+            music_delay: 0,
             replay: None,
             clock: 0,
             duck_start: 0,
@@ -213,6 +217,16 @@ impl Mixer {
             k_comp_release: coeff(COMP_RELEASE_S, rate),
             k_limit_attack: coeff(LIMIT_ATTACK_S, rate),
             k_limit_release: coeff(LIMIT_RELEASE_S, rate),
+        }
+    }
+
+    /// The same mixer with the heard file `frames` behind the position the analyzer reads
+    /// (Delayed listening): silence first, then the file `frames` late.
+    #[must_use]
+    pub fn with_music_delay(self, frames: u64) -> Mixer {
+        Mixer {
+            music_delay: frames,
+            ..self
         }
     }
 
@@ -413,14 +427,18 @@ impl Mixer {
             let g = comp * self.follow;
             l *= g;
             r *= g;
-            // The played file under its duck.
+            // The played file under its duck: the analyzer reads it at `music_pos`, the player
+            // hears it `music_delay` later.
             if let Some(music) = &self.music {
-                let s = music
-                    .get((self.music_pos + i as u64) as usize)
+                let read = self.music_pos + i as u64;
+                let s = music.get(read as usize).copied().unwrap_or(0.0);
+                peak = peak.max(s.abs());
+                let heard = read
+                    .checked_sub(self.music_delay)
+                    .and_then(|k| music.get(k as usize))
                     .copied()
                     .unwrap_or(0.0);
-                peak = peak.max(s.abs());
-                let m = s * self.music_gain * self.duck_gain(self.clock + i as u64);
+                let m = heard * self.music_gain * self.duck_gain(self.clock + i as u64);
                 l += m;
                 r += m;
             }
@@ -484,6 +502,18 @@ mod tests {
     }
 
     fn quiet(_: Report) {}
+
+    #[test]
+    fn a_delayed_file_is_heard_late_and_read_on_time() {
+        let mut music = vec![0.0f32; 1024];
+        music[10] = 1.0;
+        let mut m = Mixer::new(RATE, impulse(), Some(music.into()), 1.0).with_music_delay(300);
+        let mut out = vec![0.0; 1024];
+        // (The analyzer's peak is of the file as read, the output the file as heard.)
+        let peak = m.render(1.0, &mut out, &mut quiet);
+        assert!((peak - 1.0).abs() < 1e-6);
+        assert_eq!(first_sound(&out), Some(310));
+    }
 
     #[test]
     fn a_replay_plays_its_music_from_its_time_and_stops() {

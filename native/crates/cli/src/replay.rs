@@ -130,8 +130,21 @@ fn audio(dir: &Path) -> Result<Vec<f32>, String> {
     Err("afconvert wrote an unexpected WAV".into())
 }
 
-/// The session's audio through the current analyzer, each entry arriving as it is known.
-fn reanalyse(dir: &Path) -> Result<Vec<Arrival>, String> {
+/// The listening mode a session ran in (`meta.json`'s `listening` and `m`; Direct when absent).
+pub fn listening_of(meta: &Value) -> analysis::delayed::Listening {
+    use analysis::delayed::{DelayedParams, Listening};
+    match meta["listening"].as_str() {
+        Some("delayed") => Listening::Delayed(DelayedParams {
+            m: meta["m"].as_f64().unwrap_or(DelayedParams::chosen().m),
+            ..DelayedParams::chosen()
+        }),
+        _ => Listening::Direct,
+    }
+}
+
+/// The session's audio through the current analyzer, in the session's listening mode, each
+/// entry arriving as it is known.
+fn reanalyse(dir: &Path, meta: &Value) -> Result<Vec<Arrival>, String> {
     use analysis::analyzer::{Analyzer, Params};
     use analysis::hindsight::HindsightParams;
     let y = audio(dir)?;
@@ -139,6 +152,7 @@ fn reanalyse(dir: &Path) -> Result<Vec<Arrival>, String> {
         .map_err(|e| e.to_string())?;
     let params = Params {
         hindsight: HindsightParams::live(),
+        listening: listening_of(meta),
         ..Params::default()
     };
     let mut an = Analyzer::with_hindsight_worker(&models, params).map_err(|e| e.to_string())?;
@@ -212,7 +226,7 @@ pub fn replay_reanalysed(dir: &Path) -> Result<bool, String> {
     )
     .map_err(|e| e.to_string())?;
     let recorded: Vec<Arrival> = lines(&dir.join("stream.jsonl"))?;
-    let arrivals = reanalyse(dir)?;
+    let arrivals = reanalyse(dir, &meta)?;
     let keys: Vec<AppliedKey> = lines(&dir.join("keys.jsonl"))?;
     let count = |a: &[Arrival], group: &str| {
         a.iter()
@@ -254,5 +268,19 @@ fn run(args: &[String]) -> Result<bool, String> {
         replay_reanalysed(Path::new(dir))
     } else {
         replay(Path::new(dir))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use analysis::delayed::Listening;
+
+    #[test]
+    fn a_session_replays_in_the_mode_it_ran_in() {
+        let delayed = listening_of(&serde_json::json!({"listening": "delayed", "m": 2.5}));
+        assert!(matches!(delayed, Listening::Delayed(d) if (d.m - 2.5).abs() < 1e-12));
+        // (Sessions from before Delayed listening ran Direct.)
+        assert_eq!(listening_of(&serde_json::json!({})), Listening::Direct);
     }
 }

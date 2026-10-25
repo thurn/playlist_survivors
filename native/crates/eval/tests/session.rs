@@ -5,7 +5,9 @@
 //! the sim, the content or the level changes what settles: record it again (from `native/`,
 //! `PS_SESSIONS=/tmp/s cargo run --release -p app -- --file ../public/reactive/house-128/house-128.ogg
 //! --headless --seconds 14 --press-beats`, then copy that session's `stream.jsonl`, `keys.jsonl`
-//! and `meta.json` here).
+//! and `meta.json` here). `native/fixtures/session-house-delayed/` is the same in Delayed
+//! listening (`--delayed`): the music heard 3 s late, beats from hindsight, every entry known at
+//! its analysis position; it must replay as exactly.
 #![forbid(unsafe_code)]
 
 use std::path::{Path, PathBuf};
@@ -61,7 +63,17 @@ fn lines<T: serde::de::DeserializeOwned>(path: &Path) -> Vec<T> {
 
 #[test]
 fn a_recorded_session_settles_as_it_did_live() {
-    let dir = root().join("native/fixtures/session-house");
+    settles_as_live("native/fixtures/session-house");
+}
+
+#[test]
+fn a_delayed_session_settles_as_it_did_live() {
+    settles_as_live("native/fixtures/session-house-delayed");
+}
+
+/// The session in `rel` replayed: its run settles as it did live.
+fn settles_as_live(rel: &str) {
+    let dir = root().join(rel);
     let meta: serde_json::Value =
         serde_json::from_str(&std::fs::read_to_string(dir.join("meta.json")).unwrap()).unwrap();
     let r = &meta["runs"][0];

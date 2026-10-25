@@ -98,11 +98,13 @@ impl Output {
         coreaudio::device(coreaudio::default_output()).rate
     }
 
-    /// Starts the output, playing `music` (mono at `device_rate`) from the start if given;
-    /// `muted`, it renders everything and sends silence.
+    /// Starts the output, playing `music` (mono at `device_rate`) from the start if given, heard
+    /// `music_delay` s after the analyzer reads it (Delayed listening; 0 in Direct); `muted`, it
+    /// renders everything and sends silence.
     pub fn start(
         music: Option<Arc<[f32]>>,
         music_gain: f32,
+        music_delay: f64,
         bank: Vec<Arc<[f32]>>,
         muted: bool,
     ) -> Result<Output, String> {
@@ -157,7 +159,8 @@ impl Output {
             None => (None, None),
         };
         let ctx = Box::new(UnsafeCell::new(Ctx {
-            mixer: Mixer::new(rate, bank, music, music_gain),
+            mixer: Mixer::new(rate, bank, music, music_gain)
+                .with_music_delay((music_delay * rate).round() as u64),
             commands: cc,
             events: ep,
             music_meta: meta_tx,
