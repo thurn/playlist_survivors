@@ -130,3 +130,9 @@ now builds into one persistent directory shared by the local worktrees
 (`~/Library/Caches/playlist-survivors/check-fast-target`, unless `CARGO_TARGET_DIR` is set), so a
 fresh worktree reuses the dependencies' builds: 11 s for an analysis change in a second fresh
 worktree (load 12), 76% less. Cargo serializes concurrent builds on that directory's lock.
+
+Reverted (hv-t8o8.79): the shared directory let one worktree link another's stale build of a
+workspace crate (cargo names a workspace crate's artifacts by its path within the workspace, the
+same in every worktree): `check-fast` in one worktree failed on an import its own source had.
+check-fast builds into the worktree's `native/target/` again; a fresh worktree's first analysis
+check is back to about 45 s.

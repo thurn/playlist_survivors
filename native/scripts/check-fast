@@ -11,9 +11,9 @@
 #   removal can leave one, and the release stage would otherwise be the first to fail
 #   (hv-t8o8.70);
 # - native/scripts/crates' own tests when that script changed.
-# It builds into a persistent target directory shared by every local worktree, so a fresh worktree
-# reuses the dependencies' builds (45 s cold for an analysis change, 6 s shared; hv-t8o8.69); set
-# CARGO_TARGET_DIR to build elsewhere (Tollgate's steps use their own persistent directories).
+# Set CARGO_TARGET_DIR to build elsewhere (Tollgate's steps use persistent directories). Never
+# share one target directory between worktrees: cargo names a workspace crate's artifacts by its
+# path within the workspace, so one worktree would link another's stale build (hv-t8o8.79).
 # The oracle and causality smokes join the gate stage when the sim has them (B7, B8).
 set -eu
 cd "$(dirname "$0")/../.."
@@ -34,7 +34,6 @@ else
 fi
 
 cd native
-export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$HOME/Library/Caches/playlist-survivors/check-fast-target}"
 cargo fmt --all --check
 scripts/crates purity
 if [ "$crates" = all ]; then
