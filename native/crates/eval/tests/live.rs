@@ -134,7 +134,17 @@ fn run(
     frames: &[f64],
     lead: f64,
     keys: &Arrivals,
+    feed: impl FnMut(&mut Engine, f64),
+) -> (Vec<(f64, Record)>, Engine) {
+    run_with(frames, lead, keys, feed, false)
+}
+
+fn run_with(
+    frames: &[f64],
+    lead: f64,
+    keys: &Arrivals,
     mut feed: impl FnMut(&mut Engine, f64),
+    keep_keys: bool,
 ) -> (Vec<(f64, Record)>, Engine) {
     let file = house();
     let mut e = Engine::new(
@@ -147,6 +157,9 @@ fn run(
     )
     .unwrap();
     e.settled_log = Some(Vec::new());
+    if keep_keys {
+        e.key_log = Some(Vec::new());
+    }
     let mut next = 0;
     for &now in frames {
         feed(&mut e, now);
@@ -162,6 +175,19 @@ fn run(
     feed(&mut e, last);
     e.frame(last, 0.0);
     (e.settled_log.take().unwrap(), e)
+}
+
+/// `run`, keeping the keys as the engine applied them.
+fn run_keeping(
+    frames: &[f64],
+    lead: f64,
+    keys: &Arrivals,
+    applied: &mut Vec<sim::player::KeyEvent>,
+    feed: impl FnMut(&mut Engine, f64),
+) -> (Vec<(f64, Record)>, Engine) {
+    let (log, mut e) = run_with(frames, lead, keys, feed, true);
+    *applied = e.key_log.take().unwrap();
+    (log, e)
 }
 
 /// Frame times to `end`: 1 ms to 50 ms apart, as frames come in bursts.
@@ -220,6 +246,66 @@ fn speculation_settles_as_a_run_fed_its_keys_in_time() {
         e.stats.rollbacks,
         e.stats.replayed_s
     );
+}
+
+/// Keys later than the settling time are applied at the settled time, and the run settles as a
+/// plain run fed those applied times in time (hv-t8o8.80: the sim's stops, and so where it took
+/// stream entries in, followed when a future key was queued).
+#[test]
+fn very_late_keys_settle_as_a_run_fed_their_applied_times() {
+    for seed in ["very late keys", "a", "b", "c", "d", "e"] {
+        very_late_keys_with(seed);
+    }
+    // The case G5 saw: every key 70 ms late, frames every 1/60 s, no lead.
+    let file = house();
+    let late = presses(&file, 5.0, || 0.07);
+    let even: Vec<f64> = (1..=300).map(|k| f64::from(k) / 60.0).collect();
+    let mut replay = Replay::new(file.log.clone());
+    let mut keys_applied = Vec::new();
+    let (ahead, e) = run_keeping(&even, 0.0, &late, &mut keys_applied, |e, now| {
+        e.feed(|log| replay.feed_to(log, now));
+    });
+    assert!(e.stats.late_keys > 5, "{:?}", e.stats);
+    let in_time: Arrivals = keys_applied
+        .iter()
+        .map(|k| (k.s, k.s, k.key, k.kind == KeyEventKind::Press))
+        .collect();
+    let mut replay = Replay::new(file.log.clone());
+    let (plain, _) = run(&even, 0.0, &in_time, |e, now| {
+        e.feed(|log| replay.feed_to(log, now));
+    });
+    assert_same(&ahead, &plain);
+}
+
+fn very_late_keys_with(seed: &str) {
+    let file = house();
+    let end = 20.0;
+    let mut r = Rng::new(&[Part::Str(seed)]);
+    let late = presses(&file, end, || r.range(SETTLE_S, SETTLE_S + 0.3));
+    let mut replay = Replay::new(file.log.clone());
+    let mut keys_applied = Vec::new();
+    let (ahead, e) = run_keeping(
+        &bursty(end, seed),
+        0.2,
+        &late,
+        &mut keys_applied,
+        |e, now| {
+            e.feed(|log| replay.feed_to(log, now));
+        },
+    );
+    assert!(e.stats.late_keys > 10, "{:?}", e.stats);
+    let in_time: Arrivals = keys_applied
+        .iter()
+        .map(|k| (k.s, k.s, k.key, k.kind == KeyEventKind::Press))
+        .collect();
+    let even: Vec<f64> = (1..=(end * 60.0) as usize)
+        .map(|k| k as f64 / 60.0)
+        .collect();
+    let mut replay = Replay::new(file.log.clone());
+    let (plain, _) = run(&even, 0.0, &in_time, |e, now| {
+        e.feed(|log| replay.feed_to(log, now));
+    });
+    assert_same(&ahead, &plain);
 }
 
 /// Bursts against batch: the stream arriving in random bursts, each rolling the simulation back,

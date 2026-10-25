@@ -254,6 +254,27 @@ pub fn log_for(spec: &Spec) -> StreamLog {
 /// A live sim on `log` with the spec's gate, level and checks and the fixture's keys queued, not yet
 /// advanced. (The level is loaded against a song map with no beats: live, its range is provisional.)
 pub fn start(spec: &Spec, log: &StreamLog) -> (Rc<RefCell<LogRecorder>>, Sim) {
+    let rec = Rc::new(RefCell::new(LogRecorder::default()));
+    let mut sim = Sim::new(
+        input_for(spec, log),
+        Rc::new(log.clone()),
+        Box::new(Rc::clone(&rec)),
+        None,
+    );
+    // (An empty profile queues no keys: the test feeds its own.)
+    let queued = if spec.profile.is_empty() {
+        Vec::new()
+    } else {
+        keys(spec.track, spec.profile)
+    };
+    for k in queued {
+        sim.key(k);
+    }
+    (rec, sim)
+}
+
+/// The sim's input for a spec on `log`.
+pub fn input_for(spec: &Spec, log: &StreamLog) -> SimInput {
     let lib = library();
     let file = stream_file(spec.track);
     let mut song = reactive_song_map(f64::INFINITY);
@@ -273,12 +294,7 @@ pub fn start(spec: &Spec, log: &StreamLog) -> (Rc<RefCell<LogRecorder>>, Sim) {
     );
     input.no_hero_damage = spec.no_hero_damage;
     input.leak_future_evidence = spec.leak_future_evidence;
-    let rec = Rc::new(RefCell::new(LogRecorder::default()));
-    let mut sim = Sim::new(input, Rc::new(log.clone()), Box::new(Rc::clone(&rec)), None);
-    for k in keys(spec.track, spec.profile) {
-        sim.key(k);
-    }
-    (rec, sim)
+    input
 }
 
 /// A live run of `track` with `profile`'s keys on `log`, advanced to `until` (or its end, if sooner).

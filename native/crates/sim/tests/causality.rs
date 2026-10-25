@@ -478,3 +478,108 @@ fn bursts_of_arrivals_give_the_same_recording() {
         );
     }
 }
+
+/// When a key is queued doesn't matter, only its time: the same key queued at a stop well before
+/// it, or just before it falls, gives the identical recording (hv-t8o8.80: the stops, and so where
+/// stream entries are taken in, followed the queued keys).
+#[test]
+fn a_keys_queueing_time_changes_nothing() {
+    use sim::player::KeyEvent;
+    for track in ["house-128", "causality-mix"] {
+        let spec = Spec::new(track, "reactive-moderate");
+        let log = log_for(&spec);
+        let keys = common::keys(track, spec.profile);
+        let mut runs = Vec::new();
+        for early in [true, false] {
+            let (rec, mut sim) = start(
+                &Spec {
+                    profile: "",
+                    ..spec
+                },
+                &log,
+            );
+            let mut queued = 0;
+            // (Frames between the sim's own fixed stops, as a display's rarely line up with them.)
+            let mut t = 0.5 / 60.0;
+            while t < 20.0 {
+                // Each key queued half a second ahead, or in the frame before it falls.
+                let horizon = t + if early { 0.5 } else { 1.0 / 60.0 };
+                while queued < keys.len() && keys[queued].s <= horizon {
+                    let k = keys[queued];
+                    sim.key(KeyEvent {
+                        s: k.s.max(sim.s()),
+                        ..k
+                    });
+                    queued += 1;
+                }
+                t += 1.0 / 60.0;
+                sim.advance_to(t);
+            }
+            runs.push(recording(&rec));
+        }
+        if let Some(d) = first_difference(&runs[0], &runs[1]) {
+            panic!("{track}: early and late queueing differ: {d}");
+        }
+    }
+}
+
+/// The sim's own stops (clock moves that aren't a frame's), as a recorder sees them.
+#[derive(Default)]
+struct Stops(Vec<(f64, f64)>);
+
+impl sim::recorder::Recorder for Stops {
+    fn clock(&mut self, s: f64, w: f64, between: bool) {
+        if !between {
+            self.0.push((s, w));
+        }
+    }
+}
+
+/// hv-t8o8.80: a key queued at the run's start, or just before it falls (the sim having passed
+/// its fixed stops on the way), makes the same stops, for key times all through
+/// house-128's first seconds.
+#[test]
+fn a_key_queued_early_or_late_makes_the_same_stops() {
+    use std::cell::RefCell;
+    use std::rc::Rc;
+
+    use sim::engine::Sim;
+    use sim::movement::InputKey;
+    use sim::player::{KeyEvent, KeyEventKind};
+    let spec = Spec::new("house-128", "");
+    let log = log_for(&spec);
+    let mut k = 0.3;
+    while k < 4.0 {
+        let mut runs = Vec::new();
+        for late in [false, true] {
+            let stops = Rc::new(RefCell::new(Stops::default()));
+            let mut sim = Sim::new(
+                common::input_for(&spec, &log),
+                Rc::new(log.clone()),
+                Box::new(Rc::clone(&stops)),
+                None,
+            );
+            if late {
+                sim.advance_to(k - 0.004);
+            }
+            for (s, kind) in [(k, KeyEventKind::Press), (k + 0.08, KeyEventKind::Release)] {
+                sim.key(KeyEvent {
+                    s,
+                    kind,
+                    key: InputKey::Right,
+                    id: None,
+                });
+            }
+            sim.advance_to(k + 2.0);
+            runs.push(stops.borrow().0.clone());
+        }
+        let first = runs[0].iter().zip(&runs[1]).position(|(a, b)| a != b);
+        assert!(
+            first.is_none() && runs[0].len() == runs[1].len(),
+            "a key at {k:.4}: the stops differ from {first:?}: {:?} against {:?}",
+            first.map(|j| &runs[0][j..(j + 3).min(runs[0].len())]),
+            first.map(|j| &runs[1][j..(j + 3).min(runs[1].len())])
+        );
+        k += 0.0137;
+    }
+}
