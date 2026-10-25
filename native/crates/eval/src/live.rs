@@ -16,7 +16,7 @@ use sim::movement::InputKey;
 use sim::player::{KeyEvent, KeyEventKind};
 use sim::recorder::{
     BiteRecord, EnemyRecord, Fate, Hit, HitSource, Landing, PlanInput, PlanSwing, Recorder,
-    SettleRecord,
+    SettleRecord, ZoneWaveRecord,
 };
 use sim::schedule::reactive_song_map;
 use stream::StreamLog;
@@ -135,6 +135,20 @@ pub struct LiveView {
     pub moments: Vec<Moment>,
     /// The song time shown (the latest record's).
     pub s: f64,
+    /// The open field's zone (none: the level's first), and the transform wave sweeping in the
+    /// newest, if any (it has replaced `zone` once it has passed).
+    pub zone: Option<String>,
+    pub wave: Option<ZoneWave>,
+}
+
+/// A transform wave: from the song time `s` its ring grows from (x, y), the new zone inside it.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ZoneWave {
+    pub s: f64,
+    pub x: f64,
+    pub y: f64,
+    pub prev: Option<String>,
+    pub zone: String,
 }
 
 impl LiveView {
@@ -196,6 +210,15 @@ impl LiveView {
             Record::Health(v) => self.health = *v,
             // (Sounds go to the scheduler from the speculation: `Engine::causes`.)
             Record::Sound(_) => {}
+            Record::ZoneWave { s, x, y, zone } => {
+                self.wave = Some(ZoneWave {
+                    s: *s,
+                    x: *x,
+                    y: *y,
+                    prev: self.zone.replace(zone.clone()),
+                    zone: zone.clone(),
+                });
+            }
         }
     }
 
@@ -227,9 +250,20 @@ impl LiveView {
 pub enum Record {
     Hero(HeroPose),
     Camera(f64, f64, f64),
-    Spawn { id: usize, kind: String },
-    Sample { id: usize, x: f64, y: f64 },
-    Death { id: usize, w: f64, recycled: bool },
+    Spawn {
+        id: usize,
+        kind: String,
+    },
+    Sample {
+        id: usize,
+        x: f64,
+        y: f64,
+    },
+    Death {
+        id: usize,
+        w: f64,
+        recycled: bool,
+    },
     Moment(Moment),
     Groove(f64),
     Tier(f64),
@@ -237,6 +271,12 @@ pub enum Record {
     LevelUp,
     Health(f64),
     Sound(Caused),
+    ZoneWave {
+        s: f64,
+        x: f64,
+        y: f64,
+        zone: String,
+    },
 }
 
 /// What later reports refer back to: the clock, recent hits (id, song time, source, weapon,
@@ -467,6 +507,15 @@ impl Recorder for LiveRecorder {
             provisional: r.provisional,
             settled: r.settled,
         }));
+    }
+
+    fn zone_wave(&mut self, z: ZoneWaveRecord) {
+        self.0.borrow_mut().push(Record::ZoneWave {
+            s: z.s,
+            x: z.x,
+            y: z.y,
+            zone: z.zone,
+        });
     }
 
     fn bite(&mut self, b: BiteRecord) {

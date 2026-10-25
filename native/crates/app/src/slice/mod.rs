@@ -17,7 +17,8 @@
 //!     playlist-survivors --input-offset-ms 30 --stomp-extra-ms 10  # calibration for this session
 //!     (F1 in the app: the debug menu; F2 plays the next bundled track, F3 listens to the Mac;
 //!     F8 saves the timing log)
-//!     playlist-survivors --still <png>  # 20 s of the house track's stream through the engine, drawn offscreen
+//!     playlist-survivors --still <png> [--still-track <id> --still-at <s>]  # 20 s of the house
+//!                                     # track (or a track to a time) through the engine, offscreen
 //!     playlist-survivors --bench [--check]  # the frame's work (sim, evaluate, encode) over 60 s of it, offscreen
 
 mod calibration;
@@ -104,6 +105,9 @@ const CLEAR: [f64; 3] = [0.06, 0.07, 0.05];
 struct Options {
     file: Option<PathBuf>,
     still: Option<PathBuf>,
+    /// The still's track (`public/reactive/<id>`) and song time.
+    still_track: Option<String>,
+    still_at: Option<f64>,
     volume: f32,
     click: bool,
     mute: bool,
@@ -129,6 +133,8 @@ fn options(args: &[String]) -> Result<Options, String> {
     let mut o = Options {
         file: None,
         still: None,
+        still_track: None,
+        still_at: None,
         volume: 1.0,
         click: false,
         mute: false,
@@ -189,6 +195,16 @@ fn options(args: &[String]) -> Result<Options, String> {
             }
             "--still" => o.still = Some(it.next().ok_or("--still needs a path")?.into()),
             "--bench" => o.bench = true,
+            "--still-track" => {
+                o.still_track = Some(it.next().ok_or("--still-track needs a track id")?.clone());
+            }
+            "--still-at" => {
+                o.still_at = Some(
+                    it.next()
+                        .and_then(|v| v.parse().ok())
+                        .ok_or("--still-at needs a song time")?,
+                );
+            }
             "--check" => o.check = true,
             "--volume" => {
                 o.volume = it
@@ -271,6 +287,31 @@ impl World {
     }
 
     /// A new run's engine (live: the stream's length unknown).
+    /// The ground for `engine`'s view at run time `s`, on beats `period` s long: its zone, and the
+    /// transform wave sweeping in the next (its ring 175 px further each sixteenth for eight, as
+    /// `mapgen/openfield.ts` grows it), until it has passed.
+    fn field(&self, engine: &Engine, s: f64, period: f64) -> Result<scene::Field<'_>, String> {
+        let first = self.theme(engine)?;
+        let zone = |id: Option<&String>| id.and_then(|z| self.lib.zones.get(z)).unwrap_or(first);
+        let view = engine.view.borrow();
+        let sixteenths = view
+            .wave
+            .as_ref()
+            .map(|w| ((s - w.s) / (period.max(0.2) / 4.0)).floor() + 1.0);
+        Ok(match (&view.wave, sixteenths) {
+            (Some(w), Some(n)) if (1.0..=12.0).contains(&n) => scene::Field {
+                seed: engine.seed,
+                theme: zone(w.prev.as_ref()),
+                wave: Some((zone(Some(&w.zone)), w.x, w.y, 175.0 * n.min(8.0))),
+            },
+            _ => scene::Field {
+                seed: engine.seed,
+                theme: zone(view.zone.as_ref()),
+                wave: None,
+            },
+        })
+    }
+
     fn engine(&self) -> Result<Engine, String> {
         Engine::new(
             &self.level,
@@ -288,7 +329,7 @@ impl World {
 pub fn run(args: &[String]) -> Result<(), String> {
     let opts = options(args)?;
     if let Some(path) = &opts.still {
-        return still(path);
+        return still(path, opts.still_track.as_deref(), opts.still_at);
     }
     if opts.bench {
         return bench(opts.check);
@@ -615,11 +656,14 @@ fn bench(check: bool) -> Result<(), String> {
         let moments = engine.view.borrow_mut().take_moments();
         scene.moments(&moments, s, &world.lib, &world.looks);
         scene.level(&engine.view.borrow(), s, &world.lib);
-        let theme = world.theme(&engine)?;
-        let ground = scene::Field {
-            seed: engine.seed,
-            theme,
-        };
+        let last_period = file
+            .log
+            .beats
+            .iter()
+            .rev()
+            .find(|b| b.t <= s)
+            .map_or(0.5, |b| b.period);
+        let ground = world.field(&engine, s, last_period)?;
         let last = beats
             .iter()
             .copied()
@@ -692,11 +736,13 @@ fn bench(check: bool) -> Result<(), String> {
 
 /// 20 s of the house track's committed stream through the engine (a stride on each beat), drawn
 /// offscreen to a PNG.
-fn still(path: &Path) -> Result<(), String> {
+fn still(path: &Path, track: Option<&str>, at: Option<f64>) -> Result<(), String> {
     let world = World::load()?;
     let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
-    let stream_path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../public/reactive/house-128/stream.json");
+    let stream_path = Path::new(env!("CARGO_MANIFEST_DIR")).join(format!(
+        "../../../public/reactive/{}/stream.json",
+        track.unwrap_or("house-128")
+    ));
     let text = std::fs::read_to_string(&stream_path)
         .map_err(|e| format!("{}: {e}", stream_path.display()))?;
     let file = stream::StreamFile::parse(&text).map_err(|e| e.0)?;
@@ -705,8 +751,8 @@ fn still(path: &Path) -> Result<(), String> {
     let beats: Vec<f64> = file.log.beats.iter().map(|b| b.t).collect();
     let mut scene = Scene::default();
     let mut next = 0;
-    let end = 20.0;
-    for frame in 1..=(end as usize * 60) {
+    let end = at.unwrap_or(20.0);
+    for frame in 1..=((end * 60.0) as usize) {
         let s = frame as f64 / 60.0;
         engine.feed(|log| replay.feed_to(log, s));
         while next < beats.len() && beats[next] <= s {
@@ -729,13 +775,21 @@ fn still(path: &Path) -> Result<(), String> {
         .map(|b| b - end)
         .filter(|d| d.abs() < 2.5)
         .collect();
-    let (w, h) = (960, 640);
-    let mut layers = scene::Layers::default();
-    let theme = world.theme(&engine)?;
-    let ground = scene::Field {
-        seed: engine.seed,
-        theme,
+    // (A chosen track and time renders at the trailer's size, to set beside its frames.)
+    let (w, h) = if track.is_some() {
+        (1920, 1080)
+    } else {
+        (960, 640)
     };
+    let mut layers = scene::Layers::default();
+    let period = file
+        .log
+        .beats
+        .iter()
+        .rev()
+        .find(|b| b.t <= end)
+        .map_or(0.5, |b| b.period);
+    let ground = world.field(&engine, end, period)?;
     let last = beats
         .iter()
         .copied()
@@ -802,13 +856,14 @@ fn still(path: &Path) -> Result<(), String> {
     render::capture::write_png(path, w, h, &rgba)?;
     let v = engine.view.borrow();
     eprintln!(
-        "slice: wrote {} ({} sprites, {} lights; {} enemies, health {:.2}, groove {:.2})",
+        "slice: wrote {} ({} sprites, {} lights; {} enemies, health {:.2}, groove {:.2}; zone {})",
         path.display(),
         layers.sprites.len() + overlay.len(),
         layers.lights.len(),
         v.alive().count(),
         v.health,
-        v.groove
+        v.groove,
+        v.zone.as_deref().unwrap_or("first")
     );
     Ok(())
 }
@@ -1264,12 +1319,10 @@ impl App {
         let (w, h) = g.logical_size();
         let upcoming: Vec<f64> =
             song.map_or_else(Vec::new, |s| self.beats.iter().map(|b| b - s).collect());
-        let Ok(theme) = self.world.theme(&self.engine) else {
+        let run_s = song.map_or(0.0, |s| s - self.run_start);
+        let period = self.engine.stream().beats.last().map_or(0.5, |b| b.period);
+        let Ok(ground) = self.world.field(&self.engine, run_s, period) else {
             return;
-        };
-        let ground = scene::Field {
-            seed: self.engine.seed,
-            theme,
         };
         // The beat phase from the last beat heard and the gap to the next; bars of four from the
         // first beat.

@@ -34,16 +34,28 @@ pub struct Look {
 pub struct Scene {
     effects: Effects,
     bitten: f64,
-    /// The open field's chunks near the camera.
-    chunks: HashMap<(i64, i64), ChunkContent>,
+    /// The open field's chunks near the camera, by zone.
+    chunks: HashMap<(i64, i64, String), ChunkContent>,
     /// The hero's level last seen.
     level: u32,
 }
 
-/// The ground's zone and seed.
+/// The ground's seed and zone, and the transform wave sweeping in the next (its centre and radius,
+/// world px), if one is.
 pub struct Field<'a> {
     pub seed: f64,
     pub theme: &'a ZoneTheme,
+    pub wave: Option<(&'a ZoneTheme, f64, f64, f64)>,
+}
+
+impl Field<'_> {
+    /// The zone at (x, y): the wave's inside its ring.
+    fn zone_at(&self, x: f64, y: f64) -> &ZoneTheme {
+        match self.wave {
+            Some((z, wx, wy, r)) if (x - wx).powi(2) + (y - wy).powi(2) <= r * r => z,
+            _ => self.theme,
+        }
+    }
 }
 
 /// Where the music is: the phase (0 to 1) since the last beat and since the last bar's first.
@@ -102,7 +114,7 @@ fn grade(theme: &ZoneTheme, pulse: Pulse, now: f64, pixel: f32) -> Grade {
 enum Drawn {
     Foe(usize),
     Hero,
-    Tall((i64, i64), usize),
+    Tall((i64, i64, String), usize),
 }
 
 impl Scene {
@@ -187,6 +199,23 @@ impl Scene {
         let (cx, cy) = (cx + shx, cy + shy);
         let scale = (w / VIEW_W).min(h / VIEW_H) * zoom as f32;
         layers.grade = grade(ground.theme, pulse, now, scale);
+        // (As the wave's ring passes the camera, the grade blends into the new zone's.)
+        if let Some((z, wx, wy, r)) = ground.wave {
+            let d = ((cx - wx).powi(2) + (cy - wy).powi(2)).sqrt();
+            let t = ((r - d + 150.0) / 300.0).clamp(0.0, 1.0);
+            let t = (t * t * (3.0 - 2.0 * t)) as f32;
+            let next = grade(z, pulse, now, scale);
+            let g = &mut layers.grade;
+            let mix = |a: f32, b: f32| a + (b - a) * t;
+            for k in 0..3 {
+                g.ambient[k] = mix(g.ambient[k], next.ambient[k]);
+                g.mul[k] = mix(g.mul[k], next.mul[k]);
+                g.lift[k] = mix(g.lift[k], next.lift[k]);
+            }
+            g.contrast = mix(g.contrast, next.contrast);
+            g.saturation = mix(g.saturation, next.saturation);
+            g.haze = mix(g.haze, next.haze);
+        }
         let at = |x: f64, y: f64| {
             (
                 w / 2.0 + (x - cx) as f32 * scale,
@@ -197,29 +226,38 @@ impl Scene {
         let half_w = f64::from(w / scale / 2.0) + 64.0;
         let half_h = f64::from(h / scale / 2.0) + 64.0;
         let t = field::TILE;
-        match art.tiles.get(&ground.theme.terrain.ground) {
-            Some(tiles) => {
-                let (i0, i1) = (
-                    ((cx - half_w) / t).floor() as i64,
-                    ((cx + half_w) / t).ceil() as i64,
-                );
-                let (j0, j1) = (
-                    ((cy - half_h) / t).floor() as i64,
-                    ((cy + half_h) / t).ceil() as i64,
-                );
-                for j in j0..j1 {
-                    for i in i0..i1 {
+        let (i0, i1) = (
+            ((cx - half_w) / t).floor() as i64,
+            ((cx + half_w) / t).ceil() as i64,
+        );
+        let (j0, j1) = (
+            ((cy - half_h) / t).floor() as i64,
+            ((cy + half_h) / t).ceil() as i64,
+        );
+        for j in j0..j1 {
+            for i in i0..i1 {
+                // (Each tile in the zone at its centre: the wave's inside its ring.)
+                let zone = ground.zone_at(i as f64 * t + t / 2.0, j as f64 * t + t / 2.0);
+                let (sx, sy) = at(i as f64 * t, j as f64 * t);
+                match art
+                    .tiles
+                    .get(&zone.terrain.ground)
+                    .filter(|v| !v.is_empty())
+                {
+                    Some(tiles) => {
                         let v = field::tile_variant(ground.seed, i, j);
-                        let (sx, sy) = at(i as f64 * t, j as f64 * t);
                         let mut s =
                             Sprite::anchored(tiles[v % tiles.len()], sx, sy, (0.0, 0.0), scale);
                         s.w += 0.5;
                         s.h += 0.5;
                         out.push(s);
                     }
+                    None => {
+                        let k = (t as f32) * scale + 0.5;
+                        out.push(rect(sx, sy, k, k, [0.1, 0.2, 0.1, 1.0]));
+                    }
                 }
             }
-            None => out.push(rect(0.0, 0.0, w, h, [0.1, 0.2, 0.1, 1.0])),
         }
         // The chunks in view (generated once, dropped when far).
         let (c0, c1) = (
@@ -231,16 +269,25 @@ impl Scene {
             ((cy + half_h + 128.0) / CHUNK).floor() as i64,
         );
         self.chunks
-            .retain(|&(a, b), _| a >= c0 - 1 && a <= c1 + 1 && b >= r0 - 1 && b <= r1 + 1);
+            .retain(|(a, b, _), _| *a >= c0 - 1 && *a <= c1 + 1 && *b >= r0 - 1 && *b <= r1 + 1);
+        let mut zones = vec![ground.theme];
+        if let Some((z, ..)) = ground.wave {
+            zones.push(z);
+        }
         let mut visible = Vec::new();
-        for b in r0..=r1 {
-            for a in c0..=c1 {
-                self.chunks
-                    .entry((a, b))
-                    .or_insert_with(|| field::chunk_content(ground.seed, a, b, ground.theme));
-                visible.push((a, b));
+        for zone in &zones {
+            for b in r0..=r1 {
+                for a in c0..=c1 {
+                    let key = (a, b, zone.id.clone());
+                    self.chunks
+                        .entry(key.clone())
+                        .or_insert_with(|| field::chunk_content(ground.seed, a, b, zone));
+                    visible.push(key);
+                }
             }
         }
+        // (A prop shows where its own zone is: the wave's inside its ring, the old one outside.)
+        let shows = |zone: &str, p: &FieldProp| ground.zone_at(p.x, p.y).id == zone;
         let prop = |p: &FieldProp, tint: [f32; 4], out: &mut Vec<Sprite>| {
             if let Some(variants) = art.props.get(&p.sprite).filter(|v| !v.is_empty()) {
                 let v = variants[p.variant % variants.len()];
@@ -251,8 +298,30 @@ impl Scene {
             }
         };
         for key in &visible {
-            for p in &self.chunks[key].ground {
+            for p in self.chunks[key].ground.iter().filter(|p| shows(&key.2, p)) {
                 prop(p, [1.0; 4], out);
+            }
+        }
+        // The wave's edge: a ring in the new zone's light, and a wider one in its tint.
+        if let Some((z, wx, wy, r)) = ground.wave {
+            let light = hex(&z.ambient_light);
+            let tint = hex(&z.tint);
+            for (radius, color, alpha, width) in
+                [(r, light, 0.75, 10.0), (r + 30.0, tint, 0.35, 24.0)]
+            {
+                let n = ((radius * 0.25) as usize).clamp(48, 720);
+                let k = (width as f32 * scale).max(2.0);
+                for i in 0..n {
+                    let a = i as f64 / n as f64 * std::f64::consts::TAU;
+                    let (sx, sy) = at(wx + a.cos() * radius, wy + a.sin() * radius);
+                    out.push(rect(
+                        sx - k / 2.0,
+                        sy - k / 2.0,
+                        k,
+                        k,
+                        [color[0], color[1], color[2], alpha],
+                    ));
+                }
             }
         }
         let mut order: Vec<(f64, Drawn)> = view
@@ -266,7 +335,9 @@ impl Scene {
         }
         for key in &visible {
             for (k, p) in self.chunks[key].tall.iter().enumerate() {
-                order.push((p.y, Drawn::Tall(*key, k)));
+                if shows(&key.2, p) {
+                    order.push((p.y, Drawn::Tall(key.clone(), k)));
+                }
             }
         }
         order.sort_by(|a, b| a.0.total_cmp(&b.0));
@@ -275,13 +346,15 @@ impl Scene {
             match who {
                 Drawn::Tall(key, k) => {
                     let p = &self.chunks[&key].tall[k];
+                    let key = &key;
                     let fade =
                         hero_at.map_or(1.0, |(hx, hy)| field::prop_fade(p.x, p.y, hx, hy)) as f32;
                     prop(p, [1.0, 1.0, 1.0, fade], out);
                     // A lamp's or brazier's light, flickering.
-                    if let Some(l) = ground
-                        .theme
-                        .props
+                    if let Some(l) = zones
+                        .iter()
+                        .find(|z| z.id == key.2)
+                        .map_or(&ground.theme.props, |z| &z.props)
                         .iter()
                         .find(|q| q.sprite == p.sprite)
                         .and_then(|q| q.light.as_ref())
