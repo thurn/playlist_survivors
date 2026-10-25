@@ -15,6 +15,7 @@
 #[allow(clippy::pedantic, unused_qualifications, dead_code)]
 mod coreaudio;
 mod feed;
+mod fx;
 mod gfx;
 mod hud;
 mod keys;
@@ -154,6 +155,8 @@ impl World {
                     Look {
                         atlas: d.atlas.clone(),
                         scale: d.scale as f32,
+                        death: d.death.recipe.clone(),
+                        debris: d.death.debris.clone(),
                     },
                 )
             })
@@ -307,7 +310,7 @@ fn still(path: &Path) -> Result<(), String> {
         }
         engine.advance_to(s);
         let moments = engine.view.borrow_mut().take_moments();
-        scene.moments(&moments, s);
+        scene.moments(&moments, s, &world.lib, &world.looks);
     }
     let upcoming: Vec<f64> = beats
         .iter()
@@ -462,7 +465,8 @@ impl App {
             self.engine.advance_to(s - self.run_start);
             let moments = self.engine.view.borrow_mut().take_moments();
             self.cues(&moments, now);
-            self.scene.moments(&moments, now);
+            self.scene
+                .moments(&moments, now, &self.world.lib, &self.world.looks);
             let fell = self.engine.fallen();
             if fell || (self.last_sound.is_finite() && now - self.last_sound > SILENCE_S) {
                 if fell {

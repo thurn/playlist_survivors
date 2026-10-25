@@ -9,7 +9,9 @@ use eval::live::{LiveView, Moment};
 use render::atlas::{Atlases, Facing};
 use sim::content::types::ZoneTheme;
 
+use super::fx::Effects;
 use super::gfx::{Sprite, rect, square};
+use sim::content::ContentLibrary;
 
 /// The view's width in world units at zoom 1 (the TS game's).
 const VIEW_W: f32 = 960.0;
@@ -20,22 +22,15 @@ const VIEW_H: f32 = 640.0;
 pub struct Look {
     pub atlas: String,
     pub scale: f32,
-}
-
-/// A one-shot effect started at host time `at`, at a world position.
-struct Fx {
-    name: &'static str,
-    x: f64,
-    y: f64,
-    at: f64,
-    scale: f32,
-    tint: [f32; 4],
+    /// Its death's effect recipe and debris colours.
+    pub death: String,
+    pub debris: Vec<String>,
 }
 
 /// What the scene keeps between frames: effects in flight, and when the hero was last bitten.
 #[derive(Default)]
 pub struct Scene {
-    fx: Vec<Fx>,
+    effects: Effects,
     bitten: f64,
     /// The open field's chunks near the camera.
     chunks: HashMap<(i64, i64), ChunkContent>,
@@ -61,38 +56,42 @@ impl Scene {
     }
 
     /// Turns the view's new moments into effects, heard now (host time `now`).
-    pub fn moments(&mut self, moments: &[Moment], now: f64) {
+    pub fn moments(
+        &mut self,
+        moments: &[Moment],
+        now: f64,
+        lib: &ContentLibrary,
+        looks: &HashMap<String, Look>,
+    ) {
+        let mut fire = |id: &str, x: f64, y: f64, dir: f64, intensity: f64, debris: &[String]| {
+            if let Some(recipe) = lib.effects.get(id) {
+                self.effects
+                    .start(recipe, x, y, dir, intensity, debris, now);
+            }
+        };
         for m in moments {
             match m {
-                Moment::Hit { x, y, lethal } => self.fx.push(Fx {
-                    name: "sparks",
-                    x: *x,
-                    y: *y,
-                    at: now,
-                    scale: if *lethal { 1.6 } else { 1.0 },
-                    tint: [1.0; 4],
-                }),
-                Moment::Death { x, y, .. } if x.is_finite() => self.fx.push(Fx {
-                    name: "explosion-small",
-                    x: *x,
-                    y: *y,
-                    at: now,
-                    scale: 1.6,
-                    tint: [1.0; 4],
-                }),
-                Moment::Swing { x, y, .. } => self.fx.push(Fx {
-                    name: "slash-sweep",
-                    x: *x,
-                    y: *y,
-                    at: now,
-                    scale: 1.4,
-                    tint: [1.0, 1.0, 1.0, 0.85],
-                }),
+                // (As emit.ts: a swing's hit by its kind, a weapon's on an enemy it doesn't kill,
+                // and the enemy's own death recipe with its debris.)
+                Moment::Swing { x, y, dir, kind } => {
+                    fire(&format!("hit-{kind}"), *x, *y, *dir, 0.8, &[]);
+                }
+                Moment::Hit {
+                    x,
+                    y,
+                    lethal: false,
+                } if x.is_finite() => fire("blades-hit", *x, *y, 0.0, 0.5, &[]),
+                Moment::Death { kind, x, y } if x.is_finite() => {
+                    let (recipe, debris) =
+                        looks.get(kind).map_or(("death-humanoid", &[][..]), |l| {
+                            (l.death.as_str(), &l.debris[..])
+                        });
+                    fire(recipe, *x, *y, -std::f64::consts::FRAC_PI_2, 0.7, debris);
+                }
                 Moment::Bite { .. } => self.bitten = now,
                 _ => {}
             }
         }
-        self.fx.retain(|f| now - f.at < 2.0);
     }
 
     /// Draws `view` at host time `now` into a `w` x `h` window (the HUD is `hud`'s).
@@ -113,6 +112,8 @@ impl Scene {
         out: &mut Vec<Sprite>,
     ) {
         let (cx, cy, zoom) = view.camera;
+        let (shx, shy) = self.effects.shake(now);
+        let (cx, cy) = (cx + shx, cy + shy);
         let scale = (w / VIEW_W).min(h / VIEW_H) * zoom as f32;
         let at = |x: f64, y: f64| {
             (
@@ -259,25 +260,7 @@ impl Scene {
                 }
             }
         }
-        for fx in &self.fx {
-            let Some(anim) = art.effects.get(fx.name) else {
-                continue;
-            };
-            let frame = ((now - fx.at) * f64::from(anim.fps)).max(0.0) as usize;
-            if let Some(&region) = anim.frames.get(frame) {
-                let (sx, sy) = at(fx.x, fx.y);
-                out.push(
-                    Sprite::anchored(
-                        region,
-                        sx,
-                        sy,
-                        (anim.anchor_x, anim.anchor_y),
-                        fx.scale * scale,
-                    )
-                    .tinted(fx.tint),
-                );
-            }
-        }
+        self.effects.draw(art, now, &at, scale, w, h, out);
         if now - self.bitten < 0.6 {
             let a = (1.0 - (now - self.bitten) / 0.6) as f32;
             out.push(rect(0.0, 0.0, w, h, [0.8, 0.1, 0.1, 0.25 * a]));
