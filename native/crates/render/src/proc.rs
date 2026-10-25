@@ -26,6 +26,16 @@ impl Img {
     }
 }
 
+/// A `w` x `h` image filled in rectangles (x, y, w, h).
+fn pixels(w: u32, h: u32, rects: &'static [(u32, u32, u32, u32)]) -> Img {
+    Img::new(w, h, move |x, y| {
+        let inside = rects.iter().any(|&(rx, ry, rw, rh)| {
+            x >= rx as f32 && x < (rx + rw) as f32 && y >= ry as f32 && y < (ry + rh) as f32
+        });
+        f32::from(u8::from(inside))
+    })
+}
+
 /// A radial gradient through (radius fraction, alpha) stops, linearly between them.
 fn radial(w: u32, h: u32, stops: &[(f32, f32)]) -> Img {
     let (cx, cy) = (w as f32 / 2.0, h as f32 / 2.0);
@@ -107,6 +117,14 @@ fn textures() -> Vec<(&'static str, Img)> {
                 if e <= 1.0 { x / 64.0 } else { 0.0 }
             })
         }),
+        // The gems (`assets.ts`): each body, and its white glint drawn over it.
+        ("gem", pixels(5, 7, &[(1, 0, 3, 7), (0, 2, 5, 3)])),
+        ("gem-glint", pixels(5, 7, &[(1, 1, 1, 2)])),
+        (
+            "gem-big",
+            pixels(7, 10, &[(2, 0, 3, 10), (0, 3, 7, 4), (1, 1, 5, 8)]),
+        ),
+        ("gem-big-glint", pixels(7, 10, &[(2, 2, 1, 3)])),
         ("spark", cross(6, 2)),
         ("shard", cross(4, 2)),
         ("ember", cross(3, 1)),

@@ -12,6 +12,7 @@ use render::post::{Grade, Light};
 use sim::content::types::{ColorGrade, ZoneTheme};
 
 use super::fx::{Effects, Start, hex, rand01, rgb};
+use super::gems;
 use super::gfx::{Sprite, rect, square};
 use super::lane::{self, Lane};
 use super::tier::{self, Arms};
@@ -399,6 +400,11 @@ impl Scene {
                 }
                 Moment::Bite { .. } => self.bitten = now,
                 Moment::TierChange { up, .. } => self.tier_change = Some((now, *up)),
+                Moment::GemPickup => {
+                    if let Some(h) = view.hero {
+                        fire("gem-pickup", h.x, h.y - 16.0, 0.0, 1.0, Start::default());
+                    }
+                }
                 Moment::Press {
                     rating, unjudged, ..
                 } => self.lane.press(now, *rating, *unjudged),
@@ -558,6 +564,8 @@ impl Scene {
             .map_or(0.0, |(t, _)| 1.0 - (now - t) / TIER_RING_S)
             .clamp(0.0, 1.0);
         tier::ground(view, art, &at, scale, ring, out);
+        // (Bursts marked to stay under the characters, as the gems' pickups.)
+        self.effects.draw(art, now, &at, scale, w, h, true, out);
         // The wave's edge: a ring in the new zone's light, and a wider one in its tint.
         if let Some((z, wx, wy, r)) = ground.wave {
             let light = hex(&z.ambient_light);
@@ -716,7 +724,9 @@ impl Scene {
             trail: self.trail.make_contiguous(),
         };
         tier::weapons(view, &arms, art, &at, scale, out);
-        self.effects.draw(art, now, &at, scale, w, h, out);
+        let swell = 0.5 + 0.5 * (std::f64::consts::TAU * pulse.beat.min(1.0)).cos();
+        gems::draw(view, art, &at, scale, self.run_s, fast.pulsed(swell), out);
+        self.effects.draw(art, now, &at, scale, w, h, false, out);
         self.effects
             .post(now, &at, scale, lights, &mut layers.grade);
         draw_fast(&fast, view, art, &at, scale, out, lights);

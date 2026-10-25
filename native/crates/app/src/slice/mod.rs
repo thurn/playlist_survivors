@@ -26,6 +26,7 @@ mod calibration;
 #[allow(clippy::pedantic, unused_qualifications, dead_code)]
 mod coreaudio;
 mod fx;
+mod gems;
 mod gfx;
 mod hud;
 mod keys;

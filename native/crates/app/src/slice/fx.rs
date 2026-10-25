@@ -256,8 +256,8 @@ impl Effects {
         }
     }
 
-    /// Draws the effects at `now` (all but decals); `at` maps a world point to the screen,
-    /// `scale` world to screen.
+    /// Draws the effects at `now` (all but decals): the bursts marked `under` (beneath the
+    /// characters) or the rest; `at` maps a world point to the screen, `scale` world to screen.
     pub fn draw(
         &self,
         art: &Atlases,
@@ -266,6 +266,7 @@ impl Effects {
         scale: f32,
         w: f32,
         h: f32,
+        under: bool,
         out: &mut Vec<Sprite>,
     ) {
         let mut flash: Option<(f32, [f32; 4])> = None;
@@ -274,6 +275,10 @@ impl Effects {
             let i = inst.intensity;
             let tier = inst.start.tier;
             for (li, layer) in inst.recipe.layers.iter().enumerate() {
+                // (A burst marked `under` goes beneath the characters; everything else over them.)
+                if matches!(layer, EffectLayer::Burst { under: true, .. }) != under {
+                    continue;
+                }
                 match layer {
                     EffectLayer::Burst {
                         art: name,

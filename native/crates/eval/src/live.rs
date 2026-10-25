@@ -15,8 +15,8 @@ use sim::engine::{AnimInfo, HERO_ANIMS, Sim, SimInput, Snapshot};
 use sim::movement::InputKey;
 use sim::player::{KeyEvent, KeyEventKind};
 use sim::recorder::{
-    BiteRecord, ChainPoint, EnemyRecord, Fate, Hit, HitSource, Landing, PlanInput, PlanSwing,
-    Recorder, SettleRecord, ZoneWaveRecord,
+    BiteRecord, ChainPoint, EnemyRecord, Fate, GemRecord, Hit, HitSource, Landing, PlanInput,
+    PlanSwing, Recorder, SettleRecord, VacuumRecord, ZoneWaveRecord,
 };
 use sim::schedule::reactive_song_map;
 use stream::StreamLog;
@@ -81,6 +81,8 @@ pub enum Moment {
     Landing { x: f64, y: f64, stomp: bool },
     /// The groove's tier changed.
     TierChange { tier: usize, up: bool },
+    /// A gem reached the hero.
+    GemPickup,
     /// An enemy died where it was last seen (not recycled ones).
     Death { kind: String, x: f64, y: f64 },
     /// A swing struck: its kind, the tier at its wind-up, its hit's intensity and shape.
@@ -179,6 +181,24 @@ pub struct LiveView {
     pub bolts: BTreeMap<usize, Vec<(f64, f64, f64)>>,
     /// Chains started.
     pub chains: usize,
+    /// The gems in flight or waiting, by index, and how many have dropped.
+    pub gems: BTreeMap<usize, Gem>,
+    pub dropped: usize,
+    /// The vacuums waiting, by index, and how many have dropped.
+    pub vacuums: BTreeMap<usize, (f64, f64)>,
+    pub vacuums_dropped: usize,
+}
+
+/// A gem: when it dropped (song s) and where, when it takes off for the hero (if it waits on the
+/// field) and arrives (song s; infinite while waiting), and whether it is big.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Gem {
+    pub s0: f64,
+    pub x0: f64,
+    pub y0: f64,
+    pub fly: Option<f64>,
+    pub s1: f64,
+    pub big: bool,
 }
 
 /// A transform wave: from the song time `s` its ring grows from (x, y), the new zone inside it.
@@ -266,6 +286,41 @@ impl LiveView {
                     p.push((s, *x, *y));
                 }
             }
+            Record::Gem { x, y, s1, big } => {
+                self.gems.insert(
+                    self.dropped,
+                    Gem {
+                        s0: s,
+                        x0: *x,
+                        y0: *y,
+                        fly: None,
+                        s1: *s1,
+                        big: *big,
+                    },
+                );
+                self.dropped += 1;
+            }
+            Record::GemFly { gem, s1 } => {
+                if let Some(g) = self.gems.get_mut(gem) {
+                    g.fly = Some(s);
+                    g.s1 = *s1;
+                }
+            }
+            Record::GemGrow { gem, big } => {
+                if let Some(g) = self.gems.get_mut(gem) {
+                    g.big = *big;
+                }
+            }
+            Record::GemArrive { gem } => {
+                self.gems.remove(gem);
+            }
+            Record::Vacuum { x, y } => {
+                self.vacuums.insert(self.vacuums_dropped, (*x, *y));
+                self.vacuums_dropped += 1;
+            }
+            Record::VacuumTouch { vacuum } => {
+                self.vacuums.remove(vacuum);
+            }
             Record::ZoneWave { s, x, y, zone } => {
                 self.wave = Some(ZoneWave {
                     s: *s,
@@ -335,6 +390,33 @@ pub enum Record {
         chain: usize,
         x: f64,
         y: f64,
+    },
+    /// A gem drops at (x, y), to be collected at song time `s1` (never, while it waits on the
+    /// field); a gem (by index) takes off for the hero, to arrive at `s1`; grows big; arrives.
+    Gem {
+        x: f64,
+        y: f64,
+        s1: f64,
+        big: bool,
+    },
+    GemFly {
+        gem: usize,
+        s1: f64,
+    },
+    GemGrow {
+        gem: usize,
+        big: bool,
+    },
+    GemArrive {
+        gem: usize,
+    },
+    /// A vacuum drops at (x, y); a vacuum (by index) is touched.
+    Vacuum {
+        x: f64,
+        y: f64,
+    },
+    VacuumTouch {
+        vacuum: usize,
     },
     Groove(f64),
     Tier(f64),
@@ -698,6 +780,37 @@ impl Recorder for LiveRecorder {
             x: p.x,
             y: p.y,
         });
+    }
+
+    fn gem(&mut self, g: GemRecord) {
+        self.0.borrow_mut().push(Record::Gem {
+            x: g.x0,
+            y: g.y0,
+            s1: g.s1,
+            big: g.big,
+        });
+    }
+
+    fn gem_fly(&mut self, gem: usize, _w: f64, s1: f64) {
+        self.0.borrow_mut().push(Record::GemFly { gem, s1 });
+    }
+
+    fn gem_grow(&mut self, gem: usize, _value: f64, big: bool) {
+        self.0.borrow_mut().push(Record::GemGrow { gem, big });
+    }
+
+    fn gem_arrive(&mut self, gem: usize, _w: f64) {
+        let mut j = self.0.borrow_mut();
+        j.push(Record::GemArrive { gem });
+        j.push(Record::Moment(Moment::GemPickup));
+    }
+
+    fn vacuum(&mut self, v: VacuumRecord) {
+        self.0.borrow_mut().push(Record::Vacuum { x: v.x, y: v.y });
+    }
+
+    fn vacuum_touch(&mut self, vacuum: usize, _s: f64, _w: f64, _gems: f64) {
+        self.0.borrow_mut().push(Record::VacuumTouch { vacuum });
     }
 
     fn zone_wave(&mut self, z: ZoneWaveRecord) {
