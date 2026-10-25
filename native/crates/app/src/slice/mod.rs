@@ -161,6 +161,16 @@ impl World {
         Ok(World { lib, level, looks })
     }
 
+    /// The zone the run's ground shows: the level's first (G2's director changes it on the music).
+    fn theme(&self, engine: &Engine) -> Result<&sim::content::types::ZoneTheme, String> {
+        engine
+            .zones
+            .first()
+            .and_then(|z| self.lib.zones.get(z))
+            .or_else(|| self.lib.zones.values().next())
+            .ok_or_else(|| "no zone".to_string())
+    }
+
     /// A new run's engine (live: the stream's length unknown).
     fn engine(&self) -> Result<Engine, String> {
         Engine::new(
@@ -306,8 +316,14 @@ fn still(path: &Path) -> Result<(), String> {
         .collect();
     let (w, h) = (960, 640);
     let mut sprites = Vec::new();
+    let theme = world.theme(&engine)?;
+    let ground = scene::Field {
+        seed: engine.seed,
+        theme,
+    };
     scene.draw(
         &engine.view.borrow(),
+        &ground,
         &art,
         &world.looks,
         end,
@@ -481,8 +497,16 @@ impl App {
         let mut sprites = Vec::new();
         let upcoming: Vec<f64> =
             song.map_or_else(Vec::new, |s| self.beats.iter().map(|b| b - s).collect());
+        let Ok(theme) = self.world.theme(&self.engine) else {
+            return;
+        };
+        let ground = scene::Field {
+            seed: self.engine.seed,
+            theme,
+        };
         self.scene.draw(
             &self.engine.view.borrow(),
+            &ground,
             &self.art,
             &self.world.looks,
             now,

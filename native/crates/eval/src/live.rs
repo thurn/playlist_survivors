@@ -262,6 +262,9 @@ impl Recorder for LiveRecorder {
 pub struct Engine {
     pub sim: Sim,
     pub view: Rc<RefCell<LiveView>>,
+    /// The level's seed and zones (the open field's ground).
+    pub seed: f64,
+    pub zones: Vec<String>,
 }
 
 impl Engine {
@@ -277,6 +280,7 @@ impl Engine {
     ) -> Result<Engine, LevelError> {
         let song = reactive_song_map(file_duration);
         let level = load_level(level, lib, &song, None)?;
+        let (seed, zones) = (level.seed, level.zones.clone());
         let input = SimInput::new(level, lib, hero_anims, gate, settling);
         let view = Rc::new(RefCell::new(LiveView {
             health: 1.0,
@@ -298,7 +302,12 @@ impl Engine {
             Box::new(LiveRecorder(Rc::clone(&view))),
             None,
         );
-        Ok(Engine { sim, view })
+        Ok(Engine {
+            sim,
+            view,
+            seed,
+            zones,
+        })
     }
 
     /// The stream, to append arrivals to (each stamped with its arrival as `known_at`).

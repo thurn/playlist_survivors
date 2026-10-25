@@ -4,15 +4,16 @@
 
 use std::collections::HashMap;
 
+use eval::field::{self, CHUNK, ChunkContent, FieldProp};
 use eval::live::{LiveView, Moment};
 use render::atlas::{Atlases, Facing};
+use sim::content::types::ZoneTheme;
 
 use super::gfx::{Sprite, rect, square};
 
 /// The view's width in world units at zoom 1 (the TS game's).
 const VIEW_W: f32 = 960.0;
 const VIEW_H: f32 = 640.0;
-const TILE: f32 = 32.0;
 
 /// An enemy kind's look: its atlas sprite and scale.
 #[derive(Clone, Debug)]
@@ -36,6 +37,21 @@ struct Fx {
 pub struct Scene {
     fx: Vec<Fx>,
     bitten: f64,
+    /// The open field's chunks near the camera.
+    chunks: HashMap<(i64, i64), ChunkContent>,
+}
+
+/// The ground's zone and seed.
+pub struct Field<'a> {
+    pub seed: f64,
+    pub theme: &'a ZoneTheme,
+}
+
+/// What is drawn by depth: an enemy, the hero, or a chunk's tall prop.
+enum Drawn {
+    Foe(usize),
+    Hero,
+    Tall((i64, i64), usize),
 }
 
 impl Scene {
@@ -80,10 +96,15 @@ impl Scene {
     }
 
     /// Draws `view` at host time `now` into a `w` x `h` window (the HUD is `hud`'s).
-    #[allow(clippy::too_many_arguments, clippy::single_match_else)]
+    #[allow(
+        clippy::too_many_arguments,
+        clippy::single_match_else,
+        clippy::many_single_char_names
+    )]
     pub fn draw(
-        &self,
+        &mut self,
         view: &LiveView,
+        ground: &Field,
         art: &Atlases,
         looks: &HashMap<String, Look>,
         now: f64,
@@ -99,48 +120,93 @@ impl Scene {
                 h / 2.0 + (y - cy) as f32 * scale,
             )
         };
-        // The ground: grass tiles on the world grid around the camera.
-        if let Some(grass) = art.tiles.get("grass-summer") {
-            let half_w = f64::from(w / scale / 2.0) + f64::from(TILE);
-            let half_h = f64::from(h / scale / 2.0) + f64::from(TILE);
-            let t = f64::from(TILE);
-            let (i0, i1) = (
-                ((cx - half_w) / t).floor() as i64,
-                ((cx + half_w) / t).ceil() as i64,
-            );
-            let (j0, j1) = (
-                ((cy - half_h) / t).floor() as i64,
-                ((cy + half_h) / t).ceil() as i64,
-            );
-            for j in j0..j1 {
-                for i in i0..i1 {
-                    let hash = (i.wrapping_mul(73_856_093) ^ j.wrapping_mul(19_349_663))
-                        .unsigned_abs() as usize;
-                    let (sx, sy) = at(i as f64 * t, j as f64 * t);
-                    let mut s =
-                        Sprite::anchored(grass[hash % grass.len()], sx, sy, (0.0, 0.0), scale);
-                    s.w += 0.5;
-                    s.h += 0.5;
-                    out.push(s.tinted([0.85, 0.85, 0.85, 1.0]));
+        // The ground: the zone's tiles on the world grid around the camera.
+        let half_w = f64::from(w / scale / 2.0) + 64.0;
+        let half_h = f64::from(h / scale / 2.0) + 64.0;
+        let t = field::TILE;
+        match art.tiles.get(&ground.theme.terrain.ground) {
+            Some(tiles) => {
+                let (i0, i1) = (
+                    ((cx - half_w) / t).floor() as i64,
+                    ((cx + half_w) / t).ceil() as i64,
+                );
+                let (j0, j1) = (
+                    ((cy - half_h) / t).floor() as i64,
+                    ((cy + half_h) / t).ceil() as i64,
+                );
+                for j in j0..j1 {
+                    for i in i0..i1 {
+                        let v = field::tile_variant(ground.seed, i, j);
+                        let (sx, sy) = at(i as f64 * t, j as f64 * t);
+                        let mut s =
+                            Sprite::anchored(tiles[v % tiles.len()], sx, sy, (0.0, 0.0), scale);
+                        s.w += 0.5;
+                        s.h += 0.5;
+                        out.push(s);
+                    }
                 }
             }
-        } else {
-            out.push(rect(0.0, 0.0, w, h, [0.1, 0.2, 0.1, 1.0]));
+            None => out.push(rect(0.0, 0.0, w, h, [0.1, 0.2, 0.1, 1.0])),
         }
-        // Characters from back to front: enemies, and the hero among them by depth.
-        let mut order: Vec<(f64, Option<usize>)> = view
+        // The chunks in view (generated once, dropped when far).
+        let (c0, c1) = (
+            ((cx - half_w - 128.0) / CHUNK).floor() as i64,
+            ((cx + half_w + 128.0) / CHUNK).floor() as i64,
+        );
+        let (r0, r1) = (
+            ((cy - half_h - 128.0) / CHUNK).floor() as i64,
+            ((cy + half_h + 128.0) / CHUNK).floor() as i64,
+        );
+        self.chunks
+            .retain(|&(a, b), _| a >= c0 - 1 && a <= c1 + 1 && b >= r0 - 1 && b <= r1 + 1);
+        let mut visible = Vec::new();
+        for b in r0..=r1 {
+            for a in c0..=c1 {
+                self.chunks
+                    .entry((a, b))
+                    .or_insert_with(|| field::chunk_content(ground.seed, a, b, ground.theme));
+                visible.push((a, b));
+            }
+        }
+        let prop = |p: &FieldProp, tint: [f32; 4], out: &mut Vec<Sprite>| {
+            if let Some(variants) = art.props.get(&p.sprite).filter(|v| !v.is_empty()) {
+                let v = variants[p.variant % variants.len()];
+                let (sx, sy) = at(p.x, p.y);
+                let s = Sprite::anchored(v.region, sx, sy, (v.anchor_x, v.anchor_y), scale)
+                    .tinted(tint);
+                out.push(if p.flip { s.mirrored() } else { s });
+            }
+        };
+        for key in &visible {
+            for p in &self.chunks[key].ground {
+                prop(p, [1.0; 4], out);
+            }
+        }
+        let mut order: Vec<(f64, Drawn)> = view
             .foes
             .iter()
             .filter(|(_, f)| f.x.is_finite())
-            .map(|(&id, f)| (f.y, Some(id)))
+            .map(|(&id, f)| (f.y, Drawn::Foe(id)))
             .collect();
         if let Some(hero) = view.hero {
-            order.push((hero.y, None));
+            order.push((hero.y, Drawn::Hero));
+        }
+        for key in &visible {
+            for (k, p) in self.chunks[key].tall.iter().enumerate() {
+                order.push((p.y, Drawn::Tall(*key, k)));
+            }
         }
         order.sort_by(|a, b| a.0.total_cmp(&b.0));
+        let hero_at = view.hero.map(|h| (h.x, h.y));
         for (_, who) in order {
             match who {
-                Some(id) => {
+                Drawn::Tall(key, k) => {
+                    let p = &self.chunks[&key].tall[k];
+                    let fade =
+                        hero_at.map_or(1.0, |(hx, hy)| field::prop_fade(p.x, p.y, hx, hy)) as f32;
+                    prop(p, [1.0, 1.0, 1.0, fade], out);
+                }
+                Drawn::Foe(id) => {
                     let f = &view.foes[&id];
                     let look = looks.get(&f.kind);
                     let sprite = look.map_or("goblin", |l| l.atlas.as_str());
@@ -170,7 +236,7 @@ impl Scene {
                         out.push(square(sx, sy, 20.0 * scale, [0.9, 0.25, 0.3, tint[3]]));
                     }
                 }
-                None => {
+                Drawn::Hero => {
                     let hero = view.hero.expect("placed");
                     let (sx, sy) = at(hero.x, hero.y - hero.z);
                     let facing =
