@@ -722,11 +722,14 @@ impl Sim {
     /// The director's population at song time s, scaled by the loudness level.
     fn director_target(&self, s: f64) -> f64 {
         let d = &self.env.director;
-        director_population(
-            d,
-            s,
-            self.by_level(s, &|l| by_level(&d.population.level_scale, l)),
-        )
+        let scale = if self.env.input.leak_future_evidence {
+            let ticks = &self.log.ticks;
+            let i = ticks.partition_point(|k| k.t <= s + 1.0).saturating_sub(1);
+            0.6 + 0.7 * ticks.get(i).map_or(0.0, |k| k.evidence)
+        } else {
+            self.by_level(s, &|l| by_level(&d.population.level_scale, l))
+        };
+        director_population(d, s, scale)
     }
 
     pub(super) fn spawn_director(&mut self, bi: f64) {

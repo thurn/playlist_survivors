@@ -195,6 +195,9 @@ pub struct SimInput {
 
     /// Check-only: damage to the hero is off.
     pub no_hero_damage: bool,
+    /// Check-only, the causality checks' negative control: the director's population reads the
+    /// evidence a second ahead in the whole log, whether it has arrived or not.
+    pub leak_future_evidence: bool,
     /// Stage 2: the stream has hindsight entries, so presses settle 2 s late.
     pub settling: bool,
 }
@@ -233,6 +236,7 @@ impl SimInput {
             seed,
             gate,
             no_hero_damage: false,
+            leak_future_evidence: false,
             settling,
         }
     }
@@ -1099,6 +1103,11 @@ impl Sim {
         }
         while self.st.s < self.st.end_s && self.next_stop() < t - CLOCK_EPS {
             self.step();
+        }
+        // (The end may have been decided on the way: never past it.)
+        if t >= self.st.end_s {
+            self.run_to_end();
+            return;
         }
         if t - self.st.s > CLOCK_EPS && self.next_stop() - t > CLOCK_EPS {
             self.move_clock(t, false, true);
