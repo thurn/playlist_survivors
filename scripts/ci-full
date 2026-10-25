@@ -88,10 +88,12 @@ if [ "$section" = all ] || [ "$section" = native ]; then
   # A fixed sample: steady (house, drum and bass), a swing groove, an accelerando, two classical
   # pieces, two hard tracks. The whole corpus (--all) took over 30 minutes on a loaded host;
   # run it by hand (`ps analysis-parity --all`) when the analyzer's accuracy is in question.
+  # Delayed listening at the chosen M (E1) rides on the same runs: its lead check fails the step.
+  PARITY_DELAYED="--delayed 3"
   PARITY_TRACKS=house-128,dnb-174,hiphop-92-swing,accelerando-100-140,orpheus-galop,beethoven-fifth,notjam-klepto-linda-caverns-b,notjam-crystal-caverns
   parity=$(
     {
-      echo "$PARITY_TRACKS"
+      echo "$PARITY_TRACKS $PARITY_DELAYED"
       git ls-tree -r HEAD native/crates/analysis native/crates/cli native/models native/Cargo.toml \
       native/Cargo.lock native/rust-toolchain.toml public/reactive public/audio \
       tools/analysis/src/ps_analysis/stream.py tools/analysis/src/ps_analysis/pcm.py \
@@ -103,7 +105,7 @@ if [ "$section" = all ] || [ "$section" = native ]; then
     echo "ci-full native: corpus parity inputs $parity passed at $(cat "$STAMPS/parity-$parity"); skipping"
   else
     out="$HOME/Library/Caches/playlist-survivors/parity/$(git rev-parse --short HEAD)"
-    (cd native && taskpolicy -c utility cargo run --locked --release -p cli -- analysis-parity --tracks "$PARITY_TRACKS" --no-live --jobs 8 --check --out "$out")
+    (cd native && taskpolicy -c utility cargo run --locked --release -p cli -- analysis-parity --tracks "$PARITY_TRACKS" $PARITY_DELAYED --jobs 8 --check --out "$out")
     mkdir -p "$STAMPS"
     # (Only a clean tree's pass vouches for HEAD's inputs.)
     if [ -z "$(git status --porcelain --untracked-files=no)" ]; then

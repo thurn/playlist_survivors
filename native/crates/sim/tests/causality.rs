@@ -15,7 +15,9 @@
 
 mod common;
 
-use common::{Spec, first_difference, known_by, recording, start, stream_file, with_silent_tail};
+use common::{
+    Spec, first_difference, known_by, log_for, recording, start, stream_file, with_silent_tail,
+};
 use sim::core::rng::{Part, Rng};
 use stream::{Level, StreamLog};
 
@@ -292,7 +294,7 @@ fn causality(
     stop_at_first: bool,
 ) -> (Vec<String>, usize, Vec<&'static str>) {
     let file = stream_file(spec.track);
-    let log = with_silent_tail(file.log.clone(), 10.0);
+    let log = log_for(&spec);
     let mut failures = Vec::new();
     let mut checked = 0;
     let mut covered: Vec<&'static str> = Vec::new();
@@ -404,6 +406,12 @@ fn every_cut_is_causal() {
     };
     let mut covered = assert_causal(check, None, 5.0);
     covered.extend(assert_causal(Spec::new("orpheus-galop", ""), None, 10.0));
+    // (E1: a Delayed stream of the Galop, at the chosen M.)
+    let delayed = Spec {
+        delayed: Some(analysis::delayed::DelayedParams::chosen().m),
+        ..Spec::new("orpheus-galop", "")
+    };
+    covered.extend(assert_causal(delayed, None, 10.0));
     // (Reading switches need hindsight grids, which these streams have.)
     let missing: Vec<_> = FEATURES.iter().filter(|f| !covered.contains(f)).collect();
     assert!(
@@ -437,10 +445,18 @@ fn the_same_stream_and_keys_give_the_same_recording() {
 /// given whole: streaming equals batch.
 #[test]
 fn bursts_of_arrivals_give_the_same_recording() {
-    for track in ["causality-mix", "orpheus-galop"] {
+    let delayed_galop = Spec {
+        delayed: Some(analysis::delayed::DelayedParams::chosen().m),
+        ..Spec::new("orpheus-galop", "mash4")
+    };
+    for spec in [
+        Spec::new("causality-mix", "mash4"),
+        Spec::new("orpheus-galop", "mash4"),
+        delayed_galop,
+    ] {
+        let track = spec.track;
         let file = stream_file(track);
-        let log = with_silent_tail(file.log.clone(), 10.0);
-        let spec = Spec::new(track, "mash4");
+        let log = log_for(&spec);
         let until = file.audio.duration + 10.0;
         let (whole, mut sim) = start(&spec, &log);
         sim.advance_to(until);

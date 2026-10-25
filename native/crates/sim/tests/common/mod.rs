@@ -171,6 +171,8 @@ pub struct Spec<'a> {
     pub level: &'a str,
     pub no_hero_damage: bool,
     pub leak_future_evidence: bool,
+    /// Delayed listening at this M: the stream's beats replaced by E1's (see [`delayed_log`]).
+    pub delayed: Option<f64>,
 }
 
 impl<'a> Spec<'a> {
@@ -181,8 +183,72 @@ impl<'a> Spec<'a> {
             level: "levels/reactive.yaml",
             no_hero_damage: false,
             leak_future_evidence: false,
+            delayed: None,
         }
     }
+}
+
+/// The stream with Delayed listening's committed beats at `m` (E1) in place of Direct listening's:
+/// `analysis::delayed::replay` over the stream's own beats and hindsight entries, the hindsight
+/// usable at the live `D`, in the analyzer's order (an entry before the commits known with it).
+/// Every other group is the stream's.
+pub fn delayed_log(log: &StreamLog, m: f64, end: f64) -> StreamLog {
+    use analysis::analyzer::Entry;
+    use analysis::beats::{BeatParams, Commit};
+    use analysis::delayed::{DelayedParams, replay};
+    use analysis::hindsight::{HindsightEntry, HindsightParams};
+    let h = HindsightParams::live();
+    let mut entries: Vec<(f64, u8, Entry)> = log
+        .beats
+        .iter()
+        .map(|b| {
+            let c = Commit {
+                t: b.t,
+                known_at: b.known_at,
+                period: b.period,
+                evidence: b.evidence,
+            };
+            (b.known_at, 1, Entry::Beat(c))
+        })
+        .collect();
+    for x in log.hindsight.iter().flatten() {
+        let e = HindsightEntry {
+            known_at: x.known_at + h.delay_s,
+            window_end: x.known_at,
+            offline: x.offline.clone(),
+            online: x.online.clone(),
+        };
+        entries.push((e.known_at, 0, Entry::Hindsight(e)));
+    }
+    entries.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
+    let entries: Vec<Entry> = entries.into_iter().map(|e| e.2).collect();
+    let p = DelayedParams {
+        m,
+        ..DelayedParams::chosen()
+    };
+    let beats = replay(&entries, end, p, &h, &BeatParams::default());
+    StreamLog {
+        beats: beats
+            .iter()
+            .map(|c| stream::Beat {
+                t: c.t,
+                known_at: c.known_at,
+                period: c.period,
+                evidence: c.evidence,
+            })
+            .collect(),
+        ..log.clone()
+    }
+}
+
+/// The stream a spec runs on: the track's (Delayed if the spec says so) with a silent tail.
+pub fn log_for(spec: &Spec) -> StreamLog {
+    let file = stream_file(spec.track);
+    let log = match spec.delayed {
+        Some(m) => delayed_log(&file.log, m, file.audio.duration),
+        None => file.log,
+    };
+    with_silent_tail(log, 10.0)
 }
 
 /// A live sim on `log` with the spec's gate, level and checks and the fixture's keys queued, not yet

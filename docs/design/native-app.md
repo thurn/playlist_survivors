@@ -1493,6 +1493,14 @@ The analyzer gains `Listening::Delayed { m }`. In it:
 - **No Python oracle.** Python has no delayed rule. Stage parity covers the
   pieces E1 reuses (hindsight, the forecast commits), and corpus accuracy
   against the reference grids judges the rule itself.
+- **Measured (E1, `hv-t8o8.31`):** offline hindsight at `M = 3 s`, 85.9% of
+  committed beats within 45 ms over the 61-track corpus against Direct's 78.6%
+  at the same `D`, and no category worse (classical 84.4 against 62.8). The
+  lead holds on every track. Forecasts that fill a band are known with the
+  band at `k`: E0's earlier stamps would precede the decode that chooses them.
+  A forecast that can't lead by `H` at its own period isn't committed. The
+  table and its caveats (half-tempo recall on a few tracks) are in
+  [`native/evidence/e1/`](../../native/evidence/e1/README.md).
 
 ### Checks
 

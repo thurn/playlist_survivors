@@ -24,6 +24,7 @@ use crate::accents::{AccentParams, Accents, Forecast};
 use crate::bands::{Bands, Timbre};
 use crate::beats::{BeatParams, Belief, Beliefs, Commit, Committer, Evidence};
 use crate::dbn::OnlineDbn;
+use crate::delayed::{Delayed, Listening};
 use crate::frontend::{HOP, OnlineFrontEnd, SAMPLE_RATE};
 use crate::hindsight::{
     HindsightDecoder, HindsightEntry, HindsightParams, OnlineBeats, phase_shift,
@@ -97,6 +98,8 @@ pub struct Params {
     pub hindsight: HindsightParams,
     pub structure: StructureParams,
     pub accents: AccentParams,
+    /// Direct listening, or Delayed (committed beats from hindsight).
+    pub listening: Listening,
 }
 
 /// The hindsight worker thread and its channels.
@@ -322,6 +325,9 @@ struct Stages {
     tick_evidence: f64,
     last_belief: Option<Belief>,
     commits: Vec<Commit>,
+    /// Delayed listening's commit rule (Direct's commits then feed it, unemitted).
+    delayed: Option<Delayed>,
+    delayed_out: Vec<Commit>,
     params: Params,
     timings: Timings,
 }
@@ -420,6 +426,11 @@ impl Analyzer {
             tick_evidence: 0.0,
             last_belief: None,
             commits: Vec::new(),
+            delayed: match p.listening {
+                Listening::Direct => None,
+                Listening::Delayed(d) => Some(Delayed::new(d, &p.hindsight, &p.beats)),
+            },
+            delayed_out: Vec::new(),
             params,
             timings: Timings::default(),
         };
@@ -481,7 +492,14 @@ impl Analyzer {
             h.request(t_end, usize::MAX);
             h.next += 1;
         }
+        let before = out.len();
         h.ingest(f64::INFINITY, out);
+        Stages::delayed_entries(s.delayed.as_mut(), &mut s.delayed_out, out, before);
+        if let Some(d) = s.delayed.as_mut() {
+            s.delayed_out.clear();
+            d.finish(duration, &mut s.delayed_out);
+            out.extend(s.delayed_out.iter().copied().map(Entry::Beat));
+        }
         // The timbre entries through the stream's end, from every frame its samples allow.
         let b = &mut s.bands;
         b.advance_to(b.received() / HOP);
@@ -542,7 +560,9 @@ impl Stages {
         let started = Instant::now();
         let h = &mut self.hindsight;
         h.request_due(n, fps);
+        let before = out.len();
         h.ingest(n as f64 / fps, out);
+        Self::delayed_entries(self.delayed.as_mut(), &mut self.delayed_out, out, before);
         let shift = if h.usable.is_empty() {
             0.0
         } else {
@@ -561,7 +581,14 @@ impl Stages {
             self.committer
                 .step(&belief, shift, self.tick_evidence, &mut self.commits)
         );
-        out.extend(self.commits.iter().copied().map(Entry::Beat));
+        match self.delayed.as_mut() {
+            None => out.extend(self.commits.iter().copied().map(Entry::Beat)),
+            Some(d) => {
+                for &c in &self.commits {
+                    d.push_direct(c);
+                }
+            }
+        }
         timed!(self.timings.accents, {
             for c in &self.commits {
                 self.accents.push_beat(c);
@@ -571,6 +598,24 @@ impl Stages {
         });
         out.extend(self.forecasts.iter().copied().map(Entry::Forecast));
         self.last_belief = Some(belief);
+    }
+
+    /// Delayed listening: the hindsight entries just emitted (from `before` in `out`) commit their
+    /// bands, emitted right after them.
+    fn delayed_entries(
+        delayed: Option<&mut Delayed>,
+        buf: &mut Vec<Commit>,
+        out: &mut Vec<Entry>,
+        before: usize,
+    ) {
+        let Some(d) = delayed else { return };
+        buf.clear();
+        for e in &out[before..] {
+            if let Entry::Hindsight(x) = e {
+                d.entry(x, buf);
+            }
+        }
+        out.extend(buf.iter().copied().map(Entry::Beat));
     }
 
     /// The tick at frame `f`, from `belief` (the frame's, or the last one's past the end).

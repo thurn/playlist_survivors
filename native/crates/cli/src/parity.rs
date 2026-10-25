@@ -6,6 +6,9 @@
 //!     ps analysis-parity --all --jobs 8    # every track (the release stage)
 //!     ps analysis-parity --out DIR --check # write parity.json and parity.md; exit 1 outside the margins
 //!     ps analysis-parity --all --no-live   # the margins only, without the live-delay run (half the time)
+//!     ps analysis-parity --delayed 3       # also Delayed listening at M = 3 s (E1), with the lead check
+//!     ps analysis-parity --all --delayed-sweep --out DIR  # every grid at every M, by category (delayed.md)
+
 //!
 //! The samples are Python's own (`ps_analysis.pcm`, cached under
 //! `~/Library/Caches/playlist-survivors/pcm`), so decoders don't differ. The margin is the plan's:
@@ -22,6 +25,8 @@ use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
 use analysis::analyzer::{Analyzer, Entry, Params};
+use analysis::beats::BeatParams;
+use analysis::delayed::{self, DelayedParams, Grid};
 use analysis::hindsight::HindsightParams;
 use analysis::tensors::Tensors;
 use serde_json::{Value, json};
@@ -46,7 +51,13 @@ struct Options {
     out: Option<PathBuf>,
     check: bool,
     live: bool,
+    /// Delayed listening at these (grid, M), replayed from each track's live-delay run.
+    delayed: Vec<(Grid, f64)>,
+    sweep: bool,
 }
+
+/// The delays E1 measures (s).
+const MS: [f64; 6] = [1.5, 2.0, 2.5, 3.0, 4.0, 5.0];
 
 fn options(args: &[String]) -> Result<Options, String> {
     let mut o = Options {
@@ -55,6 +66,8 @@ fn options(args: &[String]) -> Result<Options, String> {
         out: None,
         check: false,
         live: true,
+        delayed: Vec::new(),
+        sweep: false,
     };
     let mut it = args.iter();
     while let Some(a) = it.next() {
@@ -77,8 +90,26 @@ fn options(args: &[String]) -> Result<Options, String> {
             "--out" => o.out = Some(it.next().ok_or("--out needs a directory")?.into()),
             "--check" => o.check = true,
             "--no-live" => o.live = false,
+            "--delayed" => {
+                let m = it
+                    .next()
+                    .and_then(|n| n.parse().ok())
+                    .ok_or("--delayed needs M in seconds")?;
+                o.delayed = vec![(DelayedParams::chosen().grid, m)];
+            }
+            "--delayed-sweep" => {
+                o.sweep = true;
+                o.delayed = Grid::ALL
+                    .iter()
+                    .flat_map(|&g| MS.iter().map(move |&m| (g, m)))
+                    .collect();
+            }
             other => return Err(format!("unknown argument {other}")),
         }
+    }
+    // (Delayed listening replays the live-delay run.)
+    if !o.delayed.is_empty() {
+        o.live = true;
     }
     Ok(o)
 }
@@ -377,6 +408,7 @@ fn track(
     audio: &Path,
     stream: &Value,
     with_live: bool,
+    delayed_at: &[(Grid, f64)],
 ) -> Result<Value, String> {
     let y = samples(id, audio)?;
     let audio_s = y.len() as f64 / SR;
@@ -513,9 +545,48 @@ fn track(
             }),
         );
     }
+    // Delayed listening (E1), replayed from the live-delay run: accuracy and recall against the
+    // reference, beside Direct listening's at the same D, and the lead check.
+    let recall = |b: &[f64]| {
+        let r: Vec<f64> = reference.iter().copied().filter(|&x| x >= 4.0).collect();
+        if r.is_empty() {
+            f64::NAN
+        } else {
+            matched(&r, b, 0.045)
+        }
+    };
+    let mut delayed_rows = serde_json::Map::new();
+    let bp = BeatParams::default();
+    for &(grid, m) in delayed_at {
+        let p = DelayedParams {
+            m,
+            grid,
+            ..DelayedParams::chosen()
+        };
+        let commits = delayed::replay(&live.out, audio_s, p, &HindsightParams::live(), &bp);
+        let times: Vec<f64> = commits.iter().map(|c| round4(c.t)).collect();
+        let (n, _, w45, _) = accuracy(&times, &reference, 4.0);
+        let short = commits
+            .iter()
+            .filter(|c| c.t - c.known_at < bp.commit_periods * c.period + bp.commit_extra_s - 1e-9)
+            .count();
+        let row = delayed_rows
+            .entry(grid.name())
+            .or_insert_with(|| json!({}))
+            .as_object_mut()
+            .expect("an object");
+        row.insert(
+            format!("{m}"),
+            json!({"beats": n, "within45": w45, "recall": recall(&times), "shortLead": short}),
+        );
+    }
     Ok(json!({
         "track": id,
         "audioS": audio_s,
+        "delayed": if delayed_at.is_empty() { Value::Null } else { json!({
+            "direct": {"within45": w45_live, "recall": recall(&rust_live)},
+            "grids": delayed_rows,
+        }) },
         "accuracy": {
             "rust": {"beats": n_rust, "within20": w20_rust, "within45": w45_rust, "within70": w70(&rust_d0), "offbeat45": off_rust},
             "python": {"beats": n_py, "within20": w20_py, "within45": w45_py, "within70": w70(&py_beats), "offbeat45": off_py},
@@ -604,6 +675,130 @@ fn markdown(rows: &[Value], aggregate: &Value) -> String {
     s
 }
 
+/// Delayed listening's summary: per category (index.json's groups, and `all`), the mean of tracks'
+/// accuracy and recall for Direct listening at the live D and each grid and M; E1's choice (the
+/// grid best in aggregate at its best M that is no worse than Direct on any category, and the
+/// smallest M within a point of that grid's best, to 0.5 s); and whether every beat led by H.
+fn delayed_summary(rows: &[Value], index: &Value, at: &[(Grid, f64)]) -> ((String, Value), bool) {
+    let group_of = |id: &str| -> String {
+        index["tracks"]
+            .as_array()
+            .and_then(|ts| ts.iter().find(|t| t["id"].as_str() == Some(id)))
+            .and_then(|t| t["group"].as_str())
+            .unwrap_or("unlisted")
+            .to_string()
+    };
+    let mut groups: Vec<String> = rows
+        .iter()
+        .map(|r| group_of(r["track"].as_str().unwrap_or("")))
+        .collect();
+    groups.sort();
+    groups.dedup();
+    groups.insert(0, "all".into());
+    let in_group = |g: &str| -> Vec<&Value> {
+        rows.iter()
+            .filter(|r| g == "all" || group_of(r["track"].as_str().unwrap_or("")) == g)
+            .collect()
+    };
+    let mean_of = |rs: &[&Value], pick: &dyn Fn(&Value) -> f64| -> f64 {
+        let v: Vec<f64> = rs
+            .iter()
+            .map(|r| pick(r))
+            .filter(|x| x.is_finite())
+            .collect();
+        mean(&v)
+    };
+    let cell = |r: &Value, g: Grid, m: f64, k: &str| {
+        f(&r["delayed"]["grids"][g.name()][format!("{m}")], k)
+    };
+    let short: f64 = rows
+        .iter()
+        .flat_map(|r| at.iter().map(move |&(g, m)| cell(r, g, m, "shortLead")))
+        .filter(|x| x.is_finite())
+        .sum();
+    let mut md = String::from("| Category | Tracks | Direct |");
+    for &(g, m) in at {
+        md += &format!(" {} {m} |", g.name());
+    }
+    md += "\n|---|---|---|";
+    md += &"---|".repeat(at.len());
+    md += "\n";
+    let mut table = serde_json::Map::new();
+    let mut acc = std::collections::BTreeMap::new();
+    for g in &groups {
+        let rs = in_group(g);
+        let direct = mean_of(&rs, &|r| f(&r["delayed"]["direct"], "within45"));
+        let direct_recall = mean_of(&rs, &|r| f(&r["delayed"]["direct"], "recall"));
+        md += &format!(
+            "| {g} | {} | {:.1} ({:.1}) |",
+            rs.len(),
+            100.0 * direct,
+            100.0 * direct_recall
+        );
+        let mut cells = serde_json::Map::new();
+        for &(grid, m) in at {
+            let w = mean_of(&rs, &|r| cell(r, grid, m, "within45"));
+            let rc = mean_of(&rs, &|r| cell(r, grid, m, "recall"));
+            md += &format!(" {:.1} ({:.1}) |", 100.0 * w, 100.0 * rc);
+            cells.insert(
+                format!("{} {m}", grid.name()),
+                json!({"within45": w, "recall": rc}),
+            );
+            acc.insert((g.clone(), grid.name(), (m * 10.0).round() as i64), w);
+        }
+        md += "\n";
+        table.insert(g.clone(), json!({"tracks": rs.len(), "direct": {"within45": direct, "recall": direct_recall}, "delayed": cells}));
+    }
+    md += "\n(Within 45 ms of the reference, mean of tracks, %; recall in brackets.)\n";
+    // E1's choice.
+    let direct_of = |g: &str| f(&table[g]["direct"], "within45");
+    let mut choice = Value::Null;
+    let mut best: Option<(f64, Grid)> = None;
+    for &grid in &Grid::ALL {
+        let ms: Vec<f64> = at.iter().filter(|x| x.0 == grid).map(|x| x.1).collect();
+        let Some(&top) = ms.iter().max_by(|a, b| {
+            acc[&("all".to_string(), grid.name(), (**a * 10.0).round() as i64)]
+                .total_cmp(&acc[&("all".to_string(), grid.name(), (**b * 10.0).round() as i64)])
+        }) else {
+            continue;
+        };
+        let at_top = |g: &str| acc[&(g.to_string(), grid.name(), (top * 10.0).round() as i64)];
+        let fair = groups.iter().all(|g| at_top(g) >= direct_of(g) - 1e-9);
+        if fair && best.is_none_or(|(b, _)| at_top("all") > b) {
+            best = Some((at_top("all"), grid));
+        }
+    }
+    if let Some((top, grid)) = best {
+        let m = at
+            .iter()
+            .filter(|x| x.0 == grid)
+            .map(|x| x.1)
+            .filter(|&m| {
+                acc[&("all".to_string(), grid.name(), (m * 10.0).round() as i64)]
+                    >= top - 0.01 - 1e-9
+            })
+            .fold(f64::INFINITY, f64::min);
+        let m = (m * 2.0).round() / 2.0;
+        md += &format!(
+            "\nChoice: {} at M = {m} s ({:.1}% in aggregate; Direct {:.1}%).\n",
+            grid.name(),
+            100.0 * acc[&("all".to_string(), grid.name(), (m * 10.0).round() as i64)],
+            100.0 * direct_of("all")
+        );
+        choice = json!({"grid": grid.name(), "m": m});
+    } else {
+        md += "\nChoice: none: no grid is as good as Direct on every category.\n";
+    }
+    md += &format!("Lead check: {short} beats known less than H ahead.\n");
+    (
+        (
+            md,
+            json!({"categories": table, "choice": choice, "shortLead": short}),
+        ),
+        short == 0.0,
+    )
+}
+
 pub fn main(args: &[String]) -> i32 {
     match run(args) {
         Ok(ok) => i32::from(!ok),
@@ -655,7 +850,7 @@ fn run(args: &[String]) -> Result<bool, String> {
                     let Some((id, audio, stream)) = entries.get(k) else {
                         break;
                     };
-                    let result = read_json(stream).and_then(|s| track(&models, id, audio, &s, o.live));
+                    let result = read_json(stream).and_then(|s| track(&models, id, audio, &s, o.live, &o.delayed));
                     match result {
                         Ok(row) => {
                             eprintln!(
@@ -708,7 +903,14 @@ fn run(args: &[String]) -> Result<bool, String> {
         "within45RustLiveDelay": weighted("rustLiveDelay"),
         "tracksOutsideMargin": failing,
     });
-    let ok = failing.is_empty() && rust >= python - AGGREGATE_MARGIN;
+    let mut ok = failing.is_empty() && rust >= python - AGGREGATE_MARGIN;
+    let delayed_report = if o.delayed.is_empty() {
+        None
+    } else {
+        let (report, lead_ok) = delayed_summary(&rows, &index, &o.delayed);
+        ok &= lead_ok;
+        Some(report)
+    };
     let table = markdown(&rows, &aggregate);
     print!("{table}");
     println!(
@@ -725,6 +927,17 @@ fn run(args: &[String]) -> Result<bool, String> {
         )
         .map_err(|e| e.to_string())?;
         std::fs::write(dir.join("parity.md"), &table).map_err(|e| e.to_string())?;
+        if let Some((md, doc)) = &delayed_report {
+            std::fs::write(dir.join("delayed.md"), md).map_err(|e| e.to_string())?;
+            std::fs::write(
+                dir.join("delayed.json"),
+                serde_json::to_string_pretty(doc).unwrap(),
+            )
+            .map_err(|e| e.to_string())?;
+        }
+    }
+    if let Some((md, _)) = &delayed_report {
+        print!("{md}");
     }
     Ok(!o.check || ok)
 }

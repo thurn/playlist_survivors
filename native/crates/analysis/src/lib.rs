@@ -6,6 +6,7 @@ pub mod analyzer;
 pub mod bands;
 pub mod beats;
 pub mod dbn;
+pub mod delayed;
 pub mod frontend;
 pub mod hindsight;
 pub mod numeric;
