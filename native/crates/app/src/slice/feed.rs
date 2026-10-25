@@ -1,6 +1,8 @@
 //! Analyzer entries into the sim's stream: each converted to the stream's type, stamped with its
 //! arrival as `known_at` (never earlier than the analyzer's own), and shifted so the run starts at
-//! song time 0 (a restart begins a new run mid-song).
+//! song time 0 (a restart begins a new run mid-song). A committed beat that arrives after its own
+//! time is dropped: the simulation can't act on a beat in its past (the analyzer can commit late
+//! while it starts up).
 
 use analysis::analyzer::Entry;
 use analysis::ticks::Level;
@@ -26,6 +28,7 @@ pub fn append(log: &mut StreamLog, e: &Entry, arrived: f64, start: f64) {
         return;
     }
     match e {
+        Entry::Beat(c) if at(c.t) < stamp(c.known_at) => {}
         Entry::Beat(c) => log.beats.push(stream::Beat {
             t: at(c.t),
             known_at: stamp(c.known_at),
@@ -148,6 +151,15 @@ mod tests {
             evidence: 0.9,
         });
         append(&mut log, &old, 12.1, 10.0);
+        assert_eq!(log.beats.len(), 1);
+        // Arrived after its own time: dropped.
+        let late = Entry::Beat(Commit {
+            t: 13.0,
+            known_at: 12.6,
+            period: 0.5,
+            evidence: 0.9,
+        });
+        append(&mut log, &late, 13.05, 10.0);
         assert_eq!(log.beats.len(), 1);
     }
 }
