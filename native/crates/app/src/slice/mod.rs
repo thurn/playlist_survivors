@@ -30,7 +30,7 @@ mod live;
 )]
 mod output;
 mod scene;
-mod sfx;
+mod sounds;
 #[allow(
     clippy::pedantic,
     clippy::explicit_counter_loop,
@@ -65,7 +65,7 @@ use hud::{HudState, KeyLight, PressMark};
 use live::{Msg, Source};
 use output::{Event, Output};
 use scene::{Look, Scene};
-use sfx::{Cue, Sfx};
+use sounds::Sounds;
 
 /// The tap's timeline runs this far behind the output's render timeline (phase 0, built-in
 /// speakers); `PS_TAP_MINUS_RENDER_MS` overrides it.
@@ -208,13 +208,14 @@ pub fn run(args: &[String]) -> Result<(), String> {
         None => None,
     };
     // Output first: our process object must exist before the tap can exclude it.
-    let (sfx, bank) = match Sfx::load(
+    let (sounds, bank) = match Sounds::load(
         &live::resource("sfx", "../../../public/assets/sfx"),
         Output::device_rate(),
+        &world.lib,
     ) {
-        Ok((sfx, bank)) => (Some(sfx), bank),
+        Ok((sounds, bank)) => (Some(sounds), bank),
         Err(e) => {
-            eprintln!("slice: no sound effects, blips instead: {e}");
+            eprintln!("slice: no sound effects: {e}");
             (None, Vec::new())
         }
     };
@@ -261,7 +262,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
     let mut app = App {
         key_times,
         gfx: None,
-        sfx,
+        sounds,
         art,
         world,
         rx,
@@ -277,7 +278,6 @@ pub fn run(args: &[String]) -> Result<(), String> {
         last_sound: f64::NEG_INFINITY,
         over: None,
         title_at: 0.0,
-        cue_at: f64::NEG_INFINITY,
         next_voice: 0,
         ahead: 0.02,
         voices: [0; 3],
@@ -419,7 +419,7 @@ struct App {
     /// Key press times from the window server.
     key_times: keys::KeyTimes,
     gfx: Option<Gfx>,
-    sfx: Option<Sfx>,
+    sounds: Option<Sounds>,
     art: Atlases,
     world: World,
     rx: mpsc::Receiver<Msg>,
@@ -441,8 +441,6 @@ struct App {
     /// When the run ended (host s), and whether the hero fell.
     over: Option<(f64, bool, f64)>,
     title_at: f64,
-    /// When the last swing or kill sound started (host s), so a burst plays once.
-    cue_at: f64,
     /// The next voice's identity, and how far ahead of now the output is rendering (s): a sound
     /// scheduled that far ahead lands on its sample.
     next_voice: u64,
@@ -518,6 +516,7 @@ impl App {
             self.engine.advance_to(s - self.run_start);
             let moments = self.engine.view.borrow_mut().take_moments();
             self.cues(&moments, now);
+            self.schedule_sounds();
             self.scene
                 .moments(&moments, now, &self.world.lib, &self.world.looks);
             self.scene
@@ -525,7 +524,7 @@ impl App {
             let fell = self.engine.fallen();
             if fell || (self.last_sound.is_finite() && now - self.last_sound > SILENCE_S) {
                 if fell {
-                    self.cue(Cue::Death, 150.0);
+                    self.sound_now("boss-slam", 1.0);
                 }
                 self.over = Some((now, fell, s - self.run_start));
                 eprintln!(
@@ -637,7 +636,7 @@ impl App {
         });
     }
 
-    /// The sounds the view's new moments make: kills, swings, bites.
+    /// The key display and the beat track's presses, from the view's new moments.
     fn cues(&mut self, moments: &[Moment], now: f64) {
         for m in moments {
             if let Moment::Press { rating, delta, .. } = m {
@@ -651,36 +650,46 @@ impl App {
         while self.presses.front().is_some_and(|p| now - p.0 > 1.0) {
             self.presses.pop_front();
         }
-        let kills = moments
-            .iter()
-            .filter(|m| matches!(m, Moment::Death { .. }))
-            .count();
-        let swung = moments.iter().any(|m| matches!(m, Moment::Swing { .. }));
-        if moments.iter().any(|m| matches!(m, Moment::Bite { .. })) {
-            self.cue(Cue::Hurt, 220.0);
+    }
+
+    /// Schedules the sounds the simulation caused since the last frame, for when they're heard.
+    fn schedule_sounds(&mut self) {
+        let caused = self.engine.view.borrow_mut().take_sounds();
+        let (Some(sounds), Some(clock)) = (self.sounds.as_mut(), self.clock) else {
+            return;
+        };
+        if caused.is_empty() {
+            return;
         }
-        // (A burst of kills or swings in one frame plays once, and at most every 80 ms.)
-        if now - self.cue_at > 0.08 {
-            if kills >= 3 {
-                self.cue(Cue::KillMulti, 1500.0);
-                self.cue_at = now;
-            } else if kills > 0 {
-                self.cue(Cue::Kill, 1500.0);
-                self.cue_at = now;
-            } else if swung {
-                self.cue(Cue::Swing, 1000.0);
-                self.cue_at = now;
-            }
+        let camera = self.engine.view.borrow().camera;
+        let seed = self.engine.seed;
+        let at = sounds::At {
+            seed,
+            run_start: self.run_start,
+            beats: &self.engine.log().beats,
+            gate: GATE,
+            camera,
+            clock,
+            l_out: self.l_out,
+            // (Known in time for the output to render it: past its latency and lookahead.)
+            never_late: sounds::NEVER_LATE.max(self.l_out + self.ahead.max(0.0) + 0.005),
+        };
+        let mut commands = Vec::new();
+        sounds.schedule(&caused, &at, &mut commands);
+        for c in commands {
+            let _ = self.out.commands.push(c);
         }
     }
 
-    /// A sound effect now (or, without the samples, a blip at `freq`).
-    fn cue(&mut self, cue: Cue, freq: f32) {
-        // (As soon as the output can play it on its sample.)
+    /// A sound as soon as the output can play it on its sample.
+    fn sound_now(&mut self, key: &str, gain: f64) {
         let at = now_s() + self.ahead.max(0.0) + 0.001;
-        match self.sfx.as_mut().and_then(|s| s.next(cue)) {
-            Some(play) => self.voice(Voiced::Sample(play.sound), at, play.from as f64, play.gain),
-            None => self.voice(Voiced::Click(freq), at, 0.0, 1.0),
+        let mut commands = Vec::new();
+        if let Some(s) = self.sounds.as_mut() {
+            s.now(key, at, gain, &mut commands);
+        }
+        for c in commands {
+            let _ = self.out.commands.push(c);
         }
     }
 
@@ -713,6 +722,10 @@ impl App {
         }
         self.run_start = self.song_at(now).unwrap_or(0.0);
         self.scene = Scene::default();
+        let _ = self.out.commands.push(Command::CancelAll);
+        if let Some(s) = self.sounds.as_mut() {
+            s.reset();
+        }
         self.over = None;
         self.voices = [0; 3];
     }

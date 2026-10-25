@@ -4,17 +4,19 @@
 //! groove, and the moments a frame shows once (hits, deaths, presses, bites).
 
 use std::cell::RefCell;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, VecDeque};
 use std::rc::Rc;
 
 use indexmap::IndexMap;
 use sim::content::level::{LevelError, load_level};
 use sim::content::{ContentLibrary, SourceFile};
+use sim::core::geometry::Shape;
 use sim::engine::{AnimInfo, HERO_ANIMS, Sim, SimInput};
 use sim::movement::InputKey;
 use sim::player::{KeyEvent, KeyEventKind};
 use sim::recorder::{
-    BiteRecord, EnemyRecord, Fate, Hit, PlanInput, PlanSwing, Recorder, SettleRecord,
+    BiteRecord, EnemyRecord, Fate, Hit, HitSource, Landing, PlanInput, PlanSwing, Recorder,
+    SettleRecord,
 };
 use sim::schedule::reactive_song_map;
 use stream::StreamLog;
@@ -78,6 +80,38 @@ pub enum Moment {
     Bite { damage: f64 },
 }
 
+/// What a sound marks, at the song time it belongs to (`planner/emit.ts`'s sound calls; the app
+/// places it on the beat grid, picks its sample and schedules it).
+#[derive(Clone, Debug, PartialEq)]
+pub enum Cause {
+    /// A swing's strike at `s` (its whoosh comes just before), at the hero's x.
+    Swing { s: f64, x: f64, kind: &'static str },
+    /// An enemy killed by a hit at `s`.
+    Kill { s: f64, x: f64 },
+    /// A weapon's hit at `s`: as it fires (`caught` false), and on the first enemy it catches.
+    Weapon {
+        s: f64,
+        x: f64,
+        what: String,
+        caught: bool,
+    },
+    /// The hero bitten at `s`.
+    Hurt { s: f64 },
+    /// The groove's tier rose or fell; its chime at `s`.
+    Tier { s: f64, up: bool },
+    /// A stride landed (not a stomp).
+    Step { s: f64, x: f64 },
+    /// A level gained at `s`.
+    LevelUp { s: f64 },
+}
+
+/// A sound's cause and the song time the simulation knew it at.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Caused {
+    pub cause: Cause,
+    pub known: f64,
+}
+
 /// What a frame draws.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct LiveView {
@@ -99,12 +133,28 @@ pub struct LiveView {
     pub ratings: [usize; 3],
     /// Moments since the drawer last took them.
     pub moments: Vec<Moment>,
+    /// Sounds caused since the mixer's scheduler last took them.
+    pub sounds: Vec<Caused>,
+    /// The simulation's song time (the latest clock).
+    pub s: f64,
+    /// Recent hits (id, song time, source, weapon, where): fates name them.
+    hits: VecDeque<(f64, f64, HitSource, String, f64)>,
 }
 
 impl LiveView {
     /// The moments since the last call.
     pub fn take_moments(&mut self) -> Vec<Moment> {
         std::mem::take(&mut self.moments)
+    }
+
+    /// The sounds caused since the last call.
+    pub fn take_sounds(&mut self) -> Vec<Caused> {
+        std::mem::take(&mut self.sounds)
+    }
+
+    fn sound(&mut self, cause: Cause) {
+        let known = self.s;
+        self.sounds.push(Caused { cause, known });
     }
 
     /// The living enemies.
@@ -157,11 +207,29 @@ impl Recorder for LiveRecorder {
     }
 
     fn fate(&mut self, _id: usize, fate: Fate) {
-        self.0.borrow_mut().moments.push(Moment::Hit {
+        let mut v = self.0.borrow_mut();
+        v.moments.push(Moment::Hit {
             x: fate.x,
             y: fate.y,
             lethal: fate.lethal,
         });
+        let Some(k) = v.hits.iter().position(|h| h.0 == fate.hit) else {
+            return;
+        };
+        let (_, s, source, what, _) = v.hits[k].clone();
+        if fate.lethal {
+            v.sound(Cause::Kill { s, x: fate.x });
+        }
+        // (A weapon sounds on the first enemy it catches; the hit is forgotten after.)
+        if source == HitSource::Weapon {
+            v.hits.remove(k);
+            v.sound(Cause::Weapon {
+                s,
+                x: fate.x,
+                what,
+                caught: true,
+            });
+        }
     }
 
     fn death(&mut self, id: usize, w: f64, recycled: bool) {
@@ -194,9 +262,44 @@ impl Recorder for LiveRecorder {
         }
     }
 
-    fn hit(&mut self, _h: Hit) {}
+    fn hit(&mut self, h: Hit) {
+        let mut v = self.0.borrow_mut();
+        let x = match h.shape {
+            Shape::Arc { x, .. } | Shape::Circle { x, .. } | Shape::Ring { x, .. } => x,
+            Shape::Capsule { x1, .. } => x1,
+            #[allow(unreachable_patterns)]
+            _ => v.hero.map_or(0.0, |p| p.x),
+        };
+        if h.source == HitSource::Weapon {
+            v.sound(Cause::Weapon {
+                s: h.s,
+                x,
+                what: h.what.clone(),
+                caught: false,
+            });
+        }
+        v.hits.push_back((h.id, h.s, h.source, h.what, x));
+        if v.hits.len() > 64 {
+            v.hits.pop_front();
+        }
+    }
+
+    fn landing(&mut self, l: Landing) {
+        if l.stomp != Some(true) {
+            self.0.borrow_mut().sound(Cause::Step { s: l.s, x: l.x });
+        }
+    }
+
+    fn clock(&mut self, s: f64, _w: f64, _between: bool) {
+        self.0.borrow_mut().s = s;
+    }
 
     fn swing(&mut self, sw: PlanSwing) {
+        self.0.borrow_mut().sound(Cause::Swing {
+            s: sw.s,
+            x: sw.x,
+            kind: sw.kind,
+        });
         self.0.borrow_mut().moments.push(Moment::Swing {
             x: sw.x,
             y: sw.y,
@@ -227,16 +330,23 @@ impl Recorder for LiveRecorder {
         self.0.borrow_mut().groove = v;
     }
 
-    fn tier(&mut self, _s: f64, _w: f64, tier: f64, _sound_s: f64) {
-        self.0.borrow_mut().tier = tier;
+    fn tier(&mut self, _s: f64, _w: f64, tier: f64, sound_s: f64) {
+        let mut v = self.0.borrow_mut();
+        let up = tier > v.tier;
+        if tier != v.tier {
+            v.sound(Cause::Tier { s: sound_s, up });
+        }
+        v.tier = tier;
     }
 
     fn xp(&mut self, _s: f64, fill: f64) {
         self.0.borrow_mut().xp = fill;
     }
 
-    fn upgrade(&mut self, _u: sim::upgrades::UpgradeRecord) {
-        self.0.borrow_mut().level += 1;
+    fn upgrade(&mut self, u: sim::upgrades::UpgradeRecord) {
+        let mut v = self.0.borrow_mut();
+        v.level += 1;
+        v.sound(Cause::LevelUp { s: u.s });
     }
 
     fn health(&mut self, _s: f64, frac: f64) {
@@ -251,10 +361,9 @@ impl Recorder for LiveRecorder {
     }
 
     fn bite(&mut self, b: BiteRecord) {
-        self.0
-            .borrow_mut()
-            .moments
-            .push(Moment::Bite { damage: b.damage });
+        let mut v = self.0.borrow_mut();
+        v.moments.push(Moment::Bite { damage: b.damage });
+        v.sound(Cause::Hurt { s: b.s });
     }
 }
 
