@@ -4,7 +4,7 @@
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { AtlasRect, PropDef, WorldAtlas } from "../../../src/assets/types.ts";
+import type { AtlasRect, PropDef, WorldAtlas } from "./types.ts";
 import { gradientMap, Img, loadImage } from "./image.ts";
 import { AtlasBuilder } from "./pack.ts";
 import { ASSETS_SRC, resolveSource } from "./paths.ts";

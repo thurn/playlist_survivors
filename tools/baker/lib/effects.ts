@@ -4,7 +4,7 @@
  */
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { EffectAnim, EffectsAtlas } from "../../../src/assets/types.ts";
+import type { EffectAnim, EffectsAtlas } from "./types.ts";
 import { Img, loadImage } from "./image.ts";
 import { AtlasBuilder } from "./pack.ts";
 import { ASSETS_SRC, resolveSource } from "./paths.ts";

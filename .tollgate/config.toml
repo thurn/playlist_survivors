@@ -19,8 +19,8 @@ environment = { CARGO_TARGET_DIR = "/Users/dthurn/Library/Caches/playlist-surviv
 # The release stage runs on the newest `staging` tip and moves `release` and remote master.
 # Each section is its own step, so a ci-fix bead is keyed by the section that failed.
 [[step]]
-name = "ci-full-ts"
-run = "./scripts/ci-full ts"
+name = "ci-full-baker"
+run = "./scripts/ci-full baker"
 stage = "release"
 needs = []
 timeout = "30m"

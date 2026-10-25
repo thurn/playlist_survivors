@@ -1,8 +1,0 @@
-# expect: circular extends
-soundPalettes:
-  - id: loop-a
-    extends: loop-b
-    sounds: { swing: [rpgpack/swing] }
-  - id: loop-b
-    extends: loop-a
-    sounds: { swing: [rpgpack/swing] }

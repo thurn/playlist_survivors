@@ -1,4 +1,0 @@
-# expect: unknown field "perfectMillis"
-extends: orpheus-galop
-hero:
-  timing: { perfectMillis: 45 }

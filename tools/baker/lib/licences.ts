@@ -13,7 +13,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
-import type { CreditEntry } from "../../../src/assets/types.ts";
+import type { CreditEntry } from "./types.ts";
 import { ASSETS_SRC, ULPC } from "./paths.ts";
 
 /** Allowed licences, least restrictive first. */

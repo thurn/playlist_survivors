@@ -11,8 +11,8 @@
 import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import sharp from "sharp";
-import type { AtlasRect, CharacterAtlas, EffectsAtlas, WorldAtlas } from "../../src/assets/types.ts";
-import { FACINGS } from "../../src/assets/types.ts";
+import type { AtlasRect, CharacterAtlas, EffectsAtlas, WorldAtlas } from "./lib/types.ts";
+import { FACINGS } from "./lib/types.ts";
 import { Img, loadImage, savePng } from "./lib/image.ts";
 import { CAPTURES, OUT } from "./lib/paths.ts";
 

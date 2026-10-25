@@ -14,7 +14,7 @@
  */
 import { readdirSync, rmSync, writeFileSync, mkdirSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { CreditsFile } from "../../src/assets/types.ts";
+import type { CreditsFile } from "./lib/types.ts";
 import { bakeCharacters } from "./lib/characters.ts";
 import { bakeEffects } from "./lib/effects.ts";
 import { savePng, type Img } from "./lib/image.ts";

@@ -12,8 +12,8 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import sharp from "sharp";
 import { parse as parseYaml } from "yaml";
-import type { AtlasRect, CharacterAtlas, CreditsFile, EffectsAtlas, SoundManifest, WorldAtlas } from "../../src/assets/types.ts";
-import { FACINGS } from "../../src/assets/types.ts";
+import type { AtlasRect, CharacterAtlas, CreditsFile, EffectsAtlas, SoundManifest, WorldAtlas } from "./lib/types.ts";
+import { FACINGS } from "./lib/types.ts";
 import { isAllowedLicence, leastRestrictive, resolveLicence } from "./lib/licences.ts";
 import { ASSETS_SRC, OUT, REPO, SFX_OUT } from "./lib/paths.ts";
 

@@ -4,59 +4,34 @@
 # waits for it. Run it locally only when a change touches CI scripts, the Tollgate policy,
 # workspace-wide configuration or shared test infrastructure.
 #
-#   scripts/ci-full [ts|analysis|native]    # one section (a Tollgate release step each), or all
-#
-# The Playwright e2e tests stay out: Chromium starts its own process session, which Tollgate
-# rejects. Run `npm run test:e2e` by hand.
+#   scripts/ci-full [baker|analysis|native]    # one section (a Tollgate release step each), or all
 set -eu
 cd "$(dirname "$0")/.."
 . scripts/lib/changes.sh
 section="${1:-all}"
-# Pass stamps for the TS section, keyed by its inputs' hash (outside the slots, so they persist).
+# Pass stamps, keyed by a check's inputs' hash (outside the slots, so they persist).
 STAMPS="${PS_CI_STAMPS:-$HOME/Library/Caches/playlist-survivors/ci-stamps}"
 
 case "$section" in
-  all|ts|analysis|native) ;;
-  *) echo "usage: scripts/ci-full [ts|analysis|native]" >&2; exit 2 ;;
+  all|baker|analysis|native) ;;
+  *) echo "usage: scripts/ci-full [baker|analysis|native]" >&2; exit 2 ;;
 esac
 
-# The TS section is skipped when its inputs (every TS path at HEAD, node and npm) are identical
-# to a commit that passed it before: the TS game is frozen, and native-only commits would rerun
-# about 250 s of checks on the same inputs. PS_CI_FULL_FORCE=1 runs it regardless.
-if [ "$section" = all ] || [ "$section" = ts ]; then
-  hash=$(ts_inputs_hash)
-  if [ -n "$hash" ] && [ -f "$STAMPS/ts-$hash" ] && [ "${PS_CI_FULL_FORCE:-0}" != 1 ]; then
-    echo "ci-full ts: inputs $hash passed at $(cat "$STAMPS/ts-$hash"); skipping"
-  else
-    echo "ci-full ts: inputs ${hash:-(uncommitted changes)}"
-    npm ci --no-audit --no-fund --prefer-offline
-    npm run check
-    npm run check:content
-    npm run check:assets
-    # The level's seed with causality and determinism, then three more seeds.
-    npm run check:seeds
-    # Play mode on four seeds (the moderate player's signature moments, the casual player's
-    # finale), and the curve and groove averaged over eight.
-    npm run check:play
-    # Reactive mode: causality, determinism, the shipped streams and sounds on committed beats.
-    npm run check:reactive
-    npm run build
-    if [ -n "$hash" ]; then
-      mkdir -p "$STAMPS"
-      echo "$(git rev-parse --short HEAD) $(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$STAMPS/ts-$hash"
-    fi
-  fi
+# The asset baker (tools/baker): its lint, typecheck and the baked assets' check.
+if [ "$section" = all ] || [ "$section" = baker ]; then
+  npm ci --no-audit --no-fund --prefer-offline
+  npm run check
 fi
 
 # The Python tooling: the analysis tool and the friction ledger.
 if [ "$section" = all ] || [ "$section" = analysis ]; then
-  npm run check:analysis
-  npm run check:songmap
+  uv run --directory tools/analysis pytest -q
+  uv run --directory tools/analysis ruff check .
+  uv run --project tools/analysis ps-analysis check songs/orpheus-galop/songmap.json
   scripts/friction validate
   uv run --directory tools/analysis ruff check ../../scripts/friction ../../scripts/test_friction.py
   uv run --no-project python -m unittest scripts/test_friction.py
   uv run --no-project python -m unittest scripts/test_check_conflict_markers.py
-  uv run --no-project python -m unittest scripts/test_changes.py
 fi
 
 # The native workspace: every crate's clippy and tests, the pure crates' purity, unused

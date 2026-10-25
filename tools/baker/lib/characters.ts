@@ -5,7 +5,7 @@
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { CharacterAtlas, CharacterSprite, Facing, SpriteAnimation } from "../../../src/assets/types.ts";
+import type { CharacterAtlas, CharacterSprite, Facing, SpriteAnimation } from "./types.ts";
 import { Img } from "./image.ts";
 import { buildKick } from "./kick.ts";
 import { bakeMonster, type MonsterDef } from "./monsters.ts";

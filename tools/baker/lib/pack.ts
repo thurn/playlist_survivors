@@ -2,7 +2,7 @@
  * Deterministic atlas packing: a skyline bottom-left packer with padding and
  * edge extrusion, plus de-duplication of identical images.
  */
-import type { AtlasRect } from "../../../src/assets/types.ts";
+import type { AtlasRect } from "./types.ts";
 import { Img } from "./image.ts";
 
 export interface PackOptions {

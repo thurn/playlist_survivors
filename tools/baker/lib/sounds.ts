@@ -14,7 +14,7 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { promisify } from "node:util";
 import { createOggEncoder } from "wasm-media-encoders";
-import type { SoundEntry, SoundManifest } from "../../../src/assets/types.ts";
+import type { SoundEntry, SoundManifest } from "./types.ts";
 import { ASSETS_SRC, CACHE, resolveSource, SFX_OUT } from "./paths.ts";
 
 const run = promisify(execFile);

@@ -1,5 +1,5 @@
 #!/bin/sh
-# The whole suite: an alias of scripts/ci-full, kept while TS executors wrap up. Validation is
+# The whole suite: an alias of scripts/ci-full. Validation is
 # staged now (AGENTS.md): scripts/check-fast before submitting, scripts/ci-gate in Tollgate's gate
 # stage, scripts/ci-full in its release stage.
 exec "$(dirname "$0")/ci-full" "$@"

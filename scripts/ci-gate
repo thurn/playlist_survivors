@@ -2,8 +2,7 @@
 # Tollgate's gate stage (budget about 60 s): it runs on every candidate and blocks promotion to
 # `staging`. Path-gated (scripts/lib/changes.sh): each section runs when its paths differ from the
 # base, and every section when the base is unknown.
-# - TS: install, lint, typecheck, unit tests, content and assets, the level's seeds with causality
-#   and determinism, the build.
+# - The asset baker (tools/baker): install, lint, typecheck, the baked assets' check.
 # - The analysis tool: ruff and the song map's check.
 # - Every section: conflict markers in the changed files.
 # - The friction ledger (native/evidence/, scripts/friction): its records and its tests.
@@ -27,22 +26,18 @@ if [ -s "$list" ]; then
   set --
 fi
 
-if changes_ts; then
-  echo "ci-gate: TS section"
+if changes_baker; then
+  echo "ci-gate: baker section"
   npm ci --no-audit --no-fund --prefer-offline
   npm run check
-  npm run check:content
-  npm run check:assets
-  npm run check:seeds
-  npm run build
 else
-  echo "ci-gate: no TS paths changed; skipping the TS section"
+  echo "ci-gate: the baker and its inputs unchanged; skipping the baker section"
 fi
 
 if changes_analysis; then
   echo "ci-gate: analysis section"
   uv run --directory tools/analysis ruff check .
-  npm run check:songmap
+  uv run --project tools/analysis ps-analysis check songs/orpheus-galop/songmap.json
 else
   echo "ci-gate: tools/analysis and songs/ unchanged; skipping the analysis section"
 fi

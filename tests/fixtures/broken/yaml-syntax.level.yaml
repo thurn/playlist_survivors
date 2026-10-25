@@ -1,5 +1,0 @@
-# expect: :5:
-song: orpheus-galop
-seed: 1
-title: { piece: "x", composer: "y", performer: "z"
-zones: [twilight-glade]

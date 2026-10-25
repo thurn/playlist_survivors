@@ -1,6 +1,6 @@
 # Exported models and golden data
 
-Written by `npm run analysis -- export-models` (tools/analysis/src/ps_analysis/models.py,
+Written by `uv run --project tools/analysis ps-analysis export-models` (tools/analysis/src/ps_analysis/models.py,
 docs/design/native-app.md "Models"); never edit by hand. `tools/analysis/tests/test_models.py`
 fails when these differ from a fresh export, so regenerate them whenever the stream's
 parameters or madmom change.

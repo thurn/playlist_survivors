@@ -4,7 +4,7 @@
 #   changes_init  sets CHANGES_BASE and writes the changed paths, one per line, to $CHANGES_FILE
 #                 (committed since the base, staged, unstaged and untracked). With no base it
 #                 sets CHANGES_UNKNOWN=1, and every section runs.
-#   changes_ts / changes_analysis / changes_friction / changes_native   succeed when that section
+#   changes_baker / changes_analysis / changes_friction / changes_native   succeed when that section
 #                 must run.
 #
 # The base is where the branch left `staging` (Tollgate bases worktrees and speculative
@@ -44,22 +44,9 @@ changes_match() {
   [ "$CHANGES_UNKNOWN" = 1 ] || grep -Eq "$1" "$CHANGES_FILE"
 }
 
-# The TS game and its tooling: everything except the native workspace, the analysis tool, the
-# friction ledger's script, documentation and the Tollgate policy.
-TS_EXCLUDE='^(native/|tools/analysis/|scripts/friction$|scripts/test_friction\.py$|docs/|\.tollgate/|[^/]*\.md$)'
-changes_ts() {
-  [ "$CHANGES_UNKNOWN" = 1 ] || grep -Evq "$TS_EXCLUDE" "$CHANGES_FILE"
-}
-
-# A hash of the TS section's inputs at HEAD: every TS path's blob, and the node and npm versions.
-# Empty when the tree has uncommitted changes, whose inputs HEAD doesn't describe.
-ts_inputs_hash() {
-  if [ -n "$(git status --porcelain --untracked-files=no)" ]; then return 0; fi
-  {
-    git ls-tree -r HEAD | awk -F '\t' -v re="$TS_EXCLUDE" '$2 !~ re'
-    node --version
-    npm --version
-  } | shasum -a 256 | cut -d ' ' -f 1
+# The asset baker (tools/baker, the one node tool left) and what it reads and writes.
+changes_baker() {
+  changes_match '^(tools/baker/|assets-src/|public/assets/|package(-lock)?\.json$|tsconfig\.json$|eslint\.config\.js$)'
 }
 
 # The Python analysis tool and the song maps it checks.

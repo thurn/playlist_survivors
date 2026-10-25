@@ -1399,6 +1399,22 @@ After D5:
 - `tools/analysis`, `content/`, `levels/`, `public/assets`, `public/reactive`
   and `corpus/` stay. They are the app's content and the analyzer's oracle.
 
+**Landed** (`hv-t8o8.30`, two commits): the corpus scripts (`reactive:corpus-add`,
+`reactive:streams`, `reactive:fit-grid` and their `scripts/lib/corpus.ts`) became the analysis
+tool's `corpus-add`, `streams` and `fit-corpus` (`ps_analysis/corpus.py`); restreaming
+`causality-mix` with the port rewrote its stream and `index.json` byte for byte. Then `src/`,
+`tests/`, `index.html`, the Vite and Playwright configuration, every TS script and `scripts/lib/`
+but `changes.sh`, the `demo` launch config and `trailer/` went. The asset baker (`tools/baker`)
+stays, the one node tool left, with `src/assets/types.ts` moved into it: the CI scripts' TS
+sections became a baker section (its lint, typecheck and asset check, when `tools/baker`,
+`assets-src/`, `public/assets/` or the node configuration change), and Tollgate's release step
+`ci-full-ts` became `ci-full-baker`. Dropped without a port: the reactive-local tracks
+(`reactive:add`: the app plays any file with `--file`), the feel rounds, dossiers and corpus
+metrics (`reactive:feel`, `reactive:dossier`, `reactive:corpus`), the parity report and replay,
+QA, the benchmark, captures and the trailer, all of them the web game's. AGENTS.md lost the dev
+ports and the browser's play logs (the native timing logs replace them); the README describes
+the native app.
+
 ## Phase E: Delayed Listening
 
 An opt-in output mode that trades a few seconds of delay for better beats.

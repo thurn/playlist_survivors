@@ -3,11 +3,9 @@
 # It replaces running the whole suite locally. Diff-aware, from the paths that differ from the
 # branch's base (scripts/lib/changes.sh), committed or not:
 # - Conflict markers in any changed file (scripts/check-conflict-markers).
-# - TS: eslint on the changed TS and JS files, the typecheck, and vitest's tests related to the
-#   changed files (all of `npm run check` when the toolchain's configuration changed);
-#   check:content and check:assets when their inputs changed.
+# - The asset baker (tools/baker): its lint, typecheck and the baked assets' check.
 # - The analysis tool: ruff on the changed Python files, the test modules of the changed modules,
-#   and check:songmap when the song maps changed.
+#   and the song map's check when the song maps changed.
 # - The friction ledger: its records and scripts/friction's tests, when either changed.
 # - native/scripts/check-fast when native/ changed and the workspace has one (F4 adds it).
 # Tollgate's gate stage (scripts/ci-gate) and release stage (scripts/ci-full) run the rest.
@@ -29,41 +27,19 @@ fi
 if changes_match '^scripts/(check-conflict-markers|test_check_conflict_markers\.py)$'; then
   uv run --no-project python -m unittest scripts/test_check_conflict_markers.py
 fi
-if changes_match '^scripts/(lib/changes\.sh|test_changes\.py)$'; then
-  uv run --no-project python -m unittest scripts/test_changes.py
-fi
 
-if changes_ts; then
+if changes_baker; then
   if [ ! -d node_modules ]; then
     echo "check-fast: node_modules is missing; run npm ci first" >&2
     exit 1
   fi
-  if changes_match '^(package(-lock)?\.json|tsconfig[^/]*\.json|vite\.config\.ts|eslint\.config\.js|scripts/lib/changes\.sh)$'; then
-    echo "check-fast: the toolchain's configuration changed; running npm run check"
-    npm run check
-  else
-    changes_existing '^(src|tests|scripts|tools|trailer)/.*\.(ts|tsx|js|mjs)$|^[^/]*\.(ts|js)$' > "$list"
-    if [ -s "$list" ]; then
-      echo "check-fast: eslint on $(wc -l < "$list" | tr -d ' ') files"
-      while IFS= read -r f; do set -- "$@" "$f"; done < "$list"
-      npx eslint --no-warn-ignored -- "$@"
-      set --
-    fi
-    npm run typecheck
-    changes_existing '\.(ts|tsx|js|mjs|json|yaml)$' | grep -v '^native/' > "$list" || true
-    if [ -s "$list" ]; then
-      while IFS= read -r f; do set -- "$@" "$f"; done < "$list"
-      npx vitest related --run --passWithNoTests "$@"
-      set --
-    fi
-  fi
-  if changes_match '^(content|levels)/'; then npm run check:content; fi
-  if changes_match '^(public/assets|assets-src|tools/baker)/'; then npm run check:assets; fi
+  npm run check
 fi
 
 if changes_analysis && [ "$CHANGES_UNKNOWN" = 1 ]; then
-  npm run check:analysis
-  npm run check:songmap
+  uv run --directory tools/analysis pytest -q
+  uv run --directory tools/analysis ruff check .
+  uv run --project tools/analysis ps-analysis check songs/orpheus-galop/songmap.json
 elif changes_analysis; then
   changes_existing '^tools/analysis/.*\.py$' | sed 's|^tools/analysis/||' > "$list"
   if [ -s "$list" ]; then
@@ -82,7 +58,9 @@ elif changes_analysis; then
     if [ $# -gt 0 ]; then uv run --directory tools/analysis pytest -q -- "$@"; fi
     set --
   fi
-  if changes_match '^songs/'; then npm run check:songmap; fi
+  if changes_match '^songs/'; then
+    uv run --project tools/analysis ps-analysis check songs/orpheus-galop/songmap.json
+  fi
 fi
 
 if changes_friction; then
