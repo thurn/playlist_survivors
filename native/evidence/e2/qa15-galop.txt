@@ -1,0 +1,2 @@
+direct: 128 committed beats after 4 s, 51.6% within 45 ms; lead (t - knownAt) min 0.24 s, median 1.01 s
+delayed: 119 committed beats after 4 s, 79.0% within 45 ms; lead (t - knownAt) min 0.70 s, median 1.44 s

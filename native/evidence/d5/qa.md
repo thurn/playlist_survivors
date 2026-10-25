@@ -24,7 +24,7 @@ Raw outputs: `house-run.txt`, `house-report.txt` (`ps report`, `ps log --no-tabl
 | 11 | Sessions saved; `ps replay` reproduces the run | house-128: 421 507 settled records, the replay the same (`house-report.txt`) |
 | 12 | Watch my run replays the run with its music | Done (`hv-t8o8.86`): the run's music (the analyzer's input) plays under the replay from its start; `--watch` on a File-mode run logs `the replay's music started (0.0 ms late)` |
 | 13 | Calibrate changes judging and the flash | Pending (keys; row in operator-pending) |
-| 14-19 | Delayed listening | Not built yet (E2) |
+| 14-19 | Delayed listening | E2 (`hv-t8o8.32`): see [../e2/README.md](../e2/README.md) |
 
 `ps report` on the house-128 session (AirPods): ticks arrive 9 ms before their heard time
 (committed ahead; capture to arrival met), the frame's work p99 1.3 ms (met), rollbacks
