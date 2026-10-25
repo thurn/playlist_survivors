@@ -1,8 +1,8 @@
 //! The HUD (`src/runtime/hud.ts`, read as a reference): in HUD units of a 960 x 540 screen, in the
 //! TS game's 5 x 7 pixel font. Experience and level along the top, health top left, kills and the
-//! rated presses top right, the arrow keys bottom left, and the beat track: the committed beats
-//! slide toward a beating heart, presses flash on it early or late in their rating's colour, and
-//! the groove meter beside it shows the tier. Over the hero's head, `overhead.ts`'s display: life
+//! rated presses top right, Delayed listening's tag under health, the arrow keys bottom left,
+//! and the beat track: the committed beats slide toward a beating heart, presses flash on it
+//! early or late in their rating's colour, and the groove meter beside it shows the tier. Over the hero's head, `overhead.ts`'s display: life
 //! over groove, and a gem keeping the beat as a ring closes on it.
 // (Colours as the TS source writes them.)
 #![allow(clippy::unreadable_literal, clippy::many_single_char_names)]
@@ -77,6 +77,8 @@ pub struct HudState<'a> {
     pub next_down: bool,
     /// The groove meter's flash after a tier up (1 to 0).
     pub tier_flash: f64,
+    /// How late Delayed listening hears the music (s; 0 in Direct), tagged under health.
+    pub delayed: f64,
 }
 
 /// A small heart, 7 x 6 font pixels.
@@ -140,6 +142,17 @@ pub fn draw(view: &LiveView, st: &HudState, w: f32, h: f32, out: &mut Vec<Sprite
         5.0 * u,
         hp,
     ));
+    if st.delayed > 0.0 {
+        font::text(
+            &format!("DELAYED {} S", st.delayed),
+            px(12.0),
+            py(36.0),
+            fs,
+            Align::Left,
+            rgb(0x9fe6ff),
+            out,
+        );
+    }
     // Kills and the rated presses, top right.
     font::text(
         "KILLS",

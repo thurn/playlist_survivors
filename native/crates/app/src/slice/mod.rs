@@ -1032,6 +1032,7 @@ fn bench(check: bool) -> Result<(), String> {
             head: layers.head,
             next_down: false,
             tier_flash: scene.tier_flash(s),
+            delayed: 0.0,
         };
         let mut overlay = Vec::new();
         hud::draw(
@@ -1180,6 +1181,7 @@ fn still(path: &Path, track: Option<&str>, at: Option<f64>) -> Result<(), String
         head: layers.head,
         next_down: bar == 3,
         tier_flash: scene.tier_flash(end),
+        delayed: 0.0,
     };
     let mut overlay = Vec::new();
     hud::draw(
@@ -1777,6 +1779,7 @@ impl App {
             head: layers.head.filter(|_| self.over.is_none()),
             next_down: bar >= 0.75,
             tier_flash: self.scene.tier_flash(now),
+            delayed: delay_of(self.audio.listening),
         };
         let mut overlay = Vec::new();
         if self.running || self.over.is_some() {
