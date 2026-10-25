@@ -54,23 +54,15 @@ pub struct Meta {
 }
 
 /// `keys.jsonl`: a key as applied, in run time.
-#[allow(clippy::struct_field_names)]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Key {
-    pub run: usize,
-    pub s: f64,
-    pub key: String,
-    pub pressed: bool,
-}
+pub type Key = eval::session::AppliedKey;
 
-impl Key {
-    pub fn of(run: usize, k: &KeyEvent) -> Key {
-        Key {
-            run,
-            s: k.s,
-            key: format!("{:?}", k.key),
-            pressed: k.kind == KeyEventKind::Press,
-        }
+/// A key the engine applied in run `run`.
+pub fn key_of(run: usize, k: &KeyEvent) -> Key {
+    Key {
+        run,
+        s: k.s,
+        key: format!("{:?}", k.key),
+        pressed: k.kind == KeyEventKind::Press,
     }
 }
 

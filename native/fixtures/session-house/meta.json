@@ -1,0 +1,17 @@
+{
+  "version": "0.0.0",
+  "startedUnix": 1792903051,
+  "file": "../public/reactive/house-128/house-128.ogg",
+  "device": "MacBook Pro Speakers",
+  "lOutMs": 16.625,
+  "calibration": {},
+  "runs": [
+    {
+      "s0": 2.553658499848657,
+      "end": 13.967244583185702,
+      "why": "Stopped",
+      "settledHash": "5024a28a5402b744",
+      "settledRecords": 27143
+    }
+  ]
+}

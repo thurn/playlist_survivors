@@ -805,7 +805,7 @@ impl Engine {
         {
             self.settled_view.apply(*s, rec);
             self.final_stamp = *s;
-            self.settled_hash = fnv(self.settled_hash, format!("{s:?} {rec:?}").as_bytes());
+            self.settled_hash = fnv(self.settled_hash, record_bytes(*s, rec).as_bytes());
             self.settled_count += 1;
             fresh.extend(self.settled_view.moments.drain(..).map(|m| (*s, m)));
             if let Some(log) = &mut self.settled_log {
@@ -895,6 +895,18 @@ impl Cause {
 }
 
 const FNV_OFFSET: u64 = 0xcbf2_9ce4_8422_2325;
+
+/// A settled record as its hash reads it.
+fn record_bytes(s: f64, rec: &Record) -> String {
+    format!("{s:?} {rec:?}")
+}
+
+/// The hash of settled records, as [`Engine::settled_hash`] runs it.
+pub fn hash_records(records: &[(f64, Record)]) -> u64 {
+    records.iter().fold(FNV_OFFSET, |h, (s, rec)| {
+        fnv(h, record_bytes(*s, rec).as_bytes())
+    })
+}
 
 /// FNV-1a over `bytes`, from `h`.
 fn fnv(mut h: u64, bytes: &[u8]) -> u64 {

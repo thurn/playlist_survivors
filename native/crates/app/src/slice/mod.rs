@@ -12,7 +12,7 @@
 //!     playlist-survivors --click       # also clicks on each committed beat
 //!     playlist-survivors --file <path> --volume 0.3  # the file quieter (0: silent, still heard)
 //!     playlist-survivors --file <path> --mute  # everything runs, the device gets silence
-//!     playlist-survivors --file <path> --headless --seconds 30 [--start-at S] [--switch-at S]  # no window, no Dock icon, muted:
+//!     playlist-survivors --file <path> --headless --seconds 30 [--start-at S] [--switch-at S] [--press-beats]  # no window, no Dock icon, muted:
 //!                                     # the whole live path on a timer, for checks (then exits)
 //!     playlist-survivors --input-offset-ms 30 --stomp-extra-ms 10  # calibration for this session
 //!     (F1 in the app: the debug menu; F2 plays the next bundled track, F3 listens to the Mac)
@@ -114,6 +114,8 @@ struct Options {
     start_at: Option<f64>,
     /// Press F2 (the next bundled track) this long after the start (s), for checks.
     switch_at: Option<f64>,
+    /// Press on every committed beat, 20 ms late (a stand-in player, for checks).
+    press_beats: bool,
     /// Calibration offsets for this session (ms), over the saved ones.
     input_offset_ms: Option<f64>,
     stomp_extra_ms: Option<f64>,
@@ -132,6 +134,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         seconds: None,
         start_at: None,
         switch_at: None,
+        press_beats: false,
         input_offset_ms: None,
         stomp_extra_ms: None,
     };
@@ -145,6 +148,7 @@ fn options(args: &[String]) -> Result<Options, String> {
                 o.headless = true;
                 o.mute = true;
             }
+            "--press-beats" => o.press_beats = true,
             "--switch-at" => {
                 o.switch_at = Some(
                     it.next()
@@ -373,6 +377,8 @@ pub fn run(args: &[String]) -> Result<(), String> {
         headless: opts.headless,
         exit_at: opts.seconds.map_or(f64::INFINITY, |s| now_s() + s),
         switch_at: opts.switch_at.map_or(f64::INFINITY, |s| now_s() + s),
+        press_beats: opts.press_beats,
+        pressed_beat: f64::NEG_INFINITY,
         focused: false,
         next_frame: 0.0,
         keys: [KeyLight::default(); 5],
@@ -936,6 +942,9 @@ struct App {
     headless: bool,
     exit_at: f64,
     switch_at: f64,
+    /// The stand-in player (`--press-beats`): the last beat it pressed on (song s).
+    press_beats: bool,
+    pressed_beat: f64,
     /// Whether the window has the keyboard.
     focused: bool,
     next_frame: f64,
@@ -1035,6 +1044,26 @@ impl App {
             // Ahead of the time heard by the output's latency at least, so a sound is known
             // before the output must render it (docs/design/native-app.md, "Arrivals roll back
             // like late keys").
+            // (The stand-in player presses on each committed beat once it is 20 ms past, and
+            // releases 80 ms after it: the keys reach the engine late, as real ones do.)
+            if self.press_beats {
+                let due: Vec<f64> = self
+                    .beats
+                    .iter()
+                    .copied()
+                    .filter(|&b| b > self.pressed_beat && b + 0.1 <= s && b >= self.run_start)
+                    .collect();
+                for b in due {
+                    let key = if (b * 2.0) as i64 % 2 == 0 {
+                        InputKey::Right
+                    } else {
+                        InputKey::Down
+                    };
+                    self.engine.key(b - self.run_start, key, true);
+                    self.engine.key(b + 0.08 - self.run_start, key, false);
+                    self.pressed_beat = b;
+                }
+            }
             let lead = 0.2f64.max(self.audio.l_out + self.ahead.max(0.0) + 0.02);
             self.engine.frame(s - self.run_start, lead);
             self.record_keys();
@@ -1384,7 +1413,7 @@ impl App {
         let run = self.run_index;
         if let (Some(log), Some(session)) = (self.engine.key_log.as_mut(), self.session.as_mut()) {
             for k in log.drain(..) {
-                session.key(&session::Key::of(run, &k));
+                session.key(&session::key_of(run, &k));
             }
         }
     }
@@ -1824,7 +1853,12 @@ impl ApplicationHandler for App {
 
     fn window_event(&mut self, el: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
         match event {
-            WindowEvent::CloseRequested => el.exit(),
+            WindowEvent::CloseRequested => {
+                if self.running {
+                    self.end_run(End::Stopped, now_s());
+                }
+                el.exit();
+            }
             WindowEvent::Resized(s) => {
                 if let Some(g) = self.gfx.as_mut() {
                     g.resize(s.width, s.height);
@@ -1852,6 +1886,10 @@ impl ApplicationHandler for App {
 
     fn about_to_wait(&mut self, el: &ActiveEventLoop) {
         if now_s() >= self.exit_at {
+            // (A run going ends with the session, so its record is whole.)
+            if self.running {
+                self.end_run(End::Stopped, now_s());
+            }
             el.exit();
             return;
         }
