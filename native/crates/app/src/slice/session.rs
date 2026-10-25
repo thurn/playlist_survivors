@@ -38,7 +38,8 @@ pub struct Run {
     /// The FNV-1a hash of its settled records (hex) and how many there were.
     pub settled_hash: Option<String>,
     pub settled_records: usize,
-    /// Whether it ran in zen mode (nothing judged).
+    /// Whether it ran in zen mode (nothing judged), else legacy mode. (Sessions from before zen
+    /// mode ran legacy mode.)
     #[serde(default)]
     pub zen: bool,
 }

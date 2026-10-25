@@ -818,7 +818,7 @@ pub struct ListeningMode<'a> {
     pub browser: bool,
     pub others: usize,
     pub note: Option<&'a str>,
-    /// Zen mode: nothing judged, every move on the beat.
+    /// Zen mode (the default): nothing judged, every move on the beat; else legacy mode.
     pub zen: bool,
 }
 
@@ -935,11 +935,14 @@ pub fn listening_card(
     );
     let (line, tint) = if mode.zen {
         (
-            "ZEN MODE: HOLD THE KEYS, EVERY MOVE ON THE BEAT   Z OFF",
-            [0.78, 0.97, 0.77, 1.0],
+            "ZEN MODE: HOLD THE KEYS, EVERY MOVE ON THE BEAT   Z LEGACY MODE",
+            [0.6, 0.6, 0.7, 1.0],
         )
     } else {
-        ("Z ZEN MODE: NOTHING JUDGED", [0.6, 0.6, 0.7, 1.0])
+        (
+            "LEGACY MODE: PRESSES JUDGED ON THE BEAT   Z ZEN MODE",
+            [1.0, 0.75, 0.44, 1.0],
+        )
     };
     font::text(line, cx, top + 195.0 * u, px(2.0), Align::Centre, tint, out);
     let warning = [1.0, 0.75, 0.4, 1.0];

@@ -79,7 +79,7 @@ pub struct HudState<'a> {
     pub tier_flash: f64,
     /// How late Delayed listening hears the music (s; 0 in Direct), tagged under health.
     pub delayed: f64,
-    /// Zen mode (nothing judged), tagged under health.
+    /// Zen mode (nothing judged, the default); legacy mode is tagged under health.
     pub zen: bool,
 }
 
@@ -155,9 +155,17 @@ pub fn draw(view: &LiveView, st: &HudState, w: f32, h: f32, out: &mut Vec<Sprite
             out,
         );
     }
-    if st.zen {
+    if !st.zen {
         let y = if st.delayed > 0.0 { 46.0 } else { 36.0 };
-        font::text("ZEN", px(12.0), py(y), fs, Align::Left, rgb(0xc8f7c5), out);
+        font::text(
+            "LEGACY",
+            px(12.0),
+            py(y),
+            fs,
+            Align::Left,
+            rgb(0xffc070),
+            out,
+        );
     }
     // Kills and the rated presses, top right.
     font::text(

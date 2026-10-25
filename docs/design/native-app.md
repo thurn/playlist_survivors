@@ -127,6 +127,14 @@ fixed.
     its `knownAt`.
   - Each change is judged by playing it, by the causality checks, by a
     virtual-player smoke test and by the operator's play.
+- **Zen mode is the default; non-zen play is legacy** (2026-10-25). In zen
+  mode nothing is judged: presses and held keys move the hero only on the
+  beat's stride steps, the groove stays full at the top tier, and every
+  accent's cleave launches by itself (`SimInput::zen`). Legacy mode, the TS
+  game's judged presses, groove drain and settling, stays behind `--legacy`
+  (or Z between runs) for older sessions, replays and the sim's oracle and
+  stage tests, but gets no new work. New gameplay is designed for zen mode.
+  QA items about judging (2, 13) apply to legacy mode only.
 - **The analyzer is judged by accuracy, not bits.** A1 to A6 landed at stage
   parity with Python and keep those tests while they pass. From A7 on, the bar
   is corpus accuracy: committed beats about as accurate as Python's (hit rate
@@ -1759,7 +1767,8 @@ pending, not waited for.
    it doesn't appear again.
 2. Play a steady pop or electronic track in Music. The listening screen's
    meter clears within a few seconds of the beat; Enter starts a run. Strikes
-   and sounds land on the beat as heard. Presses on the beat rate well.
+   and sounds land on the beat as heard. Held arrows hop on the beat (zen
+   mode); in legacy mode (`--legacy`), presses on the beat rate well.
 3. The same track in a browser (YouTube). Same result. The game's own sounds
    never confuse the tracker: mute the music mid-run and the game must not
    keep finding a beat in its own clicks.
@@ -1779,7 +1788,8 @@ pending, not waited for.
 11. Every session appears under `native/logs/sessions/`, and `ps replay` on it
     reproduces the run.
 12. Watch my run replays the run with its music.
-13. Calibrate (input and visual) changes judging and the flash as expected.
+13. Calibrate (input and visual) changes the flash, and judging in legacy
+    mode, as expected.
 
 Delayed listening (E2):
 

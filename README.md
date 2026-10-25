@@ -1,10 +1,15 @@
 # Playlist Survivors
 
 A rhythm survivors game for macOS that plays to whatever music the Mac is playing. It listens to
-the system's audio (or plays a file and listens to that), finds the beat as it goes, and you press
-the arrow keys (or WASD) on it: the hero strides on the beat, the sword and every weapon fire by
-themselves on it, growing with the tier your groove reaches, through a horde of LPC monsters, and
-every strike lands on the music.
+the system's audio (or plays a file and listens to that) and finds the beat as it goes. You hold
+the arrow keys (or WASD) and the hero hops on the beat, while the sword and every weapon fire by
+themselves on it through a horde of LPC monsters, and every strike lands on the music.
+
+This is **zen mode**, the default: nothing is judged, every move lands on the beat, and the groove
+stays full at the top tier. **Legacy mode** (`--legacy`, or Z between runs) is the TS game's
+original rules, where you press on the beat, each press is rated and the groove rises and drains
+with your timing. Legacy mode is kept for older sessions and the sim's tests, but is no longer
+developed.
 
 The design is [docs/design/native-app.md](docs/design/native-app.md). The game began as a TS web
 game; the `ts-freeze` tag keeps it (see [The TS game](#the-ts-game)).
@@ -27,6 +32,7 @@ From `native/`, `cargo run --release -p app -- <flags>` runs it unbundled:
 | (none) | System mode: whatever the Mac is playing |
 | `--file <path>` | plays the file and listens to it |
 | `--click` | also clicks on each committed beat |
+| `--legacy` | legacy mode: presses judged on the beat (zen mode is the default) |
 | `--delayed [--app <name>]` | Delayed listening: the music heard 3 s late, beats from hindsight; in System mode the named app is tapped, muted while tapped, and played late |
 | `--mute`, `--volume <0-1>` | everything runs, the device gets silence or less |
 | `--headless --seconds <n> [--press-beats] [--watch]` | no window, no Dock icon, muted, on a timer, for checks |
@@ -34,8 +40,9 @@ From `native/`, `cargo run --release -p app -- <flags>` runs it unbundled:
 | `--bench [--check]` | the frame's work over 60 s, offscreen |
 
 In the app: arrows or WASD stride, Space stomps, Esc or Backspace ends the run, Enter or Space
-starts the next; C and V calibrate input and video; W watches your run; F1 is the debug menu (F2
-plays the next bundled track, F3 listens to the Mac), F8 saves the timing log.
+starts the next; Z switches zen and legacy mode between runs; C and V calibrate input and video; W
+watches your run; F1 is the debug menu (F2 plays the next bundled track, F3 listens to the Mac), F8
+saves the timing log.
 
 The `ps` CLI (`cargo run --release -p cli -- <command>`) summarises sessions and timing logs
 (`ps log`, `ps report`), replays a recorded session (`ps replay`), and runs the analyzer's corpus

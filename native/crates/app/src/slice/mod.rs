@@ -21,10 +21,11 @@
 //!     playlist-survivors --file <path> --headless --seconds 30 [--start-at S] [--switch-at S] [--press-beats] [--watch]  # no window, no Dock icon, muted:
 //!                                     # the whole live path on a timer, for checks (then exits)
 //!     playlist-survivors --input-offset-ms 30 --stomp-extra-ms 10  # calibration for this session
-//!     playlist-survivors --zen         # zen mode (Z between runs): nothing judged, held keys move on the beat
+//!     playlist-survivors --legacy      # legacy mode (Z between runs): presses judged on the beat; zen mode, the
+//!                                     # default, judges nothing and moves the hero on the beat
 //!     (F1 in the app: the debug menu; F2 plays the next bundled track, F3 listens to the Mac;
 //!     F8 saves the timing log)
-//!     playlist-survivors --still <png> [--still-track <id> --still-at <s>] [--zen]  # 20 s of the house
+//!     playlist-survivors --still <png> [--still-track <id> --still-at <s>] [--legacy]  # 20 s of the house
 //!                                     # track (or a track to a time) through the engine, offscreen
 //!     playlist-survivors --bench [--check]  # the frame's work (sim, evaluate, encode) over 60 s of it, offscreen
 
@@ -166,7 +167,8 @@ struct Options {
     switch_at: Option<f64>,
     /// Press on every committed beat, 20 ms late (a stand-in player, for checks).
     press_beats: bool,
-    /// Zen mode: nothing judged, every move on the beat (Z between runs).
+    /// Zen mode, the default: nothing judged, every move on the beat. `--legacy` (or Z between
+    /// runs) plays legacy mode, where presses are judged on the beat.
     zen: bool,
     /// Watch each run as soon as it ends (for checks).
     watch: bool,
@@ -205,7 +207,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         start_at: None,
         switch_at: None,
         press_beats: false,
-        zen: false,
+        zen: true,
         watch: false,
         delayed: false,
         app: None,
@@ -228,7 +230,7 @@ fn options(args: &[String]) -> Result<Options, String> {
                 o.mute = true;
             }
             "--press-beats" => o.press_beats = true,
-            "--zen" => o.zen = true,
+            "--legacy" => o.zen = false,
             "--watch" => o.watch = true,
             "--delayed" => o.delayed = true,
             "--app" => o.app = Some(it.next().ok_or("--app needs an app's name")?.clone()),
@@ -404,7 +406,7 @@ impl World {
         })
     }
 
-    /// The engine for a run, in zen mode (nothing judged) or not.
+    /// The engine for a run, in zen mode (nothing judged) or legacy mode.
     fn engine(&self, zen: bool) -> Result<Engine, String> {
         Engine::new(
             &self.level,
@@ -970,7 +972,7 @@ fn bench(check: bool) -> Result<(), String> {
     let text = std::fs::read_to_string(&stream_path)
         .map_err(|e| format!("{}: {e}", stream_path.display()))?;
     let file = stream::StreamFile::parse(&text).map_err(|e| e.0)?;
-    let mut engine = world.engine(false)?;
+    let mut engine = world.engine(true)?;
     let mut replay = stream::Replay::new(file.log.clone());
     let beats: Vec<f64> = file.log.beats.iter().map(|b| b.t).collect();
     let (w, h) = (1920u32, 1080u32);
@@ -1042,7 +1044,7 @@ fn bench(check: bool) -> Result<(), String> {
             next_down: false,
             tier_flash: scene.tier_flash(s),
             delayed: 0.0,
-            zen: false,
+            zen: true,
         };
         let mut overlay = Vec::new();
         hud::draw(
@@ -1345,7 +1347,8 @@ struct App {
     /// The run's kills when it ended, and whether to watch each run as it ends (`--watch`).
     run_kills: usize,
     auto_watch: bool,
-    /// Zen mode for the next run (`--zen`, Z between runs), and whether the run (or the last) is in it.
+    /// Zen mode for the next run (the default; `--legacy` or Z between runs for legacy mode), and
+    /// whether the run (or the last) is in it.
     zen: bool,
     run_zen: bool,
     /// The listening mode asked for, and the app Delayed listening taps in System mode (without

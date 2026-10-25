@@ -202,8 +202,10 @@ pub struct SimInput {
     pub leak_future_evidence: bool,
     /// Stage 2: the stream has hindsight entries, so presses settle 2 s late.
     pub settling: bool,
-    /// Zen mode: nothing is judged. Presses and held keys move the hero only on the stride steps,
-    /// the groove stays full, and every accent's cleave launches by itself.
+    /// Zen mode, the app's default: nothing is judged. Presses and held keys move the hero only on
+    /// the stride steps, the groove stays full, and every accent's cleave launches by itself.
+    /// Without it, legacy mode (the TS game's rules, kept for older sessions and the oracle and
+    /// stage tests) judges every press against the grid. Legacy mode is not developed further.
     pub zen: bool,
 }
 
