@@ -336,6 +336,9 @@ pub fn run(args: &[String]) -> Result<(), String> {
         voices_at: 0.0,
         mute: opts.mute,
         frame_ms: Vec::new(),
+        paced: false,
+        occluded: false,
+        next_frame: 0.0,
         keys: [KeyLight::default(); 5],
         presses: VecDeque::new(),
     };
@@ -594,6 +597,7 @@ fn still(path: &Path) -> Result<(), String> {
     Ok(())
 }
 
+#[allow(clippy::struct_excessive_bools)]
 struct App {
     /// Key press times from the window server, and the player's calibration.
     key_times: keys::KeyTimes,
@@ -633,6 +637,11 @@ struct App {
     mute: bool,
     /// Each frame's own work since the last log (ms).
     frame_ms: Vec<f64>,
+    /// Frames are paced by a timer, not the display, while the window is hidden or occluded (it
+    /// gives no drawable to wait on); the next one is due at host `next_frame`.
+    paced: bool,
+    occluded: bool,
+    next_frame: f64,
     /// The key display: up, left, down, right, stomp.
     keys: [KeyLight; 5],
     /// Recent presses for the beat track: when (host s), how far off, their rating.
@@ -747,11 +756,16 @@ impl App {
                     .unwrap_or(0.0)
             };
             eprintln!(
-                "slice: frame work median {:.2} ms, p95 {:.2}, p99 {:.2} ({} frames); rollbacks re-simulated {:.0} ms",
+                "slice: frame work median {:.2} ms, p95 {:.2}, p99 {:.2} ({:.0} frames a second{}); rollbacks re-simulated {:.0} ms",
                 at(0.5),
                 at(0.95),
                 at(0.99),
-                f.len(),
+                f.len() as f64 / 10.0,
+                if self.paced {
+                    ", paced while hidden"
+                } else {
+                    ""
+                },
                 r.resim_s * 1e3
             );
             eprintln!(
@@ -843,7 +857,7 @@ impl App {
             [0.3, 0.8, 0.4, 0.8],
         ));
         let built = t0.elapsed().as_secs_f64();
-        let encode = g.draw(&Frame {
+        let drawn = g.draw(&Frame {
             clear: CLEAR,
             world: &layers.sprites,
             lights: &layers.lights,
@@ -851,8 +865,9 @@ impl App {
             overlay: &overlay,
         });
         // (Sim, evaluate and encode: the frame's own work, the drawable's wait apart; logged muted.)
+        self.paced = drawn.is_none() || self.occluded;
         if self.mute {
-            self.frame_ms.push((built + encode) * 1e3);
+            self.frame_ms.push((built + drawn.unwrap_or(0.0)) * 1e3);
         }
     }
 
@@ -1049,14 +1064,30 @@ impl ApplicationHandler for App {
                 self.drain();
                 self.render();
             }
+            WindowEvent::Occluded(occluded) => self.occluded = occluded,
             _ => {}
         }
     }
 
     fn about_to_wait(&mut self, el: &ActiveEventLoop) {
-        if let Some(g) = &self.gfx {
-            g.window.request_redraw();
+        if !self.paced {
+            // (The display paces the frames: the drawable waits for the next refresh.)
+            if let Some(g) = &self.gfx {
+                g.window.request_redraw();
+            }
+            el.set_control_flow(ControlFlow::Poll);
+            return;
         }
-        el.set_control_flow(ControlFlow::Poll);
+        // Hidden: a frame every 1/120 s by the clock, so the engine and the sounds keep time
+        // without spinning a core.
+        let now = now_s();
+        if now >= self.next_frame {
+            self.next_frame = now + 1.0 / 120.0;
+            if let Some(g) = &self.gfx {
+                g.window.request_redraw();
+            }
+        }
+        let wait = std::time::Duration::from_secs_f64((self.next_frame - now).max(0.0));
+        el.set_control_flow(ControlFlow::WaitUntil(std::time::Instant::now() + wait));
     }
 }

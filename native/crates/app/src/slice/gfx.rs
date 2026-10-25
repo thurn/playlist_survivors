@@ -74,13 +74,13 @@ impl Gfx {
     }
 
     /// Draws `frame`; returns how long encoding and submitting it took (s), the drawable's wait
-    /// apart.
-    pub fn draw(&mut self, frame: &Frame) -> f64 {
+    /// apart, or `None` when the window gave no drawable (hidden or occluded).
+    pub fn draw(&mut self, frame: &Frame) -> Option<f64> {
         let (wgpu::CurrentSurfaceTexture::Success(texture)
         | wgpu::CurrentSurfaceTexture::Suboptimal(texture)) = self.surface.get_current_texture()
         else {
             self.surface.configure(&self.device, &self.config);
-            return 0.0;
+            return None;
         };
         let t0 = std::time::Instant::now();
         let size = self.logical_size();
@@ -99,6 +99,6 @@ impl Gfx {
         let encode = t0.elapsed().as_secs_f64();
         self.window.pre_present_notify();
         self.queue.present(texture);
-        encode
+        Some(encode)
     }
 }
