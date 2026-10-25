@@ -114,6 +114,11 @@ impl Session {
         }
     }
 
+    /// The session's folder.
+    pub fn dir(&self) -> &Path {
+        &self.dir
+    }
+
     pub fn arrival(&mut self, a: &Arrival) {
         if let Ok(line) = serde_json::to_string(a) {
             let _ = writeln!(self.stream, "{line}");

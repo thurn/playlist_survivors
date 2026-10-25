@@ -501,6 +501,9 @@ pub struct RunnerStats {
     pub late_keys: u64,
     /// Wall time spent simulating again after rollbacks (s).
     pub resim_s: f64,
+    /// Rollbacks caused by a key (the rest by an arrival), and the deepest (song s).
+    pub key_rollbacks: u64,
+    pub deepest_s: f64,
 }
 
 /// The sim engine on a stream that grows as it arrives, run ahead of the time heard with rollback
@@ -673,9 +676,8 @@ impl Engine {
     pub fn frame(&mut self, now: f64, lead: f64) {
         let mut keys = std::mem::take(&mut self.pending);
         keys.sort_by(|a, b| a.s.total_cmp(&b.s));
-        let earliest = keys
-            .first()
-            .map(|k| k.s)
+        let first_key = keys.first().map(|k| k.s);
+        let earliest = first_key
             .into_iter()
             .chain(self.arrival.take())
             .reduce(f64::min);
@@ -684,6 +686,10 @@ impl Engine {
             && t < self.sim.s() - 1e-12
         {
             resim_to = Some(self.sim.s());
+            if first_key == Some(t) {
+                self.stats.key_rollbacks += 1;
+            }
+            self.stats.deepest_s = self.stats.deepest_s.max(self.sim.s() - t);
             self.roll_back(t.max(self.settled));
         }
         for mut k in keys {

@@ -15,7 +15,8 @@
 //!     playlist-survivors --file <path> --headless --seconds 30 [--start-at S] [--switch-at S] [--press-beats] [--watch]  # no window, no Dock icon, muted:
 //!                                     # the whole live path on a timer, for checks (then exits)
 //!     playlist-survivors --input-offset-ms 30 --stomp-extra-ms 10  # calibration for this session
-//!     (F1 in the app: the debug menu; F2 plays the next bundled track, F3 listens to the Mac)
+//!     (F1 in the app: the debug menu; F2 plays the next bundled track, F3 listens to the Mac;
+//!     F8 saves the timing log)
 //!     playlist-survivors --still <png>  # 20 s of the house track's stream through the engine, drawn offscreen
 //!     playlist-survivors --bench [--check]  # the frame's work (sim, evaluate, encode) over 60 s of it, offscreen
 
@@ -47,6 +48,7 @@ mod sounds;
     dead_code
 )]
 mod tap;
+mod timing;
 
 use std::collections::{HashMap, VecDeque};
 use std::path::{Path, PathBuf};
@@ -77,6 +79,7 @@ use output::{Event, Output};
 use scene::{End, Look, Scene};
 use session::Session;
 use sounds::Sounds;
+use timing::Timing;
 
 /// The tap's timeline runs this far behind the output's render timeline (phase 0, built-in
 /// speakers); `PS_TAP_MINUS_RENDER_MS` overrides it.
@@ -340,6 +343,8 @@ pub fn run(args: &[String]) -> Result<(), String> {
         settings,
         screen: None,
         session: None,
+        timing: None,
+        last_stats: eval::live::RunnerStats::default(),
         run_index: 0,
         run_arrivals: Vec::new(),
         run_keys: Vec::new(),
@@ -393,8 +398,22 @@ pub fn run(args: &[String]) -> Result<(), String> {
         presses: VecDeque::new(),
     };
     app.engine.settle_s = app.settle_s();
-    app.session = app.new_session();
+    app.begin_session();
     event_loop.run_app(&mut app).map_err(|e| e.to_string())
+}
+
+/// An analyzer entry's group and the content time it is about, for the timing log.
+fn content_time(e: &Entry) -> Option<(&'static str, f64)> {
+    Some(match e {
+        Entry::Beat(c) => ("beat", c.t),
+        Entry::Tick(t) => ("tick", t.t),
+        Entry::Onset(o) => ("onset", o.t),
+        Entry::Change(c) => ("change", c.t),
+        Entry::Jump(j) => ("jump", j.t),
+        Entry::End(x) => ("end", x.t),
+        Entry::Forecast(f) => ("forecast", f.t),
+        Entry::Hindsight(_) | Entry::Timbre(_) => return None,
+    })
 }
 
 /// The calibration for output device `d`: its own from the settings (else the default), with the
@@ -892,8 +911,11 @@ struct App {
     /// The saved settings, the output device's UID and whether it is Bluetooth, and the command
     /// line's offsets (kept over each device's).
     settings: Settings,
-    /// The session's record, and the index of its run going.
+    /// The session's record and its timing log, the index of its run going, and the engine's
+    /// counters at the last frame (to log each frame's rollbacks).
     session: Option<Session>,
+    timing: Option<Timing>,
+    last_stats: eval::live::RunnerStats,
     run_index: usize,
     /// The run's own arrivals and applied keys, for Watch my run, and the replay showing (when it
     /// began, host s, and how far its feeds have got).
@@ -1002,6 +1024,9 @@ impl App {
                     if let Entry::Tick(t) = &e {
                         self.listen.tick(t.t, t.evidence);
                     }
+                    if let Some((g, t)) = content_time(&e) {
+                        self.log(serde_json::json!({"k": "arr", "s": arrived, "g": g, "lag": arrived - t}));
+                    }
                     let entry = eval::session::from_analyzer(&e).stamped(arrived);
                     if self.running {
                         let start = self.run_start;
@@ -1033,6 +1058,7 @@ impl App {
                     }
                 }
                 Msg::Level { peak, heard } => {
+                    self.log(serde_json::json!({"k": "cap", "h": heard}));
                     if heard <= now + 0.5 {
                         self.peak = self.peak.max(peak);
                     }
@@ -1095,6 +1121,18 @@ impl App {
             let lead = 0.2f64.max(self.audio.l_out + self.ahead.max(0.0) + 0.02);
             self.engine.frame(s - self.run_start, lead);
             self.record_keys();
+            let (r, was) = (self.engine.stats, self.last_stats);
+            if r.rollbacks > was.rollbacks {
+                self.log(serde_json::json!({
+                    "k": "rb",
+                    "s": s,
+                    "n": r.rollbacks - was.rollbacks,
+                    "keys": r.key_rollbacks - was.key_rollbacks,
+                    "replayed": r.replayed_s - was.replayed_s,
+                    "deepest": r.deepest_s,
+                }));
+            }
+            self.last_stats = r;
             let moments = self.engine.view.borrow_mut().take_moments();
             self.cues(&moments, now);
             self.schedule_sounds();
@@ -1143,6 +1181,7 @@ impl App {
                     (l_out + self.audio.heard_offset).to_bits(),
                     Ordering::Relaxed,
                 );
+                self.log(serde_json::json!({"k": "dev", "name": d.name, "lOut": l_out * 1e3}));
                 self.end_run(End::Device, now);
                 self.engine.settle_s = self.settle_s();
             }
@@ -1212,9 +1251,12 @@ impl App {
         }
         let Some(g) = self.gfx.as_mut() else {
             // (Headless: the frame's work is the engine's and the sounds'.)
+            let built = t0.elapsed().as_secs_f64() * 1e3;
             if self.mute {
-                self.frame_ms.push(t0.elapsed().as_secs_f64() * 1e3);
+                self.frame_ms.push(built);
             }
+            let song_now = self.song_at(now);
+            self.log(serde_json::json!({"k": "frame", "s": song_now, "build": built}));
             return;
         };
         let (w, h) = g.logical_size();
@@ -1347,6 +1389,13 @@ impl App {
         });
         // (Sim, evaluate and encode: the frame's own work, the drawable's wait apart; logged muted.)
         self.paced = drawn.is_none() || self.occluded;
+        let song_now = self.song_at(now);
+        self.log(serde_json::json!({
+            "k": "frame",
+            "s": song_now,
+            "build": built * 1e3,
+            "encode": drawn.map(|e| e * 1e3),
+        }));
         if self.mute {
             self.frame_ms.push((built + drawn.unwrap_or(0.0)) * 1e3);
         }
@@ -1393,7 +1442,7 @@ impl App {
         let mut commands = Vec::new();
         sounds.reconcile(&caused, &at, &mut commands);
         for c in commands {
-            let _ = self.audio.out.commands.push(c);
+            self.send(c);
         }
     }
 
@@ -1405,7 +1454,7 @@ impl App {
             s.now(key, at, gain, &mut commands);
         }
         for c in commands {
-            let _ = self.audio.out.commands.push(c);
+            self.send(c);
         }
     }
 
@@ -1413,7 +1462,7 @@ impl App {
     /// in.
     fn voice(&mut self, source: Voiced, at: f64, from: f64, gain: f32) {
         self.next_voice += 1;
-        let _ = self.audio.out.commands.push(Command::Play(Voice {
+        self.send(Command::Play(Voice {
             id: self.next_voice,
             source,
             at,
@@ -1434,6 +1483,38 @@ impl App {
             .max(self.calibration.offset_s(InputKey::Space))
             .max(0.0);
         eval::live::SETTLE_S + KEY_LATE_S + offset + self.calibration.visual_s().max(0.0)
+    }
+
+    /// Starts the session's record and timing log (ending any before).
+    fn begin_session(&mut self) {
+        self.timing = None;
+        self.session = None;
+        self.session = self.new_session();
+        self.timing = self.session.as_ref().and_then(|s| Timing::open(s.dir()));
+        let name = coreaudio::device(self.device).name;
+        self.log(serde_json::json!({"k": "dev", "name": name, "lOut": self.audio.l_out * 1e3}));
+    }
+
+    /// A timing event.
+    #[allow(clippy::needless_pass_by_value)]
+    fn log(&mut self, v: serde_json::Value) {
+        if let Some(t) = self.timing.as_mut() {
+            t.event(&v);
+        }
+    }
+
+    /// Sends a command to the output, logging a voice's schedule margin or a cancellation.
+    fn send(&mut self, c: Command) {
+        let now = now_s();
+        let s = self.song_at(now);
+        match c {
+            Command::Play(v) => {
+                self.log(serde_json::json!({"k": "snd", "s": s, "margin": (v.at - now) * 1e3}));
+            }
+            Command::Cancel(_) => self.log(serde_json::json!({"k": "cancel", "s": s})),
+            _ => {}
+        }
+        let _ = self.audio.out.commands.push(c);
     }
 
     /// A new session's record, for the source and device now.
@@ -1533,6 +1614,7 @@ impl App {
                 self.engine.settled_count,
             );
         }
+        self.log(serde_json::json!({"k": "end", "s": self.run_start + seconds, "why": format!("{end:?}")}));
         self.over = Some((now, end, seconds));
         self.run_kills = self.engine.view.borrow().kills;
         self.running = false;
@@ -1773,8 +1855,7 @@ impl App {
         self.listen = Listen::default();
         self.device = coreaudio::default_output();
         // (A new source is a new session: its song time starts again.)
-        self.session = None;
-        self.session = self.new_session();
+        self.begin_session();
     }
 
     /// The debug menu's lines.
@@ -1858,6 +1939,8 @@ impl App {
         self.running = true;
         self.listen.reset(false);
         eprintln!("slice: run started at song time {s0:.1}");
+        self.last_stats = eval::live::RunnerStats::default();
+        self.log(serde_json::json!({"k": "run", "s": s0}));
     }
 
     fn key(&mut self, code: KeyCode, pressed: bool, repeat: bool) {
@@ -1867,6 +1950,16 @@ impl App {
         } else {
             self.key_times.take(pressed, now_s())
         };
+        if !repeat {
+            let s = self.song_at(now);
+            self.log(serde_json::json!({"k": "key", "s": s, "lag": now_s() - now}));
+        }
+        if pressed && code == KeyCode::F8 {
+            if let Some(t) = self.timing.as_mut() {
+                eprintln!("slice: timing log saved: {}", t.flush().display());
+            }
+            return;
+        }
         if self.screen_key(code, pressed, repeat, now) {
             return;
         }

@@ -1352,6 +1352,16 @@ and extended with the latency chain, per frame or per event:
 `ps log [<path>] [--from s] [--to s] [--no-table]` summarises one, like
 `npm run log:play`. F8 saves the current log beside the session.
 
+**Landed:** `slice/timing.rs` writes `timing.jsonl` beside the session (kinds
+`cap`, `arr`, `key`, `rb` with the key-caused share and depth, `frame`, `snd`
+with the schedule margin, `cancel`, `dev`, `run`, `end`; the engine counts its
+rollbacks by cause). `ps log` (`cli/src/log.rs`) summarises the newest
+session's, or a given one: arrival lag per group, key delivery, rollbacks a
+second, frame work, the sounds' least margins; a table per second unless
+`--no-table`. F8 flushes it and prints its path. Present lateness against the
+display link is not logged yet (no display link in the app: the encode time
+stands in), left to D5.
+
 ### The latency report and QA (D5)
 
 `ps report <session>` prints the latency chain's distributions for a session
