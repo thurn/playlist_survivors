@@ -446,6 +446,8 @@ pub enum End {
     Stopped,
     /// The output device changed (its latency with it).
     Device,
+    /// The music's source changed (File or System mode, from the debug menu).
+    Source,
 }
 
 /// The run's end card, in the HUD's pixel font: dims the window, says how the run ended, how long
@@ -469,6 +471,7 @@ pub fn end_card(
         End::Paused => ("PAUSED", [1.0, 0.85, 0.4, a]),
         End::Stopped => ("RUN ENDED", [0.8, 0.8, 0.85, a]),
         End::Device => ("THE OUTPUT CHANGED", [1.0, 0.85, 0.4, a]),
+        End::Source => ("THE MUSIC CHANGED", [1.0, 0.85, 0.4, a]),
     };
     let cx = w / 2.0;
     let top = h / 2.0 - 100.0 * u;

@@ -12,9 +12,10 @@
 //!     playlist-survivors --click       # also clicks on each committed beat
 //!     playlist-survivors --file <path> --volume 0.3  # the file quieter (0: silent, still heard)
 //!     playlist-survivors --file <path> --mute  # everything runs, the device gets silence
-//!     playlist-survivors --file <path> --headless --seconds 30 [--start-at S]  # no window, no Dock icon, muted:
+//!     playlist-survivors --file <path> --headless --seconds 30 [--start-at S] [--switch-at S]  # no window, no Dock icon, muted:
 //!                                     # the whole live path on a timer, for checks (then exits)
 //!     playlist-survivors --input-offset-ms 30 --stomp-extra-ms 10  # calibration for this session
+//!     (F1 in the app: the debug menu; F2 plays the next bundled track, F3 listens to the Mac)
 //!     playlist-survivors --still <png>  # 20 s of the house track's stream through the engine, drawn offscreen
 //!     playlist-survivors --bench [--check]  # the frame's work (sim, evaluate, encode) over 60 s of it, offscreen
 
@@ -108,6 +109,8 @@ struct Options {
     seconds: Option<f64>,
     /// No automatic start before this song time (s), for checks.
     start_at: Option<f64>,
+    /// Press F2 (the next bundled track) this long after the start (s), for checks.
+    switch_at: Option<f64>,
     /// Calibration offsets for this session (ms), over the saved ones.
     input_offset_ms: Option<f64>,
     stomp_extra_ms: Option<f64>,
@@ -125,6 +128,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         headless: false,
         seconds: None,
         start_at: None,
+        switch_at: None,
         input_offset_ms: None,
         stomp_extra_ms: None,
     };
@@ -137,6 +141,13 @@ fn options(args: &[String]) -> Result<Options, String> {
             "--headless" => {
                 o.headless = true;
                 o.mute = true;
+            }
+            "--switch-at" => {
+                o.switch_at = Some(
+                    it.next()
+                        .and_then(|v| v.parse().ok())
+                        .ok_or("--switch-at needs a time")?,
+                );
             }
             "--start-at" => {
                 o.start_at = Some(
@@ -270,10 +281,6 @@ pub fn run(args: &[String]) -> Result<(), String> {
         return bench(opts.check);
     }
     let world = World::load()?;
-    let music = match &opts.file {
-        Some(p) => Some(Arc::<[f32]>::from(live::decode(p, Output::device_rate())?)),
-        None => None,
-    };
     // Output first: our process object must exist before the tap can exclude it.
     let (sounds, bank) = match Sounds::load(
         &live::resource("sfx", "../../../public/assets/sfx"),
@@ -286,33 +293,6 @@ pub fn run(args: &[String]) -> Result<(), String> {
             (None, Vec::new())
         }
     };
-    let mut out = Output::start(music.clone(), opts.volume, bank, opts.mute)?;
-    let l_out = Output::reported_latency_s();
-    let (source, heard_after, mode) = match music {
-        Some(samples) => (
-            Source::File {
-                samples,
-                metas: out.music_meta.take().ok_or("no music timing")?,
-                rate: out.rate,
-            },
-            l_out,
-            "file",
-        ),
-        None => {
-            let tap = tap::Tap::start(true)?;
-            let offset = std::env::var("PS_TAP_MINUS_RENDER_MS")
-                .ok()
-                .and_then(|s| s.parse::<f64>().ok())
-                .map_or(TAP_MINUS_RENDER_S, |ms| ms / 1e3);
-            (Source::Tap(tap), l_out - offset, "system")
-        }
-    };
-    eprintln!(
-        "slice: {mode} mode, output {} Hz, L_out {:.1} ms, heard {:.1} ms after capture",
-        out.rate,
-        l_out * 1e3,
-        heard_after * 1e3
-    );
     let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
     // (Headless, the app never shows: no window, no Dock icon, no focus taken.)
     let event_loop = if opts.headless {
@@ -324,17 +304,13 @@ pub fn run(args: &[String]) -> Result<(), String> {
         EventLoop::new()
     }
     .map_err(|e| e.to_string())?;
-    let stop = Arc::new(AtomicBool::new(false));
-    let (tx, rx) = mpsc::channel();
-    // (The output's latency plus this: what the analysis thread adds to a buffer's host time.)
-    let heard_offset = heard_after - l_out;
-    let heard_after = Arc::new(AtomicU64::new(heard_after.to_bits()));
-    let analyzer = live::spawn(
-        source,
-        Arc::clone(&heard_after),
-        tx,
-        event_loop.create_proxy(),
-        stop.clone(),
+    let proxy = event_loop.create_proxy();
+    let audio = Audio::start(
+        opts.file.as_deref(),
+        opts.volume,
+        opts.mute,
+        &bank,
+        proxy.clone(),
     )?;
     let engine = world.engine()?;
     let key_times = keys::KeyTimes::install();
@@ -357,9 +333,13 @@ pub fn run(args: &[String]) -> Result<(), String> {
         sounds,
         art,
         world,
-        rx,
-        out,
-        l_out,
+        audio,
+        bank,
+        volume: opts.volume,
+        proxy,
+        tracks: tracks(),
+        track: 0,
+        debug: false,
         click: opts.click,
         clock: None,
         engine,
@@ -380,24 +360,127 @@ pub fn run(args: &[String]) -> Result<(), String> {
         voices_at: 0.0,
         mute: opts.mute,
         device: coreaudio::default_output(),
-        heard_after,
-        heard_offset,
         device_at: 0.0,
         frame_ms: Vec::new(),
         paced: opts.headless,
         occluded: false,
         headless: opts.headless,
         exit_at: opts.seconds.map_or(f64::INFINITY, |s| now_s() + s),
+        switch_at: opts.switch_at.map_or(f64::INFINITY, |s| now_s() + s),
         focused: false,
         next_frame: 0.0,
         keys: [KeyLight::default(); 5],
         presses: VecDeque::new(),
     };
     app.engine.settle_s = app.settle_s();
-    let result = event_loop.run_app(&mut app).map_err(|e| e.to_string());
-    stop.store(true, Ordering::Relaxed);
-    let _ = analyzer.join();
-    result
+    event_loop.run_app(&mut app).map_err(|e| e.to_string())
+}
+
+/// Where the music comes from and goes: the output (playing the file in File mode), the
+/// analysis thread on the tap or the file, and the timing between them.
+struct Audio {
+    out: Output,
+    rx: mpsc::Receiver<Msg>,
+    stop: Arc<AtomicBool>,
+    analyzer: Option<std::thread::JoinHandle<()>>,
+    l_out: f64,
+    /// When a captured buffer is heard after its host time (shared with the analysis thread):
+    /// the output's latency plus `heard_offset`.
+    heard_after: Arc<AtomicU64>,
+    heard_offset: f64,
+    /// The file played, in File mode.
+    file: Option<PathBuf>,
+}
+
+impl Audio {
+    /// The output and the analysis thread: on `file` played through the output (File mode), or
+    /// on the tap of everything else the Mac plays (System mode).
+    fn start(
+        file: Option<&Path>,
+        volume: f32,
+        mute: bool,
+        bank: &sounds::Bank,
+        proxy: winit::event_loop::EventLoopProxy<()>,
+    ) -> Result<Audio, String> {
+        let music = match file {
+            Some(p) => Some(Arc::<[f32]>::from(live::decode(p, Output::device_rate())?)),
+            None => None,
+        };
+        let mut out = Output::start(music.clone(), volume, bank.clone(), mute)?;
+        let l_out = Output::reported_latency_s();
+        #[allow(clippy::single_match_else)]
+        let (source, heard_after, mode) = match music {
+            Some(samples) => (
+                Source::File {
+                    samples,
+                    metas: out.music_meta.take().ok_or("no music timing")?,
+                    rate: out.rate,
+                },
+                l_out,
+                "file",
+            ),
+            None => {
+                let tap = tap::Tap::start(true)?;
+                let offset = std::env::var("PS_TAP_MINUS_RENDER_MS")
+                    .ok()
+                    .and_then(|s| s.parse::<f64>().ok())
+                    .map_or(TAP_MINUS_RENDER_S, |ms| ms / 1e3);
+                (Source::Tap(tap), l_out - offset, "system")
+            }
+        };
+        eprintln!(
+            "slice: {mode} mode{}, output {} Hz, L_out {:.1} ms, heard {:.1} ms after capture",
+            file.map_or(String::new(), |p| format!(" ({})", p.display())),
+            out.rate,
+            l_out * 1e3,
+            heard_after * 1e3
+        );
+        let stop = Arc::new(AtomicBool::new(false));
+        let (tx, rx) = mpsc::channel();
+        let heard_offset = heard_after - l_out;
+        let heard_after = Arc::new(AtomicU64::new(heard_after.to_bits()));
+        let analyzer = live::spawn(source, Arc::clone(&heard_after), tx, proxy, stop.clone())?;
+        Ok(Audio {
+            out,
+            rx,
+            stop,
+            analyzer: Some(analyzer),
+            l_out,
+            heard_after,
+            heard_offset,
+            file: file.map(Path::to_path_buf),
+        })
+    }
+
+    /// Stops the analysis thread (the output stops when dropped).
+    fn shut_down(&mut self) {
+        self.stop.store(true, Ordering::Relaxed);
+        if let Some(a) = self.analyzer.take() {
+            let _ = a.join();
+        }
+    }
+}
+
+impl Drop for Audio {
+    fn drop(&mut self) {
+        self.shut_down();
+    }
+}
+
+/// The bundled tracks' audio, for File mode from the debug menu (`public/reactive/index.json`).
+fn tracks() -> Vec<PathBuf> {
+    let dir = live::resource("reactive", "../../../public/reactive");
+    std::fs::read_to_string(dir.join("index.json"))
+        .ok()
+        .and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok())
+        .and_then(|v| {
+            v["tracks"].as_array().map(|ts| {
+                ts.iter()
+                    .filter_map(|t| t["audio"].as_str().map(|a| dir.join(a)))
+                    .collect()
+            })
+        })
+        .unwrap_or_default()
 }
 
 /// This thread's CPU time (s): the frame's cost, whatever else the machine is doing.
@@ -722,9 +805,15 @@ struct App {
     sounds: Option<Sounds>,
     art: Atlases,
     world: World,
-    rx: mpsc::Receiver<Msg>,
-    out: Output,
-    l_out: f64,
+    audio: Audio,
+    /// The sound effects (for a new output), the file's volume, and the event loop's waker.
+    bank: sounds::Bank,
+    volume: f32,
+    proxy: winit::event_loop::EventLoopProxy<()>,
+    /// The bundled tracks File mode cycles through, the next one, and whether the debug menu shows.
+    tracks: Vec<PathBuf>,
+    track: usize,
+    debug: bool,
     click: bool,
     /// Song time heard at a host time (the analysis thread's latest anchor).
     clock: Option<(f64, f64)>,
@@ -761,10 +850,6 @@ struct App {
     /// The output device in use, checked once a second (host `device_at`): a change ends the run.
     device: coreaudio::Id,
     device_at: f64,
-    /// When a captured buffer is heard after its host time (shared with the analysis thread):
-    /// the output's latency plus `heard_offset`.
-    heard_after: Arc<AtomicU64>,
-    heard_offset: f64,
     /// Each frame's own work since the last log (ms).
     frame_ms: Vec<f64>,
     /// Frames are paced by a timer, not the display, while the window is hidden or occluded (it
@@ -774,6 +859,7 @@ struct App {
     /// No window: frames on the timer, drawn nowhere; and when to exit (host s), if asked.
     headless: bool,
     exit_at: f64,
+    switch_at: f64,
     /// Whether the window has the keyboard.
     focused: bool,
     next_frame: f64,
@@ -791,7 +877,7 @@ impl App {
 
     fn drain(&mut self) {
         let now = now_s();
-        while let Ok(m) = self.rx.try_recv() {
+        while let Ok(m) = self.audio.rx.try_recv() {
             match m {
                 Msg::Clock { song, heard } => self.clock = Some((song, heard)),
                 Msg::Entry(e) => {
@@ -799,7 +885,7 @@ impl App {
                     if let Entry::Beat(c) = &e {
                         if self.click {
                             let heard = self.clock.map_or(now, |(song, h)| h + (c.t - song));
-                            self.voice(Voiced::Click(1800.0), heard - self.l_out, 0.0, 1.0);
+                            self.voice(Voiced::Click(1800.0), heard - self.audio.l_out, 0.0, 1.0);
                         }
                         self.beats.push_back(c.t);
                     }
@@ -821,7 +907,7 @@ impl App {
                     }
                 }
                 Msg::Follow(g) => {
-                    let _ = self.out.commands.push(Command::Follow(g));
+                    let _ = self.audio.out.commands.push(Command::Follow(g));
                 }
                 Msg::Level { peak, heard } => {
                     if heard <= now + 0.5 {
@@ -838,10 +924,10 @@ impl App {
                 self.beats.pop_front();
             }
         }
-        while let Ok(e) = self.out.events.pop() {
+        while let Ok(e) = self.audio.out.events.pop() {
             match e {
                 Event::Buffer { host, frames, now } => {
-                    self.ahead = host + f64::from(frames) / self.out.rate - now;
+                    self.ahead = host + f64::from(frames) / self.audio.out.rate - now;
                 }
                 Event::Voice(Report::Started { .. }) => self.voices[0] += 1,
                 Event::Voice(Report::Skipped { .. }) => self.voices[1] += 1,
@@ -862,7 +948,7 @@ impl App {
             // Ahead of the time heard by the output's latency at least, so a sound is known
             // before the output must render it (docs/design/native-app.md, "Arrivals roll back
             // like late keys").
-            let lead = 0.2f64.max(self.l_out + self.ahead.max(0.0) + 0.02);
+            let lead = 0.2f64.max(self.audio.l_out + self.ahead.max(0.0) + 0.02);
             self.engine.frame(s - self.run_start, lead);
             let moments = self.engine.view.borrow_mut().take_moments();
             self.cues(&moments, now);
@@ -898,15 +984,17 @@ impl App {
                     d.name,
                     d.rate,
                     l_out * 1e3,
-                    if (d.rate - self.out.rate).abs() > 0.5 {
+                    if (d.rate - self.audio.out.rate).abs() > 0.5 {
                         "; its rate differs from the mixer's: restart the app"
                     } else {
                         ""
                     }
                 );
-                self.l_out = l_out;
-                self.heard_after
-                    .store((l_out + self.heard_offset).to_bits(), Ordering::Relaxed);
+                self.audio.l_out = l_out;
+                self.audio.heard_after.store(
+                    (l_out + self.audio.heard_offset).to_bits(),
+                    Ordering::Relaxed,
+                );
                 self.end_run(End::Device, now);
             }
         }
@@ -963,6 +1051,7 @@ impl App {
                 ));
             }
         }
+        let debug_lines = self.debug.then(|| self.debug_lines());
         let Some(g) = self.gfx.as_mut() else {
             // (Headless: the frame's work is the engine's and the sounds'.)
             if self.mute {
@@ -1031,6 +1120,27 @@ impl App {
         if !self.running && self.over.is_none() {
             scene::listening_card(w, h, self.listen.evidence, GATE, now, &mut overlay);
         }
+        if let Some(lines) = debug_lines {
+            let u = (w / 960.0).min(h / 540.0);
+            overlay.push(gfx::rect(
+                8.0 * u,
+                40.0 * u,
+                520.0 * u,
+                (14.0 * lines.len() as f32 + 8.0) * u,
+                [0.0, 0.0, 0.0, 0.75],
+            ));
+            for (k, line) in lines.iter().enumerate() {
+                render::font::text(
+                    line,
+                    14.0 * u,
+                    (44.0 + 14.0 * k as f32) * u,
+                    u.round().max(1.0),
+                    render::font::Align::Left,
+                    [0.85, 0.95, 0.85, 1.0],
+                    &mut overlay,
+                );
+            }
+        }
         if let Some((t, end, seconds)) = self.over {
             scene::end_card(
                 w,
@@ -1096,16 +1206,16 @@ impl App {
             gate: GATE,
             camera,
             clock,
-            l_out: self.l_out,
+            l_out: self.audio.l_out,
             // (Known in time for the output to render it: past its latency and lookahead.)
-            never_late: sounds::NEVER_LATE.max(self.l_out + self.ahead.max(0.0) + 0.005),
+            never_late: sounds::NEVER_LATE.max(self.audio.l_out + self.ahead.max(0.0) + 0.005),
             now: now_s(),
             ahead: self.ahead.max(0.0),
         };
         let mut commands = Vec::new();
         sounds.reconcile(&caused, &at, &mut commands);
         for c in commands {
-            let _ = self.out.commands.push(c);
+            let _ = self.audio.out.commands.push(c);
         }
     }
 
@@ -1117,7 +1227,7 @@ impl App {
             s.now(key, at, gain, &mut commands);
         }
         for c in commands {
-            let _ = self.out.commands.push(c);
+            let _ = self.audio.out.commands.push(c);
         }
     }
 
@@ -1125,7 +1235,7 @@ impl App {
     /// in.
     fn voice(&mut self, source: Voiced, at: f64, from: f64, gain: f32) {
         self.next_voice += 1;
-        let _ = self.out.commands.push(Command::Play(Voice {
+        let _ = self.audio.out.commands.push(Command::Play(Voice {
             id: self.next_voice,
             source,
             at,
@@ -1157,11 +1267,75 @@ impl App {
         self.over = Some((now, end, seconds));
         self.running = false;
         self.listen.reset(true);
-        let _ = self.out.commands.push(Command::CancelAll);
+        let _ = self.audio.out.commands.push(Command::CancelAll);
         eprintln!(
             "slice: run over ({end:?}), {seconds:.0} s; sounds {} started, {} skipped late, {} dropped",
             self.voices[0], self.voices[1], self.voices[2]
         );
+    }
+
+    /// Changes the music's source: `file` played through the output (File mode), or the Mac's own
+    /// (System mode). The run ends; listening starts afresh on the new source.
+    fn switch(&mut self, file: Option<&Path>) {
+        let now = now_s();
+        if self.running {
+            self.end_run(End::Source, now);
+        }
+        self.audio.shut_down();
+        let start = |file: Option<&Path>| {
+            Audio::start(file, self.volume, self.mute, &self.bank, self.proxy.clone())
+        };
+        match start(file).or_else(|e| {
+            eprintln!("slice: can't switch the music's source: {e}; back to System mode");
+            start(None)
+        }) {
+            Ok(audio) => self.audio = audio,
+            Err(e) => eprintln!("slice: no music source: {e}"),
+        }
+        self.clock = None;
+        self.recent.clear();
+        self.beats.clear();
+        self.listen = Listen::default();
+        self.device = coreaudio::default_output();
+    }
+
+    /// The debug menu's lines.
+    fn debug_lines(&self) -> Vec<String> {
+        let r = self.engine.stats;
+        let mode = self.audio.file.as_ref().map_or("SYSTEM".to_string(), |p| {
+            format!(
+                "FILE {}",
+                p.file_stem()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+                    .to_uppercase()
+            )
+        });
+        vec![
+            "DEBUG  F1 CLOSE  F2 NEXT FILE  F3 SYSTEM".to_string(),
+            format!("MODE {mode}"),
+            format!(
+                "OUTPUT {:.0} HZ  L OUT {:.1} MS  HEARD {:.1} MS AFTER CAPTURE",
+                self.audio.out.rate,
+                self.audio.l_out * 1e3,
+                f64::from_bits(self.audio.heard_after.load(Ordering::Relaxed)) * 1e3
+            ),
+            format!(
+                "INPUT OFFSET {:.0} MS  STOMP {:.0} MS  SETTLE {:.0} MS",
+                self.calibration.offset_s(InputKey::Up) * 1e3,
+                self.calibration.offset_s(InputKey::Space) * 1e3,
+                self.engine.settle_s * 1e3
+            ),
+            format!(
+                "ROLLBACKS {}  REPLAYED {:.1} S  LATE KEYS {}",
+                r.rollbacks, r.replayed_s, r.late_keys
+            ),
+            format!(
+                "SOUNDS {} STARTED  {} LATE  {} DROPPED  {} CANCELLED",
+                self.voices[0], self.voices[1], self.voices[2], self.voices[3]
+            ),
+            format!("EVIDENCE {:.2}  GATE {GATE}", self.listen.evidence),
+        ]
     }
 
     /// A new run from the song time heard now, with a fresh engine and stream: the entries of
@@ -1180,7 +1354,7 @@ impl App {
         }
         self.run_start = self.song_at(now).unwrap_or(0.0);
         self.scene = Scene::default();
-        let _ = self.out.commands.push(Command::CancelAll);
+        let _ = self.audio.out.commands.push(Command::CancelAll);
         if let Some(s) = self.sounds.as_mut() {
             s.reset();
         }
@@ -1202,6 +1376,27 @@ impl App {
         } else {
             self.key_times.take(pressed, now_s())
         };
+        // The debug menu: F1 shows it, F2 plays the next bundled track (File mode), F3 listens to
+        // the Mac again (System mode).
+        if pressed && !repeat {
+            match code {
+                KeyCode::F1 => {
+                    self.debug = !self.debug;
+                    return;
+                }
+                KeyCode::F2 if !self.tracks.is_empty() => {
+                    let file = self.tracks[self.track % self.tracks.len()].clone();
+                    self.track += 1;
+                    self.switch(Some(&file));
+                    return;
+                }
+                KeyCode::F3 => {
+                    self.switch(None);
+                    return;
+                }
+                _ => {}
+            }
+        }
         // Listening: Enter or Space starts a run (a second after an end, not to skip its card).
         if !self.running {
             if pressed
@@ -1308,6 +1503,12 @@ impl ApplicationHandler for App {
         if now_s() >= self.exit_at {
             el.exit();
             return;
+        }
+        if now_s() >= self.switch_at && !self.tracks.is_empty() {
+            self.switch_at = f64::INFINITY;
+            let file = self.tracks[self.track % self.tracks.len()].clone();
+            self.track += 1;
+            self.switch(Some(&file));
         }
         if !self.paced {
             // (The display paces the frames: the drawable waits for the next refresh.)
