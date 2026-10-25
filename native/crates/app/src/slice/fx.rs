@@ -53,7 +53,7 @@ pub fn rgb(c: u32) -> [f32; 4] {
 }
 
 /// A number in [0, 1) from a seed and two indices (the particles' own randoms).
-fn rand01(seed: u64, i: u64, k: u64) -> f64 {
+pub fn rand01(seed: u64, i: u64, k: u64) -> f64 {
     let mut z = seed
         .wrapping_add(i.wrapping_mul(0x9e37_79b9_7f4a_7c15))
         .wrapping_add(k.wrapping_mul(0xbf58_476d_1ce4_e5b9));

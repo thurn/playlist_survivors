@@ -11,9 +11,11 @@ use render::font::{self, Align};
 use render::post::{Grade, Light};
 use sim::content::types::{ColorGrade, ZoneTheme};
 
-use super::fx::{Effects, Start, hex};
+use super::fx::{Effects, Start, hex, rand01, rgb};
 use super::gfx::{Sprite, rect, square};
+use super::lane::{self, Lane};
 use sim::content::ContentLibrary;
+use stream::StreamLog;
 
 /// The view's width in world units at zoom 1 (the TS game's).
 const VIEW_W: f32 = 960.0;
@@ -38,6 +40,9 @@ pub struct Scene {
     chunks: HashMap<(i64, i64, String), ChunkContent>,
     /// The hero's level last seen.
     level: u32,
+    /// The reactive fast lane, and what it shows this frame.
+    lane: Lane,
+    fast: lane::Frame,
 }
 
 /// The ground's seed and zone, and the transform wave sweeping in the next (its centre and radius,
@@ -86,27 +91,134 @@ fn grade_of(g: ColorGrade) -> ([f32; 3], [f32; 3], f32, f32) {
     }
 }
 
-/// The zone's grade at a beat: the ambient light pulsing on beats, the vignette on bars. (The
-/// TS game's reactive loudness and key look aren't in the app yet: as a mid loudness, neutral.)
-fn grade(theme: &ZoneTheme, pulse: Pulse, now: f64, pixel: f32) -> Grade {
+/// The zone's grade at a beat, as the fast lane shows it: the ambient light following the
+/// loudness and pulsing on beats, the vignette on bars, the key's look over the zone's.
+fn grade(theme: &ZoneTheme, pulse: Pulse, now: f64, pixel: f32, fast: &lane::Frame) -> Grade {
     let (mul, lift, contrast, saturation) = grade_of(theme.color_grade);
     let amb = hex(&theme.ambient_light);
-    let beat = (-6.0 * pulse.beat.clamp(0.0, 1.0)).exp() as f32;
-    let bar = (-6.0 * pulse.bar.clamp(0.0, 1.0)).exp() as f32;
-    let ambient = |v: f32| (v * 1.1 + 0.08).min(1.2);
+    let beat = fast.pulsed((-6.0 * pulse.beat.clamp(0.0, 1.0)).exp()) as f32;
+    let bar = fast.pulsed((-6.0 * pulse.bar.clamp(0.0, 1.0)).exp()) as f32;
+    let loud = fast.loudness.clamp(0.0, 1.0) as f32;
+    let intensity = 0.4 + 0.6 * loud;
+    let ambient = |v: f32| (v * 1.1 * (0.8 + 0.4 * loud) + 0.08).min(1.2);
+    let look = fast.look;
     Grade {
         ambient: [ambient(amb[0]), ambient(amb[1]), ambient(amb[2])],
-        pulse: 1.0 + 0.1 * beat,
+        pulse: 1.0 + (0.05 + 0.1 * loud) * intensity * beat,
         bloom: 0.55,
-        mul,
-        lift,
+        mul: [0, 1, 2].map(|i| mul[i] * look.mul[i]),
+        lift: [0, 1, 2].map(|i| lift[i] + look.lift[i]),
         contrast,
-        saturation,
-        vignette: 0.45 + 0.25 * bar,
+        saturation: saturation * look.sat,
+        vignette: 0.45 + 0.25 * bar * intensity,
         haze: if theme.heat_haze { 1.0 } else { 0.0 },
         time: now as f32,
         pixel,
         ..Grade::default()
+    }
+}
+
+/// The fast lane's horde: its squash on the beat, bob (px) and flinch at onsets, and each kind's
+/// step behind the beat (beats).
+const ENEMY_SQUASH: f64 = 0.16;
+const ENEMY_BOB: f64 = 4.0;
+const ENEMY_FLINCH: f64 = 0.14;
+const TYPE_PHASE_STEP: f64 = 0.12;
+
+/// An enemy kind's step behind the beat: 0, 1 or 2 steps by a hash of its name.
+fn type_phase(kind: &str) -> f64 {
+    let h = kind.bytes().fold(0x811c_9dc5u32, |h, b| {
+        (h ^ u32::from(b)).wrapping_mul(0x0100_0193)
+    });
+    f64::from(h % 3) * TYPE_PHASE_STEP
+}
+
+/// A sprite stretched by (kx, ky) about the screen point it is anchored at.
+fn stretch(mut s: Sprite, (ax, ay): (f32, f32), (kx, ky): (f32, f32)) -> Sprite {
+    s.x = ax - (ax - s.x) * kx;
+    s.w *= kx;
+    s.y = ay - (ay - s.y) * ky;
+    s.h *= ky;
+    s
+}
+
+/// The fast lane's own sprites and lights: a ripple from each press at the hero, the ground's
+/// glow with the good ones, and each onset's burst of sparks and light around the hero in the
+/// song's tint (faded while the beat is unclear).
+#[allow(clippy::many_single_char_names)]
+fn draw_fast(
+    fast: &lane::Frame,
+    view: &LiveView,
+    art: &Atlases,
+    at: &dyn Fn(f64, f64) -> (f32, f32),
+    scale: f32,
+    out: &mut Vec<Sprite>,
+    lights: &mut Vec<Light>,
+) {
+    let Some(hero) = view.hero else {
+        return;
+    };
+    if let Some(&ring) = art.proc.get("ring") {
+        let (sx, sy) = at(hero.x, hero.y - 12.0);
+        for &(age, mut c) in &fast.ripples {
+            let u = age / lane::RIPPLE_S;
+            let d = (2.0 * (14.0 + 150.0 * age)) as f32 * scale;
+            c[3] = (0.7 * (1.0 - u)) as f32;
+            out.push(Sprite::centred(ring, sx, sy, d, d).tinted(c).additive());
+        }
+    }
+    if fast.glow > 0.0 {
+        let (sx, sy) = at(hero.x, hero.y + 6.0);
+        let c = rgb(0x00ff_f0b0);
+        lights.push(Light {
+            x: sx,
+            y: sy,
+            radius: (90.0 + 60.0 * fast.glow) as f32 * scale,
+            color: [c[0], c[1], c[2]],
+            strength: (0.55 * fast.glow) as f32,
+        });
+    }
+    let fade = lane::BURST_FLOOR + (1.0 - lane::BURST_FLOOR) * fast.amp * fast.mix;
+    let tint = fast.tint;
+    let (glow, spark) = (art.proc.get("glow"), art.proc.get("spark"));
+    for b in &fast.bursts {
+        let (j, n) = (b.index as u64, b.n);
+        let u = b.age / lane::BURST_LIFE;
+        let a = rand01(0x0b5e7, j, 1) * std::f64::consts::TAU;
+        let r = 50.0 + 120.0 * rand01(0x0b5e7, j, 2);
+        let (cx, cy) = (hero.x + a.cos() * r, hero.y - 10.0 + a.sin() * r * 0.75);
+        let (sx, sy) = at(cx, cy);
+        if let Some(&g) = glow {
+            let k = g.w as f32 * (0.5 + 0.9 * n) as f32 * scale;
+            let alpha = fade * 0.6 * n * (1.0 - u).powi(2);
+            out.push(
+                Sprite::centred(g, sx, sy, k, k)
+                    .tinted([tint[0], tint[1], tint[2], alpha as f32])
+                    .additive(),
+            );
+        }
+        if let Some(&sp) = spark {
+            let spread = 1.0 - (1.0 - u).powi(2);
+            let k = sp.w as f32 * (0.8 + 0.8 * n) as f32 * scale;
+            let alpha = (fade * (0.5 + 0.5 * n) * (1.0 - u).powf(1.5)) as f32;
+            for i in 0..(3.0 + 7.0 * n).round() as u64 {
+                let a = rand01(0x0b5e8, j, i) * std::f64::consts::TAU;
+                let d = (10.0 + 30.0 * rand01(0x0b5e9, j, i)) * (0.5 + n) * spread;
+                let (px, py) = at(cx + a.cos() * d, cy + a.sin() * d * 0.75);
+                out.push(
+                    Sprite::centred(sp, px, py, k, k)
+                        .tinted([tint[0], tint[1], tint[2], alpha])
+                        .additive(),
+                );
+            }
+        }
+        lights.push(Light {
+            x: sx,
+            y: sy,
+            radius: (30.0 + 50.0 * n) as f32 * scale,
+            color: [tint[0], tint[1], tint[2]],
+            strength: (0.4 * n * fade * (1.0 - u).powi(2)) as f32,
+        });
     }
 }
 
@@ -121,6 +233,12 @@ impl Scene {
     /// When the hero was last bitten (host s).
     pub fn bitten(&self) -> f64 {
         self.bitten
+    }
+
+    /// The fast lane's frame at run time `s` (host time `now`), from the stream known by then and
+    /// its evidence gate, and the start of the view's newest zone wave.
+    pub fn fast_lane(&mut self, log: &StreamLog, gate: f64, s: f64, now: f64, wave: Option<f64>) {
+        self.fast = self.lane.frame(log, gate, s, now, wave);
     }
 
     /// Turns the view's new moments into effects, heard now (host time `now`).
@@ -248,6 +366,9 @@ impl Scene {
                     fire("dust", *x, *y, 0.0, 0.5, Start::default());
                 }
                 Moment::Bite { .. } => self.bitten = now,
+                Moment::Press {
+                    rating, unjudged, ..
+                } => self.lane.press(now, *rating, *unjudged),
                 _ => {}
             }
         }
@@ -289,14 +410,16 @@ impl Scene {
         let (cx, cy, zoom) = view.camera;
         let (shx, shy) = self.effects.shake(now);
         let (cx, cy) = (cx + shx, cy + shy);
-        let scale = (w / VIEW_W).min(h / VIEW_H) * zoom as f32;
-        layers.grade = grade(ground.theme, pulse, now, scale);
+        let fast = std::mem::take(&mut self.fast);
+        // (The camera punches in on each accent.)
+        let scale = (w / VIEW_W).min(h / VIEW_H) * (zoom * (1.0 + fast.punch)) as f32;
+        layers.grade = grade(ground.theme, pulse, now, scale, &fast);
         // (As the wave's ring passes the camera, the grade blends into the new zone's.)
         if let Some((z, wx, wy, r)) = ground.wave {
             let d = ((cx - wx).powi(2) + (cy - wy).powi(2)).sqrt();
             let t = ((r - d + 150.0) / 300.0).clamp(0.0, 1.0);
             let t = (t * t * (3.0 - 2.0 * t)) as f32;
-            let next = grade(z, pulse, now, scale);
+            let next = grade(z, pulse, now, scale, &fast);
             let g = &mut layers.grade;
             let mix = |a: f32, b: f32| a + (b - a) * t;
             for k in 0..3 {
@@ -470,9 +593,21 @@ impl Scene {
                     let look = looks.get(&f.kind);
                     let sprite = look.map_or("goblin", |l| l.atlas.as_str());
                     let size = look.map_or(1.0, |l| l.scale);
-                    let (sx, sy) = at(f.x, f.y);
                     let facing = Facing::toward((f.x - f.prev.0) as f32, (f.y - f.prev.1) as f32);
                     let dead = f.death_w.is_some();
+                    // The fast lane: the living horde hops between the beats, landing in a squash
+                    // on each (each kind a step later, so it ripples), and flinches at onsets.
+                    let (mut kx, mut ky, mut bob) = (1.0, 1.0, 0.0);
+                    if !dead {
+                        let u = (pulse.beat.clamp(0.0, 1.0) - type_phase(&f.kind)).rem_euclid(1.0);
+                        let land = (-6.0 * u).exp();
+                        let g = fast.groove();
+                        bob = ENEMY_BOB * g * (std::f64::consts::PI * u).sin();
+                        kx = (1.0 + ENEMY_SQUASH * g * land)
+                            * (1.0 - 0.5 * ENEMY_FLINCH * fast.flinch);
+                        ky = (1.0 - ENEMY_SQUASH * g * land) * (1.0 + ENEMY_FLINCH * fast.flinch);
+                    }
+                    let (sx, sy) = at(f.x, f.y - bob);
                     let tint = if dead {
                         [1.0, 1.0, 1.0, 0.35]
                     } else {
@@ -481,7 +616,7 @@ impl Scene {
                     if let Some(walk) = art.animation(sprite, "walk") {
                         // (Enemies are sampled 60 times a second; a walk frame every 6 samples.)
                         let frame = f.samples / 6;
-                        out.push(
+                        out.push(stretch(
                             Sprite::anchored(
                                 walk.frame(facing, frame, false),
                                 sx,
@@ -490,7 +625,9 @@ impl Scene {
                                 size * scale,
                             )
                             .tinted(tint),
-                        );
+                            (sx, sy),
+                            (kx as f32, ky as f32),
+                        ));
                     } else {
                         out.push(square(sx, sy, 20.0 * scale, [0.9, 0.25, 0.3, tint[3]]));
                     }
@@ -532,6 +669,13 @@ impl Scene {
         self.effects.draw(art, now, &at, scale, w, h, out);
         self.effects
             .post(now, &at, scale, lights, &mut layers.grade);
+        draw_fast(&fast, view, art, &at, scale, out, lights);
+        // (The accent flash, unless an effect's is stronger.)
+        let fa = fast.flash as f32;
+        if fa > layers.grade.flash[3] {
+            layers.grade.flash = [1.0, 1.0, 1.0, fa];
+        }
+        self.fast = fast;
         if now - self.bitten < 0.6 {
             let a = (1.0 - (now - self.bitten) / 0.6) as f32;
             out.push(rect(0.0, 0.0, w, h, [0.8, 0.1, 0.1, 0.25 * a]));

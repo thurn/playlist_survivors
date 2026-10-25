@@ -29,6 +29,7 @@ mod fx;
 mod gfx;
 mod hud;
 mod keys;
+mod lane;
 mod live;
 #[allow(
     clippy::pedantic,
@@ -673,6 +674,8 @@ fn bench(check: bool) -> Result<(), String> {
             beat: (s - last) / 0.47,
             bar: 0.5,
         };
+        let wave = engine.view.borrow().wave.as_ref().map(|v| v.s);
+        scene.fast_lane(engine.stream(), GATE, s, s, wave);
         let mut layers = scene::Layers::default();
         scene.draw(
             &engine.view.borrow(),
@@ -806,6 +809,8 @@ fn still(path: &Path, track: Option<&str>, at: Option<f64>) -> Result<(), String
         beat: beat_phase,
         bar: (bar as f64 + beat_phase.min(1.0)) / 4.0,
     };
+    let wave = engine.view.borrow().wave.as_ref().map(|v| v.s);
+    scene.fast_lane(engine.stream(), GATE, end, end, wave);
     scene.draw(
         &engine.view.borrow(),
         &ground,
@@ -1342,6 +1347,9 @@ impl App {
                 _ => (1.0, 1.0),
             }
         });
+        let wave = self.engine.view.borrow().wave.as_ref().map(|v| v.s);
+        self.scene
+            .fast_lane(self.engine.stream(), GATE, run_s, now, wave);
         let mut layers = scene::Layers::default();
         self.scene.draw(
             &self.engine.view.borrow(),
