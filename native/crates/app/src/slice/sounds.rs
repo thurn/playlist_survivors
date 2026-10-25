@@ -263,6 +263,11 @@ impl Sounds {
                 continue;
             }
             if let Some(mut v) = self.voice(&p, at) {
+                // (Never a voice whose onset has passed: a cause re-identified after it played (a
+                // kill joining or leaving its slot's group) would sound again, late.)
+                if v.at + v.lead < at.now + at.ahead {
+                    continue;
+                }
                 self.next_id += 1;
                 v.id = self.next_id;
                 self.scheduled.insert(k, (v.id, v.at));
@@ -583,6 +588,54 @@ mod tests {
         };
         sounds.reconcile(&[swing], &at, &mut out);
         assert!(out.is_empty());
+    }
+
+    #[test]
+    fn a_kill_group_changing_after_its_voice_played_sounds_nothing_more() {
+        let lib = super::super::World::load().unwrap().lib;
+        let palette = lib.sound_palettes[PALETTE].clone();
+        let samples = palette
+            .sounds
+            .values()
+            .flatten()
+            .map(|s| (sample_id(s).to_string(), (0, 0.0)))
+            .collect();
+        let mut sounds = Sounds {
+            palette,
+            samples,
+            weapons: HashMap::new(),
+            scheduled: HashMap::new(),
+            next_id: 0,
+        };
+        let b = beats(8, 0.5, 1.0);
+        let at = At {
+            seed: 1.0,
+            run_start: 0.0,
+            beats: &b,
+            gate: 0.2,
+            camera: (0.0, 0.0, 1.0),
+            clock: (0.0, 100.0),
+            l_out: 0.02,
+            never_late: NEVER_LATE,
+            now: 100.0,
+            ahead: 0.01,
+        };
+        let kill = |s: f64| Caused {
+            cause: Cause::Kill { s, x: 0.0 },
+            known: 1.0,
+        };
+        let mut out = Vec::new();
+        sounds.reconcile(&[kill(1.3), kill(1.32)], &at, &mut out);
+        assert!(matches!(out[..], [Command::Play(_)]), "{out:?}");
+        // A second after the slot (1.375) the first kill leaves the speculation's window: the
+        // group's count changes, but its voice has played.
+        out.clear();
+        let later = At {
+            now: 100.0 + 2.4,
+            ..at
+        };
+        sounds.reconcile(&[kill(1.32)], &later, &mut out);
+        assert!(out.is_empty(), "sounded again: {out:?}");
     }
 
     #[test]

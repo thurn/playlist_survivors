@@ -1098,14 +1098,15 @@ impl App {
             // Ahead of the time heard by the output's latency at least, so a sound is known
             // before the output must render it (docs/design/native-app.md, "Arrivals roll back
             // like late keys").
-            // (The stand-in player presses on each committed beat once it is 20 ms past, and
+            // (The stand-in player presses on each committed beat once it is 20 ms past (a real
+            // key's delivery), and
             // releases 80 ms after it: the keys reach the engine late, as real ones do.)
             if self.press_beats {
                 let due: Vec<f64> = self
                     .beats
                     .iter()
                     .copied()
-                    .filter(|&b| b > self.pressed_beat && b + 0.1 <= s && b >= self.run_start)
+                    .filter(|&b| b > self.pressed_beat && b + 0.02 <= s && b >= self.run_start)
                     .collect();
                 for b in due {
                     let key = if (b * 2.0) as i64 % 2 == 0 {
