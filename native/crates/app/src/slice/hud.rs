@@ -75,6 +75,8 @@ pub struct HudState<'a> {
     pub head: Option<(f32, f32)>,
     /// Whether the next beat starts a bar.
     pub next_down: bool,
+    /// The groove meter's flash after a tier up (1 to 0).
+    pub tier_flash: f64,
 }
 
 /// A small heart, 7 x 6 font pixels.
@@ -275,6 +277,19 @@ pub fn draw(view: &LiveView, st: &HudState, w: f32, h: f32, out: &mut Vec<Sprite
         rgb(0xb0b0c0),
         out,
     );
+    // (A tier up flashes the meter in the tier's colour, and lifts its label in white.)
+    let flash = st.tier_flash.clamp(0.0, 1.0) as f32;
+    if flash > 0.0 {
+        let mut c = TIERS[tier];
+        c[3] = 0.45 * flash;
+        out.push(rect(
+            px(gx - 3.0),
+            py(cy - 8.0),
+            (gw + 6.0) * u,
+            16.0 * u,
+            c,
+        ));
+    }
     out.push(rect(px(gx), py(cy - 5.0), gw * u, 10.0 * u, bg));
     out.push(rect(
         px(gx + 1.0),
@@ -286,10 +301,14 @@ pub fn draw(view: &LiveView, st: &HudState, w: f32, h: f32, out: &mut Vec<Sprite
     font::text(
         &format!("TIER {tier}"),
         px(gx + gw + 6.0),
-        py(cy - 4.0),
+        py(cy - 4.0 - 2.0 * flash),
         fs,
         Align::Left,
-        TIERS[tier],
+        if flash > 0.0 {
+            rgb(0xffffff)
+        } else {
+            TIERS[tier]
+        },
         out,
     );
 }

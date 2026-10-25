@@ -14,6 +14,7 @@ use sim::content::types::{ColorGrade, ZoneTheme};
 use super::fx::{Effects, Start, hex, rand01, rgb};
 use super::gfx::{Sprite, rect, square};
 use super::lane::{self, Lane};
+use super::tier::{self, Arms};
 use sim::content::ContentLibrary;
 use stream::StreamLog;
 
@@ -43,7 +44,18 @@ pub struct Scene {
     /// The reactive fast lane, and what it shows this frame.
     lane: Lane,
     fast: lane::Frame,
+    /// The run time the fast lane last showed.
+    run_s: f64,
+    /// The hero's recent places (host s, x, y), for the fire trail.
+    trail: std::collections::VecDeque<(f64, f64, f64)>,
+    /// The last tier change: when (host s), and whether up.
+    tier_change: Option<(f64, bool)>,
 }
+
+/// The tier change's ring lasts about a beat, and the groove meter flashes this long on a tier up
+/// (s).
+const TIER_RING_S: f64 = 0.5;
+const TIER_FLASH_S: f64 = 0.6;
 
 /// The ground's seed and zone, and the transform wave sweeping in the next (its centre and radius,
 /// world px), if one is.
@@ -63,11 +75,13 @@ impl Field<'_> {
     }
 }
 
-/// Where the music is: the phase (0 to 1) since the last beat and since the last bar's first.
+/// Where the music is: the phase (0 to 1) since the last beat and since the last bar's first, and
+/// the beat index (beats heard less one, plus the phase).
 #[derive(Clone, Copy, Debug)]
 pub struct Pulse {
     pub beat: f64,
     pub bar: f64,
+    pub index: f64,
 }
 
 /// What the scene draws: the world's sprites, its lights, and the grade over them.
@@ -239,6 +253,17 @@ impl Scene {
     /// its evidence gate, and the start of the view's newest zone wave.
     pub fn fast_lane(&mut self, log: &StreamLog, gate: f64, s: f64, now: f64, wave: Option<f64>) {
         self.fast = self.lane.frame(log, gate, s, now, wave);
+        self.run_s = s;
+    }
+
+    /// The groove meter's flash after a tier up (1 to 0), at host time `now`.
+    pub fn tier_flash(&self, now: f64) -> f64 {
+        match self.tier_change {
+            Some((at, true)) if (0.0..TIER_FLASH_S).contains(&(now - at)) => {
+                1.0 - (now - at) / TIER_FLASH_S
+            }
+            _ => 0.0,
+        }
     }
 
     /// Turns the view's new moments into effects, heard now (host time `now`).
@@ -256,6 +281,13 @@ impl Scene {
             }
         };
         let groove = view.groove.clamp(0.0, 1.0);
+        // (The hero's places, for the fire trail.)
+        if let Some(h) = view.hero {
+            self.trail.push_back((now, h.x, h.y));
+            while self.trail.front().is_some_and(|p| now - p.0 > 1.0) {
+                self.trail.pop_front();
+            }
+        }
         let view_tier = (view.tier.max(0.0) as usize).min(3);
         for m in moments {
             match m {
@@ -366,6 +398,7 @@ impl Scene {
                     fire("dust", *x, *y, 0.0, 0.5, Start::default());
                 }
                 Moment::Bite { .. } => self.bitten = now,
+                Moment::TierChange { up, .. } => self.tier_change = Some((now, *up)),
                 Moment::Press {
                     rating, unjudged, ..
                 } => self.lane.press(now, *rating, *unjudged),
@@ -399,6 +432,7 @@ impl Scene {
         ground: &Field,
         art: &Atlases,
         looks: &HashMap<String, Look>,
+        lib: &ContentLibrary,
         now: f64,
         pulse: Pulse,
         w: f32,
@@ -517,8 +551,13 @@ impl Scene {
                 prop(p, [1.0; 4], out);
             }
         }
-        // Decals on the ground, under everyone.
+        // Decals on the ground, under everyone; the hero's glow and the tier change's ring.
         self.effects.draw_decals(art, now, &at, scale, out);
+        let ring = self
+            .tier_change
+            .map_or(0.0, |(t, _)| 1.0 - (now - t) / TIER_RING_S)
+            .clamp(0.0, 1.0);
+        tier::ground(view, art, &at, scale, ring, out);
         // The wave's edge: a ring in the new zone's light, and a wider one in its tint.
         if let Some((z, wx, wy, r)) = ground.wave {
             let light = hex(&z.ambient_light);
@@ -643,6 +682,9 @@ impl Scene {
                         color: [1.0, 0.91, 0.75],
                         strength: 0.35,
                     });
+                    // The tier's aura behind the hero, swelling with the beat.
+                    let swell = 0.5 + 0.5 * (std::f64::consts::TAU * pulse.beat.min(1.0)).cos();
+                    tier::aura(view, &hero, art, &at, scale, fast.pulsed(swell), out);
                     let (sx, sy) = at(hero.x, hero.y - hero.z);
                     // (The sprites stand 64 tall, the head about 50 up.)
                     layers.head = Some(at(hero.x, hero.y - hero.z - 50.0));
@@ -666,6 +708,14 @@ impl Scene {
                 }
             }
         }
+        let arms = Arms {
+            lib,
+            beat: pulse.index,
+            now,
+            run_s: self.run_s,
+            trail: self.trail.make_contiguous(),
+        };
+        tier::weapons(view, &arms, art, &at, scale, out);
         self.effects.draw(art, now, &at, scale, w, h, out);
         self.effects
             .post(now, &at, scale, lights, &mut layers.grade);

@@ -454,6 +454,8 @@ pub trait Recorder {
     fn health(&mut self, s: f64, frac: f64) {}
     fn landing(&mut self, l: Landing) {}
     fn weapon(&mut self, id: &str, s: f64) {}
+    /// A weapon evolved at song time s.
+    fn evolve(&mut self, id: &str, s: f64) {}
     fn fire(&mut self, weapon: &str, s: f64) {}
     fn chain(&mut self, p: ChainPoint) {}
     fn chain_point(&mut self, chain: usize, p: ChainPoint) {}
@@ -557,6 +559,9 @@ impl<R: Recorder + ?Sized> Recorder for std::rc::Rc<std::cell::RefCell<R>> {
     }
     fn weapon(&mut self, id: &str, s: f64) {
         self.borrow_mut().weapon(id, s);
+    }
+    fn evolve(&mut self, id: &str, s: f64) {
+        self.borrow_mut().evolve(id, s);
     }
     fn fire(&mut self, weapon: &str, s: f64) {
         self.borrow_mut().fire(weapon, s);

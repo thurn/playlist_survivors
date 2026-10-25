@@ -15,8 +15,8 @@ use sim::engine::{AnimInfo, HERO_ANIMS, Sim, SimInput, Snapshot};
 use sim::movement::InputKey;
 use sim::player::{KeyEvent, KeyEventKind};
 use sim::recorder::{
-    BiteRecord, EnemyRecord, Fate, Hit, HitSource, Landing, PlanInput, PlanSwing, Recorder,
-    SettleRecord, ZoneWaveRecord,
+    BiteRecord, ChainPoint, EnemyRecord, Fate, Hit, HitSource, Landing, PlanInput, PlanSwing,
+    Recorder, SettleRecord, ZoneWaveRecord,
 };
 use sim::schedule::reactive_song_map;
 use stream::StreamLog;
@@ -143,6 +143,9 @@ pub struct Caused {
     pub known: f64,
 }
 
+/// How long the view keeps a chain lightning after its last jump (song s).
+const BOLT_KEEP_S: f64 = 1.0;
+
 /// What a frame draws.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct LiveView {
@@ -170,6 +173,12 @@ pub struct LiveView {
     /// newest, if any (it has replaced `zone` once it has passed).
     pub zone: Option<String>,
     pub wave: Option<ZoneWave>,
+    /// The hero's weapons, and whether each has evolved.
+    pub weapons: Vec<(String, bool)>,
+    /// Recent chain lightnings by index: each point's song time and place.
+    pub bolts: BTreeMap<usize, Vec<(f64, f64, f64)>>,
+    /// Chains started.
+    pub chains: usize,
 }
 
 /// A transform wave: from the song time `s` its ring grows from (x, y), the new zone inside it.
@@ -241,6 +250,22 @@ impl LiveView {
             Record::Health(v) => self.health = *v,
             // (Sounds go to the scheduler from the speculation: `Engine::causes`.)
             Record::Sound(_) => {}
+            Record::Weapon { id, evolved } => match self.weapons.iter_mut().find(|w| w.0 == *id) {
+                Some(w) => w.1 |= *evolved,
+                None => self.weapons.push((id.clone(), *evolved)),
+            },
+            Record::Chain { x, y } => {
+                // (A chain long done is let go.)
+                self.bolts
+                    .retain(|_, p| p.last().is_some_and(|q| q.0 > s - BOLT_KEEP_S));
+                self.bolts.insert(self.chains, vec![(s, *x, *y)]);
+                self.chains += 1;
+            }
+            Record::ChainPoint { chain, x, y } => {
+                if let Some(p) = self.bolts.get_mut(chain) {
+                    p.push((s, *x, *y));
+                }
+            }
             Record::ZoneWave { s, x, y, zone } => {
                 self.wave = Some(ZoneWave {
                     s: *s,
@@ -296,6 +321,21 @@ pub enum Record {
         recycled: bool,
     },
     Moment(Moment),
+    /// A weapon taken, or evolved.
+    Weapon {
+        id: String,
+        evolved: bool,
+    },
+    /// A chain lightning starts at (x, y), and a chain (by its index) jumps to (x, y).
+    Chain {
+        x: f64,
+        y: f64,
+    },
+    ChainPoint {
+        chain: usize,
+        x: f64,
+        y: f64,
+    },
     Groove(f64),
     Tier(f64),
     Xp(f64),
@@ -632,6 +672,32 @@ impl Recorder for LiveRecorder {
             provisional: r.provisional,
             settled: r.settled,
         }));
+    }
+
+    fn weapon(&mut self, id: &str, _s: f64) {
+        self.0.borrow_mut().push(Record::Weapon {
+            id: id.to_string(),
+            evolved: false,
+        });
+    }
+
+    fn evolve(&mut self, id: &str, _s: f64) {
+        self.0.borrow_mut().push(Record::Weapon {
+            id: id.to_string(),
+            evolved: true,
+        });
+    }
+
+    fn chain(&mut self, p: ChainPoint) {
+        self.0.borrow_mut().push(Record::Chain { x: p.x, y: p.y });
+    }
+
+    fn chain_point(&mut self, chain: usize, p: ChainPoint) {
+        self.0.borrow_mut().push(Record::ChainPoint {
+            chain,
+            x: p.x,
+            y: p.y,
+        });
     }
 
     fn zone_wave(&mut self, z: ZoneWaveRecord) {

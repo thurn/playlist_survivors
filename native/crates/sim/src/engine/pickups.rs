@@ -425,6 +425,7 @@ impl Sim {
         match item.kind {
             ItemKind::Weapon => self.grant_weapon(&item.id),
             ItemKind::Evolve => {
+                self.rec.evolve(&item.id, self.st.s);
                 let wi = lib.weapons.get_index_of(&item.id).expect("a known weapon");
                 let wd = &lib.weapons[wi];
                 if let Some(every) = wd.evolve.as_ref().and_then(|e| e.every) {

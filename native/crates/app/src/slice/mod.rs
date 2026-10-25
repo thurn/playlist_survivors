@@ -50,6 +50,7 @@ mod sounds;
     dead_code
 )]
 mod tap;
+mod tier;
 mod timing;
 
 use std::collections::{HashMap, VecDeque};
@@ -673,6 +674,7 @@ fn bench(check: bool) -> Result<(), String> {
         let pulse = scene::Pulse {
             beat: (s - last) / 0.47,
             bar: 0.5,
+            index: beats.iter().filter(|&&b| b <= s).count() as f64,
         };
         let wave = engine.view.borrow().wave.as_ref().map(|v| v.s);
         scene.fast_lane(engine.stream(), GATE, s, s, wave);
@@ -682,6 +684,7 @@ fn bench(check: bool) -> Result<(), String> {
             &ground,
             &art,
             &world.looks,
+            &world.lib,
             s,
             pulse,
             w as f32,
@@ -697,6 +700,7 @@ fn bench(check: bool) -> Result<(), String> {
             bitten_ago: f64::INFINITY,
             head: layers.head,
             next_down: false,
+            tier_flash: scene.tier_flash(s),
         };
         let mut overlay = Vec::new();
         hud::draw(
@@ -805,9 +809,11 @@ fn still(path: &Path, track: Option<&str>, at: Option<f64>) -> Result<(), String
         .count()
         .saturating_sub(1)
         % 4;
+    let heard = beats.iter().filter(|&&b| b <= end).count();
     let pulse = scene::Pulse {
         beat: beat_phase,
         bar: (bar as f64 + beat_phase.min(1.0)) / 4.0,
+        index: heard.saturating_sub(1) as f64 + beat_phase.min(1.0),
     };
     let wave = engine.view.borrow().wave.as_ref().map(|v| v.s);
     scene.fast_lane(engine.stream(), GATE, end, end, wave);
@@ -816,6 +822,7 @@ fn still(path: &Path, track: Option<&str>, at: Option<f64>) -> Result<(), String
         &ground,
         &art,
         &world.looks,
+        &world.lib,
         end,
         pulse,
         w as f32,
@@ -841,6 +848,7 @@ fn still(path: &Path, track: Option<&str>, at: Option<f64>) -> Result<(), String
         bitten_ago: f64::INFINITY,
         head: layers.head,
         next_down: bar == 3,
+        tier_flash: scene.tier_flash(end),
     };
     let mut overlay = Vec::new();
     hud::draw(
@@ -1336,15 +1344,19 @@ impl App {
         };
         // The beat phase from the last beat heard and the gap to the next; bars of four from the
         // first beat.
-        let (phase, bar) = song.map_or((1.0, 1.0), |s| {
+        let (phase, bar, index) = song.map_or((1.0, 1.0, 0.0), |s| {
             let heard = self.beats.iter().filter(|&&b| b <= s).count();
             let last = heard.checked_sub(1).map(|k| self.beats[k]);
             match (last, self.beats.get(heard)) {
                 (Some(last), Some(&next)) => {
                     let phase = (s - last) / (next - last).max(1e-3);
-                    (phase, (((heard - 1) % 4) as f64 + phase.min(1.0)) / 4.0)
+                    (
+                        phase,
+                        (((heard - 1) % 4) as f64 + phase.min(1.0)) / 4.0,
+                        (heard - 1) as f64 + phase.min(1.0),
+                    )
                 }
-                _ => (1.0, 1.0),
+                _ => (1.0, 1.0, heard as f64),
             }
         });
         let wave = self.engine.view.borrow().wave.as_ref().map(|v| v.s);
@@ -1356,8 +1368,13 @@ impl App {
             &ground,
             &self.art,
             &self.world.looks,
+            &self.world.lib,
             now,
-            scene::Pulse { beat: phase, bar },
+            scene::Pulse {
+                beat: phase,
+                bar,
+                index,
+            },
             w,
             h,
             &mut layers,
@@ -1380,6 +1397,7 @@ impl App {
             bitten_ago: now - self.scene.bitten(),
             head: layers.head.filter(|_| self.over.is_none()),
             next_down: bar >= 0.75,
+            tier_flash: self.scene.tier_flash(now),
         };
         let mut overlay = Vec::new();
         if self.running || self.over.is_some() {
