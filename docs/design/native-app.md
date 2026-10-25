@@ -1320,6 +1320,20 @@ three-hour listening session is about half a gigabyte:
 
 Watch my run on the end card replays the run from the session in memory.
 
+**Landed:** `slice/session.rs` records every session (from listening's start
+to quit or a new source; the analyzer's input as WAV, converted to FLAC when
+it closes; `stream.jsonl` of `eval::session::Arrival`s; `keys.jsonl` of the
+keys as the engine applied them; `meta.json` with each run's bounds and the
+FNV-1a hash of its settled records). `eval::session` holds the shared rebasing
+rule and `replay_run`; `ps replay <session>` replays each run and checks the
+hash, `--reanalyse` puts the audio through the current analyzer and reports
+the outcome against the live stream's. A 14 s session with a press on every
+beat is committed in `native/fixtures/session-house/` and replayed in the gate
+(`eval/tests/session.rs`; recorded again whenever a deliberate sim or content
+change moves what settles). On the end card, W replays the run on a fresh
+engine from its own arrivals and keys. For checks, `--press-beats` stands in
+for a player and `--watch` watches each run as it ends.
+
 ### Timing logs (D4)
 
 The play log from `src/live/log.ts` (and its summary command) ported to the app

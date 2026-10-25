@@ -12,7 +12,7 @@
 //!     playlist-survivors --click       # also clicks on each committed beat
 //!     playlist-survivors --file <path> --volume 0.3  # the file quieter (0: silent, still heard)
 //!     playlist-survivors --file <path> --mute  # everything runs, the device gets silence
-//!     playlist-survivors --file <path> --headless --seconds 30 [--start-at S] [--switch-at S] [--press-beats]  # no window, no Dock icon, muted:
+//!     playlist-survivors --file <path> --headless --seconds 30 [--start-at S] [--switch-at S] [--press-beats] [--watch]  # no window, no Dock icon, muted:
 //!                                     # the whole live path on a timer, for checks (then exits)
 //!     playlist-survivors --input-offset-ms 30 --stomp-extra-ms 10  # calibration for this session
 //!     (F1 in the app: the debug menu; F2 plays the next bundled track, F3 listens to the Mac)
@@ -115,6 +115,8 @@ struct Options {
     switch_at: Option<f64>,
     /// Press on every committed beat, 20 ms late (a stand-in player, for checks).
     press_beats: bool,
+    /// Watch each run as soon as it ends (for checks).
+    watch: bool,
     /// Calibration offsets for this session (ms), over the saved ones.
     input_offset_ms: Option<f64>,
     stomp_extra_ms: Option<f64>,
@@ -134,6 +136,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         start_at: None,
         switch_at: None,
         press_beats: false,
+        watch: false,
         input_offset_ms: None,
         stomp_extra_ms: None,
     };
@@ -148,6 +151,7 @@ fn options(args: &[String]) -> Result<Options, String> {
                 o.mute = true;
             }
             "--press-beats" => o.press_beats = true,
+            "--watch" => o.watch = true,
             "--switch-at" => {
                 o.switch_at = Some(
                     it.next()
@@ -337,6 +341,11 @@ pub fn run(args: &[String]) -> Result<(), String> {
         screen: None,
         session: None,
         run_index: 0,
+        run_arrivals: Vec::new(),
+        run_keys: Vec::new(),
+        watch: None,
+        run_kills: 0,
+        auto_watch: opts.watch,
         overrides,
         gfx: None,
         sounds,
@@ -785,6 +794,15 @@ fn still(path: &Path) -> Result<(), String> {
     Ok(())
 }
 
+/// Watch my run: the run replayed from its arrivals and keys on a fresh engine.
+struct Watch {
+    began: f64,
+    s0: f64,
+    span: f64,
+    arrivals: usize,
+    keys: usize,
+}
+
 /// A calibration screen, between runs (docs/design/native-app.md, "Calibration (D2)").
 #[derive(Debug)]
 enum Screen {
@@ -877,6 +895,14 @@ struct App {
     /// The session's record, and the index of its run going.
     session: Option<Session>,
     run_index: usize,
+    /// The run's own arrivals and applied keys, for Watch my run, and the replay showing (when it
+    /// began, host s, and how far its feeds have got).
+    run_arrivals: Vec<Arrival>,
+    run_keys: Vec<sim::player::KeyEvent>,
+    watch: Option<Watch>,
+    /// The run's kills when it ended, and whether to watch each run as it ends (`--watch`).
+    run_kills: usize,
+    auto_watch: bool,
     /// A calibration screen showing, if any.
     screen: Option<Screen>,
     device_uid: String,
@@ -985,6 +1011,9 @@ impl App {
                     let arrival = Arrival { arrived, entry };
                     if let Some(s) = self.session.as_mut() {
                         s.arrival(&arrival);
+                    }
+                    if self.running {
+                        self.run_arrivals.push(arrival.clone());
                     }
                     self.recent.push_back((arrival.arrived, arrival.entry));
                     while self
@@ -1118,11 +1147,13 @@ impl App {
                 self.engine.settle_s = self.settle_s();
             }
         }
+        self.watch_tick(now);
         self.screen_tick(now);
         // Listening: the next run starts on its own once the music is clear (after the end card),
         // unless a calibration screen shows.
         if !self.running
             && self.screen.is_none()
+            && self.watch.is_none()
             && let Some(s) = song
             && self.listen.ready(s)
             && s >= self.start_at
@@ -1277,7 +1308,18 @@ impl App {
                 );
             }
         }
-        if let Some((t, end, seconds)) = self.over {
+        if self.watch.is_some() {
+            let u = (w / 960.0).min(h / 540.0);
+            render::font::text(
+                "REPLAY   ESC STOPS",
+                w / 2.0,
+                h - 40.0 * u,
+                (2.0 * u).round().max(1.0),
+                render::font::Align::Centre,
+                [1.0, 0.85, 0.4, 1.0],
+                &mut overlay,
+            );
+        } else if let Some((t, end, seconds)) = self.over {
             scene::end_card(
                 w,
                 h,
@@ -1407,12 +1449,71 @@ impl App {
         })
     }
 
+    /// Starts Watch my run: the run just ended, replayed from its own arrivals and keys.
+    fn watch_run(&mut self, now: f64) {
+        let Some((_, _, seconds)) = self.over else {
+            return;
+        };
+        let Ok(mut engine) = self.world.engine() else {
+            return;
+        };
+        engine.settle_s = self.settle_s();
+        self.engine = engine;
+        self.scene = Scene::default();
+        self.watch = Some(Watch {
+            began: now,
+            s0: self.run_start,
+            span: seconds,
+            arrivals: 0,
+            keys: 0,
+        });
+    }
+
+    /// Steps the replay showing to the time since it began, as the run went.
+    fn watch_tick(&mut self, now: f64) {
+        let Some(w) = self.watch.as_mut() else {
+            return;
+        };
+        let t = now - w.began;
+        let s0 = w.s0;
+        let fed = &self.run_arrivals[w.arrivals..];
+        let n = fed.iter().take_while(|a| a.arrived - s0 <= t).count();
+        if n > 0 {
+            self.engine.feed(|log| {
+                for a in &fed[..n] {
+                    eval::session::rebase_append(log, &a.entry, s0);
+                }
+            });
+            w.arrivals += n;
+        }
+        while let Some(k) = self.run_keys.get(w.keys).filter(|k| k.s <= t) {
+            self.engine
+                .key(k.s, k.key, k.kind == sim::player::KeyEventKind::Press);
+            w.keys += 1;
+        }
+        self.engine.frame(t, 0.2);
+        let moments = self.engine.view.borrow_mut().take_moments();
+        self.scene
+            .moments(&moments, now, &self.world.lib, &self.world.looks);
+        if t > w.span + 0.5 {
+            self.watch = None;
+            eprintln!(
+                "slice: replay over: {} kills (the run had {})",
+                self.engine.view.borrow().kills,
+                self.run_kills
+            );
+        }
+    }
+
     /// The keys the engine applied since the last call, into the session's record.
     fn record_keys(&mut self) {
         let run = self.run_index;
-        if let (Some(log), Some(session)) = (self.engine.key_log.as_mut(), self.session.as_mut()) {
+        if let Some(log) = self.engine.key_log.as_mut() {
             for k in log.drain(..) {
-                session.key(&session::key_of(run, &k));
+                if let Some(session) = self.session.as_mut() {
+                    session.key(&session::key_of(run, &k));
+                }
+                self.run_keys.push(k);
             }
         }
     }
@@ -1433,7 +1534,11 @@ impl App {
             );
         }
         self.over = Some((now, end, seconds));
+        self.run_kills = self.engine.view.borrow().kills;
         self.running = false;
+        if self.auto_watch {
+            self.watch_run(now);
+        }
         self.listen.reset(true);
         let _ = self.audio.out.commands.push(Command::CancelAll);
         eprintln!(
@@ -1739,6 +1844,16 @@ impl App {
                 .feed(|log| eval::session::rebase_append(log, e, s0));
         }
         self.engine.key_log = Some(Vec::new());
+        self.run_arrivals = self
+            .recent
+            .iter()
+            .map(|(arrived, entry)| Arrival {
+                arrived: *arrived,
+                entry: entry.clone(),
+            })
+            .collect();
+        self.run_keys.clear();
+        self.watch = None;
         self.run_index = self.session.as_mut().map_or(0, |s| s.run_started(s0));
         self.running = true;
         self.listen.reset(false);
@@ -1774,6 +1889,17 @@ impl App {
                     return;
                 }
                 _ => {}
+            }
+        }
+        // Watch my run: W on the end card replays it; Esc stops the replay.
+        if pressed && !self.running {
+            if self.watch.is_some() && code == KeyCode::Escape {
+                self.watch = None;
+                return;
+            }
+            if self.watch.is_none() && self.over.is_some() && code == KeyCode::KeyW {
+                self.watch_run(now);
+                return;
             }
         }
         // Listening: Enter or Space starts a run (a second after an end, not to skip its card).

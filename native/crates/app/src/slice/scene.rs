@@ -538,7 +538,7 @@ pub fn end_card(
     );
     let blink = if (age * 1.5).fract() < 0.7 { 1.0 } else { 0.4 };
     font::text(
-        "PLAY MUSIC OR PRESS ENTER FOR A NEW RUN",
+        "W WATCH YOUR RUN   PLAY MUSIC OR PRESS ENTER FOR A NEW RUN",
         cx,
         top + 175.0 * u,
         px(2.0),
