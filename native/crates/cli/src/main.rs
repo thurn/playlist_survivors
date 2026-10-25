@@ -4,6 +4,7 @@ mod bench;
 mod log;
 mod parity;
 mod replay;
+mod report;
 
 #[allow(clippy::single_match_else)]
 fn main() {
@@ -13,9 +14,10 @@ fn main() {
         Some("runner-bench") => bench::main(&args[1..]),
         Some("replay") => replay::main(&args[1..]),
         Some("log") => log::main(&args[1..]),
+        Some("report") => report::main(&args[1..]),
         _ => {
             eprintln!(
-                "usage: ps analysis-parity [--tracks ID,ID | --all] [--jobs N] [--out DIR] [--check]\n       ps runner-bench [--seconds S] [--check]\n       ps replay <session folder> [--reanalyse]\n       ps log [<timing.jsonl>] [--from S] [--to S] [--no-table]"
+                "usage: ps analysis-parity [--tracks ID,ID | --all] [--jobs N] [--out DIR] [--check]\n       ps runner-bench [--seconds S] [--check]\n       ps replay <session folder> [--reanalyse]\n       ps log [<timing.jsonl>] [--from S] [--to S] [--no-table]\n       ps report [<session folder>]"
             );
             2
         }

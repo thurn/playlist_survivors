@@ -6,11 +6,13 @@
 //! - `arr`: an entry's arrival, its group `g` and how long after its content time it came (`lag`);
 //! - `key`: a key event, from the window server's timestamp to the main thread (`lag`);
 //! - `rb`: a frame's rollbacks (`n`, of them `keys` for a key), the song re-simulated
-//!   (`replayed`) and its depth (`deepest`);
+//!   (`replayed`), the wall time that took (`resim`, ms) and its depth (`deepest`);
 //! - `frame`: a frame's own work, sim and evaluate (`build`) and encode (`encode`), in ms;
-//! - `snd`: a voice scheduled, how long before the output must render it (`margin`, ms); and
+//! - `snd`: a voice scheduled, how long before the output must render its onset (`margin`, ms);
+//!   and
 //!   `cancel`;
-//! - `dev`: the output device (`name`) and its latency (`lOut`, ms); `run` and `end`: a run's bounds.
+//! - `dev`: the output device (`name`), its latency (`lOut`, ms) and when a captured buffer is
+//!   heard after its host time (`heardAfter`, ms); `run` and `end`: a run's bounds.
 //!
 //! `ps log` summarises one; F8 flushes it and says where it is.
 

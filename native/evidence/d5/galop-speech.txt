@@ -1,0 +1,7 @@
+== orpheus-galop (free prelude), 90 s
+slice: file mode (../public/audio/orpheus-galop.flac), output 48000 Hz, L_out 160.0 ms, heard 160.0 ms after capture
+slice: run started at song time 50.8
+slice: run over (Stopped), 39 s; sounds 305 started, 38 skipped late, 0 dropped
+== speech (say), 30 s
+slice: file mode (/private/tmp/claude-501/-Users-dthurn-playlist-survivors/6517c13c-b0f4-4b94-9bf6-a19efe16e688/scratchpad/qa/speech.aiff), output 48000 Hz, L_out 160.0 ms, heard 160.0 ms after capture
+(no run line: no run started)

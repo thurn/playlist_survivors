@@ -1,0 +1,32 @@
+/private/tmp/claude-501/-Users-dthurn-playlist-survivors/6517c13c-b0f4-4b94-9bf6-a19efe16e688/scratchpad/qa/house/1792904340
+output Derek’s AirPods Pro, 75 s of song
+
+link                                         measured                           target                
+capture to arrival, from the capture's stamp ticks p95 -9.3 ms                  <= 48 ms (report)      met
+key event to main thread                     not measured here                  <= 46 ms (gate)        
+sim + evaluate + encode per frame            p99 1.3 ms                         <= 4 ms                met
+rollback re-simulation per second            p95 9.7 ms (1.6x song replayed)    <= 250 ms; <= 7.2x     met
+output latency (reported, corrected)         160.0 ms                           report                 
+sounds: margin before the output renders     least -1157.6 ms, 171 of 509 late  none late              OVER
+capture to arrival, the app's share          not measured here                  see Targets            
+hindsight decode to arrival                  not measured here                  see Targets            
+analyzer real-time factor                    not measured here                  see Targets            
+main thread to present                       not measured here                  see Targets            
+committed beat to heard beat                 not measured here                  see Targets            
+
+/private/tmp/claude-501/-Users-dthurn-playlist-survivors/6517c13c-b0f4-4b94-9bf6-a19efe16e688/scratchpad/qa/house/1792904340/timing.jsonl
+song time -0.2-74.8 s
+output Derek’s AirPods Pro (160.0 ms)
+arrival lag, beat (ms): median -989.2, p95 -645.8, max -417.3 (n 169)
+arrival lag, change (ms): median 5820.9, p95 5828.5, max 5828.5 (n 7)
+arrival lag, end (ms): median 1328.7, p95 1328.7, max 1328.7 (n 1)
+arrival lag, jump (ms): median 821.7, p95 828.0, max 828.0 (n 3)
+arrival lag, onset (ms): median -164.6, p95 -159.5, max -157.3 (n 511)
+arrival lag, tick (ms): median -174.2, p95 -169.3, max -166.9 (n 1499)
+key to main thread (ms): none
+rollbacks: 1932 (25.8 a second; 138 for a key), 116.4 s re-simulated, deepest 301 ms
+frame, sim and evaluate (ms): median 0.1, p95 0.6, max 11.8 (n 8409)
+frame, encode (ms): none
+sound margin before the output renders it (ms): least -1157.6, p5 -163.7, median 20.2 (n 509); 9 cancelled
+
+run 0: 2.6-67.6 s, 421507 records settled live, 421507 in the replay (0 rollbacks): the same; 2301 kills, 124 perfect, 0 great, 0 good, health 1.00

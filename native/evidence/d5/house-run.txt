@@ -1,0 +1,4 @@
+slice: output Derek’s AirPods Pro (not calibrated yet): input offsets 0 ms, stomp 0 ms, display 0 ms, latency correction 0 ms; Bluetooth: sync is best-effort
+slice: file mode (../public/reactive/house-128/house-128.ogg), output 48000 Hz, L_out 160.0 ms, heard 160.0 ms after capture
+slice: run started at song time 2.6
+slice: run over (Song), 65 s; sounds 465 started, 35 skipped late, 0 dropped

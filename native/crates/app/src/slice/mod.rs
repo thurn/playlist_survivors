@@ -1129,6 +1129,7 @@ impl App {
                     "n": r.rollbacks - was.rollbacks,
                     "keys": r.key_rollbacks - was.key_rollbacks,
                     "replayed": r.replayed_s - was.replayed_s,
+                    "resim": (r.resim_s - was.resim_s) * 1e3,
                     "deepest": r.deepest_s,
                 }));
             }
@@ -1181,7 +1182,7 @@ impl App {
                     (l_out + self.audio.heard_offset).to_bits(),
                     Ordering::Relaxed,
                 );
-                self.log(serde_json::json!({"k": "dev", "name": d.name, "lOut": l_out * 1e3}));
+                self.log(serde_json::json!({"k": "dev", "name": d.name, "lOut": l_out * 1e3, "heardAfter": (l_out + self.audio.heard_offset) * 1e3}));
                 self.end_run(End::Device, now);
                 self.engine.settle_s = self.settle_s();
             }
@@ -1492,7 +1493,8 @@ impl App {
         self.session = self.new_session();
         self.timing = self.session.as_ref().and_then(|s| Timing::open(s.dir()));
         let name = coreaudio::device(self.device).name;
-        self.log(serde_json::json!({"k": "dev", "name": name, "lOut": self.audio.l_out * 1e3}));
+        let heard_after = f64::from_bits(self.audio.heard_after.load(Ordering::Relaxed));
+        self.log(serde_json::json!({"k": "dev", "name": name, "lOut": self.audio.l_out * 1e3, "heardAfter": heard_after * 1e3}));
     }
 
     /// A timing event.
@@ -1508,8 +1510,12 @@ impl App {
         let now = now_s();
         let s = self.song_at(now);
         match c {
+            // (How long before its onset must be rendered: a voice may start partway while its
+            // onset is still ahead.)
             Command::Play(v) => {
-                self.log(serde_json::json!({"k": "snd", "s": s, "margin": (v.at - now) * 1e3}));
+                self.log(
+                    serde_json::json!({"k": "snd", "s": s, "margin": (v.at + v.lead - now) * 1e3}),
+                );
             }
             Command::Cancel(_) => self.log(serde_json::json!({"k": "cancel", "s": s})),
             _ => {}
