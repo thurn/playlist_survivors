@@ -17,7 +17,8 @@
 //!   first strong onset after its dance), each boss slam and each archer volley (decided at its mark
 //!   or draw, at the key TS gave that slam or volley), a fallback zone wave (decided at its beat).
 //! - **The finale** fires on a confirmed end: an `ends` entry once 3 s of quiet below the gate have
-//!   followed it, after 30 s of judged time; it ends the run `epilogueS` later. Nothing starts at or
+//!   held, from the first quiet tick within 3 s after it, after 30 s of judged time; it ends the run
+//!   `epilogueS` later. Nothing starts at or
 //!   after it: a set piece accepted before the finale was known that would start after it is revoked.
 
 use std::rc::Rc;
@@ -40,6 +41,9 @@ const VOLLEY_REARM_S: f64 = 4.0;
 pub(super) const DOWNBEAT_NOTICE: f64 = 0.35;
 /// A confirmed end: the quiet held this long from its start (tuned in D1).
 const CONFIRM_S: f64 = 3.0;
+/// The quiet that confirms an end starts within this long after it (the evidence trails off for
+/// a second or so after the analyzer's end).
+const QUIET_WITHIN: f64 = 3.0;
 /// No end is confirmed before this much judged time in the run.
 const MIN_JUDGED_S: f64 = 30.0;
 /// The camera punch on a detected section's start.
@@ -540,23 +544,44 @@ impl Sim {
         let log = Rc::clone(&self.log);
         let ends = log.ends.as_deref().unwrap_or(&[]);
         let mut confirmed = None;
-        while let Some(e) = ends.get(self.st.plan.ends_seen) {
+        let ticks = &log.ticks[..self.st.ingested.ticks];
+        'entries: while let Some(e) = ends.get(self.st.plan.ends_seen) {
             if e.known_at > h {
                 return;
             }
-            let at = e.known_at.max(e.t + CONFIRM_S);
-            if h < at {
-                return;
-            }
-            self.st.plan.ends_seen += 1;
-            let ticks = &log.ticks[..self.st.ingested.ticks];
-            let quiet = ticks
-                .iter()
-                .filter(|k| k.t >= e.t - 1e-9 && k.t <= at + 1e-9)
-                .all(|k| k.evidence < gate);
-            if quiet && self.judged_clock(at) >= MIN_JUDGED_S {
-                confirmed = Some(at);
-                break;
+            // The quiet starts at the first tick below the gate at or after the entry (the evidence
+            // trails off for a second or so after the analyzer's end): within QUIET_WITHIN of it,
+            // and again after any loud tick that breaks it.
+            let mut from = e.t - 1e-9;
+            loop {
+                let Some(q) = ticks.iter().find(|k| k.t >= from && k.evidence < gate) else {
+                    if ticks.last().is_some_and(|k| k.t > e.t + QUIET_WITHIN) {
+                        self.st.plan.ends_seen += 1;
+                        continue 'entries;
+                    }
+                    return;
+                };
+                if q.t > e.t + QUIET_WITHIN {
+                    self.st.plan.ends_seen += 1;
+                    continue 'entries;
+                }
+                let at = e.known_at.max(q.t + CONFIRM_S);
+                let loud = ticks
+                    .iter()
+                    .find(|k| k.t > q.t && k.t <= at + 1e-9 && k.evidence >= gate);
+                if let Some(l) = loud {
+                    from = l.t + 1e-9;
+                    continue;
+                }
+                if h < at {
+                    return;
+                }
+                self.st.plan.ends_seen += 1;
+                if self.judged_clock(at) >= MIN_JUDGED_S {
+                    confirmed = Some(at);
+                    break 'entries;
+                }
+                continue 'entries;
             }
         }
         let Some(s) = confirmed.map(|at| at.max(self.st.s)) else {

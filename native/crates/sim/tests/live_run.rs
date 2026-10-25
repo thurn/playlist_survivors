@@ -19,18 +19,23 @@ fn check_whole_run(track: &str, profile: &str) {
         sim.s()
     );
     let end = sim.end_s();
-    // The finale fired on an `ends` entry confirmed by 3 s of quiet below the gate, 3 s before the end.
+    // The finale fired on an `ends` entry confirmed by 3 s of quiet below the gate, starting at the
+    // first quiet tick within 3 s after it, 3 s before the end.
     let finale = end - 3.0;
     let gate = file.params.gate;
     assert!(
         log.ends.as_ref().unwrap().iter().any(|e| {
-            let at = e.known_at.max(e.t + 3.0);
-            at <= finale + 1e-6
-                && log
-                    .ticks
-                    .iter()
-                    .filter(|k| k.t >= e.t && k.t <= at)
-                    .all(|k| k.evidence < gate)
+            log.ticks.iter().any(|q| {
+                let at = e.known_at.max(q.t + 3.0);
+                q.t >= e.t
+                    && q.t <= e.t + 3.0
+                    && (at - finale).abs() < 1e-6
+                    && log
+                        .ticks
+                        .iter()
+                        .filter(|k| k.t >= q.t && k.t <= at)
+                        .all(|k| k.evidence < gate)
+            })
         }),
         "{track}/{profile}: the finale at {finale} has no confirmed end before it"
     );

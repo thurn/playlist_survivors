@@ -119,8 +119,9 @@ pub fn stream_file(track: &str) -> StreamFile {
 }
 
 /// The stream as the live analyzer goes on giving it after the music stops: `secs` of silent ticks
-/// past the file's last, and the `ends` entry 1.5 s into the silence that the analyzer gives.
-/// (A Python stream stops at the file's end.)
+/// past the file's last. A Python stream stops at the file's end; one with no `ends` entry near it
+/// gets the one the analyzer gives, as house-128's own: a second before the music stops, while the
+/// evidence is still high, known half a second after it.
 pub fn with_silent_tail(mut log: StreamLog, secs: f64) -> StreamLog {
     let last = log.ticks.last().expect("ticks").clone();
     let mut t = last.t;
@@ -136,10 +137,10 @@ pub fn with_silent_tail(mut log: StreamLog, secs: f64) -> StreamLog {
         });
     }
     let ends = log.ends.get_or_insert_with(Vec::new);
-    if !ends.last().is_some_and(|e| e.t >= last.t) {
+    if !ends.last().is_some_and(|e| e.t >= last.t - 3.0) {
         ends.push(End {
-            t: last.t,
-            known_at: last.t + 1.5,
+            t: last.t - 1.0,
+            known_at: last.t + 0.5,
         });
     }
     log
