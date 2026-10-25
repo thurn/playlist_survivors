@@ -8,3 +8,8 @@ tools/analysis/work/
 .worktrees/
 logs/
 *.egg-info/
+dist/
+test-results/
+playwright-report/
+# The operator's own analysed tracks (the TS game's reactive:add, before D6).
+reactive-local/
