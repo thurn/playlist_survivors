@@ -1167,6 +1167,17 @@ screen, automatic start and confirmed end, rebasing a run to its start, pause
 ending the run, a device change ending the run, the end card and YOU FELL, and
 a debug menu with File mode.
 
+**Landed:** the app listens on start (the listening screen, the beat's
+evidence against the gate) and starts a run on D1's rule (2 s clear after
+1.5 s of quiet, an end, or the app's start) or on Enter; the last 20 s of
+entries are fed to the new run rebased to its start (`slice/feed.rs`). Runs
+end on YOU FELL and on the sim's confirmed end (both in the final state), on
+Esc or losing focus (Paused), Backspace, a new output device (its latency
+taken for the next run) or a new source; the end card says which. F1 shows a
+debug menu; F2 plays the next bundled track (File mode), F3 listens to the Mac
+again. For checks, `--headless --seconds N` runs it all with no window
+(`--start-at`, `--switch-at` steer it).
+
 ### Checks without an oracle (K1)
 
 Ported from `scripts/check-reactive.ts`, on the Rust sim alone:
