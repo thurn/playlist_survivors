@@ -9,6 +9,7 @@
 //!     playlist-survivors --file <path> # plays the file and listens to it
 //!     playlist-survivors --click       # also clicks on each committed beat
 //!     playlist-survivors --file <path> --volume 0.3  # the file quieter (0: silent, still heard)
+//!     playlist-survivors --file <path> --mute  # everything runs, the device gets silence
 //!     playlist-survivors --still <png>  # 20 s of the house track's stream through the engine, drawn offscreen
 
 // The tap and output are the phase 0 spike's (57e846a^:native/spike), kept as they were.
@@ -57,11 +58,12 @@ use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::{Window, WindowId};
 
+use audio::mixer::{Command, Report, Source as Voiced, Voice};
 use coreaudio::now_s;
 use gfx::Gfx;
 use hud::{HudState, KeyLight, PressMark};
 use live::{Msg, Source};
-use output::{Click, Output};
+use output::{Event, Output};
 use scene::{Look, Scene};
 use sfx::{Cue, Sfx};
 
@@ -82,6 +84,7 @@ struct Options {
     still: Option<PathBuf>,
     volume: f32,
     click: bool,
+    mute: bool,
 }
 
 fn options(args: &[String]) -> Result<Options, String> {
@@ -90,12 +93,14 @@ fn options(args: &[String]) -> Result<Options, String> {
         still: None,
         volume: 1.0,
         click: false,
+        mute: false,
     };
     let mut it = args.iter();
     while let Some(a) = it.next() {
         match a.as_str() {
             "--file" => o.file = Some(it.next().ok_or("--file needs a path")?.into()),
             "--click" => o.click = true,
+            "--mute" => o.mute = true,
             "--still" => o.still = Some(it.next().ok_or("--still needs a path")?.into()),
             "--volume" => {
                 o.volume = it
@@ -213,7 +218,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
             (None, Vec::new())
         }
     };
-    let mut out = Output::start(music.clone(), opts.volume, bank)?;
+    let mut out = Output::start(music.clone(), opts.volume, bank, opts.mute)?;
     let l_out = Output::reported_latency_s();
     let (source, heard_after, mode) = match music {
         Some(samples) => (
@@ -273,6 +278,11 @@ pub fn run(args: &[String]) -> Result<(), String> {
         over: None,
         title_at: 0.0,
         cue_at: f64::NEG_INFINITY,
+        next_voice: 0,
+        ahead: 0.02,
+        voices: [0; 3],
+        voices_at: 0.0,
+        mute: opts.mute,
         keys: [KeyLight::default(); 5],
         presses: VecDeque::new(),
     };
@@ -433,6 +443,15 @@ struct App {
     title_at: f64,
     /// When the last swing or kill sound started (host s), so a burst plays once.
     cue_at: f64,
+    /// The next voice's identity, and how far ahead of now the output is rendering (s): a sound
+    /// scheduled that far ahead lands on its sample.
+    next_voice: u64,
+    ahead: f64,
+    /// Voices started, skipped (onset passed), dropped (no room) this run; muted, they're logged
+    /// every 10 s (at host `voices_at`), for a check without sound.
+    voices: [u32; 3],
+    voices_at: f64,
+    mute: bool,
     /// The key display: up, left, down, right, stomp.
     keys: [KeyLight; 5],
     /// Recent presses for the beat track: when (host s), how far off, their rating.
@@ -455,10 +474,7 @@ impl App {
                     if let Entry::Beat(c) = &e {
                         if self.click {
                             let heard = self.clock.map_or(now, |(song, h)| h + (c.t - song));
-                            let _ = self.out.clicks.push(Click {
-                                at: heard - self.l_out,
-                                freq: 1800.0,
-                            });
+                            self.voice(Voiced::Click(1800.0), heard - self.l_out, 0.0, 1.0);
                         }
                         self.beats.push_back(c.t);
                     }
@@ -479,7 +495,17 @@ impl App {
                 self.beats.pop_front();
             }
         }
-        while self.out.events.pop().is_ok() {}
+        while let Ok(e) = self.out.events.pop() {
+            match e {
+                Event::Buffer { host, frames, now } => {
+                    self.ahead = host + f64::from(frames) / self.out.rate - now;
+                }
+                Event::Voice(Report::Started { .. }) => self.voices[0] += 1,
+                Event::Voice(Report::Skipped { .. }) => self.voices[1] += 1,
+                Event::Voice(Report::Dropped { .. }) => self.voices[2] += 1,
+                Event::Voice(_) => {}
+            }
+        }
     }
 
     fn render(&mut self) {
@@ -503,9 +529,12 @@ impl App {
                 }
                 self.over = Some((now, fell, s - self.run_start));
                 eprintln!(
-                    "slice: run over ({}), {:.0} s",
+                    "slice: run over ({}), {:.0} s; sounds {} started, {} skipped late, {} dropped",
                     if fell { "fell" } else { "silence" },
-                    s - self.run_start
+                    s - self.run_start,
+                    self.voices[0],
+                    self.voices[1],
+                    self.voices[2]
                 );
             }
         }
@@ -514,6 +543,13 @@ impl App {
             && now > t + 1.0
         {
             self.restart();
+        }
+        if self.mute && now > self.voices_at {
+            self.voices_at = now + 10.0;
+            eprintln!(
+                "slice: sounds {} started, {} skipped late, {} dropped",
+                self.voices[0], self.voices[1], self.voices[2]
+            );
         }
         if now > self.title_at {
             self.title_at = now + 0.5;
@@ -640,14 +676,29 @@ impl App {
 
     /// A sound effect now (or, without the samples, a blip at `freq`).
     fn cue(&mut self, cue: Cue, freq: f32) {
+        // (As soon as the output can play it on its sample.)
+        let at = now_s() + self.ahead.max(0.0) + 0.001;
         match self.sfx.as_mut().and_then(|s| s.next(cue)) {
-            Some(play) => {
-                let _ = self.out.plays.push(play);
-            }
-            None => {
-                let _ = self.out.clicks.push(Click { at: now_s(), freq });
-            }
+            Some(play) => self.voice(Voiced::Sample(play.sound), at, play.from as f64, play.gain),
+            None => self.voice(Voiced::Click(freq), at, 0.0, 1.0),
         }
+    }
+
+    /// Schedules `source` to start at host time `at` (on the output's timeline), `from` samples
+    /// in.
+    fn voice(&mut self, source: Voiced, at: f64, from: f64, gain: f32) {
+        self.next_voice += 1;
+        let _ = self.out.commands.push(Command::Play(Voice {
+            id: self.next_voice,
+            source,
+            at,
+            from,
+            lead: 0.0,
+            gain,
+            pan: 0.0,
+            rate: 1.0,
+            duck: false,
+        }));
     }
 
     /// A new run from the song time heard now, with a fresh engine and stream.
@@ -663,6 +714,7 @@ impl App {
         self.run_start = self.song_at(now).unwrap_or(0.0);
         self.scene = Scene::default();
         self.over = None;
+        self.voices = [0; 3];
     }
 
     fn key(&mut self, code: KeyCode, pressed: bool, repeat: bool) {

@@ -10,6 +10,7 @@ path = "src/main.rs"
 
 [dependencies]
 analysis = { path = "../analysis" }
+audio = { path = "../audio" }
 block2 = "0.6"
 eval = { path = "../eval" }
 indexmap = "2"

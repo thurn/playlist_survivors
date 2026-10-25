@@ -108,6 +108,7 @@ name = "app"
 version = "0.0.0"
 dependencies = [
  "analysis",
+ "audio",
  "block2 0.6.2",
  "eval",
  "indexmap",

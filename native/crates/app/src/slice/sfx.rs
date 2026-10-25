@@ -8,7 +8,6 @@ use std::sync::Arc;
 use serde::Deserialize;
 
 use super::live::decode;
-use super::output::Play;
 
 /// What a sound marks.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -72,6 +71,14 @@ struct Entry {
 #[derive(Deserialize)]
 struct Catalogue {
     sounds: std::collections::HashMap<String, Entry>,
+}
+
+/// A sound effect to start: an index into the bank, from a sample offset, at a gain.
+#[derive(Clone, Copy, Debug)]
+pub struct Play {
+    pub sound: usize,
+    pub from: usize,
+    pub gain: f32,
 }
 
 /// Decoded samples, for the output's bank.
