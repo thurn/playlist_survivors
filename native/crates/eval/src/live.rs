@@ -51,16 +51,47 @@ pub struct Foe {
 /// A moment the frame shows once.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Moment {
-    /// A weapon or swing hit something at (x, y).
-    Hit { x: f64, y: f64, lethal: bool },
+    /// A hit caught enemy `foe` at (x, y): from a swing (`move`), a weapon (`what`), a cleave's
+    /// wave or the finale's ring, of a weight (`light`, `medium`, `heavy`), heading `dir`, at an
+    /// intensity (0-1).
+    Hit {
+        x: f64,
+        y: f64,
+        lethal: bool,
+        foe: usize,
+        source: &'static str,
+        weight: &'static str,
+        what: String,
+        dir: f64,
+        intensity: f64,
+    },
+    /// A weapon struck at (x, y): every chain jump as it lands (`caught` false), and an orbit's
+    /// or a trail's hit on the first enemy it catches.
+    WeaponHit {
+        x: f64,
+        y: f64,
+        what: String,
+        dir: f64,
+        intensity: f64,
+        caught: bool,
+    },
+    /// A band of a cleave's shockwave hit, its arc centred at (x, y).
+    WaveBand { x: f64, y: f64, dir: f64 },
+    /// The hero landed a stride (or a stomp).
+    Landing { x: f64, y: f64, stomp: bool },
+    /// The groove's tier changed.
+    TierChange { tier: usize, up: bool },
     /// An enemy died where it was last seen (not recycled ones).
     Death { kind: String, x: f64, y: f64 },
-    /// A swing started.
+    /// A swing struck: its kind, the tier at its wind-up, its hit's intensity and shape.
     Swing {
         x: f64,
         y: f64,
         dir: f64,
         kind: &'static str,
+        tier: usize,
+        intensity: f64,
+        shape: Option<Shape>,
     },
     /// A press, with its provisional rating when judged (`perfect`, `great`, `good`, `miss`, ...),
     /// or unjudged (the beat unclear), and whether it was a stomp (Space).
@@ -284,9 +315,35 @@ pub enum Record {
 #[derive(Clone, Debug, Default, PartialEq)]
 struct Notes {
     s: f64,
-    hits: VecDeque<(f64, f64, HitSource, String, f64)>,
+    hits: VecDeque<NoteHit>,
     tier: f64,
     hero_x: f64,
+}
+
+/// A recent hit, for the fates and swings that name it.
+#[derive(Clone, Debug, PartialEq)]
+struct NoteHit {
+    id: f64,
+    s: f64,
+    source: HitSource,
+    what: String,
+    weight: &'static str,
+    x: f64,
+    y: f64,
+    dir: f64,
+    intensity: f64,
+    shape: Shape,
+    /// Whether a weapon's hit has caught an enemy yet.
+    caught: bool,
+}
+
+fn source_name(s: HitSource) -> &'static str {
+    match s {
+        HitSource::Move => "move",
+        HitSource::Weapon => "weapon",
+        HitSource::Wave => "wave",
+        HitSource::Ring => "ring",
+    }
 }
 
 /// The simulation's records in the order reported, each with the song time of the clock then.
@@ -382,27 +439,41 @@ impl Recorder for LiveRecorder {
         self.0.borrow_mut().push(Record::Sample { id, x, y });
     }
 
-    fn fate(&mut self, _id: usize, fate: Fate) {
+    fn fate(&mut self, id: usize, fate: Fate) {
         let mut j = self.0.borrow_mut();
+        let Some(k) = j.notes.hits.iter().position(|h| h.id == fate.hit) else {
+            return;
+        };
+        let h = j.notes.hits[k].clone();
         j.push(Record::Moment(Moment::Hit {
             x: fate.x,
             y: fate.y,
             lethal: fate.lethal,
+            foe: id,
+            source: source_name(h.source),
+            weight: h.weight,
+            what: h.what.clone(),
+            dir: h.dir,
+            intensity: h.intensity,
         }));
-        let Some(k) = j.notes.hits.iter().position(|h| h.0 == fate.hit) else {
-            return;
-        };
-        let (_, s, source, what, _) = j.notes.hits[k].clone();
         if fate.lethal {
-            j.sound(Cause::Kill { s, x: fate.x });
+            j.sound(Cause::Kill { s: h.s, x: fate.x });
         }
-        // (A weapon sounds on the first enemy it catches; the hit is forgotten after.)
-        if source == HitSource::Weapon {
-            j.notes.hits.remove(k);
-            j.sound(Cause::Weapon {
-                s,
+        // (A weapon sounds, and shows its hit, on the first enemy it catches.)
+        if h.source == HitSource::Weapon && !h.caught {
+            j.notes.hits[k].caught = true;
+            j.push(Record::Moment(Moment::WeaponHit {
                 x: fate.x,
-                what,
+                y: fate.y,
+                what: h.what.clone(),
+                dir: h.dir,
+                intensity: h.intensity,
+                caught: true,
+            }));
+            j.sound(Cause::Weapon {
+                s: h.s,
+                x: fate.x,
+                what: h.what,
                 caught: true,
             });
         }
@@ -414,11 +485,13 @@ impl Recorder for LiveRecorder {
 
     fn hit(&mut self, h: Hit) {
         let mut j = self.0.borrow_mut();
-        let x = match h.shape {
-            Shape::Arc { x, .. } | Shape::Circle { x, .. } | Shape::Ring { x, .. } => x,
-            Shape::Capsule { x1, .. } => x1,
+        let (x, y) = match h.shape {
+            Shape::Arc { x, y, .. } | Shape::Circle { x, y, .. } | Shape::Ring { x, y, .. } => {
+                (x, y)
+            }
+            Shape::Capsule { x0, y0, x1, y1, .. } => (f64::midpoint(x0, x1), f64::midpoint(y0, y1)),
             #[allow(unreachable_patterns)]
-            _ => j.notes.hero_x,
+            _ => (j.notes.hero_x, 0.0),
         };
         if h.source == HitSource::Weapon {
             j.sound(Cause::Weapon {
@@ -427,16 +500,59 @@ impl Recorder for LiveRecorder {
                 what: h.what.clone(),
                 caught: false,
             });
+            j.push(Record::Moment(Moment::WeaponHit {
+                x,
+                y,
+                what: h.what.clone(),
+                dir: h.dir,
+                intensity: h.intensity,
+                caught: false,
+            }));
         }
-        j.notes.hits.push_back((h.id, h.s, h.source, h.what, x));
+        let weight = match h.weight {
+            sim::recorder::Weight::Light => "light",
+            sim::recorder::Weight::Medium => "medium",
+            sim::recorder::Weight::Heavy => "heavy",
+        };
+        j.notes.hits.push_back(NoteHit {
+            id: h.id,
+            s: h.s,
+            source: h.source,
+            what: h.what,
+            weight,
+            x,
+            y,
+            dir: h.dir,
+            intensity: h.intensity,
+            shape: h.shape,
+            caught: false,
+        });
         if j.notes.hits.len() > 64 {
             j.notes.hits.pop_front();
         }
     }
 
+    fn wave_hit(&mut self, _wave: usize, hit: usize) {
+        let mut j = self.0.borrow_mut();
+        if let Some(h) = j.notes.hits.iter().find(|h| h.id == hit as f64).cloned() {
+            j.push(Record::Moment(Moment::WaveBand {
+                x: h.x,
+                y: h.y,
+                dir: h.dir,
+            }));
+        }
+    }
+
     fn landing(&mut self, l: Landing) {
-        if l.stomp != Some(true) {
-            self.0.borrow_mut().sound(Cause::Step { s: l.s, x: l.x });
+        let mut j = self.0.borrow_mut();
+        let stomp = l.stomp == Some(true);
+        j.push(Record::Moment(Moment::Landing {
+            x: l.x,
+            y: l.y,
+            stomp,
+        }));
+        if !stomp {
+            j.sound(Cause::Step { s: l.s, x: l.x });
         }
     }
 
@@ -455,11 +571,16 @@ impl Recorder for LiveRecorder {
             x: sw.x,
             kind: sw.kind,
         });
+        // (Its hit, recorded just before it, gives the intensity and shape.)
+        let hit = j.notes.hits.iter().find(|h| h.id == sw.hit).cloned();
         j.push(Record::Moment(Moment::Swing {
             x: sw.x,
             y: sw.y,
             dir: sw.dir,
             kind: sw.kind,
+            tier: (sw.tier.max(0.0) as usize).min(3),
+            intensity: hit.as_ref().map_or(0.5, |h| h.intensity),
+            shape: hit.map(|h| h.shape),
         }));
     }
 
@@ -483,6 +604,10 @@ impl Recorder for LiveRecorder {
         if tier != j.notes.tier {
             let up = tier > j.notes.tier;
             j.sound(Cause::Tier { s: sound_s, up });
+            j.push(Record::Moment(Moment::TierChange {
+                tier: (tier.max(0.0) as usize).min(3),
+                up,
+            }));
         }
         j.notes.tier = tier;
         j.push(Record::Tier(tier));

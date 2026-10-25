@@ -125,6 +125,7 @@ struct View { size: vec2<f32> };
 @group(0) @binding(3) var page1: texture_2d<f32>;
 @group(0) @binding(4) var page2: texture_2d<f32>;
 @group(0) @binding(5) var page3: texture_2d<f32>;
+@group(0) @binding(6) var smooth_samp: sampler;
 struct Out {
     @builtin(position) pos: vec4<f32>,
     @location(0) uv: vec2<f32>,
@@ -155,7 +156,8 @@ fn fs(i: Out) -> @location(0) vec4<f32> {
     if i.page == 0u { t = textureSampleLevel(page0, samp, i.uv, 0.0); }
     else if i.page == 1u { t = textureSampleLevel(page1, samp, i.uv, 0.0); }
     else if i.page == 2u { t = textureSampleLevel(page2, samp, i.uv, 0.0); }
-    else if i.page == 3u { t = textureSampleLevel(page3, samp, i.uv, 0.0); }
+    // (The last page, the procedural textures, is drawn smooth: glows and rings scale a long way.)
+    else if i.page == 3u { t = textureSampleLevel(page3, smooth_samp, i.uv, 0.0); }
     let c = t * i.tint;
     if c.a < 0.004 { discard; }
     // (Premultiplied: an additive sprite leaves what is below it, adding its light.)
@@ -177,6 +179,7 @@ pub struct SpriteRenderer {
     pipeline_layout: wgpu::PipelineLayout,
     layout: wgpu::BindGroupLayout,
     sampler: wgpu::Sampler,
+    smooth: wgpu::Sampler,
     views: Vec<wgpu::TextureView>,
     pipelines: Vec<(wgpu::TextureFormat, wgpu::RenderPipeline)>,
     slots: Vec<Slot>,
@@ -208,6 +211,11 @@ impl SpriteRenderer {
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             mag_filter: wgpu::FilterMode::Nearest,
             min_filter: wgpu::FilterMode::Nearest,
+            ..Default::default()
+        });
+        let smooth = device.create_sampler(&wgpu::SamplerDescriptor {
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
             ..Default::default()
         });
         let texture_entry = |binding| wgpu::BindGroupLayoutEntry {
@@ -243,6 +251,12 @@ impl SpriteRenderer {
                 texture_entry(3),
                 texture_entry(4),
                 texture_entry(5),
+                wgpu::BindGroupLayoutEntry {
+                    binding: 6,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: None,
+                },
             ],
         });
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -259,6 +273,7 @@ impl SpriteRenderer {
             pipeline_layout,
             layout,
             sampler,
+            smooth,
             views,
             pipelines: Vec::new(),
             slots: Vec::new(),
@@ -350,6 +365,10 @@ impl SpriteRenderer {
                     resource: wgpu::BindingResource::TextureView(v),
                 });
             }
+            entries.push(wgpu::BindGroupEntry {
+                binding: 6,
+                resource: wgpu::BindingResource::Sampler(&self.smooth),
+            });
             let bind = device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: None,
                 layout: &self.layout,

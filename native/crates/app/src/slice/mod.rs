@@ -654,7 +654,7 @@ fn bench(check: bool) -> Result<(), String> {
         }
         engine.frame(s, 0.2);
         let moments = engine.view.borrow_mut().take_moments();
-        scene.moments(&moments, s, &world.lib, &world.looks);
+        scene.moments(&moments, s, &world.lib, &world.looks, &engine.view.borrow());
         scene.level(&engine.view.borrow(), s, &world.lib);
         let last_period = file
             .log
@@ -767,7 +767,7 @@ fn still(path: &Path, track: Option<&str>, at: Option<f64>) -> Result<(), String
         }
         engine.advance_to(s);
         let moments = engine.view.borrow_mut().take_moments();
-        scene.moments(&moments, s, &world.lib, &world.looks);
+        scene.moments(&moments, s, &world.lib, &world.looks, &engine.view.borrow());
         scene.level(&engine.view.borrow(), s, &world.lib);
     }
     let upcoming: Vec<f64> = beats
@@ -1193,8 +1193,13 @@ impl App {
             let moments = self.engine.view.borrow_mut().take_moments();
             self.cues(&moments, now);
             self.schedule_sounds();
-            self.scene
-                .moments(&moments, now, &self.world.lib, &self.world.looks);
+            self.scene.moments(
+                &moments,
+                now,
+                &self.world.lib,
+                &self.world.looks,
+                &self.engine.view.borrow(),
+            );
             self.scene
                 .level(&self.engine.view.borrow(), now, &self.world.lib);
             let end = if self.engine.fallen() {
@@ -1634,8 +1639,13 @@ impl App {
         }
         self.engine.frame(t, 0.2);
         let moments = self.engine.view.borrow_mut().take_moments();
-        self.scene
-            .moments(&moments, now, &self.world.lib, &self.world.looks);
+        self.scene.moments(
+            &moments,
+            now,
+            &self.world.lib,
+            &self.world.looks,
+            &self.engine.view.borrow(),
+        );
         if t > w.span + 0.5 {
             self.watch = None;
             eprintln!(

@@ -11,7 +11,7 @@ use render::font::{self, Align};
 use render::post::{Grade, Light};
 use sim::content::types::{ColorGrade, ZoneTheme};
 
-use super::fx::{Effects, hex};
+use super::fx::{Effects, Start, hex};
 use super::gfx::{Sprite, rect, square};
 use sim::content::ContentLibrary;
 
@@ -130,31 +130,122 @@ impl Scene {
         now: f64,
         lib: &ContentLibrary,
         looks: &HashMap<String, Look>,
+        view: &LiveView,
     ) {
-        let mut fire = |id: &str, x: f64, y: f64, dir: f64, intensity: f64, debris: &[String]| {
+        let mut fire = |id: &str, x: f64, y: f64, dir: f64, intensity: f64, start: Start| {
             if let Some(recipe) = lib.effects.get(id) {
-                self.effects
-                    .start(recipe, x, y, dir, intensity, debris, now);
+                self.effects.start(recipe, x, y, dir, intensity, start, now);
             }
         };
+        let groove = view.groove.clamp(0.0, 1.0);
+        let view_tier = (view.tier.max(0.0) as usize).min(3);
         for m in moments {
             match m {
-                // (As emit.ts: a swing's hit by its kind, a weapon's on an enemy it doesn't kill,
-                // and the enemy's own death recipe with its debris.)
-                Moment::Swing { x, y, dir, kind } => {
-                    fire(&format!("hit-{kind}"), *x, *y, *dir, 0.8, &[]);
+                // (As emit.ts fires them; native/evidence/vfx/ts-spec.md.) A swing's arc by its
+                // kind, brighter with the groove, in its tier's colour and fitted to its hit.
+                Moment::Swing {
+                    x,
+                    y,
+                    dir,
+                    kind,
+                    tier,
+                    intensity,
+                    shape,
+                } => {
+                    let i = (intensity * (0.55 + 0.45 * groove) + 0.25 * groove).min(1.0);
+                    fire(
+                        &format!("hit-{kind}"),
+                        *x,
+                        *y,
+                        *dir,
+                        i,
+                        Start {
+                            tier: Some(*tier),
+                            shape: *shape,
+                            ..Start::default()
+                        },
+                    );
                 }
+                // A hit an enemy survives: a swing's by its weight, any other's the blades'.
                 Moment::Hit {
                     x,
                     y,
                     lethal: false,
-                } if x.is_finite() => fire("blades-hit", *x, *y, 0.0, 0.5, &[]),
-                Moment::Death { kind, x, y } if x.is_finite() => {
-                    let (recipe, debris) =
-                        looks.get(kind).map_or(("death-humanoid", &[][..]), |l| {
-                            (l.death.as_str(), &l.debris[..])
-                        });
-                    fire(recipe, *x, *y, -std::f64::consts::FRAC_PI_2, 0.7, debris);
+                    source,
+                    weight,
+                    dir,
+                    intensity,
+                    ..
+                } if x.is_finite() => {
+                    let id = if *source == "move" {
+                        format!("hit-{weight}")
+                    } else {
+                        "blades-hit".to_string()
+                    };
+                    fire(&id, *x, *y, *dir, 0.6 * intensity, Start::default());
+                }
+                // A kill: the finale's ring blasts, anything else the enemy's own death.
+                Moment::Hit {
+                    x,
+                    y,
+                    lethal: true,
+                    foe,
+                    source,
+                    dir,
+                    intensity,
+                    ..
+                } if x.is_finite() => {
+                    let look = view.foes.get(foe).and_then(|f| looks.get(&f.kind));
+                    let debris = look.map(|l| l.debris.clone()).unwrap_or_default();
+                    let recipe = if *source == "ring" {
+                        "blast-hit".to_string()
+                    } else {
+                        look.map_or_else(|| "death-humanoid".to_string(), |l| l.death.clone())
+                    };
+                    fire(
+                        &recipe,
+                        *x,
+                        *y,
+                        *dir,
+                        intensity.max(0.4),
+                        Start {
+                            debris,
+                            ..Start::default()
+                        },
+                    );
+                }
+                // A weapon's own effect: a chain on every jump, the others when they catch.
+                Moment::WeaponHit {
+                    x,
+                    y,
+                    what,
+                    dir,
+                    intensity,
+                    caught,
+                } => {
+                    if let Some(wd) = lib.weapons.get(what) {
+                        let chain = wd.kind == sim::content::types::WeaponKind::Chain;
+                        if chain != *caught {
+                            fire(&wd.effect, *x, *y, *dir, *intensity, Start::default());
+                        }
+                    }
+                }
+                Moment::WaveBand { x, y, dir } => fire(
+                    "shockwave",
+                    *x,
+                    *y,
+                    *dir,
+                    0.8,
+                    Start {
+                        tier: Some(view_tier),
+                        ..Start::default()
+                    },
+                ),
+                Moment::Landing { x, y, stomp: true } => {
+                    fire("stomp", *x, *y, 0.0, 1.0, Start::default());
+                }
+                Moment::Landing { x, y, stomp: false } => {
+                    fire("dust", *x, *y, 0.0, 0.5, Start::default());
                 }
                 Moment::Bite { .. } => self.bitten = now,
                 _ => {}
@@ -168,7 +259,8 @@ impl Scene {
             && view.level > self.level
             && let (Some(h), Some(recipe)) = (view.hero, lib.effects.get("level-up"))
         {
-            self.effects.start(recipe, h.x, h.y, 0.0, 1.0, &[], now);
+            self.effects
+                .start(recipe, h.x, h.y - 16.0, 0.0, 1.0, Start::default(), now);
         }
         self.level = view.level;
     }
@@ -302,6 +394,8 @@ impl Scene {
                 prop(p, [1.0; 4], out);
             }
         }
+        // Decals on the ground, under everyone.
+        self.effects.draw_decals(art, now, &at, scale, out);
         // The wave's edge: a ring in the new zone's light, and a wider one in its tint.
         if let Some((z, wx, wy, r)) = ground.wave {
             let light = hex(&z.ambient_light);
