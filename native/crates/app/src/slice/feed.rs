@@ -1,30 +1,33 @@
 //! Analyzer entries into the sim's stream: each converted to the stream's type, stamped with its
-//! arrival as `known_at` (never earlier than the analyzer's own), and shifted so the run starts at
-//! song time 0 (a restart begins a new run mid-song). A committed beat that arrives after its own
-//! time is dropped: the simulation can't act on a beat in its past (the analyzer can commit late
-//! while it starts up).
+//! arrival as `known_at` (never earlier than the analyzer's own), and rebased to the run's start
+//! `s0` (docs/design/native-app.md, "Runs on live audio (D1)"): what the sim would have seen had the
+//! song begun at `s0`, the tracker already warm. Every time is shifted by `-s0`; entries for times
+//! before `s0` are dropped, those for later times but known before it are known at run time 0;
+//! hindsight known from `s0` on is kept with its beat lists clipped to `s0`, and timbre known from
+//! `s0` on as it is. A committed beat that arrives after its own time is dropped: the simulation
+//! can't act on a beat in its past (the analyzer can commit late while it starts up).
 
 use analysis::analyzer::Entry;
 use analysis::ticks::Level;
 use stream::StreamLog;
 
-/// Appends `e`, arrived when song time `arrived` was heard, to a run that began at `start`.
-/// Entries known before the run began are skipped (a new run starts with an empty stream).
-pub fn append(log: &mut StreamLog, e: &Entry, arrived: f64, start: f64) {
-    let at = |t: f64| t - start;
-    let stamp = |known: f64| known.max(arrived) - start;
-    let known = match e {
-        Entry::Beat(c) => c.known_at,
-        Entry::Tick(t) => t.t,
-        Entry::Onset(o) => o.known_at,
-        Entry::Hindsight(h) => h.known_at,
-        Entry::Change(c) => c.known_at,
-        Entry::Jump(j) => j.known_at,
-        Entry::End(e) => e.known_at,
-        Entry::Forecast(f) => f.known_at,
-        Entry::Timbre(t) => t.known_at,
+/// Appends `e`, arrived when song time `arrived` was heard, to a run that began at song time `s0`.
+pub fn append(log: &mut StreamLog, e: &Entry, arrived: f64, s0: f64) {
+    let at = |t: f64| t - s0;
+    let stamp = |known: f64| (known.max(arrived) - s0).max(0.0);
+    // Entries about a time before the run (the summaries, known before it) aren't the run's.
+    let before = match e {
+        Entry::Beat(c) => c.t < s0,
+        Entry::Tick(t) => t.t < s0,
+        Entry::Onset(o) => o.t < s0,
+        Entry::Change(c) => c.t < s0,
+        Entry::Jump(j) => j.t < s0,
+        Entry::End(e) => e.t < s0,
+        Entry::Forecast(f) => f.t < s0,
+        Entry::Hindsight(h) => h.known_at < s0,
+        Entry::Timbre(t) => t.known_at < s0,
     };
-    if known < start {
+    if before {
         return;
     }
     match e {
@@ -71,8 +74,18 @@ pub fn append(log: &mut StreamLog, e: &Entry, arrived: f64, start: f64) {
             if let Some(list) = &mut log.hindsight {
                 list.push(stream::Hindsight {
                     known_at: stamp(h.known_at),
-                    offline: h.offline.iter().map(|&t| at(t)).collect(),
-                    online: h.online.iter().map(|&t| at(t)).collect(),
+                    offline: h
+                        .offline
+                        .iter()
+                        .filter(|&&t| t >= s0)
+                        .map(|&t| at(t))
+                        .collect(),
+                    online: h
+                        .online
+                        .iter()
+                        .filter(|&&t| t >= s0)
+                        .map(|&t| at(t))
+                        .collect(),
                 });
             }
         }
@@ -143,15 +156,25 @@ mod tests {
         append(&mut log, &beat, 12.03, 10.0);
         assert_eq!(log.beats[0].t, 2.5);
         assert!((log.beats[0].known_at - 2.03).abs() < 1e-12);
-        // Known before the run began: skipped.
+        // Before the run began: dropped.
         let old = Entry::Beat(Commit {
-            t: 10.2,
-            known_at: 9.5,
+            t: 9.8,
+            known_at: 9.3,
             period: 0.5,
             evidence: 0.9,
         });
-        append(&mut log, &old, 12.1, 10.0);
+        append(&mut log, &old, 9.35, 10.0);
         assert_eq!(log.beats.len(), 1);
+        // Committed ahead, for a time in the run but known before it: known at run time 0.
+        let ahead = Entry::Beat(Commit {
+            t: 10.4,
+            known_at: 9.6,
+            period: 0.5,
+            evidence: 0.9,
+        });
+        append(&mut log, &ahead, 9.62, 10.0);
+        assert_eq!(log.beats.len(), 2);
+        assert!((log.beats[1].t - 0.4).abs() < 1e-12 && log.beats[1].known_at == 0.0);
         // Arrived after its own time: dropped.
         let late = Entry::Beat(Commit {
             t: 13.0,
@@ -160,6 +183,6 @@ mod tests {
             evidence: 0.9,
         });
         append(&mut log, &late, 13.05, 10.0);
-        assert_eq!(log.beats.len(), 1);
+        assert_eq!(log.beats.len(), 2);
     }
 }

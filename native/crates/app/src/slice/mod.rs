@@ -12,7 +12,7 @@
 //!     playlist-survivors --click       # also clicks on each committed beat
 //!     playlist-survivors --file <path> --volume 0.3  # the file quieter (0: silent, still heard)
 //!     playlist-survivors --file <path> --mute  # everything runs, the device gets silence
-//!     playlist-survivors --file <path> --headless --seconds 30  # no window, no Dock icon, muted:
+//!     playlist-survivors --file <path> --headless --seconds 30 [--start-at S]  # no window, no Dock icon, muted:
 //!                                     # the whole live path on a timer, for checks (then exits)
 //!     playlist-survivors --input-offset-ms 30 --stomp-extra-ms 10  # calibration for this session
 //!     playlist-survivors --still <png>  # 20 s of the house track's stream through the engine, drawn offscreen
@@ -83,9 +83,6 @@ const SOUND_PEAK: f32 = 0.01;
 /// This long without sound ends the run.
 /// The analyzer's evidence gate (`manifest.json`'s `streamParams.gate`).
 const GATE: f64 = 0.2;
-/// The interim end: this long without sound, this far into a run (see `render`).
-const SILENT_END_S: f64 = 5.0;
-const MIN_RUN_S: f64 = 30.0;
 /// How late a key can reach the engine: the window server's delivery to the main thread (p95
 /// 30.5 ms, docs/design/native-app.md "Targets") and up to a frame more. The engine's settling
 /// window covers it and the calibration's offset, so a press is applied at its own time.
@@ -109,6 +106,8 @@ struct Options {
     headless: bool,
     /// Exit after this long (s).
     seconds: Option<f64>,
+    /// No automatic start before this song time (s), for checks.
+    start_at: Option<f64>,
     /// Calibration offsets for this session (ms), over the saved ones.
     input_offset_ms: Option<f64>,
     stomp_extra_ms: Option<f64>,
@@ -125,6 +124,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         check: false,
         headless: false,
         seconds: None,
+        start_at: None,
         input_offset_ms: None,
         stomp_extra_ms: None,
     };
@@ -137,6 +137,13 @@ fn options(args: &[String]) -> Result<Options, String> {
             "--headless" => {
                 o.headless = true;
                 o.mute = true;
+            }
+            "--start-at" => {
+                o.start_at = Some(
+                    it.next()
+                        .and_then(|v| v.parse().ok())
+                        .ok_or("--start-at needs a song time")?,
+                );
             }
             "--seconds" => {
                 o.seconds = Some(
@@ -362,6 +369,10 @@ pub fn run(args: &[String]) -> Result<(), String> {
         peak: 0.0,
         last_sound: f64::NEG_INFINITY,
         over: None,
+        running: false,
+        recent: VecDeque::new(),
+        listen: Listen::default(),
+        start_at: opts.start_at.unwrap_or(f64::NEG_INFINITY),
         title_at: 0.0,
         next_voice: 0,
         ahead: 0.02,
@@ -637,6 +648,71 @@ fn still(path: &Path) -> Result<(), String> {
     Ok(())
 }
 
+/// The automatic start (docs/design/native-app.md, "Runs on live audio (D1)"): a run starts once
+/// the evidence has stayed at or above the gate for 2 s after at least 1.5 s of quiet, or after
+/// the previous run's end (or the app's start).
+#[derive(Debug)]
+struct Listen {
+    /// The latest tick's evidence, where the clear stretch began (song s), where the quiet one
+    /// began, and whether a quiet stretch long enough came before the clear one.
+    evidence: f64,
+    clear_since: Option<f64>,
+    quiet_since: Option<f64>,
+    quiet_held: bool,
+}
+
+impl Default for Listen {
+    fn default() -> Listen {
+        // (The app's start counts as an end: music already playing starts the first run.)
+        Listen {
+            evidence: 0.0,
+            clear_since: None,
+            quiet_since: None,
+            quiet_held: true,
+        }
+    }
+}
+
+/// The start rule's times (s).
+const START_CLEAR_S: f64 = 2.0;
+const START_QUIET_S: f64 = 1.5;
+/// How long a new run waits behind the end card, at least (host s).
+const END_CARD_S: f64 = 3.0;
+/// How far back the entries kept for a run's start reach (song s).
+const RECENT_S: f64 = 20.0;
+
+impl Listen {
+    /// A tick of evidence `evidence` for song time `t`.
+    fn tick(&mut self, t: f64, evidence: f64) {
+        self.evidence = evidence;
+        if evidence >= GATE {
+            if let Some(q) = self.quiet_since.take()
+                && t - q >= START_QUIET_S - 1e-9
+            {
+                self.quiet_held = true;
+            }
+            self.clear_since.get_or_insert(t);
+        } else {
+            self.clear_since = None;
+            self.quiet_since.get_or_insert(t);
+        }
+    }
+
+    /// Whether a run should start at song time `song`.
+    fn ready(&self, song: f64) -> bool {
+        self.quiet_held
+            && self
+                .clear_since
+                .is_some_and(|c| song - c >= START_CLEAR_S - 1e-9)
+    }
+
+    /// A run ended (or started): the next needs its own clear stretch after it.
+    fn reset(&mut self, ended: bool) {
+        self.clear_since = None;
+        self.quiet_held = ended;
+    }
+}
+
 #[allow(clippy::struct_excessive_bools)]
 struct App {
     /// Key press times from the window server, and the player's calibration.
@@ -662,6 +738,13 @@ struct App {
     peak: f32,
     /// When sound was last heard (host s).
     last_sound: f64,
+    /// Whether a run is going; between runs the app listens (the analyzer always runs).
+    running: bool,
+    /// The entries of the last moments with their arrival (song s), to feed a run that starts
+    /// now; and the start rule's state.
+    recent: VecDeque<(f64, Entry)>,
+    listen: Listen,
+    start_at: f64,
     /// When the run ended (host s), and whether the hero fell.
     over: Option<(f64, End, f64)>,
     title_at: f64,
@@ -720,9 +803,22 @@ impl App {
                         }
                         self.beats.push_back(c.t);
                     }
-                    let start = self.run_start;
-                    self.engine
-                        .feed(|log| feed::append(log, &e, arrived, start));
+                    if let Entry::Tick(t) = &e {
+                        self.listen.tick(t.t, t.evidence);
+                    }
+                    if self.running {
+                        let start = self.run_start;
+                        self.engine
+                            .feed(|log| feed::append(log, &e, arrived, start));
+                    }
+                    self.recent.push_back((arrived, e));
+                    while self
+                        .recent
+                        .front()
+                        .is_some_and(|(a, _)| *a < arrived - RECENT_S)
+                    {
+                        self.recent.pop_front();
+                    }
                 }
                 Msg::Follow(g) => {
                     let _ = self.out.commands.push(Command::Follow(g));
@@ -760,7 +856,7 @@ impl App {
         let now = now_s();
         self.peak *= 0.97;
         let song = self.song_at(now);
-        if self.over.is_none()
+        if self.running
             && let Some(s) = song
         {
             // Ahead of the time heard by the output's latency at least, so a sound is known
@@ -777,13 +873,7 @@ impl App {
                 .level(&self.engine.view.borrow(), now, &self.world.lib);
             let end = if self.engine.fallen() {
                 Some(End::Fell)
-            } else if self.engine.done()
-                // (Interim, until the sim's confirmed end allows for the evidence's tail: the song
-                // has ended when nothing has sounded for SILENT_END_S, MIN_RUN_S into the run.)
-                || (s - self.run_start > MIN_RUN_S
-                    && self.last_sound.is_finite()
-                    && now - self.last_sound > SILENT_END_S)
-            {
+            } else if self.engine.done() {
                 Some(End::Song)
             } else {
                 None
@@ -820,13 +910,14 @@ impl App {
                 self.end_run(End::Device, now);
             }
         }
-        // (A run that ended with the song starts again when sound comes back; part 2 of G6 brings
-        // the listening screen's start rule.)
-        if let Some((t, End::Song, _)) = self.over
-            && self.last_sound > t
-            && now > t + 1.0
+        // Listening: the next run starts on its own once the music is clear (after the end card).
+        if !self.running
+            && let Some(s) = song
+            && self.listen.ready(s)
+            && s >= self.start_at
+            && self.over.is_none_or(|(t, _, _)| now > t + END_CARD_S)
         {
-            self.restart();
+            self.start();
         }
         if self.mute && now > self.voices_at {
             self.voices_at = now + 10.0;
@@ -934,7 +1025,12 @@ impl App {
             next_down: bar >= 0.75,
         };
         let mut overlay = Vec::new();
-        hud::draw(&self.engine.view.borrow(), &state, w, h, &mut overlay);
+        if self.running || self.over.is_some() {
+            hud::draw(&self.engine.view.borrow(), &state, w, h, &mut overlay);
+        }
+        if !self.running && self.over.is_none() {
+            scene::listening_card(w, h, self.listen.evidence, GATE, now, &mut overlay);
+        }
         if let Some((t, end, seconds)) = self.over {
             scene::end_card(
                 w,
@@ -1059,6 +1155,8 @@ impl App {
         }
         let seconds = self.song_at(now).map_or(0.0, |s| s - self.run_start);
         self.over = Some((now, end, seconds));
+        self.running = false;
+        self.listen.reset(true);
         let _ = self.out.commands.push(Command::CancelAll);
         eprintln!(
             "slice: run over ({end:?}), {seconds:.0} s; sounds {} started, {} skipped late, {} dropped",
@@ -1066,8 +1164,9 @@ impl App {
         );
     }
 
-    /// A new run from the song time heard now, with a fresh engine and stream.
-    fn restart(&mut self) {
+    /// A new run from the song time heard now, with a fresh engine and stream: the entries of
+    /// the last moments go in first, rebased to its start.
+    fn start(&mut self) {
         let now = now_s();
         match self.world.engine() {
             Ok(mut engine) => {
@@ -1087,6 +1186,13 @@ impl App {
         }
         self.over = None;
         self.voices = [0; 4];
+        let s0 = self.run_start;
+        for (arrived, e) in &self.recent {
+            self.engine.feed(|log| feed::append(log, e, *arrived, s0));
+        }
+        self.running = true;
+        self.listen.reset(false);
+        eprintln!("slice: run started at song time {s0:.1}");
     }
 
     fn key(&mut self, code: KeyCode, pressed: bool, repeat: bool) {
@@ -1096,12 +1202,14 @@ impl App {
         } else {
             self.key_times.take(pressed, now_s())
         };
-        if self.over.is_some() {
+        // Listening: Enter or Space starts a run (a second after an end, not to skip its card).
+        if !self.running {
             if pressed
                 && matches!(code, KeyCode::Enter | KeyCode::Space)
-                && self.over.is_some_and(|(t, _, _)| now > t + 1.0)
+                && self.over.is_none_or(|(t, _, _)| now > t + 1.0)
+                && self.clock.is_some()
             {
-                self.restart();
+                self.start();
             }
             return;
         }
@@ -1223,5 +1331,48 @@ impl ApplicationHandler for App {
         }
         let wait = std::time::Duration::from_secs_f64((self.next_frame - now).max(0.0));
         el.set_control_flow(ControlFlow::WaitUntil(std::time::Instant::now() + wait));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_run_starts_after_two_clear_seconds_once_quiet_or_after_an_end() {
+        let mut l = Listen::default();
+        // At the app's start, music already playing: 2 s of clear evidence start the first run.
+        for k in 0..=20 {
+            l.tick(f64::from(k) * 0.1, 0.6);
+        }
+        assert!(!l.ready(1.9) && l.ready(2.0));
+        // A run starts, the evidence stays clear: no second start without quiet or an end.
+        l.reset(false);
+        for k in 21..=60 {
+            l.tick(f64::from(k) * 0.1, 0.6);
+        }
+        assert!(!l.ready(6.0));
+        // A short dip is not quiet enough; 1.5 s of quiet is, then 2 s clear.
+        for k in 61..=65 {
+            l.tick(f64::from(k) * 0.1, 0.05);
+        }
+        for k in 66..=90 {
+            l.tick(f64::from(k) * 0.1, 0.6);
+        }
+        assert!(!l.ready(9.0), "a 0.5 s dip");
+        for k in 91..=110 {
+            l.tick(f64::from(k) * 0.1, 0.05);
+        }
+        for k in 111..=131 {
+            l.tick(f64::from(k) * 0.1, 0.6);
+        }
+        assert!(l.ready(13.1));
+        // After an end, the next clear stretch starts a run, quiet or not.
+        l.reset(true);
+        assert!(!l.ready(13.2));
+        for k in 132..=152 {
+            l.tick(f64::from(k) * 0.1, 0.6);
+        }
+        assert!(l.ready(15.2));
     }
 }

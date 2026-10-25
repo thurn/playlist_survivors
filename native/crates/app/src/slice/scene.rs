@@ -372,6 +372,68 @@ impl Scene {
     }
 }
 
+/// The listening screen, between runs: the title, the evidence of a beat against the gate a run
+/// starts at, and how to start one.
+pub fn listening_card(w: f32, h: f32, evidence: f64, gate: f64, now: f64, out: &mut Vec<Sprite>) {
+    out.push(rect(0.0, 0.0, w, h, [0.02, 0.02, 0.04, 0.85]));
+    let u = (w / 960.0).min(h / 540.0);
+    let px = |k: f32| (k * u).round().max(1.0);
+    let cx = w / 2.0;
+    let top = h / 2.0 - 90.0 * u;
+    font::text(
+        "PLAYLIST SURVIVORS",
+        cx,
+        top,
+        px(5.0),
+        Align::Centre,
+        [1.0, 0.85, 0.4, 1.0],
+        out,
+    );
+    let dots = ".".repeat((now * 2.0) as usize % 4);
+    font::text(
+        &format!("LISTENING{dots:<3}"),
+        cx,
+        top + 60.0 * u,
+        px(2.0),
+        Align::Centre,
+        [0.69, 0.69, 0.75, 1.0],
+        out,
+    );
+    // The beat's evidence, with the gate marked: a run starts once it holds above it for 2 s.
+    let (mw, mh) = (300.0 * u, 10.0 * u);
+    let (mx, my) = (cx - mw / 2.0, top + 85.0 * u);
+    out.push(rect(mx, my, mw, mh, [0.0, 0.0, 0.0, 0.6]));
+    let clear = evidence >= gate;
+    let color = if clear {
+        [0.44, 0.94, 0.75, 1.0]
+    } else {
+        [0.44, 0.53, 0.66, 1.0]
+    };
+    out.push(rect(
+        mx,
+        my,
+        mw * evidence.clamp(0.0, 1.0) as f32,
+        mh,
+        color,
+    ));
+    out.push(rect(
+        mx + mw * gate as f32 - u,
+        my - 3.0 * u,
+        2.0 * u,
+        mh + 6.0 * u,
+        [1.0, 1.0, 1.0, 0.8],
+    ));
+    font::text(
+        "PLAY MUSIC, OR PRESS ENTER TO START",
+        cx,
+        top + 120.0 * u,
+        px(2.0),
+        Align::Centre,
+        [0.85, 0.85, 0.9, 1.0],
+        out,
+    );
+}
+
 /// Why a run ended.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum End {
