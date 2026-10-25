@@ -14,6 +14,8 @@
 //!     playlist-survivors --delayed --app <name>   # Delayed on the system's audio: the app tapped, muted, played 3 s late
 //!     playlist-survivors --delayed --tap-child <path> --headless --seconds 20 [--stall-at S]  # the tap
 //!                                     # checked on a silent child of ours, touching no other app (and the watchdog)
+//!     playlist-survivors --loopback 60  # Delayed listening's heard delay against M, by loopback, each minute
+//!                                     # (speakers on, the capture and microphone grants)
 //!     playlist-survivors --file <path> --volume 0.3  # the file quieter (0: silent, still heard)
 //!     playlist-survivors --file <path> --mute  # everything runs, the device gets silence
 //!     playlist-survivors --file <path> --headless --seconds 30 [--start-at S] [--switch-at S] [--press-beats] [--watch]  # no window, no Dock icon, muted:
@@ -37,6 +39,7 @@ mod hud;
 mod keys;
 mod lane;
 mod live;
+mod loopback;
 #[allow(
     clippy::pedantic,
     clippy::explicit_counter_loop,
@@ -174,6 +177,10 @@ struct Options {
     play_child: Option<PathBuf>,
     /// Stall the main thread for 3 s this long after the start (s), to check the watchdog.
     stall_at: Option<f64>,
+    /// Measure Delayed listening's heard delay by loopback for this many minutes, on a clicking
+    /// child (`--click-child`, its own mode).
+    loopback: Option<f64>,
+    click_child: bool,
     /// Calibration offsets for this session (ms), over the saved ones.
     input_offset_ms: Option<f64>,
     stomp_extra_ms: Option<f64>,
@@ -201,6 +208,8 @@ fn options(args: &[String]) -> Result<Options, String> {
         tap_child: None,
         play_child: None,
         stall_at: None,
+        loopback: None,
+        click_child: false,
         input_offset_ms: None,
         stomp_extra_ms: None,
     };
@@ -223,6 +232,14 @@ fn options(args: &[String]) -> Result<Options, String> {
             }
             "--play-child" => {
                 o.play_child = Some(it.next().ok_or("--play-child needs a file")?.into());
+            }
+            "--click-child" => o.click_child = true,
+            "--loopback" => {
+                o.loopback = Some(
+                    it.next()
+                        .and_then(|v| v.parse().ok())
+                        .ok_or("--loopback needs minutes")?,
+                );
             }
             "--stall-at" => {
                 o.stall_at = Some(
@@ -401,6 +418,31 @@ pub fn run(args: &[String]) -> Result<(), String> {
     if let Some(file) = &opts.play_child {
         return play_child(file);
     }
+    if opts.click_child {
+        return click_child();
+    }
+    if let Some(minutes) = opts.loopback {
+        let (mut child, app) = spawn_child(&["--click-child".into()])?;
+        let go = || {
+            use std::io::Write;
+            let stdin = child.stdin.as_mut().ok_or("the click child's input")?;
+            writeln!(stdin, "go").map_err(|e| format!("the click child: {e}"))
+        };
+        let ok = loopback::run(
+            minutes,
+            DelayedParams::chosen().m,
+            tap_offset(),
+            &app.processes,
+            go,
+        );
+        let _ = child.kill();
+        let _ = child.wait();
+        return if ok? {
+            Ok(())
+        } else {
+            Err("the heard delay wasn't within 2 ms of M every minute".into())
+        };
+    }
     if let Some(path) = &opts.still {
         return still(path, opts.still_track.as_deref(), opts.still_at);
     }
@@ -452,7 +494,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
     }
     let (mut child, tap_target) = match (&opts.tap_child, &opts.app) {
         (Some(file), _) => {
-            let (c, a) = spawn_tap_child(file)?;
+            let (c, a) = spawn_child(&["--play-child".into(), file.clone().into_os_string()])?;
             (Some(c), Some(a))
         }
         (None, Some(name)) => (
@@ -587,13 +629,55 @@ fn play_child(file: &Path) -> Result<(), String> {
     Ok(())
 }
 
-/// Starts the tap check's child on `file`, once it is ready, and finds its process object.
-fn spawn_tap_child(file: &Path) -> Result<(std::process::Child, apps::AudioApp), String> {
+/// The loopback's child (`--click-child`): connects to the output silently, says `ready`, and
+/// clicks once a second once told `go`, until its input closes.
+fn click_child() -> Result<(), String> {
+    use std::io::{BufRead, Write};
+    let mut out = Output::start(None, 1.0, 0.0, None, Vec::new(), false)?;
+    println!("ready");
+    std::io::stdout().flush().map_err(|e| e.to_string())?;
+    // (Told `go`, then until our input closes: the parent gone.)
+    let (go_tx, go_rx) = mpsc::channel();
+    let open = Arc::new(AtomicBool::new(true));
+    let still = Arc::clone(&open);
+    std::thread::spawn(move || {
+        for line in std::io::stdin().lock().lines().map_while(Result::ok) {
+            if line.trim() == "go" {
+                let _ = go_tx.send(());
+            }
+        }
+        still.store(false, Ordering::Relaxed);
+    });
+    if go_rx.recv().is_err() {
+        return Ok(());
+    }
+    let mut id = 0u64;
+    while open.load(Ordering::Relaxed) {
+        id += 1;
+        let _ = out.commands.push(Command::Play(Voice {
+            id,
+            source: Voiced::Click(1000.0),
+            at: now_s() + 0.05,
+            from: 0.0,
+            lead: 0.0,
+            gain: 1.0,
+            pan: 0.0,
+            rate: 1.0,
+            duck: false,
+        }));
+        std::thread::sleep(std::time::Duration::from_secs(1));
+    }
+    Ok(())
+}
+
+/// Starts a child of ours with `args`, once it is ready, and finds its process object.
+fn spawn_child(
+    args: &[std::ffi::OsString],
+) -> Result<(std::process::Child, apps::AudioApp), String> {
     use std::io::BufRead;
     let exe = std::env::current_exe().map_err(|e| e.to_string())?;
     let mut child = std::process::Command::new(exe)
-        .arg("--play-child")
-        .arg(file)
+        .args(args)
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
         .spawn()
