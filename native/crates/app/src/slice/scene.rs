@@ -806,8 +806,23 @@ impl Scene {
     }
 }
 
+/// How the app is listening, for the listening screen: Delayed or Direct, how late Delayed
+/// hears the music (s), whether the music is a file, the app tapped (System mode, Delayed) and
+/// whether it is a browser, how many other apps are playing, and a passing note.
+pub struct ListeningMode<'a> {
+    pub delayed: bool,
+    pub m: f64,
+    pub file: bool,
+    pub app: Option<&'a str>,
+    pub browser: bool,
+    pub others: usize,
+    pub note: Option<&'a str>,
+}
+
 /// The listening screen, between runs: the title, the evidence of a beat against the gate a run
-/// starts at, and how to start one.
+/// starts at, how to start one, and how it is listening (L switches Direct and Delayed, P picks
+/// another app to tap).
+#[allow(clippy::too_many_arguments, clippy::many_single_char_names)]
 pub fn listening_card(
     w: f32,
     h: f32,
@@ -815,6 +830,7 @@ pub fn listening_card(
     gate: f64,
     now: f64,
     bluetooth: bool,
+    mode: &ListeningMode,
     out: &mut Vec<Sprite>,
 ) {
     out.push(rect(0.0, 0.0, w, h, [0.02, 0.02, 0.04, 0.85]));
@@ -883,11 +899,62 @@ pub fn listening_card(
         [0.6, 0.6, 0.7, 1.0],
         out,
     );
+    // How it is listening.
+    let m = mode.m;
+    let line = match (mode.delayed, mode.file, mode.app) {
+        (false, _, _) => {
+            format!("LISTENING: DIRECT   L DELAYED: THE MUSIC {m} S LATE, BETTER BEATS")
+        }
+        (true, true, _) => format!("LISTENING: DELAYED, THE MUSIC {m} S LATE   L DIRECT"),
+        (true, false, app) => format!(
+            "LISTENING: DELAYED ON {}, {m} S LATE   L DIRECT{}",
+            app.unwrap_or("?").to_uppercase(),
+            if mode.others > 0 {
+                "   P ANOTHER APP"
+            } else {
+                ""
+            }
+        ),
+    };
+    let tint = if mode.delayed {
+        [0.62, 0.9, 1.0, 1.0]
+    } else {
+        [0.6, 0.6, 0.7, 1.0]
+    };
+    font::text(
+        &line,
+        cx,
+        top + 170.0 * u,
+        px(2.0),
+        Align::Centre,
+        tint,
+        out,
+    );
+    let warning = [1.0, 0.75, 0.4, 1.0];
+    let mut y = top + 195.0 * u;
+    if mode.delayed && mode.browser {
+        let app = mode.app.unwrap_or("THE BROWSER").to_uppercase();
+        let text = format!("{app}'S VIDEO WILL RUN {m} S AHEAD OF ITS SOUND");
+        font::text(&text, cx, y, px(2.0), Align::Centre, warning, out);
+        y += 25.0 * u;
+    }
+    if let Some(note) = mode.note {
+        font::text(
+            &note.to_uppercase(),
+            cx,
+            y,
+            px(2.0),
+            Align::Centre,
+            warning,
+            out,
+        );
+        y += 25.0 * u;
+    }
     if bluetooth {
         font::text(
             "BLUETOOTH OUTPUT: SYNC IS BEST-EFFORT",
             cx,
-            top + 175.0 * u,
+            y,
             px(2.0),
             Align::Centre,
             [1.0, 0.75, 0.4, 1.0],

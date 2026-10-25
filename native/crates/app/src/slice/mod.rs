@@ -504,6 +504,10 @@ pub fn run(args: &[String]) -> Result<(), String> {
         tap_target,
         child,
         stall_at: opts.stall_at.map_or(f64::INFINITY, |s| now_s() + s),
+        apps: Vec::new(),
+        apps_at: f64::NEG_INFINITY,
+        playing_since: HashMap::new(),
+        note: None,
         overrides,
         gfx: None,
         sounds,
@@ -1249,6 +1253,12 @@ struct App {
     tap_target: Option<apps::AudioApp>,
     child: Option<std::process::Child>,
     stall_at: f64,
+    /// The apps with audio, as last looked (host s), when each started playing (by its
+    /// responsible process), and a note for the listening screen until a host time.
+    apps: Vec<apps::AudioApp>,
+    apps_at: f64,
+    playing_since: HashMap<i32, f64>,
+    note: Option<(String, f64)>,
     /// A calibration screen showing, if any.
     screen: Option<Screen>,
     device_uid: String,
@@ -1602,6 +1612,13 @@ impl App {
         if let Some((w, h)) = self.gfx.as_ref().map(Gfx::logical_size) {
             self.screen_card(w, h, now, &mut screen_sprites);
         }
+        // (The listening screen shows which apps can be tapped.)
+        if !self.running && self.over.is_none() {
+            self.poll_apps(now, false);
+            if self.note.as_ref().is_some_and(|n| now > n.1) {
+                self.note = None;
+            }
+        }
         let Some(g) = self.gfx.as_mut() else {
             // (Headless: the frame's work is the engine's and the sounds'.)
             let built = t0.elapsed().as_secs_f64() * 1e3;
@@ -1682,6 +1699,24 @@ impl App {
             hud::draw(&self.engine.view.borrow(), &state, w, h, &mut overlay);
         }
         if !self.running && self.over.is_none() {
+            let tapped = self.audio.app.as_deref();
+            let others = self
+                .apps
+                .iter()
+                .filter(|a| a.playing && Some(a.name.as_str()) != tapped)
+                .count();
+            let mode = scene::ListeningMode {
+                delayed: self.audio.listening != Listening::Direct,
+                m: DelayedParams::chosen().m,
+                file: self.audio.file.is_some(),
+                app: tapped,
+                browser: self
+                    .tap_target
+                    .as_ref()
+                    .is_some_and(apps::AudioApp::browser),
+                others,
+                note: self.note.as_ref().map(|n| n.0.as_str()),
+            };
             scene::listening_card(
                 w,
                 h,
@@ -1689,6 +1724,7 @@ impl App {
                 GATE,
                 now,
                 self.bluetooth,
+                &mode,
                 &mut overlay,
             );
         }
@@ -1934,6 +1970,79 @@ impl App {
         });
     }
 
+    /// Looks at the apps with audio again (every second, or now if `force`), noting when each
+    /// started playing.
+    fn poll_apps(&mut self, now: f64, force: bool) {
+        if !force && now - self.apps_at < 1.0 {
+            return;
+        }
+        self.apps_at = now;
+        self.apps = apps::list();
+        let playing: Vec<i32> = self
+            .apps
+            .iter()
+            .filter(|a| a.playing)
+            .map(|a| a.pid)
+            .collect();
+        self.playing_since.retain(|pid, _| playing.contains(pid));
+        for pid in playing {
+            self.playing_since.entry(pid).or_insert(now);
+        }
+    }
+
+    /// Delayed listening's app by default: the one that most recently started playing.
+    fn default_app(&self) -> Option<apps::AudioApp> {
+        self.apps
+            .iter()
+            .filter(|a| a.playing)
+            .max_by(|a, b| {
+                let since = |x: &apps::AudioApp| self.playing_since.get(&x.pid).copied();
+                since(a)
+                    .partial_cmp(&since(b))
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            })
+            .cloned()
+    }
+
+    /// L on the listening screen: Direct to Delayed (System mode: tapping the app that most
+    /// recently started playing) and back; the run ends, as a source change does.
+    fn toggle_listening(&mut self, now: f64) {
+        let file = self.audio.file.clone();
+        if self.audio.listening == Listening::Direct {
+            if file.is_none() {
+                self.poll_apps(now, true);
+                let Some(app) = self.default_app() else {
+                    self.note = Some((
+                        "No app is playing: play something, then press L".into(),
+                        now + 4.0,
+                    ));
+                    return;
+                };
+                self.tap_target = Some(app);
+            }
+            self.listening = Listening::Delayed(DelayedParams::chosen());
+        } else {
+            self.listening = Listening::Direct;
+        }
+        self.switch(file.as_deref());
+    }
+
+    /// P on the listening screen, tapping an app: the next playing app is tapped instead.
+    fn next_app(&mut self, now: f64) {
+        self.poll_apps(now, true);
+        let playing: Vec<&apps::AudioApp> = self.apps.iter().filter(|a| a.playing).collect();
+        let current = self.tap_target.as_ref().map(|a| a.pid);
+        let at = playing.iter().position(|a| Some(a.pid) == current);
+        let next = match at {
+            Some(k) => playing.get((k + 1) % playing.len().max(1)),
+            None => playing.first(),
+        };
+        if let Some(&app) = next.filter(|a| Some(a.pid) != current) {
+            self.tap_target = Some(app.clone());
+            self.switch(None);
+        }
+    }
+
     /// Ends Watch my run, and its music.
     fn stop_watch(&mut self) {
         if self.watch.take().is_some() {
@@ -2046,6 +2155,18 @@ impl App {
                     clicks,
                     taps: Vec::new(),
                 });
+                true
+            }
+            None if pressed && !self.running && code == KeyCode::KeyL => {
+                self.toggle_listening(now);
+                true
+            }
+            None if pressed
+                && !self.running
+                && code == KeyCode::KeyP
+                && self.audio.watchdog.is_some() =>
+            {
+                self.next_app(now);
                 true
             }
             None if pressed && !self.running && code == KeyCode::KeyV => {
