@@ -1248,6 +1248,11 @@ impl App {
                 Event::Voice(Report::Skipped { .. }) => self.voices[1] += 1,
                 Event::Voice(Report::Dropped { .. }) => self.voices[2] += 1,
                 Event::Voice(Report::Cancelled { .. }) => self.voices[3] += 1,
+                Event::Voice(Report::Delay { fill, underrun }) => {
+                    self.log(
+                        serde_json::json!({"k": "delay", "fill": fill * 1e3, "underrun": underrun}),
+                    );
+                }
                 Event::Voice(Report::ReplayStarted { at, actual }) => {
                     self.log(
                         serde_json::json!({"k": "replay", "at": at, "late": (actual - at) * 1e3}),

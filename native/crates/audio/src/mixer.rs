@@ -9,6 +9,8 @@
 
 use std::sync::Arc;
 
+use crate::delay::{DelayLine, Read};
+
 /// Voices waiting to start, and voices playing, at most.
 pub const MAX_PENDING: usize = 64;
 pub const MAX_PLAYING: usize = 32;
@@ -37,6 +39,8 @@ const OUTPUT_TRIM: f32 = 0.89;
 const FOLLOW_GLIDE_S: f32 = 0.05;
 /// A synthesized click: 30 ms of a decaying sine.
 const CLICK_S: f64 = 0.03;
+/// Leaving Delayed listening fades the delay line out over this long (s).
+const DELAY_FADE_S: f64 = 0.05;
 
 /// What a voice plays: a sample from the bank, or a click at a frequency.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -97,6 +101,8 @@ pub enum Command {
     },
     /// Stops the replay's music.
     StopReplay,
+    /// Fades the delay line's music out over 50 ms and drops it (leaving Delayed listening).
+    FadeDelayLine,
     /// Moves a voice that hasn't started.
     Move {
         id: u64,
@@ -137,6 +143,13 @@ pub enum Report {
         at: f64,
         actual: f64,
     },
+    /// The delay line, about every half second and on each buffer it underran: how far the
+    /// capture is ahead of what plays (s; negative: underrun), and the frames that had nothing
+    /// captured to play since the last report.
+    Delay {
+        fill: f64,
+        underrun: u32,
+    },
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -166,6 +179,12 @@ pub struct Mixer {
     music_delay: u64,
     /// A replay's music, when it is due (host s), and whether it has started.
     replay: Option<(Arc<[f32]>, f64, bool)>,
+    /// Delayed listening's delay line (System mode), the frames it has underrun since its last
+    /// report, the frame of that report, and its fade-out's start (frames) once leaving.
+    delay_line: Option<DelayLine>,
+    delay_underrun: u32,
+    delay_reported: u64,
+    delay_fade: Option<u64>,
     /// Frames rendered so far.
     clock: u64,
     /// The duck: when it started ramping in (frames), whether it was already down then, when it
@@ -203,6 +222,10 @@ impl Mixer {
             music_pos: 0,
             music_delay: 0,
             replay: None,
+            delay_line: None,
+            delay_underrun: 0,
+            delay_reported: 0,
+            delay_fade: None,
             clock: 0,
             duck_start: 0,
             duck_from_down: false,
@@ -226,6 +249,16 @@ impl Mixer {
     pub fn with_music_delay(self, frames: u64) -> Mixer {
         Mixer {
             music_delay: frames,
+            ..self
+        }
+    }
+
+    /// The same mixer playing `line`'s capture as the music (Delayed listening on the system's
+    /// audio).
+    #[must_use]
+    pub fn with_delay_line(self, line: DelayLine) -> Mixer {
+        Mixer {
+            delay_line: Some(line),
             ..self
         }
     }
@@ -272,6 +305,9 @@ impl Mixer {
             Command::Follow(g) => self.follow_target = g.max(0.0),
             Command::Replay { samples, at } => self.replay = Some((samples, at, false)),
             Command::StopReplay => self.replay = None,
+            Command::FadeDelayLine => {
+                self.delay_fade.get_or_insert(self.clock);
+            }
         }
     }
 
@@ -371,6 +407,9 @@ impl Mixer {
                 None => report(Report::Dropped { id: v.id }),
             }
         }
+        if let Some(line) = &mut self.delay_line {
+            line.pull();
+        }
         // The replay's music: where in it this buffer's first frame is (negative before it).
         let replay_from = self.replay.as_mut().map(|(samples, at, started)| {
             let from = ((host - *at) * rate).round() as i64;
@@ -442,6 +481,20 @@ impl Mixer {
                 l += m;
                 r += m;
             }
+            // The delay line's music: the frame captured `delay` before this one plays.
+            if let Some(line) = &self.delay_line {
+                let fade = self.delay_fade.map_or(1.0, |f| {
+                    1.0 - ((self.clock + i as u64 - f) as f64 / (DELAY_FADE_S * rate)).min(1.0)
+                }) as f32;
+                match line.at(host + i as f64 / rate - line.delay) {
+                    Read::Frame(a, b) => {
+                        l += a * self.music_gain * fade;
+                        r += b * self.music_gain * fade;
+                    }
+                    Read::After => self.delay_underrun += 1,
+                    Read::Before => {}
+                }
+            }
             if let Some((samples, from)) = &replay_from {
                 let k = from + i as i64;
                 if k >= 0
@@ -476,6 +529,26 @@ impl Mixer {
         if self.music.is_some() {
             self.music_pos += frames as u64;
         }
+        // The delay line's report, and its end once faded out.
+        if let Some(line) = &self.delay_line {
+            let due = self.clock - self.delay_reported >= (0.5 * rate) as u64;
+            if (due || self.delay_underrun > 0)
+                && let Some(fill) = line.fill(host + frames as f64 / rate - line.delay)
+            {
+                report(Report::Delay {
+                    fill,
+                    underrun: self.delay_underrun,
+                });
+                self.delay_underrun = 0;
+                self.delay_reported = self.clock;
+            }
+        }
+        if self
+            .delay_fade
+            .is_some_and(|f| self.clock - f >= (DELAY_FADE_S * rate) as u64)
+        {
+            self.delay_line = None;
+        }
         // (A replay played out is let go; the caller's clone frees it.)
         if replay_from.is_some_and(|(samples, from)| from + frames as i64 >= samples.len() as i64) {
             self.replay = None;
@@ -502,6 +575,35 @@ mod tests {
     }
 
     fn quiet(_: Report) {}
+
+    #[test]
+    fn the_delay_line_plays_the_capture_late_reports_underruns_and_fades_out() {
+        let (mut w, line) = crate::delay::delay_line(RATE, 0.01, 1.0);
+        // A click captured at host 10.0 (frame 0 of a 2048-frame buffer), played 0.01 s late.
+        w.write(0, 2048, 10.0, |a, b| {
+            for s in a.iter_mut().chain(b.iter_mut()) {
+                *s = 0.0;
+            }
+            a[0] = 0.5;
+            a[1] = 0.5;
+        });
+        let mut m = Mixer::new(RATE, impulse(), None, 1.0).with_delay_line(line);
+        let mut reports = Vec::new();
+        let mut out = vec![0.0; 1024];
+        m.render(10.0, &mut out, &mut |r| reports.push(r));
+        assert_eq!(first_sound(&out), Some(480));
+        // Past the capture (2048 frames, read 480 late): an underrun, reported.
+        m.render(10.0 + 2048.0 / RATE, &mut out, &mut |r| reports.push(r));
+        assert!(reports.iter().any(
+            |r| matches!(r, Report::Delay { underrun, fill } if *underrun > 0 && *fill < 0.0)
+        ));
+        // Leaving: 50 ms of fade, then no line.
+        m.apply(Command::FadeDelayLine, &mut quiet);
+        for k in 0..6 {
+            m.render(10.1 + f64::from(k) * 512.0 / RATE, &mut out, &mut quiet);
+        }
+        assert!(m.delay_line.is_none());
+    }
 
     #[test]
     fn a_delayed_file_is_heard_late_and_read_on_time() {
