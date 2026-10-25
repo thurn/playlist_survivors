@@ -28,6 +28,7 @@ mod combat;
 mod foes;
 mod hero;
 mod judge;
+mod observe;
 mod pickups;
 mod pieces;
 mod plan;

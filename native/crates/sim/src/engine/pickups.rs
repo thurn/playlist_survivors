@@ -235,7 +235,7 @@ impl Sim {
         self.st.field.retain(|g| !taken.contains(&g.gem));
     }
 
-    fn level_req(&self) -> f64 {
+    pub(super) fn level_req(&self) -> f64 {
         let lu = &self.st.sch.level_ups;
         if lu.is_empty() {
             1.0
@@ -479,7 +479,7 @@ impl Sim {
     }
 
     /// The maximum health, with the max-health passives.
-    fn health_max(&self) -> f64 {
+    pub(super) fn health_max(&self) -> f64 {
         self.env.input.lib.hero.health.max + self.st.bonus.max_health
     }
 

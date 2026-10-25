@@ -153,6 +153,8 @@ pub(super) struct StampedePlan {
 
 #[derive(Clone, Copy, Debug)]
 pub(super) struct VolleyPlan {
+    /// When its archers started drawing (its check's time).
+    pub s_draw: f64,
     pub s_release: f64,
     pub s_arrive: f64,
     pub archers: f64,
@@ -1190,6 +1192,7 @@ impl Sim {
         let v = self.st.plan.volleys.len();
         let (s_release, s_arrive) = (beats[i].t, beats[i + 1].t);
         self.st.plan.volleys.push(VolleyPlan {
+            s_draw: self.st.s,
             s_release,
             s_arrive,
             archers,

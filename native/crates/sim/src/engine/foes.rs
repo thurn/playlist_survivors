@@ -181,7 +181,7 @@ impl Sim {
     }
 
     /// The way forward now: the hero and its heading.
-    fn forward(&self) -> (f64, f64, f64, f64) {
+    pub(super) fn forward(&self) -> (f64, f64, f64, f64) {
         let hp = self.hero_pose(self.st.w);
         (hp.x, hp.y, self.st.heading.0, self.st.heading.1)
     }

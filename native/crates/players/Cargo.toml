@@ -4,5 +4,13 @@ version = "0.0.0"
 edition.workspace = true
 publish = false
 
+[dependencies]
+serde_json = "1"
+sim = { path = "../sim" }
+
 [lints]
 workspace = true
+
+[dev-dependencies]
+indexmap = "2"
+stream = { path = "../stream" }
