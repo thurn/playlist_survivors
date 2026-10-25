@@ -5,7 +5,7 @@
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc;
 use std::time::Duration;
 
@@ -135,11 +135,12 @@ fn host_of(metas: &VecDeque<Meta>, rate: f64, i: f64) -> Option<f64> {
     Some(host_s(m.input_host) + (i - m.first as f64) / rate)
 }
 
-/// Starts the analysis thread. `heard_after` is the time from a buffer's host time to when it
+/// Starts the analysis thread. `heard_after` (an f64's bits, so the app can change it when the
+/// output device changes) is the time from a buffer's host time to when it
 /// is heard (the tap's offset from the output, or the output latency for a played file).
 pub fn spawn(
     mut source: Source,
-    heard_after: f64,
+    heard_after: Arc<AtomicU64>,
     tx: mpsc::Sender<Msg>,
     proxy: EventLoopProxy<()>,
     stop: Arc<AtomicBool>,
@@ -172,7 +173,8 @@ pub fn spawn(
                 for m in &new_metas {
                     let _ = tx.send(Msg::Level {
                         peak: m.peak,
-                        heard: host_s(m.input_host) + heard_after,
+                        heard: host_s(m.input_host)
+                            + f64::from_bits(heard_after.load(Ordering::Relaxed)),
                     });
                 }
                 metas.extend(new_metas.drain(..));
@@ -195,7 +197,7 @@ pub fn spawn(
                 if let Some(h) = host_of(&metas, rate, song * SR * rs.ratio) {
                     let _ = tx.send(Msg::Clock {
                         song,
-                        heard: h + heard_after,
+                        heard: h + f64::from_bits(heard_after.load(Ordering::Relaxed)),
                     });
                 }
                 for e in out.drain(..) {

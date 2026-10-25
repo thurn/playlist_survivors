@@ -372,24 +372,45 @@ impl Scene {
     }
 }
 
-/// The run's end card, in the HUD's pixel font: dims the window, says how the run ended and how
-/// long it lasted, and how to start again.
-pub fn end_card(w: f32, h: f32, age: f64, seconds: u64, fell: bool, out: &mut Vec<Sprite>) {
+/// Why a run ended.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum End {
+    Fell,
+    /// A confirmed end: the song stopped and the finale played.
+    Song,
+    /// Esc or the window losing focus: the music moved on, so a new run starts on the next beat.
+    Paused,
+    /// The player ended it.
+    Stopped,
+    /// The output device changed (its latency with it).
+    Device,
+}
+
+/// The run's end card, in the HUD's pixel font: dims the window, says how the run ended, how long
+/// it lasted and how it went, and how a new one starts.
+pub fn end_card(
+    w: f32,
+    h: f32,
+    age: f64,
+    seconds: u64,
+    end: End,
+    view: &LiveView,
+    out: &mut Vec<Sprite>,
+) {
     let a = (age / 0.5).clamp(0.0, 1.0) as f32;
     out.push(rect(0.0, 0.0, w, h, [0.0, 0.0, 0.0, 0.7 * a]));
     let u = (w / 960.0).min(h / 540.0);
     let px = |k: f32| (k * u).round().max(1.0);
-    let (title, color, hint) = if fell {
-        ("YOU FELL", [1.0, 0.25, 0.31, a], "ENTER TO PLAY AGAIN")
-    } else {
-        (
-            "THE MUSIC STOPPED",
-            [0.62, 0.72, 1.0, a],
-            "PLAY MUSIC OR PRESS ENTER TO START AGAIN",
-        )
+    let (title, color) = match end {
+        End::Fell => ("YOU FELL", [1.0, 0.25, 0.31, a]),
+        End::Song => ("THE SONG ENDED", [0.62, 0.72, 1.0, a]),
+        End::Paused => ("PAUSED", [1.0, 0.85, 0.4, a]),
+        End::Stopped => ("RUN ENDED", [0.8, 0.8, 0.85, a]),
+        End::Device => ("THE OUTPUT CHANGED", [1.0, 0.85, 0.4, a]),
     };
     let cx = w / 2.0;
-    let top = h / 2.0 - 90.0 * u;
+    let top = h / 2.0 - 100.0 * u;
+    let grey = [0.69, 0.69, 0.75, a];
     font::text(title, cx, top, px(4.0), Align::Centre, color, out);
     font::text(
         "SURVIVED",
@@ -397,7 +418,7 @@ pub fn end_card(w: f32, h: f32, age: f64, seconds: u64, fell: bool, out: &mut Ve
         top + 50.0 * u,
         px(2.0),
         Align::Centre,
-        [0.69, 0.69, 0.75, a],
+        grey,
         out,
     );
     font::text(
@@ -409,11 +430,24 @@ pub fn end_card(w: f32, h: f32, age: f64, seconds: u64, fell: bool, out: &mut Ve
         [1.0, 1.0, 1.0, a],
         out,
     );
+    let [perfect, great, good] = view.ratings;
+    font::text(
+        &format!(
+            "KILLS {}   PERFECT {perfect}   GREAT {great}   GOOD {good}",
+            view.kills
+        ),
+        cx,
+        top + 140.0 * u,
+        px(2.0),
+        Align::Centre,
+        grey,
+        out,
+    );
     let blink = if (age * 1.5).fract() < 0.7 { 1.0 } else { 0.4 };
     font::text(
-        hint,
+        "PLAY MUSIC OR PRESS ENTER FOR A NEW RUN",
         cx,
-        top + 150.0 * u,
+        top + 175.0 * u,
         px(2.0),
         Align::Centre,
         [0.85, 0.85, 0.9, a * blink],

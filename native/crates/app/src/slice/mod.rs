@@ -3,8 +3,9 @@
 //! the sim's stream, stamped with their arrival, and the sim engine (`eval::live::Engine`) runs
 //! ahead of the song time being heard, rolling back for late keys and arrivals (G5), and shows the
 //! time heard each frame. Arrow keys or WASD stride
-//! on the beat, Space stomps. The run ends when the hero falls or after 3 s of silence (until G2
-//! brings the finale); Enter or Space starts the next.
+//! on the beat, Space stomps. The run ends when the hero falls, with a confirmed end (the song
+//! stopped, the finale played), on Esc or losing focus (a pause ends it) or on Backspace; Enter or
+//! Space starts the next.
 //!
 //!     playlist-survivors               # System mode: whatever the Mac is playing
 //!     playlist-survivors --file <path> # plays the file and listens to it
@@ -47,7 +48,7 @@ mod tap;
 use std::collections::{HashMap, VecDeque};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc;
 
 use analysis::analyzer::Entry;
@@ -69,7 +70,7 @@ use gfx::Gfx;
 use hud::{HudState, KeyLight, PressMark};
 use live::{Msg, Source};
 use output::{Event, Output};
-use scene::{Look, Scene};
+use scene::{End, Look, Scene};
 use sounds::Sounds;
 
 /// The tap's timeline runs this far behind the output's render timeline (phase 0, built-in
@@ -78,7 +79,6 @@ const TAP_MINUS_RENDER_S: f64 = 0.023;
 /// A captured buffer this loud is music, not silence.
 const SOUND_PEAK: f32 = 0.01;
 /// This long without sound ends the run.
-const SILENCE_S: f64 = 3.0;
 /// The analyzer's evidence gate (`manifest.json`'s `streamParams.gate`).
 const GATE: f64 = 0.2;
 /// How late a key can reach the engine: the window server's delivery to the main thread (p95
@@ -289,9 +289,12 @@ pub fn run(args: &[String]) -> Result<(), String> {
     let event_loop = EventLoop::new().map_err(|e| e.to_string())?;
     let stop = Arc::new(AtomicBool::new(false));
     let (tx, rx) = mpsc::channel();
+    // (The output's latency plus this: what the analysis thread adds to a buffer's host time.)
+    let heard_offset = heard_after - l_out;
+    let heard_after = Arc::new(AtomicU64::new(heard_after.to_bits()));
     let analyzer = live::spawn(
         source,
-        heard_after,
+        Arc::clone(&heard_after),
         tx,
         event_loop.create_proxy(),
         stop.clone(),
@@ -335,9 +338,14 @@ pub fn run(args: &[String]) -> Result<(), String> {
         voices: [0; 4],
         voices_at: 0.0,
         mute: opts.mute,
+        device: coreaudio::default_output(),
+        heard_after,
+        heard_offset,
+        device_at: 0.0,
         frame_ms: Vec::new(),
         paced: false,
         occluded: false,
+        focused: false,
         next_frame: 0.0,
         keys: [KeyLight::default(); 5],
         presses: VecDeque::new(),
@@ -623,7 +631,7 @@ struct App {
     /// When sound was last heard (host s).
     last_sound: f64,
     /// When the run ended (host s), and whether the hero fell.
-    over: Option<(f64, bool, f64)>,
+    over: Option<(f64, End, f64)>,
     title_at: f64,
     /// The next voice's identity, and how far ahead of now the output is rendering (s): a sound
     /// scheduled that far ahead lands on its sample.
@@ -635,12 +643,21 @@ struct App {
     voices: [u32; 4],
     voices_at: f64,
     mute: bool,
+    /// The output device in use, checked once a second (host `device_at`): a change ends the run.
+    device: coreaudio::Id,
+    device_at: f64,
+    /// When a captured buffer is heard after its host time (shared with the analysis thread):
+    /// the output's latency plus `heard_offset`.
+    heard_after: Arc<AtomicU64>,
+    heard_offset: f64,
     /// Each frame's own work since the last log (ms).
     frame_ms: Vec<f64>,
     /// Frames are paced by a timer, not the display, while the window is hidden or occluded (it
     /// gives no drawable to wait on); the next one is due at host `next_frame`.
     paced: bool,
     occluded: bool,
+    /// Whether the window has the keyboard.
+    focused: bool,
     next_frame: f64,
     /// The key display: up, left, down, right, stomp.
     keys: [KeyLight; 5],
@@ -723,23 +740,48 @@ impl App {
                 .moments(&moments, now, &self.world.lib, &self.world.looks);
             self.scene
                 .level(&self.engine.view.borrow(), now, &self.world.lib);
-            let fell = self.engine.fallen();
-            if fell || (self.last_sound.is_finite() && now - self.last_sound > SILENCE_S) {
-                if fell {
+            let end = if self.engine.fallen() {
+                Some(End::Fell)
+            } else if self.engine.done() {
+                Some(End::Song)
+            } else {
+                None
+            };
+            if let Some(end) = end {
+                if end == End::Fell {
                     self.sound_now("boss-slam", 1.0);
                 }
-                self.over = Some((now, fell, s - self.run_start));
-                eprintln!(
-                    "slice: run over ({}), {:.0} s; sounds {} started, {} skipped late, {} dropped",
-                    if fell { "fell" } else { "silence" },
-                    s - self.run_start,
-                    self.voices[0],
-                    self.voices[1],
-                    self.voices[2]
-                );
+                self.end_run(end, now);
             }
         }
-        if let Some((t, false, _)) = self.over
+        // A new output device ends the run: the stream's heard times carry the old latency.
+        if now > self.device_at {
+            self.device_at = now + 1.0;
+            let device = coreaudio::default_output();
+            if device != self.device {
+                self.device = device;
+                let d = coreaudio::device(device);
+                let l_out = Output::reported_latency_s();
+                eprintln!(
+                    "slice: output now {} ({} Hz), L_out {:.1} ms{}",
+                    d.name,
+                    d.rate,
+                    l_out * 1e3,
+                    if (d.rate - self.out.rate).abs() > 0.5 {
+                        "; its rate differs from the mixer's: restart the app"
+                    } else {
+                        ""
+                    }
+                );
+                self.l_out = l_out;
+                self.heard_after
+                    .store((l_out + self.heard_offset).to_bits(), Ordering::Relaxed);
+                self.end_run(End::Device, now);
+            }
+        }
+        // (A run that ended with the song starts again when sound comes back; part 2 of G6 brings
+        // the listening screen's start rule.)
+        if let Some((t, End::Song, _)) = self.over
             && self.last_sound > t
             && now > t + 1.0
         {
@@ -846,8 +888,16 @@ impl App {
         };
         let mut overlay = Vec::new();
         hud::draw(&self.engine.view.borrow(), &state, w, h, &mut overlay);
-        if let Some((t, fell, seconds)) = self.over {
-            scene::end_card(w, h, now - t, seconds.max(0.0) as u64, fell, &mut overlay);
+        if let Some((t, end, seconds)) = self.over {
+            scene::end_card(
+                w,
+                h,
+                now - t,
+                seconds.max(0.0) as u64,
+                end,
+                &self.engine.view.borrow(),
+                &mut overlay,
+            );
         }
         overlay.push(gfx::rect(
             0.0,
@@ -955,6 +1005,20 @@ impl App {
         eval::live::SETTLE_S + KEY_LATE_S + offset
     }
 
+    /// Ends the run (host time `now`) for `end`: the end card shows, listening goes on.
+    fn end_run(&mut self, end: End, now: f64) {
+        if self.over.is_some() {
+            return;
+        }
+        let seconds = self.song_at(now).map_or(0.0, |s| s - self.run_start);
+        self.over = Some((now, end, seconds));
+        let _ = self.out.commands.push(Command::CancelAll);
+        eprintln!(
+            "slice: run over ({end:?}), {seconds:.0} s; sounds {} started, {} skipped late, {} dropped",
+            self.voices[0], self.voices[1], self.voices[2]
+        );
+    }
+
     /// A new run from the song time heard now, with a fresh engine and stream.
     fn restart(&mut self) {
         let now = now_s();
@@ -992,6 +1056,16 @@ impl App {
             {
                 self.restart();
             }
+            return;
+        }
+        // Esc pauses, which ends the run (the music moves on); Backspace ends it.
+        if pressed && matches!(code, KeyCode::Escape | KeyCode::Backspace) {
+            let end = if code == KeyCode::Escape {
+                End::Paused
+            } else {
+                End::Stopped
+            };
+            self.end_run(end, now);
             return;
         }
         let key = match code {
@@ -1065,6 +1139,12 @@ impl ApplicationHandler for App {
                 self.render();
             }
             WindowEvent::Occluded(occluded) => self.occluded = occluded,
+            // (Losing focus pauses, once the window has had it: the keys go elsewhere.)
+            WindowEvent::Focused(true) => self.focused = true,
+            WindowEvent::Focused(false) if self.focused => {
+                self.focused = false;
+                self.end_run(End::Paused, now_s());
+            }
             _ => {}
         }
     }

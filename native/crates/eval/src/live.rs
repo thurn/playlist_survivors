@@ -858,6 +858,12 @@ impl Engine {
         v.moments = moments;
     }
 
+    /// Whether the run has ended for good: the finale's epilogue (a confirmed end's) is over in
+    /// the final state.
+    pub fn done(&self) -> bool {
+        self.sim.end_s() <= self.settled
+    }
+
     /// Whether the hero has fallen, for good (in the final records: a fall a late key or arrival
     /// could still undo doesn't end the run).
     pub fn fallen(&self) -> bool {
