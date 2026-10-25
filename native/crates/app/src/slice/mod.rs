@@ -159,7 +159,7 @@ struct Options {
     headless: bool,
     /// Exit after this long (s).
     seconds: Option<f64>,
-    /// No automatic start before this song time (s), for checks.
+    /// No automatic start before this song time (s), for headless checks.
     start_at: Option<f64>,
     /// Press F2 (the next bundled track) this long after the start (s), for checks.
     switch_at: Option<f64>,
@@ -1239,9 +1239,10 @@ enum Screen {
     Said { text: String, until: f64 },
 }
 
-/// The automatic start (docs/design/native-app.md, "Runs on live audio (D1)"): a run starts once
-/// the evidence has stayed at or above the gate for 2 s after at least 1.5 s of quiet, or after
-/// the previous run's end (or the app's start).
+/// The automatic start (docs/design/native-app.md, "Runs on live audio (D1)"), headless only: a
+/// run starts once the evidence has stayed at or above the gate for 2 s after at least 1.5 s of
+/// quiet, or after the previous run's end (or the app's start). With a window, Enter or Space
+/// starts a run.
 #[derive(Debug)]
 struct Listen {
     /// The latest tick's evidence, where the clear stretch began (song s), where the quiet one
@@ -1637,9 +1638,11 @@ impl App {
         }
         self.watch_tick(now);
         self.screen_tick(now);
-        // Listening: the next run starts on its own once the music is clear (after the end card),
-        // unless a calibration screen shows.
-        if !self.running
+        // Listening, headless (no keys to press): the next run starts on its own once the music is
+        // clear (after the end card), unless a calibration screen shows. With a window, the
+        // player starts each run.
+        if self.headless
+            && !self.running
             && self.screen.is_none()
             && self.watch.is_none()
             && let Some(s) = song

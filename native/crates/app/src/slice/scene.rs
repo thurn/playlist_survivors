@@ -819,8 +819,8 @@ pub struct ListeningMode<'a> {
     pub note: Option<&'a str>,
 }
 
-/// The listening screen, between runs: the title, the evidence of a beat against the gate a run
-/// starts at, how to start one, and how it is listening (L switches Direct and Delayed, P picks
+/// The listening screen, between runs: the title, the evidence of a beat against the gate (clear
+/// once a beat is found), how to start one, and how it is listening (L switches Direct and Delayed, P picks
 /// another app to tap).
 #[allow(clippy::too_many_arguments, clippy::many_single_char_names)]
 pub fn listening_card(
@@ -857,7 +857,7 @@ pub fn listening_card(
         [0.69, 0.69, 0.75, 1.0],
         out,
     );
-    // The beat's evidence, with the gate marked: a run starts once it holds above it for 2 s.
+    // The beat's evidence, with the gate marked: above it, a beat is found.
     let (mw, mh) = (300.0 * u, 10.0 * u);
     let (mx, my) = (cx - mw / 2.0, top + 85.0 * u);
     out.push(rect(mx, my, mw, mh, [0.0, 0.0, 0.0, 0.6]));
@@ -882,7 +882,7 @@ pub fn listening_card(
         [1.0, 1.0, 1.0, 0.8],
     ));
     font::text(
-        "PLAY MUSIC, OR PRESS ENTER TO START",
+        "PRESS ENTER TO START",
         cx,
         top + 120.0 * u,
         px(2.0),
@@ -969,7 +969,7 @@ pub enum End {
     Fell,
     /// A confirmed end: the song stopped and the finale played.
     Song,
-    /// Esc or the window losing focus: the music moved on, so a new run starts on the next beat.
+    /// Esc or the window losing focus: the music moved on, so there is nothing to resume.
     Paused,
     /// The player ended it.
     Stopped,
@@ -1039,7 +1039,7 @@ pub fn end_card(
     );
     let blink = if (age * 1.5).fract() < 0.7 { 1.0 } else { 0.4 };
     font::text(
-        "W WATCH YOUR RUN   PLAY MUSIC OR PRESS ENTER FOR A NEW RUN",
+        "W WATCH YOUR RUN   PRESS ENTER FOR A NEW RUN",
         cx,
         top + 175.0 * u,
         px(2.0),

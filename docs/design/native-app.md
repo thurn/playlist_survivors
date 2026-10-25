@@ -1115,7 +1115,7 @@ squash and flinch, and the key's look on the grade); the tier look and the
 weapons (`slice/tier.rs`); the gem field (`slice/gems.rs`); and enemies'
 hit flash, knockback and fall, and the props' sway on the bar. Not done: the
 free-movement count-in has no moment in the native flow (a run starts on music
-already playing, with nothing held), the upgrade orbs' look, and arrows and slam
+already playing), the upgrade orbs' look, and arrows and slam
 markers.
 
 ### Sound (G4)
@@ -1184,8 +1184,9 @@ ending the run, a device change ending the run, the end card and YOU FELL, and
 a debug menu with File mode.
 
 **Landed:** the app listens on start (the listening screen, the beat's
-evidence against the gate) and starts a run on D1's rule (2 s clear after
-1.5 s of quiet, an end, or the app's start) or on Enter; the last 20 s of
+evidence against the gate) and starts a run on Enter or Space (D1's automatic
+rule, 2 s clear after 1.5 s of quiet, an end, or the app's start, only
+headless); the last 20 s of
 entries are fed to the new run rebased to its start (`slice/feed.rs`). Runs
 end on YOU FELL and on the sim's confirmed end (both in the final state), on
 Esc or losing focus (Paused), Backspace, a new output device (its latency
@@ -1215,9 +1216,11 @@ Ported from `scripts/check-reactive.ts`, on the Rust sim alone:
 Built by G6 (bead `hv-t8o8.25`). The app idles on the listening screen. The analyzer always runs, so the tracker
 is warmed up before a run starts.
 
-- **Start:** automatically when the evidence has stayed at or above the gate
-  for 2 s after at least 1.5 s of quiet (or after the previous run's end), or
-  manually with Start. A run started mid-song is normal.
+- **Start:** the player presses Enter or Space (since 2026-10-25: a run that
+  started by itself on music was confusing). Headless checks, with no keys,
+  still start automatically when the evidence has stayed at or above the gate
+  for 2 s after at least 1.5 s of quiet (or after the previous run's end). A
+  run started mid-song is normal.
 - **The run's clock:** run time is heard time minus the run's start `s0`, a
   fixed offset for the whole run. It never pauses.
 - **What the sim sees at the start:** what it would have seen had the song
@@ -1233,7 +1236,7 @@ is warmed up before a run starts.
   - timbre entries known from `s0` on are kept as they are. They may summarise
     audio from before `s0`, a harmless difference from TS's first entries.
 - **End:** a confirmed end, YOU FELL, or manual End. Then the end card;
-  listening continues, and the next song starts a new run.
+  listening continues until the player starts a new run.
 - **A confirmed end.** An `ends` entry fires after any 1.5 s of quiet, and TS
   only accepts ends near the known length. Live, an end counts once the quiet
   has held for a confirmation window (3 s from its start, tuned in D1) with
@@ -1244,8 +1247,8 @@ is warmed up before a run starts.
   already defines such a rule, the port uses that instead.
 - **Pause ends the run.** Esc or losing focus freezes the game and shows the
   end card, marked Paused, with the grade so far. The music has moved on, so
-  there is nothing to resume into: listening continues, and the next clear beat
-  starts a new run. Freezing run time across a gap was rejected: committed
+  there is nothing to resume into: listening continues until the player starts
+  a new run. Freezing run time across a gap was rejected: committed
   beats either side of the gap would sit next to each other at an arbitrary
   interval, which breaks every rule that counts beats.
 - **An output device change ends the run** the same way. Entries already in
@@ -1754,9 +1757,9 @@ pending, not waited for.
 
 1. First launch: the capture permission prompt appears once. After a rebuild,
    it doesn't appear again.
-2. Play a steady pop or electronic track in Music. A run starts by itself
-   within a few seconds of the beat. Strikes and sounds land on the beat as
-   heard. Presses on the beat rate well.
+2. Play a steady pop or electronic track in Music. The listening screen's
+   meter clears within a few seconds of the beat; Enter starts a run. Strikes
+   and sounds land on the beat as heard. Presses on the beat rate well.
 3. The same track in a browser (YouTube). Same result. The game's own sounds
    never confuse the tracker: mute the music mid-run and the game must not
    keep finding a beat in its own clicks.
@@ -1765,9 +1768,9 @@ pending, not waited for.
 5. A podcast or speech: no run starts. Pressing Start gives a beatless run
    whose groove fills by itself.
 6. Pause the music mid-run: the run ends on a confirmed end about 3 s later.
-   Resume the music: a new run starts.
+   Resume the music and press Enter: a new run starts.
 7. Pause the game mid-run: the end card shows, marked Paused, while the music
-   continues. The next clear beat starts a new run.
+   continues. Enter starts a new run.
 8. A gapless playlist: the run carries across songs; End run works.
 9. Switch output from speakers to wired headphones mid-run: the run ends
    cleanly, and the next run is in sync on the headphones.
