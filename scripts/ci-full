@@ -112,4 +112,9 @@ if [ "$section" = all ] || [ "$section" = native ]; then
       echo "$(git rev-parse --short HEAD) $(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$STAMPS/parity-$parity"
     fi
   fi
+  # The live engine's cost against its gates (G5, docs/design/native-app.md "Targets"): the
+  # rollbacks' re-simulation per second and the engine's time per frame, then the whole frame's
+  # work (sim, evaluate, encode) offscreen.
+  (cd native && cargo run --locked --release -p cli -- runner-bench --check)
+  (cd native && cargo run --locked --release -p app -- --bench --check)
 fi

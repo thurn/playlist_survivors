@@ -498,6 +498,8 @@ pub struct RunnerStats {
     pub replayed_s: f64,
     /// Keys applied later than their time (at the settled time).
     pub late_keys: u64,
+    /// Wall time spent simulating again after rollbacks (s).
+    pub resim_s: f64,
 }
 
 /// The sim engine on a stream that grows as it arrives, run ahead of the time heard with rollback
@@ -665,9 +667,11 @@ impl Engine {
             .into_iter()
             .chain(self.arrival.take())
             .reduce(f64::min);
+        let mut resim_to = None;
         if let Some(t) = earliest
             && t < self.sim.s() - 1e-12
         {
+            resim_to = Some(self.sim.s());
             self.roll_back(t.max(self.settled));
         }
         for mut k in keys {
@@ -684,6 +688,12 @@ impl Engine {
             if let Some(log) = &mut self.key_log {
                 log.push(k);
             }
+        }
+        if let Some(to) = resim_to {
+            // (Back to where the simulation had been: the rollback's cost.)
+            let t0 = std::time::Instant::now();
+            self.run(to.min(now + lead));
+            self.stats.resim_s += t0.elapsed().as_secs_f64();
         }
         self.run(now + lead);
         self.settled = self.settled.max(now - SETTLE_S);

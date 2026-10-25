@@ -13,6 +13,7 @@
 //!     playlist-survivors --file <path> --mute  # everything runs, the device gets silence
 //!     playlist-survivors --input-offset-ms 30 --stomp-extra-ms 10  # calibration for this session
 //!     playlist-survivors --still <png>  # 20 s of the house track's stream through the engine, drawn offscreen
+//!     playlist-survivors --bench [--check]  # the frame's work (sim, evaluate, encode) over 60 s of it, offscreen
 
 mod calibration;
 // The tap and output are the phase 0 spike's (57e846a^:native/spike), kept as they were.
@@ -80,15 +81,21 @@ const SOUND_PEAK: f32 = 0.01;
 const SILENCE_S: f64 = 3.0;
 /// The analyzer's evidence gate (`manifest.json`'s `streamParams.gate`).
 const GATE: f64 = 0.2;
+/// The frame's work, p95 (ms): its first measurement's plus half (docs/design/native-app.md,
+/// "Targets").
+const FRAME_WORK_GATE_MS: f64 = 1.4;
 /// Under the ground (the TS game's world clear).
 const CLEAR: [f64; 3] = [0.06, 0.07, 0.05];
 
+#[allow(clippy::struct_excessive_bools)]
 struct Options {
     file: Option<PathBuf>,
     still: Option<PathBuf>,
     volume: f32,
     click: bool,
     mute: bool,
+    bench: bool,
+    check: bool,
     /// Calibration offsets for this session (ms), over the saved ones.
     input_offset_ms: Option<f64>,
     stomp_extra_ms: Option<f64>,
@@ -101,6 +108,8 @@ fn options(args: &[String]) -> Result<Options, String> {
         volume: 1.0,
         click: false,
         mute: false,
+        bench: false,
+        check: false,
         input_offset_ms: None,
         stomp_extra_ms: None,
     };
@@ -122,6 +131,8 @@ fn options(args: &[String]) -> Result<Options, String> {
                 }
             }
             "--still" => o.still = Some(it.next().ok_or("--still needs a path")?.into()),
+            "--bench" => o.bench = true,
+            "--check" => o.check = true,
             "--volume" => {
                 o.volume = it
                     .next()
@@ -222,6 +233,9 @@ pub fn run(args: &[String]) -> Result<(), String> {
     if let Some(path) = &opts.still {
         return still(path);
     }
+    if opts.bench {
+        return bench(opts.check);
+    }
     let world = World::load()?;
     let music = match &opts.file {
         Some(p) => Some(Arc::<[f32]>::from(live::decode(p, Output::device_rate())?)),
@@ -316,6 +330,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
         voices: [0; 4],
         voices_at: 0.0,
         mute: opts.mute,
+        frame_ms: Vec::new(),
         keys: [KeyLight::default(); 5],
         presses: VecDeque::new(),
     };
@@ -323,6 +338,120 @@ pub fn run(args: &[String]) -> Result<(), String> {
     stop.store(true, Ordering::Relaxed);
     let _ = analyzer.join();
     result
+}
+
+/// The frame's own work (docs/design/native-app.md, "Targets"): 60 s of the house track's stream
+/// through the engine at 120 Hz, 0.2 s ahead, a press on each beat 5 to 35 ms late; each frame's
+/// scene and HUD built and encoded offscreen at 1920 x 1080. `check` fails above the gate.
+fn bench(check: bool) -> Result<(), String> {
+    let world = World::load()?;
+    let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
+    let stream_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../public/reactive/house-128/stream.json");
+    let text = std::fs::read_to_string(&stream_path)
+        .map_err(|e| format!("{}: {e}", stream_path.display()))?;
+    let file = stream::StreamFile::parse(&text).map_err(|e| e.0)?;
+    let mut engine = world.engine()?;
+    let mut replay = stream::Replay::new(file.log.clone());
+    let beats: Vec<f64> = file.log.beats.iter().map(|b| b.t).collect();
+    let (w, h) = (1920u32, 1080u32);
+    let mut out = render::capture::Offscreen::new(&art.pages, w, h)?;
+    let mut scene = Scene::default();
+    let mut next = 0;
+    let mut times = Vec::new();
+    let mut jitter = 0.0f64;
+    for frame in 1..=(60 * 120) {
+        let s = f64::from(frame) / 120.0;
+        let t0 = std::time::Instant::now();
+        engine.feed(|log| replay.feed_to(log, s));
+        jitter = (jitter * 7.3 + 0.37).fract();
+        while next < beats.len() && beats[next] + 0.005 + 0.03 * jitter <= s {
+            let key = if next % 4 < 2 {
+                InputKey::Right
+            } else {
+                InputKey::Down
+            };
+            engine.key(beats[next], key, true);
+            engine.key(beats[next] + 0.08, key, false);
+            next += 1;
+        }
+        engine.frame(s, 0.2);
+        let moments = engine.view.borrow_mut().take_moments();
+        scene.moments(&moments, s, &world.lib, &world.looks);
+        scene.level(&engine.view.borrow(), s, &world.lib);
+        let theme = world.theme(&engine)?;
+        let ground = scene::Field {
+            seed: engine.seed,
+            theme,
+        };
+        let last = beats
+            .iter()
+            .copied()
+            .filter(|&b| b <= s)
+            .fold(0.0, f64::max);
+        let pulse = scene::Pulse {
+            beat: (s - last) / 0.47,
+            bar: 0.5,
+        };
+        let mut layers = scene::Layers::default();
+        scene.draw(
+            &engine.view.borrow(),
+            &ground,
+            &art,
+            &world.looks,
+            s,
+            pulse,
+            w as f32,
+            h as f32,
+            &mut layers,
+        );
+        let state = HudState {
+            keys: [KeyLight::default(); 5],
+            presses: &[],
+            beats: &[],
+            beat_phase: pulse.beat,
+            elapsed: s,
+            bitten_ago: f64::INFINITY,
+            head: layers.head,
+            next_down: false,
+        };
+        let mut overlay = Vec::new();
+        hud::draw(
+            &engine.view.borrow(),
+            &state,
+            w as f32,
+            h as f32,
+            &mut overlay,
+        );
+        out.draw(&Frame {
+            clear: CLEAR,
+            world: &layers.sprites,
+            lights: &layers.lights,
+            grade: layers.grade,
+            overlay: &overlay,
+        });
+        times.push(t0.elapsed().as_secs_f64() * 1e3);
+    }
+    let r = engine.stats;
+    times.sort_by(f64::total_cmp);
+    let at = |p: f64| times[((times.len() - 1) as f64 * p) as usize];
+    println!(
+        "bench: frame work (sim, evaluate, encode) at 1920 x 1080: median {:.2} ms, p95 {:.2}, p99 {:.2}, max {:.2} ({} frames); {} rollbacks re-simulating {:.0} ms",
+        at(0.5),
+        at(0.95),
+        at(0.99),
+        at(1.0),
+        times.len(),
+        r.rollbacks,
+        r.resim_s * 1e3
+    );
+    if check && at(0.95) > FRAME_WORK_GATE_MS {
+        return Err(format!(
+            "frame work p95 {:.2} ms over the gate {FRAME_WORK_GATE_MS} ms",
+            at(0.95)
+        ));
+    }
+    Ok(())
 }
 
 /// 20 s of the house track's committed stream through the engine (a stride on each beat), drawn
@@ -485,6 +614,8 @@ struct App {
     voices: [u32; 4],
     voices_at: f64,
     mute: bool,
+    /// Each frame's own work since the last log (ms).
+    frame_ms: Vec<f64>,
     /// The key display: up, left, down, right, stomp.
     keys: [KeyLight; 5],
     /// Recent presses for the beat track: when (host s), how far off, their rating.
@@ -547,6 +678,7 @@ impl App {
     }
 
     fn render(&mut self) {
+        let t0 = std::time::Instant::now();
         let now = now_s();
         self.peak *= 0.97;
         let song = self.song_at(now);
@@ -590,6 +722,21 @@ impl App {
         if self.mute && now > self.voices_at {
             self.voices_at = now + 10.0;
             let r = self.engine.stats;
+            let mut f = std::mem::take(&mut self.frame_ms);
+            f.sort_by(f64::total_cmp);
+            let at = |p: f64| {
+                f.get(((f.len().max(1) - 1) as f64 * p) as usize)
+                    .copied()
+                    .unwrap_or(0.0)
+            };
+            eprintln!(
+                "slice: frame work median {:.2} ms, p95 {:.2}, p99 {:.2} ({} frames); rollbacks re-simulated {:.0} ms",
+                at(0.5),
+                at(0.95),
+                at(0.99),
+                f.len(),
+                r.resim_s * 1e3
+            );
             eprintln!(
                 "slice: sounds {} started, {} skipped late, {} dropped, {} cancelled; {} rollbacks replaying {:.1} s, {} late keys",
                 self.voices[0],
@@ -678,13 +825,18 @@ impl App {
             4.0,
             [0.3, 0.8, 0.4, 0.8],
         ));
-        g.draw(&Frame {
+        let built = t0.elapsed().as_secs_f64();
+        let encode = g.draw(&Frame {
             clear: CLEAR,
             world: &layers.sprites,
             lights: &layers.lights,
             grade: layers.grade,
             overlay: &overlay,
         });
+        // (Sim, evaluate and encode: the frame's own work, the drawable's wait apart; logged muted.)
+        if self.mute {
+            self.frame_ms.push((built + encode) * 1e3);
+        }
     }
 
     /// The key display and the beat track's presses, from the view's new moments.

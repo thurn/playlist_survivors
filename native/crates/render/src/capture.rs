@@ -9,6 +9,67 @@ use crate::post::{Frame, Post};
 
 const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8UnormSrgb;
 
+/// A headless device drawing frames into an offscreen target, for timing the frame's work.
+pub struct Offscreen {
+    device: wgpu::Device,
+    queue: wgpu::Queue,
+    post: Post,
+    view: wgpu::TextureView,
+    size: (u32, u32),
+}
+
+impl Offscreen {
+    pub fn new(pages: &[Page], width: u32, height: u32) -> Result<Offscreen, String> {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter = pollster::block_on(instance.request_adapter(&Default::default()))
+            .map_err(|e| e.to_string())?;
+        let (device, queue) = pollster::block_on(adapter.request_device(&Default::default()))
+            .map_err(|e| e.to_string())?;
+        let post = Post::new(&device, &queue, FORMAT, pages)?;
+        let view = device
+            .create_texture(&wgpu::TextureDescriptor {
+                label: Some("offscreen"),
+                size: wgpu::Extent3d {
+                    width,
+                    height,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: FORMAT,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                view_formats: &[],
+            })
+            .create_view(&Default::default());
+        Ok(Offscreen {
+            device,
+            queue,
+            post,
+            view,
+            size: (width, height),
+        })
+    }
+
+    /// Encodes and submits `frame` (the CPU's share; the GPU runs on).
+    pub fn draw(&mut self, frame: &Frame) {
+        let mut encoder = self.device.create_command_encoder(&Default::default());
+        let (w, h) = self.size;
+        self.post.draw(
+            &self.device,
+            &self.queue,
+            &mut encoder,
+            &self.view,
+            (w, h),
+            (w as f32, h as f32),
+            frame,
+        );
+        self.queue.submit([encoder.finish()]);
+        // (Keep the GPU from falling ever further behind.)
+        let _ = self.device.poll(wgpu::PollType::Poll);
+    }
+}
+
 /// Draws `frame` into a `width` x `height` image, RGBA8 rows top first.
 pub fn render(pages: &[Page], width: u32, height: u32, frame: &Frame) -> Result<Vec<u8>, String> {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
