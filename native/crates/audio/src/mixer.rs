@@ -85,9 +85,18 @@ impl Voice {
 }
 
 /// What the render thread is asked to do.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Command {
     Play(Voice),
+    /// Plays `samples` (mono, at the output's rate) as music from host time `at`, beside the file:
+    /// a run's own music under its replay. It replaces any replay playing. (The caller keeps a
+    /// clone, so the render thread never frees it.)
+    Replay {
+        samples: Arc<[f32]>,
+        at: f64,
+    },
+    /// Stops the replay's music.
+    StopReplay,
     /// Moves a voice that hasn't started.
     Move {
         id: u64,
@@ -123,6 +132,11 @@ pub enum Report {
     Dropped {
         id: u64,
     },
+    /// The replay's music started: when it was due, and when its first sample played (host s).
+    ReplayStarted {
+        at: f64,
+        actual: f64,
+    },
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -147,6 +161,8 @@ pub struct Mixer {
     music: Option<Arc<[f32]>>,
     music_gain: f32,
     music_pos: u64,
+    /// A replay's music, when it is due (host s), and whether it has started.
+    replay: Option<(Arc<[f32]>, f64, bool)>,
     /// Frames rendered so far.
     clock: u64,
     /// The duck: when it started ramping in (frames), whether it was already down then, when it
@@ -182,6 +198,7 @@ impl Mixer {
             music,
             music_gain,
             music_pos: 0,
+            replay: None,
             clock: 0,
             duck_start: 0,
             duck_from_down: false,
@@ -239,6 +256,8 @@ impl Mixer {
                 }
             }
             Command::Follow(g) => self.follow_target = g.max(0.0),
+            Command::Replay { samples, at } => self.replay = Some((samples, at, false)),
+            Command::StopReplay => self.replay = None,
         }
     }
 
@@ -338,6 +357,18 @@ impl Mixer {
                 None => report(Report::Dropped { id: v.id }),
             }
         }
+        // The replay's music: where in it this buffer's first frame is (negative before it).
+        let replay_from = self.replay.as_mut().map(|(samples, at, started)| {
+            let from = ((host - *at) * rate).round() as i64;
+            if !*started && from + frames as i64 > 0 {
+                *started = true;
+                report(Report::ReplayStarted {
+                    at: *at,
+                    actual: host + (-from).max(0) as f64 / rate,
+                });
+            }
+            (Arc::clone(samples), from)
+        });
         let mut peak = 0.0f32;
         for i in 0..frames {
             let (mut l, mut r) = (0.0f32, 0.0f32);
@@ -393,6 +424,16 @@ impl Mixer {
                 l += m;
                 r += m;
             }
+            if let Some((samples, from)) = &replay_from {
+                let k = from + i as i64;
+                if k >= 0
+                    && let Some(&x) = samples.get(k as usize)
+                {
+                    let m = x * self.music_gain;
+                    l += m;
+                    r += m;
+                }
+            }
             // The limiter.
             let level = l.abs().max(r.abs());
             let k = if level > self.limit_env {
@@ -417,6 +458,10 @@ impl Mixer {
         if self.music.is_some() {
             self.music_pos += frames as u64;
         }
+        // (A replay played out is let go; the caller's clone frees it.)
+        if replay_from.is_some_and(|(samples, from)| from + frames as i64 >= samples.len() as i64) {
+            self.replay = None;
+        }
         peak
     }
 }
@@ -439,6 +484,41 @@ mod tests {
     }
 
     fn quiet(_: Report) {}
+
+    #[test]
+    fn a_replay_plays_its_music_from_its_time_and_stops() {
+        let mut m = Mixer::new(RATE, impulse(), None, 1.0);
+        let mut reports = Vec::new();
+        let host = 10.0;
+        // A replay of a click every 100 frames, due 300 frames in: the second buffer's 44th frame.
+        let mut music = vec![0.0f32; 1000];
+        for k in (0..1000).step_by(100) {
+            music[k] = 0.5;
+        }
+        let samples: Arc<[f32]> = music.into();
+        let at = host + 300.0 / RATE;
+        m.apply(
+            Command::Replay {
+                samples: Arc::clone(&samples),
+                at,
+            },
+            &mut quiet,
+        );
+        let mut out = vec![0.0; 512];
+        m.render(host, &mut out, &mut |r| reports.push(r));
+        assert_eq!(first_sound(&out), None);
+        m.render(host + 256.0 / RATE, &mut out, &mut |r| reports.push(r));
+        assert_eq!(first_sound(&out), Some(300 - 256));
+        assert!(matches!(
+            reports[..],
+            [Report::ReplayStarted { at: a, actual }] if a == at && (actual - at).abs() < 1e-9
+        ));
+        m.apply(Command::StopReplay, &mut quiet);
+        m.render(host + 512.0 / RATE, &mut out, &mut quiet);
+        assert_eq!(first_sound(&out), None);
+        // (The render thread kept none of it.)
+        assert_eq!(Arc::strong_count(&samples), 1);
+    }
 
     #[test]
     fn a_voice_lands_on_its_sample() {

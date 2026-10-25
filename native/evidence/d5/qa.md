@@ -22,7 +22,7 @@ Raw outputs: `house-run.txt`, `house-report.txt` (`ps report`, `ps log --no-tabl
 | 9 | Speakers to headphones mid-run | Pending (hardware); the device poll and THE OUTPUT CHANGED path are in G6 |
 | 10 | AirPods: notice, sync after calibration | The notice shows (log: "Bluetooth: sync is best-effort"); sync by ear pending |
 | 11 | Sessions saved; `ps replay` reproduces the run | house-128: 421 507 settled records, the replay the same (`house-report.txt`) |
-| 12 | Watch my run replays the run with its music | Visuals only: the replay has no music. Filed |
+| 12 | Watch my run replays the run with its music | Done (`hv-t8o8.86`): the run's music (the analyzer's input) plays under the replay from its start; `--watch` on a File-mode run logs `the replay's music started (0.0 ms late)` |
 | 13 | Calibrate changes judging and the flash | Pending (keys; row in operator-pending) |
 | 14-19 | Delayed listening | Not built yet (E2) |
 

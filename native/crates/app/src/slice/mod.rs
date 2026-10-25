@@ -91,6 +91,35 @@ const TAP_MINUS_RENDER_S: f64 = 0.023;
 /// A captured buffer this loud is music, not silence.
 const SOUND_PEAK: f32 = 0.01;
 /// This long without sound ends the run.
+/// The analyzer's input rate (Hz).
+const SR: f64 = 44_100.0;
+/// A run keeps at most this much of its music for Watch my run (s; about 160 MB).
+const RUN_AUDIO_MAX_S: f64 = 900.0;
+/// Watch my run's music starts this long after it is asked for (s), so the mixer starts it on time.
+const REPLAY_LEAD_S: f64 = 0.25;
+
+/// A run's music for its replay: `audio` (at `SR`) from sample `skip` (before its start when
+/// negative: silence first) for `seconds`, at the output's `rate` (linearly interpolated).
+fn replay_music(audio: &[f32], skip: i64, seconds: f64, rate: f64) -> Arc<[f32]> {
+    let n = (seconds.max(0.0) * rate) as usize;
+    let at = |k: i64| {
+        usize::try_from(k)
+            .ok()
+            .and_then(|k| audio.get(k))
+            .copied()
+            .unwrap_or(0.0)
+    };
+    (0..n)
+        .map(|i| {
+            let x = skip as f64 + i as f64 * SR / rate;
+            let k = x.floor();
+            let f = (x - k) as f32;
+            let k = k as i64;
+            at(k) + (at(k + 1) - at(k)) * f
+        })
+        .collect()
+}
+
 /// The analyzer's evidence gate (`manifest.json`'s `streamParams.gate`).
 const GATE: f64 = 0.2;
 /// How late a key can reach the engine: the window server's delivery to the main thread (p95
@@ -392,6 +421,10 @@ pub fn run(args: &[String]) -> Result<(), String> {
         run_index: 0,
         run_arrivals: Vec::new(),
         run_keys: Vec::new(),
+        run_audio: Vec::new(),
+        run_audio_s0: 0.0,
+        analysed: 0,
+        replay_music: None,
         watch: None,
         run_kills: 0,
         auto_watch: opts.watch,
@@ -990,6 +1023,13 @@ struct App {
     /// began, host s, and how far its feeds have got).
     run_arrivals: Vec<Arrival>,
     run_keys: Vec<sim::player::KeyEvent>,
+    /// The run's music: the analyzer's input since the run began (44.1 kHz mono), the song time
+    /// of its first sample, and the samples analysed so far this session. Watch my run plays it.
+    run_audio: Vec<f32>,
+    run_audio_s0: f64,
+    analysed: u64,
+    /// The replay's music the mixer holds (kept here, so the render thread never frees it).
+    replay_music: Option<Arc<[f32]>>,
     watch: Option<Watch>,
     /// The run's kills when it ended, and whether to watch each run as it ends (`--watch`).
     run_kills: usize,
@@ -1125,6 +1165,14 @@ impl App {
                     if let Some(s) = self.session.as_mut() {
                         s.audio(&samples);
                     }
+                    // (A run keeps its music for Watch my run, up to RUN_AUDIO_MAX_S.)
+                    if self.running && self.run_audio.len() < (RUN_AUDIO_MAX_S * SR) as usize {
+                        if self.run_audio.is_empty() {
+                            self.run_audio_s0 = self.analysed as f64 / SR;
+                        }
+                        self.run_audio.extend_from_slice(&samples);
+                    }
+                    self.analysed += samples.len() as u64;
                 }
                 Msg::Level { peak, heard } => {
                     self.log(serde_json::json!({"k": "cap", "h": heard}));
@@ -1151,6 +1199,15 @@ impl App {
                 Event::Voice(Report::Skipped { .. }) => self.voices[1] += 1,
                 Event::Voice(Report::Dropped { .. }) => self.voices[2] += 1,
                 Event::Voice(Report::Cancelled { .. }) => self.voices[3] += 1,
+                Event::Voice(Report::ReplayStarted { at, actual }) => {
+                    self.log(
+                        serde_json::json!({"k": "replay", "at": at, "late": (actual - at) * 1e3}),
+                    );
+                    eprintln!(
+                        "slice: the replay's music started ({:.1} ms late)",
+                        (actual - at) * 1e3
+                    );
+                }
             }
         }
     }
@@ -1633,8 +1690,18 @@ impl App {
         engine.settle_s = self.settle_s();
         self.engine = engine;
         self.scene = Scene::default();
+        // The run's music under it, heard from the replay's start: a little ahead, so the mixer
+        // can start it on time.
+        let began = now + REPLAY_LEAD_S;
+        let skip = ((self.run_start - self.run_audio_s0) * SR).round() as i64;
+        let music = replay_music(&self.run_audio, skip, seconds + 0.5, self.audio.out.rate);
+        self.replay_music = Some(Arc::clone(&music));
+        self.send(Command::Replay {
+            samples: music,
+            at: began - self.audio.l_out,
+        });
         self.watch = Some(Watch {
-            began: now,
+            began,
             s0: self.run_start,
             span: seconds,
             arrivals: 0,
@@ -1642,12 +1709,19 @@ impl App {
         });
     }
 
+    /// Ends Watch my run, and its music.
+    fn stop_watch(&mut self) {
+        if self.watch.take().is_some() {
+            self.send(Command::StopReplay);
+        }
+    }
+
     /// Steps the replay showing to the time since it began, as the run went.
     fn watch_tick(&mut self, now: f64) {
         let Some(w) = self.watch.as_mut() else {
             return;
         };
-        let t = now - w.began;
+        let t = (now - w.began).max(0.0);
         let s0 = w.s0;
         let fed = &self.run_arrivals[w.arrivals..];
         let n = fed.iter().take_while(|a| a.arrived - s0 <= t).count();
@@ -1674,7 +1748,7 @@ impl App {
             &self.engine.view.borrow(),
         );
         if t > w.span + 0.5 {
-            self.watch = None;
+            self.stop_watch();
             eprintln!(
                 "slice: replay over: {} kills (the run had {})",
                 self.engine.view.borrow().kills,
@@ -1952,7 +2026,13 @@ impl App {
         self.listen = Listen::default();
         self.device = coreaudio::default_output();
         // (A new source is a new session: its song time starts again.)
+        self.analysed = 0;
         self.begin_session();
+        // (Watch my run's music goes on through the new output, partway in if it is late.)
+        if let (Some(w), Some(m)) = (&self.watch, &self.replay_music) {
+            let (samples, at) = (Arc::clone(m), w.began - self.audio.l_out);
+            self.send(Command::Replay { samples, at });
+        }
     }
 
     /// The debug menu's lines.
@@ -2031,7 +2111,8 @@ impl App {
             })
             .collect();
         self.run_keys.clear();
-        self.watch = None;
+        self.run_audio.clear();
+        self.stop_watch();
         self.run_index = self.session.as_mut().map_or(0, |s| s.run_started(s0));
         self.running = true;
         self.listen.reset(false);
@@ -2084,7 +2165,7 @@ impl App {
         // Watch my run: W on the end card replays it; Esc stops the replay.
         if pressed && !self.running {
             if self.watch.is_some() && code == KeyCode::Escape {
-                self.watch = None;
+                self.stop_watch();
                 return;
             }
             if self.watch.is_none() && self.over.is_some() && code == KeyCode::KeyW {
@@ -2241,6 +2322,17 @@ impl ApplicationHandler for App {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn a_runs_music_is_resampled_from_its_start_with_silence_before_it() {
+        let audio: Vec<f32> = (0..441).map(|k| k as f32).collect();
+        // (From 10 samples before the music, for 0.01 s at twice its rate.)
+        let m = replay_music(&audio, -10, 0.01, 2.0 * SR);
+        assert_eq!(m.len(), 882);
+        assert_eq!(m[0], 0.0);
+        assert_eq!(m[20], 0.0);
+        assert!((m[21] - 0.5).abs() < 1e-6);
+        assert!((m[30] - 5.0).abs() < 1e-6);
+    }
     use super::*;
 
     #[test]
