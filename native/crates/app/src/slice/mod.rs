@@ -11,8 +11,10 @@
 //!     playlist-survivors --click       # also clicks on each committed beat
 //!     playlist-survivors --file <path> --volume 0.3  # the file quieter (0: silent, still heard)
 //!     playlist-survivors --file <path> --mute  # everything runs, the device gets silence
+//!     playlist-survivors --input-offset-ms 30 --stomp-extra-ms 10  # calibration for this session
 //!     playlist-survivors --still <png>  # 20 s of the house track's stream through the engine, drawn offscreen
 
+mod calibration;
 // The tap and output are the phase 0 spike's (57e846a^:native/spike), kept as they were.
 #[allow(clippy::pedantic, unused_qualifications, dead_code)]
 mod coreaudio;
@@ -60,6 +62,7 @@ use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::{Window, WindowId};
 
 use audio::mixer::{Command, Report, Source as Voiced, Voice};
+use calibration::Calibration;
 use coreaudio::now_s;
 use gfx::Gfx;
 use hud::{HudState, KeyLight, PressMark};
@@ -86,6 +89,9 @@ struct Options {
     volume: f32,
     click: bool,
     mute: bool,
+    /// Calibration offsets for this session (ms), over the saved ones.
+    input_offset_ms: Option<f64>,
+    stomp_extra_ms: Option<f64>,
 }
 
 fn options(args: &[String]) -> Result<Options, String> {
@@ -95,6 +101,8 @@ fn options(args: &[String]) -> Result<Options, String> {
         volume: 1.0,
         click: false,
         mute: false,
+        input_offset_ms: None,
+        stomp_extra_ms: None,
     };
     let mut it = args.iter();
     while let Some(a) = it.next() {
@@ -102,6 +110,17 @@ fn options(args: &[String]) -> Result<Options, String> {
             "--file" => o.file = Some(it.next().ok_or("--file needs a path")?.into()),
             "--click" => o.click = true,
             "--mute" => o.mute = true,
+            "--input-offset-ms" | "--stomp-extra-ms" => {
+                let v = it
+                    .next()
+                    .and_then(|v| v.parse().ok())
+                    .ok_or_else(|| format!("{a} needs a number"))?;
+                if a == "--input-offset-ms" {
+                    o.input_offset_ms = Some(v);
+                } else {
+                    o.stomp_extra_ms = Some(v);
+                }
+            }
             "--still" => o.still = Some(it.next().ok_or("--still needs a path")?.into()),
             "--volume" => {
                 o.volume = it
@@ -260,8 +279,21 @@ pub fn run(args: &[String]) -> Result<(), String> {
     )?;
     let engine = world.engine()?;
     let key_times = keys::KeyTimes::install();
+    let mut calibration = Calibration::load();
+    if let Some(ms) = opts.input_offset_ms {
+        calibration.input_offset_ms = Some(ms);
+    }
+    if let Some(ms) = opts.stomp_extra_ms {
+        calibration.stomp_extra_ms = Some(ms);
+    }
+    eprintln!(
+        "slice: input offsets {:.0} ms, stomp {:.0} ms",
+        calibration.offset_s(InputKey::Up) * 1e3,
+        calibration.offset_s(InputKey::Space) * 1e3
+    );
     let mut app = App {
         key_times,
+        calibration,
         gfx: None,
         sounds,
         art,
@@ -417,8 +449,9 @@ fn still(path: &Path) -> Result<(), String> {
 }
 
 struct App {
-    /// Key press times from the window server.
+    /// Key press times from the window server, and the player's calibration.
     key_times: keys::KeyTimes,
+    calibration: Calibration,
     gfx: Option<Gfx>,
     sounds: Option<Sounds>,
     art: Atlases,
@@ -783,7 +816,9 @@ impl App {
             InputKey::Space => 4,
         };
         self.keys[slot].held = pressed;
+        // (Less the player's calibration offset for that kind of key.)
         if let Some(s) = self.song_at(now) {
+            let s = s - self.calibration.offset_s(key);
             self.engine.key(s - self.run_start, key, pressed);
         }
     }
