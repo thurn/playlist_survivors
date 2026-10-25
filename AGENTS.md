@@ -4,7 +4,7 @@ Implement every prompt in its own Tollgate worktree, never by committing on mast
 
 ## Features
 
-Executor sessions in Hive project `playlist_survivors` work from beads.
+Executor sessions in Hive project `playlist_survivors` work from beads. Hive's beads live in `~/brain/.beads`, not this repository.
 
 - **Delivery.** Every change, including feature beads, delivers through an independent Tollgate worktree (`tg candidate`, then `tg approve --wait`). Never commit on master or use `tg push-master`. A bead is done when its commit is on `staging`: wait for the gate stage only, never for the release stage.
 - **Worktrees.** Use a fresh worktree per prompt or bead. Run `npm ci` in each new worktree before running TS checks (a native-only bead needs none). Run Tollgate waits from the main checkout, since promotion removes the clean worktree.
