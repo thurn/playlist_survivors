@@ -12,6 +12,8 @@
 //!     playlist-survivors --click       # also clicks on each committed beat
 //!     playlist-survivors --file <path> --volume 0.3  # the file quieter (0: silent, still heard)
 //!     playlist-survivors --file <path> --mute  # everything runs, the device gets silence
+//!     playlist-survivors --file <path> --headless --seconds 30  # no window, no Dock icon, muted:
+//!                                     # the whole live path on a timer, for checks (then exits)
 //!     playlist-survivors --input-offset-ms 30 --stomp-extra-ms 10  # calibration for this session
 //!     playlist-survivors --still <png>  # 20 s of the house track's stream through the engine, drawn offscreen
 //!     playlist-survivors --bench [--check]  # the frame's work (sim, evaluate, encode) over 60 s of it, offscreen
@@ -81,6 +83,9 @@ const SOUND_PEAK: f32 = 0.01;
 /// This long without sound ends the run.
 /// The analyzer's evidence gate (`manifest.json`'s `streamParams.gate`).
 const GATE: f64 = 0.2;
+/// The interim end: this long without sound, this far into a run (see `render`).
+const SILENT_END_S: f64 = 5.0;
+const MIN_RUN_S: f64 = 30.0;
 /// How late a key can reach the engine: the window server's delivery to the main thread (p95
 /// 30.5 ms, docs/design/native-app.md "Targets") and up to a frame more. The engine's settling
 /// window covers it and the calibration's offset, so a press is applied at its own time.
@@ -101,6 +106,9 @@ struct Options {
     mute: bool,
     bench: bool,
     check: bool,
+    headless: bool,
+    /// Exit after this long (s).
+    seconds: Option<f64>,
     /// Calibration offsets for this session (ms), over the saved ones.
     input_offset_ms: Option<f64>,
     stomp_extra_ms: Option<f64>,
@@ -115,6 +123,8 @@ fn options(args: &[String]) -> Result<Options, String> {
         mute: false,
         bench: false,
         check: false,
+        headless: false,
+        seconds: None,
         input_offset_ms: None,
         stomp_extra_ms: None,
     };
@@ -124,6 +134,17 @@ fn options(args: &[String]) -> Result<Options, String> {
             "--file" => o.file = Some(it.next().ok_or("--file needs a path")?.into()),
             "--click" => o.click = true,
             "--mute" => o.mute = true,
+            "--headless" => {
+                o.headless = true;
+                o.mute = true;
+            }
+            "--seconds" => {
+                o.seconds = Some(
+                    it.next()
+                        .and_then(|v| v.parse().ok())
+                        .ok_or("--seconds needs a number")?,
+                );
+            }
             "--input-offset-ms" | "--stomp-extra-ms" => {
                 let v = it
                     .next()
@@ -286,7 +307,16 @@ pub fn run(args: &[String]) -> Result<(), String> {
         heard_after * 1e3
     );
     let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
-    let event_loop = EventLoop::new().map_err(|e| e.to_string())?;
+    // (Headless, the app never shows: no window, no Dock icon, no focus taken.)
+    let event_loop = if opts.headless {
+        use winit::platform::macos::{ActivationPolicy, EventLoopBuilderExtMacOS};
+        EventLoop::builder()
+            .with_activation_policy(ActivationPolicy::Prohibited)
+            .build()
+    } else {
+        EventLoop::new()
+    }
+    .map_err(|e| e.to_string())?;
     let stop = Arc::new(AtomicBool::new(false));
     let (tx, rx) = mpsc::channel();
     // (The output's latency plus this: what the analysis thread adds to a buffer's host time.)
@@ -343,8 +373,10 @@ pub fn run(args: &[String]) -> Result<(), String> {
         heard_offset,
         device_at: 0.0,
         frame_ms: Vec::new(),
-        paced: false,
+        paced: opts.headless,
         occluded: false,
+        headless: opts.headless,
+        exit_at: opts.seconds.map_or(f64::INFINITY, |s| now_s() + s),
         focused: false,
         next_frame: 0.0,
         keys: [KeyLight::default(); 5],
@@ -656,6 +688,9 @@ struct App {
     /// gives no drawable to wait on); the next one is due at host `next_frame`.
     paced: bool,
     occluded: bool,
+    /// No window: frames on the timer, drawn nowhere; and when to exit (host s), if asked.
+    headless: bool,
+    exit_at: f64,
     /// Whether the window has the keyboard.
     focused: bool,
     next_frame: f64,
@@ -742,7 +777,13 @@ impl App {
                 .level(&self.engine.view.borrow(), now, &self.world.lib);
             let end = if self.engine.fallen() {
                 Some(End::Fell)
-            } else if self.engine.done() {
+            } else if self.engine.done()
+                // (Interim, until the sim's confirmed end allows for the evidence's tail: the song
+                // has ended when nothing has sounded for SILENT_END_S, MIN_RUN_S into the run.)
+                || (s - self.run_start > MIN_RUN_S
+                    && self.last_sound.is_finite()
+                    && now - self.last_sound > SILENT_END_S)
+            {
                 Some(End::Song)
             } else {
                 None
@@ -831,7 +872,13 @@ impl App {
                 ));
             }
         }
-        let Some(g) = self.gfx.as_mut() else { return };
+        let Some(g) = self.gfx.as_mut() else {
+            // (Headless: the frame's work is the engine's and the sounds'.)
+            if self.mute {
+                self.frame_ms.push(t0.elapsed().as_secs_f64() * 1e3);
+            }
+            return;
+        };
         let (w, h) = g.logical_size();
         let upcoming: Vec<f64> =
             song.map_or_else(Vec::new, |s| self.beats.iter().map(|b| b - s).collect());
@@ -1097,7 +1144,7 @@ impl App {
 
 impl ApplicationHandler for App {
     fn resumed(&mut self, el: &ActiveEventLoop) {
-        if self.gfx.is_some() {
+        if self.gfx.is_some() || self.headless {
             return;
         }
         let window = el.create_window(
@@ -1150,6 +1197,10 @@ impl ApplicationHandler for App {
     }
 
     fn about_to_wait(&mut self, el: &ActiveEventLoop) {
+        if now_s() >= self.exit_at {
+            el.exit();
+            return;
+        }
         if !self.paced {
             // (The display paces the frames: the drawable waits for the next refresh.)
             if let Some(g) = &self.gfx {
@@ -1163,7 +1214,10 @@ impl ApplicationHandler for App {
         let now = now_s();
         if now >= self.next_frame {
             self.next_frame = now + 1.0 / 120.0;
-            if let Some(g) = &self.gfx {
+            if self.headless {
+                self.drain();
+                self.render();
+            } else if let Some(g) = &self.gfx {
                 g.window.request_redraw();
             }
         }
