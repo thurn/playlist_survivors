@@ -1114,6 +1114,23 @@ presented time stays with D5.
 - In File mode the mixer plays the file, and the samples it renders feed the
   analyzer, so File mode runs the same path as System from the ring buffer on.
 
+**Landed:** `audio::mixer` (voices at host times on the render timeline,
+started on their sample, moved or cancelled until they start, started partway
+while their onset is ahead and skipped after; the file under a duck; the
+effects' bus, compressor and level; a limiter), `audio::follow` (the level
+follower, causal: the last second's level against the last minute's 90th
+percentile), and the app's `slice/sounds.rs` (the crisp-steel palette for the
+simulation's sound causes, kills and weapons on the next sixteenth at least
+`NEVER_LATE` (or the output's latency, if longer) after they are known, kills
+sharing a slot as a multi-kill, faded by the evidence of their beat below the
+gate, panned by the camera, scheduled at heard - `L_out` - onset). The played
+file's samples feed the analyzer with each rendered buffer's timing. Until
+G5's runner simulates ahead, a swing's strike and a step are known only as
+they happen: they play as soon as the output can (about 60 ms late) and the
+whoosh before a strike is dropped. Not yet: the director's palettes by
+loudness, tuned palettes, and the voice budget. `--mute` renders everything
+and sends silence, logging the sounds started, skipped and dropped.
+
 ### The runner (G5)
 
 - Speculation with rollback, as `src/live/runner.ts` and
