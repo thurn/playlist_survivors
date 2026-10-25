@@ -110,7 +110,9 @@ pub struct Sounds {
 }
 
 /// A voice's identity, so each frame's speculation can be compared with what is scheduled: what it
-/// plays, its slot (0.1 ms), where (quarter pixels) and how many kills share it.
+/// plays, the time of the cause it answers (0.1 ms), where (quarter pixels) and how many kills share
+/// it. (Not the slot it was placed on: a beat arriving moves the slots past the last committed one,
+/// and a started voice must not be scheduled again for it.)
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 struct VoiceKey {
     key: String,
@@ -119,10 +121,12 @@ struct VoiceKey {
     n: u32,
 }
 
-/// A sound placed: its palette key, the song time it plays at, its place, level and duck.
+/// A sound placed: its palette key, the song time it plays at and its cause's, its place, level
+/// and duck.
 struct Placed {
     key: String,
     s: f64,
+    cause_s: f64,
     x: f64,
     gain: f64,
     duck: bool,
@@ -132,7 +136,7 @@ impl Placed {
     fn id(&self, n: u32) -> VoiceKey {
         VoiceKey {
             key: self.key.clone(),
-            s: (self.s * 1e4).round() as i64,
+            s: (self.cause_s * 1e4).round() as i64,
             x: if self.x.is_finite() {
                 (self.x * 4.0).round() as i64
             } else {
@@ -223,7 +227,10 @@ impl Sounds {
                 };
                 if p.key == "kill" {
                     match kills.iter_mut().find(|(k, _)| (k.s - p.s).abs() < 1e-6) {
-                        Some((_, n)) => *n += 1,
+                        Some((k, n)) => {
+                            *n += 1;
+                            k.cause_s = k.cause_s.min(p.cause_s);
+                        }
                         None => kills.push((p, 1)),
                     }
                 } else {
@@ -406,6 +413,7 @@ fn place(call: &Call, known: f64, at: &At) -> Option<Placed> {
     (fade > 0.0).then(|| Placed {
         key: call.key.clone(),
         s,
+        cause_s: call.s,
         x: call.x,
         gain: call.gain * fade,
         duck: call.duck,
@@ -575,5 +583,61 @@ mod tests {
         };
         sounds.reconcile(&[swing], &at, &mut out);
         assert!(out.is_empty());
+    }
+
+    #[test]
+    fn a_started_voice_stays_when_a_new_beat_moves_its_slot() {
+        let lib = super::super::World::load().unwrap().lib;
+        let palette = lib.sound_palettes[PALETTE].clone();
+        let samples = palette
+            .sounds
+            .values()
+            .flatten()
+            .map(|s| (sample_id(s).to_string(), (0, 0.0)))
+            .collect();
+        let mut sounds = Sounds {
+            palette,
+            samples,
+            weapons: HashMap::new(),
+            scheduled: HashMap::new(),
+            next_id: 0,
+        };
+        // Beats to 2.5 s; a kill at 2.6 lands on an extrapolated sixteenth (2.625).
+        let early = beats(4, 0.5, 1.0);
+        let at = At {
+            seed: 1.0,
+            run_start: 0.0,
+            beats: &early,
+            gate: 0.2,
+            camera: (0.0, 0.0, 1.0),
+            clock: (0.0, 100.0),
+            l_out: 0.02,
+            never_late: NEVER_LATE,
+            now: 100.0,
+            ahead: 0.01,
+        };
+        let kill = [Caused {
+            cause: Cause::Kill { s: 2.6, x: 0.0 },
+            known: 2.4,
+        }];
+        let mut out = Vec::new();
+        sounds.reconcile(&kill, &at, &mut out);
+        assert_eq!(out.len(), 1);
+        // The next beat commits 20 ms early, moving the slot; the voice has started by then.
+        let mut later = early.clone();
+        later.push(Beat {
+            t: 2.98,
+            known_at: 2.6,
+            period: 0.48,
+            evidence: 1.0,
+        });
+        let at = At {
+            beats: &later,
+            now: 100.0 + 2.62,
+            ..at
+        };
+        out.clear();
+        sounds.reconcile(&kill, &at, &mut out);
+        assert!(out.is_empty(), "scheduled again: {out:?}");
     }
 }

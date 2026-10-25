@@ -1,11 +1,11 @@
 //! `ps runner-bench`: the live engine's cost (docs/design/native-app.md, "Targets"). House-128's
 //! stream replayed as it would arrive, frames at 120 Hz with a burst now and then, a press on each
 //! committed beat reaching the runner 5 to 35 ms late, the simulation 0.2 s ahead: each frame's
-//! engine time, and the rollbacks' re-simulation per second of play. `--check` fails above the
+//! engine time (this thread's CPU time), and the rollbacks' re-simulation per second of play
+//! (the engine's own wall clock, `RunnerStats::resim_s`). `--check` fails above the
 //! gates.
 
 use std::path::{Path, PathBuf};
-use std::time::Instant;
 
 use eval::live::Engine;
 use indexmap::IndexMap;
@@ -14,9 +14,12 @@ use sim::core::rng::{Part, Rng};
 use sim::movement::InputKey;
 use stream::{Replay, StreamFile};
 
-/// The gates, each its first measurement's p95 plus half (docs/design/native-app.md, "Targets").
-const FRAME_GATE_MS: f64 = 1.0;
-const RESIM_GATE_MS: f64 = 31.0;
+/// The gates (docs/design/native-app.md, "Targets"): the song simulated again per second of play,
+/// the same on any machine, at its measurement plus half; the timings, which a loaded machine
+/// stretches two- or threefold, at the targets themselves.
+const REPLAY_GATE: f64 = 7.2;
+const FRAME_GATE_MS: f64 = 4.0;
+const RESIM_GATE_MS: f64 = 250.0;
 const LEAD: f64 = 0.2;
 
 fn root() -> PathBuf {
@@ -28,6 +31,17 @@ fn source(rel: &str) -> Result<SourceFile, String> {
         name: rel.to_string(),
         text: std::fs::read_to_string(root().join(rel)).map_err(|e| format!("{rel}: {e}"))?,
     })
+}
+
+/// This thread's CPU time (s): what the engine costs, whatever else the machine is doing.
+fn cpu_s() -> f64 {
+    let mut ts = libc::timespec {
+        tv_sec: 0,
+        tv_nsec: 0,
+    };
+    // SAFETY: clock_gettime writes the timespec it is given.
+    unsafe { libc::clock_gettime(libc::CLOCK_THREAD_CPUTIME_ID, &raw mut ts) };
+    ts.tv_sec as f64 + ts.tv_nsec as f64 * 1e-9
 }
 
 fn percentile(v: &mut [f64], p: f64) -> f64 {
@@ -108,9 +122,9 @@ fn run(args: &[String]) -> Result<bool, String> {
             engine.key(s, key, pressed);
             next += 1;
         }
-        let t0 = Instant::now();
+        let t0 = cpu_s();
         engine.frame(now, LEAD);
-        frames.push(t0.elapsed().as_secs_f64() * 1e3);
+        frames.push((cpu_s() - t0) * 1e3);
         if now >= second {
             resim_per_second.push((engine.stats.resim_s - resim_at_second) * 1e3);
             resim_at_second = engine.stats.resim_s;
@@ -131,19 +145,19 @@ fn run(args: &[String]) -> Result<bool, String> {
     let s = engine.stats;
     println!("runner-bench: house-128, {seconds:.0} s, {n} frames at 120 Hz, lead {LEAD} s");
     println!(
-        "  engine per frame: median {f50:.3} ms, p95 {f95:.3}, p99 {f99:.3}, max {fmax:.2} (gate p95 <= {FRAME_GATE_MS} ms)"
+        "  engine per frame (thread CPU): median {f50:.3} ms, p95 {f95:.3}, p99 {f99:.3}, max {fmax:.2} (gate p99 <= {FRAME_GATE_MS} ms)"
     );
     println!(
-        "  re-simulation per second: median {r50:.1} ms, p95 {r95:.1} (gate p95 <= {RESIM_GATE_MS} ms; target 250)"
+        "  re-simulation per second (wall): median {r50:.1} ms, p95 {r95:.1} (gate p95 <= {RESIM_GATE_MS} ms)"
     );
     println!(
-        "  {} rollbacks replaying {:.1} s of song ({:.1}x real time), {} late keys",
+        "  {} rollbacks replaying {:.1} s of song ({:.1}x real time; gate <= {REPLAY_GATE}x), {} late keys",
         s.rollbacks,
         s.replayed_s,
         s.replayed_s / seconds,
         s.late_keys
     );
-    let ok = f95 <= FRAME_GATE_MS && r95 <= RESIM_GATE_MS;
+    let ok = f99 <= FRAME_GATE_MS && r95 <= RESIM_GATE_MS && s.replayed_s / seconds <= REPLAY_GATE;
     if check && !ok {
         eprintln!("runner-bench: over the gate");
     }

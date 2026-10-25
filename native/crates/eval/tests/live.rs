@@ -297,3 +297,56 @@ fn a_restored_snapshot_carries_on_as_the_run_would() {
         assert_eq!(ja.get(k), jb.get(k), "record {k}");
     }
 }
+
+/// Each moment reaches the drawer once: under speculation the stream's arrivals roll the
+/// simulation back over and over, and the unsettled records are laid over the view afresh each
+/// frame, yet the moments taken match a plain run's, one for one.
+#[test]
+fn each_moment_is_passed_on_once() {
+    let file = house();
+    let end = 20.0;
+    let moments_of = |frames: &[f64], lead: f64| {
+        let mut replay = Replay::new(file.log.clone());
+        let mut taken = Vec::new();
+        let (_, e) = run(frames, lead, &Vec::new(), |e, now| {
+            e.feed(|log| replay.feed_to(log, now));
+            taken.extend(e.view.borrow_mut().take_moments());
+        });
+        taken.extend(e.view.borrow_mut().take_moments());
+        let mut d: Vec<String> = taken.iter().map(|m| format!("{m:?}")).collect();
+        d.sort();
+        (d, e.stats.rollbacks)
+    };
+    let even: Vec<f64> = (1..=(end * 60.0) as usize)
+        .map(|k| k as f64 / 60.0)
+        .collect();
+    let (plain, _) = moments_of(&even, 0.0);
+    let (ahead, rollbacks) = moments_of(&bursty(end, "moments"), 0.2);
+    assert!(
+        rollbacks > 50 && plain.len() > 100,
+        "{rollbacks} rollbacks, {} moments",
+        plain.len()
+    );
+    assert_eq!(ahead, plain);
+}
+
+/// An arrival stamped before the settled time (a stall) is stamped at it, and rolls nothing
+/// before it back.
+#[test]
+fn a_stalled_arrival_is_stamped_at_the_settled_time() {
+    let (_, mut e) = run(&[1.0, 2.0], 0.2, &Vec::new(), |_, _| {});
+    let settled = 3.0 - SETTLE_S;
+    e.frame(3.0, 0.2);
+    let rollbacks = e.stats.rollbacks;
+    let beat = stream::Beat {
+        t: 3.5,
+        known_at: 2.5,
+        period: 0.47,
+        evidence: 0.9,
+    };
+    e.feed(|log| log.beats.push(beat));
+    let stamped = e.stream().beats.last().unwrap().known_at;
+    assert!((stamped - settled).abs() < 1e-12, "{stamped}");
+    e.frame(3.01, 0.2);
+    assert_eq!(e.stats.rollbacks, rollbacks + 1);
+}

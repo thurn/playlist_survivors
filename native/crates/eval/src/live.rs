@@ -476,7 +476,8 @@ impl Recorder for LiveRecorder {
     }
 }
 
-/// No key or arrival can still come for times more than this far before now (song s).
+/// No key or arrival can still come for times more than this far before now (song s), unless the
+/// engine's `settle_s` says otherwise (the app widens it to its key delivery and calibration).
 pub const SETTLE_S: f64 = 0.04;
 /// Snapshot spacing along the simulation's run (song s).
 pub const SNAP_DT: f64 = 1.0 / 30.0;
@@ -525,8 +526,11 @@ pub struct Engine {
     /// The journal index from which sounds are looked for.
     sound_idx: usize,
     snaps: Vec<Snap>,
-    /// Song time before which the state is final.
+    /// Song time before which the state is final, this far behind now.
     settled: f64,
+    pub settle_s: f64,
+    /// The stamp of the last final record.
+    final_stamp: f64,
     /// Keys waiting for the next frame, and every key as applied (from the oldest snapshot's).
     pending: Vec<KeyEvent>,
     applied: Vec<KeyEvent>,
@@ -595,6 +599,8 @@ impl Engine {
             sound_idx: 0,
             snaps: vec![first],
             settled: f64::NEG_INFINITY,
+            settle_s: SETTLE_S,
+            final_stamp: f64::NEG_INFINITY,
             pending: Vec::new(),
             applied: Vec::new(),
             arrival: None,
@@ -696,7 +702,7 @@ impl Engine {
             self.stats.resim_s += t0.elapsed().as_secs_f64();
         }
         self.run(now + lead);
-        self.settled = self.settled.max(now - SETTLE_S);
+        self.settled = self.settled.max(now - self.settle_s);
         // Snapshots older than the settled time go, except the newest one before it.
         let k = self
             .snaps
@@ -792,6 +798,7 @@ impl Engine {
             && let Some((s, rec)) = j.get(self.settled_idx)
         {
             self.settled_view.apply(*s, rec);
+            self.final_stamp = *s;
             fresh.extend(self.settled_view.moments.drain(..).map(|m| (*s, m)));
             if let Some(log) = &mut self.settled_log {
                 log.push((*s, rec.clone()));
@@ -843,16 +850,18 @@ impl Engine {
                 self.passed.push((s, m));
             }
         }
-        // (A record stamped at the oldest snapshot's stop may fall either side of its mark.)
-        let final_s = self.snaps[0].s;
-        self.passed.retain(|(s, _)| *s >= final_s - 1e-9);
+        // (Records after the last final one are stamped no earlier than it: a moment passed on
+        // is remembered until its record is final, whatever the snapshot's own time.)
+        let final_stamp = self.final_stamp;
+        self.passed.retain(|(s, _)| *s >= final_stamp);
         *v = shown;
         v.moments = moments;
     }
 
-    /// Whether the hero has fallen.
+    /// Whether the hero has fallen, for good (in the final records: a fall a late key or arrival
+    /// could still undo doesn't end the run).
     pub fn fallen(&self) -> bool {
-        self.view.borrow().health <= 0.0
+        self.settled_view.health <= 0.0
     }
 }
 

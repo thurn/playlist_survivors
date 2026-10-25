@@ -320,6 +320,7 @@ dependencies = [
  "analysis",
  "eval",
  "indexmap",
+ "libc",
  "serde_json",
  "sim",
  "stream",

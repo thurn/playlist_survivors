@@ -81,9 +81,14 @@ const SOUND_PEAK: f32 = 0.01;
 const SILENCE_S: f64 = 3.0;
 /// The analyzer's evidence gate (`manifest.json`'s `streamParams.gate`).
 const GATE: f64 = 0.2;
-/// The frame's work, p95 (ms): its first measurement's plus half (docs/design/native-app.md,
-/// "Targets").
-const FRAME_WORK_GATE_MS: f64 = 1.4;
+/// How late a key can reach the engine: the window server's delivery to the main thread (p95
+/// 30.5 ms, docs/design/native-app.md "Targets") and up to a frame more. The engine's settling
+/// window covers it and the calibration's offset, so a press is applied at its own time.
+const KEY_LATE_S: f64 = 0.05;
+/// The frame's work, p99 in thread CPU time (ms): the target, half a frame at 120 Hz
+/// (docs/design/native-app.md, "Targets"; a loaded machine stretches the measurement two- or
+/// threefold, so its p95 plus half would flake).
+const FRAME_WORK_GATE_MS: f64 = 4.0;
 /// Under the ground (the TS game's world clear).
 const CLEAR: [f64; 3] = [0.06, 0.07, 0.05];
 
@@ -334,13 +339,25 @@ pub fn run(args: &[String]) -> Result<(), String> {
         keys: [KeyLight::default(); 5],
         presses: VecDeque::new(),
     };
+    app.engine.settle_s = app.settle_s();
     let result = event_loop.run_app(&mut app).map_err(|e| e.to_string());
     stop.store(true, Ordering::Relaxed);
     let _ = analyzer.join();
     result
 }
 
-/// The frame's own work (docs/design/native-app.md, "Targets"): 60 s of the house track's stream
+/// This thread's CPU time (s): the frame's cost, whatever else the machine is doing.
+fn thread_cpu_s() -> f64 {
+    let mut ts = libc::timespec {
+        tv_sec: 0,
+        tv_nsec: 0,
+    };
+    // SAFETY: clock_gettime writes the timespec it is given.
+    unsafe { libc::clock_gettime(libc::CLOCK_THREAD_CPUTIME_ID, &raw mut ts) };
+    ts.tv_sec as f64 + ts.tv_nsec as f64 * 1e-9
+}
+
+/// The frame's own work, in this thread's CPU time (docs/design/native-app.md, "Targets"): 60 s of the house track's stream
 /// through the engine at 120 Hz, 0.2 s ahead, a press on each beat 5 to 35 ms late; each frame's
 /// scene and HUD built and encoded offscreen at 1920 x 1080. `check` fails above the gate.
 fn bench(check: bool) -> Result<(), String> {
@@ -362,7 +379,7 @@ fn bench(check: bool) -> Result<(), String> {
     let mut jitter = 0.0f64;
     for frame in 1..=(60 * 120) {
         let s = f64::from(frame) / 120.0;
-        let t0 = std::time::Instant::now();
+        let t0 = thread_cpu_s();
         engine.feed(|log| replay.feed_to(log, s));
         jitter = (jitter * 7.3 + 0.37).fract();
         while next < beats.len() && beats[next] + 0.005 + 0.03 * jitter <= s {
@@ -430,7 +447,7 @@ fn bench(check: bool) -> Result<(), String> {
             grade: layers.grade,
             overlay: &overlay,
         });
-        times.push(t0.elapsed().as_secs_f64() * 1e3);
+        times.push((thread_cpu_s() - t0) * 1e3);
     }
     let r = engine.stats;
     times.sort_by(f64::total_cmp);
@@ -445,10 +462,10 @@ fn bench(check: bool) -> Result<(), String> {
         r.rollbacks,
         r.resim_s * 1e3
     );
-    if check && at(0.95) > FRAME_WORK_GATE_MS {
+    if check && at(0.99) > FRAME_WORK_GATE_MS {
         return Err(format!(
-            "frame work p95 {:.2} ms over the gate {FRAME_WORK_GATE_MS} ms",
-            at(0.95)
+            "frame work p99 {:.2} ms over the gate {FRAME_WORK_GATE_MS} ms",
+            at(0.99)
         ));
     }
     Ok(())
@@ -913,11 +930,24 @@ impl App {
         }));
     }
 
+    /// The engine's settling window: no key arrives later than this after its (calibrated) time.
+    fn settle_s(&self) -> f64 {
+        let offset = self
+            .calibration
+            .offset_s(InputKey::Up)
+            .max(self.calibration.offset_s(InputKey::Space))
+            .max(0.0);
+        eval::live::SETTLE_S + KEY_LATE_S + offset
+    }
+
     /// A new run from the song time heard now, with a fresh engine and stream.
     fn restart(&mut self) {
         let now = now_s();
         match self.world.engine() {
-            Ok(engine) => self.engine = engine,
+            Ok(mut engine) => {
+                engine.settle_s = self.settle_s();
+                self.engine = engine;
+            }
             Err(e) => {
                 eprintln!("slice: can't restart: {e}");
                 return;

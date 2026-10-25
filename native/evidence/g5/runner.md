@@ -21,8 +21,26 @@ cd native && cargo run --release -p cli -- runner-bench
 | 4 | 0.025 / 0.553 / 0.800 / 1.55 | 5.6 / 19.8 | same |
 
 Re-simulation p95 is about 20 ms of CPU per second against the 250 ms target: no fallback
-(docs/design/native-app.md, "Arrivals roll back like late keys") is needed. Gates, the worst p95
-plus half: engine per frame p95 ≤ 1.0 ms, re-simulation p95 ≤ 31 ms per second.
+(docs/design/native-app.md, "Arrivals roll back like late keys") is needed.
+
+## Gates (after the cold review)
+
+The plan's rule, each first measurement's p95 plus half, gave gates (engine p95 ≤ 1.0 ms,
+re-simulation p95 ≤ 31 ms/s, frame work p95 ≤ 1.4 ms) that a loaded machine breaks with no code
+change. Later the same day, at load average 25–39, the same benches measured engine per frame (now
+in this thread's CPU time) p95 1.24–1.60 ms, p99 1.70–2.50, and re-simulation (wall) p95 46–387
+ms per second: macOS moves busy threads onto the efficiency cores, so even CPU time stretches two-
+or threefold. The song re-simulated per second of play is the same on every run (4.8×, 2043
+rollbacks), so it carries the tight gate:
+
+| Gate | Value | Where |
+|---|---|---|
+| Song re-simulated per second of play | ≤ 7.2× (4.8 plus half) | `ps runner-bench --check` |
+| Engine per frame, p99, thread CPU | ≤ 4 ms (the target) | `ps runner-bench --check` |
+| Re-simulation per second, p95, wall | ≤ 250 ms (the target) | `ps runner-bench --check` |
+| Frame work, p99, thread CPU | ≤ 4 ms (the target) | `playlist-survivors --bench --check` |
+
+Both run in the release stage's native step.
 
 ## The frame's work: sim, evaluate, encode (`playlist-survivors --bench`)
 
@@ -39,8 +57,9 @@ cd native && cargo run --release -p app -- --bench
 | 2 | 0.24 / 0.85 / 1.13 / 5.72 |
 | 3 | 0.23 / 0.80 / 1.04 / 5.87 |
 
-p99 about 1.2 ms against the 4 ms target. Gate: p95 ≤ 1.4 ms (0.92 plus half). The max (about
-6 ms, once per run) is the first frames' pipeline and texture setup.
+p99 about 1.2 ms against the 4 ms target (in thread CPU time later: p95 0.87–0.91, p99 1.14–1.15,
+max under 2.5 ms). The wall-clock max (about 6 ms, once per run) is the first frames' pipeline and
+texture setup.
 
 What this does not show: the GPU's own time (the encode is the CPU's share), a visible window's
 present, AirPods' longer lead (rollbacks grow with it), or an idle machine.
