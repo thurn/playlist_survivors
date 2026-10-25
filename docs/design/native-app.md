@@ -1090,6 +1090,18 @@ Offscreen capture (`--still`, and later `ps capture`) renders stills for the
 bead's notes. Visual comparison with the TS game is by eye, side by side, not
 by a metric.
 
+**Landed** (stills in [`native/evidence/g3/`](../../native/evidence/g3/), by
+eye against `native/oracle/stills/`): the HUD in `render::font`; the open
+field's tiles and chunk props (`eval::field`); the content's effect recipes
+(bursts, rings, atlas sprites, shake, flashes, floating text, a level-up);
+`render::post`'s passes (soft lights from the hero, lamps and effects; a bloom;
+the zone's grade; vignette on bars, ambient pulse on beats, heat haze,
+aberration and shockwaves); the overhead display and an end card in the pixel
+font. Not yet: the reactive loudness and key look on the grade (a mid loudness
+and a neutral look stand in), decals, prop sway, zone tints mixing at a sweep,
+and the free-movement count-in. The frame-time re-measure with the drawable's
+presented time stays with D5.
+
 ### Sound (G4)
 
 - A Core Audio output unit renders a mixer of scheduled voices, from SFX
