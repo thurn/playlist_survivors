@@ -133,8 +133,6 @@ pub struct LiveView {
     pub ratings: [usize; 3],
     /// Moments since the drawer last took them.
     pub moments: Vec<Moment>,
-    /// Sounds caused since the mixer's scheduler last took them.
-    pub sounds: Vec<Caused>,
     /// The song time shown (the latest record's).
     pub s: f64,
 }
@@ -143,11 +141,6 @@ impl LiveView {
     /// The moments since the last call.
     pub fn take_moments(&mut self) -> Vec<Moment> {
         std::mem::take(&mut self.moments)
-    }
-
-    /// The sounds caused since the last call.
-    pub fn take_sounds(&mut self) -> Vec<Caused> {
-        std::mem::take(&mut self.sounds)
     }
 
     /// The living enemies.
@@ -201,7 +194,8 @@ impl LiveView {
             Record::Xp(v) => self.xp = *v,
             Record::LevelUp => self.level += 1,
             Record::Health(v) => self.health = *v,
-            Record::Sound(c) => self.sounds.push(c.clone()),
+            // (Sounds go to the scheduler from the speculation: `Engine::causes`.)
+            Record::Sound(_) => {}
         }
     }
 
@@ -511,7 +505,7 @@ pub struct RunnerStats {
 /// `now + lead` assuming no new input, snapshotting as it goes; a key or an arrival for a time it
 /// has passed restores the newest snapshot before it and runs ahead again. The view shows the
 /// records up to now: those before the settled time are final, the rest are laid over them afresh
-/// each frame, and moments and sounds are passed on once.
+/// each frame, and moments are passed on once; sounds come from the speculation.
 pub struct Engine {
     pub sim: Sim,
     /// What the drawer reads: the settled view with the unsettled records up to now laid over it.
@@ -520,9 +514,12 @@ pub struct Engine {
     /// The records before the settled time, applied (and the absolute index after them).
     settled_view: LiveView,
     settled_idx: usize,
-    /// The moments and sounds passed on whose records are not yet settled (to pass each on once).
+    /// The moments passed on whose records are not yet settled (to pass each on once).
     passed: Vec<(f64, Moment)>,
-    sounded: Vec<Caused>,
+    /// The sounds the speculation causes, each with its record's journal index and known from the
+    /// frame that first saw it; and when each cause was first seen (kept across rollbacks).
+    causes: Vec<(usize, Caused)>,
+    first_seen: Vec<(Cause, f64)>,
     /// The journal index from which sounds are looked for.
     sound_idx: usize,
     snaps: Vec<Snap>,
@@ -591,7 +588,8 @@ impl Engine {
             settled_view: fresh,
             settled_idx: 0,
             passed: Vec::new(),
-            sounded: Vec::new(),
+            causes: Vec::new(),
+            first_seen: Vec::new(),
             sound_idx: 0,
             snaps: vec![first],
             settled: f64::NEG_INFINITY,
@@ -643,6 +641,12 @@ impl Engine {
     /// The keys as applied, at their effective times.
     pub fn applied(&self) -> &[KeyEvent] {
         &self.applied
+    }
+
+    /// The sounds the simulation causes, as it now speculates: those a rollback undid are gone
+    /// (until the second after their time; the scheduler cancels what hasn't started).
+    pub fn causes(&self) -> impl Iterator<Item = &Caused> {
+        self.causes.iter().map(|(_, c)| c)
     }
 
     /// The song time the simulation has run to (the speculation's frontier).
@@ -750,6 +754,8 @@ impl Engine {
         self.sim.restore(&snap.sim);
         self.journal.borrow_mut().rewind(&snap.mark);
         self.sound_idx = self.sound_idx.min(snap.mark.len);
+        let len = snap.mark.len;
+        self.causes.retain(|(k, _)| *k < len);
         // (Records before the settled time come back the same: the settled view keeps them.)
         let keys = snap.keys;
         self.snaps.truncate(i + 1);
@@ -776,7 +782,6 @@ impl Engine {
             }
             self.settled_idx += 1;
         }
-        self.settled_view.sounds.clear();
         let mut shown = self.settled_view.clone();
         let mut k = self.settled_idx;
         while let Some((s, rec)) = j.get(k) {
@@ -787,31 +792,35 @@ impl Engine {
             fresh.extend(shown.moments.drain(..).map(|m| (*s, m)));
             k += 1;
         }
-        shown.sounds.clear();
-        // Sounds from the frontier: each cause once, known from the frame that first saw it.
-        let mut sounds = Vec::new();
+        // The speculation's sounds, each known from the frame that first saw it.
         let mut k = self.sound_idx;
         while let Some((_, rec)) = j.get(k) {
-            if let Record::Sound(c) = rec
-                && !self.sounded.iter().any(|d| d.cause == c.cause)
-            {
-                let c = Caused {
-                    cause: c.cause.clone(),
-                    known: now,
-                };
-                self.sounded.push(c.clone());
-                sounds.push(c);
+            if let Record::Sound(c) = rec {
+                let known =
+                    if let Some(&(_, t)) = self.first_seen.iter().find(|(d, _)| *d == c.cause) {
+                        t
+                    } else {
+                        self.first_seen.push((c.cause.clone(), now));
+                        now
+                    };
+                self.causes.push((
+                    k,
+                    Caused {
+                        cause: c.cause.clone(),
+                        known,
+                    },
+                ));
             }
             k += 1;
         }
         self.sound_idx = k;
         drop(j);
         let settled = self.settled;
-        self.sounded.retain(|c| c.cause.s() > settled - 1.0);
+        self.first_seen.retain(|(c, _)| c.s() > settled - 1.0);
+        self.causes.retain(|(_, c)| c.cause.s() > settled - 1.0);
         // Each moment once: those an earlier frame's overlay passed on are not passed again.
         let mut v = self.view.borrow_mut();
         let mut moments = std::mem::take(&mut v.moments);
-        let mut pending_sounds = std::mem::take(&mut v.sounds);
         for (s, m) in fresh {
             if !self.passed.iter().any(|(ps, pm)| *ps == s && *pm == m) {
                 moments.push(m.clone());
@@ -819,10 +828,8 @@ impl Engine {
             }
         }
         self.passed.retain(|(s, _)| *s > settled);
-        pending_sounds.extend(sounds);
         *v = shown;
         v.moments = moments;
-        v.sounds = pending_sounds;
     }
 
     /// Whether the hero has fallen.

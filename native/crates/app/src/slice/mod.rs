@@ -281,7 +281,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
         title_at: 0.0,
         next_voice: 0,
         ahead: 0.02,
-        voices: [0; 3],
+        voices: [0; 4],
         voices_at: 0.0,
         mute: opts.mute,
         keys: [KeyLight::default(); 5],
@@ -446,9 +446,10 @@ struct App {
     /// scheduled that far ahead lands on its sample.
     next_voice: u64,
     ahead: f64,
-    /// Voices started, skipped (onset passed), dropped (no room) this run; muted, they're logged
+    /// Voices started, skipped (onset passed), dropped (no room) and cancelled (a rollback undid
+    /// them) this run; muted, they're logged
     /// every 10 s (at host `voices_at`), for a check without sound.
-    voices: [u32; 3],
+    voices: [u32; 4],
     voices_at: f64,
     mute: bool,
     /// The key display: up, left, down, right, stomp.
@@ -507,7 +508,7 @@ impl App {
                 Event::Voice(Report::Started { .. }) => self.voices[0] += 1,
                 Event::Voice(Report::Skipped { .. }) => self.voices[1] += 1,
                 Event::Voice(Report::Dropped { .. }) => self.voices[2] += 1,
-                Event::Voice(_) => {}
+                Event::Voice(Report::Cancelled { .. }) => self.voices[3] += 1,
             }
         }
     }
@@ -557,10 +558,11 @@ impl App {
             self.voices_at = now + 10.0;
             let r = self.engine.stats;
             eprintln!(
-                "slice: sounds {} started, {} skipped late, {} dropped; {} rollbacks replaying {:.1} s, {} late keys",
+                "slice: sounds {} started, {} skipped late, {} dropped, {} cancelled; {} rollbacks replaying {:.1} s, {} late keys",
                 self.voices[0],
                 self.voices[1],
                 self.voices[2],
+                self.voices[3],
                 r.rollbacks,
                 r.replayed_s,
                 r.late_keys
@@ -668,15 +670,13 @@ impl App {
         }
     }
 
-    /// Schedules the sounds the simulation caused since the last frame, for when they're heard.
+    /// Brings the scheduled sounds in line with the simulation's speculation, for when they're
+    /// heard.
     fn schedule_sounds(&mut self) {
-        let caused = self.engine.view.borrow_mut().take_sounds();
         let (Some(sounds), Some(clock)) = (self.sounds.as_mut(), self.clock) else {
             return;
         };
-        if caused.is_empty() {
-            return;
-        }
+        let caused: Vec<_> = self.engine.causes().cloned().collect();
         let camera = self.engine.view.borrow().camera;
         let seed = self.engine.seed;
         let at = sounds::At {
@@ -689,9 +689,11 @@ impl App {
             l_out: self.l_out,
             // (Known in time for the output to render it: past its latency and lookahead.)
             never_late: sounds::NEVER_LATE.max(self.l_out + self.ahead.max(0.0) + 0.005),
+            now: now_s(),
+            ahead: self.ahead.max(0.0),
         };
         let mut commands = Vec::new();
-        sounds.schedule(&caused, &at, &mut commands);
+        sounds.reconcile(&caused, &at, &mut commands);
         for c in commands {
             let _ = self.out.commands.push(c);
         }
@@ -743,7 +745,7 @@ impl App {
             s.reset();
         }
         self.over = None;
-        self.voices = [0; 3];
+        self.voices = [0; 4];
     }
 
     fn key(&mut self, code: KeyCode, pressed: bool, repeat: bool) {

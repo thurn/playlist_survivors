@@ -2,9 +2,9 @@
 //! `live/sounds.ts` as a reference): what the simulation's sound causes play, from the content's
 //! palette (`content/sounds.yaml`, samples from `public/assets/sfx`), placed on the committed beat
 //! grid never late, faded by the evidence of the beat they belong to, panned by the camera and
-//! scheduled on the output's timeline when they will be heard. The simulation runs at the time
-//! being heard (G5 brings the runner ahead of it), so a sound known after its time plays as soon
-//! as the output can.
+//! scheduled on the output's timeline when they will be heard. The sounds come from the
+//! simulation's speculation ahead of the time heard, and are brought in line with it each frame:
+//! what a rollback undid is cancelled before it starts.
 
 use std::collections::HashMap;
 use std::path::Path;
@@ -93,6 +93,9 @@ pub struct At<'a> {
     pub l_out: f64,
     /// The least a sound is known before its slot (s).
     pub never_late: f64,
+    /// Host time now, and how far ahead of it the output is rendering (s).
+    pub now: f64,
+    pub ahead: f64,
 }
 
 /// The palette, its samples in the bank, and the kill sounds waiting on their slots.
@@ -101,9 +104,43 @@ pub struct Sounds {
     /// Each sample id's bank index and onset (s).
     samples: HashMap<String, (usize, f64)>,
     weapons: HashMap<String, (String, bool)>,
-    /// Kill sounds by slot (ms): the voice and how many kills it holds.
-    kills: HashMap<i64, (u64, u32, f64)>,
+    /// The voices scheduled, by identity: their id and when they start (host s).
+    scheduled: HashMap<VoiceKey, (u64, f64)>,
     next_id: u64,
+}
+
+/// A voice's identity, so each frame's speculation can be compared with what is scheduled: what it
+/// plays, its slot (0.1 ms), where (quarter pixels) and how many kills share it.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct VoiceKey {
+    key: String,
+    s: i64,
+    x: i64,
+    n: u32,
+}
+
+/// A sound placed: its palette key, the song time it plays at, its place, level and duck.
+struct Placed {
+    key: String,
+    s: f64,
+    x: f64,
+    gain: f64,
+    duck: bool,
+}
+
+impl Placed {
+    fn id(&self, n: u32) -> VoiceKey {
+        VoiceKey {
+            key: self.key.clone(),
+            s: (self.s * 1e4).round() as i64,
+            x: if self.x.is_finite() {
+                (self.x * 4.0).round() as i64
+            } else {
+                0
+            },
+            n,
+        }
+    }
 }
 
 impl Sounds {
@@ -143,16 +180,16 @@ impl Sounds {
                 palette,
                 samples,
                 weapons,
-                kills: HashMap::new(),
+                scheduled: HashMap::new(),
                 next_id: 1 << 40,
             },
             bank,
         ))
     }
 
-    /// Forgets the kill slots (a new run).
+    /// Forgets what is scheduled (a new run: the output cancels it).
     pub fn reset(&mut self) {
-        self.kills.clear();
+        self.scheduled.clear();
     }
 
     /// A sound now: `key` centred, as soon as the output can play it (host `at`).
@@ -173,11 +210,56 @@ impl Sounds {
         }
     }
 
-    /// The commands that play `caused`.
-    pub fn schedule(&mut self, caused: &[Caused], at: &At, out: &mut Vec<Command>) {
+    /// Brings the scheduled voices in line with `caused`, the speculation's sounds now
+    /// (`LiveSoundScheduler`): a voice it no longer has is cancelled if it hasn't started, and a new
+    /// one is scheduled. Kills sharing a slot are one sound, the multi-kill from two on.
+    pub fn reconcile(&mut self, caused: &[Caused], at: &At, out: &mut Vec<Command>) {
+        let mut desired: HashMap<VoiceKey, Placed> = HashMap::new();
+        let mut kills: Vec<(Placed, u32)> = Vec::new();
         for c in caused {
             for call in self.calls(&c.cause) {
-                self.place(&call, c.known, at, out);
+                let Some(p) = place(&call, c.known, at) else {
+                    continue;
+                };
+                if p.key == "kill" {
+                    match kills.iter_mut().find(|(k, _)| (k.s - p.s).abs() < 1e-6) {
+                        Some((_, n)) => *n += 1,
+                        None => kills.push((p, 1)),
+                    }
+                } else {
+                    desired.insert(p.id(1), p);
+                }
+            }
+        }
+        for (mut p, n) in kills {
+            if n > 1 {
+                // (The kill's level is 0.6 of its fade; the multi-kill's grows with the count.)
+                p.gain *= (0.5 + 0.22 * f64::from(n).log2()) / 0.6;
+                p.key = "kill-multi".into();
+            }
+            desired.insert(p.id(n), p);
+        }
+        // (The output may be rendering up to `ahead` past now: a voice due by then has started.)
+        let started = at.now + at.ahead;
+        self.scheduled.retain(|k, &mut (id, start)| {
+            if desired.contains_key(k) {
+                true
+            } else if start > started {
+                out.push(Command::Cancel(id));
+                false
+            } else {
+                start > at.now - 2.0
+            }
+        });
+        for (k, p) in desired {
+            if self.scheduled.contains_key(&k) {
+                continue;
+            }
+            if let Some(mut v) = self.voice(&p, at) {
+                self.next_id += 1;
+                v.id = self.next_id;
+                self.scheduled.insert(k, (v.id, v.at));
+                out.push(Command::Play(v));
             }
         }
     }
@@ -260,38 +342,13 @@ impl Sounds {
         Some((sound, onset, rate as f32))
     }
 
-    fn place(&mut self, call: &Call, known: f64, at: &At, out: &mut Vec<Command>) {
-        // On its slot, or the first one far enough after it was known: never late.
-        let s = match call.every {
-            Some(every) => {
-                let slot = slot_at(at.beats, every, call.s);
-                if slot - known >= at.never_late - 1e-9 {
-                    slot
-                } else {
-                    slot_at(at.beats, every, known + at.never_late)
-                }
-            }
-            // (Until G5's runner simulates ahead, a strike is known only as it happens: it plays
-            // as soon as the output can rather than not at all. A whoosh before it is dropped.)
-            None if call.owner.is_none() => call.s.max(known + at.never_late),
-            None if call.s - known < at.never_late => return,
-            None => call.s,
-        };
-        let fade = if EXEMPT.contains(&call.key.as_str()) {
-            1.0
-        } else {
-            evidence_fade(at.beats, at.gate, call.owner.unwrap_or(call.s))
-        };
-        if fade <= 0.0 {
-            return;
-        }
-        let Some((sound, onset, rate)) = self.pick(&call.key, s, call.x, at.seed) else {
-            return;
-        };
+    /// The voice that plays `p` (its id unset).
+    fn voice(&self, p: &Placed, at: &At) -> Option<Voice> {
+        let (sound, onset, rate) = self.pick(&p.key, p.s, p.x, at.seed)?;
         let sample_gain = self
             .palette
             .sounds
-            .get(&call.key)
+            .get(&p.key)
             .and_then(|l| {
                 l.iter().find_map(|x| match x {
                     Sample::Detailed { gain, .. } => *gain,
@@ -299,59 +356,60 @@ impl Sounds {
                 })
             })
             .unwrap_or(1.0);
-        let gain = call.gain * fade * sample_gain * self.palette.gain;
         let (cx, _, zoom) = at.camera;
-        let pan = if call.x.is_finite() {
-            ((call.x - cx) / (480.0 / zoom.max(1e-3))).clamp(-0.8, 0.8)
+        let pan = if p.x.is_finite() {
+            ((p.x - cx) / (480.0 / zoom.max(1e-3))).clamp(-0.8, 0.8)
         } else {
             0.0
         };
         let lead = (onset / f64::from(rate)).min(MAX_LEAD);
         // Heard when the song reaches it; the output renders it `l_out` before, from `lead` before
         // its onset.
-        let heard = at.clock.1 + (at.run_start + s - at.clock.0);
-        let start = heard - at.l_out - lead;
-        // Kills share their slot: a second one turns its sound into the multi-kill.
-        if call.key == "kill" {
-            let slot = (s * 1000.0).round() as i64;
-            if let Some(&(id, n, x)) = self.kills.get(&slot) {
-                out.push(Command::Cancel(id));
-                let n = n + 1;
-                let multi = Call::new("kill-multi", s, x, 0.5 + 0.22 * f64::from(n).log2());
-                if let Some((sound, onset, rate)) = self.pick(&multi.key, s, x, at.seed) {
-                    let lead = (onset / f64::from(rate)).min(MAX_LEAD);
-                    self.next_id += 1;
-                    self.kills.insert(slot, (self.next_id, n, x));
-                    out.push(Command::Play(Voice {
-                        id: self.next_id,
-                        source: Source::Sample(sound),
-                        at: heard - at.l_out - lead,
-                        from: 0.0,
-                        lead,
-                        gain: (multi.gain * fade * self.palette.gain) as f32,
-                        pan: pan as f32,
-                        rate,
-                        duck: false,
-                    }));
-                }
-                return;
-            }
-            self.kills.retain(|&k, _| (k as f64) / 1000.0 > s - 2.0);
-            self.kills.insert(slot, (self.next_id + 1, 1, call.x));
-        }
-        self.next_id += 1;
-        out.push(Command::Play(Voice {
-            id: self.next_id,
+        let heard = at.clock.1 + (at.run_start + p.s - at.clock.0);
+        Some(Voice {
+            id: 0,
             source: Source::Sample(sound),
-            at: start,
+            at: heard - at.l_out - lead,
             from: 0.0,
             lead,
-            gain: gain as f32,
+            gain: (p.gain * sample_gain * self.palette.gain) as f32,
             pan: pan as f32,
             rate,
-            duck: call.duck,
-        }));
+            duck: p.duck,
+        })
     }
+}
+
+/// Where and how loud a call plays, known at song time `known`: on its slot, or the first one far
+/// enough after it was known (never late), faded by its beat's evidence; nothing when silent.
+fn place(call: &Call, known: f64, at: &At) -> Option<Placed> {
+    let s = match call.every {
+        Some(every) => {
+            let slot = slot_at(at.beats, every, call.s);
+            if slot - known >= at.never_late - 1e-9 {
+                slot
+            } else {
+                slot_at(at.beats, every, known + at.never_late)
+            }
+        }
+        // (A strike known too late for its time, as after a stall, plays as soon as the output
+        // can rather than not at all; a whoosh before it is dropped.)
+        None if call.owner.is_none() => call.s.max(known + at.never_late),
+        None if call.s - known < at.never_late => return None,
+        None => call.s,
+    };
+    let fade = if EXEMPT.contains(&call.key.as_str()) {
+        1.0
+    } else {
+        evidence_fade(at.beats, at.gate, call.owner.unwrap_or(call.s))
+    };
+    (fade > 0.0).then(|| Placed {
+        key: call.key.clone(),
+        s,
+        x: call.x,
+        gain: call.gain * fade,
+        duck: call.duck,
+    })
 }
 
 fn sample_id(s: &Sample) -> &str {
@@ -446,7 +504,7 @@ mod tests {
     }
 
     #[test]
-    fn a_kill_known_late_moves_to_a_later_slot_and_a_second_makes_a_multi_kill() {
+    fn sounds_follow_the_speculation_and_kills_share_their_slot() {
         let lib = super::super::World::load().unwrap().lib;
         let palette = lib.sound_palettes[PALETTE].clone();
         // Every sample at bank index 0 with no onset: placement is what's tested.
@@ -460,7 +518,7 @@ mod tests {
             palette,
             samples,
             weapons: HashMap::new(),
-            kills: HashMap::new(),
+            scheduled: HashMap::new(),
             next_id: 0,
         };
         let b = beats(8, 0.5, 1.0);
@@ -473,6 +531,8 @@ mod tests {
             clock: (0.0, 100.0),
             l_out: 0.02,
             never_late: NEVER_LATE,
+            now: 100.0,
+            ahead: 0.01,
         };
         let kill = |s: f64, known: f64| Caused {
             cause: Cause::Kill { s, x: 0.0 },
@@ -480,14 +540,24 @@ mod tests {
         };
         let mut out = Vec::new();
         // At 1.2, known at once: its sixteenth is 1.25, 50 ms on, under NEVER_LATE: it moves to 1.375.
-        sounds.schedule(&[kill(1.2, 1.2)], &at, &mut out);
+        let first = [kill(1.2, 1.2)];
+        sounds.reconcile(&first, &at, &mut out);
         let Command::Play(v) = out[0] else { panic!() };
         assert!((v.at - (100.0 + 1.375 - 0.02)).abs() < 1e-9, "{}", v.at);
-        // A second kill on that slot cancels it for a multi-kill.
+        // The same speculation again: nothing to do.
         out.clear();
-        sounds.schedule(&[kill(1.3, 1.3)], &at, &mut out);
+        sounds.reconcile(&first, &at, &mut out);
+        assert!(out.is_empty(), "{out:?}");
+        // A second kill on that slot: the kill gives way to a multi-kill there.
+        let both = [kill(1.2, 1.2), kill(1.3, 1.3)];
+        sounds.reconcile(&both, &at, &mut out);
         assert_eq!(out[0], Command::Cancel(v.id));
-        assert!(matches!(out[1], Command::Play(m) if (m.at - v.at).abs() < 1e-9 && m.id != v.id));
+        let Command::Play(m) = out[1] else { panic!() };
+        assert!((m.at - v.at).abs() < 1e-9 && m.id != v.id);
+        // A rollback undoes both kills: the multi-kill, not yet started, is cancelled.
+        out.clear();
+        sounds.reconcile(&[], &at, &mut out);
+        assert_eq!(out, [Command::Cancel(m.id)]);
         // A whoosh belongs to its strike's beat: below the gate there, both are silent.
         out.clear();
         let quiet = beats(8, 0.5, 0.1);
@@ -495,18 +565,15 @@ mod tests {
             beats: &quiet,
             ..at
         };
-        sounds.schedule(
-            &[Caused {
-                cause: Cause::Swing {
-                    s: 2.0,
-                    x: 0.0,
-                    kind: "light",
-                },
-                known: 1.5,
-            }],
-            &at,
-            &mut out,
-        );
+        let swing = Caused {
+            cause: Cause::Swing {
+                s: 2.0,
+                x: 0.0,
+                kind: "light",
+            },
+            known: 1.5,
+        };
+        sounds.reconcile(&[swing], &at, &mut out);
         assert!(out.is_empty());
     }
 }
