@@ -11,6 +11,9 @@
 //!     playlist-survivors --file <path> # plays the file and listens to it
 //!     playlist-survivors --click       # also clicks on each committed beat
 //!     playlist-survivors --file <path> --delayed  # Delayed listening: heard 3 s late, beats from hindsight
+//!     playlist-survivors --delayed --app <name>   # Delayed on the system's audio: the app tapped, muted, played 3 s late
+//!     playlist-survivors --delayed --tap-child <path> --headless --seconds 20 [--stall-at S]  # the tap
+//!                                     # checked on a silent child of ours, touching no other app (and the watchdog)
 //!     playlist-survivors --file <path> --volume 0.3  # the file quieter (0: silent, still heard)
 //!     playlist-survivors --file <path> --mute  # everything runs, the device gets silence
 //!     playlist-survivors --file <path> --headless --seconds 30 [--start-at S] [--switch-at S] [--press-beats] [--watch]  # no window, no Dock icon, muted:
@@ -22,6 +25,7 @@
 //!                                     # track (or a track to a time) through the engine, offscreen
 //!     playlist-survivors --bench [--check]  # the frame's work (sim, evaluate, encode) over 60 s of it, offscreen
 
+mod apps;
 mod calibration;
 // The tap and output are the phase 0 spike's (57e846a^:native/spike), kept as they were.
 #[allow(clippy::pedantic, unused_qualifications, dead_code)]
@@ -54,6 +58,7 @@ mod sounds;
 mod tap;
 mod tier;
 mod timing;
+mod watchdog;
 
 use std::collections::{HashMap, VecDeque};
 use std::path::{Path, PathBuf};
@@ -86,6 +91,7 @@ use scene::{End, Look, Scene};
 use session::Session;
 use sounds::Sounds;
 use timing::Timing;
+use watchdog::Watchdog;
 
 /// The tap's timeline runs this far behind the output's render timeline (phase 0, built-in
 /// speakers); `PS_TAP_MINUS_RENDER_MS` overrides it.
@@ -158,8 +164,16 @@ struct Options {
     press_beats: bool,
     /// Watch each run as soon as it ends (for checks).
     watch: bool,
-    /// Delayed listening: the music heard `M` late, beats from hindsight (File source for now).
+    /// Delayed listening: the music heard `M` late, beats from hindsight; in System mode, the app
+    /// named (`--app`) is tapped and muted, or (`--tap-child`, a check that touches no other app)
+    /// a child of ours playing a file, silent until tapped.
     delayed: bool,
+    app: Option<String>,
+    tap_child: Option<PathBuf>,
+    /// The child's own mode: play the file once told to (`--play-child`).
+    play_child: Option<PathBuf>,
+    /// Stall the main thread for 3 s this long after the start (s), to check the watchdog.
+    stall_at: Option<f64>,
     /// Calibration offsets for this session (ms), over the saved ones.
     input_offset_ms: Option<f64>,
     stomp_extra_ms: Option<f64>,
@@ -183,6 +197,10 @@ fn options(args: &[String]) -> Result<Options, String> {
         press_beats: false,
         watch: false,
         delayed: false,
+        app: None,
+        tap_child: None,
+        play_child: None,
+        stall_at: None,
         input_offset_ms: None,
         stomp_extra_ms: None,
     };
@@ -199,6 +217,20 @@ fn options(args: &[String]) -> Result<Options, String> {
             "--press-beats" => o.press_beats = true,
             "--watch" => o.watch = true,
             "--delayed" => o.delayed = true,
+            "--app" => o.app = Some(it.next().ok_or("--app needs an app's name")?.clone()),
+            "--tap-child" => {
+                o.tap_child = Some(it.next().ok_or("--tap-child needs a file")?.into());
+            }
+            "--play-child" => {
+                o.play_child = Some(it.next().ok_or("--play-child needs a file")?.into());
+            }
+            "--stall-at" => {
+                o.stall_at = Some(
+                    it.next()
+                        .and_then(|v| v.parse().ok())
+                        .ok_or("--stall-at needs a time")?,
+                );
+            }
             "--switch-at" => {
                 o.switch_at = Some(
                     it.next()
@@ -366,6 +398,9 @@ impl World {
 #[allow(clippy::single_match_else)]
 pub fn run(args: &[String]) -> Result<(), String> {
     let opts = options(args)?;
+    if let Some(file) = &opts.play_child {
+        return play_child(file);
+    }
     if let Some(path) = &opts.still {
         return still(path, opts.still_track.as_deref(), opts.still_at);
     }
@@ -409,15 +444,40 @@ pub fn run(args: &[String]) -> Result<(), String> {
     } else {
         Listening::Direct
     };
+    // (A tap or aggregate of ours a killed run left public is destroyed: private ones went with
+    // it.)
+    let leftovers = tap::destroy_leftovers();
+    if leftovers > 0 {
+        eprintln!("slice: destroyed {leftovers} tap objects a killed run left");
+    }
+    let (mut child, tap_target) = match (&opts.tap_child, &opts.app) {
+        (Some(file), _) => {
+            let (c, a) = spawn_tap_child(file)?;
+            (Some(c), Some(a))
+        }
+        (None, Some(name)) => (
+            None,
+            Some(apps::find(name).ok_or_else(|| format!("no app called {name} has audio"))?),
+        ),
+        (None, None) => (None, None),
+    };
     let audio = Audio::start(
         opts.file.as_deref(),
         listening,
+        tap_target.as_ref(),
         opts.volume,
         opts.mute,
         calibration.latency_correction_s(),
         &bank,
         proxy.clone(),
     )?;
+    // (The child plays only once tapped, so it is never heard.)
+    if let Some(c) = child.as_mut()
+        && let Some(stdin) = c.stdin.as_mut()
+    {
+        use std::io::Write;
+        writeln!(stdin, "go").map_err(|e| format!("the tap child: {e}"))?;
+    }
     let engine = world.engine()?;
     let key_times = keys::KeyTimes::install();
     let mut app = App {
@@ -441,6 +501,9 @@ pub fn run(args: &[String]) -> Result<(), String> {
         run_kills: 0,
         auto_watch: opts.watch,
         listening,
+        tap_target,
+        child,
+        stall_at: opts.stall_at.map_or(f64::INFINITY, |s| now_s() + s),
         overrides,
         gfx: None,
         sounds,
@@ -490,6 +553,64 @@ pub fn run(args: &[String]) -> Result<(), String> {
     app.engine.settle_s = app.settle_s();
     app.begin_session();
     event_loop.run_app(&mut app).map_err(|e| e.to_string())
+}
+
+impl Drop for App {
+    fn drop(&mut self) {
+        // (The tap check's child goes with us.)
+        if let Some(c) = self.child.as_mut() {
+            let _ = c.kill();
+            let _ = c.wait();
+        }
+    }
+}
+
+/// The tap check's child (`--play-child`): connects to the output silently (so it has a process
+/// object to tap), says `ready`, and plays `file` once told `go`, until its input closes. The
+/// parent taps it, muted, before telling it: it is never heard.
+fn play_child(file: &Path) -> Result<(), String> {
+    use std::io::{BufRead, Write};
+    let music = Arc::<[f32]>::from(live::decode(file, Output::device_rate())?);
+    let mut out = Output::start(Some(music), 0.0, 0.0, None, Vec::new(), false)?;
+    println!("ready");
+    std::io::stdout().flush().map_err(|e| e.to_string())?;
+    let mut lines = std::io::stdin().lock().lines();
+    while let Some(Ok(line)) = lines.next() {
+        if line.trim() == "go" {
+            let _ = out.commands.push(Command::MusicGain(0.5));
+        }
+    }
+    Ok(())
+}
+
+/// Starts the tap check's child on `file`, once it is ready, and finds its process object.
+fn spawn_tap_child(file: &Path) -> Result<(std::process::Child, apps::AudioApp), String> {
+    use std::io::BufRead;
+    let exe = std::env::current_exe().map_err(|e| e.to_string())?;
+    let mut child = std::process::Command::new(exe)
+        .arg("--play-child")
+        .arg(file)
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("the tap child: {e}"))?;
+    let mut ready = String::new();
+    if let Some(out) = child.stdout.take() {
+        let _ = std::io::BufReader::new(out).read_line(&mut ready);
+    }
+    if ready.trim() != "ready" {
+        let _ = child.kill();
+        return Err("the tap child didn't start".into());
+    }
+    let pid = child.id() as i32;
+    for _ in 0..40 {
+        if let Some(app) = apps::of_pid(pid) {
+            return Ok((child, app));
+        }
+        std::thread::sleep(std::time::Duration::from_millis(50));
+    }
+    let _ = child.kill();
+    Err("the tap child has no process object".into())
 }
 
 /// An analyzer entry's group and the content time it is about, for the timing log.
@@ -570,15 +691,30 @@ struct Audio {
     file: Option<PathBuf>,
     /// Direct or Delayed listening, as it runs.
     listening: Listening,
+    /// Delayed listening on the system's audio: the app tapped, and the watchdog over its tap.
+    app: Option<String>,
+    watchdog: Option<Watchdog>,
+}
+
+/// The tap's lead over the render timeline (s): `TAP_MINUS_RENDER_S`, or
+/// `PS_TAP_MINUS_RENDER_MS`.
+fn tap_offset() -> f64 {
+    std::env::var("PS_TAP_MINUS_RENDER_MS")
+        .ok()
+        .and_then(|s| s.parse::<f64>().ok())
+        .map_or(TAP_MINUS_RENDER_S, |ms| ms / 1e3)
 }
 
 impl Audio {
     /// The output and the analysis thread: on `file` played through the output (File mode), or
-    /// on the tap of everything else the Mac plays (System mode); in `listening` (Delayed: the
-    /// file is heard `M` after the analyzer reads it).
+    /// on the tap of everything else the Mac plays (System mode); in `listening`. Delayed, the
+    /// file is heard `M` after the analyzer reads it, or (System mode) `app` is tapped, muted, and
+    /// its capture played `M` late; with no app, System mode listens Direct.
+    #[allow(clippy::too_many_arguments)]
     fn start(
         file: Option<&Path>,
         listening: Listening,
+        app: Option<&apps::AudioApp>,
         volume: f32,
         mute: bool,
         correction: f64,
@@ -589,18 +725,35 @@ impl Audio {
             Some(p) => Some(Arc::<[f32]>::from(live::decode(p, Output::device_rate())?)),
             None => None,
         };
-        // (Delayed listening on the system's audio needs the app tap and its delay line, which
-        // aren't in yet: System mode listens Direct.)
-        let listening = if music.is_none() && listening != Listening::Direct {
-            eprintln!("slice: Delayed listening needs the File source for now; listening Direct");
+        let listening = if music.is_none() && listening != Listening::Direct && app.is_none() {
+            eprintln!(
+                "slice: Delayed listening on the system's audio needs an app; listening Direct"
+            );
             Listening::Direct
         } else {
             listening
         };
         let m = delay_of(listening);
-        let mut out = Output::start(music.clone(), volume, m, bank.clone(), mute)?;
+        let offset = tap_offset();
+        // (System mode, Delayed: the app's tap first, muting it, and its delay line, which plays
+        // each frame M after its capture less the tap's lead, so it is heard exactly M late.)
+        let (delayed_tap, line) = match (&music, app) {
+            (None, Some(a)) if m > 0.0 => {
+                let (t, line) = tap::Tap::start_processes(&a.processes, m - offset, m + 2.0)?;
+                (Some(t), Some(line))
+            }
+            _ => (None, None),
+        };
+        if let Some(a) = app.filter(|a| delayed_tap.is_some() && a.browser()) {
+            eprintln!(
+                "slice: {} is a browser: its video will run {m} s ahead of its sound",
+                a.name
+            );
+        }
+        let mut out = Output::start(music.clone(), volume, m, line, bank.clone(), mute)?;
         // (The device's reported latency, corrected by the player's calibration for it.)
         let l_out = Output::reported_latency_s() + correction;
+        let mut watchdog = None;
         #[allow(clippy::single_match_else)]
         let (source, heard_after, mode) = match music {
             Some(samples) => (
@@ -613,21 +766,28 @@ impl Audio {
                 "file",
             ),
             None => {
-                let tap = tap::Tap::start(true)?;
-                let offset = std::env::var("PS_TAP_MINUS_RENDER_MS")
-                    .ok()
-                    .and_then(|s| s.parse::<f64>().ok())
-                    .map_or(TAP_MINUS_RENDER_S, |ms| ms / 1e3);
-                (Source::Tap(tap), l_out - offset, "system")
+                let tap = match delayed_tap {
+                    Some(t) => {
+                        watchdog = Some(Watchdog::start(
+                            t.tap,
+                            t.aggregate,
+                            Arc::clone(&t.destroyed),
+                            Arc::clone(&t.alive),
+                        ));
+                        t
+                    }
+                    None => tap::Tap::start(true)?,
+                };
+                (Source::Tap(tap), l_out - offset + m, "system")
             }
         };
         eprintln!(
             "slice: {mode} mode{}{}, output {} Hz, L_out {:.1} ms, heard {:.1} ms after capture",
             file.map_or(String::new(), |p| format!(" ({})", p.display())),
-            if m > 0.0 {
-                format!(", Delayed listening (M = {m} s)")
-            } else {
-                String::new()
+            match (m > 0.0, app.filter(|_| file.is_none())) {
+                (true, Some(a)) => format!(", Delayed listening (M = {m} s) on {}", a.name),
+                (true, None) => format!(", Delayed listening (M = {m} s)"),
+                _ => String::new(),
             },
             out.rate,
             l_out * 1e3,
@@ -655,6 +815,8 @@ impl Audio {
             heard_offset,
             file: file.map(Path::to_path_buf),
             listening,
+            app: app.filter(|_| watchdog.is_some()).map(|a| a.name.clone()),
+            watchdog,
         })
     }
 
@@ -1081,8 +1243,12 @@ struct App {
     /// The run's kills when it ended, and whether to watch each run as it ends (`--watch`).
     run_kills: usize,
     auto_watch: bool,
-    /// The listening mode asked for (System mode listens Direct until the app tap is in).
+    /// The listening mode asked for, and the app Delayed listening taps in System mode (without
+    /// one, System mode listens Direct); the tap check's child; when to stall, for the check.
     listening: Listening,
+    tap_target: Option<apps::AudioApp>,
+    child: Option<std::process::Child>,
+    stall_at: f64,
     /// A calibration screen showing, if any.
     screen: Option<Screen>,
     device_uid: String,
@@ -1730,7 +1896,7 @@ impl App {
             file: self.audio.file.as_ref().map(|p| p.display().to_string()),
             listening: session::listening_name(self.audio.listening).to_string(),
             m: (self.audio.listening != Listening::Direct).then(|| delay_of(self.audio.listening)),
-            app: None,
+            app: self.audio.app.clone(),
             device: coreaudio::device(self.device).name,
             l_out_ms: self.audio.l_out * 1e3,
             calibration: self.calibration,
@@ -2061,11 +2227,18 @@ impl App {
         if self.running {
             self.end_run(End::Source, now);
         }
+        // (Leaving a tap, the delay line's music fades out over 50 ms before the app is heard
+        // live again.)
+        if self.audio.watchdog.is_some() {
+            self.send(Command::FadeDelayLine);
+            std::thread::sleep(std::time::Duration::from_millis(60));
+        }
         self.audio.shut_down();
-        let start = |file: Option<&Path>| {
+        let start = |file: Option<&Path>, listening: Listening, app: Option<&apps::AudioApp>| {
             Audio::start(
                 file,
-                self.listening,
+                listening,
+                app,
                 self.volume,
                 self.mute,
                 self.calibration.latency_correction_s(),
@@ -2073,9 +2246,9 @@ impl App {
                 self.proxy.clone(),
             )
         };
-        match start(file).or_else(|e| {
-            eprintln!("slice: can't switch the music's source: {e}; back to System mode");
-            start(None)
+        match start(file, self.listening, self.tap_target.as_ref()).or_else(|e| {
+            eprintln!("slice: can't switch the music's source: {e}; back to System mode, Direct");
+            start(None, Listening::Direct, None)
         }) {
             Ok(audio) => self.audio = audio,
             Err(e) => eprintln!("slice: no music source: {e}"),
@@ -2341,6 +2514,27 @@ impl ApplicationHandler for App {
     }
 
     fn about_to_wait(&mut self, el: &ActiveEventLoop) {
+        // Delayed listening's watchdog: the main thread checks in; once it has destroyed the tap
+        // (the app heard again), listening falls back to Direct and the run ends.
+        if let Some(w) = &self.audio.watchdog {
+            w.beat(now_s());
+        }
+        if let Some(w) = self.audio.watchdog.as_ref()
+            && let Some(why) = w.tripped()
+        {
+            let after = w.after();
+            eprintln!(
+                "slice: the watchdog destroyed the tap {after:.2} s in ({why}); listening Direct"
+            );
+            self.log(serde_json::json!({"k": "watchdog", "why": why, "after": after}));
+            self.listening = Listening::Direct;
+            self.switch(None);
+        }
+        if now_s() >= self.stall_at {
+            self.stall_at = f64::INFINITY;
+            eprintln!("slice: stalling the main thread for 3 s (--stall-at)");
+            std::thread::sleep(std::time::Duration::from_secs(3));
+        }
         if now_s() >= self.exit_at {
             // (A run going ends with the session, so its record is whole.)
             if self.running {

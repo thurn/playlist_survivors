@@ -99,12 +99,14 @@ impl Output {
     }
 
     /// Starts the output, playing `music` (mono at `device_rate`) from the start if given, heard
-    /// `music_delay` s after the analyzer reads it (Delayed listening; 0 in Direct); `muted`, it
-    /// renders everything and sends silence.
+    /// `music_delay` s after the analyzer reads it (Delayed listening; 0 in Direct), and the
+    /// tapped app's capture from `delay_line` (Delayed listening on the system's audio); `muted`,
+    /// it renders everything and sends silence.
     pub fn start(
         music: Option<Arc<[f32]>>,
         music_gain: f32,
         music_delay: f64,
+        delay_line: Option<audio::delay::DelayLine>,
         bank: Vec<Arc<[f32]>>,
         muted: bool,
     ) -> Result<Output, String> {
@@ -159,8 +161,14 @@ impl Output {
             None => (None, None),
         };
         let ctx = Box::new(UnsafeCell::new(Ctx {
-            mixer: Mixer::new(rate, bank, music, music_gain)
-                .with_music_delay((music_delay * rate).round() as u64),
+            mixer: {
+                let m = Mixer::new(rate, bank, music, music_gain)
+                    .with_music_delay((music_delay * rate).round() as u64);
+                match delay_line {
+                    Some(line) => m.with_delay_line(line),
+                    None => m,
+                }
+            },
             commands: cc,
             events: ep,
             music_meta: meta_tx,

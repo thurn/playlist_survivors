@@ -1,9 +1,15 @@
-//! The Core Audio process tap: all system output except our own process,
-//! through a private aggregate device, into a lock-free ring.
+//! The Core Audio process taps, each through a private aggregate device into a lock-free ring:
+//! all system output except our own process (Direct listening), or one app's processes, muted
+//! while tapped, its stereo also into Delayed listening's delay line (docs/design/native-app.md,
+//! "Capture and mute").
 
 use std::cell::UnsafeCell;
 use std::ffi::c_void;
 use std::ptr::NonNull;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+
+use audio::delay::{DelayLine, Writer};
 
 use objc2::AllocAnyThread;
 use objc2::rc::Retained;
@@ -38,6 +44,11 @@ struct Ctx {
     interleaved: bool,
     received: u64,
     dropped: u64,
+    /// The delay line's writer (Delayed listening), the host clock's seconds a tick, and the
+    /// host time of the latest buffer (an f64's bits, for the watchdog).
+    delay: Option<Writer>,
+    tick_s: f64,
+    alive: Arc<AtomicU64>,
 }
 
 /// An input IOProc on one device, downmixing to mono into a ring.
@@ -49,12 +60,16 @@ pub struct Capture {
     pub channels: usize,
     pub samples: rtrb::Consumer<f32>,
     pub meta: rtrb::Consumer<Meta>,
+    /// The host time of the latest buffer captured (an f64's bits; 0 before the first).
+    pub alive: Arc<AtomicU64>,
 }
 
 pub struct Tap {
     pub tap: Id,
     pub aggregate: Id,
     pub capture: Capture,
+    /// Set once the tap and its aggregate are destroyed (here, or by the watchdog).
+    pub destroyed: Arc<AtomicBool>,
 }
 
 impl std::ops::Deref for Tap {
@@ -72,14 +87,16 @@ impl std::ops::DerefMut for Tap {
 
 impl Capture {
     pub fn start(device: Id, fmt: AudioStreamBasicDescription) -> Result<Capture, String> {
-        Capture::start_with(device, fmt, 4.0)
+        Capture::start_with(device, fmt, 4.0, None)
     }
 
-    /// As `start`, with a ring of `ring_s` seconds (long enough to ride out a stalled reader).
+    /// As `start`, with a ring of `ring_s` seconds (long enough to ride out a stalled reader), and
+    /// the stereo frames also into `delay` when given.
     pub fn start_with(
         device: Id,
         fmt: AudioStreamBasicDescription,
         ring_s: f64,
+        delay: Option<Writer>,
     ) -> Result<Capture, String> {
         let channels = fmt.mChannelsPerFrame as usize;
         let interleaved = fmt.mFormatFlags & kAudioFormatFlagIsNonInterleaved == 0;
@@ -98,7 +115,11 @@ impl Capture {
             interleaved,
             received: 0,
             dropped: 0,
+            delay,
+            tick_s: coreaudio::tick_s(),
+            alive: Arc::new(AtomicU64::new(0)),
         }));
+        let alive = Arc::clone(&unsafe { &*ctx.get() }.alive);
         let mut proc_id: AudioDeviceIOProcID = None;
         check(
             unsafe {
@@ -123,6 +144,7 @@ impl Capture {
             channels,
             samples: sc,
             meta: mc,
+            alive,
         })
     }
 
@@ -143,7 +165,7 @@ impl Capture {
             kAudioStreamPropertyVirtualFormat,
             kAudioObjectPropertyScopeGlobal,
         )?;
-        Capture::start_with(dev, fmt, ring_s)
+        Capture::start_with(dev, fmt, ring_s, None)
     }
 
     /// Stops the IOProc, leaving the device (and any tap it reads) in place.
@@ -236,6 +258,25 @@ unsafe extern "C-unwind" fn io_proc(
             i += 1;
         }
         unsafe { chunk.commit_all() };
+        // (Delayed listening: the stereo frames too, the first two channels, by capture time.)
+        let host = unsafe { input_time.as_ref() }.mHostTime as f64 * ctx.tick_s;
+        if let Some(w) = ctx.delay.as_mut() {
+            let interleaved = ctx.interleaved;
+            w.write(first, frames, host, |a, b| {
+                let channel = |i: usize, c: usize| {
+                    let c = c.min(ch - 1);
+                    if interleaved {
+                        unsafe { *(bufs[0].mData as *const f32).add(i * ch + c) }
+                    } else {
+                        unsafe { *(bufs[c].mData as *const f32).add(i) }
+                    }
+                };
+                for (k, slot) in a.iter_mut().chain(b.iter_mut()).enumerate() {
+                    *slot = channel(k / 2, k % 2);
+                }
+            });
+        }
+        ctx.alive.store(host.to_bits(), Ordering::Relaxed);
         ctx.received += frames as u64;
         let _ = ctx.meta.push(Meta {
             first,
@@ -289,8 +330,96 @@ impl Tap {
             tap,
             aggregate,
             capture,
+            destroyed: Arc::new(AtomicBool::new(false)),
         })
     }
+
+    /// Tap the process objects `processes` (one app's), muted while tapped (macOS unmutes them
+    /// when the tap is destroyed, or when this process exits): their mono mixdown to the
+    /// analyzer, their stereo into `delay`.
+    /// The delay line plays each frame `delay` s after its capture, holding `keep` s.
+    pub fn start_processes(
+        processes: &[Id],
+        delay: f64,
+        keep: f64,
+    ) -> Result<(Tap, DelayLine), String> {
+        if processes.is_empty() {
+            return Err("no process to tap".into());
+        }
+        let ids: Vec<Retained<NSNumber>> =
+            processes.iter().map(|&p| NSNumber::new_u32(p)).collect();
+        let list = NSArray::from_retained_slice(&ids);
+        let desc = unsafe {
+            CATapDescription::initStereoMixdownOfProcesses(CATapDescription::alloc(), &list)
+        };
+        unsafe { desc.setMuteBehavior(CATapMuteBehavior::MutedWhenTapped) };
+        let (tap, aggregate, fmt) = aggregate_for(&desc)?;
+        let destroyed = Arc::new(AtomicBool::new(false));
+        let (writer, line) = audio::delay::delay_line(fmt.mSampleRate, delay, keep);
+        match Capture::start_with(aggregate, fmt, 4.0, Some(writer)) {
+            Ok(capture) => Ok((
+                Tap {
+                    tap,
+                    aggregate,
+                    capture,
+                    destroyed,
+                },
+                line,
+            )),
+            Err(e) => {
+                destroy(tap, aggregate, &destroyed);
+                Err(e)
+            }
+        }
+    }
+}
+
+/// Destroys a tap and its aggregate, once (the app's own end or the watchdog's): the tapped app
+/// is heard again. Safe from any thread.
+pub fn destroy(tap: Id, aggregate: Id, destroyed: &AtomicBool) {
+    if destroyed.swap(true, Ordering::SeqCst) {
+        return;
+    }
+    unsafe {
+        AudioHardwareDestroyAggregateDevice(aggregate);
+        AudioHardwareDestroyProcessTap(tap);
+    }
+}
+
+/// The name our taps carry, and the prefix of our aggregates' UIDs.
+const TAP_NAME: &str = "Playlist Survivors tap";
+const AGGREGATE_UID: &str = "ps-aggregate-";
+
+/// Destroys any public tap or aggregate of ours left registered by a process that was killed
+/// (private ones go with their process: ES, hv-t8o8.36). Returns how many it destroyed.
+pub fn destroy_leftovers() -> usize {
+    let mut n = 0;
+    let taps: Vec<Id> = coreaudio::get_vec(
+        coreaudio::SYSTEM,
+        kAudioHardwarePropertyTapList,
+        kAudioObjectPropertyScopeGlobal,
+    )
+    .unwrap_or_default();
+    for t in taps {
+        let name =
+            coreaudio::get_string(t, kAudioObjectPropertyName, kAudioObjectPropertyScopeGlobal);
+        if name.is_ok_and(|s| s.to_string() == TAP_NAME) {
+            unsafe { AudioHardwareDestroyProcessTap(t) };
+            n += 1;
+        }
+    }
+    for d in coreaudio::devices() {
+        let uid = coreaudio::get_string(
+            d.id,
+            kAudioDevicePropertyDeviceUID,
+            kAudioObjectPropertyScopeGlobal,
+        );
+        if uid.is_ok_and(|s| s.to_string().starts_with(AGGREGATE_UID)) {
+            unsafe { AudioHardwareDestroyAggregateDevice(d.id) };
+            n += 1;
+        }
+    }
+    n
 }
 
 /// `PS_PUBLIC=1` makes taps and aggregates visible to other processes (so a parent can see a
@@ -305,7 +434,7 @@ pub fn aggregate_for(
     desc: &CATapDescription,
 ) -> Result<(Id, Id, AudioStreamBasicDescription), String> {
     unsafe {
-        desc.setName(&NSString::from_str("Playlist Survivors spike tap"));
+        desc.setName(&NSString::from_str(TAP_NAME));
         desc.setPrivate(!public());
     }
     let mut tap: Id = 0;
@@ -323,7 +452,7 @@ pub fn aggregate_for(
     // (Unique per aggregate: one process may hold several.)
     static NEXT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
     let n = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    let agg_uid = NSString::from_str(&format!("ps-spike-aggregate-{}-{n}", std::process::id()));
+    let agg_uid = NSString::from_str(&format!("{AGGREGATE_UID}{}-{n}", std::process::id()));
     let sub: Retained<NSDictionary<NSString, AnyObject>> = NSDictionary::from_retained_objects(
         &[&*ns(kAudioSubDeviceUIDKey)],
         &[Retained::into_super(Retained::into_super(out_uid.clone()))],
@@ -347,7 +476,7 @@ pub fn aggregate_for(
     };
     put(
         kAudioAggregateDeviceNameKey,
-        Retained::into_super(Retained::into_super(NSString::from_str("PS spike tap"))),
+        Retained::into_super(Retained::into_super(NSString::from_str(TAP_NAME))),
     );
     put(
         kAudioAggregateDeviceUIDKey,
@@ -403,12 +532,14 @@ pub fn aggregate_for(
 
 impl Drop for Tap {
     fn drop(&mut self) {
-        unsafe {
-            AudioDeviceStop(self.aggregate, self.capture.proc_id);
-            AudioDeviceDestroyIOProcID(self.aggregate, self.capture.proc_id);
-            self.capture.proc_id = None;
-            AudioHardwareDestroyAggregateDevice(self.aggregate);
-            AudioHardwareDestroyProcessTap(self.tap);
+        // (Once the watchdog destroyed the aggregate, its IOProc went with it.)
+        if !self.destroyed.load(Ordering::SeqCst) {
+            unsafe {
+                AudioDeviceStop(self.aggregate, self.capture.proc_id);
+                AudioDeviceDestroyIOProcID(self.aggregate, self.capture.proc_id);
+            }
         }
+        self.capture.proc_id = None;
+        destroy(self.tap, self.aggregate, &self.destroyed);
     }
 }

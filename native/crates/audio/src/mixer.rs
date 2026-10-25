@@ -103,6 +103,8 @@ pub enum Command {
     StopReplay,
     /// Fades the delay line's music out over 50 ms and drops it (leaving Delayed listening).
     FadeDelayLine,
+    /// The played file's gain from now on.
+    MusicGain(f32),
     /// Moves a voice that hasn't started.
     Move {
         id: u64,
@@ -305,6 +307,7 @@ impl Mixer {
             Command::Follow(g) => self.follow_target = g.max(0.0),
             Command::Replay { samples, at } => self.replay = Some((samples, at, false)),
             Command::StopReplay => self.replay = None,
+            Command::MusicGain(g) => self.music_gain = g,
             Command::FadeDelayLine => {
                 self.delay_fade.get_or_insert(self.clock);
             }

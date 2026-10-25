@@ -27,7 +27,7 @@ From `native/`, `cargo run --release -p app -- <flags>` runs it unbundled:
 | (none) | System mode: whatever the Mac is playing |
 | `--file <path>` | plays the file and listens to it |
 | `--click` | also clicks on each committed beat |
-| `--delayed` | Delayed listening: the music heard 3 s late, beats from hindsight (the File source for now) |
+| `--delayed [--app <name>]` | Delayed listening: the music heard 3 s late, beats from hindsight; in System mode the named app is tapped, muted while tapped, and played late |
 | `--mute`, `--volume <0-1>` | everything runs, the device gets silence or less |
 | `--headless --seconds <n> [--press-beats] [--watch]` | no window, no Dock icon, muted, on a timer, for checks |
 | `--still <png> [--still-track <id> --still-at <s>]` | a still of a bundled track at a time, offscreen |
