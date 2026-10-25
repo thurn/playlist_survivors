@@ -506,8 +506,8 @@ pub struct RunnerStats {
 /// (docs/design/native-app.md, "Arrivals roll back like late keys"; `live/runner.ts`): it runs to
 /// `now + lead` assuming no new input, snapshotting as it goes; a key or an arrival for a time it
 /// has passed restores the newest snapshot before it and runs ahead again. The view shows the
-/// records up to now: those before the settled time are final, the rest are laid over them afresh
-/// each frame, and moments are passed on once; sounds come from the speculation.
+/// records up to now: those before the oldest snapshot kept (the newest at or before the settled
+/// time) are final, the rest are laid over them afresh each frame, and moments are passed on once; sounds come from the speculation.
 pub struct Engine {
     pub sim: Sim,
     /// What the drawer reads: the settled view with the unsettled records up to now laid over it.
@@ -759,6 +759,10 @@ impl Engine {
     fn roll_back(&mut self, t: f64) {
         let i = self.snaps.iter().rposition(|sn| sn.s < t).unwrap_or(0);
         let snap = &self.snaps[i];
+        debug_assert!(
+            self.settled_idx <= snap.mark.len,
+            "rolled back past a final record"
+        );
         self.stats.rollbacks += 1;
         self.stats.replayed_s += self.sim.s() - snap.s;
         self.sim.restore(&snap.sim);
@@ -781,10 +785,12 @@ impl Engine {
         let j = self.journal.borrow();
         // Moments with the song time of the record that made them.
         let mut fresh: Vec<(f64, Moment)> = Vec::new();
-        while let Some((s, rec)) = j.get(self.settled_idx) {
-            if *s > self.settled + 1e-9 || *s > now + 1e-9 {
-                break;
-            }
+        // Final are the records before the oldest snapshot's mark: no rollback can rewind them
+        // (one restores that snapshot at the earliest), so they never need simulating alike again.
+        let last_final = self.snaps[0].mark.len;
+        while self.settled_idx < last_final
+            && let Some((s, rec)) = j.get(self.settled_idx)
+        {
             self.settled_view.apply(*s, rec);
             fresh.extend(self.settled_view.moments.drain(..).map(|m| (*s, m)));
             if let Some(log) = &mut self.settled_log {
@@ -837,7 +843,9 @@ impl Engine {
                 self.passed.push((s, m));
             }
         }
-        self.passed.retain(|(s, _)| *s > settled);
+        // (A record stamped at the oldest snapshot's stop may fall either side of its mark.)
+        let final_s = self.snaps[0].s;
+        self.passed.retain(|(s, _)| *s >= final_s - 1e-9);
         *v = shown;
         v.moments = moments;
     }
