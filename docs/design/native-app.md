@@ -1144,6 +1144,22 @@ and sends silence, logging the sounds started, skipped and dropped.
   (late sounds, presses judged against stale state), or before D3, whose
   replays need the settled recording.
 
+**Landed:** `eval::live::Engine` journals the simulation's records (rewound
+with the snapshots), runs `max(0.2 s, L_out + margin)` ahead with a snapshot
+every 1/30 s, and rolls back for keys and arrivals that land behind it; keys
+later than the settling window are applied at the settled time and arrivals
+stamped before it are restamped to it. The app widens the window to its key
+delivery and calibration (40 ms + 50 ms + the largest offset). The view
+settles only the records before the oldest snapshot's mark and lays the rest
+up to now over them each frame; moments are passed on once; the sounds follow
+the speculation, cancelled before they start when a rollback undoes them.
+Per-key-group calibration is read from the settings file or the command line.
+Cost ([evidence](../../native/evidence/g5/runner.md)): about 5x real time of
+song re-simulated, about 20 ms of CPU per second, frames well under 2 ms; no
+fallback needed. A key later than the settling window can't be compared with
+a plain run (the sim's stops depend on when a future key was queued,
+`hv-t8o8.80`).
+
 ### Runs on live audio (G6)
 
 D1's rules ([Runs on live audio](#runs-on-live-audio-d1)): the listening
