@@ -1279,6 +1279,19 @@ file-by-file inventory behind it is in the
   changes mid-session. A Bluetooth output shows a notice that sync is
   best-effort.
 
+**Landed:** `slice/calibration.rs` keeps a calibration per output device UID
+(input and stomp offsets, display offset, latency correction; top-level values
+are the default, so G5's flat file still reads). On the listening screen, C
+runs the tap-along (8 clicks at 120 BPM, the median error after the first two
+taps within a quarter beat, saved for the group most taps came from) and V the
+visual test (a flash and a click on each beat; left and right nudge the flash
+by 5 ms, Enter saves). Frames are drawn the display offset later, and the
+settling window grows by it. The latency correction is added to the reported
+output latency; it has no test of its own, since a tap-along against the
+app's clicks measures the input offset the same way, so it is set in the file.
+A device change switches calibration and latency; a Bluetooth output shows the
+best-effort notice.
+
 ### Session recording (D3)
 
 Every session (from listening start to quit) is saved to

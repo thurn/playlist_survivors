@@ -374,7 +374,15 @@ impl Scene {
 
 /// The listening screen, between runs: the title, the evidence of a beat against the gate a run
 /// starts at, and how to start one.
-pub fn listening_card(w: f32, h: f32, evidence: f64, gate: f64, now: f64, out: &mut Vec<Sprite>) {
+pub fn listening_card(
+    w: f32,
+    h: f32,
+    evidence: f64,
+    gate: f64,
+    now: f64,
+    bluetooth: bool,
+    out: &mut Vec<Sprite>,
+) {
     out.push(rect(0.0, 0.0, w, h, [0.02, 0.02, 0.04, 0.85]));
     let u = (w / 960.0).min(h / 540.0);
     let px = |k: f32| (k * u).round().max(1.0);
@@ -432,6 +440,26 @@ pub fn listening_card(w: f32, h: f32, evidence: f64, gate: f64, now: f64, out: &
         [0.85, 0.85, 0.9, 1.0],
         out,
     );
+    font::text(
+        "C CALIBRATE YOUR TAPS   V CALIBRATE THE DISPLAY",
+        cx,
+        top + 145.0 * u,
+        px(2.0),
+        Align::Centre,
+        [0.6, 0.6, 0.7, 1.0],
+        out,
+    );
+    if bluetooth {
+        font::text(
+            "BLUETOOTH OUTPUT: SYNC IS BEST-EFFORT",
+            cx,
+            top + 175.0 * u,
+            px(2.0),
+            Align::Centre,
+            [1.0, 0.75, 0.4, 1.0],
+            out,
+        );
+    }
 }
 
 /// Why a run ended.

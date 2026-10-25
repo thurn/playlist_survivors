@@ -67,7 +67,7 @@ use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::{Window, WindowId};
 
 use audio::mixer::{Command, Report, Source as Voiced, Voice};
-use calibration::Calibration;
+use calibration::{Calibration, Settings};
 use coreaudio::now_s;
 use gfx::Gfx;
 use hud::{HudState, KeyLight, PressMark};
@@ -305,30 +305,31 @@ pub fn run(args: &[String]) -> Result<(), String> {
     }
     .map_err(|e| e.to_string())?;
     let proxy = event_loop.create_proxy();
+    let settings = Settings::load();
+    let overrides = (opts.input_offset_ms, opts.stomp_extra_ms);
+    let calibration = calibration_for(
+        &settings,
+        &coreaudio::device(coreaudio::default_output()),
+        overrides,
+    );
     let audio = Audio::start(
         opts.file.as_deref(),
         opts.volume,
         opts.mute,
+        calibration.latency_correction_s(),
         &bank,
         proxy.clone(),
     )?;
     let engine = world.engine()?;
     let key_times = keys::KeyTimes::install();
-    let mut calibration = Calibration::load();
-    if let Some(ms) = opts.input_offset_ms {
-        calibration.input_offset_ms = Some(ms);
-    }
-    if let Some(ms) = opts.stomp_extra_ms {
-        calibration.stomp_extra_ms = Some(ms);
-    }
-    eprintln!(
-        "slice: input offsets {:.0} ms, stomp {:.0} ms",
-        calibration.offset_s(InputKey::Up) * 1e3,
-        calibration.offset_s(InputKey::Space) * 1e3
-    );
     let mut app = App {
         key_times,
         calibration,
+        device_uid: coreaudio::device(coreaudio::default_output()).uid,
+        bluetooth: bluetooth(&coreaudio::device(coreaudio::default_output())),
+        settings,
+        screen: None,
+        overrides,
         gfx: None,
         sounds,
         art,
@@ -376,6 +377,46 @@ pub fn run(args: &[String]) -> Result<(), String> {
     event_loop.run_app(&mut app).map_err(|e| e.to_string())
 }
 
+/// The calibration for output device `d`: its own from the settings (else the default), with the
+/// command line's offsets over it; and a notice when the device is Bluetooth.
+fn calibration_for(
+    settings: &Settings,
+    d: &coreaudio::Device,
+    overrides: (Option<f64>, Option<f64>),
+) -> Calibration {
+    let mut c = settings.for_device(&d.uid);
+    if let Some(ms) = overrides.0 {
+        c.input_offset_ms = Some(ms);
+    }
+    if let Some(ms) = overrides.1 {
+        c.stomp_extra_ms = Some(ms);
+    }
+    eprintln!(
+        "slice: output {} ({}): input offsets {:.0} ms, stomp {:.0} ms, display {:.0} ms, latency correction {:.0} ms{}",
+        d.name,
+        if settings.devices.contains_key(&d.uid) {
+            "calibrated"
+        } else {
+            "not calibrated yet"
+        },
+        c.offset_s(InputKey::Up) * 1e3,
+        c.offset_s(InputKey::Space) * 1e3,
+        c.visual_s() * 1e3,
+        c.latency_correction_s() * 1e3,
+        if bluetooth(d) {
+            "; Bluetooth: sync is best-effort"
+        } else {
+            ""
+        }
+    );
+    c
+}
+
+/// Whether a device is Bluetooth (its latency is long and varies: sync is best-effort).
+fn bluetooth(d: &coreaudio::Device) -> bool {
+    d.transport.starts_with("blue") || d.transport.starts_with("blea")
+}
+
 /// Where the music comes from and goes: the output (playing the file in File mode), the
 /// analysis thread on the tap or the file, and the timing between them.
 struct Audio {
@@ -399,6 +440,7 @@ impl Audio {
         file: Option<&Path>,
         volume: f32,
         mute: bool,
+        correction: f64,
         bank: &sounds::Bank,
         proxy: winit::event_loop::EventLoopProxy<()>,
     ) -> Result<Audio, String> {
@@ -407,7 +449,8 @@ impl Audio {
             None => None,
         };
         let mut out = Output::start(music.clone(), volume, bank.clone(), mute)?;
-        let l_out = Output::reported_latency_s();
+        // (The device's reported latency, corrected by the player's calibration for it.)
+        let l_out = Output::reported_latency_s() + correction;
         #[allow(clippy::single_match_else)]
         let (source, heard_after, mode) = match music {
             Some(samples) => (
@@ -731,6 +774,22 @@ fn still(path: &Path) -> Result<(), String> {
     Ok(())
 }
 
+/// A calibration screen, between runs (docs/design/native-app.md, "Calibration (D2)").
+#[derive(Debug)]
+enum Screen {
+    /// The tap-along: the clicks' heard times (host s), the taps (host s, a stomp?), and what it
+    /// found once over (the line to show and until when).
+    Taps {
+        clicks: Vec<f64>,
+        taps: Vec<(f64, bool)>,
+    },
+    /// The visual test: a click and a flash on each beat (heard at `first + k * 0.5`), the flash
+    /// nudged by the offset being tried (ms).
+    Visual { first: f64, scheduled: f64, ms: f64 },
+    /// A result shown until host time `until`.
+    Said { text: String, until: f64 },
+}
+
 /// The automatic start (docs/design/native-app.md, "Runs on live audio (D1)"): a run starts once
 /// the evidence has stayed at or above the gate for 2 s after at least 1.5 s of quiet, or after
 /// the previous run's end (or the app's start).
@@ -801,6 +860,14 @@ struct App {
     /// Key press times from the window server, and the player's calibration.
     key_times: keys::KeyTimes,
     calibration: Calibration,
+    /// The saved settings, the output device's UID and whether it is Bluetooth, and the command
+    /// line's offsets (kept over each device's).
+    settings: Settings,
+    /// A calibration screen showing, if any.
+    screen: Option<Screen>,
+    device_uid: String,
+    bluetooth: bool,
+    overrides: (Option<f64>, Option<f64>),
     gfx: Option<Gfx>,
     sounds: Option<Sounds>,
     art: Atlases,
@@ -941,7 +1008,8 @@ impl App {
         let t0 = std::time::Instant::now();
         let now = now_s();
         self.peak *= 0.97;
-        let song = self.song_at(now);
+        // (Drawn for when the display shows it: the player's display offset later.)
+        let song = self.song_at(now + self.calibration.visual_s());
         if self.running
             && let Some(s) = song
         {
@@ -978,7 +1046,10 @@ impl App {
             if device != self.device {
                 self.device = device;
                 let d = coreaudio::device(device);
-                let l_out = Output::reported_latency_s();
+                self.calibration = calibration_for(&self.settings, &d, self.overrides);
+                self.device_uid.clone_from(&d.uid);
+                self.bluetooth = bluetooth(&d);
+                let l_out = Output::reported_latency_s() + self.calibration.latency_correction_s();
                 eprintln!(
                     "slice: output now {} ({} Hz), L_out {:.1} ms{}",
                     d.name,
@@ -996,10 +1067,14 @@ impl App {
                     Ordering::Relaxed,
                 );
                 self.end_run(End::Device, now);
+                self.engine.settle_s = self.settle_s();
             }
         }
-        // Listening: the next run starts on its own once the music is clear (after the end card).
+        self.screen_tick(now);
+        // Listening: the next run starts on its own once the music is clear (after the end card),
+        // unless a calibration screen shows.
         if !self.running
+            && self.screen.is_none()
             && let Some(s) = song
             && self.listen.ready(s)
             && s >= self.start_at
@@ -1052,6 +1127,10 @@ impl App {
             }
         }
         let debug_lines = self.debug.then(|| self.debug_lines());
+        let mut screen_sprites = Vec::new();
+        if let Some((w, h)) = self.gfx.as_ref().map(Gfx::logical_size) {
+            self.screen_card(w, h, now, &mut screen_sprites);
+        }
         let Some(g) = self.gfx.as_mut() else {
             // (Headless: the frame's work is the engine's and the sounds'.)
             if self.mute {
@@ -1118,8 +1197,17 @@ impl App {
             hud::draw(&self.engine.view.borrow(), &state, w, h, &mut overlay);
         }
         if !self.running && self.over.is_none() {
-            scene::listening_card(w, h, self.listen.evidence, GATE, now, &mut overlay);
+            scene::listening_card(
+                w,
+                h,
+                self.listen.evidence,
+                GATE,
+                now,
+                self.bluetooth,
+                &mut overlay,
+            );
         }
+        overlay.extend(screen_sprites);
         if let Some(lines) = debug_lines {
             let u = (w / 960.0).min(h / 540.0);
             overlay.push(gfx::rect(
@@ -1255,7 +1343,7 @@ impl App {
             .offset_s(InputKey::Up)
             .max(self.calibration.offset_s(InputKey::Space))
             .max(0.0);
-        eval::live::SETTLE_S + KEY_LATE_S + offset
+        eval::live::SETTLE_S + KEY_LATE_S + offset + self.calibration.visual_s().max(0.0)
     }
 
     /// Ends the run (host time `now`) for `end`: the end card shows, listening goes on.
@@ -1274,6 +1362,201 @@ impl App {
         );
     }
 
+    /// A key for a calibration screen (or C and V opening one while listening); whether it took
+    /// it.
+    fn screen_key(&mut self, code: KeyCode, pressed: bool, repeat: bool, now: f64) -> bool {
+        if repeat {
+            return self.screen.is_some();
+        }
+        let heard = |k: usize, first: f64| first + k as f64 * 60.0 / calibration::BPM;
+        match &mut self.screen {
+            None if pressed && !self.running && code == KeyCode::KeyC => {
+                // Eight clicks, the first a second from now; the taps are compared with when
+                // each is heard.
+                let first = now + 1.0;
+                let clicks: Vec<f64> = (0..calibration::CLICKS).map(|k| heard(k, first)).collect();
+                for (k, &c) in clicks.iter().enumerate() {
+                    let freq = if k % 4 == 0 { 2400.0 } else { 1800.0 };
+                    self.voice(Voiced::Click(freq), c - self.audio.l_out, 0.0, 1.0);
+                }
+                self.screen = Some(Screen::Taps {
+                    clicks,
+                    taps: Vec::new(),
+                });
+                true
+            }
+            None if pressed && !self.running && code == KeyCode::KeyV => {
+                self.screen = Some(Screen::Visual {
+                    first: now + 0.5,
+                    scheduled: f64::NEG_INFINITY,
+                    ms: self.calibration.visual_offset_ms.unwrap_or(0.0),
+                });
+                true
+            }
+            None => false,
+            Some(Screen::Taps { taps, .. }) => {
+                if pressed {
+                    match code {
+                        KeyCode::Escape => self.screen = None,
+                        KeyCode::Space => taps.push((now, true)),
+                        KeyCode::ArrowLeft
+                        | KeyCode::ArrowRight
+                        | KeyCode::ArrowUp
+                        | KeyCode::ArrowDown
+                        | KeyCode::KeyA
+                        | KeyCode::KeyD
+                        | KeyCode::KeyW
+                        | KeyCode::KeyS => taps.push((now, false)),
+                        _ => {}
+                    }
+                }
+                true
+            }
+            Some(Screen::Visual { ms, .. }) => {
+                if pressed {
+                    match code {
+                        KeyCode::ArrowLeft => *ms -= 5.0,
+                        KeyCode::ArrowRight => *ms += 5.0,
+                        KeyCode::Enter => {
+                            let ms = *ms;
+                            self.save_calibration(|c| c.visual_offset_ms = Some(ms));
+                            self.screen = Some(Screen::Said {
+                                text: format!("DISPLAY OFFSET {ms:.0} MS SAVED"),
+                                until: now + 3.0,
+                            });
+                        }
+                        KeyCode::Escape => self.screen = None,
+                        _ => {}
+                    }
+                }
+                true
+            }
+            Some(Screen::Said { .. }) => {
+                self.screen = None;
+                false
+            }
+        }
+    }
+
+    /// Saves a change to the current device's calibration.
+    fn save_calibration(&mut self, change: impl Fn(&mut Calibration)) {
+        let mut c = self.settings.for_device(&self.device_uid);
+        change(&mut c);
+        self.settings.devices.insert(self.device_uid.clone(), c);
+        if let Err(e) = self.settings.save() {
+            eprintln!("slice: can't save the settings: {e}");
+        }
+        change(&mut self.calibration);
+        self.engine.settle_s = self.settle_s();
+    }
+
+    /// The calibration screens' time passing: the tap-along's result once its clicks are over,
+    /// the visual test's next clicks.
+    fn screen_tick(&mut self, now: f64) {
+        match &mut self.screen {
+            Some(Screen::Taps { clicks, taps }) if now > clicks[clicks.len() - 1] + 0.6 => {
+                let stomps = taps.iter().filter(|t| t.1).count();
+                let group = calibration::tap_group(stomps, taps.len());
+                let stomp = group == calibration::Group::Stomp;
+                let times: Vec<f64> = taps.iter().filter(|t| t.1 == stomp).map(|t| t.0).collect();
+                let which = if stomp { "STOMP KEY" } else { "ARROW" };
+                let text = match calibration::tap_offset(&times, clicks) {
+                    Some(ms) => {
+                        self.save_calibration(|c| c.set_offset(group, ms));
+                        format!(
+                            "YOUR {which} TAPS LAND {:.0} MS {}: PLAY ALLOWS FOR IT",
+                            ms.abs(),
+                            if ms >= 0.0 { "LATE" } else { "EARLY" }
+                        )
+                    }
+                    None => format!("NOT ENOUGH {which} TAPS ON THE CLICKS: NOTHING CHANGED"),
+                };
+                self.screen = Some(Screen::Said {
+                    text,
+                    until: now + 4.0,
+                });
+            }
+            Some(Screen::Visual {
+                first, scheduled, ..
+            }) => {
+                // Clicks a third of a second ahead, each on a beat.
+                let period = 60.0 / calibration::BPM;
+                let mut next = if scheduled.is_finite() {
+                    *scheduled + period
+                } else {
+                    *first
+                };
+                let l_out = self.audio.l_out;
+                let mut voices = Vec::new();
+                while next < now + 0.35 {
+                    voices.push(next - l_out);
+                    *scheduled = next;
+                    next += period;
+                }
+                for at in voices {
+                    self.voice(Voiced::Click(1800.0), at, 0.0, 1.0);
+                }
+            }
+            Some(Screen::Said { until, .. }) if now > *until => self.screen = None,
+            _ => {}
+        }
+    }
+
+    /// Draws the calibration screen showing.
+    fn screen_card(&self, w: f32, h: f32, now: f64, out: &mut Vec<gfx::Sprite>) {
+        let Some(screen) = &self.screen else { return };
+        let u = (w / 960.0).min(h / 540.0);
+        let px = |k: f32| (k * u).round().max(1.0);
+        out.push(gfx::rect(0.0, 0.0, w, h, [0.02, 0.02, 0.04, 0.92]));
+        let (cx, cy) = (w / 2.0, h / 2.0);
+        let line = |text: &str, y: f32, k: f32, out: &mut Vec<gfx::Sprite>| {
+            render::font::text(
+                text,
+                cx,
+                cy + y * u,
+                px(k),
+                render::font::Align::Centre,
+                [0.9, 0.9, 0.95, 1.0],
+                out,
+            );
+        };
+        match screen {
+            Screen::Taps { taps, .. } => {
+                line("TAP ALONG WITH THE 8 CLICKS", -60.0, 3.0, out);
+                line(
+                    "WITH THE KEY YOU PLAY WITH: AN ARROW, OR SPACE",
+                    -20.0,
+                    2.0,
+                    out,
+                );
+                line(&format!("{} TAPS", taps.len()), 20.0, 2.0, out);
+            }
+            Screen::Visual { first, ms, .. } => {
+                line("MOVE THE FLASH ONTO THE CLICK", -90.0, 3.0, out);
+                line(
+                    &format!("LEFT AND RIGHT: {ms:.0} MS   ENTER SAVES   ESC LEAVES"),
+                    70.0,
+                    2.0,
+                    out,
+                );
+                // The flash for the beat heard at `first + k * period`, drawn `ms` later.
+                let period = 60.0 / calibration::BPM;
+                let since = (now - ms / 1000.0 - first).rem_euclid(period);
+                if now - ms / 1000.0 >= *first && since < 0.08 {
+                    let s = 80.0 * u;
+                    out.push(gfx::rect(
+                        cx - s / 2.0,
+                        cy - s / 2.0,
+                        s,
+                        s,
+                        [1.0, 1.0, 1.0, 1.0],
+                    ));
+                }
+            }
+            Screen::Said { text, .. } => line(text, 0.0, 2.0, out),
+        }
+    }
+
     /// Changes the music's source: `file` played through the output (File mode), or the Mac's own
     /// (System mode). The run ends; listening starts afresh on the new source.
     fn switch(&mut self, file: Option<&Path>) {
@@ -1283,7 +1566,14 @@ impl App {
         }
         self.audio.shut_down();
         let start = |file: Option<&Path>| {
-            Audio::start(file, self.volume, self.mute, &self.bank, self.proxy.clone())
+            Audio::start(
+                file,
+                self.volume,
+                self.mute,
+                self.calibration.latency_correction_s(),
+                &self.bank,
+                self.proxy.clone(),
+            )
         };
         match start(file).or_else(|e| {
             eprintln!("slice: can't switch the music's source: {e}; back to System mode");
@@ -1376,6 +1666,9 @@ impl App {
         } else {
             self.key_times.take(pressed, now_s())
         };
+        if self.screen_key(code, pressed, repeat, now) {
+            return;
+        }
         // The debug menu: F1 shows it, F2 plays the next bundled track (File mode), F3 listens to
         // the Mac again (System mode).
         if pressed && !repeat {
