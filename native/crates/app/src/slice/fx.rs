@@ -1,7 +1,7 @@
 //! Effects from the content's recipes (`content/effects.yaml`, as `plan/evaluate.ts` plays them):
 //! bursts of procedural particles under drag and gravity (sparks, glows, debris in the dying
 //! enemy's colours), expanding rings, animations from the effects atlas, camera shake and screen
-//! flashes. Lights, decals and distortion come with the shaders (G3's part 4).
+//! flashes; and for the post pass, lights, chromatic aberration and shockwaves.
 #![allow(clippy::many_single_char_names, clippy::too_many_arguments)]
 
 use sim::content::types::{EffectLayer, EffectRecipe, Param};
@@ -9,6 +9,7 @@ use sim::core::rng::{Part, Rng};
 
 use super::gfx::{Sprite, rect};
 use render::atlas::Atlases;
+use render::post::{Grade, Light, MAX_WAVES};
 
 fn param(p: &Param, intensity: f64) -> f64 {
     match p {
@@ -149,6 +150,68 @@ impl Effects {
         let t = self.current_trauma(now);
         let amp = t * t * 14.0;
         (amp * (now * 61.0).sin(), amp * (now * 47.0 + 1.3).sin())
+    }
+
+    /// The effects' lights, aberration and shockwaves at `now`, as `evaluate.ts` plays them;
+    /// `at` maps a world point to the screen, `scale` world to screen.
+    pub fn post(
+        &self,
+        now: f64,
+        at: &dyn Fn(f64, f64) -> (f32, f32),
+        scale: f32,
+        lights: &mut Vec<Light>,
+        grade: &mut Grade,
+    ) {
+        let mut waves = 0;
+        for inst in &self.live {
+            let age = now - inst.at;
+            let i = inst.intensity;
+            for layer in &inst.recipe.layers {
+                match layer {
+                    EffectLayer::Light {
+                        color,
+                        radius,
+                        life,
+                        strength,
+                        ..
+                    } if age <= *life => {
+                        let u = age / life;
+                        let (x, y) = at(inst.x, inst.y);
+                        let c = hex(color);
+                        lights.push(Light {
+                            x,
+                            y,
+                            radius: (param(radius, i) * (1.0 + 0.3 * u)) as f32 * scale,
+                            color: [c[0], c[1], c[2]],
+                            strength: (param(strength, i) * (1.0 - u).powf(1.5)) as f32,
+                        });
+                    }
+                    EffectLayer::Aberration { strength, life, .. }
+                        if age <= *life && (i >= 0.8 || inst.recipe.id == "finale-blast") =>
+                    {
+                        let a = (param(strength, i) * (1.0 - age / life)) as f32;
+                        grade.aberration = grade.aberration.max(a);
+                    }
+                    EffectLayer::Distortion {
+                        radius,
+                        life,
+                        strength,
+                        ..
+                    } if age <= *life && waves < MAX_WAVES => {
+                        let u = age / life;
+                        let (x, y) = at(inst.x, inst.y);
+                        grade.waves[waves] = [
+                            x,
+                            y,
+                            (param(radius, i) * u) as f32 * scale,
+                            (param(strength, i) * (1.0 - u)) as f32,
+                        ];
+                        waves += 1;
+                    }
+                    _ => {}
+                }
+            }
+        }
     }
 
     /// Draws the effects at `now`; `at` maps a world point to the screen, `scale` world to screen.

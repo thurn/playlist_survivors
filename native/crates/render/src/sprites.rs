@@ -118,13 +118,24 @@ fn fs(i: Out) -> @location(0) vec4<f32> {
 }
 ";
 
-/// The sprite pipeline, the pages as textures and an instance buffer.
-pub struct SpriteRenderer {
-    pipeline: wgpu::RenderPipeline,
+/// One draw's instance buffer and view, so draws recorded into one encoder don't share them.
+struct Slot {
     view: wgpu::Buffer,
     bind: wgpu::BindGroup,
     instances: wgpu::Buffer,
     capacity: usize,
+}
+
+/// The sprite pipelines (one per target format), the pages as textures and the draws' slots.
+pub struct SpriteRenderer {
+    module: wgpu::ShaderModule,
+    pipeline_layout: wgpu::PipelineLayout,
+    layout: wgpu::BindGroupLayout,
+    sampler: wgpu::Sampler,
+    views: Vec<wgpu::TextureView>,
+    pipelines: Vec<(wgpu::TextureFormat, wgpu::RenderPipeline)>,
+    slots: Vec<Slot>,
+    next_slot: usize,
     page_sizes: Vec<(f32, f32)>,
     scratch: Vec<Instance>,
 }
@@ -153,12 +164,6 @@ impl SpriteRenderer {
             mag_filter: wgpu::FilterMode::Nearest,
             min_filter: wgpu::FilterMode::Nearest,
             ..Default::default()
-        });
-        let view = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("view"),
-            size: 16,
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
         });
         let texture_entry = |binding| wgpu::BindGroupLayoutEntry {
             binding,
@@ -195,36 +200,6 @@ impl SpriteRenderer {
                 texture_entry(5),
             ],
         });
-        let bind = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: None,
-            layout: &layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: view.as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&sampler),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: wgpu::BindingResource::TextureView(&views[0]),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 3,
-                    resource: wgpu::BindingResource::TextureView(&views[1]),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 4,
-                    resource: wgpu::BindingResource::TextureView(&views[2]),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 5,
-                    resource: wgpu::BindingResource::TextureView(&views[3]),
-                },
-            ],
-        });
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("sprites"),
             source: wgpu::ShaderSource::Wgsl(SHADER.into()),
@@ -234,11 +209,35 @@ impl SpriteRenderer {
             bind_group_layouts: &[Some(&layout)],
             immediate_size: 0,
         });
+        let mut renderer = SpriteRenderer {
+            module,
+            pipeline_layout,
+            layout,
+            sampler,
+            views,
+            pipelines: Vec::new(),
+            slots: Vec::new(),
+            next_slot: 0,
+            page_sizes: pages
+                .iter()
+                .map(|p| (p.width as f32, p.height as f32))
+                .collect(),
+            scratch: Vec::new(),
+        };
+        renderer.pipeline(device, format);
+        Ok(renderer)
+    }
+
+    /// The pipeline drawing into `format` targets, built the first time.
+    fn pipeline(&mut self, device: &wgpu::Device, format: wgpu::TextureFormat) -> usize {
+        if let Some(k) = self.pipelines.iter().position(|(f, _)| *f == format) {
+            return k;
+        }
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("sprites"),
-            layout: Some(&pipeline_layout),
+            layout: Some(&self.pipeline_layout),
             vertex: wgpu::VertexState {
-                module: &module,
+                module: &self.module,
                 entry_point: Some("vs"),
                 compilation_options: Default::default(),
                 buffers: &[Some(wgpu::VertexBufferLayout {
@@ -250,7 +249,7 @@ impl SpriteRenderer {
                 })],
             },
             fragment: Some(wgpu::FragmentState {
-                module: &module,
+                module: &self.module,
                 entry_point: Some("fs"),
                 compilation_options: Default::default(),
                 targets: &[Some(wgpu::ColorTargetState {
@@ -268,22 +267,65 @@ impl SpriteRenderer {
             multiview_mask: None,
             cache: None,
         });
-        let capacity = 4096;
-        Ok(SpriteRenderer {
-            pipeline,
-            view,
-            bind,
-            instances: instance_buffer(device, capacity),
-            capacity,
-            page_sizes: pages
-                .iter()
-                .map(|p| (p.width as f32, p.height as f32))
-                .collect(),
-            scratch: Vec::new(),
-        })
+        self.pipelines.push((format, pipeline));
+        self.pipelines.len() - 1
     }
 
-    /// Clears `target` to `clear` and draws `sprites` in order, for a `size` in logical pixels.
+    /// Starts a frame: its draws take slots from the first again. (Call once per submitted
+    /// encoder, before its first draw.)
+    pub fn begin(&mut self) {
+        self.next_slot = 0;
+    }
+
+    fn slot(&mut self, device: &wgpu::Device, needed: usize) -> usize {
+        let k = self.next_slot;
+        self.next_slot += 1;
+        if k == self.slots.len() || self.slots[k].capacity < needed {
+            let capacity = needed.max(4096).next_power_of_two();
+            let view = device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("view"),
+                size: 16,
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            });
+            let mut entries = vec![
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: view.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&self.sampler),
+                },
+            ];
+            for (b, v) in self.views.iter().enumerate() {
+                entries.push(wgpu::BindGroupEntry {
+                    binding: 2 + b as u32,
+                    resource: wgpu::BindingResource::TextureView(v),
+                });
+            }
+            let bind = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: None,
+                layout: &self.layout,
+                entries: &entries,
+            });
+            let slot = Slot {
+                view,
+                bind,
+                instances: instance_buffer(device, capacity),
+                capacity,
+            };
+            if k == self.slots.len() {
+                self.slots.push(slot);
+            } else {
+                self.slots[k] = slot;
+            }
+        }
+        k
+    }
+
+    /// Draws `sprites` in order into `target` (of `format`), for a `size` in logical pixels,
+    /// clearing it to `clear` first or, with `None`, drawing over what it holds.
     #[allow(clippy::too_many_arguments)]
     pub fn draw(
         &mut self,
@@ -291,8 +333,9 @@ impl SpriteRenderer {
         queue: &wgpu::Queue,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
+        format: wgpu::TextureFormat,
         size: (f32, f32),
-        clear: [f64; 3],
+        clear: Option<[f64; 3]>,
         sprites: &[Sprite],
     ) {
         self.scratch.clear();
@@ -330,16 +373,15 @@ impl SpriteRenderer {
                 _pad: [0; 3],
             });
         }
-        if self.scratch.len() > self.capacity {
-            self.capacity = self.scratch.len().next_power_of_two();
-            self.instances = instance_buffer(device, self.capacity);
-        }
+        let pipeline = self.pipeline(device, format);
+        let slot = self.slot(device, self.scratch.len());
+        let slot = &self.slots[slot];
         queue.write_buffer(
-            &self.view,
+            &slot.view,
             0,
             bytemuck::cast_slice(&[size.0, size.1, 0.0, 0.0]),
         );
-        queue.write_buffer(&self.instances, 0, bytemuck::cast_slice(&self.scratch));
+        queue.write_buffer(&slot.instances, 0, bytemuck::cast_slice(&self.scratch));
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("sprites"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -347,11 +389,13 @@ impl SpriteRenderer {
                 depth_slice: None,
                 resolve_target: None,
                 ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(wgpu::Color {
-                        r: clear[0],
-                        g: clear[1],
-                        b: clear[2],
-                        a: 1.0,
+                    load: clear.map_or(wgpu::LoadOp::Load, |c| {
+                        wgpu::LoadOp::Clear(wgpu::Color {
+                            r: c[0],
+                            g: c[1],
+                            b: c[2],
+                            a: 1.0,
+                        })
                     }),
                     store: wgpu::StoreOp::Store,
                 },
@@ -362,9 +406,9 @@ impl SpriteRenderer {
             multiview_mask: None,
         });
         if !self.scratch.is_empty() {
-            pass.set_pipeline(&self.pipeline);
-            pass.set_bind_group(0, &self.bind, &[]);
-            pass.set_vertex_buffer(0, self.instances.slice(..));
+            pass.set_pipeline(&self.pipelines[pipeline].1);
+            pass.set_bind_group(0, &slot.bind, &[]);
+            pass.set_vertex_buffer(0, slot.instances.slice(..));
             pass.draw(0..4, 0..self.scratch.len() as u32);
         }
     }

@@ -1,11 +1,11 @@
-//! The slice's window: a wgpu surface drawn by the render crate's sprite renderer.
+//! The slice's window: a wgpu surface drawn by the render crate's sprites and post passes.
 #![allow(clippy::default_trait_access)]
 
 use std::sync::Arc;
 
 use render::atlas::Page;
+use render::post::{Frame, Post};
 pub use render::sprites::Sprite;
-use render::sprites::SpriteRenderer;
 use winit::window::Window;
 
 /// A solid rectangle in logical pixels (origin top left).
@@ -24,7 +24,7 @@ pub struct Gfx {
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
-    sprites: SpriteRenderer,
+    post: Post,
 }
 
 impl Gfx {
@@ -47,14 +47,14 @@ impl Gfx {
         config.present_mode = wgpu::PresentMode::Fifo;
         config.desired_maximum_frame_latency = 1;
         surface.configure(&device, &config);
-        let sprites = SpriteRenderer::new(&device, &queue, config.format, pages)?;
+        let post = Post::new(&device, &queue, config.format, pages)?;
         Ok(Gfx {
             window,
             surface,
             device,
             queue,
             config,
-            sprites,
+            post,
         })
     }
 
@@ -73,28 +73,28 @@ impl Gfx {
         (s.width, s.height)
     }
 
-    /// Clears to `clear` and draws `sprites` in order.
-    pub fn draw(&mut self, clear: [f64; 3], sprites: &[Sprite]) {
-        let (wgpu::CurrentSurfaceTexture::Success(frame)
-        | wgpu::CurrentSurfaceTexture::Suboptimal(frame)) = self.surface.get_current_texture()
+    /// Draws `frame`.
+    pub fn draw(&mut self, frame: &Frame) {
+        let (wgpu::CurrentSurfaceTexture::Success(texture)
+        | wgpu::CurrentSurfaceTexture::Suboptimal(texture)) = self.surface.get_current_texture()
         else {
             self.surface.configure(&self.device, &self.config);
             return;
         };
         let size = self.logical_size();
-        let view = frame.texture.create_view(&Default::default());
+        let view = texture.texture.create_view(&Default::default());
         let mut enc = self.device.create_command_encoder(&Default::default());
-        self.sprites.draw(
+        self.post.draw(
             &self.device,
             &self.queue,
             &mut enc,
             &view,
+            (self.config.width, self.config.height),
             size,
-            clear,
-            sprites,
+            frame,
         );
         self.queue.submit([enc.finish()]);
         self.window.pre_present_notify();
-        self.queue.present(frame);
+        self.queue.present(texture);
     }
 }

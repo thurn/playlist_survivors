@@ -48,6 +48,7 @@ use std::sync::mpsc;
 use analysis::analyzer::Entry;
 use eval::live::{Engine, Moment};
 use render::atlas::Atlases;
+use render::post::Frame;
 use sim::content::{ContentLibrary, SourceFile, load_content};
 use sim::movement::InputKey;
 use winit::application::ApplicationHandler;
@@ -73,6 +74,8 @@ const SOUND_PEAK: f32 = 0.01;
 const SILENCE_S: f64 = 3.0;
 /// The analyzer's evidence gate (`manifest.json`'s `streamParams.gate`).
 const GATE: f64 = 0.2;
+/// Under the ground (the TS game's world clear).
+const CLEAR: [f64; 3] = [0.06, 0.07, 0.05];
 
 struct Options {
     file: Option<PathBuf>,
@@ -318,11 +321,27 @@ fn still(path: &Path) -> Result<(), String> {
         .filter(|d| d.abs() < 2.5)
         .collect();
     let (w, h) = (960, 640);
-    let mut sprites = Vec::new();
+    let mut layers = scene::Layers::default();
     let theme = world.theme(&engine)?;
     let ground = scene::Field {
         seed: engine.seed,
         theme,
+    };
+    let last = beats
+        .iter()
+        .copied()
+        .filter(|&b| b <= end)
+        .fold(0.0, f64::max);
+    let beat_phase = (end - last) / 0.47;
+    let bar = beats
+        .iter()
+        .filter(|&&b| b <= end)
+        .count()
+        .saturating_sub(1)
+        % 4;
+    let pulse = scene::Pulse {
+        beat: beat_phase,
+        bar: (bar as f64 + beat_phase.min(1.0)) / 4.0,
     };
     scene.draw(
         &engine.view.borrow(),
@@ -330,15 +349,11 @@ fn still(path: &Path) -> Result<(), String> {
         &art,
         &world.looks,
         end,
+        pulse,
         w as f32,
         h as f32,
-        &mut sprites,
+        &mut layers,
     );
-    let last = beats
-        .iter()
-        .copied()
-        .filter(|&b| b <= end)
-        .fold(0.0, f64::max);
     let mut keys = [KeyLight::default(); 5];
     keys[3] = KeyLight {
         held: true,
@@ -353,24 +368,33 @@ fn still(path: &Path) -> Result<(), String> {
         keys,
         presses: &presses,
         beats: &upcoming,
-        beat_phase: (end - last) / 0.47,
+        beat_phase,
         elapsed: end,
         bitten_ago: f64::INFINITY,
     };
+    let mut overlay = Vec::new();
     hud::draw(
         &engine.view.borrow(),
         &state,
         w as f32,
         h as f32,
-        &mut sprites,
+        &mut overlay,
     );
-    let rgba = render::capture::render(&art.pages, w, h, [0.02, 0.02, 0.03], &sprites)?;
+    let frame = Frame {
+        clear: CLEAR,
+        world: &layers.sprites,
+        lights: &layers.lights,
+        grade: layers.grade,
+        overlay: &overlay,
+    };
+    let rgba = render::capture::render(&art.pages, w, h, &frame)?;
     render::capture::write_png(path, w, h, &rgba)?;
     let v = engine.view.borrow();
     eprintln!(
-        "slice: wrote {} ({} sprites; {} enemies, health {:.2}, groove {:.2})",
+        "slice: wrote {} ({} sprites, {} lights; {} enemies, health {:.2}, groove {:.2})",
         path.display(),
-        sprites.len(),
+        layers.sprites.len() + overlay.len(),
+        layers.lights.len(),
         v.alive().count(),
         v.health,
         v.groove
@@ -498,7 +522,6 @@ impl App {
         }
         let Some(g) = self.gfx.as_mut() else { return };
         let (w, h) = g.logical_size();
-        let mut sprites = Vec::new();
         let upcoming: Vec<f64> =
             song.map_or_else(Vec::new, |s| self.beats.iter().map(|b| b - s).collect());
         let Ok(theme) = self.world.theme(&self.engine) else {
@@ -508,29 +531,31 @@ impl App {
             seed: self.engine.seed,
             theme,
         };
+        // The beat phase from the last beat heard and the gap to the next; bars of four from the
+        // first beat.
+        let (phase, bar) = song.map_or((1.0, 1.0), |s| {
+            let heard = self.beats.iter().filter(|&&b| b <= s).count();
+            let last = heard.checked_sub(1).map(|k| self.beats[k]);
+            match (last, self.beats.get(heard)) {
+                (Some(last), Some(&next)) => {
+                    let phase = (s - last) / (next - last).max(1e-3);
+                    (phase, (((heard - 1) % 4) as f64 + phase.min(1.0)) / 4.0)
+                }
+                _ => (1.0, 1.0),
+            }
+        });
+        let mut layers = scene::Layers::default();
         self.scene.draw(
             &self.engine.view.borrow(),
             &ground,
             &self.art,
             &self.world.looks,
             now,
+            scene::Pulse { beat: phase, bar },
             w,
             h,
-            &mut sprites,
+            &mut layers,
         );
-        // The beat phase from the last beat heard and the gap to the next.
-        let phase = song.map_or(1.0, |s| {
-            let last = self
-                .beats
-                .iter()
-                .copied()
-                .filter(|&b| b <= s)
-                .fold(f64::NEG_INFINITY, f64::max);
-            match self.beats.iter().copied().find(|&b| b > s) {
-                Some(n) if last.is_finite() => (s - last) / (n - last).max(1e-3),
-                _ => 1.0,
-            }
-        });
         let presses: Vec<PressMark> = self
             .presses
             .iter()
@@ -548,18 +573,25 @@ impl App {
             elapsed: song.map_or(0.0, |s| s - self.run_start),
             bitten_ago: now - self.scene.bitten(),
         };
-        hud::draw(&self.engine.view.borrow(), &state, w, h, &mut sprites);
+        let mut overlay = Vec::new();
+        hud::draw(&self.engine.view.borrow(), &state, w, h, &mut overlay);
         if let Some((t, fell, seconds)) = self.over {
-            scene::end_card(w, h, now - t, seconds.max(0.0) as u64, fell, &mut sprites);
+            scene::end_card(w, h, now - t, seconds.max(0.0) as u64, fell, &mut overlay);
         }
-        sprites.push(gfx::rect(
+        overlay.push(gfx::rect(
             0.0,
             h - 4.0,
             w * self.peak.min(1.0),
             4.0,
             [0.3, 0.8, 0.4, 0.8],
         ));
-        g.draw([0.02, 0.02, 0.03], &sprites);
+        g.draw(&Frame {
+            clear: CLEAR,
+            world: &layers.sprites,
+            lights: &layers.lights,
+            grade: layers.grade,
+            overlay: &overlay,
+        });
     }
 
     /// The sounds the view's new moments make: kills, swings, bites.

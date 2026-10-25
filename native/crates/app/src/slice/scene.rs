@@ -7,9 +7,10 @@ use std::collections::HashMap;
 use eval::field::{self, CHUNK, ChunkContent, FieldProp};
 use eval::live::{LiveView, Moment};
 use render::atlas::{Atlases, Facing};
-use sim::content::types::ZoneTheme;
+use render::post::{Grade, Light};
+use sim::content::types::{ColorGrade, ZoneTheme};
 
-use super::fx::Effects;
+use super::fx::{Effects, hex};
 use super::gfx::{Sprite, rect, square};
 use sim::content::ContentLibrary;
 
@@ -40,6 +41,56 @@ pub struct Scene {
 pub struct Field<'a> {
     pub seed: f64,
     pub theme: &'a ZoneTheme,
+}
+
+/// Where the music is: the phase (0 to 1) since the last beat and since the last bar's first.
+#[derive(Clone, Copy, Debug)]
+pub struct Pulse {
+    pub beat: f64,
+    pub bar: f64,
+}
+
+/// What the scene draws: the world's sprites, its lights, and the grade over them.
+#[derive(Default)]
+pub struct Layers {
+    pub sprites: Vec<Sprite>,
+    pub lights: Vec<Light>,
+    pub grade: Grade,
+}
+
+/// A zone's colour grade (`renderer.ts`'s GRADES): multipliers, lift, contrast and saturation.
+fn grade_of(g: ColorGrade) -> ([f32; 3], [f32; 3], f32, f32) {
+    match g {
+        ColorGrade::Twilight => ([0.86, 0.92, 1.12], [0.0, 0.01, 0.04], 1.05, 0.85),
+        ColorGrade::Neutral => ([1.02, 1.0, 0.97], [0.0; 3], 1.04, 1.05),
+        ColorGrade::Autumn => ([1.08, 0.98, 0.86], [0.02, 0.01, 0.0], 1.06, 1.1),
+        ColorGrade::Ember => ([1.1, 0.94, 0.84], [0.02, 0.0, 0.0], 1.08, 1.0),
+        ColorGrade::Infernal => ([1.12, 0.9, 0.82], [0.03, 0.0, 0.01], 1.1, 0.98),
+    }
+}
+
+/// The zone's grade at a beat: the ambient light pulsing on beats, the vignette on bars. (The
+/// TS game's reactive loudness and key look aren't in the app yet: as a mid loudness, neutral.)
+fn grade(theme: &ZoneTheme, pulse: Pulse, now: f64, pixel: f32) -> Grade {
+    let (mul, lift, contrast, saturation) = grade_of(theme.color_grade);
+    let amb = hex(&theme.ambient_light);
+    let beat = (-6.0 * pulse.beat.clamp(0.0, 1.0)).exp() as f32;
+    let bar = (-6.0 * pulse.bar.clamp(0.0, 1.0)).exp() as f32;
+    let ambient = |v: f32| (v * 1.1 + 0.08).min(1.2);
+    Grade {
+        ambient: [ambient(amb[0]), ambient(amb[1]), ambient(amb[2])],
+        pulse: 1.0 + 0.1 * beat,
+        bloom: 0.55,
+        mul,
+        lift,
+        contrast,
+        saturation,
+        vignette: 0.45 + 0.25 * bar,
+        haze: if theme.heat_haze { 1.0 } else { 0.0 },
+        time: now as f32,
+        pixel,
+        ..Grade::default()
+    }
 }
 
 /// What is drawn by depth: an enemy, the hero, or a chunk's tall prop.
@@ -94,7 +145,8 @@ impl Scene {
         }
     }
 
-    /// Draws `view` at host time `now` into a `w` x `h` window (the HUD is `hud`'s).
+    /// Draws `view` at host time `now`, on the music's `pulse`, into a `w` x `h` window (the HUD
+    /// is `hud`'s).
     #[allow(
         clippy::too_many_arguments,
         clippy::single_match_else,
@@ -107,14 +159,18 @@ impl Scene {
         art: &Atlases,
         looks: &HashMap<String, Look>,
         now: f64,
+        pulse: Pulse,
         w: f32,
         h: f32,
-        out: &mut Vec<Sprite>,
+        layers: &mut Layers,
     ) {
+        let out = &mut layers.sprites;
+        let lights = &mut layers.lights;
         let (cx, cy, zoom) = view.camera;
         let (shx, shy) = self.effects.shake(now);
         let (cx, cy) = (cx + shx, cy + shy);
         let scale = (w / VIEW_W).min(h / VIEW_H) * zoom as f32;
+        layers.grade = grade(ground.theme, pulse, now, scale);
         let at = |x: f64, y: f64| {
             (
                 w / 2.0 + (x - cx) as f32 * scale,
@@ -206,6 +262,25 @@ impl Scene {
                     let fade =
                         hero_at.map_or(1.0, |(hx, hy)| field::prop_fade(p.x, p.y, hx, hy)) as f32;
                     prop(p, [1.0, 1.0, 1.0, fade], out);
+                    // A lamp's or brazier's light, flickering.
+                    if let Some(l) = ground
+                        .theme
+                        .props
+                        .iter()
+                        .find(|q| q.sprite == p.sprite)
+                        .and_then(|q| q.light.as_ref())
+                    {
+                        let (sx, sy) = at(p.x, p.y - 20.0);
+                        let flick = 0.85 + 0.15 * (now * 9.0 + p.x).sin();
+                        let c = hex(&l.color);
+                        lights.push(Light {
+                            x: sx,
+                            y: sy,
+                            radius: (l.radius * flick) as f32 * scale,
+                            color: [c[0], c[1], c[2]],
+                            strength: 0.8 * fade,
+                        });
+                    }
                 }
                 Drawn::Foe(id) => {
                     let f = &view.foes[&id];
@@ -239,6 +314,15 @@ impl Scene {
                 }
                 Drawn::Hero => {
                     let hero = view.hero.expect("placed");
+                    // The hero carries a soft light.
+                    let (lx, ly) = at(hero.x, hero.y - 16.0);
+                    lights.push(Light {
+                        x: lx,
+                        y: ly,
+                        radius: 144.0 * scale,
+                        color: [1.0, 0.91, 0.75],
+                        strength: 0.35,
+                    });
                     let (sx, sy) = at(hero.x, hero.y - hero.z);
                     let facing =
                         [Facing::Up, Facing::Left, Facing::Down, Facing::Right][hero.facing.min(3)];
@@ -261,6 +345,8 @@ impl Scene {
             }
         }
         self.effects.draw(art, now, &at, scale, w, h, out);
+        self.effects
+            .post(now, &at, scale, lights, &mut layers.grade);
         if now - self.bitten < 0.6 {
             let a = (1.0 - (now - self.bitten) / 0.6) as f32;
             out.push(rect(0.0, 0.0, w, h, [0.8, 0.1, 0.1, 0.25 * a]));
