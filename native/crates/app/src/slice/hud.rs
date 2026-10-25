@@ -2,7 +2,8 @@
 //! TS game's 5 x 7 pixel font. Experience and level along the top, health top left, kills and the
 //! rated presses top right, the arrow keys bottom left, and the beat track: the committed beats
 //! slide toward a beating heart, presses flash on it early or late in their rating's colour, and
-//! the groove meter beside it shows the tier.
+//! the groove meter beside it shows the tier. Over the hero's head, `overhead.ts`'s display: life
+//! over groove, and a gem keeping the beat as a ring closes on it.
 // (Colours as the TS source writes them.)
 #![allow(clippy::unreadable_literal, clippy::many_single_char_names)]
 
@@ -70,6 +71,10 @@ pub struct HudState<'a> {
     pub elapsed: f64,
     /// When the hero was last bitten, seconds ago.
     pub bitten_ago: f64,
+    /// The top of the hero's head on screen, if placed.
+    pub head: Option<(f32, f32)>,
+    /// Whether the next beat starts a bar.
+    pub next_down: bool,
 }
 
 /// A small heart, 7 x 6 font pixels.
@@ -79,6 +84,7 @@ const HEART: [&str; 6] = [
 
 pub fn draw(view: &LiveView, st: &HudState, w: f32, h: f32, out: &mut Vec<Sprite>) {
     let u = (w / 960.0).min(h / 540.0);
+    overhead(view, st, w, h, u, out);
     let (ox, oy) = ((w - 960.0 * u) / 2.0, (h - 540.0 * u) / 2.0);
     let px = |x: f32| ox + x * u;
     let py = |y: f32| oy + y * u;
@@ -284,6 +290,164 @@ pub fn draw(view: &LiveView, st: &HudState, w: f32, h: f32, out: &mut Vec<Sprite
         fs,
         Align::Left,
         TIERS[tier],
+        out,
+    );
+}
+
+fn smoothstep(x: f32) -> f32 {
+    let x = x.clamp(0.0, 1.0);
+    x * x * (3.0 - 2.0 * x)
+}
+
+/// A filled diamond at (x, y), `r` tall and `rx` wide each way, in rows `p` high.
+fn diamond(x: f32, y: f32, r: f32, rx: f32, p: f32, color: [f32; 4], out: &mut Vec<Sprite>) {
+    let rows = (r / p).ceil() as i32;
+    for k in -rows..rows {
+        let mid = (k as f32 + 0.5) * p;
+        let half = rx * (1.0 - mid.abs() / r);
+        if half > 0.0 {
+            out.push(rect(x - half, y + k as f32 * p, 2.0 * half, p, color));
+        }
+    }
+}
+
+/// A diamond's outline, `t` thick.
+fn diamond_edge(x: f32, y: f32, r: f32, rx: f32, t: f32, color: [f32; 4], out: &mut Vec<Sprite>) {
+    let n = ((r + rx) / t).ceil().max(4.0) as i32;
+    for k in 0..n {
+        let f = k as f32 / n as f32;
+        for (sx, sy) in [(1.0, 1.0), (1.0, -1.0), (-1.0, 1.0), (-1.0, -1.0)] {
+            let (dx, dy) = (sx * rx * f, sy * r * (1.0 - f));
+            out.push(rect(x + dx - t / 2.0, y + dy - t / 2.0, t, t, color));
+        }
+    }
+}
+
+/// A filled disc, in rows `p` high.
+fn disc(x: f32, y: f32, r: f32, p: f32, color: [f32; 4], out: &mut Vec<Sprite>) {
+    let rows = (r / p).ceil() as i32;
+    for k in -rows..rows {
+        let mid = (k as f32 + 0.5) * p;
+        let half = (r * r - mid * mid).max(0.0).sqrt();
+        if half > 0.0 {
+            out.push(rect(x - half, y + k as f32 * p, 2.0 * half, p, color));
+        }
+    }
+}
+
+/// A circle's outline, `t` thick.
+fn ring(x: f32, y: f32, r: f32, t: f32, color: [f32; 4], out: &mut Vec<Sprite>) {
+    let n = (std::f32::consts::TAU * r / t).ceil().max(12.0) as i32;
+    for k in 0..n {
+        let a = k as f32 / n as f32 * std::f32::consts::TAU;
+        out.push(rect(
+            x + a.cos() * r - t / 2.0,
+            y + a.sin() * r - t / 2.0,
+            t,
+            t,
+            color,
+        ));
+    }
+}
+
+/// The display over the hero's head (`overhead.ts`, `hud.ts`): life over groove, and the gem
+/// keeping the beat, a ring closing on it toward each beat (pale before a bar); without beats,
+/// the gem breathes. `hud` is the HUD unit.
+fn overhead(view: &LiveView, st: &HudState, w: f32, h: f32, hud: f32, out: &mut Vec<Sprite>) {
+    let Some((hx, hy)) = st.head else { return };
+    let a = smoothstep((st.elapsed as f32 - 0.5) / 1.5);
+    if a <= 0.0 {
+        return;
+    }
+    let u = 1.3 * hud;
+    let margin = 30.0 * u;
+    let x = hx.clamp(margin, (w - margin).max(margin));
+    let y = (hy - 16.0 * hud).clamp(16.0 * hud, (h - 16.0 * hud).max(16.0 * hud));
+    let tier = TIERS[(view.tier.max(0.0) as usize).min(TIERS.len() - 1)];
+    let line = u.max(1.0);
+    let (half, bh) = (26.0 * u, 4.0 * u);
+    let (life_y, groove_y) = (y - bh - u, y + u);
+    out.push(rect(
+        x - half - line,
+        life_y - line,
+        2.0 * (half + line),
+        2.0 * bh + 2.0 * u + 2.0 * line,
+        [0.02, 0.016, 0.04, 0.65 * a],
+    ));
+    let health = view.health.clamp(0.0, 1.0) as f32;
+    let danger = (1.0 - health / 0.3).clamp(0.0, 1.0);
+    let hit = (-8.0 * st.beat_phase.clamp(0.0, 1.0)).exp() as f32;
+    let life = if st.bitten_ago < 0.15 {
+        rgb(0xffffff)
+    } else if danger * hit > 0.5 {
+        rgb(0xff9098)
+    } else {
+        rgb(0xff4050)
+    };
+    out.push(rect(
+        x - half,
+        life_y,
+        2.0 * half * health,
+        bh,
+        alpha(life, a),
+    ));
+    out.push(rect(
+        x - half,
+        groove_y,
+        2.0 * half * view.groove.clamp(0.0, 1.0) as f32,
+        bh,
+        alpha(tier, a),
+    ));
+    let dark = [0.02, 0.016, 0.04, 0.8 * a];
+    if st.beats.is_empty() {
+        // Free movement: the gem breathes.
+        let free = rgb(0x9fb8ff);
+        let breathe = (0.5 + 0.5 * (st.elapsed as f32 * 3.0).cos()).powi(2);
+        let r = (3.5 + 1.5 * breathe) * u;
+        disc(
+            x,
+            y,
+            r + 3.0 * u * breathe,
+            line,
+            alpha(free, 0.25 * a),
+            out,
+        );
+        disc(x, y, r + line, line, dark, out);
+        disc(x, y, r, line, alpha(free, a), out);
+        return;
+    }
+    let phase = st.beat_phase.clamp(0.0, 1.0) as f32;
+    let ring_color = if st.next_down {
+        rgb(0xffe8b0)
+    } else {
+        rgb(0xd8e4ff)
+    };
+    ring(
+        x,
+        y,
+        (5.0 + 13.0 * (1.0 - phase)) * u,
+        if st.next_down { 1.75 * line } else { line },
+        alpha(ring_color, 0.85 * smoothstep(phase / 0.55) * a),
+        out,
+    );
+    let burst = (1.0 - phase * 2.0).max(0.0);
+    if burst > 0.0 {
+        let b2 = burst * burst;
+        let r = (6.0 + 12.0 * (1.0 - b2)) * u;
+        diamond(x, y, r * 0.9, r * 0.9, line, alpha(tier, 0.3 * b2 * a), out);
+        diamond_edge(x, y, r, r, 2.0 * line, alpha(tier, b2 * a), out);
+    }
+    let r = (4.5 + 2.0 * hit) * u;
+    diamond(x, y, r + line, r + line, line, dark, out);
+    let gem = if hit > 0.6 { rgb(0xffffff) } else { tier };
+    diamond(x, y, r, r, line, alpha(gem, a), out);
+    diamond(
+        x,
+        y,
+        r * 0.45,
+        r * 0.45,
+        line,
+        alpha(rgb(0xffffff), (0.35 + 0.65 * hit) * a),
         out,
     );
 }

@@ -9,6 +9,7 @@ use sim::core::rng::{Part, Rng};
 
 use super::gfx::{Sprite, rect};
 use render::atlas::Atlases;
+use render::font::{self, Align};
 use render::post::{Grade, Light, MAX_WAVES};
 
 fn param(p: &Param, intensity: f64) -> f64 {
@@ -325,6 +326,37 @@ impl Effects {
                                 .tinted(t),
                             );
                         }
+                    }
+                    EffectLayer::Text {
+                        text,
+                        color,
+                        life,
+                        size,
+                        ..
+                    } => {
+                        if age > *life {
+                            continue;
+                        }
+                        // (Rising over the place, then fading; large text at twice the size.)
+                        let u = age / life;
+                        let smooth = |x: f64| {
+                            let x = x.clamp(0.0, 1.0);
+                            x * x * (3.0 - 2.0 * x)
+                        };
+                        let rise = 18.0 * smooth((u * 3.0).min(1.0));
+                        let (sx, sy) = at(inst.x, inst.y - 40.0 - rise);
+                        let mut tint = hex(color);
+                        tint[3] = (1.0 - smooth((u - 0.6) / 0.4)) as f32;
+                        let k = if *size >= 24.0 { 2.0 } else { 1.0 };
+                        font::text(
+                            text,
+                            sx,
+                            sy,
+                            (k * scale).round().max(1.0),
+                            Align::Centre,
+                            tint,
+                            out,
+                        );
                     }
                     EffectLayer::Flash {
                         opacity,

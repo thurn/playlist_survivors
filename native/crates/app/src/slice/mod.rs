@@ -314,6 +314,7 @@ fn still(path: &Path) -> Result<(), String> {
         engine.advance_to(s);
         let moments = engine.view.borrow_mut().take_moments();
         scene.moments(&moments, s, &world.lib, &world.looks);
+        scene.level(&engine.view.borrow(), s, &world.lib);
     }
     let upcoming: Vec<f64> = beats
         .iter()
@@ -371,6 +372,8 @@ fn still(path: &Path) -> Result<(), String> {
         beat_phase,
         elapsed: end,
         bitten_ago: f64::INFINITY,
+        head: layers.head,
+        next_down: bar == 3,
     };
     let mut overlay = Vec::new();
     hud::draw(
@@ -491,6 +494,8 @@ impl App {
             self.cues(&moments, now);
             self.scene
                 .moments(&moments, now, &self.world.lib, &self.world.looks);
+            self.scene
+                .level(&self.engine.view.borrow(), now, &self.world.lib);
             let fell = self.engine.fallen();
             if fell || (self.last_sound.is_finite() && now - self.last_sound > SILENCE_S) {
                 if fell {
@@ -572,6 +577,8 @@ impl App {
             beat_phase: phase,
             elapsed: song.map_or(0.0, |s| s - self.run_start),
             bitten_ago: now - self.scene.bitten(),
+            head: layers.head.filter(|_| self.over.is_none()),
+            next_down: bar >= 0.75,
         };
         let mut overlay = Vec::new();
         hud::draw(&self.engine.view.borrow(), &state, w, h, &mut overlay);

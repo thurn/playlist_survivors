@@ -7,6 +7,7 @@ use std::collections::HashMap;
 use eval::field::{self, CHUNK, ChunkContent, FieldProp};
 use eval::live::{LiveView, Moment};
 use render::atlas::{Atlases, Facing};
+use render::font::{self, Align};
 use render::post::{Grade, Light};
 use sim::content::types::{ColorGrade, ZoneTheme};
 
@@ -35,6 +36,8 @@ pub struct Scene {
     bitten: f64,
     /// The open field's chunks near the camera.
     chunks: HashMap<(i64, i64), ChunkContent>,
+    /// The hero's level last seen.
+    level: u32,
 }
 
 /// The ground's zone and seed.
@@ -56,6 +59,8 @@ pub struct Layers {
     pub sprites: Vec<Sprite>,
     pub lights: Vec<Light>,
     pub grade: Grade,
+    /// The top of the hero's head on screen, for the overhead display.
+    pub head: Option<(f32, f32)>,
 }
 
 /// A zone's colour grade (`renderer.ts`'s GRADES): multipliers, lift, contrast and saturation.
@@ -143,6 +148,17 @@ impl Scene {
                 _ => {}
             }
         }
+    }
+
+    /// Celebrates a level gained since the last call (the `level-up` recipe at the hero).
+    pub fn level(&mut self, view: &LiveView, now: f64, lib: &ContentLibrary) {
+        if self.level > 0
+            && view.level > self.level
+            && let (Some(h), Some(recipe)) = (view.hero, lib.effects.get("level-up"))
+        {
+            self.effects.start(recipe, h.x, h.y, 0.0, 1.0, &[], now);
+        }
+        self.level = view.level;
     }
 
     /// Draws `view` at host time `now`, on the music's `pulse`, into a `w` x `h` window (the HUD
@@ -324,6 +340,8 @@ impl Scene {
                         strength: 0.35,
                     });
                     let (sx, sy) = at(hero.x, hero.y - hero.z);
+                    // (The sprites stand 64 tall, the head about 50 up.)
+                    layers.head = Some(at(hero.x, hero.y - hero.z - 50.0));
                     let facing =
                         [Facing::Up, Facing::Left, Facing::Down, Facing::Right][hero.facing.min(3)];
                     let flash =
@@ -354,69 +372,51 @@ impl Scene {
     }
 }
 
-/// The run's end card: dims the window and shows `seconds` survived in seven-segment digits.
+/// The run's end card, in the HUD's pixel font: dims the window, says how the run ended and how
+/// long it lasted, and how to start again.
 pub fn end_card(w: f32, h: f32, age: f64, seconds: u64, fell: bool, out: &mut Vec<Sprite>) {
     let a = (age / 0.5).clamp(0.0, 1.0) as f32;
     out.push(rect(0.0, 0.0, w, h, [0.0, 0.0, 0.0, 0.7 * a]));
-    let ui = (w / VIEW_W).min(h / VIEW_H);
-    let color = if fell {
-        [0.95, 0.3, 0.4, a]
+    let u = (w / 960.0).min(h / 540.0);
+    let px = |k: f32| (k * u).round().max(1.0);
+    let (title, color, hint) = if fell {
+        ("YOU FELL", [1.0, 0.25, 0.31, a], "ENTER TO PLAY AGAIN")
     } else {
-        [0.6, 0.7, 0.9, a]
+        (
+            "THE MUSIC STOPPED",
+            [0.62, 0.72, 1.0, a],
+            "PLAY MUSIC OR PRESS ENTER TO START AGAIN",
+        )
     };
-    out.push(square(w / 2.0, h / 2.0 - 110.0 * ui, 40.0 * ui, color));
-    let size = 80.0 * ui;
-    let width = digit_count(seconds) as f32 * size * 0.75;
-    digits(
-        seconds,
-        w / 2.0 + width / 2.0,
-        h / 2.0 - 40.0 * ui,
-        size,
+    let cx = w / 2.0;
+    let top = h / 2.0 - 90.0 * u;
+    font::text(title, cx, top, px(4.0), Align::Centre, color, out);
+    font::text(
+        "SURVIVED",
+        cx,
+        top + 50.0 * u,
+        px(2.0),
+        Align::Centre,
+        [0.69, 0.69, 0.75, a],
+        out,
+    );
+    font::text(
+        &format!("{}:{:02}", seconds / 60, seconds % 60),
+        cx,
+        top + 72.0 * u,
+        px(8.0),
+        Align::Centre,
         [1.0, 1.0, 1.0, a],
         out,
     );
-}
-
-fn digit_count(mut n: u64) -> usize {
-    let mut k = 1;
-    while n >= 10 {
-        n /= 10;
-        k += 1;
-    }
-    k
-}
-
-/// `n` in seven-segment digits of height `size`, right-aligned at `right`, top at `top`.
-fn digits(n: u64, right: f32, top: f32, size: f32, color: [f32; 4], out: &mut Vec<Sprite>) {
-    // Segments a-g, as bits of each digit.
-    const SEGMENTS: [u8; 10] = [
-        0b011_1111, 0b000_0110, 0b101_1011, 0b100_1111, 0b110_0110, 0b110_1101, 0b111_1101,
-        0b000_0111, 0b111_1111, 0b110_1111,
-    ];
-    let (w, t) = (size * 0.5, size * 0.1);
-    let half = size / 2.0;
-    let mut n = n;
-    let mut x = right - w;
-    loop {
-        let seg = SEGMENTS[(n % 10) as usize];
-        let bars = [
-            (x, top, w, t),
-            (x + w - t, top, t, half),
-            (x + w - t, top + half, t, half),
-            (x, top + size - t, w, t),
-            (x, top + half, t, half),
-            (x, top, t, half),
-            (x, top + half - t / 2.0, w, t),
-        ];
-        for (i, &(bx, by, bw, bh)) in bars.iter().enumerate() {
-            if seg & (1 << i) != 0 {
-                out.push(rect(bx, by, bw, bh, color));
-            }
-        }
-        n /= 10;
-        if n == 0 {
-            break;
-        }
-        x -= size * 0.75;
-    }
+    let blink = if (age * 1.5).fract() < 0.7 { 1.0 } else { 0.4 };
+    font::text(
+        hint,
+        cx,
+        top + 150.0 * u,
+        px(2.0),
+        Align::Centre,
+        [0.85, 0.85, 0.9, a * blink],
+        out,
+    );
 }
