@@ -1,7 +1,8 @@
 //! The app (docs/design/native-app.md, "Phase G: Grow the Slice"): the game on live audio. The tap
 //! (or a `--file` played through the output) feeds the analyzer on a thread; its entries go into
-//! the sim's stream, stamped with their arrival, and the sim engine (`eval::live::Engine`) steps to
-//! the song time being heard every frame (G1's runner; G5 adds rollback). Arrow keys or WASD stride
+//! the sim's stream, stamped with their arrival, and the sim engine (`eval::live::Engine`) runs
+//! ahead of the song time being heard, rolling back for late keys and arrivals (G5), and shows the
+//! time heard each frame. Arrow keys or WASD stride
 //! on the beat, Space stomps. The run ends when the hero falls or after 3 s of silence (until G2
 //! brings the finale); Enter or Space starts the next.
 //!
@@ -310,7 +311,7 @@ fn still(path: &Path) -> Result<(), String> {
     let end = 20.0;
     for frame in 1..=(end as usize * 60) {
         let s = frame as f64 / 60.0;
-        replay.feed_to(engine.log(), s);
+        engine.feed(|log| replay.feed_to(log, s));
         while next < beats.len() && beats[next] <= s {
             let key = if next % 4 < 2 {
                 InputKey::Right
@@ -476,7 +477,9 @@ impl App {
                         }
                         self.beats.push_back(c.t);
                     }
-                    feed::append(self.engine.log(), &e, arrived, self.run_start);
+                    let start = self.run_start;
+                    self.engine
+                        .feed(|log| feed::append(log, &e, arrived, start));
                 }
                 Msg::Follow(g) => {
                     let _ = self.out.commands.push(Command::Follow(g));
@@ -516,7 +519,11 @@ impl App {
         if self.over.is_none()
             && let Some(s) = song
         {
-            self.engine.advance_to(s - self.run_start);
+            // Ahead of the time heard by the output's latency at least, so a sound is known
+            // before the output must render it (docs/design/native-app.md, "Arrivals roll back
+            // like late keys").
+            let lead = 0.2f64.max(self.l_out + self.ahead.max(0.0) + 0.02);
+            self.engine.frame(s - self.run_start, lead);
             let moments = self.engine.view.borrow_mut().take_moments();
             self.cues(&moments, now);
             self.schedule_sounds();
@@ -548,9 +555,15 @@ impl App {
         }
         if self.mute && now > self.voices_at {
             self.voices_at = now + 10.0;
+            let r = self.engine.stats;
             eprintln!(
-                "slice: sounds {} started, {} skipped late, {} dropped",
-                self.voices[0], self.voices[1], self.voices[2]
+                "slice: sounds {} started, {} skipped late, {} dropped; {} rollbacks replaying {:.1} s, {} late keys",
+                self.voices[0],
+                self.voices[1],
+                self.voices[2],
+                r.rollbacks,
+                r.replayed_s,
+                r.late_keys
             );
         }
         if now > self.title_at {
@@ -669,7 +682,7 @@ impl App {
         let at = sounds::At {
             seed,
             run_start: self.run_start,
-            beats: &self.engine.log().beats,
+            beats: &self.engine.stream().beats,
             gate: GATE,
             camera,
             clock,

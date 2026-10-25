@@ -11,7 +11,7 @@ use indexmap::IndexMap;
 use sim::content::level::{LevelError, load_level};
 use sim::content::{ContentLibrary, SourceFile};
 use sim::core::geometry::Shape;
-use sim::engine::{AnimInfo, HERO_ANIMS, Sim, SimInput};
+use sim::engine::{AnimInfo, HERO_ANIMS, Sim, SimInput, Snapshot};
 use sim::movement::InputKey;
 use sim::player::{KeyEvent, KeyEventKind};
 use sim::recorder::{
@@ -406,8 +406,12 @@ impl Recorder for LiveRecorder {
         }
     }
 
-    fn clock(&mut self, s: f64, _w: f64, _between: bool) {
-        self.0.borrow_mut().notes.s = s;
+    fn clock(&mut self, s: f64, _w: f64, between: bool) {
+        // (Records take the time of the simulation's own last stop: a move to wherever a frame or
+        // a snapshot asked would make them depend on how the run was cut up.)
+        if !between {
+            self.0.borrow_mut().notes.s = s;
+        }
     }
 
     fn swing(&mut self, sw: PlanSwing) {
@@ -478,16 +482,64 @@ impl Recorder for LiveRecorder {
     }
 }
 
-/// The sim engine on a stream that grows as it arrives, its view shared with the drawer.
+/// No key or arrival can still come for times more than this far before now (song s).
+pub const SETTLE_S: f64 = 0.04;
+/// Snapshot spacing along the simulation's run (song s).
+pub const SNAP_DT: f64 = 1.0 / 30.0;
+
+/// A point the runner can roll back to: the simulation's state, the journal's mark, and how many
+/// keys had been applied.
+struct Snap {
+    s: f64,
+    sim: Snapshot,
+    mark: Mark,
+    keys: usize,
+}
+
+/// The runner's counters, for checks and the latency report.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct RunnerStats {
+    pub rollbacks: u64,
+    /// Song time simulated again after rollbacks.
+    pub replayed_s: f64,
+    /// Keys applied later than their time (at the settled time).
+    pub late_keys: u64,
+}
+
+/// The sim engine on a stream that grows as it arrives, run ahead of the time heard with rollback
+/// (docs/design/native-app.md, "Arrivals roll back like late keys"; `live/runner.ts`): it runs to
+/// `now + lead` assuming no new input, snapshotting as it goes; a key or an arrival for a time it
+/// has passed restores the newest snapshot before it and runs ahead again. The view shows the
+/// records up to now: those before the settled time are final, the rest are laid over them afresh
+/// each frame, and moments and sounds are passed on once.
 pub struct Engine {
     pub sim: Sim,
+    /// What the drawer reads: the settled view with the unsettled records up to now laid over it.
     pub view: Rc<RefCell<LiveView>>,
-    /// What the simulation reported, and how much of it the view has applied (an absolute index).
     pub journal: Rc<RefCell<Journal>>,
-    shown: usize,
+    /// The records before the settled time, applied (and the absolute index after them).
+    settled_view: LiveView,
+    settled_idx: usize,
+    /// The moments and sounds passed on whose records are not yet settled (to pass each on once).
+    passed: Vec<(f64, Moment)>,
+    sounded: Vec<Caused>,
+    /// The journal index from which sounds are looked for.
+    sound_idx: usize,
+    snaps: Vec<Snap>,
+    /// Song time before which the state is final.
+    settled: f64,
+    /// Keys waiting for the next frame, and every key as applied (from the oldest snapshot's).
+    pending: Vec<KeyEvent>,
+    applied: Vec<KeyEvent>,
+    /// The earliest `known_at` of what arrived since the last frame.
+    arrival: Option<f64>,
+    pub stats: RunnerStats,
     /// The level's seed and zones (the open field's ground).
     pub seed: f64,
     pub zones: Vec<String>,
+    /// Every record as it settles, and every key as applied, when kept (for determinism tests).
+    pub settled_log: Option<Vec<(f64, Record)>>,
+    pub key_log: Option<Vec<KeyEvent>>,
 }
 
 impl Engine {
@@ -505,12 +557,12 @@ impl Engine {
         let level = load_level(level, lib, &song, None)?;
         let (seed, zones) = (level.seed, level.zones.clone());
         let input = SimInput::new(level, lib, hero_anims, gate, settling);
-        let view = Rc::new(RefCell::new(LiveView {
+        let fresh = LiveView {
             health: 1.0,
             level: 1,
             camera: (0.0, 0.0, 1.0),
             ..LiveView::default()
-        }));
+        };
         let journal = Rc::new(RefCell::new(Journal::default()));
         let sim = Sim::new(
             input,
@@ -526,25 +578,57 @@ impl Engine {
             Box::new(LiveRecorder(Rc::clone(&journal))),
             None,
         );
+        let first = Snap {
+            s: sim.s(),
+            sim: sim.snapshot(),
+            mark: journal.borrow().mark(),
+            keys: 0,
+        };
         Ok(Engine {
             sim,
-            view,
+            view: Rc::new(RefCell::new(fresh.clone())),
             journal,
-            shown: 0,
+            settled_view: fresh,
+            settled_idx: 0,
+            passed: Vec::new(),
+            sounded: Vec::new(),
+            sound_idx: 0,
+            snaps: vec![first],
+            settled: f64::NEG_INFINITY,
+            pending: Vec::new(),
+            applied: Vec::new(),
+            arrival: None,
+            stats: RunnerStats::default(),
             seed,
             zones,
+            settled_log: None,
+            key_log: None,
         })
     }
 
-    /// The stream, to append arrivals to (each stamped with its arrival as `known_at`).
-    pub fn log(&mut self) -> &mut StreamLog {
+    /// Appends arrivals to the stream through `f` (each stamped with its arrival as `known_at`),
+    /// noting the earliest, so the next frame rolls back to it if the simulation has passed it.
+    /// An arrival stamped before the settled time (a stall) is stamped at it: nothing before the
+    /// settled time may change.
+    pub fn feed(&mut self, f: impl FnOnce(&mut StreamLog)) {
+        let settled = self.settled;
+        let log = self.sim.log_mut();
+        let before = lengths(log);
+        f(log);
+        restamp_since(log, before, settled);
+        if let Some(t) = earliest_since(log, before) {
+            self.arrival = Some(self.arrival.map_or(t, |a| a.min(t)));
+        }
+    }
+
+    /// The stream as it has arrived.
+    pub fn stream(&mut self) -> &StreamLog {
         self.sim.log_mut()
     }
 
-    /// A key pressed or released at song time `s` (not before the simulation's time).
+    /// A key pressed or released at song time `s`, applied at the next frame.
     pub fn key(&mut self, s: f64, key: InputKey, pressed: bool) {
-        let s = s.max(self.sim.s());
-        self.sim.key(KeyEvent {
+        self.pending.push(KeyEvent {
             s,
             kind: if pressed {
                 KeyEventKind::Press
@@ -556,31 +640,282 @@ impl Engine {
         });
     }
 
-    /// Runs the rules to song time `s` and shows what they reported up to it.
-    pub fn advance_to(&mut self, s: f64) {
-        if s > self.sim.s() {
-            self.sim.advance_to(s);
-        }
-        self.show(s);
-        let shown = self.shown;
-        self.journal.borrow_mut().forget(shown);
+    /// The keys as applied, at their effective times.
+    pub fn applied(&self) -> &[KeyEvent] {
+        &self.applied
     }
 
-    /// Applies the records reported up to song time `now` to the view.
-    pub fn show(&mut self, now: f64) {
+    /// The song time the simulation has run to (the speculation's frontier).
+    pub fn frontier(&self) -> f64 {
+        self.sim.s()
+    }
+
+    /// One frame at song time `now`: applies the keys and arrivals since the last (rolling back
+    /// when the simulation has passed them), runs ahead to `now + lead` and shows `now`.
+    pub fn frame(&mut self, now: f64, lead: f64) {
+        let mut keys = std::mem::take(&mut self.pending);
+        keys.sort_by(|a, b| a.s.total_cmp(&b.s));
+        let earliest = keys
+            .first()
+            .map(|k| k.s)
+            .into_iter()
+            .chain(self.arrival.take())
+            .reduce(f64::min);
+        if let Some(t) = earliest
+            && t < self.sim.s() - 1e-12
+        {
+            self.roll_back(t.max(self.settled));
+        }
+        for mut k in keys {
+            // (A very late key, a main-thread stall's, is applied at the settled time instead.)
+            let t = k.s.max(self.settled).max(self.snaps[0].s);
+            if t > k.s {
+                self.stats.late_keys += 1;
+            }
+            // (Queued ahead of the clock: the simulation reaches it at its own stop, as a run fed
+            // the key in time would. Running the clock onto it first would change the record.)
+            k.s = t;
+            self.sim.key(k);
+            self.applied.push(k);
+            if let Some(log) = &mut self.key_log {
+                log.push(k);
+            }
+        }
+        self.run(now + lead);
+        self.settled = self.settled.max(now - SETTLE_S);
+        // Snapshots older than the settled time go, except the newest one before it.
+        let k = self
+            .snaps
+            .iter()
+            .rposition(|sn| sn.s <= self.settled)
+            .unwrap_or(0);
+        if k > 0 {
+            self.snaps.drain(..k);
+            let drop = self.snaps[0].keys;
+            self.applied.drain(..drop);
+            for sn in &mut self.snaps {
+                sn.keys -= drop;
+            }
+        }
+        self.show(now);
+        let keep = self
+            .settled_idx
+            .min(self.snaps[0].mark.len)
+            .min(self.sound_idx);
+        self.journal.borrow_mut().forget(keep);
+    }
+
+    /// Runs the rules to song time `s` without looking ahead, and shows it (a replay that feeds
+    /// keys in time: no rollback is ever needed).
+    pub fn advance_to(&mut self, s: f64) {
+        self.frame(s, 0.0);
+    }
+
+    /// Runs the simulation to song time `t`, snapshotting on the way.
+    fn run(&mut self, t: f64) {
+        while self.sim.s() < t - 1e-9 && !self.sim.done() {
+            let last = self.snaps.last().map_or(f64::NEG_INFINITY, |sn| sn.s);
+            let next = t.min(last + SNAP_DT);
+            let before = self.sim.s();
+            self.sim.advance_to(next);
+            if self.sim.s() <= before {
+                // (One of the simulation's own stops sits right at `next`, and its clock waits just
+                // short of it: step through it, unless `next` is where this run ends.)
+                if next >= t {
+                    break;
+                }
+                self.sim.advance_to(t.min(next + 1e-6));
+                if self.sim.s() <= before {
+                    break;
+                }
+            }
+            if self.sim.s() >= last + SNAP_DT - 1e-6 {
+                let snap = Snap {
+                    s: self.sim.s(),
+                    sim: self.sim.snapshot(),
+                    mark: self.journal.borrow().mark(),
+                    keys: self.applied.len(),
+                };
+                self.snaps.push(snap);
+            }
+        }
+    }
+
+    /// Restores the newest snapshot before song time `t` and rewinds the journal to it.
+    fn roll_back(&mut self, t: f64) {
+        let i = self.snaps.iter().rposition(|sn| sn.s < t).unwrap_or(0);
+        let snap = &self.snaps[i];
+        self.stats.rollbacks += 1;
+        self.stats.replayed_s += self.sim.s() - snap.s;
+        self.sim.restore(&snap.sim);
+        self.journal.borrow_mut().rewind(&snap.mark);
+        self.sound_idx = self.sound_idx.min(snap.mark.len);
+        // (Records before the settled time come back the same: the settled view keeps them.)
+        let keys = snap.keys;
+        self.snaps.truncate(i + 1);
+        // Keys applied after the snapshot go back in, in the order they were applied.
+        for k in &self.applied[keys..] {
+            self.sim.key(*k);
+        }
+    }
+
+    /// Shows song time `now`: settles the records before the settled time, lays the rest up to
+    /// `now` over them, and passes on new moments and sounds.
+    fn show(&mut self, now: f64) {
         let j = self.journal.borrow();
-        let mut v = self.view.borrow_mut();
-        while let Some((s, rec)) = j.get(self.shown) {
+        // Moments with the song time of the record that made them.
+        let mut fresh: Vec<(f64, Moment)> = Vec::new();
+        while let Some((s, rec)) = j.get(self.settled_idx) {
+            if *s > self.settled + 1e-9 || *s > now + 1e-9 {
+                break;
+            }
+            self.settled_view.apply(*s, rec);
+            fresh.extend(self.settled_view.moments.drain(..).map(|m| (*s, m)));
+            if let Some(log) = &mut self.settled_log {
+                log.push((*s, rec.clone()));
+            }
+            self.settled_idx += 1;
+        }
+        self.settled_view.sounds.clear();
+        let mut shown = self.settled_view.clone();
+        let mut k = self.settled_idx;
+        while let Some((s, rec)) = j.get(k) {
             if *s > now + 1e-9 {
                 break;
             }
-            v.apply(*s, rec);
-            self.shown += 1;
+            shown.apply(*s, rec);
+            fresh.extend(shown.moments.drain(..).map(|m| (*s, m)));
+            k += 1;
         }
+        shown.sounds.clear();
+        // Sounds from the frontier: each cause once, known from the frame that first saw it.
+        let mut sounds = Vec::new();
+        let mut k = self.sound_idx;
+        while let Some((_, rec)) = j.get(k) {
+            if let Record::Sound(c) = rec
+                && !self.sounded.iter().any(|d| d.cause == c.cause)
+            {
+                let c = Caused {
+                    cause: c.cause.clone(),
+                    known: now,
+                };
+                self.sounded.push(c.clone());
+                sounds.push(c);
+            }
+            k += 1;
+        }
+        self.sound_idx = k;
+        drop(j);
+        let settled = self.settled;
+        self.sounded.retain(|c| c.cause.s() > settled - 1.0);
+        // Each moment once: those an earlier frame's overlay passed on are not passed again.
+        let mut v = self.view.borrow_mut();
+        let mut moments = std::mem::take(&mut v.moments);
+        let mut pending_sounds = std::mem::take(&mut v.sounds);
+        for (s, m) in fresh {
+            if !self.passed.iter().any(|(ps, pm)| *ps == s && *pm == m) {
+                moments.push(m.clone());
+                self.passed.push((s, m));
+            }
+        }
+        self.passed.retain(|(s, _)| *s > settled);
+        pending_sounds.extend(sounds);
+        *v = shown;
+        v.moments = moments;
+        v.sounds = pending_sounds;
     }
 
     /// Whether the hero has fallen.
     pub fn fallen(&self) -> bool {
         self.view.borrow().health <= 0.0
     }
+}
+
+impl Cause {
+    /// The song time the sound belongs to.
+    pub fn s(&self) -> f64 {
+        match self {
+            Cause::Swing { s, .. }
+            | Cause::Kill { s, .. }
+            | Cause::Weapon { s, .. }
+            | Cause::Hurt { s }
+            | Cause::Tier { s, .. }
+            | Cause::Step { s, .. }
+            | Cause::LevelUp { s } => *s,
+        }
+    }
+}
+
+/// Each stream group's length.
+fn lengths(log: &StreamLog) -> [usize; 9] {
+    fn n<T>(v: Option<&Vec<T>>) -> usize {
+        v.map_or(0, Vec::len)
+    }
+    [
+        log.beats.len(),
+        log.ticks.len(),
+        log.onsets.len(),
+        n(log.hindsight.as_ref()),
+        n(log.timbre.as_ref()),
+        n(log.changes.as_ref()),
+        n(log.jumps.as_ref()),
+        n(log.ends.as_ref()),
+        n(log.forecasts.as_ref()),
+    ]
+}
+
+/// Stamps the entries past `before`'s lengths known before `settled` at it.
+fn restamp_since(log: &mut StreamLog, before: [usize; 9], settled: f64) {
+    fn up<T>(v: Option<&mut Vec<T>>, from: usize, settled: f64, k: impl Fn(&mut T) -> &mut f64) {
+        if let Some(v) = v
+            && let Some(new) = v.get_mut(from..)
+        {
+            for e in new {
+                let known = k(e);
+                *known = known.max(settled);
+            }
+        }
+    }
+    up(Some(&mut log.beats), before[0], settled, |e| {
+        &mut e.known_at
+    });
+    up(Some(&mut log.ticks), before[1], settled, |e| {
+        &mut e.known_at
+    });
+    up(Some(&mut log.onsets), before[2], settled, |e| {
+        &mut e.known_at
+    });
+    up(log.hindsight.as_mut(), before[3], settled, |e| {
+        &mut e.known_at
+    });
+    up(log.timbre.as_mut(), before[4], settled, |e| &mut e.known_at);
+    up(log.changes.as_mut(), before[5], settled, |e| {
+        &mut e.known_at
+    });
+    up(log.jumps.as_mut(), before[6], settled, |e| &mut e.known_at);
+    up(log.ends.as_mut(), before[7], settled, |e| &mut e.known_at);
+    up(log.forecasts.as_mut(), before[8], settled, |e| {
+        &mut e.known_at
+    });
+}
+
+/// The earliest `known_at` of the entries past `before`'s lengths.
+fn earliest_since(log: &StreamLog, before: [usize; 9]) -> Option<f64> {
+    fn min<T>(v: Option<&Vec<T>>, from: usize, k: impl Fn(&T) -> f64) -> Option<f64> {
+        v?.get(from..)?.iter().map(k).reduce(f64::min)
+    }
+    [
+        min(Some(&log.beats), before[0], |e| e.known_at),
+        min(Some(&log.ticks), before[1], |e| e.known_at),
+        min(Some(&log.onsets), before[2], |e| e.known_at),
+        min(log.hindsight.as_ref(), before[3], |e| e.known_at),
+        min(log.timbre.as_ref(), before[4], |e| e.known_at),
+        min(log.changes.as_ref(), before[5], |e| e.known_at),
+        min(log.jumps.as_ref(), before[6], |e| e.known_at),
+        min(log.ends.as_ref(), before[7], |e| e.known_at),
+        min(log.forecasts.as_ref(), before[8], |e| e.known_at),
+    ]
+    .into_iter()
+    .flatten()
+    .reduce(f64::min)
 }
