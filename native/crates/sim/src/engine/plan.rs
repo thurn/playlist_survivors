@@ -201,10 +201,10 @@ pub(super) struct Plan {
     pub sections: Vec<DetectedSection>,
     last_section_known_at: Option<f64>,
     // Zone waves.
-    zone_last: f64,
-    zone_section: usize,
+    pub(super) zone_last: f64,
+    pub(super) zone_section: usize,
     pub zone_waves: u64,
-    zone_check: Option<f64>,
+    pub(super) zone_check: Option<f64>,
     // Candidates.
     sections_seen: usize,
     jumps_seen: usize,
@@ -333,6 +333,9 @@ impl Sim {
 
     /// Takes in what the entries taken in so far decide (called after each ingestion).
     pub(super) fn plan(&mut self) {
+        if self.st.freeze.frozen {
+            return;
+        }
         self.detect_sections();
         self.plan_zone_waves();
         if self.director().set_pieces.is_none() {
@@ -395,9 +398,22 @@ impl Sim {
             {
                 Some(false)
             } else {
-                match self.effective_downbeat(known_at) {
+                match self.effective_downbeat(if self.env.input.level.survivors.is_some() {
+                    known_at.max(self.st.s)
+                } else {
+                    known_at
+                }) {
                     Known::Yes(beat) => {
                         let s = self.log.beats[beat].t;
+                        // Music can change several times while a menu holds the world.
+                        // Present its latest section once, on a future downbeat after resume.
+                        if self.env.input.level.survivors.is_some()
+                            && known_at < self.st.s - 1e-9
+                            && self.st.plan.sections.len() > self.st.plan.zone_section
+                            && self.st.plan.sections.last().is_some_and(|p| p.s == s)
+                        {
+                            self.st.plan.sections.pop();
+                        }
                         self.st
                             .plan
                             .sections
@@ -442,7 +458,12 @@ impl Sim {
         let fallback_s = self.director().zone_fallback_s;
         loop {
             let last = self.st.plan.zone_last;
-            let fallback = self.first_beat_at_or_after(last + fallback_s);
+            let deadline = if self.env.input.level.survivors.is_some() {
+                (last + fallback_s).max(self.st.s)
+            } else {
+                last + fallback_s
+            };
+            let fallback = self.first_beat_at_or_after(deadline);
             let next = self
                 .st
                 .plan

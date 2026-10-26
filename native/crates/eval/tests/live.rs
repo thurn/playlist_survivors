@@ -474,3 +474,87 @@ fn a_stalled_arrival_is_stamped_at_the_settled_time() {
     e.frame(3.01, 0.2);
     assert_eq!(e.stats.rollbacks, rollbacks + 1);
 }
+
+#[test]
+fn a_late_confirm_rolls_back_across_freeze_open_and_settles_as_on_time() {
+    use sim::survivors::FreezeReason;
+    use stream::{Beat, StreamLog, Tick};
+    let content = library();
+    let src = source("levels/survivors.yaml");
+    let log = StreamLog {
+        beats: (0..=40)
+            .map(|i| {
+                let t = 0.5 + f64::from(i) * 0.5;
+                Beat {
+                    t,
+                    known_at: (t - 0.2).max(0.0),
+                    period: 0.5,
+                    evidence: 1.0,
+                }
+            })
+            .collect(),
+        ticks: (0..=400)
+            .map(|i| {
+                let t = f64::from(i) / 20.0;
+                Tick {
+                    t,
+                    known_at: t,
+                    evidence: 1.0,
+                    energy: 0.5,
+                    level: Some(stream::Level::Medium),
+                    key: None,
+                    bands: None,
+                    brightness: None,
+                }
+            })
+            .collect(),
+        ..StreamLog::default()
+    };
+    let run = |lead: f64, late: f64| {
+        let mut engine = Engine::new(
+            &src,
+            &content,
+            &IndexMap::new(),
+            0.2,
+            true,
+            true,
+            f64::INFINITY,
+        )
+        .unwrap();
+        engine.settle_s = 0.1;
+        engine.settled_log = Some(Vec::new());
+        engine.feed(|out| *out = log.clone());
+        engine.frame(0.5, lead);
+        engine.sim.freeze_at(1.0, FreezeReason::LevelUp);
+        let mut next = 0;
+        let keys = [(1.02, true), (1.03, false)];
+        for i in 51..=600 {
+            let now = f64::from(i) / 100.0;
+            while next < keys.len() && keys[next].0 + late <= now + 1e-9 {
+                engine.key(keys[next].0, InputKey::Confirm, keys[next].1);
+                next += 1;
+            }
+            engine.frame(now, lead);
+        }
+        engine.frame(6.5, 0.0);
+        (engine.settled_log.take().unwrap(), engine)
+    };
+    let (on_time, plain) = run(0.0, 0.0);
+    let (late, ahead) = run(0.4, 0.03);
+    assert!(ahead.stats.key_rollbacks > 0);
+    assert!(ahead.stats.deepest_s > 0.3);
+    assert_eq!(on_time.len(), late.len(), "settled record counts");
+    let n = on_time.len();
+    let hash = eval::live::hash_records(&on_time);
+    assert_eq!(hash, eval::live::hash_records(&late));
+    for (i, (a, b)) in on_time[..n].iter().zip(&late[..n]).enumerate() {
+        assert_eq!(format!("{a:?}"), format!("{b:?}"), "record {i}");
+    }
+    assert!(plain.view.borrow().run.unwrap().confirmed);
+    assert!(ahead.view.borrow().run.unwrap().confirmed);
+    assert_eq!(plain.sim.run_state(), ahead.sim.run_state());
+    eprintln!(
+        "freeze Confirm: {} matching settled records, hash {hash:016x}, {} key rollbacks, deepest {} s",
+        n, ahead.stats.key_rollbacks, ahead.stats.deepest_s
+    );
+}

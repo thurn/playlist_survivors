@@ -26,6 +26,7 @@
 
 mod combat;
 mod foes;
+mod freeze;
 mod hero;
 mod judge;
 mod observe;
@@ -308,6 +309,10 @@ impl QKey {
 #[derive(Clone, Debug)]
 enum Ev {
     Key(KeyEvent),
+    Freeze(crate::survivors::FreezeReason),
+    FreePulse {
+        generation: u64,
+    },
     Held,
     HitstopEnd,
     Wind(usize),
@@ -423,6 +428,8 @@ impl Ev {
     fn order(&self) -> f64 {
         match self {
             Ev::HitstopEnd => 0.0,
+            Ev::Freeze(_) => 0.5,
+            Ev::FreePulse { .. } => 6.6,
             Ev::LevelDue { .. } => 2.0,
             Ev::ReactiveBeat { .. } => 2.4,
             Ev::LevelUp { .. } => 3.0,
@@ -879,6 +886,7 @@ struct SimState {
     s: f64,
     /// Unwarped elapsed run time, independent of song boundaries (SF3 freezes it).
     run_s: f64,
+    freeze: freeze::Freeze,
     w: f64,
     rate_s: f64,
     q: Queue,
@@ -1150,6 +1158,14 @@ impl Sim {
         self.ingest_entries(t);
         self.st.horizon = max(self.st.horizon, t + 1e-9);
         // What the entries taken in decide: sections, zone waves, set pieces, the finale.
+        self.plan_freeze();
+        if self.st.freeze.frozen
+            && self.st.freeze.resume.is_none()
+            && self.st.freeze.reasons_empty()
+        {
+            self.request_resume();
+        }
+        self.requeue_held();
         self.plan();
     }
 
@@ -1208,36 +1224,53 @@ impl Sim {
         st.sch.grow_to(log, st.ingested.beats);
         st.song = st.sch.song.clone();
         st.idx = index_song(&st.song);
-        let hero = &env.input.lib.hero;
-        for bi in from..st.ingested.beats {
-            let b = log.beats[bi];
-            // (Every beat is known by its predecessor's time, the analyzer's commit rule: the
-            // streaming queue relies on it.)
-            assert!(
-                b.t >= st.s - 1e-9,
-                "beat {bi} at {} arrived after the simulation passed it ({})",
-                b.t,
-                st.s
-            );
-            let sl = &st.sch.grid_slots[bi];
-            // The sword swings by itself on every slot, never before the slot's beat is known.
-            let windup = sl.s
-                - hero.swings.windup_ms / 1000.0 / max(0.05, step_rate(&st.sch.base_steps, sl.s));
-            let at = max(max(0.0, windup), b.known_at);
-            st.q.push_init(at, Ev::Auto { slot: bi }, phase::AUTO, bi as u64);
-            st.q.push_init(b.t, Ev::Beat { bi }, phase::BEAT, bi as u64);
-            st.q.push_init(
-                b.t,
-                Ev::ReactiveBeat { bi },
-                phase::REACTIVE_BEAT,
-                bi as u64,
-            );
+        if env.input.level.survivors.is_some() {
+            for bi in from..st.ingested.beats {
+                self.queue_beat(bi);
+            }
+            self.arm_free_pulse();
+        } else {
+            let hero = &env.input.lib.hero;
+            for bi in from..st.ingested.beats {
+                let b = log.beats[bi];
+                // (Every beat is known by its predecessor's time, the analyzer's commit rule: the
+                // streaming queue relies on it.)
+                assert!(
+                    b.t >= st.s - 1e-9,
+                    "beat {bi} at {} arrived after the simulation passed it ({})",
+                    b.t,
+                    st.s
+                );
+                let sl = &st.sch.grid_slots[bi];
+                // The sword swings by itself on every slot, never before the slot's beat is known.
+                let windup = sl.s
+                    - hero.swings.windup_ms
+                        / 1000.0
+                        / max(0.05, step_rate(&st.sch.base_steps, sl.s));
+                let at = max(max(0.0, windup), b.known_at);
+                st.q.push_init(at, Ev::Auto { slot: bi }, phase::AUTO, bi as u64);
+                st.q.push_init(b.t, Ev::Beat { bi }, phase::BEAT, bi as u64);
+                st.q.push_init(
+                    b.t,
+                    Ev::ReactiveBeat { bi },
+                    phase::REACTIVE_BEAT,
+                    bi as u64,
+                );
+            }
         }
         // A held key strides on every step of the stride period: the last grid time's steps wait for
         // the next beat.
+        let st = &mut self.st;
         let upto = st.sch.stride_steps.tail();
-        for k in st.held_queued..upto {
-            st.q.push_init(st.sch.stride_steps.s[k], Ev::Held, phase::HELD, k as u64);
+        if !st.freeze.frozen {
+            for k in st.held_queued..upto {
+                let at = st.sch.stride_steps.s[k];
+                // A newly bounded interval can start before its second beat is known.
+                // Free-pulse strides already covered that time; never replay a missed stride.
+                if env.input.level.survivors.is_none() || at >= st.s - 1e-9 {
+                    st.q.push_init(at, Ev::Held, phase::HELD, k as u64);
+                }
+            }
         }
         st.held_queued = st.held_queued.max(upto);
         self.release_deferred();
@@ -1357,6 +1390,9 @@ impl Sim {
     }
 
     fn release_deferred(&mut self) {
+        if self.st.freeze.frozen {
+            return;
+        }
         let waiting = std::mem::take(&mut self.st.deferred);
         for d in waiting {
             match self.deferred_time(&d) {
@@ -1420,7 +1456,7 @@ impl Sim {
     }
 
     fn rate_at(&self, t: f64) -> f64 {
-        if self.in_stop(t) {
+        if self.st.freeze.frozen || self.in_stop(t) {
             0.0
         } else {
             round(self.base_rate(t) * self.dip_factor(t) * 1e6) / 1e6
@@ -1474,7 +1510,13 @@ impl Sim {
             ),
             self.next_dip_cut(self.st.s),
         );
-        min(min(min(self.st.q.peek(), t_fixed), t_rate), self.st.end_s)
+        min(
+            min(
+                min(min(self.st.q.peek(), t_fixed), t_rate),
+                self.freeze_stop(),
+            ),
+            self.st.end_s,
+        )
     }
 
     /// The next stop, with every stream entry known by then taken in first (taking one in may queue
@@ -1524,8 +1566,10 @@ impl Sim {
                 self.st.next_foe_k += 1.0;
             }
         }
-        if let Some(run) = self.env.input.level.survivors {
-            self.st.run_s = (self.st.run_s + t - self.st.s).min(run.duration_s);
+        if let Some(run) = self.env.input.level.survivors
+            && !self.st.freeze.frozen
+        {
+            self.st.run_s = (t - self.st.freeze.total_s).min(run.duration_s);
         }
         self.st.s = t;
         self.st.w = w1;
@@ -1541,6 +1585,9 @@ impl Sim {
             self.st.last_fixed_w = self.st.w;
         }
         self.rec.clock(self.st.s, self.st.w, between);
+        if !between {
+            self.publish_run();
+        }
     }
 
     // -------------------------------------------------------------- the loop
@@ -1549,6 +1596,9 @@ impl Sim {
     fn init(&mut self) {
         // The stream's entries known at song time 0.
         self.ingest(0.0);
+        if self.st.ingested.beats == 0 {
+            self.arm_free_pulse();
+        }
         for (i, lu) in self.st.sch.level_ups.iter().enumerate() {
             self.st
                 .q
@@ -1578,16 +1628,17 @@ impl Sim {
         let t_fixed = self.st.fixed_k / SIM_RATE;
         let t = self.next_stop();
         self.move_clock(t, t == t_fixed, false);
+        self.maybe_resume();
         if t == t_fixed {
             self.st.fixed_k += 1.0;
             self.st.recycle_k += 1;
-            if self.st.recycle_k.is_multiple_of(30) {
+            if self.st.recycle_k.is_multiple_of(30) && !self.st.freeze.frozen {
                 self.recycle();
             }
         }
         while self.st.q.peek() <= self.st.s + 1e-12 {
-            let Entry { ev, .. } = self.st.q.pop_due(self.st.s + 1e-12);
-            self.handle(ev);
+            let entry = self.st.q.pop_due(self.st.s + 1e-12);
+            self.dispatch_entry(entry);
         }
     }
 
@@ -1599,8 +1650,13 @@ impl Sim {
             return;
         }
         match ev {
+            Ev::Freeze(reason) => self.enter_freeze(reason),
+            Ev::FreePulse { generation } => self.free_pulse(generation),
             Ev::HitstopEnd => {}
             Ev::Key(e) => {
+                if self.freeze_key(&e) {
+                    return;
+                }
                 if e.kind == KeyEventKind::Press {
                     self.press(&e);
                 } else {
@@ -1753,6 +1809,7 @@ fn fresh_state(env: &Env) -> SimState {
     SimState {
         s: 0.0,
         run_s: 0.0,
+        freeze: freeze::Freeze::default(),
         w: 0.0,
         rate_s: 0.0,
         q: Queue::default(),
@@ -1991,6 +2048,35 @@ mod tests {
         sim.st.run_s = 2.0;
         sim.hurt(hp, "contact", "slime");
         assert_eq!(sim.st.health, hp - 1.0);
+    }
+
+    #[test]
+    fn a_queued_fire_keeps_its_remaining_run_time_through_a_freeze() {
+        use crate::recorder::LogRecorder;
+        use crate::survivors::FreezeReason;
+        use std::cell::RefCell;
+        let mut sim = sim_in(&stream(), true);
+        Rc::get_mut(&mut sim.env).unwrap().input.level.survivors =
+            Some(crate::content::level::Survivors { duration_s: 30.0 });
+        let rec = Rc::new(RefCell::new(LogRecorder::default()));
+        sim.rec = Box::new(Rc::clone(&rec));
+        sim.st.fire_specs.clear();
+        sim.st.q.remove(&|ev| matches!(ev, Ev::Fire { .. }));
+        let weapon = sim
+            .env
+            .input
+            .lib
+            .weapons
+            .get_index_of("orbiting-blades")
+            .unwrap();
+        sim.st.q.push(1.4, Ev::Fire { weapon, bi: 1.8 });
+        sim.freeze_at(1.1, FreezeReason::Paused);
+        key(&mut sim, 3.1, KeyEventKind::Press, InputKey::Pause);
+        key(&mut sim, 3.2, KeyEventKind::Release, InputKey::Pause);
+        sim.advance_to(3.9);
+        assert!(!rec.borrow().fires.contains_key("orbiting-blades"));
+        sim.advance_to(4.1);
+        assert_eq!(rec.borrow().fires["orbiting-blades"], vec![4.0]);
     }
 
     #[test]

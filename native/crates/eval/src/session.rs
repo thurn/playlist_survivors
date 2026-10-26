@@ -341,14 +341,18 @@ pub fn replay_run(
     keys: &[AppliedKey],
     run: &RecordedRun,
     recent_s: f64,
-) -> Replayed {
+) -> Result<Replayed, String> {
     use sim::movement::InputKey;
     engine.settled_log = Some(Vec::new());
     let mut next = arrivals
         .iter()
         .position(|a| a.arrived >= run.s0 - recent_s)
         .unwrap_or(arrivals.len());
-    let keys: Vec<&AppliedKey> = keys.iter().filter(|k| k.run == run.index).collect();
+    let keys: Vec<(&AppliedKey, InputKey)> = keys
+        .iter()
+        .filter(|k| k.run == run.index)
+        .map(|k| InputKey::parse_recorded(&k.key).map(|key| (k, key)))
+        .collect::<Result<_, _>>()?;
     let mut next_key = 0;
     let span = run.end - run.s0 + 1.0;
     let mut frame = 0u32;
@@ -366,15 +370,8 @@ pub fn replay_run(
             });
             next += n;
         }
-        while next_key < keys.len() && keys[next_key].s <= now {
-            let k = keys[next_key];
-            let key = match k.key.as_str() {
-                "Left" => InputKey::Left,
-                "Right" => InputKey::Right,
-                "Up" => InputKey::Up,
-                "Down" => InputKey::Down,
-                _ => InputKey::Space,
-            };
+        while next_key < keys.len() && keys[next_key].0.s <= now {
+            let (k, key) = keys[next_key];
             engine.key(k.s, key, k.pressed);
             next_key += 1;
         }
@@ -384,9 +381,9 @@ pub fn replay_run(
         }
     }
     let log = engine.settled_log.as_ref().expect("kept");
-    Replayed {
+    Ok(Replayed {
         hash: (log.len() >= run.records).then(|| crate::live::hash_records(&log[..run.records])),
         settled: log.len(),
         rollbacks: engine.stats.rollbacks,
-    }
+    })
 }

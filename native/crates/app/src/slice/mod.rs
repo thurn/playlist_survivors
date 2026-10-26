@@ -622,6 +622,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
         listen: Listen::default(),
         start_at: opts.start_at.unwrap_or(f64::NEG_INFINITY),
         pending_start: None,
+        last_freeze: None,
         title_at: 0.0,
         next_voice: 0,
         ahead: 0.02,
@@ -640,7 +641,8 @@ pub fn run(args: &[String]) -> Result<(), String> {
         pressed_beat: f64::NEG_INFINITY,
         focused: false,
         next_frame: 0.0,
-        keys: [KeyLight::default(); 5],
+        keys: [KeyLight::default(); 7],
+        space_confirm: false,
         presses: VecDeque::new(),
     };
     app.engine.settle_s = app.settle_s();
@@ -1446,6 +1448,7 @@ struct App {
     listen: Listen,
     start_at: f64,
     pending_start: Option<f64>,
+    last_freeze: Option<sim::survivors::FreezeReason>,
     /// When the run ended (host s), and whether the hero fell.
     over: Option<(f64, End, f64)>,
     title_at: f64,
@@ -1479,7 +1482,8 @@ struct App {
     focused: bool,
     next_frame: f64,
     /// The key display: up, left, down, right, stomp.
-    keys: [KeyLight; 5],
+    keys: [KeyLight; 7],
+    space_confirm: bool,
     /// Recent presses for the beat track: when (host s), how far off, their rating.
     presses: VecDeque<(f64, f64, Option<&'static str>)>,
 }
@@ -1633,6 +1637,21 @@ impl App {
             let lead = 0.2f64.max(self.audio.l_out + self.ahead.max(0.0) + 0.02);
             self.engine.frame(s - self.run_start, lead);
             self.record_keys();
+            let run = self.engine.view.borrow().run;
+            if let Some(run) = run
+                && run.frozen != self.last_freeze
+            {
+                self.last_freeze = run.frozen;
+                eprintln!(
+                    "slice: world {} at run {:.3} s (song {:.3})",
+                    run.frozen
+                        .map_or("RESUMED", sim::survivors::FreezeReason::banner),
+                    run.elapsed,
+                    run.song
+                );
+                self.log(serde_json::json!({"k":"freeze", "run":run.elapsed, "s":s,
+                    "why":run.frozen.map(sim::survivors::FreezeReason::banner)}));
+            }
             let (r, was) = (self.engine.stats, self.last_stats);
             if r.rollbacks > was.rollbacks {
                 self.log(serde_json::json!({
@@ -1805,7 +1824,13 @@ impl App {
             song.map_or_else(Vec::new, |s| self.beats.iter().map(|b| b - s).collect());
         let run_s = song.map_or(0.0, |s| s - self.run_start);
         let period = self.engine.stream().beats.last().map_or(0.5, |b| b.period);
-        let Ok(ground) = self.world.field(&self.engine, run_s, period) else {
+        let visual_s = self
+            .engine
+            .view
+            .borrow()
+            .run
+            .map_or(run_s, |r| r.presentation_s);
+        let Ok(ground) = self.world.field(&self.engine, visual_s, period) else {
             return;
         };
         // The beat phase from the last beat heard and the gap to the next; bars of four from the
@@ -1813,16 +1838,17 @@ impl App {
         let (phase, bar, index) = song.map_or((1.0, 1.0, 0.0), |s| {
             let heard = self.beats.iter().filter(|&&b| b <= s).count();
             let last = heard.checked_sub(1).map(|k| self.beats[k]);
-            match (last, self.beats.get(heard)) {
-                (Some(last), Some(&next)) => {
-                    let phase = (s - last) / (next - last).max(1e-3);
-                    (
-                        phase,
-                        (((heard - 1) % 4) as f64 + phase.min(1.0)) / 4.0,
-                        (heard - 1) as f64 + phase.min(1.0),
-                    )
-                }
-                _ => (1.0, 1.0, heard as f64),
+            if let (Some(last), Some(&next)) = (last, self.beats.get(heard)) {
+                let phase = (s - last) / (next - last).max(1e-3);
+                (
+                    phase,
+                    (((heard - 1) % 4) as f64 + phase.min(1.0)) / 4.0,
+                    (heard - 1) as f64 + phase.min(1.0),
+                )
+            } else {
+                let period = self.world.lib.hero.stride.free_period_s;
+                let phase = ((s - last.unwrap_or(0.0)) / period).rem_euclid(1.0);
+                (phase, phase / 4.0, heard as f64 + phase)
             }
         });
         let wave = self.engine.view.borrow().wave.as_ref().map(|v| v.s);
@@ -1855,11 +1881,11 @@ impl App {
             })
             .collect();
         let state = HudState {
-            keys: self.keys,
+            keys: self.keys[..5].try_into().expect("five gameplay keys"),
             presses: &presses,
             beats: &upcoming,
             beat_phase: phase,
-            elapsed: song.map_or(0.0, |s| s - self.run_start),
+            elapsed: self.engine.view.borrow().run.map_or(run_s, |r| r.elapsed),
             bitten_ago: now - self.scene.bitten(),
             head: layers.head.filter(|_| self.over.is_none()),
             next_down: bar >= 0.75,
@@ -2609,6 +2635,16 @@ impl App {
 
     /// A new run from the song time heard now, with a fresh engine and stream: the entries of
     /// the last moments go in first, rebased to its start.
+    fn pause_key(&mut self) {
+        if self.running
+            && let Some(s) = self.song_at(now_s())
+        {
+            let s = s - self.run_start;
+            self.engine.key(s, InputKey::Pause, true);
+            self.engine.key(s + 1e-6, InputKey::Pause, false);
+        }
+    }
+
     fn request_start(&mut self, s: f64) {
         if self.world.survivors() {
             self.pending_start.get_or_insert(s);
@@ -2631,6 +2667,7 @@ impl App {
         }
         self.run_start = s0;
         self.pending_start = None;
+        self.last_freeze = None;
         self.scene = Scene::default();
         let _ = self.audio.out.commands.push(Command::CancelAll);
         if let Some(s) = self.sounds.as_mut() {
@@ -2730,38 +2767,47 @@ impl App {
             }
             return;
         }
-        // Esc pauses, which ends the run (the music moves on); Backspace ends it.
-        if pressed && matches!(code, KeyCode::Escape | KeyCode::Backspace) {
-            let end = if code == KeyCode::Escape {
-                End::Paused
-            } else {
-                End::Stopped
-            };
-            self.end_run(end, now);
+        if pressed && code == KeyCode::Backspace {
+            self.end_run(End::Stopped, now);
             return;
+        }
+        if code == KeyCode::Escape && !self.world.survivors() {
+            if pressed {
+                self.end_run(End::Paused, now);
+            }
+            return;
+        }
+        let frozen = self.engine.view.borrow().run.and_then(|r| r.frozen);
+        if code == KeyCode::Space && pressed && !repeat {
+            self.space_confirm = matches!(
+                frozen,
+                Some(sim::survivors::FreezeReason::LevelUp | sim::survivors::FreezeReason::Chest)
+            );
         }
         let key = match code {
             KeyCode::ArrowLeft | KeyCode::KeyA => InputKey::Left,
             KeyCode::ArrowRight | KeyCode::KeyD => InputKey::Right,
             KeyCode::ArrowUp | KeyCode::KeyW => InputKey::Up,
             KeyCode::ArrowDown | KeyCode::KeyS => InputKey::Down,
+            KeyCode::Space if self.space_confirm => InputKey::Confirm,
             KeyCode::Space => InputKey::Space,
+            KeyCode::Enter => InputKey::Confirm,
+            KeyCode::Escape => InputKey::Pause,
             _ => return,
         };
         if repeat {
             return;
         }
-        let slot = match key {
-            InputKey::Up => 0,
-            InputKey::Left => 1,
-            InputKey::Down => 2,
-            InputKey::Right => 3,
-            InputKey::Space => 4,
-        };
+        let slot = key.slot();
         self.keys[slot].held = pressed;
         // (Less the player's calibration offset for that kind of key.)
         if let Some(s) = self.song_at(now) {
-            let s = s - self.calibration.offset_s(key);
+            let offset = if matches!(key, InputKey::Confirm | InputKey::Pause) {
+                0.0
+            } else {
+                self.calibration.offset_s(key)
+            };
+            let s = s - offset;
             self.engine.key(s - self.run_start, key, pressed);
         }
     }
@@ -2820,7 +2866,24 @@ impl ApplicationHandler for App {
             WindowEvent::Focused(true) => self.focused = true,
             WindowEvent::Focused(false) if self.focused => {
                 self.focused = false;
-                self.end_run(End::Paused, now_s());
+                if self.world.survivors() {
+                    if self.engine.view.borrow().run.and_then(|r| r.frozen)
+                        != Some(sim::survivors::FreezeReason::Paused)
+                    {
+                        self.pause_key();
+                    }
+                } else {
+                    self.end_run(End::Paused, now_s());
+                }
+            }
+            WindowEvent::MouseInput {
+                state: ElementState::Pressed,
+                ..
+            } if self.world.survivors()
+                && self.engine.view.borrow().run.and_then(|r| r.frozen)
+                    == Some(sim::survivors::FreezeReason::Paused) =>
+            {
+                self.pause_key();
             }
             _ => {}
         }

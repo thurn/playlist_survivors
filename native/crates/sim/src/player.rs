@@ -105,6 +105,7 @@ pub struct OrbView {
 /// What a player sees when it decides (`Observation`).
 #[derive(Clone, Debug, PartialEq)]
 pub struct Observation {
+    pub run: Option<crate::survivors::RunState>,
     /// Song and world time now.
     pub s: f64,
     pub w: f64,

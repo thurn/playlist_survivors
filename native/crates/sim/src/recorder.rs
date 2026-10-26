@@ -437,6 +437,7 @@ pub struct ChainPoint {
 /// (set pieces, the boss, arrows, zone waves, landmarks) join with their beads.
 #[allow(unused_variables)]
 pub trait Recorder {
+    fn run_state(&mut self, state: crate::survivors::RunState) {}
     /// A warp break: appended, or replacing the last one.
     fn warp(&mut self, b: WarpBreak, replace_last: bool) {}
     fn hero(&mut self, x: f64, y: f64, z: f64, facing: f64, anim: f64, frame: f64) {}
@@ -626,6 +627,9 @@ impl<R: Recorder + ?Sized> Recorder for std::rc::Rc<std::cell::RefCell<R>> {
     fn clock(&mut self, s: f64, w: f64, between: bool) {
         self.borrow_mut().clock(s, w, between);
     }
+    fn run_state(&mut self, state: crate::survivors::RunState) {
+        self.borrow_mut().run_state(state);
+    }
     fn enemy_step(&mut self, id: usize, w: f64, dur: f64) {
         self.borrow_mut().enemy_step(id, w, dur);
     }
@@ -702,6 +706,7 @@ fn to_value<T: Serialize>(x: &T) -> Value {
 /// categories), for the oracle's event log.
 #[derive(Clone, Debug)]
 pub struct LogRecorder {
+    pub run_states: Vec<crate::survivors::RunState>,
     pub breaks: Vec<WarpBreak>,
     pub inputs: Vec<Value>,
     pub settles: Vec<Value>,
@@ -734,6 +739,7 @@ pub struct LogRecorder {
 impl Default for LogRecorder {
     fn default() -> LogRecorder {
         LogRecorder {
+            run_states: Vec::new(),
             breaks: Vec::new(),
             inputs: Vec::new(),
             settles: Vec::new(),
@@ -765,6 +771,9 @@ impl Default for LogRecorder {
 }
 
 impl Recorder for LogRecorder {
+    fn run_state(&mut self, state: crate::survivors::RunState) {
+        self.run_states.push(state);
+    }
     fn warp(&mut self, b: WarpBreak, replace_last: bool) {
         if replace_last {
             *self.breaks.last_mut().expect("a break to replace") = b;

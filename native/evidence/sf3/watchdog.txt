@@ -1,0 +1,12 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sf3-freeze/native/crates/sim)
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sf3-freeze/native/crates/eval)
+   Compiling app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sf3-freeze/native/crates/app)
+    Finished `test` profile [optimized + debuginfo] target(s) in 4.93s
+     Running unittests src/main.rs (target/debug/deps/playlist_survivors-117eebc7468b2345)
+
+running 2 tests
+test slice::watchdog::tests::it_trips_on_a_stalled_main_thread_or_capture_and_not_before ... ok
+test slice::watchdog::tests::silent_buffers_do_not_look_like_a_capture_stall ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 28 filtered out; finished in 0.00s
+

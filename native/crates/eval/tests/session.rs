@@ -88,11 +88,30 @@ fn settles_as_live(rel: &str) {
     let arrivals: Vec<Arrival> = lines(&dir.join("stream.jsonl"));
     let keys: Vec<AppliedKey> = lines(&dir.join("keys.jsonl"));
     assert!(keys.len() > 20, "{} keys", keys.len());
-    let got = replay_run(&mut engine(), &arrivals, &keys, &run, 20.0);
+    let got = replay_run(&mut engine(), &arrivals, &keys, &run, 20.0).unwrap();
     assert!(got.settled >= run.records, "{got:?}");
     assert_eq!(
         got.hash,
         Some(run.hash),
         "the settled records differ from the live run's"
     );
+}
+
+#[test]
+fn an_unknown_recorded_key_fails_before_replay() {
+    let keys = vec![AppliedKey {
+        run: 0,
+        s: 0.1,
+        key: "Confrim".into(),
+        pressed: true,
+    }];
+    let run = RecordedRun {
+        index: 0,
+        s0: 0.0,
+        end: 1.0,
+        hash: 0,
+        records: 0,
+    };
+    let error = replay_run(&mut engine(), &[], &keys, &run, 20.0).unwrap_err();
+    assert!(error.contains("Confrim"));
 }

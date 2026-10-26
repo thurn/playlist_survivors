@@ -1,0 +1,9 @@
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sf3-freeze/native/crates/eval)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.52s
+     Running tests/session.rs (target/debug/deps/session-9a44ddb858779db4)
+
+running 1 test
+test an_unknown_recorded_key_fails_before_replay ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.01s
+

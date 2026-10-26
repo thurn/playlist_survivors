@@ -151,6 +151,7 @@ const BOLT_KEEP_S: f64 = 1.0;
 /// What a frame draws.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct LiveView {
+    pub run: Option<sim::survivors::RunState>,
     pub hero: Option<HeroPose>,
     /// The camera's centre and zoom.
     pub camera: (f64, f64, f64),
@@ -228,6 +229,30 @@ impl LiveView {
     pub fn apply(&mut self, s: f64, rec: &Record) {
         self.s = s;
         match rec {
+            Record::Run(state) => {
+                if let Some(previous) = self.run
+                    && previous.frozen.is_some()
+                    && state.frozen.is_none()
+                {
+                    let gap = state.song - previous.presentation_s;
+                    for gem in self.gems.values_mut() {
+                        gem.s0 += gap;
+                        gem.s1 += gap;
+                        if let Some(fly) = &mut gem.fly {
+                            *fly += gap;
+                        }
+                    }
+                    for chain in self.bolts.values_mut() {
+                        for point in chain {
+                            point.0 += gap;
+                        }
+                    }
+                    if let Some(wave) = &mut self.wave {
+                        wave.s += gap;
+                    }
+                }
+                self.run = Some(*state);
+            }
             Record::Hero(p) => self.hero = Some(*p),
             Record::Camera(x, y, zoom) => self.camera = (*x, *y, *zoom),
             Record::Spawn { id, kind } => {
@@ -359,6 +384,7 @@ impl LiveView {
 /// What the simulation reported, as the view applies it.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Record {
+    Run(sim::survivors::RunState),
     Hero(HeroPose),
     Camera(f64, f64, f64),
     Spawn {
@@ -532,6 +558,9 @@ impl Journal {
 pub struct LiveRecorder(pub Rc<RefCell<Journal>>);
 
 impl Recorder for LiveRecorder {
+    fn run_state(&mut self, state: sim::survivors::RunState) {
+        self.0.borrow_mut().push(Record::Run(state));
+    }
     fn hero(&mut self, x: f64, y: f64, z: f64, facing: f64, anim: f64, frame: f64) {
         let anim = HERO_ANIMS.get(anim as usize).copied().unwrap_or("idle");
         let mut j = self.0.borrow_mut();

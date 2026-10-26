@@ -140,6 +140,16 @@ mod tests {
     use super::*;
 
     #[test]
+    fn silent_buffers_do_not_look_like_a_capture_stall() {
+        // tap::io_proc updates alive for every nonempty captured buffer, before any
+        // evidence gate or peak test. Its samples can all be zero during this gap.
+        for frame in 1..=8 * 120 {
+            let now = 100.0 + f64::from(frame) / 120.0;
+            assert_eq!(trip(now, 100.0, now - 0.001, now - 0.005), NONE);
+        }
+    }
+
+    #[test]
     fn it_trips_on_a_stalled_main_thread_or_capture_and_not_before() {
         // (Started at 100 s; a capture every buffer, the main thread every frame.)
         assert_eq!(trip(101.0, 100.0, 100.99, 100.995), NONE);

@@ -26,9 +26,41 @@ pub enum InputKey {
     Left,
     Right,
     Space,
+    Confirm,
+    Pause,
 }
 
 impl InputKey {
+    pub const ALL: [Self; 7] = [
+        Self::Up,
+        Self::Left,
+        Self::Down,
+        Self::Right,
+        Self::Space,
+        Self::Confirm,
+        Self::Pause,
+    ];
+
+    pub fn slot(self) -> usize {
+        Self::ALL
+            .iter()
+            .position(|&key| key == self)
+            .expect("every key has a slot")
+    }
+
+    pub fn parse_recorded(name: &str) -> Result<Self, String> {
+        match name {
+            "Up" => Ok(Self::Up),
+            "Left" => Ok(Self::Left),
+            "Down" => Ok(Self::Down),
+            "Right" => Ok(Self::Right),
+            "Space" => Ok(Self::Space),
+            "Confirm" => Ok(Self::Confirm),
+            "Pause" => Ok(Self::Pause),
+            _ => Err(format!("unknown recorded input key {name:?}")),
+        }
+    }
+
     /// The direction, or None for Space.
     pub fn direction(self) -> Option<Key> {
         match self {
@@ -36,7 +68,7 @@ impl InputKey {
             InputKey::Down => Some(Key::Down),
             InputKey::Left => Some(Key::Left),
             InputKey::Right => Some(Key::Right),
-            InputKey::Space => None,
+            InputKey::Space | InputKey::Confirm | InputKey::Pause => None,
         }
     }
 
@@ -48,6 +80,8 @@ impl InputKey {
             InputKey::Left => "left",
             InputKey::Right => "right",
             InputKey::Space => "space",
+            InputKey::Confirm => "confirm",
+            InputKey::Pause => "pause",
         }
     }
 }

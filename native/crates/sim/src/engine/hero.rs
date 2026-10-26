@@ -84,7 +84,16 @@ impl Sim {
 
     /// One stride at song time s: the walk speed times the stride period.
     pub(super) fn one_stride(&self, s: f64) -> f64 {
-        self.env.rule.speed * period_at(&self.st.sch.stride_steps, s)
+        let period = if self.env.input.level.survivors.is_some()
+            && !self.log.beats[..self.st.ingested.beats]
+                .last()
+                .is_some_and(|b| b.t > s + 1e-9)
+        {
+            self.env.rule.free_period_s
+        } else {
+            period_at(&self.st.sch.stride_steps, s)
+        };
+        self.env.rule.speed * period
     }
 
     fn hold(&mut self, key: InputKey) {
@@ -401,7 +410,7 @@ impl Sim {
         };
         self.st.n_inputs += 1;
         self.hold(e.key);
-        let ahead = self.step_ahead(s);
+        let ahead = self.step_ahead(s) || self.env.input.level.survivors.is_some();
         match e.key.direction() {
             None if ahead => self.st.zen_stomp = true,
             None => self.stomp_here(&mut input),
@@ -479,6 +488,9 @@ impl Sim {
     }
 
     pub(super) fn press(&mut self, e: &KeyEvent) {
+        if matches!(e.key, InputKey::Confirm | InputKey::Pause) {
+            return;
+        }
         if self.env.input.zen {
             self.zen_press(e);
             return;

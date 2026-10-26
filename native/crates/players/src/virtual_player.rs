@@ -885,6 +885,11 @@ impl Player for VirtualPlayer {
     }
 
     fn decide(&mut self, seen: &Observation) -> Vec<KeyEvent> {
+        // These reference players move, but never choose a card or dismiss a freeze.
+        // Survivors bots add deliberate interaction policy separately in SF9.
+        if seen.run.is_some_and(|run| run.frozen.is_some()) {
+            return Vec::new();
+        }
         // A slower player only reacts to a threat once it has been in view a while.
         let filtered;
         let obs = if self.spec.reaction > SIM_REACTION + 1e-9 {

@@ -217,7 +217,7 @@ pub fn replay(dir: &Path) -> Result<bool, String> {
             zen_of(&meta, run.index),
             meta["runs"][run.index]["level"].as_str(),
         )?;
-        let got = replay_run(&mut e, &arrivals, &keys, run, RECENT_S);
+        let got = replay_run(&mut e, &arrivals, &keys, run, RECENT_S)?;
         let same = got.hash == Some(run.hash);
         ok &= same;
         println!(
@@ -267,7 +267,7 @@ pub fn replay_reanalysed(dir: &Path) -> Result<bool, String> {
             meta["runs"][run.index]["level"].as_str(),
         )?;
         // (Its hash can't be the live run's: compare outcomes.)
-        let got = replay_run(&mut e, &arrivals, &keys, run, RECENT_S);
+        let got = replay_run(&mut e, &arrivals, &keys, run, RECENT_S)?;
         println!(
             "run {} re-analysed: {} records settled; {}",
             run.index,

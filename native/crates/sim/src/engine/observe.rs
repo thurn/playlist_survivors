@@ -128,6 +128,7 @@ impl Sim {
         .then(|| lu[st.level].s);
         let (px, py, tx, ty) = self.forward();
         Observation {
+            run: self.env.input.level.survivors.map(|_| self.run_state()),
             s,
             w,
             hero: HeroView {

@@ -325,7 +325,14 @@ impl Sim {
         let bar = max(1.0, bar_of_beat_index(idx, sbi));
         let bpb = get_or(&idx.beats_per_bar, min(idx.bar_count, bar), 2.0);
         let bar_start = get_or(&idx.bar_start, min(idx.bar_count, bar), 0.0);
+        let free = env.input.level.survivors.is_some()
+            && !self.log.beats[..self.st.ingested.beats]
+                .last()
+                .is_some_and(|b| b.t > s + 1e-9);
         let mult = |g: Subdivision| -> f64 {
+            if free {
+                return 1.0;
+            }
             match group_period(g, bpb) {
                 Some(period) => {
                     let ph = ((sbi - bar_start) / period) % 1.0;
@@ -336,7 +343,11 @@ impl Sim {
             }
         };
         // Beat steps need a steady beat: enemies with a gait glide while the beat is unclear.
-        let stepping = self.clear_at(s);
+        let stepping = self.clear_at(s)
+            && (self.env.input.level.survivors.is_none()
+                || self.log.beats[..self.st.ingested.beats]
+                    .last()
+                    .is_some_and(|b| b.t > s + 1e-9));
         let step_b = if stepping { self.known_beat_at(s) } else { 0.0 };
         let health = self.st.health > 0.0;
         let alive = self.st.alive.clone();
@@ -722,12 +733,17 @@ impl Sim {
     /// The director's population at song time s, scaled by the loudness level.
     fn director_target(&self, s: f64) -> f64 {
         let d = &self.env.director;
+        let music_s = if self.env.input.level.survivors.is_some() {
+            self.st.s
+        } else {
+            s
+        };
         let scale = if self.env.input.leak_future_evidence {
             let ticks = &self.log.ticks;
             let i = ticks.partition_point(|k| k.t <= s + 1.0).saturating_sub(1);
             0.6 + 0.7 * ticks.get(i).map_or(0.0, |k| k.evidence)
         } else {
-            self.by_level(s, &|l| by_level(&d.population.level_scale, l))
+            self.by_level(music_s, &|l| by_level(&d.population.level_scale, l))
         };
         director_population(d, s, scale)
     }
@@ -739,7 +755,12 @@ impl Sim {
         let env = Rc::clone(&self.env);
         let lib = &env.input.lib;
         let s = self.st.s;
-        let target = self.director_target(s) * STREAM_SHARE;
+        let target_s = if env.input.level.survivors.is_some() {
+            self.st.run_s
+        } else {
+            s
+        };
+        let target = self.director_target(target_s) * STREAM_SHARE;
         let all = self.st.alive.len() as f64 + self.st.pending;
         let living = self
             .st

@@ -1108,6 +1108,20 @@ projects to about 50 MB more, below the 5 GiB store cap (sizing, not a soak).
 See [SF2 evidence](../../native/evidence/sf2/README.md) for commands and limits.
 
 ### SF3
+
+The freeze now holds world and run time while music continues. Escape/focus
+pause and known-evidence silence share its state; card/chest hooks route keys
+without leaking strides or stomps. The 8 s File-mode gap held run time at
+17.900 s and resumed on the documented downbeat; replay matched all 98,692
+settled records. Streaming and batch match, and a late Confirm matches 3,861
+settled records after a 420 ms rollback across opening. Free-pulse movement,
+held-key release, nested freezes and victory replanning have regression tests.
+Cold review found three issues, all fixed with regressions: past zone events,
+repeated silence inside another pause, and movement during the victory pose.
+See [SF3 evidence](../../native/evidence/sf3/README.md); System capture and
+visual/feel checks remain in operator-pending. Actual offers and chest timing
+belong to SF7/SH10.
+
 ### SF4
 ### SF5
 ### SF6

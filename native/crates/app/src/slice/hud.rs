@@ -91,6 +91,24 @@ const HEART: [&str; 6] = [
 pub fn draw(view: &LiveView, st: &HudState, w: f32, h: f32, out: &mut Vec<Sprite>) {
     let u = (w / 960.0).min(h / 540.0);
     overhead(view, st, w, h, u, out);
+    if let Some(reason) = view.run.and_then(|r| r.frozen) {
+        out.push(rect(
+            w * 0.5 - 170.0 * u,
+            h * 0.35 - 12.0 * u,
+            340.0 * u,
+            40.0 * u,
+            [0.0, 0.0, 0.0, 0.7],
+        ));
+        font::text(
+            reason.banner(),
+            w * 0.5,
+            h * 0.35,
+            (3.0 * u).max(1.0),
+            Align::Centre,
+            PLAIN,
+            out,
+        );
+    }
     let (ox, oy) = ((w - 960.0 * u) / 2.0, (h - 540.0 * u) / 2.0);
     let px = |x: f32| ox + x * u;
     let py = |y: f32| oy + y * u;

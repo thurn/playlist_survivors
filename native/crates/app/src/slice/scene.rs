@@ -674,7 +674,11 @@ impl Scene {
                     if !dead {
                         let u = (pulse.beat.clamp(0.0, 1.0) - type_phase(&f.kind)).rem_euclid(1.0);
                         let land = (-6.0 * u).exp();
-                        let g = fast.groove();
+                        let g = if view.run.is_some_and(|r| r.frozen.is_some()) {
+                            1.0
+                        } else {
+                            fast.groove()
+                        };
                         bob = ENEMY_BOB * g * (std::f64::consts::PI * u).sin();
                         kx = (1.0 + ENEMY_SQUASH * g * land)
                             * (1.0 - 0.5 * ENEMY_FLINCH * fast.flinch);
@@ -743,7 +747,10 @@ impl Scene {
                     }
                 }
                 Drawn::Hero => {
-                    let hero = view.hero.expect("placed");
+                    let mut hero = view.hero.expect("placed");
+                    if view.run.is_some_and(|r| r.frozen.is_some()) {
+                        hero.z += 3.0 * (std::f64::consts::PI * pulse.beat).sin().abs();
+                    }
                     // The hero carries a soft light.
                     let (lx, ly) = at(hero.x, hero.y - 16.0);
                     lights.push(Light {
@@ -781,14 +788,22 @@ impl Scene {
         }
         let arms = Arms {
             lib,
-            beat: pulse.index,
+            beat: view.run.and_then(|r| r.frozen_beat).unwrap_or(pulse.index),
             now,
-            run_s: self.run_s,
+            run_s: view.run.map_or(self.run_s, |r| r.presentation_s),
             trail: self.trail.make_contiguous(),
         };
         tier::weapons(view, &arms, art, &at, scale, out);
         let swell = 0.5 + 0.5 * (std::f64::consts::TAU * pulse.beat.min(1.0)).cos();
-        gems::draw(view, art, &at, scale, self.run_s, fast.pulsed(swell), out);
+        gems::draw(
+            view,
+            art,
+            &at,
+            scale,
+            view.run.map_or(self.run_s, |r| r.presentation_s),
+            fast.pulsed(swell),
+            out,
+        );
         self.effects.draw(art, now, &at, scale, w, h, false, out);
         self.effects
             .post(now, &at, scale, lights, &mut layers.grade);
