@@ -166,3 +166,35 @@ fn shipped_first_offer_now_contains_the_implemented_garlic() {
             .all(|c| !matches!(c.item,Item::Weapon(w) if !weapon_catalog().get(w).implemented))
     );
 }
+
+#[test]
+fn the_six_passive_cards_describe_the_source_rank_and_reject_retired_ids() {
+    use sim::survivors::Card;
+    for (passive, cap, line) in [
+        (PassiveId::Spinach, 5, "+10% DAMAGE"),
+        (PassiveId::HollowHeart, 5, "+20% MAX HP; HEAL ADDED HP"),
+        (PassiveId::Pummarola, 5, "+0.2 HP / SECOND"),
+        (PassiveId::EmptyTome, 5, "-8% COOLDOWN"),
+        (PassiveId::Spellbinder, 5, "+10% DURATION"),
+        (PassiveId::Duplicator, 2, "+1 PROJECTILE / SPIN"),
+    ] {
+        let item = Item::Passive(passive);
+        assert_eq!(Item::parse(passive.as_str()), Some(item));
+        assert_eq!(passive.max_rank(), cap);
+        for before in 0..cap {
+            let card = Card {
+                item,
+                before,
+                after: before + 1,
+            };
+            assert_eq!(card.description(), line);
+        }
+    }
+    for retired in ["max-health", "magnet", "might", "armour"] {
+        assert_eq!(
+            Item::parse(retired),
+            None,
+            "legacy passive must not enter Survivors offers"
+        );
+    }
+}

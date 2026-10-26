@@ -1,0 +1,7 @@
+spinach rank1>2: SPINACH / +10% DAMAGE
+hollow-heart rank1>2: HOLLOW HEART / +20% MAX HP; HEAL ADDED HP
+pummarola rank1>2: PUMMAROLA / +0.2 HP / SECOND
+empty-tome rank1>2: EMPTY TOME / -8% COOLDOWN
+spellbinder rank1>2: SPELLBINDER / +10% DURATION
+duplicator rank1>2: DUPLICATOR / +1 PROJECTILE / SPIN
+passives-check: two silent offscreen card/HUD stills, synthetic rank1 inventory; real card/stat progression is covered separately by sim tests, no survival or pacing claim

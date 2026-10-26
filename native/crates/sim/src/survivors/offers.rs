@@ -170,9 +170,9 @@ impl Card {
             }
             Item::Passive(p) => match p {
                 PassiveId::Spinach => "+10% DAMAGE",
-                PassiveId::HollowHeart => "+20% MAX HP AND HEAL",
+                PassiveId::HollowHeart => "+20% MAX HP; HEAL ADDED HP",
                 PassiveId::Pummarola => "+0.2 HP / SECOND",
-                PassiveId::Duplicator => "+1 AMOUNT",
+                PassiveId::Duplicator => "+1 PROJECTILE / SPIN",
                 PassiveId::EmptyTome => "-8% COOLDOWN",
                 PassiveId::Spellbinder => "+10% DURATION",
             },

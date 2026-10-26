@@ -1356,6 +1356,18 @@ operator row. Run from `native/` with `cargo run --release -p app -- --playlist
 playlists/survivors-30.m3u --delayed`.
 
 ### SH9
+
+The six passives already flowed through SF4/SF7's typed stats, offers and UI.
+SH9 verifies all 27 ranks through real revealed-card confirmations against the
+source totals: Might 1.5, Max HP 298.5984, Recovery 1 HP/s, Cooldown 0.6,
+Duration 1.5 and Amount +2 at their caps. Hollow Heart heals only the added
+maximum; all other stats stay fixed and extra ranks are rejected. Two card
+lines clarify that heal and Duplicator's projectile/spin effect. Two labelled
+synthetic stills show all six cards, HUD icons/pips and true pair marks; no
+offer, stat or easy knob changed. See
+[SH9 evidence](../../native/evidence/sh9/README.md). Run from `native/` with
+`cargo run --release -p app -- --playlist playlists/survivors-30.m3u --delayed`.
+
 ### SH10
 ### SH11
 ### SW1

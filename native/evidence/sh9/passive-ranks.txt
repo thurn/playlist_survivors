@@ -1,0 +1,36 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh9-passives/native/crates/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.43s
+     Running unittests src/lib.rs (target/debug/deps/sim-1ebf1e278f138957)
+
+running 1 test
+spinach rank1: source total1.100000, actual HP80.000000, via level2 card
+spinach rank2: source total1.200000, actual HP80.000000, via level3 card
+spinach rank3: source total1.300000, actual HP80.000000, via level4 card
+spinach rank4: source total1.400000, actual HP80.000000, via level5 card
+spinach rank5: source total1.500000, actual HP80.000000, via level6 card
+hollow-heart rank1: source total144.000000, actual HP104.000000, via level2 card
+hollow-heart rank2: source total172.800000, actual HP132.800000, via level3 card
+hollow-heart rank3: source total207.360000, actual HP167.360000, via level4 card
+hollow-heart rank4: source total248.832000, actual HP208.832000, via level5 card
+hollow-heart rank5: source total298.598400, actual HP258.598400, via level6 card
+pummarola rank1: source total0.200000, actual HP80.000000, via level2 card
+pummarola rank2: source total0.400000, actual HP80.000000, via level3 card
+pummarola rank3: source total0.600000, actual HP80.000000, via level4 card
+pummarola rank4: source total0.800000, actual HP80.000000, via level5 card
+pummarola rank5: source total1.000000, actual HP80.000000, via level6 card
+empty-tome rank1: source total0.920000, actual HP80.000000, via level2 card
+empty-tome rank2: source total0.840000, actual HP80.000000, via level3 card
+empty-tome rank3: source total0.760000, actual HP80.000000, via level4 card
+empty-tome rank4: source total0.680000, actual HP80.000000, via level5 card
+empty-tome rank5: source total0.600000, actual HP80.000000, via level6 card
+spellbinder rank1: source total1.100000, actual HP80.000000, via level2 card
+spellbinder rank2: source total1.200000, actual HP80.000000, via level3 card
+spellbinder rank3: source total1.300000, actual HP80.000000, via level4 card
+spellbinder rank4: source total1.400000, actual HP80.000000, via level5 card
+spellbinder rank5: source total1.500000, actual HP80.000000, via level6 card
+duplicator rank1: source total1.000000, actual HP80.000000, via level2 card
+duplicator rank2: source total2.000000, actual HP80.000000, via level3 card
+test engine::tests::survivor_all_passive_ranks_apply_source_values_through_real_card_picks ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 55 filtered out; finished in 0.04s
+

@@ -4096,6 +4096,145 @@ mod tests {
         assert!(!sim.st.freeze.frozen);
     }
     #[test]
+    fn survivor_all_passive_ranks_apply_source_values_through_real_card_picks() {
+        use crate::survivors::{Item, PassiveId, total_xp};
+        let cases: [(PassiveId, &[f64]); 6] = [
+            (PassiveId::Spinach, &[1.1, 1.2, 1.3, 1.4, 1.5]),
+            (
+                PassiveId::HollowHeart,
+                &[144.0, 172.8, 207.36, 248.832, 298.5984],
+            ),
+            (PassiveId::Pummarola, &[0.2, 0.4, 0.6, 0.8, 1.0]),
+            (PassiveId::EmptyTome, &[0.92, 0.84, 0.76, 0.68, 0.6]),
+            (PassiveId::Spellbinder, &[1.1, 1.2, 1.3, 1.4, 1.5]),
+            (PassiveId::Duplicator, &[1.0, 2.0]),
+        ];
+        for (passive, expected) in cases {
+            let mut sim = survivor_sim();
+            max_built_survivor_weapons(&mut sim);
+            // Max other owned items through their actual stat path so the real
+            // offer table has only this passive left. No authored table changes.
+            for (other, _) in cases {
+                if other != passive {
+                    for _ in 0..other.max_rank() {
+                        sim.st
+                            .survivor
+                            .as_mut()
+                            .unwrap()
+                            .arsenal
+                            .learn_passive(other)
+                            .unwrap();
+                        sim.apply_survivor_stats(other.delta());
+                    }
+                }
+            }
+            sim.st.health = 80.0;
+            let baseline = sim.survivor_progress().unwrap().stats;
+            assert_eq!(usize::from(passive.max_rank()), expected.len());
+            sim.gem_arrives(0, total_xp(expected.len()));
+            for (i, &value) in expected.iter().enumerate() {
+                let offer = sim.run_state().offer.unwrap();
+                assert!(offer.cards.iter().all(|c| c.item == Item::Passive(passive)));
+                assert_eq!(
+                    (offer.cards[0].before, offer.cards[0].after),
+                    (i as u8, i as u8 + 1)
+                );
+                let t = offer.reveals[2] + 0.01;
+                key(&mut sim, t, KeyEventKind::Press, InputKey::Confirm);
+                key(
+                    &mut sim,
+                    t + 0.001,
+                    KeyEventKind::Release,
+                    InputKey::Confirm,
+                );
+                sim.advance_to(t + 0.002);
+                let stats = sim.survivor_progress().unwrap().stats;
+                let mut want = baseline;
+                match passive {
+                    PassiveId::Spinach => want.might = value,
+                    PassiveId::HollowHeart => want.max_hp = value,
+                    PassiveId::Pummarola => want.recovery = value,
+                    PassiveId::EmptyTome => want.cooldown = value,
+                    PassiveId::Spellbinder => want.duration = value,
+                    PassiveId::Duplicator => want.amount = value,
+                }
+                // All fields, not just the desired effect: a rank must not
+                // silently apply some second passive's delta.
+                for (actual, target) in [
+                    (stats.might, want.might),
+                    (stats.max_hp, want.max_hp),
+                    (stats.recovery, want.recovery),
+                    (stats.cooldown, want.cooldown),
+                    (stats.duration, want.duration),
+                    (stats.amount, want.amount),
+                ] {
+                    assert!(
+                        (actual - target).abs() < 1e-9,
+                        "{passive:?} rank{}: {actual} vs {target}",
+                        i + 1
+                    );
+                }
+                assert_eq!(
+                    (
+                        stats.area,
+                        stats.projectile_speed,
+                        stats.armor,
+                        stats.magnet,
+                        stats.move_speed,
+                        stats.luck,
+                        stats.greed,
+                        stats.curse,
+                        stats.growth
+                    ),
+                    (
+                        want.area,
+                        want.projectile_speed,
+                        want.armor,
+                        want.magnet,
+                        want.move_speed,
+                        want.luck,
+                        want.greed,
+                        want.curse,
+                        want.growth
+                    )
+                );
+                assert_eq!(
+                    sim.survivor_inventory().unwrap().passives.rank(passive),
+                    Some(i as u8 + 1)
+                );
+                let hp = if passive == PassiveId::HollowHeart {
+                    80.0 + value - 120.0
+                } else {
+                    80.0
+                };
+                assert!(
+                    (sim.st.health - hp).abs() < 1e-9,
+                    "only added max HP heals during the chained freeze"
+                );
+                eprintln!(
+                    "{} rank{}: source total{value:.6}, actual HP{:.6}, via level{} card",
+                    passive.as_str(),
+                    i + 1,
+                    sim.st.health,
+                    offer.level
+                );
+            }
+            assert!(sim.run_state().offer.is_none());
+            let stats = sim.survivor_progress().unwrap().stats;
+            assert_eq!(
+                sim.st
+                    .survivor
+                    .as_mut()
+                    .unwrap()
+                    .arsenal
+                    .learn_passive(passive),
+                Err(crate::survivors::SlotError::Maxed)
+            );
+            assert_eq!(sim.survivor_progress().unwrap().stats, stats);
+        }
+    }
+
+    #[test]
     fn survivor_passive_card_applies_the_real_delta_and_heals_added_maximum() {
         use crate::survivors::{Item, PassiveId};
         let mut sim = survivor_sim();

@@ -168,6 +168,7 @@ struct Options {
     garlic_check: Option<PathBuf>,
     wand_check: Option<PathBuf>,
     pickups_check: Option<PathBuf>,
+    passives_check: Option<PathBuf>,
     volume: f32,
     click: bool,
     mute: bool,
@@ -224,6 +225,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         garlic_check: None,
         wand_check: None,
         pickups_check: None,
+        passives_check: None,
         volume: 1.0,
         click: false,
         mute: false,
@@ -270,6 +272,13 @@ fn options(args: &[String]) -> Result<Options, String> {
                 o.cards_check = Some(
                     it.next()
                         .ok_or("--cards-check needs an output directory")?
+                        .into(),
+                );
+            }
+            "--passives-check" => {
+                o.passives_check = Some(
+                    it.next()
+                        .ok_or("--passives-check needs an output directory")?
                         .into(),
                 );
             }
@@ -571,6 +580,9 @@ pub fn run(args: &[String]) -> Result<(), String> {
         } else {
             Err("the heard delay wasn't within 2 ms of M every minute".into())
         };
+    }
+    if let Some(dir) = &opts.passives_check {
+        return cards::passives_check::run(dir);
     }
     if let Some(dir) = &opts.pickups_check {
         return pickups::check::run(dir);

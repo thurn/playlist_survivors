@@ -1,0 +1,8 @@
+    Checking stream v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh9-passives/native/crates/stream)
+    Checking analysis v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh9-passives/native/crates/analysis)
+    Checking audio v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh9-passives/native/crates/audio)
+    Checking render v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh9-passives/native/crates/render)
+    Checking sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh9-passives/native/crates/sim)
+    Checking eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh9-passives/native/crates/eval)
+    Checking app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh9-passives/native/crates/app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.37s

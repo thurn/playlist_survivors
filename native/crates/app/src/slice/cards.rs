@@ -3,6 +3,7 @@ use super::{hud::item_color, sounds::Cue};
 use render::{atlas::Atlases, font::Align, post::Grade, sprites::Sprite};
 use sim::survivors::{Inventory, Item, Offer, RunState, weapon_catalog};
 pub mod check;
+pub mod passives_check;
 const FLIP: f64 = 0.2;
 const EXIT: f64 = 0.42;
 #[derive(Clone, Copy)]
