@@ -6,12 +6,12 @@
 use crate::content::types::{Gait, Subdivision};
 use crate::jsmath::floor;
 
-/// A gait's times per beat. (The schema allows only eighth or beat.)
+/// A gait's times per beat.
 pub fn gait_per_beat(g: &Gait) -> f64 {
-    if g.every == Subdivision::Eighth {
-        2.0
-    } else {
-        1.0
+    match g.every {
+        Subdivision::Sixteenth => 4.0,
+        Subdivision::Eighth => 2.0,
+        _ => 1.0,
     }
 }
 

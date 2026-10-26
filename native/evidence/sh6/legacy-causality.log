@@ -1,0 +1,16 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.04s
+     Running tests/causality.rs (target/debug/deps/causality-86630208d8a35901)
+
+running 7 tests
+test every_cut_is_causal ... ignored, release: every cut on the Galop and causality-mix, two players, perturbed and truncated
+test a_keys_queueing_time_changes_nothing ... ok
+negative control caught: causality-mix reactive-moderate, cut at 20.000 (perturbed): at byte 86787
+test the_negative_control_fails ... ok
+test the_same_stream_and_keys_give_the_same_recording ... ok
+test bursts_of_arrivals_give_the_same_recording ... ok
+causality on orpheus-galop: 8 cut runs, 0 failing; fired before a cut: level-ups, zone waves, section starts, reading switches, forecasts, forecast cleaves, onset cleaves, rings, volleys, bee wedges, kick lines, the boss
+test the_galop_is_causal_at_two_cuts ... ok
+test a_key_queued_early_or_late_makes_the_same_stops ... ok
+
+test result: ok. 6 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 2.85s
+

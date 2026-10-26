@@ -1,0 +1,15 @@
+/Users/dthurn/playlist_survivors/native/logs/sessions/1793026073
+output MacBook Pro Speakers, 65 s of song
+
+link                                         measured                           target                
+capture to arrival, from the capture's stamp ticks p95 272.1 ms                 <= 48 ms (report)      OVER
+key event to main thread                     not measured here                  <= 46 ms (gate)        
+sim + evaluate + encode per frame            p99 1.8 ms                         <= 4 ms                met
+rollback re-simulation per second            p95 1.6 ms (0.5x song replayed)    <= 250 ms; <= 7.2x     met
+output latency (reported, corrected)         16.6 ms                            report                 
+sounds: margin before the output renders     least 62.3 ms, 0 of 282 late       none late              met
+capture to arrival, the app's share          not measured here                  see Targets            
+hindsight decode to arrival                  not measured here                  see Targets            
+analyzer real-time factor                    not measured here                  see Targets            
+main thread to present                       not measured here                  see Targets            
+committed beat to heard beat                 not measured here                  see Targets            

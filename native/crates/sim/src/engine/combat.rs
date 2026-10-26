@@ -94,19 +94,31 @@ impl Sim {
             return;
         }
         let w = self.st.w;
+        let position = self.pos(fi, w);
         let f = &mut self.st.foes[fi];
         f.health -= h.damage;
         let lethal = f.health <= 1e-9;
         let fate = Fate {
             w,
-            x: f.x + f.vx * (w - f.last_w),
-            y: f.y + f.vy * (w - f.last_w),
+            x: position.0,
+            y: position.1,
             hit: h.id,
             lethal,
             damage: h.damage,
         };
         f.last_fate = Some(fate);
         self.rec.fate(fi, fate);
+        if self.st.survivor.is_some() {
+            let at = self.next_enemy_sixteenth(self.st.s);
+            self.st.q.push(
+                at,
+                Ev::EnemyImpact {
+                    foe: fi,
+                    fate,
+                    hit: Box::new(h.clone()),
+                },
+            );
+        }
         if self.st.boss_foe == Some(fi) {
             let f = &self.st.foes[fi];
             let frac = max(0.0, f.health) / f.health0;
@@ -136,21 +148,14 @@ impl Sim {
                     .knockback
             });
             if data.knockback * weapon_kb > 0.0 {
-                let bi = (self.known_beat_at(self.st.s) * 4.0 + 1e-6).floor() / 4.0 + 0.25;
-                let ev = Ev::Recoil {
-                    foe: fi,
-                    multiplier: data.knockback * weapon_kb,
-                };
-                if self.log.beats[..self.st.ingested.beats]
-                    .last()
-                    .is_some_and(|b| b.t > self.st.s)
-                {
-                    self.push_at_beat(bi, ev);
-                } else {
-                    self.st
-                        .q
-                        .push(self.st.s + self.env.rule.free_period_s / 4.0, ev);
-                }
+                let at = self.next_enemy_sixteenth(self.st.s);
+                self.st.q.push(
+                    at,
+                    Ev::Recoil {
+                        foe: fi,
+                        multiplier: data.knockback * weapon_kb,
+                    },
+                );
             }
         } else {
             let f = &self.st.foes[fi];
@@ -184,6 +189,7 @@ impl Sim {
         let f = &mut self.st.foes[fi];
         f.x = x;
         f.y = y;
+        f.attack = None;
         f.last_w = self.st.w;
         f.step = None;
         f.recoil_v = (dx / d * speed, dy / d * speed);

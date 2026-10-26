@@ -315,7 +315,7 @@ pub fn enemy_def() -> Schema {
         opt(
             "gait",
             object(vec![
-                def("every", en(&["eighth", "beat"]), json!("beat")),
+                def("every", en(&["sixteenth", "eighth", "beat"]), json!("beat")),
                 def(
                     "pattern",
                     Schema::String(Str {

@@ -1196,6 +1196,19 @@ SH2 and the consuming presentation beads.
 ### SH4
 ### SH5
 ### SH6
+
+Early bats, slime, bee and skeleton now step and animate on their assigned
+subdivisions. Contact attacks wind up offbeat, attempt one bite on the beat's
+peak and recheck contact; freezes require fresh notice. Flashes, recoil and
+visible deaths land on sixteenths, preserving immediate logical combat/report
+counts. Source VS stats and the easy knobs are unchanged. The minute-two
+headless still has 143 enemies at run 157.414 s (damage-exempt presentation
+only). A separate normal-damage File run replays all 79,862 settled records
+exactly, with 55 kills and full health; its duration is not a survival verdict.
+Five focused regressions cover six gaits, finite startup motion, contact,
+freeze, grid invalidation and an uncommitted-tail poison check; Live density
+rollback matches 69,420 records. See [SH6 evidence](../../native/evidence/sh6/README.md).
+
 ### SH7
 ### SH8
 ### SH9

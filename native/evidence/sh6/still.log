@@ -1,0 +1,2 @@
+still: song 160.000s, run Some(RunState { song: 159.99166666666667, presentation_s: 159.99166666666667, frozen_beat: None, elapsed: 157.4141666666667, spawn_minute: Some(2), spawned: 425, offer: None, level: 3, max_hp: 120.0, world: 157.4141666666667, frozen: None, selected: 0, confirmed: true }), alive 143, kills 282, damage-exempt true
+slice: wrote native/evidence/sh6/minute-two.png (2150 sprites, 7 lights; 143 enemies, health 1.00, groove 0.00; zone ember-hollow)

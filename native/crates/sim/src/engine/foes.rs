@@ -57,9 +57,10 @@ impl Sim {
         } else {
             at_w
         };
+        let (dx, dy) = f.attack.map_or((0.0, 0.0), |a| a.offset(at_w));
         (
-            f.x + f.vx * (at_w - f.last_w),
-            f.y + f.vy * (at_w - f.last_w),
+            f.x + f.vx * (at_w - f.last_w) + dx,
+            f.y + f.vy * (at_w - f.last_w) + dy,
         )
     }
 
@@ -144,6 +145,7 @@ impl Sim {
             r: def.radius,
             health: h0,
             survivor_boss: false,
+            attack: None,
             x,
             y,
             vx: 0.0,
@@ -350,9 +352,10 @@ impl Sim {
         let bpb = get_or(&idx.beats_per_bar, min(idx.bar_count, bar), 2.0);
         let bar_start = get_or(&idx.bar_start, min(idx.bar_count, bar), 0.0);
         let free = env.input.level.survivors.is_some()
-            && !self.log.beats[..self.st.ingested.beats]
-                .last()
-                .is_some_and(|b| b.t > s + 1e-9);
+            && (self.st.ingested.beats < 2
+                || !self.log.beats[..self.st.ingested.beats]
+                    .last()
+                    .is_some_and(|b| b.t > s + 1e-9));
         let mult = |g: Subdivision| -> f64 {
             if free {
                 return 1.0;
@@ -369,9 +372,10 @@ impl Sim {
         // Beat steps need a steady beat: enemies with a gait glide while the beat is unclear.
         let stepping = self.clear_at(s)
             && (self.env.input.level.survivors.is_none()
-                || self.log.beats[..self.st.ingested.beats]
-                    .last()
-                    .is_some_and(|b| b.t > s + 1e-9));
+                || (!free
+                    && self.log.beats[..self.st.ingested.beats]
+                        .last()
+                        .is_some_and(|b| b.t > s + 1e-9)));
         let step_b = if stepping { self.known_beat_at(s) } else { 0.0 };
         let health = self.st.health > 0.0;
         let alive = self.st.alive.clone();
@@ -566,6 +570,7 @@ impl Sim {
                 }
                 let ed = hypot(f.x - hp.x, f.y - hp.y);
                 if health
+                    && env.input.level.survivors.is_none()
                     && def.contact_damage > 0.0
                     && ed <= HURTBOX_RADIUS + f.r + CONTACT_GAP + BITE_SLACK
                     && self.st.w >= self.st.invuln_until - 1e-9
@@ -685,6 +690,7 @@ impl Sim {
             }
             // An enemy at contact bites whenever the hero isn't invulnerable.
             if health
+                && env.input.level.survivors.is_none()
                 && def.contact_damage > 0.0
                 && max(ed, min_d) <= min_d + CONTACT_GAP + BITE_SLACK
                 && self.st.w >= self.st.invuln_until - 1e-9

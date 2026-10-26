@@ -502,6 +502,8 @@ pub fn run(args: &[String]) -> Result<(), String> {
             opts.still_at,
             opts.zen,
             level,
+            opts.pick_first,
+            opts.spawn_smoke,
         );
     }
     if opts.bench {
@@ -1150,6 +1152,8 @@ fn still(
     at: Option<f64>,
     zen: bool,
     level: Option<&Path>,
+    pick_first: bool,
+    spawn_smoke: bool,
 ) -> Result<(), String> {
     let world = World::load(level)?;
     let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
@@ -1161,6 +1165,10 @@ fn still(
         .map_err(|e| format!("{}: {e}", stream_path.display()))?;
     let file = stream::StreamFile::parse(&text).map_err(|e| e.0)?;
     let mut engine = world.engine(zen)?;
+    if spawn_smoke {
+        engine.sim.disable_hero_damage_for_check();
+    }
+    let mut picked_offer = None;
     let mut replay = stream::Replay::new(file.log.clone());
     let beats: Vec<f64> = file.log.beats.iter().map(|b| b.t).collect();
     let mut scene = Scene::default();
@@ -1180,10 +1188,30 @@ fn still(
             next += 1;
         }
         engine.advance_to(s);
+        if pick_first {
+            let offer = engine.view.borrow().run.and_then(|r| r.offer);
+            if let Some(offer) = offer.filter(|o| {
+                picked_offer != Some((o.level, o.reveals[2].to_bits())) && s >= o.reveals[2]
+            }) {
+                engine.key(s, InputKey::Left, true);
+                engine.key(s + 0.001, InputKey::Left, false);
+                engine.key(s + 0.002, InputKey::Confirm, true);
+                engine.key(s + 0.003, InputKey::Confirm, false);
+                picked_offer = Some((offer.level, offer.reveals[2].to_bits()));
+            } else if offer.is_none() {
+                picked_offer = None;
+            }
+        }
         let moments = engine.view.borrow_mut().take_moments();
         scene.moments(&moments, s, &world.lib, &world.looks, &engine.view.borrow());
         scene.level(&engine.view.borrow(), s, &world.lib);
     }
+    eprintln!(
+        "still: song {end:.3}s, run {:?}, alive {}, kills {}, damage-exempt {spawn_smoke}",
+        engine.view.borrow().run,
+        engine.view.borrow().alive().count(),
+        engine.view.borrow().kills
+    );
     let upcoming: Vec<f64> = beats
         .iter()
         .map(|b| b - end)

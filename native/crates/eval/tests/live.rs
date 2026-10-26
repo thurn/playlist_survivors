@@ -827,3 +827,64 @@ fn rewinding_before_real_xp_retracts_the_projected_offer_without_a_pick() {
     );
     assert!(!view.run.unwrap().confirmed);
 }
+
+#[test]
+fn survivor_grid_reactions_hold_a_dead_body_until_its_impact_even_through_a_freeze() {
+    use eval::live::{LiveView, Moment, Record};
+    let mut view = LiveView::default();
+    view.apply(0.0, &Record::Run(sim::survivors::RunState::default()));
+    let hit = Moment::Hit {
+        x: 12.0,
+        y: 20.0,
+        lethal: true,
+        foe: 0,
+        source: "weapon",
+        weight: "light",
+        what: "sword".into(),
+        dir: 0.0,
+        intensity: 1.0,
+    };
+    view.apply(
+        0.0,
+        &Record::Spawn {
+            id: 0,
+            kind: "vs-bat3".into(),
+        },
+    );
+    view.apply(0.6, &Record::Moment(hit.clone()));
+    view.apply(
+        0.6,
+        &Record::Death {
+            id: 0,
+            w: 0.6,
+            recycled: false,
+        },
+    );
+    assert_eq!(view.alive().count(), 0, "logical death counts at once");
+    assert!(view.foes[&0].pending_impact);
+    view.apply(
+        5.0,
+        &Record::Spawn {
+            id: 1,
+            kind: "vs-bat3".into(),
+        },
+    );
+    view.apply(
+        5.0,
+        &Record::Death {
+            id: 1,
+            w: 5.0,
+            recycled: false,
+        },
+    );
+    assert!(
+        view.foes.contains_key(&0),
+        "unseen grid reaction survives dead-body pruning"
+    );
+    view.apply(
+        5.125,
+        &Record::Moment(Moment::EnemyImpact { hit: Box::new(hit) }),
+    );
+    assert!(!view.foes[&0].pending_impact);
+    assert_eq!(view.kills, 2, "visual reactions never count another kill");
+}

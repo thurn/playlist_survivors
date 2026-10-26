@@ -52,7 +52,8 @@ impl Ev {
     fn cadence(&self) -> bool {
         matches!(
             self,
-            Self::Auto { .. }
+            Self::EnemyWind { .. }
+                | Self::Auto { .. }
                 | Self::Held
                 | Self::Beat { .. }
                 | Self::ReactiveBeat { .. }
@@ -380,8 +381,13 @@ impl Sim {
                 *need = (*need as f64 + shift).ceil().max(0.0) as usize;
             }
         }
+        // Do not catch up a contact attack across a menu. The next offbeat winds afresh.
+        for foe in &mut self.st.foes {
+            foe.attack = None;
+        }
         self.requeue_held();
         self.queue_cadence();
+        self.arm_free_pulse();
         self.publish_run();
     }
 
@@ -432,10 +438,16 @@ impl Sim {
                         .step,
                     2.0,
                 ),
-                Ev::Wave { .. } | Ev::Gem { .. } | Ev::Recoil { .. } => 0.25,
+                Ev::Wave { .. } | Ev::Gem { .. } | Ev::Recoil { .. } | Ev::EnemyImpact { .. } => {
+                    0.25
+                }
                 _ => 1.0,
             };
-            let Some((bi, at)) = self.known_grid_after(due, step) else {
+            let grid = self.known_grid_after(due, step).or_else(|| {
+                matches!(h.entry.ev, Ev::Recoil { .. } | Ev::EnemyImpact { .. })
+                    .then(|| (0.0, self.next_enemy_sixteenth(due)))
+            });
+            let Some((bi, at)) = grid else {
                 self.st.freeze.held.push(h);
                 continue;
             };
@@ -480,7 +492,7 @@ impl Sim {
         }
     }
 
-    fn known_grid_after(&self, due: f64, step: f64) -> Option<(f64, f64)> {
+    pub(super) fn known_grid_after(&self, due: f64, step: f64) -> Option<(f64, f64)> {
         let beats = &self.log.beats[..self.st.ingested.beats];
         let due = due.max(self.st.s);
         // Fractional steps require both bounding beats; extrapolation would read an unknown grid.
@@ -526,6 +538,10 @@ impl Sim {
             return;
         }
         let b = self.log.beats[bi];
+        let period = bi
+            .checked_sub(1)
+            .map_or(b.period, |i| b.t - self.log.beats[i].t);
+        self.queue_enemy_wind(b.t, period, None);
         self.st
             .q
             .push_init(b.t, Ev::Beat { bi }, phase::BEAT, bi as u64);
@@ -540,10 +556,9 @@ impl Sim {
         let last = self.log.beats[..self.st.ingested.beats]
             .last()
             .map_or(0.0, |b| b.t);
-        self.st.q.push(
-            (last + self.env.rule.free_period_s).max(self.st.s),
-            Ev::FreePulse { generation },
-        );
+        let peak = (last + self.env.rule.free_period_s).max(self.st.s);
+        self.queue_enemy_wind(peak, self.env.rule.free_period_s, Some(generation));
+        self.st.q.push(peak, Ev::FreePulse { generation });
     }
 
     pub(super) fn free_pulse(&mut self, generation: u64) {
@@ -555,6 +570,11 @@ impl Sim {
             self.spawn_director(self.sbi_at(self.st.s));
             self.sword_free_pulse();
         }
+        self.queue_enemy_wind(
+            self.st.s + self.env.rule.free_period_s,
+            self.env.rule.free_period_s,
+            Some(generation),
+        );
         self.st.q.push(
             self.st.s + self.env.rule.free_period_s,
             Ev::FreePulse { generation },

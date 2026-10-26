@@ -300,6 +300,16 @@ impl Scene {
         }
         let view_tier = (view.tier.max(0.0) as usize).min(3);
         for m in moments {
+            let m = match m {
+                Moment::EnemyImpact { hit } => hit.as_ref(),
+                Moment::Hit { foe, lethal, .. } if view.run.is_some() => {
+                    if *lethal {
+                        self.struck.insert(*foe, (f64::INFINITY, true));
+                    }
+                    continue;
+                }
+                _ => m,
+            };
             // (Each enemy's last hit, for its flash, knockback and fall.)
             if let Moment::Hit { foe, lethal, .. } = m {
                 self.struck.insert(*foe, (now, *lethal));
@@ -692,8 +702,20 @@ impl Scene {
                     // on each (each kind a step later, so it ripples), and flinches at onsets.
                     let (mut kx, mut ky, mut bob) = (1.0, 1.0, 0.0);
                     if !dead {
-                        let u = (pulse.beat.clamp(0.0, 1.0) - type_phase(&f.kind)).rem_euclid(1.0);
-                        let land = (-6.0 * u).exp();
+                        let cycle = lib.enemies.get(&f.kind).map_or(1.0, |d| d.walk_cycle_beats);
+                        let u = if view.run.is_some() {
+                            // Freeze translation and walk pose; the audible gait still bobs in place.
+                            (pulse.index / cycle).rem_euclid(1.0)
+                        } else {
+                            (pulse.beat.clamp(0.0, 1.0) - type_phase(&f.kind)).rem_euclid(1.0)
+                        };
+                        let land = (-6.0
+                            * if view.run.is_some() {
+                                pulse.beat.clamp(0.0, 1.0)
+                            } else {
+                                u
+                            })
+                        .exp();
                         let g = if view.run.is_some_and(|r| r.frozen.is_some()) {
                             1.0
                         } else {
@@ -723,7 +745,8 @@ impl Scene {
                     let (sx, sy) = at(x, y);
                     // (A body whose killing blow went unseen is gone.)
                     let fall = match struck {
-                        Some((age, true)) if dead => Some(age.max(0.0)),
+                        Some((age, true)) if dead && age >= 0.0 => Some(age),
+                        _ if f.pending_impact => Some(-1.0),
                         _ if dead => None,
                         _ => Some(-1.0),
                     };
@@ -747,6 +770,11 @@ impl Scene {
                         // a fall's six frames over its length.)
                         let frame = if hurt.is_some() {
                             ((fall / DEATH_FALL_S * 6.0) as usize).min(5)
+                        } else if view.run.is_some() {
+                            let beat = view.run.and_then(|r| r.frozen_beat).unwrap_or(pulse.index);
+                            let cycle =
+                                lib.enemies.get(&f.kind).map_or(1.0, |d| d.walk_cycle_beats);
+                            (beat.max(0.0) / cycle * walk.len() as f64) as usize
                         } else {
                             f.samples / 6
                         };

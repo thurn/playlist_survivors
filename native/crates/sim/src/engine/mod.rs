@@ -25,6 +25,7 @@
 #![allow(clippy::many_single_char_names, clippy::manual_midpoint)] // (the TS names and arithmetic, as written)
 
 mod combat;
+mod enemy_rhythm;
 mod foes;
 mod freeze;
 mod hero;
@@ -330,6 +331,16 @@ enum Ev {
     FreePulse {
         generation: u64,
     },
+    EnemyWind {
+        peak: f64,
+        period: f64,
+        generation: Option<u64>,
+    },
+    EnemyImpact {
+        foe: usize,
+        fate: crate::recorder::Fate,
+        hit: Box<crate::recorder::Hit>,
+    },
     Held,
     HitstopEnd,
     Recoil {
@@ -449,6 +460,8 @@ impl Ev {
     fn order(&self) -> f64 {
         match self {
             Ev::HitstopEnd => 0.0,
+            Ev::EnemyWind { .. } | Ev::Wind(_) => 11.0,
+            Ev::EnemyImpact { .. } | Ev::Appear { .. } => 22.0,
             Ev::Freeze(_) => 0.5,
             Ev::FreePulse { .. } => 6.6,
             Ev::LevelDue { .. } => 2.0,
@@ -461,14 +474,12 @@ impl Ev {
             Ev::Settle(_) => 6.1,
             Ev::Held => 6.5,
             Ev::Auto { .. } => 10.0,
-            Ev::Wind(_) => 11.0,
             Ev::Strike(_) => 12.0,
             Ev::Wave { .. } => 15.0,
             Ev::Fire { .. } => 16.0,
             Ev::Chain { .. } => 17.0,
             Ev::Gem { .. } | Ev::ChickenHeal => 20.0,
             Ev::Beat { .. } | Ev::Drain { .. } => 21.0,
-            Ev::Appear { .. } => 22.0,
             Ev::ZoneWave { .. }
             | Ev::ZoneFallback { .. }
             | Ev::Landmark { .. }
@@ -657,6 +668,7 @@ struct Foe {
     r: f64,
     health: f64,
     survivor_boss: bool,
+    attack: Option<enemy_rhythm::Lunge>,
     x: f64,
     y: f64,
     vx: f64,
@@ -1734,6 +1746,7 @@ impl Sim {
             self.dispatch_entry(entry);
         }
         self.tick_weapons();
+        self.tick_enemy_bites();
         self.tick_spawner();
     }
 
@@ -1747,6 +1760,12 @@ impl Sim {
         match ev {
             Ev::Freeze(reason) => self.enter_freeze(reason),
             Ev::FreePulse { generation } => self.free_pulse(generation),
+            Ev::EnemyWind {
+                peak,
+                period,
+                generation,
+            } => self.enemy_wind(peak, period, generation),
+            Ev::EnemyImpact { foe, fate, hit } => self.rec.enemy_impact(foe, fate, &hit),
             Ev::HitstopEnd => {}
             Ev::Recoil { foe, multiplier } => self.survivor_recoil(foe, multiplier),
             Ev::Key(e) => {
@@ -2420,7 +2439,10 @@ mod tests {
         assert_eq!(stride_s0(&sim), Some(1.62));
     }
     fn survivor_sim() -> Sim {
-        let file = stream();
+        survivor_sim_with(stream())
+    }
+
+    fn survivor_sim_with(file: StreamFile) -> Sim {
         let base = sim_in(&file, true);
         let lib = &base.env.input.lib;
         let mut level = load_level(
@@ -2439,6 +2461,202 @@ mod tests {
         let mut sim = Sim::new(input, Rc::new(file.log), Box::new(NullRecorder), None);
         sim.st.q.remove(&|ev| matches!(ev, Ev::Auto { .. }));
         sim
+    }
+
+    fn rhythm_foe(sim: &mut Sim, x: f64) -> usize {
+        let def = sim.env.input.lib.enemies.get_index_of("vs-zombie").unwrap();
+        let stats = Rc::get_mut(&mut sim.env).unwrap().input.lib.enemies[def]
+            .survivors
+            .as_mut()
+            .unwrap();
+        stats.knockback = 0.0; // Isolate contact attacks from the hero's sword recoil.
+        sim.spawn_foe(def, x, 0.0, Some(100_000.0))
+    }
+
+    #[test]
+    fn survivor_lunge_has_notice_bites_on_the_peak_and_only_once_per_beat() {
+        use crate::recorder::LogRecorder;
+        use std::cell::RefCell;
+        let mut sim = survivor_sim();
+        let rec = Rc::new(RefCell::new(LogRecorder::default()));
+        sim.rec = Box::new(Rc::clone(&rec));
+        let id = rhythm_foe(&mut sim, 30.0);
+        sim.advance_to(0.26);
+        let attack = sim.st.foes[id].attack.expect("offbeat wind-up");
+        let at_open = attack.offset(sim.st.w);
+        sim.advance_to(0.35);
+        let back = sim.st.foes[id].attack.unwrap().offset(sim.st.w);
+        assert!(back.0 > at_open.0, "wind-up leans away from the hero");
+        assert!(sim.pos(id, sim.st.w).0.is_finite());
+        sim.advance_to(0.499);
+        assert_eq!(sim.st.health, 120.0, "continuous contact cannot bite");
+        sim.advance_to(0.501);
+        assert_eq!(sim.st.health, 116.0);
+        assert!(sim.st.foes[id].attack.unwrap().attempted);
+        sim.st.invuln_until = 0.0;
+        sim.tick_enemy_bites();
+        sim.enemy_wind(0.5, 0.5, None);
+        sim.tick_enemy_bites();
+        assert_eq!(
+            sim.st.health, 116.0,
+            "no second bite even if invulnerability is removed"
+        );
+        sim.advance_to(1.1);
+        let rec = rec.borrow();
+        assert!(!rec.bites.is_empty());
+        for bite in &rec.bites {
+            let s = bite["s"].as_f64().unwrap();
+            assert!(
+                (s / 0.5 - (s / 0.5).round()).abs() < 1e-8,
+                "bite off-grid: {s}"
+            );
+        }
+    }
+
+    #[test]
+    fn survivor_lunge_rechecks_contact_at_the_peak_and_has_no_surprise_resume_bite() {
+        let mut sim = survivor_sim();
+        let id = rhythm_foe(&mut sim, 30.0);
+        sim.advance_to(0.26);
+        assert!(sim.st.foes[id].attack.is_some());
+        // The hero escaped the notice: a queued attack has no right to deal damage.
+        sim.st.foes[id].x = 1000.0;
+        sim.advance_to(0.51);
+        assert_eq!(sim.st.health, 120.0);
+        sim.st.foes[id].x = 30.0;
+        sim.advance_to(0.76);
+        assert!(sim.st.foes[id].attack.is_some());
+        sim.freeze_at(0.77, crate::survivors::FreezeReason::Paused);
+        sim.advance_to(1.2);
+        let held = sim.pos(id, sim.st.w);
+        sim.advance_to(1.4);
+        assert_eq!(held, sim.pos(id, sim.st.w));
+        key(&mut sim, 1.4, KeyEventKind::Press, InputKey::Pause);
+        key(&mut sim, 1.41, KeyEventKind::Release, InputKey::Pause);
+        sim.advance_to(1.501);
+        assert!(!sim.st.freeze.frozen);
+        assert!(
+            sim.st.foes[id].attack.is_none(),
+            "a new offbeat must give fresh notice"
+        );
+        assert_eq!(sim.st.health, 120.0);
+    }
+
+    #[test]
+    fn survivor_early_roles_step_at_the_design_subdivisions_and_stay_finite() {
+        use crate::recorder::LogRecorder;
+        use std::cell::RefCell;
+        let mut sim = survivor_sim();
+        let rec = Rc::new(RefCell::new(LogRecorder::default()));
+        sim.rec = Box::new(Rc::clone(&rec));
+        for (i, (role, steps)) in [
+            ("vs-bat1", 2.0),
+            ("vs-bat2", 2.0),
+            ("vs-bat3", 2.0),
+            ("vs-zombie", 1.0),
+            ("vs-ghost", 4.0),
+            ("vs-skeleton", 1.0),
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let def = sim.env.input.lib.enemies.get_index_of(role).unwrap();
+            let data = &sim.env.input.lib.enemies[def];
+            assert_eq!(
+                crate::gait::gait_per_beat(data.gait.as_ref().unwrap()),
+                steps,
+                "{role}"
+            );
+            assert_eq!(data.walk_cycle_beats, 1.0 / steps, "{role}");
+            sim.spawn_foe(def, 300.0, i as f64 * 70.0, Some(100_000.0));
+        }
+        for i in 1..=240 {
+            sim.advance_to(i as f64 / 60.0);
+            for &id in &sim.st.alive {
+                let (x, y) = sim.pos(id, sim.st.w);
+                assert!(x.is_finite() && y.is_finite());
+            }
+        }
+        for enemy in &rec.borrow().enemies {
+            let steps = enemy
+                .steps
+                .as_ref()
+                .expect("gait starts after evidence locks");
+            assert!(
+                steps.iter().any(|s| s.dur > 0.0),
+                "{} never stepped",
+                enemy.kind
+            );
+        }
+    }
+
+    #[test]
+    fn survivor_lunges_and_gaits_never_read_the_uncommitted_tail() {
+        use crate::recorder::LogRecorder;
+        use std::cell::RefCell;
+        let cut = 1.6;
+        let mut poisoned = stream();
+        for (i, beat) in poisoned.log.beats.iter_mut().enumerate() {
+            if beat.known_at > cut {
+                beat.t += i as f64 * 0.3;
+                beat.period = 0.9;
+                beat.evidence = 0.0;
+            }
+        }
+        for tick in &mut poisoned.log.ticks {
+            if tick.known_at > cut {
+                tick.evidence = 0.0;
+                tick.energy = 0.0;
+            }
+        }
+        let run = |file| {
+            let mut sim = survivor_sim_with(file);
+            let rec = Rc::new(RefCell::new(LogRecorder::default()));
+            sim.rec = Box::new(Rc::clone(&rec));
+            let id = rhythm_foe(&mut sim, 30.0);
+            for i in 1..=160 {
+                sim.advance_to(i as f64 / 100.0);
+                let (x, y) = sim.pos(id, sim.st.w);
+                assert!(
+                    x.is_finite() && y.is_finite(),
+                    "opening movement must stay finite"
+                );
+            }
+            assert!(!rec.borrow().bites.is_empty());
+            let output = format!("{:?}", rec.borrow());
+            output
+        };
+        assert_eq!(run(stream()), run(poisoned));
+    }
+
+    #[test]
+    fn survivor_lunge_free_pulse_is_generation_guarded_and_reactions_use_sixteenths() {
+        let mut sim = survivor_sim();
+        let id = rhythm_foe(&mut sim, 30.0);
+        let mut grid = survivor_sim();
+        grid.advance_to(0.6);
+        assert!((grid.next_enemy_sixteenth(0.6) - 0.625).abs() < 1e-9);
+        sim.st.s = 0.25;
+        sim.st.w = 0.25;
+        let generation = sim.st.freeze.pulse_generation;
+        sim.enemy_wind(0.5, 0.5, Some(generation));
+        sim.st.s = 0.5;
+        sim.st.w = 0.5;
+        sim.st.freeze.pulse_generation += 1;
+        sim.tick_enemy_bites();
+        assert_eq!(
+            sim.st.health, 120.0,
+            "new committed grid invalidates the old free pulse"
+        );
+        sim.st.foes[id].attack = None;
+        let generation = sim.st.freeze.pulse_generation;
+        sim.st.s = 0.75;
+        sim.st.w = 0.75;
+        sim.enemy_wind(1.0, 0.5, Some(generation));
+        sim.st.s = 1.0;
+        sim.st.w = 1.0;
+        sim.tick_enemy_bites();
+        assert_eq!(sim.st.health, 116.0);
     }
 
     #[test]

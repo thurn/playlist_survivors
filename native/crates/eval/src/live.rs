@@ -46,12 +46,17 @@ pub struct Foe {
     pub samples: usize,
     /// When it died (world time), if it has.
     pub death_w: Option<f64>,
+    pub pending_impact: bool,
 }
 
 /// A moment the frame shows once.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Moment {
     WeaponFire(sim::survivors::Shot),
+    /// Grid-aligned presentation of a Survivors hit (logical Hit is kept for reports).
+    EnemyImpact {
+        hit: Box<Moment>,
+    },
     /// A hit caught enemy `foe` at (x, y): from a swing (`move`), a weapon (`what`), a cleave's
     /// wave or the finale's ring, of a weight (`light`, `medium`, `heavy`), heading `dir`, at an
     /// intensity (0-1).
@@ -287,6 +292,7 @@ impl LiveView {
                         prev: (f64::NAN, f64::NAN),
                         samples: 0,
                         death_w: None,
+                        pending_impact: false,
                     },
                 );
             }
@@ -300,6 +306,23 @@ impl LiveView {
             }
             Record::Death { id, w, recycled } => self.death(*id, *w, *recycled),
             Record::Moment(m) => {
+                match m {
+                    Moment::Hit {
+                        foe, lethal: true, ..
+                    } if self.run.is_some() => {
+                        if let Some(f) = self.foes.get_mut(foe) {
+                            f.pending_impact = true;
+                        }
+                    }
+                    Moment::EnemyImpact { hit } => {
+                        if let Moment::Hit { foe, .. } = hit.as_ref()
+                            && let Some(f) = self.foes.get_mut(foe)
+                        {
+                            f.pending_impact = false;
+                        }
+                    }
+                    _ => {}
+                }
                 if let Moment::Press { rating, .. } = m {
                     match *rating {
                         Some("perfect") => self.ratings[0] += 1,
@@ -405,7 +428,7 @@ impl LiveView {
         self.kills += 1;
         // Keep the dead only briefly (the drawer fades them).
         self.foes
-            .retain(|_, f| !f.death_w.is_some_and(|d| d < w - 2.0));
+            .retain(|_, f| f.pending_impact || !f.death_w.is_some_and(|d| d < w - 2.0));
     }
 }
 
@@ -685,6 +708,28 @@ impl Recorder for LiveRecorder {
         }
     }
 
+    fn enemy_impact(&mut self, id: usize, fate: Fate, h: &Hit) {
+        let weight = match h.weight {
+            sim::recorder::Weight::Light => "light",
+            sim::recorder::Weight::Medium => "medium",
+            sim::recorder::Weight::Heavy => "heavy",
+        };
+        self.0
+            .borrow_mut()
+            .push(Record::Moment(Moment::EnemyImpact {
+                hit: Box::new(Moment::Hit {
+                    x: fate.x,
+                    y: fate.y,
+                    lethal: fate.lethal,
+                    foe: id,
+                    source: source_name(h.source),
+                    weight,
+                    what: h.what.clone(),
+                    dir: h.dir,
+                    intensity: h.intensity,
+                }),
+            }));
+    }
     fn death(&mut self, id: usize, w: f64, recycled: bool) {
         self.0.borrow_mut().push(Record::Death { id, w, recycled });
     }

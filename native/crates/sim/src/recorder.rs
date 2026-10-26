@@ -446,6 +446,8 @@ pub trait Recorder {
     fn spawn(&mut self, rec: EnemyRecord) {}
     fn sample(&mut self, id: usize, x: f64, y: f64) {}
     fn fate(&mut self, id: usize, fate: Fate) {}
+    /// Survivors presentation reaction on the next sixteenth; logical fate is immediate.
+    fn enemy_impact(&mut self, id: usize, fate: Fate, hit: &Hit) {}
     fn death(&mut self, id: usize, w: f64, recycled: bool) {}
     fn hit(&mut self, h: Hit) {}
     fn swing(&mut self, sw: PlanSwing) {}
@@ -536,6 +538,9 @@ impl<R: Recorder + ?Sized> Recorder for std::rc::Rc<std::cell::RefCell<R>> {
     }
     fn fate(&mut self, id: usize, fate: Fate) {
         self.borrow_mut().fate(id, fate);
+    }
+    fn enemy_impact(&mut self, id: usize, fate: Fate, hit: &Hit) {
+        self.borrow_mut().enemy_impact(id, fate, hit);
     }
     fn death(&mut self, id: usize, w: f64, recycled: bool) {
         self.borrow_mut().death(id, w, recycled);
