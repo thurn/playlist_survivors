@@ -1,0 +1,54 @@
+sound-check: minute 0, run 0.008s, alive 0, peak 0, damage_exempt true
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [0, 0, 0, 0, 0], denied [0, 0, 0, 0, 0]
+sound-check: minute 1, run 60.000s, alive 55, peak 55, damage_exempt true
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [2, 1, 1, 1, 0], denied [0, 0, 0, 0, 0]
+sound-check: minute 2, run 120.006s, alive 117, peak 118, damage_exempt true
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [2, 2, 2, 1, 0], denied [0, 0, 0, 0, 0]
+sound-check: minute 3, run 180.001s, alive 281, peak 287, damage_exempt true
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [3, 2, 2, 3, 0], denied [0, 0, 10, 0, 0]
+sound-check: minute 4, run 240.000s, alive 281, peak 293, damage_exempt true
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [3, 3, 2, 3, 0], denied [0, 0, 25, 0, 0]
+sound-check: minute 5, run 300.004s, alive 261, peak 293, damage_exempt true
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [4, 3, 2, 3, 0], denied [0, 0, 27, 0, 0]
+sound-check: minute 6, run 360.004s, alive 137, peak 293, damage_exempt true
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [4, 3, 2, 3, 0], denied [0, 0, 29, 0, 0]
+sound-check: minute 7, run 420.005s, alive 265, peak 293, damage_exempt true
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [4, 3, 2, 3, 0], denied [0, 0, 30, 0, 0]
+sound-check: minute 8, run 480.005s, alive 298, peak 300, damage_exempt true
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [4, 3, 2, 3, 0], denied [0, 0, 34, 0, 0]
+sound-check: minute 9, run 540.005s, alive 186, peak 300, damage_exempt true
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [4, 3, 2, 3, 0], denied [0, 0, 41, 0, 0]
+sound-check: minute 10, run 600.005s, alive 284, peak 300, damage_exempt true
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [4, 3, 2, 3, 0], denied [0, 0, 45, 0, 0]
+sound-check: minute 11, run 660.000s, alive 300, peak 300, damage_exempt true
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [4, 3, 2, 3, 0], denied [0, 0, 45, 0, 0]
+sound-check: minute 12, run 720.006s, alive 300, peak 300, damage_exempt true
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [4, 3, 2, 3, 0], denied [0, 0, 46, 0, 0]
+sound-check: minute 13, run 780.006s, alive 300, peak 300, damage_exempt true
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [4, 3, 2, 3, 0], denied [0, 0, 48, 0, 0]
+sound-check: minute 14, run 840.006s, alive 300, peak 300, damage_exempt true
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [4, 3, 2, 3, 0], denied [0, 0, 48, 0, 0]
+sound-check: minute 15, run 900.006s, alive 300, peak 300, damage_exempt true
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [4, 3, 2, 3, 0], denied [0, 0, 50, 0, 0]
+sound-check: minute 16, run 960.006s, alive 300, peak 300, damage_exempt true
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [4, 3, 2, 3, 0], denied [0, 0, 50, 0, 0]
+sound-check: minute 17, run 1020.006s, alive 300, peak 300, damage_exempt true
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [4, 3, 2, 3, 0], denied [0, 0, 50, 0, 0]
+sound-check: minute 18, run 1080.006s, alive 287, peak 300, damage_exempt true
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [4, 3, 2, 3, 0], denied [0, 0, 50, 0, 0]
+sound-check: minute 19, run 1140.006s, alive 300, peak 300, damage_exempt true
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [4, 3, 2, 3, 0], denied [0, 0, 51, 0, 0]
+sound-check: minute 20, run 1200.001s, alive 300, peak 300, damage_exempt true
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [4, 3, 2, 3, 0], denied [0, 0, 51, 0, 0]
+sound-check: minute 21, run 1260.007s, alive 300, peak 300, damage_exempt true
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [4, 3, 2, 3, 0], denied [0, 0, 51, 0, 0]
+sound-check: minute 22, run 1320.001s, alive 300, peak 300, damage_exempt true
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [4, 3, 2, 3, 0], denied [0, 0, 51, 0, 0]
+sound-check: minute 23, run 1380.001s, alive 300, peak 300, damage_exempt true
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [4, 3, 2, 3, 0], denied [0, 0, 51, 0, 0]
+sound-check: minute 24, run 1440.001s, alive 300, peak 300, damage_exempt true
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [4, 3, 2, 3, 0], denied [0, 0, 51, 0, 0]
+sound-check: minute 25, run 1500.001s, alive 300, peak 300, damage_exempt true
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [4, 3, 2, 3, 0], denied [0, 0, 51, 0, 0]
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [4, 3, 2, 3, 0], denied [0, 0, 51, 0, 0]
+sound-check: mixer started 8541, skipped 0, dropped 0, cancelled 18; reached minute 25, peak enemies 300

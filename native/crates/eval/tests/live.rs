@@ -891,3 +891,50 @@ fn survivor_grid_reactions_hold_a_dead_body_until_its_impact_even_through_a_free
     assert!(!view.foes[&0].pending_impact);
     assert_eq!(view.kills, 2, "visual reactions never count another kill");
 }
+
+#[test]
+fn speculative_pickup_sounds_derive_from_actual_gem_records_without_hash_records() {
+    use eval::live::Cause;
+    let (lib, log) = fast_offer_fixture();
+    let mut engine = Engine::new(
+        &source("levels/survivors.yaml"),
+        &lib,
+        &IndexMap::new(),
+        0.2,
+        true,
+        true,
+        f64::INFINITY,
+    )
+    .unwrap();
+    engine.settled_log = Some(Vec::new());
+    engine.feed(|l| *l = log);
+    let mut seen = std::collections::BTreeSet::new();
+    for i in 1..=600 {
+        engine.frame(f64::from(i) / 120.0, 0.3);
+        let j = engine.journal.borrow();
+        for c in engine.causes() {
+            if let Cause::Gem { s, gem } = c.cause {
+                assert!(c.known <= engine.frontier());
+                assert!(
+                    (0..j.end())
+                        .filter_map(|k| j.get(k))
+                        .chain(engine.settled_log.as_ref().unwrap().iter())
+                        .any(|(t, r)| *t == s && matches!(r,Record::GemArrive{gem:id} if *id==gem))
+                );
+                seen.insert((s.to_bits(), gem));
+            }
+        }
+        assert!(
+            (0..j.end())
+                .filter_map(|k| j.get(k))
+                .all(|(_, r)| !matches!(
+                    r,
+                    Record::Sound(eval::live::Caused {
+                        cause: Cause::Gem { .. },
+                        ..
+                    })
+                ))
+        );
+    }
+    assert!(!seen.is_empty(), "the actual pickup path must be exercised");
+}

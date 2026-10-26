@@ -155,6 +155,7 @@ struct Options {
     still_track: Option<String>,
     still_at: Option<f64>,
     hud_full_slots: bool,
+    sound_check: Option<PathBuf>,
     volume: f32,
     click: bool,
     mute: bool,
@@ -205,6 +206,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         still_track: None,
         still_at: None,
         hud_full_slots: false,
+        sound_check: None,
         volume: 1.0,
         click: false,
         mute: false,
@@ -240,6 +242,13 @@ fn options(args: &[String]) -> Result<Options, String> {
             "--level" => o.level = Some(it.next().ok_or("--level needs a path")?.into()),
             "--click" => o.click = true,
             "--mute" => o.mute = true,
+            "--sound-check" => {
+                o.sound_check = Some(
+                    it.next()
+                        .ok_or("--sound-check needs a session directory")?
+                        .into(),
+                );
+            }
             "--headless" => {
                 o.headless = true;
                 o.mute = true;
@@ -511,6 +520,9 @@ pub fn run(args: &[String]) -> Result<(), String> {
             Err("the heard delay wasn't within 2 ms of M every minute".into())
         };
     }
+    if let Some(dir) = &opts.sound_check {
+        return sounds::check::run(dir, opts.seconds.unwrap_or(1510.0));
+    }
     let legacy_level = live::resource("levels", "../../../levels").join("reactive.yaml");
     let level = opts
         .level
@@ -539,6 +551,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
         &live::resource("sfx", "../../../public/assets/sfx"),
         Output::device_rate(),
         &world.lib,
+        world.survivors(),
     ) {
         Ok((sounds, bank)) => (Some(sounds), bank),
         Err(e) => {
@@ -587,7 +600,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
         ),
         (None, None) => (None, None),
     };
-    let audio = Audio::start(
+    let mut audio = Audio::start(
         opts.file.as_deref(),
         listening,
         tap_target.as_ref(),
@@ -597,6 +610,10 @@ pub fn run(args: &[String]) -> Result<(), String> {
         &bank,
         proxy.clone(),
     )?;
+    let _ = audio
+        .out
+        .commands
+        .push(Command::SurvivorsMix(world.survivors()));
     // (The child plays only once tapped, so it is never heard.)
     if let Some(c) = child.as_mut()
         && let Some(stdin) = c.stdin.as_mut()
@@ -1704,8 +1721,9 @@ impl App {
                         self.recent.pop_front();
                     }
                 }
-                Msg::Follow(g) => {
-                    let _ = self.audio.out.commands.push(Command::Follow(g));
+                Msg::Follow { gain, rms } => {
+                    let _ = self.audio.out.commands.push(Command::Follow(gain));
+                    let _ = self.audio.out.commands.push(Command::MusicLevel(rms));
                 }
                 Msg::Audio(samples) => {
                     if let Some(s) = self.session.as_mut() {
@@ -1957,6 +1975,9 @@ impl App {
             self.start(beat);
         }
         if self.mute && now > self.voices_at {
+            if let Some(s) = &self.sounds {
+                s.log_budget();
+            }
             self.voices_at = now + 10.0;
             if self.running {
                 let view = self.engine.view.borrow();
@@ -2258,6 +2279,7 @@ impl App {
         let seed = self.engine.seed;
         let at = sounds::At {
             seed,
+            final_before: self.engine.sound_final_before(),
             run_start: self.run_start,
             beats: &self.engine.stream().beats,
             gate: GATE,
@@ -2817,7 +2839,13 @@ impl App {
             eprintln!("slice: can't switch the music's source: {e}; back to System mode, Direct");
             start(None, Listening::Direct, None)
         }) {
-            Ok(audio) => self.audio = audio,
+            Ok(mut audio) => {
+                let _ = audio
+                    .out
+                    .commands
+                    .push(Command::SurvivorsMix(self.world.survivors()));
+                self.audio = audio;
+            }
             Err(e) => eprintln!("slice: no music source: {e}"),
         }
         self.clock = None;
@@ -2916,7 +2944,7 @@ impl App {
         self.scene = Scene::default();
         let _ = self.audio.out.commands.push(Command::CancelAll);
         if let Some(s) = self.sounds.as_mut() {
-            s.reset();
+            s.reset(now_s() + self.ahead.max(0.0));
         }
         self.over = None;
         self.voices = [0; 4];

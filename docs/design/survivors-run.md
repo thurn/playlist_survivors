@@ -1224,6 +1224,19 @@ File run replay the same hashes; presentation metadata preserves the old hash
 encoding. Readability during play remains an operator row.
 
 ### SH2
+
+The survivors palette uses existing baked samples, with duration-aware caps
+[weapons 4, hits 6, kills 2, pickups 3, UI 3]. Pickup records feed a speculative
+C6–C8 major pentatonic chain with a 0.3 s reset, preserving settled hash bytes.
+The effects ceiling sits 12 dB below followed music RMS; the music bus never
+ducks, and reference/calibration clicks remain audible without music. A silent
+recording check reaches minute 25 with 300 enemies: 8,541 starts, no late
+skips or mixer drops, category peaks [4,3,2,3,0]; a dense-input regression
+fills the other categories. This is a damage-exempt capacity check, not a
+survival or listening verdict. Review fixes cover calibration and a loudness
+step-down. See [SH2 evidence](../../native/evidence/sh2/README.md), including
+operator audition and downstream palette interfaces.
+
 ### SH3
 ### SH4
 ### SH5

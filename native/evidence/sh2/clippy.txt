@@ -1,0 +1,3 @@
+    Checking audio v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh2-sound/native/crates/audio)
+    Checking app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh2-sound/native/crates/app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.87s

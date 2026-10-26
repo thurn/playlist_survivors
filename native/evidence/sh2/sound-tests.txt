@@ -1,0 +1,18 @@
+   Compiling app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh2-sound/native/crates/app)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.01s
+     Running unittests src/main.rs (target/debug/deps/playlist_survivors-117eebc7468b2345)
+
+running 10 tests
+test slice::sounds::budget::tests::caps_cover_future_overlap_and_slow_sample_tails ... ok
+test slice::sounds::chain::tests::chain_is_pentatonic_bounded_resets_and_rewinds ... ok
+test slice::sounds::tests::the_evidence_fades_sounds_below_twice_the_gate ... ok
+test slice::sounds::tests::slots_fall_on_the_grid_and_past_the_last_beat ... ok
+test slice::sounds::tests::a_kill_group_changing_after_its_voice_played_sounds_nothing_more ... ok
+test slice::sounds::tests::a_started_voice_stays_when_a_new_beat_moves_its_slot ... ok
+test slice::sounds::tests::sounds_follow_the_speculation_and_kills_share_their_slot ... ok
+test slice::sounds::survivor_tests::a_restart_keeps_audible_tails_in_the_budget ... ok
+test slice::sounds::survivor_tests::rollback_repitches_only_a_gem_that_has_not_started ... ok
+test slice::sounds::survivor_tests::actual_palette_decodes_and_dense_causes_obey_all_caps ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 31 filtered out; finished in 0.81s
+

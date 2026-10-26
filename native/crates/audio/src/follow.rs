@@ -61,6 +61,14 @@ impl Follower {
         gain
     }
 
+    /// The last causal absolute music RMS, for an effects ceiling when music bypasses the mixer.
+    pub fn rms(&self) -> f32 {
+        if self.hops.is_empty() {
+            return 0.0;
+        }
+        (self.hops.iter().sum::<f64>() / self.hops.len() as f64).sqrt() as f32
+    }
+
     fn level(&mut self, mean_square: f64) -> f32 {
         push_bounded(&mut self.hops, mean_square, self.window);
         let ms = self.hops.iter().sum::<f64>() / self.hops.len() as f64;
@@ -114,5 +122,24 @@ mod tests {
         let mut f = Follower::new(48_000.0);
         assert_eq!(f.push(&vec![0.1; 4799]), None);
         assert!(f.push(&[0.1]).is_some());
+    }
+}
+
+#[cfg(test)]
+mod absolute_rms_tests {
+    use super::*;
+    #[test]
+    fn a_downward_pcm_step_is_measured_by_the_current_linear_window() {
+        let mut f = Follower::new(1000.0);
+        f.push(&vec![0.1; 2000]);
+        assert!((f.rms() - 0.1).abs() < 1e-6);
+        f.push(&vec![0.01; 400]);
+        assert!(
+            (f.rms() - 0.01).abs() < 1e-6,
+            "400ms after a -20dB step: {}",
+            f.rms()
+        );
+        f.push(&vec![0.0; 400]);
+        assert_eq!(f.rms(), 0.0);
     }
 }

@@ -1,0 +1,154 @@
+changes: 28 paths since fd8ee17
+friction: 46 records valid
+Using CPython 3.12.14 interpreter at: /opt/homebrew/opt/python@3.12/bin/python3.12
+Creating virtual environment at: .venv
+   Building ps-analysis @ file:///Users/dthurn/playlist_survivors/.worktrees/sh2-sound/tools/analysis
+      Built ps-analysis @ file:///Users/dthurn/playlist_survivors/.worktrees/sh2-sound/tools/analysis
+Installed 44 packages in 136ms
+All checks passed!
+WARN `--no-project` was provided, but no project was found
+...........................
+----------------------------------------------------------------------
+Ran 27 tests in 0.031s
+
+OK
+changes: 28 paths since fd8ee17
+crates purity: stream, analysis, sim, eval, players pure
+native check-fast: every crate
+    Checking analysis v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh2-sound/native/crates/analysis)
+    Checking sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh2-sound/native/crates/sim)
+    Checking stream v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh2-sound/native/crates/stream)
+    Checking players v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh2-sound/native/crates/players)
+    Checking cli v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh2-sound/native/crates/cli)
+    Checking render v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh2-sound/native/crates/render)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.99s
+
+running 18 tests
+..................
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+i...
+test result: ok. 3 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 7.76s
+
+
+running 7 tests
+.......
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.21s
+
+
+running 5 tests
+.....
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+
+
+running 7 tests
+ii.....
+test result: ok. 5 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+
+running 12 tests
+iiiiiii.....
+test result: ok. 5 passed; 0 failed; 7 ignored; 0 measured; 0 filtered out; finished in 0.23s
+
+
+running 10 tests
+i.........
+test result: ok. 9 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.54s
+
+
+running 4 tests
+i...
+test result: ok. 3 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.20s
+
+
+running 3 tests
+i..
+test result: ok. 2 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 2.69s
+
+
+running 3 tests
+ii.
+test result: ok. 1 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.98s
+
+
+running 41 tests
+.........................................
+test result: ok. 41 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.18s
+
+
+running 18 tests
+..................
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 8 tests
+........
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+
+running 5 tests
+.....
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 15 tests
+...............
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.64s
+
+
+running 3 tests
+...
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+
+running 2 tests
+..
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+..
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.97s
+
+
+running 8 tests
+........
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.30s
+
+
+running 39 tests
+.......................................
+test result: ok. 39 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s
+
+
+running 7 tests
+i......
+test result: ok. 6 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 3.85s
+
+
+running 5 tests
+.. 2/5
+current_content_loads_and_the_legacy_subset_keeps_its_reference_hash --- FAILED
+..
+failures:
+
+---- current_content_loads_and_the_legacy_subset_keeps_its_reference_hash stdout ----
+
+thread 'current_content_loads_and_the_legacy_subset_keeps_its_reference_hash' (174416247) panicked at crates/sim/tests/content.rs:103:9:
+content hash f85ac66642dc704a, TS 99bee67636d7fdbf; first difference: .soundPalettes.survivors: ours Some(Object {"id": String("survivors"), "tuned": Bool(false), "gain": Number(0.7), "sounds": Object {"swing": Array [String("kenney/knifeSlice"), String("kenney/knifeSlice2")], "hit-light": Array [String("kenney/impactMetal_light_000"), String("kenney/impactMetal_light_001")], "hit-medium": Array [String("kenney/impactMetal_medium_000"), String("kenney/impactMetal_medium_003"), String("rpg80/metal_02"), String("rpg80/metal_03")], "hit-heavy": Array [String("kenney/sci-impactMetal_000")], "finisher": Array [String("fantasy/Trap_01")], "burst": Array [String("rpgpack/magic1"), String("rpg80/spell_01")], "kill": Array [String("kenney/impactSoft_medium_000")], "kill-multi": Array [String("kenney/sci-explosionCrunch_000")], "near-miss": Array [String("rpgpack/swing2"), String("rpgpack/swing3")], "dodge": Array [String("kenney/cloth2"), String("kenney/cloth3")], "step": Array [String("kenney/cloth2"), String("kenney/cloth3")], "arrow": Array [String("kenney/pluck_001"), String("kenney/pluck_002")], "boss-hit": Array [String("rpgpack/giant1"), String("rpgpack/giant2"), String("rpgpack/giant3")], "boss-slam": Array [String("sot/bomb"), String("rpg80/stones_01")], "boss-land": Array [String("sot/bomb")], "level-up": Array [String("kenney/confirmation_002")], "blast": Array [String("sot/bomb")], "weapon-blades": Array [String("kenney/knifeSlice"), String("kenney/knifeSlice2"), String("kenney/drawKnife1")], "weapon-lightning": Array [String("rpg80/spell_02"), String("rpg80/spell_01")], "weapon-fire": Array [String("rpg80/spell_fire_01"), String("rpg80/spell_fire_02"), String("rpg80/spell_fire_03")], "gem": Array [String("rpg80/item_gem_01"), String("rpg80/item_gem_02"), String("rpg80/item_gem_03"), String("rpg80/item_gem_04")], "chime": Array [Object {"id": String("kenney/impactGlass_light_003"), "rootNote": String("G6")}], "vacuum": Array [String("kenney/maximize_004")], "zone-sweep": Array [String("rpgpack/spell")], "tier-up": Array [String("kenney/confirmation_002")], "tier-down": Array [String("kenney/minimize_001")], "orb": Array [String("kenney/confirmation_004")], "hurt": Array [String("kenney/impactPunch_medium_000"), String("kenney/impactPunch_medium_001")], "chicken": Array [String("rpgpack/bite-small")], "magic-wand-fire": Array [String("kenney/sci-laserSmall_000")], "magic-wand-hit": Array [String("kenney/digital-zap1")], "garlic-fire": Array [String("kenney/impactSoft_medium_000")], "garlic-hit": Array [String("kenney/impactSoft_medium_000")], "king-bible-fire": Array [String("kenney/cloth2")], "king-bible-hit": Array [String("kenney/impactMetal_light_001")], "lightning-ring-fire": Array [String("kenney/digital-laser1")], "lightning-ring-hit": Array [String("kenney/digital-zap1")]}}), TS None
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    current_content_loads_and_the_legacy_subset_keeps_its_reference_hash
+
+test result: FAILED. 4 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+error: test failed, to rerun pass `-p sim --test content`

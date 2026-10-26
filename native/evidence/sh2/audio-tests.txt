@@ -1,0 +1,32 @@
+   Compiling audio v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh2-sound/native/crates/audio)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.14s
+     Running unittests src/lib.rs (target/debug/deps/audio-2a5323b5111cc181)
+
+running 18 tests
+test delay::tests::a_full_ring_drops_the_buffer ... ok
+test follow::absolute_rms_tests::a_downward_pcm_step_is_measured_by_the_current_linear_window ... ok
+test delay::tests::a_dropped_buffer_reads_silence_and_the_ring_forgets_the_oldest ... ok
+test follow::tests::a_level_completes_ten_times_a_second ... ok
+test delay::tests::a_frame_plays_by_the_host_time_it_was_captured ... ok
+test mixer::calibration_ceiling_tests::reference_clicks_remain_audible_when_direct_system_music_is_silent ... ok
+test mixer::survivors_mix_tests::direct_system_uses_absolute_capture_rms_and_silence_has_no_effects ... ok
+test mixer::tests::a_delayed_file_is_heard_late_and_read_on_time ... ok
+test mixer::tests::a_late_voice_starts_partway_while_its_onset_is_ahead_and_is_skipped_after ... ok
+test mixer::tests::a_replay_plays_its_music_from_its_time_and_stops ... ok
+test mixer::tests::a_voice_lands_on_its_sample ... ok
+test mixer::survivors_mix_tests::survivors_never_ducks_and_bounds_the_effects_below_the_heard_music ... ok
+test mixer::tests::clicks_play_without_a_bank_and_a_full_queue_drops ... ok
+test mixer::tests::a_voice_moves_or_cancels_until_it_starts ... ok
+test mixer::tests::the_delay_line_plays_the_capture_late_reports_underruns_and_fades_out ... ok
+test mixer::tests::the_limiter_holds_a_loud_mix_near_full_scale ... ok
+test mixer::tests::a_ducking_voice_takes_the_music_down_and_back ... ok
+test follow::tests::the_effects_follow_a_quiet_passage_down_and_come_back ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests audio
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

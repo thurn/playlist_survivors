@@ -80,11 +80,17 @@ fn current_content_loads_and_the_legacy_subset_keeps_its_reference_hash() {
             .count(),
         20
     );
+    assert!(current.sound_palettes.contains_key("survivors"));
     let legacy: Vec<_> = files
         .into_iter()
         .filter(|f| f.name != "content/survivors-enemies.yaml")
         .collect();
-    let lib = load_content(&legacy).unwrap_or_else(|e| panic!("{e}"));
+    let mut lib = load_content(&legacy).unwrap_or_else(|e| panic!("{e}"));
+    // This reference covers legacy content, not deliberate survivors additions.
+    lib.value["soundPalettes"]
+        .as_object_mut()
+        .unwrap()
+        .remove("survivors");
     assert!(!lib.enemies.is_empty() && !lib.weapons.is_empty() && !lib.effects.is_empty());
     let oracle: Value = serde_json::from_str(
         &std::fs::read_to_string(root().join("native/oracle/content.json")).unwrap(),

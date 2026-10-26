@@ -19,6 +19,10 @@ use sim::core::rng::{Part, Rng};
 use stream::Beat;
 
 use super::live::decode;
+mod budget;
+mod chain;
+pub mod check;
+use budget::{Budget, Scheduled};
 
 /// The palette played (the TS director's loudness levels pick among three; one for now).
 const PALETTE: &str = "crisp-steel";
@@ -62,6 +66,8 @@ struct Call {
     every: Option<Every>,
     /// The song time whose beat it belongs to (the gate's), if not its own.
     owner: Option<f64>,
+    gem: Option<usize>,
+    note: Option<f64>,
 }
 
 impl Call {
@@ -74,6 +80,8 @@ impl Call {
             duck: false,
             every: None,
             owner: None,
+            gem: None,
+            note: None,
         }
     }
 }
@@ -82,6 +90,7 @@ impl Call {
 /// mapping song time to when it is heard.
 pub struct At<'a> {
     pub seed: f64,
+    pub final_before: f64,
     /// The song time the run began at (the simulation's 0).
     pub run_start: f64,
     pub beats: &'a [Beat],
@@ -99,13 +108,18 @@ pub struct At<'a> {
 }
 
 /// The palette, its samples in the bank, and the kill sounds waiting on their slots.
+#[derive(Clone)]
 pub struct Sounds {
     palette: SoundPalette,
+    survivors: bool,
+    lengths: Vec<f64>,
+    budget: Budget,
+    chain: chain::Chain,
     /// Each sample id's bank index and onset (s).
     samples: HashMap<String, (usize, f64)>,
     weapons: HashMap<String, (String, bool)>,
     /// The voices scheduled, by identity: their id and when they start (host s).
-    scheduled: HashMap<VoiceKey, (u64, f64)>,
+    scheduled: HashMap<VoiceKey, Scheduled>,
     next_id: u64,
 }
 
@@ -113,12 +127,13 @@ pub struct Sounds {
 /// plays, the time of the cause it answers (0.1 ms), where (quarter pixels) and how many kills share
 /// it. (Not the slot it was placed on: a beat arriving moves the slots past the last committed one,
 /// and a started voice must not be scheduled again for it.)
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 struct VoiceKey {
     key: String,
     s: i64,
     x: i64,
     n: u32,
+    gem: Option<usize>,
 }
 
 /// A sound placed: its palette key, the song time it plays at and its cause's, its place, level
@@ -130,6 +145,8 @@ struct Placed {
     x: f64,
     gain: f64,
     duck: bool,
+    gem: Option<usize>,
+    note: Option<f64>,
 }
 
 impl Placed {
@@ -143,23 +160,43 @@ impl Placed {
                 0
             },
             n,
+            gem: self.gem,
         }
     }
 }
 
 impl Sounds {
     /// Decodes the palette's samples from `dir` at `rate`: the sounds and the bank for the output.
-    pub fn load(dir: &Path, rate: f64, lib: &ContentLibrary) -> Result<(Sounds, Bank), String> {
+    pub fn load(
+        dir: &Path,
+        rate: f64,
+        lib: &ContentLibrary,
+        survivors: bool,
+    ) -> Result<(Sounds, Bank), String> {
         let text = std::fs::read_to_string(dir.join("sounds.json"))
             .map_err(|e| format!("{}: {e}", dir.display()))?;
         let catalogue: Catalogue = serde_json::from_str(&text).map_err(|e| e.to_string())?;
+        let id = if survivors { "survivors" } else { PALETTE };
         let palette = lib
             .sound_palettes
-            .get(PALETTE)
-            .ok_or_else(|| format!("no palette {PALETTE}"))?
+            .get(id)
+            .ok_or_else(|| format!("no palette {id}"))?
             .clone();
+        if survivors
+            && palette.sounds.get("chime").is_none_or(|samples| {
+                samples.is_empty()
+                    || samples.iter().any(
+                        |s| !matches!(s,Sample::Detailed{root_note:Some(note),..} if note=="G6"),
+                    )
+            })
+        {
+            return Err(
+                "survivors chime requires a measured G6 sample for the C6-C8 gem chain".into(),
+            );
+        }
         let mut bank: Bank = Vec::new();
         let mut samples = HashMap::new();
+        let mut lengths = Vec::new();
         for list in palette.sounds.values() {
             for sample in list {
                 let id = sample_id(sample);
@@ -170,7 +207,9 @@ impl Sounds {
                     .sounds
                     .get(id)
                     .ok_or_else(|| format!("no sound {id}"))?;
-                bank.push(decode(&dir.join(&entry.file), rate)?.into());
+                let pcm = decode(&dir.join(&entry.file), rate)?;
+                lengths.push(pcm.len() as f64 / rate);
+                bank.push(pcm.into());
                 samples.insert(id.to_string(), (bank.len() - 1, entry.onset_s));
             }
         }
@@ -182,6 +221,10 @@ impl Sounds {
         Ok((
             Sounds {
                 palette,
+                survivors,
+                lengths,
+                budget: Budget::default(),
+                chain: chain::Chain::default(),
                 samples,
                 weapons,
                 scheduled: HashMap::new(),
@@ -192,25 +235,82 @@ impl Sounds {
     }
 
     /// Forgets what is scheduled (a new run: the output cancels it).
-    pub fn reset(&mut self) {
-        self.scheduled.clear();
+    pub fn reset(&mut self, now: f64) {
+        // CancelAll stops pending voices only. Keep already audible tails in the next
+        // run's budget, under identities that cannot suppress new causes.
+        self.scheduled = self
+            .scheduled
+            .drain()
+            .filter_map(|(mut key, mut v)| {
+                if v.start <= now && v.end > now {
+                    key.key = format!("tail:{}", key.key);
+                    v.reconcile = false;
+                    Some((key, v))
+                } else {
+                    None
+                }
+            })
+            .collect();
+        self.budget = Budget::default();
+        self.chain = chain::Chain::default();
     }
 
     /// A sound now: `key` centred, as soon as the output can play it (host `at`).
     pub fn now(&mut self, key: &str, at: f64, gain: f64, out: &mut Vec<Command>) {
-        if let Some((sound, _, rate)) = self.pick(key, at, 0.0, 0.0) {
-            self.next_id += 1;
-            out.push(Command::Play(Voice {
-                id: self.next_id,
-                source: Source::Sample(sound),
-                at,
-                from: 0.0,
-                lead: 0.0,
-                gain: gain as f32,
-                pan: 0.0,
-                rate,
-                duck: false,
-            }));
+        let p = Placed {
+            key: key.into(),
+            s: at,
+            cause_s: at,
+            x: f64::NAN,
+            gain,
+            duck: false,
+            gem: None,
+            note: None,
+        };
+        let Some((sound, _, rate, sample_gain)) = self.pick(key, at, 0.0, 0.0) else {
+            return;
+        };
+        self.next_id += 1;
+        let v = Voice {
+            id: self.next_id,
+            source: Source::Sample(sound),
+            at,
+            from: 0.0,
+            lead: 0.0,
+            gain: (gain * sample_gain * self.palette.gain) as f32,
+            pan: 0.0,
+            rate,
+            duck: false,
+        };
+        self.scheduled
+            .retain(|_, v| v.end > at || v.start > at - 2.0);
+        let k = p.id(self.next_id as u32);
+        let admitted = if self.survivors {
+            self.budget
+                .admit(&k, &v, self.lengths[sound], &self.scheduled, at)
+        } else {
+            Some(Scheduled {
+                id: v.id,
+                start: v.at,
+                end: v.at + self.lengths[sound] / f64::from(v.rate),
+                category: budget::Category::of(key),
+                reconcile: false,
+                note: None,
+            })
+        };
+        if let Some(mut slot) = admitted {
+            slot.reconcile = false;
+            self.scheduled.insert(k, slot);
+            out.push(Command::Play(v));
+        }
+    }
+
+    pub fn log_budget(&self) {
+        if self.survivors {
+            eprintln!(
+                "slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak {:?}, denied {:?}",
+                self.budget.peaks, self.budget.dropped
+            );
         }
     }
 
@@ -218,10 +318,17 @@ impl Sounds {
     /// (`LiveSoundScheduler`): a voice it no longer has is cancelled if it hasn't started, and a new
     /// one is scheduled. Kills sharing a slot are one sound, the multi-kill from two on.
     pub fn reconcile(&mut self, caused: &[Caused], at: &At, out: &mut Vec<Command>) {
+        let notes = self.chain.notes(caused, at.final_before);
         let mut desired: HashMap<VoiceKey, Placed> = HashMap::new();
         let mut kills: Vec<(Placed, u32)> = Vec::new();
         for c in caused {
-            for call in self.calls(&c.cause) {
+            for mut call in self.calls(&c.cause) {
+                if let Some(gem) = call.gem {
+                    call.note = notes
+                        .iter()
+                        .find(|(id, s, _)| *id == gem && (*s - call.s).abs() < 1e-9)
+                        .map(|n| n.2);
+                }
                 let Some(p) = place(&call, c.known, at) else {
                     continue;
                 };
@@ -243,21 +350,34 @@ impl Sounds {
                 // (The kill's level is 0.6 of its fade; the multi-kill's grows with the count.)
                 p.gain *= (0.5 + 0.22 * f64::from(n).log2()) / 0.6;
                 p.key = "kill-multi".into();
+                // A dense batch is one centred transient, independent of journal iteration order.
+                if self.survivors {
+                    p.x = f64::NAN;
+                }
             }
             desired.insert(p.id(n), p);
         }
         // (The output may be rendering up to `ahead` past now: a voice due by then has started.)
         let started = at.now + at.ahead;
-        self.scheduled.retain(|k, &mut (id, start)| {
-            if desired.contains_key(k) {
+        self.scheduled.retain(|k, v| {
+            let (id, start) = (v.id, v.start);
+            if !v.reconcile {
+                return v.end > at.now || start > at.now - 2.0;
+            }
+            if desired
+                .get(k)
+                .is_some_and(|p| p.note == v.note || start <= started)
+            {
                 true
             } else if start > started {
                 out.push(Command::Cancel(id));
                 false
             } else {
-                start > at.now - 2.0
+                v.end > at.now || start > at.now - 2.0
             }
         });
+        let mut desired: Vec<_> = desired.into_iter().collect();
+        desired.sort_by(|(ak, a), (bk, b)| a.s.total_cmp(&b.s).then(ak.cmp(bk)));
         for (k, p) in desired {
             if self.scheduled.contains_key(&k) {
                 continue;
@@ -270,8 +390,27 @@ impl Sounds {
                 }
                 self.next_id += 1;
                 v.id = self.next_id;
-                self.scheduled.insert(k, (v.id, v.at));
-                out.push(Command::Play(v));
+                let Source::Sample(sound) = v.source else {
+                    continue;
+                };
+                let slot = if self.survivors {
+                    self.budget
+                        .admit(&k, &v, self.lengths[sound], &self.scheduled, at.now)
+                } else {
+                    Some(Scheduled {
+                        id: v.id,
+                        start: v.at,
+                        end: v.at + self.lengths[sound] / f64::from(v.rate),
+                        category: budget::Category::of(&p.key),
+                        reconcile: true,
+                        note: None,
+                    })
+                };
+                if let Some(mut slot) = slot {
+                    slot.note = p.note;
+                    self.scheduled.insert(k, slot);
+                    out.push(Command::Play(v));
+                }
             }
         }
     }
@@ -284,12 +423,20 @@ impl Sounds {
                 let mut whoosh = Call::new("swing", s - 0.04, *x, 0.7);
                 whoosh.owner = Some(*s);
                 let mut strike = Call::new(
-                    format!("hit-{kind}"),
+                    if self.survivors {
+                        if heavy {
+                            "hit-heavy".into()
+                        } else {
+                            "hit-light".into()
+                        }
+                    } else {
+                        format!("hit-{kind}")
+                    },
                     *s,
                     *x,
                     if heavy { 1.1 } else { 0.95 },
                 );
-                strike.duck = heavy;
+                strike.duck = heavy && !self.survivors;
                 vec![whoosh, strike]
             }
             Cause::Kill { s, x } => {
@@ -298,6 +445,12 @@ impl Sounds {
                 vec![c]
             }
             Cause::Weapon { s, x, what, caught } => {
+                if self.survivors {
+                    let key = format!("{what}-{}", if *caught { "hit" } else { "fire" });
+                    let mut c = Call::new(key, *s, *x, 0.5);
+                    c.every = Some(Every::Sixteenth);
+                    return vec![c];
+                }
                 let Some((sound, chain)) = self.weapons.get(what) else {
                     return Vec::new();
                 };
@@ -323,10 +476,22 @@ impl Sounds {
                 c.every = Some(Every::Beat);
                 vec![c]
             }
-            Cause::Step { s, x } => vec![Call::new("step", *s, *x, 0.25)],
+            Cause::Step { s, x } => {
+                if self.survivors {
+                    Vec::new()
+                } else {
+                    vec![Call::new("step", *s, *x, 0.25)]
+                }
+            }
+            Cause::Gem { s, gem } => {
+                let mut c = Call::new("chime", *s, f64::NAN, 0.55);
+                c.every = Some(Every::Sixteenth);
+                c.gem = Some(*gem);
+                vec![c]
+            }
             Cause::LevelUp { s } => {
                 let mut c = Call::new("level-up", *s, f64::NAN, 1.0);
-                c.duck = true;
+                c.duck = !self.survivors;
                 c.every = Some(Every::Beat);
                 vec![c]
             }
@@ -335,7 +500,7 @@ impl Sounds {
 
     /// A sample of `key` for a sound at song time `s` and place `x`: its bank index, onset and
     /// playback rate (a semitone either way).
-    fn pick(&self, key: &str, s: f64, x: f64, seed: f64) -> Option<(usize, f64, f32)> {
+    fn pick(&self, key: &str, s: f64, x: f64, seed: f64) -> Option<(usize, f64, f32, f64)> {
         let list = self.palette.sounds.get(key).filter(|l| !l.is_empty())?;
         let mut r = Rng::new(&[
             Part::Num(seed),
@@ -351,23 +516,20 @@ impl Sounds {
         let sample = r.pick(list);
         let &(sound, onset) = self.samples.get(sample_id(sample))?;
         let rate = 2f64.powf(r.range(-1.0, 1.0) / 12.0);
-        Some((sound, onset, rate as f32))
+        let gain = match sample {
+            Sample::Detailed { gain, .. } => gain.unwrap_or(1.0),
+            Sample::Name(_) => 1.0,
+        };
+        Some((sound, onset, rate as f32, gain))
     }
 
     /// The voice that plays `p` (its id unset).
     fn voice(&self, p: &Placed, at: &At) -> Option<Voice> {
-        let (sound, onset, rate) = self.pick(&p.key, p.s, p.x, at.seed)?;
-        let sample_gain = self
-            .palette
-            .sounds
-            .get(&p.key)
-            .and_then(|l| {
-                l.iter().find_map(|x| match x {
-                    Sample::Detailed { gain, .. } => *gain,
-                    Sample::Name(_) => None,
-                })
-            })
-            .unwrap_or(1.0);
+        let (sound, onset, mut rate, sample_gain) = self.pick(&p.key, p.s, p.x, at.seed)?;
+        if let Some(note) = p.note {
+            // The palette's chime is the existing measured G6 glass sample (MIDI 91).
+            rate = 2f64.powf((note - 91.0) / 12.0) as f32;
+        }
         let (cx, _, zoom) = at.camera;
         let pan = if p.x.is_finite() {
             ((p.x - cx) / (480.0 / zoom.max(1e-3))).clamp(-0.8, 0.8)
@@ -422,6 +584,8 @@ fn place(call: &Call, known: f64, at: &At) -> Option<Placed> {
         x: call.x,
         gain: call.gain * fade,
         duck: call.duck,
+        gem: call.gem,
+        note: call.note,
     })
 }
 
@@ -481,7 +645,7 @@ fn evidence_fade(beats: &[Beat], gate: f64, s: f64) -> f64 {
 mod tests {
     use super::*;
 
-    fn beats(n: usize, period: f64, evidence: f64) -> Vec<Beat> {
+    pub(super) fn beats(n: usize, period: f64, evidence: f64) -> Vec<Beat> {
         (0..n)
             .map(|k| Beat {
                 t: 1.0 + k as f64 * period,
@@ -529,6 +693,10 @@ mod tests {
             .collect();
         let mut sounds = Sounds {
             palette,
+            survivors: false,
+            lengths: vec![0.3],
+            budget: Budget::default(),
+            chain: chain::Chain::default(),
             samples,
             weapons: HashMap::new(),
             scheduled: HashMap::new(),
@@ -537,6 +705,7 @@ mod tests {
         let b = beats(8, 0.5, 1.0);
         let at = At {
             seed: 1.0,
+            final_before: -1.0,
             run_start: 0.0,
             beats: &b,
             gate: 0.2,
@@ -602,6 +771,10 @@ mod tests {
             .collect();
         let mut sounds = Sounds {
             palette,
+            survivors: false,
+            lengths: vec![0.3],
+            budget: Budget::default(),
+            chain: chain::Chain::default(),
             samples,
             weapons: HashMap::new(),
             scheduled: HashMap::new(),
@@ -610,6 +783,7 @@ mod tests {
         let b = beats(8, 0.5, 1.0);
         let at = At {
             seed: 1.0,
+            final_before: -1.0,
             run_start: 0.0,
             beats: &b,
             gate: 0.2,
@@ -650,6 +824,10 @@ mod tests {
             .collect();
         let mut sounds = Sounds {
             palette,
+            survivors: false,
+            lengths: vec![0.3],
+            budget: Budget::default(),
+            chain: chain::Chain::default(),
             samples,
             weapons: HashMap::new(),
             scheduled: HashMap::new(),
@@ -659,6 +837,7 @@ mod tests {
         let early = beats(4, 0.5, 1.0);
         let at = At {
             seed: 1.0,
+            final_before: -1.0,
             run_start: 0.0,
             beats: &early,
             gate: 0.2,
@@ -692,5 +871,163 @@ mod tests {
         out.clear();
         sounds.reconcile(&kill, &at, &mut out);
         assert!(out.is_empty(), "scheduled again: {out:?}");
+    }
+}
+
+#[cfg(test)]
+mod survivor_tests {
+    use super::*;
+    fn decoded() -> (Sounds, Bank) {
+        static PALETTE: std::sync::OnceLock<(Sounds, Bank)> = std::sync::OnceLock::new();
+        PALETTE
+            .get_or_init(|| {
+                let lib = crate::slice::World::load(None).unwrap().lib;
+                let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../public/assets/sfx");
+                Sounds::load(&dir, 8000.0, &lib, true).unwrap()
+            })
+            .clone()
+    }
+    #[test]
+    fn a_restart_keeps_audible_tails_in_the_budget() {
+        let (mut sounds, _) = decoded();
+        let mut out = Vec::new();
+        sounds.now("level-up", 100.0, 1.0, &mut out);
+        sounds.now("level-up", 101.0, 1.0, &mut out);
+        sounds.reset(100.01);
+        assert_eq!(
+            sounds.scheduled.len(),
+            1,
+            "only the already audible tail survives CancelAll"
+        );
+        let (key, tail) = sounds.scheduled.iter().next().unwrap();
+        assert!(key.key.starts_with("tail:"));
+        assert!(!tail.reconcile);
+        sounds.reset(1000.0);
+        assert!(sounds.scheduled.is_empty());
+    }
+    #[test]
+    fn rollback_repitches_only_a_gem_that_has_not_started() {
+        let (mut sounds, _) = decoded();
+        let b = tests::beats(8, 0.5, 1.0);
+        let at = At {
+            seed: 1.0,
+            final_before: -1.0,
+            run_start: 0.0,
+            beats: &b,
+            gate: 0.2,
+            camera: (0.0, 0.0, 1.0),
+            clock: (0.0, 100.0),
+            l_out: 0.0,
+            never_late: NEVER_LATE,
+            now: 100.0,
+            ahead: 0.0,
+        };
+        let gem = |s, gem| Caused {
+            cause: Cause::Gem { s, gem },
+            known: 0.0,
+        };
+        let mut out = Vec::new();
+        sounds.reconcile(&[gem(1.0, 0), gem(1.1, 1)], &at, &mut out);
+        let original = sounds
+            .scheduled
+            .iter()
+            .find(|(k, _)| k.gem == Some(1))
+            .unwrap()
+            .1
+            .id;
+        out.clear();
+        sounds.reconcile(&[gem(1.1, 1)], &at, &mut out);
+        assert!(out.contains(&Command::Cancel(original)));
+        let Command::Play(v) = out.iter().find(|c| matches!(c, Command::Play(_))).unwrap() else {
+            unreachable!()
+        };
+        assert!(
+            (v.rate - 2f32.powf(-7.0 / 12.0)).abs() < 1e-6,
+            "the remaining gem returns to C6"
+        );
+        let played_id = v.id;
+        let started = At { now: 101.2, ..at };
+        out.clear();
+        sounds.reconcile(&[gem(1.0, 0), gem(1.1, 1)], &started, &mut out);
+        assert!(
+            !out.iter()
+                .any(|c| matches!(c,Command::Cancel(id) if *id==played_id)),
+            "a started note remains untouched"
+        );
+    }
+    #[test]
+    fn actual_palette_decodes_and_dense_causes_obey_all_caps() {
+        let (mut sounds, bank) = decoded();
+        assert!(!bank.is_empty());
+        let b = tests::beats(8, 0.5, 1.0);
+        let at = At {
+            seed: 1.0,
+            final_before: -1.0,
+            run_start: 0.0,
+            beats: &b,
+            gate: 0.2,
+            camera: (0.0, 0.0, 1.0),
+            clock: (0.0, 100.0),
+            l_out: 0.0,
+            never_late: NEVER_LATE,
+            now: 100.0,
+            ahead: 0.0,
+        };
+        let mut causes = Vec::new();
+        for i in 0..200 {
+            causes.push(Caused {
+                cause: Cause::Swing {
+                    s: 1.0,
+                    x: i as f64,
+                    kind: "heavy",
+                },
+                known: 0.0,
+            });
+            causes.push(Caused {
+                cause: Cause::Kill {
+                    s: 1.0,
+                    x: i as f64,
+                },
+                known: 0.0,
+            });
+            causes.push(Caused {
+                cause: Cause::Gem { s: 1.0, gem: i },
+                known: 0.0,
+            });
+            causes.push(Caused {
+                cause: Cause::LevelUp {
+                    s: 1.0 + i as f64 * 0.001,
+                },
+                known: 0.0,
+            });
+        }
+        let mut out = Vec::new();
+        sounds.reconcile(&causes, &at, &mut out);
+        assert_eq!(sounds.budget.peaks, [4, 6, 1, 3, 3]);
+        assert!(sounds.budget.dropped.iter().sum::<u64>() > 500);
+        assert!(
+            out.iter()
+                .all(|c| !matches!(c, Command::Play(Voice { duck: true, .. })))
+        );
+        // Same speculative set in another input order chooses the same admitted voices.
+        let first = out.clone();
+        sounds.reset(0.0);
+        causes.reverse();
+        out.clear();
+        sounds.reconcile(&causes, &at, &mut out);
+        let projected = |cmds: Vec<Command>| {
+            cmds.into_iter()
+                .filter_map(|c| match c {
+                    Command::Play(v) => Some((v.source, v.at, v.rate, v.pan)),
+                    _ => None,
+                })
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(projected(first), projected(out.clone()));
+        // Rollback removes all future voices before they start.
+        out.clear();
+        sounds.reconcile(&[], &at, &mut out);
+        assert_eq!(out.len(), 17);
+        assert!(out.iter().all(|c| matches!(c, Command::Cancel(_))));
     }
 }

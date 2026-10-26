@@ -1,0 +1,17 @@
+   Compiling crc32fast v1.5.3
+   Compiling simd-adler32 v0.3.10
+   Compiling miniz_oxide v0.9.1
+   Compiling flate2 v1.1.10
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh2-sound/native/crates/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.55s
+     Running tests/content.rs (target/debug/deps/content-9a59fe6e516c99d0)
+
+running 5 tests
+test defaults_fill_in_as_zod_does ... ok
+test cross_references_and_extends_are_checked ... ok
+test current_content_loads_and_the_legacy_subset_keeps_its_reference_hash ... ok
+test yaml_reads_as_the_ts_yaml_package_does ... ok
+test invalid_content_is_reported_with_its_file_and_path ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+

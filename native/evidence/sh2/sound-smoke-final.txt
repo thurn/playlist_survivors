@@ -1,0 +1,4 @@
+sound-check: minute 0, run 0.008s, alive 15, peak 15, damage_exempt false
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [0, 1, 0, 0, 0], denied [0, 0, 0, 0, 0]
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [2, 1, 2, 0, 0], denied [0, 0, 0, 0, 0]
+sound-check: mixer started 54, skipped 0, dropped 0, cancelled 0; reached minute 0, peak enemies 18

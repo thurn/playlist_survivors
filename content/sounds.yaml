@@ -60,3 +60,25 @@ soundPalettes:
       kill: [kenney/impactSoft_heavy_000, kenney/impactSoft_heavy_001, kenney/impactSoft_heavy_002]
       kill-multi: [kenney/impactPunch_heavy_003, kenney/impactPunch_heavy_004, rpg80/stones_02]
       weapon-fire: [rpg80/spell_fire_04, rpg80/spell_fire_05, sot/fire]
+
+  # Survivors: short transients under the operator's music; later weapon beads tune each set.
+  - id: survivors
+    extends: crisp-steel
+    tuned: false
+    gain: 0.7
+    sounds:
+      swing: [kenney/knifeSlice, kenney/knifeSlice2]
+      hit-light: [kenney/impactMetal_light_000, kenney/impactMetal_light_001]
+      hit-heavy: [kenney/sci-impactMetal_000]
+      kill: [kenney/impactSoft_medium_000]
+      kill-multi: [kenney/sci-explosionCrunch_000]
+      chime: [{ id: kenney/impactGlass_light_003, rootNote: G6 }]
+      level-up: [kenney/confirmation_002]
+      magic-wand-fire: [kenney/sci-laserSmall_000]
+      magic-wand-hit: [kenney/digital-zap1]
+      garlic-fire: [kenney/impactSoft_medium_000]
+      garlic-hit: [kenney/impactSoft_medium_000]
+      king-bible-fire: [kenney/cloth2]
+      king-bible-hit: [kenney/impactMetal_light_001]
+      lightning-ring-fire: [kenney/digital-laser1]
+      lightning-ring-hit: [kenney/digital-zap1]

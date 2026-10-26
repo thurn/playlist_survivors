@@ -163,6 +163,8 @@ pub enum Cause {
     Step { s: f64, x: f64 },
     /// A level gained at `s`.
     LevelUp { s: f64 },
+    /// Presentation derived from the existing pickup record, never added to the hash journal.
+    Gem { s: f64, gem: usize },
 }
 
 /// A sound's cause and the song time the simulation knew it at.
@@ -1166,6 +1168,11 @@ impl Engine {
         self.causes.iter().map(|(_, c)| c)
     }
 
+    /// Sound causes older than this cannot be undone and are about to leave the sound window.
+    pub fn sound_final_before(&self) -> f64 {
+        self.settled - 1.0
+    }
+
     /// The song time the simulation has run to (the speculation's frontier).
     pub fn frontier(&self) -> f64 {
         self.sim.s()
@@ -1331,22 +1338,23 @@ impl Engine {
         }
         // The speculation's sounds, each known from the frame that first saw it.
         let mut k = self.sound_idx;
-        while let Some((_, rec)) = j.get(k) {
-            if let Record::Sound(c) = rec {
-                let known =
-                    if let Some(&(_, t)) = self.first_seen.iter().find(|(d, _)| *d == c.cause) {
-                        t
-                    } else {
-                        self.first_seen.push((c.cause.clone(), now));
-                        now
-                    };
-                self.causes.push((
-                    k,
-                    Caused {
-                        cause: c.cause.clone(),
-                        known,
-                    },
-                ));
+        while let Some((s, rec)) = j.get(k) {
+            let cause = match rec {
+                Record::Sound(c) => Some(c.cause.clone()),
+                Record::GemArrive { gem } if shown.run.is_some() => {
+                    Some(Cause::Gem { s: *s, gem: *gem })
+                }
+                _ => None,
+            };
+            if let Some(cause) = cause {
+                let known = if let Some(&(_, t)) = self.first_seen.iter().find(|(d, _)| *d == cause)
+                {
+                    t
+                } else {
+                    self.first_seen.push((cause.clone(), now));
+                    now
+                };
+                self.causes.push((k, Caused { cause, known }));
             }
             k += 1;
         }
@@ -1395,7 +1403,8 @@ impl Cause {
             | Cause::Hurt { s }
             | Cause::Tier { s, .. }
             | Cause::Step { s, .. }
-            | Cause::LevelUp { s } => *s,
+            | Cause::LevelUp { s }
+            | Cause::Gem { s, .. } => *s,
         }
     }
 }
