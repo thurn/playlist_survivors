@@ -213,7 +213,10 @@ choice is the executor's, recorded with its reasons in the bead's notes.
 - [beat-steps.md](beat-steps.md): enemy gaits on the beat.
 - VS itself: installed at
   `~/Library/Application Support/Steam/steamapps/common/Vampire Survivors`
-  (Steam build 1.16.111). SF1 re-extracts the numbers the docs lack.
+  (Steam build 1.16.111). A full extraction, made for docs/survivors/, is kept
+  outside the repo in `~/Documents/vs-extract/` (the JSON text assets in
+  `out/`, the decompiled runtime in `rt/`, loaders in `scripts/`; see its
+  README). SF1 reads the numbers the docs lack from it, never committing it.
 - Code:
   - movement: `native/crates/sim/src/engine/hero.rs` (zen strides at
     `zen_step`), `strides.rs`;
@@ -472,7 +475,7 @@ fallback: [lowest-level weapon owned, lowest-level passive owned, any offerable]
 ```
 
 - **Card 1 is the intended path.** The bots pick card 1, so the table's first
-  column is the run the pacing checks measure. The other two cards are
+  column is the run the pacing reports measure. The other two cards are
   designed so any pick stays viable.
 - **A card names an item that isn't built yet?** It's skipped, so the table can
   be written in full in SF7 while weapons land in later beads.
@@ -480,7 +483,11 @@ fallback: [lowest-level weapon owned, lowest-level passive owned, any offerable]
   chicken there).
 
 **Pacing targets the table is written against** (VS's XP curve with Mad
-Forest's kill volume; SF9's bots measure them):
+Forest's kill volume; SF9's bots report them). These are estimates and an
+upper bound: killing everything spawned gives about level 5 at 2:00 and 14 at
+5:00. They're never a gate. When the bots' measured pace differs, the offer
+table is rewritten to the measured pace (and the chests' expected evolutions
+with it), with the numbers in the notes.
 
 | By minute | Level about | Owned |
 |---|---|---|
@@ -896,20 +903,24 @@ New virtual players in the `players` crate:
 - peak enemies alive;
 - the run's settled hash.
 
-**Pass criteria (SW7 asserts them; earlier milestones report them):**
+**Gating criteria (SW7 asserts them; earlier milestones report them).**
+Only survival gates:
 
 - **Positioning bot:** survives 30:00 on 5 seeds × 3 playlist orders, with
   lowest HP above 25% of max.
 - **AFK bot:** dies before minute 10 on every seed.
-- **Pacing:**
-  - level 8–12 at minute 5;
-  - every weapon on the intended path at level 8 by its chest;
-  - level 50 or more at 30:00.
+
+**Pacing (report-only, never a gate).** Every sweep reports these against the
+targets, and they guide the offer table, but no bead fails on them:
+  - level at minute 5 (target 8–12);
+  - each intended-path weapon's level at its chest (target 8);
+  - level at 30:00 (target 50 or more).
 
 **Where they run:**
 
 - **The gate:** a 3-minute positioning-bot smoke run on one seed, on the
-  committed fixture stream, asserting survival and level ≥ 5. SF9 measures it
+  committed fixture stream, asserting survival and level ≥ 3 (a sanity check
+  that XP and level-ups work, not pacing). SF9 measures it
   within the gate's budget.
 - **The release stage:** the full sweep, as a new `ci-full` native step.
   - **Budget:** 20 minutes, with the runs in parallel jobs.
@@ -999,7 +1010,7 @@ the table.
 | Key | Bead | Work | Needs |
 |---|---|---|---|
 | **F: Foundations** | | | |
-| SF1 | `hv-n7fn.1` | Re-extract VS's missing numbers into `docs/survivors/`: player base speed, pickup radius, i-frames, knockback and resistances, full tables for the 5 weapons, 5 evolutions and 6 passives, which bosses carry chests, Mad Forest's events and treasure chances, floor chicken rules | none |
+| SF1 | `hv-n7fn.1` | Document VS's missing numbers in `docs/survivors/`, read from `~/Documents/vs-extract/`: player base speed, pickup radius, i-frames, knockback and resistances, full tables for the 5 weapons, 5 evolutions and 6 passives, which bosses carry chests, Mad Forest's events and treasure chances, floor chicken rules | none |
 | SF2 | `hv-n7fn.2` | `levels/survivors.yaml` (loadout: the sword alone) and survivors mode (the app's default with zen), the run clock, song changes not ending the run, `End::Victory` at 30:00, the 40-minute session and replay audio | none |
 | SF3 | `hv-n7fn.3` | The freeze: its own flag at warp rate 0, held and re-planned world events, the music-stopped freeze and beat-lock resume, the free pulse, Esc and focus loss as PAUSED, `InputKey::Confirm` and exhaustive replay parsing, keys routed to the card state; determinism and rollback tests (cold review) | SF2 |
 | SF4 | `hv-n7fn.4` | VS stats, damage and contact formulas, i-frames, knockback, the XP curve, gem values, colours and the 400 cap; hitstop, dips and rate steps off in survivors mode | SF1, SF3 |
@@ -1029,7 +1040,7 @@ the table.
 | SW4 | `hv-n7fn.26` | The big four bosses at 10/15/20/25, level-scaled, charging on the bar and slamming on accents; their scripted chest tiers | SW3, SH10 |
 | SW5 | `hv-n7fn.27` | The five evolutions: Bloody Tear, Soul Eater, Holy Wand, Unholy Vespers, Thunder Loop, with their logic and base look, granted by chests | SH3, SH4, SH5, SH9, SH10, SW1, SW2 |
 | SW6 | `hv-n7fn.28` | Swarm events: bat and ghost swarms and flower-wall rings, on the first loudness jump in their minute | SF6, SW3 |
-| SW7 | `hv-n7fn.29` | The 30 minutes checked end to end and the victory finale; the balance sweep against the pass criteria (easy knobs and offers only), the release step asserting; W's warden review | SW1–SW6, SF9 |
+| SW7 | `hv-n7fn.29` | The 30 minutes checked end to end and the victory finale; the balance sweep against the survival gates, pacing reported (easy knobs and offers only), the release step asserting; W's warden review | SW1–SW6, SF9 |
 | **P: Polish** | | | |
 | SP1 | `hv-n7fn.30` | Evolution showpieces: each evolution's transformation moment and upgraded visuals, and showpiece sounds from OpenGameArt | SW7, SW3 |
 | SP2 | `hv-n7fn.31` | Boss entrances, warnings and deaths; the chest showpiece (beam, burst, roulette polish) | SW7 |
