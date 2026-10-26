@@ -1,0 +1,12 @@
+Reviewer: fresh same-host Codex subagent /root/ci42_warden, no inherited turns.
+Skill: /Users/dthurn/.llms/skills/warden/SKILL.md. Read-only, no file edits.
+Base411488ca0009a2e90232971d415c588db0967f77, current working diff.
+Trigger: due-event ordering in rollback replay path, AGENTS rollback-runner exception.
+
+No actionable findings.
+
+The shortcut preserves the prior kind/phase/sequence selection predicate and existing tolerance fallback. The regression test covers near timestamps and insertion during dispatch. Kept density/replay results support the stated claims, and source hashes match the reviewed files.
+
+Full native validation was still running; review remained read-only.
+
+Disposition: no findings to fix or dismiss; no confirmation review requested.

@@ -1,0 +1,5 @@
+{
+  "command": "scripts/ci-full native",
+  "exit_code": 0,
+  "wall_seconds": 497.8431974169798
+}

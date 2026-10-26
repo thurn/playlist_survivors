@@ -640,6 +640,18 @@ impl Queue {
         if self.peek() > limit {
             return first;
         }
+        // Exact-time batches are already in kind/sequence order in the heap.
+        // Only drain/reinsert when tolerance admits a genuinely earlier kind or
+        // sequence at a slightly later time. In particular, hundreds of reactions
+        // on one grid point must not rebuild their entire batch for each event.
+        let earlier_due = self.heap.iter().any(|e| {
+            e.key.s <= limit
+                && (e.key.o < first.key.o
+                    || (e.key.o == first.key.o && e.key.rank_less(&first.key)))
+        });
+        if !earlier_due {
+            return first;
+        }
         let mut due = vec![first];
         while self.peek() <= limit {
             due.push(self.pop());
@@ -5033,5 +5045,90 @@ mod tests {
                 );
             }
         }
+    }
+    #[test]
+    fn due_queue_shortcut_preserves_full_drain_order_with_tolerance_and_new_events() {
+        use super::{Entry, Queue, phase};
+        use crate::core::rng::{Part, Rng};
+        fn reference(q: &mut Queue, limit: f64) -> Entry {
+            let first = q.pop();
+            if q.peek() > limit {
+                return first;
+            }
+            let mut due = vec![first];
+            while q.peek() <= limit {
+                due.push(q.pop());
+            }
+            let mut best = 0;
+            for i in 1..due.len() {
+                let (a, b) = (&due[i].key, &due[best].key);
+                if a.o < b.o || (a.o == b.o && a.rank_less(b)) {
+                    best = i;
+                }
+            }
+            let chosen = due.swap_remove(best);
+            for e in due {
+                q.insert(e);
+            }
+            chosen
+        }
+        let mut rng = Rng::new(&[Part::Str("ci42-due-queue")]);
+        let mut count = 0;
+        for mode in 0..4 {
+            let mut a = Queue::default();
+            let mut b = Queue::default();
+            for batch in 0..32 {
+                for i in 0..64 {
+                    let jitter = if mode == 0 {
+                        0.0
+                    } else {
+                        rng.int(-5.0, 5.0) * 1e-13
+                    };
+                    let at = batch as f64 * 0.125 + jitter;
+                    let ev = match i % 4 {
+                        0 => Ev::Recoil {
+                            foe: i,
+                            multiplier: 1.0,
+                        },
+                        1 => Ev::EnemyWind {
+                            peak: at + 0.25,
+                            period: 0.5,
+                            generation: None,
+                        },
+                        2 => Ev::Beat { bi: i },
+                        _ => Ev::Held,
+                    };
+                    let phase = if mode == 3 {
+                        (i % 7) as u16
+                    } else {
+                        phase::RUNTIME
+                    };
+                    a.push_init(at, ev.clone(), phase, i as u64 + batch * 100);
+                    b.push_init(at, ev, phase, i as u64 + batch * 100);
+                }
+                while a.peek() <= batch as f64 * 0.125 + 1e-9 {
+                    let limit = a.peek() + 1e-12;
+                    let left = a.pop_due(limit);
+                    let right = reference(&mut b, limit);
+                    assert_eq!(format!("{left:?}"), format!("{right:?}"));
+                    count += 1;
+                    if mode >= 2 && rng.next() < 0.08 {
+                        let ev = Ev::Recoil {
+                            foe: 999,
+                            multiplier: 0.5,
+                        };
+                        a.push(limit, ev.clone());
+                        b.push(limit, ev);
+                    }
+                    assert_eq!(a.heap.len(), b.heap.len());
+                    assert_eq!(a.peek(), b.peek());
+                }
+            }
+            assert!(a.heap.is_empty());
+            assert!(b.heap.is_empty());
+        }
+        eprintln!(
+            "CI42: {count} queue selections equal the original drain algorithm; exact timestamps, +/-0.5ps, mixed phases/kinds and events inserted during dispatch"
+        );
     }
 }

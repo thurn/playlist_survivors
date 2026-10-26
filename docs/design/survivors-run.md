@@ -1085,6 +1085,18 @@ Each bead summarizes its measurements here in a few lines, in its own
 subsection, linking `native/evidence/<key>/`. Beads never add sections
 elsewhere in this document. Parallel beads would collide there.
 
+### CI42
+
+The native release density check failed at 4.89 ms p99. The repair skips
+rebuilding a simultaneous event batch when its heap head already has the
+correct due order; the original tolerance fallback remains. The focused
+300-foe/400-gem, five-weapon applied-passive full native check gives **2.66 ms p99** under
+the unchanged 4 ms bar. 8,575 queue selections match the prior algorithm;
+a 30 s real-stream density replay matches 609,236 records exactly at lead 0.23
+and 25 ms late input. The [CI42 evidence](../../native/evidence/ci42/README.md)
+keeps failures, source scope, commands and final checks. No gameplay knobs
+or benchmark workload change. SP5 still measures final evolved effects.
+
 ### SF1
 
 The [feel appendix](../survivors/appendix-feel.md) records movement units and

@@ -1,0 +1,5 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-ci42-density-budget/native/crates/sim)
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-ci42-density-budget/native/crates/eval)
+   Compiling players v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-ci42-density-budget/native/crates/players)
+   Compiling cli v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-ci42-density-budget/native/crates/cli)
+    Finished `release` profile [optimized] target(s) in 7.72s

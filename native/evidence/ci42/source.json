@@ -1,0 +1,7 @@
+{
+  "base": "411488ca0009a2e90232971d415c588db0967f77",
+  "production_change": "Only Queue::pop_due: scan for a better due key before draining; original fallback unchanged",
+  "patch_sha256": "232c0fd371ee6a0e88f660f37597ef86d7915ffd92135c0ac153698c575b710d",
+  "module_sha256": "38585a3373e6d97d399a6f95223fe35634c1c0c73e7932c1ef1eaaa5f2dac5b5",
+  "review_trigger": "due-event ordering in rollback replay path; conservatively apply AGENTS rollback-runner review rule"
+}

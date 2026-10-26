@@ -1,0 +1,373 @@
+diff --git a/native/crates/app/src/slice/mod.rs b/native/crates/app/src/slice/mod.rs
+index f867be7..d5d121b 100644
+--- a/native/crates/app/src/slice/mod.rs
++++ b/native/crates/app/src/slice/mod.rs
+@@ -1226,6 +1226,9 @@ fn bench(check: bool, density: bool) -> Result<(), String> {
+         }
+         engine.frame(s, 0.2);
+         let engine_end = thread_cpu_s();
++        let phases=engine.sim.phase_take();
++        if engine_end-t0>0.003 {eprintln!("slow frame {frame} s{s} engine{:.3}ms phases(next,clock,recycle,events,weapons,tail) ns {phases:?}",(engine_end-t0)*1000.0);}
++        if frame==7200 {eprintln!("storage {:?}",engine.sim.storage());}
+         engine_times.push((engine_end - t0) * 1e3);
+         if density && s > 1.0 {
+             let view = engine.view.borrow();
+diff --git a/native/crates/sim/src/engine/bible.rs b/native/crates/sim/src/engine/bible.rs
+index dc2b1df..a9d815c 100644
+--- a/native/crates/sim/src/engine/bible.rs
++++ b/native/crates/sim/src/engine/bible.rs
+@@ -1,28 +1,15 @@
+ //! Source-duration orbiting blades; hit memory clears per blade every 1.7 s.
+-use super::{Sim, combat::HitSpec};
++use super::{
++    Sim,
++    combat::HitSpec,
++    targets::{expanded_bounds, near_bounds},
++};
+ use crate::{
+-    core::geometry::{Shape, shape_bounds},
++    core::geometry::Shape,
+     recorder::{HitSource, Weight},
+     survivors::{MissilePose, PX_PER_VS_UNIT, Shot, bible_orbit_speed},
+ };
+ use std::{collections::BTreeSet, f64::consts::TAU};
+-// Conservative broad phase only: near candidates still use the unchanged swept-capsule
+-// contact test. Outward padding keeps boundary rounding from rejecting a real contact.
+-fn expanded_bounds(shape: &Shape) -> [f64; 4] {
+-    let mut b = shape_bounds(shape);
+-    let scale = b.iter().map(|x| x.abs()).fold(1.0, f64::max);
+-    let pad = 1e-9 + 16.0 * f64::EPSILON * scale;
+-    b[0] -= pad;
+-    b[1] -= pad;
+-    b[2] += pad;
+-    b[3] += pad;
+-    b
+-}
+-fn near_bounds(b: [f64; 4], x: f64, y: f64, body_radius: f64) -> bool {
+-    let margin = 0.5 * body_radius; // the same hurtbox margin as aim::catches
+-    x >= b[0] - margin && x <= b[2] + margin && y >= b[1] - margin && y <= b[3] + margin
+-}
+-
+ #[derive(Clone, Debug)]
+ struct Blade {
+     id: usize,
+@@ -102,6 +89,7 @@ impl Sim {
+     }
+     pub(super) fn tick_bibles(&mut self) {
+         let mut cycles = std::mem::take(&mut self.st.bibles);
++        let candidates = self.projectile_targets(!cycles.is_empty());
+         for c in &mut cycles {
+             let age = self.st.w - c.born;
+             let hp = self.hero_pose(self.st.w);
+@@ -146,20 +134,18 @@ impl Sim {
+                             radius: b.radius,
+                         };
+                         let bounds = expanded_bounds(&shape);
+-                        let targets: Vec<_> = self
+-                            .st
+-                            .alive
+-                            .iter()
+-                            .copied()
+-                            .filter(|&fi| self.hittable(fi))
+-                            .filter(|&fi| {
+-                                let p = self.pos(fi, self.st.w);
+-                                let r = self.st.foes[fi].r;
+-                                near_bounds(bounds, p.0, p.1, r)
++                        let mut targets: Vec<_> = candidates
++                            .within(bounds)
++                            .filter(|t| {
++                                let (fi, x, y, r) = (t.id, t.x, t.y, t.r);
++                                near_bounds(bounds, x, y, r)
++                                    && self.hittable(fi)
+                                     && !c.blades[i].hit.contains(&fi)
+-                                    && crate::aim::catches(&shape, p.0, p.1, r)
++                                    && crate::aim::catches(&shape, x, y, r)
+                             })
++                            .map(|t| (t.order, t.id))
+                             .collect();
++                        targets.sort_unstable_by_key(|t| t.0);
+                         if targets.is_empty() {
+                             continue;
+                         }
+@@ -181,7 +167,7 @@ impl Sim {
+                             },
+                             None,
+                         );
+-                        for fi in targets {
++                        for (_, fi) in targets {
+                             c.blades[i].hit.insert(fi);
+                             self.damage(fi, &hit);
+                         }
+@@ -206,6 +192,7 @@ impl Sim {
+ #[cfg(test)]
+ mod tests {
+     use super::*;
++    use crate::core::geometry::shape_bounds;
+     #[test]
+     fn broad_phase_preserves_the_real_capsule_contact_test() {
+         for (x0, y0, x1, y1) in [
+diff --git a/native/crates/sim/src/engine/combat.rs b/native/crates/sim/src/engine/combat.rs
+index fc9eaca..c63c32d 100644
+--- a/native/crates/sim/src/engine/combat.rs
++++ b/native/crates/sim/src/engine/combat.rs
+@@ -109,13 +109,24 @@ impl Sim {
+         f.last_fate = Some(fate);
+         self.rec.fate(fi, fate);
+         if self.st.survivor.is_some() {
++            // A single area hit can queue hundreds of reactions. Share its immutable
++            // metadata across them and snapshots, checking full equality so a caller
++            // that deliberately changes a hit while retaining its ID is still correct.
++            if self
++                .st
++                .impact_hit
++                .as_ref()
++                .is_none_or(|cached| cached.as_ref() != h)
++            {
++                self.st.impact_hit = Some(Rc::new(h.clone()));
++            }
+             let at = self.next_enemy_sixteenth(self.st.s);
+             self.st.q.push(
+                 at,
+                 Ev::EnemyImpact {
+                     foe: fi,
+                     fate,
+-                    hit: Box::new(h.clone()),
++                    hit: Rc::clone(self.st.impact_hit.as_ref().expect("cached impact hit")),
+                 },
+             );
+         }
+diff --git a/native/crates/sim/src/engine/missiles.rs b/native/crates/sim/src/engine/missiles.rs
+index 7dd0d32..39dee6a 100644
+--- a/native/crates/sim/src/engine/missiles.rs
++++ b/native/crates/sim/src/engine/missiles.rs
+@@ -104,6 +104,7 @@ impl Sim {
+     }
+     pub(super) fn tick_missiles(&mut self) {
+         let mut missiles = std::mem::take(&mut self.st.missiles);
++        let candidates = self.projectile_targets(!missiles.is_empty());
+         for m in &mut missiles {
+             let dt = (self.st.w - m.last_w).max(0.0);
+             m.last_w = self.st.w;
+@@ -145,20 +146,19 @@ impl Sim {
+                 y1: m.pose.y,
+                 radius: m.pose.radius,
+             };
++            let bounds = super::targets::expanded_bounds(&shape);
+             let dx = m.pose.x - x0;
+             let dy = m.pose.y - y0;
+             let len2 = dx * dx + dy * dy;
+-            let mut targets: Vec<_> = self
+-                .st
+-                .alive
+-                .iter()
+-                .copied()
+-                .filter_map(|fi| {
+-                    if !self.hittable(fi) || m.hit_until.contains_key(&fi) {
+-                        return None;
+-                    }
+-                    let (x, y) = self.pos(fi, self.st.w);
+-                    if !crate::aim::catches(&shape, x, y, self.st.foes[fi].r) {
++            let mut targets: Vec<_> = candidates
++                .within(bounds)
++                .filter_map(|t| {
++                    let (fi, x, y, r) = (t.id, t.x, t.y, t.r);
++                    if !super::targets::near_bounds(bounds, x, y, r)
++                        || !self.hittable(fi)
++                        || m.hit_until.contains_key(&fi)
++                        || !crate::aim::catches(&shape, x, y, r)
++                    {
+                         return None;
+                     }
+                     let centre = if len2 > 1e-12 {
+@@ -166,7 +166,7 @@ impl Sim {
+                     } else {
+                         0.0
+                     };
+-                    let r = m.pose.radius + self.st.foes[fi].r;
++                    let r = m.pose.radius + r;
+                     let perpendicular =
+                         (x - x0).powi(2) + (y - y0).powi(2) - centre * centre * len2;
+                     let entry = if len2 > 1e-12 {
+diff --git a/native/crates/sim/src/engine/mod.rs b/native/crates/sim/src/engine/mod.rs
+index d6619bc..0234e03 100644
+--- a/native/crates/sim/src/engine/mod.rs
++++ b/native/crates/sim/src/engine/mod.rs
+@@ -28,6 +28,7 @@ mod bible;
+ mod bounds;
+ mod pool;
+ mod separation_cache;
++mod targets;
+ pub use bounds::Storage;
+ use pool::Pool;
+ mod combat;
+@@ -351,7 +352,7 @@ enum Ev {
+     EnemyImpact {
+         foe: usize,
+         fate: crate::recorder::Fate,
+-        hit: Box<crate::recorder::Hit>,
++        hit: Rc<crate::recorder::Hit>,
+     },
+     Held,
+     HitstopEnd,
+@@ -981,6 +982,7 @@ struct SimState {
+     light_count: usize,
+     n_inputs: usize,
+     n_hits: usize,
++    impact_hit: Option<Rc<crate::recorder::Hit>>,
+     n_gems: usize,
+     waves: Pool<WaveState>,
+     chains: Pool<ChainState>,
+@@ -1770,10 +1772,14 @@ impl Sim {
+     }
+ 
+     /// One turn of the loop: move to the next stop, then run every event due there.
++    pub fn phase_take(&self)->[u128;6] { PHASES.with(|p|p.replace([0;6])) }
+     fn step(&mut self) {
++        let prof0=std::time::Instant::now();
+         let t_fixed = self.st.fixed_k / SIM_RATE;
+         let t = self.next_stop();
++        let prof1=std::time::Instant::now();
+         self.move_clock(t, t == t_fixed, false);
++        let prof2=std::time::Instant::now();
+         self.maybe_resume();
+         if t == t_fixed {
+             self.st.fixed_k += 1.0;
+@@ -1783,13 +1789,18 @@ impl Sim {
+                 self.trim_state();
+             }
+         }
++        let prof3=std::time::Instant::now();
+         while self.st.q.peek() <= self.st.s + 1e-12 {
+             let entry = self.st.q.pop_due(self.st.s + 1e-12);
+             self.dispatch_entry(entry);
+         }
++        let prof4=std::time::Instant::now();
+         self.tick_weapons();
++        let prof5=std::time::Instant::now();
+         self.tick_enemy_bites();
+         self.tick_spawner();
++        let prof6=std::time::Instant::now();
++        PHASES.with(|p| {let mut p=p.borrow_mut();for (i,d) in [prof1-prof0,prof2-prof1,prof3-prof2,prof4-prof3,prof5-prof4,prof6-prof5].into_iter().enumerate(){p[i]+=d.as_nanos();}});
+     }
+ 
+     fn handle(&mut self, ev: Ev) {
+@@ -2027,6 +2038,7 @@ fn fresh_state(env: &Env) -> SimState {
+         light_count: 0,
+         n_inputs: 0,
+         n_hits: 0,
++        impact_hit: None,
+         n_gems: 0,
+         waves: Pool::default(),
+         chains: Pool::default(),
+@@ -5035,3 +5047,5 @@ mod tests {
+         }
+     }
+ }
++
++thread_local! {static PHASES: std::cell::RefCell<[u128;6]>=const {std::cell::RefCell::new([0;6])};}
+diff --git a/native/crates/sim/src/engine/pool.rs b/native/crates/sim/src/engine/pool.rs
+index e37a381..8775abd 100644
+--- a/native/crates/sim/src/engine/pool.rs
++++ b/native/crates/sim/src/engine/pool.rs
+@@ -61,14 +61,25 @@ impl<T> Pool<T> {
+         self.values.push(value);
+         self.next = self.next.checked_add(1).expect("simulation ID overflow");
+     }
++    #[inline]
++    fn lookup_slot(&self, id: usize) -> Option<usize> {
++        // Most live ranges are contiguous even after an old prefix retires. Validate
++        // the predicted identity before using it; holes always use the authoritative map.
++        if let Some(slot) = self.ids.first().and_then(|first| id.checked_sub(*first))
++            && self.ids.get(slot) == Some(&id)
++        {
++            return Some(slot);
++        }
++        self.slots.get(&id).copied()
++    }
+     pub fn get(&self, id: usize) -> Option<&T> {
+-        self.slots.get(&id).map(|&slot| &self.values[slot])
++        self.lookup_slot(id).map(|slot| &self.values[slot])
+     }
+     pub fn at_slot_mut(&mut self, slot: usize) -> &mut T {
+         &mut self.values[slot]
+     }
+     pub fn slot(&self, id: usize) -> usize {
+-        self.slots[&id]
++        self.lookup_slot(id).expect("live simulation ID")
+     }
+     /// Slots remain stable while the physics pass is borrowing the pool (no retirement/insertion).
+     pub fn pair_at_slots_mut(&mut self, a: usize, b: usize) -> (&mut T, &mut T) {
+@@ -119,12 +130,12 @@ impl<T> Pool<T> {
+ impl<T> Index<usize> for Pool<T> {
+     type Output = T;
+     fn index(&self, id: usize) -> &T {
+-        &self.values[self.slots[&id]]
++        &self.values[self.slot(id)]
+     }
+ }
+ impl<T> IndexMut<usize> for Pool<T> {
+     fn index_mut(&mut self, id: usize) -> &mut T {
+-        let slot = self.slots[&id];
++        let slot = self.slot(id);
+         &mut self.values[slot]
+     }
+ }
+@@ -146,6 +157,40 @@ impl<'a, T> IntoIterator for &'a mut Pool<T> {
+ mod tests {
+     use super::*;
+     #[test]
++    fn predicted_slots_match_the_map_across_prefixes_holes_insertions_and_restores() {
++        let mut p = Pool::default();
++        for id in 0..400 {
++            p.push(id * 3);
++        }
++        for round in 0..8 {
++            let snap = p.clone();
++            p.retain(|id, _| id > round * 19 && (id + round) % 7 != 0);
++            for _ in 0..31 {
++                let id = p.len();
++                p.push(id * 3);
++            }
++            for id in 0..p.len() + 10 {
++                assert_eq!(p.lookup_slot(id), p.slots.get(&id).copied());
++                assert_eq!(p.get(id), p.slots.get(&id).map(|&slot| &p.values[slot]));
++                if p.get(id).is_some() {
++                    assert_eq!(p[id], id * 3);
++                    p[id] += 1;
++                    assert_eq!(p[id], id * 3 + 1);
++                    p[id] -= 1;
++                }
++            }
++            for id in 0..snap.len() + 10 {
++                assert_eq!(snap.lookup_slot(id), snap.slots.get(&id).copied());
++            }
++        }
++        p.retain(|_, _| false);
++        assert_eq!(p.lookup_slot(0), None);
++        let id = p.len();
++        p.push(42);
++        assert_eq!(p[id], 42);
++        assert_eq!(p.get(id - 1), None);
++    }
++    #[test]
+     fn retirement_never_reuses_identity_and_rollback_restores_it() {
+         let mut pool = Pool::default();
+         pool.push(10);
+diff --git a/native/crates/sim/src/engine/weapons.rs b/native/crates/sim/src/engine/weapons.rs
+index 9f72340..238c51f 100644
+--- a/native/crates/sim/src/engine/weapons.rs
++++ b/native/crates/sim/src/engine/weapons.rs
+@@ -231,11 +231,11 @@ impl Sim {
+             .iter()
+             .copied()
+             .filter(|&fi| {
+-                if aura.hit.contains(&fi) || !self.hittable(fi) {
++                if !self.hittable(fi) {
+                     return false;
+                 }
+                 let (x, y) = self.pos(fi, self.st.w);
+-                crate::aim::catches(&shape, x, y, self.st.foes[fi].r)
++                crate::aim::catches(&shape, x, y, self.st.foes[fi].r) && !aura.hit.contains(&fi)
+             })
+             .collect();
+         if !targets.is_empty() {

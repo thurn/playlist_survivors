@@ -1,0 +1,30 @@
+{
+  "baseline": {
+    "source_sha256": "2e66457f69b4cc13b2fcd00ef2668c7a53f07e202effb29cbc321dcd3d27968e",
+    "elapsed_s": 3.8842357501853257,
+    "result": {
+      "seconds": 30,
+      "lead": 0.23,
+      "late_ms": 25,
+      "settled_records": 609236,
+      "settled_hash": "b7af20589d509af1",
+      "rollbacks": 897,
+      "live": 300,
+      "gems": 400
+    }
+  },
+  "optimized": {
+    "source_sha256": "38585a3373e6d97d399a6f95223fe35634c1c0c73e7932c1ef1eaaa5f2dac5b5",
+    "elapsed_s": 2.6556763330008835,
+    "result": {
+      "seconds": 30,
+      "lead": 0.23,
+      "late_ms": 25,
+      "settled_records": 609236,
+      "settled_hash": "b7af20589d509af1",
+      "rollbacks": 897,
+      "live": 300,
+      "gems": 400
+    }
+  }
+}
