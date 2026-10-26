@@ -324,6 +324,7 @@ dependencies = [
  "eval",
  "indexmap",
  "libc",
+ "players",
  "serde",
  "serde_json",
  "sim",
@@ -524,6 +525,7 @@ version = "0.0.0"
 dependencies = [
  "analysis",
  "indexmap",
+ "players",
  "serde",
  "serde_json",
  "sim",

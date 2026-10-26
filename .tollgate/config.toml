@@ -39,3 +39,21 @@ stage = "release"
 needs = []
 timeout = "30m"
 environment = { CARGO_TARGET_DIR = "/Users/dthurn/Library/Caches/playlist-survivors/target-release" }
+
+# SF9: independent target directory for this release step's checkout.
+[[step]]
+name = "ci-full-survivors"
+run = "./scripts/ci-full survivors"
+stage = "release"
+needs = []
+timeout = "20m"
+environment = { CARGO_TARGET_DIR = "/Users/dthurn/Library/Caches/playlist-survivors/target-release-survivors" }
+
+# The deterministic 30-minute replay has its own budget and checkout-specific build cache.
+[[step]]
+name = "ci-full-survivors-replay"
+run = "./scripts/ci-full survivors-replay"
+stage = "release"
+needs = []
+timeout = "20m"
+environment = { CARGO_TARGET_DIR = "/Users/dthurn/Library/Caches/playlist-survivors/target-release-survivors-replay" }

@@ -1,0 +1,39 @@
+{
+  "assertSurvival": false,
+  "pacingReportOnly": true,
+  "wallSeconds": 6.442382832989097,
+  "cases": [
+    {
+      "case": "cached-original-positioning-1",
+      "survivalGate": null,
+      "survivalS": 180.0,
+      "lowestHpShare": 1.0,
+      "fallen": false,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 3,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 300,
+      "settledHash": "3e6000cdeab8e28a",
+      "runWallSeconds": 3.6548615
+    },
+    {
+      "case": "cached-original-afk-1",
+      "survivalGate": null,
+      "survivalS": 180.0,
+      "lowestHpShare": 1.0,
+      "fallen": false,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 2,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 68,
+      "settledHash": "e3a8c4f734a1e45e",
+      "runWallSeconds": 1.171586583
+    }
+  ]
+}

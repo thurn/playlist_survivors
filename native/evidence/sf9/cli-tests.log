@@ -1,0 +1,14 @@
+   Compiling cli v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sf9-survival-bots/native/crates/cli)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.39s
+     Running unittests src/main.rs (target/debug/deps/ps-516a0a78fbfc2089)
+
+running 6 tests
+test survive::tests::bot_options_reject_unknown_bots_and_mislabeled_fixture_orders ... ok
+test survive_cache::tests::offset_preserves_lead_and_hindsight_coordinates ... ok
+test survive::tests::playlist_orders_preserve_the_gap_schedule_and_change_the_actual_tracks ... ok
+test survive::tests::held_actor_releases_at_cards_waits_for_reveal_then_represses ... ok
+test survive_cache::tests::cache_keys_include_audio_and_version ... ok
+test survive_cache::tests::continuous_cache_tracks_audio_order_gaps_and_version_without_path_identity ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.19s
+

@@ -27,6 +27,11 @@ if changes_match '^(native/scripts/(crates|test_crates\.py)|scripts/lib/changes\
   uv run --no-project python -m unittest native/scripts/test_crates.py
 fi
 
+if changes_match '^native/scripts/(survivors_sweep|test_survivors_sweep)\.py$'; then
+  uv run --directory tools/analysis ruff check ../../native/scripts/survivors_sweep.py ../../native/scripts/test_survivors_sweep.py
+  uv run --no-project python -m unittest native/scripts/test_survivors_sweep.py
+fi
+
 if [ "$CHANGES_UNKNOWN" = 1 ]; then
   crates=all
 else

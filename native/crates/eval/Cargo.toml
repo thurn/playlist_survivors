@@ -12,6 +12,7 @@ sim = { path = "../sim" }
 stream = { path = "../stream" }
 
 [dev-dependencies]
+players = { path = "../players" }
 serde_json = "1"
 
 [lints]

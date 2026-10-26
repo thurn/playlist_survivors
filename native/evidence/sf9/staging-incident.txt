@@ -1,0 +1,11 @@
+Observed once during SF9 in fresh Tollgate worktree /Users/dthurn/playlist_survivors/.worktrees/codex-sf9-survival-bots. Exact command:
+
+git add .tollgate/config.toml docs/design/survivors-run.md native/Cargo.lock native/crates/cli native/crates/eval/Cargo.toml native/crates/eval/tests/survive.rs native/crates/players native/scripts/check-fast native/scripts/survivors_sweep.py native/scripts/test_survivors_sweep.py native/evidence/sf9
+
+Exit1, output:
+The following paths are ignored by one of your .gitignore files:
+.tollgate
+hint: Use -f if you really want to add them.
+hint: Disable this message with "git config set advice.addIgnoredFile false"
+
+The file is tracked and modified. After this error git status reports M in the INDEX for .tollgate/config.toml and most requested files, while scripts/ci-full remains unstaged (not part of the command). git ls-files --stage .tollgate/config.toml reports mode100644 blob0e872e4c7fa81e5ed0756700d4bb2d03e236244c. git check-ignore -v --no-index reports /Users/dthurn/playlist_survivors/.git/info/exclude:7:.tollgate/. This is the repository's existing local exclusion, not an SF9 edit. Investigate whether the managed Tollgate exclusion/standard staging guidance should distinguish the tracked config from runtime files; do not blindly change it or claim a Git/Tollgate defect before reproducing. A normal tracked-file update (git add -u) is sufficient to continue SF9; no game/source change or prerequisite needed. If a Tollgate defect is confirmed, fix at cause in its repository under Hive's tooling-fix rule, per AGENTS.md. Intended project playlist_survivors, epic hv-n7fn.

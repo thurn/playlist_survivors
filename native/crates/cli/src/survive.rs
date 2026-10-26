@@ -2,6 +2,7 @@
 use crate::survive_cache::{self as cache, TrackStream};
 use analysis::tensors::Tensors;
 use eval::session::{AppliedKey, Arrival};
+use players::{SurvivorBot, SurvivorBotKind};
 use serde_json::json;
 use sim::movement::InputKey;
 use sim::player::{KeyEvent, KeyEventKind, Observation, Player};
@@ -12,6 +13,8 @@ use std::time::Instant;
 use stream::playlist::Playlist;
 struct Options {
     playlist: PathBuf,
+    bot: Option<SurvivorBotKind>,
+    order: String,
     fixture: Option<PathBuf>,
     write_fixture: Option<PathBuf>,
     record: Option<PathBuf>,
@@ -26,6 +29,8 @@ struct Options {
 fn options(args: &[String]) -> Result<Options, String> {
     let mut o = Options {
         playlist: cache::root().join("native/playlists/survivors-30.m3u"),
+        bot: Some(SurvivorBotKind::Positioning),
+        order: "original".into(),
         fixture: None,
         write_fixture: None,
         record: None,
@@ -58,12 +63,17 @@ fn options(args: &[String]) -> Result<Options, String> {
             "--only" => o.only = Some(value()?.parse().map_err(|_| "invalid track count")?),
             "--concatenated" => o.concatenated = true,
             "--runner-soak" => o.runner_soak = true,
+            "--order" => o.order.clone_from(value()?),
             "--bot" => {
-                if value()? != "held" {
-                    return Err(
-                        "SF8 supplies --bot held; SF9 adds positioning/afk/random-pick".into(),
-                    );
-                }
+                let name = value()?;
+                o.bot = if name == "held" {
+                    None
+                } else {
+                    Some(
+                        SurvivorBotKind::from_name(name)
+                            .ok_or("bot must be positioning, afk, random-pick or held")?,
+                    )
+                };
             }
             other => return Err(format!("unknown survive argument {other}")),
         }
@@ -79,6 +89,12 @@ fn options(args: &[String]) -> Result<Options, String> {
     }
     if o.concatenated && o.fixture.is_some() {
         return Err("choose --fixture or --concatenated".into());
+    }
+    if !matches!(o.order.as_str(), "original" | "reverse" | "rotate") {
+        return Err("order must be original, reverse or rotate".into());
+    }
+    if o.fixture.is_some() && o.order != "original" {
+        return Err("a prepared fixture has its own fixed order".into());
     }
     Ok(o)
 }
@@ -159,12 +175,11 @@ fn prepare(o: &Options, playlist: &Playlist) -> Result<(Vec<Arrival>, f64), Stri
     }
     let models = Tensors::load(&cache::root().join("native/models/madmom.bin"))
         .map_err(|e| e.to_string())?;
+    let version = cache::version()?;
     if o.concatenated {
-        let audio = playlist.decode(44100.0, |path| cache::decode(path, "concatenated"))?;
-        let stream = cache::analyse(&models, &audio, "concatenated".into())?;
+        let stream = cache::cached_concatenation(playlist, &o.cache, &version, &models)?;
         return Ok((stream.arrivals, stream.duration));
     }
-    let version = cache::version()?;
     let unique: Vec<PathBuf> = playlist
         .tracks
         .iter()
@@ -215,6 +230,21 @@ fn prepare(o: &Options, playlist: &Playlist) -> Result<(Vec<Arrival>, f64), Stri
     all.sort_by(|a, b| a.arrived.total_cmp(&b.arrived));
     Ok((all, samples as f64 / 44100.0))
 }
+fn order_playlist(playlist: &mut Playlist, order: &str) {
+    let gaps: Vec<_> = playlist.tracks.iter().map(|t| t.gap_before).collect();
+    match order {
+        "reverse" => playlist.tracks.reverse(),
+        "rotate" => {
+            let n = playlist.tracks.len() / 3;
+            playlist.tracks.rotate_left(n);
+        }
+        _ => {}
+    }
+    // The same silence schedule applies to every order, including the 8-second gap.
+    for (track, gap) in playlist.tracks.iter_mut().zip(gaps) {
+        track.gap_before = gap;
+    }
+}
 fn write_lines<T: serde::Serialize>(path: &Path, values: &[T]) -> Result<(), String> {
     let mut out = std::io::BufWriter::new(std::fs::File::create(path).map_err(|e| e.to_string())?);
     for value in values {
@@ -228,6 +258,7 @@ fn run(args: &[String]) -> Result<(), String> {
     crate::batch::enter()?;
     let started = Instant::now();
     let mut playlist = Playlist::load(&o.playlist)?;
+    order_playlist(&mut playlist, &o.order);
     if let Some(n) = o.only {
         playlist.tracks.truncate(n);
     }
@@ -278,16 +309,19 @@ fn run(args: &[String]) -> Result<(), String> {
     if o.runner_soak {
         engine.sim.disable_hero_damage_for_check();
     }
-    let mut actor = Holder::default();
+    let mut actor: Box<dyn Player> = o.bot.map_or_else(
+        || Box::new(Holder::default()) as Box<dyn Player>,
+        |kind| Box::new(SurvivorBot::new(kind, o.seed)) as Box<dyn Player>,
+    );
     let run_started = Instant::now();
     let report = eval::survive::drive(
         &mut engine,
         &arrivals,
-        &mut actor,
+        actor.as_mut(),
         duration,
         o.minutes * 60.0,
     );
-    let output = json!({"bot":"held","seed":o.seed,"requestedMinutes":o.minutes,"playlistSeconds":duration,"prepareWallSeconds":prepared,"runWallSeconds":run_started.elapsed().as_secs_f64(),"noHeroDamage":o.runner_soak,"streamMode":if o.fixture.is_some(){"fixture"}else if o.concatenated{"concatenated"}else{"cached-tracks"},"report":report});
+    let output = json!({"bot":o.bot.map_or("held", SurvivorBotKind::as_str),"playlistOrder":o.order,"seed":o.seed,"requestedMinutes":o.minutes,"playlistSeconds":duration,"prepareWallSeconds":prepared,"runWallSeconds":run_started.elapsed().as_secs_f64(),"noHeroDamage":o.runner_soak,"streamMode":if o.fixture.is_some(){"fixture"}else if o.concatenated{"concatenated"}else{"cached-tracks"},"report":report});
     if let Some(dir) = &o.record {
         std::fs::create_dir(dir).map_err(|e| e.to_string())?;
         write_lines(&dir.join("stream.jsonl"), &arrivals)?;
@@ -330,6 +364,47 @@ pub fn main(args: &[String]) -> i32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn playlist_orders_preserve_the_gap_schedule_and_change_the_actual_tracks() {
+        let list =
+            Playlist::parse("a.ogg\n#PS-GAP:8\nb.ogg\nc.ogg", Path::new("/fixture")).unwrap();
+        for (name, names) in [
+            ("original", ["a.ogg", "b.ogg", "c.ogg"]),
+            ("reverse", ["c.ogg", "b.ogg", "a.ogg"]),
+            ("rotate", ["b.ogg", "c.ogg", "a.ogg"]),
+        ] {
+            let mut changed = list.clone();
+            order_playlist(&mut changed, name);
+            assert_eq!(
+                changed
+                    .tracks
+                    .iter()
+                    .map(|t| t.path.file_name().unwrap().to_str().unwrap())
+                    .collect::<Vec<_>>(),
+                names
+            );
+            assert_eq!(
+                changed
+                    .tracks
+                    .iter()
+                    .map(|t| t.gap_before)
+                    .collect::<Vec<_>>(),
+                vec![0.0, 8.0, 2.0]
+            );
+        }
+    }
+    #[test]
+    fn bot_options_reject_unknown_bots_and_mislabeled_fixture_orders() {
+        let parse =
+            |args: &[&str]| options(&args.iter().map(|a| (*a).to_string()).collect::<Vec<_>>());
+        for name in ["positioning", "afk", "random-pick", "held"] {
+            let o = parse(&["--bot", name]).unwrap();
+            assert_eq!(o.bot.map_or("held", SurvivorBotKind::as_str), name);
+        }
+        assert!(parse(&["--bot", "typo"]).is_err());
+        assert!(parse(&["--fixture", "input.json", "--order", "reverse"]).is_err());
+    }
+
     #[test]
     fn held_actor_releases_at_cards_waits_for_reveal_then_represses() {
         use sim::survivors::{Card, FreezeReason, Item, Offer, WeaponId};

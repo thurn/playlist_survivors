@@ -1,0 +1,281 @@
+{
+  "bot": "positioning",
+  "playlistOrder": "original",
+  "seed": 1,
+  "requestedMinutes": 1.0,
+  "playlistSeconds": 126.9979365079365,
+  "prepareWallSeconds": 110.918443542,
+  "runWallSeconds": 0.332165792,
+  "noHeroDamage": false,
+  "streamMode": "concatenated",
+  "report": {
+    "songS": 60.00833333333333,
+    "survivalS": 60.0,
+    "lowestHpShare": 1.0,
+    "hp": [
+      {
+        "runS": 0.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 2.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 3.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 4.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 5.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 6.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 7.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 8.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 9.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 10.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 11.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 12.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 13.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 14.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 15.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 16.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 17.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 18.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 19.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 20.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 21.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 22.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 23.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 24.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 25.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 26.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 27.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 28.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 29.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 30.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 31.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 32.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 33.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 34.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 35.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 36.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 37.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 38.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 39.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 40.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 41.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 42.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 43.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 44.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 45.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 46.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 47.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 48.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 49.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 50.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 51.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 52.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 53.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 54.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 55.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 56.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 57.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 58.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 59.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 60.0,
+        "hpShare": 1.0
+      }
+    ],
+    "levelsByMinute": [
+      {
+        "minute": 0,
+        "level": 1
+      },
+      {
+        "minute": 1,
+        "level": 1
+      }
+    ],
+    "weaponsAtChests": [],
+    "evolutions": [],
+    "peakEnemies": 73,
+    "level": 1,
+    "kills": 1,
+    "fallen": false,
+    "done": false,
+    "settledHash": "85cb947ceca25114",
+    "settledRecords": 174117
+  }
+}

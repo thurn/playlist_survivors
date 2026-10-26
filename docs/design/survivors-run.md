@@ -919,8 +919,9 @@ targets, and they guide the offer table, but no bead fails on them:
 **Where they run:**
 
 - **The gate:** a 3-minute positioning-bot smoke run on one seed, on the
-  committed fixture stream, asserting survival and level ≥ 3 (a sanity check
-  that XP and level-ups work, not pacing). SF9 measures it
+  committed fixture stream, asserting survival. Level ≥ 3 is printed as an XP
+  sanity report; the operator’s only-survival-gates instruction keeps all
+  level-at-time numbers report-only. SF9 measures it
   within the gate's budget.
 - **The release stage:** the full sweep, as a new `ci-full` native step.
   - **Budget:** 20 minutes, with the runs in parallel jobs.
@@ -1018,7 +1019,7 @@ the table.
 | SF6 | `hv-n7fn.6` | The VS spawner and all 31 minutes of the schedule transcribed, enemy roles with VS stats on existing art (stand-ins for the brute and plants), level-scaled HP, the 300 cap, the easy knobs; the director's population and set pieces off for this level | SF1, SF5 |
 | SF7 | `hv-n7fn.7` | `content/offers.yaml` to level 70, the offer rules and fallback, level-up freezes and chaining, confirm after the third card's beat, a plain card overlay | SF3, SF4, SF5 |
 | SF8 | `hv-n7fn.8` | File mode `--playlist` as one source, `native/playlists/survivors-30.m3u`, per-track stream cache, the committed 3-minute fixture stream, `ps survive`'s fast-forward runner through `Engine`, `--record` session files | SF2 |
-| SF9 | `hv-n7fn.9` | Positioning, AFK and random-pick bots; `ps survive` reports; the gate's 3-minute smoke; the release stage's sweep and 30-minute replay steps (report-only) | SF6, SF7, SF8 |
+| SF9 | `hv-n7fn.9` | Positioning, AFK and random-pick bots; `ps survive` reports; the gate's 3-minute smoke; the release stage's sweep and 30-minute replay steps (survival report-only) | SF6, SF7, SF8 |
 | SF10 | `hv-n7fn.10` | Scale and soak: bounded pools and stream-derived state, snapshot cost flat over 30 minutes, 300 enemies and 400 gems benched, rollback CPU at density; F's warden review | SF5, SF6, SF9 |
 | SF11 | `hv-n7fn.11` | Asset intake: Kenney Particle Pack, Kenney Sci-Fi, Digital and Casino sounds, Kenney pixel fonts, game-icons.net SVGs, Source of Tales' `skeleton_boss`, the plant sheets; licences, credits, a first bake | none |
 | **H: The hook (minutes 0–5)** | | | |
@@ -1191,6 +1192,27 @@ establishes silence, while beat confidence still gates re-lock. See
 raw results and the per-track/gap approximation.
 
 ### SF9
+
+The pure players crate supplies positioning, AFK and seeded random-pick bots.
+Positioning holds at most two adjacent arrows per stride, flees a nearby
+crowd-weighted centre and pursues gems only outside its safety radius. Every
+bot releases movement during freezes and waits one heard beat after card3
+before its single pick. Random picks are stable by seed and level when a screen
+reopens. No game stats, offers or easy knobs change. The three-minute Rust
+fixture smoke passes in 1.16 s: 169.121 run seconds after choices, full HP,
+level 3 and peak 300. The level is a report, not a gate. All three bots replay
+their keys and ignore the uncommitted input tail. The separate 20-minute
+release step reports normal-damage runs across five seeds and three orders,
+plus a continuously analysed source; SW7 enables only the survival assertions.
+The complete matrix takes 18m 47s: 17/20 positioning runs finish, 13/20 also
+stay above 25% HP; all 20 AFK runs die before 10:00. Seven failed survival
+criteria remain reports; no values are retuned. A separate release step checks
+the full 30-minute recorded-session replay without spending the matrix budget.
+The normal-damage reverse-order recording replays all 29,528,212 records
+exactly at minimum HP 75%; its replay uses 4.67 GiB peak footprint, an explicit
+before-SF10 baseline. Final fast check passes in 27 s.
+See [SF9 evidence](../../native/evidence/sf9/README.md).
+
 ### SF10
 ### SF11
 

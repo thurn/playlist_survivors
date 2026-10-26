@@ -1,0 +1,23 @@
+survive: cached /Users/dthurn/playlist_survivors/.worktrees/codex-sf9-survival-bots/native/crates/cli/../../../native/playlists/../../public/reactive/hiphop-92-swing/hiphop-92-swing.ogg
+survive: cached /Users/dthurn/playlist_survivors/.worktrees/codex-sf9-survival-bots/native/crates/cli/../../../native/playlists/../../public/reactive/dnb-174/dnb-174.ogg
+survive: cached /Users/dthurn/playlist_survivors/.worktrees/codex-sf9-survival-bots/native/crates/cli/../../../native/playlists/../../public/reactive/accelerando-100-140/accelerando-100-140.ogg
+survive: cached /Users/dthurn/playlist_survivors/.worktrees/codex-sf9-survival-bots/native/crates/cli/../../../native/playlists/../../public/reactive/cc-kimiko-ishizaka-aria/cc-kimiko-ishizaka-aria.ogg
+survive: cached /Users/dthurn/playlist_survivors/.worktrees/codex-sf9-survival-bots/native/crates/cli/../../../native/playlists/../../public/reactive/house-128/house-128.ogg
+       77.04 real        74.89 user         1.56 sys
+           288653312  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+               57626  page reclaims
+                  25  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                1527  voluntary context switches
+               29451  involuntary context switches
+        497306910575  instructions retired
+        139276253661  cycles elapsed
+           269222512  peak memory footprint

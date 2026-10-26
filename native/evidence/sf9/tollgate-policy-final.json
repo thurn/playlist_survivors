@@ -1,0 +1,190 @@
+{
+  "allow_concurrent_roots": false,
+  "allow_no_job": false,
+  "cache": {
+    "epoch": 0,
+    "paths": []
+  },
+  "digest": "2445b715e248deff3541db121b3b4fe3a20d838ed6c8869feb0925e5b064d020",
+  "release_step_graph_digest": "4e584e2f74fffd6504b23fadf609c927dd30fcc917fd2f5a1e18f6b7a2ddfba3",
+  "remote": {
+    "branch": "master",
+    "enabled": true,
+    "name": "origin"
+  },
+  "resources": {
+    "cpu_tokens": 0,
+    "max_buildsets": 4,
+    "max_release_lag": 5,
+    "memory_bytes": 0,
+    "repository_concurrency": 2,
+    "scheduler_weight": 1,
+    "volume_critical_bytes": 10737418240,
+    "volume_emergency_bytes": 536870912,
+    "volume_warning_bytes": 16106127360
+  },
+  "runner": [
+    "/bin/sh",
+    "-c"
+  ],
+  "step_graph_digest": "f9ded41be4c56ed5514880678658b73f5a0885dab1fc64ba61dba4c95f340062",
+  "steps": [
+    {
+      "artifacts": [],
+      "command": {
+        "kind": "shell",
+        "script": "./scripts/ci-gate"
+      },
+      "cpu_tokens": 0,
+      "environment": {
+        "CARGO_TARGET_DIR": "/Users/dthurn/Library/Caches/playlist-survivors/target-gate"
+      },
+      "exclude": [],
+      "final_step": false,
+      "include": [],
+      "memory_bytes": 0,
+      "name": "gate",
+      "needs": [],
+      "remove_environment": [],
+      "rss_limit_bytes": null,
+      "semaphores": [],
+      "soft_needs": [],
+      "timeout_ns": 900000000000,
+      "voting": true,
+      "working_directory": "."
+    },
+    {
+      "artifacts": [],
+      "command": {
+        "kind": "shell",
+        "script": "./scripts/ci-full baker"
+      },
+      "cpu_tokens": 0,
+      "environment": {},
+      "exclude": [],
+      "final_step": false,
+      "include": [],
+      "memory_bytes": 0,
+      "name": "ci-full-baker",
+      "needs": [
+        "gate"
+      ],
+      "remove_environment": [],
+      "rss_limit_bytes": null,
+      "semaphores": [],
+      "soft_needs": [],
+      "stage": "release",
+      "timeout_ns": 1800000000000,
+      "voting": true,
+      "working_directory": "."
+    },
+    {
+      "artifacts": [],
+      "command": {
+        "kind": "shell",
+        "script": "./scripts/ci-full analysis"
+      },
+      "cpu_tokens": 0,
+      "environment": {},
+      "exclude": [],
+      "final_step": false,
+      "include": [],
+      "memory_bytes": 0,
+      "name": "ci-full-analysis",
+      "needs": [
+        "ci-full-baker"
+      ],
+      "remove_environment": [],
+      "rss_limit_bytes": null,
+      "semaphores": [],
+      "soft_needs": [],
+      "stage": "release",
+      "timeout_ns": 1800000000000,
+      "voting": true,
+      "working_directory": "."
+    },
+    {
+      "artifacts": [],
+      "command": {
+        "kind": "shell",
+        "script": "./scripts/ci-full native"
+      },
+      "cpu_tokens": 0,
+      "environment": {
+        "CARGO_TARGET_DIR": "/Users/dthurn/Library/Caches/playlist-survivors/target-release"
+      },
+      "exclude": [],
+      "final_step": false,
+      "include": [],
+      "memory_bytes": 0,
+      "name": "ci-full-native",
+      "needs": [
+        "ci-full-analysis"
+      ],
+      "remove_environment": [],
+      "rss_limit_bytes": null,
+      "semaphores": [],
+      "soft_needs": [],
+      "stage": "release",
+      "timeout_ns": 1800000000000,
+      "voting": true,
+      "working_directory": "."
+    },
+    {
+      "artifacts": [],
+      "command": {
+        "kind": "shell",
+        "script": "./scripts/ci-full survivors"
+      },
+      "cpu_tokens": 0,
+      "environment": {
+        "CARGO_TARGET_DIR": "/Users/dthurn/Library/Caches/playlist-survivors/target-release-survivors"
+      },
+      "exclude": [],
+      "final_step": false,
+      "include": [],
+      "memory_bytes": 0,
+      "name": "ci-full-survivors",
+      "needs": [
+        "ci-full-native"
+      ],
+      "remove_environment": [],
+      "rss_limit_bytes": null,
+      "semaphores": [],
+      "soft_needs": [],
+      "stage": "release",
+      "timeout_ns": 1200000000000,
+      "voting": true,
+      "working_directory": "."
+    },
+    {
+      "artifacts": [],
+      "command": {
+        "kind": "shell",
+        "script": "./scripts/ci-full survivors-replay"
+      },
+      "cpu_tokens": 0,
+      "environment": {
+        "CARGO_TARGET_DIR": "/Users/dthurn/Library/Caches/playlist-survivors/target-release-survivors-replay"
+      },
+      "exclude": [],
+      "final_step": false,
+      "include": [],
+      "memory_bytes": 0,
+      "name": "ci-full-survivors-replay",
+      "needs": [
+        "ci-full-survivors"
+      ],
+      "remove_environment": [],
+      "rss_limit_bytes": null,
+      "semaphores": [],
+      "soft_needs": [],
+      "stage": "release",
+      "timeout_ns": 1200000000000,
+      "voting": true,
+      "working_directory": "."
+    }
+  ],
+  "sync_user_master": "staging",
+  "version": 1
+}

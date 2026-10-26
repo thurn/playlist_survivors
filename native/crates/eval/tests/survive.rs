@@ -121,3 +121,90 @@ fn future_stream_entries_cannot_change_a_driven_prefix() {
     assert_eq!(a.settled_hash, b.settled_hash);
     assert_eq!(a.settled_records, b.settled_records);
 }
+
+#[test]
+fn positioning_survives_the_three_minute_rust_fixture_smoke() {
+    use players::{SurvivorBot, SurvivorBotKind};
+    let start = std::time::Instant::now();
+    let report = eval::survive::drive(
+        &mut engine(),
+        fixture(),
+        &mut SurvivorBot::new(SurvivorBotKind::Positioning, 1),
+        180.0,
+        180.0,
+    );
+    eprintln!(
+        "SF9 gate smoke: {:.3} song s, {:.3} run s, HP min {:.3}, level {}, peak {}, records {}, {:.3} wall s",
+        report.song_s,
+        report.survival_s,
+        report.lowest_hp_share,
+        report.level,
+        report.peak_enemies,
+        report.settled_records,
+        start.elapsed().as_secs_f64()
+    );
+    assert!(
+        !report.fallen,
+        "positioning must survive the fixture prefix"
+    );
+    // Level stays report-only; full-run HP-floor balance begins gating at SW7.
+}
+
+#[test]
+fn all_survivor_bots_replay_their_real_keys_and_only_see_known_input() {
+    use players::{SurvivorBot, SurvivorBotKind};
+    for kind in [
+        SurvivorBotKind::Positioning,
+        SurvivorBotKind::Afk,
+        SurvivorBotKind::RandomPick,
+    ] {
+        let mut e = engine();
+        e.key_log = Some(Vec::new());
+        let r = eval::survive::drive(
+            &mut e,
+            fixture(),
+            &mut SurvivorBot::new(kind, 7),
+            60.0,
+            60.0,
+        );
+        let keys: Vec<_> = e
+            .key_log
+            .as_ref()
+            .unwrap()
+            .iter()
+            .map(|k| AppliedKey {
+                run: 0,
+                s: k.s,
+                key: format!("{:?}", k.key),
+                pressed: k.kind == KeyEventKind::Press,
+            })
+            .collect();
+        let run = RecordedRun {
+            index: 0,
+            s0: 0.0,
+            end: r.song_s,
+            hash: e.settled_hash,
+            records: e.settled_count,
+        };
+        let replay = replay_run(&mut engine(), fixture(), &keys, &run, 70.0).unwrap();
+        assert_eq!(replay.hash, Some(run.hash), "{} replay", kind.as_str());
+        let prefix: Vec<_> = fixture()
+            .iter()
+            .take_while(|a| a.arrived <= 60.0)
+            .cloned()
+            .collect();
+        let short = eval::survive::drive(
+            &mut engine(),
+            &prefix,
+            &mut SurvivorBot::new(kind, 7),
+            60.0,
+            60.0,
+        );
+        assert_eq!(
+            r.settled_hash,
+            short.settled_hash,
+            "{} future-input leak",
+            kind.as_str()
+        );
+    }
+}

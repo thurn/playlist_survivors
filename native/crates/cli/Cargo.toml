@@ -16,6 +16,7 @@ libc = "0.2"
 serde = "1"
 serde_json = "1"
 sim = { path = "../sim" }
+players = { path = "../players" }
 stream = { path = "../stream" }
 
 [lints]

@@ -7,6 +7,7 @@ use analysis::{
 };
 use eval::session::{Arrival, Entry, from_analyzer};
 use serde::{Deserialize, Serialize};
+use stream::playlist::Playlist;
 
 static NEXT_TEMP: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 use std::io::Write;
@@ -180,6 +181,52 @@ pub fn cached(
 ) -> Result<TrackStream, String> {
     let bytes = std::fs::read(path).map_err(|e| format!("{}: {e}", path.display()))?;
     let key = hash(&[version.as_bytes(), &bytes])?;
+    stored(dir, &key, &path.display().to_string(), || {
+        analyse(models, &decode(path, &key)?, key.clone())
+    })
+}
+
+fn playlist_key(playlist: &Playlist, version: &str) -> Result<String, String> {
+    let mut audio_keys = std::collections::BTreeMap::new();
+    let mut order = Vec::new();
+    for track in &playlist.tracks {
+        if !audio_keys.contains_key(&track.path) {
+            let bytes =
+                std::fs::read(&track.path).map_err(|e| format!("{}: {e}", track.path.display()))?;
+            audio_keys.insert(track.path.clone(), hash(&[&bytes])?);
+        }
+        order.push((audio_keys[&track.path].clone(), track.gap_before));
+    }
+    let order = serde_json::to_vec(&order).map_err(|e| e.to_string())?;
+    hash(&[
+        b"continuous-playlist",
+        version.as_bytes(),
+        include_bytes!("../../stream/src/playlist.rs"),
+        &order,
+    ])
+}
+
+/// The continuous-analysis release lane shares one source- and audio-keyed cache. A warm
+/// read needs no PCM decoding; tracks, order, gaps and every analyzer input enter the key.
+pub fn cached_concatenation(
+    playlist: &Playlist,
+    dir: &Path,
+    version: &str,
+    models: &Tensors,
+) -> Result<TrackStream, String> {
+    let key = playlist_key(playlist, version)?;
+    stored(dir, &key, "continuous playlist", || {
+        let audio = playlist.decode(44100.0, |path| decode(path, "concatenated"))?;
+        analyse(models, &audio, key.clone())
+    })
+}
+
+fn stored(
+    dir: &Path,
+    key: &str,
+    label: &str,
+    build: impl FnOnce() -> Result<TrackStream, String>,
+) -> Result<TrackStream, String> {
     let dest = dir.join(format!("{key}.json"));
     if dest.exists() {
         let stream: TrackStream =
@@ -195,11 +242,11 @@ pub fn cached(
         {
             return Err(format!("invalid stream cache {}", dest.display()));
         }
-        eprintln!("survive: cached {}", path.display());
+        eprintln!("survive: cached {label}");
         return Ok(stream);
     }
-    eprintln!("survive: analysing {}", path.display());
-    let stream = analyse(models, &decode(path, &key)?, key.clone())?;
+    eprintln!("survive: analysing {label}");
+    let stream = build()?;
     std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
     let serial = NEXT_TEMP.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     let temp = dir.join(format!(".{key}-{}-{serial}.tmp", std::process::id()));
@@ -267,6 +314,53 @@ mod tests {
             (13.0, vec![11.0, 12.0], vec![11.1, 12.1])
         );
     }
+    #[test]
+    fn continuous_cache_tracks_audio_order_gaps_and_version_without_path_identity() {
+        use stream::playlist::Track;
+        struct Folder(PathBuf);
+        impl Drop for Folder {
+            fn drop(&mut self) {
+                let _ = std::fs::remove_dir_all(&self.0);
+            }
+        }
+        let serial = NEXT_TEMP.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let folder = Folder(
+            std::env::temp_dir().join(format!("ps-playlist-key-{}-{serial}", std::process::id())),
+        );
+        std::fs::create_dir(&folder.0).unwrap();
+        let a = folder.0.join("a");
+        let b = folder.0.join("b");
+        let copy = folder.0.join("copy");
+        std::fs::write(&a, b"audio-a").unwrap();
+        std::fs::write(&b, b"audio-b").unwrap();
+        std::fs::write(&copy, b"audio-a").unwrap();
+        let p = Playlist {
+            tracks: vec![
+                Track {
+                    path: a,
+                    gap_before: 0.0,
+                },
+                Track {
+                    path: b.clone(),
+                    gap_before: 2.0,
+                },
+            ],
+        };
+        let key = playlist_key(&p, "version-1").unwrap();
+        assert_ne!(key, playlist_key(&p, "version-2").unwrap());
+        let mut changed = p.clone();
+        changed.tracks.reverse();
+        assert_ne!(key, playlist_key(&changed, "version-1").unwrap());
+        changed = p.clone();
+        changed.tracks[1].gap_before = 8.0;
+        assert_ne!(key, playlist_key(&changed, "version-1").unwrap());
+        changed = p.clone();
+        changed.tracks[0].path = copy;
+        assert_eq!(key, playlist_key(&changed, "version-1").unwrap());
+        std::fs::write(b, b"changed-audio").unwrap();
+        assert_ne!(key, playlist_key(&p, "version-1").unwrap());
+    }
+
     #[test]
     fn cache_keys_include_audio_and_version() {
         let a = hash(&[b"v1", b"audio"]).unwrap();

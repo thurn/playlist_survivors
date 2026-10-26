@@ -4,7 +4,7 @@
 # waits for it. Run it locally only when a change touches CI scripts, the Tollgate policy,
 # workspace-wide configuration or shared test infrastructure.
 #
-#   scripts/ci-full [baker|analysis|native]    # one section (a Tollgate release step each), or all
+#   scripts/ci-full [baker|analysis|native|survivors|survivors-replay]    # one section (a Tollgate release step each), or all
 set -eu
 cd "$(dirname "$0")/.."
 . scripts/lib/changes.sh
@@ -13,8 +13,8 @@ section="${1:-all}"
 STAMPS="${PS_CI_STAMPS:-$HOME/Library/Caches/playlist-survivors/ci-stamps}"
 
 case "$section" in
-  all|baker|analysis|native) ;;
-  *) echo "usage: scripts/ci-full [baker|analysis|native]" >&2; exit 2 ;;
+  all|baker|analysis|native|survivors|survivors-replay) ;;
+  *) echo "usage: scripts/ci-full [baker|analysis|native|survivors|survivors-replay]" >&2; exit 2 ;;
 esac
 
 # The asset baker (tools/baker): its lint, typecheck and the baked assets' check.
@@ -92,4 +92,19 @@ if [ "$section" = all ] || [ "$section" = native ]; then
   # work (sim, evaluate, encode) offscreen.
   (cd native && cargo run --locked --release -p cli -- runner-bench --check)
   (cd native && cargo run --locked --release -p app -- --bench --check)
+fi
+
+# SF9's own release step: utility QoS, a bounded matrix, source-keyed skip, 20-minute budget.
+# SW7 adds --assert-survival here; pacing always remains report-only.
+if [ "$section" = all ] || [ "$section" = survivors ]; then
+  uv run --directory tools/analysis ruff check ../../native/scripts/survivors_sweep.py ../../native/scripts/test_survivors_sweep.py
+  uv run --no-project python -m unittest native/scripts/test_survivors_sweep.py
+  uv run --no-project python native/scripts/survivors_sweep.py --release
+fi
+
+# Full 30:00 exact replay is a separate step so its work does not consume the matrix budget.
+if [ "$section" = all ] || [ "$section" = survivors-replay ]; then
+  uv run --directory tools/analysis ruff check ../../native/scripts/survivors_sweep.py ../../native/scripts/test_survivors_sweep.py
+  uv run --no-project python -m unittest native/scripts/test_survivors_sweep.py
+  uv run --no-project python native/scripts/survivors_sweep.py --release --replay-only
 fi

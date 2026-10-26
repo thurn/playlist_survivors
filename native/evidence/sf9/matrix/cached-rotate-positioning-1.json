@@ -1,0 +1,7357 @@
+{
+  "bot": "positioning",
+  "playlistOrder": "rotate",
+  "seed": 1,
+  "requestedMinutes": 30.0,
+  "playlistSeconds": 2294.042448979592,
+  "prepareWallSeconds": 0.352955416,
+  "runWallSeconds": 84.712424875,
+  "noHeroDamage": false,
+  "streamMode": "cached-tracks",
+  "report": {
+    "songS": 1859.8583333333333,
+    "survivalS": 1800.0,
+    "lowestHpShare": 0.6299645849080915,
+    "hp": [
+      {
+        "runS": 0.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 2.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 3.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 4.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 5.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 6.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 7.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 8.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 9.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 10.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 11.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 12.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 13.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 14.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 15.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 16.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 17.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 18.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 19.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 20.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 21.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 22.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 23.005,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 24.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 25.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 26.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 27.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 28.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 29.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 30.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 31.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 32.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 33.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 34.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 35.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 36.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 37.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 38.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 39.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 40.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 41.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 42.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 43.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 44.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 45.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 46.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 47.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 48.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 49.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 50.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 51.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 52.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 53.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 54.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 55.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 56.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 57.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 58.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 59.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 60.005,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 61.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 62.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 63.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 64.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 65.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 66.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 67.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 68.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 69.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 70.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 71.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 72.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 73.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 74.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 75.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 76.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 77.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 78.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 79.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 80.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 81.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 82.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 83.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 84.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 85.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 86.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 87.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 88.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 89.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 90.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 91.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 92.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 93.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 94.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 95.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 96.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 97.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 98.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 99.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 100.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 101.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 102.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 103.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 104.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 105.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 106.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 107.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 108.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 109.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 110.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 111.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 112.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 113.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 114.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 115.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 116.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 117.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 118.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 119.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 120.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 121.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 122.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 123.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 124.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 125.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 126.00000000000001,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 127.00000000000001,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 128.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 129.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 130.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 131.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 132.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 133.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 134.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 135.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 136.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 137.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 138.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 139.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 140.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 141.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 142.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 143.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 144.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 145.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 146.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 147.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 148.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 149.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 150.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 151.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 152.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 153.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 154.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 155.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 156.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 157.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 158.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 159.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 160.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 161.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 162.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 163.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 164.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 165.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 166.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 167.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 168.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 169.00310430839005,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 170.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 171.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 172.00310430839005,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 173.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 174.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 175.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 176.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 177.00060430839005,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 178.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 179.00310430839005,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 180.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 181.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 182.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 183.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 184.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 185.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 186.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 187.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 188.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 189.00310430839005,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 190.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 191.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 192.00310430839005,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 193.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 194.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 195.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 196.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 197.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 198.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 199.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 200.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 201.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 202.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 203.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 204.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 205.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 206.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 207.00310430839005,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 208.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 209.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 210.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 211.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 212.00310430839005,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 213.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 214.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 215.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 216.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 217.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 218.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 219.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 220.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 221.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 222.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 223.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 224.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 225.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 226.00060430839005,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 227.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 228.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 229.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 230.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 231.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 232.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 233.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 234.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 235.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 236.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 237.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 238.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 239.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 240.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 241.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 242.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 243.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 244.00060430839005,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 245.00560430839005,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 246.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 247.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 248.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 249.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 250.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 251.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 252.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 253.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 254.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 255.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 256.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 257.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 258.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 259.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 260.00560430839005,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 261.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 262.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 263.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 264.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 265.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 266.0056043083901,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 267.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 268.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 269.0006043083901,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 270.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 271.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 272.0056043083901,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 273.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 274.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 275.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 276.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 277.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 278.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 279.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 280.0006043083901,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 281.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 282.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 283.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 284.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 285.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 286.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 287.0006043083901,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 288.0056043083901,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 289.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 290.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 291.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 292.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 293.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 294.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 295.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 296.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 297.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 298.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 299.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 300.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 301.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 302.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 303.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 304.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 305.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 306.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 307.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 308.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 309.0056043083901,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 310.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 311.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 312.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 313.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 314.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 315.0056043083901,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 316.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 317.0056043083901,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 318.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 319.0056043083901,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 320.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 321.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 322.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 323.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 324.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 325.00060430839005,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 326.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 327.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 328.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 329.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 330.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 331.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 332.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 333.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 334.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 335.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 336.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 337.0056043083901,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 338.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 339.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 340.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 341.0056043083901,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 342.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 343.00810430839016,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 344.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 345.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 346.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 347.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 348.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 349.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 350.00060430839017,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 351.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 352.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 353.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 354.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 355.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 356.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 357.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 358.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 359.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 360.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 361.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 362.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 363.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 364.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 365.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 366.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 367.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 368.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 369.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 370.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 371.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 372.00560430839016,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 373.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 374.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 375.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 376.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 377.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 378.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 379.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 380.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 381.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 382.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 383.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 384.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 385.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 386.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 387.0056043083901,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 388.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 389.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 390.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 391.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 392.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 393.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 394.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 395.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 396.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 397.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 398.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 399.00810430839016,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 400.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 401.0056043083901,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 402.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 403.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 404.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 405.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 406.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 407.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 408.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 409.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 410.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 411.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 412.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 413.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 414.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 415.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 416.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 417.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 418.00560430839016,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 419.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 420.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 421.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 422.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 423.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 424.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 425.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 426.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 427.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 428.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 429.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 430.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 431.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 432.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 433.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 434.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 435.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 436.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 437.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 438.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 439.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 440.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 441.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 442.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 443.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 444.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 445.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 446.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 447.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 448.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 449.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 450.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 451.00560430839016,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 452.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 453.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 454.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 455.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 456.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 457.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 458.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 459.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 460.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 461.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 462.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 463.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 464.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 465.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 466.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 467.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 468.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 469.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 470.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 471.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 472.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 473.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 474.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 475.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 476.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 477.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 478.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 479.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 480.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 481.00816666666674,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 482.00816666666674,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 483.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 484.00816666666674,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 485.00816666666674,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 486.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 487.00816666666674,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 488.00816666666674,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 489.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 490.00816666666674,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 491.00816666666674,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 492.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 493.0081666666668,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 494.0081666666668,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 495.0081666666668,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 496.0081666666668,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 497.0081666666668,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 498.0081666666668,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 499.0081666666668,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 500.0081666666668,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 501.0041530612246,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 502.0091530612246,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 503.0041530612246,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 504.0081666666668,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 505.0081666666668,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 506.0081666666668,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 507.0081666666668,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 508.0081666666668,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 509.0081666666668,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 510.0081666666668,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 511.0081666666668,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 512.0081666666669,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 513.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 514.0081666666669,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 515.0081666666669,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 516.0041530612247,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 517.0091530612247,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 518.0091530612247,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 519.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 520.0081666666669,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 521.0081666666669,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 522.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 523.0081666666669,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 524.0081666666669,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 525.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 526.0081666666669,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 527.0081666666669,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 528.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 529.0081666666669,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 530.0081666666669,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 531.0041530612247,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 532.0091530612247,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 533.0041530612247,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 534.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 535.0081666666669,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 536.0081666666669,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 537.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 538.0081666666669,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 539.0081666666669,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 540.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 541.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 542.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 543.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 544.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 545.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 546.0041530612247,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 547.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 548.0041530612247,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 549.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 550.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 551.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 552.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 553.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 554.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 555.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 556.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 557.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 558.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 559.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 560.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 561.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 562.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 563.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 564.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 565.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 566.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 567.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 568.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 569.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 570.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 571.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 572.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 573.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 574.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 575.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 576.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 577.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 578.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 579.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 580.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 581.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 582.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 583.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 584.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 585.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 586.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 587.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 588.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 589.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 590.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 591.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 592.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 593.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 594.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 595.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 596.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 597.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 598.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 599.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 600.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 601.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 602.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 603.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 604.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 605.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 606.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 607.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 608.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 609.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 610.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 611.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 612.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 613.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 614.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 615.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 616.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 617.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 618.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 619.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 620.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 621.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 622.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 623.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 624.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 625.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 626.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 627.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 628.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 629.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 630.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 631.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 632.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 633.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 634.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 635.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 636.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 637.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 638.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 639.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 640.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 641.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 642.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 643.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 644.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 645.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 646.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 647.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 648.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 649.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 650.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 651.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 652.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 653.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 654.0,
+        "hpShare": 0.875
+      },
+      {
+        "runS": 655.0,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 656.0,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 657.0,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 658.0,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 659.0,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 660.0,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 661.0000000000002,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 662.0000000000005,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 663.0000000000007,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 664.0010895691612,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 665.0000000000011,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 666.0000000000014,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 667.0000000000016,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 668.0000000000018,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 669.000000000002,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 670.0000000000023,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 671.0000000000025,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 672.0000000000027,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 673.000000000003,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 674.0000000000032,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 675.0000000000034,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 676.0000000000036,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 677.0000000000039,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 678.0000000000041,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 679.0000000000043,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 680.0000000000045,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 681.0000000000048,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 682.000000000005,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 683.0000000000052,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 684.0000000000055,
+        "hpShare": 0.8125
+      },
+      {
+        "runS": 685.0000000000057,
+        "hpShare": 0.75
+      },
+      {
+        "runS": 686.0000000000059,
+        "hpShare": 0.75
+      },
+      {
+        "runS": 687.0000000000061,
+        "hpShare": 0.75
+      },
+      {
+        "runS": 688.0000000000064,
+        "hpShare": 0.75
+      },
+      {
+        "runS": 689.0000000000066,
+        "hpShare": 0.75
+      },
+      {
+        "runS": 690.0000000000068,
+        "hpShare": 0.75
+      },
+      {
+        "runS": 691.000000000007,
+        "hpShare": 0.75
+      },
+      {
+        "runS": 692.0000000000073,
+        "hpShare": 0.75
+      },
+      {
+        "runS": 693.0000000000075,
+        "hpShare": 0.75
+      },
+      {
+        "runS": 694.0000000000077,
+        "hpShare": 0.75
+      },
+      {
+        "runS": 695.002216553288,
+        "hpShare": 0.75
+      },
+      {
+        "runS": 696.0000000000082,
+        "hpShare": 0.75
+      },
+      {
+        "runS": 697.0000000000084,
+        "hpShare": 0.75
+      },
+      {
+        "runS": 698.0000000000086,
+        "hpShare": 0.75
+      },
+      {
+        "runS": 699.0000000000089,
+        "hpShare": 0.75
+      },
+      {
+        "runS": 700.0022165532881,
+        "hpShare": 0.75
+      },
+      {
+        "runS": 701.0000000000093,
+        "hpShare": 0.75
+      },
+      {
+        "runS": 702.0022165532881,
+        "hpShare": 0.75
+      },
+      {
+        "runS": 703.0000000000098,
+        "hpShare": 0.75
+      },
+      {
+        "runS": 704.00000000001,
+        "hpShare": 0.9652777777777778
+      },
+      {
+        "runS": 705.0000000000102,
+        "hpShare": 0.9652777777777778
+      },
+      {
+        "runS": 706.0000000000105,
+        "hpShare": 0.9652777777777778
+      },
+      {
+        "runS": 707.0000000000107,
+        "hpShare": 0.9652777777777778
+      },
+      {
+        "runS": 708.0000000000109,
+        "hpShare": 0.9652777777777778
+      },
+      {
+        "runS": 709.0000000000111,
+        "hpShare": 0.9652777777777778
+      },
+      {
+        "runS": 710.0000000000114,
+        "hpShare": 0.9652777777777778
+      },
+      {
+        "runS": 711.0000000000116,
+        "hpShare": 0.9652777777777778
+      },
+      {
+        "runS": 712.0000000000118,
+        "hpShare": 0.9652777777777778
+      },
+      {
+        "runS": 713.000000000012,
+        "hpShare": 0.9652777777777778
+      },
+      {
+        "runS": 714.0000000000123,
+        "hpShare": 0.9652777777777778
+      },
+      {
+        "runS": 715.0000000000125,
+        "hpShare": 0.9652777777777778
+      },
+      {
+        "runS": 716.0000000000127,
+        "hpShare": 0.9652777777777778
+      },
+      {
+        "runS": 717.002216553288,
+        "hpShare": 0.9652777777777778
+      },
+      {
+        "runS": 718.0000000000132,
+        "hpShare": 0.9652777777777778
+      },
+      {
+        "runS": 719.0000000000134,
+        "hpShare": 0.9652777777777778
+      },
+      {
+        "runS": 720.0,
+        "hpShare": 0.9652777777777778
+      },
+      {
+        "runS": 721.0000000000136,
+        "hpShare": 0.9652777777777778
+      },
+      {
+        "runS": 722.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 723.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 724.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 725.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 726.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 727.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 728.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 729.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 730.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 731.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 732.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 733.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 734.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 735.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 736.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 737.002216553288,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 738.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 739.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 740.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 741.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 742.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 743.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 744.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 745.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 746.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 747.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 748.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 749.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 750.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 751.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 752.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 753.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 754.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 755.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 756.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 757.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 758.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 759.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 760.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 761.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 762.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 763.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 764.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 765.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 766.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 767.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 768.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 769.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 770.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 771.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 772.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 773.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 774.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 775.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 776.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 777.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 778.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 779.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 780.0,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 781.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 782.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 783.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 784.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 785.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 786.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 787.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 788.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 789.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 790.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 791.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 792.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 793.002216553288,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 794.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 795.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 796.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 797.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 798.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 799.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 800.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 801.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 802.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 803.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 804.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 805.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 806.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 807.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 808.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 809.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 810.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 811.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 812.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 813.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 814.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 815.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 816.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 817.002216553288,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 818.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 819.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 820.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 821.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 822.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 823.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 824.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 825.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 826.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 827.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 828.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 829.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 830.002216553288,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 831.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 832.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 833.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 834.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 835.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 836.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 837.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 838.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 839.0000000000136,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 840.0,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 841.0000000000139,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 842.002216553288,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 843.0000000000143,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 844.0000000000146,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 845.0000000000148,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 846.000000000015,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 847.0000000000152,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 848.0000000000155,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 849.0000000000157,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 850.0000000000159,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 851.0000000000161,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 852.0000000000164,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 853.0000000000166,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 854.0000000000168,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 855.000000000017,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 856.0000000000173,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 857.0000000000175,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 858.0000000000177,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 859.000000000018,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 860.0000000000182,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 861.0000000000184,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 862.0000000000186,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 863.0000000000189,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 864.0000000000191,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 865.0000000000193,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 866.0000000000196,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 867.0000000000198,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 868.00000000002,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 869.0000000000202,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 870.0000000000205,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 871.0000000000207,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 872.0000000000209,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 873.0000000000211,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 874.0000000000214,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 875.0000000000216,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 876.0000000000218,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 877.000000000022,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 878.0000000000223,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 879.0000000000225,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 880.0000000000227,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 881.000000000023,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 882.0000000000232,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 883.0000000000234,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 884.0000000000236,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 885.0000000000239,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 886.0000000000241,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 887.002216553288,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 888.0000000000246,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 889.0000000000248,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 890.000000000025,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 891.0000000000252,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 892.0000000000255,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 893.0000000000257,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 894.0000000000259,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 895.0000000000261,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 896.0000000000264,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 897.0000000000266,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 898.0000000000268,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 899.0000000000271,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 900.0,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 901.0000000000275,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 902.0000000000277,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 903.000000000028,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 904.0000000000282,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 905.0000000000284,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 906.0000000000286,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 907.0000000000289,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 908.0000000000291,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 909.0000000000293,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 910.002216553288,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 911.0000000000298,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 912.00000000003,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 913.0000000000302,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 914.0000000000305,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 915.0000000000307,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 916.0000000000309,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 917.0000000000312,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 918.0000000000314,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 919.0000000000316,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 920.0000000000318,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 921.002216553288,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 922.0000000000323,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 923.0000000000325,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 924.0000000000327,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 925.000000000033,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 926.0000000000332,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 927.0000000000334,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 928.0000000000337,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 929.0000000000339,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 930.0000000000341,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 931.0000000000343,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 932.0000000000346,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 933.0000000000348,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 934.000000000035,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 935.0000000000352,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 936.0000000000355,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 937.0000000000357,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 938.0000000000359,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 939.0000000000362,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 940.0000000000364,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 941.0000000000366,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 942.0000000000368,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 943.0000000000371,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 944.0000000000373,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 945.0000000000375,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 946.0000000000377,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 947.000000000038,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 948.0000000000382,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 949.0000000000384,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 950.0000000000387,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 951.0000000000389,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 952.002216553288,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 953.0000000000393,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 954.0000000000396,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 955.0000000000398,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 956.00000000004,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 957.0000000000402,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 958.0000000000405,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 959.0000000000407,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 960.0,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 961.0000000000412,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 962.0000000000414,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 963.002216553288,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 964.0000000000418,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 965.0000000000421,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 966.0000000000423,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 967.0000000000425,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 968.0000000000427,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 969.000000000043,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 970.0000000000432,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 971.0000000000434,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 972.0000000000437,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 973.0000000000439,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 974.0000000000441,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 975.0000000000443,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 976.0000000000446,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 977.0000000000448,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 978.000000000045,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 979.0000000000452,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 980.0000000000455,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 981.0000000000457,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 982.0000000000459,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 983.0000000000462,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 984.0000000000464,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 985.0000000000466,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 986.0000000000468,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 987.0000000000471,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 988.0000000000473,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 989.0000000000475,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 990.0000000000477,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 991.000000000048,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 992.0000000000482,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 993.0000000000484,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 994.0000000000487,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 995.0000000000489,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 996.0000000000491,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 997.0000000000493,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 998.002216553288,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 999.0000000000498,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1000.00000000005,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1001.0000000000502,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1002.0000000000505,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1003.0000000000507,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1004.0000000000509,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1005.0000000000512,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1006.0000000000514,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1007.0000000000516,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1008.0000000000518,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1009.0000000000521,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1010.0000000000523,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1011.0000000000525,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1012.0000000000528,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1013.000000000053,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1014.0000000000532,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1015.0000000000534,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1016.0000000000537,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1017.0000000000539,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1018.0000000000541,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1019.0000000000543,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1020.0,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1021.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1022.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1023.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1024.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1025.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1026.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1027.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1028.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1029.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1030.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1031.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1032.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1033.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1034.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1035.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1036.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1037.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1038.0022165532882,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1039.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1040.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1041.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1042.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1043.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1044.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1045.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1046.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1047.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1048.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1049.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1050.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1051.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1052.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1053.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1054.0007653061225,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1055.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1056.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1057.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1058.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1059.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1060.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1061.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1062.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1063.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1064.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1065.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1066.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1067.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1068.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1069.0007653061225,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1070.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1071.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1072.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1073.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1074.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1075.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1076.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1077.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1078.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1079.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1080.0,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1081.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1082.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1083.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1084.0007653061225,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1085.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1086.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1087.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1088.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1089.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1090.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1091.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1092.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1093.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1094.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1095.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1096.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1097.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1098.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1099.0007653061225,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1100.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1101.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1102.0000000000546,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1103.0007653061225,
+        "hpShare": 0.861111111111111
+      },
+      {
+        "runS": 1104.0000000000546,
+        "hpShare": 0.8619927484882843
+      },
+      {
+        "runS": 1105.0000000000546,
+        "hpShare": 0.863150155895692
+      },
+      {
+        "runS": 1106.0000000000546,
+        "hpShare": 0.8643075633030997
+      },
+      {
+        "runS": 1107.0000000000546,
+        "hpShare": 0.8654649707105073
+      },
+      {
+        "runS": 1108.0000000000546,
+        "hpShare": 0.866622378117915
+      },
+      {
+        "runS": 1109.0000000000546,
+        "hpShare": 0.8677797855253226
+      },
+      {
+        "runS": 1110.0000000000546,
+        "hpShare": 0.8689371929327304
+      },
+      {
+        "runS": 1111.0000000000546,
+        "hpShare": 0.8700946003401381
+      },
+      {
+        "runS": 1112.0000000000546,
+        "hpShare": 0.8712520077475457
+      },
+      {
+        "runS": 1113.0000000000546,
+        "hpShare": 0.8724040139203852
+      },
+      {
+        "runS": 1114.0000000000546,
+        "hpShare": 0.873561421327793
+      },
+      {
+        "runS": 1115.0000000000546,
+        "hpShare": 0.8747188287352007
+      },
+      {
+        "runS": 1116.0000000000546,
+        "hpShare": 0.823792902809275
+      },
+      {
+        "runS": 1117.0000000000546,
+        "hpShare": 0.8249503102166826
+      },
+      {
+        "runS": 1118.0000000000546,
+        "hpShare": 0.8261077176240903
+      },
+      {
+        "runS": 1119.0000000000546,
+        "hpShare": 0.827265125031498
+      },
+      {
+        "runS": 1120.0000000000546,
+        "hpShare": 0.8284225324389056
+      },
+      {
+        "runS": 1121.0000000000546,
+        "hpShare": 0.8295799398463133
+      },
+      {
+        "runS": 1122.0000000000546,
+        "hpShare": 0.830737347253721
+      },
+      {
+        "runS": 1123.0000000000546,
+        "hpShare": 0.8318947546611287
+      },
+      {
+        "runS": 1124.0000000000546,
+        "hpShare": 0.8330521620685364
+      },
+      {
+        "runS": 1125.0000000000546,
+        "hpShare": 0.834209569475944
+      },
+      {
+        "runS": 1126.0000000000546,
+        "hpShare": 0.8353669768833517
+      },
+      {
+        "runS": 1127.0000000000546,
+        "hpShare": 0.8365243842907594
+      },
+      {
+        "runS": 1128.0000000000546,
+        "hpShare": 0.837681791698167
+      },
+      {
+        "runS": 1129.0000000000546,
+        "hpShare": 0.8388391991055747
+      },
+      {
+        "runS": 1130.0000000000546,
+        "hpShare": 0.8399966065129824
+      },
+      {
+        "runS": 1131.0000000000546,
+        "hpShare": 0.84115401392039
+      },
+      {
+        "runS": 1132.0000000000546,
+        "hpShare": 0.8423114213277977
+      },
+      {
+        "runS": 1133.0000000000546,
+        "hpShare": 0.8434688287352053
+      },
+      {
+        "runS": 1134.0000000000546,
+        "hpShare": 0.844626236142613
+      },
+      {
+        "runS": 1135.0000000000546,
+        "hpShare": 0.8457836435500207
+      },
+      {
+        "runS": 1136.0000000000546,
+        "hpShare": 0.8469410509574283
+      },
+      {
+        "runS": 1137.0000000000546,
+        "hpShare": 0.8480984583648361
+      },
+      {
+        "runS": 1138.0000000000546,
+        "hpShare": 0.8492558657722438
+      },
+      {
+        "runS": 1139.0000000000546,
+        "hpShare": 0.8504132731796514
+      },
+      {
+        "runS": 1140.0,
+        "hpShare": 0.8515706805870591
+      },
+      {
+        "runS": 1141.0000000000546,
+        "hpShare": 0.8527280879944668
+      },
+      {
+        "runS": 1142.0000000000546,
+        "hpShare": 0.8538854954018744
+      },
+      {
+        "runS": 1143.0000000000546,
+        "hpShare": 0.8550429028092821
+      },
+      {
+        "runS": 1144.0000000000546,
+        "hpShare": 0.8562003102166897
+      },
+      {
+        "runS": 1145.0000000000546,
+        "hpShare": 0.8573577176240974
+      },
+      {
+        "runS": 1146.0000000000546,
+        "hpShare": 0.8585151250315051
+      },
+      {
+        "runS": 1147.0000000000546,
+        "hpShare": 0.8596725324389127
+      },
+      {
+        "runS": 1148.0000000000546,
+        "hpShare": 0.8608299398463204
+      },
+      {
+        "runS": 1149.0000000000546,
+        "hpShare": 0.861987347253728
+      },
+      {
+        "runS": 1150.0000000000546,
+        "hpShare": 0.8631447546611358
+      },
+      {
+        "runS": 1151.0000000000546,
+        "hpShare": 0.8643021620685435
+      },
+      {
+        "runS": 1152.0000000000546,
+        "hpShare": 0.8654595694759512
+      },
+      {
+        "runS": 1153.0000000000546,
+        "hpShare": 0.8666169768833588
+      },
+      {
+        "runS": 1154.0000000000546,
+        "hpShare": 0.8677743842907665
+      },
+      {
+        "runS": 1155.0000000000546,
+        "hpShare": 0.8689317916981741
+      },
+      {
+        "runS": 1156.0000000000546,
+        "hpShare": 0.8700891991055818
+      },
+      {
+        "runS": 1157.0000000000546,
+        "hpShare": 0.8712466065129895
+      },
+      {
+        "runS": 1158.000724489796,
+        "hpShare": 0.8724040139203971
+      },
+      {
+        "runS": 1159.0000000000546,
+        "hpShare": 0.8735614213278048
+      },
+      {
+        "runS": 1160.0000000000546,
+        "hpShare": 0.8747188287352125
+      },
+      {
+        "runS": 1161.0000000000546,
+        "hpShare": 0.8758762361426201
+      },
+      {
+        "runS": 1162.0000000000546,
+        "hpShare": 0.8770336435500278
+      },
+      {
+        "runS": 1163.0000000000546,
+        "hpShare": 0.8781910509574355
+      },
+      {
+        "runS": 1164.0000000000546,
+        "hpShare": 0.8793484583648432
+      },
+      {
+        "runS": 1165.0000000000546,
+        "hpShare": 0.8805058657722509
+      },
+      {
+        "runS": 1166.0000000000546,
+        "hpShare": 0.8816632731796585
+      },
+      {
+        "runS": 1167.0000000000546,
+        "hpShare": 0.8828206805870662
+      },
+      {
+        "runS": 1168.0000000000546,
+        "hpShare": 0.8839780879944739
+      },
+      {
+        "runS": 1169.0000000000546,
+        "hpShare": 0.8851354954018815
+      },
+      {
+        "runS": 1170.0000000000546,
+        "hpShare": 0.8862929028092892
+      },
+      {
+        "runS": 1171.0000000000546,
+        "hpShare": 0.8874503102166968
+      },
+      {
+        "runS": 1172.0000000000546,
+        "hpShare": 0.8886077176241045
+      },
+      {
+        "runS": 1173.0000000000546,
+        "hpShare": 0.8897712978710184
+      },
+      {
+        "runS": 1174.0000000000546,
+        "hpShare": 0.890928705278426
+      },
+      {
+        "runS": 1175.0000000000546,
+        "hpShare": 0.8920861126858337
+      },
+      {
+        "runS": 1176.0000000000546,
+        "hpShare": 0.8932435200932414
+      },
+      {
+        "runS": 1177.0000000000546,
+        "hpShare": 0.8944009275006491
+      },
+      {
+        "runS": 1178.0000000000546,
+        "hpShare": 0.8955583349080568
+      },
+      {
+        "runS": 1179.0000000000546,
+        "hpShare": 0.8967157423154645
+      },
+      {
+        "runS": 1180.0000000000546,
+        "hpShare": 0.8978731497228721
+      },
+      {
+        "runS": 1181.0000000000546,
+        "hpShare": 0.8990305571302798
+      },
+      {
+        "runS": 1182.0000000000546,
+        "hpShare": 0.9001879645376875
+      },
+      {
+        "runS": 1183.000201814059,
+        "hpShare": 0.9013453719450951
+      },
+      {
+        "runS": 1184.0000000000546,
+        "hpShare": 0.9025027793525028
+      },
+      {
+        "runS": 1185.0000000000546,
+        "hpShare": 0.9036601867599104
+      },
+      {
+        "runS": 1186.0000000000546,
+        "hpShare": 0.9048175941673181
+      },
+      {
+        "runS": 1187.0000000000546,
+        "hpShare": 0.9059750015747258
+      },
+      {
+        "runS": 1188.0000000000546,
+        "hpShare": 0.9071324089821334
+      },
+      {
+        "runS": 1189.0000000000546,
+        "hpShare": 0.9082898163895411
+      },
+      {
+        "runS": 1190.0000000000546,
+        "hpShare": 0.9094472237969489
+      },
+      {
+        "runS": 1191.0000000000546,
+        "hpShare": 0.9106046312043565
+      },
+      {
+        "runS": 1192.0000000000546,
+        "hpShare": 0.9117620386117642
+      },
+      {
+        "runS": 1193.0000000000546,
+        "hpShare": 0.9129194460191719
+      },
+      {
+        "runS": 1194.0000000000546,
+        "hpShare": 0.9140768534265795
+      },
+      {
+        "runS": 1195.0000000000546,
+        "hpShare": 0.9152342608339872
+      },
+      {
+        "runS": 1196.0000000000546,
+        "hpShare": 0.9163916682413948
+      },
+      {
+        "runS": 1197.0000000000546,
+        "hpShare": 0.9175490756488025
+      },
+      {
+        "runS": 1198.0000000000546,
+        "hpShare": 0.9187064830562102
+      },
+      {
+        "runS": 1199.0000000000546,
+        "hpShare": 0.9198638904636178
+      },
+      {
+        "runS": 1200.0,
+        "hpShare": 0.9210212978710255
+      },
+      {
+        "runS": 1201.0000000000537,
+        "hpShare": 0.9221787052784332
+      },
+      {
+        "runS": 1202.0000000000528,
+        "hpShare": 0.9233361126858408
+      },
+      {
+        "runS": 1203.0000000000518,
+        "hpShare": 0.9244935200932486
+      },
+      {
+        "runS": 1204.000000000051,
+        "hpShare": 0.9256509275006563
+      },
+      {
+        "runS": 1205.00000000005,
+        "hpShare": 0.9268083349080639
+      },
+      {
+        "runS": 1206.000000000049,
+        "hpShare": 0.9279657423154716
+      },
+      {
+        "runS": 1207.0000000000482,
+        "hpShare": 0.9291231497228792
+      },
+      {
+        "runS": 1208.0000000000473,
+        "hpShare": 0.9302805571302869
+      },
+      {
+        "runS": 1209.0000000000464,
+        "hpShare": 0.9314379645376946
+      },
+      {
+        "runS": 1210.0000000000455,
+        "hpShare": 0.9325953719451022
+      },
+      {
+        "runS": 1211.0000000000446,
+        "hpShare": 0.9337527793525099
+      },
+      {
+        "runS": 1212.0000000000437,
+        "hpShare": 0.9349101867599175
+      },
+      {
+        "runS": 1213.0000000000427,
+        "hpShare": 0.9360675941673252
+      },
+      {
+        "runS": 1214.0000000000418,
+        "hpShare": 0.9372250015747329
+      },
+      {
+        "runS": 1215.000000000041,
+        "hpShare": 0.9383824089821405
+      },
+      {
+        "runS": 1216.00000000004,
+        "hpShare": 0.9395398163895483
+      },
+      {
+        "runS": 1217.000000000039,
+        "hpShare": 0.940697223796956
+      },
+      {
+        "runS": 1218.0000000000382,
+        "hpShare": 0.9418546312043636
+      },
+      {
+        "runS": 1219.0000000000373,
+        "hpShare": 0.9430120386117713
+      },
+      {
+        "runS": 1220.0000000000364,
+        "hpShare": 0.944169446019179
+      },
+      {
+        "runS": 1221.0000000000355,
+        "hpShare": 0.9453268534265866
+      },
+      {
+        "runS": 1222.0000000000346,
+        "hpShare": 0.9464842608339943
+      },
+      {
+        "runS": 1223.0000000000337,
+        "hpShare": 0.947641668241402
+      },
+      {
+        "runS": 1224.0000000000327,
+        "hpShare": 0.9487990756488096
+      },
+      {
+        "runS": 1225.0000000000318,
+        "hpShare": 0.9499564830562173
+      },
+      {
+        "runS": 1226.000000000031,
+        "hpShare": 0.9511138904636249
+      },
+      {
+        "runS": 1227.00000000003,
+        "hpShare": 0.9522712978710326
+      },
+      {
+        "runS": 1228.000000000029,
+        "hpShare": 0.9534287052784403
+      },
+      {
+        "runS": 1229.0000000000282,
+        "hpShare": 0.9545861126858479
+      },
+      {
+        "runS": 1230.0000000000273,
+        "hpShare": 0.9557435200932557
+      },
+      {
+        "runS": 1231.0000000000264,
+        "hpShare": 0.9569009275006634
+      },
+      {
+        "runS": 1232.0000000000255,
+        "hpShare": 0.958058334908071
+      },
+      {
+        "runS": 1233.0000000000246,
+        "hpShare": 0.9592157423154787
+      },
+      {
+        "runS": 1234.0000000000236,
+        "hpShare": 0.9603731497228863
+      },
+      {
+        "runS": 1235.0000000000227,
+        "hpShare": 0.961530557130294
+      },
+      {
+        "runS": 1236.0000000000218,
+        "hpShare": 0.9626879645377017
+      },
+      {
+        "runS": 1237.000000000021,
+        "hpShare": 0.9638453719451093
+      },
+      {
+        "runS": 1238.00000000002,
+        "hpShare": 0.965002779352517
+      },
+      {
+        "runS": 1239.000000000019,
+        "hpShare": 0.9661601867599247
+      },
+      {
+        "runS": 1240.0000000000182,
+        "hpShare": 0.9673175941673323
+      },
+      {
+        "runS": 1241.0000000000173,
+        "hpShare": 0.96847500157474
+      },
+      {
+        "runS": 1242.0000000000164,
+        "hpShare": 0.9696324089821476
+      },
+      {
+        "runS": 1243.0000000000155,
+        "hpShare": 0.9707898163895554
+      },
+      {
+        "runS": 1244.0000000000146,
+        "hpShare": 0.9719472237969631
+      },
+      {
+        "runS": 1245.0000000000136,
+        "hpShare": 0.9731046312043707
+      },
+      {
+        "runS": 1246.0000000000127,
+        "hpShare": 0.9742620386117784
+      },
+      {
+        "runS": 1247.0000000000118,
+        "hpShare": 0.9754194460191861
+      },
+      {
+        "runS": 1248.000000000011,
+        "hpShare": 0.9765695231796806
+      },
+      {
+        "runS": 1249.00000000001,
+        "hpShare": 0.9777269305870883
+      },
+      {
+        "runS": 1250.000000000009,
+        "hpShare": 0.9788843379944959
+      },
+      {
+        "runS": 1251.0000000000082,
+        "hpShare": 0.9800417454019036
+      },
+      {
+        "runS": 1252.0000000000073,
+        "hpShare": 0.9811991528093112
+      },
+      {
+        "runS": 1253.0000000000064,
+        "hpShare": 0.9823565602167189
+      },
+      {
+        "runS": 1254.0000000000055,
+        "hpShare": 0.9835139676241266
+      },
+      {
+        "runS": 1255.0000000000045,
+        "hpShare": 0.9846713750315342
+      },
+      {
+        "runS": 1256.0000000000036,
+        "hpShare": 0.9337454491056085
+      },
+      {
+        "runS": 1257.0000000000027,
+        "hpShare": 0.9349028565130163
+      },
+      {
+        "runS": 1258.0000000000018,
+        "hpShare": 0.936060263920424
+      },
+      {
+        "runS": 1259.000000000001,
+        "hpShare": 0.9372176713278316
+      },
+      {
+        "runS": 1260.0,
+        "hpShare": 0.9383750787352393
+      },
+      {
+        "runS": 1261.000166666667,
+        "hpShare": 0.9395421312043751
+      },
+      {
+        "runS": 1262.000166666667,
+        "hpShare": 0.9406995386117828
+      },
+      {
+        "runS": 1263.000166666667,
+        "hpShare": 0.9418569460191905
+      },
+      {
+        "runS": 1264.000166666667,
+        "hpShare": 0.9430143534265981
+      },
+      {
+        "runS": 1265.000166666667,
+        "hpShare": 0.9441717608340059
+      },
+      {
+        "runS": 1266.000166666667,
+        "hpShare": 0.9453291682414136
+      },
+      {
+        "runS": 1267.000166666667,
+        "hpShare": 0.9464865756488212
+      },
+      {
+        "runS": 1268.000166666667,
+        "hpShare": 0.9476439830562289
+      },
+      {
+        "runS": 1269.000166666667,
+        "hpShare": 0.9488013904636365
+      },
+      {
+        "runS": 1270.000166666667,
+        "hpShare": 0.9499587978710442
+      },
+      {
+        "runS": 1271.000166666667,
+        "hpShare": 0.9511162052784519
+      },
+      {
+        "runS": 1272.000166666667,
+        "hpShare": 0.9522736126858595
+      },
+      {
+        "runS": 1273.000166666667,
+        "hpShare": 0.9534310200932672
+      },
+      {
+        "runS": 1274.000166666667,
+        "hpShare": 0.9545884275006749
+      },
+      {
+        "runS": 1275.000166666667,
+        "hpShare": 0.9557458349080825
+      },
+      {
+        "runS": 1276.000166666667,
+        "hpShare": 0.9569032423154902
+      },
+      {
+        "runS": 1277.000166666667,
+        "hpShare": 0.9580606497228978
+      },
+      {
+        "runS": 1278.000166666667,
+        "hpShare": 0.9592180571303055
+      },
+      {
+        "runS": 1279.000166666667,
+        "hpShare": 0.9603754645377133
+      },
+      {
+        "runS": 1280.000166666667,
+        "hpShare": 0.9615328719451209
+      },
+      {
+        "runS": 1281.000166666667,
+        "hpShare": 0.9626902793525286
+      },
+      {
+        "runS": 1282.000166666667,
+        "hpShare": 0.9638476867599363
+      },
+      {
+        "runS": 1283.000166666667,
+        "hpShare": 0.9650050941673439
+      },
+      {
+        "runS": 1284.000166666667,
+        "hpShare": 0.9661625015747516
+      },
+      {
+        "runS": 1285.000166666667,
+        "hpShare": 0.9673199089821592
+      },
+      {
+        "runS": 1286.000166666667,
+        "hpShare": 0.8643106497229003
+      },
+      {
+        "runS": 1287.000166666667,
+        "hpShare": 0.8654680571303079
+      },
+      {
+        "runS": 1288.000166666667,
+        "hpShare": 0.8145421312043822
+      },
+      {
+        "runS": 1289.000166666667,
+        "hpShare": 0.8156995386117899
+      },
+      {
+        "runS": 1290.000166666667,
+        "hpShare": 0.8168569460191976
+      },
+      {
+        "runS": 1291.0063287981861,
+        "hpShare": 0.8180143534266052
+      },
+      {
+        "runS": 1292.000166666667,
+        "hpShare": 0.8191717608340129
+      },
+      {
+        "runS": 1293.000166666667,
+        "hpShare": 0.8203291682414205
+      },
+      {
+        "runS": 1294.000166666667,
+        "hpShare": 0.8214865756488283
+      },
+      {
+        "runS": 1295.000166666667,
+        "hpShare": 0.822643983056236
+      },
+      {
+        "runS": 1296.003828798186,
+        "hpShare": 0.8238013904636436
+      },
+      {
+        "runS": 1297.000166666667,
+        "hpShare": 0.8249587978710513
+      },
+      {
+        "runS": 1298.000166666667,
+        "hpShare": 0.826116205278459
+      },
+      {
+        "runS": 1299.000166666667,
+        "hpShare": 0.7751902793525333
+      },
+      {
+        "runS": 1300.000166666667,
+        "hpShare": 0.7242643534266077
+      },
+      {
+        "runS": 1301.0038287981863,
+        "hpShare": 0.7254217608340153
+      },
+      {
+        "runS": 1302.000166666667,
+        "hpShare": 0.6744958349080896
+      },
+      {
+        "runS": 1303.000166666667,
+        "hpShare": 0.6756532423154973
+      },
+      {
+        "runS": 1304.000166666667,
+        "hpShare": 0.676810649722905
+      },
+      {
+        "runS": 1305.000166666667,
+        "hpShare": 0.6779680571303126
+      },
+      {
+        "runS": 1306.000166666667,
+        "hpShare": 0.6791254645377203
+      },
+      {
+        "runS": 1307.000166666667,
+        "hpShare": 0.6802828719451279
+      },
+      {
+        "runS": 1308.005028798186,
+        "hpShare": 0.6814402793525356
+      },
+      {
+        "runS": 1309.000166666667,
+        "hpShare": 0.63051435342661
+      },
+      {
+        "runS": 1310.000166666667,
+        "hpShare": 0.6316717608340177
+      },
+      {
+        "runS": 1311.000166666667,
+        "hpShare": 0.6328291682414253
+      },
+      {
+        "runS": 1312.000166666667,
+        "hpShare": 0.633986575648833
+      },
+      {
+        "runS": 1313.000166666667,
+        "hpShare": 0.6351439830562406
+      },
+      {
+        "runS": 1314.000166666667,
+        "hpShare": 0.6363013904636483
+      },
+      {
+        "runS": 1315.000166666667,
+        "hpShare": 0.637458797871056
+      },
+      {
+        "runS": 1316.000166666667,
+        "hpShare": 0.6386162052784636
+      },
+      {
+        "runS": 1317.000166666667,
+        "hpShare": 0.6397736126858713
+      },
+      {
+        "runS": 1318.000166666667,
+        "hpShare": 0.640931020093279
+      },
+      {
+        "runS": 1319.000166666667,
+        "hpShare": 0.6420884275006867
+      },
+      {
+        "runS": 1320.000166666667,
+        "hpShare": 0.6432458349080944
+      },
+      {
+        "runS": 1321.000166666667,
+        "hpShare": 0.6444032423155021
+      },
+      {
+        "runS": 1322.000166666667,
+        "hpShare": 0.6455606497229097
+      },
+      {
+        "runS": 1323.000166666667,
+        "hpShare": 0.6467180571303174
+      },
+      {
+        "runS": 1324.000166666667,
+        "hpShare": 0.647875464537725
+      },
+      {
+        "runS": 1325.000166666667,
+        "hpShare": 0.6490328719451327
+      },
+      {
+        "runS": 1326.000166666667,
+        "hpShare": 0.6501902793525404
+      },
+      {
+        "runS": 1327.000166666667,
+        "hpShare": 0.651347686759948
+      },
+      {
+        "runS": 1328.000166666667,
+        "hpShare": 0.6525050941673557
+      },
+      {
+        "runS": 1329.000166666667,
+        "hpShare": 0.6536625015747634
+      },
+      {
+        "runS": 1330.000166666667,
+        "hpShare": 0.654819908982171
+      },
+      {
+        "runS": 1331.000166666667,
+        "hpShare": 0.6559773163895787
+      },
+      {
+        "runS": 1332.000166666667,
+        "hpShare": 0.6571347237969865
+      },
+      {
+        "runS": 1333.000166666667,
+        "hpShare": 0.6582921312043941
+      },
+      {
+        "runS": 1334.000166666667,
+        "hpShare": 0.6594495386118018
+      },
+      {
+        "runS": 1335.000166666667,
+        "hpShare": 0.6606069460192094
+      },
+      {
+        "runS": 1336.000166666667,
+        "hpShare": 0.6617643534266171
+      },
+      {
+        "runS": 1337.000166666667,
+        "hpShare": 0.6629217608340248
+      },
+      {
+        "runS": 1338.000166666667,
+        "hpShare": 0.6640791682414324
+      },
+      {
+        "runS": 1339.000166666667,
+        "hpShare": 0.6652365756488401
+      },
+      {
+        "runS": 1340.000166666667,
+        "hpShare": 0.6663939830562478
+      },
+      {
+        "runS": 1341.000166666667,
+        "hpShare": 0.6675513904636554
+      },
+      {
+        "runS": 1342.000166666667,
+        "hpShare": 0.6687087978710631
+      },
+      {
+        "runS": 1343.000166666667,
+        "hpShare": 0.6698662052784707
+      },
+      {
+        "runS": 1344.000166666667,
+        "hpShare": 0.6710236126858784
+      },
+      {
+        "runS": 1345.000166666667,
+        "hpShare": 0.6721810200932862
+      },
+      {
+        "runS": 1346.000166666667,
+        "hpShare": 0.6733384275006938
+      },
+      {
+        "runS": 1347.000166666667,
+        "hpShare": 0.6744958349081015
+      },
+      {
+        "runS": 1348.000166666667,
+        "hpShare": 0.6756532423155092
+      },
+      {
+        "runS": 1349.000166666667,
+        "hpShare": 0.6768106497229168
+      },
+      {
+        "runS": 1350.000166666667,
+        "hpShare": 0.6779680571303245
+      },
+      {
+        "runS": 1351.000166666667,
+        "hpShare": 0.6791254645377321
+      },
+      {
+        "runS": 1352.000166666667,
+        "hpShare": 0.6802828719451398
+      },
+      {
+        "runS": 1353.000166666667,
+        "hpShare": 0.6814402793525475
+      },
+      {
+        "runS": 1354.000166666667,
+        "hpShare": 0.6825976867599551
+      },
+      {
+        "runS": 1355.000166666667,
+        "hpShare": 0.6837550941673628
+      },
+      {
+        "runS": 1356.000166666667,
+        "hpShare": 0.6849125015747705
+      },
+      {
+        "runS": 1357.000166666667,
+        "hpShare": 0.6860699089821781
+      },
+      {
+        "runS": 1358.000166666667,
+        "hpShare": 0.6872273163895858
+      },
+      {
+        "runS": 1359.000166666667,
+        "hpShare": 0.6883847237969936
+      },
+      {
+        "runS": 1360.003828798186,
+        "hpShare": 0.6895421312044012
+      },
+      {
+        "runS": 1361.000166666667,
+        "hpShare": 0.6906995386118089
+      },
+      {
+        "runS": 1362.000166666667,
+        "hpShare": 0.6918569460192165
+      },
+      {
+        "runS": 1363.000166666667,
+        "hpShare": 0.6930143534266242
+      },
+      {
+        "runS": 1364.000166666667,
+        "hpShare": 0.6941717608340319
+      },
+      {
+        "runS": 1365.000166666667,
+        "hpShare": 0.6953291682414395
+      },
+      {
+        "runS": 1366.003828798186,
+        "hpShare": 0.6964865756488472
+      },
+      {
+        "runS": 1367.000166666667,
+        "hpShare": 0.6976439830562549
+      },
+      {
+        "runS": 1368.000166666667,
+        "hpShare": 0.6988013904636625
+      },
+      {
+        "runS": 1369.000166666667,
+        "hpShare": 0.6999587978710702
+      },
+      {
+        "runS": 1370.000166666667,
+        "hpShare": 0.7011162052784778
+      },
+      {
+        "runS": 1371.000166666667,
+        "hpShare": 0.7022736126858855
+      },
+      {
+        "runS": 1372.000166666667,
+        "hpShare": 0.7034310200932933
+      },
+      {
+        "runS": 1373.000166666667,
+        "hpShare": 0.7045884275007009
+      },
+      {
+        "runS": 1374.000166666667,
+        "hpShare": 0.7057458349081086
+      },
+      {
+        "runS": 1375.000166666667,
+        "hpShare": 0.7069032423155163
+      },
+      {
+        "runS": 1376.000166666667,
+        "hpShare": 0.7080606497229239
+      },
+      {
+        "runS": 1377.000166666667,
+        "hpShare": 0.7092180571303316
+      },
+      {
+        "runS": 1378.000166666667,
+        "hpShare": 0.7103754645377393
+      },
+      {
+        "runS": 1379.000166666667,
+        "hpShare": 0.7115328719451469
+      },
+      {
+        "runS": 1380.000166666667,
+        "hpShare": 0.7126902793525546
+      },
+      {
+        "runS": 1381.000166666667,
+        "hpShare": 0.7138476867599622
+      },
+      {
+        "runS": 1382.000166666667,
+        "hpShare": 0.7150050941673699
+      },
+      {
+        "runS": 1383.000166666667,
+        "hpShare": 0.7161625015747776
+      },
+      {
+        "runS": 1384.000166666667,
+        "hpShare": 0.7173199089821852
+      },
+      {
+        "runS": 1385.000166666667,
+        "hpShare": 0.718477316389593
+      },
+      {
+        "runS": 1386.000166666667,
+        "hpShare": 0.7196347237970007
+      },
+      {
+        "runS": 1387.000166666667,
+        "hpShare": 0.7207921312044083
+      },
+      {
+        "runS": 1388.000166666667,
+        "hpShare": 0.721949538611816
+      },
+      {
+        "runS": 1389.000166666667,
+        "hpShare": 0.7231069460192237
+      },
+      {
+        "runS": 1390.000166666667,
+        "hpShare": 0.7242643534266313
+      },
+      {
+        "runS": 1391.000166666667,
+        "hpShare": 0.725421760834039
+      },
+      {
+        "runS": 1392.000166666667,
+        "hpShare": 0.7265791682414466
+      },
+      {
+        "runS": 1393.000166666667,
+        "hpShare": 0.7277365756488543
+      },
+      {
+        "runS": 1394.000166666667,
+        "hpShare": 0.728893983056262
+      },
+      {
+        "runS": 1395.000166666667,
+        "hpShare": 0.7300513904636696
+      },
+      {
+        "runS": 1396.000166666667,
+        "hpShare": 0.7312087978710773
+      },
+      {
+        "runS": 1397.000166666667,
+        "hpShare": 0.732366205278485
+      },
+      {
+        "runS": 1398.000166666667,
+        "hpShare": 0.7335236126858927
+      },
+      {
+        "runS": 1399.000166666667,
+        "hpShare": 0.7346810200933004
+      },
+      {
+        "runS": 1400.000166666667,
+        "hpShare": 0.735838427500708
+      },
+      {
+        "runS": 1401.000166666667,
+        "hpShare": 0.7369958349081157
+      },
+      {
+        "runS": 1402.000166666667,
+        "hpShare": 0.7381532423155234
+      },
+      {
+        "runS": 1403.000166666667,
+        "hpShare": 0.739310649722931
+      },
+      {
+        "runS": 1404.000166666667,
+        "hpShare": 0.7404680571303387
+      },
+      {
+        "runS": 1405.000166666667,
+        "hpShare": 0.7416254645377464
+      },
+      {
+        "runS": 1406.000166666667,
+        "hpShare": 0.742782871945154
+      },
+      {
+        "runS": 1407.000166666667,
+        "hpShare": 0.7439402793525617
+      },
+      {
+        "runS": 1408.003828798186,
+        "hpShare": 0.7450976867599693
+      },
+      {
+        "runS": 1409.0013287981863,
+        "hpShare": 0.746255094167377
+      },
+      {
+        "runS": 1410.000166666667,
+        "hpShare": 0.7474125015747847
+      },
+      {
+        "runS": 1411.000166666667,
+        "hpShare": 0.7485699089821923
+      },
+      {
+        "runS": 1412.000166666667,
+        "hpShare": 0.7497273163896001
+      },
+      {
+        "runS": 1413.000166666667,
+        "hpShare": 0.7508847237970078
+      },
+      {
+        "runS": 1414.000166666667,
+        "hpShare": 0.7520421312044154
+      },
+      {
+        "runS": 1415.003828798186,
+        "hpShare": 0.7531995386118231
+      },
+      {
+        "runS": 1416.000166666667,
+        "hpShare": 0.7543569460192308
+      },
+      {
+        "runS": 1417.000166666667,
+        "hpShare": 0.7555143534266384
+      },
+      {
+        "runS": 1418.000166666667,
+        "hpShare": 0.7566717608340461
+      },
+      {
+        "runS": 1419.000166666667,
+        "hpShare": 0.7578291682414537
+      },
+      {
+        "runS": 1420.000166666667,
+        "hpShare": 0.7589865756488614
+      },
+      {
+        "runS": 1421.000166666667,
+        "hpShare": 0.7601439830562691
+      },
+      {
+        "runS": 1422.0063287981861,
+        "hpShare": 0.7613013904636767
+      },
+      {
+        "runS": 1423.000166666667,
+        "hpShare": 0.7624587978710844
+      },
+      {
+        "runS": 1424.000166666667,
+        "hpShare": 0.763616205278492
+      },
+      {
+        "runS": 1425.000166666667,
+        "hpShare": 0.7647736126858998
+      },
+      {
+        "runS": 1426.000166666667,
+        "hpShare": 0.7659310200933075
+      },
+      {
+        "runS": 1427.000166666667,
+        "hpShare": 0.7670884275007152
+      },
+      {
+        "runS": 1428.000166666667,
+        "hpShare": 0.7682458349081228
+      },
+      {
+        "runS": 1429.000166666667,
+        "hpShare": 0.7694032423155305
+      },
+      {
+        "runS": 1430.000166666667,
+        "hpShare": 0.7705606497229381
+      },
+      {
+        "runS": 1431.000166666667,
+        "hpShare": 0.7717180571303458
+      },
+      {
+        "runS": 1432.000166666667,
+        "hpShare": 0.7728754645377535
+      },
+      {
+        "runS": 1433.000166666667,
+        "hpShare": 0.7740328719451611
+      },
+      {
+        "runS": 1434.000166666667,
+        "hpShare": 0.7751902793525688
+      },
+      {
+        "runS": 1435.000166666667,
+        "hpShare": 0.7763476867599765
+      },
+      {
+        "runS": 1436.000166666667,
+        "hpShare": 0.7775050941673841
+      },
+      {
+        "runS": 1437.000166666667,
+        "hpShare": 0.7786625015747918
+      },
+      {
+        "runS": 1438.000166666667,
+        "hpShare": 0.7798199089821995
+      },
+      {
+        "runS": 1439.000166666667,
+        "hpShare": 0.7809773163896072
+      },
+      {
+        "runS": 1440.000166666667,
+        "hpShare": 0.7821347237970149
+      },
+      {
+        "runS": 1441.000166666667,
+        "hpShare": 0.7832921312044225
+      },
+      {
+        "runS": 1442.000166666667,
+        "hpShare": 0.7844495386118302
+      },
+      {
+        "runS": 1443.000166666667,
+        "hpShare": 0.7856069460192379
+      },
+      {
+        "runS": 1444.000166666667,
+        "hpShare": 0.7867643534266455
+      },
+      {
+        "runS": 1445.000166666667,
+        "hpShare": 0.7879217608340532
+      },
+      {
+        "runS": 1446.000166666667,
+        "hpShare": 0.7890791682414608
+      },
+      {
+        "runS": 1447.000166666667,
+        "hpShare": 0.7902365756488685
+      },
+      {
+        "runS": 1448.000166666667,
+        "hpShare": 0.7913939830562762
+      },
+      {
+        "runS": 1449.000166666667,
+        "hpShare": 0.7925513904636838
+      },
+      {
+        "runS": 1450.000166666667,
+        "hpShare": 0.7937087978710915
+      },
+      {
+        "runS": 1451.000166666667,
+        "hpShare": 0.7948662052784992
+      },
+      {
+        "runS": 1452.000166666667,
+        "hpShare": 0.7960236126859069
+      },
+      {
+        "runS": 1453.000166666667,
+        "hpShare": 0.7971810200933146
+      },
+      {
+        "runS": 1454.000166666667,
+        "hpShare": 0.7983384275007223
+      },
+      {
+        "runS": 1455.000166666667,
+        "hpShare": 0.7994958349081299
+      },
+      {
+        "runS": 1456.000166666667,
+        "hpShare": 0.8006532423155376
+      },
+      {
+        "runS": 1457.0038287981863,
+        "hpShare": 0.8018106497229452
+      },
+      {
+        "runS": 1458.000166666667,
+        "hpShare": 0.8029680571303529
+      },
+      {
+        "runS": 1459.003828798186,
+        "hpShare": 0.8041254645377606
+      },
+      {
+        "runS": 1460.000166666667,
+        "hpShare": 0.8052828719451682
+      },
+      {
+        "runS": 1461.000166666667,
+        "hpShare": 0.8064402793525759
+      },
+      {
+        "runS": 1462.000166666667,
+        "hpShare": 0.8075976867599836
+      },
+      {
+        "runS": 1463.000166666667,
+        "hpShare": 0.8087550941673912
+      },
+      {
+        "runS": 1464.000166666667,
+        "hpShare": 0.8099125015747989
+      },
+      {
+        "runS": 1465.000166666667,
+        "hpShare": 0.8110699089822067
+      },
+      {
+        "runS": 1466.003828798186,
+        "hpShare": 0.8122273163896143
+      },
+      {
+        "runS": 1467.000166666667,
+        "hpShare": 0.813384723797022
+      },
+      {
+        "runS": 1468.000166666667,
+        "hpShare": 0.8145421312044296
+      },
+      {
+        "runS": 1469.000166666667,
+        "hpShare": 0.8156995386118373
+      },
+      {
+        "runS": 1470.000166666667,
+        "hpShare": 0.816856946019245
+      },
+      {
+        "runS": 1471.000166666667,
+        "hpShare": 0.8180143534266526
+      },
+      {
+        "runS": 1472.000166666667,
+        "hpShare": 0.8191717608340603
+      },
+      {
+        "runS": 1473.000166666667,
+        "hpShare": 0.820329168241468
+      },
+      {
+        "runS": 1474.000166666667,
+        "hpShare": 0.8214865756488756
+      },
+      {
+        "runS": 1475.003828798186,
+        "hpShare": 0.8226439830562833
+      },
+      {
+        "runS": 1476.000166666667,
+        "hpShare": 0.8238013904636909
+      },
+      {
+        "runS": 1477.000166666667,
+        "hpShare": 0.8249587978710986
+      },
+      {
+        "runS": 1478.000166666667,
+        "hpShare": 0.8261162052785064
+      },
+      {
+        "runS": 1479.000166666667,
+        "hpShare": 0.827273612685914
+      },
+      {
+        "runS": 1480.000166666667,
+        "hpShare": 0.8284310200933217
+      },
+      {
+        "runS": 1481.000166666667,
+        "hpShare": 0.8295884275007294
+      },
+      {
+        "runS": 1482.000166666667,
+        "hpShare": 0.830745834908137
+      },
+      {
+        "runS": 1483.000166666667,
+        "hpShare": 0.8319032423155447
+      },
+      {
+        "runS": 1484.000166666667,
+        "hpShare": 0.8330606497229524
+      },
+      {
+        "runS": 1485.000166666667,
+        "hpShare": 0.83421805713036
+      },
+      {
+        "runS": 1486.000166666667,
+        "hpShare": 0.8353754645377677
+      },
+      {
+        "runS": 1487.000166666667,
+        "hpShare": 0.8365328719451753
+      },
+      {
+        "runS": 1488.000166666667,
+        "hpShare": 0.837690279352583
+      },
+      {
+        "runS": 1489.000166666667,
+        "hpShare": 0.8388476867599907
+      },
+      {
+        "runS": 1490.000166666667,
+        "hpShare": 0.8400050941673983
+      },
+      {
+        "runS": 1491.000166666667,
+        "hpShare": 0.841162501574806
+      },
+      {
+        "runS": 1492.000166666667,
+        "hpShare": 0.8423199089822138
+      },
+      {
+        "runS": 1493.000166666667,
+        "hpShare": 0.8434773163896214
+      },
+      {
+        "runS": 1494.000166666667,
+        "hpShare": 0.8446347237970291
+      },
+      {
+        "runS": 1495.000166666667,
+        "hpShare": 0.8457921312044367
+      },
+      {
+        "runS": 1496.000166666667,
+        "hpShare": 0.8469495386118444
+      },
+      {
+        "runS": 1497.000166666667,
+        "hpShare": 0.8481069460192521
+      },
+      {
+        "runS": 1498.000166666667,
+        "hpShare": 0.8492643534266597
+      },
+      {
+        "runS": 1499.000166666667,
+        "hpShare": 0.8504217608340674
+      },
+      {
+        "runS": 1500.000166666667,
+        "hpShare": 0.8515791682414751
+      },
+      {
+        "runS": 1501.000166666667,
+        "hpShare": 0.8527365756488827
+      },
+      {
+        "runS": 1502.000166666667,
+        "hpShare": 0.8538939830562904
+      },
+      {
+        "runS": 1503.000166666667,
+        "hpShare": 0.855051390463698
+      },
+      {
+        "runS": 1504.000166666667,
+        "hpShare": 0.8562087978711057
+      },
+      {
+        "runS": 1505.000166666667,
+        "hpShare": 0.8573662052785135
+      },
+      {
+        "runS": 1506.000166666667,
+        "hpShare": 0.8585236126859211
+      },
+      {
+        "runS": 1507.000166666667,
+        "hpShare": 0.8596810200933288
+      },
+      {
+        "runS": 1508.000166666667,
+        "hpShare": 0.8608384275007365
+      },
+      {
+        "runS": 1509.000166666667,
+        "hpShare": 0.8619958349081441
+      },
+      {
+        "runS": 1510.000166666667,
+        "hpShare": 0.8631532423155518
+      },
+      {
+        "runS": 1511.000166666667,
+        "hpShare": 0.8643106497229595
+      },
+      {
+        "runS": 1512.000166666667,
+        "hpShare": 0.8654680571303671
+      },
+      {
+        "runS": 1513.003828798186,
+        "hpShare": 0.8666254645377748
+      },
+      {
+        "runS": 1514.000166666667,
+        "hpShare": 0.8677828719451824
+      },
+      {
+        "runS": 1515.000166666667,
+        "hpShare": 0.8689402793525901
+      },
+      {
+        "runS": 1516.000166666667,
+        "hpShare": 0.8700976867599978
+      },
+      {
+        "runS": 1517.000166666667,
+        "hpShare": 0.8712550941674054
+      },
+      {
+        "runS": 1518.000166666667,
+        "hpShare": 0.8724125015748132
+      },
+      {
+        "runS": 1519.000166666667,
+        "hpShare": 0.8735699089822209
+      },
+      {
+        "runS": 1520.000166666667,
+        "hpShare": 0.8747273163896285
+      },
+      {
+        "runS": 1521.000166666667,
+        "hpShare": 0.8758847237970362
+      },
+      {
+        "runS": 1522.000166666667,
+        "hpShare": 0.8770421312044439
+      },
+      {
+        "runS": 1523.000166666667,
+        "hpShare": 0.8781995386118515
+      },
+      {
+        "runS": 1524.003828798186,
+        "hpShare": 0.8793569460192592
+      },
+      {
+        "runS": 1525.000166666667,
+        "hpShare": 0.8805143534266668
+      },
+      {
+        "runS": 1526.000166666667,
+        "hpShare": 0.8816717608340745
+      },
+      {
+        "runS": 1527.000166666667,
+        "hpShare": 0.8828291682414822
+      },
+      {
+        "runS": 1528.003828798186,
+        "hpShare": 0.8839865756488898
+      },
+      {
+        "runS": 1529.000166666667,
+        "hpShare": 0.8851439830562975
+      },
+      {
+        "runS": 1530.000166666667,
+        "hpShare": 0.8863013904637052
+      },
+      {
+        "runS": 1531.000166666667,
+        "hpShare": 0.8874587978711128
+      },
+      {
+        "runS": 1532.000166666667,
+        "hpShare": 0.8886162052785206
+      },
+      {
+        "runS": 1533.000166666667,
+        "hpShare": 0.8897736126859283
+      },
+      {
+        "runS": 1534.000166666667,
+        "hpShare": 0.8909310200933359
+      },
+      {
+        "runS": 1535.000166666667,
+        "hpShare": 0.8920884275007436
+      },
+      {
+        "runS": 1536.000166666667,
+        "hpShare": 0.8932458349081512
+      },
+      {
+        "runS": 1537.000166666667,
+        "hpShare": 0.8944032423155589
+      },
+      {
+        "runS": 1538.000166666667,
+        "hpShare": 0.8955606497229666
+      },
+      {
+        "runS": 1539.000166666667,
+        "hpShare": 0.8967180571303742
+      },
+      {
+        "runS": 1540.000166666667,
+        "hpShare": 0.8978754645377819
+      },
+      {
+        "runS": 1541.000166666667,
+        "hpShare": 0.8990328719451895
+      },
+      {
+        "runS": 1542.000166666667,
+        "hpShare": 0.9001902793525972
+      },
+      {
+        "runS": 1543.000166666667,
+        "hpShare": 0.9013476867600049
+      },
+      {
+        "runS": 1544.000166666667,
+        "hpShare": 0.9025050941674125
+      },
+      {
+        "runS": 1545.000166666667,
+        "hpShare": 0.9036625015748203
+      },
+      {
+        "runS": 1546.000166666667,
+        "hpShare": 0.904819908982228
+      },
+      {
+        "runS": 1547.000166666667,
+        "hpShare": 0.9059773163896356
+      },
+      {
+        "runS": 1548.000166666667,
+        "hpShare": 0.9071347237970433
+      },
+      {
+        "runS": 1549.000166666667,
+        "hpShare": 0.908292131204451
+      },
+      {
+        "runS": 1550.000166666667,
+        "hpShare": 0.9094495386118586
+      },
+      {
+        "runS": 1551.000166666667,
+        "hpShare": 0.9106069460192663
+      },
+      {
+        "runS": 1552.000166666667,
+        "hpShare": 0.911764353426674
+      },
+      {
+        "runS": 1553.000166666667,
+        "hpShare": 0.9129217608340816
+      },
+      {
+        "runS": 1554.000166666667,
+        "hpShare": 0.9140791682414893
+      },
+      {
+        "runS": 1555.000166666667,
+        "hpShare": 0.9152365756488969
+      },
+      {
+        "runS": 1556.000166666667,
+        "hpShare": 0.9163939830563046
+      },
+      {
+        "runS": 1557.000166666667,
+        "hpShare": 0.9175513904637123
+      },
+      {
+        "runS": 1558.000166666667,
+        "hpShare": 0.91870879787112
+      },
+      {
+        "runS": 1559.000166666667,
+        "hpShare": 0.9198662052785277
+      },
+      {
+        "runS": 1560.000166666667,
+        "hpShare": 0.9210236126859354
+      },
+      {
+        "runS": 1561.000166666667,
+        "hpShare": 0.922181020093343
+      },
+      {
+        "runS": 1562.000166666667,
+        "hpShare": 0.9233384275007507
+      },
+      {
+        "runS": 1563.000166666667,
+        "hpShare": 0.9244958349081583
+      },
+      {
+        "runS": 1564.000166666667,
+        "hpShare": 0.925653242315566
+      },
+      {
+        "runS": 1565.000166666667,
+        "hpShare": 0.9268106497229737
+      },
+      {
+        "runS": 1566.000166666667,
+        "hpShare": 0.9279680571303813
+      },
+      {
+        "runS": 1567.000166666667,
+        "hpShare": 0.929125464537789
+      },
+      {
+        "runS": 1568.000166666667,
+        "hpShare": 0.9302828719451967
+      },
+      {
+        "runS": 1569.003828798186,
+        "hpShare": 0.9314402793526043
+      },
+      {
+        "runS": 1570.000166666667,
+        "hpShare": 0.932597686760012
+      },
+      {
+        "runS": 1571.000166666667,
+        "hpShare": 0.9337550941674196
+      },
+      {
+        "runS": 1572.000166666667,
+        "hpShare": 0.9349125015748274
+      },
+      {
+        "runS": 1573.000166666667,
+        "hpShare": 0.9360699089822351
+      },
+      {
+        "runS": 1574.000166666667,
+        "hpShare": 0.9372273163896427
+      },
+      {
+        "runS": 1575.000166666667,
+        "hpShare": 0.9383847237970504
+      },
+      {
+        "runS": 1576.000166666667,
+        "hpShare": 0.9395421312044581
+      },
+      {
+        "runS": 1577.000166666667,
+        "hpShare": 0.9406995386118657
+      },
+      {
+        "runS": 1578.000166666667,
+        "hpShare": 0.9418569460192734
+      },
+      {
+        "runS": 1579.000166666667,
+        "hpShare": 0.943014353426681
+      },
+      {
+        "runS": 1580.000166666667,
+        "hpShare": 0.9441717608340887
+      },
+      {
+        "runS": 1581.000166666667,
+        "hpShare": 0.9453291682414964
+      },
+      {
+        "runS": 1582.000166666667,
+        "hpShare": 0.946486575648904
+      },
+      {
+        "runS": 1583.000166666667,
+        "hpShare": 0.9476439830563117
+      },
+      {
+        "runS": 1584.000166666667,
+        "hpShare": 0.9488013904637194
+      },
+      {
+        "runS": 1585.000166666667,
+        "hpShare": 0.9499587978711271
+      },
+      {
+        "runS": 1586.000166666667,
+        "hpShare": 0.9511162052785348
+      },
+      {
+        "runS": 1587.000166666667,
+        "hpShare": 0.9522736126859425
+      },
+      {
+        "runS": 1588.000166666667,
+        "hpShare": 0.9534310200933501
+      },
+      {
+        "runS": 1589.000166666667,
+        "hpShare": 0.9545884275007578
+      },
+      {
+        "runS": 1590.000166666667,
+        "hpShare": 0.9557458349081654
+      },
+      {
+        "runS": 1591.000166666667,
+        "hpShare": 0.9569032423155731
+      },
+      {
+        "runS": 1592.000166666667,
+        "hpShare": 0.9580606497229808
+      },
+      {
+        "runS": 1593.000166666667,
+        "hpShare": 0.9592180571303884
+      },
+      {
+        "runS": 1594.000166666667,
+        "hpShare": 0.9603754645377961
+      },
+      {
+        "runS": 1595.000166666667,
+        "hpShare": 0.9615328719452038
+      },
+      {
+        "runS": 1596.000166666667,
+        "hpShare": 0.9626902793526114
+      },
+      {
+        "runS": 1597.000166666667,
+        "hpShare": 0.9638476867600191
+      },
+      {
+        "runS": 1598.000166666667,
+        "hpShare": 0.9650050941674269
+      },
+      {
+        "runS": 1599.000166666667,
+        "hpShare": 0.9661625015748345
+      },
+      {
+        "runS": 1600.000166666667,
+        "hpShare": 0.9673199089822422
+      },
+      {
+        "runS": 1601.000166666667,
+        "hpShare": 0.9684773163896498
+      },
+      {
+        "runS": 1602.000166666667,
+        "hpShare": 0.9696347237970575
+      },
+      {
+        "runS": 1603.000166666667,
+        "hpShare": 0.9707921312044652
+      },
+      {
+        "runS": 1604.000166666667,
+        "hpShare": 0.9719495386118728
+      },
+      {
+        "runS": 1605.000166666667,
+        "hpShare": 0.9731069460192805
+      },
+      {
+        "runS": 1606.000166666667,
+        "hpShare": 0.9742643534266882
+      },
+      {
+        "runS": 1607.000166666667,
+        "hpShare": 0.9754217608340958
+      },
+      {
+        "runS": 1608.000166666667,
+        "hpShare": 0.9765791682415035
+      },
+      {
+        "runS": 1609.000166666667,
+        "hpShare": 0.9777365756489111
+      },
+      {
+        "runS": 1610.000166666667,
+        "hpShare": 0.9788939830563188
+      },
+      {
+        "runS": 1611.0042732426302,
+        "hpShare": 0.9800513904637266
+      },
+      {
+        "runS": 1612.000166666667,
+        "hpShare": 0.9291254645378009
+      },
+      {
+        "runS": 1613.000166666667,
+        "hpShare": 0.9302828719452085
+      },
+      {
+        "runS": 1614.000166666667,
+        "hpShare": 0.9314402793526162
+      },
+      {
+        "runS": 1615.000166666667,
+        "hpShare": 0.9325976867600239
+      },
+      {
+        "runS": 1616.000166666667,
+        "hpShare": 0.9337550941674315
+      },
+      {
+        "runS": 1617.000166666667,
+        "hpShare": 0.9349125015748392
+      },
+      {
+        "runS": 1618.000166666667,
+        "hpShare": 0.9360699089822468
+      },
+      {
+        "runS": 1619.000166666667,
+        "hpShare": 0.9372273163896545
+      },
+      {
+        "runS": 1620.000166666667,
+        "hpShare": 0.9383847237970622
+      },
+      {
+        "runS": 1621.000166666667,
+        "hpShare": 0.9395421312044699
+      },
+      {
+        "runS": 1622.000166666667,
+        "hpShare": 0.9406995386118776
+      },
+      {
+        "runS": 1623.000166666667,
+        "hpShare": 0.9418569460192853
+      },
+      {
+        "runS": 1624.000166666667,
+        "hpShare": 0.9430143534266929
+      },
+      {
+        "runS": 1625.000166666667,
+        "hpShare": 0.9441717608341006
+      },
+      {
+        "runS": 1626.000166666667,
+        "hpShare": 0.9453291682415083
+      },
+      {
+        "runS": 1627.0023775510208,
+        "hpShare": 0.9464865756489159
+      },
+      {
+        "runS": 1628.000166666667,
+        "hpShare": 0.9476439830563236
+      },
+      {
+        "runS": 1629.000166666667,
+        "hpShare": 0.9488013904637312
+      },
+      {
+        "runS": 1630.000166666667,
+        "hpShare": 0.9499587978711389
+      },
+      {
+        "runS": 1631.000166666667,
+        "hpShare": 0.9511162052785466
+      },
+      {
+        "runS": 1632.000166666667,
+        "hpShare": 0.9522736126859542
+      },
+      {
+        "runS": 1633.000166666667,
+        "hpShare": 0.9534310200933619
+      },
+      {
+        "runS": 1634.000166666667,
+        "hpShare": 0.9545884275007697
+      },
+      {
+        "runS": 1635.000166666667,
+        "hpShare": 0.9557458349081773
+      },
+      {
+        "runS": 1636.000166666667,
+        "hpShare": 0.956903242315585
+      },
+      {
+        "runS": 1637.000166666667,
+        "hpShare": 0.9580606497229927
+      },
+      {
+        "runS": 1638.0073775510207,
+        "hpShare": 0.9592180571304003
+      },
+      {
+        "runS": 1639.000166666667,
+        "hpShare": 0.960375464537808
+      },
+      {
+        "runS": 1640.000166666667,
+        "hpShare": 0.9615328719452156
+      },
+      {
+        "runS": 1641.000166666667,
+        "hpShare": 0.9626902793526233
+      },
+      {
+        "runS": 1642.0023775510208,
+        "hpShare": 0.963847686760031
+      },
+      {
+        "runS": 1643.000166666667,
+        "hpShare": 0.9650050941674386
+      },
+      {
+        "runS": 1644.000166666667,
+        "hpShare": 0.9661625015748463
+      },
+      {
+        "runS": 1645.000166666667,
+        "hpShare": 0.967319908982254
+      },
+      {
+        "runS": 1646.000166666667,
+        "hpShare": 0.9684773163896616
+      },
+      {
+        "runS": 1647.000166666667,
+        "hpShare": 0.9696347237970693
+      },
+      {
+        "runS": 1648.000166666667,
+        "hpShare": 0.970792131204477
+      },
+      {
+        "runS": 1649.000166666667,
+        "hpShare": 0.9719495386118847
+      },
+      {
+        "runS": 1650.000166666667,
+        "hpShare": 0.9731069460192924
+      },
+      {
+        "runS": 1651.000166666667,
+        "hpShare": 0.9742643534267
+      },
+      {
+        "runS": 1652.000166666667,
+        "hpShare": 0.9754217608341077
+      },
+      {
+        "runS": 1653.0073775510207,
+        "hpShare": 0.9765791682415154
+      },
+      {
+        "runS": 1654.000166666667,
+        "hpShare": 0.977736575648923
+      },
+      {
+        "runS": 1655.000166666667,
+        "hpShare": 0.9788939830563307
+      },
+      {
+        "runS": 1656.000166666667,
+        "hpShare": 0.9800513904637383
+      },
+      {
+        "runS": 1657.000166666667,
+        "hpShare": 0.981208797871146
+      },
+      {
+        "runS": 1658.000166666667,
+        "hpShare": 0.9823662052785537
+      },
+      {
+        "runS": 1659.000166666667,
+        "hpShare": 0.9835236126859613
+      },
+      {
+        "runS": 1660.000166666667,
+        "hpShare": 0.8805143534267024
+      },
+      {
+        "runS": 1661.000166666667,
+        "hpShare": 0.88167176083411
+      },
+      {
+        "runS": 1662.000166666667,
+        "hpShare": 0.8828291682415177
+      },
+      {
+        "runS": 1663.000166666667,
+        "hpShare": 0.8839865756489254
+      },
+      {
+        "runS": 1664.000166666667,
+        "hpShare": 0.885143983056333
+      },
+      {
+        "runS": 1665.000166666667,
+        "hpShare": 0.8863013904637407
+      },
+      {
+        "runS": 1666.000166666667,
+        "hpShare": 0.8874587978711483
+      },
+      {
+        "runS": 1667.000166666667,
+        "hpShare": 0.8886162052785561
+      },
+      {
+        "runS": 1668.000166666667,
+        "hpShare": 0.8897736126859638
+      },
+      {
+        "runS": 1669.000166666667,
+        "hpShare": 0.8909310200933714
+      },
+      {
+        "runS": 1670.000166666667,
+        "hpShare": 0.8920884275007791
+      },
+      {
+        "runS": 1671.000166666667,
+        "hpShare": 0.8932458349081868
+      },
+      {
+        "runS": 1672.000166666667,
+        "hpShare": 0.8944032423155944
+      },
+      {
+        "runS": 1673.000166666667,
+        "hpShare": 0.8955606497230021
+      },
+      {
+        "runS": 1674.000166666667,
+        "hpShare": 0.8967180571304098
+      },
+      {
+        "runS": 1675.000166666667,
+        "hpShare": 0.8978754645378174
+      },
+      {
+        "runS": 1676.000166666667,
+        "hpShare": 0.8990328719452251
+      },
+      {
+        "runS": 1677.0038333333337,
+        "hpShare": 0.9001945231797932
+      },
+      {
+        "runS": 1678.0038333333337,
+        "hpShare": 0.9013519305872009
+      },
+      {
+        "runS": 1679.0038333333337,
+        "hpShare": 0.9025093379946086
+      },
+      {
+        "runS": 1680.0038333333337,
+        "hpShare": 0.9036667454020163
+      },
+      {
+        "runS": 1681.0038333333337,
+        "hpShare": 0.904824152809424
+      },
+      {
+        "runS": 1682.0038333333337,
+        "hpShare": 0.9059815602168316
+      },
+      {
+        "runS": 1683.0038333333337,
+        "hpShare": 0.9071389676242393
+      },
+      {
+        "runS": 1684.0038333333337,
+        "hpShare": 0.908296375031647
+      },
+      {
+        "runS": 1685.0038333333337,
+        "hpShare": 0.9094537824390546
+      },
+      {
+        "runS": 1686.0038333333337,
+        "hpShare": 0.9106111898464623
+      },
+      {
+        "runS": 1687.0038333333337,
+        "hpShare": 0.9117685972538699
+      },
+      {
+        "runS": 1688.0038333333337,
+        "hpShare": 0.9129260046612776
+      },
+      {
+        "runS": 1689.0038333333337,
+        "hpShare": 0.9140834120686853
+      },
+      {
+        "runS": 1690.0038333333337,
+        "hpShare": 0.9152408194760929
+      },
+      {
+        "runS": 1691.0038333333337,
+        "hpShare": 0.9163982268835006
+      },
+      {
+        "runS": 1692.0038333333337,
+        "hpShare": 0.9175556342909083
+      },
+      {
+        "runS": 1693.0038333333337,
+        "hpShare": 0.918713041698316
+      },
+      {
+        "runS": 1694.0038333333337,
+        "hpShare": 0.9198704491057237
+      },
+      {
+        "runS": 1695.0038333333337,
+        "hpShare": 0.9210278565131313
+      },
+      {
+        "runS": 1696.0038333333337,
+        "hpShare": 0.922185263920539
+      },
+      {
+        "runS": 1697.0038333333337,
+        "hpShare": 0.9233426713279467
+      },
+      {
+        "runS": 1698.0038333333337,
+        "hpShare": 0.9245000787353543
+      },
+      {
+        "runS": 1699.0038333333337,
+        "hpShare": 0.925657486142762
+      },
+      {
+        "runS": 1700.0038333333337,
+        "hpShare": 0.9268148935501697
+      },
+      {
+        "runS": 1701.0038333333337,
+        "hpShare": 0.9279723009575773
+      },
+      {
+        "runS": 1702.0038333333337,
+        "hpShare": 0.929129708364985
+      },
+      {
+        "runS": 1703.0038333333337,
+        "hpShare": 0.9302871157723926
+      },
+      {
+        "runS": 1704.0038333333337,
+        "hpShare": 0.9314445231798003
+      },
+      {
+        "runS": 1705.0038333333337,
+        "hpShare": 0.932601930587208
+      },
+      {
+        "runS": 1706.0038333333337,
+        "hpShare": 0.9337593379946157
+      },
+      {
+        "runS": 1707.0038333333337,
+        "hpShare": 0.9349167454020234
+      },
+      {
+        "runS": 1708.0038333333337,
+        "hpShare": 0.9360741528094311
+      },
+      {
+        "runS": 1709.0038333333337,
+        "hpShare": 0.9372315602168387
+      },
+      {
+        "runS": 1710.0038333333337,
+        "hpShare": 0.9383889676242464
+      },
+      {
+        "runS": 1711.0038333333337,
+        "hpShare": 0.9395463750316541
+      },
+      {
+        "runS": 1712.0038333333337,
+        "hpShare": 0.9407037824390617
+      },
+      {
+        "runS": 1713.0038333333337,
+        "hpShare": 0.9418611898464694
+      },
+      {
+        "runS": 1714.007336734694,
+        "hpShare": 0.943018597253877
+      },
+      {
+        "runS": 1715.0038333333337,
+        "hpShare": 0.9441760046612847
+      },
+      {
+        "runS": 1716.0063333333337,
+        "hpShare": 0.9453959081319326
+      },
+      {
+        "runS": 1717.0063333333337,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1718.0063333333337,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1719.0063333333337,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1720.0063333333337,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1721.0063333333337,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1722.0063333333337,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1723.0063333333337,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1724.0063333333337,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1725.0063333333337,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1726.0063333333337,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1727.0063333333337,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1728.0063333333337,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1729.0063333333337,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1730.0063333333337,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1731.0063333333337,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1732.0063333333337,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1733.0063333333337,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1734.0063333333337,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1735.0063333333337,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1736.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1737.0018140589575,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1738.0068140589576,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1739.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1740.0018140589575,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1741.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1742.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1743.0018140589575,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1744.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1745.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1746.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1747.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1748.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1749.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1750.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1751.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1752.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1753.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1754.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1755.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1756.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1757.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1758.0068140589576,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1759.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1760.0018140589575,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1761.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1762.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1763.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1764.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1765.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1766.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1767.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1768.0018140589575,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1769.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1770.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1771.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1772.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1773.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1774.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1775.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1776.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1777.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1778.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1779.0068140589576,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1780.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1781.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1782.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1783.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1784.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1785.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1786.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1787.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1788.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1789.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1790.0018140589575,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1791.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1792.0033333333338,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1793.0093140589577,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1794.0018140589575,
+        "hpShare": 0.8389660493827165
+      },
+      {
+        "runS": 1795.0033333333338,
+        "hpShare": 0.8413001543209883
+      },
+      {
+        "runS": 1796.0033333333338,
+        "hpShare": 0.7915316358024702
+      },
+      {
+        "runS": 1797.0033333333338,
+        "hpShare": 0.7938464506172855
+      },
+      {
+        "runS": 1798.0033333333338,
+        "hpShare": 0.7961612654321009
+      },
+      {
+        "runS": 1799.0033333333338,
+        "hpShare": 0.7984760802469163
+      },
+      {
+        "runS": 1800.0,
+        "hpShare": 0.8007908950617316
+      }
+    ],
+    "levelsByMinute": [
+      {
+        "minute": 0,
+        "level": 1
+      },
+      {
+        "minute": 1,
+        "level": 1
+      },
+      {
+        "minute": 2,
+        "level": 1
+      },
+      {
+        "minute": 3,
+        "level": 3
+      },
+      {
+        "minute": 4,
+        "level": 4
+      },
+      {
+        "minute": 5,
+        "level": 6
+      },
+      {
+        "minute": 6,
+        "level": 7
+      },
+      {
+        "minute": 7,
+        "level": 7
+      },
+      {
+        "minute": 8,
+        "level": 7
+      },
+      {
+        "minute": 9,
+        "level": 7
+      },
+      {
+        "minute": 10,
+        "level": 9
+      },
+      {
+        "minute": 11,
+        "level": 9
+      },
+      {
+        "minute": 12,
+        "level": 11
+      },
+      {
+        "minute": 13,
+        "level": 11
+      },
+      {
+        "minute": 14,
+        "level": 11
+      },
+      {
+        "minute": 15,
+        "level": 11
+      },
+      {
+        "minute": 16,
+        "level": 11
+      },
+      {
+        "minute": 17,
+        "level": 11
+      },
+      {
+        "minute": 18,
+        "level": 11
+      },
+      {
+        "minute": 19,
+        "level": 12
+      },
+      {
+        "minute": 20,
+        "level": 12
+      },
+      {
+        "minute": 21,
+        "level": 12
+      },
+      {
+        "minute": 22,
+        "level": 12
+      },
+      {
+        "minute": 23,
+        "level": 12
+      },
+      {
+        "minute": 24,
+        "level": 12
+      },
+      {
+        "minute": 25,
+        "level": 12
+      },
+      {
+        "minute": 26,
+        "level": 12
+      },
+      {
+        "minute": 27,
+        "level": 12
+      },
+      {
+        "minute": 28,
+        "level": 12
+      },
+      {
+        "minute": 29,
+        "level": 13
+      },
+      {
+        "minute": 30,
+        "level": 13
+      }
+    ],
+    "weaponsAtChests": [],
+    "evolutions": [],
+    "peakEnemies": 300,
+    "level": 19,
+    "kills": 1752,
+    "fallen": false,
+    "done": true,
+    "settledHash": "9737a14a2f19f4ee",
+    "settledRecords": 30644951
+  }
+}

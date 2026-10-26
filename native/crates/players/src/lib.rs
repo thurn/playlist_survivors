@@ -7,6 +7,8 @@
 #![forbid(unsafe_code)]
 
 mod others;
+mod survivors;
+pub use survivors::{SurvivorBot, SurvivorBotKind};
 mod reactive;
 mod virtual_player;
 

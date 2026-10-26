@@ -1,0 +1,14 @@
+WARN `--no-project` was provided, but no project was found
+test_afk_must_die_strictly_before_ten_minutes (native.scripts.test_survivors_sweep.SurvivalReports.test_afk_must_die_strictly_before_ten_minutes) ... ok
+test_matrix_covers_every_seed_order_and_both_analysis_paths (native.scripts.test_survivors_sweep.SurvivalReports.test_matrix_covers_every_seed_order_and_both_analysis_paths) ... ok
+test_only_survival_and_hp_share_gate_positioning (native.scripts.test_survivors_sweep.SurvivalReports.test_only_survival_and_hp_share_gate_positioning) ... ok
+test_random_pick_soak_and_short_runs_have_no_balance_verdict (native.scripts.test_survivors_sweep.SurvivalReports.test_random_pick_soak_and_short_runs_have_no_balance_verdict) ... ok
+test_summary_reports_pacing_without_inventing_unreached_minutes (native.scripts.test_survivors_sweep.SurvivalReports.test_summary_reports_pacing_without_inventing_unreached_minutes) ... ok
+test_continuous_preparation_with_one_worker_does_not_overlap_warmup (native.scripts.test_survivors_sweep.Workers.test_continuous_preparation_with_one_worker_does_not_overlap_warmup) ... ok
+test_one_worker_stays_bounded_and_joins (native.scripts.test_survivors_sweep.Workers.test_one_worker_stays_bounded_and_joins) ... ok
+test_worker_failure_is_reraised_after_other_workers_join (native.scripts.test_survivors_sweep.Workers.test_worker_failure_is_reraised_after_other_workers_join) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.117s
+
+OK

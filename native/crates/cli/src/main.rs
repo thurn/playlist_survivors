@@ -21,7 +21,7 @@ fn main() {
         Some("report") => report::main(&args[1..]),
         _ => {
             eprintln!(
-                "usage: ps survive --playlist <m3u> [--minutes N] [--record DIR] [--fixture STREAM]\n       ps analysis-parity [--tracks ID,ID | --all] [--jobs N] [--out DIR] [--check]\n       ps runner-bench [--seconds S] [--check]\n       ps replay <session folder> [--reanalyse]\n       ps log [<timing.jsonl>] [--from S] [--to S] [--no-table]\n       ps report [<session folder>]"
+                "usage: ps survive --playlist <m3u> [--bot positioning|afk|random-pick] [--seed N] [--minutes N] [--order original|reverse|rotate] [--record DIR] [--fixture STREAM]\n       ps analysis-parity [--tracks ID,ID | --all] [--jobs N] [--out DIR] [--check]\n       ps runner-bench [--seconds S] [--check]\n       ps replay <session folder> [--reanalyse]\n       ps log [<timing.jsonl>] [--from S] [--to S] [--no-table]\n       ps report [<session folder>]"
             );
             2
         }
