@@ -82,3 +82,7 @@ soundPalettes:
       king-bible-hit: [kenney/impactMetal_light_001]
       lightning-ring-fire: [kenney/digital-laser1]
       lightning-ring-hit: [kenney/digital-zap1]
+      offer-open: [kenney/confirmation_002]
+      card-reveal: [kenney/casino-card-place-1]
+      card-highlight: [kenney/select_001]
+      card-confirm: [kenney/digital-highUp]

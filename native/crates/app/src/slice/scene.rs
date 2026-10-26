@@ -37,6 +37,7 @@ pub struct Look {
 /// What the scene keeps between frames: effects in flight, and when the hero was last bitten.
 #[derive(Default)]
 pub struct Scene {
+    pub cards: super::cards::Screen,
     numbers: damage::Numbers,
     effects: Effects,
     bitten: f64,
@@ -315,6 +316,7 @@ impl Scene {
         view: &LiveView,
         clock: &damage::Clock,
     ) {
+        self.cards.update(view.run, view.inventory, now);
         if view.run.is_some() {
             self.numbers.moments(moments, now, clock);
         }
@@ -492,7 +494,8 @@ impl Scene {
 
     /// Celebrates a level gained since the last call (the `level-up` recipe at the hero).
     pub fn level(&mut self, view: &LiveView, now: f64, lib: &ContentLibrary) {
-        if self.level > 0
+        if view.run.is_none()
+            && self.level > 0
             && view.level > self.level
             && let (Some(h), Some(recipe)) = (view.hero, lib.effects.get("level-up"))
         {
@@ -897,6 +900,12 @@ impl Scene {
             layers.grade.flash = [1.0, 1.0, 1.0, fa];
         }
         self.numbers.draw(art, now, &at, scale, &mut layers.overlay);
+        self.cards.grade(now, &mut layers.grade);
+        self.cards
+            .draw(art, now, w, h, layers.feet, &mut layers.overlay);
+        if self.cards.covers_hero(now) {
+            layers.feet = None;
+        }
         self.fast = fast;
         if now - self.bitten < 0.6 {
             let a = (1.0 - (now - self.bitten) / 0.6) as f32;

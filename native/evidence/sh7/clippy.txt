@@ -1,0 +1,2 @@
+    Checking app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh7-cards/native/crates/app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.81s

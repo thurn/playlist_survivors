@@ -14,6 +14,7 @@ pub struct Offscreen {
     device: wgpu::Device,
     queue: wgpu::Queue,
     post: Post,
+    texture: wgpu::Texture,
     view: wgpu::TextureView,
     size: (u32, u32),
 }
@@ -26,26 +27,26 @@ impl Offscreen {
         let (device, queue) = pollster::block_on(adapter.request_device(&Default::default()))
             .map_err(|e| e.to_string())?;
         let post = Post::new(&device, &queue, FORMAT, pages)?;
-        let view = device
-            .create_texture(&wgpu::TextureDescriptor {
-                label: Some("offscreen"),
-                size: wgpu::Extent3d {
-                    width,
-                    height,
-                    depth_or_array_layers: 1,
-                },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format: FORMAT,
-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-                view_formats: &[],
-            })
-            .create_view(&Default::default());
+        let texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("offscreen"),
+            size: wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: FORMAT,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+            view_formats: &[],
+        });
+        let view = texture.create_view(&Default::default());
         Ok(Offscreen {
             device,
             queue,
             post,
+            texture,
             view,
             size: (width, height),
         })
@@ -68,87 +69,66 @@ impl Offscreen {
         // (Keep the GPU from falling ever further behind.)
         let _ = self.device.poll(wgpu::PollType::Poll);
     }
+    /// Reads the last frame without creating another device; rows returned tightly packed.
+    pub fn rgba(&self) -> Result<Vec<u8>, String> {
+        let (width, height) = self.size;
+        let row = (4 * width).div_ceil(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT)
+            * wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
+        let buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("frame readback"),
+            size: u64::from(row * height),
+            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+            mapped_at_creation: false,
+        });
+        let mut encoder = self.device.create_command_encoder(&Default::default());
+        encoder.copy_texture_to_buffer(
+            wgpu::TexelCopyTextureInfo {
+                texture: &self.texture,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            wgpu::TexelCopyBufferInfo {
+                buffer: &buffer,
+                layout: wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(row),
+                    rows_per_image: Some(height),
+                },
+            },
+            wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+        );
+        self.queue.submit([encoder.finish()]);
+        let slice = buffer.slice(..);
+        let (tx, rx) = std::sync::mpsc::channel();
+        slice.map_async(wgpu::MapMode::Read, move |r| {
+            let _ = tx.send(r);
+        });
+        self.device
+            .poll(wgpu::PollType::wait_indefinitely())
+            .map_err(|e| e.to_string())?;
+        rx.recv()
+            .map_err(|e| e.to_string())?
+            .map_err(|e| e.to_string())?;
+        let data = slice.get_mapped_range().map_err(|e| e.to_string())?;
+        let mut out = Vec::with_capacity((4 * width * height) as usize);
+        for y in 0..height {
+            let start = (y * row) as usize;
+            out.extend_from_slice(&data[start..start + 4 * width as usize]);
+        }
+        Ok(out)
+    }
 }
 
 /// Draws `frame` into a `width` x `height` image, RGBA8 rows top first.
 pub fn render(pages: &[Page], width: u32, height: u32, frame: &Frame) -> Result<Vec<u8>, String> {
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-    let adapter = pollster::block_on(instance.request_adapter(&Default::default()))
-        .map_err(|e| e.to_string())?;
-    let (device, queue) = pollster::block_on(adapter.request_device(&Default::default()))
-        .map_err(|e| e.to_string())?;
-    let mut post = Post::new(&device, &queue, FORMAT, pages)?;
-    let size = wgpu::Extent3d {
-        width,
-        height,
-        depth_or_array_layers: 1,
-    };
-    let texture = device.create_texture(&wgpu::TextureDescriptor {
-        label: Some("still"),
-        size,
-        mip_level_count: 1,
-        sample_count: 1,
-        dimension: wgpu::TextureDimension::D2,
-        format: FORMAT,
-        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
-        view_formats: &[],
-    });
-    let view = texture.create_view(&Default::default());
-    // Rows padded to the copy alignment.
-    let row = (4 * width).div_ceil(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT)
-        * wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
-    let buffer = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("still readback"),
-        size: u64::from(row * height),
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
-    let mut encoder = device.create_command_encoder(&Default::default());
-    post.draw(
-        &device,
-        &queue,
-        &mut encoder,
-        &view,
-        (width, height),
-        (width as f32, height as f32),
-        frame,
-    );
-    encoder.copy_texture_to_buffer(
-        wgpu::TexelCopyTextureInfo {
-            texture: &texture,
-            mip_level: 0,
-            origin: wgpu::Origin3d::ZERO,
-            aspect: wgpu::TextureAspect::All,
-        },
-        wgpu::TexelCopyBufferInfo {
-            buffer: &buffer,
-            layout: wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(row),
-                rows_per_image: Some(height),
-            },
-        },
-        size,
-    );
-    queue.submit([encoder.finish()]);
-    let slice = buffer.slice(..);
-    let (tx, rx) = std::sync::mpsc::channel();
-    slice.map_async(wgpu::MapMode::Read, move |r| {
-        let _ = tx.send(r);
-    });
-    device
-        .poll(wgpu::PollType::wait_indefinitely())
-        .map_err(|e| e.to_string())?;
-    rx.recv()
-        .map_err(|e| e.to_string())?
-        .map_err(|e| e.to_string())?;
-    let data = slice.get_mapped_range().map_err(|e| e.to_string())?;
-    let mut out = Vec::with_capacity((4 * width * height) as usize);
-    for y in 0..height {
-        let start = (y * row) as usize;
-        out.extend_from_slice(&data[start..start + 4 * width as usize]);
-    }
-    Ok(out)
+    let mut capture = Offscreen::new(pages, width, height)?;
+    capture.draw(frame);
+    capture.rgba()
 }
 
 /// Writes RGBA8 pixels to a PNG.
@@ -234,5 +214,31 @@ mod tests {
         assert_eq!(at(&v, 32, 32), at(&base, 32, 32));
         assert!(at(&v, 62, 62) < at(&base, 62, 62));
         assert_eq!(&v[0..4], &[255, 0, 0, 255]);
+    }
+}
+
+#[cfg(test)]
+mod persistent_capture_tests {
+    use super::*;
+    use crate::sprites::Sprite;
+    #[test]
+    fn readback_matches_known_red_pixels_with_padded_rows() {
+        let mut out = Offscreen::new(&[], 7, 5).unwrap();
+        let sprites = [Sprite::solid(0.0, 0.0, 7.0, 5.0, [1.0, 0.0, 0.0, 1.0])];
+        out.draw(&Frame {
+            clear: [0.0; 3],
+            world: &[],
+            lights: &[],
+            grade: Default::default(),
+            overlay: &sprites,
+        });
+        let rgba = out.rgba().unwrap();
+        assert_eq!(rgba.len(), 7 * 5 * 4);
+        assert!(
+            rgba.as_chunks::<4>()
+                .0
+                .iter()
+                .all(|p| *p == [255, 0, 0, 255])
+        );
     }
 }

@@ -374,103 +374,6 @@ pub fn draw(
         },
         out,
     );
-    if let Some(run) = view.run.filter(|r| r.offer.is_some()) {
-        offer_cards(run, w, h, &art.fonts["pixel"], out);
-    }
-}
-
-fn offer_cards(
-    run: sim::survivors::RunState,
-    w: f32,
-    h: f32,
-    face: &font::BitmapFont,
-    out: &mut Vec<Sprite>,
-) {
-    let offer = run.offer.expect("offer screen");
-    let u = (w / 960.0).min(h / 540.0);
-    let top = h * 0.45;
-    for (i, card) in offer.cards.into_iter().enumerate() {
-        if run.song + 1e-9 < offer.reveals[i] {
-            continue;
-        }
-        let x = w * 0.5 + (i as f32 - 1.0) * 260.0 * u;
-        let selected = run.selected == i;
-        out.push(rect(
-            x - 122.0 * u,
-            top - 4.0 * u,
-            244.0 * u,
-            166.0 * u,
-            if selected {
-                [0.2, 1.0, 0.8, 0.95]
-            } else {
-                [0.25, 0.3, 0.4, 0.95]
-            },
-        ));
-        out.push(rect(
-            x - 118.0 * u,
-            top,
-            236.0 * u,
-            158.0 * u,
-            [0.025, 0.035, 0.08, 0.96],
-        ));
-        let fs = (1.5 * u).round().max(1.0);
-        face.text(
-            card.item.name(),
-            x,
-            top + 18.0 * u,
-            fs,
-            Align::Centre,
-            PLAIN,
-            out,
-        );
-        let rank = if card.item == sim::survivors::Item::Heal {
-            "MAXED".into()
-        } else if card.before == 0 {
-            "NEW!".into()
-        } else {
-            format!("LV {} > {}", card.before, card.after)
-        };
-        face.text(
-            &rank,
-            x,
-            top + 54.0 * u,
-            fs,
-            Align::Centre,
-            rgb(0x60ffc0),
-            out,
-        );
-        face.text(
-            card.description(),
-            x,
-            top + 88.0 * u,
-            u.round().max(1.0),
-            Align::Centre,
-            PLAIN,
-            out,
-        );
-        face.text(
-            ["LEFT", "UP", "RIGHT"][i],
-            x,
-            top + 132.0 * u,
-            fs,
-            Align::Centre,
-            PLAIN,
-            out,
-        );
-    }
-    face.text(
-        if run.song + 1e-9 >= offer.reveals[2] {
-            "SPACE / ENTER TO CHOOSE"
-        } else {
-            "WAIT FOR THE THIRD BEAT"
-        },
-        w * 0.5,
-        top + 184.0 * u,
-        (1.5 * u).round().max(1.0),
-        Align::Centre,
-        PLAIN,
-        out,
-    );
 }
 
 fn smoothstep(x: f32) -> f32 {
@@ -646,7 +549,7 @@ fn key_face(key: KeyLight, x: f32, y: f32, w: f32, h: f32, out: &mut Vec<Sprite>
     ));
 }
 
-fn item_color(id: &str) -> [f32; 4] {
+pub(super) fn item_color(id: &str) -> [f32; 4] {
     match id {
         "sword" | "sword-spin" | "bloody-tear" => rgb(0xff708c),
         "garlic" | "soul-eater" | "pummarola" => rgb(0x8cffa9),
@@ -808,10 +711,9 @@ fn draw_survivors(
             },
         ));
     }
-    if let Some(reason) = view.run.and_then(|r| r.frozen) {
-        if reason == sim::survivors::FreezeReason::LevelUp {
-            out.push(rect(0.0, 0.0, w, h, [0.0, 0.0, 0.05, 0.55]));
-        }
+    if let Some(reason) = view.run.and_then(|r| r.frozen)
+        && reason != sim::survivors::FreezeReason::LevelUp
+    {
         face.text(
             reason.banner(),
             w / 2.0,
@@ -821,8 +723,5 @@ fn draw_survivors(
             rgb(0xb8d7ff),
             out,
         );
-    }
-    if let Some(run) = view.run.filter(|r| r.offer.is_some()) {
-        offer_cards(run, w, h, face, out);
     }
 }

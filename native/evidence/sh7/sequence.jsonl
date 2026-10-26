@@ -1,0 +1,4 @@
+{"event":"open","song":1.6666666666666667,"run":1.658875,"reveals":[1.9345,2.417,2.767]}
+{"event":"fully-open","song":2.9,"run":1.658875,"selected":2,"alive":12}
+{"event":"confirm","song":3.1333333333333333,"run":1.658875,"selected":2}
+{"event":"resume","song":3.325,"run":1.666875,"selected":2}

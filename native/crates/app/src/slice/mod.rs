@@ -31,6 +31,7 @@
 
 mod apps;
 mod calibration;
+mod cards;
 mod damage;
 // The tap and output are the phase 0 spike's (57e846a^:native/spike), kept as they were.
 #[allow(clippy::pedantic, unused_qualifications, dead_code)]
@@ -156,6 +157,7 @@ struct Options {
     still_at: Option<f64>,
     hud_full_slots: bool,
     sound_check: Option<PathBuf>,
+    cards_check: Option<PathBuf>,
     volume: f32,
     click: bool,
     mute: bool,
@@ -207,6 +209,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         still_at: None,
         hud_full_slots: false,
         sound_check: None,
+        cards_check: None,
         volume: 1.0,
         click: false,
         mute: false,
@@ -246,6 +249,13 @@ fn options(args: &[String]) -> Result<Options, String> {
                 o.sound_check = Some(
                     it.next()
                         .ok_or("--sound-check needs a session directory")?
+                        .into(),
+                );
+            }
+            "--cards-check" => {
+                o.cards_check = Some(
+                    it.next()
+                        .ok_or("--cards-check needs an output directory")?
                         .into(),
                 );
             }
@@ -519,6 +529,9 @@ pub fn run(args: &[String]) -> Result<(), String> {
         } else {
             Err("the heard delay wasn't within 2 ms of M every minute".into())
         };
+    }
+    if let Some(dir) = &opts.cards_check {
+        return cards::check::run(dir);
     }
     if let Some(dir) = &opts.sound_check {
         return sounds::check::run(dir, opts.seconds.unwrap_or(1510.0));
@@ -1883,7 +1896,6 @@ impl App {
             self.last_stats = r;
             let moments = self.engine.view.borrow_mut().take_moments();
             self.cues(&moments, now);
-            self.schedule_sounds();
             self.scene.moments(
                 &moments,
                 now,
@@ -1896,6 +1908,7 @@ impl App {
                     free: self.world.lib.hero.stride.free_period_s,
                 },
             );
+            self.schedule_sounds();
             self.scene
                 .level(&self.engine.view.borrow(), now, &self.world.lib);
             let end = if self.engine.fallen() {
@@ -2275,6 +2288,10 @@ impl App {
             return;
         };
         let caused: Vec<_> = self.engine.causes().cloned().collect();
+        let cues = self.scene.cards.cues(
+            self.world.survivors().then(|| self.engine.sim.run_state()),
+            now_s(),
+        );
         let camera = self.engine.view.borrow().camera;
         let seed = self.engine.seed;
         let at = sounds::At {
@@ -2292,7 +2309,7 @@ impl App {
             ahead: self.ahead.max(0.0),
         };
         let mut commands = Vec::new();
-        sounds.reconcile(&caused, &at, &mut commands);
+        sounds.reconcile_with_cues(&caused, &cues, &at, &mut commands);
         for c in commands {
             self.send(c);
         }
@@ -2502,6 +2519,7 @@ impl App {
     /// Ends Watch my run, and its music.
     fn stop_watch(&mut self) {
         if self.watch.take().is_some() {
+            self.scene.cards = cards::Screen::default();
             self.send(Command::StopReplay);
         }
     }
@@ -2587,6 +2605,7 @@ impl App {
         self.over = Some((now, end, seconds));
         self.run_kills = self.engine.view.borrow().kills;
         self.running = false;
+        self.scene.cards = cards::Screen::default();
         if self.auto_watch {
             self.watch_run(now);
         }

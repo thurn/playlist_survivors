@@ -1255,6 +1255,17 @@ freeze, grid invalidation and an uncommitted-tail poison check; Live density
 rollback matches 69,420 records. See [SH6 evidence](../../native/evidence/sh6/README.md).
 
 ### SH7
+
+The card screen now dims/desaturates the world, lands three icon/text flips
+on the sim’s reveal beats, marks owned evolution pairs, highlights selection
+and punches the chosen card while the others fall away. Pending sound cues
+share SH2’s UI budget and cancel on retraction; the sim’s keys, offers and
+next-beat resume are unchanged. The kept 66-frame offscreen sequence holds
+the run clock at 1.658875 s through open/confirm and observes resume at song
+3.325 s. Its rapid-XP/durable-enemy setup is an in-memory presentation fixture,
+not pacing or survival evidence. See [SH7 evidence](../../native/evidence/sh7/README.md)
+for stills, the silent capture and tests. Feel and listening remain an operator row.
+
 ### SH8
 ### SH9
 ### SH10

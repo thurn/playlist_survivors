@@ -107,6 +107,14 @@ pub struct At<'a> {
     pub ahead: f64,
 }
 
+/// A presentation cue at a sim-owned song time, with a stable screen identity.
+pub struct Cue {
+    pub key: &'static str,
+    pub s: f64,
+    pub id: u32,
+    pub gain: f64,
+}
+
 /// The palette, its samples in the bank, and the kill sounds waiting on their slots.
 #[derive(Clone)]
 pub struct Sounds {
@@ -318,6 +326,16 @@ impl Sounds {
     /// (`LiveSoundScheduler`): a voice it no longer has is cancelled if it hasn't started, and a new
     /// one is scheduled. Kills sharing a slot are one sound, the multi-kill from two on.
     pub fn reconcile(&mut self, caused: &[Caused], at: &At, out: &mut Vec<Command>) {
+        self.reconcile_with_cues(caused, &[], at, out);
+    }
+
+    pub fn reconcile_with_cues(
+        &mut self,
+        caused: &[Caused],
+        cues: &[Cue],
+        at: &At,
+        out: &mut Vec<Command>,
+    ) {
         let notes = self.chain.notes(caused, at.final_before);
         let mut desired: HashMap<VoiceKey, Placed> = HashMap::new();
         let mut kills: Vec<(Placed, u32)> = Vec::new();
@@ -344,6 +362,19 @@ impl Sounds {
                     desired.insert(p.id(1), p);
                 }
             }
+        }
+        for c in cues {
+            let p = Placed {
+                key: c.key.into(),
+                s: c.s,
+                cause_s: c.s,
+                x: f64::NAN,
+                gain: c.gain,
+                duck: false,
+                gem: None,
+                note: None,
+            };
+            desired.insert(p.id(c.id), p);
         }
         for (mut p, n) in kills {
             if n > 1 {
@@ -886,6 +917,40 @@ mod survivor_tests {
                 Sounds::load(&dir, 8000.0, &lib, true).unwrap()
             })
             .clone()
+    }
+    #[test]
+    fn screen_cues_land_on_their_onset_and_retract_before_start() {
+        let (mut sounds, _) = decoded();
+        let b = tests::beats(8, 0.5, 1.0);
+        let at = At {
+            seed: 1.0,
+            final_before: -1.0,
+            run_start: 0.0,
+            beats: &b,
+            gate: 0.2,
+            camera: (0.0, 0.0, 1.0),
+            clock: (0.0, 100.0),
+            l_out: 0.02,
+            never_late: NEVER_LATE,
+            now: 100.0,
+            ahead: 0.0,
+        };
+        let cue = Cue {
+            key: "card-reveal",
+            s: 1.0,
+            id: 123,
+            gain: 0.7,
+        };
+        let mut out = Vec::new();
+        sounds.reconcile_with_cues(&[], &[cue], &at, &mut out);
+        let Command::Play(v) = out[0] else {
+            panic!("no reveal sound")
+        };
+        assert!((v.at + v.lead + at.l_out - 101.0).abs() < 1e-6);
+        assert!(!v.duck);
+        out.clear();
+        sounds.reconcile_with_cues(&[], &[], &at, &mut out);
+        assert_eq!(out, vec![Command::Cancel(v.id)]);
     }
     #[test]
     fn a_restart_keeps_audible_tails_in_the_budget() {
