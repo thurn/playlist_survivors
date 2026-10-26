@@ -52,6 +52,11 @@ fn group_period(group: Subdivision, bpb: f64) -> Option<f64> {
 impl Sim {
     pub(super) fn pos(&self, fi: usize, at_w: f64) -> (f64, f64) {
         let f = &self.st.foes[fi];
+        let at_w = if self.st.survivor.is_some() && f.recoil_until > f.last_w {
+            at_w.min(f.recoil_until)
+        } else {
+            at_w
+        };
         (
             f.x + f.vx * (at_w - f.last_w),
             f.y + f.vy * (at_w - f.last_w),
@@ -140,6 +145,8 @@ impl Sim {
             knock_x: 0.0,
             knock_y: 0.0,
             knock_t: 0.0,
+            recoil_until: f64::NEG_INFINITY,
+            recoil_v: (0.0, 0.0),
             weight,
             charge_until: f64::NEG_INFINITY,
             land_s: None,
@@ -316,7 +323,11 @@ impl Sim {
         let s = self.st.s;
         // A calm section slows the enemies and curls their approach (the loudness level's calm, blended).
         let d = &env.director;
-        let calm = self.by_level(s, &|l| by_level(&d.calm, l));
+        let calm = if env.input.level.survivors.is_some() {
+            0.0
+        } else {
+            self.by_level(s, &|l| by_level(&d.calm, l))
+        };
         let calm_speed = 1.0 - calm;
         let curl_cos = cos(calm * CALM_CURL);
         let curl_sin = sin(calm * CALM_CURL);
@@ -362,6 +373,12 @@ impl Sim {
             if f.land_s.is_some_and(|l| s < l) {
                 f.vx = 0.0;
                 f.vy = 0.0;
+                continue;
+            }
+            if env.input.level.survivors.is_some() && f.recoil_until > f.last_w {
+                let used = (w1.min(f.recoil_until) - f.last_w).max(0.0);
+                f.x += f.recoil_v.0 * used;
+                f.y += f.recoil_v.1 * used;
                 continue;
             }
             if let Some(g) = f.step {
@@ -505,6 +522,19 @@ impl Sim {
                 f.last_w = w1;
                 dt
             };
+            if env.input.level.survivors.is_some() && w1 < self.st.foes[fi].recoil_until {
+                let f = &mut self.st.foes[fi];
+                f.step = None;
+                f.vx = f.recoil_v.0;
+                f.vy = f.recoil_v.1;
+                continue;
+            }
+            if env.input.level.survivors.is_some() && self.st.foes[fi].recoil_until.is_finite() {
+                let f = &mut self.st.foes[fi];
+                f.recoil_until = f64::NEG_INFINITY;
+                f.vx = 0.0;
+                f.vy = 0.0;
+            }
             // Set pieces keep their course (a ring's circle, a stampede's run) and bite whoever they run into.
             let (on_course, run) = {
                 let f = &self.st.foes[fi];
@@ -527,7 +557,11 @@ impl Sim {
                     && ed <= HURTBOX_RADIUS + f.r + CONTACT_GAP + BITE_SLACK
                     && self.st.w >= self.st.invuln_until - 1e-9
                 {
-                    let amount = armoured_bite(def.contact_damage, self.st.bonus.armour);
+                    let amount = if env.input.level.survivors.is_some() {
+                        def.contact_damage
+                    } else {
+                        armoured_bite(def.contact_damage, self.st.bonus.armour)
+                    };
                     self.hurt(amount, "bite", &def.id);
                 }
                 continue;
@@ -642,7 +676,11 @@ impl Sim {
                 && max(ed, min_d) <= min_d + CONTACT_GAP + BITE_SLACK
                 && self.st.w >= self.st.invuln_until - 1e-9
             {
-                let amount = armoured_bite(def.contact_damage, self.st.bonus.armour);
+                let amount = if env.input.level.survivors.is_some() {
+                    def.contact_damage
+                } else {
+                    armoured_bite(def.contact_damage, self.st.bonus.armour)
+                };
                 self.hurt(amount, "bite", &def.id);
             }
         }

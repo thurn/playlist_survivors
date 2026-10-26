@@ -77,7 +77,23 @@ pub fn draw(
             continue;
         }
         let (x, y) = place(index, g, s, hero.x, hero.y);
-        if g.big {
+        if view.run.is_some() {
+            let tint = match sim::survivors::gem_color(g.value) {
+                sim::survivors::GemColor::Blue => rgb(0x0030_aaff),
+                sim::survivors::GemColor::Green => rgb(0x0040_ff70),
+                sim::survivors::GemColor::Red => rgb(0x00ff_4050),
+            };
+            let big = g.value >= 10.0;
+            sprite(if big { "gem-big" } else { "gem" }, x, y, 1.0, tint, out);
+            sprite(
+                if big { "gem-big-glint" } else { "gem-glint" },
+                x,
+                y,
+                1.0,
+                [1.0; 4],
+                out,
+            );
+        } else if g.big {
             sprite("gem-big", x, y, 1.0, rgb(0x00c0_8cff), out);
             sprite("gem-big-glint", x, y, 1.0, [1.0; 4], out);
         } else {
@@ -93,6 +109,7 @@ mod tests {
 
     fn gem(fly: Option<f64>, s1: f64) -> Gem {
         Gem {
+            value: 1.0,
             s0: 1.0,
             x0: 100.0,
             y0: 50.0,

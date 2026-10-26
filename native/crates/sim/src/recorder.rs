@@ -467,6 +467,7 @@ pub trait Recorder {
     fn chicken(&mut self, c: ChickenRecord) {}
     fn chicken_taken(&mut self, i: usize, s: f64, w: f64, s_heal: f64) {}
     fn gem(&mut self, g: GemRecord) {}
+    fn gem_value(&mut self, gem: usize, value: f64) {}
     fn gem_arrive(&mut self, gem: usize, w: f64) {}
     fn gem_fly(&mut self, gem: usize, w: f64, s1: f64) {}
     fn gem_grow(&mut self, gem: usize, value: f64, big: bool) {}
@@ -593,6 +594,9 @@ impl<R: Recorder + ?Sized> Recorder for std::rc::Rc<std::cell::RefCell<R>> {
     }
     fn gem(&mut self, g: GemRecord) {
         self.borrow_mut().gem(g);
+    }
+    fn gem_value(&mut self, gem: usize, value: f64) {
+        self.borrow_mut().gem_value(gem, value);
     }
     fn gem_arrive(&mut self, gem: usize, w: f64) {
         self.borrow_mut().gem_arrive(gem, w);

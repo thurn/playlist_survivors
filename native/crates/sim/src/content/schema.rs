@@ -287,6 +287,17 @@ pub fn hero_def() -> Schema {
 
 pub fn enemy_def() -> Schema {
     object(vec![
+        opt(
+            "survivors",
+            object(vec![
+                req("speed", min(0.0)),
+                req("power", min(0.0)),
+                req("xp", min(0.0)),
+                def("knockback", min(0.0), json!(0)),
+                def("maxKnockback", min(0.0), json!(3)),
+                def("resDebuffs", min(0.0), json!(0)),
+            ]),
+        ),
         req("id", id()),
         req("atlas", string()),
         req("radius", positive()),

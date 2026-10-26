@@ -26,31 +26,55 @@ impl Sim {
         let f = &self.st.foes[fi];
         let def = &env.input.lib.enemies[f.def];
         // Every death drops gems; during the finale blast they fly to the hero a beat after it.
-        let big = def.size != Size::Regular;
-        let value = if big { 5.0 } else { 1.0 };
+        let value = if self.st.survivor.is_some() {
+            let xp = def.survivors.expect("survivor enemy stats").xp;
+            let random = Rng::new(&[
+                Part::Num(env.input.seed),
+                Part::Str("vs-gem"),
+                Part::Num(fi as f64),
+            ])
+            .next();
+            crate::survivors::gem_value(xp, random)
+        } else if def.size != Size::Regular {
+            5.0
+        } else {
+            1.0
+        };
+        let big = if self.st.survivor.is_some() {
+            value >= 10.0
+        } else {
+            def.size != Size::Regular
+        };
         if self.st.blasting {
             let blast_s = self.blast_s().expect("the finale's blast");
             let s1 = self.known_time_of_beat(self.known_beat_at(blast_s) + 1.0);
-            self.rec.gem(GemRecord {
-                w0: self.st.w,
-                x0: fate.x,
-                y0: fate.y,
-                s1,
-                w1: 0.0,
-                value,
-                big,
-                enemy: fi as f64,
-                w_t: None,
-            });
-            let gem = self.st.n_gems;
-            self.st.n_gems += 1;
-            self.st.q.push(s1, Ev::Gem { gem, value });
+            if value > 0.0 {
+                self.rec.gem(GemRecord {
+                    w0: self.st.w,
+                    x0: fate.x,
+                    y0: fate.y,
+                    s1,
+                    w1: 0.0,
+                    value,
+                    big,
+                    enemy: fi as f64,
+                    w_t: None,
+                });
+                let gem = self.st.n_gems;
+                if self.st.survivor.is_some() {
+                    self.rec.gem_value(gem, value);
+                }
+                self.st.n_gems += 1;
+                self.st.q.push(s1, Ev::Gem { gem, value });
+            }
             if self.st.boss_foe == Some(fi) {
                 self.boss_died(h.id, h.source);
             }
             return;
         }
-        self.drop_on_field(fi, fate, value, big);
+        if value > 0.0 {
+            self.drop_on_field(fi, fate, value, big);
+        }
         // The small health pool: an orc elite drops a chicken half the time (seeded by the enemy), the boss two.
         let n = if def.size == Size::Boss {
             CHICKEN_BOSS
@@ -101,6 +125,9 @@ impl Sim {
 
     /// The pickup radius at the tier now, widened by the magnet passive.
     pub(super) fn pickup_radius(&self) -> f64 {
+        if let Some(p) = &self.st.survivor {
+            return crate::survivors::PICKUP_RADIUS * p.stats.magnet;
+        }
         let r = self
             .env
             .input
@@ -114,21 +141,40 @@ impl Sim {
         r.get(i as usize).copied().unwrap_or(f64::NAN) * (1.0 + self.st.bonus.pickup)
     }
 
-    /// A death's gem waits where it dropped; past the cap, its value goes to the nearest gem.
-    fn drop_on_field(&mut self, fi: usize, fate: Fate, value: f64, big: bool) {
-        if self.st.field.len() >= GEM_CAP {
+    /// At the cap, survivors merges into the farthest gem from the hero; legacy uses the nearest death.
+    pub(super) fn drop_on_field(&mut self, fi: usize, fate: Fate, value: f64, big: bool) {
+        let survivors = self.st.survivor.is_some();
+        let cap = if survivors {
+            crate::survivors::GEM_CAP
+        } else {
+            GEM_CAP
+        };
+        if self.st.field.len() >= cap {
+            let hp = self.hero_pose(self.st.w);
             let mut near = 0usize;
             for (i, g) in self.st.field.iter().enumerate() {
                 let n = &self.st.field[near];
-                if hypot(g.x - fate.x, g.y - fate.y) < hypot(n.x - fate.x, n.y - fate.y) {
+                let choose = if survivors {
+                    hypot(g.x - hp.x, g.y - hp.y) > hypot(n.x - hp.x, n.y - hp.y)
+                } else {
+                    hypot(g.x - fate.x, g.y - fate.y) < hypot(n.x - fate.x, n.y - fate.y)
+                };
+                if choose {
                     near = i;
                 }
             }
             let g = &mut self.st.field[near];
             g.value += value;
-            g.big = g.big || big || g.value >= 5.0;
+            g.big = if survivors {
+                g.value >= 10.0
+            } else {
+                g.big || big || g.value >= 5.0
+            };
             let (gem, v, b) = (g.gem, g.value, g.big);
             self.rec.gem_grow(gem, v, b);
+            if survivors {
+                self.rec.gem_value(gem, v);
+            }
             return;
         }
         self.rec.gem(GemRecord {
@@ -143,6 +189,9 @@ impl Sim {
             w_t: None,
         });
         let gem = self.st.n_gems;
+        if survivors {
+            self.rec.gem_value(gem, value);
+        }
         self.st.n_gems += 1;
         self.st.field.push(FieldGem {
             gem,
@@ -245,7 +294,10 @@ impl Sim {
     }
 
     fn push_xp(&mut self) {
-        let fill = clamp(self.st.xp_now / self.level_req(), 0.0, 1.0);
+        let fill = self.st.survivor.as_ref().map_or_else(
+            || clamp(self.st.xp_now / self.level_req(), 0.0, 1.0),
+            crate::survivors::Progress::fill,
+        );
         self.rec.xp(self.st.s, fill);
     }
 
@@ -443,6 +495,12 @@ impl Sim {
 
     pub(super) fn gem_arrives(&mut self, i: usize, value: f64) {
         self.rec.gem_arrive(i, self.st.w);
+        if let Some(p) = &mut self.st.survivor {
+            p.gain_xp(value);
+            self.push_xp();
+            self.publish_run();
+            return;
+        }
         self.st.xp_now += value;
         self.push_xp();
         if self.st.level >= self.st.sch.level_ups.len() {
@@ -479,9 +537,29 @@ impl Sim {
         }
     }
 
+    pub fn survivor_progress(&self) -> Option<&crate::survivors::Progress> {
+        self.st.survivor.as_ref()
+    }
+
+    /// Sim-owned passive rules call this; added maximum HP is healed, as in VS.
+    pub fn apply_survivor_stats(&mut self, delta: crate::survivors::StatDelta) {
+        if let Some(p) = &mut self.st.survivor {
+            let before = p.stats.max_hp;
+            p.stats.apply(delta);
+            let added = p.stats.max_hp - before;
+            if added > 0.0 {
+                self.heal(added, "hollow-heart");
+            }
+            self.publish_run();
+        }
+    }
+
     /// The maximum health, with the max-health passives.
     pub(super) fn health_max(&self) -> f64 {
-        self.env.input.lib.hero.health.max + self.st.bonus.max_health
+        self.st.survivor.as_ref().map_or(
+            self.env.input.lib.hero.health.max + self.st.bonus.max_health,
+            |p| p.stats.max_hp,
+        )
     }
 
     /// The hero takes damage; nothing hurts it while it is invulnerable, and each hurt makes it so.
@@ -501,7 +579,25 @@ impl Sim {
             return;
         }
         let hero = &self.env.input.lib.hero;
-        self.st.invuln_until = self.st.w + hero.health.invulnerable_ms / 1000.0;
+        let amount = if let Some(p) = &self.st.survivor {
+            self.st.invuln_until = self.st.w + crate::survivors::DAMAGE_LOCKOUT_S;
+            if source == "bite" {
+                p.stats.contact_damage(
+                    amount,
+                    self.env
+                        .input
+                        .level
+                        .survivors
+                        .expect("survivors")
+                        .contact_damage,
+                )
+            } else {
+                amount
+            }
+        } else {
+            self.st.invuln_until = self.st.w + hero.health.invulnerable_ms / 1000.0;
+            amount
+        };
         self.st.health = max(0.0, self.st.health - amount);
         let frac = self.st.health / self.health_max();
         self.rec.health(self.st.s, frac);

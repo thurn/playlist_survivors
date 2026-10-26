@@ -81,6 +81,12 @@ impl Sim {
             presentation_s: if f.frozen { f.since } else { self.st.s },
             frozen_beat: f.frozen.then_some(f.beat_at_open),
             elapsed: self.st.run_s,
+            level: self
+                .st
+                .survivor
+                .as_ref()
+                .map_or(self.st.level + 1, |p| p.level),
+            max_hp: self.health_max(),
             world: self.st.w,
             frozen: f.frozen.then_some(reason).flatten(),
             selected: f.selected,
@@ -398,7 +404,7 @@ impl Sim {
                         .step,
                     2.0,
                 ),
-                Ev::Wave { .. } | Ev::Gem { .. } => 0.25,
+                Ev::Wave { .. } | Ev::Gem { .. } | Ev::Recoil { .. } => 0.25,
                 _ => 1.0,
             };
             let Some((bi, at)) = self.known_grid_after(due, step) else {

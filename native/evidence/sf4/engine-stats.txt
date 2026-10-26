@@ -1,0 +1,12 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sf4-vs-stats/native/crates/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.55s
+     Running unittests src/lib.rs (target/debug/deps/sim-1ebf1e278f138957)
+
+running 4 tests
+test engine::tests::survivor_health_uses_armor_lockout_and_heals_the_added_hollow_heart_maximum ... ok
+test engine::tests::survivor_field_keeps_400_gems_and_merges_xp_into_the_farthest_from_the_hero ... ok
+test engine::tests::survivor_zero_xp_drops_no_gem_and_recoil_starts_on_the_next_sixteenth ... ok
+test engine::tests::survivor_world_time_ignores_stops_dips_and_rates_but_holds_recovery_in_freeze ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.01s
+

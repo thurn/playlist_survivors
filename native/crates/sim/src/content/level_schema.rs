@@ -381,7 +381,10 @@ pub fn level_script() -> Schema {
         opt("director", director()),
         opt(
             "survivors",
-            object(vec![def("durationS", positive(), json!(1800))]),
+            object(vec![
+                def("durationS", positive(), json!(1800)),
+                def("contactDamage", min(0.0), json!(0.5)),
+            ]),
         ),
     ];
     object(fields)

@@ -241,6 +241,7 @@ pub struct EnemyOverride {
 #[serde(rename_all = "camelCase")]
 pub struct Survivors {
     pub duration_s: f64,
+    pub contact_damage: f64,
 }
 
 /// The loaded level script.

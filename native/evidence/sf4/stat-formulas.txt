@@ -1,0 +1,15 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sf4-vs-stats/native/crates/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.72s
+     Running tests/survivor_stats.rs (target/debug/deps/survivor_stats-0db51e3894f1fae8)
+
+running 5 tests
+px/U=154.26997245179064, hero=140, bat=54.88000000000001, radius=test contact_damage_scales_power_before_armor_with_one_hp_floor ... ok
+46.28099173553719
+test vs_stat_layers_add_except_compounding_max_health_and_final_clamps ... ok
+test the_xp_appendix_curve_and_temporary_growth_bonus_are_exact ... ok
+test movement_and_magnet_share_one_forest_unit_conversion ... ok
+20,000 xp=1 drops: 9949 zero, 10051 total XP, mean 0.50255
+test seeded_gem_values_include_zero_and_match_source_distribution_and_colors ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

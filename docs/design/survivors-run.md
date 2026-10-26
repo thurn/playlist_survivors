@@ -1123,6 +1123,19 @@ visual/feel checks remain in operator-pending. Actual offers and chest timing
 belong to SF7/SH10.
 
 ### SF4
+
+Antonio's 120 HP/1 Armor, final-stat clamps, compounding Hollow Heart,
+120 ms damage lockout and contact power ×0.5 before Armor are wired in.
+One scale (154.26997245 px/U) gives hero 140 px/s, BAT1 54.88 and magnet 46.28.
+Cumulative XP keeps the source's half-point thresholds and +1 Growth at 20/40;
+earned levels wait for SF7's cards. Zero-value gems do not drop; 400 ground
+gems merge into the farthest from the hero and retain their value/color.
+Nine formula/integrated tests cover these rules, including fixed-step recovery
+across a freeze and next-sixteenth recoil. A short headless Delayed run replayed
+all 21,307 settled records identically (36 kills/full HP); prototype enemy HP/population
+remain until SF6, so this is not a survival or pacing measurement.
+See [SF4 evidence](../../native/evidence/sf4/README.md).
+
 ### SF5
 ### SF6
 ### SF7

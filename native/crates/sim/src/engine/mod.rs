@@ -222,6 +222,11 @@ impl SimInput {
     ) -> SimInput {
         let mut lib = content.clone();
         lib.hero = level.hero.clone();
+        if level.survivors.is_some() {
+            lib.hero.walk.speed = crate::survivors::HERO_SPEED;
+            lib.hero.health.max = 120.0;
+            lib.hero.health.invulnerable_ms = 120.0;
+        }
         for (id, over) in &level.enemies {
             if let Some(e) = lib.enemies.get_mut(id) {
                 if let Some(c) = over.contact_damage {
@@ -230,6 +235,15 @@ impl SimInput {
                 if let Some(a) = over.attack_damage {
                     e.attack_damage = a;
                 }
+            }
+        }
+        if level.survivors.is_some() {
+            for e in lib.enemies.values_mut() {
+                let data = *e
+                    .survivors
+                    .get_or_insert_with(|| crate::survivors::EnemyStats::for_art(&e.id));
+                e.speed = crate::survivors::enemy_speed(data.speed);
+                e.contact_damage = data.power;
             }
         }
         let mut hero_anims = default_hero_anims();
@@ -315,6 +329,10 @@ enum Ev {
     },
     Held,
     HitstopEnd,
+    Recoil {
+        foe: usize,
+        multiplier: f64,
+    },
     Wind(usize),
     Strike(usize),
     Fire {
@@ -463,7 +481,7 @@ impl Ev {
             Ev::DrawCheck { .. } => 7.0,
             Ev::Release { .. } | Ev::SlamCheck { .. } => 8.0,
             Ev::BossLand => 13.0,
-            Ev::FormationRelease { .. } => 14.0,
+            Ev::FormationRelease { .. } | Ev::Recoil { .. } => 14.0,
             Ev::Blast { .. } => 18.0,
             Ev::Arrive { .. } | Ev::SlamLand { .. } => 19.0,
         }
@@ -649,6 +667,8 @@ struct Foe {
     knock_x: f64,
     knock_y: f64,
     knock_t: f64,
+    recoil_until: f64,
+    recoil_v: (f64, f64),
     weight: f64,
     charge_until: f64,
     land_s: Option<f64>,
@@ -887,6 +907,7 @@ struct SimState {
     /// Unwarped elapsed run time, independent of song boundaries (SF3 freezes it).
     run_s: f64,
     freeze: freeze::Freeze,
+    survivor: Option<crate::survivors::Progress>,
     w: f64,
     rate_s: f64,
     q: Queue,
@@ -1413,7 +1434,11 @@ impl Sim {
     }
 
     fn base_rate(&self, t: f64) -> f64 {
-        step_rate(self.base_steps(), t)
+        if self.env.input.level.survivors.is_some() {
+            1.0
+        } else {
+            step_rate(self.base_steps(), t)
+        }
     }
 
     fn in_stop(&self, t: f64) -> bool {
@@ -1456,7 +1481,11 @@ impl Sim {
     }
 
     fn rate_at(&self, t: f64) -> f64 {
-        if self.st.freeze.frozen || self.in_stop(t) {
+        if self.st.freeze.frozen {
+            0.0
+        } else if self.env.input.level.survivors.is_some() {
+            1.0
+        } else if self.in_stop(t) {
             0.0
         } else {
             round(self.base_rate(t) * self.dip_factor(t) * 1e6) / 1e6
@@ -1571,8 +1600,19 @@ impl Sim {
         {
             self.st.run_s = (t - self.st.freeze.total_s).min(run.duration_s);
         }
+        let elapsed_world = if fixed {
+            (w1 - self.st.last_fixed_w).max(0.0)
+        } else {
+            0.0
+        };
         self.st.s = t;
         self.st.w = w1;
+        if let Some(p) = &self.st.survivor {
+            let recovery = p.stats.finalized().recovery;
+            if elapsed_world > 0.0 && recovery > 0.0 {
+                self.heal(recovery * elapsed_world, "recovery");
+            }
+        }
         if !between {
             self.st.rate_s = t;
         }
@@ -1653,6 +1693,7 @@ impl Sim {
             Ev::Freeze(reason) => self.enter_freeze(reason),
             Ev::FreePulse { generation } => self.free_pulse(generation),
             Ev::HitstopEnd => {}
+            Ev::Recoil { foe, multiplier } => self.survivor_recoil(foe, multiplier),
             Ev::Key(e) => {
                 if self.freeze_key(&e) {
                     return;
@@ -1810,6 +1851,9 @@ fn fresh_state(env: &Env) -> SimState {
         s: 0.0,
         run_s: 0.0,
         freeze: freeze::Freeze::default(),
+        survivor: level
+            .survivors
+            .map(|_| crate::survivors::Progress::default()),
         w: 0.0,
         rate_s: 0.0,
         q: Queue::default(),
@@ -1865,7 +1909,11 @@ fn fresh_state(env: &Env) -> SimState {
         foes: Vec::new(),
         foe_samples: Vec::new(),
         blasting: false,
-        health: env.input.lib.hero.health.max,
+        health: if level.survivors.is_some() {
+            120.0
+        } else {
+            env.input.lib.hero.health.max
+        },
         boss_foe: None,
         xp_now: 0.0,
         level: 0,
@@ -2039,7 +2087,10 @@ mod tests {
     fn survivors_cannot_fall_while_waiting_for_the_victory_downbeat() {
         let mut sim = sim(&stream());
         Rc::get_mut(&mut sim.env).unwrap().input.level.survivors =
-            Some(crate::content::level::Survivors { duration_s: 2.0 });
+            Some(crate::content::level::Survivors {
+                duration_s: 2.0,
+                contact_damage: 0.5,
+            });
         sim.st.run_s = 1.9;
         let hp = sim.st.health;
         sim.hurt(1.0, "contact", "slime");
@@ -2057,7 +2108,10 @@ mod tests {
         use std::cell::RefCell;
         let mut sim = sim_in(&stream(), true);
         Rc::get_mut(&mut sim.env).unwrap().input.level.survivors =
-            Some(crate::content::level::Survivors { duration_s: 30.0 });
+            Some(crate::content::level::Survivors {
+                duration_s: 30.0,
+                contact_damage: 0.5,
+            });
         let rec = Rc::new(RefCell::new(LogRecorder::default()));
         sim.rec = Box::new(Rc::clone(&rec));
         sim.st.fire_specs.clear();
@@ -2298,5 +2352,209 @@ mod tests {
         key(&mut sim, 1.62, KeyEventKind::Press, InputKey::Right);
         sim.advance_to(1.63);
         assert_eq!(stride_s0(&sim), Some(1.62));
+    }
+    fn survivor_sim() -> Sim {
+        let file = stream();
+        let base = sim_in(&file, true);
+        let lib = &base.env.input.lib;
+        let mut level = load_level(
+            &source("levels/survivors.yaml"),
+            lib,
+            &reactive_song_map(f64::INFINITY),
+            None,
+        )
+        .unwrap();
+        let director = level.director.as_mut().unwrap();
+        director.population.start = 0.0;
+        director.population.per_minute = 0.0;
+        let mut input = SimInput::new(level, lib, &indexmap::IndexMap::new(), 0.5, false);
+        input.zen = true;
+        let mut sim = Sim::new(input, Rc::new(file.log), Box::new(NullRecorder), None);
+        sim.st.q.remove(&|ev| matches!(ev, Ev::Auto { .. }));
+        sim
+    }
+
+    #[test]
+    fn survivor_health_uses_armor_lockout_and_heals_the_added_hollow_heart_maximum() {
+        use crate::survivors::StatDelta;
+        let mut sim = survivor_sim();
+        assert_eq!(sim.st.health, 120.0);
+        sim.hurt(10.0, "bite", "skeleton");
+        assert_eq!(sim.st.health, 116.0);
+        sim.advance_to(0.119);
+        sim.hurt(10.0, "bite", "skeleton");
+        assert_eq!(sim.st.health, 116.0);
+        sim.advance_to(0.121);
+        sim.hurt(10.0, "bite", "skeleton");
+        assert_eq!(sim.st.health, 112.0);
+        sim.apply_survivor_stats(StatDelta {
+            max_hp: 0.2,
+            ..StatDelta::default()
+        });
+        assert_eq!(sim.health_max(), 144.0);
+        assert_eq!(sim.st.health, 136.0);
+        for _ in 0..4 {
+            sim.apply_survivor_stats(StatDelta {
+                max_hp: 0.2,
+                ..StatDelta::default()
+            });
+        }
+        assert!((sim.health_max() - 298.5984).abs() < 1e-9);
+        assert!((sim.st.health - (298.5984 - 8.0)).abs() < 1e-9);
+    }
+
+    #[test]
+    fn survivor_world_time_ignores_stops_dips_and_rates_but_holds_recovery_in_freeze() {
+        use crate::survivors::{FreezeReason, StatDelta};
+        let mut a = survivor_sim();
+        let mut b = survivor_sim();
+        let ar = Rc::new(std::cell::RefCell::new(
+            crate::recorder::LogRecorder::default(),
+        ));
+        let br = Rc::new(std::cell::RefCell::new(
+            crate::recorder::LogRecorder::default(),
+        ));
+        a.rec = Box::new(Rc::clone(&ar));
+        b.rec = Box::new(Rc::clone(&br));
+        for sim in [&mut a, &mut b] {
+            sim.st.health = 100.0;
+            sim.apply_survivor_stats(StatDelta {
+                recovery: 1.0,
+                ..StatDelta::default()
+            });
+            sim.st.stop_start = 0.0;
+            sim.st.stop_end = 9.0;
+            sim.st.dip_start = 0.0;
+            sim.st.sch.base_steps[0].rate = 0.2;
+            sim.start_hit_stop(0.15);
+            sim.freeze_at(1.0, FreezeReason::Paused);
+            key(sim, 3.1, KeyEventKind::Press, InputKey::Pause);
+            key(sim, 3.2, KeyEventKind::Release, InputKey::Pause);
+        }
+        a.advance_to(2.0);
+        assert!((a.w() - 1.0).abs() < 1e-9);
+        let health = a.st.health;
+        a.advance_to(3.0);
+        assert_eq!(a.st.health, health);
+        a.advance_to(5.0);
+        for k in 1..=500 {
+            b.advance_to(f64::from(k) / 100.0);
+        }
+        assert!((a.w() - a.run_s()).abs() < 1e-9);
+        assert_eq!(a.st.health, b.st.health);
+        assert!((a.st.health - (100.0 + a.w())).abs() < 0.01);
+        assert_eq!(format!("{:?}", ar.borrow()), format!("{:?}", br.borrow()));
+    }
+
+    #[test]
+    fn survivor_field_keeps_400_gems_and_merges_xp_into_the_farthest_from_the_hero() {
+        use crate::recorder::Fate;
+        let mut sim = survivor_sim();
+        for k in 0..400 {
+            sim.drop_on_field(
+                k,
+                Fate {
+                    w: 0.0,
+                    x: k as f64,
+                    y: 0.0,
+                    hit: 0.0,
+                    lethal: true,
+                    damage: 1.0,
+                },
+                1.0,
+                false,
+            );
+        }
+        // A new drop by the near gem must still merge into the far gem.
+        sim.drop_on_field(
+            400,
+            Fate {
+                w: 0.0,
+                x: 0.0,
+                y: 0.0,
+                hit: 0.0,
+                lethal: true,
+                damage: 1.0,
+            },
+            10.0,
+            true,
+        );
+        assert_eq!(sim.st.field.len(), 400);
+        assert_eq!(sim.st.n_gems, 400);
+        assert_eq!(sim.st.field[0].value, 1.0);
+        assert_eq!(sim.st.field[399].value, 11.0);
+        assert!(sim.st.field[399].big);
+        sim.gem_arrives(399, 45.0);
+        let progress = sim.survivor_progress().unwrap();
+        assert_eq!(
+            (progress.level, progress.xp, progress.pending_levels),
+            (4, 45.0, 3)
+        );
+    }
+
+    #[test]
+    fn survivor_zero_xp_drops_no_gem_and_recoil_starts_on_the_next_sixteenth() {
+        use super::combat::HitSpec;
+        use crate::core::geometry::Shape;
+        use crate::recorder::{HitSource, Weight};
+        let mut sim = survivor_sim();
+        let def = sim.env.input.lib.enemies.get_index_of("skeleton").unwrap();
+        Rc::get_mut(&mut sim.env).unwrap().input.lib.enemies[def]
+            .survivors
+            .as_mut()
+            .unwrap()
+            .xp = 0.0;
+        sim.advance_to(0.55);
+        let enemy = sim.spawn_foe(def, 100.0, 0.0, Some(100.0));
+        sim.advance_to(0.6);
+        let hit = sim.add_hit(
+            HitSpec {
+                source: HitSource::Weapon,
+                what: "sword".into(),
+                weight: Weight::Light,
+                primary: true,
+                shape: Shape::Circle {
+                    x: 100.0,
+                    y: 0.0,
+                    radius: 1000.0,
+                },
+                dir: 0.0,
+                accent: 0.0,
+                damage: 1.0,
+                group: None,
+            },
+            Some(1.0),
+        );
+        sim.damage(enemy, &hit);
+        assert!(sim.st.foes[enemy].recoil_until.is_infinite());
+        sim.advance_to(0.624);
+        assert!(sim.st.foes[enemy].recoil_until.is_infinite());
+        sim.advance_to(0.626);
+        assert!((sim.st.foes[enemy].recoil_until - 0.745).abs() < 1e-9);
+        assert!(
+            (sim.st.foes[enemy]
+                .recoil_v
+                .0
+                .hypot(sim.st.foes[enemy].recoil_v.1)
+                - 196.0)
+                .abs()
+                < 1e-9
+        );
+        sim.advance_to(0.76);
+        assert_eq!(sim.st.foes[enemy].recoil_until, f64::NEG_INFINITY);
+        Rc::get_mut(&mut sim.env).unwrap().input.lib.enemies[def]
+            .survivors
+            .as_mut()
+            .unwrap()
+            .knockback = 0.0;
+        let immune = sim.spawn_foe(def, 300.0, 0.0, Some(100.0));
+        sim.damage(immune, &hit);
+        sim.advance_to(0.9);
+        assert_eq!(sim.st.foes[immune].recoil_until, f64::NEG_INFINITY);
+        let mut lethal = hit;
+        lethal.damage = 1000.0;
+        sim.damage(enemy, &lethal);
+        assert!(sim.st.field.is_empty());
+        assert_eq!(sim.st.n_gems, 0);
     }
 }

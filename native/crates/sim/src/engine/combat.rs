@@ -47,6 +47,9 @@ pub(super) struct HitSpec {
 
 impl Sim {
     pub(super) fn start_hit_stop(&mut self, len: f64) {
+        if self.st.survivor.is_some() {
+            return;
+        }
         let s = self.st.s;
         if self.in_stop(s) {
             return;
@@ -112,6 +115,32 @@ impl Sim {
         if lethal {
             self.kill(fi);
             self.on_death(fi, fate, h);
+        } else if self.st.survivor.is_some() {
+            let data = self.env.input.lib.enemies[self.st.foes[fi].def]
+                .survivors
+                .expect("survivor enemy stats");
+            let weapon_kb = if matches!(h.what.as_str(), "garlic" | "soul-eater") {
+                0.0
+            } else {
+                5.0
+            };
+            if data.knockback * weapon_kb > 0.0 {
+                let bi = (self.known_beat_at(self.st.s) * 4.0 + 1e-6).floor() / 4.0 + 0.25;
+                let ev = Ev::Recoil {
+                    foe: fi,
+                    multiplier: data.knockback * weapon_kb,
+                };
+                if self.log.beats[..self.st.ingested.beats]
+                    .last()
+                    .is_some_and(|b| b.t > self.st.s)
+                {
+                    self.push_at_beat(bi, ev);
+                } else {
+                    self.st
+                        .q
+                        .push(self.st.s + self.env.rule.free_period_s / 4.0, ev);
+                }
+            }
         } else {
             let f = &self.st.foes[fi];
             if !(f.knock_t > 0.0
@@ -131,6 +160,27 @@ impl Sim {
         }
     }
 
+    pub(super) fn survivor_recoil(&mut self, fi: usize, multiplier: f64) {
+        if !self.st.foes.get(fi).is_some_and(|f| f.alive) {
+            return;
+        }
+        let hp = self.hero_pose(self.st.w);
+        let (x, y) = self.pos(fi, self.st.w);
+        let speed = self.env.input.lib.enemies[self.st.foes[fi].def].speed * multiplier;
+        let dx = x - hp.x;
+        let dy = y - hp.y;
+        let d = hypot(dx, dy).max(1e-9);
+        let f = &mut self.st.foes[fi];
+        f.x = x;
+        f.y = y;
+        f.last_w = self.st.w;
+        f.step = None;
+        f.recoil_v = (dx / d * speed, dy / d * speed);
+        f.vx = f.recoil_v.0;
+        f.vy = f.recoil_v.1;
+        f.recoil_until = self.st.w + crate::survivors::DAMAGE_LOCKOUT_S;
+    }
+
     fn intensity_of(&self, energy: f64, weight: Weight, accent: f64) -> f64 {
         let level = &self.env.input.level.sections[0];
         clamp(
@@ -148,7 +198,9 @@ impl Sim {
         let s = self.st.s;
         let energy = energy.unwrap_or_else(|| energy_at(&self.st.song, s));
         // The might passive: the hero's hits deal more.
-        let damage = if self.st.bonus.damage > 0.0 && h.source != HitSource::Ring {
+        let damage = if let Some(p) = &self.st.survivor {
+            h.damage * p.stats.finalized().might
+        } else if self.st.bonus.damage > 0.0 && h.source != HitSource::Ring {
             h.damage * (1.0 + self.st.bonus.damage)
         } else {
             h.damage

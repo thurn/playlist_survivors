@@ -1,0 +1,23 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.04s
+     Running tests/survivors.rs (target/debug/deps/survivors-0e33f9d9bae2b18e)
+
+running 15 tests
+test keys_held_when_cards_open_never_pick_until_released_and_pressed_again ... ok
+test ending_a_manual_pause_does_not_dismiss_a_chest_freeze ... ok
+test a_pause_holds_every_world_quantity_and_held_movement_requires_release ... ok
+test a_second_silent_gap_inside_a_pause_cannot_resume_the_world ... ok
+test victory_holds_the_hero_when_the_last_beat_ends_and_free_pulses_continue ... ok
+test freezing_a_planned_victory_replans_it_once_without_duplicate_landmarks ... ok
+test survivors_does_not_use_a_downbeat_before_its_known_at ... ok
+silence freeze run clock=7.2499999999999964; resumed at song time 12.5, run clock=7.350999999999997
+test section_changes_learned_during_pause_never_rewind_the_clock ... ok
+test silence_freezes_at_known_evidence_and_relocks_on_the_second_following_bar ... ok
+test no_committed_beat_means_held_strides_on_the_free_pulse ... ok
+test a_chained_card_clears_the_previous_confirm_and_blocks_its_held_key ... ok
+test survivors_victory_snaps_to_a_known_downbeat_and_repeats_exactly ... ok
+test frozen_streaming_and_batch_runs_record_identically ... ok
+test survivors_ignores_a_confirmed_song_end ... ok
+test a_long_pause_preserves_the_zone_fallbacks_remaining_time ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+

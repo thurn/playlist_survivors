@@ -203,6 +203,7 @@ pub enum Behavior {
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct EnemyDef {
+    pub survivors: Option<crate::survivors::EnemyStats>,
     pub id: String,
     pub atlas: String,
     pub radius: f64,

@@ -558,3 +558,34 @@ fn a_late_confirm_rolls_back_across_freeze_open_and_settles_as_on_time() {
         n, ahead.stats.key_rollbacks, ahead.stats.deepest_s
     );
 }
+
+#[test]
+fn a_growing_gem_keeps_its_xp_value_for_survivors_color_selection() {
+    let mut view = eval::live::LiveView::default();
+    view.apply(
+        1.0,
+        &Record::Gem {
+            x: 0.0,
+            y: 0.0,
+            s1: f64::INFINITY,
+            big: false,
+        },
+    );
+    view.apply(1.0, &Record::GemValue { gem: 0, value: 2.0 });
+    assert_eq!(
+        sim::survivors::gem_color(view.gems[&0].value),
+        sim::survivors::GemColor::Blue
+    );
+    view.apply(2.0, &Record::GemGrow { gem: 0, big: true });
+    view.apply(
+        2.0,
+        &Record::GemValue {
+            gem: 0,
+            value: 11.0,
+        },
+    );
+    assert_eq!(
+        sim::survivors::gem_color(view.gems[&0].value),
+        sim::survivors::GemColor::Red
+    );
+}

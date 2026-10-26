@@ -3,8 +3,8 @@ song: reactive
 seed: 2026
 player: reactive-moderate
 reactive: true
-survivors: { durationS: 1800 }
-hero: { health: { max: 200 } }
+survivors: { durationS: 1800, contactDamage: 0.5 }
+hero: { health: { max: 120, invulnerableMs: 120 } }
 upgrades: { loadout: [], offer: [] }
 zones: [twilight-glade, galop-woods, mushroom-grove, ember-hollow, infernal-grove]
 sections:

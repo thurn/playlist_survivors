@@ -194,6 +194,7 @@ pub struct LiveView {
 /// field) and arrives (song s; infinite while waiting), and whether it is big.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Gem {
+    pub value: f64,
     pub s0: f64,
     pub x0: f64,
     pub y0: f64,
@@ -251,6 +252,7 @@ impl LiveView {
                         wave.s += gap;
                     }
                 }
+                self.level = u32::try_from(state.level).unwrap_or(u32::MAX);
                 self.run = Some(*state);
             }
             Record::Hero(p) => self.hero = Some(*p),
@@ -315,6 +317,7 @@ impl LiveView {
                 self.gems.insert(
                     self.dropped,
                     Gem {
+                        value: 1.0,
                         s0: s,
                         x0: *x,
                         y0: *y,
@@ -334,6 +337,11 @@ impl LiveView {
             Record::GemGrow { gem, big } => {
                 if let Some(g) = self.gems.get_mut(gem) {
                     g.big = *big;
+                }
+            }
+            Record::GemValue { gem, value } => {
+                if let Some(g) = self.gems.get_mut(gem) {
+                    g.value = *value;
                 }
             }
             Record::GemArrive { gem } => {
@@ -435,6 +443,11 @@ pub enum Record {
     },
     GemArrive {
         gem: usize,
+    },
+    /// Extra survivor data; keep legacy session records stable.
+    GemValue {
+        gem: usize,
+        value: f64,
     },
     /// A vacuum drops at (x, y); a vacuum (by index) is touched.
     Vacuum {
@@ -826,6 +839,10 @@ impl Recorder for LiveRecorder {
 
     fn gem_grow(&mut self, gem: usize, _value: f64, big: bool) {
         self.0.borrow_mut().push(Record::GemGrow { gem, big });
+    }
+
+    fn gem_value(&mut self, gem: usize, value: f64) {
+        self.0.borrow_mut().push(Record::GemValue { gem, value });
     }
 
     fn gem_arrive(&mut self, gem: usize, _w: f64) {
