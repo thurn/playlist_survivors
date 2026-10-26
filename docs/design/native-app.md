@@ -2013,7 +2013,8 @@ Named so this plan does not block them. Each needs its own design.
   non-commercial).
 - **Other platforms:** WASAPI loopback on Windows. Process loopback captures
   one app but cannot mute it, so a Windows Delayed listening needs its own
-  design.
+  design. [windows-delayed-spike.md](windows-delayed-spike.md) is the runbook
+  for measuring whether it can work.
 - **More from Delayed listening's lookahead:** accents detected rather than
   forecast, structure events and the boss entry on time, and judging that
   needs no provisional rating.
