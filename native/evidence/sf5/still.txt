@@ -1,0 +1,1 @@
+slice: wrote evidence/sf5/still.png (1688 sprites, 5 lights; 62 enemies, health 1.00, groove 0.00; zone galop-woods)

@@ -119,11 +119,22 @@ impl Sim {
             let data = self.env.input.lib.enemies[self.st.foes[fi].def]
                 .survivors
                 .expect("survivor enemy stats");
-            let weapon_kb = if matches!(h.what.as_str(), "garlic" | "soul-eater") {
-                0.0
-            } else {
-                5.0
-            };
+            let weapon_kb = crate::survivors::WeaponId::from_name(&h.what).map_or(5.0, |id| {
+                let rank = self
+                    .st
+                    .survivor
+                    .as_ref()
+                    .expect("survivors")
+                    .arsenal
+                    .inventory()
+                    .weapons
+                    .rank(id)
+                    .unwrap_or(1);
+                crate::survivors::weapon_catalog()
+                    .get(id)
+                    .level(rank)
+                    .knockback
+            });
             if data.knockback * weapon_kb > 0.0 {
                 let bi = (self.known_beat_at(self.st.s) * 4.0 + 1e-6).floor() / 4.0 + 0.25;
                 let ev = Ev::Recoil {
@@ -198,8 +209,9 @@ impl Sim {
         let s = self.st.s;
         let energy = energy.unwrap_or_else(|| energy_at(&self.st.song, s));
         // The might passive: the hero's hits deal more.
-        let damage = if let Some(p) = &self.st.survivor {
-            h.damage * p.stats.finalized().might
+        let damage = if self.st.survivor.is_some() {
+            // Survivor shots already carry their final data-driven damage.
+            h.damage
         } else if self.st.bonus.damage > 0.0 && h.source != HitSource::Ring {
             h.damage * (1.0 + self.st.bonus.damage)
         } else {
@@ -261,6 +273,9 @@ impl Sim {
 
     /// Arms a swing for a slot (one swing per slot): an automatic one (`swingFor`).
     pub(super) fn swing_for(&mut self, slot: usize, s_armed: f64) -> Option<usize> {
+        if self.st.survivor.is_some() {
+            return None;
+        }
         if self.st.taken_slots.contains(&slot) {
             return None;
         }
@@ -412,6 +427,9 @@ impl Sim {
     /// Launches an accent's shockwave, known at song time `known` (`launchCleave`): its first band on
     /// the first eighth-note slot at least NEVER_LATE after the launch, then one band per sixteenth.
     pub(super) fn launch_cleave(&mut self, c: PendingCleave, known: f64, press: f64) {
+        if self.st.survivor.is_some() {
+            return;
+        }
         let env = Rc::clone(&self.env);
         let hero = &env.input.lib.hero;
         let wd = &hero.swings.heavy.wave;
@@ -463,6 +481,9 @@ impl Sim {
     /// Stage 5: a strong onset becomes known (with the beat clear): a cleave waiting where the hero
     /// stands, unless a heavy swing on a forecast accent near it has the cleave (`onsetAccent`).
     pub(super) fn onset_accent(&mut self, i: usize) {
+        if self.st.survivor.is_some() {
+            return;
+        }
         let o = self.log.onsets[self.st.strong_onsets[i]];
         let pool = &self.st.swing_pool;
         let heavy_near = self.st.swings.iter().any(|&x| {

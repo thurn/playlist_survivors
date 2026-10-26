@@ -1,0 +1,118 @@
+# Selected combat numbers from docs/survivors/appendix-feel.md (SF1).
+# Rank 1 is full; later numeric fields add and other fields replace.
+weapons:
+  - id: sword
+    source: WHIP
+    grid: beat
+    implemented: true
+    evolutionOf: null
+    requires: null
+    levels:
+      - {power: 1, amount: 1, intervalMs: 1350, repeatMs: 100, area: 1, speed: 1, durationMs: 1000, pierce: 0, hitDelayMs: 1000, knockback: 5, critChance: 0.2, critMultiplier: 2, critEnabled: false, intervalDependsOnDuration: false} # 1
+      - {amount: 1} # 2
+      - {power: 0.5} # 3
+      - {power: 0.5, area: 0.1} # 4
+      - {power: 0.5} # 5
+      - {power: 0.5, area: 0.1} # 6
+      - {power: 0.5} # 7
+      - {power: 0.5} # 8
+  - id: magic-wand
+    source: MAGIC_MISSILE
+    grid: eighth
+    implemented: false
+    evolutionOf: null
+    requires: null
+    levels:
+      - {power: 1, amount: 1, intervalMs: 1200, repeatMs: 100, area: 1, speed: 1, durationMs: 1000, pierce: 1, hitDelayMs: 1000, knockback: 5, critChance: 0, critMultiplier: 0, critEnabled: false, intervalDependsOnDuration: false} # 1
+      - {amount: 1} # 2
+      - {intervalMs: -200} # 3
+      - {amount: 1} # 4
+      - {power: 1} # 5
+      - {amount: 1} # 6
+      - {pierce: 1} # 7
+      - {power: 1} # 8
+  - id: king-bible
+    source: HOLYBOOK
+    grid: beat
+    implemented: false
+    evolutionOf: null
+    requires: null
+    levels:
+      - {power: 1, amount: 1, intervalMs: 3000, repeatMs: 0, area: 1, speed: 1, durationMs: 3000, pierce: 0, hitDelayMs: 1700, knockback: 5, critChance: 0, critMultiplier: 0, critEnabled: false, intervalDependsOnDuration: true} # 1
+      - {amount: 1} # 2
+      - {area: 0.25, speed: 0.3} # 3
+      - {power: 1, durationMs: 500} # 4
+      - {amount: 1} # 5
+      - {area: 0.25, speed: 0.3} # 6
+      - {power: 1, durationMs: 500} # 7
+      - {amount: 1} # 8
+  - id: lightning-ring
+    source: LIGHTNING
+    grid: beat
+    implemented: false
+    evolutionOf: null
+    requires: null
+    levels:
+      - {power: 1.5, amount: 2, intervalMs: 4500, repeatMs: 50, area: 1, speed: 1, durationMs: 1000, pierce: 0, hitDelayMs: 1000, knockback: 5, critChance: 0, critMultiplier: 0, critEnabled: false, intervalDependsOnDuration: false} # 1
+      - {amount: 1} # 2
+      - {power: 1, area: 1} # 3
+      - {amount: 1} # 4
+      - {power: 2, area: 1} # 5
+      - {amount: 1} # 6
+      - {power: 2, area: 1} # 7
+      - {amount: 1} # 8
+  - id: garlic
+    source: GARLIC
+    grid: beat
+    implemented: false
+    evolutionOf: null
+    requires: null
+    levels:
+      - {power: 0.5, amount: 1, intervalMs: 1300, repeatMs: 0, area: 1, speed: 1, durationMs: 1300, pierce: 0, hitDelayMs: 1000, knockback: 0, critChance: 0, critMultiplier: 0, critEnabled: false, intervalDependsOnDuration: false} # 1
+      - {power: 0.2, area: 0.4} # 2
+      - {power: 0.1, intervalMs: -100} # 3
+      - {power: 0.1, area: 0.2} # 4
+      - {power: 0.2, intervalMs: -100} # 5
+      - {power: 0.1, area: 0.2} # 6
+      - {power: 0.1, intervalMs: -100} # 7
+      - {power: 0.2, area: 0.2} # 8
+  - id: bloody-tear
+    source: VAMPIRICA
+    grid: beat
+    implemented: false
+    evolutionOf: sword
+    requires: hollow-heart
+    levels:
+      - {power: 4, amount: 2, intervalMs: 1350, repeatMs: 100, area: 1.3, speed: 1, durationMs: 1000, pierce: 0, hitDelayMs: 1000, knockback: 5, critChance: 0.1, critMultiplier: 2, critEnabled: true, intervalDependsOnDuration: false} # 1
+  - id: holy-wand
+    source: HOLY_MISSILE
+    grid: eighth
+    implemented: false
+    evolutionOf: magic-wand
+    requires: empty-tome
+    levels:
+      - {power: 3, amount: 4, intervalMs: 500, repeatMs: 100, area: 1, speed: 2, durationMs: 1000, pierce: 2, hitDelayMs: 1000, knockback: 5, critChance: 0, critMultiplier: 0, critEnabled: false, intervalDependsOnDuration: false} # 1
+  - id: unholy-vespers
+    source: VESPERS
+    grid: beat
+    implemented: false
+    evolutionOf: king-bible
+    requires: spellbinder
+    levels:
+      - {power: 3, amount: 4, intervalMs: 3000, repeatMs: 0, area: 1.75, speed: 1.5, durationMs: 3000, pierce: 0, hitDelayMs: 1700, knockback: 4, critChance: 0, critMultiplier: 0, critEnabled: false, intervalDependsOnDuration: false} # 1
+  - id: thunder-loop
+    source: LOOP
+    grid: beat
+    implemented: false
+    evolutionOf: lightning-ring
+    requires: duplicator
+    levels:
+      - {power: 6.5, amount: 6, intervalMs: 4500, repeatMs: 0, area: 4, speed: 1, durationMs: 1000, pierce: 0, hitDelayMs: 1000, knockback: 5, critChance: 0, critMultiplier: 0, critEnabled: false, intervalDependsOnDuration: false} # 1
+  - id: soul-eater
+    source: VORTEX
+    grid: beat
+    implemented: false
+    evolutionOf: garlic
+    requires: pummarola
+    levels:
+      - {power: 2, amount: 1, intervalMs: 1000, repeatMs: 0, area: 3, speed: 1, durationMs: 1300, pierce: 0, hitDelayMs: 1000, knockback: 0, critChance: 0, critMultiplier: 0, critEnabled: false, intervalDependsOnDuration: false} # 1

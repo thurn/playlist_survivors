@@ -458,6 +458,8 @@ pub trait Recorder {
     /// A weapon evolved at song time s.
     fn evolve(&mut self, id: &str, s: f64) {}
     fn fire(&mut self, weapon: &str, s: f64) {}
+    fn weapon_shot(&mut self, shot: crate::survivors::Shot) {}
+    fn inventory(&mut self, inventory: crate::survivors::Inventory) {}
     fn chain(&mut self, p: ChainPoint) {}
     fn chain_point(&mut self, chain: usize, p: ChainPoint) {}
     fn hit_stop(&mut self, s0: f64, s1: f64) {}
@@ -568,6 +570,13 @@ impl<R: Recorder + ?Sized> Recorder for std::rc::Rc<std::cell::RefCell<R>> {
     fn fire(&mut self, weapon: &str, s: f64) {
         self.borrow_mut().fire(weapon, s);
     }
+    fn weapon_shot(&mut self, shot: crate::survivors::Shot) {
+        self.borrow_mut().weapon_shot(shot);
+    }
+    fn inventory(&mut self, inventory: crate::survivors::Inventory) {
+        self.borrow_mut().inventory(inventory);
+    }
+
     fn chain(&mut self, p: ChainPoint) {
         self.borrow_mut().chain(p);
     }
@@ -710,6 +719,8 @@ fn to_value<T: Serialize>(x: &T) -> Value {
 /// categories), for the oracle's event log.
 #[derive(Clone, Debug)]
 pub struct LogRecorder {
+    pub weapon_shots: Vec<crate::survivors::Shot>,
+    pub inventories: Vec<crate::survivors::Inventory>,
     pub run_states: Vec<crate::survivors::RunState>,
     pub breaks: Vec<WarpBreak>,
     pub inputs: Vec<Value>,
@@ -743,6 +754,8 @@ pub struct LogRecorder {
 impl Default for LogRecorder {
     fn default() -> LogRecorder {
         LogRecorder {
+            weapon_shots: Vec::new(),
+            inventories: Vec::new(),
             run_states: Vec::new(),
             breaks: Vec::new(),
             inputs: Vec::new(),
@@ -775,6 +788,12 @@ impl Default for LogRecorder {
 }
 
 impl Recorder for LogRecorder {
+    fn weapon_shot(&mut self, shot: crate::survivors::Shot) {
+        self.weapon_shots.push(shot);
+    }
+    fn inventory(&mut self, inventory: crate::survivors::Inventory) {
+        self.inventories.push(inventory);
+    }
     fn run_state(&mut self, state: crate::survivors::RunState) {
         self.run_states.push(state);
     }

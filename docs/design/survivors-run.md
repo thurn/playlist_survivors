@@ -1137,6 +1137,19 @@ remain until SF6, so this is not a survival or pacing measurement.
 See [SF4 evidence](../../native/evidence/sf4/README.md).
 
 ### SF5
+
+All 45 weapon combat ranks are curated as data, checked against all 450 fields
+in SF1's appendix. Unsnapped run deadlines retain throughput while shots align
+to committed grid steps; collisions stagger on sixteenths. Twelve 600 s cases
+at 70/128/174 BPM stay within 0.1167% of VS. The starting sword now spins on
+beats/subdivisions (free pulse in gaps), with 80 px base radius and tempo-scaled
+Whip damage; actual target hits over 60 s match DPS at base and non-default
+stats. Accents change look/sound only. Old swings, cleaves and groove scaling
+are off in survivors. Streaming/frame-cut/freeze recordings match, as does a
+420 ms Confirm rollback. A headless run replays 21,149 settled records exactly;
+[SF5 evidence](../../native/evidence/sf5/README.md) includes the offscreen still,
+commands and limits. Other weapons enable their delivery in their planned beads.
+
 ### SF6
 ### SF7
 ### SF8

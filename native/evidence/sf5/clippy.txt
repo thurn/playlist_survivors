@@ -1,0 +1,5 @@
+    Blocking waiting for file lock on build directory
+    Checking sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sf5-weapons/native/crates/sim)
+    Checking eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sf5-weapons/native/crates/eval)
+    Checking app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sf5-weapons/native/crates/app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.78s

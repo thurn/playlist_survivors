@@ -51,6 +51,7 @@ pub struct Foe {
 /// A moment the frame shows once.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Moment {
+    WeaponFire(sim::survivors::Shot),
     /// A hit caught enemy `foe` at (x, y): from a swing (`move`), a weapon (`what`), a cleave's
     /// wave or the finale's ring, of a weight (`light`, `medium`, `heavy`), heading `dir`, at an
     /// intensity (0-1).
@@ -76,15 +77,30 @@ pub enum Moment {
         caught: bool,
     },
     /// A band of a cleave's shockwave hit, its arc centred at (x, y).
-    WaveBand { x: f64, y: f64, dir: f64 },
+    WaveBand {
+        x: f64,
+        y: f64,
+        dir: f64,
+    },
     /// The hero landed a stride (or a stomp).
-    Landing { x: f64, y: f64, stomp: bool },
+    Landing {
+        x: f64,
+        y: f64,
+        stomp: bool,
+    },
     /// The groove's tier changed.
-    TierChange { tier: usize, up: bool },
+    TierChange {
+        tier: usize,
+        up: bool,
+    },
     /// A gem reached the hero.
     GemPickup,
     /// An enemy died where it was last seen (not recycled ones).
-    Death { kind: String, x: f64, y: f64 },
+    Death {
+        kind: String,
+        x: f64,
+        y: f64,
+    },
     /// A swing struck: its kind, the tier at its wind-up, its hit's intensity and shape.
     Swing {
         x: f64,
@@ -110,7 +126,9 @@ pub enum Moment {
         settled: String,
     },
     /// The hero was bitten.
-    Bite { damage: f64 },
+    Bite {
+        damage: f64,
+    },
 }
 
 /// What a sound marks, at the song time it belongs to (`planner/emit.ts`'s sound calls; the app
@@ -151,6 +169,7 @@ const BOLT_KEEP_S: f64 = 1.0;
 /// What a frame draws.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct LiveView {
+    pub inventory: Option<sim::survivors::Inventory>,
     pub run: Option<sim::survivors::RunState>,
     pub hero: Option<HeroPose>,
     /// The camera's centre and zoom.
@@ -230,6 +249,7 @@ impl LiveView {
     pub fn apply(&mut self, s: f64, rec: &Record) {
         self.s = s;
         match rec {
+            Record::Inventory(inventory) => self.inventory = Some(*inventory),
             Record::Run(state) => {
                 if let Some(previous) = self.run
                     && previous.frozen.is_some()
@@ -392,6 +412,7 @@ impl LiveView {
 /// What the simulation reported, as the view applies it.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Record {
+    Inventory(sim::survivors::Inventory),
     Run(sim::survivors::RunState),
     Hero(HeroPose),
     Camera(f64, f64, f64),
@@ -571,6 +592,27 @@ impl Journal {
 pub struct LiveRecorder(pub Rc<RefCell<Journal>>);
 
 impl Recorder for LiveRecorder {
+    fn inventory(&mut self, inventory: sim::survivors::Inventory) {
+        self.0.borrow_mut().push(Record::Inventory(inventory));
+    }
+    fn weapon_shot(&mut self, shot: sim::survivors::Shot) {
+        let mut j = self.0.borrow_mut();
+        if shot.id.is_sword() {
+            j.sound(Cause::Swing {
+                s: shot.song,
+                x: shot.x,
+                kind: if shot.accent { "heavy" } else { "spin" },
+            });
+        } else {
+            j.sound(Cause::Weapon {
+                s: shot.song,
+                x: shot.x,
+                what: shot.id.as_str().into(),
+                caught: false,
+            });
+        }
+        j.push(Record::Moment(Moment::WeaponFire(shot)));
+    }
     fn run_state(&mut self, state: sim::survivors::RunState) {
         self.0.borrow_mut().push(Record::Run(state));
     }

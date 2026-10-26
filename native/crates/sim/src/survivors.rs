@@ -1,9 +1,13 @@
 //! State the survivors sim publishes while song time continues through a freeze.
 
+mod arsenal;
 mod progression;
 mod stats;
+mod weapons;
+pub use arsenal::*;
 pub use progression::*;
 pub use stats::*;
+pub use weapons::*;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FreezeReason {

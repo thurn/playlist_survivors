@@ -9,6 +9,7 @@ pub fn total_xp(level: usize) -> f64 {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Progress {
     pub stats: Stats,
+    pub arsenal: super::Arsenal,
     pub level: usize,
     pub xp: f64,
     /// SF7 consumes these one at a time while its card freeze stays open.
@@ -19,6 +20,7 @@ impl Default for Progress {
     fn default() -> Self {
         Self {
             stats: Stats::default(),
+            arsenal: super::Arsenal::default(),
             level: 1,
             xp: 0.0,
             pending_levels: 0,

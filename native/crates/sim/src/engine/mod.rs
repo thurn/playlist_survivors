@@ -33,6 +33,7 @@ mod observe;
 mod pickups;
 mod pieces;
 mod plan;
+mod weapons;
 
 use std::collections::HashSet;
 use std::rc::Rc;
@@ -1188,6 +1189,7 @@ impl Sim {
         }
         self.requeue_held();
         self.plan();
+        self.prepare_weapons();
     }
 
     fn ingest_entries(&mut self, t: f64) {
@@ -1541,7 +1543,10 @@ impl Sim {
         );
         min(
             min(
-                min(min(self.st.q.peek(), t_fixed), t_rate),
+                min(
+                    min(min(self.st.q.peek(), self.weapon_stop()), t_fixed),
+                    t_rate,
+                ),
                 self.freeze_stop(),
             ),
             self.st.end_s,
@@ -1648,6 +1653,7 @@ impl Sim {
         for id in self.st.loadout.weapons.clone() {
             self.grant_weapon(id.as_str());
         }
+        self.publish_inventory();
         // The first camera and hero samples.
         let r0 = self.rate_at(0.0);
         self.push_break(r0);
@@ -1656,7 +1662,7 @@ impl Sim {
         self.record_foes(0.0);
         self.st.next_foe_k = 1.0;
         // Zen mode: the groove is full from the start, at the top tier.
-        if self.env.input.zen {
+        if self.env.input.zen && self.st.survivor.is_none() {
             self.st.groove = 1.0;
             self.rec.groove(0.0, 1.0);
             self.set_tier();
@@ -1680,6 +1686,7 @@ impl Sim {
             let entry = self.st.q.pop_due(self.st.s + 1e-12);
             self.dispatch_entry(entry);
         }
+        self.tick_weapons();
     }
 
     fn handle(&mut self, ev: Ev) {
@@ -1722,6 +1729,10 @@ impl Sim {
             } => self.chain_jump(weapon, chain, jump),
             Ev::Beat { bi } => {
                 self.spawn_director(bi as f64);
+                if self.st.survivor.is_some() {
+                    self.sword_beat(bi);
+                    return;
+                }
                 // (Stage 2: the drain runs 2 s later, as of this beat, on the settled groove's timeline.)
                 let s = self.st.s;
                 if self.env.input.settling {
@@ -2556,5 +2567,217 @@ mod tests {
         sim.damage(enemy, &lethal);
         assert!(sim.st.field.is_empty());
         assert_eq!(sim.st.n_gems, 0);
+    }
+    fn sword_measurement(
+        bpm: f64,
+        rank: u8,
+        delta: crate::survivors::StatDelta,
+        accent: bool,
+    ) -> (Rc<std::cell::RefCell<crate::recorder::LogRecorder>>, Sim) {
+        let mut sim = survivor_sim();
+        let period = 60.0 / bpm;
+        let mut log = StreamLog {
+            beats: (0..((62.0 / period).ceil() as usize + 2))
+                .map(|i| {
+                    let t = i as f64 * period;
+                    Beat {
+                        t,
+                        known_at: (t - period).max(0.0),
+                        period,
+                        evidence: 1.0,
+                    }
+                })
+                .collect(),
+            ..StreamLog::default()
+        };
+        log.ticks = (0..1240)
+            .map(|i| Tick {
+                t: f64::from(i) / 20.0,
+                known_at: f64::from(i) / 20.0,
+                evidence: 1.0,
+                energy: 0.5,
+                level: None,
+                key: None,
+                bands: None,
+                brightness: None,
+            })
+            .collect();
+        if accent {
+            log.forecasts = Some(
+                log.beats
+                    .iter()
+                    .skip(1)
+                    .step_by(4)
+                    .map(|b| stream::Forecast {
+                        t: b.t,
+                        known_at: (b.t - period).max(0.0),
+                        cycle: 4.0,
+                        confidence: 1.0,
+                    })
+                    .collect(),
+            );
+        }
+        let env = Rc::get_mut(&mut sim.env).unwrap();
+        env.input.no_hero_damage = true;
+        let def = env.input.lib.enemies.get_index_of("skeleton").unwrap();
+        env.input.lib.enemies[def].speed = 0.0;
+        env.input.lib.enemies[def]
+            .survivors
+            .as_mut()
+            .unwrap()
+            .knockback = 0.0;
+        sim.log = Rc::new(log);
+        sim.st = super::fresh_state(&sim.env);
+        let rec = Rc::new(std::cell::RefCell::new(
+            crate::recorder::LogRecorder::default(),
+        ));
+        sim.rec = Box::new(Rc::clone(&rec));
+        sim.init();
+        for _ in 1..rank {
+            sim.learn_survivor_weapon(crate::survivors::WeaponId::Sword)
+                .unwrap();
+        }
+        sim.apply_survivor_stats(delta);
+        sim.spawn_foe(def, 25.0, 0.0, Some(1e9));
+        (rec, sim)
+    }
+
+    #[test]
+    fn survivor_sword_actual_damage_matches_whip_dps_at_three_tempos() {
+        use crate::survivors::{StatDelta, WeaponId, weapon_catalog};
+        for bpm in [70.0, 128.0, 174.0] {
+            for (rank, delta) in [
+                (1, StatDelta::default()),
+                (
+                    8,
+                    StatDelta {
+                        might: 0.5,
+                        amount: 2.0,
+                        area: 0.5,
+                        cooldown: -0.4,
+                        ..StatDelta::default()
+                    },
+                ),
+            ] {
+                let (rec, mut sim) = sword_measurement(bpm, rank, delta, false);
+                sim.advance_to(60.0);
+                let rec = rec.borrow();
+                let damage: f64 = rec.enemies[0].fates.iter().map(|f| f.damage).sum();
+                let weapon = weapon_catalog().get(WeaponId::Sword).level(rank);
+                let stats = sim.survivor_progress().unwrap().stats.finalized();
+                let expected =
+                    weapon.power * weapon.amount(stats) as f64 / 1.35 * stats.might * 60.0;
+                assert!(
+                    (damage / expected - 1.0).abs() < 0.01,
+                    "{bpm} rank{rank}: {damage} vs {expected}"
+                );
+                assert_eq!(rec.enemies[0].fates.len(), rec.weapon_shots.len());
+                let radius = 80.0 * weapon.area * stats.area;
+                assert!(
+                    rec.weapon_shots
+                        .iter()
+                        .all(|s| (s.radius - radius).abs() < 1e-9)
+                );
+                assert!(rec.swings.is_empty());
+                assert!(rec.cleaves.is_empty());
+                assert!(
+                    rec.weapon_shots
+                        .iter()
+                        .all(|s| s.id == WeaponId::Sword && s.amount == 1)
+                );
+                eprintln!(
+                    "{bpm} BPM sword rank{rank}: {} actual target hits, {:.9} damage/60s, expected{expected:.9}, radius{radius:.3}",
+                    rec.enemies[0].fates.len(),
+                    damage
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn survivor_accent_shots_are_marked_without_changing_damage() {
+        let (plain, mut a) =
+            sword_measurement(128.0, 1, crate::survivors::StatDelta::default(), false);
+        let (accent, mut b) =
+            sword_measurement(128.0, 1, crate::survivors::StatDelta::default(), true);
+        a.advance_to(8.0);
+        b.advance_to(8.0);
+        let a = plain.borrow();
+        let b = accent.borrow();
+        assert!(b.weapon_shots.iter().any(|s| s.accent));
+        assert!(a.weapon_shots.iter().all(|s| !s.accent));
+        assert_eq!(
+            a.enemies[0]
+                .fates
+                .iter()
+                .map(|f| f.damage)
+                .collect::<Vec<_>>(),
+            b.enemies[0]
+                .fates
+                .iter()
+                .map(|f| f.damage)
+                .collect::<Vec<_>>()
+        );
+    }
+    #[test]
+    fn survivor_interval_framework_streaming_equals_batch_across_frame_cuts_and_freeze() {
+        use crate::survivors::{Arsenal, FreezeReason, WeaponId};
+        let setup = || {
+            let mut sim = survivor_sim();
+            let period = 60.0 / 70.0;
+            let log = StreamLog {
+                beats: (0..40)
+                    .map(|i| {
+                        let t = f64::from(i) * period;
+                        Beat {
+                            t,
+                            known_at: (t - period).max(0.0),
+                            period,
+                            evidence: 1.0,
+                        }
+                    })
+                    .collect(),
+                ..StreamLog::default()
+            };
+            sim.log = Rc::new(log);
+            sim.st = super::fresh_state(&sim.env);
+            let p = sim.st.survivor.as_mut().unwrap();
+            p.arsenal = Arsenal::measurement_weapon(WeaponId::HolyWand, 1);
+            p.stats.cooldown = 0.6;
+            let rec = Rc::new(std::cell::RefCell::new(
+                crate::recorder::LogRecorder::default(),
+            ));
+            sim.rec = Box::new(Rc::clone(&rec));
+            sim.init();
+            sim.freeze_at(1.1, FreezeReason::Paused);
+            key(&mut sim, 3.1, KeyEventKind::Press, InputKey::Pause);
+            key(&mut sim, 3.2, KeyEventKind::Release, InputKey::Pause);
+            (sim, rec)
+        };
+        let (mut a, ar) = setup();
+        let (mut b, br) = setup();
+        let full = b.log.as_ref().clone();
+        a.advance_to(12.0);
+        for k in 1..=325 {
+            let t = (f64::from(k) * 0.037).min(12.0);
+            *b.log_mut() = StreamLog {
+                beats: full
+                    .beats
+                    .iter()
+                    .copied()
+                    .filter(|b| b.known_at <= t)
+                    .collect(),
+                ..StreamLog::default()
+            };
+            b.advance_to(t);
+        }
+        assert_eq!(format!("{:?}", ar.borrow()), format!("{:?}", br.borrow()));
+        assert_eq!(a.st.survivor, b.st.survivor);
+        assert!(
+            ar.borrow()
+                .weapon_shots
+                .iter()
+                .all(|s| s.song <= 1.1 || s.song >= a.st.freeze.total_s + 1.1)
+        );
     }
 }

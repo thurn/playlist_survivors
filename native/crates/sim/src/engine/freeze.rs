@@ -198,6 +198,7 @@ impl Sim {
         self.st.zen_taps.clear();
         self.st.zen_stomp = false;
         if !self.st.freeze.frozen {
+            self.hold_weapons();
             self.st.freeze.frozen = true;
             self.st.freeze.since = self.st.s;
             self.st.freeze.beat_at_open = self.sbi_at(self.st.s);
@@ -334,6 +335,9 @@ impl Sim {
         self.st.freeze.music_pending = false;
         let gap = self.st.s - self.st.freeze.since;
         self.st.freeze.total_s += gap;
+        if let Some(p) = &mut self.st.survivor {
+            p.arsenal.resume(self.st.freeze.total_s);
+        }
         // World-owned song timestamps keep their remaining lifetime; world timestamps did not move.
         if self.st.stop_end > self.st.freeze.since {
             self.st.stop_end += gap;
@@ -498,22 +502,9 @@ impl Sim {
             return;
         }
         let b = self.log.beats[bi];
-        let windup = b.t - self.env.input.lib.hero.swings.windup_ms / 1000.0;
-        self.st.q.push_init(
-            windup.max(b.known_at).max(self.st.s),
-            Ev::Auto { slot: bi },
-            phase::AUTO,
-            bi as u64,
-        );
         self.st
             .q
             .push_init(b.t, Ev::Beat { bi }, phase::BEAT, bi as u64);
-        self.st.q.push_init(
-            b.t,
-            Ev::ReactiveBeat { bi },
-            phase::REACTIVE_BEAT,
-            bi as u64,
-        );
     }
 
     pub(super) fn arm_free_pulse(&mut self) {
@@ -538,6 +529,7 @@ impl Sim {
         if !self.st.freeze.frozen && !self.st.blasting {
             self.held_stride();
             self.spawn_director(self.sbi_at(self.st.s));
+            self.sword_free_pulse();
         }
         self.st.q.push(
             self.st.s + self.env.rule.free_period_s,

@@ -1,0 +1,10 @@
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sf5-weapons/native/crates/eval)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.50s
+     Running tests/live.rs (target/debug/deps/live-95af3c317e05d1b4)
+
+running 1 test
+freeze Confirm: 3790 matching settled records, hash 0b40bb6972baeaff, 2 key rollbacks, deepest 0.41999999999999993 s
+test a_late_confirm_rolls_back_across_freeze_open_and_settles_as_on_time ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.02s
+

@@ -305,6 +305,26 @@ impl Scene {
                 self.struck.insert(*foe, (now, *lethal));
             }
             match m {
+                Moment::WeaponFire(shot) if shot.id.is_sword() => fire(
+                    if shot.accent {
+                        "hit-heavy"
+                    } else {
+                        "hit-light"
+                    },
+                    shot.x,
+                    shot.y,
+                    0.0,
+                    if shot.accent { 1.0 } else { 0.65 },
+                    Start {
+                        tier: Some(0),
+                        shape: Some(sim::core::geometry::Shape::Circle {
+                            x: shot.x,
+                            y: shot.y,
+                            radius: shot.radius,
+                        }),
+                        ..Start::default()
+                    },
+                ),
                 // (As emit.ts fires them; native/evidence/vfx/ts-spec.md.) A swing's arc by its
                 // kind, brighter with the groove, in its tier's colour and fitted to its hit.
                 Moment::Swing {
