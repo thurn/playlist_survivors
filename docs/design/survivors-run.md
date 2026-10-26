@@ -1177,6 +1177,19 @@ all 79,798 settled records; a real-XP regression applies nine picks once
 across nine rollbacks (deepest 420 ms). See [SF7 evidence](../../native/evidence/sf7/README.md).
 
 ### SF8
+
+File mode accepts the 38:14 silent-padded M3U as one source; a normal-damage
+120 s headless check crosses the first track boundary and resumes. Rust
+per-track streams are content/version cached, with a committed 180 song-second
+fixture and a reusable Engine/Player driver for SF9. Audio-free sessions
+replay their settled hash. The final held stand-in dies at 1,098.023 run seconds
+(level 10, peak 300), so those numbers are not a survival gate. A separately
+labelled damage-exempt runner soak exercises the full clock/replay path.
+The playlist check also repaired a false MUSIC STOPPED hold: known energy
+establishes silence, while beat confidence still gates re-lock. See
+[SF8 evidence](../../native/evidence/sf8/README.md) for interfaces, commands,
+raw results and the per-track/gap approximation.
+
 ### SF9
 ### SF10
 ### SF11

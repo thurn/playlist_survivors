@@ -9,6 +9,8 @@
 //! checks interpret, so the sim cannot name it.
 #![forbid(unsafe_code)]
 
+pub mod playlist;
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 

@@ -1,0 +1,1 @@
+run 0: 0.0-97.9 s, 295695 records settled live, 301999 in the replay (0 rollbacks): the same; 41 kills, 0 perfect, 0 great, 0 good, health 0.71

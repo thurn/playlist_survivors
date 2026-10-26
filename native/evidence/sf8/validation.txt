@@ -1,0 +1,41 @@
+SF8 final validation
+
+cargo clippy -p cli -p eval -p stream -p app --all-targets -- -D warnings: passed.
+cargo test -p sim --test survivors: 17 passed, including silence/evidence regressions.
+cargo test -p eval --test survive: 2 passed (Rust-input exact session replay and future-entry truncation).
+cargo test -p cli survive::tests: passed (movement release, third reveal, one confirm, fresh movement).
+cargo test -p cli survive_cache::tests: 2 passed (version/audio cache key and hindsight/beat offset).
+cargo test -p stream playlist: 2 passed (paths, gaps, concatenated samples and malformed lists).
+scripts/check-fast: passed in 14 s, native 13 s; all affected crates and dependents, purity and machete.
+First cold aggregate: passed in 72 s; final rerun followed a source change adding batch QoS to replay.
+
+Actual File/Delayed playlist app: --headless --press-beats --pick-first --seconds 120, exit 0.
+One session across house->hiphop, then run clock advances beyond minute 1 after re-lock; no song-change run end.
+Normal damage is enabled. Initial/fixed logs retained, with the initial sparse-evidence bug explained in README.
+
+Native per-track Rust/Delayed cache smoke: cold/warm same output hash; 53.498 s/0.164 s input preparation.
+Committed first 180 song seconds: fixtures/survivors-3m.json, about 1.3 MiB.
+Recorded 3-minute fixture run replays its 1,110,950 settled records identically.
+Ordinary held stand-in: died at 223.491 run s, 450 kills, peak 289, drive 5.113 s.
+Its 2,023,356 settled records replay exactly; this is not a survival gate.
+Separate runner soak: noHeroDamage:true (diagnostic only), actual 30:00/Victory,
+300 peak, 29,558,256 settled records, drive 126.160 s, hash 4eecbcad11a6c3f0.
+The entire settled recording replays exactly, no audio required.
+Continuous concatenated-analysis smoke: first two real tracks and their gap, normal damage,
+1.5 requested run minutes; input and replay reports retained separately.
+
+No Engine rollback algorithm or enemy implementation edits. Milestone F review is SF10.
+No CI/policy/workspace-wide configuration/shared test infrastructure changes, so no local ci-full requirement.
+Operator-only listening/play feel is recorded in operator-pending.md; no approval or playtest pause.
+
+Final delivery rebase (SH6 b99d7ee):
+- Both independent operator-pending rows preserved; code merged cleanly.
+- scripts/check-fast passed again, 32 s (native 32).
+- Actual 120 s headless File/Delayed playlist run repeated, exit 0.
+- Normal damage held run: 1098.023 run s / 1132.267 song s, level 10,
+  2397 kills, peak 300, drive 54.433 wall s.
+- Normal recording: 16,702,160 settled records replay exactly, hash 014435e5cebb5e93.
+- Separate noHeroDamage:true diagnostic: 1800 run s / 1850.925 song s,
+  Victory, peak 300, 29,643,047 settled records, drive 115.067 wall s,
+  hash 191d27698549a17a. Full replay result is in rebased-soak-replay.txt.
+- Initial reports above are the pre-SH6 baseline; no balance knobs were retuned.

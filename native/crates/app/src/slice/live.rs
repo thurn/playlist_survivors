@@ -217,6 +217,9 @@ pub fn spawn(
 
 /// Decodes `path` to mono float samples at `rate` with macOS's `afconvert`.
 pub fn decode(path: &Path, rate: f64) -> Result<Vec<f32>, String> {
+    if stream::playlist::is_playlist(path) {
+        return stream::playlist::Playlist::load(path)?.decode(rate, |p| decode(p, rate));
+    }
     let tmp = std::env::temp_dir().join(format!("ps-slice-{}.wav", std::process::id()));
     let status = std::process::Command::new("/usr/bin/afconvert")
         .arg("-f")

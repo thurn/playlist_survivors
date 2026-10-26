@@ -259,6 +259,7 @@ fn silence_freezes_at_known_evidence_and_relocks_on_the_second_following_bar() {
     for tick in &mut log.ticks {
         if (2.0..10.0).contains(&tick.t) {
             tick.evidence = 0.0;
+            tick.energy = 0.0;
         }
     }
     let (rec, mut sim) = start(&log, 30.0);
@@ -410,6 +411,7 @@ fn a_second_silent_gap_inside_a_pause_cannot_resume_the_world() {
     for tick in &mut log.ticks {
         if (2.0..8.0).contains(&tick.t) || (13.0..20.0).contains(&tick.t) {
             tick.evidence = 0.0;
+            tick.energy = 0.0;
         }
     }
     let (rec, mut sim) = start(&log, 1800.0);
@@ -446,4 +448,40 @@ fn victory_holds_the_hero_when_the_last_beat_ends_and_free_pulses_continue() {
         (pose.x, pose.y, pose.stepping)
     );
     assert_eq!(sim.end_s(), 6.0);
+}
+
+#[test]
+fn audible_weak_beat_evidence_does_not_mean_music_stopped() {
+    let mut log = steady_log(12);
+    for tick in &mut log.ticks {
+        tick.evidence = 0.0;
+    }
+    let (_, mut sim) = start(&log, 30.0);
+    sim.disable_hero_damage_for_check();
+    sim.advance_to(8.0);
+    assert_eq!(sim.run_state().frozen, None);
+    assert!(sim.run_s() > 7.5, "run {}", sim.run_s());
+}
+
+#[test]
+fn audible_evidence_dips_do_not_keep_a_silent_gap_frozen() {
+    let mut log = steady_log(18);
+    for (i, tick) in log.ticks.iter_mut().enumerate() {
+        if (2.0..8.0).contains(&tick.t) {
+            tick.energy = 0.0;
+            tick.evidence = 0.0;
+        } else if tick.t >= 8.0 {
+            tick.evidence = if i % 2 == 0 { 0.9 } else { 0.0 };
+        }
+    }
+    let (_, mut sim) = start(&log, 30.0);
+    sim.advance_to(7.8);
+    assert_eq!(
+        sim.run_state().frozen,
+        Some(sim::survivors::FreezeReason::MusicStopped)
+    );
+    let held = sim.run_s();
+    sim.advance_to(12.0);
+    assert_eq!(sim.run_state().frozen, None);
+    assert!(sim.run_s() > held + 1.0);
 }

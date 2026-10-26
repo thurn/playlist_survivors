@@ -1,0 +1,2 @@
+    Checking cli v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sf8-playlists/native/crates/cli)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.52s

@@ -1,0 +1,23 @@
+#EXTM3U
+# Survivors test: repeated tempo cycles, local paths; 2 s gaps, one 8 s gap.
+../../public/reactive/house-128/house-128.ogg
+../../public/reactive/hiphop-92-swing/hiphop-92-swing.ogg
+#PS-GAP:8
+../../public/reactive/accelerando-100-140/accelerando-100-140.ogg
+../../public/reactive/dnb-174/dnb-174.ogg
+../../public/reactive/cc-kimiko-ishizaka-aria/cc-kimiko-ishizaka-aria.ogg
+../../public/reactive/house-128/house-128.ogg
+../../public/reactive/hiphop-92-swing/hiphop-92-swing.ogg
+../../public/reactive/accelerando-100-140/accelerando-100-140.ogg
+../../public/reactive/dnb-174/dnb-174.ogg
+../../public/reactive/cc-kimiko-ishizaka-aria/cc-kimiko-ishizaka-aria.ogg
+../../public/reactive/house-128/house-128.ogg
+../../public/reactive/hiphop-92-swing/hiphop-92-swing.ogg
+../../public/reactive/accelerando-100-140/accelerando-100-140.ogg
+../../public/reactive/dnb-174/dnb-174.ogg
+../../public/reactive/cc-kimiko-ishizaka-aria/cc-kimiko-ishizaka-aria.ogg
+../../public/reactive/house-128/house-128.ogg
+../../public/reactive/hiphop-92-swing/hiphop-92-swing.ogg
+../../public/reactive/accelerando-100-140/accelerando-100-140.ogg
+../../public/reactive/dnb-174/dnb-174.ogg
+../../public/reactive/cc-kimiko-ishizaka-aria/cc-kimiko-ishizaka-aria.ogg

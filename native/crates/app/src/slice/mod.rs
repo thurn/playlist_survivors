@@ -226,10 +226,14 @@ fn options(args: &[String]) -> Result<Options, String> {
         input_offset_ms: None,
         stomp_extra_ms: None,
     };
+    let mut playlist = None;
     let mut it = args.iter();
     while let Some(a) = it.next() {
         match a.as_str() {
             "--file" => o.file = Some(it.next().ok_or("--file needs a path")?.into()),
+            "--playlist" => {
+                playlist = Some(PathBuf::from(it.next().ok_or("--playlist needs a path")?));
+            }
             "--level" => o.level = Some(it.next().ok_or("--level needs a path")?.into()),
             "--click" => o.click = true,
             "--mute" => o.mute = true,
@@ -320,6 +324,16 @@ fn options(args: &[String]) -> Result<Options, String> {
             s if s.starts_with("-psn_") => {}
             other => return Err(format!("unknown argument {other}")),
         }
+    }
+    if let Some(path) = playlist {
+        if o.file.is_some() {
+            return Err("choose --file or --playlist".into());
+        }
+        if !stream::playlist::is_playlist(&path) {
+            return Err("--playlist needs an .m3u or .m3u8 file".into());
+        }
+        stream::playlist::Playlist::load(&path)?;
+        o.file = Some(path);
     }
     if o.pick_first && !o.headless {
         return Err("--pick-first needs --headless".into());

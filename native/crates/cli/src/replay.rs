@@ -24,6 +24,10 @@ fn root() -> PathBuf {
 }
 
 pub fn main(args: &[String]) -> i32 {
+    if let Err(e) = crate::batch::enter() {
+        eprintln!("ps replay: {e}");
+        return 2;
+    }
     match run(args) {
         Ok(ok) => i32::from(!ok),
         Err(e) => {
@@ -63,7 +67,7 @@ pub fn runs(meta: &Value) -> Vec<RecordedRun> {
 }
 
 /// The engine as the app builds it, in zen mode or not.
-fn engine_with_level(zen: bool, level: Option<&str>) -> Result<Engine, String> {
+pub(crate) fn engine_with_level(zen: bool, level: Option<&str>) -> Result<Engine, String> {
     let mut names: Vec<String> = std::fs::read_dir(root().join("content"))
         .map_err(|e| e.to_string())?
         .filter_map(Result::ok)

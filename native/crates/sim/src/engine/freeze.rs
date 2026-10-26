@@ -126,7 +126,10 @@ impl Sim {
         let end = self.st.ingested.ticks;
         for i in self.st.freeze.ticks_seen..end {
             let tick = &self.log.ticks[i];
-            if tick.evidence >= self.env.input.gate {
+            // Weak beat confidence is not silence: e.g. a swing track or a beatless
+            // passage can stay audible throughout. The stream's normalized energy
+            // bottoms out at silence; committed-beat evidence still gates re-lock below.
+            if tick.energy > 0.01 {
                 self.st.freeze.quiet = None;
                 self.st.freeze.clear_from.get_or_insert(tick.t);
             } else {
