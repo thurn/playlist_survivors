@@ -1655,6 +1655,82 @@
         }
       ],
       "flat": true
+    },
+    "thorn-plant-summer": {
+      "tall": true,
+      "radius": 16,
+      "variants": [
+        {
+          "src": "lpc:lpc-revised/Terrain/plants_summer.png",
+          "rect": [
+            96,
+            64,
+            64,
+            64
+          ],
+          "anchor": [
+            32,
+            60
+          ]
+        }
+      ]
+    },
+    "thorn-plant-autumn": {
+      "tall": true,
+      "radius": 16,
+      "variants": [
+        {
+          "src": "lpc:lpc-revised/Terrain/plants_autumn.png",
+          "rect": [
+            96,
+            64,
+            64,
+            64
+          ],
+          "anchor": [
+            32,
+            60
+          ]
+        }
+      ]
+    },
+    "thorn-plant-winter": {
+      "tall": true,
+      "radius": 16,
+      "variants": [
+        {
+          "src": "lpc:lpc-revised/Terrain/plants_winter.png",
+          "rect": [
+            96,
+            64,
+            64,
+            64
+          ],
+          "anchor": [
+            32,
+            60
+          ]
+        }
+      ]
+    },
+    "thorn-plant-spring": {
+      "tall": true,
+      "radius": 16,
+      "variants": [
+        {
+          "src": "lpc:lpc-revised/Terrain/plants_spring.png",
+          "rect": [
+            96,
+            64,
+            64,
+            64
+          ],
+          "anchor": [
+            32,
+            60
+          ]
+        }
+      ]
     }
   }
 }

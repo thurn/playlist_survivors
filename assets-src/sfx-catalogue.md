@@ -264,6 +264,8 @@ Descriptions come from the packs' file names and pages, not from listening; audi
 | `fantasy/Pickup_Gold_00` | 0.29 | -18.5 | gold pickup sparkle |
 | `fantasy/Pickup_Gold_01` | 0.22 | -22.4 | gold pickup sparkle |
 | `fantasy/Pickup_Gold_02` | 0.25 | -22.7 | gold pickup sparkle |
+| `kenney/casino-chips-stack-1` | 0.20 | -27.5 | chip stack click (SF11 provisional; mix audition pending) |
+| `kenney/digital-tone1` | 0.16 | -18.0 | pitched seed for gem chain (SF11 provisional; mix audition pending) |
 | `kenney/drop_001` | 0.11 | -25.2 | soft drop / pop |
 | `kenney/drop_002` | 0.19 | -23.9 | soft drop / pop |
 | `kenney/handleCoins` | 0.70 | -26.4 | coins jingling |
@@ -295,10 +297,16 @@ Descriptions come from the packs' file names and pages, not from listening; audi
 
 | id | seconds | LUFS | description |
 |---|---|---|---|
+| `kenney/casino-card-place-1` | 0.62 | -26.2 | soft card landing (SF11 provisional; mix audition pending) |
+| `kenney/casino-card-slide-1` | 0.51 | -25.1 | dry card reveal swish (SF11 provisional; mix audition pending) |
+| `kenney/casino-cards-pack-open-1` | 0.94 | -24.9 | pack opening rustle (SF11 provisional; mix audition pending) |
+| `kenney/casino-chips-collide-1` | 0.17 | -27.5 | roulette tick clatter (SF11 provisional; mix audition pending) |
 | `kenney/confirmation_001` | 0.29 | -18.0 | positive confirmation blip (combo milestones) |
 | `kenney/confirmation_002` | 0.53 | -18.0 | positive confirmation blip (combo milestones) |
 | `kenney/confirmation_003` | 0.32 | -18.1 | positive confirmation blip (combo milestones) |
 | `kenney/confirmation_004` | 0.48 | -18.0 | positive confirmation blip (combo milestones) |
+| `kenney/digital-highUp` | 0.38 | -17.9 | bright ascending confirmation (SF11 provisional; mix audition pending) |
+| `kenney/digital-powerUp1` | 1.06 | -18.0 | short rising power-up (SF11 provisional; mix audition pending) |
 | `kenney/metalClick` | 0.37 | -25.3 | small metal click |
 | `kenney/metalLatch` | 0.23 | -22.3 | small metal click |
 | `kenney/select_001` | 0.04 | -25.0 | UI select tick |
@@ -312,3 +320,25 @@ Descriptions come from the packs' file names and pages, not from listening; audi
 | `rpg80/misc_01` | 0.15 | -27.9 | miscellaneous foley |
 | `rpg80/misc_02` | 0.37 | -18.6 | miscellaneous foley |
 | `rpg80/misc_03` | 0.20 | -20.4 | miscellaneous foley |
+
+## hit
+
+| id | seconds | LUFS | description |
+|---|---|---|---|
+| `kenney/digital-zap1` | 0.89 | -17.9 | dry electrical zap (SF11 provisional; mix audition pending) |
+| `kenney/sci-impactMetal_000` | 0.64 | -24.7 | brief metallic impact (SF11 provisional; mix audition pending) |
+
+## kill
+
+| id | seconds | LUFS | description |
+|---|---|---|---|
+| `kenney/sci-explosionCrunch_000` | 0.78 | -18.2 | crunchy burst (SF11 provisional; mix audition pending) |
+
+## weapon
+
+| id | seconds | LUFS | description |
+|---|---|---|---|
+| `kenney/digital-laser1` | 0.95 | -18.0 | short bright laser (SF11 provisional; mix audition pending) |
+| `kenney/sci-forceField_000` | 0.88 | -18.0 | hollow electric pulse (SF11 provisional; mix audition pending) |
+| `kenney/sci-laserLarge_000` | 0.68 | -20.7 | heavier laser transient; accent fire (SF11 provisional; mix audition pending) |
+| `kenney/sci-laserSmall_000` | 0.24 | -19.9 | short clean laser tick; wand fire (SF11 provisional; mix audition pending) |

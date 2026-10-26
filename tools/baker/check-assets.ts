@@ -12,7 +12,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import sharp from "sharp";
 import { parse as parseYaml } from "yaml";
-import type { AtlasRect, CharacterAtlas, CreditsFile, EffectsAtlas, SoundManifest, WorldAtlas } from "./lib/types.ts";
+import type { AtlasRect, CharacterAtlas, CreditsFile, EffectsAtlas, FontAtlas, IconAtlas, SoundManifest, WorldAtlas } from "./lib/types.ts";
 import { FACINGS } from "./lib/types.ts";
 import { isAllowedLicence, leastRestrictive, resolveLicence } from "./lib/licences.ts";
 import { ASSETS_SRC, OUT, REPO, SFX_OUT } from "./lib/paths.ts";
@@ -35,6 +35,7 @@ const REQUIRED: Record<string, string[]> = {
   bat: ["walk", "attack", "hurt"],
   bee: ["walk", "attack", "hurt"],
   eyeball: ["walk", "attack", "hurt"],
+  brute: ["walk", "attack", "hurt"],
 };
 const IMPACT_REQUIRED = ["slash", "backslash", "halfslash", "thrust", "slash-oversize"];
 const REQUIRED_TILES = ["grass-summer", "dirt-summer", "grass-autumn", "dirt-autumn", "grass-ember", "dirt-ember", "lava-rock", "lava"];
@@ -222,7 +223,7 @@ function checkCredits(): void {
     else if (Array.isArray(v)) v.forEach(collect);
     else if (v && typeof v === "object") Object.values(v).forEach(collect);
   };
-  for (const f of ["world.json", "effects.json", "sounds.json", "monsters.json"]) {
+  for (const f of ["world.json", "effects.json", "sounds.json", "monsters.json", "ui.json"]) {
     const p = join(ASSETS_SRC, f);
     if (existsSync(p)) collect(JSON.parse(readFileSync(p, "utf8")));
   }
@@ -315,6 +316,25 @@ async function main(): Promise<void> {
   const world = await checkWorld();
   const fx = await checkEffects();
   const sfx = checkSounds();
+  const fontAtlas = readJson<FontAtlas>(join(OUT, "fonts.json"));
+  if (fontAtlas) {
+    const sizes = await pageSizes("fonts", fontAtlas.pages, 1, 1024);
+    for (const id of ["pixel", "pixel-square"]) {
+      const font = fontAtlas.fonts[id];
+      if (!font || !(font.lineHeight > 0) || !(font.ascent > 0)) { fail(`fonts: missing metrics for ${id}`); continue; }
+      for (let code = 32; code <= 126; code++) {
+        const g = font.glyphs[String.fromCharCode(code)];
+        if (!g || !(g.advance > 0) || !Number.isFinite(g.bearingX + g.bearingY)) { fail(`fonts: ${id} invalid glyph ${code}`); continue; }
+        checkRect(`fonts: ${id}/${code}`, g.rect, sizes);
+      }
+    }
+  }
+  const icons = readJson<IconAtlas>(join(OUT, "icons.json"));
+  if (icons) {
+    const sizes = await pageSizes("icons", icons.pages, 1, 1024);
+    const defs = JSON.parse(readFileSync(join(ASSETS_SRC, "ui.json"), "utf8")) as { icons: Record<string, string> };
+    for (const id of Object.keys(defs.icons)) checkRect(`icons: ${id}`, icons.icons[id], sizes);
+  }
   checkCredits();
   checkContent(chars, world, fx, sfx);
   const total = dirSize(OUT);

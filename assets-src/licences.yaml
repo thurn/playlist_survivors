@@ -217,3 +217,136 @@ entries:
     licences: [CC-BY 3.0]
     authors: [Little Robot Sound Factory]
     urls: [https://opengameart.org/content/fantasy-sound-effects-library, https://www.littlerobotsoundfactory.com]
+
+  # Survivors intake (SF11); source URLs and archive hashes in sources.json.
+  - files: ["dl:kenney-particle-pack/**"]
+    title: Kenney Particle Pack
+    licences: [CC0]
+    authors: [Kenney]
+    urls: [https://kenney.nl/assets/particle-pack]
+  - files: ["dl:kenney-sci-fi-sounds/**"]
+    title: Kenney Sci-Fi Sounds
+    licences: [CC0]
+    authors: [Kenney]
+    urls: [https://kenney.nl/assets/sci-fi-sounds]
+  - files: ["dl:kenney-digital-audio/**"]
+    title: Kenney Digital Audio
+    licences: [CC0]
+    authors: [Kenney]
+    urls: [https://kenney.nl/assets/digital-audio]
+  - files: ["dl:kenney-casino-audio/**"]
+    title: Kenney Casino Audio
+    licences: [CC0]
+    authors: [Kenney]
+    urls: [https://kenney.nl/assets/casino-audio]
+  - files: ["dl:kenney-kenney-fonts/**"]
+    title: Kenney Kenney Fonts
+    licences: [CC0]
+    authors: [Kenney]
+    urls: [https://kenney.nl/assets/kenney-fonts]
+  - files: ["lpc:source-of-tales/sprites/monsters/skeleton_boss*.png"]
+    title: Source of Tales skeleton boss (brute)
+    licences: [CC-BY-SA 3.0, GPL 3.0]
+    authors: [Johannes Sjölund]
+    urls: [https://gitlab.com/tales/sourceoftales]
+  - files: ["lpc:source-of-tales/sprites/full_base.xml"]
+    title: Source of Tales shared sprite frame layout
+    licences: [CC0]
+    authors: [Source of Tales team]
+    urls: [https://gitlab.com/tales/sourceoftales]
+  - files: ["dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/broadsword.svg"]
+    title: Game-icons broadsword
+    licences: [CC-BY 3.0]
+    authors: [Lorc]
+    urls: [https://game-icons.net/1x1/lorc/broadsword.html]
+    notes: White glyph rasterized with the black background removed.
+  - files: ["dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/delapouite/garlic.svg"]
+    title: Game-icons garlic
+    licences: [CC-BY 3.0]
+    authors: [Delapouite]
+    urls: [https://game-icons.net/1x1/delapouite/garlic.html]
+    notes: White glyph rasterized with the black background removed.
+  - files: ["dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/wizard-staff.svg"]
+    title: Game-icons wizard-staff
+    licences: [CC-BY 3.0]
+    authors: [Lorc]
+    urls: [https://game-icons.net/1x1/lorc/wizard-staff.html]
+    notes: White glyph rasterized with the black background removed.
+  - files: ["dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/book-cover.svg"]
+    title: Game-icons book-cover
+    licences: [CC-BY 3.0]
+    authors: [Lorc]
+    urls: [https://game-icons.net/1x1/lorc/book-cover.html]
+    notes: White glyph rasterized with the black background removed.
+  - files: ["dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/lightning-helix.svg"]
+    title: Game-icons lightning-helix
+    licences: [CC-BY 3.0]
+    authors: [Lorc]
+    urls: [https://game-icons.net/1x1/lorc/lightning-helix.html]
+    notes: White glyph rasterized with the black background removed.
+  - files: ["dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/bloody-sword.svg"]
+    title: Game-icons bloody-sword
+    licences: [CC-BY 3.0]
+    authors: [Lorc]
+    urls: [https://game-icons.net/1x1/lorc/bloody-sword.html]
+    notes: White glyph rasterized with the black background removed.
+  - files: ["dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/delapouite/soul-vessel.svg"]
+    title: Game-icons soul-vessel
+    licences: [CC-BY 3.0]
+    authors: [Delapouite]
+    urls: [https://game-icons.net/1x1/delapouite/soul-vessel.html]
+    notes: White glyph rasterized with the black background removed.
+  - files: ["dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/crystal-wand.svg"]
+    title: Game-icons crystal-wand
+    licences: [CC-BY 3.0]
+    authors: [Lorc]
+    urls: [https://game-icons.net/1x1/lorc/crystal-wand.html]
+    notes: White glyph rasterized with the black background removed.
+  - files: ["dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/book-aura.svg"]
+    title: Game-icons book-aura
+    licences: [CC-BY 3.0]
+    authors: [Lorc]
+    urls: [https://game-icons.net/1x1/lorc/book-aura.html]
+    notes: White glyph rasterized with the black background removed.
+  - files: ["dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/lightning-storm.svg"]
+    title: Game-icons lightning-storm
+    licences: [CC-BY 3.0]
+    authors: [Lorc]
+    urls: [https://game-icons.net/1x1/lorc/lightning-storm.html]
+    notes: White glyph rasterized with the black background removed.
+  - files: ["dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/heart-organ.svg"]
+    title: Game-icons heart-organ
+    licences: [CC-BY 3.0]
+    authors: [Lorc]
+    urls: [https://game-icons.net/1x1/lorc/heart-organ.html]
+    notes: White glyph rasterized with the black background removed.
+  - files: ["dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/delapouite/book-cover.svg"]
+    title: Game-icons book-cover
+    licences: [CC-BY 3.0]
+    authors: [Delapouite]
+    urls: [https://game-icons.net/1x1/delapouite/book-cover.html]
+    notes: White glyph rasterized with the black background removed.
+  - files: ["dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/scroll-unfurled.svg"]
+    title: Game-icons scroll-unfurled
+    licences: [CC-BY 3.0]
+    authors: [Lorc]
+    urls: [https://game-icons.net/1x1/lorc/scroll-unfurled.html]
+    notes: White glyph rasterized with the black background removed.
+  - files: ["dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/double-ringed-orb.svg"]
+    title: Game-icons double-ringed-orb
+    licences: [CC-BY 3.0]
+    authors: [Lorc]
+    urls: [https://game-icons.net/1x1/lorc/double-ringed-orb.html]
+    notes: White glyph rasterized with the black background removed.
+  - files: ["dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/heart-bottle.svg"]
+    title: Game-icons heart-bottle
+    licences: [CC-BY 3.0]
+    authors: [Lorc]
+    urls: [https://game-icons.net/1x1/lorc/heart-bottle.html]
+    notes: White glyph rasterized with the black background removed.
+  - files: ["dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/three-leaves.svg"]
+    title: Game-icons three-leaves
+    licences: [CC-BY 3.0]
+    authors: [Lorc]
+    urls: [https://game-icons.net/1x1/lorc/three-leaves.html]
+    notes: White glyph rasterized with the black background removed.

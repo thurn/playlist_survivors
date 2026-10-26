@@ -43,6 +43,246 @@
       ]
     },
     {
+      "file": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/delapouite/book-cover.svg",
+      "title": "Game-icons book-cover",
+      "authors": [
+        "Delapouite"
+      ],
+      "licence": "CC-BY 3.0",
+      "urls": [
+        "https://game-icons.net/1x1/delapouite/book-cover.html"
+      ],
+      "usedFor": [
+        "icon:empty-tome"
+      ],
+      "notes": "White glyph rasterized with the black background removed."
+    },
+    {
+      "file": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/delapouite/garlic.svg",
+      "title": "Game-icons garlic",
+      "authors": [
+        "Delapouite"
+      ],
+      "licence": "CC-BY 3.0",
+      "urls": [
+        "https://game-icons.net/1x1/delapouite/garlic.html"
+      ],
+      "usedFor": [
+        "icon:garlic"
+      ],
+      "notes": "White glyph rasterized with the black background removed."
+    },
+    {
+      "file": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/delapouite/soul-vessel.svg",
+      "title": "Game-icons soul-vessel",
+      "authors": [
+        "Delapouite"
+      ],
+      "licence": "CC-BY 3.0",
+      "urls": [
+        "https://game-icons.net/1x1/delapouite/soul-vessel.html"
+      ],
+      "usedFor": [
+        "icon:soul-eater"
+      ],
+      "notes": "White glyph rasterized with the black background removed."
+    },
+    {
+      "file": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/bloody-sword.svg",
+      "title": "Game-icons bloody-sword",
+      "authors": [
+        "Lorc"
+      ],
+      "licence": "CC-BY 3.0",
+      "urls": [
+        "https://game-icons.net/1x1/lorc/bloody-sword.html"
+      ],
+      "usedFor": [
+        "icon:bloody-tear"
+      ],
+      "notes": "White glyph rasterized with the black background removed."
+    },
+    {
+      "file": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/book-aura.svg",
+      "title": "Game-icons book-aura",
+      "authors": [
+        "Lorc"
+      ],
+      "licence": "CC-BY 3.0",
+      "urls": [
+        "https://game-icons.net/1x1/lorc/book-aura.html"
+      ],
+      "usedFor": [
+        "icon:unholy-vespers"
+      ],
+      "notes": "White glyph rasterized with the black background removed."
+    },
+    {
+      "file": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/book-cover.svg",
+      "title": "Game-icons book-cover",
+      "authors": [
+        "Lorc"
+      ],
+      "licence": "CC-BY 3.0",
+      "urls": [
+        "https://game-icons.net/1x1/lorc/book-cover.html"
+      ],
+      "usedFor": [
+        "icon:king-bible"
+      ],
+      "notes": "White glyph rasterized with the black background removed."
+    },
+    {
+      "file": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/broadsword.svg",
+      "title": "Game-icons broadsword",
+      "authors": [
+        "Lorc"
+      ],
+      "licence": "CC-BY 3.0",
+      "urls": [
+        "https://game-icons.net/1x1/lorc/broadsword.html"
+      ],
+      "usedFor": [
+        "icon:sword-spin"
+      ],
+      "notes": "White glyph rasterized with the black background removed."
+    },
+    {
+      "file": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/crystal-wand.svg",
+      "title": "Game-icons crystal-wand",
+      "authors": [
+        "Lorc"
+      ],
+      "licence": "CC-BY 3.0",
+      "urls": [
+        "https://game-icons.net/1x1/lorc/crystal-wand.html"
+      ],
+      "usedFor": [
+        "icon:holy-wand"
+      ],
+      "notes": "White glyph rasterized with the black background removed."
+    },
+    {
+      "file": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/double-ringed-orb.svg",
+      "title": "Game-icons double-ringed-orb",
+      "authors": [
+        "Lorc"
+      ],
+      "licence": "CC-BY 3.0",
+      "urls": [
+        "https://game-icons.net/1x1/lorc/double-ringed-orb.html"
+      ],
+      "usedFor": [
+        "icon:duplicator"
+      ],
+      "notes": "White glyph rasterized with the black background removed."
+    },
+    {
+      "file": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/heart-bottle.svg",
+      "title": "Game-icons heart-bottle",
+      "authors": [
+        "Lorc"
+      ],
+      "licence": "CC-BY 3.0",
+      "urls": [
+        "https://game-icons.net/1x1/lorc/heart-bottle.html"
+      ],
+      "usedFor": [
+        "icon:pummarola"
+      ],
+      "notes": "White glyph rasterized with the black background removed."
+    },
+    {
+      "file": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/heart-organ.svg",
+      "title": "Game-icons heart-organ",
+      "authors": [
+        "Lorc"
+      ],
+      "licence": "CC-BY 3.0",
+      "urls": [
+        "https://game-icons.net/1x1/lorc/heart-organ.html"
+      ],
+      "usedFor": [
+        "icon:hollow-heart"
+      ],
+      "notes": "White glyph rasterized with the black background removed."
+    },
+    {
+      "file": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/lightning-helix.svg",
+      "title": "Game-icons lightning-helix",
+      "authors": [
+        "Lorc"
+      ],
+      "licence": "CC-BY 3.0",
+      "urls": [
+        "https://game-icons.net/1x1/lorc/lightning-helix.html"
+      ],
+      "usedFor": [
+        "icon:lightning-ring"
+      ],
+      "notes": "White glyph rasterized with the black background removed."
+    },
+    {
+      "file": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/lightning-storm.svg",
+      "title": "Game-icons lightning-storm",
+      "authors": [
+        "Lorc"
+      ],
+      "licence": "CC-BY 3.0",
+      "urls": [
+        "https://game-icons.net/1x1/lorc/lightning-storm.html"
+      ],
+      "usedFor": [
+        "icon:thunder-loop"
+      ],
+      "notes": "White glyph rasterized with the black background removed."
+    },
+    {
+      "file": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/scroll-unfurled.svg",
+      "title": "Game-icons scroll-unfurled",
+      "authors": [
+        "Lorc"
+      ],
+      "licence": "CC-BY 3.0",
+      "urls": [
+        "https://game-icons.net/1x1/lorc/scroll-unfurled.html"
+      ],
+      "usedFor": [
+        "icon:spellbinder"
+      ],
+      "notes": "White glyph rasterized with the black background removed."
+    },
+    {
+      "file": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/three-leaves.svg",
+      "title": "Game-icons three-leaves",
+      "authors": [
+        "Lorc"
+      ],
+      "licence": "CC-BY 3.0",
+      "urls": [
+        "https://game-icons.net/1x1/lorc/three-leaves.html"
+      ],
+      "usedFor": [
+        "icon:spinach"
+      ],
+      "notes": "White glyph rasterized with the black background removed."
+    },
+    {
+      "file": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/wizard-staff.svg",
+      "title": "Game-icons wizard-staff",
+      "authors": [
+        "Lorc"
+      ],
+      "licence": "CC-BY 3.0",
+      "urls": [
+        "https://game-icons.net/1x1/lorc/wizard-staff.html"
+      ],
+      "usedFor": [
+        "icon:magic-wand"
+      ],
+      "notes": "White glyph rasterized with the black background removed."
+    },
+    {
       "file": "dl:gore-blood-gibs/**",
       "title": "Gore Blood Gibs Meat Chunks",
       "authors": [
@@ -74,6 +314,42 @@
         "effect:glow-mist",
         "effect:glow-splat",
         "effect:glow-splat-large"
+      ]
+    },
+    {
+      "file": "dl:kenney-casino-audio/**",
+      "title": "Kenney Casino Audio",
+      "authors": [
+        "Kenney"
+      ],
+      "licence": "CC0",
+      "urls": [
+        "https://kenney.nl/assets/casino-audio"
+      ],
+      "usedFor": [
+        "sfx:kenney/casino-card-place-1",
+        "sfx:kenney/casino-card-slide-1",
+        "sfx:kenney/casino-cards-pack-open-1",
+        "sfx:kenney/casino-chips-collide-1",
+        "sfx:kenney/casino-chips-stack-1"
+      ]
+    },
+    {
+      "file": "dl:kenney-digital-audio/**",
+      "title": "Kenney Digital Audio",
+      "authors": [
+        "Kenney"
+      ],
+      "licence": "CC0",
+      "urls": [
+        "https://kenney.nl/assets/digital-audio"
+      ],
+      "usedFor": [
+        "sfx:kenney/digital-highUp",
+        "sfx:kenney/digital-laser1",
+        "sfx:kenney/digital-powerUp1",
+        "sfx:kenney/digital-tone1",
+        "sfx:kenney/digital-zap1"
       ]
     },
     {
@@ -208,6 +484,43 @@
       ]
     },
     {
+      "file": "dl:kenney-kenney-fonts/**",
+      "title": "Kenney Kenney Fonts",
+      "authors": [
+        "Kenney"
+      ],
+      "licence": "CC0",
+      "urls": [
+        "https://kenney.nl/assets/kenney-fonts"
+      ],
+      "usedFor": [
+        "font:pixel",
+        "font:pixel-square"
+      ]
+    },
+    {
+      "file": "dl:kenney-particle-pack/**",
+      "title": "Kenney Particle Pack",
+      "authors": [
+        "Kenney"
+      ],
+      "licence": "CC0",
+      "urls": [
+        "https://kenney.nl/assets/particle-pack"
+      ],
+      "usedFor": [
+        "effect:particle-circle-01",
+        "effect:particle-flare-01",
+        "effect:particle-magic-01",
+        "effect:particle-magic-03",
+        "effect:particle-slash-01",
+        "effect:particle-smoke-01",
+        "effect:particle-smoke-04",
+        "effect:particle-spark-01",
+        "effect:particle-spark-04"
+      ]
+    },
+    {
       "file": "dl:kenney-rpg-audio/**",
       "title": "RPG Audio",
       "authors": [
@@ -232,6 +545,24 @@
         "sfx:kenney/knifeSlice2",
         "sfx:kenney/metalClick",
         "sfx:kenney/metalLatch"
+      ]
+    },
+    {
+      "file": "dl:kenney-sci-fi-sounds/**",
+      "title": "Kenney Sci-Fi Sounds",
+      "authors": [
+        "Kenney"
+      ],
+      "licence": "CC0",
+      "urls": [
+        "https://kenney.nl/assets/sci-fi-sounds"
+      ],
+      "usedFor": [
+        "sfx:kenney/sci-explosionCrunch_000",
+        "sfx:kenney/sci-forceField_000",
+        "sfx:kenney/sci-impactMetal_000",
+        "sfx:kenney/sci-laserLarge_000",
+        "sfx:kenney/sci-laserSmall_000"
       ]
     },
     {
@@ -536,7 +867,11 @@
       "usedFor": [
         "world:bush-autumn",
         "world:bush-summer",
-        "world:grass-tuft"
+        "world:grass-tuft",
+        "world:thorn-plant-autumn",
+        "world:thorn-plant-spring",
+        "world:thorn-plant-summer",
+        "world:thorn-plant-winter"
       ],
       "notes": "Hyptosis permitted use of his CC-BY 3.0 work under OGA-BY 3.0."
     },
@@ -717,6 +1052,38 @@
       "notes": "Also offered under: GPL 3.0."
     },
     {
+      "file": "lpc:source-of-tales/sprites/full_base.xml",
+      "title": "Source of Tales shared sprite frame layout",
+      "authors": [
+        "Source of Tales team"
+      ],
+      "licence": "CC0",
+      "urls": [
+        "https://gitlab.com/tales/sourceoftales"
+      ],
+      "usedFor": [
+        "brute"
+      ]
+    },
+    {
+      "file": "lpc:source-of-tales/sprites/monsters/*.xml",
+      "title": "Source of Tales monster sprite metadata (frame layout only)",
+      "authors": [
+        "Source of Tales team"
+      ],
+      "licence": "CC0",
+      "urls": [
+        "https://gitlab.com/tales/sourceoftales"
+      ],
+      "usedFor": [
+        "bat",
+        "bee",
+        "brute",
+        "slime"
+      ],
+      "notes": "AUTHORS.txt licenses the game's XML configuration files under CC0."
+    },
+    {
       "file": "lpc:source-of-tales/sprites/monsters/bat*.png",
       "title": "LPC monsters (slime, bat, bee, eyeball)",
       "authors": [
@@ -761,6 +1128,21 @@
       ],
       "usedFor": [
         "eyeball"
+      ],
+      "notes": "Also offered under: GPL 3.0."
+    },
+    {
+      "file": "lpc:source-of-tales/sprites/monsters/skeleton_boss*.png",
+      "title": "Source of Tales skeleton boss (brute)",
+      "authors": [
+        "Johannes Sjölund"
+      ],
+      "licence": "CC-BY-SA 3.0",
+      "urls": [
+        "https://gitlab.com/tales/sourceoftales"
+      ],
+      "usedFor": [
+        "brute"
       ],
       "notes": "Also offered under: GPL 3.0."
     },
@@ -1937,6 +2319,14 @@
       "file": "effects-0.png",
       "licence": "CC-BY-SA 3.0",
       "notes": "Contains art derived from CC-BY-SA sources, so the baked page is CC-BY-SA."
+    },
+    {
+      "file": "fonts-0.png",
+      "licence": "CC0"
+    },
+    {
+      "file": "icons-0.png",
+      "licence": "CC-BY 3.0 / OGA-BY 3.0 (attribution required)"
     },
     {
       "file": "sfx/fantasy/*",

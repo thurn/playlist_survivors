@@ -1,0 +1,153 @@
+{
+  "characters": {
+    "existing_entries_unchanged": 13,
+    "new_entries": [
+      "brute"
+    ]
+  },
+  "effects": {
+    "existing_entries_unchanged": 57,
+    "new_entries": [
+      "particle-circle-01",
+      "particle-flare-01",
+      "particle-magic-01",
+      "particle-magic-03",
+      "particle-slash-01",
+      "particle-smoke-01",
+      "particle-smoke-04",
+      "particle-spark-01",
+      "particle-spark-04"
+    ]
+  },
+  "world": {
+    "existing_entries_unchanged": 22,
+    "new_entries": [
+      "thorn-plant-autumn",
+      "thorn-plant-spring",
+      "thorn-plant-summer",
+      "thorn-plant-winter"
+    ]
+  },
+  "fonts": {
+    "pixel": {
+      "glyphs": 95,
+      "lineHeight": 24,
+      "ascent": 20
+    },
+    "pixel-square": {
+      "glyphs": 95,
+      "lineHeight": 48,
+      "ascent": 40
+    }
+  },
+  "icons": [
+    "bloody-tear",
+    "duplicator",
+    "empty-tome",
+    "garlic",
+    "hollow-heart",
+    "holy-wand",
+    "king-bible",
+    "lightning-ring",
+    "magic-wand",
+    "pummarola",
+    "soul-eater",
+    "spellbinder",
+    "spinach",
+    "sword-spin",
+    "thunder-loop",
+    "unholy-vespers"
+  ],
+  "new_sounds": {
+    "kenney/casino-card-place-1": {
+      "file": "kenney/casino-card-place-1.ogg",
+      "durationS": 0.619,
+      "lufs": -26.2,
+      "onsetS": 0.0841
+    },
+    "kenney/casino-card-slide-1": {
+      "file": "kenney/casino-card-slide-1.ogg",
+      "durationS": 0.506,
+      "lufs": -25.1,
+      "onsetS": 0.056
+    },
+    "kenney/casino-cards-pack-open-1": {
+      "file": "kenney/casino-cards-pack-open-1.ogg",
+      "durationS": 0.937,
+      "lufs": -24.9,
+      "onsetS": 0.3924
+    },
+    "kenney/casino-chips-collide-1": {
+      "file": "kenney/casino-chips-collide-1.ogg",
+      "durationS": 0.175,
+      "lufs": -27.5,
+      "onsetS": 0
+    },
+    "kenney/casino-chips-stack-1": {
+      "file": "kenney/casino-chips-stack-1.ogg",
+      "durationS": 0.203,
+      "lufs": -27.5,
+      "onsetS": 0
+    },
+    "kenney/digital-highUp": {
+      "file": "kenney/digital-highUp.ogg",
+      "durationS": 0.379,
+      "lufs": -17.9,
+      "onsetS": 0.0021
+    },
+    "kenney/digital-laser1": {
+      "file": "kenney/digital-laser1.ogg",
+      "durationS": 0.95,
+      "lufs": -18,
+      "onsetS": 0.0655
+    },
+    "kenney/digital-powerUp1": {
+      "file": "kenney/digital-powerUp1.ogg",
+      "durationS": 1.056,
+      "lufs": -18,
+      "onsetS": 0
+    },
+    "kenney/digital-tone1": {
+      "file": "kenney/digital-tone1.ogg",
+      "durationS": 0.156,
+      "lufs": -18,
+      "onsetS": 0
+    },
+    "kenney/digital-zap1": {
+      "file": "kenney/digital-zap1.ogg",
+      "durationS": 0.892,
+      "lufs": -17.9,
+      "onsetS": 0.001
+    },
+    "kenney/sci-explosionCrunch_000": {
+      "file": "kenney/sci-explosionCrunch_000.ogg",
+      "durationS": 0.777,
+      "lufs": -18.2,
+      "onsetS": 0
+    },
+    "kenney/sci-forceField_000": {
+      "file": "kenney/sci-forceField_000.ogg",
+      "durationS": 0.876,
+      "lufs": -18,
+      "onsetS": 0.0542
+    },
+    "kenney/sci-impactMetal_000": {
+      "file": "kenney/sci-impactMetal_000.ogg",
+      "durationS": 0.635,
+      "lufs": -24.7,
+      "onsetS": 0
+    },
+    "kenney/sci-laserLarge_000": {
+      "file": "kenney/sci-laserLarge_000.ogg",
+      "durationS": 0.677,
+      "lufs": -20.7,
+      "onsetS": 0
+    },
+    "kenney/sci-laserSmall_000": {
+      "file": "kenney/sci-laserSmall_000.ogg",
+      "durationS": 0.236,
+      "lufs": -19.9,
+      "onsetS": 0
+    }
+  }
+}

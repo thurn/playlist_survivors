@@ -125,3 +125,19 @@ export interface CreditsFile {
    */
   outputs?: Array<{ file: string; licence: string; notes?: string }>;
 }
+
+/** UI glyphs use a baseline origin; bearings locate the trimmed raster. */
+export interface FontGlyph {
+  rect: AtlasRect;
+  advance: number;
+  bearingX: number;
+  bearingY: number;
+}
+export interface FontAtlas {
+  pages: string[];
+  fonts: Record<string, { size: number; lineHeight: number; ascent: number; glyphs: Record<string, FontGlyph> }>;
+}
+export interface IconAtlas {
+  pages: string[];
+  icons: Record<string, AtlasRect>;
+}

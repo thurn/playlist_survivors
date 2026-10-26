@@ -528,6 +528,96 @@
       },
       "fps": 1,
       "desc": "bone chip (single frame) for skeleton debris"
+    },
+    "particle-spark-01": {
+      "files": {
+        "list": [
+          "dl:kenney-particle-pack/PNG (Transparent)/spark_01.png"
+        ]
+      },
+      "scale": 0.25,
+      "fps": 1,
+      "desc": "Kenney HD spark_01 texture; additive, tint in renderer"
+    },
+    "particle-spark-04": {
+      "files": {
+        "list": [
+          "dl:kenney-particle-pack/PNG (Transparent)/spark_04.png"
+        ]
+      },
+      "scale": 0.25,
+      "fps": 1,
+      "desc": "Kenney HD spark_04 texture; additive, tint in renderer"
+    },
+    "particle-smoke-01": {
+      "files": {
+        "list": [
+          "dl:kenney-particle-pack/PNG (Transparent)/smoke_01.png"
+        ]
+      },
+      "scale": 0.25,
+      "fps": 1,
+      "desc": "Kenney HD smoke_01 texture; additive, tint in renderer"
+    },
+    "particle-smoke-04": {
+      "files": {
+        "list": [
+          "dl:kenney-particle-pack/PNG (Transparent)/smoke_04.png"
+        ]
+      },
+      "scale": 0.25,
+      "fps": 1,
+      "desc": "Kenney HD smoke_04 texture; additive, tint in renderer"
+    },
+    "particle-flare-01": {
+      "files": {
+        "list": [
+          "dl:kenney-particle-pack/PNG (Transparent)/flare_01.png"
+        ]
+      },
+      "scale": 0.25,
+      "fps": 1,
+      "desc": "Kenney HD flare_01 texture; additive, tint in renderer"
+    },
+    "particle-magic-01": {
+      "files": {
+        "list": [
+          "dl:kenney-particle-pack/PNG (Transparent)/magic_01.png"
+        ]
+      },
+      "scale": 0.25,
+      "fps": 1,
+      "desc": "Kenney HD magic_01 texture; additive, tint in renderer"
+    },
+    "particle-magic-03": {
+      "files": {
+        "list": [
+          "dl:kenney-particle-pack/PNG (Transparent)/magic_03.png"
+        ]
+      },
+      "scale": 0.25,
+      "fps": 1,
+      "desc": "Kenney HD magic_03 texture; additive, tint in renderer"
+    },
+    "particle-slash-01": {
+      "files": {
+        "list": [
+          "dl:kenney-particle-pack/PNG (Transparent)/slash_01.png"
+        ]
+      },
+      "scale": 0.25,
+      "fps": 1,
+      "desc": "Kenney HD slash_01 texture; additive, tint in renderer"
+    },
+    "particle-circle-01": {
+      "files": {
+        "list": [
+          "dl:kenney-particle-pack/PNG (Transparent)/circle_01.png"
+        ]
+      },
+      "scale": 0.25,
+      "fps": 1,
+      "desc": "Kenney HD circle_01 texture; additive, tint in renderer"
     }
   }
 }

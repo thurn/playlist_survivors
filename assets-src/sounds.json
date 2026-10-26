@@ -1384,6 +1384,96 @@
    "src": "lpc:source-of-tales/sfx/metal-bowl.ogg",
    "category": "chime",
    "desc": "struck metal bowl: warm bell tone (prelude)"
+  },
+  {
+   "id": "kenney/sci-laserSmall_000",
+   "src": "dl:kenney-sci-fi-sounds/Audio/laserSmall_000.ogg",
+   "category": "weapon",
+   "desc": "short clean laser tick; wand fire (SF11 provisional; mix audition pending)"
+  },
+  {
+   "id": "kenney/sci-laserLarge_000",
+   "src": "dl:kenney-sci-fi-sounds/Audio/laserLarge_000.ogg",
+   "category": "weapon",
+   "desc": "heavier laser transient; accent fire (SF11 provisional; mix audition pending)"
+  },
+  {
+   "id": "kenney/sci-impactMetal_000",
+   "src": "dl:kenney-sci-fi-sounds/Audio/impactMetal_000.ogg",
+   "category": "hit",
+   "desc": "brief metallic impact (SF11 provisional; mix audition pending)"
+  },
+  {
+   "id": "kenney/sci-explosionCrunch_000",
+   "src": "dl:kenney-sci-fi-sounds/Audio/explosionCrunch_000.ogg",
+   "category": "kill",
+   "desc": "crunchy burst (SF11 provisional; mix audition pending)"
+  },
+  {
+   "id": "kenney/sci-forceField_000",
+   "src": "dl:kenney-sci-fi-sounds/Audio/forceField_000.ogg",
+   "category": "weapon",
+   "desc": "hollow electric pulse (SF11 provisional; mix audition pending)"
+  },
+  {
+   "id": "kenney/digital-laser1",
+   "src": "dl:kenney-digital-audio/Audio/laser1.ogg",
+   "category": "weapon",
+   "desc": "short bright laser (SF11 provisional; mix audition pending)"
+  },
+  {
+   "id": "kenney/digital-zap1",
+   "src": "dl:kenney-digital-audio/Audio/zap1.ogg",
+   "category": "hit",
+   "desc": "dry electrical zap (SF11 provisional; mix audition pending)"
+  },
+  {
+   "id": "kenney/digital-tone1",
+   "src": "dl:kenney-digital-audio/Audio/tone1.ogg",
+   "category": "pickup",
+   "desc": "pitched seed for gem chain (SF11 provisional; mix audition pending)"
+  },
+  {
+   "id": "kenney/digital-powerUp1",
+   "src": "dl:kenney-digital-audio/Audio/powerUp1.ogg",
+   "category": "ui",
+   "desc": "short rising power-up (SF11 provisional; mix audition pending)"
+  },
+  {
+   "id": "kenney/digital-highUp",
+   "src": "dl:kenney-digital-audio/Audio/highUp.ogg",
+   "category": "ui",
+   "desc": "bright ascending confirmation (SF11 provisional; mix audition pending)"
+  },
+  {
+   "id": "kenney/casino-card-slide-1",
+   "src": "dl:kenney-casino-audio/Audio/card-slide-1.ogg",
+   "category": "ui",
+   "desc": "dry card reveal swish (SF11 provisional; mix audition pending)"
+  },
+  {
+   "id": "kenney/casino-card-place-1",
+   "src": "dl:kenney-casino-audio/Audio/card-place-1.ogg",
+   "category": "ui",
+   "desc": "soft card landing (SF11 provisional; mix audition pending)"
+  },
+  {
+   "id": "kenney/casino-chips-collide-1",
+   "src": "dl:kenney-casino-audio/Audio/chips-collide-1.ogg",
+   "category": "ui",
+   "desc": "roulette tick clatter (SF11 provisional; mix audition pending)"
+  },
+  {
+   "id": "kenney/casino-chips-stack-1",
+   "src": "dl:kenney-casino-audio/Audio/chips-stack-1.ogg",
+   "category": "pickup",
+   "desc": "chip stack click (SF11 provisional; mix audition pending)"
+  },
+  {
+   "id": "kenney/casino-cards-pack-open-1",
+   "src": "dl:kenney-casino-audio/Audio/cards-pack-open-1.ogg",
+   "category": "ui",
+   "desc": "pack opening rustle (SF11 provisional; mix audition pending)"
   }
  ]
 }

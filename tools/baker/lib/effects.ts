@@ -138,7 +138,7 @@ function writeCatalogue(defs: Record<string, AnimDef>, pending: Record<string, {
     "",
     "Animation ids in `public/assets/effects.json` (reference them as `fx:<id>` in content/effects.yaml).",
     "Anchors are the centre of the effect unless noted as bottom (ground-based effects, whose anchor is where they touch the ground).",
-    "Slash arcs are smooth (not pixel art) glowing sprites: draw them additively. Everything else is pixel art.",
+    "Slash arcs and particle-* textures are HD glowing sprites: draw them additively. The other effects are pixel art.",
     "",
     "| id | frames | fps | anchor | looks like |",
     "|---|---|---|---|---|",

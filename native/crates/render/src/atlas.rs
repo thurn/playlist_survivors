@@ -351,7 +351,14 @@ mod tests {
         let a = Atlases::load(&assets()).unwrap();
         // (The three baked atlases and the procedural textures.)
         assert_eq!(a.pages.len(), 4);
-        assert_eq!((a.pages[0].width, a.pages[0].height), (4096, 2560));
+        // Adding source art repacks the page; its height is not a runtime contract.
+        assert_eq!(a.pages[0].width, 4096);
+        assert!((1..=4096).contains(&a.pages[0].height));
+        let brute = a.animation("brute", "walk").unwrap();
+        assert_eq!(brute.len(), 8);
+        assert_eq!(a.animation("brute", "hurt").unwrap().len(), 6);
+        assert!(a.effects.contains_key("particle-magic-01"));
+        assert!(!a.props["thorn-plant-summer"].is_empty());
         let walk = a.animation("hero", "walk").unwrap();
         assert_eq!((walk.frame_w, walk.frame_h, walk.len()), (64, 64, 8));
         assert_eq!(walk.frame(Facing::Down, 9, false), walk.frames[2][1]);

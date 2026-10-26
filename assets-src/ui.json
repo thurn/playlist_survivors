@@ -1,0 +1,30 @@
+{
+  "fonts": {
+    "pixel": {
+      "src": "dl:kenney-kenney-fonts/Fonts/Kenney Pixel.ttf",
+      "size": 32
+    },
+    "pixel-square": {
+      "src": "dl:kenney-kenney-fonts/Fonts/Kenney Pixel Square.ttf",
+      "size": 32
+    }
+  },
+  "icons": {
+    "sword-spin": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/broadsword.svg",
+    "garlic": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/delapouite/garlic.svg",
+    "magic-wand": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/wizard-staff.svg",
+    "king-bible": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/book-cover.svg",
+    "lightning-ring": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/lightning-helix.svg",
+    "bloody-tear": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/bloody-sword.svg",
+    "soul-eater": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/delapouite/soul-vessel.svg",
+    "holy-wand": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/crystal-wand.svg",
+    "unholy-vespers": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/book-aura.svg",
+    "thunder-loop": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/lightning-storm.svg",
+    "hollow-heart": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/heart-organ.svg",
+    "empty-tome": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/delapouite/book-cover.svg",
+    "spellbinder": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/scroll-unfurled.svg",
+    "duplicator": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/double-ringed-orb.svg",
+    "pummarola": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/heart-bottle.svg",
+    "spinach": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/three-leaves.svg"
+  }
+}

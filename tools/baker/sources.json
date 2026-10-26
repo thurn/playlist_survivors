@@ -84,6 +84,42 @@
       "page": "https://opengameart.org/content/swishes-sound-pack",
       "sha256": "7980215241b739a787dcf26f660ce510bb237900968789395a86911619795693",
       "file": "swishes.zip"
+    },
+    "kenney-particle-pack": {
+      "url": "https://kenney.nl/media/pages/assets/particle-pack/f8fe0f8cb8-1677578741/kenney_particle-pack.zip",
+      "page": "https://kenney.nl/assets/particle-pack",
+      "sha256": "b631d4b07f7002549fdcf155f01141ad482f79f3440e4e301eed49ce5f1d8958",
+      "file": "kenney-particle-pack.zip"
+    },
+    "kenney-sci-fi-sounds": {
+      "url": "https://kenney.nl/media/pages/assets/sci-fi-sounds/6b296f9ecf-1677589334/kenney_sci-fi-sounds.zip",
+      "page": "https://kenney.nl/assets/sci-fi-sounds",
+      "sha256": "119340f351a5098ad814f78719438c0da355a9ce8a4c8a3af6a8d48aa3d49e04",
+      "file": "kenney-sci-fi-sounds.zip"
+    },
+    "kenney-digital-audio": {
+      "url": "https://kenney.nl/media/pages/assets/digital-audio/216eac4753-1677590265/kenney_digital-audio.zip",
+      "page": "https://kenney.nl/assets/digital-audio",
+      "sha256": "24e6ce28b76a6d8c89cff4d331e0965ff5c3de8a73c612028e9d363cc64e4f06",
+      "file": "kenney-digital-audio.zip"
+    },
+    "kenney-casino-audio": {
+      "url": "https://kenney.nl/media/pages/assets/casino-audio/2472606a04-1721639069/kenney_casino-audio.zip",
+      "page": "https://kenney.nl/assets/casino-audio",
+      "sha256": "f36250766ac5bc378c13708ddf12a23a8e54a3251f8d482c7536e51b5dbafa18",
+      "file": "kenney-casino-audio.zip"
+    },
+    "kenney-kenney-fonts": {
+      "url": "https://kenney.nl/media/pages/assets/kenney-fonts/8d5435c213-1677661710/kenney_kenney-fonts.zip",
+      "page": "https://kenney.nl/assets/kenney-fonts",
+      "sha256": "4e69a86eef3cd47e9d8207413868cd08bcddeb2dae4047dbd10362e2a7a16bac",
+      "file": "kenney-kenney-fonts.zip"
+    },
+    "game-icons": {
+      "url": "https://codeload.github.com/game-icons/icons/zip/82d948812bfe3f269ef8f731dcdb07b08160edc4",
+      "page": "https://game-icons.net",
+      "sha256": "2b6f10a39898bd4dcb6b5590453821f7d88c5fff4f149de237b7ee183d579f01",
+      "file": "game-icons.zip"
     }
   }
 }

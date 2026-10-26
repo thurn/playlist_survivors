@@ -5,11 +5,11 @@
  * the local LPC collections under ~/Documents/lpc, and downloaded packs listed
  * in tools/baker/sources.json (cached in ~/.cache/playlist-survivors).
  *
- * Outputs (committed): public/assets/{characters,world,effects}.json and their
+ * Outputs (committed): public/assets/{characters,world,effects,fonts,icons}.json and their
  * page PNGs, public/assets/sfx/<pack>/<name>.ogg plus sounds.json, and
  * public/assets/credits.json. Baking twice gives byte-identical outputs.
  *
- * Flags: --only=characters,world,effects,sounds bakes a subset (manifests of
+ * Flags: --only=characters,world,effects,fonts,icons,sounds bakes a subset (manifests of
  * the others are left untouched; credits are only rewritten on a full bake).
  */
 import { readdirSync, rmSync, writeFileSync, mkdirSync, existsSync, readFileSync } from "node:fs";
@@ -22,6 +22,7 @@ import { CreditCollector, isShareAlike, leastRestrictive, resolveLicence } from 
 import { OUT } from "./lib/paths.ts";
 import { bakeSounds } from "./lib/sounds.ts";
 import { ensureSources } from "./lib/sources.ts";
+import { bakeFonts, bakeIcons } from "./lib/ui.ts";
 import { bakeWorld } from "./lib/world.ts";
 
 const RECORDING: CreditsFile["recording"] = {
@@ -88,6 +89,14 @@ async function main(): Promise<void> {
     await writePages("effects", pages);
     writeJson(join(OUT, "effects.json"), atlas);
   }
+  for (const [kind, bake] of [["fonts", bakeFonts], ["icons", bakeIcons]] as const) {
+    if (!want(kind)) continue;
+    log(kind);
+    const { atlas, pages } = await bake(user(kind));
+    credits.validate();
+    await writePages(kind, pages);
+    writeJson(join(OUT, `${kind}.json`), atlas);
+  }
   if (want("sounds")) {
     log("sounds");
     const manifest = await bakeSounds(user("sounds"), log);
@@ -99,7 +108,7 @@ async function main(): Promise<void> {
   if (!only) {
     const outputs: NonNullable<CreditsFile["outputs"]> = [];
     const pagesOf = (prefix: string) => readdirSync(OUT).filter((f) => new RegExp(`^${prefix}-\\d+\\.png$`).test(f)).sort();
-    for (const prefix of ["characters", "world", "effects"]) {
+    for (const prefix of ["characters", "world", "effects", "fonts", "icons"]) {
       const lic = outputLicence([...(perOutput[prefix] ?? [])]);
       for (const f of pagesOf(prefix)) {
         outputs.push({ file: f, licence: lic, ...(lic.startsWith("CC-BY-SA") ? { notes: "Contains art derived from CC-BY-SA sources, so the baked page is CC-BY-SA." } : {}) });

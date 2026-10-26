@@ -11,6 +11,10 @@ import { resolveSource } from "./paths.ts";
 export interface MonsterDef {
   /** Sprite XML (lpc: ref), or null to synthesize from `image`. */
   xml?: string;
+  /** Shared frame-layout XMLs, resolved explicitly and credited. */
+  includes?: string[];
+  /** Use a real walk cycle instead of a small monster's looping stand. */
+  walkAction?: string;
   /** For monsters without XML: the base image and frame size. */
   image?: string;
   frameW?: number;
@@ -92,7 +96,13 @@ export async function bakeMonster(id: string, def: MonsterDef, use: (ref: string
   let sprite: XmlSprite;
   if (def.xml) {
     const xmlPath = resolveSource(def.xml);
+    use(def.xml);
     sprite = parseSpriteXml(readFileSync(xmlPath, "utf8"));
+    for (const ref of def.includes ?? []) {
+      use(ref);
+      const shared = parseSpriteXml(readFileSync(resolveSource(ref), "utf8"));
+      sprite.actions = { ...shared.actions, ...sprite.actions };
+    }
   } else {
     // Synthesize the same structure as the other monsters' XML.
     const w = def.frameW!, h = def.frameH!;
@@ -108,7 +118,9 @@ export async function bakeMonster(id: string, def: MonsterDef, use: (ref: string
     };
   }
   const images: Record<string, Img> = {};
+  const needed = new Set([sprite.actions.stand.imageset, sprite.actions[def.walkAction ?? "stand"].imageset, sprite.actions.attack.imageset, sprite.actions.dead?.imageset]);
   for (const [name, set] of Object.entries(sprite.imagesets)) {
+    if (!needed.has(name)) continue;
     const ref = `lpc:source-of-tales/${set.src}`;
     if (!existsSync(resolveSource(ref))) throw new Error(`${id}: missing ${ref}`);
     use(ref);
@@ -136,7 +148,7 @@ export async function bakeMonster(id: string, def: MonsterDef, use: (ref: string
   const out: Record<string, MonsterAnim> = {};
   const fpsOf = (frames: XmlFrame[]) => Math.round(1000 / (frames.filter((f) => f.delay > 0)[0]?.delay ?? 100));
   {
-    const a = sprite.actions.stand;
+    const a = sprite.actions[def.walkAction ?? "stand"];
     out.walk = { frameW: fw, frameH: fh, anchorX, anchorY, fps: fpsOf(a.dirs.down), frames: DIRS.map((d) => a.dirs[d].map((f) => getFrame(a.imageset, f.index))) };
   }
   {
@@ -153,7 +165,7 @@ export async function bakeMonster(id: string, def: MonsterDef, use: (ref: string
   }
   if (sprite.actions.dead) {
     const a = sprite.actions.dead;
-    out.hurt = { frameW: fw, frameH: fh, anchorX, anchorY, fps: fpsOf(a.dirs.down), frames: DIRS.map((d) => a.dirs[d].map((f) => getFrame(a.imageset, f.index))) };
+    out.hurt = { frameW: fw, frameH: fh, anchorX, anchorY, fps: fpsOf(a.dirs.down ?? a.dirs.up), frames: DIRS.map((d) => (a.dirs[d] ?? a.dirs.up).map((f) => getFrame(a.imageset, f.index))) };
   } else {
     // No death art: fade out while sinking toward the ground.
     const a = sprite.actions.stand;

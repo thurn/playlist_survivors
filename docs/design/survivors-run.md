@@ -1170,6 +1170,16 @@ passed in 49 s.
 ### SF9
 ### SF10
 ### SF11
+
+The intake adds the brute's real walk/attack/death art, four spiky plant
+variants, nine Kenney particle textures, two pixel-font faces (95 ASCII
+glyphs each), all sixteen item icons and fifteen new CC0 SFX. Each icon's
+author is credited, and font/icon baseline and tinting interfaces are in
+[SF11 evidence](../../native/evidence/sf11/README.md). A kept raster audit
+confirms all thirteen existing sprites, 57 effects and 22 props are unchanged.
+Nothing new is wired into gameplay; SFX listening is in operator-pending for
+SH2 and the consuming presentation beads.
+
 ### SH1
 ### SH2
 ### SH3

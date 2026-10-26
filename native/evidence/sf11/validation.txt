@@ -1,0 +1,20 @@
+SF11 final source validation
+
+npm ci: passed; new worktree setup before baker edits.
+npm run bake: passed; 14 sprites, 26 props, 66 effects, 245 sounds.
+Repeated full bake: all 257 output files byte-identical (bake-hashes.json).
+npm run check: passed (lint, TypeScript and asset checks).
+cargo test -p render atlas::tests::the_baked_atlases_load: passed.
+scripts/check-fast: passed in 37 s (native portion 34 s); check-fast.txt.
+scripts/ci-full: passed, exit 0; ci-full.txt.
+- Initial full run caught the stale exact atlas height assertion; fixed in SF11.
+- Final full run passes Python checks, native all-target clippy, all tests
+  including ignored release tests, purity, unused-dependency scan, release
+  app build, eight-track corpus parity and Delayed lead checks.
+- runner-bench engine p99 0.898 ms (<= 4), rollback p95 20.5 ms (<= 250).
+- Offscreen app frame-work p99 1.32 ms (<= 4).
+Headless File/Delayed smoke: passed, exit 0, 12 s session / 6 s active run,
+18 enemies alive in minute 0; headless.txt. No window or speaker output.
+Cold review: milestone F at SF10 per AGENTS.md; none required per SF11.
+Operator-only SFX listening is in operator-pending.md; no gameplay uses the
+new sounds yet, and catalogue descriptions remain provisional.

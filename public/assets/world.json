@@ -2001,6 +2001,74 @@
       ],
       "tall": false,
       "radius": 32
+    },
+    "thorn-plant-summer": {
+      "variants": [
+        {
+          "rect": {
+            "page": 0,
+            "x": 609,
+            "y": 129,
+            "w": 55,
+            "h": 51
+          },
+          "anchorX": 29,
+          "anchorY": 47
+        }
+      ],
+      "tall": true,
+      "radius": 16
+    },
+    "thorn-plant-autumn": {
+      "variants": [
+        {
+          "rect": {
+            "page": 0,
+            "x": 609,
+            "y": 129,
+            "w": 55,
+            "h": 51
+          },
+          "anchorX": 29,
+          "anchorY": 47
+        }
+      ],
+      "tall": true,
+      "radius": 16
+    },
+    "thorn-plant-winter": {
+      "variants": [
+        {
+          "rect": {
+            "page": 0,
+            "x": 609,
+            "y": 129,
+            "w": 55,
+            "h": 51
+          },
+          "anchorX": 29,
+          "anchorY": 47
+        }
+      ],
+      "tall": true,
+      "radius": 16
+    },
+    "thorn-plant-spring": {
+      "variants": [
+        {
+          "rect": {
+            "page": 0,
+            "x": 609,
+            "y": 129,
+            "w": 55,
+            "h": 51
+          },
+          "anchorX": 29,
+          "anchorY": 47
+        }
+      ],
+      "tall": true,
+      "radius": 16
     }
   }
 }
