@@ -29,6 +29,8 @@ const VIEW_H: f32 = 640.0;
 pub struct Look {
     pub atlas: String,
     pub scale: f32,
+    pub tint: [f32; 3],
+    pub style: super::roster::Style,
     /// Its death's effect recipe and debris colours.
     pub death: String,
     pub debris: Vec<String>,
@@ -715,6 +717,17 @@ impl Scene {
                 out,
             );
         }
+        let mut stomp_cells = std::collections::BTreeMap::new();
+        for f in view.foes.values().filter(|f| f.death_w.is_none()) {
+            if looks
+                .get(&f.kind)
+                .is_some_and(|l| l.style == super::roster::Style::Brute)
+            {
+                *stomp_cells
+                    .entry(((f.x / 96.0).floor() as i32, (f.y / 96.0).floor() as i32))
+                    .or_insert(0usize) += 1;
+            }
+        }
         let mut order: Vec<(f64, Drawn)> = view
             .foes
             .iter()
@@ -797,6 +810,14 @@ impl Scene {
                             * (1.0 - 0.5 * ENEMY_FLINCH * fast.flinch);
                         ky = (1.0 - ENEMY_SQUASH * g * land) * (1.0 + ENEMY_FLINCH * fast.flinch);
                     }
+                    let style = look.map_or(super::roster::Style::Character, |l| l.style);
+                    if style == super::roster::Style::Plant {
+                        let p = pulse.bar.rem_euclid(1.0);
+                        let land = (-20.0 * p).exp();
+                        bob = 0.0;
+                        kx = 1.0 + 0.06 * land;
+                        ky = 1.0 - 0.06 * land;
+                    }
                     // A hit flashes it white; the killing blow knocks the body back from the
                     // hero, squashed, and it falls (its hurt frames) and fades.
                     let struck = self.struck.get(&id).map(|&(t, lethal)| (now - t, lethal));
@@ -834,7 +855,45 @@ impl Scene {
                     if alpha <= 0.0 {
                         continue;
                     }
-                    let tint = [1.0, 1.0, 1.0, alpha];
+                    let rgb = if flash {
+                        [1.0; 3]
+                    } else {
+                        look.map_or([1.0; 3], |l| l.tint)
+                    };
+                    let tint = [rgb[0], rgb[1], rgb[2], alpha];
+                    if style == super::roster::Style::Plant {
+                        if let Some(prop) = art.props.get(sprite).and_then(|v| v.first()) {
+                            let sway = (std::f64::consts::TAU * pulse.bar).sin() as f32 * 0.065;
+                            let s = Sprite::anchored(
+                                prop.region,
+                                sx,
+                                sy,
+                                (prop.anchor_x, prop.anchor_y),
+                                size * scale,
+                            )
+                            .tinted(tint)
+                            .skewed(sway);
+                            out.push(stretch(
+                                if flash { s.silhouette() } else { s },
+                                (sx, sy),
+                                (kx as f32, ky as f32),
+                            ));
+                        }
+                        continue;
+                    }
+                    if style == super::roster::Style::Brute && !dead {
+                        let n = stomp_cells
+                            .get(&((f.x / 96.0).floor() as i32, (f.y / 96.0).floor() as i32))
+                            .copied()
+                            .unwrap_or(1);
+                        super::roster::stomp(
+                            pulse.bar,
+                            (sx, sy),
+                            size * scale,
+                            1.0 / n as f32,
+                            out,
+                        );
+                    }
                     let hurt = art.animation(sprite, "hurt").filter(|_| fall >= 0.0);
                     if let Some(walk) = hurt.or_else(|| art.animation(sprite, "walk")) {
                         // (Enemies are sampled 60 times a second; a walk frame every 6 samples;

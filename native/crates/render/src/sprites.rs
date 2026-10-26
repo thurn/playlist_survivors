@@ -33,6 +33,7 @@ pub struct Sprite {
     /// A shear about its bottom edge: the top moves left by this times its height (a sway).
     pub skew: f32,
     arc: Option<Arc>,
+    silhouette: bool,
 }
 
 impl Sprite {
@@ -55,6 +56,7 @@ impl Sprite {
             additive: false,
             skew: 0.0,
             arc: None,
+            silhouette: false,
         }
     }
 
@@ -87,6 +89,7 @@ impl Sprite {
             additive: false,
             skew: 0.0,
             arc: None,
+            silhouette: false,
         }
     }
 
@@ -103,6 +106,16 @@ impl Sprite {
             additive: false,
             skew: 0.0,
             arc: None,
+            silhouette: false,
+        }
+    }
+
+    /// Use the texture's alpha as a white mask (for a prop's hit flash).
+    #[must_use]
+    pub fn silhouette(self) -> Sprite {
+        Sprite {
+            silhouette: true,
+            ..self
         }
     }
 
@@ -251,6 +264,7 @@ fn fs(i: Out) -> @location(0) vec4<f32> {
         if (i.additive & 2u) != 0u { t = textureSampleLevel(page7, smooth_samp, i.uv, 0.0); }
         else { t = textureSampleLevel(page7, samp, i.uv, 0.0); }
     }
+    if (i.additive & 4u) != 0u { t = vec4<f32>(1.0, 1.0, 1.0, t.a); }
     let c = t * i.tint;
     if c.a < 0.004 { discard; }
     // (Premultiplied: an additive sprite leaves what is below it, adding its light.)
@@ -536,8 +550,9 @@ impl SpriteRenderer {
                 } else {
                     SOLID
                 },
-                // Bit 0 controls blending, bit 1 controls the atlas sampler.
+                // Bits: additive blending, smooth sampling, alpha-only silhouette.
                 additive: u32::from(s.additive)
+                    | (u32::from(s.silhouette) << 2)
                     | if self
                         .smooth_pages
                         .get(r.page as usize)

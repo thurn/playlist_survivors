@@ -1,0 +1,39 @@
+   Compiling num-traits v0.2.19
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling hashbrown v0.17.1
+   Compiling smallvec v1.16.4
+   Compiling crc32fast v1.5.3
+   Compiling simd-adler32 v0.3.10
+   Compiling miniz_oxide v0.9.1
+   Compiling granit-parser v2.0.0
+   Compiling indexmap v2.14.2
+   Compiling num-integer v0.1.47
+   Compiling num-complex v0.4.6
+   Compiling serde-saphyr v2.0.0
+   Compiling serde_json v1.0.154
+   Compiling flate2 v1.1.10
+   Compiling transpose v0.2.3
+   Compiling primal-check v0.3.4
+   Compiling rustfft v6.4.1
+   Compiling syn v3.0.9
+   Compiling realfft v3.5.0
+   Compiling serde_derive v1.0.229
+   Compiling serde v1.0.229
+   Compiling stream v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sw3-roster-art/native/crates/stream)
+   Compiling analysis v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sw3-roster-art/native/crates/analysis)
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sw3-roster-art/native/crates/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 12.62s
+     Running tests/survivor_spawning.rs (target/debug/deps/survivor_spawning-bd30f1999a3bcd76)
+
+running 7 tests
+test enemy_roles_match_documented_health_speed_damage_xp_and_scaling ... ok
+test enemy_knockback_fields_match_the_feel_appendix ... ok
+test future_grid_evidence_cannot_delay_a_raw_tick_and_a_freeze_holds_admission ... ok
+test raw_ticks_snap_to_the_next_known_eighth_and_minute_changes_inherit_only_population ... ok
+test deferred_bosses_wait_for_room_then_the_next_grid_step ... ok
+test a_single_committed_future_beat_is_a_grid_step ... ok
+test all_31_schedule_rows_match_the_documented_source_including_duplicate_roles ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

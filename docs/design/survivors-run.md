@@ -1402,6 +1402,20 @@ No offer/easy knob changed. Run from `native/` with
 `cargo run --release -p app -- --playlist playlists/survivors-30.m3u --delayed`.
 
 ### SW3
+
+Eight remaining base roles now use their final art and gaits: heavy mudmen,
+offbeat werewolf, dark giant bat, downbeat skeleton brutes and bar-swaying
+thorn plants. Existing SH6 lunges remain; combat stats, radii, source scale
+and spawn extents are preserved. No bake was needed: SF11 assets pass checks.
+The GPU alpha-mask regression keeps plant hit flashes white and transparent.
+[SW3 evidence](../../native/evidence/sw3/README.md) keeps an audit of all 20
+roles, eight labelled approach stills and eight silent actual-gait clips
+(52 frames each at 24 fps), plus source, lunge, render and replay outputs.
+Captures disable damage/weapons and make no survival/balance claim. A normal
+35 s File check reaches the real offer freeze and matches all 12,571 settled
+replay records. SW4/SW6 reuse the art roles; SW7 owns the milestone review.
+Run from `native/` with `cargo run --release -p app -- --playlist
+playlists/survivors-30.m3u --delayed`.
 ### SW4
 ### SW5
 ### SW6

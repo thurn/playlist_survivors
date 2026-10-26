@@ -331,3 +331,53 @@ mod aura_tests {
         );
     }
 }
+
+#[cfg(test)]
+mod silhouette_tests {
+    use super::*;
+    use crate::atlas::{Page, Region};
+    use crate::sprites::Sprite;
+    #[test]
+    fn textured_silhouette_preserves_alpha_and_whitens_only_the_hit_sprite() {
+        let page = Page {
+            name: "mask-test".into(),
+            width: 2,
+            height: 1,
+            rgba: vec![30, 150, 60, 255, 0, 0, 0, 0],
+        };
+        let r = Region {
+            page: 0,
+            x: 0,
+            y: 0,
+            w: 2,
+            h: 1,
+        };
+        let normal = Sprite::centred(r, 8.0, 8.0, 16.0, 16.0);
+        let white = Sprite::centred(r, 24.0, 8.0, 16.0, 16.0).silhouette();
+        let px = render(
+            &[page],
+            32,
+            16,
+            &Frame {
+                clear: [0.0; 3],
+                world: &[],
+                lights: &[],
+                grade: Default::default(),
+                overlay: &[normal, white],
+            },
+        )
+        .unwrap();
+        let p = |x: usize| &px[(8 * 32 + x) * 4..(8 * 32 + x + 1) * 4];
+        assert!(
+            p(4)[1] > p(4)[0] && p(4)[1] > p(4)[2],
+            "ordinary colored sprite remains colored"
+        );
+        assert!(p(20)[..3].iter().all(|&v| v > 245), "hit mask is white");
+        assert_eq!(&p(12)[..3], &[0, 0, 0]);
+        assert_eq!(
+            &p(28)[..3],
+            &[0, 0, 0],
+            "transparent texels never turn into a white rectangle"
+        );
+    }
+}

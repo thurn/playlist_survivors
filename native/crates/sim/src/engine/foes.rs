@@ -30,7 +30,8 @@ pub(super) fn get_or(xs: &[f64], i: f64, d: f64) -> f64 {
 
 /// Sprite half extents (x, up, down) used for off-screen spawns and checks.
 pub fn sprite_extents(def: &EnemyDef) -> (f64, f64, f64) {
-    let big = matches!(def.atlas.as_str(), "slime" | "bat" | "bee" | "eyeball");
+    let big = matches!(def.atlas.as_str(), "slime" | "bat" | "bee" | "eyeball")
+        || def.atlas.starts_with("thorn-plant-");
     let s = def.scale;
     if big {
         (16.0 * s, (32.0 + def.hover) * s, 6.0 * s)

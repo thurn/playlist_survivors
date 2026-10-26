@@ -1,0 +1,250 @@
+{
+  "base": "8e5320736e06e954f10435b74a68c9cccb8327e5",
+  "roles": [
+    {
+      "id": "vs-bat1",
+      "changes": {},
+      "combat_and_collision_unchanged": true
+    },
+    {
+      "id": "vs-bat2",
+      "changes": {},
+      "combat_and_collision_unchanged": true
+    },
+    {
+      "id": "vs-bat3",
+      "changes": {},
+      "combat_and_collision_unchanged": true
+    },
+    {
+      "id": "vs-bat4",
+      "changes": {},
+      "combat_and_collision_unchanged": true
+    },
+    {
+      "id": "vs-bat5",
+      "changes": {},
+      "combat_and_collision_unchanged": true
+    },
+    {
+      "id": "vs-zombie",
+      "changes": {},
+      "combat_and_collision_unchanged": true
+    },
+    {
+      "id": "vs-ghost",
+      "changes": {},
+      "combat_and_collision_unchanged": true
+    },
+    {
+      "id": "vs-skeleton",
+      "changes": {},
+      "combat_and_collision_unchanged": true
+    },
+    {
+      "id": "vs-mudman1",
+      "changes": {
+        "gait": {
+          "before": null,
+          "after": {
+            "every": "beat",
+            "pattern": "x.x.",
+            "share": 0.4
+          }
+        },
+        "group": {
+          "before": "bar",
+          "after": "beat"
+        },
+        "walkCycleBeats": {
+          "before": null,
+          "after": 2
+        }
+      },
+      "combat_and_collision_unchanged": true
+    },
+    {
+      "id": "vs-mudman2",
+      "changes": {
+        "gait": {
+          "before": null,
+          "after": {
+            "every": "beat",
+            "pattern": "x.x.",
+            "share": 0.4
+          }
+        },
+        "group": {
+          "before": "bar",
+          "after": "beat"
+        },
+        "walkCycleBeats": {
+          "before": null,
+          "after": 2
+        }
+      },
+      "combat_and_collision_unchanged": true
+    },
+    {
+      "id": "vs-werewolf",
+      "changes": {
+        "gait": {
+          "before": null,
+          "after": {
+            "every": "eighth",
+            "pattern": ".x",
+            "share": 0.4
+          }
+        },
+        "group": {
+          "before": "bar",
+          "after": "eighth"
+        },
+        "walkCycleBeats": {
+          "before": null,
+          "after": 1
+        }
+      },
+      "combat_and_collision_unchanged": true
+    },
+    {
+      "id": "vs-xlbat",
+      "changes": {
+        "gait": {
+          "before": null,
+          "after": {
+            "every": "beat",
+            "pattern": "x",
+            "share": 0.4
+          }
+        },
+        "group": {
+          "before": "eighth",
+          "after": "beat"
+        },
+        "walkCycleBeats": {
+          "before": 0.5,
+          "after": 1
+        }
+      },
+      "combat_and_collision_unchanged": true
+    },
+    {
+      "id": "vs-xlmantis",
+      "changes": {
+        "atlas": {
+          "before": "orc-elite",
+          "after": "brute"
+        },
+        "gait": {
+          "before": null,
+          "after": {
+            "every": "beat",
+            "pattern": "x...",
+            "share": 0.25
+          }
+        },
+        "walkCycleBeats": {
+          "before": null,
+          "after": 4
+        }
+      },
+      "combat_and_collision_unchanged": true
+    },
+    {
+      "id": "vs-xlmummy",
+      "changes": {
+        "atlas": {
+          "before": "orc-elite",
+          "after": "brute"
+        },
+        "gait": {
+          "before": null,
+          "after": {
+            "every": "beat",
+            "pattern": "x...",
+            "share": 0.25
+          }
+        },
+        "walkCycleBeats": {
+          "before": null,
+          "after": 4
+        }
+      },
+      "combat_and_collision_unchanged": true
+    },
+    {
+      "id": "vs-xlflower",
+      "changes": {
+        "atlas": {
+          "before": "slime",
+          "after": "thorn-plant-autumn"
+        },
+        "gait": {
+          "before": null,
+          "after": {
+            "every": "beat",
+            "pattern": "x...",
+            "share": 0.35
+          }
+        },
+        "hop": {
+          "before": true,
+          "after": false
+        },
+        "walkCycleBeats": {
+          "before": 1,
+          "after": 4
+        }
+      },
+      "combat_and_collision_unchanged": true
+    },
+    {
+      "id": "vs-flower",
+      "changes": {
+        "atlas": {
+          "before": "slime",
+          "after": "thorn-plant-summer"
+        },
+        "gait": {
+          "before": null,
+          "after": {
+            "every": "beat",
+            "pattern": "x...",
+            "share": 0.35
+          }
+        },
+        "hop": {
+          "before": true,
+          "after": false
+        },
+        "walkCycleBeats": {
+          "before": 1,
+          "after": 4
+        }
+      },
+      "combat_and_collision_unchanged": true
+    },
+    {
+      "id": "vs-boss-xlmantis",
+      "changes": {},
+      "combat_and_collision_unchanged": true
+    },
+    {
+      "id": "vs-boss-werewolf",
+      "changes": {},
+      "combat_and_collision_unchanged": true
+    },
+    {
+      "id": "vs-boss-xlmummy",
+      "changes": {},
+      "combat_and_collision_unchanged": true
+    },
+    {
+      "id": "vs-boss-xlflower",
+      "changes": {},
+      "combat_and_collision_unchanged": true
+    }
+  ],
+  "unchanged_fields": "All fields except atlas/group/gait/walkCycleBeats/hop, including complete survivors source stats, health, contactDamage, radius, scale, hover, behavior, death recipes."
+}

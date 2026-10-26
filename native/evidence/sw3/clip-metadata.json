@@ -1,0 +1,82 @@
+[
+  {
+    "file": "vs-flower.mp4",
+    "codec_name": "h264",
+    "width": 640,
+    "height": 360,
+    "r_frame_rate": "24/1",
+    "nb_frames": "52",
+    "duration": "2.166667",
+    "audio_streams": 0
+  },
+  {
+    "file": "vs-mudman1.mp4",
+    "codec_name": "h264",
+    "width": 640,
+    "height": 360,
+    "r_frame_rate": "24/1",
+    "nb_frames": "52",
+    "duration": "2.166667",
+    "audio_streams": 0
+  },
+  {
+    "file": "vs-mudman2.mp4",
+    "codec_name": "h264",
+    "width": 640,
+    "height": 360,
+    "r_frame_rate": "24/1",
+    "nb_frames": "52",
+    "duration": "2.166667",
+    "audio_streams": 0
+  },
+  {
+    "file": "vs-werewolf.mp4",
+    "codec_name": "h264",
+    "width": 640,
+    "height": 360,
+    "r_frame_rate": "24/1",
+    "nb_frames": "52",
+    "duration": "2.166667",
+    "audio_streams": 0
+  },
+  {
+    "file": "vs-xlbat.mp4",
+    "codec_name": "h264",
+    "width": 640,
+    "height": 360,
+    "r_frame_rate": "24/1",
+    "nb_frames": "52",
+    "duration": "2.166667",
+    "audio_streams": 0
+  },
+  {
+    "file": "vs-xlflower.mp4",
+    "codec_name": "h264",
+    "width": 640,
+    "height": 360,
+    "r_frame_rate": "24/1",
+    "nb_frames": "52",
+    "duration": "2.166667",
+    "audio_streams": 0
+  },
+  {
+    "file": "vs-xlmantis.mp4",
+    "codec_name": "h264",
+    "width": 640,
+    "height": 360,
+    "r_frame_rate": "24/1",
+    "nb_frames": "52",
+    "duration": "2.166667",
+    "audio_streams": 0
+  },
+  {
+    "file": "vs-xlmummy.mp4",
+    "codec_name": "h264",
+    "width": 640,
+    "height": 360,
+    "r_frame_rate": "24/1",
+    "nb_frames": "52",
+    "duration": "2.166667",
+    "audio_streams": 0
+  }
+]

@@ -1,0 +1,17 @@
+
+> playlist-survivors@0.1.0 check
+> npm run lint && npm run typecheck && npm run check:assets
+
+
+> playlist-survivors@0.1.0 lint
+> eslint tools/baker
+
+
+> playlist-survivors@0.1.0 typecheck
+> tsc --noEmit
+
+
+> playlist-survivors@0.1.0 check:assets
+> tsx tools/baker/check-assets.ts
+
+asset check passed: 14 sprites, 26 props, 66 effects, 245 sounds, 4.7 MB

@@ -36,6 +36,7 @@ mod cards;
 mod clip;
 mod damage;
 mod lightning;
+mod roster;
 // The tap and output are the phase 0 spike's (57e846a^:native/spike), kept as they were.
 #[allow(clippy::pedantic, unused_qualifications, dead_code)]
 mod coreaudio;
@@ -171,6 +172,7 @@ struct Options {
     wand_check: Option<PathBuf>,
     bible_check: Option<PathBuf>,
     lightning_check: Option<PathBuf>,
+    roster_check: Option<PathBuf>,
     pickups_check: Option<PathBuf>,
     passives_check: Option<PathBuf>,
     volume: f32,
@@ -230,6 +232,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         wand_check: None,
         bible_check: None,
         lightning_check: None,
+        roster_check: None,
         pickups_check: None,
         passives_check: None,
         volume: 1.0,
@@ -292,6 +295,13 @@ fn options(args: &[String]) -> Result<Options, String> {
                 o.pickups_check = Some(
                     it.next()
                         .ok_or("--pickups-check needs an output directory")?
+                        .into(),
+                );
+            }
+            "--roster-check" => {
+                o.roster_check = Some(
+                    it.next()
+                        .ok_or("--roster-check needs an output directory")?
                         .into(),
                 );
             }
@@ -486,17 +496,7 @@ impl World {
         let looks = lib
             .enemies
             .values()
-            .map(|d| {
-                (
-                    d.id.clone(),
-                    Look {
-                        atlas: d.atlas.clone(),
-                        scale: d.scale as f32,
-                        death: d.death.recipe.clone(),
-                        debris: d.death.debris.clone(),
-                    },
-                )
-            })
+            .map(|d| (d.id.clone(), roster::look(d)))
             .collect();
         let survivors = sim::content::level::load_level(
             &level,
@@ -606,6 +606,9 @@ pub fn run(args: &[String]) -> Result<(), String> {
     }
     if let Some(dir) = &opts.pickups_check {
         return pickups::check::run(dir);
+    }
+    if let Some(dir) = &opts.roster_check {
+        return roster::check::run(dir);
     }
     if let Some(dir) = &opts.lightning_check {
         return weapons_check::run(dir, Some((sim::survivors::WeaponId::LightningRing, 8)));
