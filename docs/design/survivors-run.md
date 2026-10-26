@@ -1085,6 +1085,16 @@ subsection, linking `native/evidence/<key>/`. Beads never add sections
 elsewhere in this document. Parallel beads would collide there.
 
 ### SF1
+
+The [feel appendix](../survivors/appendix-feel.md) records movement units and
+ratios, pickup/invulnerability values, all 45 weapon combat rank rows, six
+passives, enemy knockback/speeds, 21 Mad Forest event entries, treasure by
+minute, chicken rules and gem attraction. Runtime-specific behavior and demo
+adaptations are explicit: 120 ms damage lockout, Bloody Tear critical healing,
+Soul Eater kill-heart drops, and Bible's interval/duration distinction. Source
+hashes and numeric audits are in [SF1 evidence](../../native/evidence/sf1/README.md).
+No game data files or behavior changes are introduced.
+
 ### SF2
 
 Survivors is now the app's default level with the sword alone. Its own run

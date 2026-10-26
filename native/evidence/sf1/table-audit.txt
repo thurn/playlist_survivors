@@ -1,0 +1,1 @@
+Source audit passed: cumulative combat fields match all source deltas. Documented 45 weapon combat rows; 21 event entries.

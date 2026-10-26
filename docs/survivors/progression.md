@@ -14,11 +14,12 @@ from a wiki:
   method names below refer to that decompiled code.
 - **Version.** Steam build 1.16.111 on macOS, files dated 2026-10-21.
 
-The appendices go deeper on three topics:
+The appendices go deeper on four topics:
 
 - [Damage versus enemy health](appendix-damage-vs-health.md)
 - [Experience and leveling](appendix-xp-and-leveling.md)
 - [Gold and meta costs](appendix-gold-economy.md)
+- [Movement, weapon level tables and Mad Forest events](appendix-feel.md)
 
 ### Units
 

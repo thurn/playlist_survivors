@@ -1,0 +1,16 @@
+player_base_speed: source verified
+enemy_base_speed: source verified
+magnet_base_radius: source verified
+damage_lockout: source verified
+weapon_knockback_default: source verified
+weapon_hit_delay_default: source verified
+bloody_tear_heal: source verified
+bloody_tear_heal_delay: source verified
+soul_eater_kill_chance: source verified
+soul_eater_growth: source verified
+thunder_loop_charge: source verified
+bible_hit_memory: source verified
+pickup_speed: source verified
+pickup_update_hz: source verified
+Body.setCircle: source verified 0.01 U per legacy radius pixel
+Input SHA-256 manifest: 40 files plus PhaserPort Body type
