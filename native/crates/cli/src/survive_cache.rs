@@ -127,14 +127,23 @@ fn wav(bytes: &[u8]) -> Option<Vec<f32>> {
     None
 }
 pub fn analyse(models: &Tensors, samples: &[f32], key: String) -> Result<TrackStream, String> {
+    analyse_with_jobs(models, samples, key, 1)
+}
+fn analyse_with_jobs(
+    models: &Tensors,
+    samples: &[f32],
+    key: String,
+    model_jobs: usize,
+) -> Result<TrackStream, String> {
     let duration = samples.len() as f64 / 44100.0;
     let params = Params {
         hindsight: HindsightParams::live(),
         listening: Listening::Delayed(DelayedParams::chosen()),
         ..Params::default()
     };
-    // Inline decoding is deterministic and avoids nested workers in the bounded track jobs.
-    let mut analyzer = Analyzer::new(models, params).map_err(|e| e.to_string())?;
+    // Track jobs keep one model job; only the single continuous preparation uses four.
+    let mut analyzer =
+        Analyzer::with_hindsight_jobs(models, params, model_jobs).map_err(|e| e.to_string())?;
     let mut out = Vec::new();
     for block in samples.chunks(4096) {
         analyzer.push(block, &mut out);
@@ -217,7 +226,7 @@ pub fn cached_concatenation(
     let key = playlist_key(playlist, version)?;
     stored(dir, &key, "continuous playlist", || {
         let audio = playlist.decode(44100.0, |path| decode(path, "concatenated"))?;
-        analyse(models, &audio, key.clone())
+        analyse_with_jobs(models, &audio, key.clone(), 4)
     })
 }
 

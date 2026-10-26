@@ -343,7 +343,18 @@ pub struct Analyzer {
 impl Analyzer {
     /// The analyzer, decoding hindsight windows inline (files, tests).
     pub fn new(models: &Tensors, params: Params) -> Result<Self, TensorError> {
-        let decoder = HindsightDecoder::new(models, params.beats.fps, SAMPLE_RATE as usize)?;
+        Self::with_hindsight_jobs(models, params, 1)
+    }
+
+    /// Inline window scheduling with bounded parallel models, for offline batch preparation.
+    /// Results retain model order and the same configured hindsight arrival delay.
+    pub fn with_hindsight_jobs(
+        models: &Tensors,
+        params: Params,
+        jobs: usize,
+    ) -> Result<Self, TensorError> {
+        let decoder = HindsightDecoder::new(models, params.beats.fps, SAMPLE_RATE as usize)?
+            .with_model_jobs(jobs);
         Analyzer::build(models, params, Decoder::Inline(Box::new(decoder)))
     }
 

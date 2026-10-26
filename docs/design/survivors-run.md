@@ -1233,6 +1233,18 @@ while unrelated files still skip native checks. Seventeen selector/purity tests
 pass, including the real POSIX section selector and Cargo-metadata probes.
 See [tooling evidence](../../native/evidence/tooling-level-checks/README.md).
 
+### Tooling: cold continuous preparation (`hv-n7fn.41`)
+
+The continuous Rust analyzer prepares its independent hindsight models in
+four bounded jobs, reducing in model order. Live and per-track defaults stay
+inline. Replay implementation lives outside the analysis cache fingerprint;
+conversion, analyzer/model and audio inputs remain covered. Upstream stage
+checks and a live-delay PCM comparison pass; measurements and the original
+timeout/profile are in [repair evidence](../../native/evidence/tooling-cold-preparation/README.md).
+The cold 41-case matrix completes in 670.8 s, including 576.5 s continuous
+preparation, within the unchanged 20-minute budget. All positioning cases pass;
+six AFK cases remain report-only SW7 findings. No easy knobs or offers change.
+
 ### SH1
 
 Survivors now draws the Kenney pixel font, neon item icons and rank pips in

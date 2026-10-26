@@ -1,0 +1,8 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.03s
+     Running tests/stage_parity_a4.rs (target/debug/deps/stage_parity_a4-7434e451f4c707ee)
+
+running 1 test
+test parallel_analyzer_preserves_delayed_arrivals ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 11.36s
+

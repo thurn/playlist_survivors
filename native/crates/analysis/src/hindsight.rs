@@ -281,42 +281,76 @@ impl OfflineEnsemble {
         self.width
     }
 
-    /// The averaged activations of `frames` feature rows.
+    /// The averaged activations of `frames` feature rows, on the calling thread.
     pub fn activations(&self, features: &[f32], frames: usize) -> Vec<f32> {
+        self.activations_with_jobs(features, frames, 1)
+    }
+
+    /// Independent models run in bounded batches; reduce their outputs in model order,
+    /// preserving the inline arithmetic. Scoped workers are joined even during unwinding,
+    /// and a worker panic is propagated on the caller. Live analysis defaults to one job.
+    pub fn activations_with_jobs(&self, features: &[f32], frames: usize, jobs: usize) -> Vec<f32> {
         assert_eq!(features.len(), frames * self.width, "features per frame");
+        let jobs = jobs.clamp(1, self.nets.len());
         let mut sum = vec![0.0f32; frames];
-        let mut out = [0.0f32];
-        for net in &self.nets {
-            let mut x = features.to_vec();
-            let mut inputs = self.width;
-            for (fwd, bwd) in &net.layers {
-                let hidden = fwd.hidden + bwd.hidden;
-                let mut y = vec![0.0f32; frames * hidden];
-                let mut st = LstmState::new(fwd.hidden);
-                for f in 0..frames {
-                    fwd.step(&x[f * inputs..(f + 1) * inputs], &mut st);
-                    y[f * hidden..f * hidden + fwd.hidden].copy_from_slice(&st.h);
+        for batch in self.nets.chunks(jobs) {
+            let outputs = if jobs == 1 {
+                vec![self.model_activations(&batch[0], features, frames)]
+            } else {
+                std::thread::scope(|scope| {
+                    let handles: Vec<_> = batch
+                        .iter()
+                        .map(|net| {
+                            scope.spawn(move || self.model_activations(net, features, frames))
+                        })
+                        .collect();
+                    handles
+                        .into_iter()
+                        .map(|h| h.join().unwrap_or_else(|e| std::panic::resume_unwind(e)))
+                        .collect::<Vec<_>>()
+                })
+            };
+            for values in outputs {
+                for (sum, value) in sum.iter_mut().zip(values) {
+                    *sum += value;
                 }
-                let mut st = LstmState::new(bwd.hidden);
-                for f in (0..frames).rev() {
-                    bwd.step(&x[f * inputs..(f + 1) * inputs], &mut st);
-                    y[f * hidden + fwd.hidden..(f + 1) * hidden].copy_from_slice(&st.h);
-                }
-                x = y;
-                inputs = hidden;
-            }
-            for (f, s) in sum.iter_mut().enumerate() {
-                affine(
-                    &x[f * inputs..(f + 1) * inputs],
-                    &net.out_w,
-                    &net.out_b,
-                    &mut out,
-                );
-                *s += sigmoid(out[0]);
             }
         }
         let n = self.nets.len() as f32;
         sum.iter().map(|s| s / n).collect()
+    }
+
+    fn model_activations(&self, net: &BiNetwork, features: &[f32], frames: usize) -> Vec<f32> {
+        let mut values = vec![0.0f32; frames];
+        let mut out = [0.0f32];
+        let mut x = features.to_vec();
+        let mut inputs = self.width;
+        for (fwd, bwd) in &net.layers {
+            let hidden = fwd.hidden + bwd.hidden;
+            let mut y = vec![0.0f32; frames * hidden];
+            let mut st = LstmState::new(fwd.hidden);
+            for f in 0..frames {
+                fwd.step(&x[f * inputs..(f + 1) * inputs], &mut st);
+                y[f * hidden..f * hidden + fwd.hidden].copy_from_slice(&st.h);
+            }
+            let mut st = LstmState::new(bwd.hidden);
+            for f in (0..frames).rev() {
+                bwd.step(&x[f * inputs..(f + 1) * inputs], &mut st);
+                y[f * hidden + fwd.hidden..(f + 1) * hidden].copy_from_slice(&st.h);
+            }
+            x = y;
+            inputs = hidden;
+        }
+        for (f, s) in values.iter_mut().enumerate() {
+            affine(
+                &x[f * inputs..(f + 1) * inputs],
+                &net.out_w,
+                &net.out_b,
+                &mut out,
+            );
+            *s = sigmoid(out[0]);
+        }
+        values
     }
 }
 
@@ -467,6 +501,7 @@ pub struct HindsightDecoder {
     nn: OfflineEnsemble,
     dbn: OfflineDbn,
     sample_rate: usize,
+    model_jobs: usize,
 }
 
 impl HindsightDecoder {
@@ -485,7 +520,15 @@ impl HindsightDecoder {
             nn,
             dbn: OfflineDbn::new(models, fps)?,
             sample_rate,
+            model_jobs: 1,
         })
+    }
+
+    /// Bound offline ensemble parallelism for batch preparation; live callers keep one job.
+    #[must_use]
+    pub fn with_model_jobs(mut self, jobs: usize) -> Self {
+        self.model_jobs = jobs.clamp(1, self.nn.nets.len());
+        self
     }
 
     /// The decoded beats of a window's samples (s from its start); none under a second of audio
@@ -495,7 +538,9 @@ impl HindsightDecoder {
             return Vec::new();
         }
         let (frames, features) = self.fe.process(window);
-        let acts = self.nn.activations(&features, frames);
+        let acts = self
+            .nn
+            .activations_with_jobs(&features, frames, self.model_jobs);
         if acts.len() <= 100 {
             return Vec::new();
         }

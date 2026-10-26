@@ -162,6 +162,42 @@ fn offline_features_match_python() {
 }
 
 #[test]
+fn parallel_models_smoke() {
+    let models = models();
+    let mut dec = HindsightDecoder::new(&models, 100.0, SR).unwrap();
+    let (_, nn, _) = dec.stages();
+    let g = golden("house-128");
+    let features = g.f32("offline.features").unwrap();
+    let frames = 128;
+    let features = &features[..frames * nn.input_width()];
+    let inline = nn.activations(features, frames);
+    for jobs in [0, 2, 4, usize::MAX] {
+        assert_eq!(nn.activations_with_jobs(features, frames, jobs), inline);
+    }
+    // Truncating the bidirectional window changes activations; the full-window upstream
+    // assertions live in offline_activations_and_beats_match_python.
+    assert_eq!(nn.activations_with_jobs(&[], 0, 4), Vec::<f32>::new());
+}
+
+#[test]
+#[ignore = "release: actual PCM with nonzero delay, parallel models against inline"]
+fn parallel_analyzer_preserves_delayed_arrivals() {
+    let models = models();
+    let pcm = golden("orpheus-galop-hindsight").f32("pcm").unwrap();
+    let params = Params {
+        hindsight: HindsightParams::live(),
+        ..Params::default()
+    };
+    let mut parallel = Analyzer::with_hindsight_jobs(&models, params, 4).unwrap();
+    let mut out = Vec::new();
+    for block in pcm.chunks(4096) {
+        parallel.push(block, &mut out);
+    }
+    parallel.finish(&mut out);
+    assert_eq!(&out, galop_inline(&models, 0.67));
+}
+
+#[test]
 #[ignore = "release: stage parity, decodes hindsight windows (scripts/ci-full native runs it)"]
 fn offline_activations_and_beats_match_python() {
     let models = models();
@@ -173,6 +209,13 @@ fn offline_activations_and_beats_match_python() {
         let frames = g.shape("offline.features").unwrap()[0];
         let py_acts = g.f32("offline.activations").unwrap();
         let acts = nn.activations(&py_feat, frames);
+        for jobs in [2, 4] {
+            assert_eq!(
+                nn.activations_with_jobs(&py_feat, frames, jobs),
+                acts,
+                "{excerpt}: ordered reduction with {jobs} model jobs"
+            );
+        }
         let (w, at) = worst(&acts, &py_acts, |i| tolerance(py_acts[i]));
         let (rf, rfeat) = fe.process(&g.f32("pcm").unwrap());
         let (w2, _) = worst(&nn.activations(&rfeat, rf), &py_acts, |i| {

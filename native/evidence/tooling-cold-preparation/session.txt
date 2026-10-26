@@ -1,0 +1,58 @@
+   Compiling serde_core v1.0.229
+   Compiling rustversion v1.0.23
+   Compiling equivalent v1.0.3
+   Compiling serde_json v1.0.154
+   Compiling hashbrown v0.17.1
+   Compiling multiversion_no_op v1.0.0
+   Compiling cfg-if v1.0.5
+   Compiling foldhash v0.2.0
+   Compiling simdutf8 v0.1.5
+   Compiling scopeguard v1.2.0
+   Compiling arraydeque v0.5.1
+   Compiling unicode-width v0.2.2
+   Compiling libm v0.2.16
+   Compiling smallvec v1.16.4
+   Compiling anstyle v1.0.14
+   Compiling base64 v0.23.1
+   Compiling nohash-hasher v0.2.0
+   Compiling granit-parser v2.0.0
+   Compiling annotate-snippets v0.12.17
+   Compiling encoding_rs v0.8.42
+   Compiling indexmap v2.14.2
+   Compiling serde v1.0.229
+   Compiling stream v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-survivors-cold-preparation/native/crates/stream)
+   Compiling analysis v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-survivors-cold-preparation/native/crates/analysis)
+   Compiling encoding_rs_io v0.1.8
+   Compiling serde-saphyr v2.0.0
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-survivors-cold-preparation/native/crates/sim)
+   Compiling players v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-survivors-cold-preparation/native/crates/players)
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-survivors-cold-preparation/native/crates/eval)
+    Finished `test` profile [optimized + debuginfo] target(s) in 12.17s
+     Running unittests src/lib.rs (target/debug/deps/eval-ac22b895b76bfc69)
+
+running 2 tests
+test session::tests::entries_are_rebased_to_the_run ... ok
+test session::tests::an_arrival_reads_back_as_written ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/live.rs (target/debug/deps/live-6bbfee6942df762e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.00s
+
+     Running tests/session.rs (target/debug/deps/session-76edb21f1a60b469)
+
+running 2 tests
+test a_delayed_session_settles_as_it_did_live ... ok
+test a_recorded_session_settles_as_it_did_live ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.07s
+
+     Running tests/survive.rs (target/debug/deps/survive-3f42469f2cfa95cf)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+

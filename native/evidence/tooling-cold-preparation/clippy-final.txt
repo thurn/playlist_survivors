@@ -1,0 +1,7 @@
+    Checking analysis v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-survivors-cold-preparation/native/crates/analysis)
+    Checking stream v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-survivors-cold-preparation/native/crates/stream)
+    Checking sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-survivors-cold-preparation/native/crates/sim)
+    Checking players v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-survivors-cold-preparation/native/crates/players)
+    Checking eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-survivors-cold-preparation/native/crates/eval)
+    Checking cli v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-survivors-cold-preparation/native/crates/cli)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.58s

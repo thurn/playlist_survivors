@@ -1,0 +1,41 @@
+All checks passed!
+WARN `--no-project` was provided, but no project was found
+............
+----------------------------------------------------------------------
+Ran 12 tests in 0.134s
+
+OK
+WARN `--no-project` was provided, but no project was found
+cached-original-afk-0: 0.600s, HP 1.000, level 1, survival gate None
+cached-original-afk-1: 1800.000s, HP 0.767, level 32, survival gate False
+cached-original-afk-2: 1800.000s, HP 0.767, level 33, survival gate False
+cached-original-positioning-3: 1800.000s, HP 0.467, level 14, survival gate True
+cached-original-positioning-1: 1800.000s, HP 0.954, level 15, survival gate True
+cached-original-positioning-2: 1800.000s, HP 0.933, level 18, survival gate True
+cached-original-afk-3: 1800.000s, HP 0.800, level 32, survival gate False
+cached-original-afk-4: 1800.000s, HP 0.967, level 31, survival gate False
+cached-original-afk-5: 1800.000s, HP 0.867, level 32, survival gate False
+cached-original-positioning-4: 1800.000s, HP 0.867, level 13, survival gate True
+cached-original-positioning-5: 1800.000s, HP 0.967, level 17, survival gate True
+cached-reverse-positioning-1: 1800.000s, HP 1.000, level 20, survival gate True
+cached-reverse-afk-1: 1800.000s, HP 0.942, level 34, survival gate False
+cached-reverse-afk-2: 1800.000s, HP 0.921, level 34, survival gate False
+cached-reverse-positioning-2: 1800.000s, HP 0.933, level 17, survival gate True
+cached-reverse-positioning-3: 1800.000s, HP 1.000, level 16, survival gate True
+cached-reverse-afk-3: 1800.000s, HP 0.933, level 36, survival gate False
+cached-reverse-afk-4: 1800.000s, HP 0.921, level 35, survival gate False
+cached-reverse-positioning-4: 1800.000s, HP 1.000, level 18, survival gate True
+cached-reverse-positioning-5: 1800.000s, HP 1.000, level 17, survival gate True
+cached-reverse-afk-5: 1800.000s, HP 0.954, level 34, survival gate False
+cached-rotate-afk-1: 1800.000s, HP 0.808, level 33, survival gate False
+cached-rotate-positioning-1: 1800.000s, HP 0.717, level 14, survival gate True
+cached-rotate-afk-2: 1800.000s, HP 0.854, level 32, survival gate False
+cached-rotate-positioning-2: 1800.000s, HP 0.900, level 17, survival gate True
+cached-rotate-positioning-3: 1800.000s, HP 0.542, level 15, survival gate True
+cached-rotate-afk-3: 1800.000s, HP 0.567, level 33, survival gate False
+cached-rotate-afk-4: 1800.000s, HP 0.721, level 32, survival gate False
+cached-rotate-positioning-4: 1800.000s, HP 0.921, level 17, survival gate True
+cached-rotate-afk-5: 1800.000s, HP 0.875, level 31, survival gate False
+cached-rotate-positioning-5: 1800.000s, HP 0.767, level 17, survival gate True
+cached-original-random-pick-1: 1800.000s, HP 0.988, level 20, survival gate None
+survivors sweep: Command '['/Users/dthurn/playlist_survivors/.worktrees/codex-sf10-bounded-state/native/target/release/ps', 'survive', '--bot', 'positioning', '--seed', '1', '--order', 'original', '--minutes', '30', '--jobs', '1', '--concatenated']' timed out after 1188.9474467500113 seconds

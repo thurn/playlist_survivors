@@ -1,0 +1,19 @@
+survive: analysing continuous playlist
+       56.65 real       100.14 user         1.91 sys
+           190791680  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+               18850  page reclaims
+                 158  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                1103  voluntary context switches
+              174546  involuntary context switches
+       1006559233714  instructions retired
+        200791133709  cycles elapsed
+           189104656  peak memory footprint

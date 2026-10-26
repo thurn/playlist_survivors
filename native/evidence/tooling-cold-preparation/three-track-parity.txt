@@ -1,0 +1,12 @@
+    Finished `release` profile [optimized] target(s) in 0.04s
+     Running `target/release/ps analysis-parity --out /tmp/sf41-parity --check`
+house-128: within 45 ms 1.000 (Python 1.000; 1.000 at the live delay), real-time factor 0.245
+orpheus-galop: within 45 ms 0.582 (Python 0.582; 0.576 at the live delay), real-time factor 0.307
+cc-kevin-macleod-go-cart: within 45 ms 0.890 (Python 0.890; 0.890 at the live delay), real-time factor 0.272
+| Track | s | Beats (Rust/Py) | Within 45 ms (Rust/Py) | At D = 0.67 s | Within 70 ms (Rust/Py) | F vs Python (D = 0 / 0.67 s) | Onsets recall | Changes | Forecasts | RTF |
+|---|---|---|---|---|---|---|---|---|---|---|
+| cc-kevin-macleod-go-cart | 213 | 411/411 | 0.890/0.890 | 0.890 | 0.897/0.897 | 1.000/0.985 | 1.000 | 13/13 | 2/2 | 0.272 |
+| house-128 | 62 | 136/136 | 1.000/1.000 | 1.000 | 1.000/1.000 | 1.000/1.000 | 1.000 | 5/5 | 0/0 | 0.245 |
+| orpheus-galop | 145 | 358/358 | 0.582/0.582 | 0.576 | 0.758/0.758 | 1.000/0.994 | 1.000 | 9/9 | 2/2 | 0.307 |
+| **All** | 420 | | 0.782/0.782 | 0.780 | | | | | | |
+3 tracks: within 45 ms 0.7820 (Python 0.7820; 0.7797 at the live delay); outside the 1-point margin: []

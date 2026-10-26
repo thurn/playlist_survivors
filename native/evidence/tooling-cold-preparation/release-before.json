@@ -1,0 +1,81 @@
+{
+  "repository_id": "01a16039-84d6-7643-bfec-ddf2cd7c9b54",
+  "staging": {
+    "ref": "refs/heads/staging",
+    "oid": {
+      "format": "sha1",
+      "bytes": "3c7f66a2dc657a36b440314b18fa7bfe71446aae"
+    }
+  },
+  "release": {
+    "ref": "refs/heads/release",
+    "oid": {
+      "format": "sha1",
+      "bytes": "3c7f66a2dc657a36b440314b18fa7bfe71446aae"
+    }
+  },
+  "lag": {
+    "commits": 0,
+    "since": null
+  },
+  "release_state": "green",
+  "release_stage": true,
+  "release_block_reasons": [],
+  "promotion_pause": null,
+  "active_run": null,
+  "last_run": {
+    "item_id": "01a1799f-e6f2-7201-b401-621ddc4e7c20",
+    "state": "check-passed",
+    "terminal_reason": null,
+    "target_oid": {
+      "format": "sha1",
+      "bytes": "3c7f66a2dc657a36b440314b18fa7bfe71446aae"
+    },
+    "range": {
+      "from": {
+        "format": "sha1",
+        "bytes": "68d8872e5b9d223c6938fe559a0e4683207892e6"
+      },
+      "to": {
+        "format": "sha1",
+        "bytes": "3c7f66a2dc657a36b440314b18fa7bfe71446aae"
+      }
+    },
+    "failing_steps": [],
+    "steps": [
+      {
+        "name": "gate",
+        "result_class": "success",
+        "elapsed_ms": 28450
+      },
+      {
+        "name": "ci-full-baker",
+        "result_class": "success",
+        "elapsed_ms": 4240
+      },
+      {
+        "name": "ci-full-analysis",
+        "result_class": "success",
+        "elapsed_ms": 42524
+      },
+      {
+        "name": "ci-full-native",
+        "result_class": "success",
+        "elapsed_ms": 267946
+      },
+      {
+        "name": "ci-full-survivors",
+        "result_class": "success",
+        "elapsed_ms": 392055
+      },
+      {
+        "name": "ci-full-survivors-replay",
+        "result_class": "success",
+        "elapsed_ms": 48030
+      }
+    ],
+    "retry_of_item_id": null,
+    "buildset_id": "01a1799f-e740-7491-82c7-75e4426397fe",
+    "elapsed_ms": 783428
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "bot": "positioning",
+  "playlistOrder": "original",
+  "seed": 1,
+  "requestedMinutes": 0.1,
+  "playlistSeconds": 145.99208616780047,
+  "prepareWallSeconds": 56.327066958,
+  "runWallSeconds": 0.024835834,
+  "noHeroDamage": false,
+  "streamMode": "concatenated",
+  "report": {
+    "songS": 6.008333333333334,
+    "survivalS": 6.0,
+    "lowestHpShare": 1.0,
+    "hp": [
+      {
+        "runS": 0.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 1.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 2.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 3.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 4.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 5.0,
+        "hpShare": 1.0
+      },
+      {
+        "runS": 6.0,
+        "hpShare": 1.0
+      }
+    ],
+    "levelsByMinute": [
+      {
+        "minute": 0,
+        "level": 1
+      }
+    ],
+    "weaponsAtChests": [],
+    "evolutions": [],
+    "peakEnemies": 20,
+    "level": 1,
+    "kills": 0,
+    "fallen": false,
+    "done": false,
+    "settledHash": "0e60d0be37830c1b",
+    "settledRecords": 7634
+  }
+}
