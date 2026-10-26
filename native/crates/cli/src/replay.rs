@@ -63,7 +63,7 @@ pub fn runs(meta: &Value) -> Vec<RecordedRun> {
 }
 
 /// The engine as the app builds it, in zen mode or not.
-pub fn engine(zen: bool) -> Result<Engine, String> {
+fn engine_with_level(zen: bool, level: Option<&str>) -> Result<Engine, String> {
     let mut names: Vec<String> = std::fs::read_dir(root().join("content"))
         .map_err(|e| e.to_string())?
         .filter_map(Result::ok)
@@ -82,8 +82,15 @@ pub fn engine(zen: bool) -> Result<Engine, String> {
         .map(|n| read(&format!("content/{n}")))
         .collect::<Result<Vec<_>, _>>()?;
     let lib = load_content(&files).map_err(|e| format!("content: {e:?}"))?;
+    let source = match level {
+        Some(text) => SourceFile {
+            name: "recorded-level.yaml".into(),
+            text: text.into(),
+        },
+        None => read("levels/reactive.yaml")?,
+    };
     Engine::new(
-        &read("levels/reactive.yaml")?,
+        &source,
         &lib,
         &IndexMap::new(),
         GATE,
@@ -206,7 +213,10 @@ pub fn replay(dir: &Path) -> Result<bool, String> {
     }
     let mut ok = true;
     for run in &runs {
-        let mut e = engine(zen_of(&meta, run.index))?;
+        let mut e = engine_with_level(
+            zen_of(&meta, run.index),
+            meta["runs"][run.index]["level"].as_str(),
+        )?;
         let got = replay_run(&mut e, &arrivals, &keys, run, RECENT_S);
         let same = got.hash == Some(run.hash);
         ok &= same;
@@ -252,7 +262,10 @@ pub fn replay_reanalysed(dir: &Path) -> Result<bool, String> {
         );
     }
     for run in &runs(&meta) {
-        let mut e = engine(zen_of(&meta, run.index))?;
+        let mut e = engine_with_level(
+            zen_of(&meta, run.index),
+            meta["runs"][run.index]["level"].as_str(),
+        )?;
         // (Its hash can't be the live run's: compare outcomes.)
         let got = replay_run(&mut e, &arrivals, &keys, run, RECENT_S);
         println!(

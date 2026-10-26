@@ -42,6 +42,9 @@ pub struct Run {
     /// mode ran legacy mode.)
     #[serde(default)]
     pub zen: bool,
+    /// Exact level source, including duration overrides; older sessions use reactive.yaml.
+    #[serde(default)]
+    pub level: Option<String>,
 }
 
 /// `meta.json`.
@@ -165,10 +168,11 @@ impl Session {
     }
 
     /// A run started at session time `s0`, in zen mode or not; returns its index.
-    pub fn run_started(&mut self, s0: f64, zen: bool) -> usize {
+    pub fn run_started(&mut self, s0: f64, zen: bool, level: &str) -> usize {
         self.meta.runs.push(Run {
             s0,
             zen,
+            level: Some(level.to_string()),
             ..Run::default()
         });
         self.write_meta();
@@ -285,6 +289,21 @@ mod tests {
         assert_eq!(&h[0..4], b"RIFF");
         assert_eq!(u32::from_le_bytes(h[40..44].try_into().unwrap()), 2000);
         assert_eq!(u32::from_le_bytes(h[24..28].try_into().unwrap()), 44_100);
+    }
+
+    #[test]
+    fn forty_minutes_fit_the_session_store_with_room_for_stream_and_keys() {
+        let samples = 40 * 60 * RATE;
+        let h = wav_header(samples);
+        let audio_bytes = u64::from(u32::from_le_bytes(h[40..44].try_into().unwrap()));
+        assert_eq!(audio_bytes, 211_680_000);
+        // Reserve 100 MB for stream, keys and timing; retention removes older sessions
+        // when either the count or byte cap is reached.
+        assert!(audio_bytes + 100_000_000 < MAX_BYTES);
+        eprintln!(
+            "40-minute PCM bytes={audio_bytes}; with 100 MB metadata={} < cap={MAX_BYTES}",
+            audio_bytes + 100_000_000
+        );
     }
 
     #[test]

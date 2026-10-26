@@ -518,7 +518,7 @@ mod tests {
 
     #[test]
     fn sounds_follow_the_speculation_and_kills_share_their_slot() {
-        let lib = super::super::World::load().unwrap().lib;
+        let lib = super::super::World::load(None).unwrap().lib;
         let palette = lib.sound_palettes[PALETTE].clone();
         // Every sample at bank index 0 with no onset: placement is what's tested.
         let samples = palette
@@ -592,7 +592,7 @@ mod tests {
 
     #[test]
     fn a_kill_group_changing_after_its_voice_played_sounds_nothing_more() {
-        let lib = super::super::World::load().unwrap().lib;
+        let lib = super::super::World::load(None).unwrap().lib;
         let palette = lib.sound_palettes[PALETTE].clone();
         let samples = palette
             .sounds
@@ -640,7 +640,7 @@ mod tests {
 
     #[test]
     fn a_started_voice_stays_when_a_new_beat_moves_its_slot() {
-        let lib = super::super::World::load().unwrap().lib;
+        let lib = super::super::World::load(None).unwrap().lib;
         let palette = lib.sound_palettes[PALETTE].clone();
         let samples = palette
             .sounds

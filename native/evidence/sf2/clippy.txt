@@ -1,0 +1,4 @@
+    Checking sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sf2-run-clock/native/crates/sim)
+    Checking cli v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sf2-run-clock/native/crates/cli)
+    Checking app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sf2-run-clock/native/crates/app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.74s

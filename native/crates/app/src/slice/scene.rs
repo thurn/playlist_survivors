@@ -981,6 +981,8 @@ pub fn listening_card(
 /// Why a run ended.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum End {
+    /// Survivors reached its run-clock deadline and played the finale.
+    Victory,
     Fell,
     /// A confirmed end: the song stopped and the finale played.
     Song,
@@ -1010,6 +1012,7 @@ pub fn end_card(
     let u = (w / 960.0).min(h / 540.0);
     let px = |k: f32| (k * u).round().max(1.0);
     let (title, color) = match end {
+        End::Victory => ("VICTORY", [0.62, 1.0, 0.72, a]),
         End::Fell => ("YOU FELL", [1.0, 0.25, 0.31, a]),
         End::Song => ("THE SONG ENDED", [0.62, 0.72, 1.0, a]),
         End::Paused => ("PAUSED", [1.0, 0.85, 0.4, a]),

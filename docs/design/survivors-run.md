@@ -1086,6 +1086,17 @@ elsewhere in this document. Parallel beads would collide there.
 
 ### SF1
 ### SF2
+
+Survivors is now the app's default level with the sword alone. Its own run
+clock ignores song ends and ends on the next known downbeat after 30:00,
+followed by a three-second finale and Victory. A short override reached Victory
+headlessly in Delayed mode and replayed all 4,135 settled records identically;
+a default run stayed alive past an eight-second file's end. Legacy and explicit
+reactive launches still work. Replay retains the exact level source. Forty
+minutes of retained i16 audio uses 211,680,000 bytes; short-session metadata
+projects to about 50 MB more, below the 5 GiB store cap (sizing, not a soak).
+See [SF2 evidence](../../native/evidence/sf2/README.md) for commands and limits.
+
 ### SF3
 ### SF4
 ### SF5

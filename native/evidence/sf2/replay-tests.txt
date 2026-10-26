@@ -1,0 +1,11 @@
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sf2-run-clock/native/crates/eval)
+   Compiling cli v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sf2-run-clock/native/crates/cli)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.44s
+     Running unittests src/main.rs (target/debug/deps/ps-98937ca16a447c00)
+
+running 2 tests
+test replay::tests::a_session_replays_in_the_mode_it_ran_in ... ok
+test replay::tests::a_zen_run_replays_in_zen_mode ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+

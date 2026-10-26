@@ -339,6 +339,10 @@ impl Sim {
             return;
         }
         self.plan_finale();
+        // Survivors keeps the music-driven zones, but retires the reactive set pieces.
+        if self.env.input.level.survivors.is_some() {
+            return;
+        }
         self.generate_candidates();
         self.decide_candidates();
         self.plan_rings();
@@ -539,53 +543,69 @@ impl Sim {
         else {
             return;
         };
-        let h = self.horizon();
-        let gate = self.env.input.gate;
-        let log = Rc::clone(&self.log);
-        let ends = log.ends.as_deref().unwrap_or(&[]);
-        let mut confirmed = None;
-        let ticks = &log.ticks[..self.st.ingested.ticks];
-        'entries: while let Some(e) = ends.get(self.st.plan.ends_seen) {
-            if e.known_at > h {
+        let s = if let Some(run) = self.env.input.level.survivors {
+            // Read only committed beats already ingested at their knownAt. The deadline is
+            // expressed through the run clock so a later freeze can hold it independently.
+            let due = self.st.s + (run.duration_s - self.st.run_s).max(0.0);
+            let Some(beat) = self.log.beats[..self.st.ingested.beats]
+                .iter()
+                .enumerate()
+                .find(|(i, b)| i % 2 == 0 && b.t >= due - 1e-9 && b.t >= self.st.s - 1e-9)
+                .map(|(_, b)| b)
+            else {
                 return;
-            }
-            // The quiet starts at the first tick below the gate at or after the entry (the evidence
-            // trails off for a second or so after the analyzer's end): within QUIET_WITHIN of it,
-            // and again after any loud tick that breaks it.
-            let mut from = e.t - 1e-9;
-            loop {
-                let Some(q) = ticks.iter().find(|k| k.t >= from && k.evidence < gate) else {
-                    if ticks.last().is_some_and(|k| k.t > e.t + QUIET_WITHIN) {
+            };
+            beat.t
+        } else {
+            let h = self.horizon();
+            let gate = self.env.input.gate;
+            let log = Rc::clone(&self.log);
+            let ends = log.ends.as_deref().unwrap_or(&[]);
+            let mut confirmed = None;
+            let ticks = &log.ticks[..self.st.ingested.ticks];
+            'entries: while let Some(e) = ends.get(self.st.plan.ends_seen) {
+                if e.known_at > h {
+                    return;
+                }
+                // The quiet starts at the first tick below the gate at or after the entry (the evidence
+                // trails off for a second or so after the analyzer's end): within QUIET_WITHIN of it,
+                // and again after any loud tick that breaks it.
+                let mut from = e.t - 1e-9;
+                loop {
+                    let Some(q) = ticks.iter().find(|k| k.t >= from && k.evidence < gate) else {
+                        if ticks.last().is_some_and(|k| k.t > e.t + QUIET_WITHIN) {
+                            self.st.plan.ends_seen += 1;
+                            continue 'entries;
+                        }
+                        return;
+                    };
+                    if q.t > e.t + QUIET_WITHIN {
                         self.st.plan.ends_seen += 1;
                         continue 'entries;
                     }
-                    return;
-                };
-                if q.t > e.t + QUIET_WITHIN {
+                    let at = e.known_at.max(q.t + CONFIRM_S);
+                    let loud = ticks
+                        .iter()
+                        .find(|k| k.t > q.t && k.t <= at + 1e-9 && k.evidence >= gate);
+                    if let Some(l) = loud {
+                        from = l.t + 1e-9;
+                        continue;
+                    }
+                    if h < at {
+                        return;
+                    }
                     self.st.plan.ends_seen += 1;
+                    if self.judged_clock(at) >= MIN_JUDGED_S {
+                        confirmed = Some(at);
+                        break 'entries;
+                    }
                     continue 'entries;
                 }
-                let at = e.known_at.max(q.t + CONFIRM_S);
-                let loud = ticks
-                    .iter()
-                    .find(|k| k.t > q.t && k.t <= at + 1e-9 && k.evidence >= gate);
-                if let Some(l) = loud {
-                    from = l.t + 1e-9;
-                    continue;
-                }
-                if h < at {
-                    return;
-                }
-                self.st.plan.ends_seen += 1;
-                if self.judged_clock(at) >= MIN_JUDGED_S {
-                    confirmed = Some(at);
-                    break 'entries;
-                }
-                continue 'entries;
             }
-        }
-        let Some(s) = confirmed.map(|at| at.max(self.st.s)) else {
-            return;
+            let Some(s) = confirmed.map(|at| at.max(self.st.s)) else {
+                return;
+            };
+            s
         };
         self.st.plan.finale = Some(FinalePlan {
             s,
@@ -619,7 +639,9 @@ impl Sim {
                 .push_init(s, Ev::Landmark { id: id.clone() }, phase::LANDMARK, i);
         }
         // The base rate with the finale's swell: it falls to `swell` and back over `swellS`.
-        self.st.swell_steps = Some(with_swell(&self.st.sch.base_steps, s, f.swell, f.swell_s));
+        if self.env.input.level.survivors.is_none() {
+            self.st.swell_steps = Some(with_swell(&self.st.sch.base_steps, s, f.swell, f.swell_s));
+        }
     }
 
     /// Set pieces accepted before the finale was known that would start at or after it: TS never

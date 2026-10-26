@@ -486,7 +486,14 @@ impl Sim {
 
     /// The hero takes damage; nothing hurts it while it is invulnerable, and each hurt makes it so.
     pub(super) fn hurt(&mut self, amount: f64, source: &'static str, enemy: &str) {
-        if amount <= 0.0
+        // Once the survivors deadline is reached, the next downbeat belongs to victory.
+        if self
+            .env
+            .input
+            .level
+            .survivors
+            .is_some_and(|run| self.st.run_s >= run.duration_s)
+            || amount <= 0.0
             || self.st.health <= 0.0
             || self.st.w < self.st.invuln_until - 1e-9
             || self.env.input.no_hero_damage

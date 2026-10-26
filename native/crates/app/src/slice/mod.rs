@@ -103,24 +103,23 @@ use watchdog::Watchdog;
 const TAP_MINUS_RENDER_S: f64 = 0.023;
 /// A captured buffer this loud is music, not silence.
 const SOUND_PEAK: f32 = 0.01;
-/// This long without sound ends the run.
 /// The analyzer's input rate (Hz).
 const SR: f64 = 44_100.0;
-/// A run keeps at most this much of its music for Watch my run (s; about 160 MB).
-const RUN_AUDIO_MAX_S: f64 = 900.0;
+/// A run keeps at most this much of its music for Watch my run (s; about 212 MB as i16).
+const RUN_AUDIO_MAX_S: f64 = 2400.0;
 /// Watch my run's music starts this long after it is asked for (s), so the mixer starts it on time.
 const REPLAY_LEAD_S: f64 = 0.25;
 
 /// A run's music for its replay: `audio` (at `SR`) from sample `skip` (before its start when
 /// negative: silence first) for `seconds`, at the output's `rate` (linearly interpolated).
-fn replay_music(audio: &[f32], skip: i64, seconds: f64, rate: f64) -> Arc<[f32]> {
+fn replay_music(audio: &[i16], skip: i64, seconds: f64, rate: f64) -> Arc<[f32]> {
     let n = (seconds.max(0.0) * rate) as usize;
     let at = |k: i64| {
         usize::try_from(k)
             .ok()
             .and_then(|k| audio.get(k))
             .copied()
-            .unwrap_or(0.0)
+            .map_or(0.0, |x| f32::from(x) / 32767.0)
     };
     (0..n)
         .map(|i| {
@@ -149,6 +148,7 @@ const CLEAR: [f64; 3] = [0.06, 0.07, 0.05];
 #[allow(clippy::struct_excessive_bools)]
 struct Options {
     file: Option<PathBuf>,
+    level: Option<PathBuf>,
     still: Option<PathBuf>,
     /// The still's track (`public/reactive/<id>`) and song time.
     still_track: Option<String>,
@@ -194,6 +194,7 @@ struct Options {
 fn options(args: &[String]) -> Result<Options, String> {
     let mut o = Options {
         file: None,
+        level: None,
         still: None,
         still_track: None,
         still_at: None,
@@ -223,6 +224,7 @@ fn options(args: &[String]) -> Result<Options, String> {
     while let Some(a) = it.next() {
         match a.as_str() {
             "--file" => o.file = Some(it.next().ok_or("--file needs a path")?.into()),
+            "--level" => o.level = Some(it.next().ok_or("--level needs a path")?.into()),
             "--click" => o.click = true,
             "--mute" => o.mute = true,
             "--headless" => {
@@ -318,11 +320,12 @@ fn options(args: &[String]) -> Result<Options, String> {
 struct World {
     lib: ContentLibrary,
     level: SourceFile,
+    survivors: bool,
     looks: HashMap<String, Look>,
 }
 
 impl World {
-    fn load() -> Result<World, String> {
+    fn load(level: Option<&Path>) -> Result<World, String> {
         let dir = live::resource("content", "../../../content");
         let mut names: Vec<PathBuf> = std::fs::read_dir(&dir)
             .map_err(|e| format!("{}: {e}", dir.display()))?
@@ -350,8 +353,11 @@ impl World {
             })
             .collect::<Result<Vec<_>, _>>()?;
         let lib = load_content(&files).map_err(|e| format!("content: {e:?}"))?;
-        let level_path = live::resource("levels", "../../../levels").join("reactive.yaml");
-        let level = read(&level_path, "levels/reactive.yaml".into())?;
+        let level_path = level.map_or_else(
+            || live::resource("levels", "../../../levels").join("survivors.yaml"),
+            Path::to_path_buf,
+        );
+        let level = read(&level_path, level_path.to_string_lossy().into_owned())?;
         let looks = lib
             .enemies
             .values()
@@ -367,7 +373,25 @@ impl World {
                 )
             })
             .collect();
-        Ok(World { lib, level, looks })
+        let survivors = sim::content::level::load_level(
+            &level,
+            &lib,
+            &sim::schedule::reactive_song_map(f64::INFINITY),
+            None,
+        )
+        .map_err(|e| format!("level: {e:?}"))?
+        .survivors
+        .is_some();
+        Ok(World {
+            lib,
+            level,
+            survivors,
+            looks,
+        })
+    }
+
+    fn survivors(&self) -> bool {
+        self.survivors
     }
 
     /// The zone the run's ground shows: the level's first (G2's director changes it on the music).
@@ -452,13 +476,24 @@ pub fn run(args: &[String]) -> Result<(), String> {
             Err("the heard delay wasn't within 2 ms of M every minute".into())
         };
     }
+    let legacy_level = live::resource("levels", "../../../levels").join("reactive.yaml");
+    let level = opts
+        .level
+        .as_deref()
+        .or_else(|| (!opts.zen).then_some(legacy_level.as_path()));
     if let Some(path) = &opts.still {
-        return still(path, opts.still_track.as_deref(), opts.still_at, opts.zen);
+        return still(
+            path,
+            opts.still_track.as_deref(),
+            opts.still_at,
+            opts.zen,
+            level,
+        );
     }
     if opts.bench {
         return bench(opts.check);
     }
-    let world = World::load()?;
+    let world = World::load(level)?;
     // Output first: our process object must exist before the tap can exclude it.
     let (sounds, bank) = match Sounds::load(
         &live::resource("sfx", "../../../public/assets/sfx"),
@@ -586,6 +621,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
         recent: VecDeque::new(),
         listen: Listen::default(),
         start_at: opts.start_at.unwrap_or(f64::NEG_INFINITY),
+        pending_start: None,
         title_at: 0.0,
         next_voice: 0,
         ahead: 0.02,
@@ -965,7 +1001,9 @@ fn thread_cpu_s() -> f64 {
 /// through the engine at 120 Hz, 0.2 s ahead, a press on each beat 5 to 35 ms late; each frame's
 /// scene and HUD built and encoded offscreen at 1920 x 1080. `check` fails above the gate.
 fn bench(check: bool) -> Result<(), String> {
-    let world = World::load()?;
+    let world = World::load(Some(
+        &live::resource("levels", "../../../levels").join("reactive.yaml"),
+    ))?;
     let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
     let stream_path = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../../public/reactive/house-128/stream.json");
@@ -1087,8 +1125,14 @@ fn bench(check: bool) -> Result<(), String> {
 
 /// 20 s of the house track's committed stream through the engine (a stride on each beat), drawn
 /// offscreen to a PNG, in zen mode or not.
-fn still(path: &Path, track: Option<&str>, at: Option<f64>, zen: bool) -> Result<(), String> {
-    let world = World::load()?;
+fn still(
+    path: &Path,
+    track: Option<&str>,
+    at: Option<f64>,
+    zen: bool,
+    level: Option<&Path>,
+) -> Result<(), String> {
+    let world = World::load(level)?;
     let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
     let stream_path = Path::new(env!("CARGO_MANIFEST_DIR")).join(format!(
         "../../../public/reactive/{}/stream.json",
@@ -1338,7 +1382,7 @@ struct App {
     run_keys: Vec<sim::player::KeyEvent>,
     /// The run's music: the analyzer's input since the run began (44.1 kHz mono), the song time
     /// of its first sample, and the samples analysed so far this session. Watch my run plays it.
-    run_audio: Vec<f32>,
+    run_audio: Vec<i16>,
     run_audio_s0: f64,
     analysed: u64,
     /// The replay's music the mixer holds (kept here, so the render thread never frees it).
@@ -1401,6 +1445,7 @@ struct App {
     recent: VecDeque<(f64, eval::session::Entry)>,
     listen: Listen,
     start_at: f64,
+    pending_start: Option<f64>,
     /// When the run ended (host s), and whether the hero fell.
     over: Option<(f64, End, f64)>,
     title_at: f64,
@@ -1499,7 +1544,13 @@ impl App {
                         if self.run_audio.is_empty() {
                             self.run_audio_s0 = self.analysed as f64 / SR;
                         }
-                        self.run_audio.extend_from_slice(&samples);
+                        let remaining = (RUN_AUDIO_MAX_S * SR) as usize - self.run_audio.len();
+                        self.run_audio.extend(
+                            samples
+                                .iter()
+                                .take(remaining)
+                                .map(|x| (x.clamp(-1.0, 1.0) * 32767.0).round() as i16),
+                        );
                     }
                     self.analysed += samples.len() as u64;
                 }
@@ -1610,7 +1661,11 @@ impl App {
             let end = if self.engine.fallen() {
                 Some(End::Fell)
             } else if self.engine.done() {
-                Some(End::Song)
+                Some(if self.world.survivors() {
+                    End::Victory
+                } else {
+                    End::Song
+                })
             } else {
                 None
             };
@@ -1667,7 +1722,17 @@ impl App {
             && s >= self.start_at
             && self.over.is_none_or(|(t, _, _)| now > t + END_CARD_S)
         {
-            self.start();
+            self.request_start(s);
+        }
+        if !self.running
+            && let (Some(requested), Some(s)) = (self.pending_start, song)
+            && let Some(beat) = self
+                .beats
+                .iter()
+                .copied()
+                .find(|b| *b > requested && *b <= s)
+        {
+            self.start(beat);
         }
         if self.mute && now > self.voices_at {
             self.voices_at = now + 10.0;
@@ -2215,6 +2280,7 @@ impl App {
 
     /// Ends the run (host time `now`) for `end`: the end card shows, listening goes on.
     fn end_run(&mut self, end: End, now: f64) {
+        self.pending_start = None;
         if self.over.is_some() {
             return;
         }
@@ -2543,8 +2609,15 @@ impl App {
 
     /// A new run from the song time heard now, with a fresh engine and stream: the entries of
     /// the last moments go in first, rebased to its start.
-    fn start(&mut self) {
-        let now = now_s();
+    fn request_start(&mut self, s: f64) {
+        if self.world.survivors() {
+            self.pending_start.get_or_insert(s);
+        } else {
+            self.start(s);
+        }
+    }
+
+    fn start(&mut self, s0: f64) {
         self.run_zen = self.zen;
         match self.world.engine(self.zen) {
             Ok(mut engine) => {
@@ -2556,7 +2629,8 @@ impl App {
                 return;
             }
         }
-        self.run_start = self.song_at(now).unwrap_or(0.0);
+        self.run_start = s0;
+        self.pending_start = None;
         self.scene = Scene::default();
         let _ = self.audio.out.commands.push(Command::CancelAll);
         if let Some(s) = self.sounds.as_mut() {
@@ -2582,7 +2656,10 @@ impl App {
         self.run_audio.clear();
         self.stop_watch();
         let zen = self.zen;
-        self.run_index = self.session.as_mut().map_or(0, |s| s.run_started(s0, zen));
+        self.run_index = self
+            .session
+            .as_mut()
+            .map_or(0, |s| s.run_started(s0, zen, &self.world.level.text));
         self.running = true;
         self.listen.reset(false);
         eprintln!("slice: run started at song time {s0:.1}");
@@ -2649,7 +2726,7 @@ impl App {
                 && self.over.is_none_or(|(t, _, _)| now > t + 1.0)
                 && self.clock.is_some()
             {
-                self.start();
+                self.request_start(self.song_at(now).unwrap_or(0.0));
             }
             return;
         }
@@ -2814,14 +2891,14 @@ impl ApplicationHandler for App {
 mod tests {
     #[test]
     fn a_runs_music_is_resampled_from_its_start_with_silence_before_it() {
-        let audio: Vec<f32> = (0..441).map(|k| k as f32).collect();
+        let audio: Vec<i16> = (0..441).collect();
         // (From 10 samples before the music, for 0.01 s at twice its rate.)
         let m = replay_music(&audio, -10, 0.01, 2.0 * SR);
         assert_eq!(m.len(), 882);
         assert_eq!(m[0], 0.0);
         assert_eq!(m[20], 0.0);
-        assert!((m[21] - 0.5).abs() < 1e-6);
-        assert!((m[30] - 5.0).abs() < 1e-6);
+        assert!((m[21] * 32767.0 - 0.5).abs() < 1e-6);
+        assert!((m[30] * 32767.0 - 5.0).abs() < 1e-6);
     }
     use super::*;
 

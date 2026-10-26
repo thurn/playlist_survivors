@@ -877,6 +877,8 @@ struct Ingested {
 #[allow(clippy::struct_excessive_bools)]
 struct SimState {
     s: f64,
+    /// Unwarped elapsed run time, independent of song boundaries (SF3 freezes it).
+    run_s: f64,
     w: f64,
     rate_s: f64,
     q: Queue,
@@ -1061,6 +1063,10 @@ impl Sim {
 
     pub fn s(&self) -> f64 {
         self.st.s
+    }
+
+    pub fn run_s(&self) -> f64 {
+        self.st.run_s
     }
 
     pub fn w(&self) -> f64 {
@@ -1518,6 +1524,9 @@ impl Sim {
                 self.st.next_foe_k += 1.0;
             }
         }
+        if let Some(run) = self.env.input.level.survivors {
+            self.st.run_s = (self.st.run_s + t - self.st.s).min(run.duration_s);
+        }
         self.st.s = t;
         self.st.w = w1;
         if !between {
@@ -1583,6 +1592,12 @@ impl Sim {
     }
 
     fn handle(&mut self, ev: Ev) {
+        if self.env.input.level.survivors.is_some()
+            && self.st.blasting
+            && matches!(ev, Ev::Key(_) | Ev::Held)
+        {
+            return;
+        }
         match ev {
             Ev::HitstopEnd => {}
             Ev::Key(e) => {
@@ -1669,6 +1684,11 @@ impl Sim {
             Ev::Blast { band } => {
                 if band == 0 {
                     self.st.blasting = true;
+                    if self.env.input.level.survivors.is_some() {
+                        let pose = self.hero_pose(self.st.w);
+                        self.st.rest_pose = (pose.x, pose.y);
+                        self.st.step = None;
+                    }
                     // The finale's swell starts now.
                     if self.st.swell_steps.is_some() {
                         self.st.swelling = true;
@@ -1732,6 +1752,7 @@ fn fresh_state(env: &Env) -> SimState {
     let idx = index_song(&song);
     SimState {
         s: 0.0,
+        run_s: 0.0,
         w: 0.0,
         rate_s: 0.0,
         q: Queue::default(),
@@ -1955,6 +1976,21 @@ mod tests {
             Box::new(NullRecorder),
             None,
         )
+    }
+
+    #[test]
+    fn survivors_cannot_fall_while_waiting_for_the_victory_downbeat() {
+        let mut sim = sim(&stream());
+        Rc::get_mut(&mut sim.env).unwrap().input.level.survivors =
+            Some(crate::content::level::Survivors { duration_s: 2.0 });
+        sim.st.run_s = 1.9;
+        let hp = sim.st.health;
+        sim.hurt(1.0, "contact", "slime");
+        assert_eq!(sim.st.health, hp - 1.0);
+        sim.st.invuln_until = 0.0;
+        sim.st.run_s = 2.0;
+        sim.hurt(hp, "contact", "slime");
+        assert_eq!(sim.st.health, hp - 1.0);
     }
 
     #[test]

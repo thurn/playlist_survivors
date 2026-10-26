@@ -1,0 +1,24 @@
+{
+  "pcm_40_minutes_bytes": 211680000,
+  "audio_sample_type": "i16",
+  "rolling_cap_bytes": 5368709120,
+  "max_sessions": 20,
+  "song_end_session": "1792987923",
+  "observed_run": {
+    "s0": 2.591285714285714,
+    "end": 21.968949625020755,
+    "why": "Stopped",
+    "settledHash": "495f57612c5d2aab",
+    "settledRecords": 20893,
+    "zen": true
+  },
+  "session_file_bytes": {
+    "timing.jsonl": 312796,
+    "stream.jsonl": 142520,
+    "keys.jsonl": 0,
+    "audio.flac": 411481,
+    "meta.json": 2446
+  },
+  "extrapolation_seconds": 22,
+  "non_audio_40_min_projected_bytes": 49937673
+}

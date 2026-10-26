@@ -236,6 +236,13 @@ pub struct EnemyOverride {
     pub attack_damage: Option<f64>,
 }
 
+/// Survivors runs use their own clock across song boundaries.
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct Survivors {
+    pub duration_s: f64,
+}
+
 /// The loaded level script.
 #[derive(Clone, Debug)]
 pub struct LevelScript {
@@ -244,6 +251,7 @@ pub struct LevelScript {
     pub player: String,
     pub title: Title,
     pub reactive: bool,
+    pub survivors: Option<Survivors>,
     pub director: Option<Director>,
     pub zones: Vec<String>,
     pub sections: Vec<ResolvedSection>,
@@ -647,6 +655,9 @@ pub fn load_level(
     }
 
     let reactive = data["reactive"].as_bool().unwrap_or(false);
+    if data.get("survivors").is_some() && !reactive {
+        issues.push(at("survivors", "survivors needs a reactive level".into()));
+    }
     if data["song"].as_str() != Some(song.song.as_str()) {
         issues.push(at(
             "song",
@@ -996,6 +1007,12 @@ pub fn load_level(
             "only a reactive level (reactive: true) has a director".into(),
         ));
     }
+    if data.get("survivors").is_some() && data["director"].get("setPieces").is_none() {
+        issues.push(at(
+            "survivors",
+            "survivors needs director.setPieces for its finale".into(),
+        ));
+    }
     if reactive {
         if data.get("director").is_none() {
             issues.push(at("", "a reactive level needs a director".into()));
@@ -1145,6 +1162,9 @@ pub fn load_level(
             .unwrap_or(json!({ "piece": "", "composer": "", "performer": "" })),
     );
     v.insert("reactive".into(), json!(reactive));
+    if let Some(s) = data.get("survivors") {
+        v.insert("survivors".into(), s.clone());
+    }
     if let Some(d) = data.get("director") {
         v.insert("director".into(), d.clone());
     }
@@ -1176,6 +1196,10 @@ pub fn load_level(
         player: data["player"].as_str().unwrap().to_string(),
         title: typed(&file, "title", &value["title"])?,
         reactive,
+        survivors: data
+            .get("survivors")
+            .map(|s| typed(&file, "survivors", s))
+            .transpose()?,
         director: data
             .get("director")
             .map(|d| typed(&file, "director", d))

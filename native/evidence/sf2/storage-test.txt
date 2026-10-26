@@ -1,0 +1,10 @@
+   Compiling app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sf2-run-clock/native/crates/app)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.78s
+     Running unittests src/main.rs (target/debug/deps/playlist_survivors-117eebc7468b2345)
+
+running 1 test
+40-minute PCM bytes=211680000; with 100 MB metadata=311680000 < cap=5368709120
+test slice::session::tests::forty_minutes_fit_the_session_store_with_room_for_stream_and_keys ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 28 filtered out; finished in 0.00s
+

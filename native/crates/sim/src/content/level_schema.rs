@@ -379,6 +379,10 @@ pub fn level_script() -> Schema {
         def("events", array(level_event()), json!([])),
         def("reactive", bool(), json!(false)),
         opt("director", director()),
+        opt(
+            "survivors",
+            object(vec![def("durationS", positive(), json!(1800))]),
+        ),
     ];
     object(fields)
 }

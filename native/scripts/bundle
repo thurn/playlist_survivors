@@ -27,7 +27,7 @@ cp ../public/assets/characters.json ../public/assets/characters-0.png \
 rm -rf "$APP/Contents/Resources/content" "$APP/Contents/Resources/levels"
 cp -R ../content "$APP/Contents/Resources/content"
 mkdir -p "$APP/Contents/Resources/levels"
-cp ../levels/reactive.yaml "$APP/Contents/Resources/levels/"
+cp ../levels/reactive.yaml ../levels/survivors.yaml "$APP/Contents/Resources/levels/"
 rm -rf "$APP/Contents/Resources/sfx"
 cp -R ../public/assets/sfx "$APP/Contents/Resources/sfx"
 cat >"$APP/Contents/Info.plist" <<PLIST

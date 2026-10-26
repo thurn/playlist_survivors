@@ -1,0 +1,7 @@
+slice: output MacBook Pro Speakers (calibrated): input offsets -48 ms, stomp -48 ms, display 45 ms, latency correction 0 ms
+slice: file mode (/tmp/sf2-eight-seconds.wav), output 48000 Hz, L_out 16.6 ms, heard 16.6 ms after capture
+slice: recording the session to /tmp/ps-sf2-legacy/1792987934
+slice: frame work median 0.00 ms, p95 0.00, p99 0.00 (0 frames a second, paced while hidden); rollbacks re-simulated 0 ms
+slice: sounds 0 started, 0 skipped late, 0 dropped, 0 cancelled; 0 rollbacks replaying 0.0 s, 0 late keys
+slice: run started at song time 2.6
+slice: run over (Stopped), 5 s; sounds 26 started, 0 skipped late, 0 dropped
