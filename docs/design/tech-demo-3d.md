@@ -70,8 +70,11 @@ with its reasons in the bead's notes.
    [The Fidelity Floor](#the-fidelity-floor)).
 10. **Crowd animation is decided by a bake-off** between our own bone-texture
     GPU path and DOTS with Latios Kinemation, with stock Unity as a baseline.
-11. **Effects run on our own GPU particle runtime,** fed by an editor converter
-    from the chosen Hovl Studio and KriptoFX prefabs.
+11. **Effects run on GPU particles from the start.** An editor converter
+    carries the chosen Hovl Studio and KriptoFX prefabs into the GPU runtime.
+    TD8 opens with a spike that picks it: our own compute-shader runtime, or
+    VFX Graph driven by a few template graphs (see
+    [Choosing the GPU runtime](#choosing-the-gpu-runtime)).
 12. **A dusk or night outdoor arena,** with baked lighting for the static set, a
     shadowed moon or low sun, and effect lights that dominate.
 13. **The song is *In the Hall of the Mountain King*** (the Musopen recording,
@@ -219,7 +222,9 @@ Every visible monster keeps:
   rules out per-vertex animation textures, which cannot blend clips.
 - **A real cast shadow** in the sun's shadow map, not a blob decal.
 - **Its own reactions.** Every hit plays a flinch, a flash, knockback and a
-  hit effect. Every death plays a death animation and a death effect.
+  hit effect. Every death plays a death animation and a death effect. For a
+  tick (a repeat hit from a lingering effect), the flash is the hit effect
+  (see [Effect design rules for a horde](#effect-design-rules-for-a-horde)).
 - **Dynamic light** from nearby effects.
 
 A **cut** is any change that makes a monster cheaper to draw. A cut is
@@ -231,7 +236,8 @@ cuts:
 - a simplified mesh that draws only its shadow;
 - clips baked at 30 Hz instead of the default 60 Hz, and interpolated;
 - effect lights clustered on cells larger than the default 1.5 m;
-- coincident identical effect spawns merged.
+- coincident identical effect spawns merged;
+- an effect's large soft glow quad dropped, leaving bloom to draw the halo.
 
 The decimated meshes are **LOD1** and **LOD2**: each monster's mesh reduced at
 bake time to about half and about a quarter of its triangles, by a
@@ -851,8 +857,79 @@ their clip timing still comes from the timeline.
 Effects are half of the main question. A stock Hovl hit effect is a prefab of
 3 to 8 Shuriken particle systems. At the stress peak, 1,000 or more live
 systems would be needed, and Unity's per-system cost lands on the main thread
-long before particle counts matter. So effects run on our own GPU particle
-runtime, and an editor converter carries the chosen vendor effects into it.
+long before particle counts matter. So effects run on GPU particles from the
+start. An editor converter carries the chosen vendor effects into the GPU
+runtime, which a spike picks first (see
+[Choosing the GPU runtime](#choosing-the-gpu-runtime)).
+
+### How many effects
+
+The player causes nearly every effect, but most effect instances land on
+enemies. Survivors-genre enemies rarely emit effects of their own. Here
+monsters fight only in melee, so their share is a small dust puff per attack,
+plus the hero's parry sparks. Hits and deaths, though, scale with the horde
+and its kill rate.
+
+- **Player weapons.** A late-game Vampire Survivors build spawns about 50–60
+  weapon effects a second and keeps 60–80 alive, plus about 10 that persist.
+  That's six evolved weapons with +3 Amount, from the repo's VS data in
+  `docs/survivors/`. The hero's spells here are fewer and larger, and each
+  combo blow adds a slash, so tens are alive at once.
+- **Enemy feedback** at an envelope of 2,600 on screen and demo load (130
+  deaths and 260 hits a second):
+
+```
+              rate      lifetime   alive at once
+hit sparks    260/s     ~0.35 s    ~90
+death bursts  130/s     ~0.8 s     ~105
+all effects                        ~250-300   (heavy load: ~800-1,000)
+```
+
+**Beats make effects bursty.** Every impact lands on the beat, so one beat's
+hits and deaths spawn in a single frame. At 140 bpm a beat is 0.43 s:
+
+- at demo load, about 110 sparks and 55 death bursts spawn in one frame;
+- at heavy load, about 450 effects spawn in one frame;
+- each effect is at its largest and brightest at birth, so the beat frame is
+  also the overdraw peak.
+
+**Particles are cheap; overdraw is not.**
+
+- **Particle counts.** About 20 particles per spark, 60 per death and a few
+  hundred per spell give 15,000–30,000 live particles at demo load and about
+  100,000 at heavy. Simulating 100,000 on a 4060-class GPU takes well under
+  0.5 ms.
+- **The cost of a layer.** One full-screen layer of HDR additive blending at
+  1080p moves about 33 MB: 2 million pixels, each read and written at 8
+  bytes. That is about 0.13 ms of an RTX 4060 Laptop's 256 GB/s, or 0.2–0.3
+  ms with texture reads.
+- **The overdraw budget.** If effects get about 3 ms of the client's 12.5 ms,
+  that allows a mean of about 5 full-screen layers, and 10–15 on beat frames.
+- **Glow quads eat it.** A Hovl hit effect often carries a soft glow quad a
+  few metres across. A hundred at once make one or two full-screen layers on
+  their own.
+
+These are estimates, which TD8 measures. The harness flags any point whose
+mean transparent fragments per pixel exceed 5, or whose beat-frame peak
+exceeds 12 (see [Measurements](#measurements)). The Mac blends on tile and
+hides most of this cost, so these counters matter more than its times here.
+
+### Effect design rules for a horde
+
+Three rules keep effects affordable without breaking the fidelity floor.
+
+- **Bloom makes the glow.** Post-process bloom costs the same for one effect
+  or a thousand, while a glow quad costs per effect. Converted effects keep
+  small, HDR-bright cores and drop their large soft glow quads, so bloom draws
+  the halo. Each dropped glow layer is a cut, gated by an A/B check.
+- **Feedback is tiered.** A **tick**, a repeat hit from a lingering effect
+  such as the laser's sweep or a ring's afterburn, gets the monster's shader
+  flash and no particles. Weapon impacts get sparks, deaths get bursts, and
+  accents and spells get the large effects. Vampire Survivors tiers its
+  feedback the same way.
+- **The beat frame is the budget.** The p99 pass rule measures it. Spawning
+  must cost almost nothing per effect on the CPU: all of a frame's spawns go
+  up in one GPU buffer, never as one object per effect.
 
 ### The effect list
 
@@ -864,13 +941,15 @@ About twenty effects cover the demo, chosen by TD8 from the vendor packs:
 - **KriptoFX:** death bursts and explosions, where they read better than
   Hovl's.
 - **Ambient:** embers and drifting wisps over the arena.
+- **Monsters:** a small dust puff on each attack.
 
 ### The converter
 
 The converter is an editor script that reads each chosen prefab through
 Unity's public `ParticleSystem` and `ParticleSystemRenderer` APIs. It writes
-an effect definition for the runtime. Definitions are vendor-derived, so they
-live only in the gitignored baked folder.
+an effect definition for our own runtime, or a parameter set for the VFX
+Graph templates, whichever the spike picks. Its outputs are vendor-derived,
+so they live only in the gitignored baked folder.
 
 What it reads:
 
@@ -915,27 +994,89 @@ samples URP's opaque texture.
 - **Never copied.** No Hovl shader source is copied into them. A shader that
   must reuse vendor code counts as derived and lives in the baked folder.
 
+### Choosing the GPU runtime
+
+Two GPU runtimes could run the converted effects, and TD8 picks one with a
+spike before building either out. The vendor packs contain no VFX Graph
+assets. There are no `.vfx` files; Hovl and KriptoFX use Shuriken with 78
+hand-written shaders and 26 Shader Graphs. So effects are rebuilt whichever
+runtime wins, and the converter stays the same; only its output changes.
+
+**Our own compute runtime** (see [The runtime](#the-runtime)):
+
+- **One pool for every effect type,** so one simulation dispatch and one
+  global back-to-front sort serve them all.
+- **Exact control** over the beat-frame spawn path.
+- **All code,** so agents own it end to end.
+- **But it builds everything itself:** sorting, ribbons, sub-emitters and
+  soft particles.
+
+**VFX Graph driven by template graphs:**
+
+- **Mature features.** Unity's own GPU particle system brings simulation,
+  sorting within a system, ribbon strips, and sub-emitters through GPU events.
+  It also has collision with the depth buffer (sparks bouncing off the
+  ground), lit outputs and Shader Graph outputs.
+- **One system per effect type, not one per hit.** Each frame the client
+  fills a `GraphicsBuffer` with that type's spawn requests and sets a spawn
+  count. The graph's initialize step reads each new particle's position, seed
+  and scale from the buffer.
+- **Templates.** About 5 to 8 generic graphs cover the effects: a billboard
+  burst, stretched sparks, a ribbon trail, a mesh particle and a ground ring.
+  Each exposes its curves as baked textures, and its flipbook and timing as
+  properties. Every converted effect is one or more template instances with
+  its own parameter set.
+- **Built once, by hand.** Graphs can only be authored in the node editor.
+  There's no supported API for building them in code, and `.vfx` files are
+  fragile to edit as text. So someone builds the templates once: the operator
+  in the editor (about an afternoon), or an agent carefully editing copies of
+  the templates that ship with the VFX Graph package. After that, agents work
+  only in data.
+- **Sorting stops at the system.** Alpha-blended effects sort only within
+  their own system, so overlapping smoke from two effect types can sort
+  wrongly. Additive sparks, most of Hovl's look, are unaffected.
+
+**The spike** builds one billboard-burst effect both ways. It runs both on
+stress scene S4 (effects only) at heavy load, about 450 spawns on each beat
+frame, and fills in a table like this:
+
+```
+spike: billboard burst, S4 heavy, 40 m, N 2,600
+                    gpu p99   main p99   beat-frame spawn cost   authoring
+own runtime         …         …          …                       code only
+VFX Graph template  …         …          …                       one graph
+```
+
+- **Decision rule.** VFX Graph wins if its GPU and main-thread p99 times are
+  within 10% of ours and its template was built or edited without
+  hand-repairing the asset. Otherwise our runtime wins.
+- **Recorded in TD8's notes:** both rows, the template's authoring route, and
+  any VFX Graph feature that turned out to disable its batching.
+
 ### The runtime
 
-The runtime simulates and draws every instance of an effect together, so its
-cost follows particles, not prefabs.
+Whichever runtime wins must meet the requirements below. The mechanisms
+describe our own runtime; VFX Graph meets them through the spawn buffers and
+templates described above. The runtime simulates and draws every instance of
+an effect together, so its cost follows particles, not prefabs.
 
-- **Pools.** One GPU particle pool per emitter definition, holding state
-  buffers, a dead list and an alive list. Each is sized at twice its peak live
-  count under the heavy load at the largest N swept. Pool capacity costs only
-  memory, so a pool that overflows signals a sizing bug.
+- **One pool.** A single GPU particle pool, shared by every emitter
+  definition, holds state buffers, a dead list and an alive list. Each
+  particle carries its definition's index. The pool is sized at twice its
+  peak live count under the heavy load at the largest N swept. Capacity costs
+  only memory, so an overflow signals a sizing bug.
 - **Spawning.** Each frame the CPU uploads one buffer of spawn requests: the
   effects due this frame from the timeline, plus continuous emitters on
   projectiles and attached effects. Each request carries its definition,
   transform, seed and sub-frame time offset.
 - **Compute kernels** emit, simulate (curves through the lookup texture),
-  spawn sub-emitters and compact the alive list. Alpha-blended layers are
-  then sorted back to front.
+  spawn sub-emitters and compact the alive list. Alpha-blended particles are
+  then sorted back to front together, across effect types.
 - **Drawing.** Indirect procedural draws (quads, ribbons and meshes) are
   issued from a URP renderer feature after opaques.
 - **Randomness** comes from hashing the spawn seed and particle index, so
   fixed-time captures reproduce exactly.
-- **Budgets are hard.** A spawn that would overflow a pool is rejected and
+- **Budgets are hard.** A spawn that would overflow the pool is rejected and
   counted. Any rejection fails the pass rule, because it would hide a hit or
   death effect.
 - **Merging is a cut.** Identical spawns of one definition in the same frame,
@@ -1107,20 +1248,26 @@ row per run.
 - **Timings** from Unity's `FrameTimingManager`: main-thread CPU,
   render-thread CPU and GPU frame time.
 - **Counters** from our own systems: visible instances by type and LOD,
-  skinned vertices, shadow casters, live particles per layer, spawns
-  rejected, light cues, lights used and lights dropped.
-- **Overdraw** on every 60th frame, from a debug replacement render that
-  counts opaque depth complexity and transparent fragments per pixel. Those
-  frames are excluded from timing.
+  skinned vertices, shadow casters, live particles, effect spawns per frame
+  (and the largest in one frame), spawns rejected, light cues, lights used,
+  and the share of light dropped.
+- **Overdraw** from a debug replacement render that counts opaque depth
+  complexity and transparent fragments per pixel. It runs on every 60th
+  frame and on the frame after each downbeat, which catches the beat-frame
+  peak. Those frames are excluded from timing.
+- **Flags.** The report flags a point whose mean transparent fragments per
+  pixel exceed 5, or whose beat-frame peak exceeds 12 (see
+  [How many effects](#how-many-effects)).
 - **Machine state:** thermal state, power source and energy mode, job worker
   count, and the backbuffer size.
 
 ```json
 { "scene": "S3", "n": 2400, "viewWidthM": 40, "load": "demo", "aa": "taa",
   "gpuP99Ms": 5.31, "mainP99Ms": 4.12, "renderP99Ms": 3.05, "maxFrameMs": 7.9,
-  "onScreenAlive": 2231, "onScreenDying": 169, "particles": 412000,
-  "spawnsRejected": 0, "lightsUsed": 117, "lightsDropped": 0,
-  "opaqueDepth": 1.21, "transparentPerPixel": 2.7,
+  "onScreenAlive": 2231, "onScreenDying": 169, "particles": 26400,
+  "spawnsMaxPerFrame": 171, "spawnsRejected": 0,
+  "lightsUsed": 117, "lightDropShareP99": 0.004,
+  "opaqueDepth": 1.21, "transparentPerPixel": 3.1, "transparentBeatPeak": 8.6,
   "thermal": "nominal", "power": "ac/high", "pass": true }
 ```
 
@@ -1430,9 +1577,11 @@ The interview weighed these and rejected them for the reasons given.
 - **Bevy.** The asset-conversion cost of a custom engine, without the control.
 - **Per-vertex animation textures.** The cheapest crowd technique, but they
   cannot blend clips, which the fidelity floor requires.
-- **VFX Graph.** GPU effects with editor features for free, but there is no
-  supported API to build graphs in code, and its asset files are fragile to
-  edit as text. Agents could not author them.
+- **VFX Graph as the authoring tool for every effect.** It has GPU effects
+  with editor features for free, but there is no supported API to build
+  graphs in code, and its asset files are fragile to edit as text. Agents
+  could not author twenty effects that way. VFX Graph as a runtime, driven by
+  a few templates and converted data, remains a candidate in TD8's spike.
 - **Stock effect prefabs, pooled.** Simple, but per-system overhead caps the
   horde long before the GPU does.
 - **Buying a target laptop.** It would make the answer measured instead of
@@ -1514,10 +1663,16 @@ Each bead lists what it builds and when it is done.
     the loser and records the comparison.
   - Done when: the comparison is in its notes and only the winner remains.
 - **TD8, effects.**
-  - Builds: the converter, the runtime, light cues, clustering and the light
-    pool. Converts the effect list.
-  - Done when: every listed effect runs on the runtime with an A/B still
-    against its stock prefab, and the light pool's size is fixed.
+  - Opens with the runtime spike in
+    [Choosing the GPU runtime](#choosing-the-gpu-runtime), and records its
+    decision. If VFX Graph wins and its templates need the operator, those
+    templates go to `operator-pending.md`, and TD8 continues on the parts
+    that don't need them.
+  - Builds: the converter, the chosen runtime, light cues, clustering and the
+    light pool. Converts the effect list under the design rules for a horde.
+  - Done when: the spike's table and decision are in its notes; every listed
+    effect runs on the runtime with an A/B still against its stock prefab;
+    and the light pool's size is fixed.
 - **TD9, environment and lighting.**
   - Builds: the generated arena, lightmaps, and the lighting and
     post-processing stack.
@@ -1532,7 +1687,8 @@ Each bead lists what it builds and when it is done.
   - Done when: the song's first minute plays with every blow on its click.
 - **TD11, cuts.**
   - Calibrates the A/B thresholds. Then tries LOD thresholds, shadow proxies,
-    the 30 Hz clip rate, light clustering and effect merging.
+    the 30 Hz clip rate, larger light-cluster cells, effect merging, and
+    dropping glow quads in favor of bloom.
   - Done when: each cut is accepted or rejected, with its scores.
 - **TD12, the frontier.**
   - Runs the full sweep, the traces at frontier points and both target
@@ -1702,6 +1858,10 @@ baseline crowd handles a few hundred monsters, which is enough.
   all the way through, with no frame over twice its line.
 - **Expect** every hit and death to be visible, with no effect missing in the
   densest beats and no lights flickering out.
+- Watch the frames right after the densest downbeats, where a few hundred
+  effects spawn at once. **Expect** no stutter on the beat, and the overlay's
+  largest spawn count per frame to match the stress estimates (about 150 at
+  demo load).
 - Compare an early fight against one monster with the climax by eye. **Expect**
   each monster to look and react the same.
 - Listen at the densest beats. **Expect** weight, not clipping or a wall of
