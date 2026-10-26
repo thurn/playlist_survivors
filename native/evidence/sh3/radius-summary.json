@@ -1,0 +1,34 @@
+[
+  {
+    "radius": 48,
+    "cases": 24,
+    "minimum": 12.0,
+    "maximum": 52.904,
+    "median": 45.2525,
+    "bites": 8
+  },
+  {
+    "radius": 56,
+    "cases": 24,
+    "minimum": 24.946,
+    "maximum": 59.98,
+    "median": 50.9945,
+    "bites": 1
+  },
+  {
+    "radius": 64,
+    "cases": 24,
+    "minimum": 24.946,
+    "maximum": 68.896,
+    "median": 56.979,
+    "bites": 0
+  },
+  {
+    "radius": 80,
+    "cases": 24,
+    "minimum": 48.608,
+    "maximum": 85.693,
+    "median": 75.206,
+    "bites": 0
+  }
+]

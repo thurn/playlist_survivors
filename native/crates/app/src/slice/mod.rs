@@ -32,6 +32,7 @@
 mod apps;
 mod calibration;
 mod cards;
+mod clip;
 mod damage;
 // The tap and output are the phase 0 spike's (57e846a^:native/spike), kept as they were.
 #[allow(clippy::pedantic, unused_qualifications, dead_code)]
@@ -55,6 +56,7 @@ mod output;
 mod scene;
 mod session;
 mod sounds;
+mod sword;
 #[allow(
     clippy::pedantic,
     clippy::explicit_counter_loop,
@@ -158,6 +160,7 @@ struct Options {
     hud_full_slots: bool,
     sound_check: Option<PathBuf>,
     cards_check: Option<PathBuf>,
+    sword_check: Option<PathBuf>,
     volume: f32,
     click: bool,
     mute: bool,
@@ -210,6 +213,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         hud_full_slots: false,
         sound_check: None,
         cards_check: None,
+        sword_check: None,
         volume: 1.0,
         click: false,
         mute: false,
@@ -256,6 +260,13 @@ fn options(args: &[String]) -> Result<Options, String> {
                 o.cards_check = Some(
                     it.next()
                         .ok_or("--cards-check needs an output directory")?
+                        .into(),
+                );
+            }
+            "--sword-check" => {
+                o.sword_check = Some(
+                    it.next()
+                        .ok_or("--sword-check needs an output directory")?
                         .into(),
                 );
             }
@@ -529,6 +540,9 @@ pub fn run(args: &[String]) -> Result<(), String> {
         } else {
             Err("the heard delay wasn't within 2 ms of M every minute".into())
         };
+    }
+    if let Some(dir) = &opts.sword_check {
+        return sword::check::run(dir);
     }
     if let Some(dir) = &opts.cards_check {
         return cards::check::run(dir);

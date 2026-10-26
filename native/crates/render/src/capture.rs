@@ -242,3 +242,40 @@ mod persistent_capture_tests {
         );
     }
 }
+
+#[cfg(test)]
+mod arc_tests {
+    use super::*;
+    use crate::sprites::{Arc, Sprite};
+    #[test]
+    fn procedural_arc_has_a_hollow_centre_and_a_directional_tail() {
+        let arc = Sprite::arc(
+            64.0,
+            64.0,
+            40.0,
+            Arc {
+                head: 0.0,
+                span: std::f32::consts::FRAC_PI_2,
+                width: 6.0,
+            },
+            [1.0, 0.3, 0.5, 1.0],
+        );
+        let rgba = render(
+            &[],
+            128,
+            128,
+            &Frame {
+                clear: [0.0; 3],
+                world: &[],
+                lights: &[],
+                grade: Default::default(),
+                overlay: &[arc],
+            },
+        )
+        .unwrap();
+        let red = |x: usize, y: usize| rgba[(y * 128 + x) * 4];
+        assert_eq!(red(64, 64), 0, "no opaque disk");
+        assert!(red(92, 36) > 30, "sweep covers the upper-right ring");
+        assert_eq!(red(36, 36), 0, "no trail beyond its span");
+    }
+}

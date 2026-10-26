@@ -1,0 +1,1 @@
+sword-check: 120 frames at30fps,1280x720,128BPM, 9 real shots/1 accent, radius48; synthetic known beats/forecast, no enemies, no pacing/survival claim, silent capture

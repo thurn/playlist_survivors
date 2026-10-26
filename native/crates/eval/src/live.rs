@@ -155,6 +155,12 @@ pub enum Cause {
         what: String,
         caught: bool,
     },
+    /// A grid-aligned sword reaction, projected from its existing record (one transient per step).
+    WeaponImpact {
+        s: f64,
+        what: sim::survivors::WeaponId,
+        accent: bool,
+    },
     /// The hero bitten at `s`.
     Hurt { s: f64 },
     /// The groove's tier rose or fell; its chime at `s`.
@@ -1341,6 +1347,20 @@ impl Engine {
         while let Some((s, rec)) = j.get(k) {
             let cause = match rec {
                 Record::Sound(c) => Some(c.cause.clone()),
+                Record::Moment(Moment::EnemyImpact { hit }) if shown.run.is_some() => {
+                    match hit.as_ref() {
+                        Moment::Hit { what, weight, .. } => {
+                            sim::survivors::WeaponId::from_name(what)
+                                .filter(|id| id.is_sword())
+                                .map(|what| Cause::WeaponImpact {
+                                    s: *s,
+                                    what,
+                                    accent: *weight == "heavy",
+                                })
+                        }
+                        _ => None,
+                    }
+                }
                 Record::GemArrive { gem } if shown.run.is_some() => {
                     Some(Cause::Gem { s: *s, gem: *gem })
                 }
@@ -1404,7 +1424,8 @@ impl Cause {
             | Cause::Tier { s, .. }
             | Cause::Step { s, .. }
             | Cause::LevelUp { s }
-            | Cause::Gem { s, .. } => *s,
+            | Cause::Gem { s, .. }
+            | Cause::WeaponImpact { s, .. } => *s,
         }
     }
 }

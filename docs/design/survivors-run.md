@@ -1260,6 +1260,19 @@ step-down. See [SH2 evidence](../../native/evidence/sh2/README.md), including
 operator audition and downstream palette interfaces.
 
 ### SH3
+
+The sword now draws a procedural sweep with fading afterimages; accents add a
+wider gold spin and shock ring. Fire keeps its actual subdivision, while hit
+sounds project from existing grid-aligned reactions without new hash records.
+At 70/128/174 BPM, rank-one bat full-cycle TTK is 0.857/0.938/0.690 s and
+skeleton TTK 2.571/2.344/2.069 s, below the analytical Whip reference of
+1.350/2.700 s. The stationary test includes one initial attack period; it is not
+VS runtime parity. Radius alone changes from 80 to 48 px: a 96-case approach
+probe shows closer kills/contact exposure, not a whole-run balance verdict.
+[SH3 evidence](../../native/evidence/sh3/README.md) keeps the raw tables, stills,
+silent capture, replay and benchmark scheduling comparison. Listening and
+personal-space feel remain an operator row; SH11/SW7 own integrated balance.
+
 ### SH4
 ### SH5
 ### SH6

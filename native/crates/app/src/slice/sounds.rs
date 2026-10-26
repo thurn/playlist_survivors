@@ -451,6 +451,20 @@ impl Sounds {
         match cause {
             Cause::Swing { s, x, kind } => {
                 let heavy = *kind == "heavy";
+                if self.survivors {
+                    let mut c = Call::new(
+                        if heavy {
+                            "sword-accent-fire"
+                        } else {
+                            "sword-fire"
+                        },
+                        *s,
+                        *x,
+                        if heavy { 0.85 } else { 0.65 },
+                    );
+                    c.owner = Some(*s);
+                    return vec![c];
+                }
                 let mut whoosh = Call::new("swing", s - 0.04, *x, 0.7);
                 whoosh.owner = Some(*s);
                 let mut strike = Call::new(
@@ -491,6 +505,16 @@ impl Sounds {
                 }
                 let mut c = Call::new(sound.clone(), *s, *x, if *chain { 0.7 } else { 0.5 });
                 c.every = Some(Every::Sixteenth);
+                vec![c]
+            }
+            Cause::WeaponImpact { s, what, accent } => {
+                let key = format!(
+                    "{}-{}hit",
+                    what.as_str(),
+                    if *accent { "accent-" } else { "" }
+                );
+                let mut c = Call::new(key, *s, f64::NAN, if *accent { 0.8 } else { 0.55 });
+                c.owner = Some(*s);
                 vec![c]
             }
             Cause::Hurt { s } => {
@@ -919,6 +943,41 @@ mod survivor_tests {
             .clone()
     }
     #[test]
+    fn sword_fire_keeps_its_actual_subdivision_instead_of_snapping_again() {
+        let (mut sounds, _) = decoded();
+        let b = tests::beats(8, 0.5, 1.0);
+        let at = At {
+            seed: 1.0,
+            final_before: -1.0,
+            run_start: 0.0,
+            beats: &b,
+            gate: 0.2,
+            camera: (0.0, 0.0, 1.0),
+            clock: (0.0, 100.0),
+            l_out: 0.02,
+            never_late: NEVER_LATE,
+            now: 100.0,
+            ahead: 0.0,
+        };
+        let cause = Caused {
+            cause: Cause::Swing {
+                s: 1.0 + 1.0 / 6.0,
+                x: 0.0,
+                kind: "spin",
+            },
+            known: 0.5,
+        };
+        let mut out = Vec::new();
+        sounds.reconcile(&[cause], &at, &mut out);
+        assert_eq!(
+            out.len(),
+            1,
+            "fire only; impacts get their own actual reaction cause"
+        );
+        let Command::Play(v) = out[0] else { panic!() };
+        assert!((v.at + v.lead + at.l_out - (101.0 + 1.0 / 6.0)).abs() < 1e-6);
+    }
+    #[test]
     fn screen_cues_land_on_their_onset_and_retract_before_start() {
         let (mut sounds, _) = decoded();
         let b = tests::beats(8, 0.5, 1.0);
@@ -1049,6 +1108,14 @@ mod survivor_tests {
                 known: 0.0,
             });
             causes.push(Caused {
+                cause: Cause::WeaponImpact {
+                    s: 1.0 + i as f64 * 0.01,
+                    what: sim::survivors::WeaponId::Sword,
+                    accent: true,
+                },
+                known: 0.0,
+            });
+            causes.push(Caused {
                 cause: Cause::Kill {
                     s: 1.0,
                     x: i as f64,
@@ -1075,6 +1142,7 @@ mod survivor_tests {
                 .all(|c| !matches!(c, Command::Play(Voice { duck: true, .. })))
         );
         // Same speculative set in another input order chooses the same admitted voices.
+        let admitted = out.len();
         let first = out.clone();
         sounds.reset(0.0);
         causes.reverse();
@@ -1092,7 +1160,7 @@ mod survivor_tests {
         // Rollback removes all future voices before they start.
         out.clear();
         sounds.reconcile(&[], &at, &mut out);
-        assert_eq!(out.len(), 17);
+        assert_eq!(out.len(), admitted);
         assert!(out.iter().all(|c| matches!(c, Command::Cancel(_))));
     }
 }

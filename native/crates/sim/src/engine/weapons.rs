@@ -111,7 +111,7 @@ impl Sim {
                     weapon.amount(stats)
                 },
                 radius: if id.is_sword() {
-                    80.0 * weapon.area * stats.area
+                    crate::survivors::SWORD_BASE_RADIUS * weapon.area * stats.area
                 } else {
                     0.0
                 },

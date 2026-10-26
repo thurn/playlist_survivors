@@ -39,6 +39,7 @@ pub struct Look {
 pub struct Scene {
     pub cards: super::cards::Screen,
     numbers: damage::Numbers,
+    sword: super::sword::Sword,
     effects: Effects,
     bitten: f64,
     /// The open field's chunks near the camera, by zone.
@@ -351,26 +352,7 @@ impl Scene {
                 self.struck.insert(*foe, (now, *lethal));
             }
             match m {
-                Moment::WeaponFire(shot) if shot.id.is_sword() => fire(
-                    if shot.accent {
-                        "hit-heavy"
-                    } else {
-                        "hit-light"
-                    },
-                    shot.x,
-                    shot.y,
-                    0.0,
-                    if shot.accent { 1.0 } else { 0.65 },
-                    Start {
-                        tier: Some(0),
-                        shape: Some(sim::core::geometry::Shape::Circle {
-                            x: shot.x,
-                            y: shot.y,
-                            radius: shot.radius,
-                        }),
-                        ..Start::default()
-                    },
-                ),
+                Moment::WeaponFire(shot) if shot.id.is_sword() => self.sword.shot(*shot, now),
                 // (As emit.ts fires them; native/evidence/vfx/ts-spec.md.) A swing's arc by its
                 // kind, brighter with the groove, in its tier's colour and fitted to its hit.
                 Moment::Swing {
@@ -880,6 +862,7 @@ impl Scene {
             trail: self.trail.make_contiguous(),
         };
         tier::weapons(view, &arms, art, &at, scale, out);
+        self.sword.draw(now, art, &at, scale, out, lights);
         let swell = 0.5 + 0.5 * (std::f64::consts::TAU * pulse.beat.min(1.0)).cos();
         gems::draw(
             view,

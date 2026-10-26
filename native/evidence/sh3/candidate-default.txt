@@ -1,0 +1,1 @@
+bench: frame work (sim, evaluate, encode) at 1920 x 1080: median 0.30 ms, p95 0.90, p99 1.15, max 1.86 (7200 frames); 1776 rollbacks re-simulating 566 ms

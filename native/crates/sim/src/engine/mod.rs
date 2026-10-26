@@ -2842,7 +2842,7 @@ mod tests {
         assert!(sim.st.field.is_empty());
         assert_eq!(sim.st.n_gems, 0);
     }
-    fn sword_measurement(
+    fn sword_measurement_base(
         bpm: f64,
         rank: u8,
         delta: crate::survivors::StatDelta,
@@ -2912,8 +2912,131 @@ mod tests {
                 .unwrap();
         }
         sim.apply_survivor_stats(delta);
+        (rec, sim)
+    }
+
+    fn sword_measurement(
+        bpm: f64,
+        rank: u8,
+        delta: crate::survivors::StatDelta,
+        accent: bool,
+    ) -> (Rc<std::cell::RefCell<crate::recorder::LogRecorder>>, Sim) {
+        let (rec, mut sim) = sword_measurement_base(bpm, rank, delta, accent);
+        let def = sim.env.input.lib.enemies.get_index_of("skeleton").unwrap();
         sim.spawn_foe(def, 25.0, 0.0, Some(1e9));
         (rec, sim)
+    }
+
+    #[test]
+    fn survivor_sword_tuned_radius_has_a_real_near_and_far_boundary() {
+        let (rec, mut sim) =
+            sword_measurement_base(128.0, 1, crate::survivors::StatDelta::default(), false);
+        let def = sim
+            .env
+            .input
+            .lib
+            .enemies
+            .get_index_of("vs-skeleton")
+            .unwrap();
+        let data = &mut Rc::get_mut(&mut sim.env).unwrap().input.lib.enemies[def];
+        data.speed = 0.0;
+        let stats = data.survivors.as_mut().unwrap();
+        stats.speed = 0.0;
+        stats.knockback = 0.0;
+        sim.spawn_foe(def, 40.0, 0.0, Some(1e9));
+        sim.spawn_foe(def, 70.0, 0.0, Some(1e9));
+        sim.advance_to(2.0);
+        let log = rec.borrow();
+        assert!(!log.enemies[0].fates.is_empty());
+        assert!(
+            log.enemies[1].fates.is_empty(),
+            "the 70px target must be outside the shortened spin"
+        );
+    }
+
+    #[test]
+    fn survivor_sword_ttk_and_personal_space_measurements() {
+        use crate::survivors::{StatDelta, WeaponId, weapon_catalog};
+        eprintln!(
+            "stationary TTK: BPM, role, source HP, actual hits, first hit s, death s, full-cycle TTK s, VS Whip hits, VS Whip full-cycle s"
+        );
+        for bpm in [70.0, 128.0, 174.0] {
+            for kind in ["vs-bat3", "vs-skeleton"] {
+                let (rec, mut sim) = sword_measurement_base(bpm, 1, StatDelta::default(), false);
+                let def = sim.env.input.lib.enemies.get_index_of(kind).unwrap();
+                let hp = sim.env.input.lib.enemies[def].health;
+                let data = &mut Rc::get_mut(&mut sim.env).unwrap().input.lib.enemies[def];
+                data.speed = 0.0;
+                let stats = data.survivors.as_mut().unwrap();
+                stats.speed = 0.0;
+                stats.knockback = 0.0;
+                stats.xp = 0.0;
+                sim.spawn_foe(def, 25.0, 0.0, None);
+                sim.advance_to(5.0);
+                let log = rec.borrow();
+                let target = &log.enemies[0];
+                let death = target
+                    .fates
+                    .iter()
+                    .find(|f| f.lethal)
+                    .expect("the target dies")
+                    .w;
+                let whip = weapon_catalog().get(WeaponId::Sword).level(1);
+                let whip_hits = (hp / whip.power).ceil();
+                let whip_s = whip_hits * whip.interval_ms / 1000.0;
+                let first = target.fates[0].w;
+                let full_cycle = death - first + 60.0 / bpm;
+                eprintln!(
+                    "{bpm},{kind},{hp},{},{first:.9},{death:.9},{full_cycle:.9},{whip_hits},{whip_s:.9}",
+                    target.fates.len()
+                );
+                assert!(
+                    full_cycle <= whip_s + 1e-6,
+                    "{bpm} {kind}: {death} > Whip {whip_s}"
+                );
+            }
+        }
+        eprintln!(
+            "approach: BPM, role, chosen radius, spawn phase, first-hit distance, kill distance, death s, hits, hero bites"
+        );
+        for bpm in [70.0, 128.0, 174.0] {
+            for kind in ["vs-bat3", "vs-skeleton"] {
+                for radius in [48.0, 56.0, 64.0, 80.0] {
+                    for phase in [0.0, 0.25, 0.5, 0.75] {
+                        let (rec, mut sim) = sword_measurement_base(
+                            bpm,
+                            1,
+                            StatDelta {
+                                area: radius / crate::survivors::SWORD_BASE_RADIUS - 1.0,
+                                ..StatDelta::default()
+                            },
+                            false,
+                        );
+                        Rc::get_mut(&mut sim.env).unwrap().input.no_hero_damage = false;
+                        let def = sim.env.input.lib.enemies.get_index_of(kind).unwrap();
+                        sim.advance_to(phase * 60.0 / bpm);
+                        sim.spawn_foe(def, 150.0, 0.0, None);
+                        sim.advance_to(20.0);
+                        let log = rec.borrow();
+                        let target = &log.enemies[0];
+                        let first = target.fates.first().expect("target reached the sword");
+                        let last = target
+                            .fates
+                            .iter()
+                            .find(|f| f.lethal)
+                            .expect("approaching target dies");
+                        eprintln!(
+                            "{bpm},{kind},{radius},{phase},{:.3},{:.3},{:.9},{},{}",
+                            first.x.hypot(first.y),
+                            last.x.hypot(last.y),
+                            last.w,
+                            target.fates.len(),
+                            log.bites.len()
+                        );
+                    }
+                }
+            }
+        }
     }
 
     #[test]
@@ -2946,7 +3069,7 @@ mod tests {
                     "{bpm} rank{rank}: {damage} vs {expected}"
                 );
                 assert_eq!(rec.enemies[0].fates.len(), rec.weapon_shots.len());
-                let radius = 80.0 * weapon.area * stats.area;
+                let radius = crate::survivors::SWORD_BASE_RADIUS * weapon.area * stats.area;
                 assert!(
                     rec.weapon_shots
                         .iter()

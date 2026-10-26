@@ -1,0 +1,2 @@
+cards-check: presentation fixture: bat health0.0001 speed1000 xp10, 12 zombies health1000000, minute0 one roster; normal hero damage, no pacing/survival claim
+cards-check: 66 offscreen frames at30fps, open Some(1.6666666666666667), confirm Some(3.025), resume Some(3.325); silent capture, operator sound/feel pending

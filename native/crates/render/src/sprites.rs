@@ -8,6 +8,14 @@ use crate::atlas::{Page, Region};
 pub const MAX_PAGES: usize = 8;
 /// The page index of a solid (untextured) sprite.
 pub const SOLID: u32 = u32::MAX;
+const ARC: u32 = u32::MAX - 1;
+/// A procedural sweep: head angle and trailing span in radians, thickness in pixels.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Arc {
+    pub head: f32,
+    pub span: f32,
+    pub width: f32,
+}
 
 /// One quad: where it goes (logical pixels, origin top left), what it shows, and its tint
 /// (multiplied, with alpha); turned `rot` radians about its centre, and drawn additively (light
@@ -24,6 +32,7 @@ pub struct Sprite {
     pub additive: bool,
     /// A shear about its bottom edge: the top moves left by this times its height (a sway).
     pub skew: f32,
+    arc: Option<Arc>,
 }
 
 impl Sprite {
@@ -45,7 +54,24 @@ impl Sprite {
             rot: 0.0,
             additive: false,
             skew: 0.0,
+            arc: None,
         }
+    }
+
+    /// An antialiased luminous arc with no raster asset. Its centre line is `radius`.
+    pub fn arc(x: f32, y: f32, radius: f32, arc: Arc, tint: [f32; 4]) -> Sprite {
+        let diameter = 2.0 * radius / 0.82;
+        let mut s = Self::solid(
+            x - diameter / 2.0,
+            y - diameter / 2.0,
+            diameter,
+            diameter,
+            tint,
+        )
+        .additive();
+        s.region.page = ARC;
+        s.arc = Some(arc);
+        s
     }
 
     /// `region` drawn at `scale`, its anchor (pixels within the region) at (x, y).
@@ -60,6 +86,7 @@ impl Sprite {
             rot: 0.0,
             additive: false,
             skew: 0.0,
+            arc: None,
         }
     }
 
@@ -75,6 +102,7 @@ impl Sprite {
             rot: 0.0,
             additive: false,
             skew: 0.0,
+            arc: None,
         }
     }
 
@@ -126,6 +154,7 @@ struct Instance {
     additive: u32,
     rot: f32,
     skew: f32,
+    shape: [f32; 4],
 }
 
 const SHADER: &str = r"
@@ -147,11 +176,12 @@ struct Out {
     @location(1) tint: vec4<f32>,
     @location(2) @interpolate(flat) page: u32,
     @location(3) @interpolate(flat) additive: u32,
+    @location(4) @interpolate(flat) shape: vec4<f32>,
 };
 @vertex
 fn vs(@builtin(vertex_index) v: u32, @location(0) rect: vec4<f32>, @location(1) uv: vec4<f32>,
       @location(2) tint: vec4<f32>, @location(3) page: u32, @location(4) additive: u32,
-      @location(5) rot: f32, @location(6) skew: f32) -> Out {
+      @location(5) rot: f32, @location(6) skew: f32, @location(7) shape: vec4<f32>) -> Out {
     let corner = vec2<f32>(f32(v & 1u), f32((v >> 1u) & 1u));
     var local = (corner - 0.5) * rect.zw;
     // (A sway shears it about its bottom edge.)
@@ -165,12 +195,31 @@ fn vs(@builtin(vertex_index) v: u32, @location(0) rect: vec4<f32>, @location(1) 
     o.tint = tint;
     o.page = page;
     o.additive = additive;
+    o.shape = shape;
     return o;
 }
 @fragment
 fn fs(i: Out) -> @location(0) vec4<f32> {
     var t = vec4<f32>(1.0);
-    if i.page == 0u {
+    let q = (i.uv - 0.5) * 2.0;
+    let radius = length(q);
+    let aa = max(fwidth(radius), 0.002);
+    if i.page == 4294967294u {
+        let theta = atan2(q.y, q.x);
+        let delta = (i.shape.x - theta + 12.566371) % 6.283185;
+        let span = clamp(i.shape.y, 0.01, 6.283185);
+        let along = clamp(delta / span, 0.0, 1.0);
+        let full = span > 6.27;
+        let taper = select(pow(1.0 - along, 0.7), 1.0, full);
+        let width = max(i.shape.z * (0.3 + 0.7 * taper), 0.002);
+        let d = abs(radius - 0.82);
+        let core = 1.0 - smoothstep(width * 0.35, width * 0.6 + aa, d);
+        let halo = 0.3 * exp(-d*d / max(width*width*5.0, 0.00001));
+        let tail = select(pow(1.0-along,1.2) * (1.0-smoothstep(max(span-0.08,0.0),span,delta)),1.0,full);
+        t = vec4<f32>(1.0,1.0,1.0,min(1.0,core+halo)*tail);
+    }
+
+    else if i.page == 0u {
         if (i.additive & 2u) != 0u { t = textureSampleLevel(page0, smooth_samp, i.uv, 0.0); }
         else { t = textureSampleLevel(page0, samp, i.uv, 0.0); }
     }
@@ -355,7 +404,7 @@ impl SpriteRenderer {
                     step_mode: wgpu::VertexStepMode::Instance,
                     attributes: &wgpu::vertex_attr_array![
                         0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Uint32, 4 => Uint32,
-                        5 => Float32, 6 => Float32
+                        5 => Float32, 6 => Float32, 7 => Float32x4
                     ],
                 })],
             },
@@ -480,7 +529,9 @@ impl SpriteRenderer {
                 rect: [x, s.y, w, s.h],
                 uv,
                 tint: s.tint,
-                page: if (r.page as usize) < self.page_sizes.len() {
+                page: if s.arc.is_some() {
+                    ARC
+                } else if (r.page as usize) < self.page_sizes.len() {
                     r.page
                 } else {
                     SOLID
@@ -499,6 +550,9 @@ impl SpriteRenderer {
                     },
                 rot: s.rot,
                 skew: s.skew,
+                shape: s.arc.map_or([0.0; 4], |arc| {
+                    [arc.head, arc.span, 2.0 * arc.width / w.max(0.001), 0.0]
+                }),
             });
         }
         let pipeline = self.pipeline(device, format);

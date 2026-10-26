@@ -17,7 +17,16 @@ fn start(log: &StreamLog, duration: f64) -> (Rc<RefCell<LogRecorder>>, Sim) {
         .text
         .replace("durationS: 1800", &format!("durationS: {duration}"));
     let lib = common::library();
-    let level = load_level(&src, lib, &reactive_song_map(f64::INFINITY), None).unwrap();
+    let mut level = load_level(&src, lib, &reactive_song_map(f64::INFINITY), None).unwrap();
+    // These tests isolate clock/freeze/finale behavior. Combat XP must not open an
+    // unrelated offer when weapon reach or enemy movement changes.
+    for row in &mut level.survivor_schedule {
+        row.minimum = Some(0);
+        row.enemies = Some(Vec::new());
+        row.bosses.clear();
+        row.events.clear();
+        row.treasure.clear();
+    }
     assert!(level.upgrades.loadout.is_empty()); // The sword is intrinsic until SF5.
     assert!(level.upgrades.offer.is_empty());
     let mut input = SimInput::new(level, lib, &common::atlas(), 0.2, true);

@@ -938,3 +938,53 @@ fn speculative_pickup_sounds_derive_from_actual_gem_records_without_hash_records
     }
     assert!(!seen.is_empty(), "the actual pickup path must be exercised");
 }
+
+#[test]
+fn sword_impact_sounds_follow_existing_grid_records_without_hash_records() {
+    use eval::live::Cause;
+    let (mut lib, log) = fast_offer_fixture();
+    // Isolate grid reactions from an XP offer that would intentionally hold them.
+    lib.enemies
+        .get_mut("vs-bat3")
+        .unwrap()
+        .survivors
+        .as_mut()
+        .unwrap()
+        .xp = 0.0;
+    let mut engine = Engine::new(
+        &source("levels/survivors.yaml"),
+        &lib,
+        &IndexMap::new(),
+        0.2,
+        true,
+        true,
+        f64::INFINITY,
+    )
+    .unwrap();
+    engine.settled_log = Some(Vec::new());
+    engine.feed(|l| *l = log);
+    let mut seen = 0;
+    for i in 1..=600 {
+        engine.frame(f64::from(i) / 120.0, 0.3);
+        let journal = engine.journal.borrow();
+        let all = || {
+            (0..journal.end())
+                .filter_map(|k| journal.get(k))
+                .chain(engine.settled_log.as_ref().unwrap().iter())
+        };
+        for c in engine.causes() {
+            if let Cause::WeaponImpact { s, what, accent } = c.cause {
+                assert!(all().any(|(t,r)| *t==s && matches!(r,Record::Moment(Moment::EnemyImpact{hit}) if matches!(hit.as_ref(),Moment::Hit{what:id,weight,..} if id==what.as_str() && (*weight=="heavy")==accent))));
+                seen += 1;
+            }
+        }
+        assert!(all().all(|(_, r)| !matches!(
+            r,
+            Record::Sound(eval::live::Caused {
+                cause: Cause::WeaponImpact { .. },
+                ..
+            })
+        )));
+    }
+    assert!(seen > 0, "actual sword impacts must be exercised");
+}

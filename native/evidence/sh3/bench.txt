@@ -1,0 +1,2 @@
+bench: frame work (sim, evaluate, encode) at 1920 x 1080: median 1.18 ms, p95 3.65, p99 4.66, max 7.91 (7200 frames); 1776 rollbacks re-simulating 2067 ms
+playlist-survivors: frame work p99 4.66 ms over the gate 4 ms

@@ -1,0 +1,2 @@
+still: song 12.313s, run Some(RunState { song: 12.2927, presentation_s: 12.2927, frozen_beat: None, elapsed: 12.2927, spawn_minute: Some(0), spawned: 27, offer: None, level: 1, max_hp: 120.0, world: 12.2927, frozen: None, selected: 0, confirmed: false }), alive 19, kills 8, damage-exempt false
+slice: wrote native/evidence/sh3/live-still.png (1193 sprites, 5 lights; 19 enemies, health 0.96, groove 0.00; zone galop-woods)

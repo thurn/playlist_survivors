@@ -1,0 +1,17 @@
+[
+  {
+    "check": "baseline-background",
+    "exit": 1,
+    "wallSeconds": 11.70100941695273
+  },
+  {
+    "check": "baseline-default",
+    "exit": 0,
+    "wallSeconds": 2.8468299580272287
+  },
+  {
+    "check": "candidate-default",
+    "exit": 0,
+    "wallSeconds": 2.918158208951354
+  }
+]

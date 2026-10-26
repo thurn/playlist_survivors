@@ -1,0 +1,92 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.17s
+     Running unittests src/lib.rs (target/debug/deps/sim-1ebf1e278f138957)
+
+running 1 test
+70 BPM sword rank1: 70 actual target hits, 44.444444444 damage/60s, expected44.444444444, radius48.000
+70 BPM sword rank8: 280 actual target hits, 1066.666666667 damage/60s, expected1066.666666667, radius86.400
+128 BPM sword rank1: 128 actual target hits, 44.444444444 damage/60s, expected44.444444444, radius48.000
+128 BPM sword rank8: 512 actual target hits, 1066.666666667 damage/60s, expected1066.666666667, radius86.400
+174 BPM sword rank1: 174 actual target hits, 44.444444444 damage/60s, expected44.444444444, radius48.000
+174 BPM sword rank8: 696 actual target hits, 1066.666666667 damage/60s, expected1066.666666667, radius86.400
+test engine::tests::survivor_sword_actual_damage_matches_whip_dps_at_three_tempos ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 39 filtered out; finished in 0.06s
+
+     Running tests/causality.rs (target/debug/deps/causality-86630208d8a35901)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests/content.rs (target/debug/deps/content-9a59fe6e516c99d0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/core.rs (target/debug/deps/core-c9e1543def3e3e62)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/jsmath.rs (target/debug/deps/jsmath-fb18d9c6c162492d)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/live_run.rs (target/debug/deps/live_run-2a500f2f64a31168)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running tests/oracle_prefix.rs (target/debug/deps/oracle_prefix-36ea5184dd57a6c5)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/schedule.rs (target/debug/deps/schedule-6977568b6c2c1a3c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/sim_modules.rs (target/debug/deps/sim_modules-19b481e47351ed7e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+     Running tests/survivor_offers.rs (target/debug/deps/survivor_offers-fffa46330d1578d9)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/survivor_spawning.rs (target/debug/deps/survivor_spawning-bd30f1999a3bcd76)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests/survivor_stats.rs (target/debug/deps/survivor_stats-0db51e3894f1fae8)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/survivor_weapons.rs (target/debug/deps/survivor_weapons-b4eb7ccfae612445)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/survivors.rs (target/debug/deps/survivors-0e33f9d9bae2b18e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.00s
+

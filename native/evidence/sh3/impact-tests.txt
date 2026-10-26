@@ -1,0 +1,9 @@
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh3-sword/native/crates/eval)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.98s
+     Running tests/live.rs (target/debug/deps/live-95af3c317e05d1b4)
+
+running 1 test
+test sword_impact_sounds_follow_existing_grid_records_without_hash_records ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.05s
+

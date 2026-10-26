@@ -86,3 +86,7 @@ soundPalettes:
       card-reveal: [kenney/casino-card-place-1]
       card-highlight: [kenney/select_001]
       card-confirm: [kenney/digital-highUp]
+      sword-fire: [rpgpack/swing, kenney/knifeSlice]
+      sword-accent-fire: [rpg80/blade_03]
+      sword-hit: [kenney/impactMetal_light_000, kenney/impactMetal_light_001]
+      sword-accent-hit: [kenney/sci-impactMetal_000]

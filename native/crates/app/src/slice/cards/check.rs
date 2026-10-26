@@ -2,16 +2,7 @@
 use crate::slice::{HudState, KeyLight, Scene, World, damage, hud, live, scene};
 use render::{atlas::Atlases, capture, post::Frame};
 use sim::movement::InputKey;
-use std::{
-    io::Write,
-    path::{Path, PathBuf},
-};
-struct Frames(PathBuf);
-impl Drop for Frames {
-    fn drop(&mut self) {
-        let _ = std::fs::remove_dir_all(&self.0);
-    }
-}
+use std::{io::Write, path::Path};
 pub fn run(dir: &Path) -> Result<(), String> {
     if std::env::var_os("PS_NATIVE_BATCH").is_none() {
         let status = std::process::Command::new("taskpolicy")
@@ -69,13 +60,10 @@ pub fn run(dir: &Path) -> Result<(), String> {
     let mut scene = Scene::default();
     let (w, h) = (1280u32, 720u32);
     let mut gpu = capture::Offscreen::new(&art.pages, w, h)?;
-    let frame_path = std::env::temp_dir().join(format!("ps-cards-{}", std::process::id()));
-    std::fs::create_dir(&frame_path).map_err(|e| e.to_string())?;
-    let frames = Frames(frame_path);
+    let mut clip = crate::slice::clip::Clip::new(w, h, 30)?;
     let mut trace = std::fs::File::create(dir.join("sequence.jsonl")).map_err(|e| e.to_string())?;
     let (mut opened, mut chosen, mut resumed) = (None, None, None);
     let (mut highlight, mut open_still, mut confirm_still) = (false, false, false);
-    let mut n = 0u32;
     for tick in 1..=7200 {
         let s = f64::from(tick) / 120.0;
         engine.feed(|log| replay.feed_to(log, s));
@@ -182,8 +170,7 @@ pub fn run(dir: &Path) -> Result<(), String> {
             overlay: &overlay,
         });
         let rgba = gpu.rgba()?;
-        capture::write_png(&frames.0.join(format!("{n:04}.png")), w, h, &rgba)?;
-        n += 1;
+        clip.frame(&rgba)?;
         if !open_still && run.offer.is_some_and(|o| s >= o.reveals[2] + 0.1) {
             capture::write_png(&dir.join("open.png"), w, h, &rgba)?;
             open_still = true;
@@ -208,18 +195,8 @@ pub fn run(dir: &Path) -> Result<(), String> {
             engine.view.borrow().gems.len()
         ));
     }
-    let status = std::process::Command::new("ffmpeg")
-        .args(["-v", "error", "-y", "-framerate", "30", "-i"])
-        .arg(frames.0.join("%04d.png"))
-        .args([
-            "-an", "-c:v", "libx264", "-crf", "20", "-pix_fmt", "yuv420p",
-        ])
-        .arg(dir.join("open-pick-resume.mp4"))
-        .status()
-        .map_err(|e| e.to_string())?;
-    if !status.success() {
-        return Err(format!("ffmpeg: {status}"));
-    }
+    clip.encode(&dir.join("open-pick-resume.mp4"))?;
+    let n = clip.count();
     eprintln!(
         "cards-check: {n} offscreen frames at30fps, open {opened:?}, confirm {chosen:?}, resume {resumed:?}; silent capture, operator sound/feel pending"
     );

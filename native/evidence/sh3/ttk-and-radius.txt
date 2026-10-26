@@ -1,0 +1,191 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh3-sword/native/crates/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 5.86s
+     Running unittests src/lib.rs (target/debug/deps/sim-1ebf1e278f138957)
+
+running 1 test
+stationary TTK: BPM, role, source HP, actual hits, first hit s, death s, full-cycle TTK s, VS Whip hits, VS Whip full-cycle s
+70,vs-bat3,0.5,1,0.000000000,0.000000000,0.857142857,1,1.350000000
+70,vs-skeleton,1.5,3,0.000000000,1.714285714,2.571428571,2,2.700000000
+128,vs-bat3,0.5,2,0.000000000,0.468750000,0.937500000,1,1.350000000
+128,vs-skeleton,1.5,5,0.000000000,1.875000000,2.343750000,2,2.700000000
+174,vs-bat3,0.5,2,0.000000000,0.344827586,0.689655172,1,1.350000000
+174,vs-skeleton,1.5,6,0.000000000,1.724137931,2.068965517,2,2.700000000
+approach: BPM, role, chosen radius, spawn phase, first-hit distance, kill distance, death s, hits, hero bites
+70,vs-bat3,48,0,12.000,12.000,2.571428571,1,0
+70,vs-bat3,48,0.25,24.946,24.946,2.571428571,1,0
+70,vs-bat3,48,0.5,34.884,34.884,2.571428571,1,0
+70,vs-bat3,48,0.75,48.608,48.608,2.571428571,1,0
+70,vs-bat3,56,0,58.812,58.812,1.714285714,1,0
+70,vs-bat3,56,0.25,24.946,24.946,2.571428571,1,0
+70,vs-bat3,56,0.5,34.884,34.884,2.571428571,1,0
+70,vs-bat3,56,0.75,48.608,48.608,2.571428571,1,0
+70,vs-bat3,64,0,58.812,58.812,1.714285714,1,0
+70,vs-bat3,64,0.25,24.946,24.946,2.571428571,1,0
+70,vs-bat3,64,0.5,34.884,34.884,2.571428571,1,0
+70,vs-bat3,64,0.75,48.608,48.608,2.571428571,1,0
+70,vs-bat3,80,0,58.812,58.812,1.714285714,1,0
+70,vs-bat3,80,0.25,71.986,71.986,1.714285714,1,0
+70,vs-bat3,80,0.5,81.924,81.924,1.714285714,1,0
+70,vs-bat3,80,0.75,48.608,48.608,2.571428571,1,0
+70,vs-skeleton,48,0,50.644,50.986,4.285714286,3,0
+70,vs-skeleton,48,0.25,16.283,50.949,5.142857143,3,1
+70,vs-skeleton,48,0.5,24.311,50.977,5.142857143,3,1
+70,vs-skeleton,48,0.75,43.473,51.003,5.142857143,3,0
+70,vs-skeleton,56,0,50.644,50.986,4.285714286,3,0
+70,vs-skeleton,56,0.25,61.883,51.150,4.285714286,3,0
+70,vs-skeleton,56,0.5,24.311,50.977,5.142857143,3,1
+70,vs-skeleton,56,0.75,43.473,51.003,5.142857143,3,0
+70,vs-skeleton,64,0,50.644,50.986,4.285714286,3,0
+70,vs-skeleton,64,0.25,61.883,51.150,4.285714286,3,0
+70,vs-skeleton,64,0.5,69.911,53.649,4.285714286,3,0
+70,vs-skeleton,64,0.75,43.473,51.003,5.142857143,3,0
+70,vs-skeleton,80,0,84.244,67.874,3.428571429,3,0
+70,vs-skeleton,80,0.25,61.883,51.150,4.285714286,3,0
+70,vs-skeleton,80,0.5,69.911,53.649,4.285714286,3,0
+70,vs-skeleton,80,0.75,77.073,60.810,4.285714286,3,0
+128,vs-bat3,48,0,51.489,32.967,2.812500000,2,0
+128,vs-bat3,48,0.25,33.023,44.066,2.812500000,2,0
+128,vs-bat3,48,0.5,38.340,45.543,2.812500000,2,0
+128,vs-bat3,48,0.75,45.701,52.904,2.812500000,2,0
+128,vs-bat3,56,0,51.489,58.692,2.343750000,2,0
+128,vs-bat3,56,0.25,58.748,40.226,2.812500000,2,0
+128,vs-bat3,56,0.5,38.340,45.543,2.812500000,2,0
+128,vs-bat3,56,0.75,45.701,52.904,2.812500000,2,0
+128,vs-bat3,64,0,51.489,58.692,2.343750000,2,0
+128,vs-bat3,64,0.25,58.748,65.951,2.343750000,2,0
+128,vs-bat3,64,0.5,64.065,45.543,2.812500000,2,0
+128,vs-bat3,64,0.75,45.701,52.904,2.812500000,2,0
+128,vs-bat3,80,0,77.214,84.417,1.875000000,2,0
+128,vs-bat3,80,0.25,84.473,65.951,2.343750000,2,0
+128,vs-bat3,80,0.5,64.065,71.268,2.343750000,2,0
+128,vs-bat3,80,0.75,71.426,78.629,2.343750000,2,0
+128,vs-skeleton,48,0,42.526,26.265,5.625000000,5,1
+128,vs-skeleton,48,0.25,48.746,50.197,5.625000000,5,2
+128,vs-skeleton,48,0.5,53.020,50.210,5.625000000,5,1
+128,vs-skeleton,48,0.75,26.563,26.059,6.093750000,5,2
+128,vs-skeleton,56,0,60.901,49.221,5.156250000,5,0
+128,vs-skeleton,56,0.25,48.746,55.223,5.156250000,5,0
+128,vs-skeleton,56,0.5,53.020,59.775,5.156250000,5,0
+128,vs-skeleton,56,0.75,56.938,45.258,5.625000000,5,0
+128,vs-skeleton,64,0,60.901,67.705,4.687500000,5,0
+128,vs-skeleton,64,0.25,67.121,55.442,5.156250000,5,0
+128,vs-skeleton,64,0.5,53.020,59.497,5.156250000,5,0
+128,vs-skeleton,64,0.75,56.938,63.415,5.156250000,5,0
+128,vs-skeleton,80,0,79.276,85.693,4.218750000,5,0
+128,vs-skeleton,80,0.25,85.496,73.430,4.687500000,5,0
+128,vs-skeleton,80,0.5,71.395,78.259,4.687500000,5,0
+128,vs-skeleton,80,0.75,75.313,82.117,4.687500000,5,0
+174,vs-bat3,48,0,40.694,35.774,2.758620690,2,0
+174,vs-bat3,48,0.25,45.976,41.056,2.758620690,2,0
+174,vs-bat3,48,0.5,49.660,44.740,2.758620690,2,0
+174,vs-bat3,48,0.75,36.605,50.609,2.758620690,2,0
+174,vs-bat3,56,0,59.618,54.698,2.413793103,2,0
+174,vs-bat3,56,0.25,45.976,59.980,2.413793103,2,0
+174,vs-bat3,56,0.5,49.660,44.740,2.758620690,2,0
+174,vs-bat3,56,0.75,55.529,50.609,2.758620690,2,0
+174,vs-bat3,64,0,59.618,54.698,2.413793103,2,0
+174,vs-bat3,64,0.25,64.900,59.980,2.413793103,2,0
+174,vs-bat3,64,0.5,68.584,63.664,2.413793103,2,0
+174,vs-bat3,64,0.75,55.529,50.609,2.758620690,2,0
+174,vs-bat3,80,0,78.542,73.622,2.068965517,2,0
+174,vs-bat3,80,0.25,83.824,78.904,2.068965517,2,0
+174,vs-bat3,80,0.5,68.584,82.588,2.068965517,2,0
+174,vs-bat3,80,0.75,74.453,69.533,2.413793103,2,0
+174,vs-skeleton,48,0,44.564,44.962,5.862068966,6,0
+174,vs-skeleton,48,0.25,49.103,49.525,5.862068966,6,0
+174,vs-skeleton,48,0.5,52.070,52.740,5.862068966,6,0
+174,vs-skeleton,48,0.75,41.604,42.080,6.206896552,6,0
+174,vs-skeleton,56,0,58.081,58.463,5.517241379,6,0
+174,vs-skeleton,56,0.25,49.103,49.613,5.862068966,6,0
+174,vs-skeleton,56,0.5,52.070,52.469,5.862068966,6,0
+174,vs-skeleton,56,0.75,55.121,55.326,5.862068966,6,0
+174,vs-skeleton,64,0,58.081,58.516,5.517241379,6,0
+174,vs-skeleton,64,0.25,62.621,63.097,5.517241379,6,0
+174,vs-skeleton,64,0.5,65.588,65.970,5.517241379,6,0
+174,vs-skeleton,64,0.75,68.638,68.896,5.517241379,6,0
+174,vs-skeleton,80,0,85.115,85.293,4.827586207,6,0
+174,vs-skeleton,80,0.25,76.138,76.790,5.172413793,6,0
+174,vs-skeleton,80,0.5,79.105,79.645,5.172413793,6,0
+174,vs-skeleton,80,0.75,82.156,82.503,5.172413793,6,0
+test engine::tests::survivor_sword_ttk_and_personal_space_measurements ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 39 filtered out; finished in 0.64s
+
+     Running tests/causality.rs (target/debug/deps/causality-86630208d8a35901)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests/content.rs (target/debug/deps/content-9a59fe6e516c99d0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/core.rs (target/debug/deps/core-c9e1543def3e3e62)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/jsmath.rs (target/debug/deps/jsmath-fb18d9c6c162492d)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/live_run.rs (target/debug/deps/live_run-2a500f2f64a31168)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running tests/oracle_prefix.rs (target/debug/deps/oracle_prefix-36ea5184dd57a6c5)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/schedule.rs (target/debug/deps/schedule-6977568b6c2c1a3c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/sim_modules.rs (target/debug/deps/sim_modules-19b481e47351ed7e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+     Running tests/survivor_offers.rs (target/debug/deps/survivor_offers-fffa46330d1578d9)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/survivor_spawning.rs (target/debug/deps/survivor_spawning-bd30f1999a3bcd76)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests/survivor_stats.rs (target/debug/deps/survivor_stats-0db51e3894f1fae8)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/survivor_weapons.rs (target/debug/deps/survivor_weapons-b4eb7ccfae612445)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/survivors.rs (target/debug/deps/survivors-0e33f9d9bae2b18e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.00s
+
