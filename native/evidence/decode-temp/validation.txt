@@ -1,0 +1,29 @@
+changes: 7 paths since eb21368
+friction: 46 records valid
+Using CPython 3.12.14 interpreter at: /opt/homebrew/opt/python@3.12/bin/python3.12
+Creating virtual environment at: .venv
+   Building ps-analysis @ file:///Users/dthurn/playlist_survivors/.worktrees/decode-temp/tools/analysis
+      Built ps-analysis @ file:///Users/dthurn/playlist_survivors/.worktrees/decode-temp/tools/analysis
+Installed 44 packages in 148ms
+All checks passed!
+WARN `--no-project` was provided, but no project was found
+...........................
+----------------------------------------------------------------------
+Ran 27 tests in 0.029s
+
+OK
+changes: 7 paths since eb21368
+crates purity: stream, analysis, sim, eval, players pure
+native check-fast: app
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s
+
+running 43 tests
+.....................................Error: Couldn't open input file ('wht?')
+......
+test result: ok. 43 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.86s
+
+Analyzing dependencies of crates in this directory...
+cargo-machete didn't find any unused dependencies in this directory. Good job!
+Done!
+native check-fast: passed in 2 s
+check-fast: passed in 4 s

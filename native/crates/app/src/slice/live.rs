@@ -218,12 +218,41 @@ pub fn spawn(
         .map_err(|e| e.to_string())
 }
 
+/// Each conversion owns a directory, including failures and malformed output.
+struct DecodeTemp(PathBuf);
+impl DecodeTemp {
+    fn new() -> Result<Self, String> {
+        static NEXT: AtomicU64 = AtomicU64::new(0);
+        loop {
+            let path = std::env::temp_dir().join(format!(
+                "ps-slice-decode-{}-{}",
+                std::process::id(),
+                NEXT.fetch_add(1, Ordering::Relaxed)
+            ));
+            match std::fs::create_dir(&path) {
+                Ok(()) => return Ok(Self(path)),
+                Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
+                Err(e) => return Err(format!("{}: {e}", path.display())),
+            }
+        }
+    }
+}
+impl Drop for DecodeTemp {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.0);
+    }
+}
+
 /// Decodes `path` to mono float samples at `rate` with macOS's `afconvert`.
 pub fn decode(path: &Path, rate: f64) -> Result<Vec<f32>, String> {
     if stream::playlist::is_playlist(path) {
         return stream::playlist::Playlist::load(path)?.decode(rate, |p| decode(p, rate));
     }
-    let tmp = std::env::temp_dir().join(format!("ps-slice-{}.wav", std::process::id()));
+    decode_file(path, rate, DecodeTemp::new()?)
+}
+
+fn decode_file(path: &Path, rate: f64, temp: DecodeTemp) -> Result<Vec<f32>, String> {
+    let tmp = temp.0.join("decoded.wav");
     let status = std::process::Command::new("/usr/bin/afconvert")
         .arg("-f")
         .arg("WAVE")
@@ -239,8 +268,9 @@ pub fn decode(path: &Path, rate: f64) -> Result<Vec<f32>, String> {
         return Err(format!("afconvert failed on {}", path.display()));
     }
     let bytes = std::fs::read(&tmp).map_err(|e| e.to_string())?;
-    let _ = std::fs::remove_file(&tmp);
-    wav_f32(&bytes).ok_or_else(|| "afconvert wrote an unexpected WAV".into())
+    let result = wav_f32(&bytes).ok_or_else(|| "afconvert wrote an unexpected WAV".into());
+    drop(temp);
+    result
 }
 
 /// The float32 samples of a WAV file's `data` chunk.
@@ -300,5 +330,70 @@ mod tests {
         b.extend(0.25f32.to_le_bytes());
         b.extend((-1.0f32).to_le_bytes());
         assert_eq!(wav_f32(&b), Some(vec![0.25, -1.0]));
+    }
+}
+
+#[cfg(test)]
+mod decode_tests {
+    use super::*;
+    fn constant_wav(value: f32) -> Vec<u8> {
+        let n = 1600u32;
+        let mut bytes = b"RIFF".to_vec();
+        bytes.extend((36 + n * 4).to_le_bytes());
+        bytes.extend(b"WAVEfmt ");
+        bytes.extend(16u32.to_le_bytes());
+        bytes.extend(3u16.to_le_bytes());
+        bytes.extend(1u16.to_le_bytes());
+        bytes.extend(8000u32.to_le_bytes());
+        bytes.extend(32000u32.to_le_bytes());
+        bytes.extend(4u16.to_le_bytes());
+        bytes.extend(32u16.to_le_bytes());
+        bytes.extend(b"data");
+        bytes.extend((n * 4).to_le_bytes());
+        for _ in 0..n {
+            bytes.extend(value.to_le_bytes());
+        }
+        bytes
+    }
+    #[test]
+    fn concurrent_decodes_preserve_each_sources_real_pcm() {
+        let inputs = DecodeTemp::new().unwrap();
+        let a = inputs.0.join("a.wav");
+        let b = inputs.0.join("b.wav");
+        std::fs::write(&a, constant_wav(0.125)).unwrap();
+        std::fs::write(&b, constant_wav(-0.25)).unwrap();
+        let barrier = std::sync::Barrier::new(2);
+        let (a, b) = std::thread::scope(|scope| {
+            let x = scope.spawn(|| {
+                barrier.wait();
+                decode(&a, 8000.0).unwrap()
+            });
+            let y = scope.spawn(|| {
+                barrier.wait();
+                decode(&b, 8000.0).unwrap()
+            });
+            (x.join().unwrap(), y.join().unwrap())
+        });
+        assert_eq!(a.len(), 1600);
+        assert_eq!(b.len(), 1600);
+        assert!(a.iter().all(|x| (*x - 0.125).abs() < 1e-6));
+        assert!(b.iter().all(|x| (*x + 0.25).abs() < 1e-6));
+    }
+    #[test]
+    fn conversion_directories_are_unique_and_failures_clean_them() {
+        let a = DecodeTemp::new().unwrap();
+        let b = DecodeTemp::new().unwrap();
+        assert_ne!(a.0, b.0);
+        let path = a.0.clone();
+        std::fs::write(path.join("partial.wav"), b"partial").unwrap();
+        let missing = b.0.join("does-not-exist.wav");
+        assert!(decode_file(&missing, 8000.0, a).is_err());
+        assert!(
+            !path.exists(),
+            "failed conversions must not retain partial output"
+        );
+        let path = b.0.clone();
+        drop(b);
+        assert!(!path.exists());
     }
 }

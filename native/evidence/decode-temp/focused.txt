@@ -1,0 +1,11 @@
+   Compiling app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/decode-temp/native/crates/app)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.63s
+     Running unittests src/main.rs (target/debug/deps/playlist_survivors-117eebc7468b2345)
+
+running 2 tests
+Error: Couldn't open input file ('wht?')
+test slice::live::decode_tests::conversion_directories_are_unique_and_failures_clean_them ... ok
+test slice::live::decode_tests::concurrent_decodes_preserve_each_sources_real_pcm ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 41 filtered out; finished in 0.03s
+
