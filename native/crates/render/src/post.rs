@@ -50,6 +50,8 @@ pub struct Grade {
     /// Each shockwave's centre, radius and strength (none at strength 0).
     pub waves: [[f32; 4]; MAX_WAVES],
     pub pixel: f32,
+    /// Local aura haze: centre, radius in logical pixels, strength (0 disables).
+    pub aura: [f32; 4],
 }
 
 impl Default for Grade {
@@ -70,6 +72,7 @@ impl Default for Grade {
             aberration: 0.0,
             waves: [[0.0; 4]; MAX_WAVES],
             pixel: 1.0,
+            aura: [0.0; 4],
         }
     }
 }
@@ -110,6 +113,7 @@ struct Comp {
     _pad: f32,
     size: [f32; 4],
     waves: [[f32; 4]; MAX_WAVES],
+    aura: [f32; 4],
 }
 
 const SHADER: &str = r"
@@ -123,6 +127,7 @@ struct Comp {
     aberration: f32, pixel: f32, srgb_out: f32, pad: f32,
     size: vec4<f32>,
     waves: array<vec4<f32>, 4>,
+    aura: vec4<f32>,
 };
 struct Blur { step: vec4<f32> };
 
@@ -221,6 +226,12 @@ fn composite_fs(i: Full) -> @location(0) vec4<f32> {
         let q = p / px;
         p.x += sin(q.y * 0.09 + comp.time * 3.0) * 0.6 * comp.haze * px;
         p.y += sin(q.x * 0.07 + comp.time * 2.3) * 0.4 * comp.haze * px;
+    }
+    if comp.aura.w > 0.0 && comp.aura.z > 0.0 {
+        let d = length(p - comp.aura.xy) / comp.aura.z;
+        let envelope = (1.0 - smoothstep(0.65, 1.0, d)) * comp.aura.w;
+        let q = p / px;
+        p += vec2<f32>(sin(q.y * 0.16 + comp.time * 5.0), cos(q.x * 0.13 - comp.time * 4.0)) * envelope * 1.8 * px;
     }
     var c: vec3<f32>;
     if comp.aberration > 0.001 {
@@ -651,6 +662,10 @@ impl Post {
                 *v *= dpi;
             }
         }
+        let mut aura = g.aura;
+        for value in &mut aura[..3] {
+            *value *= dpi;
+        }
         let comp = Comp {
             ambient: g.ambient,
             pulse: g.pulse,
@@ -669,6 +684,7 @@ impl Post {
             _pad: 0.0,
             size: [physical.0 as f32, physical.1 as f32, 0.0, 0.0],
             waves,
+            aura,
         };
         queue.write_buffer(&self.comp, 0, bytemuck::bytes_of(&comp));
         full(encoder, target, &self.composite, &t.composite);

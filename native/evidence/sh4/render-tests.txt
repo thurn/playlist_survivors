@@ -1,0 +1,25 @@
+   Compiling render v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh4-garlic/native/crates/render)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.40s
+     Running unittests src/lib.rs (target/debug/deps/render-43f90f1c04939609)
+
+running 11 tests
+test font::tests::every_glyph_is_five_by_seven ... ok
+test atlas::tests::facings_follow_the_larger_axis ... ok
+test font::tests::text_is_runs_of_pixels_aligned_as_asked ... ok
+test proc::tests::every_texture_fits_the_page_without_overlap ... ok
+test atlas::tests::the_baked_atlases_load ... ok
+test font::bitmap_tests::bitmap_text_uses_baselines_alignment_and_fallback ... ok
+test capture::arc_tests::procedural_arc_has_a_hollow_centre_and_a_directional_tail ... ok
+test capture::persistent_capture_tests::readback_matches_known_red_pixels_with_padded_rows ... ok
+test capture::tests::a_sprite_lands_where_it_is_drawn ... ok
+test capture::aura_tests::local_aura_haze_distorts_world_inside_radius_and_preserves_overlay ... ok
+test capture::tests::the_grade_lights_and_overlay_change_what_is_drawn ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+
+   Doc-tests render
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

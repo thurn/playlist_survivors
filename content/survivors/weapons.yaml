@@ -64,7 +64,7 @@ weapons:
   - id: garlic
     source: GARLIC
     grid: beat
-    implemented: false
+    implemented: true
     evolutionOf: null
     requires: null
     levels:

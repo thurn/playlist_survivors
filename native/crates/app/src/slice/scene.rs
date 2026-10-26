@@ -40,6 +40,7 @@ pub struct Scene {
     pub cards: super::cards::Screen,
     numbers: damage::Numbers,
     sword: super::sword::Sword,
+    garlic: super::garlic::Garlic,
     effects: Effects,
     bitten: f64,
     /// The open field's chunks near the camera, by zone.
@@ -353,6 +354,9 @@ impl Scene {
             }
             match m {
                 Moment::WeaponFire(shot) if shot.id.is_sword() => self.sword.shot(*shot, now),
+                Moment::WeaponFire(shot) if shot.id == sim::survivors::WeaponId::Garlic => {
+                    self.garlic.shot(*shot, now);
+                }
                 // (As emit.ts fires them; native/evidence/vfx/ts-spec.md.) A swing's arc by its
                 // kind, brighter with the groove, in its tier's colour and fitted to its hit.
                 Moment::Swing {
@@ -663,6 +667,17 @@ impl Scene {
                 }
             }
         }
+        self.garlic.draw(
+            view,
+            now,
+            view.run.and_then(|r| r.frozen_beat).unwrap_or(pulse.index),
+            art,
+            &at,
+            scale,
+            out,
+            lights,
+            &mut layers.grade,
+        );
         let mut order: Vec<(f64, Drawn)> = view
             .foes
             .iter()

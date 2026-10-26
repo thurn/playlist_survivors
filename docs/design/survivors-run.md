@@ -1274,6 +1274,18 @@ silent capture, replay and benchmark scheduling comparison. Listening and
 personal-space feel remain an operator row; SH11/SW7 own integrated balance.
 
 ### SH4
+
+Garlic is offered by the existing level 2 preference and follows the hero as a
+persistent aura. Each target is hit once per beat-snapped interval incarnation;
+rank 1/rank 8 use source power 0.5/1.5, raw interval 1.3/1.0 s and converted radius
+49.366/98.733px. Surviving eligible hits increase knockback susceptibility by 0.3;
+its own knockback remains 0, per the runtime source. The ring kick-pulses, brightens
+on accents and adds local heat haze underneath the HUD. Sound cues project from
+existing shot/contact records. [SH4 evidence](../../native/evidence/sh4/README.md)
+keeps source-table/collision tests, rollback and fresh normal File replay, stills
+and a silent synthetic presentation capture. Crowd balance and listening remain
+later sweeps/operator rows; no offer preference or easy knob was retuned.
+
 ### SH5
 ### SH6
 

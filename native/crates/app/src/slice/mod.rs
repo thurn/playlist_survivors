@@ -38,6 +38,7 @@ mod damage;
 #[allow(clippy::pedantic, unused_qualifications, dead_code)]
 mod coreaudio;
 mod fx;
+mod garlic;
 mod gems;
 mod gfx;
 mod hud;
@@ -68,6 +69,7 @@ mod tap;
 mod tier;
 mod timing;
 mod watchdog;
+mod weapons_check;
 
 use std::collections::{HashMap, VecDeque};
 use std::path::{Path, PathBuf};
@@ -161,6 +163,7 @@ struct Options {
     sound_check: Option<PathBuf>,
     cards_check: Option<PathBuf>,
     sword_check: Option<PathBuf>,
+    garlic_check: Option<PathBuf>,
     volume: f32,
     click: bool,
     mute: bool,
@@ -214,6 +217,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         sound_check: None,
         cards_check: None,
         sword_check: None,
+        garlic_check: None,
         volume: 1.0,
         click: false,
         mute: false,
@@ -260,6 +264,13 @@ fn options(args: &[String]) -> Result<Options, String> {
                 o.cards_check = Some(
                     it.next()
                         .ok_or("--cards-check needs an output directory")?
+                        .into(),
+                );
+            }
+            "--garlic-check" => {
+                o.garlic_check = Some(
+                    it.next()
+                        .ok_or("--garlic-check needs an output directory")?
                         .into(),
                 );
             }
@@ -541,8 +552,11 @@ pub fn run(args: &[String]) -> Result<(), String> {
             Err("the heard delay wasn't within 2 ms of M every minute".into())
         };
     }
+    if let Some(dir) = &opts.garlic_check {
+        return weapons_check::run(dir, Some(1));
+    }
     if let Some(dir) = &opts.sword_check {
-        return sword::check::run(dir);
+        return weapons_check::run(dir, None);
     }
     if let Some(dir) = &opts.cards_check {
         return cards::check::run(dir);

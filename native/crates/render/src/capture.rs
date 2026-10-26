@@ -279,3 +279,55 @@ mod arc_tests {
         assert_eq!(red(36, 36), 0, "no trail beyond its span");
     }
 }
+
+#[cfg(test)]
+mod aura_tests {
+    use super::*;
+    use crate::{post::Grade, sprites::Sprite};
+    #[test]
+    fn local_aura_haze_distorts_world_inside_radius_and_preserves_overlay() {
+        let world: Vec<_> = (0..64)
+            .map(|i| Sprite::solid((i * 2) as f32, 0.0, 1.0, 128.0, [1.0, 0.3, 0.2, 1.0]))
+            .collect();
+        let overlay = [Sprite::solid(60.0, 60.0, 8.0, 8.0, [0.0, 1.0, 0.0, 1.0])];
+        let mut gpu = Offscreen::new(&[], 128, 128).unwrap();
+        let grade = Grade::default();
+        gpu.draw(&Frame {
+            clear: [0.0; 3],
+            world: &world,
+            lights: &[],
+            grade,
+            overlay: &overlay,
+        });
+        let plain = gpu.rgba().unwrap();
+        gpu.draw(&Frame {
+            clear: [0.0; 3],
+            world: &world,
+            lights: &[],
+            grade: Grade {
+                aura: [64.0, 64.0, 32.0, 1.0],
+                time: 1.2,
+                ..grade
+            },
+            overlay: &overlay,
+        });
+        let bent = gpu.rgba().unwrap();
+        let pixel = |bytes: &Vec<u8>, x: usize, y: usize| {
+            bytes[(y * 128 + x) * 4..(y * 128 + x + 1) * 4].to_vec()
+        };
+        assert_eq!(
+            pixel(&plain, 8, 8),
+            pixel(&bent, 8, 8),
+            "outside lens unchanged"
+        );
+        assert_eq!(
+            pixel(&plain, 64, 64),
+            pixel(&bent, 64, 64),
+            "HUD overlay unaffected"
+        );
+        assert!(
+            (40..88).any(|x| (40..55).any(|y| pixel(&plain, x, y) != pixel(&bent, x, y))),
+            "world texture within lens must bend"
+        );
+    }
+}

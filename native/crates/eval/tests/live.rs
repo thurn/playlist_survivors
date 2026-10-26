@@ -767,6 +767,13 @@ fn a_real_xp_offer_pick_applies_once_across_speculative_rollback() {
                 .map(|s| usize::from(s.rank))
                 .sum::<usize>();
         assert!(picks > 0, "real gem XP opened at least one offer");
+        assert!(
+            inventory
+                .weapons
+                .rank(sim::survivors::WeaponId::Garlic)
+                .is_some(),
+            "first real XP choice exercises the persistent aura across rollback"
+        );
         assert_eq!(ranks, 1 + picks, "each confirm applied exactly one rank");
         (e.settled_log.take().unwrap(), inventory, e.stats, picks)
     };
@@ -987,4 +994,78 @@ fn sword_impact_sounds_follow_existing_grid_records_without_hash_records() {
         )));
     }
     assert!(seen > 0, "actual sword impacts must be exercised");
+}
+
+#[test]
+fn garlic_sound_projection_uses_actual_shots_and_grid_contacts() {
+    use eval::live::Cause;
+    let (content, log) = fast_offer_fixture();
+    let mut e = Engine::new(
+        &source("levels/survivors.yaml"),
+        &content,
+        &IndexMap::new(),
+        0.2,
+        true,
+        true,
+        f64::INFINITY,
+    )
+    .unwrap();
+    e.sim.disable_hero_damage_for_check();
+    e.settled_log = Some(Vec::new());
+    e.feed(|l| *l = log);
+    let mut picked = None;
+    let (mut pulses, mut contacts) = (0, 0);
+    for k in 1..=2400 {
+        let now = f64::from(k) / 120.0;
+        let offer = e.view.borrow().run.and_then(|r| r.offer);
+        if let Some(o) = offer {
+            let token = (o.level, o.reveals[2].to_bits());
+            if picked != Some(token) && now >= o.reveals[2] + 0.03 {
+                picked = Some(token);
+                e.key(now, InputKey::Confirm, true);
+                e.key(now + 0.005, InputKey::Confirm, false);
+            }
+        }
+        e.frame(now, 0.3);
+        let j = e.journal.borrow();
+        let all = || {
+            (0..j.end())
+                .filter_map(|k| j.get(k))
+                .chain(e.settled_log.as_ref().unwrap().iter())
+        };
+        for c in e.causes() {
+            match c.cause {
+                Cause::WeaponPulse {
+                    s, what, accent, ..
+                } if what == sim::survivors::WeaponId::Garlic => {
+                    assert!(all().any(|(t,r)| *t==s && matches!(r,Record::Moment(Moment::WeaponFire(shot)) if shot.id==what && shot.accent==accent)));
+                    pulses += 1;
+                }
+                Cause::WeaponImpact {
+                    s,
+                    what: sim::survivors::WeaponId::Garlic,
+                    ..
+                } => {
+                    assert!(all().any(|(t,r)| *t==s && matches!(r,Record::Moment(Moment::EnemyImpact{hit}) if matches!(hit.as_ref(),Moment::Hit{what,..} if what=="garlic"))));
+                    contacts += 1;
+                }
+                Cause::Weapon { ref what, .. } => assert_ne!(
+                    what, "garlic",
+                    "legacy fire is replaced by typed projection"
+                ),
+                _ => {}
+            }
+        }
+        assert!(all().all(|(_, r)| !matches!(
+            r,
+            Record::Sound(eval::live::Caused {
+                cause: Cause::WeaponPulse { .. } | Cause::WeaponImpact { .. },
+                ..
+            })
+        )));
+    }
+    assert!(
+        pulses > 0 && contacts > 0,
+        "actual garlic pulse/contact paths exercised: {pulses}/{contacts}"
+    );
 }

@@ -155,7 +155,14 @@ pub enum Cause {
         what: String,
         caught: bool,
     },
-    /// A grid-aligned sword reaction, projected from its existing record (one transient per step).
+    /// A typed pulse projected from an existing weapon-shot record (no hash record).
+    WeaponPulse {
+        s: f64,
+        x: f64,
+        what: sim::survivors::WeaponId,
+        accent: bool,
+    },
+    /// A grid-aligned weapon reaction, projected from its existing record (one transient per step).
     WeaponImpact {
         s: f64,
         what: sim::survivors::WeaponId,
@@ -1346,12 +1353,28 @@ impl Engine {
         let mut k = self.sound_idx;
         while let Some((s, rec)) = j.get(k) {
             let cause = match rec {
+                Record::Sound(Caused {
+                    cause: Cause::Weapon { what, .. },
+                    ..
+                }) if shown.run.is_some() && what == "garlic" => None,
                 Record::Sound(c) => Some(c.cause.clone()),
+                Record::Moment(Moment::WeaponFire(shot))
+                    if shown.run.is_some() && shot.id == sim::survivors::WeaponId::Garlic =>
+                {
+                    Some(Cause::WeaponPulse {
+                        s: *s,
+                        x: shot.x,
+                        what: shot.id,
+                        accent: shot.accent,
+                    })
+                }
                 Record::Moment(Moment::EnemyImpact { hit }) if shown.run.is_some() => {
                     match hit.as_ref() {
                         Moment::Hit { what, weight, .. } => {
                             sim::survivors::WeaponId::from_name(what)
-                                .filter(|id| id.is_sword())
+                                .filter(|id| {
+                                    id.is_sword() || *id == sim::survivors::WeaponId::Garlic
+                                })
                                 .map(|what| Cause::WeaponImpact {
                                     s: *s,
                                     what,
@@ -1425,7 +1448,8 @@ impl Cause {
             | Cause::Step { s, .. }
             | Cause::LevelUp { s }
             | Cause::Gem { s, .. }
-            | Cause::WeaponImpact { s, .. } => *s,
+            | Cause::WeaponImpact { s, .. }
+            | Cause::WeaponPulse { s, .. } => *s,
         }
     }
 }

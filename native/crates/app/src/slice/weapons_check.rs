@@ -2,7 +2,7 @@
 use crate::slice::{HudState, KeyLight, Scene, World, clip::Clip, damage, hud, live, scene};
 use render::{atlas::Atlases, capture, post::Frame};
 use std::path::Path;
-pub fn run(dir: &Path) -> Result<(), String> {
+pub fn run(dir: &Path, garlic_rank: Option<u8>) -> Result<(), String> {
     if std::env::var_os("PS_NATIVE_BATCH").is_none() {
         let status = std::process::Command::new("taskpolicy")
             .arg("-b")
@@ -49,8 +49,8 @@ pub fn run(dir: &Path) -> Result<(), String> {
             })
             .collect(),
         forecasts: Some(vec![stream::Forecast {
-            t: 4.0 * period,
-            known_at: 3.0 * period,
+            t: if garlic_rank.is_some() { 6.0 } else { 4.0 } * period,
+            known_at: if garlic_rank.is_some() { 5.0 } else { 3.0 } * period,
             cycle: 4.0,
             confidence: 1.0,
         }]),
@@ -58,6 +58,18 @@ pub fn run(dir: &Path) -> Result<(), String> {
     };
     let mut replay = stream::Replay::new(log);
     let mut engine = world.engine(true)?;
+    if let Some(rank) = garlic_rank {
+        engine.feed(|l| replay.feed_to(l, 0.0));
+        engine.frame(0.0, 0.0);
+        // Presentation-only initial loadout. Lead zero avoids speculative restore
+        // of this injected starting inventory; rollback is tested separately.
+        for _ in 0..rank {
+            engine
+                .sim
+                .learn_survivor_weapon(sim::survivors::WeaponId::Garlic)
+                .map_err(|e| format!("fixture Garlic: {e:?}"))?;
+        }
+    }
     let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
     let (w, h) = (1280u32, 720u32);
     let mut gpu = capture::Offscreen::new(&art.pages, w, h)?;
@@ -68,10 +80,17 @@ pub fn run(dir: &Path) -> Result<(), String> {
     for tick in 1..=480 {
         let s = f64::from(tick) / 120.0;
         engine.feed(|l| replay.feed_to(l, s));
-        engine.frame(s, 0.3);
-        let moments = engine.view.borrow_mut().take_moments();
+        engine.frame(s, if garlic_rank.is_some() { 0.0 } else { 0.3 });
+        let mut moments = engine.view.borrow_mut().take_moments();
+        if garlic_rank.is_some() {
+            // Isolate the aura in this presentation fixture; inventory/combat are unchanged.
+            moments.retain(|m| !matches!(m,eval::live::Moment::WeaponFire(s) if s.id.is_sword()));
+        }
         for m in &moments {
             if let eval::live::Moment::WeaponFire(shot) = m {
+                if garlic_rank.is_some() && shot.id != sim::survivors::WeaponId::Garlic {
+                    continue;
+                }
                 shots += 1;
                 heavy += usize::from(shot.accent);
             }
@@ -149,11 +168,23 @@ pub fn run(dir: &Path) -> Result<(), String> {
         });
         let rgba = gpu.rgba()?;
         clip.frame(&rgba)?;
-        if !normal && s >= 2.0 * period + 0.1 {
+        if !normal
+            && s >= if garlic_rank.is_some() {
+                0.1
+            } else {
+                2.0 * period + 0.1
+            }
+        {
             capture::write_png(&dir.join("normal.png"), w, h, &rgba)?;
             normal = true;
         }
-        if !accent && s >= 4.0 * period + 0.1 {
+        if !accent
+            && s >= if garlic_rank.is_some() {
+                3.0
+            } else {
+                4.0 * period + 0.1
+            }
+        {
             capture::write_png(&dir.join("accent.png"), w, h, &rgba)?;
             accent = true;
         }
@@ -161,11 +192,18 @@ pub fn run(dir: &Path) -> Result<(), String> {
     if !normal || !accent || heavy == 0 {
         return Err("sword fixture missed its normal/accent shots".into());
     }
-    clip.encode(&dir.join("spin-and-accent.mp4"))?;
+    clip.encode(&dir.join(if garlic_rank.is_some() {
+        "aura-and-accent.mp4"
+    } else {
+        "spin-and-accent.mp4"
+    }))?;
+    let setup = garlic_rank.map_or_else(
+        || "normal sword, speculative lead 0.3".to_owned(),
+        |rank| format!("Garlic rank {rank}, injected initial loadout, lead 0, sword FX hidden"),
+    );
     eprintln!(
-        "sword-check: {} frames at30fps,1280x720,128BPM, {shots} real shots/{heavy} accent, radius{}; synthetic known beats/forecast, no enemies, no pacing/survival claim, silent capture",
-        clip.count(),
-        sim::survivors::SWORD_BASE_RADIUS
+        "weapon-check: {} frames at 30 fps, 1280x720, 128 BPM, {shots} matching real shots/{heavy} accent; {setup}; synthetic known beats/forecast, no enemies, no pacing/survival/rollback claim, silent capture",
+        clip.count()
     );
     Ok(())
 }

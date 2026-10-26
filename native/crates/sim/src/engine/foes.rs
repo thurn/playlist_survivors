@@ -162,6 +162,7 @@ impl Sim {
             knock_t: 0.0,
             recoil_until: f64::NEG_INFINITY,
             recoil_v: (0.0, 0.0),
+            knockback: def.survivors.map_or(0.0, |s| s.knockback),
             weight,
             charge_until: f64::NEG_INFINITY,
             land_s: None,

@@ -99,5 +99,5 @@ fn runtime_specific_intervals_and_crit_flags_are_preserved() {
             .interval_depends_on_duration
     );
     assert!(catalog.get(WeaponId::Sword).implemented);
-    assert!(!catalog.get(WeaponId::Garlic).implemented);
+    assert!(catalog.get(WeaponId::Garlic).implemented);
 }

@@ -1,0 +1,30 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh4-garlic/native/crates/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 6.48s
+     Running unittests src/lib.rs (native/target/debug/deps/sim-1ebf1e278f138957)
+
+running 22 tests
+test engine::tests::survivor_field_keeps_400_gems_and_merges_xp_into_the_farthest_from_the_hero ... ok
+test engine::tests::survivor_health_uses_armor_lockout_and_heals_the_added_hollow_heart_maximum ... ok
+test engine::tests::survivor_full_field_preserves_a_boss_and_recycling_keeps_its_hp_and_reward ... ok
+test engine::tests::survivor_passive_card_applies_the_real_delta_and_heals_added_maximum ... ok
+test engine::tests::survivor_lunge_has_notice_bites_on_the_peak_and_only_once_per_beat ... ok
+test engine::tests::survivor_new_committed_beat_replaces_a_pending_free_pulse_resume ... ok
+test engine::tests::survivor_cards_resume_on_free_pulse_without_a_beat ... ok
+test engine::tests::survivor_card_picks_wait_for_reveal_chain_and_apply_once ... ok
+test engine::tests::survivor_everything_maxed_card_heals_the_level_knob_once ... ok
+test engine::tests::survivor_early_roles_step_at_the_design_subdivisions_and_stay_finite ... ok
+test engine::tests::survivor_lunge_rechecks_contact_at_the_peak_and_has_no_surprise_resume_bite ... ok
+test engine::tests::survivor_lunge_free_pulse_is_generation_guarded_and_reactions_use_sixteenths ... ok
+test engine::tests::survivor_interval_framework_streaming_equals_batch_across_frame_cuts_and_freeze ... ok
+test engine::tests::survivor_zero_xp_drops_no_gem_and_recoil_starts_on_the_next_sixteenth ... ok
+test engine::tests::survivor_sword_tuned_radius_has_a_real_near_and_far_boundary ... ok
+test engine::tests::survivor_accent_shots_are_marked_without_changing_damage ... ok
+test engine::tests::survivor_lunges_and_gaits_never_read_the_uncommitted_tail ... ok
+test engine::tests::survivor_spawner_holds_grid_admissions_and_does_not_catch_up_frozen_ticks ... ok
+test engine::tests::survivor_world_time_ignores_stops_dips_and_rates_but_holds_recovery_in_freeze ... ok
+test engine::tests::survivor_sword_actual_damage_matches_whip_dps_at_three_tempos ... ok
+test engine::tests::survivor_spawner_all_minutes_obeys_source_rosters_minimum_cap_and_scaled_hp ... ok
+test engine::tests::survivor_sword_ttk_and_personal_space_measurements ... ok
+
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 22 filtered out; finished in 0.63s
+

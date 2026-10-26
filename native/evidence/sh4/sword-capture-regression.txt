@@ -1,0 +1,1 @@
+weapon-check: 120 frames at30fps,1280x720,128BPM, 9 matching real shots/1 accent; Garlic rankNone (injected initial loadout, lead0, sword FX hidden) or normal sword; synthetic known beats/forecast, no enemies, no pacing/survival/rollback claim, silent capture

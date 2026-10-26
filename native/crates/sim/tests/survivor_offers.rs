@@ -41,9 +41,9 @@ fn preferences_skip_unbuilt_and_keep_distinct_viable_choices() {
     assert_eq!(
         current.map(|c| c.item),
         [
+            Item::Weapon(WeaponId::Garlic),
             Item::Weapon(WeaponId::Sword),
-            Item::Passive(PassiveId::Spinach),
-            Item::Passive(PassiveId::HollowHeart)
+            Item::Passive(PassiveId::Spinach)
         ]
     );
 }
@@ -152,5 +152,17 @@ fn an_evolved_weapon_blocks_reoffering_its_base() {
             .cards(7, inv, &built_catalog())
             .iter()
             .all(|c| c.item != Item::Weapon(WeaponId::Sword))
+    );
+}
+
+#[test]
+fn shipped_first_offer_now_contains_the_implemented_garlic() {
+    let cards = offer_table().cards(2, initial(), weapon_catalog());
+    assert_eq!(cards[0].item, Item::Weapon(WeaponId::Garlic));
+    assert_eq!((cards[0].before, cards[0].after), (0, 1));
+    assert!(
+        cards
+            .iter()
+            .all(|c| !matches!(c.item,Item::Weapon(w) if !weapon_catalog().get(w).implemented))
     );
 }

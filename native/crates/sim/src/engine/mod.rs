@@ -685,6 +685,8 @@ struct Foe {
     knock_t: f64,
     recoil_until: f64,
     recoil_v: (f64, f64),
+    /// Mutable VS susceptibility; Garlic can increase it on a surviving hit.
+    knockback: f64,
     weight: f64,
     charge_until: f64,
     land_s: Option<f64>,
@@ -925,6 +927,7 @@ struct SimState {
     freeze: freeze::Freeze,
     survivor: Option<crate::survivors::Progress>,
     spawner: crate::survivors::Spawner,
+    garlic: Option<weapons::GarlicAura>,
     w: f64,
     rate_s: f64,
     q: Queue,
@@ -1929,6 +1932,7 @@ fn fresh_state(env: &Env) -> SimState {
         s: 0.0,
         run_s: 0.0,
         spawner: crate::survivors::Spawner::default(),
+        garlic: None,
         freeze: freeze::Freeze::default(),
         survivor: level
             .survivors
@@ -3039,6 +3043,157 @@ mod tests {
         }
     }
 
+    fn garlic_measurement(
+        bpm: f64,
+        rank: u8,
+    ) -> (
+        Rc<std::cell::RefCell<crate::recorder::LogRecorder>>,
+        Sim,
+        usize,
+    ) {
+        let (rec, mut sim) =
+            sword_measurement_base(bpm, 1, crate::survivors::StatDelta::default(), false);
+        sim.st.survivor.as_mut().unwrap().arsenal =
+            crate::survivors::Arsenal::measurement_weapon(crate::survivors::WeaponId::Garlic, rank);
+        let def = sim
+            .env
+            .input
+            .lib
+            .enemies
+            .get_index_of("vs-skeleton")
+            .unwrap();
+        let data = &mut Rc::get_mut(&mut sim.env).unwrap().input.lib.enemies[def];
+        data.speed = 0.0;
+        let stats = data.survivors.as_mut().unwrap();
+        stats.speed = 0.0;
+        stats.xp = 0.0;
+        (rec, sim, def)
+    }
+    #[test]
+    fn garlic_source_rows_and_persistent_target_cadence() {
+        for (rank, power, area, interval) in [(1, 0.5, 1.0, 1.3), (8, 1.5, 2.0, 1.0)] {
+            let (rec, mut sim, def) = garlic_measurement(120.0, rank);
+            let radius = 0.32 * crate::survivors::PX_PER_VS_UNIT * area;
+            sim.spawn_foe(def, 20.0, 0.0, Some(1000.0));
+            sim.spawn_foe(def, 0.0, 25.0, Some(1000.0));
+            sim.spawn_foe(def, radius + 50.0, 0.0, Some(1000.0));
+            sim.advance_to(0.2);
+            sim.spawn_foe(def, 30.0, 0.0, Some(1000.0)); // enters an already existing aura
+            sim.advance_to(0.9);
+            {
+                let r = rec.borrow();
+                for i in [0, 1, 3] {
+                    assert_eq!(r.enemies[i].fates.len(), 1);
+                    assert!((r.enemies[i].fates[0].damage - power).abs() < 1e-9);
+                }
+                assert!(r.enemies[2].fates.is_empty());
+                let shot = r.weapon_shots[0];
+                assert!((shot.radius - radius).abs() < 1e-9);
+                assert_eq!(shot.amount, 1);
+                assert_eq!(shot.knockback, 0.0);
+            }
+            sim.advance_to(1.51);
+            let r = rec.borrow();
+            assert_eq!(r.weapon_shots.len(), 2);
+            assert!((r.weapon_shots[1].ready_run - interval).abs() < 1e-9);
+            assert_eq!(r.weapon_shots[1].song, if rank == 1 { 1.5 } else { 1.0 });
+            for i in [0, 1, 3] {
+                assert_eq!(r.enemies[i].fates.len(), 2);
+            }
+            eprintln!(
+                "Garlic rank{rank}: power{power} area{area} radius{radius:.6} raw interval{interval}s, shots {:?}, per-target hits2 (including mid-cycle entry), outside0",
+                r.weapon_shots.iter().map(|s| s.song).collect::<Vec<_>>()
+            );
+        }
+        let (rec, mut sim, def) = garlic_measurement(174.0, 8);
+        sim.apply_survivor_stats(crate::survivors::StatDelta {
+            cooldown: -0.4,
+            ..Default::default()
+        });
+        sim.spawn_foe(def, 20.0, 0.0, Some(1000.0));
+        sim.advance_to(1.4);
+        let r = rec.borrow();
+        assert_eq!(
+            r.enemies[0].fates.len(),
+            3,
+            "1000ms generic hitDelay must not throttle aura incarnations"
+        );
+        assert!((r.weapon_shots[1].song - 120.0 / 174.0).abs() < 1e-9);
+        eprintln!(
+            "Garlic rank8 cooldown0.6 at174BPM: {:?} hits (generic1000ms delay ignored)",
+            r.enemies[0].fates.iter().map(|f| f.w).collect::<Vec<_>>()
+        );
+    }
+    #[test]
+    fn garlic_persistent_aura_moves_with_the_hero_between_pulses() {
+        let (rec, mut sim, def) = garlic_measurement(120.0, 1);
+        sim.spawn_foe(def, 80.0, 0.0, Some(1000.0));
+        sim.advance_to(0.1);
+        assert!(rec.borrow().enemies[0].fates.is_empty());
+        sim.key(KeyEvent {
+            s: 0.15,
+            key: InputKey::Right,
+            kind: KeyEventKind::Press,
+            id: None,
+        });
+        sim.advance_to(0.9);
+        let r = rec.borrow();
+        assert_eq!(r.weapon_shots.len(), 1, "no second aura incarnation yet");
+        assert_eq!(
+            r.enemies[0].fates.len(),
+            1,
+            "existing aura follows hero into target"
+        );
+        assert!(r.enemies[0].fates[0].w > 0.1);
+    }
+
+    #[test]
+    fn garlic_debuff_obeys_source_eligibility_and_increases_later_recoil() {
+        for (start, resistance, after) in [
+            (0.0, 0.0, 0.3),
+            (2.9, 0.0, 3.2),
+            (3.0, 0.0, 3.0),
+            (0.0, 1.0, 0.0),
+        ] {
+            let (_, mut sim, def) = garlic_measurement(120.0, 1);
+            let stats = Rc::get_mut(&mut sim.env).unwrap().input.lib.enemies[def]
+                .survivors
+                .as_mut()
+                .unwrap();
+            stats.knockback = start;
+            stats.max_knockback = 3.0;
+            stats.res_debuffs = resistance;
+            let fi = sim.spawn_foe(def, 20.0, 0.0, Some(1000.0));
+            sim.advance_to(0.1);
+            assert!((sim.st.foes[fi].knockback - after).abs() < 1e-9);
+            assert!(
+                sim.st.foes[fi].recoil_until.is_infinite(),
+                "Garlic own knockback is zero"
+            );
+            let hit = sim.add_hit(
+                super::combat::HitSpec {
+                    source: crate::recorder::HitSource::Weapon,
+                    what: "sword".into(),
+                    weight: crate::recorder::Weight::Light,
+                    primary: true,
+                    shape: crate::core::geometry::Shape::Circle {
+                        x: 0.0,
+                        y: 0.0,
+                        radius: 100.0,
+                    },
+                    dir: 0.0,
+                    accent: 0.0,
+                    damage: 0.1,
+                    group: None,
+                },
+                None,
+            );
+            sim.damage(fi, &hit);
+            sim.advance_to(0.13);
+            assert_eq!(sim.st.foes[fi].recoil_until.is_finite(), after > 0.0);
+        }
+    }
+
     #[test]
     fn survivor_sword_actual_damage_matches_whip_dps_at_three_tempos() {
         use crate::survivors::{StatDelta, WeaponId, weapon_catalog};
@@ -3381,6 +3536,7 @@ mod tests {
     fn survivor_card_picks_wait_for_reveal_chain_and_apply_once() {
         let mut sim = survivor_sim();
         sim.st.health = 80.0;
+        let initial = sim.survivor_inventory().unwrap();
         sim.gem_arrives(0, 45.0);
         assert_eq!(sim.st.survivor.as_ref().unwrap().pending_levels, 3);
         assert_eq!(sim.run_state().offer.unwrap().level, 2);
@@ -3398,11 +3554,9 @@ mod tests {
             InputKey::Confirm,
         );
         assert_eq!(
-            sim.survivor_inventory()
-                .unwrap()
-                .weapons
-                .rank(crate::survivors::WeaponId::Sword),
-            Some(1)
+            sim.survivor_inventory().unwrap(),
+            initial,
+            "early confirm applies nothing"
         );
         for level in 2..=4 {
             let offer = sim.run_state().offer.unwrap();
@@ -3410,13 +3564,19 @@ mod tests {
             let t = offer.reveals[2] + 0.01;
             key(&mut sim, t, KeyEventKind::Press, InputKey::Confirm);
             sim.advance_to(t + 0.001);
-            assert_eq!(
-                sim.survivor_inventory()
-                    .unwrap()
-                    .weapons
-                    .rank(crate::survivors::WeaponId::Sword),
-                Some(level as u8)
-            );
+            let applied = sim.survivor_inventory().unwrap();
+            assert_eq!(offer.cards[0].item.rank(applied), offer.cards[0].after);
+            let total: usize = applied
+                .weapons
+                .iter()
+                .map(|s| usize::from(s.rank))
+                .sum::<usize>()
+                + applied
+                    .passives
+                    .iter()
+                    .map(|s| usize::from(s.rank))
+                    .sum::<usize>();
+            assert_eq!(total, level, "exactly one rank per confirmed offer");
             // A held/repeated confirm cannot select the next chained card.
             key(&mut sim, t + 0.002, KeyEventKind::Press, InputKey::Confirm);
             key(
@@ -3426,11 +3586,9 @@ mod tests {
                 InputKey::Confirm,
             );
             assert_eq!(
-                sim.survivor_inventory()
-                    .unwrap()
-                    .weapons
-                    .rank(crate::survivors::WeaponId::Sword),
-                Some(level as u8)
+                sim.survivor_inventory().unwrap(),
+                applied,
+                "held confirm applies no second pick"
             );
         }
         assert!(sim.run_state().offer.is_none());
@@ -3442,13 +3600,19 @@ mod tests {
     fn survivor_passive_card_applies_the_real_delta_and_heals_added_maximum() {
         use crate::survivors::{Item, PassiveId};
         let mut sim = survivor_sim();
+        max_built_survivor_weapons(&mut sim);
         sim.st.health = 80.0;
         sim.gem_arrives(0, 5.0);
         let offer = sim.run_state().offer.unwrap();
-        assert_eq!(offer.cards[2].item, Item::Passive(PassiveId::HollowHeart));
+        let index = offer
+            .cards
+            .iter()
+            .position(|c| c.item == Item::Passive(PassiveId::HollowHeart))
+            .expect("maxed weapons leave Hollow Heart offerable");
+        let select = [InputKey::Left, InputKey::Up, InputKey::Right][index];
         let t = offer.reveals[2] + 0.01;
-        key(&mut sim, t, KeyEventKind::Press, InputKey::Right);
-        key(&mut sim, t + 0.001, KeyEventKind::Release, InputKey::Right);
+        key(&mut sim, t, KeyEventKind::Press, select);
+        key(&mut sim, t + 0.001, KeyEventKind::Release, select);
         key(&mut sim, t + 0.002, KeyEventKind::Press, InputKey::Confirm);
         sim.advance_to(t + 0.01);
         assert_eq!(sim.health_max(), 144.0);
@@ -3496,13 +3660,29 @@ mod tests {
         sim.advance_to(1.6);
         assert!(!sim.st.freeze.frozen);
     }
+    fn max_built_survivor_weapons(sim: &mut Sim) {
+        for def in crate::survivors::weapon_catalog()
+            .weapons
+            .values()
+            .filter(|d| d.implemented && d.evolution_of.is_none())
+        {
+            while sim
+                .survivor_inventory()
+                .unwrap()
+                .weapons
+                .rank(def.id)
+                .unwrap_or(0)
+                < def.max_rank()
+            {
+                sim.learn_survivor_weapon(def.id).unwrap();
+            }
+        }
+    }
     #[test]
     fn survivor_everything_maxed_card_heals_the_level_knob_once() {
-        use crate::survivors::{Item, PassiveId, WeaponId};
+        use crate::survivors::{Item, PassiveId};
         let mut sim = survivor_sim();
-        for _ in 1..8 {
-            sim.learn_survivor_weapon(WeaponId::Sword).unwrap();
-        }
+        max_built_survivor_weapons(&mut sim);
         for passive in [
             PassiveId::Spinach,
             PassiveId::HollowHeart,

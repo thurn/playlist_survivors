@@ -1,5 +1,4 @@
 //! Short, bounded spin afterimages driven only by published shots, never by the simulation.
-pub mod check;
 use render::{
     atlas::Atlases,
     post::Light,

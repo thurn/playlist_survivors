@@ -5,6 +5,14 @@ use crate::core::geometry::Shape;
 use crate::recorder::{HitSource, Weight};
 use crate::survivors::{Inventory, Shot, SlotError, WeaponId, weapon_catalog};
 
+/// One persistent aura incarnation: a target can enter at any time, but is hit
+/// only once until the next interval-driven incarnation (VS GarlicProjectile).
+#[derive(Clone, Debug)]
+pub(super) struct GarlicAura {
+    shot: Shot,
+    hit: std::collections::HashSet<usize>,
+}
+
 impl Sim {
     fn weapons_active(&self) -> bool {
         self.st.survivor.is_some()
@@ -112,6 +120,8 @@ impl Sim {
                 },
                 radius: if id.is_sword() {
                     crate::survivors::SWORD_BASE_RADIUS * weapon.area * stats.area
+                } else if id == WeaponId::Garlic {
+                    0.32 * crate::survivors::PX_PER_VS_UNIT * weapon.area * stats.area
                 } else {
                     0.0
                 },
@@ -132,6 +142,12 @@ impl Sim {
             };
             self.rec.fire(id.as_str(), self.st.s);
             self.rec.weapon_shot(shot);
+            if id == WeaponId::Garlic {
+                self.st.garlic = Some(GarlicAura {
+                    shot,
+                    hit: std::collections::HashSet::new(),
+                });
+            }
             // Later weapon beads implement their delivery on the shared shot schedule.
             if id.is_sword() {
                 let hit = self.add_hit(
@@ -155,6 +171,58 @@ impl Sim {
                 self.apply_hit(&hit, None);
             }
         }
+        self.tick_garlic();
+    }
+    fn tick_garlic(&mut self) {
+        let Some(mut aura) = self.st.garlic.take() else {
+            return;
+        };
+        let hp = self.hero_pose(self.st.w);
+        let shape = Shape::Circle {
+            x: hp.x,
+            y: hp.y,
+            radius: aura.shot.radius,
+        };
+        let targets: Vec<_> = self
+            .st
+            .alive
+            .iter()
+            .copied()
+            .filter(|&fi| {
+                if aura.hit.contains(&fi) || !self.hittable(fi) {
+                    return false;
+                }
+                let (x, y) = self.pos(fi, self.st.w);
+                crate::aim::catches(&shape, x, y, self.st.foes[fi].r)
+            })
+            .collect();
+        if !targets.is_empty() {
+            let hit = self.add_hit(
+                HitSpec {
+                    source: HitSource::Weapon,
+                    what: aura.shot.id.as_str().into(),
+                    weight: if aura.shot.accent {
+                        Weight::Heavy
+                    } else {
+                        Weight::Light
+                    },
+                    primary: true,
+                    shape,
+                    dir: 0.0,
+                    accent: f64::from(aura.shot.accent),
+                    damage: aura.shot.damage,
+                    group: None,
+                },
+                None,
+            );
+            for fi in targets {
+                aura.hit.insert(fi);
+                self.damage(fi, &hit);
+            }
+            let foes = &self.st.foes;
+            self.st.alive.retain(|&fi| foes[fi].alive);
+        }
+        self.st.garlic = Some(aura);
     }
     pub(super) fn publish_inventory(&mut self) {
         if let Some(p) = &self.st.survivor {

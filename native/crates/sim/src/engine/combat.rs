@@ -147,13 +147,18 @@ impl Sim {
                     .level(rank)
                     .knockback
             });
-            if data.knockback * weapon_kb > 0.0 {
+            let f = &mut self.st.foes[fi];
+            if h.what == "garlic" && data.res_debuffs < 1.0 && f.knockback < data.max_knockback {
+                // Source tests before adding: the last increment may overshoot.
+                f.knockback += 0.3;
+            }
+            if f.knockback * weapon_kb > 0.0 {
                 let at = self.next_enemy_sixteenth(self.st.s);
                 self.st.q.push(
                     at,
                     Ev::Recoil {
                         foe: fi,
-                        multiplier: data.knockback * weapon_kb,
+                        multiplier: self.st.foes[fi].knockback * weapon_kb,
                     },
                 );
             }

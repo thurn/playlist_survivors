@@ -507,6 +507,16 @@ impl Sounds {
                 c.every = Some(Every::Sixteenth);
                 vec![c]
             }
+            Cause::WeaponPulse { s, x, what, accent } => {
+                let key = format!(
+                    "{}-{}fire",
+                    what.as_str(),
+                    if *accent { "accent-" } else { "" }
+                );
+                let mut c = Call::new(key, *s, *x, if *accent { 0.7 } else { 0.5 });
+                c.owner = Some(*s);
+                vec![c]
+            }
             Cause::WeaponImpact { s, what, accent } => {
                 let key = format!(
                     "{}-{}hit",
@@ -976,6 +986,61 @@ mod survivor_tests {
         );
         let Command::Play(v) = out[0] else { panic!() };
         assert!((v.at + v.lead + at.l_out - (101.0 + 1.0 / 6.0)).abs() < 1e-6);
+    }
+    #[test]
+    fn garlic_pulse_and_contact_cues_use_real_palette_and_cancel_on_retraction() {
+        let (mut sounds, _) = decoded();
+        let b = tests::beats(8, 0.5, 1.0);
+        let at = At {
+            seed: 1.0,
+            final_before: -1.0,
+            run_start: 0.0,
+            beats: &b,
+            gate: 0.2,
+            camera: (0.0, 0.0, 1.0),
+            clock: (0.0, 100.0),
+            l_out: 0.02,
+            never_late: NEVER_LATE,
+            now: 100.0,
+            ahead: 0.0,
+        };
+        let mut causes = Vec::new();
+        for accent in [false, true] {
+            let s = if accent { 2.0 } else { 1.0 };
+            causes.push(Caused {
+                cause: Cause::WeaponPulse {
+                    s,
+                    x: 0.0,
+                    what: sim::survivors::WeaponId::Garlic,
+                    accent,
+                },
+                known: 0.5,
+            });
+            causes.push(Caused {
+                cause: Cause::WeaponImpact {
+                    s: s + 0.125,
+                    what: sim::survivors::WeaponId::Garlic,
+                    accent,
+                },
+                known: 0.5,
+            });
+        }
+        let mut out = Vec::new();
+        sounds.reconcile(&causes, &at, &mut out);
+        assert_eq!(
+            out.len(),
+            4,
+            "normal/accent fire and actual impact clips decode"
+        );
+        for (command, s) in out.iter().zip([1.0, 1.125, 2.0, 2.125]) {
+            let Command::Play(v) = command else { panic!() };
+            assert!((v.at + v.lead + at.l_out - (100.0 + s)).abs() < 1e-6);
+            assert!(!v.duck);
+        }
+        out.clear();
+        sounds.reconcile(&[], &at, &mut out);
+        assert_eq!(out.len(), 4);
+        assert!(out.iter().all(|c| matches!(c, Command::Cancel(_))));
     }
     #[test]
     fn screen_cues_land_on_their_onset_and_retract_before_start() {
