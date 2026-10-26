@@ -513,6 +513,7 @@ impl Sim {
         self.rec.gem_arrive(i, self.st.w);
         if let Some(p) = &mut self.st.survivor {
             p.gain_xp(value);
+            self.open_survivor_offer();
             self.push_xp();
             self.publish_run();
             return;

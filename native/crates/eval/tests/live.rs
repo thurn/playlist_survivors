@@ -678,3 +678,152 @@ fn survivor_spawner_speculation_matches_on_time_at_density() {
     assert!(b.settled_log.as_ref().unwrap().is_empty());
     eprintln!("density speculation with off-grid pause: {compared} matching settled records");
 }
+
+fn fast_offer_fixture() -> (ContentLibrary, stream::StreamLog) {
+    use stream::{Beat, StreamLog, Tick};
+    let mut content = library();
+    let bat = content.enemies.get_mut("vs-bat3").unwrap();
+    bat.health = 0.0001;
+    let stats = bat.survivors.as_mut().unwrap();
+    stats.speed = 1000.0;
+    stats.xp = 20.0;
+    let log = StreamLog {
+        beats: (0..=100)
+            .map(|i| {
+                let t = f64::from(i) * 0.5;
+                Beat {
+                    t,
+                    known_at: (t - 3.0).max(0.0),
+                    period: 0.5,
+                    evidence: 1.0,
+                }
+            })
+            .collect(),
+        ticks: (0..=1000)
+            .map(|i| {
+                let t = f64::from(i) / 20.0;
+                Tick {
+                    t,
+                    known_at: t,
+                    evidence: 1.0,
+                    energy: 0.5,
+                    level: Some(stream::Level::Medium),
+                    key: None,
+                    bands: None,
+                    brightness: None,
+                }
+            })
+            .collect(),
+        ..StreamLog::default()
+    };
+    (content, log)
+}
+
+#[test]
+fn a_real_xp_offer_pick_applies_once_across_speculative_rollback() {
+    let (content, log) = fast_offer_fixture();
+    let run = |lead: f64, late: f64| {
+        let mut e = Engine::new(
+            &source("levels/survivors.yaml"),
+            &content,
+            &IndexMap::new(),
+            0.2,
+            true,
+            true,
+            f64::INFINITY,
+        )
+        .unwrap();
+        e.sim.disable_hero_damage_for_check();
+        e.settle_s = 0.1;
+        e.settled_log = Some(Vec::new());
+        e.feed(|out| *out = log.clone());
+        let mut picked = None;
+        let mut picks = 0;
+        for k in 1..=2000 {
+            let now = f64::from(k) / 100.0;
+            let offer = e.view.borrow().run.and_then(|r| r.offer);
+            if let Some(o) = offer {
+                let token = (o.level, o.reveals[2].to_bits());
+                let at = o.reveals[2] + 0.02;
+                if picked != Some(token) && now + 1e-9 >= at + late {
+                    e.key(at, InputKey::Confirm, true);
+                    e.key(at + 0.005, InputKey::Confirm, false);
+                    picked = Some(token);
+                    picks += 1;
+                }
+            }
+            e.frame(now, lead);
+        }
+        e.frame(20.8, 0.0);
+        let inventory = e.sim.survivor_inventory().unwrap();
+        let ranks: usize = inventory
+            .weapons
+            .iter()
+            .map(|s| usize::from(s.rank))
+            .sum::<usize>()
+            + inventory
+                .passives
+                .iter()
+                .map(|s| usize::from(s.rank))
+                .sum::<usize>();
+        assert!(picks > 0, "real gem XP opened at least one offer");
+        assert_eq!(ranks, 1 + picks, "each confirm applied exactly one rank");
+        (e.settled_log.take().unwrap(), inventory, e.stats, picks)
+    };
+    let (plain, pi, _, picks) = run(0.0, 0.0);
+    let (late, li, stats, late_picks) = run(0.4, 0.03);
+    assert_eq!(pi, li);
+    assert_eq!(picks, late_picks);
+    assert!(stats.key_rollbacks > 0);
+    assert_eq!(plain.len(), late.len());
+    assert_same(&plain, &late);
+    eprintln!(
+        "real XP offers: {picks} picks applied once, {} matching records, {} key rollbacks, deepest {:.3}s",
+        plain.len(),
+        stats.key_rollbacks,
+        stats.deepest_s
+    );
+}
+
+#[test]
+fn rewinding_before_real_xp_retracts_the_projected_offer_without_a_pick() {
+    let (content, log) = fast_offer_fixture();
+    let mut e = Engine::new(
+        &source("levels/survivors.yaml"),
+        &content,
+        &IndexMap::new(),
+        0.2,
+        true,
+        true,
+        f64::INFINITY,
+    )
+    .unwrap();
+    e.sim.disable_hero_damage_for_check();
+    e.feed(|out| *out = log);
+    let before = e.sim.snapshot();
+    let mark = e.journal.borrow().mark();
+    e.sim.advance_to(10.0);
+    let project = |e: &Engine| {
+        let mut view = eval::live::LiveView::default();
+        let journal = e.journal.borrow();
+        for k in 0..journal.end() {
+            let (s, r) = journal.get(k).unwrap();
+            view.apply(*s, r);
+        }
+        view
+    };
+    assert!(project(&e).run.unwrap().offer.is_some());
+    e.sim.restore(&before);
+    e.journal.borrow_mut().rewind(&mark);
+    e.sim.advance_to(0.1);
+    let view = project(&e);
+    assert!(view.run.unwrap().offer.is_none());
+    assert_eq!(
+        view.inventory
+            .unwrap()
+            .weapons
+            .rank(sim::survivors::WeaponId::Sword),
+        Some(1)
+    );
+    assert!(!view.run.unwrap().confirmed);
+}

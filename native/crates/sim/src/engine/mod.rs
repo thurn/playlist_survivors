@@ -30,6 +30,7 @@ mod freeze;
 mod hero;
 mod judge;
 mod observe;
+mod offers;
 mod pickups;
 mod pieces;
 mod plan;
@@ -1195,7 +1196,8 @@ impl Sim {
         // What the entries taken in decide: sections, zone waves, set pieces, the finale.
         self.plan_freeze();
         if self.st.freeze.frozen
-            && self.st.freeze.resume.is_none()
+            && (self.st.freeze.resume.is_none()
+                || self.st.freeze.resume_grid == freeze::ResumeGrid::Free)
             && self.st.freeze.reasons_empty()
         {
             self.request_resume();
@@ -3033,5 +3035,162 @@ mod tests {
             1,
             "a scheduled boss drops exactly one chicken"
         );
+    }
+    #[test]
+    fn survivor_card_picks_wait_for_reveal_chain_and_apply_once() {
+        let mut sim = survivor_sim();
+        sim.st.health = 80.0;
+        sim.gem_arrives(0, 45.0);
+        assert_eq!(sim.st.survivor.as_ref().unwrap().pending_levels, 3);
+        assert_eq!(sim.run_state().offer.unwrap().level, 2);
+        let ready = sim.run_state().offer.unwrap().reveals[2];
+        key(
+            &mut sim,
+            ready - 0.02,
+            KeyEventKind::Press,
+            InputKey::Confirm,
+        );
+        key(
+            &mut sim,
+            ready - 0.01,
+            KeyEventKind::Release,
+            InputKey::Confirm,
+        );
+        assert_eq!(
+            sim.survivor_inventory()
+                .unwrap()
+                .weapons
+                .rank(crate::survivors::WeaponId::Sword),
+            Some(1)
+        );
+        for level in 2..=4 {
+            let offer = sim.run_state().offer.unwrap();
+            assert_eq!(offer.level, level);
+            let t = offer.reveals[2] + 0.01;
+            key(&mut sim, t, KeyEventKind::Press, InputKey::Confirm);
+            sim.advance_to(t + 0.001);
+            assert_eq!(
+                sim.survivor_inventory()
+                    .unwrap()
+                    .weapons
+                    .rank(crate::survivors::WeaponId::Sword),
+                Some(level as u8)
+            );
+            // A held/repeated confirm cannot select the next chained card.
+            key(&mut sim, t + 0.002, KeyEventKind::Press, InputKey::Confirm);
+            key(
+                &mut sim,
+                t + 0.003,
+                KeyEventKind::Release,
+                InputKey::Confirm,
+            );
+            assert_eq!(
+                sim.survivor_inventory()
+                    .unwrap()
+                    .weapons
+                    .rank(crate::survivors::WeaponId::Sword),
+                Some(level as u8)
+            );
+        }
+        assert!(sim.run_state().offer.is_none());
+        assert_eq!(sim.st.survivor.as_ref().unwrap().pending_levels, 0);
+        sim.advance_to(sim.s() + 1.0);
+        assert!(!sim.st.freeze.frozen);
+    }
+    #[test]
+    fn survivor_passive_card_applies_the_real_delta_and_heals_added_maximum() {
+        use crate::survivors::{Item, PassiveId};
+        let mut sim = survivor_sim();
+        sim.st.health = 80.0;
+        sim.gem_arrives(0, 5.0);
+        let offer = sim.run_state().offer.unwrap();
+        assert_eq!(offer.cards[2].item, Item::Passive(PassiveId::HollowHeart));
+        let t = offer.reveals[2] + 0.01;
+        key(&mut sim, t, KeyEventKind::Press, InputKey::Right);
+        key(&mut sim, t + 0.001, KeyEventKind::Release, InputKey::Right);
+        key(&mut sim, t + 0.002, KeyEventKind::Press, InputKey::Confirm);
+        sim.advance_to(t + 0.01);
+        assert_eq!(sim.health_max(), 144.0);
+        assert_eq!(sim.st.health, 104.0);
+        assert_eq!(
+            sim.survivor_inventory()
+                .unwrap()
+                .passives
+                .rank(PassiveId::HollowHeart),
+            Some(1)
+        );
+    }
+    #[test]
+    fn survivor_cards_resume_on_free_pulse_without_a_beat() {
+        let mut sim = survivor_sim();
+        sim.log = Rc::new(StreamLog::default());
+        sim.st = super::fresh_state(&sim.env);
+        sim.init();
+        sim.gem_arrives(0, 5.0);
+        let t = sim.run_state().offer.unwrap().reveals[2] + 0.01;
+        key(&mut sim, t, KeyEventKind::Press, InputKey::Confirm);
+        sim.advance_to(t + 1.0);
+        assert!(sim.run_state().offer.is_none());
+        assert!(!sim.st.freeze.frozen);
+    }
+    #[test]
+    fn survivor_new_committed_beat_replaces_a_pending_free_pulse_resume() {
+        let mut sim = survivor_sim();
+        sim.log = Rc::new(StreamLog {
+            beats: vec![Beat {
+                t: 1.5,
+                known_at: 1.2,
+                period: 0.5,
+                evidence: 1.0,
+            }],
+            ..StreamLog::default()
+        });
+        sim.st = super::fresh_state(&sim.env);
+        sim.init();
+        sim.gem_arrives(0, 5.0);
+        key(&mut sim, 1.06, KeyEventKind::Press, InputKey::Confirm);
+        key(&mut sim, 1.07, KeyEventKind::Release, InputKey::Confirm);
+        sim.advance_to(1.45);
+        assert!(sim.st.freeze.frozen);
+        sim.advance_to(1.6);
+        assert!(!sim.st.freeze.frozen);
+    }
+    #[test]
+    fn survivor_everything_maxed_card_heals_the_level_knob_once() {
+        use crate::survivors::{Item, PassiveId, WeaponId};
+        let mut sim = survivor_sim();
+        for _ in 1..8 {
+            sim.learn_survivor_weapon(WeaponId::Sword).unwrap();
+        }
+        for passive in [
+            PassiveId::Spinach,
+            PassiveId::HollowHeart,
+            PassiveId::Pummarola,
+            PassiveId::Duplicator,
+            PassiveId::EmptyTome,
+            PassiveId::Spellbinder,
+        ] {
+            for _ in 0..passive.max_rank() {
+                sim.st
+                    .survivor
+                    .as_mut()
+                    .unwrap()
+                    .arsenal
+                    .learn_passive(passive)
+                    .unwrap();
+                sim.apply_survivor_stats(passive.delta());
+            }
+        }
+        sim.st.health = 40.0;
+        sim.gem_arrives(0, 5.0);
+        let offer = sim.run_state().offer.unwrap();
+        assert!(offer.cards.iter().all(|c| c.item == Item::Heal));
+        let t = offer.reveals[2] + 0.01;
+        key(&mut sim, t, KeyEventKind::Press, InputKey::Confirm);
+        sim.advance_to(t + 0.001);
+        assert_eq!(sim.st.health, 70.0);
+        key(&mut sim, t + 0.002, KeyEventKind::Press, InputKey::Confirm);
+        sim.advance_to(t + 0.003);
+        assert_eq!(sim.st.health, 70.0);
     }
 }

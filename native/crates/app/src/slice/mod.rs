@@ -169,6 +169,8 @@ struct Options {
     press_beats: bool,
     /// Headless spawn-only smoke: hold Right with hero damage disabled; never a survival result.
     spawn_smoke: bool,
+    /// Headless input helper: choose the first card after its third reveal.
+    pick_first: bool,
     /// Zen mode, the default: nothing judged, every move on the beat. `--legacy` (or Z between
     /// runs) plays legacy mode, where presses are judged on the beat.
     zen: bool,
@@ -211,6 +213,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         switch_at: None,
         press_beats: false,
         spawn_smoke: false,
+        pick_first: false,
         zen: true,
         watch: false,
         delayed: false,
@@ -236,6 +239,7 @@ fn options(args: &[String]) -> Result<Options, String> {
             }
             "--press-beats" => o.press_beats = true,
             "--spawn-smoke" => o.spawn_smoke = true,
+            "--pick-first" => o.pick_first = true,
             "--legacy" => o.zen = false,
             "--watch" => o.watch = true,
             "--delayed" => o.delayed = true,
@@ -316,6 +320,9 @@ fn options(args: &[String]) -> Result<Options, String> {
             s if s.starts_with("-psn_") => {}
             other => return Err(format!("unknown argument {other}")),
         }
+    }
+    if o.pick_first && !o.headless {
+        return Err("--pick-first needs --headless".into());
     }
     if o.spawn_smoke && (!o.headless || o.press_beats) {
         return Err("--spawn-smoke needs --headless and cannot combine with --press-beats".into());
@@ -646,6 +653,8 @@ pub fn run(args: &[String]) -> Result<(), String> {
         switch_at: opts.switch_at.map_or(f64::INFINITY, |s| now_s() + s),
         press_beats: opts.press_beats,
         spawn_smoke: opts.spawn_smoke,
+        pick_first: opts.pick_first,
+        picked_offer: None,
         pressed_beat: f64::NEG_INFINITY,
         focused: false,
         next_frame: 0.0,
@@ -1194,7 +1203,8 @@ fn still(
         .rev()
         .find(|b| b.t <= end)
         .map_or(0.5, |b| b.period);
-    let ground = world.field(&engine, end, period)?;
+    let visual_s = engine.view.borrow().run.map_or(end, |r| r.presentation_s);
+    let ground = world.field(&engine, visual_s, period)?;
     let last = beats
         .iter()
         .copied()
@@ -1242,7 +1252,7 @@ fn still(
         presses: &presses,
         beats: &upcoming,
         beat_phase,
-        elapsed: end,
+        elapsed: engine.view.borrow().run.map_or(end, |r| r.elapsed),
         bitten_ago: f64::INFINITY,
         head: layers.head,
         next_down: bar == 3,
@@ -1487,6 +1497,9 @@ struct App {
     press_beats: bool,
     /// Headless spawn-only smoke: hold Right with hero damage disabled; never a survival result.
     spawn_smoke: bool,
+    /// Headless input helper: choose the first card after its third reveal.
+    pick_first: bool,
+    picked_offer: Option<(usize, u64)>,
     pressed_beat: f64,
     /// Whether the window has the keyboard.
     focused: bool,
@@ -1648,9 +1661,39 @@ impl App {
             self.engine.frame(s - self.run_start, lead);
             self.record_keys();
             let run = self.engine.view.borrow().run;
+            if self.pick_first {
+                let offer = run.and_then(|r| r.offer);
+                if let Some(offer) = offer.filter(|o| {
+                    self.picked_offer != Some((o.level, o.reveals[2].to_bits()))
+                        && s - self.run_start >= o.reveals[2]
+                }) {
+                    let now = s - self.run_start;
+                    eprintln!(
+                        "slice: pick-first queues level {} card1 {} rank {} > {} at {:.3}, third reveal {:.3}",
+                        offer.level,
+                        offer.cards[0].item.name(),
+                        offer.cards[0].before,
+                        offer.cards[0].after,
+                        now,
+                        offer.reveals[2]
+                    );
+                    self.engine.key(now, InputKey::Left, true);
+                    self.engine.key(now + 0.001, InputKey::Left, false);
+                    self.engine.key(now + 0.002, InputKey::Confirm, true);
+                    self.engine.key(now + 0.003, InputKey::Confirm, false);
+                    self.picked_offer = Some((offer.level, offer.reveals[2].to_bits()));
+                } else if offer.is_none() {
+                    self.picked_offer = None;
+                }
+            }
             if let Some(run) = run
                 && run.frozen != self.last_freeze
             {
+                if self.spawn_smoke && self.last_freeze.is_some() && run.frozen.is_none() {
+                    let now = s - self.run_start;
+                    self.engine.key(now, InputKey::Right, false);
+                    self.engine.key(now + 0.001, InputKey::Right, true);
+                }
                 self.last_freeze = run.frozen;
                 eprintln!(
                     "slice: world {} at run {:.3} s (song {:.3})",
@@ -2701,6 +2744,7 @@ impl App {
         self.run_start = s0;
         self.pending_start = None;
         self.last_freeze = None;
+        self.picked_offer = None;
         self.scene = Scene::default();
         let _ = self.audio.out.commands.push(Command::CancelAll);
         if let Some(s) = self.sounds.as_mut() {

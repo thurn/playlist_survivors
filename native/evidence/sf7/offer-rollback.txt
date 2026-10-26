@@ -1,0 +1,25 @@
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sf7-offers/native/crates/eval)
+warning: unnecessary qualification
+   --> crates/eval/tests/live.rs:682:29
+    |
+682 | fn fast_offer_fixture() -> (sim::content::ContentLibrary, stream::StreamLog) {
+    |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: requested on the command line with `-W unused-qualifications`
+help: remove the unnecessary path segments
+    |
+682 - fn fast_offer_fixture() -> (sim::content::ContentLibrary, stream::StreamLog) {
+682 + fn fast_offer_fixture() -> (ContentLibrary, stream::StreamLog) {
+    |
+
+warning: `eval` (test "live") generated 1 warning (run `cargo fix --test "live" -p eval` to apply 1 suggestion)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.26s
+     Running tests/live.rs (native/target/debug/deps/live-95af3c317e05d1b4)
+
+running 2 tests
+test rewinding_before_real_xp_retracts_the_projected_offer_without_a_pick ... ok
+real XP offers: 9 picks applied once, 5601 matching records, 9 key rollbacks, deepest 0.420s
+test a_real_xp_offer_pick_applies_once_across_speculative_rollback ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.04s
+

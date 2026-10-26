@@ -1,0 +1,41 @@
+changes: 32 paths since de2ea4f
+friction: 46 records valid
+Using CPython 3.12.14 interpreter at: /opt/homebrew/opt/python@3.12/bin/python3.12
+Creating virtual environment at: .venv
+   Building ps-analysis @ file:///Users/dthurn/playlist_survivors/.worktrees/codex-sf7-offers/tools/analysis
+      Built ps-analysis @ file:///Users/dthurn/playlist_survivors/.worktrees/codex-sf7-offers/tools/analysis
+Installed 44 packages in 111ms
+All checks passed!
+WARN `--no-project` was provided, but no project was found
+...........................
+----------------------------------------------------------------------
+Ran 27 tests in 0.033s
+
+OK
+changes: 32 paths since de2ea4f
+crates purity: stream, analysis, sim, eval, players pure
+native check-fast: every crate
+    Checking stream v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sf7-offers/native/crates/stream)
+    Checking analysis v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sf7-offers/native/crates/analysis)
+    Checking audio v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sf7-offers/native/crates/audio)
+    Checking render v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sf7-offers/native/crates/render)
+    Checking sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sf7-offers/native/crates/sim)
+    Checking eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sf7-offers/native/crates/eval)
+    Checking players v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sf7-offers/native/crates/players)
+error: variables can be used directly in the `format!` string
+   --> crates/sim/tests/survivor_offers.rs:108:13
+    |
+108 |             eprintln!("intended all-built path at level {level}: {:?}", inv);
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#uninlined_format_args
+    = note: `-D clippy::uninlined-format-args` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::uninlined_format_args)]`
+help: change this to
+    |
+108 -             eprintln!("intended all-built path at level {level}: {:?}", inv);
+108 +             eprintln!("intended all-built path at level {level}: {inv:?}");
+    |
+
+error: could not compile `sim` (test "survivor_offers") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

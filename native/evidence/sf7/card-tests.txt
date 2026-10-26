@@ -1,0 +1,35 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sf7-offers/native/crates/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.22s
+     Running unittests src/lib.rs (native/target/debug/deps/sim-1ebf1e278f138957)
+
+running 2 tests
+test engine::tests::survivor_cards_resume_on_free_pulse_without_a_beat ... ok
+test engine::tests::survivor_card_picks_wait_for_reveal_chain_and_apply_once ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 31 filtered out; finished in 0.01s
+
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.04s
+     Running unittests src/lib.rs (native/target/debug/deps/sim-1ebf1e278f138957)
+
+running 1 test
+test engine::tests::survivor_new_committed_beat_replaces_a_pending_free_pulse_resume ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 32 filtered out; finished in 0.01s
+
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.04s
+     Running unittests src/lib.rs (native/target/debug/deps/sim-1ebf1e278f138957)
+
+running 1 test
+test engine::tests::survivor_passive_card_applies_the_real_delta_and_heals_added_maximum ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 32 filtered out; finished in 0.01s
+
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sf7-offers/native/crates/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 6.68s
+     Running unittests src/lib.rs (native/target/debug/deps/sim-1ebf1e278f138957)
+
+running 1 test
+test engine::tests::survivor_everything_maxed_card_heals_the_level_knob_once ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 33 filtered out; finished in 0.01s
+

@@ -14,6 +14,7 @@ pub struct Progress {
     pub xp: f64,
     /// SF7 consumes these one at a time while its card freeze stays open.
     pub pending_levels: usize,
+    pub offer: Option<super::Offer>,
 }
 
 impl Default for Progress {
@@ -24,6 +25,7 @@ impl Default for Progress {
             level: 1,
             xp: 0.0,
             pending_levels: 0,
+            offer: None,
         }
     }
 }

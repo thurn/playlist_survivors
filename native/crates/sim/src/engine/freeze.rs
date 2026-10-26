@@ -10,11 +10,18 @@ struct Held {
     entry: Entry,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(super) enum ResumeGrid {
+    #[default]
+    Committed,
+    Free,
+}
+
 #[derive(Clone, Debug, Default)]
 pub(super) struct Freeze {
     pub frozen: bool,
     pub total_s: f64,
-    reasons: Vec<FreezeReason>,
+    pub(super) reasons: Vec<FreezeReason>,
     last: Option<FreezeReason>,
     down: [bool; 7],
     blocked: [bool; 7],
@@ -30,6 +37,7 @@ pub(super) struct Freeze {
     music_pending: bool,
     music_lock: Option<usize>,
     pub resume: Option<f64>,
+    pub(super) resume_grid: ResumeGrid,
     pub pulse_generation: u64,
 }
 
@@ -83,6 +91,7 @@ impl Sim {
             elapsed: self.st.run_s,
             spawn_minute: self.st.spawner.minute,
             spawned: self.st.spawner.spawned,
+            offer: self.st.survivor.as_ref().and_then(|p| p.offer),
             level: self
                 .st
                 .survivor
@@ -195,6 +204,7 @@ impl Sim {
             self.st.freeze.music_lock = None;
         }
         self.st.freeze.resume = None;
+        self.st.freeze.resume_grid = ResumeGrid::Committed;
         self.st.freeze.blocked = self.st.freeze.down;
         self.st.held.clear();
         self.st.zen_taps.clear();
@@ -287,6 +297,11 @@ impl Sim {
                 InputKey::Up => self.st.freeze.selected = 1,
                 InputKey::Right => self.st.freeze.selected = 2,
                 InputKey::Confirm | InputKey::Space => {
+                    if self.st.survivor.as_ref().is_some_and(|p| p.offer.is_some()) {
+                        self.pick_survivor_offer();
+                        self.publish_run();
+                        return true;
+                    }
                     self.st.freeze.confirmed = true;
                     self.st
                         .freeze
@@ -303,11 +318,18 @@ impl Sim {
 
     pub(super) fn request_resume(&mut self) {
         if self.st.freeze.reasons.is_empty() {
-            // A plain pause resumes on the next committed beat; no extrapolated beat is read.
-            self.st.freeze.resume = self.log.beats[..self.st.ingested.beats]
+            // Resume on a committed beat, or a free pulse when no beat is known.
+            // Ingestion can replace a pending free pulse with a newly committed beat.
+            let beat = self.log.beats[..self.st.ingested.beats]
                 .iter()
                 .find(|b| b.t > self.st.s + 1e-9)
                 .map(|b| b.t);
+            self.st.freeze.resume_grid = if beat.is_none() {
+                ResumeGrid::Free
+            } else {
+                ResumeGrid::Committed
+            };
+            self.st.freeze.resume = beat.or_else(|| Some(self.next_stride(self.st.s + 1e-6)));
         }
     }
 

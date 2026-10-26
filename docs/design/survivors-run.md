@@ -1166,6 +1166,16 @@ final File session replays all 3,781,538 settled records exactly; check-fast
 passed in 49 s.
 
 ### SF7
+
+The scripted preferences cover levels 2–70, skip unbuilt weapons, and choose
+owned low-rank upgrades before new eligible items; all-maxed offers heal the
+level's 30 HP knob. XP opens a rollbackable three-card freeze immediately;
+chains stay frozen, held confirms cannot pick twice, and the third reveal
+is the sim's confirm gate. The overlay is plain text/highlight on the existing
+font; SH1/SH7 own icons, fonts and polish. Normal-damage File evidence replays
+all 79,798 settled records; a real-XP regression applies nine picks once
+across nine rollbacks (deepest 420 ms). See [SF7 evidence](../../native/evidence/sf7/README.md).
+
 ### SF8
 ### SF9
 ### SF10

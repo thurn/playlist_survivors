@@ -98,6 +98,17 @@ pub fn load_content(files: &[SourceFile]) -> Result<ContentLibrary, ContentError
     sorted.sort_by(|a, b| a.name.cmp(&b.name));
     let file_schema = schema::content_file();
     for f in sorted {
+        // Native scripted choices have their own typed schema, outside the prototype library.
+        if f.name.rsplit('/').next() == Some("offers.yaml") {
+            if let Err(message) = crate::survivors::OfferTable::parse(&f.text) {
+                issues.push(ContentIssue {
+                    file: f.name.clone(),
+                    path: "offers".into(),
+                    message,
+                });
+            }
+            continue;
+        }
         let doc: Value = match serde_saphyr::from_str_with_options(&f.text, yaml_options()) {
             Ok(v) => v,
             Err(e) => {

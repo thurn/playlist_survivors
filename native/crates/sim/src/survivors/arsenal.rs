@@ -234,6 +234,9 @@ impl Arsenal {
         }
         Ok(rank)
     }
+    pub fn learn_passive(&mut self, id: PassiveId) -> Result<u8, SlotError> {
+        self.inventory.passives.upgrade(id, id.max_rank())
+    }
     fn slot(&self, id: WeaponId) -> usize {
         self.inventory
             .weapons
