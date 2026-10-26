@@ -19,7 +19,8 @@ It produces three things:
 
 - **A frontier report.** For each camera zoom and effect load, the largest
   number of on-screen monsters that fits the frame budget, what limits it, and
-  a recommended envelope for game design.
+  a recommended envelope for game design. It also shows how rich the
+  environment can be, and what that richness costs in monsters.
 - **The demo build.** A macOS app that plays the 2:34 song, with the horde
   peaking at that envelope in the climax.
 - **A capture.** A 1080p60 video of the demo for sharing.
@@ -75,8 +76,15 @@ with its reasons in the bead's notes.
     TD8 opens with a spike that picks it: our own compute-shader runtime, or
     VFX Graph driven by a few template graphs (see
     [Choosing the GPU runtime](#choosing-the-gpu-runtime)).
-12. **A dusk or night outdoor arena,** with baked lighting for the static set, a
-    shadowed moon or low sun, and effect lights that dominate.
+12. **A night forest glade built from classic Synty POLYGON packs,** with open
+    clearings for the fighting and rich decoration around them, baked
+    moonlight, emissive glow and effect lights that dominate (see
+    [The Environment](#the-environment)).
+    - **It must look good.** It's art-directed, and checked from fixed beauty
+      shots.
+    - **Its rendering is optimized as deliberately as the crowd's,** with its
+      own stock baseline, ladder of techniques and density sweep. The report
+      gives the trade between scene richness and monster count.
 13. **The song is *In the Hall of the Mountain King*** (the Musopen recording,
     public domain, 154 s, already in `songs/mountain-king/`). The horde ramps
     with its crescendo.
@@ -87,7 +95,7 @@ with its reasons in the bead's notes.
     the developer who runs the demo and reviews its evidence. Routine checks
     stay windowless.
 17. **A new epic in the project's issue tracker, run in parallel with the
-    survivors run** (`hv-n7fn`), with plan keys `TD1` to `TD13` (see
+    survivors run** (`hv-n7fn`), with plan keys `TD1` to `TD15` (see
     [Implementation Plan](#implementation-plan)).
 
 ## Related Information
@@ -139,8 +147,9 @@ with its reasons in the bead's notes.
 The demo is a single 2:34 shot of one battle, with no input and no HUD. It
 should feel like watching an expert play a finished game.
 
-- **The arena.** A dusk battlefield of ruins, dead trees, gravestones and
-  torches under a low, cold moon. Effect light carries the scene.
+- **The arena.** A moonlit enchanted forest: open glades ringed by trees,
+  glowing elven trees and crystals, ruins, a graveyard and braziers, under
+  cool blue moonlight. Effect light carries the fighting.
 - **The hero.** A Synty knight with sword and shield. They stride on beats and
   carve through the horde with sword combos whose blows land on beats,
   spinning on accents and slamming on the downbeats that open phrases.
@@ -303,6 +312,10 @@ The demo's full song has no steady state. Its run passes when every 20 s
 window, starting every 5 s, meets the same lines, and no frame anywhere
 exceeds twice its line.
 
+The environment has a ceiling of its own: the empty arena, with lighting and
+post-processing, gets at most 2.0 ms of GPU p99 on the M5 Max, about 4.5 ms of
+the target's 12.5 ms (see [Environment frontier](#environment-frontier)).
+
 The reserve is checked too, not just assumed. A real game's sim layer must
 fit in the 4.2 ms of target CPU the client leaves free. That gives the sim its
 own line on the M5 Max: **2.0 ms per tick** (4.2 ÷ 1.7 ÷ 1.2), measured by
@@ -378,7 +391,9 @@ post:           bloom, neutral tonemapping, color grading, SSAO, vignette
 off:            motion blur, depth of field, film grain, upscaling
 ```
 
-- **Static environment** draws through the GPU Resident Drawer.
+- **Static environment** rendering climbs its own measured ladder, starting
+  with the GPU Resident Drawer (see
+  [Environment rendering](#environment-rendering)).
 - **Graphics APIs:** Metal on macOS; Direct3D 12 for the Windows build.
 - **Benchmark runs** turn vsync off and leave the frame rate uncapped, so frame
   time measures throughput. The showcase build caps at the display rate.
@@ -1225,36 +1240,209 @@ view width  camera height  visible ground  at 1-2 per m²   monster height
 
 Monsters off screen cost nothing to draw, except that their shadows reach in.
 
-## Environment and Lighting
+## The Environment
 
-The arena is a static set designed to look rich while staying cheap. Its
-cost is measured on its own in an empty-arena stress scene.
+The environment is where the demo spends its extra frame budget. It should
+look like a scene from a finished game: a moonlit forest glade, built from
+Synty's classic POLYGON packs, with open ground for the fighting and rich
+decoration around it. Its rendering gets the same treatment as the crowd: a
+stock baseline, a measured ladder of optimizations, cuts gated by A/B checks,
+and a density axis that shows what richness costs in monsters.
 
-- **Layout.** About 160 × 160 m of ground, so the hero can circle for the
-  whole song. Props (ruins, dead trees, gravestones, rocks, torches) come
-  from Synty Dark Fantasy, Goblin War Camp or a Nature Biomes pack, chosen by
-  TD2.
-- **Mostly open, with some structures.** Most of the ground is open, but it
-  includes broken ruin walls and one walled courtyard with 3 or 4 gaps, which
-  the level script's sections and stress scene S6 use.
-- **Placed by the choreography layer.** Prop placement comes from the
-  placement list the choreography layer computes from tracked parameters
-  (see [Navigation around structures](#navigation-around-structures)). So
-  every wall the camera shows is a wall the monsters walk around.
-- **Generated, not hand-edited.** An editor script builds the scene from that
-  placement list. The generated scene and its lightmaps are derived content
-  and stay in the gitignored baked folder.
-- **Sun or moon.** One directional light at 25° to 35° elevation, cool and dim,
-  with soft shadows.
-- **Static lighting.** Lightmaps baked in batch mode, including the torches'
-  static light.
+### Art direction
+
+- **Mood.** An enchanted forest at night. Cool blue moonlight; warm pools of
+  light from braziers, candles and pyres; cyan and violet magic from glowing
+  trees, crystals and runes; low mist in the hollows.
+- **Value structure.** The ground is dark and low in contrast. Monsters, the
+  hero and effects carry the brightest values and the most saturated colors,
+  so the horde reads at a glance even at a 55 m view.
+- **Color separation.** The environment keeps to cool blues, greens and
+  violets. Combat effects are warm and white-hot, so they never get lost in
+  the set.
+- **Composition.** Open clearings 30–60 m across, linked by paths and ringed
+  by forest. Each clearing has one landmark the eye can rest on: a glowing
+  elven tree, a ruined shrine, a stone circle, the walled courtyard or a
+  graveyard.
+- **No empty screens.** Every camera position the level script reaches shows
+  some edge decoration or a landmark, never only bare ground.
+
+### The kit
+
+The scene uses classic POLYGON packs. Their foliage is almost all solid
+geometry, and their materials mostly use the Standard shader, which Unity's
+converter turns into URP Lit:
+
+```
+pack              what it provides
+Fantasy Kingdom   trees (33), bushes and plants (75), rocks (90)
+Adventure         trees (48) with solid canopies, on one small atlas
+Elven Realm       glowing trees and canopies, ruins, statues, lamps, vines
+Dark Fantasy      graveyard, tombs, ruins, candles, pyres, dead trees
+```
+
+- **No Nature Biomes packs.** Their cutout leaf cards shade the same pixels
+  many times over, and their vegetation shaders are built-in-pipeline only
+  (see [Alternatives Considered](#alternatives-considered)).
+- **TD2 confirms the mix** with a style still: the roster and the kit
+  together under night lighting, from the game camera.
+
+### Layout
+
+The layout is authored as tracked parameters and generated. The choreography
+layer turns the parameters into the placement list (see
+[Navigation around structures](#navigation-around-structures)), and an editor
+script builds the scene from that list. So every wall the camera shows is a
+wall the monsters walk around.
+
+- **Areas.** The parameters name areas on the 160 × 160 m ground, each with a
+  type: clearing, path, edge band, forest, landmark or structure.
+- **Density by type:**
+  - **Clearings and paths** are fighting ground. They carry only sparse clutter
+    under 0.3 m tall (flowers, moss, scattered stones), and nothing blocks.
+  - **Edge bands,** 3–6 m wide, carry bushes, rocks, fallen logs and vines,
+    and partly block.
+  - **Forest** is dense trees and rocks, and blocks. Canopies never overhang
+    fighting ground.
+  - **Landmarks and structures** are placed explicitly, not scattered.
+  Structures include broken ruin walls and the walled courtyard with 3 or 4
+  gaps that the level script and stress scene S6 use.
+- **Seeded scatter** fills each area by its type's rules: spacing, scale and
+  rotation jitter, and slope limits.
+- **A density multiplier** scales edge bands and forest only, for the density
+  sweep (see [Environment frontier](#environment-frontier)). Clearings stay
+  clear at every density.
+
+```json
+{ "seed": 7, "size": [160, 160], "decorationDensity": 1.0,
+  "areas": [
+    { "type": "clearing", "center": [0, 0], "radius": 28 },
+    { "type": "landmark", "at": [6, -4],
+      "prefab": "elven/SM_Env_Tree_Glowing_01" },
+    { "type": "structure", "kind": "courtyard", "center": [-52, 30],
+      "gaps": 4 },
+    { "type": "forest", "ring": [68, 80] } ] }
+```
+
+### Lighting the night
+
+- **Moonlight.** One directional light, cool blue, at 25° to 35° elevation.
+- **Baked static light.** Lightmaps, baked in batch mode, hold the moon's
+  light and shadows on the static set, plus the static light of braziers,
+  lamps and glowing plants.
+- **A static shadow map for monsters.** URP has no cached shadow maps. So at
+  load, the client renders the static set's depth once from the moon's
+  direction over the whole arena (4096² over 160 m, about 4 cm per texel).
+  The crowd and hero shaders sample it, so monsters walk through tree shade,
+  and the realtime cascades hold only the monsters and the hero.
+- **Emissive glow.** Glowing trees, crystals, runes and flames use emissive
+  materials, which bloom picks up for nearly nothing.
+- **Few realtime environment lights.** At most 8 flickering flame lights,
+  counted in S0 and separate from the effect-light pool.
+- **Atmosphere.** Height-tinted distance fog, a few low mist cards in hollows
+  (few, since they are transparent overdraw), and fireflies as ambient
+  particles on the effect runtime.
 - **Ambient for monsters.** Thousands of monsters cannot each sample light
   probes cheaply, so they take ambient from Unity's global ambient probe.
   Per-pixel Adaptive Probe Volume sampling is measured as an option.
-- **Atmosphere.** Distance fog for depth, and a few flickering realtime torch
-  lights, measured with the arena in the empty-arena scene.
-- **Post-processing** follows the defaults in
+- **Night grading.** A color-grading lookup table built for the night palette,
+  on top of the post-processing in
   [Engine and Rendering Setup](#engine-and-rendering-setup).
+
+### Environment rendering
+
+The kit's prefabs, placed as plain GameObjects, cost about what Synty's own
+demo scenes do: every prop its own draw call and its own shadow caster. The
+environment's rendering is therefore optimized as deliberately as the crowd,
+up a measured ladder. Every rung is measured on S0 at the authored density and
+at twice it, and against S3 at the envelope, because the environment and the
+crowd share the GPU.
+
+```
+rung  technique                                          targets
+E0    stock: GameObjects, realtime shadows from all      the baseline
+E1    GPU Resident Drawer instancing (+ its GPU          CPU draw submission
+      occlusion culling, measured on and off)
+E2    baked static lighting and the static shadow map;   shadow-pass geometry
+      the static set leaves the realtime cascades
+E3    decimated LODs for small props (a cut)             vertices and triangles
+E4    impostors for the forest's interior (a cut)        the densest geometry
+E5    capped textures and shared atlases                 memory and bandwidth
+E6    the static set in or out of the depth prepass      prepass vertices vs
+                                                         overdraw
+```
+
+- **E0 is the baseline.** It is the kit placed as plain GameObjects, with
+  realtime shadows from everything: what dropping Synty's demo scene into URP
+  would cost. The report compares the final rung against it, as the crowd's
+  report compares against stock Unity.
+- **Each rung is kept only if it helps.** A rung stays when it lowers S0's GPU
+  or CPU time, or raises the envelope's monster count, without failing an A/B
+  check. Otherwise it is recorded and dropped.
+- **Cuts follow the fidelity rules.** E3's LODs and E4's impostors are cuts,
+  gated by the same A/B checks as the crowd's, on the beauty shots (see
+  [Making it look good](#making-it-look-good)), in stills and in motion.
+- **Vendor tools help.** Amplify Impostors (for E4) and Mesh Combine Studio
+  are already in the vendor asset project. Merging clustered small props with
+  Mesh Combine Studio changes nothing visible, so it is not a cut; it is
+  measured within E1, against instancing alone.
+- **Texture caps are applied by our code.** An import override caps
+  environment textures, never an edit to vendor files. The cap is the
+  smallest size whose beauty-shot A/B passes, likely 1024 px, or 2048 for the
+  most shared atlas.
+- **Canopy fade.** Tree materials use a Shader Graph variant of URP Lit that
+  dithers out canopy pixels within a few metres, on screen, of the hero, so
+  the hero is never hidden. The layout keeps canopies off fighting ground; the
+  fade covers forest edges.
+- **Only what the kit uses is ported.** Elven Realm's triplanar rock shader is
+  the one custom shader the kit needs. It is rewritten in Shader Graph, which
+  makes it compatible with the GPU Resident Drawer.
+
+### Environment frontier
+
+The crowd's frontier asks how many monsters fit; the environment's asks how
+rich the scene can be, and what that richness costs in monsters.
+
+- **The density sweep** runs S0 at decoration densities 0.5×, 1×, 2× and 4×,
+  and S3 at the envelope at 1× and 2×.
+- **The report gives the curve:** S0's GPU and CPU times against density, and
+  the envelope's monster count at each density tested. For example: "doubling
+  the decoration costs 0.6 ms of target GPU, or about 350 monsters."
+- **The ceiling.** S0, the empty arena with lighting and post-processing,
+  must stay at or under 2.0 ms of GPU p99 on the M5 Max, about 4.5 ms of the
+  target's 12.5 ms. Its main-thread and render-thread times must each stay
+  under 1.0 ms. The authored density is the richest that fits the ceiling.
+- **The headline count pays for the scene.** TD12's frontier is measured in
+  the finished scene at the authored density, so the monster count already
+  includes the environment's cost.
+
+### Making it look good
+
+Agents can't judge beauty by feel, so the scene is built against references
+and checked from fixed shots.
+
+- **Reference stills.** Each pack's own art-directed demo scene (Elven
+  Realm's demo, Dark Fantasy's graveyard) is opened in batch mode and rendered
+  from our camera's angle and height. Those stills set the bar for density
+  and dressing.
+- **Beauty shots.** Six fixed camera positions, named in the layout
+  parameters: the opening clearing, a path between clearings, the
+  glowing-tree landmark, the graveyard, the courtyard and a forest edge. Each
+  is rendered at 1080p in fixed-time mode, once empty and once with a horde at
+  the envelope count.
+- **A self-review checklist,** recorded with each set of shots:
+  - the horde reads against the ground at a glance;
+  - every shot shows a landmark or edge decoration;
+  - no canopy hides fighting ground;
+  - effect colors stand apart from the set;
+  - nothing floats, clips or repeats in an obvious pattern.
+- **A readability measure.** For the horde shots, an ID render masks monster
+  pixels, and the harness reports the luminance contrast between monster
+  pixels and the ground around them. TD15 sets a floor from the first layout
+  that passes the checklist, and later changes must not fall below it.
+- **The operator's eye.** Each set of beauty shots goes to
+  `operator-pending.md` for review. Feedback arrives later as new beads, and
+  no bead waits for it.
 
 ## Sound
 
@@ -1290,7 +1478,7 @@ ground under the default sun, ambient and post-processing. From TD9 on they
 run in the arena, and TD12's sweep uses the arena.
 
 ```
-S0  empty arena          environment, lighting and post only
+S0  empty arena          environment, lighting and post; density 0.5x to 4x
 S1  crowd walking        N monsters on beat gaits, no actions or effects
 S2  crowd in combat      S1 + hero combos, hits, deaths, refills; no effects
 S3  full combat          S2 + effects and lights at a load preset
@@ -1448,6 +1636,8 @@ gives:
   or render thread) and both target estimates;
 - the baseline comparison: stock Unity's maximum against the chosen path's;
 - the envelope, defined below, with every factor and assumption it rests on;
+- the environment's density curve, what richness costs in monsters, and its
+  final rendering against the stock baseline, rung E0;
 - every accepted cut, with its A/B result.
 
 The **envelope** is the recommended pair of a view width and an on-screen
@@ -1712,6 +1902,15 @@ The interview weighed these and rejected them for the reasons given.
 - **Velocity-based local avoidance** (RVO or ORCA). Smoother passing in
   sparse crowds, but heavier per monster, and a horde mostly converges on one
   target, where separation plus marching in place reads well.
+- **Synty's Nature Biomes packs for the forest.** The lushest look in the
+  library, but their foliage is cutout leaf cards, which shade the same
+  pixels many times over and redraw into the shadow maps. Their vegetation
+  shaders are built-in-pipeline only, and their demo scenes are about 19,000
+  unbatched prefab instances. The classic POLYGON packs give a forest of
+  solid geometry at a fraction of the cost.
+- **Dropping a pack's demo scene in as the map.** Fast, but those scenes are
+  dressed for eye-level vistas, and their layout wouldn't fit the clearings,
+  navigation and placement list. They serve as reference stills instead.
 - **Buying a target laptop.** It would make the answer measured instead of
   inferred, but was declined. The report labels inferred numbers.
 - **Offscreen-only benchmarks.** They never disturb the operator, but they
@@ -1752,11 +1951,11 @@ Each bead lists what it builds and when it is done.
 - **TD2, assets.**
   - Builds: the manifest, the sync tool and its record; the clip annotator
     and its contact sheets.
-  - Chooses: the roster, the hero, the arena packs, the effect candidates and
-    the sounds.
+  - Chooses: the roster, the hero, the effect candidates and the sounds, and
+    the kit's pieces from the classic packs in [The kit](#the-kit).
   - Done when: every roster type's walk, attack, hit and death clips and
     every hero combo and locomotion clip are annotated, and a style still
-    shows the roster together under the default lighting.
+    shows the roster and the kit together under night lighting.
 - **TD3, choreography.**
   - Builds: the Mountain King song map, through the song-map workflow in
     [tech-demo.md](tech-demo.md#building-the-song-map), with hand-checked
@@ -1807,15 +2006,18 @@ Each bead lists what it builds and when it is done.
   - Done when: the spike's table and decision are in its notes; every listed
     effect runs on the runtime with an A/B still against its stock prefab;
     and the light pool's size is fixed.
-- **TD9, environment and lighting.**
-  - Builds: the arena generated from TD3's placement list, including the
-    ruin walls and the walled courtyard; lightmaps; and the lighting and
+- **TD9, the arena.**
+  - Builds: the layout parameters and their scatter rules; the arena
+    generated from TD3's placement list, with the ruin walls, the walled
+    courtyard and the density multiplier; the kit's conversion to URP Lit;
+    the night lighting, lightmaps and static shadow map; and the
     post-processing stack. S6 becomes runnable.
   - Decides MSAA against TAA. Both are full quality, so this is not a cut:
     the choice weighs cost against capture pairs of monster edges and spark
     trails, which also go to the operator for review.
-  - Done when: S0 is measured, and the anti-aliasing choice is recorded with
-    its captures and its cost.
+  - Done when: the arena renders at every density, S0 is measured at rung E0,
+    and the anti-aliasing choice is recorded with its captures and its
+    cost.
 - **TD10, hero and presentation.**
   - Builds: the hero's playable graph, combos, spells, parries, local
     hit-stop, the client's punch and shake, and sound scheduling.
@@ -1825,6 +2027,23 @@ Each bead lists what it builds and when it is done.
     the 30 Hz clip rate, larger light-cluster cells, effect merging, and
     dropping glow quads in favor of bloom.
   - Done when: each cut is accepted or rejected, with its scores.
+- **TD14, environment rendering.**
+  - Climbs the ladder in [Environment rendering](#environment-rendering),
+    rung by rung, and runs the density sweep. Rungs E3 and E4 are cuts and
+    use TD11's A/B thresholds; the other rungs can start as soon as TD9
+    lands.
+  - Done when: every rung is measured, kept or dropped with its numbers; the
+    density curve is in its evidence; and S0 at the authored density fits the
+    environment's ceiling.
+- **TD15, the art pass.**
+  - Builds: the reference stills from the packs' demo scenes, the six beauty
+    shots, the readability measure and its floor, and the landmarks and
+    dressing that meet [the art direction](#art-direction).
+  - Spends the headroom TD14 frees: the richest scene that keeps S0 within
+    its ceiling.
+  - Done when: every beauty shot passes the checklist and the readability
+    floor, S0 fits the ceiling, and the shots are in its evidence and in
+    `operator-pending.md`.
 - **TD12, the frontier.**
   - Runs the full sweep, the traces at frontier points and both target
     estimates. Writes the report and the envelope, and puts the envelope into
@@ -1833,6 +2052,8 @@ Each bead lists what it builds and when it is done.
     and at S6. The report states whether the envelope holds among walls and
     whether the sim fits its reserve. If S6 fails at the envelope, the report
     gives S6's own frontier and what limits it.
+  - Also carries TD14's environment results into the report: the density
+    curve, the richness-to-monsters trade, and the final rung against E0.
   - Done when: the report is in its evidence and its summary in its notes.
 - **TD13, the demo.**
   - Tunes the level script so the climax holds the envelope and the full song
@@ -1857,7 +2078,9 @@ TD8         after TD4
 TD9         after TD2 and TD7 (it lights the chosen crowd shader)
 TD10        after TD7 and TD8
 TD11        after TD7, TD8 and TD9
-TD12        after TD10 and TD11
+TD14        after TD9; its cut rungs (E3, E4) after TD11
+TD15        after TD8 and TD14
+TD12        after TD10, TD11 and TD15
 TD13        after TD12
 ```
 
@@ -1869,7 +2092,8 @@ TD13        after TD12
   beads recorded in their notes:
   - foundations: TD1 to TD4;
   - the crowd: TD5 to TD7;
-  - the demo's systems: TD8 to TD11;
+  - the scene: TD9, TD14 and TD15;
+  - the demo's systems: TD8, TD10 and TD11;
   - the answer: TD12 and TD13.
 - **A per-bead review for the vendor guard** (TD1, and any later change to
   it), because a leak cannot be undone.
@@ -1943,6 +2167,14 @@ Not started.
 Not started.
 
 ### TD13
+
+Not started.
+
+### TD14
+
+Not started.
+
+### TD15
 
 Not started.
 
@@ -2031,6 +2263,20 @@ baseline crowd handles a few hundred monsters, which is enough.
 - **Expect** elites and the boss to fit through every gap.
 - Run S6 and one S3 frontier point with live-sim mode on. **Expect** the
   sim's tick p99 at or under 2.0 ms, and no determinism mismatch reported.
+
+### The scene
+
+- Flip through the six beauty shots, empty and with the horde. **Expect** a
+  scene that looks finished: a landmark or edge decoration in every shot,
+  readable monsters, and effects that stand out from the set.
+- Run S0 windowed with `--overlay` at 1× and 2× density. **Expect** S0's GPU
+  p99 under 2.0 ms at the authored density.
+- Walk the hero along a forest edge (`--start-at` a section that does).
+  **Expect** canopies near the hero to dither out, and never to hide it.
+- Look for floating props, clipping, and obvious repeating patterns in the
+  scatter. **Expect** none.
+- Compare the final scene with rung E0 in the report. **Expect** the same
+  look at a fraction of the cost.
 
 ### A/B review
 
