@@ -92,6 +92,8 @@ if [ "$section" = all ] || [ "$section" = native ]; then
   # work (sim, evaluate, encode) offscreen.
   (cd native && cargo run --locked --release -p cli -- runner-bench --check)
   (cd native && cargo run --locked --release -p app -- --bench --check)
+  # SF10: the same production-priority frame bar at 300 enemies and 400 gems.
+  (cd native && cargo run --locked --release -p app -- --bench-density --check)
 fi
 
 # SF9's own release step: utility QoS, a bounded matrix, source-keyed skip, 20-minute budget.

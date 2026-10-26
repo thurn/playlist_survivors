@@ -1214,6 +1214,26 @@ before-SF10 baseline. Final fast check passes in 27 s.
 See [SF9 evidence](../../native/evidence/sf9/README.md).
 
 ### SF10
+
+Live pools retire objects behind monotonic IDs; stream histories share pages,
+scratch geometry stays outside snapshots, and displayed-prefix caches bound
+rollback/view work. F's cold review found three issues, all fixed: finite
+beatless pickup timing, no-grid victory, and replay moment retention. Final
+integration also rejects retired missile targets, restores shared vacuum
+handling and culls distant Bible collision candidates before the unchanged
+contact test.
+
+With all five rank-8 base weapons and six applied max passives, 300 foes/400
+gems give **3.38 ms frame-work p99** at 1080p. Snapshot copying is
+262,865 / 273,063 / 264,560 bytes at minutes 1/15/30 (30/1 = 1.006×); the
+source-scoped age data precedes only the stateless collision optimization.
+The normal 30-minute recording replays all 31,399,652 records exactly. The
+41-case matrix takes 276.9 s; seven AFK cases remain report-only SW7 findings.
+No knobs or offers change. File/System feel checks are operator-pending.
+Source SHAs, commands, raw outputs and corrected historical fixture scope are
+in [SF10 evidence](../../native/evidence/sf10/README.md). SP5 remeasures final
+evolved effects; Tollgate certifies integration with later commits.
+
 ### SF11
 
 The intake adds the brute's real walk/attack/death art, four spiky plant

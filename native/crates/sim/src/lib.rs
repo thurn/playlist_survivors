@@ -14,6 +14,7 @@ pub mod player;
 pub mod reactive;
 pub mod recorder;
 pub mod schedule;
+pub mod shared_vec;
 pub mod strides;
 pub mod survivors;
 pub mod tiers;

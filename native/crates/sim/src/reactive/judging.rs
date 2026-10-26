@@ -6,6 +6,7 @@
 //! tick arrives, before anything reads it, so the result is the same. The judged-time clock
 //! (`judgedClock` in simulate.ts) is kept alongside.
 
+use crate::shared_vec::SharedVec;
 use stream::Tick;
 
 /// How long the beat must have been clear before presses are judged again.
@@ -17,16 +18,16 @@ pub const LOCK_GAP_S: f64 = 4.0;
 pub struct Judging {
     gate: f64,
     /// Per tick: is the beat judged from it to the next?
-    pub judged: Vec<bool>,
+    pub judged: SharedVec<bool>,
     /// Per judged tick: when its run of judged ticks began (NaN otherwise).
-    pub since: Vec<f64>,
+    pub since: SharedVec<f64>,
     /// Per tick: when the latest lock-on began (NaN before any, and at ticks below the gate).
-    pub lock_on: Vec<f64>,
+    pub lock_on: SharedVec<f64>,
     /// Per unjudged tick: when its stretch without judging began (NaN when judged).
-    pub unjudged_since: Vec<f64>,
+    pub unjudged_since: SharedVec<f64>,
     /// Judged time up to each tick (each judged tick holding to the next).
-    cum: Vec<f64>,
-    times: Vec<f64>,
+    cum: SharedVec<f64>,
+    times: SharedVec<f64>,
     clear_from: f64,
     last_judged: f64,
     lock: f64,
@@ -36,16 +37,25 @@ impl Judging {
     pub fn new(gate: f64) -> Judging {
         Judging {
             gate,
-            judged: Vec::new(),
-            since: Vec::new(),
-            lock_on: Vec::new(),
-            unjudged_since: Vec::new(),
-            cum: vec![0.0],
-            times: Vec::new(),
+            judged: SharedVec::new(),
+            since: SharedVec::new(),
+            lock_on: SharedVec::new(),
+            unjudged_since: SharedVec::new(),
+            cum: vec![0.0].into(),
+            times: SharedVec::new(),
             clear_from: f64::NAN,
             last_judged: 0.0,
             lock: f64::NAN,
         }
+    }
+
+    pub(crate) fn index_bytes(&self) -> usize {
+        self.judged.index_bytes()
+            + self.since.index_bytes()
+            + self.lock_on.index_bytes()
+            + self.unjudged_since.index_bytes()
+            + self.cum.index_bytes()
+            + self.times.index_bytes()
     }
 
     pub fn len(&self) -> usize {

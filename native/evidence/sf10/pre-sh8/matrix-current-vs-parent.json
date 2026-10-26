@@ -1,0 +1,375 @@
+{
+  "parent": "16f2e75f7f2aafb90c8345d45e23888c7a8d4172",
+  "source": "5f439da015cca57e4ff5d1e1907707cd7f86c944",
+  "cases": [
+    {
+      "case": "cached-original-positioning-1",
+      "sameHash": false,
+      "sameRecords": false,
+      "beforeHash": "c383f5e5deb4ab71",
+      "afterHash": "926db662094670f0",
+      "beforeRecords": 29154636,
+      "afterRecords": 29144245
+    },
+    {
+      "case": "cached-original-afk-1",
+      "sameHash": true,
+      "sameRecords": true,
+      "beforeHash": "826cfe6935f84724",
+      "afterHash": "826cfe6935f84724",
+      "beforeRecords": 830033,
+      "afterRecords": 830033
+    },
+    {
+      "case": "cached-original-positioning-2",
+      "sameHash": false,
+      "sameRecords": false,
+      "beforeHash": "976e069548a588b3",
+      "afterHash": "b985845a62433da7",
+      "beforeRecords": 29032089,
+      "afterRecords": 29057497
+    },
+    {
+      "case": "cached-original-afk-2",
+      "sameHash": true,
+      "sameRecords": true,
+      "beforeHash": "ada76e7a4b92c258",
+      "afterHash": "ada76e7a4b92c258",
+      "beforeRecords": 815515,
+      "afterRecords": 815515
+    },
+    {
+      "case": "cached-original-positioning-3",
+      "sameHash": false,
+      "sameRecords": false,
+      "beforeHash": "c2908f617d1c85a4",
+      "afterHash": "affc3c9b0039b945",
+      "beforeRecords": 29886460,
+      "afterRecords": 29886452
+    },
+    {
+      "case": "cached-original-afk-3",
+      "sameHash": true,
+      "sameRecords": true,
+      "beforeHash": "73fcc01a30ab7ee1",
+      "afterHash": "73fcc01a30ab7ee1",
+      "beforeRecords": 832464,
+      "afterRecords": 832464
+    },
+    {
+      "case": "cached-original-positioning-4",
+      "sameHash": false,
+      "sameRecords": false,
+      "beforeHash": "3cc5d47ee6b8dd92",
+      "afterHash": "94d1053e403c79cf",
+      "beforeRecords": 28965534,
+      "afterRecords": 29057757
+    },
+    {
+      "case": "cached-original-afk-4",
+      "sameHash": true,
+      "sameRecords": true,
+      "beforeHash": "5f6b118d716e78fd",
+      "afterHash": "5f6b118d716e78fd",
+      "beforeRecords": 868611,
+      "afterRecords": 868611
+    },
+    {
+      "case": "cached-original-positioning-5",
+      "sameHash": false,
+      "sameRecords": false,
+      "beforeHash": "f6802664ff4b540a",
+      "afterHash": "c7b8c06ae4857f62",
+      "beforeRecords": 28796275,
+      "afterRecords": 28791600
+    },
+    {
+      "case": "cached-original-afk-5",
+      "sameHash": true,
+      "sameRecords": true,
+      "beforeHash": "0cb0092b4db19aac",
+      "afterHash": "0cb0092b4db19aac",
+      "beforeRecords": 827327,
+      "afterRecords": 827327
+    },
+    {
+      "case": "cached-reverse-positioning-1",
+      "sameHash": false,
+      "sameRecords": false,
+      "beforeHash": "181b7812530523e0",
+      "afterHash": "0129364b2e514098",
+      "beforeRecords": 28552420,
+      "afterRecords": 28552415
+    },
+    {
+      "case": "cached-reverse-afk-1",
+      "sameHash": false,
+      "sameRecords": false,
+      "beforeHash": "a302dc0d88afc0cd",
+      "afterHash": "c02096eabd8552b8",
+      "beforeRecords": 23236013,
+      "afterRecords": 23236012
+    },
+    {
+      "case": "cached-reverse-positioning-2",
+      "sameHash": false,
+      "sameRecords": false,
+      "beforeHash": "d6edac600ce744ca",
+      "afterHash": "b444b8559d25542f",
+      "beforeRecords": 30804815,
+      "afterRecords": 30370147
+    },
+    {
+      "case": "cached-reverse-afk-2",
+      "sameHash": true,
+      "sameRecords": true,
+      "beforeHash": "fb7e9c0754f1010c",
+      "afterHash": "fb7e9c0754f1010c",
+      "beforeRecords": 911107,
+      "afterRecords": 911107
+    },
+    {
+      "case": "cached-reverse-positioning-3",
+      "sameHash": false,
+      "sameRecords": false,
+      "beforeHash": "8d85c072f1e7bbae",
+      "afterHash": "16127d57d35456f1",
+      "beforeRecords": 29168676,
+      "afterRecords": 29168668
+    },
+    {
+      "case": "cached-reverse-afk-3",
+      "sameHash": true,
+      "sameRecords": true,
+      "beforeHash": "0af3b7f2de1fbefa",
+      "afterHash": "0af3b7f2de1fbefa",
+      "beforeRecords": 871024,
+      "afterRecords": 871024
+    },
+    {
+      "case": "cached-reverse-positioning-4",
+      "sameHash": false,
+      "sameRecords": false,
+      "beforeHash": "25b4ce88387d6d6c",
+      "afterHash": "7e63e74d7123a281",
+      "beforeRecords": 28968185,
+      "afterRecords": 28968184
+    },
+    {
+      "case": "cached-reverse-afk-4",
+      "sameHash": false,
+      "sameRecords": false,
+      "beforeHash": "6f09ce3763274b9d",
+      "afterHash": "6ae74862f74cacf7",
+      "beforeRecords": 905508,
+      "afterRecords": 938596
+    },
+    {
+      "case": "cached-reverse-positioning-5",
+      "sameHash": false,
+      "sameRecords": false,
+      "beforeHash": "c4e42488ea83b2b8",
+      "afterHash": "83952776a637999c",
+      "beforeRecords": 28389249,
+      "afterRecords": 28389243
+    },
+    {
+      "case": "cached-reverse-afk-5",
+      "sameHash": true,
+      "sameRecords": true,
+      "beforeHash": "b628446198591b81",
+      "afterHash": "b628446198591b81",
+      "beforeRecords": 932943,
+      "afterRecords": 932943
+    },
+    {
+      "case": "cached-rotate-positioning-1",
+      "sameHash": false,
+      "sameRecords": false,
+      "beforeHash": "a897ff9c4cb59de0",
+      "afterHash": "02c67fe49053e32f",
+      "beforeRecords": 30643922,
+      "afterRecords": 30643915
+    },
+    {
+      "case": "cached-rotate-afk-1",
+      "sameHash": true,
+      "sameRecords": true,
+      "beforeHash": "44a1f1bc1d201837",
+      "afterHash": "44a1f1bc1d201837",
+      "beforeRecords": 23188178,
+      "afterRecords": 23188178
+    },
+    {
+      "case": "cached-rotate-positioning-2",
+      "sameHash": false,
+      "sameRecords": false,
+      "beforeHash": "ba6b7c3356c9e84d",
+      "afterHash": "360845ca58da5342",
+      "beforeRecords": 29051135,
+      "afterRecords": 28778569
+    },
+    {
+      "case": "cached-rotate-afk-2",
+      "sameHash": true,
+      "sameRecords": true,
+      "beforeHash": "b935ae80b9a2ba19",
+      "afterHash": "b935ae80b9a2ba19",
+      "beforeRecords": 23180602,
+      "afterRecords": 23180602
+    },
+    {
+      "case": "cached-rotate-positioning-3",
+      "sameHash": false,
+      "sameRecords": false,
+      "beforeHash": "1fe1ee22b0f12971",
+      "afterHash": "7f290ae7aeadb909",
+      "beforeRecords": 29104237,
+      "afterRecords": 31338410
+    },
+    {
+      "case": "cached-rotate-afk-3",
+      "sameHash": true,
+      "sameRecords": true,
+      "beforeHash": "db8eb086d8cc9035",
+      "afterHash": "db8eb086d8cc9035",
+      "beforeRecords": 804879,
+      "afterRecords": 804879
+    },
+    {
+      "case": "cached-rotate-positioning-4",
+      "sameHash": false,
+      "sameRecords": false,
+      "beforeHash": "88efc52264add4ab",
+      "afterHash": "901a51295ac76a60",
+      "beforeRecords": 29072574,
+      "afterRecords": 29163303
+    },
+    {
+      "case": "cached-rotate-afk-4",
+      "sameHash": true,
+      "sameRecords": true,
+      "beforeHash": "105e1eb67c5b967e",
+      "afterHash": "105e1eb67c5b967e",
+      "beforeRecords": 23116404,
+      "afterRecords": 23116404
+    },
+    {
+      "case": "cached-rotate-positioning-5",
+      "sameHash": false,
+      "sameRecords": false,
+      "beforeHash": "9d8427cccb592fb7",
+      "afterHash": "95b8a23ae831a074",
+      "beforeRecords": 28958775,
+      "afterRecords": 29366000
+    },
+    {
+      "case": "cached-rotate-afk-5",
+      "sameHash": true,
+      "sameRecords": true,
+      "beforeHash": "9c83b6dcb1a53ae5",
+      "afterHash": "9c83b6dcb1a53ae5",
+      "beforeRecords": 854617,
+      "afterRecords": 854617
+    },
+    {
+      "case": "cached-original-random-pick-1",
+      "sameHash": false,
+      "sameRecords": false,
+      "beforeHash": "14afccd042bb3ad4",
+      "afterHash": "d20c2b3d231fd26e",
+      "beforeRecords": 28253458,
+      "afterRecords": 28341943
+    },
+    {
+      "case": "continuous-original-positioning-1",
+      "sameHash": true,
+      "sameRecords": true,
+      "beforeHash": "5ebaca0d9269b5af",
+      "afterHash": "5ebaca0d9269b5af",
+      "beforeRecords": 30623244,
+      "afterRecords": 30623244
+    },
+    {
+      "case": "continuous-original-afk-1",
+      "sameHash": true,
+      "sameRecords": true,
+      "beforeHash": "f31f69f7423f0515",
+      "afterHash": "f31f69f7423f0515",
+      "beforeRecords": 23418105,
+      "afterRecords": 23418105
+    },
+    {
+      "case": "continuous-original-positioning-2",
+      "sameHash": true,
+      "sameRecords": true,
+      "beforeHash": "f02542987bc3a270",
+      "afterHash": "f02542987bc3a270",
+      "beforeRecords": 29316768,
+      "afterRecords": 29316768
+    },
+    {
+      "case": "continuous-original-afk-2",
+      "sameHash": true,
+      "sameRecords": true,
+      "beforeHash": "a434b73839f48490",
+      "afterHash": "a434b73839f48490",
+      "beforeRecords": 839443,
+      "afterRecords": 839443
+    },
+    {
+      "case": "continuous-original-positioning-3",
+      "sameHash": true,
+      "sameRecords": true,
+      "beforeHash": "0a4fc4166cf51282",
+      "afterHash": "0a4fc4166cf51282",
+      "beforeRecords": 31343320,
+      "afterRecords": 31343320
+    },
+    {
+      "case": "continuous-original-afk-3",
+      "sameHash": true,
+      "sameRecords": true,
+      "beforeHash": "67ff8654cec2ac21",
+      "afterHash": "67ff8654cec2ac21",
+      "beforeRecords": 841932,
+      "afterRecords": 841932
+    },
+    {
+      "case": "continuous-original-positioning-4",
+      "sameHash": true,
+      "sameRecords": true,
+      "beforeHash": "2df78b044636b019",
+      "afterHash": "2df78b044636b019",
+      "beforeRecords": 31389999,
+      "afterRecords": 31389999
+    },
+    {
+      "case": "continuous-original-afk-4",
+      "sameHash": true,
+      "sameRecords": true,
+      "beforeHash": "73fe5d86e519b92b",
+      "afterHash": "73fe5d86e519b92b",
+      "beforeRecords": 23316863,
+      "afterRecords": 23316863
+    },
+    {
+      "case": "continuous-original-positioning-5",
+      "sameHash": true,
+      "sameRecords": true,
+      "beforeHash": "f733718df2148c52",
+      "afterHash": "f733718df2148c52",
+      "beforeRecords": 29070367,
+      "afterRecords": 29070367
+    },
+    {
+      "case": "continuous-original-afk-5",
+      "sameHash": true,
+      "sameRecords": true,
+      "beforeHash": "a724b847bf90dbfe",
+      "afterHash": "a724b847bf90dbfe",
+      "beforeRecords": 857062,
+      "afterRecords": 857062
+    }
+  ]
+}

@@ -342,7 +342,7 @@ fn galop() -> SongMap {
                 beats_per_bar: m["beatsPerBar"].as_f64().unwrap(),
             })
             .collect(),
-        beats: nums(&v["beats"]),
+        beats: nums(&v["beats"]).into(),
         first_downbeat_index: v["firstDownbeatIndex"].as_f64().unwrap(),
         sections: v["sections"]
             .as_array()
@@ -363,7 +363,7 @@ fn galop() -> SongMap {
                 anchors: None,
             })
             .collect(),
-        energy: nums(&v["energy"]),
+        energy: nums(&v["energy"]).into(),
         accents: Vec::new(),
     }
 }

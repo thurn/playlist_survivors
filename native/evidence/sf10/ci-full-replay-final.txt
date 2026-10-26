@@ -1,0 +1,27 @@
+All checks passed!
+WARN `--no-project` was provided, but no project was found
+............
+----------------------------------------------------------------------
+Ran 12 tests in 0.130s
+
+OK
+WARN `--no-project` was provided, but no project was found
+survivors replay: 31399652 records, hash 1fb4266a6a8eae06, diagnostic=False, 26.715s; /Users/dthurn/Library/Caches/playlist-survivors/survivors-replay/c7c4542833a2fb66bd2b563a9c402d28839cd95073fcafdd0f1b7be3078576e6-1793048807107092000
+       29.08 real        25.98 user         0.26 sys
+            76349440  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+               35517  page reclaims
+                1644  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   3  messages sent
+                   3  messages received
+                   5  signals received
+                1693  voluntary context switches
+               15193  involuntary context switches
+            35507243  instructions retired
+            16534409  cycles elapsed
+             1425720  peak memory footprint

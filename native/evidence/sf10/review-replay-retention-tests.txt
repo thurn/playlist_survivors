@@ -1,0 +1,13 @@
+   Compiling players v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sf10-bounded-state/native/crates/players)
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sf10-bounded-state/native/crates/eval)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.30s
+     Running tests/session.rs (target/debug/deps/session-76edb21f1a60b469)
+
+running 4 tests
+test an_unknown_recorded_key_fails_before_replay ... ok
+test a_delayed_session_settles_as_it_did_live ... ok
+test a_recorded_session_settles_as_it_did_live ... ok
+test prefix_hash_matches_the_kept_records_without_enabling_retention ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+

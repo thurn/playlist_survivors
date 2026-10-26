@@ -1,0 +1,69 @@
+All checks passed!
+WARN `--no-project` was provided, but no project was found
+............
+----------------------------------------------------------------------
+Ran 12 tests in 0.131s
+
+OK
+WARN `--no-project` was provided, but no project was found
+cached-original-afk-0: 0.600s, HP 1.000, level 1, survival gate None
+cached-original-afk-1: 353.108s, HP 0.000, level 3, survival gate True
+cached-original-afk-2: 1800.000s, HP 1.000, level 26, survival gate False
+cached-original-afk-3: 1800.000s, HP 1.000, level 25, survival gate False
+cached-original-positioning-2: 1800.000s, HP 0.933, level 19, survival gate True
+continuous-original-positioning-1: 1800.000s, HP 0.988, level 21, survival gate True
+cached-original-positioning-3: 1800.000s, HP 0.929, level 17, survival gate True
+cached-original-positioning-1: 1800.000s, HP 0.846, level 17, survival gate True
+cached-reverse-afk-1: 368.186s, HP 0.000, level 3, survival gate True
+cached-original-afk-4: 1800.000s, HP 1.000, level 25, survival gate False
+cached-original-positioning-4: 1800.000s, HP 0.975, level 19, survival gate True
+cached-original-afk-5: 1800.000s, HP 1.000, level 26, survival gate False
+cached-reverse-afk-2: 373.194s, HP 0.000, level 3, survival gate True
+cached-reverse-afk-3: 371.874s, HP 0.000, level 3, survival gate True
+cached-original-positioning-5: 1800.000s, HP 1.000, level 20, survival gate True
+cached-reverse-afk-4: 373.571s, HP 0.000, level 3, survival gate True
+cached-reverse-positioning-1: 1800.000s, HP 1.000, level 23, survival gate True
+cached-reverse-positioning-2: 1800.000s, HP 1.000, level 22, survival gate True
+cached-rotate-afk-1: 352.283s, HP 0.000, level 3, survival gate True
+cached-reverse-positioning-3: 1800.000s, HP 1.000, level 21, survival gate True
+cached-reverse-afk-5: 1800.000s, HP 0.988, level 32, survival gate False
+cached-reverse-positioning-4: 1800.000s, HP 1.000, level 22, survival gate True
+cached-rotate-afk-2: 365.631s, HP 0.000, level 3, survival gate True
+cached-rotate-afk-3: 357.079s, HP 0.000, level 3, survival gate True
+cached-reverse-positioning-5: 1800.000s, HP 1.000, level 22, survival gate True
+cached-rotate-afk-4: 352.143s, HP 0.000, level 3, survival gate True
+cached-rotate-positioning-1: 1800.000s, HP 0.933, level 18, survival gate True
+cached-rotate-afk-5: 363.375s, HP 0.000, level 3, survival gate True
+cached-rotate-positioning-2: 1800.000s, HP 0.900, level 22, survival gate True
+cached-rotate-positioning-3: 1800.000s, HP 0.942, level 17, survival gate True
+continuous-original-afk-2: 353.295s, HP 0.000, level 3, survival gate True
+continuous-original-afk-1: 1800.000s, HP 1.000, level 27, survival gate False
+cached-rotate-positioning-5: 1800.000s, HP 0.900, level 20, survival gate True
+cached-rotate-positioning-4: 1800.000s, HP 0.921, level 20, survival gate True
+cached-original-random-pick-1: 1800.000s, HP 0.988, level 21, survival gate None
+continuous-original-afk-3: 355.892s, HP 0.000, level 3, survival gate True
+continuous-original-afk-5: 342.562s, HP 0.000, level 3, survival gate True
+continuous-original-positioning-2: 1800.000s, HP 1.000, level 20, survival gate True
+continuous-original-afk-4: 1800.000s, HP 1.000, level 27, survival gate False
+continuous-original-positioning-3: 1800.000s, HP 0.954, level 20, survival gate True
+continuous-original-positioning-4: 1800.000s, HP 1.000, level 14, survival gate True
+continuous-original-positioning-5: 1800.000s, HP 0.988, level 18, survival gate True
+survivors sweep: 41 reports, 7 survival failures (report-only), 276.882s; /Users/dthurn/Library/Caches/playlist-survivors/survivors/89a2e7888d6e85a9fd5fa89b91edfc96d26f241fd5bf9557ccc932be9e682eac-1793051386473667000
+      277.43 real      1406.59 user        19.02 sys
+            76251136  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+              361622  page reclaims
+                3042  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   3  messages sent
+                   3  messages received
+                   5  signals received
+               54676  voluntary context switches
+             2884692  involuntary context switches
+            34738808  instructions retired
+            16577552  cycles elapsed
+             1425720  peak memory footprint

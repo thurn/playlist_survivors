@@ -511,11 +511,25 @@ impl Sim {
         }
     }
 
+    /// A finite stand-in grid, phased from the last committed beat at/before the deadline.
+    pub(super) fn free_grid_at_or_after(&self, due: f64, step: f64) -> f64 {
+        let period = self.env.rule.free_period_s * step;
+        let anchor = self.log.beats[..self.st.ingested.beats]
+            .iter()
+            .rev()
+            .find(|b| b.t <= due)
+            .map_or(0.0, |b| b.t);
+        anchor + (((due - anchor) / period - 1e-9).ceil().max(0.0)) * period
+    }
+
     pub(super) fn known_grid_after(&self, due: f64, step: f64) -> Option<(f64, f64)> {
         let beats = &self.log.beats[..self.st.ingested.beats];
         let due = due.max(self.st.s);
         // Fractional steps require both bounding beats; extrapolation would read an unknown grid.
-        for (i, beat) in beats.iter().enumerate() {
+        let first = beats
+            .partition_point(|b| b.t < due - 1e-9)
+            .saturating_sub(1);
+        for (i, beat) in beats.iter().enumerate().skip(first) {
             let mut bi = (i as f64 / step - 1e-9).ceil() * step;
             while bi < i as f64 + 1.0 - 1e-9 {
                 let at = if bi.fract().abs() < 1e-9 {

@@ -564,19 +564,31 @@ impl Sim {
         else {
             return;
         };
+        let mut free_finale = false;
         let s = if let Some(run) = self.env.input.level.survivors {
             // Read only committed beats already ingested at their knownAt. The deadline is
             // expressed through the run clock so a later freeze can hold it independently.
             let due = self.st.s + (run.duration_s - self.st.run_s).max(0.0);
-            let Some(beat) = self.log.beats[..self.st.ingested.beats]
+            if let Some(beat) = self.log.beats[..self.st.ingested.beats]
                 .iter()
                 .enumerate()
                 .find(|(i, b)| i % 2 == 0 && b.t >= due - 1e-9 && b.t >= self.st.s - 1e-9)
                 .map(|(_, b)| b)
-            else {
+            {
+                beat.t
+            } else if self.st.run_s >= run.duration_s - 1e-9
+                && self.known_grid_after(self.st.s, 1.0).is_none()
+                && self.log.beats[..self.st.ingested.beats]
+                    .last()
+                    .is_none_or(|b| self.st.s > b.t + b.period + 1e-9)
+            {
+                // Audible beatless music must still finish the run. Commit the stand-in
+                // pulse only once the deadline is reached and no future beat is known.
+                free_finale = true;
+                self.free_grid_at_or_after(due, 1.0)
+            } else {
                 return;
-            };
-            beat.t
+            }
         } else {
             let h = self.horizon();
             let gate = self.env.input.gate;
@@ -644,12 +656,21 @@ impl Sim {
         let bi0 = self.sbi_at(s);
         let mut k = 0.0;
         while k < bands {
-            self.push_init_at_beat(
-                bi0 + k * step_b,
-                Ev::Blast { band: k as usize },
-                phase::BLAST,
-                k as u64,
-            );
+            if free_finale {
+                self.st.q.push_init(
+                    s + k * step_b * self.env.rule.free_period_s,
+                    Ev::Blast { band: k as usize },
+                    phase::BLAST,
+                    k as u64,
+                );
+            } else {
+                self.push_init_at_beat(
+                    bi0 + k * step_b,
+                    Ev::Blast { band: k as usize },
+                    phase::BLAST,
+                    k as u64,
+                );
+            }
             k += 1.0;
         }
         if let Some(id) = &f.landmark {

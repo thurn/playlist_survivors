@@ -67,8 +67,11 @@ impl Sim {
 
     /// Can this enemy be hit now? (The boss is out of reach while it drops in.)
     pub(super) fn hittable(&self, fi: usize) -> bool {
-        let f = &self.st.foes[fi];
-        f.alive && f.land_s.is_none_or(|l| self.st.s >= l - 1e-9)
+        // A travelling missile can outlive its target's final sample and retirement.
+        self.st
+            .foes
+            .get(fi)
+            .is_some_and(|f| f.alive && f.land_s.is_none_or(|l| self.st.s >= l - 1e-9))
     }
 
     /// Formation members on their slots, ring members while their ring holds, and the boss dropping
@@ -381,6 +384,7 @@ impl Sim {
         let step_b = if stepping { self.known_beat_at(s) } else { 0.0 };
         let health = self.st.health > 0.0;
         let alive = self.st.alive.clone();
+        let slots: Vec<usize> = alive.iter().map(|&id| self.st.foes.slot(id)).collect();
         // Bring everyone to this step's time first.
         for &fi in &alive {
             // Set pieces' members follow their circles and slots.
@@ -410,116 +414,149 @@ impl Sim {
             f.x += f.vx * dt;
             f.y += f.vy * dt;
         }
-        {
-            self.st.generation += 1;
-            let generation = self.st.generation;
-            let gox = floor(hp.x / CELL) as i64 - G / 2;
-            let goy = floor(hp.y / CELL) as i64 - G / 2;
-            if self.st.next_arr.len() < alive.len() {
-                self.st.next_arr = vec![0; alive.len() * 2];
+        let gox = floor(hp.x / CELL) as i64 - G / 2;
+        let goy = floor(hp.y / CELL) as i64 - G / 2;
+        let separation_input: Vec<[u64; 4]> = alive
+            .iter()
+            .map(|&id| {
+                let f = &self.st.foes[id];
+                [
+                    f.x.to_bits(),
+                    f.y.to_bits(),
+                    f.r.to_bits(),
+                    u64::from(self.pinned(id) || f.run.is_some()),
+                ]
+            })
+            .collect();
+        if let Some(output) = self.spatial.cache.lookup((gox, goy), &separation_input) {
+            for (&slot, pose) in slots.iter().zip(output) {
+                let f = self.st.foes.at_slot_mut(slot);
+                [f.x, f.y, f.sx, f.sy] = *pose;
             }
-            let cell_of = |x: f64, gox: i64| floor(x / CELL) as i64 - gox;
-            for (i, &fi) in alive.iter().enumerate() {
-                let f = &mut self.st.foes[fi];
-                f.sx = 0.0;
-                f.sy = 0.0;
-                let ix = cell_of(f.x, gox);
-                let iy = cell_of(f.y, goy);
-                if ix < 0 || iy < 0 || ix >= G || iy >= G {
-                    self.st.next_arr[i] = -2;
-                    continue;
+        } else {
+            {
+                if self.spatial.generation == i32::MAX {
+                    self.spatial.stamp.fill(0);
+                    self.spatial.generation = 0;
                 }
-                let c = (iy * G + ix) as usize;
-                if self.st.stamp[c] != generation {
-                    self.st.stamp[c] = generation;
-                    self.st.head[c] = -1;
+                self.spatial.generation += 1;
+                let generation = self.spatial.generation;
+                if self.spatial.next_arr.len() < alive.len() {
+                    self.spatial.next_arr = vec![0; alive.len() * 2];
                 }
-                self.st.next_arr[i] = self.st.head[c];
-                self.st.head[c] = i as i32;
-            }
-            // Separation forces and positional correction, pairwise.
-            for i in 0..alive.len() {
-                let (ax0, ay0) = (self.st.foes[alive[i]].x, self.st.foes[alive[i]].y);
-                let ix = cell_of(ax0, gox);
-                let iy = cell_of(ay0, goy);
-                if ix < 0 || iy < 0 || ix >= G || iy >= G {
-                    continue;
-                }
-                for gx in ix - 1..=ix + 1 {
-                    if !(0..G).contains(&gx) {
+                let cell_of = |x: f64, gox: i64| floor(x / CELL) as i64 - gox;
+                for (i, &fi) in alive.iter().enumerate() {
+                    let f = &mut self.st.foes[fi];
+                    f.sx = 0.0;
+                    f.sy = 0.0;
+                    let ix = cell_of(f.x, gox);
+                    let iy = cell_of(f.y, goy);
+                    if ix < 0 || iy < 0 || ix >= G || iy >= G {
+                        self.spatial.next_arr[i] = -2;
                         continue;
                     }
-                    for gy in iy - 1..=iy + 1 {
-                        if !(0..G).contains(&gy) {
+                    let c = (iy * G + ix) as usize;
+                    if self.spatial.stamp[c] != generation {
+                        self.spatial.stamp[c] = generation;
+                        self.spatial.head[c] = -1;
+                    }
+                    self.spatial.next_arr[i] = self.spatial.head[c];
+                    self.spatial.head[c] = i as i32;
+                }
+                // Separation forces and positional correction, pairwise.
+                for i in 0..alive.len() {
+                    let (ax0, ay0) = (self.st.foes[alive[i]].x, self.st.foes[alive[i]].y);
+                    let ix = cell_of(ax0, gox);
+                    let iy = cell_of(ay0, goy);
+                    if ix < 0 || iy < 0 || ix >= G || iy >= G {
+                        continue;
+                    }
+                    for gx in ix - 1..=ix + 1 {
+                        if !(0..G).contains(&gx) {
                             continue;
                         }
-                        let c = (gy * G + gx) as usize;
-                        if self.st.stamp[c] != generation {
-                            continue;
-                        }
-                        let mut j = self.st.head[c];
-                        while j >= 0 {
-                            let ju = j as usize;
-                            let next = self.st.next_arr[ju];
-                            if ju <= i {
-                                j = next;
+                        for gy in iy - 1..=iy + 1 {
+                            if !(0..G).contains(&gy) {
                                 continue;
                             }
-                            let (ai, bi) = (alive[i], alive[ju]);
-                            let (a, b) = (&self.st.foes[ai], &self.st.foes[bi]);
-                            let ox = a.x - b.x;
-                            let oy = a.y - b.y;
-                            let lim = SEPARATION * (a.r + b.r);
-                            let d2 = ox * ox + oy * oy;
-                            if d2 >= lim * lim {
-                                j = next;
+                            let c = (gy * G + gx) as usize;
+                            if self.spatial.stamp[c] != generation {
                                 continue;
                             }
-                            let dd = sqrt(d2);
-                            let dd = if dd == 0.0 || dd.is_nan() { 0.01 } else { dd };
-                            let ux = if dd > 0.01 { ox / dd } else { 1.0 };
-                            let uy = if dd > 0.01 { oy / dd } else { 0.0 };
-                            // Members, the landing boss and runners hold their places or course.
-                            let pa = self.pinned(ai) || self.st.foes[ai].run.is_some();
-                            let pb = self.pinned(bi) || self.st.foes[bi].run.is_some();
-                            if pa && pb {
+                            let mut j = self.spatial.head[c];
+                            while j >= 0 {
+                                let ju = j as usize;
+                                let next = self.spatial.next_arr[ju];
+                                if ju <= i {
+                                    j = next;
+                                    continue;
+                                }
+                                let (a, b) = self.st.foes.pair_at_slots_mut(slots[i], slots[ju]);
+                                let ox = a.x - b.x;
+                                let oy = a.y - b.y;
+                                let lim = SEPARATION * (a.r + b.r);
+                                let d2 = ox * ox + oy * oy;
+                                if d2 >= lim * lim {
+                                    j = next;
+                                    continue;
+                                }
+                                let dd = sqrt(d2);
+                                let dd = if dd == 0.0 || dd.is_nan() { 0.01 } else { dd };
+                                let ux = if dd > 0.01 { ox / dd } else { 1.0 };
+                                let uy = if dd > 0.01 { oy / dd } else { 0.0 };
+                                // Members, the landing boss and runners hold their places or course.
+                                let pinned = |f: &Foe| {
+                                    ((f.slot.is_some() || f.has_at) && s < f.slot_until)
+                                        || f.land_s.is_some_and(|l| s < l)
+                                };
+                                let pa = pinned(a) || a.run.is_some();
+                                let pb = pinned(b) || b.run.is_some();
+                                if pa && pb {
+                                    j = next;
+                                    continue;
+                                }
+                                let wa = if pa {
+                                    0.0
+                                } else if pb {
+                                    1.0
+                                } else {
+                                    0.5
+                                };
+                                let k = (1.0 - dd / lim) * 90.0;
+                                let gap = MIN_GAP * (a.r + b.r);
+                                {
+                                    a.sx += ux * k * 2.0 * wa;
+                                    a.sy += uy * k * 2.0 * wa;
+                                }
+                                {
+                                    b.sx -= ux * k * 2.0 * (1.0 - wa);
+                                    b.sy -= uy * k * 2.0 * (1.0 - wa);
+                                }
+                                if dd < gap {
+                                    let push = gap - dd;
+                                    a.x += ux * push * wa;
+                                    a.y += uy * push * wa;
+                                    b.x -= ux * push * (1.0 - wa);
+                                    b.y -= uy * push * (1.0 - wa);
+                                }
                                 j = next;
-                                continue;
                             }
-                            let wa = if pa {
-                                0.0
-                            } else if pb {
-                                1.0
-                            } else {
-                                0.5
-                            };
-                            let k = (1.0 - dd / lim) * 90.0;
-                            let gap = MIN_GAP * (a.r + b.r);
-                            {
-                                let a = &mut self.st.foes[ai];
-                                a.sx += ux * k * 2.0 * wa;
-                                a.sy += uy * k * 2.0 * wa;
-                            }
-                            {
-                                let b = &mut self.st.foes[bi];
-                                b.sx -= ux * k * 2.0 * (1.0 - wa);
-                                b.sy -= uy * k * 2.0 * (1.0 - wa);
-                            }
-                            if dd < gap {
-                                let push = gap - dd;
-                                let a = &mut self.st.foes[ai];
-                                a.x += ux * push * wa;
-                                a.y += uy * push * wa;
-                                let b = &mut self.st.foes[bi];
-                                b.x -= ux * push * (1.0 - wa);
-                                b.y -= uy * push * (1.0 - wa);
-                            }
-                            j = next;
                         }
                     }
                 }
             }
+            let output = alive
+                .iter()
+                .map(|&id| {
+                    let f = &self.st.foes[id];
+                    [f.x, f.y, f.sx, f.sy]
+                })
+                .collect();
+            self.spatial
+                .cache
+                .insert((gox, goy), separation_input, output);
         }
+
         // Archer groups share a post: on the line from the hero toward the group, at their range.
         let mut posts: Vec<(usize, f64, f64, f64)> = Vec::new();
         for &fi in &alive {
@@ -941,6 +978,11 @@ impl Sim {
 
     /// The first sixteenth note at or after song time t, from the beats known.
     pub(super) fn sixteenth_at_or_after(&self, t: f64) -> f64 {
+        if self.st.survivor.is_some() {
+            return self
+                .known_grid_after(t, 0.25)
+                .map_or_else(|| self.free_grid_at_or_after(t, 0.25), |(_, at)| at);
+        }
         self.known_time_of_beat(ceil(self.known_beat_at(t) * 4.0 - 1e-6) / 4.0)
     }
 

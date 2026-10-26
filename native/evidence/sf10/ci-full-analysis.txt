@@ -1,0 +1,379 @@
+........................................................................ [ 42%]
+........................................................................ [ 84%]
+...........................                                              [100%]
+=============================== warnings summary ===============================
+tests/test_models.py::test_librosa_matrices_reproduce_structures_features
+  /Users/dthurn/playlist_survivors/.worktrees/codex-sf10-bounded-state/tools/analysis/tests/test_models.py:56: RuntimeWarning: divide by zero encountered in matmul
+    assert np.allclose(m["mel"] @ spec, mel, rtol=1e-5)
+
+tests/test_models.py::test_librosa_matrices_reproduce_structures_features
+  /Users/dthurn/playlist_survivors/.worktrees/codex-sf10-bounded-state/tools/analysis/tests/test_models.py:56: RuntimeWarning: overflow encountered in matmul
+    assert np.allclose(m["mel"] @ spec, mel, rtol=1e-5)
+
+tests/test_models.py::test_librosa_matrices_reproduce_structures_features
+  /Users/dthurn/playlist_survivors/.worktrees/codex-sf10-bounded-state/tools/analysis/tests/test_models.py:56: RuntimeWarning: invalid value encountered in matmul
+    assert np.allclose(m["mel"] @ spec, mel, rtol=1e-5)
+
+tests/test_models.py::test_librosa_matrices_reproduce_structures_features
+  /Users/dthurn/playlist_survivors/.worktrees/codex-sf10-bounded-state/tools/analysis/tests/test_models.py:60: RuntimeWarning: divide by zero encountered in matmul
+    ours = m["dct"] @ librosa.power_to_db(m["mel"] @ spec, top_db=None)
+
+tests/test_models.py::test_librosa_matrices_reproduce_structures_features
+  /Users/dthurn/playlist_survivors/.worktrees/codex-sf10-bounded-state/tools/analysis/tests/test_models.py:60: RuntimeWarning: overflow encountered in matmul
+    ours = m["dct"] @ librosa.power_to_db(m["mel"] @ spec, top_db=None)
+
+tests/test_models.py::test_librosa_matrices_reproduce_structures_features
+  /Users/dthurn/playlist_survivors/.worktrees/codex-sf10-bounded-state/tools/analysis/tests/test_models.py:60: RuntimeWarning: invalid value encountered in matmul
+    ours = m["dct"] @ librosa.power_to_db(m["mel"] @ spec, top_db=None)
+
+tests/test_models.py::test_librosa_matrices_reproduce_structures_features
+  /Users/dthurn/playlist_survivors/.worktrees/codex-sf10-bounded-state/tools/analysis/tests/test_models.py:65: RuntimeWarning: divide by zero encountered in matmul
+    raw = m["chroma"] @ spec
+
+tests/test_models.py::test_librosa_matrices_reproduce_structures_features
+  /Users/dthurn/playlist_survivors/.worktrees/codex-sf10-bounded-state/tools/analysis/tests/test_models.py:65: RuntimeWarning: overflow encountered in matmul
+    raw = m["chroma"] @ spec
+
+tests/test_models.py::test_librosa_matrices_reproduce_structures_features
+  /Users/dthurn/playlist_survivors/.worktrees/codex-sf10-bounded-state/tools/analysis/tests/test_models.py:65: RuntimeWarning: invalid value encountered in matmul
+    raw = m["chroma"] @ spec
+
+tests/test_models.py::test_exported_front_ends_and_dbn_reproduce_madmom
+  /Users/dthurn/playlist_survivors/.worktrees/codex-sf10-bounded-state/tools/analysis/tests/test_models.py:117: RuntimeWarning: divide by zero encountered in matmul
+    logf = np.log10(mag @ m["online.2048.filterbank"] + 1)
+
+tests/test_models.py::test_exported_front_ends_and_dbn_reproduce_madmom
+  /Users/dthurn/playlist_survivors/.worktrees/codex-sf10-bounded-state/tools/analysis/tests/test_models.py:117: RuntimeWarning: overflow encountered in matmul
+    logf = np.log10(mag @ m["online.2048.filterbank"] + 1)
+
+tests/test_models.py::test_exported_front_ends_and_dbn_reproduce_madmom
+  /Users/dthurn/playlist_survivors/.worktrees/codex-sf10-bounded-state/tools/analysis/tests/test_models.py:117: RuntimeWarning: invalid value encountered in matmul
+    logf = np.log10(mag @ m["online.2048.filterbank"] + 1)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+real-time factors (pop-arrangement excerpt): bands 0.0011, brightness 0.0012, timbre 0.0292 (target under 0.2)
+171 passed, 12 warnings in 63.42s (0:01:03)
+All checks passed!
+{
+ "ok": true,
+ "errors": [],
+ "warnings": [],
+ "sections": [
+  {
+   "label": "prelude",
+   "bars": [
+    1,
+    14
+   ],
+   "feel": "free",
+   "key": "E major",
+   "start": 0.149,
+   "end": 43.21,
+   "beats": [
+    0,
+    55
+   ],
+   "beatCount": 56,
+   "medianBeatMs": 740.0,
+   "bpm": 81.1,
+   "onsetAlignment": {
+    "counted": 55,
+    "aligned": 25,
+    "fraction": 0.455,
+    "medianAbsOffsetMs": 28.9,
+    "meanOffsetMs": -2.2
+   },
+   "smoothness": {
+    "pairs": 55,
+    "maxChange": 0.1795,
+    "p95Change": 0.11,
+    "violations": 12
+   },
+   "anchors": {
+    "count": 11,
+    "maxGapS": 7.57,
+    "maxOnsetOffsetMs": 0.0
+   }
+  },
+  {
+   "label": "galop-vamp",
+   "bars": [
+    15,
+    30
+   ],
+   "feel": "pulsed",
+   "key": "D major",
+   "start": 43.21,
+   "end": 54.066,
+   "beats": [
+    56,
+    87
+   ],
+   "beatCount": 32,
+   "medianBeatMs": 340.0,
+   "bpm": 176.5,
+   "onsetAlignment": {
+    "counted": 32,
+    "aligned": 31,
+    "fraction": 0.969,
+    "medianAbsOffsetMs": 9.3,
+    "meanOffsetMs": -0.6
+   },
+   "smoothness": {
+    "pairs": 31,
+    "maxChange": 0.0588,
+    "p95Change": 0.0585,
+    "violations": 0
+   }
+  },
+  {
+   "label": "galop-opening",
+   "bars": [
+    31,
+    53
+   ],
+   "feel": "pulsed",
+   "key": "D major",
+   "start": 54.066,
+   "end": 69.82,
+   "beats": [
+    88,
+    133
+   ],
+   "beatCount": 46,
+   "medianBeatMs": 340.0,
+   "bpm": 176.5,
+   "onsetAlignment": {
+    "counted": 46,
+    "aligned": 44,
+    "fraction": 0.957,
+    "medianAbsOffsetMs": 10.2,
+    "meanOffsetMs": 3.2
+   },
+   "smoothness": {
+    "pairs": 45,
+    "maxChange": 0.0727,
+    "p95Change": 0.0567,
+    "violations": 0
+   }
+  },
+  {
+   "label": "theme-a",
+   "bars": [
+    54,
+    69
+   ],
+   "feel": "pulsed",
+   "key": "G major",
+   "start": 69.82,
+   "end": 80.23,
+   "beats": [
+    134,
+    165
+   ],
+   "beatCount": 32,
+   "medianBeatMs": 324.6,
+   "bpm": 184.9,
+   "onsetAlignment": {
+    "counted": 32,
+    "aligned": 31,
+    "fraction": 0.969,
+    "medianAbsOffsetMs": 11.6,
+    "meanOffsetMs": -4.0
+   },
+   "smoothness": {
+    "pairs": 31,
+    "maxChange": 0.0746,
+    "p95Change": 0.0625,
+    "violations": 0
+   }
+  },
+  {
+   "label": "theme-a-repeat",
+   "bars": [
+    70,
+    85
+   ],
+   "feel": "pulsed",
+   "key": "G major",
+   "start": 80.23,
+   "end": 90.528,
+   "beats": [
+    166,
+    197
+   ],
+   "beatCount": 32,
+   "medianBeatMs": 320.0,
+   "bpm": 187.5,
+   "onsetAlignment": {
+    "counted": 31,
+    "aligned": 30,
+    "fraction": 0.968,
+    "medianAbsOffsetMs": 10.6,
+    "meanOffsetMs": -6.5
+   },
+   "smoothness": {
+    "pairs": 31,
+    "maxChange": 0.0675,
+    "p95Change": 0.0611,
+    "violations": 0
+   }
+  },
+  {
+   "label": "kick-line",
+   "bars": [
+    86,
+    101
+   ],
+   "feel": "pulsed",
+   "key": "D major",
+   "start": 90.528,
+   "end": 100.65,
+   "beats": [
+    198,
+    229
+   ],
+   "beatCount": 32,
+   "medianBeatMs": 318.2,
+   "bpm": 188.6,
+   "onsetAlignment": {
+    "counted": 32,
+    "aligned": 30,
+    "fraction": 0.938,
+    "medianAbsOffsetMs": 11.8,
+    "meanOffsetMs": -3.2
+   },
+   "smoothness": {
+    "pairs": 31,
+    "maxChange": 0.0625,
+    "p95Change": 0.0603,
+    "violations": 0
+   }
+  },
+  {
+   "label": "bridge",
+   "bars": [
+    102,
+    107
+   ],
+   "feel": "pulsed",
+   "key": "D major",
+   "start": 100.65,
+   "end": 104.548,
+   "beats": [
+    230,
+    241
+   ],
+   "beatCount": 12,
+   "medianBeatMs": 323.7,
+   "bpm": 185.4,
+   "onsetAlignment": {
+    "counted": 12,
+    "aligned": 11,
+    "fraction": 0.917,
+    "medianAbsOffsetMs": 11.3,
+    "meanOffsetMs": -0.2
+   },
+   "smoothness": {
+    "pairs": 11,
+    "maxChange": 0.0629,
+    "p95Change": 0.0591,
+    "violations": 0
+   }
+  },
+  {
+   "label": "climax",
+   "bars": [
+    108,
+    139
+   ],
+   "feel": "pulsed",
+   "key": "D major",
+   "start": 104.548,
+   "end": 124.63,
+   "beats": [
+    242,
+    305
+   ],
+   "beatCount": 64,
+   "medianBeatMs": 311.2,
+   "bpm": 192.8,
+   "onsetAlignment": {
+    "counted": 63,
+    "aligned": 62,
+    "fraction": 0.984,
+    "medianAbsOffsetMs": 10.3,
+    "meanOffsetMs": -1.2
+   },
+   "smoothness": {
+    "pairs": 63,
+    "maxChange": 0.0724,
+    "p95Change": 0.0678,
+    "violations": 0
+   }
+  },
+  {
+   "label": "coda",
+   "bars": [
+    140,
+    177
+   ],
+   "feel": "pulsed",
+   "key": "D major",
+   "start": 124.63,
+   "end": 144.386,
+   "beats": [
+    306,
+    381
+   ],
+   "beatCount": 76,
+   "medianBeatMs": 250.0,
+   "bpm": 240.0,
+   "onsetAlignment": {
+    "counted": 73,
+    "aligned": 66,
+    "fraction": 0.904,
+    "medianAbsOffsetMs": 8.3,
+    "meanOffsetMs": -3.9
+   },
+   "smoothness": {
+    "pairs": 15,
+    "maxChange": 0.0004,
+    "p95Change": 0.0004,
+    "violations": 0
+   }
+  }
+ ],
+ "accents": {
+  "count": 30,
+  "labels": {
+   "tutti-chord": 8
+  },
+  "maxOnsetOffsetMs": 0.0
+ }
+}
+prelude          bars   1-14  free      0.149-  43.210 s    81.1 bpm  anchors 11 max gap 7.57 s
+galop-vamp       bars  15-30  pulsed   43.210-  54.066 s   176.5 bpm  align 96.9% (31/32)  max gap change 5.9%
+galop-opening    bars  31-53  pulsed   54.066-  69.820 s   176.5 bpm  align 95.7% (44/46)  max gap change 7.3%
+theme-a          bars  54-69  pulsed   69.820-  80.230 s   184.9 bpm  align 96.9% (31/32)  max gap change 7.5%
+theme-a-repeat   bars  70-85  pulsed   80.230-  90.528 s   187.5 bpm  align 96.8% (30/31)  max gap change 6.8%
+kick-line        bars  86-101 pulsed   90.528- 100.650 s   188.6 bpm  align 93.8% (30/32)  max gap change 6.2%
+bridge           bars 102-107 pulsed  100.650- 104.548 s   185.4 bpm  align 91.7% (11/12)  max gap change 6.3%
+climax           bars 108-139 pulsed  104.548- 124.630 s   192.8 bpm  align 98.4% (62/63)  max gap change 7.2%
+coda             bars 140-177 pulsed  124.630- 144.386 s   240.0 bpm  align 90.4% (66/73)  max gap change 0.0%
+accents: 30 {'tutti-chord': 8}
+check: OK
+friction: 46 records valid
+All checks passed!
+WARN `--no-project` was provided, but no project was found
+...........................
+----------------------------------------------------------------------
+Ran 27 tests in 0.026s
+
+OK
+WARN `--no-project` was provided, but no project was found
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.052s
+
+OK

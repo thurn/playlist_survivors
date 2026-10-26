@@ -25,6 +25,11 @@
 #![allow(clippy::many_single_char_names, clippy::manual_midpoint)] // (the TS names and arithmetic, as written)
 
 mod bible;
+mod bounds;
+mod pool;
+mod separation_cache;
+pub use bounds::Storage;
+use pool::Pool;
 mod combat;
 mod enemy_rhythm;
 mod foes;
@@ -41,6 +46,7 @@ mod plan;
 mod spawning;
 mod weapons;
 
+use crate::shared_vec::SharedVec;
 use std::collections::HashSet;
 use std::rc::Rc;
 
@@ -944,7 +950,7 @@ struct SimState {
     w: f64,
     rate_s: f64,
     q: Queue,
-    breaks: Vec<WarpBreak>,
+    breaks: SharedVec<WarpBreak>,
     stop_start: f64,
     stop_end: f64,
     rest_pose: (f64, f64),
@@ -968,7 +974,7 @@ struct SimState {
     pending_cleave: Option<PendingCleave>,
     onset_cleave: Option<(PendingCleave, f64)>,
     last_great: Option<(f64, bool)>,
-    swing_pool: Vec<Swing>,
+    swing_pool: Pool<Swing>,
     swings: Vec<usize>,
     live_swings: Vec<usize>,
     taken_slots: HashSet<usize>,
@@ -976,8 +982,8 @@ struct SimState {
     n_inputs: usize,
     n_hits: usize,
     n_gems: usize,
-    waves: Vec<WaveState>,
-    chains: Vec<ChainState>,
+    waves: Pool<WaveState>,
+    chains: Pool<ChainState>,
     field: Vec<FieldGem>,
     flying_gems: Vec<pickups::FlyingGem>,
     vacuums: Vec<Spot>,
@@ -997,7 +1003,7 @@ struct SimState {
     punches: Vec<Punch>,
     alive: Vec<usize>,
     pending: f64,
-    foes: Vec<Foe>,
+    foes: Pool<Foe>,
     foe_samples: Vec<usize>,
     blasting: bool,
     health: f64,
@@ -1015,22 +1021,18 @@ struct SimState {
     next_hero_k: f64,
     next_foe_k: f64,
     dip_start: f64,
-    head: Vec<i32>,
-    stamp: Vec<i32>,
-    next_arr: Vec<i32>,
-    generation: i32,
     fixed_k: f64,
     last_fixed_w: f64,
     recycle_k: u64,
     // The stream as taken in, and what grows from it.
     ingested: Ingested,
     song: SongMap,
-    idx: SongIndex,
+    idx: Rc<SongIndex>,
     sch: ReactiveSchedule,
     judging: Judging,
     /// The strong onsets taken in (indices into the log's onsets), and the confident forecasts.
-    strong_onsets: Vec<usize>,
-    forecasts: Vec<usize>,
+    strong_onsets: SharedVec<usize>,
+    forecasts: SharedVec<usize>,
     /// Stride steps whose held strides are queued (the last grid time's are provisional).
     held_queued: usize,
     /// Events waiting for the beats their times need.
@@ -1073,6 +1075,26 @@ pub struct Snapshot {
     finished: bool,
 }
 
+/// Rebuilt separation bins; no game rule reads their contents across physics passes.
+struct Spatial {
+    head: Vec<i32>,
+    stamp: Vec<i32>,
+    next_arr: Vec<i32>,
+    generation: i32,
+    cache: separation_cache::Cache,
+}
+impl Default for Spatial {
+    fn default() -> Self {
+        Self {
+            head: vec![0; (G * G) as usize],
+            stamp: vec![0; (G * G) as usize],
+            next_arr: Vec::new(),
+            generation: 0,
+            cache: separation_cache::Cache::default(),
+        }
+    }
+}
+
 /// A steppable simulation (`Sim`). `advance_to` runs the game rules up to a song time over the
 /// stream as known; `key` applies a key event at its exact song time; `snapshot` and `restore`
 /// roll it back.
@@ -1083,6 +1105,7 @@ pub struct Sim {
     /// the simulation has taken in.
     log: Rc<StreamLog>,
     pub rec: Box<dyn Recorder>,
+    spatial: Spatial,
     finished: bool,
 }
 
@@ -1118,6 +1141,7 @@ impl Sim {
             st,
             log,
             rec,
+            spatial: Spatial::default(),
             finished: false,
         };
         sim.init();
@@ -1290,7 +1314,7 @@ impl Sim {
         st.ingested.beats += n_beats;
         st.sch.grow_to(log, st.ingested.beats);
         st.song = st.sch.song.clone();
-        st.idx = index_song(&st.song);
+        st.idx = Rc::new(index_song(&st.song));
         if env.input.level.survivors.is_some() {
             for bi in from..st.ingested.beats {
                 self.queue_beat(bi);
@@ -1756,6 +1780,7 @@ impl Sim {
             self.st.recycle_k += 1;
             if self.st.recycle_k.is_multiple_of(30) && !self.st.freeze.frozen {
                 self.recycle();
+                self.trim_state();
             }
         }
         while self.st.q.peek() <= self.st.s + 1e-12 {
@@ -1974,7 +1999,7 @@ fn fresh_state(env: &Env) -> SimState {
         w: 0.0,
         rate_s: 0.0,
         q: Queue::default(),
-        breaks: Vec::new(),
+        breaks: SharedVec::new(),
         stop_start: -1.0,
         stop_end: -1.0,
         rest_pose: (0.0, 0.0),
@@ -1995,7 +2020,7 @@ fn fresh_state(env: &Env) -> SimState {
         pending_cleave: None,
         onset_cleave: None,
         last_great: None,
-        swing_pool: Vec::new(),
+        swing_pool: Pool::default(),
         swings: Vec::new(),
         live_swings: Vec::new(),
         taken_slots: HashSet::new(),
@@ -2003,8 +2028,8 @@ fn fresh_state(env: &Env) -> SimState {
         n_inputs: 0,
         n_hits: 0,
         n_gems: 0,
-        waves: Vec::new(),
-        chains: Vec::new(),
+        waves: Pool::default(),
+        chains: Pool::default(),
         field: Vec::new(),
         flying_gems: Vec::new(),
         vacuums: Vec::new(),
@@ -2024,7 +2049,7 @@ fn fresh_state(env: &Env) -> SimState {
         punches: Vec::new(),
         alive: Vec::new(),
         pending: 0.0,
-        foes: Vec::new(),
+        foes: Pool::default(),
         foe_samples: Vec::new(),
         blasting: false,
         health: if level.survivors.is_some() {
@@ -2046,20 +2071,16 @@ fn fresh_state(env: &Env) -> SimState {
         next_hero_k: 0.0,
         next_foe_k: 0.0,
         dip_start: f64::NEG_INFINITY,
-        head: vec![0; (G * G) as usize],
-        stamp: vec![-1; (G * G) as usize],
-        next_arr: vec![0; 1024],
-        generation: 0,
         fixed_k: 1.0,
         last_fixed_w: 0.0,
         recycle_k: 0,
         ingested: Ingested::default(),
         song,
-        idx,
+        idx: Rc::new(idx),
         sch,
         judging: Judging::new(env.input.gate),
-        strong_onsets: Vec::new(),
-        forecasts: Vec::new(),
+        strong_onsets: SharedVec::new(),
+        forecasts: SharedVec::new(),
         held_queued: 0,
         deferred: Vec::new(),
         stomp_target: None,
@@ -2089,13 +2110,14 @@ mod tests {
 
     use stream::{Audio, Beat, Params, StreamFile, StreamLog, Tick};
 
-    use super::{Ev, Sim, SimInput};
+    use super::{ChainState, Ev, Sim, SimInput, WaveState};
     use crate::content::level::load_level;
     use crate::content::{SourceFile, load_content};
     use crate::movement::InputKey;
     use crate::player::{KeyEvent, KeyEventKind};
     use crate::recorder::NullRecorder;
     use crate::schedule::{grow_song_map, reactive_song_map};
+    use std::collections::HashSet;
 
     fn source(rel: &str) -> SourceFile {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
@@ -4330,7 +4352,7 @@ mod tests {
             }
             let mut counts = std::collections::BTreeMap::new();
             let mut bosses = 0;
-            for f in &sim.st.foes[start..] {
+            for f in sim.st.foes.iter().skip(start) {
                 let def = &sim.env.input.lib.enemies[f.def];
                 *counts.entry(def.id.as_str()).or_insert(0usize) += 1;
                 let scaled = f.survivor_boss || def.survivors.unwrap().level_scaled;
@@ -4786,5 +4808,230 @@ mod tests {
         key(&mut sim, t + 0.002, KeyEventKind::Press, InputKey::Confirm);
         sim.advance_to(t + 0.003);
         assert_eq!(sim.st.health, 70.0);
+    }
+    #[test]
+    fn retired_survivor_ids_stay_absent_and_a_snapshot_restores_the_old_identity() {
+        let mut sim = survivor_sim();
+        let first = rhythm_foe(&mut sim, 400.0);
+        let old = sim.snapshot();
+        for _ in 0..100 {
+            let id = *sim.st.alive.last().unwrap();
+            sim.st.foes[id].alive = false;
+            sim.st.foes[id].final_sample = true;
+            sim.record_foes(sim.st.w);
+            sim.st.alive.clear();
+            sim.trim_state();
+            assert_eq!(sim.st.foes.stored(), 0);
+            assert!(
+                !sim.hittable(id),
+                "retired missile targets are not hittable"
+            );
+            let new = rhythm_foe(&mut sim, 400.0);
+            assert!(new > id);
+            let before = sim.st.foes[new].recoil_until;
+            sim.survivor_recoil(id, 1.0); // A stale queued recoil cannot affect the new foe.
+            assert_eq!(sim.st.foes[new].recoil_until, before);
+        }
+        assert_eq!(sim.st.foes.stored(), 1);
+        assert_eq!(sim.st.foe_samples.len(), 1);
+        sim.restore(&old);
+        assert!(sim.st.foes[first].alive);
+        assert_eq!(sim.st.foes.len(), first + 1);
+    }
+
+    #[test]
+    fn effect_pools_keep_queued_and_deferred_references_then_retire_them() {
+        let mut sim = survivor_sim();
+        sim.st.waves.push(WaveState {
+            x: 0.0,
+            y: 0.0,
+            dir: 0.0,
+            group: 0,
+            mult: 1.0,
+            inner: 0.0,
+            half_angle: 1.0,
+            to: 100.0,
+            hit: HashSet::new(),
+        });
+        sim.st.chains.push(ChainState {
+            last: crate::recorder::ChainPoint {
+                w: 0.0,
+                x: 0.0,
+                y: 0.0,
+            },
+            index: 0,
+            hit: HashSet::new(),
+            jumps: 2.0,
+            energy: 1.0,
+            bi: 0.0,
+            range: None,
+            mult: 1.0,
+        });
+        sim.st.q.push(100.0, Ev::Wave { group: 0, band: 0 });
+        sim.push_at_beat(
+            100.0,
+            Ev::Chain {
+                weapon: 0,
+                chain: 0,
+                jump: 0,
+            },
+        );
+        sim.trim_state();
+        assert_eq!(sim.st.waves.stored(), 1);
+        assert_eq!(sim.st.chains.stored(), 1);
+        sim.st.q.remove(&|ev| matches!(ev, Ev::Wave { .. }));
+        sim.st.deferred.clear();
+        sim.trim_state();
+        assert_eq!(sim.st.waves.stored(), 0);
+        assert_eq!(sim.st.chains.stored(), 0);
+        assert_eq!(sim.st.chains.len(), 1); // Recording identity remains monotonic.
+    }
+    #[test]
+    fn separation_cache_matches_uncached_physics_after_restore_and_changed_keys() {
+        use crate::recorder::LogRecorder;
+        use std::cell::RefCell;
+        let mut a = survivor_sim();
+        let mut b = survivor_sim();
+        b.spatial.cache.disabled = true;
+        let ar = Rc::new(RefCell::new(LogRecorder::default()));
+        let br = Rc::new(RefCell::new(LogRecorder::default()));
+        a.rec = Box::new(Rc::clone(&ar));
+        b.rec = Box::new(Rc::clone(&br));
+        for k in 0..40 {
+            for sim in [&mut a, &mut b] {
+                rhythm_foe(sim, (k as f64 - 20.0) * 2.0);
+            }
+        }
+        a.advance_to(1.0);
+        b.advance_to(1.0);
+        let (sa, sb) = (a.snapshot(), b.snapshot());
+        let (base_ar, base_br) = (ar.borrow().clone(), br.borrow().clone());
+        for changed in [false, false, true] {
+            a.restore(&sa);
+            b.restore(&sb);
+            *ar.borrow_mut() = base_ar.clone();
+            *br.borrow_mut() = base_br.clone();
+            if changed {
+                for sim in [&mut a, &mut b] {
+                    key(sim, 1.01, KeyEventKind::Press, InputKey::Right);
+                }
+            }
+            a.advance_to(1.25);
+            b.advance_to(1.25);
+            assert_eq!(format!("{:?}", ar.borrow()), format!("{:?}", br.borrow()));
+            assert_eq!(format!("{:?}", a.st.foes), format!("{:?}", b.st.foes));
+        }
+        assert!(a.spatial.cache.hits > 0);
+    }
+    #[test]
+    fn beatless_gems_chickens_and_vacuums_never_queue_nan_or_stall_the_clock() {
+        #[derive(Default)]
+        struct Arrivals(Vec<usize>);
+        impl crate::recorder::Recorder for Arrivals {
+            fn gem_arrive(&mut self, gem: usize, _w: f64) {
+                self.0.push(gem);
+            }
+        }
+        for beats in [0, 1] {
+            for vacuum in [false, true] {
+                let mut file = stream();
+                file.log.beats.truncate(beats);
+                let mut sim = survivor_sim_with(file);
+                let arrived = Rc::new(std::cell::RefCell::new(Arrivals::default()));
+                sim.rec = Box::new(Rc::clone(&arrived));
+                sim.st.health = 60.0;
+                sim.st.chickens.push(super::Spot {
+                    i: 0,
+                    x: 0.0,
+                    y: 0.0,
+                });
+                let x = if vacuum { 150.0 } else { 0.0 };
+                sim.drop_on_field(
+                    0,
+                    crate::recorder::Fate {
+                        w: 0.0,
+                        x,
+                        y: 0.0,
+                        hit: 0.0,
+                        lethal: true,
+                        damage: 1.0,
+                    },
+                    1.0,
+                    false,
+                );
+                let gem = sim.st.field.last().unwrap().gem;
+                if vacuum {
+                    sim.st.vacuums.push(super::Spot {
+                        i: 0,
+                        x: 0.0,
+                        y: 0.0,
+                    });
+                }
+                sim.advance_to(1.5);
+                assert!(sim.s() > 1.4, "{beats} beats, vacuum {vacuum}: {}", sim.s());
+                assert!(sim.st.field.is_empty(), "{beats} beats, vacuum {vacuum}");
+                assert!(sim.st.vacuums.is_empty());
+                assert!(arrived.borrow().0.contains(&gem));
+                assert!(sim.survivor_progress().unwrap().xp > 0.0);
+                assert!(sim.st.health > 60.0);
+                assert!(sim.st.q.heap.iter().all(|e| !e.key.s.is_nan()));
+            }
+        }
+    }
+
+    #[test]
+    fn beatless_victory_clears_high_hp_foes_and_finishes_its_gem_flights() {
+        let mut file = stream();
+        file.log.beats.clear();
+        let mut sim = survivor_sim_with(file);
+        Rc::get_mut(&mut sim.env)
+            .unwrap()
+            .input
+            .level
+            .survivors
+            .as_mut()
+            .unwrap()
+            .duration_s = 2.2;
+        sim.disable_hero_damage_for_check();
+        let id = rhythm_foe(&mut sim, 400.0);
+        assert!(sim.st.foes[id].health > 2000.0);
+        sim.advance_to(6.0);
+        assert!(sim.done(), "stuck at {}", sim.s());
+        assert!((sim.end_s() - 5.45).abs() < 1e-8);
+        assert_eq!(sim.storage().alive, 0);
+        assert!(sim.st.q.heap.iter().all(|e| !e.key.s.is_nan()));
+    }
+
+    #[test]
+    fn binary_grid_search_matches_the_full_known_prefix_scan() {
+        let mut sim = survivor_sim();
+        sim.advance_to(1.1);
+        for step in [0.25, 0.5, 1.0, 2.0, 4.0] {
+            for due in [-1.0, 0.0, 0.125, 0.5, 0.99, 1.0, 1.1, 1.25, 1.5, 2.0, 100.0] {
+                let due = f64::max(due, sim.st.s);
+                let beats = &sim.log.beats[..sim.st.ingested.beats];
+                let slow = beats.iter().enumerate().find_map(|(i, beat)| {
+                    let mut bi = (i as f64 / step - 1e-9).ceil() * step;
+                    while bi < i as f64 + 1.0 - 1e-9 {
+                        let at = if bi.fract().abs() < 1e-9 {
+                            beat.t
+                        } else {
+                            let next = beats.get(i + 1)?;
+                            beat.t + (next.t - beat.t) * bi.fract()
+                        };
+                        if at >= due - 1e-9 {
+                            return Some((bi, at));
+                        }
+                        bi += step;
+                    }
+                    None
+                });
+                assert_eq!(
+                    sim.known_grid_after(due, step),
+                    slow,
+                    "due {due} step {step}"
+                );
+            }
+        }
     }
 }

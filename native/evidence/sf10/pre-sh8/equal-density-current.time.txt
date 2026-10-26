@@ -1,0 +1,22 @@
+    Blocking waiting for file lock on build directory
+   Compiling cli v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sf10-bounded-state/native/crates/cli)
+    Finished `release` profile [optimized] target(s) in 58.37s
+     Running `target/release/examples/survivors_scale /tmp/sf10-normal-session equal`
+     1101.90 real       234.06 user         5.02 sys
+            49201152  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+               12571  page reclaims
+                   1  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                  11  voluntary context switches
+              433781  involuntary context switches
+       1694626700390  instructions retired
+        528141622381  cycles elapsed
+            42533248  peak memory footprint

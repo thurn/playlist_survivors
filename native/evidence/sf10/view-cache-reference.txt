@@ -1,0 +1,14 @@
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sf10-bounded-state/native/crates/eval)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.69s
+     Running unittests src/lib.rs (target/debug/deps/eval-ac22b895b76bfc69)
+
+running 6 tests
+test field::tests::fading_is_full_far_and_least_near ... ok
+test live::presentation_hash_tests::damage_label_metadata_preserves_the_recording_protocol ... ok
+test live::damage_source_tests::displayed_damage_and_time_come_from_the_actual_fate ... ok
+test session::tests::entries_are_rebased_to_the_run ... ok
+test session::tests::an_arrival_reads_back_as_written ... ok
+test scale::tests::density_setup_survives_an_initial_rollback_with_all_gems_and_weapons ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+

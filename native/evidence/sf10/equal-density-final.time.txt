@@ -1,0 +1,21 @@
+   Compiling cli v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sf10-bounded-state/native/crates/cli)
+    Finished `release` profile [optimized] target(s) in 0.98s
+     Running `target/release/examples/survivors_scale /tmp/sf10-normal-session equal`
+      487.07 real       301.40 user         9.38 sys
+            49446912  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+               12403  page reclaims
+                   3  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                  11  voluntary context switches
+              453692  involuntary context switches
+       1901768896729  instructions retired
+        601322561923  cycles elapsed
+            46416232  peak memory footprint

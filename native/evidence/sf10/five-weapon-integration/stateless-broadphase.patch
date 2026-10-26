@@ -1,0 +1,96 @@
+diff --git a/native/crates/sim/src/engine/bible.rs b/native/crates/sim/src/engine/bible.rs
+index 05e2761..dc2b1df 100644
+--- a/native/crates/sim/src/engine/bible.rs
++++ b/native/crates/sim/src/engine/bible.rs
+@@ -1,11 +1,28 @@
+ //! Source-duration orbiting blades; hit memory clears per blade every 1.7 s.
+ use super::{Sim, combat::HitSpec};
+ use crate::{
+-    core::geometry::Shape,
++    core::geometry::{Shape, shape_bounds},
+     recorder::{HitSource, Weight},
+     survivors::{MissilePose, PX_PER_VS_UNIT, Shot, bible_orbit_speed},
+ };
+ use std::{collections::BTreeSet, f64::consts::TAU};
++// Conservative broad phase only: near candidates still use the unchanged swept-capsule
++// contact test. Outward padding keeps boundary rounding from rejecting a real contact.
++fn expanded_bounds(shape: &Shape) -> [f64; 4] {
++    let mut b = shape_bounds(shape);
++    let scale = b.iter().map(|x| x.abs()).fold(1.0, f64::max);
++    let pad = 1e-9 + 16.0 * f64::EPSILON * scale;
++    b[0] -= pad;
++    b[1] -= pad;
++    b[2] += pad;
++    b[3] += pad;
++    b
++}
++fn near_bounds(b: [f64; 4], x: f64, y: f64, body_radius: f64) -> bool {
++    let margin = 0.5 * body_radius; // the same hurtbox margin as aim::catches
++    x >= b[0] - margin && x <= b[2] + margin && y >= b[1] - margin && y <= b[3] + margin
++}
++
+ #[derive(Clone, Debug)]
+ struct Blade {
+     id: usize,
+@@ -128,15 +145,19 @@ impl Sim {
+                             y1: b.y,
+                             radius: b.radius,
+                         };
++                        let bounds = expanded_bounds(&shape);
+                         let targets: Vec<_> = self
+                             .st
+                             .alive
+                             .iter()
+                             .copied()
+-                            .filter(|&fi| self.hittable(fi) && !c.blades[i].hit.contains(&fi))
++                            .filter(|&fi| self.hittable(fi))
+                             .filter(|&fi| {
+                                 let p = self.pos(fi, self.st.w);
+-                                crate::aim::catches(&shape, p.0, p.1, self.st.foes[fi].r)
++                                let r = self.st.foes[fi].r;
++                                near_bounds(bounds, p.0, p.1, r)
++                                    && !c.blades[i].hit.contains(&fi)
++                                    && crate::aim::catches(&shape, p.0, p.1, r)
+                             })
+                             .collect();
+                         if targets.is_empty() {
+@@ -181,3 +202,39 @@ impl Sim {
+         self.st.alive.retain(|&fi| foes[fi].alive);
+     }
+ }
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    #[test]
++    fn broad_phase_preserves_the_real_capsule_contact_test() {
++        for (x0, y0, x1, y1) in [
++            (0.0, 0.0, 0.0, 0.0),
++            (-100.0, 20.0, 200.0, -50.0),
++            (10_000.0, -10_000.0, 10_000.001, -9999.999),
++        ] {
++            for radius in [0.0, 0.1, 12.0, 100.0] {
++                let shape = Shape::Capsule {
++                    x0,
++                    y0,
++                    x1,
++                    y1,
++                    radius,
++                };
++                let b = expanded_bounds(&shape);
++                for body in [0.0, 1.0, 24.0, 256.0] {
++                    let edge = shape_bounds(&shape);
++                    for dx in [-1000.0, -1e-10, 0.0, 1e-10, 1000.0] {
++                        for x in [x0, x1, edge[0] - 0.5 * body, edge[2] + 0.5 * body] {
++                            for y in [y0, y1, edge[1] - 0.5 * body, edge[3] + 0.5 * body] {
++                                let (x, y) = (x + dx, y + dx);
++                                let original = crate::aim::catches(&shape, x, y, body);
++                                assert_eq!(near_bounds(b, x, y, body) && original, original);
++                            }
++                        }
++                    }
++                }
++            }
++        }
++    }
++}

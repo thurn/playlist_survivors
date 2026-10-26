@@ -1,0 +1,9 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.07s
+     Running unittests src/lib.rs (target/debug/deps/sim-1ebf1e278f138957)
+
+running 2 tests
+test engine::tests::beatless_victory_clears_high_hp_foes_and_finishes_its_gem_flights ... ok
+test engine::tests::beatless_gems_chickens_and_vacuums_never_queue_nan_or_stall_the_clock ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 48 filtered out; finished in 0.03s
+

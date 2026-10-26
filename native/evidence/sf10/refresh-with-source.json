@@ -1,0 +1,14 @@
+{
+  "action": "updated",
+  "branch": "codex/sf10-bounded-state",
+  "message": "Rebased one clean feature commit to 174294de64.",
+  "new_oid": {
+    "bytes": "174294de64e04c629eff21c541beb4b24205410e",
+    "format": "sha1"
+  },
+  "old_oid": {
+    "bytes": "f43a7d7b8ba21e10447b9e7ca47d17ae37b9d49b",
+    "format": "sha1"
+  },
+  "path": "/Users/dthurn/playlist_survivors/.worktrees/codex-sf10-bounded-state"
+}

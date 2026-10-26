@@ -53,7 +53,12 @@ impl Sim {
         };
         if self.st.blasting {
             let blast_s = self.blast_s().expect("the finale's blast");
-            let s1 = self.known_time_of_beat(self.known_beat_at(blast_s) + 1.0);
+            let s1 = if self.st.survivor.is_some() {
+                self.known_grid_after(blast_s + 1e-8, 1.0)
+                    .map_or(blast_s + self.env.rule.free_period_s, |(_, at)| at)
+            } else {
+                self.known_time_of_beat(self.known_beat_at(blast_s) + 1.0)
+            };
             if value > 0.0 {
                 self.rec.gem(GemRecord {
                     w0: self.st.w,
@@ -255,22 +260,22 @@ impl Sim {
         let hp = self.hero_pose(self.st.w);
         if self.st.survivor.is_some() {
             self.collect_survivor_gems();
-            return;
-        }
-        let r = self.pickup_radius();
-        if self
-            .st
-            .field
-            .iter()
-            .any(|g| hypot(g.x - hp.x, g.y - hp.y) <= r)
-        {
-            let s1 = self.sixteenth_at_or_after(self.st.s + NEVER_LATE);
-            let field = std::mem::take(&mut self.st.field);
-            for g in field {
-                if hypot(g.x - hp.x, g.y - hp.y) > r {
-                    self.st.field.push(g);
-                } else {
-                    self.take_off(g, s1);
+        } else {
+            let r = self.pickup_radius();
+            if self
+                .st
+                .field
+                .iter()
+                .any(|g| hypot(g.x - hp.x, g.y - hp.y) <= r)
+            {
+                let s1 = self.sixteenth_at_or_after(self.st.s + NEVER_LATE);
+                let field = std::mem::take(&mut self.st.field);
+                for g in field {
+                    if hypot(g.x - hp.x, g.y - hp.y) > r {
+                        self.st.field.push(g);
+                    } else {
+                        self.take_off(g, s1);
+                    }
                 }
             }
         }
@@ -367,14 +372,25 @@ impl Sim {
             return;
         }
         // Over one bar of sixteenths from the first at least NEVER_LATE away, nearest first.
-        let bi0 = self.known_beat_at(self.sixteenth_at_or_after(self.st.s + NEVER_LATE));
+        let first = self.sixteenth_at_or_after(self.st.s + NEVER_LATE);
+        let free = self.st.survivor.is_some()
+            && self
+                .known_grid_after(self.st.s + NEVER_LATE, 0.25)
+                .is_none();
+        let bi0 = self.known_beat_at(first);
         let bar = max(1.0, bar_of_beat_index(&self.st.idx, self.sbi_at(self.st.s)));
         let bpb = super::foes::get_or(&self.st.idx.beats_per_bar, bar, 2.0);
         let n = 4.0 * bpb;
         let len = in_view.len() as f64;
         let taken: Vec<usize> = in_view.iter().map(|g| g.gem).collect();
         for (k, g) in in_view.into_iter().enumerate() {
-            let t = self.known_time_of_beat(bi0 + floor((k as f64 * n) / len) / 4.0);
+            let offset = floor((k as f64 * n) / len) / 4.0;
+            let t = self.known_time_of_beat(bi0 + offset);
+            let t = if self.st.survivor.is_some() && (free || !t.is_finite()) {
+                first + offset * self.env.rule.free_period_s
+            } else {
+                t
+            };
             self.take_off(g, t);
         }
         self.st.field.retain(|g| !taken.contains(&g.gem));

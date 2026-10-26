@@ -1,0 +1,361 @@
+[
+  {
+    "planKey": "SF1",
+    "bead": "hv-n7fn.1",
+    "integratedCommit": "29036cc0fcfd26321537fdd62150d4770960e16c",
+    "notes": "",
+    "deliveryComments": [
+      {
+        "id": "01a17671-81af-7f0f-b90f-ae663b0e4b89",
+        "issue_id": "hv-n7fn.1",
+        "author": "01a1765f-cbc2-75b2-8fd6-fee82750b02c",
+        "text": "SF1 claimed in thread 01a1765f-cbc2-75b2-8fd6-fee82750b02c, worktree .worktrees/sf1-vs-feel-numbers at 3cf60a3f70823834b9d9c690dad7581ea9ef87ce. Scope: sourced numeric appendix only, no raw game assets/data. Reading extracted runtime/data plus missing PhaserPort Body type to verify coordinate conversions. Decompiler runtime-root failure tracked as hv-n7fn.35; explicit DOTNET_ROOT=/opt/homebrew/opt/dotnet/libexec succeeds. Fixed Decisions remain unchanged; actual VS differences are documented as adaptations.",
+        "created_at": "2026-10-26T04:21:53Z"
+      },
+      {
+        "id": "01a17677-b38f-740f-8cab-6f78388800da",
+        "issue_id": "hv-n7fn.1",
+        "author": "01a1765f-cbc2-75b2-8fd6-fee82750b02c",
+        "text": "SF1 appendix complete: 45 cumulative weapon rank rows, 27 passive ranks, 21 event entries; source movement/pickup/invulnerability units, knockback susceptibility/resistance, every pre-Reaper Forest minute treasure and projectile-specific crit/heal/hit timing. Source hashes and independent data-delta/runtime checks retained in native/evidence/sf1/. Fixed adaptations explicitly distinguished, including Soul Eater per-hit healing, sword geometry and demo chicken drops. No raw extracted files, game text or source committed. scripts/check-fast passed in 2 s. Commit 29036cc; run command from native/: cargo run --release -p app -- --file ../public/reactive/house-128/house-128.ogg --headless --seconds 30 --delayed. Documentation-only: SF2 playable behavior/evidence unchanged. No per-bead review under epic policy.",
+        "created_at": "2026-10-26T04:28:39Z"
+      },
+      {
+        "id": "01a17678-5c54-7c50-a718-eac7a939801b",
+        "issue_id": "hv-n7fn.1",
+        "author": "01a1765f-cbc2-75b2-8fd6-fee82750b02c",
+        "text": "Delivered candidate 01a17677-470b-7641-8f4b-636b590ed40d to staging as exact commit 29036cc0fcfd26321537fdd62150d4770960e16c. SF1 acceptance complete: linked appendix, all requested fields covered with data/runtime sources, no raw extraction committed. Release was green/lag0 before this candidate; asynchronous release state recorded at completion below.",
+        "created_at": "2026-10-26T04:29:22Z"
+      },
+      {
+        "id": "01a17679-3a10-78d9-8086-d961c9fbfc68",
+        "issue_id": "hv-n7fn.1",
+        "author": "01a1765f-cbc2-75b2-8fd6-fee82750b02c",
+        "text": "Completion release observation: pending, lag 1 commit, active release 01a17677-d40e-79b0-9f5d-a964100f457a, no failing steps or pause. Exact promoted SHA 29036cc0fcfd26321537fdd62150d4770960e16c.",
+        "created_at": "2026-10-26T04:30:19Z"
+      }
+    ]
+  },
+  {
+    "planKey": "SF2",
+    "bead": "hv-n7fn.2",
+    "integratedCommit": "3cf60a3f70823834b9d9c690dad7581ea9ef87ce",
+    "notes": "",
+    "deliveryComments": [
+      {
+        "id": "01a17662-41c6-7c25-99bb-f832e1fe67ea",
+        "issue_id": "hv-n7fn.2",
+        "author": "01a1765f-cbc2-75b2-8fd6-fee82750b02c",
+        "text": "Claimed SF2 in thread 01a1765f-cbc2-75b2-8fd6-fee82750b02c. No open prerequisites or competing owners; no ci-fix/velocity ready. Scope: survivors mode/run clock/victory and 40-minute replay audio; worktree .worktrees/sf2-run-clock, base 892a9b9c0a65f0135c544dca6bb636464828a4f7. Release green, lag 0. Fixed Decisions read; no per-bead cold review unless rollback runner changes.",
+        "created_at": "2026-10-26T04:05:13Z"
+      },
+      {
+        "id": "01a1766c-00cf-77d7-bb58-5b929e5acb3c",
+        "issue_id": "hv-n7fn.2",
+        "author": "01a1765f-cbc2-75b2-8fd6-fee82750b02c",
+        "text": "SF2 implemented in .worktrees/sf2-run-clock. Choices: standalone survivors level uses the intrinsic sword with empty added loadout/offers until SF5/SF7; existing director population retained until SF6, non-VS set pieces skipped. Clock is explicit snapshot state; victory chooses a known committed bar downbeat, protects against damage after the duration and holds the hero pose during the epilogue. Added --level for overrides and reactive access; --legacy retains reactive. Sessions embed exact level source (old sessions fall back to reactive.yaml). Replay audio stores i16 with a strict 2400-second cap. No rollback-runner changes, so no SF2 per-bead review under epic policy. Measurements: 5-second override in headless Delayed File mode reached Victory at about 8.8 run seconds including snap+3-second epilogue; ps replay matched all 4135 settled records, 25 kills, full health. An 8-second File excerpt left default survivors running to process exit at 21.969 session seconds; recorded prefix replay matched. Headless legacy/reactive compatibility launches passed. Evidence native/evidence/sf2/; run command from native/: cargo run --release -p app -- --file ../public/reactive/house-128/house-128.ogg --headless --seconds 30 --delayed. 40-minute i16 sizing 211680000 bytes plus ~49.94 MB extrapolated metadata; this is sizing, not a soak (SF10). Visual/audio feel recorded in operator-pending.md, no acceptance pause.",
+        "created_at": "2026-10-26T04:15:52Z"
+      },
+      {
+        "id": "01a1766c-b2a1-7add-978b-1bc6ddb95215",
+        "issue_id": "hv-n7fn.2",
+        "author": "01a1765f-cbc2-75b2-8fd6-fee82750b02c",
+        "text": "Final aggregate scripts/check-fast passed in 10 seconds. Commit 3cf60a3f70823834b9d9c690dad7581ea9ef87ce, candidate 01a1766c-6bc3-7431-bc43-33039ba2a599 submitted and authorized from the main checkout; gate running. Awaiting staging before completion.",
+        "created_at": "2026-10-26T04:16:38Z"
+      },
+      {
+        "id": "01a1766d-0e6d-7e9e-b72b-5d6d6f13218c",
+        "issue_id": "hv-n7fn.2",
+        "author": "01a1765f-cbc2-75b2-8fd6-fee82750b02c",
+        "text": "Delivered: candidate 01a1766c-6bc3-7431-bc43-33039ba2a599 passed gate and promoted to staging; staging contains exact commit 3cf60a3f70823834b9d9c690dad7581ea9ef87ce. All SF2 acceptance complete. Release runs asynchronously; not waited on.",
+        "created_at": "2026-10-26T04:17:01Z"
+      },
+      {
+        "id": "01a1766d-5973-72da-8cf9-7c14cbcbea64",
+        "issue_id": "hv-n7fn.2",
+        "author": "01a1765f-cbc2-75b2-8fd6-fee82750b02c",
+        "text": "Release observation at completion: pending, active release 01a1766c-f2e8-72e3-a05a-9ab2ab01ceb9, lag 1 commit; no promotion pause. Staging confirmed. No release wait.",
+        "created_at": "2026-10-26T04:17:20Z"
+      }
+    ]
+  },
+  {
+    "planKey": "SF3",
+    "bead": "hv-n7fn.3",
+    "integratedCommit": "bfb3a0bc273e0426d0537fc63c342f3c8ce27e86",
+    "notes": "",
+    "deliveryComments": [
+      {
+        "id": "01a1767e-c4d2-7a8b-a672-8e28f4534778",
+        "issue_id": "hv-n7fn.3",
+        "author": "01a1765f-cbc2-75b2-8fd6-fee82750b02c",
+        "text": "Claimed SF3 in thread 01a1765f-cbc2-75b2-8fd6-fee82750b02c. SF2 prerequisite closed completed and on staging. Fresh worktree .worktrees/sf3-freeze, base e23cff8fbcc0bb6fdc28966a156945b769c2e55c. Scope: independent freeze flag/rate-zero warp/run-clock hold, causally scheduled music stop/resume and free pulse, paused input and Confirm parsing, view/banner/bob, headless gap and deterministic/rollback checks. Cold warden required once after self-review. Investigating current queue: periodic grid events must be re-planned once on resume while finite attacks/spawns preserve remaining run time, avoiding catch-up bursts. Card/chest hooks are provided here; offers and roulette remain SF7/SH10.",
+        "created_at": "2026-10-26T04:36:22Z"
+      },
+      {
+        "id": "01a17698-1ecd-7d6d-9d58-bedf00f4272e",
+        "issue_id": "hv-n7fn.3",
+        "author": "01a1765f-cbc2-75b2-8fd6-fee82750b02c",
+        "text": "Self-review before cold review: downstream SF4/SF5/SF7/SH10 reread; independent world/run freeze, remaining-time rescheduling, Confirm and interaction hooks provided; card reveal eligibility/chest resolution deliberately remain in their consuming beads. Claims checked against native/evidence/sf3 kept outputs; File mode is not proof of System permission/ear feel, pending row added. Edge cases checked: no committed beat, held keys, chained/nested reasons, late keys, queued fire, preplanned victory. Path/rename/dev-dependency logic not applicable. Tests tie silence to stream ticks/knownAt and replay to a real analyzer File-mode session, not only a helper with itself. Concurrency: no new workers/channels; watchdog silent-heartbeat case checked, runner tested with nondefault 400 ms speculation and late Confirm. Existing full causality sweep running at background QoS. Choices: two-beat native bars govern resume, known grid only; finite events preserve remaining run time while cadence regenerates to avoid catch-up.",
+        "created_at": "2026-10-26T05:04:03Z"
+      },
+      {
+        "id": "01a17698-f595-7cae-be8e-2a880f3af27e",
+        "issue_id": "hv-n7fn.3",
+        "author": "01a1765f-cbc2-75b2-8fd6-fee82750b02c",
+        "text": "Focused results: 11 survivors tests pass; queued-fire hold test passes; late Confirm has 3,883 identical settled records with 420 ms rollback; exhaustive unknown-key test and both watchdog cases pass; clippy all five consumers clean. Existing ignored every-cut causality sweep passed in 68.26 s at background QoS. Headless Delayed 8 s zero-PCM File gap: run 17.900 held from song 17.908 to 25.400, 98,142 settled records replay identical, no late/dropped sounds. Evidence native/evidence/sf3. Cold warden requested in fresh read-only same-host subagent sf3_warden; no app window opened.",
+        "created_at": "2026-10-26T05:04:58Z"
+      },
+      {
+        "id": "01a176a4-1439-73f7-8886-c842744b7cf4",
+        "issue_id": "hv-n7fn.3",
+        "author": "01a1765f-cbc2-75b2-8fd6-fee82750b02c",
+        "text": "Cold warden completed, three confirmed findings fixed with regression tests: P1 historical zone changes could rewind time after resume (now future downbeat, latest musical transition only, fallback remaining time rebased); P2 music_pending was not cleared when music recovered under another freeze (second quiet gap now remains frozen); P2 free pulse moved held hero in finale (pulse work off while blasting). Added monotonicity checks for a paused section change and both pending/unplanned fallback deadlines, plus repeated silence and beatless finale tests. All 15 survivor cases pass. Monotonicity also exposed missed held steps from late-bounded intervals; skip historical steps in survivors, use fixtures honoring committed-by-previous-beat contract. No confirmation review. Late Confirm now checks full equal record counts and hash: 3,861 records, 4f798c6e571ffcd8, deepest rollback .42s. Repeated real headless gap session 1792991737: 98,692 settled records replay identical; frozen run17.900, resume song25.400, 34 stream-arrival rollbacks, no late keys/dropped sounds. Final aggregate running.",
+        "created_at": "2026-10-26T05:17:07Z"
+      },
+      {
+        "id": "01a176a5-5a9e-753b-a9d5-90a0bd43e9d9",
+        "issue_id": "hv-n7fn.3",
+        "author": "01a1765f-cbc2-75b2-8fd6-fee82750b02c",
+        "text": "Implementation commit bfb3a0bc273e0426d0537fc63c342f3c8ce27e86; final scripts/check-fast passed in 27 s (native25). Candidate 01a176a4-c64f-7c53-9846-4fa3c771c204 authorized from main checkout with tg approve --wait; gate in progress. Run command from native/: PS_SESSIONS=/Users/dthurn/playlist_survivors/native/logs/sessions target/release/playlist-survivors --file /tmp/sf3-gap.wav --delayed --headless --seconds 46; replay command target/release/ps replay /Users/dthurn/playlist_survivors/native/logs/sessions/1792991737. Kept measurements and raw outputs native/evidence/sf3, summary in SF3 Bead Notes. No analyzer changes, no asset inputs, no CI/shared infrastructure changes; no corpus parity or ci-full required. Operator-only System/focus/ear checks listed in operator-pending.md. Final ignored causality sweep 67.29 s clean.",
+        "created_at": "2026-10-26T05:18:31Z"
+      },
+      {
+        "id": "01a176a6-3002-76f9-89de-4c19cb154efd",
+        "issue_id": "hv-n7fn.3",
+        "author": "01a1765f-cbc2-75b2-8fd6-fee82750b02c",
+        "text": "Candidate 01a176a4-c64f-7c53-9846-4fa3c771c204 promoted exact bfb3a0bc273e0426d0537fc63c342f3c8ce27e86 to staging. Gate passed, native worktree cleanup automatic. Release pending lag1, no failing steps or hold observed; not waiting for release per policy.",
+        "created_at": "2026-10-26T05:19:25Z"
+      }
+    ]
+  },
+  {
+    "planKey": "SF4",
+    "bead": "hv-n7fn.4",
+    "integratedCommit": "8bc08c593be29db6bc69be1eb30bfbd1de12768c",
+    "notes": "Serialized after hv-n7fn.3 (SF3): the step loop and SimState in native/crates/sim/src/engine/mod.rs",
+    "deliveryComments": [
+      {
+        "id": "01a176b7-8301-7cc1-b7d6-a4d26b7e6185",
+        "issue_id": "hv-n7fn.4",
+        "author": "01a1765f-cbc2-75b2-8fd6-fee82750b02c",
+        "text": "Choices from docs/survivors: px_per_vs_unit=140/(0.825*1.1)=154.26997245179064 display px per Unity U (equivalently1.5426997 per legacy physics px); hero140px/s, raw140 BAT1=54.88px/s, base magnet46.2809917355px. Selected Forest speed modifiers both1.1 preserve VS ratios; calm no longer slows survivor enemies. Antonio120HP/Armor1 and120ms damage lockout; contactDamage0.5 remains fixed in level. Raw stat sums retain layers, final clamps applied at read; Hollow Heart multiplies current maximum and heals only added maximum. No Antonio Might level bonus. XP retains fractional thresholds (e.g.2866.5 at21) per formula; temporary Growth is additive +1 at20/40. Earned levels accumulate pending_levels for SF7, which owns actual offers/freezes. Enemy metadata exposes source speed/power/xp/susceptibility for SF6; temporary existing-art casting supplies source values while HP/population remain prototype until SF6. Knockback is120ms reverse base velocity, next known sixteenth (free-pulse quarter-step without grid); no invented (1-resistance) multiplier. Existing chicken/offer tuning untouched.",
+        "created_at": "2026-10-26T05:38:21Z"
+      },
+      {
+        "id": "01a176be-7d71-755f-9419-8520ba60b99c",
+        "issue_id": "hv-n7fn.4",
+        "author": "01a1765f-cbc2-75b2-8fd6-fee82750b02c",
+        "text": "Checks: 5 formula tests pass, with20,000 seeded xp1 drops yielding9,949 zeros/10,051XP(mean.50255); four integrated tests pass (HP/Armor/120ms, HH heals gained max, equal recovery recordings across frame cuts+freeze, 400/farthest cap/levels, zero drops+sixteenth recoil+immunity). All15 SF3 tests pass. Growing-gem view test and existing growing-stream playback pass; clippy clean. First aggregate caught a legacy stored-session hash regression from adding value to old Gem records: fixed using additive Survivors-only GemValue callback/record, no runner algorithm change; all3 session tests now pass with old hashes. Final headless command20s Delayed house-128 session1792993501,21,307 settled records replay exact(24,465 replay total),36 kills/fullHP,4 live stream-arrival rollbacks,no late keys/dropped sounds. Final aggregate rerun after the source compatibility fix. Per policy no SF4 cold review: it joins SF10 milestone review; no rollback runner algorithm changed.",
+        "created_at": "2026-10-26T05:45:58Z"
+      },
+      {
+        "id": "01a176c0-5c85-7a7b-ad2c-ea5316e79970",
+        "issue_id": "hv-n7fn.4",
+        "author": "01a1765f-cbc2-75b2-8fd6-fee82750b02c",
+        "text": "Final scripts/check-fast passed22s(native21), including restored legacy session hashes. Temporary gem tints use existing procedural silhouettes: blue#30aaff, green#40ff70, red#ff4050, chosen for readable distinctions without an asset bake ahead of SF11; SH8 owns pickup polish. Final kept source unchanged since aggregate; background ignored causality sweep finishing before candidate.",
+        "created_at": "2026-10-26T05:48:01Z"
+      },
+      {
+        "id": "01a176c0-a9bd-7dda-aa83-547c1309437c",
+        "issue_id": "hv-n7fn.4",
+        "author": "01a1765f-cbc2-75b2-8fd6-fee82750b02c",
+        "text": "Commit8bc08c593be29db6bc69be1eb30bfbd1de12768c, candidate01a176c0-7019-7403-9dd1-27faae03092b. Submitted from own fresh sf4-vs-stats worktree, authorized via tg approve --wait from main; gate in progress. Ignored every-cut causality sweep passed66.58s at background QoS; final aggregate22s. Evidence native/evidence/sf4, own SF4 Bead Notes summary. Run: from native/, PS_SESSIONS=/Users/dthurn/playlist_survivors/native/logs/sessions target/release/playlist-survivors --file ../public/reactive/house-128/house-128.ogg --delayed --headless --seconds20 (actual flag uses --seconds 20). Replay: target/release/ps replay /Users/dthurn/playlist_survivors/native/logs/sessions/1792993501. All21,307 live settled records match. No app window opened. Operator-only feel row recorded; no approval pauses.",
+        "created_at": "2026-10-26T05:48:20Z"
+      },
+      {
+        "id": "01a176c1-b88f-7c35-abe4-dd43905a4c82",
+        "issue_id": "hv-n7fn.4",
+        "author": "01a1765f-cbc2-75b2-8fd6-fee82750b02c",
+        "text": "Delivered: commit 8bc08c593be29db6bc69be1eb30bfbd1de12768c promoted to staging by candidate 01a176c0-7019-7403-9dd1-27faae03092b; gate passed. Release pending, lag 1, no promotion hold; not waiting for release. Exact playable run command from native/: PS_SESSIONS=/Users/dthurn/playlist_survivors/native/logs/sessions target/release/playlist-survivors --file ../public/reactive/house-128/house-128.ogg --delayed --headless --seconds 20. Exact replay command: target/release/ps replay /Users/dthurn/playlist_survivors/native/logs/sessions/1792993501. Final aggregate 22 s and background causality 66.58 s passed. Own SF4 design subsection and native/evidence/sf4 contain summary/raw outputs; operator-only checks recorded.",
+        "created_at": "2026-10-26T05:49:30Z"
+      }
+    ]
+  },
+  {
+    "planKey": "SF5",
+    "bead": "hv-n7fn.5",
+    "integratedCommit": "4c95de0ba726699f3f2ea1539fb29b31cb826051",
+    "notes": "",
+    "deliveryComments": [
+      {
+        "id": "01a176ef-c488-72fd-ae0a-888296a293e8",
+        "issue_id": "hv-n7fn.5",
+        "author": "01a1765f-cbc2-75b2-8fd6-fee82750b02c",
+        "text": "Implementation choices: curated table content/survivors/weapons.yaml contains all45 sourced combat ranks as deltas (450 fields checked against SF1 feel appendix); embedded in the pure sim so the frozen TS content stays independent. Six weapon and six passive slots are fixed arrays. Only sword is implemented/offerable now; other delivery/evolution flags remain false for their planned beads. Cooldowns keep unsnapped run deadlines; next-song times use an explicit accumulated freeze offset, avoiding frame-cut subtraction drift. Ready deadlines survive menu time; next interval reads current stats at the previous ready event, never last fire. Colliding interval shots use committed sixteenths; missing grid uses raw interval. Sword is beat cadence like Auto: pending song subdivisions are regenerated at resume, avoiding an old-beat catch-up burst; interval-weapon pending deadlines are held. Sword uses the committed interval when both bounds are known, otherwise its committed beat period; free pulse uses freePeriodS. Final shot envelope carries area/speed/duration/pierce/hit delay/KB/crit for downstream handlers. Damage is finalized once in shot construction, bypassing old groove/tier scaling; accents affect visuals/sound only.",
+        "created_at": "2026-10-26T06:39:47Z"
+      },
+      {
+        "id": "01a17703-d966-7bd3-88b4-e52fa68d1366",
+        "issue_id": "hv-n7fn.5",
+        "author": "01a1765f-cbc2-75b2-8fd6-fee82750b02c",
+        "text": "Commit: 4c95de0ba726699f3f2ea1539fb29b31cb826051. Candidate: 01a17703-7280-7573-91b0-aeb3dc8218cf; authorized from main with tg approve --wait, gate in progress. Final scripts/check-fast passed in 65 s (native 63), above the nominal 60 s budget in this fresh worktree after typechecks; no test or tool failure, no rerun to improve the timing. Full existing ignored causality sweep passed at background QoS in 69.00 s. All 45 ranks/450 fields match source docs, 12 cooldown measurements stay within 0.1167%, actual sword target damage over 60 s matches Whip DPS at all three tempos/base and non-default stats. Streaming equals batch through a freeze and 37 ms frame cuts; late Confirm has 3,790 equal settled records, hash0b40bb6972baeaff, 420 ms deepest rollback. Both stored legacy session hashes remain exact. Run from native/: PS_SESSIONS=/Users/dthurn/playlist_survivors/native/logs/sessions target/release/playlist-survivors --file ../public/reactive/house-128/house-128.ogg --delayed --headless --seconds 20. Final-build replay: target/release/ps replay /Users/dthurn/playlist_survivors/native/logs/sessions/1792997022; all21,149 live settled records match. Separate --headless --still evidence/sf5/still.png snapshot inspected, no window. Native/evidence/sf5 has commands/raw outputs and limits; own SF5 Bead Notes summary and operator-only feel row written.",
+        "created_at": "2026-10-26T07:01:43Z"
+      },
+      {
+        "id": "01a17707-4c4f-7bd7-baa0-1eec952f38f9",
+        "issue_id": "hv-n7fn.5",
+        "author": "01a1765f-cbc2-75b2-8fd6-fee82750b02c",
+        "text": "Landed: exact 4c95de0ba726699f3f2ea1539fb29b31cb826051 promoted to staging by candidate 01a17703-7280-7573-91b0-aeb3dc8218cf; gate passed. Release pending lag 1 with no promotion hold; not waiting for asynchronous release. All writers settled before submission; worktree cleanup is Tollgate-owned. No SF5 per-bead review under the Survivors policy; this commit is recorded for SF10 milestone review.",
+        "created_at": "2026-10-26T07:05:29Z"
+      }
+    ]
+  },
+  {
+    "planKey": "SF6",
+    "bead": "hv-n7fn.6",
+    "integratedCommit": "152f244c170623ec3dd4fee51f18d13af878e347",
+    "notes": "Serialized after hv-n7fn.5 (SF5): the step loop and SimState in native/crates/sim/src/engine/mod.rs\nCommit 152f244c170623ec3dd4fee51f18d13af878e347; candidate 01a1773e-2b4f-7e62-a174-9ff1b5bfa2ba submitted, gate promotion pending. Run from the worktree root: PS_SESSIONS=/Users/dthurn/playlist_survivors/native/logs/sessions native/target/release/playlist-survivors --file /tmp/sf6-five-minutes.wav --headless --delayed --spawn-smoke --seconds 315. Final session1793001281 stopped at309.129 run seconds, every minute0-4 roster observed, peak300 alive; all3,781,538 settled live records replay exactly (3,800,931 including replay tail),489kills,no late/dropped sounds. Explicit noHeroDamage check flag means no survival claim. Raw outputs and choices: native/evidence/sf6/README.md; own SF6 design subsection updated. Synthetic31row/20role source, cap/min/HP20 tests, held/deferred boss/recycle/chicken tests pass. Dense8s/off-grid-pause regression118,817 matching records; lateConfirm420ms7,679 records hash77f8e4d7a8f8977d; legacy3session fixtures and ignoredcausality63.32s pass. check-fast49s(native47), clippyclean, app30/CLI5 pass. Replay exposed frame-dependent landing order; explicit survivor landing stops fixed it. No Engine rollback-runner code changed; no per-SF6 cold review under epic policy. Tooling selector gap filed separately hv-n7fn.36; current Rust diff selected all native validation. Prior comments and evidence record implementation choices and planned consumers.\nPromoted exact commit152f244c170623ec3dd4fee51f18d13af878e347 to staging via candidate01a1773e-2b4f-7e62-a174-9ff1b5bfa2ba; tg approve --wait ran from main checkout and exited0. Staging ancestor check passed. Release pending, lag1, no holds; did not wait for release. All acceptance done, own SF6 design subsection and evidence retained.",
+    "deliveryComments": [
+      {
+        "id": "01a1772c-1fb8-75cc-af41-e66873eed576",
+        "issue_id": "hv-n7fn.6",
+        "author": "01a1765f-cbc2-75b2-8fd6-fee82750b02c",
+        "text": "SF6 implementation is in fresh Tollgate worktree /Users/dthurn/playlist_survivors/.worktrees/codex-sf6-spawner (base 4c95de0). 31 schedule rows, 20 role defs, all 21 event data rows and source treasure are present; source contract tests compare schedule/primary enemy stats directly to docs/survivors. Actual spawner tests check minimum, 300 cap, all roles, HP at level20, full-field boss admission and recycled HP/chicken flag; freeze framecuts match. Existing freeze15 and legacy session3 pass. Late Confirm: 7,679 equal settled records, hash77f8e4d7a8f8977d, two key rollbacks, deepest420ms. Ignored legacy causality sweep passed63.32s under /usr/sbin/taskpolicy -b. Clippy clean; app30/CLI5 tests pass.\n\nChoices/reasons are in native/evidence/sf6/README.md: beat/eighth admission with raw fallback; full-field bosses reserve room and re-snap when room opens; whole rosters only truncated at hard cap; pending admissions regenerate after freeze; population fields inherit while explicit boss/event/treasure arrays follow SF1's reset rules; boss mini-roles scale HP as SF6 explicitly requests; brute=scaled orc-elite, plant=slime, giant/boss bat=2x bat. No new art or balance retune. SH6/SW3/SW4 own gaits/lunges/final art, SH10 owns behavior/chests (including carrying source-minute treasure with a boss instance), SW6 executes event data, SF10 bounds pools. Operator readability/feel row added. No cold review here per epic policy; no Engine rollback-runner code changed.\n\nNormal tap-player attempt fell233s, interim continuous-right attempt fell122s; these are neither the SF9 positioning bot nor a balance gate. Kept their raw outputs. A dedicated --headless --spawn-smoke uses the existing check-only hero-damage switch to verify 5-minute roster arrival without changing game stats; it records noHeroDamage in the session, and CLI replay/re-analysis/Watch reapply it. Card selection and real survival testing remain SF7/SF9. Final source 315s File/Delayed smoke is running, then exact replay, final check-fast, commit/candidate/gate promotion. No claims of survival success from this smoke.\n",
+        "created_at": "2026-10-26T07:45:43Z"
+      }
+    ]
+  },
+  {
+    "planKey": "SF7",
+    "bead": "hv-n7fn.7",
+    "integratedCommit": "da2561c49c590f47cae0e722c9560a39c35686d1",
+    "notes": "Simulation/testing lane ownership confirmed; leaving SF11/SF8/SH1/SH2 to second executor. Added serialization edges SF7->SF8 (App options/frame and settled offer input interface) and SF7->SH1 (slice/hud.rs), while both dependent beads were unclaimed. Handoffs recorded on those beads. SF7 uses a fixed Copy Offer in RunState: level, cards[3] (item/before/after), reveals[3] in song seconds; selected is separate RunState field. Third reveal is the authoritative confirm gate. Fresh headless --pick-first sends normal recorded keys, using (level,third-reveal bits) as its retry token. All game choice state is in the sim, not the renderer. Actual XP regression:9 picks applied once,5601 equal records,9 key rollbacks,deepest420ms. Rewind before XP removes the projected offer and leaves inventory unchanged. Normal-damage File/Delayed65s app session1793019906: one pick at26.258song s after26.250third reveal, resumes26.720;79798 settled records replay exactly,57kills,HP0.99. Offscreen card image inspected; no app window opened. More final validation/evidence/delivery pending.\nCommit da2561c49c590f47cae0e722c9560a39c35686d1 submitted through tg candidate; approval wait running from main checkout. Final base de2ea4f0532c6ac6a5e1a9c71cd83ad3601049f5 includes SF11. check-fast passed51s(native50), clippy clean; app30 and legacy session3 tests pass, full live suite13 passes. No Engine rollback-runner algorithm edits; per-epic policy SF10 performs the F milestone cold review. Normal-damage run command from worktree root: PS_SESSIONS=/Users/dthurn/playlist_survivors/native/logs/sessions native/target/release/playlist-survivors --file /tmp/sf6-five-minutes.wav --headless --delayed --press-beats --pick-first --seconds 65. Session1793019906,59.135run s,57kills,HP0.99,79798 settled records replay exactly, no late/dropped sounds. Image native/evidence/sf7/cards.png inspected headless at40song seconds. Raw tests/measurements/choices in own SF7 design subsection and native/evidence/sf7/README.md. Maxed-card heal30, held/early confirm, chain, beatless/new-grid resume tests pass. Actual XP fixture9picks each one rank,5601 equal records,9key rollbacks/deepest420ms; checkpoint/journal retraction removes offer without pick. Precommit tg update rejected dirty/zero-unique-commit states as expected, so own edits were checkpointed, clean feature branch fast-forwarded to staging, edits restored without conflicts before final check; exact checkpoint57839bd was removed after feature commit. Gate result still pending; no release wait.\nExact commit da2561c49c590f47cae0e722c9560a39c35686d1 promoted to staging by candidate01a17876-dd9a-71e1-acfb-544718f156ff. tg approve --wait from main exited0; staging ancestor check passed. Release pending/lag1 with no holds and no failing steps; did not wait for release. All SF7 acceptance completed, including plain playable overlay and exact recorded replay. Closing releases the SF8/SH1 serialization edges.",
+    "deliveryComments": []
+  },
+  {
+    "planKey": "SF8",
+    "bead": "hv-n7fn.8",
+    "integratedCommit": "089c08f5f3cc71b70a6f5724c8e7227fffb6d68c",
+    "notes": "Serialized after hv-n7fn.7: App options/frame input and the settled-run interface for level-up freezes. SF7 publishes RunState.offer (Copy Offer with level, cards[3], reveals[3] in song seconds), RunState.song, and selected. The SF8 held-direction stand-in must release keys held at open and choose card1 with Confirm/Space only once song>=offer.reveals[2], then release Confirm; several offers can chain while the run clock stays held. Use actual input keys through Engine; the renderer owns no pick state. SF7 adds --pick-first for headless app checks (normal damage) and keeps its overlay in slice/hud.rs minimal. This edge was added while SF8 was unclaimed; the second executor handles SF11 then SF8. No worktree or source edits in SF8 by this session.\nSF7 final interface clarification: RunState.song and Offer.reveals are song seconds relative to Engine/run start (they continue during freezes); RunState.elapsed is the held run clock. App coordinates subtract session run.s0 before submitting keys. A held-direction stand-in must release its held direction when an offer opens, confirm only after reveals[2] and release Confirm, then freshly press movement after resume; the freeze intentionally does not restart a key held at opening. Same (level,third-reveal bits) retry token handles retracted/reopened offers. A recorded session needs zen:true and exact level source, plus actual applied keys; --pick-first is just a recorded-key actor, not a game rule. Keep noHeroDamage false for survival reports (the old --spawn-smoke flag is damage-exempt). A 3-minute song prefix is less run time once choices freeze; report both clocks. Playlist length must account for held choice/chest time as well as gaps. SF7 commit da2561c49c590f47cae0e722c9560a39c35686d1 is in its gate wait; the serialization edge releases once staged/closed.\nSH6 in progress independently from da2561c: logical Moment::Hit and Moment::Death remain immediate/exactly once for SF8 reports; additive Moment::EnemyImpact { hit: Box<Moment> } is visual-only, delivered next sixteenth (ignore for aggregate hit/kill counts). No rollback Engine algorithm change. To fulfill SH6 minute-two headless capture I will forward existing --pick-first and --spawn-smoke flags only into the offscreen still() helper and its call; no changes to Options/parser, File/playlist source or live frame() input. Final rebase will retain SF8 integrations. A first-known-beat movement finite-position regression is being fixed on SH6.",
+    "deliveryComments": [
+      {
+        "id": "01a17859-4d93-7eb5-96d7-c1f4fa3d2d9e",
+        "issue_id": "hv-n7fn.8",
+        "author": "01a17841-b0f1-7cd3-85e6-f659e8ba5ad1",
+        "text": "Assets/app handoff acknowledged: SF11 intake is validated by check-fast and headless smoke, finishing required local ci-full before promotion. SF8 will be claimed after SF7 lands, honoring its explicit serialization edge and offer/input contract; no competing edits to SF7. Planned SF8 runner inputs use Engine with actual Confirm release/third-card reveal timing; SF9 keeps bots. Font/icon/sound intake interfaces are recorded in native/evidence/sf11/README.md.",
+        "created_at": "2026-10-26T13:14:41Z"
+      },
+      {
+        "id": "01a1789f-e702-7036-aff7-9cbcecce2e67",
+        "issue_id": "hv-n7fn.8",
+        "author": "01a17841-b0f1-7cd3-85e6-f659e8ba5ad1",
+        "text": "Claimed assets/app lane after SF7 closed at da2561c. Worktree .worktrees/sf8-playlists. Shared stream::playlist parses local M3U paths/gap markers; app feeds concatenated PCM through existing File path, never switch(). CLI survive_cache defaults to Rust Analyzer with live hindsight/Delayed parameters, keyed by audio plus compiled analyzer/conversion sources, lockfile and model bytes. eval::survive::drive uses Engine and existing Player trait, 120 Hz causal arrivals and real keys; SF9 can replace held actor without changing playback/session code. No edits to eval::live rollback algorithms, sim engine or enemy work. SF9 retains bots/sweeps/gate integration.",
+        "created_at": "2026-10-26T14:31:48Z"
+      },
+      {
+        "id": "01a178a9-5a47-70c7-ba94-e23b2bf7b135",
+        "issue_id": "hv-n7fn.8",
+        "author": "01a17841-b0f1-7cd3-85e6-f659e8ba5ad1",
+        "text": "First 120s app playlist run crossed the audio boundary in one session but exposed an upstream freeze bug: MUSIC STOPPED at run60.078/song61.842 never resumed on audible hiphop. Session1793025340 has 200 ticks at65-75s,120 clear, energy1.0 and15beats; alternating confidence dips reset music_lock each time. Necessary SF8 repair is bounded to sim/engine/freeze.rs: silence reads normalized tick energy (>0.01 means audible), while committed-beat evidence still gates re-lock. Two existing synthetic silence tests now also zero energy; new regressions cover audible weak evidence and post-gap evidence dips. No enemy/foe or SH6 code is touched; no Engine rollback algorithm edit. Will validate actual playlist/resume and exact replay before candidate.",
+        "created_at": "2026-10-26T14:42:07Z"
+      },
+      {
+        "id": "01a178b6-e5f2-7df6-bc72-012534efa1ff",
+        "issue_id": "hv-n7fn.8",
+        "author": "01a17841-b0f1-7cd3-85e6-f659e8ba5ad1",
+        "text": "Validation: actual File/Delayed 120s playlist session crosses house->hiphop in one source, resumes MUSIC STOPPED (run59.484/song64.117), then advances past run99s; no track end. 17 survivors tests pass, plus source-fixture driver exact replay/truncation, parser/gap, cache-version and actor reveal/release tests. Normal held stand-in requested30min but died223.491run s (450kills,level5,peak289), 5.113s drive; its2023356 settled records replay exactly. Separately labelled --runner-soak (noHeroDamage:true, never balance evidence) runs actual30:00/Victory with300peak,29558256settled records in126.160s (14.3x faster), hash4eecbcad11a6c3f0 replays exactly. Full input is the same38:14 Rust stream already generated by default cached playlist; no synthetic oracle substituted. Final cold/warm one-track cache preparation53.498s/0.164s with identical hash. Final aggregate rerunning only after CLI replay acquired batch QoS too; source wrappers leave Engine rollback untouched.",
+        "created_at": "2026-10-26T14:56:55Z"
+      },
+      {
+        "id": "01a178ba-8163-7c50-afc8-efb6b43af424",
+        "issue_id": "hv-n7fn.8",
+        "author": "01a17841-b0f1-7cd3-85e6-f659e8ba5ad1",
+        "text": "Source a4ba52e492e1a75f21ba7ee1ef4f834c2f1aaac4 submitted as candidate01a178b9-ede2-7a62-b7a5-dae0c030c54c. Admission found only operator-pending.md conflict against newer staging b99d7ee. Rebasing with tg update, preserving both independent operator rows, then required check-fast again and resubmit; no unknown candidate effects or release wait.",
+        "created_at": "2026-10-26T15:00:51Z"
+      },
+      {
+        "id": "01a178c4-05b1-703e-a911-56985c56556e",
+        "issue_id": "hv-n7fn.8",
+        "author": "01a17841-b0f1-7cd3-85e6-f659e8ba5ad1",
+        "text": "Final source 089c08f5f3cc71b70a6f5724c8e7227fffb6d68c on SH6 b99d7ee, candidate 01a178c3-9b3e-7a62-9bfe-9d007618d7e8 now approved from main, gate pending. Earlier candidate 01a178b9-ede2-7a62-b7a5-dae0c030c54c is known terminal merge-conflict, never authorized, superseded by this exact rebased source. Both operator rows kept. Rebased check-fast passes 32 s. Repeated actual app120 check passes. Rebased normal held player dies 1098.023 run s (level10,2397kills,peak300) in54.433wall s; 16702160 records replay exactly, hash014435e5cebb5e93. Diagnostic-only noHeroDamage:true soak reaches30:00/Victory in115.067wall s; all29643047records replay exactly, hash191d27698549a17a. Both final session meta/keys and shared exact stream retained compressed in native/evidence/sf8/recorded. Raw baseline reports labelled pre-SH6. No workspace-rooted writers remain.",
+        "created_at": "2026-10-26T15:11:15Z"
+      },
+      {
+        "id": "01a178c4-b5de-78f4-9f3b-a13ca0c507d4",
+        "issue_id": "hv-n7fn.8",
+        "author": "01a17841-b0f1-7cd3-85e6-f659e8ba5ad1",
+        "text": "LANDED: exact source/tested commit 089c08f5f3cc71b70a6f5724c8e7227fffb6d68c promoted to staging by candidate 01a178c3-9b3e-7a62-9bfe-9d007618d7e8, certificate 01a178c4-3f92-7522-a453-fb0f373d4cc4. Approval wait exited 0 from main. Release pending, lag 1, no holds; not waiting. All SF8 acceptance complete: actual 120 s File/Delayed boundary, cached and continuous Rust input paths, committed 180 s fixture, full 30:00 diagnostic Engine run and exact audio-free replay (damage flag explicit), normal-damage results kept separately. SF9 is unblocked for simulation executor. Moving assets/app lane to SH1.",
+        "created_at": "2026-10-26T15:12:00Z"
+      }
+    ]
+  },
+  {
+    "planKey": "SF9",
+    "bead": "hv-n7fn.9",
+    "integratedCommit": "340787afc28a7963aad9385b4a83e967f26eeaa5",
+    "notes": "Claim acknowledged for sim/testing lane after SF7/SF8 hive_resolution=completed and tooling36 landed; fresh codex/sf9-survival-bots base d5e988ec7cdd1e5ba10787f124065f212ead9cff. Read fixed Decisions again and SF8 interfaces/evidence. User latest only-survival-gates instruction takes precedence over the old prose XP-level>=3 smoke assertion: the fixture smoke will assert survival while reporting level, with XP mechanics covered by their existing tests. No pacing level thresholds will gate. Release balance assertions remain off until SW7, random-pick evidence never gates. Plan to use existing pure Player observation interface, retained normal-damage reports and an explicitly labelled runner soak only if a normal bot cannot yet furnish a full30minute replay; no game-knob or offer changes. SF8 already supplied correctly labelled soak diagnostics and exact session recording; preserve noHeroDamage in all reporting.\nSF9 checkpoint: core implementation uncommitted in /Users/dthurn/playlist_survivors/.worktrees/codex-sf9-survival-bots. Now based on SH1 fd8ee17c06c53a3e53048c1dfbd1ee9bb5397d54 (clean FF from d5 after own tracked/untracked checkpoint5a7bd25b2968b614b2de153cecab7c43e07a4a0e, restored exact owned stash, no conflicts; retain until committed). players::SurvivorBot supplies positioning/AFK/random-pick; observation-only, no stomp, per-stride held direction, 240px crowd /90px safety, safe gem pull .35, full seed string, stable card per seed+level, release freeze keys, confirm one screen reveal interval after third card. CLI bot default positioning, held retained; three actual playlist orders preserve gaps. Initial fixture smoke169.121run/180song s,HP1,level3,peak300,1459699records,1.16-1.41wall s, survival-only assertion. All three bots key replay/future-prefix tests extended to60s. Real normal-damage 3-run-minute positioning/AFK checks produce same hashes jobs4 vsjobs1 (3e6000cdeab8e28a/e3a8c4f734a1e45e). Random seed7 fixture:1514388records replayexact7e4b433cce695348. Continuous first2tracks126.99794s PCM: cold110.918s/warm2.884s background,60run s,174117records replayexact85cb947ceca25114. All those preview reports are labelled pre-SH1 base. New cache includes actual audio, analyzer/models/version/order/gaps and compiled playlist decoder; adding decoder key correctly invalidates preview caches (semantics unchanged). Python sweep built: 41normal reports (30cached5seedsx3ordersx2bots,10continuous5seedsx2,1random),6bounded workers on18CPU64GiB host,utility for release/background manual,20min deadline,joined workers and errors,live command/stdout/stderr artifacts,source-input clean stamps and assert-mode-separated keys. SW7 adds --assert-survival to scripts/ci-full; all pacing remains reports. CI step ci-full-survivors declared20m with independent target-release-survivors; config validation passes. Eight Python unit tests includejobs1 continuous warmup and panic/join guards. No full final check-fast/commit yet. Next: finish final focused check collection, scripts/check-fast once final source, immediate ConventionalCommit; scripts/ci-full all (new matrix included, needs complete within20m its own section). Full30min replay is separate delivery evidence outside matrix deadline: use retained normal first-case session if victory else explicit --runner-soak positioning record then ps replay, labelled exempt not survival. Need keep full matrix outputs, table, full replay/headless run, update own SF9 design subsection/README, sourceSHA in notes, TG candidate then approve --wait from main, close only atstaging. No perSF9 cold review: milestoneSF10 reviews allF commits; Engine rollback algorithm unchanged. All earlier owned smoke/check processes collected; no outstanding background writer at checkpoint.\nCore committed0f774d2bde4fa1a86918c1e452e38b748b933337 after final scripts/check-fast passed100s(native99); cold combined SH1 workspace over nominal60s, no failing check; gate fixture smoke1.348s. Full required scripts/ci-full is running in owned exec session58462, output /tmp/sf9-ci-full.log. Do not start a duplicate. Core now includes decoder-source bytes in continuous cache key, final8Python tests, real single-worker vs4worker equality and collected normal/AFK/random/continuous smoke outputs in native/evidence/sf9. Git add explicit tracked .tollgate/config.toml returnedignored-path exit1 but staged config+other paths; local .git/info/exclude line7 ignores .tollgate/. Filed exact command/output/one occurrence as tooling hv-n7fn.39, not claimed or blocking SF9; normal git add -u completed staging, no policy exclusion edited. Core commit keeps all required source. Own checkpoint stash5a7bd25b2968b614b2de153cecab7c43e07a4a0e can be dropped by verified owned ref after delivery. Full matrix will run as the final ci-full section,41normal reports,sixworkers,utility,20min budget. Full30minute replay remains separate delivery evidence outside that step deadline; do not close until it and headless playability are kept and candidate promoted to staging. No perbead review; SF10 milestone review next.\nPlan-table audit while CI running: its SF9 row explicitly includes a release-stage 30-minute replay step. Earlier treating replay as delivery-only was too narrow. Fulfill it with a separate utility-QoS release step (own20min budget and independent target directory), keeping the matrix20min budget intact. Do not modify source until current owned full-CI58462 finishes. Prepared function text only in /tmp/sf9-replay-functions.txt (not applied): complete_run, matrix_session, run_replay; then add --replay-only parser dispatch, scripts/ci-full survivors-replay section plus all inclusion, matching .tollgate step target-release-survivors-replay, tests/docs. Reuse exact-current matrix first normal-session if complete; otherwise explicitly noHeroDamage=true positioning soak, never a balance verdict. Validate metadatahash/count/mode and ps replay exit. Current matrix output /Users/dthurn/Library/Caches/playlist-survivors/survivors/067c588510593c73c5a3de7a7cf583f5fc79d5670e52313eb34a52642824ed80-1793031952918164000 ; continuous lane and normal31 cases processing. Early AFK seeds die323-329run s (survival criterion true); original positioning seed1falls1394.526s andseed2falls1669.446s, bothlevel8, balancefalse as expected report-only before later weapons/SW7. No knobs retuned. Keep complete outputs. After current CI finishes, source change requires fast check again, amend ConventionalCommit, then run added full replay component on final source (baker/analysis/native/matrix game code unchanged, their just-completed full-CI results remain valid; rerun any component whose source materially changes). Then exactfull30 delivery evidence and headless playable check, candidate/approve staging. Prepared new CI replay SourceCode is not yet applied, required work outstanding.\nFinal source94bac198f86d1aa33def78647ef2f989c804af1c (core0f774d2 then CI replay/evidence amendments). Candidate01a1792f-7054-7151-92b3-84e4e281a857, initial tested integration340787afc28a7963aad9385b4a83e967f26eeaa5; approval wait from main in owned exec session. Full initial scripts/ci-full passed baker,analysis,native,matrix; matrix41normal reports1126.907s (18m47s), within20. 17/20positioning finished30,13/20alsoabove25%HP;7balancefailures report-only untilSW7. All20AFKdie317.673\u2013329.529s; randomfull30minHP.483,evidenceonly. No knobs/offers retuned. After adding required separate automated30minreplay release step, finalfast27s(native26),12Python tests; noRust/game/analyzer/matrix-function source changed, so reuse completed full components and validate new replay component onfinal source. scripts/ci-full survivors-replay passes59.879s, explicitdiagnostic30500286records hashf8eb3bbe025b1b6f exactreplay, no balanceverdict. Also realnormal positioning seed1reverse full30: song1891.458s,minHP.75,1391kills,level17,29528212records, hashb9aee49487a2df1d, exactfullreplay. Drive76.762wall s; peakfootprint269222512B vsreplay5014343640B (4.67GiB baseline sentSF10). TwoCIrelease steps each20min use independentCargo targets; SW7 adds --assert-survival only to matrix invocation, replay is mechanicalhash coverage notbalance. Full reports/commands/stderr/HPtables and exact meta/keys/gzipped input in native/evidence/sf9; own design SF9summary. Playable normal-priority command: PS_SESSIONS=/Users/dthurn/playlist_survivors/native/logs/sessions native/target/release/playlist-survivors --playlist native/playlists/survivors-30.m3u --headless --delayed --press-beats --pick-first --seconds 30 ;122sounds,0late/drop,session1793034501 (verify exactsession in keptheadless log). Initial background-priority real-time check skipped5effects; keptasQoScomparison, corrected because realtimeFilechecks are not batchsweeps. NoSourcechanges afterfinalfast, onlykeptoutputs/docs. No perSF9coldreview; SF10milestone next. Need confirm exactpromotion/applyTollgateconfigaftermaincheckoutupdated, thenclose. Releasegreen lag0beforecandidate; no releasewait.\nCorrection to provisional session id in previous note: the kept normal-priority headless log records actual session1793034390 at /Users/dthurn/playlist_survivors/native/logs/sessions/1793034390 (not1793034501). Delivery confirmed: candidate01a1792f-7054-7151-92b3-84e4e281a857 promoted, integratedcommit340787afc28a7963aad9385b4a83e967f26eeaa5 verified onstaging. Source94bac198f86d1aa33def78647ef2f989c804af1c and integratedpatch stable ids checked equal. Applied maincheckout Tollgateconfig with both survivor release steps afterpromotion; configcommand succeeded. Release pending/lag1 or more as observed in delivery JSON; no wait. All required acceptance including fullnormal30minrecord+exactreplay and automaticrelease replay complete, with measurements and commands kept. Final SHA for milestone review is integrated340787afc28a7963aad9385b4a83e967f26eeaa5 (source94bac retainedforprovenance).\nExact postdelivery release observation: pending,lag2,no holds or promotion pause; not awaited. OwnedSF9checkpoint5a7bd25b2968b614b2de153cecab7c43e07a4a0e removed by verified owned stash reference after immutable source/staging delivery. No writers remain.",
+    "deliveryComments": [
+      {
+        "id": "01a17847-23a0-7b98-a618-9dde6ba5d219",
+        "issue_id": "hv-n7fn.9",
+        "author": "01a17841-b0f1-7cd3-85e6-f659e8ba5ad1",
+        "text": "Handoff: assets/app executor 01a17841-b0f1-7cd3-85e6-f659e8ba5ad1 is delivering SF11 then SF8; will record SF8 runner/session interfaces and commit here when landed. SF9 remains for existing simulation executor.",
+        "created_at": "2026-10-26T12:54:51Z"
+      },
+      {
+        "id": "01a178b6-e763-7007-b462-33c2e3860451",
+        "issue_id": "hv-n7fn.9",
+        "author": "01a17841-b0f1-7cd3-85e6-f659e8ba5ad1",
+        "text": "SF8 interface now implemented, preparing candidate: eval::survive::drive takes Engine/Arrival slice/existing dyn Player/until_song/run_seconds and returns report. native/fixtures/survivors-3m.json is a duration/key/arrivals envelope (180song seconds,1.3MiB). CLI --fixture bypasses audio/model/cache work. Reports always include both clocks; prefix3song minutes gives168.866run s with held card freezes. --record emits meta/stream/keys only, zen:true/exactseededlevel/actualappliedkeys. Normal stand-in dies223.491s; noHeroDamage is false by default. --runner-soak is diagnostic-only and explicitly true in report/record, never use for survival gates. Release utility wrapper must set PS_NATIVE_BATCH=1 so CLI retains caller utility QoS; default local survive/replay re-exec taskpolicy -b. Full docs/native evidence record API/cache/concatenated-input details.",
+        "created_at": "2026-10-26T14:56:55Z"
+      },
+      {
+        "id": "01a178c4-b7ee-7c44-af84-6e1474f1a921",
+        "issue_id": "hv-n7fn.9",
+        "author": "01a17841-b0f1-7cd3-85e6-f659e8ba5ad1",
+        "text": "SF8 LANDED and closed: 089c08f5f3cc71b70a6f5724c8e7227fffb6d68c on staging. Interfaces and final SH6-rebased measurements native/evidence/sf8/README.md; raw recorded inputs compressed in recorded/. Claim SF9 when ready/unclaimed. Assets/app executor now takes SH1, then SH2; no competing SF9 implementation.",
+        "created_at": "2026-10-26T15:12:00Z"
+      },
+      {
+        "id": "01a178d9-e94f-73a9-a8bb-4f00e42fe3cb",
+        "issue_id": "hv-n7fn.9",
+        "author": "01a17841-b0f1-7cd3-85e6-f659e8ba5ad1",
+        "text": "SH1 heads-up: Moment::Hit adds damage/song/critical presentation fields (real Fate.damage, logical hit song time; critical false until SW5). Pattern matches with .. continue to work; any explicit constructor needs the three fields. Settled Hit/EnemyImpact hash bytes and counts are preserved for existing recordings, with literal protocol + legacy replay tests; no Engine rollback algorithm edits. eval::survive API unchanged. Cold review of the hash handling is scheduled per project policy.",
+        "created_at": "2026-10-26T15:35:09Z"
+      },
+      {
+        "id": "01a17940-b73d-7b37-973f-8ed7917c5dee",
+        "issue_id": "hv-n7fn.9",
+        "author": "01a17841-b0f1-7cd3-85e6-f659e8ba5ad1",
+        "text": "SH3 app-lane handoff in progress: radius-only starting spin tune80\u219248px from96controlled incoming-target cases (3tempos\u00d72roles\u00d74phases\u00d74radii). Damage/amount/cooldown formulas unchanged. Raw and summaries native/evidence/sh3/. Radius48 reduces median kill distance75.206\u219245.2525px over24cases perradius, with8recorded bites vs0at80; no full-run survival claim. SF9 measurements on earlier80px staging remain labelled baselines; later survival/balance gates should use latest staging once SH3 lands. No bot/runner algorithm or easy-knob edits.",
+        "created_at": "2026-10-26T17:27:27Z"
+      }
+    ]
+  },
+  {
+    "planKey": "SF11",
+    "bead": "hv-n7fn.11",
+    "integratedCommit": "de2ea4f0532c6ac6a5e1a9c71cd83ad3601049f5",
+    "notes": "",
+    "deliveryComments": [
+      {
+        "id": "01a17847-2324-7ad9-8cff-766b6e3a3181",
+        "issue_id": "hv-n7fn.11",
+        "author": "01a17841-b0f1-7cd3-85e6-f659e8ba5ad1",
+        "text": "Assets/app lane claimed by 01a17841-b0f1-7cd3-85e6-f659e8ba5ad1. Fresh worktree .worktrees/sf11-assets at 152f244. SF11 is intake only: additive atlas entries and licences, no gameplay changes. Next SF8 will expose playlist/cache/Engine runner/session interfaces for SF9 promptly; then SH1 and SH2. SF7/SF9/SF10 and simulation enemy work remain with 01a1765f-cbc2-75b2-8fd6-fee82750b02c. Release green, lag 0 at entry.",
+        "created_at": "2026-10-26T12:54:50Z"
+      },
+      {
+        "id": "01a17851-9046-7da4-b8ea-3882eafe7920",
+        "issue_id": "hv-n7fn.11",
+        "author": "01a17841-b0f1-7cd3-85e6-f659e8ba5ad1",
+        "text": "Intake baked and npm check passed (14 sprites, 26 props, 66 effects, 245 sounds, 4.7 MB). Fonts/icons now have separate manifests with baseline/advance metrics and source-author credits. Runtime untouched. First ci-full found old hardcoded character page height (4096x2560 vs repacked 4096x3072); test now checks bounds and actual brute/particle/plant loading, focused cargo test passes. Full suite rerunning. Source raster audit confirms pre-existing 13 sprites/57 effects/22 props unchanged. Audio ear checks recorded in operator-pending, provisional catalogue descriptions honest. No per-bead review under survivors policy; SF10 reviews this commit.",
+        "created_at": "2026-10-26T13:06:14Z"
+      },
+      {
+        "id": "01a1785a-ab7a-7e3c-9c07-010a8597ea40",
+        "issue_id": "hv-n7fn.11",
+        "author": "01a17841-b0f1-7cd3-85e6-f659e8ba5ad1",
+        "text": "Source commit 57d2622f773213014deb8750f66c28aa3ad3f6a5; candidate 01a1785a-73bf-7e90-b34e-bbddbae28484 submitted and approved from main checkout, gate pending. scripts/check-fast passed 37 s; local ci-full passed including ignored native tests, 8-track parity, lead and frame gates; headless smoke advanced 6 active seconds. Full rebake all 257 files byte-identical. Interfaces and complete inventory in native/evidence/sf11/README.md and intake-audit.json. New UI art remains unused by runtime; operator ear checks recorded. No writers remain in worktree.",
+        "created_at": "2026-10-26T13:16:10Z"
+      },
+      {
+        "id": "01a1785b-d2ca-7376-9285-f8efb590bb4e",
+        "issue_id": "hv-n7fn.11",
+        "author": "01a17841-b0f1-7cd3-85e6-f659e8ba5ad1",
+        "text": "LANDED: candidate 01a1785a-73bf-7e90-b34e-bbddbae28484 promoted to staging, gate certificate 01a1785b-96ae-7770-b7fd-336a70e5af47. Source commit 57d2622f773213014deb8750f66c28aa3ad3f6a5; certified integration de2ea4f0532c6ac6a5e1a9c71cd83ad3601049f5 (includes independent Windows runbook). Release is asynchronous, pending with lag 2 and no hold at delivery; not waiting for it. SF11 acceptance complete except the explicitly recorded operator ear checks for downstream consumers. SF8 remains serialized after the active SF7.",
+        "created_at": "2026-10-26T13:17:26Z"
+      }
+    ]
+  }
+]

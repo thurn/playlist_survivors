@@ -7,14 +7,15 @@
 use crate::content::types::HeroDef;
 use crate::jsmath::{hypot, max, min};
 use crate::movement::{Clamp, Dir, Key, Step, key_dir};
+use crate::shared_vec::SharedVec;
 
 /// The steps a held key strides on (song times), the stride period at each, and how many steps its
 /// grid step has.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct StrideSteps {
-    pub s: Vec<f64>,
-    pub period: Vec<f64>,
-    pub per: Vec<u8>,
+    pub s: SharedVec<f64>,
+    pub period: SharedVec<f64>,
+    pub per: SharedVec<u8>,
     /// Where the last grid time's steps start in `s`: they are provisional, since the last grid time
     /// keeps the step before it until the next grid time arrives.
     tail: usize,

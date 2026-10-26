@@ -953,7 +953,13 @@ impl Sim {
             // Nothing survives the final band, wherever it stands.
             for fi in self.st.alive.clone() {
                 if self.st.foes[fi].alive {
-                    self.damage(fi, &h);
+                    if self.st.survivor.is_some() {
+                        let mut lethal = h.clone();
+                        lethal.damage = lethal.damage.max(self.st.foes[fi].health);
+                        self.damage(fi, &lethal);
+                    } else {
+                        self.damage(fi, &h);
+                    }
                 }
             }
             let foes = &self.st.foes;

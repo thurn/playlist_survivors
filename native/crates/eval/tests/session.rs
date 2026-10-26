@@ -115,3 +115,36 @@ fn an_unknown_recorded_key_fails_before_replay() {
     let error = replay_run(&mut engine(), &[], &keys, &run, 20.0).unwrap_err();
     assert!(error.contains("Confrim"));
 }
+
+#[test]
+fn prefix_hash_matches_the_kept_records_without_enabling_retention() {
+    let dir = root().join("native/fixtures/session-house-delayed");
+    let arrivals: Vec<Arrival> = lines(&dir.join("stream.jsonl"));
+    let keys: Vec<AppliedKey> = lines(&dir.join("keys.jsonl"));
+    let base = RecordedRun {
+        index: 0,
+        s0: 0.0,
+        end: 8.0,
+        hash: 0,
+        records: usize::MAX,
+    };
+    let mut kept = engine();
+    kept.settled_log = Some(Vec::new());
+    let all = replay_run(&mut kept, &arrivals, &keys, &base, 20.0).unwrap();
+    let records = kept.settled_log.as_ref().unwrap();
+    assert!(records.len() > 100);
+    assert_eq!(all.hash, None);
+    for n in [0, 1, records.len() / 2, records.len(), records.len() + 1] {
+        let run = RecordedRun { records: n, ..base };
+        let mut bounded = engine();
+        let got = replay_run(&mut bounded, &arrivals, &keys, &run, 20.0).unwrap();
+        assert!(bounded.settled_log.is_none());
+        assert!(
+            bounded.view.borrow().moments.is_empty(),
+            "offline replay consumes transient presentation"
+        );
+        let expected = (n <= records.len()).then(|| eval::live::hash_records(&records[..n]));
+        assert_eq!(got.hash, expected, "prefix {n}");
+        assert_eq!(got.settled, records.len());
+    }
+}

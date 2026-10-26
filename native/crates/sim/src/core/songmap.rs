@@ -6,6 +6,7 @@
 
 use super::at;
 use crate::jsmath::floor;
+use crate::shared_vec::SharedVec;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Feel {
@@ -50,14 +51,14 @@ pub struct SongMap {
     pub duration: f64,
     pub meter: Vec<MeterRegion>,
     /// One time per beat, strictly increasing.
-    pub beats: Vec<f64>,
+    pub beats: SharedVec<f64>,
     /// Which beat is beat 1 of bar 1; earlier beats are a pickup.
     pub first_downbeat_index: f64,
     pub sections: Vec<SongSection>,
     /// Inclusive bar ranges of musical phrases.
     pub phrases: Vec<[f64; 2]>,
     /// 0–1 per beat.
-    pub energy: Vec<f64>,
+    pub energy: SharedVec<f64>,
     pub accents: Vec<Accent>,
 }
 

@@ -297,7 +297,7 @@ fn stride_steps_subdivide_slow_steps_and_keep_the_last_step() {
     let one = stride_steps(&[2.0], 0.4);
     assert_eq!(
         (one.s, one.period, one.per),
-        (vec![2.0], vec![0.4], vec![1])
+        (vec![2.0].into(), vec![0.4].into(), vec![1].into())
     );
     assert!(stride_steps(&[], 0.4).s.is_empty());
 }

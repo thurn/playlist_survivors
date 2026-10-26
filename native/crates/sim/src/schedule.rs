@@ -9,6 +9,7 @@
 //! slots and grid slots are one list, one slot per committed beat, and its base rate is 1
 //! throughout. Set pieces and the finale come later (B6).
 
+use crate::shared_vec::SharedVec;
 use stream::{StreamEnd, StreamLog};
 
 use crate::content::level::{LevelScript, Movement, TimingGrid};
@@ -83,7 +84,7 @@ pub fn reactive_song_map(file_duration: f64) -> SongMap {
             from_bar: 1.0,
             beats_per_bar: REACTIVE_BEATS_PER_BAR,
         }],
-        beats: Vec::new(),
+        beats: SharedVec::new(),
         first_downbeat_index: 0.0,
         sections: vec![SongSection {
             label: REACTIVE_SECTION.into(),
@@ -93,7 +94,7 @@ pub fn reactive_song_map(file_duration: f64) -> SongMap {
             anchors: None,
         }],
         phrases: Vec::new(),
-        energy: Vec::new(),
+        energy: SharedVec::new(),
         accents: Vec::new(),
     }
 }
@@ -117,9 +118,9 @@ pub fn grow_song_map(song: &mut SongMap, log: &StreamLog, upto: usize) {
 pub struct ReactiveSchedule {
     pub song: SongMap,
     /// The grid: one slot per committed beat (the schedule's `grids[0]`, `slots` and `gridSlots`).
-    pub grid_slots: Vec<GridSlot>,
+    pub grid_slots: SharedVec<GridSlot>,
     /// Its times (`gridTimes`, and `strikeTimes`, which are the same).
-    pub grid_times: Vec<f64>,
+    pub grid_times: SharedVec<f64>,
     /// The last grid time's steps are provisional until the next beat arrives.
     pub stride_steps: StrideSteps,
     pub base_steps: Vec<RateStep>,
@@ -160,8 +161,8 @@ impl ReactiveSchedule {
         });
         ReactiveSchedule {
             song: reactive_song_map(file_duration),
-            grid_slots: Vec::new(),
-            grid_times: Vec::new(),
+            grid_slots: SharedVec::new(),
+            grid_times: SharedVec::new(),
             stride_steps: StrideSteps::default(),
             base_steps,
             level_ups,

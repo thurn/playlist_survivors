@@ -94,7 +94,7 @@ fn survivors_victory_snaps_to_a_known_downbeat_and_repeats_exactly() {
 }
 
 #[test]
-fn survivors_does_not_use_a_downbeat_before_its_known_at() {
+fn survivors_does_not_read_uncommitted_victory_beats_in_a_free_passage() {
     let log = StreamLog {
         beats: vec![
             Beat {
@@ -118,11 +118,21 @@ fn survivors_does_not_use_a_downbeat_before_its_known_at() {
         ],
         ..StreamLog::default()
     };
-    let (_, mut sim) = start(&log, 2.2);
-    sim.advance_to(9.9);
-    assert!(sim.end_s().is_infinite());
-    sim.advance_to(10.1);
-    assert_eq!(sim.end_s(), 14.0);
+    let mut prefix = log.clone();
+    prefix.beats.truncate(1);
+    let (ra, mut a) = start(&log, 2.2);
+    let (rb, mut b) = start(&prefix, 2.2);
+    for sim in [&mut a, &mut b] {
+        sim.advance_to(2.1);
+        assert!(
+            sim.end_s().is_infinite(),
+            "no finale before the run deadline"
+        );
+        sim.advance_to(9.9);
+        assert!(sim.done());
+        assert!((sim.end_s() - 5.45).abs() < 1e-8);
+    }
+    assert_eq!(common::recording(&ra), common::recording(&rb));
 }
 
 fn steady_log(seconds: u32) -> StreamLog {
@@ -493,4 +503,34 @@ fn audible_evidence_dips_do_not_keep_a_silent_gap_frozen() {
     sim.advance_to(12.0);
     assert_eq!(sim.run_state().frozen, None);
     assert!(sim.run_s() > held + 1.0);
+}
+
+#[test]
+fn audible_beatless_victory_uses_free_pulses_and_ignores_uncommitted_beats() {
+    for n in [0, 1, 3] {
+        let mut log = steady_log(12);
+        log.beats.truncate(n);
+        let mut poisoned = log.clone();
+        poisoned.beats.push(Beat {
+            t: 1.2,
+            known_at: 100.0,
+            period: 0.1,
+            evidence: 1.0,
+        });
+        let (ra, mut a) = start(&log, 2.2);
+        let (rb, mut b) = start(&poisoned, 2.2);
+        for frame in 1..=72 {
+            a.advance_to(f64::from(frame) * 0.1);
+        }
+        b.advance_to(7.2);
+        assert!(a.done() && b.done(), "{n} beats: {} / {}", a.s(), b.s());
+        assert!(
+            (a.end_s() - if n == 3 { 5.4 } else { 5.45 }).abs() < 1e-8,
+            "{n} beats: {}",
+            a.end_s()
+        );
+        assert_eq!(a.run_s(), 2.2);
+        assert_eq!(common::recording(&ra), common::recording(&rb));
+        assert!(ra.borrow().hits.iter().any(|h| h["what"] == "finale-blast"));
+    }
 }

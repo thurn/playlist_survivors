@@ -1,0 +1,5 @@
+bench density: 7080 frames with 300 live enemies + 400 simulation gems; all implemented Survivors sword effects, synthetic HP, damage exempt
+bench engine CPU ms: p50 0.182, p95 0.904, p99 1.193
+bench scene CPU ms: p50 0.225, p95 0.437, p99 0.533
+bench encode CPU ms: p50 0.219, p95 0.444, p99 0.592
+bench: frame work (sim, evaluate, encode) at 1920 x 1080: median 0.74 ms, p95 1.59, p99 2.11, max 2.75 (7200 frames); 1776 rollbacks re-simulating 1020 ms

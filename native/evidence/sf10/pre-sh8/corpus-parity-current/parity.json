@@ -1,0 +1,1388 @@
+{
+  "aggregate": {
+    "tracks": 8,
+    "audioS": 738.4426984126984,
+    "within45Rust": 0.5949044585987261,
+    "within45Python": 0.5949044585987261,
+    "within45RustLiveDelay": 0.5902999361837907,
+    "tracksOutsideMargin": []
+  },
+  "tracks": [
+    {
+      "track": "accelerando-100-140",
+      "audioS": 75.49412698412698,
+      "delayed": {
+        "direct": {
+          "within45": 0.7976878612716763,
+          "recall": 1.0
+        },
+        "grids": {
+          "offline": {
+            "3": {
+              "beats": 138,
+              "within45": 1.0,
+              "recall": 1.0,
+              "shortLead": 0
+            }
+          }
+        }
+      },
+      "accuracy": {
+        "rust": {
+          "beats": 173,
+          "within20": 0.7630057803468208,
+          "within45": 0.7976878612716763,
+          "within70": 0.7976878612716763,
+          "offbeat45": 0.2023121387283237
+        },
+        "python": {
+          "beats": 173,
+          "within20": 0.7630057803468208,
+          "within45": 0.7976878612716763,
+          "within70": 0.7976878612716763,
+          "offbeat45": 0.2023121387283237
+        },
+        "rustLiveDelay": {
+          "beats": 173,
+          "within20": 0.7630057803468208,
+          "within45": 0.7976878612716763,
+          "within70": 0.7976878612716763,
+          "offbeat45": 0.2023121387283237
+        }
+      },
+      "agreement": {
+        "rust": {
+          "precision70": 1.0,
+          "recall70": 1.0,
+          "f70": 1.0
+        },
+        "rustLiveDelay": {
+          "precision70": 1.0,
+          "recall70": 0.9946808510638298,
+          "f70": 0.9973333333333333
+        }
+      },
+      "beats": {
+        "rust": 188,
+        "python": 188,
+        "evidenceMean": {
+          "rust": 0.6569779408599847,
+          "python": 0.6569765957446809
+        }
+      },
+      "ticks": {
+        "rust": 1509,
+        "python": 1509,
+        "energyMeanAbsDiff": 0.000023091938549524648,
+        "bandsMeanAbsDiff": 0.000010512020323822949,
+        "keysEqual": 1.0
+      },
+      "onsets": {
+        "rust": 355,
+        "python": 355,
+        "strongRust": 13,
+        "strongPython": 13,
+        "recall10ms": 1.0,
+        "precision10ms": 1.0
+      },
+      "structure": {
+        "changes": {
+          "rust": 8,
+          "python": 8,
+          "matched100ms": 1.0
+        },
+        "jumps": {
+          "rust": 2,
+          "python": 2,
+          "matched100ms": 1.0
+        },
+        "ends": {
+          "rust": 1,
+          "python": 1,
+          "matched100ms": 1.0
+        }
+      },
+      "forecasts": {
+        "rust": 3,
+        "python": 3,
+        "matched1ms": 1.0
+      },
+      "timbre": {
+        "rust": 75,
+        "python": 75,
+        "meanAbsDiff": 0.000023290094176393482
+      },
+      "realTimeFactor": {
+        "whole": 1.5084577332743219,
+        "frontend": 0.026666984816226643,
+        "rnn": 0.02307391941052915,
+        "beats": 0.010785924369603017,
+        "onsets": 0.001038526771976376,
+        "bands": 0.09781540501226837,
+        "structure": 0.02100365169244743,
+        "hindsightWithWaits": 1.3278200917413947,
+        "accents": 0.00021577703658226332
+      },
+      "hindsightStalls": {
+        "count": 74,
+        "s": 101.485756881
+      },
+      "computeRealTimeFactor": 0.1641709531604477,
+      "arrivalDelay": {
+        "beats": {
+          "lagP50Ms": 5.328798185928463,
+          "lagP99Ms": 11.47392290249627,
+          "entries": 187,
+          "blockComputeP50Ms": 0.573709,
+          "blockComputeP99Ms": 20.076375
+        },
+        "ticks": {
+          "lagP50Ms": 5.804988662134747,
+          "lagP99Ms": 11.496598639456401,
+          "entries": 1509,
+          "blockComputeP50Ms": 0.885,
+          "blockComputeP99Ms": 21.19475
+        },
+        "onsets": {
+          "lagP50Ms": 5.419501133786753,
+          "lagP99Ms": 11.383219954648638,
+          "entries": 355,
+          "blockComputeP50Ms": 0.584167,
+          "blockComputeP99Ms": 44.302
+        },
+        "hindsight": {
+          "lagP50Ms": 5.918367346936293,
+          "lagP99Ms": 11.451247165531697,
+          "entries": 75,
+          "blockComputeP50Ms": 1363.5195,
+          "blockComputeP99Ms": 1821.640791
+        },
+        "structure": {
+          "lagP50Ms": 3.378684807255894,
+          "lagP99Ms": 9.160997732426068,
+          "entries": 11,
+          "blockComputeP50Ms": 0.954,
+          "blockComputeP99Ms": 2.233417
+        },
+        "forecasts": {
+          "lagP50Ms": 7.165532879817249,
+          "lagP99Ms": 8.707482993198568,
+          "entries": 3,
+          "blockComputeP50Ms": 1.128625,
+          "blockComputeP99Ms": 13.586125
+        },
+        "timbre": {
+          "lagP50Ms": 5.623582766439483,
+          "lagP99Ms": 11.156462585034888,
+          "entries": 75,
+          "blockComputeP50Ms": 1.011042,
+          "blockComputeP99Ms": 20.68325
+        }
+      }
+    },
+    {
+      "track": "beethoven-fifth",
+      "audioS": 180.25,
+      "delayed": {
+        "direct": {
+          "within45": 0.4729241877256318,
+          "recall": 0.4712230215827338
+        },
+        "grids": {
+          "offline": {
+            "3": {
+              "beats": 269,
+              "within45": 0.8513011152416357,
+              "recall": 0.8237410071942446,
+              "shortLead": 0
+            }
+          }
+        }
+      },
+      "accuracy": {
+        "rust": {
+          "beats": 277,
+          "within20": 0.2563176895306859,
+          "within45": 0.4729241877256318,
+          "within70": 0.631768953068592,
+          "offbeat45": 0.05054151624548736
+        },
+        "python": {
+          "beats": 277,
+          "within20": 0.2563176895306859,
+          "within45": 0.4729241877256318,
+          "within70": 0.631768953068592,
+          "offbeat45": 0.05054151624548736
+        },
+        "rustLiveDelay": {
+          "beats": 277,
+          "within20": 0.2563176895306859,
+          "within45": 0.4729241877256318,
+          "within70": 0.6353790613718412,
+          "offbeat45": 0.05054151624548736
+        }
+      },
+      "agreement": {
+        "rust": {
+          "precision70": 1.0,
+          "recall70": 1.0,
+          "f70": 1.0
+        },
+        "rustLiveDelay": {
+          "precision70": 0.9825174825174825,
+          "recall70": 0.9825174825174825,
+          "f70": 0.9825174825174825
+        }
+      },
+      "beats": {
+        "rust": 286,
+        "python": 286,
+        "evidenceMean": {
+          "rust": 0.1624947761626163,
+          "python": 0.1624996503496504
+        }
+      },
+      "ticks": {
+        "rust": 3605,
+        "python": 3605,
+        "energyMeanAbsDiff": 0.000023143120600360206,
+        "bandsMeanAbsDiff": 0.000018323722936735358,
+        "keysEqual": 1.0
+      },
+      "onsets": {
+        "rust": 2083,
+        "python": 2083,
+        "strongRust": 79,
+        "strongPython": 79,
+        "recall10ms": 1.0,
+        "precision10ms": 1.0
+      },
+      "structure": {
+        "changes": {
+          "rust": 10,
+          "python": 10,
+          "matched100ms": 1.0
+        },
+        "jumps": {
+          "rust": 18,
+          "python": 18,
+          "matched100ms": 1.0
+        },
+        "ends": {
+          "rust": 3,
+          "python": 3,
+          "matched100ms": 1.0
+        }
+      },
+      "forecasts": {
+        "rust": 0,
+        "python": 0,
+        "matched1ms": 1.0
+      },
+      "timbre": {
+        "rust": 180,
+        "python": 180,
+        "meanAbsDiff": 0.00002587262160177624
+      },
+      "realTimeFactor": {
+        "whole": 1.003459771151179,
+        "frontend": 0.007518448477115118,
+        "rnn": 0.014827000038834953,
+        "beats": 0.006544804582524272,
+        "onsets": 0.0009052466463245492,
+        "bands": 0.06905305651040222,
+        "structure": 0.012660111395284328,
+        "hindsightWithWaits": 0.8917603405436894,
+        "accents": 0.00011348643550624133
+      },
+      "hindsightStalls": {
+        "count": 179,
+        "s": 161.140629457
+      },
+      "computeRealTimeFactor": 0.10947569649375867,
+      "arrivalDelay": {
+        "beats": {
+          "lagP50Ms": 5.736961451248135,
+          "lagP99Ms": 11.609977324263038,
+          "entries": 286,
+          "blockComputeP50Ms": 0.5761660000000001,
+          "blockComputeP99Ms": 22.325625000000002
+        },
+        "ticks": {
+          "lagP50Ms": 5.804988662134747,
+          "lagP99Ms": 11.496598639467948,
+          "entries": 3605,
+          "blockComputeP50Ms": 0.9201250000000001,
+          "blockComputeP99Ms": 11.768625
+        },
+        "onsets": {
+          "lagP50Ms": 5.827664399078003,
+          "lagP99Ms": 11.51927437641831,
+          "entries": 2083,
+          "blockComputeP50Ms": 0.609042,
+          "blockComputeP99Ms": 867.264375
+        },
+        "hindsight": {
+          "lagP50Ms": 5.827664399106425,
+          "lagP99Ms": 11.360544217694724,
+          "entries": 180,
+          "blockComputeP50Ms": 1007.2589169999999,
+          "blockComputeP99Ms": 1283.4632080000001
+        },
+        "structure": {
+          "lagP50Ms": 5.850340136049681,
+          "lagP99Ms": 11.337868480737257,
+          "entries": 31,
+          "blockComputeP50Ms": 0.9047919999999999,
+          "blockComputeP99Ms": 12.065790999999999
+        },
+        "forecasts": {
+          "lagP50Ms": null,
+          "lagP99Ms": null,
+          "entries": 0,
+          "blockComputeP50Ms": null,
+          "blockComputeP99Ms": null
+        },
+        "timbre": {
+          "lagP50Ms": 5.714285714283562,
+          "lagP99Ms": 11.428571428567125,
+          "entries": 180,
+          "blockComputeP50Ms": 1.061042,
+          "blockComputeP99Ms": 11.177292
+        }
+      }
+    },
+    {
+      "track": "dnb-174",
+      "audioS": 62.5,
+      "delayed": {
+        "direct": {
+          "within45": 1.0,
+          "recall": 1.0
+        },
+        "grids": {
+          "offline": {
+            "3": {
+              "beats": 136,
+              "within45": 1.0,
+              "recall": 0.8343558282208589,
+              "shortLead": 0
+            }
+          }
+        }
+      },
+      "accuracy": {
+        "rust": {
+          "beats": 163,
+          "within20": 0.9938650306748467,
+          "within45": 1.0,
+          "within70": 1.0,
+          "offbeat45": 0.0
+        },
+        "python": {
+          "beats": 163,
+          "within20": 0.9938650306748467,
+          "within45": 1.0,
+          "within70": 1.0,
+          "offbeat45": 0.0
+        },
+        "rustLiveDelay": {
+          "beats": 163,
+          "within20": 0.9938650306748467,
+          "within45": 1.0,
+          "within70": 1.0,
+          "offbeat45": 0.0
+        }
+      },
+      "agreement": {
+        "rust": {
+          "precision70": 1.0,
+          "recall70": 1.0,
+          "f70": 1.0
+        },
+        "rustLiveDelay": {
+          "precision70": 1.0,
+          "recall70": 1.0,
+          "f70": 1.0
+        }
+      },
+      "beats": {
+        "rust": 183,
+        "python": 183,
+        "evidenceMean": {
+          "rust": 0.4205665267883708,
+          "python": 0.4205655737704918
+        }
+      },
+      "ticks": {
+        "rust": 1250,
+        "python": 1250,
+        "energyMeanAbsDiff": 0.000022383439547084693,
+        "bandsMeanAbsDiff": 0.000015822838526617372,
+        "keysEqual": 1.0
+      },
+      "onsets": {
+        "rust": 401,
+        "python": 401,
+        "strongRust": 13,
+        "strongPython": 13,
+        "recall10ms": 1.0,
+        "precision10ms": 1.0
+      },
+      "structure": {
+        "changes": {
+          "rust": 6,
+          "python": 6,
+          "matched100ms": 1.0
+        },
+        "jumps": {
+          "rust": 2,
+          "python": 2,
+          "matched100ms": 1.0
+        },
+        "ends": {
+          "rust": 0,
+          "python": 0,
+          "matched100ms": 1.0
+        }
+      },
+      "forecasts": {
+        "rust": 0,
+        "python": 0,
+        "matched1ms": 1.0
+      },
+      "timbre": {
+        "rust": 62,
+        "python": 62,
+        "meanAbsDiff": 0.000025534841166570832
+      },
+      "realTimeFactor": {
+        "whole": 1.6702677000000001,
+        "frontend": 0.034866589951999996,
+        "rnn": 0.028372767456,
+        "beats": 0.01051218616,
+        "onsets": 0.0014878701599999999,
+        "bands": 0.117752405568,
+        "structure": 0.029261680911999998,
+        "hindsightWithWaits": 1.447880899456,
+        "accents": 0.00008190892800000001
+      },
+      "hindsightStalls": {
+        "count": 61,
+        "s": 92.108932329
+      },
+      "computeRealTimeFactor": 0.196524782736,
+      "arrivalDelay": {
+        "beats": {
+          "lagP50Ms": 5.736961451248135,
+          "lagP99Ms": 11.564625850340349,
+          "entries": 183,
+          "blockComputeP50Ms": 0.7460410000000001,
+          "blockComputeP99Ms": 1437.718791
+        },
+        "ticks": {
+          "lagP50Ms": 5.804988662131194,
+          "lagP99Ms": 11.496598639456401,
+          "entries": 1250,
+          "blockComputeP50Ms": 0.968417,
+          "blockComputeP99Ms": 23.905292000000003
+        },
+        "onsets": {
+          "lagP50Ms": 5.759637188205602,
+          "lagP99Ms": 11.496598639453737,
+          "entries": 401,
+          "blockComputeP50Ms": 0.6782090000000001,
+          "blockComputeP99Ms": 20.918333
+        },
+        "hindsight": {
+          "lagP50Ms": 5.827664399092214,
+          "lagP99Ms": 11.360544217687618,
+          "entries": 62,
+          "blockComputeP50Ms": 1706.2659170000002,
+          "blockComputeP99Ms": 2013.83475
+        },
+        "structure": {
+          "lagP50Ms": 7.596371882087283,
+          "lagP99Ms": 10.72562358277196,
+          "entries": 8,
+          "blockComputeP50Ms": 1.223792,
+          "blockComputeP99Ms": 19.004666999999998
+        },
+        "forecasts": {
+          "lagP50Ms": null,
+          "lagP99Ms": null,
+          "entries": 0,
+          "blockComputeP50Ms": null,
+          "blockComputeP99Ms": null
+        },
+        "timbre": {
+          "lagP50Ms": 5.714285714283562,
+          "lagP99Ms": 11.065759637190808,
+          "entries": 62,
+          "blockComputeP50Ms": 1.036375,
+          "blockComputeP99Ms": 19.207124999999998
+        }
+      }
+    },
+    {
+      "track": "hiphop-92-swing",
+      "audioS": 62.499977324263035,
+      "delayed": {
+        "direct": {
+          "within45": 0.5058823529411764,
+          "recall": 1.0
+        },
+        "grids": {
+          "offline": {
+            "3": {
+              "beats": 86,
+              "within45": 1.0,
+              "recall": 1.0,
+              "shortLead": 0
+            }
+          }
+        }
+      },
+      "accuracy": {
+        "rust": {
+          "beats": 170,
+          "within20": 0.4294117647058823,
+          "within45": 0.5058823529411764,
+          "within70": 0.5058823529411764,
+          "offbeat45": 0.49411764705882355
+        },
+        "python": {
+          "beats": 170,
+          "within20": 0.4294117647058823,
+          "within45": 0.5058823529411764,
+          "within70": 0.5058823529411764,
+          "offbeat45": 0.49411764705882355
+        },
+        "rustLiveDelay": {
+          "beats": 170,
+          "within20": 0.4294117647058823,
+          "within45": 0.5058823529411764,
+          "within70": 0.5058823529411764,
+          "offbeat45": 0.49411764705882355
+        }
+      },
+      "agreement": {
+        "rust": {
+          "precision70": 1.0,
+          "recall70": 1.0,
+          "f70": 1.0
+        },
+        "rustLiveDelay": {
+          "precision70": 1.0,
+          "recall70": 1.0,
+          "f70": 1.0
+        }
+      },
+      "beats": {
+        "rust": 188,
+        "python": 188,
+        "evidenceMean": {
+          "rust": 0.23650869207352676,
+          "python": 0.2365037234042555
+        }
+      },
+      "ticks": {
+        "rust": 1249,
+        "python": 1249,
+        "energyMeanAbsDiff": 0.000021843005434708345,
+        "bandsMeanAbsDiff": 0.000013897616518181365,
+        "keysEqual": 1.0
+      },
+      "onsets": {
+        "rust": 465,
+        "python": 465,
+        "strongRust": 11,
+        "strongPython": 11,
+        "recall10ms": 1.0,
+        "precision10ms": 1.0
+      },
+      "structure": {
+        "changes": {
+          "rust": 9,
+          "python": 9,
+          "matched100ms": 1.0
+        },
+        "jumps": {
+          "rust": 2,
+          "python": 2,
+          "matched100ms": 1.0
+        },
+        "ends": {
+          "rust": 1,
+          "python": 1,
+          "matched100ms": 1.0
+        }
+      },
+      "forecasts": {
+        "rust": 0,
+        "python": 0,
+        "matched1ms": 1.0
+      },
+      "timbre": {
+        "rust": 62,
+        "python": 62,
+        "meanAbsDiff": 0.000025172197345226683
+      },
+      "realTimeFactor": {
+        "whole": 1.6794059479642804,
+        "frontend": 0.0324457387476966,
+        "rnn": 0.031090784160103097,
+        "beats": 0.014074548498412155,
+        "onsets": 0.001113672468053503,
+        "bands": 0.12103588762524722,
+        "structure": 0.021810587241138227,
+        "hindsightWithWaits": 1.4576988619103355,
+        "accents": 0.00005223763495242992
+      },
+      "hindsightStalls": {
+        "count": 61,
+        "s": 92.575882956
+      },
+      "computeRealTimeFactor": 0.19819128326613453,
+      "arrivalDelay": {
+        "beats": {
+          "lagP50Ms": 6.303854875284287,
+          "lagP99Ms": 11.609977324263038,
+          "entries": 188,
+          "blockComputeP50Ms": 0.647625,
+          "blockComputeP99Ms": 27.16875
+        },
+        "ticks": {
+          "lagP50Ms": 5.804988662131194,
+          "lagP99Ms": 11.496598639456401,
+          "entries": 1249,
+          "blockComputeP50Ms": 0.954542,
+          "blockComputeP99Ms": 22.985125
+        },
+        "onsets": {
+          "lagP50Ms": 6.077097505666984,
+          "lagP99Ms": 11.428571428570677,
+          "entries": 465,
+          "blockComputeP50Ms": 0.666875,
+          "blockComputeP99Ms": 1677.0703330000001
+        },
+        "hindsight": {
+          "lagP50Ms": 5.827664399092214,
+          "lagP99Ms": 11.360544217687618,
+          "entries": 62,
+          "blockComputeP50Ms": 1735.529084,
+          "blockComputeP99Ms": 1952.445833
+        },
+        "structure": {
+          "lagP50Ms": 5.0113378684812915,
+          "lagP99Ms": 9.7052154195012,
+          "entries": 12,
+          "blockComputeP50Ms": 0.8536670000000001,
+          "blockComputeP99Ms": 21.233292000000002
+        },
+        "forecasts": {
+          "lagP50Ms": null,
+          "lagP99Ms": null,
+          "entries": 0,
+          "blockComputeP50Ms": null,
+          "blockComputeP99Ms": null
+        },
+        "timbre": {
+          "lagP50Ms": 5.714285714283562,
+          "lagP99Ms": 11.065759637190808,
+          "entries": 62,
+          "blockComputeP50Ms": 1.206708,
+          "blockComputeP99Ms": 18.229042
+        }
+      }
+    },
+    {
+      "track": "house-128",
+      "audioS": 62.5,
+      "delayed": {
+        "direct": {
+          "within45": 1.0,
+          "recall": 1.0
+        },
+        "grids": {
+          "offline": {
+            "3": {
+              "beats": 120,
+              "within45": 1.0,
+              "recall": 1.0,
+              "shortLead": 0
+            }
+          }
+        }
+      },
+      "accuracy": {
+        "rust": {
+          "beats": 120,
+          "within20": 1.0,
+          "within45": 1.0,
+          "within70": 1.0,
+          "offbeat45": 0.0
+        },
+        "python": {
+          "beats": 120,
+          "within20": 1.0,
+          "within45": 1.0,
+          "within70": 1.0,
+          "offbeat45": 0.0
+        },
+        "rustLiveDelay": {
+          "beats": 120,
+          "within20": 1.0,
+          "within45": 1.0,
+          "within70": 1.0,
+          "offbeat45": 0.0
+        }
+      },
+      "agreement": {
+        "rust": {
+          "precision70": 1.0,
+          "recall70": 1.0,
+          "f70": 1.0
+        },
+        "rustLiveDelay": {
+          "precision70": 1.0,
+          "recall70": 1.0,
+          "f70": 1.0
+        }
+      },
+      "beats": {
+        "rust": 136,
+        "python": 136,
+        "evidenceMean": {
+          "rust": 0.4712685682459457,
+          "python": 0.47127205882352935
+        }
+      },
+      "ticks": {
+        "rust": 1250,
+        "python": 1250,
+        "energyMeanAbsDiff": 0.000023184789135911975,
+        "bandsMeanAbsDiff": 0.000013759980547080728,
+        "keysEqual": 1.0
+      },
+      "onsets": {
+        "rust": 513,
+        "python": 513,
+        "strongRust": 17,
+        "strongPython": 17,
+        "recall10ms": 1.0,
+        "precision10ms": 1.0
+      },
+      "structure": {
+        "changes": {
+          "rust": 5,
+          "python": 5,
+          "matched100ms": 1.0
+        },
+        "jumps": {
+          "rust": 2,
+          "python": 2,
+          "matched100ms": 1.0
+        },
+        "ends": {
+          "rust": 1,
+          "python": 1,
+          "matched100ms": 1.0
+        }
+      },
+      "forecasts": {
+        "rust": 0,
+        "python": 0,
+        "matched1ms": 1.0
+      },
+      "timbre": {
+        "rust": 62,
+        "python": 62,
+        "meanAbsDiff": 0.00002607527628377807
+      },
+      "realTimeFactor": {
+        "whole": 1.647380528,
+        "frontend": 0.03677649496,
+        "rnn": 0.02459911984,
+        "beats": 0.011499014896,
+        "onsets": 0.001923117008,
+        "bands": 0.111001863792,
+        "structure": 0.019406772544,
+        "hindsightWithWaits": 1.442049061104,
+        "accents": 0.000078369024
+      },
+      "hindsightStalls": {
+        "count": 61,
+        "s": 91.730444661
+      },
+      "computeRealTimeFactor": 0.179693413424,
+      "arrivalDelay": {
+        "beats": {
+          "lagP50Ms": 5.487528344671144,
+          "lagP99Ms": 11.609977324263038,
+          "entries": 136,
+          "blockComputeP50Ms": 0.513166,
+          "blockComputeP99Ms": 18.736791
+        },
+        "ticks": {
+          "lagP50Ms": 5.804988662131194,
+          "lagP99Ms": 11.496598639456401,
+          "entries": 1250,
+          "blockComputeP50Ms": 0.9384159999999999,
+          "blockComputeP99Ms": 21.947292
+        },
+        "onsets": {
+          "lagP50Ms": 5.646258503401391,
+          "lagP99Ms": 10.929705215417584,
+          "entries": 513,
+          "blockComputeP50Ms": 0.6311249999999999,
+          "blockComputeP99Ms": 1546.497333
+        },
+        "hindsight": {
+          "lagP50Ms": 5.827664399092214,
+          "lagP99Ms": 11.360544217687618,
+          "entries": 62,
+          "blockComputeP50Ms": 1701.258084,
+          "blockComputeP99Ms": 1957.500834
+        },
+        "structure": {
+          "lagP50Ms": 1.8140589569171084,
+          "lagP99Ms": 5.328798185942674,
+          "entries": 8,
+          "blockComputeP50Ms": 1.005625,
+          "blockComputeP99Ms": 18.401583
+        },
+        "forecasts": {
+          "lagP50Ms": null,
+          "lagP99Ms": null,
+          "entries": 0,
+          "blockComputeP50Ms": null,
+          "blockComputeP99Ms": null
+        },
+        "timbre": {
+          "lagP50Ms": 5.714285714283562,
+          "lagP99Ms": 11.065759637190808,
+          "entries": 62,
+          "blockComputeP50Ms": 1.125459,
+          "blockComputeP99Ms": 18.401583
+        }
+      }
+    },
+    {
+      "track": "notjam-crystal-caverns",
+      "audioS": 47.5,
+      "delayed": {
+        "direct": {
+          "within45": 0.03571428571428571,
+          "recall": 0.03614457831325301
+        },
+        "grids": {
+          "offline": {
+            "3": {
+              "beats": 83,
+              "within45": 0.12048192771084337,
+              "recall": 0.12048192771084337,
+              "shortLead": 0
+            }
+          }
+        }
+      },
+      "accuracy": {
+        "rust": {
+          "beats": 84,
+          "within20": 0.03571428571428571,
+          "within45": 0.03571428571428571,
+          "within70": 0.03571428571428571,
+          "offbeat45": 0.9642857142857143
+        },
+        "python": {
+          "beats": 84,
+          "within20": 0.03571428571428571,
+          "within45": 0.03571428571428571,
+          "within70": 0.03571428571428571,
+          "offbeat45": 0.9642857142857143
+        },
+        "rustLiveDelay": {
+          "beats": 84,
+          "within20": 0.03571428571428571,
+          "within45": 0.03571428571428571,
+          "within70": 0.03571428571428571,
+          "offbeat45": 0.9642857142857143
+        }
+      },
+      "agreement": {
+        "rust": {
+          "precision70": 1.0,
+          "recall70": 1.0,
+          "f70": 1.0
+        },
+        "rustLiveDelay": {
+          "precision70": 0.968421052631579,
+          "recall70": 0.968421052631579,
+          "f70": 0.968421052631579
+        }
+      },
+      "beats": {
+        "rust": 95,
+        "python": 95,
+        "evidenceMean": {
+          "rust": 0.5647644883947929,
+          "python": 0.5647715789473683
+        }
+      },
+      "ticks": {
+        "rust": 950,
+        "python": 950,
+        "energyMeanAbsDiff": 0.000022668943341886435,
+        "bandsMeanAbsDiff": 7.515078941279326e-6,
+        "keysEqual": 1.0
+      },
+      "onsets": {
+        "rust": 210,
+        "python": 210,
+        "strongRust": 9,
+        "strongPython": 9,
+        "recall10ms": 1.0,
+        "precision10ms": 1.0
+      },
+      "structure": {
+        "changes": {
+          "rust": 3,
+          "python": 3,
+          "matched100ms": 1.0
+        },
+        "jumps": {
+          "rust": 10,
+          "python": 10,
+          "matched100ms": 1.0
+        },
+        "ends": {
+          "rust": 1,
+          "python": 1,
+          "matched100ms": 1.0
+        }
+      },
+      "forecasts": {
+        "rust": 0,
+        "python": 0,
+        "matched1ms": 1.0
+      },
+      "timbre": {
+        "rust": 47,
+        "python": 47,
+        "meanAbsDiff": 0.00002646613429586207
+      },
+      "realTimeFactor": {
+        "whole": 1.7772955544,
+        "frontend": 0.049088073915789475,
+        "rnn": 0.03370771962105263,
+        "beats": 0.014957718905263158,
+        "onsets": 0.002704794568421053,
+        "bands": 0.15059612778947368,
+        "structure": 0.02999711509473684,
+        "hindsightWithWaits": 1.4961404603578947,
+        "accents": 0.00002800545263157895
+      },
+      "hindsightStalls": {
+        "count": 46,
+        "s": 72.766338754
+      },
+      "computeRealTimeFactor": 0.2453726332631579,
+      "arrivalDelay": {
+        "beats": {
+          "lagP50Ms": 5.918367346936293,
+          "lagP99Ms": 11.609977324263038,
+          "entries": 95,
+          "blockComputeP50Ms": 0.73675,
+          "blockComputeP99Ms": 1572.9066249999998
+        },
+        "ticks": {
+          "lagP50Ms": 5.804988662134747,
+          "lagP99Ms": 11.496598639456401,
+          "entries": 950,
+          "blockComputeP50Ms": 1.136459,
+          "blockComputeP99Ms": 25.043875
+        },
+        "onsets": {
+          "lagP50Ms": 5.419501133786753,
+          "lagP99Ms": 10.975056689343177,
+          "entries": 210,
+          "blockComputeP50Ms": 0.736208,
+          "blockComputeP99Ms": 22.523083
+        },
+        "hindsight": {
+          "lagP50Ms": 5.736961451247247,
+          "lagP99Ms": 11.360544217687618,
+          "entries": 47,
+          "blockComputeP50Ms": 1765.766625,
+          "blockComputeP99Ms": 2022.829125
+        },
+        "structure": {
+          "lagP50Ms": 7.0521541950085975,
+          "lagP99Ms": 10.92970521541936,
+          "entries": 14,
+          "blockComputeP50Ms": 1.881625,
+          "blockComputeP99Ms": 17.532875
+        },
+        "forecasts": {
+          "lagP50Ms": null,
+          "lagP99Ms": null,
+          "entries": 0,
+          "blockComputeP50Ms": null,
+          "blockComputeP99Ms": null
+        },
+        "timbre": {
+          "lagP50Ms": 5.623582766439483,
+          "lagP99Ms": 11.065759637190808,
+          "entries": 47,
+          "blockComputeP50Ms": 1.311792,
+          "blockComputeP99Ms": 28.755458
+        }
+      }
+    },
+    {
+      "track": "notjam-klepto-linda-caverns-b",
+      "audioS": 103.09859410430839,
+      "delayed": {
+        "direct": {
+          "within45": 0.3605150214592275,
+          "recall": 0.358974358974359
+        },
+        "grids": {
+          "offline": {
+            "3": {
+              "beats": 239,
+              "within45": 0.4435146443514644,
+              "recall": 0.452991452991453,
+              "shortLead": 0
+            }
+          }
+        }
+      },
+      "accuracy": {
+        "rust": {
+          "beats": 236,
+          "within20": 0.2542372881355932,
+          "within45": 0.3855932203389831,
+          "within70": 0.3983050847457627,
+          "offbeat45": 0.5932203389830508
+        },
+        "python": {
+          "beats": 236,
+          "within20": 0.2542372881355932,
+          "within45": 0.3855932203389831,
+          "within70": 0.3983050847457627,
+          "offbeat45": 0.5932203389830508
+        },
+        "rustLiveDelay": {
+          "beats": 233,
+          "within20": 0.23605150214592274,
+          "within45": 0.3605150214592275,
+          "within70": 0.38197424892703863,
+          "offbeat45": 0.6094420600858369
+        }
+      },
+      "agreement": {
+        "rust": {
+          "precision70": 1.0,
+          "recall70": 1.0,
+          "f70": 1.0
+        },
+        "rustLiveDelay": {
+          "precision70": 0.9186991869918699,
+          "recall70": 0.9076305220883534,
+          "f70": 0.913131313131313
+        }
+      },
+      "beats": {
+        "rust": 249,
+        "python": 249,
+        "evidenceMean": {
+          "rust": 0.5113800810572848,
+          "python": 0.511378714859438
+        }
+      },
+      "ticks": {
+        "rust": 2061,
+        "python": 2061,
+        "energyMeanAbsDiff": 0.000022909967725573514,
+        "bandsMeanAbsDiff": 0.000013886100121917644,
+        "keysEqual": 1.0
+      },
+      "onsets": {
+        "rust": 618,
+        "python": 618,
+        "strongRust": 18,
+        "strongPython": 18,
+        "recall10ms": 1.0,
+        "precision10ms": 1.0
+      },
+      "structure": {
+        "changes": {
+          "rust": 9,
+          "python": 9,
+          "matched100ms": 1.0
+        },
+        "jumps": {
+          "rust": 9,
+          "python": 9,
+          "matched100ms": 1.0
+        },
+        "ends": {
+          "rust": 1,
+          "python": 1,
+          "matched100ms": 1.0
+        }
+      },
+      "forecasts": {
+        "rust": 0,
+        "python": 0,
+        "matched1ms": 1.0
+      },
+      "timbre": {
+        "rust": 103,
+        "python": 103,
+        "meanAbsDiff": 0.000024413649961956253
+      },
+      "realTimeFactor": {
+        "whole": 1.3248305163968488,
+        "frontend": 0.018844449120560904,
+        "rnn": 0.021902161417598195,
+        "beats": 0.008937287224962214,
+        "onsets": 0.0016784962831299013,
+        "bands": 0.09095316003545909,
+        "structure": 0.01736933090657117,
+        "hindsightWithWaits": 1.1649366485006316,
+        "accents": 0.00016639781705115504
+      },
+      "hindsightStalls": {
+        "count": 102,
+        "s": 121.359804089
+      },
+      "computeRealTimeFactor": 0.14770676273813146,
+      "arrivalDelay": {
+        "beats": {
+          "lagP50Ms": 6.0997732426315565,
+          "lagP99Ms": 11.587301587304921,
+          "entries": 246,
+          "blockComputeP50Ms": 0.5992919999999999,
+          "blockComputeP99Ms": 1240.742791
+        },
+        "ticks": {
+          "lagP50Ms": 5.804988662134747,
+          "lagP99Ms": 11.496598639456401,
+          "entries": 2061,
+          "blockComputeP50Ms": 0.911667,
+          "blockComputeP99Ms": 18.2255
+        },
+        "onsets": {
+          "lagP50Ms": 5.895691609978826,
+          "lagP99Ms": 11.451247165531697,
+          "entries": 618,
+          "blockComputeP50Ms": 0.673792,
+          "blockComputeP99Ms": 577.343041
+        },
+        "hindsight": {
+          "lagP50Ms": 5.827664399092214,
+          "lagP99Ms": 11.451247165531697,
+          "entries": 103,
+          "blockComputeP50Ms": 1256.9884579999998,
+          "blockComputeP99Ms": 1478.792125
+        },
+        "structure": {
+          "lagP50Ms": 4.444444444445139,
+          "lagP99Ms": 11.247165532878967,
+          "entries": 19,
+          "blockComputeP50Ms": 0.90275,
+          "blockComputeP99Ms": 14.129249999999999
+        },
+        "forecasts": {
+          "lagP50Ms": null,
+          "lagP99Ms": null,
+          "entries": 0,
+          "blockComputeP50Ms": null,
+          "blockComputeP99Ms": null
+        },
+        "timbre": {
+          "lagP50Ms": 5.804988662134747,
+          "lagP99Ms": 11.337868480723046,
+          "entries": 103,
+          "blockComputeP50Ms": 1.0465,
+          "blockComputeP99Ms": 14.842667
+        }
+      }
+    },
+    {
+      "track": "orpheus-galop",
+      "audioS": 144.6,
+      "delayed": {
+        "direct": {
+          "within45": 0.5763688760806917,
+          "recall": 0.5319148936170213
+        },
+        "grids": {
+          "offline": {
+            "3": {
+              "beats": 266,
+              "within45": 0.7706766917293233,
+              "recall": 0.5452127659574468,
+              "shortLead": 0
+            }
+          }
+        }
+      },
+      "accuracy": {
+        "rust": {
+          "beats": 347,
+          "within20": 0.29394812680115273,
+          "within45": 0.5821325648414986,
+          "within70": 0.7579250720461095,
+          "offbeat45": 0.08069164265129683
+        },
+        "python": {
+          "beats": 347,
+          "within20": 0.29394812680115273,
+          "within45": 0.5821325648414986,
+          "within70": 0.7579250720461095,
+          "offbeat45": 0.08069164265129683
+        },
+        "rustLiveDelay": {
+          "beats": 347,
+          "within20": 0.2910662824207493,
+          "within45": 0.5763688760806917,
+          "within70": 0.7579250720461095,
+          "offbeat45": 0.08069164265129683
+        }
+      },
+      "agreement": {
+        "rust": {
+          "precision70": 1.0,
+          "recall70": 1.0,
+          "f70": 1.0
+        },
+        "rustLiveDelay": {
+          "precision70": 0.994413407821229,
+          "recall70": 0.994413407821229,
+          "f70": 0.994413407821229
+        }
+      },
+      "beats": {
+        "rust": 358,
+        "python": 358,
+        "evidenceMean": {
+          "rust": 0.2695587603457695,
+          "python": 0.26955949720670386
+        }
+      },
+      "ticks": {
+        "rust": 2892,
+        "python": 2892,
+        "energyMeanAbsDiff": 0.00002368908072240106,
+        "bandsMeanAbsDiff": 0.000021194869835466693,
+        "keysEqual": 1.0
+      },
+      "onsets": {
+        "rust": 1519,
+        "python": 1519,
+        "strongRust": 58,
+        "strongPython": 58,
+        "recall10ms": 1.0,
+        "precision10ms": 1.0
+      },
+      "structure": {
+        "changes": {
+          "rust": 9,
+          "python": 9,
+          "matched100ms": 1.0
+        },
+        "jumps": {
+          "rust": 11,
+          "python": 11,
+          "matched100ms": 1.0
+        },
+        "ends": {
+          "rust": 2,
+          "python": 2,
+          "matched100ms": 1.0
+        }
+      },
+      "forecasts": {
+        "rust": 2,
+        "python": 2,
+        "matched1ms": 1.0
+      },
+      "timbre": {
+        "rust": 144,
+        "python": 144,
+        "meanAbsDiff": 0.000025218182250494093
+      },
+      "realTimeFactor": {
+        "whole": 1.2278042683886583,
+        "frontend": 0.012251572102351315,
+        "rnn": 0.01914032195020747,
+        "beats": 0.008428593526970955,
+        "onsets": 0.0011754621300138312,
+        "bands": 0.08414053071922546,
+        "structure": 0.014522406500691563,
+        "hindsightWithWaits": 1.0878656185338866,
+        "accents": 0.0001367880428769018
+      },
+      "hindsightStalls": {
+        "count": 143,
+        "s": 158.258097662
+      },
+      "computeRealTimeFactor": 0.1333499277109267,
+      "arrivalDelay": {
+        "beats": {
+          "lagP50Ms": 6.077097505666984,
+          "lagP99Ms": 11.47392290249627,
+          "entries": 358,
+          "blockComputeP50Ms": 0.622542,
+          "blockComputeP99Ms": 559.06075
+        },
+        "ticks": {
+          "lagP50Ms": 5.804988662134747,
+          "lagP99Ms": 11.496598639456401,
+          "entries": 2892,
+          "blockComputeP50Ms": 0.946875,
+          "blockComputeP99Ms": 13.317
+        },
+        "onsets": {
+          "lagP50Ms": 5.94104308389376,
+          "lagP99Ms": 11.54195011336867,
+          "entries": 1519,
+          "blockComputeP50Ms": 0.679708,
+          "blockComputeP99Ms": 1013.945791
+        },
+        "hindsight": {
+          "lagP50Ms": 5.736961451248135,
+          "lagP99Ms": 11.451247165531697,
+          "entries": 144,
+          "blockComputeP50Ms": 1174.633417,
+          "blockComputeP99Ms": 1400.149375
+        },
+        "structure": {
+          "lagP50Ms": 6.9614512471645185,
+          "lagP99Ms": 11.564625850340349,
+          "entries": 22,
+          "blockComputeP50Ms": 0.990542,
+          "blockComputeP99Ms": 9.884542
+        },
+        "forecasts": {
+          "lagP50Ms": 4.0589569161042505,
+          "lagP99Ms": 4.0589569161042505,
+          "entries": 2,
+          "blockComputeP50Ms": 1.098125,
+          "blockComputeP99Ms": 1.098125
+        },
+        "timbre": {
+          "lagP50Ms": 5.895691609978826,
+          "lagP99Ms": 11.519274376411204,
+          "entries": 144,
+          "blockComputeP50Ms": 1.05625,
+          "blockComputeP99Ms": 11.360624999999999
+        }
+      }
+    }
+  ]
+}

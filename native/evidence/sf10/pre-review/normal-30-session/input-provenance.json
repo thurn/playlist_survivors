@@ -1,0 +1,7 @@
+{
+  "source": "native/evidence/sf9/recorded-normal-30/stream.jsonl.gz",
+  "sourceDecompressedSha256": "1e056fad9ac630251e4c8260b92405fd8f1007730ca1164c196392d5e25deaa3",
+  "currentRecordedInputSha256": "1e056fad9ac630251e4c8260b92405fd8f1007730ca1164c196392d5e25deaa3",
+  "currentInputBytes": 18760947,
+  "currentInputKept": "reuse SF9 source; identical bytes"
+}

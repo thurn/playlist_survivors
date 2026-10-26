@@ -179,6 +179,7 @@ struct Options {
     click: bool,
     mute: bool,
     bench: bool,
+    bench_density: bool,
     check: bool,
     headless: bool,
     /// Exit after this long (s).
@@ -239,6 +240,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         click: false,
         mute: false,
         bench: false,
+        bench_density: false,
         check: false,
         headless: false,
         seconds: None,
@@ -407,6 +409,10 @@ fn options(args: &[String]) -> Result<Options, String> {
             "--hud-full-slots" => o.hud_full_slots = true,
             "--still" => o.still = Some(it.next().ok_or("--still needs a path")?.into()),
             "--bench" => o.bench = true,
+            "--bench-density" => {
+                o.bench = true;
+                o.bench_density = true;
+            }
             "--still-track" => {
                 o.still_track = Some(it.next().ok_or("--still-track needs a track id")?.clone());
             }
@@ -651,7 +657,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
         );
     }
     if opts.bench {
-        return bench(opts.check);
+        return bench(opts.check, opts.bench_density);
     }
     let world = World::load(level)?;
     // Output first: our process object must exist before the tap can exclude it.
@@ -1170,17 +1176,26 @@ fn thread_cpu_s() -> f64 {
 /// The frame's own work, in this thread's CPU time (docs/design/native-app.md, "Targets"): 60 s of the house track's stream
 /// through the engine at 120 Hz, 0.2 s ahead, a press on each beat 5 to 35 ms late; each frame's
 /// scene and HUD built and encoded offscreen at 1920 x 1080. `check` fails above the gate.
-fn bench(check: bool) -> Result<(), String> {
-    let world = World::load(Some(
-        &live::resource("levels", "../../../levels").join("reactive.yaml"),
-    ))?;
+fn bench(check: bool, density: bool) -> Result<(), String> {
+    let world = World::load(Some(&live::resource("levels", "../../../levels").join(
+        if density {
+            "survivors.yaml"
+        } else {
+            "reactive.yaml"
+        },
+    )))?;
     let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
     let stream_path = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../../public/reactive/house-128/stream.json");
     let text = std::fs::read_to_string(&stream_path)
         .map_err(|e| format!("{}: {e}", stream_path.display()))?;
     let file = stream::StreamFile::parse(&text).map_err(|e| e.0)?;
-    let mut engine = world.engine(true)?;
+    let mut engine = if density {
+        eval::scale::density_engine(&world.level, &world.lib)?
+    } else {
+        world.engine(true)?
+    };
+    let mut density_frames = 0;
     let mut replay = stream::Replay::new(file.log.clone());
     let beats: Vec<f64> = file.log.beats.iter().map(|b| b.t).collect();
     let (w, h) = (1920u32, 1080u32);
@@ -1188,6 +1203,9 @@ fn bench(check: bool) -> Result<(), String> {
     let mut scene = Scene::default();
     let mut next = 0;
     let mut times = Vec::new();
+    let mut engine_times = Vec::new();
+    let mut scene_times = Vec::new();
+    let mut encode_times = Vec::new();
     let mut jitter = 0.0f64;
     for frame in 1..=(60 * 120) {
         let s = f64::from(frame) / 120.0;
@@ -1195,7 +1213,9 @@ fn bench(check: bool) -> Result<(), String> {
         engine.feed(|log| replay.feed_to(log, s));
         jitter = (jitter * 7.3 + 0.37).fract();
         while next < beats.len() && beats[next] + 0.005 + 0.03 * jitter <= s {
-            let key = if next % 4 < 2 {
+            let key = if density {
+                InputKey::Space
+            } else if next % 4 < 2 {
                 InputKey::Right
             } else {
                 InputKey::Down
@@ -1205,6 +1225,14 @@ fn bench(check: bool) -> Result<(), String> {
             next += 1;
         }
         engine.frame(s, 0.2);
+        let engine_end = thread_cpu_s();
+        engine_times.push((engine_end - t0) * 1e3);
+        if density && s > 1.0 {
+            let view = engine.view.borrow();
+            assert_eq!(view.alive().count(), 300);
+            assert_eq!(view.gems.len(), 400);
+            density_frames += 1;
+        }
         let moments = engine.view.borrow_mut().take_moments();
         scene.moments(
             &moments,
@@ -1275,6 +1303,8 @@ fn bench(check: bool) -> Result<(), String> {
             h as f32,
             &mut overlay,
         );
+        let scene_end = thread_cpu_s();
+        scene_times.push((scene_end - engine_end) * 1e3);
         out.draw(&Frame {
             clear: CLEAR,
             world: &layers.sprites,
@@ -1282,7 +1312,35 @@ fn bench(check: bool) -> Result<(), String> {
             grade: layers.grade,
             overlay: &overlay,
         });
-        times.push((thread_cpu_s() - t0) * 1e3);
+        let end = thread_cpu_s();
+        encode_times.push((end - scene_end) * 1e3);
+        times.push((end - t0) * 1e3);
+    }
+    if density {
+        println!(
+            "bench density: {density_frames} frames with 300 live enemies + 400 simulation gems; max implemented Survivors weapons/passives, synthetic HP, damage exempt"
+        );
+        println!(
+            "bench density loadout: {:?}",
+            engine.sim.survivor_inventory()
+        );
+        println!(
+            "bench density stats: {:?}",
+            engine.sim.survivor_progress().map(|p| p.stats.finalized())
+        );
+    }
+    for (name, values) in [
+        ("engine", &mut engine_times),
+        ("scene", &mut scene_times),
+        ("encode", &mut encode_times),
+    ] {
+        values.sort_by(f64::total_cmp);
+        println!(
+            "bench {name} CPU ms: p50 {:.3}, p95 {:.3}, p99 {:.3}",
+            values[values.len() / 2],
+            values[values.len() * 95 / 100],
+            values[values.len() * 99 / 100]
+        );
     }
     let r = engine.stats;
     times.sort_by(f64::total_cmp);

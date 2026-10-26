@@ -1,0 +1,7 @@
+{
+  "rawBytes": 19063791,
+  "sha256": "082416fa9f5a3982720ff0ac35a49c5c45431dc0f7ae5718ecddd321a07a1956",
+  "sameCompressedInput": "../../pre-sh8/recorded-normal-current/stream.jsonl.gz",
+  "recordingSource": "02165bbd087b522bc324ece4f4691cd8e776d6d7",
+  "verifiedReplaySource": "bdd9e830489c2d77a4ee84b1938f53bd4d598717"
+}

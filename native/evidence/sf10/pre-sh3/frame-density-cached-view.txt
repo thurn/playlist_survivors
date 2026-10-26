@@ -1,0 +1,3 @@
+bench density: 7080 frames with 300 live enemies + 400 simulation gems; sword + orbit/chain/trail effects, synthetic HP, damage exempt
+bench: frame work (sim, evaluate, encode) at 1920 x 1080: median 0.75 ms, p95 5.24, p99 5.90, max 7.20 (7200 frames); 1776 rollbacks re-simulating 4589 ms
+playlist-survivors: frame work p99 5.90 ms over the gate 4 ms

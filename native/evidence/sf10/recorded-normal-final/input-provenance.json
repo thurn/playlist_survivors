@@ -1,0 +1,8 @@
+{
+  "sourceMatrix": "/Users/dthurn/Library/Caches/playlist-survivors/survivors/04629550f6ee1511a96df69bda4950e33b460a28a73dfb6a0f42d02e9a44c69a-1793048470007148000",
+  "sourceCommit": "561b18be33a7e08608e5ac2bb25f881d3a04514d",
+  "rawBytes": 19063791,
+  "sha256": "082416fa9f5a3982720ff0ac35a49c5c45431dc0f7ae5718ecddd321a07a1956",
+  "sameCompressedInput": "../pre-sh8/recorded-normal-current/stream.jsonl.gz",
+  "streamMode": "actual Rust/Delayed cached tracks, original order"
+}

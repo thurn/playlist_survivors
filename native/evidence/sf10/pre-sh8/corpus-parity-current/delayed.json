@@ -1,0 +1,61 @@
+{
+  "categories": {
+    "all": {
+      "tracks": 8,
+      "direct": {
+        "within45": 0.5936365731490862,
+        "recall": 0.6747821065609207
+      },
+      "delayed": {
+        "offline 3": {
+          "within45": 0.7732467973791584,
+          "recall": 0.7220978727593558
+        }
+      }
+    },
+    "classical": {
+      "tracks": 2,
+      "direct": {
+        "within45": 0.5246465319031617,
+        "recall": 0.5015689575998775
+      },
+      "delayed": {
+        "offline 3": {
+          "within45": 0.8109889034854795,
+          "recall": 0.6844768865758457
+        }
+      }
+    },
+    "notjam": {
+      "tracks": 2,
+      "direct": {
+        "within45": 0.1981146535867566,
+        "recall": 0.197559468643806
+      },
+      "delayed": {
+        "offline 3": {
+          "within45": 0.2819982860311539,
+          "recall": 0.2867366903511482
+        }
+      }
+    },
+    "synthetic": {
+      "tracks": 4,
+      "direct": {
+        "within45": 0.8258925535532132,
+        "recall": 1.0
+      },
+      "delayed": {
+        "offline 3": {
+          "within45": 1.0,
+          "recall": 0.9585889570552147
+        }
+      }
+    }
+  },
+  "choice": {
+    "grid": "offline",
+    "m": 3.0
+  },
+  "shortLead": 0.0
+}

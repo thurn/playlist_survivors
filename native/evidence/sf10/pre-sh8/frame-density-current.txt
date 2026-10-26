@@ -1,0 +1,6 @@
+bench density: 7080 frames with 300 live enemies + 400 simulation gems; max implemented Survivors weapons/passives, synthetic HP, damage exempt
+bench density loadout: Some(Inventory { weapons: Slots { items: [Some(Owned { id: Sword, rank: 8 }), Some(Owned { id: Garlic, rank: 8 }), Some(Owned { id: MagicWand, rank: 8 }), None, None, None] }, passives: Slots { items: [Some(Owned { id: Spinach, rank: 5 }), Some(Owned { id: HollowHeart, rank: 5 }), Some(Owned { id: Pummarola, rank: 5 }), Some(Owned { id: Duplicator, rank: 2 }), Some(Owned { id: EmptyTome, rank: 5 }), Some(Owned { id: Spellbinder, rank: 5 })] } })
+bench engine CPU ms: p50 0.156, p95 1.580, p99 2.439
+bench scene CPU ms: p50 0.244, p95 0.356, p99 0.451
+bench encode CPU ms: p50 0.183, p95 0.277, p99 0.341
+bench: frame work (sim, evaluate, encode) at 1920 x 1080: median 0.64 ms, p95 2.02, p99 3.08, max 4.02 (7200 frames); 1776 rollbacks re-simulating 1625 ms

@@ -1087,6 +1087,13 @@ struct Snap {
     keys: usize,
 }
 
+/// A displayed journal prefix, reused only while every record in it survives rollback.
+struct Shown {
+    s: f64,
+    next: usize,
+    view: LiveView,
+}
+
 /// The runner's counters, for checks and the latency report.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct RunnerStats {
@@ -1116,8 +1123,11 @@ pub struct Engine {
     /// The records before the settled time, applied (and the absolute index after them).
     settled_view: LiveView,
     settled_idx: usize,
+    shown: Vec<Shown>,
+    #[cfg(test)]
+    reference_passed: Vec<(f64, Moment)>,
     /// The moments passed on whose records are not yet settled (to pass each on once).
-    passed: Vec<(f64, Moment)>,
+    passed: std::collections::HashMap<(u64, usize), Vec<(f64, Moment)>>,
     /// The sounds the speculation causes, each with its record's journal index and known from the
     /// frame that first saw it; and when each cause was first seen (kept across rollbacks).
     causes: Vec<(usize, Caused)>,
@@ -1143,6 +1153,9 @@ pub struct Engine {
     /// many: a session keeps it, and a replay must settle the same.
     pub settled_hash: u64,
     pub settled_count: usize,
+    /// One requested prefix hash for bounded session replay (the test-only log is optional).
+    prefix_target: Option<usize>,
+    prefix_hash: Option<u64>,
     /// Every record as it settles, and every key as applied, when kept (for determinism tests).
     pub settled_log: Option<Vec<(f64, Record)>>,
     pub key_log: Option<Vec<KeyEvent>>,
@@ -1161,6 +1174,30 @@ impl Engine {
         zen: bool,
         file_duration: f64,
     ) -> Result<Engine, LevelError> {
+        Self::new_with_setup(
+            level,
+            lib,
+            hero_anims,
+            gate,
+            settling,
+            zen,
+            file_duration,
+            |_| {},
+        )
+    }
+
+    /// Offline fixtures configure state before the initial snapshot and its journal mark.
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn new_with_setup(
+        level: &SourceFile,
+        lib: &ContentLibrary,
+        hero_anims: &IndexMap<String, AnimInfo>,
+        gate: f64,
+        settling: bool,
+        zen: bool,
+        file_duration: f64,
+        setup: impl FnOnce(&mut Sim),
+    ) -> Result<Engine, LevelError> {
         let song = reactive_song_map(file_duration);
         let level = load_level(level, lib, &song, None)?;
         let (seed, zones) = (level.seed, level.zones.clone());
@@ -1173,7 +1210,7 @@ impl Engine {
             ..LiveView::default()
         };
         let journal = Rc::new(RefCell::new(Journal::default()));
-        let sim = Sim::new(
+        let mut sim = Sim::new(
             input,
             Rc::new(StreamLog {
                 hindsight: settling.then(Vec::new),
@@ -1187,6 +1224,7 @@ impl Engine {
             Box::new(LiveRecorder(Rc::clone(&journal))),
             None,
         );
+        setup(&mut sim);
         let first = Snap {
             s: sim.s(),
             sim: sim.snapshot(),
@@ -1199,7 +1237,10 @@ impl Engine {
             journal,
             settled_view: fresh,
             settled_idx: 0,
-            passed: Vec::new(),
+            shown: Vec::new(),
+            #[cfg(test)]
+            reference_passed: Vec::new(),
+            passed: std::collections::HashMap::new(),
             causes: Vec::new(),
             first_seen: Vec::new(),
             sound_idx: 0,
@@ -1215,6 +1256,8 @@ impl Engine {
             zones,
             settled_hash: FNV_OFFSET,
             settled_count: 0,
+            prefix_target: None,
+            prefix_hash: None,
             settled_log: None,
             key_log: None,
         })
@@ -1347,6 +1390,20 @@ impl Engine {
         self.frame(s, 0.0);
     }
 
+    /// Capture exactly this settled prefix without retaining its records. Must precede the run.
+    pub(crate) fn track_prefix(&mut self, count: usize) {
+        assert_eq!(
+            self.settled_count, 0,
+            "prefix tracking starts on a fresh engine"
+        );
+        self.prefix_target = Some(count);
+        self.prefix_hash = (count == 0).then_some(self.settled_hash);
+    }
+
+    pub(crate) fn tracked_prefix(&self) -> Option<u64> {
+        self.prefix_hash
+    }
+
     /// Runs the simulation to song time `t`, snapshotting on the way.
     fn run(&mut self, t: f64) {
         while self.sim.s() < t - 1e-9 && !self.sim.done() {
@@ -1389,6 +1446,7 @@ impl Engine {
         self.stats.replayed_s += self.sim.s() - snap.s;
         self.sim.restore(&snap.sim);
         self.journal.borrow_mut().rewind(&snap.mark);
+        self.shown.retain(|view| view.next <= snap.mark.len);
         self.sound_idx = self.sound_idx.min(snap.mark.len);
         let len = snap.mark.len;
         self.causes.retain(|(k, _)| *k < len);
@@ -1417,14 +1475,43 @@ impl Engine {
             self.final_stamp = *s;
             self.settled_hash = fnv(self.settled_hash, record_bytes(*s, rec).as_bytes());
             self.settled_count += 1;
+            if self.prefix_target == Some(self.settled_count) {
+                self.prefix_hash = Some(self.settled_hash);
+            }
             fresh.extend(self.settled_view.moments.drain(..).map(|m| (*s, m)));
             if let Some(log) = &mut self.settled_log {
                 log.push((*s, rec.clone()));
             }
             self.settled_idx += 1;
         }
-        let mut shown = self.settled_view.clone();
-        let mut k = self.settled_idx;
+        // In unit tests, compare every cached state and emitted moment with the original
+        // complete overlay and linear deduplication, including across late-key rollbacks.
+        #[cfg(test)]
+        let (reference_view, reference_fresh) = {
+            let mut reference = self.settled_view.clone();
+            let mut events = fresh.clone();
+            let mut index = self.settled_idx;
+            while let Some((stamp, rec)) = j.get(index) {
+                if *stamp > now + 1e-9 {
+                    break;
+                }
+                reference.apply(*stamp, rec);
+                events.extend(reference.moments.drain(..).map(|m| (*stamp, m)));
+                index += 1;
+            }
+            (reference, events)
+        };
+        // Reuse a surviving displayed prefix. In particular, a small late key need not
+        // evaluate every unsettled enemy sample again from the oldest rollback snapshot.
+        let cached = self
+            .shown
+            .iter()
+            .rev()
+            .find(|v| v.s <= now && v.next >= self.settled_idx);
+        let (mut shown, mut k) = cached.map_or_else(
+            || (self.settled_view.clone(), self.settled_idx),
+            |v| (v.view.clone(), v.next),
+        );
         while let Some((s, rec)) = j.get(k) {
             if *s > now + 1e-9 {
                 break;
@@ -1432,6 +1519,17 @@ impl Engine {
             shown.apply(*s, rec);
             fresh.extend(shown.moments.drain(..).map(|m| (*s, m)));
             k += 1;
+        }
+        #[cfg(test)]
+        assert_eq!(shown, reference_view, "cached view diverged at {now}");
+        let oldest = self.snaps[0].mark.len;
+        self.shown.retain(|v| v.next >= oldest);
+        if self.shown.last().is_none_or(|v| v.next != k) {
+            self.shown.push(Shown {
+                s: now,
+                next: k,
+                view: shown.clone(),
+            });
         }
         // The speculation's sounds, each known from the frame that first saw it.
         let mut k = self.sound_idx;
@@ -1526,16 +1624,42 @@ impl Engine {
         // Each moment once: those an earlier frame's overlay passed on are not passed again.
         let mut v = self.view.borrow_mut();
         let mut moments = std::mem::take(&mut v.moments);
+        #[cfg(test)]
+        let previous_moments = moments.len();
         for (s, m) in fresh {
-            if !self.passed.iter().any(|(ps, pm)| *ps == s && *pm == m) {
+            let bucket = self.passed.entry(moment_bucket(s, &m)).or_default();
+            if !bucket.iter().any(|(ps, pm)| *ps == s && *pm == m) {
                 moments.push(m.clone());
-                self.passed.push((s, m));
+                bucket.push((s, m));
             }
         }
         // (Records after the last final one are stamped no earlier than it: a moment passed on
         // is remembered until its record is final, whatever the snapshot's own time.)
         let final_stamp = self.final_stamp;
-        self.passed.retain(|(s, _)| *s >= final_stamp);
+        self.passed.retain(|_, bucket| {
+            bucket.retain(|(s, _)| *s >= final_stamp);
+            !bucket.is_empty()
+        });
+        #[cfg(test)]
+        {
+            let mut expected = Vec::new();
+            for (s, m) in reference_fresh {
+                if !self
+                    .reference_passed
+                    .iter()
+                    .any(|(ps, pm)| *ps == s && *pm == m)
+                {
+                    expected.push(m.clone());
+                    self.reference_passed.push((s, m));
+                }
+            }
+            self.reference_passed.retain(|(s, _)| *s >= final_stamp);
+            assert_eq!(
+                &moments[previous_moments..],
+                expected.as_slice(),
+                "moment dedup diverged at {now}"
+            );
+        }
         *v = shown;
         v.moments = moments;
     }
@@ -1551,6 +1675,17 @@ impl Engine {
     pub fn fallen(&self) -> bool {
         self.settled_view.health <= 0.0
     }
+}
+
+/// Equal moments always choose the same bucket, including +0/-0 stamps. Bucket matches
+/// still use PartialEq, so distinct moments, NaNs and hit metadata keep their old behavior.
+fn moment_bucket(stamp: f64, moment: &Moment) -> (u64, usize) {
+    let foe = match moment {
+        Moment::Hit { foe, .. } => *foe,
+        Moment::EnemyImpact { hit } => return moment_bucket(stamp, hit),
+        _ => usize::MAX,
+    };
+    (if stamp == 0.0 { 0 } else { stamp.to_bits() }, foe)
 }
 
 impl Cause {

@@ -43,7 +43,7 @@ pub fn replay_run(
     recent_s: f64,
 ) -> Result<Replayed, String> {
     use sim::movement::InputKey;
-    engine.settled_log = Some(Vec::new());
+    engine.track_prefix(run.records);
     let mut next = arrivals
         .iter()
         .position(|a| a.arrived >= run.s0 - recent_s)
@@ -76,14 +76,15 @@ pub fn replay_run(
             next_key += 1;
         }
         engine.frame(now, 0.0);
+        // An offline replay consumes state/hash, not transient presentation events.
+        engine.view.borrow_mut().take_moments();
         if now > span {
             break;
         }
     }
-    let log = engine.settled_log.as_ref().expect("kept");
     Ok(Replayed {
-        hash: (log.len() >= run.records).then(|| crate::live::hash_records(&log[..run.records])),
-        settled: log.len(),
+        hash: engine.tracked_prefix(),
+        settled: engine.settled_count,
         rollbacks: engine.stats.rollbacks,
     })
 }

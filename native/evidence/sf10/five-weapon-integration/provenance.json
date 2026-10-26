@@ -1,0 +1,10 @@
+{
+  "recordingAndSnapshotSource": "02165bbd087b522bc324ece4f4691cd8e776d6d7",
+  "optimizedSource": "bdd9e830489c2d77a4ee84b1938f53bd4d598717",
+  "onlyChangedRuntimeFile": [
+    "native/crates/sim/src/engine/bible.rs"
+  ],
+  "stateDefinitionsAndCloneImplementationUnchanged": true,
+  "predicateEquivalence": "bounds-tests.txt compares unchanged real capsule contact predicate; normal-replay.txt verifies the prior recording exactly",
+  "loadout": "all5 rank8 base weapons and6 actually applied max passives; printed in density logs"
+}

@@ -1,0 +1,22 @@
+
+thread 'main' (175070635) panicked at crates/sim/src/engine/combat.rs:905:17:
+the fire trail reaches back past the kept hero samples (w=372.27)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+      164.42 real       153.97 user         2.11 sys
+            49758208  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+                4233  page reclaims
+                   1  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                  14  voluntary context switches
+               50249  involuntary context switches
+        810714435301  instructions retired
+        274480481565  cycles elapsed
+            46842216  peak memory footprint

@@ -1,0 +1,59 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.05s
+     Running tests/live.rs (target/debug/deps/live-6bbfee6942df762e)
+
+running 1 test
+
+thread 'survivor_weapon_sounds_and_missile_trails_follow_actual_records' (176192447) panicked at crates/sim/src/engine/foes.rs:69:30:
+no entry found for key
+stack backtrace:
+   0: __rustc::rust_begin_unwind
+             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/std/src/panicking.rs:679:5
+   1: core::panicking::panic_fmt
+             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:80:14
+   2: core::panicking::panic_display::<&str>
+             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/panicking.rs:259:5
+   3: core::option::expect_failed
+             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/option.rs:2260:5
+   4: <core::option::Option<&usize>>::expect
+             at /Users/dthurn/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/option.rs:969:21
+   5: <std::collections::hash::map::HashMap<usize, usize, core::hash::BuildHasherDefault<sim::engine::pool::IdHasher>> as core::ops::index::Index<&usize>>::index
+             at /Users/dthurn/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/collections/hash/map.rs:1517:23
+   6: <sim::engine::pool::Pool<sim::engine::Foe> as core::ops::index::Index<usize>>::index
+             at /Users/dthurn/playlist_survivors/.worktrees/codex-sf10-bounded-state/native/crates/sim/src/engine/pool.rs:122:32
+   7: <sim::engine::Sim>::hittable
+             at /Users/dthurn/playlist_survivors/.worktrees/codex-sf10-bounded-state/native/crates/sim/src/engine/foes.rs:69:30
+   8: <sim::engine::Sim>::tick_missiles::{closure#1}
+             at /Users/dthurn/playlist_survivors/.worktrees/codex-sf10-bounded-state/native/crates/sim/src/engine/missiles.rs:116:40
+   9: <core::option::Option<usize>>::is_some_and::<<sim::engine::Sim>::tick_missiles::{closure#1}>
+             at /Users/dthurn/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/option.rs:662:24
+  10: <sim::engine::Sim>::tick_missiles
+             at /Users/dthurn/playlist_survivors/.worktrees/codex-sf10-bounded-state/native/crates/sim/src/engine/missiles.rs:116:18
+  11: <sim::engine::Sim>::tick_weapons
+             at /Users/dthurn/playlist_survivors/.worktrees/codex-sf10-bounded-state/native/crates/sim/src/engine/weapons.rs:196:14
+  12: <sim::engine::Sim>::step
+             at /Users/dthurn/playlist_survivors/.worktrees/codex-sf10-bounded-state/native/crates/sim/src/engine/mod.rs:1781:14
+  13: <sim::engine::Sim>::advance_to
+             at /Users/dthurn/playlist_survivors/.worktrees/codex-sf10-bounded-state/native/crates/sim/src/engine/mod.rs:1211:18
+  14: <eval::live::Engine>::run
+             at ./src/live.rs:1346:22
+  15: <eval::live::Engine>::frame
+             at ./src/live.rs:1296:14
+  16: live::survivor_weapon_sounds_and_missile_trails_follow_actual_records
+             at ./tests/live.rs:1038:11
+  17: live::survivor_weapon_sounds_and_missile_trails_follow_actual_records::{closure#0}
+             at ./tests/live.rs:1007:69
+  18: <live::survivor_weapon_sounds_and_missile_trails_follow_actual_records::{closure#0} as core::ops::function::FnOnce<()>>::call_once
+             at /Users/dthurn/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5
+  19: <fn() -> core::result::Result<(), alloc::string::String> as core::ops::function::FnOnce<()>>::call_once
+             at /rustc/48a229ceaefd4985c50990b14116b6d856af0985/library/core/src/ops/function.rs:250:5
+note: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.
+test survivor_weapon_sounds_and_missile_trails_follow_actual_records ... FAILED
+
+failures:
+
+failures:
+    survivor_weapon_sounds_and_missile_trails_follow_actual_records
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 16 filtered out; finished in 0.10s
+
+error: test failed, to rerun pass `-p eval --test live`
