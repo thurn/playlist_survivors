@@ -59,12 +59,12 @@ changes_friction() {
   changes_match '^(native/evidence/|scripts/friction$|scripts/test_friction\.py$)'
 }
 
-# The native workspace and the content it reads (content/, levels/reactive.yaml, the baked
+# The native workspace and the content it reads (content/, levels/*.yaml or *.yml, the baked
 # assets, the shipped streams), but not the friction ledger in native/evidence/, which every
 # bead writes.
 changes_native() {
   [ "$CHANGES_UNKNOWN" = 1 ] \
-    || grep -E '^(native/|content/|levels/reactive\.yaml$|public/assets/|public/reactive/)' "$CHANGES_FILE" \
+    || grep -E '^(native/|content/|levels/.*\.ya?ml$|public/assets/|public/reactive/|scripts/lib/changes\.sh$)' "$CHANGES_FILE" \
       | grep -Evq '^native/evidence/'
 }
 

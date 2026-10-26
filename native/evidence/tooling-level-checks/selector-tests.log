@@ -1,0 +1,24 @@
+WARN `--no-project` was provided, but no project was found
+test_a_crate_and_its_dependents (native.scripts.test_crates.Affected.test_a_crate_and_its_dependents) ... ok
+test_a_leaf_crate_alone (native.scripts.test_crates.Affected.test_a_leaf_crate_alone) ... ok
+test_dev_dependents_are_affected (native.scripts.test_crates.Affected.test_dev_dependents_are_affected)
+cli's tests use eval: a change to eval can break them. ... ok
+test_other_paths_affect_nothing (native.scripts.test_crates.Affected.test_other_paths_affect_nothing) ... ok
+test_workspace_files_and_content_affect_everything (native.scripts.test_crates.Affected.test_workspace_files_and_content_affect_everything) ... ok
+test_both_ends_of_a_level_rename_are_independently_selected (native.scripts.test_crates.NativeSection.test_both_ends_of_a_level_rename_are_independently_selected) ... ok
+test_level_files_select_native_without_needing_to_exist (native.scripts.test_crates.NativeSection.test_level_files_select_native_without_needing_to_exist) ... ok
+test_selector_changes_run_their_own_regressions (native.scripts.test_crates.NativeSection.test_selector_changes_run_their_own_regressions) ... ok
+test_unknown_base_conservatively_selects_native (native.scripts.test_crates.NativeSection.test_unknown_base_conservatively_selects_native) ... ok
+test_unrelated_paths_do_not_select_native (native.scripts.test_crates.NativeSection.test_unrelated_paths_do_not_select_native) ... ok
+test_a_pure_crate_without_forbid_unsafe_fails (native.scripts.test_crates.Purity.test_a_pure_crate_without_forbid_unsafe_fails) ... ok
+test_a_transitive_impure_dependency_fails (native.scripts.test_crates.Purity.test_a_transitive_impure_dependency_fails) ... ok
+test_depending_on_an_impure_crate_fails (native.scripts.test_crates.Purity.test_depending_on_an_impure_crate_fails) ... ok
+test_dev_dependencies_do_not_count (native.scripts.test_crates.Purity.test_dev_dependencies_do_not_count) ... ok
+test_forbid_unsafe_in_a_comment_does_not_count (native.scripts.test_crates.Purity.test_forbid_unsafe_in_a_comment_does_not_count) ... ok
+test_the_planned_graph_is_pure (native.scripts.test_crates.Purity.test_the_planned_graph_is_pure) ... ok
+test_only_library_and_binary_targets_must_forbid_unsafe (native.scripts.test_crates.RootFiles.test_only_library_and_binary_targets_must_forbid_unsafe) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.086s
+
+OK

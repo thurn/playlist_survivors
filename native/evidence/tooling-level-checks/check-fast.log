@@ -1,0 +1,21 @@
+changes: 10 paths since b99d7ee
+friction: 46 records valid
+All checks passed!
+WARN `--no-project` was provided, but no project was found
+...........................
+----------------------------------------------------------------------
+Ran 27 tests in 0.029s
+
+OK
+changes: 10 paths since b99d7ee
+All checks passed!
+WARN `--no-project` was provided, but no project was found
+.................
+----------------------------------------------------------------------
+Ran 17 tests in 0.086s
+
+OK
+crates purity: stream, analysis, sim, eval, players pure
+native check-fast: no crate changed
+native check-fast: passed in 1 s
+check-fast: passed in 2 s

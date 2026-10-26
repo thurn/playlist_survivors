@@ -1203,6 +1203,14 @@ confirms all thirteen existing sprites, 57 effects and 22 props are unchanged.
 Nothing new is wired into gameplay; SFX listening is in operator-pending for
 SH2 and the consuming presentation beads.
 
+### Tooling: level-only checks (`hv-n7fn.36`)
+
+Survivors-only level edits now select the native section and every affected
+crate. The selectors cover YAML custom levels, including moved/deleted paths,
+while unrelated files still skip native checks. Seventeen selector/purity tests
+pass, including the real POSIX section selector and Cargo-metadata probes.
+See [tooling evidence](../../native/evidence/tooling-level-checks/README.md).
+
 ### SH1
 ### SH2
 ### SH3

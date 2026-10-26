@@ -1,0 +1,5 @@
+levels/survivors.yaml: native=True, affected=all
+levels/reactive.yaml: native=True, affected=all
+levels/custom/endless.yml: native=True, affected=all
+levels/README.md: native=False, affected=none
+docs/design/survivors-run.md: native=False, affected=none

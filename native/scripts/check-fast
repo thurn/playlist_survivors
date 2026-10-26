@@ -22,7 +22,7 @@ started=$(date +%s)
 changes_init
 trap 'rm -f "$CHANGES_FILE"' EXIT
 
-if changes_match '^native/scripts/(crates|test_crates\.py)$'; then
+if changes_match '^(native/scripts/(crates|test_crates\.py)|scripts/lib/changes\.sh)$'; then
   uv run --directory tools/analysis ruff check ../../native/scripts/crates ../../native/scripts/test_crates.py
   uv run --no-project python -m unittest native/scripts/test_crates.py
 fi

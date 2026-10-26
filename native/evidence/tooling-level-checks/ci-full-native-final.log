@@ -1,0 +1,550 @@
+All checks passed!
+WARN `--no-project` was provided, but no project was found
+.................
+----------------------------------------------------------------------
+Ran 17 tests in 0.095s
+
+OK
+crates purity: stream, analysis, sim, eval, players pure
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.21s
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.20s
+     Running unittests src/lib.rs (target/debug/deps/analysis-7cc3dbe2b623ab8b)
+
+running 18 tests
+test numeric::tests::percentiles_at_the_ends ... ok
+test delayed::tests::uncovered_finds_gaps_and_empty_bands ... ok
+test delayed::tests::local_period_is_the_median_spacing ... ok
+test delayed::tests::a_band_commits_its_grid_and_fills_its_gaps_with_forecasts ... ok
+test tensors::tests::reads_each_dtype ... ok
+test tensors::tests::rejects_malformed_files ... ok
+test pinned::superflux_is_madmoms ... ok
+test pinned::log_densities_are_madmoms ... ok
+test pinned::rounding_is_pythons ... ok
+test pinned::combining_onsets_is_madmoms ... ok
+test pinned::the_phase_arithmetic_is_numpys ... ok
+test pinned::percentiles_are_numpys ... ok
+test pinned::the_running_mean_is_scipys_uniform_filter ... ok
+test pinned::strong_flags_are_detect_onsets ... ok
+test pinned::sums_and_means_are_numpys ... ok
+test pinned::hanning_is_numpys ... ok
+test pinned::the_key_correlation_is_numpys ... ok
+test pinned::the_axis_mean_is_numpys ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/delayed.rs (target/debug/deps/delayed-daa4632d5acc8a9d)
+
+running 4 tests
+test every_beat_leads_by_the_horizon_and_stamps_never_go_back ... ok
+test streamed_beats_are_the_replay_of_direct_listening ... ok
+test delayed_listening_changes_only_the_committed_beats ... ok
+test the_stream_is_causal_by_audio_position ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 12.87s
+
+     Running tests/stage_parity_a1.rs (target/debug/deps/stage_parity_a1-d96a3cb249005ce9)
+
+running 7 tests
+test hanning_matches_the_exported_window ... ok
+test the_ensemble_has_eight_networks ... ok
+test the_ensemble_takes_the_front_ends_features ... ok
+test frames_are_cut_as_madmom_cuts_them ... ok
+test the_stream_is_independent_of_block_sizes ... ok
+test features_and_activations_match_python ... ok
+test a_stream_of_any_length_has_madmoms_frames ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+
+     Running tests/stage_parity_a2.rs (target/debug/deps/stage_parity_a2-357d17d5570bf4fa)
+
+running 5 tests
+test params_are_the_streams ... ok
+test beliefs_evidence_and_commits_match_python_to_the_bit ... ok
+test the_next_beat_is_known_when_a_beat_arrives ... ok
+test thirty_seconds_of_the_galop_with_its_tempo_flips_match_python ... ok
+test from_pcm_the_whole_chain_commits_pythons_beats ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+     Running tests/stage_parity_a3.rs (target/debug/deps/stage_parity_a3-03322d312973a938)
+
+running 7 tests
+test onsets_from_pythons_function_match_to_the_bit ... ok
+test params_are_the_streams ... ok
+test the_onset_function_matches_python ... ok
+test ticks_match_python_to_the_bit ... ok
+test thirty_seconds_of_tick_evidence_match_python ... ok
+test the_analyzer_from_pcm_matches_python ... ok
+test the_analyzer_is_independent_of_block_sizes ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.50s
+
+     Running tests/stage_parity_a4.rs (target/debug/deps/stage_parity_a4-e0bf52e5d7444ac8)
+
+running 12 tests
+test params_are_the_streams ... ok
+test viterbi_ties_and_edges_are_madmoms ... ok
+test the_phase_check_commits_pythons_beats ... ok
+test offline_features_match_python ... ok
+test a_short_stream_from_pcm_matches_python ... ok
+test offline_activations_and_beats_match_python ... ok
+test hindsight_entries_match_python ... ok
+test the_worker_reports_its_stalls ... ok
+test a_stream_of_awkward_length_has_pythons_entries ... ok
+test the_analyzer_from_pcm_commits_pythons_phased_beats ... ok
+test with_a_delay_entries_count_from_their_window_ends_plus_d ... ok
+test the_worker_gives_the_inline_results ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 14.48s
+
+     Running tests/stage_parity_a5.rs (target/debug/deps/stage_parity_a5-0fff0c6446420fda)
+
+running 10 tests
+test params_and_keys_are_the_streams ... ok
+test keys_from_pythons_features_match_to_the_bit ... ok
+test keys_match_python ... ok
+test features_match_python ... ok
+test structure_matches_python_on_the_galop ... ok
+test structure_matches_python_on_a_cut_piece ... ok
+test structure_matches_python_on_a_synthetic_piece ... ok
+test ticks_from_heard_samples_match_ticks_from_frames ... ok
+test structure_matches_python_past_every_window_it_keeps ... ok
+test the_analyzer_from_pcm_matches_python has been running for over 60 seconds
+test the_analyzer_from_pcm_matches_python ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 62.98s
+
+     Running tests/stage_parity_a6.rs (target/debug/deps/stage_parity_a6-020e50049b3815d8)
+
+running 4 tests
+test params_are_the_streams ... ok
+test forecasts_match_python_at_the_edges ... ok
+test forecasts_match_python_on_every_stream ... ok
+test the_analyzer_from_pcm_forecasts_as_python ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.83s
+
+     Running tests/stage_parity_a7.rs (target/debug/deps/stage_parity_a7-f27fba153cf13a98)
+
+running 3 tests
+test very_short_audio_gives_its_few_entries ... ok
+test bands_brightness_and_timbre_match_python ... ok
+test the_analyzer_from_pcm_carries_pythons_bands ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 27.24s
+
+     Running tests/stream_causality.rs (target/debug/deps/stream_causality-03c5307a11ee00d9)
+
+running 3 tests
+test a_short_stream_is_causal ... ok
+test the_stream_is_causal_in_every_group ... ok
+test structure_and_forecasts_are_causal ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 50.89s
+
+     Running unittests src/main.rs (target/debug/deps/playlist_survivors-117eebc7468b2345)
+
+running 30 tests
+test slice::calibration::tests::the_stomp_key_follows_the_directions_until_calibrated_itself ... ok
+test slice::calibration::tests::a_tap_along_takes_the_median_error_after_the_first_two_taps ... ok
+test slice::apps::tests::an_app_is_named_by_its_bundle_or_executable ... ok
+test slice::gems::tests::a_blasts_gem_hangs_then_flies_in ... ok
+test slice::gems::tests::a_gem_waits_on_the_field_until_it_takes_off_then_reaches_the_hero ... ok
+test slice::apps::tests::browsers_are_known_by_bundle_or_name ... ok
+test slice::lane::tests::a_wave_takes_the_key_heard_before_it_and_fades_its_look_in ... ok
+test slice::lane::tests::keys_read_as_their_pitch_class_and_mode ... ok
+test slice::lane::tests::presses_ripple_and_the_good_ones_light_the_ground ... ok
+test slice::live::tests::a_wav_data_chunk_is_read ... ok
+test slice::loopback::tests::clicks_are_found_over_the_noise_once_each ... ok
+test slice::lane::tests::the_pulse_follows_the_evidence_and_the_onsets_flash_once_a_gap ... ok
+test slice::session::tests::forty_minutes_fit_the_session_store_with_room_for_stream_and_keys ... ok
+test slice::loopback::tests::each_source_click_takes_the_first_heard_in_its_window ... ok
+test slice::session::tests::the_wav_header_says_its_sizes ... ok
+test slice::lane::tests::nothing_is_shown_before_it_is_known ... ok
+test slice::calibration::tests::settings_keep_a_calibration_per_device_and_read_the_old_file ... ok
+test slice::sounds::tests::slots_fall_on_the_grid_and_past_the_last_beat ... ok
+test slice::live::tests::the_resampler_keeps_a_constant_and_its_rate ... ok
+test slice::sounds::tests::the_evidence_fades_sounds_below_twice_the_gate ... ok
+test slice::tests::a_run_starts_after_two_clear_seconds_once_quiet_or_after_an_end ... ok
+test slice::tests::a_runs_music_is_resampled_from_its_start_with_silence_before_it ... ok
+test slice::tier::tests::a_line_spans_its_ends ... ok
+test slice::watchdog::tests::it_trips_on_a_stalled_main_thread_or_capture_and_not_before ... ok
+test slice::tier::tests::the_trail_finds_the_hero_between_its_samples ... ok
+test slice::watchdog::tests::silent_buffers_do_not_look_like_a_capture_stall ... ok
+test slice::session::tests::pruning_keeps_the_newest ... ok
+test slice::sounds::tests::a_kill_group_changing_after_its_voice_played_sounds_nothing_more ... ok
+test slice::sounds::tests::a_started_voice_stays_when_a_new_beat_moves_its_slot ... ok
+test slice::sounds::tests::sounds_follow_the_speculation_and_kills_share_their_slot ... ok
+
+test result: ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/lib.rs (target/debug/deps/audio-2a5323b5111cc181)
+
+running 14 tests
+test follow::tests::a_level_completes_ten_times_a_second ... ok
+test mixer::tests::a_late_voice_starts_partway_while_its_onset_is_ahead_and_is_skipped_after ... ok
+test delay::tests::a_dropped_buffer_reads_silence_and_the_ring_forgets_the_oldest ... ok
+test mixer::tests::a_delayed_file_is_heard_late_and_read_on_time ... ok
+test mixer::tests::clicks_play_without_a_bank_and_a_full_queue_drops ... ok
+test delay::tests::a_full_ring_drops_the_buffer ... ok
+test mixer::tests::a_voice_lands_on_its_sample ... ok
+test mixer::tests::a_replay_plays_its_music_from_its_time_and_stops ... ok
+test mixer::tests::the_limiter_holds_a_loud_mix_near_full_scale ... ok
+test mixer::tests::a_voice_moves_or_cancels_until_it_starts ... ok
+test mixer::tests::the_delay_line_plays_the_capture_late_reports_underruns_and_fades_out ... ok
+test mixer::tests::a_ducking_voice_takes_the_music_down_and_back ... ok
+test delay::tests::a_frame_plays_by_the_host_time_it_was_captured ... ok
+test follow::tests::the_effects_follow_a_quiet_passage_down_and_come_back ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/ps-8cd5d4bfce241f16)
+
+running 5 tests
+test parity::tests::accuracy_is_stream_pys ... ok
+test replay::tests::a_zen_run_replays_in_zen_mode ... ok
+test replay::tests::a_session_replays_in_the_mode_it_ran_in ... ok
+test parity::tests::matching_counts_neighbours_within_the_tolerance ... ok
+test parity::python::accuracy_equals_pythons_on_committed_streams ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/lib.rs (target/debug/deps/eval-4d9170bdeb7c6234)
+
+running 3 tests
+test field::tests::fading_is_full_far_and_least_near ... ok
+test session::tests::entries_are_rebased_to_the_run ... ok
+test session::tests::an_arrival_reads_back_as_written ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/live.rs (target/debug/deps/live-6b65ab5955109416)
+
+running 14 tests
+test a_growing_gem_keeps_its_xp_value_for_survivors_color_selection ... ok
+test survivor_grid_reactions_hold_a_dead_body_until_its_impact_even_through_a_freeze ... ok
+test rewinding_before_real_xp_retracts_the_projected_offer_without_a_pick ... ok
+test a_stalled_arrival_is_stamped_at_the_settled_time ... ok
+test a_restored_snapshot_carries_on_as_the_run_would ... ok
+test a_late_confirm_rolls_back_across_freeze_open_and_settles_as_on_time ... ok
+test a_real_xp_offer_pick_applies_once_across_speculative_rollback ... ok
+test the_engine_plays_a_growing_stream ... ok
+test survivor_spawner_speculation_matches_on_time_at_density ... ok
+test each_moment_is_passed_on_once ... ok
+test zen_speculation_settles_as_a_run_fed_its_keys_in_time ... ok
+test speculation_settles_as_a_run_fed_its_keys_in_time ... ok
+test bursts_of_arrivals_settle_as_the_stream_given_whole ... ok
+test very_late_keys_settle_as_a_run_fed_their_applied_times ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.38s
+
+     Running tests/session.rs (target/debug/deps/session-4dc3e2b48334fbf6)
+
+running 3 tests
+test an_unknown_recorded_key_fails_before_replay ... ok
+test a_delayed_session_settles_as_it_did_live ... ok
+test a_recorded_session_settles_as_it_did_live ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running unittests src/lib.rs (target/debug/deps/players-b09e7a46b2b4f593)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/smoke.rs (target/debug/deps/smoke-7c719a9298d56f76)
+
+running 2 tests
+test a_driven_run_is_deterministic ... ok
+test the_honest_player_outplays_the_masher_on_the_galop ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.67s
+
+     Running unittests src/lib.rs (target/debug/deps/render-5bd9b5d487a63ac3)
+
+running 7 tests
+test atlas::tests::facings_follow_the_larger_axis ... ok
+test font::tests::every_glyph_is_five_by_seven ... ok
+test font::tests::text_is_runs_of_pixels_aligned_as_asked ... ok
+test proc::tests::every_texture_fits_the_page_without_overlap ... ok
+test atlas::tests::the_baked_atlases_load ... ok
+test capture::tests::a_sprite_lands_where_it_is_drawn ... ok
+test capture::tests::the_grade_lights_and_overlay_change_what_is_drawn ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+
+     Running unittests src/lib.rs (target/debug/deps/sim-232ac2abfd979d6b)
+
+running 39 tests
+test canonical::tests::fnv1a64_test_vectors ... ok
+test engine::tests::a_queued_fire_keeps_its_remaining_run_time_through_a_freeze ... ok
+test engine::tests::a_zen_tap_bends_a_held_stride_into_a_diagonal ... ok
+test engine::tests::a_downbeat_not_yet_known_waits_for_its_beat ... ok
+test engine::tests::a_zen_stomp_waits_for_the_step_and_stamps_in_place ... ok
+test engine::tests::past_the_last_bar_a_downbeat_waits_for_its_beat ... ok
+test engine::tests::a_held_key_in_zen_mode_strides_on_every_step ... ok
+test engine::tests::a_zen_press_moves_on_the_next_stride_step_and_a_tap_strides_once ... ok
+test engine::tests::survivor_health_uses_armor_lockout_and_heals_the_added_hollow_heart_maximum ... ok
+test engine::tests::survivor_everything_maxed_card_heals_the_level_knob_once ... ok
+test engine::tests::survivor_card_picks_wait_for_reveal_chain_and_apply_once ... ok
+test engine::tests::survivor_cards_resume_on_free_pulse_without_a_beat ... ok
+test engine::tests::survivor_field_keeps_400_gems_and_merges_xp_into_the_farthest_from_the_hero ... ok
+test engine::tests::survivor_early_roles_step_at_the_design_subdivisions_and_stay_finite ... ok
+test engine::tests::survivor_full_field_preserves_a_boss_and_recycling_keeps_its_hp_and_reward ... ok
+test engine::tests::a_zen_wait_survives_a_snapshot ... ok
+test engine::tests::survivor_lunge_has_notice_bites_on_the_peak_and_only_once_per_beat ... ok
+test engine::tests::survivor_new_committed_beat_replaces_a_pending_free_pulse_resume ... ok
+test engine::tests::survivor_lunge_rechecks_contact_at_the_peak_and_has_no_surprise_resume_bite ... ok
+test survivors::arsenal::tests::a_pending_cooldown_survives_a_long_freeze_without_song_time_debt ... ok
+test survivors::arsenal::tests::an_unknown_future_grid_cannot_change_a_raw_shot ... ok
+test reactive::judging::tests::extended_tick_by_tick_equals_extended_at_once ... ok
+test survivors::arsenal::tests::no_grid_uses_the_exact_raw_interval ... ok
+test survivors::arsenal::tests::six_slots_are_bounded_and_an_owned_upgrade_uses_no_new_slot ... ok
+test engine::tests::survivors_cannot_fall_while_waiting_for_the_victory_downbeat ... ok
+test engine::tests::without_zen_mode_a_press_moves_at_once ... ok
+test engine::tests::survivor_lunge_free_pulse_is_generation_guarded_and_reactions_use_sixteenths ... ok
+test engine::tests::survivor_passive_card_applies_the_real_delta_and_heals_added_maximum ... ok
+test engine::tests::zen_mode_judges_nothing_and_keeps_the_groove_full ... ok
+test engine::tests::survivor_accent_shots_are_marked_without_changing_damage ... ok
+test engine::tests::survivor_zero_xp_drops_no_gem_and_recoil_starts_on_the_next_sixteenth ... ok
+test engine::tests::survivor_interval_framework_streaming_equals_batch_across_frame_cuts_and_freeze ... ok
+test engine::tests::zen_mode_judges_nothing_while_settling_either ... ok
+test engine::tests::survivor_lunges_and_gaits_never_read_the_uncommitted_tail ... ok
+test engine::tests::survivor_world_time_ignores_stops_dips_and_rates_but_holds_recovery_in_freeze ... ok
+test engine::tests::survivor_spawner_holds_grid_admissions_and_does_not_catch_up_frozen_ticks ... ok
+test survivors::arsenal::tests::cooldowns_keep_vs_throughput_without_grid_drift_at_three_tempos ... ok
+test engine::tests::survivor_sword_actual_damage_matches_whip_dps_at_three_tempos ... ok
+test engine::tests::survivor_spawner_all_minutes_obeys_source_rosters_minimum_cap_and_scaled_hp ... ok
+
+test result: ok. 39 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s
+
+     Running tests/causality.rs (target/debug/deps/causality-83df88730995e59e)
+
+running 7 tests
+test a_keys_queueing_time_changes_nothing ... ok
+test the_negative_control_fails ... ok
+test the_same_stream_and_keys_give_the_same_recording ... ok
+test bursts_of_arrivals_give_the_same_recording ... ok
+test the_galop_is_causal_at_two_cuts ... ok
+test a_key_queued_early_or_late_makes_the_same_stops ... ok
+test every_cut_is_causal ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 23.76s
+
+     Running tests/content.rs (target/debug/deps/content-01cd770d38d7df31)
+
+running 5 tests
+test defaults_fill_in_as_zod_does ... ok
+test current_content_loads_and_the_legacy_subset_keeps_its_reference_hash ... ok
+test cross_references_and_extends_are_checked ... ok
+test yaml_reads_as_the_ts_yaml_package_does ... ok
+test invalid_content_is_reported_with_its_file_and_path ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/core.rs (target/debug/deps/core-c4961e73384bba3e)
+
+running 6 tests
+test warp_matches_ts ... ok
+test hash32_matches_ts ... ok
+test noise_and_shaping_match_ts ... ok
+test rng_matches_ts ... ok
+test songmap_matches_ts_on_the_galop ... ok
+test geometry_matches_ts ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/jsmath.rs (target/debug/deps/jsmath-48241aaa002f1a02)
+
+running 3 tests
+test to_int32_wraps_like_ecmascript ... ok
+test jsmath_matches_every_v8_vector ... ok
+test jsmath_matches_the_extra_v8_vectors ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/live_run.rs (target/debug/deps/live_run-75387b2b378a1f33)
+
+running 2 tests
+test a_live_run_ends_on_a_confirmed_end ... ok
+test live_runs_end_on_confirmed_ends ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.99s
+
+     Running tests/oracle_prefix.rs (target/debug/deps/oracle_prefix-4d60faca2b7d3cfe)
+
+running 5 tests
+test a_restored_snapshot_runs_on_the_same ... ok
+test frames_change_nothing ... ok
+test judging_without_hindsight_matches_ts ... ok
+test event_logs_match_up_to_the_first_judging_dependent_moment ... ok
+test event_logs_match_up_to_the_first_set_piece ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.40s
+
+     Running tests/schedule.rs (target/debug/deps/schedule-17c968e6f17e0de9)
+
+running 8 tests
+test stride_steps_subdivide_slow_steps_and_keep_the_last_step ... ok
+test extends_matches_events_whatever_their_number_spelling ... ok
+test beats_arriving_one_at_a_time_grow_the_batch_schedule ... ok
+test hero_errors_and_empty_section_labels_read_as_ts ... ok
+test level_errors_name_the_file_and_path ... ok
+test extends_merges_sections_by_label_and_hero_deeply ... ok
+test growing_schedule_equals_ts_batch_schedule ... ok
+test reactive_level_hash_matches_every_fixture ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.34s
+
+     Running tests/sim_modules.rs (target/debug/deps/sim_modules-837e520bda1ea95a)
+
+running 9 tests
+test bent_steps_keep_their_stride_start ... ok
+test gait_matches_ts ... ok
+test aim_matches_ts ... ok
+test tiers_match_ts ... ok
+test start_stride_matches_ts ... ok
+test strides_match_ts ... ok
+test upgrades_match_ts ... ok
+test timing_matches_ts ... ok
+test movement_matches_ts ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/survivor_offers.rs (target/debug/deps/survivor_offers-b4181ee579cfe9e7)
+
+running 4 tests
+test preferences_skip_unbuilt_and_keep_distinct_viable_choices ... ok
+test an_evolved_weapon_blocks_reoffering_its_base ... ok
+test fallback_prefers_lowest_owned_rank_and_heals_only_when_no_item_is_offerable ... ok
+test first_column_meets_the_planned_level_milestones_with_all_weapons_built ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/survivor_spawning.rs (target/debug/deps/survivor_spawning-6b529f08310e2482)
+
+running 7 tests
+test enemy_knockback_fields_match_the_feel_appendix ... ok
+test enemy_roles_match_documented_health_speed_damage_xp_and_scaling ... ok
+test a_single_committed_future_beat_is_a_grid_step ... ok
+test deferred_bosses_wait_for_room_then_the_next_grid_step ... ok
+test raw_ticks_snap_to_the_next_known_eighth_and_minute_changes_inherit_only_population ... ok
+test future_grid_evidence_cannot_delay_a_raw_tick_and_a_freeze_holds_admission ... ok
+test all_31_schedule_rows_match_the_documented_source_including_duplicate_roles ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/survivor_stats.rs (target/debug/deps/survivor_stats-6d2b1a5bee4e8c32)
+
+running 5 tests
+test contact_damage_scales_power_before_armor_with_one_hp_floor ... ok
+test the_xp_appendix_curve_and_temporary_growth_bonus_are_exact ... ok
+test vs_stat_layers_add_except_compounding_max_health_and_final_clamps ... ok
+test movement_and_magnet_share_one_forest_unit_conversion ... ok
+test seeded_gem_values_include_zero_and_match_source_distribution_and_colors ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/survivor_weapons.rs (target/debug/deps/survivor_weapons-6fb1df5d720ef24f)
+
+running 3 tests
+test runtime_specific_intervals_and_crit_flags_are_preserved ... ok
+test every_combat_rank_matches_the_sourced_feel_appendix ... ok
+test numeric_rank_deltas_add_and_boolean_fields_replace ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/survivors.rs (target/debug/deps/survivors-59ed969ab4ba47a6)
+
+running 15 tests
+test no_committed_beat_means_held_strides_on_the_free_pulse ... ok
+test a_chained_card_clears_the_previous_confirm_and_blocks_its_held_key ... ok
+test keys_held_when_cards_open_never_pick_until_released_and_pressed_again ... ok
+test ending_a_manual_pause_does_not_dismiss_a_chest_freeze ... ok
+test a_second_silent_gap_inside_a_pause_cannot_resume_the_world ... ok
+test freezing_a_planned_victory_replans_it_once_without_duplicate_landmarks ... ok
+test victory_holds_the_hero_when_the_last_beat_ends_and_free_pulses_continue ... ok
+test section_changes_learned_during_pause_never_rewind_the_clock ... ok
+test a_pause_holds_every_world_quantity_and_held_movement_requires_release ... ok
+test survivors_does_not_use_a_downbeat_before_its_known_at ... ok
+test silence_freezes_at_known_evidence_and_relocks_on_the_second_following_bar ... ok
+test survivors_victory_snaps_to_a_known_downbeat_and_repeats_exactly ... ok
+test frozen_streaming_and_batch_runs_record_identically ... ok
+test survivors_ignores_a_confirmed_song_end ... ok
+test a_long_pause_preserves_the_zone_fallbacks_remaining_time ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running unittests src/lib.rs (target/debug/deps/stream-b0bcedb61863bb88)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/stream.rs (target/debug/deps/stream-73e50f766db4ac0d)
+
+running 4 tests
+test split_hands_back_the_reference_apart ... ok
+test ticks_are_read_by_time_and_arrival ... ok
+test groups_are_in_known_at_order ... ok
+test replay_feeds_each_entry_once_known_and_ends_whole ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.75s
+
+   Doc-tests analysis
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests audio
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests eval
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests players
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests render
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests sim
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests stream
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+Analyzing dependencies of crates in this directory...
+cargo-machete didn't find any unused dependencies in this directory. Good job!
+Done!
+    Finished `release` profile [optimized] target(s) in 0.25s
+ci-full native: corpus parity inputs 44fc9a1a743738e8457526f8b1f25358678e7b80f0749c51ed04cf32d76500bc passed at 152f244 2026-10-26T08:14:43Z; skipping
+    Finished `release` profile [optimized] target(s) in 0.05s
+     Running `target/release/ps runner-bench --check`
+runner-bench: house-128, 90 s, 10270 frames at 120 Hz, lead 0.2 s
+  engine per frame (thread CPU): median 0.024 ms, p95 0.583, p99 0.832, max 1.45 (gate p99 <= 4 ms)
+  re-simulation per second (wall): median 5.7 ms, p95 19.0 (gate p95 <= 250 ms)
+  2043 rollbacks replaying 428.7 s of song (4.8x real time; gate <= 7.2x), 0 late keys
+    Finished `release` profile [optimized] target(s) in 0.08s
+     Running `target/release/playlist-survivors --bench --check`
+bench: frame work (sim, evaluate, encode) at 1920 x 1080: median 0.32 ms, p95 0.99, p99 1.34, max 3.51 (7200 frames); 1776 rollbacks re-simulating 614 ms

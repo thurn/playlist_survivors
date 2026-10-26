@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import importlib.machinery
 import importlib.util
+import os
+import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -138,6 +141,9 @@ class Affected(unittest.TestCase):
             "native/oracle/fixtures.json.gz",
             "content/enemies.yaml",
             "levels/reactive.yaml",
+            "levels/survivors.yaml",
+            "levels/play.yaml",
+            "levels/custom/endless.yml",
             "public/reactive/house-128/stream.json",
         ):
             self.assertIsNone(crates.affected(m, [path]), path)
@@ -151,11 +157,74 @@ class Affected(unittest.TestCase):
                     "docs/design/native-app.md",
                     "native/evidence/x.json",
                     "native/scripts/crates",
-                    "levels/play.yaml",
+                    "levels/README.md",
+                    "levels/survivors.yaml.bak",
+                    "docs/levels/survivors.yaml",
                 ],
             ),
             [],
         )
+
+
+class NativeSection(unittest.TestCase):
+    """Run the real POSIX section selector as the gate does, including absent/deleted paths."""
+
+    def selected(self, paths: list[str], unknown: bool = False) -> bool:
+        script = Path(__file__).resolve().parents[2] / "scripts/lib/changes.sh"
+        with tempfile.NamedTemporaryFile(mode="w") as changed:
+            changed.write("\n".join(paths) + "\n")
+            changed.flush()
+            result = subprocess.run(
+                [
+                    "/bin/sh",
+                    "-c",
+                    '. "$1"; changes_native',
+                    "selector-test",
+                    str(script),
+                ],
+                env=dict(
+                    os.environ,
+                    CHANGES_FILE=changed.name,
+                    CHANGES_UNKNOWN=str(int(unknown)),
+                ),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        self.assertIn(result.returncode, (0, 1), result.stderr)
+        return result.returncode == 0
+
+    def test_level_files_select_native_without_needing_to_exist(self) -> None:
+        for path in (
+            "levels/survivors.yaml",
+            "levels/reactive.yaml",
+            "levels/new.yml",
+            "levels/custom/deleted.yaml",
+        ):
+            with self.subTest(path=path):
+                self.assertTrue(self.selected([path]))
+
+    def test_both_ends_of_a_level_rename_are_independently_selected(self) -> None:
+        # changes_init uses --no-renames, so a move's old and new names both count.
+        self.assertTrue(self.selected(["levels/survivors.yaml", "docs/retired.yaml"]))
+        self.assertTrue(self.selected(["docs/draft.yaml", "levels/new.yaml"]))
+
+    def test_unrelated_paths_do_not_select_native(self) -> None:
+        for path in (
+            "levels/README.md",
+            "levels/survivors.yaml.bak",
+            "docs/levels/x.yaml",
+            "native/evidence/sf6/README.md",
+            "songs/example/songmap.json",
+        ):
+            with self.subTest(path=path):
+                self.assertFalse(self.selected([path]))
+
+    def test_selector_changes_run_their_own_regressions(self) -> None:
+        self.assertTrue(self.selected(["scripts/lib/changes.sh"]))
+
+    def test_unknown_base_conservatively_selects_native(self) -> None:
+        self.assertTrue(self.selected([], unknown=True))
 
 
 if __name__ == "__main__":
