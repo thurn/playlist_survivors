@@ -1,0 +1,23 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sw2-lightning/native/crates/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.85s
+     Running unittests src/lib.rs (target/debug/deps/sim-1ebf1e278f138957)
+
+running 5 tests
+Lightning rank1: 2 strikes, power1.5, area1, radius12.341597796, times[0.0, 0.125], both nearby targets take2 hits
+Lightning 70 BPM: [0.0, 0.21428571428571427, 0.42857142857142855, 0.6428571428571428, 0.8571428571428571, 1.0714285714285714]
+Lightning fractional freeze preserves all strikes: [0.0, 0.125, 2.625, 2.75, 2.875, 3.0]
+Lightning rank8: 6 strikes, power6.5, area4, radius49.366391185, times[0.0, 0.125, 0.25, 0.375, 0.5, 0.625], both nearby targets take6 hits
+Lightning 128 BPM: [0.0, 0.1171875, 0.234375, 0.3515625, 0.46875, 0.5859375]
+Lightning bonuses: Amount8, damage9.75, Area6, radius74.049586777; duration1ms and Speed0 do not remove strikes; raw2.7s volley restarts at beat3.0
+test engine::tests::lightning_source_ranks_apply_area_damage_once_per_strike_on_sixteenths ... ok
+test engine::tests::lightning_burst_holds_through_fractional_freeze_and_ignores_generic_duration_speed_and_hit_delay ... ok
+Lightning visibility: no strikes with only offscreen targets; later entry collected at0.125s; moved target positions120 then300
+test engine::tests::lightning_targets_are_visible_and_chosen_at_each_actual_strike ... ok
+Lightning 174 BPM: [0.0, 0.08620689655172414, 0.1724137931034483, 0.25862068965517243, 0.3448275862068966, 0.4310344827586207]
+Lightning deterministic20s: 30 actual strikes across3 visible enemies, seed2026 counts{-200: 12, 120: 9, 280: 9}, frame cuts identical; seed2027 changes target order
+test engine::tests::lightning_seeded_target_choices_repeat_across_frame_cuts_and_change_with_seed ... ok
+Lightning late-known grid: [0.0, 0.0875, 0.3, 0.44999999999999996, 0.6, 0.75]; first free strike before the bounding beat is known, later draft retimed causally to committed sixteenths
+test engine::tests::lightning_grids_follow_three_tempos_and_a_newly_committed_grid_replaces_a_free_draft ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 60 filtered out; finished in 0.04s
+

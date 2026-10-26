@@ -798,6 +798,13 @@ fn a_real_xp_offer_pick_applies_once_across_speculative_rollback() {
                 .is_some(),
             "real XP choices exercise orbit cycles and per-blade memories across rollback"
         );
+        assert!(
+            inventory
+                .weapons
+                .rank(sim::survivors::WeaponId::LightningRing)
+                .is_some(),
+            "actual offers reach Lightning Ring before comparing rollback"
+        );
         assert_eq!(ranks, 1 + picks, "each confirm applied exactly one rank");
         (e.settled_log.take().unwrap(), inventory, e.stats, picks)
     };
@@ -808,6 +815,15 @@ fn a_real_xp_offer_pick_applies_once_across_speculative_rollback() {
     assert!(stats.key_rollbacks > 0);
     assert_eq!(plain.len(), late.len());
     assert_same(&plain, &late);
+    let strike_count = plain
+        .iter()
+        .filter(|(_, r)| matches!(r, Record::Moment(Moment::LightningStrike(_))))
+        .count();
+    assert!(
+        strike_count > 0,
+        "actual positioned lightning strikes survive rollback"
+    );
+    eprintln!("actual lightning strike records in rollback fixture: {strike_count}");
     let mut orbit_lives = std::collections::BTreeMap::new();
     for (_, record) in &plain {
         if let Record::Missile(p) = record
@@ -1090,9 +1106,14 @@ fn survivor_weapon_sounds_and_missile_trails_follow_actual_records() {
                     sim::survivors::WeaponId::Garlic
                         | sim::survivors::WeaponId::MagicWand
                         | sim::survivors::WeaponId::KingBible
+                        | sim::survivors::WeaponId::LightningRing
                 ) =>
                 {
-                    assert!(all().any(|(t,r)| *t==s && matches!(r,Record::Moment(Moment::WeaponFire(shot)) if shot.id==what && shot.accent==accent)));
+                    if what == sim::survivors::WeaponId::LightningRing {
+                        assert!(all().any(|(t,r)| *t==s && matches!(r,Record::Moment(Moment::LightningStrike(strike)) if strike.weapon==what && strike.accent==accent)));
+                    } else {
+                        assert!(all().any(|(t,r)| *t==s && matches!(r,Record::Moment(Moment::WeaponFire(shot)) if shot.id==what && shot.accent==accent)));
+                    }
                     *pulses.entry(what).or_insert(0usize) += 1;
                 }
                 Cause::WeaponImpact { s, what, .. }
@@ -1101,13 +1122,17 @@ fn survivor_weapon_sounds_and_missile_trails_follow_actual_records() {
                         sim::survivors::WeaponId::Garlic
                             | sim::survivors::WeaponId::MagicWand
                             | sim::survivors::WeaponId::KingBible
+                            | sim::survivors::WeaponId::LightningRing
                     ) =>
                 {
                     assert!(all().any(|(t,r)| *t==s && matches!(r,Record::Moment(Moment::EnemyImpact{hit}) if matches!(hit.as_ref(),Moment::Hit{what:id,..} if id==what.as_str()))));
                     *contacts.entry(what).or_insert(0usize) += 1;
                 }
                 Cause::Weapon { ref what, .. } => assert!(
-                    !matches!(what.as_str(), "garlic" | "magic-wand" | "king-bible"),
+                    !matches!(
+                        what.as_str(),
+                        "garlic" | "magic-wand" | "king-bible" | "lightning-ring"
+                    ),
                     "legacy fire is replaced by typed projection"
                 ),
                 _ => {}
@@ -1133,6 +1158,7 @@ fn survivor_weapon_sounds_and_missile_trails_follow_actual_records() {
         sim::survivors::WeaponId::Garlic,
         sim::survivors::WeaponId::MagicWand,
         sim::survivors::WeaponId::KingBible,
+        sim::survivors::WeaponId::LightningRing,
     ] {
         assert!(
             pulses.get(&id).copied().unwrap_or(0) > 0

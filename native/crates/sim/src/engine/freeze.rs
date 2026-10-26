@@ -451,7 +451,8 @@ impl Sim {
                 | Ev::Recoil { .. }
                 | Ev::EnemyImpact { .. }
                 | Ev::MissileEnd(_)
-                | Ev::ChickenHeal { .. } => 0.25,
+                | Ev::ChickenHeal { .. }
+                | Ev::LightningStrike(_) => 0.25,
                 _ => 1.0,
             };
             let grid = self.known_grid_after(due, step).or_else(|| {
@@ -461,6 +462,7 @@ impl Sim {
                         | Ev::EnemyImpact { .. }
                         | Ev::MissileEnd(_)
                         | Ev::ChickenHeal { .. }
+                        | Ev::LightningStrike(_)
                 )
                 .then(|| (0.0, self.next_enemy_sixteenth(due)))
             });

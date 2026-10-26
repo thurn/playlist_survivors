@@ -31,6 +31,7 @@ mod foes;
 mod freeze;
 mod hero;
 mod judge;
+mod lightning;
 mod missiles;
 mod observe;
 mod offers;
@@ -340,6 +341,7 @@ enum Ev {
     },
     MissileEnd(Box<crate::survivors::MissilePose>),
     WandBullet(Box<crate::survivors::Shot>),
+    LightningStrike(Box<lightning::PendingLightning>),
     EnemyImpact {
         foe: usize,
         fate: crate::recorder::Fate,
@@ -482,7 +484,7 @@ impl Ev {
             Ev::Auto { .. } => 10.0,
             Ev::Strike(_) => 12.0,
             Ev::Wave { .. } => 15.0,
-            Ev::Fire { .. } | Ev::WandBullet(_) => 16.0,
+            Ev::Fire { .. } | Ev::WandBullet(_) | Ev::LightningStrike(_) => 16.0,
             Ev::Chain { .. } => 17.0,
             Ev::Gem { .. } | Ev::ChickenHeal { .. } => 20.0,
             Ev::Beat { .. } | Ev::Drain { .. } => 21.0,
@@ -937,6 +939,8 @@ struct SimState {
     missiles: Vec<missiles::Missile>,
     bibles: Vec<bible::BibleCycle>,
     next_missile: usize,
+    next_lightning_volley: usize,
+    next_lightning_strike: usize,
     w: f64,
     rate_s: f64,
     q: Queue,
@@ -1781,6 +1785,7 @@ impl Sim {
             Ev::EnemyImpact { foe, fate, hit } => self.rec.enemy_impact(foe, fate, &hit),
             Ev::MissileEnd(pose) => self.rec.missile(*pose),
             Ev::WandBullet(shot) => self.missile_burst_shot(*shot),
+            Ev::LightningStrike(pending) => self.lightning_strike(*pending),
             Ev::HitstopEnd => {}
             Ev::Recoil { foe, multiplier } => self.survivor_recoil(foe, multiplier),
             Ev::Key(e) => {
@@ -1960,6 +1965,8 @@ fn fresh_state(env: &Env) -> SimState {
         missiles: Vec::new(),
         bibles: Vec::new(),
         next_missile: 0,
+        next_lightning_volley: 0,
+        next_lightning_strike: 0,
         freeze: freeze::Freeze::default(),
         survivor: level
             .survivors
@@ -3312,6 +3319,271 @@ mod tests {
         );
         (rec, sim, def)
     }
+    fn lightning_measurement(
+        rank: u8,
+    ) -> (
+        Rc<std::cell::RefCell<crate::recorder::LogRecorder>>,
+        Sim,
+        usize,
+    ) {
+        lightning_measurement_at(120.0, rank)
+    }
+    fn lightning_measurement_at(
+        bpm: f64,
+        rank: u8,
+    ) -> (
+        Rc<std::cell::RefCell<crate::recorder::LogRecorder>>,
+        Sim,
+        usize,
+    ) {
+        let (rec, mut sim, def) = wand_measurement_at(bpm, 1);
+        sim.st.survivor.as_mut().unwrap().arsenal = crate::survivors::Arsenal::measurement_weapon(
+            crate::survivors::WeaponId::LightningRing,
+            rank,
+        );
+        (rec, sim, def)
+    }
+    fn lightning_target(sim: &mut Sim, def: usize, x: f64) -> usize {
+        let fi = sim.spawn_foe(def, x, 0.0, Some(10_000.0));
+        sim.st.foes[fi].has_at = true;
+        sim.st.foes[fi].slot_until = f64::INFINITY;
+        fi
+    }
+    #[test]
+    fn lightning_source_ranks_apply_area_damage_once_per_strike_on_sixteenths() {
+        for (rank, amount, power, area) in [(1, 2, 1.5, 1.0), (8, 6, 6.5, 4.0)] {
+            let (rec, mut sim, def) = lightning_measurement(rank);
+            lightning_target(&mut sim, def, 120.0);
+            lightning_target(&mut sim, def, 126.0);
+            sim.advance_to((amount - 1) as f64 * 0.125 + 0.01);
+            let r = rec.borrow();
+            assert_eq!(r.lightning_strikes.len(), amount);
+            for (i, strike) in r.lightning_strikes.iter().enumerate() {
+                assert!((strike.song - i as f64 * 0.125).abs() < 1e-9);
+                assert!(
+                    (strike.radius - 0.08 * crate::survivors::PX_PER_VS_UNIT * area).abs() < 1e-9
+                );
+            }
+            for enemy in &r.enemies {
+                assert_eq!(
+                    enemy.fates.len(),
+                    amount,
+                    "the nearby second enemy receives AoE too"
+                );
+                assert!(enemy.fates.iter().all(|f| (f.damage - power).abs() < 1e-9));
+            }
+            eprintln!(
+                "Lightning rank{rank}: {amount} strikes, power{power}, area{area}, radius{:.9}, times{:?}, both nearby targets take{amount} hits",
+                r.lightning_strikes[0].radius,
+                r.lightning_strikes
+                    .iter()
+                    .map(|s| s.song)
+                    .collect::<Vec<_>>()
+            );
+        }
+    }
+    #[test]
+    fn lightning_targets_are_visible_and_chosen_at_each_actual_strike() {
+        let (rec, mut sim, def) = lightning_measurement(1);
+        lightning_target(&mut sim, def, 1500.0);
+        sim.advance_to(0.14);
+        assert!(
+            rec.borrow().lightning_strikes.is_empty(),
+            "offscreen-only casts create no bolt or strike cue"
+        );
+        let (rec, mut sim, def) = lightning_measurement(1);
+        sim.advance_to(0.1);
+        let fi = lightning_target(&mut sim, def, 120.0);
+        sim.advance_to(0.14);
+        assert_eq!(
+            rec.borrow().lightning_strikes.len(),
+            1,
+            "a target entering after the cast is selected at strike time"
+        );
+        assert!((rec.borrow().lightning_strikes[0].song - 0.125).abs() < 1e-9);
+        assert_eq!(rec.borrow().enemies[0].fates.len(), 1);
+        assert!(sim.st.foes[fi].alive);
+        let (rec, mut sim, def) = lightning_measurement(1);
+        let fi = lightning_target(&mut sim, def, 120.0);
+        sim.advance_to(0.06);
+        sim.st.foes[fi].x = 300.0;
+        sim.advance_to(0.14);
+        let r = rec.borrow();
+        assert!((r.lightning_strikes[0].x - 120.0).abs() < 1e-8);
+        assert!(
+            (r.lightning_strikes[1].x - 300.0).abs() < 1e-8,
+            "later strike never reuses a stale cast position"
+        );
+        eprintln!(
+            "Lightning visibility: no strikes with only offscreen targets; later entry collected at0.125s; moved target positions120 then300"
+        );
+    }
+    #[test]
+    fn lightning_burst_holds_through_fractional_freeze_and_ignores_generic_duration_speed_and_hit_delay()
+     {
+        let (rec, mut sim, def) = lightning_measurement(8);
+        lightning_target(&mut sim, def, 120.0);
+        sim.freeze_at(0.203, crate::survivors::FreezeReason::Paused);
+        sim.advance_to(2.0);
+        assert_eq!(rec.borrow().lightning_strikes.len(), 2);
+        key(&mut sim, 2.1, KeyEventKind::Press, InputKey::Pause);
+        key(&mut sim, 2.11, KeyEventKind::Release, InputKey::Pause);
+        sim.advance_to(3.2);
+        let r = rec.borrow();
+        assert_eq!(r.lightning_strikes.len(), 6);
+        assert!(
+            r.lightning_strikes
+                .iter()
+                .skip(2)
+                .all(|s| s.song >= 2.5 && (s.song * 8.0 - (s.song * 8.0).round()).abs() < 1e-8)
+        );
+        eprintln!(
+            "Lightning fractional freeze preserves all strikes: {:?}",
+            r.lightning_strikes
+                .iter()
+                .map(|s| s.song)
+                .collect::<Vec<_>>()
+        );
+        drop(r);
+        let (rec, mut sim, def) = lightning_measurement(8);
+        lightning_target(&mut sim, def, 120.0);
+        sim.apply_survivor_stats(crate::survivors::StatDelta {
+            amount: 2.0,
+            might: 0.5,
+            area: 0.5,
+            cooldown: -0.4,
+            duration: -0.999,
+            projectile_speed: -1.0,
+            ..Default::default()
+        });
+        sim.advance_to(1.0);
+        let r = rec.borrow();
+        assert_eq!(r.lightning_strikes.len(), 8);
+        assert_eq!(
+            r.enemies[0].fates.len(),
+            8,
+            "generic one-second target delay is per projectile, not across the volley"
+        );
+        assert!(
+            r.enemies[0]
+                .fates
+                .iter()
+                .all(|f| (f.damage - 9.75).abs() < 1e-9)
+        );
+        assert!(
+            (r.lightning_strikes[0].radius - 0.48 * crate::survivors::PX_PER_VS_UNIT).abs() < 1e-9
+        );
+        drop(r);
+        sim.advance_to(3.01);
+        let r = rec.borrow();
+        assert_eq!(r.weapon_shots.len(), 2);
+        assert!((r.weapon_shots[1].ready_run - 2.7).abs() < 1e-9);
+        assert!((r.weapon_shots[1].song - 3.0).abs() < 1e-9);
+        eprintln!(
+            "Lightning bonuses: Amount8, damage9.75, Area6, radius{:.9}; duration1ms and Speed0 do not remove strikes; raw2.7s volley restarts at beat3.0",
+            r.lightning_strikes[0].radius
+        );
+    }
+    #[test]
+    fn lightning_grids_follow_three_tempos_and_a_newly_committed_grid_replaces_a_free_draft() {
+        for bpm in [70.0, 128.0, 174.0] {
+            let (rec, mut sim, def) = lightning_measurement_at(bpm, 8);
+            lightning_target(&mut sim, def, 120.0);
+            let period = 60.0 / bpm;
+            sim.advance_to(period * 1.25 + 0.01);
+            let r = rec.borrow();
+            assert_eq!(r.lightning_strikes.len(), 6);
+            for (i, s) in r.lightning_strikes.iter().enumerate() {
+                assert!((s.song - i as f64 * period / 4.0).abs() < 1e-9);
+            }
+            eprintln!(
+                "Lightning {bpm} BPM: {:?}",
+                r.lightning_strikes
+                    .iter()
+                    .map(|s| s.song)
+                    .collect::<Vec<_>>()
+            );
+        }
+        let (rec, mut sim, def) = lightning_measurement(8);
+        sim.log = Rc::new(StreamLog {
+            beats: vec![
+                Beat {
+                    t: 0.0,
+                    known_at: 0.0,
+                    period: 0.6,
+                    evidence: 1.0,
+                },
+                Beat {
+                    t: 0.6,
+                    known_at: 0.1,
+                    period: 0.6,
+                    evidence: 1.0,
+                },
+                Beat {
+                    t: 1.2,
+                    known_at: 0.6,
+                    period: 0.6,
+                    evidence: 1.0,
+                },
+            ],
+            ..StreamLog::default()
+        });
+        sim.st = super::fresh_state(&sim.env);
+        sim.init();
+        sim.st.survivor.as_mut().unwrap().arsenal = crate::survivors::Arsenal::measurement_weapon(
+            crate::survivors::WeaponId::LightningRing,
+            8,
+        );
+        lightning_target(&mut sim, def, 120.0);
+        sim.advance_to(0.8);
+        let r = rec.borrow();
+        let times: Vec<_> = r.lightning_strikes.iter().map(|s| s.song).collect();
+        let free = sim.env.rule.free_period_s / 4.0;
+        let expected = [0.0, free, 0.3, 0.45, 0.6, 0.75];
+        assert_eq!(times.len(), expected.len());
+        for (s, t) in times.iter().zip(expected) {
+            assert!((s - t).abs() < 1e-9, "{times:?}");
+        }
+        eprintln!(
+            "Lightning late-known grid: {times:?}; first free strike before the bounding beat is known, later draft retimed causally to committed sixteenths"
+        );
+    }
+
+    #[test]
+    fn lightning_seeded_target_choices_repeat_across_frame_cuts_and_change_with_seed() {
+        let run = |seed: f64, chunks: bool| {
+            let (rec, mut sim, def) = lightning_measurement(8);
+            Rc::get_mut(&mut sim.env).unwrap().input.seed = seed;
+            for x in [-200.0, 120.0, 280.0] {
+                lightning_target(&mut sim, def, x);
+            }
+            if chunks {
+                for i in 1..=2000 {
+                    sim.advance_to(f64::from(i) * 0.01);
+                }
+            } else {
+                sim.advance_to(20.0);
+            }
+            rec.borrow().lightning_strikes.clone()
+        };
+        let a = run(2026.0, false);
+        let b = run(2026.0, true);
+        let c = run(2027.0, false);
+        assert_eq!(a, b);
+        assert_ne!(
+            a.iter().map(|s| s.x).collect::<Vec<_>>(),
+            c.iter().map(|s| s.x).collect::<Vec<_>>()
+        );
+        assert_eq!(a.len(), 30);
+        let mut counts = std::collections::BTreeMap::new();
+        for s in a {
+            *counts.entry(s.x as i32).or_insert(0) += 1;
+        }
+        eprintln!(
+            "Lightning deterministic20s: 30 actual strikes across3 visible enemies, seed2026 counts{counts:?}, frame cuts identical; seed2027 changes target order"
+        );
+    }
+
     #[test]
     fn bible_source_damage_amount_lifetime_and_periodic_hit_memory() {
         for (rank, amount, power, duration, interval) in

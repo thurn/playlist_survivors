@@ -84,6 +84,8 @@ soundPalettes:
       king-bible-accent-hit: [kenney/sci-impactMetal_000]
       lightning-ring-fire: [kenney/digital-laser1]
       lightning-ring-hit: [kenney/digital-zap1]
+      lightning-ring-accent-fire: [kenney/sci-explosionCrunch_000]
+      lightning-ring-accent-hit: [kenney/sci-impactMetal_000]
       offer-open: [kenney/confirmation_002]
       card-reveal: [kenney/casino-card-place-1]
       card-highlight: [kenney/select_001]

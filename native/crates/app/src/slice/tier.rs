@@ -239,31 +239,46 @@ pub fn weapons(
         } as f32;
         let outer = with_alpha(rgb(BOLT_COLORS[tier]), (0.5 + 0.08 * tier as f32) * a);
         let width = (3.0 + tier as f32) * scale;
-        let flick = (arms.now * 30.0).floor() as u64;
-        for (k, pair) in shown.windows(2).enumerate() {
-            let (p0, p1) = (pair[0], pair[1]);
-            let mut prev = p0;
-            for j in 1..=6u64 {
-                let u = j as f32 / 6.0;
-                let jit = if j == 6 {
-                    0.0
-                } else {
-                    (rand01(index as u64 * 64 + k as u64, j, flick) as f32 - 0.5) * 12.0 * scale
-                };
-                let next = (
-                    p0.0 + (p1.0 - p0.0) * u + jit,
-                    p0.1 + (p1.1 - p0.1) * u + jit * 0.6,
-                );
-                out.push(line(prev, next, width, outer));
-                prev = next;
-            }
-            out.push(line(
-                p0,
-                p1,
-                scale.max(1.0),
-                with_alpha(rgb(0x00ff_ffff), a),
-            ));
+        bolt(&shown, index as u64, arms.now, width, outer, a, scale, out);
+    }
+}
+
+/// Shared chain/sky bolt tessellation: jittered outer segments and a white core.
+#[allow(clippy::too_many_arguments)]
+pub(super) fn bolt(
+    shown: &[(f32, f32)],
+    seed: u64,
+    now: f64,
+    width: f32,
+    outer: [f32; 4],
+    a: f32,
+    scale: f32,
+    out: &mut Vec<Sprite>,
+) {
+    let flick = (now * 30.0).floor() as u64;
+    for (k, pair) in shown.windows(2).enumerate() {
+        let (p0, p1) = (pair[0], pair[1]);
+        let mut prev = p0;
+        for j in 1..=6u64 {
+            let u = j as f32 / 6.0;
+            let jit = if j == 6 {
+                0.0
+            } else {
+                (rand01(seed * 64 + k as u64, j, flick) as f32 - 0.5) * 12.0 * scale
+            };
+            let next = (
+                p0.0 + (p1.0 - p0.0) * u + jit,
+                p0.1 + (p1.1 - p0.1) * u + jit * 0.6,
+            );
+            out.push(line(prev, next, width, outer));
+            prev = next;
         }
+        out.push(line(
+            p0,
+            p1,
+            scale.max(1.0),
+            with_alpha(rgb(0x00ff_ffff), a),
+        ));
     }
 }
 

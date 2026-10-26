@@ -1,0 +1,2 @@
+lightning-check: 6 actual positioned strikes, 1 accented; camera-window 4.4..5.8 s, zero-enemy casts draw/play no strikes
+weapon-check: 43 frames at 30 fps, 1280x720, 128 BPM, 2 matching real shots/1 accent; lightning-ring rank 8, injected initial loadout, lead 0, sword FX hidden; synthetic known beats/forecast, 8 skeletons, health 1000, XP 0, no pacing/survival/rollback claim, silent capture

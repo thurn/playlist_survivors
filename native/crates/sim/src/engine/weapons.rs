@@ -139,6 +139,8 @@ impl Sim {
                     0.08 * crate::survivors::PX_PER_VS_UNIT * weapon.area * stats.area
                 } else if id == WeaponId::Garlic {
                     0.32 * crate::survivors::PX_PER_VS_UNIT * weapon.area * stats.area
+                } else if id == WeaponId::LightningRing {
+                    0.08 * crate::survivors::PX_PER_VS_UNIT * weapon.area * stats.area
                 } else if id == WeaponId::KingBible {
                     0.5 * (weapon.area * stats.area).min(4.5) * crate::survivors::PX_PER_VS_UNIT
                 } else {
@@ -173,6 +175,9 @@ impl Sim {
                         })),
                     );
                 }
+            }
+            if id == WeaponId::LightningRing {
+                self.launch_lightning(shot);
             }
             if id == WeaponId::KingBible {
                 self.launch_bible(shot);

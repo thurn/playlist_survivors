@@ -42,6 +42,7 @@ pub struct Scene {
     sword: super::sword::Sword,
     garlic: super::garlic::Garlic,
     pickups: super::pickups::Pickups,
+    lightning: super::lightning::Lightning,
     effects: Effects,
     bitten: f64,
     /// The open field's chunks near the camera, by zone.
@@ -488,6 +489,7 @@ impl Scene {
                 Moment::Bite { .. } => self.bitten = now,
                 Moment::TierChange { up, .. } => self.tier_change = Some((now, *up)),
                 Moment::ChickenHeal { amount, .. } => self.pickups.healed(now, *amount),
+                Moment::LightningStrike(strike) => self.lightning.struck(*strike, now),
                 Moment::GemPickup => {
                     if let Some(h) = view.hero {
                         fire("gem-pickup", h.x, h.y - 16.0, 0.0, 1.0, Start::default());
@@ -915,6 +917,8 @@ impl Scene {
         self.sword.draw(now, art, &at, scale, out, lights);
         super::wand::draw(view, art, &at, scale, out, lights);
         super::bible::draw(view, art, &at, scale, out, lights);
+        self.lightning
+            .draw(now, &at, scale, h, out, lights, &mut layers.grade);
         let swell = 0.5 + 0.5 * (std::f64::consts::TAU * pulse.beat.min(1.0)).cos();
         if view.run.is_none() {
             gems::draw(

@@ -1386,6 +1386,21 @@ phase/tempo limits and source audit. Run from `native/` with
 `cargo run --release -p app -- --playlist playlists/survivors-30.m3u --delayed`.
 
 ### SW2
+
+Lightning Ring now casts source-cadence volleys with 2–6 random visible-target
+strikes on successive sixteenths and source circular AoE. Target/position choice
+happens at each actual landing, with deterministic per-volley/index keys;
+free subdivisions can be replaced causally by newly committed grids. Pending
+ordinals survive freezes. Actual strike moments drive reused chain/sky bolts,
+short flashes and typed sounds; empty attempts make no phantom strike cue.
+Tests cover source ranks/radii, three tempos, late grid knowledge, visibility,
+move-after-cast, fractional pause, non-default stats and deterministic frame
+cuts. The actual-card rollback fixture retains 8,571 identical records with
+22 delayed-confirm choices. Labelled synthetic normal/accent stills and a
+short silent clip are in [SW2 evidence](../../native/evidence/sw2/README.md).
+No offer/easy knob changed. Run from `native/` with
+`cargo run --release -p app -- --playlist playlists/survivors-30.m3u --delayed`.
+
 ### SW3
 ### SW4
 ### SW5

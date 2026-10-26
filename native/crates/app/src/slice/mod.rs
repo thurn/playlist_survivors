@@ -35,6 +35,7 @@ mod calibration;
 mod cards;
 mod clip;
 mod damage;
+mod lightning;
 // The tap and output are the phase 0 spike's (57e846a^:native/spike), kept as they were.
 #[allow(clippy::pedantic, unused_qualifications, dead_code)]
 mod coreaudio;
@@ -169,6 +170,7 @@ struct Options {
     garlic_check: Option<PathBuf>,
     wand_check: Option<PathBuf>,
     bible_check: Option<PathBuf>,
+    lightning_check: Option<PathBuf>,
     pickups_check: Option<PathBuf>,
     passives_check: Option<PathBuf>,
     volume: f32,
@@ -227,6 +229,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         garlic_check: None,
         wand_check: None,
         bible_check: None,
+        lightning_check: None,
         pickups_check: None,
         passives_check: None,
         volume: 1.0,
@@ -289,6 +292,13 @@ fn options(args: &[String]) -> Result<Options, String> {
                 o.pickups_check = Some(
                     it.next()
                         .ok_or("--pickups-check needs an output directory")?
+                        .into(),
+                );
+            }
+            "--lightning-check" => {
+                o.lightning_check = Some(
+                    it.next()
+                        .ok_or("--lightning-check needs an output directory")?
                         .into(),
                 );
             }
@@ -596,6 +606,9 @@ pub fn run(args: &[String]) -> Result<(), String> {
     }
     if let Some(dir) = &opts.pickups_check {
         return pickups::check::run(dir);
+    }
+    if let Some(dir) = &opts.lightning_check {
+        return weapons_check::run(dir, Some((sim::survivors::WeaponId::LightningRing, 8)));
     }
     if let Some(dir) = &opts.bible_check {
         return weapons_check::run(dir, Some((sim::survivors::WeaponId::KingBible, 8)));

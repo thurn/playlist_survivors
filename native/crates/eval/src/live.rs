@@ -104,6 +104,7 @@ pub enum Moment {
     },
     /// A gem reached the hero.
     GemPickup,
+    LightningStrike(sim::survivors::LightningStrike),
     ChickenHeal {
         id: usize,
         amount: f64,
@@ -698,6 +699,11 @@ impl Journal {
 pub struct LiveRecorder(pub Rc<RefCell<Journal>>);
 
 impl Recorder for LiveRecorder {
+    fn lightning(&mut self, strike: sim::survivors::LightningStrike) {
+        self.0
+            .borrow_mut()
+            .push(Record::Moment(Moment::LightningStrike(strike)));
+    }
     fn gem_pose(&mut self, s: f64, pose: sim::survivors::GemPose) {
         let mut j = self.0.borrow_mut();
         // Called inside a fixed clock move, before clock() publishes its stop.
@@ -1435,11 +1441,22 @@ impl Engine {
                     cause: Cause::Weapon { what, .. },
                     ..
                 }) if shown.run.is_some()
-                    && matches!(what.as_str(), "garlic" | "magic-wand" | "king-bible") =>
+                    && matches!(
+                        what.as_str(),
+                        "garlic" | "magic-wand" | "king-bible" | "lightning-ring"
+                    ) =>
                 {
                     None
                 }
                 Record::Sound(c) => Some(c.cause.clone()),
+                Record::Moment(Moment::LightningStrike(strike)) if shown.run.is_some() => {
+                    Some(Cause::WeaponPulse {
+                        s: *s,
+                        x: strike.x,
+                        what: strike.weapon,
+                        accent: strike.accent,
+                    })
+                }
                 Record::Moment(Moment::WeaponFire(shot))
                     if shown.run.is_some()
                         && matches!(
@@ -1467,6 +1484,7 @@ impl Engine {
                                             sim::survivors::WeaponId::Garlic
                                                 | sim::survivors::WeaponId::MagicWand
                                                 | sim::survivors::WeaponId::KingBible
+                                                | sim::survivors::WeaponId::LightningRing
                                         )
                                 })
                                 .map(|what| Cause::WeaponImpact {

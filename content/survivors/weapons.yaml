@@ -49,7 +49,7 @@ weapons:
   - id: lightning-ring
     source: LIGHTNING
     grid: beat
-    implemented: false
+    implemented: true
     evolutionOf: null
     requires: null
     levels:

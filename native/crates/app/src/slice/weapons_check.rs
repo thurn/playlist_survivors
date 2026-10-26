@@ -19,19 +19,20 @@ pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Resul
     }
     std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
     let mut world = World::load(None)?;
+    let lightning = fixture.is_some_and(|(id, _)| id == sim::survivors::WeaponId::LightningRing);
     let bible = fixture.is_some_and(|(id, _)| id == sim::survivors::WeaponId::KingBible);
     let wand = fixture.is_some_and(|(id, _)| id == sim::survivors::WeaponId::MagicWand);
     let old = "{\"minute\":0,\"minimum\":15,\"frequency\":1000,\"enemies\":[\"vs-bat3\"],\"bosses\":[],\"events\":[],\"treasure\":[]}";
     if !world.level.text.contains(old) {
         return Err("sword fixture minute0 changed".into());
     }
-    let row = if wand {
+    let row = if wand || lightning {
         r#"{"minute":0,"minimum":8,"frequency":60000,"enemies":["vs-skeleton"],"bosses":[],"events":[],"treasure":[]}"#
     } else {
         r#"{"minute":0,"minimum":0,"frequency":60000,"enemies":[],"bosses":[],"events":[],"treasure":[]}"#
     };
     world.level.text = world.level.text.replacen(old, row, 1);
-    if wand {
+    if wand || lightning {
         let target = world
             .lib
             .enemies
@@ -44,7 +45,9 @@ pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Resul
             .ok_or("fixture skeleton stats missing")?
             .xp = 0.0;
     }
-    let accent_beat = if bible {
+    let accent_beat = if lightning {
+        10.0
+    } else if bible {
         30.0
     } else if wand {
         9.0
@@ -106,9 +109,10 @@ pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Resul
     let mut scene = Scene::default();
     let (mut normal, mut accent) = (false, false);
     let (mut shots, mut heavy) = (0, 0);
+    let (mut strikes, mut accent_strikes) = (0, 0);
     for tick in 1..=if bible {
         1800
-    } else if wand {
+    } else if wand || lightning {
         720
     } else {
         480
@@ -122,6 +126,10 @@ pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Resul
             moments.retain(|m| !matches!(m,eval::live::Moment::WeaponFire(s) if s.id.is_sword()));
         }
         for m in &moments {
+            if let eval::live::Moment::LightningStrike(strike) = m {
+                strikes += 1;
+                accent_strikes += usize::from(strike.accent);
+            }
             if let eval::live::Moment::WeaponFire(shot) = m {
                 if fixture.is_some_and(|(id, _)| shot.id != id) {
                     continue;
@@ -156,6 +164,9 @@ pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Resul
             bar: (s / period % 4.0) / 4.0,
             index: s / period,
         };
+        if lightning && !(4.4..=5.8).contains(&s) {
+            continue;
+        }
         let mut layers = scene::Layers::default();
         let ground = world.field(&engine, run.presentation_s, period)?;
         scene.fast_lane(engine.stream(), 0.2, s, s, None);
@@ -206,7 +217,9 @@ pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Resul
             clip.frame(&rgba)?;
         }
         if !normal
-            && s >= if bible {
+            && s >= if lightning {
+                5.05
+            } else if bible {
                 8.1
             } else if wand {
                 1.3
@@ -220,7 +233,9 @@ pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Resul
             normal = true;
         }
         if !accent
-            && s >= if bible {
+            && s >= if lightning {
+                accent_beat * period + 0.02
+            } else if bible {
                 accent_beat * period + 0.6
             } else if wand {
                 accent_beat * period + 0.1
@@ -237,7 +252,9 @@ pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Resul
     if !normal || !accent || heavy == 0 {
         return Err("sword fixture missed its normal/accent shots".into());
     }
-    clip.encode(&dir.join(if bible {
+    clip.encode(&dir.join(if lightning {
+        "sky-strikes.mp4"
+    } else if bible {
         "orbit-and-accent.mp4"
     } else if wand {
         "homing-and-impact.mp4"
@@ -255,11 +272,16 @@ pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Resul
             )
         },
     );
-    let actors = if wand {
+    let actors = if wand || lightning {
         "8 skeletons, health 1000, XP 0"
     } else {
         "no enemies"
     };
+    if lightning {
+        eprintln!(
+            "lightning-check: {strikes} actual positioned strikes, {accent_strikes} accented; camera-window 4.4..5.8 s, zero-enemy casts draw/play no strikes"
+        );
+    }
     eprintln!(
         "weapon-check: {} frames at 30 fps, 1280x720, 128 BPM, {shots} matching real shots/{heavy} accent; {setup}; synthetic known beats/forecast, {actors}, no pacing/survival/rollback claim, silent capture",
         clip.count()

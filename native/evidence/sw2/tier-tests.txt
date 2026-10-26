@@ -1,0 +1,9 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.28s
+     Running unittests src/main.rs (target/debug/deps/playlist_survivors-117eebc7468b2345)
+
+running 2 tests
+test slice::tier::tests::the_trail_finds_the_hero_between_its_samples ... ok
+test slice::tier::tests::a_line_spans_its_ends ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 52 filtered out; finished in 0.00s
+

@@ -462,6 +462,7 @@ pub trait Recorder {
     fn fire(&mut self, weapon: &str, s: f64) {}
     fn weapon_shot(&mut self, shot: crate::survivors::Shot) {}
     fn missile(&mut self, pose: crate::survivors::MissilePose) {}
+    fn lightning(&mut self, strike: crate::survivors::LightningStrike) {}
     fn gem_pose(&mut self, s: f64, pose: crate::survivors::GemPose) {}
     fn floor_chicken(&mut self, s: f64, event: crate::survivors::FloorChicken) {}
     fn inventory(&mut self, inventory: crate::survivors::Inventory) {}
@@ -583,6 +584,9 @@ impl<R: Recorder + ?Sized> Recorder for std::rc::Rc<std::cell::RefCell<R>> {
     }
     fn missile(&mut self, pose: crate::survivors::MissilePose) {
         self.borrow_mut().missile(pose);
+    }
+    fn lightning(&mut self, strike: crate::survivors::LightningStrike) {
+        self.borrow_mut().lightning(strike);
     }
     fn gem_pose(&mut self, s: f64, pose: crate::survivors::GemPose) {
         self.borrow_mut().gem_pose(s, pose);
@@ -739,6 +743,7 @@ fn to_value<T: Serialize>(x: &T) -> Value {
 pub struct LogRecorder {
     pub weapon_shots: Vec<crate::survivors::Shot>,
     pub missiles: Vec<crate::survivors::MissilePose>,
+    pub lightning_strikes: Vec<crate::survivors::LightningStrike>,
     pub gem_poses: Vec<crate::survivors::GemPose>,
     pub floor_chickens: Vec<crate::survivors::FloorChicken>,
     pub inventories: Vec<crate::survivors::Inventory>,
@@ -777,6 +782,7 @@ impl Default for LogRecorder {
         LogRecorder {
             weapon_shots: Vec::new(),
             missiles: Vec::new(),
+            lightning_strikes: Vec::new(),
             gem_poses: Vec::new(),
             floor_chickens: Vec::new(),
             inventories: Vec::new(),
@@ -812,6 +818,9 @@ impl Default for LogRecorder {
 }
 
 impl Recorder for LogRecorder {
+    fn lightning(&mut self, strike: crate::survivors::LightningStrike) {
+        self.lightning_strikes.push(strike);
+    }
     fn gem_pose(&mut self, _s: f64, pose: crate::survivors::GemPose) {
         self.gem_poses.push(pose);
     }

@@ -1,0 +1,15 @@
+{
+  "source": "LightningProjectile.cs",
+  "sha256": "e5ef7eb615e8975f4a2c7b8ccb4871b62e9d6338a1b3c911aa635e0d625c8991",
+  "checked_facts": [
+    "body radius 8 * PArea legacy px, centered at selected enemy position",
+    "each projectile selects a random enemy in screen; missing target despawns without a strike",
+    "70 ms descent then a short ground strike; generic duration/speed are not damage/travel windows"
+  ],
+  "native_adaptations": [
+    "replace source 50 ms repeat with successive sixteenths",
+    "choose current visible target independently at each actual landing, with replacement",
+    "instant AoE at grid landing; own reused chain/sky-bolt drawing and .18 s visual tail",
+    "each strike refreshes its accent from currently known forecast; damage unchanged"
+  ]
+}
