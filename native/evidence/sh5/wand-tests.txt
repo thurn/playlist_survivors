@@ -1,0 +1,101 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh5-wand/native/crates/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 10.96s
+     Running unittests src/lib.rs (native/target/debug/deps/sim-1ebf1e278f138957)
+
+running 7 tests
+Wand rank1: amount1 power1 pierce1, fires[0.0], target hits1, radius12.341598, speed254.545455
+test engine::tests::wand_spent_head_waits_for_its_grid_aligned_impact ... ok
+test engine::tests::wand_zero_speed_projectiles_still_have_a_finite_life ... ok
+70BPM rank8 +Amount2/Cooldown0.6: 398/40s vs400 source bullets, 4 burst bullets pending
+test engine::tests::wand_homes_on_current_targets_holds_in_freeze_and_culls_without_a_generic_lifespan ... ok
+test engine::tests::wand_turns_back_after_target_hit_memory_expires_and_respects_stat_bonuses ... ok
+Wand rank8: amount4 power3 pierce2, fires[0.0, 0.1, 0.2, 0.3], target hits4, radius12.341598, speed254.545455
+rank8 one missile: exactly2 surviving targets, third untouched; lethal overlaps preserve rank1 pierce; long-step swept hits are ordered near-first
+test engine::tests::wand_swept_collision_orders_targets_and_spends_pierce_only_on_survivors ... ok
+Wand rank8 without grid: raw100ms burst [0.0, 0.1, 0.2, 0.3]
+128BPM rank8 +Amount2/Cooldown0.6: 400/40s vs400 source bullets, 2 burst bullets pending
+test engine::tests::wand_source_rows_amount_and_burst_cadence ... ok
+174BPM rank8 +Amount2/Cooldown0.6: 400/40s vs400 source bullets, 2 burst bullets pending
+mid-burst freeze: resume2.500000, remaining bullets 2.550000,2.650000 preserve50ms then100ms
+test engine::tests::wand_max_burst_throughput_stays_bounded_at_three_tempos_and_holds_mid_burst ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 44 filtered out; finished in 0.04s
+
+     Running tests/causality.rs (native/target/debug/deps/causality-86630208d8a35901)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests/content.rs (native/target/debug/deps/content-9a59fe6e516c99d0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/core.rs (native/target/debug/deps/core-c9e1543def3e3e62)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/jsmath.rs (native/target/debug/deps/jsmath-fb18d9c6c162492d)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/live_run.rs (native/target/debug/deps/live_run-2a500f2f64a31168)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running tests/oracle_prefix.rs (native/target/debug/deps/oracle_prefix-36ea5184dd57a6c5)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/schedule.rs (native/target/debug/deps/schedule-6977568b6c2c1a3c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/sim_modules.rs (native/target/debug/deps/sim_modules-19b481e47351ed7e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+     Running tests/survivor_offers.rs (native/target/debug/deps/survivor_offers-fffa46330d1578d9)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/survivor_spawning.rs (native/target/debug/deps/survivor_spawning-bd30f1999a3bcd76)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests/survivor_stats.rs (native/target/debug/deps/survivor_stats-0db51e3894f1fae8)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/survivor_weapons.rs (native/target/debug/deps/survivor_weapons-b4eb7ccfae612445)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/survivors.rs (native/target/debug/deps/survivors-0e33f9d9bae2b18e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.00s
+

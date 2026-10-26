@@ -194,6 +194,8 @@ const BOLT_KEEP_S: f64 = 1.0;
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct LiveView {
     pub inventory: Option<sim::survivors::Inventory>,
+    /// Bounded recent causal projectile samples, restored with the view on rollback.
+    pub missiles: BTreeMap<usize, Vec<sim::survivors::MissilePose>>,
     pub run: Option<sim::survivors::RunState>,
     pub hero: Option<HeroPose>,
     /// The camera's centre and zoom.
@@ -273,6 +275,17 @@ impl LiveView {
     pub fn apply(&mut self, s: f64, rec: &Record) {
         self.s = s;
         match rec {
+            Record::Missile(pose) => {
+                if pose.alive {
+                    let trail = self.missiles.entry(pose.id).or_default();
+                    trail.push(*pose);
+                    if trail.len() > 10 {
+                        trail.remove(0);
+                    }
+                } else {
+                    self.missiles.remove(&pose.id);
+                }
+            }
             Record::Inventory(inventory) => self.inventory = Some(*inventory),
             Record::Run(state) => {
                 if let Some(previous) = self.run
@@ -454,6 +467,7 @@ impl LiveView {
 /// What the simulation reported, as the view applies it.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Record {
+    Missile(sim::survivors::MissilePose),
     Inventory(sim::survivors::Inventory),
     Run(sim::survivors::RunState),
     Hero(HeroPose),
@@ -634,6 +648,9 @@ impl Journal {
 pub struct LiveRecorder(pub Rc<RefCell<Journal>>);
 
 impl Recorder for LiveRecorder {
+    fn missile(&mut self, pose: sim::survivors::MissilePose) {
+        self.0.borrow_mut().push(Record::Missile(pose));
+    }
     fn inventory(&mut self, inventory: sim::survivors::Inventory) {
         self.0.borrow_mut().push(Record::Inventory(inventory));
     }
@@ -1356,10 +1373,16 @@ impl Engine {
                 Record::Sound(Caused {
                     cause: Cause::Weapon { what, .. },
                     ..
-                }) if shown.run.is_some() && what == "garlic" => None,
+                }) if shown.run.is_some() && matches!(what.as_str(), "garlic" | "magic-wand") => {
+                    None
+                }
                 Record::Sound(c) => Some(c.cause.clone()),
                 Record::Moment(Moment::WeaponFire(shot))
-                    if shown.run.is_some() && shot.id == sim::survivors::WeaponId::Garlic =>
+                    if shown.run.is_some()
+                        && matches!(
+                            shot.id,
+                            sim::survivors::WeaponId::Garlic | sim::survivors::WeaponId::MagicWand
+                        ) =>
                 {
                     Some(Cause::WeaponPulse {
                         s: *s,
@@ -1373,7 +1396,12 @@ impl Engine {
                         Moment::Hit { what, weight, .. } => {
                             sim::survivors::WeaponId::from_name(what)
                                 .filter(|id| {
-                                    id.is_sword() || *id == sim::survivors::WeaponId::Garlic
+                                    id.is_sword()
+                                        || matches!(
+                                            *id,
+                                            sim::survivors::WeaponId::Garlic
+                                                | sim::survivors::WeaponId::MagicWand
+                                        )
                                 })
                                 .map(|what| Cause::WeaponImpact {
                                     s: *s,

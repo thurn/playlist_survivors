@@ -245,3 +245,18 @@ pub fn weapon_catalog() -> &'static WeaponCatalog {
         .expect("validated survivors weapon tables")
     })
 }
+
+/// A causal sample of one travelling projectile; `alive=false` removes its view.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct MissilePose {
+    pub id: usize,
+    pub weapon: WeaponId,
+    pub w: f64,
+    pub x: f64,
+    pub y: f64,
+    pub vx: f64,
+    pub vy: f64,
+    pub radius: f64,
+    pub accent: bool,
+    pub alive: bool,
+}

@@ -19,7 +19,7 @@ weapons:
   - id: magic-wand
     source: MAGIC_MISSILE
     grid: eighth
-    implemented: false
+    implemented: true
     evolutionOf: null
     requires: null
     levels:

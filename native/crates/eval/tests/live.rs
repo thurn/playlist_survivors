@@ -774,6 +774,13 @@ fn a_real_xp_offer_pick_applies_once_across_speculative_rollback() {
                 .is_some(),
             "first real XP choice exercises the persistent aura across rollback"
         );
+        assert!(
+            inventory
+                .weapons
+                .rank(sim::survivors::WeaponId::MagicWand)
+                .is_some(),
+            "second real XP choice exercises projectiles and bursts across rollback"
+        );
         assert_eq!(ranks, 1 + picks, "each confirm applied exactly one rank");
         (e.settled_log.take().unwrap(), inventory, e.stats, picks)
     };
@@ -997,7 +1004,7 @@ fn sword_impact_sounds_follow_existing_grid_records_without_hash_records() {
 }
 
 #[test]
-fn garlic_sound_projection_uses_actual_shots_and_grid_contacts() {
+fn survivor_weapon_sounds_and_missile_trails_follow_actual_records() {
     use eval::live::Cause;
     let (content, log) = fast_offer_fixture();
     let mut e = Engine::new(
@@ -1014,7 +1021,9 @@ fn garlic_sound_projection_uses_actual_shots_and_grid_contacts() {
     e.settled_log = Some(Vec::new());
     e.feed(|l| *l = log);
     let mut picked = None;
-    let (mut pulses, mut contacts) = (0, 0);
+    let mut pulses = std::collections::BTreeMap::new();
+    let mut contacts = std::collections::BTreeMap::new();
+    let mut peak_missiles = 0;
     for k in 1..=2400 {
         let now = f64::from(k) / 120.0;
         let offer = e.view.borrow().run.and_then(|r| r.offer);
@@ -1037,24 +1046,37 @@ fn garlic_sound_projection_uses_actual_shots_and_grid_contacts() {
             match c.cause {
                 Cause::WeaponPulse {
                     s, what, accent, ..
-                } if what == sim::survivors::WeaponId::Garlic => {
+                } if matches!(
+                    what,
+                    sim::survivors::WeaponId::Garlic | sim::survivors::WeaponId::MagicWand
+                ) =>
+                {
                     assert!(all().any(|(t,r)| *t==s && matches!(r,Record::Moment(Moment::WeaponFire(shot)) if shot.id==what && shot.accent==accent)));
-                    pulses += 1;
+                    *pulses.entry(what).or_insert(0usize) += 1;
                 }
-                Cause::WeaponImpact {
-                    s,
-                    what: sim::survivors::WeaponId::Garlic,
-                    ..
-                } => {
-                    assert!(all().any(|(t,r)| *t==s && matches!(r,Record::Moment(Moment::EnemyImpact{hit}) if matches!(hit.as_ref(),Moment::Hit{what,..} if what=="garlic"))));
-                    contacts += 1;
+                Cause::WeaponImpact { s, what, .. }
+                    if matches!(
+                        what,
+                        sim::survivors::WeaponId::Garlic | sim::survivors::WeaponId::MagicWand
+                    ) =>
+                {
+                    assert!(all().any(|(t,r)| *t==s && matches!(r,Record::Moment(Moment::EnemyImpact{hit}) if matches!(hit.as_ref(),Moment::Hit{what:id,..} if id==what.as_str()))));
+                    *contacts.entry(what).or_insert(0usize) += 1;
                 }
-                Cause::Weapon { ref what, .. } => assert_ne!(
-                    what, "garlic",
+                Cause::Weapon { ref what, .. } => assert!(
+                    !matches!(what.as_str(), "garlic" | "magic-wand"),
                     "legacy fire is replaced by typed projection"
                 ),
                 _ => {}
             }
+        }
+        let view = e.view.borrow();
+        peak_missiles = peak_missiles.max(view.missiles.len());
+        for trail in view.missiles.values() {
+            assert!((1..=10).contains(&trail.len()));
+            assert!(trail.windows(2).all(|p| p[0].w <= p[1].w));
+            let head = trail.last().unwrap();
+            assert!(all().any(|(_, r)| matches!(r,Record::Missile(p) if p==head)));
         }
         assert!(all().all(|(_, r)| !matches!(
             r,
@@ -1064,8 +1086,15 @@ fn garlic_sound_projection_uses_actual_shots_and_grid_contacts() {
             })
         )));
     }
-    assert!(
-        pulses > 0 && contacts > 0,
-        "actual garlic pulse/contact paths exercised: {pulses}/{contacts}"
-    );
+    for id in [
+        sim::survivors::WeaponId::Garlic,
+        sim::survivors::WeaponId::MagicWand,
+    ] {
+        assert!(
+            pulses.get(&id).copied().unwrap_or(0) > 0
+                && contacts.get(&id).copied().unwrap_or(0) > 0,
+            "actual pulse/contact paths exercised for {id:?}: {pulses:?}/{contacts:?}"
+        );
+    }
+    assert!(peak_missiles > 0, "actual projectile view path exercised");
 }

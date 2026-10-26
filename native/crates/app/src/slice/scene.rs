@@ -352,6 +352,27 @@ impl Scene {
             if let Moment::Hit { foe, lethal, .. } = m {
                 self.struck.insert(*foe, (now, *lethal));
             }
+            if let Moment::Hit {
+                what,
+                lethal: true,
+                x,
+                y,
+                dir,
+                intensity,
+                ..
+            } = m
+                && what == "magic-wand"
+                && x.is_finite()
+            {
+                fire(
+                    "blades-hit",
+                    *x,
+                    *y,
+                    *dir,
+                    0.6 * intensity,
+                    Start::default(),
+                );
+            }
             match m {
                 Moment::WeaponFire(shot) if shot.id.is_sword() => self.sword.shot(*shot, now),
                 Moment::WeaponFire(shot) if shot.id == sim::survivors::WeaponId::Garlic => {
@@ -878,6 +899,7 @@ impl Scene {
         };
         tier::weapons(view, &arms, art, &at, scale, out);
         self.sword.draw(now, art, &at, scale, out, lights);
+        super::wand::draw(view, art, &at, scale, out, lights);
         let swell = 0.5 + 0.5 * (std::f64::consts::TAU * pulse.beat.min(1.0)).cos();
         gems::draw(
             view,

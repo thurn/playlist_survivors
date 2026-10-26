@@ -428,6 +428,11 @@ impl Sim {
                 continue;
             }
             let due = self.st.s + (h.ready_run - self.st.run_s).max(0.0);
+            if matches!(h.entry.ev, Ev::WandBullet(_)) {
+                h.entry.key.s = due;
+                self.st.q.insert(h.entry);
+                continue;
+            }
             let step = match &h.entry.ev {
                 Ev::Fire { weapon, .. } => super::combat::subdivision_beats(
                     self.env.input.lib.weapons[*weapon].fires.every,
@@ -441,14 +446,19 @@ impl Sim {
                         .step,
                     2.0,
                 ),
-                Ev::Wave { .. } | Ev::Gem { .. } | Ev::Recoil { .. } | Ev::EnemyImpact { .. } => {
-                    0.25
-                }
+                Ev::Wave { .. }
+                | Ev::Gem { .. }
+                | Ev::Recoil { .. }
+                | Ev::EnemyImpact { .. }
+                | Ev::MissileEnd(_) => 0.25,
                 _ => 1.0,
             };
             let grid = self.known_grid_after(due, step).or_else(|| {
-                matches!(h.entry.ev, Ev::Recoil { .. } | Ev::EnemyImpact { .. })
-                    .then(|| (0.0, self.next_enemy_sixteenth(due)))
+                matches!(
+                    h.entry.ev,
+                    Ev::Recoil { .. } | Ev::EnemyImpact { .. } | Ev::MissileEnd(_)
+                )
+                .then(|| (0.0, self.next_enemy_sixteenth(due)))
             });
             let Some((bi, at)) = grid else {
                 self.st.freeze.held.push(h);

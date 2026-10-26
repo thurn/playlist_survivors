@@ -1,0 +1,23 @@
+slice: output MacBook Pro Speakers (calibrated): input offsets -48 ms, stomp -48 ms, display 45 ms, latency correction 0 ms
+slice: file mode (../public/reactive/house-128/house-128.ogg), output 48000 Hz, L_out 16.6 ms, heard 16.6 ms after capture
+slice: recording the session to /Users/dthurn/playlist_survivors/.worktrees/sh5-wand/native/crates/app/../../logs/sessions/1793040677
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [0, 0, 0, 0, 0], denied [0, 0, 0, 0, 0]
+slice: frame work median 0.00 ms, p95 0.00, p99 0.00 (0 frames a second, paced while hidden); rollbacks re-simulated 0 ms
+slice: sounds 0 started, 0 skipped late, 0 dropped, 0 cancelled; 0 rollbacks replaying 0.0 s, 0 late keys
+slice: run started at song time 2.6
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [1, 1, 2, 1, 0], denied [0, 0, 0, 0, 0]
+slice: survivors minute Some(0), run 7.450s, spawned 24, alive 14: {"vs-bat3": 14}
+slice: frame work median 0.03 ms, p95 0.22, p99 0.38 (107 frames a second, paced while hidden); rollbacks re-simulated 23 ms
+slice: sounds 32 started, 0 skipped late, 0 dropped, 0 cancelled; 216 rollbacks replaying 48.7 s, 0 late keys
+slice: world LEVEL UP at run 9.743 s (song 9.750)
+slice: pick-first queues level 2 card1 GARLIC rank 0 > 1 at 10.800, third reveal 10.796
+slice: world RESUMED at run 9.743 s (song 11.036)
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [2, 3, 2, 1, 3], denied [0, 0, 0, 0, 0]
+slice: survivors minute Some(0), run 16.157s, spawned 43, alive 14: {"vs-bat3": 14}
+slice: frame work median 0.05 ms, p95 0.28, p99 0.38 (106 frames a second, paced while hidden); rollbacks re-simulated 57 ms
+slice: sounds 87 started, 0 skipped late, 0 dropped, 5 cancelled; 508 rollbacks replaying 114.5 s, 0 late keys
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [2, 3, 2, 1, 3], denied [0, 0, 0, 0, 0]
+slice: survivors minute Some(0), run 26.157s, spawned 61, alive 15: {"vs-bat3": 15}
+slice: frame work median 0.05 ms, p95 0.31, p99 0.47 (106 frames a second, paced while hidden); rollbacks re-simulated 97 ms
+slice: sounds 149 started, 0 skipped late, 0 dropped, 7 cancelled; 795 rollbacks replaying 179.2 s, 0 late keys
+slice: run over (Stopped), 32 s; sounds 173 started, 0 skipped late, 0 dropped

@@ -2,7 +2,7 @@
 use crate::slice::{HudState, KeyLight, Scene, World, clip::Clip, damage, hud, live, scene};
 use render::{atlas::Atlases, capture, post::Frame};
 use std::path::Path;
-pub fn run(dir: &Path, garlic_rank: Option<u8>) -> Result<(), String> {
+pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Result<(), String> {
     if std::env::var_os("PS_NATIVE_BATCH").is_none() {
         let status = std::process::Command::new("taskpolicy")
             .arg("-b")
@@ -19,13 +19,39 @@ pub fn run(dir: &Path, garlic_rank: Option<u8>) -> Result<(), String> {
     }
     std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
     let mut world = World::load(None)?;
+    let wand = fixture.is_some_and(|(id, _)| id == sim::survivors::WeaponId::MagicWand);
     let old = "{\"minute\":0,\"minimum\":15,\"frequency\":1000,\"enemies\":[\"vs-bat3\"],\"bosses\":[],\"events\":[],\"treasure\":[]}";
     if !world.level.text.contains(old) {
         return Err("sword fixture minute0 changed".into());
     }
-    world.level.text=world.level.text.replacen(old,"{\"minute\":0,\"minimum\":0,\"frequency\":60000,\"enemies\":[],\"bosses\":[],\"events\":[],\"treasure\":[]}",1);
+    let row = if wand {
+        r#"{"minute":0,"minimum":8,"frequency":60000,"enemies":["vs-skeleton"],"bosses":[],"events":[],"treasure":[]}"#
+    } else {
+        r#"{"minute":0,"minimum":0,"frequency":60000,"enemies":[],"bosses":[],"events":[],"treasure":[]}"#
+    };
+    world.level.text = world.level.text.replacen(old, row, 1);
+    if wand {
+        let target = world
+            .lib
+            .enemies
+            .get_mut("vs-skeleton")
+            .ok_or("fixture skeleton missing")?;
+        target.health = 1000.0;
+        target
+            .survivors
+            .as_mut()
+            .ok_or("fixture skeleton stats missing")?
+            .xp = 0.0;
+    }
+    let accent_beat = if wand {
+        9.0
+    } else if fixture.is_some() {
+        6.0
+    } else {
+        4.0
+    };
     let period = 60.0 / 128.0;
-    let beats: Vec<_> = (0..=12)
+    let beats: Vec<_> = (0..=20)
         .map(|i| stream::Beat {
             t: f64::from(i) * period,
             known_at: (f64::from(i) * period - period).max(0.0),
@@ -36,7 +62,7 @@ pub fn run(dir: &Path, garlic_rank: Option<u8>) -> Result<(), String> {
     let times: Vec<_> = beats.iter().map(|b| b.t).collect();
     let log = stream::StreamLog {
         beats,
-        ticks: (0..=120)
+        ticks: (0..=160)
             .map(|i| stream::Tick {
                 t: f64::from(i) * 0.05,
                 known_at: f64::from(i) * 0.05,
@@ -49,8 +75,8 @@ pub fn run(dir: &Path, garlic_rank: Option<u8>) -> Result<(), String> {
             })
             .collect(),
         forecasts: Some(vec![stream::Forecast {
-            t: if garlic_rank.is_some() { 6.0 } else { 4.0 } * period,
-            known_at: if garlic_rank.is_some() { 5.0 } else { 3.0 } * period,
+            t: accent_beat * period,
+            known_at: (accent_beat - 1.0) * period,
             cycle: 4.0,
             confidence: 1.0,
         }]),
@@ -58,7 +84,7 @@ pub fn run(dir: &Path, garlic_rank: Option<u8>) -> Result<(), String> {
     };
     let mut replay = stream::Replay::new(log);
     let mut engine = world.engine(true)?;
-    if let Some(rank) = garlic_rank {
+    if let Some((id, rank)) = fixture {
         engine.feed(|l| replay.feed_to(l, 0.0));
         engine.frame(0.0, 0.0);
         // Presentation-only initial loadout. Lead zero avoids speculative restore
@@ -66,8 +92,8 @@ pub fn run(dir: &Path, garlic_rank: Option<u8>) -> Result<(), String> {
         for _ in 0..rank {
             engine
                 .sim
-                .learn_survivor_weapon(sim::survivors::WeaponId::Garlic)
-                .map_err(|e| format!("fixture Garlic: {e:?}"))?;
+                .learn_survivor_weapon(id)
+                .map_err(|e| format!("fixture weapon: {e:?}"))?;
         }
     }
     let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
@@ -77,18 +103,18 @@ pub fn run(dir: &Path, garlic_rank: Option<u8>) -> Result<(), String> {
     let mut scene = Scene::default();
     let (mut normal, mut accent) = (false, false);
     let (mut shots, mut heavy) = (0, 0);
-    for tick in 1..=480 {
+    for tick in 1..=if wand { 720 } else { 480 } {
         let s = f64::from(tick) / 120.0;
         engine.feed(|l| replay.feed_to(l, s));
-        engine.frame(s, if garlic_rank.is_some() { 0.0 } else { 0.3 });
+        engine.frame(s, if fixture.is_some() { 0.0 } else { 0.3 });
         let mut moments = engine.view.borrow_mut().take_moments();
-        if garlic_rank.is_some() {
+        if fixture.is_some() {
             // Isolate the aura in this presentation fixture; inventory/combat are unchanged.
             moments.retain(|m| !matches!(m,eval::live::Moment::WeaponFire(s) if s.id.is_sword()));
         }
         for m in &moments {
             if let eval::live::Moment::WeaponFire(shot) = m {
-                if garlic_rank.is_some() && shot.id != sim::survivors::WeaponId::Garlic {
+                if fixture.is_some_and(|(id, _)| shot.id != id) {
                     continue;
                 }
                 shots += 1;
@@ -169,7 +195,9 @@ pub fn run(dir: &Path, garlic_rank: Option<u8>) -> Result<(), String> {
         let rgba = gpu.rgba()?;
         clip.frame(&rgba)?;
         if !normal
-            && s >= if garlic_rank.is_some() {
+            && s >= if wand {
+                1.3
+            } else if fixture.is_some() {
                 0.1
             } else {
                 2.0 * period + 0.1
@@ -179,7 +207,9 @@ pub fn run(dir: &Path, garlic_rank: Option<u8>) -> Result<(), String> {
             normal = true;
         }
         if !accent
-            && s >= if garlic_rank.is_some() {
+            && s >= if wand {
+                accent_beat * period + 0.1
+            } else if fixture.is_some() {
                 3.0
             } else {
                 4.0 * period + 0.1
@@ -192,17 +222,29 @@ pub fn run(dir: &Path, garlic_rank: Option<u8>) -> Result<(), String> {
     if !normal || !accent || heavy == 0 {
         return Err("sword fixture missed its normal/accent shots".into());
     }
-    clip.encode(&dir.join(if garlic_rank.is_some() {
+    clip.encode(&dir.join(if wand {
+        "homing-and-impact.mp4"
+    } else if fixture.is_some() {
         "aura-and-accent.mp4"
     } else {
         "spin-and-accent.mp4"
     }))?;
-    let setup = garlic_rank.map_or_else(
+    let setup = fixture.map_or_else(
         || "normal sword, speculative lead 0.3".to_owned(),
-        |rank| format!("Garlic rank {rank}, injected initial loadout, lead 0, sword FX hidden"),
+        |(id, rank)| {
+            format!(
+                "{} rank {rank}, injected initial loadout, lead 0, sword FX hidden",
+                id.as_str()
+            )
+        },
     );
+    let actors = if wand {
+        "8 skeletons, health 1000, XP 0"
+    } else {
+        "no enemies"
+    };
     eprintln!(
-        "weapon-check: {} frames at 30 fps, 1280x720, 128 BPM, {shots} matching real shots/{heavy} accent; {setup}; synthetic known beats/forecast, no enemies, no pacing/survival/rollback claim, silent capture",
+        "weapon-check: {} frames at 30 fps, 1280x720, 128 BPM, {shots} matching real shots/{heavy} accent; {setup}; synthetic known beats/forecast, {actors}, no pacing/survival/rollback claim, silent capture",
         clip.count()
     );
     Ok(())

@@ -1,0 +1,1 @@
+weapon-check: 180 frames at 30 fps, 1280x720, 128 BPM, 24 matching real shots/1 accent; magic-wand rank 8, injected initial loadout, lead 0, sword FX hidden; synthetic known beats/forecast, 8 skeletons, health 1000, XP 0, no pacing/survival/rollback claim, silent capture

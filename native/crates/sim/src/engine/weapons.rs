@@ -14,7 +14,7 @@ pub(super) struct GarlicAura {
 }
 
 impl Sim {
-    fn weapons_active(&self) -> bool {
+    pub(super) fn weapons_active(&self) -> bool {
         self.st.survivor.is_some()
             && !self.st.freeze.frozen
             && !self.st.blasting
@@ -24,6 +24,14 @@ impl Sim {
                 .level
                 .survivors
                 .is_some_and(|s| self.st.run_s < s.duration_s)
+    }
+    pub(super) fn weapon_accent(&self) -> bool {
+        self.log.forecasts.as_ref().is_some_and(|forecasts| {
+            self.st.forecasts.iter().any(|&i| {
+                let f = forecasts[i];
+                f.known_at <= self.st.s + 1e-9 && (f.t - self.st.s).abs() <= 1e-3
+            })
+        })
     }
     pub(super) fn weapon_stop(&self) -> f64 {
         if !self.weapons_active() {
@@ -76,6 +84,9 @@ impl Sim {
     }
     pub(super) fn tick_weapons(&mut self) {
         if !self.weapons_active() {
+            if self.st.blasting {
+                self.clear_missiles();
+            }
             return;
         }
         self.prepare_weapons();
@@ -97,12 +108,7 @@ impl Sim {
             let stats = p.stats.finalized();
             let weapon = weapon_catalog().get(id).level(rank);
             let hp = self.hero_pose(self.st.w);
-            let accent = self.log.forecasts.as_ref().is_some_and(|forecasts| {
-                self.st.forecasts.iter().any(|&i| {
-                    let f = forecasts[i];
-                    f.known_at <= self.st.s + 1e-9 && (f.t - self.st.s).abs() <= 1e-3
-                })
-            });
+            let accent = self.weapon_accent();
             let shot = Shot {
                 id,
                 rank,
@@ -113,13 +119,15 @@ impl Sim {
                 damage: weapon.power
                     * stats.might
                     * if id.is_sword() { period / 1.35 } else { 1.0 },
-                amount: if id.is_sword() {
+                amount: if id.is_sword() || matches!(id, WeaponId::MagicWand | WeaponId::HolyWand) {
                     1
                 } else {
                     weapon.amount(stats)
                 },
                 radius: if id.is_sword() {
                     crate::survivors::SWORD_BASE_RADIUS * weapon.area * stats.area
+                } else if matches!(id, WeaponId::MagicWand | WeaponId::HolyWand) {
+                    0.08 * crate::survivors::PX_PER_VS_UNIT * weapon.area * stats.area
                 } else if id == WeaponId::Garlic {
                     0.32 * crate::survivors::PX_PER_VS_UNIT * weapon.area * stats.area
                 } else {
@@ -142,6 +150,19 @@ impl Sim {
             };
             self.rec.fire(id.as_str(), self.st.s);
             self.rec.weapon_shot(shot);
+            if id == WeaponId::MagicWand {
+                self.launch_missile(shot);
+                for i in 1..weapon.amount(stats) {
+                    let offset = i as f64 * weapon.repeat_ms / 1000.0;
+                    self.st.q.push(
+                        self.st.s + offset,
+                        super::Ev::WandBullet(Box::new(Shot {
+                            ready_run: ready_run + offset,
+                            ..shot
+                        })),
+                    );
+                }
+            }
             if id == WeaponId::Garlic {
                 self.st.garlic = Some(GarlicAura {
                     shot,
@@ -172,6 +193,7 @@ impl Sim {
             }
         }
         self.tick_garlic();
+        self.tick_missiles();
     }
     fn tick_garlic(&mut self) {
         let Some(mut aura) = self.st.garlic.take() else {

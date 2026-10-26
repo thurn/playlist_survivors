@@ -461,6 +461,7 @@ pub trait Recorder {
     fn evolve(&mut self, id: &str, s: f64) {}
     fn fire(&mut self, weapon: &str, s: f64) {}
     fn weapon_shot(&mut self, shot: crate::survivors::Shot) {}
+    fn missile(&mut self, pose: crate::survivors::MissilePose) {}
     fn inventory(&mut self, inventory: crate::survivors::Inventory) {}
     fn chain(&mut self, p: ChainPoint) {}
     fn chain_point(&mut self, chain: usize, p: ChainPoint) {}
@@ -577,6 +578,9 @@ impl<R: Recorder + ?Sized> Recorder for std::rc::Rc<std::cell::RefCell<R>> {
     }
     fn weapon_shot(&mut self, shot: crate::survivors::Shot) {
         self.borrow_mut().weapon_shot(shot);
+    }
+    fn missile(&mut self, pose: crate::survivors::MissilePose) {
+        self.borrow_mut().missile(pose);
     }
     fn inventory(&mut self, inventory: crate::survivors::Inventory) {
         self.borrow_mut().inventory(inventory);
@@ -725,6 +729,7 @@ fn to_value<T: Serialize>(x: &T) -> Value {
 #[derive(Clone, Debug)]
 pub struct LogRecorder {
     pub weapon_shots: Vec<crate::survivors::Shot>,
+    pub missiles: Vec<crate::survivors::MissilePose>,
     pub inventories: Vec<crate::survivors::Inventory>,
     pub run_states: Vec<crate::survivors::RunState>,
     pub breaks: Vec<WarpBreak>,
@@ -760,6 +765,7 @@ impl Default for LogRecorder {
     fn default() -> LogRecorder {
         LogRecorder {
             weapon_shots: Vec::new(),
+            missiles: Vec::new(),
             inventories: Vec::new(),
             run_states: Vec::new(),
             breaks: Vec::new(),
@@ -793,6 +799,9 @@ impl Default for LogRecorder {
 }
 
 impl Recorder for LogRecorder {
+    fn missile(&mut self, pose: crate::survivors::MissilePose) {
+        self.missiles.push(pose);
+    }
     fn weapon_shot(&mut self, shot: crate::survivors::Shot) {
         self.weapon_shots.push(shot);
     }

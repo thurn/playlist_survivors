@@ -1287,6 +1287,20 @@ and a silent synthetic presentation capture. Crowd balance and listening remain
 later sweeps/operator rows; no offer preference or easy knob was retuned.
 
 ### SH5
+
+Magic Wand is offered by the existing table and uses source power/Amount/pierce
+at ranks 1/8, swept near-first collisions and bounded homing. Each burst starts
+on the eighth grid after its unsnapped cooldown, then keeps source 100 ms repeats;
+separately reserving every projectile on sixteenths would throttle slow-tempo
+maxed builds. At 70/128/174 BPM, rank 8+Amount2/Cooldown0.6 emits 398/400/400 bullets
+in 40 s versus 400 source-rate bullets, with only 4/2/2 pending. Raw remaining burst
+delays hold through freeze. Causal projectile records drive ten-sample glow
+trails; contact heads/sparks disappear on their grid reaction. [SH5 evidence](../../native/evidence/sh5/README.md)
+keeps the source tests, real-XP rollback equality and explicitly labeled rank 8
+stills/silent capture. The normal short File run acquires Garlic; Wand is
+covered separately. Integrated balance, dense GPU timing and listening remain
+later sweeps/operator checks; no offer preference or easy knob was retuned.
+
 ### SH6
 
 Early bats, slime, bee and skeleton now step and animate on their assigned

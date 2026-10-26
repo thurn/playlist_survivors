@@ -30,6 +30,7 @@ mod foes;
 mod freeze;
 mod hero;
 mod judge;
+mod missiles;
 mod observe;
 mod offers;
 mod pickups;
@@ -336,6 +337,8 @@ enum Ev {
         period: f64,
         generation: Option<u64>,
     },
+    MissileEnd(Box<crate::survivors::MissilePose>),
+    WandBullet(Box<crate::survivors::Shot>),
     EnemyImpact {
         foe: usize,
         fate: crate::recorder::Fate,
@@ -461,7 +464,7 @@ impl Ev {
         match self {
             Ev::HitstopEnd => 0.0,
             Ev::EnemyWind { .. } | Ev::Wind(_) => 11.0,
-            Ev::EnemyImpact { .. } | Ev::Appear { .. } => 22.0,
+            Ev::EnemyImpact { .. } | Ev::MissileEnd(_) | Ev::Appear { .. } => 22.0,
             Ev::Freeze(_) => 0.5,
             Ev::FreePulse { .. } => 6.6,
             Ev::LevelDue { .. } => 2.0,
@@ -476,7 +479,7 @@ impl Ev {
             Ev::Auto { .. } => 10.0,
             Ev::Strike(_) => 12.0,
             Ev::Wave { .. } => 15.0,
-            Ev::Fire { .. } => 16.0,
+            Ev::Fire { .. } | Ev::WandBullet(_) => 16.0,
             Ev::Chain { .. } => 17.0,
             Ev::Gem { .. } | Ev::ChickenHeal => 20.0,
             Ev::Beat { .. } | Ev::Drain { .. } => 21.0,
@@ -928,6 +931,8 @@ struct SimState {
     survivor: Option<crate::survivors::Progress>,
     spawner: crate::survivors::Spawner,
     garlic: Option<weapons::GarlicAura>,
+    missiles: Vec<missiles::Missile>,
+    next_missile: usize,
     w: f64,
     rate_s: f64,
     q: Queue,
@@ -1769,6 +1774,8 @@ impl Sim {
                 generation,
             } => self.enemy_wind(peak, period, generation),
             Ev::EnemyImpact { foe, fate, hit } => self.rec.enemy_impact(foe, fate, &hit),
+            Ev::MissileEnd(pose) => self.rec.missile(*pose),
+            Ev::WandBullet(shot) => self.missile_burst_shot(*shot),
             Ev::HitstopEnd => {}
             Ev::Recoil { foe, multiplier } => self.survivor_recoil(foe, multiplier),
             Ev::Key(e) => {
@@ -1933,6 +1940,8 @@ fn fresh_state(env: &Env) -> SimState {
         run_s: 0.0,
         spawner: crate::survivors::Spawner::default(),
         garlic: None,
+        missiles: Vec::new(),
+        next_missile: 0,
         freeze: freeze::Freeze::default(),
         survivor: level
             .survivors
@@ -3069,6 +3078,309 @@ mod tests {
         stats.xp = 0.0;
         (rec, sim, def)
     }
+    fn wand_measurement(
+        rank: u8,
+    ) -> (
+        Rc<std::cell::RefCell<crate::recorder::LogRecorder>>,
+        Sim,
+        usize,
+    ) {
+        wand_measurement_at(120.0, rank)
+    }
+    fn wand_measurement_at(
+        bpm: f64,
+        rank: u8,
+    ) -> (
+        Rc<std::cell::RefCell<crate::recorder::LogRecorder>>,
+        Sim,
+        usize,
+    ) {
+        let (rec, mut sim, def) = garlic_measurement(bpm, 1);
+        sim.st.survivor.as_mut().unwrap().arsenal = crate::survivors::Arsenal::measurement_weapon(
+            crate::survivors::WeaponId::MagicWand,
+            rank,
+        );
+        Rc::get_mut(&mut sim.env).unwrap().input.lib.enemies[def]
+            .survivors
+            .as_mut()
+            .unwrap()
+            .knockback = 0.0;
+        (rec, sim, def)
+    }
+    #[test]
+    fn wand_source_rows_amount_and_burst_cadence() {
+        for (rank, amount, power, pierce) in [(1, 1, 1.0, 1.0), (8, 4, 3.0, 2.0)] {
+            let (rec, mut sim, def) = wand_measurement(rank);
+            sim.spawn_foe(def, 100.0, 0.0, Some(1000.0));
+            sim.advance_to(0.95);
+            let r = rec.borrow();
+            assert_eq!(r.weapon_shots.len(), amount);
+            assert_eq!(r.enemies[0].fates.len(), amount);
+            assert!(
+                r.enemies[0]
+                    .fates
+                    .iter()
+                    .all(|f| (f.damage - power).abs() < 1e-9)
+            );
+            assert!(r.weapon_shots.iter().all(|s| s.amount == 1
+                && s.pierce == pierce
+                && (s.radius - 0.08 * crate::survivors::PX_PER_VS_UNIT).abs() < 1e-9));
+            let fires: Vec<_> = r.weapon_shots.iter().map(|s| s.song).collect();
+            assert_eq!(
+                fires,
+                if rank == 1 {
+                    vec![0.0]
+                } else {
+                    vec![0.0, 0.1, 0.2, 0.3]
+                }
+            );
+            let initial = r.missiles[0];
+            assert!(
+                (initial.vx.hypot(initial.vy) - 1.65 * crate::survivors::PX_PER_VS_UNIT).abs()
+                    < 1e-9
+            );
+            eprintln!(
+                "Wand rank{rank}: amount{amount} power{power} pierce{pierce}, fires{fires:?}, target hits{}, radius{:.6}, speed{:.6}",
+                r.enemies[0].fates.len(),
+                initial.radius,
+                initial.vx.hypot(initial.vy)
+            );
+        }
+        let (rec, mut sim, _) = wand_measurement(8);
+        sim.log = Rc::new(StreamLog::default());
+        sim.st = super::fresh_state(&sim.env);
+        sim.init();
+        sim.st.survivor.as_mut().unwrap().arsenal =
+            crate::survivors::Arsenal::measurement_weapon(crate::survivors::WeaponId::MagicWand, 8);
+        sim.advance_to(0.5);
+        let fires: Vec<_> = rec.borrow().weapon_shots.iter().map(|s| s.song).collect();
+        assert_eq!(fires.len(), 4);
+        for (i, t) in fires.iter().enumerate() {
+            assert!((*t - i as f64 * 0.1).abs() < 1e-9);
+        }
+        eprintln!("Wand rank8 without grid: raw100ms burst {fires:?}");
+    }
+    #[test]
+    fn wand_swept_collision_orders_targets_and_spends_pierce_only_on_survivors() {
+        for near_health in [0.5, 100.0] {
+            let (rec, mut sim, def) = wand_measurement(1);
+            // Far target created first: collision order must follow distance, not arena ID.
+            sim.spawn_foe(def, 160.0, 0.0, Some(100.0));
+            sim.spawn_foe(def, 80.0, 0.0, Some(near_health));
+            sim.advance_to(0.001);
+            // Controlled long integration step stresses one swept segment crossing
+            // both bodies; ordinary Stats clamps would hide a fake high-speed test.
+            sim.st.w += 1.0;
+            sim.tick_missiles();
+            let r = rec.borrow();
+            assert_eq!(r.enemies[1].fates.len(), 1);
+            assert_eq!(r.enemies[0].fates.len(), usize::from(near_health < 1.0));
+        }
+        let (rec, mut sim, def) = wand_measurement(8);
+        for x in [80.0, 130.0, 180.0] {
+            sim.spawn_foe(def, x, 0.0, Some(100.0));
+        }
+        sim.advance_to(0.01);
+        sim.st.survivor.as_mut().unwrap().arsenal = crate::survivors::Arsenal::default(); // isolate one missile
+        sim.st.q.remove(&|e| matches!(e, Ev::WandBullet(_))); // isolate this one travelling missile
+        sim.advance_to(0.9);
+        let r = rec.borrow();
+        assert_eq!(
+            r.enemies.iter().map(|f| f.fates.len()).collect::<Vec<_>>(),
+            [1, 1, 0]
+        );
+        eprintln!(
+            "rank8 one missile: exactly2 surviving targets, third untouched; lethal overlaps preserve rank1 pierce; long-step swept hits are ordered near-first"
+        );
+    }
+    #[test]
+    fn wand_spent_head_waits_for_its_grid_aligned_impact() {
+        let (rec, mut sim, def) = wand_measurement(1);
+        sim.apply_survivor_stats(crate::survivors::StatDelta {
+            projectile_speed: 30.0,
+            ..Default::default()
+        });
+        sim.spawn_foe(def, 80.0, 0.0, Some(100.0));
+        sim.advance_to(0.1);
+        {
+            let r = rec.borrow();
+            assert_eq!(r.enemies[0].fates.len(), 1);
+            let head = r.missiles.last().unwrap();
+            assert!(
+                head.alive && head.vx == 0.0 && head.vy == 0.0,
+                "spent head holds before the next sixteenth"
+            );
+            assert!(
+                head.x < 80.0,
+                "stops at swept contact instead of overshooting the target"
+            );
+            assert!(!r.missiles.iter().any(|p| !p.alive));
+        }
+        sim.advance_to(0.126);
+        assert!(
+            !rec.borrow().missiles.last().unwrap().alive,
+            "head removed on the impact sixteenth"
+        );
+    }
+
+    #[test]
+    fn wand_turns_back_after_target_hit_memory_expires_and_respects_stat_bonuses() {
+        let (rec, mut sim, def) = wand_measurement(8);
+        sim.spawn_foe(def, 80.0, 0.0, Some(1000.0));
+        sim.advance_to(0.01);
+        sim.st.survivor.as_mut().unwrap().arsenal = crate::survivors::Arsenal::default();
+        sim.st.q.remove(&|e| matches!(e, Ev::WandBullet(_))); // isolate this one travelling missile
+        sim.advance_to(1.0);
+        assert_eq!(
+            rec.borrow().enemies[0].fates.len(),
+            1,
+            "per-projectile1000ms target memory"
+        );
+        sim.advance_to(2.8);
+        let r = rec.borrow();
+        assert_eq!(
+            r.enemies[0].fates.len(),
+            2,
+            "homing must turn180degrees when the original target is behind"
+        );
+        assert!(r.enemies[0].fates[1].w - r.enemies[0].fates[0].w >= 1.0);
+        drop(r);
+        let (rec, mut sim, def) = wand_measurement(1);
+        sim.apply_survivor_stats(crate::survivors::StatDelta {
+            might: 0.5,
+            projectile_speed: 0.5,
+            area: 0.5,
+            amount: 2.0,
+            cooldown: -0.4,
+            ..Default::default()
+        });
+        sim.spawn_foe(def, 100.0, 0.0, Some(1000.0));
+        sim.advance_to(0.65);
+        let r = rec.borrow();
+        assert_eq!(r.weapon_shots.len(), 3);
+        assert_eq!(r.enemies[0].fates.len(), 3);
+        assert!(
+            r.enemies[0]
+                .fates
+                .iter()
+                .all(|f| (f.damage - 1.5).abs() < 1e-9)
+        );
+        assert!(
+            (r.missiles[0].radius - 0.08 * crate::survivors::PX_PER_VS_UNIT * 1.5).abs() < 1e-9
+        );
+        assert!(
+            (r.missiles[0].vx.hypot(r.missiles[0].vy)
+                - 1.65 * crate::survivors::PX_PER_VS_UNIT * 1.5)
+                .abs()
+                < 1e-9
+        );
+    }
+
+    #[test]
+    fn wand_homes_on_current_targets_holds_in_freeze_and_culls_without_a_generic_lifespan() {
+        use crate::survivors::FreezeReason;
+        let (rec, mut sim, def) = wand_measurement(1);
+        let target = sim.spawn_foe(def, 300.0, 0.0, Some(100.0));
+        sim.advance_to(0.05);
+        sim.st.foes[target].y = 100.0;
+        sim.advance_to(0.2);
+        assert!(
+            rec.borrow().missiles.iter().any(|p| p.vy > 1.0),
+            "homes after target moves"
+        );
+        sim.freeze_at(0.21, FreezeReason::Paused);
+        sim.advance_to(0.22);
+        let held = rec.borrow().missiles.last().copied().unwrap();
+        sim.advance_to(2.0);
+        assert_eq!(
+            rec.borrow().missiles.last(),
+            Some(&held),
+            "no samples/motion while frozen"
+        );
+        let (rec, mut sim, _) = wand_measurement(1);
+        sim.advance_to(0.01);
+        sim.st.survivor.as_mut().unwrap().arsenal = crate::survivors::Arsenal::default();
+        sim.st.q.remove(&|e| matches!(e, Ev::WandBullet(_))); // isolate this one travelling missile
+        sim.advance_to(1.1);
+        assert!(
+            rec.borrow().missiles.last().unwrap().alive,
+            "generic1000ms duration is not a lifespan"
+        );
+        sim.advance_to(6.0);
+        assert!(
+            !rec.borrow().missiles.last().unwrap().alive,
+            "finite view/travel culling"
+        );
+    }
+
+    #[test]
+    fn wand_zero_speed_projectiles_still_have_a_finite_life() {
+        let (rec, mut sim, _) = wand_measurement(1);
+        sim.apply_survivor_stats(crate::survivors::StatDelta {
+            projectile_speed: -1.0,
+            ..Default::default()
+        });
+        sim.advance_to(0.001);
+        sim.st.survivor.as_mut().unwrap().arsenal = crate::survivors::Arsenal::default();
+        sim.st.q.remove(&|e| matches!(e, Ev::WandBullet(_)));
+        sim.advance_to(13.0);
+        let r = rec.borrow();
+        assert_eq!(r.missiles[0].vx, 0.0);
+        assert!(
+            !r.missiles.last().unwrap().alive,
+            "zero speed cannot evade the active-world-time cull"
+        );
+    }
+
+    #[test]
+    fn wand_max_burst_throughput_stays_bounded_at_three_tempos_and_holds_mid_burst() {
+        for bpm in [70.0, 128.0, 174.0] {
+            let (rec, mut sim, _) = wand_measurement_at(bpm, 8);
+            sim.apply_survivor_stats(crate::survivors::StatDelta {
+                amount: 2.0,
+                cooldown: -0.4,
+                ..Default::default()
+            });
+            sim.advance_to(40.0);
+            let fired = rec.borrow().weapon_shots.len();
+            assert!(
+                (388..=406).contains(&fired),
+                "{bpm}: expected400 source bullets with at most two bursts of boundary delay, got{fired}"
+            );
+            let pending = sim
+                .st
+                .q
+                .heap
+                .iter()
+                .filter(|e| matches!(e.ev, Ev::WandBullet(_)))
+                .count();
+            assert!(pending <= 12, "no growing sixteenth-serialization backlog");
+            eprintln!(
+                "{bpm}BPM rank8 +Amount2/Cooldown0.6: {fired}/40s vs400 source bullets, {pending} burst bullets pending"
+            );
+        }
+        let (rec, mut sim, _) = wand_measurement(8);
+        sim.freeze_at(0.15, crate::survivors::FreezeReason::Paused);
+        sim.advance_to(2.0);
+        assert_eq!(rec.borrow().weapon_shots.len(), 2);
+        key(&mut sim, 2.1, KeyEventKind::Press, InputKey::Pause);
+        key(&mut sim, 2.11, KeyEventKind::Release, InputKey::Pause);
+        sim.advance_to(2.9);
+        let r = rec.borrow();
+        let resume = r
+            .run_states
+            .iter()
+            .find(|r| r.song > 2.0 && r.frozen.is_none())
+            .unwrap()
+            .song;
+        assert!((r.weapon_shots[2].song - resume - 0.05).abs() < 1e-8);
+        assert!((r.weapon_shots[3].song - r.weapon_shots[2].song - 0.1).abs() < 1e-8);
+        eprintln!(
+            "mid-burst freeze: resume{resume:.6}, remaining bullets {:.6},{:.6} preserve50ms then100ms",
+            r.weapon_shots[2].song, r.weapon_shots[3].song
+        );
+    }
+
     #[test]
     fn garlic_source_rows_and_persistent_target_cadence() {
         for (rank, power, area, interval) in [(1, 0.5, 1.0, 1.3), (8, 1.5, 2.0, 1.0)] {

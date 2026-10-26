@@ -42,8 +42,8 @@ fn preferences_skip_unbuilt_and_keep_distinct_viable_choices() {
         current.map(|c| c.item),
         [
             Item::Weapon(WeaponId::Garlic),
-            Item::Weapon(WeaponId::Sword),
-            Item::Passive(PassiveId::Spinach)
+            Item::Weapon(WeaponId::MagicWand),
+            Item::Weapon(WeaponId::Sword)
         ]
     );
 }

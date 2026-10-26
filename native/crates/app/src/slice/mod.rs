@@ -68,6 +68,7 @@ mod sword;
 mod tap;
 mod tier;
 mod timing;
+mod wand;
 mod watchdog;
 mod weapons_check;
 
@@ -164,6 +165,7 @@ struct Options {
     cards_check: Option<PathBuf>,
     sword_check: Option<PathBuf>,
     garlic_check: Option<PathBuf>,
+    wand_check: Option<PathBuf>,
     volume: f32,
     click: bool,
     mute: bool,
@@ -218,6 +220,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         cards_check: None,
         sword_check: None,
         garlic_check: None,
+        wand_check: None,
         volume: 1.0,
         click: false,
         mute: false,
@@ -264,6 +267,13 @@ fn options(args: &[String]) -> Result<Options, String> {
                 o.cards_check = Some(
                     it.next()
                         .ok_or("--cards-check needs an output directory")?
+                        .into(),
+                );
+            }
+            "--wand-check" => {
+                o.wand_check = Some(
+                    it.next()
+                        .ok_or("--wand-check needs an output directory")?
                         .into(),
                 );
             }
@@ -552,8 +562,11 @@ pub fn run(args: &[String]) -> Result<(), String> {
             Err("the heard delay wasn't within 2 ms of M every minute".into())
         };
     }
+    if let Some(dir) = &opts.wand_check {
+        return weapons_check::run(dir, Some((sim::survivors::WeaponId::MagicWand, 8)));
+    }
     if let Some(dir) = &opts.garlic_check {
-        return weapons_check::run(dir, Some(1));
+        return weapons_check::run(dir, Some((sim::survivors::WeaponId::Garlic, 1)));
     }
     if let Some(dir) = &opts.sword_check {
         return weapons_check::run(dir, None);
