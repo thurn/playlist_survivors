@@ -86,6 +86,7 @@ impl Sim {
         if !self.weapons_active() {
             if self.st.blasting {
                 self.clear_missiles();
+                self.clear_bibles();
             }
             return;
         }
@@ -109,6 +110,14 @@ impl Sim {
             let weapon = weapon_catalog().get(id).level(rank);
             let hp = self.hero_pose(self.st.w);
             let accent = self.weapon_accent();
+            let period = if id == WeaponId::KingBible {
+                self.log.beats[..self.st.ingested.beats]
+                    .iter()
+                    .rfind(|b| b.t <= self.st.s + 1e-9)
+                    .map_or(0.0, |b| b.period)
+            } else {
+                period
+            };
             let shot = Shot {
                 id,
                 rank,
@@ -130,6 +139,8 @@ impl Sim {
                     0.08 * crate::survivors::PX_PER_VS_UNIT * weapon.area * stats.area
                 } else if id == WeaponId::Garlic {
                     0.32 * crate::survivors::PX_PER_VS_UNIT * weapon.area * stats.area
+                } else if id == WeaponId::KingBible {
+                    0.5 * (weapon.area * stats.area).min(4.5) * crate::survivors::PX_PER_VS_UNIT
                 } else {
                     0.0
                 },
@@ -163,6 +174,9 @@ impl Sim {
                     );
                 }
             }
+            if id == WeaponId::KingBible {
+                self.launch_bible(shot);
+            }
             if id == WeaponId::Garlic {
                 self.st.garlic = Some(GarlicAura {
                     shot,
@@ -194,6 +208,7 @@ impl Sim {
         }
         self.tick_garlic();
         self.tick_missiles();
+        self.tick_bibles();
     }
     fn tick_garlic(&mut self) {
         let Some(mut aura) = self.st.garlic.take() else {

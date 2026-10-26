@@ -19,6 +19,7 @@ pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Resul
     }
     std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
     let mut world = World::load(None)?;
+    let bible = fixture.is_some_and(|(id, _)| id == sim::survivors::WeaponId::KingBible);
     let wand = fixture.is_some_and(|(id, _)| id == sim::survivors::WeaponId::MagicWand);
     let old = "{\"minute\":0,\"minimum\":15,\"frequency\":1000,\"enemies\":[\"vs-bat3\"],\"bosses\":[],\"events\":[],\"treasure\":[]}";
     if !world.level.text.contains(old) {
@@ -43,7 +44,9 @@ pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Resul
             .ok_or("fixture skeleton stats missing")?
             .xp = 0.0;
     }
-    let accent_beat = if wand {
+    let accent_beat = if bible {
+        30.0
+    } else if wand {
         9.0
     } else if fixture.is_some() {
         6.0
@@ -51,7 +54,7 @@ pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Resul
         4.0
     };
     let period = 60.0 / 128.0;
-    let beats: Vec<_> = (0..=20)
+    let beats: Vec<_> = (0..=if bible { 48 } else { 20 })
         .map(|i| stream::Beat {
             t: f64::from(i) * period,
             known_at: (f64::from(i) * period - period).max(0.0),
@@ -62,7 +65,7 @@ pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Resul
     let times: Vec<_> = beats.iter().map(|b| b.t).collect();
     let log = stream::StreamLog {
         beats,
-        ticks: (0..=160)
+        ticks: (0..=if bible { 400 } else { 160 })
             .map(|i| stream::Tick {
                 t: f64::from(i) * 0.05,
                 known_at: f64::from(i) * 0.05,
@@ -103,7 +106,13 @@ pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Resul
     let mut scene = Scene::default();
     let (mut normal, mut accent) = (false, false);
     let (mut shots, mut heavy) = (0, 0);
-    for tick in 1..=if wand { 720 } else { 480 } {
+    for tick in 1..=if bible {
+        1800
+    } else if wand {
+        720
+    } else {
+        480
+    } {
         let s = f64::from(tick) / 120.0;
         engine.feed(|l| replay.feed_to(l, s));
         engine.frame(s, if fixture.is_some() { 0.0 } else { 0.3 });
@@ -193,9 +202,13 @@ pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Resul
             overlay: &overlay,
         });
         let rgba = gpu.rgba()?;
-        clip.frame(&rgba)?;
+        if !bible || s >= 6.8 {
+            clip.frame(&rgba)?;
+        }
         if !normal
-            && s >= if wand {
+            && s >= if bible {
+                8.1
+            } else if wand {
                 1.3
             } else if fixture.is_some() {
                 0.1
@@ -207,7 +220,9 @@ pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Resul
             normal = true;
         }
         if !accent
-            && s >= if wand {
+            && s >= if bible {
+                accent_beat * period + 0.6
+            } else if wand {
                 accent_beat * period + 0.1
             } else if fixture.is_some() {
                 3.0
@@ -222,7 +237,9 @@ pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Resul
     if !normal || !accent || heavy == 0 {
         return Err("sword fixture missed its normal/accent shots".into());
     }
-    clip.encode(&dir.join(if wand {
+    clip.encode(&dir.join(if bible {
+        "orbit-and-accent.mp4"
+    } else if wand {
         "homing-and-impact.mp4"
     } else if fixture.is_some() {
         "aura-and-accent.mp4"

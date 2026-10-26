@@ -1,0 +1,12 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sw1-bible/native/crates/sim)
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sw1-bible/native/crates/eval)
+   Compiling players v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sw1-bible/native/crates/players)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.78s
+     Running tests/live.rs (target/debug/deps/live-6bbfee6942df762e)
+
+running 1 test
+real XP offers: 22 picks applied once, 8676 matching records, 22 key rollbacks, deepest 0.420s
+test a_real_xp_offer_pick_applies_once_across_speculative_rollback ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.06s
+

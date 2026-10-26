@@ -24,6 +24,7 @@
 
 #![allow(clippy::many_single_char_names, clippy::manual_midpoint)] // (the TS names and arithmetic, as written)
 
+mod bible;
 mod combat;
 mod enemy_rhythm;
 mod foes;
@@ -934,6 +935,7 @@ struct SimState {
     spawner: crate::survivors::Spawner,
     garlic: Option<weapons::GarlicAura>,
     missiles: Vec<missiles::Missile>,
+    bibles: Vec<bible::BibleCycle>,
     next_missile: usize,
     w: f64,
     rate_s: f64,
@@ -1956,6 +1958,7 @@ fn fresh_state(env: &Env) -> SimState {
         spawner: crate::survivors::Spawner::default(),
         garlic: None,
         missiles: Vec::new(),
+        bibles: Vec::new(),
         next_missile: 0,
         freeze: freeze::Freeze::default(),
         survivor: level
@@ -3294,6 +3297,166 @@ mod tests {
             .knockback = 0.0;
         (rec, sim, def)
     }
+    fn bible_measurement(
+        bpm: f64,
+        rank: u8,
+    ) -> (
+        Rc<std::cell::RefCell<crate::recorder::LogRecorder>>,
+        Sim,
+        usize,
+    ) {
+        let (rec, mut sim, def) = wand_measurement_at(bpm, 1);
+        sim.st.survivor.as_mut().unwrap().arsenal = crate::survivors::Arsenal::measurement_weapon(
+            crate::survivors::WeaponId::KingBible,
+            rank,
+        );
+        (rec, sim, def)
+    }
+    #[test]
+    fn bible_source_damage_amount_lifetime_and_periodic_hit_memory() {
+        for (rank, amount, power, duration, interval) in
+            [(1, 1, 1.0, 3.0, 6.0), (8, 4, 3.0, 4.0, 7.0)]
+        {
+            let (rec, mut sim, def) = bible_measurement(120.0, rank);
+            let foe = sim.spawn_foe(def, 0.0, 0.0, Some(1000.0));
+            sim.st.foes[foe].r = 200.0;
+            sim.st.foes[foe].has_at = true;
+            sim.st.foes[foe].slot_until = f64::INFINITY; // Pin the giant test collider against hero separation.
+            sim.advance_to(duration + 0.49);
+            let r = rec.borrow();
+            let hits = &r.enemies[0].fates;
+            let windows = if rank == 1 { 2 } else { 3 };
+            assert_eq!(
+                hits.len(),
+                amount * windows,
+                "rank{rank}, world{}, fates{hits:?}, pose{:?}, foe{:?}",
+                sim.w(),
+                r.missiles.last(),
+                sim.pos(foe, sim.w())
+            );
+            eprintln!(
+                "Bible rank{rank} hit windows: {:?}",
+                hits.iter().map(|f| (f.w, f.damage)).collect::<Vec<_>>()
+            );
+            for (window, chunk) in hits.chunks(amount).enumerate() {
+                assert!(chunk.iter().all(|f| (if window == 0 {
+                    (0.0..=0.5).contains(&f.w)
+                } else {
+                    (f.w - window as f64 * 1.7).abs() < 0.011
+                }) && (f.damage - power).abs() < 1e-9));
+            }
+            let poses: Vec<_> = r
+                .missiles
+                .iter()
+                .filter(|p| p.w >= 0.5 && p.w <= 0.55)
+                .collect();
+            assert!(!poses.is_empty());
+            let area = if rank == 1 { 1.0 } else { 1.5 };
+            for p in poses {
+                let omega = if rank == 1 {
+                    2.1875
+                } else {
+                    std::f64::consts::PI
+                };
+                assert!(
+                    (p.vx.hypot(p.vy) / p.x.hypot(p.y) - omega).abs() < 1e-9,
+                    "actual orbit uses the selected source/cardinal speed"
+                );
+                assert!(
+                    (p.x.hypot(p.y) - 0.5 * area * crate::survivors::PX_PER_VS_UNIT).abs() < 1e-8
+                );
+                assert!(
+                    (p.radius - 0.08 * crate::survivors::PX_PER_VS_UNIT * (1.0 + 0.3 * area)).abs()
+                        < 1e-8
+                );
+            }
+            eprintln!(
+                "Bible rank{rank}: {amount} blades, damage{power}, active{duration}s, periodic1.7s windows{windows}, hits{}, raw cycle{interval}s",
+                hits.len()
+            );
+            drop(r);
+            sim.advance_to(interval + 0.01);
+            assert_eq!(rec.borrow().weapon_shots.len(), 2);
+            assert!((rec.borrow().weapon_shots[1].song - interval).abs() < 1e-8);
+        }
+        let (rec, mut sim, def) = bible_measurement(120.0, 1);
+        sim.advance_to(1.6);
+        let foe = sim.spawn_foe(def, 0.0, 0.0, Some(1000.0));
+        sim.st.foes[foe].r = 200.0;
+        sim.st.foes[foe].has_at = true;
+        sim.st.foes[foe].slot_until = f64::INFINITY;
+        sim.advance_to(1.69);
+        assert_eq!(rec.borrow().enemies[0].fates.len(), 1);
+        sim.advance_to(1.71);
+        assert_eq!(
+            rec.borrow().enemies[0].fates.len(),
+            2,
+            "memory clears at the cycle's 1.7s boundary, not 1.7s after late contact"
+        );
+    }
+    #[test]
+    fn bible_lethal_contact_frees_the_population_slot_in_the_same_step() {
+        let (rec, mut sim, def) = bible_measurement(120.0, 1);
+        let radius = 0.5 * crate::survivors::PX_PER_VS_UNIT;
+        let foe = sim.spawn_foe(def, radius, 0.0, Some(0.5));
+        sim.advance_to(0.01);
+        assert!(rec.borrow().enemies[0].fates.iter().any(|f| f.lethal));
+        assert!(!sim.st.foes[foe].alive);
+        assert!(
+            !sim.st.alive.contains(&foe),
+            "a Bible kill cannot occupy the alive population until the following weapon tick"
+        );
+    }
+
+    #[test]
+    fn bible_bonuses_radius_cap_and_freeze_follow_active_world_time() {
+        let (rec, mut sim, _) = bible_measurement(120.0, 8);
+        sim.apply_survivor_stats(crate::survivors::StatDelta {
+            might: 0.5,
+            amount: 2.0,
+            area: 9.0,
+            projectile_speed: 2.0,
+            duration: 0.5,
+            cooldown: -0.4,
+            ..Default::default()
+        });
+        sim.advance_to(0.6);
+        let shot = rec.borrow().weapon_shots[0];
+        assert_eq!(shot.amount, 6);
+        assert!((shot.damage - 4.5).abs() < 1e-9);
+        assert!((shot.duration_s - 6.0).abs() < 1e-9);
+        let p = *rec.borrow().missiles.last().unwrap();
+        let radius = 2.25 * crate::survivors::PX_PER_VS_UNIT;
+        assert!(
+            (p.x.hypot(p.y) - radius).abs() < 1e-8,
+            "orbit caps Area at4.5"
+        );
+        assert!((p.vx.hypot(p.vy) - radius * 10.5).abs() < 1e-8);
+        sim.freeze_at(0.613, crate::survivors::FreezeReason::Paused);
+        sim.advance_to(0.62);
+        let held = rec.borrow().missiles.clone();
+        sim.advance_to(2.0);
+        assert_eq!(rec.borrow().missiles, held);
+        key(&mut sim, 2.1, KeyEventKind::Press, InputKey::Pause);
+        key(&mut sim, 2.11, KeyEventKind::Release, InputKey::Pause);
+        sim.advance_to(3.0);
+        assert_eq!(
+            sim.st.bibles.len(),
+            1,
+            "song pause did not consume six-second duration"
+        );
+        let offset = sim.s() - sim.w();
+        sim.advance_to(offset + 6.6);
+        assert!(sim.st.bibles.is_empty());
+        assert!(
+            !rec.borrow().missiles.last().unwrap().alive,
+            "view receives cleanup after the half-second visual fade"
+        );
+        eprintln!(
+            "Bible bonuses: damage4.5, Amount6, active6s, Area15 orbit capped2.25U, speed10.5rad/s; fractional freeze holds samples and world lifetime"
+        );
+    }
+
     #[test]
     fn wand_source_rows_amount_and_burst_cadence() {
         for (rank, amount, power, pierce) in [(1, 1, 1.0, 1.0), (8, 4, 3.0, 2.0)] {

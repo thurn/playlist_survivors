@@ -1371,6 +1371,20 @@ offer, stat or easy knob changed. See
 ### SH10
 ### SH11
 ### SW1
+
+King Bible now emits source-duration cycles with evenly spaced orbiting blades,
+Area-capped radius, per-blade periodic 1.7 s hit memory and KB 5. Cycles restart
+on beats; a compatible cardinal lattice within ±15% of source angular speed
+locks that incarnation, otherwise source speed stays. Snapshots own motion and
+memory; shared bounded projectile records drive blade art/afterimages, cleanup
+and exact fire/contact cues. Rank 1/8 tests retain damage 1/3, Amount 1/4,
+duration 3/4 s and raw cycle 6/7 s. Real high-XP card choices acquire Bible and
+settle 8,676 records identically with delayed confirms; this is not balance
+proof. Kept normal/accent stills and silent clip are a labelled synthetic
+no-enemy fixture. See [SW1 evidence](../../native/evidence/sw1/README.md), including
+phase/tempo limits and source audit. Run from `native/` with
+`cargo run --release -p app -- --playlist playlists/survivors-30.m3u --delayed`.
+
 ### SW2
 ### SW3
 ### SW4

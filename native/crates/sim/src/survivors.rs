@@ -1,6 +1,8 @@
 //! State the survivors sim publishes while song time continues through a freeze.
 
 mod arsenal;
+mod bible;
+pub use bible::*;
 mod offers;
 pub use offers::*;
 mod spawning;

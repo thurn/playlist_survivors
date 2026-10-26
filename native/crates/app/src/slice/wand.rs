@@ -13,6 +13,12 @@ pub fn draw(
         let Some(head) = trail.last() else {
             continue;
         };
+        if !matches!(
+            head.weapon,
+            sim::survivors::WeaponId::MagicWand | sim::survivors::WeaponId::HolyWand
+        ) {
+            continue;
+        }
         let color = if head.accent {
             [0.8, 0.65, 1.0]
         } else {

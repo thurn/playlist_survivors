@@ -997,6 +997,7 @@ mod survivor_tests {
         for what in [
             sim::survivors::WeaponId::Garlic,
             sim::survivors::WeaponId::MagicWand,
+            sim::survivors::WeaponId::KingBible,
         ] {
             let (mut sounds, _) = decoded();
             let b = tests::beats(8, 0.5, 1.0);

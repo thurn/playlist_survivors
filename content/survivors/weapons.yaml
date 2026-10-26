@@ -34,7 +34,7 @@ weapons:
   - id: king-bible
     source: HOLYBOOK
     grid: beat
-    implemented: false
+    implemented: true
     evolutionOf: null
     requires: null
     levels:

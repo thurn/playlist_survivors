@@ -1434,7 +1434,9 @@ impl Engine {
                 Record::Sound(Caused {
                     cause: Cause::Weapon { what, .. },
                     ..
-                }) if shown.run.is_some() && matches!(what.as_str(), "garlic" | "magic-wand") => {
+                }) if shown.run.is_some()
+                    && matches!(what.as_str(), "garlic" | "magic-wand" | "king-bible") =>
+                {
                     None
                 }
                 Record::Sound(c) => Some(c.cause.clone()),
@@ -1442,7 +1444,9 @@ impl Engine {
                     if shown.run.is_some()
                         && matches!(
                             shot.id,
-                            sim::survivors::WeaponId::Garlic | sim::survivors::WeaponId::MagicWand
+                            sim::survivors::WeaponId::Garlic
+                                | sim::survivors::WeaponId::MagicWand
+                                | sim::survivors::WeaponId::KingBible
                         ) =>
                 {
                     Some(Cause::WeaponPulse {
@@ -1462,6 +1466,7 @@ impl Engine {
                                             *id,
                                             sim::survivors::WeaponId::Garlic
                                                 | sim::survivors::WeaponId::MagicWand
+                                                | sim::survivors::WeaponId::KingBible
                                         )
                                 })
                                 .map(|what| Cause::WeaponImpact {

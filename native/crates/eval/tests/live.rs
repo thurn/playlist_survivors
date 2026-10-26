@@ -721,7 +721,17 @@ fn fast_offer_fixture() -> (ContentLibrary, stream::StreamLog) {
 
 #[test]
 fn a_real_xp_offer_pick_applies_once_across_speculative_rollback() {
-    let (content, log) = fast_offer_fixture();
+    let (mut content, log) = fast_offer_fixture();
+    // A bounded high-XP fixture reaches Bible through actual cards before
+    // stationary Garlic kills leave the magnet. This is not pacing evidence.
+    content
+        .enemies
+        .get_mut("vs-bat3")
+        .unwrap()
+        .survivors
+        .as_mut()
+        .unwrap()
+        .xp = 200.0;
     let run = |lead: f64, late: f64| {
         let mut e = Engine::new(
             &source("levels/survivors.yaml"),
@@ -739,7 +749,7 @@ fn a_real_xp_offer_pick_applies_once_across_speculative_rollback() {
         e.feed(|out| *out = log.clone());
         let mut picked = None;
         let mut picks = 0;
-        for k in 1..=2000 {
+        for k in 1..=4000 {
             let now = f64::from(k) / 100.0;
             let offer = e.view.borrow().run.and_then(|r| r.offer);
             if let Some(o) = offer {
@@ -754,7 +764,7 @@ fn a_real_xp_offer_pick_applies_once_across_speculative_rollback() {
             }
             e.frame(now, lead);
         }
-        e.frame(20.8, 0.0);
+        e.frame(40.8, 0.0);
         let inventory = e.sim.survivor_inventory().unwrap();
         let ranks: usize = inventory
             .weapons
@@ -781,6 +791,13 @@ fn a_real_xp_offer_pick_applies_once_across_speculative_rollback() {
                 .is_some(),
             "second real XP choice exercises projectiles and bursts across rollback"
         );
+        assert!(
+            inventory
+                .weapons
+                .rank(sim::survivors::WeaponId::KingBible)
+                .is_some(),
+            "real XP choices exercise orbit cycles and per-blade memories across rollback"
+        );
         assert_eq!(ranks, 1 + picks, "each confirm applied exactly one rank");
         (e.settled_log.take().unwrap(), inventory, e.stats, picks)
     };
@@ -791,6 +808,20 @@ fn a_real_xp_offer_pick_applies_once_across_speculative_rollback() {
     assert!(stats.key_rollbacks > 0);
     assert_eq!(plain.len(), late.len());
     assert_same(&plain, &late);
+    let mut orbit_lives = std::collections::BTreeMap::new();
+    for (_, record) in &plain {
+        if let Record::Missile(p) = record
+            && p.weapon == sim::survivors::WeaponId::KingBible
+        {
+            let life = orbit_lives.entry(p.id).or_insert((p.w, p.w));
+            life.1 = p.w;
+        }
+    }
+    assert!(
+        orbit_lives.values().any(|(first, last)| last - first > 1.7),
+        "actual orbital motion spans a hit-memory reset across rollback"
+    );
+    eprintln!("actual Bible blade lifetimes in rollback fixture: {orbit_lives:?}");
     eprintln!(
         "real XP offers: {picks} picks applied once, {} matching records, {} key rollbacks, deepest {:.3}s",
         plain.len(),
@@ -1006,7 +1037,15 @@ fn sword_impact_sounds_follow_existing_grid_records_without_hash_records() {
 #[test]
 fn survivor_weapon_sounds_and_missile_trails_follow_actual_records() {
     use eval::live::Cause;
-    let (content, log) = fast_offer_fixture();
+    let (mut content, log) = fast_offer_fixture();
+    content
+        .enemies
+        .get_mut("vs-bat3")
+        .unwrap()
+        .survivors
+        .as_mut()
+        .unwrap()
+        .xp = 200.0;
     let mut e = Engine::new(
         &source("levels/survivors.yaml"),
         &content,
@@ -1024,7 +1063,7 @@ fn survivor_weapon_sounds_and_missile_trails_follow_actual_records() {
     let mut pulses = std::collections::BTreeMap::new();
     let mut contacts = std::collections::BTreeMap::new();
     let mut peak_missiles = 0;
-    for k in 1..=2400 {
+    for k in 1..=4800 {
         let now = f64::from(k) / 120.0;
         let offer = e.view.borrow().run.and_then(|r| r.offer);
         if let Some(o) = offer {
@@ -1048,7 +1087,9 @@ fn survivor_weapon_sounds_and_missile_trails_follow_actual_records() {
                     s, what, accent, ..
                 } if matches!(
                     what,
-                    sim::survivors::WeaponId::Garlic | sim::survivors::WeaponId::MagicWand
+                    sim::survivors::WeaponId::Garlic
+                        | sim::survivors::WeaponId::MagicWand
+                        | sim::survivors::WeaponId::KingBible
                 ) =>
                 {
                     assert!(all().any(|(t,r)| *t==s && matches!(r,Record::Moment(Moment::WeaponFire(shot)) if shot.id==what && shot.accent==accent)));
@@ -1057,14 +1098,16 @@ fn survivor_weapon_sounds_and_missile_trails_follow_actual_records() {
                 Cause::WeaponImpact { s, what, .. }
                     if matches!(
                         what,
-                        sim::survivors::WeaponId::Garlic | sim::survivors::WeaponId::MagicWand
+                        sim::survivors::WeaponId::Garlic
+                            | sim::survivors::WeaponId::MagicWand
+                            | sim::survivors::WeaponId::KingBible
                     ) =>
                 {
                     assert!(all().any(|(t,r)| *t==s && matches!(r,Record::Moment(Moment::EnemyImpact{hit}) if matches!(hit.as_ref(),Moment::Hit{what:id,..} if id==what.as_str()))));
                     *contacts.entry(what).or_insert(0usize) += 1;
                 }
                 Cause::Weapon { ref what, .. } => assert!(
-                    !matches!(what.as_str(), "garlic" | "magic-wand"),
+                    !matches!(what.as_str(), "garlic" | "magic-wand" | "king-bible"),
                     "legacy fire is replaced by typed projection"
                 ),
                 _ => {}
@@ -1089,6 +1132,7 @@ fn survivor_weapon_sounds_and_missile_trails_follow_actual_records() {
     for id in [
         sim::survivors::WeaponId::Garlic,
         sim::survivors::WeaponId::MagicWand,
+        sim::survivors::WeaponId::KingBible,
     ] {
         assert!(
             pulses.get(&id).copied().unwrap_or(0) > 0

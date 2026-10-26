@@ -1,0 +1,18 @@
+{
+  "source": "HolyBookProjectile.cs",
+  "sha256": "0691640af09fb1632119137a1c5c32600d0411f001993e9a381c31d148f4f18a",
+  "checked_facts": [
+    "body radius 8 legacy px; initial scale zero",
+    "grows to 1 + 0.3 * PArea over 0.5 s",
+    "orbit radius 0.5 * min(4.5, PArea) U",
+    "angular velocity 35 * 0.0625 * PSpeed rad/s",
+    "equally spaced initial angles",
+    "per-blade target set cleared by repeating HitBoxDelay timer",
+    "PDuration expiry, then 0.5 s visual shrink"
+  ],
+  "native_adaptations": [
+    "linear growth/shrink rather than a tween-library ease",
+    "combat ends at PDuration; shrink is presentation only",
+    "optional committed-period cardinal lock within 15% of source angular speed"
+  ]
+}

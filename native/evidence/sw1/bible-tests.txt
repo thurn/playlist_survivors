@@ -1,0 +1,25 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sw1-bible/native/crates/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 4.25s
+     Running unittests src/lib.rs (target/debug/deps/sim-1ebf1e278f138957)
+
+running 4 tests
+Bible orbit: 70 BPM, Speed1, Amount1, source2.187500000 rad/s -> 2.187500000, lockedfalse
+Bible orbit: 128 BPM, Speed1, Amount1, source2.187500000 rad/s -> 2.187500000, lockedfalse
+Bible orbit: 174 BPM, Speed1, Amount1, source2.187500000 rad/s -> 2.277654674, lockedtrue
+Bible orbit: 70 BPM, Speed1.6, Amount4, source3.500000000 rad/s -> 3.665191429, lockedtrue
+Bible orbit: 128 BPM, Speed1.6, Amount4, source3.500000000 rad/s -> 3.351032164, lockedtrue
+Bible orbit: 174 BPM, Speed1.6, Amount4, source3.500000000 rad/s -> 3.500000000, lockedfalse
+Bible orbit: 128 BPM, Speed1.6, Amount3, source3.500000000 rad/s -> 3.500000000, lockedfalse
+Bible orbit: 326 BPM, Speed1.3, Amount3, source2.843750000 rad/s -> 2.844886681, lockedtrue
+test survivors::bible::tests::bible_cardinal_lattice_uses_source_offsets_and_the_fifteen_percent_limit ... ok
+test engine::tests::bible_lethal_contact_frees_the_population_slot_in_the_same_step ... ok
+Bible rank1 hit windows: [(0.0, 1.0), (1.7, 1.0)]
+Bible rank1: 1 blades, damage1, active3s, periodic1.7s windows2, hits2, raw cycle6s
+Bible bonuses: damage4.5, Amount6, active6s, Area15 orbit capped2.25U, speed10.5rad/s; fractional freeze holds samples and world lifetime
+test engine::tests::bible_bonuses_radius_cap_and_freeze_follow_active_world_time ... ok
+Bible rank8 hit windows: [(0.35, 3.0), (0.4083333333333333, 3.0), (0.4166666666666667, 3.0), (0.475, 3.0), (1.7, 3.0), (1.7, 3.0), (1.7, 3.0), (1.7, 3.0), (3.4, 3.0), (3.4, 3.0), (3.4, 3.0), (3.4, 3.0)]
+Bible rank8: 4 blades, damage3, active4s, periodic1.7s windows3, hits12, raw cycle7s
+test engine::tests::bible_source_damage_amount_lifetime_and_periodic_hit_memory ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 56 filtered out; finished in 0.02s
+

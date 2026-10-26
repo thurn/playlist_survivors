@@ -30,6 +30,7 @@
 //!     playlist-survivors --bench [--check]  # the frame's work (sim, evaluate, encode) over 60 s of it, offscreen
 
 mod apps;
+mod bible;
 mod calibration;
 mod cards;
 mod clip;
@@ -167,6 +168,7 @@ struct Options {
     sword_check: Option<PathBuf>,
     garlic_check: Option<PathBuf>,
     wand_check: Option<PathBuf>,
+    bible_check: Option<PathBuf>,
     pickups_check: Option<PathBuf>,
     passives_check: Option<PathBuf>,
     volume: f32,
@@ -224,6 +226,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         sword_check: None,
         garlic_check: None,
         wand_check: None,
+        bible_check: None,
         pickups_check: None,
         passives_check: None,
         volume: 1.0,
@@ -286,6 +289,13 @@ fn options(args: &[String]) -> Result<Options, String> {
                 o.pickups_check = Some(
                     it.next()
                         .ok_or("--pickups-check needs an output directory")?
+                        .into(),
+                );
+            }
+            "--bible-check" => {
+                o.bible_check = Some(
+                    it.next()
+                        .ok_or("--bible-check needs an output directory")?
                         .into(),
                 );
             }
@@ -586,6 +596,9 @@ pub fn run(args: &[String]) -> Result<(), String> {
     }
     if let Some(dir) = &opts.pickups_check {
         return pickups::check::run(dir);
+    }
+    if let Some(dir) = &opts.bible_check {
+        return weapons_check::run(dir, Some((sim::survivors::WeaponId::KingBible, 8)));
     }
     if let Some(dir) = &opts.wand_check {
         return weapons_check::run(dir, Some((sim::survivors::WeaponId::MagicWand, 8)));

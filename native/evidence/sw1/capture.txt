@@ -1,0 +1,1 @@
+weapon-check: 247 frames at 30 fps, 1280x720, 128 BPM, 3 matching real shots/1 accent; king-bible rank 8, injected initial loadout, lead 0, sword FX hidden; synthetic known beats/forecast, no enemies, no pacing/survival/rollback claim, silent capture

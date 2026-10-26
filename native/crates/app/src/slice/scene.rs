@@ -914,6 +914,7 @@ impl Scene {
         tier::weapons(view, &arms, art, &at, scale, out);
         self.sword.draw(now, art, &at, scale, out, lights);
         super::wand::draw(view, art, &at, scale, out, lights);
+        super::bible::draw(view, art, &at, scale, out, lights);
         let swell = 0.5 + 0.5 * (std::f64::consts::TAU * pulse.beat.min(1.0)).cos();
         if view.run.is_none() {
             gems::draw(

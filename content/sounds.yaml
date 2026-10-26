@@ -80,6 +80,8 @@ soundPalettes:
       magic-wand-accent-hit: [kenney/sci-impactMetal_000]
       king-bible-fire: [kenney/cloth2]
       king-bible-hit: [kenney/impactMetal_light_001]
+      king-bible-accent-fire: [rpg80/blade_03]
+      king-bible-accent-hit: [kenney/sci-impactMetal_000]
       lightning-ring-fire: [kenney/digital-laser1]
       lightning-ring-hit: [kenney/digital-zap1]
       offer-open: [kenney/confirmation_002]
