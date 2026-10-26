@@ -1212,6 +1212,17 @@ pass, including the real POSIX section selector and Cargo-metadata probes.
 See [tooling evidence](../../native/evidence/tooling-level-checks/README.md).
 
 ### SH1
+
+Survivors now draws the Kenney pixel font, neon item icons and rank pips in
+six weapon/six passive slots, XP/level, run timer, kills and HP under the hero.
+Damage labels use applied Fate damage ×10, merge per enemy/beat and cap at
+128. Minute-zero and full-slot offscreen captures are kept in
+[SH1 evidence](../../native/evidence/sh1/README.md); the latter is a synthetic
+layout/critical-style fixture, not gameplay progression. SW5 owns wiring real
+critical status. A pre-change recording and a fresh 20-second normal-damage
+File run replay the same hashes; presentation metadata preserves the old hash
+encoding. Readability during play remains an operator row.
+
 ### SH2
 ### SH3
 ### SH4

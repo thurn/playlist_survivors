@@ -457,3 +457,100 @@ mod tests {
         assert_eq!(glyph('§'), glyph('?'));
     }
 }
+
+/// One trimmed glyph, relative to a text baseline, from the licensed bitmap atlas.
+#[derive(Clone, Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BitmapGlyph {
+    pub rect: crate::atlas::Region,
+    pub advance: f32,
+    pub bearing_x: f32,
+    pub bearing_y: f32,
+}
+#[derive(Clone, Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BitmapFont {
+    pub line_height: f32,
+    pub ascent: f32,
+    pub glyphs: std::collections::HashMap<char, BitmapGlyph>,
+}
+impl BitmapFont {
+    fn glyph(&self, c: char) -> &BitmapGlyph {
+        let c = match c {
+            '×' => 'x',
+            '–' | '—' => '-',
+            '’' | '‘' => '\'',
+            '“' | '”' => '"',
+            c => c,
+        };
+        self.glyphs
+            .get(&c)
+            .or_else(|| self.glyphs.get(&'?'))
+            .expect("validated bitmap font")
+    }
+    fn factor(&self, scale: f32) -> f32 {
+        scale * 7.0 / self.glyph('M').rect.h as f32
+    }
+    /// Uses the HUD's existing font-pixel scale: capitals are 7*scale high.
+    pub fn width(&self, text: &str, scale: f32) -> f32 {
+        text.chars().map(|c| self.glyph(c).advance).sum::<f32>() * self.factor(scale)
+    }
+    #[allow(clippy::too_many_arguments)]
+    pub fn text(
+        &self,
+        text: &str,
+        x: f32,
+        y: f32,
+        scale: f32,
+        align: Align,
+        color: [f32; 4],
+        out: &mut Vec<Sprite>,
+    ) {
+        let factor = self.factor(scale);
+        let width = self.width(text, scale);
+        let x = match align {
+            Align::Left => x,
+            Align::Centre => x - width / 2.0,
+            Align::Right => x - width,
+        };
+        let baseline = y - self.glyph('M').bearing_y * factor;
+        for (shift, tint) in [(scale, [0.0, 0.0, 0.0, 0.7 * color[3]]), (0.0, color)] {
+            let mut pen = x;
+            for c in text.chars() {
+                let g = self.glyph(c);
+                if c != ' ' {
+                    out.push(
+                        Sprite::anchored(
+                            g.rect,
+                            pen + g.bearing_x * factor + shift,
+                            baseline + g.bearing_y * factor + shift,
+                            (0.0, 0.0),
+                            factor,
+                        )
+                        .tinted(tint),
+                    );
+                }
+                pen += g.advance * factor;
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod bitmap_tests {
+    use super::*;
+    #[test]
+    fn bitmap_text_uses_baselines_alignment_and_fallback() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../public/assets");
+        let art = crate::atlas::Atlases::load(&root).unwrap();
+        let face = &art.fonts["pixel"];
+        let mut out = Vec::new();
+        face.text("M1?", 100.0, 20.0, 2.0, Align::Right, [1.0; 4], &mut out);
+        let lit: Vec<_> = out.iter().filter(|s| s.tint == [1.0; 4]).collect();
+        assert_eq!(lit.len(), 3);
+        assert!((lit[0].y - 20.0).abs() < 0.01);
+        assert!(lit.iter().all(|s| s.region.page == 4));
+        assert_eq!(face.width("§", 2.0), face.width("?", 2.0));
+        assert!(lit.iter().all(|s| s.x + s.w <= 100.0 + 0.01));
+    }
+}

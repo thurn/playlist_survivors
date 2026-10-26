@@ -7,10 +7,11 @@ use std::collections::HashMap;
 use eval::field::{self, CHUNK, ChunkContent, FieldProp};
 use eval::live::{LiveView, Moment};
 use render::atlas::{Atlases, Facing};
-use render::font::{self, Align};
+use render::font::Align;
 use render::post::{Grade, Light};
 use sim::content::types::{ColorGrade, ZoneTheme};
 
+use super::damage;
 use super::fx::{Effects, Start, hex, rand01, rgb};
 use super::gems;
 use super::gfx::{Sprite, rect, square};
@@ -36,6 +37,7 @@ pub struct Look {
 /// What the scene keeps between frames: effects in flight, and when the hero was last bitten.
 #[derive(Default)]
 pub struct Scene {
+    numbers: damage::Numbers,
     effects: Effects,
     bitten: f64,
     /// The open field's chunks near the camera, by zone.
@@ -101,6 +103,8 @@ pub struct Layers {
     pub grade: Grade,
     /// The top of the hero's head on screen, for the overhead display.
     pub head: Option<(f32, f32)>,
+    pub feet: Option<(f32, f32)>,
+    pub overlay: Vec<Sprite>,
 }
 
 /// A zone's colour grade (`renderer.ts`'s GRADES): multipliers, lift, contrast and saturation.
@@ -253,6 +257,32 @@ enum Drawn {
 }
 
 impl Scene {
+    /// Offscreen presentation fixture, never applied to the simulation.
+    pub fn damage_fixture(&mut self, x: f64, y: f64, now: f64) {
+        self.numbers = damage::Numbers::default();
+        let clock = damage::Clock {
+            beats: &[],
+            start: 0.0,
+            free: 0.5,
+        };
+        self.numbers
+            .add(1, now, 1.0, false, x - 48.0, y - 8.0, now, &clock);
+        self.numbers
+            .add(1, now, 2.0, false, x - 48.0, y - 8.0, now, &clock);
+        self.numbers
+            .add(2, now, 10.0, true, x + 48.0, y - 8.0, now, &clock);
+    }
+    pub fn draw_damage(
+        &mut self,
+        art: &Atlases,
+        now: f64,
+        at: &dyn Fn(f64, f64) -> (f32, f32),
+        scale: f32,
+        out: &mut Vec<Sprite>,
+    ) {
+        self.numbers.draw(art, now, at, scale, out);
+    }
+
     /// When the hero was last bitten (host s).
     pub fn bitten(&self) -> f64 {
         self.bitten
@@ -283,7 +313,11 @@ impl Scene {
         lib: &ContentLibrary,
         looks: &HashMap<String, Look>,
         view: &LiveView,
+        clock: &damage::Clock,
     ) {
+        if view.run.is_some() {
+            self.numbers.moments(moments, now, clock);
+        }
         let mut fire = |id: &str, x: f64, y: f64, dir: f64, intensity: f64, start: Start| {
             if let Some(recipe) = lib.effects.get(id) {
                 self.effects.start(recipe, x, y, dir, intensity, start, now);
@@ -814,6 +848,7 @@ impl Scene {
                     let (sx, sy) = at(hero.x, hero.y - hero.z);
                     // (The sprites stand 64 tall, the head about 50 up.)
                     layers.head = Some(at(hero.x, hero.y - hero.z - 50.0));
+                    layers.feet = Some(at(hero.x, hero.y));
                     let facing =
                         [Facing::Up, Facing::Left, Facing::Down, Facing::Right][hero.facing.min(3)];
                     let flash =
@@ -861,6 +896,7 @@ impl Scene {
         if fa > layers.grade.flash[3] {
             layers.grade.flash = [1.0, 1.0, 1.0, fa];
         }
+        self.numbers.draw(art, now, &at, scale, &mut layers.overlay);
         self.fast = fast;
         if now - self.bitten < 0.6 {
             let a = (1.0 - (now - self.bitten) / 0.6) as f32;
@@ -897,6 +933,7 @@ pub fn listening_card(
     now: f64,
     bluetooth: bool,
     mode: &ListeningMode,
+    face: &render::font::BitmapFont,
     out: &mut Vec<Sprite>,
 ) {
     out.push(rect(0.0, 0.0, w, h, [0.02, 0.02, 0.04, 0.85]));
@@ -904,7 +941,7 @@ pub fn listening_card(
     let px = |k: f32| (k * u).round().max(1.0);
     let cx = w / 2.0;
     let top = h / 2.0 - 90.0 * u;
-    font::text(
+    face.text(
         "PLAYLIST SURVIVORS",
         cx,
         top,
@@ -914,7 +951,7 @@ pub fn listening_card(
         out,
     );
     let dots = ".".repeat((now * 2.0) as usize % 4);
-    font::text(
+    face.text(
         &format!("LISTENING{dots:<3}"),
         cx,
         top + 60.0 * u,
@@ -947,7 +984,7 @@ pub fn listening_card(
         mh + 6.0 * u,
         [1.0, 1.0, 1.0, 0.8],
     ));
-    font::text(
+    face.text(
         "PRESS ENTER TO START",
         cx,
         top + 120.0 * u,
@@ -956,7 +993,7 @@ pub fn listening_card(
         [0.85, 0.85, 0.9, 1.0],
         out,
     );
-    font::text(
+    face.text(
         "C CALIBRATE YOUR TAPS   V CALIBRATE THE DISPLAY",
         cx,
         top + 145.0 * u,
@@ -987,7 +1024,7 @@ pub fn listening_card(
     } else {
         [0.6, 0.6, 0.7, 1.0]
     };
-    font::text(
+    face.text(
         &line,
         cx,
         top + 170.0 * u,
@@ -1007,17 +1044,17 @@ pub fn listening_card(
             [1.0, 0.75, 0.44, 1.0],
         )
     };
-    font::text(line, cx, top + 195.0 * u, px(2.0), Align::Centre, tint, out);
+    face.text(line, cx, top + 195.0 * u, px(2.0), Align::Centre, tint, out);
     let warning = [1.0, 0.75, 0.4, 1.0];
     let mut y = top + 220.0 * u;
     if mode.delayed && mode.browser {
         let app = mode.app.unwrap_or("THE BROWSER").to_uppercase();
         let text = format!("{app}'S VIDEO WILL RUN {m} S AHEAD OF ITS SOUND");
-        font::text(&text, cx, y, px(2.0), Align::Centre, warning, out);
+        face.text(&text, cx, y, px(2.0), Align::Centre, warning, out);
         y += 25.0 * u;
     }
     if let Some(note) = mode.note {
-        font::text(
+        face.text(
             &note.to_uppercase(),
             cx,
             y,
@@ -1029,7 +1066,7 @@ pub fn listening_card(
         y += 25.0 * u;
     }
     if bluetooth {
-        font::text(
+        face.text(
             "BLUETOOTH OUTPUT: SYNC IS BEST-EFFORT",
             cx,
             y,
@@ -1061,6 +1098,7 @@ pub enum End {
 
 /// The run's end card, in the HUD's pixel font: dims the window, says how the run ended, how long
 /// it lasted and how it went, and how a new one starts.
+#[allow(clippy::too_many_arguments)]
 pub fn end_card(
     w: f32,
     h: f32,
@@ -1068,6 +1106,7 @@ pub fn end_card(
     seconds: u64,
     end: End,
     view: &LiveView,
+    face: &render::font::BitmapFont,
     out: &mut Vec<Sprite>,
 ) {
     let a = (age / 0.5).clamp(0.0, 1.0) as f32;
@@ -1086,8 +1125,8 @@ pub fn end_card(
     let cx = w / 2.0;
     let top = h / 2.0 - 100.0 * u;
     let grey = [0.69, 0.69, 0.75, a];
-    font::text(title, cx, top, px(4.0), Align::Centre, color, out);
-    font::text(
+    face.text(title, cx, top, px(4.0), Align::Centre, color, out);
+    face.text(
         "SURVIVED",
         cx,
         top + 50.0 * u,
@@ -1096,7 +1135,7 @@ pub fn end_card(
         grey,
         out,
     );
-    font::text(
+    face.text(
         &format!("{}:{:02}", seconds / 60, seconds % 60),
         cx,
         top + 72.0 * u,
@@ -1106,7 +1145,7 @@ pub fn end_card(
         out,
     );
     let [perfect, great, good] = view.ratings;
-    font::text(
+    face.text(
         &format!(
             "KILLS {}   PERFECT {perfect}   GREAT {great}   GOOD {good}",
             view.kills
@@ -1119,7 +1158,7 @@ pub fn end_card(
         out,
     );
     let blink = if (age * 1.5).fract() < 0.7 { 1.0 } else { 0.4 };
-    font::text(
+    face.text(
         "W WATCH YOUR RUN   PRESS ENTER FOR A NEW RUN",
         cx,
         top + 175.0 * u,

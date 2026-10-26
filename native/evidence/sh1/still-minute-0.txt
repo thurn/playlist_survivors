@@ -1,0 +1,2 @@
+still: song 0.500s, run Some(RunState { song: 0.49166666666666664, presentation_s: 0.49166666666666664, frozen_beat: None, elapsed: 0.49166666666666664, spawn_minute: Some(0), spawned: 15, offer: None, level: 1, max_hp: 120.0, world: 0.49166666666666664, frozen: None, selected: 0, confirmed: false }), alive 15, kills 0, damage-exempt false
+slice: wrote native/evidence/sh1/minute-0.png (896 sprites, 1 lights; 15 enemies, health 1.00, groove 0.00; zone first)

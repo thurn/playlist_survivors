@@ -1,0 +1,2 @@
+still: song 12.000s, run Some(RunState { song: 11.991666666666667, presentation_s: 11.991666666666667, frozen_beat: None, elapsed: 11.991666666666667, spawn_minute: Some(0), spawned: 28, offer: None, level: 1, max_hp: 120.0, world: 11.991666666666667, frozen: None, selected: 0, confirmed: false }), alive 14, kills 14, damage-exempt false
+slice: wrote native/evidence/sh1/full-slots.png (1310 sprites, 5 lights; 14 enemies, health 1.00, groove 0.00; zone galop-woods)

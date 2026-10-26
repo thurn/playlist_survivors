@@ -5,7 +5,7 @@
 use crate::atlas::{Page, Region};
 
 /// The most atlas pages bound at once.
-pub const MAX_PAGES: usize = 4;
+pub const MAX_PAGES: usize = 8;
 /// The page index of a solid (untextured) sprite.
 pub const SOLID: u32 = u32::MAX;
 
@@ -137,6 +137,10 @@ struct View { size: vec2<f32> };
 @group(0) @binding(4) var page2: texture_2d<f32>;
 @group(0) @binding(5) var page3: texture_2d<f32>;
 @group(0) @binding(6) var smooth_samp: sampler;
+@group(0) @binding(7) var page4: texture_2d<f32>;
+@group(0) @binding(8) var page5: texture_2d<f32>;
+@group(0) @binding(9) var page6: texture_2d<f32>;
+@group(0) @binding(10) var page7: texture_2d<f32>;
 struct Out {
     @builtin(position) pos: vec4<f32>,
     @location(0) uv: vec2<f32>,
@@ -166,15 +170,42 @@ fn vs(@builtin(vertex_index) v: u32, @location(0) rect: vec4<f32>, @location(1) 
 @fragment
 fn fs(i: Out) -> @location(0) vec4<f32> {
     var t = vec4<f32>(1.0);
-    if i.page == 0u { t = textureSampleLevel(page0, samp, i.uv, 0.0); }
-    else if i.page == 1u { t = textureSampleLevel(page1, samp, i.uv, 0.0); }
-    else if i.page == 2u { t = textureSampleLevel(page2, samp, i.uv, 0.0); }
-    // (The last page, the procedural textures, is drawn smooth: glows and rings scale a long way.)
-    else if i.page == 3u { t = textureSampleLevel(page3, smooth_samp, i.uv, 0.0); }
+    if i.page == 0u {
+        if (i.additive & 2u) != 0u { t = textureSampleLevel(page0, smooth_samp, i.uv, 0.0); }
+        else { t = textureSampleLevel(page0, samp, i.uv, 0.0); }
+    }
+    else if i.page == 1u {
+        if (i.additive & 2u) != 0u { t = textureSampleLevel(page1, smooth_samp, i.uv, 0.0); }
+        else { t = textureSampleLevel(page1, samp, i.uv, 0.0); }
+    }
+    else if i.page == 2u {
+        if (i.additive & 2u) != 0u { t = textureSampleLevel(page2, smooth_samp, i.uv, 0.0); }
+        else { t = textureSampleLevel(page2, samp, i.uv, 0.0); }
+    }
+    else if i.page == 3u {
+        if (i.additive & 2u) != 0u { t = textureSampleLevel(page3, smooth_samp, i.uv, 0.0); }
+        else { t = textureSampleLevel(page3, samp, i.uv, 0.0); }
+    }
+    else if i.page == 4u {
+        if (i.additive & 2u) != 0u { t = textureSampleLevel(page4, smooth_samp, i.uv, 0.0); }
+        else { t = textureSampleLevel(page4, samp, i.uv, 0.0); }
+    }
+    else if i.page == 5u {
+        if (i.additive & 2u) != 0u { t = textureSampleLevel(page5, smooth_samp, i.uv, 0.0); }
+        else { t = textureSampleLevel(page5, samp, i.uv, 0.0); }
+    }
+    else if i.page == 6u {
+        if (i.additive & 2u) != 0u { t = textureSampleLevel(page6, smooth_samp, i.uv, 0.0); }
+        else { t = textureSampleLevel(page6, samp, i.uv, 0.0); }
+    }
+    else if i.page == 7u {
+        if (i.additive & 2u) != 0u { t = textureSampleLevel(page7, smooth_samp, i.uv, 0.0); }
+        else { t = textureSampleLevel(page7, samp, i.uv, 0.0); }
+    }
     let c = t * i.tint;
     if c.a < 0.004 { discard; }
     // (Premultiplied: an additive sprite leaves what is below it, adding its light.)
-    return vec4<f32>(c.rgb * c.a, select(c.a, 0.0, i.additive == 1u));
+    return vec4<f32>(c.rgb * c.a, select(c.a, 0.0, (i.additive & 1u) == 1u));
 }
 ";
 
@@ -198,6 +229,7 @@ pub struct SpriteRenderer {
     slots: Vec<Slot>,
     next_slot: usize,
     page_sizes: Vec<(f32, f32)>,
+    smooth_pages: Vec<bool>,
     scratch: Vec<Instance>,
 }
 
@@ -264,6 +296,10 @@ impl SpriteRenderer {
                 texture_entry(3),
                 texture_entry(4),
                 texture_entry(5),
+                texture_entry(7),
+                texture_entry(8),
+                texture_entry(9),
+                texture_entry(10),
                 wgpu::BindGroupLayoutEntry {
                     binding: 6,
                     visibility: wgpu::ShaderStages::FRAGMENT,
@@ -291,6 +327,7 @@ impl SpriteRenderer {
             pipelines: Vec::new(),
             slots: Vec::new(),
             next_slot: 0,
+            smooth_pages: pages.iter().map(|p| p.name == "proc").collect(),
             page_sizes: pages
                 .iter()
                 .map(|p| (p.width as f32, p.height as f32))
@@ -374,7 +411,7 @@ impl SpriteRenderer {
             ];
             for (b, v) in self.views.iter().enumerate() {
                 entries.push(wgpu::BindGroupEntry {
-                    binding: 2 + b as u32,
+                    binding: if b < 4 { 2 + b as u32 } else { 3 + b as u32 },
                     resource: wgpu::BindingResource::TextureView(v),
                 });
             }
@@ -448,7 +485,18 @@ impl SpriteRenderer {
                 } else {
                     SOLID
                 },
-                additive: u32::from(s.additive),
+                // Bit 0 controls blending, bit 1 controls the atlas sampler.
+                additive: u32::from(s.additive)
+                    | if self
+                        .smooth_pages
+                        .get(r.page as usize)
+                        .copied()
+                        .unwrap_or(false)
+                    {
+                        2
+                    } else {
+                        0
+                    },
                 rot: s.rot,
                 skew: s.skew,
             });

@@ -109,8 +109,21 @@ pub struct Atlases {
     pub effects: HashMap<String, Effect>,
     pub tiles: HashMap<String, Vec<Region>>,
     pub props: HashMap<String, Vec<Prop>>,
-    /// The procedural textures (`crate::proc`), on the last page.
+    /// The procedural textures (`crate::proc`), before the UI pages.
     pub proc: HashMap<String, Region>,
+    pub fonts: HashMap<String, crate::font::BitmapFont>,
+    pub icons: HashMap<String, Region>,
+}
+
+#[derive(Deserialize)]
+struct RawFonts {
+    pages: Vec<String>,
+    fonts: HashMap<String, crate::font::BitmapFont>,
+}
+#[derive(Deserialize)]
+struct RawIcons {
+    pages: Vec<String>,
+    icons: HashMap<String, Region>,
 }
 
 #[derive(Deserialize)]
@@ -322,6 +335,35 @@ impl Atlases {
         }
         let (proc_page, proc) = crate::proc::page(pages.len() as u32);
         pages.push(proc_page);
+        let mut fonts: RawFonts = read_json(&dir.join("fonts.json"))?;
+        let font_base = pages.len() as u32;
+        for name in &fonts.pages {
+            pages.push(read_png(&dir.join(name))?);
+        }
+        for font in fonts.fonts.values_mut() {
+            if font.line_height <= 0.0
+                || font.ascent <= 0.0
+                || (32..=126).any(|c| !font.glyphs.contains_key(&char::from(c)))
+            {
+                return Err("incomplete bitmap font".into());
+            }
+            for glyph in font.glyphs.values_mut() {
+                glyph.rect = check(glyph.rect, font_base, &pages)?;
+            }
+        }
+        if !fonts.fonts.contains_key("pixel") {
+            return Err("missing pixel font".into());
+        }
+        let raw_icons: RawIcons = read_json(&dir.join("icons.json"))?;
+        let icon_base = pages.len() as u32;
+        for name in &raw_icons.pages {
+            pages.push(read_png(&dir.join(name))?);
+        }
+        let icons = raw_icons
+            .icons
+            .into_iter()
+            .map(|(id, r)| check(r, icon_base, &pages).map(|r| (id, r)))
+            .collect::<Result<HashMap<_, _>, _>>()?;
         Ok(Atlases {
             pages,
             characters,
@@ -329,6 +371,8 @@ impl Atlases {
             tiles,
             props,
             proc,
+            fonts: fonts.fonts,
+            icons,
         })
     }
 
@@ -350,7 +394,11 @@ mod tests {
     fn the_baked_atlases_load() {
         let a = Atlases::load(&assets()).unwrap();
         // (The three baked atlases and the procedural textures.)
-        assert_eq!(a.pages.len(), 4);
+        assert_eq!(a.pages.len(), 6);
+        assert_eq!(a.fonts["pixel"].glyphs.len(), 95);
+        assert_eq!(a.icons.len(), 16);
+        assert_eq!(a.fonts["pixel"].glyphs[&'A'].rect.page, 4);
+        assert_eq!(a.icons["sword-spin"].page, 5);
         // Adding source art repacks the page; its height is not a runtime contract.
         assert_eq!(a.pages[0].width, 4096);
         assert!((1..=4096).contains(&a.pages[0].height));

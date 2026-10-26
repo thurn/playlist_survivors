@@ -1,0 +1,69 @@
+changes: 25 paths since 089c08f
+friction: 46 records valid
+Using CPython 3.12.14 interpreter at: /opt/homebrew/opt/python@3.12/bin/python3.12
+Creating virtual environment at: .venv
+   Building ps-analysis @ file:///Users/dthurn/playlist_survivors/.worktrees/sh1-hud/tools/analysis
+      Built ps-analysis @ file:///Users/dthurn/playlist_survivors/.worktrees/sh1-hud/tools/analysis
+Installed 44 packages in 172ms
+All checks passed!
+WARN `--no-project` was provided, but no project was found
+...........................
+----------------------------------------------------------------------
+Ran 27 tests in 0.032s
+
+OK
+changes: 25 paths since 089c08f
+crates purity: stream, analysis, sim, eval, players pure
+native check-fast: app cli eval render
+    Checking cli v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh1-hud/native/crates/cli)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.41s
+
+running 36 tests
+....................................
+test result: ok. 36 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+
+running 8 tests
+........
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+
+running 5 tests
+.....
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 14 tests
+..............
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.36s
+
+
+running 3 tests
+...
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+
+running 2 tests
+..
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+
+running 8 tests
+........
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+Analyzing dependencies of crates in this directory...
+cargo-machete didn't find any unused dependencies in this directory. Good job!
+Done!
+native check-fast: passed in 7 s
+check-fast: passed in 9 s

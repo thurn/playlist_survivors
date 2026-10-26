@@ -64,6 +64,10 @@ pub enum Moment {
         x: f64,
         y: f64,
         lethal: bool,
+        /// Presentation metadata; excluded from the established settled hash encoding.
+        damage: f64,
+        song: f64,
+        critical: bool,
         foe: usize,
         source: &'static str,
         weight: &'static str,
@@ -674,10 +678,14 @@ impl Recorder for LiveRecorder {
             return;
         };
         let h = j.notes.hits[k].clone();
+        let song = j.notes.s;
         j.push(Record::Moment(Moment::Hit {
             x: fate.x,
             y: fate.y,
             lethal: fate.lethal,
+            damage: fate.damage,
+            song,
+            critical: false,
             foe: id,
             source: source_name(h.source),
             weight: h.weight,
@@ -721,6 +729,9 @@ impl Recorder for LiveRecorder {
                     x: fate.x,
                     y: fate.y,
                     lethal: fate.lethal,
+                    damage: fate.damage,
+                    song: h.s,
+                    critical: false,
                     foe: id,
                     source: source_name(h.source),
                     weight,
@@ -1392,8 +1403,44 @@ impl Cause {
 const FNV_OFFSET: u64 = 0xcbf2_9ce4_8422_2325;
 
 /// A settled record as its hash reads it.
+fn hit_record(hit: &Moment) -> Option<String> {
+    if let Moment::Hit {
+        x,
+        y,
+        lethal,
+        foe,
+        source,
+        weight,
+        what,
+        dir,
+        intensity,
+        ..
+    } = hit
+    {
+        // Keep the existing recording protocol: font/damage-label metadata is not a
+        // game-rule change and must not invalidate a previously recorded session.
+        Some(format!(
+            "Hit {{ x: {x:?}, y: {y:?}, lethal: {lethal:?}, foe: {foe:?}, source: {source:?}, weight: {weight:?}, what: {what:?}, dir: {dir:?}, intensity: {intensity:?} }}"
+        ))
+    } else {
+        None
+    }
+}
 fn record_bytes(s: f64, rec: &Record) -> String {
-    format!("{s:?} {rec:?}")
+    match rec {
+        Record::Moment(hit @ Moment::Hit { .. }) => {
+            format!("{s:?} Moment({})", hit_record(hit).expect("hit"))
+        }
+        Record::Moment(Moment::EnemyImpact { hit })
+            if matches!(hit.as_ref(), Moment::Hit { .. }) =>
+        {
+            format!(
+                "{s:?} Moment(EnemyImpact {{ hit: {} }})",
+                hit_record(hit).expect("hit")
+            )
+        }
+        _ => format!("{s:?} {rec:?}"),
+    }
 }
 
 /// The hash of settled records, as [`Engine::settled_hash`] runs it.
@@ -1484,4 +1531,99 @@ fn earliest_since(log: &StreamLog, before: [usize; 9]) -> Option<f64> {
     .into_iter()
     .flatten()
     .reduce(f64::min)
+}
+
+#[cfg(test)]
+mod presentation_hash_tests {
+    use super::*;
+    fn hit(damage: f64, song: f64, critical: bool) -> Moment {
+        Moment::Hit {
+            x: 1.0,
+            y: 2.0,
+            lethal: false,
+            damage,
+            song,
+            critical,
+            foe: 3,
+            source: "move",
+            weight: "light",
+            what: "sword".into(),
+            dir: 0.0,
+            intensity: 0.5,
+        }
+    }
+    #[test]
+    fn damage_label_metadata_preserves_the_recording_protocol() {
+        let expected = "4.0 Moment(Hit { x: 1.0, y: 2.0, lethal: false, foe: 3, source: \"move\", weight: \"light\", what: \"sword\", dir: 0.0, intensity: 0.5 })";
+        let a = Record::Moment(hit(1.0, 4.0, false));
+        let b = Record::Moment(hit(2.0, 5.0, true));
+        assert_eq!(record_bytes(4.0, &a), expected);
+        assert_eq!(record_bytes(4.0, &b), expected);
+        let impact = Record::Moment(Moment::EnemyImpact {
+            hit: Box::new(hit(1.0, 4.0, false)),
+        });
+        assert_eq!(
+            record_bytes(4.0, &impact),
+            "4.0 Moment(EnemyImpact { hit: Hit { x: 1.0, y: 2.0, lethal: false, foe: 3, source: \"move\", weight: \"light\", what: \"sword\", dir: 0.0, intensity: 0.5 } })"
+        );
+    }
+}
+
+#[cfg(test)]
+mod damage_source_tests {
+    use super::*;
+    #[test]
+    fn displayed_damage_and_time_come_from_the_actual_fate() {
+        let journal = Rc::new(RefCell::new(Journal::default()));
+        let mut recorder = LiveRecorder(Rc::clone(&journal));
+        recorder.hit(Hit {
+            source: HitSource::Move,
+            what: "sword".into(),
+            weight: sim::recorder::Weight::Light,
+            primary: true,
+            shape: Shape::Circle {
+                x: 0.0,
+                y: 0.0,
+                radius: 80.0,
+            },
+            dir: 0.0,
+            accent: 0.0,
+            damage: 99.0,
+            group: None,
+            id: 1.0,
+            s: 0.5,
+            w: 0.5,
+            section: 0.0,
+            energy: 0.5,
+            intensity: 0.5,
+        });
+        recorder.clock(0.75, 0.75, false);
+        recorder.fate(
+            7,
+            Fate {
+                w: 0.75,
+                x: 1.0,
+                y: 2.0,
+                hit: 1.0,
+                lethal: false,
+                damage: 2.75,
+            },
+        );
+        let j = journal.borrow();
+        let hit = j
+            .records
+            .iter()
+            .find_map(|(_, r)| {
+                if let Record::Moment(Moment::Hit {
+                    damage, song, foe, ..
+                }) = r
+                {
+                    Some((*damage, *song, *foe))
+                } else {
+                    None
+                }
+            })
+            .unwrap();
+        assert_eq!(hit, (2.75, 0.75, 7));
+    }
 }

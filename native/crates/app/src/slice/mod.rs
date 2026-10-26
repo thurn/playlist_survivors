@@ -31,6 +31,7 @@
 
 mod apps;
 mod calibration;
+mod damage;
 // The tap and output are the phase 0 spike's (57e846a^:native/spike), kept as they were.
 #[allow(clippy::pedantic, unused_qualifications, dead_code)]
 mod coreaudio;
@@ -153,6 +154,7 @@ struct Options {
     /// The still's track (`public/reactive/<id>`) and song time.
     still_track: Option<String>,
     still_at: Option<f64>,
+    hud_full_slots: bool,
     volume: f32,
     click: bool,
     mute: bool,
@@ -202,6 +204,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         still: None,
         still_track: None,
         still_at: None,
+        hud_full_slots: false,
         volume: 1.0,
         click: false,
         mute: false,
@@ -301,6 +304,7 @@ fn options(args: &[String]) -> Result<Options, String> {
                     o.stomp_extra_ms = Some(v);
                 }
             }
+            "--hud-full-slots" => o.hud_full_slots = true,
             "--still" => o.still = Some(it.next().ok_or("--still needs a path")?.into()),
             "--bench" => o.bench = true,
             "--still-track" => {
@@ -334,6 +338,9 @@ fn options(args: &[String]) -> Result<Options, String> {
         }
         stream::playlist::Playlist::load(&path)?;
         o.file = Some(path);
+    }
+    if o.hud_full_slots && o.still.is_none() {
+        return Err("--hud-full-slots needs --still".into());
     }
     if o.pick_first && !o.headless {
         return Err("--pick-first needs --headless".into());
@@ -516,8 +523,11 @@ pub fn run(args: &[String]) -> Result<(), String> {
             opts.still_at,
             opts.zen,
             level,
-            opts.pick_first,
-            opts.spawn_smoke,
+            StillOptions {
+                pick_first: opts.pick_first,
+                spawn_smoke: opts.spawn_smoke,
+                hud_full_slots: opts.hud_full_slots,
+            },
         );
     }
     if opts.bench {
@@ -1071,7 +1081,18 @@ fn bench(check: bool) -> Result<(), String> {
         }
         engine.frame(s, 0.2);
         let moments = engine.view.borrow_mut().take_moments();
-        scene.moments(&moments, s, &world.lib, &world.looks, &engine.view.borrow());
+        scene.moments(
+            &moments,
+            s,
+            &world.lib,
+            &world.looks,
+            &engine.view.borrow(),
+            &damage::Clock {
+                beats: &beats,
+                start: 0.0,
+                free: world.lib.hero.stride.free_period_s,
+            },
+        );
         scene.level(&engine.view.borrow(), s, &world.lib);
         let last_period = file
             .log
@@ -1114,15 +1135,17 @@ fn bench(check: bool) -> Result<(), String> {
             elapsed: s,
             bitten_ago: f64::INFINITY,
             head: layers.head,
+            feet: layers.feet,
             next_down: false,
             tier_flash: scene.tier_flash(s),
             delayed: 0.0,
             zen: true,
         };
-        let mut overlay = Vec::new();
+        let mut overlay = std::mem::take(&mut layers.overlay);
         hud::draw(
             &engine.view.borrow(),
             &state,
+            &art,
             w as f32,
             h as f32,
             &mut overlay,
@@ -1160,15 +1183,25 @@ fn bench(check: bool) -> Result<(), String> {
 
 /// 20 s of the house track's committed stream through the engine (a stride on each beat), drawn
 /// offscreen to a PNG, in zen mode or not.
+#[derive(Clone, Copy)]
+struct StillOptions {
+    pick_first: bool,
+    spawn_smoke: bool,
+    hud_full_slots: bool,
+}
 fn still(
     path: &Path,
     track: Option<&str>,
     at: Option<f64>,
     zen: bool,
     level: Option<&Path>,
-    pick_first: bool,
-    spawn_smoke: bool,
+    options: StillOptions,
 ) -> Result<(), String> {
+    let StillOptions {
+        pick_first,
+        spawn_smoke,
+        hud_full_slots,
+    } = options;
     let world = World::load(level)?;
     let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
     let stream_path = Path::new(env!("CARGO_MANIFEST_DIR")).join(format!(
@@ -1217,7 +1250,18 @@ fn still(
             }
         }
         let moments = engine.view.borrow_mut().take_moments();
-        scene.moments(&moments, s, &world.lib, &world.looks, &engine.view.borrow());
+        scene.moments(
+            &moments,
+            s,
+            &world.lib,
+            &world.looks,
+            &engine.view.borrow(),
+            &damage::Clock {
+                beats: &beats,
+                start: 0.0,
+                free: world.lib.hero.stride.free_period_s,
+            },
+        );
         scene.level(&engine.view.borrow(), s, &world.lib);
     }
     eprintln!(
@@ -1279,6 +1323,55 @@ fn still(
         h as f32,
         &mut layers,
     );
+    if hud_full_slots {
+        use sim::survivors::{Inventory, PassiveId, WeaponId};
+        let mut inventory = Inventory::default();
+        for id in [
+            WeaponId::Sword,
+            WeaponId::Garlic,
+            WeaponId::MagicWand,
+            WeaponId::KingBible,
+            WeaponId::LightningRing,
+            WeaponId::BloodyTear,
+        ] {
+            let max = sim::survivors::weapon_catalog().get(id).max_rank();
+            for _ in 0..max {
+                inventory
+                    .weapons
+                    .upgrade(id, max)
+                    .expect("six fixture slots");
+            }
+        }
+        for id in [
+            PassiveId::HollowHeart,
+            PassiveId::EmptyTome,
+            PassiveId::Spellbinder,
+            PassiveId::Duplicator,
+            PassiveId::Pummarola,
+            PassiveId::Spinach,
+        ] {
+            for _ in 0..id.max_rank() {
+                inventory
+                    .passives
+                    .upgrade(id, id.max_rank())
+                    .expect("six fixture slots");
+            }
+        }
+        engine.view.borrow_mut().inventory = Some(inventory);
+        if let Some(hero) = engine.view.borrow().hero {
+            scene.damage_fixture(hero.x, hero.y, end);
+            // The scene was composed above: add the fixture labels to its overlay now.
+            let (cx, cy, zoom) = engine.view.borrow().camera;
+            let scale = (w as f32 / 960.0).min(h as f32 / 640.0) * zoom as f32;
+            let at = |x: f64, y: f64| {
+                (
+                    w as f32 / 2.0 + (x - cx) as f32 * scale,
+                    h as f32 / 2.0 + (y - cy) as f32 * scale,
+                )
+            };
+            scene.draw_damage(&art, end, &at, scale, &mut layers.overlay);
+        }
+    }
     let mut keys = [KeyLight::default(); 5];
     keys[3] = KeyLight {
         held: true,
@@ -1297,15 +1390,17 @@ fn still(
         elapsed: engine.view.borrow().run.map_or(end, |r| r.elapsed),
         bitten_ago: f64::INFINITY,
         head: layers.head,
+        feet: layers.feet,
         next_down: bar == 3,
         tier_flash: scene.tier_flash(end),
         delayed: 0.0,
         zen,
     };
-    let mut overlay = Vec::new();
+    let mut overlay = std::mem::take(&mut layers.overlay);
     hud::draw(
         &engine.view.borrow(),
         &state,
+        &art,
         w as f32,
         h as f32,
         &mut overlay,
@@ -1340,6 +1435,14 @@ struct Watch {
     span: f64,
     arrivals: usize,
     keys: usize,
+    beats: Vec<f64>,
+}
+
+impl Watch {
+    fn remember_beats(&mut self, log: &stream::StreamLog) {
+        let seen = self.beats.len();
+        self.beats.extend(log.beats.iter().skip(seen).map(|b| b.t));
+    }
 }
 
 /// A calibration screen, between runs (docs/design/native-app.md, "Calibration (D2)").
@@ -1769,6 +1872,11 @@ impl App {
                 &self.world.lib,
                 &self.world.looks,
                 &self.engine.view.borrow(),
+                &damage::Clock {
+                    beats: self.beats.make_contiguous(),
+                    start: self.run_start,
+                    free: self.world.lib.hero.stride.free_period_s,
+                },
             );
             self.scene
                 .level(&self.engine.view.borrow(), now, &self.world.lib);
@@ -2000,14 +2108,22 @@ impl App {
             elapsed: self.engine.view.borrow().run.map_or(run_s, |r| r.elapsed),
             bitten_ago: now - self.scene.bitten(),
             head: layers.head.filter(|_| self.over.is_none()),
+            feet: layers.feet.filter(|_| self.over.is_none()),
             next_down: bar >= 0.75,
             tier_flash: self.scene.tier_flash(now),
             delayed: delay_of(self.audio.listening),
             zen: self.run_zen,
         };
-        let mut overlay = Vec::new();
+        let mut overlay = std::mem::take(&mut layers.overlay);
         if self.running || self.over.is_some() {
-            hud::draw(&self.engine.view.borrow(), &state, w, h, &mut overlay);
+            hud::draw(
+                &self.engine.view.borrow(),
+                &state,
+                &self.art,
+                w,
+                h,
+                &mut overlay,
+            );
         }
         if !self.running && self.over.is_none() {
             let tapped = self.audio.app.as_deref();
@@ -2037,6 +2153,7 @@ impl App {
                 now,
                 self.bluetooth,
                 &mode,
+                &self.art.fonts["pixel"],
                 &mut overlay,
             );
         }
@@ -2081,6 +2198,7 @@ impl App {
                 seconds.max(0.0) as u64,
                 end,
                 &self.engine.view.borrow(),
+                &self.art.fonts["pixel"],
                 &mut overlay,
             );
         }
@@ -2282,6 +2400,7 @@ impl App {
             span: seconds,
             arrivals: 0,
             keys: 0,
+            beats: Vec::new(),
         });
     }
 
@@ -2381,6 +2500,8 @@ impl App {
                 }
             });
             w.arrivals += n;
+            // The recorded stream's rebased, causal commits, independent of live music.
+            w.remember_beats(self.engine.stream());
         }
         while let Some(k) = self.run_keys.get(w.keys).filter(|k| k.s <= t) {
             self.engine
@@ -2395,6 +2516,11 @@ impl App {
             &self.world.lib,
             &self.world.looks,
             &self.engine.view.borrow(),
+            &damage::Clock {
+                beats: &w.beats,
+                start: 0.0,
+                free: self.world.lib.hero.stride.free_period_s,
+            },
         );
         if t > w.span + 0.5 {
             self.stop_watch();
@@ -3073,6 +3199,37 @@ impl ApplicationHandler for App {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn watch_labels_follow_only_the_rebased_recorded_beats() {
+        let mut watch = Watch {
+            began: 0.0,
+            s0: 2.8,
+            span: 20.0,
+            arrivals: 0,
+            keys: 0,
+            beats: Vec::new(),
+        };
+        let mut log = stream::StreamLog::default();
+        let beat = |t, known_at| {
+            eval::session::Entry::Beat(stream::Beat {
+                t,
+                known_at,
+                period: 0.7,
+                evidence: 1.0,
+            })
+        };
+        eval::session::rebase_append(&mut log, &beat(3.0, 2.9), watch.s0);
+        eval::session::rebase_append(&mut log, &beat(3.2, 3.3), watch.s0);
+        eval::session::rebase_append(&mut log, &beat(2.0, 1.9), watch.s0);
+        watch.remember_beats(&log);
+        watch.remember_beats(&log);
+        assert_eq!(watch.beats.len(), 1);
+        assert!((watch.beats[0] - 0.2).abs() < 1e-9);
+        eval::session::rebase_append(&mut log, &beat(3.7, 3.5), watch.s0);
+        watch.remember_beats(&log);
+        assert_eq!(watch.beats.len(), 2);
+        assert!((watch.beats[1] - 0.9).abs() < 1e-9);
+    }
     #[test]
     fn a_runs_music_is_resampled_from_its_start_with_silence_before_it() {
         let audio: Vec<i16> = (0..441).collect();

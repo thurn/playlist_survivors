@@ -73,6 +73,7 @@ pub struct HudState<'a> {
     pub bitten_ago: f64,
     /// The top of the hero's head on screen, if placed.
     pub head: Option<(f32, f32)>,
+    pub feet: Option<(f32, f32)>,
     /// Whether the next beat starts a bar.
     pub next_down: bool,
     /// The groove meter's flash after a tier up (1 to 0).
@@ -88,7 +89,18 @@ const HEART: [&str; 6] = [
     ".##.##.", "#######", "#######", ".#####.", "..###..", "...#...",
 ];
 
-pub fn draw(view: &LiveView, st: &HudState, w: f32, h: f32, out: &mut Vec<Sprite>) {
+pub fn draw(
+    view: &LiveView,
+    st: &HudState,
+    art: &render::atlas::Atlases,
+    w: f32,
+    h: f32,
+    out: &mut Vec<Sprite>,
+) {
+    if view.run.is_some() {
+        draw_survivors(view, st, art, w, h, out);
+        return;
+    }
     let u = (w / 960.0).min(h / 540.0);
     overhead(view, st, w, h, u, out);
     if view.run.is_some_and(|r| r.offer.is_some()) {
@@ -363,11 +375,17 @@ pub fn draw(view: &LiveView, st: &HudState, w: f32, h: f32, out: &mut Vec<Sprite
         out,
     );
     if let Some(run) = view.run.filter(|r| r.offer.is_some()) {
-        offer_cards(run, w, h, out);
+        offer_cards(run, w, h, &art.fonts["pixel"], out);
     }
 }
 
-fn offer_cards(run: sim::survivors::RunState, w: f32, h: f32, out: &mut Vec<Sprite>) {
+fn offer_cards(
+    run: sim::survivors::RunState,
+    w: f32,
+    h: f32,
+    face: &font::BitmapFont,
+    out: &mut Vec<Sprite>,
+) {
     let offer = run.offer.expect("offer screen");
     let u = (w / 960.0).min(h / 540.0);
     let top = h * 0.45;
@@ -396,7 +414,7 @@ fn offer_cards(run: sim::survivors::RunState, w: f32, h: f32, out: &mut Vec<Spri
             [0.025, 0.035, 0.08, 0.96],
         ));
         let fs = (1.5 * u).round().max(1.0);
-        font::text(
+        face.text(
             card.item.name(),
             x,
             top + 18.0 * u,
@@ -412,7 +430,7 @@ fn offer_cards(run: sim::survivors::RunState, w: f32, h: f32, out: &mut Vec<Spri
         } else {
             format!("LV {} > {}", card.before, card.after)
         };
-        font::text(
+        face.text(
             &rank,
             x,
             top + 54.0 * u,
@@ -421,7 +439,7 @@ fn offer_cards(run: sim::survivors::RunState, w: f32, h: f32, out: &mut Vec<Spri
             rgb(0x60ffc0),
             out,
         );
-        font::text(
+        face.text(
             card.description(),
             x,
             top + 88.0 * u,
@@ -430,7 +448,7 @@ fn offer_cards(run: sim::survivors::RunState, w: f32, h: f32, out: &mut Vec<Spri
             PLAIN,
             out,
         );
-        font::text(
+        face.text(
             ["LEFT", "UP", "RIGHT"][i],
             x,
             top + 132.0 * u,
@@ -440,7 +458,7 @@ fn offer_cards(run: sim::survivors::RunState, w: f32, h: f32, out: &mut Vec<Spri
             out,
         );
     }
-    font::text(
+    face.text(
         if run.song + 1e-9 >= offer.reveals[2] {
             "SPACE / ENTER TO CHOOSE"
         } else {
@@ -626,4 +644,185 @@ fn key_face(key: KeyLight, x: f32, y: f32, w: f32, h: f32, out: &mut Vec<Sprite>
         h - 2.0 * b,
         alpha(fill, if key.held { 0.9 } else { 0.25 }),
     ));
+}
+
+fn item_color(id: &str) -> [f32; 4] {
+    match id {
+        "sword" | "sword-spin" | "bloody-tear" => rgb(0xff708c),
+        "garlic" | "soul-eater" | "pummarola" => rgb(0x8cffa9),
+        "magic-wand" | "holy-wand" | "empty-tome" => rgb(0x68dfff),
+        "king-bible" | "unholy-vespers" | "spellbinder" => rgb(0xc59bff),
+        "lightning-ring" | "thunder-loop" | "duplicator" => rgb(0xffdf70),
+        "spinach" => rgb(0x6bff79),
+        _ => rgb(0xff8dac),
+    }
+}
+fn draw_survivors(
+    view: &LiveView,
+    st: &HudState,
+    art: &render::atlas::Atlases,
+    w: f32,
+    h: f32,
+    out: &mut Vec<Sprite>,
+) {
+    let u = (w / 960.0).min(h / 540.0);
+    let face = &art.fonts["pixel"];
+    let bg = [0.015, 0.02, 0.04, 0.82];
+    let bar = w - 24.0 * u;
+    out.push(rect(
+        10.0 * u,
+        6.0 * u,
+        bar + 4.0 * u,
+        14.0 * u,
+        [0.08, 0.16, 0.22, 0.95],
+    ));
+    out.push(rect(12.0 * u, 8.0 * u, bar, 10.0 * u, bg));
+    out.push(rect(
+        12.0 * u,
+        8.0 * u,
+        bar * view.xp.clamp(0.0, 1.0) as f32,
+        10.0 * u,
+        rgb(0x5fe8cf),
+    ));
+    let level = view.run.map_or(view.level as usize, |r| r.level);
+    face.text(
+        &format!("LEVEL {level}"),
+        w - 16.0 * u,
+        9.0 * u,
+        1.1 * u,
+        Align::Right,
+        [1.0; 4],
+        out,
+    );
+    let elapsed = st.elapsed.max(0.0) as u64;
+    face.text(
+        &format!("{:02}:{:02}", elapsed / 60, elapsed % 60),
+        w / 2.0,
+        32.0 * u,
+        4.0 * u,
+        Align::Centre,
+        [1.0; 4],
+        out,
+    );
+    face.text(
+        "KILLS",
+        w - 14.0 * u,
+        33.0 * u,
+        1.5 * u,
+        Align::Right,
+        rgb(0x9caabf),
+        out,
+    );
+    face.text(
+        &view.kills.to_string(),
+        w - 14.0 * u,
+        49.0 * u,
+        3.0 * u,
+        Align::Right,
+        [1.0; 4],
+        out,
+    );
+    let inv = view.inventory.unwrap_or_default();
+    let weapons: Vec<_> = inv
+        .weapons
+        .iter()
+        .map(|s| {
+            (
+                s.id.as_str(),
+                s.rank,
+                sim::survivors::weapon_catalog().get(s.id).max_rank(),
+            )
+        })
+        .collect();
+    let passives: Vec<_> = inv
+        .passives
+        .iter()
+        .map(|s| (s.id.as_str(), s.rank, s.id.max_rank()))
+        .collect();
+    for (row, slots) in [&weapons, &passives].into_iter().enumerate() {
+        for i in 0..6 {
+            let x = (13.0 + i as f32 * 40.0) * u;
+            let y = (32.0 + row as f32 * 44.0) * u;
+            out.push(rect(x, y, 36.0 * u, 39.0 * u, [0.03, 0.05, 0.08, 0.72]));
+            out.push(rect(x + u, y + u, 34.0 * u, 32.0 * u, bg));
+            if let Some(&(id, rank, max)) = slots.get(i) {
+                let color = item_color(id);
+                let icon = if id == "sword" { "sword-spin" } else { id };
+                if let Some(r) = art.icons.get(icon) {
+                    if let Some(glow) = art.proc.get("glow") {
+                        out.push(
+                            Sprite::centred(*glow, x + 18.0 * u, y + 17.0 * u, 42.0 * u, 42.0 * u)
+                                .tinted(alpha(color, 0.26))
+                                .additive(),
+                        );
+                    }
+                    out.push(
+                        Sprite::centred(*r, x + 18.0 * u, y + 17.0 * u, 27.0 * u, 27.0 * u)
+                            .tinted(color)
+                            .additive(),
+                    );
+                }
+                let step = 30.0 / f32::from(max);
+                for pip in 0..max {
+                    out.push(rect(
+                        x + (3.0 + f32::from(pip) * step) * u,
+                        y + 35.0 * u,
+                        (step - 1.0) * u,
+                        2.0 * u,
+                        if pip < rank {
+                            color
+                        } else {
+                            [0.15, 0.19, 0.24, 1.0]
+                        },
+                    ));
+                }
+            }
+        }
+    }
+    if let Some((x, y)) = st.feet {
+        let x = x.clamp(24.0 * u, w - 24.0 * u);
+        let y = (y + 9.0 * u).clamp(24.0 * u, h - 10.0 * u);
+        out.push(rect(
+            x - 23.0 * u,
+            y - u,
+            46.0 * u,
+            6.0 * u,
+            [0.005, 0.008, 0.015, 0.95],
+        ));
+        out.push(rect(
+            x - 22.0 * u,
+            y,
+            44.0 * u,
+            4.0 * u,
+            [0.22, 0.07, 0.1, 0.9],
+        ));
+        out.push(rect(
+            x - 22.0 * u,
+            y,
+            44.0 * u * view.health.clamp(0.0, 1.0) as f32,
+            4.0 * u,
+            if st.bitten_ago < 0.15 {
+                [1.0; 4]
+            } else {
+                rgb(0xff4a68)
+            },
+        ));
+    }
+    if let Some(reason) = view.run.and_then(|r| r.frozen) {
+        if reason == sim::survivors::FreezeReason::LevelUp {
+            out.push(rect(0.0, 0.0, w, h, [0.0, 0.0, 0.05, 0.55]));
+        }
+        face.text(
+            reason.banner(),
+            w / 2.0,
+            h * 0.32,
+            3.0 * u,
+            Align::Centre,
+            rgb(0xb8d7ff),
+            out,
+        );
+    }
+    if let Some(run) = view.run.filter(|r| r.offer.is_some()) {
+        offer_cards(run, w, h, face, out);
+    }
 }
