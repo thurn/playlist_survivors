@@ -206,7 +206,9 @@ Three properties follow from this structure:
 - **Lookahead is unlimited.** An attack can start winding up before the beat
   its blow lands on.
 - **The choreographer's cost is paid at load.** The benchmark measures only
-  the client; the 25% reserve stands in for a real sim layer.
+  the client; the 25% reserve stands in for a real sim layer. Live-sim mode
+  checks that a sim like the choreographer fits in that reserve (see
+  [Live-sim mode](#live-sim-mode)).
 
 ## The Fidelity Floor
 
@@ -300,6 +302,11 @@ window after 5 s of warm-up:
 The demo's full song has no steady state. Its run passes when every 20 s
 window, starting every 5 s, meets the same lines, and no frame anywhere
 exceeds twice its line.
+
+The reserve is checked too, not just assumed. A real game's sim layer must
+fit in the 4.2 ms of target CPU the client leaves free. That gives the sim its
+own line on the M5 Max: **2.0 ms per tick** (4.2 ÷ 1.7 ÷ 1.2), measured by
+[Live-sim mode](#live-sim-mode).
 
 ### Where the Mac flatters the target
 
@@ -508,6 +515,9 @@ Its inputs:
 - **The clip annotations** (see
   [Clip annotations and retiming](#clip-annotations-and-retiming)), so it
   knows every clip's timing.
+- **The arena's placement list:** every prop's type, position and rotation,
+  with each type's footprint on the ground (see
+  [Navigation around structures](#navigation-around-structures)).
 - **A seed.**
 
 For example, one section of the level script, with the envelope's two numbers
@@ -539,9 +549,10 @@ it holds a placeholder.
 What the simulation does on each grid step:
 
 - **The hero either strides or attacks on each beat.** Striding is one gait
-  step toward the densest arc of monsters within reach, which keeps the horde
-  wrapped around the hero. During an attack the hero's motion follows the
-  combo clip's own root motion instead.
+  step toward the densest arc of monsters within reach, on open ground, which
+  keeps the horde wrapped around the hero. During an attack the hero's motion
+  follows the combo clip's own root motion instead. Walls push the hero out
+  like any monster.
 - **Combo impacts land on the grid** given by the section's combo pattern:
   slashes on beats, spins on accents, slams on phrase-opening downbeats.
 - **An action that cannot fit moves later.** If the next eligible grid
@@ -550,12 +561,15 @@ What the simulation does on each grid step:
   every second beat or less often, and every windup fits.
 - **Spells fire from the section's spell set** at their grid positions.
   - **Projectiles** launch so they arrive on the grid: launch time is the
-    impact minus the flight time. The launch itself is off the grid.
+    impact minus the flight time. The launch itself is off the grid. Bolts
+    only target monsters with a clear line from the hero.
   - **Beams such as the laser** hit everything along their sweep on each
-    eighth note while they last.
-- **Monsters take one gait step per beat** toward the hero. A spatial hash
-  keeps them apart, so they never overlap by more than a quarter of their
-  radius.
+    eighth note while they last. Rings, lightning and beams ignore walls.
+- **Monsters take one gait step per beat** toward the hero, following a flow
+  field around walls and structures (see
+  [Navigation around structures](#navigation-around-structures)). A spatial
+  hash keeps them apart, so they never overlap by more than a quarter of
+  their radius.
 - **A monster within reach attacks.** It schedules an impact on the next beat
   its windup fits. The hero parries any blow that would land, with a parry
   effect and no damage; the hero is a perfect player.
@@ -564,9 +578,9 @@ What the simulation does on each grid step:
   short `Linear` knockback segments, or `Death` events once a monster's hit
   points run out.
 - **Spawns refill toward the section's target count.** They come in on beats,
-  a few at a time, at a ring 2 m beyond the view's edge. A monster counts
-  toward the target from spawn until its death starts, so a dying monster is
-  replaced at once.
+  a few at a time, at a ring 2 m beyond the view's edge, on open cells the
+  flow field can reach. A monster counts toward the target from spawn until
+  its death starts, so a dying monster is replaced at once.
 
 The choreographer also owns the camera's **framing**: where the view is
 centred and how wide it is. It runs the follow spring and zoom easing
@@ -574,6 +588,56 @@ described in [Camera](#camera) and records them as the framing track. That is
 how it knows which monsters are on screen and where the view's edge is. The
 client adds punch (at most 2% of the view width) and shake (at most 0.25 m)
 on top, which the 2 m spawn margin covers.
+
+### Navigation around structures
+
+The arena is mostly open, but some sections have walls and structures: ruins,
+and a walled courtyard with gaps. Monsters must flow around them, never
+through them, and thousands of monsters can't each search for a path. So the
+choreographer navigates the way horde and RTS games do, at a cost that grows
+only linearly with the number of monsters.
+
+- **One placement list.** The choreography layer computes the arena's prop
+  placement from tracked arena parameters: a seed, the prop types and the
+  structures. Unity's scene generator instantiates props from the same list,
+  so the scene and the obstacle map can never disagree.
+- **Footprints** are tracked annotations, keyed by each prop's vendor GUID
+  like the clip annotations: a circle or polygon on the ground. Small props
+  such as grass and debris have none and don't block.
+- **The obstacle map.** Footprints are rasterized onto a 0.5 m grid over the
+  arena, about 320 × 320 cells for 160 × 160 m.
+- **A wall distance field.** Precomputed once per layout: each cell's distance
+  to the nearest blocked cell. After each gait step, a monster closer to a
+  wall than its radius is pushed out along the field's gradient, at the cost
+  of one lookup per monster.
+- **A flow field toward the hero.** A Dijkstra search with 8 neighbours runs
+  from the hero's cell, over cells whose wall distance exceeds a typical
+  monster radius. Each cell gets its cost to reach the hero. A monster steps
+  toward its cell's lowest-cost neighbour, interpolated for smooth headings.
+- **Rebuilds are rare and spread out.** The field rebuilds when the hero
+  enters a new cell, at most once per beat. Each rebuild is time-sliced
+  across that beat's ticks, so no single tick carries it. Its cost depends on
+  the grid, not on the number of monsters.
+- **Marching in place.** In a jam, a gait step that would overlap a neighbour
+  more than allowed is shortened. A monster whose step shrinks below 20% of a
+  stride marks time on the beat instead, stepping in place. A packed doorway
+  then reads as a crowd waiting its turn, in rhythm, instead of jittering.
+- **Room for every size.** Every gap in a structure is at least as wide as
+  the largest monster's diameter plus 1 m, so elites and the boss follow the
+  same field.
+
+Each tick's navigation work, in pseudocode:
+
+```
+per beat:  if hero entered a new cell: start a flow-field rebuild,
+           spread over this beat's ticks
+per tick:  advance the rebuild by one slice
+           for each monster starting a gait step:
+               dir = flowField.direction(cell)       // one lookup
+               step = separate(dir, spatialHash)     // a few neighbours
+               if step < 0.2 × stride: mark time in place
+               pos = pushOutOfWalls(pos + step, distanceField)
+```
 
 ### Stress timelines
 
@@ -589,6 +653,9 @@ A stress script fixes:
 - **N**, the on-screen count, alive and dying. Refills hold each bar's average
   within 5% of N. N never exceeds the view's packing capacity (see
   [Performance Budget](#performance-budget)).
+- an **off-screen reserve** of 0.5 × N more monsters, walking in from beyond
+  the view, as a real game keeps. The client culls them, so they cost almost
+  nothing to draw, but the sim moves them every tick;
 - the **view width**, held fixed;
 - the **effect load**, a preset that scales with N:
 
@@ -1164,12 +1231,19 @@ The arena is a static set designed to look rich while staying cheap. Its
 cost is measured on its own in an empty-arena stress scene.
 
 - **Layout.** About 160 × 160 m of ground, so the hero can circle for the
-  whole song. Props (ruins, dead trees, gravestones, rocks, torches) are
-  placed by a seeded scatter script. They come from Synty Dark Fantasy,
-  Goblin War Camp or a Nature Biomes pack, chosen by TD2.
-- **Generated, not hand-edited.** The scene is built by an editor script from
-  tracked parameters. The generated scene and its lightmaps are derived
-  content and stay in the gitignored baked folder.
+  whole song. Props (ruins, dead trees, gravestones, rocks, torches) come
+  from Synty Dark Fantasy, Goblin War Camp or a Nature Biomes pack, chosen by
+  TD2.
+- **Mostly open, with some structures.** Most of the ground is open, but it
+  includes broken ruin walls and one walled courtyard with 3 or 4 gaps, which
+  the level script's sections and stress scene S6 use.
+- **Placed by the choreography layer.** Prop placement comes from the
+  placement list the choreography layer computes from tracked parameters
+  (see [Navigation around structures](#navigation-around-structures)). So
+  every wall the camera shows is a wall the monsters walk around.
+- **Generated, not hand-edited.** An editor script builds the scene from that
+  placement list. The generated scene and its lightmaps are derived content
+  and stay in the gitignored baked folder.
 - **Sun or moon.** One directional light at 25° to 35° elevation, cool and dim,
   with soft shadows.
 - **Static lighting.** Lightmaps baked in batch mode, including the torches'
@@ -1222,7 +1296,47 @@ S2  crowd in combat      S1 + hero combos, hits, deaths, refills; no effects
 S3  full combat          S2 + effects and lights at a load preset
 S4  effects only         S3's effect stream with the monsters hidden
 S5  worst beats          S3 at heavy load, a worst beat every 4 bars
+S6  walls and chokes     S3 at demo load around the arena's walled courtyard
 song                     the demo's own timeline
+```
+
+S6 needs the arena's structures, so it runs from TD9 on. The hero fights
+inside the walled courtyard, and the horde funnels in through its gaps. That
+tests:
+
+- navigation cost under congestion, in live-sim mode;
+- local density spikes at the gaps, for drawing and overdraw;
+- wall shadows across the horde;
+- whether jams look acceptable, which the operator reviews from captures.
+
+### Live-sim mode
+
+The client's measurements never include the choreographer, which runs at
+load. Live-sim mode measures what a sim like it would cost per frame, so the
+reserve becomes a measured number.
+
+- **A second copy runs live.** The precomputed timeline still drives every
+  frame. Alongside it, a second copy of the choreographer ticks at 60 Hz on
+  the main thread, in step with song time. It simulates everything a real
+  game would: the on-screen horde, the off-screen reserve, navigation,
+  separation, hits and spawns.
+- **Its results are discarded,** except at sampled ticks, where its state
+  must match the precomputed timeline exactly. That doubles as a
+  determinism check.
+- **The sim's own line.** The tick's p99 time must stay at most 2.0 ms on the
+  M5 Max (see [Performance Budget](#performance-budget)).
+- **The frame's main-thread line rises to 8.0 ms** in live-sim runs: the
+  client's 6.0 ms plus the sim's 2.0 ms. The GPU and render-thread lines are
+  unchanged.
+- **It is a conservative stand-in.** The choreographer is plain C# on one
+  thread, without Burst or jobs. Passing means a real sim fits with room to
+  spare. Failing means a real sim would need those optimizations, not that
+  the design fails.
+
+```json
+{ "scene": "S6", "n": 2600, "offScreen": 1300, "liveSim": true,
+  "simTickP99Ms": 1.42, "simTickMaxMs": 1.88, "flowRebuildSlices": 26,
+  "mainP99Ms": 6.9, "gpuP99Ms": 5.38, "pass": true }
 ```
 
 ### The sweep
@@ -1250,7 +1364,8 @@ row per run.
 - **Counters** from our own systems: visible instances by type and LOD,
   skinned vertices, shadow casters, live particles, effect spawns per frame
   (and the largest in one frame), spawns rejected, light cues, lights used,
-  and the share of light dropped.
+  and the share of light dropped. In live-sim runs, also the sim's tick time
+  and its flow-field rebuild slices.
 - **Overdraw** from a debug replacement render that counts opaque depth
   complexity and transparent fragments per pixel. It runs on every 60th
   frame and on the frame after each downbeat, which catches the beat-frame
@@ -1558,6 +1673,13 @@ The choreography layer's tests:
 - no two monsters overlap by more than a quarter of their radius;
 - every hit and death has its clip and effect events;
 - spawns appear outside the view at that section's view width;
+- no monster or hero ever stands closer to a wall than its radius, beyond a
+  small tolerance;
+- on a test layout with a courtyard and gaps, every monster with a path
+  reaches the hero, none stays stuck for more than 4 beats, and blocked
+  monsters mark time in place instead of jittering;
+- the flow field matches a reference shortest-path search on small test
+  layouts;
 - the song's timeline builds in under 3 s.
 
 ## Alternatives Considered
@@ -1584,6 +1706,12 @@ The interview weighed these and rejected them for the reasons given.
   a few templates and converted data, remains a candidate in TD8's spike.
 - **Stock effect prefabs, pooled.** Simple, but per-system overhead caps the
   horde long before the GPU does.
+- **A path per monster** (Unity's NavMesh agents, or A* each). Every agent
+  costs a GameObject or its own search, and its cost grows with path length
+  and congestion. A flow field costs the same for 100 monsters or 5,000.
+- **Velocity-based local avoidance** (RVO or ORCA). Smoother passing in
+  sparse crowds, but heavier per monster, and a horde mostly converges on one
+  target, where separation plus marching in place reads well.
 - **Buying a target laptop.** It would make the answer measured instead of
   inferred, but was declined. The report labels inferred numbers.
 - **Offscreen-only benchmarks.** They never disturb the operator, but they
@@ -1636,6 +1764,10 @@ Each bead lists what it builds and when it is done.
   - Also builds: the timeline types, the choreographer with its framing track
     and sound aggregation, the level-script and stress-script formats, and
     the layer's tests.
+  - Also builds navigation: the arena placement list and footprint
+    annotations, the obstacle map, the wall distance field, the time-sliced
+    flow field, marching in place, and the stress scripts' off-screen
+    reserve.
   - Done when: the song's timeline and every stress script's timeline build
     and pass the layer's tests, with a placeholder envelope.
 - **TD4, harness.**
@@ -1646,6 +1778,8 @@ Each bead lists what it builds and when it is done.
     retiming and the two animation slots), the song clock, the bench scene,
     the development flags listed in [Manual QA](#manual-qa), and the stock
     baseline crowd and a simply drawn hero, all driven by TD3's timelines.
+  - Also builds [live-sim mode](#live-sim-mode), with its sampled
+    determinism check.
   - Done when: a sweep of the stock baseline over S1 and S2 produces result
     rows and a first frontier, and the
     [first assembled check](#first-assembled-check) passes.
@@ -1674,8 +1808,9 @@ Each bead lists what it builds and when it is done.
     effect runs on the runtime with an A/B still against its stock prefab;
     and the light pool's size is fixed.
 - **TD9, environment and lighting.**
-  - Builds: the generated arena, lightmaps, and the lighting and
-    post-processing stack.
+  - Builds: the arena generated from TD3's placement list, including the
+    ruin walls and the walled courtyard; lightmaps; and the lighting and
+    post-processing stack. S6 becomes runnable.
   - Decides MSAA against TAA. Both are full quality, so this is not a cut:
     the choice weighs cost against capture pairs of monster edges and spark
     trails, which also go to the operator for review.
@@ -1694,6 +1829,10 @@ Each bead lists what it builds and when it is done.
   - Runs the full sweep, the traces at frontier points and both target
     estimates. Writes the report and the envelope, and puts the envelope into
     the level script.
+  - Also runs S6 at the envelope, and live-sim mode at every frontier point
+    and at S6. The report states whether the envelope holds among walls and
+    whether the sim fits its reserve. If S6 fails at the envelope, the report
+    gives S6's own frontier and what limits it.
   - Done when: the report is in its evidence and its summary in its notes.
 - **TD13, the demo.**
   - Tunes the level script so the climax holds the envelope and the full song
@@ -1818,9 +1957,11 @@ here, since the demo itself takes no input:
 --click             mix a click track: every beat, louder on downbeats
 --start-at <s>      seek the song; --seconds <n> to exit after n seconds
 --fixed-time        deterministic 1/60 s frames, sound muted
---scene <S0..S5|song> --n <count> --view-width <m> --load <preset> --aa <mode>
+--scene <S0..S6|song> --n <count> --view-width <m> --load <preset> --aa <mode>
+--live-sim          also tick a live copy of the choreographer and time it
 --freeze-at <s>     hold one frame for inspection
 --show-lod          tint monsters by LOD; --overdraw for a heat map
+--show-nav          draw the flow field and blocked cells over the ground
 ```
 
 ### First assembled check
@@ -1879,6 +2020,17 @@ baseline crowd handles a few hundred monsters, which is enough.
 - Launch with a different window size. **Expect** a refusal naming the
   backbuffer size.
 - Check every result row. **Expect** `jobWorkers: 6`.
+
+### Walls and the live sim
+
+- Run S6 windowed with `--overlay`, about a minute.
+- **Expect** the horde to flow around the courtyard walls and through its
+  gaps, and never to pass through a wall.
+- **Expect** jams at the gaps to read as monsters marking time on the beat,
+  not jittering or vibrating against each other.
+- **Expect** elites and the boss to fit through every gap.
+- Run S6 and one S3 frontier point with live-sim mode on. **Expect** the
+  sim's tick p99 at or under 2.0 ms, and no determinism mismatch reported.
 
 ### A/B review
 
