@@ -42,6 +42,9 @@ pub struct Run {
     /// mode ran legacy mode.)
     #[serde(default)]
     pub zen: bool,
+    /// Explicit check-only configuration, replayed with the same damage rule.
+    #[serde(default)]
+    pub no_hero_damage: bool,
     /// Exact level source, including duration overrides; older sessions use reactive.yaml.
     #[serde(default)]
     pub level: Option<String>,
@@ -168,11 +171,12 @@ impl Session {
     }
 
     /// A run started at session time `s0`, in zen mode or not; returns its index.
-    pub fn run_started(&mut self, s0: f64, zen: bool, level: &str) -> usize {
+    pub fn run_started(&mut self, s0: f64, zen: bool, level: &str, no_hero_damage: bool) -> usize {
         self.meta.runs.push(Run {
             s0,
             zen,
             level: Some(level.to_string()),
+            no_hero_damage,
             ..Run::default()
         });
         self.write_meta();

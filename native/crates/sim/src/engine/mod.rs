@@ -33,6 +33,7 @@ mod observe;
 mod pickups;
 mod pieces;
 mod plan;
+mod spawning;
 mod weapons;
 
 use std::collections::HashSet;
@@ -654,6 +655,7 @@ struct Foe {
     def: usize,
     r: f64,
     health: f64,
+    survivor_boss: bool,
     x: f64,
     y: f64,
     vx: f64,
@@ -909,6 +911,7 @@ struct SimState {
     run_s: f64,
     freeze: freeze::Freeze,
     survivor: Option<crate::survivors::Progress>,
+    spawner: crate::survivors::Spawner,
     w: f64,
     rate_s: f64,
     q: Queue,
@@ -1093,6 +1096,16 @@ impl Sim {
 
     pub fn s(&self) -> f64 {
         self.st.s
+    }
+
+    /// Static check configuration, set before the first clock step. Snapshots keep the same
+    /// environment, so rollback cannot accidentally re-enable damage in a spawn-only smoke.
+    pub fn disable_hero_damage_for_check(&mut self) {
+        assert!(self.st.s == 0.0, "check configuration must precede the run");
+        Rc::get_mut(&mut self.env)
+            .expect("fresh simulation environment")
+            .input
+            .no_hero_damage = true;
     }
 
     pub fn run_s(&self) -> f64 {
@@ -1527,6 +1540,29 @@ impl Sim {
         0.0
     }
 
+    // A landing must be one of the simulation's own stops. Otherwise a partial frame
+    // can record it before/after the next hero sample and change the settled journal.
+    fn survivor_landing_stop(&self) -> f64 {
+        if self.st.survivor.is_none() || self.st.landed {
+            return f64::INFINITY;
+        }
+        let Some(step) = &self.st.step else {
+            return f64::INFINITY;
+        };
+        let rate = self.rate_at(self.st.rate_s);
+        if rate <= 0.0 {
+            return f64::INFINITY;
+        }
+        let target = step.w0 + self.env.rule.duration_s;
+        let (s, w) = self
+            .st
+            .breaks
+            .last()
+            .filter(|b| b.rate == rate)
+            .map_or((self.st.s, self.st.w), |b| (b.s, b.w));
+        (s + (target - w) / rate).max(self.st.s)
+    }
+
     /// Song time of the loop's next stop: the next event, fixed step or rate change.
     fn next_stop_now(&self) -> f64 {
         let t_fixed = self.st.fixed_k / SIM_RATE;
@@ -1544,7 +1580,16 @@ impl Sim {
         min(
             min(
                 min(
-                    min(min(self.st.q.peek(), self.weapon_stop()), t_fixed),
+                    min(
+                        min(
+                            min(
+                                min(self.st.q.peek(), self.weapon_stop()),
+                                self.survivor_landing_stop(),
+                            ),
+                            self.spawn_stop(),
+                        ),
+                        t_fixed,
+                    ),
                     t_rate,
                 ),
                 self.freeze_stop(),
@@ -1687,6 +1732,7 @@ impl Sim {
             self.dispatch_entry(entry);
         }
         self.tick_weapons();
+        self.tick_spawner();
     }
 
     fn handle(&mut self, ev: Ev) {
@@ -1861,6 +1907,7 @@ fn fresh_state(env: &Env) -> SimState {
     SimState {
         s: 0.0,
         run_s: 0.0,
+        spawner: crate::survivors::Spawner::default(),
         freeze: freeze::Freeze::default(),
         survivor: level
             .survivors
@@ -2101,6 +2148,9 @@ mod tests {
             Some(crate::content::level::Survivors {
                 duration_s: 2.0,
                 contact_damage: 0.5,
+                brute_chicken_chance: 0.05,
+                boss_chickens: 1.0,
+                maxed_heal: 30.0,
             });
         sim.st.run_s = 1.9;
         let hp = sim.st.health;
@@ -2122,6 +2172,9 @@ mod tests {
             Some(crate::content::level::Survivors {
                 duration_s: 30.0,
                 contact_damage: 0.5,
+                brute_chicken_chance: 0.05,
+                boss_chickens: 1.0,
+                maxed_heal: 30.0,
             });
         let rec = Rc::new(RefCell::new(LogRecorder::default()));
         sim.rec = Box::new(Rc::clone(&rec));
@@ -2375,6 +2428,7 @@ mod tests {
             None,
         )
         .unwrap();
+        level.survivor_schedule.clear();
         let director = level.director.as_mut().unwrap();
         director.population.start = 0.0;
         director.population.per_minute = 0.0;
@@ -2778,6 +2832,206 @@ mod tests {
                 .weapon_shots
                 .iter()
                 .all(|s| s.song <= 1.1 || s.song >= a.st.freeze.total_s + 1.1)
+        );
+    }
+    #[test]
+    fn survivor_spawner_all_minutes_obeys_source_rosters_minimum_cap_and_scaled_hp() {
+        let mut sim = survivor_sim();
+        let level = load_level(
+            &source("levels/survivors.yaml"),
+            &sim.env.input.lib,
+            &reactive_song_map(f64::INFINITY),
+            None,
+        )
+        .unwrap();
+        let schedule = level.survivor_schedule.clone();
+        Rc::get_mut(&mut sim.env).unwrap().input.level = level;
+        sim.st.survivor.as_mut().unwrap().level = 20;
+        sim.log = Rc::new(StreamLog {
+            beats: (0..3602)
+                .map(|k| Beat {
+                    t: f64::from(k) * 0.5,
+                    known_at: 0.0,
+                    period: 0.5,
+                    evidence: 1.0,
+                })
+                .collect(),
+            ..StreamLog::default()
+        });
+        sim.st.ingested.beats = sim.log.beats.len();
+        for minute in &schedule {
+            // Isolate each source row for one minute, including an empty field refill. The
+            // separate clock test covers real minute transitions and inherited fields.
+            sim.st.foes.clear();
+            sim.st.alive.clear();
+            sim.st.foe_samples.clear();
+            sim.st.spawner = crate::survivors::Spawner::default();
+            let mut phase = minute.clone();
+            phase.minute = 0;
+            Rc::get_mut(&mut sim.env)
+                .unwrap()
+                .input
+                .level
+                .survivor_schedule = vec![phase];
+            let start = 0;
+            let t0 = 0.0;
+            for k in 0..=1199 {
+                let t = t0 + f64::from(k) * 0.05;
+                sim.st.s = t;
+                sim.st.run_s = t;
+                sim.st.w = t;
+                sim.tick_spawner();
+                let alive = sim
+                    .st
+                    .alive
+                    .iter()
+                    .filter(|&&i| sim.st.foes[i].alive)
+                    .count();
+                assert!(alive <= 300, "minute {}: {alive}", minute.minute);
+                if k == 10 && !minute.enemies.as_ref().unwrap().is_empty() {
+                    assert!(
+                        alive >= minute.minimum.unwrap(),
+                        "minute {}: {alive}",
+                        minute.minute
+                    );
+                }
+            }
+            let mut counts = std::collections::BTreeMap::new();
+            let mut bosses = 0;
+            for f in &sim.st.foes[start..] {
+                let def = &sim.env.input.lib.enemies[f.def];
+                *counts.entry(def.id.as_str()).or_insert(0usize) += 1;
+                let scaled = f.survivor_boss || def.survivors.unwrap().level_scaled;
+                assert_eq!(f.health0, def.health * if scaled { 20.0 } else { 1.0 });
+                if f.survivor_boss {
+                    bosses += 1;
+                    assert!(minute.bosses.contains(&def.id));
+                } else {
+                    assert!(minute.enemies.as_ref().unwrap().contains(&def.id));
+                }
+            }
+            // At 30:00 admission stops for victory; no Reaper or inherited boss.
+            assert_eq!(bosses, minute.bosses.len());
+            for role in minute.enemies.as_ref().unwrap() {
+                assert!(counts.contains_key(role.as_str()), "missing {role}");
+            }
+            eprintln!(
+                "minute {} minimum {} alive {} bosses {} actual {:?}",
+                minute.minute,
+                minute.minimum.unwrap(),
+                sim.st.alive.len(),
+                bosses,
+                counts
+            );
+        }
+    }
+
+    #[test]
+    fn survivor_spawner_holds_grid_admissions_and_does_not_catch_up_frozen_ticks() {
+        use crate::survivors::FreezeReason;
+        let setup = || {
+            let mut sim = survivor_sim();
+            let mut level = load_level(
+                &source("levels/survivors.yaml"),
+                &sim.env.input.lib,
+                &reactive_song_map(f64::INFINITY),
+                None,
+            )
+            .unwrap();
+            level.survivor_schedule.truncate(1);
+            let env = Rc::get_mut(&mut sim.env).unwrap();
+            env.input.level = level;
+            env.input.no_hero_damage = true;
+            sim.freeze_at(1.1, FreezeReason::Paused);
+            key(&mut sim, 3.1, KeyEventKind::Press, InputKey::Pause);
+            key(&mut sim, 3.2, KeyEventKind::Release, InputKey::Pause);
+            sim
+        };
+        let mut a = setup();
+        let mut b = setup();
+        a.advance_to(3.0);
+        let spawned = a.st.spawner.spawned;
+        a.advance_to(3.05);
+        assert_eq!(spawned, a.st.spawner.spawned);
+        a.advance_to(6.0);
+        for k in 1..=600 {
+            b.advance_to(f64::from(k) / 100.0);
+        }
+        assert_eq!(a.st.spawner, b.st.spawner);
+        assert_eq!(format!("{:?}", a.st.foes), format!("{:?}", b.st.foes));
+        assert!(a.st.spawner.spawned < 25, "no frozen-time debt");
+    }
+    #[test]
+    fn survivor_full_field_preserves_a_boss_and_recycling_keeps_its_hp_and_reward() {
+        use super::combat::HitSpec;
+        use crate::core::geometry::Shape;
+        use crate::recorder::{HitSource, LogRecorder, Weight};
+        let mut sim = survivor_sim();
+        sim.log = Rc::new(StreamLog::default());
+        sim.st.ingested.beats = 0;
+        let rec = Rc::new(std::cell::RefCell::new(LogRecorder::default()));
+        sim.rec = Box::new(Rc::clone(&rec));
+        let mut level = load_level(
+            &source("levels/survivors.yaml"),
+            &sim.env.input.lib,
+            &reactive_song_map(f64::INFINITY),
+            None,
+        )
+        .unwrap();
+        level.survivor_schedule.truncate(2);
+        level.survivor_schedule[0].minimum = Some(300);
+        Rc::get_mut(&mut sim.env).unwrap().input.level = level;
+        sim.st.survivor.as_mut().unwrap().level = 20;
+        sim.tick_spawner();
+        assert_eq!(sim.st.alive.len(), 300);
+        sim.st.run_s = 60.0;
+        sim.st.s = 60.0;
+        sim.st.w = 60.0;
+        sim.tick_spawner();
+        assert_eq!(sim.st.spawner.waiting_bosses, ["vs-bat4"]);
+        sim.kill(0);
+        sim.tick_spawner();
+        assert!(sim.st.spawner.waiting_bosses.is_empty());
+        assert_eq!(
+            sim.st
+                .alive
+                .iter()
+                .filter(|&&i| sim.st.foes[i].alive)
+                .count(),
+            300
+        );
+        let boss = sim.st.foes.len() - 1;
+        assert!(sim.st.foes[boss].survivor_boss);
+        assert_eq!(sim.st.foes[boss].health, 100.0);
+        sim.st.foes[boss].health = 42.0;
+        sim.st.foes[boss].x = 1e6;
+        sim.recycle();
+        let boss = sim.st.foes.len() - 1;
+        assert!(sim.st.foes[boss].survivor_boss);
+        assert_eq!(sim.st.foes[boss].health, 42.0);
+        let hit = sim.add_hit(
+            HitSpec {
+                source: HitSource::Weapon,
+                what: "sword".into(),
+                weight: Weight::Light,
+                primary: true,
+                shape: Shape::Circle {
+                    x: 0.0,
+                    y: 0.0,
+                    radius: 1.0,
+                },
+                dir: 0.0,
+                accent: 0.0,
+                damage: 1000.0,
+                group: None,
+            },
+            None,
+        );
+        sim.damage(boss, &hit);
+        assert_eq!(
+            rec.borrow().chickens.len(),
+            1,
+            "a scheduled boss drops exactly one chicken"
         );
     }
 }

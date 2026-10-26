@@ -217,6 +217,9 @@ pub fn replay(dir: &Path) -> Result<bool, String> {
             zen_of(&meta, run.index),
             meta["runs"][run.index]["level"].as_str(),
         )?;
+        if meta["runs"][run.index]["noHeroDamage"].as_bool() == Some(true) {
+            e.sim.disable_hero_damage_for_check();
+        }
         let got = replay_run(&mut e, &arrivals, &keys, run, RECENT_S)?;
         let same = got.hash == Some(run.hash);
         ok &= same;
@@ -267,6 +270,9 @@ pub fn replay_reanalysed(dir: &Path) -> Result<bool, String> {
             meta["runs"][run.index]["level"].as_str(),
         )?;
         // (Its hash can't be the live run's: compare outcomes.)
+        if meta["runs"][run.index]["noHeroDamage"].as_bool() == Some(true) {
+            e.sim.disable_hero_damage_for_check();
+        }
         let got = replay_run(&mut e, &arrivals, &keys, run, RECENT_S)?;
         println!(
             "run {} re-analysed: {} records settled; {}",

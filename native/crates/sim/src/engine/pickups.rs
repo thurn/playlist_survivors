@@ -76,7 +76,23 @@ impl Sim {
             self.drop_on_field(fi, fate, value, big);
         }
         // The small health pool: an orc elite drops a chicken half the time (seeded by the enemy), the boss two.
-        let n = if def.size == Size::Boss {
+        let chicken_roll = Rng::new(&[
+            Part::Num(env.input.seed),
+            Part::Str("chicken"),
+            Part::Num(fi as f64),
+        ])
+        .next();
+        let n = if let Some(run) = env.input.level.survivors {
+            if self.st.foes[fi].survivor_boss {
+                run.boss_chickens
+            } else if def.survivors.is_some_and(|s| s.brute)
+                && chicken_roll < run.brute_chicken_chance
+            {
+                1.0
+            } else {
+                0.0
+            }
+        } else if def.size == Size::Boss {
             CHICKEN_BOSS
         } else if def.size == Size::Elite
             && Rng::new(&[

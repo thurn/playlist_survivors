@@ -1,0 +1,5 @@
+    Checking sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sf6-spawner/native/crates/sim)
+    Checking eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sf6-spawner/native/crates/eval)
+    Checking cli v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sf6-spawner/native/crates/cli)
+    Checking app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sf6-spawner/native/crates/app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.55s

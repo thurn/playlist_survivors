@@ -589,3 +589,92 @@ fn a_growing_gem_keeps_its_xp_value_for_survivors_color_selection() {
         sim::survivors::GemColor::Red
     );
 }
+
+#[test]
+fn survivor_spawner_speculation_matches_on_time_at_density() {
+    use stream::{Beat, StreamLog, Tick};
+    let content = library();
+    let mut src = source("levels/survivors.yaml");
+    assert!(src.text.contains("\"minimum\":15"));
+    src.text = src.text.replacen("\"minimum\":15", "\"minimum\":300", 1);
+    let log = StreamLog {
+        beats: (0..=24)
+            .map(|i| {
+                let t = f64::from(i) * 0.5;
+                Beat {
+                    t,
+                    known_at: (t - 3.0).max(0.0),
+                    period: 0.5,
+                    evidence: 1.0,
+                }
+            })
+            .collect(),
+        ticks: (0..=240)
+            .map(|i| {
+                let t = f64::from(i) / 20.0;
+                Tick {
+                    t,
+                    known_at: t,
+                    evidence: 1.0,
+                    energy: 0.5,
+                    level: Some(stream::Level::Medium),
+                    key: None,
+                    bands: None,
+                    brightness: None,
+                }
+            })
+            .collect(),
+        ..StreamLog::default()
+    };
+    let fresh = || {
+        let mut e = Engine::new(
+            &src,
+            &content,
+            &IndexMap::new(),
+            0.2,
+            true,
+            true,
+            f64::INFINITY,
+        )
+        .unwrap();
+        e.sim.disable_hero_damage_for_check();
+        e.settle_s = 0.1;
+        e.settled_log = Some(Vec::new());
+        e.feed(|out| *out = log.clone());
+        e.key(0.0, InputKey::Right, true);
+        e.sim.freeze_at(1.123, sim::survivors::FreezeReason::Paused);
+        e.key(1.4, InputKey::Right, false);
+        e.key(2.137, InputKey::Pause, true);
+        e.key(2.14, InputKey::Pause, false);
+        e.key(3.0, InputKey::Right, true);
+        e
+    };
+    let mut a = fresh();
+    let mut b = fresh();
+    let mut compared = 0;
+    let mut peak = 0;
+    for i in 1..=800 {
+        let now = f64::from(i) / 100.0;
+        a.frame(now, 0.0);
+        b.frame(now, 0.2);
+        peak = peak.max(b.view.borrow().alive().count());
+        let ar = a.settled_log.as_mut().unwrap();
+        let br = b.settled_log.as_mut().unwrap();
+        let n = ar.len().min(br.len());
+        for k in 0..n {
+            assert_eq!(
+                format!("{:?}", ar[k]),
+                format!("{:?}", br[k]),
+                "at {now}, record {}",
+                compared + k
+            );
+        }
+        ar.drain(..n);
+        br.drain(..n);
+        compared += n;
+    }
+    assert_eq!(peak, 300);
+    assert!(a.settled_log.as_ref().unwrap().is_empty());
+    assert!(b.settled_log.as_ref().unwrap().is_empty());
+    eprintln!("density speculation with off-grid pause: {compared} matching settled records");
+}

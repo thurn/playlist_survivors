@@ -242,6 +242,9 @@ pub struct EnemyOverride {
 pub struct Survivors {
     pub duration_s: f64,
     pub contact_damage: f64,
+    pub brute_chicken_chance: f64,
+    pub boss_chickens: f64,
+    pub maxed_heal: f64,
 }
 
 /// The loaded level script.
@@ -253,6 +256,7 @@ pub struct LevelScript {
     pub title: Title,
     pub reactive: bool,
     pub survivors: Option<Survivors>,
+    pub survivor_schedule: Vec<crate::survivors::SpawnMinute>,
     pub director: Option<Director>,
     pub zones: Vec<String>,
     pub sections: Vec<ResolvedSection>,
@@ -1147,6 +1151,42 @@ pub fn load_level(
         }
     }
 
+    if let Some(schedule) = data
+        .get("survivors")
+        .and_then(|s| s.get("schedule"))
+        .and_then(Value::as_array)
+    {
+        for (i, minute) in schedule.iter().enumerate() {
+            if minute["minute"].as_f64() != Some(i as f64) {
+                issues.push(at(
+                    "survivors.schedule",
+                    "minutes must be contiguous from zero".into(),
+                ));
+            }
+            if i == 0
+                && ["enemies", "minimum", "frequency"]
+                    .iter()
+                    .any(|k| minute.get(k).is_none())
+            {
+                issues.push(at(
+                    "survivors.schedule",
+                    "minute zero needs enemies, minimum and frequency".into(),
+                ));
+            }
+            for key in ["enemies", "bosses"] {
+                for id in minute
+                    .get(key)
+                    .and_then(Value::as_array)
+                    .into_iter()
+                    .flatten()
+                {
+                    if !lib.enemies.contains_key(id.as_str().unwrap_or_default()) {
+                        issues.push(at("survivors.schedule", format!("unknown enemy {id}")));
+                    }
+                }
+            }
+        }
+    }
     if !issues.is_empty() {
         return Err(LevelError { issues });
     }
@@ -1201,6 +1241,12 @@ pub fn load_level(
             .get("survivors")
             .map(|s| typed(&file, "survivors", s))
             .transpose()?,
+        survivor_schedule: data
+            .get("survivors")
+            .and_then(|s| s.get("schedule"))
+            .map(|s| typed(&file, "survivors.schedule", s))
+            .transpose()?
+            .unwrap_or_default(),
         director: data
             .get("director")
             .map(|d| typed(&file, "director", d))

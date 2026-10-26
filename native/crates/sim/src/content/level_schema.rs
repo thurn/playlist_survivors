@@ -384,6 +384,42 @@ pub fn level_script() -> Schema {
             object(vec![
                 def("durationS", positive(), json!(1800)),
                 def("contactDamage", min(0.0), json!(0.5)),
+                def("bruteChickenChance", min_max(0.0, 1.0), json!(0.05)),
+                def("bossChickens", int_min(0.0), json!(1)),
+                def("maxedHeal", min(0.0), json!(30)),
+                def(
+                    "schedule",
+                    array(object(vec![
+                        req("minute", int_range(0.0, 30.0)),
+                        opt("enemies", array(id())),
+                        opt("minimum", int_range(0.0, 300.0)),
+                        opt("frequency", positive()),
+                        def("bosses", array(id()), json!([])),
+                        def(
+                            "events",
+                            array(object(vec![
+                                req("kind", en(&["BAT_SWARM", "GHOST_SWARM", "FLOWER_WALL"])),
+                                req("delayMs", min(0.0)),
+                                req("extraRepeats", int_min(0.0)),
+                                opt("chance", min_max(0.0, 100.0)),
+                                req("durationMs", positive()),
+                                req("count", int_positive()),
+                            ])),
+                            json!([]),
+                        ),
+                        def(
+                            "treasure",
+                            array(object(vec![
+                                req("chances", array(min_max(0.0, 100.0))),
+                                req("level", int_positive()),
+                                req("prizeTypes", string()),
+                                def("fixedPrizes", array(string()), json!([])),
+                            ])),
+                            json!([]),
+                        ),
+                    ])),
+                    json!([]),
+                ),
             ]),
         ),
     ];

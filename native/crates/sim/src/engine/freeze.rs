@@ -81,6 +81,8 @@ impl Sim {
             presentation_s: if f.frozen { f.since } else { self.st.s },
             frozen_beat: f.frozen.then_some(f.beat_at_open),
             elapsed: self.st.run_s,
+            spawn_minute: self.st.spawner.minute,
+            spawned: self.st.spawner.spawned,
             level: self
                 .st
                 .survivor

@@ -1,6 +1,5 @@
-//! The content loader against F2's oracle (`native/oracle/content.json`): every content file
-//! loads, and the loaded library's canonical hash equals the TS loader's. On a mismatch, the
-//! first difference from the TS value (`content.json.gz`) is reported.
+//! Every current content file loads. F2's reference hash checks the unchanged legacy subset;
+//! new Survivors role data has direct source contracts in survivor_spawning.rs.
 #![allow(
     clippy::many_single_char_names,
     clippy::unreadable_literal,
@@ -70,8 +69,22 @@ fn first_difference(a: &Value, b: &Value, path: &str) -> Option<String> {
 }
 
 #[test]
-fn every_content_file_loads_and_hashes_as_the_ts_loader() {
-    let lib = load_content(&content_files()).unwrap_or_else(|e| panic!("{e}"));
+fn current_content_loads_and_the_legacy_subset_keeps_its_reference_hash() {
+    let files = content_files();
+    let current = load_content(&files).unwrap_or_else(|e| panic!("{e}"));
+    assert_eq!(
+        current
+            .enemies
+            .values()
+            .filter(|e| e.id.starts_with("vs-"))
+            .count(),
+        20
+    );
+    let legacy: Vec<_> = files
+        .into_iter()
+        .filter(|f| f.name != "content/survivors-enemies.yaml")
+        .collect();
+    let lib = load_content(&legacy).unwrap_or_else(|e| panic!("{e}"));
     assert!(!lib.enemies.is_empty() && !lib.weapons.is_empty() && !lib.effects.is_empty());
     let oracle: Value = serde_json::from_str(
         &std::fs::read_to_string(root().join("native/oracle/content.json")).unwrap(),

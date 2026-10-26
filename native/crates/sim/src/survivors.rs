@@ -1,6 +1,8 @@
 //! State the survivors sim publishes while song time continues through a freeze.
 
 mod arsenal;
+mod spawning;
+pub use spawning::*;
 mod progression;
 mod stats;
 mod weapons;
@@ -34,6 +36,8 @@ pub struct RunState {
     pub presentation_s: f64,
     pub frozen_beat: Option<f64>,
     pub elapsed: f64,
+    pub spawn_minute: Option<usize>,
+    pub spawned: usize,
     pub level: usize,
     pub max_hp: f64,
     pub world: f64,

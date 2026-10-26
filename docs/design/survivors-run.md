@@ -1151,6 +1151,20 @@ are off in survivors. Streaming/frame-cut/freeze recordings match, as does a
 commands and limits. Other weapons enable their delivery in their planned beads.
 
 ### SF6
+
+All 31 Mad Forest minutes and 20 source-stat roles are in the level/content,
+with the 300-alive cap, whole-roster refill, grid arrivals, level-scaled bosses
+and fixed chicken knobs. Brutes/plants use existing art stand-ins. Synthetic
+source/cap/HP checks and headless File evidence are kept in
+[SF6 evidence](../../native/evidence/sf6/README.md). Spawn-only smoke results
+are explicitly separate from SF9's survival gates; normal early check players
+can still die with the rank-1 sword before SF7 adds offers. The final spawn
+smoke reached 309 s, observed every minute 0–4 roster, and peaked at 300 alive.
+A frame-dependent landing order exposed by replay is fixed; the dense
+off-grid-pause test matches 118,817 records between execution strategies. The
+final File session replays all 3,781,538 settled records exactly; check-fast
+passed in 49 s.
+
 ### SF7
 ### SF8
 ### SF9

@@ -142,10 +142,12 @@ pub struct EnemyStats {
     pub knockback: f64,
     pub max_knockback: f64,
     pub res_debuffs: f64,
+    pub level_scaled: bool,
+    pub brute: bool,
 }
 
 impl EnemyStats {
-    /// Temporary director art casting until SF6 replaces the roster, not new balance knobs.
+    /// Fallback for authored levels using legacy art IDs; the shipped Survivors level has explicit stats.
     pub fn for_art(id: &str) -> Self {
         let (speed, power, xp, knockback) = match id {
             "bat" => (140.0, 5.0, 1.0, 1.0),
@@ -164,6 +166,8 @@ impl EnemyStats {
             knockback,
             max_knockback: if id == "minotaur" { 1.0 } else { 3.0 },
             res_debuffs: 0.0,
+            level_scaled: false,
+            brute: false,
         }
     }
 }

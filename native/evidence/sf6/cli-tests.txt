@@ -1,0 +1,14 @@
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sf6-spawner/native/crates/eval)
+   Compiling cli v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sf6-spawner/native/crates/cli)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.34s
+     Running unittests src/main.rs (native/target/debug/deps/ps-98937ca16a447c00)
+
+running 5 tests
+test parity::tests::accuracy_is_stream_pys ... ok
+test parity::tests::matching_counts_neighbours_within_the_tolerance ... ok
+test replay::tests::a_zen_run_replays_in_zen_mode ... ok
+test replay::tests::a_session_replays_in_the_mode_it_ran_in ... ok
+test parity::python::accuracy_equals_pythons_on_committed_streams ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

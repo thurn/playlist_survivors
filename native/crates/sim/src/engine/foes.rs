@@ -119,7 +119,19 @@ impl Sim {
         let env = Rc::clone(&self.env);
         let def = &env.input.lib.enemies[def_i];
         let id = self.st.foes.len();
-        let h0 = health.unwrap_or(def.health);
+        let h0 = health.unwrap_or_else(|| {
+            def.health
+                * if let Some(progress) = self
+                    .st
+                    .survivor
+                    .as_ref()
+                    .filter(|_| def.survivors.is_some_and(|s| s.level_scaled))
+                {
+                    progress.level as f64
+                } else {
+                    1.0
+                }
+        });
         // A stepping enemy takes its first step on its next step's gait time.
         let step_k = def
             .gait
@@ -131,6 +143,7 @@ impl Sim {
             def: def_i,
             r: def.radius,
             health: h0,
+            survivor_boss: false,
             x,
             y,
             vx: 0.0,
@@ -737,7 +750,8 @@ impl Sim {
             f.alive = false;
             f.final_sample = true;
             f.death_w = w;
-            let (def_i, health, id, retreat) = (f.def, f.health, f.id, f.retreat);
+            let (def_i, health, id, retreat, boss) =
+                (f.def, f.health, f.id, f.retreat, f.survivor_boss);
             self.rec.death(fi, w, true);
             // (A retreating boss leaves for good.)
             if retreat {
@@ -749,7 +763,8 @@ impl Sim {
                 Part::Num(id as f64),
             ]);
             let p2 = self.spawn_point(&env.input.lib.enemies[def_i], &mut r, true);
-            self.spawn_foe(def_i, p2.0, p2.1, Some(health));
+            let replacement = self.spawn_foe(def_i, p2.0, p2.1, Some(health));
+            self.st.foes[replacement].survivor_boss = boss;
         }
         let foes = &self.st.foes;
         self.st.alive.retain(|&i| foes[i].alive);
@@ -787,7 +802,7 @@ impl Sim {
     }
 
     pub(super) fn spawn_director(&mut self, bi: f64) {
-        if self.st.blasting {
+        if self.st.blasting || self.st.survivor.is_some() {
             return;
         }
         let env = Rc::clone(&self.env);

@@ -172,6 +172,7 @@ impl Sim {
         Ok(rank)
     }
     pub(super) fn hold_weapons(&mut self) {
+        self.st.spawner.hold();
         if let Some(p) = &mut self.st.survivor {
             p.arsenal.hold();
         }

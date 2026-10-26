@@ -296,6 +296,8 @@ pub fn enemy_def() -> Schema {
                 def("knockback", min(0.0), json!(0)),
                 def("maxKnockback", min(0.0), json!(3)),
                 def("resDebuffs", min(0.0), json!(0)),
+                def("levelScaled", bool(), json!(false)),
+                def("brute", bool(), json!(false)),
             ]),
         ),
         req("id", id()),

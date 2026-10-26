@@ -1,0 +1,55 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sf6-spawner/native/crates/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.87s
+     Running unittests src/lib.rs (native/target/debug/deps/sim-1ebf1e278f138957)
+
+running 10 tests
+test engine::tests::survivor_health_uses_armor_lockout_and_heals_the_added_hollow_heart_maximum ... ok
+test engine::tests::survivor_field_keeps_400_gems_and_merges_xp_into_the_farthest_from_the_hero ... ok
+test engine::tests::survivor_zero_xp_drops_no_gem_and_recoil_starts_on_the_next_sixteenth ... ok
+test engine::tests::survivor_full_field_preserves_a_boss_and_recycling_keeps_its_hp_and_reward ... ok
+minute 0 minimum 15 alive 74 bosses 0 actual {"vs-bat3": 74}
+70 BPM sword rank1: 70 actual target hits, 44.444444444 damage/60s, expected44.444444444, radius80.000
+minute 1 minimum 30 alive 149 bosses 1 actual {"vs-bat1": 74, "vs-bat4": 1, "vs-zombie": 74}
+test engine::tests::survivor_world_time_ignores_stops_dips_and_rates_but_holds_recovery_in_freeze ... ok
+test engine::tests::survivor_accent_shots_are_marked_without_changing_damage ... ok
+test engine::tests::survivor_interval_framework_streaming_equals_batch_across_frame_cuts_and_freeze ... ok
+minute 2 minimum 50 alive 300 bosses 0 actual {"vs-bat1": 100, "vs-bat2": 100, "vs-bat3": 100}
+test engine::tests::survivor_spawner_holds_grid_admissions_and_does_not_catch_up_frozen_ticks ... ok
+70 BPM sword rank8: 280 actual target hits, 1066.666666667 damage/60s, expected1066.666666667, radius144.000
+minute 3 minimum 40 alive 279 bosses 1 actual {"vs-bat4": 1, "vs-skeleton": 278}
+minute 4 minimum 30 alive 268 bosses 0 actual {"vs-ghost": 134, "vs-skeleton": 134}
+minute 5 minimum 10 alive 69 bosses 1 actual {"vs-mudman2": 68, "vs-xlmantis": 1}
+128 BPM sword rank1: 128 actual target hits, 44.444444444 damage/60s, expected44.444444444, radius80.000
+minute 6 minimum 20 alive 258 bosses 0 actual {"vs-mudman2": 129, "vs-zombie": 129}
+minute 7 minimum 80 alive 300 bosses 1 actual {"vs-bat2": 100, "vs-bat3": 100, "vs-bat4": 1, "vs-mudman1": 99}
+minute 8 minimum 100 alive 139 bosses 1 actual {"vs-xlbat": 1, "vs-zombie": 138}
+minute 9 minimum 30 alive 269 bosses 1 actual {"vs-bat5": 1, "vs-xlbat": 134, "vs-zombie": 134}
+128 BPM sword rank8: 512 actual target hits, 1066.666666667 damage/60s, expected1066.666666667, radius144.000
+minute 10 minimum 10 alive 249 bosses 1 actual {"vs-boss-xlmantis": 1, "vs-mudman1": 124, "vs-mudman2": 124}
+174 BPM sword rank1: 174 actual target hits, 44.444444444 damage/60s, expected44.444444444, radius80.000
+minute 11 minimum 300 alive 300 bosses 0 actual {"vs-skeleton": 300}
+174 BPM sword rank8: 696 actual target hits, 1066.666666667 damage/60s, expected1066.666666667, radius144.000
+test engine::tests::survivor_sword_actual_damage_matches_whip_dps_at_three_tempos ... ok
+minute 12 minimum 20 alive 300 bosses 1 actual {"vs-bat4": 1, "vs-ghost": 100, "vs-skeleton": 99, "vs-werewolf": 100}
+minute 13 minimum 150 alive 300 bosses 0 actual {"vs-ghost": 200, "vs-werewolf": 100}
+minute 14 minimum 20 alive 300 bosses 1 actual {"vs-bat5": 1, "vs-werewolf": 149, "vs-xlbat": 150}
+minute 15 minimum 100 alive 300 bosses 1 actual {"vs-boss-werewolf": 1, "vs-mudman2": 99, "vs-werewolf": 100, "vs-xlbat": 100}
+minute 16 minimum 100 alive 300 bosses 1 actual {"vs-bat4": 1, "vs-mudman1": 100, "vs-mudman2": 99, "vs-xlmantis": 100}
+minute 17 minimum 20 alive 79 bosses 0 actual {"vs-xlmummy": 79}
+minute 18 minimum 60 alive 299 bosses 1 actual {"vs-bat5": 1, "vs-mudman1": 149, "vs-xlmummy": 149}
+minute 19 minimum 100 alive 300 bosses 0 actual {"vs-mudman1": 150, "vs-xlmummy": 150}
+minute 20 minimum 100 alive 300 bosses 1 actual {"vs-boss-xlmummy": 1, "vs-mudman2": 100, "vs-xlbat": 99, "vs-xlmummy": 100}
+minute 21 minimum 300 alive 300 bosses 1 actual {"vs-flower": 299, "vs-xlflower": 1}
+minute 22 minimum 200 alive 300 bosses 1 actual {"vs-bat4": 1, "vs-flower": 150, "vs-xlmummy": 149}
+minute 23 minimum 300 alive 300 bosses 1 actual {"vs-bat5": 1, "vs-flower": 150, "vs-xlmummy": 149}
+minute 24 minimum 300 alive 300 bosses 1 actual {"vs-flower": 150, "vs-xlflower": 1, "vs-xlmummy": 149}
+minute 25 minimum 100 alive 300 bosses 1 actual {"vs-boss-xlflower": 1, "vs-xlflower": 299}
+minute 26 minimum 150 alive 300 bosses 0 actual {"vs-flower": 150, "vs-xlflower": 150}
+minute 27 minimum 300 alive 300 bosses 1 actual {"vs-bat4": 1, "vs-mudman1": 100, "vs-mudman2": 99, "vs-xlmummy": 100}
+minute 28 minimum 300 alive 300 bosses 0 actual {"vs-bat4": 150, "vs-xlbat": 150}
+minute 29 minimum 300 alive 300 bosses 1 actual {"vs-bat4": 151, "vs-bat5": 149}
+minute 30 minimum 1 alive 0 bosses 0 actual {}
+test engine::tests::survivor_spawner_all_minutes_obeys_source_rosters_minimum_cap_and_scaled_hp ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 19 filtered out; finished in 0.28s
+

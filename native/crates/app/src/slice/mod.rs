@@ -167,6 +167,8 @@ struct Options {
     switch_at: Option<f64>,
     /// Press on every committed beat, 20 ms late (a stand-in player, for checks).
     press_beats: bool,
+    /// Headless spawn-only smoke: hold Right with hero damage disabled; never a survival result.
+    spawn_smoke: bool,
     /// Zen mode, the default: nothing judged, every move on the beat. `--legacy` (or Z between
     /// runs) plays legacy mode, where presses are judged on the beat.
     zen: bool,
@@ -208,6 +210,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         start_at: None,
         switch_at: None,
         press_beats: false,
+        spawn_smoke: false,
         zen: true,
         watch: false,
         delayed: false,
@@ -232,6 +235,7 @@ fn options(args: &[String]) -> Result<Options, String> {
                 o.mute = true;
             }
             "--press-beats" => o.press_beats = true,
+            "--spawn-smoke" => o.spawn_smoke = true,
             "--legacy" => o.zen = false,
             "--watch" => o.watch = true,
             "--delayed" => o.delayed = true,
@@ -312,6 +316,9 @@ fn options(args: &[String]) -> Result<Options, String> {
             s if s.starts_with("-psn_") => {}
             other => return Err(format!("unknown argument {other}")),
         }
+    }
+    if o.spawn_smoke && (!o.headless || o.press_beats) {
+        return Err("--spawn-smoke needs --headless and cannot combine with --press-beats".into());
     }
     Ok(o)
 }
@@ -638,6 +645,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
         exit_at: opts.seconds.map_or(f64::INFINITY, |s| now_s() + s),
         switch_at: opts.switch_at.map_or(f64::INFINITY, |s| now_s() + s),
         press_beats: opts.press_beats,
+        spawn_smoke: opts.spawn_smoke,
         pressed_beat: f64::NEG_INFINITY,
         focused: false,
         next_frame: 0.0,
@@ -1477,6 +1485,8 @@ struct App {
     switch_at: f64,
     /// The stand-in player (`--press-beats`): the last beat it pressed on (song s).
     press_beats: bool,
+    /// Headless spawn-only smoke: hold Right with hero damage disabled; never a survival result.
+    spawn_smoke: bool,
     pressed_beat: f64,
     /// Whether the window has the keyboard.
     focused: bool,
@@ -1755,6 +1765,23 @@ impl App {
         }
         if self.mute && now > self.voices_at {
             self.voices_at = now + 10.0;
+            if self.running {
+                let view = self.engine.view.borrow();
+                if let Some(run) = view.run.filter(|r| r.spawn_minute.is_some()) {
+                    let mut roles = std::collections::BTreeMap::new();
+                    for (_, foe) in view.alive() {
+                        *roles.entry(foe.kind.as_str()).or_insert(0usize) += 1;
+                    }
+                    eprintln!(
+                        "slice: survivors minute {:?}, run {:.3}s, spawned {}, alive {}: {:?}",
+                        run.spawn_minute,
+                        run.elapsed,
+                        run.spawned,
+                        view.alive().count(),
+                        roles
+                    );
+                }
+            }
             let r = self.engine.stats;
             let mut f = std::mem::take(&mut self.frame_ms);
             f.sort_by(f64::total_cmp);
@@ -2149,6 +2176,9 @@ impl App {
             return;
         };
         engine.settle_s = self.settle_s();
+        if self.spawn_smoke {
+            engine.sim.disable_hero_damage_for_check();
+        }
         self.engine = engine;
         self.scene = Scene::default();
         // The run's music under it, heard from the replay's start: a little ahead, so the mixer
@@ -2658,6 +2688,9 @@ impl App {
         match self.world.engine(self.zen) {
             Ok(mut engine) => {
                 engine.settle_s = self.settle_s();
+                if self.spawn_smoke {
+                    engine.sim.disable_hero_damage_for_check();
+                }
                 self.engine = engine;
             }
             Err(e) => {
@@ -2681,6 +2714,9 @@ impl App {
                 .feed(|log| eval::session::rebase_append(log, e, s0));
         }
         self.engine.key_log = Some(Vec::new());
+        if self.spawn_smoke {
+            self.engine.key(0.0, InputKey::Right, true);
+        }
         self.run_arrivals = self
             .recent
             .iter()
@@ -2693,10 +2729,9 @@ impl App {
         self.run_audio.clear();
         self.stop_watch();
         let zen = self.zen;
-        self.run_index = self
-            .session
-            .as_mut()
-            .map_or(0, |s| s.run_started(s0, zen, &self.world.level.text));
+        self.run_index = self.session.as_mut().map_or(0, |s| {
+            s.run_started(s0, zen, &self.world.level.text, self.spawn_smoke)
+        });
         self.running = true;
         self.listen.reset(false);
         eprintln!("slice: run started at song time {s0:.1}");
