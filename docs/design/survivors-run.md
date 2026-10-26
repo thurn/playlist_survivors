@@ -1340,6 +1340,21 @@ not pacing or survival evidence. See [SH7 evidence](../../native/evidence/sh7/RE
 for stills, the silent capture and tests. Feel and listening remain an operator row.
 
 ### SH8
+
+Gems now show the source blue/green/red value bands, bounded value-scaled glyphs
+and compact beat glows below actors. At 61.708 px combined magnet/body overlap,
+snapshot-owned motion gives the source 60 Hz outward kick and accelerating
+pull; physical collection queues XP/chime on the next sixteenth. Floor food
+has a pixel sprite, actual grid-heal feedback and 300 ms pickup immunity; the
+level's existing drops and fixed 30 HP heal are unchanged. Tests cover geometry,
+freeze, capped healing, immunity, the 400 cap and causal journal timestamps.
+A normal-damage fixture reached run 1:00 at full HP with 291 kills/137 gems;
+a separate 400-gem layout checks drawing hierarchy. A 60-second File check
+replayed all 73,345 live settled records identically. See
+[SH8 evidence](../../native/evidence/sh8/README.md); listening/feel remain an
+operator row. Run from `native/` with `cargo run --release -p app -- --playlist
+playlists/survivors-30.m3u --delayed`.
+
 ### SH9
 ### SH10
 ### SH11

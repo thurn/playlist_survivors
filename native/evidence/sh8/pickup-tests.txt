@@ -1,0 +1,15 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh8-pickups/native/crates/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 8.19s
+     Running unittests src/lib.rs (target/debug/deps/sim-1ebf1e278f138957)
+
+running 4 tests
+test survivors::pickups::tests::pickup_source_attraction_updates_at_60hz_and_increments_legacy_speed_once ... ok
+boss chicken: HP80 -> 110, actual heal30, immunity through0.300s then normal bite4HP
+source magnet46.280992px +body15.426997px: x60 attracted, x62 waits; first gem collected at world0.750000, poses35
+test engine::tests::pickup_motion_and_food_wait_through_a_fractional_world_freeze ... ok
+test engine::tests::pickup_source_magnet_body_overlap_kicks_out_then_accelerates_to_collection ... ok
+boss chicken: HP115 -> 120, actual heal5, immunity through0.300s then normal bite4HP
+test engine::tests::pickup_boss_chicken_drops_heals_thirty_caps_missing_hp_and_protects_for_300ms ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 51 filtered out; finished in 0.02s
+

@@ -462,6 +462,8 @@ pub trait Recorder {
     fn fire(&mut self, weapon: &str, s: f64) {}
     fn weapon_shot(&mut self, shot: crate::survivors::Shot) {}
     fn missile(&mut self, pose: crate::survivors::MissilePose) {}
+    fn gem_pose(&mut self, s: f64, pose: crate::survivors::GemPose) {}
+    fn floor_chicken(&mut self, s: f64, event: crate::survivors::FloorChicken) {}
     fn inventory(&mut self, inventory: crate::survivors::Inventory) {}
     fn chain(&mut self, p: ChainPoint) {}
     fn chain_point(&mut self, chain: usize, p: ChainPoint) {}
@@ -582,6 +584,13 @@ impl<R: Recorder + ?Sized> Recorder for std::rc::Rc<std::cell::RefCell<R>> {
     fn missile(&mut self, pose: crate::survivors::MissilePose) {
         self.borrow_mut().missile(pose);
     }
+    fn gem_pose(&mut self, s: f64, pose: crate::survivors::GemPose) {
+        self.borrow_mut().gem_pose(s, pose);
+    }
+    fn floor_chicken(&mut self, s: f64, event: crate::survivors::FloorChicken) {
+        self.borrow_mut().floor_chicken(s, event);
+    }
+
     fn inventory(&mut self, inventory: crate::survivors::Inventory) {
         self.borrow_mut().inventory(inventory);
     }
@@ -730,6 +739,8 @@ fn to_value<T: Serialize>(x: &T) -> Value {
 pub struct LogRecorder {
     pub weapon_shots: Vec<crate::survivors::Shot>,
     pub missiles: Vec<crate::survivors::MissilePose>,
+    pub gem_poses: Vec<crate::survivors::GemPose>,
+    pub floor_chickens: Vec<crate::survivors::FloorChicken>,
     pub inventories: Vec<crate::survivors::Inventory>,
     pub run_states: Vec<crate::survivors::RunState>,
     pub breaks: Vec<WarpBreak>,
@@ -766,6 +777,8 @@ impl Default for LogRecorder {
         LogRecorder {
             weapon_shots: Vec::new(),
             missiles: Vec::new(),
+            gem_poses: Vec::new(),
+            floor_chickens: Vec::new(),
             inventories: Vec::new(),
             run_states: Vec::new(),
             breaks: Vec::new(),
@@ -799,6 +812,13 @@ impl Default for LogRecorder {
 }
 
 impl Recorder for LogRecorder {
+    fn gem_pose(&mut self, _s: f64, pose: crate::survivors::GemPose) {
+        self.gem_poses.push(pose);
+    }
+    fn floor_chicken(&mut self, _s: f64, event: crate::survivors::FloorChicken) {
+        self.floor_chickens.push(event);
+    }
+
     fn missile(&mut self, pose: crate::survivors::MissilePose) {
         self.missiles.push(pose);
     }

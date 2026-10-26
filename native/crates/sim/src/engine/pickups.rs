@@ -20,6 +20,12 @@ use crate::upgrades::{ItemKind, UpgradeItem, UpgradeRecord, offers_for, passive_
 /// Upgrade orbs rise this far apart (radians).
 pub const ORB_SPREAD: f64 = (2.0 * PI) / 3.0;
 
+#[derive(Clone, Debug)]
+pub(super) struct FlyingGem {
+    gem: FieldGem,
+    motion: crate::survivors::Attraction,
+}
+
 impl Sim {
     pub(super) fn on_death(&mut self, fi: usize, fate: Fate, h: &Hit) {
         let env = Rc::clone(&self.env);
@@ -125,6 +131,16 @@ impl Sim {
                 s_heal: None,
             });
             let i = self.st.n_chickens;
+            if self.st.survivor.is_some() {
+                self.rec.floor_chicken(
+                    self.st.s,
+                    crate::survivors::FloorChicken::Drop {
+                        id: i,
+                        x,
+                        y: fate.y,
+                    },
+                );
+            }
             self.st.n_chickens += 1;
             self.st.chickens.push(Spot { i, x, y: fate.y });
             k += 1.0;
@@ -237,6 +253,10 @@ impl Sim {
             return;
         }
         let hp = self.hero_pose(self.st.w);
+        if self.st.survivor.is_some() {
+            self.collect_survivor_gems();
+            return;
+        }
         let r = self.pickup_radius();
         if self
             .st
@@ -262,6 +282,66 @@ impl Sim {
             .find(|v| hypot(v.x - hp.x, v.y - hp.y) <= VACUUM_TOUCH)
         {
             self.touch_vacuum(v, (hp.x, hp.y));
+        }
+    }
+
+    fn collect_survivor_gems(&mut self) {
+        if self.st.freeze.frozen || self.st.health <= 0.0 {
+            return;
+        }
+        let flying = std::mem::take(&mut self.st.flying_gems);
+        for mut f in flying {
+            let (mut updated, mut collected) = (false, false);
+            while f.motion.next_w <= self.st.w + 1e-9 {
+                let hp = self.hero_pose(f.motion.next_w);
+                collected = f.motion.update((hp.x, hp.y), super::HURTBOX_RADIUS);
+                updated = true;
+                if collected {
+                    break;
+                }
+            }
+            if updated {
+                self.rec.gem_pose(
+                    self.st.s,
+                    crate::survivors::GemPose {
+                        id: f.gem.gem,
+                        w: self.st.w,
+                        x: f.motion.x,
+                        y: f.motion.y,
+                    },
+                );
+            }
+            if collected {
+                let at = self.sixteenth_at_or_after(self.st.s + NEVER_LATE);
+                self.st.q.push(
+                    at,
+                    Ev::Gem {
+                        gem: f.gem.gem,
+                        value: f.gem.value,
+                    },
+                );
+            } else {
+                self.st.flying_gems.push(f);
+            }
+        }
+        let hp = self.hero_pose(self.st.w);
+        let radius = self.pickup_radius() + crate::survivors::GEM_BODY_RADIUS;
+        for gem in std::mem::take(&mut self.st.field) {
+            if (gem.x - hp.x).hypot(gem.y - hp.y) > radius {
+                self.st.field.push(gem);
+                continue;
+            }
+            let motion = crate::survivors::Attraction::new(self.st.w, gem.x, gem.y);
+            self.rec.gem_pose(
+                self.st.s,
+                crate::survivors::GemPose {
+                    id: gem.gem,
+                    w: self.st.w,
+                    x: gem.x,
+                    y: gem.y,
+                },
+            );
+            self.st.flying_gems.push(FlyingGem { gem, motion });
         }
     }
 
@@ -417,6 +497,9 @@ impl Sim {
     /// On every fixed step: a chicken within reach of the hero is eaten, healing on the first
     /// sixteenth at least NEVER_LATE away.
     pub(super) fn touch_chickens(&mut self) {
+        if self.st.survivor.is_some() && (self.st.freeze.frozen || self.st.health <= 0.0) {
+            return;
+        }
         if self.st.chickens.is_empty() {
             return;
         }
@@ -429,7 +512,15 @@ impl Sim {
             }
             let s_heal = self.sixteenth_at_or_after(self.st.s + NEVER_LATE);
             self.rec.chicken_taken(c.i, self.st.s, self.st.w, s_heal);
-            self.st.q.push(s_heal, Ev::ChickenHeal);
+            if self.st.survivor.is_some() {
+                self.st.invuln_until = self
+                    .st
+                    .invuln_until
+                    .max(self.st.w + crate::survivors::CHICKEN_IMMUNITY_S);
+                self.rec
+                    .floor_chicken(self.st.s, crate::survivors::FloorChicken::Taken { id: c.i });
+            }
+            self.st.q.push(s_heal, Ev::ChickenHeal { chicken: c.i });
         }
     }
 

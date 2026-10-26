@@ -41,6 +41,7 @@ pub struct Scene {
     numbers: damage::Numbers,
     sword: super::sword::Sword,
     garlic: super::garlic::Garlic,
+    pickups: super::pickups::Pickups,
     effects: Effects,
     bitten: f64,
     /// The open field's chunks near the camera, by zone.
@@ -486,6 +487,7 @@ impl Scene {
                 }
                 Moment::Bite { .. } => self.bitten = now,
                 Moment::TierChange { up, .. } => self.tier_change = Some((now, *up)),
+                Moment::ChickenHeal { amount, .. } => self.pickups.healed(now, *amount),
                 Moment::GemPickup => {
                     if let Some(h) = view.hero {
                         fire("gem-pickup", h.x, h.y - 16.0, 0.0, 1.0, Start::default());
@@ -699,6 +701,18 @@ impl Scene {
             lights,
             &mut layers.grade,
         );
+        if view.run.is_some() {
+            let swell = 0.5 + 0.5 * (std::f64::consts::TAU * pulse.beat.min(1.0)).cos();
+            gems::draw(
+                view,
+                art,
+                &at,
+                scale,
+                view.run.map_or(self.run_s, |r| r.presentation_s),
+                fast.pulsed(swell),
+                out,
+            );
+        }
         let mut order: Vec<(f64, Drawn)> = view
             .foes
             .iter()
@@ -901,15 +915,21 @@ impl Scene {
         self.sword.draw(now, art, &at, scale, out, lights);
         super::wand::draw(view, art, &at, scale, out, lights);
         let swell = 0.5 + 0.5 * (std::f64::consts::TAU * pulse.beat.min(1.0)).cos();
-        gems::draw(
-            view,
-            art,
-            &at,
-            scale,
-            view.run.map_or(self.run_s, |r| r.presentation_s),
-            fast.pulsed(swell),
-            out,
-        );
+        if view.run.is_none() {
+            gems::draw(
+                view,
+                art,
+                &at,
+                scale,
+                view.run.map_or(self.run_s, |r| r.presentation_s),
+                fast.pulsed(swell),
+                out,
+            );
+        }
+        if let Some(hero) = view.hero {
+            self.pickups
+                .draw(now, at(hero.x, hero.y), scale, out, lights);
+        }
         self.effects.draw(art, now, &at, scale, w, h, false, out);
         self.effects
             .post(now, &at, scale, lights, &mut layers.grade);

@@ -1,0 +1,11 @@
+   Compiling cli v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh8-pickups/native/crates/cli)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.24s
+     Running unittests src/main.rs (target/debug/deps/ps-516a0a78fbfc2089)
+
+running 3 tests
+test survive::tests::bot_options_reject_unknown_bots_and_mislabeled_fixture_orders ... ok
+test survive::tests::playlist_orders_preserve_the_gap_schedule_and_change_the_actual_tracks ... ok
+test survive::tests::held_actor_releases_at_cards_waits_for_reveal_then_represses ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.01s
+

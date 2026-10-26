@@ -125,6 +125,19 @@ fn textures() -> Vec<(&'static str, Img)> {
             pixels(7, 10, &[(2, 0, 3, 10), (0, 3, 7, 4), (1, 1, 5, 8)]),
         ),
         ("gem-big-glint", pixels(7, 10, &[(2, 2, 1, 3)])),
+        // Small hand-authored floor food, using the same pixel masks as gems.
+        (
+            "chicken-body",
+            pixels(12, 10, &[(2, 0, 4, 9), (0, 2, 8, 5), (1, 1, 6, 7)]),
+        ),
+        (
+            "chicken-bone",
+            pixels(12, 10, &[(6, 5, 4, 2), (9, 6, 2, 3), (10, 7, 2, 2)]),
+        ),
+        (
+            "chicken-glint",
+            pixels(12, 10, &[(2, 1, 3, 1), (1, 2, 1, 3)]),
+        ),
         ("spark", cross(6, 2)),
         ("shard", cross(4, 2)),
         ("ember", cross(3, 1)),

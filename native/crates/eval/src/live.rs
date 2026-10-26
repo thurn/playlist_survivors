@@ -104,6 +104,10 @@ pub enum Moment {
     },
     /// A gem reached the hero.
     GemPickup,
+    ChickenHeal {
+        id: usize,
+        amount: f64,
+    },
     /// An enemy died where it was last seen (not recycled ones).
     Death {
         kind: String,
@@ -145,9 +149,16 @@ pub enum Moment {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Cause {
     /// A swing's strike at `s` (its whoosh comes just before), at the hero's x.
-    Swing { s: f64, x: f64, kind: &'static str },
+    Swing {
+        s: f64,
+        x: f64,
+        kind: &'static str,
+    },
     /// An enemy killed by a hit at `s`.
-    Kill { s: f64, x: f64 },
+    Kill {
+        s: f64,
+        x: f64,
+    },
     /// A weapon's hit at `s`: as it fires (`caught` false), and on the first enemy it catches.
     Weapon {
         s: f64,
@@ -169,15 +180,32 @@ pub enum Cause {
         accent: bool,
     },
     /// The hero bitten at `s`.
-    Hurt { s: f64 },
+    Hurt {
+        s: f64,
+    },
     /// The groove's tier rose or fell; its chime at `s`.
-    Tier { s: f64, up: bool },
+    Tier {
+        s: f64,
+        up: bool,
+    },
     /// A stride landed (not a stomp).
-    Step { s: f64, x: f64 },
+    Step {
+        s: f64,
+        x: f64,
+    },
     /// A level gained at `s`.
-    LevelUp { s: f64 },
+    LevelUp {
+        s: f64,
+    },
     /// Presentation derived from the existing pickup record, never added to the hash journal.
-    Gem { s: f64, gem: usize },
+    Gem {
+        s: f64,
+        gem: usize,
+    },
+    Chicken {
+        s: f64,
+        id: usize,
+    },
 }
 
 /// A sound's cause and the song time the simulation knew it at.
@@ -194,6 +222,8 @@ const BOLT_KEEP_S: f64 = 1.0;
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct LiveView {
     pub inventory: Option<sim::survivors::Inventory>,
+    pub gem_poses: BTreeMap<usize, sim::survivors::GemPose>,
+    pub chickens: BTreeMap<usize, (f64, f64)>,
     /// Bounded recent causal projectile samples, restored with the view on rollback.
     pub missiles: BTreeMap<usize, Vec<sim::survivors::MissilePose>>,
     pub run: Option<sim::survivors::RunState>,
@@ -275,6 +305,23 @@ impl LiveView {
     pub fn apply(&mut self, s: f64, rec: &Record) {
         self.s = s;
         match rec {
+            Record::GemPose(pose) => {
+                self.gem_poses.insert(pose.id, *pose);
+                if let Some(g) = self.gems.get_mut(&pose.id) {
+                    g.fly.get_or_insert(s);
+                }
+            }
+            Record::FloorChicken(event) => match *event {
+                sim::survivors::FloorChicken::Drop { id, x, y } => {
+                    self.chickens.insert(id, (x, y));
+                }
+                sim::survivors::FloorChicken::Taken { id } => {
+                    self.chickens.remove(&id);
+                }
+                sim::survivors::FloorChicken::Healed { id, amount } => {
+                    self.moments.push(Moment::ChickenHeal { id, amount });
+                }
+            },
             Record::Missile(pose) => {
                 if pose.alive {
                     let trail = self.missiles.entry(pose.id).or_default();
@@ -420,6 +467,7 @@ impl LiveView {
                 }
             }
             Record::GemArrive { gem } => {
+                self.gem_poses.remove(gem);
                 self.gems.remove(gem);
             }
             Record::Vacuum { x, y } => {
@@ -467,6 +515,8 @@ impl LiveView {
 /// What the simulation reported, as the view applies it.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Record {
+    GemPose(sim::survivors::GemPose),
+    FloorChicken(sim::survivors::FloorChicken),
     Missile(sim::survivors::MissilePose),
     Inventory(sim::survivors::Inventory),
     Run(sim::survivors::RunState),
@@ -648,6 +698,17 @@ impl Journal {
 pub struct LiveRecorder(pub Rc<RefCell<Journal>>);
 
 impl Recorder for LiveRecorder {
+    fn gem_pose(&mut self, s: f64, pose: sim::survivors::GemPose) {
+        let mut j = self.0.borrow_mut();
+        // Called inside a fixed clock move, before clock() publishes its stop.
+        j.notes.s = s;
+        j.push(Record::GemPose(pose));
+    }
+    fn floor_chicken(&mut self, s: f64, event: sim::survivors::FloorChicken) {
+        let mut j = self.0.borrow_mut();
+        j.notes.s = s;
+        j.push(Record::FloorChicken(event));
+    }
     fn missile(&mut self, pose: sim::survivors::MissilePose) {
         self.0.borrow_mut().push(Record::Missile(pose));
     }
@@ -1412,6 +1473,11 @@ impl Engine {
                         _ => None,
                     }
                 }
+                Record::FloorChicken(sim::survivors::FloorChicken::Healed { id, .. })
+                    if shown.run.is_some() =>
+                {
+                    Some(Cause::Chicken { s: *s, id: *id })
+                }
                 Record::GemArrive { gem } if shown.run.is_some() => {
                     Some(Cause::Gem { s: *s, gem: *gem })
                 }
@@ -1477,7 +1543,8 @@ impl Cause {
             | Cause::LevelUp { s }
             | Cause::Gem { s, .. }
             | Cause::WeaponImpact { s, .. }
-            | Cause::WeaponPulse { s, .. } => *s,
+            | Cause::WeaponPulse { s, .. }
+            | Cause::Chicken { s, .. } => *s,
         }
     }
 }

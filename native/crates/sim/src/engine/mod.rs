@@ -387,7 +387,9 @@ enum Ev {
     OrbApply {
         item: UpgradeItem,
     },
-    ChickenHeal,
+    ChickenHeal {
+        chicken: usize,
+    },
     LevelWait {
         level: usize,
     },
@@ -481,7 +483,7 @@ impl Ev {
             Ev::Wave { .. } => 15.0,
             Ev::Fire { .. } | Ev::WandBullet(_) => 16.0,
             Ev::Chain { .. } => 17.0,
-            Ev::Gem { .. } | Ev::ChickenHeal => 20.0,
+            Ev::Gem { .. } | Ev::ChickenHeal { .. } => 20.0,
             Ev::Beat { .. } | Ev::Drain { .. } => 21.0,
             Ev::ZoneWave { .. }
             | Ev::ZoneFallback { .. }
@@ -971,6 +973,7 @@ struct SimState {
     waves: Vec<WaveState>,
     chains: Vec<ChainState>,
     field: Vec<FieldGem>,
+    flying_gems: Vec<pickups::FlyingGem>,
     vacuums: Vec<Spot>,
     loadout: Loadout,
     bonus: PassiveBonus,
@@ -1827,7 +1830,19 @@ impl Sim {
                     self.grant();
                 }
             }
-            Ev::ChickenHeal => self.heal(CHICKEN_HEAL, "chicken"),
+            Ev::ChickenHeal { chicken } => {
+                let before = self.st.health;
+                self.heal(CHICKEN_HEAL, "chicken");
+                if self.st.survivor.is_some() {
+                    self.rec.floor_chicken(
+                        self.st.s,
+                        crate::survivors::FloorChicken::Healed {
+                            id: chicken,
+                            amount: self.st.health - before,
+                        },
+                    );
+                }
+            }
             Ev::OrbApply { item } => {
                 let i = self
                     .st
@@ -1981,6 +1996,7 @@ fn fresh_state(env: &Env) -> SimState {
         waves: Vec::new(),
         chains: Vec::new(),
         field: Vec::new(),
+        flying_gems: Vec::new(),
         vacuums: Vec::new(),
         loadout: starting_loadout(&level.upgrades.loadout),
         bonus: PassiveBonus::default(),
@@ -2742,6 +2758,177 @@ mod tests {
         assert_eq!(a.st.health, b.st.health);
         assert!((a.st.health - (100.0 + a.w())).abs() < 0.01);
         assert_eq!(format!("{:?}", ar.borrow()), format!("{:?}", br.borrow()));
+    }
+
+    #[test]
+    fn pickup_source_magnet_body_overlap_kicks_out_then_accelerates_to_collection() {
+        let mut sim = survivor_sim();
+        let rec = Rc::new(std::cell::RefCell::new(
+            crate::recorder::LogRecorder::default(),
+        ));
+        sim.rec = Box::new(Rc::clone(&rec));
+        for (fi, x) in [(0, 60.0), (1, 62.0)] {
+            sim.drop_on_field(
+                fi,
+                crate::recorder::Fate {
+                    w: 0.0,
+                    x,
+                    y: 0.0,
+                    hit: 0.0,
+                    lethal: true,
+                    damage: 0.0,
+                },
+                1.0,
+                false,
+            );
+        }
+        assert!((sim.pickup_radius() - 0.3 * crate::survivors::PX_PER_VS_UNIT).abs() < 1e-9);
+        sim.collect_gems();
+        assert_eq!(
+            sim.st.field.len(),
+            1,
+            "0.3U magnet plus0.1U gem body, not magnet alone"
+        );
+        assert_eq!(sim.st.flying_gems.len(), 1);
+        sim.advance_to(0.2);
+        assert!(
+            rec.borrow()
+                .gem_poses
+                .iter()
+                .any(|p| p.id == 0 && p.x > 65.0),
+            "negative start gives an outward kick"
+        );
+        assert!(
+            sim.st.survivor.as_ref().unwrap().xp == 0.0,
+            "not collected on an arbitrary early beat"
+        );
+        sim.advance_to(1.2);
+        let r = rec.borrow();
+        assert_eq!(sim.st.survivor.as_ref().unwrap().xp, 1.0);
+        assert_eq!(sim.st.field.len(), 1);
+        assert!(r.xp.0.last().is_some_and(|s| *s > 0.5));
+        eprintln!(
+            "source magnet46.280992px +body15.426997px: x60 attracted, x62 waits; first gem collected at world{:.6}, poses{}",
+            r.xp.0.last().copied().unwrap(),
+            r.gem_poses.len()
+        );
+        drop(r);
+        sim.apply_survivor_stats(crate::survivors::StatDelta {
+            magnet: 0.5,
+            ..Default::default()
+        });
+        sim.collect_gems();
+        assert!(
+            sim.st.field.is_empty(),
+            "magnet modifiers apply to magnet radius, not gem body"
+        );
+    }
+    #[test]
+    fn pickup_motion_and_food_wait_through_a_fractional_world_freeze() {
+        let mut sim = survivor_sim();
+        let rec = Rc::new(std::cell::RefCell::new(
+            crate::recorder::LogRecorder::default(),
+        ));
+        sim.rec = Box::new(Rc::clone(&rec));
+        sim.drop_on_field(
+            0,
+            crate::recorder::Fate {
+                w: 0.0,
+                x: 60.0,
+                y: 0.0,
+                hit: 0.0,
+                lethal: true,
+                damage: 0.0,
+            },
+            1.0,
+            false,
+        );
+        sim.freeze_at(0.203, crate::survivors::FreezeReason::Paused);
+        sim.advance_to(0.21);
+        let before = rec.borrow().gem_poses.clone();
+        rec.borrow_mut()
+            .chickens
+            .push(crate::recorder::ChickenRecord {
+                s: sim.st.s,
+                w: sim.st.w,
+                x: 0.0,
+                y: 0.0,
+                s_taken: None,
+                w_taken: None,
+                s_heal: None,
+            });
+        sim.st.chickens.push(super::Spot {
+            i: 0,
+            x: 0.0,
+            y: 0.0,
+        });
+        sim.advance_to(2.0);
+        assert_eq!(rec.borrow().gem_poses, before);
+        assert!(rec.borrow().floor_chickens.is_empty(), "no paused pickup");
+        assert_eq!(sim.st.survivor.as_ref().unwrap().xp, 0.0);
+        key(&mut sim, 2.1, KeyEventKind::Press, InputKey::Pause);
+        key(&mut sim, 2.11, KeyEventKind::Release, InputKey::Pause);
+        sim.advance_to(3.7);
+        assert_eq!(sim.st.survivor.as_ref().unwrap().xp, 1.0);
+        assert!(
+            rec.borrow()
+                .floor_chickens
+                .iter()
+                .any(|e| matches!(e, crate::survivors::FloorChicken::Healed { .. }))
+        );
+    }
+    #[test]
+    fn pickup_boss_chicken_drops_heals_thirty_caps_missing_hp_and_protects_for_300ms() {
+        for (start, expected) in [(80.0, 110.0), (115.0, 120.0)] {
+            let (rec, mut sim, def) = garlic_measurement(120.0, 1);
+            Rc::get_mut(&mut sim.env).unwrap().input.no_hero_damage = false;
+            sim.st.health = start;
+            let fi = sim.spawn_foe(def, 100.0, 0.0, Some(1.0));
+            sim.st.foes[fi].survivor_boss = true;
+            let hit = sim.add_hit(
+                super::combat::HitSpec {
+                    source: crate::recorder::HitSource::Weapon,
+                    what: "sword".into(),
+                    weight: crate::recorder::Weight::Light,
+                    primary: true,
+                    shape: crate::core::geometry::Shape::Circle {
+                        x: 100.0,
+                        y: 0.0,
+                        radius: 1.0,
+                    },
+                    dir: 0.0,
+                    accent: 0.0,
+                    damage: 1.0,
+                    group: None,
+                },
+                None,
+            );
+            sim.damage(fi, &hit);
+            assert_eq!(rec.borrow().chickens.len(), 1, "level bossChickens1");
+            assert!(matches!(
+                rec.borrow().floor_chickens[0],
+                crate::survivors::FloorChicken::Drop {
+                    id: 0,
+                    x: 100.0,
+                    y: 0.0
+                }
+            ));
+            sim.st.rest_pose = (100.0, 0.0);
+            sim.touch_chickens();
+            assert!(sim.st.chickens.is_empty());
+            sim.advance_to(0.126);
+            assert_eq!(sim.st.health, expected);
+            assert!(rec.borrow().floor_chickens.iter().any(|e|matches!(e,crate::survivors::FloorChicken::Healed{id:0,amount} if (*amount-(expected-start)).abs()<1e-9)));
+            sim.hurt(10.0, "bite", "test");
+            assert_eq!(sim.st.health, expected, "food pickup immunity is300ms");
+            sim.advance_to(0.301);
+            sim.hurt(10.0, "bite", "test");
+            assert_eq!(sim.st.health, expected - 4.0);
+            eprintln!(
+                "boss chicken: HP{start} -> {expected}, actual heal{}, immunity through0.300s then normal bite4HP",
+                expected - start
+            );
+        }
     }
 
     #[test]

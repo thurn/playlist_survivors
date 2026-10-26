@@ -1,0 +1,31 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling num-traits v0.2.19
+   Compiling serde-saphyr v2.0.0
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh8-pickups/native/crates/sim)
+   Compiling players v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh8-pickups/native/crates/players)
+    Finished `test` profile [optimized + debuginfo] target(s) in 9.61s
+     Running unittests src/lib.rs (target/debug/deps/players-4848058dd9f73cbc)
+
+running 4 tests
+test survivors::tests::afk_never_moves_and_picks_once_one_beat_after_the_cards_land ... ok
+test survivors::tests::positioning_flees_the_close_crowd_and_seeks_xp_only_when_safe ... ok
+test survivors::tests::freeze_releases_movement_and_resume_requires_a_fresh_press ... ok
+test survivors::tests::seeded_random_picks_survive_reopening_and_preserve_all_seed_bits ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/smoke.rs (target/debug/deps/smoke-6b3bce3c51da4dad)
+
+running 2 tests
+test a_driven_run_is_deterministic ... ok
+test the_honest_player_outplays_the_masher_on_the_galop ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.71s
+
+   Doc-tests players
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

@@ -1098,3 +1098,67 @@ fn survivor_weapon_sounds_and_missile_trails_follow_actual_records() {
     }
     assert!(peak_missiles > 0, "actual projectile view path exercised");
 }
+
+#[test]
+fn pickup_records_use_the_fixed_stop_timestamp_and_rewind_with_the_journal() {
+    use eval::live::{Journal, LiveRecorder, LiveView};
+    use sim::{
+        recorder::Recorder,
+        survivors::{FloorChicken, GemPose},
+    };
+    let journal = std::rc::Rc::new(std::cell::RefCell::new(Journal::default()));
+    let mut recorder = LiveRecorder(std::rc::Rc::clone(&journal));
+    let mark = journal.borrow().mark();
+    recorder.gem_pose(
+        0.017,
+        GemPose {
+            id: 7,
+            w: 0.017,
+            x: 60.0,
+            y: 2.0,
+        },
+    );
+    recorder.floor_chicken(
+        0.017,
+        FloorChicken::Drop {
+            id: 2,
+            x: 5.0,
+            y: 6.0,
+        },
+    );
+    let mut view = LiveView::default();
+    for i in 0..journal.borrow().end() {
+        let j = journal.borrow();
+        let (s, record) = j.get(i).unwrap();
+        assert_eq!(
+            *s, 0.017,
+            "callback precedes clock() but owns its canonical stop"
+        );
+        view.apply(*s, record);
+    }
+    assert_eq!(view.gem_poses[&7].x, 60.0);
+    assert_eq!(view.chickens[&2], (5.0, 6.0));
+    journal.borrow_mut().rewind(&mark);
+    assert_eq!(journal.borrow().end(), 0);
+    recorder.floor_chicken(0.025, FloorChicken::Taken { id: 2 });
+    recorder.floor_chicken(
+        0.125,
+        FloorChicken::Healed {
+            id: 2,
+            amount: 30.0,
+        },
+    );
+    for i in 0..journal.borrow().end() {
+        let j = journal.borrow();
+        let (s, record) = j.get(i).unwrap();
+        view.apply(*s, record);
+    }
+    assert!(view.chickens.is_empty());
+    assert!(matches!(
+        view.take_moments().as_slice(),
+        [Moment::ChickenHeal {
+            id: 2,
+            amount: 30.0
+        }]
+    ));
+}

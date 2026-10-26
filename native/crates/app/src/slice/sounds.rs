@@ -548,6 +548,11 @@ impl Sounds {
                     vec![Call::new("step", *s, *x, 0.25)]
                 }
             }
+            Cause::Chicken { s, .. } => {
+                let mut c = Call::new("chicken", *s, f64::NAN, 0.65);
+                c.owner = Some(*s);
+                vec![c]
+            }
             Cause::Gem { s, gem } => {
                 let mut c = Call::new("chime", *s, f64::NAN, 0.55);
                 c.every = Some(Every::Sixteenth);

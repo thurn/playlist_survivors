@@ -450,13 +450,17 @@ impl Sim {
                 | Ev::Gem { .. }
                 | Ev::Recoil { .. }
                 | Ev::EnemyImpact { .. }
-                | Ev::MissileEnd(_) => 0.25,
+                | Ev::MissileEnd(_)
+                | Ev::ChickenHeal { .. } => 0.25,
                 _ => 1.0,
             };
             let grid = self.known_grid_after(due, step).or_else(|| {
                 matches!(
                     h.entry.ev,
-                    Ev::Recoil { .. } | Ev::EnemyImpact { .. } | Ev::MissileEnd(_)
+                    Ev::Recoil { .. }
+                        | Ev::EnemyImpact { .. }
+                        | Ev::MissileEnd(_)
+                        | Ev::ChickenHeal { .. }
                 )
                 .then(|| (0.0, self.next_enemy_sixteenth(due)))
             });

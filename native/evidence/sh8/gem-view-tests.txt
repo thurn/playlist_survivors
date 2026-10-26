@@ -1,0 +1,14 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh8-pickups/native/crates/sim)
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh8-pickups/native/crates/eval)
+   Compiling app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sh8-pickups/native/crates/app)
+    Finished `test` profile [optimized + debuginfo] target(s) in 11.51s
+     Running unittests src/main.rs (target/debug/deps/playlist_survivors-117eebc7468b2345)
+
+running 4 tests
+test slice::gems::tests::a_blasts_gem_hangs_then_flies_in ... ok
+test slice::gems::tests::a_gem_waits_on_the_field_until_it_takes_off_then_reaches_the_hero ... ok
+test slice::gems::tests::survivor_gem_uses_recorded_physical_position_without_an_invented_arrival ... ok
+test slice::gems::tests::survivor_value_bands_scale_and_cap_the_merged_gem_size ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 50 filtered out; finished in 0.00s
+
