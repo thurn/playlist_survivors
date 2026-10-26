@@ -1,0 +1,15 @@
+changes: 3 paths since 29036cc
+friction: 46 records valid
+Using CPython 3.12.14 interpreter at: /opt/homebrew/opt/python@3.12/bin/python3.12
+Creating virtual environment at: .venv
+   Building ps-analysis @ file:///Users/dthurn/playlist_survivors/.worktrees/tooling-dotnet-root/tools/analysis
+      Built ps-analysis @ file:///Users/dthurn/playlist_survivors/.worktrees/tooling-dotnet-root/tools/analysis
+Installed 44 packages in 137ms
+All checks passed!
+WARN `--no-project` was provided, but no project was found
+...........................
+----------------------------------------------------------------------
+Ran 27 tests in 0.034s
+
+OK
+check-fast: passed in 1 s

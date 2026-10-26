@@ -1,0 +1,4 @@
+ilspycmd -l c with explicit Homebrew DOTNET_ROOT: exit 0
+Body type present in PhaserPort.dll
+Local extraction README runtime-root guidance: present
+README SHA-256: 024897cd25c2510bd795c3835bb2bfb6f9aae6326c8c2421295b0fc645d66ebf
