@@ -13,3 +13,18 @@ test-results/
 playwright-report/
 # The operator's own analysed tracks (the TS game's reactive:add, before D6).
 reactive-local/
+# 3D tech demo: paid vendor assets and everything derived from them, plus
+# Unity's generated folders. Never commit these (AGENTS.md, vendor assets).
+/demo3d/Assets/Vendor/
+/demo3d/Assets/Vendor.meta
+/demo3d/Assets/Baked/
+/demo3d/Assets/Baked.meta
+/demo3d/[Ll]ibrary/
+/demo3d/[Tt]emp/
+/demo3d/[Oo]bj/
+/demo3d/[Bb]uilds/
+/demo3d/[Ll]ogs/
+/demo3d/[Uu]ser[Ss]ettings/
+/demo3d/*.csproj
+/demo3d/*.sln
+/demo3d/*.slnx
