@@ -36,6 +36,7 @@ pub struct HeroPose {
 /// An enemy as last sampled.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Foe {
+    pub survivor_boss: bool,
     /// Its content id (`goblin`, `bat`, ...).
     pub kind: String,
     pub x: f64,
@@ -149,6 +150,11 @@ pub enum Moment {
 /// places it on the beat grid, picks its sample and schedules it).
 #[derive(Clone, Debug, PartialEq)]
 pub enum Cause {
+    Treasure {
+        s: f64,
+        id: usize,
+        tick: Option<u8>,
+    },
     /// A swing's strike at `s` (its whoosh comes just before), at the hero's x.
     Swing {
         s: f64,
@@ -225,6 +231,7 @@ pub struct LiveView {
     pub inventory: Option<sim::survivors::Inventory>,
     pub gem_poses: BTreeMap<usize, sim::survivors::GemPose>,
     pub chickens: BTreeMap<usize, (f64, f64)>,
+    pub chests: BTreeMap<usize, sim::survivors::FieldChest>,
     /// Bounded recent causal projectile samples, restored with the view on rollback.
     pub missiles: BTreeMap<usize, Vec<sim::survivors::MissilePose>>,
     pub run: Option<sim::survivors::RunState>,
@@ -323,6 +330,20 @@ impl LiveView {
                     self.moments.push(Moment::ChickenHeal { id, amount });
                 }
             },
+            Record::SurvivorBoss(id) => {
+                if let Some(f) = self.foes.get_mut(id) {
+                    f.survivor_boss = true;
+                }
+            }
+            Record::Chest(event) => match *event {
+                sim::survivors::ChestEvent::Drop(c) => {
+                    self.chests.insert(c.id, c);
+                }
+                sim::survivors::ChestEvent::Taken { id } => {
+                    self.chests.remove(&id);
+                }
+                _ => {}
+            },
             Record::Missile(pose) => {
                 if pose.alive {
                     let trail = self.missiles.entry(pose.id).or_default();
@@ -366,6 +387,7 @@ impl LiveView {
                 self.foes.insert(
                     *id,
                     Foe {
+                        survivor_boss: false,
                         kind: kind.clone(),
                         x: f64::NAN,
                         y: f64::NAN,
@@ -518,6 +540,8 @@ impl LiveView {
 pub enum Record {
     GemPose(sim::survivors::GemPose),
     FloorChicken(sim::survivors::FloorChicken),
+    Chest(sim::survivors::ChestEvent),
+    SurvivorBoss(usize),
     Missile(sim::survivors::MissilePose),
     Inventory(sim::survivors::Inventory),
     Run(sim::survivors::RunState),
@@ -714,6 +738,14 @@ impl Recorder for LiveRecorder {
         let mut j = self.0.borrow_mut();
         j.notes.s = s;
         j.push(Record::FloorChicken(event));
+    }
+    fn survivor_boss(&mut self, id: usize) {
+        self.0.borrow_mut().push(Record::SurvivorBoss(id));
+    }
+    fn chest(&mut self, s: f64, event: sim::survivors::ChestEvent) {
+        let mut j = self.0.borrow_mut();
+        j.notes.s = s;
+        j.push(Record::Chest(event));
     }
     fn missile(&mut self, pose: sim::survivors::MissilePose) {
         self.0.borrow_mut().push(Record::Missile(pose));
@@ -1599,6 +1631,20 @@ impl Engine {
                 {
                     Some(Cause::Chicken { s: *s, id: *id })
                 }
+                Record::Chest(sim::survivors::ChestEvent::Tick { id, index }) => {
+                    Some(Cause::Treasure {
+                        s: *s,
+                        id: *id,
+                        tick: Some(*index),
+                    })
+                }
+                Record::Chest(sim::survivors::ChestEvent::Landed { id, .. }) => {
+                    Some(Cause::Treasure {
+                        s: *s,
+                        id: *id,
+                        tick: None,
+                    })
+                }
                 Record::GemArrive { gem } if shown.run.is_some() => {
                     Some(Cause::Gem { s: *s, gem: *gem })
                 }
@@ -1702,7 +1748,8 @@ impl Cause {
             | Cause::Gem { s, .. }
             | Cause::WeaponImpact { s, .. }
             | Cause::WeaponPulse { s, .. }
-            | Cause::Chicken { s, .. } => *s,
+            | Cause::Chicken { s, .. }
+            | Cause::Treasure { s, .. } => *s,
         }
     }
 }

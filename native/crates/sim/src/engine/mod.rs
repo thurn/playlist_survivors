@@ -30,6 +30,7 @@ mod pool;
 mod separation_cache;
 pub use bounds::Storage;
 use pool::Pool;
+mod chests;
 mod combat;
 mod enemy_rhythm;
 mod foes;
@@ -694,6 +695,7 @@ struct Foe {
     r: f64,
     health: f64,
     survivor_boss: bool,
+    chest_loot: Option<crate::survivors::ChestLoot>,
     attack: Option<enemy_rhythm::Lunge>,
     x: f64,
     y: f64,
@@ -953,6 +955,10 @@ struct SimState {
     freeze: freeze::Freeze,
     survivor: Option<crate::survivors::Progress>,
     spawner: crate::survivors::Spawner,
+    chests: Vec<crate::survivors::FieldChest>,
+    n_chests: usize,
+    treasure_minutes: u32,
+    roulette: Option<crate::survivors::Roulette>,
     garlic: Option<weapons::GarlicAura>,
     missiles: Vec<missiles::Missile>,
     bibles: Vec<bible::BibleCycle>,
@@ -1739,6 +1745,7 @@ impl Sim {
             self.collect_gems();
             self.touch_orbs();
             self.touch_chickens();
+            self.touch_chests();
             self.st.last_fixed_w = self.st.w;
         }
         self.rec.clock(self.st.s, self.st.w, between);
@@ -1786,6 +1793,7 @@ impl Sim {
         let t_fixed = self.st.fixed_k / SIM_RATE;
         let t = self.next_stop();
         self.move_clock(t, t == t_fixed, false);
+        self.tick_chest();
         self.maybe_resume();
         if t == t_fixed {
             self.st.fixed_k += 1.0;
@@ -1998,6 +2006,10 @@ fn fresh_state(env: &Env) -> SimState {
         s: 0.0,
         run_s: 0.0,
         spawner: crate::survivors::Spawner::default(),
+        chests: Vec::new(),
+        n_chests: 0,
+        treasure_minutes: 0,
+        roulette: None,
         garlic: None,
         missiles: Vec::new(),
         bibles: Vec::new(),
@@ -4454,7 +4466,7 @@ mod tests {
         sim.st.s = 60.0;
         sim.st.w = 60.0;
         sim.tick_spawner();
-        assert_eq!(sim.st.spawner.waiting_bosses, ["vs-bat4"]);
+        assert_eq!(sim.st.spawner.waiting_bosses[0].role, "vs-bat4");
         sim.kill(0);
         sim.tick_spawner();
         assert!(sim.st.spawner.waiting_bosses.is_empty());
@@ -5129,6 +5141,436 @@ mod tests {
         }
         eprintln!(
             "CI42: {count} queue selections equal the original drain algorithm; exact timestamps, +/-0.5ps, mixed phases/kinds and events inserted during dispatch"
+        );
+    }
+    mod chest_tests {
+        use super::*;
+        use crate::survivors::{ChestEvent, FreezeReason, Item, WeaponId};
+        fn fixture(beats: usize) -> (Sim, Rc<std::cell::RefCell<crate::recorder::LogRecorder>>) {
+            let mut file = stream();
+            file.log = StreamLog {
+                beats: (0..beats)
+                    .map(|i| Beat {
+                        t: i as f64 * 0.5,
+                        known_at: (i as f64 * 0.5 - 0.6).max(0.0),
+                        period: 0.5,
+                        evidence: 1.0,
+                    })
+                    .collect(),
+                ..Default::default()
+            };
+            let mut s = survivor_sim_with(file);
+            let r = Rc::new(std::cell::RefCell::new(
+                crate::recorder::LogRecorder::default(),
+            ));
+            s.rec = Box::new(Rc::clone(&r));
+            s.advance_to(0.13);
+            let h = s.hero_pose(s.st.w);
+            s.drop_chest(h.x, h.y, 3, 10);
+            s.touch_chests();
+            (s, r)
+        }
+        #[test]
+        fn chest_two_bars_tick_on_eighths_and_land_on_downbeat_without_confirm() {
+            let (mut s, r) = fixture(30);
+            let run = s.st.run_s;
+            key(&mut s, 0.2, KeyEventKind::Press, InputKey::Confirm);
+            key(&mut s, 0.21, KeyEventKind::Release, InputKey::Confirm);
+            s.advance_to(2.99);
+            assert_eq!(s.run_state().frozen, Some(FreezeReason::Chest));
+            assert_eq!(s.st.run_s, run);
+            assert_eq!(
+                s.st.survivor
+                    .as_ref()
+                    .unwrap()
+                    .arsenal
+                    .inventory()
+                    .weapons
+                    .rank(WeaponId::Sword),
+                Some(1)
+            );
+            s.advance_to(3.001);
+            let q = s.run_state().roulette.unwrap();
+            assert_eq!(q.landed, Some(3.0));
+            assert_eq!(q.rewards, [Some(Item::Weapon(WeaponId::Sword)); 5]);
+            assert_eq!(
+                s.st.survivor
+                    .as_ref()
+                    .unwrap()
+                    .arsenal
+                    .inventory()
+                    .weapons
+                    .rank(WeaponId::Sword),
+                Some(6)
+            );
+            let ticks: Vec<_> = r
+                .borrow()
+                .chests
+                .iter()
+                .filter_map(|(s, e)| matches!(e, ChestEvent::Tick { .. }).then_some(*s))
+                .collect();
+            assert_eq!(
+                ticks,
+                (0..8).map(|i| 1.0 + i as f64 * 0.25).collect::<Vec<_>>()
+            );
+            s.advance_to(3.51);
+            assert!(!s.st.freeze.frozen);
+            assert!(s.st.run_s > run);
+            eprintln!(
+                "SH10: tier3, 8 ticks at1.0..2.75, landing3.0, source upgrades Sword1->6, run frozen{run:.6}"
+            );
+        }
+        #[test]
+        fn chest_snapshot_repeats_reward_timing_inventory_and_all_events() {
+            let (mut s, r) = fixture(30);
+            s.advance_to(1.37);
+            let snap = s.snapshot();
+            let before = r.borrow().clone();
+            s.advance_to(4.2);
+            let expected = r.borrow().chests.clone();
+            let inv = s.st.survivor.as_ref().unwrap().arsenal.inventory();
+            let state = s.run_state();
+            s.restore(&snap);
+            *r.borrow_mut() = before;
+            for i in 138..=420 {
+                s.advance_to(i as f64 / 100.0);
+            }
+            assert_eq!(r.borrow().chests, expected);
+            assert_eq!(s.st.survivor.as_ref().unwrap().arsenal.inventory(), inv);
+            assert_eq!(s.run_state(), state);
+        }
+        #[test]
+        fn chest_zero_one_and_poisoned_uncommitted_beats_stay_finite_and_causal() {
+            for beats in [0, 1] {
+                let (mut s, _) = fixture(beats);
+                s.advance_to(4.0);
+                assert!(!s.st.freeze.frozen);
+                assert!(s.st.run_s > 0.13);
+                assert!(s.st.q.peek().is_finite());
+                assert_eq!(
+                    s.st.survivor
+                        .as_ref()
+                        .unwrap()
+                        .arsenal
+                        .inventory()
+                        .weapons
+                        .rank(WeaponId::Sword),
+                    Some(6)
+                );
+            }
+            let (mut a, ra) = fixture(2);
+            let (mut b, rb) = fixture(2);
+            Rc::get_mut(&mut b.log)
+                .unwrap()
+                .beats
+                .extend((2..30).map(|i| Beat {
+                    t: i as f64 * 0.731,
+                    known_at: 100.0,
+                    period: 0.731,
+                    evidence: 1.0,
+                }));
+            a.advance_to(4.0);
+            b.advance_to(4.0);
+            assert_eq!(ra.borrow().chests, rb.borrow().chests);
+        }
+        #[test]
+        fn chest_pause_does_not_skip_to_prizes_and_pending_levels_wait() {
+            let (mut s, rec) = fixture(40);
+            s.st.survivor.as_mut().unwrap().pending_levels = 1;
+            s.st.survivor.as_mut().unwrap().level = 2;
+            s.open_survivor_offer();
+            assert!(s.st.survivor.as_ref().unwrap().offer.is_none());
+            key(&mut s, 1.1, KeyEventKind::Press, InputKey::Pause);
+            key(&mut s, 1.11, KeyEventKind::Release, InputKey::Pause);
+            s.advance_to(4.0);
+            assert!(s.st.roulette.unwrap().landed.is_none());
+            key(&mut s, 4.1, KeyEventKind::Press, InputKey::Pause);
+            key(&mut s, 4.11, KeyEventKind::Release, InputKey::Pause);
+            s.advance_to(7.01);
+            assert!(
+                rec.borrow()
+                    .chests
+                    .iter()
+                    .any(|(_, e)| matches!(e, ChestEvent::Landed { .. }))
+            );
+            assert!(s.st.survivor.as_ref().unwrap().offer.is_some());
+            assert_eq!(s.run_state().frozen, Some(FreezeReason::LevelUp));
+        }
+
+        #[test]
+        fn late_grid_bounds_cannot_backdate_roulette_during_stop_lookahead() {
+            let (mut s, rec) = fixture(30);
+            let log = Rc::get_mut(&mut s.log).unwrap();
+            // A new bound at1.7 is not known until1.75. The midpoint1.6
+            // cannot pull next_stop backwards when it ingests at1.75.
+            log.beats[4].t = 1.7;
+            log.beats[4].known_at = 1.75;
+            s.advance_to(1.74);
+            assert!(
+                rec.borrow()
+                    .chests
+                    .iter()
+                    .filter(|(_, event)| matches!(event, ChestEvent::Tick { .. }))
+                    .all(|(at, _)| *at <= 1.5)
+            );
+            assert!(s.st.roulette.unwrap().landed.is_none());
+            s.advance_to(4.1);
+            assert!(
+                rec.borrow()
+                    .chests
+                    .iter()
+                    .any(|(_, e)| matches!(e, ChestEvent::Landed { .. }))
+            );
+            assert_eq!(
+                s.st.roulette.unwrap().landed,
+                Some(4.0),
+                "relocked spin finishes on the next downbeat, never a leftover eighth"
+            );
+        }
+        #[test]
+        fn music_relock_removes_only_the_music_reason_and_finishes_the_chest_spin() {
+            let (mut s, rec) = fixture(40);
+            Rc::get_mut(&mut s.log).unwrap().ticks = (0..200)
+                .map(|i| {
+                    let t = f64::from(i) * 0.05;
+                    Tick {
+                        t,
+                        known_at: t,
+                        evidence: 1.0,
+                        energy: 0.5,
+                        level: None,
+                        key: None,
+                        bands: None,
+                        brightness: None,
+                    }
+                })
+                .collect();
+            s.freeze_at(1.1, FreezeReason::MusicStopped);
+            s.advance_to(2.9);
+            assert!(s.st.freeze.reasons.contains(&FreezeReason::MusicStopped));
+            assert!(s.st.roulette.unwrap().landed.is_none());
+            s.advance_to(4.9);
+            assert_eq!(s.run_state().frozen, Some(FreezeReason::Chest));
+            assert!(!s.st.freeze.reasons.contains(&FreezeReason::MusicStopped));
+            assert!((s.st.run_s - 0.13).abs() < 1e-9);
+            assert!(
+                rec.borrow()
+                    .chests
+                    .iter()
+                    .filter(|(_, event)| matches!(event, ChestEvent::Tick { .. }))
+                    .all(|(at, _)| *at < 1.1 || *at >= 3.0)
+            );
+            s.advance_to(5.01);
+            assert!(!s.st.freeze.frozen);
+            assert_eq!(s.st.roulette.unwrap().landed, Some(5.0));
+            assert_eq!(
+                s.st.survivor
+                    .as_ref()
+                    .unwrap()
+                    .arsenal
+                    .inventory()
+                    .weapons
+                    .rank(WeaponId::Sword),
+                Some(6)
+            );
+        }
+        #[test]
+        fn early_chest_applies_real_passive_delta_then_three_heals_and_caps_health() {
+            use crate::survivors::PassiveId;
+            let (mut s, _) = fixture(30);
+            s.st.roulette.as_mut().unwrap().minute = 1;
+            while s
+                .st
+                .survivor
+                .as_ref()
+                .unwrap()
+                .arsenal
+                .inventory()
+                .weapons
+                .rank(WeaponId::Sword)
+                != Some(7)
+            {
+                s.learn_survivor_weapon(WeaponId::Sword).unwrap();
+            }
+            for _ in 0..4 {
+                s.st.survivor
+                    .as_mut()
+                    .unwrap()
+                    .arsenal
+                    .learn_passive(PassiveId::HollowHeart)
+                    .unwrap();
+                s.apply_survivor_stats(PassiveId::HollowHeart.delta());
+            }
+            let before = s.health_max();
+            s.st.health = 1.0;
+            s.advance_to(3.001);
+            let after = s.health_max();
+            assert!((after - before * 1.2).abs() < 1e-9);
+            assert!(
+                (s.st.health
+                    - (1.0 + after - before
+                        + 3.0 * s.env.input.level.survivors.unwrap().maxed_heal))
+                    .abs()
+                    < 1e-9
+            );
+            assert_eq!(
+                s.st.roulette.unwrap().rewards,
+                [
+                    Some(Item::Weapon(WeaponId::Sword)),
+                    Some(Item::Passive(PassiveId::HollowHeart)),
+                    Some(Item::Heal),
+                    Some(Item::Heal),
+                    Some(Item::Heal)
+                ]
+            );
+            let (mut maxed, _) = fixture(30);
+            maxed.st.roulette.as_mut().unwrap().minute = 1;
+            while maxed
+                .st
+                .survivor
+                .as_ref()
+                .unwrap()
+                .arsenal
+                .inventory()
+                .weapons
+                .rank(WeaponId::Sword)
+                != Some(8)
+            {
+                maxed.learn_survivor_weapon(WeaponId::Sword).unwrap();
+            }
+            maxed.st.health = 1.0;
+            maxed.advance_to(3.001);
+            assert_eq!(maxed.st.roulette.unwrap().rewards, [Some(Item::Heal); 5]);
+            assert_eq!(maxed.st.health, maxed.health_max());
+        }
+    }
+    #[test]
+    fn scheduled_boss_treasure_uses_its_origin_minute_once_and_survives_recycling() {
+        use crate::survivors::ScheduledBoss;
+        let mut s = survivor_sim();
+        s.log = Rc::new(StreamLog::default());
+        s.st.ingested.beats = 0;
+        let mut level = load_level(
+            &source("levels/survivors.yaml"),
+            &s.env.input.lib,
+            &reactive_song_map(f64::INFINITY),
+            None,
+        )
+        .unwrap();
+        // Two holders exercise the source's first-success-only rule; no ordinary population.
+        for row in &mut level.survivor_schedule {
+            row.minimum = Some(0);
+            row.enemies = Some(Vec::new());
+        }
+        level.survivor_schedule[1].treasure[0].tier = Some(3);
+        Rc::get_mut(&mut s.env).unwrap().input.level = level;
+        s.st.survivor.as_mut().unwrap().level = 7;
+        // A held boss carries its origin even if admission happens during minute8,
+        // whose XLBAT source row explicitly has no treasure.
+        s.st.spawner.minute = Some(8);
+        s.st.spawner.waiting_bosses = vec![
+            ScheduledBoss {
+                role: "vs-bat4".into(),
+                minute: 1,
+            },
+            ScheduledBoss {
+                role: "vs-bat5".into(),
+                minute: 1,
+            },
+            ScheduledBoss {
+                role: "vs-xlbat".into(),
+                minute: 8,
+            },
+        ];
+        s.st.s = 480.0;
+        s.st.run_s = 480.0;
+        s.st.w = 480.0;
+        s.tick_spawner();
+        assert_eq!(s.st.foes[0].health, 35.0);
+        assert_eq!(s.st.foes[1].health, 35.0);
+        assert_eq!(s.st.foes[2].health, 189.0);
+        assert_eq!(
+            s.st.foes[0].chest_loot,
+            Some(crate::survivors::ChestLoot { tier: 3, minute: 1 })
+        );
+        assert_eq!(s.st.foes[1].chest_loot, None);
+        assert_eq!(s.st.foes[2].chest_loot, None);
+        assert_eq!(s.st.treasure_minutes, 1 << 1);
+        s.st.foes[0].health = 19.0;
+        s.st.foes[0].x = 1e6;
+        s.recycle();
+        let replacement = s.st.foes.len() - 1;
+        assert!(s.st.foes[replacement].survivor_boss);
+        assert_eq!(s.st.foes[replacement].health, 19.0);
+        assert_eq!(
+            s.st.foes[replacement].chest_loot,
+            Some(crate::survivors::ChestLoot { tier: 3, minute: 1 })
+        );
+        assert_eq!(
+            s.st.treasure_minutes,
+            1 << 1,
+            "recycling does not reroll treasure"
+        );
+    }
+    #[test]
+    fn late_boss_gait_uses_bar_slots_instead_of_the_ordinary_roles_slots() {
+        let mut file = stream();
+        file.log = StreamLog {
+            beats: (0..180)
+                .map(|i| Beat {
+                    t: f64::from(i) * 0.5,
+                    known_at: 0.0,
+                    period: 0.5,
+                    evidence: 1.0,
+                })
+                .collect(),
+            ticks: (0..1800)
+                .map(|i| {
+                    let t = f64::from(i) * 0.05;
+                    Tick {
+                        t,
+                        known_at: t,
+                        evidence: 1.0,
+                        energy: 0.5,
+                        level: None,
+                        key: None,
+                        bands: None,
+                        brightness: None,
+                    }
+                })
+                .collect(),
+            ..Default::default()
+        };
+        let mut s = survivor_sim_with(file);
+        s.advance_to(60.25);
+        let id = s.spawn_foe(
+            s.env.input.lib.enemies.get_index_of("vs-xlmantis").unwrap(),
+            300.0,
+            0.0,
+            Some(10000.0),
+        );
+        s.mark_survivor_boss(id, true);
+        assert_eq!(s.st.foes[id].step_k, Some(120.0));
+        s.advance_to(60.99);
+        assert!(s.st.foes[id].step.is_none(), "wait for bar");
+        s.advance_to(61.02);
+        assert!(
+            s.st.foes[id].step.is_some(),
+            "minute5/8-style spawn does not wait dozens of bars"
+        );
+        s.freeze_at(61.2, crate::survivors::FreezeReason::Paused);
+        key(&mut s, 62.1, KeyEventKind::Press, InputKey::Pause);
+        key(&mut s, 62.11, KeyEventKind::Release, InputKey::Pause);
+        s.advance_to(62.99);
+        assert_eq!(
+            s.st.foes[id].step.unwrap().w0,
+            61.0,
+            "resume on odd beat finishes held step, does not start an extra charge"
+        );
+        s.advance_to(63.02);
+        assert!(
+            (s.st.foes[id].step.unwrap().w0 - 61.7).abs() < 1e-8,
+            "next native bar starts the next charge"
         );
     }
 }

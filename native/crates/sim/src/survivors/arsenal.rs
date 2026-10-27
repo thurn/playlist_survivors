@@ -234,6 +234,23 @@ impl Arsenal {
         }
         Ok(rank)
     }
+    pub fn evolve(&mut self, id: WeaponId, run: f64) -> Result<(), SlotError> {
+        let d = weapon_catalog().get(id);
+        let parent = d.evolution_of.ok_or(SlotError::Unavailable)?;
+        if !d.implemented
+            || self.inventory.weapons.rank(parent) != Some(weapon_catalog().get(parent).max_rank())
+            || d.requires
+                .is_none_or(|p| self.inventory.passives.rank(p).is_none())
+        {
+            return Err(SlotError::Unavailable);
+        }
+        let slot = self.slot(parent);
+        self.inventory.weapons.replace(parent, id)?;
+        self.pending.retain(|p| p.id != parent);
+        self.reserved[slot] = None;
+        self.clocks[slot] = (!id.is_sword()).then(|| Cooldown::new(run));
+        Ok(())
+    }
     pub fn learn_passive(&mut self, id: PassiveId) -> Result<u8, SlotError> {
         self.inventory.passives.upgrade(id, id.max_rank())
     }

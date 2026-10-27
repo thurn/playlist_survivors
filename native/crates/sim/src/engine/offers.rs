@@ -6,7 +6,12 @@ impl Sim {
         let Some(p) = self.st.survivor.as_ref() else {
             return;
         };
-        if p.pending_levels == 0 || p.offer.is_some() || self.st.blasting || self.st.health <= 0.0 {
+        if p.pending_levels == 0
+            || p.offer.is_some()
+            || self.st.roulette.is_some_and(|r| r.landed.is_none())
+            || self.st.blasting
+            || self.st.health <= 0.0
+        {
             return;
         }
         let level = p.level - p.pending_levels + 1;

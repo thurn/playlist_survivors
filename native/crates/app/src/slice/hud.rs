@@ -713,6 +713,8 @@ fn draw_survivors(
     }
     if let Some(reason) = view.run.and_then(|r| r.frozen)
         && reason != sim::survivors::FreezeReason::LevelUp
+        && !(reason == sim::survivors::FreezeReason::Chest
+            && view.run.is_some_and(|r| r.roulette.is_some()))
     {
         face.text(
             reason.banner(),

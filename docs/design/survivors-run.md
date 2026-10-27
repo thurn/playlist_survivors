@@ -1401,6 +1401,20 @@ offer, stat or easy knob changed. See
 `cargo run --release -p app -- --playlist playlists/survivors-30.m3u --delayed`.
 
 ### SH10
+
+Scheduled bosses charge on native bars with contact-only damage and an accent
+landing squash. Origin-owned treasure survives cap delays/recycling; source
+rolls or scripted tiers give 1/3/5 items. The snapshot-owned roulette freezes
+world/run time, ticks for two stable bars and grants sequential evolution,
+owned-level or heal rewards on its landing downbeat. Evolutions stay disabled
+until SW5 and limited to origins 10/15/20/25. A real-kill replay matches 8,741
+records at lead 0.23/late 25ms. 87 sim tests, 19 live tests, a 460-frame silent
+capture and the minute 1 headless playlist smoke are kept in the
+[SH10 evidence](../../native/evidence/sh10/README.md); density p99 is 3.04ms.
+No easy knob or offer changes. File/System feel checks remain operator-pending.
+Run from `native/` with `cargo run --release -p app -- --playlist
+playlists/survivors-30.m3u --headless --delayed --press-beats --pick-first --seconds 90`.
+
 ### SH11
 ### SW1
 

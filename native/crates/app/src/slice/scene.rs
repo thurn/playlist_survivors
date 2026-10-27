@@ -818,6 +818,13 @@ impl Scene {
                         kx = 1.0 + 0.06 * land;
                         ky = 1.0 - 0.06 * land;
                     }
+                    if f.survivor_boss && !dead {
+                        // Accents add a landing squash, without another attack or damage area.
+                        let slam = (fast.flash / 0.22).clamp(0.0, 1.0);
+                        kx *= 1.0 + 0.18 * slam;
+                        ky *= 1.0 - 0.14 * slam;
+                        bob -= 4.0 * slam;
+                    }
                     // A hit flashes it white; the killing blow knocks the body back from the
                     // hero, squashed, and it falls (its hurt frames) and fades.
                     let struck = self.struck.get(&id).map(|&(t, lethal)| (now - t, lethal));
@@ -1003,6 +1010,7 @@ impl Scene {
         if fa > layers.grade.flash[3] {
             layers.grade.flash = [1.0, 1.0, 1.0, fa];
         }
+        super::treasure::draw(view, art, &at, scale, w, h, out, &mut layers.overlay);
         self.numbers.draw(art, now, &at, scale, &mut layers.overlay);
         self.cards.grade(now, &mut layers.grade);
         self.cards

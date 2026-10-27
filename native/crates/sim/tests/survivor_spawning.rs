@@ -105,7 +105,10 @@ fn raw_ticks_snap_to_the_next_known_eighth_and_minute_changes_inherit_only_popul
     assert_eq!(state.roster.minimum, 15);
     assert_eq!(state.roster.enemies, ["vs-bat3"]);
     assert_eq!(
-        due.iter().flat_map(|d| &d.bosses).collect::<Vec<_>>(),
+        due.iter()
+            .flat_map(|d| &d.bosses)
+            .map(|b| &b.role)
+            .collect::<Vec<_>>(),
         [&"vs-bat4".to_owned()]
     );
     assert!(state.take_due(60.0).is_empty());
@@ -192,7 +195,10 @@ fn a_single_committed_future_beat_is_a_grid_step() {
 fn deferred_bosses_wait_for_room_then_the_next_grid_step() {
     let schedule = schedule();
     let mut state = Spawner::default();
-    state.waiting_bosses.push("vs-bat4".into());
+    state.waiting_bosses.push(sim::survivors::ScheduledBoss {
+        role: "vs-bat4".into(),
+        minute: 1,
+    });
     let grid = [
         Beat {
             t: 0.0,
@@ -235,4 +241,28 @@ fn enemy_knockback_fields_match_the_feel_appendix() {
         checked += 1;
     }
     assert_eq!(checked, 20);
+}
+
+#[test]
+fn treasure_validation_rejects_invalid_scripted_tiers_and_chance_shapes() {
+    let source = common::source("levels/survivors.yaml");
+    for replacement in [
+        "\"chances\":[0,30]",
+        "\"chances\":[0,0,30],\"tier\":0",
+        "\"chances\":[0,0,30],\"tier\":4",
+        "\"chances\":[0,0,30],\"tier\":1.5",
+    ] {
+        let mut bad = source.clone();
+        bad.text = bad.text.replacen("\"chances\":[0,0,30]", replacement, 1);
+        assert!(
+            load_level(
+                &bad,
+                common::library(),
+                &reactive_song_map(f64::INFINITY),
+                None
+            )
+            .is_err(),
+            "{replacement}"
+        );
+    }
 }

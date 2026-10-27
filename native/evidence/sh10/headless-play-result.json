@@ -1,0 +1,5 @@
+{
+  "command": "PS_SESSIONS=/Users/dthurn/playlist_survivors/native/logs/sessions native/target/release/playlist-survivors --playlist native/playlists/survivors-30.m3u --headless --delayed --press-beats --pick-first --seconds 90",
+  "exit_code": 0,
+  "wall_seconds": 94.85952112497762
+}

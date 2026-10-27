@@ -1,0 +1,37 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sh10-boss-chests/native/crates/sim)
+   Compiling players v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sh10-boss-chests/native/crates/players)
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sh10-boss-chests/native/crates/eval)
+    Finished `test` profile [optimized + debuginfo] target(s) in 5.54s
+     Running tests/live.rs (target/debug/deps/live-6bbfee6942df762e)
+
+running 19 tests
+test a_growing_gem_keeps_its_xp_value_for_survivors_color_selection ... ok
+test survivor_grid_reactions_hold_a_dead_body_until_its_impact_even_through_a_freeze ... ok
+test pickup_records_use_the_fixed_stop_timestamp_and_rewind_with_the_journal ... ok
+test rewinding_before_real_xp_retracts_the_projected_offer_without_a_pick ... ok
+test speculative_pickup_sounds_derive_from_actual_gem_records_without_hash_records ... ok
+test a_stalled_arrival_is_stamped_at_the_settled_time ... ok
+test a_restored_snapshot_carries_on_as_the_run_would ... ok
+test sword_impact_sounds_follow_existing_grid_records_without_hash_records ... ok
+freeze Confirm: 7704 matching settled records, hash a6f1b76ce018a2a8, 2 key rollbacks, deepest 0.41999999999999993 s
+test a_late_confirm_rolls_back_across_freeze_open_and_settles_as_on_time ... ok
+actual lightning strike records in rollback fixture: 2
+actual Bible blade lifetimes in rollback fixture: {1: (1.125, 3.0416666666666643)}
+real XP offers: 22 picks applied once, 8571 matching records, 22 key rollbacks, deepest 0.420s
+test a_real_xp_offer_pick_applies_once_across_speculative_rollback ... ok
+test survivor_weapon_sounds_and_missile_trails_follow_actual_records ... ok
+SH10 chest actual-boss replay: 8741 records, hashdb2f10b9efad09e2, 3 key rollbacks, depth0.254000s,8eighth ticks/one landing; lead0.23 late25ms
+test chest_freeze_rewards_and_field_records_survive_late_input_from_a_real_boss_kill ... ok
+30 s: 65 presses (61 judged, 61 settled), up to 132 enemies, 550 deaths, health 1.00, groove 1.00
+test the_engine_plays_a_growing_stream ... ok
+test each_moment_is_passed_on_once ... ok
+test zen_speculation_settles_as_a_run_fed_its_keys_in_time ... ok
+59300 records settled alike; 489 rollbacks replaying 103.2 s
+test speculation_settles_as_a_run_fed_its_keys_in_time ... ok
+test bursts_of_arrivals_settle_as_the_stream_given_whole ... ok
+density speculation with off-grid pause: 119221 matching settled records
+test survivor_spawner_speculation_matches_on_time_at_density ... ok
+test very_late_keys_settle_as_a_run_fed_their_applied_times ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.46s
+

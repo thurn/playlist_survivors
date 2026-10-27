@@ -444,6 +444,7 @@ pub trait Recorder {
     fn camera(&mut self, x: f64, y: f64, zoom: f64) {}
     /// A new enemy (its id is the next index); its first sample follows.
     fn spawn(&mut self, rec: EnemyRecord) {}
+    fn survivor_boss(&mut self, id: usize) {}
     fn sample(&mut self, id: usize, x: f64, y: f64) {}
     fn fate(&mut self, id: usize, fate: Fate) {}
     /// Survivors presentation reaction on the next sixteenth; logical fate is immediate.
@@ -465,6 +466,7 @@ pub trait Recorder {
     fn lightning(&mut self, strike: crate::survivors::LightningStrike) {}
     fn gem_pose(&mut self, s: f64, pose: crate::survivors::GemPose) {}
     fn floor_chicken(&mut self, s: f64, event: crate::survivors::FloorChicken) {}
+    fn chest(&mut self, s: f64, event: crate::survivors::ChestEvent) {}
     fn inventory(&mut self, inventory: crate::survivors::Inventory) {}
     fn chain(&mut self, p: ChainPoint) {}
     fn chain_point(&mut self, chain: usize, p: ChainPoint) {}
@@ -537,6 +539,9 @@ impl<R: Recorder + ?Sized> Recorder for std::rc::Rc<std::cell::RefCell<R>> {
     fn spawn(&mut self, rec: EnemyRecord) {
         self.borrow_mut().spawn(rec);
     }
+    fn survivor_boss(&mut self, id: usize) {
+        self.borrow_mut().survivor_boss(id);
+    }
     fn sample(&mut self, id: usize, x: f64, y: f64) {
         self.borrow_mut().sample(id, x, y);
     }
@@ -595,6 +600,9 @@ impl<R: Recorder + ?Sized> Recorder for std::rc::Rc<std::cell::RefCell<R>> {
         self.borrow_mut().floor_chicken(s, event);
     }
 
+    fn chest(&mut self, s: f64, event: crate::survivors::ChestEvent) {
+        self.borrow_mut().chest(s, event);
+    }
     fn inventory(&mut self, inventory: crate::survivors::Inventory) {
         self.borrow_mut().inventory(inventory);
     }
@@ -746,6 +754,8 @@ pub struct LogRecorder {
     pub lightning_strikes: Vec<crate::survivors::LightningStrike>,
     pub gem_poses: Vec<crate::survivors::GemPose>,
     pub floor_chickens: Vec<crate::survivors::FloorChicken>,
+    pub chests: Vec<(f64, crate::survivors::ChestEvent)>,
+    pub survivor_bosses: Vec<usize>,
     pub inventories: Vec<crate::survivors::Inventory>,
     pub run_states: Vec<crate::survivors::RunState>,
     pub breaks: Vec<WarpBreak>,
@@ -785,6 +795,8 @@ impl Default for LogRecorder {
             lightning_strikes: Vec::new(),
             gem_poses: Vec::new(),
             floor_chickens: Vec::new(),
+            chests: Vec::new(),
+            survivor_bosses: Vec::new(),
             inventories: Vec::new(),
             run_states: Vec::new(),
             breaks: Vec::new(),
@@ -828,6 +840,12 @@ impl Recorder for LogRecorder {
         self.floor_chickens.push(event);
     }
 
+    fn survivor_boss(&mut self, id: usize) {
+        self.survivor_bosses.push(id);
+    }
+    fn chest(&mut self, s: f64, event: crate::survivors::ChestEvent) {
+        self.chests.push((s, event));
+    }
     fn missile(&mut self, pose: crate::survivors::MissilePose) {
         self.missiles.push(pose);
     }

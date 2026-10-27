@@ -411,6 +411,7 @@ pub fn level_script() -> Schema {
                             "treasure",
                             array(object(vec![
                                 req("chances", array(min_max(0.0, 100.0))),
+                                opt("tier", int_range(1.0, 3.0)),
                                 req("level", int_positive()),
                                 req("prizeTypes", string()),
                                 def("fixedPrizes", array(string()), json!([])),

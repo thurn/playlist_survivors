@@ -1,0 +1,40 @@
+{
+  "base": "228182d6f9101682a7033518255e96bd3b5c1d06",
+  "files": {
+    "native/crates/app/src/slice/cards.rs": "936858f2aee94d480862135a0bce0e271d4e28a36984dc6799b5b7ba68b0678e",
+    "native/crates/app/src/slice/hud.rs": "450ea0806e4a35b7533acc812d33cf20af4ab135026a96e878c3a6038f424194",
+    "native/crates/app/src/slice/mod.rs": "9ea9be4115477e7b0e6d8455561eb23d01207a7ac3b7e5e30f351f834dfff7c5",
+    "native/crates/app/src/slice/scene.rs": "11ed2c407545bc5ddee93b673e5ae62ae71a52cdc2332bd44a415070a4d2d51f",
+    "native/crates/app/src/slice/sounds.rs": "bcdbc89561d1eb52fc4d45fee58e61689ce02d0813c23edaf5b32e46c9c5e32d",
+    "native/crates/app/src/slice/treasure.rs": "6a07955a62b28d6614467e977d2847c8f1971253962e0f61cac0db1300ff0ff5",
+    "native/crates/app/src/slice/treasure/check.rs": "27b7e2f476717a588a7e4e3d2980517b5cee08a2a62b9361f0d8199e2e2ccac4",
+    "native/crates/eval/src/live.rs": "e7d1bb1b780c310281408045c6f575d0f42f5f24e16ddefb18b1297b6e874e7a",
+    "native/crates/eval/tests/live.rs": "ada98f22f9bf8c30d56a85c40bb0d9c416b9995910ecce042a61a1c48c69b6af",
+    "native/crates/players/src/survivors.rs": "8983fed0c8ee8db8f4040e3b0a4742383698ef8e83f03f2b83546fb5750f76f2",
+    "native/crates/sim/src/content/level.rs": "5f99fdcd6d9a0c0ddee170ecddfac6340be9fe339159f6e71540c5f423bbfef9",
+    "native/crates/sim/src/content/level_schema.rs": "c1d1fc2efc36f9b36d0d49b29d65af5b2c8ab6ad2b9e5a9b3d7bab9d81d91e49",
+    "native/crates/sim/src/engine/chests.rs": "725f4012e95bf6828345a47f1c0f62c3193ca05dfae88b736aa9310a4155a9ea",
+    "native/crates/sim/src/engine/enemy_rhythm.rs": "afd8d48d1d89f0efb421309faa651362a7b51835b6c2173683188de8bcaf738b",
+    "native/crates/sim/src/engine/foes.rs": "62e483081ddec6e7e4d682081a2113dacd810d1a644079f2c013a0cb2c86cb24",
+    "native/crates/sim/src/engine/freeze.rs": "94655baf91822213ed4cad8021561b3bc6a678008beb505ec6f03e8886381a76",
+    "native/crates/sim/src/engine/mod.rs": "abae021b639d24670456cea72415e7a5be2f90fb2856be1b58f3c0046f10ecdc",
+    "native/crates/sim/src/engine/observe.rs": "7c5fb4f07eb5bd12fe455774ff3dd50d6cdc1ca7d6f6aa4ed8aac6662b320a81",
+    "native/crates/sim/src/engine/offers.rs": "c61fc4cb97f50627325a93a590d6b7507bdb564829c817f3df3ebd2d6bb629b0",
+    "native/crates/sim/src/engine/pickups.rs": "cbaf73618079784dec155c24e5b46d5b815b485283b6efba673261a91de2fb5d",
+    "native/crates/sim/src/engine/spawning.rs": "ab25a1aeec24a8c440bc041575290ef7ee4bf706dd73ba70ac5c8ce43f53d166",
+    "native/crates/sim/src/player.rs": "090c0ac4f9ae41a036ae0ab5d15c84ce448e4f226633c69fa78ca3b5a83fb807",
+    "native/crates/sim/src/recorder.rs": "e952440eb3a001f85dfe0af533013baa8b6d886b17143a2e7ada80b3838a25df",
+    "native/crates/sim/src/survivors.rs": "dc557e679d5c4f3df60f59c213e185ce2a2f0ba0881b25683c027288124c2c99",
+    "native/crates/sim/src/survivors/arsenal.rs": "c02561667f458d15e23dba4edd2f7c2266f66e764af03c18d3740c0621a8767f",
+    "native/crates/sim/src/survivors/chests.rs": "f5d0803e5afe0e6d1c76aeb42c90721b041e7b1b75783b074aa292484ddd0cbc",
+    "native/crates/sim/src/survivors/offers.rs": "5ff2876af595779321686ea631b847697c8d3478edfb1ac2daac1b9dd725a06c",
+    "native/crates/sim/src/survivors/spawning.rs": "f8a5d641905e84f18542d9c9f6a4dc52838f7227b373fd38d1c3b40d69ea8aa5",
+    "native/crates/sim/tests/survivor_spawning.rs": "2a428ac3718a0c68a5384873ea616329fae32aa9c2cde27d9c7927c3afe4f181"
+  },
+  "headless_scope": "90s smoke predates final late-grid guard/alignment; no chest in that smoke, and the altered path is separately covered by sim/live tests and final offscreen capture",
+  "numbers_from": [
+    "docs/survivors/appendix-feel.md",
+    "levels/survivors.yaml",
+    "content/survivors-enemies.yaml"
+  ]
+}

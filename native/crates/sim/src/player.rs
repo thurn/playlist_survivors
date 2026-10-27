@@ -126,6 +126,8 @@ pub struct Observation {
     pub level_up_at: Option<f64>,
     /// Chickens lying in sight.
     pub chickens: Option<Vec<Point>>,
+    /// Unopened treasure on the visible field.
+    pub chests: Option<Vec<Point>>,
     /// The hero's position and heading now.
     pub pace_point: crate::world::Frame,
 }

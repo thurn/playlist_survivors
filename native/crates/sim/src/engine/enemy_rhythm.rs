@@ -2,6 +2,15 @@
 use super::{BITE_SLACK, CONTACT_GAP, Ev, HURTBOX_RADIUS, Sim};
 
 const REACH: f64 = 12.0;
+pub(super) fn boss_gait() -> &'static crate::content::types::Gait {
+    static GAIT: std::sync::OnceLock<crate::content::types::Gait> = std::sync::OnceLock::new();
+    GAIT.get_or_init(|| crate::content::types::Gait {
+        // The native map has two-beat bars; gait slots are beats/eighths.
+        every: crate::content::types::Subdivision::Beat,
+        pattern: "x.".into(),
+        share: 0.7,
+    })
+}
 
 #[derive(Clone, Copy, Debug)]
 pub(super) struct Lunge {
@@ -33,6 +42,18 @@ impl Lunge {
 }
 
 impl Sim {
+    pub(super) fn mark_survivor_boss(&mut self, id: usize, boss: bool) {
+        self.st.foes[id].survivor_boss = boss;
+        if boss {
+            self.rec.survivor_boss(id);
+            // The role's ordinary gait may use a different subdivision. Its slot
+            // number cannot be reused as a bar slot at a late-minute spawn.
+            self.st.foes[id].step_k = Some(crate::gait::gait_slot(
+                boss_gait(),
+                self.known_beat_at(self.st.s),
+            ));
+        }
+    }
     pub(super) fn next_enemy_sixteenth(&self, due: f64) -> f64 {
         self.known_grid_after(due + 1e-8, 0.25).map_or_else(
             || {

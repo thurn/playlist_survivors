@@ -33,6 +33,8 @@ pub struct SpawnEvent {
 #[serde(rename_all = "camelCase")]
 pub struct Treasure {
     pub chances: Vec<f64>,
+    #[serde(default, deserialize_with = "optional_count")]
+    pub tier: Option<usize>,
     #[serde(deserialize_with = "count")]
     pub level: usize,
     pub prize_types: String,
@@ -71,11 +73,16 @@ impl SpawnRoster {
     }
 }
 #[derive(Clone, Debug, PartialEq)]
+pub struct ScheduledBoss {
+    pub role: String,
+    pub minute: usize,
+}
+#[derive(Clone, Debug, PartialEq)]
 struct Pending {
     ready: f64,
     song: f64,
     roster: SpawnRoster,
-    bosses: Vec<String>,
+    bosses: Vec<ScheduledBoss>,
 }
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Spawner {
@@ -84,14 +91,14 @@ pub struct Spawner {
     next_tick: f64,
     pending: Vec<Pending>,
     /// A full field holds scheduled bosses until a slot becomes free. Regular ticks have no debt.
-    pub waiting_bosses: Vec<String>,
+    pub waiting_bosses: Vec<ScheduledBoss>,
     pub spawned: usize,
     boss_song: Option<f64>,
 }
 #[derive(Clone, Debug)]
 pub struct SpawnBatch {
     pub roster: SpawnRoster,
-    pub bosses: Vec<String>,
+    pub bosses: Vec<ScheduledBoss>,
 }
 impl Spawner {
     pub fn next_stop(&self, schedule: &[SpawnMinute], song: f64, offset: f64) -> f64 {
@@ -128,7 +135,10 @@ impl Spawner {
         {
             self.minute = Some(next);
             self.roster.apply(phase);
-            bosses.clone_from(&phase.bosses);
+            bosses.extend(phase.bosses.iter().map(|role| ScheduledBoss {
+                role: role.clone(),
+                minute: phase.minute,
+            }));
         }
         if self.minute.is_some() && self.next_tick <= run + 1e-9 {
             self.pending.push(Pending {

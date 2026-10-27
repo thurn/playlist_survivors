@@ -72,6 +72,7 @@ mod sword;
 mod tap;
 mod tier;
 mod timing;
+mod treasure;
 mod wand;
 mod watchdog;
 mod weapons_check;
@@ -167,6 +168,7 @@ struct Options {
     hud_full_slots: bool,
     sound_check: Option<PathBuf>,
     cards_check: Option<PathBuf>,
+    treasure_check: Option<PathBuf>,
     sword_check: Option<PathBuf>,
     garlic_check: Option<PathBuf>,
     wand_check: Option<PathBuf>,
@@ -228,6 +230,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         hud_full_slots: false,
         sound_check: None,
         cards_check: None,
+        treasure_check: None,
         sword_check: None,
         garlic_check: None,
         wand_check: None,
@@ -276,6 +279,13 @@ fn options(args: &[String]) -> Result<Options, String> {
                 o.sound_check = Some(
                     it.next()
                         .ok_or("--sound-check needs a session directory")?
+                        .into(),
+                );
+            }
+            "--treasure-check" => {
+                o.treasure_check = Some(
+                    it.next()
+                        .ok_or("--treasure-check needs an output directory")?
                         .into(),
                 );
             }
@@ -630,6 +640,9 @@ pub fn run(args: &[String]) -> Result<(), String> {
     }
     if let Some(dir) = &opts.sword_check {
         return weapons_check::run(dir, None);
+    }
+    if let Some(dir) = &opts.treasure_check {
+        return treasure::check::run(dir);
     }
     if let Some(dir) = &opts.cards_check {
         return cards::check::run(dir);

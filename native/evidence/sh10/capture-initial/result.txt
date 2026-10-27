@@ -1,0 +1,2 @@
+playlist-survivors: fixture missed one of four stills
+playlist-survivors: treasure-check child:exit status: 1

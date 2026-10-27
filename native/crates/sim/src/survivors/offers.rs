@@ -17,7 +17,7 @@ const PASSIVES: [PassiveId; 6] = [
     PassiveId::EmptyTome,
     PassiveId::Spellbinder,
 ];
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize)]
 pub enum Item {
     Weapon(WeaponId),
     Passive(PassiveId),

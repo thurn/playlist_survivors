@@ -1232,3 +1232,158 @@ fn pickup_records_use_the_fixed_stop_timestamp_and_rewind_with_the_journal() {
         }]
     ));
 }
+
+#[test]
+fn chest_freeze_rewards_and_field_records_survive_late_input_from_a_real_boss_kill() {
+    use sim::survivors::{ChestEvent, WeaponId};
+    fn engine() -> Engine {
+        let mut content = library();
+        content
+            .enemies
+            .get_mut("vs-bat4")
+            .unwrap()
+            .survivors
+            .as_mut()
+            .unwrap()
+            .xp = 0.0;
+        let mut level = source("levels/survivors.yaml");
+        let old = r#"{"minute":0,"minimum":15,"frequency":1000,"enemies":["vs-bat3"],"bosses":[],"events":[],"treasure":[]}"#;
+        assert!(level.text.contains(old));
+        let row = serde_json::json!({"minute":0,"minimum":0,"frequency":60000,"enemies":[],"bosses":["vs-bat4"],"events":[],"treasure":[{"tier":3,"chances":[0,0,0],"level":1,"prizeTypes":"EAAAA","fixedPrizes":[]}]});
+        level.text = level.text.replacen(old, &row.to_string(), 1);
+        let mut out = Engine::new(
+            &level,
+            &content,
+            &IndexMap::new(),
+            0.2,
+            true,
+            true,
+            f64::INFINITY,
+        )
+        .unwrap();
+        out.settled_log = Some(Vec::new());
+        out
+    }
+    let file = house();
+    let mut a = engine();
+    let mut replay = Replay::new(file.log.clone());
+    let mut held = Vec::new();
+    let mut keys = Vec::new();
+    let mut opened = None;
+    for frame in 1..=3600 {
+        let now = f64::from(frame) / 120.0;
+        a.feed(|l| replay.feed_to(l, now));
+        let view = a.view.borrow();
+        let mut target = Vec::new();
+        if let Some(r) = view.run.and_then(|r| r.roulette) {
+            opened.get_or_insert(r.opened);
+        }
+        if view.run.is_some_and(|r| r.frozen.is_none())
+            && let Some((c, h)) = view.chests.values().next().zip(view.hero)
+        {
+            let (dx, dy) = (c.x - h.x, c.y - h.y);
+            if dx.abs() > dy.abs() * 0.414_213_562_373_095 {
+                target.push(if dx < 0.0 {
+                    InputKey::Left
+                } else {
+                    InputKey::Right
+                });
+            }
+            if dy.abs() > dx.abs() * 0.414_213_562_373_095 {
+                target.push(if dy < 0.0 {
+                    InputKey::Up
+                } else {
+                    InputKey::Down
+                });
+            }
+        }
+        drop(view);
+        for &k in &held {
+            if !target.contains(&k) {
+                a.key(now, k, false);
+                keys.push((now, k, false));
+            }
+        }
+        for &k in &target {
+            if !held.contains(&k) {
+                a.key(now, k, true);
+                keys.push((now, k, true));
+            }
+        }
+        held = target;
+        a.frame(now, 0.0);
+        a.view.borrow_mut().take_moments();
+    }
+    let opened = opened.expect("discovery run opened a real dropped chest");
+    // A harmless confirm straddles the actual opening, forcing replay back across
+    // it at nondefault lookahead. Chest input must not dismiss the roulette.
+    keys.extend([
+        (opened - 0.001, InputKey::Confirm, true),
+        (opened + 0.001, InputKey::Confirm, false),
+    ]);
+    keys.sort_by(|a, b| a.0.total_cmp(&b.0));
+    let run = |lead: f64, late: f64| {
+        let mut e = engine();
+        let mut replay = Replay::new(file.log.clone());
+        let mut next = 0;
+        for frame in 1..=3600 {
+            let now = f64::from(frame) / 120.0;
+            e.feed(|l| replay.feed_to(l, now));
+            while next < keys.len() && keys[next].0 + late <= now + 1e-9 {
+                let (s, k, down) = keys[next];
+                e.key(s, k, down);
+                next += 1;
+            }
+            e.frame(now, lead);
+            e.view.borrow_mut().take_moments();
+        }
+        e.frame(30.5, 0.0);
+        e
+    };
+    a = run(0.0, 0.0);
+    let b = run(0.23, 0.025);
+    assert_eq!(
+        a.view
+            .borrow()
+            .inventory
+            .unwrap()
+            .weapons
+            .rank(WeaponId::Sword),
+        Some(6),
+        "real kill/drop/touch applied five items"
+    );
+    let records = a.settled_log.as_ref().unwrap();
+    let ticks: Vec<_> = records
+        .iter()
+        .filter_map(|(s, r)| matches!(r, Record::Chest(ChestEvent::Tick { .. })).then_some(*s))
+        .collect();
+    assert_eq!(ticks.len(), 8);
+    assert!(
+        records
+            .iter()
+            .any(|(_, r)| matches!(r, Record::Chest(ChestEvent::Drop(_))))
+    );
+    assert!(
+        records
+            .iter()
+            .any(|(_, r)| matches!(r, Record::Chest(ChestEvent::Taken { .. })))
+    );
+    assert_eq!(
+        records
+            .iter()
+            .filter(|(_, r)| matches!(r, Record::Chest(ChestEvent::Landed { .. })))
+            .count(),
+        1
+    );
+    assert!(b.stats.key_rollbacks > 0);
+    assert!(b.stats.deepest_s > 0.2);
+    assert_eq!(b.stats.late_keys, 0);
+    assert_same(records, b.settled_log.as_ref().unwrap());
+    println!(
+        "SH10 chest actual-boss replay: {} records, hash{:016x}, {} key rollbacks, depth{:.6}s,8eighth ticks/one landing; lead0.23 late25ms",
+        records.len(),
+        eval::live::hash_records(records),
+        b.stats.key_rollbacks,
+        b.stats.deepest_s
+    );
+}

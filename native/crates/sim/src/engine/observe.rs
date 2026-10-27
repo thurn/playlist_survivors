@@ -151,6 +151,15 @@ impl Sim {
             orbs,
             level_up_at,
             chickens: (!chickens.is_empty()).then_some(chickens),
+            chests: {
+                let chests: Vec<_> = st
+                    .chests
+                    .iter()
+                    .filter(|c| hypot(c.x - hp.x, c.y - hp.y) <= VACUUM_SEEN)
+                    .map(|c| Point { x: c.x, y: c.y })
+                    .collect();
+                (!chests.is_empty()).then_some(chests)
+            },
             pace_point: Frame {
                 x: px,
                 y: py,

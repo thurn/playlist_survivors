@@ -93,6 +93,7 @@ impl Sim {
             spawn_minute: self.st.spawner.minute,
             spawned: self.st.spawner.spawned,
             offer: self.st.survivor.as_ref().and_then(|p| p.offer),
+            roulette: self.st.roulette,
             level: self
                 .st
                 .survivor
@@ -289,6 +290,11 @@ impl Sim {
         if !self.st.freeze.frozen {
             return key.key == InputKey::Confirm;
         }
+        if self.st.roulette.is_some_and(|r| r.landed.is_none())
+            && self.st.freeze.reasons.contains(&FreezeReason::Chest)
+        {
+            return true;
+        }
         let interaction = self
             .st
             .freeze
@@ -338,7 +344,11 @@ impl Sim {
     }
 
     pub(super) fn freeze_stop(&self) -> f64 {
-        self.st.freeze.resume.unwrap_or(f64::INFINITY)
+        self.st
+            .freeze
+            .resume
+            .unwrap_or(f64::INFINITY)
+            .min(self.chest_stop())
     }
 
     pub(super) fn maybe_resume(&mut self) {
@@ -385,8 +395,17 @@ impl Sim {
             }
         }
         // Do not catch up a contact attack across a menu. The next offbeat winds afresh.
+        let boss_slot = crate::gait::gait_slot(
+            super::enemy_rhythm::boss_gait(),
+            self.known_beat_at(self.st.s),
+        );
         for foe in &mut self.st.foes {
             foe.attack = None;
+            if foe.survivor_boss {
+                // Finish an in-progress world-time charge, then wait for a fresh
+                // bar. Menu song time is not a backlog of missed boss charges.
+                foe.step_k = Some(boss_slot);
+            }
         }
         self.requeue_held();
         self.queue_cadence();

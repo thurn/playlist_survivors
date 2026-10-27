@@ -83,6 +83,9 @@ impl Sim {
             }
             return;
         }
+        if let Some(loot) = self.st.foes[fi].chest_loot.take() {
+            self.drop_chest(fate.x, fate.y, loot.tier, loot.minute);
+        }
         if value > 0.0 {
             self.drop_on_field(fi, fate, value, big);
         }

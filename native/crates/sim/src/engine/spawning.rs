@@ -51,7 +51,7 @@ impl Sim {
                 * self.st.survivor.as_ref().expect("survivors").level as f64
         });
         let id = self.spawn_foe(def, x, y, health);
-        self.st.foes[id].survivor_boss = boss;
+        self.mark_survivor_boss(id, boss);
         self.st.spawner.spawned += 1;
     }
     pub(super) fn tick_spawner(&mut self) {
@@ -84,7 +84,8 @@ impl Sim {
                 let Some(role) = bosses.next() else {
                     break;
                 };
-                self.spawn_role(&role, true);
+                self.spawn_role(&role.role, true);
+                self.attach_treasure(role.minute);
             }
             self.st.spawner.waiting_bosses.extend(bosses);
         }

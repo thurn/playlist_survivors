@@ -87,6 +87,18 @@ impl SurvivorBot {
         }
         let escape = unit(x, y).unwrap_or(self.heading);
         if !danger
+            && let Some(chest) = obs.chests.as_ref().and_then(|cs| {
+                cs.iter().min_by(|a, b| {
+                    (a.x - obs.hero.x)
+                        .hypot(a.y - obs.hero.y)
+                        .total_cmp(&(b.x - obs.hero.x).hypot(b.y - obs.hero.y))
+                })
+            })
+            && let Some(pull) = unit(chest.x - obs.hero.x, chest.y - obs.hero.y)
+        {
+            return pull;
+        }
+        if !danger
             && let Some(gem) = obs.gems.as_ref().and_then(|gems| {
                 gems.iter().min_by(|a, b| {
                     (a.x - obs.hero.x)
@@ -227,6 +239,7 @@ mod tests {
             orbs: None,
             level_up_at: None,
             chickens: None,
+            chests: None,
             pace_point: sim::world::Frame {
                 x: 0.0,
                 y: 0.0,

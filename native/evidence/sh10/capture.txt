@@ -1,0 +1,1 @@
+treasure-check: boss killed normally; four stills and 460 silent frames at24fps, tier3 five sequential upgrades Sword1->6; openSome(20.166666666666668) landSome(22.508333333333333); fixture only, no balance/survival claim

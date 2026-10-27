@@ -321,7 +321,7 @@ impl Screen {
         }
     }
 }
-fn icon(item: Item) -> &'static str {
+pub(super) fn icon(item: Item) -> &'static str {
     match item {
         Item::Weapon(w) => {
             if w.as_str() == "sword" {

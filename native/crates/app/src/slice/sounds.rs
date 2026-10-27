@@ -548,6 +548,16 @@ impl Sounds {
                     vec![Call::new("step", *s, *x, 0.25)]
                 }
             }
+            Cause::Treasure { s, tick, .. } => {
+                let mut c = Call::new(
+                    if tick.is_some() { "chime" } else { "level-up" },
+                    *s,
+                    f64::NAN,
+                    if tick.is_some() { 0.3 } else { 0.7 },
+                );
+                c.owner = Some(*s);
+                vec![c]
+            }
             Cause::Chicken { s, .. } => {
                 let mut c = Call::new("chicken", *s, f64::NAN, 0.65);
                 c.owner = Some(*s);

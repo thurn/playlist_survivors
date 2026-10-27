@@ -149,6 +149,7 @@ impl Sim {
             r: def.radius,
             health: h0,
             survivor_boss: false,
+            chest_loot: None,
             attack: None,
             x,
             y,
@@ -673,7 +674,14 @@ impl Sim {
             let charge = if s < charge_until { CHARGE_SPEED } else { 1.0 };
             // The curl turns half the enemies clockwise and half counterclockwise.
             let cs = if fid % 2 == 0 { curl_sin } else { -curl_sin };
-            match &def.gait {
+            let boss_gait = self.st.foes[fi]
+                .survivor_boss
+                .then(super::enemy_rhythm::boss_gait);
+            if let Some(gait) = boss_gait.filter(|_| stepping && self.st.foes[fi].step_k.is_none())
+            {
+                self.st.foes[fi].step_k = Some(gait_slot(gait, step_b));
+            }
+            match boss_gait.or(def.gait.as_ref()) {
                 Some(gait) if stepping => {
                     // A beat step on each gait time, aimed where the hero is then.
                     if let Some(due) = self.step_due(fi, gait, step_b, s) {
@@ -795,8 +803,14 @@ impl Sim {
             f.alive = false;
             f.final_sample = true;
             f.death_w = w;
-            let (def_i, health, id, retreat, boss) =
-                (f.def, f.health, f.id, f.retreat, f.survivor_boss);
+            let (def_i, health, id, retreat, boss, chest) = (
+                f.def,
+                f.health,
+                f.id,
+                f.retreat,
+                f.survivor_boss,
+                f.chest_loot,
+            );
             self.rec.death(fi, w, true);
             // (A retreating boss leaves for good.)
             if retreat {
@@ -809,7 +823,8 @@ impl Sim {
             ]);
             let p2 = self.spawn_point(&env.input.lib.enemies[def_i], &mut r, true);
             let replacement = self.spawn_foe(def_i, p2.0, p2.1, Some(health));
-            self.st.foes[replacement].survivor_boss = boss;
+            self.mark_survivor_boss(replacement, boss);
+            self.st.foes[replacement].chest_loot = chest;
         }
         let foes = &self.st.foes;
         self.st.alive.retain(|&i| foes[i].alive);

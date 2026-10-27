@@ -1173,6 +1173,14 @@ pub fn load_level(
                     "minute zero needs enemies, minimum and frequency".into(),
                 ));
             }
+            for t in minute["treasure"].as_array().into_iter().flatten() {
+                if t["chances"].as_array().is_none_or(|c| c.len() != 3) {
+                    issues.push(at(
+                        "survivors.schedule",
+                        "treasure needs three tier chances".into(),
+                    ));
+                }
+            }
             for key in ["enemies", "bosses"] {
                 for id in minute
                     .get(key)
