@@ -10,11 +10,10 @@ enabled = true
 # The gate stage (about 60 s, path-gated by the script) blocks promotion to `staging`.
 [[step]]
 name = "gate"
-run = "./scripts/ci-gate"
+run = 'CARGO_TARGET_DIR="$HOME/Library/Caches/playlist-survivors/target-gate" ./scripts/ci-gate'
 timeout = "15m"
-# The native section builds into a persistent target directory outside the slots, so a run
-# recompiles only the workspace's own crates (S0 measured no gain from sccache).
-environment = { CARGO_TARGET_DIR = "/Users/dthurn/Library/Caches/playlist-survivors/target-gate" }
+# Shell expansion in run resolves the current user's home. Each step has its own persistent
+# target directory outside the slots (S0 measured no gain from sccache).
 
 # The release stage runs on the newest `staging` tip and moves `release` and remote master.
 # Each section is its own step, so a ci-fix bead is keyed by the section that failed.
@@ -34,26 +33,23 @@ timeout = "30m"
 
 [[step]]
 name = "ci-full-native"
-run = "./scripts/ci-full native"
+run = 'CARGO_TARGET_DIR="$HOME/Library/Caches/playlist-survivors/target-release" ./scripts/ci-full native'
 stage = "release"
 needs = []
 timeout = "30m"
-environment = { CARGO_TARGET_DIR = "/Users/dthurn/Library/Caches/playlist-survivors/target-release" }
 
 # SF9: independent target directory for this release step's checkout.
 [[step]]
 name = "ci-full-survivors"
-run = "./scripts/ci-full survivors"
+run = 'CARGO_TARGET_DIR="$HOME/Library/Caches/playlist-survivors/target-release-survivors" ./scripts/ci-full survivors'
 stage = "release"
 needs = []
 timeout = "20m"
-environment = { CARGO_TARGET_DIR = "/Users/dthurn/Library/Caches/playlist-survivors/target-release-survivors" }
 
 # The deterministic 30-minute replay has its own budget and checkout-specific build cache.
 [[step]]
 name = "ci-full-survivors-replay"
-run = "./scripts/ci-full survivors-replay"
+run = 'CARGO_TARGET_DIR="$HOME/Library/Caches/playlist-survivors/target-release-survivors-replay" ./scripts/ci-full survivors-replay'
 stage = "release"
 needs = []
 timeout = "20m"
-environment = { CARGO_TARGET_DIR = "/Users/dthurn/Library/Caches/playlist-survivors/target-release-survivors-replay" }
