@@ -24,7 +24,8 @@
 //!     playlist-survivors --classic     # classic mode (Z between runs): presses judged on the beat; zen mode, the
 //!                                     # default, judges nothing and moves the hero on the beat
 //!     (F1 in the app: the debug menu; F2 plays the next bundled track, F3 listens to the Mac;
-//!     F8 saves the timing log)
+//!     F8 saves the timing log; E steps the music's envelope layer through on, 2x, 4x and off,
+//!     `--no-envelopes` starts without it and `--envelope-gain <x>` starts it at x)
 //!     playlist-survivors --still <png> [--still-track <id> --still-at <s>] [--classic]  # 20 s of the house
 //!                                     # track (or a track to a time) through the engine, offscreen
 //!     playlist-survivors --bench [--check]  # the frame's work (sim, evaluate, encode) over 60 s of it, offscreen
@@ -246,6 +247,10 @@ struct Options {
     /// Calibration offsets for this session (ms), over the saved ones.
     input_offset_ms: Option<f64>,
     stomp_extra_ms: Option<f64>,
+    /// Start with the music's envelope layer hidden, to compare, or exaggerated
+    /// this many times (E steps through on, 2x, 4x and off).
+    no_envelopes: bool,
+    envelope_gain: f64,
 }
 
 fn options(args: &[String]) -> Result<Options, String> {
@@ -300,6 +305,8 @@ fn options(args: &[String]) -> Result<Options, String> {
         click_child: false,
         input_offset_ms: None,
         stomp_extra_ms: None,
+        no_envelopes: false,
+        envelope_gain: 1.0,
     };
     let mut playlist = None;
     let mut it = args.iter();
@@ -466,6 +473,7 @@ fn options(args: &[String]) -> Result<Options, String> {
             "--pick-first" => o.pick_first = true,
             "--classic" | "--legacy" => o.zen = false,
             "--watch" => o.watch = true,
+            "--no-envelopes" => o.no_envelopes = true,
             "--delayed" => o.delayed = true,
             "--app" => o.app = Some(it.next().ok_or("--app needs an app's name")?.clone()),
             "--tap-child" => {
@@ -509,6 +517,13 @@ fn options(args: &[String]) -> Result<Options, String> {
                         .and_then(|v| v.parse().ok())
                         .ok_or("--seconds needs a number")?,
                 );
+            }
+            "--envelope-gain" => {
+                o.envelope_gain = it
+                    .next()
+                    .and_then(|v| v.parse().ok())
+                    .filter(|&g: &f64| g > 0.0)
+                    .ok_or_else(|| format!("{a} needs a positive number"))?;
             }
             "--input-offset-ms" | "--stomp-extra-ms" => {
                 let v = it
@@ -802,6 +817,8 @@ pub fn run(args: &[String]) -> Result<(), String> {
                 pick_first: opts.pick_first,
                 spawn_smoke: opts.spawn_smoke,
                 hud_full_slots: opts.hud_full_slots,
+                no_envelopes: opts.no_envelopes,
+                envelope_gain: opts.envelope_gain,
             },
         );
     }
@@ -908,6 +925,8 @@ pub fn run(args: &[String]) -> Result<(), String> {
         auto_watch: opts.watch,
         zen: opts.zen,
         run_zen: opts.zen,
+        envelopes_off: opts.no_envelopes,
+        envelope_gain: opts.envelope_gain,
         listening,
         tap_target,
         child,
@@ -1131,6 +1150,15 @@ fn delay_of(listening: Listening) -> f64 {
     match listening {
         Listening::Direct => 0.0,
         Listening::Delayed(d) => d.m,
+    }
+}
+
+/// How long before it is heard an entry reaches the stream (s): Delayed listening's `M` less the
+/// capture → arrival target; 0 in Direct. The fast lane may read that far ahead.
+fn lookahead(listening: Listening) -> f64 {
+    match listening {
+        Listening::Direct => 0.0,
+        Listening::Delayed(d) => (d.m - d.a).max(0.0),
     }
 }
 
@@ -1538,7 +1566,7 @@ fn bench_pass(mode: BenchMode, report: bool) -> Result<BenchTimes, String> {
             index: beats.iter().filter(|&&b| b <= s).count() as f64,
         };
         let wave = engine.view.borrow().wave.as_ref().map(|v| v.s);
-        scene.fast_lane(engine.stream(), GATE, s, s, wave);
+        scene.fast_lane(engine.stream(), GATE, s, s, wave, 0.0);
         let mut layers = scene::Layers::default();
         scene.draw(
             &engine.view.borrow(),
@@ -1636,10 +1664,13 @@ fn bench_pass(mode: BenchMode, report: bool) -> Result<BenchTimes, String> {
 /// 20 s of the house track's committed stream through the engine (a stride on each beat), drawn
 /// offscreen to a PNG, in zen mode or not.
 #[derive(Clone, Copy)]
+#[allow(clippy::struct_excessive_bools)]
 struct StillOptions {
     pick_first: bool,
     spawn_smoke: bool,
     hud_full_slots: bool,
+    no_envelopes: bool,
+    envelope_gain: f64,
 }
 fn still(
     path: &Path,
@@ -1653,6 +1684,8 @@ fn still(
         pick_first,
         spawn_smoke,
         hud_full_slots,
+        no_envelopes,
+        envelope_gain,
     } = options;
     let world = World::load(level)?;
     let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
@@ -1671,6 +1704,8 @@ fn still(
     let mut replay = stream::Replay::new(file.log.clone());
     let beats: Vec<f64> = file.log.beats.iter().map(|b| b.t).collect();
     let mut scene = Scene::default();
+    scene.envelopes_off = no_envelopes;
+    scene.envelope_boost = envelope_gain - 1.0;
     let mut next = 0;
     let end = at.unwrap_or(20.0);
     for frame in 1..=((end * 60.0) as usize) {
@@ -1762,7 +1797,7 @@ fn still(
         index: heard.saturating_sub(1) as f64 + beat_phase.min(1.0),
     };
     let wave = engine.view.borrow().wave.as_ref().map(|v| v.s);
-    scene.fast_lane(engine.stream(), GATE, end, end, wave);
+    scene.fast_lane(engine.stream(), GATE, end, end, wave, 0.0);
     scene.draw(
         &engine.view.borrow(),
         &ground,
@@ -2059,6 +2094,9 @@ struct App {
     /// whether the run (or the last) is in it.
     zen: bool,
     run_zen: bool,
+    /// The music's envelope layer is hidden, and how exaggerated it is (E steps both).
+    envelopes_off: bool,
+    envelope_gain: f64,
     /// The listening mode asked for, and the app Delayed listening taps in System mode (without
     /// one, System mode listens Direct); the tap check's child; when to stall, for the check.
     listening: Listening,
@@ -2575,8 +2613,11 @@ impl App {
         };
         let (phase, bar, index) = (pulse.beat, pulse.bar, pulse.index);
         let wave = self.engine.view.borrow().wave.as_ref().map(|v| v.s);
+        self.scene.envelopes_off = self.envelopes_off;
+        self.scene.envelope_boost = self.envelope_gain - 1.0;
+        let ahead = lookahead(self.audio.listening);
         self.scene
-            .fast_lane(self.engine.stream(), GATE, run_s, now, wave);
+            .fast_lane(self.engine.stream(), GATE, run_s, now, wave, ahead);
         let mut layers = scene::Layers::default();
         self.scene.draw(
             &self.engine.view.borrow(),
@@ -3565,6 +3606,25 @@ impl App {
                 }
                 KeyCode::F1 => {
                     self.debug = !self.debug;
+                    return;
+                }
+                // E steps the music's envelope layer: on, 2x, 4x, off, and on again.
+                KeyCode::KeyE => {
+                    (self.envelopes_off, self.envelope_gain) =
+                        match (self.envelopes_off, self.envelope_gain) {
+                            (true, _) => (false, 1.0),
+                            (false, g) if g < 2.0 => (false, 2.0),
+                            (false, g) if g < 4.0 => (false, 4.0),
+                            _ => (true, 1.0),
+                        };
+                    eprintln!(
+                        "slice: music envelopes {}",
+                        if self.envelopes_off {
+                            "off".to_string()
+                        } else {
+                            format!("x{}", self.envelope_gain)
+                        }
+                    );
                     return;
                 }
                 KeyCode::F2 if !self.tracks.is_empty() => {

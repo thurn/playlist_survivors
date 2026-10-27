@@ -15,6 +15,7 @@ fn state() -> HudState<'static> {
         rhythm: Rhythm {
             locked: true,
             groove: 0.55,
+            ..Rhythm::default()
         },
         keys_visible: true,
     }

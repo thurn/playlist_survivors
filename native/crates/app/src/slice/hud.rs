@@ -65,6 +65,20 @@ pub struct PressMark {
 pub struct Rhythm {
     pub locked: bool,
     pub groove: f64,
+    pub envelopes: Envelopes,
+}
+
+/// The music's envelope layer as the HUD tags it under the meter: on (with the kick's envelope,
+/// which pulses its light, and its gain when exaggerated), off (E), or not shown.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub enum Envelopes {
+    #[default]
+    Hidden,
+    Off,
+    On {
+        kick: f64,
+        gain: f64,
+    },
 }
 
 /// What the HUD reads besides the sim's view.
@@ -435,6 +449,39 @@ pub fn draw(
         },
         out,
     );
+    // The envelope layer's tag, with its key and gain: lit, its light pulsing on each kick, or dim
+    // while E has it off.
+    match st.rhythm.envelopes {
+        Envelopes::Hidden => {}
+        Envelopes::Off => font::text(
+            "E: ENVELOPES OFF",
+            px(gx),
+            py(cy + 9.0),
+            fs,
+            Align::Left,
+            alpha(PLAIN, 0.6),
+            out,
+        ),
+        Envelopes::On { kick, gain } => {
+            let k = kick.clamp(0.0, 1.0) as f32;
+            out.push(rect(
+                px(gx),
+                py(cy + 10.0),
+                4.0 * u,
+                4.0 * u,
+                alpha(FREE, 0.45 + 0.55 * k),
+            ));
+            font::text(
+                &format!("E: ENVELOPES {gain}×"),
+                px(gx + 7.0),
+                py(cy + 9.0),
+                fs,
+                Align::Left,
+                alpha(FREE, 0.8 + 0.2 * k),
+                out,
+            );
+        }
+    }
     if view.run.is_some() {
         inventory(view, art, u, px(130.0), py(28.0), out);
     }

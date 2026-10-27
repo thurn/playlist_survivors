@@ -117,7 +117,7 @@ fn run_cases(dir: &Path, restored: bool) -> Result<(), String> {
                 index: s / period,
             };
             let ground = world.field(&engine, run.presentation_s, period)?;
-            scene.fast_lane(engine.stream(), 0.2, s, s, None);
+            scene.fast_lane(engine.stream(), 0.2, s, s, None, 0.0);
             let mut layers = scene::Layers::default();
             scene.draw(
                 &view,
@@ -191,7 +191,7 @@ fn run_cases(dir: &Path, restored: bool) -> Result<(), String> {
                 isolated.bolts.clear();
                 isolated.fire_trail = None;
                 let mut clean = Scene::default();
-                clean.fast_lane(engine.stream(), 0.2, s, s, None);
+                clean.fast_lane(engine.stream(), 0.2, s, s, None, 0.0);
                 let mut marks = scene::Layers::default();
                 clean.draw(
                     &isolated,

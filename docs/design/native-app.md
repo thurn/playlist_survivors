@@ -241,9 +241,13 @@ fixed.
 - Play mode, the authored Galop and the song-map toolchain.
 - Delaying or muting by default, tapping every app for Delayed listening, or a
   delayed mode on any platform but macOS.
-- Using Delayed listening's lookahead for anything but committed beats, such
-  as accents detected rather than forecast or structure events on time (see
-  [Beyond This Plan](#beyond-this-plan)).
+- Using Delayed listening's lookahead in the sim for anything but committed
+  beats, such as accents detected rather than forecast or structure events on
+  time (see [Beyond This Plan](#beyond-this-plan)). Presentation may use it
+  (since 2026-10-27): the fast lane reads entries `M - A` before their
+  `knownAt`, so its effects land as each hit sounds, kicks are anticipated and
+  drops build up (`app/src/slice/lane.rs`). The sim's stream, its `knownAt`
+  stamps and its causality are unchanged.
 - Track identity for live audio, such as reading Now Playing metadata. Live
   runs have no per-track best grade.
 - Gamepad input. The TS game is keyboard-only.

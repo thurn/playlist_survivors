@@ -58,6 +58,10 @@ pub struct Scene {
     fast: lane::Frame,
     /// The run time the fast lane last showed.
     run_s: f64,
+    /// The music's envelope layer is hidden (E, or `--no-envelopes`), and how much more strongly
+    /// than measured it shows (E, or `--envelope-gain`: 0 is 1x).
+    pub envelopes_off: bool,
+    pub envelope_boost: f64,
     /// The hero's recent places (host s, x, y), for the fire trail.
     trail: std::collections::VecDeque<(f64, f64, f64)>,
     /// The last tier change: when (host s), and whether up.
@@ -140,21 +144,64 @@ fn grade(theme: &ZoneTheme, pulse: Pulse, now: f64, pixel: f32, fast: &lane::Fra
     let intensity = 0.4 + 0.6 * loud;
     let ambient = |v: f32| (v * 1.1 * (0.8 + 0.4 * loud) + 0.08).min(1.2);
     let look = fast.look;
+    let env = fast.env;
+    let (kick, snare, bass) = (env.kick as f32, env.snare as f32, env.bass_drive() as f32);
+    let rise = env.rise as f32;
     Grade {
         ambient: [ambient(amb[0]), ambient(amb[1]), ambient(amb[2])],
-        pulse: 1.0 + (0.05 + 0.1 * loud) * intensity * beat,
-        bloom: 0.35 + 0.3 * loud + 0.08 * beat + 0.06 * fast.drop as f32,
+        pulse: 1.0 + (0.05 + 0.1 * loud) * intensity * beat + ENV_EXPOSURE * kick
+            - ENV_DIM_RISE * rise,
+        bloom: 0.35
+            + 0.3 * loud
+            + 0.08 * beat
+            + 0.06 * fast.drop as f32
+            + ENV_BLOOM_KICK * kick
+            + ENV_BLOOM_SNARE * snare
+            + ENV_BLOOM_BASS * bass,
         mul: [0, 1, 2].map(|i| mul[i] * look.mul[i]),
         lift: [0, 1, 2].map(|i| lift[i] + look.lift[i]),
         contrast,
-        saturation: saturation * look.sat,
-        vignette: 0.45 + 0.25 * bar * intensity,
+        saturation: saturation
+            * look.sat
+            * (1.0 + ENV_SATURATION_SNARE * snare)
+            * (1.0 - ENV_DESATURATE_RISE * rise).max(0.0),
+        vignette: (0.45 + 0.25 * bar * intensity - ENV_VIGNETTE_BASS * bass
+            + ENV_VIGNETTE_RISE * rise)
+            .max(0.0),
         haze: if theme.heat_haze { 1.0 } else { 0.0 },
         time: now as f32,
         pixel,
         ..Grade::default()
     }
 }
+
+/// The music's envelope layer (lane::Envelopes): what each band moves, presentation only. Kicks
+/// push the exposure, bloom and camera and squash the living horde down; snares stretch it back up,
+/// bloom and saturate; the bass opens the vignette and swells the hero's light; hats flicker the
+/// props' lights. With lookahead (Delayed listening), the horde rises and the camera eases back
+/// just before each kick, and before a drop the camera pulls out while the picture dims, closes in
+/// and drains of colour, all released at once as it lands.
+const ENV_EXPOSURE: f32 = 0.07;
+const ENV_BLOOM_KICK: f32 = 0.18;
+const ENV_BLOOM_SNARE: f32 = 0.08;
+const ENV_BLOOM_BASS: f32 = 0.12;
+const ENV_SATURATION_SNARE: f32 = 0.08;
+const ENV_VIGNETTE_BASS: f32 = 0.12;
+const ENV_ZOOM_KICK: f64 = 0.008;
+const ENV_SQUASH_KICK: f64 = 0.09;
+const ENV_DROP_KICK: f64 = 2.5;
+const ENV_STRETCH_SNARE: f64 = 0.05;
+const ENV_HERO_LIGHT_BASS: f64 = 0.25;
+const ENV_HERO_LIGHT_KICK: f64 = 0.15;
+const ENV_PROP_LIGHT_KICK: f32 = 0.25;
+const ENV_PROP_FLICKER_HAT: f64 = 0.12;
+const ENV_ZOOM_PRE: f64 = 0.006;
+const ENV_STRETCH_PRE: f64 = 0.06;
+const ENV_LIFT_PRE: f64 = 2.5;
+const ENV_ZOOM_RISE: f64 = 0.035;
+const ENV_DIM_RISE: f32 = 0.06;
+const ENV_DESATURATE_RISE: f32 = 0.3;
+const ENV_VIGNETTE_RISE: f32 = 0.22;
 
 /// The fast lane's horde: its squash on the beat, bob (px) and flinch at onsets, and each kind's
 /// step behind the beat (beats).
@@ -332,8 +379,21 @@ impl Scene {
 
     /// The fast lane's frame at run time `s` (host time `now`), from the stream known by then and
     /// its evidence gate, and the start of the view's newest zone wave.
-    pub fn fast_lane(&mut self, log: &StreamLog, gate: f64, s: f64, now: f64, wave: Option<f64>) {
-        self.fast = self.lane.frame(log, gate, s, now, wave);
+    pub fn fast_lane(
+        &mut self,
+        log: &StreamLog,
+        gate: f64,
+        s: f64,
+        now: f64,
+        wave: Option<f64>,
+        ahead: f64,
+    ) {
+        self.fast = self.lane.frame(log, gate, s, now, wave, ahead);
+        if self.envelopes_off {
+            self.fast.env = lane::Envelopes::default();
+        } else {
+            self.fast.env = self.fast.env.scaled(1.0 + self.envelope_boost);
+        }
         self.run_s = s;
     }
 
@@ -341,6 +401,14 @@ impl Scene {
         super::hud::Rhythm {
             locked: self.fast.locked,
             groove: (0.65 * self.fast.loudness + 0.35 * self.fast.groove()).clamp(0.0, 1.0),
+            envelopes: if self.envelopes_off {
+                super::hud::Envelopes::Off
+            } else {
+                super::hud::Envelopes::On {
+                    kick: self.fast.env.kick / (1.0 + self.envelope_boost),
+                    gain: 1.0 + self.envelope_boost,
+                }
+            },
         }
     }
 
@@ -633,8 +701,12 @@ impl Scene {
         let (shx, shy) = self.effects.shake(now);
         let (cx, cy) = (cx + shx, cy + shy);
         let fast = std::mem::take(&mut self.fast);
-        // (The camera punches in on each accent.)
-        let scale = (w / VIEW_W).min(h / VIEW_H) * (zoom * (1.0 + fast.punch)) as f32;
+        // (The camera punches in on each accent, and pumps a little with the kicks: easing back
+        // before each one and pulling out before a drop, with lookahead.)
+        let env = fast.env;
+        let pump =
+            ENV_ZOOM_KICK * env.kick - ENV_ZOOM_PRE * env.kick_pre - ENV_ZOOM_RISE * env.rise;
+        let scale = (w / VIEW_W).min(h / VIEW_H) * (zoom * (1.0 + fast.punch + pump)) as f32;
         layers.grade = grade(ground.theme, pulse, now, scale, &fast);
         // (As the wave's ring passes the camera, the grade blends into the new zone's.)
         if let Some((z, wx, wy, r)) = ground.wave {
@@ -865,7 +937,9 @@ impl Scene {
                         .and_then(|q| q.light.as_ref())
                     {
                         let (sx, sy) = at(p.x, p.y - 20.0);
-                        let flick = 0.85 + 0.15 * (now * 9.0 + p.x).sin();
+                        let flick = 0.85
+                            + 0.15 * (now * 9.0 + p.x).sin()
+                            + ENV_PROP_FLICKER_HAT * fast.env.hat;
                         let c = hex(&l.color);
                         lights.push(Light {
                             x: sx,
@@ -874,7 +948,8 @@ impl Scene {
                             color: [c[0], c[1], c[2]],
                             strength: (0.45
                                 + 0.35 * fast.loudness as f32
-                                + 0.1 * fast.flash as f32)
+                                + 0.1 * fast.flash as f32
+                                + ENV_PROP_LIGHT_KICK * fast.env.kick as f32)
                                 * fade,
                         });
                     }
@@ -951,6 +1026,16 @@ impl Scene {
                         kx *= 1.0 + 0.18 * slam;
                         ky *= 1.0 - 0.14 * slam;
                         bob -= 4.0 * slam;
+                    }
+                    // The envelope layer: the living horde squashes down on kicks and stretches
+                    // up on snares, in place, whether or not the beat is clear; with lookahead,
+                    // it rises into each kick first.
+                    if !dead {
+                        let (kick, snare, pre) = (fast.env.kick, fast.env.snare, fast.env.kick_pre);
+                        let up = ENV_STRETCH_SNARE * snare + ENV_STRETCH_PRE * pre;
+                        kx *= (1.0 + 0.8 * ENV_SQUASH_KICK * kick) * (1.0 - 0.8 * up);
+                        ky *= (1.0 - ENV_SQUASH_KICK * kick) * (1.0 + up);
+                        bob += ENV_LIFT_PRE * pre - ENV_DROP_KICK * kick;
                     }
                     // A hit flashes it white; the killing blow knocks the body back from the
                     // hero, squashed, and it falls (its hurt frames) and fades.
@@ -1102,18 +1187,30 @@ impl Scene {
                     if view.run.is_some_and(|r| r.frozen.is_some()) {
                         hero.z += 3.0 * (std::f64::consts::PI * pulse.beat).sin().abs();
                     }
-                    // The hero carries a soft light.
+                    // The hero carries a soft light, swelling with the bass and the kicks.
                     let (lx, ly) = at(hero.x, hero.y - 16.0);
+                    let (kick, bass) = (fast.env.kick, fast.env.bass_drive());
                     lights.push(Light {
                         x: lx,
                         y: ly,
-                        radius: 144.0 * scale,
+                        radius: (144.0
+                            * (1.0 + ENV_HERO_LIGHT_BASS * bass + ENV_HERO_LIGHT_KICK * kick))
+                            as f32
+                            * scale,
                         color: [1.0, 0.91, 0.75],
-                        strength: 0.35,
+                        strength: (0.35 + 0.15 * kick) as f32,
                     });
-                    // The tier's aura behind the hero, swelling with the beat.
+                    // The tier's aura behind the hero, swelling with the beat and the kicks.
                     let swell = 0.5 + 0.5 * (std::f64::consts::TAU * pulse.beat.min(1.0)).cos();
-                    tier::aura(view, &hero, art, &at, scale, fast.pulsed(swell), out);
+                    tier::aura(
+                        view,
+                        &hero,
+                        art,
+                        &at,
+                        scale,
+                        fast.pulsed(swell).max(kick),
+                        out,
+                    );
                     let (sx, sy) = at(hero.x, hero.y - hero.z);
                     // (The sprites stand 64 tall, the head about 50 up.)
                     layers.head = Some(at(hero.x, hero.y - hero.z - 50.0));

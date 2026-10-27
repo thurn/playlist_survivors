@@ -789,6 +789,7 @@ mod restored_cards_tests {
             rhythm: Rhythm {
                 locked: true,
                 groove: 0.6,
+                ..Rhythm::default()
             },
             keys_visible: false,
         };

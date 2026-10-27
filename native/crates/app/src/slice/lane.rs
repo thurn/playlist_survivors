@@ -29,6 +29,19 @@ pub const BURST_FLOOR: f64 = 0.35;
 /// over this long.
 const KEY_WINDOW_S: f64 = 4.0;
 const LOOK_FADE_S: f64 = 1.0;
+/// The music's envelopes: each drum band's hit decays over this long from when it sounds, and the
+/// bass level releases over this long (s); none looks further back than the window.
+const KICK_DECAY_S: f64 = 0.11;
+const SNARE_DECAY_S: f64 = 0.09;
+const HAT_DECAY_S: f64 = 0.045;
+const BASS_RELEASE_S: f64 = 0.22;
+const ENVELOPE_WINDOW_S: f64 = 0.6;
+/// With lookahead (Delayed listening), a kick is anticipated over this long before it sounds, and a
+/// loudness jump (a drop) builds over this long before it lands (s).
+const ANTICIPATE_S: f64 = 0.09;
+/// A tick's kick flux is anticipated only above this floor (its faint flux is nearly constant).
+const KICK_PRE_FLOOR: f64 = 0.4;
+const DROP_RISE_S: f64 = 1.6;
 
 /// A grading tweak: multipliers and lift per channel, and a saturation factor.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -56,6 +69,46 @@ pub struct Burst {
     pub n: f64,
 }
 
+/// The music as continuous envelopes (each 0-1), for the layer under the beat game: each drum
+/// band's latest hits (its labelled onsets and its ticks' flux, whichever is stronger) decaying
+/// from when they sound, and the bass level with a fast attack and a slow release. They never wait
+/// on a beat, so a frame of them can't be wrong the way a missed beat is. With lookahead they also
+/// see what is coming: the next kick's anticipation, rising to it as it sounds, and a drop's
+/// build-up, rising to it as it lands (both 0 in Direct listening).
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Envelopes {
+    pub kick: f64,
+    pub snare: f64,
+    pub hat: f64,
+    pub bass: f64,
+    pub kick_pre: f64,
+    pub rise: f64,
+    /// How strongly the layer shows them (1 as measured; E exaggerates it, to see what each does).
+    pub gain: f64,
+}
+
+impl Envelopes {
+    /// The bass above its usual floor (0-1, times the gain): the level sits near 0.5 through most
+    /// music.
+    pub fn bass_drive(&self) -> f64 {
+        ((self.bass - 0.35) / 0.65).clamp(0.0, 1.0) * self.gain
+    }
+
+    /// The envelopes shown `g` times as strongly.
+    #[must_use]
+    pub fn scaled(self, g: f64) -> Envelopes {
+        Envelopes {
+            kick: self.kick * g,
+            snare: self.snare * g,
+            hat: self.hat * g,
+            kick_pre: self.kick_pre * g,
+            rise: self.rise * g,
+            gain: self.gain * g,
+            ..self
+        }
+    }
+}
+
 /// What the fast lane shows this frame.
 #[derive(Clone, Debug, Default)]
 pub struct Frame {
@@ -81,6 +134,8 @@ pub struct Frame {
     /// The song's tint for effects, and the key's look on the grade.
     pub tint: [f32; 4],
     pub look: Look,
+    /// The music's envelopes.
+    pub env: Envelopes,
 }
 
 impl Frame {
@@ -121,8 +176,11 @@ impl Lane {
     }
 
     /// The frame at run time `s` (host time `now`) from the stream known by then, its evidence
-    /// gate, and the newest zone wave's start.
-    #[allow(clippy::many_single_char_names)]
+    /// gate, and the newest zone wave's start. `ahead` is the lookahead (s): Delayed listening's
+    /// entries arrive `M - A` before they are heard, so the lane (presentation only, never the
+    /// sim) may read an entry that long before its `known_at`, and shows each effect when it
+    /// sounds; 0 in Direct listening, where everything shows at its `known_at`.
+    #[allow(clippy::many_single_char_names, clippy::too_many_arguments)]
     pub fn frame(
         &mut self,
         log: &StreamLog,
@@ -130,8 +188,9 @@ impl Lane {
         s: f64,
         now: f64,
         wave_s: Option<f64>,
+        ahead: f64,
     ) -> Frame {
-        self.learn(log, s, wave_s);
+        self.learn(log, s, ahead, wave_s);
         let mut f = Frame::default();
         let known = log.ticks.partition_point(|t| t.known_at <= s + 1e-9);
         if self.judging.as_ref().is_none_or(|j| j.len() > known) {
@@ -160,9 +219,9 @@ impl Lane {
             .unwrap_or(&[])
             .iter()
             .rev()
-            .find(|j| j.known_at <= s && j.t <= s && j.db >= 6.0)
+            .find(|j| j.known_at <= s + ahead && j.t <= s && j.db >= 6.0)
         {
-            let age = s - jump.known_at.max(jump.t);
+            let age = s - shown(jump.t, jump.known_at, ahead);
             f.drop = (jump.db / 12.0).clamp(0.0, 1.0) * (-age / 0.3).exp();
         }
         let (mut n, mut clear, mut energy) = (0usize, 0usize, 0.0);
@@ -210,9 +269,9 @@ impl Lane {
         }
         // The onsets' bursts, newest first; the newest's flinch.
         let onsets = &log.onsets[..self.shares.len()];
-        let latest = onsets.partition_point(|o| o.known_at <= s);
+        let latest = onsets.partition_point(|o| shown(o.t, o.known_at, ahead) <= s);
         for j in (0..latest).rev() {
-            let age = s - onsets[j].known_at;
+            let age = s - shown(onsets[j].t, onsets[j].known_at, ahead);
             if age >= BURST_LIFE {
                 break;
             }
@@ -232,11 +291,13 @@ impl Lane {
             ),
             None => Look::default(),
         };
+        f.env = envelopes(log, &self.shares, s, ahead);
         f
     }
 
-    /// Takes in the onsets known since the last frame, and the key at a new zone wave.
-    fn learn(&mut self, log: &StreamLog, s: f64, wave_s: Option<f64>) {
+    /// Takes in the onsets known since the last frame (`ahead` early), and the key at a new zone
+    /// wave.
+    fn learn(&mut self, log: &StreamLog, s: f64, ahead: f64, wave_s: Option<f64>) {
         // (A new run starts a new stream.)
         if log.onsets.len() < self.shares.len() {
             *self = Lane {
@@ -246,7 +307,7 @@ impl Lane {
         }
         for o in log.onsets[self.shares.len()..]
             .iter()
-            .take_while(|o| o.known_at <= s + 1e-9)
+            .take_while(|o| o.known_at <= s + ahead + 1e-9)
         {
             let decay = 0.5f64.powf((o.known_at - self.peak_at).max(0.0) / ONSET_PEAK_HALF_S);
             self.peak = o.strength.max(self.peak * decay);
@@ -256,13 +317,14 @@ impl Lane {
             } else {
                 0.0
             });
+            let at = shown(o.t, o.known_at, ahead);
             if o.strong
                 && self
                     .flashes
                     .last()
-                    .is_none_or(|&k| o.known_at - k >= FLASH_GAP - 1e-9)
+                    .is_none_or(|&k| at - k >= FLASH_GAP - 1e-9)
             {
-                self.flashes.push(o.known_at);
+                self.flashes.push(at);
             }
         }
         if wave_s.is_some() && wave_s != self.wave_s {
@@ -271,6 +333,83 @@ impl Lane {
             self.wave_s = wave_s;
         }
     }
+}
+
+/// When an entry's effect shows: when it sounds, unless it can't be known by then (its
+/// `known_at`, less the lookahead).
+fn shown(t: f64, known_at: f64, ahead: f64) -> f64 {
+    t.max(known_at - ahead)
+}
+
+/// The music's envelopes at run time `s`, from the ticks and onsets known by then, `ahead` early
+/// (`shares` holds each learned onset's strength share). A hit's envelope peaks when it sounds, at
+/// its `t`; a kick still to come is anticipated, and a drop still to come builds.
+fn envelopes(log: &StreamLog, shares: &[f64], s: f64, ahead: f64) -> Envelopes {
+    let mut e = Envelopes {
+        gain: 1.0,
+        ..Envelopes::default()
+    };
+    let hit = |v: f64, age: f64, decay: f64| v.clamp(0.0, 1.0) * (-age.max(0.0) / decay).exp();
+    // (Rising to 1 as it sounds, `lead` s ahead.)
+    let pre = |v: f64, lead: f64| v.clamp(0.0, 1.0) * (1.0 - lead / ANTICIPATE_S).max(0.0).powi(2);
+    let known = |known_at: f64| known_at <= s + ahead + 1e-9;
+    let ticks = &log.ticks[..log
+        .ticks
+        .partition_point(|t| t.t <= s + ANTICIPATE_S + 1e-9)];
+    for t in ticks
+        .iter()
+        .rev()
+        .take_while(|t| s - t.t < ENVELOPE_WINDOW_S)
+    {
+        let Some(b) = t.bands.filter(|_| known(t.known_at)) else {
+            continue;
+        };
+        let age = s - t.t;
+        if age < 0.0 {
+            let strong = (b.kick - KICK_PRE_FLOOR) / (1.0 - KICK_PRE_FLOOR);
+            e.kick_pre = e.kick_pre.max(pre(strong, -age));
+            continue;
+        }
+        e.kick = e.kick.max(hit(b.kick, age, KICK_DECAY_S));
+        e.snare = e.snare.max(hit(b.snare, age, SNARE_DECAY_S));
+        e.hat = e.hat.max(hit(b.hat, age, HAT_DECAY_S));
+        e.bass = e.bass.max(hit(b.bass, age, BASS_RELEASE_S));
+    }
+    let onsets = &log.onsets[..shares.len()];
+    for (j, o) in onsets.iter().enumerate().rev() {
+        let age = s - o.t;
+        if age >= ENVELOPE_WINDOW_S {
+            break;
+        }
+        if !known(o.known_at) || age < -ANTICIPATE_S {
+            continue;
+        }
+        if age < 0.0 {
+            if o.band == Some(stream::Band::Kick) {
+                e.kick_pre = e.kick_pre.max(pre(shares[j], -age));
+            }
+            continue;
+        }
+        let (slot, decay) = match o.band {
+            Some(stream::Band::Kick) => (&mut e.kick, KICK_DECAY_S),
+            Some(stream::Band::Snare) => (&mut e.snare, SNARE_DECAY_S),
+            Some(stream::Band::Hat) => (&mut e.hat, HAT_DECAY_S),
+            _ => continue,
+        };
+        *slot = slot.max(hit(shares[j], age, decay));
+    }
+    // The next drop already known: its build, easing in, as strong as the jump.
+    if let Some(j) = log
+        .jumps
+        .as_deref()
+        .unwrap_or(&[])
+        .iter()
+        .find(|j| j.t > s && j.t - s < DROP_RISE_S && j.db >= 6.0 && known(j.known_at))
+    {
+        let u = 1.0 - (j.t - s) / DROP_RISE_S;
+        e.rise = (j.db / 12.0).clamp(0.0, 1.0) * u * u * (3.0 - 2.0 * u);
+    }
+    e
 }
 
 /// A press ripple's tint by its rating (`RIPPLE_TINTS`).
@@ -449,6 +588,96 @@ mod tests {
     }
 
     #[test]
+    fn envelopes_peak_when_a_hit_sounds_and_wait_for_known_at_in_direct() {
+        let mut l = log();
+        // A labelled kick heard at 1.0, known 10 ms later; a hat known only at 2.0.
+        l.onsets = vec![
+            Onset {
+                t: 1.0,
+                known_at: 1.01,
+                strength: 1.0,
+                strong: false,
+                band: Some(stream::Band::Kick),
+            },
+            Onset {
+                t: 1.5,
+                known_at: 2.0,
+                strength: 1.0,
+                strong: false,
+                band: Some(stream::Band::Hat),
+            },
+        ];
+        // The ticks' own flux: a snare at 1.05, the bass full at 1.0.
+        for t in &mut l.ticks {
+            t.bands = Some(stream::Bands {
+                kick: 0.0,
+                snare: if (t.t - 1.05).abs() < 1e-9 { 0.8 } else { 0.0 },
+                hat: 0.0,
+                bass: if (t.t - 1.0).abs() < 1e-9 { 1.0 } else { 0.3 },
+            });
+        }
+        let mut lane = Lane::default();
+        // Before the kick is known, nothing of it shows.
+        assert_eq!(lane.frame(&l, 0.2, 1.005, 1.005, None, 0.0).env.kick, 0.0);
+        let e = lane.frame(&l, 0.2, 1.1, 1.1, None, 0.0).env;
+        // Its envelope decays from when it sounded, not from when it was known.
+        assert!((e.kick - (-0.1 / KICK_DECAY_S).exp()).abs() < 1e-9);
+        assert!((e.snare - 0.8 * (-0.05 / SNARE_DECAY_S).exp()).abs() < 1e-9);
+        assert!((e.bass - (-0.1 / BASS_RELEASE_S).exp()).abs() < 1e-9);
+        assert!(e.bass_drive() > 0.0 && e.bass_drive() < 1.0);
+        // The hat sounded at 1.5 but isn't known until 2.0.
+        assert_eq!(lane.frame(&l, 0.2, 1.6, 1.6, None, 0.0).env.hat, 0.0);
+        // Long after, everything has released to the bass's floor.
+        let e = lane.frame(&l, 0.2, 3.0, 3.0, None, 0.0).env;
+        assert_eq!((e.kick, e.snare, e.hat), (0.0, 0.0, 0.0));
+        assert!((e.bass - 0.3).abs() < 1e-9 && e.bass_drive() == 0.0);
+    }
+
+    #[test]
+    fn lookahead_anticipates_kicks_builds_drops_and_shows_hits_as_they_sound() {
+        let mut l = log();
+        // Delayed listening: a strong kick heard at 2.0 and a 12 dB drop landing at 3.0, each
+        // known (at its analysis position) well after it sounds, but arriving 2.95 s early.
+        l.onsets = vec![Onset {
+            t: 2.0,
+            known_at: 2.01,
+            strength: 1.0,
+            strong: true,
+            band: Some(stream::Band::Kick),
+        }];
+        l.jumps = Some(vec![stream::Jump {
+            t: 3.0,
+            known_at: 4.0,
+            db: 12.0,
+        }]);
+        let ahead = 2.95;
+        let at = |s: f64, ahead: f64| Lane::default().frame(&l, 0.2, s, s, None, ahead);
+        // Direct listening sees neither coming.
+        let direct = at(1.95, 0.0).env;
+        assert_eq!((direct.kick_pre, direct.rise), (0.0, 0.0));
+        // With lookahead the kick is anticipated, rising to it, and nothing before its window.
+        let (early, near) = (at(1.95, ahead).env, at(1.99, ahead).env);
+        assert!(early.kick_pre > 0.0 && near.kick_pre > early.kick_pre && near.kick_pre < 1.0);
+        assert_eq!(at(1.9, ahead).env.kick_pre, 0.0);
+        // It lands exactly when it sounds: the envelope full, the flash and burst at age 0.
+        let hit = at(2.0, ahead);
+        assert!((hit.env.kick - 1.0).abs() < 1e-9 && hit.env.kick_pre == 0.0);
+        assert!((hit.flash - 0.22).abs() < 1e-9);
+        assert_eq!(hit.bursts.len(), 1);
+        assert!(hit.bursts[0].age.abs() < 1e-9);
+        // Direct listening shows the same flash only once it is known.
+        assert_eq!(at(2.0, 0.0).flash, 0.0);
+        // The drop builds over its last 1.6 s, and releases as it lands, its pulse on time.
+        assert_eq!(at(1.3, ahead).env.rise, 0.0);
+        let (mid, late) = (at(2.2, ahead).env.rise, at(2.9, ahead).env.rise);
+        assert!(mid > 0.0 && late > mid && late < 1.0);
+        let landed = at(3.0, ahead);
+        assert_eq!(landed.env.rise, 0.0);
+        assert!((landed.drop - 1.0).abs() < 1e-9);
+        assert_eq!(at(3.0, 0.0).drop, 0.0, "Direct waits for its known_at");
+    }
+
+    #[test]
     fn keys_read_as_their_pitch_class_and_mode() {
         assert_eq!(key_code("C major"), Some(0));
         assert_eq!(key_code("F# minor"), Some(18));
@@ -460,7 +689,7 @@ mod tests {
     fn the_pulse_follows_the_evidence_and_the_onsets_flash_once_a_gap() {
         let mut lane = Lane::default();
         let l = log();
-        let f = lane.frame(&l, 0.2, 1.25, 1.25, None);
+        let f = lane.frame(&l, 0.2, 1.25, 1.25, None, 0.0);
         // (Evidence twice the gate: a full pulse, the beat clear throughout.)
         assert!((f.amp - 1.0).abs() < 1e-9 && (f.mix - 1.0).abs() < 1e-9);
         // The second onset is too soon for a flash of its own: the flash is the first's.
@@ -474,14 +703,14 @@ mod tests {
         assert!((lane.shares[1] - 0.5).abs() < 0.01);
         assert_eq!(f.bursts.len(), 2);
         assert!(f.flinch < 0.5 && f.flinch > 0.0);
-        lane.frame(&l, 0.2, 1.75, 1.75, None);
+        lane.frame(&l, 0.2, 1.75, 1.75, None, 0.0);
         assert_eq!(lane.flashes, vec![1.0, 1.7]);
     }
 
     #[test]
     fn nothing_is_shown_before_it_is_known() {
         let mut lane = Lane::default();
-        let f = lane.frame(&log(), 0.2, 0.9, 0.9, None);
+        let f = lane.frame(&log(), 0.2, 0.9, 0.9, None, 0.0);
         assert!(f.bursts.is_empty() && f.flash == 0.0 && f.flinch == 0.0);
     }
 
@@ -489,12 +718,12 @@ mod tests {
     fn a_wave_takes_the_key_heard_before_it_and_fades_its_look_in() {
         let mut lane = Lane::default();
         let l = log();
-        let before = lane.frame(&l, 0.2, 2.0, 2.0, None);
+        let before = lane.frame(&l, 0.2, 2.0, 2.0, None, 0.0);
         assert_eq!(before.look, Look::default());
-        let start = lane.frame(&l, 0.2, 3.0, 3.0, Some(3.0));
+        let start = lane.frame(&l, 0.2, 3.0, 3.0, Some(3.0), 0.0);
         assert_eq!(lane.key, Some(21));
         assert_eq!(start.look, Look::default());
-        let after = lane.frame(&l, 0.2, 4.5, 4.5, Some(3.0));
+        let after = lane.frame(&l, 0.2, 4.5, 4.5, Some(3.0), 0.0);
         assert_eq!(after.look, key_look(Some(21)));
         assert_ne!(after.tint, key_tint(None));
     }
@@ -504,19 +733,19 @@ mod tests {
         let mut lane = Lane::default();
         lane.press(10.0, Some("perfect"), false);
         lane.press(10.5, Some("good"), false);
-        let f = lane.frame(&log(), 0.2, 0.0, 10.6, None);
+        let f = lane.frame(&log(), 0.2, 0.0, 10.6, None, 0.0);
         // (The first press's ripple has gone.)
         assert_eq!(f.ripples.len(), 1);
         assert!((f.glow - 0.5).abs() < 1e-9);
         assert!((f.press - (-0.1f64 / 0.25).exp()).abs() < 1e-9);
-        let later = lane.frame(&log(), 0.2, 0.0, 13.0, None);
+        let later = lane.frame(&log(), 0.2, 0.0, 13.0, None, 0.0);
         assert!(later.ripples.is_empty() && later.glow == 0.0);
     }
     #[test]
     fn unknown_ticks_jumps_and_onsets_do_not_change_the_frame_or_zone_key() {
         let mut log = StreamLog::default();
         log.ticks.push(tick(0.0, 1.0, "C major"));
-        let baseline = Lane::default().frame(&log, 0.2, 1.0, 1.0, Some(1.0));
+        let baseline = Lane::default().frame(&log, 0.2, 1.0, 1.0, Some(1.0), 0.0);
         let mut late = tick(0.9, 0.0, "F# minor");
         late.energy = 1.0;
         late.known_at = 2.0;
@@ -527,13 +756,13 @@ mod tests {
             db: 12.0,
         }]);
         log.onsets.push(onset(2.0, 1.0, true));
-        let frame = Lane::default().frame(&log, 0.2, 1.0, 1.0, Some(1.0));
+        let frame = Lane::default().frame(&log, 0.2, 1.0, 1.0, Some(1.0), 0.0);
         assert_eq!(frame.loudness, baseline.loudness);
         assert_eq!(frame.amp, baseline.amp);
         assert_eq!(frame.tint, baseline.tint);
         assert_eq!(frame.drop, 0.0);
         assert!(frame.bursts.is_empty());
-        let after = Lane::default().frame(&log, 0.2, 2.0, 2.0, None);
+        let after = Lane::default().frame(&log, 0.2, 2.0, 2.0, None, 0.0);
         assert_eq!(after.drop, 1.0);
         assert!(!after.bursts.is_empty());
     }
@@ -569,16 +798,16 @@ mod hud_lock_tests {
         };
         let mut lane = Lane::default();
         assert!(
-            !lane.frame(&log, 0.2, 0.8, 0.8, None).locked,
+            !lane.frame(&log, 0.2, 0.8, 0.8, None, 0.0).locked,
             "one-second admission gate"
         );
         assert!(
-            lane.frame(&log, 0.2, 1.5, 1.5, None).locked,
+            lane.frame(&log, 0.2, 1.5, 1.5, None, 0.0).locked,
             "future low confidence is not heard yet"
         );
-        assert!(!lane.frame(&log, 0.2, 1.61, 1.61, None).locked);
+        assert!(!lane.frame(&log, 0.2, 1.61, 1.61, None, 0.0).locked);
         assert!(
-            !lane.frame(&log, 0.2, 3.0, 3.0, None).locked,
+            !lane.frame(&log, 0.2, 3.0, 3.0, None, 0.0).locked,
             "no stale metronome"
         );
     }

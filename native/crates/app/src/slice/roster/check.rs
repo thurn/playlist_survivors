@@ -281,7 +281,7 @@ fn draw(
     };
     let run = view.run.ok_or("roster run missing")?;
     let ground = world.field(engine, run.presentation_s, period)?;
-    scene.fast_lane(engine.stream(), 0.2, s, s, None);
+    scene.fast_lane(engine.stream(), 0.2, s, s, None, 0.0);
     let mut layers = scene::Layers::default();
     scene.draw(
         view,

@@ -126,7 +126,7 @@ pub fn run(dir: &Path) -> Result<(), String> {
             index: beats.iter().filter(|b| **b <= s).count() as f64,
         };
         let ground = world.field(&engine, run.presentation_s, period)?;
-        scene.fast_lane(engine.stream(), 0.2, s, s, None);
+        scene.fast_lane(engine.stream(), 0.2, s, s, None, 0.0);
         scene.draw(
             &engine.view.borrow(),
             &ground,

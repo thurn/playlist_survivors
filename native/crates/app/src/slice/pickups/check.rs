@@ -205,7 +205,7 @@ fn draw(
     };
     let run = view.run.ok_or("no view run")?;
     let ground = world.field(engine, run.presentation_s, period)?;
-    scene.fast_lane(engine.stream(), 0.2, now, now, None);
+    scene.fast_lane(engine.stream(), 0.2, now, now, None, 0.0);
     let mut layers = scene::Layers::default();
     scene.draw(
         view,

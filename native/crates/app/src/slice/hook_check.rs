@@ -133,7 +133,7 @@ pub fn run(dir: &Path) -> Result<(), String> {
             index,
         };
         let ground = world.field(&engine, run.presentation_s, period)?;
-        scene.fast_lane(engine.stream(), 0.2, s, s, wave);
+        scene.fast_lane(engine.stream(), 0.2, s, s, wave, 0.0);
         let view = engine.view.borrow();
         let mut layers = scene::Layers::default();
         scene.draw(

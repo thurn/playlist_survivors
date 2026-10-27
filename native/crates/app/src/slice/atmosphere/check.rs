@@ -144,6 +144,7 @@ fn capture(dir: &Path, aura_only: bool) -> Result<(), String> {
             song,
             song,
             view.wave.as_ref().map(|w| w.s),
+            0.0,
         );
         let mut layers = scene::Layers::default();
         scene.draw(
@@ -210,7 +211,7 @@ fn capture(dir: &Path, aura_only: bool) -> Result<(), String> {
                 for (label, inventory) in aura_builds() {
                     let mut fixture = view.clone();
                     fixture.inventory = Some(inventory);
-                    scene.fast_lane(engine.stream(), 0.2, song, song, None);
+                    scene.fast_lane(engine.stream(), 0.2, song, song, None, 0.0);
                     let mut layers = scene::Layers::default();
                     scene.draw(
                         &fixture,

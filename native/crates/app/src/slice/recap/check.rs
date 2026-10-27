@@ -191,6 +191,7 @@ pub fn run(dir: &Path) -> Result<(), String> {
                 song,
                 song,
                 view.wave.as_ref().map(|w| w.s),
+                0.0,
             );
             let mut layers = scene::Layers::default();
             scene.draw(
