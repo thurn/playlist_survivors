@@ -472,7 +472,15 @@ clarification that standing-still minimum difficulty remains diagnostic.
 
 ### FR3 — Sound
 
-Pending implementation.
+Restored footsteps and removed both the music-RMS waveform clamp and beat-
+confidence muting. Added persisted independent effects gain (`[` / `]`, F1
+shows level). Player attack, hurt and UI voices have separate reservations;
+actual sample lengths, compression, cancellation and spatial variation remain.
+Default ducking is off in both modes. Effects cannot alter the music limiter's
+envelope. Four real-music PCM mixes and a muted Delayed run pass; short WAVs
+are kept outside git, with subjective speaker/System checks pending.
+[Evidence and playable command](../../native/evidence/fr3/README.md). The bead
+records the exact commit and candidate.
 
 ### FR4 — HUD and legacy
 

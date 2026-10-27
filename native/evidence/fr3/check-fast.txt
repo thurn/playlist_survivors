@@ -1,0 +1,35 @@
+changes: 15 paths since 7bd1e35
+friction: 46 records valid
+All checks passed!
+WARN `--no-project` was provided, but no project was found
+...........................
+----------------------------------------------------------------------
+Ran 27 tests in 0.027s
+
+OK
+changes: 15 paths since 7bd1e35
+crates purity: stream, analysis, sim, eval, players pure
+native check-fast: app audio
+    Checking app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-fr3/native/crates/app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.16s
+
+running 75 tests
+...........................................i................Error: Couldn't open input file ('wht?')
+...............
+test result: ok. 74 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 1.03s
+
+
+running 18 tests
+..................
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+Analyzing dependencies of crates in this directory...
+cargo-machete didn't find any unused dependencies in this directory. Good job!
+Done!
+native check-fast: passed in 4 s
+check-fast: passed in 5 s

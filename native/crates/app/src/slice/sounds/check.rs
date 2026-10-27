@@ -1,5 +1,5 @@
 //! Audio-free recording replay through the real scheduler/mixer, below CI's priority.
-use super::{At, Command, Path, Sounds};
+use super::{At, Path, Sounds};
 use crate::slice::World;
 use eval::session::{AppliedKey, Arrival, rebase_append};
 use serde::de::DeserializeOwned;
@@ -58,9 +58,6 @@ pub fn run(dir: &Path, until_run_s: f64) -> Result<(), String> {
         true,
     )?;
     let mut mixer = audio::mixer::Mixer::new(rate, bank, None, 1.0);
-    mixer.apply(Command::SurvivorsMix(true), &mut |_| {});
-    // Synthetic 0.1 RMS; this diagnostic measures scheduling, not an ear-level mix verdict.
-    mixer.apply(Command::MusicLevel(0.1), &mut |_| {});
     let (mut next, mut next_key, mut played, mut minute, mut peak) = (0, 0, 0usize, 0usize, 0usize);
     let mut reached = 0.0f64;
     let mut reports = [0u64; 4];
@@ -100,7 +97,6 @@ pub fn run(dir: &Path, until_run_s: f64) -> Result<(), String> {
             final_before,
             run_start: s0,
             beats: &engine.stream().beats,
-            gate: 0.2,
             camera,
             clock: (s0, 1000.0),
             l_out: 0.0,

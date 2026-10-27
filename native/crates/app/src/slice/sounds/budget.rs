@@ -8,21 +8,29 @@ pub enum Category {
     Kills,
     Pickups,
     Ui,
+    HeroAttack,
+    HeroDamage,
+    Steps,
 }
 impl Category {
     pub fn of(key: &str) -> Self {
         match key {
-            "swing" => Self::Weapons,
+            "swing"
+            | "sword-fire"
+            | "sword-accent-fire"
+            | "bloody-tear-fire"
+            | "bloody-tear-accent-fire" => Self::HeroAttack,
+            "step" => Self::Steps,
             "kill" | "kill-multi" => Self::Kills,
             "chime" | "gem" | "chicken" | "vacuum" => Self::Pickups,
-            "hurt" => Self::Hits,
+            "hurt" => Self::HeroDamage,
             _ if key.starts_with("hit-") || key.ends_with("-hit") => Self::Hits,
             _ if key.starts_with("weapon-") || key.ends_with("-fire") => Self::Weapons,
             _ => Self::Ui,
         }
     }
     pub fn cap(self) -> usize {
-        [4, 6, 2, 3, 3][self as usize]
+        [4, 6, 2, 3, 3, 3, 2, 2][self as usize]
     }
 }
 #[derive(Clone, Copy)]
@@ -36,8 +44,8 @@ pub struct Scheduled {
 }
 #[derive(Clone, Default)]
 pub struct Budget {
-    pub peaks: [usize; 5],
-    pub dropped: [u64; 5],
+    pub peaks: [usize; 8],
+    pub dropped: [u64; 8],
     denied: HashMap<VoiceKey, f64>,
 }
 impl Budget {
@@ -91,12 +99,39 @@ mod tests {
     use audio::mixer::Voice;
     fn key(n: u32) -> VoiceKey {
         VoiceKey {
-            key: "swing".into(),
+            key: "weapon-fire".into(),
             s: 0,
             x: 0,
             n,
             gem: None,
         }
+    }
+    #[test]
+    fn crowd_tails_cannot_consume_player_damage_attack_or_ui_slots() {
+        let mut budget = Budget::default();
+        let mut scheduled = HashMap::new();
+        for name in ["magic-wand-hit", "magic-wand-fire", "kill", "chime"] {
+            for n in 0..Category::of(name).cap() {
+                let mut k = key(n as u32);
+                k.key = name.into();
+                let v = Voice::sample(n as u64, 0, 1.0, 1.0);
+                let slot = budget.admit(&k, &v, 3.0, &scheduled, 0.0).unwrap();
+                scheduled.insert(k, slot);
+            }
+        }
+        for name in ["sword-fire", "hurt", "level-up", "step"] {
+            let mut k = key(100);
+            k.key = name.into();
+            assert!(
+                budget
+                    .admit(&k, &Voice::sample(100, 0, 1.5, 1.0), 1.0, &scheduled, 0.0)
+                    .is_some(),
+                "{name}"
+            );
+        }
+        assert!(
+            (0..8).map(|i| [4, 6, 2, 3, 3, 3, 2, 2][i]).sum::<usize>() < audio::mixer::MAX_PLAYING
+        );
     }
     #[test]
     fn caps_cover_future_overlap_and_slow_sample_tails() {

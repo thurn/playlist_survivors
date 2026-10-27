@@ -85,9 +85,25 @@ pub struct Settings {
     pub default: Calibration,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub devices: BTreeMap<String, Calibration>,
+    /// Global effects level, independent of output calibration and music volume.
+    #[serde(default)]
+    pub effects: Option<f32>,
 }
 
 impl Settings {
+    pub fn effects_level(&self) -> f32 {
+        self.effects
+            .filter(|v| v.is_finite())
+            .unwrap_or(1.0)
+            .clamp(0.0, 2.0)
+    }
+
+    pub fn adjust_effects(&mut self, delta: f32) -> f32 {
+        let level = ((self.effects_level() + delta) * 10.0).round() / 10.0;
+        self.effects = Some(level.clamp(0.0, 2.0));
+        self.effects_level()
+    }
+
     /// Where the settings live.
     pub fn path() -> Option<PathBuf> {
         if let Ok(p) = std::env::var("PS_SETTINGS") {
@@ -188,7 +204,9 @@ mod tests {
         let old: Settings =
             serde_json::from_str(r#"{"inputOffsetMs": 40, "stompExtraMs": 15}"#).unwrap();
         assert_eq!(old.default.input_offset_ms, Some(40.0));
+        assert_eq!(old.effects_level(), 1.0);
         let mut s = old.clone();
+        assert_eq!(s.adjust_effects(-0.1), 0.9);
         let mut airpods = Calibration::default();
         airpods.set_offset(Group::Direction, 120.0);
         airpods.latency_correction_ms = Some(30.0);

@@ -1,8 +1,8 @@
 //! The output's mixer (docs/design/native-app.md, "Sound (G4)"; `src/runtime/audio.ts` and
 //! `live/sounds.ts` as a reference): voices scheduled on the render timestamps' host-time
 //! timeline and started on their exact sample, movable or cancellable until they start, never
-//! started after their onset; the played file under a duck envelope; the effects through a
-//! compressor and a level follower; everything through a limiter. It runs on the render thread,
+//! started after their onset. Effects have their own compressor and gain. The protected music
+//! bus is independent of gameplay; effects use its remaining output headroom. It runs on the render thread,
 //! so it never allocates or locks once built.
 
 #![allow(clippy::many_single_char_names)]
@@ -17,7 +17,7 @@ pub const MAX_PLAYING: usize = 32;
 /// A voice whose onset has passed by more than this is skipped, never started late.
 pub const ONSET_TOLERANCE_S: f64 = 0.001;
 
-/// The effects sit about 6 dB below the music's peak.
+/// Baseline effects gain, before compression and the player's effects control.
 const SFX_LEVEL: f32 = 0.32;
 /// A ducking sound takes the music down about 3.5 dB for 120 ms, ramping in over 10 and back
 /// over 80.
@@ -116,10 +116,10 @@ pub enum Command {
     CancelAll,
     /// The effects' level (a gain, from the level follower).
     Follow(f32),
-    /// Survivors effects have a -12 dB peak ceiling against the heard music's 400 ms RMS.
-    SurvivorsMix(bool),
-    /// Absolute capture RMS for Direct System mode, where music bypasses this mixer.
-    MusicLevel(f32),
+    /// Player effects level (0..2), independent of music and analysis.
+    EffectsGain(f32),
+    /// Optional music ducking; off by default in every mode.
+    Ducking(bool),
 }
 
 /// What happened to a voice.
@@ -199,10 +199,9 @@ pub struct Mixer {
     duck_from_down: bool,
     duck_hold: u64,
     duck_end: u64,
-    survivors: bool,
-    music_ms: f32,
-    external_music_rms: f32,
-    k_music: f32,
+    ducking: bool,
+    effects_gain: f32,
+    effects_target: f32,
     follow: f32,
     follow_target: f32,
     comp_env: f32,
@@ -241,10 +240,9 @@ impl Mixer {
             duck_from_down: false,
             duck_hold: 0,
             duck_end: 0,
-            survivors: false,
-            music_ms: 0.0,
-            external_music_rms: 0.0,
-            k_music: coeff(0.4, rate),
+            ducking: false,
+            effects_gain: 1.0,
+            effects_target: 1.0,
             follow: 1.0,
             follow_target: 1.0,
             comp_env: 0.0,
@@ -317,10 +315,12 @@ impl Mixer {
                 }
             }
             Command::Follow(g) => self.follow_target = g.max(0.0),
-            Command::SurvivorsMix(on) => self.survivors = on,
-            Command::MusicLevel(rms) => {
-                self.external_music_rms = if rms.is_finite() { rms.max(0.0) } else { 0.0 }
+            Command::EffectsGain(g) => {
+                if g.is_finite() {
+                    self.effects_target = g.clamp(0.0, 2.0);
+                }
             }
+            Command::Ducking(on) => self.ducking = on,
             Command::Replay { samples, at } => self.replay = Some((samples, at, false)),
             Command::StopReplay => self.replay = None,
             Command::MusicGain(g) => self.music_gain = g,
@@ -414,7 +414,7 @@ impl Mixer {
                         start,
                         pos: from,
                     });
-                    if v.duck && !self.survivors {
+                    if v.duck && self.ducking {
                         self.duck(self.clock + start as u64);
                     }
                     report(Report::Started {
@@ -444,7 +444,6 @@ impl Mixer {
         let mut peak = 0.0f32;
         for i in 0..frames {
             let (mut l, mut r) = (0.0f32, 0.0f32);
-            let (mut reference_l, mut reference_r) = (0.0f32, 0.0f32);
             for k in 0..MAX_PLAYING {
                 let Some(mut p) = self.playing[k] else {
                     continue;
@@ -460,14 +459,8 @@ impl Mixer {
                 let x = self.at(p.voice.source, p.pos) * p.voice.gain;
                 // (Equal power, as a stereo panner places a mono source.)
                 let a = (p.voice.pan.clamp(-1.0, 1.0) + 1.0) * std::f32::consts::FRAC_PI_4;
-                if self.survivors && matches!(p.voice.source, Source::Click(_)) {
-                    // Calibration/reference clicks must be audible without external music.
-                    reference_l += x * a.cos();
-                    reference_r += x * a.sin();
-                } else {
-                    l += x * a.cos();
-                    r += x * a.sin();
-                }
+                l += x * a.cos();
+                r += x * a.sin();
                 p.pos += f64::from(p.voice.rate);
                 self.playing[k] = if p.pos >= len { None } else { Some(p) };
             }
@@ -489,7 +482,9 @@ impl Mixer {
                 1.0
             };
             self.follow = self.follow_target + self.k_follow * (self.follow - self.follow_target);
-            let g = comp * self.follow;
+            self.effects_gain =
+                self.effects_target + self.k_follow * (self.effects_gain - self.effects_target);
+            let g = comp * self.follow * self.effects_gain;
             l *= g;
             r *= g;
             let effects = (l, r);
@@ -508,10 +503,10 @@ impl Mixer {
                     .unwrap_or(0.0);
                 let m = heard
                     * self.music_gain
-                    * if self.survivors {
-                        1.0
-                    } else {
+                    * if self.ducking {
                         self.duck_gain(self.clock + i as u64)
+                    } else {
+                        1.0
                     };
                 l += m;
                 r += m;
@@ -540,25 +535,7 @@ impl Mixer {
                     r += m;
                 }
             }
-            if self.survivors {
-                let rms =
-                    if self.music.is_some() || self.delay_line.is_some() || self.replay.is_some() {
-                        let ms = f32::midpoint(l * l, r * r);
-                        self.music_ms = ms + self.k_music * (self.music_ms - ms);
-                        self.music_ms.max(0.0).sqrt()
-                    } else {
-                        self.external_music_rms
-                    };
-                let ceiling = rms * 10f32.powf(-12.0 / 20.0);
-                l += effects.0.clamp(-ceiling, ceiling);
-                r += effects.1.clamp(-ceiling, ceiling);
-                l += reference_l * SFX_LEVEL * g;
-                r += reference_r * SFX_LEVEL * g;
-            } else {
-                l += effects.0;
-                r += effects.1;
-            }
-            // The limiter.
+            // Protect music independently: gameplay cannot change its gain or envelope.
             let level = l.abs().max(r.abs());
             let k = if level > self.limit_env {
                 self.k_limit_attack
@@ -571,8 +548,11 @@ impl Mixer {
             } else {
                 1.0
             };
-            out[2 * i] = l * lim * OUTPUT_TRIM;
-            out[2 * i + 1] = r * lim * OUTPUT_TRIM;
+            let music_l = (l * lim * OUTPUT_TRIM).clamp(-1.0, 1.0);
+            let music_r = (r * lim * OUTPUT_TRIM).clamp(-1.0, 1.0);
+            out[2 * i] = music_l + (effects.0 * OUTPUT_TRIM).clamp(-1.0 - music_l, 1.0 - music_l);
+            out[2 * i + 1] =
+                music_r + (effects.1 * OUTPUT_TRIM).clamp(-1.0 - music_r, 1.0 - music_r);
         }
         // Voices start at the top of the next buffer from here on.
         for p in self.playing.iter_mut().flatten() {
@@ -789,6 +769,7 @@ mod tests {
         let mut m = Mixer::new(RATE, vec![vec![0.0f32; 10].into()], Some(music), 1.0);
         let mut v = Voice::sample(1, 0, 0.01, 0.0);
         v.duck = true;
+        m.apply(Command::Ducking(true), &mut quiet);
         m.apply(Command::Play(v), &mut quiet);
         let mut out = vec![0.0; 2 * 24_000];
         m.render(0.0, &mut out, &mut quiet);
@@ -831,70 +812,57 @@ mod tests {
 }
 
 #[cfg(test)]
-mod survivors_mix_tests {
+mod effects_mix_tests {
     use super::*;
     #[test]
-    fn survivors_never_ducks_and_bounds_the_effects_below_the_heard_music() {
-        let rate = 1000.0;
-        let music: Arc<[f32]> = vec![0.1; 2000].into();
-        let bank: Vec<Arc<[f32]>> = vec![vec![1.0; 2000].into()];
-        let mut base = Mixer::new(rate, bank.clone(), Some(music.clone()), 1.0);
-        let mut mixed = Mixer::new(rate, bank, Some(music), 1.0);
-        mixed.apply(Command::SurvivorsMix(true), &mut |_| {});
-        let mut voice = Voice::sample(1, 0, 0.0, 10.0);
-        voice.duck = true;
-        mixed.apply(Command::Play(voice), &mut |_| {});
-        let mut a = vec![0.0; 2000];
-        let mut b = a.clone();
-        base.render(0.0, &mut a, &mut |_| {});
-        mixed.render(0.0, &mut b, &mut |_| {});
-        let cap = 0.1 * 10f32.powf(-12.0 / 20.0) * OUTPUT_TRIM;
-        for (x, y) in a.iter().zip(&b) {
-            assert!(*y >= *x - 1e-6, "music must not duck");
-            assert!(*y - *x <= cap + 1e-6);
+    fn quiet_or_absent_music_never_silences_effects_and_ducking_defaults_off() {
+        for music in [None, Some(vec![0.05; 2000].into())] {
+            let mut mixed = Mixer::new(1000.0, vec![vec![1.0; 2000].into()], music, 1.0);
+            let mut voice = Voice::sample(1, 0, 0.0, 1.0);
+            voice.duck = true;
+            mixed.apply(Command::Play(voice), &mut |_| {});
+            let mut out = vec![0.0; 2000];
+            mixed.render(0.0, &mut out, &mut |_| {});
+            assert!(out[1999] > 0.08, "audible even without musical evidence");
+            assert_eq!(mixed.duck_end, 0);
         }
-        assert!(b[1999] > a[1999], "effects remain audible");
-        assert_eq!(
-            mixed.duck_end, 0,
-            "even a duck-marked voice cannot duck survivors music"
-        );
     }
     #[test]
-    fn direct_system_uses_absolute_capture_rms_and_silence_has_no_effects() {
-        let mut m = Mixer::new(1000.0, vec![vec![1.0; 1000].into()], None, 1.0);
-        m.apply(Command::SurvivorsMix(true), &mut |_| {});
-        m.apply(Command::Play(Voice::sample(1, 0, 0.0, 10.0)), &mut |_| {});
-        let mut out = vec![0.0; 200];
-        m.render(0.0, &mut out, &mut |_| {});
-        assert!(out.iter().all(|x| *x == 0.0));
-        m.apply(Command::MusicLevel(0.05), &mut |_| {});
-        m.render(0.1, &mut out, &mut |_| {});
-        let cap = 0.05 * 10f32.powf(-12.0 / 20.0) * OUTPUT_TRIM;
-        assert!(out.iter().all(|x| x.abs() <= cap + 1e-6));
-        assert!(out.iter().any(|x| *x > 0.0));
+    fn effects_control_mutes_only_effects_and_smooths_changes() {
+        let music: Arc<[f32]> = vec![0.4; 8000].into();
+        let mut mixed = Mixer::new(
+            1000.0,
+            vec![vec![1.0; 8000].into()],
+            Some(music.clone()),
+            1.0,
+        );
+        let mut base = Mixer::new(1000.0, vec![], Some(music), 1.0);
+        mixed.apply(Command::Play(Voice::sample(1, 0, 0.0, 1.0)), &mut |_| {});
+        mixed.apply(Command::EffectsGain(0.0), &mut |_| {});
+        let mut out = vec![0.0; 4000];
+        let mut reference = out.clone();
+        mixed.render(0.0, &mut out, &mut |_| {});
+        base.render(0.0, &mut reference, &mut |_| {});
+        assert!(out[0] > reference[0]);
+        assert!((out[3999] - reference[3999]).abs() < 1e-6);
+        assert!(out.iter().all(|v| v.is_finite() && v.abs() <= 1.0));
     }
-}
-
-#[cfg(test)]
-mod calibration_ceiling_tests {
-    use super::*;
     #[test]
-    fn reference_clicks_remain_audible_when_direct_system_music_is_silent() {
-        let mut mixer = Mixer::new(8000.0, Vec::new(), None, 1.0);
-        mixer.apply(Command::SurvivorsMix(true), &mut |_| {});
-        mixer.apply(Command::MusicLevel(0.0), &mut |_| {});
-        mixer.apply(
-            Command::Play(Voice {
-                source: Source::Click(1000.0),
-                ..Voice::sample(1, 0, 0.0, 1.0)
-            }),
-            &mut |_| {},
+    fn loud_effects_cannot_pump_the_music_limiter() {
+        let music: Arc<[f32]> = vec![0.95; 2000].into();
+        let mut mixed = Mixer::new(
+            1000.0,
+            vec![vec![-1.0; 2000].into()],
+            Some(music.clone()),
+            1.0,
         );
-        let mut out = vec![0.0; 480];
-        mixer.render(0.0, &mut out, &mut |_| {});
-        assert!(
-            out.iter().any(|x| x.abs() > 0.01),
-            "calibration cannot depend on music that excludes our own click"
-        );
+        let mut base = Mixer::new(1000.0, vec![], Some(music), 1.0);
+        mixed.apply(Command::Play(Voice::sample(1, 0, 0.0, 20.0)), &mut |_| {});
+        let mut a = vec![0.0; 4000];
+        let mut b = a.clone();
+        mixed.render(0.0, &mut a, &mut |_| {});
+        base.render(0.0, &mut b, &mut |_| {});
+        assert_eq!(mixed.limit_env, base.limit_env);
+        assert!(a.iter().all(|v| v.abs() <= 1.0));
     }
 }

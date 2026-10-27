@@ -1215,7 +1215,7 @@ pub fn listening_card(
         out,
     );
     face.text(
-        "C CALIBRATE YOUR TAPS   V CALIBRATE THE DISPLAY",
+        "C TAP CALIBRATION   V DISPLAY   [ / ] EFFECTS   F1 LEVEL",
         cx,
         top + 145.0 * u,
         px(2.0),

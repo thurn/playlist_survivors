@@ -28,8 +28,6 @@ use budget::{Budget, Scheduled};
 
 /// The palette played (the TS director's loudness levels pick among three; one for now).
 const PALETTE: &str = "crisp-steel";
-/// Sounds that carry information play while the beat is unclear too (`GATE_EXEMPT_SOUNDS`).
-const EXEMPT: [&str; 5] = ["hurt", "level-up", "tier-up", "tier-down", "orb"];
 /// A sound plays on its slot only when known at least this long before it (`NEVER_LATE`); the
 /// app raises it to cover the output's latency.
 pub const NEVER_LATE: f64 = 0.06;
@@ -96,7 +94,7 @@ pub struct At<'a> {
     /// The song time the run began at (the simulation's 0).
     pub run_start: f64,
     pub beats: &'a [Beat],
-    pub gate: f64,
+
     pub camera: (f64, f64, f64),
     /// Song time `song` is heard at host time `heard`.
     pub clock: (f64, f64),
@@ -328,7 +326,7 @@ impl Sounds {
     pub fn log_budget(&self) {
         if self.survivors {
             eprintln!(
-                "slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak {:?}, denied {:?}",
+                "slice: sound budgets [weapons,hits,kills,pickups,ui,hero-attack,hero-damage,steps] caps [4,6,2,3,3,3,2,2], peak {:?}, denied {:?}",
                 self.budget.peaks, self.budget.dropped
             );
         }
@@ -553,13 +551,7 @@ impl Sounds {
                 c.every = Some(Every::Beat);
                 vec![c]
             }
-            Cause::Step { s, x } => {
-                if self.survivors {
-                    Vec::new()
-                } else {
-                    vec![Call::new("step", *s, *x, 0.25)]
-                }
-            }
+            Cause::Step { s, x } => vec![Call::new("step", *s, *x, 0.35)],
             Cause::Boss(cue) => {
                 use sim::survivors::BossCueKind;
                 let key = match cue.kind {
@@ -684,17 +676,12 @@ fn place(call: &Call, known: f64, at: &At) -> Option<Placed> {
         None if call.s - known < at.never_late => return None,
         None => call.s,
     };
-    let fade = if EXEMPT.contains(&call.key.as_str()) {
-        1.0
-    } else {
-        evidence_fade(at.beats, at.gate, call.owner.unwrap_or(call.s))
-    };
-    (fade > 0.0).then(|| Placed {
+    Some(Placed {
         key: call.key.clone(),
         s,
         cause_s: call.s,
         x: call.x,
-        gain: call.gain * fade,
+        gain: call.gain,
         duck: call.duck,
         gem: call.gem,
         note: call.note,
@@ -743,16 +730,6 @@ fn slot_at(beats: &[Beat], every: Every, t: f64) -> f64 {
     time_of(beats, (bi * per - 1e-6).ceil() / per)
 }
 
-/// A gameplay sound's level by the evidence of the latest beat at or before song time `s`: full
-/// at twice the gate, silent at it (`soundFade`).
-fn evidence_fade(beats: &[Beat], gate: f64, s: f64) -> f64 {
-    let k = beats.partition_point(|b| b.t <= s);
-    if k == 0 {
-        return 0.0;
-    }
-    ((beats[k - 1].evidence - gate) / gate).clamp(0.0, 1.0)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -777,19 +754,6 @@ mod tests {
         // Past the last beat (2.5), at its period.
         assert!((slot_at(&b, Every::Beat, 2.6) - 3.0).abs() < 1e-9);
         assert_eq!(slot_at(&b, Every::Beat, 0.5), 0.5, "before the first");
-    }
-
-    #[test]
-    fn the_evidence_fades_sounds_below_twice_the_gate() {
-        let gate = 0.2;
-        assert_eq!(evidence_fade(&beats(2, 0.5, 0.4), gate, 1.6), 1.0);
-        assert!((evidence_fade(&beats(2, 0.5, 0.3), gate, 1.6) - 0.5).abs() < 1e-9);
-        assert_eq!(evidence_fade(&beats(2, 0.5, 0.15), gate, 1.6), 0.0);
-        assert_eq!(
-            evidence_fade(&beats(2, 0.5, 1.0), gate, 0.5),
-            0.0,
-            "no beat yet"
-        );
     }
 
     #[test]
@@ -820,7 +784,6 @@ mod tests {
             final_before: -1.0,
             run_start: 0.0,
             beats: &b,
-            gate: 0.2,
             camera: (0.0, 0.0, 1.0),
             clock: (0.0, 100.0),
             l_out: 0.02,
@@ -852,7 +815,7 @@ mod tests {
         out.clear();
         sounds.reconcile(&[], &at, &mut out);
         assert_eq!(out, [Command::Cancel(m.id)]);
-        // A whoosh belongs to its strike's beat: below the gate there, both are silent.
+        // Quiet evidence does not suppress the actual player attack.
         out.clear();
         let quiet = beats(8, 0.5, 0.1);
         let at = At {
@@ -868,7 +831,10 @@ mod tests {
             known: 1.5,
         };
         sounds.reconcile(&[swing], &at, &mut out);
-        assert!(out.is_empty());
+        assert_eq!(
+            out.iter().filter(|c| matches!(c, Command::Play(_))).count(),
+            2
+        );
     }
 
     #[test]
@@ -898,7 +864,6 @@ mod tests {
             final_before: -1.0,
             run_start: 0.0,
             beats: &b,
-            gate: 0.2,
             camera: (0.0, 0.0, 1.0),
             clock: (0.0, 100.0),
             l_out: 0.02,
@@ -952,7 +917,6 @@ mod tests {
             final_before: -1.0,
             run_start: 0.0,
             beats: &early,
-            gate: 0.2,
             camera: (0.0, 0.0, 1.0),
             clock: (0.0, 100.0),
             l_out: 0.02,
@@ -1000,6 +964,141 @@ mod survivor_tests {
             .clone()
     }
     #[test]
+    fn essential_and_stride_cues_play_without_any_beat_evidence() {
+        let (mut sounds, _) = decoded();
+        let at = At {
+            seed: 1.0,
+            final_before: -1.0,
+            run_start: 0.0,
+            beats: &[],
+            camera: (0.0, 0.0, 1.0),
+            clock: (0.0, 100.0),
+            l_out: 0.0,
+            never_late: NEVER_LATE,
+            now: 100.0,
+            ahead: 0.0,
+        };
+        for cause in [
+            Cause::Step { s: 1.0, x: 0.0 },
+            Cause::Swing {
+                s: 1.0,
+                x: 0.0,
+                kind: "heavy",
+            },
+            Cause::Hurt { s: 1.0 },
+            Cause::Chicken { s: 1.0, id: 1 },
+        ] {
+            let mut out = Vec::new();
+            sounds.reconcile(&[Caused { cause, known: 0.0 }], &at, &mut out);
+            assert!(
+                out.iter()
+                    .any(|c| matches!(c, Command::Play(v) if v.gain > 0.0)),
+                "{out:?}"
+            );
+            sounds.reset(0.0);
+        }
+    }
+
+    #[test]
+    #[ignore = "release: real decoded music and effects mix qualification"]
+    fn real_music_effects_mix_qualification() {
+        use audio::mixer::Mixer;
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
+        let index: serde_json::Value = serde_json::from_str(
+            &std::fs::read_to_string(root.join("public/reactive/index.json")).unwrap(),
+        )
+        .unwrap();
+        for track in [
+            "cc-kimiko-ishizaka-aria",
+            "cc-the-crypts-no-life-after-crypts",
+            "dnb-174",
+            "beethoven-fifth",
+        ] {
+            let entry = index["tracks"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|e| e["id"] == track)
+                .unwrap();
+            let path = root
+                .join("public/reactive")
+                .join(entry["audio"].as_str().unwrap());
+            let mut pcm = decode(&path, 8000.0).unwrap();
+            pcm.truncate(24 * 8000);
+            let (mut sounds, bank) = decoded();
+            let music = Arc::<[f32]>::from(pcm);
+            let mut mixed = Mixer::new(8000.0, bank, Some(music.clone()), 1.0);
+            let mut base = Mixer::new(8000.0, vec![], Some(music), 1.0);
+            let mut out = vec![0.0; 24 * 8000 * 2];
+            let mut reference = out.clone();
+            // Actual palette samples, normal and dense overlapping transients. No confidence
+            // gate; the follower is deliberately at its deepest permitted quiet-passage cut.
+            mixed.apply(Command::Follow(0.316), &mut |_| {});
+            for i in 0..40 {
+                let t = 1.0 + f64::from(i) * 0.5;
+                let mut cmds = Vec::new();
+                for key in [
+                    "step",
+                    "sword-fire",
+                    "sword-accent-hit",
+                    "kill-multi",
+                    "chime",
+                ] {
+                    sounds.now(key, t, 0.7, &mut cmds);
+                }
+                if i % 4 == 0 {
+                    sounds.now("hurt", t + 0.1, 0.8, &mut cmds);
+                }
+                for c in cmds {
+                    mixed.apply(c, &mut |_| {});
+                }
+                // Render incrementally to honor the real bounded scheduling queue.
+                let start = (f64::from(i) * 0.5 * 8000.0) as usize * 2;
+                let end = start + 8000;
+                mixed.render(f64::from(i) * 0.5, &mut out[start..end], &mut |_| {});
+                base.render(f64::from(i) * 0.5, &mut reference[start..end], &mut |_| {});
+            }
+            mixed.render(20.0, &mut out[320_000..], &mut |_| {});
+            base.render(20.0, &mut reference[320_000..], &mut |_| {});
+            let rms = |v: &[f32]| {
+                (v.iter().map(|x| f64::from(*x).powi(2)).sum::<f64>() / v.len() as f64).sqrt()
+            };
+            let delta: Vec<_> = out.iter().zip(&reference).map(|(a, b)| a - b).collect();
+            let peak = out.iter().map(|x| x.abs()).fold(0.0f32, f32::max);
+            let fx_peak = delta.iter().map(|x| x.abs()).fold(0.0f32, f32::max);
+            assert!(
+                fx_peak > 0.01 && rms(&delta) > 0.001,
+                "real clips remain audible: {track}"
+            );
+            assert!(peak <= 1.0 && out.iter().all(|x| x.is_finite()));
+            eprintln!(
+                "MIX {track}: music_rms={:.6} effects_rms={:.6} effects_peak={fx_peak:.6} output_peak={peak:.6}",
+                rms(&reference),
+                rms(&delta)
+            );
+            if let Ok(dir) = std::env::var("PS_MIX_EXPORT_DIR") {
+                std::fs::create_dir_all(&dir).unwrap();
+                let data: Vec<u8> = out.iter().flat_map(|v| v.to_le_bytes()).collect();
+                let mut wav = Vec::new();
+                wav.extend(b"RIFF");
+                wav.extend((36 + data.len() as u32).to_le_bytes());
+                wav.extend(b"WAVEfmt ");
+                wav.extend(16u32.to_le_bytes());
+                wav.extend(3u16.to_le_bytes());
+                wav.extend(2u16.to_le_bytes());
+                wav.extend(8000u32.to_le_bytes());
+                wav.extend(64000u32.to_le_bytes());
+                wav.extend(8u16.to_le_bytes());
+                wav.extend(32u16.to_le_bytes());
+                wav.extend(b"data");
+                wav.extend((data.len() as u32).to_le_bytes());
+                wav.extend(data);
+                std::fs::write(Path::new(&dir).join(format!("{track}.wav")), wav).unwrap();
+            }
+        }
+    }
+
+    #[test]
     fn sword_fire_keeps_its_actual_subdivision_instead_of_snapping_again() {
         let (mut sounds, _) = decoded();
         let b = tests::beats(8, 0.5, 1.0);
@@ -1008,7 +1107,6 @@ mod survivor_tests {
             final_before: -1.0,
             run_start: 0.0,
             beats: &b,
-            gate: 0.2,
             camera: (0.0, 0.0, 1.0),
             clock: (0.0, 100.0),
             l_out: 0.02,
@@ -1054,7 +1152,6 @@ mod survivor_tests {
                 final_before: -1.0,
                 run_start: 0.0,
                 beats: &b,
-                gate: 0.2,
                 camera: (0.0, 0.0, 1.0),
                 clock: (0.0, 100.0),
                 l_out: 0.02,
@@ -1120,7 +1217,6 @@ mod survivor_tests {
             final_before: -1.0,
             run_start: 0.0,
             beats: &b,
-            gate: 0.2,
             camera: (0.0, 0.0, 1.0),
             clock: (0.0, 100.0),
             l_out: 0.02,
@@ -1172,7 +1268,6 @@ mod survivor_tests {
             final_before: -1.0,
             run_start: 0.0,
             beats: &b,
-            gate: 0.2,
             camera: (0.0, 0.0, 1.0),
             clock: (0.0, 100.0),
             l_out: 0.0,
@@ -1230,7 +1325,6 @@ mod survivor_tests {
                 final_before: -1.0,
                 run_start: 0.0,
                 beats: &b,
-                gate: 0.2,
                 camera: (0.0, 0.0, 1.0),
                 clock: (0.0, 100.0),
                 l_out: 0.02,
@@ -1273,7 +1367,6 @@ mod survivor_tests {
             final_before: -1.0,
             run_start: 0.0,
             beats: &b,
-            gate: 0.2,
             camera: (0.0, 0.0, 1.0),
             clock: (0.0, 100.0),
             l_out: 0.0,
@@ -1319,7 +1412,7 @@ mod survivor_tests {
         }
         let mut out = Vec::new();
         sounds.reconcile(&causes, &at, &mut out);
-        assert_eq!(sounds.budget.peaks, [4, 6, 1, 3, 3]);
+        assert_eq!(sounds.budget.peaks, [0, 6, 1, 3, 3, 3, 0, 0]);
         assert!(sounds.budget.dropped.iter().sum::<u64>() > 500);
         assert!(
             out.iter()
@@ -1357,7 +1450,6 @@ mod survivor_tests {
             final_before: -1.0,
             run_start: 0.0,
             beats: &beats,
-            gate: 0.2,
             camera: (0.0, 0.0, 1.0),
             clock: (0.0, 100.0),
             l_out: 0.02,

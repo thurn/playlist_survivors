@@ -856,7 +856,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
     let _ = audio
         .out
         .commands
-        .push(Command::SurvivorsMix(world.survivors()));
+        .push(Command::EffectsGain(settings.effects_level()));
     // (The child plays only once tapped, so it is never heard.)
     if let Some(c) = child.as_mut()
         && let Some(stdin) = c.stdin.as_mut()
@@ -2050,9 +2050,8 @@ impl App {
                         self.recent.pop_front();
                     }
                 }
-                Msg::Follow { gain, rms } => {
+                Msg::Follow { gain } => {
                     let _ = self.audio.out.commands.push(Command::Follow(gain));
-                    let _ = self.audio.out.commands.push(Command::MusicLevel(rms));
                 }
                 Msg::Audio(samples) => {
                     if let Some(s) = self.session.as_mut() {
@@ -2620,7 +2619,6 @@ impl App {
             final_before: self.engine.sound_final_before(),
             run_start: self.run_start,
             beats: &self.engine.stream().beats,
-            gate: GATE,
             camera,
             clock,
             l_out: self.audio.l_out,
@@ -3184,7 +3182,7 @@ impl App {
                 let _ = audio
                     .out
                     .commands
-                    .push(Command::SurvivorsMix(self.world.survivors()));
+                    .push(Command::EffectsGain(self.settings.effects_level()));
                 self.audio = audio;
             }
             Err(e) => eprintln!("slice: no music source: {e}"),
@@ -3219,6 +3217,10 @@ impl App {
         vec![
             "DEBUG  F1 CLOSE  F2 NEXT FILE  F3 SYSTEM".to_string(),
             format!("MODE {mode}"),
+            format!(
+                "EFFECTS {:.0}%   [ QUIETER   ] LOUDER",
+                self.settings.effects_level() * 100.0
+            ),
             format!(
                 "OUTPUT {:.0} HZ  L OUT {:.1} MS  HEARD {:.1} MS AFTER CAPTURE",
                 self.audio.out.rate,
@@ -3367,6 +3369,19 @@ impl App {
         if pressed && code == KeyCode::F8 {
             if let Some(t) = self.timing.as_mut() {
                 eprintln!("slice: timing log saved: {}", t.flush().display());
+            }
+            return;
+        }
+        if pressed && matches!(code, KeyCode::BracketLeft | KeyCode::BracketRight) {
+            let delta = if code == KeyCode::BracketLeft {
+                -0.1
+            } else {
+                0.1
+            };
+            let gain = self.settings.adjust_effects(delta);
+            self.send(Command::EffectsGain(gain));
+            if let Err(e) = self.settings.save() {
+                eprintln!("slice: effects level not saved: {e}");
             }
             return;
         }

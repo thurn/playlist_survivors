@@ -31,7 +31,7 @@ pub enum Msg {
     /// The loudest sample of a captured buffer and the host time it is heard.
     Level { peak: f32, heard: f64 },
     /// The effects' gain, following the music's loudness (`audio::follow`).
-    Follow { gain: f32, rms: f32 },
+    Follow { gain: f32 },
     /// The analyzer's input (44.1 kHz), for the session's record.
     Audio(Vec<f32>),
 }
@@ -191,10 +191,7 @@ pub fn spawn(
                     continue;
                 }
                 if let Some(g) = follower.push(&raw) {
-                    let _ = tx.send(Msg::Follow {
-                        gain: g,
-                        rms: follower.rms(),
-                    });
+                    let _ = tx.send(Msg::Follow { gain: g });
                 }
                 y.clear();
                 rs.push(&raw, &mut y);
