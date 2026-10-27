@@ -6,8 +6,8 @@ Playlist Survivors is a planned rhythm game with fantasy action-RPG elements:
 the horde combat of Vampire Survivors with the beat-locked movement of Crypt
 of the NecroDancer. This document specifies a **3D tech demo**: a
 non-interactive Unity build in which a hero carves through a horde of fully
-animated 3D monsters to Grieg's *In the Hall of the Mountain King*, as if a
-perfect player were controlling the hero to the beat.
+animated 3D monsters to *Action* by Alessia Labate & Conrad Taylor (NCS
+Release), as if a perfect player were controlling the hero to the beat.
 
 The demo answers one question that the game's design depends on:
 
@@ -27,7 +27,7 @@ It produces three things:
   number of on-screen monsters that fits the frame budget, what limits it, and
   a recommended envelope for game design. It also shows how rich the
   environment can be, and what that richness costs in monsters.
-- **The demo build.** A macOS app that plays the 2:34 song, with the horde
+- **The demo build.** A macOS app that plays the full 3:19 song, with the horde
   peaking at that envelope in the climax.
 - **A capture.** A 1080p60 video of the demo for sharing.
 
@@ -38,7 +38,9 @@ simplest option wins.
 ### Decisions
 
 These were settled with the user on 2026-10-26 in a design interview, and
-revised the same day in a review interview. Executors treat them as fixed.
+revised the same day in a review interview. The target song was changed to
+*Action* at the user's request on 2026-10-27. Executors treat these decisions
+as fixed.
 Every other choice is the executor's, recorded with its reasons in the bead's
 notes.
 
@@ -94,9 +96,12 @@ notes.
     - **Its rendering is optimized as deliberately as the crowd's,** with its
       own stock baseline, ladder of techniques and density sweep. The report
       gives the trade between scene richness and monster count.
-13. **The song is *In the Hall of the Mountain King*** (the Musopen recording,
-    public domain, 154 s, already in `songs/mountain-king/`). The horde ramps
-    with its crescendo.
+13. **The song is *Action* by Alessia Labate & Conrad Taylor (NCS Release),**
+    using the user-supplied MP3, 198.968 s (about 3:19, measured with
+    `ffprobe`). The source on this machine is
+    `/Users/dthurn/Downloads/Alessia Labate, Conrad Taylor - Action [NCS Release].mp3`.
+    The full recording is the timing reference; TD3 maps its sections and
+    accents before setting the horde's build, releases and final climax.
 14. **The hero fights with sword combos and beat spells.**
 15. **Native 1080p by default.** MSAA 4× and TAA are compared. Upscaling is
     reported only as extra headroom, never in the headline count.
@@ -151,7 +156,7 @@ notes.
 
 ## What the Viewer Sees
 
-The demo is a single 2:34 shot of one battle, with no input and no HUD. It
+The demo is a single 3:19 shot of one battle, with no input and no HUD. It
 should feel like watching an expert play a finished game.
 
 - **The arena.** A moonlit enchanted forest: open glades ringed by trees,
@@ -166,19 +171,21 @@ should feel like watching an expert play a finished game.
   Magic Pig Games' low-poly line, with Synty Fantasy Rivals brutes as elites
   and a boss at the climax. They advance in beat-synced gaits, attack on
   beats, flinch when hit and die visibly.
-- **The arc.** The theme repeats faster and louder. The opening has a handful
-  of monsters, each repetition adds more, the final presto holds the measured
-  envelope on screen, and the closing chords end in slams that clear the
-  screen.
+- **The arc.** The opening has a handful of monsters. Horde density and
+  spell intensity follow *Action*'s mapped energy and accents, with room to
+  breathe in lower-energy sections. The final high-energy section holds the
+  measured envelope on screen, and the ending clears the horde on mapped
+  accents.
 
-An illustrative outline follows. The song map sets the real boundaries.
+An illustrative outline follows. These are choreography roles, not confirmed
+song sections or timestamps; TD3 sets their boundaries from the supplied MP3.
 
 ```
-0:00  low strings, theme      12 skeletons     30 m view, hero strides
-0:40  theme climbs            ~15% of envelope first rings on downbeats
-1:30  brass and full band     ~50% of envelope zoom eases out
-2:05  presto                  100% of envelope laser sweeps, boss arrives
-2:28  final chords            the horde dies   a slam on every chord
+opening              12 skeletons      30 m view, hero strides
+early build          ~15% of envelope  first rings on downbeats
+later build          ~50% of envelope  zoom eases out
+final energy peak    100% of envelope  laser sweeps, boss arrives
+ending               the horde dies   slams on mapped accents
 ```
 
 ## System Overview
@@ -186,8 +193,9 @@ An illustrative outline follows. The song map sets the real boundaries.
 The demo has four parts, and data flows one way through them.
 
 - **Song map:** the recording's beats, downbeats, sections, accents and
-  loudness. It is built once with the beat-analysis tool and committed, since
-  the recording is public domain.
+  loudness. It is built once from the supplied MP3 with the beat-analysis
+  tool and committed as JSON under `songs/action/`. The audio stays local;
+  the old public-domain recording and its song map are not used.
 - **Choreography layer:** plain C# with no UnityEngine dependency. At load it
   runs a deterministic forward simulation over the whole song. The result is
   the **timeline**: every entity's motion as segments, the camera's framing,
@@ -635,11 +643,12 @@ on top, which the 2 m spawn margin covers.
 ### Free sections
 
 A section the song map marks `free` has no steady beat, only approximate
-ones. Mountain King's closing chords are like this: chords separated by
-rests and fermatas. In a free section:
+ones. This remains supported, but TD3 marks a section of *Action* as free
+only if the supplied recording calls for it; the ending is not assumed to
+be free. In a free section:
 
 - **The grid is the section's accents.** Hero actions and spells land on
-  accents only. The closing section gets one hero slam per chord.
+  accents only. A free ending gets hero slams on its curated accents.
 - **Monsters move smoothly.** They advance in `Linear` segments instead of
   `Pulse` gait steps, so they don't step to beats that aren't there.
 - **The beat tests skip it.** The test that every gait step starts on a beat
@@ -1479,10 +1488,15 @@ and checked from fixed shots.
 Sound is not part of the measured question, but the demo needs it to feel
 right. It must stay as punchy at 100 hits a beat as at one.
 
-- **Music.** The recording is imported as streamed Ogg Vorbis and started with
-  `PlayScheduled`. Its tracked copy lives in `songs/mountain-king/`. The
-  setup command copies it and its song map into the gitignored baked folder,
-  because the vendor guard forbids binary files under `demo3d/`.
+- **Music.** The supplied *Action* MP3 is converted to streamed Ogg Vorbis
+  and started with `PlayScheduled`. Setup accepts the local source path
+  from Decision 13 (or an explicit replacement path), converts it into the
+  gitignored baked folder, and copies the tracked `songs/action/` song map
+  there. The map and playback use the same time origin; TD3 checks that the
+  conversion preserves beat alignment, including any encoder delay. Neither
+  the source MP3 nor the converted audio is committed. TD3 records the NCS
+  usage terms and required credits for the demo build and shared capture;
+  the previous recording's public-domain status does not apply.
 - **Effects** come from the vendor sound packs: Magic Spells SFX Bundle, RPG
   Magic Sound Effects Pack 3 and Universal Sound FX.
 - **Aggregation happens in the choreography layer,** so the timeline's
@@ -2080,9 +2094,14 @@ Each bead lists what it builds and when it is done.
     every hero combo and locomotion clip are annotated, and a style still
     shows the roster and the kit together under night lighting.
 - **TD3, choreography on open ground.**
-  - Builds: the Mountain King song map, through the song-map workflow in
-    [tech-demo.md](tech-demo.md#building-the-song-map), with hand-checked
-    beats in the accelerating passages.
+  - Builds: the *Action* song map under `songs/action/`, through the song-map
+    workflow in [tech-demo.md](tech-demo.md#building-the-song-map), using the
+    full supplied MP3 rather than the earlier demo's source or crop.
+    Hand-checks beats, downbeats, section transitions and accents; identifies
+    the final energy peak and ending without assuming a tempo ramp or free
+    closing chords. Records the source identity, duration, NCS usage terms
+    and required credits alongside the map, and checks alignment against
+    the converted playback audio.
   - Also builds: the timeline types (with `Tick`), the choreographer with its
     framing track, kill-rate feedback, free sections and sound aggregation,
     the level-script and stress-script formats with the off-screen reserve,
@@ -2389,8 +2408,9 @@ baseline crowd handles a few hundred monsters, which is enough.
 - **Expect** the overlay's counts to match the level script's targets.
 - Seek with `--start-at 45`. **Expect** the horde's state at 0:45 to appear
   immediately, with the same positions as a run from the start.
-- Seek into the closing chords. **Expect** a hero slam on every chord, and
-  monsters advancing smoothly instead of stepping to beats.
+- Seek into the mapped ending. **Expect** hero slams on its curated accents.
+  If TD3 identifies a free section, seek there too: **expect** monsters to
+  advance smoothly instead of stepping to beats.
 - Seek into a laser sweep, once TD10 has added it. **Expect** swept monsters
   to flash without flinching or sliding back.
 
@@ -2407,8 +2427,9 @@ baseline crowd handles a few hundred monsters, which is enough.
 ### The full demo
 
 - Run the showcase build windowed at 1080p with `--overlay`.
-- **Expect** the arc from a handful of monsters to the envelope count at the
-  presto, then the final chords clearing the screen.
+- **Expect** the full *Action* recording (about 3:19), with the arc from a
+  handful of monsters to the envelope count at the mapped final energy
+  peak, then the ending's accents clearing the screen.
 - **Expect** the hero to travel between the level script's goal areas,
   fighting on the way, and every screen to show a landmark or edge
   decoration.
