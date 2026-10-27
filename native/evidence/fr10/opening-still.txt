@@ -1,0 +1,2 @@
+still: song 20.000s, run Some(RunState { pickup_radius: 120.0, upgrade: Some(UpgradePulse { song: 8.1977, world: 6.7567, x: 304.528, y: 254.57599999999982, radius: 160.0 }), song: 19.997, presentation_s: 19.997, frozen_beat: None, elapsed: 18.556, spawn_minute: Some(0), spawned: 149, offer: None, roulette: None, level: 2, max_hp: 120.0, world: 18.556, frozen: None, selected: 0, confirmed: true }), alive 17, kills 132, damage-exempt false
+slice: wrote /tmp/fr10-opening.png (2167 sprites, 13 lights; 17 enemies, health 1.00, groove 0.00; zone galop-woods)

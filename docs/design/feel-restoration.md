@@ -8,8 +8,8 @@ for balance, progression and monster density. It does not prescribe our attack
 shapes, animation, HUD, sounds or relationship to music. The project's higher
 priority remains: every moment of gameplay should be cinematic.
 
-This is a plan, not an implementation report. Decisions were settled with the
-user on 2026-10-27. They supersede conflicting retirements and fixed decisions
+This records the approved plan; implementation and qualification are linked
+under Work notes. Decisions were settled with the user on 2026-10-27. They supersede conflicting retirements and fixed decisions
 in survivors-run.md. Keep that document as the history and reference for the
 run, progression, freezes, chests and existing weapons.
 
@@ -575,4 +575,17 @@ human feel/speaker/System remain pending. The bead records review/checks/candida
 
 ### FR10 — Integrated qualification
 
-Pending implementation.
+All ten packages are implemented. [Final qualification and comparisons](../../native/evidence/fr10/README.md)
+retain normal/damage-exempt/reference distinctions, both modes' actual short
+File/Delayed Watch round trips, four real-music PCM exports and the full local
+suite on final shipping source. All20 active30-minute cases survive, minHP
+share0.416667;41 reports have zero survival failures. The random-choice run
+finishes with max Chain/Trail and three evolutions. Exact replay passes22,737,077
+records/hashd381e4ea7f83b0e8. Final1080p dense p993.10ms stays under the unchanged
+4ms bar. Native/source safety, legal paths and existing contact formulas pass.
+AFK remains diagnostic; no balance values were retuned to force standing-still
+losses. Sampled HP changes and screenshots have explicit limits, and human
+feel/speaker/System checks remain in operator-pending.md without a work pause.
+The long-run signature deadline regression found here is fixed/reviewed in
+FR8's linked follow-up. FR10 adds evidence/docs only; the bead records its
+landed commit/candidate and the source commits of all packages.

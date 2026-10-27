@@ -1,0 +1,44 @@
+{
+  "case": "cached-original-random-pick-1",
+  "lastPhysicalChest": {
+    "id": 14,
+    "originMinute": 29,
+    "tier": 1,
+    "runS": 1775.2375554421772,
+    "weapons": [
+      {
+        "weapon": "bloody-tear",
+        "rank": 1
+      },
+      {
+        "weapon": "soul-eater",
+        "rank": 1
+      },
+      {
+        "weapon": "chain-lightning",
+        "rank": 8
+      },
+      {
+        "weapon": "fire-trail",
+        "rank": 8
+      },
+      {
+        "weapon": "lightning-ring",
+        "rank": 8
+      },
+      {
+        "weapon": "holy-wand",
+        "rank": 1
+      }
+    ]
+  },
+  "evolutions": [
+    "bloody-tear",
+    "soul-eater",
+    "holy-wand"
+  ],
+  "level": 80,
+  "kills": 18554,
+  "survivalS": 1800.0,
+  "lowestHpShare": 0.7916666666666666
+}

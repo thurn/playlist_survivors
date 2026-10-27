@@ -1,0 +1,200 @@
+{
+  "activeCases": 20,
+  "minimumHP": 0.4166666666666667,
+  "killRange": [
+    18711,
+    22123
+  ],
+  "level5Range": [
+    14,
+    17
+  ],
+  "level30Range": [
+    44,
+    74
+  ],
+  "maxOneSampleNetHpDrop": 0.17361111111111116,
+  "rows": [
+    {
+      "case": "cached-original-positioning-1",
+      "minHP": 1.0,
+      "kills": 20653,
+      "level5": 17,
+      "level30": 71,
+      "peakEnemies": 300,
+      "maxOneSampleNetHpDrop": 0
+    },
+    {
+      "case": "cached-original-positioning-2",
+      "minHP": 0.4791666666666667,
+      "kills": 20021,
+      "level5": 17,
+      "level30": 74,
+      "peakEnemies": 300,
+      "maxOneSampleNetHpDrop": 0.17361111111111116
+    },
+    {
+      "case": "cached-original-positioning-3",
+      "minHP": 0.6527777777777778,
+      "kills": 19660,
+      "level5": 17,
+      "level30": 73,
+      "peakEnemies": 300,
+      "maxOneSampleNetHpDrop": 0.17361111111111116
+    },
+    {
+      "case": "cached-original-positioning-4",
+      "minHP": 1.0,
+      "kills": 20722,
+      "level5": 16,
+      "level30": 44,
+      "peakEnemies": 300,
+      "maxOneSampleNetHpDrop": 0
+    },
+    {
+      "case": "cached-original-positioning-5",
+      "minHP": 0.8263888888888888,
+      "kills": 22123,
+      "level5": 17,
+      "level30": 46,
+      "peakEnemies": 300,
+      "maxOneSampleNetHpDrop": 0.17361111111111116
+    },
+    {
+      "case": "cached-reverse-positioning-1",
+      "minHP": 0.9375,
+      "kills": 21486,
+      "level5": 15,
+      "level30": 70,
+      "peakEnemies": 300,
+      "maxOneSampleNetHpDrop": 0.0625
+    },
+    {
+      "case": "cached-reverse-positioning-2",
+      "minHP": 1.0,
+      "kills": 20651,
+      "level5": 14,
+      "level30": 66,
+      "peakEnemies": 300,
+      "maxOneSampleNetHpDrop": 0
+    },
+    {
+      "case": "cached-reverse-positioning-3",
+      "minHP": 1.0,
+      "kills": 20514,
+      "level5": 14,
+      "level30": 68,
+      "peakEnemies": 300,
+      "maxOneSampleNetHpDrop": 0
+    },
+    {
+      "case": "cached-reverse-positioning-4",
+      "minHP": 1.0,
+      "kills": 20468,
+      "level5": 14,
+      "level30": 71,
+      "peakEnemies": 300,
+      "maxOneSampleNetHpDrop": 0
+    },
+    {
+      "case": "cached-reverse-positioning-5",
+      "minHP": 0.8263888888888888,
+      "kills": 20205,
+      "level5": 14,
+      "level30": 71,
+      "peakEnemies": 300,
+      "maxOneSampleNetHpDrop": 0.17361111111111116
+    },
+    {
+      "case": "cached-rotate-positioning-1",
+      "minHP": 1.0,
+      "kills": 19723,
+      "level5": 16,
+      "level30": 66,
+      "peakEnemies": 300,
+      "maxOneSampleNetHpDrop": 0
+    },
+    {
+      "case": "cached-rotate-positioning-2",
+      "minHP": 0.9375,
+      "kills": 20329,
+      "level5": 16,
+      "level30": 70,
+      "peakEnemies": 300,
+      "maxOneSampleNetHpDrop": 0.0625
+    },
+    {
+      "case": "cached-rotate-positioning-3",
+      "minHP": 0.8263888888888888,
+      "kills": 18984,
+      "level5": 15,
+      "level30": 69,
+      "peakEnemies": 300,
+      "maxOneSampleNetHpDrop": 0.17361111111111116
+    },
+    {
+      "case": "cached-rotate-positioning-4",
+      "minHP": 0.6527777777777778,
+      "kills": 20159,
+      "level5": 17,
+      "level30": 68,
+      "peakEnemies": 300,
+      "maxOneSampleNetHpDrop": 0.17361111111111116
+    },
+    {
+      "case": "cached-rotate-positioning-5",
+      "minHP": 0.6527777777777778,
+      "kills": 19595,
+      "level5": 16,
+      "level30": 66,
+      "peakEnemies": 300,
+      "maxOneSampleNetHpDrop": 0.17361111111111116
+    },
+    {
+      "case": "continuous-original-positioning-1",
+      "minHP": 1.0,
+      "kills": 20528,
+      "level5": 17,
+      "level30": 68,
+      "peakEnemies": 300,
+      "maxOneSampleNetHpDrop": 0
+    },
+    {
+      "case": "continuous-original-positioning-2",
+      "minHP": 1.0,
+      "kills": 20425,
+      "level5": 16,
+      "level30": 65,
+      "peakEnemies": 300,
+      "maxOneSampleNetHpDrop": 0
+    },
+    {
+      "case": "continuous-original-positioning-3",
+      "minHP": 0.4166666666666667,
+      "kills": 18711,
+      "level5": 16,
+      "level30": 67,
+      "peakEnemies": 300,
+      "maxOneSampleNetHpDrop": 0.17361111111111116
+    },
+    {
+      "case": "continuous-original-positioning-4",
+      "minHP": 1.0,
+      "kills": 20995,
+      "level5": 17,
+      "level30": 62,
+      "peakEnemies": 300,
+      "maxOneSampleNetHpDrop": 0
+    },
+    {
+      "case": "continuous-original-positioning-5",
+      "minHP": 1.0,
+      "kills": 19940,
+      "level5": 17,
+      "level30": 67,
+      "peakEnemies": 300,
+      "maxOneSampleNetHpDrop": 0
+    }
+  ],
+  "limit": "HP samples at each integer run second; net fractional HP changes include recovery and max-HP changes, so this is not exact contact burst damage or enemy-source attribution."
+}

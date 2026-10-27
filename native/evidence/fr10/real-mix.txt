@@ -1,0 +1,12 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.26s
+     Running unittests src/main.rs (target/debug/deps/playlist_survivors-117eebc7468b2345)
+
+running 1 test
+MIX cc-kimiko-ishizaka-aria: music_rms=0.023730 effects_rms=0.008249 effects_peak=0.054599 output_peak=0.187997
+MIX cc-the-crypts-no-life-after-crypts: music_rms=0.124599 effects_rms=0.008249 effects_peak=0.054599 output_peak=0.868442
+MIX dnb-174: music_rms=0.086339 effects_rms=0.008249 effects_peak=0.054599 output_peak=0.475924
+MIX beethoven-fifth: music_rms=0.033997 effects_rms=0.008249 effects_peak=0.054599 output_peak=0.305297
+test slice::sounds::survivor_tests::real_music_effects_mix_qualification ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 86 filtered out; finished in 2.34s
+
