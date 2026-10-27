@@ -1,0 +1,53 @@
+[
+  {
+    "file": "capture/bat-drop.mp4",
+    "sha256": "2320f68cf54c0ee44a280ffc2a0c565c2ddf407d48ef51b9d74e733dac708141",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 1280,
+          "height": 720,
+          "r_frame_rate": "24/1",
+          "duration": "4.000000",
+          "nb_frames": "96"
+        }
+      ]
+    }
+  },
+  {
+    "file": "capture/flower-wall.mp4",
+    "sha256": "ffc1830afe27606bc44358d00b243fe92cbdfe5dea915650efafa28d7c643d77",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 1280,
+          "height": 720,
+          "r_frame_rate": "24/1",
+          "duration": "8.000000",
+          "nb_frames": "192"
+        }
+      ]
+    }
+  },
+  {
+    "file": "capture/ghost-drop.mp4",
+    "sha256": "929e79f6a9acad1722549c1b4ac329ec6864241b4cc5ed705bd25fccd1cf10db",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 1280,
+          "height": 720,
+          "r_frame_rate": "24/1",
+          "duration": "4.000000",
+          "nb_frames": "96"
+        }
+      ]
+    }
+  }
+]

@@ -1518,6 +1518,21 @@ SP1 retains the transformation/showpiece pass. No offer/easy knob changed.
 Run from `native/` with `cargo run --release -p app -- --playlist
 playlists/survivors-30.m3u --delayed`.
 ### SW6
+
+Mad Forest's source event attempts now unlock on the first known ≥6 dB jump
+inside their run minute, or at its last-ten-second fallback. Source repeats,
+chance and expiry use the held run clock; grid admissions, fixed-heading
+bat/ghost gaits, boss-preserving 300 cap and source-speed bar-step flower
+walls are snapshot-owned. SF1-swarm supplies both event roles' source combat
+rows. Six event regressions and all 20 live tests pass; the actual event replay
+matches 96,846 records at lead 0.23 with 25ms-late keys. A normal positioning
+prefix reaches 5:00 at level 10, minimum HP 92.08%, 850 kills (pacing only).
+[SW6 evidence](../../native/evidence/sw6/README.md) keeps choices, raw outputs,
+source scopes and three silent offscreen captures. SW7 owns the full sweep
+and W review; real-music readability remains operator-pending. Run from
+`native/`: `cargo run --release -p app -- --playlist playlists/survivors-30.m3u
+--headless --delayed --press-beats --pick-first --seconds 30`.
+
 ### SW7
 ### SP1
 ### SP2

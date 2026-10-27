@@ -1,0 +1,6 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw6-swarm-events/native/crates/sim)
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw6-swarm-events/native/crates/eval)
+   Compiling players v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw6-swarm-events/native/crates/players)
+   Compiling app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw6-swarm-events/native/crates/app)
+   Compiling cli v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw6-swarm-events/native/crates/cli)
+    Finished `release` profile [optimized] target(s) in 10.71s

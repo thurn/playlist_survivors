@@ -1,0 +1,5 @@
+    Checking sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw6-swarm-events/native/crates/sim)
+    Checking eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw6-swarm-events/native/crates/eval)
+    Checking players v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw6-swarm-events/native/crates/players)
+    Checking app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw6-swarm-events/native/crates/app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.82s

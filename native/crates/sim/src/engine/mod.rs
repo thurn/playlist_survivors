@@ -45,6 +45,7 @@ mod pickups;
 mod pieces;
 mod plan;
 mod spawning;
+mod survivor_events;
 mod weapons;
 
 use crate::shared_vec::SharedVec;
@@ -695,6 +696,7 @@ struct Foe {
     r: f64,
     health: f64,
     survivor_boss: bool,
+    swarm_dir: Option<(f64, f64)>,
     chest_loot: Option<crate::survivors::ChestLoot>,
     attack: Option<enemy_rhythm::Lunge>,
     x: f64,
@@ -743,6 +745,7 @@ enum Member {
     Formation(usize),
     Ring(usize),
     Stampede(usize),
+    SurvivorEvent(usize),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -955,6 +958,7 @@ struct SimState {
     freeze: freeze::Freeze,
     survivor: Option<crate::survivors::Progress>,
     spawner: crate::survivors::Spawner,
+    events: survivor_events::Events,
     chests: Vec<crate::survivors::FieldChest>,
     n_chests: usize,
     treasure_minutes: u32,
@@ -1661,7 +1665,7 @@ impl Sim {
                                 min(self.st.q.peek(), self.weapon_stop()),
                                 self.survivor_landing_stop(),
                             ),
-                            self.spawn_stop(),
+                            self.spawn_stop().min(self.event_stop()),
                         ),
                         t_fixed,
                     ),
@@ -1812,6 +1816,7 @@ impl Sim {
         self.tick_weapons();
         self.tick_enemy_bites();
         self.tick_spawner();
+        self.tick_survivor_events();
     }
 
     fn handle(&mut self, ev: Ev) {
@@ -2008,6 +2013,7 @@ fn fresh_state(env: &Env) -> SimState {
         s: 0.0,
         run_s: 0.0,
         spawner: crate::survivors::Spawner::default(),
+        events: survivor_events::Events::default(),
         chests: Vec::new(),
         n_chests: 0,
         treasure_minutes: 0,

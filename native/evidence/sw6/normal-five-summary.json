@@ -1,0 +1,12 @@
+{
+  "command": "target/release/ps survive --minutes 5 --bot positioning --seed 1",
+  "survived": true,
+  "run_s": 300.0,
+  "min_hp": 0.9208333333333333,
+  "level_report_only": 10,
+  "kills_report_only": 850,
+  "records": 2249717,
+  "hash": "839f3125fcc09399",
+  "run_wall_s": 22.586334,
+  "prepare_wall_s": 1.840777583
+}

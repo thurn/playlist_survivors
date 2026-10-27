@@ -1,0 +1,10 @@
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw6-swarm-events/native/crates/eval)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.80s
+     Running tests/live.rs (target/debug/deps/live-6bbfee6942df762e)
+
+running 1 test
+SW6 actual event replay: 96846 records hash8ad5d382c9e26476, peak100, 6 late-key rollbacks depth0.254000s, lead0.23 late25ms; normal-hero-damage HP1e6/XP0 event fixture
+test survivor_swarm_drop_and_expiry_replay_exactly_across_late_pause_keys ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 19 filtered out; finished in 0.27s
+

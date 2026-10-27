@@ -1,0 +1,14 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw6-swarm-events/native/crates/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.95s
+     Running unittests src/lib.rs (target/debug/deps/sim-1ebf1e278f138957)
+
+running 6 tests
+test engine::survivor_events::tests::source_roles_keep_fixed_crossing_heading_and_cap_room_never_discards_bosses ... ok
+test engine::survivor_events::tests::jump_waits_for_its_knowledge_and_scheduled_minute_then_repeats_and_expires ... ok
+test engine::survivor_events::tests::no_jump_falls_back_in_the_last_ten_seconds_and_hidden_jumps_cannot_change_the_prefix ... ok
+test engine::survivor_events::tests::beatless_and_one_beat_swarm_attempts_stay_finite_and_zero_delay_does_not_repeat ... ok
+test engine::survivor_events::tests::event_snapshot_and_pause_keep_attempts_and_lifetime_in_run_time ... ok
+test engine::survivor_events::tests::zero_chance_wall_is_unconditional_closes_on_bars_at_source_speed_and_expires ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 88 filtered out; finished in 0.06s
+

@@ -1,0 +1,3 @@
+swarm-check bat-drop: actual event peak50, 96 silent frames24fps; HP1e6/XP0, normal hero damage, diagnostic view0.55, source first attempt/count/speed/contact/expiry; synthetic128BPM
+swarm-check ghost-drop: actual event peak20, 96 silent frames24fps; HP1e6/XP0, normal hero damage, diagnostic view0.55, source first attempt/count/speed/contact/expiry; synthetic128BPM
+swarm-check flower-wall: actual event peak100, 192 silent frames24fps; HP1e6/XP0, normal hero damage, diagnostic view0.55, source first attempt/count/speed/contact/expiry; synthetic128BPM

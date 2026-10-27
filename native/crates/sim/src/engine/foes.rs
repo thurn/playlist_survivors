@@ -149,6 +149,7 @@ impl Sim {
             r: def.radius,
             health: h0,
             survivor_boss: false,
+            swarm_dir: None,
             chest_loot: None,
             attack: None,
             x,
@@ -629,6 +630,29 @@ impl Sim {
                 continue;
             }
             let def = &lib.enemies[self.st.foes[fi].def];
+            if let Some((dx, dy)) = self.st.foes[fi].swarm_dir {
+                // Event formations keep one fixed crossing heading. The gait
+                // changes speed within a slot, never the average source speed.
+                self.st.foes[fi].sx = 0.0;
+                self.st.foes[fi].sy = 0.0;
+                if let Some(gait) = def.gait.as_ref().filter(|_| stepping) {
+                    if let Some(due) = self.step_due(fi, gait, step_b, s) {
+                        self.start_step(
+                            fi,
+                            w1,
+                            dx * def.speed * due.0,
+                            dy * def.speed * due.0,
+                            due,
+                        );
+                    }
+                    self.step_velocity(fi, w1);
+                } else {
+                    self.stop_stepping(fi, w1);
+                    self.st.foes[fi].vx = dx * def.speed;
+                    self.st.foes[fi].vy = dy * def.speed;
+                }
+                continue;
+            }
             if let Some(g) = self.st.foes[fi].archer_group {
                 let p = posts
                     .iter()
@@ -786,6 +810,10 @@ impl Sim {
             .filter(|&fi| {
                 let (x, y) = self.pos(fi, w);
                 let f = &self.st.foes[fi];
+                // Event members keep their identity until their run-clock expiry.
+                if matches!(f.member, Some(super::Member::SurvivorEvent(_))) {
+                    return false;
+                }
                 // A stampede's runner, once it has left the view on the side it runs to.
                 if let Some((vx, vy)) = f.run.filter(|_| f.alive) {
                     let row = super::pieces::STAMPEDE_ROW;

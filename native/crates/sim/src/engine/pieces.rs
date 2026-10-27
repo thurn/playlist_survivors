@@ -336,6 +336,32 @@ impl Sim {
         }
     }
 
+    /// Survivor flower walls reuse the ring's pinned geometry. Bar-owned
+    /// progress is supplied by the event state; no legacy close/vacuum runs.
+    pub(super) fn set_survivor_wall_path(
+        &mut self,
+        id: usize,
+        x: f64,
+        y: f64,
+        c: f64,
+        sn: f64,
+        short_radius: f64,
+    ) {
+        let f = &mut self.st.foes[id];
+        f.has_at = true;
+        f.slot_until = f64::INFINITY;
+        f.ring_path = Some(RingPath {
+            x,
+            y,
+            c,
+            sn,
+            from: 1.0,
+            to: (RING_CLOSE / short_radius).min(1.0),
+            u: 0.0,
+            du: 0.0,
+        });
+    }
+
     /// A closing ring: its members evenly spaced on a circle just outside the view around the hero,
     /// with gaps; they hold their radius until the close starts.
     pub(super) fn ring_enter(&mut self, k: usize) {

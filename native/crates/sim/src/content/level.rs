@@ -1181,6 +1181,28 @@ pub fn load_level(
                     ));
                 }
             }
+            for event in minute["events"].as_array().into_iter().flatten() {
+                let role = match event["kind"].as_str() {
+                    Some("BAT_SWARM") => Some("vs-bat-swarm"),
+                    Some("GHOST_SWARM") => Some("vs-ghost-swarm"),
+                    Some("FLOWER_WALL") => Some("vs-flower"),
+                    _ => {
+                        issues.push(at(
+                            "survivors.schedule",
+                            "unknown survivor event kind".into(),
+                        ));
+                        None
+                    }
+                };
+                if let Some(role) = role
+                    && !lib.enemies.contains_key(role)
+                {
+                    issues.push(at(
+                        "survivors.schedule",
+                        format!("event needs enemy {role}"),
+                    ));
+                }
+            }
             for key in ["enemies", "bosses"] {
                 for id in minute
                     .get(key)

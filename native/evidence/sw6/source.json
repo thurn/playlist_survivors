@@ -1,0 +1,21 @@
+{
+  "base": "c5162345fb14a5e2834836e7e98c18338a384446",
+  "files": {
+    "content/survivors-enemies.yaml": "993607fd5f8a7f28a3d515a85c3bccb57ef22e3580bf9f2460a2af34d3c7600c",
+    "native/crates/app/src/slice/mod.rs": "f788fe780fb17a2967f5b5f68c561970b6bb5aeb89520a07cea44a8161cd18e8",
+    "native/crates/app/src/slice/swarm_check.rs": "f3d0e9b9754d753c8fc93de0f5374eef3886a43a42ce529e1b4adb1e61f852a7",
+    "native/crates/eval/tests/live.rs": "b99e6bffa5ca1e96277de387b46058ddceeb564618958c8a338ad04cc60521dc",
+    "native/crates/sim/src/content/level.rs": "fe18b78a1c9fd11e63969987132c96b56ca69881c84d1790c5d097f854ed3a7d",
+    "native/crates/sim/src/engine/mod.rs": "b5c21adfe1da26847ef3f87c28786679d80e73e15b719bd86df03fd2631557c5",
+    "native/crates/sim/src/engine/foes.rs": "66b8e8f7e0ec8733968125c8e177411a05f7a2b9ff840d19b9438baf8fa7025d",
+    "native/crates/sim/src/engine/pieces.rs": "614f98d53d4e47e5e7804a2126bb871bafe6fd7b914bc05d109e4802fb5bf490",
+    "native/crates/sim/src/engine/survivor_events.rs": "29ab6293f28251ab2d9d9961247e621f25fcc161b345c498153dd6e7bd69ba11",
+    "native/crates/sim/tests/survivor_spawning.rs": "226ef29369b172c62ed31d1bda8a09b511c32c9db454d93da34ac203df846c0b",
+    "native/crates/sim/tests/content.rs": "088f2e52ffeaeebc3ee44b69f8ac68dc1f5b2800e5e703142446394dfceaacb1"
+  },
+  "numbers_from": [
+    "docs/survivors/appendix-feel.md",
+    "levels/survivors.yaml"
+  ],
+  "scope": "Final production event implementation including zero-admission cap guard; later additions to the private event tests do not alter release behavior. Captures and normal-five repeated on that final production build. Runtime Engine rollback constructor/algorithm unchanged."
+}

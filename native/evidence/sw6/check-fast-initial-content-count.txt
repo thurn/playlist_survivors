@@ -1,0 +1,160 @@
+changes: 44 paths since c516234
+friction: 46 records valid
+Using CPython 3.12.14 interpreter at: /opt/homebrew/opt/python@3.12/bin/python3.12
+Creating virtual environment at: .venv
+   Building ps-analysis @ file:///Users/dthurn/playlist_survivors/.worktrees/codex-sw6-swarm-events/tools/analysis
+      Built ps-analysis @ file:///Users/dthurn/playlist_survivors/.worktrees/codex-sw6-swarm-events/tools/analysis
+Installed 44 packages in 111ms
+All checks passed!
+WARN `--no-project` was provided, but no project was found
+...........................
+----------------------------------------------------------------------
+Ran 27 tests in 0.030s
+
+OK
+changes: 44 paths since c516234
+crates purity: stream, analysis, sim, eval, players pure
+native check-fast: every crate
+    Checking analysis v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw6-swarm-events/native/crates/analysis)
+    Checking audio v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw6-swarm-events/native/crates/audio)
+    Checking sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw6-swarm-events/native/crates/sim)
+    Checking stream v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw6-swarm-events/native/crates/stream)
+    Checking render v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw6-swarm-events/native/crates/render)
+    Checking players v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw6-swarm-events/native/crates/players)
+    Checking eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw6-swarm-events/native/crates/eval)
+    Checking cli v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw6-swarm-events/native/crates/cli)
+    Checking app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw6-swarm-events/native/crates/app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.74s
+
+running 18 tests
+..................
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+i...
+test result: ok. 3 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 7.47s
+
+
+running 7 tests
+.......
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+
+
+running 5 tests
+.....
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+
+
+running 7 tests
+ii.....
+test result: ok. 5 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+
+running 14 tests
+iiiiiiii......
+test result: ok. 6 passed; 0 failed; 8 ignored; 0 measured; 0 filtered out; finished in 0.23s
+
+
+running 10 tests
+i.........
+test result: ok. 9 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.55s
+
+
+running 4 tests
+i...
+test result: ok. 3 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.19s
+
+
+running 3 tests
+i..
+test result: ok. 2 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 2.44s
+
+
+running 3 tests
+ii.
+test result: ok. 1 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.81s
+
+
+running 56 tests
+.............................................Error: Couldn't open input file ('wht?')
+...........
+test result: ok. 56 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.93s
+
+
+running 18 tests
+..................
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 11 tests
+...........
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+
+
+running 6 tests
+......
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.24s
+
+
+running 20 tests
+....................
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.48s
+
+
+running 4 tests
+....
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+
+
+running 4 tests
+....
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.34s
+
+
+running 4 tests
+....
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+..
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.00s
+
+
+running 12 tests
+............
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+
+
+running 94 tests
+....................................................................................... 87/94
+.......
+test result: ok. 94 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.72s
+
+
+running 7 tests
+i......
+test result: ok. 6 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 3.12s
+
+
+running 5 tests
+current_content_loads_and_the_legacy_subset_keeps_its_reference_hash --- FAILED
+....
+failures:
+
+---- current_content_loads_and_the_legacy_subset_keeps_its_reference_hash stdout ----
+
+thread 'current_content_loads_and_the_legacy_subset_keeps_its_reference_hash' (178906011) panicked at crates/sim/tests/content.rs:75:5:
+assertion `left == right` failed
+  left: 22
+ right: 20
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    current_content_loads_and_the_legacy_subset_keeps_its_reference_hash
+
+test result: FAILED. 4 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+error: test failed, to rerun pass `-p sim --test content`

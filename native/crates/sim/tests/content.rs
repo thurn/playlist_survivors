@@ -78,7 +78,7 @@ fn current_content_loads_and_the_legacy_subset_keeps_its_reference_hash() {
             .values()
             .filter(|e| e.id.starts_with("vs-"))
             .count(),
-        20
+        22 // twenty roster/boss roles plus the two event-only swarms
     );
     assert!(current.sound_palettes.contains_key("survivors"));
     let legacy: Vec<_> = files

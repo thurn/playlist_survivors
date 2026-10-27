@@ -1387,3 +1387,128 @@ fn chest_freeze_rewards_and_field_records_survive_late_input_from_a_real_boss_ki
         b.stats.deepest_s
     );
 }
+
+#[test]
+fn survivor_swarm_drop_and_expiry_replay_exactly_across_late_pause_keys() {
+    use stream::{Beat, Jump, StreamLog, Tick};
+    let mut content = library();
+    // Fixture data is installed before Engine captures its initial snapshot.
+    // Durable XP-free event actors isolate scheduling/expiry from card freezes.
+    let bat = content.enemies.get_mut("vs-bat-swarm").unwrap();
+    bat.health = 1_000_000.0;
+    bat.survivors.as_mut().unwrap().xp = 0.0;
+    let mut level = source("levels/survivors.yaml");
+    // Move the source minute-2 bat event to minute zero solely for a short
+    // real-Engine rollback smoke. Keep source stats/count/delay/duration.
+    let mut lines = level.text.lines().map(str::to_string).collect::<Vec<_>>();
+    for line in &mut lines {
+        if line.trim_start().starts_with("- {\"minute\":") {
+            let mut row: serde_json::Value =
+                serde_json::from_str(line.trim_start().strip_prefix("- ").unwrap()).unwrap();
+            let minute = row["minute"].as_u64().unwrap();
+            row["enemies"] = serde_json::json!([]);
+            row["minimum"] = serde_json::json!(0);
+            row["bosses"] = serde_json::json!([]);
+            row["events"] = serde_json::json!([]);
+            if minute == 0 {
+                row["events"] = serde_json::json!([{"kind":"BAT_SWARM","delayMs":5000,"extraRepeats":2,"durationMs":10000,"count":50}]);
+            }
+            *line = format!("    - {row}");
+        }
+    }
+    level.text = lines.join("\n");
+    let log = StreamLog {
+        beats: (0..=60)
+            .map(|i| {
+                let t = f64::from(i) * 0.5;
+                Beat {
+                    t,
+                    known_at: (t - 0.5).max(0.0),
+                    period: 0.5,
+                    evidence: 1.0,
+                }
+            })
+            .collect(),
+        ticks: (0..=600)
+            .map(|i| {
+                let t = f64::from(i) * 0.05;
+                Tick {
+                    t,
+                    known_at: t,
+                    energy: 0.5,
+                    evidence: 1.0,
+                    level: None,
+                    key: None,
+                    bands: None,
+                    brightness: None,
+                }
+            })
+            .collect(),
+        jumps: Some(vec![Jump {
+            t: 2.0,
+            known_at: 2.0,
+            db: 9.0,
+        }]),
+        ..Default::default()
+    };
+    let keys = [
+        (1.999, InputKey::Pause, true),
+        (2.001, InputKey::Pause, false),
+        (3.0, InputKey::Pause, true),
+        (3.01, InputKey::Pause, false),
+        (5.0, InputKey::Right, true),
+        (12.0, InputKey::Right, false),
+    ];
+    let run = |lead, late| {
+        let mut e = Engine::new(
+            &level,
+            &content,
+            &IndexMap::new(),
+            0.2,
+            false,
+            false,
+            f64::INFINITY,
+        )
+        .unwrap();
+        e.settled_log = Some(Vec::new());
+        let mut replay = Replay::new(log.clone());
+        let mut next = 0;
+        let mut peak = 0;
+        for frame in 1..=3000 {
+            let now = f64::from(frame) / 120.0;
+            e.feed(|l| replay.feed_to(l, now));
+            while next < keys.len() && keys[next].0 + late <= now + 1e-9 {
+                let (s, key, pressed) = keys[next];
+                e.key(s, key, pressed);
+                next += 1;
+            }
+            e.frame(now, lead);
+            peak = peak.max(e.view.borrow().alive().count());
+            e.view.borrow_mut().take_moments();
+        }
+        e.frame(25.5, 0.0);
+        (e, peak)
+    };
+    let (a, peak) = run(0.0, 0.0);
+    let (b, other) = run(0.23, 0.025);
+    assert!(
+        peak >= 50 && other >= 50,
+        "actual event members were not admitted"
+    );
+    assert!(
+        a.view.borrow().alive().next().is_none(),
+        "all three attempt lifetimes expired"
+    );
+    assert!(b.stats.key_rollbacks > 0);
+    assert!(b.stats.deepest_s > 0.2);
+    let records = a.settled_log.as_ref().unwrap();
+    assert_same(records, b.settled_log.as_ref().unwrap());
+    println!(
+        "SW6 actual event replay: {} records hash{:016x}, peak{}, {} late-key rollbacks depth{:.6}s, lead0.23 late25ms; normal-hero-damage HP1e6/XP0 event fixture",
+        records.len(),
+        eval::live::hash_records(records),
+        peak,
+        b.stats.key_rollbacks,
+        b.stats.deepest_s
+    );
+}

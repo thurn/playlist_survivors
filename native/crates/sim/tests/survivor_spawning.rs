@@ -266,3 +266,51 @@ fn treasure_validation_rejects_invalid_scripted_tiers_and_chance_shapes() {
         );
     }
 }
+
+#[test]
+fn swarm_roles_match_the_curated_event_only_combat_rows() {
+    let doc = common::source("docs/survivors/appendix-feel.md").text;
+    let table = doc
+        .split("### Swarm combat fields")
+        .nth(1)
+        .unwrap()
+        .split("## Mad Forest events")
+        .next()
+        .unwrap();
+    let mut checked = 0;
+    for line in table.lines() {
+        let cols: Vec<_> = line.split('|').map(str::trim).collect();
+        if cols.len() != 9 || !["BATSWARM", "GHOSTSWARM"].contains(&cols[1]) {
+            continue;
+        }
+        let id = if cols[1] == "BATSWARM" {
+            "vs-bat-swarm"
+        } else {
+            "vs-ghost-swarm"
+        };
+        let d = &common::library().enemies[id];
+        let stats = d.survivors.unwrap();
+        assert_eq!(d.health, cols[2].parse::<f64>().unwrap());
+        assert_eq!(stats.level_scaled, cols[3] == "yes");
+        assert_eq!(stats.power, cols[4].parse::<f64>().unwrap());
+        assert_eq!(stats.speed, cols[5].parse::<f64>().unwrap());
+        assert_eq!(stats.xp, cols[6].parse::<f64>().unwrap());
+        assert_eq!(cols[7], "yes");
+        checked += 1;
+    }
+    assert_eq!(checked, 2);
+}
+#[test]
+fn unknown_survivor_event_kinds_are_rejected() {
+    let mut src = common::source("levels/survivors.yaml");
+    src.text = src.text.replace("BAT_SWARM", "UNKNOWN_SWARM");
+    assert!(
+        load_level(
+            &src,
+            common::library(),
+            &reactive_song_map(f64::INFINITY),
+            None
+        )
+        .is_err()
+    );
+}
