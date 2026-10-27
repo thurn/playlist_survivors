@@ -1,0 +1,12 @@
+   Compiling app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-fr4/native/crates/app)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.85s
+     Running unittests src/main.rs (target/debug/deps/playlist_survivors-117eebc7468b2345)
+
+running 4 tests
+test slice::hud::tests::hud_state_render_qualification ... ignored, release: offscreen HUD state qualification
+test slice::hud_pulse_tests::replay_hud_uses_recorded_clock_beats_and_original_bar_origin ... ok
+test slice::hud_pulse_tests::pruning_recent_history_keeps_global_downbeats_and_phase ... ok
+test slice::lane::hud_lock_tests::musical_lock_uses_heard_known_ticks_and_stops_after_a_gap ... ok
+
+test result: ok. 3 passed; 0 failed; 1 ignored; 0 measured; 77 filtered out; finished in 0.00s
+

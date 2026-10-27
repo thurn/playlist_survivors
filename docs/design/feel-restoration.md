@@ -488,7 +488,17 @@ records the exact commit and candidate.
 
 ### FR4 — HUD and legacy
 
-Pending implementation.
+Restored the shared compact beat/heart and overhead gem/ring HUD, fixed/local
+health and damage/low-health pulse, Delayed tag and saved optional key lights
+(F4). Empty inventory slots recede to dots. Heard reliable beats drive the
+markers; unclear/stale music shows waiting. Zen shows musical energy without
+ratings or gameplay penalties; legacy retains earned groove/tiers, ratings,
+press marks, settling, cleaves and beatless fairness. Removed Survivors bypasses
+of legacy drain, tier damage/reach and valid hitstop/rates. `--legacy` now plays
+the same Survivors level by default. Cold review's bar-ordinal and replay-clock
+findings are fixed with regressions. [Evidence and commands](../../native/evidence/fr4/README.md)
+include960/1080 states, real combat, crowded fixtures and a passing density
+benchmark. Human/System feel remains pending. The bead records commit/candidate.
 
 ### FR5 — Weapons and passives
 

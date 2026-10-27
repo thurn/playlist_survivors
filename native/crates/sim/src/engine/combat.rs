@@ -47,7 +47,7 @@ pub(super) struct HitSpec {
 
 impl Sim {
     pub(super) fn start_hit_stop(&mut self, len: f64) {
-        if self.st.survivor.is_some() {
+        if self.st.survivor.is_some() && self.env.input.zen {
             return;
         }
         let s = self.st.s;
@@ -407,7 +407,7 @@ impl Sim {
     }
 
     /// Amount/free-pulse shots use the same identity and animation as main beats.
-    pub(super) fn survivor_sword_shot(&mut self) -> Option<(u64, f64)> {
+    pub(super) fn survivor_sword_shot(&mut self) -> Option<(u64, f64, f64)> {
         let i = self
             .st
             .live_swings
@@ -417,7 +417,7 @@ impl Sim {
             .unwrap_or_else(|| self.arm_swing_at(self.st.s, self.st.s));
         self.do_strike(i);
         let sw = &self.st.swing_pool[i];
-        sw.hit.map(|id| (id as u64, sw.dir))
+        sw.hit.map(|id| (id as u64, sw.dir, sw.tier))
     }
 
     /// A forecast accent within `within` of song time t, known by `now` (`forecastAt`).
@@ -500,10 +500,16 @@ impl Sim {
         out
     }
 
-    fn tier_reach(&self, tier: f64) -> ArcReach {
+    pub(super) fn tier_reach(&self, tier: f64) -> ArcReach {
         let mut arc = swing_arc_at(&self.env.input.lib.hero, tier);
         if let Some((_, _, radius)) = self.survivor_sword() {
-            arc.radius = radius;
+            let hero = &self.env.input.lib.hero;
+            arc.radius = radius
+                * if self.env.input.zen {
+                    1.0
+                } else {
+                    arc.radius / swing_arc_at(hero, 3.0).radius.max(1.0)
+                };
         }
         ArcReach {
             radius: arc.radius,
@@ -511,12 +517,16 @@ impl Sim {
         }
     }
 
-    fn heavy_tier_reach(&self, tier: f64) -> ArcReach {
+    pub(super) fn heavy_tier_reach(&self, tier: f64) -> ArcReach {
         let mut arc = heavy_arc_at(&self.env.input.lib.hero, tier);
         if let Some((_, _, radius)) = self.survivor_sword() {
             let hero = &self.env.input.lib.hero;
-            arc.radius = radius * hero.swings.heavy.hit_shape.radius
-                / hero.swings.light.hit_shape.radius.max(1.0);
+            arc.radius = if self.env.input.zen {
+                radius * hero.swings.heavy.hit_shape.radius
+                    / hero.swings.light.hit_shape.radius.max(1.0)
+            } else {
+                radius * arc.radius / swing_arc_at(hero, 3.0).radius.max(1.0)
+            };
         }
         ArcReach {
             radius: arc.radius,
@@ -572,7 +582,15 @@ impl Sim {
             group,
             mult: self.survivor_sword().map_or_else(
                 || tier_damage(hero, c.tier),
-                |(_, power, _)| power / hero.swings.light.damage.max(1e-9),
+                |(_, power, _)| {
+                    power
+                        * if env.input.zen {
+                            1.0
+                        } else {
+                            tier_damage(hero, c.tier)
+                        }
+                        / hero.swings.light.damage.max(1e-9)
+                },
             ),
             inner: reach.radius,
             half_angle: reach.half_angle,
@@ -769,6 +787,7 @@ impl Sim {
                 accent,
                 damage: survivor.map_or(def_damage * mult, |(_, power, _)| {
                     power
+                        * if env.input.zen { 1.0 } else { mult }
                         * if heavy {
                             hero.swings.heavy.damage / hero.swings.light.damage.max(1e-9)
                         } else {

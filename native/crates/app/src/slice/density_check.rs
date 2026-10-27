@@ -118,19 +118,25 @@ pub fn run(dir: &Path) -> Result<(), String> {
                 720.0,
                 &mut layers,
             );
+            let upcoming: Vec<_> = beats
+                .iter()
+                .map(|b| b - s)
+                .filter(|d| d.abs() < 2.5)
+                .collect();
             let st = HudState {
                 keys: [KeyLight::default(); 5],
                 presses: &[],
-                beats: &[],
+                beats: &upcoming,
                 beat_phase: pulse.beat,
                 elapsed: run.elapsed,
                 bitten_ago: f64::INFINITY,
                 head: layers.head,
-                feet: layers.feet,
                 next_down: false,
                 tier_flash: scene.tier_flash(s),
                 delayed: 3.0,
                 zen: true,
+                rhythm: scene.hud_rhythm(),
+                keys_visible: true,
             };
             hud::draw(&view, &st, &art, 1280.0, 720.0, &mut layers.overlay);
             art.fonts["pixel"].text(

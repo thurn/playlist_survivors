@@ -61,11 +61,12 @@ pub fn run(dir: &Path) -> Result<(), String> {
         elapsed: 90.0,
         bitten_ago: f64::INFINITY,
         head: None,
-        feet: None,
         next_down: false,
         tier_flash: 0.0,
         delayed: 3.0,
         zen: true,
+        rhythm: hud::Rhythm::default(),
+        keys_visible: true,
     };
     let mut gpu = capture::Offscreen::new(&art.pages, 1280, 720)?;
     for (page, passives) in PASSIVES.chunks(3).enumerate() {

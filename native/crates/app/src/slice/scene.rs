@@ -312,6 +312,13 @@ impl Scene {
         self.run_s = s;
     }
 
+    pub fn hud_rhythm(&self) -> super::hud::Rhythm {
+        super::hud::Rhythm {
+            locked: self.fast.locked,
+            groove: (0.65 * self.fast.loudness + 0.35 * self.fast.groove()).clamp(0.0, 1.0),
+        }
+    }
+
     /// The groove meter's flash after a tier up (1 to 0), at host time `now`.
     pub fn tier_flash(&self, now: f64) -> f64 {
         match self.tier_change {

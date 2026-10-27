@@ -88,9 +88,15 @@ pub struct Settings {
     /// Global effects level, independent of output calibration and music volume.
     #[serde(default)]
     pub effects: Option<f32>,
+    #[serde(default)]
+    pub show_keys: Option<bool>,
 }
 
 impl Settings {
+    pub fn keys_visible(&self) -> bool {
+        self.show_keys.unwrap_or(true)
+    }
+
     pub fn effects_level(&self) -> f32 {
         self.effects
             .filter(|v| v.is_finite())

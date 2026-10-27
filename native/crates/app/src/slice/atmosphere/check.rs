@@ -161,11 +161,12 @@ fn capture(dir: &Path, aura_only: bool) -> Result<(), String> {
             elapsed: run.elapsed,
             bitten_ago: f64::INFINITY,
             head: layers.head,
-            feet: layers.feet,
             next_down: false,
             tier_flash: 0.0,
             delayed: 3.0,
             zen: true,
+            rhythm: scene.hud_rhythm(),
+            keys_visible: true,
         };
         let mut overlay = std::mem::take(&mut layers.overlay);
         hud::draw(&view, &state, &art, 1280.0, 720.0, &mut overlay);

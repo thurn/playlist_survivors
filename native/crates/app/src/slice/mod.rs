@@ -766,11 +766,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
     if let Some(dir) = &opts.sound_check {
         return sounds::check::run(dir, opts.seconds.unwrap_or(1510.0));
     }
-    let legacy_level = live::resource("levels", "../../../levels").join("reactive.yaml");
-    let level = opts
-        .level
-        .as_deref()
-        .or_else(|| (!opts.zen).then_some(legacy_level.as_path()));
+    let level = opts.level.as_deref();
     if let Some(path) = &opts.still {
         return still(
             path,
@@ -914,6 +910,8 @@ pub fn run(args: &[String]) -> Result<(), String> {
         run_start: 0.0,
         scene: Scene::default(),
         beats: VecDeque::new(),
+        discarded_beats: 0,
+        run_beat_origin: 0,
         peak: 0.0,
         last_sound: f64::NEG_INFINITY,
         over: None,
@@ -1440,11 +1438,12 @@ fn bench(check: bool, mode: BenchMode) -> Result<(), String> {
             elapsed: s,
             bitten_ago: f64::INFINITY,
             head: layers.head,
-            feet: layers.feet,
             next_down: false,
             tier_flash: scene.tier_flash(s),
             delayed: 0.0,
             zen: true,
+            rhythm: scene.hud_rhythm(),
+            keys_visible: true,
         };
         let mut overlay = std::mem::take(&mut layers.overlay);
         hud::draw(
@@ -1733,11 +1732,12 @@ fn still(
         elapsed: engine.view.borrow().run.map_or(end, |r| r.elapsed),
         bitten_ago: f64::INFINITY,
         head: layers.head,
-        feet: layers.feet,
         next_down: bar == 3,
         tier_flash: scene.tier_flash(end),
         delayed: 0.0,
         zen,
+        rhythm: scene.hud_rhythm(),
+        keys_visible: true,
     };
     let mut overlay = std::mem::take(&mut layers.overlay);
     hud::draw(
@@ -1779,9 +1779,23 @@ struct Watch {
     arrivals: usize,
     keys: usize,
     beats: Vec<f64>,
+    beat_origin: usize,
 }
 
 impl Watch {
+    fn hud_timeline(&self, now: f64, free: f64) -> (f64, scene::Pulse, Vec<f64>) {
+        let t = (now - self.began).max(0.0);
+        (
+            t,
+            heard_pulse(self.beats.iter().copied(), self.beat_origin, t, free),
+            self.beats
+                .iter()
+                .map(|b| b - t)
+                .filter(|d| d.abs() < 2.5)
+                .collect(),
+        )
+    }
+
     fn remember_beats(&mut self, log: &stream::StreamLog) {
         let seen = self.beats.len();
         self.beats.extend(log.beats.iter().skip(seen).map(|b| b.t));
@@ -1827,6 +1841,37 @@ impl Default for Listen {
             quiet_since: None,
             quiet_held: true,
         }
+    }
+}
+
+/// Beat phase and global bar position from a bounded or complete committed history.
+fn heard_pulse(
+    beats: impl IntoIterator<Item = f64>,
+    discarded: usize,
+    s: f64,
+    free: f64,
+) -> scene::Pulse {
+    let (mut heard, mut last, mut next) = (0, None, None);
+    for t in beats {
+        if t <= s {
+            heard += 1;
+            last = Some(t);
+        } else {
+            next = Some(t);
+            break;
+        }
+    }
+    let ordinal = discarded + heard;
+    let phase = if let (Some(last), Some(next)) = (last, next) {
+        (s - last) / (next - last).max(1e-3)
+    } else {
+        ((s - last.unwrap_or(0.0)) / free).rem_euclid(1.0)
+    };
+    let beat = ordinal.saturating_sub(1);
+    scene::Pulse {
+        beat: phase,
+        bar: ((beat % 4) as f64 + phase.min(1.0)) / 4.0,
+        index: beat as f64 + phase.min(1.0),
     }
 }
 
@@ -1942,6 +1987,8 @@ struct App {
     scene: Scene,
     /// Committed beats' song times, recent and upcoming.
     beats: VecDeque<f64>,
+    discarded_beats: usize,
+    run_beat_origin: usize,
     /// The loudest sample heard in the last moments.
     peak: f32,
     /// When sound was last heard (host s).
@@ -2086,6 +2133,7 @@ impl App {
         if let Some(song) = self.song_at(now) {
             while self.beats.front().is_some_and(|&b| b < song - 2.0) {
                 self.beats.pop_front();
+                self.discarded_beats += 1;
             }
         }
         while let Ok(e) = self.audio.out.events.pop() {
@@ -2389,9 +2437,21 @@ impl App {
             return;
         };
         let (w, h) = g.logical_size();
-        let upcoming: Vec<f64> =
-            song.map_or_else(Vec::new, |s| self.beats.iter().map(|b| b - s).collect());
-        let run_s = song.map_or(0.0, |s| s - self.run_start);
+        let free = self.world.lib.hero.stride.free_period_s;
+        let (run_s, pulse, upcoming) = if let Some(watch) = &self.watch {
+            watch.hud_timeline(now, free)
+        } else {
+            let t = song.unwrap_or(0.0);
+            (
+                t - self.run_start,
+                heard_pulse(self.beats.iter().copied(), self.discarded_beats, t, free),
+                self.beats
+                    .iter()
+                    .map(|b| b - t)
+                    .filter(|d| d.abs() < 2.5)
+                    .collect(),
+            )
+        };
         let period = self.engine.stream().beats.last().map_or(0.5, |b| b.period);
         let visual_s = self
             .engine
@@ -2402,24 +2462,7 @@ impl App {
         let Ok(ground) = self.world.field(&self.engine, visual_s, period) else {
             return;
         };
-        // The beat phase from the last beat heard and the gap to the next; bars of four from the
-        // first beat.
-        let (phase, bar, index) = song.map_or((1.0, 1.0, 0.0), |s| {
-            let heard = self.beats.iter().filter(|&&b| b <= s).count();
-            let last = heard.checked_sub(1).map(|k| self.beats[k]);
-            if let (Some(last), Some(&next)) = (last, self.beats.get(heard)) {
-                let phase = (s - last) / (next - last).max(1e-3);
-                (
-                    phase,
-                    (((heard - 1) % 4) as f64 + phase.min(1.0)) / 4.0,
-                    (heard - 1) as f64 + phase.min(1.0),
-                )
-            } else {
-                let period = self.world.lib.hero.stride.free_period_s;
-                let phase = ((s - last.unwrap_or(0.0)) / period).rem_euclid(1.0);
-                (phase, phase / 4.0, heard as f64 + phase)
-            }
-        });
+        let (phase, bar, index) = (pulse.beat, pulse.bar, pulse.index);
         let wave = self.engine.view.borrow().wave.as_ref().map(|v| v.s);
         self.scene
             .fast_lane(self.engine.stream(), GATE, run_s, now, wave);
@@ -2457,11 +2500,12 @@ impl App {
             elapsed: self.engine.view.borrow().run.map_or(run_s, |r| r.elapsed),
             bitten_ago: now - self.scene.bitten(),
             head: layers.head.filter(|_| self.over.is_none()),
-            feet: layers.feet.filter(|_| self.over.is_none()),
             next_down: bar >= 0.75,
             tier_flash: self.scene.tier_flash(now),
             delayed: delay_of(self.audio.listening),
             zen: self.run_zen,
+            rhythm: self.scene.hud_rhythm(),
+            keys_visible: self.settings.keys_visible(),
         };
         let mut overlay = std::mem::take(&mut layers.overlay);
         if self.running || self.over.is_some() {
@@ -2759,7 +2803,10 @@ impl App {
             arrivals: 0,
             keys: 0,
             beats: Vec::new(),
+            beat_origin: self.run_beat_origin,
         });
+        self.keys = [KeyLight::default(); 7];
+        self.presses.clear();
     }
 
     /// Looks at the apps with audio again (every second, or now if `force`), noting when each
@@ -2838,6 +2885,8 @@ impl App {
     /// Ends Watch my run, and its music.
     fn stop_watch(&mut self) {
         if self.watch.take().is_some() {
+            self.keys = [KeyLight::default(); 7];
+            self.presses.clear();
             self.scene.cards = cards::Screen::default();
             self.send(Command::StopReplay);
         }
@@ -2863,8 +2912,9 @@ impl App {
             w.remember_beats(self.engine.stream());
         }
         while let Some(k) = self.run_keys.get(w.keys).filter(|k| k.s <= t) {
-            self.engine
-                .key(k.s, k.key, k.kind == sim::player::KeyEventKind::Press);
+            let pressed = k.kind == sim::player::KeyEventKind::Press;
+            self.keys[k.key.slot()].held = pressed;
+            self.engine.key(k.s, k.key, pressed);
             w.keys += 1;
         }
         self.engine.frame(t, 0.2);
@@ -2881,7 +2931,9 @@ impl App {
                 free: self.world.lib.hero.stride.free_period_s,
             },
         );
-        if t > w.span + 0.5 {
+        let finished = t > w.span + 0.5;
+        self.cues(&moments, now);
+        if finished {
             self.stop_watch();
             eprintln!(
                 "slice: replay over: {} kills (the run had {})",
@@ -3190,6 +3242,7 @@ impl App {
         self.clock = None;
         self.recent.clear();
         self.beats.clear();
+        self.discarded_beats = 0;
         self.listen = Listen::default();
         self.device = coreaudio::default_output();
         // (A new source is a new session: its song time starts again.)
@@ -3217,6 +3270,7 @@ impl App {
         vec![
             "DEBUG  F1 CLOSE  F2 NEXT FILE  F3 SYSTEM".to_string(),
             format!("MODE {mode}"),
+            "F4 TOGGLE KEY LIGHTS".into(),
             format!(
                 "EFFECTS {:.0}%   [ QUIETER   ] LOUDER",
                 self.settings.effects_level() * 100.0
@@ -3313,6 +3367,8 @@ impl App {
             }
         }
         self.run_start = s0;
+        self.run_beat_origin =
+            self.discarded_beats + self.beats.iter().filter(|&&b| b < s0).count();
         self.pending_start = None;
         self.last_freeze = None;
         self.picked_offer = None;
@@ -3392,6 +3448,13 @@ impl App {
         // the Mac again (System mode).
         if pressed && !repeat {
             match code {
+                KeyCode::F4 => {
+                    self.settings.show_keys = Some(!self.settings.keys_visible());
+                    if let Err(e) = self.settings.save() {
+                        eprintln!("slice: key lights not saved: {e}");
+                    }
+                    return;
+                }
                 KeyCode::F1 => {
                     self.debug = !self.debug;
                     return;
@@ -3654,6 +3717,7 @@ mod tests {
             arrivals: 0,
             keys: 0,
             beats: Vec::new(),
+            beat_origin: 0,
         };
         let mut log = stream::StreamLog::default();
         let beat = |t, known_at| {
@@ -3725,5 +3789,47 @@ mod tests {
             l.tick(f64::from(k) * 0.1, 0.6);
         }
         assert!(l.ready(15.2));
+    }
+}
+
+#[cfg(test)]
+mod hud_pulse_tests {
+    use super::*;
+    #[test]
+    fn replay_hud_uses_recorded_clock_beats_and_original_bar_origin() {
+        let watch = Watch {
+            began: 100.0,
+            s0: 200.0,
+            span: 20.0,
+            arrivals: 0,
+            keys: 0,
+            beats: vec![0.2, 0.7, 1.2, 1.7],
+            beat_origin: 7,
+        };
+        let (t, p, upcoming) = watch.hud_timeline(101.3, 0.5);
+        assert!((t - 1.3).abs() < 1e-9);
+        assert!((p.beat - 0.2).abs() < 1e-9);
+        assert!((p.index - 9.2).abs() < 1e-9);
+        assert!((upcoming[3] - 0.4).abs() < 1e-9);
+    }
+    #[test]
+    fn pruning_recent_history_keeps_global_downbeats_and_phase() {
+        for bpm in [70.0, 120.0, 174.0] {
+            let period = 60.0 / bpm;
+            for n in 5..80 {
+                let s = (f64::from(n) + 0.8) * period;
+                let full: VecDeque<_> = (0..n + 3).map(|i| f64::from(i) * period).collect();
+                let mut recent = full.clone();
+                let mut discarded = 0;
+                while recent.front().is_some_and(|t| *t < s - 2.0) {
+                    recent.pop_front();
+                    discarded += 1;
+                }
+                let a = heard_pulse(full.iter().copied(), 0, s, 0.5);
+                let b = heard_pulse(recent.iter().copied(), discarded, s, 0.5);
+                assert_eq!((a.beat, a.bar, a.index), (b.beat, b.bar, b.index));
+                assert_eq!(b.bar >= 0.75, n % 4 == 3);
+            }
+        }
     }
 }

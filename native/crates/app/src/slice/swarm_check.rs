@@ -181,11 +181,12 @@ pub fn run(dir: &Path) -> Result<(), String> {
                 elapsed: run.elapsed,
                 bitten_ago: f64::INFINITY,
                 head: layers.head,
-                feet: layers.feet,
                 next_down: false,
                 tier_flash: scene.tier_flash(s),
                 delayed: 3.0,
                 zen: true,
+                rhythm: scene.hud_rhythm(),
+                keys_visible: true,
             };
             let mut overlay = std::mem::take(&mut layers.overlay);
             hud::draw(&view, &st, &art, 1280.0, 720.0, &mut overlay);

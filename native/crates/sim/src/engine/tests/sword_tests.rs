@@ -177,3 +177,96 @@ fn legacy_delayed_qualifying_press_keeps_primary_exclusions_after_another_hit() 
         "intervening hit cannot erase primary exclusion"
     );
 }
+
+#[test]
+fn legacy_tiers_change_real_sword_and_weapon_damage_while_zen_stays_full() {
+    use crate::survivors::{WeaponId, weapon_catalog};
+    for zen in [false, true] {
+        for tier in [0.0, 3.0] {
+            let (rec, mut sim) = sword_measurement_base(120.0, 1, StatDelta::default(), false);
+            Rc::get_mut(&mut sim.env).unwrap().input.zen = zen;
+            sim.learn_survivor_weapon(WeaponId::MagicWand).unwrap();
+            sim.st.tier = tier;
+            sim.st.groove = if tier == 0.0 { 0.0 } else { 1.0 };
+            // Isolate the selected earned tier from later drain; judging itself is tested below.
+            sim.st.last_raise_s = 100.0;
+            sim.advance_to(0.51);
+            let r = rec.borrow();
+            for shot in &r.weapon_shots {
+                let base = weapon_catalog().get(shot.id).level(shot.rank).power;
+                let mult = if zen {
+                    1.0
+                } else {
+                    crate::tiers::tier_damage(&sim.env.input.lib.hero, tier)
+                };
+                assert!((shot.damage - base * mult).abs() < 1e-9);
+                if shot.id.is_sword() {
+                    let expected = if zen || tier == 3.0 { 190.0 } else { 100.0 };
+                    assert!((shot.radius - expected).abs() < 1e-9);
+                    let hit = r
+                        .hits
+                        .iter()
+                        .find(|h| h["id"].as_f64() == shot.attack.map(|a| a as f64))
+                        .unwrap();
+                    assert_eq!(hit["damage"], shot.damage);
+                    assert_eq!(hit["shape"]["radius"], shot.radius);
+                }
+            }
+            assert!(r.weapon_shots.iter().any(|s| s.id == WeaponId::MagicWand));
+            assert!(r.weapon_shots.iter().any(|s| s.id.is_sword()));
+        }
+    }
+}
+
+#[test]
+fn survivor_legacy_keeps_judging_rewards_drain_and_optional_hitstop() {
+    for zen in [false, true] {
+        let (rec, mut sim) = sword_measurement_base(120.0, 1, StatDelta::default(), false);
+        let input = &mut Rc::get_mut(&mut sim.env).unwrap().input;
+        input.zen = zen;
+        input.settling = false;
+        sim.st.groove = 0.1;
+        sim.st.tier = 0.0;
+        sim.advance_to(2.0);
+        let before = sim.st.groove;
+        key(&mut sim, 2.01, KeyEventKind::Press, InputKey::Right);
+        key(&mut sim, 2.1, KeyEventKind::Release, InputKey::Right);
+        sim.advance_to(2.11);
+        let earned = sim.st.groove;
+        assert_eq!(
+            rec.borrow().inputs.iter().any(|i| i["rating"].is_string()),
+            !zen
+        );
+        if !zen {
+            assert!(earned > before);
+        }
+        sim.start_hit_stop(0.05);
+        assert_eq!(sim.in_stop(sim.st.s + 0.001), !zen);
+        assert_eq!(sim.rate_at(sim.st.s + 0.001), if zen { 1.0 } else { 0.0 });
+        sim.advance_to(12.0);
+        if zen {
+            assert_eq!(sim.st.groove, earned);
+        } else {
+            assert!(sim.st.groove < earned);
+        }
+    }
+}
+
+#[test]
+fn survivor_legacy_beatless_passages_keep_fair_credit_without_fake_ratings() {
+    let (rec, mut sim) = sword_measurement_base(120.0, 1, StatDelta::default(), false);
+    let input = &mut Rc::get_mut(&mut sim.env).unwrap().input;
+    input.zen = false;
+    input.settling = false;
+    sim.st.groove = 0.1;
+    sim.st.tier = 0.0;
+    for t in &mut sim.log_mut().ticks {
+        t.evidence = 0.0;
+    }
+    sim.advance_to(8.0);
+    assert!(
+        sim.st.groove > 0.1,
+        "unclear music grants fairness credit rather than draining"
+    );
+    assert!(rec.borrow().inputs.iter().all(|i| !i["rating"].is_string()));
+}

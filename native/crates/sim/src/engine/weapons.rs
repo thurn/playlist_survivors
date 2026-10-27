@@ -128,11 +128,6 @@ impl Sim {
             } else {
                 1.0
             };
-            let heavy_area = if id.is_sword() && accent {
-                hero.swings.heavy.hit_shape.radius / hero.swings.light.hit_shape.radius.max(1.0)
-            } else {
-                1.0
-            };
             let period = if matches!(id, WeaponId::KingBible | WeaponId::UnholyVespers) {
                 self.log.beats[..self.st.ingested.beats]
                     .iter()
@@ -145,6 +140,12 @@ impl Sim {
                 self.survivor_sword_shot()
             } else {
                 None
+            };
+            let tier = attack.map_or(self.st.tier, |a| a.2);
+            let tier_mult = if self.env.input.zen {
+                1.0
+            } else {
+                crate::tiers::tier_damage(&self.env.input.lib.hero, tier)
             };
             let shot = Shot {
                 attack: attack.map(|a| a.0),
@@ -161,14 +162,19 @@ impl Sim {
                     } else {
                         0.0
                     })
-                    * heavy_damage,
+                    * heavy_damage
+                    * tier_mult,
                 amount: if id.is_sword() || matches!(id, WeaponId::MagicWand | WeaponId::HolyWand) {
                     1
                 } else {
                     weapon.amount(stats)
                 },
                 radius: if id.is_sword() {
-                    crate::survivors::SWORD_BASE_RADIUS * weapon.area * stats.area * heavy_area
+                    if accent {
+                        self.heavy_tier_reach(tier).radius
+                    } else {
+                        self.tier_reach(tier).radius
+                    }
                 } else if matches!(id, WeaponId::MagicWand | WeaponId::HolyWand) {
                     0.08 * crate::survivors::PX_PER_VS_UNIT * weapon.area * stats.area
                 } else if matches!(id, WeaponId::Garlic | WeaponId::SoulEater) {

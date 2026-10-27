@@ -1,0 +1,2 @@
+still: song 4.000s, run Some(RunState { song: 3.9916666666666667, presentation_s: 3.9916666666666667, frozen_beat: None, elapsed: 3.9916666666666667, spawn_minute: Some(0), spawned: 21, offer: None, roulette: None, level: 1, max_hp: 120.0, world: 3.9916666666666667, frozen: None, selected: 0, confirmed: false }), alive 11, kills 10, damage-exempt false
+slice: wrote evidence/fr4/game-quiet.png (1897 sprites, 5 lights; 11 enemies, health 1.00, groove 0.00; zone first)

@@ -61,6 +61,7 @@ pub struct Burst {
 pub struct Frame {
     /// The beat's evidence over the gate (0-1), the latest press's pulse, the share of the last
     /// 0.5 s with the beat clear, and the energy smoothed over it.
+    pub locked: bool,
     pub amp: f64,
     pub press: f64,
     pub mix: f64,
@@ -99,6 +100,7 @@ impl Frame {
 /// known, the key at each zone wave, and the recent presses.
 #[derive(Default)]
 pub struct Lane {
+    judging: Option<sim::reactive::judging::Judging>,
     shares: Vec<f64>,
     flashes: Vec<f64>,
     peak: f64,
@@ -131,6 +133,21 @@ impl Lane {
     ) -> Frame {
         self.learn(log, s, wave_s);
         let mut f = Frame::default();
+        let known = log.ticks.partition_point(|t| t.known_at <= s + 1e-9);
+        if self.judging.as_ref().is_none_or(|j| j.len() > known) {
+            self.judging = Some(sim::reactive::judging::Judging::new(gate));
+        }
+        let judging = self.judging.as_mut().expect("judging");
+        judging.extend(&log.ticks[..known]);
+        let heard = log.ticks[..known].partition_point(|t| t.t <= s + 1e-9);
+        f.locked = heard
+            .checked_sub(1)
+            .is_some_and(|i| judging.judged_at(i as isize) && s - log.ticks[i].t <= 0.25)
+            && log
+                .beats
+                .iter()
+                .any(|b| b.known_at <= s && b.t >= s && b.evidence >= gate);
+
         // The pulse: the latest tick's evidence, and the last 0.5 s's clarity and energy.
         let ticks = &log.ticks;
         let i = ticks.partition_point(|t| t.t <= s + 1e-9);
@@ -519,5 +536,50 @@ mod tests {
         let after = Lane::default().frame(&log, 0.2, 2.0, 2.0, None);
         assert_eq!(after.drop, 1.0);
         assert!(!after.bursts.is_empty());
+    }
+}
+
+#[cfg(test)]
+mod hud_lock_tests {
+    use super::*;
+    #[test]
+    fn musical_lock_uses_heard_known_ticks_and_stops_after_a_gap() {
+        let log = StreamLog {
+            ticks: (0..=30)
+                .map(|i| stream::Tick {
+                    t: f64::from(i) * 0.05,
+                    known_at: f64::from(i) * 0.05 + 0.2,
+                    evidence: if i < 28 { 1.0 } else { 0.0 },
+                    energy: 0.6,
+                    level: None,
+                    key: None,
+                    bands: None,
+                    brightness: None,
+                })
+                .collect(),
+            beats: (0..10)
+                .map(|i| stream::Beat {
+                    t: f64::from(i) * 0.5,
+                    known_at: (f64::from(i) * 0.5 - 0.5).max(0.0),
+                    period: 0.5,
+                    evidence: 1.0,
+                })
+                .collect(),
+            ..StreamLog::default()
+        };
+        let mut lane = Lane::default();
+        assert!(
+            !lane.frame(&log, 0.2, 0.8, 0.8, None).locked,
+            "one-second admission gate"
+        );
+        assert!(
+            lane.frame(&log, 0.2, 1.5, 1.5, None).locked,
+            "future low confidence is not heard yet"
+        );
+        assert!(!lane.frame(&log, 0.2, 1.61, 1.61, None).locked);
+        assert!(
+            !lane.frame(&log, 0.2, 3.0, 3.0, None).locked,
+            "no stale metronome"
+        );
     }
 }

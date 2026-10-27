@@ -58,6 +58,13 @@ pub struct PressMark {
     pub rating: Option<&'static str>,
 }
 
+/// Heard musical state, independent of key accuracy.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Rhythm {
+    pub locked: bool,
+    pub groove: f64,
+}
+
 /// What the HUD reads besides the sim's view.
 pub struct HudState<'a> {
     /// Up, left, down, right, and the stomp key.
@@ -73,7 +80,6 @@ pub struct HudState<'a> {
     pub bitten_ago: f64,
     /// The top of the hero's head on screen, if placed.
     pub head: Option<(f32, f32)>,
-    pub feet: Option<(f32, f32)>,
     /// Whether the next beat starts a bar.
     pub next_down: bool,
     /// The groove meter's flash after a tier up (1 to 0).
@@ -82,6 +88,8 @@ pub struct HudState<'a> {
     pub delayed: f64,
     /// Zen mode (nothing judged, the default); legacy mode is tagged under health.
     pub zen: bool,
+    pub rhythm: Rhythm,
+    pub keys_visible: bool,
 }
 
 /// A small heart, 7 x 6 font pixels.
@@ -97,16 +105,16 @@ pub fn draw(
     h: f32,
     out: &mut Vec<Sprite>,
 ) {
-    if view.run.is_some() {
-        draw_survivors(view, st, art, w, h, out);
-        return;
-    }
     let u = (w / 960.0).min(h / 540.0);
     overhead(view, st, w, h, u, out);
     if view.run.is_some_and(|r| r.offer.is_some()) {
         out.push(rect(0.0, 0.0, w, h, [0.0, 0.0, 0.05, 0.55]));
     }
-    if let Some(reason) = view.run.and_then(|r| r.frozen) {
+    if let Some(reason) = view.run.and_then(|r| r.frozen)
+        && reason != sim::survivors::FreezeReason::LevelUp
+        && !(reason == sim::survivors::FreezeReason::Chest
+            && view.run.is_some_and(|r| r.roulette.is_some()))
+    {
         out.push(rect(
             w * 0.5 - 170.0 * u,
             h * 0.35 - 12.0 * u,
@@ -165,11 +173,21 @@ pub fn draw(
         out,
     );
     out.push(rect(px(12.0), py(24.0), 90.0 * u, 7.0 * u, bg));
-    let hp = if st.bitten_ago < 0.25 {
-        rgb(0xffffff)
-    } else {
-        rgb(0xff4050)
-    };
+    let hp = life_color(view.health, st);
+    if view.health < 0.3 {
+        let pulse = if st.rhythm.locked {
+            (-8.0 * st.beat_phase.clamp(0.0, 1.0)).exp()
+        } else {
+            0.3
+        };
+        out.push(rect(
+            px(9.0),
+            py(21.0),
+            96.0 * u,
+            13.0 * u,
+            alpha(rgb(0xff2048), (0.2 + 0.5 * pulse) as f32),
+        ));
+    }
     out.push(rect(
         px(13.0),
         py(25.0),
@@ -238,19 +256,21 @@ pub fn draw(
         );
     }
     // The arrow keys and the stomp key, bottom left.
-    let places = [(1.0, 0.0), (0.0, 1.0), (1.0, 1.0), (2.0, 1.0)];
-    for (k, &(col, row)) in places.iter().enumerate() {
-        key_face(
-            st.keys[k],
-            px(26.0 + col * 25.0),
-            py(452.0 + row * 25.0),
-            22.0 * u,
-            22.0 * u,
-            out,
-        );
+    if st.keys_visible {
+        let places = [(1.0, 0.0), (0.0, 1.0), (1.0, 1.0), (2.0, 1.0)];
+        for (k, &(col, row)) in places.iter().enumerate() {
+            key_face(
+                st.keys[k],
+                px(26.0 + col * 25.0),
+                py(452.0 + row * 25.0),
+                22.0 * u,
+                22.0 * u,
+                out,
+            );
+        }
+        key_face(st.keys[4], px(104.0), py(481.0), 10.0 * u, 18.0 * u, out);
+        key_face(st.keys[4], px(117.0), py(479.0), 10.0 * u, 18.0 * u, out);
     }
-    key_face(st.keys[4], px(104.0), py(481.0), 10.0 * u, 18.0 * u, out);
-    key_face(st.keys[4], px(117.0), py(479.0), 10.0 * u, 18.0 * u, out);
     let elapsed = st.elapsed.max(0.0) as u64;
     font::text(
         &format!("{}:{:02}", elapsed / 60, elapsed % 60),
@@ -270,7 +290,7 @@ pub fn draw(
         18.0 * u,
         [0.0, 0.0, 0.0, 0.45],
     ));
-    for &dt in st.beats {
+    for &dt in st.beats.iter().filter(|_| st.rhythm.locked) {
         let d = dt as f32 * 90.0;
         if d > 186.0 {
             continue;
@@ -312,7 +332,11 @@ pub fn draw(
             alpha(rating_color(p.rating), a),
         ));
     }
-    let pulse = (-6.0 * st.beat_phase.clamp(0.0, 1.0)).exp() as f32;
+    let pulse = if st.rhythm.locked {
+        (-6.0 * st.beat_phase.clamp(0.0, 1.0)).exp() as f32
+    } else {
+        0.0
+    };
     let hs = (1.4 + 0.6 * pulse) * u;
     let (hx, hy) = (px(cx) - 3.5 * hs, py(cy) - 3.0 * hs);
     for (r, row) in HEART.iter().enumerate() {
@@ -323,16 +347,31 @@ pub fn draw(
                     hy + r as f32 * hs,
                     hs,
                     hs,
-                    rgb(0xff3060),
+                    if st.rhythm.locked {
+                        rgb(0xff3060)
+                    } else {
+                        PLAIN
+                    },
                 ));
             }
         }
     }
-    // The groove meter and the tier.
-    let tier = (view.tier.max(0.0) as usize).min(TIERS.len() - 1);
+    if !st.rhythm.locked {
+        font::text(
+            "WAITING FOR BEAT",
+            px(cx),
+            py(cy - 26.0),
+            fs,
+            Align::Centre,
+            PLAIN,
+            out,
+        );
+    }
+    // Musical energy in zen, earned groove and tier in legacy.
+    let (groove, tier) = meter(view, st);
     let (gx, gw) = (cx + 212.0, 70.0);
     font::text(
-        "GROOVE",
+        if st.zen { "MUSIC" } else { "GROOVE" },
         px(gx),
         py(cy - 16.0),
         fs,
@@ -341,7 +380,11 @@ pub fn draw(
         out,
     );
     // (A tier up flashes the meter in the tier's colour, and lifts its label in white.)
-    let flash = st.tier_flash.clamp(0.0, 1.0) as f32;
+    let flash = if st.zen {
+        0.0
+    } else {
+        st.tier_flash.clamp(0.0, 1.0) as f32
+    };
     if flash > 0.0 {
         let mut c = TIERS[tier];
         c[3] = 0.45 * flash;
@@ -357,12 +400,16 @@ pub fn draw(
     out.push(rect(
         px(gx + 1.0),
         py(cy - 4.0),
-        (gw - 2.0) * u * view.groove.clamp(0.0, 1.0) as f32,
+        (gw - 2.0) * u * groove as f32,
         8.0 * u,
         TIERS[tier],
     ));
     font::text(
-        &format!("TIER {tier}"),
+        &if st.zen {
+            "ZEN".into()
+        } else {
+            format!("TIER {tier}")
+        },
         px(gx + gw + 6.0),
         py(cy - 4.0 - 2.0 * flash),
         fs,
@@ -374,6 +421,9 @@ pub fn draw(
         },
         out,
     );
+    if view.run.is_some() {
+        inventory(view, art, u, px(130.0), py(28.0), out);
+    }
 }
 
 fn smoothstep(x: f32) -> f32 {
@@ -444,8 +494,9 @@ fn overhead(view: &LiveView, st: &HudState, w: f32, h: f32, hud: f32, out: &mut 
     let u = 1.3 * hud;
     let margin = 30.0 * u;
     let x = hx.clamp(margin, (w - margin).max(margin));
-    let y = (hy - 16.0 * hud).clamp(16.0 * hud, (h - 16.0 * hud).max(16.0 * hud));
-    let tier = TIERS[(view.tier.max(0.0) as usize).min(TIERS.len() - 1)];
+    let y = (hy - 16.0 * hud).clamp(52.0 * u, (h - 16.0 * hud).max(52.0 * u));
+    let (groove, ti) = meter(view, st);
+    let tier = TIERS[ti];
     let line = u.max(1.0);
     let (half, bh) = (26.0 * u, 4.0 * u);
     let (life_y, groove_y) = (y - bh - u, y + u);
@@ -457,15 +508,12 @@ fn overhead(view: &LiveView, st: &HudState, w: f32, h: f32, hud: f32, out: &mut 
         [0.02, 0.016, 0.04, 0.65 * a],
     ));
     let health = view.health.clamp(0.0, 1.0) as f32;
-    let danger = (1.0 - health / 0.3).clamp(0.0, 1.0);
-    let hit = (-8.0 * st.beat_phase.clamp(0.0, 1.0)).exp() as f32;
-    let life = if st.bitten_ago < 0.15 {
-        rgb(0xffffff)
-    } else if danger * hit > 0.5 {
-        rgb(0xff9098)
+    let hit = if st.rhythm.locked {
+        (-8.0 * st.beat_phase.clamp(0.0, 1.0)).exp() as f32
     } else {
-        rgb(0xff4050)
+        0.0
     };
+    let life = life_color(view.health, st);
     out.push(rect(
         x - half,
         life_y,
@@ -476,12 +524,13 @@ fn overhead(view: &LiveView, st: &HudState, w: f32, h: f32, hud: f32, out: &mut 
     out.push(rect(
         x - half,
         groove_y,
-        2.0 * half * view.groove.clamp(0.0, 1.0) as f32,
+        2.0 * half * groove as f32,
         bh,
         alpha(tier, a),
     ));
+    let y = (y - 24.0 * u).max(20.0 * u);
     let dark = [0.02, 0.016, 0.04, 0.8 * a];
-    if st.beats.is_empty() {
+    if !st.rhythm.locked {
         // Free movement: the gem breathes.
         let free = rgb(0x9fb8ff);
         let breathe = (0.5 + 0.5 * (st.elapsed as f32 * 3.0).cos()).powi(2);
@@ -560,71 +609,46 @@ pub(super) fn item_color(id: &str) -> [f32; 4] {
         _ => rgb(0xff8dac),
     }
 }
-fn draw_survivors(
+fn meter(view: &LiveView, st: &HudState) -> (f64, usize) {
+    let groove = if st.zen {
+        st.rhythm.groove
+    } else {
+        view.groove
+    }
+    .clamp(0.0, 1.0);
+    let tier = if st.zen {
+        (groove * 4.0).floor() as usize
+    } else {
+        view.tier.max(0.0) as usize
+    }
+    .min(3);
+    (groove, tier)
+}
+
+fn life_color(health: f64, st: &HudState) -> [f32; 4] {
+    if st.bitten_ago < 0.2 {
+        return [1.0; 4];
+    }
+    let hit = if st.rhythm.locked {
+        (-8.0 * st.beat_phase.clamp(0.0, 1.0)).exp()
+    } else {
+        0.0
+    };
+    if health < 0.3 && hit > 0.5 {
+        rgb(0xffb0b8)
+    } else {
+        rgb(0xff4050)
+    }
+}
+
+fn inventory(
     view: &LiveView,
-    st: &HudState,
     art: &render::atlas::Atlases,
-    w: f32,
-    h: f32,
+    u: f32,
+    ox: f32,
+    oy: f32,
     out: &mut Vec<Sprite>,
 ) {
-    let u = (w / 960.0).min(h / 540.0);
-    let face = &art.fonts["pixel"];
-    let bg = [0.015, 0.02, 0.04, 0.82];
-    let bar = w - 24.0 * u;
-    out.push(rect(
-        10.0 * u,
-        6.0 * u,
-        bar + 4.0 * u,
-        14.0 * u,
-        [0.08, 0.16, 0.22, 0.95],
-    ));
-    out.push(rect(12.0 * u, 8.0 * u, bar, 10.0 * u, bg));
-    out.push(rect(
-        12.0 * u,
-        8.0 * u,
-        bar * view.xp.clamp(0.0, 1.0) as f32,
-        10.0 * u,
-        rgb(0x5fe8cf),
-    ));
-    let level = view.run.map_or(view.level as usize, |r| r.level);
-    face.text(
-        &format!("LEVEL {level}"),
-        w - 16.0 * u,
-        9.0 * u,
-        1.1 * u,
-        Align::Right,
-        [1.0; 4],
-        out,
-    );
-    let elapsed = st.elapsed.max(0.0) as u64;
-    face.text(
-        &format!("{:02}:{:02}", elapsed / 60, elapsed % 60),
-        w / 2.0,
-        32.0 * u,
-        4.0 * u,
-        Align::Centre,
-        [1.0; 4],
-        out,
-    );
-    face.text(
-        "KILLS",
-        w - 14.0 * u,
-        33.0 * u,
-        1.5 * u,
-        Align::Right,
-        rgb(0x9caabf),
-        out,
-    );
-    face.text(
-        &view.kills.to_string(),
-        w - 14.0 * u,
-        49.0 * u,
-        3.0 * u,
-        Align::Right,
-        [1.0; 4],
-        out,
-    );
     let inv = view.inventory.unwrap_or_default();
     let weapons: Vec<_> = inv
         .weapons
@@ -644,86 +668,44 @@ fn draw_survivors(
         .collect();
     for (row, slots) in [&weapons, &passives].into_iter().enumerate() {
         for i in 0..6 {
-            let x = (13.0 + i as f32 * 40.0) * u;
-            let y = (32.0 + row as f32 * 44.0) * u;
-            out.push(rect(x, y, 36.0 * u, 39.0 * u, [0.03, 0.05, 0.08, 0.72]));
-            out.push(rect(x + u, y + u, 34.0 * u, 32.0 * u, bg));
-            if let Some(&(id, rank, max)) = slots.get(i) {
-                let color = item_color(id);
-                let icon = if id == "sword" { "sword-spin" } else { id };
-                if let Some(r) = art.icons.get(icon) {
-                    if let Some(glow) = art.proc.get("glow") {
-                        out.push(
-                            Sprite::centred(*glow, x + 18.0 * u, y + 17.0 * u, 42.0 * u, 42.0 * u)
-                                .tinted(alpha(color, 0.26))
-                                .additive(),
-                        );
-                    }
-                    out.push(
-                        Sprite::centred(*r, x + 18.0 * u, y + 17.0 * u, 27.0 * u, 27.0 * u)
-                            .tinted(color)
-                            .additive(),
-                    );
-                }
-                let step = 30.0 / f32::from(max);
-                for pip in 0..max {
-                    out.push(rect(
-                        x + (3.0 + f32::from(pip) * step) * u,
-                        y + 35.0 * u,
-                        (step - 1.0) * u,
-                        2.0 * u,
-                        if pip < rank {
-                            color
-                        } else {
-                            [0.15, 0.19, 0.24, 1.0]
-                        },
-                    ));
-                }
+            let (x, y) = (ox + i as f32 * 28.0 * u, oy + row as f32 * 30.0 * u);
+            let Some(&(id, rank, max)) = slots.get(i) else {
+                out.push(rect(
+                    x + 10.0 * u,
+                    y + 10.0 * u,
+                    3.0 * u,
+                    3.0 * u,
+                    [0.3, 0.4, 0.5, 0.18],
+                ));
+                continue;
+            };
+            let color = item_color(id);
+            out.push(rect(x, y, 24.0 * u, 26.0 * u, [0.01, 0.02, 0.04, 0.65]));
+            let icon = if id == "sword" { "sword-spin" } else { id };
+            if let Some(r) = art.icons.get(icon) {
+                out.push(
+                    Sprite::centred(*r, x + 12.0 * u, y + 11.0 * u, 20.0 * u, 20.0 * u)
+                        .tinted(color)
+                        .additive(),
+                );
+            }
+            let step = 22.0 / f32::from(max);
+            for pip in 0..max {
+                out.push(rect(
+                    x + (1.0 + f32::from(pip) * step) * u,
+                    y + 23.0 * u,
+                    (step - 0.6) * u,
+                    2.0 * u,
+                    if pip < rank {
+                        color
+                    } else {
+                        [0.15, 0.19, 0.24, 1.0]
+                    },
+                ));
             }
         }
     }
-    if let Some((x, y)) = st.feet {
-        let x = x.clamp(24.0 * u, w - 24.0 * u);
-        let y = (y + 9.0 * u).clamp(24.0 * u, h - 10.0 * u);
-        out.push(rect(
-            x - 23.0 * u,
-            y - u,
-            46.0 * u,
-            6.0 * u,
-            [0.005, 0.008, 0.015, 0.95],
-        ));
-        out.push(rect(
-            x - 22.0 * u,
-            y,
-            44.0 * u,
-            4.0 * u,
-            [0.22, 0.07, 0.1, 0.9],
-        ));
-        out.push(rect(
-            x - 22.0 * u,
-            y,
-            44.0 * u * view.health.clamp(0.0, 1.0) as f32,
-            4.0 * u,
-            if st.bitten_ago < 0.15 {
-                [1.0; 4]
-            } else {
-                rgb(0xff4a68)
-            },
-        ));
-    }
-    if let Some(reason) = view.run.and_then(|r| r.frozen)
-        && reason != sim::survivors::FreezeReason::LevelUp
-        && !(reason == sim::survivors::FreezeReason::Chest
-            && view.run.is_some_and(|r| r.roulette.is_some()))
-    {
-        face.text(
-            reason.banner(),
-            w / 2.0,
-            h * 0.32,
-            3.0 * u,
-            Align::Centre,
-            rgb(0xb8d7ff),
-            out,
-        );
-    }
 }
+
+#[cfg(test)]
+mod tests;

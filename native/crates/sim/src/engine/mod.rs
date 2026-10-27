@@ -1541,7 +1541,7 @@ impl Sim {
     }
 
     fn base_rate(&self, t: f64) -> f64 {
-        if self.env.input.level.survivors.is_some() {
+        if self.env.input.level.survivors.is_some() && self.env.input.zen {
             1.0
         } else {
             step_rate(self.base_steps(), t)
@@ -1590,7 +1590,7 @@ impl Sim {
     fn rate_at(&self, t: f64) -> f64 {
         if self.st.freeze.frozen {
             0.0
-        } else if self.env.input.level.survivors.is_some() {
+        } else if self.env.input.level.survivors.is_some() && self.env.input.zen {
             1.0
         } else if self.in_stop(t) {
             0.0
@@ -1896,7 +1896,6 @@ impl Sim {
                 self.spawn_director(bi as f64);
                 if self.st.survivor.is_some() {
                     self.sword_beat(bi);
-                    return;
                 }
                 // (Stage 2: the drain runs 2 s later, as of this beat, on the settled groove's timeline.)
                 let s = self.st.s;
