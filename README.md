@@ -54,7 +54,7 @@ parity (`ps analysis-parity`) and the runner's benchmark (`ps runner-bench`).
   the sim.
 - `public/assets/`: the baked atlases and sounds. `npm ci && npm run bake` rebakes them from
   `assets-src/` (`tools/baker`); `npm run check:assets` checks them; `npm run bake:contact-sheet`
-  draws contact sheets to review.
+  draws contact sheets to review. Rebaking also needs the [external art sources](#fetching-art-sources).
 - `public/reactive/`: the bundled tracks and their belief streams; `corpus/manifest.yaml` lists the
   feel corpus. The analysis tool (`tools/analysis`, `uv run --project tools/analysis ps-analysis
   <command>`) writes them: `corpus-add` ingests the manifest's tracks, `streams` regenerates every
@@ -62,6 +62,81 @@ parity (`ps analysis-parity`) and the runner's benchmark (`ps runner-bench`).
   `encode` work on one track; `export-models` exports the analyzer's models and golden data for
   `native/`.
 - `songs/`: the Galop's authored song map (`ps-analysis check` validates it).
+
+## Fetching art sources
+
+The baked assets, analyzer models and sample music are committed: a fresh clone can build and
+play the native game without fetching art sources or running the baker. Fetch these sources
+only when changing or rebaking assets. They stay outside this repository.
+
+The baker needs four LPC collections. These snapshots match the source versions used for the
+current recipes; download archives rather than cloning their Git histories:
+
+| Directory under `LPC_ROOT` | Source version |
+|---|---|
+| `ulpc-generator` | [Universal LPC generator](https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator), `9bf06be193b053db256b2536824af426de046aa2` |
+| `lpc-revised` | [LPC Revised](https://github.com/ElizaWy/LPC), `f07f7f5892e67c932c68f70bb04472f2c64e46bc` |
+| `source-of-tales` | [Source of Tales](https://gitlab.com/tales/sourceoftales), `ce4457dfd9da49be9daf54098b15ac73ed830fd0` |
+| `lpc-tile-atlas/files` | [LPC Tile Atlas](https://opengameart.org/content/lpc-tile-atlas), `Atlas_0.zip` (checksum below) |
+
+On macOS, run the following in Bash. Use a new, empty `LPC_ROOT`; its default is
+`~/Documents/lpc`. If that directory already holds your collections, choose another directory
+for a fresh download. Keep the same `LPC_ROOT` exported when running the baker, including in
+later shells if you chose a non-default location.
+
+```bash
+(
+  set -eu
+  export LPC_ROOT="${LPC_ROOT:-$HOME/Documents/lpc}"
+  mkdir -p "$LPC_ROOT"
+
+  fetch_lpc() {
+    name="$1"
+    url="$2"
+    # Refuse to overwrite an existing collection.
+    test ! -e "$LPC_ROOT/$name"
+    curl --fail --location --retry 3 "$url" -o "$LPC_ROOT/$name.tar.gz"
+    mkdir "$LPC_ROOT/$name"
+    tar -xzf "$LPC_ROOT/$name.tar.gz" -C "$LPC_ROOT/$name" --strip-components=1
+    rm "$LPC_ROOT/$name.tar.gz"
+  }
+
+  fetch_lpc ulpc-generator \
+    https://codeload.github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/tar.gz/9bf06be193b053db256b2536824af426de046aa2
+  fetch_lpc lpc-revised \
+    https://codeload.github.com/ElizaWy/LPC/tar.gz/f07f7f5892e67c932c68f70bb04472f2c64e46bc
+  fetch_lpc source-of-tales \
+    https://gitlab.com/tales/sourceoftales/-/archive/ce4457dfd9da49be9daf54098b15ac73ed830fd0/sourceoftales-ce4457dfd9da49be9daf54098b15ac73ed830fd0.tar.gz
+
+  test ! -e "$LPC_ROOT/lpc-tile-atlas"
+  curl --fail --location --retry 3 \
+    https://opengameart.org/sites/default/files/Atlas_0.zip -o "$LPC_ROOT/Atlas_0.zip"
+  (cd "$LPC_ROOT" && printf '%s  Atlas_0.zip\n' \
+    4b8d0030c4e5c18029a0298caf11c74d38eb10273ac44e364ef620b81bcaa5fd | shasum -a 256 -c -)
+  mkdir -p "$LPC_ROOT/lpc-tile-atlas/files"
+  unzip -q "$LPC_ROOT/Atlas_0.zip" -d "$LPC_ROOT/lpc-tile-atlas/files"
+  rm "$LPC_ROOT/Atlas_0.zip"
+)
+```
+
+These are mixed-license collections, not all CC0. Keep their upstream credit and license files;
+the baker selects allowed licenses through `assets-src/licences.yaml` and the generator's
+`CREDITS.csv`, then writes `public/assets/credits.json`. The tile atlas includes unreviewed
+regions: the current recipes use only the reviewed `#ruins` region.
+
+To rebake, install Node 24+ and FFmpeg, then run from the repository root:
+
+```bash
+npm ci
+FFMPEG="$(command -v ffmpeg)" npm run bake
+npm run check
+```
+
+The baker automatically downloads and verifies the other packs listed in
+`tools/baker/sources.json`. Those downloads are cached in `~/.cache/playlist-survivors`
+(`PS_CACHE` overrides it); the first bake needs internet access. Review any resulting asset and
+credit changes before committing them. If a fetch stops partway through, remove only that
+incomplete collection before retrying its command; the block refuses existing collections.
 
 ## Checks
 
