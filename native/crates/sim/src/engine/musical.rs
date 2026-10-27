@@ -124,7 +124,10 @@ impl Sim {
     }
     /// A mandatory boss can reclaim ordinary/optional actors, but never another boss.
     pub(super) fn reserve_boss_room(&mut self) {
-        let need = self.st.spawner.waiting_bosses.len().min(SURVIVOR_CAP);
+        self.reclaim_boss_room(self.st.spawner.waiting_bosses.len());
+    }
+    pub(super) fn reclaim_boss_room(&mut self, need: usize) {
+        let need = need.min(SURVIVOR_CAP);
         if need == 0 {
             return;
         }
@@ -267,7 +270,7 @@ impl Sim {
                 .iter()
                 .find(|b| {
                     b.known_at <= self.st.s
-                        && b.t >= self.st.s + 0.35 - 1e-9
+                        && b.t >= self.st.s + 0.35_f64.min(b.period * 0.75) - 1e-9
                         && b.evidence >= self.env.input.gate
                 })
                 .map(|b| b.t);

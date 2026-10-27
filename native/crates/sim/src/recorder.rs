@@ -502,6 +502,7 @@ pub trait Recorder {
     fn formation(&mut self, f: FormationRecord) {}
     fn zone_wave(&mut self, z: ZoneWaveRecord) {}
     fn landmark(&mut self, l: LandmarkRecord) {}
+    fn punctuation(&mut self, s: f64, w: f64) {}
     /// A formation member's dance starts at song time `s_from`; its whole dance at its release.
     fn dance_start(&mut self, id: usize, s_from: f64, anim: &str, alternate: bool) {}
     fn dance(&mut self, id: usize, d: DanceRecord) {}
@@ -699,6 +700,10 @@ impl<R: Recorder + ?Sized> Recorder for std::rc::Rc<std::cell::RefCell<R>> {
     fn landmark(&mut self, l: LandmarkRecord) {
         self.borrow_mut().landmark(l);
     }
+    fn punctuation(&mut self, s: f64, w: f64) {
+        self.borrow_mut().punctuation(s, w);
+    }
+
     fn dance_start(&mut self, id: usize, s_from: f64, anim: &str, alternate: bool) {
         self.borrow_mut().dance_start(id, s_from, anim, alternate);
     }

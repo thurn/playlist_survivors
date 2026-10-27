@@ -28,6 +28,11 @@ pub fn draw(
             continue;
         }
         if cue.kind == BossCueKind::Warning {
+            // A held entrance can wait indefinitely for reliable music without
+            // leaving a full-width notice over the playfield the whole time.
+            if age > 6.0 {
+                continue;
+            }
             let pulse = 0.72 + 0.28 * (age * std::f32::consts::TAU * 2.0).cos();
             overlay.push(Sprite::solid(
                 0.0,

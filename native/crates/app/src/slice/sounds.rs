@@ -551,6 +551,11 @@ impl Sounds {
                 c.every = Some(Every::Beat);
                 vec![c]
             }
+            Cause::Slam { s, x } => {
+                let mut c = Call::new("boss-slam", *s, *x, 0.8);
+                c.owner = Some(*s);
+                vec![c]
+            }
             Cause::Step { s, x } => vec![Call::new("step", *s, *x, 0.35)],
             Cause::Boss(cue) => {
                 use sim::survivors::BossCueKind;

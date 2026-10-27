@@ -46,7 +46,9 @@ mod observe;
 mod offers;
 mod pickups;
 mod pieces;
+pub use pieces::SLAM_RADIUS;
 mod plan;
+mod signature;
 mod spawning;
 mod survivor_events;
 mod weapons;
@@ -971,6 +973,7 @@ struct SimState {
     boss_presentation: crate::survivors::BossPresentation,
     events: survivor_events::Events,
     musical: musical::Musical,
+    signature: signature::Signature,
     chests: Vec<crate::survivors::FieldChest>,
     n_chests: usize,
     treasure_minutes: u32,
@@ -1685,6 +1688,7 @@ impl Sim {
                             self.spawn_stop()
                                 .min(self.event_stop())
                                 .min(self.musical_stop())
+                                .min(self.signature_stop())
                                 .min(self.boss_notice_stop()),
                         ),
                         t_fixed,
@@ -1839,6 +1843,7 @@ impl Sim {
         self.tick_boss_notice();
         self.tick_spawner();
         self.tick_survivor_events();
+        self.tick_signature();
         self.tick_musical();
     }
 
@@ -2058,6 +2063,7 @@ fn fresh_state(env: &Env) -> SimState {
         boss_presentation: crate::survivors::BossPresentation::default(),
         events: survivor_events::Events::default(),
         musical: musical::Musical::default(),
+        signature: signature::Signature::default(),
         chests: Vec::new(),
         n_chests: 0,
         treasure_minutes: 0,
@@ -2189,6 +2195,7 @@ mod tests {
     mod mainbeat_tests;
     mod musical_tests;
     mod restored_tests;
+    mod signature_tests;
     mod sword_tests;
     use std::path::Path;
     use std::rc::Rc;

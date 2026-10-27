@@ -67,6 +67,7 @@ mod pickups;
 mod recap;
 mod scene;
 mod session;
+mod signature;
 mod sounds;
 mod swarm_check;
 mod sword;

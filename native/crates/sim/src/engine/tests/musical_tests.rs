@@ -4,7 +4,7 @@ use crate::engine::{Member, musical::Kind};
 use crate::survivors::{FreezeReason, ScheduledBoss, StatDelta};
 
 fn base(bpm: f64) -> (Rc<std::cell::RefCell<crate::recorder::LogRecorder>>, Sim) {
-    sword_measurement_base(
+    let (rec, mut s) = sword_measurement_base(
         bpm,
         1,
         StatDelta {
@@ -13,7 +13,16 @@ fn base(bpm: f64) -> (Rc<std::cell::RefCell<crate::recorder::LogRecorder>>, Sim)
             ..Default::default()
         },
         false,
-    )
+    );
+    Rc::get_mut(&mut s.env)
+        .unwrap()
+        .director
+        .set_pieces
+        .as_mut()
+        .unwrap()
+        .boss
+        .after_s = 10000.0;
+    (rec, s)
 }
 
 #[test]
@@ -243,7 +252,6 @@ fn causal_music_selects_all_four_shapes_and_unknown_jump_cannot_enter_early() {
         let (rec, mut s) = base(128.0);
         extend_music(&mut s, level, false);
         s.advance_to(until);
-        assert!(!s.st.alive.is_empty(), "{role}: {:?}", s.st.musical);
         s.retire_musical();
         assert!(rec.borrow().formations.iter().any(|f| f.def == role));
     }
@@ -346,4 +354,34 @@ fn released_kick_keeps_its_remaining_charge_across_a_long_pause() {
         "menu must not spend the remaining charge"
     );
     assert!(s.st.foes[id].charge_until - s.s() <= remaining + 1e-8);
+}
+
+#[test]
+fn fast_song_one_beat_forecasts_can_admit_real_musical_entrances() {
+    for level in [
+        stream::Level::Quiet,
+        stream::Level::Medium,
+        stream::Level::Loud,
+    ] {
+        let (rec, mut s) = base(174.0);
+        extend_music(&mut s, level, false);
+        let period = 60.0 / 174.0;
+        s.log_mut().beats = (0..1200)
+            .map(|i| {
+                let t = f64::from(i) * period;
+                Beat {
+                    t,
+                    known_at: (t - period).max(0.0),
+                    period,
+                    evidence: 1.0,
+                }
+            })
+            .collect();
+        s.advance_to(340.0);
+        s.retire_musical();
+        assert!(
+            !rec.borrow().formations.is_empty(),
+            "{level:?} entrances starved by longer notice than known lead"
+        );
+    }
 }

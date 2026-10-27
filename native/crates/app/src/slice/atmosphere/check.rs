@@ -1,4 +1,4 @@
-//! Real four-minute zone fallbacks, captured offscreen on a synthetic empty-field run.
+//! Actual opening-minute zone fallbacks, offscreen in an explicitly empty synthetic run.
 use crate::slice::{HudState, KeyLight, Scene, World, damage, hud, live, scene};
 use render::{atlas::Atlases, capture, font::Align, post::Frame};
 use sim::survivors::{Inventory, WeaponId, weapon_catalog};
@@ -44,9 +44,14 @@ fn capture(dir: &Path, aura_only: bool) -> Result<(), String> {
             *line = format!("    - {row}");
         }
     }
+    // Keep this authoring diagnostic empty even as gameplay gains choreography.
+    for formation in world.lib.formations.values_mut() {
+        formation.count = 0.0;
+    }
     world.level.text = lines
         .join("\n")
-        .replace("durationS: 1800", "durationS: 962");
+        .replace("durationS: 1800", "durationS: 962")
+        .replace("afterS: 90", "afterS: 10000");
     let period = 0.5;
     let log = stream::StreamLog {
         beats: (0..=1940)
@@ -97,10 +102,10 @@ fn capture(dir: &Path, aura_only: bool) -> Result<(), String> {
     .map_err(|e| e.to_string())?;
     let targets = [
         ("twilight-glade", 2.0),
-        ("galop-woods", 242.0),
-        ("mushroom-grove", 482.0),
-        ("ember-hollow", 722.0),
-        ("infernal-grove", 962.0),
+        ("galop-woods", 62.0),
+        ("mushroom-grove", 122.0),
+        ("ember-hollow", 182.0),
+        ("infernal-grove", 242.0),
     ];
     let mut next = 0;
     for tick in 1..=23090 {
@@ -170,7 +175,15 @@ fn capture(dir: &Path, aura_only: bool) -> Result<(), String> {
         };
         let mut overlay = std::mem::take(&mut layers.overlay);
         hud::draw(&view, &state, &art, 1280.0, 720.0, &mut overlay);
-        art.fonts["pixel"].text("DIAGNOSTIC: REAL4MIN FALLBACK / EMPTY FIELD / SYNTHETIC120BPM / SHORTENED VICTORY16:02",640.0,700.0,1.0,Align::Centre,[0.85,0.85,0.95,1.0],&mut overlay);
+        art.fonts["pixel"].text(
+            "DIAGNOSTIC: ACTUAL OPENING1MIN FALLBACK / EMPTY FIELD / SYNTHETIC120BPM",
+            640.0,
+            700.0,
+            1.0,
+            Align::Centre,
+            [0.85, 0.85, 0.95, 1.0],
+            &mut overlay,
+        );
         gpu.draw(&Frame {
             clear: crate::slice::CLEAR,
             world: &layers.sprites,
@@ -267,7 +280,7 @@ fn capture(dir: &Path, aura_only: bool) -> Result<(), String> {
     if next != targets.len() {
         return Err("missed a zone".into());
     }
-    clip.encode(&dir.join("four-minute-sweep.mp4"))?;
+    clip.encode(&dir.join("opening-minute-sweep.mp4"))?;
     eprintln!(
         "SP3: five actual zone stills, six labelled inventory aura poses, {} silent24fps sweep frames; no human feel/density/survival claim",
         clip.count()

@@ -608,6 +608,10 @@ impl Sim {
             .filter(|&fi| {
                 let (x, y) = self.pos(fi, w);
                 let f = &self.st.foes[fi];
+                // The signature keeps one identity while it is on stage.
+                if self.st.boss_foe == Some(fi) && !f.retreat {
+                    return false;
+                }
                 // Event members keep their identity until their run-clock expiry.
                 if matches!(
                     f.member,

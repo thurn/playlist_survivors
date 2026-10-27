@@ -58,6 +58,7 @@ impl Sim {
     }
     pub(super) fn boss_cue(&mut self, kind: BossCueKind, id: usize, x: f64, y: f64) {
         if kind == BossCueKind::Landed {
+            self.st.boss_presentation.last_landed_run = Some(self.st.run_s);
             self.st.boss_presentation.pending = self.st.boss_presentation.pending.saturating_sub(1);
             if self.st.boss_presentation.pending == 0 {
                 self.st.boss_presentation.landed_run = Some(self.st.run_s);

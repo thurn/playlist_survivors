@@ -1,7 +1,7 @@
 //! Choreography recording through actual speculation/late-key rollback.
 use crate::live::Engine;
 use sim::content::{ContentLibrary, SourceFile};
-fn content() -> (SourceFile, ContentLibrary) {
+pub(super) fn content() -> (SourceFile, ContentLibrary) {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
     let mut paths: Vec<_> = std::fs::read_dir(root.join("content"))
         .unwrap()
@@ -18,6 +18,7 @@ fn content() -> (SourceFile, ContentLibrary) {
         .collect();
     let level = SourceFile { name: "musical-check.yaml".into(),
         text: std::fs::read_to_string(root.join("levels/survivors.yaml")).unwrap()
+            .replace("afterS: 90", "afterS: 10000")
             .lines().map(|l| if l.trim().starts_with("- {\"minute\":") {
                 let minute = l.trim().split(',').next().unwrap().trim_start_matches("- {\"minute\":");
                 format!("    - {{\"minute\":{minute},\"minimum\":0,\"frequency\":1000,\"enemies\":[],\"bosses\":[],\"events\":[],\"treasure\":[]}}")

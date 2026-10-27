@@ -22,6 +22,8 @@ pub struct BossPresentation {
     pub pending: usize,
     pub warning_run: Option<f64>,
     pub landed_run: Option<f64>,
+    /// Every actual landing, independent of the aggregate notice envelope.
+    pub last_landed_run: Option<f64>,
 }
 impl BossPresentation {
     pub fn zoom(&self, run: f64) -> f64 {

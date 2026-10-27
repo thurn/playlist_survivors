@@ -223,6 +223,7 @@ impl Sim {
         }
         self.st.freeze.resume = None;
         self.st.musical.cancel_pending();
+        self.freeze_signature();
         self.st.freeze.resume_grid = ResumeGrid::Committed;
         self.st.freeze.blocked = self.st.freeze.down;
         self.st.held.clear();
@@ -571,7 +572,7 @@ impl Sim {
                     }
                     // Its check and interval belong to the held world clock too.
                     self.st.plan.zone_check = Some(at);
-                    self.st.plan.zone_last = at - self.env.director.zone_fallback_s;
+                    self.st.plan.zone_last = at - self.zone_interval();
                     *previous = at;
                 }
                 Ev::ZoneWave {

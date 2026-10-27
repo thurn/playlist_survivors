@@ -262,6 +262,7 @@ fn draw_fast(
 enum Drawn {
     Foe(usize),
     Hero,
+    Landmark(usize),
     Tall((i64, i64, String), usize),
 }
 
@@ -684,7 +685,14 @@ impl Scene {
             }
         }
         // (A prop shows where its own zone is: the wave's inside its ring, the old one outside.)
-        let shows = |zone: &str, p: &FieldProp| ground.zone_at(p.x, p.y).id == zone;
+        let landmark_props = super::signature::stones(view);
+        let shows = |zone: &str, p: &FieldProp| {
+            ground.zone_at(p.x, p.y).id == zone
+                && !view
+                    .landmarks
+                    .iter()
+                    .any(|l| l.id == "standing-stones" && (p.x - l.x).hypot(p.y - l.y) < 330.0)
+        };
         // Trees, bushes and mushrooms sway with the bar, as strongly as the pulse shows (each a
         // little differently).
         let swell = 0.5 + 0.5 * (std::f64::consts::TAU * pulse.bar.clamp(0.0, 1.0)).cos();
@@ -782,11 +790,25 @@ impl Scene {
                 }
             }
         }
+        order.extend(
+            landmark_props
+                .iter()
+                .enumerate()
+                .map(|(i, p)| (p.y, Drawn::Landmark(i))),
+        );
         order.sort_by(|a, b| a.0.total_cmp(&b.0));
         let mut hero_top = None;
         let hero_at = view.hero.map(|h| (h.x, h.y));
         for (_, who) in order {
             match who {
+                Drawn::Landmark(i) => {
+                    let p = &landmark_props[i];
+                    let fade = view
+                        .hero
+                        .map_or(1.0, |h| field::prop_fade(p.x, p.y, h.x, h.y))
+                        as f32;
+                    prop(p, [1.0, 1.0, 1.0, fade], out);
+                }
                 Drawn::Tall(key, k) => {
                     let p = &self.chunks[&key].tall[k];
                     let key = &key;
@@ -901,6 +923,15 @@ impl Scene {
                     };
                     let flash = reacting && (visibility >= 0.6 || f.survivor_boss);
                     let (mut x, mut y) = (f.x, f.y - bob);
+                    if let Some((_, start, land, _)) =
+                        view.signature.filter(|(boss, _, _, _)| *boss == id)
+                    {
+                        let song = view.run.map_or(view.s, |r| r.presentation_s);
+                        if song < land {
+                            let u = ((song - start) / (land - start).max(1e-6)).clamp(0.0, 1.0);
+                            y -= 180.0 * (1.0 - u) * (1.0 - u);
+                        }
+                    }
                     if let (Some((age, true)), Some(h)) = (struck, view.hero)
                         && (0.0..KNOCK_S).contains(&age)
                     {
@@ -1131,6 +1162,7 @@ impl Scene {
             }
             layers.overlay.push(hero);
         }
+        super::signature::draw(view, art, &at, scale, out);
         super::bosses::draw(view, art, &at, scale, w, h, out, &mut layers.overlay);
         super::treasure::draw(view, art, &at, scale, w, h, out, &mut layers.overlay);
         self.evolution.draw(

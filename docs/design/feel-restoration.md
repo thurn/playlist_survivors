@@ -547,7 +547,15 @@ and performance thresholds are unchanged.
 
 ### FR8 — Encounters and zones
 
-Pending implementation.
+Restored the one-time90s minotaur with reliable-beat entrance/slams, actual
+standing-stones arena, health/death/reward presentation and shared300 cap.
+Pauses and unreliable landings replan without duplicate actors or marks;
+source bosses retain separate landing priority and their existing chests.
+Opening fallback waves use60s, then240s; section/song punctuation remains small
+and keeps run continuity. Fast174BPM entrances now fit their actual known lead.
+[Evidence and commands](../../native/evidence/fr8/README.md) cover real music,
+late keys, tempos, source overlap and silent labelled captures. Human/System
+feel remains pending; the bead records cold review, checks and candidate.
 
 ### FR9 — Presentation
 

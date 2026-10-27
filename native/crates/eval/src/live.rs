@@ -153,6 +153,10 @@ pub enum Moment {
 /// places it on the beat grid, picks its sample and schedules it).
 #[derive(Clone, Debug, PartialEq)]
 pub enum Cause {
+    Slam {
+        s: f64,
+        x: f64,
+    },
     Boss(sim::survivors::BossCue),
     Treasure {
         s: f64,
@@ -232,6 +236,12 @@ const BOLT_KEEP_S: f64 = 1.0;
 /// What a frame draws.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct LiveView {
+    pub signature: Option<(usize, f64, f64, f64)>, // id, drop start, landing song, health
+    pub landmarks: Vec<sim::recorder::LandmarkRecord>,
+    pub slam_marks: BTreeMap<usize, sim::recorder::SlamMarkRecord>,
+    pub slams: Vec<sim::recorder::SlamRecord>,
+    pub punctuation: Option<f64>, // held world time
+
     pub recap: crate::recap::Recap,
     /// First fatal record, restored/retracted with the view on rollback.
     pub fatal_summary: Option<crate::recap::Summary>,
@@ -434,6 +444,9 @@ impl LiveView {
                         wave.s += gap;
                     }
                 }
+                if state.frozen.is_some() {
+                    self.slam_marks.clear();
+                }
                 self.level = u32::try_from(state.level).unwrap_or(u32::MAX);
                 self.run = Some(*state);
             }
@@ -462,6 +475,31 @@ impl LiveView {
                     },
                 );
             }
+            Record::Signature(id, start, land) => self.signature = Some((*id, *start, *land, 1.0)),
+            Record::BossHealth(health) => {
+                if let Some(b) = &mut self.signature {
+                    b.3 = *health;
+                }
+            }
+            Record::Landmark(l) => {
+                self.landmarks.push(l.clone());
+                if self.landmarks.len() > 8 {
+                    self.landmarks.remove(0);
+                }
+            }
+            Record::SlamMark(k, m) => {
+                self.slam_marks.insert(*k, *m);
+                while self.slam_marks.len() > 32 {
+                    self.slam_marks.pop_first();
+                }
+            }
+            Record::Slam(m) => {
+                self.slam_marks
+                    .retain(|_, p| (p.s_land - m.s_land).abs() > 1e-8);
+                self.slams.retain(|p| m.w_land - p.w_land <= 2.0);
+                self.slams.push(*m);
+            }
+            Record::Punctuation(w) => self.punctuation = Some(*w),
             Record::Dance { id, active } => {
                 if *active && self.foes.get(id).is_some_and(|f| f.death_w.is_none()) {
                     self.dancers.insert(*id);
@@ -629,6 +667,12 @@ impl LiveView {
 /// What the simulation reported, as the view applies it.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Record {
+    Signature(usize, f64, f64),
+    BossHealth(f64),
+    Landmark(sim::recorder::LandmarkRecord),
+    SlamMark(usize, sim::recorder::SlamMarkRecord),
+    Slam(sim::recorder::SlamRecord),
+    Punctuation(f64),
     Dance {
         id: usize,
         active: bool,
@@ -912,6 +956,29 @@ impl Recorder for LiveRecorder {
         });
     }
 
+    fn punctuation(&mut self, _s: f64, w: f64) {
+        self.0.borrow_mut().push(Record::Punctuation(w));
+    }
+    fn landmark(&mut self, l: sim::recorder::LandmarkRecord) {
+        self.0.borrow_mut().push(Record::Landmark(l));
+    }
+    fn boss(&mut self, id: usize, land_s: f64, _x: f64, _y: f64, s: f64) {
+        self.0.borrow_mut().push(Record::Signature(id, s, land_s));
+    }
+    fn boss_health(&mut self, _s: f64, health: f64) {
+        self.0.borrow_mut().push(Record::BossHealth(health));
+    }
+    fn slam_mark(&mut self, k: usize, m: sim::recorder::SlamMarkRecord) {
+        self.0.borrow_mut().push(Record::SlamMark(k, m));
+    }
+    fn slam(&mut self, m: sim::recorder::SlamRecord) {
+        let mut j = self.0.borrow_mut();
+        j.push(Record::Slam(m));
+        j.sound(Cause::Slam {
+            s: m.s_land,
+            x: m.x,
+        });
+    }
     fn dance_start(&mut self, id: usize, _s_from: f64, _anim: &str, _alternate: bool) {
         self.0.borrow_mut().push(Record::Dance { id, active: true });
     }
@@ -1891,7 +1958,8 @@ impl Cause {
     pub fn s(&self) -> f64 {
         match self {
             Cause::Boss(cue) => cue.song,
-            Cause::Swing { s, .. }
+            Cause::Slam { s, .. }
+            | Cause::Swing { s, .. }
             | Cause::Kill { s, .. }
             | Cause::Weapon { s, .. }
             | Cause::Hurt { s }

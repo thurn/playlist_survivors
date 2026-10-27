@@ -1,0 +1,5 @@
+    Checking sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-fr8/native/crates/sim)
+    Checking eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-fr8/native/crates/eval)
+    Checking players v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-fr8/native/crates/players)
+    Checking app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-fr8/native/crates/app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.40s

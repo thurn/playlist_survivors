@@ -192,6 +192,18 @@ pub(super) struct FinalePlan {
     pub blast: String,
 }
 
+impl BossPlan {
+    pub(super) fn signature(kind: String, s_enter: f64) -> Self {
+        Self {
+            kind,
+            s_enter,
+            slams: Vec::new(),
+            s_retreat: f64::INFINITY,
+            checks: 0,
+        }
+    }
+}
+
 /// The planner's state (snapshot state).
 #[derive(Clone, Debug, Default)]
 pub(super) struct Plan {
@@ -452,13 +464,23 @@ impl Sim {
         }
     }
 
+    pub(super) fn zone_interval(&self) -> f64 {
+        if self.st.survivor.is_some()
+            && self.st.plan.zone_last - self.st.freeze.total_s < 300.0 - 1e-9
+        {
+            60.0
+        } else {
+            self.director().zone_fallback_s
+        }
+    }
+
     /// The zone waves (`zoneWavePlan`): one on each detected section start, and one on the first
     /// beat `zoneFallbackS` after the last wave unless a start is known by then.
     pub(super) fn plan_zone_waves(&mut self) {
         if self.st.blasting && self.st.survivor.is_some() {
             return;
         }
-        let fallback_s = self.director().zone_fallback_s;
+        let fallback_s = self.zone_interval();
         loop {
             let last = self.st.plan.zone_last;
             let deadline = if self.env.input.level.survivors.is_some() {

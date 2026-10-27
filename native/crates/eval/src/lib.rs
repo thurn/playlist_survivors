@@ -12,3 +12,6 @@ pub mod scale;
 
 #[cfg(test)]
 mod musical_tests;
+
+#[cfg(test)]
+mod signature_tests;

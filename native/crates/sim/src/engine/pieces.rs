@@ -1021,6 +1021,7 @@ impl Sim {
         // A detected section starts: the roster steps, and a level-up whose experience is reached
         // falls due now.
         if let Some(section) = section {
+            self.rec.punctuation(self.st.s, self.st.w);
             self.st.section = section;
             if self.st.level_ready {
                 self.grant();
