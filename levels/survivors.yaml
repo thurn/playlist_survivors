@@ -67,7 +67,7 @@ director:
   sectionRule: { jumpDb: 6, minGapS: 8 }
   levelUps: []
   levelUpWaitS: 20
-  zoneFallbackS: 60
+  zoneFallbackS: 240
   smoothS: 2
   camera:
     quiet: { zoom: 1.3, lead: 30 }

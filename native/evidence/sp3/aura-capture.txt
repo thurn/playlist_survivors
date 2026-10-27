@@ -1,0 +1,4 @@
+   Compiling app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp3-zones-aura/native/crates/app)
+    Finished `release` profile [optimized] target(s) in 4.66s
+     Running `target/release/playlist-survivors --aura-check evidence/sp3`
+SP3: six labelled inventory-only aura poses at0..5 owned evolutions; quiet actual world, no acquisition/weapon-behavior claim

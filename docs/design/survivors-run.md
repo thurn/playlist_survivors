@@ -1581,6 +1581,27 @@ camera multiplier, SP5 owns density readability/performance. Play from
 Commit/staging OIDs and cold-review disposition are in hv-n7fn.31's notes.
 
 ### SP3
+
+The existing section sweeps now have their specified240-active-second
+fallback, including the configured stand-in pulse without a beat. Pause
+preserves the remainder. Victory starts an infernal-grove sweep and later
+queued zones cannot replace it. Existing director zoom/lead and SP2's
+boss multiplier remain authoritative; ambient/prop light and bloom follow
+energy, beat and accents. Known positive loudness jumps add a short drop
+pulse and at most64 trails on actual swarm actors. The hero's aura reads
+owned evolution count0–5 from Inventory, replacing pinned tier styling;
+base-only builds keep a small locating glow. Unknown tick/key/onset tails
+cannot affect the current camera or lane.
+
+[Evidence](../../native/evidence/sp3/README.md) keeps actual grid/free-pulse
+four-minute tours, pause/finale/causality checks, per-zone stills and a sweep,
+plus separately labelled inventory-only aura poses and synthetic source-swarm
+captures. These establish presentation, not dense real-run performance or
+human feel. No asset bake, source-stat/AI/offer/easy-knob retune or analyzer
+change. SP5 owns the milestone cold review and density budget. Play from
+`native/`: `cargo run --release -p app -- --playlist playlists/survivors-30.m3u --delayed`.
+Source/staging SHAs are recorded in hv-n7fn.32's native notes.
+
 ### SP4
 ### SP5
 

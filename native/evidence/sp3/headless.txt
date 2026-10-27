@@ -1,0 +1,25 @@
+    Finished `release` profile [optimized] target(s) in 0.23s
+     Running `target/release/playlist-survivors --file ../public/reactive/house-128/house-128.ogg --headless --delayed --press-beats --pick-first --seconds 35`
+slice: output MacBook Pro Speakers (calibrated): input offsets -48 ms, stomp -48 ms, display 45 ms, latency correction 0 ms
+slice: file mode (../public/reactive/house-128/house-128.ogg), Delayed listening (M = 3 s), output 48000 Hz, L_out 16.6 ms, heard 3016.6 ms after capture
+slice: recording the session to /tmp/sp3-sessions/1793073410
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [0, 0, 0, 0, 0], denied [0, 0, 0, 0, 0]
+slice: frame work median 0.00 ms, p95 0.00, p99 0.00 (0 frames a second, paced while hidden); rollbacks re-simulated 0 ms
+slice: sounds 0 started, 0 skipped late, 0 dropped, 0 cancelled; 0 rollbacks replaying 0.0 s, 0 late keys
+slice: run started at song time 2.8
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [1, 2, 1, 1, 0], denied [0, 0, 0, 0, 0]
+slice: survivors minute Some(0), run 4.208s, spawned 18, alive 17: {"vs-bat3": 17}
+slice: frame work median 0.00 ms, p95 0.08, p99 0.32 (106 frames a second, paced while hidden); rollbacks re-simulated 2 ms
+slice: sounds 13 started, 0 skipped late, 0 dropped, 0 cancelled; 13 rollbacks replaying 2.8 s, 0 late keys
+slice: world LEVEL UP at run 13.942 s (song 13.950)
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [1, 2, 2, 1, 3], denied [0, 0, 0, 0, 0]
+slice: survivors minute Some(0), run 13.942s, spawned 29, alive 17: {"vs-bat3": 17}
+slice: frame work median 0.04 ms, p95 0.11, p99 0.25 (106 frames a second, paced while hidden); rollbacks re-simulated 8 ms
+slice: sounds 61 started, 0 skipped late, 0 dropped, 2 cancelled; 45 rollbacks replaying 9.6 s, 0 late keys
+slice: pick-first queues level 2 card1 MAGIC WAND rank 0 > 1 at 15.001, third reveal 15.000
+slice: world RESUMED at run 13.947 s (song 15.475)
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [2, 4, 2, 1, 3], denied [0, 0, 1, 0, 0]
+slice: survivors minute Some(0), run 22.689s, spawned 69, alive 12: {"vs-bat3": 12}
+slice: frame work median 0.06 ms, p95 0.13, p99 0.36 (107 frames a second, paced while hidden); rollbacks re-simulated 15 ms
+slice: sounds 163 started, 0 skipped late, 0 dropped, 22 cancelled; 77 rollbacks replaying 16.5 s, 0 late keys
+slice: run over (Stopped), 29 s; sounds 218 started, 0 skipped late, 0 dropped

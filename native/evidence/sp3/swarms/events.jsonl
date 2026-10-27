@@ -1,0 +1,6 @@
+{"case":"bat-drop","event":"admission","song":3.05,"count":50,"jumpKnownAt":3.0}
+{"case":"bat-drop","event":"complete","peak":50,"frames":96,"heroHealth":1.0}
+{"case":"ghost-drop","event":"admission","song":3.05,"count":20,"jumpKnownAt":3.0}
+{"case":"ghost-drop","event":"complete","peak":20,"frames":96,"heroHealth":1.0}
+{"case":"flower-wall","event":"admission","song":3.05,"count":100,"jumpKnownAt":3.0}
+{"case":"flower-wall","event":"complete","peak":100,"frames":192,"heroHealth":1.0}

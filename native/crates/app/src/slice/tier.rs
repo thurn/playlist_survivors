@@ -56,14 +56,23 @@ pub fn ground(
     let (sx, sy) = at(hero.x, hero.y);
     if let Some(&glow) = art.proc.get("glow") {
         let k = glow.w as f32 * scale;
-        let c = if tier > 0 {
+        let c = if view.run.is_some() {
+            let aura = super::atmosphere::aura(view);
+            [
+                aura.color[0],
+                aura.color[1],
+                aura.color[2],
+                0.30 + 0.04 * aura.count as f32,
+            ]
+        } else if tier > 0 {
             with_alpha(rgb(AURA_TINTS[tier]), 0.7)
         } else {
             with_alpha(rgb(0x00ff_f0b0), 0.55)
         };
         out.push(Sprite::centred(glow, sx, sy, 1.6 * k, 0.8 * k).tinted(c));
     }
-    if ring > 0.0
+    if view.run.is_none()
+        && ring > 0.0
         && let Some(&r) = art.proc.get("ring")
     {
         let d = (2.0 * PICKUP_RADIUS[tier]) as f32 * scale;
@@ -83,13 +92,24 @@ pub fn aura(
     out: &mut Vec<Sprite>,
 ) {
     let tier = index(view);
-    let Some(&glow) = art.proc.get("glow").filter(|_| tier > 0) else {
+    let build = super::atmosphere::aura(view);
+    let strength = if view.run.is_some() {
+        build.alpha
+    } else {
+        AURA_ALPHA[tier]
+    };
+    let Some(&glow) = art.proc.get("glow").filter(|_| strength > 0.0) else {
         return;
     };
     let p = pulse as f32;
     let (sx, sy) = at(hero.x, hero.y - hero.z - 16.0);
-    let k = glow.w as f32 * scale;
-    let c = with_alpha(rgb(AURA_TINTS[tier]), AURA_ALPHA[tier] * (0.8 + 0.2 * p));
+    let k = glow.w as f32 * scale * if view.run.is_some() { build.size } else { 1.0 };
+    let color = if view.run.is_some() {
+        [build.color[0], build.color[1], build.color[2], 1.0]
+    } else {
+        rgb(AURA_TINTS[tier])
+    };
+    let c = with_alpha(color, strength * (0.8 + 0.2 * p));
     out.push(
         Sprite::centred(glow, sx, sy, (1.5 + 0.25 * p) * k, (1.9 + 0.3 * p) * k)
             .tinted(c)

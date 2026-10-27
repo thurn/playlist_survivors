@@ -407,8 +407,8 @@ fn section_changes_learned_during_pause_never_rewind_the_clock() {
 #[test]
 fn a_long_pause_preserves_the_zone_fallbacks_remaining_time() {
     use sim::{movement::InputKey as K, survivors::FreezeReason};
-    for (pause, resume, fallback) in [(1.1, 70.1, 129.5), (59.3, 70.1, 71.5)] {
-        let log = steady_log(140);
+    for (pause, resume, fallback) in [(1.1, 70.1, 309.5), (59.3, 70.1, 251.5)] {
+        let log = steady_log(330);
         let (rec, mut sim) = start(&log, 1800.0);
         sim.freeze_at(pause, FreezeReason::Paused);
         key(&mut sim, resume, K::Pause, true);
@@ -532,5 +532,54 @@ fn audible_beatless_victory_uses_free_pulses_and_ignores_uncommitted_beats() {
         assert_eq!(a.run_s(), 2.2);
         assert_eq!(common::recording(&ra), common::recording(&rb));
         assert!(ra.borrow().hits.iter().any(|h| h["what"] == "finale-blast"));
+    }
+}
+
+#[test]
+fn four_minute_fallback_tours_five_zones_and_victory_always_returns_to_infernal() {
+    for grid in [true, false] {
+        let mut log = steady_log(1210);
+        if !grid {
+            log.beats.clear();
+        }
+        let (rec, mut sim) = start(&log, 1201.0);
+        sim.advance_to(1199.9);
+        let expected = [
+            "galop-woods",
+            "mushroom-grove",
+            "ember-hollow",
+            "infernal-grove",
+        ];
+        {
+            let rec = rec.borrow();
+            assert_eq!(rec.zone_waves.len(), 4);
+            for (i, zone) in expected.into_iter().enumerate() {
+                assert_eq!(rec.zone_waves[i].zone, zone);
+                let previous = if i == 0 { 0.0 } else { rec.zone_waves[i - 1].s };
+                let gap = rec.zone_waves[i].s - previous;
+                let pulse = if grid {
+                    0.5
+                } else {
+                    common::library().hero.stride.free_period_s
+                };
+                assert!(gap >= 240.0 - 1e-7 && gap <= 240.0 + pulse + 1e-7);
+            }
+        }
+        // The fifth fallback cycles away immediately before victory; the finale must restore infernal.
+        sim.advance_to(1205.0);
+        let rec = rec.borrow();
+        assert!(
+            rec.zone_waves
+                .iter()
+                .any(|z| z.s >= 1200.0 && z.zone == "twilight-glade")
+        );
+        assert_eq!(rec.zone_waves.last().unwrap().zone, "infernal-grove");
+        println!(
+            "SP3 grid{grid}: {:?}",
+            rec.zone_waves
+                .iter()
+                .map(|z| (&z.zone, z.s))
+                .collect::<Vec<_>>()
+        );
     }
 }

@@ -139,7 +139,7 @@ fn grade(theme: &ZoneTheme, pulse: Pulse, now: f64, pixel: f32, fast: &lane::Fra
     Grade {
         ambient: [ambient(amb[0]), ambient(amb[1]), ambient(amb[2])],
         pulse: 1.0 + (0.05 + 0.1 * loud) * intensity * beat,
-        bloom: 0.55,
+        bloom: 0.35 + 0.3 * loud + 0.08 * beat + 0.06 * fast.drop as f32,
         mul: [0, 1, 2].map(|i| mul[i] * look.mul[i]),
         lift: [0, 1, 2].map(|i| lift[i] + look.lift[i]),
         contrast,
@@ -776,7 +776,10 @@ impl Scene {
                             y: sy,
                             radius: (l.radius * flick) as f32 * scale,
                             color: [c[0], c[1], c[2]],
-                            strength: 0.8 * fade,
+                            strength: (0.45
+                                + 0.35 * fast.loudness as f32
+                                + 0.1 * fast.flash as f32)
+                                * fade,
                         });
                     }
                 }
@@ -1027,6 +1030,7 @@ impl Scene {
         if fa > layers.grade.flash[3] {
             layers.grade.flash = [1.0, 1.0, 1.0, fa];
         }
+        super::atmosphere::drop_trails(view, art, &at, scale, fast.drop, out);
         super::bosses::draw(view, art, &at, scale, w, h, out, &mut layers.overlay);
         super::treasure::draw(view, art, &at, scale, w, h, out, &mut layers.overlay);
         self.numbers.draw(art, now, &at, scale, &mut layers.overlay);

@@ -455,6 +455,9 @@ impl Sim {
     /// The zone waves (`zoneWavePlan`): one on each detected section start, and one on the first
     /// beat `zoneFallbackS` after the last wave unless a start is known by then.
     pub(super) fn plan_zone_waves(&mut self) {
+        if self.st.blasting && self.st.survivor.is_some() {
+            return;
+        }
         let fallback_s = self.director().zone_fallback_s;
         loop {
             let last = self.st.plan.zone_last;
@@ -463,7 +466,12 @@ impl Sim {
             } else {
                 last + fallback_s
             };
-            let fallback = self.first_beat_at_or_after(deadline);
+            let fallback = match self.first_beat_at_or_after(deadline) {
+                Known::NotYet if self.st.survivor.is_some() => {
+                    Known::Yes(self.free_grid_at_or_after(deadline, 1.0))
+                }
+                known => known,
+            };
             let next = self
                 .st
                 .plan

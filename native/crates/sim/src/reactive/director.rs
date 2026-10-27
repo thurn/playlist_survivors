@@ -46,6 +46,10 @@ pub fn level_blend(
     let mut hi = s;
     while i >= 0 && hi > t0 + 1e-12 {
         let tick = &all[i as usize];
+        if tick.known_at > s + 1e-9 {
+            i -= 1;
+            continue;
+        }
         let lo = max(tick.t, t0);
         sum += (hi - lo) * value(tick.level.unwrap_or(Level::Medium));
         hi = lo;
@@ -71,4 +75,37 @@ pub fn tick_index_in(ticks: &[stream::Tick], s: f64) -> isize {
         }
     }
     lo as isize - 1
+}
+
+#[cfg(test)]
+mod knowledge_tests {
+    use super::*;
+    #[test]
+    fn late_tick_cannot_change_camera_before_its_known_time() {
+        let mut log = StreamLog::default();
+        log.ticks.push(stream::Tick {
+            t: 0.0,
+            known_at: 0.0,
+            evidence: 1.0,
+            energy: 0.5,
+            level: Some(Level::Medium),
+            key: None,
+            bands: None,
+            brightness: None,
+        });
+        let value = |l| match l {
+            Level::Quiet => 1.3,
+            Level::Medium => 1.2,
+            Level::Loud => 1.05,
+        };
+        let before = level_blend(&log, 1, 2.0, 2.0, &value);
+        log.ticks.push(stream::Tick {
+            t: 1.0,
+            known_at: 3.0,
+            level: Some(Level::Loud),
+            ..log.ticks[0].clone()
+        });
+        assert_eq!(level_blend(&log, 2, 2.0, 2.0, &value), before);
+        assert_eq!(level_blend(&log, 2, 3.1, 2.0, &value), 1.05);
+    }
 }

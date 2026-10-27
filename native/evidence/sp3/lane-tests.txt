@@ -1,0 +1,14 @@
+   Compiling app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp3-zones-aura/native/crates/app)
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.86s
+     Running unittests src/main.rs (target/debug/deps/playlist_survivors-117eebc7468b2345)
+
+running 6 tests
+test slice::lane::tests::keys_read_as_their_pitch_class_and_mode ... ok
+test slice::lane::tests::unknown_ticks_jumps_and_onsets_do_not_change_the_frame_or_zone_key ... ok
+test slice::lane::tests::nothing_is_shown_before_it_is_known ... ok
+test slice::lane::tests::the_pulse_follows_the_evidence_and_the_onsets_flash_once_a_gap ... ok
+test slice::lane::tests::presses_ripple_and_the_good_ones_light_the_ground ... ok
+test slice::lane::tests::a_wave_takes_the_key_heard_before_it_and_fades_its_look_in ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 54 filtered out; finished in 0.00s
+

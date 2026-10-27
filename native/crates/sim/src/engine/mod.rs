@@ -1960,6 +1960,16 @@ impl Sim {
                 if band == 0 {
                     self.st.blasting = true;
                     if self.env.input.level.survivors.is_some() {
+                        if let Some(zone) = self
+                            .env
+                            .input
+                            .level
+                            .zones
+                            .iter()
+                            .position(|z| z == "infernal-grove")
+                        {
+                            self.zone_wave(zone, None);
+                        }
                         let pose = self.hero_pose(self.st.w);
                         self.st.rest_pose = (pose.x, pose.y);
                         self.st.step = None;

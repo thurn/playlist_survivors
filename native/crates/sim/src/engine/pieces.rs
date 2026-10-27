@@ -996,6 +996,12 @@ impl Sim {
     // -------------------------------------------------------------- the open field
 
     pub(super) fn zone_wave(&mut self, zone: usize, section: Option<usize>) {
+        if self.st.survivor.is_some()
+            && self.st.blasting
+            && self.env.input.level.zones[zone] != "infernal-grove"
+        {
+            return;
+        }
         let hp = self.hero_pose(self.st.w);
         let id = self.env.input.level.zones[zone].clone();
         self.rec.zone_wave(ZoneWaveRecord {

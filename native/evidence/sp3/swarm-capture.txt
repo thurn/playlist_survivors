@@ -1,0 +1,6 @@
+   Compiling app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp3-zones-aura/native/crates/app)
+    Finished `release` profile [optimized] target(s) in 3.66s
+     Running `target/release/playlist-survivors --swarm-check evidence/sp3/swarms`
+swarm-check bat-drop: actual event peak50, 96 silent frames24fps; HP1e6/XP0, normal hero damage, diagnostic view0.55, source first attempt/count/speed/contact/expiry; synthetic128BPM
+swarm-check ghost-drop: actual event peak20, 96 silent frames24fps; HP1e6/XP0, normal hero damage, diagnostic view0.55, source first attempt/count/speed/contact/expiry; synthetic128BPM
+swarm-check flower-wall: actual event peak100, 192 silent frames24fps; HP1e6/XP0, normal hero damage, diagnostic view0.55, source first attempt/count/speed/contact/expiry; synthetic128BPM

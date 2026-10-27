@@ -65,6 +65,8 @@ pub struct Frame {
     pub press: f64,
     pub mix: f64,
     pub loudness: f64,
+    /// A short pulse from an actual positive loudness jump already known at this frame.
+    pub drop: f64,
     /// The accent flash's alpha and the camera's punch (a zoom factor over 1).
     pub flash: f64,
     pub punch: f64,
@@ -132,8 +134,19 @@ impl Lane {
         // The pulse: the latest tick's evidence, and the last 0.5 s's clarity and energy.
         let ticks = &log.ticks;
         let i = ticks.partition_point(|t| t.t <= s + 1e-9);
-        if i > 0 {
-            f.amp = ((ticks[i - 1].evidence - gate) / gate).clamp(0.0, 1.0);
+        if let Some(t) = ticks[..i].iter().rev().find(|t| t.known_at <= s + 1e-9) {
+            f.amp = ((t.evidence - gate) / gate).clamp(0.0, 1.0);
+        }
+        if let Some(jump) = log
+            .jumps
+            .as_deref()
+            .unwrap_or(&[])
+            .iter()
+            .rev()
+            .find(|j| j.known_at <= s && j.t <= s && j.db >= 6.0)
+        {
+            let age = s - jump.known_at.max(jump.t);
+            f.drop = (jump.db / 12.0).clamp(0.0, 1.0) * (-age / 0.3).exp();
         }
         let (mut n, mut clear, mut energy) = (0usize, 0usize, 0.0);
         for t in ticks[..i]
@@ -141,6 +154,9 @@ impl Lane {
             .rev()
             .take_while(|t| t.t > s - SMOOTH_S + 1e-9)
         {
+            if t.known_at > s + 1e-9 {
+                continue;
+            }
             n += 1;
             clear += usize::from(t.evidence >= gate);
             energy += t.energy;
@@ -211,7 +227,10 @@ impl Lane {
                 ..Lane::default()
             };
         }
-        for o in &log.onsets[self.shares.len()..] {
+        for o in log.onsets[self.shares.len()..]
+            .iter()
+            .take_while(|o| o.known_at <= s + 1e-9)
+        {
             let decay = 0.5f64.powf((o.known_at - self.peak_at).max(0.0) / ONSET_PEAK_HALF_S);
             self.peak = o.strength.max(self.peak * decay);
             self.peak_at = o.known_at;
@@ -286,7 +305,9 @@ fn dominant_key(log: &StreamLog, s: f64) -> Option<u8> {
         .rev()
         .take_while(|t| t.t > s - KEY_WINDOW_S)
     {
-        if let Some(c) = t.key.as_deref().and_then(key_code) {
+        if t.known_at <= s + 1e-9
+            && let Some(c) = t.key.as_deref().and_then(key_code)
+        {
             match votes.iter_mut().find(|v| v.0 == c) {
                 Some(v) => v.1 += 1,
                 None => votes.push((c, 1)),
@@ -426,12 +447,18 @@ mod tests {
         // (Evidence twice the gate: a full pulse, the beat clear throughout.)
         assert!((f.amp - 1.0).abs() < 1e-9 && (f.mix - 1.0).abs() < 1e-9);
         // The second onset is too soon for a flash of its own: the flash is the first's.
-        assert_eq!(lane.flashes, vec![1.0, 1.7]);
+        assert_eq!(
+            lane.flashes,
+            vec![1.0],
+            "the future onset is not learned yet"
+        );
         assert!((f.flash - 0.22 * (-0.25f64 / 0.07).exp()).abs() < 1e-9);
         // A quieter onset is a smaller share of the peak, and flinches the horde less.
         assert!((lane.shares[1] - 0.5).abs() < 0.01);
         assert_eq!(f.bursts.len(), 2);
         assert!(f.flinch < 0.5 && f.flinch > 0.0);
+        lane.frame(&l, 0.2, 1.75, 1.75, None);
+        assert_eq!(lane.flashes, vec![1.0, 1.7]);
     }
 
     #[test]
@@ -467,5 +494,30 @@ mod tests {
         assert!((f.press - (-0.1f64 / 0.25).exp()).abs() < 1e-9);
         let later = lane.frame(&log(), 0.2, 0.0, 13.0, None);
         assert!(later.ripples.is_empty() && later.glow == 0.0);
+    }
+    #[test]
+    fn unknown_ticks_jumps_and_onsets_do_not_change_the_frame_or_zone_key() {
+        let mut log = StreamLog::default();
+        log.ticks.push(tick(0.0, 1.0, "C major"));
+        let baseline = Lane::default().frame(&log, 0.2, 1.0, 1.0, Some(1.0));
+        let mut late = tick(0.9, 0.0, "F# minor");
+        late.energy = 1.0;
+        late.known_at = 2.0;
+        log.ticks.push(late);
+        log.jumps = Some(vec![stream::Jump {
+            t: 0.9,
+            known_at: 2.0,
+            db: 12.0,
+        }]);
+        log.onsets.push(onset(2.0, 1.0, true));
+        let frame = Lane::default().frame(&log, 0.2, 1.0, 1.0, Some(1.0));
+        assert_eq!(frame.loudness, baseline.loudness);
+        assert_eq!(frame.amp, baseline.amp);
+        assert_eq!(frame.tint, baseline.tint);
+        assert_eq!(frame.drop, 0.0);
+        assert!(frame.bursts.is_empty());
+        let after = Lane::default().frame(&log, 0.2, 2.0, 2.0, None);
+        assert_eq!(after.drop, 1.0);
+        assert!(!after.bursts.is_empty());
     }
 }

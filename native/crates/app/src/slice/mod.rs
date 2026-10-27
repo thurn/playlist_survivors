@@ -38,6 +38,7 @@ mod damage;
 mod lightning;
 mod roster;
 // The tap and output are the phase 0 spike's (57e846a^:native/spike), kept as they were.
+mod atmosphere;
 mod bosses;
 #[allow(clippy::pedantic, unused_qualifications, dead_code)]
 mod coreaudio;
@@ -171,6 +172,8 @@ struct Options {
     hud_full_slots: bool,
     sound_check: Option<PathBuf>,
     cards_check: Option<PathBuf>,
+    aura_check: Option<PathBuf>,
+    zone_check: Option<PathBuf>,
     boss_check: Option<PathBuf>,
     treasure_check: Option<PathBuf>,
     hook_check: Option<PathBuf>,
@@ -237,6 +240,8 @@ fn options(args: &[String]) -> Result<Options, String> {
         hud_full_slots: false,
         sound_check: None,
         cards_check: None,
+        aura_check: None,
+        zone_check: None,
         boss_check: None,
         treasure_check: None,
         hook_check: None,
@@ -304,6 +309,20 @@ fn options(args: &[String]) -> Result<Options, String> {
                 o.hook_check = Some(
                     it.next()
                         .ok_or("--hook-check needs a recorded survive directory")?
+                        .into(),
+                );
+            }
+            "--aura-check" => {
+                o.aura_check = Some(
+                    it.next()
+                        .ok_or("--aura-check needs an output directory")?
+                        .into(),
+                );
+            }
+            "--zone-check" => {
+                o.zone_check = Some(
+                    it.next()
+                        .ok_or("--zone-check needs an output directory")?
                         .into(),
                 );
             }
@@ -688,6 +707,12 @@ pub fn run(args: &[String]) -> Result<(), String> {
     }
     if let Some(dir) = &opts.hook_check {
         return hook_check::run(dir);
+    }
+    if let Some(dir) = &opts.aura_check {
+        return atmosphere::check::auras(dir);
+    }
+    if let Some(dir) = &opts.zone_check {
+        return atmosphere::check::run(dir);
     }
     if let Some(dir) = &opts.boss_check {
         return treasure::check::bosses(dir);
