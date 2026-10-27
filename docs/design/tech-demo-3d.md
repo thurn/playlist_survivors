@@ -27,7 +27,7 @@ It produces three things:
   number of on-screen monsters that fits the frame budget, what limits it, and
   a recommended envelope for game design. It also shows how rich the
   environment can be, and what that richness costs in monsters.
-- **The demo build.** A macOS app that plays the full 3:19 song, with the horde
+- **The demo build.** A Windows app that plays the full 3:19 song, with the horde
   peaking at that envelope in the climax.
 - **A capture.** A 1080p60 video of the demo for sharing.
 
@@ -39,8 +39,9 @@ simplest option wins.
 
 These were settled with the user on 2026-10-26 in a design interview, and
 revised the same day in a review interview. The target song was changed to
-*Action* at the user's request on 2026-10-27. Executors treat these decisions
-as fixed.
+*Action* at the user's request on 2026-10-27. The same day, the user moved
+development and measurement from the M5 Max Mac to **Cygnus**, their Windows
+desktop (Decisions 3, 4, 16 and 18). Executors treat these decisions as fixed.
 Every other choice is the executor's, recorded with its reasons in the bead's
 notes.
 
@@ -54,21 +55,24 @@ notes.
    - It is the most common laptop GPU on Steam in September 2026: 3.5% of all
      GPUs, ahead of the RTX 5060 Laptop (2.5%), RTX 3060 Laptop (1.7%) and
      RTX 4050 Laptop (1.6%).
-   - The equivalent Mac floor is an M3 Pro or M4 Pro class machine.
-   - Base M-series MacBook Airs, at roughly a third of a 4060 Laptop's GPU,
-     are not targeted.
-   - No Windows player is built or run.
-4. **Validation happens on this M5 Max only.** Budgets are translated from
-   published benchmarks; no target device is bought. Every target-hardware
-   number in the report is labeled as inferred and shows its factors.
+   - The demo is a Windows x64 player on Direct3D 12. No macOS player is
+     built or measured.
+4. **Validation happens on Cygnus only:** an Intel Core i7-12700F with an
+   NVIDIA RTX 4070 Ti (12 GB) and 32 GB of RAM, on Windows 11 Home 25H2.
+   - Its GPU has the target's architecture (Ada Lovelace), so its costs scale
+     to the target instead of hiding behind a different design, as the Mac's
+     tile-based GPU did.
+   - Budgets are translated from published benchmarks; no target device is
+     bought. Every target-hardware number in the report is labeled as
+     inferred and shows its factors.
 5. **The client gets 75% of the target frame:** 12.5 ms of 16.7 ms. The rest
    is reserved for the real game's sim layer, HUD, audio and input. The
    headline count is measured against this budget. It is the count of the
    **envelope**, the recommended view width and on-screen count (defined in
    [The report](#the-report)), and the demo's climax runs at exactly that
    envelope.
-6. **Engine: Unity 6.6 (6000.6.7f1) with URP,** plus bespoke GPU-driven systems
-   for the crowd and the particles.
+6. **Engine: Unity 6.6 (6000.6.7f1) with URP on Direct3D 12,** plus bespoke
+   GPU-driven systems for the crowd and the particles.
 7. **The project lives in this repository.** Paid vendor assets, and anything
    derived from them, are never committed, because the repository is public
    (see [Vendor Assets and Licensing](#vendor-assets-and-licensing)).
@@ -98,19 +102,27 @@ notes.
       gives the trade between scene richness and monster count.
 13. **The song is *Action* by Alessia Labate & Conrad Taylor (NCS Release),**
     using the user-supplied MP3, 198.968 s (about 3:19, measured with
-    `ffprobe`). The source on this machine is
-    `/Users/dthurn/Downloads/Alessia Labate, Conrad Taylor - Action [NCS Release].mp3`.
+    `ffprobe`). The source on the Mac is
+    `/Users/dthurn/Downloads/Alessia Labate, Conrad Taylor - Action [NCS Release].mp3`,
+    copied to Cygnus with the vendor sources (see
+    [Setting up Cygnus](#setting-up-cygnus)).
     The full recording is the timing reference; TD0 maps its sections and
     accents before setting the horde's build, releases and final climax.
 14. **The hero fights with sword combos and beat spells.**
 15. **Native 1080p by default.** MSAA 4× and TAA are compared. Upscaling is
     reported only as extra headroom, never in the headline count.
-16. **Benchmark sweeps may open a window** on the screen of the **operator**,
-    the developer who runs the demo and reviews its evidence. Routine checks
+16. **Benchmark sweeps may take Cygnus's screen at any time.** Cygnus is
+    mostly idle, and the **operator**, the developer who runs the demo and
+    reviews its evidence, rarely uses it while agents work. Routine checks
     stay windowless.
-17. **A new epic in the project's issue tracker, run in parallel with the
-    survivors run** (`hv-n7fn`), with plan keys `TD0` to `TD15` (see
-    [Implementation Plan](#implementation-plan)).
+17. **A new epic in the project's issue tracker,** with plan keys `TD0` to
+    `TD15` (see [Implementation Plan](#implementation-plan)).
+18. **The Mac stays the control plane; Cygnus does the Unity work.** Beads,
+    Hive and Tollgate stay on the Mac, which lands every change and owns
+    remote master. A Mac executor claims each bead and hands its Unity work to
+    a worker session on Cygnus, which returns a branch through a private relay
+    repository (see [Working Across Two Machines](#working-across-two-machines)).
+    Nothing in Hive or Tollgate is ported to Windows.
 
 ## Related Information
 
@@ -134,7 +146,7 @@ notes.
 - [beat-steps.md](beat-steps.md): why the 2D demo replaced choreography
   planned backwards from kills with a forward simulation. This demo's
   choreographer is a forward simulation for the same reason.
-- [survivors-run.md](survivors-run.md): the parallel epic. Its Vampire
+- [survivors-run.md](survivors-run.md): the finished survivors run. Its Vampire
   Survivors numbers (speeds, kill pacing) are a reference for plausible horde
   behavior.
 - [native-app.md](native-app.md): the native Rust app, its windowless-testing
@@ -143,16 +155,20 @@ notes.
   [video cards](https://store.steampowered.com/hwsurvey/videocard/) and the
   [overview](https://store.steampowered.com/hwsurvey/Steam-Hardware-Software-Survey-Welcome-to-Steam)
   (Windows 95%, macOS 1.9%, 1920×1080 on 48% of primary displays).
-- [Notebookcheck's M5 Pro and M5 Max GPU analysis](https://www.notebookcheck.net/Apple-M5-Pro-M5-Max-GPU-Analysis-M5-Max-GPU-on-par-with-the-GeForce-RTX-5070-and-faster-than-Strix-Halo.1246060.0.html):
-  the M5 Max 40-core GPU scores 3,924 in 3DMark Steel Nomad, against about
-  2,025 for an RTX 4060 Laptop.
+- 3DMark Steel Nomad scores: about 5,040 for an RTX 4070 Ti and about 2,025
+  for an RTX 4060 Laptop. TD7 confirms both from a published comparison and
+  records the source.
+- [windows-delayed-spike.md](windows-delayed-spike.md): the earlier Windows
+  spike on Cygnus, and how that machine was first set up.
 - [NVIDIA FLIP](https://github.com/NVlabs/flip): the image-difference metric
   behind the fidelity A/B checks.
-- Asset sources on this machine, both read-only:
+- Asset sources, read-only. On the Mac:
   - `~/synty`: Synty POLYGON and ANIMATION packs as `.unitypackage.gz` files.
   - `~/unity_assets/UnityAssets`: a Unity 6.6 project with Hovl Studio,
     KriptoFX, Magic Pig Games (Infinity PBR), sound packs and other packs
     already imported.
+  - Cygnus gets a copy of the packs the demo uses (see
+    [Setting up Cygnus](#setting-up-cygnus)).
 
 ## What the Viewer Sees
 
@@ -285,38 +301,38 @@ dying monsters separately and headlines their sum.
 ## Performance Budget
 
 The target is 60 fps on an RTX 4060 Laptop, and the client may use 75% of
-each frame: 12.5 ms of 16.7 ms. All development happens on an M5 Max, so the
-target budget is translated into pass lines for this machine.
+each frame: 12.5 ms of 16.7 ms. All measurement happens on Cygnus, so the
+target budget is translated into pass lines for that machine.
 
 The translation factors are approximate:
 
-- **GPU: the M5 Max is about 1.9× an RTX 4060 Laptop** (Steel Nomad 3,924
-  against 2,025).
-- **CPU: one M5 Max performance core is about 1.7× one performance core** of
-  a typical 4060 laptop's processor (an i7-13620H or Ryzen 7 7840HS class
-  part). This is an estimate from single-thread benchmark scores, and the
-  report states it as an assumption.
-- **An uncertainty margin of 1.2×** applies to both, for drivers, thermals and
-  Windows.
+- **GPU: Cygnus's RTX 4070 Ti is about 2.5× an RTX 4060 Laptop** (Steel Nomad
+  about 5,040 against 2,025).
+- **CPU: one i7-12700F performance core is about one performance core** of a
+  typical 4060 laptop's processor (an i7-13620H or Ryzen 7 7840HS class
+  part), within about 10%. This is an estimate from single-thread benchmark
+  scores, and the report states it as an assumption.
+- **An uncertainty margin of 1.2×** applies to both, for drivers, thermals
+  and the spread of laptop power limits.
 - **Unity's job workers are capped at 6.** A 4060 laptop typically has 6 to 8
   performance cores, shared with the main thread, render thread and the OS.
+  The 12700F has 8, plus 4 efficiency cores.
 
 ```
-                  target (RTX 4060 Laptop)   M5 Max pass line
-GPU frame         12.5 ms                    5.5 ms   (÷ 1.9 ÷ 1.2)
-main thread       12.5 ms                    6.0 ms   (÷ 1.7 ÷ 1.2)
-render thread     12.5 ms                    6.0 ms   (÷ 1.7 ÷ 1.2)
+                  target (RTX 4060 Laptop)   Cygnus pass line
+GPU frame         12.5 ms                    4.2 ms   (÷ 2.5 ÷ 1.2)
+main thread       12.5 ms                   10.4 ms   (÷ 1.0 ÷ 1.2)
+render thread     12.5 ms                   10.4 ms   (÷ 1.0 ÷ 1.2)
 job workers       6 to 8 cores               capped at 6
 ```
 
-The GPU line is the "180 fps on this Mac" rule of thumb: 5.5 ms is about
-180 fps.
+The GPU line is "240 fps on Cygnus": 4.2 ms is about 240 fps at 1920×1080.
 
 The **pass rule**: a configuration passes when, over a 20 s steady-state
 window after 5 s of warm-up:
 
-- p99 GPU frame time is at most 5.5 ms;
-- p99 main-thread and render-thread CPU times are at most 6.0 ms each;
+- p99 GPU frame time is at most 4.2 ms;
+- p99 main-thread and render-thread CPU times are at most 10.4 ms each;
 - no single frame exceeds twice its line;
 - no particle spawn was rejected, and the light dropped by the effect-light
   pool stayed within its limit (see [Effects](#effects));
@@ -328,62 +344,57 @@ window, starting every 5 s, meets the same lines, and no frame anywhere
 exceeds twice its line.
 
 The environment has a ceiling of its own: the empty arena, with lighting and
-post-processing, gets at most 2.0 ms of GPU p99 on the M5 Max, about 4.5 ms of
+post-processing, gets at most 1.5 ms of GPU p99 on Cygnus, about 4.5 ms of
 the target's 12.5 ms (see [Environment frontier](#environment-frontier)).
 
 The reserve is checked too, not just assumed. A real game's sim layer must
 fit in the 4.2 ms of target CPU the client leaves free. That gives the sim its
-own line on the M5 Max: **2.0 ms per tick** (4.2 ÷ 1.7 ÷ 1.2), measured by
+own line on Cygnus: **3.5 ms per tick** (4.2 ÷ 1.0 ÷ 1.2), measured by
 [Sim tick timing](#sim-tick-timing).
 
-### Where the Mac flatters the target
+### Where Cygnus flatters the target
 
-The M5 Max is not simply a faster 4060. Three architectural differences make
-some costs nearly free on the Mac but expensive on the target, so frame time
-alone understates them. The harness counts these costs directly.
+Cygnus's GPU is the target's architecture, so the old Mac caveats are gone:
+NVIDIA GPUs shade every fragment that passes the depth test and blend through
+memory, on Cygnus as on the target. What remains is a difference of size, not
+of kind, and the harness counts the costs that scale worst.
 
-- **Hidden-surface removal.** Apple GPUs are tile-based deferred renderers.
-  Each opaque pixel is shaded once, whatever the draw order. NVIDIA GPUs shade
-  every fragment that passes the depth test when it is drawn, so opaque
-  overdraw costs there.
-  - **Depth priming closes most of the gap.** SSAO needs a depth prepass, so
-    URP runs one, and forced depth priming makes the forward pass shade each
-    opaque pixel once on any GPU.
-  - **The prepass itself still overdraws.** Its fragments are cheap, but its
-    vertex work for skinned monsters is not. The crowd is drawn roughly front
-    to back to help it (see [Drawing the crowd](#drawing-the-crowd)).
-  - **The harness reports opaque depth complexity:** the mean number of
-    prepass fragments per covered pixel that pass the depth test in the
-    client's draw order. A debug render counts it on any GPU.
-- **On-tile blending.** Apple GPUs blend transparent fragments in on-chip
-  memory, while NVIDIA blends through memory. Particle overdraw costs more on
-  the target. The harness reports transparent fragments per pixel.
-- **Memory bandwidth.** An RTX 4060 Laptop has 256 GB/s. The M5 Max has more
-  than twice that, about 2.1–2.4× by published figures; TD7 records the
-  figure it uses. Bandwidth-bound passes therefore translate worse than the
-  1.9× compute ratio.
-- **Faster job workers.** Six M5 Max workers each run about 1.7× faster than
-  the target's cores. The client completes its jobs inside the frame, before
-  rendering, so job latency lands in main-thread time and the CPU lines cover
-  it.
+- **Memory bandwidth.** An RTX 4060 Laptop has 256 GB/s, and the 4070 Ti
+  504 GB/s: about 2.0×, against 2.5× in compute. Bandwidth-bound passes
+  (shadows, transparent effects, post-processing) therefore translate worse
+  than the compute ratio.
+- **L2 cache.** 48 MB against 32 MB. The larger cache hides some of the
+  bandwidth gap on Cygnus, which the bandwidth treatment below and the margin
+  cover.
+- **Power.** A desktop card at full power against a laptop part whose power
+  limit varies by model. The laptop's Steel Nomad score is a typical one, and
+  the report says that a low-power 4060 Laptop will fall short of it.
+- **Memory speed for the CPU.** Cygnus's DDR4 runs at 2133 MHz until XMP is
+  enabled (see [Setting up Cygnus](#setting-up-cygnus)), slower than a
+  typical 4060 laptop's memory. Until then its CPU times are pessimistic,
+  which understates the frontier where the CPU limits it. The harness records
+  the memory speed in every result row.
+- **Overdraw counters stay.** Opaque depth complexity and transparent
+  fragments per pixel no longer correct for a different GPU design, but they
+  still explain what limits a point (see [Measurements](#measurements)).
 
 A **frontier point** is the largest on-screen count that passes the pass rule
-on the M5 Max at one combination of the other sweep axes, found by the
+on Cygnus at one combination of the other sweep axes, found by the
 [sweep's search](#the-sweep). Every point gets a **compute estimate** of the
-target's GPU time: the M5 Max GPU time × 1.9 × 1.2.
+target's GPU time: Cygnus's GPU time × 2.5 × 1.2.
 
 The compute ratio flatters bandwidth-heavy points. So two points also get a
 **per-pass estimate**: the envelope point (see [The report](#the-report)) and
 the heavy-load point at the envelope's view width.
 
-- **The trace.** A Metal System Trace at the found count. Shadow, transparent
-  and post-processing passes are scaled by the bandwidth ratio × 1.2, and the
-  other passes by 1.9 × 1.2. Their sum is then scaled by the run's
-  p99-to-mean GPU time ratio.
+- **The capture.** A PIX timing capture at the found count gives each render
+  pass's GPU time. Shadow, transparent and post-processing passes are scaled
+  by 2.0 × 1.2, and the other passes by 2.5 × 1.2. Their sum is then scaled
+  by the run's p99-to-mean GPU time ratio.
 - **The step-down.** If the estimate exceeds 12.5 ms, the count steps down by
-  5%, and the pass rule and the trace repeat.
-- **Other points are not traced.** The report flags those whose overdraw
-  counters suggest the Mac flatters them (see [Measurements](#measurements)).
+  5%, and the pass rule and the capture repeat.
+- **Other points are not captured.** The report flags those whose overdraw
+  counters are high (see [Measurements](#measurements)).
 
 A frontier point can also be limited by space rather than time. Monsters keep
 apart (see [The choreographer](#the-choreographer)), so a view holds at most
@@ -394,7 +405,8 @@ is reported as capacity-bound.
 
 ## Engine and Rendering Setup
 
-The project uses Unity 6.6 (6000.6.7f1, already installed) with URP. URP's
+The project uses Unity 6.6 (6000.6.7f1, installed on Cygnus during
+[setup](#setting-up-cygnus)) with URP. URP's
 Forward+ path is required: it shades many unshadowed point lights per pixel,
 and it is what the GPU Resident Drawer needs.
 
@@ -414,10 +426,14 @@ off:            motion blur, depth of field, film grain, upscaling
 - **Static environment** rendering climbs its own measured ladder, starting
   with the GPU Resident Drawer (see
   [Environment rendering](#environment-rendering)).
-- **Graphics API:** Metal. No Windows player is built.
+- **Graphics API:** Direct3D 12 only. The player is forced to it, and every
+  result row records the API in use.
+- **Scripting backend:** IL2CPP for the benchmark and showcase builds, since
+  a shipped game would use it. Mono is allowed for development builds while
+  iterating. TD1 records both build times.
 - **Benchmark runs** turn vsync off and leave the frame rate uncapped, so frame
   time measures throughput. The showcase build caps at the display rate.
-- **The macOS player** is the demo and the benchmark.
+- **The Windows x64 player** is the demo and the benchmark.
 
 ## The Choreography Layer
 
@@ -519,9 +535,10 @@ Rules every timeline obeys:
 - **Every death has a death clip and a death effect event,** and every hit
   that is not a tick has a hit clip and a hit effect event.
 - **Everything is deterministic.** The same song map, level script and seed
-  give a byte-identical JSON dump on the same runtime. Mono in Unity and .NET
-  under `dotnet test` may differ in the last bits of floating point, so each
-  runtime is checked against itself.
+  give a byte-identical JSON dump on the same runtime and platform. IL2CPP
+  or Mono in Unity, and .NET under `dotnet test` on the Mac (arm64) or on
+  Cygnus (x64), may differ in the last bits of floating point, so each is
+  checked against itself.
 
 A short excerpt of the JSON dump, for one goblin's first steps and death:
 
@@ -803,10 +820,12 @@ clock. Nothing in the client uses its own notion of game time.
 - **Fixed-time mode** advances song time by exactly 1/60 s per frame, whatever
   the real frame time, with sound muted. A/B captures, determinism checks and
   the video capture use it.
-- **The video's sound is mixed offline.** The capture writes 1080p frames in
-  fixed-time mode. A mixing step then renders the recording plus every
+- **The video's sound is mixed offline.** The capture renders 1080p frames in
+  fixed-time mode and streams them straight into ffmpeg's encoder, never as
+  image files: 3:19 of 1080p60 PNGs would take tens of gigabytes of
+  Cygnus's disk. A mixing step then renders the recording plus every
   `SoundEvent` in the timeline at its song time, and muxes the result with
-  the frames (ffmpeg). The events are already aggregated (see
+  the video (ffmpeg). The events are already aggregated (see
   [Sound](#sound)), so the mix matches what the live demo plays.
 
 ## The Crowd
@@ -1029,8 +1048,9 @@ hits and deaths spawn in a single frame. At 140 bpm a beat is 0.43 s:
 
 These are estimates, which TD8 measures. The harness flags any point whose
 mean transparent fragments per pixel exceed 5, or whose beat-frame peak
-exceeds 12 (see [Measurements](#measurements)). The Mac blends on tile and
-hides most of this cost, so these counters matter more than its times here.
+exceeds 12 (see [Measurements](#measurements)). Cygnus has twice the
+target's bandwidth, so its times understate this cost, and the counters
+show it directly.
 
 ### Effect design rules for a horde
 
@@ -1463,9 +1483,9 @@ rich the scene can be, and what that richness costs in monsters.
   the envelope's monster count at each density tested. For example: "doubling
   the decoration costs 0.6 ms of target GPU, or about 350 monsters."
 - **The ceiling.** S0, the empty arena with lighting and post-processing,
-  must stay at or under 2.0 ms of GPU p99 on the M5 Max, about 4.5 ms of the
+  must stay at or under 1.5 ms of GPU p99 on Cygnus, about 4.5 ms of the
   target's 12.5 ms. Its main-thread and render-thread times must each stay
-  under 1.0 ms. The authored density is the richest that fits the ceiling.
+  under 1.7 ms (about 2.0 ms of the target's). The authored density is the richest that fits the ceiling.
 - **The headline count pays for the scene.** TD12's frontier is measured in
   the finished scene at the authored density, so the monster count already
   includes the environment's cost.
@@ -1571,8 +1591,8 @@ load-time run, and the reserve becomes a measured number.
   the off-screen reserve, navigation, separation, hits and spawns. Stress
   timelines hold N steady, so their ticks measure the sim at that N.
 - **Warm-up.** The first 5 s of ticks are excluded, as frames are.
-- **The sim's own line.** The tick's p99 time must stay at most 2.0 ms on the
-  M5 Max (see [Performance Budget](#performance-budget)).
+- **The sim's own line.** The tick's p99 time must stay at most 3.5 ms on
+  Cygnus (see [Performance Budget](#performance-budget)).
 - **It is a conservative stand-in.** The choreographer is plain C# on one
   thread, without Burst or jobs. Passing means a real sim fits with room to
   spare. Failing means a real sim would need those optimizations, not that
@@ -1602,8 +1622,8 @@ harness searches for the largest N that passes.
 The frontier is the resulting table of maximum N per view width, load and
 anti-aliasing mode.
 
-Sweeps hold Tollgate paused and sit on the plan's longest path, so the
-search spends as few runs as it can:
+Sweeps hold Cygnus's screen and GPU and sit on the plan's longest path, so
+the search spends as few runs as it can:
 
 - **One process per scene.** The player loads a scene once and changes the
   other axes in place. For a new N it rebuilds the stress timeline (timing
@@ -1644,73 +1664,79 @@ row per run.
 - **Flags.** The report flags a point whose mean transparent fragments per
   pixel exceed 5, or whose beat-frame peak exceeds 12 (see
   [How many effects](#how-many-effects)).
-- **Machine state:** thermal state, power source and energy mode, job worker
-  count, and the backbuffer size.
+- **Machine state:** the graphics API, the GPU driver version, GPU
+  temperature and NVIDIA's throttle reasons (from `nvidia-smi`), the Windows
+  power plan, the memory speed, the job worker count and the backbuffer
+  size.
 
 ```json
 { "scene": "S3", "n": 2400, "viewWidthM": 40, "load": "demo", "aa": "taa",
-  "gpuP99Ms": 5.31, "mainP99Ms": 4.12, "renderP99Ms": 3.05, "maxFrameMs": 7.9,
+  "gpuP99Ms": 4.08, "mainP99Ms": 4.12, "renderP99Ms": 3.05, "maxFrameMs": 6.3,
   "onScreenAlive": 2231, "onScreenDying": 169, "particles": 26400,
   "spawnsMaxPerFrame": 171, "spawnsRejected": 0,
   "lightsUsed": 117, "lightDropShareP99": 0.004,
   "opaqueDepth": 1.21, "transparentPerPixel": 3.1, "transparentBeatPeak": 8.6,
-  "thermal": "nominal", "power": "ac/high", "pass": true }
+  "api": "d3d12", "driver": "610.88", "gpuTempC": 64, "gpuThrottle": "none",
+  "powerPlan": "high", "memMHz": 3200, "pass": true }
 ```
 
 At the envelope point and the heavy-load point at its width (see
-[Performance Budget](#performance-budget)), the harness also records a 10 s
-Metal System Trace and keeps its per-pass GPU summary, not the raw trace:
-
-```
-xcrun xctrace record --template 'Metal System Trace' --time-limit 10s \
-  --output <run>.trace --launch -- <app> --bench <point.json>
-```
+[Performance Budget](#performance-budget)), the harness also takes PIX timing
+captures over a few seconds at the found count, and keeps their per-pass GPU
+summary, not the raw captures. TD7 scripts the captures with PIX's
+command-line tool, `pixtool`, or PIX's programmatic capture API, and records
+the exact command in its notes.
 
 ### Running a sweep
 
-Sweeps run the real macOS player in a window, which benchmark beads may open
-on the operator's screen.
+Sweeps run the real Windows player in a window on Cygnus's desktop.
 
 ```
-PlaylistSurvivors3D.app/Contents/MacOS/PlaylistSurvivors3D \
-  -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 \
-  -job-worker-count 6 --bench sweep.json --out <evidence dir>
+PlaylistSurvivors3D.exe -force-d3d12 -screen-width 1920 -screen-height 1080 \
+  -screen-fullscreen 0 -job-worker-count 6 --bench sweep.json --out <evidence dir>
 ```
 
 - **Exactly 1920×1080 pixels.** The camera must render into a 1920×1080-pixel
-  backbuffer. On a Retina display a window's size in points is half its size
-  in pixels, so TD7 finds the flags or window size that give exactly 1080p.
-  The command above is illustrative. The harness asserts the backbuffer size
-  at startup and refuses to run otherwise.
+  backbuffer. Cygnus's only desktop display is a 3840×2160 monitor at 200%
+  scaling, so a window of 1920×1080 pixels fills a quarter of it, and a
+  window sized in scaled units would be twice that. TD7 finds the flags that
+  give exactly 1080p. The command above is illustrative. The harness asserts
+  the backbuffer size at startup and refuses to run otherwise.
+- **The interactive desktop.** Worker sessions run in the Claude desktop app
+  in the operator's logged-in session, so the player's window appears on the
+  desktop. A locked desktop or a sleeping display stops composition, so the
+  harness keeps the display awake during a sweep
+  (`SetThreadExecutionState`) and refuses to start while the desktop is
+  locked.
 - **The worker cap.** Unity's `-job-worker-count` sets it, and the harness
   verifies `JobsUtility.JobWorkerCount` at startup.
 - **No frame cap.** Vsync is off and the frame rate uncapped.
 
 ### Quiet machine
 
-The machine is shared with Tollgate's gate and release stages and with other
-agent sessions, and their load would corrupt measurements. Parallel epics
-keep it busy, so a sweep can't wait for a machine that is idle on its own.
-It quiets what it can, waits a bounded time for the rest, and reports what
-it couldn't quiet.
+Cygnus is mostly idle, and Tollgate never runs there. The load that can
+corrupt a measurement is other worker sessions on Cygnus (Unity imports,
+IL2CPP builds), plus Windows' own background work: updates, Defender scans
+and indexing. A sweep quiets what it can, waits a bounded time for the rest,
+and reports what it couldn't quiet.
 
-- **The lock.** A sweep holds a machine-wide lock (an exclusive `flock` on a
-  file in the per-machine cache). It waits for the lock, not around it, so
-  two sweeps never overlap.
-- **Tollgate pauses.** The sweep runs `tg pause`, then waits for any gate or
-  release run in progress to finish. It runs `tg resume` on exit, a crash
-  included, through a shell trap. A marker beside the lock file records the
-  pause, so the next sweep resumes one that a killed sweep left behind.
-- **Other sessions can't be paused.** Agent sessions on other epics keep
-  building. The sweep waits up to 10 minutes for other processes to use less
-  than 10% of total CPU over 5 s, then runs anyway.
-- **Hard refusals.** A run never starts unless the Mac is on AC power, not in
-  Low Power Mode, and its thermal state is nominal.
-- **During a run,** it samples thermal state and other processes' CPU every
-  second. Any violation marks the run noisy.
-- **The window too.** macOS throttles a window that is covered or loses
-  focus, so a run during which the player's window is occluded or loses key
-  focus is marked noisy.
+- **The lock.** A sweep holds a machine-wide lock: a file in the per-machine
+  cache, opened for exclusive access for the sweep's whole life. Windows
+  releases it if the process dies, so a killed sweep leaves nothing to clean
+  up. A sweep waits for the lock, not around it, so two sweeps never overlap.
+- **Other sessions can't be paused.** The sweep waits up to 10 minutes for
+  other processes to use less than 10% of total CPU over 5 s, then runs
+  anyway.
+- **Hard refusals.** A run never starts unless the power plan is High
+  performance (or Ultimate Performance), the desktop is unlocked, and the
+  GPU is idle-cool: under 50 °C with no thermal throttle reason.
+- **During a run,** it samples other processes' CPU and the GPU's throttle
+  reasons every second. Any thermal slowdown, or other processes over the
+  threshold, marks the run noisy. A power-cap reason under full load is
+  normal for a desktop card and is recorded, not counted as noise.
+- **The window too.** A run during which the player's window loses the
+  foreground or is occluded (its swap chain reports occlusion) is marked
+  noisy.
 - **A noisy run** is repeated up to twice and then reported as noisy, never
   silently kept. The report counts the frontier points that rest on noisy
   runs.
@@ -1718,14 +1744,14 @@ it couldn't quiet.
 ### Scheduling sweeps
 
 The heavy sweeps take hours of window time: TD5's baseline comparison,
-TD14's density sweep and TD12's full sweep. They cost least when nothing
-else runs.
+TD14's density sweep and TD12's full sweep.
 
-- **The operator can schedule them.** Running those beads overnight, or
-  while the operator is away, with other epics' executors stopped, avoids
-  the waits and the repeated noisy runs.
-- **Nothing waits for it.** No bead pauses for a quiet window. A sweep run
-  among other work only takes longer, and reports what it couldn't quiet.
+- **They run when their bead reaches them.** Cygnus is mostly idle, so no
+  bead waits for a quiet window or for the operator.
+- **At most two worker sessions on Cygnus at once.** A third would mostly add
+  noisy runs and contention for the GPU and the disk. Mac executors check
+  Cygnus's live workers before starting another (see
+  [Working Across Two Machines](#working-across-two-machines)).
 
 ### The report
 
@@ -1833,12 +1859,23 @@ Only the assets the demo uses enter the project, which keeps imports and the
 `Library` small.
 
 - **The manifest** is tracked JSON listing each vendor asset the demo uses:
-  its source pack, path, GUID and purpose.
-- **The sync tool** fills the vendor folder from the manifest:
+  its source, path, GUID and purpose. A source is named by a root (`synty` or
+  `unity_assets`) and a path under it, never by a machine's path, and carries
+  the source file's SHA-256. The sync tool refuses a source whose hash
+  differs, so both machines always sync, and build their records, from
+  identical files.
+- **Source roots are per machine.** On the Mac they are `~/synty` and
+  `~/unity_assets/UnityAssets`; on Cygnus, the copies made during
+  [setup](#setting-up-cygnus). A small untracked config file in the
+  per-machine cache maps each root to its folder.
+- **The sync tool** fills the vendor folder from the manifest. It runs on
+  both machines, so it is written in a language both run without Unity
+  (Python under `uv`, as the repo's analysis tool is, or a .NET console
+  tool; TD1 picks):
   - From a Synty `.unitypackage.gz` (a gzipped tar of per-GUID folders, each
     holding `asset`, `asset.meta` and `pathname`), it extracts the listed
     GUIDs.
-  - From `~/unity_assets/UnityAssets`, it copies the listed files with their
+  - From the `unity_assets` root, it copies the listed files with their
     `.meta` files.
   - Either way it follows `guid:` references in the copied YAML (prefab to
     material to texture or shader) to include everything the listed assets
@@ -1846,20 +1883,29 @@ Only the assets the demo uses enter the project, which keeps imports and the
 - **GUIDs stay the vendor's,** so our tracked YAML can reference vendor
   assets by GUID. A reference is not vendor content.
 - **A sync record** (gitignored) lists every synced file's GUID and SHA-256.
-  The guard checks against it.
+  The guard checks against it. The Mac never imports anything into Unity,
+  but it builds the same record from the same manifest and its own copies of
+  the sources (a record-only run of the sync tool), so its gate can run the
+  guard.
 
 ```json
-{ "pack": "~/synty/POLYGON_Fantasy_Rivals_Unity_2021_3_v1_3_1.unitypackage.gz",
+{ "source": "synty:POLYGON_Fantasy_Rivals_Unity_2021_3_v1_3_1.unitypackage.gz",
   "path": "Assets/PolygonFantasyRivals/Models/Characters.fbx",
-  "guid": "…", "use": "elites: Big Ork, Troll" }
+  "sourceSha256": "…", "guid": "…", "use": "elites: Big Ork, Troll" }
 ```
 
 ### The vendor guard
 
 A leak to the public repository cannot be undone, so a guard checks every
-change at three points: `scripts/check-fast`, the gate and the release stage.
-The release stage is the last line of defense, because it moves remote
-master. The guard fails when any tracked file:
+change at four points:
+
+- **On Cygnus, before every push to the relay repository.** The relay is
+  private, but the guard still runs there first, since everything pushed to
+  it is bound for the public repository.
+- **On the Mac:** `scripts/check-fast`, the gate and the release stage. The
+  release stage is the last line of defense, because it moves remote master.
+
+The guard fails when any tracked file:
 
 - is inside the vendor or baked folders;
 - is binary (by extension or a NUL byte) anywhere under `demo3d/`. The one
@@ -1877,8 +1923,10 @@ More rules:
   capture tool, the A/B tool, the clip annotator's contact sheets, the report)
   adds the `ps-render` tag.
 - **One record per machine.** The sync record lives in the per-machine cache
-  (see [Unity Work by Agents](#unity-work-by-agents)). Every worktree and
-  Tollgate's own checkouts read the same file.
+  (see [Unity Work by Agents](#unity-work-by-agents)). On the Mac, every
+  worktree and Tollgate's own checkouts read the same file; on Cygnus, every
+  worker worktree does. A manifest change rebuilds both records before the
+  guard runs: the Mac's in its gate, Cygnus's in setup.
 - **It starts empty.** The setup command creates an empty record until the
   sync tool (TD2) first fills it. An empty record is valid.
 - **A missing record fails safe.** If the record file is missing, the GUID and
@@ -1897,38 +1945,245 @@ vendor guard: FAIL
 AGENTS.md carries the rule for every agent: never commit vendor or derived
 files, never force-add an ignored path, and never bypass the guard.
 
+## Working Across Two Machines
+
+The Mac keeps the project's machinery: Hive and its beads, Tollgate, the gate
+and release stages, and remote master. Cygnus has none of it, and needs
+none: it runs worker sessions that do the Unity and GPU work and hand back
+commits.
+
+### Who does what
+
+- **The Mac:** every bead's claim, notes and closing; every Tollgate
+  candidate; the vendor guard's Mac checkpoints and `dotnet test`. Beads that
+  need no Unity run there entirely: TD0 (the song map), TD3 (the
+  choreographer) and TD6 (navigation).
+- **Cygnus:** everything that needs Unity, the GPU or the vendor assets:
+  TD1's Unity parts, TD2, TD4, TD5 and TD7 to TD15.
+- **A Cygnus bead still has a Mac executor.** It claims the bead, briefs a
+  worker session on Cygnus, reviews what comes back, and lands it. That
+  executor must be a Claude Code session, since it needs the Claude Code
+  Remote tools to start and follow the worker; a Codex executor leaves
+  Cygnus beads to one.
+
+### The relay repository
+
+Commits move between the machines through a **private** GitHub repository,
+`thurn/playlist_survivors-relay`, created during
+[setup](#setting-up-cygnus). Its branches:
+
+- **`base`:** the Mac's current `staging` tip, pushed by a Mac executor
+  before each handoff. Workers branch from it, so they see work that has
+  landed but not yet reached remote master.
+- **`td/<key>`:** one per handoff (`td/td5`, or `td/td5-2` for a second
+  handoff of the same bead), written only by its worker.
+
+It is private for two reasons. A worker's branch has not yet passed the
+Mac's gate, and `staging` has not yet passed the release stage, the guard's
+last line of defense. Neither may reach the public repository early.
+
+### A handoff
+
+1. **Claim and prepare.** The Mac executor claims the bead as usual, creates
+   its Tollgate worktree, and pushes `staging` to the relay's `base`.
+2. **Check capacity.** It lists the live worker sessions in Cygnus's
+   environment (tagged with the epic, see below). With two working, it waits
+   for one to finish (see [Scheduling sweeps](#scheduling-sweeps)), doing the
+   bead's Mac-side parts meanwhile.
+3. **Start a worker.** It calls the Claude Code Remote tool
+   `create_session` in the Remote Control environment whose name starts
+   `Cygnus:C:\src\playlist_survivors` (looked up with `list_environments`,
+   since its id can change). The session is tagged `hv-50g9` and
+   `td:<key>`. The brief carries the bead's text, the design sections it
+   names, the branch name, the worker rules below, and the report format.
+4. **The worker works.** In order:
+   - `git fetch relay`, then a worktree from `relay/base` at
+     `D:\wt\<key>` on branch `td/<key>`;
+   - the setup command; the bead's work, committed with Conventional
+     Commits;
+   - its checks before every push (see [Automated Checks](#automated-checks));
+   - `git push relay td/<key>`, at each checkpoint (before a long sweep, at
+     the end of a session) as well as at the end, so no work lives only on
+     Cygnus's disk;
+   - a final message with its report: commit SHAs, what it built, its
+     measurements and evidence paths, its checks' results, the run command,
+     anything pending on the operator, and any deviation from the design,
+     with reasons.
+5. **The executor follows it.** A worker cannot message back, so the
+   executor reads its status and final message with `get_session` and
+   `list_events`. It checks in with a scheduled message (`send_later`) every
+   30 minutes or so, longer during a sweep, never at minute intervals.
+   Follow-ups, such as review findings or a gate failure, go to the same
+   worker with `send_message`, so it keeps its context.
+6. **Land.** In its Tollgate worktree, the executor fetches `td/<key>`,
+   rebases it onto its worktree's base, and lands it as usual:
+   `scripts/check-fast`, `tg candidate HEAD`, `tg approve --wait`. A series
+   of commits lands one candidate at a time. The worker's report goes into
+   the bead's notes.
+7. **Clean up.** Once the commit is on `staging`, the executor deletes the
+   relay branch, asks the worker to remove its worktree, and archives the
+   session.
+
+The worker's rules, repeated in every brief:
+
+- **No beads, no Tollgate, no origin.** A worker never runs `bd`, `hive` or
+  `tg`, and never pushes to `origin`. It pushes only its own `td/<key>`
+  branch to the relay.
+- **The vendor guard before every push,** with no exceptions (see
+  [The vendor guard](#the-vendor-guard)).
+- **Stop and report** when the base does not build, a prerequisite is
+  missing, or setup is incomplete. The executor decides what happens next.
+  A base whose Unity build is broken gets a bead labeled `ci-fix` with
+  `release_step=demo3d-unity`, which preempts other work as AGENTS.md
+  describes for release failures.
+- **A failed or restarted worker** loses nothing that was pushed. The
+  executor starts a replacement from the last pushed `td/<key>`, and records
+  the restart in the bead's notes.
+
+## Setting up Cygnus
+
+Cygnus was surveyed on 2026-10-27. Several things block agents until the
+operator fixes them, all in one sitting.
+
+What the survey found:
+
+- Windows 11 Home 25H2, build 26200. RTX 4070 Ti on driver 610.88; i7-12700F;
+  32 GB of DDR4 running at 2133 MHz (XMP off).
+- **One local drive, C:, with 39 GB free** of 930 GB, and no Dev Drive.
+  G: is Google Drive for desktop; it holds about 150 Synty packs as
+  `.unitypackage` files, some in different versions from the Mac's.
+- One desktop display: a 3840×2160 BenQ PD3200U at 60 Hz and 200% scaling,
+  without HDR.
+- **Unity: only 6000.5.8f1, and no license.** A batch-mode probe exits with
+  code 198, "No valid Unity Editor license found".
+- **No .NET SDK, no Python, no `uv`, no PIX.** Present: git, git-lfs, ffmpeg
+  9.0.1, Rust, Visual Studio 2022 17.14, the Windows SDK, Windows Performance
+  Toolkit, NVIDIA's FrameView SDK.
+- **`gh` is installed but not signed in.**
+- Cygnus can't resolve the Mac by name. The Mac is `JARVIS` at 192.168.68.66,
+  and Cygnus is at 192.168.68.57. Neither runs an SSH server.
+- The checkout at `C:\src\playlist_survivors` is 30 commits behind, with the
+  earlier audio spike's untracked folders in it.
+- No earlier 3D prototype and no Asset Store cache. KriptoFX, Magic Pig and
+  the Mac's `UnityAssets` project are not on Cygnus.
+
+### The operator's steps
+
+1. **Disk.** Free at least 150 GB on C:. Then create a 120 GB **Dev Drive**
+   as a virtual disk on C: (Settings, System, Storage, Disks & volumes,
+   Create Dev Drive), lettered D:.
+   - A Dev Drive is ReFS, where Windows copies by cloning blocks. That
+     replaces the Mac's APFS clones, so the setup command's copies of the
+     vendor folder, baked folder and warm `Library` are nearly free.
+   - Defender's performance mode on a Dev Drive also speeds up Unity's
+     imports.
+   - D: holds the vendor sources (about 6 GB), the per-machine cache (about
+     10 to 15 GB), the worker worktrees and captures. The Unity editor
+     (about 10 GB) stays on C:.
+2. **Unity.** Sign in to Unity Hub and activate a license (Personal is
+   enough). Install 6000.6.7f1 with Windows Build Support (IL2CPP).
+   6000.5.8f1 can be removed to save space.
+3. **Tools,** from an administrator PowerShell, with `winget`: the .NET 10
+   SDK, `uv` and PIX on Windows. Confirm the package ids with
+   `winget search` first.
+4. **Long paths.** Turn on Win32 long paths (an administrator setting), and
+   `git config --global core.longpaths true`. Unity's `Library` nests deep.
+5. **GitHub.** `gh auth login`, then `gh auth setup-git`, so git can push to
+   the relay. The relay repository itself is created from the Mac.
+6. **Power and display.** The High performance power plan; the display never
+   turns off and the PC never sleeps; no automatic lock. Turn off GeForce
+   Experience's instant replay and the Xbox Game Bar's background recording,
+   which use the GPU's encoder.
+7. **Memory.** Enable XMP in the firmware, so the DDR4 runs at its rated
+   speed. This is optional; without it, CPU numbers are pessimistic (see
+   [Where Cygnus flatters the target](#where-cygnus-flatters-the-target)).
+8. **File Sharing on the Mac,** for the asset copy below: System Settings,
+   General, Sharing, File Sharing. Then connect once from Cygnus's File
+   Explorer to `\\192.168.68.66`, so Windows remembers the credentials. File
+   Sharing can be turned off after the copy.
+
+### Moving the assets
+
+Only the packs the demo uses move: about 6 GB of the Mac's 27 GB of sources, not counting the asset project's rebuildable `Library`. Vendor
+files and copies of them never enter either repository.
+
+- **Synty, 0.8 GB:** the POLYGON packs Fantasy Rivals, Knights, Fantasy
+  Characters, Fantasy Kingdom, Adventure, Elven Realm and Dark Fantasy, and
+  the ANIMATION packs Base Locomotion, Sword Combat, Idles and Goblin
+  Locomotion.
+- **From `~/unity_assets/UnityAssets`, about 5 GB:** `Assets/Hovl Studio`,
+  `Assets/KriptoFX`, `Assets/Magic Pig Games (Infinity PBR)`, the three sound
+  packs named in [Sound](#sound), `Assets/AmplifyImpostors` and
+  `Assets/MeshCombineStudio`, each with its `.meta` files, plus `Packages/`
+  and `ProjectSettings/`. Never `Library/` (21 GB, which Unity rebuilds).
+- **The song:** the *Action* MP3.
+
+Cygnus's Google Drive already has most Synty packs, but not always in the
+Mac's versions. Copy the Mac's files anyway: the manifest's source hashes
+must match on both machines.
+
+The first worker (TD1's) does the copy over SMB with `robocopy` once the
+operator has finished the steps above:
+
+```
+robocopy \\192.168.68.66\dthurn\synty D:\vendor\synty <pack files> /Z /MT:8
+robocopy "\\192.168.68.66\dthurn\unity_assets\UnityAssets\Assets\Hovl Studio" ^
+  "D:\vendor\unity_assets\UnityAssets\Assets\Hovl Studio" /E /Z /MT:8
+```
+
+TD2 may want more packs later. It copies them the same way and adds them to
+the list above.
+
+### What TD1 verifies
+
+TD1's worker checks the setup before anything else and records each result:
+the Unity probe exits 0 with licensing initialized; `dotnet --list-sdks`
+shows a 10.x SDK; `uv` and PIX are present; D: is a Dev Drive; a test branch
+pushes to and deletes from the relay; the power plan is High performance;
+and the memory speed. Anything missing goes to `operator-pending.md`, and
+the worker stops if it blocks the bead.
+
 ## Unity Work by Agents
 
 Agents implement this demo, and they cannot use the Unity editor's interface.
-Everything is therefore scripted, runs in batch mode, and fits the repo's
+Everything is therefore scripted, runs in batch mode on Cygnus, and fits the
 worktree-per-change workflow.
 
 - **Batch mode for everything:** baking, scene generation, lightmapping,
   tests and builds.
 
   ```
-  Unity -batchmode -projectPath "$WORKTREE/demo3d" \
-    -executeMethod Demo3D.Tasks.BakeAll -quit -logFile -
-  Unity -batchmode -projectPath "$WORKTREE/demo3d" \
-    -runTests -testPlatform EditMode -testResults results.xml -logFile -
+  Unity.exe -batchmode -projectPath "D:\wt\<key>\demo3d" ^
+    -executeMethod Demo3D.Tasks.BakeAll -quit -logFile <log>
+  Unity.exe -batchmode -projectPath "D:\wt\<key>\demo3d" ^
+    -runTests -testPlatform EditMode -testResults results.xml -logFile <log>
   ```
 
+  TD1 confirms whether `-logFile -` streams the log to the console on
+  Windows; otherwise the task entry points write to a file and print it.
 - **Scenes, prefabs and materials are generated** by editor scripts from
   tracked parameters. Agents never hand-edit vendor YAML, and edit our own
   Unity YAML only for small settings files.
-- **The choreography layer also builds and tests with `dotnet test`** (SDK 10
-  is installed), through an SDK-style project over the same source files.
-  That takes seconds, without Unity.
+- **The choreography layer also builds and tests with `dotnet test`** (SDK
+  10, on both machines), through an SDK-style project over the same source
+  files. That takes seconds, without Unity.
+- **Tools run on both machines.** The setup command, the sync tool and the
+  vendor guard run on Windows and macOS: Python under `uv`, or .NET console
+  tools (TD1 picks). The repo's Bash scripts run on Cygnus under Git Bash
+  where needed.
 - **One setup command prepares a worktree.**
   - A per-machine cache holds the vendor folder, the baked folder and a warm
-    `Library` (under `~/Library/Caches/playlist-survivors/demo3d/`), keyed by
-    the manifest's hash and the generators' input hash.
-  - It clones all three into the worktree with APFS clones (`cp -c`), which
-    are instant.
+    `Library`, keyed by the manifest's hash and the generators' input hash.
+    On Cygnus it lives on the Dev Drive, at
+    `D:\cache\playlist-survivors\demo3d\`, beside the worktrees, since a
+    block clone only works within one volume.
+  - It clones all three into the worktree with ReFS block clones, which are
+    nearly instant. Off a Dev Drive it falls back to plain copies, slowly,
+    and says so.
   - It rebakes only what is stale, and verifies the Unity license.
 
   ```
-  $ demo3d setup        # in a fresh worktree; the command name is TD1's choice
+  > demo3d setup        # in a fresh worktree; the command name is TD1's choice
   cloned Vendor (412 files), Baked (manifest 3f2a…), Library (warm)
   rebaking: bone textures for 1 changed clip annotation
   ```
@@ -1936,46 +2191,39 @@ worktree-per-change workflow.
   editor's startup and the asset database's check on every compile or test
   run, which adds up over the dozens of iterations a bead makes.
   - A task command starts one long-running batch-mode editor per worktree.
-    It takes commands over a Unix socket in the worktree: refresh and
-    compile, run EditMode tests, run a task method. Its listener restarts
-    after each domain reload.
+    It takes commands over a named pipe (or localhost TCP with a per-worktree
+    token, TD1 picks): refresh and compile, run EditMode tests, run a task
+    method. Its listener restarts after each domain reload.
   - The task entry points use it when it is running and fall back to a cold
     launch otherwise. It exits after 30 idle minutes.
   - It holds the worktree's project lock, so every Unity step in that
     worktree goes through it while it runs.
-  - **Before submitting,** a bead runs its Unity checks once cold, since a
-    long-lived editor can carry stale static state across reloads. The gate
-    and release stages always launch cold.
+  - **Before pushing,** a worker runs its Unity checks once cold, since a
+    long-lived editor can carry stale static state across reloads.
   - TD1 spikes it and records the cold and warm loop times. If it isn't
     reliable, cold launches stay, and the notes say why.
-- **Projects are locked per path.** The operator's editor may have the main
-  checkout's project open, and Unity locks a project per path. Agents only
-  ever open their own worktree's project.
+- **Projects are locked per path.** The operator's editor may have a
+  project open, and Unity locks a project per path. Agents only ever open
+  their own worktree's project.
 - **On-screen windows.** Only benchmark sweeps open a window. Everything else
   runs in batch mode and opens none.
 
 ## Automated Checks
 
-Checks follow the repo's stages. They are path-gated on `demo3d/`, except the
-vendor guard, which runs on every change.
+Checks are path-gated on `demo3d/`, except the vendor guard, which runs on
+every change.
 
-- **`scripts/check-fast`:** the vendor guard, and `dotnet test` of the
-  choreography layer when it changed.
-- **The gate (`scripts/ci-gate`):** the vendor guard and `dotnet test`, plus a
-  Unity batch-mode compile and EditMode tests. The Unity steps stay in the
-  gate only if TD1 measures them within the gate's budget on a warm
-  `Library`; otherwise they move to the release stage. A slow gate holds up
-  every candidate in the repository, the survivors run's included, so when
-  in doubt they move.
-- **The release stage (`scripts/ci-full`, a new `ci-full-demo3d` step):** the
-  vendor guard, the Unity import and compile, EditMode tests and the macOS
-  player build.
-- **Unity steps set up first.** Before any Unity step, the gate and release
-  stages run the setup command in their own checkout. It clones the vendor
-  folder, baked folder and warm `Library` from the per-machine cache, exactly
-  as in a worktree.
-- **No benchmarks** run in the gate or release stage. Benchmarks need a quiet
-  machine and a window.
+- **On the Mac, in every stage** (`scripts/check-fast`, the gate, and a new
+  `ci-full-demo3d` step in the release stage): the vendor guard, and
+  `dotnet test` of the choreography layer when it changed. The Mac has no
+  Unity project to build, so no stage runs Unity.
+- **On Cygnus, before every push to the relay:** the vendor guard,
+  `dotnet test`, a cold Unity batch-mode compile and EditMode tests, and,
+  for a bead that changes the player, an IL2CPP player build. The worker
+  reports each result, and the executor copies them into the bead's notes.
+  These are the only Unity checks, so a worker never pushes without them.
+- **No benchmarks** run in any check. Benchmarks need a quiet machine and a
+  window.
 
 The choreography layer's tests:
 
@@ -2007,14 +2255,16 @@ open and nobody should read its report as settling:
 - **Input and audio latency.** The native app spent much of its epic on the
   latency chain: the audio clock, the display link, and presses landing on
   beats. The demo takes no input, so Unity's DSP buffer, input and present
-  latency on macOS go unmeasured.
+  latency go unmeasured.
 - **Hosting the Rust sim.** The sim tick timing shows that a single-threaded
   C# sim like the choreographer fits the reserve. It says nothing about what
   the real Rust sim costs in Unity, or whether it would run as a native
   plugin or be ported to C#.
-- **Windows.** No Windows player is built or run. Direct3D 12 shader
-  compatibility and Windows driver behavior are untested, and every target
-  number is inferred from the Mac.
+- **A real laptop.** Every target number is inferred from a desktop of the
+  same GPU architecture, not measured on a 4060 Laptop. Laptop power limits
+  and thermals, and AMD or Intel GPUs, go unmeasured.
+- **macOS.** No macOS player is built. Metal shader compatibility and Apple
+  GPU behavior are untested, though macOS is under 2% of Steam's users.
 
 ## Alternatives Considered
 
@@ -2043,11 +2293,24 @@ The interviews weighed these and rejected them for the reasons given.
   would measure contention with the frame, but timing the load-time run gives
   the tick cost without a second copy, an 8.0 ms main-thread line or the
   sync logic.
-- **A Windows compile check.** A Mono Windows player built from the Mac to
-  compile the Direct3D 12 shaders, never run. Dropped with Windows from the
-  demo's scope.
+- **Staying on the M5 Max.** The original plan, kept until 2026-10-27. One
+  machine, with the repo's own tools. But its tile-based GPU hides the
+  target's overdraw and blending costs, its numbers needed correction
+  factors across GPU designs, and Direct3D 12 went untested. Cygnus has the
+  target's GPU architecture and API.
+- **Executors on Cygnus.** Cygnus's sessions would claim beads themselves,
+  reading the Mac's bead database over the network. That needs Dolt exposed
+  beyond localhost, and `bd` and Hive on Windows, and a Mac session to land
+  each branch anyway. A Mac executor per bead needs nothing ported.
+- **Porting Tollgate and Hive to Windows.** Tollgate is a macOS app. Porting
+  it is a project of its own, and two Tollgates would contend for remote
+  master.
+- **Public branches as the transport.** Workers would push to the public
+  repository's branches. A mistake would publish vendor files before any of
+  the Mac's guards ran. The private relay keeps everything unpublished until
+  the Mac's gate passes.
 - **A trace at every frontier point.** Bandwidth-corrects every table cell,
-  but needs a parsed Metal System Trace per point. Only the envelope and its
+  but needs a parsed GPU capture per point. Only the envelope and its
   heavy-load point are traced; overdraw counters flag the rest.
 - **VFX Graph as the authoring tool for every effect.** It has GPU effects
   with editor features for free, but there is no supported API to build
@@ -2085,7 +2348,9 @@ with TD1 to TD15 filed as `hv-50g9.1` to `hv-50g9.15`, and TD0 (the song
 map, split out of TD3 so it can start at once) as `hv-50g9.16`. Its work items
 are **beads**. Each bead is implemented by an executor session (an agent
 session working one bead) and delivered as one Tollgate candidate, under the
-rules in AGENTS.md. The epic runs in parallel with `hv-n7fn`.
+rules in AGENTS.md. Each bead's Unity work runs in a worker session on
+Cygnus, as [Working Across Two Machines](#working-across-two-machines)
+describes; TD0, TD3 and TD6 run on the Mac alone.
 
 - **Plan keys.** Beads use the keys below.
 - **Evidence** goes in `demo3d/evidence/<key>/` (lowercase).
@@ -2117,24 +2382,34 @@ Each bead lists what it builds and when it is done.
     `ps-render` tag.
   - Done when: the map passes the analysis tool's `check`, and alignment
     against the converted audio is recorded.
-- **TD1, foundations.**
-  - Builds: the Unity project; `.gitignore` coverage; the vendor guard in
-    check-fast, the gate and the release stage; the worktree setup command
-    and its cache; batch-mode task entry points; the
-    [warm editor](#unity-work-by-agents); the `dotnet` project for the
-    choreography layer.
+- **TD1, foundations.** The first bead with a Cygnus worker.
+  - Opens with [What TD1 verifies](#what-td1-verifies) and the
+    [asset copy](#moving-the-assets). If setup is incomplete, the worker
+    stops and reports, and the operator's missing steps go to
+    `operator-pending.md`.
+  - Builds, on Cygnus: the Unity project on Direct3D 12; the worktree setup
+    command and its cache on the Dev Drive; batch-mode task entry points; the
+    [warm editor](#unity-work-by-agents); the guard's pre-push run.
+  - Builds, for both machines: `.gitignore` coverage; the vendor guard in
+    check-fast, the gate and the release stage on the Mac; the `dotnet`
+    project for the choreography layer; small helpers for the handoff if they
+    save the Mac executor steps (pushing `base`, landing a `td/<key>`
+    branch).
   - Spikes, recorded in its notes:
-    - Unity's batch-mode compile and test time on a warm `Library`, which
-      decides gate placement, and the same loop through the warm editor;
-    - a windowed 1080p player reporting `FrameTimingManager` GPU times on
-      Metal;
+    - Unity's cold batch-mode compile and test time on a warm `Library`, and
+      the same loop through the warm editor;
+    - IL2CPP and Mono player build times;
+    - a windowed player at exactly 1920×1080 pixels on Cygnus's 4K desktop,
+      reporting `FrameTimingManager` GPU times on Direct3D 12;
+    - the setup command's clone time on the Dev Drive;
     - the C# version Unity 6.6 accepts.
-  - Done when: one command sets up a fresh worktree; the guard's tests catch
-    every failure case with synthetic fixtures; and an empty scene builds for
-    macOS. The [vendor guard drill](#vendor-guard-drill) runs once TD2 and
-    TD4 exist.
+  - Done when: one command sets up a fresh worktree on Cygnus; the guard's
+    tests catch every failure case with synthetic fixtures, on both
+    machines; and an empty scene builds a Windows IL2CPP player. The
+    [vendor guard drill](#vendor-guard-drill) runs once TD2 and TD4 exist.
 - **TD2, assets.**
-  - Builds: the manifest, the sync tool and its record; the clip annotator
+  - Builds: the manifest with its source hashes, the sync tool and its
+    record on Cygnus, and the record-only run on the Mac; the clip annotator
     and its contact sheets.
   - Chooses: the roster, the hero, the effect candidates and the sounds, and
     the kit's pieces from the classic packs in [The kit](#the-kit).
@@ -2186,14 +2461,14 @@ Each bead lists what it builds and when it is done.
     and the song and stress timelines still pass with walls.
 - **TD7, harness.**
   - Builds: the windowed benchmark player and the sweep runner with its
-    fitted search, result rows, the quiet-machine lock with its Tollgate
-    pause, the overdraw counters and the Metal System Trace summary.
+    fitted search, result rows, the quiet-machine lock and refusals, the
+    overdraw counters and the PIX capture summary.
+  - Confirms the Steel Nomad scores and the bandwidth figures the budget
+    uses, with sources.
   - Starts once TD1 lands, in parallel with TD2 and TD3. Until TD4's stress
     scenes exist, it runs on a **synthetic load**: N instances of one stock
     mesh, GPU-instanced and moving, which is enough to exercise the search,
     the timings and the lock.
-  - Adds a line to AGENTS.md's 3D tech demo rules: a sweep pauses Tollgate,
-    so a paused queue during a sweep is expected, not a tooling failure.
   - Done when: a sweep of the synthetic load produces result rows and a
     first frontier, and the
     [sweeps and machine lock](#sweeps-and-the-machine-lock) checks pass.
@@ -2258,7 +2533,7 @@ Each bead lists what it builds and when it is done.
 - **TD12, the frontier.**
   - Runs the full sweep with every point's compute estimate, at TD9's
     anti-aliasing mode; the other mode is measured only at the envelope
-    point, for the report. Then it runs the traces
+    point, for the report. Then it runs the PIX captures
     and per-pass estimates at the envelope point and its heavy-load point.
     Writes the report and the envelope, and puts the envelope into the level
     script.
@@ -2331,29 +2606,16 @@ TD13        after TD12
 ### Working rules
 
 - **Playable after every bead.** Each bead from TD4 on keeps the demo
-  runnable and writes its run command in its notes.
+  runnable on Cygnus and writes its run command in its notes.
+- **The worker writes the bead's notes section.** Its branch carries the
+  bead's subsection under [Bead Notes](#bead-notes) and its evidence; the
+  Mac executor adds the commit SHA when it lands.
 - **Commit SHAs.** Each bead records its commit SHA in its notes, so a
   milestone's review covers exactly its beads' commits.
 - **No approval pauses.** Checks only the operator can make go to
   `operator-pending.md`.
 - **Prototype rules.** Prefer the simplest option wherever it does not change
   a measurement.
-
-### A possible Windows test machine
-
-The operator has a Windows desktop with an i7-12700F and an RTX 4070 Ti. It
-could serve as a spot check of the inferred numbers, though Decisions 3 and 4
-rule out a Windows player for now. Its GPU is the target's architecture
-(Ada), so the Mac's tile-based caveats drop away, but it is about 2.5× an RTX
-4060 Laptop (Steel Nomad about 5,040 against 2,025, or 1.3× the M5 Max), with
-only 2.0× its bandwidth (504 GB/s). With the same 1.2× margin, the 12.5 ms
-target maps to a **GPU pass line of about 4.2 ms, roughly 240 fps at
-1920×1080**. That is this machine's equivalent of the Mac's 180 fps, or 5.0
-ms (200 fps) without the margin. One 12700F performance core is roughly a
-13620H core (within about 10%, unmeasured here), so its main-thread and
-render-thread lines are about 10 ms, and its sim line about 3.3 ms per tick.
-Job workers stay capped at 6, of its 8 performance cores. Bandwidth-bound
-passes will translate worse than the 2.5× compute ratio, as on the Mac.
 
 ## Bead Notes
 
@@ -2427,8 +2689,8 @@ Not started.
 
 ## Manual QA
 
-Manual QA watches the demo and its tools the way the operator will use them.
-The development build's command-line flags put it into each state needed
+Manual QA watches the demo and its tools the way the operator will use them,
+on Cygnus. The development build's command-line flags put it into each state needed
 here, since the demo itself takes no input:
 
 ```
@@ -2465,8 +2727,11 @@ baseline crowd handles a few hundred monsters, which is enough.
 
 ### Vendor guard drill
 
-- In a scratch worktree, force-add a file from the vendor folder and run
-  `scripts/check-fast`. **Expect** a failure naming the file.
+- In a scratch worktree on Cygnus, force-add a file from the vendor folder
+  and run the pre-push guard. **Expect** a failure naming the file, and no
+  push.
+- Do the same in a scratch worktree on the Mac, with a file from the Mac's
+  sources, and run `scripts/check-fast`. **Expect** the same failure.
 - Copy a vendor PNG into a tracked folder under `demo3d/`. **Expect** the
   binary-file failure.
 - Copy a vendor prefab with its `.meta` into a tracked folder. **Expect** the
@@ -2501,11 +2766,11 @@ baseline crowd handles a few hundred monsters, which is enough.
   timings, counters, machine state and a pass flag.
 - Start a heavy build in another terminal, then run the sweep. **Expect** a
   bounded wait, then runs marked noisy, repeated, and counted in the report.
-- Watch `tg status` during a sweep. **Expect** Tollgate paused while it runs
-  and resumed when it ends.
-- Kill a sweep with `kill -9`, then start another. **Expect** the new sweep
-  to report and resume the pause the killed one left.
-- Unplug the power. **Expect** a refusal.
+- Start a second sweep while one runs. **Expect** it to wait for the lock.
+- Kill a sweep with `taskkill /F`, then start another. **Expect** the new
+  sweep to take the lock at once.
+- Switch the power plan to Balanced. **Expect** a refusal naming the plan.
+- Lock the desktop, then start a sweep. **Expect** a refusal.
 - Run three sweeps back to back. **Expect** any thermal throttling reported,
   never hidden.
 - Launch with a different window size. **Expect** a refusal naming the
@@ -2521,7 +2786,7 @@ baseline crowd handles a few hundred monsters, which is enough.
   not jittering or vibrating against each other.
 - **Expect** elites and the boss to fit through every gap.
 - Check the result rows of S6 and one S3 frontier point. **Expect** the
-  sim's tick p99 at or under 2.0 ms.
+  sim's tick p99 at or under 3.5 ms.
 
 ### The scene
 
@@ -2529,7 +2794,7 @@ baseline crowd handles a few hundred monsters, which is enough.
   scene that looks finished: a landmark or edge decoration in every shot,
   readable monsters, and effects that stand out from the set.
 - Run S0 windowed with `--overlay` at 1× and 2× density. **Expect** S0's GPU
-  p99 under 2.0 ms at the authored density.
+  p99 under 1.5 ms at the authored density.
 - Walk the hero along a forest edge (`--start-at` a section that does).
   **Expect** canopies near the hero to dither out, and never to hide it.
 - Look for floating props, clipping, and obvious repeating patterns in the
