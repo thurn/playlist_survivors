@@ -836,6 +836,17 @@ impl Scene {
                             * (1.0 - 0.5 * ENEMY_FLINCH * fast.flinch);
                         ky = (1.0 - ENEMY_SQUASH * g * land) * (1.0 + ENEMY_FLINCH * fast.flinch);
                     }
+                    // Contact anticipation is an in-place squash, separate from root travel.
+                    if !dead
+                        && view.run.is_none_or(|r| r.frozen.is_none())
+                        && let Some((start, peak)) = f.notice
+                        && view.s >= start
+                        && view.s < peak
+                    {
+                        let u = ((view.s - start) / (peak - start).max(1e-6)).clamp(0.0, 1.0);
+                        kx *= 1.0 + 0.2 * u;
+                        ky *= 1.0 - 0.18 * u;
+                    }
                     let style = look.map_or(super::roster::Style::Character, |l| l.style);
                     if style == super::roster::Style::Plant {
                         let p = pulse.bar.rem_euclid(1.0);
@@ -1421,6 +1432,7 @@ mod density_tests {
                 view.foes.insert(
                     100,
                     eval::live::Foe {
+                        notice: None,
                         survivor_boss: true,
                         kind: "vs-boss-xlmummy".into(),
                         x: 0.0,

@@ -214,6 +214,21 @@ fn actual_sim_fates_match_live_recap_for_all_five_evolutions_through_pause() {
                 }
             })
             .collect(),
+        ticks: (0..500)
+            .map(|i| {
+                let t = f64::from(i) * 0.05;
+                stream::Tick {
+                    t,
+                    known_at: t,
+                    evidence: 1.0,
+                    energy: 0.5,
+                    level: None,
+                    key: None,
+                    bands: None,
+                    brightness: None,
+                }
+            })
+            .collect(),
         ..Default::default()
     };
     let mut replay = stream::Replay::new(log.clone());

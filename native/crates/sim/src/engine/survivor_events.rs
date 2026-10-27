@@ -21,9 +21,6 @@ struct Attempt {
 #[derive(Clone, Debug)]
 struct Group {
     until: f64,
-    start: f64,
-    wall: bool,
-    bar: Option<i64>,
     members: Vec<usize>,
 }
 #[derive(Clone, Debug, Default)]
@@ -48,16 +45,6 @@ impl Sim {
                 .level
                 .survivors
                 .is_some_and(|r| self.st.run_s < r.duration_s)
-    }
-    fn event_bar(&self) -> i64 {
-        let grid_live = self.st.ingested.beats >= 2
-            && self.log.beats[self.st.ingested.beats - 1].t
-                >= self.st.s - 2.0 * self.log.beats[self.st.ingested.beats - 1].period;
-        if grid_live {
-            (self.known_beat_at(self.st.s) / 2.0).floor() as i64
-        } else {
-            (self.st.run_s / (2.0 * self.env.rule.free_period_s)).floor() as i64
-        }
     }
     pub(super) fn event_stop(&self) -> f64 {
         if !self.events_active() {
@@ -87,7 +74,10 @@ impl Sim {
             });
         }
         for a in &state.pending {
-            next = next.min(a.song.unwrap_or(a.ready + offset));
+            let due = a.song.unwrap_or(a.ready + offset);
+            if due > self.st.s + 1e-9 {
+                next = next.min(due);
+            }
         }
         for g in &state.groups {
             next = next.min(g.until + offset);
@@ -117,26 +107,6 @@ impl Sim {
             self.expire_event_members(&g.members);
             false
         });
-        let bar = self.event_bar();
-        for g in &mut groups {
-            if g.wall && g.bar != Some(bar) {
-                g.bar = Some(bar);
-                for &id in &g.members {
-                    if let Some(f) = self.st.foes.get(id).filter(|f| f.alive) {
-                        let speed = self.env.input.lib.enemies[f.def].speed;
-                        let f = &mut self.st.foes[id];
-                        if let Some(path) = f.ring_path.as_mut() {
-                            let distance = path.c.hypot(path.sn) * (path.from - path.to);
-                            path.u = ((self.st.run_s - g.start) * speed / distance.max(1e-9))
-                                .clamp(path.u, 1.0);
-                        }
-                    }
-                    if self.st.foes.get(id).is_some_and(|f| f.alive) {
-                        self.move_pinned(id, self.st.w);
-                    }
-                }
-            }
-        }
         self.st.events.groups = groups;
         let schedule = &self.env.input.level.survivor_schedule;
         while let Some(row) = schedule
@@ -209,16 +179,26 @@ impl Sim {
             }
         }
         let mut pending = std::mem::take(&mut self.st.events.pending);
+        // A gap discards repeated entrance debt. Preserve one latest ready
+        // attempt per source row, plus future attempts, within the population cap.
+        let latest: Vec<_> = pending
+            .iter()
+            .filter(|a| a.ready <= self.st.run_s + 1e-9)
+            .map(|a| (a.minute, a.row, a.ordinal))
+            .collect();
+        pending.retain(|a| {
+            a.ready > self.st.run_s + 1e-9
+                || !latest
+                    .iter()
+                    .any(|&(m, r, o)| m == a.minute && r == a.row && o > a.ordinal)
+        });
         for a in &mut pending {
-            if a.ready <= self.st.run_s + 1e-9 && a.song.is_none() {
-                a.song = Some(
-                    self.known_grid_after(self.st.s, 0.5)
-                        .map_or(self.st.s, |g| g.1),
-                );
+            if a.ready <= self.st.run_s + 1e-9 && a.song.is_none_or(|s| s < self.st.s - 1e-8) {
+                a.song = self.known_grid_after(self.st.s, 1.0).map(|g| g.1);
             }
         }
         pending.retain(|a| {
-            if !a.song.is_some_and(|s| s <= self.st.s + 1e-9) {
+            if !self.clear_at(self.st.s) || !a.song.is_some_and(|s| (s - self.st.s).abs() < 1e-8) {
                 return true;
             }
             self.fire_survivor_event(a);
@@ -345,12 +325,8 @@ impl Sim {
             s_release: self.st.s,
             members: members.iter().map(|&i| i as f64).collect(),
         });
-        let bar = wall.then(|| self.event_bar());
         self.st.events.groups.push(Group {
             until: self.st.run_s + a.event.duration_ms / 1000.0,
-            start: self.st.run_s,
-            wall,
-            bar,
             members,
         });
     }
@@ -591,7 +567,7 @@ mod tests {
         );
     }
     #[test]
-    fn zero_chance_wall_is_unconditional_closes_on_bars_at_source_speed_and_expires() {
+    fn zero_chance_wall_closes_in_main_beat_steps_at_source_speed_and_expires() {
         let (mut s, rec) = sim(
             5,
             vec![Jump {
@@ -650,8 +626,8 @@ mod tests {
             row.delay_ms = 0.0;
             row.extra_repeats = 20;
             s.advance_to(131.0);
-            assert_eq!(rec.borrow().formations.len(), 1);
-            assert_eq!(s.st.alive.len(), 50);
+            assert_eq!(rec.borrow().formations.len(), 0);
+            assert_eq!(s.st.alive.len(), 0);
             for &id in &s.st.alive {
                 let f = &s.st.foes[id];
                 assert!(f.x.is_finite() && f.y.is_finite() && f.vx.is_finite() && f.vy.is_finite());
@@ -660,9 +636,37 @@ mod tests {
             assert!(s.st.alive.is_empty());
             assert_eq!(
                 rec.borrow().formations.len(),
-                1,
-                "source zero delay means one immediate attempt"
+                0,
+                "no known future main beat means no formation catch-up"
             );
         }
+    }
+    #[test]
+    fn relock_discards_overdue_swarm_repeat_debt() {
+        let (mut s, rec) = sim_beats(
+            2,
+            vec![Jump {
+                t: 121.0,
+                known_at: 121.0,
+                db: 8.0,
+            }],
+            Some(0),
+        );
+        s.advance_to(134.0);
+        assert!(rec.borrow().formations.is_empty());
+        s.log_mut().beats = (0..20)
+            .map(|i| Beat {
+                t: 134.5 + i as f64 * 0.5,
+                known_at: 134.1,
+                period: 0.5,
+                evidence: 1.0,
+            })
+            .collect();
+        s.advance_to(135.01);
+        assert_eq!(
+            rec.borrow().formations.len(),
+            1,
+            "one entrance, no three-attempt catch-up flood"
+        );
     }
 }

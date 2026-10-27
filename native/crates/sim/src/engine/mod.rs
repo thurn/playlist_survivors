@@ -113,7 +113,6 @@ pub const BEATLESS: Beatless = Beatless {
 
 const FORECAST_CONFIDENCE: f64 = 0.6;
 const FORECAST_WINDOW: f64 = 0.05;
-const STEP_SEEN: f64 = 0.5;
 const BITE_SLACK: f64 = 2.0;
 pub const SPAWN_PER_BEAT: f64 = 120.0;
 const SPAWN_FORWARD: f64 = 0.6;
@@ -145,7 +144,6 @@ const DIP_RATE: f64 = 0.4;
 const CALM_CURL: f64 = crate::jsmath::PI / 3.0;
 const DIP_RAMP: f64 = 0.04;
 const DIP_HOLD: f64 = 0.07;
-const ARCHER_RANGE: f64 = 220.0;
 const CLEAVE_AIM_AHEAD: f64 = 160.0;
 const CHARGE_SPEED: f64 = 4.0;
 const HEADING_BEATS: f64 = 2.0;
@@ -682,6 +680,9 @@ impl Queue {
 /// A beat step: from world time w0, easing out over dur, (dx, dy) plus the separation push over span.
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct FoeStep {
+    s0: f64,
+    peak_s: f64,
+    last_s: f64,
     w0: f64,
     dur: f64,
     dx: f64,
@@ -1352,14 +1353,10 @@ impl Sim {
             let hero = &env.input.lib.hero;
             for bi in from..st.ingested.beats {
                 let b = log.beats[bi];
-                // (Every beat is known by its predecessor's time, the analyzer's commit rule: the
-                // streaming queue relies on it.)
-                assert!(
-                    b.t >= st.s - 1e-9,
-                    "beat {bi} at {} arrived after the simulation passed it ({})",
-                    b.t,
-                    st.s
-                );
+                // Late knowledge never replays missed travel or attack debt.
+                if b.t < st.s - 1e-9 {
+                    continue;
+                }
                 let sl = &st.sch.grid_slots[bi];
                 // The sword swings by itself on every slot, never before the slot's beat is known.
                 let windup = sl.s
@@ -1368,6 +1365,14 @@ impl Sim {
                         / max(0.05, step_rate(&st.sch.base_steps, sl.s));
                 let at = max(max(0.0, windup), b.known_at);
                 st.q.push_init(at, Ev::Auto { slot: bi }, phase::AUTO, bi as u64);
+                st.q.push(
+                    (b.t - b.period * 0.5).max(b.known_at).max(st.s),
+                    Ev::EnemyWind {
+                        peak: b.t,
+                        period: b.period,
+                        generation: None,
+                    },
+                );
                 st.q.push_init(b.t, Ev::Beat { bi }, phase::BEAT, bi as u64);
                 st.q.push_init(
                     b.t,
@@ -2168,6 +2173,7 @@ fn fresh_state(env: &Env) -> SimState {
 #[cfg(test)]
 mod tests {
     mod evolution_tests;
+    mod mainbeat_tests;
     use std::path::Path;
     use std::rc::Rc;
 
@@ -2605,27 +2611,29 @@ mod tests {
         let rec = Rc::new(RefCell::new(LogRecorder::default()));
         sim.rec = Box::new(Rc::clone(&rec));
         let id = rhythm_foe(&mut sim, 30.0);
-        sim.advance_to(0.26);
-        let attack = sim.st.foes[id].attack.expect("offbeat wind-up");
-        let at_open = attack.offset(sim.st.w);
-        sim.advance_to(0.35);
-        let back = sim.st.foes[id].attack.unwrap().offset(sim.st.w);
-        assert!(back.0 > at_open.0, "wind-up leans away from the hero");
-        assert!(sim.pos(id, sim.st.w).0.is_finite());
-        sim.advance_to(0.499);
+        sim.advance_to(1.26);
+        sim.st.foes[id].attack.expect("in-place contact notice");
+        let held = sim.pos(id, sim.st.w);
+        sim.advance_to(1.35);
+        assert_eq!(
+            held,
+            sim.pos(id, sim.st.w),
+            "notice never translates the root"
+        );
+        sim.advance_to(1.499);
         assert_eq!(sim.st.health, 120.0, "continuous contact cannot bite");
-        sim.advance_to(0.501);
+        sim.advance_to(1.501);
         assert_eq!(sim.st.health, 116.0);
         assert!(sim.st.foes[id].attack.unwrap().attempted);
         sim.st.invuln_until = 0.0;
         sim.tick_enemy_bites();
-        sim.enemy_wind(0.5, 0.5, None);
+        sim.enemy_wind(1.5, 0.5, None);
         sim.tick_enemy_bites();
         assert_eq!(
             sim.st.health, 116.0,
             "no second bite even if invulnerability is removed"
         );
-        sim.advance_to(1.1);
+        sim.advance_to(2.1);
         let rec = rec.borrow();
         assert!(!rec.bites.is_empty());
         for bite in &rec.bites {
@@ -2641,23 +2649,23 @@ mod tests {
     fn survivor_lunge_rechecks_contact_at_the_peak_and_has_no_surprise_resume_bite() {
         let mut sim = survivor_sim();
         let id = rhythm_foe(&mut sim, 30.0);
-        sim.advance_to(0.26);
+        sim.advance_to(1.26);
         assert!(sim.st.foes[id].attack.is_some());
         // The hero escaped the notice: a queued attack has no right to deal damage.
         sim.st.foes[id].x = 1000.0;
-        sim.advance_to(0.51);
+        sim.advance_to(1.51);
         assert_eq!(sim.st.health, 120.0);
         sim.st.foes[id].x = 30.0;
-        sim.advance_to(0.76);
+        sim.advance_to(1.76);
         assert!(sim.st.foes[id].attack.is_some());
-        sim.freeze_at(0.77, crate::survivors::FreezeReason::Paused);
-        sim.advance_to(1.2);
+        sim.freeze_at(1.77, crate::survivors::FreezeReason::Paused);
+        sim.advance_to(2.2);
         let held = sim.pos(id, sim.st.w);
-        sim.advance_to(1.4);
+        sim.advance_to(2.4);
         assert_eq!(held, sim.pos(id, sim.st.w));
-        key(&mut sim, 1.4, KeyEventKind::Press, InputKey::Pause);
-        key(&mut sim, 1.41, KeyEventKind::Release, InputKey::Pause);
-        sim.advance_to(1.501);
+        key(&mut sim, 2.4, KeyEventKind::Press, InputKey::Pause);
+        key(&mut sim, 2.41, KeyEventKind::Release, InputKey::Pause);
+        sim.advance_to(2.501);
         assert!(!sim.st.freeze.frozen);
         assert!(
             sim.st.foes[id].attack.is_none(),
@@ -2667,18 +2675,18 @@ mod tests {
     }
 
     #[test]
-    fn survivor_early_roles_step_at_the_design_subdivisions_and_stay_finite() {
+    fn survivor_early_roles_step_on_main_beats_and_stay_finite() {
         use crate::recorder::LogRecorder;
         use std::cell::RefCell;
         let mut sim = survivor_sim();
         let rec = Rc::new(RefCell::new(LogRecorder::default()));
         sim.rec = Box::new(Rc::clone(&rec));
         for (i, (role, steps)) in [
-            ("vs-bat1", 2.0),
-            ("vs-bat2", 2.0),
-            ("vs-bat3", 2.0),
+            ("vs-bat1", 1.0),
+            ("vs-bat2", 1.0),
+            ("vs-bat3", 1.0),
             ("vs-zombie", 1.0),
-            ("vs-ghost", 4.0),
+            ("vs-ghost", 1.0),
             ("vs-skeleton", 1.0),
         ]
         .into_iter()
@@ -2754,33 +2762,14 @@ mod tests {
     }
 
     #[test]
-    fn survivor_lunge_free_pulse_is_generation_guarded_and_reactions_use_sixteenths() {
+    fn survivor_free_pulse_never_arms_contact_and_reactions_keep_their_grid() {
         let mut sim = survivor_sim();
         let id = rhythm_foe(&mut sim, 30.0);
-        let mut grid = survivor_sim();
-        grid.advance_to(0.6);
-        assert!((grid.next_enemy_sixteenth(0.6) - 0.625).abs() < 1e-9);
-        sim.st.s = 0.25;
-        sim.st.w = 0.25;
-        let generation = sim.st.freeze.pulse_generation;
-        sim.enemy_wind(0.5, 0.5, Some(generation));
-        sim.st.s = 0.5;
-        sim.st.w = 0.5;
-        sim.st.freeze.pulse_generation += 1;
-        sim.tick_enemy_bites();
-        assert_eq!(
-            sim.st.health, 120.0,
-            "new committed grid invalidates the old free pulse"
-        );
+        sim.advance_to(0.6);
+        assert!((sim.next_enemy_sixteenth(0.6) - 0.625).abs() < 1e-9);
         sim.st.foes[id].attack = None;
-        let generation = sim.st.freeze.pulse_generation;
-        sim.st.s = 0.75;
-        sim.st.w = 0.75;
-        sim.enemy_wind(1.0, 0.5, Some(generation));
-        sim.st.s = 1.0;
-        sim.st.w = 1.0;
-        sim.tick_enemy_bites();
-        assert_eq!(sim.st.health, 116.0);
+        sim.enemy_wind(1.0, 0.5, Some(sim.st.freeze.pulse_generation));
+        assert!(sim.st.foes[id].attack.is_none());
     }
 
     #[test]
@@ -4983,8 +4972,8 @@ mod tests {
                     key(sim, 1.01, KeyEventKind::Press, InputKey::Right);
                 }
             }
-            a.advance_to(1.25);
-            b.advance_to(1.25);
+            a.advance_to(1.49);
+            b.advance_to(1.49);
             assert_eq!(format!("{:?}", ar.borrow()), format!("{:?}", br.borrow()));
             assert_eq!(format!("{:?}", a.st.foes), format!("{:?}", b.st.foes));
         }
@@ -5557,7 +5546,7 @@ mod tests {
         );
     }
     #[test]
-    fn late_boss_gait_uses_bar_slots_instead_of_the_ordinary_roles_slots() {
+    fn late_boss_uses_sharp_main_beat_steps_and_discards_resume_debt() {
         let mut file = stream();
         file.log = StreamLog {
             beats: (0..180)
@@ -5595,26 +5584,24 @@ mod tests {
         );
         s.mark_survivor_boss(id, true);
         assert_eq!(s.st.foes[id].step_k, Some(120.0));
-        s.advance_to(60.99);
-        assert!(s.st.foes[id].step.is_none(), "wait for bar");
-        s.advance_to(61.02);
-        assert!(
-            s.st.foes[id].step.is_some(),
-            "minute5/8-style spawn does not wait dozens of bars"
-        );
-        s.freeze_at(61.2, crate::survivors::FreezeReason::Paused);
+        s.advance_to(60.39);
+        assert!(s.st.foes[id].step.is_none(), "hold before main-beat window");
+        s.advance_to(60.49);
+        let step = s.st.foes[id].step.expect("step before next main beat");
+        assert!(step.dur <= 0.1 + 1e-9);
+        s.advance_to(60.51);
+        let held = s.pos(id, s.st.w);
+        s.advance_to(60.8);
+        assert_eq!(held, s.pos(id, s.st.w));
+        s.freeze_at(60.82, crate::survivors::FreezeReason::Paused);
         key(&mut s, 62.1, KeyEventKind::Press, InputKey::Pause);
         key(&mut s, 62.11, KeyEventKind::Release, InputKey::Pause);
+        s.advance_to(62.51);
+        assert!(s.st.foes[id].step.is_none(), "resume discards held travel");
         s.advance_to(62.99);
-        assert_eq!(
-            s.st.foes[id].step.unwrap().w0,
-            61.0,
-            "resume on odd beat finishes held step, does not start an extra charge"
-        );
-        s.advance_to(63.02);
         assert!(
-            (s.st.foes[id].step.unwrap().w0 - 61.7).abs() < 1e-8,
-            "next native bar starts the next charge"
+            s.st.foes[id].step.is_some(),
+            "future main beat admits fresh travel"
         );
     }
 }

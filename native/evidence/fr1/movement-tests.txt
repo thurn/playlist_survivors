@@ -1,0 +1,21 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/feel-fr1/native/crates/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 5.12s
+     Running unittests src/lib.rs (target/debug/deps/sim-1ebf1e278f138957)
+
+running 9 tests
+test engine::tests::mainbeat_tests::contact_notice_is_published_before_attack_without_root_motion ... ok
+test engine::tests::mainbeat_tests::legacy_rate_changes_keep_steps_on_heard_main_beats ... ok
+test engine::tests::mainbeat_tests::pause_during_step_captures_pose_and_cancels_remaining_distance ... ok
+test engine::tests::mainbeat_tests::ring_holds_until_close_and_cancelled_travel_is_not_repaid ... ok
+test engine::tests::mainbeat_tests::sparse_committed_beats_do_not_repay_missing_distance_on_relock ... ok
+FR1 70 BPM: 284 moving root samples, all admitted; other samples held
+FR1 real recorded house-delayed: 493 moving root samples, all admitted
+test engine::tests::mainbeat_tests::recorded_house_delayed_timestamped_music_has_no_offbeat_travel ... ok
+test engine::tests::mainbeat_tests::legacy_armour_reduces_main_beat_contact ... ok
+FR1 128 BPM: 468 moving root samples, all admitted; other samples held
+test engine::tests::mainbeat_tests::no_beats_low_confidence_and_late_evidence_hold_without_travel_debt ... ok
+FR1 174 BPM: 486 moving root samples, all admitted; other samples held
+test engine::tests::mainbeat_tests::catalog_bats_swarms_and_bosses_hold_at_70_128_174_bpm ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 115 filtered out; finished in 0.03s
+

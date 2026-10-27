@@ -4,20 +4,18 @@
 use std::rc::Rc;
 
 use super::{
-    BITE_SLACK, CALM_CURL, CELL, CHARGE_SPEED, CONTACT_GAP, ENEMY_RATE, Ev, Foe, FoeStep, G,
-    HURTBOX_RADIUS, KNOCK_TIME, MIN_GAP, POP_CAP, RECYCLE_VIEWS, SEPARATION, SIM_RATE, SPAWN_EXTRA,
-    SPAWN_FORWARD, SPAWN_MARGIN, SPAWN_PER_BEAT, STEP_SEEN, STREAM_SHARE, Sim,
+    CALM_CURL, CELL, CHARGE_SPEED, CONTACT_GAP, ENEMY_RATE, Ev, Foe, FoeStep, G, HURTBOX_RADIUS,
+    KNOCK_TIME, MIN_GAP, POP_CAP, RECYCLE_VIEWS, SEPARATION, SPAWN_EXTRA, SPAWN_FORWARD,
+    SPAWN_MARGIN, SPAWN_PER_BEAT, STREAM_SHARE, Sim,
 };
-use crate::content::types::{Behavior, EnemyDef, Gait, Subdivision};
+use crate::content::types::{Behavior, EnemyDef, Subdivision};
 use crate::core::rng::{Part, Rng};
-use crate::core::shaping::{beat_hit, clamp};
+use crate::core::shaping::clamp;
 use crate::core::songmap::{bar_of_beat_index, time_of_beat_index};
-use crate::gait::{gait_beat, gait_ground, gait_slot, gait_step_after, gait_step_at_or_before};
-use crate::jsmath::{PI, atan2, ceil, cos, floor, hypot, max, min, pow, round, sin, sqrt};
+use crate::jsmath::{PI, atan2, ceil, cos, floor, hypot, max, min, round, sin, sqrt};
 use crate::movement::ease_out;
 use crate::reactive::director::{by_level, director_population, section_roster};
 use crate::recorder::EnemyRecord;
-use crate::upgrades::armoured_bite;
 
 /// JS's `xs[i] ?? d`: the item at a whole index in range, else d.
 pub(super) fn get_or(xs: &[f64], i: f64, d: f64) -> f64 {
@@ -40,16 +38,6 @@ pub fn sprite_extents(def: &EnemyDef) -> (f64, f64, f64) {
     }
 }
 
-fn group_period(group: Subdivision, bpb: f64) -> Option<f64> {
-    match group {
-        Subdivision::Eighth => Some(0.5),
-        Subdivision::Beat => Some(1.0),
-        Subdivision::Bar => Some(bpb),
-        Subdivision::TwoBar => Some(2.0 * bpb),
-        Subdivision::Sixteenth => None,
-    }
-}
-
 impl Sim {
     pub(super) fn pos(&self, fi: usize, at_w: f64) -> (f64, f64) {
         let f = &self.st.foes[fi];
@@ -58,11 +46,28 @@ impl Sim {
         } else {
             at_w
         };
-        let (dx, dy) = f.attack.map_or((0.0, 0.0), |a| a.offset(at_w));
-        (
-            f.x + f.vx * (at_w - f.last_w) + dx,
-            f.y + f.vy * (at_w - f.last_w) + dy,
-        )
+        if let Some(g) = f.step {
+            let song = self
+                .st
+                .breaks
+                .iter()
+                .rev()
+                .find(|b| b.w <= at_w + 1e-12 && b.rate > 0.0)
+                .map_or(self.st.s, |b| b.s + (at_w - b.w) / b.rate);
+            if song > g.peak_s + 1.0 / super::SIM_RATE + 1e-9 {
+                return (f.x, f.y);
+            }
+            let de = ease_out(clamp((song - g.s0) / (g.peak_s - g.s0), 0.0, 1.0))
+                - ease_out(clamp((g.last_s - g.s0) / (g.peak_s - g.s0), 0.0, 1.0));
+            return (f.x + g.dx * de, f.y + g.dy * de);
+        }
+        if f.recoil_until > f.last_w {
+            return (
+                f.x + f.recoil_v.0 * (at_w - f.last_w),
+                f.y + f.recoil_v.1 * (at_w - f.last_w),
+            );
+        }
+        (f.x, f.y)
     }
 
     /// Can this enemy be hit now? (The boss is out of reach while it drops in.)
@@ -138,10 +143,10 @@ impl Sim {
                 }
         });
         // A stepping enemy takes its first step on its next step's gait time.
-        let step_k = def
-            .gait
-            .as_ref()
-            .map(|g| gait_slot(g, self.known_beat_at(self.st.s)));
+        let step_k = Some(
+            self.log.beats[..self.st.ingested.beats].partition_point(|b| b.t <= self.st.s) as f64
+                - 1.0,
+        );
         let weight = self.weight_of(def, false);
         self.st.foes.push(Foe {
             id,
@@ -259,163 +264,55 @@ impl Sim {
         (cx + c * t, cy + sn * t)
     }
 
-    /// Beat steps: whether the enemy is due a step at beat index b, song time s, and its ground and
-    /// duration (`stepDue`).
-    fn step_due(&mut self, fi: usize, gait: &Gait, b: f64, s: f64) -> Option<(f64, f64)> {
-        let k = gait_slot(gait, b);
-        let f = &mut self.st.foes[fi];
-        let joins = f.step_k.is_none();
-        let due = joins
-            || (k > f.step_k.unwrap_or(f64::NAN)
-                && gait_step_after(gait, f.step_k.unwrap_or(0.0)) <= k);
-        f.step_k = Some(if joins {
-            k
-        } else {
-            max(f.step_k.unwrap_or(f64::NAN), k)
-        });
-        if !due {
-            return None;
-        }
-        let kk = if joins {
-            k
-        } else {
-            gait_step_at_or_before(gait, k)
-        };
-        let t0 = self.known_time_of_beat(gait_beat(gait, kk));
-        let r = self.base_rate(s);
-        let ground = r * if joins {
-            self.known_time_of_beat(gait_beat(gait, gait_step_after(gait, k))) - s
-        } else {
-            self.known_time_of_beat(gait_beat(gait, kk + gait_ground(gait))) - t0
-        };
-        let dur = min(
-            ground,
-            r * gait.share * (self.known_time_of_beat(gait_beat(gait, kk + 1.0)) - t0),
-        );
-        Some((ground, dur))
-    }
-
-    fn start_step(&mut self, fi: usize, w: f64, dx: f64, dy: f64, due: (f64, f64)) {
-        let dur = max(1.0 / SIM_RATE, due.1);
-        self.st.foes[fi].step = Some(FoeStep {
-            w0: w,
-            dur,
-            dx,
-            dy,
-            span: due.0,
-        });
-        if hypot(dx, dy) >= STEP_SEEN {
-            self.rec.enemy_step(fi, w, dur);
-        }
-    }
-
-    fn stop_stepping(&mut self, fi: usize, w: f64) {
-        if self.st.foes[fi].step_k.is_some() {
-            self.rec.enemy_step(fi, w, 0.0);
-        }
-        let f = &mut self.st.foes[fi];
-        f.step_k = None;
-        f.step = None;
-    }
-
-    fn step_velocity(&mut self, fi: usize, w: f64) {
-        let f = &mut self.st.foes[fi];
-        let Some(g) = f.step else {
-            f.vx = 0.0;
-            f.vy = 0.0;
-            return;
-        };
-        let u = (w - g.w0) / g.dur;
-        if u >= 1.0 {
-            f.vx = 0.0;
-            f.vy = 0.0;
-            return;
-        }
-        let slope = (3.0 * pow(1.0 - u, 2.0)) / g.dur;
-        f.vx = (g.dx + f.sx * g.span) * slope;
-        f.vy = (g.dy + f.sy * g.span) * slope;
-    }
-
-    /// Integrates every enemy to world time w1 (a fixed step).
-    #[allow(clippy::too_many_lines)] // (one TS function)
+    /// Integrate only admitted travel or a separately tagged forced reaction. The
+    /// endpoint is analytic, so sample cadence cannot stretch a step into its hold.
     pub(super) fn move_foes(&mut self, w1: f64) {
-        let env = Rc::clone(&self.env);
-        let lib = &env.input.lib;
         let hp = self.hero_pose(w1);
-        let s = self.st.s;
-        // A calm section slows the enemies and curls their approach (the loudness level's calm, blended).
-        let d = &env.director;
-        let calm = if env.input.level.survivors.is_some() {
-            0.0
-        } else {
-            self.by_level(s, &|l| by_level(&d.calm, l))
-        };
-        let calm_speed = 1.0 - calm;
-        let curl_cos = cos(calm * CALM_CURL);
-        let curl_sin = sin(calm * CALM_CURL);
-        let sbi = self.sbi_at(s);
-        let idx = &self.st.idx;
-        let bar = max(1.0, bar_of_beat_index(idx, sbi));
-        let bpb = get_or(&idx.beats_per_bar, min(idx.bar_count, bar), 2.0);
-        let bar_start = get_or(&idx.bar_start, min(idx.bar_count, bar), 0.0);
-        let free = env.input.level.survivors.is_some()
-            && (self.st.ingested.beats < 2
-                || !self.log.beats[..self.st.ingested.beats]
-                    .last()
-                    .is_some_and(|b| b.t > s + 1e-9));
-        let mult = |g: Subdivision| -> f64 {
-            if free {
-                return 1.0;
-            }
-            match group_period(g, bpb) {
-                Some(period) => {
-                    let ph = ((sbi - bar_start) / period) % 1.0;
-                    let ph = if ph < 0.0 { ph + 1.0 } else { ph };
-                    (0.6 + 0.8 * beat_hit(ph)) / 0.733
-                }
-                None => 1.0,
-            }
-        };
-        // Beat steps need a steady beat: enemies with a gait glide while the beat is unclear.
-        let stepping = self.clear_at(s)
-            && (self.env.input.level.survivors.is_none()
-                || (!free
-                    && self.log.beats[..self.st.ingested.beats]
-                        .last()
-                        .is_some_and(|b| b.t > s + 1e-9)));
-        let step_b = if stepping { self.known_beat_at(s) } else { 0.0 };
-        let health = self.st.health > 0.0;
         let alive = self.st.alive.clone();
-        let slots: Vec<usize> = alive.iter().map(|&id| self.st.foes.slot(id)).collect();
-        // Bring everyone to this step's time first.
+        let admitted = self.enemy_main_window();
+        let reliable = self.enemy_reliable();
         for &fi in &alive {
-            // Set pieces' members follow their circles and slots.
-            if self.move_pinned(fi, w1) {
-                continue;
-            }
             let f = &mut self.st.foes[fi];
-            let dt = w1 - f.last_w;
-            if f.land_s.is_some_and(|l| s < l) {
-                f.vx = 0.0;
-                f.vy = 0.0;
-                continue;
-            }
-            if env.input.level.survivors.is_some() && f.recoil_until > f.last_w {
+            if f.recoil_until > f.last_w {
                 let used = (w1.min(f.recoil_until) - f.last_w).max(0.0);
                 f.x += f.recoil_v.0 * used;
                 f.y += f.recoil_v.1 * used;
-                continue;
+                f.step = None;
+            } else if f.knock_t > 0.0 {
+                let used = (w1 - f.last_w).min(f.knock_t);
+                f.x += f.knock_x * used / KNOCK_TIME;
+                f.y += f.knock_y * used / KNOCK_TIME;
+                f.knock_t -= used;
+                f.step = None;
+            } else if let Some(g) = f.step {
+                // Loss of confidence cancels travel; it never finishes a stale step.
+                if reliable && self.st.s <= g.peak_s + 1.0 / super::SIM_RATE + 1e-9 {
+                    let de = ease_out(clamp((self.st.s - g.s0) / (g.peak_s - g.s0), 0.0, 1.0))
+                        - ease_out(clamp((g.last_s - g.s0) / (g.peak_s - g.s0), 0.0, 1.0));
+                    f.x += g.dx * de;
+                    f.y += g.dy * de;
+                    f.step.as_mut().expect("step").last_s = self.st.s;
+                } else {
+                    f.step = None;
+                }
             }
-            if let Some(g) = f.step {
-                let de = ease_out(clamp((w1 - g.w0) / g.dur, 0.0, 1.0))
-                    - ease_out(clamp((f.last_w - g.w0) / g.dur, 0.0, 1.0));
-                f.x += (g.dx + f.sx * g.span) * de;
-                f.y += (g.dy + f.sy * g.span) * de;
-                continue;
+            if f.recoil_until <= w1 {
+                f.recoil_until = f64::NEG_INFINITY;
             }
-            f.x += f.vx * dt;
-            f.y += f.vy * dt;
+            if let Some(path) = f.ring_path.as_mut() {
+                let radius = ((f.x - path.x) * path.c + (f.y - path.y) * path.sn)
+                    / (path.c * path.c + path.sn * path.sn).max(1e-9);
+                path.u = ((path.from - radius) / (path.from - path.to).max(1e-9)).clamp(0.0, 1.0);
+            }
+            f.last_w = w1;
+            f.vx = 0.0;
+            f.vy = 0.0;
         }
+        let Some((bi, peak, period)) = admitted else {
+            return;
+        };
+        let s = self.st.s;
+        let slots: Vec<usize> = alive.iter().map(|&id| self.st.foes.slot(id)).collect();
         let gox = floor(hp.x / CELL) as i64 - G / 2;
         let goy = floor(hp.y / CELL) as i64 - G / 2;
         let separation_input: Vec<[u64; 4]> = alive
@@ -536,10 +433,10 @@ impl Sim {
                                 }
                                 if dd < gap {
                                     let push = gap - dd;
-                                    a.x += ux * push * wa;
-                                    a.y += uy * push * wa;
-                                    b.x -= ux * push * (1.0 - wa);
-                                    b.y -= uy * push * (1.0 - wa);
+                                    a.sx += ux * push * wa;
+                                    a.sy += uy * push * wa;
+                                    b.sx -= ux * push * (1.0 - wa);
+                                    b.sy -= uy * push * (1.0 - wa);
                                 }
                                 j = next;
                             }
@@ -559,220 +456,107 @@ impl Sim {
                 .insert((gox, goy), separation_input, output);
         }
 
-        // Archer groups share a post: on the line from the hero toward the group, at their range.
-        let mut posts: Vec<(usize, f64, f64, f64)> = Vec::new();
+        // Separation is part of the next step's destination. It cannot translate
+        // roots while holding, and its vector is frozen for the entire step.
         for &fi in &alive {
             let f = &self.st.foes[fi];
-            let Some(g) = f.archer_group else { continue };
-            match posts.iter_mut().find(|p| p.0 == g) {
-                Some(p) => {
-                    p.1 += f.x;
-                    p.2 += f.y;
-                    p.3 += 1.0;
-                }
-                None => posts.push((g, f.x, f.y, 1.0)),
-            }
-        }
-        for &fi in &alive {
-            let dt = {
-                let f = &mut self.st.foes[fi];
-                let dt = w1 - f.last_w;
-                f.last_w = w1;
-                dt
-            };
-            if env.input.level.survivors.is_some() && w1 < self.st.foes[fi].recoil_until {
-                let f = &mut self.st.foes[fi];
-                f.step = None;
-                f.vx = f.recoil_v.0;
-                f.vy = f.recoil_v.1;
-                continue;
-            }
-            if env.input.level.survivors.is_some() && self.st.foes[fi].recoil_until.is_finite() {
-                let f = &mut self.st.foes[fi];
-                f.recoil_until = f64::NEG_INFINITY;
-                f.vx = 0.0;
-                f.vy = 0.0;
-            }
-            // Set pieces keep their course (a ring's circle, a stampede's run) and bite whoever they run into.
-            let (on_course, run) = {
-                let f = &self.st.foes[fi];
-                (
-                    (f.has_at || f.ring_path.is_some()) && s < f.slot_until,
-                    f.run,
-                )
-            };
-            if on_course || run.is_some() {
-                self.stop_stepping(fi, w1);
-                let def = &lib.enemies[self.st.foes[fi].def];
-                let f = &mut self.st.foes[fi];
-                if let Some((vx, vy)) = run {
-                    f.vx = vx;
-                    f.vy = vy;
-                }
-                let ed = hypot(f.x - hp.x, f.y - hp.y);
-                if health
-                    && env.input.level.survivors.is_none()
-                    && def.contact_damage > 0.0
-                    && ed <= HURTBOX_RADIUS + f.r + CONTACT_GAP + BITE_SLACK
-                    && self.st.w >= self.st.invuln_until - 1e-9
-                {
-                    let amount = if env.input.level.survivors.is_some() {
-                        def.contact_damage
-                    } else {
-                        armoured_bite(def.contact_damage, self.st.bonus.armour)
-                    };
-                    self.hurt(amount, "bite", &def.id);
-                }
-                continue;
-            }
-            if self.pinned(fi) {
-                self.stop_stepping(fi, w1);
-                continue;
-            }
-            let def = &lib.enemies[self.st.foes[fi].def];
-            if let Some((dx, dy)) = self.st.foes[fi].swarm_dir {
-                // Event formations keep one fixed crossing heading. The gait
-                // changes speed within a slot, never the average source speed.
-                self.st.foes[fi].sx = 0.0;
-                self.st.foes[fi].sy = 0.0;
-                if let Some(gait) = def.gait.as_ref().filter(|_| stepping) {
-                    if let Some(due) = self.step_due(fi, gait, step_b, s) {
-                        self.start_step(
-                            fi,
-                            w1,
-                            dx * def.speed * due.0,
-                            dy * def.speed * due.0,
-                            due,
-                        );
-                    }
-                    self.step_velocity(fi, w1);
-                } else {
-                    self.stop_stepping(fi, w1);
-                    self.st.foes[fi].vx = dx * def.speed;
-                    self.st.foes[fi].vy = dy * def.speed;
-                }
-                continue;
-            }
-            if let Some(g) = self.st.foes[fi].archer_group {
-                let p = posts
-                    .iter()
-                    .find(|p| p.0 == g)
-                    .copied()
-                    .expect("the group's post");
-                let f = &self.st.foes[fi];
-                let cx = p.1 / p.3 - hp.x;
-                let cy = p.2 / p.3 - hp.y;
-                let cl = hypot(cx, cy);
-                let cl = if cl == 0.0 { 1.0 } else { cl };
-                let off = (f.archer_slot.unwrap_or(0) as f64 - 0.5) * super::pieces::ARCHER_GAP;
-                let tx = hp.x + (cx / cl) * super::ARCHER_RANGE - (cy / cl) * off - f.x;
-                let ty = hp.y + (cy / cl) * super::ARCHER_RANGE + (cx / cl) * off - f.y;
-                let tl = hypot(tx, ty);
-                let tl = if tl == 0.0 { 1.0 } else { tl };
-                if let Some(gait) = def.gait.as_ref().filter(|_| stepping) {
-                    if let Some(due) = self.step_due(fi, gait, step_b, s) {
-                        let len = min(def.speed * calm_speed * due.0, tl);
-                        self.start_step(fi, w1, (tx / tl) * len, (ty / tl) * len, due);
-                    }
-                    self.step_velocity(fi, w1);
-                    continue;
-                }
-                self.stop_stepping(fi, w1);
-                let sp = def.speed * calm_speed * mult(def.group) * clamp(tl / 20.0, 0.0, 1.0);
-                let kk = min(1.0, dt * 12.0);
-                let f = &mut self.st.foes[fi];
-                f.vx += ((tx / tl) * sp - f.vx) * kk;
-                f.vy += ((ty / tl) * sp - f.vy) * kk;
-                continue;
-            }
-            let (fx, fy, fr, fid, charge_until) = {
-                let f = &self.st.foes[fi];
-                (f.x, f.y, f.r, f.id, f.charge_until)
-            };
-            let k = min(1.0, dt * 12.0);
-            let dx = hp.x - fx;
-            let dy = hp.y - fy;
-            let dd = hypot(dx, dy);
-            let dd = if dd == 0.0 || dd.is_nan() { 0.01 } else { dd };
-            let contact = HURTBOX_RADIUS + fr + CONTACT_GAP;
-            let charge = if s < charge_until { CHARGE_SPEED } else { 1.0 };
-            // The curl turns half the enemies clockwise and half counterclockwise.
-            let cs = if fid % 2 == 0 { curl_sin } else { -curl_sin };
-            let boss_gait = self.st.foes[fi]
-                .survivor_boss
-                .then(super::enemy_rhythm::boss_gait);
-            if let Some(gait) = boss_gait.filter(|_| stepping && self.st.foes[fi].step_k.is_none())
+            if f.step_k.is_some_and(|k| k >= bi as f64)
+                || f.recoil_until >= w1
+                || f.knock_t > 0.0
+                || f.land_s.is_some_and(|s| self.st.s < s)
             {
-                self.st.foes[fi].step_k = Some(gait_slot(gait, step_b));
+                continue;
             }
-            match boss_gait.or(def.gait.as_ref()) {
-                Some(gait) if stepping => {
-                    // A beat step on each gait time, aimed where the hero is then.
-                    if let Some(due) = self.step_due(fi, gait, step_b, s) {
-                        let reach = def.speed * calm_speed * due.0;
-                        let len = if def.behavior == Behavior::Archer {
-                            clamp(dd - super::ARCHER_RANGE, -0.5 * reach, reach)
-                        } else {
-                            clamp(dd - contact, 0.0, reach * charge)
-                        };
-                        self.start_step(
-                            fi,
-                            w1,
-                            ((dx * curl_cos - dy * cs) / dd) * len,
-                            ((dy * curl_cos + dx * cs) / dd) * len,
-                            due,
-                        );
-                    }
-                    self.step_velocity(fi, w1);
-                }
-                _ => {
-                    self.stop_stepping(fi, w1);
-                    let m = mult(def.group) * calm_speed;
-                    // Archers keep their distance; everyone else closes to contact.
-                    let speed = if def.behavior == Behavior::Archer {
-                        def.speed * m * clamp((dd - super::ARCHER_RANGE) / 30.0, -0.5, 1.0)
+            self.st.foes[fi].step_k = Some(bi as f64);
+            let def = &self.env.input.lib.enemies[self.st.foes[fi].def];
+            let cadence = if self.st.foes[fi].survivor_boss {
+                1
+            } else {
+                def.gait.as_ref().map_or(1, |g| {
+                    // Subdivision patterns only choose a slower cadence. They
+                    // never introduce eighth/sixteenth movement admissions.
+                    if crate::gait::gait_ground(g) >= 2.0 {
+                        2
                     } else {
-                        def.speed * m * charge * clamp((dd - contact) / 16.0, 0.0, 1.0)
-                    };
-                    let f = &mut self.st.foes[fi];
-                    let tvx = ((dx * curl_cos - dy * cs) / dd) * speed + f.sx;
-                    let tvy = ((dy * curl_cos + dx * cs) / dd) * speed + f.sy;
-                    f.vx += (tvx - f.vx) * k;
-                    f.vy += (tvy - f.vy) * k;
-                }
+                        1
+                    }
+                })
+            };
+            if bi % cadence != 0 {
+                continue;
             }
-            let f = &mut self.st.foes[fi];
-            if f.knock_t > 0.0 {
-                let used = min(dt, f.knock_t);
-                f.x += (f.knock_x * used) / KNOCK_TIME;
-                f.y += (f.knock_y * used) / KNOCK_TIME;
-                f.knock_t -= used;
-            }
-            // The hero passes through the crowd: enemies are pushed aside.
-            let min_d = HURTBOX_RADIUS + f.r;
-            let ex = f.x - hp.x;
-            let ey = f.y - hp.y;
-            let ed = hypot(ex, ey);
-            if ed < min_d {
-                let ux = if ed > 0.01 { ex / ed } else { 1.0 };
-                let uy = if ed > 0.01 { ey / ed } else { 0.0 };
-                f.x = hp.x + ux * min_d;
-                f.y = hp.y + uy * min_d;
-            }
-            // An enemy at contact bites whenever the hero isn't invulnerable.
-            if health
-                && env.input.level.survivors.is_none()
-                && def.contact_damage > 0.0
-                && max(ed, min_d) <= min_d + CONTACT_GAP + BITE_SLACK
-                && self.st.w >= self.st.invuln_until - 1e-9
-            {
-                let amount = if env.input.level.survivors.is_some() {
-                    def.contact_damage
+            let f = &self.st.foes[fi];
+            let span = period * cadence as f64;
+            let speed = def.speed
+                * if self.st.s < f.charge_until {
+                    CHARGE_SPEED
                 } else {
-                    armoured_bite(def.contact_damage, self.st.bonus.armour)
+                    1.0
                 };
-                self.hurt(amount, "bite", &def.id);
+            let (x, y) = (f.x, f.y);
+            let mut dx = hp.x - x;
+            let mut dy = hp.y - y;
+            let d = hypot(dx, dy).max(1e-9);
+            let contact = HURTBOX_RADIUS + f.r + CONTACT_GAP;
+            let mut distance = (d - contact).max(0.0).min(speed * span);
+            dx /= d;
+            dy /= d;
+            if let Some((vx, vy)) = f.run {
+                dx = vx;
+                dy = vy;
+                distance = span;
+            } else if let Some((ux, uy)) = f.swarm_dir {
+                dx = ux;
+                dy = uy;
+                distance = speed * span;
+            } else if let Some(path) = f.ring_path.filter(|_| self.st.s < f.slot_until) {
+                let radius = crate::core::shaping::lerp(path.from, path.to, path.u);
+                let next = (radius - (path.from - path.to) * path.du * span).max(path.to);
+                dx = path.x + path.c * next - x;
+                dy = path.y + path.sn * next - y;
+                distance = 1.0;
+            } else if let Some(slot) = f.slot.filter(|_| self.st.s < f.slot_until) {
+                let a = self.formation_anchor();
+                let p = slot.at(bi as f64);
+                let tx = a.0 + p.0 - x;
+                let ty = a.1 + p.1 - y;
+                let d = hypot(tx, ty).max(1e-9);
+                dx = tx / d;
+                dy = ty / d;
+                distance = d.min(speed * span);
+            } else if f.has_at && self.st.s < f.slot_until {
+                continue;
+            } else {
+                let calm = self.by_level(self.st.s, &|l| by_level(&self.env.director.calm, l));
+                let curl = calm * CALM_CURL * if fi % 2 == 0 { 1.0 } else { -1.0 };
+                (dx, dy) = (
+                    dx * cos(curl) - dy * sin(curl),
+                    dy * cos(curl) + dx * sin(curl),
+                );
+                distance *= 1.0 - calm;
             }
+            let f = &self.st.foes[fi];
+            let push = if !self.pinned(fi) && f.run.is_none() && f.swarm_dir.is_none() {
+                (f.sx * span, f.sy * span)
+            } else {
+                (0.0, 0.0)
+            };
+            // Bound dense correction to one normal step; it never accumulates debt.
+            let length = hypot(push.0, push.1).max(1e-9);
+            let scale = (speed * span / length).min(1.0);
+            let dur = ((peak - self.st.s) * self.rate_at(self.st.s)).max(1e-9);
+            let f = &mut self.st.foes[fi];
+            f.step = Some(FoeStep {
+                s0: self.st.s,
+                peak_s: peak,
+                last_s: self.st.s,
+                w0: w1,
+                dur,
+                dx: dx * distance + push.0 * scale,
+                dy: dy * distance + push.1 * scale,
+                span: 0.0,
+            });
+            self.rec.enemy_step(fi, w1, dur);
         }
     }
 

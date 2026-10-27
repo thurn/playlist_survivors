@@ -495,6 +495,8 @@ pub trait Recorder {
     fn clock(&mut self, s: f64, w: f64, between: bool) {}
     /// Beat steps: an enemy's step from world time w lasting dur, or (dur 0) its return to gliding.
     fn enemy_step(&mut self, id: usize, w: f64, dur: f64) {}
+    /// In-place contact anticipation, ending at a committed song-time beat.
+    fn enemy_notice(&mut self, id: usize, peak_s: f64) {}
     fn settle(&mut self, r: SettleRecord) {}
     /// A set piece released (or a ring closing, a stampede entering), with its members.
     fn formation(&mut self, f: FormationRecord) {}
@@ -681,6 +683,9 @@ impl<R: Recorder + ?Sized> Recorder for std::rc::Rc<std::cell::RefCell<R>> {
     }
     fn enemy_step(&mut self, id: usize, w: f64, dur: f64) {
         self.borrow_mut().enemy_step(id, w, dur);
+    }
+    fn enemy_notice(&mut self, id: usize, peak_s: f64) {
+        self.borrow_mut().enemy_notice(id, peak_s);
     }
     fn settle(&mut self, r: SettleRecord) {
         self.borrow_mut().settle(r);

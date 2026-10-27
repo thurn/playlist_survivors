@@ -4,8 +4,8 @@
 use std::rc::Rc;
 
 use super::{
-    Ev, FoeSlot, HURTBOX_LIFT, HURTBOX_RADIUS, KNOCK_TIME, Member, POP_CAP, RingPath, SIM_RATE,
-    SPAWN_MARGIN, Sim, Spot, VACUUM_AHEAD,
+    Ev, FoeSlot, HURTBOX_LIFT, HURTBOX_RADIUS, KNOCK_TIME, Member, POP_CAP, RingPath, SPAWN_MARGIN,
+    Sim, Spot, VACUUM_AHEAD,
 };
 use crate::content::types::{FormationShape, ReleaseMode};
 use crate::core::geometry::Shape;
@@ -347,6 +347,9 @@ impl Sim {
         sn: f64,
         short_radius: f64,
     ) {
+        let to = (RING_CLOSE / short_radius).min(1.0);
+        let speed = self.env.input.lib.enemies[self.st.foes[id].def].speed;
+        let du = speed / (hypot(c, sn) * (1.0 - to)).max(1e-9);
         let f = &mut self.st.foes[id];
         f.has_at = true;
         f.slot_until = f64::INFINITY;
@@ -356,9 +359,9 @@ impl Sim {
             c,
             sn,
             from: 1.0,
-            to: (RING_CLOSE / short_radius).min(1.0),
+            to,
             u: 0.0,
-            du: 0.0,
+            du,
         });
     }
 
@@ -571,7 +574,6 @@ impl Sim {
                 let id = self.spawn_member(def_i, x, y, Member::Stampede(k));
                 let f = &mut self.st.foes[id];
                 f.run = Some((dir * speed, 0.0));
-                f.vx = dir * speed;
                 members.push(id);
                 left -= 1.0;
                 j += 1.0;
@@ -879,6 +881,10 @@ impl Sim {
     }
 
     pub(super) fn slam_land(&mut self, k: usize) {
+        if !self.enemy_contact_beat() {
+            self.st.slam_marks.retain(|m| m.0 != k);
+            return;
+        }
         let Some(i) = self.st.slam_marks.iter().position(|m| m.0 == k) else {
             return;
         };
@@ -1050,59 +1056,5 @@ impl Sim {
             gems: None,
         });
         self.st.vacuums.push(Spot { i, x, y });
-    }
-
-    /// Set pieces' members on a fixed step before the others move: rings on their circles, formation
-    /// members on their slots. True if the member's motion is done.
-    pub(super) fn move_pinned(&mut self, fi: usize, w1: f64) -> bool {
-        let s = self.st.s;
-        let f = &self.st.foes[fi];
-        let dt = w1 - f.last_w;
-        if f.ring_path.is_some() && s < f.slot_until {
-            let slot_until = f.slot_until;
-            let f = &mut self.st.foes[fi];
-            let rp = f.ring_path.as_mut().expect("a ring path");
-            // (Its pace re-solved each step for what is left of the close by its end in song time.)
-            if rp.du > 0.0 {
-                rp.du = (1.0 - rp.u) / max(1.0 / SIM_RATE, slot_until - s);
-            }
-            rp.u = min(1.0, rp.u + dt * rp.du);
-            let rad = lerp(rp.from, rp.to, rp.u);
-            let (x, y) = (rp.x + rp.c * rad, rp.y + rp.sn * rad);
-            let v = if rp.u < 1.0 {
-                rp.du * (rp.to - rp.from)
-            } else {
-                0.0
-            };
-            let (vx, vy) = (rp.c * v, rp.sn * v);
-            f.x = x;
-            f.y = y;
-            f.vx = vx;
-            f.vy = vy;
-            return true;
-        }
-        if let Some(slot) = f.slot.filter(|_| s < f.slot_until) {
-            let a = self.formation_anchor();
-            let p = slot.at(self.sbi_at(s));
-            let rate = self.rate_at(s);
-            let q2 = slot.at(self.sbi_at(s + 1.0 / SIM_RATE));
-            let f = &mut self.st.foes[fi];
-            f.vx = a.2
-                + if rate > 0.0 {
-                    ((q2.0 - p.0) * SIM_RATE) / rate
-                } else {
-                    0.0
-                };
-            f.vy = a.3
-                + if rate > 0.0 {
-                    ((q2.1 - p.1) * SIM_RATE) / rate
-                } else {
-                    0.0
-                };
-            f.x = a.0 + p.0;
-            f.y = a.1 + p.1;
-            return true;
-        }
-        false
     }
 }

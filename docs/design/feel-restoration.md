@@ -446,7 +446,13 @@ movement; if one becomes necessary, follow its corpus-parity requirements.
 
 ### FR1 — Enemy movement
 
-Pending implementation.
+Implemented shared committed-main-beat admission, short pre-footplant steps,
+stationary holds, baked separation, explicit recoil, swept contact, gap holds and
+menu debt cancellation. All catalog roles (bats included), bosses, swarm crossings
+and pinned ring/formation travel use it. Free pulses retain player/weapon behavior
+without admitting enemy contact. Evidence and playable command:
+[native/evidence/fr1](../../native/evidence/fr1/README.md). Visual feel and integrated
+qualification remain FR10. The bead records the exact landed commit and candidate.
 
 ### FR2 — Sword and accents
 

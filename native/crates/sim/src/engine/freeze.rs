@@ -216,6 +216,25 @@ impl Sim {
         self.st.zen_stomp = false;
         if !self.st.freeze.frozen {
             self.hold_weapons();
+            // Capture the fractional step pose before pausing. Resume never
+            // completes a pre-menu step or snaps back to its last fixed sample.
+            for fi in self.st.alive.clone() {
+                let (x, y) = self.pos(fi, self.st.w);
+                let f = &mut self.st.foes[fi];
+                f.x = x;
+                f.y = y;
+                if let Some(path) = f.ring_path.as_mut() {
+                    let radius = ((x - path.x) * path.c + (y - path.y) * path.sn)
+                        / (path.c * path.c + path.sn * path.sn).max(1e-9);
+                    path.u =
+                        ((path.from - radius) / (path.from - path.to).max(1e-9)).clamp(0.0, 1.0);
+                }
+                f.last_w = self.st.w;
+                f.step = None;
+                f.attack = None;
+                f.vx = 0.0;
+                f.vy = 0.0;
+            }
             self.st.freeze.frozen = true;
             self.st.freeze.since = self.st.s;
             self.st.freeze.beat_at_open = self.sbi_at(self.st.s);
@@ -401,11 +420,10 @@ impl Sim {
         );
         for foe in &mut self.st.foes {
             foe.attack = None;
-            if foe.survivor_boss {
-                // Finish an in-progress world-time charge, then wait for a fresh
-                // bar. Menu song time is not a backlog of missed boss charges.
-                foe.step_k = Some(boss_slot);
-            }
+            foe.step = None;
+            foe.vx = 0.0;
+            foe.vy = 0.0;
+            foe.step_k = Some(boss_slot);
         }
         self.requeue_held();
         self.queue_cadence();
@@ -590,9 +608,7 @@ impl Sim {
             return;
         }
         let b = self.log.beats[bi];
-        let period = bi
-            .checked_sub(1)
-            .map_or(b.period, |i| b.t - self.log.beats[i].t);
+        let period = self.enemy_beat_period(bi);
         self.queue_enemy_wind(b.t, period, None);
         self.st
             .q
@@ -609,7 +625,7 @@ impl Sim {
             .last()
             .map_or(0.0, |b| b.t);
         let peak = (last + self.env.rule.free_period_s).max(self.st.s);
-        self.queue_enemy_wind(peak, self.env.rule.free_period_s, Some(generation));
+
         self.st.q.push(peak, Ev::FreePulse { generation });
     }
 
@@ -622,11 +638,7 @@ impl Sim {
             self.spawn_director(self.sbi_at(self.st.s));
             self.sword_free_pulse();
         }
-        self.queue_enemy_wind(
-            self.st.s + self.env.rule.free_period_s,
-            self.env.rule.free_period_s,
-            Some(generation),
-        );
+
         self.st.q.push(
             self.st.s + self.env.rule.free_period_s,
             Ev::FreePulse { generation },

@@ -36,6 +36,7 @@ pub struct HeroPose {
 /// An enemy as last sampled.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Foe {
+    pub notice: Option<(f64, f64)>,
     pub survivor_boss: bool,
     /// Its content id (`goblin`, `bat`, ...).
     pub kind: String,
@@ -412,6 +413,7 @@ impl LiveView {
                 self.foes.insert(
                     *id,
                     Foe {
+                        notice: None,
                         survivor_boss: false,
                         kind: kind.clone(),
                         x: f64::NAN,
@@ -422,6 +424,11 @@ impl LiveView {
                         pending_impact: false,
                     },
                 );
+            }
+            Record::EnemyNotice { id, start, peak } => {
+                if let Some(f) = self.foes.get_mut(id) {
+                    f.notice = Some((*start, *peak));
+                }
             }
             Record::Sample { id, x, y } => {
                 if let Some(f) = self.foes.get_mut(id) {
@@ -579,6 +586,11 @@ pub enum Record {
     FloorChicken(sim::survivors::FloorChicken),
     Chest(sim::survivors::ChestEvent),
     SurvivorBoss(usize),
+    EnemyNotice {
+        id: usize,
+        start: f64,
+        peak: f64,
+    },
     Missile(sim::survivors::MissilePose),
     Inventory(sim::survivors::Inventory),
     Run(sim::survivors::RunState),
@@ -842,6 +854,11 @@ impl Recorder for LiveRecorder {
         });
     }
 
+    fn enemy_notice(&mut self, id: usize, peak: f64) {
+        let mut j = self.0.borrow_mut();
+        let start = j.notes.s;
+        j.push(Record::EnemyNotice { id, start, peak });
+    }
     fn sample(&mut self, id: usize, x: f64, y: f64) {
         self.0.borrow_mut().push(Record::Sample { id, x, y });
     }

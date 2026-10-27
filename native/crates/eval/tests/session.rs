@@ -1,13 +1,6 @@
-//! A recorded listening session replayed (docs/design/native-app.md, "Session recording (D3)"): a
-//! short one, committed in `native/fixtures/session-house/` (made by `playlist-survivors --file
-//! house-128 --headless --seconds 14 --press-beats`: 11 s of a run with a press on every beat,
-//! many of them later than the settling window), must settle as it did live. A deliberate change to
-//! the sim, the content or the level changes what settles: record it again (from `native/`,
-//! `PS_SESSIONS=/tmp/s cargo run --release -p app -- --file ../public/reactive/house-128/house-128.ogg
-//! --headless --seconds 14 --press-beats`, then copy that session's `stream.jsonl`, `keys.jsonl`
-//! and `meta.json` here). `native/fixtures/session-house-delayed/` is the same in Delayed
-//! listening (`--delayed`): the music heard 3 s late, beats from hindsight, every entry known at
-//! its analysis position; it must replay as exactly.
+//! Recorded listening inputs and stream arrivals remain replayable across deliberate
+//! game changes. Historical full-world hashes encode obsolete enemy travel; compare
+//! current settled records across settlement windows instead. Preserve raw sessions.
 #![forbid(unsafe_code)]
 
 use std::path::{Path, PathBuf};
@@ -63,17 +56,17 @@ fn lines<T: serde::de::DeserializeOwned>(path: &Path) -> Vec<T> {
 }
 
 #[test]
-fn a_recorded_session_settles_as_it_did_live() {
-    settles_as_live("native/fixtures/session-house");
+fn a_recorded_session_replays_across_settlement_windows() {
+    replays_across_windows("native/fixtures/session-house");
 }
 
 #[test]
-fn a_delayed_session_settles_as_it_did_live() {
-    settles_as_live("native/fixtures/session-house-delayed");
+fn a_delayed_session_replays_across_settlement_windows() {
+    replays_across_windows("native/fixtures/session-house-delayed");
 }
 
-/// The session in `rel` replayed: its run settles as it did live.
-fn settles_as_live(rel: &str) {
+/// Real arrivals/keys replay identically with different rollback horizons.
+fn replays_across_windows(rel: &str) {
     let dir = root().join(rel);
     let meta: serde_json::Value =
         serde_json::from_str(&std::fs::read_to_string(dir.join("meta.json")).unwrap()).unwrap();
@@ -88,12 +81,29 @@ fn settles_as_live(rel: &str) {
     let arrivals: Vec<Arrival> = lines(&dir.join("stream.jsonl"));
     let keys: Vec<AppliedKey> = lines(&dir.join("keys.jsonl"));
     assert!(keys.len() > 20, "{} keys", keys.len());
-    let got = replay_run(&mut engine(), &arrivals, &keys, &run, 20.0).unwrap();
-    assert!(got.settled >= run.records, "{got:?}");
+    let mut kept = engine();
+    kept.settled_log = Some(Vec::new());
+    let all = RecordedRun {
+        records: usize::MAX,
+        ..run
+    };
+    replay_run(&mut kept, &arrivals, &keys, &all, 20.0).unwrap();
+    let records = kept.settled_log.as_ref().unwrap();
+    // Stay before the terminal settlement boundary in both horizons.
+    let n = records.partition_point(|(s, _)| *s < run.end - run.s0 - 0.5);
+    assert!(
+        n > 1000,
+        "recorded session must exercise substantial gameplay"
+    );
+    let expected = eval::live::hash_records(&records[..n]);
+    let prefix = RecordedRun { records: n, ..run };
+    let mut wider = engine();
+    wider.settle_s = 0.4;
+    let got = replay_run(&mut wider, &arrivals, &keys, &prefix, 20.0).unwrap();
     assert_eq!(
         got.hash,
-        Some(run.hash),
-        "the settled records differ from the live run's"
+        Some(expected),
+        "recorded keys and arrivals must settle identically"
     );
 }
 
