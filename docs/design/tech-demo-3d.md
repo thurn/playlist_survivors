@@ -360,9 +360,9 @@ alone understates them. The harness counts these costs directly.
   it.
 
 A **frontier point** is the largest on-screen count that passes the pass rule
-on the M5 Max at one combination of the other sweep axes, found by binary
-search. Every point gets a **compute estimate** of the target's GPU time: the
-M5 Max GPU time × 1.9 × 1.2.
+on the M5 Max at one combination of the other sweep axes, found by the
+[sweep's search](#the-sweep). Every point gets a **compute estimate** of the
+target's GPU time: the M5 Max GPU time × 1.9 × 1.2.
 
 The compute ratio flatters bandwidth-heavy points. So two points also get a
 **per-pass estimate**: the envelope point (see [The report](#the-report)) and
@@ -380,7 +380,7 @@ the heavy-load point at the envelope's view width.
 A frontier point can also be limited by space rather than time. Monsters keep
 apart (see [The choreographer](#the-choreographer)), so a view holds at most
 its **packing capacity**: its visible ground times the roster's densest
-packing, about 2.4 monsters per m² for 0.4 m radii. The binary search's
+packing, about 2.4 monsters per m² for 0.4 m radii. The search's
 ceiling is the smaller of 12,000 and that capacity. A point that reaches it
 is reported as capacity-bound.
 
@@ -904,7 +904,7 @@ polish depend on the crowd.
 
 - **Scenes.** The crowd-only and crowd-with-combat stress scenes (no
   effects), at 2,000 on-screen monsters and a 40 m view. Each arm then also
-  gets a binary search for its own maximum.
+  gets a search for its own maximum.
 - **Arms.** Both bone-texture skinning variants and the stock baseline, all
   under the same pass rule.
 - **Recorded per arm:** max on-screen count, the frame breakdown at 2,000,
@@ -1558,17 +1558,39 @@ load-time run, and the reserve becomes a measured number.
 ### The sweep
 
 A sweep is a JSON spec of axes. For each combination of the other axes, the
-harness binary-searches the largest N that passes.
+harness searches for the largest N that passes.
 
 ```json
-{ "scene": "S3", "seconds": 20, "warmup": 5,
-  "n": { "search": [100, 12000] },
+{ "scene": "S3", "seconds": 20, "warmup": 5, "probeSeconds": 8,
+  "n": { "search": [100, 12000], "resolution": 0.05 },
   "viewWidthM": [30, 40, 55], "load": ["light", "demo", "heavy"],
   "aa": ["msaa4", "taa"], "jobWorkers": 6 }
 ```
 
 The frontier is the resulting table of maximum N per view width, load and
 anti-aliasing mode.
+
+Sweeps hold Tollgate paused and sit on the plan's longest path, so the
+search spends as few runs as it can:
+
+- **One process per scene.** The player loads a scene once and changes the
+  other axes in place. For a new N it rebuilds the stress timeline (timing
+  its ticks, as at load) and resizes the crowd, then re-warms for 3 s. The
+  first point gets the full warm-up.
+- **A fitted search.** Each resource's frame time grows close to linearly
+  with N. The harness measures three short probes spread over the search
+  range and fits a line per resource: GPU, main thread and render thread.
+  The lowest line's crossing of its pass line is the candidate N, and that
+  resource is the point's limit.
+- **Confirmed at full length.** A full run at the candidate N must pass and
+  one 5% above it must fail. If either disagrees with the fit, the harness
+  bisects between them as before.
+- **Seeded from neighbors.** Probes start around the nearest point already
+  measured, since adjacent points' frontiers are close.
+- **5% resolution.** The envelope rounds down to the nearest 100 anyway.
+
+A point costs about four runs instead of a bisection's seven, and no run
+pays for a launch or a scene load.
 
 ### Measurements
 
@@ -1654,9 +1676,24 @@ it couldn't quiet.
   Low Power Mode, and its thermal state is nominal.
 - **During a run,** it samples thermal state and other processes' CPU every
   second. Any violation marks the run noisy.
+- **The window too.** macOS throttles a window that is covered or loses
+  focus, so a run during which the player's window is occluded or loses key
+  focus is marked noisy.
 - **A noisy run** is repeated up to twice and then reported as noisy, never
   silently kept. The report counts the frontier points that rest on noisy
   runs.
+
+### Scheduling sweeps
+
+The heavy sweeps take hours of window time: TD5's baseline comparison,
+TD14's density sweep and TD12's full sweep. They cost least when nothing
+else runs.
+
+- **The operator can schedule them.** Running those beads overnight, or
+  while the operator is away, with other epics' executors stopped, avoids
+  the waits and the repeated noisy runs.
+- **Nothing waits for it.** No bead pauses for a quiet window. A sweep run
+  among other work only takes longer, and reports what it couldn't quiet.
 
 ### The report
 
@@ -1856,6 +1893,22 @@ worktree-per-change workflow.
   cloned Vendor (412 files), Baked (manifest 3f2a…), Library (warm)
   rebaking: bone textures for 1 changed clip annotation
   ```
+- **A warm editor for the inner loop.** A cold batch-mode launch pays for the
+  editor's startup and the asset database's check on every compile or test
+  run, which adds up over the dozens of iterations a bead makes.
+  - A task command starts one long-running batch-mode editor per worktree.
+    It takes commands over a Unix socket in the worktree: refresh and
+    compile, run EditMode tests, run a task method. Its listener restarts
+    after each domain reload.
+  - The task entry points use it when it is running and fall back to a cold
+    launch otherwise. It exits after 30 idle minutes.
+  - It holds the worktree's project lock, so every Unity step in that
+    worktree goes through it while it runs.
+  - **Before submitting,** a bead runs its Unity checks once cold, since a
+    long-lived editor can carry stale static state across reloads. The gate
+    and release stages always launch cold.
+  - TD1 spikes it and records the cold and warm loop times. If it isn't
+    reliable, cold launches stay, and the notes say why.
 - **Projects are locked per path.** The operator's editor may have the main
   checkout's project open, and Unity locks a project per path. Agents only
   ever open their own worktree's project.
@@ -1872,7 +1925,9 @@ vendor guard, which runs on every change.
 - **The gate (`scripts/ci-gate`):** the vendor guard and `dotnet test`, plus a
   Unity batch-mode compile and EditMode tests. The Unity steps stay in the
   gate only if TD1 measures them within the gate's budget on a warm
-  `Library`; otherwise they move to the release stage.
+  `Library`; otherwise they move to the release stage. A slow gate holds up
+  every candidate in the repository, the survivors run's included, so when
+  in doubt they move.
 - **The release stage (`scripts/ci-full`, a new `ci-full-demo3d` step):** the
   vendor guard, the Unity import and compile, EditMode tests and the macOS
   player build.
@@ -2003,11 +2058,12 @@ Each bead lists what it builds and when it is done.
 - **TD1, foundations.**
   - Builds: the Unity project; `.gitignore` coverage; the vendor guard in
     check-fast, the gate and the release stage; the worktree setup command
-    and its cache; batch-mode task entry points; the `dotnet` project for
-    the choreography layer.
+    and its cache; batch-mode task entry points; the
+    [warm editor](#unity-work-by-agents); the `dotnet` project for the
+    choreography layer.
   - Spikes, recorded in its notes:
     - Unity's batch-mode compile and test time on a warm `Library`, which
-      decides gate placement;
+      decides gate placement, and the same loop through the warm editor;
     - a windowed 1080p player reporting `FrameTimingManager` GPU times on
       Metal;
     - the C# version Unity 6.6 accepts.
@@ -2046,13 +2102,18 @@ Each bead lists what it builds and when it is done.
     hero, all driven by TD3's timelines with TD2's annotations.
   - Also builds the capture tool: fixed-time stills and video pairs, with
     the `ps-render` tag.
+  - TD7 builds the harness alongside it. Whichever of TD4 and TD7 lands
+    second registers TD4's stress scenes and the sim tick timing with the
+    sweep runner.
   - Done when: the [first assembled check](#first-assembled-check) passes.
 - **TD5, bone-texture crowd.**
   - Builds: the bone-texture baker, the instance pipeline, both skinning
     variants, culling, depth bins, the shadow extension and motion vectors.
+  - Starts once TD2 lands, on a test scene that cycles the roster's clips at
+    random phases. Its hookup to TD4's timeline evaluation waits for TD4.
   - Compares both variants with the stock baseline, as in
     [Against the baseline](#against-the-baseline), using TD7's harness, and
-    deletes the slower variant.
+    deletes the slower variant. This is the first sweep of a real crowd.
   - Done when: it draws S1 and S2 within the fidelity floor, and the
     comparison is in its notes.
 - **TD6, navigation.**
@@ -2065,13 +2126,17 @@ Each bead lists what it builds and when it is done.
     [Automated Checks](#automated-checks) pass on the courtyard test layout,
     and the song and stress timelines still pass with walls.
 - **TD7, harness.**
-  - Builds: the windowed benchmark player and sweep runner, result rows, the
-    quiet-machine lock with its Tollgate pause, the overdraw counters and the
-    Metal System Trace summary.
+  - Builds: the windowed benchmark player and the sweep runner with its
+    fitted search, result rows, the quiet-machine lock with its Tollgate
+    pause, the overdraw counters and the Metal System Trace summary.
+  - Starts once TD1 lands, in parallel with TD2 and TD3. Until TD4's stress
+    scenes exist, it runs on a **synthetic load**: N instances of one stock
+    mesh, GPU-instanced and moving, which is enough to exercise the search,
+    the timings and the lock.
   - Adds a line to AGENTS.md's 3D tech demo rules: a sweep pauses Tollgate,
     so a paused queue during a sweep is expected, not a tooling failure.
-  - Done when: a sweep of the stock baseline over S1 and S2 produces result
-    rows and a first frontier, and the
+  - Done when: a sweep of the synthetic load produces result rows and a
+    first frontier, and the
     [sweeps and machine lock](#sweeps-and-the-machine-lock) checks pass.
 - **TD8, effects.**
   - Opens with the runtime spike in
@@ -2091,6 +2156,9 @@ Each bead lists what it builds and when it is done.
     conversion to URP Lit;
     the night lighting, lightmaps and static shadow map; and the
     post-processing stack. S6 becomes runnable.
+  - Starts once TD4, TD6 and TD7 land, lighting TD4's stock crowd. Its crowd
+    steps wait for TD5: the static shadow map in the crowd shader, and the
+    anti-aliasing decision, since TAA leans on the crowd's motion vectors.
   - Decides MSAA against TAA. Both are full quality, so this is not a cut:
     the choice weighs cost against capture pairs of monster edges and spark
     trails, which also go to the operator for review.
@@ -2119,13 +2187,16 @@ Each bead lists what it builds and when it is done.
   - Builds: the reference stills from the packs' demo scenes, the six beauty
     shots, the readability measure and its floor, and the landmarks and
     dressing that meet [the art direction](#art-direction).
-  - Spends the headroom TD14 frees: the richest scene that keeps S0 within
-    its ceiling.
+  - Starts once TD8 and TD9 land, dressing the scene at TD9's density. Its
+    last step waits for TD14: spending the headroom TD14 frees, the richest
+    scene that keeps S0 within its ceiling.
   - Done when: every beauty shot passes the checklist and the readability
     floor, S0 fits the ceiling, and the shots are in its evidence and in
     `operator-pending.md`.
 - **TD12, the frontier.**
-  - Runs the full sweep with every point's compute estimate, then the traces
+  - Runs the full sweep with every point's compute estimate, at TD9's
+    anti-aliasing mode; the other mode is measured only at the envelope
+    point, for the report. Then it runs the traces
     and per-pass estimates at the envelope point and its heavy-load point.
     Writes the report and the envelope, and puts the envelope into the level
     script.
@@ -2151,20 +2222,30 @@ Each bead lists what it builds and when it is done.
 ```
 TD1         first
 TD2, TD3    after TD1, in parallel (TD3 uses placeholder clip annotations)
+TD7         after TD1, in parallel with TD2 and TD3 (on a synthetic load)
 TD4         after TD2 and TD3
+TD5         after TD2; its timeline hookup after TD4, its baseline
+            comparison after TD7
 TD6         after TD2 and TD3 (it needs the kit's footprints)
-TD7         after TD4
-TD5         after TD4; its baseline comparison after TD7
-TD8         after TD7 (its spike is measured on the harness)
-TD9         after TD5, TD6 and TD7 (it lights the crowd shader, generates
-            the arena from the placement list and measures S0 on the harness)
+TD8         after TD4 and TD7 (its spike runs S4 on the harness)
+TD9         after TD4, TD6 and TD7 (it generates the arena from the
+            placement list and measures S0 on the harness); its crowd
+            steps after TD5
 TD10        after TD5 and TD8
 TD11        after TD5, TD8 and TD9
 TD14        after TD9; its cut rungs (E3, E4) after TD11
-TD15        after TD8 and TD14
-TD12        after TD10, TD11 and TD15
+TD15        after TD8 and TD9; its headroom step after TD14
+TD12        after TD10, TD11, TD14 and TD15
 TD13        after TD12
 ```
+
+- **The graph is kept wide.** A bead starts as soon as its first steps can,
+  so two executors rarely wait and a third has work most of the time.
+- **A step that waits.** Where a later step of a bead needs another bead
+  ("its crowd steps after TD5"), the bead starts without it. If the other
+  bead is not on `staging` when that step comes up, the executor lands what
+  is done as its own candidate, adds a dependency edge on the other bead,
+  and finishes the step after it lands.
 
 ### Reviews
 
