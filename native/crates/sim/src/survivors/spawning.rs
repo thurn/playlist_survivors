@@ -163,7 +163,9 @@ impl Spawner {
             self.boss_song = None;
             return false;
         }
-        let due = *self.boss_song.get_or_insert_with(|| snap(song, beats));
+        let due = *self
+            .boss_song
+            .get_or_insert_with(|| super::boss_bar(song, song, beats).0);
         if due <= song + 1e-9 {
             self.boss_song = None;
             true

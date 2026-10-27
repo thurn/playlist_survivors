@@ -793,6 +793,9 @@ impl Sim {
             };
             zoom *= 1.0 + pu.amt * envl;
         }
+        // Survivors world samples use the held run clock. The enclosing stop time can
+        // vary with frame cuts, so easing must read this exact sample, not st.run_s.
+        zoom *= self.st.boss_presentation.zoom(wk);
         self.st
             .camera
             .sample(p.x + tx * lead, p.y + ty * lead - 12.0, zoom);

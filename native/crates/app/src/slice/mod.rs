@@ -38,6 +38,7 @@ mod damage;
 mod lightning;
 mod roster;
 // The tap and output are the phase 0 spike's (57e846a^:native/spike), kept as they were.
+mod bosses;
 #[allow(clippy::pedantic, unused_qualifications, dead_code)]
 mod coreaudio;
 mod fx;
@@ -170,6 +171,7 @@ struct Options {
     hud_full_slots: bool,
     sound_check: Option<PathBuf>,
     cards_check: Option<PathBuf>,
+    boss_check: Option<PathBuf>,
     treasure_check: Option<PathBuf>,
     hook_check: Option<PathBuf>,
     swarm_check: Option<PathBuf>,
@@ -235,6 +237,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         hud_full_slots: false,
         sound_check: None,
         cards_check: None,
+        boss_check: None,
         treasure_check: None,
         hook_check: None,
         swarm_check: None,
@@ -301,6 +304,13 @@ fn options(args: &[String]) -> Result<Options, String> {
                 o.hook_check = Some(
                     it.next()
                         .ok_or("--hook-check needs a recorded survive directory")?
+                        .into(),
+                );
+            }
+            "--boss-check" => {
+                o.boss_check = Some(
+                    it.next()
+                        .ok_or("--boss-check needs an output directory")?
                         .into(),
                 );
             }
@@ -678,6 +688,9 @@ pub fn run(args: &[String]) -> Result<(), String> {
     }
     if let Some(dir) = &opts.hook_check {
         return hook_check::run(dir);
+    }
+    if let Some(dir) = &opts.boss_check {
+        return treasure::check::bosses(dir);
     }
     if let Some(dir) = &opts.treasure_check {
         return treasure::check::run(dir);

@@ -1558,6 +1558,28 @@ Commit and staging OIDs are recorded in hv-n7fn.29’s native notes.
 
 ### SP1
 ### SP2
+
+Boss notices and their short original horn begin two native bars before the
+scheduled entrance on a steady committed grid. Camera zoom eases out through
+the shared sim/view camera; bosses land visibly on the next downbeat along
+their seeded approach ray. Held bosses keep the notice/zoom until every
+announced arrival fits; freezes hold the camera and reanchor admission.
+Source stats, attack AI and chest/reward rules stay unchanged. No known grid
+keeps raw admission; tempo changes/freezes/cap holds can lengthen notice.
+Typed, bounded cues drive landing/death rings and source-timed sounds. Death
+presentation follows the actual grid reaction, including its existing chest
+freeze hold. Physical chests gain a beacon/motes, settling roulette motion
+and animated reward beam/burst. No asset bake.
+
+[Evidence](../../native/evidence/sp2/README.md) keeps actual timing/cap and
+late-key replay checks, decoded sound onset/retraction checks, and a labelled
+silent real boss kill/drop/pickup/tier3 fixture. The empty-field synthetic
+capture establishes presentation rather than dense survival or human mix.
+SP1 retains evolution art/bake ownership; SP3 composes the authoritative
+camera multiplier, SP5 owns density readability/performance. Play from
+`native/`: `cargo run --release -p app -- --playlist playlists/survivors-30.m3u --delayed`.
+Commit/staging OIDs and cold-review disposition are in hv-n7fn.31's notes.
+
 ### SP3
 ### SP4
 ### SP5

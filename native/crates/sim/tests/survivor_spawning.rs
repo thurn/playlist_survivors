@@ -192,7 +192,7 @@ fn a_single_committed_future_beat_is_a_grid_step() {
 }
 
 #[test]
-fn deferred_bosses_wait_for_room_then_the_next_grid_step() {
+fn deferred_bosses_wait_for_room_then_the_next_native_downbeat() {
     let schedule = schedule();
     let mut state = Spawner::default();
     state.waiting_bosses.push(sim::survivors::ScheduledBoss {
@@ -217,9 +217,9 @@ fn deferred_bosses_wait_for_room_then_the_next_grid_step() {
     assert!(!state.bosses_due(0.1, &grid, true));
     state.prepare(&schedule, 0.1, 0.1, &grid);
     state.take_due(0.25);
-    assert_eq!(state.next_stop(&schedule, 0.1, 0.0), 0.25);
-    assert!(!state.bosses_due(0.249, &grid, true));
-    assert!(state.bosses_due(0.25, &grid, true));
+    assert_eq!(state.next_stop(&schedule, 0.1, 0.0), 1.0);
+    assert!(!state.bosses_due(0.999, &grid, true));
+    assert!(state.bosses_due(1.0, &grid, true));
 }
 
 #[test]

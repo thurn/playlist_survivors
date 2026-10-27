@@ -4,6 +4,12 @@ use render::{atlas::Atlases, capture, font::Align, post::Frame};
 use sim::{movement::InputKey, survivors::WeaponId};
 use std::{io::Write, path::Path};
 pub fn run(dir: &Path) -> Result<(), String> {
+    capture(dir, false)
+}
+pub fn bosses(dir: &Path) -> Result<(), String> {
+    capture(dir, true)
+}
+fn capture(dir: &Path, showcase: bool) -> Result<(), String> {
     if std::env::var_os("PS_NATIVE_BATCH").is_none() {
         let status = std::process::Command::new("taskpolicy")
             .arg("-b")
@@ -34,10 +40,28 @@ pub fn run(dir: &Path) -> Result<(), String> {
         return Err("fixture minute-zero changed".into());
     }
     let row = serde_json::json!({"minute":0,"minimum":0,"frequency":60000,"enemies":[],"bosses":["vs-bat4"],"events":[],"treasure":[{"tier":3,"chances":[0,0,0],"level":1,"prizeTypes":"EAAAA","fixedPrizes":[]}]});
-    world.level.text = world.level.text.replacen(old, &row.to_string(), 1);
+    if showcase {
+        let empty = serde_json::json!({"minute":0,"minimum":0,"frequency":60000,"enemies":[],"bosses":[],"events":[],"treasure":[]});
+        world.level.text = world.level.text.replacen(old, &empty.to_string(), 1);
+        let minute_one = world
+            .level
+            .text
+            .lines()
+            .find(|l| l.trim().starts_with("- {\"minute\":1,"))
+            .ok_or("minute1 row missing")?
+            .to_string();
+        let mut row = row.clone();
+        row["minute"] = 1.into();
+        world.level.text = world
+            .level
+            .text
+            .replace(&minute_one, &format!("    - {row}"));
+    } else {
+        world.level.text = world.level.text.replacen(old, &row.to_string(), 1);
+    }
     let period = 60.0 / 128.0;
     let log = stream::StreamLog {
-        beats: (0..160)
+        beats: (0..240)
             .map(|i| {
                 let t = f64::from(i) * period;
                 stream::Beat {
@@ -48,7 +72,7 @@ pub fn run(dir: &Path) -> Result<(), String> {
                 }
             })
             .collect(),
-        ticks: (0..1500)
+        ticks: (0..2400)
             .map(|i| {
                 let t = f64::from(i) * 0.05;
                 stream::Tick {
@@ -63,7 +87,7 @@ pub fn run(dir: &Path) -> Result<(), String> {
                 }
             })
             .collect(),
-        onsets: (0..80)
+        onsets: (0..120)
             .map(|i| {
                 let t = f64::from(i) * 2.0 * period;
                 stream::Onset {
@@ -76,7 +100,7 @@ pub fn run(dir: &Path) -> Result<(), String> {
             })
             .collect(),
         forecasts: Some(
-            (0..80)
+            (0..120)
                 .map(|i| {
                     let t = f64::from(i) * 2.0 * period;
                     stream::Forecast {
@@ -101,8 +125,9 @@ pub fn run(dir: &Path) -> Result<(), String> {
     let (mut boss_still, mut field_still, mut spin_still, mut landed_still) =
         (false, false, false, false);
     let (mut start, mut landed, mut opened) = (None, None, None);
+    let (mut warning_still, mut entrance_still, mut death_still) = (false, false, false);
     let mut held: Vec<InputKey> = Vec::new();
-    for tick in 1..=7200 {
+    for tick in 1..=12000 {
         let s = f64::from(tick) / 120.0;
         engine.feed(|l| replay.feed_to(l, s));
         let view = engine.view.borrow();
@@ -159,6 +184,15 @@ pub fn run(dir: &Path) -> Result<(), String> {
             .alive()
             .find(|(_, f)| f.kind == "vs-bat4")
             .map(|(_, f)| (f.x - h.x).hypot(f.y - h.y));
+        if showcase
+            && start.is_none()
+            && view
+                .boss_cues
+                .iter()
+                .any(|c| c.kind == sim::survivors::BossCueKind::Warning)
+        {
+            start = Some(s);
+        }
         if start.is_none() && distance.is_some_and(|d| d < 170.0) {
             start = Some(s);
         }
@@ -178,7 +212,19 @@ pub fn run(dir: &Path) -> Result<(), String> {
             landed = Some(s);
             writeln!(trace,"{}",serde_json::json!({"event":"land","song":s,"run":run.elapsed,"sword":view.inventory.map(|i|i.weapons.rank(WeaponId::Sword))})).map_err(|e|e.to_string())?;
         }
-        let extra_still = !field_still && !view.chests.is_empty()
+        let entrance = view
+            .boss_cues
+            .iter()
+            .find(|c| c.kind == sim::survivors::BossCueKind::Landed);
+        let death = view
+            .boss_cues
+            .iter()
+            .find(|c| c.kind == sim::survivors::BossCueKind::Defeated);
+        let extra_still = showcase
+            && ((!warning_still && start.is_some())
+                || (!entrance_still && entrance.is_some())
+                || (!death_still && death.is_some()))
+            || !field_still && !view.chests.is_empty()
             || !boss_still && distance.is_some_and(|d| d < 100.0);
         if start.is_none() || (tick % 5 != 0 && !extra_still) {
             continue;
@@ -220,7 +266,11 @@ pub fn run(dir: &Path) -> Result<(), String> {
         let mut overlay = std::mem::take(&mut layers.overlay);
         hud::draw(&view, &st, &art, 1280.0, 720.0, &mut overlay);
         art.fonts["pixel"].text(
-            "DIAGNOSTIC: MINUTE-0 BOSS / XP0 / SCRIPTED TIER3 / SYNTHETIC128BPM / BAR ACCENTS",
+            if showcase {
+                "DIAGNOSTIC: MINUTE1 / EMPTY FIELD / BOSS XP0 / TIER3 / SYNTHETIC128BPM"
+            } else {
+                "DIAGNOSTIC: MINUTE-0 BOSS / XP0 / SCRIPTED TIER3 / SYNTHETIC128BPM / BAR ACCENTS"
+            },
             640.0,
             700.0,
             1.0,
@@ -240,6 +290,32 @@ pub fn run(dir: &Path) -> Result<(), String> {
             clip.frame(&rgba)?;
         }
         let save = |name: &str| capture::write_png(&dir.join(name), 1280, 720, &rgba);
+        if showcase && !warning_still {
+            save("warning.png")?;
+            warning_still = true;
+            writeln!(trace,"{}",serde_json::json!({"event":"warning","song":s,"cue":view.boss_cues.iter().find(|c|c.kind==sim::survivors::BossCueKind::Warning).map(|c|c.song),"zoom":view.camera.2})).map_err(|e|e.to_string())?;
+        }
+        if showcase
+            && !entrance_still
+            && let Some(cue) = entrance
+        {
+            save("entrance.png")?;
+            entrance_still = true;
+            writeln!(trace,"{}",serde_json::json!({"event":"entrance","song":s,"cue":cue.song,"run":cue.run,"zoom":view.camera.2})).map_err(|e|e.to_string())?;
+        }
+        if showcase
+            && !death_still
+            && let Some(cue) = death
+        {
+            save("death.png")?;
+            death_still = true;
+            writeln!(
+                trace,
+                "{}",
+                serde_json::json!({"event":"death","song":s,"cue":cue.song,"run":cue.run})
+            )
+            .map_err(|e| e.to_string())?;
+        }
         if !boss_still && distance.is_some_and(|d| d < 100.0) {
             save("boss-bat.png")?;
             boss_still = true;
@@ -261,7 +337,12 @@ pub fn run(dir: &Path) -> Result<(), String> {
             landed_still = true;
         }
         if landed.is_some_and(|at| s > at + 1.3) && run.frozen.is_none() {
-            if !boss_still || !field_still || !spin_still || !landed_still {
+            if !boss_still
+                || !field_still
+                || !spin_still
+                || !landed_still
+                || (showcase && (!warning_still || !entrance_still || !death_still))
+            {
                 return Err("fixture missed one of four stills".into());
             }
             if view.inventory.and_then(|i| i.weapons.rank(WeaponId::Sword)) != Some(6) {

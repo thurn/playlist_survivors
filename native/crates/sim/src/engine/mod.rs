@@ -30,6 +30,7 @@ mod pool;
 mod separation_cache;
 pub use bounds::Storage;
 use pool::Pool;
+mod boss_presentation;
 mod chests;
 mod combat;
 mod enemy_rhythm;
@@ -351,6 +352,7 @@ enum Ev {
     WandBullet(Box<crate::survivors::Shot>),
     LightningStrike(Box<lightning::PendingLightning>),
     EnemyImpact {
+        boss: bool,
         foe: usize,
         fate: crate::recorder::Fate,
         hit: Box<crate::recorder::Hit>,
@@ -958,6 +960,7 @@ struct SimState {
     freeze: freeze::Freeze,
     survivor: Option<crate::survivors::Progress>,
     spawner: crate::survivors::Spawner,
+    boss_presentation: crate::survivors::BossPresentation,
     events: survivor_events::Events,
     chests: Vec<crate::survivors::FieldChest>,
     n_chests: usize,
@@ -1665,7 +1668,9 @@ impl Sim {
                                 min(self.st.q.peek(), self.weapon_stop()),
                                 self.survivor_landing_stop(),
                             ),
-                            self.spawn_stop().min(self.event_stop()),
+                            self.spawn_stop()
+                                .min(self.event_stop())
+                                .min(self.boss_notice_stop()),
                         ),
                         t_fixed,
                     ),
@@ -1815,6 +1820,7 @@ impl Sim {
         }
         self.tick_weapons();
         self.tick_enemy_bites();
+        self.tick_boss_notice();
         self.tick_spawner();
         self.tick_survivor_events();
     }
@@ -1834,7 +1840,17 @@ impl Sim {
                 period,
                 generation,
             } => self.enemy_wind(peak, period, generation),
-            Ev::EnemyImpact { foe, fate, hit } => self.rec.enemy_impact(foe, fate, &hit),
+            Ev::EnemyImpact {
+                boss,
+                foe,
+                fate,
+                hit,
+            } => {
+                if fate.lethal && boss {
+                    self.boss_cue(crate::survivors::BossCueKind::Defeated, foe, fate.x, fate.y);
+                }
+                self.rec.enemy_impact(foe, fate, &hit);
+            }
             Ev::MissileEnd(pose) => self.rec.missile(*pose),
             Ev::WandBullet(shot) => self.missile_burst_shot(*shot),
             Ev::LightningStrike(pending) => self.lightning_strike(*pending),
@@ -2013,6 +2029,7 @@ fn fresh_state(env: &Env) -> SimState {
         s: 0.0,
         run_s: 0.0,
         spawner: crate::survivors::Spawner::default(),
+        boss_presentation: crate::survivors::BossPresentation::default(),
         events: survivor_events::Events::default(),
         chests: Vec::new(),
         n_chests: 0,

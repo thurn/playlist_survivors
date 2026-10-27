@@ -824,6 +824,18 @@ impl Scene {
                         ky = 1.0 - 0.06 * land;
                     }
                     if f.survivor_boss && !dead {
+                        if let Some(cue) =
+                            view.boss_cues.iter().rev().find(|c| {
+                                c.id == id && c.kind == sim::survivors::BossCueKind::Landed
+                            })
+                        {
+                            let age = view.run.map_or(0.0, |r| r.elapsed) - cue.run;
+                            if (0.0..0.35).contains(&age) {
+                                let squash = (1.0 - age / 0.35).powi(2);
+                                kx *= 1.0 + 0.35 * squash;
+                                ky *= 1.0 - 0.28 * squash;
+                            }
+                        }
                         // Accents add a landing squash, without another attack or damage area.
                         let slam = (fast.flash / 0.22).clamp(0.0, 1.0);
                         kx *= 1.0 + 0.18 * slam;
@@ -1015,6 +1027,7 @@ impl Scene {
         if fa > layers.grade.flash[3] {
             layers.grade.flash = [1.0, 1.0, 1.0, fa];
         }
+        super::bosses::draw(view, art, &at, scale, w, h, out, &mut layers.overlay);
         super::treasure::draw(view, art, &at, scale, w, h, out, &mut layers.overlay);
         self.numbers.draw(art, now, &at, scale, &mut layers.overlay);
         self.cards.grade(now, &mut layers.grade);

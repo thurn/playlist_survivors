@@ -1,0 +1,12 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp2-boss-showpiece/native/crates/sim)
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp2-boss-showpiece/native/crates/eval)
+   Compiling players v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp2-boss-showpiece/native/crates/players)
+    Finished `test` profile [optimized + debuginfo] target(s) in 6.09s
+     Running tests/live.rs (target/debug/deps/live-6bbfee6942df762e)
+
+running 1 test
+SP2: 16041 exact records, warning58.125, landing song60.9375 run60.425, late-key rollbacks3 at lead0.237/17ms cuts; normal source boss on isolated field
+test boss_notices_landings_and_camera_replay_across_late_pause_keys ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 20 filtered out; finished in 0.09s
+

@@ -1559,3 +1559,98 @@ fn survivor_swarm_drop_and_expiry_replay_exactly_across_late_pause_keys() {
         b.stats.deepest_s
     );
 }
+
+#[test]
+fn boss_notices_landings_and_camera_replay_across_late_pause_keys() {
+    use sim::survivors::BossCueKind;
+    let content = library();
+    let mut level = source("levels/survivors.yaml");
+    for minute in [0, 1] {
+        let line = level
+            .text
+            .lines()
+            .find(|l| l.trim().starts_with(&format!("- {{\"minute\":{minute},")))
+            .unwrap()
+            .to_string();
+        let row = serde_json::json!({"minute":minute,"minimum":0,"frequency":1000,"enemies":[],"bosses":if minute==1 {vec!["vs-bat4"]} else {vec![]},"events":[],"treasure":[]});
+        level.text = level.text.replace(&line, &format!("    - {row}"));
+    }
+    let period = 60.0 / 128.0;
+    let log = stream::StreamLog {
+        beats: (0..150)
+            .map(|i| {
+                let t = f64::from(i) * period;
+                stream::Beat {
+                    t,
+                    known_at: (t - period).max(0.0),
+                    period,
+                    evidence: 1.0,
+                }
+            })
+            .collect(),
+        ..Default::default()
+    };
+    let keys = [
+        (58.55, InputKey::Pause, true),
+        (58.56, InputKey::Pause, false),
+        (59.0, InputKey::Pause, true),
+        (59.01, InputKey::Pause, false),
+    ];
+    let run = |lead: f64, late: f64, cut: f64| {
+        let mut e = Engine::new(
+            &level,
+            &content,
+            &IndexMap::new(),
+            0.2,
+            true,
+            true,
+            f64::INFINITY,
+        )
+        .unwrap();
+        e.settled_log = Some(Vec::new());
+        let mut replay = Replay::new(log.clone());
+        let mut next = 0;
+        for frame in 1..=(63.0 / cut).ceil() as usize {
+            let now = frame as f64 * cut;
+            e.feed(|l| replay.feed_to(l, now));
+            while next < keys.len() && keys[next].0 + late <= now + 1e-9 {
+                let (s, k, down) = keys[next];
+                e.key(s, k, down);
+                next += 1;
+            }
+            e.frame(now, lead);
+            e.view.borrow_mut().take_moments();
+        }
+        e.frame(63.5, 0.0);
+        e
+    };
+    let a = run(0.0, 0.0, 1.0 / 120.0);
+    let b = run(0.237, 0.025, 0.017);
+    let records = a.settled_log.as_ref().unwrap();
+    assert_same(records, b.settled_log.as_ref().unwrap());
+    let cues: Vec<_> = records
+        .iter()
+        .filter_map(|(_, r)| {
+            if let Record::BossCue(c) = r {
+                Some(*c)
+            } else {
+                None
+            }
+        })
+        .collect();
+    assert_eq!(cues.len(), 2);
+    assert_eq!(cues[0].kind, BossCueKind::Warning);
+    assert_eq!(cues[0].song, 58.125);
+    assert_eq!(cues[1].kind, BossCueKind::Landed);
+    assert!(cues[1].run >= 60.0);
+    assert!((cues[1].song / (2.0 * period)).fract().abs() < 1e-8);
+    assert!(b.stats.key_rollbacks > 0);
+    println!(
+        "SP2: {} exact records, warning{}, landing song{} run{}, late-key rollbacks{} at lead0.237/17ms cuts; normal source boss on isolated field",
+        records.len(),
+        cues[0].song,
+        cues[1].song,
+        cues[1].run,
+        b.stats.key_rollbacks
+    );
+}

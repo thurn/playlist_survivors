@@ -1,0 +1,100 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp2-boss-showpiece/native/crates/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 9.73s
+     Running unittests src/lib.rs (target/debug/deps/sim-1ebf1e278f138957)
+
+running 11 tests
+test survivors::bosses::tests::actual_committed_downbeats_win_over_period_extrapolation ... ok
+test survivors::bosses::tests::camera_eases_and_uses_held_run_clock ... ok
+test survivors::bosses::tests::bars_use_known_prefix_and_two_native_bars ... ok
+test engine::spawning::tests::partial_boss_admission_keeps_notice_and_camera_until_last_held_boss_lands ... ok
+test engine::spawning::tests::deferred_boss_death_keeps_identity_after_freeze_and_actual_pool_retirement ... ok
+boss chicken: HP80 -> 110, actual heal30, immunity through0.300s then normal bite4HP
+test engine::spawning::tests::boss_showpiece_warns_two_bars_before_visible_downbeat_landing_and_holds_on_freeze ... ok
+test engine::survivor_events::tests::source_roles_keep_fixed_crossing_heading_and_cap_room_never_discards_bosses ... ok
+test engine::tests::scheduled_boss_treasure_uses_its_origin_minute_once_and_survives_recycling ... ok
+test engine::tests::survivor_full_field_preserves_a_boss_and_recycling_keeps_its_hp_and_reward ... ok
+boss chicken: HP115 -> 120, actual heal5, immunity through0.300s then normal bite4HP
+test engine::tests::pickup_boss_chicken_drops_heals_thirty_caps_missing_hp_and_protects_for_300ms ... ok
+test engine::tests::late_boss_gait_uses_bar_slots_instead_of_the_ordinary_roles_slots ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 101 filtered out; finished in 0.03s
+
+     Running tests/causality.rs (target/debug/deps/causality-86630208d8a35901)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests/content.rs (target/debug/deps/content-9a59fe6e516c99d0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/core.rs (target/debug/deps/core-c9e1543def3e3e62)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/jsmath.rs (target/debug/deps/jsmath-fb18d9c6c162492d)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/live_run.rs (target/debug/deps/live_run-2a500f2f64a31168)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running tests/oracle_prefix.rs (target/debug/deps/oracle_prefix-36ea5184dd57a6c5)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/schedule.rs (target/debug/deps/schedule-6977568b6c2c1a3c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/sim_modules.rs (target/debug/deps/sim_modules-19b481e47351ed7e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+     Running tests/survivor_offers.rs (target/debug/deps/survivor_offers-fffa46330d1578d9)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/survivor_spawning.rs (target/debug/deps/survivor_spawning-bd30f1999a3bcd76)
+
+running 1 test
+test deferred_bosses_wait_for_room_then_the_next_native_downbeat ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.01s
+
+     Running tests/survivor_stats.rs (target/debug/deps/survivor_stats-0db51e3894f1fae8)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/survivor_weapons.rs (target/debug/deps/survivor_weapons-b4eb7ccfae612445)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/survivors.rs (target/debug/deps/survivors-0e33f9d9bae2b18e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.00s
+

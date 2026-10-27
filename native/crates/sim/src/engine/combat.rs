@@ -132,12 +132,14 @@ impl Sim {
             damage: applied,
         };
         f.last_fate = Some(fate);
+        let boss = f.survivor_boss;
         self.rec.fate(fi, fate);
         if self.st.survivor.is_some() {
             let at = self.next_enemy_sixteenth(self.st.s);
             self.st.q.push(
                 at,
                 Ev::EnemyImpact {
+                    boss,
                     foe: fi,
                     fate,
                     hit: Box::new(h.clone()),

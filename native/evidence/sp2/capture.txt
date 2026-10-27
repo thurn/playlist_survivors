@@ -1,0 +1,6 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp2-boss-showpiece/native/crates/sim)
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp2-boss-showpiece/native/crates/eval)
+   Compiling app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp2-boss-showpiece/native/crates/app)
+    Finished `release` profile [optimized] target(s) in 9.47s
+     Running `target/release/playlist-survivors --boss-check evidence/sp2`
+treasure-check: boss killed normally; four stills and 549 silent frames at24fps, tier3 five sequential upgrades Sword1->6; openSome(77.35833333333333) landSome(79.69166666666666); fixture only, no balance/survival claim

@@ -446,6 +446,7 @@ pub trait Recorder {
     fn camera(&mut self, x: f64, y: f64, zoom: f64) {}
     /// A new enemy (its id is the next index); its first sample follows.
     fn spawn(&mut self, rec: EnemyRecord) {}
+    fn boss_cue(&mut self, cue: crate::survivors::BossCue) {}
     fn survivor_boss(&mut self, id: usize) {}
     fn sample(&mut self, id: usize, x: f64, y: f64) {}
     fn fate(&mut self, id: usize, fate: Fate) {}
@@ -540,6 +541,9 @@ impl<R: Recorder + ?Sized> Recorder for std::rc::Rc<std::cell::RefCell<R>> {
     }
     fn spawn(&mut self, rec: EnemyRecord) {
         self.borrow_mut().spawn(rec);
+    }
+    fn boss_cue(&mut self, cue: crate::survivors::BossCue) {
+        self.borrow_mut().boss_cue(cue);
     }
     fn survivor_boss(&mut self, id: usize) {
         self.borrow_mut().survivor_boss(id);
@@ -751,6 +755,7 @@ fn to_value<T: Serialize>(x: &T) -> Value {
 /// categories), for the oracle's event log.
 #[derive(Clone, Debug)]
 pub struct LogRecorder {
+    pub boss_cues: Vec<crate::survivors::BossCue>,
     pub weapon_shots: Vec<crate::survivors::Shot>,
     pub missiles: Vec<crate::survivors::MissilePose>,
     pub lightning_strikes: Vec<crate::survivors::LightningStrike>,
@@ -792,6 +797,7 @@ pub struct LogRecorder {
 impl Default for LogRecorder {
     fn default() -> LogRecorder {
         LogRecorder {
+            boss_cues: Vec::new(),
             weapon_shots: Vec::new(),
             missiles: Vec::new(),
             lightning_strikes: Vec::new(),
@@ -842,6 +848,9 @@ impl Recorder for LogRecorder {
         self.floor_chickens.push(event);
     }
 
+    fn boss_cue(&mut self, cue: crate::survivors::BossCue) {
+        self.boss_cues.push(cue);
+    }
     fn survivor_boss(&mut self, id: usize) {
         self.survivor_bosses.push(id);
     }

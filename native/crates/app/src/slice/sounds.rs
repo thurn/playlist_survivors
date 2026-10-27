@@ -19,6 +19,8 @@ use sim::core::rng::{Part, Rng};
 use stream::Beat;
 
 use super::live::decode;
+mod horn;
+use horn::horn;
 mod budget;
 mod chain;
 pub mod check;
@@ -185,7 +187,7 @@ impl Sounds {
             .map_err(|e| format!("{}: {e}", dir.display()))?;
         let catalogue: Catalogue = serde_json::from_str(&text).map_err(|e| e.to_string())?;
         let id = if survivors { "survivors" } else { PALETTE };
-        let palette = lib
+        let mut palette = lib
             .sound_palettes
             .get(id)
             .ok_or_else(|| format!("no palette {id}"))?
@@ -220,6 +222,16 @@ impl Sounds {
                 bank.push(pcm.into());
                 samples.insert(id.to_string(), (bank.len() - 1, entry.onset_s));
             }
+        }
+        if survivors {
+            let pcm = horn(rate);
+            lengths.push(pcm.len() as f64 / rate);
+            samples.insert("procedural/boss-horn".into(), (bank.len(), 0.0));
+            bank.push(pcm.into());
+            palette.sounds.insert(
+                "boss-warning".into(),
+                vec![Sample::Name("procedural/boss-horn".into())],
+            );
         }
         let weapons = lib
             .weapons
@@ -547,6 +559,26 @@ impl Sounds {
                 } else {
                     vec![Call::new("step", *s, *x, 0.25)]
                 }
+            }
+            Cause::Boss(cue) => {
+                use sim::survivors::BossCueKind;
+                let key = match cue.kind {
+                    BossCueKind::Warning => "boss-warning",
+                    BossCueKind::Landed => "boss-land",
+                    BossCueKind::Defeated => "boss-slam",
+                };
+                let mut c = Call::new(
+                    key,
+                    cue.song,
+                    if cue.kind == BossCueKind::Warning {
+                        f64::NAN
+                    } else {
+                        cue.x
+                    },
+                    0.65,
+                );
+                c.owner = Some(cue.song);
+                vec![c]
             }
             Cause::Treasure { s, tick, .. } => {
                 let mut c = Call::new(
@@ -1264,5 +1296,69 @@ mod survivor_tests {
         sounds.reconcile(&[], &at, &mut out);
         assert_eq!(out.len(), admitted);
         assert!(out.iter().all(|c| matches!(c, Command::Cancel(_))));
+    }
+    #[test]
+    fn boss_cues_use_decoded_palette_onsets_and_cancel_before_playback() {
+        use sim::survivors::{BossCue, BossCueKind};
+        let (mut sounds, _) = decoded();
+        let beats = tests::beats(12, 0.5, 1.0);
+        let at = At {
+            seed: 1.0,
+            final_before: -1.0,
+            run_start: 0.0,
+            beats: &beats,
+            gate: 0.2,
+            camera: (0.0, 0.0, 1.0),
+            clock: (0.0, 100.0),
+            l_out: 0.02,
+            never_late: NEVER_LATE,
+            now: 100.0,
+            ahead: 0.0,
+        };
+        let causes: Vec<_> = [
+            BossCueKind::Warning,
+            BossCueKind::Landed,
+            BossCueKind::Defeated,
+        ]
+        .into_iter()
+        .enumerate()
+        .map(|(i, kind)| Caused {
+            cause: Cause::Boss(BossCue {
+                kind,
+                pending: 0,
+                song: 1.0 + i as f64,
+                run: 1.0 + i as f64,
+                id: i,
+                x: 0.0,
+                y: 0.0,
+            }),
+            known: 0.5,
+        })
+        .collect();
+        let mut out = Vec::new();
+        sounds.reconcile(&causes, &at, &mut out);
+        let played: Vec<_> = out
+            .iter()
+            .filter_map(|c| {
+                if let Command::Play(v) = c {
+                    Some(v)
+                } else {
+                    None
+                }
+            })
+            .collect();
+        assert_eq!(played.len(), 3, "all three boss cues have an actual voice");
+        for (i, v) in played.iter().enumerate() {
+            assert!((v.at + v.lead + at.l_out - (101.0 + i as f64)).abs() < 1e-6);
+            assert!(!v.duck);
+        }
+        out.clear();
+        sounds.reconcile(&[], &at, &mut out);
+        assert_eq!(
+            out.iter()
+                .filter(|c| matches!(c, Command::Cancel(_)))
+                .count(),
+            3
+        );
     }
 }

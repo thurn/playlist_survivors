@@ -150,6 +150,7 @@ pub enum Moment {
 /// places it on the beat grid, picks its sample and schedules it).
 #[derive(Clone, Debug, PartialEq)]
 pub enum Cause {
+    Boss(sim::survivors::BossCue),
     Treasure {
         s: f64,
         id: usize,
@@ -228,6 +229,8 @@ const BOLT_KEEP_S: f64 = 1.0;
 /// What a frame draws.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct LiveView {
+    pub boss_cues: Vec<sim::survivors::BossCue>,
+    pub boss_warning: Option<sim::survivors::BossCue>,
     pub inventory: Option<sim::survivors::Inventory>,
     pub gem_poses: BTreeMap<usize, sim::survivors::GemPose>,
     pub chickens: BTreeMap<usize, (f64, f64)>,
@@ -313,6 +316,21 @@ impl LiveView {
     pub fn apply(&mut self, s: f64, rec: &Record) {
         self.s = s;
         match rec {
+            Record::BossCue(cue) => {
+                match cue.kind {
+                    sim::survivors::BossCueKind::Warning => self.boss_warning = Some(*cue),
+                    sim::survivors::BossCueKind::Landed if cue.pending == 0 => {
+                        self.boss_warning = None;
+                    }
+                    sim::survivors::BossCueKind::Landed | sim::survivors::BossCueKind::Defeated => {
+                    }
+                }
+                self.boss_cues.retain(|c| cue.run - c.run < 5.0);
+                self.boss_cues.push(*cue);
+                if self.boss_cues.len() > 32 {
+                    self.boss_cues.remove(0);
+                }
+            }
             Record::GemPose(pose) => {
                 self.gem_poses.insert(pose.id, *pose);
                 if let Some(g) = self.gems.get_mut(&pose.id) {
@@ -538,6 +556,7 @@ impl LiveView {
 /// What the simulation reported, as the view applies it.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Record {
+    BossCue(sim::survivors::BossCue),
     GemPose(sim::survivors::GemPose),
     FloorChicken(sim::survivors::FloorChicken),
     Chest(sim::survivors::ChestEvent),
@@ -723,6 +742,12 @@ impl Journal {
 pub struct LiveRecorder(pub Rc<RefCell<Journal>>);
 
 impl Recorder for LiveRecorder {
+    fn boss_cue(&mut self, cue: sim::survivors::BossCue) {
+        let mut j = self.0.borrow_mut();
+        j.notes.s = cue.song;
+        j.push(Record::BossCue(cue));
+        j.sound(Cause::Boss(cue));
+    }
     fn lightning(&mut self, strike: sim::survivors::LightningStrike) {
         self.0
             .borrow_mut()
@@ -1754,6 +1779,7 @@ impl Cause {
     /// The song time the sound belongs to.
     pub fn s(&self) -> f64 {
         match self {
+            Cause::Boss(cue) => cue.song,
             Cause::Swing { s, .. }
             | Cause::Kill { s, .. }
             | Cause::Weapon { s, .. }

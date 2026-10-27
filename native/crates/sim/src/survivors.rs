@@ -1,5 +1,7 @@
 //! State the survivors sim publishes while song time continues through a freeze.
 
+mod bosses;
+pub use bosses::*;
 mod chests;
 pub use chests::*;
 mod arsenal;
