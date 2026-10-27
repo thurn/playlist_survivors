@@ -1,0 +1,34 @@
+{
+  "build": "Steam 1.16.111 macOS",
+  "source_sha256": {
+    "out/ENEMY_DATA.txt": "8c0347736064e82822655f8b9aa23e08f6741ed2f868575e5e835977002dbdfa",
+    "rt/VampireSurvivors.Objects.Characters/EnemyController.cs": "203875c72c39beb37035a9119696b1590376361cfd675e0d5c392daa07baf45f"
+  },
+  "selected_numeric_facts": [
+    {
+      "role": "BATSWARM",
+      "rank": 1,
+      "health": 0.1,
+      "levelScaled": false,
+      "contactPower": 1,
+      "speed": 700,
+      "xp": 1,
+      "knockback": 1,
+      "maxKnockback": 3,
+      "fixedDirection": true
+    },
+    {
+      "role": "GHOSTSWARM",
+      "rank": 1,
+      "health": 1,
+      "levelScaled": false,
+      "contactPower": 5,
+      "speed": 700,
+      "xp": 1.5,
+      "knockback": 0,
+      "maxKnockback": 3,
+      "fixedDirection": true
+    }
+  ],
+  "runtime_check": "InitSkills enables level-scaling only for HP_x_Level; both event roles omit it. Fixed_Direction is present for both; no raw data/source retained."
+}

@@ -1108,6 +1108,15 @@ Soul Eater kill-heart drops, and Bible's interval/duration distinction. Source
 hashes and numeric audits are in [SF1 evidence](../../native/evidence/sf1/README.md).
 No game data files or behavior changes are introduced.
 
+### SF1-swarm
+
+The event-only BATSWARM/GHOSTSWARM combat rows omitted from the damage
+appendix are now curated in `docs/survivors/appendix-feel.md`: HP 0.1/1,
+contact power 1/5, XP 1/1.5, speed 700, fixed direction, no level scaling.
+[SF1-swarm evidence](../../native/evidence/sf1-swarm/README.md) keeps source
+hashes and selected numeric facts. No raw data or runtime source is committed;
+SW6 consumes the documented values. No game/app behavior changes.
+
 ### SF2
 
 Survivors is now the app's default level with the sword alone. Its own run

@@ -311,7 +311,8 @@ Wand projectile's pierce budget, so their zero is **not zero targets**.
 
 Source: `ENEMY_DATA` rank 1 for every Mad Forest roster/boss plus the two
 swarm types; the Reaper is intentionally omitted from this demo. The HP,
-contact power and XP tables remain in the [damage appendix](appendix-damage-vs-health.md).
+contact power and XP roster tables remain in the [damage appendix](appendix-damage-vs-health.md);
+the event-only swarm combat rows are below.
 `speed` is a data scalar relative to 100, **not px/s**. Hero-speed ratios
 below are `0.28 × speed / 100`, with shared Forest speed modifiers cancelling.
 KB/maxKB/deathKB are dimensionless. Missing resistances become zero through
@@ -342,6 +343,23 @@ KB/maxKB/deathKB are dimensionless. Missing resistances become zero through
 | XLMANTIS | 80 | 0.224 | 0 | 3 | 0 | 0 | 0 | 0 |
 | XLMUMMY | 80 | 0.224 | 0 | 3 | 0 | 0 | 0 | 0 |
 | ZOMBIE | 100 | 0.28 | 0.8 | 3 | 4 | 0 | 0 | 0 |
+
+### Swarm combat fields
+
+The damage appendix's roster table omits the two event-only roles. Their
+`ENEMY_DATA` rank-1 combat fields are:
+
+| Event role | Raw max HP | HP × player level | Contact power | speed | XP | Fixed direction |
+|---|---:|---|---:|---:|---:|---|
+| BATSWARM | 0.1 | no | 1 | 700 | 1 | yes |
+| GHOSTSWARM | 1 | no | 5 | 700 | 1.5 | yes |
+
+Neither role has the `HP_x_Level` skill; `EnemyController.InitSkills` enables
+level scaling only for that skill. Both use `Fixed_Direction`, matching the
+crossing-swarm behavior. These are raw source fields; the demo still converts
+speed by the hero ratio and applies its level's contact-damage multiplier.
+Knockback/resistance fields are in the preceding table. Source hashes and the
+selected numerical audit are in [SF1-swarm evidence](../../native/evidence/sf1-swarm/README.md).
 
 ## Mad Forest events
 
