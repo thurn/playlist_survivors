@@ -1085,6 +1085,18 @@ Each bead summarizes its measurements here in a few lines, in its own
 subsection, linking `native/evidence/<key>/`. Beads never add sections
 elsewhere in this document. Parallel beads would collide there.
 
+### Tooling — epic-scoped waits (hv-n7fn.44)
+
+[Kept evidence](../../native/evidence/tooling-scoped-await/README.md) records
+Hive scoped-wait fix `f8f8d000b7078a8e90fea6394a4144d549d849fe` and its test-only
+observation prerequisite `bc96e7878b85a9222cd42fd004304c7424bd3cab`.
+Both passed their own Hive cold reviews, full gates and exact-commit Linux
+Portability runs. The live source reload and scoped probe ignore unrelated ready
+epics while preserving claims, prerequisites and the bound project/stream.
+Use `executor await --parent hv-n7fn --include-label ci-fix --include-label velocity`;
+its default deadline/interval remain. No game code or extra Survivors review
+changes; this evidence commit SHA is recorded in the native bead notes.
+
 ### Tooling — capacity interruption recovery (hv-n7fn.37)
 
 [Kept native records](../../native/evidence/tooling-capacity-recovery/README.md)

@@ -1,0 +1,28 @@
+{
+  "repository_id": "01a0cc79-6fa9-7be1-ac9c-3f2d23fad671",
+  "staging": {
+    "ref": "refs/heads/staging",
+    "oid": {
+      "format": "sha1",
+      "bytes": "f8f8d000b7078a8e90fea6394a4144d549d849fe"
+    }
+  },
+  "release": {
+    "ref": "refs/heads/release",
+    "oid": {
+      "format": "sha1",
+      "bytes": "f8f8d000b7078a8e90fea6394a4144d549d849fe"
+    }
+  },
+  "lag": {
+    "commits": 0,
+    "since": null
+  },
+  "release_state": "green",
+  "release_stage": false,
+  "release_block_reasons": [],
+  "promotion_pause": null,
+  "active_run": null,
+  "last_run": null,
+  "runs": []
+}

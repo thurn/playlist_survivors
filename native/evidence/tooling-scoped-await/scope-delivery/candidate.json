@@ -1,0 +1,421 @@
+{
+  "attempt_generations": [
+    {
+      "anchored_base_oid": {
+        "bytes": "bc96e7878b85a9222cd42fd004304c7424bd3cab",
+        "format": "sha1"
+      },
+      "configuration_digest": "af10a7232cad4d3a4526348476d847425480663f7200d5401a311da6ba9802b2",
+      "engine_epoch": 1,
+      "expected_parent_oid": {
+        "bytes": "bc96e7878b85a9222cd42fd004304c7424bd3cab",
+        "format": "sha1"
+      },
+      "id": "01a17bbd-8690-7133-bb17-667390e168b2",
+      "identity_digest": "db026794795418f77ccbeb1c3b2976c13a971304e79b73cec2acecec7d388a94",
+      "invalidated_by": null,
+      "item_id": "01a17bbd-854c-7fc2-988c-fd9ccafdeb38",
+      "ordered_item_ids": [
+        "01a17bbd-854c-7fc2-988c-fd9ccafdeb38"
+      ],
+      "ordered_source_oids": [
+        {
+          "bytes": "f8f8d000b7078a8e90fea6394a4144d549d849fe",
+          "format": "sha1"
+        }
+      ],
+      "prefix_oids": [
+        {
+          "bytes": "f8f8d000b7078a8e90fea6394a4144d549d849fe",
+          "format": "sha1"
+        }
+      ],
+      "step_graph_digest": "264bf841a39210a64a9288075c9c09d8eb2dcf26c6b70ae7e0dd24cb123d579e",
+      "tested_oid": {
+        "bytes": "f8f8d000b7078a8e90fea6394a4144d549d849fe",
+        "format": "sha1"
+      }
+    }
+  ],
+  "attempts": [
+    {
+      "attempt": 1,
+      "created_at": [
+        2026,
+        300,
+        5,
+        3,
+        0,
+        866905000,
+        0,
+        0,
+        0
+      ],
+      "environment_fingerprint": "9e62e603306f18e38039c3540d3d9d0b12827948917817a34582a7d0cc22e2d8",
+      "expected_parent_oid": {
+        "bytes": "bc96e7878b85a9222cd42fd004304c7424bd3cab",
+        "format": "sha1"
+      },
+      "finished_at": [
+        2026,
+        300,
+        5,
+        6,
+        41,
+        93695000,
+        0,
+        0,
+        0
+      ],
+      "frozen_steps": [
+        {
+          "command": {
+            "kind": "shell",
+            "runner": [
+              "/bin/sh",
+              "-c"
+            ],
+            "script": "scripts/prepare-check && scripts/check"
+          },
+          "cpu_tokens": 0,
+          "final_step": false,
+          "id": "62c87bbd-86d9-70a0-b418-7f70fe90a98a",
+          "memory_bytes": 0,
+          "name": "ci",
+          "needs": [],
+          "reuse_on_retry": false,
+          "rss_limit_bytes": null,
+          "semaphores": [],
+          "soft_needs": [],
+          "timeout_ns": 3600000000000,
+          "voting": true,
+          "working_directory": "."
+        }
+      ],
+      "id": "01a17bbd-86d9-70a0-b418-7f70fe90a98a",
+      "item_id": "01a17bbd-854c-7fc2-988c-fd9ccafdeb38",
+      "retry_of": null,
+      "slot_id": "01a17baa-1a38-7683-99e8-32f32b31d35e",
+      "started_at": [
+        2026,
+        300,
+        5,
+        3,
+        0,
+        891786000,
+        0,
+        0,
+        0
+      ],
+      "state": "passed",
+      "step_results": [
+        {
+          "diagnostics": [],
+          "elapsed_ms": 220145,
+          "exit_code": 0,
+          "log_hash": "59ccdb5e96eeb526bc42a5c6e9f0fe5c63cd81db2ba36781418927a5d7b802a5",
+          "name": "ci",
+          "result_class": "success",
+          "reused_from_attempt_id": null,
+          "signal": null,
+          "stderr_end": 259,
+          "stdout_end": 59634
+        }
+      ],
+      "tested_oid": {
+        "bytes": "f8f8d000b7078a8e90fea6394a4144d549d849fe",
+        "format": "sha1"
+      },
+      "validation_generation_id": "01a17bbd-8690-7133-bb17-667390e168b2"
+    }
+  ],
+  "buildset": {
+    "attempt": 1,
+    "created_at": [
+      2026,
+      300,
+      5,
+      3,
+      0,
+      866905000,
+      0,
+      0,
+      0
+    ],
+    "environment_fingerprint": "9e62e603306f18e38039c3540d3d9d0b12827948917817a34582a7d0cc22e2d8",
+    "expected_parent_oid": {
+      "bytes": "bc96e7878b85a9222cd42fd004304c7424bd3cab",
+      "format": "sha1"
+    },
+    "finished_at": [
+      2026,
+      300,
+      5,
+      6,
+      41,
+      93695000,
+      0,
+      0,
+      0
+    ],
+    "frozen_steps": [
+      {
+        "command": {
+          "kind": "shell",
+          "runner": [
+            "/bin/sh",
+            "-c"
+          ],
+          "script": "scripts/prepare-check && scripts/check"
+        },
+        "cpu_tokens": 0,
+        "final_step": false,
+        "id": "62c87bbd-86d9-70a0-b418-7f70fe90a98a",
+        "memory_bytes": 0,
+        "name": "ci",
+        "needs": [],
+        "reuse_on_retry": false,
+        "rss_limit_bytes": null,
+        "semaphores": [],
+        "soft_needs": [],
+        "timeout_ns": 3600000000000,
+        "voting": true,
+        "working_directory": "."
+      }
+    ],
+    "id": "01a17bbd-86d9-70a0-b418-7f70fe90a98a",
+    "item_id": "01a17bbd-854c-7fc2-988c-fd9ccafdeb38",
+    "retry_of": null,
+    "slot_id": "01a17baa-1a38-7683-99e8-32f32b31d35e",
+    "started_at": [
+      2026,
+      300,
+      5,
+      3,
+      0,
+      891786000,
+      0,
+      0,
+      0
+    ],
+    "state": "passed",
+    "step_results": [
+      {
+        "diagnostics": [],
+        "elapsed_ms": 220145,
+        "exit_code": 0,
+        "log_hash": "59ccdb5e96eeb526bc42a5c6e9f0fe5c63cd81db2ba36781418927a5d7b802a5",
+        "name": "ci",
+        "result_class": "success",
+        "reused_from_attempt_id": null,
+        "signal": null,
+        "stderr_end": 259,
+        "stdout_end": 59634
+      }
+    ],
+    "tested_oid": {
+      "bytes": "f8f8d000b7078a8e90fea6394a4144d549d849fe",
+      "format": "sha1"
+    },
+    "validation_generation_id": "01a17bbd-8690-7133-bb17-667390e168b2"
+  },
+  "certificate": {
+    "buildset_id": "01a17bbd-86d9-70a0-b418-7f70fe90a98a",
+    "checkout_verified": true,
+    "completed_event_sequence": 40367,
+    "configuration_digest": "af10a7232cad4d3a4526348476d847425480663f7200d5401a311da6ba9802b2",
+    "created_at": [
+      2026,
+      300,
+      5,
+      6,
+      41,
+      101677000,
+      0,
+      0,
+      0
+    ],
+    "engine_epoch": 1,
+    "environment_fingerprint": "9e62e603306f18e38039c3540d3d9d0b12827948917817a34582a7d0cc22e2d8",
+    "expected_parent_oid": {
+      "bytes": "bc96e7878b85a9222cd42fd004304c7424bd3cab",
+      "format": "sha1"
+    },
+    "id": "01a17bc0-e34d-7902-b37c-d97753c2060c",
+    "queue_item_id": "01a17bbd-854c-7fc2-988c-fd9ccafdeb38",
+    "step_graph_digest": "264bf841a39210a64a9288075c9c09d8eb2dcf26c6b70ae7e0dd24cb123d579e",
+    "tested_oid": {
+      "bytes": "f8f8d000b7078a8e90fea6394a4144d549d849fe",
+      "format": "sha1"
+    },
+    "tree_oid": {
+      "bytes": "821160f72318a9df26b41e69cf16a8f12020ad66",
+      "format": "sha1"
+    },
+    "validation_generation_id": "01a17bbd-8690-7133-bb17-667390e168b2",
+    "voting_results": [
+      {
+        "attempt_id": "01a17bbd-8724-7111-9a66-b1a85c7106cd",
+        "log_hash": "59ccdb5e96eeb526bc42a5c6e9f0fe5c63cd81db2ba36781418927a5d7b802a5",
+        "log_stderr_end": 259,
+        "log_stdout_end": 59634,
+        "step_id": "62c87bbd-86d9-70a0-b418-7f70fe90a98a"
+      }
+    ],
+    "warnings": []
+  },
+  "certificates": [
+    {
+      "buildset_id": "01a17bbd-86d9-70a0-b418-7f70fe90a98a",
+      "checkout_verified": true,
+      "completed_event_sequence": 40367,
+      "configuration_digest": "af10a7232cad4d3a4526348476d847425480663f7200d5401a311da6ba9802b2",
+      "created_at": [
+        2026,
+        300,
+        5,
+        6,
+        41,
+        101677000,
+        0,
+        0,
+        0
+      ],
+      "engine_epoch": 1,
+      "environment_fingerprint": "9e62e603306f18e38039c3540d3d9d0b12827948917817a34582a7d0cc22e2d8",
+      "expected_parent_oid": {
+        "bytes": "bc96e7878b85a9222cd42fd004304c7424bd3cab",
+        "format": "sha1"
+      },
+      "id": "01a17bc0-e34d-7902-b37c-d97753c2060c",
+      "queue_item_id": "01a17bbd-854c-7fc2-988c-fd9ccafdeb38",
+      "step_graph_digest": "264bf841a39210a64a9288075c9c09d8eb2dcf26c6b70ae7e0dd24cb123d579e",
+      "tested_oid": {
+        "bytes": "f8f8d000b7078a8e90fea6394a4144d549d849fe",
+        "format": "sha1"
+      },
+      "tree_oid": {
+        "bytes": "821160f72318a9df26b41e69cf16a8f12020ad66",
+        "format": "sha1"
+      },
+      "validation_generation_id": "01a17bbd-8690-7133-bb17-667390e168b2",
+      "voting_results": [
+        {
+          "attempt_id": "01a17bbd-8724-7111-9a66-b1a85c7106cd",
+          "log_hash": "59ccdb5e96eeb526bc42a5c6e9f0fe5c63cd81db2ba36781418927a5d7b802a5",
+          "log_stderr_end": 259,
+          "log_stdout_end": 59634,
+          "step_id": "62c87bbd-86d9-70a0-b418-7f70fe90a98a"
+        }
+      ],
+      "warnings": []
+    }
+  ],
+  "elapsed_ms": 220201,
+  "failure_attribution": null,
+  "generation": {
+    "anchored_base_oid": {
+      "bytes": "bc96e7878b85a9222cd42fd004304c7424bd3cab",
+      "format": "sha1"
+    },
+    "configuration_digest": "af10a7232cad4d3a4526348476d847425480663f7200d5401a311da6ba9802b2",
+    "engine_epoch": 1,
+    "expected_parent_oid": {
+      "bytes": "bc96e7878b85a9222cd42fd004304c7424bd3cab",
+      "format": "sha1"
+    },
+    "id": "01a17bbd-8690-7133-bb17-667390e168b2",
+    "identity_digest": "db026794795418f77ccbeb1c3b2976c13a971304e79b73cec2acecec7d388a94",
+    "invalidated_by": null,
+    "item_id": "01a17bbd-854c-7fc2-988c-fd9ccafdeb38",
+    "ordered_item_ids": [
+      "01a17bbd-854c-7fc2-988c-fd9ccafdeb38"
+    ],
+    "ordered_source_oids": [
+      {
+        "bytes": "f8f8d000b7078a8e90fea6394a4144d549d849fe",
+        "format": "sha1"
+      }
+    ],
+    "prefix_oids": [
+      {
+        "bytes": "f8f8d000b7078a8e90fea6394a4144d549d849fe",
+        "format": "sha1"
+      }
+    ],
+    "step_graph_digest": "264bf841a39210a64a9288075c9c09d8eb2dcf26c6b70ae7e0dd24cb123d579e",
+    "tested_oid": {
+      "bytes": "f8f8d000b7078a8e90fea6394a4144d549d849fe",
+      "format": "sha1"
+    }
+  },
+  "included_items": [
+    "01a17bbd"
+  ],
+  "item": {
+    "admission_sequence": 141,
+    "buildset_id": "01a17bbd-86d9-70a0-b418-7f70fe90a98a",
+    "certificate_id": "01a17bc0-e34d-7902-b37c-d97753c2060c",
+    "cleanup_policy": "automatic",
+    "cleanup_state": "completed",
+    "current_generation_id": "01a17bbd-8690-7133-bb17-667390e168b2",
+    "dependencies": [],
+    "enqueue_sequence": 141,
+    "id": "01a17bbd-854c-7fc2-988c-fd9ccafdeb38",
+    "kind": "gate",
+    "metadata": {
+      "approved_at": [
+        2026,
+        300,
+        5,
+        3,
+        0,
+        433278000,
+        0,
+        0,
+        0
+      ],
+      "author_email": "derek@fake.email",
+      "author_name": "Derek Thurn",
+      "branch": "codex/epic-scoped-await",
+      "message_hash": "72aa9ff6adcd455ed84f12aa52fe373b3b233e5eafa6c14ca57fecad84149e99",
+      "purpose": "candidate",
+      "signature_state": "unknown",
+      "subject": "fix(executor): scope retained waits to an epic and shared labels",
+      "worktree_path": "/Users/dthurn/hive/.worktrees/codex-epic-scoped-await"
+    },
+    "promotion_authorized": true,
+    "promotion_authorized_at": [
+      2026,
+      300,
+      5,
+      3,
+      26,
+      391880000,
+      0,
+      0,
+      0
+    ],
+    "promotion_authorized_by": "01a17bbd-eaa1-7b61-b865-f9cacb8f7c35",
+    "remote_state": "synchronized",
+    "repository_id": "01a0cc79-6fa9-7be1-ac9c-3f2d23fad671",
+    "retry_of_item_id": null,
+    "source_oid": {
+      "bytes": "f8f8d000b7078a8e90fea6394a4144d549d849fe",
+      "format": "sha1"
+    },
+    "source_ref": "refs/tollgate/sources/01a17bbd-854c-7fc2-988c-fd9ccafdeb38",
+    "state": "promoted",
+    "terminal_reason": null
+  },
+  "local_master": {
+    "contains_tested": true,
+    "master_oid": {
+      "bytes": "f8f8d000b7078a8e90fea6394a4144d549d849fe",
+      "format": "sha1"
+    },
+    "policy_enabled": true,
+    "reason": null,
+    "status": "synchronized"
+  }
+}

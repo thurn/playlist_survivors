@@ -1,0 +1,23 @@
+# hv-n7fn.44 — waits stay inside the authorized epic
+
+A real native `hive executor await` returned immediately with unrelated 3D/legacy ready IDs after this executor completed the then-ready Survivors work. SP4 was peer-owned and SP5 blocked, so repeating that project-wide wait could not retain an idle wait for the authorized epic. One occurrence was filed as this tooling bead; no unrelated bead or peer claim was taken.
+
+Cause repair `hv-kff6` was delivered in the configured Hive repository under the executor tooling-fix exception. Source/tested/landed/released `f8f8d000b7078a8e90fea6394a4144d549d849fe`, candidate `01a17bbd-854c-7fc2-988c-fd9ccafdeb38`, certificate `01a17bc0-e34d-7902-b37c-d97753c2060c`. Full Tollgate certification, remote synchronization and cleanup completed; Hive release was green with lag 0. [Exact-commit Portability run](https://github.com/thurn/hive/actions/runs/40453449938) passed. Scope delivery receipts are kept here.
+
+`executor await --parent hv-n7fn --include-label ci-fix --include-label velocity` selects direct epic children OR the included shared labels, always inside the session's existing project/stream. Defaults are unchanged; the filter applies to ready/waiting work, never hides owned unfinished assignments, retains project-wide held peers and filters the readiness recheck after peer inspection. It never claims, changes bindings, loosens prerequisites or transfers worktrees. Responses identify the query scope. The ordinary 3900-second deadline and 30-second native interval remain; only a controlled zero-time live probe is claimed here, not a full 65-minute scoped idle observation.
+
+One fresh read-only warden review under **Hive's own AGENTS.md** found no actionable scope-fix issues. Three real native Beads/Dolt CLI wait journeys passed in 27.987 s (the new journey 10.418 s); typing, formatting and the final integrated fast check (25.077 s) passed. The reviewed source files and guide stayed byte-identical through the repair rebase, with SHA-256 proof. No extra Survivors per-bead cold review was added.
+
+The first scoped-wait candidate failed an unrelated existing observation journey: zero candidate rows after three fixed sweeps and one bounded poll. This was filed immediately as Hive tooling prerequisite `hv-ylr7`, not retried unchanged. Its test-only repair is source/landed `bc96e7878b85a9222cd42fd004304c7424bd3cab`, candidate `01a17bb5-b5c1-7bf0-8ec0-2869f60b7bef`, certificate `01a17bb8-ebef-7200-903f-ae26f5f43be8`. It preserves production code/timeouts and original identity/ownership/branch/promotion/cache/outage assertions, proves an exhausted poll does no I/O, then resumes bounded progress.
+
+That repair's required fresh Hive cold review found one P2: polling before history is ready can cache absent branch attribution. It was fixed by waiting for history before polling. A disposable external Beads wrapper fails its first read and then delegates to the real CLI: the regression fails before the fix (empty fallback links, 4.296 s) and all four tests pass after it (4.966 s), including the unchanged native timeout guard. No exact gate-host scheduling contention is claimed. The repair passed its final fast check (32.008 s), full gate and [Portability run](https://github.com/thurn/hive/actions/runs/40452632224). Raw failed-gate, diagnosis, review and red/green outputs are kept here. No confirmation reviews were run.
+
+After promotion, `hive source --json` selected the exact f8 snapshot through normal hot reload, without a reinstall or resident restart. The live scoped zero-time wait returned `ExecutorAwaitTimeout` with held SP5 and this original blocked tooling bead waiting, while identifying the requested scope; it no longer returned unrelated ready epics. Both Hive cause beads are closed, with source/check/provider writers settled. This original bead delivers only project guidance, this evidence and its own design subsection; it changes no game or rollback-runner code and requires no operator check or app window.
+
+Run from a durable checkout, after arming the session:
+
+```
+/Users/dthurn/hive/bin/hive executor await --session "${CODEX_THREAD_ID:?}" --parent hv-n7fn --include-label ci-fix --include-label velocity --json
+```
+
+Retain that native wait and collect its existing process output inside one long-yield tool cell per the executor waiting skill. A scoped drained result permits a stop when no eligible waiting work remains; a peer's independent claimed final bead remains theirs. Final Playlist evidence source SHA, `scripts/check-fast`, staging promotion, release snapshot and readiness check are recorded in hv-n7fn.44's native notes.
