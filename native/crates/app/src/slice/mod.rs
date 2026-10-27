@@ -42,6 +42,7 @@ mod atmosphere;
 mod bosses;
 #[allow(clippy::pedantic, unused_qualifications, dead_code)]
 mod coreaudio;
+mod evolution;
 mod fx;
 mod garlic;
 mod gems;
@@ -2530,10 +2531,13 @@ impl App {
             return;
         };
         let caused: Vec<_> = self.engine.causes().cloned().collect();
-        let cues = self.scene.cards.cues(
+        let mut cues = self.scene.cards.cues(
             self.world.survivors().then(|| self.engine.sim.run_state()),
             now_s(),
         );
+        cues.extend(evolution::cues(
+            self.world.survivors().then(|| self.engine.sim.run_state()),
+        ));
         let camera = self.engine.view.borrow().camera;
         let seed = self.engine.seed;
         let at = sounds::At {

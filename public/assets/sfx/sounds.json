@@ -1104,6 +1104,42 @@
       "lufs": -24.8,
       "onsetS": 0.21
     },
+    "rpg80/item_misc_01": {
+      "file": "rpg80/item_misc_01.ogg",
+      "durationS": 0.336,
+      "lufs": -25.5,
+      "onsetS": 0
+    },
+    "rpg80/item_misc_02": {
+      "file": "rpg80/item_misc_02.ogg",
+      "durationS": 0.374,
+      "lufs": -22.5,
+      "onsetS": 0
+    },
+    "rpg80/item_misc_03": {
+      "file": "rpg80/item_misc_03.ogg",
+      "durationS": 0.294,
+      "lufs": -25.6,
+      "onsetS": 0
+    },
+    "rpg80/item_misc_04": {
+      "file": "rpg80/item_misc_04.ogg",
+      "durationS": 0.174,
+      "lufs": -24.8,
+      "onsetS": 0.0109
+    },
+    "rpg80/item_misc_05": {
+      "file": "rpg80/item_misc_05.ogg",
+      "durationS": 0.254,
+      "lufs": -19.9,
+      "onsetS": 0.037
+    },
+    "rpg80/item_misc_06": {
+      "file": "rpg80/item_misc_06.ogg",
+      "durationS": 0.517,
+      "lufs": -18.2,
+      "onsetS": 0.0939
+    },
     "rpg80/metal_01": {
       "file": "rpg80/metal_01.ogg",
       "durationS": 0.472,

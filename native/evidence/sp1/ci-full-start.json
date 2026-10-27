@@ -1,0 +1,24 @@
+{
+  "command": [
+    "scripts/ci-full"
+  ],
+  "startedUTC": "2026-10-27T03:50:20.015725+00:00",
+  "sourceFingerprintSha256": "a5b023a698fd47a8093c79bdda00e4b14a0d138b3b8cb61ab515b37146b655f2",
+  "sourceFiles": 539,
+  "paths": [
+    "assets-src",
+    "content",
+    "levels",
+    "native/crates",
+    "native/scripts",
+    "public/assets",
+    "scripts",
+    "package.json",
+    "package-lock.json",
+    "native/Cargo.toml",
+    "native/Cargo.lock",
+    "native/rust-toolchain.toml"
+  ],
+  "includesUntrackedSource": true,
+  "reason": "Shared weapons-check capture helper changed; complete local release validation."
+}

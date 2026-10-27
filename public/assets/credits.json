@@ -724,6 +724,26 @@
       ]
     },
     {
+      "file": "dl:rpg80/item_misc_0*.ogg",
+      "title": "80 CC0 RPG SFX — evolution unlock transients",
+      "authors": [
+        "rubberduck"
+      ],
+      "licence": "CC0",
+      "urls": [
+        "https://opengameart.org/content/80-cc0-rpg-sfx"
+      ],
+      "usedFor": [
+        "sfx:rpg80/item_misc_01",
+        "sfx:rpg80/item_misc_02",
+        "sfx:rpg80/item_misc_03",
+        "sfx:rpg80/item_misc_04",
+        "sfx:rpg80/item_misc_05",
+        "sfx:rpg80/item_misc_06"
+      ],
+      "notes": "Six item_misc sources selected by SP1; the baker trims silence and normalizes them, without synthesizing or adding musical notes."
+    },
+    {
       "file": "dl:starsteel-spell-effects/**",
       "title": "Spell Effects by StarsteelGaming",
       "authors": [

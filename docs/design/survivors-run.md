@@ -1557,6 +1557,29 @@ in operator-pending. From root after build: `native/target/release/playlist-surv
 Commit and staging OIDs are recorded in hv-n7fn.29’s native notes.
 
 ### SP1
+
+Presentation-only evolution showpieces add actual-reward, downbeat transformation
+bursts, five distinct evolved effects and six short CC0 OpenGameArt transients.
+Stable chest identity, owned inventory and pause clocks prevent early, repeated
+or withdrawn celebrations; forecast state only supplies existing sound lead.
+The ordinary weapons, simulation and weapon statistics are unchanged. The source
+and landed commit SHAs are recorded in hv-n7fn.30's notes.
+
+[Evidence](../../native/evidence/sp1/README.md) keeps five silent injected-loadout
+clips (48 s/1440 frames), 16 inspected stills, CC0 provenance and sound timing,
+61 app/5 content tests, clippy, a full local check (1075.223 s, unchanged source
+fingerprint), and the headless run/replay. All 41 survival-matrix gameplay hashes
+match SW7: 20 positioning passes/minimum HP 82.986111%, 20 AFK deaths before
+329.030 s; pacing remains report-only. Base-five dense p99 is 2.95 ms; this does
+not prove evolved density. The typed capture trigger is presentation evidence,
+not natural evolution acquisition. SP5 owns P's cold review and evolved density;
+subjective listening and feel remain in operator-pending.
+
+Run from the root after building: `native/target/release/playlist-survivors
+--evolutions-check native/evidence/sp1/captures`; normal play check:
+`native/target/release/playlist-survivors --playlist native/playlists/survivors-30.m3u
+--headless --delayed --press-beats --pick-first --seconds 30`.
+
 ### SP2
 
 Boss notices and their short original horn begin two native bars before the

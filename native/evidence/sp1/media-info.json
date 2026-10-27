@@ -1,0 +1,168 @@
+[
+  {
+    "file": "captures/bloody-tear/accent.png",
+    "bytes": 260150,
+    "sha256": "fc058dfc788a348a4bb5ffa2ea1c6b76762cdfafca1ec490ac10c14ab7f26320",
+    "sameAsInitial": true
+  },
+  {
+    "file": "captures/bloody-tear/normal.png",
+    "bytes": 252847,
+    "sha256": "63a222587f4c3ce80b08e398df4bb37fbd8e50d08bdcf840b693b92009aa6328",
+    "sameAsInitial": true
+  },
+  {
+    "file": "captures/bloody-tear/showpiece.mp4",
+    "bytes": 4313601,
+    "sha256": "e7c46c2b869b05135502198613d6f3915bd265ca2f809fbebee0a445f0a22648",
+    "sameAsInitial": true,
+    "video": {
+      "codec_name": "h264",
+      "width": 1280,
+      "height": 720,
+      "r_frame_rate": "30/1",
+      "duration": "15.000000",
+      "nb_frames": "450"
+    }
+  },
+  {
+    "file": "captures/bloody-tear/transformation.png",
+    "bytes": 283822,
+    "sha256": "9f483be43b5efc540155327bc4f0a423c349d4682d81b86fafeafc48a072ba54",
+    "sameAsInitial": true
+  },
+  {
+    "file": "captures/holy-wand/accent.png",
+    "bytes": 225752,
+    "sha256": "91b3ffc76594182098b155926a0768eccc0f870bd2d0b18bab0e99fc7d316e36",
+    "sameAsInitial": true
+  },
+  {
+    "file": "captures/holy-wand/normal.png",
+    "bytes": 218558,
+    "sha256": "f599a43cd142b9bd4a2d664b437c778fddd250886b2b1fe61e7657c387bccd7f",
+    "sameAsInitial": true
+  },
+  {
+    "file": "captures/holy-wand/showpiece.mp4",
+    "bytes": 1028820,
+    "sha256": "9cc03b8d3233d5f8c5a4bc4e49f075e720df06070c574a95e03dd4b7b102dbe7",
+    "sameAsInitial": true,
+    "video": {
+      "codec_name": "h264",
+      "width": 1280,
+      "height": 720,
+      "r_frame_rate": "30/1",
+      "duration": "6.000000",
+      "nb_frames": "180"
+    }
+  },
+  {
+    "file": "captures/holy-wand/transformation.png",
+    "bytes": 284658,
+    "sha256": "ebc57540f999cbc8d03d5d2146b98d10d0797465c53b6e6dd8e6d19372a8e025",
+    "sameAsInitial": true
+  },
+  {
+    "file": "captures/soul-eater/accent.png",
+    "bytes": 301624,
+    "sha256": "769e9a279169d6b1da3170cb004533076dec718a059a1caa226bfa222e965768",
+    "sameAsInitial": true
+  },
+  {
+    "file": "captures/soul-eater/normal.png",
+    "bytes": 288243,
+    "sha256": "01e4fd27736eebd17009985f2207079df8300fbc23783a20bf8399711c720b7b",
+    "sameAsInitial": true
+  },
+  {
+    "file": "captures/soul-eater/showpiece.mp4",
+    "bytes": 764271,
+    "sha256": "747444f1349e1a7d3fb5e3e5ca044c680b28b66ffe5eb2c692c0099d5016c0a3",
+    "sameAsInitial": true,
+    "video": {
+      "codec_name": "h264",
+      "width": 1280,
+      "height": 720,
+      "r_frame_rate": "30/1",
+      "duration": "4.000000",
+      "nb_frames": "120"
+    }
+  },
+  {
+    "file": "captures/soul-eater/transformation.png",
+    "bytes": 320102,
+    "sha256": "e712d47609e0b9f2dc27d21b4cc5eabc11e587e655aaf091d8ac589b817cd927",
+    "sameAsInitial": true
+  },
+  {
+    "file": "captures/thunder-loop/accent.png",
+    "bytes": 260782,
+    "sha256": "4c38502412bf170d75ccf38be40383a550784672debdc9bc8cd2c9c12a6f8e80",
+    "sameAsInitial": true
+  },
+  {
+    "file": "captures/thunder-loop/normal.png",
+    "bytes": 281128,
+    "sha256": "a518e9de99f3392659527841e3e3c4e3e0ec017ac980659154f311b0a9d0812c",
+    "sameAsInitial": true
+  },
+  {
+    "file": "captures/thunder-loop/return.png",
+    "bytes": 275017,
+    "sha256": "7a569bf926604c2ae01521a75612bbb15582ccc6a85a2c3b7b043eed3dd68dea",
+    "sameAsInitial": true
+  },
+  {
+    "file": "captures/thunder-loop/showpiece.mp4",
+    "bytes": 1867030,
+    "sha256": "7569190f08f3b4a3a12b2942f04fc930a14f954a23053a4c8906267f78e9e6d7",
+    "sameAsInitial": true,
+    "video": {
+      "codec_name": "h264",
+      "width": 1280,
+      "height": 720,
+      "r_frame_rate": "30/1",
+      "duration": "8.000000",
+      "nb_frames": "240"
+    }
+  },
+  {
+    "file": "captures/thunder-loop/transformation.png",
+    "bytes": 286696,
+    "sha256": "90cef7ce513298e600afa5cfb48e63811c999420a86fe522fb53244f72a3d4bf",
+    "sameAsInitial": true
+  },
+  {
+    "file": "captures/unholy-vespers/accent.png",
+    "bytes": 245836,
+    "sha256": "01a716db7310298ce55eaa896ae54d475e5733dc4226ad93d3f70ab72e2d2520",
+    "sameAsInitial": false
+  },
+  {
+    "file": "captures/unholy-vespers/normal.png",
+    "bytes": 243214,
+    "sha256": "47c882c832df5cea7729053a8bd8ae3550bf6efaeea2b2e9e3f1d01af14ada1b",
+    "sameAsInitial": true
+  },
+  {
+    "file": "captures/unholy-vespers/showpiece.mp4",
+    "bytes": 2236919,
+    "sha256": "263525e12f135cb47e1c11d50e86d27af6bc49f15e92411474789764e3ed2cb5",
+    "sameAsInitial": false,
+    "video": {
+      "codec_name": "h264",
+      "width": 1280,
+      "height": 720,
+      "r_frame_rate": "30/1",
+      "duration": "15.000000",
+      "nb_frames": "450"
+    }
+  },
+  {
+    "file": "captures/unholy-vespers/transformation.png",
+    "bytes": 280441,
+    "sha256": "8377f97bf928ed08876e26f5f88151de5314f94fa8b204e5ec5d6d9e0a0eb38a",
+    "sameAsInitial": true
+  }
+]

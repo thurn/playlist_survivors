@@ -38,10 +38,11 @@ impl Sword {
             let age = (now - spin.at).max(0.0);
             let (x, y) = at(shot.x, shot.y);
             let radius = shot.radius as f32 * scale;
-            let color = if shot.accent {
+            let blood = shot.id == sim::survivors::WeaponId::BloodyTear;
+            let color = if blood {
+                super::evolution::color(shot.id)
+            } else if shot.accent {
                 [1.0, 0.75, 0.4]
-            } else if shot.id == sim::survivors::WeaponId::BloodyTear {
-                [1.0, 0.12, 0.2]
             } else {
                 [1.0, 0.28, 0.58]
             };
@@ -77,6 +78,35 @@ impl Sword {
                     },
                     [1.0, 0.95, 1.0, fade * 0.9],
                 ));
+                if blood {
+                    // A second, counter-cut crescent leaves the centre and HP bar clear.
+                    out.push(Sprite::arc(
+                        x,
+                        y,
+                        size * 0.77,
+                        Arc {
+                            head: -head + 1.2,
+                            span: span * 0.9,
+                            width: 4.0 * scale,
+                        },
+                        [1.0, 0.05, 0.18, 0.75 * fade],
+                    ));
+                    for i in 0..4 {
+                        let angle = head - i as f32 * 0.52;
+                        let radial = size * (0.82 - i as f32 * 0.04);
+                        out.push(
+                            Sprite::solid(
+                                x + angle.cos() * radial - 2.0 * scale,
+                                y + angle.sin() * radial - 4.0 * scale,
+                                4.0 * scale,
+                                8.0 * scale,
+                                [1.0, 0.16, 0.3, fade * (0.7 - i as f32 * 0.12)],
+                            )
+                            .rotated(angle)
+                            .additive(),
+                        );
+                    }
+                }
                 if let Some(glow) = art.proc.get("glow") {
                     let tip = (x + head.cos() * size, y + head.sin() * size);
                     out.push(

@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/dthurn/playlist_survivors/.worktrees/codex-sp1-evolution-showpieces/native/target/release/playlist-survivors",
+    "--playlist",
+    "native/playlists/survivors-30.m3u",
+    "--headless",
+    "--delayed",
+    "--press-beats",
+    "--pick-first",
+    "--seconds",
+    "30"
+  ],
+  "exitCode": 0,
+  "wallSeconds": 35.274525000015274,
+  "sessions": [
+    "/Users/dthurn/playlist_survivors/native/logs/sessions/1793073476"
+  ]
+}

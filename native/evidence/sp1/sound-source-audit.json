@@ -1,0 +1,85 @@
+{
+  "page": "https://opengameart.org/content/80-cc0-rpg-sfx",
+  "author": "rubberduck",
+  "license": "CC0",
+  "primaryVerifiedUTC": "2026-10-27",
+  "sourceArchiveSha256": "1c2f06ff4e8563b5b8b745b23cf213c1474142a69bb82bd8f5e10d9b3f7a7bbd",
+  "selection": [
+    {
+      "id": "rpg80/item_misc_01",
+      "src": "dl:rpg80/item_misc_01.ogg",
+      "category": "evolution",
+      "desc": "Short CC0 item-unlock transient selected for an evolution transformation; music-context audition remains an operator check."
+    },
+    {
+      "id": "rpg80/item_misc_02",
+      "src": "dl:rpg80/item_misc_02.ogg",
+      "category": "evolution",
+      "desc": "Short CC0 item-unlock transient selected for an evolution transformation; music-context audition remains an operator check."
+    },
+    {
+      "id": "rpg80/item_misc_03",
+      "src": "dl:rpg80/item_misc_03.ogg",
+      "category": "evolution",
+      "desc": "Short CC0 item-unlock transient selected for an evolution transformation; music-context audition remains an operator check."
+    },
+    {
+      "id": "rpg80/item_misc_04",
+      "src": "dl:rpg80/item_misc_04.ogg",
+      "category": "evolution",
+      "desc": "Short CC0 item-unlock transient selected for an evolution transformation; music-context audition remains an operator check."
+    },
+    {
+      "id": "rpg80/item_misc_05",
+      "src": "dl:rpg80/item_misc_05.ogg",
+      "category": "evolution",
+      "desc": "Short CC0 item-unlock transient selected for an evolution transformation; music-context audition remains an operator check."
+    },
+    {
+      "id": "rpg80/item_misc_06",
+      "src": "dl:rpg80/item_misc_06.ogg",
+      "category": "evolution",
+      "desc": "Short CC0 item-unlock transient selected for an evolution transformation; music-context audition remains an operator check."
+    }
+  ],
+  "scope": "Short source transients; no claim of a human music-context audition. Final onset/duration/loudness come from the bake.",
+  "baked": {
+    "rpg80/item_misc_01": {
+      "file": "rpg80/item_misc_01.ogg",
+      "durationS": 0.336,
+      "lufs": -25.5,
+      "onsetS": 0
+    },
+    "rpg80/item_misc_02": {
+      "file": "rpg80/item_misc_02.ogg",
+      "durationS": 0.374,
+      "lufs": -22.5,
+      "onsetS": 0
+    },
+    "rpg80/item_misc_03": {
+      "file": "rpg80/item_misc_03.ogg",
+      "durationS": 0.294,
+      "lufs": -25.6,
+      "onsetS": 0
+    },
+    "rpg80/item_misc_04": {
+      "file": "rpg80/item_misc_04.ogg",
+      "durationS": 0.174,
+      "lufs": -24.8,
+      "onsetS": 0.0109
+    },
+    "rpg80/item_misc_05": {
+      "file": "rpg80/item_misc_05.ogg",
+      "durationS": 0.254,
+      "lufs": -19.9,
+      "onsetS": 0.037
+    },
+    "rpg80/item_misc_06": {
+      "file": "rpg80/item_misc_06.ogg",
+      "durationS": 0.517,
+      "lufs": -18.2,
+      "onsetS": 0.0939
+    }
+  },
+  "mix": "New keys use the existing UI voice cap3, no music duck. Per-weapon existing normal/accent fire and hit cues retained. Several evolved rewards aggregate to one transform cue."
+}

@@ -1,0 +1,4 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sp1-evolution-showpieces/native/crates/sim)
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sp1-evolution-showpieces/native/crates/eval)
+   Compiling app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sp1-evolution-showpieces/native/crates/app)
+    Finished `release` profile [optimized] target(s) in 11.44s

@@ -40,6 +40,7 @@ pub struct Look {
 #[derive(Default)]
 pub struct Scene {
     pub cards: super::cards::Screen,
+    pub evolution: super::evolution::Evolution,
     numbers: damage::Numbers,
     sword: super::sword::Sword,
     garlic: super::garlic::Garlic,
@@ -323,6 +324,7 @@ impl Scene {
         clock: &damage::Clock,
     ) {
         self.cards.update(view.run, view.inventory, now);
+        self.evolution.update(view.run, view.inventory);
         if view.run.is_some() {
             self.numbers.moments(moments, now, clock);
         }
@@ -1033,6 +1035,17 @@ impl Scene {
         super::atmosphere::drop_trails(view, art, &at, scale, fast.drop, out);
         super::bosses::draw(view, art, &at, scale, w, h, out, &mut layers.overlay);
         super::treasure::draw(view, art, &at, scale, w, h, out, &mut layers.overlay);
+        self.evolution.draw(
+            view,
+            art,
+            &at,
+            scale,
+            w,
+            h,
+            out,
+            lights,
+            &mut layers.overlay,
+        );
         self.numbers.draw(art, now, &at, scale, &mut layers.overlay);
         self.cards.grade(now, &mut layers.grade);
         self.cards

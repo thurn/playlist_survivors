@@ -321,6 +321,17 @@ Descriptions come from the packs' file names and pages, not from listening; audi
 | `rpg80/misc_02` | 0.37 | -18.6 | miscellaneous foley |
 | `rpg80/misc_03` | 0.20 | -20.4 | miscellaneous foley |
 
+## evolution
+
+| id | seconds | LUFS | description |
+|---|---|---|---|
+| `rpg80/item_misc_01` | 0.34 | -25.5 | Short CC0 item-unlock transient selected for an evolution transformation; music-context audition remains an operator check. |
+| `rpg80/item_misc_02` | 0.37 | -22.5 | Short CC0 item-unlock transient selected for an evolution transformation; music-context audition remains an operator check. |
+| `rpg80/item_misc_03` | 0.29 | -25.6 | Short CC0 item-unlock transient selected for an evolution transformation; music-context audition remains an operator check. |
+| `rpg80/item_misc_04` | 0.17 | -24.8 | Short CC0 item-unlock transient selected for an evolution transformation; music-context audition remains an operator check. |
+| `rpg80/item_misc_05` | 0.25 | -19.9 | Short CC0 item-unlock transient selected for an evolution transformation; music-context audition remains an operator check. |
+| `rpg80/item_misc_06` | 0.52 | -18.2 | Short CC0 item-unlock transient selected for an evolution transformation; music-context audition remains an operator check. |
+
 ## hit
 
 | id | seconds | LUFS | description |

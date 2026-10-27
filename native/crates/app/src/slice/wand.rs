@@ -19,10 +19,11 @@ pub fn draw(
         ) {
             continue;
         }
-        let color = if head.accent {
+        let holy = head.weapon == sim::survivors::WeaponId::HolyWand;
+        let color = if holy {
+            super::evolution::color(head.weapon)
+        } else if head.accent {
             [0.8, 0.65, 1.0]
-        } else if head.weapon == sim::survivors::WeaponId::HolyWand {
-            [1.0, 0.85, 0.4]
         } else {
             [0.35, 0.85, 1.0]
         };
@@ -37,7 +38,10 @@ pub fn draw(
             }
             let alpha = (i + 1) as f32 / trail.len() as f32;
             for (width, tint) in [
-                (6.0, [color[0], color[1], color[2], alpha * 0.35]),
+                (
+                    if holy { 9.0 } else { 6.0 },
+                    [color[0], color[1], color[2], alpha * 0.35],
+                ),
                 (1.5, [1.0, 1.0, 1.0, alpha * 0.8]),
             ] {
                 out.push(
@@ -72,6 +76,34 @@ pub fn draw(
             )
             .additive(),
         );
+        if holy {
+            let angle = head.vy.atan2(head.vx) as f32;
+            for side in [-1.0, 1.0] {
+                let a = angle + side * 0.7;
+                out.push(
+                    Sprite::solid(
+                        x - 8.0 * scale,
+                        y - 1.0 * scale,
+                        16.0 * scale,
+                        2.0 * scale,
+                        [1.0, 0.8, 0.25, 0.75],
+                    )
+                    .rotated(a)
+                    .additive(),
+                );
+            }
+            out.push(
+                Sprite::solid(
+                    x - 3.0 * scale,
+                    y - 3.0 * scale,
+                    6.0 * scale,
+                    6.0 * scale,
+                    [1.0, 1.0, 0.85, 0.9],
+                )
+                .rotated(std::f32::consts::FRAC_PI_4)
+                .additive(),
+            );
+        }
         lights.push(Light {
             x,
             y,

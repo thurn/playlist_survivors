@@ -1,0 +1,252 @@
+{
+  "baseline": "native/evidence/sw7/final-matrix/summary.json",
+  "allEqual": true,
+  "cases": [
+    {
+      "case": "cached-original-positioning-1",
+      "sp1": "edd2c4598be943e1",
+      "sw7": "edd2c4598be943e1",
+      "equal": true
+    },
+    {
+      "case": "cached-original-afk-1",
+      "sp1": "141d5d2edd7a768a",
+      "sw7": "141d5d2edd7a768a",
+      "equal": true
+    },
+    {
+      "case": "cached-original-positioning-2",
+      "sp1": "d3d204e996ee66b7",
+      "sw7": "d3d204e996ee66b7",
+      "equal": true
+    },
+    {
+      "case": "cached-original-afk-2",
+      "sp1": "9c987a9aae9c55da",
+      "sw7": "9c987a9aae9c55da",
+      "equal": true
+    },
+    {
+      "case": "cached-original-positioning-3",
+      "sp1": "324173dbd06b5230",
+      "sw7": "324173dbd06b5230",
+      "equal": true
+    },
+    {
+      "case": "cached-original-afk-3",
+      "sp1": "eed43a84cae73275",
+      "sw7": "eed43a84cae73275",
+      "equal": true
+    },
+    {
+      "case": "cached-original-positioning-4",
+      "sp1": "5e618cafc24acdc7",
+      "sw7": "5e618cafc24acdc7",
+      "equal": true
+    },
+    {
+      "case": "cached-original-afk-4",
+      "sp1": "31b383baa66dd1ab",
+      "sw7": "31b383baa66dd1ab",
+      "equal": true
+    },
+    {
+      "case": "cached-original-positioning-5",
+      "sp1": "f4c4acc8fda9cbe0",
+      "sw7": "f4c4acc8fda9cbe0",
+      "equal": true
+    },
+    {
+      "case": "cached-original-afk-5",
+      "sp1": "472420da81f1bde5",
+      "sw7": "472420da81f1bde5",
+      "equal": true
+    },
+    {
+      "case": "cached-reverse-positioning-1",
+      "sp1": "b1375da2fb54af2b",
+      "sw7": "b1375da2fb54af2b",
+      "equal": true
+    },
+    {
+      "case": "cached-reverse-afk-1",
+      "sp1": "5d83b5aeed133653",
+      "sw7": "5d83b5aeed133653",
+      "equal": true
+    },
+    {
+      "case": "cached-reverse-positioning-2",
+      "sp1": "9d82eba3fb38b402",
+      "sw7": "9d82eba3fb38b402",
+      "equal": true
+    },
+    {
+      "case": "cached-reverse-afk-2",
+      "sp1": "574ca22cbe508487",
+      "sw7": "574ca22cbe508487",
+      "equal": true
+    },
+    {
+      "case": "cached-reverse-positioning-3",
+      "sp1": "b123f173af451f21",
+      "sw7": "b123f173af451f21",
+      "equal": true
+    },
+    {
+      "case": "cached-reverse-afk-3",
+      "sp1": "5fc9956dda3e20b5",
+      "sw7": "5fc9956dda3e20b5",
+      "equal": true
+    },
+    {
+      "case": "cached-reverse-positioning-4",
+      "sp1": "9b65949446742e67",
+      "sw7": "9b65949446742e67",
+      "equal": true
+    },
+    {
+      "case": "cached-reverse-afk-4",
+      "sp1": "a0c038e3a4015e26",
+      "sw7": "a0c038e3a4015e26",
+      "equal": true
+    },
+    {
+      "case": "cached-reverse-positioning-5",
+      "sp1": "766a76872fdc0992",
+      "sw7": "766a76872fdc0992",
+      "equal": true
+    },
+    {
+      "case": "cached-reverse-afk-5",
+      "sp1": "b558ee994359a42a",
+      "sw7": "b558ee994359a42a",
+      "equal": true
+    },
+    {
+      "case": "cached-rotate-positioning-1",
+      "sp1": "659872c40a219059",
+      "sw7": "659872c40a219059",
+      "equal": true
+    },
+    {
+      "case": "cached-rotate-afk-1",
+      "sp1": "a636f85b73cd83ca",
+      "sw7": "a636f85b73cd83ca",
+      "equal": true
+    },
+    {
+      "case": "cached-rotate-positioning-2",
+      "sp1": "e64222389a8a373e",
+      "sw7": "e64222389a8a373e",
+      "equal": true
+    },
+    {
+      "case": "cached-rotate-afk-2",
+      "sp1": "115fd8295f35b178",
+      "sw7": "115fd8295f35b178",
+      "equal": true
+    },
+    {
+      "case": "cached-rotate-positioning-3",
+      "sp1": "de6be8c44615a5de",
+      "sw7": "de6be8c44615a5de",
+      "equal": true
+    },
+    {
+      "case": "cached-rotate-afk-3",
+      "sp1": "4ae683490f2571f0",
+      "sw7": "4ae683490f2571f0",
+      "equal": true
+    },
+    {
+      "case": "cached-rotate-positioning-4",
+      "sp1": "27d12ee03c256c54",
+      "sw7": "27d12ee03c256c54",
+      "equal": true
+    },
+    {
+      "case": "cached-rotate-afk-4",
+      "sp1": "3a02e8703747154e",
+      "sw7": "3a02e8703747154e",
+      "equal": true
+    },
+    {
+      "case": "cached-rotate-positioning-5",
+      "sp1": "7bb8e1a0f4492f84",
+      "sw7": "7bb8e1a0f4492f84",
+      "equal": true
+    },
+    {
+      "case": "cached-rotate-afk-5",
+      "sp1": "d7a64fa087b1a44e",
+      "sw7": "d7a64fa087b1a44e",
+      "equal": true
+    },
+    {
+      "case": "cached-original-random-pick-1",
+      "sp1": "a4b3df1c5450b0bc",
+      "sw7": "a4b3df1c5450b0bc",
+      "equal": true
+    },
+    {
+      "case": "continuous-original-positioning-1",
+      "sp1": "82586f06825db61c",
+      "sw7": "82586f06825db61c",
+      "equal": true
+    },
+    {
+      "case": "continuous-original-afk-1",
+      "sp1": "2067d8df0c364de4",
+      "sw7": "2067d8df0c364de4",
+      "equal": true
+    },
+    {
+      "case": "continuous-original-positioning-2",
+      "sp1": "4a4dbca5889b92da",
+      "sw7": "4a4dbca5889b92da",
+      "equal": true
+    },
+    {
+      "case": "continuous-original-afk-2",
+      "sp1": "81a8b86945027606",
+      "sw7": "81a8b86945027606",
+      "equal": true
+    },
+    {
+      "case": "continuous-original-positioning-3",
+      "sp1": "98691f7265d34acc",
+      "sw7": "98691f7265d34acc",
+      "equal": true
+    },
+    {
+      "case": "continuous-original-afk-3",
+      "sp1": "9ee8c3015ea201e1",
+      "sw7": "9ee8c3015ea201e1",
+      "equal": true
+    },
+    {
+      "case": "continuous-original-positioning-4",
+      "sp1": "8192a1c5db80989e",
+      "sw7": "8192a1c5db80989e",
+      "equal": true
+    },
+    {
+      "case": "continuous-original-afk-4",
+      "sp1": "71e79f2c74c9357c",
+      "sw7": "71e79f2c74c9357c",
+      "equal": true
+    },
+    {
+      "case": "continuous-original-positioning-5",
+      "sp1": "daeb2f94996b0a31",
+      "sw7": "daeb2f94996b0a31",
+      "equal": true
+    },
+    {
+      "case": "continuous-original-afk-5",
+      "sp1": "780343ac942a1e49",
+      "sw7": "780343ac942a1e49",
+      "equal": true
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "scope": "Offscreen injected diagnostic fixtures, no human sound audition or dense-five-EVO GPU claim",
+  "directlyInspectedPngs": [
+    "captures/bloody-tear/accent.png",
+    "captures/bloody-tear/normal.png",
+    "captures/bloody-tear/transformation.png",
+    "captures/holy-wand/accent.png",
+    "captures/holy-wand/normal.png",
+    "captures/holy-wand/transformation.png",
+    "captures/soul-eater/accent.png",
+    "captures/soul-eater/normal.png",
+    "captures/soul-eater/transformation.png",
+    "captures/thunder-loop/accent.png",
+    "captures/thunder-loop/normal.png",
+    "captures/thunder-loop/return.png",
+    "captures/thunder-loop/transformation.png",
+    "captures/unholy-vespers/accent.png",
+    "captures/unholy-vespers/normal.png",
+    "captures/unholy-vespers/transformation.png"
+  ],
+  "pngCount": 16,
+  "allReadable": true,
+  "observations": [
+    "Hero and HP remain visible; damage labels readable where present",
+    "Bloody Tear true critical labels gold; Soul transparent centre; Holy split lances; Vespers final accent weighted blade/halo; Thunder actual strike/return forked rings"
+  ],
+  "finalMediaManifest": "media-info.json",
+  "videoScope": "five silent H264 clips; ffprobe confirms 30fps1280x720; no claim of human real-time audiovisual playback"
+}

@@ -1,0 +1,76 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sp1-evolution-showpieces/native/crates/sim)
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sp1-evolution-showpieces/native/crates/eval)
+   Compiling app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sp1-evolution-showpieces/native/crates/app)
+    Finished `test` profile [optimized + debuginfo] target(s) in 11.98s
+     Running unittests src/main.rs (target/debug/deps/playlist_survivors-117eebc7468b2345)
+
+running 65 tests
+test slice::apps::tests::an_app_is_named_by_its_bundle_or_executable ... ok
+test slice::calibration::tests::the_stomp_key_follows_the_directions_until_calibrated_itself ... ok
+test slice::calibration::tests::a_tap_along_takes_the_median_error_after_the_first_two_taps ... ok
+test slice::apps::tests::browsers_are_known_by_bundle_or_name ... ok
+test slice::damage::tests::damage_is_scaled_and_summed_per_enemy_per_beat ... ok
+test slice::damage::tests::labels_wait_for_the_grid_reaction_across_a_freeze ... ok
+test slice::damage::tests::a_free_pulse_uses_run_or_last_beat_origin ... ok
+test slice::evolution::tests::chest_identity_never_fires_early_restarts_after_expiry_or_survives_retraction ... ok
+test slice::evolution::tests::corrected_rewards_refresh_identity_without_restarting_the_animation ... ok
+test slice::damage::tests::labels_are_bounded_at_density ... ok
+test slice::evolution::tests::cues_reconcile_at_landing_and_multi_reward_uses_one_ui_voice ... ok
+test slice::calibration::tests::settings_keep_a_calibration_per_device_and_read_the_old_file ... ok
+test slice::evolution::tests::manual_and_music_pauses_hold_burst_but_chest_animation_advances ... ok
+test slice::gems::tests::a_blasts_gem_hangs_then_flies_in ... ok
+test slice::gems::tests::a_gem_waits_on_the_field_until_it_takes_off_then_reaches_the_hero ... ok
+test slice::gems::tests::survivor_gem_uses_recorded_physical_position_without_an_invented_arrival ... ok
+test slice::gems::tests::survivor_value_bands_scale_and_cap_the_merged_gem_size ... ok
+test slice::lane::tests::keys_read_as_their_pitch_class_and_mode ... ok
+test slice::lane::tests::a_wave_takes_the_key_heard_before_it_and_fades_its_look_in ... ok
+test slice::lane::tests::nothing_is_shown_before_it_is_known ... ok
+test slice::lane::tests::presses_ripple_and_the_good_ones_light_the_ground ... ok
+test slice::lane::tests::the_pulse_follows_the_evidence_and_the_onsets_flash_once_a_gap ... ok
+test slice::lane::tests::unknown_ticks_jumps_and_onsets_do_not_change_the_frame_or_zone_key ... ok
+test slice::live::tests::a_wav_data_chunk_is_read ... ok
+test slice::loopback::tests::clicks_are_found_over_the_noise_once_each ... ok
+test slice::loopback::tests::each_source_click_takes_the_first_heard_in_its_window ... ok
+test slice::live::tests::the_resampler_keeps_a_constant_and_its_rate ... ok
+test slice::session::tests::forty_minutes_fit_the_session_store_with_room_for_stream_and_keys ... ok
+test slice::session::tests::the_wav_header_says_its_sizes ... ok
+test slice::sounds::budget::tests::caps_cover_future_overlap_and_slow_sample_tails ... ok
+test slice::sounds::chain::tests::chain_is_pentatonic_bounded_resets_and_rewinds ... ok
+test slice::cards::tests::rollback_replaces_cards_and_pair_inventory_at_the_same_reveal_times ... ok
+test slice::cards::tests::a_retraction_does_not_animate_or_sound_a_confirm ... ok
+test slice::cards::tests::chained_offers_keep_the_world_dim_and_cues_use_sim_reveals ... ok
+test slice::atmosphere::tests::aura_reads_actual_owned_evolutions_and_ignores_pinned_tier_and_base_ranks ... ok
+test slice::cards::tests::pair_badge_follows_actual_catalog_partners ... ok
+test slice::cards::tests::forecast_retiming_replaces_future_cues_instead_of_doubling_them ... ok
+test slice::cards::tests::picks_fall_away_but_retracted_picks_reopen_without_confirm ... ok
+test slice::sounds::tests::slots_fall_on_the_grid_and_past_the_last_beat ... ok
+test slice::sounds::horn::tests::warning_horn_is_finite_short_and_below_full_scale_at_output_rates ... ok
+test slice::sounds::tests::the_evidence_fades_sounds_below_twice_the_gate ... ok
+test slice::tests::a_run_starts_after_two_clear_seconds_once_quiet_or_after_an_end ... ok
+test slice::tests::a_runs_music_is_resampled_from_its_start_with_silence_before_it ... ok
+test slice::tests::watch_labels_follow_only_the_rebased_recorded_beats ... ok
+test slice::tier::tests::a_line_spans_its_ends ... ok
+test slice::tier::tests::the_trail_finds_the_hero_between_its_samples ... ok
+test slice::watchdog::tests::it_trips_on_a_stalled_main_thread_or_capture_and_not_before ... ok
+test slice::watchdog::tests::silent_buffers_do_not_look_like_a_capture_stall ... ok
+test slice::session::tests::pruning_keeps_the_newest ... ok
+test slice::sounds::tests::a_started_voice_stays_when_a_new_beat_moves_its_slot ... ok
+test slice::sounds::tests::a_kill_group_changing_after_its_voice_played_sounds_nothing_more ... ok
+test slice::sounds::tests::sounds_follow_the_speculation_and_kills_share_their_slot ... ok
+Error: Couldn't open input file ('wht?')
+test slice::live::decode_tests::conversion_directories_are_unique_and_failures_clean_them ... ok
+test slice::live::decode_tests::concurrent_decodes_preserve_each_sources_real_pcm ... ok
+test slice::cards::tests::third_card_is_fully_readable_on_the_sims_confirmation_beat ... ok
+test slice::damage::draw_tests::critical_labels_are_larger_and_gold ... ok
+test slice::roster::tests::roster_uses_baked_directional_art_or_anchored_thorn_props ... ok
+test slice::sounds::survivor_tests::screen_cues_land_on_their_onset_and_retract_before_start ... ok
+test slice::sounds::survivor_tests::sword_fire_keeps_its_actual_subdivision_instead_of_snapping_again ... ok
+test slice::sounds::survivor_tests::rollback_repitches_only_a_gem_that_has_not_started ... ok
+test slice::sounds::survivor_tests::boss_cues_use_decoded_palette_onsets_and_cancel_before_playback ... ok
+test slice::sounds::survivor_tests::a_restart_keeps_audible_tails_in_the_budget ... ok
+test slice::sounds::survivor_tests::evolution_transients_decode_land_on_the_grant_and_cancel_before_playing ... ok
+test slice::sounds::survivor_tests::weapon_pulse_and_contact_cues_use_real_palette_and_cancel_on_retraction ... ok
+test slice::sounds::survivor_tests::actual_palette_decodes_and_dense_causes_obey_all_caps ... ok
+
+test result: ok. 65 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.22s
+

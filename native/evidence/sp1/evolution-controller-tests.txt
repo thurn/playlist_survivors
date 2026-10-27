@@ -1,0 +1,11 @@
+   Compiling app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sp1-evolution-showpieces/native/crates/app)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.89s
+     Running unittests src/main.rs (target/debug/deps/playlist_survivors-117eebc7468b2345)
+
+running 3 tests
+test slice::evolution::tests::cues_reconcile_at_landing_and_multi_reward_uses_one_ui_voice ... ok
+test slice::evolution::tests::chest_identity_never_fires_early_restarts_after_expiry_or_survives_retraction ... ok
+test slice::evolution::tests::manual_and_music_pauses_hold_burst_but_chest_animation_advances ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 56 filtered out; finished in 0.00s
+

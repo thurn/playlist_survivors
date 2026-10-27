@@ -11,7 +11,7 @@ pub struct Lightning {
 }
 impl Lightning {
     pub fn struck(&mut self, strike: LightningStrike, now: f64) {
-        self.strikes.retain(|(_, born)| now - born < 0.18);
+        self.strikes.retain(|(_, born)| now - born < 0.3);
         if self.strikes.len() == 64 {
             self.strikes.remove(0);
         }
@@ -30,15 +30,17 @@ impl Lightning {
     ) {
         for &(strike, born) in &self.strikes {
             let age = now - born;
-            if !(0.0..0.18).contains(&age) {
+            let thunder = strike.weapon == sim::survivors::WeaponId::ThunderLoop;
+            let life = if thunder { 0.28 } else { 0.18 };
+            if !(0.0..life).contains(&age) {
                 continue;
             }
-            let fade = (1.0 - age as f32 / 0.18).powi(2);
+            let fade = (1.0 - age as f32 / life as f32).powi(2);
             let (x, y) = at(strike.x, strike.y);
-            let color = if strike.accent {
+            let color = if thunder {
+                super::evolution::color(strike.weapon)
+            } else if strike.accent {
                 [1.0, 0.8, 0.35]
-            } else if strike.weapon == sim::survivors::WeaponId::ThunderLoop {
-                [1.0, 0.45, 0.75]
             } else {
                 [0.5, 0.75, 1.0]
             };
@@ -64,6 +66,35 @@ impl Lightning {
                 scale,
                 out,
             );
+            if thunder {
+                // Each real strike, including its fixed-point return, has a forked crown.
+                let fork = [
+                    (points[1].0 + 35.0 * scale, points[1].1 - 45.0 * scale),
+                    (points[2].0 + 18.0 * scale, points[2].1),
+                    (x, y),
+                ];
+                tier::bolt(
+                    &fork,
+                    strike.id as u64 ^ 0xEC40,
+                    now,
+                    2.5 * scale,
+                    [1.0, 0.85, 1.0, 0.6 * fade],
+                    fade,
+                    scale,
+                    out,
+                );
+                out.push(Sprite::arc(
+                    x,
+                    y,
+                    strike.radius as f32 * scale * (0.55 + 0.85 * age as f32 / life as f32),
+                    Arc {
+                        head: 0.0,
+                        span: std::f32::consts::TAU,
+                        width: 3.0 * scale,
+                    },
+                    [1.0, 0.7, 0.95, 0.45 * fade],
+                ));
+            }
             let r = strike.radius as f32 * scale;
             out.push(Sprite::arc(
                 x,

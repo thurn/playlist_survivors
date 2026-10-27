@@ -1,0 +1,29 @@
+
+> playlist-survivors@0.1.0 bake
+> tsx tools/baker/bake.ts
+
+characters
+  character goblin
+  character hero
+  character minotaur
+  character orc-elite
+  character orc-ember
+  character orc
+  character skeleton-archer
+  character skeleton-ember
+  character skeleton
+  monster slime
+  monster bat
+  monster bee
+  monster eyeball
+  monster brute
+  packing 2099 unique character images
+world
+  packing 174 unique world images
+effects
+  packing 376 unique effect images
+fonts
+icons
+sounds
+  baked 251 sounds
+done

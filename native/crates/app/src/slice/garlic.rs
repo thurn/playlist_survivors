@@ -46,7 +46,7 @@ impl Garlic {
         };
         let radius = shot.radius as f32 * scale;
         let color = if shot.id == WeaponId::SoulEater {
-            [0.7 + 0.3 * accent, 0.4 + 0.4 * accent, 1.0]
+            super::evolution::color(shot.id)
         } else {
             [0.4 + 0.6 * accent, 1.0, 0.65 - 0.3 * accent]
         };
@@ -74,6 +74,33 @@ impl Garlic {
                     alpha * (0.6 + 0.4 * kick) + 0.15 * accent,
                 ],
             ));
+        }
+        if shot.id == WeaponId::SoulEater {
+            // A segmented outer sigil and inward wisps distinguish the evolved field.
+            for i in 0..12 {
+                let phase = (beat * 0.5 + f64::from(i) / 12.0).fract() as f32;
+                let a = i as f32 * std::f32::consts::TAU / 12.0 + phase * 0.7;
+                out.push(Sprite::arc(
+                    x,
+                    y,
+                    radius * 0.96,
+                    Arc {
+                        head: a,
+                        span: 0.2,
+                        width: 3.0 * scale,
+                    },
+                    [0.8, 0.4, 1.0, 0.3 + 0.15 * kick],
+                ));
+                if let Some(glow) = art.proc.get("glow") {
+                    let r = radius * (0.92 - 0.46 * phase);
+                    let size = (7.0 + 8.0 * (1.0 - phase)) * scale;
+                    out.push(
+                        Sprite::centred(*glow, x + a.cos() * r, y + a.sin() * r, size, size)
+                            .tinted([0.4, 1.0, 0.95, 0.35 * (std::f32::consts::PI * phase).sin()])
+                            .additive(),
+                    );
+                }
+            }
         }
         lights.push(Light {
             x,

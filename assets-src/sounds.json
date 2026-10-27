@@ -1474,6 +1474,42 @@
    "src": "dl:kenney-casino-audio/Audio/cards-pack-open-1.ogg",
    "category": "ui",
    "desc": "pack opening rustle (SF11 provisional; mix audition pending)"
+  },
+  {
+   "id": "rpg80/item_misc_01",
+   "src": "dl:rpg80/item_misc_01.ogg",
+   "category": "evolution",
+   "desc": "Short CC0 item-unlock transient selected for an evolution transformation; music-context audition remains an operator check."
+  },
+  {
+   "id": "rpg80/item_misc_02",
+   "src": "dl:rpg80/item_misc_02.ogg",
+   "category": "evolution",
+   "desc": "Short CC0 item-unlock transient selected for an evolution transformation; music-context audition remains an operator check."
+  },
+  {
+   "id": "rpg80/item_misc_03",
+   "src": "dl:rpg80/item_misc_03.ogg",
+   "category": "evolution",
+   "desc": "Short CC0 item-unlock transient selected for an evolution transformation; music-context audition remains an operator check."
+  },
+  {
+   "id": "rpg80/item_misc_04",
+   "src": "dl:rpg80/item_misc_04.ogg",
+   "category": "evolution",
+   "desc": "Short CC0 item-unlock transient selected for an evolution transformation; music-context audition remains an operator check."
+  },
+  {
+   "id": "rpg80/item_misc_05",
+   "src": "dl:rpg80/item_misc_05.ogg",
+   "category": "evolution",
+   "desc": "Short CC0 item-unlock transient selected for an evolution transformation; music-context audition remains an operator check."
+  },
+  {
+   "id": "rpg80/item_misc_06",
+   "src": "dl:rpg80/item_misc_06.ogg",
+   "category": "evolution",
+   "desc": "Short CC0 item-unlock transient selected for an evolution transformation; music-context audition remains an operator check."
   }
  ]
 }

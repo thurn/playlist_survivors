@@ -216,6 +216,32 @@ pub fn run(dir: &Path, fixture: Option<(WeaponId, u8)>) -> Result<(), String> {
                 free: 0.35,
             },
         );
+        if evolved && (4.0 * period..4.0 * period + 0.5).contains(&s) {
+            // A labelled presentation trigger only. Real grant/eligibility is tested in sim;
+            // these injected initial-loadout clips make no natural-acquisition claim.
+            let mut visual_run = engine.view.borrow().run.ok_or("missing presentation run")?;
+            visual_run.roulette = Some(sim::survivors::Roulette {
+                id: 0,
+                tier: 1,
+                minute: 25,
+                opened: 0.0,
+                tick: 8,
+                next_song: 5.0 * period,
+                next_beat: None,
+                started: true,
+                landed: Some(4.0 * period),
+                rewards: [
+                    Some(sim::survivors::Item::Weapon(fixture.unwrap().0)),
+                    None,
+                    None,
+                    None,
+                    None,
+                ],
+            });
+            scene
+                .evolution
+                .update(Some(visual_run), engine.view.borrow().inventory);
+        }
         if tick % 4 != 0 {
             continue;
         }
@@ -230,7 +256,7 @@ pub fn run(dir: &Path, fixture: Option<(WeaponId, u8)>) -> Result<(), String> {
             bar: (s / period % 4.0) / 4.0,
             index: s / period,
         };
-        if lightning && !(4.4..=if thunder { 7.2 } else { 5.8 }).contains(&s) {
+        if lightning && !evolved && !(4.4..=if thunder { 7.2 } else { 5.8 }).contains(&s) {
             continue;
         }
         let normal_at = if lightning {
@@ -254,13 +280,6 @@ pub fn run(dir: &Path, fixture: Option<(WeaponId, u8)>) -> Result<(), String> {
             } else {
                 0.1
             };
-        if evolved
-            && !((!normal && s >= normal_at)
-                || (!accent && s >= accent_at)
-                || (thunder && !returned && s >= 6.25))
-        {
-            continue;
-        }
         let mut layers = scene::Layers::default();
         let ground = world.field(&engine, run.presentation_s, period)?;
         scene.fast_lane(engine.stream(), 0.2, s, s, None);
@@ -332,8 +351,11 @@ pub fn run(dir: &Path, fixture: Option<(WeaponId, u8)>) -> Result<(), String> {
             overlay: &overlay,
         });
         let rgba = gpu.rgba()?;
-        if !evolved && (!bible || s >= 6.8) {
+        if evolved || !bible || s >= 6.8 {
             clip.frame(&rgba)?;
+        }
+        if evolved && (4.0 * period + 0.16..4.0 * period + 0.16 + 1.0 / 30.0).contains(&s) {
+            capture::write_png(&dir.join("transformation.png"), w, h, &rgba)?;
         }
         if thunder && !returned && s >= 6.25 {
             capture::write_png(&dir.join("return.png"), w, h, &rgba)?;
@@ -365,8 +387,10 @@ pub fn run(dir: &Path, fixture: Option<(WeaponId, u8)>) -> Result<(), String> {
     if !normal || !accent || heavy == 0 || (thunder && (!returned || strikes < 14)) {
         return Err("sword fixture missed its normal/accent shots".into());
     }
-    if !evolved {
-        clip.encode(&dir.join(if lightning {
+    {
+        clip.encode(&dir.join(if evolved {
+            "showpiece.mp4"
+        } else if lightning {
             "sky-strikes.mp4"
         } else if bible {
             "orbit-and-accent.mp4"
@@ -404,9 +428,10 @@ pub fn run(dir: &Path, fixture: Option<(WeaponId, u8)>) -> Result<(), String> {
     }
     if evolved {
         eprintln!(
-            "evolution-check {}: {} stills, 1280x720, synthetic128BPM, {shots} actual matching shots/{heavy} accent; {setup}; {actors}; silent, no pacing/survival/rollback claim",
+            "evolution-check {}: {} stills plus labelled transformation and {} video frames at30fps, 1280x720, synthetic128BPM, {shots} actual matching shots/{heavy} accent; {setup}; {actors}; silent, no pacing/survival/rollback claim",
             fixture.unwrap().0.as_str(),
-            if thunder { 3 } else { 2 }
+            if thunder { 3 } else { 2 },
+            clip.count()
         );
     } else {
         eprintln!(

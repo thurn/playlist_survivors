@@ -99,6 +99,14 @@ soundPalettes:
       sword-hit: [kenney/impactMetal_light_000, kenney/impactMetal_light_001]
       sword-accent-hit: [kenney/sci-impactMetal_000]
 
+      # Short OGA CC0 transformations; multi-reward chests use one UI voice.
+      evolve-bloody-tear: [rpg80/item_misc_01]
+      evolve-soul-eater: [rpg80/item_misc_02]
+      evolve-holy-wand: [rpg80/item_misc_03]
+      evolve-unholy-vespers: [rpg80/item_misc_04]
+      evolve-thunder-loop: [rpg80/item_misc_05]
+      evolve-multiple: [rpg80/item_misc_06]
+
       bloody-tear-fire: [rpgpack/swing, kenney/knifeSlice]
       bloody-tear-hit: [kenney/impactMetal_light_000, kenney/impactMetal_light_001]
       bloody-tear-accent-fire: [rpg80/blade_03]

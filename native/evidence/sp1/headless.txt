@@ -1,0 +1,19 @@
+slice: output MacBook Pro Speakers (calibrated): input offsets -48 ms, stomp -48 ms, display 45 ms, latency correction 0 ms
+slice: file mode (native/playlists/survivors-30.m3u), Delayed listening (M = 3 s), output 48000 Hz, L_out 16.6 ms, heard 3016.6 ms after capture
+slice: recording the session to /Users/dthurn/playlist_survivors/native/logs/sessions/1793073476
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [0, 0, 0, 0, 0], denied [0, 0, 0, 0, 0]
+slice: frame work median 0.00 ms, p95 0.00, p99 0.00 (0 frames a second, paced while hidden); rollbacks re-simulated 0 ms
+slice: sounds 0 started, 0 skipped late, 0 dropped, 0 cancelled; 0 rollbacks replaying 0.0 s, 0 late keys
+slice: run started at song time 2.8
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [1, 2, 1, 1, 0], denied [0, 0, 0, 0, 0]
+slice: survivors minute Some(0), run 4.200s, spawned 18, alive 17: {"vs-bat3": 17}
+slice: frame work median 0.00 ms, p95 0.07, p99 0.17 (107 frames a second, paced while hidden); rollbacks re-simulated 1 ms
+slice: sounds 13 started, 0 skipped late, 0 dropped, 0 cancelled; 13 rollbacks replaying 2.8 s, 0 late keys
+slice: world LEVEL UP at run 13.942 s (song 13.942)
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [1, 2, 2, 1, 3], denied [0, 0, 0, 0, 0]
+slice: survivors minute Some(0), run 13.942s, spawned 29, alive 17: {"vs-bat3": 17}
+slice: frame work median 0.04 ms, p95 0.10, p99 0.18 (107 frames a second, paced while hidden); rollbacks re-simulated 4 ms
+slice: sounds 61 started, 0 skipped late, 0 dropped, 2 cancelled; 45 rollbacks replaying 9.7 s, 0 late keys
+slice: pick-first queues level 2 card1 MAGIC WAND rank 0 > 1 at 15.008, third reveal 15.000
+slice: world RESUMED at run 13.947 s (song 15.475)
+slice: run over (Stopped), 24 s; sounds 163 started, 0 skipped late, 0 dropped

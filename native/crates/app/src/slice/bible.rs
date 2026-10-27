@@ -12,6 +12,41 @@ pub fn draw(
     let Some(blade) = art.proc.get("blade") else {
         return;
     };
+    if let Some(hero) = view.hero
+        && let Some(head) = view
+            .missiles
+            .values()
+            .filter_map(|t| t.last())
+            .find(|p| p.weapon == sim::survivors::WeaponId::UnholyVespers)
+    {
+        let (x, y) = at(hero.x, hero.y);
+        let radius = (head.x - hero.x).hypot(head.y - hero.y) as f32 * scale;
+        let phase = (head.y - hero.y).atan2(head.x - hero.x) as f32;
+        for i in 0..8 {
+            out.push(Sprite::arc(
+                x,
+                y,
+                radius,
+                render::sprites::Arc {
+                    head: phase + i as f32 * std::f32::consts::TAU / 8.0,
+                    span: 0.48,
+                    width: 2.0 * scale,
+                },
+                [0.75, 0.25, 1.0, 0.24],
+            ));
+        }
+        out.push(Sprite::arc(
+            x,
+            y,
+            radius * 0.9,
+            render::sprites::Arc {
+                head: 0.0,
+                span: std::f32::consts::TAU,
+                width: 1.0 * scale,
+            },
+            [0.75, 0.45, 1.0, 0.12],
+        ));
+    }
     for trail in view.missiles.values() {
         let Some(head) = trail.last() else {
             continue;
@@ -22,14 +57,19 @@ pub fn draw(
         ) {
             continue;
         }
-        let color = if head.accent {
+        let color = if head.weapon == sim::survivors::WeaponId::UnholyVespers {
+            super::evolution::color(head.weapon)
+        } else if head.accent {
             [1.0, 0.7, 0.3]
-        } else if head.weapon == sim::survivors::WeaponId::UnholyVespers {
-            [0.85, 0.3, 1.0]
         } else {
             [0.6, 0.8, 1.0]
         };
-        let grow = (head.radius / (0.08 * sim::survivors::PX_PER_VS_UNIT)) as f32;
+        let grow = (head.radius / (0.08 * sim::survivors::PX_PER_VS_UNIT)) as f32
+            * if head.accent && head.weapon == sim::survivors::WeaponId::UnholyVespers {
+                1.12
+            } else {
+                1.0
+            };
         if grow <= 0.001 {
             continue;
         }

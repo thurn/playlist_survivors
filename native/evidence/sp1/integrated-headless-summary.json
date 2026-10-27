@@ -1,0 +1,16 @@
+{
+  "base": "a8c6a4eb5aada1cb77ead825b2b61cc031409d0f",
+  "command": [
+    "native/target/release/playlist-survivors",
+    "--playlist",
+    "native/playlists/survivors-30.m3u",
+    "--headless",
+    "--delayed",
+    "--press-beats",
+    "--pick-first",
+    "--seconds",
+    "30"
+  ],
+  "exitCode": 0,
+  "wallSeconds": 38.96730358316563
+}

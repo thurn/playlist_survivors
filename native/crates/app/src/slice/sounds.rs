@@ -1214,6 +1214,56 @@ mod survivor_tests {
         );
     }
     #[test]
+    fn evolution_transients_decode_land_on_the_grant_and_cancel_before_playing() {
+        for key in [
+            "evolve-bloody-tear",
+            "evolve-soul-eater",
+            "evolve-holy-wand",
+            "evolve-unholy-vespers",
+            "evolve-thunder-loop",
+            "evolve-multiple",
+        ] {
+            let (mut sounds, _) = decoded();
+            let b = tests::beats(8, 0.5, 1.0);
+            let at = At {
+                seed: 1.0,
+                final_before: -1.0,
+                run_start: 0.0,
+                beats: &b,
+                gate: 0.2,
+                camera: (0.0, 0.0, 1.0),
+                clock: (0.0, 100.0),
+                l_out: 0.02,
+                never_late: NEVER_LATE,
+                now: 101.8,
+                ahead: 0.0,
+            };
+            let cue = Cue {
+                key,
+                s: 2.0,
+                id: 3,
+                gain: 0.75,
+            };
+            let mut out = Vec::new();
+            sounds.reconcile_with_cues(&[], std::slice::from_ref(&cue), &at, &mut out);
+            assert_eq!(out.len(), 1, "{key}: exactly one short transient");
+            let Command::Play(voice) = out[0] else {
+                panic!()
+            };
+            assert!((voice.at + voice.lead + at.l_out - 102.0).abs() < 1e-6);
+            assert!(!voice.duck, "the music remains untouched");
+            assert_eq!(sounds.budget.peaks[4], 1, "UI category, not a weapon voice");
+            out.clear();
+            sounds.reconcile_with_cues(&[], std::slice::from_ref(&cue), &at, &mut out);
+            assert!(out.is_empty(), "same chest never starts another voice");
+            sounds.reconcile_with_cues(&[], &[], &at, &mut out);
+            assert!(matches!(out.as_slice(),[Command::Cancel(id)] if *id==voice.id));
+            eprintln!(
+                "{key}: decoded, onset on landing, one UI voice, no duck, retraction cancels"
+            );
+        }
+    }
+    #[test]
     fn actual_palette_decodes_and_dense_causes_obey_all_caps() {
         let (mut sounds, bank) = decoded();
         assert!(!bank.is_empty());

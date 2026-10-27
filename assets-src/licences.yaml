@@ -202,6 +202,13 @@ entries:
     licences: [CC0]
     authors: [artisticdude]
     urls: [https://opengameart.org/content/swishes-sound-pack]
+  # SP1: short transformation transients, primary CC0 page rechecked 2026-10-27.
+  - files: ["dl:rpg80/item_misc_0*.ogg"]
+    title: 80 CC0 RPG SFX — evolution unlock transients
+    licences: [CC0]
+    authors: [rubberduck]
+    urls: [https://opengameart.org/content/80-cc0-rpg-sfx]
+    notes: Six item_misc sources selected by SP1; the baker trims silence and normalizes them, without synthesizing or adding musical notes.
   - files: ["dl:rpg80/**"]
     title: 80 CC0 RPG SFX
     licences: [CC0]
