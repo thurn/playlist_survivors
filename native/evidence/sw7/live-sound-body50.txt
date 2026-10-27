@@ -1,0 +1,9 @@
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw7-whole-run/native/crates/eval)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.55s
+     Running tests/live.rs (target/debug/deps/live-6bbfee6942df762e)
+
+running 1 test
+test survivor_weapon_sounds_and_missile_trails_follow_actual_records ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 19 filtered out; finished in 2.60s
+

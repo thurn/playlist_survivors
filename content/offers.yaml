@@ -1,64 +1,60 @@
-# Scripted preferences, design/survivors-run.md, The offer table.
-# Pacing estimates are reports, never gates. Only SW7 retunes this table.
-# Card1 is the intended all-built path; unbuilt items skip to fallback.
-# Later ranks prefer damage/sustain alternatives; duplicate choices are avoided when possible.
+# Scripted preferences; SW7 measured full-run pacing in native/evidence/sw7/.
+# Pacing is report-only. Card1 is the intended path; other picks remain available.
 offers:
-  # 2 min / level ~5: Sword2+, Garlic, Magic Wand.
-  2: [[garlic], [magic-wand], [sword]]
-  3: [[magic-wand, garlic], [sword], [spinach]]
-  4: [[sword], [garlic, magic-wand], [hollow-heart]]
-  5: [[garlic], [sword], [magic-wand]]
-  # 5 min / level ~10: add Spinach and Hollow Heart.
-  6: [[spinach], [sword], [garlic]]
-  7: [[sword], [hollow-heart], [magic-wand]]
-  8: [[hollow-heart], [garlic], [spinach]]
+  # SW7: moving for XP unlocks Garlic at6; stationary Wand-only play remains vulnerable.
+  2: [[magic-wand], [garlic], [sword]]
+  3: [[empty-tome], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
+  # Damage, health, then area defense; every early support card affects the owned build.
+  4: [[spinach], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
+  5: [[hollow-heart], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
+  # Sword8 + Hollow Heart by13; the first eligible chest can grant Bloody Tear.
+  6: [[garlic], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
+  7: [[sword], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
+  8: [[sword], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
   9: [[sword], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
   10: [[sword], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
-  # 8 min / level ~15: add Bible and Pummarola; Sword reaches8 by15.
-  11: [[king-bible], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
-  12: [[pummarola], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
+  11: [[sword], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
+  12: [[sword], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
   13: [[sword], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
-  14: [[sword], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
-  15: [[sword], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
-  # 10 min / level ~18: Sword8 + Hollow Heart ready for chest.
-  16: [[magic-wand], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
-  17: [[magic-wand], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
-  18: [[magic-wand], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
-  # 12 min / level ~22: add Lightning Ring and Empty Tome.
-  19: [[lightning-ring], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
-  20: [[empty-tome], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
+  # Garlic8 + Pummarola by21; later chests can grant Soul Eater.
+  14: [[pummarola], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
+  15: [[garlic], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
+  16: [[garlic], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
+  17: [[garlic], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
+  18: [[garlic], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
+  19: [[garlic], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
+  20: [[garlic], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
   21: [[garlic], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
-  22: [[garlic], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
-  # 15 min / level ~28: Garlic8 + Pummarola ready for chest.
-  23: [[garlic], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
-  24: [[garlic], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
-  25: [[garlic], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
-  26: [[garlic], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
+  # All five weapons owned by23; Wand8 + Tome by30.
+  22: [[king-bible], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
+  23: [[lightning-ring], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
+  24: [[magic-wand], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
+  25: [[magic-wand], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
+  26: [[magic-wand], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
   27: [[magic-wand], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
   28: [[magic-wand], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
-  # 20 min / level ~38: Wand8 + Tome; add Spellbinder and Duplicator.
   29: [[magic-wand], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
   30: [[magic-wand], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
+  # Bible8 + Spellbinder by38; Ring8 by45 and Duplicator46 complete its pair.
   31: [[spellbinder], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
-  32: [[duplicator], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
+  32: [[king-bible], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
   33: [[king-bible], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
   34: [[king-bible], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
   35: [[king-bible], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
   36: [[king-bible], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
   37: [[king-bible], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
   38: [[king-bible], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
-  # 25 min / level ~48: Bible8 and Ring8 by46 for the five-item chest.
-  39: [[king-bible], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
+  39: [[lightning-ring], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
   40: [[lightning-ring], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
   41: [[lightning-ring], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
   42: [[lightning-ring], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
   43: [[lightning-ring], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
   44: [[lightning-ring], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
   45: [[lightning-ring], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
-  46: [[lightning-ring], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
+  # Finish six passives; max without chest grants at67, heal from68.
+  46: [[duplicator], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
   47: [[spinach], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
   48: [[spinach], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
-  # 30 min / levels55-65: finish passives; full max at67, heal from68.
   49: [[spinach], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
   50: [[spinach], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]
   51: [[hollow-heart], [sword, spinach, garlic, any], [hollow-heart, pummarola, magic-wand, any]]

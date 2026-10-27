@@ -344,7 +344,7 @@ fn evolution_thunder_charge_and_holy_burst_keep_remaining_time_through_freeze() 
     );
     drop(r);
     let (rec, mut sim, _) = evolved(120.0, WeaponId::HolyWand);
-    sim.freeze_at(0.15, crate::survivors::FreezeReason::Paused);
+    sim.freeze_at(0.075, crate::survivors::FreezeReason::Paused);
     key(&mut sim, 2.1, KeyEventKind::Press, InputKey::Pause);
     key(&mut sim, 2.11, KeyEventKind::Release, InputKey::Pause);
     sim.advance_to(3.0);
@@ -352,11 +352,11 @@ fn evolution_thunder_charge_and_holy_burst_keep_remaining_time_through_freeze() 
     let shot = r
         .weapon_shots
         .iter()
-        .find(|s| s.id == WeaponId::HolyWand && (s.ready_run - 0.2).abs() < 1e-9)
+        .find(|s| s.id == WeaponId::HolyWand && (s.ready_run - 0.1).abs() < 1e-9)
         .unwrap();
     assert!(
-        (shot.song - 2.55).abs() < 1e-9,
-        "remaining 50ms of already emitted burst must survive"
+        (shot.song - 2.525).abs() < 1e-9,
+        "remaining 25ms of already emitted burst must survive"
     );
 }
 #[test]
@@ -487,4 +487,35 @@ fn evolution_soul_recovery_bonus_is_added_after_non_default_might() {
     eprintln!(
         "Soul Eater +Spinach5/Might1.5: 600 recovered HP gives actual4 damage; +6 recovery cap gives9, bonus added after Might"
     );
+}
+
+#[test]
+fn holy_wand_burst_repeats_use_source_speed_including_non_default_character_speed() {
+    for bonus in [0.0, 1.0] {
+        let (rec, mut sim, _) = evolved(120.0, WeaponId::HolyWand);
+        sim.apply_survivor_stats(StatDelta {
+            amount: 2.0,
+            projectile_speed: bonus,
+            ..Default::default()
+        });
+        sim.advance_to(0.26);
+        let r = rec.borrow();
+        let shots: Vec<_> = r
+            .weapon_shots
+            .iter()
+            .filter(|s| s.id == WeaponId::HolyWand)
+            .collect();
+        assert_eq!(shots.len(), 6);
+        // Curated HOLY_MISSILE RepeatInterval100ms / (weapon Speed2 * character Speed).
+        let repeat = 0.1 / (2.0 * (1.0 + bonus));
+        for (i, shot) in shots.iter().enumerate() {
+            assert!((shot.song - i as f64 * repeat).abs() < 1e-9);
+            assert!((shot.ready_run - i as f64 * repeat).abs() < 1e-9);
+        }
+        eprintln!(
+            "Holy Wand Speed{} six-shot burst interval{repeat:.3}s final{:.3}s",
+            2.0 * (1.0 + bonus),
+            shots.last().unwrap().song
+        );
+    }
 }

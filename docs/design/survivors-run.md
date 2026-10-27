@@ -1534,6 +1534,28 @@ and W review; real-music readability remains operator-pending. Run from
 --headless --delayed --press-beats --pick-first --seconds 30`.
 
 ### SW7
+
+The [whole-run evidence](../../native/evidence/sw7/README.md) keeps the final
+41-case sweep: all 20 positioning cases survive 30:00 with at least 82.986% HP;
+all 20 AFK cases die in 225.383–329.030 s. Release now asserts survival only.
+Pacing remains report-only: 18/20 reach level 8–12 by five minutes, levels are
+15–20 at 30:00 and 24–40 after the victory clear. Seven origin-10 chests have
+Sword 8; Garlic is 7/7/8 at three origin-15 chests; no origin-20/25 chest is
+collected. The measured offer path prioritizes Sword 8 at player level 13,
+then Garlic 8 at 21, with Wand first and Garlic at level 6. Easy knobs and VS
+stats stay unchanged. Seven Bloody Tear/one Soul Eater runs do not establish
+all five natural evolution paths or the original level-50 pacing target.
+
+Full normal replay matches 28,645,747 records/hash `edd2c4598be943e1`;
+local CI passes in 727.429 s with the source fingerprint unchanged. Base-five
+300-foe/400-gem frame work p99 is 2.59 ms (max 5.82 ms); SP5 owns evolved
+density. W’s cold review found one confirmed P2: Holy Wand repeats now divide
+by projectile Speed (50 ms normally), with speed/pause regressions. Chest
+reports retain physical identity/origin/tier across interrupted freezes.
+The final 30-app-second headless smoke/replay passes; File/System feel stays
+in operator-pending. From root after build: `native/target/release/playlist-survivors --playlist native/playlists/survivors-30.m3u --headless --delayed --press-beats --pick-first --seconds 30`.
+Commit and staging OIDs are recorded in hv-n7fn.29’s native notes.
+
 ### SP1
 ### SP2
 ### SP3

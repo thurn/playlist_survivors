@@ -1,0 +1,1 @@
+Final refinement: replace inert Spellbinder4 with useful Spinach4, acquire Spellbinder31 before Bible8/38, Duplicator46 before its final67 rank. All AFK actors in prior prefix died at level2, so the changes after level3 do not protect them; verify with final full matrix. Damage/chicken/heal unchanged.

@@ -32,8 +32,8 @@ fn preferences_skip_unbuilt_and_keep_distinct_viable_choices() {
     assert_eq!(
         cards.map(|c| c.item),
         [
-            Item::Weapon(WeaponId::Garlic),
             Item::Weapon(WeaponId::MagicWand),
+            Item::Weapon(WeaponId::Garlic),
             Item::Weapon(WeaponId::Sword)
         ]
     );
@@ -41,8 +41,8 @@ fn preferences_skip_unbuilt_and_keep_distinct_viable_choices() {
     assert_eq!(
         current.map(|c| c.item),
         [
-            Item::Weapon(WeaponId::Garlic),
             Item::Weapon(WeaponId::MagicWand),
+            Item::Weapon(WeaponId::Garlic),
             Item::Weapon(WeaponId::Sword)
         ]
     );
@@ -92,7 +92,7 @@ fn fallback_prefers_lowest_owned_rank_and_heals_only_when_no_item_is_offerable()
     );
 }
 #[test]
-fn first_column_meets_the_planned_level_milestones_with_all_weapons_built() {
+fn scripted_first_column_fills_the_source_slots_then_offers_healing() {
     let mut inv = initial();
     let catalog = built_catalog();
     let mut heals = 0;
@@ -102,45 +102,36 @@ fn first_column_meets_the_planned_level_milestones_with_all_weapons_built() {
             heals += 1;
         } else {
             assert_eq!(card.before, card.item.rank(inv));
+            assert_eq!(card.after, card.before + 1);
             take(&mut inv, card.item);
         }
-        if [5, 10, 15, 18, 22, 28, 38, 48, 67, 70].contains(&level) {
-            eprintln!("intended all-built path at level {level}: {inv:?}");
-        }
-        match level {
-            5 => {
-                assert!(inv.weapons.rank(WeaponId::Sword) >= Some(2));
-                assert!(inv.weapons.rank(WeaponId::Garlic).is_some());
-                assert!(inv.weapons.rank(WeaponId::MagicWand).is_some());
-            }
-            10 => {
-                assert!(inv.passives.rank(PassiveId::Spinach).is_some());
-                assert!(inv.passives.rank(PassiveId::HollowHeart).is_some());
-            }
-            15 => {
-                assert!(inv.weapons.rank(WeaponId::KingBible).is_some());
-                assert!(inv.passives.rank(PassiveId::Pummarola).is_some());
-            }
-            18 => assert_eq!(inv.weapons.rank(WeaponId::Sword), Some(8)),
-            22 => {
-                assert!(inv.weapons.rank(WeaponId::LightningRing).is_some());
-                assert!(inv.passives.rank(PassiveId::EmptyTome).is_some());
-            }
-            28 => assert_eq!(inv.weapons.rank(WeaponId::Garlic), Some(8)),
-            38 => {
-                assert_eq!(inv.weapons.rank(WeaponId::MagicWand), Some(8));
-                assert!(inv.passives.rank(PassiveId::Duplicator).is_some());
-                assert!(inv.passives.rank(PassiveId::Spellbinder).is_some());
-            }
-            48 => {
-                assert_eq!(inv.weapons.rank(WeaponId::KingBible), Some(8));
-                assert_eq!(inv.weapons.rank(WeaponId::LightningRing), Some(8));
-            }
-            _ => {}
-        }
     }
-    assert_eq!(heals, 3); // no chest upgrades in this pure table simulation: full max at67
+    // Eligibility/capacity contract, not a level-at-time or chest pacing gate.
+    for weapon in [
+        WeaponId::Sword,
+        WeaponId::Garlic,
+        WeaponId::MagicWand,
+        WeaponId::KingBible,
+        WeaponId::LightningRing,
+    ] {
+        assert_eq!(
+            inv.weapons.rank(weapon),
+            Some(catalog.get(weapon).max_rank())
+        );
+    }
+    for passive in [
+        PassiveId::Spinach,
+        PassiveId::HollowHeart,
+        PassiveId::Pummarola,
+        PassiveId::EmptyTome,
+        PassiveId::Spellbinder,
+        PassiveId::Duplicator,
+    ] {
+        assert_eq!(inv.passives.rank(passive), Some(passive.max_rank()));
+    }
+    assert_eq!(heals, 3); // No chest grants: all source ranks filled before the heal fallback.
 }
+
 #[test]
 fn an_evolved_weapon_blocks_reoffering_its_base() {
     let mut inv = initial();
@@ -156,9 +147,9 @@ fn an_evolved_weapon_blocks_reoffering_its_base() {
 }
 
 #[test]
-fn shipped_first_offer_now_contains_the_implemented_garlic() {
+fn shipped_first_offer_contains_the_implemented_wand() {
     let cards = offer_table().cards(2, initial(), weapon_catalog());
-    assert_eq!(cards[0].item, Item::Weapon(WeaponId::Garlic));
+    assert_eq!(cards[0].item, Item::Weapon(WeaponId::MagicWand));
     assert_eq!((cards[0].before, cards[0].after), (0, 1));
     assert!(
         cards

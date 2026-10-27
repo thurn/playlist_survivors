@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/dthurn/playlist_survivors/.worktrees/codex-sw7-whole-run/native/target/release/playlist-survivors",
+    "--playlist",
+    "native/playlists/survivors-30.m3u",
+    "--headless",
+    "--delayed",
+    "--press-beats",
+    "--pick-first",
+    "--seconds",
+    "30",
+    "--still",
+    "native/evidence/sw7/headless.png"
+  ],
+  "exitCode": 0,
+  "wallSeconds": 0.6745737080927938,
+  "newSessions": []
+}

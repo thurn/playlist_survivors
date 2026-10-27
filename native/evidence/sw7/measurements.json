@@ -1,0 +1,121 @@
+{
+  "wallSeconds": 202.5081267079804,
+  "assertSurvival": true,
+  "pacingReportOnly": true,
+  "cases": 41,
+  "positioningCases": 20,
+  "positioningPasses": 20,
+  "lowestPositioningHP": 0.8298611111111112,
+  "afkCases": 20,
+  "afkPasses": 20,
+  "afkDeathRangeS": [
+    225.38333333333333,
+    329.0297301587302
+  ],
+  "randomPickCases": [
+    {
+      "case": "cached-original-random-pick-1",
+      "survivalGate": null,
+      "survivalS": 1800.0,
+      "lowestHpShare": 0.8541666666666666,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 3,
+      "levelAt30": 9,
+      "lastLevel": 15,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 1515.5055,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 3
+            },
+            {
+              "weapon": "garlic",
+              "rank": 1
+            }
+          ]
+        }
+      ],
+      "evolutions": [],
+      "peakEnemies": 300,
+      "settledHash": "a4b3df1c5450b0bc",
+      "runWallSeconds": 51.654879875
+    }
+  ],
+  "levelAt5Range": [
+    4,
+    12
+  ],
+  "levelAt5Within8to12": 18,
+  "levelAt30Range": [
+    15,
+    20
+  ],
+  "levelAt30AtLeast50": 0,
+  "postFinaleLevelRange": [
+    24,
+    40
+  ],
+  "evolutionRuns": {
+    "bloody-tear": 7,
+    "soul-eater": 1
+  },
+  "collectedChestOrigins": {
+    "1": 4,
+    "3": 2,
+    "7": 3,
+    "9": 5,
+    "10": 7,
+    "12": 2,
+    "14": 8,
+    "15": 3,
+    "16": 3,
+    "18": 6,
+    "22": 5,
+    "23": 2
+  },
+  "normalRecord": {
+    "songS": 1875.5833333333333,
+    "survivalS": 1800.0,
+    "lowestHpShare": 0.9875,
+    "hp": "see raw case",
+    "levelsByMinute": "see raw case",
+    "weaponsAtChests": [
+      {
+        "id": 2,
+        "originMinute": 10,
+        "tier": 1,
+        "runS": 1389.0763333333334,
+        "weapons": [
+          {
+            "weapon": "sword",
+            "rank": 8
+          },
+          {
+            "weapon": "magic-wand",
+            "rank": 1
+          },
+          {
+            "weapon": "garlic",
+            "rank": 4
+          }
+        ]
+      }
+    ],
+    "evolutions": [
+      "bloody-tear"
+    ],
+    "peakEnemies": 300,
+    "level": 32,
+    "kills": 3129,
+    "fallen": false,
+    "done": true,
+    "settledHash": "edd2c4598be943e1",
+    "settledRecords": 28645747
+  }
+}

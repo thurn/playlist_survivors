@@ -1,0 +1,13 @@
+   Compiling players v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw7-whole-run/native/crates/players)
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw7-whole-run/native/crates/eval)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.72s
+     Running tests/survive.rs (target/debug/deps/survive-3f42469f2cfa95cf)
+
+running 4 tests
+test future_stream_entries_cannot_change_a_driven_prefix ... ok
+test a_fast_run_replays_the_rust_fixture_exactly ... ok
+test positioning_survives_the_three_minute_rust_fixture_smoke ... ok
+test all_survivor_bots_replay_their_real_keys_and_only_see_known_input ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.41s
+

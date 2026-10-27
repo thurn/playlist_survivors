@@ -1,0 +1,18 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.04s
+     Running tests/live.rs (target/debug/deps/live-6bbfee6942df762e)
+
+running 1 test
+
+thread 'survivor_weapon_sounds_and_missile_trails_follow_actual_records' (179221221) panicked at crates/eval/tests/live.rs:1208:9:
+actual pulse/contact paths exercised for KingBible: {Garlic: 12192, MagicWand: 10146}/{Garlic: 480, MagicWand: 8501}
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test survivor_weapon_sounds_and_missile_trails_follow_actual_records ... FAILED
+
+failures:
+
+failures:
+    survivor_weapon_sounds_and_missile_trails_follow_actual_records
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 19 filtered out; finished in 1.09s
+
+error: test failed, to rerun pass `-p eval --test live`

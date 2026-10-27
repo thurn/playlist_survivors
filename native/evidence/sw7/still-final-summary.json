@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/dthurn/playlist_survivors/.worktrees/codex-sw7-whole-run/native/target/release/playlist-survivors",
+    "--playlist",
+    "native/playlists/survivors-30.m3u",
+    "--headless",
+    "--delayed",
+    "--press-beats",
+    "--pick-first",
+    "--still",
+    "native/evidence/sw7/still-final.png"
+  ],
+  "exitCode": 0,
+  "sameAsEarlierStill": true,
+  "sha256": "31a2b42cddf4e554898ace72df81208b07eac71a985fc949b17ecfbdb184a6f8"
+}

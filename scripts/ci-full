@@ -97,11 +97,11 @@ if [ "$section" = all ] || [ "$section" = native ]; then
 fi
 
 # SF9's own release step: utility QoS, a bounded matrix, source-keyed skip, 20-minute budget.
-# SW7 adds --assert-survival here; pacing always remains report-only.
+# SW7: only survival asserts; all pacing measurements remain report-only.
 if [ "$section" = all ] || [ "$section" = survivors ]; then
   uv run --directory tools/analysis ruff check ../../native/scripts/survivors_sweep.py ../../native/scripts/test_survivors_sweep.py
   uv run --no-project python -m unittest native/scripts/test_survivors_sweep.py
-  uv run --no-project python native/scripts/survivors_sweep.py --release
+  uv run --no-project python native/scripts/survivors_sweep.py --release --assert-survival
 fi
 
 # Full 30:00 exact replay is a separate step so its work does not consume the matrix budget.

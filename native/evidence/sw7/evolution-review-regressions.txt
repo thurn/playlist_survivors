@@ -1,0 +1,20 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw7-whole-run/native/crates/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 7.65s
+     Running unittests src/lib.rs (target/debug/deps/sim-1ebf1e278f138957)
+
+running 12 tests
+test engine::tests::evolution_tests::evolution_soul_eater_heals_actual_contacts_and_grows_from_actual_recovery_only ... ok
+test engine::tests::evolution_tests::evolution_bloody_tear_crit_damage_and_shared_one_second_heal_limit ... ok
+test engine::tests::evolution_tests::evolution_soul_recovery_bonus_is_added_after_non_default_might ... ok
+test engine::tests::evolution_tests::evolution_thunder_loop_returns_to_original_points_after_target_moves ... ok
+test engine::tests::evolution_tests::holy_wand_burst_repeats_use_source_speed_including_non_default_character_speed ... ok
+test engine::tests::evolution_tests::evolution_real_roulette_grants_five_replacements_only_from_late_origin ... ok
+test engine::tests::evolution_tests::evolution_thunder_charge_and_holy_burst_keep_remaining_time_through_freeze ... ok
+test engine::tests::evolution_tests::evolution_snapshot_restores_all_five_pending_effects_heal_counters_and_crit_results ... ok
+test engine::tests::evolution_tests::evolution_all_five_ignore_poisoned_uncommitted_beats_and_energy ... ok
+test engine::tests::evolution_tests::evolution_holy_wand_uses_source_speed_pierce_and_tome_throughput ... ok
+test engine::tests::evolution_tests::evolution_vespers_keeps_a_visible_orbit_across_grid_gaps_and_source_overlaps ... ok
+test engine::tests::evolution_tests::evolution_all_five_require_max_base_and_partner_and_replace_atomically ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 94 filtered out; finished in 0.04s
+

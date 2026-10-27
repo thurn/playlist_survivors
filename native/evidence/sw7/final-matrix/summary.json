@@ -1,0 +1,1782 @@
+{
+  "assertSurvival": true,
+  "pacingReportOnly": true,
+  "wallSeconds": 202.5081267079804,
+  "cases": [
+    {
+      "case": "cached-original-positioning-1",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 0.9875,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 11,
+      "levelAt30": 17,
+      "lastLevel": 32,
+      "weaponsAtChests": [
+        {
+          "id": 2,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 1389.0763333333334,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 4
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "edd2c4598be943e1",
+      "runWallSeconds": 50.907977125
+    },
+    {
+      "case": "cached-original-afk-1",
+      "survivalGate": true,
+      "survivalS": 326.9685634920635,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": 2,
+      "levelAt30": null,
+      "lastLevel": 2,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 3,
+          "tier": 1,
+          "runS": 199.144,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            }
+          ]
+        }
+      ],
+      "evolutions": [],
+      "peakEnemies": 122,
+      "settledHash": "141d5d2edd7a768a",
+      "runWallSeconds": 1.7018052080000001
+    },
+    {
+      "case": "cached-original-positioning-2",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 0.9541666666666667,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 10,
+      "levelAt30": 17,
+      "lastLevel": 28,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 300,
+      "settledHash": "d3d204e996ee66b7",
+      "runWallSeconds": 50.480106208
+    },
+    {
+      "case": "cached-original-afk-2",
+      "survivalGate": true,
+      "survivalS": 329.0297301587302,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": 2,
+      "levelAt30": null,
+      "lastLevel": 2,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 3,
+          "tier": 1,
+          "runS": 197.43733333333333,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            }
+          ]
+        }
+      ],
+      "evolutions": [],
+      "peakEnemies": 123,
+      "settledHash": "9c987a9aae9c55da",
+      "runWallSeconds": 1.719432083
+    },
+    {
+      "case": "cached-original-positioning-3",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 0.8298611111111112,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 4,
+      "levelAt30": 17,
+      "lastLevel": 31,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 1298.7926666666663,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "originMinute": 9,
+          "tier": 1,
+          "runS": 1374.7543390022674,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "originMinute": 14,
+          "tier": 1,
+          "runS": 1377.8043843537412,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 3
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "originMinute": 18,
+          "tier": 1,
+          "runS": 1405.424429705215,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 2
+            },
+            {
+              "weapon": "garlic",
+              "rank": 3
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "324173dbd06b5230",
+      "runWallSeconds": 52.675975375
+    },
+    {
+      "case": "cached-original-afk-3",
+      "survivalGate": true,
+      "survivalS": 229.7226666666667,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 2,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 105,
+      "settledHash": "eed43a84cae73275",
+      "runWallSeconds": 1.620724042
+    },
+    {
+      "case": "cached-original-positioning-4",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 0.975,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 10,
+      "levelAt30": 17,
+      "lastLevel": 34,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 300,
+      "settledHash": "5e618cafc24acdc7",
+      "runWallSeconds": 50.752039042
+    },
+    {
+      "case": "cached-original-afk-4",
+      "survivalGate": true,
+      "survivalS": 239.73183333333336,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 2,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 117,
+      "settledHash": "31b383baa66dd1ab",
+      "runWallSeconds": 1.723916625
+    },
+    {
+      "case": "cached-original-positioning-5",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 1.0,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 10,
+      "levelAt30": 17,
+      "lastLevel": 31,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 1,
+          "tier": 1,
+          "runS": 141.6277166666667,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            }
+          ]
+        }
+      ],
+      "evolutions": [],
+      "peakEnemies": 300,
+      "settledHash": "f4c4acc8fda9cbe0",
+      "runWallSeconds": 52.232389916
+    },
+    {
+      "case": "cached-original-afk-5",
+      "survivalGate": true,
+      "survivalS": 235.71600000000004,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 2,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 104,
+      "settledHash": "472420da81f1bde5",
+      "runWallSeconds": 1.627449167
+    },
+    {
+      "case": "cached-reverse-positioning-1",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 1.0,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 11,
+      "levelAt30": 18,
+      "lastLevel": 32,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 300,
+      "settledHash": "b1375da2fb54af2b",
+      "runWallSeconds": 51.685247958
+    },
+    {
+      "case": "cached-reverse-afk-1",
+      "survivalGate": true,
+      "survivalS": 318.31249999999994,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": 2,
+      "levelAt30": null,
+      "lastLevel": 2,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 3,
+          "tier": 1,
+          "runS": 204.72583333333333,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            }
+          ]
+        }
+      ],
+      "evolutions": [],
+      "peakEnemies": 128,
+      "settledHash": "5d83b5aeed133653",
+      "runWallSeconds": 2.1705972080000002
+    },
+    {
+      "case": "cached-reverse-positioning-2",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 0.9618055555555556,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 6,
+      "levelAt30": 15,
+      "lastLevel": 32,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 1,
+          "tier": 1,
+          "runS": 526.6468333333331,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 5
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 1
+            }
+          ]
+        }
+      ],
+      "evolutions": [],
+      "peakEnemies": 300,
+      "settledHash": "9d82eba3fb38b402",
+      "runWallSeconds": 53.398761416
+    },
+    {
+      "case": "cached-reverse-afk-2",
+      "survivalGate": true,
+      "survivalS": 313.19166666666666,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": 2,
+      "levelAt30": null,
+      "lastLevel": 2,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 3,
+          "tier": 1,
+          "runS": 206.21166666666667,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            }
+          ]
+        }
+      ],
+      "evolutions": [],
+      "peakEnemies": 130,
+      "settledHash": "574ca22cbe508487",
+      "runWallSeconds": 2.1812245
+    },
+    {
+      "case": "cached-reverse-positioning-3",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 1.0,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 12,
+      "levelAt30": 15,
+      "lastLevel": 30,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 1,
+          "tier": 1,
+          "runS": 90.03833333333333,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            }
+          ]
+        }
+      ],
+      "evolutions": [],
+      "peakEnemies": 300,
+      "settledHash": "b123f173af451f21",
+      "runWallSeconds": 50.981303875
+    },
+    {
+      "case": "cached-reverse-afk-3",
+      "survivalGate": true,
+      "survivalS": 247.63333333333333,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 2,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 136,
+      "settledHash": "5fc9956dda3e20b5",
+      "runWallSeconds": 1.7315892499999999
+    },
+    {
+      "case": "cached-reverse-positioning-4",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 1.0,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 10,
+      "levelAt30": 18,
+      "lastLevel": 32,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 300,
+      "settledHash": "9b65949446742e67",
+      "runWallSeconds": 52.846582
+    },
+    {
+      "case": "cached-reverse-afk-4",
+      "survivalGate": true,
+      "survivalS": 234.02583333333334,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 2,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 112,
+      "settledHash": "a0c038e3a4015e26",
+      "runWallSeconds": 1.591520458
+    },
+    {
+      "case": "cached-reverse-positioning-5",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 1.0,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 11,
+      "levelAt30": 17,
+      "lastLevel": 37,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 300,
+      "settledHash": "766a76872fdc0992",
+      "runWallSeconds": 51.687953625
+    },
+    {
+      "case": "cached-reverse-afk-5",
+      "survivalGate": true,
+      "survivalS": 225.38333333333333,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 2,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 114,
+      "settledHash": "b558ee994359a42a",
+      "runWallSeconds": 1.4922388340000001
+    },
+    {
+      "case": "cached-rotate-positioning-1",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 0.8541666666666666,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 11,
+      "levelAt30": 19,
+      "lastLevel": 28,
+      "weaponsAtChests": [
+        {
+          "id": 2,
+          "originMinute": 9,
+          "tier": 1,
+          "runS": 1423.9764999999998,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 6
+            }
+          ]
+        }
+      ],
+      "evolutions": [],
+      "peakEnemies": 300,
+      "settledHash": "659872c40a219059",
+      "runWallSeconds": 51.524999917
+    },
+    {
+      "case": "cached-rotate-afk-1",
+      "survivalGate": true,
+      "survivalS": 328.53989569161,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": 2,
+      "levelAt30": null,
+      "lastLevel": 2,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 3,
+          "tier": 1,
+          "runS": 196.4306666666667,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            }
+          ]
+        }
+      ],
+      "evolutions": [],
+      "peakEnemies": 125,
+      "settledHash": "a636f85b73cd83ca",
+      "runWallSeconds": 2.4169264999999998
+    },
+    {
+      "case": "cached-rotate-positioning-2",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 0.9666666666666667,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 11,
+      "levelAt30": 19,
+      "lastLevel": 40,
+      "weaponsAtChests": [
+        {
+          "id": 1,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 1410.0936393424035,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 5
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "originMinute": 22,
+          "tier": 1,
+          "runS": 1494.766643877551,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 5
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "originMinute": 7,
+          "tier": 1,
+          "runS": 1512.7279817460317,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 2
+            },
+            {
+              "weapon": "garlic",
+              "rank": 5
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "originMinute": 12,
+          "tier": 1,
+          "runS": 1514.5184862811789,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 3
+            },
+            {
+              "weapon": "garlic",
+              "rank": 6
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "originMinute": 18,
+          "tier": 1,
+          "runS": 1524.3281574829928,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 4
+            },
+            {
+              "weapon": "garlic",
+              "rank": 6
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "originMinute": 14,
+          "tier": 1,
+          "runS": 1525.0594953514735,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 5
+            },
+            {
+              "weapon": "garlic",
+              "rank": 6
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "originMinute": 16,
+          "tier": 1,
+          "runS": 1525.492499886621,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 6
+            },
+            {
+              "weapon": "garlic",
+              "rank": 6
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "originMinute": 23,
+          "tier": 1,
+          "runS": 1673.9425044217687,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 6
+            },
+            {
+              "weapon": "garlic",
+              "rank": 7
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "originMinute": 15,
+          "tier": 1,
+          "runS": 1693.1410010204083,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 7
+            },
+            {
+              "weapon": "garlic",
+              "rank": 7
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "e64222389a8a373e",
+      "runWallSeconds": 53.230135333
+    },
+    {
+      "case": "cached-rotate-afk-2",
+      "survivalGate": true,
+      "survivalS": 260.7306666666667,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 2,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 102,
+      "settledHash": "115fd8295f35b178",
+      "runWallSeconds": 1.835347875
+    },
+    {
+      "case": "cached-rotate-positioning-3",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 0.9541666666666667,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 11,
+      "levelAt30": 18,
+      "lastLevel": 26,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 300,
+      "settledHash": "de6be8c44615a5de",
+      "runWallSeconds": 51.402661708
+    },
+    {
+      "case": "cached-rotate-afk-3",
+      "survivalGate": true,
+      "survivalS": 315.064,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": 2,
+      "levelAt30": null,
+      "lastLevel": 2,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 117,
+      "settledHash": "4ae683490f2571f0",
+      "runWallSeconds": 2.26326575
+    },
+    {
+      "case": "cached-rotate-positioning-4",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 0.8625,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 9,
+      "levelAt30": 17,
+      "lastLevel": 24,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 1376.6276666666665,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 2
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "originMinute": 14,
+          "tier": 1,
+          "runS": 1499.3440045351474,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 3
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "originMinute": 22,
+          "tier": 1,
+          "runS": 1663.524009070295,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 2
+            },
+            {
+              "weapon": "garlic",
+              "rank": 4
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "27d12ee03c256c54",
+      "runWallSeconds": 53.247159208
+    },
+    {
+      "case": "cached-rotate-afk-4",
+      "survivalGate": true,
+      "survivalS": 249.63066666666668,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 2,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 111,
+      "settledHash": "3a02e8703747154e",
+      "runWallSeconds": 1.7474089579999998
+    },
+    {
+      "case": "cached-rotate-positioning-5",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 0.925,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 10,
+      "levelAt30": 17,
+      "lastLevel": 26,
+      "weaponsAtChests": [
+        {
+          "id": 2,
+          "originMinute": 9,
+          "tier": 1,
+          "runS": 1407.936,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 3
+            }
+          ]
+        }
+      ],
+      "evolutions": [],
+      "peakEnemies": 300,
+      "settledHash": "7bb8e1a0f4492f84",
+      "runWallSeconds": 53.280168333
+    },
+    {
+      "case": "cached-rotate-afk-5",
+      "survivalGate": true,
+      "survivalS": 298.48066666666665,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 2,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 105,
+      "settledHash": "d7a64fa087b1a44e",
+      "runWallSeconds": 2.145837334
+    },
+    {
+      "case": "cached-original-random-pick-1",
+      "survivalGate": null,
+      "survivalS": 1800.0,
+      "lowestHpShare": 0.8541666666666666,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 3,
+      "levelAt30": 9,
+      "lastLevel": 15,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 1515.5055,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 3
+            },
+            {
+              "weapon": "garlic",
+              "rank": 1
+            }
+          ]
+        }
+      ],
+      "evolutions": [],
+      "peakEnemies": 300,
+      "settledHash": "a4b3df1c5450b0bc",
+      "runWallSeconds": 51.654879875
+    },
+    {
+      "case": "continuous-original-positioning-1",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 0.9875,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 11,
+      "levelAt30": 19,
+      "lastLevel": 32,
+      "weaponsAtChests": [
+        {
+          "id": 3,
+          "originMinute": 12,
+          "tier": 1,
+          "runS": 1414.8516666666667,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 5
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "originMinute": 18,
+          "tier": 1,
+          "runS": 1414.86,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 2
+            },
+            {
+              "weapon": "garlic",
+              "rank": 5
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "originMinute": 14,
+          "tier": 1,
+          "runS": 1636.5566666666666,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 3
+            },
+            {
+              "weapon": "garlic",
+              "rank": 5
+            }
+          ]
+        },
+        {
+          "id": 0,
+          "originMinute": 7,
+          "tier": 1,
+          "runS": 1641.28,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 4
+            },
+            {
+              "weapon": "garlic",
+              "rank": 5
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "originMinute": 22,
+          "tier": 1,
+          "runS": 1664.9999999999998,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 5
+            },
+            {
+              "weapon": "garlic",
+              "rank": 6
+            }
+          ]
+        }
+      ],
+      "evolutions": [],
+      "peakEnemies": 300,
+      "settledHash": "82586f06825db61c",
+      "runWallSeconds": 52.235441292
+    },
+    {
+      "case": "continuous-original-afk-1",
+      "survivalGate": true,
+      "survivalS": 247.14499999999998,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 2,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 108,
+      "settledHash": "2067d8df0c364de4",
+      "runWallSeconds": 1.777557125
+    },
+    {
+      "case": "continuous-original-positioning-2",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 1.0,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 11,
+      "levelAt30": 20,
+      "lastLevel": 33,
+      "weaponsAtChests": [
+        {
+          "id": 3,
+          "originMinute": 16,
+          "tier": 1,
+          "runS": 1470.3491666666664,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 6
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "originMinute": 18,
+          "tier": 1,
+          "runS": 1470.7391666666667,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 2
+            },
+            {
+              "weapon": "garlic",
+              "rank": 6
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "originMinute": 14,
+          "tier": 1,
+          "runS": 1472.1925,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 3
+            },
+            {
+              "weapon": "garlic",
+              "rank": 6
+            }
+          ]
+        },
+        {
+          "id": 0,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 1472.7258333333334,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 4
+            },
+            {
+              "weapon": "garlic",
+              "rank": 7
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "originMinute": 22,
+          "tier": 1,
+          "runS": 1490.9858333333336,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 4
+            },
+            {
+              "weapon": "garlic",
+              "rank": 7
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "originMinute": 15,
+          "tier": 1,
+          "runS": 1515.0975000000003,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 5
+            },
+            {
+              "weapon": "garlic",
+              "rank": 7
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "4a4dbca5889b92da",
+      "runWallSeconds": 51.146843541
+    },
+    {
+      "case": "continuous-original-afk-2",
+      "survivalGate": true,
+      "survivalS": 238.18833333333333,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 2,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 107,
+      "settledHash": "81a8b86945027606",
+      "runWallSeconds": 1.7416139579999999
+    },
+    {
+      "case": "continuous-original-positioning-3",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 0.9875,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 10,
+      "levelAt30": 16,
+      "lastLevel": 27,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 3,
+          "tier": 1,
+          "runS": 1424.7533333333333,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 3
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "originMinute": 14,
+          "tier": 1,
+          "runS": 1522.4033333333332,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 2
+            },
+            {
+              "weapon": "garlic",
+              "rank": 3
+            }
+          ]
+        }
+      ],
+      "evolutions": [],
+      "peakEnemies": 300,
+      "settledHash": "98691f7265d34acc",
+      "runWallSeconds": 38.72005225
+    },
+    {
+      "case": "continuous-original-afk-3",
+      "survivalGate": true,
+      "survivalS": 237.4883333333333,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 2,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 112,
+      "settledHash": "9ee8c3015ea201e1",
+      "runWallSeconds": 1.809661
+    },
+    {
+      "case": "continuous-original-positioning-4",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 0.9340277777777778,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 10,
+      "levelAt30": 19,
+      "lastLevel": 35,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 7,
+          "tier": 1,
+          "runS": 1318.5641666666668,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 4
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "originMinute": 9,
+          "tier": 1,
+          "runS": 1410.9158333333335,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 2
+            },
+            {
+              "weapon": "garlic",
+              "rank": 5
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 1413.1825000000001,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 3
+            },
+            {
+              "weapon": "garlic",
+              "rank": 5
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "originMinute": 23,
+          "tier": 1,
+          "runS": 1581.8641666666667,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 3
+            },
+            {
+              "weapon": "garlic",
+              "rank": 6
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "originMinute": 22,
+          "tier": 3,
+          "runS": 1582.8158333333333,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 4
+            },
+            {
+              "weapon": "garlic",
+              "rank": 6
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "originMinute": 15,
+          "tier": 1,
+          "runS": 1584.9841666666666,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 7
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "originMinute": 18,
+          "tier": 1,
+          "runS": 1649.9225000000004,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 7
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "originMinute": 14,
+          "tier": 1,
+          "runS": 1652.8858333333337,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear",
+        "soul-eater"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "8192a1c5db80989e",
+      "runWallSeconds": 39.061918958
+    },
+    {
+      "case": "continuous-original-afk-4",
+      "survivalGate": true,
+      "survivalS": 241.6308333333333,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 2,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 103,
+      "settledHash": "71e79f2c74c9357c",
+      "runWallSeconds": 1.7043913750000002
+    },
+    {
+      "case": "continuous-original-positioning-5",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 1.0,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 10,
+      "levelAt30": 19,
+      "lastLevel": 31,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 1,
+          "tier": 1,
+          "runS": 153.2208333333333,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "originMinute": 3,
+          "tier": 1,
+          "runS": 607.5799999999997,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 1330.6458333333333,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 2
+            },
+            {
+              "weapon": "garlic",
+              "rank": 6
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "originMinute": 9,
+          "tier": 2,
+          "runS": 1366.8808333333334,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 2
+            },
+            {
+              "weapon": "garlic",
+              "rank": 6
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "originMinute": 18,
+          "tier": 1,
+          "runS": 1369.7308333333335,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 5
+            },
+            {
+              "weapon": "garlic",
+              "rank": 7
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "originMinute": 16,
+          "tier": 1,
+          "runS": 1369.7358333333336,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 6
+            },
+            {
+              "weapon": "garlic",
+              "rank": 7
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "originMinute": 14,
+          "tier": 1,
+          "runS": 1371.8525000000002,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 7
+            },
+            {
+              "weapon": "garlic",
+              "rank": 7
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "daeb2f94996b0a31",
+      "runWallSeconds": 37.776777292
+    },
+    {
+      "case": "continuous-original-afk-5",
+      "survivalGate": true,
+      "survivalS": 249.68166666666664,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 2,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 102,
+      "settledHash": "780343ac942a1e49",
+      "runWallSeconds": 1.649733917
+    }
+  ]
+}

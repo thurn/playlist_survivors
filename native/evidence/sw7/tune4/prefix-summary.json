@@ -1,0 +1,163 @@
+[
+  {
+    "case": "cached-rotate-afk-5",
+    "survivalS": 298.48066666666665,
+    "minHP": 0.0,
+    "fallen": true,
+    "lastLevel": 2
+  },
+  {
+    "case": "cached-original-positioning-1",
+    "survivalS": 600.0,
+    "minHP": 0.9875,
+    "fallen": false,
+    "lastLevel": 14
+  },
+  {
+    "case": "cached-rotate-positioning-4",
+    "survivalS": 600.0,
+    "minHP": 0.8625,
+    "fallen": false,
+    "lastLevel": 11
+  },
+  {
+    "case": "cached-reverse-positioning-2",
+    "survivalS": 600.0,
+    "minHP": 0.9618055555555556,
+    "fallen": false,
+    "lastLevel": 11
+  },
+  {
+    "case": "cached-rotate-afk-4",
+    "survivalS": 249.63066666666668,
+    "minHP": 0.0,
+    "fallen": true,
+    "lastLevel": 2
+  },
+  {
+    "case": "continuous-original-afk-1",
+    "survivalS": 247.14499999999998,
+    "minHP": 0.0,
+    "fallen": true,
+    "lastLevel": 2
+  },
+  {
+    "case": "cached-rotate-afk-3",
+    "survivalS": 315.064,
+    "minHP": 0.0,
+    "fallen": true,
+    "lastLevel": 2
+  },
+  {
+    "case": "cached-rotate-afk-2",
+    "survivalS": 260.7306666666667,
+    "minHP": 0.0,
+    "fallen": true,
+    "lastLevel": 2
+  },
+  {
+    "case": "cached-original-afk-1",
+    "survivalS": 326.9685634920635,
+    "minHP": 0.0,
+    "fallen": true,
+    "lastLevel": 2
+  },
+  {
+    "case": "cached-reverse-afk-1",
+    "survivalS": 318.31249999999994,
+    "minHP": 0.0,
+    "fallen": true,
+    "lastLevel": 2
+  },
+  {
+    "case": "cached-original-afk-2",
+    "survivalS": 329.0297301587302,
+    "minHP": 0.0,
+    "fallen": true,
+    "lastLevel": 2
+  },
+  {
+    "case": "cached-reverse-afk-2",
+    "survivalS": 313.19166666666666,
+    "minHP": 0.0,
+    "fallen": true,
+    "lastLevel": 2
+  },
+  {
+    "case": "cached-rotate-afk-1",
+    "survivalS": 328.53989569161,
+    "minHP": 0.0,
+    "fallen": true,
+    "lastLevel": 2
+  },
+  {
+    "case": "continuous-original-afk-3",
+    "survivalS": 237.4883333333333,
+    "minHP": 0.0,
+    "fallen": true,
+    "lastLevel": 2
+  },
+  {
+    "case": "continuous-original-afk-2",
+    "survivalS": 238.18833333333333,
+    "minHP": 0.0,
+    "fallen": true,
+    "lastLevel": 2
+  },
+  {
+    "case": "cached-reverse-afk-3",
+    "survivalS": 247.63333333333333,
+    "minHP": 0.0,
+    "fallen": true,
+    "lastLevel": 2
+  },
+  {
+    "case": "cached-original-afk-3",
+    "survivalS": 229.7226666666667,
+    "minHP": 0.0,
+    "fallen": true,
+    "lastLevel": 2
+  },
+  {
+    "case": "continuous-original-afk-5",
+    "survivalS": 249.68166666666664,
+    "minHP": 0.0,
+    "fallen": true,
+    "lastLevel": 2
+  },
+  {
+    "case": "cached-original-afk-4",
+    "survivalS": 239.73183333333336,
+    "minHP": 0.0,
+    "fallen": true,
+    "lastLevel": 2
+  },
+  {
+    "case": "cached-reverse-afk-4",
+    "survivalS": 234.02583333333334,
+    "minHP": 0.0,
+    "fallen": true,
+    "lastLevel": 2
+  },
+  {
+    "case": "cached-reverse-afk-5",
+    "survivalS": 225.38333333333333,
+    "minHP": 0.0,
+    "fallen": true,
+    "lastLevel": 2
+  },
+  {
+    "case": "cached-original-afk-5",
+    "survivalS": 235.71600000000004,
+    "minHP": 0.0,
+    "fallen": true,
+    "lastLevel": 2
+  },
+  {
+    "case": "continuous-original-afk-4",
+    "survivalS": 241.6308333333333,
+    "minHP": 0.0,
+    "fallen": true,
+    "lastLevel": 2
+  }
+]

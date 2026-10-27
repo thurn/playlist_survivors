@@ -170,7 +170,8 @@ impl Sim {
             if matches!(id, WeaponId::MagicWand | WeaponId::HolyWand) {
                 self.launch_missile(shot);
                 for i in 1..weapon.amount(stats) {
-                    let offset = i as f64 * weapon.repeat_ms / 1000.0;
+                    // Source Weapon.PSpeedRepeatInterval uses the final projectile speed.
+                    let offset = i as f64 * weapon.repeat_ms / 1000.0 / shot.speed.max(0.001);
                     self.st.q.push(
                         self.st.s + offset,
                         super::Ev::WandBullet(Box::new(Shot {

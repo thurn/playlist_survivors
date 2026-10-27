@@ -1,0 +1,5 @@
+WARN `--no-project` was provided, but no project was found
+cached-original-afk-0: 0.600s, HP 1.000, level 1, survival gate None
+cached-original-afk-1: 1800.000s, HP 1.000, level 29, survival gate False
+cached-original-positioning-1: 1800.000s, HP 0.921, level 32, survival gate True
+survivors sweep: 2 reports, 1 survival failures (report-only), 408.946s; native/evidence/sw7/smoke

@@ -1,0 +1,1 @@
+unrebuilt files used the original binary: offers are compile-time include_str. They are baseline prefix data only. Files without this prefix follow the logged rebuilt CLI.

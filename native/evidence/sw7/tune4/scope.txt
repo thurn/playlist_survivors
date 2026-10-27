@@ -1,0 +1,1 @@
+Ten-minute prefixes. Compile-time table had an accidental additional Hollow Heart at level25, corrected before final checks. None of these actors reached25, so the prefix results retain their stated scope. All final full-run evidence uses the corrected full table.

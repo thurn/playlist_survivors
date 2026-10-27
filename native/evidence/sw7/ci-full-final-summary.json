@@ -1,0 +1,10 @@
+{
+  "command": [
+    "scripts/ci-full"
+  ],
+  "exitCode": 0,
+  "wallSeconds": 727.4289180829655,
+  "sourceBeforeSha256": "f792a58f7130ecf1a68356d3e6db3edd7914c9d81815503a8bbcfda1077e3db7",
+  "sourceAfterSha256": "f792a58f7130ecf1a68356d3e6db3edd7914c9d81815503a8bbcfda1077e3db7",
+  "sourceUnchanged": true
+}

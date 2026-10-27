@@ -719,11 +719,10 @@ fn fast_offer_fixture() -> (ContentLibrary, stream::StreamLog) {
     (content, log)
 }
 
-#[test]
-fn a_real_xp_offer_pick_applies_once_across_speculative_rollback() {
-    let (mut content, log) = fast_offer_fixture();
-    // A bounded high-XP fixture reaches Bible through actual cards before
-    // stationary Garlic kills leave the magnet. This is not pacing evidence.
+// Actual-card/record-projection coverage, not pacing: weak XP carriers fund the
+// cards; a separate durable cohort remains hittable by every weapon after Garlic8.
+fn all_weapons_offer_fixture() -> (ContentLibrary, stream::StreamLog, SourceFile) {
+    let (mut content, mut log) = fast_offer_fixture();
     content
         .enemies
         .get_mut("vs-bat3")
@@ -731,10 +730,66 @@ fn a_real_xp_offer_pick_applies_once_across_speculative_rollback() {
         .survivors
         .as_mut()
         .unwrap()
-        .xp = 200.0;
+        .xp = sim::survivors::total_xp(22);
+    let target = content.enemies.get_mut("vs-bat2").unwrap();
+    target.health = 1_000_000.0;
+    target.radius = 50.0; // The orbit can hit this large durable body while it contacts the hero.
+    let stats = target.survivors.as_mut().unwrap();
+    stats.speed = 1000.0;
+    stats.xp = 0.0;
+    stats.knockback = 0.0; // Keep a durable target in the orbital contact band.
+    let mut level = source("levels/survivors.yaml");
+    let row = serde_json::json!({"minute":0,"minimum":2,"frequency":1_000_000,
+        "enemies":["vs-bat3"],"bosses":["vs-bat2"],"events":[],"treasure":[]});
+    let mut inserted = false;
+    level.text = level
+        .text
+        .lines()
+        .filter_map(|line| {
+            if line.trim_start().starts_with("- {\"minute\":") {
+                if inserted {
+                    None
+                } else {
+                    inserted = true;
+                    Some(format!("    - {row}"))
+                }
+            } else {
+                Some(line.to_string())
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    for i in 101..=240 {
+        let t = f64::from(i) * 0.5;
+        log.beats.push(stream::Beat {
+            t,
+            known_at: (t - 3.0).max(0.0),
+            period: 0.5,
+            evidence: 1.0,
+        });
+    }
+    for i in 1001..=2400 {
+        let t = f64::from(i) / 20.0;
+        log.ticks.push(stream::Tick {
+            t,
+            known_at: t,
+            evidence: 1.0,
+            energy: 0.5,
+            level: Some(stream::Level::Medium),
+            key: None,
+            bands: None,
+            brightness: None,
+        });
+    }
+    (content, log, level)
+}
+
+#[test]
+fn a_real_xp_offer_pick_applies_once_across_speculative_rollback() {
+    let (content, log, level) = all_weapons_offer_fixture();
     let run = |lead: f64, late: f64| {
         let mut e = Engine::new(
-            &source("levels/survivors.yaml"),
+            &level,
             &content,
             &IndexMap::new(),
             0.2,
@@ -749,7 +804,7 @@ fn a_real_xp_offer_pick_applies_once_across_speculative_rollback() {
         e.feed(|out| *out = log.clone());
         let mut picked = None;
         let mut picks = 0;
-        for k in 1..=4000 {
+        for k in 1..=10000 {
             let now = f64::from(k) / 100.0;
             let offer = e.view.borrow().run.and_then(|r| r.offer);
             if let Some(o) = offer {
@@ -764,7 +819,7 @@ fn a_real_xp_offer_pick_applies_once_across_speculative_rollback() {
             }
             e.frame(now, lead);
         }
-        e.frame(40.8, 0.0);
+        e.frame(100.8, 0.0);
         let inventory = e.sim.survivor_inventory().unwrap();
         let ranks: usize = inventory
             .weapons
@@ -782,14 +837,14 @@ fn a_real_xp_offer_pick_applies_once_across_speculative_rollback() {
                 .weapons
                 .rank(sim::survivors::WeaponId::Garlic)
                 .is_some(),
-            "first real XP choice exercises the persistent aura across rollback"
+            "real XP choices exercise the persistent aura across rollback"
         );
         assert!(
             inventory
                 .weapons
                 .rank(sim::survivors::WeaponId::MagicWand)
                 .is_some(),
-            "second real XP choice exercises projectiles and bursts across rollback"
+            "real XP choices exercise projectiles and bursts across rollback"
         );
         assert!(
             inventory
@@ -1053,17 +1108,9 @@ fn sword_impact_sounds_follow_existing_grid_records_without_hash_records() {
 #[test]
 fn survivor_weapon_sounds_and_missile_trails_follow_actual_records() {
     use eval::live::Cause;
-    let (mut content, log) = fast_offer_fixture();
-    content
-        .enemies
-        .get_mut("vs-bat3")
-        .unwrap()
-        .survivors
-        .as_mut()
-        .unwrap()
-        .xp = 200.0;
+    let (content, log, level) = all_weapons_offer_fixture();
     let mut e = Engine::new(
-        &source("levels/survivors.yaml"),
+        &level,
         &content,
         &IndexMap::new(),
         0.2,
@@ -1079,7 +1126,7 @@ fn survivor_weapon_sounds_and_missile_trails_follow_actual_records() {
     let mut pulses = std::collections::BTreeMap::new();
     let mut contacts = std::collections::BTreeMap::new();
     let mut peak_missiles = 0;
-    for k in 1..=4800 {
+    for k in 1..=12000 {
         let now = f64::from(k) / 120.0;
         let offer = e.view.borrow().run.and_then(|r| r.offer);
         if let Some(o) = offer {

@@ -1,0 +1,2 @@
+still: song 20.000s, run Some(RunState { song: 19.991666666666667, presentation_s: 19.991666666666667, frozen_beat: None, elapsed: 18.944166666666668, spawn_minute: Some(0), spawned: 43, offer: None, roulette: None, level: 2, max_hp: 120.0, world: 18.944166666666668, frozen: None, selected: 0, confirmed: true }), alive 13, kills 30, damage-exempt false
+slice: wrote native/evidence/sw7/headless.png (1143 sprites, 8 lights; 13 enemies, health 0.95, groove 0.00; zone galop-woods)

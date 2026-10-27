@@ -1,0 +1,19 @@
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw7-whole-run/native/crates/eval)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.07s
+     Running tests/live.rs (target/debug/deps/live-6bbfee6942df762e)
+
+running 1 test
+
+thread 'a_real_xp_offer_pick_applies_once_across_speculative_rollback' (179203229) panicked at crates/eval/tests/live.rs:831:9:
+real XP choices exercise orbit cycles and per-blade memories across rollback
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test a_real_xp_offer_pick_applies_once_across_speculative_rollback ... FAILED
+
+failures:
+
+failures:
+    a_real_xp_offer_pick_applies_once_across_speculative_rollback
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 19 filtered out; finished in 0.28s
+
+error: test failed, to rerun pass `-p eval --test live`

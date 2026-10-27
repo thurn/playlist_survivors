@@ -3,7 +3,7 @@ use crate::live::Engine;
 use crate::session::{Arrival, rebase_append};
 use serde::Serialize;
 use sim::player::{KeyEventKind, Player};
-use sim::survivors::FreezeReason;
+use sim::survivors::{Inventory, RunState};
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -26,6 +26,9 @@ pub struct WeaponRank {
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChestPoint {
+    pub id: usize,
+    pub origin_minute: usize,
+    pub tier: u8,
     pub run_s: f64,
     pub weapons: Vec<WeaponRank>,
 }
@@ -47,6 +50,29 @@ pub struct Report {
     pub settled_hash: String,
     pub settled_records: usize,
 }
+/// Sample the inventory once when a physical chest opens. A music/level freeze
+/// may temporarily take precedence over TREASURE without opening another chest.
+fn sample_chest(points: &mut Vec<ChestPoint>, run: RunState, inv: Inventory) {
+    let Some(chest) = run.roulette else { return };
+    if points.last().is_some_and(|point| point.id == chest.id) {
+        return;
+    }
+    points.push(ChestPoint {
+        id: chest.id,
+        origin_minute: chest.minute,
+        tier: chest.tier,
+        run_s: run.elapsed,
+        weapons: inv
+            .weapons
+            .iter()
+            .map(|w| WeaponRank {
+                weapon: w.id.as_str().into(),
+                rank: w.rank,
+            })
+            .collect(),
+    });
+}
+
 /// Match replay's 120 Hz grid: feed only arrived entries, then apply observed-state
 /// decisions at this frame or later. run_seconds uses the held run clock.
 pub fn drive(
@@ -76,7 +102,6 @@ pub fn drive(
     let mut decision = player.next_decision(-1.0);
     let mut last_second = None;
     let mut last_minute = None;
-    let mut chest = false;
     for frame in 1..=((until_song * 120.0).ceil() as u64) {
         let now = frame as f64 / 120.0;
         let start = next;
@@ -122,19 +147,7 @@ pub fn drive(
             last_minute = Some(minute);
         }
         if let Some(inv) = view.inventory {
-            if run.frozen == Some(FreezeReason::Chest) && !chest {
-                r.weapons_at_chests.push(ChestPoint {
-                    run_s: run.elapsed,
-                    weapons: inv
-                        .weapons
-                        .iter()
-                        .map(|w| WeaponRank {
-                            weapon: w.id.as_str().into(),
-                            rank: w.rank,
-                        })
-                        .collect(),
-                });
-            }
+            sample_chest(&mut r.weapons_at_chests, run, inv);
             for w in inv.weapons.iter() {
                 let name = w.id.as_str();
                 if matches!(
@@ -146,7 +159,6 @@ pub fn drive(
                 }
             }
         }
-        chest = run.frozen == Some(FreezeReason::Chest);
         drop(view);
         engine.view.borrow_mut().take_moments();
         if engine.done() || engine.fallen() || (run_seconds < 1800.0 && run.elapsed >= run_seconds)
@@ -159,4 +171,75 @@ pub fn drive(
     r.settled_hash = format!("{:016x}", engine.settled_hash);
     r.settled_records = engine.settled_count;
     r
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sim::survivors::{FreezeReason, Roulette, WeaponId};
+
+    #[test]
+    fn interrupted_roulette_is_one_chest_with_its_origin_and_pre_reward_ranks() {
+        let mut points = Vec::new();
+        let mut inv = Inventory::default();
+        inv.weapons.upgrade(WeaponId::Sword, 8).unwrap();
+        let mut run = RunState {
+            elapsed: 725.0,
+            frozen: Some(FreezeReason::Chest),
+            roulette: Some(Roulette {
+                id: 7,
+                tier: 1,
+                minute: 10,
+                opened: 725.0,
+                tick: 0,
+                next_song: 726.0,
+                next_beat: None,
+                started: false,
+                landed: None,
+                rewards: [None; 5],
+            }),
+            ..RunState::default()
+        };
+        sample_chest(&mut points, run, inv);
+        inv.weapons.upgrade(WeaponId::Sword, 8).unwrap();
+        for reason in [
+            FreezeReason::MusicStopped,
+            FreezeReason::LevelUp,
+            FreezeReason::Chest,
+        ] {
+            run.frozen = Some(reason);
+            sample_chest(&mut points, run, inv);
+        }
+        run.roulette = None;
+        sample_chest(&mut points, run, inv);
+        assert_eq!(points.len(), 1);
+        assert_eq!(
+            (points[0].id, points[0].origin_minute, points[0].tier),
+            (7, 10, 1)
+        );
+        assert_eq!(points[0].weapons[0].rank, 1);
+        // A second physical chest can open at the same held run time.
+        run.roulette = Some(Roulette {
+            id: 8,
+            tier: 3,
+            minute: 15,
+            opened: 730.0,
+            tick: 0,
+            next_song: 731.0,
+            next_beat: None,
+            started: false,
+            landed: None,
+            rewards: [None; 5],
+        });
+        sample_chest(&mut points, run, inv);
+        assert_eq!(points.len(), 2);
+        assert_eq!(
+            (
+                points[1].origin_minute,
+                points[1].tier,
+                points[1].weapons[0].rank
+            ),
+            (15, 3, 2)
+        );
+    }
 }

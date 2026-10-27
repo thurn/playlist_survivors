@@ -1,0 +1,10 @@
+{
+  "command": [
+    "scripts/check-fast"
+  ],
+  "exitCode": 0,
+  "wallSeconds": 33.233323875116184,
+  "sourceBeforeSha256": "f792a58f7130ecf1a68356d3e6db3edd7914c9d81815503a8bbcfda1077e3db7",
+  "sourceAfterSha256": "f792a58f7130ecf1a68356d3e6db3edd7914c9d81815503a8bbcfda1077e3db7",
+  "sameSourceAsFullCI": true
+}

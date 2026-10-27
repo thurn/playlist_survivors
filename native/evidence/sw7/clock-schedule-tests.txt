@@ -1,0 +1,90 @@
+   Compiling autocfg v1.5.1
+   Compiling proc-macro2 v1.0.107
+   Compiling serde_core v1.0.229
+   Compiling unicode-ident v1.0.27
+   Compiling rustversion v1.0.23
+   Compiling quote v1.0.47
+   Compiling zmij v1.0.23
+   Compiling cfg-if v1.0.5
+   Compiling serde_json v1.0.154
+   Compiling serde v1.0.229
+   Compiling equivalent v1.0.3
+   Compiling hashbrown v0.17.1
+   Compiling strength_reduce v0.2.4
+   Compiling simdutf8 v0.1.5
+   Compiling memchr v2.8.3
+   Compiling scopeguard v1.2.0
+   Compiling foldhash v0.2.0
+   Compiling itoa v1.0.18
+   Compiling multiversion_no_op v1.0.0
+   Compiling libm v0.2.16
+   Compiling arraydeque v0.5.1
+   Compiling anstyle v1.0.14
+   Compiling unicode-width v0.2.2
+   Compiling smallvec v1.16.4
+   Compiling crc32fast v1.5.3
+   Compiling adler2 v2.0.1
+   Compiling simd-adler32 v0.3.10
+   Compiling nohash-hasher v0.2.0
+   Compiling annotate-snippets v0.12.17
+   Compiling granit-parser v2.0.0
+   Compiling base64 v0.23.1
+   Compiling miniz_oxide v0.9.1
+   Compiling num-traits v0.2.19
+   Compiling syn v3.0.9
+   Compiling flate2 v1.1.10
+   Compiling encoding_rs v0.8.42
+   Compiling num-integer v0.1.47
+   Compiling num-complex v0.4.6
+   Compiling indexmap v2.14.2
+   Compiling primal-check v0.3.4
+   Compiling transpose v0.2.3
+   Compiling rustfft v6.4.1
+   Compiling serde_derive v1.0.229
+   Compiling encoding_rs_io v0.1.8
+   Compiling serde-saphyr v2.0.0
+   Compiling realfft v3.5.0
+   Compiling stream v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw7-whole-run/native/crates/stream)
+   Compiling analysis v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw7-whole-run/native/crates/analysis)
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw7-whole-run/native/crates/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 15.73s
+     Running tests/survivor_spawning.rs (target/debug/deps/survivor_spawning-bd30f1999a3bcd76)
+
+running 10 tests
+test swarm_roles_match_the_curated_event_only_combat_rows ... ok
+test enemy_roles_match_documented_health_speed_damage_xp_and_scaling ... ok
+test enemy_knockback_fields_match_the_feel_appendix ... ok
+test unknown_survivor_event_kinds_are_rejected ... ok
+test deferred_bosses_wait_for_room_then_the_next_grid_step ... ok
+test raw_ticks_snap_to_the_next_known_eighth_and_minute_changes_inherit_only_population ... ok
+test future_grid_evidence_cannot_delay_a_raw_tick_and_a_freeze_holds_admission ... ok
+test a_single_committed_future_beat_is_a_grid_step ... ok
+test all_31_schedule_rows_match_the_documented_source_including_duplicate_roles ... ok
+test treasure_validation_rejects_invalid_scripted_tiers_and_chance_shapes ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/survivors.rs (target/debug/deps/survivors-0e33f9d9bae2b18e)
+
+running 18 tests
+test no_committed_beat_means_held_strides_on_the_free_pulse ... ok
+test keys_held_when_cards_open_never_pick_until_released_and_pressed_again ... ok
+test a_chained_card_clears_the_previous_confirm_and_blocks_its_held_key ... ok
+test ending_a_manual_pause_does_not_dismiss_a_chest_freeze ... ok
+test a_pause_holds_every_world_quantity_and_held_movement_requires_release ... ok
+test section_changes_learned_during_pause_never_rewind_the_clock ... ok
+test audible_weak_beat_evidence_does_not_mean_music_stopped ... ok
+test victory_holds_the_hero_when_the_last_beat_ends_and_free_pulses_continue ... ok
+test a_second_silent_gap_inside_a_pause_cannot_resume_the_world ... ok
+test audible_evidence_dips_do_not_keep_a_silent_gap_frozen ... ok
+test silence_freezes_at_known_evidence_and_relocks_on_the_second_following_bar ... ok
+test freezing_a_planned_victory_replans_it_once_without_duplicate_landmarks ... ok
+test survivors_does_not_read_uncommitted_victory_beats_in_a_free_passage ... ok
+test survivors_victory_snaps_to_a_known_downbeat_and_repeats_exactly ... ok
+test frozen_streaming_and_batch_runs_record_identically ... ok
+test survivors_ignores_a_confirmed_song_end ... ok
+test a_long_pause_preserves_the_zone_fallbacks_remaining_time ... ok
+test audible_beatless_victory_uses_free_pulses_and_ignores_uncommitted_beats ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+

@@ -1,0 +1,14 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw7-whole-run/native/crates/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 4.44s
+     Running tests/survivor_offers.rs (target/debug/deps/survivor_offers-fffa46330d1578d9)
+
+running 6 tests
+test the_six_passive_cards_describe_the_source_rank_and_reject_retired_ids ... ok
+test shipped_first_offer_contains_the_implemented_wand ... ok
+test an_evolved_weapon_blocks_reoffering_its_base ... ok
+test preferences_skip_unbuilt_and_keep_distinct_viable_choices ... ok
+test fallback_prefers_lowest_owned_rank_and_heals_only_when_no_item_is_offerable ... ok
+test scripted_first_column_fills_the_source_slots_then_offers_healing ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

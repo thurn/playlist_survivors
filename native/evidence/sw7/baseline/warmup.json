@@ -1,0 +1,37 @@
+{
+  "bot": "afk",
+  "playlistOrder": "original",
+  "seed": 0,
+  "requestedMinutes": 0.01,
+  "playlistSeconds": 2294.042448979592,
+  "prepareWallSeconds": 0.0596695,
+  "runWallSeconds": 0.001583417,
+  "noHeroDamage": false,
+  "streamMode": "cached-tracks",
+  "report": {
+    "songS": 0.6083333333333333,
+    "survivalS": 0.6,
+    "lowestHpShare": 1.0,
+    "hp": [
+      {
+        "runS": 0.0,
+        "hpShare": 1.0
+      }
+    ],
+    "levelsByMinute": [
+      {
+        "minute": 0,
+        "level": 1
+      }
+    ],
+    "weaponsAtChests": [],
+    "evolutions": [],
+    "peakEnemies": 15,
+    "level": 1,
+    "kills": 0,
+    "fallen": false,
+    "done": false,
+    "settledHash": "83bff9ed190759c3",
+    "settledRecords": 478
+  }
+}

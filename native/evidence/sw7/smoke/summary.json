@@ -1,0 +1,84 @@
+{
+  "assertSurvival": false,
+  "pacingReportOnly": true,
+  "wallSeconds": 408.94573124987073,
+  "cases": [
+    {
+      "case": "cached-original-positioning-1",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 0.9208333333333333,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 10,
+      "levelAt30": 17,
+      "lastLevel": 32,
+      "weaponsAtChests": [
+        {
+          "runS": 1484.7863333333335,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 2
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 3
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "runS": 1485.1547120181408,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 2
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 3
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 1
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "efc8f2c853a6eb70",
+      "runWallSeconds": 278.656002375
+    },
+    {
+      "case": "cached-original-afk-1",
+      "survivalGate": false,
+      "survivalS": 1800.0,
+      "lowestHpShare": 1.0,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 4,
+      "levelAt30": 4,
+      "lastLevel": 29,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 300,
+      "settledHash": "d0ed029fbb970fe4",
+      "runWallSeconds": 270.343110917
+    }
+  ]
+}

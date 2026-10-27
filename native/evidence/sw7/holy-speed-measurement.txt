@@ -1,0 +1,10 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.04s
+     Running unittests src/lib.rs (target/debug/deps/sim-1ebf1e278f138957)
+
+running 1 test
+Holy Wand Speed2 six-shot burst interval0.050s final0.250s
+Holy Wand Speed4 six-shot burst interval0.025s final0.125s
+test engine::tests::evolution_tests::holy_wand_burst_repeats_use_source_speed_including_non_default_character_speed ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 105 filtered out; finished in 0.02s
+

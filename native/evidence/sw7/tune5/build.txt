@@ -1,0 +1,5 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw7-whole-run/native/crates/sim)
+   Compiling players v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw7-whole-run/native/crates/players)
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw7-whole-run/native/crates/eval)
+   Compiling cli v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-sw7-whole-run/native/crates/cli)
+    Finished `release` profile [optimized] target(s) in 7.50s
