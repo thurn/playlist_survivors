@@ -12,6 +12,12 @@ const ROLES: [&str; 8] = [
     "vs-flower",
     "vs-xlflower",
 ];
+const BOSSES: [&str; 4] = [
+    "vs-boss-xlmantis",
+    "vs-boss-werewolf",
+    "vs-boss-xlmummy",
+    "vs-boss-xlflower",
+];
 pub fn run(dir: &Path) -> Result<(), String> {
     if std::env::var_os("PS_NATIVE_BATCH").is_none() {
         let status = std::process::Command::new("taskpolicy")
@@ -31,7 +37,12 @@ pub fn run(dir: &Path) -> Result<(), String> {
     let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
     let mut video = capture::Offscreen::new(&art.pages, 640, 360)?;
     let mut still = capture::Offscreen::new(&art.pages, 1280, 720)?;
-    for role in ROLES {
+    let selected = std::env::var("PS_ROSTER_ROLES").unwrap_or_else(|_| ROLES.join(","));
+    for role in selected.split(',') {
+        if !ROLES.contains(&role) && !BOSSES.contains(&role) {
+            return Err(format!("unsupported roster role {role}"));
+        }
+        let boss = BOSSES.contains(&role);
         let mut world = World::load(None)?;
         for zone in world.lib.zones.values_mut() {
             zone.props.clear();
@@ -41,8 +52,10 @@ pub fn run(dir: &Path) -> Result<(), String> {
             .enemies
             .get_mut(role)
             .ok_or("roster role missing")?;
-        actor.health = 1_000_000.0;
-        actor.survivors.as_mut().ok_or("role stats missing")?.xp = 0.0;
+        if !boss {
+            actor.health = 1_000_000.0;
+            actor.survivors.as_mut().ok_or("role stats missing")?.xp = 0.0;
+        }
         let begin = world
             .level
             .text
@@ -57,7 +70,11 @@ pub fn run(dir: &Path) -> Result<(), String> {
             }
             len += line.len();
         }
-        let row = serde_json::json!({"minute":0,"minimum":1,"frequency":600_000,"enemies":[role],"bosses":[],"events":[],"treasure":[]});
+        let row = if boss {
+            serde_json::json!({"minute":0,"minimum":0,"frequency":600_000,"enemies":[],"bosses":[role],"events":[],"treasure":[]})
+        } else {
+            serde_json::json!({"minute":0,"minimum":1,"frequency":600_000,"enemies":[role],"bosses":[],"events":[],"treasure":[]})
+        };
         world
             .level
             .text
@@ -90,6 +107,35 @@ pub fn run(dir: &Path) -> Result<(), String> {
                     }
                 })
                 .collect(),
+            forecasts: boss.then(|| {
+                (0..=195)
+                    .map(|i| {
+                        let t = f64::from(i) * 2.0 * period;
+                        stream::Forecast {
+                            t,
+                            known_at: (t - 0.2).max(0.0),
+                            cycle: 2.0,
+                            confidence: 1.0,
+                        }
+                    })
+                    .collect()
+            }),
+            onsets: if boss {
+                (0..195)
+                    .map(|i| {
+                        let t = f64::from(i) * 2.0 * period;
+                        stream::Onset {
+                            t,
+                            known_at: t + 0.01,
+                            strength: 1.0,
+                            strong: true,
+                            band: None,
+                        }
+                    })
+                    .collect()
+            } else {
+                Vec::new()
+            },
             ..Default::default()
         };
         let beats: Vec<_> = log.beats.iter().map(|b| b.t).collect();
@@ -194,10 +240,15 @@ pub fn run(dir: &Path) -> Result<(), String> {
         }
         clip.encode(&dir.join(format!("{role}.mp4")))?;
         eprintln!(
-            "roster-check {role}: start{:.6}, end{end:.6}, {} frames/24fps at640x360; source gait/actual approach and lunge, HP1000000/XP0, hero damage exemption, Might0/Area0, scenery suppressed; synthetic128BPM, lead0, silent, no balance/survival claim",
+            "roster-check {role}: start{:.6}, end{end:.6}, {} frames/24fps at640x360; source gait/actual approach and lunge, HP/XP documented below for bosses (otherwise1000000/0), hero damage exemption, Might0/Area0, scenery suppressed; synthetic128BPM, lead0, silent, no balance/survival claim",
             start.unwrap(),
             clip.count()
         );
+        if boss {
+            eprintln!(
+                "boss fixture: {role} scheduled at minute0/playerlevel1, source HP/XP retained, bar charge and synthetic bar accents; source speed/contact damage unchanged; not a late-run survival test"
+            );
+        }
     }
     Ok(())
 }
@@ -218,7 +269,14 @@ fn draw(
     let phase = (s / period).rem_euclid(1.0);
     let pulse = scene::Pulse {
         beat: phase,
-        bar: (s / period / 4.0).rem_euclid(1.0),
+        bar: (s
+            / period
+            / if role.starts_with("vs-boss-") {
+                2.0
+            } else {
+                4.0
+            })
+        .rem_euclid(1.0),
         index: s / period,
     };
     let run = view.run.ok_or("roster run missing")?;
@@ -256,14 +314,22 @@ fn draw(
     art.fonts["pixel"].text(
         &role.to_uppercase(),
         w / 2.0,
-        h * 0.22,
+        h * if role.starts_with("vs-boss-") {
+            0.80
+        } else {
+            0.22
+        },
         w / 640.0 * 1.5,
         Align::Centre,
         [1.0; 4],
         &mut overlay,
     );
     art.fonts["pixel"].text(
-        "DIAGNOSTIC: DAMAGE EXEMPT / WEAPONS SUPPRESSED",
+        if role.starts_with("vs-boss-") {
+            "DIAGNOSTIC: DAMAGE EXEMPT / MIGHT0 / AREA0 / SYNTHETIC128BPM"
+        } else {
+            "DIAGNOSTIC: DAMAGE EXEMPT / WEAPONS SUPPRESSED"
+        },
         w / 2.0,
         h - 15.0,
         w / 640.0 * 0.75,

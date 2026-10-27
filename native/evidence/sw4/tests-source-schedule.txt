@@ -1,0 +1,15 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.05s
+     Running tests/survivor_spawning.rs (target/debug/deps/survivor_spawning-bd30f1999a3bcd76)
+
+running 8 tests
+test enemy_roles_match_documented_health_speed_damage_xp_and_scaling ... ok
+test enemy_knockback_fields_match_the_feel_appendix ... ok
+test a_single_committed_future_beat_is_a_grid_step ... ok
+test raw_ticks_snap_to_the_next_known_eighth_and_minute_changes_inherit_only_population ... ok
+test future_grid_evidence_cannot_delay_a_raw_tick_and_a_freeze_holds_admission ... ok
+test deferred_bosses_wait_for_room_then_the_next_grid_step ... ok
+test all_31_schedule_rows_match_the_documented_source_including_duplicate_roles ... ok
+test treasure_validation_rejects_invalid_scripted_tiers_and_chance_shapes ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

@@ -1477,6 +1477,20 @@ replay records. SW4/SW6 reuse the art roles; SW7 owns the milestone review.
 Run from `native/` with `cargo run --release -p app -- --playlist
 playlists/survivors-30.m3u --delayed`.
 ### SW4
+
+The four late bosses use minotaur, crimson orc-elite and enlarged ochre/violet
+brute variants, with two-beat walk cycles and SH10's bar charge/accent-only
+squash. Source HP, speed, contact power, XP and resistance stay unchanged.
+Minutes 10/15/20/25 script chest tiers 1/1/1/3, retaining source chance rows.
+Twelve actual spawn/drop cases at player levels 1/7/35 check minute boundaries,
+HP scaling and one physical scripted-tier chest. [SW4 evidence](../../native/evidence/sw4/README.md)
+keeps source contracts and four inspected stills/silent clips. Captures inject
+each holder at minute 0, normal source HP/XP, hero-damage exemption and
+Might0/Area0; they make no late-run survival claim. SW7 reviews W, and the
+operator row carries feel. Run from `native/`: `cargo run --release -p app
+-- --playlist playlists/survivors-30.m3u --headless --delayed --press-beats
+--pick-first --seconds 30`.
+
 ### SW5
 ### SW6
 ### SW7

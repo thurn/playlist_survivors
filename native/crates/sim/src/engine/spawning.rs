@@ -110,3 +110,116 @@ impl Sim {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::content::level::load_level;
+    use crate::content::{SourceFile, load_content};
+    use crate::core::geometry::Shape;
+    use crate::engine::{SimInput, combat::HitSpec};
+    use crate::recorder::{HitSource, NullRecorder, Weight};
+    use crate::schedule::reactive_song_map;
+    use crate::survivors::ChestLoot;
+    use std::path::Path;
+    use stream::StreamLog;
+
+    fn sim() -> Sim {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
+        let source = |path: &Path| SourceFile {
+            name: path.to_string_lossy().into(),
+            text: std::fs::read_to_string(path).unwrap(),
+        };
+        let mut paths: Vec<_> = std::fs::read_dir(root.join("content"))
+            .unwrap()
+            .map(|e| e.unwrap().path())
+            .filter(|p| p.extension().is_some_and(|x| x == "yaml"))
+            .collect();
+        paths.sort();
+        let lib = load_content(&paths.iter().map(|p| source(p)).collect::<Vec<_>>()).unwrap();
+        let mut level = load_level(
+            &source(&root.join("levels/survivors.yaml")),
+            &lib,
+            &reactive_song_map(f64::INFINITY),
+            None,
+        )
+        .unwrap();
+        // Isolate scheduled holders, leaving exact boss and treasure rows intact.
+        for row in &mut level.survivor_schedule {
+            row.minimum = Some(0);
+            row.enemies = Some(Vec::new());
+            row.events.clear();
+        }
+        let mut input = SimInput::new(level, &lib, &indexmap::IndexMap::new(), 0.5, false);
+        input.zen = true;
+        Sim::new(
+            input,
+            Rc::new(StreamLog::default()),
+            Box::new(NullRecorder),
+            None,
+        )
+    }
+
+    #[test]
+    fn big_four_spawn_on_their_minutes_scale_actual_hp_and_drop_scripted_tiers() {
+        for level in [1, 7, 35] {
+            for (minute, role, raw_hp, tier) in [
+                (10, "vs-boss-xlmantis", 15.0, 1),
+                (15, "vs-boss-werewolf", 20.0, 1),
+                (20, "vs-boss-xlmummy", 25.0, 1),
+                (25, "vs-boss-xlflower", 15.0, 3),
+            ] {
+                let mut s = sim();
+                s.st.survivor.as_mut().unwrap().level = level;
+                s.st.spawner.minute = Some(minute - 1);
+                let at = minute as f64 * 60.0;
+                s.st.s = at - 0.01;
+                s.st.w = s.st.s;
+                s.st.run_s = s.st.s;
+                s.tick_spawner();
+                assert_eq!(s.st.foes.len(), 0, "{role} spawned before its minute");
+                s.st.s = at;
+                s.st.w = at;
+                s.st.run_s = at;
+                s.tick_spawner();
+                assert_eq!(s.st.foes.len(), 1);
+                let f = &s.st.foes[0];
+                assert_eq!(s.env.input.lib.enemies[f.def].id, role);
+                assert!(f.survivor_boss);
+                assert_eq!(f.health, raw_hp * level as f64);
+                assert_eq!(f.chest_loot, Some(ChestLoot { tier, minute }));
+                let h = s.add_hit(
+                    HitSpec {
+                        source: HitSource::Weapon,
+                        what: "sword-spin".into(),
+                        weight: Weight::Heavy,
+                        primary: true,
+                        shape: Shape::Circle {
+                            x: 0.0,
+                            y: 0.0,
+                            radius: 1.0,
+                        },
+                        dir: 0.0,
+                        accent: 0.0,
+                        damage: raw_hp * level as f64 + 1.0,
+                        group: None,
+                    },
+                    Some(0.5),
+                );
+                s.damage(0, &h);
+                assert!(!s.st.foes[0].alive);
+                assert_eq!(s.st.chests.len(), 1);
+                assert_eq!((s.st.chests[0].tier, s.st.chests[0].minute), (tier, minute));
+                // A second lethal delivery cannot duplicate a holder's chest.
+                s.damage(0, &h);
+                s.tick_spawner();
+                assert_eq!(s.st.chests.len(), 1);
+                assert_eq!(s.st.foes.len(), 1);
+                eprintln!(
+                    "SW4 minute{minute} {role} level{level}: HP{} chest tier{tier}, one spawn/drop",
+                    raw_hp * level as f64
+                );
+            }
+        }
+    }
+}

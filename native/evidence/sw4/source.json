@@ -1,0 +1,15 @@
+{
+  "base": "12d4e39b75d03dc4a9b83b9fc62fa21eddf3cb67",
+  "files": {
+    "content/survivors-enemies.yaml": "e9835fc904d758ebf13c0cbb0df6cc0e9658c861fd080908d2d10406888608b7",
+    "levels/survivors.yaml": "5947cd588fff40400584d1cb946b9b3958011997043756656f33fe106debcb2c",
+    "native/crates/app/src/slice/roster.rs": "b84f3b8b433d3b8656da77a81a909f76da3f1e8582e46e089803c315b46adaae",
+    "native/crates/app/src/slice/roster/check.rs": "926fea53eabbc222cbab368e447a3db885e4ead44459e183a4b7632447456e48",
+    "native/crates/sim/src/engine/spawning.rs": "780940953665a47a7031c35279abd58f107117044707bd96dca3aec4a07c6064"
+  },
+  "source_tables": [
+    "docs/survivors/appendix-damage-vs-health.md",
+    "docs/survivors/appendix-feel.md"
+  ],
+  "review": "SW7 owns W milestone cold review; no Engine rollback-runner change"
+}

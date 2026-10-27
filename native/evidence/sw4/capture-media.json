@@ -1,0 +1,70 @@
+[
+  {
+    "file": "capture/vs-boss-werewolf.mp4",
+    "sha256": "ddbe902ef2961bf36a759335c25d4d53be63f21b23ebb10a60ff568aeb50e7b7",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 640,
+          "height": 360,
+          "r_frame_rate": "24/1",
+          "duration": "2.166667",
+          "nb_frames": "52"
+        }
+      ]
+    }
+  },
+  {
+    "file": "capture/vs-boss-xlflower.mp4",
+    "sha256": "a2593e0eb7ca3ff29b2353c1b905e60c5c34f0323fa8a1735b2bf7bcb63f18dc",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 640,
+          "height": 360,
+          "r_frame_rate": "24/1",
+          "duration": "2.166667",
+          "nb_frames": "52"
+        }
+      ]
+    }
+  },
+  {
+    "file": "capture/vs-boss-xlmantis.mp4",
+    "sha256": "5c245bb96f9218883b4f249ca93cb37c6906569bbd97911b1009da43a5fb56ee",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 640,
+          "height": 360,
+          "r_frame_rate": "24/1",
+          "duration": "2.166667",
+          "nb_frames": "52"
+        }
+      ]
+    }
+  },
+  {
+    "file": "capture/vs-boss-xlmummy.mp4",
+    "sha256": "fd9209315a7a97427c83fd87e33edbf794d3ca493122b828b0e888a8b2850a47",
+    "media": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 640,
+          "height": 360,
+          "r_frame_rate": "24/1",
+          "duration": "2.166667",
+          "nb_frames": "52"
+        }
+      ]
+    }
+  }
+]

@@ -19,6 +19,10 @@ pub fn look(d: &EnemyDef) -> Look {
     };
     let tint = match d.id.as_str() {
         "vs-xlbat" => [0.7, 0.65, 0.85],
+        "vs-boss-xlmantis" => [1.0, 0.75, 0.45],
+        "vs-boss-werewolf" => [1.0, 0.55, 0.5],
+        "vs-boss-xlmummy" => [0.95, 0.8, 0.5],
+        "vs-boss-xlflower" => [0.8, 0.6, 1.0],
         "vs-xlmummy" => [0.95, 0.85, 0.7],
         "vs-xlmantis" => [0.8, 0.95, 0.8],
         _ => [1.0; 3],
@@ -73,6 +77,24 @@ mod tests {
             ),
             ("vs-werewolf", "orc-ember", Style::Character, 1.0, 1.0, ".x"),
             ("vs-xlbat", "bat", Style::Character, 2.0, 1.0, "x"),
+            (
+                "vs-boss-xlmantis",
+                "minotaur",
+                Style::Character,
+                2.0,
+                2.0,
+                "x.",
+            ),
+            (
+                "vs-boss-werewolf",
+                "orc-elite",
+                Style::Character,
+                2.0,
+                2.0,
+                "x.",
+            ),
+            ("vs-boss-xlmummy", "brute", Style::Brute, 1.5, 2.0, "x."),
+            ("vs-boss-xlflower", "brute", Style::Brute, 1.5, 2.0, "x."),
             ("vs-xlmantis", "brute", Style::Brute, 1.0, 4.0, "x..."),
             ("vs-xlmummy", "brute", Style::Brute, 1.0, 4.0, "x..."),
             (
