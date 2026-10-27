@@ -52,6 +52,19 @@ pub struct Foe {
     pub pending_impact: bool,
 }
 
+/// Confirmed-to-the-current-view death presentation, rebuilt with journal rollback.
+pub const AFTERMATH_LIFE: f64 = 20.0;
+pub const AFTERMATH_CAP: usize = 96;
+#[derive(Clone, Debug, PartialEq)]
+pub struct Aftermath {
+    pub foe: usize,
+    pub kind: String,
+    pub x: f64,
+    pub y: f64,
+    pub world: f64,
+    pub intensity: f64,
+}
+
 /// A moment the frame shows once.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Moment {
@@ -236,6 +249,9 @@ const BOLT_KEEP_S: f64 = 1.0;
 /// What a frame draws.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct LiveView {
+    /// Catalog kinds with a real floor-decal layer; shared across view snapshots.
+    pub aftermath_kinds: Rc<std::collections::BTreeSet<String>>,
+    pub aftermath: VecDeque<Aftermath>,
     pub signature: Option<(usize, f64, f64, f64)>, // id, drop start, landing song, health
     pub landmarks: Vec<sim::recorder::LandmarkRecord>,
     pub slam_marks: BTreeMap<usize, sim::recorder::SlamMarkRecord>,
@@ -447,6 +463,8 @@ impl LiveView {
                 if state.frozen.is_some() {
                     self.slam_marks.clear();
                 }
+                self.aftermath
+                    .retain(|m| state.world - m.world < AFTERMATH_LIFE);
                 self.level = u32::try_from(state.level).unwrap_or(u32::MAX);
                 self.run = Some(*state);
             }
@@ -540,6 +558,43 @@ impl LiveView {
                         }
                     }
                     Moment::EnemyImpact { hit } => {
+                        if let Moment::Hit {
+                            foe,
+                            x,
+                            y,
+                            intensity,
+                            lethal: true,
+                            source,
+                            ..
+                        } = hit.as_ref()
+                            && *source != "ring"
+                            && self.run.is_some()
+                            && let Some(f) = self.foes.get(foe).filter(|f| {
+                                !f.survivor_boss && self.aftermath_kinds.contains(&f.kind)
+                            })
+                        {
+                            let world = f.death_w.unwrap_or_else(|| self.run.unwrap().world);
+                            let cell = |x: f64, y: f64| {
+                                ((x / 32.0).floor() as i64, (y / 32.0).floor() as i64)
+                            };
+                            if !self.aftermath.iter().any(|m| {
+                                m.foe == *foe
+                                    || ((world - m.world).abs() < 1.0
+                                        && cell(m.x, m.y) == cell(*x, *y))
+                            }) {
+                                self.aftermath.push_back(Aftermath {
+                                    foe: *foe,
+                                    kind: f.kind.clone(),
+                                    x: *x,
+                                    y: *y,
+                                    world,
+                                    intensity: *intensity,
+                                });
+                                while self.aftermath.len() > AFTERMATH_CAP {
+                                    self.aftermath.pop_front();
+                                }
+                            }
+                        }
                         if let Moment::Hit { foe, .. } = hit.as_ref()
                             && let Some(f) = self.foes.get_mut(foe)
                         {
@@ -1433,7 +1488,20 @@ impl Engine {
         let (seed, zones) = (level.seed, level.zones.clone());
         let mut input = SimInput::new(level, lib, hero_anims, gate, settling);
         input.zen = zen;
+        let aftermath_kinds = lib
+            .enemies
+            .values()
+            .filter(|e| {
+                lib.effects.get(&e.death.recipe).is_some_and(|r| {
+                    r.layers
+                        .iter()
+                        .any(|l| matches!(l, sim::content::types::EffectLayer::Decal { .. }))
+                })
+            })
+            .map(|e| e.id.clone())
+            .collect();
         let fresh = LiveView {
+            aftermath_kinds: Rc::new(aftermath_kinds),
             health: 1.0,
             level: 1,
             camera: (0.0, 0.0, 1.0),

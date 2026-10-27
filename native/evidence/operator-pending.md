@@ -68,3 +68,5 @@ the row. Add a row whenever a bead records something as pending on the operator
 | FR7 formation feel | Judge step/hold rhythm, gaps and quiet/loud pacing through stampedes, kick lines, wedges and rings; audition with speakers/System. | From `native/`: `cargo run --release -p app -- --playlist playlists/survivors-30.m3u --delayed` (also `--legacy`) | FR7 (`hv-zzie.7`) | FR10 / velocity |
 
 | FR8 signature and opening tour | Judge minotaur warning/descent, main-beat slam notice and stone-arena readability; audition landing/slams/death and section/song punctuation with speakers/System. | From `native/`: `cargo run --release -p app -- --playlist playlists/survivors-30.m3u --delayed` (also `--legacy`) | FR8 (`hv-zzie.8`) | FR10 / velocity |
+
+| FR9 presence and aftermath | Judge starting/unevolved aura growth, nearby hit/death clarity, persistent floor marks and dense peak readability; audition alongside restored cues in File/System. | From native/: `cargo run --release -p app -- --playlist playlists/survivors-30.m3u --delayed` (also `--legacy`) | FR9 (`hv-zzie.9`) | FR10 / velocity |

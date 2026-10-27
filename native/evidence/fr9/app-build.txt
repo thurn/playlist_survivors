@@ -1,0 +1,3 @@
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-fr9/native/crates/eval)
+   Compiling app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-fr9/native/crates/app)
+    Finished `release` profile [optimized] target(s) in 6.62s

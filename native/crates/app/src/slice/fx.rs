@@ -17,7 +17,7 @@ use sim::core::geometry::Shape;
 
 use super::gfx::{Sprite, rect};
 
-fn param(p: &Param, intensity: f64) -> f64 {
+pub(super) fn param(p: &Param, intensity: f64) -> f64 {
     match p {
         Param::Num(v) => *v,
         Param::Range([lo, hi]) => lo + (hi - lo) * intensity.clamp(0.0, 1.0),
@@ -73,6 +73,8 @@ pub struct Start {
     pub scale: Option<f64>,
     /// Survivors per-hit particle multiplier; long-lived hit decals are capped at1s.
     pub density: Option<f64>,
+    /// Ordinary overlapping light/arc energy, independent of foreground particle size.
+    pub radiance: Option<f64>,
     /// Boss-role showpieces keep their recipe even when its name is an ordinary death.
     pub protected: bool,
 }
@@ -155,15 +157,21 @@ impl Effects {
     /// less 1.6 a second, summed.
     pub fn shake(&self, now: f64) -> (f64, f64) {
         let mut trauma = 0.0;
+        let mut ordinary = 0.0_f64;
         for inst in &self.live {
             let age = now - inst.at;
             for layer in &inst.recipe.layers {
                 if let EffectLayer::Shake { trauma: t, .. } = layer {
-                    trauma += (param(t, inst.intensity) - 1.6 * age).max(0.0);
+                    let hit = (param(t, inst.intensity) - 1.6 * age).max(0.0);
+                    if let Some(r) = inst.start.radiance {
+                        ordinary = ordinary.max(hit * r);
+                    } else {
+                        trauma += hit;
+                    }
                 }
             }
         }
-        let shake = 9.0 * trauma.min(1.0f64).powi(2);
+        let shake = 9.0 * (trauma + ordinary).min(1.0f64).powi(2);
         (shake * (now * 61.0).sin(), shake * (now * 47.0 + 1.3).sin())
     }
 
@@ -178,7 +186,12 @@ impl Effects {
         grade: &mut Grade,
     ) {
         let mut waves = 0;
-        for inst in &self.live {
+        for inst in self
+            .live
+            .iter()
+            .filter(|i| i.start.radiance.is_none())
+            .chain(self.live.iter().filter(|i| i.start.radiance.is_some()))
+        {
             let age = now - inst.at;
             let i = inst.intensity;
             for layer in &inst.recipe.layers {
@@ -198,7 +211,10 @@ impl Effects {
                             y,
                             radius: (param(radius, i) * (1.0 + 0.3 * u)) as f32 * scale,
                             color: [c[0], c[1], c[2]],
-                            strength: (param(strength, i) * (1.0 - u).powf(1.5)) as f32,
+                            strength: (param(strength, i)
+                                * (1.0 - u).powf(1.5)
+                                * inst.start.radiance.unwrap_or(1.0))
+                                as f32,
                         });
                     }
                     // (The only layer the I < 0.8 cut touches.)
@@ -220,7 +236,8 @@ impl Effects {
                             x,
                             y,
                             (param(radius, i) * u) as f32 * scale,
-                            (param(strength, i) * (1.0 - u)) as f32,
+                            (param(strength, i) * (1.0 - u) * inst.start.radiance.unwrap_or(1.0))
+                                as f32,
                         ];
                         waves += 1;
                     }
@@ -240,6 +257,10 @@ impl Effects {
         out: &mut Vec<Sprite>,
     ) {
         for inst in &self.live {
+            // Ordinary death decals are projected from rollbackable view history.
+            if inst.start.density.is_some() && inst.recipe.id.starts_with("death-") {
+                continue;
+            }
             let age = now - inst.at;
             for layer in &inst.recipe.layers {
                 let EffectLayer::Decal {
@@ -442,6 +463,13 @@ impl Effects {
                         if age > *life || age < 0.0 {
                             continue;
                         }
+                        // Dense per-victim sword recipes repeat the entire broad arc.
+                        // Keep their sparks/body reactions; the published hero shot owns
+                        // the readable full-size cut and remains outside this budget.
+                        if *align == Align::HitShape && inst.start.radiance.is_some_and(|r| r < 0.5)
+                        {
+                            continue;
+                        }
                         let u = age / life;
                         let mut color = match (tier, tint) {
                             (Some(t), _) => rgb(SWORD_TINTS[t]),
@@ -450,6 +478,9 @@ impl Effects {
                         };
                         color[3] = ((1.0 - u * u) as f32) * tier.map_or(1.0, |t| TIER_ALPHA[t]);
                         color[3] *= inst.start.density.unwrap_or(1.0).sqrt() as f32;
+                        // The hero owns the broad cut; dozens of per-target arcs must not
+                        // add up to another opaque sword around the crowd.
+                        color[3] *= inst.start.radiance.unwrap_or(1.0).powi(2) as f32;
                         let k = param(size, i) * inst.start.scale.unwrap_or(1.0);
                         let shaped = (*align == Align::HitShape)
                             .then_some(inst.start.shape)
@@ -508,7 +539,10 @@ impl Effects {
                         if age > *life || age < 0.0 {
                             continue;
                         }
-                        let a = (param(opacity, i) * (1.0 - age / life)) as f32;
+                        let a = (param(opacity, i)
+                            * (1.0 - age / life)
+                            * inst.start.radiance.unwrap_or(1.0))
+                            as f32;
                         // (The strongest flash of the frame wins, with its colour.)
                         if flash.is_none_or(|(b, _)| a > b) {
                             flash = Some((a, hex(color)));
@@ -526,7 +560,7 @@ impl Effects {
 }
 
 /// A procedural art (`proc:<name>`) or an atlas effect's first frame, for a decal.
-fn proc_art(art: &Atlases, name: &str, _seed: u64) -> Option<Region> {
+pub(super) fn proc_art(art: &Atlases, name: &str, _seed: u64) -> Option<Region> {
     let key = name.strip_prefix("proc:").unwrap_or(name);
     art.proc.get(key).copied()
 }
@@ -564,8 +598,22 @@ fn shape_sprite(
             radius,
             dir,
             half_angle,
-            ..
+            inner,
         } => {
+            if inner.is_some() {
+                let (sx, sy) = at(x, y);
+                return Some(Sprite::arc(
+                    sx,
+                    sy,
+                    radius as f32 * scale,
+                    render::sprites::Arc {
+                        head: (dir + half_angle) as f32,
+                        span: (2.0 * half_angle) as f32,
+                        width: 4.0 * scale,
+                    },
+                    [1.0; 4],
+                ));
+            }
             if half_angle >= std::f64::consts::PI - 1e-6 {
                 let ring = *art.proc.get("ring")?;
                 let d = (radius / 62.0 * k * grow) as f32 * ring.w as f32 * scale;

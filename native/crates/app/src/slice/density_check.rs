@@ -180,7 +180,53 @@ fn run_cases(dir: &Path, restored: bool) -> Result<(), String> {
                 720,
                 &gpu.rgba()?,
             )?;
-            writeln!(trace,"{}",serde_json::json!({"case":name,"song":s,"run":run.elapsed,"alive":view.alive().count(),"gems":view.gems.len(),"gemPoses":view.gem_poses.len(),"pickups":pickups,"presentedHits":hits,"presentedKills":kills,"impactCounts":scene.impact_counts(),"sprites":layers.sprites.len(),"overlay":layers.overlay.len(),"lights":layers.lights.len(),"inventory":format!("{:?}",view.inventory)})).map_err(|e|e.to_string())?;
+            writeln!(trace,"{}",serde_json::json!({"case":name,"song":s,"run":run.elapsed,"alive":view.alive().count(),"gems":view.gems.len(),"gemPoses":view.gem_poses.len(),"pickups":pickups,"presentedHits":hits,"presentedKills":kills,"aftermathMarks":view.aftermath.len(),"impactCounts":scene.impact_counts(),"sprites":layers.sprites.len(),"overlay":layers.overlay.len(),"lights":layers.lights.len(),"inventory":format!("{:?}",view.inventory)})).map_err(|e|e.to_string())?;
+            if killable && saved == 2 {
+                let mut isolated = view.clone();
+                isolated.foes.clear();
+                isolated.gems.clear();
+                isolated.gem_poses.clear();
+                isolated.missiles.clear();
+                isolated.bolts.clear();
+                isolated.fire_trail = None;
+                let mut clean = Scene::default();
+                clean.fast_lane(engine.stream(), 0.2, s, s, None);
+                let mut marks = scene::Layers::default();
+                clean.draw(
+                    &isolated,
+                    &ground,
+                    &art,
+                    &world.looks,
+                    &world.lib,
+                    s,
+                    pulse,
+                    1280.0,
+                    720.0,
+                    &mut marks,
+                );
+                art.fonts["pixel"].text(
+                    "DIAGNOSTIC: ACTUAL VIEW DEATH MARKS / OTHER COMBAT EFFECTS HIDDEN",
+                    640.0,
+                    700.0,
+                    1.0,
+                    Align::Centre,
+                    [0.85, 0.9, 1.0, 1.0],
+                    &mut marks.overlay,
+                );
+                gpu.draw(&Frame {
+                    clear: super::CLEAR,
+                    world: &marks.sprites,
+                    lights: &marks.lights,
+                    grade: marks.grade,
+                    overlay: &marks.overlay,
+                });
+                capture::write_png(
+                    &dir.join("aftermath-isolation.png"),
+                    1280,
+                    720,
+                    &gpu.rgba()?,
+                )?;
+            }
             saved += 1;
         }
         if saved != 3

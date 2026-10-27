@@ -1,0 +1,3 @@
+SP5 evolved:3 actual stills, hits31673 kills0 pickups0 peak moving poses0, impact budget(31673, 6143, 26014)
+SP5 moving:3 actual stills, hits26468 kills0 pickups29 peak moving poses76, impact budget(26468, 6318, 20634)
+SP5 deaths:3 actual stills, hits7082 kills956 pickups0 peak moving poses0, impact budget(7082, 4497, 3228)

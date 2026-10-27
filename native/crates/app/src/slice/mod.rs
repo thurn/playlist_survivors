@@ -39,6 +39,7 @@ mod density_check;
 mod lightning;
 mod roster;
 // The tap and output are the phase 0 spike's (57e846a^:native/spike), kept as they were.
+mod aftermath;
 mod atmosphere;
 mod bosses;
 #[allow(clippy::pedantic, unused_qualifications, dead_code)]
@@ -173,6 +174,7 @@ enum BenchMode {
     Evolved,
     Moving,
     Restored,
+    Combat,
 }
 #[allow(clippy::struct_excessive_bools)]
 struct Options {
@@ -439,6 +441,10 @@ fn options(args: &[String]) -> Result<Options, String> {
                         .ok_or("--restored-check needs a directory")?
                         .into(),
                 );
+            }
+            "--bench-combat" => {
+                o.bench = true;
+                o.bench_mode = BenchMode::Combat;
             }
             "--bench-restored" => {
                 o.bench = true;
@@ -1325,7 +1331,10 @@ fn thread_cpu_s() -> f64 {
 /// scene and HUD built and encoded offscreen at 1920 x 1080. `check` fails above the gate.
 fn bench(check: bool, mode: BenchMode) -> Result<(), String> {
     let density = mode != BenchMode::Reactive;
-    let evolved = matches!(mode, BenchMode::Evolved | BenchMode::Moving);
+    let evolved = matches!(
+        mode,
+        BenchMode::Evolved | BenchMode::Moving | BenchMode::Combat
+    );
     let moving = matches!(mode, BenchMode::Moving | BenchMode::Restored);
     let world = World::load(Some(&live::resource("levels", "../../../levels").join(
         if density {
@@ -1340,7 +1349,9 @@ fn bench(check: bool, mode: BenchMode) -> Result<(), String> {
     let text = std::fs::read_to_string(&stream_path)
         .map_err(|e| format!("{}: {e}", stream_path.display()))?;
     let file = stream::StreamFile::parse(&text).map_err(|e| e.0)?;
-    let mut engine = if mode == BenchMode::Restored {
+    let mut engine = if mode == BenchMode::Combat {
+        eval::scale::evolved_combat_engine(&world.level, &world.lib)?
+    } else if mode == BenchMode::Restored {
         eval::scale::restored_density_engine(&world.level, &world.lib)?
     } else if evolved {
         eval::scale::evolved_density_engine(&world.level, &world.lib)?
@@ -1351,6 +1362,7 @@ fn bench(check: bool, mode: BenchMode) -> Result<(), String> {
     };
     let mut density_frames = 0;
     let (mut min_gems, mut peak_poses, mut pickups) = (400, 0, 0);
+    let (mut peak_enemies, mut peak_marks) = (0, 0);
     let mut replay = stream::Replay::new(file.log.clone());
     let beats: Vec<f64> = file.log.beats.iter().map(|b| b.t).collect();
     let (w, h) = (1920u32, 1080u32);
@@ -1391,7 +1403,13 @@ fn bench(check: bool, mode: BenchMode) -> Result<(), String> {
         engine_times.push((engine_end - t0) * 1e3);
         if density && s > 1.0 {
             let view = engine.view.borrow();
-            assert_eq!(view.alive().count(), 300);
+            if mode == BenchMode::Combat {
+                assert!(view.alive().count() <= 300);
+            } else {
+                assert_eq!(view.alive().count(), 300);
+            }
+            peak_enemies = peak_enemies.max(view.alive().count());
+            peak_marks = peak_marks.max(view.aftermath.len());
             if !moving {
                 assert_eq!(view.gems.len(), 400);
             }
@@ -1492,12 +1510,23 @@ fn bench(check: bool, mode: BenchMode) -> Result<(), String> {
             "moving fixture missed pickup path: poses{peak_poses} pickups{pickups} gems{min_gems}"
         ));
     }
+    if mode == BenchMode::Combat {
+        let kills = engine.view.borrow().kills;
+        if peak_enemies != 300 || peak_marks == 0 || kills == 0 {
+            return Err(format!(
+                "combat fixture missed actual death/aftermath: peak enemies{peak_enemies}, marks{peak_marks}, kills{kills}"
+            ));
+        }
+        println!(
+            "bench actual combat: peak enemies{peak_enemies}, marks{peak_marks}, kills{kills}; injected40HP/zeroXP, damage exempt"
+        );
+    }
     if density {
         println!(
             "bench final effects: evolved{evolved} moving{moving}, min gems{min_gems}, peak moving gem poses{peak_poses}, actual pickup moments{pickups}"
         );
         println!(
-            "bench density: {density_frames} frames with 300 live enemies + up to400 simulation gems; max legal six-slot Survivors build, synthetic HP, damage exempt"
+            "bench density: {density_frames} frames, peak{peak_enemies} live enemies + up to400 simulation gems; max legal six-slot Survivors build, synthetic HP, damage exempt"
         );
         println!(
             "bench density loadout: {:?}",

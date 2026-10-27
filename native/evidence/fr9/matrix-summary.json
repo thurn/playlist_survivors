@@ -1,0 +1,8491 @@
+{
+  "assertSurvival": true,
+  "pacingReportOnly": true,
+  "wallSeconds": 806.4734967080876,
+  "cases": [
+    {
+      "case": "cached-original-positioning-1",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 1.0,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 17,
+      "levelAt30": 71,
+      "lastLevel": 79,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 3,
+          "tier": 1,
+          "runS": 201.3018333333334,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "originMinute": 5,
+          "tier": 1,
+          "runS": 678.3030758503398,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 6
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 1
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 679.9795270975053,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 6
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 2
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "originMinute": 12,
+          "tier": 1,
+          "runS": 878.123851360544,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 4
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "originMinute": 14,
+          "tier": 1,
+          "runS": 952.600342290249,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 6
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "originMinute": 15,
+          "tier": 1,
+          "runS": 1061.7272221088435,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "originMinute": 18,
+          "tier": 1,
+          "runS": 1180.6141642857142,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "originMinute": 20,
+          "tier": 1,
+          "runS": 1322.1078366213155,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "originMinute": 23,
+          "tier": 1,
+          "runS": 1474.9395486394562,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "originMinute": 22,
+          "tier": 1,
+          "runS": 1479.9645939909303,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "originMinute": 25,
+          "tier": 3,
+          "runS": 1582.4141948979602,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "originMinute": 27,
+          "tier": 1,
+          "runS": 1716.4321914965997,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "unholy-vespers",
+              "rank": 1
+            },
+            {
+              "weapon": "thunder-loop",
+              "rank": 1
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 4
+            }
+          ]
+        },
+        {
+          "id": 12,
+          "originMinute": 29,
+          "tier": 1,
+          "runS": 1759.403624603175,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "unholy-vespers",
+              "rank": 1
+            },
+            {
+              "weapon": "thunder-loop",
+              "rank": 1
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 8
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear",
+        "soul-eater",
+        "holy-wand",
+        "unholy-vespers",
+        "thunder-loop"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "d381e4ea7f83b0e8",
+      "runWallSeconds": 239.183468334
+    },
+    {
+      "case": "cached-original-afk-1",
+      "survivalGate": null,
+      "survivalS": 134.71733333333333,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 1,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 79,
+      "settledHash": "403110acd5c77fff",
+      "runWallSeconds": 1.92104
+    },
+    {
+      "case": "cached-original-positioning-2",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 0.4791666666666667,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 17,
+      "levelAt30": 74,
+      "lastLevel": 81,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 5,
+          "tier": 1,
+          "runS": 694.2095499999998,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 7
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 1
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 706.9893345804985,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 2
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "originMinute": 14,
+          "tier": 1,
+          "runS": 950.1949921768705,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 4
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "originMinute": 16,
+          "tier": 2,
+          "runS": 1039.0131497732425,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 7
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "originMinute": 18,
+          "tier": 1,
+          "runS": 1175.6409252834464,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "originMinute": 15,
+          "tier": 1,
+          "runS": 1216.6575976190477,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "originMinute": 22,
+          "tier": 1,
+          "runS": 1434.1662699546484,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "originMinute": 23,
+          "tier": 1,
+          "runS": 1480.3921486394556,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "originMinute": 20,
+          "tier": 1,
+          "runS": 1483.5838606575962,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "originMinute": 25,
+          "tier": 3,
+          "runS": 1648.2334060090702,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "originMinute": 27,
+          "tier": 1,
+          "runS": 1708.073943424036,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "unholy-vespers",
+              "rank": 1
+            },
+            {
+              "weapon": "thunder-loop",
+              "rank": 1
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 3
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear",
+        "soul-eater",
+        "holy-wand",
+        "unholy-vespers",
+        "thunder-loop"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "b375409539ab7db4",
+      "runWallSeconds": 235.061511334
+    },
+    {
+      "case": "cached-original-afk-2",
+      "survivalGate": null,
+      "survivalS": 134.71733333333333,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 1,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 80,
+      "settledHash": "cdf9e35e5b3580c3",
+      "runWallSeconds": 1.9048535
+    },
+    {
+      "case": "cached-original-positioning-3",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 0.6527777777777778,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 17,
+      "levelAt30": 73,
+      "lastLevel": 79,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 1,
+          "tier": 1,
+          "runS": 127.70400000000004,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 2
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "originMinute": 7,
+          "tier": 1,
+          "runS": 439.51639682539707,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 7
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "originMinute": 5,
+          "tier": 1,
+          "runS": 674.4916666666668,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 6
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 1
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 714.2226179138321,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 3
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 2
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "originMinute": 12,
+          "tier": 1,
+          "runS": 798.0791088435374,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 2
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "originMinute": 14,
+          "tier": 1,
+          "runS": 944.5297664399093,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 7
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "originMinute": 15,
+          "tier": 1,
+          "runS": 1077.6262573696147,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "originMinute": 18,
+          "tier": 1,
+          "runS": 1197.413432879819,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "originMinute": 20,
+          "tier": 1,
+          "runS": 1467.83150521542,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "originMinute": 22,
+          "tier": 1,
+          "runS": 1468.6148839002276,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "originMinute": 23,
+          "tier": 1,
+          "runS": 1469.398262585035,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "originMinute": 25,
+          "tier": 3,
+          "runS": 1576.4908079365093,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 12,
+          "originMinute": 27,
+          "tier": 1,
+          "runS": 1704.9613045351487,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "unholy-vespers",
+              "rank": 1
+            },
+            {
+              "weapon": "thunder-loop",
+              "rank": 1
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 4
+            }
+          ]
+        },
+        {
+          "id": 13,
+          "originMinute": 29,
+          "tier": 1,
+          "runS": 1794.0776979591847,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "unholy-vespers",
+              "rank": 1
+            },
+            {
+              "weapon": "thunder-loop",
+              "rank": 1
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 8
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear",
+        "soul-eater",
+        "holy-wand",
+        "unholy-vespers",
+        "thunder-loop"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "1e8703456696f5f3",
+      "runWallSeconds": 238.027243
+    },
+    {
+      "case": "cached-original-afk-3",
+      "survivalGate": null,
+      "survivalS": 134.71733333333333,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 1,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 77,
+      "settledHash": "d2d16bb8c0f408c8",
+      "runWallSeconds": 2.772002708
+    },
+    {
+      "case": "cached-original-positioning-4",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 1.0,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 16,
+      "levelAt30": 44,
+      "lastLevel": 54,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 7,
+          "tier": 1,
+          "runS": 442.05683333333343,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 7
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "originMinute": 9,
+          "tier": 1,
+          "runS": 576.8506031746033,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 2
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 1
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "originMinute": 5,
+          "tier": 1,
+          "runS": 599.4671575963721,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 3
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 2
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 710.1800861678007,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 3
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 2
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "originMinute": 12,
+          "tier": 2,
+          "runS": 932.6174104308392,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 6
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "originMinute": 14,
+          "tier": 1,
+          "runS": 950.253068027211,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "originMinute": 15,
+          "tier": 1,
+          "runS": 1076.8278922902498,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "originMinute": 18,
+          "tier": 1,
+          "runS": 1160.7106678004538,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "originMinute": 20,
+          "tier": 1,
+          "runS": 1468.1535068027217,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "originMinute": 22,
+          "tier": 3,
+          "runS": 1471.0035521541959,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "originMinute": 23,
+          "tier": 1,
+          "runS": 1479.1002641723364,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "originMinute": 25,
+          "tier": 3,
+          "runS": 1579.1853095238105,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 12,
+          "originMinute": 27,
+          "tier": 1,
+          "runS": 1698.3341394557835,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "unholy-vespers",
+              "rank": 1
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 13,
+          "originMinute": 29,
+          "tier": 1,
+          "runS": 1773.5063662131531,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "unholy-vespers",
+              "rank": 1
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear",
+        "soul-eater",
+        "holy-wand",
+        "unholy-vespers"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "f9e6625092c353c4",
+      "runWallSeconds": 232.441948208
+    },
+    {
+      "case": "cached-original-afk-4",
+      "survivalGate": null,
+      "survivalS": 134.71733333333333,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 1,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 77,
+      "settledHash": "0c9c387541f6578f",
+      "runWallSeconds": 4.760543375
+    },
+    {
+      "case": "cached-original-positioning-5",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 0.8263888888888888,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 17,
+      "levelAt30": 46,
+      "lastLevel": 56,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 3,
+          "tier": 1,
+          "runS": 203.8629833333335,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "originMinute": 7,
+          "tier": 1,
+          "runS": 470.68758650793666,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 2
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "originMinute": 9,
+          "tier": 1,
+          "runS": 579.1533563492067,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 4
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 1
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "originMinute": 5,
+          "tier": 1,
+          "runS": 635.6581182539686,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 4
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 2
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 682.0679028344675,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 7
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 2
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 2
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "originMinute": 12,
+          "tier": 1,
+          "runS": 816.5662540816329,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 4
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "originMinute": 14,
+          "tier": 2,
+          "runS": 973.4610783446714,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "originMinute": 15,
+          "tier": 1,
+          "runS": 1004.7725692743769,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "originMinute": 18,
+          "tier": 2,
+          "runS": 1157.9078379818607,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "originMinute": 20,
+          "tier": 1,
+          "runS": 1259.9356769841283,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "originMinute": 23,
+          "tier": 1,
+          "runS": 1433.192389002269,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "originMinute": 22,
+          "tier": 1,
+          "runS": 1439.9491010204097,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 12,
+          "originMinute": 25,
+          "tier": 3,
+          "runS": 1541.0808130385503,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 13,
+          "originMinute": 27,
+          "tier": 1,
+          "runS": 1693.4931917233578,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "unholy-vespers",
+              "rank": 1
+            },
+            {
+              "weapon": "thunder-loop",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 14,
+          "originMinute": 29,
+          "tier": 1,
+          "runS": 1774.4437518140608,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "unholy-vespers",
+              "rank": 1
+            },
+            {
+              "weapon": "thunder-loop",
+              "rank": 1
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear",
+        "soul-eater",
+        "holy-wand",
+        "unholy-vespers",
+        "thunder-loop"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "ff6dcc119f2b801b",
+      "runWallSeconds": 233.151855917
+    },
+    {
+      "case": "cached-original-afk-5",
+      "survivalGate": null,
+      "survivalS": 134.71733333333333,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 1,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 78,
+      "settledHash": "4be4b38cf1a63a44",
+      "runWallSeconds": 3.13786975
+    },
+    {
+      "case": "cached-reverse-positioning-1",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 0.9375,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 15,
+      "levelAt30": 70,
+      "lastLevel": 77,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 3,
+          "tier": 1,
+          "runS": 232.0266666666667,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 7
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "originMinute": 5,
+          "tier": 1,
+          "runS": 544.1755,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 2
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "originMinute": 9,
+          "tier": 2,
+          "runS": 674.7065544217687,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 3
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 2
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 759.0492755102041,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 4
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 3
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "originMinute": 14,
+          "tier": 1,
+          "runS": 871.6823632653063,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 7
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "originMinute": 15,
+          "tier": 1,
+          "runS": 1051.956702267574,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "originMinute": 18,
+          "tier": 1,
+          "runS": 1112.4738111111114,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "originMinute": 22,
+          "tier": 1,
+          "runS": 1337.2517532879822,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "originMinute": 20,
+          "tier": 1,
+          "runS": 1373.541980045352,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "originMinute": 23,
+          "tier": 1,
+          "runS": 1420.728373469388,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "originMinute": 25,
+          "tier": 3,
+          "runS": 1634.7968065759644,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 2
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "originMinute": 27,
+          "tier": 3,
+          "runS": 1701.548303174604,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "unholy-vespers",
+              "rank": 1
+            },
+            {
+              "weapon": "thunder-loop",
+              "rank": 1
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 8
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear",
+        "soul-eater",
+        "holy-wand",
+        "unholy-vespers",
+        "thunder-loop"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "fe09df95c2759857",
+      "runWallSeconds": 205.606341292
+    },
+    {
+      "case": "cached-reverse-afk-1",
+      "survivalGate": null,
+      "survivalS": 192.25,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 2,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 299,
+      "settledHash": "257e721f129eedc1",
+      "runWallSeconds": 6.460655416
+    },
+    {
+      "case": "cached-reverse-positioning-2",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 1.0,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 14,
+      "levelAt30": 66,
+      "lastLevel": 73,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 1,
+          "tier": 1,
+          "runS": 108.96916666666667,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "originMinute": 3,
+          "tier": 1,
+          "runS": 188.60250000000002,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 5
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "originMinute": 9,
+          "tier": 1,
+          "runS": 628.628,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 3
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "originMinute": 5,
+          "tier": 1,
+          "runS": 679.7082210884354,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 4
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 2
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 779.9176088435374,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 3
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 3
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "originMinute": 12,
+          "tier": 3,
+          "runS": 785.8101145124717,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 3
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 3
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "originMinute": 14,
+          "tier": 1,
+          "runS": 885.1967868480727,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "originMinute": 16,
+          "tier": 2,
+          "runS": 1010.0102925170069,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "originMinute": 15,
+          "tier": 1,
+          "runS": 1069.1249013605443,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "originMinute": 18,
+          "tier": 1,
+          "runS": 1121.2770102040818,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "originMinute": 22,
+          "tier": 1,
+          "runS": 1390.1991190476183,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "originMinute": 20,
+          "tier": 1,
+          "runS": 1397.5160124716544,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 12,
+          "originMinute": 23,
+          "tier": 1,
+          "runS": 1436.9610308956908,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 13,
+          "originMinute": 25,
+          "tier": 3,
+          "runS": 1576.6394640022668,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 5
+            }
+          ]
+        },
+        {
+          "id": 14,
+          "originMinute": 27,
+          "tier": 1,
+          "runS": 1652.7326272675728,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "unholy-vespers",
+              "rank": 1
+            },
+            {
+              "weapon": "thunder-loop",
+              "rank": 1
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 15,
+          "originMinute": 29,
+          "tier": 1,
+          "runS": 1744.4749571995458,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "unholy-vespers",
+              "rank": 1
+            },
+            {
+              "weapon": "thunder-loop",
+              "rank": 1
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 8
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear",
+        "soul-eater",
+        "holy-wand",
+        "unholy-vespers",
+        "thunder-loop"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "3e8cefca610558cd",
+      "runWallSeconds": 203.57969125
+    },
+    {
+      "case": "cached-reverse-afk-2",
+      "survivalGate": null,
+      "survivalS": 190.84916666666666,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 3,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 277,
+      "settledHash": "6be0e1ff8bb11cd0",
+      "runWallSeconds": 6.314616625
+    },
+    {
+      "case": "cached-reverse-positioning-3",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 1.0,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 14,
+      "levelAt30": 68,
+      "lastLevel": 74,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 3,
+          "tier": 1,
+          "runS": 229.7891666666667,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 6
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "originMinute": 5,
+          "tier": 2,
+          "runS": 385.7178333333334,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 5
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "originMinute": 9,
+          "tier": 1,
+          "runS": 591.8869512471657,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 5
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "originMinute": 12,
+          "tier": 1,
+          "runS": 732.4546723356011,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 3
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 3
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 789.5159767573697,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 5
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 4
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "originMinute": 14,
+          "tier": 1,
+          "runS": 874.0426490929708,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "originMinute": 15,
+          "tier": 1,
+          "runS": 1062.5261547619048,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "originMinute": 18,
+          "tier": 1,
+          "runS": 1142.5482636054423,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "originMinute": 20,
+          "tier": 1,
+          "runS": 1307.3537057823128,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "originMinute": 22,
+          "tier": 1,
+          "runS": 1357.4455992063492,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "originMinute": 23,
+          "tier": 1,
+          "runS": 1419.895325963719,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "originMinute": 25,
+          "tier": 3,
+          "runS": 1630.1529257369616,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 2
+            }
+          ]
+        },
+        {
+          "id": 12,
+          "originMinute": 27,
+          "tier": 1,
+          "runS": 1679.6477556689345,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "unholy-vespers",
+              "rank": 1
+            },
+            {
+              "weapon": "thunder-loop",
+              "rank": 1
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 6
+            }
+          ]
+        },
+        {
+          "id": 13,
+          "originMinute": 29,
+          "tier": 1,
+          "runS": 1759.495918934241,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "unholy-vespers",
+              "rank": 1
+            },
+            {
+              "weapon": "thunder-loop",
+              "rank": 1
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 8
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear",
+        "soul-eater",
+        "holy-wand",
+        "unholy-vespers",
+        "thunder-loop"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "cf05f518bfbcb6ad",
+      "runWallSeconds": 202.866789875
+    },
+    {
+      "case": "cached-reverse-afk-3",
+      "survivalGate": null,
+      "survivalS": 190.05916666666667,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 3,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 300,
+      "settledHash": "0cf3f4305394065a",
+      "runWallSeconds": 6.534361416
+    },
+    {
+      "case": "cached-reverse-positioning-4",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 1.0,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 14,
+      "levelAt30": 71,
+      "lastLevel": 78,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 7,
+          "tier": 1,
+          "runS": 457.6039999999999,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 6
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "originMinute": 5,
+          "tier": 1,
+          "runS": 489.94114092970506,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 2
+            },
+            {
+              "weapon": "garlic",
+              "rank": 7
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "originMinute": 9,
+          "tier": 1,
+          "runS": 642.8988212018141,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 3
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 1
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 760.0915422902493,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 4
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 2
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "originMinute": 14,
+          "tier": 3,
+          "runS": 878.1092633786847,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 4
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "originMinute": 15,
+          "tier": 1,
+          "runS": 1131.672576530612,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "originMinute": 18,
+          "tier": 1,
+          "runS": 1187.6280187074829,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "originMinute": 22,
+          "tier": 2,
+          "runS": 1398.5601275510207,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "originMinute": 23,
+          "tier": 1,
+          "runS": 1436.4756876417237,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "originMinute": 20,
+          "tier": 1,
+          "runS": 1438.940954081633,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "originMinute": 25,
+          "tier": 3,
+          "runS": 1551.714387188209,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 3
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "originMinute": 27,
+          "tier": 1,
+          "runS": 1678.3658837868488,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "unholy-vespers",
+              "rank": 1
+            },
+            {
+              "weapon": "thunder-loop",
+              "rank": 1
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 8
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear",
+        "soul-eater",
+        "holy-wand",
+        "unholy-vespers",
+        "thunder-loop"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "f4a8ae2420adb16b",
+      "runWallSeconds": 205.496920917
+    },
+    {
+      "case": "cached-reverse-afk-4",
+      "survivalGate": null,
+      "survivalS": 188.44916666666668,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 3,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 268,
+      "settledHash": "778a355f39bbd978",
+      "runWallSeconds": 6.220905417
+    },
+    {
+      "case": "cached-reverse-positioning-5",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 0.8263888888888888,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 14,
+      "levelAt30": 71,
+      "lastLevel": 78,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 5,
+          "tier": 1,
+          "runS": 480.85691666666673,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 6
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "originMinute": 7,
+          "tier": 1,
+          "runS": 482.03759693877555,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 2
+            },
+            {
+              "weapon": "garlic",
+              "rank": 6
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 725.6677772108842,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 1
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "originMinute": 12,
+          "tier": 1,
+          "runS": 808.4154982993197,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 5
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 2
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "originMinute": 14,
+          "tier": 1,
+          "runS": 862.4071706349205,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 4
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "originMinute": 16,
+          "tier": 1,
+          "runS": 1027.4736763038552,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "originMinute": 15,
+          "tier": 1,
+          "runS": 1058.7274518140591,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "originMinute": 18,
+          "tier": 2,
+          "runS": 1122.1312273242631,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "originMinute": 20,
+          "tier": 1,
+          "runS": 1318.7841695011339,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "originMinute": 22,
+          "tier": 1,
+          "runS": 1363.9993962585033,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "originMinute": 23,
+          "tier": 1,
+          "runS": 1449.3274563492062,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "originMinute": 25,
+          "tier": 3,
+          "runS": 1659.7387061224488,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 2
+            }
+          ]
+        },
+        {
+          "id": 12,
+          "originMinute": 27,
+          "tier": 1,
+          "runS": 1726.0377027210886,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "unholy-vespers",
+              "rank": 1
+            },
+            {
+              "weapon": "thunder-loop",
+              "rank": 1
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 7
+            }
+          ]
+        },
+        {
+          "id": 13,
+          "originMinute": 29,
+          "tier": 1,
+          "runS": 1794.4133659863946,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "unholy-vespers",
+              "rank": 1
+            },
+            {
+              "weapon": "thunder-loop",
+              "rank": 1
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 8
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear",
+        "soul-eater",
+        "holy-wand",
+        "unholy-vespers",
+        "thunder-loop"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "2b9a8f0dde2ca5fa",
+      "runWallSeconds": 204.945309958
+    },
+    {
+      "case": "cached-reverse-afk-5",
+      "survivalGate": null,
+      "survivalS": 190.5066666666667,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 3,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 267,
+      "settledHash": "d39ad55f8d1599e8",
+      "runWallSeconds": 6.291842375
+    },
+    {
+      "case": "cached-rotate-positioning-1",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 1.0,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 16,
+      "levelAt30": 66,
+      "lastLevel": 74,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 9,
+          "tier": 1,
+          "runS": 622.3371999999999,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 2
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 1
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 671.4511104308388,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 4
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 2
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "originMinute": 5,
+          "tier": 1,
+          "runS": 793.2555605442175,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 6
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "originMinute": 12,
+          "tier": 1,
+          "runS": 858.6491773242628,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 2
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "originMinute": 14,
+          "tier": 1,
+          "runS": 906.3744607709749,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 5
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "originMinute": 16,
+          "tier": 1,
+          "runS": 1002.7114108843538,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "originMinute": 15,
+          "tier": 1,
+          "runS": 1028.7443122448976,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "originMinute": 18,
+          "tier": 1,
+          "runS": 1130.6559210884348,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "originMinute": 23,
+          "tier": 1,
+          "runS": 1438.9792192743757,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "originMinute": 22,
+          "tier": 2,
+          "runS": 1441.9455571428566,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "originMinute": 20,
+          "tier": 1,
+          "runS": 1490.7452283446705,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "originMinute": 25,
+          "tier": 3,
+          "runS": 1654.0386841269838,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 12,
+          "originMinute": 27,
+          "tier": 1,
+          "runS": 1663.9202034013601,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "unholy-vespers",
+              "rank": 1
+            },
+            {
+              "weapon": "thunder-loop",
+              "rank": 1
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 5
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear",
+        "soul-eater",
+        "holy-wand",
+        "unholy-vespers",
+        "thunder-loop"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "8d0a3cfcab471d46",
+      "runWallSeconds": 199.843306417
+    },
+    {
+      "case": "cached-rotate-afk-1",
+      "survivalGate": null,
+      "survivalS": 98.61366666666666,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 1,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 44,
+      "settledHash": "262feb11f5d43d16",
+      "runWallSeconds": 1.530587833
+    },
+    {
+      "case": "cached-rotate-positioning-2",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 0.9375,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 16,
+      "levelAt30": 70,
+      "lastLevel": 77,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 1,
+          "tier": 1,
+          "runS": 69.48199999999999,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "originMinute": 5,
+          "tier": 1,
+          "runS": 616.6038560090702,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 3
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 1
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 643.799933106576,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 4
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 2
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "originMinute": 14,
+          "tier": 1,
+          "runS": 876.4746768707485,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 4
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "originMinute": 16,
+          "tier": 1,
+          "runS": 1015.4882936507937,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "originMinute": 15,
+          "tier": 1,
+          "runS": 1055.653695011338,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "originMinute": 18,
+          "tier": 1,
+          "runS": 1124.0011371882085,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "originMinute": 23,
+          "tier": 1,
+          "runS": 1418.622802040816,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "originMinute": 20,
+          "tier": 1,
+          "runS": 1455.4191399092967,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "originMinute": 22,
+          "tier": 1,
+          "runS": 1506.8021444444441,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "originMinute": 25,
+          "tier": 3,
+          "runS": 1543.7157668934237,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "originMinute": 27,
+          "tier": 1,
+          "runS": 1662.8392226757371,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "unholy-vespers",
+              "rank": 1
+            },
+            {
+              "weapon": "thunder-loop",
+              "rank": 1
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 2
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear",
+        "soul-eater",
+        "holy-wand",
+        "unholy-vespers",
+        "thunder-loop"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "b4d96fd3ecf5ccf3",
+      "runWallSeconds": 217.433846208
+    },
+    {
+      "case": "cached-rotate-afk-2",
+      "survivalGate": null,
+      "survivalS": 98.61366666666666,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 1,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 45,
+      "settledHash": "5dee32a083129d17",
+      "runWallSeconds": 1.564312583
+    },
+    {
+      "case": "cached-rotate-positioning-3",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 0.8263888888888888,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 15,
+      "levelAt30": 69,
+      "lastLevel": 77,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 1,
+          "tier": 1,
+          "runS": 72.67699999999998,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "originMinute": 3,
+          "tier": 1,
+          "runS": 233.9915226757371,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 2
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "originMinute": 5,
+          "tier": 1,
+          "runS": 597.0772517006806,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 3
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 1
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 658.4286621315193,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 5
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 2
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "originMinute": 12,
+          "tier": 1,
+          "runS": 770.7197789115648,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 6
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 2
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "originMinute": 14,
+          "tier": 1,
+          "runS": 959.0017290249434,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 7
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "originMinute": 15,
+          "tier": 1,
+          "runS": 1094.5210124716557,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "originMinute": 18,
+          "tier": 1,
+          "runS": 1113.61814399093,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "originMinute": 23,
+          "tier": 1,
+          "runS": 1420.8264755102043,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "originMinute": 22,
+          "tier": 1,
+          "runS": 1471.3728133786851,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "originMinute": 20,
+          "tier": 1,
+          "runS": 1518.5183179138326,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "originMinute": 25,
+          "tier": 3,
+          "runS": 1613.1128403628127,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 12,
+          "originMinute": 27,
+          "tier": 1,
+          "runS": 1665.8026929705222,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "unholy-vespers",
+              "rank": 1
+            },
+            {
+              "weapon": "thunder-loop",
+              "rank": 1
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 2
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear",
+        "soul-eater",
+        "holy-wand",
+        "unholy-vespers",
+        "thunder-loop"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "359469b17f68b651",
+      "runWallSeconds": 219.300495542
+    },
+    {
+      "case": "cached-rotate-afk-3",
+      "survivalGate": null,
+      "survivalS": 98.61366666666666,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 1,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 45,
+      "settledHash": "4d82d5902450a514",
+      "runWallSeconds": 1.676461167
+    },
+    {
+      "case": "cached-rotate-positioning-4",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 0.6527777777777778,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 17,
+      "levelAt30": 68,
+      "lastLevel": 75,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 7,
+          "tier": 1,
+          "runS": 455.03399999999993,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 7
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "originMinute": 5,
+          "tier": 1,
+          "runS": 612.9483956916098,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 3
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 1
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 721.2406394557819,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 3
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 2
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "originMinute": 14,
+          "tier": 1,
+          "runS": 903.8200895691604,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 4
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "originMinute": 15,
+          "tier": 1,
+          "runS": 1038.9540396825394,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "originMinute": 18,
+          "tier": 1,
+          "runS": 1095.3873151927432,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "originMinute": 23,
+          "tier": 1,
+          "runS": 1405.6797800453508,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "originMinute": 22,
+          "tier": 1,
+          "runS": 1481.0894512471648,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "originMinute": 20,
+          "tier": 1,
+          "runS": 1502.2357891156455,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "originMinute": 25,
+          "tier": 3,
+          "runS": 1592.3147448979585,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "originMinute": 27,
+          "tier": 1,
+          "runS": 1666.1311248299317,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "unholy-vespers",
+              "rank": 1
+            },
+            {
+              "weapon": "thunder-loop",
+              "rank": 1
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 2
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear",
+        "soul-eater",
+        "holy-wand",
+        "unholy-vespers",
+        "thunder-loop"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "57eacb1196d89bdf",
+      "runWallSeconds": 219.611101292
+    },
+    {
+      "case": "cached-rotate-afk-4",
+      "survivalGate": null,
+      "survivalS": 98.61366666666666,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 1,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 44,
+      "settledHash": "74a75e8a01afb0c0",
+      "runWallSeconds": 1.6447177499999999
+    },
+    {
+      "case": "cached-rotate-positioning-5",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 0.6527777777777778,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 16,
+      "levelAt30": 66,
+      "lastLevel": 74,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 3,
+          "tier": 1,
+          "runS": 211.3178,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "originMinute": 7,
+          "tier": 1,
+          "runS": 453.8861956916098,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "originMinute": 9,
+          "tier": 1,
+          "runS": 605.8913247165531,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 3
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 1
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "originMinute": 5,
+          "tier": 1,
+          "runS": 620.9690684807255,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 4
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 2
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 641.8684789115645,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 4
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 2
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 2
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "originMinute": 12,
+          "tier": 1,
+          "runS": 873.0693476757369,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 3
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "originMinute": 14,
+          "tier": 2,
+          "runS": 915.7737977891155,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 7
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "originMinute": 15,
+          "tier": 1,
+          "runS": 1005.0549145691604,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "originMinute": 18,
+          "tier": 2,
+          "runS": 1095.341482596371,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "originMinute": 22,
+          "tier": 1,
+          "runS": 1364.149780782312,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "originMinute": 23,
+          "tier": 1,
+          "runS": 1489.8227853174594,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "originMinute": 20,
+          "tier": 1,
+          "runS": 1517.6322410997723,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 12,
+          "originMinute": 25,
+          "tier": 3,
+          "runS": 1632.0865302154189,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 3
+            }
+          ]
+        },
+        {
+          "id": 13,
+          "originMinute": 27,
+          "tier": 1,
+          "runS": 1650.1497161564616,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "unholy-vespers",
+              "rank": 1
+            },
+            {
+              "weapon": "thunder-loop",
+              "rank": 1
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 7
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear",
+        "soul-eater",
+        "holy-wand",
+        "unholy-vespers",
+        "thunder-loop"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "6f21eb99bf4af224",
+      "runWallSeconds": 222.020319542
+    },
+    {
+      "case": "cached-rotate-afk-5",
+      "survivalGate": null,
+      "survivalS": 98.61366666666666,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 1,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 45,
+      "settledHash": "140c3bb897c5c575",
+      "runWallSeconds": 1.629050834
+    },
+    {
+      "case": "cached-original-random-pick-1",
+      "survivalGate": null,
+      "survivalS": 1800.0,
+      "lowestHpShare": 0.7916666666666666,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 16,
+      "levelAt30": 73,
+      "lastLevel": 80,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 1,
+          "tier": 1,
+          "runS": 107.68616666666668,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 3
+            },
+            {
+              "weapon": "garlic",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "originMinute": 9,
+          "tier": 1,
+          "runS": 635.677257482993,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 5
+            },
+            {
+              "weapon": "garlic",
+              "rank": 5
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 2
+            },
+            {
+              "weapon": "fire-trail",
+              "rank": 1
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 691.8373527210882,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 7
+            },
+            {
+              "weapon": "garlic",
+              "rank": 5
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 2
+            },
+            {
+              "weapon": "fire-trail",
+              "rank": 1
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 2
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 2
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "originMinute": 5,
+          "tier": 1,
+          "runS": 714.2991769841268,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 5
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 2
+            },
+            {
+              "weapon": "fire-trail",
+              "rank": 2
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 2
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 2
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "originMinute": 12,
+          "tier": 1,
+          "runS": 855.5565012471653,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 6
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 3
+            },
+            {
+              "weapon": "fire-trail",
+              "rank": 3
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 3
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 3
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "originMinute": 14,
+          "tier": 1,
+          "runS": 949.4929921768704,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 7
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 3
+            },
+            {
+              "weapon": "fire-trail",
+              "rank": 3
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 4
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 4
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "originMinute": 15,
+          "tier": 1,
+          "runS": 1007.8769831065755,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 7
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 4
+            },
+            {
+              "weapon": "fire-trail",
+              "rank": 3
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 5
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 4
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "originMinute": 16,
+          "tier": 1,
+          "runS": 1041.0451407029477,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 4
+            },
+            {
+              "weapon": "fire-trail",
+              "rank": 3
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 6
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 4
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "originMinute": 18,
+          "tier": 1,
+          "runS": 1171.0912495464852,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 4
+            },
+            {
+              "weapon": "fire-trail",
+              "rank": 4
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 7
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 5
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "originMinute": 22,
+          "tier": 1,
+          "runS": 1445.4274218820863,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 5
+            },
+            {
+              "weapon": "fire-trail",
+              "rank": 5
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "originMinute": 20,
+          "tier": 1,
+          "runS": 1469.7733005668933,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 7
+            },
+            {
+              "weapon": "fire-trail",
+              "rank": 5
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "originMinute": 23,
+          "tier": 1,
+          "runS": 1505.8383459183674,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 7
+            },
+            {
+              "weapon": "fire-trail",
+              "rank": 5
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 12,
+          "originMinute": 25,
+          "tier": 3,
+          "runS": 1623.0753912698415,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 8
+            },
+            {
+              "weapon": "fire-trail",
+              "rank": 6
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 13,
+          "originMinute": 27,
+          "tier": 1,
+          "runS": 1682.042595351474,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 8
+            },
+            {
+              "weapon": "fire-trail",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 14,
+          "originMinute": 29,
+          "tier": 1,
+          "runS": 1775.2375554421772,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 8
+            },
+            {
+              "weapon": "fire-trail",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear",
+        "soul-eater",
+        "holy-wand"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "a9b10480664ee5ae",
+      "runWallSeconds": 212.049590708
+    },
+    {
+      "case": "continuous-original-positioning-1",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 1.0,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 17,
+      "levelAt30": 68,
+      "lastLevel": 76,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 1,
+          "tier": 1,
+          "runS": 146.25333333333327,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 3
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "originMinute": 7,
+          "tier": 1,
+          "runS": 456.5274999999999,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "originMinute": 5,
+          "tier": 1,
+          "runS": 624.8708333333332,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 4
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 1
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 662.9108333333331,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 5
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 2
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "originMinute": 12,
+          "tier": 1,
+          "runS": 826.736666666667,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 5
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "originMinute": 14,
+          "tier": 1,
+          "runS": 901.1900000000005,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "originMinute": 15,
+          "tier": 1,
+          "runS": 1089.6183333333336,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "originMinute": 18,
+          "tier": 1,
+          "runS": 1093.1733333333336,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "originMinute": 20,
+          "tier": 1,
+          "runS": 1398.1208333333334,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "originMinute": 22,
+          "tier": 1,
+          "runS": 1451.7083333333335,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "originMinute": 23,
+          "tier": 1,
+          "runS": 1456.1433333333334,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "originMinute": 25,
+          "tier": 3,
+          "runS": 1596.2475000000002,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 12,
+          "originMinute": 27,
+          "tier": 2,
+          "runS": 1664.8250000000003,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "unholy-vespers",
+              "rank": 1
+            },
+            {
+              "weapon": "thunder-loop",
+              "rank": 1
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 3
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear",
+        "soul-eater",
+        "holy-wand",
+        "unholy-vespers",
+        "thunder-loop"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "88e347b4b6e65e35",
+      "runWallSeconds": 244.572461125
+    },
+    {
+      "case": "continuous-original-afk-1",
+      "survivalGate": null,
+      "survivalS": 127.54333333333331,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 1,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 118,
+      "settledHash": "d40b0dd3d319c264",
+      "runWallSeconds": 3.126194166
+    },
+    {
+      "case": "continuous-original-positioning-2",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 1.0,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 16,
+      "levelAt30": 65,
+      "lastLevel": 73,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 1,
+          "tier": 1,
+          "runS": 87.58416666666666,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "originMinute": 3,
+          "tier": 1,
+          "runS": 198.7625,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 2
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "originMinute": 9,
+          "tier": 1,
+          "runS": 597.0375,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 3
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 1
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "originMinute": 5,
+          "tier": 1,
+          "runS": 674.4175000000001,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 6
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 2
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 703.6658333333332,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 3
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 3
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "originMinute": 12,
+          "tier": 1,
+          "runS": 824.7558333333335,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 6
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "originMinute": 14,
+          "tier": 2,
+          "runS": 895.5500000000001,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "originMinute": 15,
+          "tier": 1,
+          "runS": 1051.4450000000006,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "originMinute": 18,
+          "tier": 3,
+          "runS": 1124.5400000000004,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "originMinute": 22,
+          "tier": 1,
+          "runS": 1404.2308333333335,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "originMinute": 20,
+          "tier": 1,
+          "runS": 1459.2775000000001,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 3
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "originMinute": 23,
+          "tier": 1,
+          "runS": 1463.4508333333333,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 3
+            }
+          ]
+        },
+        {
+          "id": 12,
+          "originMinute": 25,
+          "tier": 3,
+          "runS": 1611.0883333333336,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 7
+            }
+          ]
+        },
+        {
+          "id": 13,
+          "originMinute": 27,
+          "tier": 2,
+          "runS": 1672.7841666666673,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "unholy-vespers",
+              "rank": 1
+            },
+            {
+              "weapon": "thunder-loop",
+              "rank": 1
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 8
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear",
+        "soul-eater",
+        "holy-wand",
+        "unholy-vespers",
+        "thunder-loop"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "fd92c018a436803b",
+      "runWallSeconds": 227.424462208
+    },
+    {
+      "case": "continuous-original-afk-2",
+      "survivalGate": null,
+      "survivalS": 127.68333333333332,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 2,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 116,
+      "settledHash": "ee1aee255ec9bc23",
+      "runWallSeconds": 3.315001209
+    },
+    {
+      "case": "continuous-original-positioning-3",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 0.4166666666666667,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 16,
+      "levelAt30": 67,
+      "lastLevel": 74,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 707.0824999999999,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 7
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 1
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "originMinute": 5,
+          "tier": 1,
+          "runS": 711.0116666666665,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 1
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "originMinute": 12,
+          "tier": 2,
+          "runS": 812.2475000000001,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 6
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "originMinute": 14,
+          "tier": 1,
+          "runS": 915.4083333333333,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 6
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "originMinute": 16,
+          "tier": 1,
+          "runS": 1017.3799999999997,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "originMinute": 15,
+          "tier": 1,
+          "runS": 1070.0708333333332,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "originMinute": 18,
+          "tier": 1,
+          "runS": 1152.9333333333332,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "originMinute": 20,
+          "tier": 1,
+          "runS": 1402.483333333333,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "originMinute": 22,
+          "tier": 1,
+          "runS": 1467.345833333333,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "originMinute": 23,
+          "tier": 1,
+          "runS": 1500.9474999999998,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "originMinute": 25,
+          "tier": 3,
+          "runS": 1555.4666666666665,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "originMinute": 27,
+          "tier": 1,
+          "runS": 1640.4308333333333,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "unholy-vespers",
+              "rank": 1
+            },
+            {
+              "weapon": "thunder-loop",
+              "rank": 1
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 2
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear",
+        "soul-eater",
+        "holy-wand",
+        "unholy-vespers",
+        "thunder-loop"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "073c792b9e31b142",
+      "runWallSeconds": 138.129176
+    },
+    {
+      "case": "continuous-original-afk-3",
+      "survivalGate": null,
+      "survivalS": 127.54333333333331,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 1,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 118,
+      "settledHash": "d63d5fc2ca4fadf1",
+      "runWallSeconds": 3.154744625
+    },
+    {
+      "case": "continuous-original-positioning-4",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 1.0,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 17,
+      "levelAt30": 62,
+      "lastLevel": 70,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 7,
+          "tier": 2,
+          "runS": 480.4066666666665,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 717.0099999999998,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 5
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 2
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "originMinute": 5,
+          "tier": 1,
+          "runS": 717.3983333333331,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 5
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 2
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "originMinute": 14,
+          "tier": 1,
+          "runS": 908.2808333333334,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 7
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "originMinute": 15,
+          "tier": 1,
+          "runS": 1108.595833333333,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "originMinute": 18,
+          "tier": 1,
+          "runS": 1127.8308333333332,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "originMinute": 22,
+          "tier": 1,
+          "runS": 1470.2799999999995,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "originMinute": 23,
+          "tier": 3,
+          "runS": 1471.0233333333329,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "originMinute": 20,
+          "tier": 1,
+          "runS": 1490.7999999999995,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "originMinute": 25,
+          "tier": 3,
+          "runS": 1558.990833333333,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 2
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "originMinute": 27,
+          "tier": 2,
+          "runS": 1639.1341666666663,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "unholy-vespers",
+              "rank": 1
+            },
+            {
+              "weapon": "thunder-loop",
+              "rank": 1
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 7
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear",
+        "soul-eater",
+        "holy-wand",
+        "unholy-vespers",
+        "thunder-loop"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "24530e6919d95c76",
+      "runWallSeconds": 131.281612542
+    },
+    {
+      "case": "continuous-original-afk-4",
+      "survivalGate": null,
+      "survivalS": 127.54333333333331,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 1,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 118,
+      "settledHash": "871d1db3b5a7370a",
+      "runWallSeconds": 3.128668958
+    },
+    {
+      "case": "continuous-original-positioning-5",
+      "survivalGate": true,
+      "survivalS": 1800.0,
+      "lowestHpShare": 1.0,
+      "fallen": false,
+      "done": true,
+      "levelAt5": 17,
+      "levelAt30": 67,
+      "lastLevel": 74,
+      "weaponsAtChests": [
+        {
+          "id": 0,
+          "originMinute": 9,
+          "tier": 1,
+          "runS": 556.3374999999999,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "originMinute": 5,
+          "tier": 1,
+          "runS": 655.7008333333333,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 4
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 1
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "originMinute": 10,
+          "tier": 1,
+          "runS": 663.3474999999999,
+          "weapons": [
+            {
+              "weapon": "sword",
+              "rank": 8
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 4
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 2
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 1
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "originMinute": 12,
+          "tier": 1,
+          "runS": 758.1891666666666,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 7
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 2
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "originMinute": 14,
+          "tier": 1,
+          "runS": 1013.0691666666662,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "originMinute": 16,
+          "tier": 1,
+          "runS": 1022.8033333333331,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "originMinute": 15,
+          "tier": 1,
+          "runS": 1066.8966666666665,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "garlic",
+              "rank": 8
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "originMinute": 18,
+          "tier": 1,
+          "runS": 1132.3324999999998,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "originMinute": 22,
+          "tier": 1,
+          "runS": 1388.0741666666668,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "originMinute": 23,
+          "tier": 1,
+          "runS": 1474.896666666667,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "originMinute": 20,
+          "tier": 1,
+          "runS": 1510.831666666667,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "magic-wand",
+              "rank": 8
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "originMinute": 25,
+          "tier": 3,
+          "runS": 1626.3716666666676,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "king-bible",
+              "rank": 8
+            },
+            {
+              "weapon": "lightning-ring",
+              "rank": 8
+            }
+          ]
+        },
+        {
+          "id": 12,
+          "originMinute": 27,
+          "tier": 1,
+          "runS": 1669.6216666666674,
+          "weapons": [
+            {
+              "weapon": "bloody-tear",
+              "rank": 1
+            },
+            {
+              "weapon": "holy-wand",
+              "rank": 1
+            },
+            {
+              "weapon": "soul-eater",
+              "rank": 1
+            },
+            {
+              "weapon": "unholy-vespers",
+              "rank": 1
+            },
+            {
+              "weapon": "thunder-loop",
+              "rank": 1
+            },
+            {
+              "weapon": "chain-lightning",
+              "rank": 2
+            }
+          ]
+        }
+      ],
+      "evolutions": [
+        "bloody-tear",
+        "soul-eater",
+        "holy-wand",
+        "unholy-vespers",
+        "thunder-loop"
+      ],
+      "peakEnemies": 300,
+      "settledHash": "cb606b06a306957d",
+      "runWallSeconds": 131.269832875
+    },
+    {
+      "case": "continuous-original-afk-5",
+      "survivalGate": null,
+      "survivalS": 127.54333333333331,
+      "lowestHpShare": 0.0,
+      "fallen": true,
+      "done": false,
+      "levelAt5": null,
+      "levelAt30": null,
+      "lastLevel": 1,
+      "weaponsAtChests": [],
+      "evolutions": [],
+      "peakEnemies": 115,
+      "settledHash": "f85e7a5c4590d29a",
+      "runWallSeconds": 2.958295417
+    }
+  ]
+}

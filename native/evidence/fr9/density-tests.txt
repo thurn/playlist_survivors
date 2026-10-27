@@ -1,0 +1,13 @@
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-fr9/native/crates/eval)
+   Compiling app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-fr9/native/crates/app)
+    Finished `test` profile [optimized + debuginfo] target(s) in 4.54s
+     Running unittests src/main.rs (target/debug/deps/playlist_survivors-117eebc7468b2345)
+
+running 4 tests
+test slice::impact_budget::tests::weapon_catches_cannot_spend_the_reserved_death_cell ... ok
+test slice::impact_budget::tests::foreground_has_reserved_full_reactions_after_background_is_full ... ok
+test slice::impact_budget::tests::dense_hits_merge_shrink_and_recover_without_suppressing_death ... ok
+test slice::impact_budget::tests::boss_showpiece_bypasses_an_exhausted_ordinary_death_budget ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 83 filtered out; finished in 0.00s
+

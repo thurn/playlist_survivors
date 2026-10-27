@@ -267,6 +267,28 @@ enum Drawn {
 }
 
 impl Scene {
+    fn foreground_flashes(
+        &self,
+        view: &LiveView,
+        now: f64,
+    ) -> Option<std::collections::HashSet<usize>> {
+        if !self.impact_budget.dense() {
+            return None;
+        }
+        let hero = view.hero?;
+        let mut near: Vec<_> = view
+            .foes
+            .iter()
+            .filter_map(|(&id, f)| {
+                let age = now - self.struck.get(&id)?.0;
+                let distance = (f.x - hero.x).hypot(f.y - hero.y);
+                ((0.0..HIT_FLASH_S).contains(&age) && distance <= 160.0).then_some((id, distance))
+            })
+            .collect();
+        near.sort_by(|a, b| a.1.total_cmp(&b.1).then(a.0.cmp(&b.0)));
+        Some(near.into_iter().take(8).map(|p| p.0).collect())
+    }
+
     pub fn impact_counts(&self) -> (usize, usize, usize) {
         (
             self.impact_budget.requested,
@@ -343,9 +365,11 @@ impl Scene {
         self.cards.update(view.run.as_ref(), view.inventory, now);
         self.evolution.update(view.run.as_ref(), view.inventory);
         if view.run.is_some() {
+            self.numbers.focus(view.hero.map(|h| (h.x, h.y)));
             self.numbers.moments(moments, now, clock);
         }
         let survivors = view.run.is_some();
+        self.impact_budget.focus(view.hero.map(|h| (h.x, h.y)));
         self.impact_budget.observe(
             now,
             moments
@@ -365,7 +389,14 @@ impl Scene {
             }
         };
         let groove = view.groove.clamp(0.0, 1.0);
-        self.struck.retain(|_, s| now - s.0 < 1.0);
+        self.struck.retain(|id, s| {
+            now - s.0 < 1.0
+                && !(s.1
+                    && view
+                        .foes
+                        .get(id)
+                        .is_some_and(|f| f.death_w.is_none() && !f.pending_impact))
+        });
         // Trail history uses held world time in Survivors, like its actual damage path.
         if !survivors && let Some(h) = view.hero {
             let trail_now = view.run.map_or(now, |r| r.world);
@@ -392,7 +423,12 @@ impl Scene {
             };
             // (Each enemy's last hit, for its flash, knockback and fall.)
             if let Moment::Hit { foe, lethal, .. } = m {
-                self.struck.insert(*foe, (now, *lethal));
+                // A held killing impact cannot be overwritten by an older nonlethal
+                // cue. Rapid weapons also need a visible hold between white flashes.
+                let prior = self.struck.get(foe);
+                if *lethal || prior.is_none_or(|&(at, dead)| !dead && now - at >= 0.12) {
+                    self.struck.insert(*foe, (now, *lethal));
+                }
             }
             if let Moment::Hit {
                 what,
@@ -528,7 +564,7 @@ impl Scene {
                     0.8,
                     Start {
                         shape: Some(*shape),
-                        tier: Some(view_tier),
+                        tier: view.run.is_none().then_some(view_tier),
                         ..Start::default()
                     },
                 ),
@@ -590,6 +626,7 @@ impl Scene {
     ) {
         let out = &mut layers.sprites;
         let lights = &mut layers.lights;
+        let foreground_flashes = self.foreground_flashes(view, now);
         let (cx, cy, zoom) = view.camera;
         let (shx, shy) = self.effects.shake(now);
         let (cx, cy) = (cx + shx, cy + shy);
@@ -722,6 +759,7 @@ impl Scene {
         }
         // Decals on the ground, under everyone; the hero's glow and the tier change's ring.
         self.effects.draw_decals(art, now, &at, scale, out);
+        super::aftermath::draw(view, art, lib, looks, &at, scale, out);
         let ring = self
             .tier_change
             .map_or(0.0, |(t, _)| 1.0 - (now - t) / TIER_RING_S)
@@ -916,11 +954,18 @@ impl Scene {
                     // hero, squashed, and it falls (its hurt frames) and fades.
                     let struck = self.struck.get(&id).map(|&(t, lethal)| (now - t, lethal));
                     let reacting = struck.is_some_and(|(age, _)| (0.0..HIT_FLASH_S).contains(&age));
-                    let visibility = if view.run.is_some() {
-                        self.impact_budget.flash()
+                    let mut visibility = if view.run.is_some() {
+                        self.impact_budget.flash_at(f.x, f.y, f.survivor_boss)
                     } else {
                         1.0
                     };
+                    if !f.survivor_boss
+                        && foreground_flashes
+                            .as_ref()
+                            .is_some_and(|ids| !ids.contains(&id))
+                    {
+                        visibility = visibility.min(0.4);
+                    }
                     let flash = reacting && (visibility >= 0.6 || f.survivor_boss);
                     let (mut x, mut y) = (f.x, f.y - bob);
                     if let Some((_, start, land, _)) =
@@ -1467,6 +1512,97 @@ pub fn end_card(
 #[cfg(test)]
 mod density_tests {
     use super::*;
+    #[test]
+    fn rapid_hits_leave_flash_holds_and_old_hits_cannot_erase_a_death() {
+        let world = crate::slice::World::load(None).unwrap();
+        let mut scene = Scene::default();
+        let mut view = LiveView {
+            run: Some(sim::survivors::RunState::default()),
+            ..Default::default()
+        };
+        let clock = damage::Clock {
+            beats: &[0.5, 1.0, 1.5],
+            start: 0.0,
+            free: 0.5,
+        };
+        let hit = |lethal| Moment::Hit {
+            x: 0.0,
+            y: 0.0,
+            lethal,
+            damage: 1.0,
+            song: 1.0,
+            critical: false,
+            foe: 7,
+            source: "move",
+            weight: "light",
+            what: "sword".into(),
+            dir: 0.0,
+            intensity: 1.0,
+        };
+        let impact = |lethal| Moment::EnemyImpact {
+            hit: Box::new(hit(lethal)),
+        };
+        for now in [1.0, 1.03] {
+            scene.moments(
+                &[impact(false)],
+                now,
+                &world.lib,
+                &world.looks,
+                &view,
+                &clock,
+            );
+        }
+        assert_eq!(scene.struck[&7], (1.0, false));
+        scene.moments(
+            &[impact(false)],
+            1.2,
+            &world.lib,
+            &world.looks,
+            &view,
+            &clock,
+        );
+        assert_eq!(scene.struck[&7], (1.2, false));
+        scene.moments(&[hit(true)], 1.21, &world.lib, &world.looks, &view, &clock);
+        scene.moments(
+            &[impact(false)],
+            1.23,
+            &world.lib,
+            &world.looks,
+            &view,
+            &clock,
+        );
+        assert_eq!(scene.struck[&7], (f64::INFINITY, true));
+        scene.moments(
+            &[impact(true)],
+            1.3,
+            &world.lib,
+            &world.looks,
+            &view,
+            &clock,
+        );
+        assert_eq!(scene.struck[&7], (1.3, true));
+        view.apply(
+            1.4,
+            &eval::live::Record::Spawn {
+                id: 7,
+                kind: "vs-bat3".into(),
+            },
+        );
+        scene.moments(&[], 1.4, &world.lib, &world.looks, &view, &clock);
+        assert!(
+            !scene.struck.contains_key(&7),
+            "a replay-corrected live foe must not keep a discarded death"
+        );
+        scene.moments(
+            &[impact(false)],
+            1.41,
+            &world.lib,
+            &world.looks,
+            &view,
+            &clock,
+        );
+        assert_eq!(scene.struck[&7], (1.41, false));
+    }
     #[test]
     fn actual_boss_roles_and_retired_cues_keep_death_showpieces_in_a_full_cell_budget() {
         let world = crate::slice::World::load(None).unwrap();

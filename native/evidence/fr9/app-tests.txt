@@ -1,0 +1,96 @@
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-fr9/native/crates/eval)
+   Compiling app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-fr9/native/crates/app)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.57s
+     Running unittests src/main.rs (target/debug/deps/playlist_survivors-117eebc7468b2345)
+
+running 86 tests
+test slice::cards::restored_cards_tests::restored_card_render_qualification ... ignored, release: restored card and inventory offscreen qualification
+test slice::calibration::tests::the_stomp_key_follows_the_directions_until_calibrated_itself ... ok
+test slice::apps::tests::an_app_is_named_by_its_bundle_or_executable ... ok
+test slice::calibration::tests::a_tap_along_takes_the_median_error_after_the_first_two_taps ... ok
+test slice::apps::tests::browsers_are_known_by_bundle_or_name ... ok
+test slice::damage::tests::a_free_pulse_uses_run_or_last_beat_origin ... ok
+test slice::damage::tests::labels_wait_for_the_grid_reaction_across_a_freeze ... ok
+test slice::damage::tests::damage_is_scaled_and_summed_per_enemy_per_beat ... ok
+test slice::damage::tests::labels_are_bounded_at_density ... ok
+test slice::evolution::tests::cues_reconcile_at_landing_and_multi_reward_uses_one_ui_voice ... ok
+test slice::evolution::tests::corrected_rewards_refresh_identity_without_restarting_the_animation ... ok
+test slice::evolution::tests::chest_identity_never_fires_early_restarts_after_expiry_or_survives_retraction ... ok
+test slice::evolution::tests::manual_and_music_pauses_hold_burst_but_chest_animation_advances ... ok
+test slice::gems::tests::a_blasts_gem_hangs_then_flies_in ... ok
+test slice::gems::tests::a_gem_waits_on_the_field_until_it_takes_off_then_reaches_the_hero ... ok
+test slice::gems::tests::survivor_gem_uses_recorded_physical_position_without_an_invented_arrival ... ok
+test slice::hud::tests::hud_state_render_qualification ... ignored, release: offscreen HUD state qualification
+test slice::gems::tests::survivor_value_bands_scale_and_cap_the_merged_gem_size ... ok
+test slice::hud::tests::low_health_pulses_on_a_reliable_beat_and_damage_flashes_white ... ok
+test slice::hud::tests::zen_meter_is_heard_music_and_legacy_meter_is_earned_accuracy ... ok
+test slice::calibration::tests::settings_keep_a_calibration_per_device_and_read_the_old_file ... ok
+test slice::hud_pulse_tests::pruning_recent_history_keeps_global_downbeats_and_phase ... ok
+test slice::hud_pulse_tests::replay_hud_uses_recorded_clock_beats_and_original_bar_origin ... ok
+test slice::impact_budget::tests::dense_hits_merge_shrink_and_recover_without_suppressing_death ... ok
+test slice::impact_budget::tests::foreground_has_reserved_full_reactions_after_background_is_full ... ok
+test slice::impact_budget::tests::boss_showpiece_bypasses_an_exhausted_ordinary_death_budget ... ok
+test slice::lane::hud_lock_tests::musical_lock_uses_heard_known_ticks_and_stops_after_a_gap ... ok
+test slice::lane::tests::a_wave_takes_the_key_heard_before_it_and_fades_its_look_in ... ok
+test slice::lane::tests::keys_read_as_their_pitch_class_and_mode ... ok
+test slice::lane::tests::nothing_is_shown_before_it_is_known ... ok
+test slice::lane::tests::the_pulse_follows_the_evidence_and_the_onsets_flash_once_a_gap ... ok
+test slice::lane::tests::unknown_ticks_jumps_and_onsets_do_not_change_the_frame_or_zone_key ... ok
+test slice::lane::tests::presses_ripple_and_the_good_ones_light_the_ground ... ok
+test slice::live::tests::a_wav_data_chunk_is_read ... ok
+test slice::cards::tests::forecast_retiming_replaces_future_cues_instead_of_doubling_them ... ok
+test slice::cards::tests::chained_offers_keep_the_world_dim_and_cues_use_sim_reveals ... ok
+test slice::cards::tests::horizontal_navigation_visits_every_card_including_between_frames ... ok
+test slice::cards::tests::clicks_cover_all_three_card_faces_at_different_window_sizes ... ok
+test slice::atmosphere::tests::aura_starts_visible_grows_with_real_ranks_and_keeps_evolution_layers ... ok
+test slice::cards::tests::a_retraction_does_not_animate_or_sound_a_confirm ... ok
+test slice::cards::tests::picks_fall_away_but_retracted_picks_reopen_without_confirm ... ok
+test slice::cards::tests::pair_badge_follows_actual_catalog_partners ... ok
+test slice::cards::tests::rollback_replaces_cards_and_pair_inventory_at_the_same_reveal_times ... ok
+test slice::loopback::tests::clicks_are_found_over_the_noise_once_each ... ok
+test slice::live::tests::the_resampler_keeps_a_constant_and_its_rate ... ok
+test slice::loopback::tests::each_source_click_takes_the_first_heard_in_its_window ... ok
+test slice::recap::tests::held_time_keeps_short_ownership_visible_and_rounds_near_whole_seconds ... ok
+test slice::session::tests::forty_minutes_fit_the_session_store_with_room_for_stream_and_keys ... ok
+test slice::session::tests::the_wav_header_says_its_sizes ... ok
+test slice::sounds::budget::tests::caps_cover_future_overlap_and_slow_sample_tails ... ok
+test slice::sounds::budget::tests::crowd_tails_cannot_consume_player_damage_attack_or_ui_slots ... ok
+test slice::sounds::chain::tests::chain_is_pentatonic_bounded_resets_and_rewinds ... ok
+test slice::signature::tests::actual_stones_layout_is_bounded_and_centered_on_recorded_landmark ... ok
+test slice::sounds::survivor_tests::real_music_effects_mix_qualification ... ignored, release: real decoded music and effects mix qualification
+test slice::sounds::horn::tests::warning_horn_is_finite_short_and_below_full_scale_at_output_rates ... ok
+test slice::session::tests::pruning_keeps_the_newest ... ok
+test slice::fx::density_tests::source_boss_debris_lives_past_one_second_and_only_hit_decals_shorten ... ok
+test slice::scene::density_tests::rapid_hits_leave_flash_holds_and_old_hits_cannot_erase_a_death ... ok
+test slice::scene::density_tests::actual_boss_roles_and_retired_cues_keep_death_showpieces_in_a_full_cell_budget ... ok
+test slice::sounds::tests::a_kill_group_changing_after_its_voice_played_sounds_nothing_more ... ok
+test slice::sounds::tests::slots_fall_on_the_grid_and_past_the_last_beat ... ok
+test slice::sounds::tests::a_started_voice_stays_when_a_new_beat_moves_its_slot ... ok
+test slice::tests::a_run_starts_after_two_clear_seconds_once_quiet_or_after_an_end ... ok
+test slice::tests::a_runs_music_is_resampled_from_its_start_with_silence_before_it ... ok
+test slice::tests::watch_labels_follow_only_the_rebased_recorded_beats ... ok
+test slice::tier::tests::a_line_spans_its_ends ... ok
+test slice::tier::tests::the_trail_finds_the_hero_between_its_samples ... ok
+test slice::watchdog::tests::it_trips_on_a_stalled_main_thread_or_capture_and_not_before ... ok
+test slice::watchdog::tests::silent_buffers_do_not_look_like_a_capture_stall ... ok
+test slice::sounds::tests::sounds_follow_the_speculation_and_kills_share_their_slot ... ok
+Error: Couldn't open input file ('wht?')
+test slice::live::decode_tests::conversion_directories_are_unique_and_failures_clean_them ... ok
+test slice::live::decode_tests::concurrent_decodes_preserve_each_sources_real_pcm ... ok
+test slice::cards::restored_cards_tests::restored_cards_have_distinct_baked_icons_and_truthful_labels ... ok
+test slice::damage::draw_tests::critical_labels_are_larger_and_gold ... ok
+test slice::damage::draw_tests::dense_coincident_labels_share_space_without_changing_their_values ... ok
+test slice::cards::tests::third_card_is_fully_readable_on_the_sims_confirmation_beat ... ok
+test slice::roster::tests::roster_uses_baked_directional_art_or_anchored_thorn_props ... ok
+test slice::sounds::survivor_tests::screen_cues_land_on_their_onset_and_retract_before_start ... ok
+test slice::sounds::survivor_tests::a_restart_keeps_audible_tails_in_the_budget ... ok
+test slice::sounds::survivor_tests::sword_fire_keeps_its_actual_subdivision_instead_of_snapping_again ... ok
+test slice::sounds::survivor_tests::rollback_repitches_only_a_gem_that_has_not_started ... ok
+test slice::sounds::survivor_tests::essential_and_stride_cues_play_without_any_beat_evidence ... ok
+test slice::sounds::survivor_tests::boss_cues_use_decoded_palette_onsets_and_cancel_before_playback ... ok
+test slice::sounds::survivor_tests::evolution_transients_decode_land_on_the_grant_and_cancel_before_playing ... ok
+test slice::sounds::survivor_tests::weapon_pulse_and_contact_cues_use_real_palette_and_cancel_on_retraction ... ok
+test slice::sounds::survivor_tests::actual_palette_decodes_and_dense_causes_obey_all_caps ... ok
+
+test result: ok. 83 passed; 0 failed; 3 ignored; 0 measured; 0 filtered out; finished in 1.16s
+

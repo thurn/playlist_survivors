@@ -206,24 +206,8 @@ fn capture(dir: &Path, aura_only: bool) -> Result<(), String> {
             capture::write_png(&dir.join(format!("{name}.png")), 1280, 720, &rgba)?;
             writeln!(trace,"{}",serde_json::json!({"song":song,"run":run.elapsed,"zone":ground.theme.id,"zoom":view.camera.2,"bloom":layers.grade.bloom,"ambient":layers.grade.ambient})).map_err(|e|e.to_string())?;
             if next == 0 {
-                for count in 0..=5 {
+                for (label, inventory) in aura_builds() {
                     let mut fixture = view.clone();
-                    let mut inventory = Inventory::default();
-                    for id in [
-                        WeaponId::BloodyTear,
-                        WeaponId::SoulEater,
-                        WeaponId::HolyWand,
-                        WeaponId::UnholyVespers,
-                        WeaponId::ThunderLoop,
-                    ]
-                    .into_iter()
-                    .take(count)
-                    {
-                        inventory
-                            .weapons
-                            .upgrade(id, weapon_catalog().get(id).max_rank())
-                            .map_err(|e| format!("{e:?}"))?;
-                    }
                     fixture.inventory = Some(inventory);
                     scene.fast_lane(engine.stream(), 0.2, song, song, None);
                     let mut layers = scene::Layers::default();
@@ -240,9 +224,7 @@ fn capture(dir: &Path, aura_only: bool) -> Result<(), String> {
                         &mut layers,
                     );
                     art.fonts["pixel"].text(
-                        &format!(
-                            "DIAGNOSTIC INVENTORY OVERRIDE: {count} OWNED EVOLUTIONS / AURA ONLY"
-                        ),
+                        &format!("DIAGNOSTIC INVENTORY OVERRIDE: {label} / AURA ONLY"),
                         640.0,
                         700.0,
                         1.0,
@@ -258,7 +240,7 @@ fn capture(dir: &Path, aura_only: bool) -> Result<(), String> {
                         overlay: &layers.overlay,
                     });
                     capture::write_png(
-                        &dir.join(format!("aura-{count}.png")),
+                        &dir.join(format!("aura-{label}.png")),
                         1280,
                         720,
                         &gpu.rgba()?,
@@ -267,7 +249,7 @@ fn capture(dir: &Path, aura_only: bool) -> Result<(), String> {
             }
             if aura_only {
                 eprintln!(
-                    "SP3: six labelled inventory-only aura poses at0..5 owned evolutions; quiet actual world, no acquisition/weapon-behavior claim"
+                    "FR9: eight labelled aura-only legal rank/evolution builds; no acquisition/weapon-behavior claim"
                 );
                 return Ok(());
             }
@@ -282,8 +264,83 @@ fn capture(dir: &Path, aura_only: bool) -> Result<(), String> {
     }
     clip.encode(&dir.join("opening-minute-sweep.mp4"))?;
     eprintln!(
-        "SP3: five actual zone stills, six labelled inventory aura poses, {} silent24fps sweep frames; no human feel/density/survival claim",
+        "FR9: five actual zone stills, eight labelled inventory aura poses, {} silent24fps sweep frames; no human feel/density/survival claim",
         clip.count()
     );
     Ok(())
+}
+
+/// Legal slot/rank states for visual comparison; this never grants a gameplay upgrade.
+fn aura_builds() -> Vec<(String, Inventory)> {
+    use sim::survivors::PassiveId;
+    let mut opening = Inventory::default();
+    opening.weapons.upgrade(WeaponId::Sword, 8).unwrap();
+    let mut growing = opening;
+    for (id, rank) in [
+        (WeaponId::Sword, 4),
+        (WeaponId::ChainLightning, 4),
+        (WeaponId::FireTrail, 3),
+    ] {
+        while growing.weapons.rank(id).unwrap_or(0) < rank {
+            growing
+                .weapons
+                .upgrade(id, weapon_catalog().get(id).max_rank())
+                .unwrap();
+        }
+    }
+    for id in [PassiveId::Magnet, PassiveId::Armour] {
+        for _ in 0..3 {
+            growing.passives.upgrade(id, id.max_rank()).unwrap();
+        }
+    }
+    let mut maxed = Inventory::default();
+    for id in [
+        WeaponId::Sword,
+        WeaponId::Garlic,
+        WeaponId::MagicWand,
+        WeaponId::KingBible,
+        WeaponId::LightningRing,
+        WeaponId::ChainLightning,
+    ] {
+        for _ in 0..weapon_catalog().get(id).max_rank() {
+            maxed
+                .weapons
+                .upgrade(id, weapon_catalog().get(id).max_rank())
+                .unwrap();
+        }
+    }
+    for id in [
+        PassiveId::Spinach,
+        PassiveId::HollowHeart,
+        PassiveId::Pummarola,
+        PassiveId::Duplicator,
+        PassiveId::EmptyTome,
+        PassiveId::Spellbinder,
+    ] {
+        for _ in 0..id.max_rank() {
+            maxed.passives.upgrade(id, id.max_rank()).unwrap();
+        }
+    }
+    let mut builds = vec![
+        ("opening".into(), opening),
+        ("growing-unevolved".into(), growing),
+        ("max-base".into(), maxed),
+    ];
+    for (i, id) in [
+        WeaponId::BloodyTear,
+        WeaponId::SoulEater,
+        WeaponId::HolyWand,
+        WeaponId::UnholyVespers,
+        WeaponId::ThunderLoop,
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        maxed
+            .weapons
+            .replace(weapon_catalog().get(id).evolution_of.unwrap(), id)
+            .unwrap();
+        builds.push((format!("evolved-{}", i + 1), maxed));
+    }
+    builds
 }

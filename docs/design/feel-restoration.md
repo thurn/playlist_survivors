@@ -563,7 +563,15 @@ simulation loop. Existing damage, mainbeat choreography and CI budgets remain.
 
 ### FR9 — Presentation
 
-Pending implementation.
+Restored starting presence and aura growth from actual weapon/passive ranks,
+with distinct owned-evolution layers. Foreground particles/body responses retain
+reserved space, primary sword/signatures remain strong, and dense per-victim
+broad arcs/light/shake/labels recede. Actual catalog floor aftermath persists
+for20 world seconds in a96-mark rollbackable pool; menus hold it and discarded
+deaths retract. No combat/balance values changed. [Evidence and commands](../../native/evidence/fr9/README.md)
+cover actual late-key kills, bounded history, labelled aura/density captures and
+1080p combat/restored-build benchmarks. FR10 owns integrated qualification;
+human feel/speaker/System remain pending. The bead records review/checks/candidate.
 
 ### FR10 — Integrated qualification
 

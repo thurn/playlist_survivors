@@ -15,3 +15,6 @@ mod musical_tests;
 
 #[cfg(test)]
 mod signature_tests;
+
+#[cfg(test)]
+mod aftermath_tests;

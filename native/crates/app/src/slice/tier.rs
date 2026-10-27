@@ -122,6 +122,34 @@ pub fn aura(
             .tinted(c)
             .additive(),
     );
+    if view.run.is_some()
+        && let Some(inventory) = view.inventory
+    {
+        for (i, slot) in inventory
+            .weapons
+            .iter()
+            .filter(|w| {
+                sim::survivors::weapon_catalog()
+                    .get(w.id)
+                    .evolution_of
+                    .is_some()
+            })
+            .enumerate()
+        {
+            let color = super::evolution::color(slot.id);
+            out.push(Sprite::arc(
+                sx,
+                sy,
+                (25.0 + 4.0 * i as f32 + 2.0 * p) * scale,
+                render::sprites::Arc {
+                    head: (hero.world * 0.6) as f32 + i as f32 * 1.25,
+                    span: 1.8,
+                    width: 1.2 * scale,
+                },
+                [color[0], color[1], color[2], 0.24],
+            ));
+        }
+    }
 }
 
 /// Where the hero was (x, y) at host time `t`, from its recent places (oldest first).

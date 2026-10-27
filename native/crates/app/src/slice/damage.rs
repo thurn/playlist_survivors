@@ -49,8 +49,12 @@ struct Number {
 #[derive(Default)]
 pub struct Numbers {
     items: std::collections::VecDeque<Number>,
+    hero: Option<(f64, f64)>,
 }
 impl Numbers {
+    pub fn focus(&mut self, hero: Option<(f64, f64)>) {
+        self.hero = hero;
+    }
     /// Grid-aligned reactions present each applied Fate once, including across freezes.
     pub fn moments(&mut self, moments: &[eval::live::Moment], now: f64, clock: &Clock) {
         for moment in moments {
@@ -125,24 +129,43 @@ impl Numbers {
         let face = &art.fonts["pixel"];
         // Values remain summed per enemy/beat; crowded labels only share screen space.
         let mut cells = std::collections::BTreeSet::new();
+        let (mut near_labels, mut far_labels) = (0, 0);
+        let dense = self.items.len() > 32;
         for offset in 0..self.items.len() {
             let n = if self.items.len() > 32 {
                 &self.items[self.items.len() - 1 - offset]
             } else {
                 &self.items[offset]
             };
+            let near = self
+                .hero
+                .is_some_and(|h| (n.x - h.0).hypot(n.y - h.1) <= 190.0);
+            if dense && ((near && near_labels >= 12) || (!near && far_labels >= 20)) {
+                continue;
+            }
             let age = (now - n.last).max(0.0);
             let fade = (1.0 - age / HOLD).min(1.0) as f32;
             let pop = (1.0 + 0.25 * (-age * 18.0).exp()) as f32;
             let (x, y) = at(n.x, n.y - 35.0 - (now - n.born).min(1.2) * 18.0);
-            if self.items.len() > 32
+            if dense
                 && !cells.insert((
-                    (x / (42.0 * scale)).floor() as i32,
-                    (y / (22.0 * scale)).floor() as i32,
+                    (x / (64.0 * scale)).floor() as i32,
+                    (y / (32.0 * scale)).floor() as i32,
                 ))
             {
                 continue;
             }
+            if near {
+                near_labels += 1;
+            } else {
+                far_labels += 1;
+            }
+            let fade = fade
+                * if dense && !near && !n.critical {
+                    0.55
+                } else {
+                    1.0
+                };
             let color = if n.critical {
                 [1.0, 0.81, 0.22, fade]
             } else {
@@ -266,6 +289,8 @@ mod draw_tests {
         };
         let mut dense = Numbers::default();
         let mut single = Numbers::default();
+        dense.focus(Some((0.0, 0.0)));
+        single.focus(Some((0.0, 0.0)));
         for foe in 0..64 {
             dense.add(foe, 0.0, 1.0, false, 0.0, 0.0, 0.0, &clock);
         }
