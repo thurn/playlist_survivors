@@ -326,7 +326,7 @@ impl Sim {
 
     /// Arms a swing for a slot (one swing per slot): an automatic one (`swingFor`).
     pub(super) fn swing_for(&mut self, slot: usize, s_armed: f64) -> Option<usize> {
-        if self.st.survivor.is_some() {
+        if self.st.survivor.is_some() && self.survivor_sword().is_none() {
             return None;
         }
         if self.st.taken_slots.contains(&slot) {
@@ -340,9 +340,12 @@ impl Sim {
             return None;
         }
         self.st.taken_slots.insert(slot);
+        let s_strike = self.st.sch.grid_slots[slot].s;
+        Some(self.arm_swing_at(s_strike, s_armed))
+    }
+
+    pub(super) fn arm_swing_at(&mut self, s_strike: f64, s_armed: f64) -> usize {
         let hero = &self.env.input.lib.hero;
-        let sl = &self.st.sch.grid_slots[slot];
-        let s_strike = sl.s;
         // (Reactive mode: heavy or light is decided at the wind-up, from the forecasts known by then.)
         let (frames, impact) = (6.0, 3.0);
         let s_wind = max(
@@ -350,6 +353,7 @@ impl Sim {
             s_strike - hero.swings.windup_ms / 1000.0 / max(0.05, self.base_rate(s_strike)),
         );
         let sw = Swing {
+            hit: None,
             s_armed,
             s_wind,
             s_strike,
@@ -358,7 +362,7 @@ impl Sim {
             impact,
             frames,
             tier: 0.0,
-            accent: sl.accent,
+            accent: 0.0,
             dir: self.st.facing_angle,
             aimed: false,
             struck: false,
@@ -379,7 +383,41 @@ impl Sim {
         self.st.live_swings.push(i);
         self.st.q.push(s_wind, Ev::Wind(i));
         self.st.q.push(s_strike, Ev::Strike(i));
-        Some(i)
+        i
+    }
+
+    /// Current inventory is the only source of survivor sword damage/reach.
+    pub(super) fn survivor_sword(&self) -> Option<(crate::survivors::WeaponId, f64, f64)> {
+        let p = self.st.survivor.as_ref()?;
+        let slot = p
+            .arsenal
+            .inventory()
+            .weapons
+            .iter()
+            .find(|s| s.id.is_sword())?;
+        let weapon = crate::survivors::weapon_catalog()
+            .get(slot.id)
+            .level(slot.rank);
+        let stats = p.stats.finalized();
+        Some((
+            slot.id,
+            weapon.power * stats.might,
+            crate::survivors::SWORD_BASE_RADIUS * weapon.area * stats.area,
+        ))
+    }
+
+    /// Amount/free-pulse shots use the same identity and animation as main beats.
+    pub(super) fn survivor_sword_shot(&mut self) -> Option<(u64, f64)> {
+        let i = self
+            .st
+            .live_swings
+            .iter()
+            .copied()
+            .find(|&i| (self.st.swing_pool[i].s_strike - self.st.s).abs() < 1e-8)
+            .unwrap_or_else(|| self.arm_swing_at(self.st.s, self.st.s));
+        self.do_strike(i);
+        let sw = &self.st.swing_pool[i];
+        sw.hit.map(|id| (id as u64, sw.dir))
     }
 
     /// A forecast accent within `within` of song time t, known by `now` (`forecastAt`).
@@ -436,26 +474,37 @@ impl Sim {
                 continue;
             }
             let f = &self.st.foes[fi];
-            let fx = f.x + f.vx * (w - f.last_w);
-            let fy = f.y + f.vy * (w - f.last_w);
+            let (fx, fy) = self.pos(fi, w);
             if abs(fx - x) > 2.0 * reach + f.r || abs(fy - y) > 2.0 * reach + f.r {
                 continue;
             }
-            if hypot(fx - x, fy - y) > 2.0 * reach + f.r {
+            let limit = if self.st.survivor.is_some() {
+                reach + 0.5 * f.r
+            } else {
+                2.0 * reach + f.r
+            };
+            if hypot(fx - x, fy - y) > limit {
                 continue;
             }
             out.push(AimTarget {
                 x: fx,
                 y: fy,
                 r: f.r,
-                weight: f.weight,
+                weight: if f.survivor_boss {
+                    self.env.input.lib.hero.aim_weights.boss
+                } else {
+                    f.weight
+                },
             });
         }
         out
     }
 
     fn tier_reach(&self, tier: f64) -> ArcReach {
-        let arc = swing_arc_at(&self.env.input.lib.hero, tier);
+        let mut arc = swing_arc_at(&self.env.input.lib.hero, tier);
+        if let Some((_, _, radius)) = self.survivor_sword() {
+            arc.radius = radius;
+        }
         ArcReach {
             radius: arc.radius,
             half_angle: (arc.degrees * PI) / 360.0,
@@ -463,7 +512,12 @@ impl Sim {
     }
 
     fn heavy_tier_reach(&self, tier: f64) -> ArcReach {
-        let arc = heavy_arc_at(&self.env.input.lib.hero, tier);
+        let mut arc = heavy_arc_at(&self.env.input.lib.hero, tier);
+        if let Some((_, _, radius)) = self.survivor_sword() {
+            let hero = &self.env.input.lib.hero;
+            arc.radius = radius * hero.swings.heavy.hit_shape.radius
+                / hero.swings.light.hit_shape.radius.max(1.0);
+        }
         ArcReach {
             radius: arc.radius,
             half_angle: (arc.degrees * PI) / 360.0,
@@ -480,9 +534,19 @@ impl Sim {
     /// Launches an accent's shockwave, known at song time `known` (`launchCleave`): its first band on
     /// the first eighth-note slot at least NEVER_LATE after the launch, then one band per sixteenth.
     pub(super) fn launch_cleave(&mut self, c: PendingCleave, known: f64, press: f64) {
-        if self.st.survivor.is_some() {
+        self.st.cleave_times.retain(|s| *s >= self.st.s - 8.0);
+        if self
+            .st
+            .cleave_times
+            .iter()
+            .any(|s| abs(*s - c.s) <= super::FORECAST_WINDOW + 1e-9)
+        {
             return;
         }
+        if self.st.cleave_times.len() == 32 {
+            self.st.cleave_times.remove(0);
+        }
+        self.st.cleave_times.push(c.s);
         let env = Rc::clone(&self.env);
         let hero = &env.input.lib.hero;
         let wd = &hero.swings.heavy.wave;
@@ -492,19 +556,28 @@ impl Sim {
         while time_of_beat_index(song, bi0) - known < NEVER_LATE - 1e-9 {
             bi0 += 0.5;
         }
-        let to = wave_reach_at(hero, c.tier);
+        let to = if self.st.survivor.is_some() {
+            reach.radius
+                + (wave_reach_at(hero, c.tier) - heavy_arc_at(hero, c.tier).radius).max(wd.band)
+        } else {
+            wave_reach_at(hero, c.tier)
+        };
         let bands = ceil((to - reach.radius) / wd.band - 1e-9);
         let group = self.st.waves.len();
         self.st.waves.push(WaveState {
+            weapon: self.survivor_sword().map(|(id, _, _)| id),
             x: c.x,
             y: c.y,
             dir: c.dir,
             group,
-            mult: tier_damage(hero, c.tier),
+            mult: self.survivor_sword().map_or_else(
+                || tier_damage(hero, c.tier),
+                |(_, power, _)| power / hero.swings.light.damage.max(1e-9),
+            ),
             inner: reach.radius,
             half_angle: reach.half_angle,
             to,
-            hit: HashSet::new(),
+            hit: c.primary_targets.into_iter().collect(),
         });
         // (Its first band's time may be a beat ahead of those known: recorded once known.)
         let launch = self.st.s;
@@ -534,9 +607,6 @@ impl Sim {
     /// Stage 5: a strong onset becomes known (with the beat clear): a cleave waiting where the hero
     /// stands, unless a heavy swing on a forecast accent near it has the cleave (`onsetAccent`).
     pub(super) fn onset_accent(&mut self, i: usize) {
-        if self.st.survivor.is_some() {
-            return;
-        }
         let o = self.log.onsets[self.st.strong_onsets[i]];
         let pool = &self.st.swing_pool;
         let heavy_near = self.st.swings.iter().any(|&x| {
@@ -548,6 +618,7 @@ impl Sim {
         }
         let hp = self.hero_pose(self.st.w);
         let c = PendingCleave {
+            primary_targets: Vec::new(),
             gi: -1.0,
             s: o.t,
             x: hp.x,
@@ -579,8 +650,10 @@ impl Sim {
         let hp = self.hero_pose(self.st.w);
         let tier = self.st.tier;
         let heavy = self.st.swing_pool[i].heavy;
-        let reach = if heavy {
+        let reach = if heavy && self.st.survivor.is_none() {
             self.accent_aim_at(tier)
+        } else if heavy {
+            self.heavy_tier_reach(tier)
         } else {
             self.tier_reach(tier)
         };
@@ -596,7 +669,16 @@ impl Sim {
         }
         let dir = aim(hp.x, hp.y, self.st.facing_angle, &targets, reach);
         self.st.facing_angle = dir;
-        let record_reach = if heavy {
+        let record_reach = if self.st.survivor.is_some() {
+            Reach {
+                radius: if heavy {
+                    self.heavy_tier_reach(tier).radius
+                } else {
+                    self.tier_reach(tier).radius
+                },
+                degrees: 360.0,
+            }
+        } else if heavy {
             Reach {
                 radius: reach.radius,
                 degrees: (reach.half_angle * 360.0) / PI,
@@ -631,10 +713,17 @@ impl Sim {
             reach: record_reach,
         });
         let wind_w = max(1.0 / 240.0, (sw.s_strike - sw.s_wind) * base_rate);
-        sw.fps = sw.impact / wind_w;
+        sw.fps = if sw.s_strike <= sw.s_wind + 1e-9 {
+            24.0
+        } else {
+            sw.impact / wind_w
+        };
     }
 
     pub(super) fn do_strike(&mut self, i: usize) {
+        if self.st.swing_pool[i].struck || (self.st.survivor.is_some() && !self.weapons_active()) {
+            return;
+        }
         if !self.st.swing_pool[i].aimed {
             self.do_wind(i);
         }
@@ -655,26 +744,46 @@ impl Sim {
         } else {
             self.tier_reach(tier)
         };
-        let shape = swing_arc(hp.x, hp.y, dir, reach);
+        let survivor = self.survivor_sword();
+        let shape = if survivor.is_some() {
+            Shape::Circle {
+                x: hp.x,
+                y: hp.y,
+                radius: reach.radius,
+            }
+        } else {
+            swing_arc(hp.x, hp.y, dir, reach)
+        };
         let mult = tier_damage(hero, tier);
         let h = self.add_hit(
             HitSpec {
                 source: HitSource::Move,
-                what: (if heavy { "cleave" } else { "slash" }).into(),
+                what: survivor.map_or_else(
+                    || (if heavy { "cleave" } else { "slash" }).into(),
+                    |(id, _, _)| id.as_str().into(),
+                ),
                 weight: if heavy { Weight::Heavy } else { Weight::Light },
                 primary: true,
                 shape,
                 dir,
                 accent,
-                damage: def_damage * mult,
+                damage: survivor.map_or(def_damage * mult, |(_, power, _)| {
+                    power
+                        * if heavy {
+                            hero.swings.heavy.damage / hero.swings.light.damage.max(1e-9)
+                        } else {
+                            1.0
+                        }
+                }),
                 group: None,
             },
             None,
         );
-        self.apply_hit(&h, None);
+        let primary_targets = self.apply_hit(&h, None);
         let w = self.st.w;
         let sw = &mut self.st.swing_pool[i];
         sw.struck = true;
+        sw.hit = Some(h.id);
         sw.w_strike = w;
         let mut r = sw.record.take().expect("an aimed swing's record");
         r.w = w;
@@ -687,6 +796,7 @@ impl Sim {
             // better launches its shockwave, now when it came first (with a hit-stop), or when it comes.
             let gi = nearest_index(&self.st.sch.grid_times, s_strike);
             let c = PendingCleave {
+                primary_targets,
                 gi: gi as f64,
                 s: s_strike,
                 x: hp.x,
@@ -753,7 +863,7 @@ impl Sim {
         };
         let spec = HitSpec {
             source: HitSource::Wave,
-            what: "shockwave".into(),
+            what: wv.weapon.map_or("shockwave", |id| id.as_str()).into(),
             weight: Weight::Medium,
             primary: false,
             shape,

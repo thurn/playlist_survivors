@@ -147,6 +147,9 @@ impl Cooldown {
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Shot {
+    /// The shared primary hit, when this shot is a character sword attack.
+    pub attack: Option<u64>,
+    pub dir: f64,
     pub id: WeaponId,
     pub rank: u8,
     pub ready_run: f64,
@@ -207,6 +210,12 @@ impl Arsenal {
     /// The clock's accumulated frozen song time, an anchor independent of frame cuts.
     pub fn resume(&mut self, song_offset: f64) {
         self.song_offset = song_offset;
+    }
+    #[cfg(test)]
+    pub(crate) fn measurement_empty() -> Self {
+        let mut out = Self::default();
+        out.inventory.weapons = Slots::default();
+        out
     }
     #[cfg(test)]
     pub(crate) fn measurement_weapon(id: WeaponId, rank: u8) -> Self {

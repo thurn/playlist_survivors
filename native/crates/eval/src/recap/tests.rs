@@ -242,13 +242,31 @@ fn actual_sim_fates_match_live_recap_for_all_five_evolutions_through_pause() {
             id: None,
         });
     }
+    let mut shared_sword_cue = false;
     for frame in 1..=2400 {
         let now = f64::from(frame) / 120.0;
         engine.feed(|l| replay.feed_to(l, now));
         source_replay.feed_to(sim.log_mut(), now);
         engine.frame(now, 0.0);
+        for c in engine.causes() {
+            match c.cause {
+                crate::live::Cause::Swing { .. } => shared_sword_cue = true,
+                crate::live::Cause::WeaponPulse {
+                    what: WeaponId::BloodyTear,
+                    ..
+                } => panic!("duplicate evolved sword fire cue"),
+                crate::live::Cause::Weapon { ref what, .. } if what == "bloody-tear" => {
+                    panic!("duplicate direct evolved fire cue")
+                }
+                _ => {}
+            }
+        }
         sim.advance_to(now);
     }
+    assert!(
+        shared_sword_cue,
+        "actual evolved sword must exercise shared swing sound"
+    );
     let rec = producer.borrow();
     let hits: std::collections::HashMap<u64, WeaponId> = rec
         .hits

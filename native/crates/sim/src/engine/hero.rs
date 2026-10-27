@@ -532,7 +532,7 @@ impl Sim {
                 )
         });
         let mut launched = false;
-        if let Some(pc) = self.st.pending_cleave
+        if let Some(pc) = self.st.pending_cleave.clone()
             && let Some(j) = judged.as_ref().filter(|j| j.class == PressClass::Counted)
             && j.grid_index as f64 == pc.gi
         {
@@ -545,7 +545,7 @@ impl Sim {
         // Stage 5: a counted press of Great or better within the Great window of an unforecast strong
         // onset launches its cleave (one cleave a press).
         if great {
-            if let Some((c, t)) = self.st.onset_cleave
+            if let Some((c, t)) = self.st.onset_cleave.clone()
                 && !launched
                 && abs(s - t) <= hero.timing.great_ms / 1000.0 + 1e-9
             {

@@ -62,7 +62,8 @@ fn evolution_bloody_tear_crit_damage_and_shared_one_second_heal_limit() {
     let r = rec.borrow();
     let fates: Vec<_> = r.enemies.iter().flat_map(|e| e.fates.iter()).collect();
     assert!(!fates.is_empty() && fates.iter().all(|f| f.critical));
-    let expected = 4.0 * (0.5 / 1.35) * 2.0;
+    let tear = weapon_catalog().get(WeaponId::BloodyTear).level(1);
+    let expected = tear.power * tear.crit_multiplier;
     assert!(fates.iter().all(|f| (f.damage - expected).abs() < 1e-9));
     let heals: Vec<_> = r
         .heals

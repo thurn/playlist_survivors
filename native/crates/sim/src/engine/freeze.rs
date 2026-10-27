@@ -244,10 +244,15 @@ impl Sim {
             for entry in entries {
                 if entry.ev.control() {
                     self.st.q.insert(entry);
-                } else if !entry.ev.cadence() {
+                } else if !entry.ev.cadence() && !matches!(entry.ev, Ev::Wind(_) | Ev::Strike(_)) {
                     self.hold_world(entry);
                 }
             }
+            self.st.live_swings.clear();
+            let beats = &self.log.beats;
+            self.st
+                .taken_slots
+                .retain(|&bi| beats.get(bi).is_some_and(|b| b.t <= self.st.s));
             // A previously known victory beat must wait for the stopped run clock too.
             if self
                 .st
@@ -610,6 +615,12 @@ impl Sim {
         let b = self.log.beats[bi];
         let period = self.enemy_beat_period(bi);
         self.queue_enemy_wind(b.t, period, None);
+        if b.t >= self.st.s - 1e-9 {
+            let wind = (b.t - self.env.input.lib.hero.swings.windup_ms / 1000.0).max(self.st.s);
+            self.st
+                .q
+                .push_init(wind, Ev::Auto { slot: bi }, phase::AUTO, bi as u64);
+        }
         self.st
             .q
             .push_init(b.t, Ev::Beat { bi }, phase::BEAT, bi as u64);

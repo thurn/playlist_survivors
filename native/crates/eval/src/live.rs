@@ -89,6 +89,7 @@ pub enum Moment {
     },
     /// A band of a cleave's shockwave hit, its arc centred at (x, y).
     WaveBand {
+        shape: Shape,
         x: f64,
         y: f64,
         dir: f64,
@@ -810,13 +811,8 @@ impl Recorder for LiveRecorder {
     }
     fn weapon_shot(&mut self, shot: sim::survivors::Shot) {
         let mut j = self.0.borrow_mut();
-        if shot.id == sim::survivors::WeaponId::Sword {
-            j.sound(Cause::Swing {
-                s: shot.song,
-                x: shot.x,
-                kind: if shot.accent { "heavy" } else { "spin" },
-            });
-        } else {
+        // The shared swing record owns sword audio, including Bloody Tear.
+        if !shot.id.is_sword() {
             j.sound(Cause::Weapon {
                 s: shot.song,
                 x: shot.x,
@@ -989,6 +985,7 @@ impl Recorder for LiveRecorder {
         let mut j = self.0.borrow_mut();
         if let Some(h) = j.notes.hits.iter().find(|h| h.id == hit as f64).cloned() {
             j.push(Record::Moment(Moment::WaveBand {
+                shape: h.shape,
                 x: h.x,
                 y: h.y,
                 dir: h.dir,
@@ -1661,7 +1658,6 @@ impl Engine {
                             shot.id,
                             sim::survivors::WeaponId::Garlic
                                 | sim::survivors::WeaponId::SoulEater
-                                | sim::survivors::WeaponId::BloodyTear
                                 | sim::survivors::WeaponId::MagicWand
                                 | sim::survivors::WeaponId::HolyWand
                                 | sim::survivors::WeaponId::KingBible

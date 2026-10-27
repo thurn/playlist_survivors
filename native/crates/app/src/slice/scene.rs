@@ -424,18 +424,20 @@ impl Scene {
                     shape,
                 } => {
                     let i = (intensity * (0.55 + 0.45 * groove) + 0.25 * groove).min(1.0);
-                    fire(
-                        &format!("hit-{kind}"),
-                        *x,
-                        *y,
-                        *dir,
-                        i,
-                        Start {
-                            tier: Some(*tier),
-                            shape: *shape,
-                            ..Start::default()
-                        },
-                    );
+                    if view.inventory.is_none() {
+                        fire(
+                            &format!("hit-{kind}"),
+                            *x,
+                            *y,
+                            *dir,
+                            i,
+                            Start {
+                                tier: Some(*tier),
+                                shape: *shape,
+                                ..Start::default()
+                            },
+                        );
+                    }
                 }
                 // A hit an enemy survives: a swing's by its weight, any other's the blades'.
                 Moment::Hit {
@@ -505,13 +507,14 @@ impl Scene {
                         }
                     }
                 }
-                Moment::WaveBand { x, y, dir } => fire(
+                Moment::WaveBand { x, y, dir, shape } => fire(
                     "shockwave",
                     *x,
                     *y,
                     *dir,
                     0.8,
                     Start {
+                        shape: Some(*shape),
                         tier: Some(view_tier),
                         ..Start::default()
                     },

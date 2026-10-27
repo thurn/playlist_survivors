@@ -723,21 +723,25 @@ fn fast_offer_fixture() -> (ContentLibrary, stream::StreamLog) {
 // cards; a separate durable cohort remains hittable by every weapon after Garlic8.
 fn all_weapons_offer_fixture() -> (ContentLibrary, stream::StreamLog, SourceFile) {
     let (mut content, mut log) = fast_offer_fixture();
-    content
+    let carrier = content
         .enemies
         .get_mut("vs-bat3")
         .unwrap()
         .survivors
         .as_mut()
-        .unwrap()
-        .xp = sim::survivors::total_xp(22);
+        .unwrap();
+    carrier.xp = sim::survivors::total_xp(22);
+    // This projection fixture needs real collected XP, not an AFK balance test.
+    // Finish a carrier's admitted step inside pickup reach before the 190px hit.
+    carrier.speed = 10_000.0;
     let target = content.enemies.get_mut("vs-bat2").unwrap();
     target.health = 1_000_000.0;
-    target.radius = 50.0; // The orbit can hit this large durable body while it contacts the hero.
+    target.radius = 120.0; // Durable fixture body overlaps the maxed aura and orbit while holding at contact.
     let stats = target.survivors.as_mut().unwrap();
     stats.speed = 1000.0;
     stats.xp = 0.0;
-    stats.knockback = 0.0; // Keep a durable target in the orbital contact band.
+    stats.knockback = 0.0;
+    stats.res_debuffs = 1.0; // Garlic cannot grow recoil on this durable contact fixture.
     let mut level = source("levels/survivors.yaml");
     let row = serde_json::json!({"minute":0,"minimum":2,"frequency":1_000_000,
         "enemies":["vs-bat3"],"bosses":["vs-bat2"],"events":[],"treasure":[]});

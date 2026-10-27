@@ -17,6 +17,12 @@ pub struct Sword {
 impl Sword {
     pub fn shot(&mut self, shot: Shot, now: f64) {
         self.spins.retain(|s| now - s.at < 0.45);
+        if let Some(id) = shot.attack
+            && let Some(spin) = self.spins.iter_mut().find(|s| s.shot.attack == Some(id))
+        {
+            spin.shot = shot;
+            return;
+        }
         if self.spins.len() == 16 {
             self.spins.pop_front();
         }
@@ -49,10 +55,20 @@ impl Sword {
             if age < life {
                 let p = (age / life) as f32;
                 let fade = (1.0 - p).powf(0.7);
-                let head = -std::f32::consts::FRAC_PI_2
-                    + std::f32::consts::TAU * (1.0 - (1.0 - p).powi(2));
+                let head = shot.dir as f32 - 1.2 + 2.4 * (1.0 - (1.0 - p).powi(2));
                 let span = 1.3 + 2.0 * (std::f32::consts::PI * p).sin();
-                let size = radius * if shot.accent { 1.2 } else { 1.0 };
+                let size = radius;
+                out.push(Sprite::arc(
+                    x,
+                    y,
+                    size,
+                    Arc {
+                        head: 0.0,
+                        span: std::f32::consts::TAU,
+                        width: 1.5 * scale,
+                    },
+                    [color[0], color[1], color[2], fade * 0.2],
+                ));
                 for i in (0..3).rev() {
                     let tail = i as f32;
                     out.push(Sprite::arc(
@@ -128,7 +144,7 @@ impl Sword {
                 out.push(Sprite::arc(
                     x,
                     y,
-                    radius * (0.85 + 0.65 * p),
+                    radius * (0.85 + 0.15 * p),
                     Arc {
                         head: 0.0,
                         span: std::f32::consts::TAU,

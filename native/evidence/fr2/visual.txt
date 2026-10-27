@@ -1,0 +1,6 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/feel-fr2/native/crates/sim)
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/feel-fr2/native/crates/eval)
+   Compiling app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/feel-fr2/native/crates/app)
+    Finished `release` profile [optimized] target(s) in 10.14s
+     Running `target/release/playlist-survivors --sword-check ../captures/feel-fr2-final`
+weapon-check: 120 frames at 30 fps, 1280x720, 128 BPM, 9 matching real shots/1 accent; normal sword, speculative lead 0.3; synthetic known beats/forecast, no enemies, no pacing/survival/rollback claim, silent capture

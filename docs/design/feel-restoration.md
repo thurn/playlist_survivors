@@ -456,7 +456,14 @@ qualification remain FR10. The bead records the exact landed commit and candidat
 
 ### FR2 — Sword and accents
 
-Pending implementation.
+Restored target-facing character swings, 190 px radial reach and full catalog
+power per hit at every tempo. Heavy primaries replace ordinary hits; outward
+waves are additional, with primary/target and forecast/onset deduplication. Shot
+identity carries the actual hit and facing into the visible arc; the shared
+swing owns its audio. Bloody Tear crit/heal behavior remains. Evidence, recipe
+and playable command: [native/evidence/fr2](../../native/evidence/fr2/README.md).
+FR3/FR4 and FR10 retain their sound, legacy tier and qualification scopes. The
+bead records the landed commit and candidate.
 
 ### FR3 — Sound
 

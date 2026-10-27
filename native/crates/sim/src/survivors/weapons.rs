@@ -1,6 +1,6 @@
 //! Curated VS level deltas, loaded independently of the frozen prototype content.
 /// Starting spin radius; SH3 tunes personal space, independently of VS damage.
-pub const SWORD_BASE_RADIUS: f64 = 48.0;
+pub const SWORD_BASE_RADIUS: f64 = 190.0;
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};

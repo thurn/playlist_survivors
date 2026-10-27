@@ -109,7 +109,30 @@ impl Sim {
             let stats = p.stats.finalized();
             let weapon = weapon_catalog().get(id).level(rank);
             let hp = self.hero_pose(self.st.w);
-            let accent = self.weapon_accent();
+            let accent = if id.is_sword() {
+                self.st
+                    .live_swings
+                    .iter()
+                    .map(|&i| &self.st.swing_pool[i])
+                    .find(|sw| (sw.s_strike - self.st.s).abs() < 1e-8)
+                    .map_or_else(
+                        || self.weapon_accent() && self.clear_at(self.st.s),
+                        |sw| sw.heavy,
+                    )
+            } else {
+                self.weapon_accent()
+            };
+            let hero = &self.env.input.lib.hero;
+            let heavy_damage = if id.is_sword() && accent {
+                hero.swings.heavy.damage / hero.swings.light.damage.max(1e-9)
+            } else {
+                1.0
+            };
+            let heavy_area = if id.is_sword() && accent {
+                hero.swings.heavy.hit_shape.radius / hero.swings.light.hit_shape.radius.max(1.0)
+            } else {
+                1.0
+            };
             let period = if matches!(id, WeaponId::KingBible | WeaponId::UnholyVespers) {
                 self.log.beats[..self.st.ingested.beats]
                     .iter()
@@ -118,7 +141,14 @@ impl Sim {
             } else {
                 period
             };
+            let attack = if id.is_sword() {
+                self.survivor_sword_shot()
+            } else {
+                None
+            };
             let shot = Shot {
+                attack: attack.map(|a| a.0),
+                dir: attack.map_or(0.0, |a| a.1),
                 id,
                 rank,
                 ready_run,
@@ -131,14 +161,14 @@ impl Sim {
                     } else {
                         0.0
                     })
-                    * if id.is_sword() { period / 1.35 } else { 1.0 },
+                    * heavy_damage,
                 amount: if id.is_sword() || matches!(id, WeaponId::MagicWand | WeaponId::HolyWand) {
                     1
                 } else {
                     weapon.amount(stats)
                 },
                 radius: if id.is_sword() {
-                    crate::survivors::SWORD_BASE_RADIUS * weapon.area * stats.area
+                    crate::survivors::SWORD_BASE_RADIUS * weapon.area * stats.area * heavy_area
                 } else if matches!(id, WeaponId::MagicWand | WeaponId::HolyWand) {
                     0.08 * crate::survivors::PX_PER_VS_UNIT * weapon.area * stats.area
                 } else if matches!(id, WeaponId::Garlic | WeaponId::SoulEater) {
@@ -194,27 +224,6 @@ impl Sim {
                 });
             }
             // Later weapon beads implement their delivery on the shared shot schedule.
-            if id.is_sword() {
-                let hit = self.add_hit(
-                    HitSpec {
-                        source: HitSource::Move,
-                        what: id.as_str().into(),
-                        weight: if accent { Weight::Heavy } else { Weight::Light },
-                        primary: true,
-                        shape: Shape::Circle {
-                            x: hp.x,
-                            y: hp.y,
-                            radius: shot.radius,
-                        },
-                        dir: 0.0,
-                        accent: f64::from(accent),
-                        damage: shot.damage,
-                        group: None,
-                    },
-                    None,
-                );
-                self.apply_hit(&hit, None);
-            }
         }
         self.tick_garlic();
         self.tick_missiles();

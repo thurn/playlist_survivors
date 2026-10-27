@@ -1,0 +1,14 @@
+    Finished `release` profile [optimized] target(s) in 0.20s
+     Running `target/release/playlist-survivors --file ../public/reactive/house-128/house-128.ogg --headless --seconds 12 --delayed`
+slice: output MacBook Pro Speakers (calibrated): input offsets -64 ms, stomp -64 ms, display 45 ms, latency correction 0 ms
+slice: file mode (../public/reactive/house-128/house-128.ogg), Delayed listening (M = 3 s), output 48000 Hz, L_out 16.6 ms, heard 3016.6 ms after capture
+slice: recording the session to /tmp/feel-fr2-sessions/1793115989
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [0, 0, 0, 0, 0], denied [0, 0, 0, 0, 0]
+slice: frame work median 0.00 ms, p95 0.00, p99 0.00 (0 frames a second, paced while hidden); rollbacks re-simulated 0 ms
+slice: sounds 0 started, 0 skipped late, 0 dropped, 0 cancelled; 0 rollbacks replaying 0.0 s, 0 late keys
+slice: run started at song time 2.8
+slice: sound budgets [weapons,hits,kills,pickups,ui] caps [4,6,2,3,3], peak [1, 1, 2, 0, 0], denied [0, 0, 0, 0, 0]
+slice: survivors minute Some(0), run 4.217s, spawned 18, alive 12: {"vs-bat3": 12}
+slice: frame work median 0.00 ms, p95 0.10, p99 0.16 (112 frames a second, paced while hidden); rollbacks re-simulated 1 ms
+slice: sounds 15 started, 0 skipped late, 0 dropped, 0 cancelled; 4 rollbacks replaying 0.7 s, 0 late keys
+slice: run over (Stopped), 6 s; sounds 28 started, 0 skipped late, 0 dropped

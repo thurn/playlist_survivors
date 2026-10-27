@@ -804,8 +804,9 @@ struct Flying {
     damage: f64,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 struct PendingCleave {
+    primary_targets: Vec<usize>,
     gi: f64,
     s: f64,
     x: f64,
@@ -817,6 +818,7 @@ struct PendingCleave {
 #[derive(Clone, Debug)]
 #[allow(clippy::struct_excessive_bools)]
 struct Swing {
+    hit: Option<f64>,
     s_armed: f64,
     s_wind: f64,
     s_strike: f64,
@@ -837,6 +839,7 @@ struct Swing {
 
 #[derive(Clone, Debug)]
 struct WaveState {
+    weapon: Option<crate::survivors::WeaponId>,
     x: f64,
     y: f64,
     dir: f64,
@@ -1000,6 +1003,7 @@ struct SimState {
     memo: PressMemo,
     tier: f64,
     last_raise_s: f64,
+    cleave_times: Vec<f64>,
     pending_cleave: Option<PendingCleave>,
     onset_cleave: Option<(PendingCleave, f64)>,
     last_great: Option<(f64, bool)>,
@@ -2084,6 +2088,7 @@ fn fresh_state(env: &Env) -> SimState {
         memo: PressMemo::default(),
         tier: 0.0,
         last_raise_s: f64::NEG_INFINITY,
+        cleave_times: Vec::new(),
         pending_cleave: None,
         onset_cleave: None,
         last_great: None,
@@ -2174,6 +2179,7 @@ fn fresh_state(env: &Env) -> SimState {
 mod tests {
     mod evolution_tests;
     mod mainbeat_tests;
+    mod sword_tests;
     use std::path::Path;
     use std::rc::Rc;
 
@@ -3216,7 +3222,7 @@ mod tests {
     }
 
     #[test]
-    fn survivor_sword_tuned_radius_has_a_real_near_and_far_boundary() {
+    fn survivor_sword_190px_reach_has_a_real_near_and_far_boundary() {
         let (rec, mut sim) =
             sword_measurement_base(128.0, 1, crate::survivors::StatDelta::default(), false);
         let def = sim
@@ -3231,14 +3237,14 @@ mod tests {
         let stats = data.survivors.as_mut().unwrap();
         stats.speed = 0.0;
         stats.knockback = 0.0;
-        sim.spawn_foe(def, 40.0, 0.0, Some(1e9));
-        sim.spawn_foe(def, 70.0, 0.0, Some(1e9));
+        sim.spawn_foe(def, 190.0, 0.0, Some(1e9));
+        sim.spawn_foe(def, 201.0, 0.0, Some(1e9));
         sim.advance_to(2.0);
         let log = rec.borrow();
         assert!(!log.enemies[0].fates.is_empty());
         assert!(
             log.enemies[1].fates.is_empty(),
-            "the 70px target must be outside the shortened spin"
+            "the 201px body is outside the 190px hit plus its half-radius"
         );
     }
 
@@ -3881,7 +3887,7 @@ mod tests {
             sim.spawn_foe(def, x, 0.0, Some(100.0));
         }
         sim.advance_to(0.01);
-        sim.st.survivor.as_mut().unwrap().arsenal = crate::survivors::Arsenal::default(); // isolate one missile
+        sim.st.survivor.as_mut().unwrap().arsenal = crate::survivors::Arsenal::measurement_empty(); // isolate one missile
         sim.st.q.remove(&|e| matches!(e, Ev::WandBullet(_))); // isolate this one travelling missile
         sim.advance_to(0.9);
         let r = rec.borrow();
@@ -3928,7 +3934,7 @@ mod tests {
         let (rec, mut sim, def) = wand_measurement(8);
         sim.spawn_foe(def, 80.0, 0.0, Some(1000.0));
         sim.advance_to(0.01);
-        sim.st.survivor.as_mut().unwrap().arsenal = crate::survivors::Arsenal::default();
+        sim.st.survivor.as_mut().unwrap().arsenal = crate::survivors::Arsenal::measurement_empty();
         sim.st.q.remove(&|e| matches!(e, Ev::WandBullet(_))); // isolate this one travelling missile
         sim.advance_to(1.0);
         assert_eq!(
@@ -3999,7 +4005,7 @@ mod tests {
         );
         let (rec, mut sim, _) = wand_measurement(1);
         sim.advance_to(0.01);
-        sim.st.survivor.as_mut().unwrap().arsenal = crate::survivors::Arsenal::default();
+        sim.st.survivor.as_mut().unwrap().arsenal = crate::survivors::Arsenal::measurement_empty();
         sim.st.q.remove(&|e| matches!(e, Ev::WandBullet(_))); // isolate this one travelling missile
         sim.advance_to(1.1);
         assert!(
@@ -4021,7 +4027,7 @@ mod tests {
             ..Default::default()
         });
         sim.advance_to(0.001);
-        sim.st.survivor.as_mut().unwrap().arsenal = crate::survivors::Arsenal::default();
+        sim.st.survivor.as_mut().unwrap().arsenal = crate::survivors::Arsenal::measurement_empty();
         sim.st.q.remove(&|e| matches!(e, Ev::WandBullet(_)));
         sim.advance_to(13.0);
         let r = rec.borrow();
@@ -4207,7 +4213,7 @@ mod tests {
     }
 
     #[test]
-    fn survivor_sword_actual_damage_matches_whip_dps_at_three_tempos() {
+    fn survivor_sword_full_catalog_power_per_hit_at_three_tempos() {
         use crate::survivors::{StatDelta, WeaponId, weapon_catalog};
         for bpm in [70.0, 128.0, 174.0] {
             for (rank, delta) in [
@@ -4229,8 +4235,14 @@ mod tests {
                 let damage: f64 = rec.enemies[0].fates.iter().map(|f| f.damage).sum();
                 let weapon = weapon_catalog().get(WeaponId::Sword).level(rank);
                 let stats = sim.survivor_progress().unwrap().stats.finalized();
-                let expected =
-                    weapon.power * weapon.amount(stats) as f64 / 1.35 * stats.might * 60.0;
+                let power = weapon.power * stats.might;
+                let expected = power * rec.enemies[0].fates.len() as f64;
+                assert!(
+                    rec.enemies[0]
+                        .fates
+                        .iter()
+                        .all(|f| (f.damage - power).abs() < 1e-9)
+                );
                 assert!(
                     (damage / expected - 1.0).abs() < 0.01,
                     "{bpm} rank{rank}: {damage} vs {expected}"
@@ -4242,7 +4254,7 @@ mod tests {
                         .iter()
                         .all(|s| (s.radius - radius).abs() < 1e-9)
                 );
-                assert!(rec.swings.is_empty());
+                assert_eq!(rec.swings.len(), rec.weapon_shots.len());
                 assert!(rec.cleaves.is_empty());
                 assert!(
                     rec.weapon_shots
@@ -4259,7 +4271,7 @@ mod tests {
     }
 
     #[test]
-    fn survivor_accent_shots_are_marked_without_changing_damage() {
+    fn survivor_accent_replaces_normal_hit_and_adds_deduplicated_wave() {
         let (plain, mut a) =
             sword_measurement(128.0, 1, crate::survivors::StatDelta::default(), false);
         let (accent, mut b) =
@@ -4270,17 +4282,19 @@ mod tests {
         let b = accent.borrow();
         assert!(b.weapon_shots.iter().any(|s| s.accent));
         assert!(a.weapon_shots.iter().all(|s| !s.accent));
+        let normal: f64 = a.enemies[0].fates.iter().map(|f| f.damage).sum();
+        let heavy: f64 = b.enemies[0].fates.iter().map(|f| f.damage).sum();
+        assert!(heavy > normal);
+        assert!(!b.cleaves.is_empty());
         assert_eq!(
-            a.enemies[0]
-                .fates
+            b.enemies[0].fates.len(),
+            b.weapon_shots.len(),
+            "primary target cannot be hit again by its wave"
+        );
+        assert!(
+            b.swings
                 .iter()
-                .map(|f| f.damage)
-                .collect::<Vec<_>>(),
-            b.enemies[0]
-                .fates
-                .iter()
-                .map(|f| f.damage)
-                .collect::<Vec<_>>()
+                .any(|s| s["kind"] == "heavy" && s["anim"] == "slash-oversize")
         );
     }
     #[test]
@@ -4899,6 +4913,7 @@ mod tests {
     fn effect_pools_keep_queued_and_deferred_references_then_retire_them() {
         let mut sim = survivor_sim();
         sim.st.waves.push(WaveState {
+            weapon: None,
             x: 0.0,
             y: 0.0,
             dir: 0.0,
