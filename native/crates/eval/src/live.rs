@@ -235,6 +235,7 @@ pub struct LiveView {
     pub recap: crate::recap::Recap,
     /// First fatal record, restored/retracted with the view on rollback.
     pub fatal_summary: Option<crate::recap::Summary>,
+    pub dancers: std::collections::BTreeSet<usize>,
     pub boss_cues: Vec<sim::survivors::BossCue>,
     pub boss_warning: Option<sim::survivors::BossCue>,
     pub inventory: Option<sim::survivors::Inventory>,
@@ -461,6 +462,13 @@ impl LiveView {
                     },
                 );
             }
+            Record::Dance { id, active } => {
+                if *active && self.foes.get(id).is_some_and(|f| f.death_w.is_none()) {
+                    self.dancers.insert(*id);
+                } else {
+                    self.dancers.remove(id);
+                }
+            }
             Record::EnemyNotice { id, start, peak } => {
                 if let Some(f) = self.foes.get_mut(id) {
                     f.notice = Some((*start, *peak));
@@ -595,6 +603,7 @@ impl LiveView {
     }
 
     fn death(&mut self, id: usize, w: f64, recycled: bool) {
+        self.dancers.remove(&id);
         let Some(f) = self.foes.get_mut(&id) else {
             return;
         };
@@ -620,6 +629,10 @@ impl LiveView {
 /// What the simulation reported, as the view applies it.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Record {
+    Dance {
+        id: usize,
+        active: bool,
+    },
     BossCue(sim::survivors::BossCue),
     GemPose(sim::survivors::GemPose),
     FloorChicken(sim::survivors::FloorChicken),
@@ -899,6 +912,14 @@ impl Recorder for LiveRecorder {
         });
     }
 
+    fn dance_start(&mut self, id: usize, _s_from: f64, _anim: &str, _alternate: bool) {
+        self.0.borrow_mut().push(Record::Dance { id, active: true });
+    }
+    fn dance(&mut self, id: usize, _d: sim::recorder::DanceRecord) {
+        self.0
+            .borrow_mut()
+            .push(Record::Dance { id, active: false });
+    }
     fn enemy_notice(&mut self, id: usize, peak: f64) {
         let mut j = self.0.borrow_mut();
         let start = j.notes.s;

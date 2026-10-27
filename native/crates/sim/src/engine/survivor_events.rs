@@ -206,7 +206,7 @@ impl Sim {
         });
         self.st.events.pending = pending;
     }
-    fn expire_event_members(&mut self, members: &[usize]) {
+    pub(super) fn expire_event_members(&mut self, members: &[usize]) {
         for &id in members {
             if self.st.foes.get(id).is_some_and(|f| f.alive) {
                 let f = &mut self.st.foes[id];
@@ -221,9 +221,10 @@ impl Sim {
             .alive
             .retain(|&id| foes.get(id).is_some_and(|f| f.alive));
     }
-    fn event_room(&mut self, count: usize) -> usize {
+    pub(super) fn event_room(&mut self, count: usize) -> usize {
         let hero = self.hero_pose(self.st.w);
-        let excess = (self.st.alive.len() + count).saturating_sub(SURVIVOR_CAP);
+        let cap = SURVIVOR_CAP.saturating_sub(self.st.spawner.waiting_bosses.len());
+        let excess = (self.st.alive.len() + count).saturating_sub(cap);
         let mut far: Vec<_> = self
             .st
             .alive
@@ -243,7 +244,7 @@ impl Sim {
         });
         far.truncate(excess);
         self.expire_event_members(&far);
-        count.min(SURVIVOR_CAP.saturating_sub(self.st.alive.len()))
+        count.min(cap.saturating_sub(self.st.alive.len()))
     }
     fn fire_survivor_event(&mut self, a: &Attempt) {
         let mut rng = Rng::new(&[
@@ -274,6 +275,8 @@ impl Sim {
             "FLOWER_WALL" => "vs-flower",
             _ => return,
         };
+        // Scheduled source encounters take priority over an optional musical group.
+        self.retire_musical();
         let count = self.event_room(a.event.count);
         if count == 0 {
             return;
@@ -306,7 +309,10 @@ impl Sim {
         for i in 0..count {
             let angle = theta
                 + if wall {
-                    i as f64 * std::f64::consts::TAU / a.event.count as f64
+                    // A readable 60-degree exit, including at the final radius.
+                    std::f64::consts::PI / 6.0
+                        + i as f64 * (5.0 * std::f64::consts::PI / 3.0)
+                            / a.event.count.saturating_sub(1).max(1) as f64
                 } else {
                     i as f64 * std::f64::consts::PI / 500.0
                 };
@@ -369,6 +375,8 @@ mod tests {
             None,
         )
         .unwrap();
+        // These tests isolate scheduled source events, independently of optional choreography.
+        level.director.as_mut().unwrap().set_pieces = None;
         for row in &mut level.survivor_schedule {
             row.minimum = Some(0);
             row.enemies = Some(Vec::new());

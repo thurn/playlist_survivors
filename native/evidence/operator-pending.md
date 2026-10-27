@@ -64,3 +64,5 @@ the row. Add a row whenever a bead records something as pending on the operator
 | FR5 restored choices | Play early Chain Lightning/Fire Trail and Magnet/Armour alternatives; audition distinct cues and check trail/chain feel, with speakers/System enabled. | `cargo run --release -p app -- --playlist playlists/survivors-30.m3u --delayed` (also `--legacy`) | hv-zzie.5 / FR10 |
 
 | FR6 collection and upgrades | Judge120px pickup comfort/Magnet reach and the final-card resume celebration/push; audition resume cue with speakers/System enabled. | `cargo run --release -p app -- --playlist playlists/survivors-30.m3u --delayed` (also `--legacy`) | hv-zzie.6 / FR10 |
+
+| FR7 formation feel | Judge step/hold rhythm, gaps and quiet/loud pacing through stampedes, kick lines, wedges and rings; audition with speakers/System. | From `native/`: `cargo run --release -p app -- --playlist playlists/survivors-30.m3u --delayed` (also `--legacy`) | FR7 (`hv-zzie.7`) | FR10 / velocity |

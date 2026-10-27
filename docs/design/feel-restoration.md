@@ -531,7 +531,15 @@ Human/System feel remains pending; the bead records review/checks/candidate.
 
 ### FR7 — Director and formations
 
-Pending implementation.
+Restored bounded quiet/loud roster pressure, curling admitted approaches and
+catalog stampedes, kick lines, wedges and goblin rings. One optional group of
+at most40 shares the300 cap,30s spacing and48s life; scheduled source events
+win and mandatory bosses reclaim slots. Rings/flower walls retain exits.
+Entrances use known reliable main beats, discard menu/confidence debt and
+never add archers or enemy fallback pulses. [Evidence and commands](../../native/evidence/fr7/README.md)
+cover three tempos, causal triggers, pauses, caps and late-key recordings.
+FR10 retains integrated real-music/feel qualification; the bead records review,
+checks and landed candidate.
 
 ### FR8 — Encounters and zones
 

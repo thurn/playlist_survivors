@@ -9,3 +9,6 @@ pub mod session;
 pub mod survive;
 
 pub mod scale;
+
+#[cfg(test)]
+mod musical_tests;

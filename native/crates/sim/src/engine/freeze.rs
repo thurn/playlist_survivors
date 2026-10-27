@@ -222,6 +222,7 @@ impl Sim {
             self.st.freeze.music_lock = None;
         }
         self.st.freeze.resume = None;
+        self.st.musical.cancel_pending();
         self.st.freeze.resume_grid = ResumeGrid::Committed;
         self.st.freeze.blocked = self.st.freeze.down;
         self.st.held.clear();
@@ -444,6 +445,14 @@ impl Sim {
             self.known_beat_at(self.st.s),
         );
         for foe in &mut self.st.foes {
+            if matches!(foe.member, Some(super::Member::Musical(_))) {
+                if let Some(slot) = foe.slot.as_mut() {
+                    slot.b_start += shift;
+                }
+                if foe.charge_until > self.st.freeze.since {
+                    foe.charge_until += gap;
+                }
+            }
             foe.attack = None;
             foe.step = None;
             foe.vx = 0.0;

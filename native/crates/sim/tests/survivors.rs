@@ -16,8 +16,11 @@ fn start(log: &StreamLog, duration: f64) -> (Rc<RefCell<LogRecorder>>, Sim) {
     src.text = src
         .text
         .replace("durationS: 1800", &format!("durationS: {duration}"));
-    let lib = common::library();
-    let mut level = load_level(&src, lib, &reactive_song_map(f64::INFINITY), None).unwrap();
+    let mut lib = common::library().clone();
+    for formation in lib.formations.values_mut() {
+        formation.count = 0.0;
+    }
+    let mut level = load_level(&src, &lib, &reactive_song_map(f64::INFINITY), None).unwrap();
     // These tests isolate clock/freeze/finale behavior. Combat XP must not open an
     // unrelated offer when weapon reach or enemy movement changes.
     for row in &mut level.survivor_schedule {
@@ -27,9 +30,19 @@ fn start(log: &StreamLog, duration: f64) -> (Rc<RefCell<LogRecorder>>, Sim) {
         row.events.clear();
         row.treasure.clear();
     }
+    // Clock fixtures also exclude musical combat, which could otherwise earn a card.
+    let sp = level
+        .director
+        .as_mut()
+        .unwrap()
+        .set_pieces
+        .as_mut()
+        .unwrap();
+    sp.stampede.count = 0.0;
+    sp.ring.count = 0.0;
     assert!(level.upgrades.loadout.is_empty()); // The sword is intrinsic until SF5.
     assert!(level.upgrades.offer.is_empty());
-    let mut input = SimInput::new(level, lib, &common::atlas(), 0.2, true);
+    let mut input = SimInput::new(level, &lib, &common::atlas(), 0.2, true);
     input.zen = true;
     let rec = Rc::new(RefCell::new(LogRecorder::default()));
     let sim = Sim::new(input, Rc::new(log.clone()), Box::new(Rc::clone(&rec)), None);

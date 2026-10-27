@@ -92,6 +92,7 @@ impl Sim {
                 .waiting_bosses
                 .extend(batch.bosses.iter().cloned());
         }
+        self.reserve_boss_room();
         let room = self.alive_count() < SURVIVOR_CAP;
         if self
             .st
@@ -111,8 +112,19 @@ impl Sim {
         // Reserve open slots while a held boss waits for its grid step. A regular refill
         // must not continually take the slot back before the boss can arrive.
         let regular_cap = SURVIVOR_CAP.saturating_sub(self.st.spawner.waiting_bosses.len());
+        let scale = self
+            .by_level(self.st.s, &|l| {
+                crate::reactive::director::by_level(&self.env.director.population.level_scale, l)
+            })
+            .clamp(0.6, 1.3);
         for batch in batches {
             if batch.roster.enemies.is_empty() {
+                continue;
+            }
+            let target = (batch.roster.minimum as f64 * scale).ceil() as usize;
+            // Quiet passages can breathe once their bounded target is satisfied.
+            // Skipped ticks are discarded, never saved as a later refill burst.
+            if scale < 0.99 && self.alive_count() >= target.min(regular_cap) {
                 continue;
             }
             loop {
@@ -122,7 +134,7 @@ impl Sim {
                     }
                     self.spawn_role(role, false);
                 }
-                if self.alive_count() >= batch.roster.minimum.min(regular_cap) {
+                if self.alive_count() >= target.min(regular_cap) {
                     break;
                 }
             }
@@ -281,7 +293,7 @@ mod tests {
         assert_eq!(s.st.boss_presentation.landed_run, Some(60.0));
     }
     #[test]
-    fn partial_boss_admission_keeps_notice_and_camera_until_last_held_boss_lands() {
+    fn boss_admission_reclaims_ordinary_space_and_finishes_the_notice_once() {
         let mut s = sim();
         Rc::get_mut(&mut s.env)
             .unwrap()
@@ -312,19 +324,22 @@ mod tests {
         s.st.s = 60.0;
         s.st.run_s = 60.0;
         s.tick_spawner();
-        assert_eq!(s.st.boss_presentation.pending, 1);
-        assert_eq!(s.st.spawner.waiting_bosses.len(), 1);
-        assert!(s.st.boss_presentation.landed_run.is_none());
-        s.st.foes[0].alive = false;
-        s.st.s = 60.5;
-        s.st.run_s = 60.5;
-        s.tick_spawner();
-        assert_eq!(s.st.boss_presentation.pending, 1);
+        assert_eq!(s.st.boss_presentation.pending, 0);
+        assert!(s.st.spawner.waiting_bosses.is_empty());
+        assert_eq!(s.st.boss_presentation.landed_run, Some(60.0));
+        assert_eq!(s.st.alive.len(), SURVIVOR_CAP);
+        assert_eq!(
+            s.st.alive
+                .iter()
+                .filter(|&&id| s.st.foes[id].survivor_boss)
+                .count(),
+            2
+        );
         s.st.s = 61.0;
         s.st.run_s = 61.0;
         s.tick_spawner();
         assert_eq!(s.st.boss_presentation.pending, 0);
-        assert_eq!(s.st.boss_presentation.landed_run, Some(61.0));
+        assert_eq!(s.st.boss_presentation.landed_run, Some(60.0));
     }
     #[test]
     fn deferred_boss_death_keeps_identity_after_freeze_and_actual_pool_retirement() {

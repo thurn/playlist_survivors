@@ -1,0 +1,28 @@
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-fr7/native/crates/eval)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.42s
+     Running unittests src/lib.rs (target/debug/deps/eval-ac22b895b76bfc69)
+
+running 1 test
+400s authored musical roles; late30ms lead0.237: 39 rollbacks, settled hash22d87c255f5541f1
+test musical_tests::formation_records_survive_late_keys_with_nondefault_lead ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 11 filtered out; finished in 1.05s
+
+     Running tests/live.rs (target/debug/deps/live-6bbfee6942df762e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 24 filtered out; finished in 0.00s
+
+     Running tests/session.rs (target/debug/deps/session-76edb21f1a60b469)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/survive.rs (target/debug/deps/survive-3f42469f2cfa95cf)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+

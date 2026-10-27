@@ -499,7 +499,9 @@ impl Sim {
             }
             let f = &self.st.foes[fi];
             let span = period * cadence as f64;
-            let speed = def.speed
+            // Authored runners carry their role's average crossing speed (e.g.
+            // stampede2.5x); it still becomes one bounded main-beat step.
+            let speed = f.run.map_or(def.speed, |v| hypot(v.0, v.1))
                 * if self.st.s < f.charge_until {
                     CHARGE_SPEED
                 } else {
@@ -607,7 +609,10 @@ impl Sim {
                 let (x, y) = self.pos(fi, w);
                 let f = &self.st.foes[fi];
                 // Event members keep their identity until their run-clock expiry.
-                if matches!(f.member, Some(super::Member::SurvivorEvent(_))) {
+                if matches!(
+                    f.member,
+                    Some(super::Member::SurvivorEvent(_) | super::Member::Musical(_))
+                ) {
                     return false;
                 }
                 // A stampede's runner, once it has left the view on the side it runs to.

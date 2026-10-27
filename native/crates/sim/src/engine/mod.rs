@@ -41,6 +41,7 @@ mod hero;
 mod judge;
 mod lightning;
 mod missiles;
+mod musical;
 mod observe;
 mod offers;
 mod pickups;
@@ -750,6 +751,7 @@ enum Member {
     Ring(usize),
     Stampede(usize),
     SurvivorEvent(usize),
+    Musical(usize),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -968,6 +970,7 @@ struct SimState {
     spawner: crate::survivors::Spawner,
     boss_presentation: crate::survivors::BossPresentation,
     events: survivor_events::Events,
+    musical: musical::Musical,
     chests: Vec<crate::survivors::FieldChest>,
     n_chests: usize,
     treasure_minutes: u32,
@@ -1681,6 +1684,7 @@ impl Sim {
                             ),
                             self.spawn_stop()
                                 .min(self.event_stop())
+                                .min(self.musical_stop())
                                 .min(self.boss_notice_stop()),
                         ),
                         t_fixed,
@@ -1835,6 +1839,7 @@ impl Sim {
         self.tick_boss_notice();
         self.tick_spawner();
         self.tick_survivor_events();
+        self.tick_musical();
     }
 
     fn handle(&mut self, ev: Ev) {
@@ -2052,6 +2057,7 @@ fn fresh_state(env: &Env) -> SimState {
         spawner: crate::survivors::Spawner::default(),
         boss_presentation: crate::survivors::BossPresentation::default(),
         events: survivor_events::Events::default(),
+        musical: musical::Musical::default(),
         chests: Vec::new(),
         n_chests: 0,
         treasure_minutes: 0,
@@ -2181,6 +2187,7 @@ mod tests {
     mod collection_tests;
     mod evolution_tests;
     mod mainbeat_tests;
+    mod musical_tests;
     mod restored_tests;
     mod sword_tests;
     use std::path::Path;
@@ -4406,6 +4413,7 @@ mod tests {
             ..StreamLog::default()
         });
         sim.st.ingested.beats = sim.log.beats.len();
+        sim.st.ingested.ticks = 0; // This fixture replaced its tick evidence.
         for minute in &schedule {
             // Isolate each source row for one minute, including an empty field refill. The
             // separate clock test covers real minute transitions and inherited fields.
@@ -4516,6 +4524,7 @@ mod tests {
         let mut sim = survivor_sim();
         sim.log = Rc::new(StreamLog::default());
         sim.st.ingested.beats = 0;
+        sim.st.ingested.ticks = 0;
         let rec = Rc::new(std::cell::RefCell::new(LogRecorder::default()));
         sim.rec = Box::new(Rc::clone(&rec));
         let mut level = load_level(
@@ -4535,9 +4544,7 @@ mod tests {
         sim.st.s = 60.0;
         sim.st.w = 60.0;
         sim.tick_spawner();
-        assert_eq!(sim.st.spawner.waiting_bosses[0].role, "vs-bat4");
-        sim.kill(0);
-        sim.tick_spawner();
+        // Mandatory admission reclaims an ordinary slot, rather than waiting for a kill.
         assert!(sim.st.spawner.waiting_bosses.is_empty());
         assert_eq!(
             sim.st
@@ -5572,6 +5579,7 @@ mod tests {
         let mut s = survivor_sim();
         s.log = Rc::new(StreamLog::default());
         s.st.ingested.beats = 0;
+        s.st.ingested.ticks = 0;
         let mut level = load_level(
             &source("levels/survivors.yaml"),
             &s.env.input.lib,

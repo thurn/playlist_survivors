@@ -976,13 +976,27 @@ impl Scene {
                         );
                     }
                     let hurt = art.animation(sprite, "hurt").filter(|_| fall >= 0.0);
-                    if let Some(walk) = hurt.or_else(|| art.animation(sprite, "walk")) {
+                    let beat = view.run.and_then(|r| r.frozen_beat).unwrap_or(pulse.index);
+                    let dancing = (!dead && view.dancers.contains(&id))
+                        .then(|| {
+                            art.animation(
+                                sprite,
+                                if (beat.floor() as usize).is_multiple_of(2) {
+                                    "kick"
+                                } else {
+                                    "kick-alt"
+                                },
+                            )
+                        })
+                        .flatten();
+                    if let Some(walk) = hurt.or(dancing).or_else(|| art.animation(sprite, "walk")) {
                         // (Enemies are sampled 60 times a second; a walk frame every 6 samples;
                         // a fall's six frames over its length.)
                         let frame = if hurt.is_some() {
                             ((fall / DEATH_FALL_S * 6.0) as usize).min(5)
+                        } else if dancing.is_some() {
+                            (beat.rem_euclid(1.0) * walk.len() as f64) as usize
                         } else if view.run.is_some() {
-                            let beat = view.run.and_then(|r| r.frozen_beat).unwrap_or(pulse.index);
                             let cycle =
                                 lib.enemies.get(&f.kind).map_or(1.0, |d| d.walk_cycle_beats);
                             (beat.max(0.0) / cycle * walk.len() as f64) as usize
