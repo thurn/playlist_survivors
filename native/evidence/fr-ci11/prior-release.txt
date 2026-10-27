@@ -1,0 +1,52 @@
+All checks passed!
+WARN `--no-project` was provided, but no project was found
+............
+----------------------------------------------------------------------
+Ran 12 tests in 0.115s
+
+OK
+WARN `--no-project` was provided, but no project was found
+cached-original-afk-0: 0.600s, HP 1.000, level 1, survival gate None
+cached-original-afk-2: 429.506s, HP 0.000, level 2, survival gate True
+cached-original-afk-1: 444.246s, HP 0.000, level 2, survival gate True
+cached-original-afk-3: 447.739s, HP 0.000, level 2, survival gate True
+cached-original-afk-4: 432.565s, HP 0.000, level 2, survival gate True
+cached-original-positioning-2: 1800.000s, HP 0.661, level 24, survival gate True
+cached-original-positioning-1: 1800.000s, HP 0.709, level 32, survival gate True
+cached-original-positioning-3: 1800.000s, HP 0.715, level 33, survival gate True
+cached-reverse-afk-1: 266.923s, HP 0.000, level 3, survival gate True
+continuous-original-positioning-1: 1800.000s, HP 0.580, level 34, survival gate True
+cached-reverse-afk-2: 264.882s, HP 0.000, level 2, survival gate True
+cached-original-afk-5: 449.239s, HP 0.000, level 2, survival gate True
+cached-original-positioning-4: 1800.000s, HP 0.382, level 32, survival gate True
+cached-reverse-afk-3: 268.386s, HP 0.000, level 3, survival gate True
+cached-reverse-afk-4: 338.288s, HP 0.000, level 6, survival gate True
+cached-original-positioning-5: 1800.000s, HP 0.689, level 27, survival gate True
+cached-reverse-afk-5: 268.960s, HP 0.000, level 2, survival gate True
+cached-reverse-positioning-1: 1800.000s, HP 0.562, level 35, survival gate True
+cached-reverse-positioning-2: 1800.000s, HP 0.772, level 34, survival gate True
+cached-reverse-positioning-3: 1800.000s, HP 0.715, level 37, survival gate True
+cached-rotate-afk-1: 400.004s, HP 0.000, level 3, survival gate True
+cached-reverse-positioning-4: 1800.000s, HP 0.743, level 36, survival gate True
+cached-rotate-afk-2: 398.967s, HP 0.000, level 4, survival gate True
+cached-reverse-positioning-5: 1800.000s, HP 0.299, level 32, survival gate True
+cached-rotate-afk-3: 398.647s, HP 0.000, level 3, survival gate True
+cached-rotate-afk-4: 400.053s, HP 0.000, level 2, survival gate True
+cached-rotate-positioning-1: 1800.000s, HP 0.497, level 29, survival gate True
+cached-rotate-afk-5: 399.191s, HP 0.000, level 3, survival gate True
+continuous-original-afk-1: 430.872s, HP 0.000, level 3, survival gate True
+cached-rotate-positioning-2: 1800.000s, HP 0.667, level 35, survival gate True
+cached-rotate-positioning-3: 1800.000s, HP 0.177, level 25, survival gate False
+continuous-original-afk-2: 433.548s, HP 0.000, level 3, survival gate True
+cached-original-random-pick-1: 1305.745s, HP 0.000, level 10, survival gate None
+cached-rotate-positioning-4: 1800.000s, HP 0.649, level 37, survival gate True
+cached-rotate-positioning-5: 1800.000s, HP 0.323, level 30, survival gate True
+continuous-original-afk-3: 437.857s, HP 0.000, level 2, survival gate True
+continuous-original-afk-4: 435.141s, HP 0.000, level 3, survival gate True
+continuous-original-afk-5: 437.191s, HP 0.000, level 2, survival gate True
+continuous-original-positioning-2: 1800.000s, HP 0.705, level 26, survival gate True
+continuous-original-positioning-3: 1800.000s, HP 0.607, level 28, survival gate True
+continuous-original-positioning-4: 1800.000s, HP 0.668, level 35, survival gate True
+continuous-original-positioning-5: 1800.000s, HP 0.600, level 36, survival gate True
+survivors sweep: 41 reports, 1 survival failures (asserting), 615.350s; /Users/dthurn/Library/Caches/playlist-survivors/survivors/92b4bfbcbbb211b30fa6714557921490d6456820b67a063aee25e79d7bdfb7b8-1793115005199445000
+survivors sweep: survival gates failed: cached-rotate-positioning-3

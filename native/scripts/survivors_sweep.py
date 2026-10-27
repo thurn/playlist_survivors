@@ -7,7 +7,8 @@
 Normal damage: 5 seeds x 3 orders x positioning/AFK, plus one random-pick report.
 The base-order continuous-analysis lane runs 5 seeds x positioning/AFK. It starts
 alongside the cached lane, then reuses a full-source cache for its remaining cases.
-Only SW7 enables --assert-survival. Pacing is always reported, never asserted.
+--assert-survival gates the positioning player. AFK minimum difficulty and pacing
+remain reported diagnostics, secondary to game feel (operator direction 2026-10-27).
 """
 
 from __future__ import annotations
@@ -75,7 +76,7 @@ def cases() -> list[Case]:
 
 
 def verdict(data: dict) -> bool | None:
-    """Only survival thresholds; random-pick/diagnostic/short runs have no verdict."""
+    """Gate active-player comfort; minimum difficulty remains diagnostic."""
     if data["noHeroDamage"] or data["requestedMinutes"] != 30:
         return None
     r = data["report"]
@@ -86,8 +87,6 @@ def verdict(data: dict) -> bool | None:
             and r["survivalS"] >= 1800
             and r["lowestHpShare"] > 0.25
         )
-    if data["bot"] == "afk":
-        return r["fallen"] and r["survivalS"] < 600
     return None
 
 

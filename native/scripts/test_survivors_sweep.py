@@ -76,14 +76,15 @@ class SurvivalReports(unittest.TestCase):
         ]
         self.assertTrue(sweep.verdict(d), "pacing never changes the gate")
 
-    def test_afk_must_die_strictly_before_ten_minutes(self):
+    def test_afk_minimum_difficulty_is_diagnostic_at_any_survival_time(self):
         d = data("afk")
         d["report"].update(fallen=True, survivalS=599.999)
-        self.assertTrue(sweep.verdict(d))
-        d["report"]["survivalS"] = 600
-        self.assertFalse(sweep.verdict(d))
-        d["report"].update(fallen=False, survivalS=100)
-        self.assertFalse(sweep.verdict(d))
+        self.assertIsNone(sweep.verdict(d))
+        for seconds in [600, 606.15, 1800]:
+            d["report"]["survivalS"] = seconds
+            self.assertIsNone(sweep.verdict(d))
+        d["report"].update(fallen=False, survivalS=1800)
+        self.assertIsNone(sweep.verdict(d))
 
     def test_random_pick_soak_and_short_runs_have_no_balance_verdict(self):
         self.assertIsNone(sweep.verdict(data("random-pick")))

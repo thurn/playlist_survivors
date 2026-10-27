@@ -417,10 +417,12 @@ obsolete tests that demanded 48 px, tempo compensation or enemy fallback glide.
 Keep the existing positioning/AFK bots as diagnostic starting points. Measure
 30-minute survival, minimum HP, kills, XP/level progression, damage sources,
 contact bursts and density over several music tempos and legal build paths.
-Preserve the easy positioning-player target and a meaningful AFK failure target,
-but first check whether an AFK result changed because of the intentionally
-restored reach/full hits or genuine inactivity exploitation. Bots do not prove
-that combat feels good. Any changed gate needs explicit evidence and rationale;
+Preserve the easy positioning-player target. Following the operator's 2026-10-27
+implementation clarification, AFK minimum-difficulty results remain diagnostics:
+report them, but do not make mandatory standing-still losses a release gate or
+weaken feel to satisfy them. First check whether an AFK result changed because
+of the intentionally restored reach/full hits or genuine inactivity exploitation.
+Bots do not prove that combat feels good. Any changed gate needs explicit evidence and rationale;
 never disable a red survival gate silently.
 
 Tune documented enemy/contact/progression knobs only after identifying a real
@@ -463,7 +465,10 @@ identity carries the actual hit and facing into the visible arc; the shared
 swing owns its audio. Bloody Tear crit/heal behavior remains. Evidence, recipe
 and playable command: [native/evidence/fr2](../../native/evidence/fr2/README.md).
 FR3/FR4 and FR10 retain their sound, legacy tier and qualification scopes. The
-bead records the landed commit and candidate.
+bead records the landed commit and candidate. Follow-up
+[qualification evidence](../../native/evidence/fr-ci11/README.md) records the
+unchanged active-player gate passing all cases after FR2, and the operator's
+clarification that standing-still minimum difficulty remains diagnostic.
 
 ### FR3 — Sound
 
