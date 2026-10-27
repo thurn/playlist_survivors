@@ -99,7 +99,7 @@ use render::post::Frame;
 use sim::content::{ContentLibrary, SourceFile, load_content};
 use sim::movement::InputKey;
 use winit::application::ApplicationHandler;
-use winit::event::{ElementState, WindowEvent};
+use winit::event::{ElementState, MouseButton, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::{Window, WindowId};
@@ -947,6 +947,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
         next_frame: 0.0,
         keys: [KeyLight::default(); 7],
         space_confirm: false,
+        cursor: None,
         presses: VecDeque::new(),
     };
     app.engine.settle_s = app.settle_s();
@@ -1996,6 +1997,7 @@ struct App {
     /// The key display: up, left, down, right, stomp.
     keys: [KeyLight; 7],
     space_confirm: bool,
+    cursor: Option<winit::dpi::PhysicalPosition<f64>>,
     /// Recent presses for the beat track: when (host s), how far off, their rating.
     presses: VecDeque<(f64, f64, Option<&'static str>)>,
 }
@@ -3253,6 +3255,38 @@ impl App {
         }
     }
 
+    /// Menu actions use uncalibrated pulses: a held movement key cannot block a card pick.
+    fn card_key(&mut self, now: f64, key: InputKey) {
+        if let Some(s) = self.song_at(now) {
+            let s = s - self.run_start;
+            self.engine.key(s, key, false);
+            self.engine.key(s, key, true);
+            self.engine.key(s, key, false);
+        }
+    }
+
+    fn click_card(&mut self) {
+        if !self.running || self.screen.is_some() || self.watch.is_some() {
+            return;
+        }
+        let run = self.engine.view.borrow().run;
+        if !run.is_some_and(|r| {
+            r.offer.is_some() && r.frozen == Some(sim::survivors::FreezeReason::LevelUp)
+        }) {
+            return;
+        }
+        let (Some(gfx), Some(cursor)) = (&self.gfx, self.cursor) else {
+            return;
+        };
+        let cursor = cursor.to_logical::<f32>(gfx.window.scale_factor());
+        let (w, h) = gfx.logical_size();
+        let now = now_s();
+        if let Some(index) = self.scene.cards.hit(now, w, h, cursor.x, cursor.y) {
+            self.card_key(now, cards::selection_key(index));
+            self.card_key(now, InputKey::Confirm);
+        }
+    }
+
     fn request_start(&mut self, s: f64) {
         if self.world.survivors() {
             self.pending_start.get_or_insert(s);
@@ -3393,6 +3427,28 @@ impl App {
             return;
         }
         let frozen = self.engine.view.borrow().run.and_then(|r| r.frozen);
+        if self
+            .engine
+            .view
+            .borrow()
+            .run
+            .is_some_and(|r| r.offer.is_some())
+            && pressed
+            && matches!(
+                code,
+                KeyCode::ArrowLeft | KeyCode::KeyA | KeyCode::ArrowRight | KeyCode::KeyD
+            )
+        {
+            if !repeat
+                && let Some(key) = self
+                    .scene
+                    .cards
+                    .navigate(matches!(code, KeyCode::ArrowRight | KeyCode::KeyD))
+            {
+                self.card_key(now, key);
+            }
+            return;
+        }
         if code == KeyCode::Space && pressed && !repeat {
             self.space_confirm = matches!(
                 frozen,
@@ -3500,6 +3556,13 @@ impl ApplicationHandler for App {
             {
                 self.pause_key();
             }
+            WindowEvent::CursorMoved { position, .. } => self.cursor = Some(position),
+            WindowEvent::CursorLeft { .. } => self.cursor = None,
+            WindowEvent::MouseInput {
+                state: ElementState::Pressed,
+                button: MouseButton::Left,
+                ..
+            } => self.click_card(),
             _ => {}
         }
     }

@@ -1,6 +1,7 @@
-//! Offer presentation only: the sim owns reveals, selection, confirmation and resuming.
+//! Offer presentation and UI input mapping; the sim owns picks, reveals and resuming.
 use super::{hud::item_color, sounds::Cue};
 use render::{atlas::Atlases, font::Align, post::Grade, sprites::Sprite};
+use sim::movement::InputKey;
 use sim::survivors::{Inventory, Item, Offer, RunState, weapon_catalog};
 pub mod check;
 pub mod passives_check;
@@ -27,12 +28,15 @@ struct Closing {
 pub struct Screen {
     active: Option<Active>,
     closing: Option<Closing>,
+    // Include presses queued since the last frame when navigating again.
+    input_selected: usize,
 }
 fn same(a: Offer, b: Offer) -> bool {
     a.level == b.level && a.reveals == b.reveals
 }
 impl Screen {
     pub fn update(&mut self, run: Option<RunState>, inv: Option<Inventory>, now: f64) {
+        self.input_selected = run.map_or(0, |r| r.selected);
         let next = run.and_then(|r| r.offer);
         if self
             .closing
@@ -105,6 +109,30 @@ impl Screen {
             self.active = None;
             self.closing = None;
         }
+    }
+    /// Translate horizontal navigation into the sim's recorded, absolute card keys.
+    pub fn navigate(&mut self, right: bool) -> Option<InputKey> {
+        self.active?;
+        self.input_selected = if right {
+            (self.input_selected + 1).min(2)
+        } else {
+            self.input_selected.saturating_sub(1)
+        };
+        Some(selection_key(self.input_selected))
+    }
+    /// Logical window coordinates, using the same card bounds and highlight scale as drawing.
+    pub fn hit(&self, now: f64, width: f32, height: f32, x: f32, y: f32) -> Option<usize> {
+        let a = self.active?;
+        if a.song + now - a.host + 1e-9 < a.offer.reveals[2] {
+            return None;
+        }
+        let u = (width / 960.0).min(height / 540.0);
+        (0..3).find(|&i| {
+            let scale = highlight_scale(i == a.selected, now - a.highlight);
+            let cx = width / 2.0 + (i as f32 - 1.0) * 260.0 * u;
+            let cy = height * 0.33 + 109.0 * u;
+            (x - cx).abs() <= 122.0 * u * scale && (y - cy).abs() <= 113.0 * u * scale
+        })
     }
     pub fn cues(&self, forecast: Option<RunState>, now: f64) -> Vec<Cue> {
         let mut offers = Vec::new();
@@ -279,11 +307,7 @@ impl Screen {
                 let progress = ((age + FLIP) / FLIP).clamp(0.0, 1.0) as f32;
                 let flip = (std::f32::consts::PI * progress).cos().abs().max(0.035);
                 let selected = i == a.selected;
-                let scale = if selected {
-                    1.0 + 0.035 * (-(now - a.highlight) * 13.0).exp() as f32
-                } else {
-                    1.0
-                };
+                let scale = highlight_scale(selected, now - a.highlight);
                 if progress < 0.5 {
                     let x = width / 2.0 + (i as f32 - 1.0) * 260.0 * unit;
                     out.push(Sprite::solid(
@@ -312,7 +336,7 @@ impl Screen {
             }
             face.text(
                 if a.song + now - a.host + 1e-9 >= a.offer.reveals[2] {
-                    "LEFT / UP / RIGHT   -   SPACE / ENTER TO CHOOSE"
+                    "LEFT / RIGHT TO SELECT   -   SPACE / ENTER OR CLICK TO CHOOSE"
                 } else {
                     "CHOOSE AFTER THE THIRD BEAT"
                 },
@@ -324,6 +348,16 @@ impl Screen {
                 out,
             );
         }
+    }
+}
+pub(super) fn selection_key(index: usize) -> InputKey {
+    [InputKey::Left, InputKey::Up, InputKey::Right][index]
+}
+fn highlight_scale(selected: bool, age: f64) -> f32 {
+    if selected {
+        1.0 + 0.035 * (-age * 13.0).exp() as f32
+    } else {
+        1.0
     }
 }
 pub(super) fn icon(item: Item) -> &'static str {
@@ -487,6 +521,52 @@ mod tests {
                 reveals: [0.5, 1.0, 1.5],
             }),
             ..RunState::default()
+        }
+    }
+    #[test]
+    fn horizontal_navigation_visits_every_card_including_between_frames() {
+        let mut screen = Screen::default();
+        let r = run();
+        screen.update(Some(r), None, 10.0);
+        assert_eq!(screen.navigate(false), Some(InputKey::Left));
+        assert_eq!(screen.navigate(true), Some(InputKey::Up));
+        assert_eq!(screen.navigate(true), Some(InputKey::Right));
+        assert_eq!(screen.navigate(true), Some(InputKey::Right));
+        assert_eq!(screen.navigate(false), Some(InputKey::Up));
+        assert_eq!(screen.navigate(false), Some(InputKey::Left));
+        // A frame reconciles against the sim, including a rollback or a chained offer.
+        screen.update(Some(RunState { selected: 2, ..r }), None, 10.1);
+        assert_eq!(screen.navigate(false), Some(InputKey::Up));
+        screen.update(None, None, 10.2);
+        assert_eq!(screen.navigate(true), None);
+    }
+    #[test]
+    fn clicks_cover_all_three_card_faces_at_different_window_sizes() {
+        for (w, h) in [(960.0, 540.0), (1440.0, 900.0), (540.0, 960.0)] {
+            let mut screen = Screen::default();
+            let r = run();
+            screen.update(Some(r), None, 10.0);
+            let u = (w / 960.0_f32).min(h / 540.0_f32);
+            for i in 0..3 {
+                let x = w / 2.0 + (i as f32 - 1.0) * 260.0 * u;
+                let y = h * 0.33 + 109.0 * u;
+                assert_eq!(screen.hit(11.49, w, h, x, y), None, "unready offer");
+                for (dx, dy) in [(0.0, 0.0), (-121.0, -112.0), (121.0, 112.0)] {
+                    assert_eq!(screen.hit(11.5, w, h, x + dx * u, y + dy * u), Some(i));
+                }
+                assert_eq!(screen.hit(11.5, w, h, x + 128.0 * u, y), None, "gap");
+                assert_eq!(screen.hit(11.5, w, h, x, y - 120.0 * u), None, "above");
+            }
+            screen.update(
+                Some(RunState {
+                    offer: None,
+                    confirmed: true,
+                    ..r
+                }),
+                None,
+                11.6,
+            );
+            assert_eq!(screen.hit(11.7, w, h, w / 2.0, h * 0.5), None, "closing");
         }
     }
     #[test]
