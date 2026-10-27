@@ -1986,7 +1986,8 @@ The interviews weighed these and rejected them for the reasons given.
 
 ## Implementation Plan
 
-The work is a new epic in Hive, the project's issue tracker. Its work items
+The work is a new epic in Hive, the project's issue tracker: `hv-50g9`,
+with TD1 to TD15 filed as `hv-50g9.1` to `hv-50g9.15`. Its work items
 are **beads**. Each bead is implemented by an executor session (an agent
 session working one bead) and delivered as one Tollgate candidate, under the
 rules in AGENTS.md. The epic runs in parallel with `hv-n7fn`.
@@ -2155,8 +2156,8 @@ TD6         after TD2 and TD3 (it needs the kit's footprints)
 TD7         after TD4
 TD5         after TD4; its baseline comparison after TD7
 TD8         after TD7 (its spike is measured on the harness)
-TD9         after TD5 and TD6 (it lights the crowd shader and generates
-            the arena from the placement list)
+TD9         after TD5, TD6 and TD7 (it lights the crowd shader, generates
+            the arena from the placement list and measures S0 on the harness)
 TD10        after TD5 and TD8
 TD11        after TD5, TD8 and TD9
 TD14        after TD9; its cut rungs (E3, E4) after TD11
