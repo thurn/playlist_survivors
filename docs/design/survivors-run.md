@@ -949,7 +949,9 @@ SF10 measures, with the evidence in `native/evidence/sf10/`:
 
 Today's 4 ms frame-work bar holds (a release-stage check,
 `native/evidence/g5/runner.md`), and snapshot cost doesn't grow with run
-length. SP5 re-measures with the final effects.
+length. SP5 re-measures with the final effects. Since 2026-10-27 the density
+bench (`--bench-density`) is a measurement to run by hand, not a release-stage
+gate: the operator judges game performance by play, not by blocking landings.
 
 ### Determinism and causality
 
