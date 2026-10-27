@@ -22,12 +22,21 @@ pub struct RecordedRun {
 }
 
 /// What a replay found: the hash of its first `records` settled records (`None` if it settled
-/// fewer), and how many it settled.
+/// fewer), and how many it settled; and the groove the run showed, frame by frame.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Replayed {
     pub hash: Option<u64>,
     pub settled: usize,
     pub rollbacks: u64,
+    pub groove: GrooveSummary,
+}
+
+/// The groove a replay showed: its mean and lowest, and the share of frames below full.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct GrooveSummary {
+    pub mean: f64,
+    pub min: f64,
+    pub below_full: f64,
 }
 
 /// Replays `run` on `engine` (fresh, built as the app builds it): the session's arrivals fed at
@@ -56,6 +65,7 @@ pub fn replay_run(
     let mut next_key = 0;
     let span = run.end - run.s0 + 1.0;
     let mut frame = 0u32;
+    let (mut sum, mut min, mut below) = (0.0, f64::INFINITY, 0u32);
     loop {
         frame += 1;
         let now = f64::from(frame) / 120.0;
@@ -78,13 +88,23 @@ pub fn replay_run(
         engine.frame(now, 0.0);
         // An offline replay consumes state/hash, not transient presentation events.
         engine.view.borrow_mut().take_moments();
+        let groove = engine.view.borrow().groove;
+        sum += groove;
+        min = min.min(groove);
+        below += u32::from(groove < 1.0 - 1e-9);
         if now > span {
             break;
         }
     }
+    let frames = f64::from(frame);
     Ok(Replayed {
         hash: engine.tracked_prefix(),
         settled: engine.settled_count,
         rollbacks: engine.stats.rollbacks,
+        groove: GrooveSummary {
+            mean: sum / frames,
+            min,
+            below_full: f64::from(below) / frames,
+        },
     })
 }

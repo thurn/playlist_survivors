@@ -104,7 +104,7 @@ fn freeze_discards_windup_and_resumes_with_one_attack_instead_of_a_burst() {
 }
 
 #[test]
-fn legacy_delayed_qualifying_press_keeps_primary_exclusions_after_another_hit() {
+fn classic_delayed_qualifying_press_keeps_primary_exclusions_after_another_hit() {
     use crate::core::geometry::Shape;
     use crate::engine::combat::HitSpec;
     use crate::recorder::{HitSource, LogRecorder, Weight};
@@ -179,7 +179,7 @@ fn legacy_delayed_qualifying_press_keeps_primary_exclusions_after_another_hit() 
 }
 
 #[test]
-fn legacy_tiers_change_real_sword_and_weapon_damage_while_zen_stays_full() {
+fn classic_tiers_change_real_sword_and_weapon_damage_while_zen_stays_full() {
     use crate::survivors::{WeaponId, weapon_catalog};
     for zen in [false, true] {
         for tier in [0.0, 3.0] {
@@ -219,7 +219,7 @@ fn legacy_tiers_change_real_sword_and_weapon_damage_while_zen_stays_full() {
 }
 
 #[test]
-fn survivor_legacy_keeps_judging_rewards_drain_and_optional_hitstop() {
+fn survivor_classic_keeps_judging_rewards_drain_and_optional_hitstop() {
     for zen in [false, true] {
         let (rec, mut sim) = sword_measurement_base(120.0, 1, StatDelta::default(), false);
         let input = &mut Rc::get_mut(&mut sim.env).unwrap().input;
@@ -253,7 +253,7 @@ fn survivor_legacy_keeps_judging_rewards_drain_and_optional_hitstop() {
 }
 
 #[test]
-fn survivor_legacy_beatless_passages_keep_fair_credit_without_fake_ratings() {
+fn survivor_classic_beatless_passages_keep_fair_credit_without_fake_ratings() {
     let (rec, mut sim) = sword_measurement_base(120.0, 1, StatDelta::default(), false);
     let input = &mut Rc::get_mut(&mut sim.env).unwrap().input;
     input.zen = false;
@@ -269,4 +269,49 @@ fn survivor_legacy_beatless_passages_keep_fair_credit_without_fake_ratings() {
         "unclear music grants fairness credit rather than draining"
     );
     assert!(rec.borrow().inputs.iter().all(|i| !i["rating"].is_string()));
+}
+
+#[test]
+fn classic_groove_holds_through_an_upgrade_pick() {
+    // (Settling, as the app runs: the drain runs 2 s late, as of each beat.)
+    for settling in [false, true] {
+        let late = if settling {
+            crate::reactive::settle::SETTLE_DELAY
+        } else {
+            0.0
+        };
+        let (_, mut sim) = sword_measurement_base(120.0, 1, StatDelta::default(), false);
+        let input = &mut Rc::get_mut(&mut sim.env).unwrap().input;
+        input.zen = false;
+        input.settling = settling;
+        sim.st.groove = 1.0;
+        sim.st.tier = 3.0;
+        // Steady on-beat presses up to the menu.
+        for b in 2..8 {
+            let s = f64::from(b) * 0.5 + 0.01;
+            key(&mut sim, s, KeyEventKind::Press, InputKey::Right);
+            key(&mut sim, s + 0.05, KeyEventKind::Release, InputKey::Right);
+        }
+        sim.freeze_at(3.8, crate::survivors::FreezeReason::LevelUp);
+        sim.advance_to(3.81);
+        assert!(sim.st.freeze.frozen);
+        let held = sim.st.groove;
+        // A long look at the cards, then a pick.
+        sim.advance_to(9.0);
+        assert_eq!(
+            sim.st.groove, held,
+            "settling {settling}: no drain while choosing"
+        );
+        key(&mut sim, 9.0, KeyEventKind::Press, InputKey::Confirm);
+        key(&mut sim, 9.05, KeyEventKind::Release, InputKey::Confirm);
+        sim.advance_to(9.51);
+        assert!(!sim.st.freeze.frozen);
+        // The bar after the menu (1 s here) is the player's to find the beat again: the drain does
+        // not count the menu's time against them.
+        sim.advance_to(10.45 + late);
+        assert_eq!(
+            sim.st.groove, held,
+            "settling {settling}: no drain for the menu's time"
+        );
+    }
 }

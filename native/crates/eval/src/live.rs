@@ -284,6 +284,8 @@ pub struct LiveView {
     pub health: f64,
     pub groove: f64,
     pub tier: f64,
+    /// Classic mode: presses are not judged now (the beat unclear), so the groove is safe.
+    pub unjudged: bool,
     /// The experience bar's fill, 0-1, and the level (1 and up).
     pub xp: f64,
     pub level: u32,
@@ -614,6 +616,7 @@ impl LiveView {
                 self.moments.push(m.clone());
             }
             Record::Groove(v) => self.groove = *v,
+            Record::Judging(judged) => self.unjudged = !judged,
             Record::Tier(v) => self.tier = *v,
             Record::Xp(v) => self.xp = *v,
             Record::LevelUp => self.level += 1,
@@ -810,6 +813,7 @@ pub enum Record {
         vacuum: usize,
     },
     Groove(f64),
+    Judging(bool),
     Tier(f64),
     Xp(f64),
     LevelUp,
@@ -1243,6 +1247,10 @@ impl Recorder for LiveRecorder {
 
     fn groove(&mut self, _s: f64, v: f64) {
         self.0.borrow_mut().push(Record::Groove(v));
+    }
+
+    fn judging(&mut self, _s: f64, judged: bool) {
+        self.0.borrow_mut().push(Record::Judging(judged));
     }
 
     fn tier(&mut self, _s: f64, _w: f64, tier: f64, sound_s: f64) {

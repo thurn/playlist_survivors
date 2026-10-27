@@ -184,6 +184,7 @@ fn capture(dir: &Path, aura_only: bool) -> Result<(), String> {
             [0.85, 0.85, 0.95, 1.0],
             &mut overlay,
         );
+        overlay.append(&mut layers.modal);
         gpu.draw(&Frame {
             clear: crate::slice::CLEAR,
             world: &layers.sprites,
@@ -232,6 +233,7 @@ fn capture(dir: &Path, aura_only: bool) -> Result<(), String> {
                         [0.85, 0.85, 0.95, 1.0],
                         &mut layers.overlay,
                     );
+                    layers.overlay.append(&mut layers.modal);
                     gpu.draw(&Frame {
                         clear: crate::slice::CLEAR,
                         world: &layers.sprites,

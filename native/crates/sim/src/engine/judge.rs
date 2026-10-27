@@ -7,7 +7,9 @@ use super::{BEATLESS, FAIR, PendingSettle, Sim};
 use crate::core::shaping::clamp;
 use crate::jsmath::max;
 use crate::reactive::director::tick_index_in;
-use crate::reactive::settle::{READING, SETTLE_DELAY, judgement_label};
+use crate::reactive::settle::{
+    AMBIGUITY_SPAN_S, READING, SETTLE_DELAY, grids_agree_near, judgement_label,
+};
 use crate::recorder::SettleRecord;
 use crate::timing::{drain_per_beat, first_at_or_after, groove_after_change, tier_for};
 
@@ -60,16 +62,29 @@ impl Sim {
         )
     }
 
-    /// (hv-s4pt.12) How much of a penalty counts at song time t: scaled by the tracker's confidence.
+    /// (hv-s4pt.12) How much of a penalty counts at song time t: scaled by the tracker's confidence,
+    /// none until it is well past the judging gate.
     fn penalty_scale(&self, t: f64) -> f64 {
-        let gate = self.env.input.gate;
+        let from = max(self.env.input.gate, FAIR.from);
         FAIR.floor
             + (1.0 - FAIR.floor)
                 * clamp(
-                    (self.evidence_at(t) - gate) / max(1e-6, FAIR.full_at - gate),
+                    (self.evidence_at(t) - from) / max(1e-6, FAIR.full_at - from),
                     0.0,
                     1.0,
                 )
+    }
+
+    /// Classic mode: tells the view when judging stops or starts (an unclear beat judges nothing).
+    pub(super) fn show_judging(&mut self) {
+        if self.env.input.zen {
+            return;
+        }
+        let judged = self.clear_at(self.st.s) && !self.grid_known_at(self.st.s).is_empty();
+        if self.st.shown_judged != Some(judged) {
+            self.st.shown_judged = Some(judged);
+            self.rec.judging(self.st.s, judged);
+        }
     }
 
     /// (hv-s4pt.13) Is song time t in the lock-on grace?
@@ -113,8 +128,14 @@ impl Sim {
         self.judged_clock(t) - self.judged_clock(from)
     }
 
-    /// The groove after a press's change, and the tier it sets.
+    /// The groove after a press's change (a penalty scaled by the beat's confidence), and the tier
+    /// it sets.
     pub(super) fn meter_change(&mut self, change: f64) {
+        let change = if change < 0.0 {
+            change * self.penalty_scale(self.st.s)
+        } else {
+            change
+        };
         let before = self.st.groove;
         self.st.groove = groove_after_change(self.st.groove, change);
         if change > 0.0 {
@@ -203,7 +224,13 @@ impl Sim {
         } else {
             settled_change
         };
-        let change = if raw < 0.0 && self.in_grace(pr.s) {
+        // An ambiguous beat (the offline and online trackers disagree around the press) costs nothing.
+        let ambiguous = entry
+            .as_ref()
+            .is_some_and(|e| !grids_agree_near(e, pr.s, AMBIGUITY_SPAN_S));
+        let change = if raw < 0.0 && ambiguous {
+            0.0
+        } else if raw < 0.0 && self.in_grace(pr.s) {
             if p.steady {
                 0.0
             } else {

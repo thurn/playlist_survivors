@@ -86,11 +86,16 @@ fn current_content_loads_and_the_legacy_subset_keeps_its_reference_hash() {
         .filter(|f| f.name != "content/survivors-enemies.yaml")
         .collect();
     let mut lib = load_content(&legacy).unwrap_or_else(|e| panic!("{e}"));
-    // This reference covers legacy content, not deliberate survivors additions.
+    // This reference covers legacy content, not deliberate survivors additions, nor classic mode's
+    // gentler groove costs (2026-10-27): the TS game's costs stand in for them.
     lib.value["soundPalettes"]
         .as_object_mut()
         .unwrap()
         .remove("survivors");
+    let ts = ts_content();
+    for cost in ["counted", "offbeat", "stray"] {
+        lib.value["hero"]["meter"][cost] = ts["hero"]["meter"][cost].clone();
+    }
     assert!(!lib.enemies.is_empty() && !lib.weapons.is_empty() && !lib.effects.is_empty());
     let oracle: Value = serde_json::from_str(
         &std::fs::read_to_string(root().join("native/oracle/content.json")).unwrap(),
@@ -98,20 +103,23 @@ fn current_content_loads_and_the_legacy_subset_keeps_its_reference_hash() {
     .unwrap();
     let want = oracle["hash"].as_str().unwrap();
     let got = hash_hex(&lib.value);
-    if got != want {
-        let mut gz = String::new();
-        flate2::read::GzDecoder::new(
-            std::fs::File::open(root().join("native/oracle/content.json.gz")).unwrap(),
-        )
-        .read_to_string(&mut gz)
-        .unwrap();
-        let ts: Value = serde_json::from_str(&gz).unwrap();
-        panic!(
-            "content hash {got}, TS {want}; first difference: {}",
-            first_difference(&lib.value, &ts, "")
-                .unwrap_or_else(|| "none found (number bits or key order?)".into())
-        );
-    }
+    assert!(
+        got == want,
+        "content hash {got}, TS {want}; first difference: {}",
+        first_difference(&lib.value, &ts, "")
+            .unwrap_or_else(|| "none found (number bits or key order?)".into())
+    );
+}
+
+/// The TS game's content, as the reference hash was taken from it.
+fn ts_content() -> Value {
+    let mut gz = String::new();
+    flate2::read::GzDecoder::new(
+        std::fs::File::open(root().join("native/oracle/content.json.gz")).unwrap(),
+    )
+    .read_to_string(&mut gz)
+    .unwrap();
+    serde_json::from_str(&gz).unwrap()
 }
 
 fn with_change(

@@ -127,14 +127,20 @@ fixed.
     its `knownAt`.
   - Each change is judged by playing it, by the causality checks, by a
     virtual-player smoke test and by the operator's play.
-- **Zen mode is the default; non-zen play is legacy** (2026-10-25). In zen
-  mode nothing is judged: presses and held keys move the hero only on the
-  beat's stride steps, the groove stays full at the top tier, and every
-  accent's cleave launches by itself (`SimInput::zen`). Legacy mode, the TS
-  game's judged presses, groove drain and settling, stays behind `--legacy`
-  (or Z between runs) for older sessions, replays and the sim's oracle and
-  stage tests, but gets no new work. New gameplay is designed for zen mode.
-  QA items about judging (2, 13) apply to legacy mode only.
+- **Zen mode is the default; judged play is classic mode** (2026-10-25,
+  renamed from legacy mode 2026-10-27). In zen mode nothing is judged:
+  presses and held keys move the hero only on the beat's stride steps, the
+  groove stays full at the top tier, and every accent's cleave launches by
+  itself (`SimInput::zen`). Classic mode, behind `--classic` (`--legacy`
+  still works) or Z between runs, judges presses, drains and settles the
+  groove, but fairly: it starts full, off-beat eighth notes cost nothing, a
+  Perfect or Great press after a loose one takes the beat instead of costing a
+  stray, and penalties count
+  only on a confident beat (evidence from 0.35, full at 0.65) where the
+  offline and online trackers agree; the drain never counts a level-up menu,
+  and the groove meter squiggles while judging pauses
+  (`native/evidence/classic-mode/`). New gameplay is designed for zen mode.
+  QA items about judging (2, 13) apply to classic mode only.
 - **The analyzer is judged by accuracy, not bits.** A1 to A6 landed at stage
   parity with Python and keep those tests while they pass. From A7 on, the bar
   is corpus accuracy: committed beats about as accurate as Python's (hit rate

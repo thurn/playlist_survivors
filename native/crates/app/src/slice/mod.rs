@@ -21,11 +21,11 @@
 //!     playlist-survivors --file <path> --headless --seconds 30 [--start-at S] [--switch-at S] [--press-beats] [--watch]  # no window, no Dock icon, muted:
 //!                                     # the whole live path on a timer, for checks (then exits)
 //!     playlist-survivors --input-offset-ms 30 --stomp-extra-ms 10  # calibration for this session
-//!     playlist-survivors --legacy      # legacy mode (Z between runs): presses judged on the beat; zen mode, the
+//!     playlist-survivors --classic     # classic mode (Z between runs): presses judged on the beat; zen mode, the
 //!                                     # default, judges nothing and moves the hero on the beat
 //!     (F1 in the app: the debug menu; F2 plays the next bundled track, F3 listens to the Mac;
 //!     F8 saves the timing log)
-//!     playlist-survivors --still <png> [--still-track <id> --still-at <s>] [--legacy]  # 20 s of the house
+//!     playlist-survivors --still <png> [--still-track <id> --still-at <s>] [--classic]  # 20 s of the house
 //!                                     # track (or a track to a time) through the engine, offscreen
 //!     playlist-survivors --bench [--check]  # the frame's work (sim, evaluate, encode) over 60 s of it, offscreen
 
@@ -224,8 +224,8 @@ struct Options {
     spawn_smoke: bool,
     /// Headless input helper: choose the first card after its third reveal.
     pick_first: bool,
-    /// Zen mode, the default: nothing judged, every move on the beat. `--legacy` (or Z between
-    /// runs) plays legacy mode, where presses are judged on the beat.
+    /// Zen mode, the default: nothing judged, every move on the beat. `--classic` (or Z between
+    /// runs) plays classic mode, where presses are judged on the beat.
     zen: bool,
     /// Watch each run as soon as it ends (for checks).
     watch: bool,
@@ -464,7 +464,7 @@ fn options(args: &[String]) -> Result<Options, String> {
             "--press-beats" => o.press_beats = true,
             "--spawn-smoke" => o.spawn_smoke = true,
             "--pick-first" => o.pick_first = true,
-            "--legacy" => o.zen = false,
+            "--classic" | "--legacy" => o.zen = false,
             "--watch" => o.watch = true,
             "--delayed" => o.delayed = true,
             "--app" => o.app = Some(it.next().ok_or("--app needs an app's name")?.clone()),
@@ -684,7 +684,7 @@ impl World {
         })
     }
 
-    /// The engine for a run, in zen mode (nothing judged) or legacy mode.
+    /// The engine for a run, in zen mode (nothing judged) or classic mode.
     fn engine(&self, zen: bool) -> Result<Engine, String> {
         Engine::new(
             &self.level,
@@ -1578,6 +1578,7 @@ fn bench_pass(mode: BenchMode, report: bool) -> Result<BenchTimes, String> {
         );
         let scene_end = thread_cpu_s();
         scene_times.push((scene_end - engine_end) * 1e3);
+        overlay.append(&mut layers.modal);
         out.draw(&Frame {
             clear: CLEAR,
             world: &layers.sprites,
@@ -1857,6 +1858,7 @@ fn still(
         h as f32,
         &mut overlay,
     );
+    overlay.append(&mut layers.modal);
     let frame = Frame {
         clear: CLEAR,
         world: &layers.sprites,
@@ -2053,7 +2055,7 @@ struct App {
     /// The run's kills when it ended, and whether to watch each run as it ends (`--watch`).
     run_kills: usize,
     auto_watch: bool,
-    /// Zen mode for the next run (the default; `--legacy` or Z between runs for legacy mode), and
+    /// Zen mode for the next run (the default; `--classic` or Z between runs for classic mode), and
     /// whether the run (or the last) is in it.
     zen: bool,
     run_zen: bool,
@@ -2714,6 +2716,7 @@ impl App {
             [0.3, 0.8, 0.4, 0.8],
         ));
         let built = t0.elapsed().as_secs_f64();
+        overlay.append(&mut layers.modal);
         let drawn = g.draw(&Frame {
             clear: CLEAR,
             world: &layers.sprites,

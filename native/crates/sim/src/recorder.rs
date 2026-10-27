@@ -457,6 +457,8 @@ pub trait Recorder {
     fn swing(&mut self, sw: PlanSwing) {}
     fn input(&mut self, i: PlanInput) {}
     fn groove(&mut self, s: f64, v: f64) {}
+    /// Classic mode: presses are judged from song time s on, or not (the beat unclear).
+    fn judging(&mut self, s: f64, judged: bool) {}
     fn tier(&mut self, s: f64, w: f64, tier: f64, sound_s: f64) {}
     fn health(&mut self, s: f64, frac: f64) {}
     fn landing(&mut self, l: Landing) {}
@@ -574,6 +576,9 @@ impl<R: Recorder + ?Sized> Recorder for std::rc::Rc<std::cell::RefCell<R>> {
     }
     fn groove(&mut self, s: f64, v: f64) {
         self.borrow_mut().groove(s, v);
+    }
+    fn judging(&mut self, s: f64, judged: bool) {
+        self.borrow_mut().judging(s, judged);
     }
     fn tier(&mut self, s: f64, w: f64, tier: f64, sound_s: f64) {
         self.borrow_mut().tier(s, w, tier, sound_s);

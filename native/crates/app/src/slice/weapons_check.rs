@@ -344,6 +344,7 @@ pub fn run(dir: &Path, fixture: Option<(WeaponId, u8)>) -> Result<(), String> {
                 &mut overlay,
             );
         }
+        overlay.append(&mut layers.modal);
         gpu.draw(&Frame {
             clear: crate::slice::CLEAR,
             world: &layers.sprites,

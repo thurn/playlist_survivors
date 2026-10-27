@@ -114,6 +114,8 @@ pub struct Layers {
     pub head: Option<(f32, f32)>,
     pub feet: Option<(f32, f32)>,
     pub overlay: Vec<Sprite>,
+    /// The level-up cards: over everything, the HUD included (drawn last).
+    pub modal: Vec<Sprite>,
 }
 
 /// A zone's colour grade (`renderer.ts`'s GRADES): multipliers, lift, contrast and saturation.
@@ -1223,9 +1225,11 @@ impl Scene {
         );
         self.cards.grade(now, &mut layers.grade);
         self.cards
-            .draw(art, now, w, h, layers.feet, &mut layers.overlay);
+            .draw(art, now, w, h, layers.feet, &mut layers.modal);
+        // (The cards cover the hero: no marker at its feet, no display over its head.)
         if self.cards.covers_hero(now) {
             layers.feet = None;
+            layers.head = None;
         }
         self.fast = fast;
         if now - self.bitten < 0.6 {
@@ -1247,7 +1251,7 @@ pub struct ListeningMode<'a> {
     pub browser: bool,
     pub others: usize,
     pub note: Option<&'a str>,
-    /// Zen mode (the default): nothing judged, every move on the beat; else legacy mode.
+    /// Zen mode (the default): nothing judged, every move on the beat; else classic mode.
     pub zen: bool,
 }
 
@@ -1365,12 +1369,12 @@ pub fn listening_card(
     );
     let (line, tint) = if mode.zen {
         (
-            "ZEN MODE: HOLD THE KEYS, EVERY MOVE ON THE BEAT   Z LEGACY MODE",
+            "ZEN MODE: HOLD THE KEYS, EVERY MOVE ON THE BEAT   Z CLASSIC MODE",
             [0.6, 0.6, 0.7, 1.0],
         )
     } else {
         (
-            "LEGACY MODE: PRESSES JUDGED ON THE BEAT   Z ZEN MODE",
+            "CLASSIC MODE: PRESSES JUDGED ON THE BEAT   Z ZEN MODE",
             [1.0, 0.75, 0.44, 1.0],
         )
     };

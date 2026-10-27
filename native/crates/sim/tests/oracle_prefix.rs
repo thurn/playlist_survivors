@@ -1,4 +1,4 @@
-//! Native replay invariants and the retained legacy judging reference.
+//! Native replay invariants. (The TS judging reference retired with classic mode's fairer rules.)
 #![allow(
     clippy::case_sensitive_file_extension_comparisons,
     clippy::float_cmp,
@@ -11,14 +11,14 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use indexmap::IndexMap;
-use serde_json::{Value, json};
+use serde_json::Value;
 use sim::content::level::load_level;
 use sim::content::{ContentLibrary, SourceFile, load_content};
 use sim::core::warp::WarpBreak;
 use sim::engine::{AnimInfo, Sim, SimInput};
 use sim::movement::InputKey;
 use sim::player::{KeyEvent, KeyEventKind};
-use sim::recorder::{self, LogRecorder, Recorder};
+use sim::recorder::{self, Recorder};
 use sim::schedule::{grow_song_map, reactive_song_map};
 use stream::StreamFile;
 
@@ -88,133 +88,6 @@ fn key(name: &str) -> InputKey {
         "right" => InputKey::Right,
         "space" => InputKey::Space,
         _ => panic!("key {name}"),
-    }
-}
-
-/// A recorder the test keeps a handle on.
-struct Shared(Rc<RefCell<LogRecorder>>);
-
-impl Recorder for Shared {
-    fn warp(&mut self, b: WarpBreak, r: bool) {
-        self.0.borrow_mut().warp(b, r);
-    }
-    fn spawn(&mut self, rec: recorder::EnemyRecord) {
-        self.0.borrow_mut().spawn(rec);
-    }
-    fn sample(&mut self, id: usize, x: f64, y: f64) {
-        self.0.borrow_mut().sample(id, x, y);
-    }
-    fn fate(&mut self, id: usize, f: recorder::Fate) {
-        self.0.borrow_mut().fate(id, f);
-    }
-    fn death(&mut self, id: usize, w: f64, r: bool) {
-        self.0.borrow_mut().death(id, w, r);
-    }
-    fn hit(&mut self, h: recorder::Hit) {
-        self.0.borrow_mut().hit(h);
-    }
-    fn swing(&mut self, sw: recorder::PlanSwing) {
-        self.0.borrow_mut().swing(sw);
-    }
-    fn input(&mut self, i: recorder::PlanInput) {
-        self.0.borrow_mut().input(i);
-    }
-    fn groove(&mut self, s: f64, v: f64) {
-        self.0.borrow_mut().groove(s, v);
-    }
-    fn tier(&mut self, s: f64, w: f64, t: f64, ss: f64) {
-        self.0.borrow_mut().tier(s, w, t, ss);
-    }
-    fn health(&mut self, s: f64, f: f64) {
-        self.0.borrow_mut().health(s, f);
-    }
-    fn weapon(&mut self, id: &str, s: f64) {
-        self.0.borrow_mut().weapon(id, s);
-    }
-    fn fire(&mut self, w: &str, s: f64) {
-        self.0.borrow_mut().fire(w, s);
-    }
-    fn chain(&mut self, p: recorder::ChainPoint) {
-        self.0.borrow_mut().chain(p);
-    }
-    fn chain_point(&mut self, c: usize, p: recorder::ChainPoint) {
-        self.0.borrow_mut().chain_point(c, p);
-    }
-    fn bite(&mut self, b: recorder::BiteRecord) {
-        self.0.borrow_mut().bite(b);
-    }
-    fn heal(&mut self, h: recorder::HealRecord) {
-        self.0.borrow_mut().heal(h);
-    }
-    fn chicken(&mut self, c: recorder::ChickenRecord) {
-        self.0.borrow_mut().chicken(c);
-    }
-    fn chicken_taken(&mut self, i: usize, s: f64, w: f64, h: f64) {
-        self.0.borrow_mut().chicken_taken(i, s, w, h);
-    }
-    fn vacuum(&mut self, v: recorder::VacuumRecord) {
-        self.0.borrow_mut().vacuum(v);
-    }
-    fn vacuum_touch(&mut self, i: usize, s: f64, w: f64, g: f64) {
-        self.0.borrow_mut().vacuum_touch(i, s, w, g);
-    }
-    fn upgrade(&mut self, u: sim::upgrades::UpgradeRecord) {
-        self.0.borrow_mut().upgrade(u);
-    }
-    fn upgrade_taken(&mut self, i: usize, k: usize, s: f64, w: f64, a: f64, wk: bool) {
-        self.0.borrow_mut().upgrade_taken(i, k, s, w, a, wk);
-    }
-    fn xp(&mut self, s: f64, f: f64) {
-        self.0.borrow_mut().xp(s, f);
-    }
-    fn wave(&mut self, c: recorder::Cleave) {
-        self.0.borrow_mut().wave(c);
-    }
-    fn enemy_step(&mut self, id: usize, w: f64, d: f64) {
-        self.0.borrow_mut().enemy_step(id, w, d);
-    }
-    fn settle(&mut self, r: recorder::SettleRecord) {
-        self.0.borrow_mut().settle(r);
-    }
-}
-
-/// Two JSON values equal as the oracle compares them: numbers by value (JSON can't carry -0, NaN or
-/// infinities: they read 0, null and null); objects field by field.
-fn same(a: &Value, b: &Value) -> bool {
-    match (a, b) {
-        (Value::Number(x), Value::Number(y)) => x.as_f64() == y.as_f64(),
-        (Value::Object(x), Value::Object(y)) => {
-            x.len() == y.len() && x.iter().all(|(k, v)| y.get(k).is_some_and(|w| same(v, w)))
-        }
-        (Value::Array(x), Value::Array(y)) => {
-            x.len() == y.len() && x.iter().zip(y).all(|(v, w)| same(v, w))
-        }
-        _ => a == b,
-    }
-}
-
-/// The first difference between two values, as a path.
-fn diff(a: &Value, b: &Value, path: &str) -> Option<String> {
-    match (a, b) {
-        (Value::Object(x), Value::Object(y)) => {
-            for k in x.keys().chain(y.keys()) {
-                match (x.get(k), y.get(k)) {
-                    (Some(p), Some(q)) => {
-                        if let Some(d) = diff(p, q, &format!("{path}.{k}")) {
-                            return Some(d);
-                        }
-                    }
-                    (p, q) => return Some(format!("{path}.{k}: ours {p:?}, TS {q:?}")),
-                }
-            }
-            None
-        }
-        (Value::Array(x), Value::Array(y)) if x.len() == y.len() => x
-            .iter()
-            .zip(y)
-            .enumerate()
-            .find_map(|(i, (p, q))| diff(p, q, &format!("{path}[{i}]"))),
-        _ => (!same(a, b)).then(|| format!("{path}: ours {a}, TS {b}")),
     }
 }
 
@@ -369,138 +242,4 @@ fn a_restored_snapshot_runs_on_the_same() {
         a.len(),
         b.len()
     );
-}
-
-/// An input's judging fields: what the press was and how it was judged.
-fn judging_fields(v: &Value) -> Value {
-    let mut out = serde_json::Map::new();
-    for k in [
-        "s", "kind", "key", "rating", "delta", "class", "extra", "offbeat", "unjudged", "stomp",
-        "rock", "bend", "steps",
-    ] {
-        if let Some(x) = v.get(k) {
-            out.insert(k.into(), x.clone());
-        }
-    }
-    Value::Object(out)
-}
-
-/// B5: judging without hindsight (presses change the groove when pressed; the drain runs on each
-/// beat), which no shipped stream exercises: against TS runs of three streams with their hindsight
-/// removed (`judging-vectors.json.gz`, from `gen-judging-vectors.mts`).
-#[test]
-fn judging_without_hindsight_matches_ts() {
-    let raw = std::fs::read(
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/judging-vectors.json.gz"),
-    )
-    .unwrap();
-    let mut text = String::new();
-    flate2::read::GzDecoder::new(&raw[..])
-        .read_to_string(&mut text)
-        .unwrap();
-    let vectors: Value = serde_json::from_str(&text).unwrap();
-    let lib = library();
-    let anims = atlas();
-    for run in vectors["runs"].as_array().unwrap() {
-        let (track, profile) = (
-            run["track"].as_str().unwrap(),
-            run["profile"].as_str().unwrap(),
-        );
-        assert_eq!(run["settles"], 0);
-        let mut file = StreamFile::parse(
-            &std::fs::read_to_string(root().join(format!("public/reactive/{track}/stream.json")))
-                .unwrap(),
-        )
-        .unwrap();
-        file.log.hindsight = None;
-        let mut song = reactive_song_map(file.audio.duration);
-        grow_song_map(&mut song, &file.log, file.log.beats.len());
-        let level = load_level(&source("levels/reactive.yaml"), &lib, &song, None).unwrap();
-        let input = SimInput::new(level, &lib, &anims, file.params.gate, false);
-        let rec = Rc::new(RefCell::new(LogRecorder::default()));
-        let mut sim = Sim::new(
-            input,
-            Rc::new(file.log.clone()),
-            Box::new(Shared(Rc::clone(&rec))),
-            // (Live runs end on a confirmed end; this one is bounded where TS's ran to at least.)
-            Some(file.audio.duration + 1.0),
-        );
-        let dir = root().join(format!("native/oracle/fixtures/{track}/{profile}"));
-        for k in gz_lines(&dir.join("keys.jsonl.gz")) {
-            sim.key(KeyEvent {
-                s: k["s"].as_f64().unwrap(),
-                kind: if k["kind"] == "press" {
-                    KeyEventKind::Press
-                } else {
-                    KeyEventKind::Release
-                },
-                key: key(k["key"].as_str().unwrap()),
-                id: None,
-            });
-        }
-        sim.run_to_end();
-        let end = sim.end_s();
-        let rec = rec.borrow();
-        assert!(rec.settles.is_empty());
-        let before = |v: &Value| v[0].as_f64().is_some_and(|t| t < end);
-        let series = |s: &(Vec<f64>, Vec<f64>)| {
-            s.0.iter()
-                .zip(&s.1)
-                .map(|(&t, &v)| json!([t, v]))
-                .collect::<Vec<_>>()
-        };
-        let inputs_before = |list: Vec<Value>| {
-            list.into_iter()
-                .filter(|v| v["s"].as_f64().is_some_and(|t| t < end))
-                .collect::<Vec<_>>()
-        };
-        let cases: Vec<(&str, Vec<Value>, Vec<Value>)> = vec![
-            (
-                "groove",
-                series(&rec.groove),
-                run["groove"]
-                    .as_array()
-                    .unwrap()
-                    .iter()
-                    .filter(|v| before(v))
-                    .cloned()
-                    .collect(),
-            ),
-            (
-                "tier",
-                series(&rec.tier),
-                run["tier"]
-                    .as_array()
-                    .unwrap()
-                    .iter()
-                    .filter(|v| before(v))
-                    .cloned()
-                    .collect(),
-            ),
-            (
-                "input",
-                inputs_before(rec.inputs.iter().map(judging_fields).collect()),
-                inputs_before(run["inputs"].as_array().unwrap().clone()),
-            ),
-        ];
-        for (k, ours, theirs) in cases {
-            for (i, (a, b)) in ours.iter().zip(&theirs).enumerate() {
-                assert!(
-                    same(a, b),
-                    "{track}/{profile} without hindsight: {k} #{i} differs\n  ours {a}\n  TS   {b}\n  {}",
-                    diff(a, b, "v").unwrap_or_default()
-                );
-            }
-            assert_eq!(
-                ours.len(),
-                theirs.len(),
-                "{track}/{profile} without hindsight: {k} lines"
-            );
-            assert!(
-                ours.len() > 3,
-                "{track}/{profile}: {k} has {} lines",
-                ours.len()
-            );
-        }
-    }
 }

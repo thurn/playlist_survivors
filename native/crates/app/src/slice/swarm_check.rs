@@ -200,6 +200,7 @@ pub fn run(dir: &Path) -> Result<(), String> {
                 &mut overlay,
             );
             art.fonts["pixel"].text("PRESENTATION: HP1E6 / XP0 / NORMAL HERO DAMAGE / VIEW0.55 / SYNTHETIC128BPM / SILENT",640.0,700.0,1.0,Align::Centre,[0.8,0.8,0.9,1.0],&mut overlay);
+            overlay.append(&mut layers.modal);
             gpu.draw(&Frame {
                 clear: super::CLEAR,
                 world: &layers.sprites,

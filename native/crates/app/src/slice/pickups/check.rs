@@ -236,6 +236,7 @@ fn draw(
     };
     let mut overlay = std::mem::take(&mut layers.overlay);
     hud::draw(view, &st, art, 1280.0, 720.0, &mut overlay);
+    overlay.append(&mut layers.modal);
     gpu.draw(&Frame {
         clear: crate::slice::CLEAR,
         world: &layers.sprites,

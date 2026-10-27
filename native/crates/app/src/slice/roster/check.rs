@@ -338,6 +338,7 @@ fn draw(
         [0.8, 0.8, 0.9, 1.0],
         &mut overlay,
     );
+    overlay.append(&mut layers.modal);
     gpu.draw(&Frame {
         clear: crate::slice::CLEAR,
         world: &layers.sprites,

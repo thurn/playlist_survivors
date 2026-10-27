@@ -56,6 +56,18 @@ fn resolve(name: &str) -> Option<SourceFile> {
     root().join(&rel).exists().then(|| source(&rel))
 }
 
+/// The TS game's groove meter, as the fixtures' level hashes were taken with it.
+fn ts_meter() -> Value {
+    let mut text = String::new();
+    flate2::read::GzDecoder::new(
+        std::fs::File::open(root().join("native/oracle/content.json.gz")).unwrap(),
+    )
+    .read_to_string(&mut text)
+    .unwrap();
+    let ts: Value = serde_json::from_str(&text).unwrap();
+    ts["hero"]["meter"].clone()
+}
+
 /// The reactive level, loaded against a stream's whole reactive song map.
 fn level_for(lib: &ContentLibrary, file: &StreamFile) -> LevelScript {
     let mut song = reactive_song_map(file.audio.duration);
@@ -74,8 +86,13 @@ fn reactive_level_hash_matches_every_fixture() {
         .collect();
     tracks.sort();
     assert!(tracks.len() >= 60);
+    // (Classic mode's gentler groove costs, 2026-10-27, are not the TS game's: its costs stand in.)
+    let ts = ts_meter();
     for track in tracks {
-        let level = level_for(&lib, &stream(&track));
+        let mut level = level_for(&lib, &stream(&track));
+        for cost in ["counted", "offbeat", "stray"] {
+            level.value["hero"]["meter"][cost] = ts[cost].clone();
+        }
         let ours = hash_hex(&level.value);
         for p in std::fs::read_dir(fixtures.join(&track)).unwrap() {
             let meta: Value = serde_json::from_str(

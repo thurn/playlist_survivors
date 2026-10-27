@@ -196,6 +196,35 @@ fn agreement(a: &[f64], b: &[f64], tol: f64) -> f64 {
     n
 }
 
+/// How far either side of a press the trackers must agree for its beat to count as unambiguous.
+pub const AMBIGUITY_SPAN_S: f64 = 2.0;
+/// The share of each tracker's beats near a press the other must match.
+const AGREE_SHARE: f64 = 0.75;
+
+/// Do the entry's offline and online trackers agree on the beat within `span` of song time s?
+/// Each must have two beats there at least, and most of each one's beats a match in the other's
+/// (so a half- or double-time disagreement, or one tracker off the phase, is ambiguous).
+pub fn grids_agree_near(entry: &Hindsight, s: f64, span: f64) -> bool {
+    let near = |d: &[f64]| -> Vec<f64> {
+        d.iter()
+            .copied()
+            .filter(|t| abs(t - s) <= span + 1e-9)
+            .collect()
+    };
+    let (a, b) = (near(&entry.offline), near(&entry.online));
+    if a.len() < 2 || b.len() < 2 {
+        return false;
+    }
+    let tol = max(match_tolerance(&a), match_tolerance(&b));
+    let share = |x: &[f64], y: &[f64]| {
+        x.iter()
+            .filter(|&&t| nearest_dist(y, t) <= tol + 1e-9)
+            .count() as f64
+            / x.len() as f64
+    };
+    share(&a, &b) >= AGREE_SHARE && share(&b, &a) >= AGREE_SHARE
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Reading {
     pub chosen: Candidate,

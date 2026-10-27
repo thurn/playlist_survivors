@@ -304,4 +304,4 @@ mod tests {
 // Replay is deliberately separate from the analyzer-to-stream conversion above. Analysis
 // cache fingerprints cover this file, while replay-only changes preserve valid streams.
 mod replay;
-pub use replay::{AppliedKey, RecordedRun, Replayed, replay_run};
+pub use replay::{AppliedKey, GrooveSummary, RecordedRun, Replayed, replay_run};

@@ -10,7 +10,7 @@
 use std::path::{Path, PathBuf};
 
 use eval::live::Engine;
-use eval::session::{AppliedKey, Arrival, RecordedRun, replay_run};
+use eval::session::{AppliedKey, Arrival, RecordedRun, Replayed, replay_run};
 use indexmap::IndexMap;
 use serde_json::Value;
 use sim::content::{SourceFile, load_content};
@@ -194,12 +194,17 @@ fn reanalyse(dir: &Path, meta: &Value) -> Result<Vec<Arrival>, String> {
 }
 
 /// How a replayed run went.
-fn outcome(e: &Engine) -> String {
+fn outcome(e: &Engine, got: &Replayed) -> String {
     let v = e.view.borrow();
     let [p, g, ok] = v.ratings;
+    let groove = got.groove;
     format!(
-        "{} kills, {p} perfect, {g} great, {ok} good, health {:.2}",
-        v.kills, v.health
+        "{} kills, {p} perfect, {g} great, {ok} good, health {:.2}; groove mean {:.2}, min {:.2}, below full {:.0}% of frames",
+        v.kills,
+        v.health,
+        groove.mean,
+        groove.min,
+        100.0 * groove.below_full
     )
 }
 
@@ -236,7 +241,7 @@ pub fn replay(dir: &Path) -> Result<bool, String> {
             got.settled,
             got.rollbacks,
             if same { "the same" } else { "DIFFERENT" },
-            outcome(&e)
+            outcome(&e, &got)
         );
     }
     Ok(ok)
@@ -282,7 +287,7 @@ pub fn replay_reanalysed(dir: &Path) -> Result<bool, String> {
             "run {} re-analysed: {} records settled; {}",
             run.index,
             got.settled,
-            outcome(&e)
+            outcome(&e, &got)
         );
     }
     Ok(true)

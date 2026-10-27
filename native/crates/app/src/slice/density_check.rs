@@ -167,6 +167,7 @@ fn run_cases(dir: &Path, restored: bool) -> Result<(), String> {
                 &mut layers.overlay,
             );
             art.fonts["pixel"].text(if restored{"DIAGNOSTIC: 300 FOES / HERO EXEMPT / SIX MAX WEAPONS, CHAIN + TRAIL / SIX PASSIVES"}else if killable{"DIAGNOSTIC: MINUTE25 ROSTER / HP40 XP0 / HERO EXEMPT / FIVE EVOLUTIONS + SIX MAX PASSIVES"}else{"DIAGNOSTIC: MINUTE25 ROSTER / HP1E12 / HERO EXEMPT / FIVE EVOLUTIONS + SIX MAX PASSIVES"},640.0,705.0,0.9,Align::Centre,[0.85,0.9,1.0,1.0],&mut layers.overlay);
+            layers.overlay.append(&mut layers.modal);
             gpu.draw(&Frame {
                 clear: super::CLEAR,
                 world: &layers.sprites,

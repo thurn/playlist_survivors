@@ -269,15 +269,22 @@ pub fn classify_press(
     if near(i - 1) < near(i) {
         i -= 1;
     }
+    // An eighth note is as natural as the beat, and costs nothing. A press within the Good window of
+    // a beat not yet pressed counts for that beat, though (so a player running early or late on a
+    // fast beat is counted, for the drift to correct), unless it is within Perfect of the off-beat
+    // after a counted beat.
     if i >= 0 && i + 1 < n {
         let off = sj - (grid[i as usize] + grid[i as usize + 1]) / 2.0;
-        let counted = memo.counted.get(&key_of(i)).copied();
-        if abs(off) * 1000.0 <= hero.timing.great_ms
+        let off_ms = abs(off) * 1000.0;
+        let open_beat = !memo.counted.contains_key(&key_of(gi))
+            && abs(sj - at(grid, gi)) * 1000.0 <= hero.timing.good_ms;
+        let after_the_beat = memo.counted.contains_key(&key_of(i));
+        if off_ms <= hero.timing.great_ms
             && !memo.offbeats.contains(&key_of(i))
-            && counted.is_some_and(|c| c.rating != CountedRating::Loose)
+            && (!open_beat || (after_the_beat && off_ms <= hero.timing.perfect_ms))
         {
             memo.offbeats.insert(key_of(i));
-            let (rating, change) = if abs(off) * 1000.0 <= hero.timing.perfect_ms {
+            let (rating, change) = if off_ms <= hero.timing.perfect_ms {
                 (CountedRating::Perfect, m.offbeat.perfect)
             } else {
                 (CountedRating::Great, m.offbeat.great)
@@ -293,8 +300,17 @@ pub fn classify_press(
         }
     }
     let delta = sj - at(grid, gi);
-    let Some(counted) = memo.counted.get(&key_of(gi)).copied() else {
-        let rating = counted_rating(hero, delta);
+    let rating = counted_rating(hero, delta);
+    let earlier = memo.counted.get(&key_of(gi)).copied();
+    // A beat counts its first press, or once, a Perfect or Great one after a loose first (not a double
+    // tap): the player found the beat, and earns it rather than a stray's cost. (The loose press keeps
+    // its own, scaled, cost. Not after a Good first: mashers would press until one was Perfect.)
+    let takes_the_beat = earlier.is_none_or(|c| {
+        c.rating == CountedRating::Loose
+            && matches!(rating, CountedRating::Perfect | CountedRating::Great)
+            && s - c.s > m.double_tap_ms / 1000.0 + 1e-9
+    });
+    if takes_the_beat {
         memo.counted.insert(key_of(gi), CountedPress { s, rating });
         // A loose press is too far off to say how late the player runs.
         if rating != CountedRating::Loose {
@@ -313,7 +329,8 @@ pub fn classify_press(
             change: counted_change(hero, rating),
             drift,
         };
-    };
+    }
+    let counted = earlier.expect("a counted press");
     if s - counted.s <= m.double_tap_ms / 1000.0 + 1e-9 {
         return PressJudgement {
             class: PressClass::Double,

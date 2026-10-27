@@ -419,6 +419,8 @@ impl Sim {
         self.st.freeze.music_pending = false;
         let gap = self.st.s - self.st.freeze.since;
         self.st.freeze.total_s += gap;
+        // Classic mode: the drain counts from the resume, never across the menu.
+        self.st.last_raise_s = self.st.last_raise_s.max(self.st.s);
         if let Some(p) = &mut self.st.survivor {
             p.arsenal.resume(self.st.freeze.total_s);
         }

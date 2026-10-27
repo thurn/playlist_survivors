@@ -13,7 +13,7 @@ use sim::content::types::{Gait, Subdivision};
 use sim::content::{ContentLibrary, SourceFile, load_content};
 use sim::movement::{self, InputKey, Key, Rock, Step, TakenPress};
 use sim::strides::{self, StrideState, StrideSteps};
-use sim::timing::{self, CountedRating, KeyGroup, PressClass, PressMemo, Rating};
+use sim::timing::{self, KeyGroup, Rating};
 use sim::upgrades::{self, ItemKind, Loadout, UpgradeItem, UpgradeRecord};
 use sim::{aim, gait, tiers};
 
@@ -117,25 +117,6 @@ fn rating_name(r: Option<Rating>) -> Option<&'static str> {
     })
 }
 
-fn counted_name(r: Option<CountedRating>) -> Option<&'static str> {
-    r.map(|r| match r {
-        CountedRating::Perfect => "perfect",
-        CountedRating::Great => "great",
-        CountedRating::Good => "good",
-        CountedRating::Loose => "loose",
-    })
-}
-
-fn class_name(c: PressClass) -> &'static str {
-    match c {
-        PressClass::Partner => "partner",
-        PressClass::Offbeat => "offbeat",
-        PressClass::Counted => "counted",
-        PressClass::Double => "double",
-        PressClass::Stray => "stray",
-    }
-}
-
 fn group(name: &str) -> KeyGroup {
     if name == "stomp" {
         KeyGroup::Stomp
@@ -184,44 +165,8 @@ fn timing_matches_ts() {
             }
         }
     }
-    for (c, case) in arr(&t["classify"]).iter().enumerate() {
-        let grid = fs(&case["grid"]);
-        let offset = case["keyOffset"].as_i64().unwrap();
-        let mut key_of = move |gi: isize| gi as i64 + offset;
-        let mut memo = PressMemo::default();
-        for (i, (p, want)) in arr(&case["presses"])
-            .iter()
-            .zip(arr(&case["out"]))
-            .enumerate()
-        {
-            let j = timing::classify_press(
-                hero,
-                &grid,
-                f(&p[0]),
-                p[1].as_bool().unwrap(),
-                &mut memo,
-                group(p[2].as_str().unwrap()),
-                &mut key_of,
-            );
-            let what = format!("classify case {c} press {i}");
-            assert_eq!(class_name(j.class), want[0].as_str().unwrap(), "{what}");
-            assert_eq!(counted_name(j.rating), want[1].as_str(), "{what}");
-            same(j.delta, f(&want[2]), &format!("{what} delta"));
-            assert_eq!(j.grid_index as i64, want[3].as_i64().unwrap(), "{what}");
-            same(j.change, f(&want[4]), &format!("{what} change"));
-            same(j.drift, f(&want[5]), &format!("{what} drift"));
-        }
-        same_all(
-            &memo.recent_direction,
-            &fs(&case["recent"]["direction"]),
-            "recent direction",
-        );
-        same_all(
-            &memo.recent_stomp,
-            &fs(&case["recent"]["stomp"]),
-            "recent stomp",
-        );
-    }
+    // (Classic mode's press classes left the TS game's on purpose, 2026-10-27: the sim's
+    // engine/tests/classic_tests.rs tests them.)
     for row in arr(&t["tierFor"]) {
         let tier = row[0].as_f64().unwrap();
         assert_eq!(

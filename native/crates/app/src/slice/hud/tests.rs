@@ -20,7 +20,7 @@ fn state() -> HudState<'static> {
     }
 }
 #[test]
-fn zen_meter_is_heard_music_and_legacy_meter_is_earned_accuracy() {
+fn zen_meter_is_heard_music_and_classic_meter_is_earned_accuracy() {
     let mut view = LiveView {
         groove: 1.0,
         tier: 3.0,
@@ -68,7 +68,9 @@ fn hud_state_render_qualification() {
     std::fs::create_dir_all(&dir).unwrap();
     for (w, h) in [(960, 540), (1920, 1080)] {
         let mut gpu = capture::Offscreen::new(&art.pages, w, h).unwrap();
-        for name in ["quiet", "waiting", "hurt", "legacy", "cards", "end"] {
+        for name in [
+            "quiet", "waiting", "hurt", "classic", "unjudged", "cards", "end",
+        ] {
             let mut inv = Inventory::default();
             inv.weapons.upgrade(WeaponId::Sword, 8).unwrap();
             let mut view = LiveView {
@@ -92,9 +94,10 @@ fn hud_state_render_qualification() {
                 view.health = 0.12;
                 st.beat_phase = 0.0;
             }
-            if name == "legacy" {
+            if name == "classic" || name == "unjudged" {
                 st.zen = false;
                 view.ratings = [12, 4, 1];
+                view.unjudged = name == "unjudged";
             }
             if name == "cards" {
                 let run = view.run.as_mut().unwrap();

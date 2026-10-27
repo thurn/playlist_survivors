@@ -163,6 +163,7 @@ pub fn run(dir: &Path) -> Result<(), String> {
             h as f32,
             &mut overlay,
         );
+        overlay.append(&mut layers.modal);
         gpu.draw(&Frame {
             clear: crate::slice::CLEAR,
             world: &layers.sprites,

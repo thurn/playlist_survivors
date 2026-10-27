@@ -19,6 +19,8 @@ const GOOD: [f32; 4] = rgb(0x9fd0ff);
 const PLAIN: [f32; 4] = rgb(0x8890a8);
 /// Each tier's colour on the groove meter: cool at 0, gold at 3 (`TIER_COLORS`).
 const TIERS: [[f32; 4]; 4] = [rgb(0x7088a8), rgb(0x60c0ff), rgb(0x70f0c0), rgb(0xffd040)];
+/// Unjudged music (classic mode, the beat unclear): the groove meter squiggles in the free gem's blue.
+const FREE: [f32; 4] = rgb(0x9fb8ff);
 
 const fn rgb(c: u32) -> [f32; 4] {
     [
@@ -86,7 +88,7 @@ pub struct HudState<'a> {
     pub tier_flash: f64,
     /// How late Delayed listening hears the music (s; 0 in Direct), tagged under health.
     pub delayed: f64,
-    /// Zen mode (nothing judged, the default); legacy mode is tagged under health.
+    /// Zen mode (nothing judged, the default); classic mode is tagged under health.
     pub zen: bool,
     pub rhythm: Rhythm,
     pub keys_visible: bool,
@@ -107,9 +109,7 @@ pub fn draw(
 ) {
     let u = (w / 960.0).min(h / 540.0);
     overhead(view, st, w, h, u, out);
-    if view.run.is_some_and(|r| r.offer.is_some()) {
-        out.push(rect(0.0, 0.0, w, h, [0.0, 0.0, 0.05, 0.55]));
-    }
+    // (The level-up cards dim everything beneath them, this HUD included.)
     if let Some(reason) = view.run.and_then(|r| r.frozen)
         && reason != sim::survivors::FreezeReason::LevelUp
         && !(reason == sim::survivors::FreezeReason::Chest
@@ -209,7 +209,7 @@ pub fn draw(
     if !st.zen {
         let y = if st.delayed > 0.0 { 46.0 } else { 36.0 };
         font::text(
-            "LEGACY",
+            "CLASSIC",
             px(12.0),
             py(y),
             fs,
@@ -367,7 +367,7 @@ pub fn draw(
             out,
         );
     }
-    // Musical energy in zen, earned groove and tier in legacy.
+    // Musical energy in zen, earned groove and tier in classic.
     let (groove, tier) = meter(view, st);
     let (gx, gw) = (cx + 212.0, 70.0);
     font::text(
@@ -397,13 +397,27 @@ pub fn draw(
         ));
     }
     out.push(rect(px(gx), py(cy - 5.0), gw * u, 10.0 * u, bg));
+    let unjudged = unjudged(view, st);
+    let fill = (gw - 2.0) * u * groove as f32;
     out.push(rect(
         px(gx + 1.0),
         py(cy - 4.0),
-        (gw - 2.0) * u * groove as f32,
+        fill,
         8.0 * u,
-        TIERS[tier],
+        alpha(TIERS[tier], if unjudged { 0.35 } else { 1.0 }),
     ));
+    if unjudged {
+        squiggle(
+            px(gx + 1.0),
+            py(cy),
+            fill,
+            2.6 * u,
+            u,
+            st.elapsed as f32,
+            FREE,
+            out,
+        );
+    }
     font::text(
         &if st.zen {
             "ZEN".into()
@@ -423,6 +437,31 @@ pub fn draw(
     );
     if view.run.is_some() {
         inventory(view, art, u, px(130.0), py(28.0), out);
+    }
+}
+
+/// Classic mode with the beat unclear: nothing is judged, and the groove is safe.
+fn unjudged(view: &LiveView, st: &HudState) -> bool {
+    !st.zen && view.unjudged
+}
+
+/// A flowing line `w` long from (x, y), `amp` either side, `p` the pixel: the unjudged groove.
+#[allow(clippy::too_many_arguments)]
+fn squiggle(
+    x: f32,
+    y: f32,
+    w: f32,
+    amp: f32,
+    p: f32,
+    t: f32,
+    color: [f32; 4],
+    out: &mut Vec<Sprite>,
+) {
+    let n = (w / p).floor() as i32;
+    for k in 0..n {
+        let dx = k as f32 * p;
+        let dy = (dx / amp * 0.9 - t * 5.0).sin() * amp;
+        out.push(rect(x + dx, y + dy - p, p, 2.0 * p, color));
     }
 }
 
@@ -521,13 +560,26 @@ fn overhead(view: &LiveView, st: &HudState, w: f32, h: f32, hud: f32, out: &mut 
         bh,
         alpha(life, a),
     ));
+    let unjudged = unjudged(view, st);
     out.push(rect(
         x - half,
         groove_y,
         2.0 * half * groove as f32,
         bh,
-        alpha(tier, a),
+        alpha(tier, if unjudged { 0.35 * a } else { a }),
     ));
+    if unjudged {
+        squiggle(
+            x - half,
+            groove_y + bh / 2.0,
+            2.0 * half * groove as f32,
+            1.3 * u,
+            0.7 * u,
+            st.elapsed as f32,
+            alpha(FREE, a),
+            out,
+        );
+    }
     let y = (y - 24.0 * u).max(20.0 * u);
     let dark = [0.02, 0.016, 0.04, 0.8 * a];
     if !st.rhythm.locked {

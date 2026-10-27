@@ -86,18 +86,21 @@ pub const HURTBOX_RADIUS: f64 = 10.0;
 pub const HURTBOX_LIFT: f64 = 20.0;
 const CONTACT_GAP: f64 = 4.0;
 
-/// (hv-s4pt.12) The fairness knobs of the settled judgment.
+/// (hv-s4pt.12) The fairness knobs of the judgment. Penalties count only from the beat evidence
+/// `from` (none below it, however clear the beat is for judging), growing to full at `full_at`.
 pub struct Fair {
     pub benefit_of_doubt: bool,
     pub steady_run: f64,
     pub floor: f64,
+    pub from: f64,
     pub full_at: f64,
 }
 pub const FAIR: Fair = Fair {
     benefit_of_doubt: true,
     steady_run: 4.0,
     floor: 0.0,
-    full_at: 0.55,
+    from: 0.35,
+    full_at: 0.65,
 };
 
 /// (hv-s4pt.13) Beatless credit and the lock-on grace.
@@ -223,8 +226,8 @@ pub struct SimInput {
     pub settling: bool,
     /// Zen mode, the app's default: nothing is judged. Presses and held keys move the hero only on
     /// the stride steps, the groove stays full, and every accent's cleave launches by itself.
-    /// Without it, legacy mode (the TS game's rules, kept for older sessions and the oracle and
-    /// stage tests) judges every press against the grid. Legacy mode is not developed further.
+    /// Without it, classic mode (once legacy mode: the TS game's rules, made fairer) judges presses
+    /// against the grid, and takes groove away only when it is sure a press was off the beat.
     pub zen: bool,
 }
 
@@ -1006,6 +1009,8 @@ struct SimState {
     landed: bool,
     facing_angle: f64,
     groove: f64,
+    /// Classic mode: whether presses were judged as the view was last told.
+    shown_judged: Option<bool>,
     last_press_s: f64,
     memo: PressMemo,
     tier: f64,
@@ -1810,8 +1815,9 @@ impl Sim {
         self.st.next_hero_k = 1.0;
         self.record_foes(0.0);
         self.st.next_foe_k = 1.0;
-        // Zen mode: the groove is full from the start, at the top tier.
-        if self.env.input.zen && self.st.survivor.is_none() {
+        // The groove is full from the start, at the top tier: zen mode keeps it so, and classic
+        // mode takes it away only for presses it is sure are off the beat.
+        if !self.env.input.zen || self.st.survivor.is_none() {
             self.st.groove = 1.0;
             self.rec.groove(0.0, 1.0);
             self.set_tier();
@@ -1845,6 +1851,7 @@ impl Sim {
         self.tick_survivor_events();
         self.tick_signature();
         self.tick_musical();
+        self.show_judging();
     }
 
     fn handle(&mut self, ev: Ev) {
@@ -2097,6 +2104,7 @@ fn fresh_state(env: &Env) -> SimState {
         landed: true,
         facing_angle: 0.0,
         groove: 0.0,
+        shown_judged: None,
         last_press_s: f64::NEG_INFINITY,
         memo: PressMemo::default(),
         tier: 0.0,
@@ -2190,6 +2198,7 @@ fn fresh_state(env: &Env) -> SimState {
 
 #[cfg(test)]
 mod tests {
+    mod classic_tests;
     mod collection_tests;
     mod evolution_tests;
     mod mainbeat_tests;

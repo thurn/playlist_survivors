@@ -106,9 +106,12 @@ fn run(track: &str, player: &str) -> Outcome {
 }
 
 #[test]
-fn the_honest_player_outplays_the_masher_on_the_galop() {
-    let honest = run("orpheus-galop", "reactive-moderate");
-    let masher = run("orpheus-galop", "mash4");
+fn the_honest_player_outplays_the_masher_on_a_clear_beat() {
+    // (Classic mode judges only a beat it is sure of: on the galop, whose beat it rarely is, the
+    // masher keeps its groove too, 2026-10-27. Fun comes first: the masher pays in groove and tier,
+    // not by falling.)
+    let honest = run("house-128", "reactive-moderate");
+    let masher = run("house-128", "mash4");
     for (name, o) in [("reactive-moderate", &honest), ("mash4", &masher)] {
         eprintln!(
             "{name}: fell {:?}, groove {:.2}, tier 2+ {:.0}%, {} presses",
@@ -123,23 +126,35 @@ fn the_honest_player_outplays_the_masher_on_the_galop() {
         "the players hardly pressed"
     );
     assert!(
-        honest.groove > masher.groove,
-        "the masher's groove is as good as the honest player's"
+        honest.groove > masher.groove + 0.2,
+        "the masher's groove is near the honest player's"
     );
     assert!(
-        honest.tier2 > masher.tier2,
-        "the masher spends as long at tier 2+ as the honest player"
+        honest.tier2 > masher.tier2 + 0.2,
+        "the masher spends nearly as long at tier 2+ as the honest player"
     );
-    // The honest player usually lives; the masher usually falls (or at least falls first).
     assert!(
         honest.fell.is_none(),
         "the honest player fell at {:?}",
         honest.fell
     );
-    assert!(masher.fell.is_some(), "the masher lived to the end");
 }
 
-/// A player driving the sim is as deterministic as replayed keys: the same run twice comes out the same.
+#[test]
+fn off_beat_and_half_time_players_keep_their_groove() {
+    for track in ["house-128", "orpheus-galop"] {
+        for player in ["reactive-offbeat", "reactive-half"] {
+            let o = run(track, player);
+            assert!(
+                o.groove > 0.95 && o.tier2 > 0.95,
+                "{track} {player}: groove {:.2}, tier 2+ {:.0}%",
+                o.groove,
+                100.0 * o.tier2
+            );
+        }
+    }
+}
+
 #[test]
 fn a_driven_run_is_deterministic() {
     assert_eq!(run("causality-mix", "mash4"), run("causality-mix", "mash4"));

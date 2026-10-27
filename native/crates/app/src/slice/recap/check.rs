@@ -219,6 +219,7 @@ pub fn run(dir: &Path) -> Result<(), String> {
                 &mut layers.overlay,
             );
             art.fonts["pixel"].text(if victory {"DIAGNOSTIC:20S VICTORY / HERO EXEMPT / HP1000 XP0 KB0 / RANK8 + API EVOS / SYNTHETIC120BPM"}else{"DIAGNOSTIC:FAST LETHAL SKELETONS / HP1000 XP0 KB0 / RANK8 START / SYNTHETIC120BPM"},640.0,704.0,0.9,Align::Centre,[0.75,0.8,0.9,1.0],&mut layers.overlay);
+            layers.overlay.append(&mut layers.modal);
             gpu.draw(&Frame {
                 clear: crate::slice::CLEAR,
                 world: &layers.sprites,

@@ -174,6 +174,7 @@ pub fn run(dir: &Path) -> Result<(), String> {
             [0.8, 0.8, 0.9, 1.0],
             &mut overlay,
         );
+        overlay.append(&mut layers.modal);
         gpu.draw(&Frame {
             clear: super::CLEAR,
             world: &layers.sprites,

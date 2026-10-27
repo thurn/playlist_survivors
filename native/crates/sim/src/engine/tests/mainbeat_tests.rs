@@ -206,7 +206,7 @@ fn ring_holds_until_close_and_cancelled_travel_is_not_repaid() {
 }
 
 #[test]
-fn legacy_rate_changes_keep_steps_on_heard_main_beats() {
+fn classic_rate_changes_keep_steps_on_heard_main_beats() {
     let file = tempo(128.0);
     let beats = file.log.beats.clone();
     let mut sim = sim_in(&file, false);
@@ -243,7 +243,7 @@ fn legacy_rate_changes_keep_steps_on_heard_main_beats() {
 }
 
 #[test]
-fn legacy_armour_reduces_main_beat_contact() {
+fn classic_armour_reduces_main_beat_contact() {
     let f = tempo(128.0);
     let run = |armour| {
         let mut sim = sim_in(&f, false);

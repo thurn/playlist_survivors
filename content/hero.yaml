@@ -14,19 +14,16 @@ hero:
   # The groove meter (see docs/design/gameplay-redesign.md): each press
   # class changes the groove on its 0-to-1 scale; a bar after the latest press that raised it, it
   # drains from full to empty in 8 bars. The tiers rise at these values and drop 0.05 below them.
-  # Tuned against the groove checks in check:play (from the design's starting values: good -0.05,
-  # loose -0.10, off-beat Perfect 0.03 and Great 0, stray -0.10, tier 1 at 0.3). A random press
-  # near the off-beat after a Great counted press is an off-beat, so the counted presses that are
-  # left land nearer the grid: mashing at 4 a second filled the groove. Off-beats now earn nothing,
-  # a Great one costs a little, and Good, loose and stray presses cost more. Replays of real play
-  # logs found gentler Good and loose costs let the mashers climb, so they stay; the drift does
-  # more for a player who runs steadily late, and leaves mashers (whose median offset is 0) as
-  # they were.
+  # Classic mode starts the groove full and takes it away only for presses it is sure are off the
+  # beat (fun over strictness, 2026-10-27): eighth notes (off-beats) cost nothing, a Good press
+  # costs a little, and only loose and stray presses cost more, scaled by how sure the tracker is.
+  # (The TS game's harsher costs, good -0.12, loose -0.15, off-beat Great -0.04 and stray -0.25,
+  # held mashers back and punished real players with them.)
   meter:
-    counted: { perfect: 0.08, great: 0.02, good: -0.12, loose: -0.15 }
-    offbeat: { perfect: 0, great: -0.04 }
+    counted: { perfect: 0.08, great: 0.02, good: -0.04, loose: -0.10 }
+    offbeat: { perfect: 0, great: 0 }
     doubleTap: 0
-    stray: -0.25
+    stray: -0.10
     drain: { afterBars: 1, emptyInBars: 8 }
     tiers: [0.45, 0.6, 0.85]
     hysteresis: 0.05
