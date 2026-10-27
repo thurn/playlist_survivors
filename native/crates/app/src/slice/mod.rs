@@ -62,6 +62,7 @@ mod loopback;
 )]
 mod output;
 mod pickups;
+mod recap;
 mod scene;
 mod session;
 mod sounds;
@@ -173,6 +174,7 @@ struct Options {
     hud_full_slots: bool,
     sound_check: Option<PathBuf>,
     cards_check: Option<PathBuf>,
+    recap_check: Option<PathBuf>,
     aura_check: Option<PathBuf>,
     zone_check: Option<PathBuf>,
     boss_check: Option<PathBuf>,
@@ -241,6 +243,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         hud_full_slots: false,
         sound_check: None,
         cards_check: None,
+        recap_check: None,
         aura_check: None,
         zone_check: None,
         boss_check: None,
@@ -310,6 +313,13 @@ fn options(args: &[String]) -> Result<Options, String> {
                 o.hook_check = Some(
                     it.next()
                         .ok_or("--hook-check needs a recorded survive directory")?
+                        .into(),
+                );
+            }
+            "--recap-check" => {
+                o.recap_check = Some(
+                    it.next()
+                        .ok_or("--recap-check needs an output directory")?
                         .into(),
                 );
             }
@@ -709,6 +719,9 @@ pub fn run(args: &[String]) -> Result<(), String> {
     if let Some(dir) = &opts.hook_check {
         return hook_check::run(dir);
     }
+    if let Some(dir) = &opts.recap_check {
+        return recap::check::run(dir);
+    }
     if let Some(dir) = &opts.aura_check {
         return atmosphere::check::auras(dir);
     }
@@ -878,6 +891,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
         peak: 0.0,
         last_sound: f64::NEG_INFINITY,
         over: None,
+        end_summary: None,
         running: false,
         recent: VecDeque::new(),
         listen: Listen::default(),
@@ -1887,6 +1901,8 @@ struct App {
     last_freeze: Option<sim::survivors::FreezeReason>,
     /// When the run ended (host s), and whether the hero fell.
     over: Option<(f64, End, f64)>,
+    /// Completed Survivors statistics survive a partial Watch-my-run replay.
+    end_summary: Option<recap::Summary>,
     title_at: f64,
     /// The next voice's identity, and how far ahead of now the output is rendering (s): a sound
     /// scheduled that far ahead lands on its sample.
@@ -2468,14 +2484,16 @@ impl App {
                 &mut overlay,
             );
         } else if let Some((t, end, seconds)) = self.over {
+            let view = self.engine.view.borrow();
             scene::end_card(
                 w,
                 h,
                 now - t,
                 seconds.max(0.0) as u64,
                 end,
-                &self.engine.view.borrow(),
-                &self.art.fonts["pixel"],
+                &view,
+                self.end_summary.as_ref(),
+                &self.art,
                 &mut overlay,
             );
         }
@@ -2848,6 +2866,7 @@ impl App {
             );
         }
         self.log(serde_json::json!({"k": "end", "s": self.run_start + seconds, "why": format!("{end:?}")}));
+        self.end_summary = recap::Summary::from_view(&self.engine.view.borrow());
         self.over = Some((now, end, seconds));
         self.run_kills = self.engine.view.borrow().kills;
         self.running = false;
@@ -3212,6 +3231,7 @@ impl App {
             s.reset(now_s() + self.ahead.max(0.0));
         }
         self.over = None;
+        self.end_summary = None;
         self.voices = [0; 4];
         let s0 = self.run_start;
         for (_, e) in &self.recent {

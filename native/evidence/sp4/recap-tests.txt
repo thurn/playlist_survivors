@@ -1,0 +1,13 @@
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp4-end-recap/native/crates/eval)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.09s
+     Running unittests src/lib.rs (target/debug/deps/eval-ac22b895b76bfc69)
+
+running 3 tests
+test recap::tests::records_count_logical_damage_once_keep_rank_time_and_close_base_at_evolution ... ok
+SP4 fatal boundary: completed run0.7 damage56.29629629629628; displayed clocks0.7416666666666665/1.1083333333333332, later raw damage115.55555555555553, identical summaries at settle0.04/0.4 lead0.237 across pause
+test recap::tests::completed_fatal_summary_is_identical_across_settlement_windows ... ok
+SP4 producer: 1695 actual applied fates, run17.491666667, per-weapon [Row { id: Sword, damage: 0.0, held_s: 0.0, dps: 0.0 }, Row { id: BloodyTear, damage: 312.5925925925931, held_s: 17.491666666666667, dps: 17.870943835688983 }, Row { id: Garlic, damage: 0.0, held_s: 0.0, dps: 0.0 }, Row { id: SoulEater, damage: 1200.0, held_s: 17.491666666666667, dps: 68.60409718913769 }, Row { id: MagicWand, damage: 0.0, held_s: 0.0, dps: 0.0 }, Row { id: HolyWand, damage: 1059.0, held_s: 17.491666666666667, dps: 60.54311576941401 }, Row { id: KingBible, damage: 0.0, held_s: 0.0, dps: 0.0 }, Row { id: UnholyVespers, damage: 1323.0, held_s: 17.491666666666667, dps: 75.63601715102429 }, Row { id: LightningRing, damage: 0.0, held_s: 0.0, dps: 0.0 }, Row { id: ThunderLoop, damage: 695.5, held_s: 17.491666666666667, dps: 39.761791329204385 }]
+test recap::tests::actual_sim_fates_match_live_recap_for_all_five_evolutions_through_pause ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.16s
+

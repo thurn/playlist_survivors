@@ -861,10 +861,20 @@ fn a_real_xp_offer_pick_applies_once_across_speculative_rollback() {
             "actual offers reach Lightning Ring before comparing rollback"
         );
         assert_eq!(ranks, 1 + picks, "each confirm applied exactly one rank");
-        (e.settled_log.take().unwrap(), inventory, e.stats, picks)
+        (
+            e.settled_log.take().unwrap(),
+            inventory,
+            e.view.borrow().recap.clone(),
+            e.stats,
+            picks,
+        )
     };
-    let (plain, pi, _, picks) = run(0.0, 0.0);
-    let (late, li, stats, late_picks) = run(0.4, 0.03);
+    let (plain, pi, pr, _, picks) = run(0.0, 0.0);
+    let (late, li, lr, stats, late_picks) = run(0.4, 0.03);
+    assert_eq!(
+        pr, lr,
+        "recap timers and damage survive actual late offer-pick rollback"
+    );
     assert_eq!(pi, li);
     assert_eq!(picks, late_picks);
     assert!(stats.key_rollbacks > 0);

@@ -1659,6 +1659,28 @@ change. SP5 owns the milestone cold review and density budget. Play from
 Source/staging SHAs are recorded in hv-n7fn.32's native notes.
 
 ### SP4
+
+VICTORY and YOU FELL now share the completed run's active time, kills,
+level and per-weapon damage/time-held/DPS table. Existing logical hit values
+and inventory changes drive the bounded recap in the rollback view; visual
+hit echoes and the finale never double-count weapon damage. Rank upgrades
+keep time, evolution closes the base interval, and lingering base attacks
+retain identity. Menus/music freezes add no held time. Damage/DPS use the
+same×10 human-facing scale as combat labels; held time shows tenths.
+
+The first fatal Health record captures an immutable Summary in the rollback
+view; confirmation delay cannot inflate time or damage. The completed Summary
+survives Watch-my-run and an early replay stop, while replay retains its original
+wall/song span. New runs
+clear it. [Evidence](../../native/evidence/sp4/README.md) keeps an independent
+actual-Sim applied-fate comparison, real late-offer rollback checks, and
+labelled actual shortened-victory/forced-fatal-contact card stills. Fixture
+loadouts/actors do not establish natural acquisition or balance. Eye/ear/W
+feel remains operator-pending. One per-bead cold review covers the changed
+rollback projection; SP5 also reviews the milestone. Play from `native/`:
+`cargo run --release -p app -- --playlist playlists/survivors-30.m3u --delayed`.
+Source/staging SHAs and review disposition are recorded in hv-n7fn.33's notes.
+
 ### SP5
 
 ## Beyond This Plan

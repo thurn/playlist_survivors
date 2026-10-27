@@ -1,0 +1,2 @@
+    Checking eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp4-end-recap/native/crates/eval)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.46s

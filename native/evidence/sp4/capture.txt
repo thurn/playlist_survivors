@@ -1,0 +1,5 @@
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp4-end-recap/native/crates/eval)
+   Compiling app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp4-end-recap/native/crates/app)
+    Finished `release` profile [optimized] target(s) in 5.44s
+     Running `target/release/playlist-survivors --recap-check evidence/sp4`
+SP4: actual shortened victory and fast-lethal-contact defeat cards from combat/ownership records; no natural progression or full-run survival claim

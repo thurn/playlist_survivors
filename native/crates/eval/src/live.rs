@@ -229,6 +229,9 @@ const BOLT_KEEP_S: f64 = 1.0;
 /// What a frame draws.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct LiveView {
+    pub recap: crate::recap::Recap,
+    /// First fatal record, restored/retracted with the view on rollback.
+    pub fatal_summary: Option<crate::recap::Summary>,
     pub boss_cues: Vec<sim::survivors::BossCue>,
     pub boss_warning: Option<sim::survivors::BossCue>,
     pub inventory: Option<sim::survivors::Inventory>,
@@ -373,7 +376,11 @@ impl LiveView {
                     self.missiles.remove(&pose.id);
                 }
             }
-            Record::Inventory(inventory) => self.inventory = Some(*inventory),
+            Record::Inventory(inventory) => {
+                self.recap
+                    .inventory(*inventory, self.run.map_or(0.0, |r| r.elapsed));
+                self.inventory = Some(*inventory);
+            }
             Record::Run(state) => {
                 if let Some(previous) = self.run
                     && previous.frozen.is_some()
@@ -426,6 +433,12 @@ impl LiveView {
             }
             Record::Death { id, w, recycled } => self.death(*id, *w, *recycled),
             Record::Moment(m) => {
+                if self.inventory.is_some()
+                    && let Moment::Hit { what, damage, .. } = m
+                    && let Some(id) = sim::survivors::WeaponId::from_name(what)
+                {
+                    self.recap.damage(id, *damage);
+                }
                 match m {
                     Moment::Hit {
                         foe, lethal: true, ..
@@ -457,7 +470,12 @@ impl LiveView {
             Record::Tier(v) => self.tier = *v,
             Record::Xp(v) => self.xp = *v,
             Record::LevelUp => self.level += 1,
-            Record::Health(v) => self.health = *v,
+            Record::Health(v) => {
+                self.health = *v;
+                if *v <= 0.0 && self.fatal_summary.is_none() {
+                    self.fatal_summary = crate::recap::Summary::from_view(self);
+                }
+            }
             // (Sounds go to the scheduler from the speculation: `Engine::causes`.)
             Record::Sound(_) => {}
             Record::Weapon { id, evolved } => match self.weapons.iter_mut().find(|w| w.0 == *id) {

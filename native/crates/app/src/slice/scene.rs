@@ -1262,9 +1262,19 @@ pub fn end_card(
     seconds: u64,
     end: End,
     view: &LiveView,
-    face: &render::font::BitmapFont,
+    completed: Option<&super::recap::Summary>,
+    art: &Atlases,
     out: &mut Vec<Sprite>,
 ) {
+    if let Some(summary) = completed {
+        super::recap::draw(w, h, age, end, summary, art, out);
+        return;
+    }
+    if let Some(summary) = super::recap::Summary::from_view(view) {
+        super::recap::draw(w, h, age, end, &summary, art, out);
+        return;
+    }
+    let face = &art.fonts["pixel"];
     let a = (age / 0.5).clamp(0.0, 1.0) as f32;
     out.push(rect(0.0, 0.0, w, h, [0.0, 0.0, 0.0, 0.7 * a]));
     let u = (w / 960.0).min(h / 540.0);
