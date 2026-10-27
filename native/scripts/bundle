@@ -20,9 +20,8 @@ cp "$TARGET/release/playlist-survivors" "$APP/Contents/MacOS/playlist-survivors"
 # The analyzer's models (the playable slice, docs/design/native-app.md Phase V).
 cp models/madmom.bin "$APP/Contents/Resources/madmom.bin"
 mkdir -p "$APP/Contents/Resources/assets"
-cp ../public/assets/characters.json ../public/assets/characters-0.png \
-  ../public/assets/effects.json ../public/assets/effects-0.png \
-  ../public/assets/world.json ../public/assets/world-0.png "$APP/Contents/Resources/assets/"
+# Ship every baked atlas and page, including fonts, icons, and future overflow pages.
+cp ../public/assets/*.json ../public/assets/*.png "$APP/Contents/Resources/assets/"
 # The game's content and its reactive level (the sim engine, G1).
 rm -rf "$APP/Contents/Resources/content" "$APP/Contents/Resources/levels"
 cp -R ../content "$APP/Contents/Resources/content"
