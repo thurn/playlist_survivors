@@ -15,6 +15,12 @@ The demo answers one question that the game's design depends on:
 > on screen at once while every monster still looks and reacts the way a
 > single monster does?
 
+The demo scouts a larger decision: whether the game's client should move from
+the native Rust app ([native-app.md](native-app.md)) to Unity. So the report
+gives what stock Unity does as well as what bespoke systems reach. What else
+that decision needs is listed in
+[What This Does Not Answer](#what-this-does-not-answer).
+
 It produces three things:
 
 - **A frontier report.** For each camera zoom and effect load, the largest
@@ -31,9 +37,10 @@ simplest option wins.
 
 ### Decisions
 
-These were settled with the user on 2026-10-26 in a design interview.
-Executors treat them as fixed. Every other choice is the executor's, recorded
-with its reasons in the bead's notes.
+These were settled with the user on 2026-10-26 in a design interview, and
+revised the same day in a review interview. Executors treat them as fixed.
+Every other choice is the executor's, recorded with its reasons in the bead's
+notes.
 
 1. **A standalone showcase.** The demo does not render the game's Rust sim.
    It has its own choreography and content.
@@ -48,6 +55,7 @@ with its reasons in the bead's notes.
    - The equivalent Mac floor is an M3 Pro or M4 Pro class machine.
    - Base M-series MacBook Airs, at roughly a third of a 4060 Laptop's GPU,
      are not targeted.
+   - No Windows player is built or run.
 4. **Validation happens on this M5 Max only.** Budgets are translated from
    published benchmarks; no target device is bought. Every target-hardware
    number in the report is labeled as inferred and shows its factors.
@@ -69,8 +77,9 @@ with its reasons in the bead's notes.
    animation, a real cast shadow, its own hit and death reactions and effects,
    and dynamic light from nearby effects, at any horde size (see
    [The Fidelity Floor](#the-fidelity-floor)).
-10. **Crowd animation is decided by a bake-off** between our own bone-texture
-    GPU path and DOTS with Latios Kinemation, with stock Unity as a baseline.
+10. **Crowd animation runs on our own bone-texture GPU path,** measured
+    against stock Unity as a baseline. DOTS with Latios Kinemation was
+    dropped: it is unconfirmed on Unity 6.6 and not clearly faster.
 11. **Effects run on GPU particles from the start.** An editor converter
     carries the chosen Hovl Studio and KriptoFX prefabs into the GPU runtime.
     TD8 opens with a spike that picks it: our own compute-shader runtime, or
@@ -132,8 +141,6 @@ with its reasons in the bead's notes.
 - [Notebookcheck's M5 Pro and M5 Max GPU analysis](https://www.notebookcheck.net/Apple-M5-Pro-M5-Max-GPU-Analysis-M5-Max-GPU-on-par-with-the-GeForce-RTX-5070-and-faster-than-Strix-Halo.1246060.0.html):
   the M5 Max 40-core GPU scores 3,924 in 3DMark Steel Nomad, against about
   2,025 for an RTX 4060 Laptop.
-- [Latios Framework](https://github.com/Dreaming381/Latios-Framework): home of
-  Kinemation, one arm of the crowd bake-off.
 - [NVIDIA FLIP](https://github.com/NVlabs/flip): the image-difference metric
   behind the fidelity A/B checks.
 - Asset sources on this machine, both read-only:
@@ -150,12 +157,11 @@ should feel like watching an expert play a finished game.
 - **The arena.** A moonlit enchanted forest: open glades ringed by trees,
   glowing elven trees and crystals, ruins, a graveyard and braziers, under
   cool blue moonlight. Effect light carries the fighting.
-- **The hero.** A Synty knight with sword and shield. They stride on beats and
-  carve through the horde with sword combos whose blows land on beats,
-  spinning on accents and slamming on the downbeats that open phrases.
-  Spells fire on the musical
-  grid: rings on downbeats, bolts on eighth notes, lightning on accents and a
-  laser sweep in the climax.
+- **The hero.** A Synty knight with sword and shield. They stride on beats from
+  clearing to clearing and carve through the horde with sword combos whose
+  blows land on beats, spinning on accents and slamming on the downbeats that
+  open phrases. Spells fire on the musical grid: rings on downbeats, bolts on
+  eighth notes, lightning on accents and a laser sweep in the climax.
 - **The horde.** Skeletons, goblins, slimes, bats, mushrooms and demons from
   Magic Pig Games' low-poly line, with Synty Fantasy Rivals brutes as elites
   and a boss at the climax. They advance in beat-synced gaits, attack on
@@ -215,9 +221,9 @@ Three properties follow from this structure:
 - **Lookahead is unlimited.** An attack can start winding up before the beat
   its blow lands on.
 - **The choreographer's cost is paid at load.** The benchmark measures only
-  the client; the 25% reserve stands in for a real sim layer. Live-sim mode
-  checks that a sim like the choreographer fits in that reserve (see
-  [Live-sim mode](#live-sim-mode)).
+  the client; the 25% reserve stands in for a real sim layer. The
+  choreographer times each of its ticks at load, which checks that a sim
+  like it fits in that reserve (see [Sim tick timing](#sim-tick-timing)).
 
 ## The Fidelity Floor
 
@@ -233,8 +239,9 @@ Every visible monster keeps:
   rules out per-vertex animation textures, which cannot blend clips.
 - **A real cast shadow** in the sun's shadow map, not a blob decal.
 - **Its own reactions.** Every hit plays a flinch, a flash, knockback and a
-  hit effect. Every death plays a death animation and a death effect. For a
-  tick (a repeat hit from a lingering effect), the flash is the hit effect
+  hit effect. Every death plays a death animation and a death effect. A
+  **tick**, a repeat hit from a lingering effect, plays only the flash: no
+  flinch, knockback or particles. A tick that kills plays the full death
   (see [Effect design rules for a horde](#effect-design-rules-for-a-horde)).
 - **Dynamic light** from nearby effects.
 
@@ -319,7 +326,7 @@ the target's 12.5 ms (see [Environment frontier](#environment-frontier)).
 The reserve is checked too, not just assumed. A real game's sim layer must
 fit in the 4.2 ms of target CPU the client leaves free. That gives the sim its
 own line on the M5 Max: **2.0 ms per tick** (4.2 ÷ 1.7 ÷ 1.2), measured by
-[Live-sim mode](#live-sim-mode).
+[Sim tick timing](#sim-tick-timing).
 
 ### Where the Mac flatters the target
 
@@ -344,7 +351,7 @@ alone understates them. The harness counts these costs directly.
   memory, while NVIDIA blends through memory. Particle overdraw costs more on
   the target. The harness reports transparent fragments per pixel.
 - **Memory bandwidth.** An RTX 4060 Laptop has 256 GB/s. The M5 Max has more
-  than twice that, about 2.1–2.4× by published figures; TD4 records the
+  than twice that, about 2.1–2.4× by published figures; TD7 records the
   figure it uses. Bandwidth-bound passes therefore translate worse than the
   1.9× compute ratio.
 - **Faster job workers.** Six M5 Max workers each run about 1.7× faster than
@@ -352,18 +359,23 @@ alone understates them. The harness counts these costs directly.
   rendering, so job latency lands in main-thread time and the CPU lines cover
   it.
 
-A **frontier point** is the largest on-screen count that passes at one
-combination of the other sweep axes. It must pass two checks, and the report
-gives both:
+A **frontier point** is the largest on-screen count that passes the pass rule
+on the M5 Max at one combination of the other sweep axes, found by binary
+search. Every point gets a **compute estimate** of the target's GPU time: the
+M5 Max GPU time × 1.9 × 1.2.
 
-- **The pass rule on the M5 Max,** found by binary search. This alone gives a
-  **compute estimate** of the target's GPU time: the M5 Max GPU time × 1.9 ×
-  1.2.
-- **A per-pass estimate,** from a Metal System Trace at the found count.
-  Shadow, transparent and post-processing passes are scaled by the bandwidth
-  ratio × 1.2, and the other passes by 1.9 × 1.2. Their sum is then scaled by
-  the run's p99-to-mean GPU time ratio. If it exceeds 12.5 ms, the count steps
-  down by 5% and both checks repeat.
+The compute ratio flatters bandwidth-heavy points. So two points also get a
+**per-pass estimate**: the envelope point (see [The report](#the-report)) and
+the heavy-load point at the envelope's view width.
+
+- **The trace.** A Metal System Trace at the found count. Shadow, transparent
+  and post-processing passes are scaled by the bandwidth ratio × 1.2, and the
+  other passes by 1.9 × 1.2. Their sum is then scaled by the run's
+  p99-to-mean GPU time ratio.
+- **The step-down.** If the estimate exceeds 12.5 ms, the count steps down by
+  5%, and the pass rule and the trace repeat.
+- **Other points are not traced.** The report flags those whose overdraw
+  counters suggest the Mac flatters them (see [Measurements](#measurements)).
 
 A frontier point can also be limited by space rather than time. Monsters keep
 apart (see [The choreographer](#the-choreographer)), so a view holds at most
@@ -394,13 +406,10 @@ off:            motion blur, depth of field, film grain, upscaling
 - **Static environment** rendering climbs its own measured ladder, starting
   with the GPU Resident Drawer (see
   [Environment rendering](#environment-rendering)).
-- **Graphics APIs:** Metal on macOS; Direct3D 12 for the Windows build.
+- **Graphics API:** Metal. No Windows player is built.
 - **Benchmark runs** turn vsync off and leave the frame rate uncapped, so frame
   time measures throughput. The showcase build caps at the display rate.
 - **The macOS player** is the demo and the benchmark.
-- **A Windows player** is built from the Mac as a compile check for the
-  Direct3D 12 shaders and is never run. It uses the Mono scripting backend,
-  the only Windows backend Unity builds from macOS.
 
 ## The Choreography Layer
 
@@ -460,7 +469,7 @@ animation starts. The client works backwards from the impact to start each
 clip (see [Clip annotations and retiming](#clip-annotations-and-retiming)):
 
 ```csharp
-public enum ActionKind { Spawn, Attack, Hit, Death, Parry }
+public enum ActionKind { Spawn, Attack, Hit, Tick, Death, Parry }
 public readonly struct ActionEvent {
     public readonly int Entity, Clip, Target;    // Target -1 for none
     public readonly ActionKind Kind;
@@ -484,18 +493,23 @@ public readonly struct FramingSample { public readonly Vector2 Focus;
     public readonly float ViewWidth; }
 ```
 
+A `Tick` is a repeat hit from a lingering effect, such as the laser's sweep
+or a ring's afterburn. The client plays it as a shader flash only, with no
+clip, knockback or effect event.
+
 The **beat grid** is the song map's beats and their halves and quarters.
 Accents are the song map's curated accent list; a beat counts as an accent
-when an accent lies within 30 ms of it.
+when an accent lies within 30 ms of it. In a `free` section the grid is that
+section's accents instead (see [Free sections](#free-sections)).
 
 Rules every timeline obeys:
 
 - **Stable entity ids.** An id is never reused within a timeline, so the
   client can keep per-entity slots across frames.
-- **Every `Attack`, `Hit` and `Death` impact lies on the beat grid,** within
-  1 ms.
-- **Every death has a death clip and a death effect event,** and every hit has
-  a hit clip and a hit effect event.
+- **Every `Attack`, `Hit`, `Tick` and `Death` impact lies on the grid,**
+  within 1 ms.
+- **Every death has a death clip and a death effect event,** and every hit
+  that is not a tick has a hit clip and a hit effect event.
 - **Everything is deterministic.** The same song map, level script and seed
   give a byte-identical JSON dump on the same runtime. Mono in Unity and .NET
   under `dotnet test` may differ in the last bits of floating point, so each
@@ -526,7 +540,9 @@ Its inputs:
   a feel: `pulsed`, or `free` where the beats are only approximate.
 - **A level script:** a small tracked JSON file giving, per song-map section,
   the target on-screen count as a fraction of the envelope count, the view
-  width, the monster mix, the hero's combo pattern and the spell set.
+  width, the effect load preset (see [Stress timelines](#stress-timelines)),
+  the hero's goal area, the monster mix, the hero's combo pattern and the
+  spell set.
 - **The clip annotations** (see
   [Clip annotations and retiming](#clip-annotations-and-retiming)), so it
   knows every clip's timing.
@@ -542,6 +558,7 @@ at its top:
 { "envelope": { "onScreen": 2400, "viewWidthM": 40 },
   "sections": [
     { "section": "theme-4", "onScreen": 0.6, "viewWidthM": 40,
+      "load": "demo", "goal": "glowing-tree",
       "mix": { "skeleton": 4, "goblin": 3, "bat": 2, "slime": 1 },
       "combo": ["slashL", "slashR", "spin@accent"],
       "spells": ["ring@downbeat", "bolt@eighth"] } ] }
@@ -563,11 +580,17 @@ it holds a placeholder.
 
 What the simulation does on each grid step:
 
-- **The hero either strides or attacks on each beat.** Striding is one gait
-  step toward the densest arc of monsters within reach, on open ground, which
-  keeps the horde wrapped around the hero. During an attack the hero's motion
-  follows the combo clip's own root motion instead. Walls push the hero out
-  like any monster.
+- **The hero either strides or attacks on each beat.** They attack whenever
+  monsters are within reach, and otherwise stride. During an attack the
+  hero's motion follows the combo clip's own root motion instead. Walls push
+  the hero out like any monster.
+- **The hero heads for the section's goal.** Each section names a goal area
+  from the layout parameters. Until the hero reaches it, each stride is one
+  gait step along a flow field toward the goal, built once per section at
+  load (see [Navigation around structures](#navigation-around-structures)).
+  Once there, each stride heads for the densest arc of monsters within
+  reach, staying inside the goal area, which keeps the horde wrapped around
+  the hero.
 - **Combo impacts land on the grid** given by the section's combo pattern:
   slashes on beats, spins on accents, slams on phrase-opening downbeats.
 - **An action that cannot fit moves later.** If the next eligible grid
@@ -578,7 +601,7 @@ What the simulation does on each grid step:
   - **Projectiles** launch so they arrive on the grid: launch time is the
     impact minus the flight time. The launch itself is off the grid. Bolts
     only target monsters with a clear line from the hero.
-  - **Beams such as the laser** hit everything along their sweep on each
+  - **Beams such as the laser** tick everything along their sweep on each
     eighth note while they last. Rings, lightning and beams ignore walls.
 - **Monsters take one gait step per beat** toward the hero, following a flow
   field around walls and structures (see
@@ -592,10 +615,15 @@ What the simulation does on each grid step:
   against monster positions at that instant. The result is `Hit` events with
   short `Linear` knockback segments, or `Death` events once a monster's hit
   points run out.
+- **Kill rate follows the section's load preset.** The song holds each
+  section's deaths and hits per second with the same per-bar feedback as the
+  stress timelines, so its climax kills as fast as the frontier's measured
+  points. The climax adds the boss, the laser and denser spells on top.
 - **Spawns refill toward the section's target count.** They come in on beats,
   a few at a time, at a ring 2 m beyond the view's edge, on open cells the
-  flow field can reach. A monster counts toward the target from spawn until
-  its death starts, so a dying monster is replaced at once.
+  flow field can reach. While the hero heads for a goal, spawns are weighted
+  toward the direction of travel. A monster counts toward the target from
+  spawn until its death starts, so a dying monster is replaced at once.
 
 The choreographer also owns the camera's **framing**: where the view is
 centred and how wide it is. It runs the follow spring and zoom easing
@@ -603,6 +631,20 @@ described in [Camera](#camera) and records them as the framing track. That is
 how it knows which monsters are on screen and where the view's edge is. The
 client adds punch (at most 2% of the view width) and shake (at most 0.25 m)
 on top, which the 2 m spawn margin covers.
+
+### Free sections
+
+A section the song map marks `free` has no steady beat, only approximate
+ones. Mountain King's closing chords are like this: chords separated by
+rests and fermatas. In a free section:
+
+- **The grid is the section's accents.** Hero actions and spells land on
+  accents only. The closing section gets one hero slam per chord.
+- **Monsters move smoothly.** They advance in `Linear` segments instead of
+  `Pulse` gait steps, so they don't step to beats that aren't there.
+- **The beat tests skip it.** The test that every gait step starts on a beat
+  exempts free sections; the test that every impact lies on the grid uses the
+  accents there.
 
 ### Navigation around structures
 
@@ -633,6 +675,9 @@ only linearly with the number of monsters.
   enters a new cell, at most once per beat. Each rebuild is time-sliced
   across that beat's ticks, so no single tick carries it. Its cost depends on
   the grid, not on the number of monsters.
+- **The hero's own fields.** Each section's goal gets one more flow field,
+  from the goal area outward, built once at load. The hero follows it the
+  same way a monster follows the field toward the hero.
 - **Marching in place.** In a jam, a gait step that would overlap a neighbour
   more than allowed is shortened. A monster whose step shrinks below 20% of a
   stride marks time on the beat instead, stepping in place. A packed doorway
@@ -672,7 +717,10 @@ A stress script fixes:
   the view, as a real game keeps. The client culls them, so they cost almost
   nothing to draw, but the sim moves them every tick;
 - the **view width**, held fixed;
-- the **effect load**, a preset that scales with N:
+- the **hero's ground,** with no goal: the hero holds the bench scene's
+  centre (in S6, the courtyard) and fights in place;
+- the **effect load**, a preset that scales with N, which the level script's
+  sections also name:
 
 ```
 load    deaths/s   hits/s       spells
@@ -757,8 +805,8 @@ clock. Nothing in the client uses its own notion of game time.
 The crowd is the core of the measurement. Thousands of skinned monsters must
 meet the fidelity floor, and stock Unity, an Animator plus a
 SkinnedMeshRenderer per monster, tops out in the hundreds, mostly on CPU.
-Two GPU-driven paths compete in a bake-off, and stock Unity is measured as
-the baseline.
+Our own GPU-driven bone-texture path draws the crowd, and stock Unity is
+measured as the baseline.
 
 ### Roster
 
@@ -779,8 +827,9 @@ coverage.
 
 ### Common requirements
 
-Both GPU paths must meet the same requirements. That way the bake-off
-compares the implementations, not the features.
+The bone-texture path must meet these requirements. The stock baseline meets
+the same ones wherever stock Unity can, so the comparison is of
+implementations, not features.
 
 - **Per-entity state comes from the timeline.** A Burst job evaluates each
   monster's segment, easing, action state and clip times each frame.
@@ -836,24 +885,6 @@ struct MonsterInstance {
 };
 ```
 
-### Latios Kinemation path
-
-Latios Framework's Kinemation is an open-source ECS animation and rendering
-layer, proven at crowd scale.
-
-- **Data.** Monster prefabs are baked into entities. Clips are compressed with
-  ACL and sampled in Burst jobs, and skinning runs in compute shaders.
-- **Rendering.** Kinemation's own culling and LOD work on top of Entities
-  Graphics in URP.
-- **Driving it.** A system copies each monster's timeline state (clips, times,
-  blend) into Kinemation's sampling inputs. Kinemation then does the rest.
-- **Shared code.** The same scene builder, lighting and effects code as the
-  bone-texture path, so only the crowd differs.
-- **Unity version.** Latios is confirmed on Unity 6.0 but not on 6.6, where
-  Entities is a core package tied to the editor version. TD6 checks first. If
-  6.6 is unsupported, this arm runs in a copy of the project on the newest
-  editor Latios supports, and the comparison records the version difference.
-
 ### Stock baseline
 
 The baseline shows what Unity does out of the box, so the report can say how
@@ -864,35 +895,31 @@ far the bespoke paths move the frontier.
 - **A SkinnedMeshRenderer per monster,** with Unity's compute skinning and
   shadows on.
 - **Everything else is shared:** the same scene, lighting and timeline as the
-  two GPU paths.
+  bone-texture path.
 
-### The bake-off
+### Against the baseline
 
-The bake-off picks the crowd path with numbers, early, before effects and
-polish depend on it.
+TD5 compares the bone-texture path with stock Unity early, before effects and
+polish depend on the crowd.
 
 - **Scenes.** The crowd-only and crowd-with-combat stress scenes (no
   effects), at 2,000 on-screen monsters and a 40 m view. Each arm then also
   gets a binary search for its own maximum.
-- **Arms.** Bone-texture path (both skinning variants), Kinemation and the
-  stock baseline, all under the same pass rule.
+- **Arms.** Both bone-texture skinning variants and the stock baseline, all
+  under the same pass rule.
 - **Recorded per arm:** max on-screen count, the frame breakdown at 2,000,
   and implementation notes (lines of code, workarounds, any fidelity-floor
   item it struggled with).
-- **Decision rule.** The GPU arm with the larger S2 maximum at 40 m wins.
-  Within 10%, the bone-texture path wins, because it has fewer dependencies
-  and is easier to extend. If the bone-texture path wins, its faster skinning
-  variant at that point survives.
-- **Afterwards.** The losing GPU arm's code is deleted; its measurements stay
-  in the evidence. The stock baseline stays as a harness option, so the
-  final report can compare against it.
+- **The variant.** The skinning variant with the larger S2 maximum at 40 m
+  survives. The other's code is deleted; its measurements stay in the
+  evidence.
+- **The baseline stays** as a harness option, so the final report can
+  compare against it.
 
 ### Drawing the crowd
 
 The bone-texture path draws the crowd in a fixed way that keeps CPU cost
-flat and helps the target's GPU. The Kinemation path uses its own culling and
-LOD instead, and must reach the same outcomes listed in
-[Common requirements](#common-requirements).
+flat and helps the target's GPU.
 
 - **Culling runs in a compute pass.** Each instance's bounding sphere is
   tested against the camera frustum extended toward the sun by the longest
@@ -1006,7 +1033,8 @@ Three rules keep effects affordable without breaking the fidelity floor.
   the halo. Each dropped glow layer is a cut, gated by an A/B check.
 - **Feedback is tiered.** A **tick**, a repeat hit from a lingering effect
   such as the laser's sweep or a ring's afterburn, gets the monster's shader
-  flash and no particles. Weapon impacts get sparks, deaths get bursts, and
+  flash and nothing else: no particles, flinch or knockback, so a swept crowd
+  doesn't jitter in place. Weapon impacts get sparks, deaths get bursts, and
   accents and spells get the large effects. Vampire Survivors tiers its
   feedback the same way.
 - **The beat frame is the budget.** The p99 pass rule measures it. Spawning
@@ -1296,7 +1324,9 @@ script builds the scene from that list. So every wall the camera shows is a
 wall the monsters walk around.
 
 - **Areas.** The parameters name areas on the 160 × 160 m ground, each with a
-  type: clearing, path, edge band, forest, landmark or structure.
+  type: clearing, path, edge band, forest, landmark or structure. A clearing,
+  landmark or structure may also have a name, which the level script uses as
+  a section's goal.
 - **Density by type:**
   - **Clearings and paths** are fighting ground. They carry only sparse clutter
     under 0.3 m tall (flowers, moss, scattered stones), and nothing blocks.
@@ -1316,11 +1346,11 @@ wall the monsters walk around.
 ```json
 { "seed": 7, "size": [160, 160], "decorationDensity": 1.0,
   "areas": [
-    { "type": "clearing", "center": [0, 0], "radius": 28 },
-    { "type": "landmark", "at": [6, -4],
+    { "type": "clearing", "name": "opening", "center": [0, 0], "radius": 28 },
+    { "type": "landmark", "name": "glowing-tree", "at": [6, -4],
       "prefab": "elven/SM_Env_Tree_Glowing_01" },
-    { "type": "structure", "kind": "courtyard", "center": [-52, 30],
-      "gaps": 4 },
+    { "type": "structure", "name": "courtyard", "kind": "courtyard",
+      "center": [-52, 30], "gaps": 4 },
     { "type": "forest", "ring": [68, 80] } ] }
 ```
 
@@ -1492,39 +1522,37 @@ S6 needs the arena's structures, so it runs from TD9 on. The hero fights
 inside the walled courtyard, and the horde funnels in through its gaps. That
 tests:
 
-- navigation cost under congestion, in live-sim mode;
+- navigation cost under congestion, from the sim's tick timing;
 - local density spikes at the gaps, for drawing and overdraw;
 - wall shadows across the horde;
 - whether jams look acceptable, which the operator reviews from captures.
 
-### Live-sim mode
+### Sim tick timing
 
 The client's measurements never include the choreographer, which runs at
-load. Live-sim mode measures what a sim like it would cost per frame, so the
-reserve becomes a measured number.
+load. But the choreographer stands in for a game's sim, and it already ticks
+at 60 Hz over the whole timeline. So the player times every tick of that
+load-time run, and the reserve becomes a measured number.
 
-- **A second copy runs live.** The precomputed timeline still drives every
-  frame. Alongside it, a second copy of the choreographer ticks at 60 Hz on
-  the main thread, in step with song time. It simulates everything a real
-  game would: the on-screen horde, the off-screen reserve, navigation,
-  separation, hits and spawns.
-- **Its results are discarded,** except at sampled ticks, where its state
-  must match the precomputed timeline exactly. That doubles as a
-  determinism check.
+- **What is timed.** Each tick's wall time on the main thread, in the player
+  build. A tick simulates everything a real game would: the on-screen horde,
+  the off-screen reserve, navigation, separation, hits and spawns. Stress
+  timelines hold N steady, so their ticks measure the sim at that N.
+- **Warm-up.** The first 5 s of ticks are excluded, as frames are.
 - **The sim's own line.** The tick's p99 time must stay at most 2.0 ms on the
   M5 Max (see [Performance Budget](#performance-budget)).
-- **The frame's main-thread line rises to 8.0 ms** in live-sim runs: the
-  client's 6.0 ms plus the sim's 2.0 ms. The GPU and render-thread lines are
-  unchanged.
 - **It is a conservative stand-in.** The choreographer is plain C# on one
   thread, without Burst or jobs. Passing means a real sim fits with room to
   spare. Failing means a real sim would need those optimizations, not that
   the design fails.
+- **What it leaves out.** The ticks run before the frame loop, so contention
+  with the client's frame (caches, the garbage collector) is not measured. A
+  single-threaded tick loop that allocates nothing keeps that small.
+  Determinism is covered by the byte-identical dump test, not here.
 
 ```json
-{ "scene": "S6", "n": 2600, "offScreen": 1300, "liveSim": true,
-  "simTickP99Ms": 1.42, "simTickMaxMs": 1.88, "flowRebuildSlices": 26,
-  "mainP99Ms": 6.9, "gpuP99Ms": 5.38, "pass": true }
+{ "scene": "S6", "n": 2600, "offScreen": 1300,
+  "simTickP99Ms": 1.42, "simTickMaxMs": 1.88, "flowRebuildSlices": 26 }
 ```
 
 ### The sweep
@@ -1552,8 +1580,9 @@ row per run.
 - **Counters** from our own systems: visible instances by type and LOD,
   skinned vertices, shadow casters, live particles, effect spawns per frame
   (and the largest in one frame), spawns rejected, light cues, lights used,
-  and the share of light dropped. In live-sim runs, also the sim's tick time
-  and its flow-field rebuild slices.
+  and the share of light dropped. Also the sim's tick times from the run's
+  load-time choreography, and its flow-field rebuild slices (see
+  [Sim tick timing](#sim-tick-timing)).
 - **Overdraw** from a debug replacement render that counts opaque depth
   complexity and transparent fragments per pixel. It runs on every 60th
   frame and on the frame after each downbeat, which catches the beat-frame
@@ -1574,8 +1603,9 @@ row per run.
   "thermal": "nominal", "power": "ac/high", "pass": true }
 ```
 
-At each frontier point, the harness also records a 10 s Metal System Trace
-and keeps its per-pass GPU summary, not the raw trace:
+At the envelope point and the heavy-load point at its width (see
+[Performance Budget](#performance-budget)), the harness also records a 10 s
+Metal System Trace and keeps its per-pass GPU summary, not the raw trace:
 
 ```
 xcrun xctrace record --template 'Metal System Trace' --time-limit 10s \
@@ -1595,7 +1625,7 @@ PlaylistSurvivors3D.app/Contents/MacOS/PlaylistSurvivors3D \
 
 - **Exactly 1920×1080 pixels.** The camera must render into a 1920×1080-pixel
   backbuffer. On a Retina display a window's size in points is half its size
-  in pixels, so TD4 finds the flags or window size that give exactly 1080p.
+  in pixels, so TD7 finds the flags or window size that give exactly 1080p.
   The command above is illustrative. The harness asserts the backbuffer size
   at startup and refuses to run otherwise.
 - **The worker cap.** Unity's `-job-worker-count` sets it, and the harness
@@ -1605,26 +1635,28 @@ PlaylistSurvivors3D.app/Contents/MacOS/PlaylistSurvivors3D \
 ### Quiet machine
 
 The machine is shared with Tollgate's gate and release stages and with other
-agent sessions, and their load would corrupt measurements. A sweep holds a
-machine-wide lock (an exclusive `flock` on a file in the per-machine cache)
-and checks the machine before and during every run.
+agent sessions, and their load would corrupt measurements. Parallel epics
+keep it busy, so a sweep can't wait for a machine that is idle on its own.
+It quiets what it can, waits a bounded time for the rest, and reports what
+it couldn't quiet.
 
-Before a run, it refuses to start unless:
-
-- the Mac is on AC power and not in Low Power Mode;
-- its thermal state is nominal;
-- no Tollgate gate or release run is in progress, according to Tollgate's
-  status;
-- other processes use less than 10% of total CPU over 5 s.
-
-The remaining rules:
-
+- **The lock.** A sweep holds a machine-wide lock (an exclusive `flock` on a
+  file in the per-machine cache). It waits for the lock, not around it, so
+  two sweeps never overlap.
+- **Tollgate pauses.** The sweep runs `tg pause`, then waits for any gate or
+  release run in progress to finish. It runs `tg resume` on exit, a crash
+  included, through a shell trap. A marker beside the lock file records the
+  pause, so the next sweep resumes one that a killed sweep left behind.
+- **Other sessions can't be paused.** Agent sessions on other epics keep
+  building. The sweep waits up to 10 minutes for other processes to use less
+  than 10% of total CPU over 5 s, then runs anyway.
+- **Hard refusals.** A run never starts unless the Mac is on AC power, not in
+  Low Power Mode, and its thermal state is nominal.
 - **During a run,** it samples thermal state and other processes' CPU every
   second. Any violation marks the run noisy.
 - **A noisy run** is repeated up to twice and then reported as noisy, never
-  silently kept.
-- **Waiting.** A sweep waits for the lock, not around it. Two sweeps never
-  overlap.
+  silently kept. The report counts the frontier points that rest on noisy
+  runs.
 
 ### The report
 
@@ -1633,7 +1665,9 @@ bead that ran the sweep, with a short summary in that bead's notes below. It
 gives:
 
 - the frontier tables, with each point's limiting resource (GPU, main thread
-  or render thread) and both target estimates;
+  or render thread), its compute estimate, and the per-pass estimate where
+  it was traced;
+- the sim's tick timing at every frontier point and in S6;
 - the baseline comparison: stock Unity's maximum against the chosen path's;
 - the envelope, defined below, with every factor and assumption it rests on;
 - the environment's density curve, what richness costs in monsters, and its
@@ -1679,7 +1713,9 @@ deterministic capture pair and an image-difference score.
     the crowd animates at 15 Hz.
   - A cut passes when both its scores sit at or below the invisible anchor's
     plus a third of the gap to the visible anchor's.
-- **The tool.** TD4 builds the capture-pair tool. Its stills and videos carry
+- **The tools.** TD4 builds the capture tool, which renders fixed-time stills
+  and video pairs; TD8 and TD9 use it before any cut exists. TD11 adds the
+  FLIP scoring and calibrates the thresholds. Their stills and videos carry
   the `ps-render` tag (see [The vendor guard](#the-vendor-guard)).
 - **Motion.** Some cuts show only in motion, such as LOD popping. Each A/B also
   keeps a 2 s fixed-time video pair.
@@ -1823,14 +1859,6 @@ worktree-per-change workflow.
 - **Projects are locked per path.** The operator's editor may have the main
   checkout's project open, and Unity locks a project per path. Agents only
   ever open their own worktree's project.
-- **The Windows module** (Windows Build Support, Mono) is installed once,
-  through Unity Hub's headless command line:
-
-  ```
-  "/Applications/Unity Hub.app/Contents/MacOS/Unity Hub" -- --headless \
-    install-modules --version 6000.6.7f1 -m windows-mono
-  ```
-
 - **On-screen windows.** Only benchmark sweeps open a window. Everything else
   runs in batch mode and opens none.
 
@@ -1846,8 +1874,8 @@ vendor guard, which runs on every change.
   gate only if TD1 measures them within the gate's budget on a warm
   `Library`; otherwise they move to the release stage.
 - **The release stage (`scripts/ci-full`, a new `ci-full-demo3d` step):** the
-  vendor guard, the Unity import and compile, EditMode tests, the macOS player
-  build, and the Windows player build as a compile-only check.
+  vendor guard, the Unity import and compile, EditMode tests and the macOS
+  player build.
 - **Unity steps set up first.** Before any Unity step, the gate and release
   stages run the setup command in their own checkout. It clones the vendor
   folder, baked folder and warm `Library` from the per-machine cache, exactly
@@ -1858,8 +1886,12 @@ vendor guard, which runs on every change.
 The choreography layer's tests:
 
 - the same inputs give a byte-identical timeline dump;
-- every impact lies within 1 ms of the beat grid;
-- every gait step starts on a beat;
+- every impact lies within 1 ms of the grid (accents in free sections);
+- every gait step starts on a beat, outside free sections;
+- every hero stride outside an attack heads toward the section's goal until
+  the hero reaches it;
+- each section's measured deaths per second stay within 10% of its load
+  preset;
 - no two monsters overlap by more than a quarter of their radius;
 - every hit and death has its clip and effect events;
 - spawns appear outside the view at that section's view width;
@@ -1872,9 +1904,27 @@ The choreography layer's tests:
   layouts;
 - the song's timeline builds in under 3 s.
 
+## What This Does Not Answer
+
+The demo scouts a move of the game's client to Unity, but it answers only how
+many monsters and effects fit. A move also needs these, which the demo leaves
+open and nobody should read its report as settling:
+
+- **Input and audio latency.** The native app spent much of its epic on the
+  latency chain: the audio clock, the display link, and presses landing on
+  beats. The demo takes no input, so Unity's DSP buffer, input and present
+  latency on macOS go unmeasured.
+- **Hosting the Rust sim.** The sim tick timing shows that a single-threaded
+  C# sim like the choreographer fits the reserve. It says nothing about what
+  the real Rust sim costs in Unity, or whether it would run as a native
+  plugin or be ported to C#.
+- **Windows.** No Windows player is built or run. Direct3D 12 shader
+  compatibility and Windows driver behavior are untested, and every target
+  number is inferred from the Mac.
+
 ## Alternatives Considered
 
-The interview weighed these and rejected them for the reasons given.
+The interviews weighed these and rejected them for the reasons given.
 
 - **Rendering the game's Rust sim.** The numbers would transfer directly, but
   the demo would inherit the survivors run's content, pacing and 300-monster
@@ -1889,6 +1939,22 @@ The interview weighed these and rejected them for the reasons given.
 - **Bevy.** The asset-conversion cost of a custom engine, without the control.
 - **Per-vertex animation textures.** The cheapest crowd technique, but they
   cannot blend clips, which the fidelity floor requires.
+- **DOTS with Latios Kinemation as a second crowd arm.** An open-source ECS
+  animation layer proven at crowd scale. But Latios is confirmed on Unity 6.0
+  and not on 6.6, where Entities is tied to the editor version, so the arm
+  might have needed its own project on an older editor. It was not clearly
+  faster than a bone-texture path, and it cost a bead and a bake-off.
+- **Live-sim mode.** A second copy of the choreographer ticking beside the
+  client every frame, checked against the timeline at sampled ticks. It
+  would measure contention with the frame, but timing the load-time run gives
+  the tick cost without a second copy, an 8.0 ms main-thread line or the
+  sync logic.
+- **A Windows compile check.** A Mono Windows player built from the Mac to
+  compile the Direct3D 12 shaders, never run. Dropped with Windows from the
+  demo's scope.
+- **A trace at every frontier point.** Bandwidth-corrects every table cell,
+  but needs a parsed Metal System Trace per point. Only the envelope and its
+  heavy-load point are traced; overdraw counters flag the rest.
 - **VFX Graph as the authoring tool for every effect.** It has GPU effects
   with editor features for free, but there is no supported API to build
   graphs in code, and its asset files are fragile to edit as text. Agents
@@ -1937,7 +2003,7 @@ Each bead lists what it builds and when it is done.
   - Builds: the Unity project; `.gitignore` coverage; the vendor guard in
     check-fast, the gate and the release stage; the worktree setup command
     and its cache; batch-mode task entry points; the `dotnet` project for
-    the choreography layer; the Windows module.
+    the choreography layer.
   - Spikes, recorded in its notes:
     - Unity's batch-mode compile and test time on a warm `Library`, which
       decides gate placement;
@@ -1946,8 +2012,8 @@ Each bead lists what it builds and when it is done.
     - the C# version Unity 6.6 accepts.
   - Done when: one command sets up a fresh worktree; the guard's tests catch
     every failure case with synthetic fixtures; and an empty scene builds for
-    macOS and Windows. The [vendor guard drill](#vendor-guard-drill) runs once
-    TD2 and TD4 exist.
+    macOS. The [vendor guard drill](#vendor-guard-drill) runs once TD2 and
+    TD4 exist.
 - **TD2, assets.**
   - Builds: the manifest, the sync tool and its record; the clip annotator
     and its contact sheets.
@@ -1956,45 +2022,56 @@ Each bead lists what it builds and when it is done.
   - Done when: every roster type's walk, attack, hit and death clips and
     every hero combo and locomotion clip are annotated, and a style still
     shows the roster and the kit together under night lighting.
-- **TD3, choreography.**
+- **TD3, choreography on open ground.**
   - Builds: the Mountain King song map, through the song-map workflow in
     [tech-demo.md](tech-demo.md#building-the-song-map), with hand-checked
     beats in the accelerating passages.
-  - Also builds: the timeline types, the choreographer with its framing track
-    and sound aggregation, the level-script and stress-script formats, and
-    the layer's tests.
-  - Also builds navigation: the arena placement list and footprint
-    annotations, the obstacle map, the wall distance field, the time-sliced
-    flow field, marching in place, and the stress scripts' off-screen
-    reserve.
+  - Also builds: the timeline types (with `Tick`), the choreographer with its
+    framing track, kill-rate feedback, free sections and sound aggregation,
+    the level-script and stress-script formats with the off-screen reserve,
+    the sim tick timing, and the layer's tests.
+  - Without walls, the hero walks straight toward each section's goal, which
+    a test layout names; TD6 adds the flow fields.
+  - Uses placeholder clip annotations: a tracked JSON file of plausible
+    impact times, ends and strides per placeholder roster type. So it runs in
+    parallel with TD2. TD4 switches to TD2's real annotations.
   - Done when: the song's timeline and every stress script's timeline build
-    and pass the layer's tests, with a placeholder envelope.
-- **TD4, harness.**
-  - Builds: the windowed benchmark player and sweep runner, result rows, the
-    quiet-machine lock, fixed-time mode, the capture tool, the A/B pair tool,
-    the overdraw counters and the Metal System Trace summary.
-  - Also builds: the client's timeline evaluation (segments, action states,
-    retiming and the two animation slots), the song clock, the bench scene,
-    the development flags listed in [Manual QA](#manual-qa), and the stock
-    baseline crowd and a simply drawn hero, all driven by TD3's timelines.
-  - Also builds [live-sim mode](#live-sim-mode), with its sampled
-    determinism check.
-  - Done when: a sweep of the stock baseline over S1 and S2 produces result
-    rows and a first frontier, and the
-    [first assembled check](#first-assembled-check) passes.
+    and pass the layer's tests on open ground, with a placeholder envelope.
+- **TD4, client playback.**
+  - Builds: the client's timeline evaluation (segments, action states,
+    retiming and the two animation slots), the song clock, fixed-time mode,
+    the bench scene, the development flags listed in
+    [Manual QA](#manual-qa), and the stock baseline crowd and a simply drawn
+    hero, all driven by TD3's timelines with TD2's annotations.
+  - Also builds the capture tool: fixed-time stills and video pairs, with
+    the `ps-render` tag.
+  - Done when: the [first assembled check](#first-assembled-check) passes.
 - **TD5, bone-texture crowd.**
   - Builds: the bone-texture baker, the instance pipeline, both skinning
     variants, culling, depth bins, the shadow extension and motion vectors.
-  - Done when: it draws S1 and S2 within the fidelity floor.
-- **TD6, Kinemation crowd.**
-  - Checks Latios's supported Unity version first, then builds the same scenes
-    on Kinemation.
-  - Done when: it draws S1 and S2 within the fidelity floor, or its notes show
-    why it cannot.
-- **TD7, the bake-off.**
-  - Sweeps the baseline, TD5 and TD6 under one rule, picks the winner, deletes
-    the loser and records the comparison.
-  - Done when: the comparison is in its notes and only the winner remains.
+  - Compares both variants with the stock baseline, as in
+    [Against the baseline](#against-the-baseline), using TD7's harness, and
+    deletes the slower variant.
+  - Done when: it draws S1 and S2 within the fidelity floor, and the
+    comparison is in its notes.
+- **TD6, navigation.**
+  - Builds: the placement-list generator (areas, scatter rules, structures
+    and the density multiplier) and footprint annotations for TD2's kit
+    pieces; the obstacle map, the wall distance field, the time-sliced flow
+    field toward the hero, the hero's per-section goal fields, and marching
+    in place.
+  - Done when: the navigation tests in
+    [Automated Checks](#automated-checks) pass on the courtyard test layout,
+    and the song and stress timelines still pass with walls.
+- **TD7, harness.**
+  - Builds: the windowed benchmark player and sweep runner, result rows, the
+    quiet-machine lock with its Tollgate pause, the overdraw counters and the
+    Metal System Trace summary.
+  - Adds a line to AGENTS.md's 3D tech demo rules: a sweep pauses Tollgate,
+    so a paused queue during a sweep is expected, not a tooling failure.
+  - Done when: a sweep of the stock baseline over S1 and S2 produces result
+    rows and a first frontier, and the
+    [sweeps and machine lock](#sweeps-and-the-machine-lock) checks pass.
 - **TD8, effects.**
   - Opens with the runtime spike in
     [Choosing the GPU runtime](#choosing-the-gpu-runtime), and records its
@@ -2007,9 +2084,10 @@ Each bead lists what it builds and when it is done.
     effect runs on the runtime with an A/B still against its stock prefab;
     and the light pool's size is fixed.
 - **TD9, the arena.**
-  - Builds: the layout parameters and their scatter rules; the arena
-    generated from TD3's placement list, with the ruin walls, the walled
-    courtyard and the density multiplier; the kit's conversion to URP Lit;
+  - Builds: the arena's layout parameters, with named goal areas for the
+    level script; the scene generated from TD6's placement list, with the
+    ruin walls, the walled courtyard and the density multiplier; the kit's
+    conversion to URP Lit;
     the night lighting, lightmaps and static shadow map; and the
     post-processing stack. S6 becomes runnable.
   - Decides MSAA against TAA. Both are full quality, so this is not a cut:
@@ -2023,7 +2101,8 @@ Each bead lists what it builds and when it is done.
     hit-stop, the client's punch and shake, and sound scheduling.
   - Done when: the song's first minute plays with every blow on its click.
 - **TD11, cuts.**
-  - Calibrates the A/B thresholds. Then tries LOD thresholds, shadow proxies,
+  - Adds FLIP scoring to TD4's capture tool and calibrates the A/B
+    thresholds. Then tries LOD thresholds, shadow proxies,
     the 30 Hz clip rate, larger light-cluster cells, effect merging, and
     dropping glow quads in favor of bloom.
   - Done when: each cut is accepted or rejected, with its scores.
@@ -2045,13 +2124,14 @@ Each bead lists what it builds and when it is done.
     floor, S0 fits the ceiling, and the shots are in its evidence and in
     `operator-pending.md`.
 - **TD12, the frontier.**
-  - Runs the full sweep, the traces at frontier points and both target
-    estimates. Writes the report and the envelope, and puts the envelope into
-    the level script.
-  - Also runs S6 at the envelope, and live-sim mode at every frontier point
-    and at S6. The report states whether the envelope holds among walls and
-    whether the sim fits its reserve. If S6 fails at the envelope, the report
-    gives S6's own frontier and what limits it.
+  - Runs the full sweep with every point's compute estimate, then the traces
+    and per-pass estimates at the envelope point and its heavy-load point.
+    Writes the report and the envelope, and puts the envelope into the level
+    script.
+  - Also runs S6 at the envelope, and reports the sim's tick timing at every
+    frontier point and at S6. The report states whether the envelope holds
+    among walls and whether the sim fits its reserve. If S6 fails at the
+    envelope, the report gives S6's own frontier and what limits it.
   - Also carries TD14's environment results into the report: the density
     curve, the richness-to-monsters trade, and the final rung against E0.
   - Done when: the report is in its evidence and its summary in its notes.
@@ -2069,15 +2149,16 @@ Each bead lists what it builds and when it is done.
 
 ```
 TD1         first
-TD2         after TD1
-TD3         after TD1 and TD2 (it needs the clip annotations)
+TD2, TD3    after TD1, in parallel (TD3 uses placeholder clip annotations)
 TD4         after TD2 and TD3
-TD5, TD6    after TD4, in parallel
-TD7         after TD5 and TD6
-TD8         after TD4
-TD9         after TD2 and TD7 (it lights the chosen crowd shader)
-TD10        after TD7 and TD8
-TD11        after TD7, TD8 and TD9
+TD6         after TD2 and TD3 (it needs the kit's footprints)
+TD7         after TD4
+TD5         after TD4; its baseline comparison after TD7
+TD8         after TD7 (its spike is measured on the harness)
+TD9         after TD5 and TD6 (it lights the crowd shader and generates
+            the arena from the placement list)
+TD10        after TD5 and TD8
+TD11        after TD5, TD8 and TD9
 TD14        after TD9; its cut rungs (E3, E4) after TD11
 TD15        after TD8 and TD14
 TD12        after TD10, TD11 and TD15
@@ -2090,8 +2171,8 @@ TD13        after TD12
   warden review skill. Whichever of the milestone's beads finishes last
   requests it, once all their commits are on `staging`, on the commits its
   beads recorded in their notes:
-  - foundations: TD1 to TD4;
-  - the crowd: TD5 to TD7;
+  - foundations: TD1 to TD4, TD6 and TD7;
+  - the crowd: TD5;
   - the scene: TD9, TD14 and TD15;
   - the demo's systems: TD8, TD10 and TD11;
   - the answer: TD12 and TD13.
@@ -2190,7 +2271,6 @@ here, since the demo itself takes no input:
 --start-at <s>      seek the song; --seconds <n> to exit after n seconds
 --fixed-time        deterministic 1/60 s frames, sound muted
 --scene <S0..S6|song> --n <count> --view-width <m> --load <preset> --aa <mode>
---live-sim          also tick a live copy of the choreographer and time it
 --freeze-at <s>     hold one frame for inspection
 --show-lod          tint monsters by LOD; --overdraw for a heat map
 --show-nav          draw the flow field and blocked cells over the ground
@@ -2211,6 +2291,10 @@ baseline crowd handles a few hundred monsters, which is enough.
 - **Expect** the overlay's counts to match the level script's targets.
 - Seek with `--start-at 45`. **Expect** the horde's state at 0:45 to appear
   immediately, with the same positions as a run from the start.
+- Seek into the closing chords. **Expect** a hero slam on every chord, and
+  monsters advancing smoothly instead of stepping to beats.
+- Seek into a laser sweep, once TD10 has added it. **Expect** swept monsters
+  to flash without flinching or sliding back.
 
 ### Vendor guard drill
 
@@ -2227,6 +2311,9 @@ baseline crowd handles a few hundred monsters, which is enough.
 - Run the showcase build windowed at 1080p with `--overlay`.
 - **Expect** the arc from a handful of monsters to the envelope count at the
   presto, then the final chords clearing the screen.
+- **Expect** the hero to travel between the level script's goal areas,
+  fighting on the way, and every screen to show a landmark or edge
+  decoration.
 - **Expect** the overlay's rolling 20 s p99 times to stay under the pass lines
   all the way through, with no frame over twice its line.
 - **Expect** every hit and death to be visible, with no effect missing in the
@@ -2245,7 +2332,11 @@ baseline crowd handles a few hundred monsters, which is enough.
 - Run a small sweep (one scene, two points). **Expect** result rows with
   timings, counters, machine state and a pass flag.
 - Start a heavy build in another terminal, then run the sweep. **Expect** a
-  refusal to start, or the run marked noisy and repeated.
+  bounded wait, then runs marked noisy, repeated, and counted in the report.
+- Watch `tg status` during a sweep. **Expect** Tollgate paused while it runs
+  and resumed when it ends.
+- Kill a sweep with `kill -9`, then start another. **Expect** the new sweep
+  to report and resume the pause the killed one left.
 - Unplug the power. **Expect** a refusal.
 - Run three sweeps back to back. **Expect** any thermal throttling reported,
   never hidden.
@@ -2253,7 +2344,7 @@ baseline crowd handles a few hundred monsters, which is enough.
   backbuffer size.
 - Check every result row. **Expect** `jobWorkers: 6`.
 
-### Walls and the live sim
+### Walls and the sim
 
 - Run S6 windowed with `--overlay`, about a minute.
 - **Expect** the horde to flow around the courtyard walls and through its
@@ -2261,8 +2352,8 @@ baseline crowd handles a few hundred monsters, which is enough.
 - **Expect** jams at the gaps to read as monsters marking time on the beat,
   not jittering or vibrating against each other.
 - **Expect** elites and the boss to fit through every gap.
-- Run S6 and one S3 frontier point with live-sim mode on. **Expect** the
-  sim's tick p99 at or under 2.0 ms, and no determinism mismatch reported.
+- Check the result rows of S6 and one S3 frontier point. **Expect** the
+  sim's tick p99 at or under 2.0 ms.
 
 ### The scene
 
@@ -2291,7 +2382,3 @@ baseline crowd handles a few hundred monsters, which is enough.
 
 - **A missing vendor cache:** run setup in a fresh worktree with the cache
   folder renamed. **Expect** a clear error naming the missing source.
-- **Kinemation's version:** check that TD6's notes name the Unity version its
-  arm ran on, and that the comparison flags any difference.
-- **The Windows build:** check that the release stage built it, and that its
-  shaders compiled for Direct3D 12.
