@@ -2275,6 +2275,22 @@ TD13        after TD12
 - **Prototype rules.** Prefer the simplest option wherever it does not change
   a measurement.
 
+### A possible Windows test machine
+
+The operator has a Windows desktop with an i7-12700F and an RTX 4070 Ti. It
+could serve as a spot check of the inferred numbers, though Decisions 3 and 4
+rule out a Windows player for now. Its GPU is the target's architecture
+(Ada), so the Mac's tile-based caveats drop away, but it is about 2.5× an RTX
+4060 Laptop (Steel Nomad about 5,040 against 2,025, or 1.3× the M5 Max), with
+only 2.0× its bandwidth (504 GB/s). With the same 1.2× margin, the 12.5 ms
+target maps to a **GPU pass line of about 4.2 ms, roughly 240 fps at
+1920×1080**. That is this machine's equivalent of the Mac's 180 fps, or 5.0
+ms (200 fps) without the margin. One 12700F performance core is roughly a
+13620H core (within about 10%, unmeasured here), so its main-thread and
+render-thread lines are about 10 ms, and its sim line about 3.3 ms per tick.
+Job workers stay capped at 6, of its 8 performance cores. Bandwidth-bound
+passes will translate worse than the 2.5× compute ratio, as on the Mac.
+
 ## Bead Notes
 
 Each bead summarizes its measurements here in a few lines, in its own
