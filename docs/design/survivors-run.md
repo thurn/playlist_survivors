@@ -1,5 +1,13 @@
 # Survivors Run: the 30-Minute Demo
 
+> **Restoration follow-up (2026-10-27):**
+> [Restore the Musical Power Fantasy](feel-restoration.md) supersedes the
+> conflicting combat, enemy movement, HUD, audio and choreography decisions
+> below. VS is a baseline for balance and density, not a requirement to remove
+> the game's musical identity. This document retains the implementation
+> history and the run/progression systems the restoration keeps; the follow-up
+> is a plan, not a claim that restoration has already landed.
+
 ## Introduction
 
 The native app plays a reactive run to whatever music is on the Mac
