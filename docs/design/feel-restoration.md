@@ -500,6 +500,10 @@ findings are fixed with regressions. [Evidence and commands](../../native/eviden
 include960/1080 states, real combat, crowded fixtures and a passing density
 benchmark. Human/System feel remains pending. The bead records commit/candidate.
 
+A follow-up [finale cancellation repair](../../native/evidence/fr-ci13/README.md)
+removes cancelled blast bands still waiting for unknown beats, preventing a
+card pause near victory from delivering an orphaned finale event.
+
 ### FR5 — Weapons and passives
 
 Pending implementation.

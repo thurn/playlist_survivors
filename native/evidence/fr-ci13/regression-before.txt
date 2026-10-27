@@ -1,0 +1,19 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-ci13/native/crates/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 8.08s
+     Running unittests src/lib.rs (target/debug/deps/sim-1ebf1e278f138957)
+
+running 1 test
+
+thread 'engine::tests::cancelling_a_future_finale_removes_bands_waiting_for_unknown_beats' (183450385) panicked at crates/sim/src/engine/mod.rs:5086:9:
+cancelled finale must own deferred bands as well as queued bands
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test engine::tests::cancelling_a_future_finale_removes_bands_waiting_for_unknown_beats ... FAILED
+
+failures:
+
+failures:
+    engine::tests::cancelling_a_future_finale_removes_bands_waiting_for_unknown_beats
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 133 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p sim --lib`

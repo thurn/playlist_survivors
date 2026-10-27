@@ -274,6 +274,13 @@ impl Sim {
                 }
                 self.st.freeze.held.retain(|h| !matches!(h.entry.ev, Ev::Blast { .. })
                     && !matches!(&h.entry.ev, Ev::Landmark { id } if Some(id)==landmark.as_ref()));
+                // Unknown beat slots own events outside the queue too. They belong to
+                // the cancelled finale, and must not be resolved during this menu.
+                self.st.deferred.retain(|d| {
+                    !matches!(&d.then, super::Then::Push(Ev::Blast { .. }))
+                        && !matches!(&d.then, super::Then::Push(Ev::Landmark { id })
+                        if Some(id) == landmark.as_ref())
+                });
             }
         }
         self.publish_run();

@@ -5074,6 +5074,42 @@ mod tests {
     }
 
     #[test]
+    fn cancelling_a_future_finale_removes_bands_waiting_for_unknown_beats() {
+        let mut sim = survivor_sim();
+        Rc::get_mut(&mut sim.env)
+            .unwrap()
+            .input
+            .level
+            .survivors
+            .as_mut()
+            .unwrap()
+            .duration_s = 2.2;
+        sim.disable_hero_damage_for_check();
+        sim.advance_to(2.1);
+        assert!(sim.st.plan.finale.is_some());
+        assert!(
+            sim.st
+                .deferred
+                .iter()
+                .any(|d| matches!(d.then, super::Then::Push(Ev::Blast { .. })))
+        );
+        sim.enter_freeze(crate::survivors::FreezeReason::LevelUp);
+        assert!(sim.st.plan.finale.is_none());
+        assert!(
+            !sim.st
+                .deferred
+                .iter()
+                .any(|d| matches!(d.then, super::Then::Push(Ev::Blast { .. }))),
+            "cancelled finale must own deferred bands as well as queued bands"
+        );
+        key(&mut sim, 3.1, KeyEventKind::Press, InputKey::Confirm);
+        key(&mut sim, 3.11, KeyEventKind::Release, InputKey::Confirm);
+        sim.advance_to(8.0);
+        assert!(sim.done());
+        assert!(sim.st.blasting);
+    }
+
+    #[test]
     fn binary_grid_search_matches_the_full_known_prefix_scan() {
         let mut sim = survivor_sim();
         sim.advance_to(1.1);
