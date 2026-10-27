@@ -104,6 +104,7 @@ impl Sim {
     }
     pub(super) fn tick_missiles(&mut self) {
         let mut missiles = std::mem::take(&mut self.st.missiles);
+        let contacts = super::contacts::Contacts::new(self);
         for m in &mut missiles {
             let dt = (self.st.w - m.last_w).max(0.0);
             m.last_w = self.st.w;
@@ -148,17 +149,16 @@ impl Sim {
             let dx = m.pose.x - x0;
             let dy = m.pose.y - y0;
             let len2 = dx * dx + dy * dy;
-            let mut targets: Vec<_> = self
-                .st
-                .alive
-                .iter()
-                .copied()
-                .filter_map(|fi| {
+            let mut targets: Vec<_> = contacts
+                .candidates(&shape)
+                .into_iter()
+                .filter_map(|p| {
+                    let fi = p.fi;
                     if !self.hittable(fi) || m.hit_until.contains_key(&fi) {
                         return None;
                     }
-                    let (x, y) = self.pos(fi, self.st.w);
-                    if !crate::aim::catches(&shape, x, y, self.st.foes[fi].r) {
+                    let (x, y) = (p.x, p.y);
+                    if !crate::aim::catches(&shape, x, y, p.r) {
                         return None;
                     }
                     let centre = if len2 > 1e-12 {

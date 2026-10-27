@@ -1,0 +1,14 @@
+{
+  "command": "scripts/ci-full",
+  "exit_code": 0,
+  "survival_gate_passes": 40,
+  "source_manifest_sha256": "5ed9163679599d8ec41a3db4041675fa8505d64246fb04d13e5b5b6a6447ace6",
+  "full_release_replay_diagnostic": true,
+  "full_release_replay_records": 29042724,
+  "full_release_replay_hash": "0a2cc6b87ae71bad",
+  "normal_app_replay_records": 28473,
+  "final_frame_p99_ms": {
+    "stationary_evolved": 3.18,
+    "moving_evolved": 3.21
+  }
+}

@@ -1,5 +1,5 @@
 //! Offline SF10 measurements: actual snapshot allocations, CPU step cost and late-key rollback.
-//! Usage: cargo run --release -p cli --example survivors_scale -- SESSION [equal]
+//! Usage: cargo run --release -p cli --example survivors_scale -- SESSION [equal|evolved]
 //! SESSION is a decompressed SF9 recorded-normal-30 session. Equal mode uses its arrived stream,
 //! with a labelled synthetic 300-enemy, unkillable, damage-exempt density fixture.
 use eval::{
@@ -101,7 +101,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     batch::enter()?;
     let args: Vec<_> = std::env::args().skip(1).collect();
     let dir = PathBuf::from(args.first().ok_or("session folder required")?);
-    let equal = args.get(1).is_some_and(|s| s == "equal");
+    let evolved = args.get(1).is_some_and(|s| s == "evolved");
+    let equal = evolved || args.get(1).is_some_and(|s| s == "equal");
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
     let meta: serde_json::Value = serde_json::from_slice(&std::fs::read(dir.join("meta.json"))?)?;
     let mut paths: Vec<_> = std::fs::read_dir(root.join("content"))?
@@ -126,7 +127,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .ok_or("recorded level missing")?
             .into(),
     };
-    let mut engine = if equal {
+    let mut engine = if evolved {
+        eval::scale::evolved_density_engine(&level, &lib)?
+    } else if equal {
         eval::scale::density_engine(&level, &lib)?
     } else {
         Engine::new(
@@ -209,7 +212,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     println!(
         "{}",
-        json!({"equalDensity":equal,"damageExempt":equal,"wallSeconds":start.elapsed().as_secs_f64(),"samples":samples,
+        json!({"evolved":evolved,"equalDensity":equal,"damageExempt":equal,"wallSeconds":start.elapsed().as_secs_f64(),"samples":samples,
         "minute25Frames":frames.len(),"injectedLateKeys":injected,"minute25StepCpuMsP50":percentile(&mut frames,0.5),"minute25StepCpuMsP99":percentile(&mut frames,0.99),
         "minute25RollbackFrames":rollback_cpu.len(),"minute25RollbackCpuMsTotal":rollback_cpu.iter().sum::<f64>(),"minute25RollbackCpuMsP99":percentile(&mut rollback_cpu,0.99),"minute25ReplayedSongSeconds":replayed,
         "settledRecords":engine.settled_count,"settledHash":format!("{:016x}",engine.settled_hash),"retainedSettledLog":engine.settled_log.is_some(),"finalStorage":engine.sim.storage()})

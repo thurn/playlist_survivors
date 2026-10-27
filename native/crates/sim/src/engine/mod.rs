@@ -33,6 +33,7 @@ use pool::Pool;
 mod boss_presentation;
 mod chests;
 mod combat;
+mod contacts;
 mod enemy_rhythm;
 mod foes;
 mod freeze;

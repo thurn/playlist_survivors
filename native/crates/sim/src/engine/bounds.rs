@@ -121,6 +121,20 @@ impl Sim {
 }
 
 impl Sim {
+    /// Final-effects density fixture, configured before the first rollback snapshot.
+    pub fn seed_evolved_scale_check(&mut self) {
+        self.seed_scale_check();
+        for id in [
+            crate::survivors::WeaponId::BloodyTear,
+            crate::survivors::WeaponId::SoulEater,
+            crate::survivors::WeaponId::HolyWand,
+            crate::survivors::WeaponId::UnholyVespers,
+            crate::survivors::WeaponId::ThunderLoop,
+        ] {
+            self.evolve_survivor_weapon(id).unwrap();
+        }
+    }
+
     /// Offline density fixture only, before Engine takes its first snapshot. Zero-XP gems
     /// exercise all 400 field entries without creating upgrade screens in the stationary soak.
     pub fn seed_scale_check(&mut self) {

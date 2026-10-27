@@ -1,0 +1,9 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/native/crates/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 4.90s
+     Running unittests src/lib.rs (target/debug/deps/sim-1ebf1e278f138957)
+
+running 1 test
+test engine::contacts::tests::indexed_candidates_preserve_source_contact_order_at_boundaries_and_long_sweeps ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 113 filtered out; finished in 0.00s
+

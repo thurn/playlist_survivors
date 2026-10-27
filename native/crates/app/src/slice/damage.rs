@@ -123,11 +123,26 @@ impl Numbers {
     ) {
         self.items.retain(|n| now - n.last < HOLD);
         let face = &art.fonts["pixel"];
-        for n in &self.items {
+        // Values remain summed per enemy/beat; crowded labels only share screen space.
+        let mut cells = std::collections::BTreeSet::new();
+        for offset in 0..self.items.len() {
+            let n = if self.items.len() > 32 {
+                &self.items[self.items.len() - 1 - offset]
+            } else {
+                &self.items[offset]
+            };
             let age = (now - n.last).max(0.0);
             let fade = (1.0 - age / HOLD).min(1.0) as f32;
             let pop = (1.0 + 0.25 * (-age * 18.0).exp()) as f32;
             let (x, y) = at(n.x, n.y - 35.0 - (now - n.born).min(1.2) * 18.0);
+            if self.items.len() > 32
+                && !cells.insert((
+                    (x / (42.0 * scale)).floor() as i32,
+                    (y / (22.0 * scale)).floor() as i32,
+                ))
+            {
+                continue;
+            }
             let color = if n.critical {
                 [1.0, 0.81, 0.22, fade]
             } else {
@@ -241,6 +256,28 @@ mod tests {
 mod draw_tests {
     use super::*;
     #[test]
+    fn dense_coincident_labels_share_space_without_changing_their_values() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../public/assets");
+        let art = Atlases::load(&path).unwrap();
+        let clock = Clock {
+            beats: &[],
+            start: 0.0,
+            free: 0.5,
+        };
+        let mut dense = Numbers::default();
+        let mut single = Numbers::default();
+        for foe in 0..64 {
+            dense.add(foe, 0.0, 1.0, false, 0.0, 0.0, 0.0, &clock);
+        }
+        single.add(0, 0.0, 1.0, false, 0.0, 0.0, 0.0, &clock);
+        let (mut a, mut b) = (Vec::new(), Vec::new());
+        dense.draw(&art, 0.0, &|x, y| (x as f32, y as f32), 1.0, &mut a);
+        single.draw(&art, 0.0, &|x, y| (x as f32, y as f32), 1.0, &mut b);
+        assert_eq!(a, b, "dense labels must not overdraw the same cell64 times");
+        assert_eq!(dense.items.len(), 64);
+        assert!(dense.items.iter().all(|n| n.value == 1.0));
+    }
+    #[test]
     fn critical_labels_are_larger_and_gold() {
         let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../public/assets");
         let art = Atlases::load(&path).unwrap();
@@ -261,5 +298,13 @@ mod draw_tests {
             .unwrap();
         assert!(gold.h > white.h);
         assert!(gold.w > white.w);
+        assert!(
+            sprites
+                .iter()
+                .position(|s| s.tint == [1.0, 0.81, 0.22, 1.0])
+                .unwrap()
+                > sprites.iter().position(|s| s.tint == [1.0; 4]).unwrap(),
+            "sparse labels retain arrival order, newest on top"
+        );
     }
 }

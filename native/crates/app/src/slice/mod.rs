@@ -35,6 +35,7 @@ mod calibration;
 mod cards;
 mod clip;
 mod damage;
+mod density_check;
 mod lightning;
 mod roster;
 // The tap and output are the phase 0 spike's (57e846a^:native/spike), kept as they were.
@@ -49,6 +50,7 @@ mod gems;
 mod gfx;
 mod hook_check;
 mod hud;
+mod impact_budget;
 mod keys;
 mod lane;
 mod live;
@@ -163,6 +165,13 @@ const FRAME_WORK_GATE_MS: f64 = 4.0;
 /// Under the ground (the TS game's world clear).
 const CLEAR: [f64; 3] = [0.06, 0.07, 0.05];
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum BenchMode {
+    Reactive,
+    Base,
+    Evolved,
+    Moving,
+}
 #[allow(clippy::struct_excessive_bools)]
 struct Options {
     file: Option<PathBuf>,
@@ -175,6 +184,7 @@ struct Options {
     sound_check: Option<PathBuf>,
     cards_check: Option<PathBuf>,
     recap_check: Option<PathBuf>,
+    density_check: Option<PathBuf>,
     aura_check: Option<PathBuf>,
     zone_check: Option<PathBuf>,
     boss_check: Option<PathBuf>,
@@ -194,7 +204,7 @@ struct Options {
     click: bool,
     mute: bool,
     bench: bool,
-    bench_density: bool,
+    bench_mode: BenchMode,
     check: bool,
     headless: bool,
     /// Exit after this long (s).
@@ -244,6 +254,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         sound_check: None,
         cards_check: None,
         recap_check: None,
+        density_check: None,
         aura_check: None,
         zone_check: None,
         boss_check: None,
@@ -263,7 +274,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         click: false,
         mute: false,
         bench: false,
-        bench_density: false,
+        bench_mode: BenchMode::Reactive,
         check: false,
         headless: false,
         seconds: None,
@@ -315,6 +326,10 @@ fn options(args: &[String]) -> Result<Options, String> {
                         .ok_or("--hook-check needs a recorded survive directory")?
                         .into(),
                 );
+            }
+            "--density-check" => {
+                o.density_check =
+                    Some(it.next().ok_or("--density-check needs a directory")?.into());
             }
             "--recap-check" => {
                 o.recap_check = Some(
@@ -488,9 +503,17 @@ fn options(args: &[String]) -> Result<Options, String> {
             "--hud-full-slots" => o.hud_full_slots = true,
             "--still" => o.still = Some(it.next().ok_or("--still needs a path")?.into()),
             "--bench" => o.bench = true,
+            "--bench-evolved-moving" => {
+                o.bench = true;
+                o.bench_mode = BenchMode::Moving;
+            }
+            "--bench-evolved" => {
+                o.bench = true;
+                o.bench_mode = BenchMode::Evolved;
+            }
             "--bench-density" => {
                 o.bench = true;
-                o.bench_density = true;
+                o.bench_mode = BenchMode::Base;
             }
             "--still-track" => {
                 o.still_track = Some(it.next().ok_or("--still-track needs a track id")?.clone());
@@ -719,6 +742,9 @@ pub fn run(args: &[String]) -> Result<(), String> {
     if let Some(dir) = &opts.hook_check {
         return hook_check::run(dir);
     }
+    if let Some(dir) = &opts.density_check {
+        return density_check::run(dir);
+    }
     if let Some(dir) = &opts.recap_check {
         return recap::check::run(dir);
     }
@@ -760,7 +786,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
         );
     }
     if opts.bench {
-        return bench(opts.check, opts.bench_density);
+        return bench(opts.check, opts.bench_mode);
     }
     let world = World::load(level)?;
     // Output first: our process object must exist before the tap can exclude it.
@@ -1280,7 +1306,10 @@ fn thread_cpu_s() -> f64 {
 /// The frame's own work, in this thread's CPU time (docs/design/native-app.md, "Targets"): 60 s of the house track's stream
 /// through the engine at 120 Hz, 0.2 s ahead, a press on each beat 5 to 35 ms late; each frame's
 /// scene and HUD built and encoded offscreen at 1920 x 1080. `check` fails above the gate.
-fn bench(check: bool, density: bool) -> Result<(), String> {
+fn bench(check: bool, mode: BenchMode) -> Result<(), String> {
+    let density = mode != BenchMode::Reactive;
+    let evolved = matches!(mode, BenchMode::Evolved | BenchMode::Moving);
+    let moving = mode == BenchMode::Moving;
     let world = World::load(Some(&live::resource("levels", "../../../levels").join(
         if density {
             "survivors.yaml"
@@ -1294,12 +1323,15 @@ fn bench(check: bool, density: bool) -> Result<(), String> {
     let text = std::fs::read_to_string(&stream_path)
         .map_err(|e| format!("{}: {e}", stream_path.display()))?;
     let file = stream::StreamFile::parse(&text).map_err(|e| e.0)?;
-    let mut engine = if density {
+    let mut engine = if evolved {
+        eval::scale::evolved_density_engine(&world.level, &world.lib)?
+    } else if density {
         eval::scale::density_engine(&world.level, &world.lib)?
     } else {
         world.engine(true)?
     };
     let mut density_frames = 0;
+    let (mut min_gems, mut peak_poses, mut pickups) = (400, 0, 0);
     let mut replay = stream::Replay::new(file.log.clone());
     let beats: Vec<f64> = file.log.beats.iter().map(|b| b.t).collect();
     let (w, h) = (1920u32, 1080u32);
@@ -1317,7 +1349,14 @@ fn bench(check: bool, density: bool) -> Result<(), String> {
         engine.feed(|log| replay.feed_to(log, s));
         jitter = (jitter * 7.3 + 0.37).fract();
         while next < beats.len() && beats[next] + 0.005 + 0.03 * jitter <= s {
-            let key = if density {
+            let key = if moving {
+                [
+                    InputKey::Right,
+                    InputKey::Down,
+                    InputKey::Left,
+                    InputKey::Up,
+                ][next / 8 % 4]
+            } else if density {
                 InputKey::Space
             } else if next % 4 < 2 {
                 InputKey::Right
@@ -1334,10 +1373,18 @@ fn bench(check: bool, density: bool) -> Result<(), String> {
         if density && s > 1.0 {
             let view = engine.view.borrow();
             assert_eq!(view.alive().count(), 300);
-            assert_eq!(view.gems.len(), 400);
+            if !moving {
+                assert_eq!(view.gems.len(), 400);
+            }
+            min_gems = min_gems.min(view.gems.len());
+            peak_poses = peak_poses.max(view.gem_poses.len());
             density_frames += 1;
         }
         let moments = engine.view.borrow_mut().take_moments();
+        pickups += moments
+            .iter()
+            .filter(|m| matches!(m, Moment::GemPickup))
+            .count();
         scene.moments(
             &moments,
             s,
@@ -1420,9 +1467,17 @@ fn bench(check: bool, density: bool) -> Result<(), String> {
         encode_times.push((end - scene_end) * 1e3);
         times.push((end - t0) * 1e3);
     }
+    if moving && (peak_poses == 0 || pickups == 0 || min_gems == 400) {
+        return Err(format!(
+            "moving fixture missed pickup path: poses{peak_poses} pickups{pickups} gems{min_gems}"
+        ));
+    }
     if density {
         println!(
-            "bench density: {density_frames} frames with 300 live enemies + 400 simulation gems; max implemented Survivors weapons/passives, synthetic HP, damage exempt"
+            "bench final effects: evolved{evolved} moving{moving}, min gems{min_gems}, peak moving gem poses{peak_poses}, actual pickup moments{pickups}"
+        );
+        println!(
+            "bench density: {density_frames} frames with 300 live enemies + up to400 simulation gems; max implemented Survivors weapons/passives, synthetic HP, damage exempt"
         );
         println!(
             "bench density loadout: {:?}",

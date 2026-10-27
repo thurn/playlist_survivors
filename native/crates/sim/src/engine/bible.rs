@@ -110,6 +110,7 @@ impl Sim {
     }
     pub(super) fn tick_bibles(&mut self) {
         let mut cycles = std::mem::take(&mut self.st.bibles);
+        let contacts = super::contacts::Contacts::new(self);
         let newest = cycles
             .iter()
             .rposition(|c| c.shot.id == crate::survivors::WeaponId::UnholyVespers);
@@ -159,19 +160,16 @@ impl Sim {
                             radius: b.radius,
                         };
                         let bounds = expanded_bounds(&shape);
-                        let targets: Vec<_> = self
-                            .st
-                            .alive
-                            .iter()
-                            .copied()
-                            .filter(|&fi| self.hittable(fi))
-                            .filter(|&fi| {
-                                let p = self.pos(fi, self.st.w);
-                                let r = self.st.foes[fi].r;
-                                near_bounds(bounds, p.0, p.1, r)
-                                    && !c.blades[i].hit.contains(&fi)
-                                    && crate::aim::catches(&shape, p.0, p.1, r)
+                        let targets: Vec<_> = contacts
+                            .candidates(&shape)
+                            .into_iter()
+                            .filter(|p| {
+                                self.hittable(p.fi)
+                                    && !c.blades[i].hit.contains(&p.fi)
+                                    && near_bounds(bounds, p.x, p.y, p.r)
+                                    && crate::aim::catches(&shape, p.x, p.y, p.r)
                             })
+                            .map(|p| p.fi)
                             .collect();
                         if targets.is_empty() {
                             continue;

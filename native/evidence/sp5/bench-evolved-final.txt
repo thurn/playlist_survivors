@@ -1,0 +1,8 @@
+bench final effects: evolvedtrue movingfalse, min gems400, peak moving gem poses0, actual pickup moments0
+bench density: 7080 frames with 300 live enemies + up to400 simulation gems; max implemented Survivors weapons/passives, synthetic HP, damage exempt
+bench density loadout: Some(Inventory { weapons: Slots { items: [Some(Owned { id: BloodyTear, rank: 1 }), Some(Owned { id: SoulEater, rank: 1 }), Some(Owned { id: HolyWand, rank: 1 }), Some(Owned { id: UnholyVespers, rank: 1 }), Some(Owned { id: ThunderLoop, rank: 1 }), None] }, passives: Slots { items: [Some(Owned { id: Spinach, rank: 5 }), Some(Owned { id: HollowHeart, rank: 5 }), Some(Owned { id: Pummarola, rank: 5 }), Some(Owned { id: Duplicator, rank: 2 }), Some(Owned { id: EmptyTome, rank: 5 }), Some(Owned { id: Spellbinder, rank: 5 })] } })
+bench density stats: Some(Stats { might: 1.5000000000000004, cooldown: 0.6000000000000002, amount: 2.0, area: 1.0, projectile_speed: 1.0, duration: 1.5000000000000004, max_hp: 298.59839999999997, recovery: 1.0, armor: 1.0, move_speed: 1.0, magnet: 1.0, luck: 1.0, greed: 1.0, curse: 1.0, growth: 1.0 })
+bench engine CPU ms: p50 0.225, p95 2.285, p99 2.728
+bench scene CPU ms: p50 0.132, p95 0.181, p99 0.212
+bench encode CPU ms: p50 0.201, p95 0.322, p99 0.403
+bench: frame work (sim, evaluate, encode) at 1920 x 1080: median 0.65 ms, p95 2.74, p99 3.18, max 4.37 (7200 frames); 1776 rollbacks re-simulating 3171 ms

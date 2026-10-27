@@ -47,6 +47,7 @@ pub struct Scene {
     pickups: super::pickups::Pickups,
     lightning: super::lightning::Lightning,
     effects: Effects,
+    impact_budget: super::impact_budget::Budget,
     bitten: f64,
     /// The open field's chunks near the camera, by zone.
     chunks: HashMap<(i64, i64, String), ChunkContent>,
@@ -265,6 +266,14 @@ enum Drawn {
 }
 
 impl Scene {
+    pub fn impact_counts(&self) -> (usize, usize, usize) {
+        (
+            self.impact_budget.requested,
+            self.impact_budget.accepted,
+            self.impact_budget.merged,
+        )
+    }
+
     /// Offscreen presentation fixture, never applied to the simulation.
     pub fn damage_fixture(&mut self, x: f64, y: f64, now: f64) {
         self.numbers = damage::Numbers::default();
@@ -328,7 +337,21 @@ impl Scene {
         if view.run.is_some() {
             self.numbers.moments(moments, now, clock);
         }
-        let mut fire = |id: &str, x: f64, y: f64, dir: f64, intensity: f64, start: Start| {
+        let survivors = view.run.is_some();
+        self.impact_budget.observe(
+            now,
+            moments
+                .iter()
+                .filter(|m| matches!(m, Moment::EnemyImpact { .. }))
+                .count(),
+        );
+        let mut fire = |id: &str, x: f64, y: f64, dir: f64, intensity: f64, mut start: Start| {
+            if survivors {
+                let Some(admitted) = self.impact_budget.start(id, x, y, start) else {
+                    return;
+                };
+                start = admitted;
+            }
             if let Some(recipe) = lib.effects.get(id) {
                 self.effects.start(recipe, x, y, dir, intensity, start, now);
             }
@@ -458,6 +481,10 @@ impl Scene {
                         intensity.max(0.4),
                         Start {
                             debris,
+                            protected: view.foes.get(foe).is_some_and(|f| f.survivor_boss)
+                                || view.boss_cues.iter().any(|c| {
+                                    c.id == *foe && c.kind == sim::survivors::BossCueKind::Defeated
+                                }),
                             ..Start::default()
                         },
                     );
@@ -712,18 +739,6 @@ impl Scene {
             lights,
             &mut layers.grade,
         );
-        if view.run.is_some() {
-            let swell = 0.5 + 0.5 * (std::f64::consts::TAU * pulse.beat.min(1.0)).cos();
-            gems::draw(
-                view,
-                art,
-                &at,
-                scale,
-                view.run.map_or(self.run_s, |r| r.presentation_s),
-                fast.pulsed(swell),
-                out,
-            );
-        }
         let mut stomp_cells = std::collections::BTreeMap::new();
         for f in view.foes.values().filter(|f| f.death_w.is_none()) {
             if looks
@@ -752,6 +767,7 @@ impl Scene {
             }
         }
         order.sort_by(|a, b| a.0.total_cmp(&b.0));
+        let mut hero_top = None;
         let hero_at = view.hero.map(|h| (h.x, h.y));
         for (_, who) in order {
             match who {
@@ -850,7 +866,13 @@ impl Scene {
                     // A hit flashes it white; the killing blow knocks the body back from the
                     // hero, squashed, and it falls (its hurt frames) and fades.
                     let struck = self.struck.get(&id).map(|&(t, lethal)| (now - t, lethal));
-                    let flash = struck.is_some_and(|(age, _)| (0.0..HIT_FLASH_S).contains(&age));
+                    let reacting = struck.is_some_and(|(age, _)| (0.0..HIT_FLASH_S).contains(&age));
+                    let visibility = if view.run.is_some() {
+                        self.impact_budget.flash()
+                    } else {
+                        1.0
+                    };
+                    let flash = reacting && (visibility >= 0.6 || f.survivor_boss);
                     let (mut x, mut y) = (f.x, f.y - bob);
                     if let (Some((age, true)), Some(h)) = (struck, view.hero)
                         && (0.0..KNOCK_S).contains(&age)
@@ -884,10 +906,13 @@ impl Scene {
                     if alpha <= 0.0 {
                         continue;
                     }
+                    let base = look.map_or([1.0; 3], |l| l.tint);
                     let rgb = if flash {
                         [1.0; 3]
+                    } else if reacting {
+                        base.map(|c| c + (1.0 - c) * visibility as f32)
                     } else {
-                        look.map_or([1.0; 3], |l| l.tint)
+                        base
                     };
                     let tint = [rgb[0], rgb[1], rgb[2], alpha];
                     if style == super::roster::Style::Plant {
@@ -991,6 +1016,7 @@ impl Scene {
                         )),
                         None => out.push(square(sx, sy, 26.0 * scale, [0.4, 0.85, 1.0, 1.0])),
                     }
+                    hero_top = out.last().copied();
                 }
             }
         }
@@ -1033,6 +1059,32 @@ impl Scene {
             layers.grade.flash = [1.0, 1.0, 1.0, fa];
         }
         super::atmosphere::drop_trails(view, art, &at, scale, fast.drop, out);
+        // Keep objective sprites crisp above additive effects and post flashes. HUD/cards
+        // still draw afterwards, so offers can cover the hero deliberately.
+        if view.run.is_some() {
+            let swell = 0.5 + 0.5 * (std::f64::consts::TAU * pulse.beat.min(1.0)).cos();
+            gems::draw(
+                view,
+                art,
+                &at,
+                scale,
+                view.run.map_or(self.run_s, |r| r.presentation_s),
+                fast.pulsed(swell),
+                &mut layers.overlay,
+            );
+        }
+        self.numbers.draw(art, now, &at, scale, &mut layers.overlay);
+        if view.run.is_some()
+            && let Some(hero) = hero_top
+        {
+            for (dx, dy) in [(-1.0, 0.0), (1.0, 0.0), (0.0, -1.0), (0.0, 1.0)] {
+                let mut rim = hero.silhouette().tinted([0.015, 0.025, 0.045, 0.9]);
+                rim.x += dx * scale;
+                rim.y += dy * scale;
+                layers.overlay.push(rim);
+            }
+            layers.overlay.push(hero);
+        }
         super::bosses::draw(view, art, &at, scale, w, h, out, &mut layers.overlay);
         super::treasure::draw(view, art, &at, scale, w, h, out, &mut layers.overlay);
         self.evolution.draw(
@@ -1046,7 +1098,6 @@ impl Scene {
             lights,
             &mut layers.overlay,
         );
-        self.numbers.draw(art, now, &at, scale, &mut layers.overlay);
         self.cards.grade(now, &mut layers.grade);
         self.cards
             .draw(art, now, w, h, layers.feet, &mut layers.overlay);
@@ -1333,4 +1384,87 @@ pub fn end_card(
         [0.85, 0.85, 0.9, a * blink],
         out,
     );
+}
+
+#[cfg(test)]
+mod density_tests {
+    use super::*;
+    #[test]
+    fn actual_boss_roles_and_retired_cues_keep_death_showpieces_in_a_full_cell_budget() {
+        let world = crate::slice::World::load(None).unwrap();
+        for retired in [false, true] {
+            let mut scene = Scene::default();
+            scene.impact_budget.observe(1.0, 400);
+            for i in 0..24 {
+                assert!(
+                    scene
+                        .impact_budget
+                        .start("death-humanoid", f64::from(i) * 48.0, 0.0, Start::default())
+                        .is_some()
+                );
+            }
+            let mut view = LiveView {
+                run: Some(sim::survivors::RunState::default()),
+                ..LiveView::default()
+            };
+            if retired {
+                view.boss_cues.push(sim::survivors::BossCue {
+                    kind: sim::survivors::BossCueKind::Defeated,
+                    pending: 0,
+                    song: 1.0,
+                    run: 1.0,
+                    id: 100,
+                    x: 0.0,
+                    y: 0.0,
+                });
+            } else {
+                view.foes.insert(
+                    100,
+                    eval::live::Foe {
+                        survivor_boss: true,
+                        kind: "vs-boss-xlmummy".into(),
+                        x: 0.0,
+                        y: 0.0,
+                        prev: (0.0, 0.0),
+                        samples: 1,
+                        death_w: Some(1.0),
+                        pending_impact: false,
+                    },
+                );
+            }
+            let before = scene.impact_counts();
+            let hit = Moment::Hit {
+                x: 0.0,
+                y: 0.0,
+                lethal: true,
+                damage: 100.0,
+                song: 1.0,
+                critical: false,
+                foe: 100,
+                source: "move",
+                weight: "light",
+                what: "sword".into(),
+                dir: 0.0,
+                intensity: 1.0,
+            };
+            scene.moments(
+                &[Moment::EnemyImpact { hit: Box::new(hit) }],
+                1.0,
+                &world.lib,
+                &world.looks,
+                &view,
+                &damage::Clock {
+                    beats: &[],
+                    start: 0.0,
+                    free: 0.5,
+                },
+            );
+            let after = scene.impact_counts();
+            assert_eq!(
+                (after.1, after.2),
+                (before.1, before.2),
+                "boss recipe must bypass ordinary admission, retired{retired}"
+            );
+        }
+    }
 }

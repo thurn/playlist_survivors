@@ -1,0 +1,2 @@
+    Checking app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/native/crates/app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.00s

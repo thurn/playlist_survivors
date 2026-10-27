@@ -1,0 +1,10 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/native/crates/sim)
+   Compiling players v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/native/crates/players)
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/native/crates/eval)
+   Compiling cli v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/native/crates/cli)
+    Finished `release` profile [optimized] target(s) in 7.28s
+     Running `target/release/examples/evolved_contacts`
+{"moving":false,"killable":false,"hash":"dae5d62b01e17cbe","records":649768,"rollbacks":845,"kills":0,"gems":400,"health":1.0}
+{"moving":false,"killable":true,"hash":"5c5e949e256b060c","records":599329,"rollbacks":845,"kills":710,"gems":400,"health":1.0}
+{"moving":true,"killable":false,"hash":"15312056e6064e90","records":652160,"rollbacks":845,"kills":0,"gems":326,"health":1.0}
+{"moving":true,"killable":true,"hash":"e3722b196c9541a8","records":604806,"rollbacks":845,"kills":757,"gems":326,"health":1.0}

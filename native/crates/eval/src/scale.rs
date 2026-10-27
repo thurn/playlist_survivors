@@ -6,6 +6,27 @@ use sim::content::{ContentLibrary, SourceFile};
 /// enemies isolate age from density. Faster BAT1 overload is retained separately in evidence.
 /// All musical input still passes through normal ingestion, freezes, strides and the full implemented weapon loadout.
 pub fn density_engine(level: &SourceFile, lib: &ContentLibrary) -> Result<Engine, String> {
+    configured_density_engine(level, lib, sim::engine::Sim::seed_scale_check, false)
+}
+/// SP5 final evolved loadout; the original base-loadout release fixture remains explicit.
+pub fn evolved_density_engine(level: &SourceFile, lib: &ContentLibrary) -> Result<Engine, String> {
+    configured_density_engine(
+        level,
+        lib,
+        sim::engine::Sim::seed_evolved_scale_check,
+        false,
+    )
+}
+/// Actual deaths at the same minute-25 roster, with labelled low HP/zero XP.
+pub fn evolved_combat_engine(level: &SourceFile, lib: &ContentLibrary) -> Result<Engine, String> {
+    configured_density_engine(level, lib, sim::engine::Sim::seed_evolved_scale_check, true)
+}
+fn configured_density_engine(
+    level: &SourceFile,
+    lib: &ContentLibrary,
+    setup: impl FnOnce(&mut sim::engine::Sim),
+    killable: bool,
+) -> Result<Engine, String> {
     let mut rows = 0;
     let text = level.text.lines().map(|line| {
         if let Some(minute) = line.trim().strip_prefix("- {\"minute\":")
@@ -22,7 +43,10 @@ pub fn density_engine(level: &SourceFile, lib: &ContentLibrary) -> Result<Engine
     }
     let mut content = lib.clone();
     for enemy in content.enemies.values_mut() {
-        enemy.health = 1e12;
+        enemy.health = if killable { 40.0 } else { 1e12 };
+        if killable && let Some(stats) = enemy.survivors.as_mut() {
+            stats.xp = 0.0;
+        }
     }
     let engine = Engine::new_with_setup(
         &SourceFile {
@@ -35,7 +59,7 @@ pub fn density_engine(level: &SourceFile, lib: &ContentLibrary) -> Result<Engine
         true,
         true,
         f64::INFINITY,
-        sim::engine::Sim::seed_scale_check,
+        setup,
     )
     .map_err(|e| format!("{e:?}"))?;
     Ok(engine)

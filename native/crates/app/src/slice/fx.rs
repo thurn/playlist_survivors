@@ -71,6 +71,10 @@ pub struct Start {
     pub tier: Option<usize>,
     pub shape: Option<Shape>,
     pub scale: Option<f64>,
+    /// Survivors per-hit particle multiplier; long-lived hit decals are capped at1s.
+    pub density: Option<f64>,
+    /// Boss-role showpieces keep their recipe even when its name is an ordinary death.
+    pub protected: bool,
 }
 
 /// One recipe playing at a place.
@@ -83,8 +87,30 @@ struct Instance {
     intensity: f64,
     seed: u64,
     start: Start,
+    until: f64,
 }
 
+fn retained_life(recipe: &EffectRecipe, start: &Start, intensity: f64) -> f64 {
+    if start.density.is_none() {
+        return DECAL_LIFE + 1.0;
+    }
+    recipe
+        .layers
+        .iter()
+        .map(|layer| match layer {
+            EffectLayer::Decal { .. } => 1.0,
+            EffectLayer::Shake { trauma, .. } => param(trauma, intensity) / 1.6,
+            EffectLayer::Sprite { life, .. }
+            | EffectLayer::Burst { life, .. }
+            | EffectLayer::Light { life, .. }
+            | EffectLayer::Flash { life, .. }
+            | EffectLayer::Distortion { life, .. }
+            | EffectLayer::Ring { life, .. }
+            | EffectLayer::Aberration { life, .. }
+            | EffectLayer::Text { life, .. } => *life,
+        })
+        .fold(0.0, f64::max)
+}
 /// The effects playing.
 #[derive(Default)]
 pub struct Effects {
@@ -109,7 +135,9 @@ impl Effects {
         let seed = (x * 4.0).round().to_bits()
             ^ (y * 4.0).round().to_bits().rotate_left(17)
             ^ self.count.wrapping_mul(0x2545_f491_4f6c_dd1d);
+        let until = now + retained_life(recipe, &start, intensity);
         self.live.push(Instance {
+            until,
             recipe: recipe.clone(),
             x,
             y,
@@ -120,7 +148,7 @@ impl Effects {
             start,
         });
         // (The longest layer is a decal's.)
-        self.live.retain(|i| now - i.at < DECAL_LIFE + 1.0);
+        self.live.retain(|i| now < i.until);
     }
 
     /// The camera's shake offset at `now` (world px): `9 trauma^2`, the trauma each shake layer's
@@ -227,7 +255,14 @@ impl Effects {
                     continue;
                 };
                 let s = param(size, inst.intensity) * inst.start.scale.unwrap_or(1.0);
-                let l = DECAL_LIFE;
+                let l = if inst.start.density.is_some() {
+                    1.0
+                } else {
+                    DECAL_LIFE
+                };
+                if age >= l {
+                    continue;
+                }
                 let fade = ((age - 0.6 * l) / (0.4 * l)).clamp(0.0, 1.0);
                 let alpha = (20.0 * age).min(1.0) * (1.0 - fade * fade * (3.0 - 2.0 * fade)) * 0.85;
                 let mut color = match tint.as_deref() {
@@ -297,7 +332,10 @@ impl Effects {
                             continue;
                         }
                         let u = age / life;
-                        let n = (param(count, i) * tier.map_or(1.0, |t| TIER_COUNT[t])).round();
+                        let n = (param(count, i)
+                            * tier.map_or(1.0, |t| TIER_COUNT[t])
+                            * inst.start.density.unwrap_or(1.0))
+                        .round();
                         let debris_art = name.ends_with("gib") || name.ends_with("bone");
                         for p in 0..n as u64 {
                             let (r1, r2, r3) = (
@@ -342,7 +380,10 @@ impl Effects {
                             } else {
                                 1.0 - u
                             } as f32;
-                            let mut k = param(size, i) * (0.7 + 0.6 * r3);
+                            color[3] *= inst.start.density.unwrap_or(1.0).sqrt() as f32;
+                            let mut k = param(size, i)
+                                * (0.7 + 0.6 * r3)
+                                * inst.start.density.map_or(1.0, f64::sqrt);
                             if name.ends_with("dust") {
                                 k *= 1.0 + u;
                             }
@@ -384,6 +425,7 @@ impl Effects {
                         if let Some(&ring) = art.proc.get("ring") {
                             let (sx, sy) = at(inst.x, inst.y - 8.0);
                             let d = (2.0 * r) as f32 * scale;
+                            c[3] *= inst.start.density.unwrap_or(1.0).sqrt() as f32;
                             let s = Sprite::centred(ring, sx, sy, d, d * 0.75).tinted(c);
                             out.push(if *additive { s.additive() } else { s });
                         }
@@ -407,6 +449,7 @@ impl Effects {
                             (None, None) => [1.0; 4],
                         };
                         color[3] = ((1.0 - u * u) as f32) * tier.map_or(1.0, |t| TIER_ALPHA[t]);
+                        color[3] *= inst.start.density.unwrap_or(1.0).sqrt() as f32;
                         let k = param(size, i) * inst.start.scale.unwrap_or(1.0);
                         let shaped = (*align == Align::HitShape)
                             .then_some(inst.start.shape)
@@ -622,4 +665,48 @@ fn plain_sprite(
             },
         ),
     )
+}
+
+#[cfg(test)]
+mod density_tests {
+    use super::*;
+    #[test]
+    fn source_boss_debris_lives_past_one_second_and_only_hit_decals_shorten() {
+        let world = crate::slice::World::load(None).unwrap();
+        let recipe = &world.lib.effects["death-boss"];
+        let ordinary = Start {
+            density: Some(0.2),
+            ..Start::default()
+        };
+        assert_eq!(retained_life(recipe, &ordinary, 1.0), 1.8);
+        assert_eq!(retained_life(recipe, &Start::default(), 1.0), 21.0);
+        let mut fx = Effects::default();
+        fx.start(recipe, 0.0, 0.0, 0.0, 1.0, ordinary, 0.0);
+        fx.start(
+            &world.lib.effects["blades-hit"],
+            100.0,
+            0.0,
+            0.0,
+            0.6,
+            Start::default(),
+            1.1,
+        );
+        assert!(
+            fx.live.iter().any(|i| i.at == 0.0),
+            "a later impact must not truncate source1.4s/1.8s debris"
+        );
+        fx.start(
+            &world.lib.effects["blades-hit"],
+            200.0,
+            0.0,
+            0.0,
+            0.6,
+            Start::default(),
+            1.9,
+        );
+        assert!(
+            fx.live.iter().all(|i| i.at != 0.0),
+            "ordinary per-hit decals must not retain the recipe for20s"
+        );
+    }
 }

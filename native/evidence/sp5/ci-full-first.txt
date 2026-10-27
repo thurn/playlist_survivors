@@ -1,0 +1,651 @@
+
+added 114 packages in 983ms
+
+> playlist-survivors@0.1.0 check
+> npm run lint && npm run typecheck && npm run check:assets
+
+
+> playlist-survivors@0.1.0 lint
+> eslint tools/baker
+
+
+> playlist-survivors@0.1.0 typecheck
+> tsc --noEmit
+
+
+> playlist-survivors@0.1.0 check:assets
+> tsx tools/baker/check-assets.ts
+
+asset check passed: 14 sprites, 26 props, 66 effects, 251 sounds, 4.7 MB
+Using CPython 3.12.14 interpreter at: /opt/homebrew/opt/python@3.12/bin/python3.12
+Creating virtual environment at: .venv
+   Building ps-analysis @ file:///Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/tools/analysis
+      Built ps-analysis @ file:///Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/tools/analysis
+Installed 44 packages in 172ms
+........................................................................ [ 42%]
+........................................................................ [ 84%]
+...........................                                              [100%]
+=============================== warnings summary ===============================
+tests/test_models.py::test_librosa_matrices_reproduce_structures_features
+  /Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/tools/analysis/tests/test_models.py:56: RuntimeWarning: divide by zero encountered in matmul
+    assert np.allclose(m["mel"] @ spec, mel, rtol=1e-5)
+
+tests/test_models.py::test_librosa_matrices_reproduce_structures_features
+  /Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/tools/analysis/tests/test_models.py:56: RuntimeWarning: overflow encountered in matmul
+    assert np.allclose(m["mel"] @ spec, mel, rtol=1e-5)
+
+tests/test_models.py::test_librosa_matrices_reproduce_structures_features
+  /Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/tools/analysis/tests/test_models.py:56: RuntimeWarning: invalid value encountered in matmul
+    assert np.allclose(m["mel"] @ spec, mel, rtol=1e-5)
+
+tests/test_models.py::test_librosa_matrices_reproduce_structures_features
+  /Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/tools/analysis/tests/test_models.py:60: RuntimeWarning: divide by zero encountered in matmul
+    ours = m["dct"] @ librosa.power_to_db(m["mel"] @ spec, top_db=None)
+
+tests/test_models.py::test_librosa_matrices_reproduce_structures_features
+  /Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/tools/analysis/tests/test_models.py:60: RuntimeWarning: overflow encountered in matmul
+    ours = m["dct"] @ librosa.power_to_db(m["mel"] @ spec, top_db=None)
+
+tests/test_models.py::test_librosa_matrices_reproduce_structures_features
+  /Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/tools/analysis/tests/test_models.py:60: RuntimeWarning: invalid value encountered in matmul
+    ours = m["dct"] @ librosa.power_to_db(m["mel"] @ spec, top_db=None)
+
+tests/test_models.py::test_librosa_matrices_reproduce_structures_features
+  /Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/tools/analysis/tests/test_models.py:65: RuntimeWarning: divide by zero encountered in matmul
+    raw = m["chroma"] @ spec
+
+tests/test_models.py::test_librosa_matrices_reproduce_structures_features
+  /Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/tools/analysis/tests/test_models.py:65: RuntimeWarning: overflow encountered in matmul
+    raw = m["chroma"] @ spec
+
+tests/test_models.py::test_librosa_matrices_reproduce_structures_features
+  /Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/tools/analysis/tests/test_models.py:65: RuntimeWarning: invalid value encountered in matmul
+    raw = m["chroma"] @ spec
+
+tests/test_models.py::test_exported_front_ends_and_dbn_reproduce_madmom
+  /Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/tools/analysis/tests/test_models.py:117: RuntimeWarning: divide by zero encountered in matmul
+    logf = np.log10(mag @ m["online.2048.filterbank"] + 1)
+
+tests/test_models.py::test_exported_front_ends_and_dbn_reproduce_madmom
+  /Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/tools/analysis/tests/test_models.py:117: RuntimeWarning: overflow encountered in matmul
+    logf = np.log10(mag @ m["online.2048.filterbank"] + 1)
+
+tests/test_models.py::test_exported_front_ends_and_dbn_reproduce_madmom
+  /Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/tools/analysis/tests/test_models.py:117: RuntimeWarning: invalid value encountered in matmul
+    logf = np.log10(mag @ m["online.2048.filterbank"] + 1)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+real-time factors (pop-arrangement excerpt): bands 0.0012, brightness 0.0013, timbre 0.0303 (target under 0.2)
+171 passed, 12 warnings in 67.65s (0:01:07)
+All checks passed!
+{
+ "ok": true,
+ "errors": [],
+ "warnings": [],
+ "sections": [
+  {
+   "label": "prelude",
+   "bars": [
+    1,
+    14
+   ],
+   "feel": "free",
+   "key": "E major",
+   "start": 0.149,
+   "end": 43.21,
+   "beats": [
+    0,
+    55
+   ],
+   "beatCount": 56,
+   "medianBeatMs": 740.0,
+   "bpm": 81.1,
+   "onsetAlignment": {
+    "counted": 55,
+    "aligned": 25,
+    "fraction": 0.455,
+    "medianAbsOffsetMs": 28.9,
+    "meanOffsetMs": -2.2
+   },
+   "smoothness": {
+    "pairs": 55,
+    "maxChange": 0.1795,
+    "p95Change": 0.11,
+    "violations": 12
+   },
+   "anchors": {
+    "count": 11,
+    "maxGapS": 7.57,
+    "maxOnsetOffsetMs": 0.0
+   }
+  },
+  {
+   "label": "galop-vamp",
+   "bars": [
+    15,
+    30
+   ],
+   "feel": "pulsed",
+   "key": "D major",
+   "start": 43.21,
+   "end": 54.066,
+   "beats": [
+    56,
+    87
+   ],
+   "beatCount": 32,
+   "medianBeatMs": 340.0,
+   "bpm": 176.5,
+   "onsetAlignment": {
+    "counted": 32,
+    "aligned": 31,
+    "fraction": 0.969,
+    "medianAbsOffsetMs": 9.3,
+    "meanOffsetMs": -0.6
+   },
+   "smoothness": {
+    "pairs": 31,
+    "maxChange": 0.0588,
+    "p95Change": 0.0585,
+    "violations": 0
+   }
+  },
+  {
+   "label": "galop-opening",
+   "bars": [
+    31,
+    53
+   ],
+   "feel": "pulsed",
+   "key": "D major",
+   "start": 54.066,
+   "end": 69.82,
+   "beats": [
+    88,
+    133
+   ],
+   "beatCount": 46,
+   "medianBeatMs": 340.0,
+   "bpm": 176.5,
+   "onsetAlignment": {
+    "counted": 46,
+    "aligned": 44,
+    "fraction": 0.957,
+    "medianAbsOffsetMs": 10.2,
+    "meanOffsetMs": 3.2
+   },
+   "smoothness": {
+    "pairs": 45,
+    "maxChange": 0.0727,
+    "p95Change": 0.0567,
+    "violations": 0
+   }
+  },
+  {
+   "label": "theme-a",
+   "bars": [
+    54,
+    69
+   ],
+   "feel": "pulsed",
+   "key": "G major",
+   "start": 69.82,
+   "end": 80.23,
+   "beats": [
+    134,
+    165
+   ],
+   "beatCount": 32,
+   "medianBeatMs": 324.6,
+   "bpm": 184.9,
+   "onsetAlignment": {
+    "counted": 32,
+    "aligned": 31,
+    "fraction": 0.969,
+    "medianAbsOffsetMs": 11.6,
+    "meanOffsetMs": -4.0
+   },
+   "smoothness": {
+    "pairs": 31,
+    "maxChange": 0.0746,
+    "p95Change": 0.0625,
+    "violations": 0
+   }
+  },
+  {
+   "label": "theme-a-repeat",
+   "bars": [
+    70,
+    85
+   ],
+   "feel": "pulsed",
+   "key": "G major",
+   "start": 80.23,
+   "end": 90.528,
+   "beats": [
+    166,
+    197
+   ],
+   "beatCount": 32,
+   "medianBeatMs": 320.0,
+   "bpm": 187.5,
+   "onsetAlignment": {
+    "counted": 31,
+    "aligned": 30,
+    "fraction": 0.968,
+    "medianAbsOffsetMs": 10.6,
+    "meanOffsetMs": -6.5
+   },
+   "smoothness": {
+    "pairs": 31,
+    "maxChange": 0.0675,
+    "p95Change": 0.0611,
+    "violations": 0
+   }
+  },
+  {
+   "label": "kick-line",
+   "bars": [
+    86,
+    101
+   ],
+   "feel": "pulsed",
+   "key": "D major",
+   "start": 90.528,
+   "end": 100.65,
+   "beats": [
+    198,
+    229
+   ],
+   "beatCount": 32,
+   "medianBeatMs": 318.2,
+   "bpm": 188.6,
+   "onsetAlignment": {
+    "counted": 32,
+    "aligned": 30,
+    "fraction": 0.938,
+    "medianAbsOffsetMs": 11.8,
+    "meanOffsetMs": -3.2
+   },
+   "smoothness": {
+    "pairs": 31,
+    "maxChange": 0.0625,
+    "p95Change": 0.0603,
+    "violations": 0
+   }
+  },
+  {
+   "label": "bridge",
+   "bars": [
+    102,
+    107
+   ],
+   "feel": "pulsed",
+   "key": "D major",
+   "start": 100.65,
+   "end": 104.548,
+   "beats": [
+    230,
+    241
+   ],
+   "beatCount": 12,
+   "medianBeatMs": 323.7,
+   "bpm": 185.4,
+   "onsetAlignment": {
+    "counted": 12,
+    "aligned": 11,
+    "fraction": 0.917,
+    "medianAbsOffsetMs": 11.3,
+    "meanOffsetMs": -0.2
+   },
+   "smoothness": {
+    "pairs": 11,
+    "maxChange": 0.0629,
+    "p95Change": 0.0591,
+    "violations": 0
+   }
+  },
+  {
+   "label": "climax",
+   "bars": [
+    108,
+    139
+   ],
+   "feel": "pulsed",
+   "key": "D major",
+   "start": 104.548,
+   "end": 124.63,
+   "beats": [
+    242,
+    305
+   ],
+   "beatCount": 64,
+   "medianBeatMs": 311.2,
+   "bpm": 192.8,
+   "onsetAlignment": {
+    "counted": 63,
+    "aligned": 62,
+    "fraction": 0.984,
+    "medianAbsOffsetMs": 10.3,
+    "meanOffsetMs": -1.2
+   },
+   "smoothness": {
+    "pairs": 63,
+    "maxChange": 0.0724,
+    "p95Change": 0.0678,
+    "violations": 0
+   }
+  },
+  {
+   "label": "coda",
+   "bars": [
+    140,
+    177
+   ],
+   "feel": "pulsed",
+   "key": "D major",
+   "start": 124.63,
+   "end": 144.386,
+   "beats": [
+    306,
+    381
+   ],
+   "beatCount": 76,
+   "medianBeatMs": 250.0,
+   "bpm": 240.0,
+   "onsetAlignment": {
+    "counted": 73,
+    "aligned": 66,
+    "fraction": 0.904,
+    "medianAbsOffsetMs": 8.3,
+    "meanOffsetMs": -3.9
+   },
+   "smoothness": {
+    "pairs": 15,
+    "maxChange": 0.0004,
+    "p95Change": 0.0004,
+    "violations": 0
+   }
+  }
+ ],
+ "accents": {
+  "count": 30,
+  "labels": {
+   "tutti-chord": 8
+  },
+  "maxOnsetOffsetMs": 0.0
+ }
+}
+prelude          bars   1-14  free      0.149-  43.210 s    81.1 bpm  anchors 11 max gap 7.57 s
+galop-vamp       bars  15-30  pulsed   43.210-  54.066 s   176.5 bpm  align 96.9% (31/32)  max gap change 5.9%
+galop-opening    bars  31-53  pulsed   54.066-  69.820 s   176.5 bpm  align 95.7% (44/46)  max gap change 7.3%
+theme-a          bars  54-69  pulsed   69.820-  80.230 s   184.9 bpm  align 96.9% (31/32)  max gap change 7.5%
+theme-a-repeat   bars  70-85  pulsed   80.230-  90.528 s   187.5 bpm  align 96.8% (30/31)  max gap change 6.8%
+kick-line        bars  86-101 pulsed   90.528- 100.650 s   188.6 bpm  align 93.8% (30/32)  max gap change 6.2%
+bridge           bars 102-107 pulsed  100.650- 104.548 s   185.4 bpm  align 91.7% (11/12)  max gap change 6.3%
+climax           bars 108-139 pulsed  104.548- 124.630 s   192.8 bpm  align 98.4% (62/63)  max gap change 7.2%
+coda             bars 140-177 pulsed  124.630- 144.386 s   240.0 bpm  align 90.4% (66/73)  max gap change 0.0%
+accents: 30 {'tutti-chord': 8}
+check: OK
+friction: 46 records valid
+All checks passed!
+WARN `--no-project` was provided, but no project was found
+...........................
+----------------------------------------------------------------------
+Ran 27 tests in 0.024s
+
+OK
+WARN `--no-project` was provided, but no project was found
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.159s
+
+OK
+All checks passed!
+WARN `--no-project` was provided, but no project was found
+.................
+----------------------------------------------------------------------
+Ran 17 tests in 0.085s
+
+OK
+crates purity: stream, analysis, sim, eval, players pure
+    Checking audio v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/native/crates/audio)
+    Checking analysis v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/native/crates/analysis)
+    Checking stream v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/native/crates/stream)
+    Checking players v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/native/crates/players)
+    Checking render v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/native/crates/render)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.66s
+   Compiling analysis v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/native/crates/analysis)
+   Compiling stream v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/native/crates/stream)
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/native/crates/sim)
+   Compiling players v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/native/crates/players)
+   Compiling render v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/native/crates/render)
+   Compiling cli v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/native/crates/cli)
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/native/crates/eval)
+   Compiling audio v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sp5-density-polish/native/crates/audio)
+    Finished `test` profile [optimized + debuginfo] target(s) in 14.36s
+     Running unittests src/lib.rs (target/debug/deps/analysis-7cc3dbe2b623ab8b)
+
+running 18 tests
+test numeric::tests::percentiles_at_the_ends ... ok
+test delayed::tests::local_period_is_the_median_spacing ... ok
+test delayed::tests::uncovered_finds_gaps_and_empty_bands ... ok
+test delayed::tests::a_band_commits_its_grid_and_fills_its_gaps_with_forecasts ... ok
+test pinned::combining_onsets_is_madmoms ... ok
+test pinned::rounding_is_pythons ... ok
+test pinned::hanning_is_numpys ... ok
+test pinned::percentiles_are_numpys ... ok
+test pinned::log_densities_are_madmoms ... ok
+test pinned::superflux_is_madmoms ... ok
+test pinned::sums_and_means_are_numpys ... ok
+test pinned::the_phase_arithmetic_is_numpys ... ok
+test tensors::tests::reads_each_dtype ... ok
+test pinned::the_axis_mean_is_numpys ... ok
+test pinned::the_key_correlation_is_numpys ... ok
+test tensors::tests::rejects_malformed_files ... ok
+test pinned::strong_flags_are_detect_onsets ... ok
+test pinned::the_running_mean_is_scipys_uniform_filter ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/delayed.rs (target/debug/deps/delayed-daa4632d5acc8a9d)
+
+running 4 tests
+test every_beat_leads_by_the_horizon_and_stamps_never_go_back ... ok
+test streamed_beats_are_the_replay_of_direct_listening ... ok
+test delayed_listening_changes_only_the_committed_beats ... ok
+test the_stream_is_causal_by_audio_position ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 12.73s
+
+     Running tests/stage_parity_a1.rs (target/debug/deps/stage_parity_a1-d96a3cb249005ce9)
+
+running 7 tests
+test hanning_matches_the_exported_window ... ok
+test the_ensemble_has_eight_networks ... ok
+test the_ensemble_takes_the_front_ends_features ... ok
+test frames_are_cut_as_madmom_cuts_them ... ok
+test the_stream_is_independent_of_block_sizes ... ok
+test features_and_activations_match_python ... ok
+test a_stream_of_any_length_has_madmoms_frames ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+
+     Running tests/stage_parity_a2.rs (target/debug/deps/stage_parity_a2-357d17d5570bf4fa)
+
+running 5 tests
+test params_are_the_streams ... ok
+test the_next_beat_is_known_when_a_beat_arrives ... ok
+test beliefs_evidence_and_commits_match_python_to_the_bit ... ok
+test thirty_seconds_of_the_galop_with_its_tempo_flips_match_python ... ok
+test from_pcm_the_whole_chain_commits_pythons_beats ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+     Running tests/stage_parity_a3.rs (target/debug/deps/stage_parity_a3-03322d312973a938)
+
+running 7 tests
+test onsets_from_pythons_function_match_to_the_bit ... ok
+test params_are_the_streams ... ok
+test the_onset_function_matches_python ... ok
+test ticks_match_python_to_the_bit ... ok
+test thirty_seconds_of_tick_evidence_match_python ... ok
+test the_analyzer_from_pcm_matches_python ... ok
+test the_analyzer_is_independent_of_block_sizes ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.64s
+
+     Running tests/stage_parity_a4.rs (target/debug/deps/stage_parity_a4-e0bf52e5d7444ac8)
+
+running 14 tests
+test params_are_the_streams ... ok
+test viterbi_ties_and_edges_are_madmoms ... ok
+test parallel_models_smoke ... ok
+test the_phase_check_commits_pythons_beats ... ok
+test offline_features_match_python ... ok
+test a_short_stream_from_pcm_matches_python ... ok
+test offline_activations_and_beats_match_python ... ok
+test hindsight_entries_match_python ... ok
+test the_worker_reports_its_stalls ... ok
+test a_stream_of_awkward_length_has_pythons_entries ... ok
+test parallel_analyzer_preserves_delayed_arrivals ... ok
+test the_analyzer_from_pcm_commits_pythons_phased_beats ... ok
+test with_a_delay_entries_count_from_their_window_ends_plus_d ... ok
+test the_worker_gives_the_inline_results ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 14.18s
+
+     Running tests/stage_parity_a5.rs (target/debug/deps/stage_parity_a5-0fff0c6446420fda)
+
+running 10 tests
+test params_and_keys_are_the_streams ... ok
+test keys_from_pythons_features_match_to_the_bit ... ok
+test features_match_python ... ok
+test keys_match_python ... ok
+test structure_matches_python_on_the_galop ... ok
+test structure_matches_python_on_a_cut_piece ... ok
+test structure_matches_python_on_a_synthetic_piece ... ok
+test ticks_from_heard_samples_match_ticks_from_frames ... ok
+test structure_matches_python_past_every_window_it_keeps ... ok
+test the_analyzer_from_pcm_matches_python has been running for over 60 seconds
+test the_analyzer_from_pcm_matches_python ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 66.38s
+
+     Running tests/stage_parity_a6.rs (target/debug/deps/stage_parity_a6-020e50049b3815d8)
+
+running 4 tests
+test params_are_the_streams ... ok
+test forecasts_match_python_at_the_edges ... ok
+test forecasts_match_python_on_every_stream ... ok
+test the_analyzer_from_pcm_forecasts_as_python ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.03s
+
+     Running tests/stage_parity_a7.rs (target/debug/deps/stage_parity_a7-f27fba153cf13a98)
+
+running 3 tests
+test very_short_audio_gives_its_few_entries ... ok
+test bands_brightness_and_timbre_match_python ... ok
+test the_analyzer_from_pcm_carries_pythons_bands ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 27.66s
+
+     Running tests/stream_causality.rs (target/debug/deps/stream_causality-03c5307a11ee00d9)
+
+running 3 tests
+test a_short_stream_is_causal ... ok
+test the_stream_is_causal_in_every_group ... ok
+test structure_and_forecasts_are_causal ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 52.79s
+
+     Running unittests src/main.rs (target/debug/deps/playlist_survivors-117eebc7468b2345)
+
+running 69 tests
+test slice::apps::tests::an_app_is_named_by_its_bundle_or_executable ... ok
+test slice::apps::tests::browsers_are_known_by_bundle_or_name ... ok
+test slice::calibration::tests::the_stomp_key_follows_the_directions_until_calibrated_itself ... ok
+test slice::calibration::tests::a_tap_along_takes_the_median_error_after_the_first_two_taps ... ok
+test slice::calibration::tests::settings_keep_a_calibration_per_device_and_read_the_old_file ... ok
+test slice::damage::tests::a_free_pulse_uses_run_or_last_beat_origin ... ok
+test slice::damage::tests::damage_is_scaled_and_summed_per_enemy_per_beat ... ok
+test slice::damage::tests::labels_are_bounded_at_density ... ok
+test slice::damage::tests::labels_wait_for_the_grid_reaction_across_a_freeze ... ok
+test slice::evolution::tests::chest_identity_never_fires_early_restarts_after_expiry_or_survives_retraction ... ok
+test slice::evolution::tests::corrected_rewards_refresh_identity_without_restarting_the_animation ... ok
+test slice::evolution::tests::cues_reconcile_at_landing_and_multi_reward_uses_one_ui_voice ... ok
+test slice::evolution::tests::manual_and_music_pauses_hold_burst_but_chest_animation_advances ... ok
+test slice::gems::tests::a_blasts_gem_hangs_then_flies_in ... ok
+test slice::gems::tests::a_gem_waits_on_the_field_until_it_takes_off_then_reaches_the_hero ... ok
+test slice::gems::tests::survivor_gem_uses_recorded_physical_position_without_an_invented_arrival ... ok
+test slice::gems::tests::survivor_value_bands_scale_and_cap_the_merged_gem_size ... ok
+test slice::impact_budget::tests::boss_showpiece_bypasses_an_exhausted_ordinary_death_budget ... ok
+test slice::impact_budget::tests::dense_hits_merge_shrink_and_recover_without_suppressing_death ... ok
+test slice::lane::tests::a_wave_takes_the_key_heard_before_it_and_fades_its_look_in ... ok
+test slice::lane::tests::keys_read_as_their_pitch_class_and_mode ... ok
+test slice::lane::tests::nothing_is_shown_before_it_is_known ... ok
+test slice::lane::tests::presses_ripple_and_the_good_ones_light_the_ground ... ok
+test slice::lane::tests::the_pulse_follows_the_evidence_and_the_onsets_flash_once_a_gap ... ok
+test slice::lane::tests::unknown_ticks_jumps_and_onsets_do_not_change_the_frame_or_zone_key ... ok
+test slice::atmosphere::tests::aura_reads_actual_owned_evolutions_and_ignores_pinned_tier_and_base_ranks ... ok
+test slice::cards::tests::a_retraction_does_not_animate_or_sound_a_confirm ... ok
+test slice::cards::tests::forecast_retiming_replaces_future_cues_instead_of_doubling_them ... ok
+test slice::cards::tests::pair_badge_follows_actual_catalog_partners ... ok
+test slice::cards::tests::chained_offers_keep_the_world_dim_and_cues_use_sim_reveals ... ok
+test slice::cards::tests::picks_fall_away_but_retracted_picks_reopen_without_confirm ... ok
+test slice::cards::tests::rollback_replaces_cards_and_pair_inventory_at_the_same_reveal_times ... ok
+test slice::live::tests::a_wav_data_chunk_is_read ... ok
+test slice::loopback::tests::clicks_are_found_over_the_noise_once_each ... ok
+test slice::loopback::tests::each_source_click_takes_the_first_heard_in_its_window ... ok
+test slice::live::tests::the_resampler_keeps_a_constant_and_its_rate ... ok
+test slice::recap::tests::held_time_keeps_short_ownership_visible_and_rounds_near_whole_seconds ... ok
+test slice::session::tests::forty_minutes_fit_the_session_store_with_room_for_stream_and_keys ... ok
+test slice::session::tests::the_wav_header_says_its_sizes ... ok
+test slice::sounds::budget::tests::caps_cover_future_overlap_and_slow_sample_tails ... ok
+test slice::sounds::chain::tests::chain_is_pentatonic_bounded_resets_and_rewinds ... ok
+test slice::sounds::horn::tests::warning_horn_is_finite_short_and_below_full_scale_at_output_rates ... ok
+test slice::sounds::tests::slots_fall_on_the_grid_and_past_the_last_beat ... ok
+test slice::session::tests::pruning_keeps_the_newest ... ok
+test slice::sounds::tests::the_evidence_fades_sounds_below_twice_the_gate ... ok
+test slice::tests::a_run_starts_after_two_clear_seconds_once_quiet_or_after_an_end ... ok
+test slice::tests::a_runs_music_is_resampled_from_its_start_with_silence_before_it ... ok
+test slice::tests::watch_labels_follow_only_the_rebased_recorded_beats ... ok
+test slice::tier::tests::a_line_spans_its_ends ... ok
+test slice::tier::tests::the_trail_finds_the_hero_between_its_samples ... ok
+test slice::watchdog::tests::it_trips_on_a_stalled_main_thread_or_capture_and_not_before ... ok
+test slice::watchdog::tests::silent_buffers_do_not_look_like_a_capture_stall ... ok
+test slice::fx::density_tests::source_boss_debris_lives_past_one_second_and_only_hit_decals_shorten ... ok
+test slice::sounds::tests::a_started_voice_stays_when_a_new_beat_moves_its_slot ... ok
+test slice::sounds::tests::a_kill_group_changing_after_its_voice_played_sounds_nothing_more ... ok
+test slice::sounds::tests::sounds_follow_the_speculation_and_kills_share_their_slot ... ok
+Error: Couldn't open input file ('wht?')
+test slice::live::decode_tests::conversion_directories_are_unique_and_failures_clean_them ... ok
+test slice::live::decode_tests::concurrent_decodes_preserve_each_sources_real_pcm ... ok
+test slice::damage::draw_tests::critical_labels_are_larger_and_gold ... FAILED
+test slice::cards::tests::third_card_is_fully_readable_on_the_sims_confirmation_beat ... ok
+test slice::roster::tests::roster_uses_baked_directional_art_or_anchored_thorn_props ... ok
+test slice::sounds::survivor_tests::sword_fire_keeps_its_actual_subdivision_instead_of_snapping_again ... ok
+test slice::sounds::survivor_tests::a_restart_keeps_audible_tails_in_the_budget ... ok
+test slice::sounds::survivor_tests::screen_cues_land_on_their_onset_and_retract_before_start ... ok
+test slice::sounds::survivor_tests::boss_cues_use_decoded_palette_onsets_and_cancel_before_playback ... ok
+test slice::sounds::survivor_tests::rollback_repitches_only_a_gem_that_has_not_started ... ok
+test slice::sounds::survivor_tests::evolution_transients_decode_land_on_the_grant_and_cancel_before_playing ... ok
+test slice::sounds::survivor_tests::weapon_pulse_and_contact_cues_use_real_palette_and_cancel_on_retraction ... ok
+test slice::sounds::survivor_tests::actual_palette_decodes_and_dense_causes_obey_all_caps ... ok
+
+failures:
+
+---- slice::damage::draw_tests::critical_labels_are_larger_and_gold stdout ----
+
+thread 'slice::damage::draw_tests::critical_labels_are_larger_and_gold' (180812587) panicked at crates/app/src/slice/damage.rs:265:65:
+called `Option::unwrap()` on a `None` value
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    slice::damage::draw_tests::critical_labels_are_larger_and_gold
+
+test result: FAILED. 68 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.14s
+
+error: test failed, to rerun pass `-p app --bin playlist-survivors`

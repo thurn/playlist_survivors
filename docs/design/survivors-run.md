@@ -1695,6 +1695,24 @@ Source/staging SHAs and review disposition are recorded in hv-n7fn.33's notes.
 
 ### SP5
 
+Final-evolution density uses the actual five evolutions and six applied max
+passives, with300 minute25-roster foes and up to400 gems. Per-hit recipes
+merge spatially/time-wise and shrink with recent hit density; the hero and
+gem cores draw above additive effects, with HP/HUD and modal showpieces on
+top. Damage remains per-enemy/per-beat; crowded labels share screen space.
+
+An ephemeral ordered spatial broad phase avoids repeated Bible/Wand scans
+without changing contact predicates, target ties or recording. Four actual
+before/after runs match exactly at nondefault lead/late keys. Normal-priority
+1080p frame p99 is 3.18ms stationary and 3.21ms moving with actual attraction/
+pickups, below 4ms; slower background-QoS numbers are separately scoped.
+[Evidence](../../native/evidence/sp5/README.md) keeps raw output, final-density
+stills, snapshot/rollback remeasurement and P's review disposition. Synthetic
+loadouts/HP/gems establish density, not balance or natural acquisition.
+Operator eye/ear/System checks remain pending, with no pause. Play from
+`native/`: `cargo run --release -p app -- --playlist playlists/survivors-30.m3u --delayed`.
+Final source/staging SHAs and review findings go in hv-n7fn.34's native notes.
+
 ## Beyond This Plan
 
 Named so this plan doesn't block them:
