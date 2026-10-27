@@ -1,0 +1,58 @@
+{
+  "item_id": "01a17eeb-6cad-7723-888f-8efcc43cb395",
+  "state": "check-failed",
+  "terminal_reason": "release-run-failed",
+  "target_oid": {
+    "format": "sha1",
+    "bytes": "d20759f674ca093f0399ba0f8c8d6a569335405a"
+  },
+  "range": {
+    "from": {
+      "format": "sha1",
+      "bytes": "ad1e536f07d7b2e26c5dd85c07f72ee93e55a332"
+    },
+    "to": {
+      "format": "sha1",
+      "bytes": "d20759f674ca093f0399ba0f8c8d6a569335405a"
+    }
+  },
+  "failing_steps": [
+    "ci-full-survivors",
+    "ci-full-survivors-replay"
+  ],
+  "steps": [
+    {
+      "name": "gate",
+      "result_class": "success",
+      "elapsed_ms": 62083
+    },
+    {
+      "name": "ci-full-baker",
+      "result_class": "success",
+      "elapsed_ms": 5147
+    },
+    {
+      "name": "ci-full-analysis",
+      "result_class": "success",
+      "elapsed_ms": 43225
+    },
+    {
+      "name": "ci-full-native",
+      "result_class": "success",
+      "elapsed_ms": 282260
+    },
+    {
+      "name": "ci-full-survivors",
+      "result_class": "timeout",
+      "elapsed_ms": 1200895
+    },
+    {
+      "name": "ci-full-survivors-replay",
+      "result_class": "skipped",
+      "elapsed_ms": 0
+    }
+  ],
+  "retry_of_item_id": null,
+  "buildset_id": "01a17ef7-e3a7-7bf1-8481-889acbe509a1",
+  "elapsed_ms": 1593744
+}

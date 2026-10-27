@@ -557,6 +557,10 @@ and keeps run continuity. Fast174BPM entrances now fit their actual known lead.
 late keys, tempos, source overlap and silent labelled captures. Human/System
 feel remains pending; the bead records cold review, checks and candidate.
 
+A [long-run repair](../../native/evidence/fr-ci15/README.md) cancels abandoned
+signature descent/slam deadlines on death/retreat, preventing a zero-advance
+simulation loop. Existing damage, mainbeat choreography and CI budgets remain.
+
 ### FR9 — Presentation
 
 Pending implementation.

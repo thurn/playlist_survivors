@@ -1,0 +1,20 @@
+[
+  {
+    "case": "seed4",
+    "done": true,
+    "fallen": false,
+    "survivalS": 1800.0,
+    "lowestHpShare": 1.0,
+    "settledRecords": 22203956,
+    "settledHash": "f9e6625092c353c4"
+  },
+  {
+    "case": "continuous-seed5",
+    "done": true,
+    "fallen": false,
+    "survivalS": 1800.0,
+    "lowestHpShare": 1.0,
+    "settledRecords": 22645869,
+    "settledHash": "cb606b06a306957d"
+  }
+]

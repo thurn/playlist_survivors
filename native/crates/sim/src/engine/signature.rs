@@ -94,6 +94,9 @@ impl Sim {
             self.boss_cue(BossCueKind::Warning, usize::MAX, 0.0, 0.0);
         }
         if self.st.signature.started && self.st.boss_foe.is_none_or(|id| !self.st.foes[id].alive) {
+            self.st.signature.landing = None;
+            self.st.signature.mark = None;
+            self.st.slam_marks.clear();
             return;
         }
         // Stage after the scheduled early boss's beat, with at least350ms actual notice.
@@ -181,6 +184,9 @@ impl Sim {
             return;
         };
         if self.st.run_s >= landed + config.retreat_s {
+            // A cancelled slam cannot keep signature_stop at the current clock.
+            self.st.signature.mark = None;
+            self.st.slam_marks.clear();
             if !self.st.signature.retreat {
                 self.boss_retreat();
                 self.st.signature.retreat = true;

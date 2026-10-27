@@ -281,3 +281,42 @@ fn signature_warning_restarts_camera_after_a_previous_source_boss() {
     assert!(s.st.boss_presentation.zoom(s.st.run_s) < 0.9);
     assert!(s.st.boss_presentation.landed_run.is_none());
 }
+
+#[test]
+fn signature_death_and_retreat_cancel_pending_slam_deadlines() {
+    for dead in [false, true] {
+        let (_, mut s) = base(128.0);
+        for i in 10800..12600 {
+            s.advance_to(f64::from(i) / 120.0);
+            if !s.st.slam_marks.is_empty() {
+                break;
+            }
+        }
+        assert!(
+            !s.st.slam_marks.is_empty(),
+            "actual boss never marked a slam"
+        );
+        let id = s.st.boss_foe.unwrap();
+        if dead {
+            s.st.foes[id].alive = false;
+        } else {
+            s.st.run_s = 200.0;
+        }
+        let cancelled_deadline = s.signature_stop();
+        assert!(cancelled_deadline.is_finite());
+        s.tick_signature();
+        assert!(
+            s.signature_stop().is_infinite(),
+            "dead{dead}: cancelled slam still owns a deadline"
+        );
+        assert!(s.st.slam_marks.is_empty());
+        s.advance_to(cancelled_deadline + 0.2);
+        assert!(
+            s.st.s > cancelled_deadline,
+            "dead{dead}: clock{} deadline{} end{}",
+            s.st.s,
+            cancelled_deadline,
+            s.st.end_s
+        );
+    }
+}

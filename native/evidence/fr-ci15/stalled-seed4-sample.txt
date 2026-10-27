@@ -1,0 +1,369 @@
+Analysis of sampling ps (pid 74616) every 1 millisecond
+Process:         ps [74616]
+Path:            /Users/USER/Library/Caches/*/ps
+Load Address:    0x1029c0000
+Identifier:      ps
+Version:         0
+Code Type:       ARM64
+Platform:        macOS
+Parent Process:  Python [72696]
+Target Type:     live task
+
+Date/Time:       2026-10-27 13:29:22.988 -0700
+Launch Time:     2026-10-27 13:12:29.243 -0700
+OS Version:      macOS 26.5.2 (25F84)
+Report Version:  7
+Analysis Tool:   /usr/bin/sample
+
+Physical footprint:         4.5G
+Physical footprint (peak):  4.5G
+Idle exit:                  untracked
+----
+
+Call graph:
+    756 Thread_184378330   DispatchQueue_1: com.apple.main-thread  (serial)
+      751 start  (in dyld) + 6992  [0x18db77e00]
+      + 751 main  (in ps) + 52  [0x102a381d8]
+      +   751 _RNvNtCs82bWklYMk3w_3std2rt19lang_start_internal  (in ps) + 952  [0x102d53ddc]
+      +     751 _RNCINvNtCs82bWklYMk3w_3std2rt10lang_startuE0CsaLbGjpWyLu0_2ps  (in ps) + 16  [0x102a3c5a0]
+      +       751 _RINvNtNtCs82bWklYMk3w_3std3sys9backtrace28___rust_begin_short_backtraceFEuuECsaLbGjpWyLu0_2ps  (in ps) + 12  [0x102a26a50]
+      +         751 _RNvCsaLbGjpWyLu0_2ps4main  (in ps) + 412  [0x102a344c0]
+      +           751 _RNvNtCsaLbGjpWyLu0_2ps7survive3run  (in ps) + 9024  [0x1029ee820]
+      +             751 _RNvNtCsczCwz8bLRva_4eval7survive5drive  (in ps) + 720  [0x102a8242c]
+      +               751 _RNvMs2_NtCsczCwz8bLRva_4eval4liveNtB5_6Engine5frame  (in ps) + 1472  [0x102a61d5c]
+      +                 751 _RNvMs2_NtCsczCwz8bLRva_4eval4liveNtB5_6Engine3run  (in ps) + 396  [0x102a615d0]
+      +                   517 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim10advance_to  (in ps) + 100  [0x102b27d20]
+      +                   ! 220 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim4step  (in ps) + 46204  [0x102b3a3c8]
+      +                   ! : 83 _RNvMNtNtCs79wx9WQuwnR_3sim6engine7weaponsNtB4_3Sim12tick_weapons  (in ps) + 8604  [0x102b1d268]
+      +                   ! : | 26 _RNvMNtNtCs79wx9WQuwnR_3sim6engine8contactsNtB2_8Contacts3new  (in ps) + 1144  [0x102c62c84]
+      +                   ! : | + 25 _RNvMs4_NtCshxvaOLs88l5_5alloc7raw_vecINtB5_6RawVecjE8grow_oneCsiCtT7m9ln6d_12serde_saphyr  (in ps) + 60  [0x102d85700]
+      +                   ! : | + ! 18 _RNvMs5_NtCshxvaOLs88l5_5alloc7raw_vecNtB5_11RawVecInner11finish_growCsiCtT7m9ln6d_12serde_saphyr  (in ps) + 120  [0x102d857a4]
+      +                   ! : | + ! : 6 <deduplicated_symbol>  (in libsystem_malloc.dylib) + 112,68,...  [0x18dd52144,0x18dd52118,...]
+      +                   ! : | + ! : 3 _malloc_zone_malloc  (in libsystem_malloc.dylib) + 12,44,...  [0x18dd62044,0x18dd62064,...]
+      +                   ! : | + ! : 3 _xzm_xzone_malloc_tiny  (in libsystem_malloc.dylib) + 96,256,...  [0x18dd57f34,0x18dd57fd4,...]
+      +                   ! : | + ! : 2 _RNvCs1njKG4L9aB3_7___rustc11___rdl_alloc  (in ps) + 0  [0x102d42484]
+      +                   ! : | + ! : 2 _xzm_xzone_malloc  (in libsystem_malloc.dylib) + 8,180  [0x18dd528c8,0x18dd52974]
+      +                   ! : | + ! : 1 DYLD-STUB$$malloc  (in ps) + 4  [0x102d90b74]
+      +                   ! : | + ! : 1 _RNvCs1njKG4L9aB3_7___rustc12___rust_alloc  (in ps) + 0  [0x102a4d328]
+      +                   ! : | + ! 6 _RNvMs5_NtCshxvaOLs88l5_5alloc7raw_vecNtB5_11RawVecInner11finish_growCsiCtT7m9ln6d_12serde_saphyr  (in ps) + 36,44,...  [0x102d85750,0x102d85758,...]
+      +                   ! : | + ! 1 _RNvMs5_NtCshxvaOLs88l5_5alloc7raw_vecNtB5_11RawVecInner11finish_growCsiCtT7m9ln6d_12serde_saphyr  (in ps) + 108  [0x102d85798]
+      +                   ! : | + !   1 _RNvCs1njKG4L9aB3_7___rustc35___rust_no_alloc_shim_is_unstable_v2  (in ps) + 0  [0x102a4d338]
+      +                   ! : | + 1 _RNvMNtNtCs79wx9WQuwnR_3sim6engine8contactsNtB2_8Contacts3new  (in ps) + 508  [0x102c62a08]
+      +                   ! : | 24 _RNvMNtNtCs79wx9WQuwnR_3sim6engine8contactsNtB2_8Contacts3new  (in ps) + 832  [0x102c62b4c]
+      +                   ! : | + 18 _RNvMNtNtCs79wx9WQuwnR_3sim6engine8contactsNtB2_8Contacts3new  (in ps) + 876,960,...  [0x102c62b78,0x102c62bcc,...]
+      +                   ! : | + 3 _RINvYNtNtNtCs82bWklYMk3w_3std4hash6random11RandomStateNtNtCs8Mbv00yxnRz_4core4hash11BuildHasher8hash_oneRTxxEECs79wx9WQuwnR_3sim  (in ps) + 92  [0x102c19f6c]
+      +                   ! : | + ! 3 _RNvXs3_NtNtCs8Mbv00yxnRz_4core4hash3sipINtB5_6HasherNtB5_11Sip13RoundsENtB7_6Hasher5writeCs79wx9WQuwnR_3sim  (in ps) + 400,380  [0x102c28748,0x102c28734]
+      +                   ! : | + 3 _RINvYNtNtNtCs82bWklYMk3w_3std4hash6random11RandomStateNtNtCs8Mbv00yxnRz_4core4hash11BuildHasher8hash_oneRTxxEECs79wx9WQuwnR_3sim  (in ps) + 248,252,...  [0x102c1a008,0x102c1a00c,...]
+      +                   ! : | 16 _RNvMNtNtCs79wx9WQuwnR_3sim6engine8contactsNtB2_8Contacts3new  (in ps) + 552  [0x102c62a34]
+      +                   ! : | + 5 _RNvMNtNtCs79wx9WQuwnR_3sim6engine4foesNtB4_3Sim3pos  (in ps) + 684  [0x102b0bbf0]
+      +                   ! : | + ! 5 pow  (in libsystem_m.dylib) + 44,128,...  [0x19dce202c,0x19dce2080,...]
+      +                   ! : | + 5 _RNvMNtNtCs79wx9WQuwnR_3sim6engine4foesNtB4_3Sim3pos  (in ps) + 92,124,...  [0x102b0b9a0,0x102b0b9c0,...]
+      +                   ! : | + 4 _RNvMNtNtCs79wx9WQuwnR_3sim6engine8contactsNtB2_8Contacts3new  (in ps) + 624,552,...  [0x102c62a7c,0x102c62a34,...]
+      +                   ! : | + 2 _RNvMNtNtCs79wx9WQuwnR_3sim6engine4foesNtB4_3Sim3pos  (in ps) + 636  [0x102b0bbc0]
+      +                   ! : | +   2 pow  (in libsystem_m.dylib) + 20,808  [0x19dce2014,0x19dce2328]
+      +                   ! : | 10 _RNvMNtNtCs79wx9WQuwnR_3sim6engine8contactsNtB2_8Contacts3new  (in ps) + 1232  [0x102c62cdc]
+      +                   ! : | + 8 _RINvMs6_NtCs3fRkGY2FHAU_9hashbrown3rawINtB6_8RawTableTTxxEINtNtCshxvaOLs88l5_5alloc3vec3VecjEEE14reserve_rehashNCINvNtB8_3map11make_hasherBQ_BU_NtNtNtCs82bWklYMk3w_3std4hash6random11RandomStateE0ECs79wx9WQuwnR_3sim  (in ps) + 268  [0x102d7d070]
+      +                   ! : | + ! 4 _RINvYNtNtNtCs82bWklYMk3w_3std4hash6random11RandomStateNtNtCs8Mbv00yxnRz_4core4hash11BuildHasher8hash_oneRTxxEECs79wx9WQuwnR_3sim  (in ps) + 92  [0x102c19f6c]
+      +                   ! : | + ! : 4 _RNvXs3_NtNtCs8Mbv00yxnRz_4core4hash3sipINtB5_6HasherNtB5_11Sip13RoundsENtB7_6Hasher5writeCs79wx9WQuwnR_3sim  (in ps) + 0,348,...  [0x102c285b8,0x102c28714,...]
+      +                   ! : | + ! 2 _RINvYNtNtNtCs82bWklYMk3w_3std4hash6random11RandomStateNtNtCs8Mbv00yxnRz_4core4hash11BuildHasher8hash_oneRTxxEECs79wx9WQuwnR_3sim  (in ps) + 112  [0x102c19f80]
+      +                   ! : | + ! : 2 _RNvXs3_NtNtCs8Mbv00yxnRz_4core4hash3sipINtB5_6HasherNtB5_11Sip13RoundsENtB7_6Hasher5writeCs79wx9WQuwnR_3sim  (in ps) + 360,452  [0x102c28720,0x102c2877c]
+      +                   ! : | + ! 2 _RINvYNtNtNtCs82bWklYMk3w_3std4hash6random11RandomStateNtNtCs8Mbv00yxnRz_4core4hash11BuildHasher8hash_oneRTxxEECs79wx9WQuwnR_3sim  (in ps) + 172,272  [0x102c19fbc,0x102c1a020]
+      +                   ! : | + 2 _RINvMs6_NtCs3fRkGY2FHAU_9hashbrown3rawINtB6_8RawTableTTxxEINtNtCshxvaOLs88l5_5alloc3vec3VecjEEE14reserve_rehashNCINvNtB8_3map11make_hasherBQ_BU_NtNtNtCs82bWklYMk3w_3std4hash6random11RandomStateE0ECs79wx9WQuwnR_3sim  (in ps) + 120  [0x102d7cfdc]
+      +                   ! : | +   1 _RINvMsa_NtCs3fRkGY2FHAU_9hashbrown3rawNtB6_13RawTableInner22fallible_with_capacityNtNtCshxvaOLs88l5_5alloc5alloc6GlobalECs79wx9WQuwnR_3sim  (in ps) + 244  [0x102c4a8a4]
+      +                   ! : | +   : 1 _malloc_zone_malloc  (in libsystem_malloc.dylib) + 12  [0x18dd62044]
+      +                   ! : | +   1 _RINvMsa_NtCs3fRkGY2FHAU_9hashbrown3rawNtB6_13RawTableInner22fallible_with_capacityNtNtCshxvaOLs88l5_5alloc5alloc6GlobalECs79wx9WQuwnR_3sim  (in ps) + 160  [0x102c4a850]
+      +                   ! : | 2 _RINvYNtNtNtCs82bWklYMk3w_3std4hash6random11RandomStateNtNtCs8Mbv00yxnRz_4core4hash11BuildHasher8hash_oneRTxxEECs79wx9WQuwnR_3sim  (in ps) + 300  [0x102c1a03c]
+      +                   ! : | 2 _RNvMNtNtCs79wx9WQuwnR_3sim6engine4foesNtB4_3Sim3pos  (in ps) + 748  [0x102b0bc30]
+      +                   ! : | 2 _RNvMs4_NtCshxvaOLs88l5_5alloc7raw_vecINtB5_6RawVecjE8grow_oneCsiCtT7m9ln6d_12serde_saphyr  (in ps) + 84  [0x102d85718]
+      +                   ! : | 1 _RINvMs6_NtCs3fRkGY2FHAU_9hashbrown3rawINtB6_8RawTableTTxxEINtNtCshxvaOLs88l5_5alloc3vec3VecjEEE14reserve_rehashNCINvNtB8_3map11make_hasherBQ_BU_NtNtNtCs82bWklYMk3w_3std4hash6random11RandomStateE0ECs79wx9WQuwnR_3sim  (in ps) + 1044  [0x102d7d378]
+      +                   ! : 83 _RNvMNtNtCs79wx9WQuwnR_3sim6engine7weaponsNtB4_3Sim12tick_weapons  (in ps) + 12024  [0x102b1dfc4]
+      +                   ! : | 29 _RNvMNtNtCs79wx9WQuwnR_3sim6engine8contactsNtB2_8Contacts3new  (in ps) + 1144  [0x102c62c84]
+      +                   ! : | + 25 _RNvMs4_NtCshxvaOLs88l5_5alloc7raw_vecINtB5_6RawVecjE8grow_oneCsiCtT7m9ln6d_12serde_saphyr  (in ps) + 60  [0x102d85700]
+      +                   ! : | + ! 16 _RNvMs5_NtCshxvaOLs88l5_5alloc7raw_vecNtB5_11RawVecInner11finish_growCsiCtT7m9ln6d_12serde_saphyr  (in ps) + 120  [0x102d857a4]
+      +                   ! : | + ! : 6 _malloc_zone_malloc  (in libsystem_malloc.dylib) + 12,56,...  [0x18dd62044,0x18dd62070,...]
+      +                   ! : | + ! : 5 _xzm_xzone_malloc_tiny  (in libsystem_malloc.dylib) + 12,516,...  [0x18dd57ee0,0x18dd580d8,...]
+      +                   ! : | + ! : 4 <deduplicated_symbol>  (in libsystem_malloc.dylib) + 112,212  [0x18dd52144,0x18dd521a8]
+      +                   ! : | + ! : 1 _xzm_xzone_malloc  (in libsystem_malloc.dylib) + 324  [0x18dd52a04]
+      +                   ! : | + ! 6 _RNvMs5_NtCshxvaOLs88l5_5alloc7raw_vecNtB5_11RawVecInner11finish_growCsiCtT7m9ln6d_12serde_saphyr  (in ps) + 36,44,...  [0x102d85750,0x102d85758,...]
+      +                   ! : | + ! 3 _RNvMs5_NtCshxvaOLs88l5_5alloc7raw_vecNtB5_11RawVecInner11finish_growCsiCtT7m9ln6d_12serde_saphyr  (in ps) + 108  [0x102d85798]
+      +                   ! : | + !   3 _RNvCs1njKG4L9aB3_7___rustc35___rust_no_alloc_shim_is_unstable_v2  (in ps) + 0  [0x102a4d338]
+      +                   ! : | + 2 _RNvMNtNtCs79wx9WQuwnR_3sim6engine8contactsNtB2_8Contacts3new  (in ps) + 356,508  [0x102c62970,0x102c62a08]
+      +                   ! : | + 2 _RNvMs5_NtCshxvaOLs88l5_5alloc7raw_vecNtB5_11RawVecInner11finish_growCsiCtT7m9ln6d_12serde_saphyr  (in ps) + 172  [0x102d857d8]
+      +                   ! : | 17 _RNvMNtNtCs79wx9WQuwnR_3sim6engine8contactsNtB2_8Contacts3new  (in ps) + 552  [0x102c62a34]
+      +                   ! : | + 6 _RNvMNtNtCs79wx9WQuwnR_3sim6engine4foesNtB4_3Sim3pos  (in ps) + 684  [0x102b0bbf0]
+      +                   ! : | + ! 6 pow  (in libsystem_m.dylib) + 128,144,...  [0x19dce2080,0x19dce2090,...]
+      +                   ! : | + 6 _RNvMNtNtCs79wx9WQuwnR_3sim6engine4foesNtB4_3Sim3pos  (in ps) + 532,288,...  [0x102b0bb58,0x102b0ba64,...]
+      +                   ! : | + 2 _RNvMNtNtCs79wx9WQuwnR_3sim6engine4foesNtB4_3Sim3pos  (in ps) + 636  [0x102b0bbc0]
+      +                   ! : | + ! 1 DYLD-STUB$$pow  (in ps) + 4  [0x102d90ca0]
+      +                   ! : | + ! 1 pow  (in libsystem_m.dylib) + 552  [0x19dce2228]
+      +                   ! : | + 2 _RNvMNtNtCs79wx9WQuwnR_3sim6engine8contactsNtB2_8Contacts3new  (in ps) + 552  [0x102c62a34]
+      +                   ! : | + 1 pow  (in libsystem_m.dylib) + 520  [0x19dce2208]
+      +                   ! : | 17 _RNvMNtNtCs79wx9WQuwnR_3sim6engine8contactsNtB2_8Contacts3new  (in ps) + 1232  [0x102c62cdc]
+      +                   ! : | + 12 _RINvMs6_NtCs3fRkGY2FHAU_9hashbrown3rawINtB6_8RawTableTTxxEINtNtCshxvaOLs88l5_5alloc3vec3VecjEEE14reserve_rehashNCINvNtB8_3map11make_hasherBQ_BU_NtNtNtCs82bWklYMk3w_3std4hash6random11RandomStateE0ECs79wx9WQuwnR_3sim  (in ps) + 268  [0x102d7d070]
+      +                   ! : | + ! 6 _RINvYNtNtNtCs82bWklYMk3w_3std4hash6random11RandomStateNtNtCs8Mbv00yxnRz_4core4hash11BuildHasher8hash_oneRTxxEECs79wx9WQuwnR_3sim  (in ps) + 112  [0x102c19f80]
+      +                   ! : | + ! : 6 _RNvXs3_NtNtCs8Mbv00yxnRz_4core4hash3sipINtB5_6HasherNtB5_11Sip13RoundsENtB7_6Hasher5writeCs79wx9WQuwnR_3sim  (in ps) + 376,444,...  [0x102c28730,0x102c28774,...]
+      +                   ! : | + ! 5 _RINvYNtNtNtCs82bWklYMk3w_3std4hash6random11RandomStateNtNtCs8Mbv00yxnRz_4core4hash11BuildHasher8hash_oneRTxxEECs79wx9WQuwnR_3sim  (in ps) + 144,120,...  [0x102c19fa0,0x102c19f88,...]
+      +                   ! : | + ! 1 _RINvYNtNtNtCs82bWklYMk3w_3std4hash6random11RandomStateNtNtCs8Mbv00yxnRz_4core4hash11BuildHasher8hash_oneRTxxEECs79wx9WQuwnR_3sim  (in ps) + 92  [0x102c19f6c]
+      +                   ! : | + !   1 _RNvXs3_NtNtCs8Mbv00yxnRz_4core4hash3sipINtB5_6HasherNtB5_11Sip13RoundsENtB7_6Hasher5writeCs79wx9WQuwnR_3sim  (in ps) + 376  [0x102c28730]
+      +                   ! : | + 3 _RINvMs6_NtCs3fRkGY2FHAU_9hashbrown3rawINtB6_8RawTableTTxxEINtNtCshxvaOLs88l5_5alloc3vec3VecjEEE14reserve_rehashNCINvNtB8_3map11make_hasherBQ_BU_NtNtNtCs82bWklYMk3w_3std4hash6random11RandomStateE0ECs79wx9WQuwnR_3sim  (in ps) + 204  [0x102d7d030]
+      +                   ! : | + 1 _RINvMs6_NtCs3fRkGY2FHAU_9hashbrown3rawINtB6_8RawTableTTxxEINtNtCshxvaOLs88l5_5alloc3vec3VecjEEE14reserve_rehashNCINvNtB8_3map11make_hasherBQ_BU_NtNtNtCs82bWklYMk3w_3std4hash6random11RandomStateE0ECs79wx9WQuwnR_3sim  (in ps) + 120  [0x102d7cfdc]
+      +                   ! : | + ! 1 _RINvMsa_NtCs3fRkGY2FHAU_9hashbrown3rawNtB6_13RawTableInner22fallible_with_capacityNtNtCshxvaOLs88l5_5alloc5alloc6GlobalECs79wx9WQuwnR_3sim  (in ps) + 244  [0x102c4a8a4]
+      +                   ! : | + !   1 DYLD-STUB$$malloc  (in ps) + 4  [0x102d90b74]
+      +                   ! : | + 1 _RINvMs6_NtCs3fRkGY2FHAU_9hashbrown3rawINtB6_8RawTableTTxxEINtNtCshxvaOLs88l5_5alloc3vec3VecjEEE14reserve_rehashNCINvNtB8_3map11make_hasherBQ_BU_NtNtNtCs82bWklYMk3w_3std4hash6random11RandomStateE0ECs79wx9WQuwnR_3sim  (in ps) + 1164  [0x102d7d3f0]
+      +                   ! : | +   1 _free  (in libsystem_malloc.dylib) + 0  [0x18dd62c4c]
+      +                   ! : | 16 _RNvMNtNtCs79wx9WQuwnR_3sim6engine8contactsNtB2_8Contacts3new  (in ps) + 832  [0x102c62b4c]
+      +                   ! : | + 11 _RNvMNtNtCs79wx9WQuwnR_3sim6engine8contactsNtB2_8Contacts3new  (in ps) + 876,960,...  [0x102c62b78,0x102c62bcc,...]
+      +                   ! : | + 4 _RINvYNtNtNtCs82bWklYMk3w_3std4hash6random11RandomStateNtNtCs8Mbv00yxnRz_4core4hash11BuildHasher8hash_oneRTxxEECs79wx9WQuwnR_3sim  (in ps) + 92  [0x102c19f6c]
+      +                   ! : | + ! 4 _RNvXs3_NtNtCs8Mbv00yxnRz_4core4hash3sipINtB5_6HasherNtB5_11Sip13RoundsENtB7_6Hasher5writeCs79wx9WQuwnR_3sim  (in ps) + 380,400,...  [0x102c28734,0x102c28748,...]
+      +                   ! : | + 1 _RINvYNtNtNtCs82bWklYMk3w_3std4hash6random11RandomStateNtNtCs8Mbv00yxnRz_4core4hash11BuildHasher8hash_oneRTxxEECs79wx9WQuwnR_3sim  (in ps) + 112  [0x102c19f80]
+      +                   ! : | +   1 _RNvXs3_NtNtCs8Mbv00yxnRz_4core4hash3sipINtB5_6HasherNtB5_11Sip13RoundsENtB7_6Hasher5writeCs79wx9WQuwnR_3sim  (in ps) + 444  [0x102c28774]
+      +                   ! : | 4 _RINvYNtNtNtCs82bWklYMk3w_3std4hash6random11RandomStateNtNtCs8Mbv00yxnRz_4core4hash11BuildHasher8hash_oneRTxxEECs79wx9WQuwnR_3sim  (in ps) + 300  [0x102c1a03c]
+      +                   ! : 27 _RNvMNtNtCs79wx9WQuwnR_3sim6engine7weaponsNtB4_3Sim12tick_weapons  (in ps) + 8072  [0x102b1d054]
+      +                   ! : | 27 _RNvXNtNtCshxvaOLs88l5_5alloc3vec21spec_from_iter_nestedINtB4_3VecjEINtB2_18SpecFromIterNestedjINtNtNtNtCs8Mbv00yxnRz_4core4iter8adapters6filter6FilterINtNtB1z_6copied6CopiedINtNtNtB1D_5slice4iter4IterjEENCNvMNtNtCs79wx9WQuwnR_3sim6engine7weaponsNtB3m_3Sim11tick_garlic0EE9from_iterB3o_  (in ps) + 80  [0x102b56398]
+      +                   ! : |   19 _RNvXs1_NtNtNtCs8Mbv00yxnRz_4core3ops8function5implsQNCNvMNtNtCs79wx9WQuwnR_3sim6engine7weaponsNtBV_3Sim11tick_garlic0INtB7_5FnMutTRjEE8call_mutBX_  (in ps) + 512  [0x102c10724]
+      +                   ! : |   + 12 _RNvMNtNtCs79wx9WQuwnR_3sim6engine4foesNtB4_3Sim3pos  (in ps) + 36,204,...  [0x102b0b968,0x102b0ba10,...]
+      +                   ! : |   + 5 _RNvMNtNtCs79wx9WQuwnR_3sim6engine4foesNtB4_3Sim3pos  (in ps) + 684  [0x102b0bbf0]
+      +                   ! : |   + ! 5 pow  (in libsystem_m.dylib) + 288,20,...  [0x19dce2120,0x19dce2014,...]
+      +                   ! : |   + 2 _RNvMNtNtCs79wx9WQuwnR_3sim6engine4foesNtB4_3Sim3pos  (in ps) + 636  [0x102b0bbc0]
+      +                   ! : |   +   2 pow  (in libsystem_m.dylib) + 20,552  [0x19dce2014,0x19dce2228]
+      +                   ! : |   5 _RNvXs1_NtNtNtCs8Mbv00yxnRz_4core3ops8function5implsQNCNvMNtNtCs79wx9WQuwnR_3sim6engine7weaponsNtBV_3Sim11tick_garlic0INtB7_5FnMutTRjEE8call_mutBX_  (in ps) + 704  [0x102c107e4]
+      +                   ! : |   + 5 _RNvNtNtCs79wx9WQuwnR_3sim4core8geometry14shape_contains  (in ps) + 1080,856,...  [0x102c64d38,0x102c64c58,...]
+      +                   ! : |   3 _RNvXs1_NtNtNtCs8Mbv00yxnRz_4core3ops8function5implsQNCNvMNtNtCs79wx9WQuwnR_3sim6engine7weaponsNtBV_3Sim11tick_garlic0INtB7_5FnMutTRjEE8call_mutBX_  (in ps) + 416,40  [0x102c106c4,0x102c1054c]
+      +                   ! : 11 _RNvMNtNtCs79wx9WQuwnR_3sim6engine7weaponsNtB4_3Sim12tick_weapons  (in ps) + 11936  [0x102b1df6c]
+      +                   ! : | 4 _xzm_free  (in libsystem_malloc.dylib) + 352  [0x18dd531cc]
+      +                   ! : | + 3 DYLD-STUB$$_platform_bzero  (in libsystem_malloc.dylib) + 12  [0x18dd6a7f8]
+      +                   ! : | + 1 _platform_memset  (in libsystem_platform.dylib) + 180  [0x18df3f144]
+      +                   ! : | 3 _RNvMNtNtCs79wx9WQuwnR_3sim6engine7weaponsNtB4_3Sim12tick_weapons  (in ps) + 11872,11940  [0x102b1df2c,0x102b1df70]
+      +                   ! : | 3 _xzm_free  (in libsystem_malloc.dylib) + 220,252,...  [0x18dd53148,0x18dd53168,...]
+      +                   ! : | 1 _free  (in libsystem_malloc.dylib) + 108  [0x18dd62cb8]
+      +                   ! : 7 _RNvMNtNtCs79wx9WQuwnR_3sim6engine7weaponsNtB4_3Sim12tick_weapons  (in ps) + 14808  [0x102b1eaa4]
+      +                   ! : | 3 _xzm_free  (in libsystem_malloc.dylib) + 196,236,...  [0x18dd53130,0x18dd53158,...]
+      +                   ! : | 2 _free  (in libsystem_malloc.dylib) + 0,56  [0x18dd62c4c,0x18dd62c84]
+      +                   ! : | 2 _xzm_free  (in libsystem_malloc.dylib) + 352  [0x18dd531cc]
+      +                   ! : |   2 _platform_memset  (in libsystem_platform.dylib) + 180  [0x18df3f144]
+      +                   ! : 3 _RNvMNtNtCs79wx9WQuwnR_3sim6engine7weaponsNtB4_3Sim12tick_weapons  (in ps) + 220  [0x102b1b1a8]
+      +                   ! : | 3 _RNvMs2_NtNtCs79wx9WQuwnR_3sim9survivors7arsenalNtB5_7Arsenal7prepare  (in ps) + 104  [0x102bff7f8]
+      +                   ! : |   2 _RNvXNtNtCshxvaOLs88l5_5alloc3vec21spec_from_iter_nestedINtB4_3VecINtNtNtCs79wx9WQuwnR_3sim9survivors7arsenal5OwnedNtNtB16_7weapons8WeaponIdEEINtB2_18SpecFromIterNestedB11_INtNtNtNtCs8Mbv00yxnRz_4core4iter8adapters7flatten7FlattenINtNtB2O_6copied6CopiedINtNtNtB2S_5slice4iter4IterINtNtB2S_6option6OptionB11_EEEEE9from_iterB18_  (in ps) + 80  [0x102b52cc8]
+      +                   ! : |   + 1 _malloc_zone_malloc  (in libsystem_malloc.dylib) + 0  [0x18dd62038]
+      +                   ! : |   + 1 _xzm_xzone_malloc_tiny  (in libsystem_malloc.dylib) + 256  [0x18dd57fd4]
+      +                   ! : |   1 _RNvXNtNtCshxvaOLs88l5_5alloc3vec21spec_from_iter_nestedINtB4_3VecINtNtNtCs79wx9WQuwnR_3sim9survivors7arsenal5OwnedNtNtB16_7weapons8WeaponIdEEINtB2_18SpecFromIterNestedB11_INtNtNtNtCs8Mbv00yxnRz_4core4iter8adapters7flatten7FlattenINtNtB2O_6copied6CopiedINtNtNtB2S_5slice4iter4IterINtNtB2S_6option6OptionB11_EEEEE9from_iterB18_  (in ps) + 28  [0x102b52c94]
+      +                   ! : 3 _RNvMNtNtCs79wx9WQuwnR_3sim6engine7weaponsNtB4_3Sim12tick_weapons  (in ps) + 14648  [0x102b1ea04]
+      +                   ! : | 3 _RINvMs_NtCshxvaOLs88l5_5alloc3vecINtB5_3VecjE6retainNCNvMs_NtNtCs79wx9WQuwnR_3sim6engine5bibleNtBX_3Sim11tick_bibless3_0EBZ_  (in ps) + 244,256  [0x102b4d750,0x102b4d75c]
+      +                   ! : 2 _RNvMNtNtCs79wx9WQuwnR_3sim6engine7weaponsNtB4_3Sim12tick_weapons  (in ps) + 11776  [0x102b1decc]
+      +                   ! : | 2 _RINvMs_NtCshxvaOLs88l5_5alloc3vecINtB5_3VecjE6retainNCNvMNtNtCs79wx9WQuwnR_3sim6engine8missilesNtBV_3Sim13tick_missiless3_0EBX_  (in ps) + 256  [0x102b4d284]
+      +                   ! : 1 _RNvMNtNtCs79wx9WQuwnR_3sim6engine7weaponsNtB4_3Sim12tick_weapons  (in ps) + 14852  [0x102b1ead0]
+      +                   ! :   1 _xzm_free  (in libsystem_malloc.dylib) + 1048  [0x18dd53484]
+      +                   ! :     1 mach_absolute_time  (in libsystem_kernel.dylib) + 108  [0x18def210c]
+      +                   ! 186 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim4step  (in ps) + 76  [0x102b2ef98]
+      +                   ! : 86 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim9next_stop  (in ps) + 148  [0x102b41d8c]
+      +                   ! : | 86 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim13next_stop_now  (in ps) + 1632  [0x102b2c514]
+      +                   ! : |   84 _RNvMNtNtCs79wx9WQuwnR_3sim6engine17boss_presentationNtB4_3Sim16next_boss_notice  (in ps) + 620  [0x102b09db8]
+      +                   ! : |   + 47 _RINvXs0_NtNtNtCs8Mbv00yxnRz_4core4iter8adapters3mapINtB6_3MapINtNtB8_6filter6FilterINtNtNtBc_5slice4iter4IterNtNtNtCs79wx9WQuwnR_3sim9survivors8spawning11SpawnMinuteENCNvMNtNtB1P_6engine17boss_presentationNtB2L_3Sim16next_boss_notice0ENCB2G_s_0ENtNtNtBa_6traits8iterator8Iterator4foldTjdENCINvNvB3V_6min_by4foldB4y_NCB2G_s0_0E0EB1P_  (in ps) + 212  [0x102c42484]
+      +                   ! : |   + ! 46 _RNvNtNtCs79wx9WQuwnR_3sim9survivors6bosses8boss_bar  (in ps) + 76,100,...  [0x102c017e0,0x102c017f8,...]
+      +                   ! : |   + ! 1 _RINvXs0_NtNtNtCs8Mbv00yxnRz_4core4iter8adapters3mapINtB6_3MapINtNtB8_6filter6FilterINtNtNtBc_5slice4iter4IterNtNtNtCs79wx9WQuwnR_3sim9survivors8spawning11SpawnMinuteENCNvMNtNtB1P_6engine17boss_presentationNtB2L_3Sim16next_boss_notice0ENCB2G_s_0ENtNtNtBa_6traits8iterator8Iterator4foldTjdENCINvNvB3V_6min_by4foldB4y_NCB2G_s0_0E0EB1P_  (in ps) + 248  [0x102c424a8]
+      +                   ! : |   + 37 _RINvXs0_NtNtNtCs8Mbv00yxnRz_4core4iter8adapters3mapINtB6_3MapINtNtB8_6filter6FilterINtNtNtBc_5slice4iter4IterNtNtNtCs79wx9WQuwnR_3sim9survivors8spawning11SpawnMinuteENCNvMNtNtB1P_6engine17boss_presentationNtB2L_3Sim16next_boss_notice0ENCB2G_s_0ENtNtNtBa_6traits8iterator8Iterator4foldTjdENCINvNvB3V_6min_by4foldB4y_NCB2G_s0_0E0EB1P_  (in ps) + 416  [0x102c42550]
+      +                   ! : |   +   37 _RNvNtNtCs79wx9WQuwnR_3sim9survivors6bosses8boss_bar  (in ps) + 76,100,...  [0x102c017e0,0x102c017f8,...]
+      +                   ! : |   2 _RNvMNtNtCs79wx9WQuwnR_3sim6engine17boss_presentationNtB4_3Sim16next_boss_notice  (in ps) + 416  [0x102b09cec]
+      +                   ! : |     2 _RNvNtNtCs79wx9WQuwnR_3sim9survivors6bosses8boss_bar  (in ps) + 76,100  [0x102c017e0,0x102c017f8]
+      +                   ! : 75 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim9next_stop  (in ps) + 64  [0x102b41d38]
+      +                   ! : | 75 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim13next_stop_now  (in ps) + 1632  [0x102b2c514]
+      +                   ! : |   69 _RNvMNtNtCs79wx9WQuwnR_3sim6engine17boss_presentationNtB4_3Sim16next_boss_notice  (in ps) + 620  [0x102b09db8]
+      +                   ! : |   + 38 _RINvXs0_NtNtNtCs8Mbv00yxnRz_4core4iter8adapters3mapINtB6_3MapINtNtB8_6filter6FilterINtNtNtBc_5slice4iter4IterNtNtNtCs79wx9WQuwnR_3sim9survivors8spawning11SpawnMinuteENCNvMNtNtB1P_6engine17boss_presentationNtB2L_3Sim16next_boss_notice0ENCB2G_s_0ENtNtNtBa_6traits8iterator8Iterator4foldTjdENCINvNvB3V_6min_by4foldB4y_NCB2G_s0_0E0EB1P_  (in ps) + 212  [0x102c42484]
+      +                   ! : |   + ! 37 _RNvNtNtCs79wx9WQuwnR_3sim9survivors6bosses8boss_bar  (in ps) + 76,100,...  [0x102c017e0,0x102c017f8,...]
+      +                   ! : |   + ! 1 _RINvXs0_NtNtNtCs8Mbv00yxnRz_4core4iter8adapters3mapINtB6_3MapINtNtB8_6filter6FilterINtNtNtBc_5slice4iter4IterNtNtNtCs79wx9WQuwnR_3sim9survivors8spawning11SpawnMinuteENCNvMNtNtB1P_6engine17boss_presentationNtB2L_3Sim16next_boss_notice0ENCB2G_s_0ENtNtNtBa_6traits8iterator8Iterator4foldTjdENCINvNvB3V_6min_by4foldB4y_NCB2G_s0_0E0EB1P_  (in ps) + 272  [0x102c424c0]
+      +                   ! : |   + 31 _RINvXs0_NtNtNtCs8Mbv00yxnRz_4core4iter8adapters3mapINtB6_3MapINtNtB8_6filter6FilterINtNtNtBc_5slice4iter4IterNtNtNtCs79wx9WQuwnR_3sim9survivors8spawning11SpawnMinuteENCNvMNtNtB1P_6engine17boss_presentationNtB2L_3Sim16next_boss_notice0ENCB2G_s_0ENtNtNtBa_6traits8iterator8Iterator4foldTjdENCINvNvB3V_6min_by4foldB4y_NCB2G_s0_0E0EB1P_  (in ps) + 416  [0x102c42550]
+      +                   ! : |   +   31 _RNvNtNtCs79wx9WQuwnR_3sim9survivors6bosses8boss_bar  (in ps) + 100,76,...  [0x102c017f8,0x102c017e0,...]
+      +                   ! : |   5 _RNvMNtNtCs79wx9WQuwnR_3sim6engine17boss_presentationNtB4_3Sim16next_boss_notice  (in ps) + 416  [0x102b09cec]
+      +                   ! : |   + 5 _RNvNtNtCs79wx9WQuwnR_3sim9survivors6bosses8boss_bar  (in ps) + 100,76,...  [0x102c017f8,0x102c017e0,...]
+      +                   ! : |   1 _RNvMNtNtCs79wx9WQuwnR_3sim6engine17boss_presentationNtB4_3Sim16next_boss_notice  (in ps) + 596  [0x102b09da0]
+      +                   ! : |     1 _RNvNtNtCs79wx9WQuwnR_3sim9survivors6bosses8boss_bar  (in ps) + 84  [0x102c017e8]
+      +                   ! : 25 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim9next_stop  (in ps) + 92  [0x102b41d54]
+      +                   ! :   20 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim6ingest  (in ps) + 2704  [0x102b40fac]
+      +                   ! :   + 13 _RNvMs0_NtNtCs79wx9WQuwnR_3sim6engine6freezeNtB7_3Sim12requeue_held  (in ps) + 1008  [0x102b2155c]
+      +                   ! :   + ! 10 _RNvMs0_NtNtCs79wx9WQuwnR_3sim6engine6freezeNtB7_3Sim16known_grid_after  (in ps) + 148,156,...  [0x102b21eec,0x102b21ef4,...]
+      +                   ! :   + ! 3 _RNvMs0_NtNtCs79wx9WQuwnR_3sim6engine6freezeNtB7_3Sim12requeue_held  (in ps) + 1064,300  [0x102b21594,0x102b21298]
+      +                   ! :   + 6 _RNvMs0_NtNtCs79wx9WQuwnR_3sim6engine6freezeNtB7_3Sim12requeue_held  (in ps) + 2204  [0x102b21a08]
+      +                   ! :   + ! 6 _RNvMs4_NtCshxvaOLs88l5_5alloc7raw_vecINtB5_6RawVecNtNtNtCs79wx9WQuwnR_3sim6engine6freeze4HeldE8grow_oneBS_  (in ps) + 60  [0x102d84ddc]
+      +                   ! :   + !   5 _RNvMs5_NtCshxvaOLs88l5_5alloc7raw_vecNtB5_11RawVecInner11finish_growCs79wx9WQuwnR_3sim  (in ps) + 92  [0x102d84f9c]
+      +                   ! :   + !   : 5 _realloc  (in libsystem_malloc.dylib) + 452  [0x18dd62e90]
+      +                   ! :   + !   :   4 _malloc_zone_realloc  (in libsystem_malloc.dylib) + 148  [0x18dd62674]
+      +                   ! :   + !   :   | 2 xzm_realloc  (in libsystem_malloc.dylib) + 852  [0x18dd52e48]
+      +                   ! :   + !   :   | + 2 _platform_memmove  (in libsystem_platform.dylib) + 180,192  [0x18df3f414,0x18df3f420]
+      +                   ! :   + !   :   | 2 xzm_realloc  (in libsystem_malloc.dylib) + 12,408  [0x18dd52b00,0x18dd52c8c]
+      +                   ! :   + !   :   1 _malloc_zone_realloc  (in libsystem_malloc.dylib) + 88  [0x18dd62638]
+      +                   ! :   + !   1 _RNvMs5_NtCshxvaOLs88l5_5alloc7raw_vecNtB5_11RawVecInner11finish_growCs79wx9WQuwnR_3sim  (in ps) + 120  [0x102d84fb8]
+      +                   ! :   + !     1 _malloc_zone_malloc  (in libsystem_malloc.dylib) + 44  [0x18dd62064]
+      +                   ! :   + 1 _RNvMs0_NtNtCs79wx9WQuwnR_3sim6engine6freezeNtB7_3Sim12requeue_held  (in ps) + 2388  [0x102b21ac0]
+      +                   ! :   +   1 DYLD-STUB$$free  (in ps) + 0  [0x102d90ad4]
+      +                   ! :   5 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim6ingest  (in ps) + 2712  [0x102b40fb4]
+      +                   ! :     3 _RNvMs2_NtNtCs79wx9WQuwnR_3sim6engine4planNtB7_3Sim4plan  (in ps) + 1236  [0x102b24a7c]
+      +                   ! :     ! 2 _RNvMs2_NtNtCs79wx9WQuwnR_3sim6engine4planNtB7_3Sim4plan  (in ps) + 1472,1476  [0x102b24b68,0x102b24b6c]
+      +                   ! :     ! 1 _RNvXs4_NtCshxvaOLs88l5_5alloc6stringNtB5_6StringNtNtCs8Mbv00yxnRz_4core5clone5Clone5clone  (in ps) + 48  [0x102d69dec]
+      +                   ! :     !   1 _malloc_zone_malloc  (in libsystem_malloc.dylib) + 44  [0x18dd62064]
+      +                   ! :     2 _RNvMs2_NtNtCs79wx9WQuwnR_3sim6engine4planNtB7_3Sim4plan  (in ps) + 1212  [0x102b24a64]
+      +                   ! :       2 _RNvXs4_NtCshxvaOLs88l5_5alloc6stringNtB5_6StringNtNtCs8Mbv00yxnRz_4core5clone5Clone5clone  (in ps) + 48  [0x102d69dec]
+      +                   ! :         1 _malloc_zone_malloc  (in libsystem_malloc.dylib) + 64  [0x18dd62078]
+      +                   ! :         1 _xzm_xzone_malloc_tiny  (in libsystem_malloc.dylib) + 672  [0x18dd58174]
+      +                   ! 94 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim4step  (in ps) + 46356  [0x102b3a460]
+      +                   ! : 88 _RNvMNtNtCs79wx9WQuwnR_3sim6engine17boss_presentationNtB4_3Sim16next_boss_notice  (in ps) + 620  [0x102b09db8]
+      +                   ! : | 48 _RINvXs0_NtNtNtCs8Mbv00yxnRz_4core4iter8adapters3mapINtB6_3MapINtNtB8_6filter6FilterINtNtNtBc_5slice4iter4IterNtNtNtCs79wx9WQuwnR_3sim9survivors8spawning11SpawnMinuteENCNvMNtNtB1P_6engine17boss_presentationNtB2L_3Sim16next_boss_notice0ENCB2G_s_0ENtNtNtBa_6traits8iterator8Iterator4foldTjdENCINvNvB3V_6min_by4foldB4y_NCB2G_s0_0E0EB1P_  (in ps) + 212  [0x102c42484]
+      +                   ! : | + 47 _RNvNtNtCs79wx9WQuwnR_3sim9survivors6bosses8boss_bar  (in ps) + 76,100,...  [0x102c017e0,0x102c017f8,...]
+      +                   ! : | + 1 _RINvXs0_NtNtNtCs8Mbv00yxnRz_4core4iter8adapters3mapINtB6_3MapINtNtB8_6filter6FilterINtNtNtBc_5slice4iter4IterNtNtNtCs79wx9WQuwnR_3sim9survivors8spawning11SpawnMinuteENCNvMNtNtB1P_6engine17boss_presentationNtB2L_3Sim16next_boss_notice0ENCB2G_s_0ENtNtNtBa_6traits8iterator8Iterator4foldTjdENCINvNvB3V_6min_by4foldB4y_NCB2G_s0_0E0EB1P_  (in ps) + 248  [0x102c424a8]
+      +                   ! : | 40 _RINvXs0_NtNtNtCs8Mbv00yxnRz_4core4iter8adapters3mapINtB6_3MapINtNtB8_6filter6FilterINtNtNtBc_5slice4iter4IterNtNtNtCs79wx9WQuwnR_3sim9survivors8spawning11SpawnMinuteENCNvMNtNtB1P_6engine17boss_presentationNtB2L_3Sim16next_boss_notice0ENCB2G_s_0ENtNtNtBa_6traits8iterator8Iterator4foldTjdENCINvNvB3V_6min_by4foldB4y_NCB2G_s0_0E0EB1P_  (in ps) + 416  [0x102c42550]
+      +                   ! : |   40 _RNvNtNtCs79wx9WQuwnR_3sim9survivors6bosses8boss_bar  (in ps) + 76,100,...  [0x102c017e0,0x102c017f8,...]
+      +                   ! : 5 _RNvMNtNtCs79wx9WQuwnR_3sim6engine17boss_presentationNtB4_3Sim16next_boss_notice  (in ps) + 416  [0x102b09cec]
+      +                   ! : | 5 _RNvNtNtCs79wx9WQuwnR_3sim9survivors6bosses8boss_bar  (in ps) + 76,100  [0x102c017e0,0x102c017f8]
+      +                   ! : 1 _RNvMNtNtCs79wx9WQuwnR_3sim6engine17boss_presentationNtB4_3Sim16next_boss_notice  (in ps) + 596  [0x102b09da0]
+      +                   ! :   1 _RNvNtNtCs79wx9WQuwnR_3sim9survivors6bosses8boss_bar  (in ps) + 100  [0x102c017f8]
+      +                   ! 4 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim4step  (in ps) + 100  [0x102b2efb0]
+      +                   ! : 2 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim10move_clock  (in ps) + 14552  [0x102b2b900]
+      +                   ! : | 2 _RNvXs1_NtCsczCwz8bLRva_4eval4liveNtB5_12LiveRecorderNtNtCs79wx9WQuwnR_3sim8recorder8Recorder9run_state  (in ps) + 404  [0x102a6becc]
+      +                   ! : |   2 _platform_memmove  (in libsystem_platform.dylib) + 180  [0x18df3f414]
+      +                   ! : 1 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim10move_clock  (in ps) + 72  [0x102b28070]
+      +                   ! : | 1 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim10move_clock  (in ps) + 148  [0x102b280bc]
+      +                   ! : 1 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim10move_clock  (in ps) + 14536  [0x102b2b8f0]
+      +                   ! :   1 _RNvMs0_NtNtCs79wx9WQuwnR_3sim6engine6freezeNtB7_3Sim9run_state  (in ps) + 432  [0x102b222a8]
+      +                   ! 4 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim4step  (in ps) + 56972  [0x102b3cdd8]
+      +                   ! : 4 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim4step  (in ps) + 56972,59608,...  [0x102b3cdd8,0x102b3d824,...]
+      +                   ! 3 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim4step  (in ps) + 46212  [0x102b3a3d0]
+      +                   ! : 3 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim4step  (in ps) + 46288,46300,...  [0x102b3a41c,0x102b3a428,...]
+      +                   ! 3 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim4step  (in ps) + 48732  [0x102b3ada8]
+      +                   ! : 3 _RNvNtNtCs79wx9WQuwnR_3sim8reactive8director11level_blend  (in ps) + 212,280,...  [0x102be9190,0x102be91d4,...]
+      +                   ! 1 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim4step  (in ps) + 47944  [0x102b3aa94]
+      +                   ! : 1 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim4step  (in ps) + 48080  [0x102b3ab1c]
+      +                   ! 1 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim4step  (in ps) + 50740  [0x102b3b580]
+      +                   ! : 1 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim4step  (in ps) + 50844  [0x102b3b5e8]
+      +                   ! 1 _RNvXs4_NtCshxvaOLs88l5_5alloc6stringNtB5_6StringNtNtCs8Mbv00yxnRz_4core5clone5Clone5clone  (in ps) + 92  [0x102d69e18]
+      +                   234 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim10advance_to  (in ps) + 84  [0x102b27d10]
+      +                     120 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim9next_stop  (in ps) + 64  [0x102b41d38]
+      +                     : 119 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim13next_stop_now  (in ps) + 1632  [0x102b2c514]
+      +                     : | 116 _RNvMNtNtCs79wx9WQuwnR_3sim6engine17boss_presentationNtB4_3Sim16next_boss_notice  (in ps) + 620  [0x102b09db8]
+      +                     : | + 65 _RINvXs0_NtNtNtCs8Mbv00yxnRz_4core4iter8adapters3mapINtB6_3MapINtNtB8_6filter6FilterINtNtNtBc_5slice4iter4IterNtNtNtCs79wx9WQuwnR_3sim9survivors8spawning11SpawnMinuteENCNvMNtNtB1P_6engine17boss_presentationNtB2L_3Sim16next_boss_notice0ENCB2G_s_0ENtNtNtBa_6traits8iterator8Iterator4foldTjdENCINvNvB3V_6min_by4foldB4y_NCB2G_s0_0E0EB1P_  (in ps) + 212  [0x102c42484]
+      +                     : | + ! 63 _RNvNtNtCs79wx9WQuwnR_3sim9survivors6bosses8boss_bar  (in ps) + 76,100,...  [0x102c017e0,0x102c017f8,...]
+      +                     : | + ! 2 _RINvXs0_NtNtNtCs8Mbv00yxnRz_4core4iter8adapters3mapINtB6_3MapINtNtB8_6filter6FilterINtNtNtBc_5slice4iter4IterNtNtNtCs79wx9WQuwnR_3sim9survivors8spawning11SpawnMinuteENCNvMNtNtB1P_6engine17boss_presentationNtB2L_3Sim16next_boss_notice0ENCB2G_s_0ENtNtNtBa_6traits8iterator8Iterator4foldTjdENCINvNvB3V_6min_by4foldB4y_NCB2G_s0_0E0EB1P_  (in ps) + 248  [0x102c424a8]
+      +                     : | + 51 _RINvXs0_NtNtNtCs8Mbv00yxnRz_4core4iter8adapters3mapINtB6_3MapINtNtB8_6filter6FilterINtNtNtBc_5slice4iter4IterNtNtNtCs79wx9WQuwnR_3sim9survivors8spawning11SpawnMinuteENCNvMNtNtB1P_6engine17boss_presentationNtB2L_3Sim16next_boss_notice0ENCB2G_s_0ENtNtNtBa_6traits8iterator8Iterator4foldTjdENCINvNvB3V_6min_by4foldB4y_NCB2G_s0_0E0EB1P_  (in ps) + 416  [0x102c42550]
+      +                     : | +   51 _RNvNtNtCs79wx9WQuwnR_3sim9survivors6bosses8boss_bar  (in ps) + 76,100,...  [0x102c017e0,0x102c017f8,...]
+      +                     : | 2 _RNvMNtNtCs79wx9WQuwnR_3sim6engine17boss_presentationNtB4_3Sim16next_boss_notice  (in ps) + 596  [0x102b09da0]
+      +                     : | + 2 _RNvNtNtCs79wx9WQuwnR_3sim9survivors6bosses8boss_bar  (in ps) + 76,100  [0x102c017e0,0x102c017f8]
+      +                     : | 1 _RNvMNtNtCs79wx9WQuwnR_3sim6engine17boss_presentationNtB4_3Sim16next_boss_notice  (in ps) + 416  [0x102b09cec]
+      +                     : |   1 _RNvNtNtCs79wx9WQuwnR_3sim9survivors6bosses8boss_bar  (in ps) + 104  [0x102c017fc]
+      +                     : 1 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim13next_stop_now  (in ps) + 2724  [0x102b2c958]
+      +                     90 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim9next_stop  (in ps) + 148  [0x102b41d8c]
+      +                     : 89 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim13next_stop_now  (in ps) + 1632  [0x102b2c514]
+      +                     : | 83 _RNvMNtNtCs79wx9WQuwnR_3sim6engine17boss_presentationNtB4_3Sim16next_boss_notice  (in ps) + 620  [0x102b09db8]
+      +                     : | + 52 _RINvXs0_NtNtNtCs8Mbv00yxnRz_4core4iter8adapters3mapINtB6_3MapINtNtB8_6filter6FilterINtNtNtBc_5slice4iter4IterNtNtNtCs79wx9WQuwnR_3sim9survivors8spawning11SpawnMinuteENCNvMNtNtB1P_6engine17boss_presentationNtB2L_3Sim16next_boss_notice0ENCB2G_s_0ENtNtNtBa_6traits8iterator8Iterator4foldTjdENCINvNvB3V_6min_by4foldB4y_NCB2G_s0_0E0EB1P_  (in ps) + 416  [0x102c42550]
+      +                     : | + ! 52 _RNvNtNtCs79wx9WQuwnR_3sim9survivors6bosses8boss_bar  (in ps) + 76,112,...  [0x102c017e0,0x102c01804,...]
+      +                     : | + 31 _RINvXs0_NtNtNtCs8Mbv00yxnRz_4core4iter8adapters3mapINtB6_3MapINtNtB8_6filter6FilterINtNtNtBc_5slice4iter4IterNtNtNtCs79wx9WQuwnR_3sim9survivors8spawning11SpawnMinuteENCNvMNtNtB1P_6engine17boss_presentationNtB2L_3Sim16next_boss_notice0ENCB2G_s_0ENtNtNtBa_6traits8iterator8Iterator4foldTjdENCINvNvB3V_6min_by4foldB4y_NCB2G_s0_0E0EB1P_  (in ps) + 212  [0x102c42484]
+      +                     : | +   31 _RNvNtNtCs79wx9WQuwnR_3sim9survivors6bosses8boss_bar  (in ps) + 76,100,...  [0x102c017e0,0x102c017f8,...]
+      +                     : | 3 _RNvMNtNtCs79wx9WQuwnR_3sim6engine17boss_presentationNtB4_3Sim16next_boss_notice  (in ps) + 416  [0x102b09cec]
+      +                     : | + 3 _RNvNtNtCs79wx9WQuwnR_3sim9survivors6bosses8boss_bar  (in ps) + 76,84,...  [0x102c017e0,0x102c017e8,...]
+      +                     : | 3 _RNvMNtNtCs79wx9WQuwnR_3sim6engine17boss_presentationNtB4_3Sim16next_boss_notice  (in ps) + 596  [0x102b09da0]
+      +                     : |   3 _RNvNtNtCs79wx9WQuwnR_3sim9survivors6bosses8boss_bar  (in ps) + 76  [0x102c017e0]
+      +                     : 1 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim13next_stop_now  (in ps) + 620  [0x102b2c120]
+      +                     24 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim9next_stop  (in ps) + 92  [0x102b41d54]
+      +                       18 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim6ingest  (in ps) + 2704  [0x102b40fac]
+      +                       | 15 _RNvMs0_NtNtCs79wx9WQuwnR_3sim6engine6freezeNtB7_3Sim12requeue_held  (in ps) + 1008  [0x102b2155c]
+      +                       | + 11 _RNvMs0_NtNtCs79wx9WQuwnR_3sim6engine6freezeNtB7_3Sim16known_grid_after  (in ps) + 148,156,...  [0x102b21eec,0x102b21ef4,...]
+      +                       | + 4 _RNvMs0_NtNtCs79wx9WQuwnR_3sim6engine6freezeNtB7_3Sim12requeue_held  (in ps) + 2184,396,...  [0x102b219f4,0x102b212f8,...]
+      +                       | 2 _RNvMs0_NtNtCs79wx9WQuwnR_3sim6engine6freezeNtB7_3Sim12requeue_held  (in ps) + 2204  [0x102b21a08]
+      +                       | + 2 _RNvMs4_NtCshxvaOLs88l5_5alloc7raw_vecINtB5_6RawVecNtNtNtCs79wx9WQuwnR_3sim6engine6freeze4HeldE8grow_oneBS_  (in ps) + 60  [0x102d84ddc]
+      +                       | +   2 _RNvMs5_NtCshxvaOLs88l5_5alloc7raw_vecNtB5_11RawVecInner11finish_growCs79wx9WQuwnR_3sim  (in ps) + 92  [0x102d84f9c]
+      +                       | +     2 _realloc  (in libsystem_malloc.dylib) + 452  [0x18dd62e90]
+      +                       | +       2 _malloc_zone_realloc  (in libsystem_malloc.dylib) + 148  [0x18dd62674]
+      +                       | +         2 xzm_realloc  (in libsystem_malloc.dylib) + 852  [0x18dd52e48]
+      +                       | +           2 _platform_memmove  (in libsystem_platform.dylib) + 180  [0x18df3f414]
+      +                       | 1 _RNvMs0_NtNtCs79wx9WQuwnR_3sim6engine6freezeNtB7_3Sim12requeue_held  (in ps) + 2388  [0x102b21ac0]
+      +                       |   1 _xzm_free_outlined  (in libsystem_malloc.dylib) + 204  [0x18dd5b4e0]
+      +                       6 _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim6ingest  (in ps) + 2712  [0x102b40fb4]
+      +                         4 _RNvMs2_NtNtCs79wx9WQuwnR_3sim6engine4planNtB7_3Sim4plan  (in ps) + 1236  [0x102b24a7c]
+      +                         + 4 _RNvMs2_NtNtCs79wx9WQuwnR_3sim6engine4planNtB7_3Sim4plan  (in ps) + 1456,1472,...  [0x102b24b58,0x102b24b68,...]
+      +                         1 _RNvMs2_NtNtCs79wx9WQuwnR_3sim6engine4planNtB7_3Sim4plan  (in ps) + 1212  [0x102b24a64]
+      +                         + 1 _RNvXs4_NtCshxvaOLs88l5_5alloc6stringNtB5_6StringNtNtCs8Mbv00yxnRz_4core5clone5Clone5clone  (in ps) + 48  [0x102d69dec]
+      +                         +   1 DYLD-STUB$$malloc  (in ps) + 4  [0x102d90b74]
+      +                         1 _RNvMs2_NtNtCs79wx9WQuwnR_3sim6engine4planNtB7_3Sim4plan  (in ps) + 3896  [0x102b254e0]
+      +                           1 _xzm_free  (in libsystem_malloc.dylib) + 580  [0x18dd532b0]
+      5 _RINvMsa_NtCs3fRkGY2FHAU_9hashbrown3rawNtB6_13RawTableInner22fallible_with_capacityNtNtCshxvaOLs88l5_5alloc5alloc6GlobalECs79wx9WQuwnR_3sim  (in ps) + 244  [0x102c4a8a4]
+        5 _xzm_xzone_malloc_tiny  (in libsystem_malloc.dylib) + 168,200,...  [0x18dd57f7c,0x18dd57f9c,...]
+
+Total number in stack (recursive counted multiple, when >=5):
+        19       _RNvNtNtCs79wx9WQuwnR_3sim9survivors6bosses8boss_bar  (in ps) + 0  [0x102c01794]
+        7       _RNvXs3_NtNtCs8Mbv00yxnRz_4core4hash3sipINtB5_6HasherNtB5_11Sip13RoundsENtB7_6Hasher5writeCs79wx9WQuwnR_3sim  (in ps) + 0  [0x102c285b8]
+        7       _malloc_zone_malloc  (in libsystem_malloc.dylib) + 0  [0x18dd62038]
+        7       pow  (in libsystem_m.dylib) + 0  [0x19dce2000]
+        6       _RNvMNtNtCs79wx9WQuwnR_3sim6engine8contactsNtB2_8Contacts3new  (in ps) + 0  [0x102c6280c]
+        5       _RINvXs0_NtNtNtCs8Mbv00yxnRz_4core4iter8adapters3mapINtB6_3MapINtNtB8_6filter6FilterINtNtNtBc_5slice4iter4IterNtNtNtCs79wx9WQuwnR_3sim9survivors8spawning11SpawnMinuteENCNvMNtNtB1P_6engine17boss_presentationNtB2L_3Sim16next_boss_notice0ENCB2G_s_0ENtNtNtBa_6traits8iterator8Iterator4foldTjdENCINvNvB3V_6min_by4foldB4y_NCB2G_s0_0E0EB1P_  (in ps) + 212  [0x102c42484]
+        5       _RINvXs0_NtNtNtCs8Mbv00yxnRz_4core4iter8adapters3mapINtB6_3MapINtNtB8_6filter6FilterINtNtNtBc_5slice4iter4IterNtNtNtCs79wx9WQuwnR_3sim9survivors8spawning11SpawnMinuteENCNvMNtNtB1P_6engine17boss_presentationNtB2L_3Sim16next_boss_notice0ENCB2G_s_0ENtNtNtBa_6traits8iterator8Iterator4foldTjdENCINvNvB3V_6min_by4foldB4y_NCB2G_s0_0E0EB1P_  (in ps) + 416  [0x102c42550]
+        5       _RINvYNtNtNtCs82bWklYMk3w_3std4hash6random11RandomStateNtNtCs8Mbv00yxnRz_4core4hash11BuildHasher8hash_oneRTxxEECs79wx9WQuwnR_3sim  (in ps) + 0  [0x102c19f10]
+        5       _RNvMNtNtCs79wx9WQuwnR_3sim6engine17boss_presentationNtB4_3Sim16next_boss_notice  (in ps) + 416  [0x102b09cec]
+        5       _RNvMNtNtCs79wx9WQuwnR_3sim6engine17boss_presentationNtB4_3Sim16next_boss_notice  (in ps) + 620  [0x102b09db8]
+        5       _xzm_xzone_malloc_tiny  (in libsystem_malloc.dylib) + 0  [0x18dd57ed4]
+
+Sort by top of stack, same collapsed (when >= 5):
+        _RNvNtNtCs79wx9WQuwnR_3sim9survivors6bosses8boss_bar  (in ps)        458
+        _RNvMNtNtCs79wx9WQuwnR_3sim6engine8contactsNtB2_8Contacts3new  (in ps)        38
+        _RNvMNtNtCs79wx9WQuwnR_3sim6engine4foesNtB4_3Sim3pos  (in ps)        25
+        pow  (in libsystem_m.dylib)        22
+        _RNvMs0_NtNtCs79wx9WQuwnR_3sim6engine6freezeNtB7_3Sim16known_grid_after  (in ps)        21
+        _RNvXs3_NtNtCs8Mbv00yxnRz_4core4hash3sipINtB5_6HasherNtB5_11Sip13RoundsENtB7_6Hasher5writeCs79wx9WQuwnR_3sim  (in ps)        21
+        _RINvYNtNtNtCs82bWklYMk3w_3std4hash6random11RandomStateNtNtCs8Mbv00yxnRz_4core4hash11BuildHasher8hash_oneRTxxEECs79wx9WQuwnR_3sim  (in ps)        16
+        _xzm_xzone_malloc_tiny  (in libsystem_malloc.dylib)        15
+        _RNvMs5_NtCshxvaOLs88l5_5alloc7raw_vecNtB5_11RawVecInner11finish_growCsiCtT7m9ln6d_12serde_saphyr  (in ps)        14
+        _malloc_zone_malloc  (in libsystem_malloc.dylib)        14
+        <deduplicated_symbol>  (in libsystem_malloc.dylib)        10
+        _RNvMs3_NtCs79wx9WQuwnR_3sim6engineNtB5_3Sim4step  (in ps)        9
+        _RNvMs0_NtNtCs79wx9WQuwnR_3sim6engine6freezeNtB7_3Sim12requeue_held  (in ps)        7
+        _xzm_free  (in libsystem_malloc.dylib)        7
+        _RNvMs2_NtNtCs79wx9WQuwnR_3sim6engine4planNtB7_3Sim4plan  (in ps)        6
+        _platform_memmove  (in libsystem_platform.dylib)        6
+        _RINvXs0_NtNtNtCs8Mbv00yxnRz_4core4iter8adapters3mapINtB6_3MapINtNtB8_6filter6FilterINtNtNtBc_5slice4iter4IterNtNtNtCs79wx9WQuwnR_3sim9survivors8spawning11SpawnMinuteENCNvMNtNtB1P_6engine17boss_presentationNtB2L_3Sim16next_boss_notice0ENCB2G_s_0ENtNtNtBa_6traits8iterator8Iterator4foldTjdENCINvNvB3V_6min_by4foldB4y_NCB2G_s0_0E0EB1P_  (in ps)        5
+        _RNvNtNtCs79wx9WQuwnR_3sim4core8geometry14shape_contains  (in ps)        5
+
+Binary Images:
+       0x1029c0000 -        0x102eb547f +ps (0) <1DF30614-A4C5-3F23-AC7A-86DC00577DF0> /Users/*/Library/Caches/*/ps
+       0x18dad0000 -        0x18db22b4b  libobjc.A.dylib (951.7) <FF1D8AE4-ABEF-35F1-A30A-1183B9CB414F> /usr/lib/libobjc.A.dylib
+       0x18db23000 -        0x18db57d07  libdyld.dylib (1378) <B147D877-D0C2-388F-B38D-D3132E39905F> /usr/lib/system/libdyld.dylib
+       0x18db58000 -        0x18dbfe217  dyld (1.0.0 - 1378) <F924BDD3-4365-3466-9580-8B1B3FA8F857> /usr/lib/dyld
+       0x18dbff000 -        0x18dc02228  libsystem_blocks.dylib (96) <CC947089-488D-316B-A9C7-46DEC0F73145> /usr/lib/system/libsystem_blocks.dylib
+       0x18dc03000 -        0x18dc5755f  libxpc.dylib (3102.120.13) <C40FCAE8-7A17-3D82-87CB-3DA4802ADEF1> /usr/lib/system/libxpc.dylib
+       0x18dc58000 -        0x18dc789ff  libsystem_trace.dylib (1861.120.4) <D0FABAB3-5AE7-3F10-8C62-60CBF5D70850> /usr/lib/system/libsystem_trace.dylib
+       0x18dc79000 -        0x18dd275f7  libcorecrypto.dylib (1922.121.1) <A01A158D-6FE7-3B1C-A2C4-6BCB90D7314A> /usr/lib/system/libcorecrypto.dylib
+       0x18dd28000 -        0x18dd781d7  libsystem_malloc.dylib (812.100.31) <5FAE4807-4D2B-3A95-A63A-DD96D3DA11B4> /usr/lib/system/libsystem_malloc.dylib
+       0x18dd79000 -        0x18ddc023f  libdispatch.dylib (1542.100.32) <F071EFE4-299F-3089-ACC4-0025B8FFB52A> /usr/lib/system/libdispatch.dylib
+       0x18ddc1000 -        0x18ddc3ffb  libsystem_featureflags.dylib (103) <71FCFFBD-85F8-3365-AFE0-BECEA4369122> /usr/lib/system/libsystem_featureflags.dylib
+       0x18ddc4000 -        0x18de44d9f  libsystem_c.dylib (1752.120.2) <694B7881-1BF3-3D0F-8F19-B50AE4E8EF8A> /usr/lib/system/libsystem_c.dylib
+       0x18de45000 -        0x18ded5ae7  libc++.1.dylib (2100.43) <5013C0F8-84A9-3B56-9FEB-C353816A750F> /usr/lib/libc++.1.dylib
+       0x18ded6000 -        0x18def075f  libc++abi.dylib (2100.43) <E482D257-E5A0-3816-BD97-7B39342958DA> /usr/lib/libc++abi.dylib
+       0x18def1000 -        0x18df2e2af  libsystem_kernel.dylib (12377.121.10) <FCA53B98-3D6A-38B2-A0EC-DF0F7E05F171> /usr/lib/system/libsystem_kernel.dylib
+       0x18df2f000 -        0x18df3bb3b  libsystem_pthread.dylib (539.100.4) <4F33683C-18C8-39A1-800B-2E3BD43BCC13> /usr/lib/system/libsystem_pthread.dylib
+       0x18df3c000 -        0x18df44963  libsystem_platform.dylib (375.120.2) <160FD864-8D15-36FC-9E97-9725388CFAFE> /usr/lib/system/libsystem_platform.dylib
+       0x18df45000 -        0x18df746eb  libsystem_info.dylib (600) <3D62F2D9-F516-31BF-83C7-E203D872300B> /usr/lib/system/libsystem_info.dylib
+       0x191f0c000 -        0x191f15e5f  libsystem_darwin.dylib (1752.120.2) <8858F025-745A-388E-9544-080781CC9A69> /usr/lib/system/libsystem_darwin.dylib
+       0x192377000 -        0x1923891b6  libsystem_notify.dylib (348.120.4) <64D76451-1E0C-369B-A631-54DA3140E083> /usr/lib/system/libsystem_notify.dylib
+       0x194644000 -        0x19465ef7b  libsystem_networkextension.dylib (2226.121.1) <0331EE20-A1FB-3C0D-990A-F65939CFF505> /usr/lib/system/libsystem_networkextension.dylib
+       0x1946e1000 -        0x1946f8fdf  libsystem_asl.dylib (406) <F40838DF-2F15-3F62-970F-DEE25706BF1B> /usr/lib/system/libsystem_asl.dylib
+       0x19629f000 -        0x1962a7387  libsystem_symptoms.dylib (2169.120.7) <F5029F5C-1BF3-31C7-892E-BC8606AC829E> /usr/lib/system/libsystem_symptoms.dylib
+       0x19a543000 -        0x19a57b257  libsystem_containermanager.dylib (725.120.2) <518BE44D-AA31-31E6-B44B-A37AD5E47040> /usr/lib/system/libsystem_containermanager.dylib
+       0x19b954000 -        0x19b9585d7  libsystem_configuration.dylib (1405.120.5) <0F7BBC1C-3D50-3E59-A31F-E4672A80BCEB> /usr/lib/system/libsystem_configuration.dylib
+       0x19b959000 -        0x19b95f8cf  libsystem_sandbox.dylib (2680.120.12) <EC3A75EA-44C0-3A0B-9BF7-71C117B0A9C6> /usr/lib/system/libsystem_sandbox.dylib
+       0x19cfb3000 -        0x19cfb61fb  libquarantine.dylib (196.120.2) <5849009B-ACA3-3796-94C4-BBDF8D300EBA> /usr/lib/system/libquarantine.dylib
+       0x19d752000 -        0x19d758d03  libsystem_coreservices.dylib (191.4.5) <9576143B-C303-35A3-BA63-1FD06EDA2BB1> /usr/lib/system/libsystem_coreservices.dylib
+       0x19dcdd000 -        0x19dd1aa77  libsystem_m.dylib (3312.100.1) <A7E0863C-101A-31A0-922B-ED9B02626151> /usr/lib/system/libsystem_m.dylib
+       0x19dd1b000 -        0x19dd1bc9b  libcharset.1.dylib (115.120.2) <338A5252-594A-3AC5-B274-5AB3CE5820C6> /usr/lib/libcharset.1.dylib
+       0x19dd1c000 -        0x19dd1f527  libmacho.dylib (1378) <755441B4-C034-3E3A-8E3C-F424FBB28261> /usr/lib/system/libmacho.dylib
+       0x19dd39000 -        0x19dd463a7  libcommonCrypto.dylib (600035) <CE357BB1-2D49-37CC-9FFE-D093936B1475> /usr/lib/system/libcommonCrypto.dylib
+       0x19dd47000 -        0x19dd50ca3  libunwind.dylib (2100.2) <FC8F0C4E-6FB0-3E27-ABEF-B0FA720CD5E4> /usr/lib/system/libunwind.dylib
+       0x19dd59000 -        0x19dd637ff  libcopyfile.dylib (240) <8ACFAC7A-88E9-3EF4-853F-A9140FF110E5> /usr/lib/system/libcopyfile.dylib
+       0x19dd64000 -        0x19dd67987  libcompiler_rt.dylib (103.3) <AA79151F-C19D-3C7C-92F8-B10F04D82C1C> /usr/lib/system/libcompiler_rt.dylib
+       0x19dd68000 -        0x19dd6c78b  libsystem_collections.dylib (1752.120.2) <72DB5BE7-EF78-37D0-8AAD-53E37CFE4287> /usr/lib/system/libsystem_collections.dylib
+       0x19dd6d000 -        0x19dd704cf  libsystem_secinit.dylib (168.100.7) <E525C566-CDA4-3D99-B12B-1615FD54A1F3> /usr/lib/system/libsystem_secinit.dylib
+       0x19dd71000 -        0x19dd73bf7  libremovefile.dylib (85.100.6) <635E661D-80A7-340D-A165-3F7D318FDFC9> /usr/lib/system/libremovefile.dylib
+       0x19dd74000 -        0x19dd74f27  libkeymgr.dylib (31) <8C08891A-DF1C-3DCC-AB64-4742FD6BE9BA> /usr/lib/system/libkeymgr.dylib
+       0x19dd75000 -        0x19dd7de37  libsystem_dnssd.dylib (2881.120.11) <6F45DF3F-233B-3BC3-BA8C-B43E7DA884BF> /usr/lib/system/libsystem_dnssd.dylib
+       0x19dd7e000 -        0x19dd8309b  libcache.dylib (95) <189B576E-6176-3F82-8FA4-5914B0BEAEE7> /usr/lib/system/libcache.dylib
+       0x19dd84000 -        0x19dd85ce3  libSystem.B.dylib (1356) <BA6A669A-3BB9-3BC7-85E8-8F0C1E68351E> /usr/lib/libSystem.B.dylib
+       0x19ddbe000 -        0x19ddc52bb  libiconv.2.dylib (115.120.2) <7C02D8F4-1921-323C-9D3D-A5D9B0ACDD78> /usr/lib/libiconv.2.dylib
+       0x291040000 -        0x291047349  libRosetta.dylib (367.9) <8651ED4F-6506-3788-B56B-32EE414A85CA> /usr/lib/libRosetta.dylib
+       0x292c5d000 -        0x292c60a4b  libsystem_darwindirectory.dylib (122) <CF277A2C-C818-3F16-8B3F-3C7B39FCD164> /usr/lib/system/libsystem_darwindirectory.dylib
+       0x292c61000 -        0x292c6a5d3  libsystem_eligibility.dylib (319.121.1) <DDAC0531-0262-3DDC-8EC8-80EB9438847A> /usr/lib/system/libsystem_eligibility.dylib
+       0x292c6b000 -        0x292c7288b  libsystem_sanitizers.dylib (26.1) <44C4234F-8B2D-38D3-A774-B4B3C75AF3A7> /usr/lib/system/libsystem_sanitizers.dylib
+       0x292c73000 -        0x292c73bb7  libsystem_trial.dylib (474.2.18.2) <68C583BA-AFF5-3916-86AE-6E38BFEF98D6> /usr/lib/system/libsystem_trial.dylib
