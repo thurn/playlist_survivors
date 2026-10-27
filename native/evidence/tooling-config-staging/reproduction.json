@@ -1,0 +1,132 @@
+{
+  "gitVersion": "git version 2.54.0",
+  "steps": [
+    {
+      "args": [
+        "init",
+        "-b",
+        "main"
+      ],
+      "exit": 0,
+      "stdout": "Initialized empty Git repository in /private/var/folders/dw/rtc6lpnx293gdfl40kv4xt5m0000gn/T/tmpdwk6_vs0/.git/\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "config",
+        "user.name",
+        "Fixture"
+      ],
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "config",
+        "user.email",
+        "fixture@example.invalid"
+      ],
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "add",
+        ".tollgate/config.toml"
+      ],
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "commit",
+        "-m",
+        "initial tracked policy"
+      ],
+      "exit": 0,
+      "stdout": "[main (root-commit) 8d67fd0] initial tracked policy\n 1 file changed, 1 insertion(+)\n create mode 100644 .tollgate/config.toml\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "add",
+        ".tollgate/config.toml"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "The following paths are ignored by one of your .gitignore files:\n.tollgate\nhint: Use -f if you really want to add them.\nhint: Disable this message with \"git config set advice.addIgnoredFile false\"\n"
+    },
+    {
+      "args": [
+        "status",
+        "--porcelain"
+      ],
+      "exit": 0,
+      "stdout": "M  .tollgate/config.toml\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "diff",
+        "--cached",
+        "--name-only"
+      ],
+      "exit": 0,
+      "stdout": ".tollgate/config.toml\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "reset",
+        "--",
+        ".tollgate/config.toml"
+      ],
+      "exit": 0,
+      "stdout": "Unstaged changes after reset:\nM\t.tollgate/config.toml\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "add",
+        "-u",
+        "--",
+        ".tollgate/config.toml"
+      ],
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "status",
+        "--porcelain"
+      ],
+      "exit": 0,
+      "stdout": "M  .tollgate/config.toml\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "diff",
+        "--cached",
+        "--name-only"
+      ],
+      "exit": 0,
+      "stdout": ".tollgate/config.toml\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "check-ignore",
+        "-v",
+        ".tollgate/runtime.json"
+      ],
+      "exit": 0,
+      "stdout": ".git/info/exclude:1:.tollgate/\t.tollgate/runtime.json\n",
+      "stderr": ""
+    }
+  ]
+}

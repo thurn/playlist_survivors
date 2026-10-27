@@ -1,0 +1,14 @@
+{
+  "gitVersion": "git version 2.54.0",
+  "fixtureReproducesOriginalWarning": true,
+  "explicitAddExit": 1,
+  "trackedOnlyAddExit": 0,
+  "indexedPaths": [
+    ".tollgate/config.toml"
+  ],
+  "runtimeStillIgnored": true,
+  "tollgateSource": "114f93d2a5d56d804ea0da60bffd241c7c856ac5",
+  "sourceFunction": "crates/tollgate-service/src/lib.rs:prepare_configuration_root",
+  "sourceObservation": "Adds .tollgate/ to common info/exclude if absent; this fixture reproduces without Tollgate. No evidence of index corruption or failed policy mutation.",
+  "decision": "Document tracked-only staging; retain deliberate runtime exclusion; no tool source defect confirmed."
+}

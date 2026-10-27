@@ -1081,6 +1081,20 @@ the table.
 
 ## Bead Notes
 
+Each bead summarizes its measurements here in a few lines, in its own
+subsection, linking `native/evidence/<key>/`. Beads never add sections
+elsewhere in this document. Parallel beads would collide there.
+
+### Tooling — tracked configuration staging (hv-n7fn.39)
+
+[Kept reproduction](../../native/evidence/tooling-config-staging/README.md) shows
+Git 2.54.0 returns an ignored-parent error after staging the tracked config;
+`git add -u -- .tollgate/config.toml` succeeds and leaves runtime files ignored.
+The standalone fixture needs no Tollgate process. AGENTS.md now records that
+command and inspecting the index after an error. No tool defect, exclude change
+or game change is inferred. This bead's commit SHA is in its native notes.
+
+
 ### Tooling — pristine worktree refresh (hv-n7fn.40)
 
 [Kept evidence](../../native/evidence/tooling-pristine-update/README.md) records
@@ -1093,9 +1107,6 @@ healthy doctors and an installed-service probe are retained. This bead changes
 no game behavior. Its own evidence commit SHA is in the native bead notes.
 
 
-Each bead summarizes its measurements here in a few lines, in its own
-subsection, linking `native/evidence/<key>/`. Beads never add sections
-elsewhere in this document. Parallel beads would collide there.
 
 ### CI42
 
