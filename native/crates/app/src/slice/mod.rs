@@ -44,6 +44,7 @@ mod fx;
 mod garlic;
 mod gems;
 mod gfx;
+mod hook_check;
 mod hud;
 mod keys;
 mod lane;
@@ -169,6 +170,7 @@ struct Options {
     sound_check: Option<PathBuf>,
     cards_check: Option<PathBuf>,
     treasure_check: Option<PathBuf>,
+    hook_check: Option<PathBuf>,
     sword_check: Option<PathBuf>,
     garlic_check: Option<PathBuf>,
     wand_check: Option<PathBuf>,
@@ -231,6 +233,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         sound_check: None,
         cards_check: None,
         treasure_check: None,
+        hook_check: None,
         sword_check: None,
         garlic_check: None,
         wand_check: None,
@@ -279,6 +282,13 @@ fn options(args: &[String]) -> Result<Options, String> {
                 o.sound_check = Some(
                     it.next()
                         .ok_or("--sound-check needs a session directory")?
+                        .into(),
+                );
+            }
+            "--hook-check" => {
+                o.hook_check = Some(
+                    it.next()
+                        .ok_or("--hook-check needs a recorded survive directory")?
                         .into(),
                 );
             }
@@ -640,6 +650,9 @@ pub fn run(args: &[String]) -> Result<(), String> {
     }
     if let Some(dir) = &opts.sword_check {
         return weapons_check::run(dir, None);
+    }
+    if let Some(dir) = &opts.hook_check {
+        return hook_check::run(dir);
     }
     if let Some(dir) = &opts.treasure_check {
         return treasure::check::run(dir);

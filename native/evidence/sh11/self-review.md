@@ -1,0 +1,9 @@
+# H milestone pre-review pass
+
+- Downstream needs: read SW4/SW5 boss/chest, SW6 admission and SW7 survival/offer consumers, plus SP1–SP5 presentation consumers. Current typed origin/tier and disabled evolution seams remain explicit; later beads own actual evolutions/showpieces. No offers or easy knobs change here despite the older SH11 prose: current AGENTS reserves them to SW7.
+- Claims: checked H evidence/readme scopes and kept raw outputs. Synthetic/damage-exempt presentation checks are distinct from normal-damage survival. Historical SF10 measurements predate applied-stat integration; only its final scoped figures apply. SH10 normal smoke saw no chest; its separate real kill/touch replay and capture do. SH11 fresh reports/capture are kept with source scope before final summary.
+- Edge cases: reread freeze blocked keys, music re-lock, pending levels and chest deadlines; zero/one/hidden/late-grid regressions exist. Recycled source HP/treasure origin and retired missile/vacuum fixes are covered. Capture bounds span, checks child/ffmpeg status and requires exact source recording count/hash; no chunked analyzer or diff/path logic added.
+- Tests against source: source rank/passive tables and actual card application checks, real audio mixer PCM, real streamed Engine/keys replay, real kill/touch roulette. No TS/oracle or bit-exact arithmetic constraints added.
+- Concurrency: no new sim worker or channel. Existing sound scheduling/cancellation and category duration checks apply; H diagnostics synchronously wait on checked background-QoS children and ffmpeg. No shared Cargo target. Analyzer ownership changes are not part of H11. Engine rollback algorithm is unchanged by the new capture path.
+
+One cold read-only Warden review follows on the ten indexed H commits and current integration, with SF10/CI42/W1–W3 as context. No confirmation review will be requested.

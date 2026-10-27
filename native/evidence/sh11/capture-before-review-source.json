@@ -1,0 +1,10 @@
+{
+  "base": "12db4a0a34ad38ed77672862799165510c28767b",
+  "cards_sha256": "936858f2aee94d480862135a0bce0e271d4e28a36984dc6799b5b7ba68b0678e",
+  "hook_check_sha256": "168273132607e45e4e6bbbbb8e91902faccc797ce0c8c3f3c7ff32d829e18535",
+  "recorded_hash": "b86dc62f2064b22a",
+  "recorded_records": 2022470,
+  "clip_frames": 1207,
+  "clip_sha256": "a1c4f2e9346c272ac8c9051d493c77401e3d8f3cb6f17afbb470617b887e1a55",
+  "scope": "Initial capture before SH11 review presentation fixes; sim/eval/players/stream/analyzer/level/offers unchanged from base"
+}

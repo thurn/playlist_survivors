@@ -1,0 +1,14 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.27s
+     Running unittests src/main.rs (target/debug/deps/playlist_survivors-117eebc7468b2345)
+
+running 7 tests
+test slice::cards::tests::a_retraction_does_not_animate_or_sound_a_confirm ... ok
+test slice::cards::tests::picks_fall_away_but_retracted_picks_reopen_without_confirm ... ok
+test slice::cards::tests::rollback_replaces_cards_and_pair_inventory_at_the_same_reveal_times ... ok
+test slice::cards::tests::pair_badge_follows_actual_catalog_partners ... ok
+test slice::cards::tests::forecast_retiming_replaces_future_cues_instead_of_doubling_them ... ok
+test slice::cards::tests::chained_offers_keep_the_world_dim_and_cues_use_sim_reveals ... ok
+test slice::cards::tests::third_card_is_fully_readable_on_the_sims_confirmation_beat ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 49 filtered out; finished in 0.05s
+

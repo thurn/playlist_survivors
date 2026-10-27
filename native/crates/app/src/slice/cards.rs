@@ -89,6 +89,11 @@ impl Screen {
                 a.highlight = now;
                 a.highlight_song = run.song;
             }
+            // A rollback can change eligibility/cards without changing this
+            // level's reveal beats. Keep the animation identity, but always
+            // show the sim's current offer and evolution-pair inventory.
+            a.offer = offer;
+            a.inv = inv.unwrap_or_default();
             a.selected = run.selected;
             a.song = run.song;
             a.host = now;
@@ -587,6 +592,38 @@ mod tests {
                 .map(|c| c.s)
                 .collect::<Vec<_>>(),
             vec![0.6, 1.1, 1.6]
+        );
+    }
+    #[test]
+    fn rollback_replaces_cards_and_pair_inventory_at_the_same_reveal_times() {
+        let mut screen = Screen::default();
+        let mut inv = Inventory::default();
+        inv.weapons.upgrade(WeaponId::Sword, 8).unwrap();
+        let mut r = run();
+        r.offer.as_mut().unwrap().cards = offer_table().cards(2, inv, weapon_catalog());
+        screen.update(Some(r), Some(inv), 10.0);
+        let old = screen.active.unwrap();
+        // A different earlier pick/loot can max Garlic before this same level.
+        for _ in 0..8 {
+            inv.weapons.upgrade(WeaponId::Garlic, 8).unwrap();
+        }
+        inv.passives
+            .upgrade(sim::survivors::PassiveId::HollowHeart, 5)
+            .unwrap();
+        r.offer.as_mut().unwrap().cards = offer_table().cards(2, inv, weapon_catalog());
+        assert_ne!(old.offer.cards, r.offer.unwrap().cards);
+        assert_eq!(old.offer.reveals, r.offer.unwrap().reveals);
+        screen.update(Some(r), Some(inv), 10.2);
+        let shown = screen.active.unwrap();
+        assert_eq!(shown.offer, r.offer.unwrap());
+        assert_eq!(shown.inv, inv);
+        assert_eq!(shown.opened, old.opened, "same reveal animation continues");
+        assert!(screen.closing.is_none());
+        assert!(
+            !screen
+                .cues(None, 10.2)
+                .iter()
+                .any(|c| c.key == "card-confirm")
         );
     }
     #[test]

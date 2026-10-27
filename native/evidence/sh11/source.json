@@ -1,0 +1,11 @@
+{
+  "base": "12db4a0a34ad38ed77672862799165510c28767b",
+  "files": {
+    "native/crates/app/src/slice/mod.rs": "d3205c6b1e462fe7e5dd4b41d62096af5ee8e030b6cf681b442eed8b782754e9",
+    "native/crates/app/src/slice/cards.rs": "4227e7066ed4b2abf2df3e6554f57601530887c5ebf5a3621dd188519878f49e",
+    "native/crates/app/src/slice/hook_check.rs": "168273132607e45e4e6bbbbb8e91902faccc797ce0c8c3f3c7ff32d829e18535"
+  },
+  "gameInputDiffFromBase": [],
+  "captureBeforeReviewPresentationFix": false,
+  "scope": "Final-source headless smoke and repeated offscreen capture include the reviewed card refresh fix. Matrix and recorded inputs remain valid: sim,eval,players,CLI,analyzer,stream,level,offers unchanged from base. Initial raw capture source is separately recorded."
+}

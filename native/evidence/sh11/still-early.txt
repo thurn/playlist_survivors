@@ -1,0 +1,2 @@
+still: song 45.000s, run Some(RunState { song: 44.99166666666667, presentation_s: 44.99166666666667, frozen_beat: None, elapsed: 43.94416666666667, spawn_minute: Some(0), spawned: 58, offer: None, roulette: None, level: 2, max_hp: 120.0, world: 43.94416666666667, frozen: None, selected: 0, confirmed: true }), alive 23, kills 35, damage-exempt false
+slice: wrote ../native/evidence/sh11/early-play.png (1199 sprites, 5 lights; 23 enemies, health 0.95, groove 0.00; zone ember-hollow)

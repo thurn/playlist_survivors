@@ -1,0 +1,1 @@
+hook-check: 1207 frames at24fps; exact b86dc62f2064b22a/2022470 records; six minute stills, cardstrue, bosstrue, roulettefalse; normal damage, silent montage

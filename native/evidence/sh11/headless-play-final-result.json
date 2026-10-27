@@ -1,0 +1,16 @@
+{
+  "command": [
+    "native/target/release/playlist-survivors",
+    "--playlist",
+    "native/playlists/survivors-30.m3u",
+    "--headless",
+    "--delayed",
+    "--press-beats",
+    "--pick-first",
+    "--seconds",
+    "30"
+  ],
+  "PS_SESSIONS": "/Users/dthurn/playlist_survivors/native/logs/sessions",
+  "exit": 0,
+  "wall_s": 34.764359374996275
+}

@@ -1,0 +1,2 @@
+still: song 6.000s, run Some(RunState { song: 5.991666666666666, presentation_s: 5.991666666666666, frozen_beat: None, elapsed: 5.991666666666666, spawn_minute: Some(0), spawned: 20, offer: None, roulette: None, level: 1, max_hp: 120.0, world: 5.991666666666666, frozen: None, selected: 0, confirmed: false }), alive 15, kills 5, damage-exempt false
+slice: wrote ../native/evidence/sh11/drop-in.png (1218 sprites, 4 lights; 15 enemies, health 0.97, groove 0.00; zone first)

@@ -1,0 +1,72 @@
+{
+  "command": "uv run --no-project python native/scripts/survivors_sweep.py --minutes 5 --jobs 2 --out native/evidence/sh11/matrix",
+  "cases": 41,
+  "wallSeconds": 163.68591379188,
+  "hookSurvivalPass": true,
+  "positioningSurvived": 20,
+  "afkSurvived5": 20,
+  "pacingTarget": [
+    8,
+    12
+  ],
+  "pacingIsGate": false,
+  "groups": [
+    {
+      "input": "cached-original",
+      "positioningSurvived": 5,
+      "minimumHp": 0.7291666666666666,
+      "levelsAt5": [
+        2,
+        9,
+        1,
+        2,
+        2
+      ],
+      "withinPacingTargetReportOnly": 1,
+      "chestsOpened": 0
+    },
+    {
+      "input": "cached-reverse",
+      "positioningSurvived": 5,
+      "minimumHp": 1.0,
+      "levelsAt5": [
+        11,
+        11,
+        11,
+        8,
+        11
+      ],
+      "withinPacingTargetReportOnly": 5,
+      "chestsOpened": 2
+    },
+    {
+      "input": "cached-rotate",
+      "positioningSurvived": 5,
+      "minimumHp": 0.8291666666666667,
+      "levelsAt5": [
+        11,
+        4,
+        12,
+        1,
+        2
+      ],
+      "withinPacingTargetReportOnly": 2,
+      "chestsOpened": 0
+    },
+    {
+      "input": "continuous-original",
+      "positioningSurvived": 5,
+      "minimumHp": 0.8333333333333334,
+      "levelsAt5": [
+        10,
+        2,
+        10,
+        5,
+        2
+      ],
+      "withinPacingTargetReportOnly": 2,
+      "chestsOpened": 0
+    }
+  ],
+  "scope": "First five run minutes only; full-run HP>25% and AFK-before10 gates belong SW7. No knob or offer retune."
+}

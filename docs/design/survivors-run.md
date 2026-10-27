@@ -1416,6 +1416,20 @@ Run from `native/` with `cargo run --release -p app -- --playlist
 playlists/survivors-30.m3u --headless --delayed --press-beats --pick-first --seconds 90`.
 
 ### SH11
+
+All 20 normal-damage positioning prefixes survive five run minutes, minimum
+HP 72.92%, in the 41-case sweep (163.686s wall). Level at 5 varies 1–12;
+10/20 reach the report-only 8–12 target. All 20 AFK prefixes remain alive at
+5:00; the full before-10 verdict belongs to SW7. The [SH11 evidence](../../native/evidence/sh11/README.md)
+keeps raw reports, source-scoped actual-play recordings, first-five stills,
+a silent offscreen montage and H's indexed cold review/dispositions. The one
+confirmed review issue is fixed: rollback-corrected cards and pair badges
+refresh even when reveal beats stay unchanged, without a phantom confirm. Offers
+and easy knobs remain SW7's work under AGENTS. File/System feel and music
+listening are operator-pending. Run from `native/` with `cargo run --release
+-p app -- --playlist playlists/survivors-30.m3u --headless --delayed
+--press-beats --pick-first --seconds 30`.
+
 ### SW1
 
 King Bible now emits source-duration cycles with evenly spaced orbiting blades,
