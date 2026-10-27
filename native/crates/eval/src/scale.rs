@@ -36,6 +36,8 @@ fn configured_density_engine(
     setup: impl FnOnce(&mut sim::engine::Sim),
     killable: bool,
 ) -> Result<Engine, String> {
+    // Isolate constant population from musical pressure, while retaining actual
+    // quiet/loud travel and presentation. This is an injected load, not run balance.
     let mut rows = 0;
     let text = level.text.lines().map(|line| {
         if let Some(minute) = line.trim().strip_prefix("- {\"minute\":")
@@ -50,6 +52,14 @@ fn configured_density_engine(
             "density fixture expected 31 schedule rows, found {rows}"
         ));
     }
+    let pressure = "levelScale: { quiet: 0.6, medium: 1.0, loud: 1.3 }";
+    if !text.contains(pressure) {
+        return Err("density fixture expected the musical pressure scale".into());
+    }
+    let text = text.replace(
+        pressure,
+        "levelScale: { quiet: 1.0, medium: 1.0, loud: 1.0 }",
+    );
     let mut content = lib.clone();
     for enemy in content.enemies.values_mut() {
         enemy.health = if killable { 40.0 } else { 1e12 };
@@ -155,6 +165,13 @@ mod tests {
                 );
             }
             engine.frame(now, 0.23); // deliberately non-default lead and late input
+            if now > 1.0 {
+                assert_eq!(
+                    engine.view.borrow().alive().count(),
+                    300,
+                    "constant injected population even under quiet music"
+                );
+            }
             engine.view.borrow_mut().take_moments();
         }
         assert!(engine.stats.rollbacks > 20);

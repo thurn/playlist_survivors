@@ -1,0 +1,54 @@
+changes: 7 paths since d75d694
+friction: 46 records valid
+All checks passed!
+WARN `--no-project` was provided, but no project was found
+...........................
+----------------------------------------------------------------------
+Ran 27 tests in 0.030s
+
+OK
+changes: 7 paths since d75d694
+crates purity: stream, analysis, sim, eval, players pure
+native check-fast: app cli eval
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.19s
+
+running 83 tests
+i................i.................................i...............Error: Couldn't open input file ('wht?')
+................
+test result: ok. 80 passed; 0 failed; 3 ignored; 0 measured; 0 filtered out; finished in 1.08s
+
+
+running 11 tests
+...........
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+
+
+running 12 tests
+............
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.07s
+
+
+running 24 tests
+........................
+test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.68s
+
+
+running 4 tests
+....
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+
+
+running 4 tests
+....
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.44s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+Analyzing dependencies of crates in this directory...
+cargo-machete didn't find any unused dependencies in this directory. Good job!
+Done!
+native check-fast: passed in 10 s
+check-fast: passed in 11 s

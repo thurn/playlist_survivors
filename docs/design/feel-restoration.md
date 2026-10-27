@@ -541,6 +541,10 @@ cover three tempos, causal triggers, pauses, caps and late-key recordings.
 FR10 retains integrated real-music/feel qualification; the bead records review,
 checks and landed candidate.
 
+A second [release-fixture repair](../../native/evidence/fr-ci14/README.md) keeps
+the injected density scene at300 actors across music levels; shipped pressure
+and performance thresholds are unchanged.
+
 ### FR8 — Encounters and zones
 
 Pending implementation.
