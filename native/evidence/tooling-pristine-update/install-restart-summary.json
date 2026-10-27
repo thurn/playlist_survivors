@@ -1,0 +1,23 @@
+{
+  "commit": "114f93d2a5d56d804ea0da60bffd241c7c856ac5",
+  "releaseImmediatelyBeforeReplacement": "114f93d2a5d56d804ea0da60bffd241c7c856ac5",
+  "oldPids": [
+    28056
+  ],
+  "newPids": [
+    29710
+  ],
+  "bundleHashes": {
+    "tollgate-app": "20eb2fbd8d9dc10b150c1337bcdf4bdc026a8e7ef1aa87e9cd074e940aae446c",
+    "tg": "514612b89748f5a2364b3789aa1695a6b92385183cd76a204f028cdeff4dc25b",
+    "tollgate-worker": "e995e2de0d79ac9d7839ef043417aaf5d3da40cf7bbd75df4b1fae6bb57852f7"
+  },
+  "doctorsHealthy": {
+    "tollgate": true,
+    "playlist_survivors": true
+  },
+  "activationExit": 0,
+  "cliVersion": "tg 0.1.0",
+  "launch": "open -g -j (background and hidden)",
+  "installLock": "/tmp/tollgate-self-install.lock"
+}

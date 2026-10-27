@@ -1,0 +1,1 @@
+{"error":{"code":"service-error","message":"Git error: Git command produced invalid output: feature update found no source commit on this clean branch; tg update rebases exactly one source commit. To refresh this pristine worktree, run `git merge --ff-only staging` here; keep any saved stash until its changes are restored","retryable":false},"ok":false}

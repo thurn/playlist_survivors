@@ -1,0 +1,62 @@
+RUN ['codesign', '--force', '--deep', '--sign', '-', '/Users/dthurn/tollgate/.worktrees/codex-pristine-update-install/target/release/bundle/macos/Tollgate.app']
+/Users/dthurn/tollgate/.worktrees/codex-pristine-update-install/target/release/bundle/macos/Tollgate.app: replacing existing signature
+RUN ['codesign', '--verify', '--deep', '--strict', '/Users/dthurn/tollgate/.worktrees/codex-pristine-update-install/target/release/bundle/macos/Tollgate.app']
+RUN ['ditto', '/Users/dthurn/tollgate/.worktrees/codex-pristine-update-install/target/release/bundle/macos/Tollgate.app', '/Applications/.tollgate-install.r1y7yfkt/Tollgate.app']
+OLD PIDS [28056]
+RUN ['osascript', '-e', 'tell application id "dev.tollgate.desktop" to quit']
+RUN ['open', '-g', '-j', '/Applications/Tollgate.app']
+battlement           activating   queued · waiting-for-slot
+dreamtides_web       activating   queued · waiting-for-slot
+fulcrum              activating   queued · waiting-for-slot
+hive                 activating   queued · waiting-for-slot
+mvm                  activating   queued · waiting-for-slot
+playlist_survivors   activating   recovering · log-retention
+quest_prototype      activating   opening · open-store
+rbp                  activating   queued · waiting-for-slot
+roguespades_prototype activating   queued · waiting-for-slot
+rsp                  activating   queued · waiting-for-slot
+stylon               activating   queued · waiting-for-slot
+tollgate             activating   opening · integrity-check
+tome                 activating   queued · waiting-for-slot
+trox                 activating   queued · waiting-for-slot
+playlist_survivors   active
+quest_prototype      activating   opening · integrity-check
+rsp                  active
+tollgate             activating   recovering · remote-intents
+trox                 activating   opening · open-store
+battlement           activating   opening · open-store
+fulcrum              activating   opening · open-store
+quest_prototype      active
+tollgate             active
+trox                 activating   opening · integrity-check
+dreamtides_web       activating   opening · discover-repository
+fulcrum              active
+hive                 active
+rbp                  activating   opening · open-store
+roguespades_prototype active
+stylon               active
+trox                 active
+battlement           activating   opening · integrity-check
+dreamtides_web       activating   opening · open-store
+mvm                  active
+rbp                  active
+tome                 active
+battlement           activating   recovering · log-retention
+dreamtides_web       activating   recovering · log-retention
+battlement           active
+dreamtides_web       active
+ACTIVATION EXIT 0
+RUN ['/Users/dthurn/.local/bin/tg', '--no-launch', 'doctor']
+Tollgate doctor · tollgate
+  ✓ Repository execution         Active
+  ✓ SQLite integrity             ok
+  ✓ Authoritative staging        observed 114f93d2a5 · recorded 114f93d2a5
+  ✓ Authoritative release        observed 114f93d2a5 · recorded 114f93d2a5
+  ✓ Execution mirror             Recorded staging is reachable in the isolated execution mirror.
+  ✓ Trusted configuration        disk 66ffd05df453 · active 66ffd05df453
+  ✓ Runner executable            /bin/sh
+  ✓ Persistent slots             1 registered slot(s) passed ownership checks
+  ✓ Retained artifacts           no retained artifact needs attention
+  ✓ APFS force-clone             force-clone probe succeeded
+  ✓ Authoritative volume reserve 143688192000 bytes available
+  ✓ Remote exact ref             observed 114f93d2a5

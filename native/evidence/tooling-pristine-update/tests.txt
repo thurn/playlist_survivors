@@ -1,0 +1,46 @@
+   Compiling tollgate-git v0.1.0 (/Users/dthurn/tollgate/.worktrees/codex-pristine-update-guidance/crates/tollgate-git)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.03s
+     Running unittests src/lib.rs (target/debug/deps/tollgate_git-7bf44ae3048539dc)
+
+running 32 tests
+test tests::ignored_cache_directories_must_be_recursively_ignored ... ok
+test tests::exact_registration_rejects_an_orphan_that_only_discovers_its_parent ... ok
+test tests::raw_commit_rewrite_strips_signature_and_preserves_message_bytes ... ok
+test tests::cleanup_rejects_a_symlink_alias_before_removal ... ok
+test tests::ancestry_distinguishes_non_ancestor_from_missing_object ... ok
+test tests::configures_master_to_track_the_configured_remote_branch ... ok
+test tests::initializes_staging_and_release_without_moving_the_checked_out_master_branch ... ok
+test tests::neither_tollgate_branch_may_be_checked_out_in_any_worktree ... ok
+test tests::cleanup_accepts_git_unregistration_with_residual_generated_files ... ok
+test tests::leaves_a_dirty_checked_out_master_untouched ... ok
+test tests::lists_unmerged_master_commits_oldest_first ... ok
+test tests::distinguishes_an_empty_synthetic_patch_from_a_conflict ... ok
+test tests::cleanup_preserves_dirty_and_different_repository_worktrees ... ok
+test tests::range_changed_paths_are_the_union_of_every_first_parent_commit ... ok
+test tests::projects_an_unchanged_master_source_to_its_tested_commit ... ok
+test tests::rejects_master_that_diverged_from_release ... ok
+test tests::synchronizes_an_unchecked_out_master_with_an_exact_ref_cas ... ok
+test tests::a_conflicting_feature_update_names_its_paths_and_leaves_the_worktree_unchanged ... ok
+test tests::rejects_a_master_range_containing_a_merge_commit ... ok
+test tests::staging_is_created_at_release_exactly_once ... ok
+test tests::a_one_commit_feature_update_still_rebases_onto_staging ... ok
+test tests::refuses_to_overwrite_an_existing_divergent_tollgate_branch ... ok
+test tests::constructs_a_shared_synthetic_prefix_with_preserved_parent_chain ... ok
+test tests::conflicting_unsubmitted_master_rebase_leaves_checkout_unchanged ... ok
+test tests::rebases_diverged_master_commits_onto_release ... ok
+test tests::tested_object_ref_never_overwrites_contradictory_owned_evidence ... ok
+test tests::reports_conflicting_paths_and_source_base_when_prefix_synthesis_fails ... ok
+test tests::staging_promotion_leaves_release_and_verifies_it ... ok
+test tests::the_opt_out_transaction_moves_staging_and_release_together_or_not_at_all ... ok
+test tests::rebases_clean_unsubmitted_master_onto_certified_release ... ok
+test tests::synchronizes_checked_out_master_and_its_files_by_fast_forward ... ok
+test tests::a_pristine_feature_update_explains_refresh_without_touching_work_or_stash ... ok
+
+test result: ok. 32 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.98s
+
+   Doc-tests tollgate_git
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

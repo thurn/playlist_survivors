@@ -1,0 +1,22 @@
+{
+  "command": "tg --no-launch update --json",
+  "expectedDiagnosticExit": 5,
+  "originalHead": "9e6cfb69a33c6f3feb738bd63e185dd250e1ca0d",
+  "probeScope": "clean owned unsubmitted feature branch behind staging; avoids active immutable release-source guard at latest tip",
+  "before": {
+    "head": "d68e2be149e50505373809c761404c7b86b406e3",
+    "tree": "1f434156d1ecb7edae57e20f106b5844c57487e1",
+    "branch": "codex/pristine-refresh-evidence",
+    "status": ""
+  },
+  "after": {
+    "head": "d68e2be149e50505373809c761404c7b86b406e3",
+    "tree": "1f434156d1ecb7edae57e20f106b5844c57487e1",
+    "branch": "codex/pristine-refresh-evidence",
+    "status": ""
+  },
+  "unchanged": true,
+  "safeRefreshCommand": "git merge --ff-only staging",
+  "refreshExit": 0,
+  "refreshedHead": "9e6cfb69a33c6f3feb738bd63e185dd250e1ca0d"
+}

@@ -1,0 +1,89 @@
+{
+  "checks": [
+    {
+      "detail": "Active",
+      "name": "Repository execution",
+      "recovery_action": null,
+      "status": "healthy"
+    },
+    {
+      "detail": "ok",
+      "name": "SQLite integrity",
+      "recovery_action": null,
+      "status": "healthy"
+    },
+    {
+      "detail": "observed 9e6cfb69a3 · recorded 9e6cfb69a3",
+      "name": "Authoritative staging",
+      "recovery_action": null,
+      "status": "healthy"
+    },
+    {
+      "detail": "observed ccae091229 · recorded ccae091229",
+      "name": "Authoritative release",
+      "recovery_action": null,
+      "status": "healthy"
+    },
+    {
+      "detail": "Recorded staging is reachable in the isolated execution mirror.",
+      "name": "Execution mirror",
+      "recovery_action": null,
+      "status": "healthy"
+    },
+    {
+      "detail": "disk 2445b715e248 · active 2445b715e248",
+      "name": "Trusted configuration",
+      "recovery_action": null,
+      "status": "healthy"
+    },
+    {
+      "detail": "/bin/sh",
+      "name": "Runner executable",
+      "recovery_action": null,
+      "status": "healthy"
+    },
+    {
+      "detail": "4 registered slot(s) passed ownership checks",
+      "name": "Persistent slots",
+      "recovery_action": null,
+      "status": "healthy"
+    },
+    {
+      "detail": "no retained artifact needs attention",
+      "name": "Retained artifacts",
+      "recovery_action": null,
+      "status": "healthy"
+    },
+    {
+      "detail": "force-clone probe succeeded",
+      "name": "APFS force-clone",
+      "recovery_action": null,
+      "status": "healthy"
+    },
+    {
+      "detail": "143607816192 bytes available",
+      "name": "Authoritative volume reserve",
+      "recovery_action": null,
+      "status": "healthy"
+    },
+    {
+      "detail": "observed ccae091229",
+      "name": "Remote exact ref",
+      "recovery_action": null,
+      "status": "healthy"
+    }
+  ],
+  "generated_at": [
+    2026,
+    300,
+    4,
+    24,
+    15,
+    302699000,
+    0,
+    0,
+    0
+  ],
+  "healthy": true,
+  "repository_id": "01a16039-84d6-7643-bfec-ddf2cd7c9b54"
+}

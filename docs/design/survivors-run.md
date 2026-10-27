@@ -1081,6 +1081,18 @@ the table.
 
 ## Bead Notes
 
+### Tooling — pristine worktree refresh (hv-n7fn.40)
+
+[Kept evidence](../../native/evidence/tooling-pristine-update/README.md) records
+cause fix `hv-mm03` in Tollgate, source/landed `114f93d2a5d56d804ea0da60bffd241c7c856ac5`.
+A zero-source-commit `tg update` error now explains `git merge --ff-only staging`
+and preserving saved work. Real Git tests prove unchanged branch/index/stash and
+a usable refresh path; all 32 adapter tests, clippy and Tollgate certification pass.
+The exact release was built (216.738 s), installed and restarted; binary hashes,
+healthy doctors and an installed-service probe are retained. This bead changes
+no game behavior. Its own evidence commit SHA is in the native bead notes.
+
+
 Each bead summarizes its measurements here in a few lines, in its own
 subsection, linking `native/evidence/<key>/`. Beads never add sections
 elsewhere in this document. Parallel beads would collide there.

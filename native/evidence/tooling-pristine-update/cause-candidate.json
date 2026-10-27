@@ -1,0 +1,421 @@
+{
+  "attempt_generations": [
+    {
+      "anchored_base_oid": {
+        "bytes": "34e9051f10756352d32215e9f11fb74c29c4edf5",
+        "format": "sha1"
+      },
+      "configuration_digest": "66ffd05df453e046909693da08ead1a39216ab73db1d4cc3b49c22a89e9560c6",
+      "engine_epoch": 1,
+      "expected_parent_oid": {
+        "bytes": "34e9051f10756352d32215e9f11fb74c29c4edf5",
+        "format": "sha1"
+      },
+      "id": "01a17b94-e6ab-7901-bc1d-bdf97b813b1e",
+      "identity_digest": "09c85d393e58d45895afbb2beba5dbc90ca9d57382683d0d4c09298f24f29286",
+      "invalidated_by": null,
+      "item_id": "01a17b94-e33e-78d2-8d2a-19891f0f504b",
+      "ordered_item_ids": [
+        "01a17b94-e33e-78d2-8d2a-19891f0f504b"
+      ],
+      "ordered_source_oids": [
+        {
+          "bytes": "114f93d2a5d56d804ea0da60bffd241c7c856ac5",
+          "format": "sha1"
+        }
+      ],
+      "prefix_oids": [
+        {
+          "bytes": "114f93d2a5d56d804ea0da60bffd241c7c856ac5",
+          "format": "sha1"
+        }
+      ],
+      "step_graph_digest": "65704e157f8647ceaad3c11a0ccadfa82c8a66345aa8ede704470794c2fb510a",
+      "tested_oid": {
+        "bytes": "114f93d2a5d56d804ea0da60bffd241c7c856ac5",
+        "format": "sha1"
+      }
+    }
+  ],
+  "attempts": [
+    {
+      "attempt": 1,
+      "created_at": [
+        2026,
+        300,
+        4,
+        18,
+        38,
+        517266000,
+        0,
+        0,
+        0
+      ],
+      "environment_fingerprint": "898c8b3786e8ad57858a8b1de296a6dac26b1db76b059c6e0915d1bae0803210",
+      "expected_parent_oid": {
+        "bytes": "34e9051f10756352d32215e9f11fb74c29c4edf5",
+        "format": "sha1"
+      },
+      "finished_at": [
+        2026,
+        300,
+        4,
+        19,
+        35,
+        580628000,
+        0,
+        0,
+        0
+      ],
+      "frozen_steps": [
+        {
+          "command": {
+            "kind": "shell",
+            "runner": [
+              "/bin/sh",
+              "-c"
+            ],
+            "script": "npm --prefix ui ci && npm --prefix ui run build && npm --prefix ui test && scripts/prepare-sidecar.sh debug && cargo test --workspace --all-targets --no-run && cargo test -p tollgate-config -p tollgate-domain -p tollgate-git -p tollgate-ipc -p tollgate-scheduler -p tollgate-store && cargo test -p tollgate-service existing_master_integration_state_migrates_to_release_without_switching_checkout"
+          },
+          "cpu_tokens": 0,
+          "final_step": false,
+          "id": "62c87b94-e6f7-7f01-8cea-7b582ae96ca0",
+          "memory_bytes": 0,
+          "name": "ci",
+          "needs": [],
+          "reuse_on_retry": false,
+          "rss_limit_bytes": null,
+          "semaphores": [],
+          "soft_needs": [],
+          "timeout_ns": 3600000000000,
+          "voting": true,
+          "working_directory": "."
+        }
+      ],
+      "id": "01a17b94-e6f7-7f01-8cea-7b582ae96ca0",
+      "item_id": "01a17b94-e33e-78d2-8d2a-19891f0f504b",
+      "retry_of": null,
+      "slot_id": "01a17150-7501-7121-9e0d-49440e403565",
+      "started_at": [
+        2026,
+        300,
+        4,
+        18,
+        38,
+        572304000,
+        0,
+        0,
+        0
+      ],
+      "state": "passed",
+      "step_results": [
+        {
+          "diagnostics": [],
+          "elapsed_ms": 56946,
+          "exit_code": 0,
+          "log_hash": "61a32cf3f73c55284e1970e4cc44ba892a68801702bae64a6fde8433b6ec6340",
+          "name": "ci",
+          "result_class": "success",
+          "reused_from_attempt_id": null,
+          "signal": null,
+          "stderr_end": 10097,
+          "stdout_end": 12577
+        }
+      ],
+      "tested_oid": {
+        "bytes": "114f93d2a5d56d804ea0da60bffd241c7c856ac5",
+        "format": "sha1"
+      },
+      "validation_generation_id": "01a17b94-e6ab-7901-bc1d-bdf97b813b1e"
+    }
+  ],
+  "buildset": {
+    "attempt": 1,
+    "created_at": [
+      2026,
+      300,
+      4,
+      18,
+      38,
+      517266000,
+      0,
+      0,
+      0
+    ],
+    "environment_fingerprint": "898c8b3786e8ad57858a8b1de296a6dac26b1db76b059c6e0915d1bae0803210",
+    "expected_parent_oid": {
+      "bytes": "34e9051f10756352d32215e9f11fb74c29c4edf5",
+      "format": "sha1"
+    },
+    "finished_at": [
+      2026,
+      300,
+      4,
+      19,
+      35,
+      580628000,
+      0,
+      0,
+      0
+    ],
+    "frozen_steps": [
+      {
+        "command": {
+          "kind": "shell",
+          "runner": [
+            "/bin/sh",
+            "-c"
+          ],
+          "script": "npm --prefix ui ci && npm --prefix ui run build && npm --prefix ui test && scripts/prepare-sidecar.sh debug && cargo test --workspace --all-targets --no-run && cargo test -p tollgate-config -p tollgate-domain -p tollgate-git -p tollgate-ipc -p tollgate-scheduler -p tollgate-store && cargo test -p tollgate-service existing_master_integration_state_migrates_to_release_without_switching_checkout"
+        },
+        "cpu_tokens": 0,
+        "final_step": false,
+        "id": "62c87b94-e6f7-7f01-8cea-7b582ae96ca0",
+        "memory_bytes": 0,
+        "name": "ci",
+        "needs": [],
+        "reuse_on_retry": false,
+        "rss_limit_bytes": null,
+        "semaphores": [],
+        "soft_needs": [],
+        "timeout_ns": 3600000000000,
+        "voting": true,
+        "working_directory": "."
+      }
+    ],
+    "id": "01a17b94-e6f7-7f01-8cea-7b582ae96ca0",
+    "item_id": "01a17b94-e33e-78d2-8d2a-19891f0f504b",
+    "retry_of": null,
+    "slot_id": "01a17150-7501-7121-9e0d-49440e403565",
+    "started_at": [
+      2026,
+      300,
+      4,
+      18,
+      38,
+      572304000,
+      0,
+      0,
+      0
+    ],
+    "state": "passed",
+    "step_results": [
+      {
+        "diagnostics": [],
+        "elapsed_ms": 56946,
+        "exit_code": 0,
+        "log_hash": "61a32cf3f73c55284e1970e4cc44ba892a68801702bae64a6fde8433b6ec6340",
+        "name": "ci",
+        "result_class": "success",
+        "reused_from_attempt_id": null,
+        "signal": null,
+        "stderr_end": 10097,
+        "stdout_end": 12577
+      }
+    ],
+    "tested_oid": {
+      "bytes": "114f93d2a5d56d804ea0da60bffd241c7c856ac5",
+      "format": "sha1"
+    },
+    "validation_generation_id": "01a17b94-e6ab-7901-bc1d-bdf97b813b1e"
+  },
+  "certificate": {
+    "buildset_id": "01a17b94-e6f7-7f01-8cea-7b582ae96ca0",
+    "checkout_verified": true,
+    "completed_event_sequence": 92014,
+    "configuration_digest": "66ffd05df453e046909693da08ead1a39216ab73db1d4cc3b49c22a89e9560c6",
+    "created_at": [
+      2026,
+      300,
+      4,
+      19,
+      35,
+      589455000,
+      0,
+      0,
+      0
+    ],
+    "engine_epoch": 1,
+    "environment_fingerprint": "898c8b3786e8ad57858a8b1de296a6dac26b1db76b059c6e0915d1bae0803210",
+    "expected_parent_oid": {
+      "bytes": "34e9051f10756352d32215e9f11fb74c29c4edf5",
+      "format": "sha1"
+    },
+    "id": "01a17b95-c625-7330-94b0-189acd86d89f",
+    "queue_item_id": "01a17b94-e33e-78d2-8d2a-19891f0f504b",
+    "step_graph_digest": "65704e157f8647ceaad3c11a0ccadfa82c8a66345aa8ede704470794c2fb510a",
+    "tested_oid": {
+      "bytes": "114f93d2a5d56d804ea0da60bffd241c7c856ac5",
+      "format": "sha1"
+    },
+    "tree_oid": {
+      "bytes": "c4a403416ab127aea2fdb698e41e636102dda6c9",
+      "format": "sha1"
+    },
+    "validation_generation_id": "01a17b94-e6ab-7901-bc1d-bdf97b813b1e",
+    "voting_results": [
+      {
+        "attempt_id": "01a17b94-e774-7fb2-b1f3-674c1e900c8e",
+        "log_hash": "61a32cf3f73c55284e1970e4cc44ba892a68801702bae64a6fde8433b6ec6340",
+        "log_stderr_end": 10097,
+        "log_stdout_end": 12577,
+        "step_id": "62c87b94-e6f7-7f01-8cea-7b582ae96ca0"
+      }
+    ],
+    "warnings": []
+  },
+  "certificates": [
+    {
+      "buildset_id": "01a17b94-e6f7-7f01-8cea-7b582ae96ca0",
+      "checkout_verified": true,
+      "completed_event_sequence": 92014,
+      "configuration_digest": "66ffd05df453e046909693da08ead1a39216ab73db1d4cc3b49c22a89e9560c6",
+      "created_at": [
+        2026,
+        300,
+        4,
+        19,
+        35,
+        589455000,
+        0,
+        0,
+        0
+      ],
+      "engine_epoch": 1,
+      "environment_fingerprint": "898c8b3786e8ad57858a8b1de296a6dac26b1db76b059c6e0915d1bae0803210",
+      "expected_parent_oid": {
+        "bytes": "34e9051f10756352d32215e9f11fb74c29c4edf5",
+        "format": "sha1"
+      },
+      "id": "01a17b95-c625-7330-94b0-189acd86d89f",
+      "queue_item_id": "01a17b94-e33e-78d2-8d2a-19891f0f504b",
+      "step_graph_digest": "65704e157f8647ceaad3c11a0ccadfa82c8a66345aa8ede704470794c2fb510a",
+      "tested_oid": {
+        "bytes": "114f93d2a5d56d804ea0da60bffd241c7c856ac5",
+        "format": "sha1"
+      },
+      "tree_oid": {
+        "bytes": "c4a403416ab127aea2fdb698e41e636102dda6c9",
+        "format": "sha1"
+      },
+      "validation_generation_id": "01a17b94-e6ab-7901-bc1d-bdf97b813b1e",
+      "voting_results": [
+        {
+          "attempt_id": "01a17b94-e774-7fb2-b1f3-674c1e900c8e",
+          "log_hash": "61a32cf3f73c55284e1970e4cc44ba892a68801702bae64a6fde8433b6ec6340",
+          "log_stderr_end": 10097,
+          "log_stdout_end": 12577,
+          "step_id": "62c87b94-e6f7-7f01-8cea-7b582ae96ca0"
+        }
+      ],
+      "warnings": []
+    }
+  ],
+  "elapsed_ms": 57008,
+  "failure_attribution": null,
+  "generation": {
+    "anchored_base_oid": {
+      "bytes": "34e9051f10756352d32215e9f11fb74c29c4edf5",
+      "format": "sha1"
+    },
+    "configuration_digest": "66ffd05df453e046909693da08ead1a39216ab73db1d4cc3b49c22a89e9560c6",
+    "engine_epoch": 1,
+    "expected_parent_oid": {
+      "bytes": "34e9051f10756352d32215e9f11fb74c29c4edf5",
+      "format": "sha1"
+    },
+    "id": "01a17b94-e6ab-7901-bc1d-bdf97b813b1e",
+    "identity_digest": "09c85d393e58d45895afbb2beba5dbc90ca9d57382683d0d4c09298f24f29286",
+    "invalidated_by": null,
+    "item_id": "01a17b94-e33e-78d2-8d2a-19891f0f504b",
+    "ordered_item_ids": [
+      "01a17b94-e33e-78d2-8d2a-19891f0f504b"
+    ],
+    "ordered_source_oids": [
+      {
+        "bytes": "114f93d2a5d56d804ea0da60bffd241c7c856ac5",
+        "format": "sha1"
+      }
+    ],
+    "prefix_oids": [
+      {
+        "bytes": "114f93d2a5d56d804ea0da60bffd241c7c856ac5",
+        "format": "sha1"
+      }
+    ],
+    "step_graph_digest": "65704e157f8647ceaad3c11a0ccadfa82c8a66345aa8ede704470794c2fb510a",
+    "tested_oid": {
+      "bytes": "114f93d2a5d56d804ea0da60bffd241c7c856ac5",
+      "format": "sha1"
+    }
+  },
+  "included_items": [
+    "01a17b94"
+  ],
+  "item": {
+    "admission_sequence": 120,
+    "buildset_id": "01a17b94-e6f7-7f01-8cea-7b582ae96ca0",
+    "certificate_id": "01a17b95-c625-7330-94b0-189acd86d89f",
+    "cleanup_policy": "automatic",
+    "cleanup_state": "completed",
+    "current_generation_id": "01a17b94-e6ab-7901-bc1d-bdf97b813b1e",
+    "dependencies": [],
+    "enqueue_sequence": 120,
+    "id": "01a17b94-e33e-78d2-8d2a-19891f0f504b",
+    "kind": "gate",
+    "metadata": {
+      "approved_at": [
+        2026,
+        300,
+        4,
+        18,
+        37,
+        509067000,
+        0,
+        0,
+        0
+      ],
+      "author_email": "derek@fake.email",
+      "author_name": "Derek Thurn",
+      "branch": "codex/pristine-update-guidance",
+      "message_hash": "b7bb7339a7e45f61255d6b2910a42d9d25a1ec7573c4f0d70a7d01b9f6cdbdb3",
+      "purpose": "candidate",
+      "signature_state": "unknown",
+      "subject": "fix(git): explain how to refresh pristine feature worktrees",
+      "worktree_path": "/Users/dthurn/tollgate/.worktrees/codex-pristine-update-guidance"
+    },
+    "promotion_authorized": true,
+    "promotion_authorized_at": [
+      2026,
+      300,
+      4,
+      18,
+      58,
+      929074000,
+      0,
+      0,
+      0
+    ],
+    "promotion_authorized_by": "01a17b95-36c8-7d33-a2e9-e1a32ad0577c",
+    "remote_state": "synchronized",
+    "repository_id": "019ff669-c120-73a3-8619-e4bbff6d45fc",
+    "retry_of_item_id": null,
+    "source_oid": {
+      "bytes": "114f93d2a5d56d804ea0da60bffd241c7c856ac5",
+      "format": "sha1"
+    },
+    "source_ref": "refs/tollgate/sources/01a17b94-e33e-78d2-8d2a-19891f0f504b",
+    "state": "promoted",
+    "terminal_reason": null
+  },
+  "local_master": {
+    "contains_tested": true,
+    "master_oid": {
+      "bytes": "114f93d2a5d56d804ea0da60bffd241c7c856ac5",
+      "format": "sha1"
+    },
+    "policy_enabled": true,
+    "reason": null,
+    "status": "synchronized"
+  }
+}
