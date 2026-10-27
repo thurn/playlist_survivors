@@ -1009,6 +1009,11 @@ mod survivor_tests {
             sim::survivors::WeaponId::MagicWand,
             sim::survivors::WeaponId::KingBible,
             sim::survivors::WeaponId::LightningRing,
+            sim::survivors::WeaponId::BloodyTear,
+            sim::survivors::WeaponId::SoulEater,
+            sim::survivors::WeaponId::HolyWand,
+            sim::survivors::WeaponId::UnholyVespers,
+            sim::survivors::WeaponId::ThunderLoop,
         ] {
             let (mut sounds, _) = decoded();
             let b = tests::beats(8, 0.5, 1.0);

@@ -1501,6 +1501,22 @@ operator row carries feel. Run from `native/`: `cargo run --release -p app
 --pick-first --seconds 30`.
 
 ### SW5
+
+The five evolutions now replace max-rank base slots through eligible late
+chests. Source tables/pairs are numerically unchanged. Bloody Tear carries
+actual critical damage/gold labels and its shared 8 HP / active-second heal;
+Soul Eater applies the documented per-contact healing adaptation and grows
+from actual recovered HP, adding its bonus after Might scales base power. Holy Wand uses source rapid bursts, Vespers bridges
+grid gaps without stopping its orbit, and Thunder Loop returns to each
+original strike point after its 1.5 s charge. Snapshot/freeze/causality tests
+cover all five together; actual tier-3 roulette tests cover five sequential
+replacements and early-origin exclusion. [SW5 evidence](../../native/evidence/sw5/README.md)
+keeps source audits, raw checks and eleven labelled stills, including actual
+combat criticals (forced Luck 10) and Thunder's fixed-point return. The demo's
+Soul Eater healing scales with contacted density; SW7 measures that result.
+SP1 retains the transformation/showpiece pass. No offer/easy knob changed.
+Run from `native/` with `cargo run --release -p app -- --playlist
+playlists/survivors-30.m3u --delayed`.
 ### SW6
 ### SW7
 ### SP1

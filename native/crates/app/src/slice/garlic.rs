@@ -32,7 +32,7 @@ impl Garlic {
         };
         if view
             .inventory
-            .is_none_or(|i| i.weapons.rank(WeaponId::Garlic).is_none())
+            .is_none_or(|i| i.weapons.rank(shot.id).is_none())
         {
             return;
         }
@@ -45,7 +45,11 @@ impl Garlic {
             0.0
         };
         let radius = shot.radius as f32 * scale;
-        let color = [0.4 + 0.6 * accent, 1.0, 0.65 - 0.3 * accent];
+        let color = if shot.id == WeaponId::SoulEater {
+            [0.7 + 0.3 * accent, 0.4 + 0.4 * accent, 1.0]
+        } else {
+            [0.4 + 0.6 * accent, 1.0, 0.65 - 0.3 * accent]
+        };
         if let Some(glow) = art.proc.get("glow") {
             out.push(
                 Sprite::centred(*glow, x, y, 2.3 * radius, 2.3 * radius)

@@ -95,16 +95,41 @@ impl Sim {
         }
         let w = self.st.w;
         let position = self.pos(fi, w);
+        let (critical, applied) = if h.what == "bloody-tear"
+            && let Some(p) = &self.st.survivor
+        {
+            use crate::core::rng::{Part, Rng};
+            let tear = crate::survivors::weapon_catalog()
+                .get(crate::survivors::WeaponId::BloodyTear)
+                .level(1);
+            let luck = p.stats.finalized().luck;
+            let critical = tear.crit_enabled
+                && Rng::new(&[
+                    Part::Num(self.env.input.seed),
+                    Part::Str("bloody-tear-critical"),
+                    Part::Num(h.id),
+                    Part::Num(self.st.foes[fi].id as f64),
+                ])
+                .next()
+                    < tear.crit_chance * luck;
+            (
+                critical,
+                h.damage * if critical { tear.crit_multiplier } else { 1.0 },
+            )
+        } else {
+            (false, h.damage)
+        };
         let f = &mut self.st.foes[fi];
-        f.health -= h.damage;
+        f.health -= applied;
         let lethal = f.health <= 1e-9;
         let fate = Fate {
+            critical,
             w,
             x: position.0,
             y: position.1,
             hit: h.id,
             lethal,
-            damage: h.damage,
+            damage: applied,
         };
         f.last_fate = Some(fate);
         self.rec.fate(fi, fate);
@@ -118,6 +143,18 @@ impl Sim {
                     hit: Box::new(h.clone()),
                 },
             );
+        }
+        if critical && self.st.run_s >= self.st.last_bloody_heal + 1.0 - 1e-9 {
+            self.st.last_bloody_heal = self.st.run_s;
+            self.heal(8.0, "bloody-tear");
+        }
+        if h.what == "soul-eater"
+            && let Some(p) = &self.st.survivor
+        {
+            // Documented demo adaptation: each actual aura contact heals a source
+            // Little Heart amount instead of rolling a heart only on a kill.
+            let recovery = p.stats.finalized().recovery;
+            self.heal(1.0 + recovery, "soul-eater");
         }
         if self.st.boss_foe == Some(fi) {
             let f = &self.st.foes[fi];
@@ -148,7 +185,10 @@ impl Sim {
                     .knockback
             });
             let f = &mut self.st.foes[fi];
-            if h.what == "garlic" && data.res_debuffs < 1.0 && f.knockback < data.max_knockback {
+            if matches!(h.what.as_str(), "garlic" | "soul-eater")
+                && data.res_debuffs < 1.0
+                && f.knockback < data.max_knockback
+            {
                 // Source tests before adding: the last increment may overshoot.
                 f.knockback += 0.3;
             }

@@ -1,0 +1,29 @@
+   Compiling players v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sw5-evolutions/native/crates/players)
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sw5-evolutions/native/crates/eval)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.72s
+     Running unittests src/lib.rs (target/debug/deps/eval-ac22b895b76bfc69)
+
+running 2 tests
+test live::presentation_hash_tests::damage_label_metadata_preserves_the_recording_protocol ... ok
+test live::presentation_hash_tests::evolved_applied_damage_and_critical_status_change_the_recording_hash ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/live.rs (target/debug/deps/live-6bbfee6942df762e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 19 filtered out; finished in 0.00s
+
+     Running tests/session.rs (target/debug/deps/session-76edb21f1a60b469)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/survive.rs (target/debug/deps/survive-3f42469f2cfa95cf)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+

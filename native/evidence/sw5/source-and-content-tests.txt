@@ -1,0 +1,33 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.04s
+     Running tests/content.rs (target/debug/deps/content-9a59fe6e516c99d0)
+
+running 5 tests
+test defaults_fill_in_as_zod_does ... ok
+test current_content_loads_and_the_legacy_subset_keeps_its_reference_hash ... ok
+test cross_references_and_extends_are_checked ... ok
+test yaml_reads_as_the_ts_yaml_package_does ... ok
+test invalid_content_is_reported_with_its_file_and_path ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/survivor_offers.rs (target/debug/deps/survivor_offers-fffa46330d1578d9)
+
+running 6 tests
+test the_six_passive_cards_describe_the_source_rank_and_reject_retired_ids ... ok
+test an_evolved_weapon_blocks_reoffering_its_base ... ok
+test preferences_skip_unbuilt_and_keep_distinct_viable_choices ... ok
+test shipped_first_offer_now_contains_the_implemented_garlic ... ok
+test fallback_prefers_lowest_owned_rank_and_heals_only_when_no_item_is_offerable ... ok
+test first_column_meets_the_planned_level_milestones_with_all_weapons_built ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/survivor_weapons.rs (target/debug/deps/survivor_weapons-b4eb7ccfae612445)
+
+running 3 tests
+test runtime_specific_intervals_and_crit_flags_are_preserved ... ok
+test numeric_rank_deltas_add_and_boolean_fields_replace ... ok
+test every_combat_rank_matches_the_sourced_feel_appendix ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

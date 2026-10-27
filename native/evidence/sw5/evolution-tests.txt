@@ -1,0 +1,116 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sw5-evolutions/native/crates/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 6.55s
+     Running unittests src/lib.rs (target/debug/deps/sim-1ebf1e278f138957)
+
+running 11 tests
+Soul Eater: source radius, +1 power/600 actual recovery capped+6; demo per-contact heal1.2 with Pummarola1, no kill required/overheal growth
+Soul Eater +Spinach5/Might1.5: 600 recovered HP gives actual4 damage; +6 recovery cap gives9, bonus added after Might
+Thunder Loop: 7 source+Amount first strikes /7 fixed-point returns at+1.5s, moved old target avoided/new occupant hit
+actual tier3 roulette origin5: five sequential grants, evolution grant allowedfalse
+Thunder Loop fractional pause0.2..2.5: first return3.875, >=1.5 active seconds after first point
+test engine::tests::evolution_tests::evolution_soul_eater_heals_actual_contacts_and_grows_from_actual_recovery_only ... ok
+test engine::tests::evolution_tests::evolution_soul_recovery_bonus_is_added_after_non_default_might ... ok
+test engine::tests::evolution_tests::evolution_thunder_loop_returns_to_original_points_after_target_moves ... ok
+BloodyTear: max-base+partner eligibility, early chest blocked, slot replacement and repeat/base rejection pass
+Vespers 70BPM: 4 source3s recasts, visible throughout12s with required Spellbinder1/duration3.3s
+Holy Wand 70BPM: 194/10s vs200 source bullets, P3/pierce2/speed3.3U/s
+Bloody Tear: 21 critical overlaps at damage2.962962963; 2 shared 8HP heals in1.51s
+test engine::tests::evolution_tests::evolution_bloody_tear_crit_damage_and_shared_one_second_heal_limit ... ok
+actual tier3 roulette origin25: five sequential grants, evolution grant allowedtrue
+test engine::tests::evolution_tests::evolution_real_roulette_grants_five_replacements_only_from_late_origin ... ok
+all five evolutions: full LogRecorder and heal/critical state identical after snapshot0.2, fractional pause0.237, irregular17ms replay cuts through8s
+test engine::tests::evolution_tests::evolution_snapshot_restores_all_five_pending_effects_heal_counters_and_crit_results ... SoulEater: max-base+partner eligibility, early chest blocked, slot replacement and repeat/base rejection pass
+ok
+Vespers 128BPM: 4 source3s recasts, visible throughout12s with required Spellbinder1/duration3.3s
+test engine::tests::evolution_tests::evolution_thunder_charge_and_holy_burst_keep_remaining_time_through_freeze ... ok
+Holy Wand 128BPM: 196/10s vs200 source bullets, P3/pierce2/speed3.3U/s
+test engine::tests::evolution_tests::evolution_all_five_ignore_poisoned_uncommitted_beats_and_energy ... ok
+HolyWand: max-base+partner eligibility, early chest blocked, slot replacement and repeat/base rejection pass
+Vespers 174BPM: 4 source3s recasts, visible throughout12s with required Spellbinder1/duration3.3s
+test engine::tests::evolution_tests::evolution_vespers_keeps_a_visible_orbit_across_grid_gaps_and_source_overlaps ... ok
+Holy Wand 174BPM: 196/10s vs200 source bullets, P3/pierce2/speed3.3U/s
+test engine::tests::evolution_tests::evolution_holy_wand_uses_source_speed_pierce_and_tome_throughput ... ok
+UnholyVespers: max-base+partner eligibility, early chest blocked, slot replacement and repeat/base rejection pass
+ThunderLoop: max-base+partner eligibility, early chest blocked, slot replacement and repeat/base rejection pass
+test engine::tests::evolution_tests::evolution_all_five_require_max_base_and_partner_and_replace_atomically ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 87 filtered out; finished in 0.04s
+
+     Running tests/causality.rs (target/debug/deps/causality-86630208d8a35901)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests/content.rs (target/debug/deps/content-9a59fe6e516c99d0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/core.rs (target/debug/deps/core-c9e1543def3e3e62)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/jsmath.rs (target/debug/deps/jsmath-fb18d9c6c162492d)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/live_run.rs (target/debug/deps/live_run-2a500f2f64a31168)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running tests/oracle_prefix.rs (target/debug/deps/oracle_prefix-36ea5184dd57a6c5)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/schedule.rs (target/debug/deps/schedule-6977568b6c2c1a3c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/sim_modules.rs (target/debug/deps/sim_modules-19b481e47351ed7e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+     Running tests/survivor_offers.rs (target/debug/deps/survivor_offers-fffa46330d1578d9)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/survivor_spawning.rs (target/debug/deps/survivor_spawning-bd30f1999a3bcd76)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/survivor_stats.rs (target/debug/deps/survivor_stats-0db51e3894f1fae8)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/survivor_weapons.rs (target/debug/deps/survivor_weapons-b4eb7ccfae612445)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/survivors.rs (target/debug/deps/survivors-0e33f9d9bae2b18e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.00s
+

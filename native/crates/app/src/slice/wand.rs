@@ -21,6 +21,8 @@ pub fn draw(
         }
         let color = if head.accent {
             [0.8, 0.65, 1.0]
+        } else if head.weapon == sim::survivors::WeaponId::HolyWand {
+            [1.0, 0.85, 0.4]
         } else {
             [0.35, 0.85, 1.0]
         };

@@ -40,6 +40,8 @@ impl Sword {
             let radius = shot.radius as f32 * scale;
             let color = if shot.accent {
                 [1.0, 0.75, 0.4]
+            } else if shot.id == sim::survivors::WeaponId::BloodyTear {
+                [1.0, 0.12, 0.2]
             } else {
                 [1.0, 0.28, 0.58]
             };

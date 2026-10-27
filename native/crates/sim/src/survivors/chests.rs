@@ -150,6 +150,14 @@ mod tests {
     fn items_evolve_then_level_owned_weapons_then_owned_passives_then_heal() {
         let mut inv = Inventory::default();
         let mut catalog = weapon_catalog().clone();
+        // Exercise capability fallback independently of the shipped enabled set.
+        for def in catalog
+            .weapons
+            .values_mut()
+            .filter(|d| d.evolution_of.is_some())
+        {
+            def.implemented = false;
+        }
         inv.weapons.upgrade(WeaponId::Sword, 8).unwrap();
         inv.passives.upgrade(PassiveId::Spinach, 5).unwrap();
         assert_eq!(
@@ -183,7 +191,7 @@ mod tests {
             Item::Heal,
             "unowned items are never introduced"
         );
-        // Future SW5 capability seam: catalogue enablement is required as well as max rank+partner.
+        // Capability seam: catalogue enablement is required as well as max rank+partner.
         catalog
             .weapons
             .get_mut(&WeaponId::BloodyTear)

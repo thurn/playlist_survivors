@@ -177,6 +177,7 @@ struct Options {
     bible_check: Option<PathBuf>,
     lightning_check: Option<PathBuf>,
     roster_check: Option<PathBuf>,
+    evolutions_check: Option<PathBuf>,
     pickups_check: Option<PathBuf>,
     passives_check: Option<PathBuf>,
     volume: f32,
@@ -240,6 +241,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         bible_check: None,
         lightning_check: None,
         roster_check: None,
+        evolutions_check: None,
         pickups_check: None,
         passives_check: None,
         volume: 1.0,
@@ -317,6 +319,13 @@ fn options(args: &[String]) -> Result<Options, String> {
                 o.pickups_check = Some(
                     it.next()
                         .ok_or("--pickups-check needs an output directory")?
+                        .into(),
+                );
+            }
+            "--evolutions-check" => {
+                o.evolutions_check = Some(
+                    it.next()
+                        .ok_or("--evolutions-check needs a directory")?
                         .into(),
                 );
             }
@@ -632,6 +641,9 @@ pub fn run(args: &[String]) -> Result<(), String> {
     }
     if let Some(dir) = &opts.pickups_check {
         return pickups::check::run(dir);
+    }
+    if let Some(dir) = &opts.evolutions_check {
+        return weapons_check::evolutions(dir);
     }
     if let Some(dir) = &opts.roster_check {
         return roster::check::run(dir);

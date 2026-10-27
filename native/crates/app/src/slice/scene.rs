@@ -365,7 +365,7 @@ impl Scene {
                 intensity,
                 ..
             } = m
-                && what == "magic-wand"
+                && matches!(what.as_str(), "magic-wand" | "holy-wand")
                 && x.is_finite()
             {
                 fire(
@@ -379,7 +379,12 @@ impl Scene {
             }
             match m {
                 Moment::WeaponFire(shot) if shot.id.is_sword() => self.sword.shot(*shot, now),
-                Moment::WeaponFire(shot) if shot.id == sim::survivors::WeaponId::Garlic => {
+                Moment::WeaponFire(shot)
+                    if matches!(
+                        shot.id,
+                        sim::survivors::WeaponId::Garlic | sim::survivors::WeaponId::SoulEater
+                    ) =>
+                {
                     self.garlic.shot(*shot, now);
                 }
                 // (As emit.ts fires them; native/evidence/vfx/ts-spec.md.) A swing's arc by its

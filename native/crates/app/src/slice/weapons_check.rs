@@ -1,8 +1,10 @@
 //! Synthetic committed beat/forecast stream through real shot emission, drawn without a window.
 use crate::slice::{HudState, KeyLight, Scene, World, clip::Clip, damage, hud, live, scene};
+use render::font::Align;
 use render::{atlas::Atlases, capture, post::Frame};
+use sim::survivors::{WeaponId, weapon_catalog};
 use std::path::Path;
-pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Result<(), String> {
+fn reexec_batch() -> Result<bool, String> {
     if std::env::var_os("PS_NATIVE_BATCH").is_none() {
         let status = std::process::Command::new("taskpolicy")
             .arg("-b")
@@ -12,27 +14,54 @@ pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Resul
             .status()
             .map_err(|e| e.to_string())?;
         return if status.success() {
-            Ok(())
+            Ok(true)
         } else {
             Err(format!("sword-check child: {status}"))
         };
     }
+    Ok(false)
+}
+pub fn evolutions(dir: &Path) -> Result<(), String> {
+    if reexec_batch()? {
+        return Ok(());
+    }
+    for id in [
+        WeaponId::BloodyTear,
+        WeaponId::SoulEater,
+        WeaponId::HolyWand,
+        WeaponId::UnholyVespers,
+        WeaponId::ThunderLoop,
+    ] {
+        run(&dir.join(id.as_str()), Some((id, 1)))?;
+    }
+    Ok(())
+}
+pub fn run(dir: &Path, fixture: Option<(WeaponId, u8)>) -> Result<(), String> {
+    if reexec_batch()? {
+        return Ok(());
+    }
     std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
     let mut world = World::load(None)?;
-    let lightning = fixture.is_some_and(|(id, _)| id == sim::survivors::WeaponId::LightningRing);
-    let bible = fixture.is_some_and(|(id, _)| id == sim::survivors::WeaponId::KingBible);
-    let wand = fixture.is_some_and(|(id, _)| id == sim::survivors::WeaponId::MagicWand);
+    let thunder = fixture.is_some_and(|(id, _)| id == WeaponId::ThunderLoop);
+    let blood = fixture.is_some_and(|(id, _)| id == WeaponId::BloodyTear);
+    let evolved = fixture.is_some_and(|(id, _)| weapon_catalog().get(id).evolution_of.is_some());
+    let lightning = fixture
+        .is_some_and(|(id, _)| matches!(id, WeaponId::LightningRing | WeaponId::ThunderLoop));
+    let bible =
+        fixture.is_some_and(|(id, _)| matches!(id, WeaponId::KingBible | WeaponId::UnholyVespers));
+    let wand =
+        fixture.is_some_and(|(id, _)| matches!(id, WeaponId::MagicWand | WeaponId::HolyWand));
     let old = "{\"minute\":0,\"minimum\":15,\"frequency\":1000,\"enemies\":[\"vs-bat3\"],\"bosses\":[],\"events\":[],\"treasure\":[]}";
     if !world.level.text.contains(old) {
         return Err("sword fixture minute0 changed".into());
     }
-    let row = if wand || lightning {
+    let row = if wand || lightning || blood {
         r#"{"minute":0,"minimum":8,"frequency":60000,"enemies":["vs-skeleton"],"bosses":[],"events":[],"treasure":[]}"#
     } else {
         r#"{"minute":0,"minimum":0,"frequency":60000,"enemies":[],"bosses":[],"events":[],"treasure":[]}"#
     };
     world.level.text = world.level.text.replacen(old, row, 1);
-    if wand || lightning {
+    if wand || lightning || blood {
         let target = world
             .lib
             .enemies
@@ -45,19 +74,23 @@ pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Resul
             .ok_or("fixture skeleton stats missing")?
             .xp = 0.0;
     }
-    let accent_beat = if lightning {
+    let accent_beat = if blood {
+        20.0
+    } else if lightning {
         10.0
     } else if bible {
-        30.0
+        if evolved { 20.0 } else { 30.0 }
     } else if wand {
         9.0
+    } else if fixture.is_some_and(|(id, _)| id == WeaponId::SoulEater) {
+        7.0
     } else if fixture.is_some() {
         6.0
     } else {
         4.0
     };
     let period = 60.0 / 128.0;
-    let beats: Vec<_> = (0..=if bible { 48 } else { 20 })
+    let beats: Vec<_> = (0..=if bible || blood { 48 } else { 20 })
         .map(|i| stream::Beat {
             t: f64::from(i) * period,
             known_at: (f64::from(i) * period - period).max(0.0),
@@ -68,7 +101,7 @@ pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Resul
     let times: Vec<_> = beats.iter().map(|b| b.t).collect();
     let log = stream::StreamLog {
         beats,
-        ticks: (0..=if bible { 400 } else { 160 })
+        ticks: (0..=if bible || blood { 400 } else { 160 })
             .map(|i| stream::Tick {
                 t: f64::from(i) * 0.05,
                 known_at: f64::from(i) * 0.05,
@@ -95,24 +128,57 @@ pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Resul
         engine.frame(0.0, 0.0);
         // Presentation-only initial loadout. Lead zero avoids speculative restore
         // of this injected starting inventory; rollback is tested separately.
-        for _ in 0..rank {
+        if let Some(parent) = weapon_catalog().get(id).evolution_of {
+            while engine
+                .sim
+                .survivor_inventory()
+                .unwrap()
+                .weapons
+                .rank(parent)
+                .unwrap_or(0)
+                < 8
+            {
+                engine
+                    .sim
+                    .learn_survivor_weapon(parent)
+                    .map_err(|e| format!("fixture base: {e:?}"))?;
+            }
             engine
                 .sim
-                .learn_survivor_weapon(id)
-                .map_err(|e| format!("fixture weapon: {e:?}"))?;
+                .learn_survivor_passive(weapon_catalog().get(id).requires.unwrap())
+                .map_err(|e| format!("fixture passive: {e:?}"))?;
+            engine
+                .sim
+                .evolve_survivor_weapon(id)
+                .map_err(|e| format!("fixture evolution: {e:?}"))?;
+        } else {
+            for _ in 0..rank {
+                engine
+                    .sim
+                    .learn_survivor_weapon(id)
+                    .map_err(|e| format!("fixture weapon: {e:?}"))?;
+            }
         }
+    }
+    if blood {
+        engine.sim.apply_survivor_stats(sim::survivors::StatDelta {
+            luck: 9.0,
+            ..Default::default()
+        });
     }
     let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
     let (w, h) = (1280u32, 720u32);
     let mut gpu = capture::Offscreen::new(&art.pages, w, h)?;
     let mut clip = Clip::new(w, h, 30)?;
     let mut scene = Scene::default();
-    let (mut normal, mut accent) = (false, false);
+    let (mut normal, mut accent, mut returned) = (false, false, false);
     let (mut shots, mut heavy) = (0, 0);
     let (mut strikes, mut accent_strikes) = (0, 0);
-    for tick in 1..=if bible {
+    for tick in 1..=if bible || blood {
         1800
-    } else if wand || lightning {
+    } else if thunder {
+        960
+    } else if wand || lightning || blood {
         720
     } else {
         480
@@ -123,7 +189,7 @@ pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Resul
         let mut moments = engine.view.borrow_mut().take_moments();
         if fixture.is_some() {
             // Isolate the aura in this presentation fixture; inventory/combat are unchanged.
-            moments.retain(|m| !matches!(m,eval::live::Moment::WeaponFire(s) if s.id.is_sword()));
+            moments.retain(|m| !matches!(m,eval::live::Moment::WeaponFire(s) if s.id.is_sword() && fixture.is_some_and(|(id,_)|id != s.id)));
         }
         for m in &moments {
             if let eval::live::Moment::LightningStrike(strike) = m {
@@ -164,7 +230,35 @@ pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Resul
             bar: (s / period % 4.0) / 4.0,
             index: s / period,
         };
-        if lightning && !(4.4..=5.8).contains(&s) {
+        if lightning && !(4.4..=if thunder { 7.2 } else { 5.8 }).contains(&s) {
+            continue;
+        }
+        let normal_at = if lightning {
+            5.05
+        } else if bible {
+            8.1
+        } else if wand {
+            1.3
+        } else if blood {
+            8.1
+        } else if fixture.is_some() {
+            0.1
+        } else {
+            2.0 * period + 0.1
+        };
+        let accent_at = accent_beat * period
+            + if bible {
+                0.6
+            } else if blood {
+                0.15
+            } else {
+                0.1
+            };
+        if evolved
+            && !((!normal && s >= normal_at)
+                || (!accent && s >= accent_at)
+                || (thunder && !returned && s >= 6.25))
+        {
             continue;
         }
         let mut layers = scene::Layers::default();
@@ -205,6 +299,31 @@ pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Resul
             h as f32,
             &mut overlay,
         );
+        if evolved {
+            let id = fixture.unwrap().0;
+            art.fonts["pixel"].text(
+                sim::survivors::Item::Weapon(id).name(),
+                w as f32 / 2.0,
+                150.0,
+                2.0,
+                Align::Centre,
+                [1.0; 4],
+                &mut overlay,
+            );
+            art.fonts["pixel"].text(
+                if blood {
+                    "DIAGNOSTIC: INJECTED BLOODY TEAR / LUCK 10 / DURABLE TARGETS"
+                } else {
+                    "DIAGNOSTIC: INJECTED EVOLUTION / SYNTHETIC STREAM"
+                },
+                w as f32 / 2.0,
+                h as f32 - 15.0,
+                1.0,
+                Align::Centre,
+                [0.8, 0.8, 0.9, 1.0],
+                &mut overlay,
+            );
+        }
         gpu.draw(&Frame {
             clear: crate::slice::CLEAR,
             world: &layers.sprites,
@@ -213,27 +332,21 @@ pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Resul
             overlay: &overlay,
         });
         let rgba = gpu.rgba()?;
-        if !bible || s >= 6.8 {
+        if !evolved && (!bible || s >= 6.8) {
             clip.frame(&rgba)?;
         }
-        if !normal
-            && s >= if lightning {
-                5.05
-            } else if bible {
-                8.1
-            } else if wand {
-                1.3
-            } else if fixture.is_some() {
-                0.1
-            } else {
-                2.0 * period + 0.1
-            }
-        {
+        if thunder && !returned && s >= 6.25 {
+            capture::write_png(&dir.join("return.png"), w, h, &rgba)?;
+            returned = true;
+        }
+        if !normal && s >= normal_at {
             capture::write_png(&dir.join("normal.png"), w, h, &rgba)?;
             normal = true;
         }
         if !accent
-            && s >= if lightning {
+            && s >= if evolved {
+                accent_at
+            } else if lightning {
                 accent_beat * period + 0.02
             } else if bible {
                 accent_beat * period + 0.6
@@ -249,42 +362,57 @@ pub fn run(dir: &Path, fixture: Option<(sim::survivors::WeaponId, u8)>) -> Resul
             accent = true;
         }
     }
-    if !normal || !accent || heavy == 0 {
+    if !normal || !accent || heavy == 0 || (thunder && (!returned || strikes < 14)) {
         return Err("sword fixture missed its normal/accent shots".into());
     }
-    clip.encode(&dir.join(if lightning {
-        "sky-strikes.mp4"
-    } else if bible {
-        "orbit-and-accent.mp4"
-    } else if wand {
-        "homing-and-impact.mp4"
-    } else if fixture.is_some() {
-        "aura-and-accent.mp4"
-    } else {
-        "spin-and-accent.mp4"
-    }))?;
+    if !evolved {
+        clip.encode(&dir.join(if lightning {
+            "sky-strikes.mp4"
+        } else if bible {
+            "orbit-and-accent.mp4"
+        } else if wand {
+            "homing-and-impact.mp4"
+        } else if fixture.is_some() {
+            "aura-and-accent.mp4"
+        } else {
+            "spin-and-accent.mp4"
+        }))?;
+    }
     let setup = fixture.map_or_else(
         || "normal sword, speculative lead 0.3".to_owned(),
         |(id, rank)| {
             format!(
-                "{} rank {rank}, injected initial loadout, lead 0, sword FX hidden",
+                "{} rank {rank}, injected initial loadout, lead 0, base sword FX hidden",
                 id.as_str()
             )
         },
     );
-    let actors = if wand || lightning {
-        "8 skeletons, health 1000, XP 0"
+    let actors = if wand || lightning || blood {
+        if blood {
+            "8 skeletons, health 1000, XP 0; Luck10 forces actual critical overlaps (no hero exemption)"
+        } else {
+            "8 skeletons, health 1000, XP 0"
+        }
     } else {
         "no enemies"
     };
     if lightning {
         eprintln!(
-            "lightning-check: {strikes} actual positioned strikes, {accent_strikes} accented; camera-window 4.4..5.8 s, zero-enemy casts draw/play no strikes"
+            "lightning-check: {strikes} actual positioned strikes, {accent_strikes} accented; camera-window 4.4..{} s, zero-enemy casts draw/play no strikes",
+            if thunder { 7.2 } else { 5.8 }
         );
     }
-    eprintln!(
-        "weapon-check: {} frames at 30 fps, 1280x720, 128 BPM, {shots} matching real shots/{heavy} accent; {setup}; synthetic known beats/forecast, {actors}, no pacing/survival/rollback claim, silent capture",
-        clip.count()
-    );
+    if evolved {
+        eprintln!(
+            "evolution-check {}: {} stills, 1280x720, synthetic128BPM, {shots} actual matching shots/{heavy} accent; {setup}; {actors}; silent, no pacing/survival/rollback claim",
+            fixture.unwrap().0.as_str(),
+            if thunder { 3 } else { 2 }
+        );
+    } else {
+        eprintln!(
+            "weapon-check: {} frames at 30 fps, 1280x720, 128 BPM, {shots} matching real shots/{heavy} accent; {setup}; synthetic known beats/forecast, {actors}, no pacing/survival/rollback claim, silent capture",
+            clip.count()
+        );
+    }
     Ok(())
 }

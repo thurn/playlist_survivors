@@ -79,7 +79,7 @@ weapons:
   - id: bloody-tear
     source: VAMPIRICA
     grid: beat
-    implemented: false
+    implemented: true
     evolutionOf: sword
     requires: hollow-heart
     levels:
@@ -87,7 +87,7 @@ weapons:
   - id: holy-wand
     source: HOLY_MISSILE
     grid: eighth
-    implemented: false
+    implemented: true
     evolutionOf: magic-wand
     requires: empty-tome
     levels:
@@ -95,7 +95,7 @@ weapons:
   - id: unholy-vespers
     source: VESPERS
     grid: beat
-    implemented: false
+    implemented: true
     evolutionOf: king-bible
     requires: spellbinder
     levels:
@@ -103,7 +103,7 @@ weapons:
   - id: thunder-loop
     source: LOOP
     grid: beat
-    implemented: false
+    implemented: true
     evolutionOf: lightning-ring
     requires: duplicator
     levels:
@@ -111,7 +111,7 @@ weapons:
   - id: soul-eater
     source: VORTEX
     grid: beat
-    implemented: false
+    implemented: true
     evolutionOf: garlic
     requires: pummarola
     levels:

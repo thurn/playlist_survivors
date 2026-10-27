@@ -960,6 +960,8 @@ struct SimState {
     treasure_minutes: u32,
     roulette: Option<crate::survivors::Roulette>,
     garlic: Option<weapons::GarlicAura>,
+    last_bloody_heal: f64,
+    soul_recovered: f64,
     missiles: Vec<missiles::Missile>,
     bibles: Vec<bible::BibleCycle>,
     next_missile: usize,
@@ -2011,6 +2013,8 @@ fn fresh_state(env: &Env) -> SimState {
         treasure_minutes: 0,
         roulette: None,
         garlic: None,
+        last_bloody_heal: f64::NEG_INFINITY,
+        soul_recovered: 0.0,
         missiles: Vec::new(),
         bibles: Vec::new(),
         next_missile: 0,
@@ -2129,6 +2133,7 @@ fn fresh_state(env: &Env) -> SimState {
 
 #[cfg(test)]
 mod tests {
+    mod evolution_tests;
     use std::path::Path;
     use std::rc::Rc;
 
@@ -2827,6 +2832,7 @@ mod tests {
             sim.drop_on_field(
                 fi,
                 crate::recorder::Fate {
+                    critical: false,
                     w: 0.0,
                     x,
                     y: 0.0,
@@ -2889,6 +2895,7 @@ mod tests {
         sim.drop_on_field(
             0,
             crate::recorder::Fate {
+                critical: false,
                 w: 0.0,
                 x: 60.0,
                 y: 0.0,
@@ -2995,6 +3002,7 @@ mod tests {
             sim.drop_on_field(
                 k,
                 Fate {
+                    critical: false,
                     w: 0.0,
                     x: k as f64,
                     y: 0.0,
@@ -3010,6 +3018,7 @@ mod tests {
         sim.drop_on_field(
             400,
             Fate {
+                critical: false,
                 w: 0.0,
                 x: 0.0,
                 y: 0.0,
@@ -4973,6 +4982,7 @@ mod tests {
                 sim.drop_on_field(
                     0,
                     crate::recorder::Fate {
+                        critical: false,
                         w: 0.0,
                         x,
                         y: 0.0,

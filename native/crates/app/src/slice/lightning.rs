@@ -37,6 +37,8 @@ impl Lightning {
             let (x, y) = at(strike.x, strike.y);
             let color = if strike.accent {
                 [1.0, 0.8, 0.35]
+            } else if strike.weapon == sim::survivors::WeaponId::ThunderLoop {
+                [1.0, 0.45, 0.75]
             } else {
                 [0.5, 0.75, 1.0]
             };

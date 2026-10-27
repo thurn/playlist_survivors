@@ -746,6 +746,13 @@ impl Sim {
         }
         let before = self.st.health;
         self.st.health = min(hm, self.st.health + amount);
+        if self.survivor_inventory().is_some_and(|i| {
+            i.weapons
+                .rank(crate::survivors::WeaponId::SoulEater)
+                .is_some()
+        }) {
+            self.st.soul_recovered += self.st.health - before;
+        }
         self.rec.health(self.st.s, self.st.health / hm);
         self.rec.heal(HealRecord {
             s: self.st.s,

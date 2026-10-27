@@ -755,7 +755,7 @@ impl Recorder for LiveRecorder {
     }
     fn weapon_shot(&mut self, shot: sim::survivors::Shot) {
         let mut j = self.0.borrow_mut();
-        if shot.id.is_sword() {
+        if shot.id == sim::survivors::WeaponId::Sword {
             j.sound(Cause::Swing {
                 s: shot.song,
                 x: shot.x,
@@ -816,7 +816,7 @@ impl Recorder for LiveRecorder {
             lethal: fate.lethal,
             damage: fate.damage,
             song,
-            critical: false,
+            critical: fate.critical,
             foe: id,
             source: source_name(h.source),
             weight: h.weight,
@@ -862,7 +862,7 @@ impl Recorder for LiveRecorder {
                     lethal: fate.lethal,
                     damage: fate.damage,
                     song: h.s,
-                    critical: false,
+                    critical: fate.critical,
                     foe: id,
                     source: source_name(h.source),
                     weight,
@@ -1573,7 +1573,15 @@ impl Engine {
                 }) if shown.run.is_some()
                     && matches!(
                         what.as_str(),
-                        "garlic" | "magic-wand" | "king-bible" | "lightning-ring"
+                        "garlic"
+                            | "magic-wand"
+                            | "king-bible"
+                            | "lightning-ring"
+                            | "bloody-tear"
+                            | "soul-eater"
+                            | "holy-wand"
+                            | "unholy-vespers"
+                            | "thunder-loop"
                     ) =>
                 {
                     None
@@ -1592,8 +1600,12 @@ impl Engine {
                         && matches!(
                             shot.id,
                             sim::survivors::WeaponId::Garlic
+                                | sim::survivors::WeaponId::SoulEater
+                                | sim::survivors::WeaponId::BloodyTear
                                 | sim::survivors::WeaponId::MagicWand
+                                | sim::survivors::WeaponId::HolyWand
                                 | sim::survivors::WeaponId::KingBible
+                                | sim::survivors::WeaponId::UnholyVespers
                         ) =>
                 {
                     Some(Cause::WeaponPulse {
@@ -1612,9 +1624,13 @@ impl Engine {
                                         || matches!(
                                             *id,
                                             sim::survivors::WeaponId::Garlic
+                                                | sim::survivors::WeaponId::SoulEater
                                                 | sim::survivors::WeaponId::MagicWand
+                                                | sim::survivors::WeaponId::HolyWand
                                                 | sim::survivors::WeaponId::KingBible
+                                                | sim::survivors::WeaponId::UnholyVespers
                                                 | sim::survivors::WeaponId::LightningRing
+                                                | sim::survivors::WeaponId::ThunderLoop
                                         )
                                 })
                                 .map(|what| Cause::WeaponImpact {
@@ -1768,11 +1784,21 @@ fn hit_record(hit: &Moment) -> Option<String> {
         what,
         dir,
         intensity,
+        damage,
+        critical,
         ..
     } = hit
     {
-        // Keep the existing recording protocol: font/damage-label metadata is not a
-        // game-rule change and must not invalidate a previously recorded session.
+        // Old base-weapon label metadata keeps its protocol. Evolved identities
+        // were unavailable before SW5: their applied damage/crit is game state.
+        if matches!(
+            what.as_str(),
+            "bloody-tear" | "soul-eater" | "holy-wand" | "unholy-vespers" | "thunder-loop"
+        ) {
+            return Some(format!(
+                "Hit {{ x: {x:?}, y: {y:?}, lethal: {lethal:?}, foe: {foe:?}, source: {source:?}, weight: {weight:?}, what: {what:?}, dir: {dir:?}, intensity: {intensity:?}, damage: {damage:?}, critical: {critical:?} }}"
+            ));
+        }
         Some(format!(
             "Hit {{ x: {x:?}, y: {y:?}, lethal: {lethal:?}, foe: {foe:?}, source: {source:?}, weight: {weight:?}, what: {what:?}, dir: {dir:?}, intensity: {intensity:?} }}"
         ))
@@ -1907,6 +1933,37 @@ mod presentation_hash_tests {
         }
     }
     #[test]
+    fn evolved_applied_damage_and_critical_status_change_the_recording_hash() {
+        for what in [
+            "bloody-tear",
+            "soul-eater",
+            "holy-wand",
+            "unholy-vespers",
+            "thunder-loop",
+        ] {
+            let mut a = hit(1.0, 4.0, false);
+            if let Moment::Hit { what: name, .. } = &mut a {
+                *name = what.into();
+            }
+            let mut b = a.clone();
+            if let Moment::Hit { damage, .. } = &mut b {
+                *damage = 2.0;
+            }
+            assert_ne!(
+                record_bytes(4.0, &Record::Moment(a.clone())),
+                record_bytes(4.0, &Record::Moment(b))
+            );
+            let mut c = a.clone();
+            if let Moment::Hit { critical, .. } = &mut c {
+                *critical = true;
+            }
+            assert_ne!(
+                record_bytes(4.0, &Record::Moment(a)),
+                record_bytes(4.0, &Record::Moment(c))
+            );
+        }
+    }
+    #[test]
     fn damage_label_metadata_preserves_the_recording_protocol() {
         let expected = "4.0 Moment(Hit { x: 1.0, y: 2.0, lethal: false, foe: 3, source: \"move\", weight: \"light\", what: \"sword\", dir: 0.0, intensity: 0.5 })";
         let a = Record::Moment(hit(1.0, 4.0, false));
@@ -1955,6 +2012,7 @@ mod damage_source_tests {
         recorder.fate(
             7,
             Fate {
+                critical: true,
                 w: 0.75,
                 x: 1.0,
                 y: 2.0,
@@ -1969,15 +2027,19 @@ mod damage_source_tests {
             .iter()
             .find_map(|(_, r)| {
                 if let Record::Moment(Moment::Hit {
-                    damage, song, foe, ..
+                    damage,
+                    song,
+                    foe,
+                    critical,
+                    ..
                 }) = r
                 {
-                    Some((*damage, *song, *foe))
+                    Some((*damage, *song, *foe, *critical))
                 } else {
                     None
                 }
             })
             .unwrap();
-        assert_eq!(hit, (2.75, 0.75, 7));
+        assert_eq!(hit, (2.75, 0.75, 7, true));
     }
 }

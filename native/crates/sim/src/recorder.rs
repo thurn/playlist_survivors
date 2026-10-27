@@ -109,6 +109,8 @@ pub struct Hit {
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize)]
 pub struct Fate {
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub critical: bool,
     pub w: f64,
     pub x: f64,
     pub y: f64,

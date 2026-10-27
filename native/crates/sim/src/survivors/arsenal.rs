@@ -223,7 +223,14 @@ impl Arsenal {
     }
     pub fn learn(&mut self, id: WeaponId, run: f64) -> Result<u8, SlotError> {
         let def = weapon_catalog().get(id);
-        if !def.implemented || def.evolution_of.is_some() {
+        if !def.implemented
+            || def.evolution_of.is_some()
+            || self
+                .inventory
+                .weapons
+                .iter()
+                .any(|s| weapon_catalog().get(s.id).evolution_of == Some(id))
+        {
             return Err(SlotError::Unavailable);
         }
         let was = self.inventory.weapons.rank(id);

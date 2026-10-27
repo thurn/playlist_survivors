@@ -24,6 +24,8 @@ pub fn draw(
         }
         let color = if head.accent {
             [1.0, 0.7, 0.3]
+        } else if head.weapon == sim::survivors::WeaponId::UnholyVespers {
+            [0.85, 0.3, 1.0]
         } else {
             [0.6, 0.8, 1.0]
         };

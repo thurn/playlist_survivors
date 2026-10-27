@@ -1,0 +1,11 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sw5-evolutions/native/crates/sim)
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sw5-evolutions/native/crates/eval)
+   Compiling app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/sw5-evolutions/native/crates/app)
+    Finished `test` profile [optimized + debuginfo] target(s) in 6.16s
+     Running unittests src/main.rs (target/debug/deps/playlist_survivors-117eebc7468b2345)
+
+running 1 test
+test slice::sounds::survivor_tests::weapon_pulse_and_contact_cues_use_real_palette_and_cancel_on_retraction ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 54 filtered out; finished in 0.91s
+

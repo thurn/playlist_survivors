@@ -1,0 +1,68 @@
+[
+  {
+    "file": "bloody-tear/accent.png",
+    "width": 1280,
+    "height": 720,
+    "sha256": "f7232621b569ec6328aeabad6db30effe8a8a2259d32aa69a9a9e99d789568e9"
+  },
+  {
+    "file": "bloody-tear/normal.png",
+    "width": 1280,
+    "height": 720,
+    "sha256": "a71910eec60515f32a199a148492e2523d9091fbc97a31dd0e44b7d1daad46ae"
+  },
+  {
+    "file": "holy-wand/accent.png",
+    "width": 1280,
+    "height": 720,
+    "sha256": "192ff7f32b789097153368945755d78b8cfa9be254004284679779564c9da352"
+  },
+  {
+    "file": "holy-wand/normal.png",
+    "width": 1280,
+    "height": 720,
+    "sha256": "3f4a7d7a71fa6fea56db125df087f0f47cd3426b101f6e4ebdd9ad5aced61f75"
+  },
+  {
+    "file": "soul-eater/accent.png",
+    "width": 1280,
+    "height": 720,
+    "sha256": "d3b3029a49c5f10709cf7d51159dc5a00512bca87626ceba50fa2d16ca42a15b"
+  },
+  {
+    "file": "soul-eater/normal.png",
+    "width": 1280,
+    "height": 720,
+    "sha256": "5d4d47a5bdbecc9d7a9eaf05ab960c7fb3125e478ba743cd4f89b28f2144bdc1"
+  },
+  {
+    "file": "thunder-loop/accent.png",
+    "width": 1280,
+    "height": 720,
+    "sha256": "a22367d41d579d687cb9b8e552ca3a6f07e22b2bdf09a52632285580dc88c0f2"
+  },
+  {
+    "file": "thunder-loop/normal.png",
+    "width": 1280,
+    "height": 720,
+    "sha256": "6593c48e2911b451a347a230326e15894cf9594baae468b9ea2cb4087258829f"
+  },
+  {
+    "file": "thunder-loop/return.png",
+    "width": 1280,
+    "height": 720,
+    "sha256": "0c52e8eaff9649e16f1cbd4c2c65f067397096a57ed1ffc7b5dbb9b10a84320b"
+  },
+  {
+    "file": "unholy-vespers/accent.png",
+    "width": 1280,
+    "height": 720,
+    "sha256": "7cfa8eb4b11c53d69530153fe071c7c93c7b3f9c680981f689c4839ef091dc93"
+  },
+  {
+    "file": "unholy-vespers/normal.png",
+    "width": 1280,
+    "height": 720,
+    "sha256": "d8d67cb6538e0b5255480487dd12ca4f5d68b6352cccf815b88f8490bae61beb"
+  }
+]

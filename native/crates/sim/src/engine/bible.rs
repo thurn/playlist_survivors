@@ -32,6 +32,7 @@ struct Blade {
 pub(super) struct BibleCycle {
     shot: Shot,
     born: f64,
+    end_w: f64,
     last: f64,
     sampled: f64,
     clear_at: f64,
@@ -43,7 +44,7 @@ impl BibleCycle {
     fn size(&self, w: f64) -> f64 {
         let age = (w - self.born).max(0.0);
         let grow = (age / 0.5).min(1.0);
-        let fade = (1.0 - (age - self.shot.duration_s).max(0.0) / 0.5).max(0.0);
+        let fade = (1.0 - (w - self.end_w).max(0.0) / 0.5).max(0.0);
         (1.0 + 0.3 * self.shot.area) * grow * fade
     }
     fn pose(&self, i: usize, w: f64, hero: (f64, f64), alive: bool) -> MissilePose {
@@ -75,9 +76,16 @@ impl Sim {
                 }
             })
             .collect();
+        // Bridge only quantization gaps; source-duration overlaps still coexist.
+        for c in &mut self.st.bibles {
+            if c.shot.id == crate::survivors::WeaponId::UnholyVespers {
+                c.end_w = c.end_w.min(self.st.w.max(c.born + c.shot.duration_s));
+            }
+        }
         let cycle = BibleCycle {
             shot,
             born: self.st.w,
+            end_w: self.st.w + shot.duration_s,
             last: self.st.w,
             sampled: self.st.w,
             clear_at: self.st.w + shot.hit_delay_s,
@@ -102,16 +110,21 @@ impl Sim {
     }
     pub(super) fn tick_bibles(&mut self) {
         let mut cycles = std::mem::take(&mut self.st.bibles);
-        for c in &mut cycles {
-            let age = self.st.w - c.born;
+        let newest = cycles
+            .iter()
+            .rposition(|c| c.shot.id == crate::survivors::WeaponId::UnholyVespers);
+        for (index, c) in cycles.iter_mut().enumerate() {
+            if newest == Some(index) {
+                c.end_w = c.end_w.max(self.st.w + 1.0 / 60.0);
+            }
             let hp = self.hero_pose(self.st.w);
-            if age >= c.shot.duration_s + 0.5 - 1e-9 {
+            if self.st.w >= c.end_w + 0.5 - 1e-9 {
                 for i in 0..c.blades.len() {
                     self.rec.missile(c.pose(i, self.st.w, (hp.x, hp.y), false));
                 }
                 continue;
             }
-            if age < c.shot.duration_s - 1e-9 {
+            if self.st.w < c.end_w - 1e-9 {
                 while self.st.w >= c.clear_at - 1e-9 {
                     for blade in &mut c.blades {
                         blade.hit.clear();
@@ -196,7 +209,7 @@ impl Sim {
             }
             c.last = self.st.w;
         }
-        cycles.retain(|c| self.st.w - c.born < c.shot.duration_s + 0.5 - 1e-9);
+        cycles.retain(|c| self.st.w < c.end_w + 0.5 - 1e-9);
         self.st.bibles = cycles;
         let foes = &self.st.foes;
         self.st.alive.retain(|&fi| foes[fi].alive);

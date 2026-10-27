@@ -110,7 +110,7 @@ impl Sim {
             let weapon = weapon_catalog().get(id).level(rank);
             let hp = self.hero_pose(self.st.w);
             let accent = self.weapon_accent();
-            let period = if id == WeaponId::KingBible {
+            let period = if matches!(id, WeaponId::KingBible | WeaponId::UnholyVespers) {
                 self.log.beats[..self.st.ingested.beats]
                     .iter()
                     .rfind(|b| b.t <= self.st.s + 1e-9)
@@ -125,8 +125,12 @@ impl Sim {
                 song: self.st.s,
                 x: hp.x,
                 y: hp.y,
-                damage: weapon.power
-                    * stats.might
+                damage: (weapon.power * stats.might
+                    + if id == WeaponId::SoulEater {
+                        (self.st.soul_recovered / 600.0).min(6.0)
+                    } else {
+                        0.0
+                    })
                     * if id.is_sword() { period / 1.35 } else { 1.0 },
                 amount: if id.is_sword() || matches!(id, WeaponId::MagicWand | WeaponId::HolyWand) {
                     1
@@ -137,11 +141,11 @@ impl Sim {
                     crate::survivors::SWORD_BASE_RADIUS * weapon.area * stats.area
                 } else if matches!(id, WeaponId::MagicWand | WeaponId::HolyWand) {
                     0.08 * crate::survivors::PX_PER_VS_UNIT * weapon.area * stats.area
-                } else if id == WeaponId::Garlic {
+                } else if matches!(id, WeaponId::Garlic | WeaponId::SoulEater) {
                     0.32 * crate::survivors::PX_PER_VS_UNIT * weapon.area * stats.area
-                } else if id == WeaponId::LightningRing {
+                } else if matches!(id, WeaponId::LightningRing | WeaponId::ThunderLoop) {
                     0.08 * crate::survivors::PX_PER_VS_UNIT * weapon.area * stats.area
-                } else if id == WeaponId::KingBible {
+                } else if matches!(id, WeaponId::KingBible | WeaponId::UnholyVespers) {
                     0.5 * (weapon.area * stats.area).min(4.5) * crate::survivors::PX_PER_VS_UNIT
                 } else {
                     0.0
@@ -163,7 +167,7 @@ impl Sim {
             };
             self.rec.fire(id.as_str(), self.st.s);
             self.rec.weapon_shot(shot);
-            if id == WeaponId::MagicWand {
+            if matches!(id, WeaponId::MagicWand | WeaponId::HolyWand) {
                 self.launch_missile(shot);
                 for i in 1..weapon.amount(stats) {
                     let offset = i as f64 * weapon.repeat_ms / 1000.0;
@@ -176,13 +180,13 @@ impl Sim {
                     );
                 }
             }
-            if id == WeaponId::LightningRing {
+            if matches!(id, WeaponId::LightningRing | WeaponId::ThunderLoop) {
                 self.launch_lightning(shot);
             }
-            if id == WeaponId::KingBible {
+            if matches!(id, WeaponId::KingBible | WeaponId::UnholyVespers) {
                 self.launch_bible(shot);
             }
-            if id == WeaponId::Garlic {
+            if matches!(id, WeaponId::Garlic | WeaponId::SoulEater) {
                 self.st.garlic = Some(GarlicAura {
                     shot,
                     hit: std::collections::HashSet::new(),
@@ -280,6 +284,38 @@ impl Sim {
         let rank = p.arsenal.learn(id, self.st.run_s)?;
         self.publish_inventory();
         Ok(rank)
+    }
+    /// Initial-loadout tools use the same passive delta as causal offer/chest choices.
+    pub fn learn_survivor_passive(
+        &mut self,
+        id: crate::survivors::PassiveId,
+    ) -> Result<u8, SlotError> {
+        let rank = self
+            .st
+            .survivor
+            .as_mut()
+            .ok_or(SlotError::Unavailable)?
+            .arsenal
+            .learn_passive(id)?;
+        self.apply_survivor_stats(id.delta());
+        self.publish_inventory();
+        Ok(rank)
+    }
+    /// Chest rewards call this atomically; emitted projectiles/bursts finish as captured.
+    pub fn evolve_survivor_weapon(&mut self, id: WeaponId) -> Result<(), SlotError> {
+        self.st
+            .survivor
+            .as_mut()
+            .ok_or(SlotError::Unavailable)?
+            .arsenal
+            .evolve(id, self.st.run_s)?;
+        if id == WeaponId::SoulEater {
+            self.st.garlic = None;
+            self.st.soul_recovered = 0.0;
+        }
+        self.rec.evolve(id.as_str(), self.st.s);
+        self.publish_inventory();
+        Ok(())
     }
     pub(super) fn hold_weapons(&mut self) {
         self.st.spawner.hold();

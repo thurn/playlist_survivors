@@ -217,14 +217,16 @@ impl Sim {
     fn apply_chest_item(&mut self, item: Item) {
         match item {
             Item::Weapon(id) => {
-                let p = self.st.survivor.as_mut().expect("survivors");
                 if weapon_catalog().get(id).evolution_of.is_some() {
-                    p.arsenal
-                        .evolve(id, self.st.run_s)
-                        .expect("eligible evolution");
-                    self.rec.evolve(id.as_str(), self.st.s);
+                    self.evolve_survivor_weapon(id).expect("eligible evolution");
                 } else {
-                    p.arsenal.learn(id, self.st.run_s).expect("owned upgrade");
+                    self.st
+                        .survivor
+                        .as_mut()
+                        .expect("survivors")
+                        .arsenal
+                        .learn(id, self.st.run_s)
+                        .expect("owned upgrade");
                 }
             }
             Item::Passive(id) => {

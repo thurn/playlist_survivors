@@ -1,0 +1,14 @@
+{
+  "base": "12db4a0a34ad38ed77672862799165510c28767b",
+  "weapon_table_change": "Only the five implemented flags change; every numerical/stat/evolution-pair field is textually identical.",
+  "before_sha256": "ee7a1371857adbf4b39d5ee25646152f90875ded116c9fbd6dc888832e3a764c",
+  "after_sha256": "f7c1140016f606a96ab8a537e11f0989e34d4116ea3785a0b38cf24799dd773f",
+  "source": "docs/survivors/appendix-feel.md",
+  "source_sha256": "b43abfbf10c92cd6f7dfba7d1b2d890ae84828457422170712394f668b64c0b2",
+  "source_tests": "source-and-content-tests.txt: every_combat_rank_matches_the_sourced_feel_appendix (45 ranks /450 numerical fields)",
+  "soul_eater_runtime": {
+    "path": "rt/VampireSurvivors.Objects.Weapons/VortexWeapon.cs",
+    "sha256": "2b449ddd136d91a8bddc45a566748e61e4bc4e4b35815bc532b7df92b7ff7228",
+    "fact": "Recovered-HP power bonus is added after the Might-scaled base power; Spinach5 gives 2*1.5+bonus, capped at 9 total."
+  }
+}

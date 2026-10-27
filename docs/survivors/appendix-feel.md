@@ -122,8 +122,9 @@ The raw fields need these projectile-specific rules:
   recovers `1 × (1 + Recovery)` player HP (`LittleHeart.GetTaken`,
   `CharacterController.RecoverHp`), with healing capped by missing HP.
   Soul Eater's power adds `min(6, actual HP recovered / 600)` after evolution
-  (`VortexWeapon.PPower/VortexUpdate`); the recovery callback counts actual,
-  not overheal. There is no fixed every-hit heal field in WEAPON_DATA.
+  (`VortexWeapon.PPower/VortexUpdate`). The bonus is added after Might scales
+  the base power, so Might does not multiply this bonus. The recovery callback
+  counts actual healing, not overheal. There is no fixed every-hit heal field in WEAPON_DATA.
   The design's "heals per hit" is a demo adaptation, not a claim about VS.
 - **Lightning Ring / Thunder Loop:** interval is the volley cadence, amount
   the strike count. Thunder Loop repeats each strike after a **1500 ms** charge,

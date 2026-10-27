@@ -1,4 +1,4 @@
-//! One current-visible random target per strike, with replacement across the volley.
+//! Current-visible target selection, then fixed-point Thunder Loop returns.
 use super::{Ev, Sim, combat::HitSpec};
 use crate::{
     core::{
@@ -6,13 +6,15 @@ use crate::{
         rng::{Part, Rng},
     },
     recorder::{HitSource, Weight},
-    survivors::{LightningStrike, Shot},
+    survivors::{LightningStrike, Shot, WeaponId},
 };
 #[derive(Clone, Debug)]
 pub(super) struct PendingLightning {
     pub shot: Shot,
     pub volley: usize,
     pub index: usize,
+    /// A return strike keeps the original point even after its target moves or dies.
+    pub point: Option<(f64, f64)>,
 }
 impl Sim {
     pub(super) fn launch_lightning(&mut self, shot: Shot) {
@@ -22,17 +24,22 @@ impl Sim {
             shot,
             volley,
             index: 0,
+            point: None,
         });
     }
     pub(super) fn lightning_strike(&mut self, pending: PendingLightning) {
         if !self.weapons_active() {
             return;
         }
-        // A newly committed grid can replace a provisional free subdivision.
+        // Newly committed knowledge can defer a provisional free subdivision.
         if let Some((_, at)) = self.known_grid_after(self.st.s - 1e-8, 0.25)
             && at > self.st.s + 1e-7
         {
             self.st.q.push(at, Ev::LightningStrike(Box::new(pending)));
+            return;
+        }
+        if let Some((x, y)) = pending.point {
+            self.lightning_at(pending.shot, x, y);
             return;
         }
         let view = self.st.camera.view();
@@ -57,57 +64,18 @@ impl Sim {
             .next();
             let fi = targets[(random * targets.len() as f64).floor() as usize];
             let (x, y) = self.pos(fi, self.st.w);
-            let strike = LightningStrike {
-                id: self.st.next_lightning_strike,
-                weapon: pending.shot.id,
-                song: self.st.s,
-                x,
-                y,
-                radius: pending.shot.radius,
-                accent: self.weapon_accent(),
-            };
-            self.st.next_lightning_strike += 1;
-            self.rec.lightning(strike);
-            let hit = self.add_hit(
-                HitSpec {
-                    source: HitSource::Weapon,
-                    what: pending.shot.id.as_str().into(),
-                    weight: if strike.accent {
-                        Weight::Heavy
-                    } else {
-                        Weight::Light
-                    },
-                    primary: true,
-                    shape: Shape::Circle {
-                        x,
-                        y,
-                        radius: strike.radius,
-                    },
-                    dir: 0.0,
-                    accent: f64::from(strike.accent),
-                    damage: pending.shot.damage,
-                    group: None,
-                },
-                None,
-            );
-            let victims: Vec<_> = self
-                .st
-                .alive
-                .iter()
-                .copied()
-                .filter(|&fi| {
-                    if !self.hittable(fi) {
-                        return false;
-                    }
-                    let p = self.pos(fi, self.st.w);
-                    crate::aim::catches(&hit.shape, p.0, p.1, self.st.foes[fi].r)
-                })
-                .collect();
-            for fi in victims {
-                self.damage(fi, &hit);
+            self.lightning_at(pending.shot, x, y);
+            if pending.shot.id == WeaponId::ThunderLoop {
+                let due = self.st.s + 1.5;
+                let at = self.known_grid_after(due, 0.25).map_or(due, |(_, at)| at);
+                self.st.q.push(
+                    at,
+                    Ev::LightningStrike(Box::new(PendingLightning {
+                        point: Some((x, y)),
+                        ..pending.clone()
+                    })),
+                );
             }
-            let foes = &self.st.foes;
-            self.st.alive.retain(|&fi| foes[fi].alive);
         }
         if pending.index + 1 < pending.shot.amount {
             self.st.q.push(
@@ -118,5 +86,58 @@ impl Sim {
                 })),
             );
         }
+    }
+    fn lightning_at(&mut self, shot: Shot, x: f64, y: f64) {
+        let strike = LightningStrike {
+            id: self.st.next_lightning_strike,
+            weapon: shot.id,
+            song: self.st.s,
+            x,
+            y,
+            radius: shot.radius,
+            accent: self.weapon_accent(),
+        };
+        self.st.next_lightning_strike += 1;
+        self.rec.lightning(strike);
+        let hit = self.add_hit(
+            HitSpec {
+                source: HitSource::Weapon,
+                what: shot.id.as_str().into(),
+                weight: if strike.accent {
+                    Weight::Heavy
+                } else {
+                    Weight::Light
+                },
+                primary: true,
+                shape: Shape::Circle {
+                    x,
+                    y,
+                    radius: strike.radius,
+                },
+                dir: 0.0,
+                accent: f64::from(strike.accent),
+                damage: shot.damage,
+                group: None,
+            },
+            None,
+        );
+        let victims: Vec<_> = self
+            .st
+            .alive
+            .iter()
+            .copied()
+            .filter(|&fi| {
+                if !self.hittable(fi) {
+                    return false;
+                }
+                let p = self.pos(fi, self.st.w);
+                crate::aim::catches(&hit.shape, p.0, p.1, self.st.foes[fi].r)
+            })
+            .collect();
+        for fi in victims {
+            self.damage(fi, &hit);
+        }
+        let foes = &self.st.foes;
+        self.st.alive.retain(|&fi| foes[fi].alive);
     }
 }

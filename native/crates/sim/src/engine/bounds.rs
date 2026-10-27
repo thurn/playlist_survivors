@@ -169,6 +169,7 @@ impl Sim {
             self.drop_on_field(
                 i,
                 crate::recorder::Fate {
+                    critical: false,
                     w: 0.0,
                     x: if i % 20 < 10 {
                         -150.0 - (i % 10) as f64 * 15.0
