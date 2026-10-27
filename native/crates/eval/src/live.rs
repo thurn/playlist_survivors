@@ -715,6 +715,7 @@ pub enum Record {
 /// where), the tier. A mark carries a copy, so a rollback restores it with the records.
 #[derive(Clone, Debug, Default, PartialEq)]
 struct Notes {
+    upgrade: Option<sim::survivors::UpgradePulse>,
     s: f64,
     w: f64,
     hits: VecDeque<NoteHit>,
@@ -862,7 +863,14 @@ impl Recorder for LiveRecorder {
         j.push(Record::Moment(Moment::WeaponFire(shot)));
     }
     fn run_state(&mut self, state: sim::survivors::RunState) {
-        self.0.borrow_mut().push(Record::Run(state));
+        let mut j = self.0.borrow_mut();
+        if j.notes.upgrade != state.upgrade {
+            j.notes.upgrade = state.upgrade;
+            if let Some(pulse) = state.upgrade {
+                j.sound(Cause::LevelUp { s: pulse.song });
+            }
+        }
+        j.push(Record::Run(state));
     }
     fn hero(&mut self, x: f64, y: f64, z: f64, facing: f64, anim: f64, frame: f64) {
         let anim = HERO_ANIMS.get(anim as usize).copied().unwrap_or("idle");

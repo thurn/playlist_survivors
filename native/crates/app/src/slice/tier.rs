@@ -71,6 +71,13 @@ pub fn ground(
         };
         out.push(Sprite::centred(glow, sx, sy, 1.6 * k, 0.8 * k).tinted(c));
     }
+    if let Some(run) = view.run
+        && run.pickup_radius > 0.0
+        && let Some(&r) = art.proc.get("ring")
+    {
+        let d = (2.0 * run.pickup_radius) as f32 * scale;
+        out.push(Sprite::centred(r, sx, sy, d, d).tinted([0.45, 1.0, 0.8, 0.13]));
+    }
     if view.run.is_none()
         && ring > 0.0
         && let Some(&r) = art.proc.get("ring")

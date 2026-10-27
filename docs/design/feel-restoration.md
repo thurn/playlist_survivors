@@ -519,7 +519,15 @@ remains pending. The bead records review, final checks and landed candidate.
 
 ### FR6 — Pickups and upgrades
 
-Pending implementation.
+Restored120px pickup comfort with actual Magnet scaling and a visible ring.
+Overflow at400 resting gems merges near the death without changing XP. Resolved
+cards/chests coalesce into one world-space celebration and sound on final
+resume. The160px pulse gives ordinary foes at most48px of tagged recoil;
+bosses/formations, HP, immunity, menu release and weapon debt rules remain.
+Run-owned identity/age makes the effect and sound rollback-safe. [Evidence and
+commands](../../native/evidence/fr6/README.md) include real modal choices, late
+keys, snapshot replay, attraction boundaries and near-drop XP conservation.
+Human/System feel remains pending; the bead records review/checks/candidate.
 
 ### FR7 — Director and formations
 

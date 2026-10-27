@@ -1,0 +1,13 @@
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-fr6/native/crates/eval)
+   Compiling players v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-fr6/native/crates/players)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.29s
+     Running tests/live.rs (target/debug/deps/live-6bbfee6942df762e)
+
+running 1 test
+actual lightning strike records in rollback fixture: 30
+actual Bible blade lifetimes in rollback fixture: {1: (1.625, 5.125), 22: (7.625, 11.125), 41: (13.625, 17.125), 60: (19.125, 22.625), 82: (25.125, 28.625), 101: (30.625, 34.125), 120: (36.625, 40.125), 139: (42.125, 45.625), 161: (48.125, 51.625), 180: (53.625, 57.125), 199: (59.625, 61.29166666666667)}
+real XP offers: 26 picks applied once, 32911 matching records, 26 key rollbacks, deepest 0.420s
+test a_real_xp_offer_pick_applies_once_across_speculative_rollback ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 23 filtered out; finished in 0.18s
+

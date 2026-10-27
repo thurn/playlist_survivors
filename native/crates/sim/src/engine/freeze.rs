@@ -18,6 +18,12 @@ pub(super) enum ResumeGrid {
 }
 
 #[derive(Clone, Debug, Default)]
+pub(super) struct UpgradeFeedback {
+    pub pending: bool,
+    pub pulse: Option<crate::survivors::UpgradePulse>,
+}
+
+#[derive(Clone, Debug, Default)]
 pub(super) struct Freeze {
     pub frozen: bool,
     pub total_s: f64,
@@ -39,6 +45,7 @@ pub(super) struct Freeze {
     pub resume: Option<f64>,
     pub(super) resume_grid: ResumeGrid,
     pub pulse_generation: u64,
+    pub upgrade: UpgradeFeedback,
 }
 
 impl Freeze {
@@ -90,6 +97,8 @@ impl Sim {
             .copied()
             .or(f.last);
         RunState {
+            pickup_radius: self.pickup_radius(),
+            upgrade: f.upgrade.pulse,
             song: self.st.s,
             presentation_s: if f.frozen { f.since } else { self.st.s },
             frozen_beat: f.frozen.then_some(f.beat_at_open),
@@ -445,6 +454,19 @@ impl Sim {
         self.queue_cadence();
         self.arm_free_pulse();
         self.publish_run();
+    }
+
+    /// Same-grid XP arrivals may open another card immediately after resume.
+    /// Only celebrate after those queued events have settled without a new hold.
+    pub(super) fn settle_upgrade_resume(&mut self) {
+        if !self.st.freeze.frozen
+            && !self.st.blasting
+            && self.st.health > 0.0
+            && std::mem::take(&mut self.st.freeze.upgrade.pending)
+        {
+            self.upgrade_pulse();
+            self.publish_run();
+        }
     }
 
     /// Incoming finite events are held; cadence events are regenerated once on resume.

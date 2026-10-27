@@ -169,6 +169,7 @@ impl Sim {
                 self.apply_chest_item(item);
                 *slot = Some(item);
             }
+            self.st.freeze.upgrade.pending = true;
             r.landed = Some(self.st.s);
             self.st.roulette = Some(r);
             self.rec.chest(

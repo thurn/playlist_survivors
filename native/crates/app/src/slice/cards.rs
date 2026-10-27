@@ -35,7 +35,7 @@ fn same(a: Offer, b: Offer) -> bool {
     a.level == b.level && a.reveals == b.reveals
 }
 impl Screen {
-    pub fn update(&mut self, run: Option<RunState>, inv: Option<Inventory>, now: f64) {
+    pub fn update(&mut self, run: Option<&RunState>, inv: Option<Inventory>, now: f64) {
         self.input_selected = run.map_or(0, |r| r.selected);
         let next = run.and_then(|r| r.offer);
         if self
@@ -134,7 +134,7 @@ impl Screen {
             (x - cx).abs() <= 122.0 * u * scale && (y - cy).abs() <= 113.0 * u * scale
         })
     }
-    pub fn cues(&self, forecast: Option<RunState>, now: f64) -> Vec<Cue> {
+    pub fn cues(&self, forecast: Option<&RunState>, now: f64) -> Vec<Cue> {
         let mut offers = Vec::new();
         if let Some(a) = self.active {
             offers.push(a.offer);
@@ -527,7 +527,7 @@ mod tests {
     fn horizontal_navigation_visits_every_card_including_between_frames() {
         let mut screen = Screen::default();
         let r = run();
-        screen.update(Some(r), None, 10.0);
+        screen.update(Some(&r), None, 10.0);
         assert_eq!(screen.navigate(false), Some(InputKey::Left));
         assert_eq!(screen.navigate(true), Some(InputKey::Up));
         assert_eq!(screen.navigate(true), Some(InputKey::Right));
@@ -535,7 +535,7 @@ mod tests {
         assert_eq!(screen.navigate(false), Some(InputKey::Up));
         assert_eq!(screen.navigate(false), Some(InputKey::Left));
         // A frame reconciles against the sim, including a rollback or a chained offer.
-        screen.update(Some(RunState { selected: 2, ..r }), None, 10.1);
+        screen.update(Some(&RunState { selected: 2, ..r }), None, 10.1);
         assert_eq!(screen.navigate(false), Some(InputKey::Up));
         screen.update(None, None, 10.2);
         assert_eq!(screen.navigate(true), None);
@@ -545,7 +545,7 @@ mod tests {
         for (w, h) in [(960.0, 540.0), (1440.0, 900.0), (540.0, 960.0)] {
             let mut screen = Screen::default();
             let r = run();
-            screen.update(Some(r), None, 10.0);
+            screen.update(Some(&r), None, 10.0);
             let u = (w / 960.0_f32).min(h / 540.0_f32);
             for i in 0..3 {
                 let x = w / 2.0 + (i as f32 - 1.0) * 260.0 * u;
@@ -558,7 +558,7 @@ mod tests {
                 assert_eq!(screen.hit(11.5, w, h, x, y - 120.0 * u), None, "above");
             }
             screen.update(
-                Some(RunState {
+                Some(&RunState {
                     offer: None,
                     confirmed: true,
                     ..r
@@ -573,10 +573,10 @@ mod tests {
     fn a_retraction_does_not_animate_or_sound_a_confirm() {
         let mut s = Screen::default();
         let r = run();
-        s.update(Some(r), None, 10.0);
+        s.update(Some(&r), None, 10.0);
         // A stale confirmed bit from an earlier level must not turn a rollback into a pick.
         s.update(
-            Some(RunState {
+            Some(&RunState {
                 offer: None,
                 confirmed: true,
                 level: 1,
@@ -592,9 +592,9 @@ mod tests {
     fn picks_fall_away_but_retracted_picks_reopen_without_confirm() {
         let mut s = Screen::default();
         let r = run();
-        s.update(Some(r), None, 10.0);
+        s.update(Some(&r), None, 10.0);
         s.update(
-            Some(RunState {
+            Some(&RunState {
                 offer: None,
                 confirmed: true,
                 ..r
@@ -604,7 +604,7 @@ mod tests {
         );
         assert!(s.closing.is_some());
         assert!(s.cues(None, 12.0).iter().any(|c| c.key == "card-confirm"));
-        s.update(Some(r), None, 12.1);
+        s.update(Some(&r), None, 12.1);
         assert!(s.active.is_some() && s.closing.is_none());
         assert!(!s.cues(None, 12.1).iter().any(|c| c.key == "card-confirm"));
     }
@@ -612,8 +612,8 @@ mod tests {
     fn chained_offers_keep_the_world_dim_and_cues_use_sim_reveals() {
         let mut s = Screen::default();
         let r = run();
-        s.update(Some(r), None, 10.0);
-        let cues = s.cues(Some(r), 10.1);
+        s.update(Some(&r), None, 10.0);
+        let cues = s.cues(Some(&r), 10.1);
         assert_eq!(cues.len(), 4);
         assert_eq!(
             cues.iter()
@@ -629,7 +629,7 @@ mod tests {
         next.offer = Some(o);
         next.level = 3;
         next.song = 1.6;
-        s.update(Some(next), None, 11.6);
+        s.update(Some(&next), None, 11.6);
         assert!(s.dim(11.6) > 0.99);
         assert!(s.active.is_some() && s.closing.is_some());
     }
@@ -641,15 +641,15 @@ mod tests {
         .unwrap();
         let mut screen = Screen::default();
         let mut r = run();
-        screen.update(Some(r), None, 0.0);
+        screen.update(Some(&r), None, 0.0);
         let region = art.icons[icon(r.offer.unwrap().cards[2].item)];
         r.song = 1.29;
-        screen.update(Some(r), None, 1.29);
+        screen.update(Some(&r), None, 1.29);
         let mut before = Vec::new();
         screen.draw(&art, 1.29, 960.0, 540.0, None, &mut before);
         assert!(!before.iter().any(|s| s.region == region));
         r.song = 1.5;
-        screen.update(Some(r), None, 1.5);
+        screen.update(Some(&r), None, 1.5);
         let mut on = Vec::new();
         screen.draw(&art, 1.5, 960.0, 540.0, None, &mut on);
         assert!(
@@ -661,10 +661,10 @@ mod tests {
     fn forecast_retiming_replaces_future_cues_instead_of_doubling_them() {
         let mut screen = Screen::default();
         let r = run();
-        screen.update(Some(r), None, 0.0);
+        screen.update(Some(&r), None, 0.0);
         let mut forecast = r;
         forecast.offer.as_mut().unwrap().reveals = [0.6, 1.1, 1.6];
-        let cues = screen.cues(Some(forecast), 0.0);
+        let cues = screen.cues(Some(&forecast), 0.0);
         assert_eq!(cues.len(), 4);
         assert_eq!(
             cues.iter()
@@ -681,7 +681,7 @@ mod tests {
         inv.weapons.upgrade(WeaponId::Sword, 8).unwrap();
         let mut r = run();
         r.offer.as_mut().unwrap().cards = offer_table().cards(2, inv, weapon_catalog());
-        screen.update(Some(r), Some(inv), 10.0);
+        screen.update(Some(&r), Some(inv), 10.0);
         let old = screen.active.unwrap();
         // A different earlier pick/loot can max Garlic before this same level.
         for _ in 0..8 {
@@ -693,7 +693,7 @@ mod tests {
         r.offer.as_mut().unwrap().cards = offer_table().cards(2, inv, weapon_catalog());
         assert_ne!(old.offer.cards, r.offer.unwrap().cards);
         assert_eq!(old.offer.reveals, r.offer.unwrap().reveals);
-        screen.update(Some(r), Some(inv), 10.2);
+        screen.update(Some(&r), Some(inv), 10.2);
         let shown = screen.active.unwrap();
         assert_eq!(shown.offer, r.offer.unwrap());
         assert_eq!(shown.inv, inv);

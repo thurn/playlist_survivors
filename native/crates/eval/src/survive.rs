@@ -52,7 +52,7 @@ pub struct Report {
 }
 /// Sample the inventory once when a physical chest opens. A music/level freeze
 /// may temporarily take precedence over TREASURE without opening another chest.
-fn sample_chest(points: &mut Vec<ChestPoint>, run: RunState, inv: Inventory) {
+fn sample_chest(points: &mut Vec<ChestPoint>, run: &RunState, inv: Inventory) {
     let Some(chest) = run.roulette else { return };
     if points.last().is_some_and(|point| point.id == chest.id) {
         return;
@@ -147,7 +147,7 @@ pub fn drive(
             last_minute = Some(minute);
         }
         if let Some(inv) = view.inventory {
-            sample_chest(&mut r.weapons_at_chests, run, inv);
+            sample_chest(&mut r.weapons_at_chests, &run, inv);
             for w in inv.weapons.iter() {
                 let name = w.id.as_str();
                 if matches!(
@@ -200,7 +200,7 @@ mod tests {
             }),
             ..RunState::default()
         };
-        sample_chest(&mut points, run, inv);
+        sample_chest(&mut points, &run, inv);
         inv.weapons.upgrade(WeaponId::Sword, 8).unwrap();
         for reason in [
             FreezeReason::MusicStopped,
@@ -208,10 +208,10 @@ mod tests {
             FreezeReason::Chest,
         ] {
             run.frozen = Some(reason);
-            sample_chest(&mut points, run, inv);
+            sample_chest(&mut points, &run, inv);
         }
         run.roulette = None;
-        sample_chest(&mut points, run, inv);
+        sample_chest(&mut points, &run, inv);
         assert_eq!(points.len(), 1);
         assert_eq!(
             (points[0].id, points[0].origin_minute, points[0].tier),
@@ -231,7 +231,7 @@ mod tests {
             landed: None,
             rewards: [None; 5],
         });
-        sample_chest(&mut points, run, inv);
+        sample_chest(&mut points, &run, inv);
         assert_eq!(points.len(), 2);
         assert_eq!(
             (

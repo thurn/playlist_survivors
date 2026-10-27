@@ -1829,6 +1829,7 @@ impl Sim {
             let entry = self.st.q.pop_due(self.st.s + 1e-12);
             self.dispatch_entry(entry);
         }
+        self.settle_upgrade_resume();
         self.tick_weapons();
         self.tick_enemy_bites();
         self.tick_boss_notice();
@@ -2177,6 +2178,7 @@ fn fresh_state(env: &Env) -> SimState {
 
 #[cfg(test)]
 mod tests {
+    mod collection_tests;
     mod evolution_tests;
     mod mainbeat_tests;
     mod restored_tests;
@@ -2852,13 +2854,13 @@ mod tests {
     }
 
     #[test]
-    fn pickup_source_magnet_body_overlap_kicks_out_then_accelerates_to_collection() {
+    fn pickup_comfort_radius_body_overlap_kicks_out_then_accelerates_to_collection() {
         let mut sim = survivor_sim();
         let rec = Rc::new(std::cell::RefCell::new(
             crate::recorder::LogRecorder::default(),
         ));
         sim.rec = Box::new(Rc::clone(&rec));
-        for (fi, x) in [(0, 60.0), (1, 62.0)] {
+        for (fi, x) in [(0, 134.0), (1, 136.0)] {
             sim.drop_on_field(
                 fi,
                 crate::recorder::Fate {
@@ -2874,12 +2876,12 @@ mod tests {
                 false,
             );
         }
-        assert!((sim.pickup_radius() - 0.3 * crate::survivors::PX_PER_VS_UNIT).abs() < 1e-9);
+        assert_eq!(sim.pickup_radius(), 120.0);
         sim.collect_gems();
         assert_eq!(
             sim.st.field.len(),
             1,
-            "0.3U magnet plus0.1U gem body, not magnet alone"
+            "120px comfort radius plus0.1U gem body, not magnet alone"
         );
         assert_eq!(sim.st.flying_gems.len(), 1);
         sim.advance_to(0.2);
@@ -2887,7 +2889,7 @@ mod tests {
             rec.borrow()
                 .gem_poses
                 .iter()
-                .any(|p| p.id == 0 && p.x > 65.0),
+                .any(|p| p.id == 0 && p.x > 134.0),
             "negative start gives an outward kick"
         );
         assert!(
@@ -2900,7 +2902,7 @@ mod tests {
         assert_eq!(sim.st.field.len(), 1);
         assert!(r.xp.0.last().is_some_and(|s| *s > 0.5));
         eprintln!(
-            "source magnet46.280992px +body15.426997px: x60 attracted, x62 waits; first gem collected at world{:.6}, poses{}",
+            "comfort magnet120px +body15.426997px: x134 attracted, x136 waits; first gem collected at world{:.6}, poses{}",
             r.xp.0.last().copied().unwrap(),
             r.gem_poses.len()
         );
@@ -3025,7 +3027,7 @@ mod tests {
     }
 
     #[test]
-    fn survivor_field_keeps_400_gems_and_merges_xp_into_the_farthest_from_the_hero() {
+    fn survivor_field_keeps_400_gems_and_merges_xp_near_its_death() {
         use crate::recorder::Fate;
         let mut sim = survivor_sim();
         for k in 0..400 {
@@ -3044,7 +3046,7 @@ mod tests {
                 false,
             );
         }
-        // A new drop by the near gem must still merge into the far gem.
+        // An overflow drop stays near its death, without changing XP or the field cap.
         sim.drop_on_field(
             400,
             Fate {
@@ -3061,9 +3063,29 @@ mod tests {
         );
         assert_eq!(sim.st.field.len(), 400);
         assert_eq!(sim.st.n_gems, 400);
-        assert_eq!(sim.st.field[0].value, 1.0);
-        assert_eq!(sim.st.field[399].value, 11.0);
-        assert!(sim.st.field[399].big);
+        assert_eq!(sim.st.field[0].value, 11.0);
+        assert_eq!(sim.st.field[399].value, 1.0);
+        assert!(sim.st.field[0].big);
+        sim.drop_on_field(
+            401,
+            Fate {
+                critical: false,
+                w: 0.0,
+                x: 250.25,
+                y: 0.0,
+                hit: 0.0,
+                lethal: true,
+                damage: 1.0,
+            },
+            5.0,
+            false,
+        );
+        assert_eq!(
+            sim.st.field[250].value, 6.0,
+            "nearest death, independently of the hero"
+        );
+        assert_eq!(sim.st.field[0].value, 11.0);
+        assert_eq!(sim.st.field.iter().map(|g| g.value).sum::<f64>(), 415.0);
         sim.gem_arrives(399, 45.0);
         let progress = sim.survivor_progress().unwrap();
         assert_eq!(

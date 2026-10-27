@@ -240,7 +240,7 @@ pub fn run(dir: &Path, fixture: Option<(WeaponId, u8)>) -> Result<(), String> {
             });
             scene
                 .evolution
-                .update(Some(visual_run), engine.view.borrow().inventory);
+                .update(Some(&visual_run), engine.view.borrow().inventory);
         }
         if tick % 4 != 0 {
             continue;

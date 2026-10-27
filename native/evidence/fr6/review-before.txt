@@ -1,0 +1,45 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-fr6/native/crates/sim)
+warning: unnecessary qualification
+   --> crates/sim/src/engine/tests/collection_tests.rs:110:23
+    |
+110 |     s.st.q.push(0.25, super::super::Ev::Gem { gem:0, value:5.0 });
+    |                       ^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: requested on the command line with `-W unused-qualifications`
+help: remove the unnecessary path segments
+    |
+110 -     s.st.q.push(0.25, super::super::Ev::Gem { gem:0, value:5.0 });
+110 +     s.st.q.push(0.25, Ev::Gem { gem:0, value:5.0 });
+    |
+
+warning: unnecessary qualification
+   --> crates/sim/src/engine/tests/collection_tests.rs:111:23
+    |
+111 |     s.st.q.push(0.25, super::super::Ev::Gem { gem:1, value:15.0 });
+    |                       ^^^^^^^^^^^^^^^^^^^^^
+    |
+help: remove the unnecessary path segments
+    |
+111 -     s.st.q.push(0.25, super::super::Ev::Gem { gem:1, value:15.0 });
+111 +     s.st.q.push(0.25, Ev::Gem { gem:1, value:15.0 });
+    |
+
+warning: `sim` (lib test) generated 2 warnings (run `cargo fix --lib -p sim --tests` to apply 2 suggestions)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.89s
+     Running unittests src/lib.rs (target/debug/deps/sim-1ebf1e278f138957)
+
+running 1 test
+
+thread 'engine::tests::collection_tests::simultaneous_gem_arrivals_finish_reopening_cards_before_the_resume_celebration' (183726318) panicked at crates/sim/src/engine/tests/collection_tests.rs:120:5:
+held same-beat XP immediately reopens a card; no premature pulse or sound
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test engine::tests::collection_tests::simultaneous_gem_arrivals_finish_reopening_cards_before_the_resume_celebration ... FAILED
+
+failures:
+
+failures:
+    engine::tests::collection_tests::simultaneous_gem_arrivals_finish_reopening_cards_before_the_resume_celebration
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 144 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p sim --lib`

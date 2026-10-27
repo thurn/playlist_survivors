@@ -1,0 +1,3 @@
+pickups-check minute1: real Rust3m arrivals, normal damage/stationary/first-card picks, song60.008333, run60.000000, HP1.000000, level1, kills184, gems102, chickens0; scene history last2run seconds, silent offscreen still
+pickups-check upgrade: separately injected resume pulse at age180ms over the actual minute1 view; no survival claim
+pickups-check cap: synthetic400 resting-gem layout and1 floor chicken over the minute1 view; values1,2,3,9,10,100; outside magnet, fixed layout camera; actual cap/merge/drop/heal rules checked separately, no natural density/survival claim

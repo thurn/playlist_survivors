@@ -181,7 +181,7 @@ impl Sim {
         r.get(i as usize).copied().unwrap_or(f64::NAN) * (1.0 + self.st.bonus.pickup)
     }
 
-    /// At the cap, survivors merges into the farthest gem from the hero; legacy uses the nearest death.
+    /// At the field cap, keep earned XP beside its death by merging into the nearest gem.
     pub(super) fn drop_on_field(&mut self, fi: usize, fate: Fate, value: f64, big: bool) {
         let survivors = self.st.survivor.is_some();
         let cap = if survivors {
@@ -190,15 +190,10 @@ impl Sim {
             GEM_CAP
         };
         if self.st.field.len() >= cap {
-            let hp = self.hero_pose(self.st.w);
             let mut near = 0usize;
             for (i, g) in self.st.field.iter().enumerate() {
                 let n = &self.st.field[near];
-                let choose = if survivors {
-                    hypot(g.x - hp.x, g.y - hp.y) > hypot(n.x - hp.x, n.y - hp.y)
-                } else {
-                    hypot(g.x - fate.x, g.y - fate.y) < hypot(n.x - fate.x, n.y - fate.y)
-                };
+                let choose = hypot(g.x - fate.x, g.y - fate.y) < hypot(n.x - fate.x, n.y - fate.y);
                 if choose {
                     near = i;
                 }
@@ -458,6 +453,57 @@ impl Sim {
             });
         } else {
             self.rise_orbs(index, offers);
+        }
+    }
+
+    /// A bounded forced reaction, once after the final modal choice. It grants no
+    /// immunity or damage, and never shifts a boss or authored formation geometry.
+    pub(super) fn upgrade_pulse(&mut self) {
+        const MAX_PUSH: f64 = 48.0;
+        const RECOIL_S: f64 = 0.12;
+        let w = self.st.w;
+        let hero = self.hero_pose(w);
+        self.st.freeze.upgrade.pulse = Some(crate::survivors::UpgradePulse {
+            song: self.st.s,
+            world: w,
+            x: hero.x,
+            y: hero.y,
+            radius: LEVEL_PULSE,
+        });
+        for fi in self.st.alive.clone() {
+            let f = &self.st.foes[fi];
+            if !f.alive
+                || f.survivor_boss
+                || self.st.boss_foe == Some(fi)
+                || f.member.is_some()
+                || self.pinned(fi)
+            {
+                continue;
+            }
+            let (x, y) = self.pos(fi, w);
+            let (dx, dy) = (x - hero.x, y - hero.y);
+            let d = hypot(dx, dy);
+            if d >= LEVEL_PULSE {
+                continue;
+            }
+            let (ux, uy) = if d > 1e-6 {
+                (dx / d, dy / d)
+            } else {
+                let a = fi as f64 * 2.399_963_229_728_653;
+                (cos(a), sin(a))
+            };
+            let distance = (LEVEL_PULSE - d).min(MAX_PUSH);
+            let life = RECOIL_S;
+            let f = &mut self.st.foes[fi];
+            f.x = x;
+            f.y = y;
+            f.last_w = w;
+            f.step = None;
+            f.attack = None;
+            f.recoil_v = (ux * distance / life, uy * distance / life);
+            f.vx = f.recoil_v.0;
+            f.vy = f.recoil_v.1;
+            f.recoil_until = w + life;
         }
     }
 

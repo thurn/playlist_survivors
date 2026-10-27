@@ -2668,13 +2668,9 @@ impl App {
             return;
         };
         let caused: Vec<_> = self.engine.causes().cloned().collect();
-        let mut cues = self.scene.cards.cues(
-            self.world.survivors().then(|| self.engine.sim.run_state()),
-            now_s(),
-        );
-        cues.extend(evolution::cues(
-            self.world.survivors().then(|| self.engine.sim.run_state()),
-        ));
+        let forecast = self.world.survivors().then(|| self.engine.sim.run_state());
+        let mut cues = self.scene.cards.cues(forecast.as_ref(), now_s());
+        cues.extend(evolution::cues(forecast.as_ref()));
         let camera = self.engine.view.borrow().camera;
         let seed = self.engine.seed;
         let at = sounds::At {

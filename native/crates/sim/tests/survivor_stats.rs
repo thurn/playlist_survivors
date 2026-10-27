@@ -157,7 +157,7 @@ fn movement_and_magnet_share_one_forest_unit_conversion() {
     assert!((HERO_SPEED - 140.0).abs() < 1e-9);
     assert!((enemy_speed(140.0) - 54.88).abs() < 1e-9);
     assert!((enemy_speed(100.0) / HERO_SPEED - 0.28).abs() < 1e-9);
-    assert!((PICKUP_RADIUS - 46.280_991_735_537_19).abs() < 1e-9);
+    assert_eq!(PICKUP_RADIUS, 120.0);
     eprintln!(
         "px/U={PX_PER_VS_UNIT}, hero={HERO_SPEED}, bat={}, radius={PICKUP_RADIUS}",
         enemy_speed(140.0)

@@ -49,3 +49,63 @@ impl Pickups {
         });
     }
 }
+
+/// Rollback-safe: the authoritative resume record supplies both origin and held age.
+pub fn celebration(
+    view: &eval::live::LiveView,
+    art: &render::atlas::Atlases,
+    at: &dyn Fn(f64, f64) -> (f32, f32),
+    scale: f32,
+    out: &mut Vec<Sprite>,
+    lights: &mut Vec<Light>,
+) {
+    let Some((run, pulse)) = view
+        .run
+        .and_then(|run| run.upgrade.map(|pulse| (run, pulse)))
+    else {
+        return;
+    };
+    let age = run.world - pulse.world;
+    if !(0.0..0.7).contains(&age) {
+        return;
+    }
+    let progress = (age / 0.7) as f32;
+    let fade = (1.0 - progress).powi(2);
+    let (x, y) = at(pulse.x, pulse.y);
+    out.push(Sprite::arc(
+        x,
+        y,
+        pulse.radius as f32 * scale * (1.0 - (1.0 - progress).powi(3)),
+        Arc {
+            head: 0.0,
+            span: std::f32::consts::TAU,
+            width: (2.0 + 3.0 * fade) * scale,
+        },
+        [1.0, 0.8, 0.35, 0.7 * fade],
+    ));
+    if let Some(&glow) = art.proc.get("glow") {
+        for i in 0..12 {
+            let angle = i as f32 * std::f32::consts::TAU / 12.0 + progress * 0.6;
+            let radius = (20.0 + 85.0 * progress) * scale;
+            let size = (5.0 + 12.0 * fade) * scale;
+            out.push(
+                Sprite::centred(
+                    glow,
+                    x + angle.cos() * radius,
+                    y + angle.sin() * radius,
+                    size,
+                    size,
+                )
+                .tinted([1.0, 0.85, 0.4, 0.65 * fade])
+                .additive(),
+            );
+        }
+    }
+    lights.push(Light {
+        x,
+        y,
+        radius: 130.0 * scale,
+        color: [1.0, 0.8, 0.35],
+        strength: 0.22 * fade,
+    });
+}

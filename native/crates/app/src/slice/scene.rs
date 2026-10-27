@@ -339,8 +339,8 @@ impl Scene {
         view: &LiveView,
         clock: &damage::Clock,
     ) {
-        self.cards.update(view.run, view.inventory, now);
-        self.evolution.update(view.run, view.inventory);
+        self.cards.update(view.run.as_ref(), view.inventory, now);
+        self.evolution.update(view.run.as_ref(), view.inventory);
         if view.run.is_some() {
             self.numbers.moments(moments, now, clock);
         }
@@ -719,6 +719,7 @@ impl Scene {
             .map_or(0.0, |(t, _)| 1.0 - (now - t) / TIER_RING_S)
             .clamp(0.0, 1.0);
         tier::ground(view, art, &at, scale, ring, out);
+        super::pickups::celebration(view, art, &at, scale, out, lights);
         // (Bursts marked to stay under the characters, as the gems' pickups.)
         self.effects.draw(art, now, &at, scale, w, h, true, out);
         // The wave's edge: a ring in the new zone's light, and a wider one in its tint.

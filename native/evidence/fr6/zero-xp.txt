@@ -1,0 +1,10 @@
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-fr6/native/crates/eval)
+   Compiling players v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-fr6/native/crates/players)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3.65s
+     Running tests/live.rs (target/debug/deps/live-6bbfee6942df762e)
+
+running 1 test
+test zero_xp_kills_keep_real_impact_death_and_kill_audio_without_fake_gems ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 23 filtered out; finished in 0.02s
+

@@ -3,7 +3,8 @@
 /// Unity world units, including normal Mad Forest's shared speed modifier.
 pub const PX_PER_VS_UNIT: f64 = 140.0 / (0.825 * 1.1);
 pub const HERO_SPEED: f64 = 0.825 * 1.1 * PX_PER_VS_UNIT;
-pub const PICKUP_RADIUS: f64 = 0.3 * PX_PER_VS_UNIT;
+/// Selected restoration comfort default; XP values and gem body size stay unchanged.
+pub const PICKUP_RADIUS: f64 = 120.0;
 pub const DAMAGE_LOCKOUT_S: f64 = 0.120;
 pub const GEM_CAP: usize = 400;
 

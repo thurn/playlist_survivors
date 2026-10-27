@@ -107,6 +107,28 @@ pub fn run(dir: &Path) -> Result<(), String> {
         minute.gems.len(),
         minute.chickens.len()
     );
+    let mut celebration = minute.clone();
+    let r = celebration.run.as_mut().expect("minute run");
+    r.upgrade = Some(sim::survivors::UpgradePulse {
+        song: r.song,
+        world: r.world - 0.18,
+        x: celebration.hero.unwrap().x,
+        y: celebration.hero.unwrap().y,
+        radius: sim::engine::LEVEL_PULSE,
+    });
+    draw(
+        &world,
+        &mut engine,
+        &mut scene,
+        &art,
+        &mut gpu,
+        now,
+        &celebration,
+        &dir.join("upgrade.png"),
+    )?;
+    eprintln!(
+        "pickups-check upgrade: separately injected resume pulse at age180ms over the actual minute1 view; no survival claim"
+    );
     let mut cap = minute.clone();
     cap.gems.clear();
     cap.gem_poses.clear();
@@ -114,11 +136,13 @@ pub fn run(dir: &Path) -> Result<(), String> {
     let hero = cap.hero.ok_or("no cap hero")?;
     cap.camera = (hero.x, hero.y - 30.0, 1.0);
     let values = [1.0, 2.0, 3.0, 9.0, 10.0, 100.0];
-    'rows: for row in 0..16 {
-        for col in 0..26 {
-            let x = hero.x + (f64::from(col) - 12.5) * 32.0;
-            let y = hero.y + (f64::from(row) - 7.5) * 32.0;
-            if (x - hero.x).hypot(y - hero.y) < 64.0 {
+    'rows: for row in 0..18 {
+        for col in 0..30 {
+            let x = hero.x + (f64::from(col) - 14.5) * 32.0;
+            let y = hero.y + (f64::from(row) - 8.5) * 32.0;
+            if (x - hero.x).hypot(y - hero.y)
+                < cap.run.unwrap().pickup_radius + sim::survivors::GEM_BODY_RADIUS + 4.0
+            {
                 continue;
             }
             let id = cap.gems.len();

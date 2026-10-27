@@ -54,7 +54,7 @@ fn key(id: WeaponId) -> &'static str {
 }
 /// Forecast state supplies lead; the existing cue reconciler cancels a retracted grant.
 /// Five sequential rewards share one transient, preserving the three-voice UI cap.
-pub fn cues(run: Option<RunState>) -> Vec<Cue> {
+pub fn cues(run: Option<&RunState>) -> Vec<Cue> {
     let Some(chest) = run.and_then(|r| r.roulette) else {
         return Vec::new();
     };
@@ -89,7 +89,7 @@ pub struct Evolution {
     song: Option<f64>,
 }
 impl Evolution {
-    pub fn update(&mut self, run: Option<RunState>, inv: Option<Inventory>) {
+    pub fn update(&mut self, run: Option<&RunState>, inv: Option<Inventory>) {
         let (Some(run), Some(inv)) = (run, inv) else {
             *self = Self::default();
             return;
@@ -279,83 +279,83 @@ mod tests {
     fn chest_identity_never_fires_early_restarts_after_expiry_or_survives_retraction() {
         let mut e = Evolution::default();
         let (mut r, i) = state(1.9);
-        e.update(Some(r), Some(i));
+        e.update(Some(&r), Some(i));
         assert!(e.burst.is_none());
         r.song = 2.0;
-        e.update(Some(r), Some(i));
+        e.update(Some(&r), Some(i));
         assert_eq!(e.burst.as_ref().unwrap().age, 0.0);
         r.song = 2.2;
-        e.update(Some(r), Some(i));
+        e.update(Some(&r), Some(i));
         assert!((e.burst.as_ref().unwrap().age - 0.2).abs() < 1e-8);
         r.song = 4.0;
-        e.update(Some(r), Some(i));
+        e.update(Some(&r), Some(i));
         assert!(e.burst.is_none());
-        e.update(Some(r), Some(i));
+        e.update(Some(&r), Some(i));
         assert!(e.burst.is_none());
         r.song = 2.0;
-        e.update(Some(r), Some(i));
+        e.update(Some(&r), Some(i));
         assert!(e.burst.is_some());
-        e.update(Some(r), Some(Inventory::default()));
+        e.update(Some(&r), Some(Inventory::default()));
         assert!(e.burst.is_none());
         r.roulette.as_mut().unwrap().landed = None;
-        e.update(Some(r), Some(i));
+        e.update(Some(&r), Some(i));
         assert!(e.burst.is_none());
     }
     #[test]
     fn manual_and_music_pauses_hold_burst_but_chest_animation_advances() {
         let mut e = Evolution::default();
         let (mut r, i) = state(2.0);
-        e.update(Some(r), Some(i));
+        e.update(Some(&r), Some(i));
         for reason in [FreezeReason::Paused, FreezeReason::MusicStopped] {
             r.song += 2.0;
             r.frozen = Some(reason);
-            e.update(Some(r), Some(i));
+            e.update(Some(&r), Some(i));
             assert_eq!(e.burst.as_ref().unwrap().age, 0.0);
         }
         r.song += 0.25;
         r.frozen = Some(FreezeReason::Chest);
-        e.update(Some(r), Some(i));
+        e.update(Some(&r), Some(i));
         assert_eq!(e.burst.as_ref().unwrap().age, 0.25);
         r.roulette = None;
         r.song += 0.25;
         r.frozen = None;
-        e.update(Some(r), Some(i));
+        e.update(Some(&r), Some(i));
         assert_eq!(e.burst.as_ref().unwrap().age, 0.5);
     }
     #[test]
     fn cues_reconcile_at_landing_and_multi_reward_uses_one_ui_voice() {
         let (mut r, _) = state(1.8);
-        let c = cues(Some(r));
+        let c = cues(Some(&r));
         assert_eq!(c.len(), 1);
         assert_eq!(c[0].s, 2.0);
         assert_eq!(c[0].key, "evolve-holy-wand");
         r.roulette.as_mut().unwrap().rewards[1] = Some(Item::Weapon(WeaponId::SoulEater));
-        let c = cues(Some(r));
+        let c = cues(Some(&r));
         assert_eq!(c.len(), 1);
         assert_eq!(c[0].key, "evolve-multiple");
         r.roulette.as_mut().unwrap().landed = None;
-        assert!(cues(Some(r)).is_empty());
+        assert!(cues(Some(&r)).is_empty());
     }
     #[test]
     fn corrected_rewards_refresh_identity_without_restarting_the_animation() {
         let mut presentation = Evolution::default();
         let (mut run, mut inv) = state(2.0);
-        presentation.update(Some(run), Some(inv));
+        presentation.update(Some(&run), Some(inv));
         inv.weapons
             .replace(WeaponId::HolyWand, WeaponId::SoulEater)
             .unwrap();
         run.song = 2.1;
         run.roulette.as_mut().unwrap().rewards[0] = Some(Item::Weapon(WeaponId::SoulEater));
-        presentation.update(Some(run), Some(inv));
+        presentation.update(Some(&run), Some(inv));
         let burst = presentation.burst.as_ref().unwrap();
         assert_eq!(burst.weapons, [WeaponId::SoulEater]);
         assert!((burst.age - 0.1).abs() < 1e-8);
-        assert_eq!(cues(Some(run))[0].key, "evolve-soul-eater");
+        assert_eq!(cues(Some(&run))[0].key, "evolve-soul-eater");
         run.song = 2.2;
-        presentation.update(Some(run), Some(Inventory::default()));
+        presentation.update(Some(&run), Some(Inventory::default()));
         assert!(presentation.burst.is_none());
         run.song = 2.3;
-        presentation.update(Some(run), Some(inv));
+        presentation.update(Some(&run), Some(inv));
         assert!((presentation.burst.as_ref().unwrap().age - 0.3).abs() < 1e-8);
     }
 }

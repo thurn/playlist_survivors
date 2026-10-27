@@ -884,6 +884,45 @@ fn a_real_xp_offer_pick_applies_once_across_speculative_rollback() {
     assert!(stats.key_rollbacks > 0);
     assert_eq!(plain.len(), late.len());
     assert_same(&plain, &late);
+    let pulses: std::collections::BTreeSet<_> = plain
+        .iter()
+        .filter_map(|(_, r)| {
+            if let Record::Run(run) = r {
+                run.upgrade.map(|p| p.song.to_bits())
+            } else {
+                None
+            }
+        })
+        .collect();
+    let sounds: Vec<_> = plain
+        .iter()
+        .filter_map(|(_, r)| {
+            if let Record::Sound(eval::live::Caused {
+                cause: eval::live::Cause::LevelUp { s },
+                ..
+            }) = r
+            {
+                Some(s.to_bits())
+            } else {
+                None
+            }
+        })
+        .collect();
+    assert!(
+        !pulses.is_empty(),
+        "actual card resolution resumes with a world-space celebration"
+    );
+    assert_eq!(
+        sounds.len(),
+        pulses.len(),
+        "one cue per resumed celebration, including chained cards"
+    );
+    assert_eq!(
+        sounds
+            .into_iter()
+            .collect::<std::collections::BTreeSet<_>>(),
+        pulses
+    );
     let strike_count = plain
         .iter()
         .filter(|(_, r)| matches!(r, Record::Moment(Moment::LightningStrike(_))))
@@ -1860,4 +1899,53 @@ fn authoritative_fire_path_replays_late_movement_and_holds_through_a_menu() {
         "rendered past poses must be corrected just like actual trail damage after late keys"
     );
     assert!(a.hero_trail.windows(2).all(|v| v[0].0 < v[1].0));
+}
+
+#[test]
+fn zero_xp_kills_keep_real_impact_death_and_kill_audio_without_fake_gems() {
+    let (mut lib, log) = fast_offer_fixture();
+    lib.enemies
+        .get_mut("vs-bat3")
+        .unwrap()
+        .survivors
+        .as_mut()
+        .unwrap()
+        .xp = 0.0;
+    let mut e = Engine::new(
+        &source("levels/survivors.yaml"),
+        &lib,
+        &IndexMap::new(),
+        0.2,
+        true,
+        true,
+        f64::INFINITY,
+    )
+    .unwrap();
+    e.settled_log = Some(Vec::new());
+    e.feed(|l| *l = log);
+    for i in 1..=600 {
+        e.frame(f64::from(i) / 120.0, 0.2);
+    }
+    e.frame(5.5, 0.0);
+    let r = e.settled_log.as_ref().unwrap();
+    assert!(r.iter().any(|(_, r)| matches!(
+        r,
+        Record::Death {
+            recycled: false,
+            ..
+        }
+    )));
+    assert!(
+        r.iter()
+            .any(|(_, r)| matches!(r, Record::Moment(Moment::EnemyImpact { .. })))
+    );
+    assert!(r.iter().any(|(_, r)| matches!(
+        r,
+        Record::Sound(eval::live::Caused {
+            cause: eval::live::Cause::Kill { .. },
+            ..
+        })
+    )));
+    assert!(!r.iter().any(|(_, r)| matches!(r, Record::Gem { .. })));
+    assert_eq!(e.view.borrow().xp, 0.0);
 }

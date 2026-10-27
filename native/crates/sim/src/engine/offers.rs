@@ -73,6 +73,7 @@ impl Sim {
         p.offer = None;
         p.pending_levels -= 1;
         let more = p.pending_levels > 0;
+        self.st.freeze.upgrade.pending = true;
         self.st.freeze.confirmed = true;
         self.publish_inventory();
         if more {

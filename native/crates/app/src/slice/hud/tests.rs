@@ -125,7 +125,7 @@ fn hud_state_render_qualification() {
             let mut overlay = Vec::new();
             draw(&view, &st, &art, w as f32, h as f32, &mut overlay);
             let mut cards = cards::Screen::default();
-            cards.update(view.run, view.inventory, 10.0);
+            cards.update(view.run.as_ref(), view.inventory, 10.0);
             cards.draw(&art, 10.6, w as f32, h as f32, st.head, &mut overlay);
             if name == "end" {
                 scene::end_card(

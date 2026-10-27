@@ -42,8 +42,20 @@ impl FreezeReason {
     }
 }
 
+/// One resolved upgrade celebration, published only when the world resumes.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct UpgradePulse {
+    pub song: f64,
+    pub world: f64,
+    pub x: f64,
+    pub y: f64,
+    pub radius: f64,
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct RunState {
+    pub pickup_radius: f64,
+    pub upgrade: Option<UpgradePulse>,
     pub song: f64,
     pub presentation_s: f64,
     pub frozen_beat: Option<f64>,
