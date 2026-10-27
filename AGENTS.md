@@ -1,5 +1,11 @@
 # Working on Playlist Survivors
 
+Playlist Survivors is a horde survivor rhythm game. It is a free, open source, non-commercial project.
+
+We rely heavily on prototyping, and move quickly. Code and documentation get out of date fast. Ask clarifying questions at the start of sessions if you're not sure what's still current.
+
+Vision: Playlist Survivors is "the game that doesn't need a trailer". This is because *every moment of gameplay is cinematic*. The aesthetic experience is prioritized over everything.
+
 Implement every prompt in its own Tollgate worktree, never by committing on master. Create one with `tg worktree create <name>`, make the change, validate with `scripts/check-fast`, and immediately commit using Conventional Commits syntax. Then deliver it without asking: submit with `tg candidate HEAD` in the worktree, then from the main checkout run `tg approve <candidate-id> --wait`, which runs Tollgate's gate stage and promotes the candidate to `staging`. The change is landed then. Tollgate's release stage validates the newest `staging` tip afterwards and moves `release` and remote master; Tollgate owns pushes to remote master.
 
 ## Features
