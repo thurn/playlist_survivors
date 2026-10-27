@@ -1,0 +1,7 @@
+{
+  "id": "hv-n7fn.37",
+  "description": "Monitor reported one platform interruption of assets/app executor 01a17841-b0f1-7cd3-85e6-f659e8ba5ad1 during SF11: Selected model is at capacity. Please try a different model. This was a model-service failure, not a shell command. Worktree .worktrees/sf11-assets and full-check process survived; original process output was collected without launching a duplicate. Current turn resumed. External service capacity remains outside project code; retain this occurrence for recurrence diagnosis.",
+  "notes": "Hourly monitor reported a recurrence in sim executor 01a1765f-cbc2-75b2-8fd6-fee82750b02c during SH6: Selected model is at capacity. Please try a different model. The SH6 worktree and native claim survived. On resume inspected logs and collected the owned check process: app compile clean, 13 eval Live tests passed; three newly written lunge test failures were implementation/test-fixture issues and are being repaired on SH6. No duplicate candidate/check launched. This is a second monitor-reported platform occurrence across the two executors; no application source defect established.",
+  "created_at": "2026-10-26T13:04:38Z",
+  "updated_at": "2026-10-27T04:29:56Z"
+}

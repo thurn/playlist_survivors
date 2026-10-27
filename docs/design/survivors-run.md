@@ -1085,6 +1085,16 @@ Each bead summarizes its measurements here in a few lines, in its own
 subsection, linking `native/evidence/<key>/`. Beads never add sections
 elsewhere in this document. Parallel beads would collide there.
 
+### Tooling — capacity interruption recovery (hv-n7fn.37)
+
+[Kept native records](../../native/evidence/tooling-capacity-recovery/README.md)
+cover two monitor-reported provider-capacity interruptions. SF11 and SH6 resumed,
+collected surviving checks and delivered; their exact promoted certificates,
+staging ancestry and retained evidence hashes are verified. No new occurrence
+or reproduced provider outage is claimed. AGENTS.md records checking ownership,
+handles and candidates before replacement work. No game behavior changes; this
+bead's source SHA is in its native notes.
+
 ### Tooling — tracked configuration staging (hv-n7fn.39)
 
 [Kept reproduction](../../native/evidence/tooling-config-staging/README.md) shows

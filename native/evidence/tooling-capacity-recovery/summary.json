@@ -1,0 +1,52 @@
+{
+  "recordedMonitorOccurrences": 2,
+  "providerError": "Selected model is at capacity. Please try a different model.",
+  "externalProviderReproduced": false,
+  "newOccurrencesObservedThisBead": 0,
+  "scope": "Native incident reports plus preserved settled deliveries/evidence; not provider telemetry or proof no other attempts existed",
+  "records": [
+    {
+      "bead": "hv-n7fn.11",
+      "finalCandidate": "01a1785a-73bf-7e90-b34e-bbddbae28484",
+      "state": "promoted",
+      "landed": "de2ea4f0532c6ac6a5e1a9c71cd83ad3601049f5",
+      "ancestorOfStaging": true,
+      "retainedEvidenceSha256": {
+        "native/evidence/sf11/check-fast.txt": "9aeeedcc0b5cf54915236b2d8bf68ff12c8e0c31a19870ae9a0f5edeb754b9db",
+        "native/evidence/sf11/intake-audit.json": "60f76d2ac9664e9fad73681d14df269dc74bdcf9c6f250868c2b6fb24b109f65",
+        "native/evidence/sf11/ci-full.txt": "5fbac57ee1c5ae476923c35cce9665fa8e5cec522b970a1787fb7a4bc2737b70",
+        "native/evidence/sf11/ci-full-initial.txt": "e9ee321a123d7538cc13ca29b85b397a9b4105ea836aee48a4781979bdf75730",
+        "native/evidence/sf11/validation.txt": "2fdd41fa26e04bf7686098346c43d056555a0375a10945165509193f83686798",
+        "native/evidence/sf11/README.md": "c3f5fd14e38fbfa2ee3a58e50bf768f20cdeb2b3c5f99886c2d27cce9bec3400",
+        "native/evidence/sf11/bake-hashes.json": "a3a442a9b44dd3cdcbfdc4026274899ea23794215a18a5a1710be90813384815",
+        "native/evidence/sf11/intake.png": "12639f299fa6b94c4972c66c64382fd20b76e2e54b5d2c25f7a9ba4e6041e441",
+        "native/evidence/sf11/headless.txt": "e40b35d78f3ae26fdcaa10c4f894e48ceea501918a96a64058e6736a23ec399b",
+        "native/evidence/sf11/bake.txt": "dceffa4a16e796397f2c77128b80ba0fe1f6b1a03bcdc2e690d0b879b4335c3a"
+      }
+    },
+    {
+      "bead": "hv-n7fn.17",
+      "finalCandidate": "01a178b4-00d7-7b23-be1a-f06f471f663c",
+      "state": "promoted",
+      "landed": "b99d7eeceb9d89f35151e791847d019faf26c91a",
+      "ancestorOfStaging": true,
+      "retainedEvidenceSha256": {
+        "native/evidence/sh6/legacy-session-tests.log": "a807e633993c9efabb7ee1b5f2b92ea902cc0e1747bd6fe60d7d84524ff3148d",
+        "native/evidence/sh6/contact-tests.log": "67c1bf8a3d8b6e42f12df028e9902abc563436713e7e0a3789e4f052b5401029",
+        "native/evidence/sh6/headless.log": "9486ba53786a9fad4952236a3cd80a6f330594e15afb2ba75ec56809214906a6",
+        "native/evidence/sh6/gait-tests.log": "64a0eb1e5b81246c04da74c69908dfdb231a6570fe9a890f2a05269928fe302b",
+        "native/evidence/sh6/session-summary.json": "e513823b88ba650fb3b523edc124c038bc03169c2700dcd07bc519423f628971",
+        "native/evidence/sh6/freeze-tests.log": "c4d6f844381f2d67f772323aff77a4271b0174b60efdf77a856fed1803fe50eb",
+        "native/evidence/sh6/timing-report.log": "7fb9b7e6876ad209db9d6d64087ee0bbaaa6379c8b577d44ed599d097b833bc1",
+        "native/evidence/sh6/still.log": "6a83ac30ddfd7e2c86591cb7f13df7a7651bf50e30c133cad4b065eb5c679b0b",
+        "native/evidence/sh6/check-fast.log": "a82daa8d19359c3eeea23dbd651470cdd807698bb407f95418d6dddc2416dab4",
+        "native/evidence/sh6/README.md": "a09d12abcce9edc43d69288e64316278a309faa6a51e2f68fa2745a92ffdbd0b",
+        "native/evidence/sh6/capture-fixture.py": "4e12dfbb2feb8811b0eae2afc9f529e46f216e4b59b5a5353d02d312637e7398",
+        "native/evidence/sh6/legacy-causality.log": "0f5641fbb61f9902b8f806bdacf2de6bfc21fe45313a056ce5b5279f7ceececd",
+        "native/evidence/sh6/minute-two.png": "a1aa360eadbe47de7b22569affadef2367ee085fa043a4841a0eab45927a0dd1",
+        "native/evidence/sh6/live-tests.log": "658298f7db3419f47e6b5aef94fbc6ddd8fd26353d3dbbd2cac53ab837241a94",
+        "native/evidence/sh6/replay.log": "67fd44a38ddbc5b036fa944544e0059acdc571a77f4730f57de4d51b468cd43c"
+      }
+    }
+  ]
+}

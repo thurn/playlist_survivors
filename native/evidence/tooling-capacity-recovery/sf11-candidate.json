@@ -1,0 +1,421 @@
+{
+  "attempt_generations": [
+    {
+      "anchored_base_oid": {
+        "bytes": "08b7166cafe22ef513af543e998801434fdbfef4",
+        "format": "sha1"
+      },
+      "configuration_digest": "597ba2c176c89c476e14d6ee7f0c28e8dbd9e36662eeb775bac758285a97f83e",
+      "engine_epoch": 1,
+      "expected_parent_oid": {
+        "bytes": "08b7166cafe22ef513af543e998801434fdbfef4",
+        "format": "sha1"
+      },
+      "id": "01a1785a-7bae-7b52-bd93-23fb47a7f323",
+      "identity_digest": "d7dd932bb962afb078615e26f08a7bd90fe45eef3df3efe47deb5b8a3b065e51",
+      "invalidated_by": null,
+      "item_id": "01a1785a-73bf-7e90-b34e-bbddbae28484",
+      "ordered_item_ids": [
+        "01a1785a-73bf-7e90-b34e-bbddbae28484"
+      ],
+      "ordered_source_oids": [
+        {
+          "bytes": "57d2622f773213014deb8750f66c28aa3ad3f6a5",
+          "format": "sha1"
+        }
+      ],
+      "prefix_oids": [
+        {
+          "bytes": "de2ea4f0532c6ac6a5e1a9c71cd83ad3601049f5",
+          "format": "sha1"
+        }
+      ],
+      "step_graph_digest": "f9ded41be4c56ed5514880678658b73f5a0885dab1fc64ba61dba4c95f340062",
+      "tested_oid": {
+        "bytes": "de2ea4f0532c6ac6a5e1a9c71cd83ad3601049f5",
+        "format": "sha1"
+      }
+    }
+  ],
+  "attempts": [
+    {
+      "attempt": 1,
+      "created_at": [
+        2026,
+        299,
+        13,
+        15,
+        58,
+        520922000,
+        0,
+        0,
+        0
+      ],
+      "environment_fingerprint": "898c8b3786e8ad57858a8b1de296a6dac26b1db76b059c6e0915d1bae0803210",
+      "expected_parent_oid": {
+        "bytes": "08b7166cafe22ef513af543e998801434fdbfef4",
+        "format": "sha1"
+      },
+      "finished_at": [
+        2026,
+        299,
+        13,
+        17,
+        10,
+        688308000,
+        0,
+        0,
+        0
+      ],
+      "frozen_steps": [
+        {
+          "command": {
+            "kind": "shell",
+            "runner": [
+              "/bin/sh",
+              "-c"
+            ],
+            "script": "./scripts/ci-gate"
+          },
+          "cpu_tokens": 0,
+          "final_step": false,
+          "id": "66c00c3f-7c65-7221-ace3-940395a8ea52",
+          "memory_bytes": 0,
+          "name": "gate",
+          "needs": [],
+          "reuse_on_retry": false,
+          "rss_limit_bytes": null,
+          "semaphores": [],
+          "soft_needs": [],
+          "timeout_ns": 900000000000,
+          "voting": true,
+          "working_directory": "."
+        }
+      ],
+      "id": "01a1785a-7c65-7221-ace3-940395a8ea52",
+      "item_id": "01a1785a-73bf-7e90-b34e-bbddbae28484",
+      "retry_of": null,
+      "slot_id": "01a17056-f16c-7662-a89a-fd8380424bf4",
+      "started_at": [
+        2026,
+        299,
+        13,
+        15,
+        59,
+        266646000,
+        0,
+        0,
+        0
+      ],
+      "state": "passed",
+      "step_results": [
+        {
+          "diagnostics": [],
+          "elapsed_ms": 71289,
+          "exit_code": 0,
+          "log_hash": "2d55d12fe3e288b57ca05cd9ded1488a625cbc30480f85523e03fe56a6906728",
+          "name": "gate",
+          "result_class": "success",
+          "reused_from_attempt_id": null,
+          "signal": null,
+          "stderr_end": 1438,
+          "stdout_end": 5766
+        }
+      ],
+      "tested_oid": {
+        "bytes": "de2ea4f0532c6ac6a5e1a9c71cd83ad3601049f5",
+        "format": "sha1"
+      },
+      "validation_generation_id": "01a1785a-7bae-7b52-bd93-23fb47a7f323"
+    }
+  ],
+  "buildset": {
+    "attempt": 1,
+    "created_at": [
+      2026,
+      299,
+      13,
+      15,
+      58,
+      520922000,
+      0,
+      0,
+      0
+    ],
+    "environment_fingerprint": "898c8b3786e8ad57858a8b1de296a6dac26b1db76b059c6e0915d1bae0803210",
+    "expected_parent_oid": {
+      "bytes": "08b7166cafe22ef513af543e998801434fdbfef4",
+      "format": "sha1"
+    },
+    "finished_at": [
+      2026,
+      299,
+      13,
+      17,
+      10,
+      688308000,
+      0,
+      0,
+      0
+    ],
+    "frozen_steps": [
+      {
+        "command": {
+          "kind": "shell",
+          "runner": [
+            "/bin/sh",
+            "-c"
+          ],
+          "script": "./scripts/ci-gate"
+        },
+        "cpu_tokens": 0,
+        "final_step": false,
+        "id": "66c00c3f-7c65-7221-ace3-940395a8ea52",
+        "memory_bytes": 0,
+        "name": "gate",
+        "needs": [],
+        "reuse_on_retry": false,
+        "rss_limit_bytes": null,
+        "semaphores": [],
+        "soft_needs": [],
+        "timeout_ns": 900000000000,
+        "voting": true,
+        "working_directory": "."
+      }
+    ],
+    "id": "01a1785a-7c65-7221-ace3-940395a8ea52",
+    "item_id": "01a1785a-73bf-7e90-b34e-bbddbae28484",
+    "retry_of": null,
+    "slot_id": "01a17056-f16c-7662-a89a-fd8380424bf4",
+    "started_at": [
+      2026,
+      299,
+      13,
+      15,
+      59,
+      266646000,
+      0,
+      0,
+      0
+    ],
+    "state": "passed",
+    "step_results": [
+      {
+        "diagnostics": [],
+        "elapsed_ms": 71289,
+        "exit_code": 0,
+        "log_hash": "2d55d12fe3e288b57ca05cd9ded1488a625cbc30480f85523e03fe56a6906728",
+        "name": "gate",
+        "result_class": "success",
+        "reused_from_attempt_id": null,
+        "signal": null,
+        "stderr_end": 1438,
+        "stdout_end": 5766
+      }
+    ],
+    "tested_oid": {
+      "bytes": "de2ea4f0532c6ac6a5e1a9c71cd83ad3601049f5",
+      "format": "sha1"
+    },
+    "validation_generation_id": "01a1785a-7bae-7b52-bd93-23fb47a7f323"
+  },
+  "certificate": {
+    "buildset_id": "01a1785a-7c65-7221-ace3-940395a8ea52",
+    "checkout_verified": true,
+    "completed_event_sequence": 9997,
+    "configuration_digest": "597ba2c176c89c476e14d6ee7f0c28e8dbd9e36662eeb775bac758285a97f83e",
+    "created_at": [
+      2026,
+      299,
+      13,
+      17,
+      10,
+      702488000,
+      0,
+      0,
+      0
+    ],
+    "engine_epoch": 1,
+    "environment_fingerprint": "898c8b3786e8ad57858a8b1de296a6dac26b1db76b059c6e0915d1bae0803210",
+    "expected_parent_oid": {
+      "bytes": "08b7166cafe22ef513af543e998801434fdbfef4",
+      "format": "sha1"
+    },
+    "id": "01a1785b-96ae-7770-b7fd-336a70e5af47",
+    "queue_item_id": "01a1785a-73bf-7e90-b34e-bbddbae28484",
+    "step_graph_digest": "f9ded41be4c56ed5514880678658b73f5a0885dab1fc64ba61dba4c95f340062",
+    "tested_oid": {
+      "bytes": "de2ea4f0532c6ac6a5e1a9c71cd83ad3601049f5",
+      "format": "sha1"
+    },
+    "tree_oid": {
+      "bytes": "376b839dad2e52211281d9d1e657da72ffd26814",
+      "format": "sha1"
+    },
+    "validation_generation_id": "01a1785a-7bae-7b52-bd93-23fb47a7f323",
+    "voting_results": [
+      {
+        "attempt_id": "01a1785a-7fb7-7020-a02b-acfdcdc905ef",
+        "log_hash": "2d55d12fe3e288b57ca05cd9ded1488a625cbc30480f85523e03fe56a6906728",
+        "log_stderr_end": 1438,
+        "log_stdout_end": 5766,
+        "step_id": "66c00c3f-7c65-7221-ace3-940395a8ea52"
+      }
+    ],
+    "warnings": []
+  },
+  "certificates": [
+    {
+      "buildset_id": "01a1785a-7c65-7221-ace3-940395a8ea52",
+      "checkout_verified": true,
+      "completed_event_sequence": 9997,
+      "configuration_digest": "597ba2c176c89c476e14d6ee7f0c28e8dbd9e36662eeb775bac758285a97f83e",
+      "created_at": [
+        2026,
+        299,
+        13,
+        17,
+        10,
+        702488000,
+        0,
+        0,
+        0
+      ],
+      "engine_epoch": 1,
+      "environment_fingerprint": "898c8b3786e8ad57858a8b1de296a6dac26b1db76b059c6e0915d1bae0803210",
+      "expected_parent_oid": {
+        "bytes": "08b7166cafe22ef513af543e998801434fdbfef4",
+        "format": "sha1"
+      },
+      "id": "01a1785b-96ae-7770-b7fd-336a70e5af47",
+      "queue_item_id": "01a1785a-73bf-7e90-b34e-bbddbae28484",
+      "step_graph_digest": "f9ded41be4c56ed5514880678658b73f5a0885dab1fc64ba61dba4c95f340062",
+      "tested_oid": {
+        "bytes": "de2ea4f0532c6ac6a5e1a9c71cd83ad3601049f5",
+        "format": "sha1"
+      },
+      "tree_oid": {
+        "bytes": "376b839dad2e52211281d9d1e657da72ffd26814",
+        "format": "sha1"
+      },
+      "validation_generation_id": "01a1785a-7bae-7b52-bd93-23fb47a7f323",
+      "voting_results": [
+        {
+          "attempt_id": "01a1785a-7fb7-7020-a02b-acfdcdc905ef",
+          "log_hash": "2d55d12fe3e288b57ca05cd9ded1488a625cbc30480f85523e03fe56a6906728",
+          "log_stderr_end": 1438,
+          "log_stdout_end": 5766,
+          "step_id": "66c00c3f-7c65-7221-ace3-940395a8ea52"
+        }
+      ],
+      "warnings": []
+    }
+  ],
+  "elapsed_ms": 71421,
+  "failure_attribution": null,
+  "generation": {
+    "anchored_base_oid": {
+      "bytes": "08b7166cafe22ef513af543e998801434fdbfef4",
+      "format": "sha1"
+    },
+    "configuration_digest": "597ba2c176c89c476e14d6ee7f0c28e8dbd9e36662eeb775bac758285a97f83e",
+    "engine_epoch": 1,
+    "expected_parent_oid": {
+      "bytes": "08b7166cafe22ef513af543e998801434fdbfef4",
+      "format": "sha1"
+    },
+    "id": "01a1785a-7bae-7b52-bd93-23fb47a7f323",
+    "identity_digest": "d7dd932bb962afb078615e26f08a7bd90fe45eef3df3efe47deb5b8a3b065e51",
+    "invalidated_by": null,
+    "item_id": "01a1785a-73bf-7e90-b34e-bbddbae28484",
+    "ordered_item_ids": [
+      "01a1785a-73bf-7e90-b34e-bbddbae28484"
+    ],
+    "ordered_source_oids": [
+      {
+        "bytes": "57d2622f773213014deb8750f66c28aa3ad3f6a5",
+        "format": "sha1"
+      }
+    ],
+    "prefix_oids": [
+      {
+        "bytes": "de2ea4f0532c6ac6a5e1a9c71cd83ad3601049f5",
+        "format": "sha1"
+      }
+    ],
+    "step_graph_digest": "f9ded41be4c56ed5514880678658b73f5a0885dab1fc64ba61dba4c95f340062",
+    "tested_oid": {
+      "bytes": "de2ea4f0532c6ac6a5e1a9c71cd83ad3601049f5",
+      "format": "sha1"
+    }
+  },
+  "included_items": [
+    "01a1785a"
+  ],
+  "item": {
+    "admission_sequence": 404,
+    "buildset_id": "01a1785a-7c65-7221-ace3-940395a8ea52",
+    "certificate_id": "01a1785b-96ae-7770-b7fd-336a70e5af47",
+    "cleanup_policy": "automatic",
+    "cleanup_state": "completed",
+    "current_generation_id": "01a1785a-7bae-7b52-bd93-23fb47a7f323",
+    "dependencies": [],
+    "enqueue_sequence": 404,
+    "id": "01a1785a-73bf-7e90-b34e-bbddbae28484",
+    "kind": "gate",
+    "metadata": {
+      "approved_at": [
+        2026,
+        299,
+        13,
+        15,
+        56,
+        231023000,
+        0,
+        0,
+        0
+      ],
+      "author_email": "derek@fake.email",
+      "author_name": "Derek Thurn",
+      "branch": "sf11-assets",
+      "message_hash": "8dd72318588b907db59ce31fa2ce4df55a8713ef08f87ff54db7e6d18aeb33e7",
+      "purpose": "candidate",
+      "signature_state": "unknown",
+      "subject": "feat(assets): intake survivors fonts icons particles and sounds",
+      "worktree_path": "/Users/dthurn/playlist_survivors/.worktrees/sf11-assets"
+    },
+    "promotion_authorized": true,
+    "promotion_authorized_at": [
+      2026,
+      299,
+      13,
+      16,
+      9,
+      464968000,
+      0,
+      0,
+      0
+    ],
+    "promotion_authorized_by": "01a1785a-a74b-7302-a855-d64bf48b0a72",
+    "remote_state": "preflight-pending",
+    "repository_id": "01a16039-84d6-7643-bfec-ddf2cd7c9b54",
+    "retry_of_item_id": null,
+    "source_oid": {
+      "bytes": "57d2622f773213014deb8750f66c28aa3ad3f6a5",
+      "format": "sha1"
+    },
+    "source_ref": "refs/tollgate/sources/01a1785a-73bf-7e90-b34e-bbddbae28484",
+    "state": "promoted",
+    "terminal_reason": null
+  },
+  "local_master": {
+    "contains_tested": true,
+    "master_oid": {
+      "bytes": "756d9a1cd1834ad197436bc0325b6376b2dce61a",
+      "format": "sha1"
+    },
+    "policy_enabled": true,
+    "reason": null,
+    "status": "synchronized"
+  }
+}

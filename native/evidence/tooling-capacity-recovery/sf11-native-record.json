@@ -1,0 +1,46 @@
+{
+  "bead": {
+    "id": "hv-n7fn.11",
+    "title": "[SF11] Asset intake: Kenney packs, fonts, game-icons, brute and plant sheets",
+    "status": "closed",
+    "assignee": "01a17841-b0f1-7cd3-85e6-f659e8ba5ad1",
+    "closed_at": "2026-10-26T13:17:26Z",
+    "metadata": {
+      "hive_origin_thread": "55e2cf0b-f6d6-422f-b175-feea0511e34b",
+      "hive_project": "playlist_survivors",
+      "hive_resolution": "completed",
+      "plan_key": "SF11"
+    },
+    "notes": "SF10 milestone review index: integrated commit de2ea4f0532c6ac6a5e1a9c71cd83ad3601049f5 for SF11, staging ancestry verified. Original run commands, measurements and delivery decisions remain in this bead's existing comments and native/evidence/sf11/. This is a delivery-index backfill; status and completed resolution are unchanged."
+  },
+  "comments": [
+    {
+      "id": "01a17847-2324-7ad9-8cff-766b6e3a3181",
+      "issue_id": "hv-n7fn.11",
+      "author": "01a17841-b0f1-7cd3-85e6-f659e8ba5ad1",
+      "text": "Assets/app lane claimed by 01a17841-b0f1-7cd3-85e6-f659e8ba5ad1. Fresh worktree .worktrees/sf11-assets at 152f244. SF11 is intake only: additive atlas entries and licences, no gameplay changes. Next SF8 will expose playlist/cache/Engine runner/session interfaces for SF9 promptly; then SH1 and SH2. SF7/SF9/SF10 and simulation enemy work remain with 01a1765f-cbc2-75b2-8fd6-fee82750b02c. Release green, lag 0 at entry.",
+      "created_at": "2026-10-26T12:54:50Z"
+    },
+    {
+      "id": "01a17851-9046-7da4-b8ea-3882eafe7920",
+      "issue_id": "hv-n7fn.11",
+      "author": "01a17841-b0f1-7cd3-85e6-f659e8ba5ad1",
+      "text": "Intake baked and npm check passed (14 sprites, 26 props, 66 effects, 245 sounds, 4.7 MB). Fonts/icons now have separate manifests with baseline/advance metrics and source-author credits. Runtime untouched. First ci-full found old hardcoded character page height (4096x2560 vs repacked 4096x3072); test now checks bounds and actual brute/particle/plant loading, focused cargo test passes. Full suite rerunning. Source raster audit confirms pre-existing 13 sprites/57 effects/22 props unchanged. Audio ear checks recorded in operator-pending, provisional catalogue descriptions honest. No per-bead review under survivors policy; SF10 reviews this commit.",
+      "created_at": "2026-10-26T13:06:14Z"
+    },
+    {
+      "id": "01a1785a-ab7a-7e3c-9c07-010a8597ea40",
+      "issue_id": "hv-n7fn.11",
+      "author": "01a17841-b0f1-7cd3-85e6-f659e8ba5ad1",
+      "text": "Source commit 57d2622f773213014deb8750f66c28aa3ad3f6a5; candidate 01a1785a-73bf-7e90-b34e-bbddbae28484 submitted and approved from main checkout, gate pending. scripts/check-fast passed 37 s; local ci-full passed including ignored native tests, 8-track parity, lead and frame gates; headless smoke advanced 6 active seconds. Full rebake all 257 files byte-identical. Interfaces and complete inventory in native/evidence/sf11/README.md and intake-audit.json. New UI art remains unused by runtime; operator ear checks recorded. No writers remain in worktree.",
+      "created_at": "2026-10-26T13:16:10Z"
+    },
+    {
+      "id": "01a1785b-d2ca-7376-9285-f8efb590bb4e",
+      "issue_id": "hv-n7fn.11",
+      "author": "01a17841-b0f1-7cd3-85e6-f659e8ba5ad1",
+      "text": "LANDED: candidate 01a1785a-73bf-7e90-b34e-bbddbae28484 promoted to staging, gate certificate 01a1785b-96ae-7770-b7fd-336a70e5af47. Source commit 57d2622f773213014deb8750f66c28aa3ad3f6a5; certified integration de2ea4f0532c6ac6a5e1a9c71cd83ad3601049f5 (includes independent Windows runbook). Release is asynchronous, pending with lag 2 and no hold at delivery; not waiting for it. SF11 acceptance complete except the explicitly recorded operator ear checks for downstream consumers. SF8 remains serialized after the active SF7.",
+      "created_at": "2026-10-26T13:17:26Z"
+    }
+  ]
+}

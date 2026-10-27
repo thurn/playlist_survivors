@@ -1,0 +1,25 @@
+{
+  "bead": {
+    "id": "hv-n7fn.17",
+    "title": "[SH6] Early enemies on the beat: gaits, offbeat wind-up, on-beat lunge bites",
+    "status": "closed",
+    "assignee": "01a1765f-cbc2-75b2-8fd6-fee82750b02c",
+    "closed_at": "2026-10-26T14:54:54Z",
+    "metadata": {
+      "hive_origin_thread": "55e2cf0b-f6d6-422f-b175-feea0511e34b",
+      "hive_project": "playlist_survivors",
+      "hive_resolution": "completed",
+      "plan_key": "SH6"
+    },
+    "notes": "SH6 implementation committed b99d7eeceb9d89f35151e791847d019faf26c91a from fresh Tollgate codex/sh6-enemy-gaits, base da2561c49c590f47cae0e722c9560a39c35686d1. Candidate 01a178b4-00d7-7b23-be1a-f06f471f663c is in gate wait from main checkout; not done until staging. Early six gaits, offbeat notice/beat-peak contact recheck/one attempt, grid presentation and recoil. No source stat/easy-knob retune. Contact, startup finite, uncommitted-tail poison, free-generation and pause regressions pass; 14 Live tests (300-density pause 69420 identical settled records), 15 freezes, six legacy causality gates and three legacy recorded sessions pass. scripts/check-fast passed83s(native80), over nominal60s budget with no failing check. Normal-damage playable command: PS_SESSIONS=/Users/dthurn/playlist_survivors/native/logs/sessions /usr/sbin/taskpolicy -b native/target/release/playlist-survivors --file /tmp/sf6-five-minutes.wav --headless --delayed --press-beats --pick-first --seconds65 (actual syntax --seconds 65). Session1793026073: 58.952song seconds including offer,55kills,HP1.00; all79862 settled records replay exactly(hash f1b46d8c777a2af3),81795 replay with tail,282 sounds zero late/drop. Damage-exempt offscreen minute2: run157.414s,143alive,282kills,2150sprites7lights,160songseconds; not survival evidence. Commands, choices/reasons, measured outputs and inspected PNG in native/evidence/sh6/ with own design Bead Notes subsection and feel row in operator-pending. No per-SH6 cold review by explicit milestone policy; SH11 reviews H. No rollback Engine algorithm change. Source unknown first interval glides until two beats to avoid NaNs; reactions own the Hit across short cache eviction. Interface handoffs in SF8/SF10 notes.\nDelivered: candidate 01a178b4-00d7-7b23-be1a-f06f471f663c promoted by tg approve --wait from main checkout. Source b99d7eeceb9d89f35151e791847d019faf26c91a verified ancestor of staging; gate succeeded. Exact playable command: PS_SESSIONS=/Users/dthurn/playlist_survivors/native/logs/sessions /usr/sbin/taskpolicy -b native/target/release/playlist-survivors --file /tmp/sf6-five-minutes.wav --headless --delayed --press-beats --pick-first --seconds 65. Release state pending, lag1, no holds/promotion pause; not awaited. Evidence and own SH6 design subsection included in source commit. Operator-only feel/listening row remains pending, without blocking completion.\nSH11 milestone review index: SH6 integrated commit b99d7eeceb9d89f35151e791847d019faf26c91a is verified ancestor of staging. Original delivery notes/comments and native/evidence/sh6/ retain source, run commands, measurements and limits. Index backfill only; completed resolution unchanged."
+  },
+  "comments": [
+    {
+      "id": "01a178a9-5ad4-718a-8bc7-ae65538286b0",
+      "issue_id": "hv-n7fn.17",
+      "author": "01a17841-b0f1-7cd3-85e6-f659e8ba5ad1",
+      "text": "SF8 handoff: necessary playlist freeze repair touches only engine/freeze.rs and existing silence fixtures in sim/tests/survivors.rs plus two appended freeze regressions. Evidence/bug described on hv-n7fn.8. No edits to foes, enemy movement/bites or SH6 implementation. SF8 continues to own CLI/playlists, SF9 remains simulation lane.",
+      "created_at": "2026-10-26T14:42:07Z"
+    }
+  ]
+}

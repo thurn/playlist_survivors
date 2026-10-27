@@ -1,0 +1,421 @@
+{
+  "attempt_generations": [
+    {
+      "anchored_base_oid": {
+        "bytes": "da2561c49c590f47cae0e722c9560a39c35686d1",
+        "format": "sha1"
+      },
+      "configuration_digest": "597ba2c176c89c476e14d6ee7f0c28e8dbd9e36662eeb775bac758285a97f83e",
+      "engine_epoch": 1,
+      "expected_parent_oid": {
+        "bytes": "da2561c49c590f47cae0e722c9560a39c35686d1",
+        "format": "sha1"
+      },
+      "id": "01a178b4-0a1c-7c80-b690-be1454f7da56",
+      "identity_digest": "d2a362737bb6ac6d2a056d3f072a216af4f227315461fd69c4f5f33c5fcded8b",
+      "invalidated_by": null,
+      "item_id": "01a178b4-00d7-7b23-be1a-f06f471f663c",
+      "ordered_item_ids": [
+        "01a178b4-00d7-7b23-be1a-f06f471f663c"
+      ],
+      "ordered_source_oids": [
+        {
+          "bytes": "b99d7eeceb9d89f35151e791847d019faf26c91a",
+          "format": "sha1"
+        }
+      ],
+      "prefix_oids": [
+        {
+          "bytes": "b99d7eeceb9d89f35151e791847d019faf26c91a",
+          "format": "sha1"
+        }
+      ],
+      "step_graph_digest": "f9ded41be4c56ed5514880678658b73f5a0885dab1fc64ba61dba4c95f340062",
+      "tested_oid": {
+        "bytes": "b99d7eeceb9d89f35151e791847d019faf26c91a",
+        "format": "sha1"
+      }
+    }
+  ],
+  "attempts": [
+    {
+      "attempt": 1,
+      "created_at": [
+        2026,
+        299,
+        14,
+        53,
+        47,
+        554671000,
+        0,
+        0,
+        0
+      ],
+      "environment_fingerprint": "898c8b3786e8ad57858a8b1de296a6dac26b1db76b059c6e0915d1bae0803210",
+      "expected_parent_oid": {
+        "bytes": "da2561c49c590f47cae0e722c9560a39c35686d1",
+        "format": "sha1"
+      },
+      "finished_at": [
+        2026,
+        299,
+        14,
+        54,
+        36,
+        380257000,
+        0,
+        0,
+        0
+      ],
+      "frozen_steps": [
+        {
+          "command": {
+            "kind": "shell",
+            "runner": [
+              "/bin/sh",
+              "-c"
+            ],
+            "script": "./scripts/ci-gate"
+          },
+          "cpu_tokens": 0,
+          "final_step": false,
+          "id": "66c00cd1-0a61-7ea0-aaef-4c15f2eb5e6c",
+          "memory_bytes": 0,
+          "name": "gate",
+          "needs": [],
+          "reuse_on_retry": false,
+          "rss_limit_bytes": null,
+          "semaphores": [],
+          "soft_needs": [],
+          "timeout_ns": 900000000000,
+          "voting": true,
+          "working_directory": "."
+        }
+      ],
+      "id": "01a178b4-0a61-7ea0-aaef-4c15f2eb5e6c",
+      "item_id": "01a178b4-00d7-7b23-be1a-f06f471f663c",
+      "retry_of": null,
+      "slot_id": "01a16039-85cf-76b3-95a3-1de0f8b794cf",
+      "started_at": [
+        2026,
+        299,
+        14,
+        53,
+        47,
+        613763000,
+        0,
+        0,
+        0
+      ],
+      "state": "passed",
+      "step_results": [
+        {
+          "diagnostics": [],
+          "elapsed_ms": 48687,
+          "exit_code": 0,
+          "log_hash": "fb9e92d4693e51533b792fc6ffefd5e79c0781cf045b3ac9f2acd010eb397025",
+          "name": "gate",
+          "result_class": "success",
+          "reused_from_attempt_id": null,
+          "signal": null,
+          "stderr_end": 1238,
+          "stdout_end": 5566
+        }
+      ],
+      "tested_oid": {
+        "bytes": "b99d7eeceb9d89f35151e791847d019faf26c91a",
+        "format": "sha1"
+      },
+      "validation_generation_id": "01a178b4-0a1c-7c80-b690-be1454f7da56"
+    }
+  ],
+  "buildset": {
+    "attempt": 1,
+    "created_at": [
+      2026,
+      299,
+      14,
+      53,
+      47,
+      554671000,
+      0,
+      0,
+      0
+    ],
+    "environment_fingerprint": "898c8b3786e8ad57858a8b1de296a6dac26b1db76b059c6e0915d1bae0803210",
+    "expected_parent_oid": {
+      "bytes": "da2561c49c590f47cae0e722c9560a39c35686d1",
+      "format": "sha1"
+    },
+    "finished_at": [
+      2026,
+      299,
+      14,
+      54,
+      36,
+      380257000,
+      0,
+      0,
+      0
+    ],
+    "frozen_steps": [
+      {
+        "command": {
+          "kind": "shell",
+          "runner": [
+            "/bin/sh",
+            "-c"
+          ],
+          "script": "./scripts/ci-gate"
+        },
+        "cpu_tokens": 0,
+        "final_step": false,
+        "id": "66c00cd1-0a61-7ea0-aaef-4c15f2eb5e6c",
+        "memory_bytes": 0,
+        "name": "gate",
+        "needs": [],
+        "reuse_on_retry": false,
+        "rss_limit_bytes": null,
+        "semaphores": [],
+        "soft_needs": [],
+        "timeout_ns": 900000000000,
+        "voting": true,
+        "working_directory": "."
+      }
+    ],
+    "id": "01a178b4-0a61-7ea0-aaef-4c15f2eb5e6c",
+    "item_id": "01a178b4-00d7-7b23-be1a-f06f471f663c",
+    "retry_of": null,
+    "slot_id": "01a16039-85cf-76b3-95a3-1de0f8b794cf",
+    "started_at": [
+      2026,
+      299,
+      14,
+      53,
+      47,
+      613763000,
+      0,
+      0,
+      0
+    ],
+    "state": "passed",
+    "step_results": [
+      {
+        "diagnostics": [],
+        "elapsed_ms": 48687,
+        "exit_code": 0,
+        "log_hash": "fb9e92d4693e51533b792fc6ffefd5e79c0781cf045b3ac9f2acd010eb397025",
+        "name": "gate",
+        "result_class": "success",
+        "reused_from_attempt_id": null,
+        "signal": null,
+        "stderr_end": 1238,
+        "stdout_end": 5566
+      }
+    ],
+    "tested_oid": {
+      "bytes": "b99d7eeceb9d89f35151e791847d019faf26c91a",
+      "format": "sha1"
+    },
+    "validation_generation_id": "01a178b4-0a1c-7c80-b690-be1454f7da56"
+  },
+  "certificate": {
+    "buildset_id": "01a178b4-0a61-7ea0-aaef-4c15f2eb5e6c",
+    "checkout_verified": true,
+    "completed_event_sequence": 10134,
+    "configuration_digest": "597ba2c176c89c476e14d6ee7f0c28e8dbd9e36662eeb775bac758285a97f83e",
+    "created_at": [
+      2026,
+      299,
+      14,
+      54,
+      36,
+      388473000,
+      0,
+      0,
+      0
+    ],
+    "engine_epoch": 1,
+    "environment_fingerprint": "898c8b3786e8ad57858a8b1de296a6dac26b1db76b059c6e0915d1bae0803210",
+    "expected_parent_oid": {
+      "bytes": "da2561c49c590f47cae0e722c9560a39c35686d1",
+      "format": "sha1"
+    },
+    "id": "01a178b4-c964-7361-b684-db2d288fe0af",
+    "queue_item_id": "01a178b4-00d7-7b23-be1a-f06f471f663c",
+    "step_graph_digest": "f9ded41be4c56ed5514880678658b73f5a0885dab1fc64ba61dba4c95f340062",
+    "tested_oid": {
+      "bytes": "b99d7eeceb9d89f35151e791847d019faf26c91a",
+      "format": "sha1"
+    },
+    "tree_oid": {
+      "bytes": "195ec5975d42c142b9e888e5c20ed993caaba090",
+      "format": "sha1"
+    },
+    "validation_generation_id": "01a178b4-0a1c-7c80-b690-be1454f7da56",
+    "voting_results": [
+      {
+        "attempt_id": "01a178b4-0ae9-7d50-867d-9386f5d92607",
+        "log_hash": "fb9e92d4693e51533b792fc6ffefd5e79c0781cf045b3ac9f2acd010eb397025",
+        "log_stderr_end": 1238,
+        "log_stdout_end": 5566,
+        "step_id": "66c00cd1-0a61-7ea0-aaef-4c15f2eb5e6c"
+      }
+    ],
+    "warnings": []
+  },
+  "certificates": [
+    {
+      "buildset_id": "01a178b4-0a61-7ea0-aaef-4c15f2eb5e6c",
+      "checkout_verified": true,
+      "completed_event_sequence": 10134,
+      "configuration_digest": "597ba2c176c89c476e14d6ee7f0c28e8dbd9e36662eeb775bac758285a97f83e",
+      "created_at": [
+        2026,
+        299,
+        14,
+        54,
+        36,
+        388473000,
+        0,
+        0,
+        0
+      ],
+      "engine_epoch": 1,
+      "environment_fingerprint": "898c8b3786e8ad57858a8b1de296a6dac26b1db76b059c6e0915d1bae0803210",
+      "expected_parent_oid": {
+        "bytes": "da2561c49c590f47cae0e722c9560a39c35686d1",
+        "format": "sha1"
+      },
+      "id": "01a178b4-c964-7361-b684-db2d288fe0af",
+      "queue_item_id": "01a178b4-00d7-7b23-be1a-f06f471f663c",
+      "step_graph_digest": "f9ded41be4c56ed5514880678658b73f5a0885dab1fc64ba61dba4c95f340062",
+      "tested_oid": {
+        "bytes": "b99d7eeceb9d89f35151e791847d019faf26c91a",
+        "format": "sha1"
+      },
+      "tree_oid": {
+        "bytes": "195ec5975d42c142b9e888e5c20ed993caaba090",
+        "format": "sha1"
+      },
+      "validation_generation_id": "01a178b4-0a1c-7c80-b690-be1454f7da56",
+      "voting_results": [
+        {
+          "attempt_id": "01a178b4-0ae9-7d50-867d-9386f5d92607",
+          "log_hash": "fb9e92d4693e51533b792fc6ffefd5e79c0781cf045b3ac9f2acd010eb397025",
+          "log_stderr_end": 1238,
+          "log_stdout_end": 5566,
+          "step_id": "66c00cd1-0a61-7ea0-aaef-4c15f2eb5e6c"
+        }
+      ],
+      "warnings": []
+    }
+  ],
+  "elapsed_ms": 48766,
+  "failure_attribution": null,
+  "generation": {
+    "anchored_base_oid": {
+      "bytes": "da2561c49c590f47cae0e722c9560a39c35686d1",
+      "format": "sha1"
+    },
+    "configuration_digest": "597ba2c176c89c476e14d6ee7f0c28e8dbd9e36662eeb775bac758285a97f83e",
+    "engine_epoch": 1,
+    "expected_parent_oid": {
+      "bytes": "da2561c49c590f47cae0e722c9560a39c35686d1",
+      "format": "sha1"
+    },
+    "id": "01a178b4-0a1c-7c80-b690-be1454f7da56",
+    "identity_digest": "d2a362737bb6ac6d2a056d3f072a216af4f227315461fd69c4f5f33c5fcded8b",
+    "invalidated_by": null,
+    "item_id": "01a178b4-00d7-7b23-be1a-f06f471f663c",
+    "ordered_item_ids": [
+      "01a178b4-00d7-7b23-be1a-f06f471f663c"
+    ],
+    "ordered_source_oids": [
+      {
+        "bytes": "b99d7eeceb9d89f35151e791847d019faf26c91a",
+        "format": "sha1"
+      }
+    ],
+    "prefix_oids": [
+      {
+        "bytes": "b99d7eeceb9d89f35151e791847d019faf26c91a",
+        "format": "sha1"
+      }
+    ],
+    "step_graph_digest": "f9ded41be4c56ed5514880678658b73f5a0885dab1fc64ba61dba4c95f340062",
+    "tested_oid": {
+      "bytes": "b99d7eeceb9d89f35151e791847d019faf26c91a",
+      "format": "sha1"
+    }
+  },
+  "included_items": [
+    "01a178b4"
+  ],
+  "item": {
+    "admission_sequence": 408,
+    "buildset_id": "01a178b4-0a61-7ea0-aaef-4c15f2eb5e6c",
+    "certificate_id": "01a178b4-c964-7361-b684-db2d288fe0af",
+    "cleanup_policy": "automatic",
+    "cleanup_state": "completed",
+    "current_generation_id": "01a178b4-0a1c-7c80-b690-be1454f7da56",
+    "dependencies": [],
+    "enqueue_sequence": 408,
+    "id": "01a178b4-00d7-7b23-be1a-f06f471f663c",
+    "kind": "gate",
+    "metadata": {
+      "approved_at": [
+        2026,
+        299,
+        14,
+        53,
+        45,
+        53435000,
+        0,
+        0,
+        0
+      ],
+      "author_email": "derek@fake.email",
+      "author_name": "Derek Thurn",
+      "branch": "codex/sh6-enemy-gaits",
+      "message_hash": "f5cfc98599d1387971d495cfe97eabc09e9b942db4c965cd60e44859355bece4",
+      "purpose": "candidate",
+      "signature_state": "unknown",
+      "subject": "feat(sim): put survivor enemy gaits and contact attacks on the beat",
+      "worktree_path": "/Users/dthurn/playlist_survivors/.worktrees/codex-sh6-enemy-gaits"
+    },
+    "promotion_authorized": true,
+    "promotion_authorized_at": [
+      2026,
+      299,
+      14,
+      54,
+      14,
+      175523000,
+      0,
+      0,
+      0
+    ],
+    "promotion_authorized_by": "01a178b4-727f-7b10-87d6-dd030cf62966",
+    "remote_state": "preflight-pending",
+    "repository_id": "01a16039-84d6-7643-bfec-ddf2cd7c9b54",
+    "retry_of_item_id": null,
+    "source_oid": {
+      "bytes": "b99d7eeceb9d89f35151e791847d019faf26c91a",
+      "format": "sha1"
+    },
+    "source_ref": "refs/tollgate/sources/01a178b4-00d7-7b23-be1a-f06f471f663c",
+    "state": "promoted",
+    "terminal_reason": null
+  },
+  "local_master": {
+    "contains_tested": true,
+    "master_oid": {
+      "bytes": "756d9a1cd1834ad197436bc0325b6376b2dce61a",
+      "format": "sha1"
+    },
+    "policy_enabled": true,
+    "reason": null,
+    "status": "synchronized"
+  }
+}

@@ -1,0 +1,15 @@
+changes: 10 paths since 756d9a1
+friction: 46 records valid
+Using CPython 3.12.14 interpreter at: /opt/homebrew/opt/python@3.12/bin/python3.12
+Creating virtual environment at: .venv
+   Building ps-analysis @ file:///Users/dthurn/playlist_survivors/.worktrees/codex-capacity-interruption-evidence/tools/analysis
+      Built ps-analysis @ file:///Users/dthurn/playlist_survivors/.worktrees/codex-capacity-interruption-evidence/tools/analysis
+Installed 44 packages in 168ms
+All checks passed!
+WARN `--no-project` was provided, but no project was found
+...........................
+----------------------------------------------------------------------
+Ran 27 tests in 0.025s
+
+OK
+check-fast: passed in 1 s
