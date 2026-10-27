@@ -100,7 +100,7 @@ notes.
     using the user-supplied MP3, 198.968 s (about 3:19, measured with
     `ffprobe`). The source on this machine is
     `/Users/dthurn/Downloads/Alessia Labate, Conrad Taylor - Action [NCS Release].mp3`.
-    The full recording is the timing reference; TD3 maps its sections and
+    The full recording is the timing reference; TD0 maps its sections and
     accents before setting the horde's build, releases and final climax.
 14. **The hero fights with sword combos and beat spells.**
 15. **Native 1080p by default.** MSAA 4× and TAA are compared. Upscaling is
@@ -109,7 +109,7 @@ notes.
     the developer who runs the demo and reviews its evidence. Routine checks
     stay windowless.
 17. **A new epic in the project's issue tracker, run in parallel with the
-    survivors run** (`hv-n7fn`), with plan keys `TD1` to `TD15` (see
+    survivors run** (`hv-n7fn`), with plan keys `TD0` to `TD15` (see
     [Implementation Plan](#implementation-plan)).
 
 ## Related Information
@@ -178,7 +178,7 @@ should feel like watching an expert play a finished game.
   accents.
 
 An illustrative outline follows. These are choreography roles, not confirmed
-song sections or timestamps; TD3 sets their boundaries from the supplied MP3.
+song sections or timestamps; TD0 sets their boundaries from the supplied MP3.
 
 ```
 opening              12 skeletons      30 m view, hero strides
@@ -643,7 +643,7 @@ on top, which the 2 m spawn margin covers.
 ### Free sections
 
 A section the song map marks `free` has no steady beat, only approximate
-ones. This remains supported, but TD3 marks a section of *Action* as free
+ones. This remains supported, but TD0 marks a section of *Action* as free
 only if the supplied recording calls for it; the ending is not assumed to
 be free. In a free section:
 
@@ -1070,7 +1070,22 @@ an effect definition for our own runtime, or a parameter set for the VFX
 Graph templates, whichever the spike picks. Its outputs are vendor-derived,
 so they live only in the gitignored baked folder.
 
-What it reads:
+**The converter covers only what the chosen effects use.** It is not a
+general Shuriken converter.
+
+- **Inventory first.** Before writing the converter, TD8 runs an editor
+  script over the chosen prefabs and all their child systems. It lists every
+  module enabled, and every shape, render mode, curve mode and vertex stream
+  in use, with the prefabs that use each. The table goes to TD8's evidence.
+- **Build to the inventory.** The converter implements exactly the entries in
+  that table. Anything else fails loudly, as below.
+- **Swap before extending.** When one effect is the only user of a costly
+  module, such as ribbons or sub-emitters, choose another effect that reads the
+  same before implementing the module, unless no candidate reads as well.
+  Record each swap in TD8's notes.
+
+The modules the chosen effects might need, as a guide to what the inventory
+will contain:
 
 - **`main`:** duration, looping, start delay, lifetime, speed, 3D size and
   rotation, color, gravity, simulation space and max particles.
@@ -1492,9 +1507,12 @@ right. It must stay as punchy at 100 hits a beat as at one.
   and started with `PlayScheduled`. Setup accepts the local source path
   from Decision 13 (or an explicit replacement path), converts it into the
   gitignored baked folder, and copies the tracked `songs/action/` song map
-  there. The map and playback use the same time origin; TD3 checks that the
-  conversion preserves beat alignment, including any encoder delay. Neither
-  the source MP3 nor the converted audio is committed. TD3 records the NCS
+  there. The map and playback use the same time origin; TD0 fixes the
+  conversion command and checks that it preserves beat alignment, including
+  any encoder delay. Neither the source MP3 nor any conversion or crop of it
+  is committed: `.gitignore` excludes audio under `songs/action/` and
+  `public/audio/action*`, and the vendor guard fails on it (see
+  [The vendor guard](#the-vendor-guard)). TD0 records the NCS
   usage terms and required credits for the demo build and shared capture;
   the previous recording's public-domain status does not apply.
 - **Effects** come from the vendor sound packs: Magic Spells SFX Bundle, RPG
@@ -1796,6 +1814,10 @@ themselves, and a public repository is redistribution.
   edited copies of vendor prefabs, materials or scenes.
 - **Builds:** the built apps and Unity's `Library`, which hold vendor content
   in compiled form.
+- **The song's audio:** the *Action* MP3 and every conversion or crop of it.
+  NCS audio is not ours to redistribute. The repo's other songs commit their
+  public-domain source audio beside their song maps; this one never does.
+  Only its song map, edit list and report summary are tracked.
 
 Vendor files live only in the gitignored `demo3d/Assets/Vendor/` and derived
 files only in the gitignored `demo3d/Assets/Baked/`. Tracked files are our own
@@ -1844,7 +1866,10 @@ master. The guard fails when any tracked file:
   exception is a PNG or JPEG under the demo's evidence that carries the
   capture tool's `ps-render` text tag, which marks it as our render;
 - has a `.meta` GUID that appears in the sync record;
-- has a SHA-256 that appears in the sync record.
+- has a SHA-256 that appears in the sync record;
+- is audio (by extension or content) under `songs/action/`, or under
+  `public/audio/` with a name starting `action`. `.gitignore` already
+  excludes both, so this catches only a force-add or a renamed path.
 
 More rules:
 
@@ -2056,7 +2081,8 @@ The interviews weighed these and rejected them for the reasons given.
 ## Implementation Plan
 
 The work is a new epic in Hive, the project's issue tracker: `hv-50g9`,
-with TD1 to TD15 filed as `hv-50g9.1` to `hv-50g9.15`. Its work items
+with TD1 to TD15 filed as `hv-50g9.1` to `hv-50g9.15`, and TD0 (the song
+map, split out of TD3 so it can start at once) as `hv-50g9.16`. Its work items
 are **beads**. Each bead is implemented by an executor session (an agent
 session working one bead) and delivered as one Tollgate candidate, under the
 rules in AGENTS.md. The epic runs in parallel with `hv-n7fn`.
@@ -2069,6 +2095,28 @@ rules in AGENTS.md. The epic runs in parallel with `hv-n7fn`.
 
 Each bead lists what it builds and when it is done.
 
+- **TD0, the song map.**
+  - Builds: the *Action* song map under `songs/action/`, through the song-map
+    workflow in [tech-demo.md](tech-demo.md#building-the-song-map), using the
+    full supplied MP3 rather than the earlier demo's source or crop. No score
+    exists, so the expected form comes from the recording itself: its energy
+    curve, spectrogram strips and onsets.
+  - Hand-checks beats, downbeats, section transitions and accents, and
+    identifies the final energy peak and the ending, without assuming a tempo
+    ramp or free closing chords.
+  - Records the source's identity (path, duration, SHA-256), the NCS usage
+    terms and the required credits in `songs/action/source.json`.
+  - Fixes the MP3-to-Ogg conversion command that setup uses (see
+    [Sound](#sound)), and checks that the converted audio keeps the map's
+    beat alignment, encoder delay included.
+  - Needs no Unity and no other bead, so it starts at once.
+  - Tracked output follows `songs/orpheus-galop/`: the song map, edit list,
+    form notes and report summary. The audio stays out of git (see
+    [What never reaches git](#what-never-reaches-git)). Report images stay in
+    the analysis tool's gitignored work folder, since they carry no
+    `ps-render` tag.
+  - Done when: the map passes the analysis tool's `check`, and alignment
+    against the converted audio is recorded.
 - **TD1, foundations.**
   - Builds: the Unity project; `.gitignore` coverage; the vendor guard in
     check-fast, the gate and the release stage; the worktree setup command
@@ -2094,15 +2142,7 @@ Each bead lists what it builds and when it is done.
     every hero combo and locomotion clip are annotated, and a style still
     shows the roster and the kit together under night lighting.
 - **TD3, choreography on open ground.**
-  - Builds: the *Action* song map under `songs/action/`, through the song-map
-    workflow in [tech-demo.md](tech-demo.md#building-the-song-map), using the
-    full supplied MP3 rather than the earlier demo's source or crop.
-    Hand-checks beats, downbeats, section transitions and accents; identifies
-    the final energy peak and ending without assuming a tempo ramp or free
-    closing chords. Records the source identity, duration, NCS usage terms
-    and required credits alongside the map, and checks alignment against
-    the converted playback audio.
-  - Also builds: the timeline types (with `Tick`), the choreographer with its
+  - Builds, from TD0's song map: the timeline types (with `Tick`), the choreographer with its
     framing track, kill-rate feedback, free sections and sound aggregation,
     the level-script and stress-script formats with the off-screen reserve,
     the sim tick timing, and the layer's tests.
@@ -2163,9 +2203,12 @@ Each bead lists what it builds and when it is done.
     decision. If VFX Graph wins and its templates need the operator, those
     templates go to `operator-pending.md`, and TD8 continues on the parts
     that don't need them.
-  - Builds: the converter, the chosen runtime, light cues, clustering and the
-    light pool. Converts the effect list under the design rules for a horde.
-  - Done when: the spike's table and decision are in its notes; every listed
+  - Builds: the module inventory of the chosen prefabs, then the converter,
+    scoped to that inventory (see [The converter](#the-converter)); the
+    chosen runtime, light cues, clustering and the light pool. Converts the
+    effect list under the design rules for a horde.
+  - Done when: the spike's table and decision and the module inventory are
+    in its notes and evidence; every listed
     effect runs on the runtime with an A/B still against its stock prefab;
     and the light pool's size is fixed.
 - **TD9, the arena.**
@@ -2239,8 +2282,10 @@ Each bead lists what it builds and when it is done.
 ### Order and parallelism
 
 ```
-TD1         first
-TD2, TD3    after TD1, in parallel (TD3 uses placeholder clip annotations)
+TD0, TD1    first, in parallel (TD0 needs no Unity)
+TD2         after TD1
+TD3         after TD0 and TD1, in parallel with TD2 (it uses placeholder
+            clip annotations)
 TD7         after TD1, in parallel with TD2 and TD3 (on a synthetic load)
 TD4         after TD2 and TD3
 TD5         after TD2; its timeline hookup after TD4, its baseline
@@ -2272,7 +2317,7 @@ TD13        after TD12
   warden review skill. Whichever of the milestone's beads finishes last
   requests it, once all their commits are on `staging`, on the commits its
   beads recorded in their notes:
-  - foundations: TD1 to TD4, TD6 and TD7;
+  - foundations: TD0 to TD4, TD6 and TD7;
   - the crowd: TD5;
   - the scene: TD9, TD14 and TD15;
   - the demo's systems: TD8, TD10 and TD11;
@@ -2315,6 +2360,10 @@ passes will translate worse than the 2.5× compute ratio, as on the Mac.
 Each bead summarizes its measurements here in a few lines, in its own
 subsection, linking `demo3d/evidence/<key>/`. Beads never add sections
 elsewhere in this document; parallel beads would collide there.
+
+### TD0
+
+Not started.
 
 ### TD1
 
@@ -2395,7 +2444,7 @@ here, since the demo itself takes no input:
 
 ### First assembled check
 
-Run this as soon as TD3 and TD4 have landed, before the GPU crowd or effects
+Run this as soon as TD4 has landed, before the GPU crowd or effects
 exist. It exercises the main integration boundary: the choreographer's
 timeline driving the client's crowd and hero on the audio clock. TD4's stock
 baseline crowd handles a few hundred monsters, which is enough.
@@ -2409,7 +2458,7 @@ baseline crowd handles a few hundred monsters, which is enough.
 - Seek with `--start-at 45`. **Expect** the horde's state at 0:45 to appear
   immediately, with the same positions as a run from the start.
 - Seek into the mapped ending. **Expect** hero slams on its curated accents.
-  If TD3 identifies a free section, seek there too: **expect** monsters to
+  If TD0 identifies a free section, seek there too: **expect** monsters to
   advance smoothly instead of stepping to beats.
 - Seek into a laser sweep, once TD10 has added it. **Expect** swept monsters
   to flash without flinching or sliding back.
