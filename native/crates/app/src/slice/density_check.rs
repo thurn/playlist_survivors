@@ -4,6 +4,12 @@ use render::{atlas::Atlases, capture, font::Align, post::Frame};
 use sim::movement::InputKey;
 use std::{io::Write, path::Path};
 pub fn run(dir: &Path) -> Result<(), String> {
+    run_cases(dir, false)
+}
+pub fn restored(dir: &Path) -> Result<(), String> {
+    run_cases(dir, true)
+}
+fn run_cases(dir: &Path, restored: bool) -> Result<(), String> {
     if std::env::var_os("PS_NATIVE_BATCH").is_none() {
         let status = std::process::Command::new("taskpolicy")
             .arg("-b")
@@ -30,12 +36,19 @@ pub fn run(dir: &Path) -> Result<(), String> {
     let beats: Vec<_> = file.log.beats.iter().map(|b| b.t).collect();
     let mut gpu = capture::Offscreen::new(&art.pages, 1280, 720)?;
     let mut trace = std::fs::File::create(dir.join("density.jsonl")).map_err(|e| e.to_string())?;
-    for (name, moving, killable) in [
-        ("evolved", false, false),
-        ("moving", true, false),
-        ("deaths", false, true),
-    ] {
-        let mut engine = if killable {
+    let cases = if restored {
+        vec![("restored", true, false)]
+    } else {
+        vec![
+            ("evolved", false, false),
+            ("moving", true, false),
+            ("deaths", false, true),
+        ]
+    };
+    for (name, moving, killable) in cases {
+        let mut engine = if restored {
+            eval::scale::restored_density_engine(&world.level, &world.lib)?
+        } else if killable {
             eval::scale::evolved_combat_engine(&world.level, &world.lib)?
         } else {
             eval::scale::evolved_density_engine(&world.level, &world.lib)?
@@ -153,7 +166,7 @@ pub fn run(dir: &Path) -> Result<(), String> {
                 [1.0; 4],
                 &mut layers.overlay,
             );
-            art.fonts["pixel"].text(if killable{"DIAGNOSTIC: MINUTE25 ROSTER / HP40 XP0 / HERO EXEMPT / FIVE EVOLUTIONS + SIX MAX PASSIVES"}else{"DIAGNOSTIC: MINUTE25 ROSTER / HP1E12 / HERO EXEMPT / FIVE EVOLUTIONS + SIX MAX PASSIVES"},640.0,705.0,0.9,Align::Centre,[0.85,0.9,1.0,1.0],&mut layers.overlay);
+            art.fonts["pixel"].text(if restored{"DIAGNOSTIC: 300 FOES / HERO EXEMPT / SIX MAX WEAPONS, CHAIN + TRAIL / SIX PASSIVES"}else if killable{"DIAGNOSTIC: MINUTE25 ROSTER / HP40 XP0 / HERO EXEMPT / FIVE EVOLUTIONS + SIX MAX PASSIVES"}else{"DIAGNOSTIC: MINUTE25 ROSTER / HP1E12 / HERO EXEMPT / FIVE EVOLUTIONS + SIX MAX PASSIVES"},640.0,705.0,0.9,Align::Centre,[0.85,0.9,1.0,1.0],&mut layers.overlay);
             gpu.draw(&Frame {
                 clear: super::CLEAR,
                 world: &layers.sprites,

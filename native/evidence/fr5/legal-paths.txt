@@ -1,0 +1,28 @@
+   Compiling sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-fr5/native/crates/sim)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.01s
+     Running tests/survivor_offers.rs (target/debug/deps/survivor_offers-fffa46330d1578d9)
+
+running 7 tests
+test eight_passive_cards_describe_real_deltas_without_duplicate_health_or_might ... ok
+test an_evolved_weapon_blocks_reoffering_its_base ... ok
+test fallback_prefers_lowest_owned_rank_and_heals_only_when_no_item_is_offerable ... ok
+test shipped_first_offer_contains_the_implemented_wand ... ok
+test preferences_skip_unbuilt_and_keep_distinct_viable_choices ... ok
+test scripted_first_column_keeps_legal_growth_with_six_of_seven_weapon_slots ... ok
+Sword: max rank by level10, 9 legal picks
+Garlic: max rank by level19, 18 legal picks
+MagicWand: max rank by level21, 20 legal picks
+KingBible: max rank by level30, 29 legal picks
+LightningRing: max rank by level30, 29 legal picks
+ChainLightning: max rank by level27, 26 legal picks
+FireTrail: max rank by level28, 27 legal picks
+BloodyTear + both restored weapons and support passives: legal by level13
+SoulEater + both restored weapons and support passives: legal by level20
+HolyWand + both restored weapons and support passives: legal by level26
+UnholyVespers + both restored weapons and support passives: legal by level35
+ThunderLoop + both restored weapons and support passives: legal by level46
+Six-slot restored build: legal by level22; seventh weapon is excluded
+test every_base_and_evolution_has_a_legal_path_with_restored_alternatives ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.22s
+

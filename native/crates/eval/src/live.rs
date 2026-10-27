@@ -24,6 +24,7 @@ use stream::StreamLog;
 /// The hero as the simulation last placed it.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct HeroPose {
+    pub world: f64,
     pub x: f64,
     pub y: f64,
     pub z: f64,
@@ -237,6 +238,8 @@ pub struct LiveView {
     pub boss_cues: Vec<sim::survivors::BossCue>,
     pub boss_warning: Option<sim::survivors::BossCue>,
     pub inventory: Option<sim::survivors::Inventory>,
+    /// Last real trail pulse: captured radius/lifetime for its renderer, rewound with the view.
+    pub fire_trail: Option<sim::survivors::Shot>,
     pub gem_poses: BTreeMap<usize, sim::survivors::GemPose>,
     pub chickens: BTreeMap<usize, (f64, f64)>,
     pub chests: BTreeMap<usize, sim::survivors::FieldChest>,
@@ -244,6 +247,8 @@ pub struct LiveView {
     pub missiles: BTreeMap<usize, Vec<sim::survivors::MissilePose>>,
     pub run: Option<sim::survivors::RunState>,
     pub hero: Option<HeroPose>,
+    /// Authoritative fixed-sample path, rewound with the view on late keys.
+    pub hero_trail: Vec<(f64, f64, f64)>,
     /// The camera's centre and zoom.
     pub camera: (f64, f64, f64),
     /// Enemies by id: alive, or dead within the last `DEAD_KEEP` entries.
@@ -382,6 +387,29 @@ impl LiveView {
                 self.recap
                     .inventory(*inventory, self.run.map_or(0.0, |r| r.elapsed));
                 self.inventory = Some(*inventory);
+                if inventory
+                    .weapons
+                    .rank(sim::survivors::WeaponId::FireTrail)
+                    .is_none()
+                {
+                    self.fire_trail = None;
+                }
+                // Legacy recipes are visible only while their actual inventory slots own them.
+                self.weapons
+                    .retain(|(id, _)| !matches!(id.as_str(), "chain-lightning" | "fire-trail"));
+                self.weapons.extend(
+                    inventory
+                        .weapons
+                        .iter()
+                        .filter(|s| {
+                            matches!(
+                                s.id,
+                                sim::survivors::WeaponId::ChainLightning
+                                    | sim::survivors::WeaponId::FireTrail
+                            )
+                        })
+                        .map(|s| (s.id.as_str().into(), false)),
+                );
             }
             Record::Run(state) => {
                 if let Some(previous) = self.run
@@ -408,7 +436,14 @@ impl LiveView {
                 self.level = u32::try_from(state.level).unwrap_or(u32::MAX);
                 self.run = Some(*state);
             }
-            Record::Hero(p) => self.hero = Some(*p),
+            Record::Hero(p) => {
+                self.hero = Some(*p);
+                if self.run.is_some() {
+                    self.hero_trail
+                        .retain(|v| v.0 < p.world && p.world - v.0 <= 10.0);
+                    self.hero_trail.push((p.world, p.x, p.y));
+                }
+            }
             Record::Camera(x, y, zoom) => self.camera = (*x, *y, *zoom),
             Record::Spawn { id, kind } => {
                 self.foes.insert(
@@ -448,6 +483,9 @@ impl LiveView {
                     self.recap.damage(id, *damage);
                 }
                 match m {
+                    Moment::WeaponFire(shot) if shot.id == sim::survivors::WeaponId::FireTrail => {
+                        self.fire_trail = Some(*shot);
+                    }
                     Moment::Hit {
                         foe, lethal: true, ..
                     } if self.run.is_some() => {
@@ -678,6 +716,7 @@ pub enum Record {
 #[derive(Clone, Debug, Default, PartialEq)]
 struct Notes {
     s: f64,
+    w: f64,
     hits: VecDeque<NoteHit>,
     tier: f64,
     hero_x: f64,
@@ -829,7 +868,9 @@ impl Recorder for LiveRecorder {
         let anim = HERO_ANIMS.get(anim as usize).copied().unwrap_or("idle");
         let mut j = self.0.borrow_mut();
         j.notes.hero_x = x;
+        let world = j.notes.w;
         j.push(Record::Hero(HeroPose {
+            world,
             x,
             y,
             z,
@@ -943,12 +984,14 @@ impl Recorder for LiveRecorder {
             _ => (j.notes.hero_x, 0.0),
         };
         if h.source == HitSource::Weapon {
-            j.sound(Cause::Weapon {
-                s: h.s,
-                x,
-                what: h.what.clone(),
-                caught: false,
-            });
+            if !matches!(h.what.as_str(), "chain-lightning" | "fire-trail") {
+                j.sound(Cause::Weapon {
+                    s: h.s,
+                    x,
+                    what: h.what.clone(),
+                    caught: false,
+                });
+            }
             j.push(Record::Moment(Moment::WeaponHit {
                 x,
                 y,
@@ -1006,11 +1049,13 @@ impl Recorder for LiveRecorder {
         }
     }
 
-    fn clock(&mut self, s: f64, _w: f64, between: bool) {
+    fn clock(&mut self, s: f64, w: f64, between: bool) {
         // (Records take the time of the simulation's own last stop: a move to wherever a frame or
         // a snapshot asked would make them depend on how the run was cut up.)
         if !between {
-            self.0.borrow_mut().notes.s = s;
+            let mut j = self.0.borrow_mut();
+            j.notes.s = s;
+            j.notes.w = w;
         }
     }
 
@@ -1639,6 +1684,8 @@ impl Engine {
                             | "holy-wand"
                             | "unholy-vespers"
                             | "thunder-loop"
+                            | "chain-lightning"
+                            | "fire-trail"
                     ) =>
                 {
                     None
@@ -1662,6 +1709,8 @@ impl Engine {
                                 | sim::survivors::WeaponId::HolyWand
                                 | sim::survivors::WeaponId::KingBible
                                 | sim::survivors::WeaponId::UnholyVespers
+                                | sim::survivors::WeaponId::ChainLightning
+                                | sim::survivors::WeaponId::FireTrail
                         ) =>
                 {
                     Some(Cause::WeaponPulse {
@@ -1687,6 +1736,8 @@ impl Engine {
                                                 | sim::survivors::WeaponId::UnholyVespers
                                                 | sim::survivors::WeaponId::LightningRing
                                                 | sim::survivors::WeaponId::ThunderLoop
+                                                | sim::survivors::WeaponId::ChainLightning
+                                                | sim::survivors::WeaponId::FireTrail
                                         )
                                 })
                                 .map(|what| Cause::WeaponImpact {

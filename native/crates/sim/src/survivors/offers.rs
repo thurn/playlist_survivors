@@ -2,20 +2,24 @@
 use super::{Inventory, PassiveId, StatDelta, WeaponCatalog, WeaponId};
 use serde::Deserialize;
 use std::{collections::BTreeMap, sync::OnceLock};
-const WEAPONS: [WeaponId; 5] = [
+pub const BASE_WEAPONS: [WeaponId; 7] = [
     WeaponId::Sword,
     WeaponId::Garlic,
     WeaponId::MagicWand,
     WeaponId::KingBible,
     WeaponId::LightningRing,
+    WeaponId::ChainLightning,
+    WeaponId::FireTrail,
 ];
-const PASSIVES: [PassiveId; 6] = [
+pub const PASSIVES: [PassiveId; 8] = [
     PassiveId::Spinach,
     PassiveId::HollowHeart,
     PassiveId::Pummarola,
     PassiveId::Duplicator,
     PassiveId::EmptyTome,
     PassiveId::Spellbinder,
+    PassiveId::Magnet,
+    PassiveId::Armour,
 ];
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize)]
 pub enum Item {
@@ -45,6 +49,8 @@ impl Item {
                 WeaponId::HolyWand => "HOLY WAND",
                 WeaponId::UnholyVespers => "UNHOLY VESPERS",
                 WeaponId::ThunderLoop => "THUNDER LOOP",
+                WeaponId::ChainLightning => "CHAIN LIGHTNING",
+                WeaponId::FireTrail => "FIRE TRAIL",
             },
             Self::Passive(p) => p.name(),
             Self::Heal => "HEAL",
@@ -89,6 +95,8 @@ impl PassiveId {
             Self::Duplicator => "duplicator",
             Self::EmptyTome => "empty-tome",
             Self::Spellbinder => "spellbinder",
+            Self::Magnet => "magnet",
+            Self::Armour => "armour",
         }
     }
     pub fn name(self) -> &'static str {
@@ -99,6 +107,8 @@ impl PassiveId {
             Self::Duplicator => "DUPLICATOR",
             Self::EmptyTome => "EMPTY TOME",
             Self::Spellbinder => "SPELLBINDER",
+            Self::Magnet => "MAGNET",
+            Self::Armour => "ARMOUR",
         }
     }
     pub fn delta(self) -> StatDelta {
@@ -121,6 +131,14 @@ impl PassiveId {
             },
             Self::EmptyTome => StatDelta {
                 cooldown: -0.08,
+                ..StatDelta::default()
+            },
+            Self::Magnet => StatDelta {
+                magnet: 0.3,
+                ..StatDelta::default()
+            },
+            Self::Armour => StatDelta {
+                armor: 1.0,
                 ..StatDelta::default()
             },
             Self::Spellbinder => StatDelta {
@@ -157,6 +175,8 @@ impl Card {
                 if after.amount > before.amount {
                     if id.is_sword() {
                         "+1 SPIN"
+                    } else if id == WeaponId::ChainLightning {
+                        "+1 CHAIN JUMP"
                     } else {
                         "+1 PROJECTILE"
                     }
@@ -179,6 +199,8 @@ impl Card {
                 PassiveId::Duplicator => "+1 PROJECTILE / SPIN",
                 PassiveId::EmptyTome => "-8% COOLDOWN",
                 PassiveId::Spellbinder => "+10% DURATION",
+                PassiveId::Magnet => "+30% PICKUP REACH",
+                PassiveId::Armour => "-1 CONTACT DAMAGE (MINIMUM 1)",
             },
             Item::Heal => "RECOVER HP",
         }
@@ -226,7 +248,7 @@ impl OfferTable {
         Ok(out)
     }
     pub fn cards(&self, level: usize, inv: Inventory, catalog: &WeaponCatalog) -> [Card; 3] {
-        let all: Vec<_> = WEAPONS
+        let all: Vec<_> = BASE_WEAPONS
             .into_iter()
             .map(Item::Weapon)
             .chain(PASSIVES.into_iter().map(Item::Passive))

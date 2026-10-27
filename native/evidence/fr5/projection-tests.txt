@@ -1,0 +1,11 @@
+   Compiling eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-fr5/native/crates/eval)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1.79s
+     Running tests/live.rs (target/debug/deps/live-6bbfee6942df762e)
+
+running 1 test
+restored recap Row { id: ChainLightning, damage: 947.7000000000058, held_s: 9.9945, dps: 94.82215218370162 }; 21 shots and matching fire cues
+restored recap Row { id: FireTrail, damage: 4.500000000000002, held_s: 9.9945, dps: 0.4502476361999101 }; 33 shots and matching fire cues
+test restored_inventory_deliveries_project_one_fire_cue_and_actual_recap_damage ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 22 filtered out; finished in 0.21s
+

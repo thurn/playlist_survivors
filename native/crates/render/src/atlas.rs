@@ -396,7 +396,13 @@ mod tests {
         // (The three baked atlases and the procedural textures.)
         assert_eq!(a.pages.len(), 6);
         assert_eq!(a.fonts["pixel"].glyphs.len(), 95);
-        assert_eq!(a.icons.len(), 16);
+        assert_eq!(a.icons.len(), 20);
+        for id in ["chain-lightning", "fire-trail", "magnet", "armour"] {
+            assert!(
+                a.icons.contains_key(id),
+                "restored choice has a baked icon: {id}"
+            );
+        }
         assert_eq!(a.fonts["pixel"].glyphs[&'A'].rect.page, 4);
         assert_eq!(a.icons["sword-spin"].page, 5);
         // Adding source art repacks the page; its height is not a runtime contract.

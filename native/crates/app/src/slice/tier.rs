@@ -150,6 +150,7 @@ pub struct Arms<'a> {
     pub now: f64,
     pub run_s: f64,
     pub trail: &'a [(f64, f64, f64)],
+    pub trail_now: f64,
 }
 
 /// The weapons the hero holds, drawn over the characters: the orbiting blades (a turn of the orbit
@@ -204,13 +205,35 @@ pub fn weapons(
                 let Some(fire) = art.effects.get("fire").filter(|f| !f.frames.is_empty()) else {
                     continue;
                 };
-                for k in 0..10u32 {
-                    let t = arms.now - 0.06 - f64::from(k) * 0.07;
+                let (duration, radius) = if view.inventory.is_some() {
+                    let Some(shot) = view.fire_trail else {
+                        continue;
+                    };
+                    (shot.duration_s, shot.radius)
+                } else {
+                    (0.76, 20.0)
+                };
+                if duration <= 0.12 {
+                    continue;
+                }
+                let count = if view.inventory.is_some() {
+                    (duration / 0.07).ceil().clamp(10.0, 32.0) as u32
+                } else {
+                    10
+                };
+                for k in 0..count {
+                    let t = if view.inventory.is_some() {
+                        arms.trail_now
+                            - 0.12
+                            - f64::from(k) * (duration - 0.12) / f64::from(count - 1)
+                    } else {
+                        arms.now - 0.06 - f64::from(k) * 0.07
+                    };
                     let Some((x, y)) = hero_at(arms.trail, t) else {
                         continue;
                     };
                     let x = x + (rand01(u64::from(k), (t * 14.0).floor() as u64, 7) - 0.5) * 8.0;
-                    let a = 1.0 - f64::from(k) / 10.0;
+                    let a = 1.0 - f64::from(k) / f64::from(count);
                     let frame =
                         ((arms.now * 12.0 + f64::from(k) * 3.0) as usize) % fire.frames.len();
                     let (sx, sy) = at(x, y);
@@ -220,7 +243,7 @@ pub fn weapons(
                             sx,
                             sy,
                             (fire.anchor_x, fire.anchor_y),
-                            0.8 * scale,
+                            0.8 * (radius / 20.0).clamp(0.5, 3.0) as f32 * scale,
                         )
                         .tinted(with_alpha(rgb(FLAME_TINTS[tier]), a as f32))
                         .additive(),

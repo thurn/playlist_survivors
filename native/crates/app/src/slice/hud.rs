@@ -605,6 +605,10 @@ pub(super) fn item_color(id: &str) -> [f32; 4] {
         "magic-wand" | "holy-wand" | "empty-tome" => rgb(0x68dfff),
         "king-bible" | "unholy-vespers" | "spellbinder" => rgb(0xc59bff),
         "lightning-ring" | "thunder-loop" | "duplicator" => rgb(0xffdf70),
+        "chain-lightning" => rgb(0xa8c8ff),
+        "fire-trail" => rgb(0xff8a3a),
+        "magnet" => rgb(0x60ffc0),
+        "armour" => rgb(0xc0c8d8),
         "spinach" => rgb(0x6bff79),
         _ => rgb(0xff8dac),
     }

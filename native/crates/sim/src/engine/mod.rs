@@ -861,6 +861,7 @@ struct ChainState {
     bi: f64,
     range: Option<f64>,
     mult: f64,
+    shot: Option<crate::survivors::Shot>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -2178,6 +2179,7 @@ fn fresh_state(env: &Env) -> SimState {
 mod tests {
     mod evolution_tests;
     mod mainbeat_tests;
+    mod restored_tests;
     mod sword_tests;
     use std::path::Path;
     use std::rc::Rc;
@@ -4624,7 +4626,7 @@ mod tests {
     #[test]
     fn survivor_all_passive_ranks_apply_source_values_through_real_card_picks() {
         use crate::survivors::{Item, PassiveId, total_xp};
-        let cases: [(PassiveId, &[f64]); 6] = [
+        let cases: [(PassiveId, &[f64]); 8] = [
             (PassiveId::Spinach, &[1.1, 1.2, 1.3, 1.4, 1.5]),
             (
                 PassiveId::HollowHeart,
@@ -4634,13 +4636,19 @@ mod tests {
             (PassiveId::EmptyTome, &[0.92, 0.84, 0.76, 0.68, 0.6]),
             (PassiveId::Spellbinder, &[1.1, 1.2, 1.3, 1.4, 1.5]),
             (PassiveId::Duplicator, &[1.0, 2.0]),
+            (PassiveId::Magnet, &[1.3, 1.6, 1.9, 2.2, 2.5]),
+            (PassiveId::Armour, &[2.0, 3.0, 4.0, 5.0, 6.0]),
         ];
         for (passive, expected) in cases {
             let mut sim = survivor_sim();
             max_built_survivor_weapons(&mut sim);
             // Max other owned items through their actual stat path so the real
             // offer table has only this passive left. No authored table changes.
-            for (other, _) in cases {
+            for (other, _) in cases
+                .into_iter()
+                .filter(|(other, _)| *other != passive)
+                .take(5)
+            {
                 if other != passive {
                     for _ in 0..other.max_rank() {
                         sim.st
@@ -4660,12 +4668,19 @@ mod tests {
             sim.gem_arrives(0, total_xp(expected.len()));
             for (i, &value) in expected.iter().enumerate() {
                 let offer = sim.run_state().offer.unwrap();
-                assert!(offer.cards.iter().all(|c| c.item == Item::Passive(passive)));
+                let selected = offer
+                    .cards
+                    .iter()
+                    .position(|c| c.item == Item::Passive(passive))
+                    .expect("target among three remaining offerable passives");
                 assert_eq!(
-                    (offer.cards[0].before, offer.cards[0].after),
+                    (offer.cards[selected].before, offer.cards[selected].after),
                     (i as u8, i as u8 + 1)
                 );
                 let t = offer.reveals[2] + 0.01;
+                let choose = [InputKey::Left, InputKey::Up, InputKey::Right][selected];
+                key(&mut sim, t - 0.004, KeyEventKind::Press, choose);
+                key(&mut sim, t - 0.003, KeyEventKind::Release, choose);
                 key(&mut sim, t, KeyEventKind::Press, InputKey::Confirm);
                 key(
                     &mut sim,
@@ -4683,6 +4698,8 @@ mod tests {
                     PassiveId::EmptyTome => want.cooldown = value,
                     PassiveId::Spellbinder => want.duration = value,
                     PassiveId::Duplicator => want.amount = value,
+                    PassiveId::Magnet => want.magnet = value,
+                    PassiveId::Armour => want.armor = value,
                 }
                 // All fields, not just the desired effect: a rank must not
                 // silently apply some second passive's delta.
@@ -4693,6 +4710,8 @@ mod tests {
                     (stats.cooldown, want.cooldown),
                     (stats.duration, want.duration),
                     (stats.amount, want.amount),
+                    (stats.magnet, want.magnet),
+                    (stats.armor, want.armor),
                 ] {
                     assert!(
                         (actual - target).abs() < 1e-9,
@@ -4704,8 +4723,6 @@ mod tests {
                     (
                         stats.area,
                         stats.projectile_speed,
-                        stats.armor,
-                        stats.magnet,
                         stats.move_speed,
                         stats.luck,
                         stats.greed,
@@ -4715,8 +4732,6 @@ mod tests {
                     (
                         want.area,
                         want.projectile_speed,
-                        want.armor,
-                        want.magnet,
                         want.move_speed,
                         want.luck,
                         want.greed,
@@ -4829,6 +4844,7 @@ mod tests {
             .weapons
             .values()
             .filter(|d| d.implemented && d.evolution_of.is_none())
+            .take(crate::survivors::ITEM_SLOTS)
         {
             while sim
                 .survivor_inventory()
@@ -4936,6 +4952,7 @@ mod tests {
             bi: 0.0,
             range: None,
             mult: 1.0,
+            shot: None,
         });
         sim.st.q.push(100.0, Ev::Wave { group: 0, band: 0 });
         sim.push_at_beat(

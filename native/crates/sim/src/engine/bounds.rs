@@ -33,6 +33,7 @@ impl Sim {
             .heap
             .iter()
             .map(|e| &e.ev)
+            .chain(self.st.freeze.held_events())
             .chain(self.st.deferred.iter().filter_map(|e| match &e.then {
                 Then::Push(ev) => Some(ev),
                 _ => None,
@@ -138,25 +139,50 @@ impl Sim {
     /// Offline density fixture only, before Engine takes its first snapshot. Zero-XP gems
     /// exercise all 400 field entries without creating upgrade screens in the stationary soak.
     pub fn seed_scale_check(&mut self) {
+        use crate::survivors::WeaponId::{
+            ChainLightning, Garlic, KingBible, LightningRing, MagicWand, Sword,
+        };
+        self.seed_scale_build([
+            Sword,
+            Garlic,
+            MagicWand,
+            KingBible,
+            LightningRing,
+            ChainLightning,
+        ]);
+    }
+
+    /// Alternative legal six-slot build exercises both restored deliveries and moving pickups.
+    pub fn seed_restored_scale_check(&mut self) {
+        use crate::survivors::WeaponId::{
+            ChainLightning, FireTrail, Garlic, KingBible, MagicWand, Sword,
+        };
+        self.seed_scale_build([
+            Sword,
+            Garlic,
+            MagicWand,
+            KingBible,
+            ChainLightning,
+            FireTrail,
+        ]);
+    }
+
+    fn seed_scale_build(&mut self, weapons: [crate::survivors::WeaponId; 6]) {
         assert_eq!(self.st.s, 0.0);
         assert!(self.st.survivor.is_some());
         self.disable_hero_damage_for_check();
-        // Max the real implemented loadout, including H weapons that landed while F's
-        // soak was running. Future weapon beads automatically join this measurement.
-        for def in crate::survivors::weapon_catalog()
-            .weapons
-            .values()
-            .filter(|d| d.implemented && d.evolution_of.is_none())
-        {
+        // Seven base choices compete for six actual slots.
+        for id in weapons {
+            let def = crate::survivors::weapon_catalog().get(id);
             while self
                 .survivor_inventory()
                 .unwrap()
                 .weapons
-                .rank(def.id)
+                .rank(id)
                 .unwrap_or(0)
                 < def.max_rank()
             {
-                self.learn_survivor_weapon(def.id).unwrap();
+                self.learn_survivor_weapon(id).unwrap();
             }
         }
         for passive in [

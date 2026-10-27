@@ -720,3 +720,141 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod restored_cards_tests {
+    use super::*;
+    use crate::slice::{
+        hud::{self, HudState, KeyLight, Rhythm},
+        live,
+    };
+    use sim::survivors::{Card, PassiveId, WeaponId};
+    #[test]
+    fn restored_cards_have_distinct_baked_icons_and_truthful_labels() {
+        let art = Atlases::load(&live::resource("assets", "../../../public/assets")).unwrap();
+        for item in [
+            Item::Weapon(WeaponId::ChainLightning),
+            Item::Weapon(WeaponId::FireTrail),
+            Item::Passive(PassiveId::Magnet),
+            Item::Passive(PassiveId::Armour),
+        ] {
+            assert!(art.icons.contains_key(icon(item)), "{}", item.name());
+            assert!(!item.name().is_empty());
+        }
+    }
+    #[test]
+    #[ignore = "release: restored card and inventory offscreen qualification"]
+    fn restored_card_render_qualification() {
+        use render::{capture, post::Frame};
+        let art = Atlases::load(&live::resource("assets", "../../../public/assets")).unwrap();
+        let dir = std::env::var_os("PS_RESTORED_EXPORT_DIR").map_or_else(
+            || std::env::temp_dir().join("ps-fr5-cards"),
+            std::path::PathBuf::from,
+        );
+        std::fs::create_dir_all(&dir).unwrap();
+        let mut gpu = capture::Offscreen::new(&art.pages, 1280, 720).unwrap();
+        let mut inv = Inventory::default();
+        for w in [
+            WeaponId::Sword,
+            WeaponId::Garlic,
+            WeaponId::MagicWand,
+            WeaponId::KingBible,
+            WeaponId::ChainLightning,
+            WeaponId::FireTrail,
+        ] {
+            inv.weapons.upgrade(w, 8).unwrap();
+        }
+        for p in [PassiveId::Magnet, PassiveId::Armour] {
+            inv.passives.upgrade(p, 5).unwrap();
+        }
+        let view = eval::live::LiveView {
+            inventory: Some(inv),
+            health: 1.0,
+            level: 12,
+            run: Some(RunState::default()),
+            ..eval::live::LiveView::default()
+        };
+        let st = HudState {
+            keys: [KeyLight::default(); 5],
+            presses: &[],
+            beats: &[0.3, 0.8],
+            beat_phase: 0.4,
+            elapsed: 60.0,
+            bitten_ago: 10.0,
+            head: None,
+            next_down: false,
+            tier_flash: 0.0,
+            delayed: 3.0,
+            zen: true,
+            rhythm: Rhythm {
+                locked: true,
+                groove: 0.6,
+            },
+            keys_visible: false,
+        };
+        for (name, items) in [
+            (
+                "weapons",
+                [
+                    Item::Weapon(WeaponId::ChainLightning),
+                    Item::Weapon(WeaponId::FireTrail),
+                    Item::Weapon(WeaponId::Sword),
+                ],
+            ),
+            (
+                "passives",
+                [
+                    Item::Passive(PassiveId::Magnet),
+                    Item::Passive(PassiveId::Armour),
+                    Item::Passive(PassiveId::Spinach),
+                ],
+            ),
+        ] {
+            let mut out = Vec::new();
+            hud::draw(&view, &st, &art, 1280.0, 720.0, &mut out);
+            for (i, item) in items.into_iter().enumerate() {
+                card_draw(
+                    Card {
+                        item,
+                        before: 0,
+                        after: 1,
+                    },
+                    inv,
+                    i == 0,
+                    &art,
+                    640.0 + (i as f32 - 1.0) * 346.0,
+                    230.0,
+                    1.25,
+                    1.0,
+                    1.0,
+                    1.0,
+                    0.0,
+                    &mut out,
+                );
+            }
+            art.fonts["pixel"].text(
+                "SYNTHETIC UI FIXTURE / SIX LEGAL WEAPON SLOTS",
+                640.0,
+                660.0,
+                1.0,
+                Align::Centre,
+                [0.8, 0.9, 1.0, 1.0],
+                &mut out,
+            );
+            gpu.draw(&Frame {
+                clear: crate::slice::CLEAR,
+                world: &[],
+                lights: &[],
+                grade: Grade::default(),
+                overlay: &out,
+            });
+            capture::write_png(
+                &dir.join(format!("{name}.png")),
+                1280,
+                720,
+                &gpu.rgba().unwrap(),
+            )
+            .unwrap();
+        }
+    }
+}

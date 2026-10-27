@@ -127,3 +127,12 @@ soundPalettes:
       thunder-loop-hit: [kenney/digital-zap1]
       thunder-loop-accent-fire: [kenney/sci-explosionCrunch_000]
       thunder-loop-accent-hit: [kenney/sci-impactMetal_000]
+
+      chain-lightning-fire: [rpg80/spell_02]
+      chain-lightning-hit: [kenney/sci-impactMetal_000]
+      chain-lightning-accent-fire: [rpg80/spell_01]
+      chain-lightning-accent-hit: [kenney/impactPlate_heavy_001]
+      fire-trail-fire: [rpg80/spell_fire_01, rpg80/spell_fire_02]
+      fire-trail-hit: [kenney/impactSoft_medium_001]
+      fire-trail-accent-fire: [rpg80/spell_fire_03]
+      fire-trail-accent-hit: [kenney/impactSoft_heavy_000]

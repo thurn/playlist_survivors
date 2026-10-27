@@ -25,6 +25,10 @@
     "spellbinder": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/scroll-unfurled.svg",
     "duplicator": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/double-ringed-orb.svg",
     "pummarola": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/heart-bottle.svg",
-    "spinach": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/three-leaves.svg"
+    "spinach": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/three-leaves.svg",
+    "chain-lightning": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/willdabeast/chain-lightning.svg",
+    "fire-trail": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/fire-tail.svg",
+    "magnet": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/magnet.svg",
+    "armour": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/delapouite/chest-armor.svg"
   }
 }

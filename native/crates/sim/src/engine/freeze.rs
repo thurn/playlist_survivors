@@ -42,6 +42,10 @@ pub(super) struct Freeze {
 }
 
 impl Freeze {
+    pub(super) fn held_events(&self) -> impl Iterator<Item = &Ev> {
+        self.held.iter().map(|h| &h.entry.ev)
+    }
+
     pub fn reasons_empty(&self) -> bool {
         self.reasons.is_empty()
     }
@@ -504,7 +508,12 @@ impl Sim {
                 | Ev::LightningStrike(_) => 0.25,
                 _ => 1.0,
             };
+            let restored_chain = matches!(&h.entry.ev, Ev::Chain { chain, .. }
+                if self.st.chains[*chain].shot.is_some());
             let grid = self.known_grid_after(due, step).or_else(|| {
+                if restored_chain {
+                    return Some((0.0, self.free_grid_at_or_after(due, step)));
+                }
                 matches!(
                     h.entry.ev,
                     Ev::Recoil { .. }

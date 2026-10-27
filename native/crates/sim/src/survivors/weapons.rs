@@ -19,6 +19,8 @@ pub enum WeaponId {
     UnholyVespers,
     LightningRing,
     ThunderLoop,
+    ChainLightning,
+    FireTrail,
 }
 
 impl WeaponId {
@@ -34,6 +36,8 @@ impl WeaponId {
             Self::UnholyVespers => "unholy-vespers",
             Self::LightningRing => "lightning-ring",
             Self::ThunderLoop => "thunder-loop",
+            Self::ChainLightning => "chain-lightning",
+            Self::FireTrail => "fire-trail",
         }
     }
     pub fn from_name(name: &str) -> Option<Self> {
@@ -48,6 +52,8 @@ impl WeaponId {
             "unholy-vespers" => Self::UnholyVespers,
             "lightning-ring" => Self::LightningRing,
             "thunder-loop" => Self::ThunderLoop,
+            "chain-lightning" => Self::ChainLightning,
+            "fire-trail" => Self::FireTrail,
             _ => return None,
         })
     }
@@ -65,6 +71,8 @@ pub enum PassiveId {
     Duplicator,
     Pummarola,
     Spinach,
+    Magnet,
+    Armour,
 }
 impl PassiveId {
     pub fn max_rank(self) -> u8 {

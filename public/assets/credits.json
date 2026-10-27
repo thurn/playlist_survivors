@@ -58,6 +58,21 @@
       "notes": "White glyph rasterized with the black background removed."
     },
     {
+      "file": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/delapouite/chest-armor.svg",
+      "title": "Game-icons chest-armor",
+      "authors": [
+        "Delapouite"
+      ],
+      "licence": "CC-BY 3.0",
+      "urls": [
+        "https://game-icons.net/1x1/delapouite/chest-armor.html"
+      ],
+      "usedFor": [
+        "icon:armour"
+      ],
+      "notes": "White glyph rasterized with the black background removed."
+    },
+    {
       "file": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/delapouite/garlic.svg",
       "title": "Game-icons garlic",
       "authors": [
@@ -178,6 +193,21 @@
       "notes": "White glyph rasterized with the black background removed."
     },
     {
+      "file": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/fire-tail.svg",
+      "title": "Game-icons fire-tail",
+      "authors": [
+        "Lorc"
+      ],
+      "licence": "CC-BY 3.0",
+      "urls": [
+        "https://game-icons.net/1x1/lorc/fire-tail.html"
+      ],
+      "usedFor": [
+        "icon:fire-trail"
+      ],
+      "notes": "White glyph rasterized with the black background removed."
+    },
+    {
       "file": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/heart-bottle.svg",
       "title": "Game-icons heart-bottle",
       "authors": [
@@ -238,6 +268,21 @@
       "notes": "White glyph rasterized with the black background removed."
     },
     {
+      "file": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/magnet.svg",
+      "title": "Game-icons magnet",
+      "authors": [
+        "Lorc"
+      ],
+      "licence": "CC-BY 3.0",
+      "urls": [
+        "https://game-icons.net/1x1/lorc/magnet.html"
+      ],
+      "usedFor": [
+        "icon:magnet"
+      ],
+      "notes": "White glyph rasterized with the black background removed."
+    },
+    {
       "file": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/scroll-unfurled.svg",
       "title": "Game-icons scroll-unfurled",
       "authors": [
@@ -279,6 +324,21 @@
       ],
       "usedFor": [
         "icon:magic-wand"
+      ],
+      "notes": "White glyph rasterized with the black background removed."
+    },
+    {
+      "file": "dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/willdabeast/chain-lightning.svg",
+      "title": "Game-icons chain-lightning",
+      "authors": [
+        "Willdabeast"
+      ],
+      "licence": "CC-BY 3.0",
+      "urls": [
+        "https://game-icons.net/1x1/willdabeast/chain-lightning.html"
+      ],
+      "usedFor": [
+        "icon:chain-lightning"
       ],
       "notes": "White glyph rasterized with the black background removed."
     },

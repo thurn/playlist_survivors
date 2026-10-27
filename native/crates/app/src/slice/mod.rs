@@ -171,6 +171,7 @@ enum BenchMode {
     Base,
     Evolved,
     Moving,
+    Restored,
 }
 #[allow(clippy::struct_excessive_bools)]
 struct Options {
@@ -185,6 +186,7 @@ struct Options {
     cards_check: Option<PathBuf>,
     recap_check: Option<PathBuf>,
     density_check: Option<PathBuf>,
+    restored_check: Option<PathBuf>,
     aura_check: Option<PathBuf>,
     zone_check: Option<PathBuf>,
     boss_check: Option<PathBuf>,
@@ -255,6 +257,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         cards_check: None,
         recap_check: None,
         density_check: None,
+        restored_check: None,
         aura_check: None,
         zone_check: None,
         boss_check: None,
@@ -428,6 +431,17 @@ fn options(args: &[String]) -> Result<Options, String> {
                         .ok_or("--garlic-check needs an output directory")?
                         .into(),
                 );
+            }
+            "--restored-check" => {
+                o.restored_check = Some(
+                    it.next()
+                        .ok_or("--restored-check needs a directory")?
+                        .into(),
+                );
+            }
+            "--bench-restored" => {
+                o.bench = true;
+                o.bench_mode = BenchMode::Restored;
             }
             "--sword-check" => {
                 o.sword_check = Some(
@@ -741,6 +755,9 @@ pub fn run(args: &[String]) -> Result<(), String> {
     }
     if let Some(dir) = &opts.hook_check {
         return hook_check::run(dir);
+    }
+    if let Some(dir) = &opts.restored_check {
+        return density_check::restored(dir);
     }
     if let Some(dir) = &opts.density_check {
         return density_check::run(dir);
@@ -1308,7 +1325,7 @@ fn thread_cpu_s() -> f64 {
 fn bench(check: bool, mode: BenchMode) -> Result<(), String> {
     let density = mode != BenchMode::Reactive;
     let evolved = matches!(mode, BenchMode::Evolved | BenchMode::Moving);
-    let moving = mode == BenchMode::Moving;
+    let moving = matches!(mode, BenchMode::Moving | BenchMode::Restored);
     let world = World::load(Some(&live::resource("levels", "../../../levels").join(
         if density {
             "survivors.yaml"
@@ -1322,7 +1339,9 @@ fn bench(check: bool, mode: BenchMode) -> Result<(), String> {
     let text = std::fs::read_to_string(&stream_path)
         .map_err(|e| format!("{}: {e}", stream_path.display()))?;
     let file = stream::StreamFile::parse(&text).map_err(|e| e.0)?;
-    let mut engine = if evolved {
+    let mut engine = if mode == BenchMode::Restored {
+        eval::scale::restored_density_engine(&world.level, &world.lib)?
+    } else if evolved {
         eval::scale::evolved_density_engine(&world.level, &world.lib)?
     } else if density {
         eval::scale::density_engine(&world.level, &world.lib)?
@@ -1477,7 +1496,7 @@ fn bench(check: bool, mode: BenchMode) -> Result<(), String> {
             "bench final effects: evolved{evolved} moving{moving}, min gems{min_gems}, peak moving gem poses{peak_poses}, actual pickup moments{pickups}"
         );
         println!(
-            "bench density: {density_frames} frames with 300 live enemies + up to400 simulation gems; max implemented Survivors weapons/passives, synthetic HP, damage exempt"
+            "bench density: {density_frames} frames with 300 live enemies + up to400 simulation gems; max legal six-slot Survivors build, synthetic HP, damage exempt"
         );
         println!(
             "bench density loadout: {:?}",

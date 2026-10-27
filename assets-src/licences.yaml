@@ -357,3 +357,27 @@ entries:
     authors: [Lorc]
     urls: [https://game-icons.net/1x1/lorc/three-leaves.html]
     notes: White glyph rasterized with the black background removed.
+  - files: ["dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/willdabeast/chain-lightning.svg"]
+    title: Game-icons chain-lightning
+    licences: [CC-BY 3.0]
+    authors: [Willdabeast]
+    urls: [https://game-icons.net/1x1/willdabeast/chain-lightning.html]
+    notes: White glyph rasterized with the black background removed.
+  - files: ["dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/fire-tail.svg"]
+    title: Game-icons fire-tail
+    licences: [CC-BY 3.0]
+    authors: [Lorc]
+    urls: [https://game-icons.net/1x1/lorc/fire-tail.html]
+    notes: White glyph rasterized with the black background removed.
+  - files: ["dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/lorc/magnet.svg"]
+    title: Game-icons magnet
+    licences: [CC-BY 3.0]
+    authors: [Lorc]
+    urls: [https://game-icons.net/1x1/lorc/magnet.html]
+    notes: White glyph rasterized with the black background removed.
+  - files: ["dl:game-icons/icons-82d948812bfe3f269ef8f731dcdb07b08160edc4/delapouite/chest-armor.svg"]
+    title: Game-icons chest-armor
+    licences: [CC-BY 3.0]
+    authors: [Delapouite]
+    urls: [https://game-icons.net/1x1/delapouite/chest-armor.html]
+    notes: White glyph rasterized with the black background removed.

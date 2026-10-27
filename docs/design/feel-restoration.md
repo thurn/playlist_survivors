@@ -506,7 +506,16 @@ card pause near victory from delivering an orphaned finale event.
 
 ### FR5 — Weapons and passives
 
-Pending implementation.
+Restored Chain Lightning and Fire Trail as actual eight-rank inventory choices,
+with captured damage/visual/audio identities, snapshots, recap, icons and cards.
+Magnet/Armour are five-rank support passives. All seven bases and five existing
+evolutions have legal paths within six slots; early alternatives preserve the
+first offer. Chain reaches260px beyond the190px starting sword; trails follow
+actual past poses and hold with the modal world clock. A fast-step hit-position
+regression is fixed. [Evidence and commands](../../native/evidence/fr5/README.md)
+retain catalog/choice/replay/audio checks and dense diagnostics. The bright
+injected dense scene explicitly feeds FR9's presentation hierarchy; human feel
+remains pending. The bead records review, final checks and landed candidate.
 
 ### FR6 — Pickups and upgrades
 

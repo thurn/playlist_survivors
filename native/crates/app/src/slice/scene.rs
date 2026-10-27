@@ -365,10 +365,15 @@ impl Scene {
         };
         let groove = view.groove.clamp(0.0, 1.0);
         self.struck.retain(|_, s| now - s.0 < 1.0);
-        // (The hero's places, for the fire trail.)
-        if let Some(h) = view.hero {
-            self.trail.push_back((now, h.x, h.y));
-            while self.trail.front().is_some_and(|p| now - p.0 > 1.0) {
+        // Trail history uses held world time in Survivors, like its actual damage path.
+        if !survivors && let Some(h) = view.hero {
+            let trail_now = view.run.map_or(now, |r| r.world);
+            while self.trail.back().is_some_and(|p| p.0 >= trail_now) {
+                self.trail.pop_back();
+            }
+            self.trail.push_back((trail_now, h.x, h.y));
+            let keep = if survivors { 10.0 } else { 1.0 };
+            while self.trail.front().is_some_and(|p| trail_now - p.0 > keep) {
                 self.trail.pop_front();
             }
         }
@@ -1046,7 +1051,12 @@ impl Scene {
             beat: view.run.and_then(|r| r.frozen_beat).unwrap_or(pulse.index),
             now,
             run_s: view.run.map_or(self.run_s, |r| r.presentation_s),
-            trail: self.trail.make_contiguous(),
+            trail_now: view.run.map_or(now, |r| r.world),
+            trail: if view.run.is_some() {
+                &view.hero_trail
+            } else {
+                self.trail.make_contiguous()
+            },
         };
         tier::weapons(view, &arms, art, &at, scale, out);
         self.sword.draw(now, art, &at, scale, out, lights);

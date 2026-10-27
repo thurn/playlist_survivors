@@ -1668,3 +1668,196 @@ fn boss_notices_landings_and_camera_replay_across_late_pause_keys() {
         b.stats.key_rollbacks
     );
 }
+
+#[test]
+fn restored_inventory_deliveries_project_one_fire_cue_and_actual_recap_damage() {
+    use sim::survivors::WeaponId;
+    let lib = library();
+    let mut engine =
+        eval::scale::restored_density_engine(&source("levels/survivors.yaml"), &lib).unwrap();
+    let mut file = StreamFile::parse(
+        &std::fs::read_to_string(root().join("public/reactive/house-128/stream.json")).unwrap(),
+    )
+    .unwrap();
+    // Deliberately inject known forecasts on the real track's quarter grid to
+    // exercise actual captured accent shots in this short production-routing check.
+    file.log.forecasts = Some(
+        file.log
+            .beats
+            .windows(2)
+            .flat_map(|v| {
+                (0..4).map(move |i| stream::Forecast {
+                    t: v[0].t + (v[1].t - v[0].t) * f64::from(i) / 4.0,
+                    known_at: v[0].known_at.max(v[1].known_at),
+                    cycle: 4.0,
+                    confidence: 1.0,
+                })
+            })
+            .collect(),
+    );
+    let mut replay = Replay::new(file.log);
+    engine.key(0.01, InputKey::Right, true);
+    let mut index = engine.journal.borrow().end();
+    let mut shots = std::collections::BTreeMap::<WeaponId, usize>::new();
+    let mut fires = std::collections::BTreeMap::<WeaponId, usize>::new();
+    let mut projected = std::collections::BTreeSet::new();
+    let mut accented = std::collections::BTreeSet::new();
+    let mut impacts = std::collections::BTreeSet::new();
+    for frame in 1..=1200 {
+        let s = f64::from(frame) / 120.0;
+        engine.feed(|l| replay.feed_to(l, s));
+        engine.frame(s, 0.0);
+        for caused in engine.causes() {
+            match caused.cause {
+                eval::live::Cause::WeaponPulse {
+                    s,
+                    what: id @ (WeaponId::ChainLightning | WeaponId::FireTrail),
+                    accent,
+                    ..
+                } => {
+                    projected.insert((id, s.to_bits()));
+                    if accent {
+                        accented.insert(id);
+                    }
+                }
+                eval::live::Cause::WeaponImpact {
+                    what: id @ (WeaponId::ChainLightning | WeaponId::FireTrail),
+                    ..
+                } => {
+                    impacts.insert(id);
+                }
+                eval::live::Cause::Weapon { ref what, .. } => assert!(
+                    !matches!(
+                        WeaponId::from_name(what),
+                        Some(WeaponId::ChainLightning | WeaponId::FireTrail)
+                    ),
+                    "generic cue must be suppressed"
+                ),
+                _ => {}
+            }
+        }
+        let journal = engine.journal.borrow();
+        while index < journal.end() {
+            let (_, record) = journal
+                .get(index)
+                .expect("collect every frame before pruning");
+            match record {
+                Record::Moment(Moment::WeaponFire(shot))
+                    if matches!(shot.id, WeaponId::ChainLightning | WeaponId::FireTrail) =>
+                {
+                    *shots.entry(shot.id).or_default() += 1;
+                }
+                Record::Sound(eval::live::Caused {
+                    cause:
+                        eval::live::Cause::Weapon {
+                            what,
+                            caught: false,
+                            ..
+                        },
+                    ..
+                }) => {
+                    if let Some(id @ (WeaponId::ChainLightning | WeaponId::FireTrail)) =
+                        WeaponId::from_name(what)
+                    {
+                        *fires.entry(id).or_default() += 1;
+                    }
+                }
+                _ => {}
+            }
+            index += 1;
+        }
+    }
+    assert_eq!(
+        shots, fires,
+        "trail circles and chain jumps must not duplicate the shot's fire cue"
+    );
+    let view = engine.view.borrow();
+    for id in [WeaponId::ChainLightning, WeaponId::FireTrail] {
+        assert!(shots[&id] > 0);
+        assert_eq!(
+            projected.iter().filter(|(w, _)| *w == id).count(),
+            shots[&id]
+        );
+        assert!(
+            accented.contains(&id),
+            "real captured accent reaches production pulse routing"
+        );
+        assert!(
+            impacts.contains(&id),
+            "actual admitted impacts reach production audio"
+        );
+        assert!(
+            view.weapons.contains(&(id.as_str().into(), false)),
+            "inventory projects its actual existing recipe"
+        );
+        let row = view
+            .recap
+            .rows(view.run.unwrap().elapsed)
+            .into_iter()
+            .find(|r| r.id == id)
+            .unwrap();
+        assert!(
+            row.held_s > 0.0 && row.damage > 0.0 && row.dps.is_finite(),
+            "actual delivery feeds recap: {row:?}"
+        );
+        eprintln!(
+            "restored recap {row:?}; {} shots and matching fire cues",
+            shots[&id]
+        );
+    }
+}
+
+#[test]
+fn authoritative_fire_path_replays_late_movement_and_holds_through_a_menu() {
+    let lib = library();
+    let file = StreamFile::parse(
+        &std::fs::read_to_string(root().join("public/reactive/house-128/stream.json")).unwrap(),
+    )
+    .unwrap();
+    let run = |late: f64| {
+        let mut e =
+            eval::scale::restored_density_engine(&source("levels/survivors.yaml"), &lib).unwrap();
+        let mut replay = Replay::new(file.log.clone());
+        let keys = [
+            (0.01, InputKey::Right, true),
+            (0.21, InputKey::Right, false),
+            (0.22, InputKey::Up, true),
+            (0.6, InputKey::Pause, true),
+            (0.61, InputKey::Pause, false),
+            (1.0, InputKey::Pause, true),
+            (1.01, InputKey::Pause, false),
+        ];
+        let mut next = 0;
+        let mut held = None;
+        for i in 1..=240 {
+            let now = f64::from(i) / 120.0;
+            e.feed(|l| replay.feed_to(l, now));
+            while next < keys.len() && keys[next].0 + late <= now {
+                let (at, key, down) = keys[next];
+                e.key(at, key, down);
+                next += 1;
+            }
+            e.frame(now, 0.23);
+            if now > 0.85 && now < 0.95 {
+                let v = e.view.borrow();
+                if let Some(ref path) = held {
+                    assert_eq!(path, &v.hero_trail);
+                }
+                held = Some(v.hero_trail.clone());
+            }
+        }
+        e.frame(2.25, 0.0);
+        e
+    };
+    let a = run(0.0);
+    let b = run(0.025);
+    assert!(b.stats.key_rollbacks > 0);
+    let a = a.view.borrow();
+    let b = b.view.borrow();
+    assert!(a.hero_trail.len() > 100);
+    assert_eq!(
+        a.hero_trail, b.hero_trail,
+        "rendered past poses must be corrected just like actual trail damage after late keys"
+    );
+    assert!(a.hero_trail.windows(2).all(|v| v[0].0 < v[1].0));
+}

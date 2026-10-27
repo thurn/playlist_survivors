@@ -307,12 +307,8 @@ impl Sim {
                 continue;
             }
             let f = &self.st.foes[fi];
-            if catches(
-                &h.shape,
-                f.x + f.vx * (w - f.last_w),
-                f.y + f.vy * (w - f.last_w),
-                f.r,
-            ) {
+            let p = self.pos(fi, w);
+            if catches(&h.shape, p.0, p.1, f.r) {
                 self.damage(fi, h);
                 out.push(fi);
             }
@@ -982,20 +978,40 @@ impl Sim {
     }
 
     pub(super) fn fire(&mut self, wi: usize, bi: f64) {
+        self.fire_with_shot(wi, bi, None);
+    }
+
+    /// Restored inventory weapons reuse the existing causal chain/trail delivery. The shot
+    /// owns damage, growth and the deadline; no legacy fire spec or second loadout is granted.
+    pub(super) fn fire_with_shot(
+        &mut self,
+        wi: usize,
+        bi: f64,
+        shot: Option<crate::survivors::Shot>,
+    ) {
         // Weapons rest during a hit-stop.
-        if self.in_stop(self.st.s) {
+        if self.in_stop(self.st.s) && shot.is_none() {
             return;
         }
         let env = Rc::clone(&self.env);
         let hero = &env.input.lib.hero;
         let wd: &WeaponDef = &env.input.lib.weapons[wi];
         let s = self.st.s;
-        self.rec.fire(&wd.id, s);
+        if shot.is_none() {
+            self.rec.fire(&wd.id, s);
+        }
         let hp = self.hero_pose(self.st.w);
         let energy = energy_at(&self.st.song, s);
         let tier = self.st.tier;
-        let mult = tier_damage(hero, tier);
-        let weight = Weight::from_content(wd.weight);
+        let mult = shot.map_or_else(
+            || tier_damage(hero, tier),
+            |s| s.damage / wd.damage.max(1e-9),
+        );
+        let weight = if shot.is_some_and(|s| s.accent) {
+            Weight::Heavy
+        } else {
+            Weight::from_content(wd.weight)
+        };
         match wd.kind {
             WeaponKind::Orbit => {
                 let o = wd.orbit.as_ref().expect("an orbit");
@@ -1059,11 +1075,14 @@ impl Sim {
                     last: first,
                     index,
                     hit: HashSet::new(),
-                    jumps,
+                    jumps: shot.map_or(jumps, |s| s.amount as f64),
                     energy,
                     bi,
-                    range: tiered.map(|t| t.range),
+                    range: shot
+                        .map(|s| 140.0 * s.area)
+                        .or_else(|| tiered.map(|t| t.range)),
                     mult,
+                    shot,
                 });
                 self.rec.chain(first);
                 self.chain_jump(wi, index, 0);
@@ -1076,7 +1095,8 @@ impl Sim {
                 let bd = (at(min(beats.len() as f64 - 1.0, fb)) - at(max(0.0, fb - 1.0)))
                     * self.base_rate(s);
                 let w = self.st.w;
-                let w_from = w - tr.beats * max(0.05, bd);
+                let w_from = w - shot.map_or(tr.beats * max(0.05, bd), |s| s.duration_s);
+                let mut hit = HashSet::new();
                 let base = self.st.hero_base;
                 assert!(
                     !(base > 0 && base as f64 / HERO_RATE >= w_from),
@@ -1106,15 +1126,16 @@ impl Sim {
                         shape: Shape::Circle {
                             x,
                             y,
-                            radius: trail_radius_at(wd, tier),
+                            radius: shot.map_or_else(|| trail_radius_at(wd, tier), |s| s.radius),
                         },
                         dir: 0.0,
-                        accent: 0.0,
+                        accent: f64::from(shot.is_some_and(|s| s.accent)),
                         damage: wd.damage * mult,
                         group: None,
                     };
                     let h = self.add_hit(spec, Some(energy));
-                    self.apply_hit(&h, None);
+                    let filter = |id| shot.is_none() || !hit.contains(&id);
+                    hit.extend(self.apply_hit(&h, Some(&filter)));
                     k -= 1;
                 }
             }
@@ -1125,16 +1146,8 @@ impl Sim {
     pub(super) fn chain_jump(&mut self, wi: usize, ci: usize, j: usize) {
         let s = self.st.s;
         if self.in_stop(s) {
-            // A jump inside a hit-stop waits for the next sixteenth after it.
             let bi = floor(self.sbi_at(s) * 4.0 + 1e-6) / 4.0 + 0.25;
-            self.push_at_beat(
-                bi,
-                Ev::Chain {
-                    weapon: wi,
-                    chain: ci,
-                    jump: j,
-                },
-            );
+            self.queue_chain_jump(wi, ci, j, bi, self.st.stop_end + 1e-8);
             return;
         }
         let env = Rc::clone(&self.env);
@@ -1149,25 +1162,25 @@ impl Sim {
             ch.last.y + 16.0
         };
         let mut best: Option<usize> = None;
-        let mut best_d = ch.range.unwrap_or(c.range);
+        let mut best_d = if j == 0 {
+            ch.shot.map_or(ch.range.unwrap_or(c.range), |s| s.radius)
+        } else {
+            ch.range.unwrap_or(c.range)
+        };
         for &fi in &self.st.alive {
             let f = &self.st.foes[fi];
             if !f.alive || ch.hit.contains(&fi) {
                 continue;
             }
-            let d = hypot(
-                f.x + f.vx * (w - f.last_w) - fx,
-                f.y + f.vy * (w - f.last_w) - fy,
-            );
+            let p = self.pos(fi, w);
+            let d = hypot(p.0 - fx, p.1 - fy);
             if d < best_d {
                 best_d = d;
                 best = Some(fi);
             }
         }
         let Some(bf) = best else { return };
-        let f = &self.st.foes[bf];
-        let bx = f.x + f.vx * (w - f.last_w);
-        let by = f.y + f.vy * (w - f.last_w);
+        let (bx, by) = self.pos(bf, w);
         let p = ChainPoint {
             w,
             x: bx,
@@ -1176,35 +1189,56 @@ impl Sim {
         let ch = &mut self.st.chains[ci];
         ch.hit.insert(bf);
         ch.last = p;
-        let (index, energy, mult, jumps, cbi) = (ch.index, ch.energy, ch.mult, ch.jumps, ch.bi);
+        let (index, energy, mult, jumps, cbi, shot) =
+            (ch.index, ch.energy, ch.mult, ch.jumps, ch.bi, ch.shot);
+        // The selected target was just marked; other overlapping targets join after this hit.
+        let prior = ch.hit.clone();
         self.rec.chain_point(index, p);
         let spec = HitSpec {
             source: HitSource::Weapon,
             what: wd.id.clone(),
-            weight: Weight::from_content(wd.weight),
+            weight: if shot.is_some_and(|s| s.accent) {
+                Weight::Heavy
+            } else {
+                Weight::from_content(wd.weight)
+            },
             primary: false,
             shape: Shape::Circle {
                 x: bx,
                 y: by,
-                radius: wd.hit_shape.as_ref().expect("a hit shape").radius,
+                radius: wd.hit_shape.as_ref().expect("a hit shape").radius
+                    * shot.map_or(1.0, |s| s.area),
             },
             dir: atan2(by - fy, bx - fx),
-            accent: 0.0,
+            accent: f64::from(shot.is_some_and(|s| s.accent)),
             damage: wd.damage * mult,
             group: None,
         };
         let h = self.add_hit(spec, Some(energy));
-        self.apply_hit(&h, None);
+        let filter = |fi| shot.is_none() || fi == bf || !prior.contains(&fi);
+        let caught = self.apply_hit(&h, Some(&filter));
+        if shot.is_some() {
+            self.st.chains[ci].hit.extend(caught);
+        }
         if ((j + 1) as f64) < jumps {
             let step_b = subdivision_beats(c.step, 2.0);
-            self.push_at_beat(
-                cbi + (j as f64 + 1.0) * step_b,
-                Ev::Chain {
-                    weapon: wi,
-                    chain: ci,
-                    jump: j + 1,
-                },
+            self.queue_chain_jump(wi, ci, j + 1, cbi + (j as f64 + 1.0) * step_b, s + 1e-8);
+        }
+    }
+    fn queue_chain_jump(&mut self, wi: usize, ci: usize, j: usize, bi: f64, due: f64) {
+        let ev = Ev::Chain {
+            weapon: wi,
+            chain: ci,
+            jump: j,
+        };
+        if self.st.chains[ci].shot.is_some() {
+            let at = self.known_grid_after(due, 0.25).map_or_else(
+                || due.max(self.st.s) + self.env.rule.free_period_s / 4.0,
+                |(_, at)| at,
             );
+            self.st.q.push(at, ev);
+        } else {
+            self.push_at_beat(bi, ev);
         }
     }
 }

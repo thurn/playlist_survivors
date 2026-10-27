@@ -4,9 +4,18 @@ use sim::content::{ContentLibrary, SourceFile};
 
 /// Constant 300-enemy population of minute 25's XLFlower roster; effectively unkillable
 /// enemies isolate age from density. Faster BAT1 overload is retained separately in evidence.
-/// All musical input still passes through normal ingestion, freezes, strides and the full implemented weapon loadout.
+/// All musical input still passes through normal ingestion, freezes, strides and an explicit legal six-slot weapon loadout.
 pub fn density_engine(level: &SourceFile, lib: &ContentLibrary) -> Result<Engine, String> {
     configured_density_engine(level, lib, sim::engine::Sim::seed_scale_check, false)
+}
+/// Alternative six-slot build with chain and trail, preserving the same population fixture.
+pub fn restored_density_engine(level: &SourceFile, lib: &ContentLibrary) -> Result<Engine, String> {
+    configured_density_engine(
+        level,
+        lib,
+        sim::engine::Sim::seed_restored_scale_check,
+        false,
+    )
 }
 /// SP5 final evolved loadout; the original base-loadout release fixture remains explicit.
 pub fn evolved_density_engine(level: &SourceFile, lib: &ContentLibrary) -> Result<Engine, String> {
@@ -106,6 +115,7 @@ mod tests {
             .weapons
             .values()
             .filter(|d| d.implemented && d.evolution_of.is_none())
+            .take(sim::survivors::ITEM_SLOTS)
             .collect();
         assert_eq!(engine.view.borrow().inventory, Some(inventory));
         assert_eq!(inventory.weapons.iter().count(), built.len());

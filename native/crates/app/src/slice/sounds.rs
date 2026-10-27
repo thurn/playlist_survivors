@@ -1043,6 +1043,10 @@ mod survivor_tests {
                     "sword-accent-hit",
                     "kill-multi",
                     "chime",
+                    "chain-lightning-fire",
+                    "chain-lightning-hit",
+                    "fire-trail-fire",
+                    "fire-trail-hit",
                 ] {
                     sounds.now(key, t, 0.7, &mut cmds);
                 }
@@ -1144,6 +1148,8 @@ mod survivor_tests {
             sim::survivors::WeaponId::HolyWand,
             sim::survivors::WeaponId::UnholyVespers,
             sim::survivors::WeaponId::ThunderLoop,
+            sim::survivors::WeaponId::ChainLightning,
+            sim::survivors::WeaponId::FireTrail,
         ] {
             let (mut sounds, _) = decoded();
             let b = tests::beats(8, 0.5, 1.0);

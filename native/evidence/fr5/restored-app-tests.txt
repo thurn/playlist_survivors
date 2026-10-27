@@ -1,0 +1,11 @@
+   Compiling app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-fr5/native/crates/app)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.21s
+     Running unittests src/main.rs (target/debug/deps/playlist_survivors-117eebc7468b2345)
+
+running 3 tests
+test slice::cards::restored_cards_tests::restored_card_render_qualification ... ignored, release: restored card and inventory offscreen qualification
+test slice::scene::restored_trail_tests::trail_history_uses_held_world_time_and_keeps_its_actual_lifetime_through_menus ... ok
+test slice::cards::restored_cards_tests::restored_cards_have_distinct_baked_icons_and_truthful_labels ... ok
+
+test result: ok. 2 passed; 0 failed; 1 ignored; 0 measured; 81 filtered out; finished in 0.06s
+

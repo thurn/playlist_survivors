@@ -169,7 +169,11 @@ impl Sim {
                 } else {
                     weapon.amount(stats)
                 },
-                radius: if id.is_sword() {
+                radius: if id == WeaponId::ChainLightning {
+                    260.0 * weapon.area * stats.area
+                } else if id == WeaponId::FireTrail {
+                    20.0 * weapon.area * stats.area
+                } else if id.is_sword() {
                     if accent {
                         self.heavy_tier_reach(tier).radius
                     } else {
@@ -229,7 +233,16 @@ impl Sim {
                     hit: std::collections::HashSet::new(),
                 });
             }
-            // Later weapon beads implement their delivery on the shared shot schedule.
+            if matches!(id, WeaponId::ChainLightning | WeaponId::FireTrail) {
+                let wi = self
+                    .env
+                    .input
+                    .lib
+                    .weapons
+                    .get_index_of(id.as_str())
+                    .expect("restored recipe");
+                self.fire_with_shot(wi, self.sbi_at(self.st.s), Some(shot));
+            }
         }
         self.tick_garlic();
         self.tick_missiles();

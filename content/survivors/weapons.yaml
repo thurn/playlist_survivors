@@ -116,3 +116,35 @@ weapons:
     requires: pummarola
     levels:
       - {power: 2, amount: 1, intervalMs: 1000, repeatMs: 0, area: 3, speed: 1, durationMs: 1300, pierce: 0, hitDelayMs: 1000, knockback: 0, critChance: 0, critMultiplier: 0, critEnabled: false, intervalDependsOnDuration: false} # 1
+
+  # Restored native recipes (content/weapons.yaml), not VS equivalence claims.
+  - id: chain-lightning
+    source: RESTORED_CHAIN
+    grid: beat
+    implemented: true
+    evolutionOf: null
+    requires: null
+    levels:
+      - {power: 1.2, amount: 3, intervalMs: 1000, repeatMs: 125, area: 1, speed: 1, durationMs: 1000, pierce: 0, hitDelayMs: 1000, knockback: 5, critChance: 0, critMultiplier: 0, critEnabled: false, intervalDependsOnDuration: false}
+      - {amount: 1}
+      - {power: 0.3}
+      - {area: 0.2}
+      - {amount: 1}
+      - {power: 0.3}
+      - {intervalMs: -200}
+      - {amount: 1, area: 0.2}
+  - id: fire-trail
+    source: RESTORED_TRAIL
+    grid: beat
+    implemented: true
+    evolutionOf: null
+    requires: null
+    levels:
+      - {power: 0.4, amount: 1, intervalMs: 500, repeatMs: 0, area: 1, speed: 1, durationMs: 1000, pierce: 0, hitDelayMs: 500, knockback: 0, critChance: 0, critMultiplier: 0, critEnabled: false, intervalDependsOnDuration: false}
+      - {area: 0.2}
+      - {power: 0.2}
+      - {durationMs: 250}
+      - {area: 0.2}
+      - {power: 0.2}
+      - {durationMs: 250}
+      - {power: 0.2, area: 0.2}
