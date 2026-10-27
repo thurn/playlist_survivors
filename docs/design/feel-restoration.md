@@ -456,6 +456,10 @@ without admitting enemy contact. Evidence and playable command:
 [native/evidence/fr1](../../native/evidence/fr1/README.md). Visual feel and integrated
 qualification remain FR10. The bead records the exact landed commit and candidate.
 
+Dense-CI follow-up removes repeated separation once every beat destination is
+fixed; mid-window spawn/recoil/landing still admit steps. Both retained 1080p
+runs pass, without establishing a timing improvement. [Evidence](../../native/evidence/fr-ci12/README.md).
+
 ### FR2 — Sword and accents
 
 Restored target-facing character swings, 190 px radial reach and full catalog

@@ -297,3 +297,40 @@ fn sparse_committed_beats_do_not_repay_missing_distance_on_relock() {
     let speed = sim.env.input.lib.enemies[sim.st.foes[id].def].speed;
     assert!((p.0 - q.0).abs() <= speed * 60.0 / 128.0 + 1e-7);
 }
+
+#[test]
+fn separation_runs_only_for_new_steps_but_admits_a_late_spawn_in_the_window() {
+    let mut sim = survivor_sim_with(tempo(120.0));
+    let id = rhythm_foe(&mut sim, 300.0);
+    sim.advance_to(2.92);
+    let work = sim.spatial.cache.hits + sim.spatial.cache.misses;
+    let first = sim.st.foes[id].step.expect("admitted step");
+    sim.advance_to(2.96);
+    assert_eq!(sim.spatial.cache.hits + sim.spatial.cache.misses, work);
+    assert_eq!(sim.st.foes[id].step.unwrap().dx, first.dx);
+    assert_eq!(sim.st.foes[id].step.unwrap().dy, first.dy);
+    let late = rhythm_foe(&mut sim, 350.0);
+    let recoil = rhythm_foe(&mut sim, 400.0);
+    let landing = rhythm_foe(&mut sim, 450.0);
+    sim.st.foes[recoil].recoil_until = 2.975;
+    sim.st.foes[recoil].recoil_v = (1.0, 0.0);
+    sim.st.foes[landing].land_s = Some(2.975);
+    sim.advance_to(2.99);
+    assert!(
+        sim.st.foes[late].step.is_some(),
+        "late spawn still gets a causal shortened step"
+    );
+    assert!(
+        sim.st.foes[recoil].step.is_some(),
+        "recoil expiry still admits a step"
+    );
+    assert!(
+        sim.st.foes[landing].step.is_some(),
+        "landing still admits a step"
+    );
+    assert!(sim.spatial.cache.hits + sim.spatial.cache.misses > work);
+    sim.advance_to(3.01);
+    let pos = sim.pos(late, sim.st.w);
+    sim.advance_to(3.2);
+    assert_eq!(sim.pos(late, sim.st.w), pos, "stationary hold is unchanged");
+}

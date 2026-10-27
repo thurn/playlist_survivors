@@ -1,0 +1,282 @@
+changes: 9 paths since 3a5bcfa
+friction: 46 records valid
+Using CPython 3.12.14 interpreter at: /opt/homebrew/opt/python@3.12/bin/python3.12
+Creating virtual environment at: .venv
+   Building ps-analysis @ file:///Users/dthurn/playlist_survivors/.worktrees/codex-feel-ci12/tools/analysis
+      Built ps-analysis @ file:///Users/dthurn/playlist_survivors/.worktrees/codex-feel-ci12/tools/analysis
+Installed 44 packages in 164ms
+All checks passed!
+WARN `--no-project` was provided, but no project was found
+...........................
+----------------------------------------------------------------------
+Ran 27 tests in 0.023s
+
+OK
+changes: 9 paths since 3a5bcfa
+crates purity: stream, analysis, sim, eval, players pure
+native check-fast: app cli eval players sim
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+    Checking cfg-if v1.0.5
+    Checking foldhash v0.2.0
+    Checking equivalent v1.0.3
+    Checking unicode-width v0.2.2
+    Checking scopeguard v1.2.0
+    Checking smallvec v1.16.4
+    Checking itoa v1.0.18
+    Checking memchr v2.8.3
+   Compiling num-traits v0.2.19
+   Compiling libc v0.2.191
+    Checking libm v0.2.16
+    Checking serde_core v1.0.229
+    Checking zmij v1.0.23
+    Checking simdutf8 v0.1.5
+    Checking arraydeque v0.5.1
+    Checking anstyle v1.0.14
+    Checking bitflags v2.13.2
+    Checking base64 v0.23.1
+    Checking objc2-encode v4.1.0
+    Checking hashbrown v0.17.1
+    Checking nohash-hasher v0.2.0
+    Checking encoding_rs v0.8.42
+    Checking strength_reduce v0.2.4
+    Checking granit-parser v2.0.0
+   Compiling objc2 v0.6.5
+    Checking simd-adler32 v0.3.10
+    Checking annotate-snippets v0.12.17
+   Compiling crc32fast v1.5.3
+    Checking adler2 v2.0.1
+   Compiling cfg_aliases v0.2.2
+   Compiling thiserror v2.0.21
+   Compiling zerocopy v0.8.63
+    Checking rustc-hash v1.1.0
+    Checking miniz_oxide v0.9.1
+   Compiling parking_lot_core v0.9.12
+   Compiling naga v30.0.1
+    Checking raw-window-handle v0.6.2
+    Checking log v0.4.34
+    Checking bit-vec v0.9.1
+    Checking codespan-reporting v0.13.1
+    Checking once_cell v1.21.4
+    Checking static_assertions v1.1.0
+   Compiling objc-sys v0.3.5
+    Checking unicode-ident v1.0.27
+    Checking bit-set v0.10.0
+    Checking arrayvec v0.7.8
+   Compiling wgpu-hal v30.0.1
+    Checking lock_api v0.4.14
+    Checking libloading v0.8.9
+    Checking profiling v1.0.18
+   Compiling wgpu-core v30.0.1
+    Checking core-foundation-sys v0.8.7
+   Compiling litrs v1.0.1
+   Compiling wgpu v30.0.1
+    Checking dispatch v0.2.0
+    Checking bitflags v1.3.2
+    Checking foreign-types-shared v0.3.1
+   Compiling winit v0.30.13
+    Checking miniz_oxide v0.8.9
+    Checking encoding_rs_io v0.1.8
+    Checking fdeflate v0.3.7
+    Checking num-integer v0.1.47
+    Checking num-complex v0.4.6
+    Checking primal-check v0.3.4
+    Checking indexmap v2.14.2
+    Checking serde-saphyr v2.0.0
+    Checking transpose v0.2.3
+    Checking pin-project-lite v0.2.17
+    Checking tracing-core v0.1.36
+    Checking cursor-icon v1.2.0
+    Checking dpi v0.1.2
+    Checking rustfft v6.4.1
+    Checking smol_str v0.2.2
+    Checking dispatch2 v0.3.1
+    Checking block2 v0.6.2
+    Checking serde_json v1.0.154
+   Compiling syn v3.0.9
+    Checking flate2 v1.1.10
+   Compiling syn v2.0.119
+   Compiling document-features v0.2.12
+    Checking objc2-core-audio-types v0.3.2
+    Checking png v0.18.1
+    Checking tracing v0.1.44
+    Checking pollster v1.0.1
+    Checking rtrb v0.4.0
+    Checking objc2 v0.5.3
+    Checking audio v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-ci12/native/crates/audio)
+    Checking block2 v0.5.1
+    Checking objc2-foundation v0.2.2
+    Checking realfft v3.5.0
+    Checking objc2-core-foundation v0.3.2
+    Checking core-foundation v0.9.4
+    Checking parking_lot v0.12.5
+    Checking core-graphics-types v0.1.3
+    Checking objc2-foundation v0.3.2
+    Checking objc2-core-graphics v0.3.2
+    Checking objc2-app-kit v0.2.2
+    Checking objc2-core-text v0.3.2
+    Checking objc2-core-video v0.3.2
+   Compiling serde_derive v1.0.229
+   Compiling thiserror-impl v2.0.21
+   Compiling bytemuck_derive v1.12.1
+   Compiling foreign-types-macros v0.2.4
+   Compiling zerocopy-derive v0.8.63
+    Checking foreign-types v0.5.0
+    Checking core-graphics v0.23.2
+    Checking bytemuck v1.25.2
+    Checking naga-types v30.0.1
+    Checking wgpu-types v30.0.1
+    Checking serde v1.0.229
+    Checking stream v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-ci12/native/crates/stream)
+    Checking analysis v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-ci12/native/crates/analysis)
+    Checking sim v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-ci12/native/crates/sim)
+    Checking half v2.7.1
+    Checking objc2-metal v0.3.2
+    Checking objc2-core-audio v0.3.2
+    Checking objc2-core-image v0.3.2
+    Checking objc2-cloud-kit v0.3.2
+    Checking objc2-core-data v0.3.2
+    Checking objc2-audio-toolbox v0.3.2
+    Checking players v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-ci12/native/crates/players)
+    Checking eval v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-ci12/native/crates/eval)
+    Checking cli v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-ci12/native/crates/cli)
+    Checking objc2-quartz-core v0.3.2
+    Checking raw-window-metal v1.1.0
+    Checking objc2-app-kit v0.3.2
+    Checking wgpu-naga-bridge v30.0.1
+    Checking wgpu-core-deps-apple v30.0.1
+    Checking render v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-ci12/native/crates/render)
+    Checking app v0.0.0 (/Users/dthurn/playlist_survivors/.worktrees/codex-feel-ci12/native/crates/app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 20.02s
+
+running 75 tests
+............................................i...............Error: Couldn't open input file ('wht?')
+...............
+test result: ok. 74 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 1.08s
+
+
+running 11 tests
+...........
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+
+running 11 tests
+...........
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.22s
+
+
+running 21 tests
+.....................
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.68s
+
+
+running 4 tests
+....
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+
+
+running 4 tests
+....
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.22s
+
+
+running 4 tests
+....
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+..
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+
+
+running 130 tests
+....................................................................................... 87/130
+...........................................
+test result: ok. 130 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.83s
+
+
+running 7 tests
+i......
+test result: ok. 6 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 2.64s
+
+
+running 5 tests
+.....
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 6 tests
+......
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 3 tests
+...
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+
+running 2 tests
+..
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s
+
+
+running 3 tests
+...
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s
+
+
+running 8 tests
+........
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.30s
+
+
+running 9 tests
+.........
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 6 tests
+......
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 10 tests
+..........
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 5 tests
+.....
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 3 tests
+...
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 19 tests
+...................
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.40s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+Analyzing dependencies of crates in this directory...
+cargo-machete didn't find any unused dependencies in this directory. Good job!
+Done!
+native check-fast: passed in 78 s
+check-fast: passed in 81 s

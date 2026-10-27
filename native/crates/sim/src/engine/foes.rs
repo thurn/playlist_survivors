@@ -311,6 +311,18 @@ impl Sim {
         let Some((bi, peak, period)) = admitted else {
             return;
         };
+        // Separation only contributes to a newly admitted step. Recomputing it on every
+        // physics tick within the same beat window changes no destination and dominates
+        // dense rollback work. Still admit a new spawn or a foe leaving recoil mid-window.
+        let needs_step = |f: &Foe| {
+            !f.step_k.is_some_and(|k| k >= bi as f64)
+                && f.recoil_until < w1
+                && f.knock_t <= 0.0
+                && !f.land_s.is_some_and(|s| self.st.s < s)
+        };
+        if !alive.iter().any(|&id| needs_step(&self.st.foes[id])) {
+            return;
+        }
         let s = self.st.s;
         let slots: Vec<usize> = alive.iter().map(|&id| self.st.foes.slot(id)).collect();
         let gox = floor(hp.x / CELL) as i64 - G / 2;
