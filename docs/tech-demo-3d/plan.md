@@ -313,7 +313,7 @@ the task that consumes the result removes the row once it has used it.
 
 | What | How | Added by | Consumed by |
 |---|---|---|---|
-| Finish Cygnus's setup | Set the display to never turn off (`powercfg /change monitor-timeout-ac 0`); reboot once and check D: comes back, or add a startup task that attaches `C:\DevDrive\DevDrive.vhdx`; confirm Settings, Accounts, Sign-in options, "If you've been away" is Never; optionally enable XMP; delete the start-up checkout's untracked `native/evidence/windows-spike/` and `native/spike-windows/` (in git since `73530c7`) and the `D:\wt\windows-spike` worktree | Cygnus setup (2026-10-28) | TD1 |
+| Finish Cygnus's setup | Reboot once and check D: comes back, or add a startup task that attaches `C:\DevDrive\DevDrive.vhdx`; confirm Settings, Accounts, Sign-in options, "If you've been away" is Never; delete the start-up checkout's untracked `native/evidence/windows-spike/` and `native/spike-windows/` (in git since `73530c7`) and the `D:\wt\windows-spike` worktree | Cygnus setup (2026-10-28) | TD1 |
 
 ## Task Notes
 

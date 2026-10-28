@@ -79,7 +79,8 @@ operator and partly by agent sessions in its Remote Control environment.
 Where it stands:
 
 - Windows 11 Home 25H2, build 26200. RTX 4070 Ti on driver 610.88; i7-12700F;
-  32 GB of DDR4 at 2133 MHz (XMP still off).
+  32 GB of DDR4 at 2133 MHz. XMP stays off: Cygnus froze at startup with it
+  on.
 - **C:** NTFS, about 225 GB free. **D:** a 120 GB Dev Drive (ReFS, label
   `DevDrive`), a dynamically expanding VHDX at `C:\DevDrive\DevDrive.vhdx`,
   about 107 GB free with the vendor sources on it.
@@ -104,9 +105,13 @@ Where it stands:
 - G: is Google Drive for desktop, with about 150 Synty packs, some in
   different versions from the Mac's. The demo doesn't use them.
 
-Still open, in [Pending on the operator](plan.md#pending-on-the-operator): the AC display timeout (15 minutes, not
-never), whether D: comes back after a reboot, the "If you've been away"
-sign-in setting (unreadable without admin), and, optionally, XMP.
+Still open, in [Pending on the operator](plan.md#pending-on-the-operator):
+whether D: comes back after a reboot, and the "If you've been away" sign-in
+setting (unreadable without admin).
+
+The display turns off after 15 idle minutes, and that stays: the PC itself
+never sleeps or locks, and a sweep wakes the display and holds it on for its
+own duration (see [Running a sweep](benchmarks.md#running-a-sweep)).
 
 ### The operator's steps
 
@@ -139,14 +144,14 @@ can't raise a UAC prompt (see
    `git config --global core.longpaths true`. Unity's `Library` nests deep.
 5. **GitHub.** `gh auth login`, then `gh auth setup-git`, so git can push to
    the relay over HTTPS. The relay repository is created from the Mac.
-6. **Power and display.** The High performance power plan; the display never
-   turns off and the PC never sleeps (`powercfg /change monitor-timeout-ac 0`
-   and `standby-timeout-ac 0`); no automatic lock (Settings, Accounts,
+6. **Power and display.** The High performance power plan; the PC never
+   sleeps (`powercfg /change standby-timeout-ac 0`), though the display may;
+   no automatic lock (Settings, Accounts,
    Sign-in options: Dynamic lock off and "If you've been away" set to Never;
    no secure screen saver). Turn off GeForce Experience's instant replay and
    the Xbox Game Bar's background recording, which use the GPU's encoder.
-7. **Memory.** Enable XMP in the firmware, so the DDR4 runs at its rated
-   speed. This is optional; without it, CPU numbers are pessimistic (see
+7. **Memory.** Leave XMP off: Cygnus froze at startup with it on. CPU
+   numbers are pessimistic as a result (see
    [Where Cygnus flatters the target](performance.md#where-cygnus-flatters-the-target)).
 8. **Assets.** Copy the zips and the song to Cygnus's Downloads (below).
 

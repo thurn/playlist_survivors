@@ -120,11 +120,12 @@ of kind, and the harness counts the costs that scale worst.
 - **Power.** A desktop card at full power against a laptop part whose power
   limit varies by model. The laptop's Steel Nomad score is a typical one, and
   the report says that a low-power 4060 Laptop will fall short of it.
-- **Memory speed for the CPU.** Cygnus's DDR4 runs at 2133 MHz until XMP is
-  enabled (see [Setting up Cygnus](windows.md#setting-up-cygnus)), slower than a
-  typical 4060 laptop's memory. Until then its CPU times are pessimistic,
-  which understates the frontier where the CPU limits it. The harness records
-  the memory speed in every result row.
+- **Memory speed for the CPU.** Cygnus's DDR4 runs at 2133 MHz, slower than
+  a typical 4060 laptop's memory. XMP would raise it, but Cygnus froze at
+  startup with XMP on, so it stays off (see
+  [Setting up Cygnus](windows.md#setting-up-cygnus)). Its CPU times are
+  therefore pessimistic, which understates the frontier where the CPU limits
+  it. The harness records the memory speed in every result row.
 - **Overdraw counters stay.** Opaque depth complexity and transparent
   fragments per pixel no longer correct for a different GPU design, but they
   still explain what limits a point (see [Measurements](benchmarks.md#measurements)).

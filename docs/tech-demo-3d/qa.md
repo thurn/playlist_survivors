@@ -85,6 +85,8 @@ baseline crowd handles a few hundred monsters, which is enough.
   sweep to take the lock at once.
 - Switch the power plan to Balanced. **Expect** a refusal naming the plan.
 - Lock the desktop, then start a sweep. **Expect** a refusal.
+- Let the display turn off, then start a sweep. **Expect** the display to
+  wake and the sweep to run with its window composited.
 - Run three sweeps back to back. **Expect** any thermal throttling reported,
   never hidden.
 - Launch with a different window size. **Expect** a refusal naming the

@@ -158,9 +158,11 @@ PlaylistSurvivors3D.exe -force-d3d12 -screen-width 1920 -screen-height 1080 \
   the backbuffer size at startup and refuses to run otherwise.
 - **The interactive desktop.** Agent sessions run in the Claude desktop app
   in the operator's logged-in session, so the player's window appears on the
-  desktop. A locked desktop or a sleeping display stops composition, so the
-  harness keeps the display awake during a sweep
-  (`SetThreadExecutionState`) and refuses to start while the desktop is
+  desktop. A locked desktop or a sleeping display stops composition. The
+  display is allowed to sleep between sweeps, so the harness wakes it at a
+  sweep's start and holds it on until the end
+  (`SetThreadExecutionState` with `ES_DISPLAY_REQUIRED`). It refuses to run
+  if the display doesn't come back, and to start while the desktop is
   locked.
 - **The worker cap.** Unity's `-job-worker-count` sets it, and the harness
   verifies `JobsUtility.JobWorkerCount` at startup.
