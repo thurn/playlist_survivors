@@ -1,0 +1,134 @@
+﻿# spike capture 22460 10 --tone --wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q1-capture.wav
+# spike analyze tone C:\Users\dthurn\AppData\Local\Temp\spike-wav\q1-endpoint.wav
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q1-endpoint.wav
+# spike analyze lag C:\Users\dthurn\AppData\Local\Temp\spike-wav\q1-capture.wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q1-endpoint.wav 0
+# spike apps
+# spike capture 22460 8 --wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-none-capture.wav
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-none-capture.wav
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-none-endpoint.wav
+# spike analyze level C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-none-endpoint.wav
+# spike mute 22460 mute
+# spike apps
+# spike capture 22460 8 --wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-mute-capture.wav
+# spike restore
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-mute-capture.wav
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-mute-endpoint.wav
+# spike analyze level C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-mute-endpoint.wav
+# spike mute 22460 vol:1e-3
+# spike apps
+# spike capture 22460 8 --wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-vol-1e-3-capture.wav
+# spike restore
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-vol-1e-3-capture.wav
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-vol-1e-3-endpoint.wav
+# spike analyze level C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-vol-1e-3-endpoint.wav
+# spike mute 22460 vol:1e-4
+# spike apps
+# spike capture 22460 8 --wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-vol-1e-4-capture.wav
+# spike restore
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-vol-1e-4-capture.wav
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-vol-1e-4-endpoint.wav
+# spike analyze level C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-vol-1e-4-endpoint.wav
+# spike mute 22460 vol:1e-5
+# spike apps
+# spike capture 22460 8 --wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-vol-1e-5-capture.wav
+# spike restore
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-vol-1e-5-capture.wav
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-vol-1e-5-endpoint.wav
+# spike analyze level C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-vol-1e-5-endpoint.wav
+# spike apps
+# spike capture 22460 8 --wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-none-after-capture.wav
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-none-after-capture.wav
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-none-after-endpoint.wav
+# spike analyze level C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-none-after-endpoint.wav
+# spike capture 24116 10 --tone --wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q1-capture.wav
+# spike analyze tone C:\Users\dthurn\AppData\Local\Temp\spike-wav\q1-endpoint.wav
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q1-endpoint.wav
+# spike analyze lag C:\Users\dthurn\AppData\Local\Temp\spike-wav\q1-capture.wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q1-endpoint.wav 0
+# spike apps
+# spike capture 24116 8 --wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-none-capture.wav
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-none-capture.wav
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-none-endpoint.wav
+# spike analyze level C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-none-endpoint.wav
+# spike mute 24116 mute
+# spike apps
+# spike capture 24116 8 --wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-mute-capture.wav
+# spike restore
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-mute-capture.wav
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-mute-endpoint.wav
+# spike analyze level C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-mute-endpoint.wav
+# spike mute 24116 vol:1e-3
+# spike apps
+# spike capture 24116 8 --wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-vol-1e-3-capture.wav
+# spike restore
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-vol-1e-3-capture.wav
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-vol-1e-3-endpoint.wav
+# spike analyze level C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-vol-1e-3-endpoint.wav
+# spike mute 24116 vol:1e-4
+# spike apps
+# spike capture 24116 8 --wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-vol-1e-4-capture.wav
+# spike restore
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-vol-1e-4-capture.wav
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-vol-1e-4-endpoint.wav
+# spike analyze level C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-vol-1e-4-endpoint.wav
+# spike mute 24116 vol:1e-5
+# spike apps
+# spike capture 24116 8 --wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-vol-1e-5-capture.wav
+# spike restore
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-vol-1e-5-capture.wav
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-vol-1e-5-endpoint.wav
+# spike analyze level C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-vol-1e-5-endpoint.wav
+# spike apps
+# spike capture 24116 8 --wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-none-after-capture.wav
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-none-after-capture.wav
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-none-after-endpoint.wav
+# spike analyze level C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-none-after-endpoint.wav
+# spike analyze lag C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-none-capture.wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-none-endpoint.wav 0
+# spike capture 5884 8 --wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-D-capture.wav
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-D-capture.wav
+# spike analyze level C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-D-endpoint.wav
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-D-endpoint.wav
+# spike analyze clicks C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-D-steam-endpoint.wav
+# 2026-10-26T22:17:20.1107043-07:00 q3q5-source.ps1 -Seconds 600, source pid 11668
+# spike analyze lag C:\Users\dthurn\AppData\Local\Temp\spike-wav\q3-cap-headset.wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q3-loop-headset.wav 3 --series
+# spike analyze lag C:\Users\dthurn\AppData\Local\Temp\spike-wav\q3-cap-steam.wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q3-loop-steam.wav 3 --series
+# spike apps
+# spike apps
+# spike apps
+# spike loopback 2 --wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q4-mute-1-after-kill-endpoint.wav
+# spike analyze level C:\Users\dthurn\AppData\Local\Temp\spike-wav\q4-mute-1-after-kill-endpoint.wav
+# spike restore
+# spike apps
+# spike apps
+# spike apps
+# spike loopback 2 --wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q4-mute-2-after-kill-endpoint.wav
+# spike analyze level C:\Users\dthurn\AppData\Local\Temp\spike-wav\q4-mute-2-after-kill-endpoint.wav
+# spike mute 10684 mute
+# spike apps
+# spike loopback 2 --wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q4-mute-3-relaunched-endpoint.wav
+# spike analyze level C:\Users\dthurn\AppData\Local\Temp\spike-wav\q4-mute-3-relaunched-endpoint.wav
+# spike restore
+# spike apps
+# spike apps
+# spike apps
+# spike apps
+# spike loopback 2 --wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q4-vol-1e-5-1-after-kill-endpoint.wav
+# spike analyze level C:\Users\dthurn\AppData\Local\Temp\spike-wav\q4-vol-1e-5-1-after-kill-endpoint.wav
+# spike restore
+# spike apps
+# spike apps
+# spike apps
+# spike loopback 2 --wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q4-vol-1e-5-2-after-kill-endpoint.wav
+# spike analyze level C:\Users\dthurn\AppData\Local\Temp\spike-wav\q4-vol-1e-5-2-after-kill-endpoint.wav
+# spike mute 20632 vol:1e-5
+# spike apps
+# spike loopback 2 --wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q4-vol-1e-5-3-relaunched-endpoint.wav
+# spike analyze level C:\Users\dthurn\AppData\Local\Temp\spike-wav\q4-vol-1e-5-3-relaunched-endpoint.wav
+# spike restore
+# spike apps
+# spike apps
+# spike analyze lag C:\Users\dthurn\AppData\Local\Temp\spike-wav\q3-cap-headset.wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q3-loop-headset.wav 3 --series
+# spike analyze lag C:\Users\dthurn\AppData\Local\Temp\spike-wav\q3-cap-steam.wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q3-loop-steam.wav 3 --series
+# spike analyze lag C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-D-capture.wav C:\Users\dthurn\AppData\Local\Temp\spike-wav\q2-D-steam-endpoint.wav 0
+# spike delay 32632 3 8 --route vol:1e-5
+# spike analyze level C:\Users\dthurn\AppData\Local\Temp\spike-wav\fix-endpoint.wav
+# spike devices

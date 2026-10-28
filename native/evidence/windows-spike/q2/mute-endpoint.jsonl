@@ -1,0 +1,11 @@
+{"capture":"endpoint loopback of Headset (High Definition Audio Device)","seconds":9.0,"tone_3k":false}
+{"devpos":1199520,"frames":48960,"newest_age_ms":-20.661799926310778,"packets":102,"peak_dbfs":-999.0,"qpc_100ns":8879920940481,"rms_dbfs":-999.0,"silent_packets":102,"t":1.00907939998433}
+{"devpos":1247520,"frames":48000,"newest_age_ms":-20.663500055670738,"packets":202,"peak_dbfs":-999.0,"qpc_100ns":8879930940423,"rms_dbfs":-999.0,"silent_packets":202,"t":2.0090718999272212}
+{"devpos":1295520,"frames":48000,"newest_age_ms":-20.670899879187346,"packets":302,"peak_dbfs":-999.0,"qpc_100ns":8879940940475,"rms_dbfs":-999.0,"silent_packets":302,"t":3.0090697000268847}
+{"devpos":1343520,"frames":48000,"newest_age_ms":-20.572399944067,"packets":402,"peak_dbfs":-999.0,"qpc_100ns":8879950940474,"rms_dbfs":-999.0,"silent_packets":402,"t":4.009168099961244}
+{"devpos":1391520,"frames":48000,"newest_age_ms":-20.58279990684241,"packets":502,"peak_dbfs":-999.0,"qpc_100ns":8879960940460,"rms_dbfs":-999.0,"silent_packets":502,"t":5.009156299987808}
+{"devpos":1439520,"frames":48000,"newest_age_ms":-20.651899967342615,"packets":602,"peak_dbfs":-999.0,"qpc_100ns":8879970940504,"rms_dbfs":-999.0,"silent_packets":602,"t":6.009091599960811}
+{"devpos":1487520,"frames":48000,"newest_age_ms":-20.634199948981404,"packets":702,"peak_dbfs":-999.0,"qpc_100ns":8879980940468,"rms_dbfs":-999.0,"silent_packets":702,"t":7.0091056999517605}
+{"devpos":1535520,"frames":48000,"newest_age_ms":-20.579800000414252,"packets":802,"peak_dbfs":-999.0,"qpc_100ns":8879990940413,"rms_dbfs":-999.0,"silent_packets":802,"t":8.009154599974863}
+{"devpos":1583520,"frames":48000,"newest_age_ms":-20.533799999393523,"packets":902,"peak_dbfs":-999.0,"qpc_100ns":8880000940383,"rms_dbfs":-999.0,"silent_packets":902,"t":9.00919759995304}
+{"summary":{"clicks":{"between_clicks_rms_dbfs":-999.0,"clicks":0,"level_db_vs_source":{"n":0},"residual_db":{"n":0},"spacing_ms":{"n":0}},"discontinuities":1,"expected_frames":432000,"frames":432960,"level":{"peak_dbfs":-999.0,"rms_dbfs":-999.0,"seconds":9.02},"packets":902,"packets_without_qpc":0,"silent_packets":902,"timestamp_errors":0,"tone_1k_dbfs":-999.0,"tone_3k_dbfs":-999.0}}

@@ -1,0 +1,54 @@
+﻿[
+    {
+        "route":  "mute",
+        "step":  "1 spike killed, no guard",
+        "before_kill":  "1.0/True",
+        "after_kill":  "1.0/True",
+        "heard_peak_dbfs":  -999.0,
+        "state_file_left":  true,
+        "after_manual_restore":  "1.0/False"
+    },
+    {
+        "route":  "mute",
+        "step":  "2 spike killed, guard",
+        "before_kill":  "1.0/True",
+        "after_kill":  "1.0/False",
+        "heard_peak_dbfs":  -19.99999987057016,
+        "guard_restore_ms":  9.370099985972047,
+        "state_file_left":  false
+    },
+    {
+        "route":  "mute",
+        "step":  "3 source killed while silenced, relaunched",
+        "after_relaunch":  "1.0/True",
+        "heard_peak_dbfs":  -999.0,
+        "after_manual_restore":  "1.0/False",
+        "relaunched_after_restore":  "1.0/False"
+    },
+    {
+        "route":  "vol:1e-5",
+        "step":  "1 spike killed, no guard",
+        "before_kill":  "9.99999974737875E-06/False",
+        "after_kill":  "9.99999974737875E-06/False",
+        "heard_peak_dbfs":  -120.00000002192976,
+        "state_file_left":  true,
+        "after_manual_restore":  "1.0/False"
+    },
+    {
+        "route":  "vol:1e-5",
+        "step":  "2 spike killed, guard",
+        "before_kill":  "9.99999974737875E-06/False",
+        "after_kill":  "1.0/False",
+        "heard_peak_dbfs":  -19.99999987057016,
+        "guard_restore_ms":  9.536599973216653,
+        "state_file_left":  false
+    },
+    {
+        "route":  "vol:1e-5",
+        "step":  "3 source killed while silenced, relaunched",
+        "after_relaunch":  "9.99999974737875E-06/False",
+        "heard_peak_dbfs":  -120.00000002192976,
+        "after_manual_restore":  "1.0/False",
+        "relaunched_after_restore":  "1.0/False"
+    }
+]

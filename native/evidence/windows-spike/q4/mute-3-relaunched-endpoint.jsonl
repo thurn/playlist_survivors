@@ -1,0 +1,4 @@
+﻿{"capture":"endpoint loopback of Headset (High Definition Audio Device)","seconds":2.0,"tone_3k":false}
+{"devpos":121920,"frames":48480,"newest_age_ms":-20.173499933443964,"packets":101,"peak_dbfs":-999.0,"qpc_100ns":8889266350242,"rms_dbfs":-999.0,"silent_packets":101,"t":1.0075550000183284}
+{"devpos":169920,"frames":48000,"newest_age_ms":-20.270699975080788,"packets":201,"peak_dbfs":-999.0,"qpc_100ns":8889276350303,"rms_dbfs":-999.0,"silent_packets":201,"t":2.00746390002314}
+{"summary":{"clicks":{"between_clicks_rms_dbfs":-999.0,"clicks":0,"level_db_vs_source":{"n":0},"residual_db":{"n":0},"spacing_ms":{"n":0}},"discontinuities":1,"expected_frames":96000,"frames":96480,"level":{"peak_dbfs":-999.0,"rms_dbfs":-999.0,"seconds":2.01},"packets":201,"packets_without_qpc":0,"silent_packets":201,"timestamp_errors":0,"tone_1k_dbfs":-999.0,"tone_3k_dbfs":-999.0}}

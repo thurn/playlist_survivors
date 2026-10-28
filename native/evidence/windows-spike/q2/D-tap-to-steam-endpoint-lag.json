@@ -1,0 +1,1 @@
+﻿{"a_clicks":16,"a_packets_without_qpc":0,"b_clicks":18,"b_packets_without_qpc":0,"delay_ms":{"max":-10.774333262816072,"median":-11.295733274891973,"min":-11.594133218750358,"n":16,"p05":-11.566433240659535,"p95":-10.776933282613754},"delayed":16,"drift_ms_per_minute":0.8931744756560583,"live":0,"unmatched":2}

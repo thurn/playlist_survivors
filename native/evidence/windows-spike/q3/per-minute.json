@@ -1,0 +1,212 @@
+﻿[
+    {
+        "run":  "headset",
+        "minute":  0,
+        "fill_median_ms":  2957.876,
+        "fill_spread_ms":  0.037,
+        "heard_raw_median_ms":  3001.851,
+        "heard_raw_spread_ms":  0.055,
+        "underrun_frames":  0,
+        "cap_dropped":  0
+    },
+    {
+        "run":  "headset",
+        "minute":  1,
+        "fill_median_ms":  2957.86,
+        "fill_spread_ms":  0.032,
+        "heard_raw_median_ms":  3001.85,
+        "heard_raw_spread_ms":  0.055,
+        "underrun_frames":  0,
+        "cap_dropped":  0
+    },
+    {
+        "run":  "headset",
+        "minute":  2,
+        "fill_median_ms":  2957.848,
+        "fill_spread_ms":  0.032,
+        "heard_raw_median_ms":  3001.851,
+        "heard_raw_spread_ms":  0.054,
+        "underrun_frames":  0,
+        "cap_dropped":  0
+    },
+    {
+        "run":  "headset",
+        "minute":  3,
+        "fill_median_ms":  2957.831,
+        "fill_spread_ms":  0.037,
+        "heard_raw_median_ms":  3001.849,
+        "heard_raw_spread_ms":  0.063,
+        "underrun_frames":  0,
+        "cap_dropped":  0
+    },
+    {
+        "run":  "headset",
+        "minute":  4,
+        "fill_median_ms":  2957.82,
+        "fill_spread_ms":  0.039,
+        "heard_raw_median_ms":  3001.849,
+        "heard_raw_spread_ms":  0.063,
+        "underrun_frames":  0,
+        "cap_dropped":  0
+    },
+    {
+        "run":  "headset",
+        "minute":  5,
+        "fill_median_ms":  2957.807,
+        "fill_spread_ms":  0.041,
+        "heard_raw_median_ms":  3001.851,
+        "heard_raw_spread_ms":  0.048,
+        "underrun_frames":  0,
+        "cap_dropped":  0
+    },
+    {
+        "run":  "headset",
+        "minute":  6,
+        "fill_median_ms":  2957.792,
+        "fill_spread_ms":  0.03,
+        "heard_raw_median_ms":  3001.851,
+        "heard_raw_spread_ms":  0.057,
+        "underrun_frames":  0,
+        "cap_dropped":  0
+    },
+    {
+        "run":  "headset",
+        "minute":  7,
+        "fill_median_ms":  2957.776,
+        "fill_spread_ms":  0.043,
+        "heard_raw_median_ms":  3001.848,
+        "heard_raw_spread_ms":  0.063,
+        "underrun_frames":  0,
+        "cap_dropped":  0
+    },
+    {
+        "run":  "headset",
+        "minute":  8,
+        "fill_median_ms":  2957.765,
+        "fill_spread_ms":  0.038,
+        "heard_raw_median_ms":  3001.85,
+        "heard_raw_spread_ms":  0.055,
+        "underrun_frames":  0,
+        "cap_dropped":  0
+    },
+    {
+        "run":  "headset",
+        "minute":  9,
+        "fill_median_ms":  2957.753,
+        "fill_spread_ms":  0.037,
+        "heard_raw_median_ms":  3001.85,
+        "heard_raw_spread_ms":  0.059,
+        "underrun_frames":  0,
+        "cap_dropped":  0
+    },
+    {
+        "run":  "headset",
+        "minute":  10,
+        "fill_median_ms":  2957.729,
+        "fill_spread_ms":  0,
+        "heard_raw_median_ms":  null,
+        "heard_raw_spread_ms":  null,
+        "underrun_frames":  0,
+        "cap_dropped":  0
+    },
+    {
+        "run":  "steam",
+        "minute":  0,
+        "fill_median_ms":  2945.087,
+        "fill_spread_ms":  0.883,
+        "heard_raw_median_ms":  3000.053,
+        "heard_raw_spread_ms":  1.878,
+        "underrun_frames":  0,
+        "cap_dropped":  0
+    },
+    {
+        "run":  "steam",
+        "minute":  1,
+        "fill_median_ms":  2945.081,
+        "fill_spread_ms":  1.011,
+        "heard_raw_median_ms":  2999.998,
+        "heard_raw_spread_ms":  1.836,
+        "underrun_frames":  0,
+        "cap_dropped":  0
+    },
+    {
+        "run":  "steam",
+        "minute":  2,
+        "fill_median_ms":  2945.086,
+        "fill_spread_ms":  0.958,
+        "heard_raw_median_ms":  3000.006,
+        "heard_raw_spread_ms":  1.802,
+        "underrun_frames":  0,
+        "cap_dropped":  0
+    },
+    {
+        "run":  "steam",
+        "minute":  3,
+        "fill_median_ms":  2945.012,
+        "fill_spread_ms":  1.048,
+        "heard_raw_median_ms":  3000.06,
+        "heard_raw_spread_ms":  1.77,
+        "underrun_frames":  0,
+        "cap_dropped":  0
+    },
+    {
+        "run":  "steam",
+        "minute":  4,
+        "fill_median_ms":  2945.212,
+        "fill_spread_ms":  0.937,
+        "heard_raw_median_ms":  3000.011,
+        "heard_raw_spread_ms":  1.9,
+        "underrun_frames":  0,
+        "cap_dropped":  0
+    },
+    {
+        "run":  "steam",
+        "minute":  5,
+        "fill_median_ms":  2945.101,
+        "fill_spread_ms":  0.99,
+        "heard_raw_median_ms":  3000.052,
+        "heard_raw_spread_ms":  1.672,
+        "underrun_frames":  0,
+        "cap_dropped":  0
+    },
+    {
+        "run":  "steam",
+        "minute":  6,
+        "fill_median_ms":  2945.046,
+        "fill_spread_ms":  10.491,
+        "heard_raw_median_ms":  3000.045,
+        "heard_raw_spread_ms":  1.669,
+        "underrun_frames":  0,
+        "cap_dropped":  0
+    },
+    {
+        "run":  "steam",
+        "minute":  7,
+        "fill_median_ms":  2944.956,
+        "fill_spread_ms":  0.983,
+        "heard_raw_median_ms":  3000.011,
+        "heard_raw_spread_ms":  1.93,
+        "underrun_frames":  0,
+        "cap_dropped":  0
+    },
+    {
+        "run":  "steam",
+        "minute":  8,
+        "fill_median_ms":  2945.108,
+        "fill_spread_ms":  1.007,
+        "heard_raw_median_ms":  2999.988,
+        "heard_raw_spread_ms":  1.793,
+        "underrun_frames":  0,
+        "cap_dropped":  0
+    },
+    {
+        "run":  "steam",
+        "minute":  9,
+        "fill_median_ms":  2945.169,
+        "fill_spread_ms":  0.949,
+        "heard_raw_median_ms":  3000.028,
+        "heard_raw_spread_ms":  1.678,
+        "underrun_frames":  0,
+        "cap_dropped":  0
+    }
+]

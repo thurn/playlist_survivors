@@ -1,0 +1,6 @@
+﻿{"default":false,"kind":"render","mix_bits":32,"mix_channels":2,"mix_rate":48000,"name":"Speakers (Steam Streaming Speakers)"}
+{"default":false,"kind":"render","mix_bits":32,"mix_channels":2,"mix_rate":48000,"name":"Digital Audio (S/PDIF) (High Definition Audio Device)"}
+{"default":false,"kind":"render","mix_bits":32,"mix_channels":2,"mix_rate":48000,"name":"Speakers (Steam Streaming Microphone)"}
+{"default":true,"kind":"render","mix_bits":32,"mix_channels":2,"mix_rate":48000,"name":"Headset (High Definition Audio Device)"}
+{"default":true,"kind":"capture","mix_bits":32,"mix_channels":2,"mix_rate":48000,"name":"Microphone (High Definition Audio Device)"}
+{"default":false,"kind":"capture","mix_bits":32,"mix_channels":1,"mix_rate":44100,"name":"Microphone (Steam Streaming Microphone)"}
