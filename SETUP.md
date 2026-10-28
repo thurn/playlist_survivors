@@ -446,6 +446,6 @@ The archived TypeScript game is available separately with
 `git worktree add ../playlist-survivors-ts ts-freeze`. Install its dependencies with `npm ci`
 inside that worktree and follow that version's README.
 
-The [Unity 3D tech demo design](docs/design/tech-demo-3d.md) is a separate project; its paid
+The [Unity 3D tech demo design](docs/tech-demo-3d/README.md) is a separate project; its paid
 vendor assets are not part of this setup and must never be committed. The commands in this
 guide build the native Rust game.
