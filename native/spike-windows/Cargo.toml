@@ -14,7 +14,7 @@ path = "src/main.rs"
 [dependencies]
 audio = { path = "../crates/audio" } # the delay line, reused unchanged
 serde_json = "1"
-windows-core = "0.62"
+windows-core = "0.62" # needed by the expansion of `windows::core::implement`
 windows = { version = "0.62", features = [
     "Win32_Devices_FunctionDiscovery",
     "Win32_Foundation",
@@ -31,3 +31,8 @@ windows = { version = "0.62", features = [
     "Win32_System_Variant",
     "Win32_UI_Shell_PropertiesSystem",
 ] }
+
+# cargo machete scans native/, this crate included, and can't see a use that
+# only a macro's expansion makes.
+[package.metadata.cargo-machete]
+ignored = ["windows-core"]
