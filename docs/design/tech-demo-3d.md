@@ -1997,7 +1997,9 @@ last line of defense. Neither may reach the public repository early.
    `td:<key>`. The brief carries the bead's text, the design sections it
    names, the branch name, the worker rules below, and the report format.
 4. **The worker works.** In order:
-   - `git fetch relay`, then a worktree from `relay/base` at
+   - `git fetch relay` (adding the remote,
+     `https://github.com/thurn/playlist_survivors-relay.git`, if the
+     checkout lacks it), then a worktree from `relay/base` at
      `D:\wt\<key>` on branch `td/<key>`;
    - the setup command; the bead's work, committed with Conventional
      Commits;
@@ -2031,6 +2033,10 @@ The worker's rules, repeated in every brief:
   branch to the relay.
 - **The vendor guard before every push,** with no exceptions (see
   [The vendor guard](#the-vendor-guard)).
+- **Only in its own worktree.** A worker never edits or leaves files in the
+  start-up checkout at `C:\src\playlist_survivors`, and never needs
+  administrator rights: anything that does goes to the operator (see
+  [Lessons from setting up Cygnus](#lessons-from-setting-up-cygnus)).
 - **Stop and report** when the base does not build, a prerequisite is
   missing, or setup is incomplete. The executor decides what happens next.
   A base whose Unity build is broken gets a bead labeled `ci-fix` with
@@ -2042,106 +2048,178 @@ The worker's rules, repeated in every brief:
 
 ## Setting up Cygnus
 
-Cygnus was surveyed on 2026-10-27. Several things block agents until the
-operator fixes them, all in one sitting.
+Cygnus was surveyed on 2026-10-27 and set up on 2026-10-28, partly by the
+operator and partly by agent sessions in its Remote Control environment.
 
-What the survey found:
+Where it stands:
 
 - Windows 11 Home 25H2, build 26200. RTX 4070 Ti on driver 610.88; i7-12700F;
-  32 GB of DDR4 running at 2133 MHz (XMP off).
-- **One local drive, C:, with 39 GB free** of 930 GB, and no Dev Drive.
-  G: is Google Drive for desktop; it holds about 150 Synty packs as
-  `.unitypackage` files, some in different versions from the Mac's.
+  32 GB of DDR4 at 2133 MHz (XMP still off).
+- **C:** NTFS, about 225 GB free. **D:** a 120 GB Dev Drive (ReFS, label
+  `DevDrive`), a dynamically expanding VHDX at `C:\DevDrive\DevDrive.vhdx`,
+  about 107 GB free with the vendor sources on it.
 - One desktop display: a 3840×2160 BenQ PD3200U at 60 Hz and 200% scaling,
   without HDR.
-- **Unity: only 6000.5.8f1, and no license.** A batch-mode probe exits with
-  code 198, "No valid Unity Editor license found".
-- **No .NET SDK, no Python, no `uv`, no PIX.** Present: git, git-lfs, ffmpeg
-  9.0.1, Rust, Visual Studio 2022 17.14, the Windows SDK, Windows Performance
-  Toolkit, NVIDIA's FrameView SDK.
-- **`gh` is installed but not signed in.**
+- **Unity 6000.6.7f1** with Windows Build Support (IL2CPP and Mono),
+  licensed: a batch probe exits 0. No other editor is installed.
+- **Tools:** the .NET SDK 10.0.403, `uv` 0.13.6 (user scope), PIX 2603.25,
+  git, git-lfs, ffmpeg 9.0.1, Rust, Visual Studio 2022 17.14, the Windows
+  SDK, Windows Performance Toolkit, NVIDIA's FrameView SDK.
+- **Win32 long paths** on, and `core.longpaths` set.
+- **`gh`** signed in as `thurn`, and `gh auth setup-git` run, so HTTPS pushes
+  use its credentials. The private relay exists, and a first handoff went
+  through it (see [Lessons from setting up Cygnus](#lessons-from-setting-up-cygnus)).
+- **Power:** the High performance plan, standby never, Game Bar background
+  recording off, no screen-saver lock, Dynamic Lock off.
+- **The checkout** at `C:\src\playlist_survivors`, used only to start
+  sessions, tracks master. Workers never work in it (see
+  [A handoff](#a-handoff)).
 - Cygnus can't resolve the Mac by name. The Mac is `JARVIS` at 192.168.68.66,
   and Cygnus is at 192.168.68.57. Neither runs an SSH server.
-- The checkout at `C:\src\playlist_survivors` is 30 commits behind, with the
-  earlier audio spike's untracked folders in it.
-- No earlier 3D prototype and no Asset Store cache. KriptoFX, Magic Pig and
-  the Mac's `UnityAssets` project are not on Cygnus.
+- G: is Google Drive for desktop, with about 150 Synty packs, some in
+  different versions from the Mac's. The demo doesn't use them.
+
+Still open, in `operator-pending.md`: the AC display timeout (15 minutes, not
+never), whether D: comes back after a reboot, the "If you've been away"
+sign-in setting (unreadable without admin), and, optionally, XMP.
 
 ### The operator's steps
 
+For rebuilding the machine, or a second one. Every step that needs
+administrator rights is the operator's: agent sessions run unelevated and
+can't raise a UAC prompt (see
+[Lessons from setting up Cygnus](#lessons-from-setting-up-cygnus)).
+
 1. **Disk.** Free at least 150 GB on C:. Then create a 120 GB **Dev Drive**
-   as a virtual disk on C: (Settings, System, Storage, Disks & volumes,
-   Create Dev Drive), lettered D:.
+   in Settings (System, Storage, Advanced storage settings, Disks & volumes,
+   Create Dev Drive, Create new VHD), as a dynamically expanding VHDX,
+   lettered D:.
    - A Dev Drive is ReFS, where Windows copies by cloning blocks. That
      replaces the Mac's APFS clones, so the setup command's copies of the
      vendor folder, baked folder and warm `Library` are nearly free.
    - Defender's performance mode on a Dev Drive also speeds up Unity's
      imports.
-   - D: holds the vendor sources (about 6 GB), the per-machine cache (about
+   - D: holds the vendor sources (about 11 GB), the per-machine cache (about
      10 to 15 GB), the worker worktrees and captures. The Unity editor
      (about 10 GB) stays on C:.
+   - Check that D: comes back after a reboot. If it doesn't, a startup task
+     that attaches the VHDX (as SYSTEM) fixes it; creating that is the
+     operator's too.
 2. **Unity.** Sign in to Unity Hub and activate a license (Personal is
    enough). Install 6000.6.7f1 with Windows Build Support (IL2CPP).
-   6000.5.8f1 can be removed to save space.
 3. **Tools,** from an administrator PowerShell, with `winget`: the .NET 10
-   SDK, `uv` and PIX on Windows. Confirm the package ids with
-   `winget search` first.
+   SDK (`Microsoft.DotNet.SDK.10`) and PIX on Windows (`Microsoft.PIX`).
+   `uv` (`astral-sh.uv`) needs no admin; an agent can install it.
 4. **Long paths.** Turn on Win32 long paths (an administrator setting), and
    `git config --global core.longpaths true`. Unity's `Library` nests deep.
 5. **GitHub.** `gh auth login`, then `gh auth setup-git`, so git can push to
-   the relay. The relay repository itself is created from the Mac.
+   the relay over HTTPS. The relay repository is created from the Mac.
 6. **Power and display.** The High performance power plan; the display never
-   turns off and the PC never sleeps; no automatic lock. Turn off GeForce
-   Experience's instant replay and the Xbox Game Bar's background recording,
-   which use the GPU's encoder.
+   turns off and the PC never sleeps (`powercfg /change monitor-timeout-ac 0`
+   and `standby-timeout-ac 0`); no automatic lock (Settings, Accounts,
+   Sign-in options: Dynamic lock off and "If you've been away" set to Never;
+   no secure screen saver). Turn off GeForce Experience's instant replay and
+   the Xbox Game Bar's background recording, which use the GPU's encoder.
 7. **Memory.** Enable XMP in the firmware, so the DDR4 runs at its rated
    speed. This is optional; without it, CPU numbers are pessimistic (see
    [Where Cygnus flatters the target](#where-cygnus-flatters-the-target)).
-8. **File Sharing on the Mac,** for the asset copy below: System Settings,
-   General, Sharing, File Sharing. Then connect once from Cygnus's File
-   Explorer to `\\192.168.68.66`, so Windows remembers the credentials. File
-   Sharing can be turned off after the copy.
+8. **Assets.** Copy the zips and the song to Cygnus's Downloads (below).
 
 ### Moving the assets
 
-Only the packs the demo uses move: about 6 GB of the Mac's 27 GB of sources, not counting the asset project's rebuildable `Library`. Vendor
-files and copies of them never enter either repository.
+Only the packs the demo uses are placed: about 11 GB. Vendor files and copies
+of them never enter either repository, and the relay is no exception.
 
-- **Synty, 0.8 GB:** the POLYGON packs Fantasy Rivals, Knights, Fantasy
-  Characters, Fantasy Kingdom, Adventure, Elven Realm and Dark Fantasy, and
-  the ANIMATION packs Base Locomotion, Sword Combat, Idles and Goblin
-  Locomotion.
-- **From `~/unity_assets/UnityAssets`, about 5 GB:** `Assets/Hovl Studio`,
-  `Assets/KriptoFX`, `Assets/Magic Pig Games (Infinity PBR)`, the three sound
-  packs named in [Sound](#sound), `Assets/AmplifyImpostors` and
-  `Assets/MeshCombineStudio`, each with its `.meta` files, plus `Packages/`
-  and `ProjectSettings/`. Never `Library/` (21 GB, which Unity rebuilds).
-- **The song:** the *Action* MP3.
+They went over on 2026-10-28 as two zips the operator made on the Mac and
+copied to Cygnus's `Downloads`, plus the song:
 
-Cygnus's Google Drive already has most Synty packs, but not always in the
-Mac's versions. Copy the Mac's files anyway: the manifest's source hashes
-must match on both machines.
+- **`synty.zip`:** the Mac's whole `~/synty`, as `.unitypackage.gz` files.
+  Placed in `D:\vendor\synty`, still gzipped: the POLYGON packs Fantasy
+  Rivals, Knights, Fantasy Characters, Fantasy Kingdom, Adventure, Elven
+  Realm and Dark Fantasy, and the ANIMATION packs Base Locomotion, Sword
+  Combat, Idles and Goblin Locomotion.
+- **`Assets.zip`:** most of the asset project's `Assets/` folder (18.5 GB
+  unpacked, with many packs the demo doesn't use). Placed in
+  `D:\vendor\unity_assets\UnityAssets\Assets`, each folder with its sibling
+  `.meta`: `Hovl Studio`, `KriptoFX`, `Magic Pig Games (Infinity PBR)`,
+  `AmplifyImpostors`, `MeshCombineStudio`, and the four sound and music packs
+  named in [Sound](#sound).
+- **The song:** the *Action* MP3, in `D:\vendor\songs\action\`.
 
-The first worker (TD1's) does the copy over SMB with `robocopy` once the
-operator has finished the steps above:
+The asset project's `Packages/` and `ProjectSettings/` are not copied: they
+are a stock template plus URP and Shader Graph, with default tags and
+layers, and `demo3d/` has its own.
 
-```
-robocopy \\192.168.68.66\dthurn\synty D:\vendor\synty <pack files> /Z /MT:8
-robocopy "\\192.168.68.66\dthurn\unity_assets\UnityAssets\Assets\Hovl Studio" ^
-  "D:\vendor\unity_assets\UnityAssets\Assets\Hovl Studio" /E /Z /MT:8
-```
+Every placed file was checked against the Mac: each Synty package's and the
+song's SHA-256, and each asset folder's file count and total bytes. The
+manifest's source hashes therefore match on both machines.
 
-TD2 may want more packs later. It copies them the same way and adds them to
-the list above.
+TD2 may want more packs later. `Assets.zip` already holds many; others come
+over the same way (a zip from the Mac, checked against its hashes), and are
+added to the list above.
 
 ### What TD1 verifies
 
 TD1's worker checks the setup before anything else and records each result:
-the Unity probe exits 0 with licensing initialized; `dotnet --list-sdks`
-shows a 10.x SDK; `uv` and PIX are present; D: is a Dev Drive; a test branch
-pushes to and deletes from the relay; the power plan is High performance;
-and the memory speed. Anything missing goes to `operator-pending.md`, and
-the worker stops if it blocks the bead.
+the Unity probe (with an explicit `-projectPath`) exits 0 with licensing
+initialized; `dotnet --list-sdks` shows a 10.x SDK; `uv` and PIX are
+present; D: is ReFS (`Get-Volume`; `fsutil devdrv query` needs admin); the
+vendor sources are in place; a test branch pushes to and deletes from the
+relay; the power plan is High performance; and the memory speed. Anything
+missing goes to `operator-pending.md`, and the worker stops if it blocks the
+bead.
+
+### Lessons from setting up Cygnus
+
+From the survey, the setup and the first relay handoff (the Windows Delayed
+listening spike, landed as `73530c7`), 2026-10-27/28:
+
+- **Agent sessions on Cygnus can't elevate.** They run unelevated, and auto
+  mode refuses to launch an elevated script, register a startup task, or
+  change lock or other security settings, so no UAC prompt ever appears.
+  Everything that needs admin is the operator's, so no worker step may need
+  it: a worker that finds one stops and lists it.
+- **PowerShell and .NET write CRLF,** sometimes mixed with LF in one file.
+  The spike's handoff carried 96 such files. The repository's
+  `.gitattributes` (`* text=auto eol=lf`) now stores every text file with
+  LF whichever machine commits it.
+- **Windows paths break `/` parsing.** The spike's step 0 found 15 test
+  failures from one `rsplit('/')` on a path (`sim/src/content/load.rs`).
+  Code that handles paths uses the path APIs, never string splits.
+- **Floating point differs by an ulp or so.** The Windows CRT's `pow`,
+  `sin`, `cos` and `exp` differ from macOS's, which failed two bit-exact
+  tests. Determinism is per runtime and platform (the
+  [Timeline contract](#timeline-contract)), and no test compares floats bit
+  for bit across machines.
+- **Workers can't count on messaging the Mac.** In both Cygnus sessions the
+  `send_message` tool disappeared partway through. The executor reads each
+  worker with `list_events`, and a worker's final message is always its full
+  report.
+- **Unity reopens its last project** when batch mode gets no
+  `-projectPath`, re-creating it if it was deleted. Every Unity command
+  names its project.
+- **Zips made on the Mac carry `__MACOSX/` and `.DS_Store` entries** (half
+  of `Assets.zip`'s 220,000). Extract entry by entry with .NET's `ZipFile`,
+  skipping those, rather than with `Expand-Archive`, which can't filter and
+  is slow at that size. Use `-LiteralPath` for names with brackets.
+- **Untracked files in the start-up checkout block pulls** once the same
+  paths land in git. Workers work only in `D:\wt\<key>` worktrees, and the
+  checkout at `C:\src\playlist_survivors` stays clean.
+- **A new install isn't on the running shell's PATH.** After installing a
+  tool, refresh it with
+  `$env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')`.
+- **`robocopy` exits 0 to 7 on success;** only 8 and above are failures.
+- **The gate doesn't see Windows-only code.** The spike is its own Cargo
+  workspace inside `native/`, so the gate's check-fast found no crate
+  changed. The release stage's `cargo machete`, which scans all of
+  `native/`, then flagged `windows-core` as unused: the `windows` crate's
+  `implement` macro needs it, which machete can't see (hv-50g9.17). Code
+  that only builds on Windows is checked on Cygnus before its push, since
+  the Mac can't build it.
+- **Evidence written on Cygnus names its paths** (`C:\Users\dthurn\...`),
+  as the Mac's does (`/Users/dthurn/...`). That's acceptable; credentials
+  and vendor content are not, and the worker checks for both before
+  pushing.
 
 ## Unity Work by Agents
 
