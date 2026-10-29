@@ -25,14 +25,15 @@ namespace Demo2D.Runtime.Playback
         public Material spriteLit, spriteUnlit;
 
         /// <summary>
-        /// The open ground (until PX6's arena): a grid of tiles from the forest sheet, row 0 at
-        /// the bottom, its cell (0, 0) at <see cref="groundOrigin"/>; indices into
-        /// <see cref="groundSprites"/>, -1 for no overlay.
+        /// PX6's arena: the 2D kit and the tile sheet's catalogue (the layout is among
+        /// <see cref="layouts"/>), the props' textures by name, and the MainLev sheet's sliced tiles
+        /// with each one's cell (column, row from the sheet's top). The client composes the Tilemaps
+        /// from these at load, as the sim generates its placements, so nothing derived is baked.
         /// </summary>
-        public Sprite[] groundSprites;
-        public int groundW, groundH;
-        public Vector2Int groundOrigin;
-        public int[] groundBase, groundOverlay;
+        public TextAsset forestProps, forestTiles;
+        public Texture2D[] propSheets;
+        public Sprite[] sheetSprites;
+        public Vector2Int[] sheetCells;
 
         public static PlaybackData Load() =>
             Resources.Load<PlaybackData>(ResourcePath)

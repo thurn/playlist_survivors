@@ -73,7 +73,7 @@ namespace Demo2D.EditorTools.Assets
 
         /// <summary>
         /// The forest's grass with <paramref name="patches"/> patches of moss and dirt, w × h tiles
-        /// (the stills' ground, and the player's open ground until PX6's arena).
+        /// (PX3's stills' ground).
         /// </summary>
         public static ForestTiles.TestMap GroundMap(ForestTiles.Catalog catalog, int w, int h, int seed, int patches = 7)
         {

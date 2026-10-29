@@ -16,6 +16,10 @@ namespace Demo2D.Choreography
         public const string MeasuredAnnotationsFile = "clip-annotations.json";
         public const string RosterFile = "roster.json";
         public const string LevelFile = "action-level.json";
+        /// <summary>PX6's 2D kit: the props' footprints and sprites.</summary>
+        public const string PropsFile = "forest-props.json";
+        public const string TilesFile = "forest-tiles.json";
+        public const string ArenaLayout = "arena";
 
         /// <summary>The checkout's root: the first directory up from <paramref name="start"/> (or the
         /// working directory, then the assembly's) that holds songs/ and demo2d's data.</summary>
@@ -37,16 +41,23 @@ namespace Demo2D.Choreography
 
         public static string DataPath(string root, string file) => Path.Combine(root, DataDir, file);
 
-        /// <summary>The run's inputs on a layout (Data/&lt;layout&gt;-layout.json; "open-ground" until PX6's arena).</summary>
+        /// <summary>The run's inputs on a layout (Data/&lt;layout&gt;-layout.json): PX6's arena, or open ground.</summary>
         public static ChoreographyData LoadData(string root, string layout, bool placeholders = false)
         {
             string measured = DataPath(root, MeasuredAnnotationsFile);
-            string annotations = !placeholders && File.Exists(measured) ? measured : DataPath(root, PlaceholderAnnotationsFile);
-            return ChoreographyData.FromJson(
-                File.ReadAllText(annotations),
-                File.ReadAllText(DataPath(root, RosterFile)),
-                File.ReadAllText(DataPath(root, layout + "-layout.json")));
+            string annotations = File.ReadAllText(!placeholders && File.Exists(measured) ? measured : DataPath(root, PlaceholderAnnotationsFile));
+            string roster = File.ReadAllText(DataPath(root, RosterFile));
+            string layoutJson = File.ReadAllText(DataPath(root, layout + "-layout.json"));
+            return JsonValue.Parse(layoutJson).Has("areas")
+                ? ForestArena.Parse(layoutJson, File.ReadAllText(DataPath(root, PropsFile))).Data(annotations, roster)
+                : ChoreographyData.FromJson(annotations, roster, layoutJson);
         }
+
+        /// <summary>The arena (Data/&lt;layout&gt;-layout.json with the 2D kit).</summary>
+        public static ForestArena LoadArena(string root, string layout = ArenaLayout) =>
+            ForestArena.Parse(File.ReadAllText(DataPath(root, layout + "-layout.json")), File.ReadAllText(DataPath(root, PropsFile)));
+
+        public static TileSheet LoadTileSheet(string root) => TileSheet.Parse(File.ReadAllText(DataPath(root, TilesFile)));
 
         public static SongMap LoadSong(string root, string song) =>
             SongMap.Parse(File.ReadAllText(Path.Combine(root, "songs", song, "songmap.json")));

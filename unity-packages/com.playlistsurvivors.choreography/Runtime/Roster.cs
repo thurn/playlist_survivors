@@ -28,6 +28,7 @@ namespace PS.Choreography
         public float Bars;            // beams: how long they sweep
         public int Projectile = -1;   // spells that fly
         public int Clip = -1;         // hero combos
+        public float AdvanceM;        // hero combos: the least the hero moves over the clip (its root motion when larger)
         public int Effect = -1, Sound = -1;
     }
 
@@ -150,6 +151,7 @@ namespace PS.Choreography
                     Strength = m["strength"].AsFloat(0.5f),
                     RangeM = m["rangeM"].AsFloat(10f),
                     Bars = m["bars"].AsFloat(1f),
+                    AdvanceM = m["advanceM"].AsFloat(0f),
                     Effect = Catalog.Effect(m["effect"].AsString()),
                     Sound = Catalog.Sound(m["sound"].AsString()),
                 };

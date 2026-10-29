@@ -728,7 +728,7 @@ namespace PS.Choreography
                 Vector2 dir = DenseDirection(from, roster.HeroReachM * 1.5f, out bool any);
                 if (!goalReached) { dir = nav != null ? GoalHeading(from, out _) : Vector2.Normalize(goal.Center - from); any = true; }   // cut a way toward the goal
                 if (!any) dir = Easing.Dir(fFrom);
-                Vector2 to = from + dir * clip.RootMotionM;
+                Vector2 to = from + dir * Math.Max(clip.RootMotionM, mv.AdvanceM);
                 if (nav != null) to = WallStep(from, to, roster.HeroRadius);
                 to = HeroPath(from, to);
                 if (goalReached) to = ClampToGoal(to);

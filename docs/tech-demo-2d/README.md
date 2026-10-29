@@ -220,17 +220,32 @@ Character frames are baked, not imported as is:
 
 ### The arena
 
-- **The 2D layout** reuses demo3d's `LayoutArea` shapes (clearings, paths,
-  edges, forest fill, landmarks) and adds a ground material per area (grass,
-  moss, dirt, stone path), cliffs (a capsule with a facing), water (a stream
-  capsule) and bridges.
-- **The generator** (an editor task, output in the gitignored `Baked/`)
-  writes ground, cliff and water Tilemaps with autotiled edges from the
-  `MainLev` sheet's blob sets. It scatters trees, bushes, stumps and logs
-  from `Decorative` and the swaying trees by the layout's scatter rules, and
-  emits each prop's footprint for the sim's obstacle map.
+- **The 2D layout** (`Data/arena-layout.json`) reuses demo3d's `LayoutArea`
+  shapes (clearings, paths, edges, forest fill, landmarks as goals) and adds
+  a ground material per area (grass, dark grass, moss, dirt, stone), cliffs
+  (whole-metre rectangles facing south: the sheet's plateau block draws no
+  other face), water (a stream in a sunken channel, also a rectangle: the
+  sheet's channel block bends no corners) and bridges across it.
+- **The 2D kit** (`Data/forest-props.json`) is both the footprint table and
+  the props' sprite catalogue: `Decorative`'s trees, stumps, fallen branches
+  and plants, and the seven swaying trees. Trunks, stumps and branches block;
+  plants never do.
+- **The generator** (`ForestArena`, `ArenaTiles`, engine-free) runs at load
+  in the player, as the sim's placement list does, rather than as an editor
+  bake: the Tilemaps can't go stale against the layout the sim navigates
+  (PX6 chose this; only the vendor textures and the sheet's tiles are baked
+  into PlaybackData). It writes a base grass layer, one corner-autotiled
+  overlay per ground material (the `clear-on-*` sets, whose transparent edges
+  layer), the cliffs and the channel from their blocks, and the bridges. It
+  scatters the kit by the layout's rules, drops scatter in water or on a
+  cliff, and adds each cliff and each stretch of channel between bridges to
+  the placement list as a blocking polygon.
 - **The sim's navigation** (flow fields, goals, walls) is demo3d's, fed by
-  the 2D layout's obstacles.
+  the arena's placement list.
+- **Props draw in the crowd's order:** each prop's feet join the sprites'
+  back-to-front ranking, swaying trees step their frames with the song time,
+  and a prop at least 2.5 m tall fades to 45% where a character standing
+  behind it would be hidden.
 
 ### Effects and lights
 

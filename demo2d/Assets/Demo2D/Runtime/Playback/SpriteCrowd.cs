@@ -19,7 +19,8 @@ namespace Demo2D.Runtime.Playback
     /// The draw order is explicit: each frame ranks the sprites by their feet's texel row, then
     /// by entity, into their sorting order. Snapped feet often share a row, and the renderer
     /// breaks such ties by its own registration order, which pooling changes, so a seek and a
-    /// run from the start would otherwise overlap a crowd differently.
+    /// run from the start would otherwise overlap a crowd differently. The arena's props (PX6) join
+    /// the same ranking, so a monster walking behind a tree is drawn behind it.
     /// </summary>
     public sealed class SpriteCrowd : IDisposable
     {
@@ -68,8 +69,8 @@ namespace Demo2D.Runtime.Playback
             _boltShadow = Shadow(0.2f);
         }
 
-        /// <summary>Draws <paramref name="entities"/> (sorted by id) at song time t.</summary>
-        public void Draw(List<int> entities, double t)
+        /// <summary>Draws <paramref name="entities"/> (sorted by id) at song time t, ranked with the visible <paramref name="props"/>.</summary>
+        public void Draw(List<int> entities, double t, ArenaProps props = null)
         {
             _used = 0;
             foreach (int e in entities)
@@ -86,7 +87,7 @@ namespace Demo2D.Runtime.Playback
                     Array.Resize(ref _sortKeys, i * 2);
                     Array.Resize(ref _sortIndex, i * 2);
                 }
-                // Back to front: higher rows first, then by entity (ids are below 2^20).
+                // Back to front: higher rows first, then by entity (ids are below 2^19; props rank above them).
                 _sortKeys[i] = -(long)Mathf.RoundToInt(feet.y * CharacterAtlas.PixelsPerMetre) << 20 | (long)e;
                 _sortIndex[i] = i;
                 body.gameObject.SetActive(true);
@@ -113,8 +114,26 @@ namespace Demo2D.Runtime.Playback
                 shadow.sprite = _shadowOf[info.Kind == EntityKind.Hero ? _shadowOf.Length - 1 : info.Type];
                 shadow.color = new Color(1, 1, 1, st.Alpha);
             }
-            Array.Sort(_sortKeys, _sortIndex, 0, _used);
-            for (int rank = 0; rank < _used; rank++) _bodies[_sortIndex[rank]].sortingOrder = rank;
+            // Props rank among the bodies by their feet's row too (after any body on the same row).
+            int ranked = _used + (props?.Visible.Count ?? 0);
+            if (ranked > _sortKeys.Length)
+            {
+                Array.Resize(ref _sortKeys, ranked * 2);
+                Array.Resize(ref _sortIndex, ranked * 2);
+            }
+            for (int j = _used; j < ranked; j++)
+            {
+                int prop = props.Visible[j - _used];
+                _sortKeys[j] = -(long)props.SortRow(prop) << 20 | (1L << 19) + prop;
+                _sortIndex[j] = j;
+            }
+            Array.Sort(_sortKeys, _sortIndex, 0, ranked);
+            for (int rank = 0; rank < ranked; rank++)
+            {
+                int k = _sortIndex[rank];
+                if (k < _used) _bodies[k].sortingOrder = rank;
+                else props.Renderer(props.Visible[k - _used]).sortingOrder = rank;
+            }
             for (int i = _used; i < _bodies.Count; i++)
             {
                 if (!_bodies[i].gameObject.activeSelf) break;

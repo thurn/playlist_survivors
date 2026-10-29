@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Demo2D.Runtime.Playback;
@@ -11,7 +10,8 @@ namespace Demo2D.EditorTools.Assets
     /// <summary>
     /// Bakes the player's PlaybackData index into Assets/Baked/Playback/Resources/ (PX5): the
     /// baked song and music, demo2d's choreography data, PX3's atlases, the shaders and materials
-    /// the client creates at runtime (so the build keeps them), and the open ground's tiles.
+    /// the client creates at runtime (so the build keeps them), and the arena's vendor textures and
+    /// tiles (PX6; the client composes the arena from its JSON at load, so no bake of it goes stale).
     /// Needs `demo2d setup` (the song); bakes the atlases (SpriteBaker) when they're missing.
     /// Every build runs it.
     /// </summary>
@@ -23,14 +23,11 @@ namespace Demo2D.EditorTools.Assets
         public const string UpscalePath = "Assets/Demo2D/Runtime/Shaders/SharpUpscale.shader";
         const string SpriteBakerSource = "Assets/Demo2D/Editor/Assets/SpriteBaker.cs";
         public const string SpriteUnlitPath ="Packages/com.unity.render-pipelines.universal/Runtime/Materials/Sprite-Unlit-Default.mat";
-        /// <summary>The open ground's extent in metres (tiles): the open-ground layout's goals with room around them.</summary>
-        public static readonly RectInt GroundRect = new RectInt(-48, -84, 96, 120);
+        const string ForestDir = "Assets/Vendor/RPGW_AncientForest";
 
         public static void Bake()
         {
             Directory.CreateDirectory(Dir);
-            T Load<T>(string path) where T : UnityEngine.Object =>
-                AssetDatabase.LoadAssetAtPath<T>(path) ?? throw new Exception("PlaybackBaker: missing " + path);
 
             // Setup writes action.ogg, or action.wav where ffmpeg has no libvorbis (the Mac).
             var musicPath = File.Exists(AudioDir + "/action.ogg") ? AudioDir + "/action.ogg" : AudioDir + "/action.wav";
@@ -75,46 +72,31 @@ namespace Demo2D.EditorTools.Assets
             data.upscale = Load<Shader>(UpscalePath);
             data.spriteLit = Load<Material>(ProjectSetup.SpriteLitPath);
             data.spriteUnlit = Load<Material>(SpriteUnlitPath);
-            BakeGround(data);
+            BakeArena(data);
 
             var path = Dir + "/" + PlaybackData.ResourcePath + ".asset";
             AssetDatabase.DeleteAsset(path);
             AssetDatabase.CreateAsset(data, path);
             AssetDatabase.SaveAssets();
             Debug.Log($"PlaybackBaker: {data.atlases.Length} atlases, {data.layouts.Length} layouts, " +
-                      $"ground {data.groundW}x{data.groundH} of {data.groundSprites.Length} tiles, music {(music != null ? "yes" : "MISSING")}");
+                      $"{data.propSheets.Length} prop sheets, {data.sheetSprites.Length} sheet tiles, music {(music != null ? "yes" : "MISSING")}");
         }
 
-        /// <summary>PX3's forest grass with moss and dirt over <see cref="GroundRect"/>, as tile indices.</summary>
-        static void BakeGround(PlaybackData data)
+        static T Load<T>(string path) where T : UnityEngine.Object =>
+            AssetDatabase.LoadAssetAtPath<T>(path) ?? throw new Exception("PlaybackBaker: missing " + path);
+
+        /// <summary>The arena's inputs: the 2D kit, the sheet's catalogue and tiles, and the props' textures.</summary>
+        static void BakeArena(PlaybackData data)
         {
+            data.forestProps = Load<TextAsset>(CharacterPacks.DataDir + "/forest-props.json");
+            data.forestTiles = Load<TextAsset>(ForestTiles.CatalogPath);
             var catalog = ForestTiles.Load();
-            var r = GroundRect;
-            int patches = Mathf.RoundToInt(7f * r.width * r.height / (30 * 17)); // the stills' density
-            var map = SpriteStills.GroundMap(catalog, r.width, r.height, 3, patches);
-            var sheet = ForestTiles.Sprites(catalog.Sheet, catalog.TilePx);
-            var cells = new List<Vector2Int>();
-            var index = new Dictionary<Vector2Int, int>();
-            int Index(Vector2Int cell)
-            {
-                if (index.TryGetValue(cell, out int i)) return i;
-                if (!sheet.ContainsKey(cell)) throw new Exception($"PlaybackBaker: the sheet has no tile at {cell}");
-                cells.Add(cell);
-                return index[cell] = cells.Count - 1;
-            }
-            data.groundW = r.width;
-            data.groundH = r.height;
-            data.groundOrigin = r.position;
-            data.groundBase = new int[r.width * r.height];
-            data.groundOverlay = new int[r.width * r.height];
-            for (int row = 0; row < r.height; row++)
-            for (int x = 0; x < r.width; x++)
-            {
-                int i = (r.height - 1 - row) * r.width + x; // the map's rows run from the top
-                data.groundBase[i] = Index(map.Base);
-                data.groundOverlay[i] = map.Overlay[x, row] is Vector2Int cell ? Index(cell) : -1;
-            }
-            data.groundSprites = cells.Select(c => sheet[c]).ToArray();
+            var sheet = ForestTiles.Sprites(catalog.Sheet, catalog.TilePx).OrderBy(kv => kv.Key.y).ThenBy(kv => kv.Key.x).ToList();
+            data.sheetCells = sheet.Select(kv => kv.Key).ToArray();
+            data.sheetSprites = sheet.Select(kv => kv.Value).ToArray();
+            data.propSheets = new[] { catalog.Props }
+                .Concat(Directory.GetFiles(ForestDir + "/Animated", "*.png").OrderBy(p => p, StringComparer.Ordinal))
+                .Select(p => Load<Texture2D>(p.Replace('\\', '/'))).ToArray();
         }
     }
 }

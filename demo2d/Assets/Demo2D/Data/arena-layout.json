@@ -1,0 +1,94 @@
+{
+  "note": [
+    "The Ancient Forest arena (PX6), in demo3d's ArenaLayout format (its Data/arena-layout.json's note documents areas, goals, props and scatter) plus a 2D extension; ForestArena reads both. Ground (x, y) in metres, one tile each, the arena centred on the origin and y pointing north (up the screen). Props are forest-props.json's ids, which never rotate or scale: scatter them with scale [1, 1] and yawJitterDeg 0.",
+    "ground: the tile ground. base names the sheet's plain grass (forest-tiles.json's base), drawn everywhere; materials, in drawing order, name a forest-tiles.json transition set whose outer terrain is the material and inner is clear, so each draws as a corner-autotiled overlay with transparent edges. An area's ground (a material, or base) paints its shape, later areas over earlier ones, every edge pushed in or out by up to wobbleM of seeded noise; the forest fill's ground is the default under all of them. Water keeps base ground within a tile of it, matching the channel's own banks.",
+    "cliffs: raised rock ledges, rect [x0, y0, x1, y1] in whole metres (at least 2 wide and 4 tall), drawn from the sheet's plateau block with its rock face on the facing side (south only: the sheet draws no other face). The whole rect blocks.",
+    "water: streams in a sunken channel, rect [x0, y0, x1, y1] (at least 4 tall), drawn with the channel block: a two-tile rock bank on the north, water, a rim on the south, caps at both ends. bridges: each bridge's deck, 2 m wide from x, crosses the channel north to south. The channel blocks apart from its decks; scatter never lands in water or on a cliff.",
+    "The goals are the level script's (PX4's open-ground names): the hero walks camp glade, old stump, moss clearing, over the stone bridge, to the cliff ledge's foot and into the great clearing for the climax."
+  ],
+  "name": "arena",
+  "seed": 11,
+  "size": [120, 120],
+  "decorationDensity": 1.0,
+  "edgeWidthM": [3, 6],
+  "heroStart": [0, -34],
+  "ground": {
+    "base": "grass",
+    "wobbleM": 1.2,
+    "materials": [
+      { "name": "dark-grass", "set": "clear-on-dark-grass" },
+      { "name": "moss", "set": "clear-on-moss" },
+      { "name": "dirt", "set": "clear-on-dirt" },
+      { "name": "stone", "set": "clear-on-stone" }
+    ]
+  },
+  "props": {
+    "forest-trees": { "forest/tree1": 3, "forest/tree2": 3, "forest/tree3": 3, "forest/old-tree1": 1.5, "forest/old-tree2": 1.5, "forest/old-tree3": 1.5,
+                      "forest/dead-tree-a": 0.6, "forest/dead-tree-b": 0.6, "forest/dead-tree-c": 0.6, "forest/big-tree": 0.2 },
+    "forest-deadwood": { "forest/stump": 1, "forest/stump-roots": 1, "forest/fallen-branches-a": 1, "forest/fallen-branches-b": 1 },
+    "undergrowth": { "forest/umbrella-1": 1, "forest/umbrella-2": 1, "forest/umbrella-3": 1, "forest/umbrella-4": 1, "forest/umbrella-5": 1, "forest/umbrella-6": 1,
+                     "forest/umbrella-7": 1, "forest/umbrella-8": 1, "forest/umbrella-9": 1, "forest/umbrella-10": 1, "forest/umbrella-11": 1, "forest/umbrella-12": 1,
+                     "forest/umbrella-13": 1, "forest/umbrella-14": 1, "forest/umbrella-15": 1, "forest/umbrella-16": 1, "forest/umbrella-17": 1, "forest/umbrella-18": 1,
+                     "forest/leafy-1": 1, "forest/leafy-2": 1, "forest/leafy-3": 1, "forest/leafy-4": 1, "forest/leafy-5": 1, "forest/leafy-6": 1,
+                     "forest/leafy-7": 1, "forest/leafy-8": 1, "forest/leafy-9": 1,
+                     "forest/clump-1": 1, "forest/clump-2": 1, "forest/clump-3": 1, "forest/clump-4": 1, "forest/clump-5": 1, "forest/clump-6": 1,
+                     "forest/clump-7": 1, "forest/clump-8": 1, "forest/clump-9": 1, "forest/clump-10": 1, "forest/clump-11": 1, "forest/clump-12": 1,
+                     "forest/clump-13": 1, "forest/clump-14": 1, "forest/clump-15": 1, "forest/clump-16": 1, "forest/clump-17": 1, "forest/clump-18": 1,
+                     "forest/clump-19": 1, "forest/clump-20": 1, "forest/clump-21": 1, "forest/clump-22": 1, "forest/clump-23": 1, "forest/clump-24": 1,
+                     "forest/clump-25": 1, "forest/clump-26": 1, "forest/clump-27": 1, "forest/clump-28": 1, "forest/clump-29": 1, "forest/clump-30": 1 },
+    "tufts": { "forest/grass-1": 1, "forest/grass-2": 1, "forest/grass-3": 1, "forest/grass-4": 1, "forest/grass-5": 1, "forest/grass-6": 1, "forest/grass-7": 1,
+               "forest/grass-8": 1, "forest/grass-9": 1, "forest/grass-10": 1, "forest/grass-11": 1, "forest/grass-12": 1, "forest/grass-13": 1, "forest/grass-14": 1,
+               "forest/grass-15": 1 },
+    "flowers": { "forest/flowers-1": 1, "forest/flowers-2": 1, "forest/flowers-3": 1, "forest/flowers-4": 1, "forest/flowers-5": 1, "forest/flowers-6": 1,
+                 "forest/flowers-7": 1, "forest/flowers-8": 1, "forest/flowers-9": 1, "forest/flowers-10": 1, "forest/flowers-11": 1, "forest/flowers-12": 1 }
+  },
+  "scatter": {
+    "forest": [
+      { "props": "forest-trees", "spacingM": 4.2, "scale": [1, 1], "yawJitterDeg": 0 },
+      { "props": "forest-deadwood", "spacingM": 15, "scale": [1, 1], "yawJitterDeg": 0, "chance": 0.5 },
+      { "props": "undergrowth", "dressing": true, "spacingM": 2.6, "scale": [1, 1], "yawJitterDeg": 0, "chance": 0.7 }
+    ],
+    "edge": [
+      { "props": "undergrowth", "spacingM": 2.4, "scale": [1, 1], "yawJitterDeg": 0, "chance": 0.75 },
+      { "props": "tufts", "dressing": true, "spacingM": 2.2, "scale": [1, 1], "yawJitterDeg": 0, "chance": 0.5 }
+    ],
+    "path": [
+      { "props": "tufts", "spacingM": 3.4, "scale": [1, 1], "yawJitterDeg": 0, "chance": 0.35 }
+    ],
+    "clearing": [
+      { "props": "tufts", "spacingM": 3.0, "scale": [1, 1], "yawJitterDeg": 0, "chance": 0.45 },
+      { "props": "flowers", "dressing": true, "spacingM": 4.0, "scale": [1, 1], "yawJitterDeg": 0, "chance": 0.35 }
+    ]
+  },
+  "areas": [
+    { "type": "clearing", "name": "camp", "center": [0, -32], "radius": 9, "ground": "base" },
+    { "type": "landmark", "name": "stump", "at": [-4.5, -27], "pieces": [{ "prop": "forest/stump-roots", "at": [0, 0] }], "clearM": 0 },
+    { "type": "path", "from": [0, -30], "to": [3, -22], "width": 6, "ground": "dirt" },
+    { "type": "clearing", "name": "moss", "center": [3, -22], "radius": 5, "ground": "moss" },
+    { "type": "path", "from": [3, -22], "to": [4, -10], "width": 5, "ground": "dirt" },
+    { "type": "clearing", "name": "bridge-head", "center": [4, -10], "radius": 4.5, "ground": "stone" },
+    { "type": "clearing", "name": "ledge-foot", "center": [6, -5], "radius": 5, "ground": "dirt" },
+    { "type": "path", "from": [6, -5], "to": [-7, 7], "width": 7, "ground": "dirt" },
+    { "type": "clearing", "name": "great", "center": [-7, 7], "radius": 16, "ground": "base" },
+    { "type": "landmark", "name": "great-tree", "at": [-19, 18], "pieces": [{ "prop": "forest/great-dead-tree", "at": [0, 0] }], "clearM": 0 },
+    { "type": "landmark", "name": "camp-glade", "at": [0, -34], "goal": { "at": [0, -34], "radius": 3 }, "clearM": 0 },
+    { "type": "landmark", "name": "old-stump", "at": [0, -28.5], "goal": { "at": [0, -28.5], "radius": 4 }, "clearM": 0 },
+    { "type": "landmark", "name": "moss-clearing", "at": [3, -22], "goal": { "at": [3, -22], "radius": 4 }, "clearM": 0 },
+    { "type": "landmark", "name": "stone-bridge", "at": [4, -11], "goal": { "at": [4, -11], "radius": 3.5 }, "clearM": 0 },
+    { "type": "landmark", "name": "cliff-ledge", "at": [5, -5], "goal": { "at": [5, -5], "radius": 3 }, "clearM": 0 },
+    { "type": "landmark", "name": "great-clearing", "at": [-7, 7], "goal": { "at": [-7, 7], "radius": 8 }, "clearM": 0 },
+    { "type": "forest", "fill": true, "ground": "dark-grass" }
+  ],
+  "cliffs": [
+    { "name": "ledge", "rect": [9, -3, 21, 4], "facing": "south" }
+  ],
+  "water": [
+    { "name": "stream", "rect": [-10, -19, 16, -14], "bridges": [3] }
+  ],
+  "shots": [
+    { "name": "overview", "at": [0, 0], "viewWidthM": 120 },
+    { "name": "stone-bridge", "at": [4, -11], "viewWidthM": 34 },
+    { "name": "cliff-ledge", "at": [10, -1], "viewWidthM": 34 },
+    { "name": "great-clearing", "at": [-6, 7], "viewWidthM": 40.5 }
+  ]
+}

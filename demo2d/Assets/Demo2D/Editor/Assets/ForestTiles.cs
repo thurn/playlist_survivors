@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Demo2D.Choreography;
 using PS.Choreography;
 using UnityEditor;
 using UnityEngine;
@@ -59,27 +60,12 @@ namespace Demo2D.EditorTools.Assets
         }
 
         // Corner patterns: a bit per tile corner that lies in the inner terrain.
-        public const int TL = 1, TR = 2, BL = 4, BR = 8;
-        public static readonly int[] Diagonals = { TL | BR, TR | BL };
+        public const int TL = TileSheet.TL, TR = TileSheet.TR, BL = TileSheet.BL, BR = TileSheet.BR;
+        public static readonly int[] Diagonals = TileSheet.Diagonals;
 
-        /// <summary>
-        /// The tiles of one transition set by corner pattern. In the template at column 0 a corner
-        /// is inner when it lies strictly inside the 5×5; in the template at column 5, when it doesn't.
-        /// </summary>
-        public static Dictionary<int, List<Vector2Int>> CornerTiles(Vector2Int set)
-        {
-            var tiles = new Dictionary<int, List<Vector2Int>>();
-            for (int t = 0; t < 2; t++)
-            for (int j = 0; j < 5; j++)
-            for (int i = 0; i < 5; i++)
-            {
-                bool Inner(int vx, int vy) => (vx >= 1 && vx <= 4 && vy >= 1 && vy <= 4) == (t == 0);
-                int key = (Inner(i, j) ? TL : 0) | (Inner(i + 1, j) ? TR : 0) | (Inner(i, j + 1) ? BL : 0) | (Inner(i + 1, j + 1) ? BR : 0);
-                if (!tiles.TryGetValue(key, out var list)) tiles[key] = list = new List<Vector2Int>();
-                list.Add(new Vector2Int(set.x + 5 * t + i, set.y + 2 + j));
-            }
-            return tiles;
-        }
+        /// <summary>The tiles of one transition set by corner pattern (<see cref="TileSheet.CornerTiles((int, int))"/>).</summary>
+        public static Dictionary<int, List<Vector2Int>> CornerTiles(Vector2Int set) =>
+            TileSheet.CornerTiles((set.x, set.y)).ToDictionary(kv => kv.Key, kv => kv.Value.Select(c => new Vector2Int(c.col, c.row)).ToList());
 
         /// <summary>A map of sheet tiles, rows from the top: a base tile everywhere, overlay tiles where set.</summary>
         public sealed class TestMap

@@ -4,13 +4,12 @@ using Demo2D.Choreography;
 using PS.Choreography;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
-using UnityEngine.Tilemaps;
 
 namespace Demo2D.Runtime.Playback
 {
     /// <summary>
     /// The song's playback (PX5), apart from its clock: builds the timeline from the baked
-    /// PlaybackData, then draws any song time on request (<see cref="Frame"/>): the open ground,
+    /// PlaybackData, then draws any song time on request (<see cref="Frame"/>): the arena (PX6),
     /// the sprite crowd, the camera's follow, punch and shake, and the pixel pipeline. Everything
     /// it draws is a function of the time, so the player (DemoMain, which owns the clock) and the
     /// seek test share it.
@@ -21,6 +20,8 @@ namespace Demo2D.Runtime.Playback
         public readonly SpriteEvaluator Evaluator;
         public readonly PixelPipeline Pipeline;
         readonly SpriteCrowd _crowd;
+        readonly ArenaProps _props;
+        readonly List<Vector2> _feet = new List<Vector2>();
         readonly CameraFeel _feel;
         readonly GameObject _root;
         readonly Light2D _heroLight;
@@ -30,12 +31,16 @@ namespace Demo2D.Runtime.Playback
         double _lastT = double.NegativeInfinity;
         readonly List<UnityEngine.Object> _made = new List<UnityEngine.Object>();
 
+        /// <summary>Props this far beyond the view still draw (the camera's punch and shake).</summary>
+        const float PropMarginM = 2f;
+
         public bool Feel = true;
         public double BuildSeconds { get; }
         public int OnScreenAlive { get; private set; }
         public int OnScreenDying { get; private set; }
         public int Drawn => _crowd.Drawn;
         public float ViewWidth { get; private set; }
+        public readonly ForestArena Arena;
 
         public SongPlayback(PlaybackData data, string zoom, Transform parent)
         {
@@ -43,7 +48,8 @@ namespace Demo2D.Runtime.Playback
             _root.transform.SetParent(parent, false);
             var level = LevelScript.Parse(data.level.text);
             var layout = data.Layout(level.Layout) ?? throw new InvalidOperationException("SongPlayback: no layout " + level.Layout);
-            var choreo = ChoreographyData.FromJson(data.annotations.text, data.roster.text, layout.text);
+            Arena = ForestArena.Parse(layout.text, data.forestProps.text);
+            var choreo = Arena.Data(data.annotations.text, data.roster.text);
             var started = Time.realtimeSinceStartupAsDouble;
             Timeline = Choreographer.Run(SongMap.Parse(data.songMap.text), level, choreo);
             BuildSeconds = Time.realtimeSinceStartupAsDouble - started;
@@ -77,7 +83,8 @@ namespace Demo2D.Runtime.Playback
             float widest = 0;
             foreach (var f in Timeline.Framing) widest = Mathf.Max(widest, f.ViewWidth);
             Pipeline = new PixelPipeline(data.upscale, widest, zoom, _root.transform);
-            BuildGround(data);
+            ArenaGround.Build(Arena, data, _root.transform, _made);
+            _props = new ArenaProps(Arena, data.propSheets, data.spriteLit, _root.transform);
 
             // A warm light on the hero, so he reads in the night crowd (PX3's lineup; PX7 owns the lighting).
             _heroLight = new GameObject("Hero Light").AddComponent<Light2D>();
@@ -108,12 +115,22 @@ namespace Demo2D.Runtime.Playback
         public void Frame(double t, int outW, int outH)
         {
             Activate(t);
-            _crowd.Draw(_active, t);
-
             var framing = Timeline.FramingAt(Math.Max(0, t));
             float punch = Feel ? _feel.Punch(t) : 1f;
             var centre = new Vector2(framing.Focus.X, framing.Focus.Y) + (Feel ? _feel.Shake(t) : Vector2.zero);
             ViewWidth = framing.ViewWidth;
+
+            // The props on screen (with a margin for the punch and the shake), faded over the characters behind them.
+            float w = framing.ViewWidth * Mathf.Max(1f, punch) + 2 * PropMarginM, h = w * 9 / 16 + 2 * PropMarginM;
+            _feet.Clear();
+            foreach (int e in _active)
+                if (Timeline.Entities[e].Kind != EntityKind.Projectile)
+                {
+                    var p = Timeline.PositionAt(e, t);
+                    _feet.Add(new Vector2(p.X, p.Y));
+                }
+            _props.Draw(t, new Rect(centre.x - w / 2, centre.y - h / 2, w, h), _feet);
+            _crowd.Draw(_active, t, _props);
             Pipeline.Frame(centre, framing.ViewWidth * punch, framing.ViewWidth, outW, outH);
 
             var hero = Timeline.PositionAt(0, t);
@@ -160,41 +177,10 @@ namespace Demo2D.Runtime.Playback
             if (added) _active.Sort();
         }
 
-        /// <summary>The open ground (PX3's forest grass with moss and dirt), until PX6's arena.</summary>
-        void BuildGround(PlaybackData data)
-        {
-            var root = new GameObject("Ground");
-            root.transform.SetParent(_root.transform, false);
-            root.transform.localPosition = new Vector3(data.groundOrigin.x, data.groundOrigin.y, 0);
-            root.AddComponent<Grid>().cellSize = Vector3.one;
-            var tiles = new TileBase[data.groundSprites.Length];
-            for (int i = 0; i < tiles.Length; i++)
-            {
-                var tile = ScriptableObject.CreateInstance<Tile>();
-                tile.sprite = data.groundSprites[i];
-                tiles[i] = tile;
-                _made.Add(tile);
-            }
-            void Layer(string name, int order, int[] cells)
-            {
-                var go = new GameObject(name);
-                go.transform.SetParent(root.transform, false);
-                var map = go.AddComponent<Tilemap>();
-                var r = go.AddComponent<TilemapRenderer>();
-                r.sharedMaterial = data.spriteLit;
-                r.sortingOrder = order;
-                r.mode = TilemapRenderer.Mode.Chunk;
-                var block = new TileBase[cells.Length];
-                for (int i = 0; i < cells.Length; i++) block[i] = cells[i] >= 0 ? tiles[cells[i]] : null;
-                map.SetTilesBlock(new BoundsInt(0, 0, 0, data.groundW, data.groundH, 1), block);
-            }
-            Layer("Base", -1001, data.groundBase);
-            Layer("Overlay", -1000, data.groundOverlay);
-        }
-
         public void Dispose()
         {
             _crowd.Dispose();
+            _props.Dispose();
             Pipeline.Dispose();
             Destroy(_root);
             foreach (var o in _made) Destroy(o);

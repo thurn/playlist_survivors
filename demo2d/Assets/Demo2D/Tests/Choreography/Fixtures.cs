@@ -15,6 +15,7 @@ namespace Demo2D.Choreography.Tests
         static LevelScript level;
         static SongMap song;
         static Timeline songTimeline;
+        static ForestArena arena;
 
         /// <summary>Unity's editor runs Mono, which is slower than .NET; timing bounds loosen there.</summary>
         public static bool OnMono => Type.GetType("Mono.Runtime") != null;
@@ -22,6 +23,8 @@ namespace Demo2D.Choreography.Tests
         public static string Root => root ?? (root = ChoreographyFiles.FindRepoRoot());
         public static ChoreographyData Data => data ?? (data = ChoreographyFiles.LoadData(Root, Level.Layout));
         public static LevelScript Level => level ?? (level = ChoreographyFiles.LoadLevel(Root));
+        /// <summary>PX6's arena, the level script's layout.</summary>
+        public static ForestArena Arena => arena ?? (arena = ChoreographyFiles.LoadArena(Root, Level.Layout));
         public static SongMap Song => song ?? (song = ChoreographyFiles.LoadSong(Root, Level.Song));
 
         public static Timeline SongTimeline => songTimeline ?? (songTimeline = BuildSong());
