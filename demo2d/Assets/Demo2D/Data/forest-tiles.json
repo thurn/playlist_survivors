@@ -1,0 +1,27 @@
+{
+  "note": "Where things are on RPGW_AncientForest's MainLev sheet (Sliced/MainLev.png: 54x49 tiles of 32 px, sliced one sprite per tile), in tiles from the sheet's top-left corner (PX2). 'transitions' are its 14 ground transition sets. Each is 10x7 tiles: a top row of 2x2 extras (a one-vertex patch, diagonal pieces, the reverse patch), then two 5x5 templates from row 2: at column 0 the 'inner' terrain filling the template's inside with the 'outer' terrain as its ring, at column 5 the reverse. Each template tile's four corners are inner or outer by whether that corner lies inside the 5x5 (corner autotiling, as in Tiled's corner sets), so together the two templates give every corner pattern except the two diagonals. Either terrain may be transparent ('clear': an overlay drawn over another ground). The looks are approximate. 'stamps' are the authored cliff, plateau, ground-fill, bridge and cliffs-over-water blocks, which PX6 composes; PX2's test map places them as authored. 'base' is a plain grass tile the test map draws under everything.",
+  "sheet": "Assets/Vendor/RPGW_AncientForest/Sliced/MainLev.png",
+  "props": "Assets/Vendor/RPGW_AncientForest/Sliced/Decorative.png",
+  "tilePx": 32,
+  "base": { "col": 17, "row": 25 },
+  "transitions": [
+    { "name": "dark-grass-on-grass", "col": 0, "row": 21 },
+    { "name": "dirt-on-grass", "col": 10, "row": 21 },
+    { "name": "stone-on-grass", "col": 20, "row": 21 },
+    { "name": "clear-on-stone", "col": 30, "row": 21 },
+    { "name": "clear-on-moss", "col": 40, "row": 21 },
+    { "name": "clear-on-grass", "col": 0, "row": 28 },
+    { "name": "clear-on-dirt", "col": 10, "row": 28 },
+    { "name": "clear-on-dark-grass", "col": 20, "row": 28 },
+    { "name": "slate-on-olive", "col": 0, "row": 35 },
+    { "name": "stone-on-olive", "col": 10, "row": 35 },
+    { "name": "grass-on-olive", "col": 20, "row": 35 },
+    { "name": "clear-on-olive", "col": 0, "row": 42 },
+    { "name": "clear-on-light-grass", "col": 10, "row": 42 },
+    { "name": "clear-on-dark-stone", "col": 20, "row": 42 }
+  ],
+  "stamps": [
+    { "name": "cliffs, plateaus, ground fills and bridges", "col": 0, "row": 0, "w": 54, "h": 21 },
+    { "name": "cliffs over water", "col": 30, "row": 28, "w": 24, "h": 21 }
+  ]
+}

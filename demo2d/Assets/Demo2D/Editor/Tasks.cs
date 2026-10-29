@@ -26,6 +26,15 @@ namespace Demo2D.EditorTools
         /// <summary>Applies the project configuration (ProjectSetup).</summary>
         public static void Configure() => ProjectSetup.Configure();
 
+        /// <summary>
+        /// PX2's asset evidence into `-out &lt;dir&gt;` (default evidence/px2): a contact sheet per
+        /// character, the tile test map and the CFXR gallery, all tagged renders.
+        /// </summary>
+        public static void AssetStills()
+        {
+            Assets.AssetStills.Write(TaskArgs.Get("-out", Path.Combine("evidence", "px2")));
+        }
+
         // URP's build preprocessing rewrites these tracked assets for the build's target (the
         // pipeline's shader prefilters, the global settings' runtime list). BuildPlayer puts them
         // back, so a build leaves the checkout clean.

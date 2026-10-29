@@ -1,0 +1,45 @@
+{
+  "note": "PX2's effect list candidates: two or three CFXR prefabs per effect kind, best first, chosen from the gallery stills (demo2d/evidence/px2/cfxr-<kind>.jpg) under night lighting at native scale (32 grid pixels per metre). Paths are the manifest's (pixel_assets); the project has them under Assets/Vendor/. All draw best as authored (the top-down camera sees CFXR's 3D effects from the side; laid flat, none looked better, and lightning looked much worse). PX7 picks one per kind and sets its scale, tint, sorting and light cue.",
+  "kinds": {
+    "slash arc": [
+      { "path": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Impacts/Variants/CFXR Slash (Orange).prefab", "why": "a compact burst of warm slivers; knight_male's skills draw their own arcs, so the effect only needs to add sparks" },
+      { "path": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Impacts/CFXR Slash (Blue).prefab", "why": "the same in the moonlight's blue" },
+      { "path": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Impacts/Variants/CFXR Slash (Cross, Orange).prefab", "why": "a taller cross of slivers, for the spin or a combo's last blow" }
+    ],
+    "hit spark": [
+      { "path": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Impacts/CFXR Hit A (Red).prefab", "why": "a small orange star that reads on dark ground without hiding the grunt it hits" },
+      { "path": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Impacts/CFXR Hit C.prefab", "why": "white, so a tint can match the blow" },
+      { "path": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Impacts/CFXR Hit B (Blue).prefab", "why": "a cool star with a glow, for spells' hits" }
+    ],
+    "death burst": [
+      { "path": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Misc/CFXR Smoke Poof.prefab", "why": "a white puff about a grunt's size: undead dissolving, light enough for 400 deaths" },
+      { "path": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Explosions/CFXR Explosion 1.prefab", "why": "a flash and fireball, for elites" },
+      { "path": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Misc/CFXR Magic Poof.prefab", "why": "the puff with coloured stars, for casters" }
+    ],
+    "ring": [
+      { "path": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Fire/Variants/CFXR Fire Ring (Blue).prefab", "why": "a ring of cold flame about 3.5 m across that faces the camera however it's turned" },
+      { "path": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Fire/CFXR Fire Ring.prefab", "why": "the same in fire" },
+      { "path": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Impacts/CFXR Impact Glowing HDR (Blue).prefab", "why": "a bright flash inside a ring, for downbeats that need more punch" }
+    ],
+    "bolt": [
+      { "path": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Fire/CFXR Fireball + Fire Trail.prefab", "why": "the projectile: a small fireball whose trail appears once it moves" },
+      { "path": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Fire/Variants/CFXR Fireball Plain.prefab", "why": "the same without a trail, for casters' slow bolts" },
+      { "path": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Impacts/Variants/CFXR Impact Glowing HDR (Blue, No Flare).prefab", "why": "the impact where a bolt lands" }
+    ],
+    "lightning": [
+      { "path": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Electric/CFXR Lightning Strike + Impact.prefab", "why": "a strike from the top of the screen into a ground flash: right for a top-down view as authored" },
+      { "path": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Electric/Variants/CFXR Lightning Strike + Impact (Purple).prefab", "why": "the same in purple" },
+      { "path": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Electric/CFXR Electric Explosion.prefab", "why": "a large electric sphere, for the accents' biggest strikes" }
+    ],
+    "beam": [
+      { "path": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Electric/CFXR Electric Barrier Simple (HDR).prefab", "why": "a jagged electric line, the nearest CFXR has to a beam; it needs aiming along the sweep" },
+      { "path": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Fire/Variants/CFXR Fire (line).prefab", "why": "a row of flames that could line the beam's path" },
+      { "path": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Fire/CFXR Fire Breath.prefab", "why": "a stream that grows over time, small in the first quarter second" }
+    ],
+    "boss slam": [
+      { "path": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Impacts/CFXR Big Impact HDR.prefab", "why": "a white shock ring and spikes that read at the climax's zoom without covering the horde" },
+      { "path": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Impacts/Variants/CFXR Impact Glowing Cross HDR (Orange).prefab", "why": "a warm glowing cross with a wide ring" },
+      { "path": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Explosions/CFXR Explosion 2 Bigger.prefab", "why": "a big fireball, if the slam should burn" }
+    ]
+  }
+}

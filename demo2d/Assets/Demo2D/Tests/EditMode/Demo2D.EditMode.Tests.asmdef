@@ -2,6 +2,7 @@
     "name": "Demo2D.EditMode.Tests",
     "rootNamespace": "Demo2D.Tests",
     "references": [
+        "PS.Choreography",
         "Demo2D.Runtime",
         "Demo2D.EditorTools",
         "Unity.RenderPipelines.Universal.Runtime",

@@ -2,6 +2,7 @@
     "name": "Demo2D.EditorTools",
     "rootNamespace": "Demo2D.EditorTools",
     "references": [
+        "PS.Choreography",
         "Demo2D.Runtime",
         "Unity.RenderPipelines.Core.Runtime",
         "Unity.RenderPipelines.Core.Editor",
