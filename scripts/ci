@@ -1,5 +1,4 @@
 #!/bin/sh
-# The whole suite: an alias of scripts/ci-full. Validation is
-# staged now (AGENTS.md): scripts/check-fast before submitting, scripts/ci-gate in Tollgate's gate
-# stage, scripts/ci-full in its release stage.
+# The whole suite: an alias of scripts/ci-full. Validation is staged (AGENTS.md): scripts/check-fast
+# in `enact push`, scripts/ci-full in slow CI.
 exec "$(dirname "$0")/ci-full" "$@"

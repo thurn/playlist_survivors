@@ -1,10 +1,10 @@
 #!/bin/sh
-# Tollgate's release stage: every check, on the newest `staging` tip, asynchronously. A pass moves
-# `release` and remote master; a failure is fixed forward by a ci-fix bead (AGENTS.md). Nobody
-# waits for it. Run it locally only when a change touches CI scripts, the Tollgate policy,
-# workspace-wide configuration or shared test infrastructure.
+# Enact's slow CI: every check, on the newest `staging` tip, asynchronously. A pass moves remote
+# master; a failure is fixed forward by a Steward bead (AGENTS.md). Nobody waits for it. Run it
+# locally only when a change touches CI scripts, `.enact.toml`, workspace-wide configuration or
+# shared test infrastructure.
 #
-#   scripts/ci-full [baker|analysis|native|survivors|survivors-replay|demo3d]    # one section (a Tollgate release step each), or all
+#   scripts/ci-full [baker|analysis|native|survivors|survivors-replay|demo3d]    # one section, or all
 set -eu
 cd "$(dirname "$0")/.."
 . scripts/lib/changes.sh
@@ -38,7 +38,7 @@ fi
 # dependencies, and a release build of the app. Each phase adds its release-stage checks here
 # (docs/design/native-app.md, "Automated Checks"): stage and corpus parity (A), the oracle sweep,
 # causality and playability (B), visual parity (C1), sessions (D3), `ps bench`, Delayed listening
-# (E). Tollgate's ci-full-native step sets CARGO_TARGET_DIR to a persistent directory.
+# (E). `.enact.toml`'s slow command sets CARGO_TARGET_DIR to a persistent directory.
 if [ "$section" = all ] || [ "$section" = native ]; then
   uv run --directory tools/analysis ruff check ../../native/scripts/crates ../../native/scripts/test_crates.py
   uv run --no-project python -m unittest native/scripts/test_crates.py

@@ -1,5 +1,5 @@
 #!/bin/sh
-# The fast local check (budget 60 s): run it once, on the final tree, before `tg candidate`.
+# The fast local check (budget 60 s): `enact push` runs it on the rebased tree.
 # It replaces running the whole suite locally. Diff-aware, from the paths that differ from the
 # branch's base (scripts/lib/changes.sh), committed or not:
 # - Conflict markers in any changed file (scripts/check-conflict-markers).
@@ -10,7 +10,7 @@
 # - native/scripts/check-fast when native/ changed and the workspace has one (F4 adds it).
 # - The 3D demo's vendor guard, always, over the commits since the base and the index; its tools'
 #   lint and tests when demo3d/tools changed, and the choreography layer's tests when it changed.
-# Tollgate's gate stage (scripts/ci-gate) and release stage (scripts/ci-full) run the rest.
+# Slow CI (scripts/ci-full, on the `staging` tip) runs the rest.
 set -eu
 cd "$(dirname "$0")/.."
 . scripts/lib/changes.sh

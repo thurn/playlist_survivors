@@ -10,15 +10,15 @@ Tools and an SDK compatible with the pinned Rust toolchain. The Homebrew route b
 - [Development tools and checks](#development-tools-and-checks)
 - [Python analysis tool](#python-analysis-tool)
 - [Asset baker and art sources](#asset-baker-and-art-sources)
-- [Tollgate (optional)](#tollgate-optional)
-- [Hive and Beads (optional)](#hive-and-beads-optional)
+- [Enact (optional)](#enact-optional)
+- [Earlier Hive beads](#earlier-hive-beads)
 - [Local data and troubleshooting](#local-data-and-troubleshooting)
 
 ## Build and play
 
 Only Git, Apple's build tools and Rust are needed to build and play. The repository includes
 the baked graphics, sounds, analyzer models and sample music. Python, Node, external LPC
-sources, Tollgate and Hive are optional for this path.
+sources and Enact are optional for this path.
 
 ### Install the build tools
 
@@ -124,15 +124,15 @@ cargo run --locked --release -p app -- \
   --file ../public/reactive/house-128/house-128.ogg --headless --seconds 10
 ```
 
-`scripts/ci-gate` is the promotion check; `scripts/ci-full` runs the complete release suite.
-Run the full suite locally too when changing CI scripts, Tollgate policy, workspace-wide
+`scripts/check-fast` is the promotion check; `scripts/ci-full` runs the complete suite.
+Run the full suite locally too when changing CI scripts, `.enact.toml`, workspace-wide
 configuration or shared test infrastructure. It needs the Python and Node toolchains below,
 but does not rebake art. Native checks use the GPU offscreen and need a usable macOS graphics
 session. Use headless/offscreen checks during routine development to avoid opening a window.
 
 Each worktree uses its own `native/target` by default. Never point two development worktrees at
-one Cargo target directory. Tollgate manages separate persistent caches for its gate and
-release steps under `$HOME/Library/Caches/playlist-survivors/`.
+one Cargo target directory. Enact's slow CI, serialized by its lock, keeps a persistent cache
+under `$HOME/Library/Caches/playlist-survivors/`.
 
 ## Python analysis tool
 
@@ -251,174 +251,41 @@ The baker automatically downloads and verifies the other packs listed in
 credit changes before committing them. If a fetch stops partway through, remove only that
 incomplete collection before retrying its command; the block refuses existing collections.
 
-## Tollgate (optional)
+## Enact (optional)
 
-Tollgate is the local macOS validation and delivery service used by this project's maintained
-workflow. You can build, play and edit without it; delivery to this project's `staging` branch
-follows [AGENTS.md](AGENTS.md). Hive is not required to use Tollgate.
-
-### Install and register
-
-Install Node as above and Rust stable for Tollgate's own build, then follow the
-[Tollgate installation instructions](https://github.com/thurn/tollgate#install-a-local-checkout).
-For a source installation, choose any directory outside this repository:
+[Enact](https://github.com/thurn/enact) is the delivery and agent orchestration workflow used
+by this project's maintainers. You can build, play and edit without it; delivery to this
+project's `staging` branch follows [AGENTS.md](AGENTS.md). It needs Git, Python 3.11+,
+[Beads](https://github.com/gastownhall/beads) 1.2+ and the `dolt` CLI.
 
 ```sh
-mkdir -p "$HOME/src"
-git clone https://github.com/thurn/tollgate.git "$HOME/src/tollgate"
-(cd "$HOME/src/tollgate" && ./scripts/install-local.sh)
-export PATH="$HOME/.local/bin:$PATH"
-tg --version
+git clone https://github.com/thurn/enact.git "$HOME/enact"
+python3 "$HOME/enact/scripts/enact.py" install
+cd "$PS_ROOT"
+python3 "$HOME/enact/scripts/enact.py" setup
 ```
 
-The installer builds the desktop app and CLI, installs the app to `/Applications/Tollgate.app`,
-and links `tg` into `~/.local/bin`. Set `TOLLGATE_INSTALL_DIR` to an existing writable
-Applications directory if needed. Keep `~/.local/bin` on PATH in your login shell, along with
-Cargo, uv, Python 3.12, Node/npm and cargo-machete. Configure the Python and Node sections first:
-the release suite uses both even when your own work is Rust-only.
-
-In a fresh main checkout, register the existing policy and inspect the result:
+`.enact.toml` holds the fast check (`scripts/check-fast`) and the slow check (`scripts/ci-full`,
+with a persistent Cargo target directory). Deliver a change from a worktree:
 
 ```sh
 cd "$PS_ROOT"
-tg init
-tg config validate
-tg env show
-tg doctor
-```
-
-`tg init` uses the committed `.tollgate/config.toml`; do not replace it with a generated
-single-step example. It creates local `staging` and `release` refs and local runtime state.
-The policy's Cargo cache paths expand `$HOME` in the step commands and require no username
-edits. `tg env reload` refreshes the service's login-shell environment after installing tools
-or changing PATH. Existing configured installations can simply run `tg doctor` and
-`tg config validate` rather than initialize again.
-
-The tracked policy enables remote publishing. To publish from this Mac, configure Git
-credentials and permission to push to the configured remote. On a second machine, choose
-which Mac publishes; keep one publisher for the shared remote. A local-only installation can
-set `[remote] enabled = false` in its local policy before registration, following Tollgate's
-configuration instructions; keep that local override out of feature commits. Do not copy
-another machine's `.git/tollgate` state, sockets, build caches or worktrees.
-
-### Deliver a change
-
-Create one fresh worktree per prompt or bead, use the path printed by Tollgate, then validate
-and commit there with a Conventional Commit message:
-
-```sh
-cd "$PS_ROOT"
-tg worktree create my-change
-# Enter the worktree path printed above, make the change, then:
-scripts/check-fast
+python3 "$HOME/enact/scripts/enact.py" worktree create my-change
+# Enter the printed worktree path, make the change, then:
 git add <changed-files>
 git commit -m "fix: describe the change"
-tg candidate HEAD
+python3 "$HOME/enact/scripts/enact.py" push
 ```
 
-Copy the returned candidate ID and run approval from the main checkout, because promotion can
-remove the clean worktree:
+`enact push` rebases onto `origin/staging`, runs the fast check, pushes to `staging` and starts
+slow CI in the background; a pass moves `master`. Never commit or push to `master` directly.
 
-```sh
-cd "$PS_ROOT"
-tg approve <candidate-id> --wait
-```
+## Earlier Hive beads
 
-A successful gate promotes to `staging`: the work is landed. The release suite runs
-asynchronously and Tollgate publishes a passing `release` to remote `master`. Do not wait for
-release to finish a bead. Make changes in feature worktrees; Tollgate owns publishing to
-master. Do not use `tg push-master` for this project.
-Consult `tg status` for blocked work and the project's CI-fix rules in AGENTS.md for failures.
-
-## Hive and Beads (optional)
-
-Hive adds bead-based task selection, agent roles and local observations. It is not needed to
-build, play, run tests, or use Tollgate directly. The task database is separate from this public
-repository; cloning the game does not copy work items or thread history.
-
-### Install Hive and its task tools
-
-Follow [Hive's current setup instructions](https://github.com/thurn/hive#configure). Its current
-supported task stack is Python 3.12, [Beads 1.2.2](https://github.com/gastownhall/beads/releases/tag/v1.2.2)
-in server mode, [Dolt 2.2.0](https://github.com/dolthub/dolt/releases/tag/v2.2.0), and configured
-Tollgate. Install the macOS ARM64 binaries from those releases on PATH, then verify
-`bd --version` and `dolt version`. Use Hive's upstream pins if they change together.
-
-```sh
-git clone https://github.com/thurn/hive.git "$HOME/src/hive"
-export PATH="$HOME/src/hive/bin:$HOME/.local/bin:$PATH"
-hive --help
-```
-
-Hive's launcher runs the committed source from its checkout; it does not require installing
-its Python package globally. `HIVE_PYTHON` can name your Python 3.12 executable if it is not
-available as `python3.12`.
-
-### Select the task store and configure this checkout
-
-To continue existing project work, restore the private Beads store using
-[Hive's backup/restore and remote-sync instructions](https://github.com/thurn/hive/blob/master/docs/operations.md).
-Restore into a fresh destination and verify its database identity before enabling writers.
-The maintained project uses a `.beads` directory inside a separate `brain` repository; its
-location on your Mac is configurable. Do not initialize an empty replacement for existing
-project work or put private task data in the game's repository. Keep one publishing machine
-for private-store sync as well.
-
-For an independent new task store instead, initialize a separate directory with
-`bd init --server --prefix hv --skip-agents --skip-hooks` and explicitly arrange its Dolt
-server using Beads' server setup instructions. Hive requires server-mode `.beads/metadata.json`
-and never initializes or starts a replacement database itself.
-
-Create a local bootstrap JSON with resolved paths. This example assumes Hive was cloned above
-and that the separate store is at `~/brain`; change `PS_BEADS_ROOT` to your restored or newly
-prepared store. Use a new config file, or merge the project into your existing configuration
-rather than overwriting it:
-
-```sh
-export PS_BEADS_ROOT="$HOME/brain"
-export HIVE_BOOTSTRAP_CONFIG="$HOME/.config/playlist-survivors/hive.json"
-python3.12 - <<'PYCONFIG'
-import json
-import os
-from pathlib import Path
-
-root = Path(os.environ["PS_ROOT"]).resolve()
-store = Path(os.environ["PS_BEADS_ROOT"]).resolve()
-assert (store / ".beads/metadata.json").is_file(), "Prepare the server-mode Beads store first"
-config = Path(os.environ["HIVE_BOOTSTRAP_CONFIG"])
-config.parent.mkdir(parents=True, exist_ok=True)
-with config.open("x") as output:
-    json.dump({
-        "repository": str(Path.home() / "src/hive"),
-        "state": str(Path.home() / ".local/state/hive"),
-        "beads": str(store),
-        "projects": [{
-            "id": "playlist_survivors",
-            "repository": str(root),
-            "invariants": str(root / "AGENTS.md"),
-        }],
-    }, output, indent=2)
-    output.write("\n")
-PYCONFIG
-hive source --json
-```
-
-Keep `HIVE_BOOTSTRAP_CONFIG`, Hive's PATH and any `HIVE_PYTHON` setting in the environment of
-every shell or agent using this setup. Hive does not expand `$HOME` strings inside JSON;
-the example writes actual paths on the current machine. Verify the native Beads route before
-claiming anything:
-
-```sh
-BEADS_DIR="$PS_BEADS_ROOT/.beads" BEADS_DOLT_AUTO_START=0 \
-  BD_NON_INTERACTIVE=1 BD_NO_HOOKS=true \
-  bd --sandbox --dolt-auto-commit off context --json
-```
-
-Compare the reported store, database and server with the intended restored store. Follow
-Hive's role/routing instructions for claims and actual agent session IDs. Its skills can be
-installed with `"$HOME/src/hive/scripts/install-skills"`; review existing skill-name conflicts
-first. Collectors, dashboards and executor hooks are opt-in; follow Hive's operations guide
-if you want them. They are not prerequisites for game development.
+Work before Enact (the native app epic `hv-t8o8`, the survivors run `hv-n7fn`) was tracked in
+Hive's private Beads store (`~/brain/.beads` on the maintainer's Mac), which this repository
+does not include. New work is filed in this repository's Beads database (prefix `ps`), which
+Enact syncs through `refs/dolt/data` on `origin`.
 
 ## Local data and troubleshooting
 
@@ -430,9 +297,8 @@ if you want them. They are not prerequisites for game development.
 | Listening-session recordings | `native/logs/sessions/` in the checkout; `PS_SESSIONS` overrides it |
 | Analyzer models | Committed `native/models/madmom.bin`; `PS_MODELS` overrides it |
 | Calibration | Local user settings; recalibrate on a new display/audio setup |
-| Tollgate / Hive runtime data | Machine-local; configure afresh rather than copying live state |
+| Enact / Hive runtime data | Machine-local; configure afresh rather than copying live state |
 
-- **A tool is missing in Tollgate:** put it on the login-shell PATH and run `tg env reload`.
 - **Python 3.12 is not found:** install a system Python and check `command -v python3.12`;
   uv-managed Python alone does not satisfy this project's setting.
 - **FFmpeg is not found when baking:** ensure it is on PATH and use the documented `FFMPEG`

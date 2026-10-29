@@ -44,3 +44,10 @@ reactive-local/
 /demo3d/dotnet/**/bin/
 /demo3d/dotnet/**/obj/
 /demo3d/tools/.venv/
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key
+.beads/proxieddb/
+/.beads/interactions.jsonl

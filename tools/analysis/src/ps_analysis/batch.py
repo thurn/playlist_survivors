@@ -1,4 +1,4 @@
-"""Long batch jobs run below Tollgate's gate and release steps (hv-t8o8.55).
+"""Long batch jobs run below the fast and slow checks (hv-t8o8.55).
 
 On macOS the command re-executes itself under ``taskpolicy -b`` (background QoS:
 efficiency cores, throttled I/O), which its child processes inherit; ``nice``

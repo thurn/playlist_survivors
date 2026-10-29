@@ -1,0 +1,18 @@
+# Enact configuration. See /Users/dthurn/enact/README.md.
+remote = "origin"
+staging_branch = "staging"
+master_branch = "master"
+
+[checks]
+fast = "scripts/check-fast"
+# One persistent target directory: the slow-CI runner is serialized by its lock.
+slow = 'CARGO_TARGET_DIR="$HOME/Library/Caches/playlist-survivors/target-release" scripts/ci-full'
+
+[worktree]
+root = ".worktrees"   # inside the checkout; gitignored
+# create = "scripts/enact-worktree create"   # replaces `git worktree add`
+# remove = "scripts/enact-worktree remove"   # replaces `git worktree remove`
+
+# [roles.warden.claude]
+# model = "opus"
+# effort = "max"

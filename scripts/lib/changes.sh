@@ -1,5 +1,5 @@
 # Which sections a check runs, from the paths that differ from the branch's base.
-# Sourced (POSIX sh) by scripts/check-fast and scripts/ci-gate, from the repository root.
+# Sourced (POSIX sh) by scripts/check-fast, from the repository root.
 #
 #   changes_init  sets CHANGES_BASE and writes the changed paths, one per line, to $CHANGES_FILE
 #                 (committed since the base, staged, unstaged and untracked). With no base it
@@ -8,8 +8,8 @@
 #                 succeed when that section
 #                 must run.
 #
-# The base is where the branch left `staging` (Tollgate bases worktrees and speculative
-# checkouts on it), else `origin/master`, else the parent commit. Set CHANGES_BASE to a revision
+# The base is where the branch left `origin/staging` (Enact bases worktrees on it), else local
+# `staging`, else `origin/master`, else the parent commit. Set CHANGES_BASE to a revision
 # to choose it instead.
 
 changes_init() {
@@ -19,7 +19,7 @@ changes_init() {
   if [ -n "$CHANGES_BASE" ]; then
     CHANGES_BASE=$(git rev-parse --verify "$CHANGES_BASE^{commit}")
   fi
-  for ref in staging origin/master; do
+  for ref in origin/staging staging origin/master; do
     if [ -n "$CHANGES_BASE" ]; then break; fi
     if CHANGES_BASE=$(git merge-base "$ref" HEAD 2>/dev/null); then break; fi
     CHANGES_BASE=""

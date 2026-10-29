@@ -17,7 +17,7 @@ game; the `ts-freeze` tag keeps it (see the [setup guide](SETUP.md#local-data-an
 ## Setup
 
 See the [complete setup guide](SETUP.md) for cloning and playing on a new Mac, development
-tools, fetching art sources, and optional Tollgate/Hive configuration.
+tools, fetching art sources, and optional Enact configuration.
 
 ## Playing
 

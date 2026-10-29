@@ -1,4 +1,4 @@
-//! Long local analysis/simulation jobs run below Tollgate's utility-class checks.
+//! Long local analysis/simulation jobs run below the utility-class slow checks.
 pub fn enter() -> Result<(), String> {
     #[cfg(target_os = "macos")]
     if std::env::var_os("PS_NATIVE_BATCH").is_none() {
