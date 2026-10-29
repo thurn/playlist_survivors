@@ -1,0 +1,23 @@
+{
+    "name": "Demo3D.EditMode.Tests",
+    "rootNamespace": "Demo3D.Tests",
+    "references": [
+        "Demo3D.Choreography",
+        "Demo3D.Bench",
+        "Demo3D.Runtime",
+        "Demo3D.EditorTools",
+        "Unity.Mathematics",
+        "Unity.Collections",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": ["Editor"],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": ["nunit.framework.dll", "Newtonsoft.Json.dll"],
+    "autoReferenced": false,
+    "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

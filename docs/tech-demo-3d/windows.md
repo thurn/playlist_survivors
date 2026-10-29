@@ -71,6 +71,33 @@ Mac:
 4. **Land each commit** through Tollgate as usual, after `scripts/ci-full`
    passes locally: one candidate at a time.
 
+It was done on 2026-10-29, from relay `b07f0e61`, as four commits cut at the
+`demo3d` branch's milestone points: foundations and the crowd (relay
+`f1507a5b`, TD0 to TD7), the demo's systems (`d405cd8b`: TD8, TD10, TD11 and
+TD9's arena), the scene (`b1b4d733`: TD14, TD15 and TD11's recalibration),
+and the answer (`b07f0e61`: TD12, TD13 and the Mac's skeleton LOD
+experiments). The first also wired the guard into the Mac's checks, and let
+demo files reach the public repository (see
+[The vendor guard](vendor-assets.md#the-vendor-guard)). Demo work since then
+lands through Tollgate like any other change; the relay keeps the run's full
+history.
+
+The guard change had its cold review (no leak path found). Fixed: the hook
+checks `git archive`'s status, the release step says when it can't check the
+range against `origin/master`, and the derived and sync records are written
+through per-process temporary files, since checks now run concurrently.
+Recorded, not fixed:
+
+- **Edited text copies.** Until integration, the public-origin rule refused
+  every demo file, which also stopped a vendor shader or prefab copied under
+  `Assets/Demo3D/` with an edit and a fresh GUID. Nothing recognizes that
+  copy now ([What TD1 built](vendor-assets.md#the-vendor-guard)); review demo diffs for vendor-looking
+  text.
+- **The installed hook** changes only when `demo3d setup` runs; rerun it
+  after changing `demo3d/tools/hooks/pre-push`.
+- **Concurrent appends** to the derived record can lose entries, which only
+  weakens it until the next check re-adds them.
+
 ## Setting up Cygnus
 
 Cygnus was surveyed on 2026-10-27 and set up on 2026-10-28, partly by the

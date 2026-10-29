@@ -1,0 +1,7 @@
+{
+  "_comment": "qa.md, Sweeps and the machine lock: a small sweep (one scene, two points). TD7's synthetic load.",
+  "scene": "synthetic", "seconds": 10, "warmup": 5, "rewarm": 3, "probeSeconds": 5,
+  "n": { "search": [100, 12000], "resolution": 0.05 },
+  "viewWidthM": [30, 40], "load": ["demo"], "aa": ["msaa4"], "jobWorkers": 6,
+  "sceneOptions": { "triangles": 12000, "glow": true }
+}

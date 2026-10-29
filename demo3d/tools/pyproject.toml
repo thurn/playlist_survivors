@@ -1,0 +1,26 @@
+[project]
+name = "demo3d-tools"
+version = "0.1.0"
+description = "The 3D tech demo's worktree setup, vendor guard, sync tool and Unity task runner"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.scripts]
+demo3d = "demo3d_tools.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[dependency-groups]
+dev = ["pytest", "ruff"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+# Long extension lists read better as one split string.
+ignore = ["SIM905"]

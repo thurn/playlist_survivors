@@ -1,0 +1,33 @@
+{
+  "note": "The placeholder roster's design numbers (TD3). Radii in metres (fodder 0.4 m, the packing the budget assumes), gait steps per beat, reach beyond contact, hit points. Hit shapes are before the kill-rate feedback scales them. TD2 picks the real roster; TD13 tunes these.",
+  "hero": {
+    "radius": 0.5, "strideM": 0.9, "reachM": 2.4, "senseM": 8.0,
+    "combos": {
+      "slashL": { "shape": "arc", "radius": 2.4, "arcDeg": 160, "strength": 0.5, "effect": "slash-trail", "sound": "swing" },
+      "slashR": { "shape": "arc", "radius": 2.4, "arcDeg": 160, "strength": 0.5, "effect": "slash-trail", "sound": "swing" },
+      "thrust": { "shape": "line", "length": 3.5, "width": 1.2, "strength": 0.6, "effect": "thrust-trail", "sound": "swing" },
+      "spin": { "shape": "ring", "radius": 2.8, "strength": 0.8, "effect": "spin-trail", "sound": "swing" },
+      "slam": { "shape": "ring", "radius": 3.6, "strength": 1.0, "effect": "slam-shock", "sound": "swing" }
+    }
+  },
+  "monsters": [
+    { "name": "skeleton", "rank": "fodder", "radius": 0.4, "stepM": 0.75, "reachM": 0.5, "hitPoints": 2 },
+    { "name": "goblin", "rank": "fodder", "radius": 0.38, "stepM": 0.85, "reachM": 0.45, "hitPoints": 2 },
+    { "name": "slime", "rank": "fodder", "radius": 0.4, "stepM": 0.65, "reachM": 0.4, "hitPoints": 2 },
+    { "name": "bat", "rank": "fodder", "radius": 0.35, "stepM": 0.95, "reachM": 0.4, "hitPoints": 1 },
+    { "name": "mushroom", "rank": "fodder", "radius": 0.4, "stepM": 0.6, "reachM": 0.45, "hitPoints": 3 },
+    { "name": "demon", "rank": "fodder", "radius": 0.45, "stepM": 0.8, "reachM": 0.55, "hitPoints": 3 },
+    { "name": "bigork", "rank": "elite", "radius": 0.8, "stepM": 0.65, "reachM": 0.8, "hitPoints": 6 },
+    { "name": "troll", "rank": "elite", "radius": 0.9, "stepM": 0.6, "reachM": 0.9, "hitPoints": 8 },
+    { "name": "boss", "rank": "boss", "radius": 1.5, "stepM": 0.6, "reachM": 1.2, "hitPoints": 60 }
+  ],
+  "projectiles": [
+    { "name": "bolt", "speedMps": 30 }
+  ],
+  "spells": {
+    "ring": { "shape": "ring", "radius": 4.5, "strength": 0.6, "effect": "ring", "sound": "ring" },
+    "bolt": { "shape": "single", "projectile": "bolt", "rangeM": 12, "strength": 0.4, "effect": "bolt-impact", "sound": "bolt" },
+    "lightning": { "shape": "circle", "radius": 2.2, "rangeM": 12, "strength": 0.7, "effect": "lightning", "sound": "lightning" },
+    "laser": { "shape": "line", "length": 12, "width": 0.8, "bars": 1, "strength": 0.2, "effect": "laser", "sound": "laser" }
+  }
+}

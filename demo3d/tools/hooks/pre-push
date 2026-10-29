@@ -1,0 +1,66 @@
+#!/bin/sh
+# The vendor guard runs before every push (docs/tech-demo-3d/vendor-assets.md, The vendor
+# guard). `demo3d setup` copies this file into the repository's shared hooks folder
+# ($(git rev-parse --git-common-dir)/hooks), so every checkout of the clone runs it, including
+# worktrees that never ran setup and checkouts without the demo's tools.
+# Never bypass it: a vendor file that reaches the public repository can't be taken back.
+root=$(git rev-parse --show-toplevel) || exit 1
+zero=0000000000000000000000000000000000000000
+input=$(cat)
+
+# The guard needs uv, and runs from this checkout's tools or, in a checkout without them (the
+# main checkout on an older master, from which Tollgate pushes remote master), from the first
+# pushed tip that has them.
+guard() {
+  if ! command -v uv >/dev/null 2>&1; then
+    echo "pre-push: uv is not on PATH, so the vendor guard can't run; refusing the push" >&2
+    exit 1
+  fi
+  printf '%s\n' "$input" | uv run --quiet --project "$1" demo3d guard --pre-push "$remote" "$url"
+  exit $?
+}
+remote=$1
+url=$2
+tools="$root/demo3d/tools"
+if [ -f "$tools/pyproject.toml" ]; then
+  guard "$tools"
+fi
+tip=
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ -z "$local_sha" ] || [ "$local_sha" = "$zero" ] && continue
+  if git cat-file -e "$local_sha:demo3d/tools/pyproject.toml" 2>/dev/null; then
+    tip=$local_sha
+    break
+  fi
+done <<EOF
+$input
+EOF
+if [ -n "$tip" ]; then
+  tmp=$(mktemp -d) || exit 1
+  trap 'rm -rf "$tmp"' EXIT
+  git archive -o "$tmp/tools.tar" "$tip" demo3d/tools || exit 1
+  tar -x -f "$tmp/tools.tar" -C "$tmp" || exit 1
+  guard "$tmp/demo3d/tools"
+fi
+
+# Nothing here has the tools, so nothing can run the guard: refuse any push that carries a change
+# to the demo's paths, and let the rest through.
+status=0
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ -z "$local_sha" ] || [ "$local_sha" = "$zero" ] && continue
+  if [ "$remote_sha" != "$zero" ] && git cat-file -e "$remote_sha^{commit}" 2>/dev/null; then
+    commits=$(git rev-list "$remote_sha..$local_sha") || exit 1
+  else
+    commits=$(git rev-list "$local_sha" --not --remotes="$remote") || exit 1
+  fi
+  [ -z "$commits" ] && continue
+  if echo "$commits" | git diff-tree --stdin -r -m --root --no-commit-id --name-only \
+      | grep -iqE '^(demo3d/|songs/action/|public/(.*/)?action)'; then
+    echo "pre-push: $local_ref changes the 3D demo's paths, but there are no demo3d/tools" \
+      "(in this checkout or the pushed commits) to run the vendor guard; refusing the push" >&2
+    status=1
+  fi
+done <<EOF
+$input
+EOF
+exit $status

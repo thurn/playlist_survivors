@@ -1,0 +1,57 @@
+{
+  "note": "TD3's placeholder clip annotations: plausible impact times, ends, strides and root motion per placeholder roster type, in seconds from each clip's start. TD4 replaces this file with TD2's measured annotations (same format, keyed by vendor GUID and clip name); the choreographer looks clips up by 'use'.",
+  "annotations": [
+    { "guid": "placeholder", "clip": "skeleton walk", "impact": 0.0, "end": 1.0, "rootMotionM": 0.0, "strideM": 1.1, "use": "skeleton walk" },
+    { "guid": "placeholder", "clip": "skeleton attack", "impact": 0.42, "end": 0.95, "rootMotionM": 0.0, "strideM": 0.0, "use": "skeleton attack" },
+    { "guid": "placeholder", "clip": "skeleton hit", "impact": 0.05, "end": 0.40, "rootMotionM": 0.0, "strideM": 0.0, "use": "skeleton hit" },
+    { "guid": "placeholder", "clip": "skeleton death", "impact": 0.08, "end": 1.10, "rootMotionM": 0.0, "strideM": 0.0, "use": "skeleton death" },
+
+    { "guid": "placeholder", "clip": "goblin walk", "impact": 0.0, "end": 0.9, "rootMotionM": 0.0, "strideM": 1.0, "use": "goblin walk" },
+    { "guid": "placeholder", "clip": "goblin attack", "impact": 0.36, "end": 0.85, "rootMotionM": 0.0, "strideM": 0.0, "use": "goblin attack" },
+    { "guid": "placeholder", "clip": "goblin hit", "impact": 0.05, "end": 0.38, "rootMotionM": 0.0, "strideM": 0.0, "use": "goblin hit" },
+    { "guid": "placeholder", "clip": "goblin death", "impact": 0.07, "end": 1.00, "rootMotionM": 0.0, "strideM": 0.0, "use": "goblin death" },
+
+    { "guid": "placeholder", "clip": "slime walk", "impact": 0.0, "end": 1.2, "rootMotionM": 0.0, "strideM": 0.9, "use": "slime walk" },
+    { "guid": "placeholder", "clip": "slime attack", "impact": 0.48, "end": 1.05, "rootMotionM": 0.0, "strideM": 0.0, "use": "slime attack" },
+    { "guid": "placeholder", "clip": "slime hit", "impact": 0.06, "end": 0.45, "rootMotionM": 0.0, "strideM": 0.0, "use": "slime hit" },
+    { "guid": "placeholder", "clip": "slime death", "impact": 0.10, "end": 1.20, "rootMotionM": 0.0, "strideM": 0.0, "use": "slime death" },
+
+    { "guid": "placeholder", "clip": "bat walk", "impact": 0.0, "end": 0.6, "rootMotionM": 0.0, "strideM": 1.4, "use": "bat walk" },
+    { "guid": "placeholder", "clip": "bat attack", "impact": 0.30, "end": 0.70, "rootMotionM": 0.0, "strideM": 0.0, "use": "bat attack" },
+    { "guid": "placeholder", "clip": "bat hit", "impact": 0.04, "end": 0.32, "rootMotionM": 0.0, "strideM": 0.0, "use": "bat hit" },
+    { "guid": "placeholder", "clip": "bat death", "impact": 0.06, "end": 0.90, "rootMotionM": 0.0, "strideM": 0.0, "use": "bat death" },
+
+    { "guid": "placeholder", "clip": "mushroom walk", "impact": 0.0, "end": 1.1, "rootMotionM": 0.0, "strideM": 0.8, "use": "mushroom walk" },
+    { "guid": "placeholder", "clip": "mushroom attack", "impact": 0.45, "end": 1.00, "rootMotionM": 0.0, "strideM": 0.0, "use": "mushroom attack" },
+    { "guid": "placeholder", "clip": "mushroom hit", "impact": 0.05, "end": 0.42, "rootMotionM": 0.0, "strideM": 0.0, "use": "mushroom hit" },
+    { "guid": "placeholder", "clip": "mushroom death", "impact": 0.09, "end": 1.15, "rootMotionM": 0.0, "strideM": 0.0, "use": "mushroom death" },
+
+    { "guid": "placeholder", "clip": "demon walk", "impact": 0.0, "end": 1.0, "rootMotionM": 0.0, "strideM": 1.2, "use": "demon walk" },
+    { "guid": "placeholder", "clip": "demon attack", "impact": 0.40, "end": 0.90, "rootMotionM": 0.0, "strideM": 0.0, "use": "demon attack" },
+    { "guid": "placeholder", "clip": "demon hit", "impact": 0.05, "end": 0.40, "rootMotionM": 0.0, "strideM": 0.0, "use": "demon hit" },
+    { "guid": "placeholder", "clip": "demon death", "impact": 0.08, "end": 1.10, "rootMotionM": 0.0, "strideM": 0.0, "use": "demon death" },
+
+    { "guid": "placeholder", "clip": "bigork walk", "impact": 0.0, "end": 1.3, "rootMotionM": 0.0, "strideM": 1.6, "use": "bigork walk" },
+    { "guid": "placeholder", "clip": "bigork attack", "impact": 0.55, "end": 1.20, "rootMotionM": 0.0, "strideM": 0.0, "use": "bigork attack" },
+    { "guid": "placeholder", "clip": "bigork hit", "impact": 0.06, "end": 0.50, "rootMotionM": 0.0, "strideM": 0.0, "use": "bigork hit" },
+    { "guid": "placeholder", "clip": "bigork death", "impact": 0.12, "end": 1.60, "rootMotionM": 0.0, "strideM": 0.0, "use": "bigork death" },
+
+    { "guid": "placeholder", "clip": "troll walk", "impact": 0.0, "end": 1.4, "rootMotionM": 0.0, "strideM": 1.8, "use": "troll walk" },
+    { "guid": "placeholder", "clip": "troll attack", "impact": 0.60, "end": 1.30, "rootMotionM": 0.0, "strideM": 0.0, "use": "troll attack" },
+    { "guid": "placeholder", "clip": "troll hit", "impact": 0.07, "end": 0.55, "rootMotionM": 0.0, "strideM": 0.0, "use": "troll hit" },
+    { "guid": "placeholder", "clip": "troll death", "impact": 0.14, "end": 1.80, "rootMotionM": 0.0, "strideM": 0.0, "use": "troll death" },
+
+    { "guid": "placeholder", "clip": "boss walk", "impact": 0.0, "end": 1.6, "rootMotionM": 0.0, "strideM": 2.2, "use": "boss walk" },
+    { "guid": "placeholder", "clip": "boss attack", "impact": 0.70, "end": 1.50, "rootMotionM": 0.0, "strideM": 0.0, "use": "boss attack" },
+    { "guid": "placeholder", "clip": "boss hit", "impact": 0.08, "end": 0.60, "rootMotionM": 0.0, "strideM": 0.0, "use": "boss hit" },
+    { "guid": "placeholder", "clip": "boss death", "impact": 0.20, "end": 2.50, "rootMotionM": 0.0, "strideM": 0.0, "use": "boss death" },
+
+    { "guid": "placeholder", "clip": "hero idle", "impact": 0.0, "end": 2.0, "rootMotionM": 0.0, "strideM": 0.0, "use": "hero idle" },
+    { "guid": "placeholder", "clip": "hero walk", "impact": 0.0, "end": 1.0, "rootMotionM": 0.0, "strideM": 1.8, "use": "hero walk" },
+    { "guid": "placeholder", "clip": "hero slash left", "impact": 0.24, "end": 0.55, "rootMotionM": 0.2, "strideM": 0.0, "use": "hero slashL" },
+    { "guid": "placeholder", "clip": "hero slash right", "impact": 0.26, "end": 0.58, "rootMotionM": 0.2, "strideM": 0.0, "use": "hero slashR" },
+    { "guid": "placeholder", "clip": "hero thrust", "impact": 0.30, "end": 0.68, "rootMotionM": 0.5, "strideM": 0.0, "use": "hero thrust" },
+    { "guid": "placeholder", "clip": "hero spin", "impact": 0.38, "end": 0.85, "rootMotionM": 0.0, "strideM": 0.0, "use": "hero spin" },
+    { "guid": "placeholder", "clip": "hero overhead slam", "impact": 0.50, "end": 1.05, "rootMotionM": 0.3, "strideM": 0.0, "use": "hero slam" }
+  ]
+}

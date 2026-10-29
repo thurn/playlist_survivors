@@ -1,0 +1,7 @@
+{
+  "_comment": "qa.md, Sweeps and the machine lock: three of these back to back load the GPU for about 3 minutes; any thermal throttling must show in the rows.",
+  "scene": "synthetic", "seconds": 20, "warmup": 5, "rewarm": 3,
+  "n": { "fixed": [3000, 3000, 3000] }, "viewWidthM": [55], "load": ["demo"], "aa": ["msaa4"], "jobWorkers": 6,
+  "quiet": { "maxWaitS": 60, "coolWaitS": 300 },
+  "sceneOptions": { "triangles": 12000, "glow": true }
+}

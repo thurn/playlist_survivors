@@ -1,0 +1,130 @@
+{
+  "note": [
+    "The arena's layout parameters (TD6; environment.md, Layout). ArenaLayout.Parse reads them and ArenaLayout.Generate turns them into the placement list that the choreographer navigates and TD9's scene generator instantiates.",
+    "Ground (x, y) is Unity's (x, z) in metres, the arena centred on the origin; yawDeg in degrees with the timeline's convention (Unity's Euler y).",
+    "seed: the scatter's seed. size: the ground. decorationDensity: scales edge-band and forest scatter only (spacing / sqrt(density)); clearings and paths stay as they are. edgeWidthM: the edge band's width, varied by seeded noise between the two.",
+    "props: named groups of kit pieces ('pack/prefab', as in footprints.json), each with a weight. scatter: per area type (clearing, path, edge, forest), layers of {props, spacingM (a jittered grid), scale [min, max], yawJitterDeg, chance, maxSlopeDeg (unused while the ground is flat), keepCanopyOff (forest's default: canopies never overhang fighting ground)}. Clearing and path layers may hold only pieces that do not block.",
+    "areas: {type, name?, shape, goal?, pieces?}. Shapes: center + radius (a disc), center + ring [inner, outer], from + to + width (a path), or fill (forest: everything not otherwise typed). Edge bands need no area: they ring all fighting ground (clearings and paths). Landmarks (at) and structures (center, or from/to) are placed explicitly: pieces [{prop, at (from the area's anchor), yawDeg, scale}], and for a structure its walls from a prop group: kind courtyard (size [x, y], yawDeg, gaps 3 or 4 of gapM metres, one per side, closedSide 0 south / 1 east / 2 north / 3 west when 3) or kind ruin-wall (from, to, gaps evenly spaced). Every gap must exceed the largest monster's diameter by 1 m. Scatter keeps clearM (computed if absent) from a landmark's or structure's anchor (a ruin wall's line).",
+    "goal {at, radius}: makes a named area a goal the level script (or a stress script's hold) can name. shots: named camera positions for the beauty shots."
+  ],
+  "name": "arena",
+  "seed": 7,
+  "size": [160, 160],
+  "decorationDensity": 1.0,
+  "edgeWidthM": [3, 6],
+  "heroStart": [0, -50],
+  "props": {
+    "forest-trees": {
+      "kingdom/SM_Env_Tree_Round_01": 3, "kingdom/SM_Env_Tree_Round_02": 3, "kingdom/SM_Env_Tree_Round_03": 3, "kingdom/SM_Env_Tree_Round_04": 2,
+      "kingdom/SM_Env_Tree_Large_01": 0.5, "kingdom/SM_Env_Tree_Large_02": 0.5,
+      "kingdom/SM_Env_Tree_Pine_Cluster_01": 0.4, "kingdom/SM_Env_Tree_Pine_Cluster_02": 0.3,
+      "adventure/SM_Env_Tree_01": 2, "adventure/SM_Env_Tree_02": 2, "adventure/SM_Env_Tree_03": 2, "adventure/SM_Env_Tree_04": 2, "adventure/SM_Env_Tree_05": 2,
+      "adventure/SM_Env_TreePine_01": 1.5, "adventure/SM_Env_TreePine_02": 1.5, "adventure/SM_Env_TreePine_03": 1,
+      "elven/SM_Env_Tree_01": 0.8, "elven/SM_Env_Tree_02": 0.8, "elven/SM_Env_Tree_03": 0.8,
+      "darkfantasy/SM_Env_Tree_Dead_02": 0.3, "darkfantasy/SM_Env_Tree_Dead_03": 0.2,
+      "kingdom/SM_Env_Tree_Dead_01": 0.3, "kingdom/SM_Env_Tree_Dead_02": 0.3
+    },
+    "forest-rocks": {
+      "elven/SM_Env_Rock_01": 1, "elven/SM_Env_Rock_02": 1, "elven/SM_Env_Rock_03": 1, "elven/SM_Env_Rock_Round_01": 1,
+      "kingdom/SM_Env_Rock_Chunk_02": 1, "kingdom/SM_Env_Rock_Chunk_03": 1
+    },
+    "edge-plants": {
+      "elven/SM_Env_Bush_01": 3, "elven/SM_Env_Bush_02": 3, "elven/SM_Env_Bush_03": 3,
+      "elven/SM_Env_Bushes_01": 0.8, "elven/SM_Env_Bushes_02": 0.6, "elven/SM_Env_Bushes_03": 0.5,
+      "adventure/SM_Env_TreeLog_01": 0.8, "adventure/SM_Env_TreeStump_01": 0.6,
+      "kingdom/SM_Env_Rock_Chunk_01": 1.2, "kingdom/SM_Env_Rock_Chunk_02": 0.6
+    },
+    "edge-soft": {
+      "elven/SM_Env_Fern_01": 3, "elven/SM_Env_Grass_01": 2, "elven/SM_Env_Grass_02": 2, "elven/SM_Env_Grass_03": 2,
+      "elven/SM_Env_Flowers_01": 1, "elven/SM_Env_Flowers_04": 1
+    },
+    "clutter": {
+      "kingdom/SM_Env_Rock_01": 1, "kingdom/SM_Env_Rock_02": 1, "kingdom/SM_Env_Rock_03": 1, "kingdom/SM_Env_Rock_04": 1,
+      "kingdom/SM_Generic_Small_Rocks_01": 1.5, "kingdom/SM_Generic_Small_Rocks_02": 1.5,
+      "elven/SM_Env_Flowers_02": 1, "elven/SM_Env_Flowers_03": 1
+    },
+    "ruin-walls": {
+      "darkfantasy/SM_Bld_Wall_Ruin_01": 1, "darkfantasy/SM_Bld_Wall_Ruin_02": 1, "darkfantasy/SM_Bld_Wall_Ruin_03": 1,
+      "darkfantasy/SM_Bld_Wall_Ruin_04": 1, "darkfantasy/SM_Bld_Wall_Ruin_05": 1, "darkfantasy/SM_Bld_Wall_Ruin_06": 1,
+      "darkfantasy/SM_Bld_Wall_Ruin_07": 1
+    }
+  },
+  "scatter": {
+    "forest": [
+      { "props": "forest-trees", "spacingM": 4.5, "scale": [0.9, 1.3] },
+      { "props": "forest-rocks", "spacingM": 14, "scale": [0.6, 1.0], "chance": 0.6 }
+    ],
+    "edge": [
+      { "props": "edge-plants", "spacingM": 2.6, "scale": [0.8, 1.2] },
+      { "props": "edge-soft", "spacingM": 2.0, "scale": [0.8, 1.3] }
+    ],
+    "path": [
+      { "props": "clutter", "spacingM": 3.5, "scale": [1.0, 1.6], "chance": 0.4 }
+    ],
+    "clearing": [
+      { "props": "clutter", "spacingM": 3.0, "scale": [1.0, 1.6], "chance": 0.5 }
+    ]
+  },
+  "areas": [
+    { "type": "clearing", "name": "camp", "center": [0, -48], "radius": 17, "goal": { "at": [0, -50], "radius": 3 } },
+    { "type": "landmark", "name": "glowing-tree", "at": [-8, -38],
+      "pieces": [ { "prop": "elven/SM_Env_Tree_Glowing_01", "at": [0, 0], "yawDeg": 30 },
+                  { "prop": "elven/SM_Env_Tree_Glowing_Canopy_01", "at": [0, 0], "yawDeg": 30 } ],
+      "goal": { "at": [-1, -38], "radius": 4 } },
+    { "type": "path", "from": [2, -36], "to": [12, -24], "width": 9 },
+    { "type": "clearing", "name": "glade", "center": [16, -16], "radius": 15 },
+    { "type": "landmark", "name": "crystal-ring", "at": [12, -25],
+      "pieces": [ { "prop": "darkfantasy/SM_Prop_Tomb_Stone_01", "at": [7, 0], "yawDeg": 90, "scale": 1.6 },
+                  { "prop": "darkfantasy/SM_Prop_Tomb_Stone_01", "at": [3.5, 6.06], "yawDeg": 30, "scale": 1.6 },
+                  { "prop": "darkfantasy/SM_Prop_Tomb_Stone_01", "at": [-3.5, 6.06], "yawDeg": -30, "scale": 1.6 },
+                  { "prop": "darkfantasy/SM_Prop_Tomb_Stone_01", "at": [-7, 0], "yawDeg": -90, "scale": 1.6 },
+                  { "prop": "darkfantasy/SM_Prop_Tomb_Stone_01", "at": [-3.5, -6.06], "yawDeg": -150, "scale": 1.6 },
+                  { "prop": "darkfantasy/SM_Prop_Tomb_Stone_01", "at": [3.5, -6.06], "yawDeg": 150, "scale": 1.6 } ],
+      "goal": { "at": [12, -25], "radius": 5 } },
+    { "type": "landmark", "name": "graveyard", "at": [28, -13],
+      "pieces": [ { "prop": "darkfantasy/SM_Prop_Tomb_01", "at": [0, 2], "yawDeg": 5 },
+                  { "prop": "darkfantasy/SM_Prop_Tomb_02", "at": [2.8, -2], "yawDeg": -8 },
+                  { "prop": "darkfantasy/SM_Prop_Tomb_Stone_01", "at": [-1.5, -4], "yawDeg": 12 },
+                  { "prop": "darkfantasy/SM_Prop_Tomb_Stone_01", "at": [3, 5], "yawDeg": -20 },
+                  { "prop": "darkfantasy/SM_Prop_Tomb_Stone_01", "at": [-2, 5.5], "yawDeg": 4 },
+                  { "prop": "darkfantasy/SM_Prop_Statue_01", "at": [4.5, 1.5], "yawDeg": -90 },
+                  { "prop": "darkfantasy/SM_Env_Tree_Dead_01", "at": [6, -5], "yawDeg": 40 },
+                  { "prop": "darkfantasy/SM_Bld_Fence_Cemetary_01", "at": [-1, 8.5], "yawDeg": 0 },
+                  { "prop": "darkfantasy/SM_Bld_Fence_Cemetary_02", "at": [2, 8.5], "yawDeg": 0 },
+                  { "prop": "darkfantasy/SM_Bld_Fence_Pillar_Cemetary_01", "at": [2.4, 8.5], "yawDeg": 0 },
+                  { "prop": "darkfantasy/SM_Prop_Candle_01", "at": [-1.2, 0.2], "yawDeg": 0 },
+                  { "prop": "darkfantasy/SM_Prop_Candle_02", "at": [1.4, -3.5], "yawDeg": 0 },
+                  { "prop": "darkfantasy/SM_Prop_Candle_03", "at": [-2.6, 3.4], "yawDeg": 0 },
+                  { "prop": "darkfantasy/SM_Prop_Skull_Pile_01", "at": [5.2, -1.5], "yawDeg": 70 } ],
+      "goal": { "at": [22, -14], "radius": 5 } },
+    { "type": "structure", "name": "ruins-gate", "kind": "ruin-wall", "from": [2, -1], "to": [30, -1], "gaps": 1, "gapM": 6, "walls": "ruin-walls",
+      "pieces": [ { "prop": "darkfantasy/SM_Bld_Ruin_04", "at": [0.5, -2.2], "yawDeg": 10 },
+                  { "prop": "darkfantasy/SM_Bld_Ruin_03", "at": [27, 1.5], "yawDeg": 0 } ],
+      "goal": { "at": [16, -1], "radius": 4 } },
+    { "type": "clearing", "name": "courtyard-field", "center": [4, 20], "radius": 30, "goal": { "at": [6, 32], "radius": 6 } },
+    { "type": "structure", "name": "courtyard", "kind": "courtyard", "center": [0, 16], "size": [16, 16], "yawDeg": 0, "gaps": 4, "gapM": 5, "walls": "ruin-walls",
+      "goal": { "at": [0, 13.5], "radius": 6 } },
+    { "type": "clearing", "name": "brazier-glade-clearing", "center": [-22, 34], "radius": 12 },
+    { "type": "landmark", "name": "brazier-glade", "at": [-22, 32],
+      "pieces": [ { "prop": "darkfantasy/SM_Prop_Brazier_01", "at": [5.5, 0], "yawDeg": 0 },
+                  { "prop": "darkfantasy/SM_Prop_Brazier_01", "at": [0, 5.5], "yawDeg": 0 },
+                  { "prop": "darkfantasy/SM_Prop_Brazier_01", "at": [-5.5, 0], "yawDeg": 0 },
+                  { "prop": "darkfantasy/SM_Prop_Brazier_01", "at": [0, -5.5], "yawDeg": 0 },
+                  { "prop": "darkfantasy/SM_Prop_Pyre_02", "at": [-6, 7], "yawDeg": 20 },
+                  { "prop": "darkfantasy/SM_Prop_Statue_02", "at": [6, 7], "yawDeg": 200 } ],
+      "goal": { "at": [-22, 32], "radius": 5 } },
+    { "type": "clearing", "name": "opening", "center": [44, 40], "radius": 35, "goal": { "at": [44, 40], "radius": 4 } },
+    { "type": "landmark", "name": "opening-ruin", "at": [68, 54],
+      "pieces": [ { "prop": "darkfantasy/SM_Bld_Ruin_02", "at": [0, 0], "yawDeg": 15 },
+                  { "prop": "darkfantasy/SM_Prop_Gargoyle_Statue_01", "at": [-4.5, -3], "yawDeg": 230 } ] },
+    { "type": "forest", "fill": true }
+  ],
+  "shots": [
+    { "name": "opening", "at": [44, 40], "viewWidthM": 40 },
+    { "name": "path", "at": [7, -30], "viewWidthM": 36 },
+    { "name": "glowing-tree", "at": [-4, -38], "viewWidthM": 32 },
+    { "name": "graveyard", "at": [24, -13], "viewWidthM": 34 },
+    { "name": "courtyard", "at": [0, 16], "viewWidthM": 40 },
+    { "name": "forest-edge", "at": [-12, -48], "viewWidthM": 32 }
+  ]
+}

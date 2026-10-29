@@ -1,0 +1,56 @@
+{
+ "title": "Action [NCS Release]",
+ "artists": "Alessia Labate, Conrad Taylor",
+ "label": "NCS (NoCopyrightSounds)",
+ "tags": "ID3: title 'Action [NCS Release]', artist 'Conrad Taylor & Alessia Labate', album 'Action', genre 'Techno', date 2026",
+ "file": "Alessia Labate, Conrad Taylor - Action [NCS Release].mp3",
+ "paths": {
+  "cygnus": "D:\\vendor\\songs\\action\\Alessia Labate, Conrad Taylor - Action [NCS Release].mp3",
+  "mac": "~/Downloads/Alessia Labate, Conrad Taylor - Action [NCS Release].mp3"
+ },
+ "format": "MP3 (MPEG-1 Layer III), 256 kbps CBR, 44.1 kHz, stereo; Info header with LAME extension (encoder Lavc58.18): encoder delay 576, padding 881",
+ "bytes": 6369253,
+ "duration": 198.967778,
+ "frames": 8774479,
+ "sha256": "bc5dafdaf75435faa225acf8293f9d954a935b86c4b0555b0c04fc46c8fe5231",
+ "redistributable": false,
+ "license": {
+  "summary": "NCS audio, free to use under NCS's usage policy with credit; not ours to redistribute. The MP3 and every conversion or crop of it stay out of git (.gitignore, vendor guard).",
+  "usagePolicy": "https://ncs.io/usage-policy",
+  "checked": "2026-10-27, from Cygnus: the track page and the usage policy page were read online. The Terms & Conditions page could not be fetched (https://ncs.io/terms returned 404), so its wording on redistribution is unverified.",
+  "terms": [
+   "YouTube and Twitch videos and streams by independent creators may use NCS tracks free, monetised included, if they credit the artist and song and follow the usage policy.",
+   "Video credit: copy the credit block from the NCS track page or the NCS YouTube video's description (below).",
+   "Streams: add 'Music provided by http://spoti.fi/NCS' to the stream description.",
+   "Games: the usage policy says game developers go through NCS's commercial licensing form. The demo is a free, non-commercial prototype, but a public demo build would still need that form (operator decision); a shared capture video falls under the free video use with the credit below.",
+   "Brands promoting their own products contact NCS's partnerships team; that does not apply here.",
+   "The usage policy page does not address redistributing the audio files themselves; treat them as not redistributable."
+  ]
+ },
+ "credit": {
+  "source": "https://ncs.io/Action (the 'When using this song, please add the following to your description' block, read 2026-10-27)",
+  "text": "Song: Conrad Taylor - Action\nMusic provided by NoCopyrightSounds\nFree Download/Stream: http://ncs.io/Action\nWatch: http://ncs.lnk.to/ActionAT/youtube",
+  "note": "NCS's credit line names only Conrad Taylor, while the page title is 'Action by Alessia Labate + Conrad Taylor' and the file name names both. Use NCS's block verbatim; the demo's own credits screen may name both artists."
+ },
+ "songMapAudio": {
+  "file": "public/audio/action.flac",
+  "tracked": false,
+  "what": "The song map's time origin. The MP3 decoded by ffmpeg with its gapless trim (1105 samples dropped at the start: encoder delay 576 + decoder delay 529; 352 samples of padding dropped at the end), stored losslessly as 24-bit stereo FLAC. Time 0 in songmap.json is the MP3's first gapless sample.",
+  "frames": 8774479,
+  "sampleRate": 44100,
+  "command": "ffmpeg -i \"<source.mp3>\" -map 0:a -c:a flac -compression_level 8 public/audio/action.flac"
+ },
+ "playback": {
+  "file": "action.ogg (in the gitignored baked folder, written by the worktree setup command)",
+  "tracked": false,
+  "command": "ffmpeg -nostdin -y -i \"<source.mp3>\" -map 0:a -map_metadata -1 -c:a libvorbis -q:a 6 \"<baked>/action.ogg\"",
+  "tool": "ffmpeg 9.0.1 (gyan.dev full build), libvorbis; about 192 kbps, stereo, 44.1 kHz, 5.0 MB",
+  "alignment": {
+   "offsetSamples": 0,
+   "offsetMs": 0.0,
+   "frames": 8774479,
+   "measured": "Decoded Ogg cross-correlated against the map's FLAC in four 10 s windows (1-11, 60-70, 125-135, 185-195 s): lag 0.000 samples (|lag| < 0.002) in all four, the same frame count, and ps-analysis check passes on the Ogg with the same onset alignment. Without the gapless trim the MP3 plays 1105 samples (25.057 ms) late. Evidence: demo3d/evidence/td0/alignment.json.",
+   "caveat": "Measured on decoders outside Unity (ffmpeg, libsndfile). Unity re-encodes the imported Ogg; TD3's click-track check in Unity confirms its playback origin."
+  }
+ }
+}

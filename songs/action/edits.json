@@ -1,0 +1,442 @@
+[
+ {
+  "op": "moveBeat",
+  "index": 514,
+  "time": 198.59047
+ },
+ {
+  "op": "moveBeat",
+  "index": 0,
+  "time": 0.00982
+ },
+ {
+  "op": "respace",
+  "from": 0,
+  "to": 514,
+  "count": 513
+ },
+ {
+  "op": "setFirstDownbeat",
+  "index": 0
+ },
+ {
+  "op": "setMeter",
+  "meter": [
+   {
+    "fromBar": 1,
+    "beatsPerBar": 4
+   }
+  ]
+ },
+ {
+  "op": "removeSection",
+  "label": "all"
+ },
+ {
+  "op": "setSection",
+  "label": "intro",
+  "bars": [
+   1,
+   8
+  ],
+  "feel": "pulsed"
+ },
+ {
+  "op": "setSection",
+  "label": "groove",
+  "bars": [
+   9,
+   22
+  ],
+  "feel": "pulsed"
+ },
+ {
+  "op": "setSection",
+  "label": "break-1",
+  "bars": [
+   23,
+   24
+  ],
+  "feel": "free"
+ },
+ {
+  "op": "setSection",
+  "label": "drop-1",
+  "bars": [
+   25,
+   48
+  ],
+  "feel": "pulsed"
+ },
+ {
+  "op": "setSection",
+  "label": "breakdown",
+  "bars": [
+   49,
+   56
+  ],
+  "feel": "pulsed"
+ },
+ {
+  "op": "setSection",
+  "label": "groove-2",
+  "bars": [
+   57,
+   72
+  ],
+  "feel": "pulsed"
+ },
+ {
+  "op": "setSection",
+  "label": "build",
+  "bars": [
+   73,
+   78
+  ],
+  "feel": "pulsed"
+ },
+ {
+  "op": "setSection",
+  "label": "break-2",
+  "bars": [
+   79,
+   80
+  ],
+  "feel": "free"
+ },
+ {
+  "op": "setSection",
+  "label": "drop-2",
+  "bars": [
+   81,
+   104
+  ],
+  "feel": "pulsed"
+ },
+ {
+  "op": "setSection",
+  "label": "final-peak",
+  "bars": [
+   105,
+   120
+  ],
+  "feel": "pulsed"
+ },
+ {
+  "op": "setSection",
+  "label": "outro",
+  "bars": [
+   121,
+   126
+  ],
+  "feel": "pulsed"
+ },
+ {
+  "op": "setSection",
+  "label": "ending",
+  "bars": [
+   127,
+   129
+  ],
+  "feel": "free"
+ },
+ {
+  "op": "setPhrases",
+  "phrases": [
+   [
+    1,
+    4
+   ],
+   [
+    5,
+    8
+   ],
+   [
+    9,
+    16
+   ],
+   [
+    17,
+    22
+   ],
+   [
+    23,
+    24
+   ],
+   [
+    25,
+    32
+   ],
+   [
+    33,
+    40
+   ],
+   [
+    41,
+    48
+   ],
+   [
+    49,
+    56
+   ],
+   [
+    57,
+    64
+   ],
+   [
+    65,
+    72
+   ],
+   [
+    73,
+    78
+   ],
+   [
+    79,
+    80
+   ],
+   [
+    81,
+    88
+   ],
+   [
+    89,
+    96
+   ],
+   [
+    97,
+    104
+   ],
+   [
+    105,
+    112
+   ],
+   [
+    113,
+    120
+   ],
+   [
+    121,
+    126
+   ],
+   [
+    127,
+    129
+   ]
+  ]
+ },
+ {
+  "op": "setTempoChanges",
+  "tempoChanges": []
+ },
+ {
+  "op": "clearAnchors"
+ },
+ {
+  "op": "addAnchor",
+  "time": 34.58,
+  "strength": 0.5,
+  "snapMs": 30
+ },
+ {
+  "op": "addAnchor",
+  "time": 35.645,
+  "strength": 0.6,
+  "snapMs": 30
+ },
+ {
+  "op": "addAnchor",
+  "time": 36.445,
+  "strength": 0.9,
+  "snapMs": 30
+ },
+ {
+  "op": "addAnchor",
+  "time": 37.095,
+  "strength": 0.8,
+  "snapMs": 30
+ },
+ {
+  "op": "addAnchor",
+  "time": 121.58,
+  "strength": 0.5,
+  "snapMs": 30
+ },
+ {
+  "op": "addAnchor",
+  "time": 123.153,
+  "strength": 0.9,
+  "snapMs": 30
+ },
+ {
+  "op": "addAnchor",
+  "time": 123.807,
+  "strength": 0.7,
+  "snapMs": 30
+ },
+ {
+  "op": "addAnchor",
+  "time": 195.898,
+  "strength": 0.8,
+  "snapMs": 30
+ },
+ {
+  "op": "addAnchor",
+  "time": 197.446,
+  "strength": 1.0,
+  "snapMs": 30
+ },
+ {
+  "op": "clearAccents"
+ },
+ {
+  "op": "addAccent",
+  "time": 1.5582,
+  "strength": 0.55
+ },
+ {
+  "op": "addAccent",
+  "time": 4.623,
+  "strength": 0.6,
+  "snapMs": 20
+ },
+ {
+  "op": "addAccent",
+  "time": 7.7518,
+  "strength": 0.55
+ },
+ {
+  "op": "addAccent",
+  "time": 10.8485,
+  "strength": 0.55
+ },
+ {
+  "op": "addAccent",
+  "time": 12.3969,
+  "strength": 1.0,
+  "label": "drop"
+ },
+ {
+  "op": "addAccent",
+  "time": 24.784,
+  "strength": 0.6
+ },
+ {
+  "op": "addAccent",
+  "time": 35.645,
+  "strength": 0.6,
+  "snapMs": 20
+ },
+ {
+  "op": "addAccent",
+  "time": 36.445,
+  "strength": 0.85,
+  "snapMs": 20,
+  "label": "stab"
+ },
+ {
+  "op": "addAccent",
+  "time": 37.1711,
+  "strength": 1.0,
+  "label": "drop"
+ },
+ {
+  "op": "addAccent",
+  "time": 49.5582,
+  "strength": 0.9,
+  "label": "re-entry"
+ },
+ {
+  "op": "addAccent",
+  "time": 61.9453,
+  "strength": 0.6
+ },
+ {
+  "op": "addAccent",
+  "time": 80.5259,
+  "strength": 0.6
+ },
+ {
+  "op": "addAccent",
+  "time": 86.7195,
+  "strength": 0.85,
+  "label": "re-entry"
+ },
+ {
+  "op": "addAccent",
+  "time": 99.1066,
+  "strength": 0.6
+ },
+ {
+  "op": "addAccent",
+  "time": 105.3001,
+  "strength": 0.55
+ },
+ {
+  "op": "addAccent",
+  "time": 111.4937,
+  "strength": 0.6
+ },
+ {
+  "op": "addAccent",
+  "time": 123.153,
+  "strength": 0.9,
+  "snapMs": 20,
+  "label": "stab"
+ },
+ {
+  "op": "addAccent",
+  "time": 123.8808,
+  "strength": 1.0,
+  "label": "drop"
+ },
+ {
+  "op": "addAccent",
+  "time": 136.2679,
+  "strength": 0.9,
+  "label": "re-entry"
+ },
+ {
+  "op": "addAccent",
+  "time": 148.655,
+  "strength": 0.95,
+  "label": "re-entry"
+ },
+ {
+  "op": "addAccent",
+  "time": 155.136,
+  "strength": 0.75,
+  "snapMs": 20,
+  "label": "stab"
+ },
+ {
+  "op": "addAccent",
+  "time": 161.0421,
+  "strength": 0.95,
+  "label": "re-entry"
+ },
+ {
+  "op": "addAccent",
+  "time": 173.4292,
+  "strength": 0.65
+ },
+ {
+  "op": "addAccent",
+  "time": 185.8163,
+  "strength": 0.6
+ },
+ {
+  "op": "addAccent",
+  "time": 195.898,
+  "strength": 0.8,
+  "snapMs": 20,
+  "label": "stab"
+ },
+ {
+  "op": "addAccent",
+  "time": 197.446,
+  "strength": 0.9,
+  "snapMs": 20,
+  "label": "stab"
+ }
+]

@@ -8,6 +8,8 @@
 #   and the song map's check when the song maps changed.
 # - The friction ledger: its records and scripts/friction's tests, when either changed.
 # - native/scripts/check-fast when native/ changed and the workspace has one (F4 adds it).
+# - The 3D demo's vendor guard, always, over the commits since the base and the index; its tools'
+#   lint and tests when demo3d/tools changed, and the choreography layer's tests when it changed.
 # Tollgate's gate stage (scripts/ci-gate) and release stage (scripts/ci-full) run the rest.
 set -eu
 cd "$(dirname "$0")/.."
@@ -71,6 +73,20 @@ fi
 
 if changes_native && [ -x native/scripts/check-fast ]; then
   native/scripts/check-fast
+fi
+
+# The vendor guard (docs/tech-demo-3d/vendor-assets.md), whatever changed: a vendor file is
+# caught by its hash anywhere in the tree.
+if [ -n "$CHANGES_BASE" ]; then
+  uv run --quiet --project demo3d/tools demo3d guard --range "$CHANGES_BASE..HEAD"
+fi
+uv run --quiet --project demo3d/tools demo3d guard --index
+if changes_match '^demo3d/tools/'; then
+  uv run --directory demo3d/tools ruff check .
+  uv run --directory demo3d/tools pytest -q
+fi
+if changes_match '^(demo3d/(dotnet/|Assets/Demo3D/Choreography/|Assets/Demo3D/Tests/Choreography/)|songs/action/)'; then
+  dotnet test demo3d/dotnet/Demo3D.Choreography.Tests --nologo -v q
 fi
 
 echo "check-fast: passed in $(( $(date +%s) - started )) s"

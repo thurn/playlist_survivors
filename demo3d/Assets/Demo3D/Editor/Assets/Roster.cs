@@ -1,0 +1,166 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Newtonsoft.Json;
+using UnityEditor;
+using UnityEngine;
+
+namespace Demo3D.EditorTools.Assets
+{
+    /// <summary>
+    /// The roster (Assets/Demo3D/Data/roster.json): each monster type, the boss candidates and the
+    /// hero, with their vendor prefab and clips by GUID. A clip name of "" means the first clip in
+    /// that file (Synty's animation packs hold one clip per FBX).
+    /// </summary>
+    public static class Roster
+    {
+        public const string DataPath = "Assets/Demo3D/Data/roster.json";
+
+        public sealed class Ref
+        {
+            public string guid;
+            public string path;
+        }
+
+        public sealed class ClipRef
+        {
+            public string guid;
+            public string clip;
+        }
+
+        public sealed class WeaponRef
+        {
+            public string guid;
+            public string path;
+            public string bone;
+        }
+
+        public sealed class Type
+        {
+            public string id;
+            public string kind;
+            public string rig;
+            public float radius;
+            public float heightM;
+            public float hoverM;
+            public Ref prefab;
+            public Dictionary<string, ClipRef> clips = new Dictionary<string, ClipRef>();
+            public Dictionary<string, ClipRef> rootMotionClips = new Dictionary<string, ClipRef>();
+            public List<WeaponRef> weapons = new List<WeaponRef>();
+
+            public bool Humanoid => rig == "humanoid";
+        }
+
+        sealed class File
+        {
+            public int version;
+            public List<Type> types;
+        }
+
+        public static List<Type> Load()
+        {
+            var file = JsonConvert.DeserializeObject<File>(System.IO.File.ReadAllText(DataPath));
+            if (file == null || file.version != 1) throw new Exception("Roster: unknown version");
+            return file.types;
+        }
+
+        public static string PathOf(string guid)
+        {
+            var path = AssetDatabase.GUIDToAssetPath(guid);
+            if (string.IsNullOrEmpty(path))
+                throw new Exception($"Roster: no asset with GUID {guid}; is the vendor folder synced (demo3d setup)?");
+            return path;
+        }
+
+        /// <summary>A Synty attack's own `_Hit_` clip start, in seconds: the vendor's impact frame.</summary>
+        public static float? VendorHitTime(ClipRef c)
+        {
+            var hit = AssetDatabase.LoadAllAssetsAtPath(PathOf(c.guid)).OfType<AnimationClip>()
+                .FirstOrDefault(a => a.name.Contains("_Hit_"));
+            if (hit == null) return null;
+            var importer = AssetImporter.GetAtPath(PathOf(c.guid)) as ModelImporter;
+            var info = importer?.clipAnimations.FirstOrDefault(x => x.name == hit.name);
+            var whole = importer?.clipAnimations.OrderByDescending(x => x.lastFrame - x.firstFrame).FirstOrDefault();
+            if (info == null || whole == null) return null;
+            return (info.firstFrame - whole.firstFrame) / hit.frameRate;
+        }
+
+        public static GameObject LoadPrefab(Ref r) =>
+            AssetDatabase.LoadAssetAtPath<GameObject>(PathOf(r.guid))
+            ?? throw new Exception($"Roster: {r.path} is not a prefab");
+
+        public static AnimationClip LoadClip(ClipRef c)
+        {
+            var path = PathOf(c.guid);
+            var clips = AssetDatabase.LoadAllAssetsAtPath(path).OfType<AnimationClip>()
+                .Where(a => !a.name.StartsWith("__preview__", StringComparison.Ordinal)).ToList();
+            if (clips.Count == 0) throw new Exception($"Roster: no clips in {path}");
+            // Synty's packs split each attack into WindUp, Hit and FollowThrough clips beside the
+            // whole one; the whole one is the longest.
+            if (string.IsNullOrEmpty(c.clip)) return clips.OrderByDescending(a => a.length).First();
+            return clips.FirstOrDefault(a => a.name == c.clip)
+                ?? throw new Exception($"Roster: no clip '{c.clip}' in {path} (has {string.Join(", ", clips.Select(a => a.name))})");
+        }
+
+        /// <summary>Instantiates a type's prefab, with URP materials and its weapons attached.</summary>
+        public static GameObject Spawn(Type t, Vector3 at, float yawDeg)
+        {
+            var prefab = LoadPrefab(t.prefab);
+            var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+            PrefabUtility.UnpackPrefabInstance(go, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+            go.transform.SetPositionAndRotation(at, Quaternion.Euler(0, yawDeg, 0));
+            var animator = go.GetComponentInChildren<Animator>();
+            if (animator != null)
+            {
+                animator.applyRootMotion = false;
+                animator.runtimeAnimatorController = null;
+            }
+            foreach (var w in t.weapons)
+            {
+                var bone = FindBone(go, animator, w.bone);
+                if (bone == null) continue;
+                var weapon = (GameObject)PrefabUtility.InstantiatePrefab(LoadPrefab(new Ref { guid = w.guid, path = w.path }));
+                weapon.transform.SetParent(bone, false);
+            }
+            UrpMaterials.Convert(go);
+            if (t.heightM > 0)
+            {
+                // Scale the prefab to the type's height in the demo (measured in its bind pose).
+                float native = MeasureHeight(go);
+                if (native > 0.05f) go.transform.localScale *= t.heightM / native;
+            }
+            if (t.hoverM > 0) go.transform.position += Vector3.up * t.hoverM;
+            return go;
+        }
+
+        public static float MeasureHeight(GameObject go)
+        {
+            var renderers = go.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            if (renderers.Length == 0) return 0;
+            float top = float.MinValue, bottom = float.MaxValue;
+            foreach (var r in renderers)
+            {
+                if (r.sharedMesh == null) continue;
+                var b = r.sharedMesh.bounds;
+                // The mesh's bounds in world space, through its root bone, approximate the bind pose.
+                for (int i = 0; i < 8; i++)
+                {
+                    var c = b.center + Vector3.Scale(b.extents, new Vector3((i & 1) * 2 - 1, (i >> 1 & 1) * 2 - 1, (i >> 2 & 1) * 2 - 1));
+                    var w = r.transform.TransformPoint(c);
+                    top = Mathf.Max(top, w.y);
+                    bottom = Mathf.Min(bottom, w.y);
+                }
+            }
+            return top - Mathf.Min(bottom, go.transform.position.y);
+        }
+
+        public static Transform FindBone(GameObject go, Animator animator, string name)
+        {
+            if (animator != null && animator.isHuman && Enum.TryParse(name, out HumanBodyBones hb))
+                return animator.GetBoneTransform(hb);
+            return go.GetComponentsInChildren<Transform>(true)
+                .FirstOrDefault(x => x.name.IndexOf(name, StringComparison.OrdinalIgnoreCase) >= 0);
+        }
+    }
+}

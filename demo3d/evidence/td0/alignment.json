@@ -1,0 +1,119 @@
+{
+ "task": "TD0",
+ "date": "2026-10-27",
+ "machine": "Cygnus (Windows 11)",
+ "reference": {
+  "file": "public/audio/action.flac",
+  "what": "the song map's audio: the source MP3 decoded by ffmpeg 9.0.1 (gapless) to 24-bit FLAC, stereo, 44100 Hz",
+  "frames": 8774479,
+  "sampleRate": 44100,
+  "command": "ffmpeg -i <source.mp3> -map 0:a -c:a flac -compression_level 8 public/audio/action.flac"
+ },
+ "mp3Header": {
+  "tag": "Info (Xing, CBR) with LAME extension, written by Lavc58.18",
+  "frames": 7618,
+  "encoderDelay": 576,
+  "padding": 881,
+  "decoderDelay": 529,
+  "startSkipSamples": 1105,
+  "framesBeforeTrim": 8775936,
+  "framesAfterTrim": 8774479,
+  "durationAfterTrim": 198.967778,
+  "note": "ffprobe reports start_time 0.025057 s (1105 samples) for the MP3; ffmpeg and libsndfile both drop those 1105 samples and the trailing 352 samples of padding"
+ },
+ "method": "mono mix; FFT cross-correlation over lags of +/-4000 samples in four 10 s windows (1-11, 60-70, 125-135, 185-195 s), parabolic sub-sample peak; residualDb is the aligned difference energy relative to the reference (lossy codecs leave -20 to -30 dB of waveform difference, which is not a timing error). A positive lag means the file plays later than the map.",
+ "windows": [
+  [
+   1,
+   11
+  ],
+  [
+   60,
+   70
+  ],
+  [
+   125,
+   135
+  ],
+  [
+   185,
+   195
+  ]
+ ],
+ "files": [
+  {
+   "file": "tools/analysis/work/action.ogg",
+   "what": "the converted Ogg (ffmpeg 9.0.1 libvorbis -q:a 6 from the MP3), decoded by libsndfile 1.2.2 (libvorbis)",
+   "frames": 8774479,
+   "frameDelta": 0,
+   "lagSamples": [
+    -0.001,
+    -0.0,
+    -0.001,
+    -0.001
+   ],
+   "lagMs": [
+    -0.0,
+    -0.0,
+    -0.0,
+    -0.0
+   ],
+   "residualDb": [
+    -22.7,
+    -26.6,
+    -31.9,
+    -29.2
+   ]
+  },
+  {
+   "file": "tools/analysis/work/action-src.mp3",
+   "what": "the source MP3 decoded by libsndfile 1.2.2 (mpg123, gapless)",
+   "frames": 8774479,
+   "frameDelta": 0,
+   "lagSamples": [
+    0.0,
+    -0.0,
+    -0.0,
+    -0.0
+   ],
+   "lagMs": [
+    0.0,
+    -0.0,
+    -0.0,
+    -0.0
+   ],
+   "residualDb": [
+    -118.1,
+    -45.9,
+    -57.3,
+    -49.4
+   ]
+  },
+  {
+   "file": "tools/analysis/work/mp3-nogapless.wav",
+   "what": "the source MP3 decoded by ffmpeg with -flags2 +skip_manual (gapless trim NOT applied): what a decoder that ignores the LAME/Info header plays",
+   "frames": 8775936,
+   "frameDelta": 1457,
+   "lagSamples": [
+    1105.0,
+    1105.0,
+    1105.0,
+    1105.0
+   ],
+   "lagMs": [
+    25.0567,
+    25.0567,
+    25.0567,
+    25.0567
+   ],
+   "residualDb": [
+    -121.6,
+    -45.9,
+    -57.3,
+    -49.4
+   ]
+  }
+ ],
+ "checkOnOgg": "ps-analysis check songs/action/songmap.json --audio tools/analysis/work/action.ogg: OK, with the same per-section onset alignment as on the FLAC",
+ "result": "The Ogg made by the fixed command has exactly the reference's 8774479 frames and a measured offset of 0.000 samples (|lag| < 0.002 samples) in every window. Skipping the gapless trim would make playback 1105 samples (25.057 ms) late."
+}

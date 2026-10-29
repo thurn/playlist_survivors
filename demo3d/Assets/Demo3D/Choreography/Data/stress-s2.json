@@ -1,0 +1,4 @@
+{ "note": "S2, crowd in combat: S1 plus hero combos, hits, deaths and refills; no spells or effects.",
+  "scene": "S2", "layout": "arena", "hold": "opening", "bpm": 140, "seconds": 60, "seed": 1, "reserve": 0.5, "viewWidthM": 40, "n": 1200,
+  "mix": { "skeleton": 3, "goblin": 3, "slime": 2, "bat": 2, "mushroom": 2, "demon": 2 },
+  "combo": ["slashL", "slashR", "thrust", "spin@accent", "slam@phrase"], "load": "demo", "spells": [], "draw": ["crowd", "hero"] }

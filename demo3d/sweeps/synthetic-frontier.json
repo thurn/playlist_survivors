@@ -1,0 +1,7 @@
+{
+  "_comment": "TD7's first frontier: the synthetic load (12,000-triangle capsules with additive glow quads) at the three design view widths.",
+  "scene": "synthetic", "seconds": 20, "warmup": 5, "rewarm": 3, "probeSeconds": 8,
+  "n": { "search": [100, 12000], "resolution": 0.05 },
+  "viewWidthM": [30, 40, 55], "load": ["demo"], "aa": ["msaa4"], "jobWorkers": 6,
+  "sceneOptions": { "triangles": 12000, "glow": true }
+}

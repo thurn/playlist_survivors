@@ -1,0 +1,90 @@
+TD6 measurements: the layer's tests' own output (dotnet test demo3d/dotnet/Demo3D.Choreography.Tests, 112/112 passed, 2026-10-28 on Cygnus, other sessions running).
+
+== Walls in every timeline (NavigationTests.NobodyStandsInsideAWall*): exact distance to the placement list's footprints, computed by the test; tolerance 0.05 m
+song:action: 2408972 samples, deepest 0.022 m inside a radius
+stress:S1:n1200:w40:none: 756420 samples, deepest 0.000 m inside a radius
+stress:S2:n1200:w40:demo: 754473 samples, deepest 0.003 m inside a radius
+stress:S3:n1200:w40:demo: 754912 samples, deepest 0.000 m inside a radius
+stress:S4:n1200:w40:demo: 754912 samples, deepest 0.000 m inside a radius
+stress:S5:n1200:w40:heavy: 734968 samples, deepest 0.020 m inside a radius
+stress:S6:n1200:w40:demo: 754286 samples, deepest 0.022 m inside a radius
+stress:court-dense:n500:w40:none: 162216 samples, deepest 0.017 m inside a radius
+stress:court-sparse:n80:w70:none: 26244 samples, deepest 0.017 m inside a radius
+
+== Courtyard test layout (sparse: 80 monsters from 22 m out, hero holding and not attacking; dense: 500 on screen, nobody dies)
+35444 gait steps: 29605 in place (29605 beside a neighbour), 12 reversals (11 in a jam), 0 zig-zags
+80 monsters with a path (6 in the U, 2 beyond the long wall, 12 behind the courtyard's closed side); the last reached the hero at 19.5 s
+dense: 22402 four-beat windows short of the hero, 18224 in a crowd
+sparse: 1791 four-beat windows short of the hero, 19 in a crowd
+
+== S6 (walls and chokes)
+S6 bar means: 1139 1089 1066 1038 1013 1016 1004 1005 1012 1012 998 988 956 939 950 951 959 976 976 954 950 956 976 1010 1020 1018 1025 1033 1022 1008 986 953
+S6: mean on screen 1018 of 1200; 0 of 128 beats with nobody inside the walls
+
+== Stress fill (bar means after the 5 s warm-up)
+S1 bar means: 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200
+S2 bar means: 1225 1240 1237 1230 1241 1237 1210 1196 1207 1216 1237 1227 1228 1231 1220 1221 1220 1213 1229 1225 1224 1230 1226 1218 1224 1233 1223 1211 1198 1199 1204 1213
+S3 bar means: 1237 1215 1219 1204 1200 1220 1209 1202 1216 1211 1208 1211 1203 1204 1209 1200 1192 1207 1205 1202 1213 1202 1196 1202 1193 1195 1208 1197 1191 1209 1198 1191
+S4 bar means: 1237 1215 1219 1204 1200 1220 1209 1202 1216 1211 1208 1211 1203 1204 1209 1200 1192 1207 1205 1202 1213 1202 1196 1202 1193 1195 1208 1197 1191 1209 1198 1191
+S5 bar means: 1140 964 1071 1081 989 902 1041 1084 1017 919 1066 1085 1000 897 1044 1109 992 894 1039 1117 1009 910 1056 1105 993 908 1037 1085 950 870 1028 1068
+
+== Overlap (no two living monsters overlapping by more than a quarter radius; worst seen)
+S1: 420 samples, worst overlap 0.100 of the smaller radius
+S2: 420 samples, worst overlap 0.100 of the smaller radius
+S3: 420 samples, worst overlap 0.112 of the smaller radius
+S4: 420 samples, worst overlap 0.112 of the smaller radius
+S5: 420 samples, worst overlap 0.101 of the smaller radius
+S6: 420 samples, worst overlap 0.100 of the smaller radius
+song: 1542 samples, worst overlap 0.169 of the smaller radius
+
+== The song
+song build: first 1.871 s, second 2.939 s
+song dump: 78553175 characters, FNV-1a bdc6a356ae1364d7
+strides toward a goal: 77 (36 around walls by the goal field), within a reached goal: 10
+break-1: 7.43 deaths/s against 7.50
+break-2: 19.70 deaths/s against 20.00
+breakdown: 14.05 deaths/s against 15.00
+build: 46.18 deaths/s against 50.00
+drop-1: 38.62 deaths/s against 40.00
+drop-2: 78.55 deaths/s against 80.00
+ending: 12.43 deaths/s against 12.50
+final-peak: 96.79 deaths/s against 100.00
+groove-2: 48.96 deaths/s against 50.00
+groove: 7.24 deaths/s against 7.50
+intro: 0.32 deaths/s against 0.30
+outro: 24.76 deaths/s against 25.00
+
+== Placement list
+at density 2: Path 1, Clearing 321, Forest 1142, Edge 558
+scatter: Path 1, Clearing 321, Forest 670, Edge 359; 1417 placements, 828 blocking
+arena at density 1: 1417 placements (828 blocking) of 79 pieces, generated in 42.5 ms; obstacle map 320x320 cells (12723 blocked, 828 footprints) in 21.4 ms; a whole flow field from the hero's start settles 85200 cells in 4.45 ms
+  goal camp at (0, -50) r 3: 0.0 m by the field from the hero's start
+  goal glowing-tree at (-1, -38) r 4: 12.4 m by the field from the hero's start
+  goal crystal-ring at (12, -25) r 5: 29.8 m by the field from the hero's start
+  goal graveyard at (22, -14) r 5: 44.8 m by the field from the hero's start
+  goal ruins-gate at (16, -1) r 4: 55.4 m by the field from the hero's start
+  goal courtyard-field at (6, 32) r 6: 86.3 m by the field from the hero's start
+  goal courtyard at (0, 13.5) r 6: 65.4 m by the field from the hero's start
+  goal brazier-glade at (-22, 32) r 5: 90.8 m by the field from the hero's start
+  goal opening at (44, 40) r 4: 107.6 m by the field from the hero's start
+arena at density 2: 2088 placements (1353 blocking) of 80 pieces, generated in 57.6 ms; obstacle map 320x320 cells (18232 blocked, 1353 footprints) in 23.5 ms; a whole flow field from the hero's start settles 77801 cells in 4.61 ms
+  goal camp at (0, -50) r 3: 0.0 m by the field from the hero's start
+  goal glowing-tree at (-1, -38) r 4: 12.4 m by the field from the hero's start
+  goal crystal-ring at (12, -25) r 5: 29.8 m by the field from the hero's start
+  goal graveyard at (22, -14) r 5: 44.8 m by the field from the hero's start
+  goal ruins-gate at (16, -1) r 4: 55.4 m by the field from the hero's start
+  goal courtyard-field at (6, 32) r 6: 87.6 m by the field from the hero's start
+  goal courtyard at (0, 13.5) r 6: 66.7 m by the field from the hero's start
+  goal brazier-glade at (-22, 32) r 5: 90.8 m by the field from the hero's start
+  goal opening at (44, 40) r 4: 107.6 m by the field from the hero's start
+courtyard-test at density 1: 259 placements (139 blocking) of 14 pieces, generated in 8.3 ms; obstacle map 128x128 cells (1358 blocked, 139 footprints) in 11.0 ms; a whole flow field from the hero's start settles 14244 cells in 2.74 ms
+  goal court at (0, 0) r 2: 0.0 m by the field from the hero's start
+
+== Tick timing as reported by the tests (dotnet test, so noisier than tick-timing.md)
+S1: {"simTickP50Ms":0.0078,"simTickP99Ms":2.8971,"simTickMaxMs":7.5417,"simTickMeanMs":0.124,"simTicks":3301,"simWarmupS":5,"flowRebuildSlices":27,"flowRebuilds":2}
+S2: {"simTickP50Ms":0.0155,"simTickP99Ms":3.4167,"simTickMaxMs":6.433,"simTickMeanMs":0.1531,"simTicks":3301,"simWarmupS":5,"flowRebuildSlices":52,"flowRebuilds":3}
+S3: {"simTickP50Ms":0.014,"simTickP99Ms":3.6201,"simTickMaxMs":6.1393,"simTickMeanMs":0.1584,"simTicks":3301,"simWarmupS":5,"flowRebuildSlices":53,"flowRebuilds":3}
+S4: {"simTickP50Ms":0.0141,"simTickP99Ms":3.7128,"simTickMaxMs":6.522,"simTickMeanMs":0.1603,"simTicks":3301,"simWarmupS":5,"flowRebuildSlices":53,"flowRebuilds":3}
+S5: {"simTickP50Ms":0.0148,"simTickP99Ms":4.0491,"simTickMaxMs":7.9672,"simTickMeanMs":0.1688,"simTicks":3301,"simWarmupS":5,"flowRebuildSlices":154,"flowRebuilds":7}
+S6: {"simTickP50Ms":0.0166,"simTickP99Ms":5.1105,"simTickMaxMs":7.2546,"simTickMeanMs":0.2236,"simTicks":3301,"simWarmupS":5,"flowRebuildSlices":357,"flowRebuilds":15}
+song: {"simTickP50Ms":0.0097,"simTickP99Ms":4.7736,"simTickMaxMs":23.6464,"simTickMeanMs":0.1556,"simTicks":11640,"simWarmupS":5,"flowRebuildSlices":1968,"flowRebuilds":84}

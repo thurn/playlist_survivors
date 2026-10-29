@@ -41,3 +41,6 @@ reactive-local/
 /songs/action/*.aac
 /songs/action/*.opus
 /public/audio/action*
+/demo3d/dotnet/**/bin/
+/demo3d/dotnet/**/obj/
+/demo3d/tools/.venv/

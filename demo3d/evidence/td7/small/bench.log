@@ -1,0 +1,72 @@
+22:41:56 sweep 20261027-224156: D:\wt\td7\demo3d\sweeps\synthetic-small.json -> D:\wt\td7\demo3d\Logs\bench\small1
+22:41:56 the orchestrator holds the machine lock
+22:41:56 display state on (watching: True), held on
+22:41:56 GPU 39 °C, throttle none
+22:42:03 machine quiet: other processes 10.0% CPU over 5 s (waited 7 s)
+22:42:03 machine {"sweep": "20261027-224156", "api": "d3d12", "gpu": "NVIDIA GeForce RTX 4070 Ti", "driver": "610.88", "cpu": "12th Gen Intel(R) Core(TM) i7-12700F", "logicalCores": 20, "powerPlan": "high", "powerPlanName": "High performance", "memMHz": 2133, "jobWorkers": 6, "backbuffer": "1920x1080", "display": "on", "gpuTempC": 39, "gpuThrottle": "none", "quietWaitS": 7, "otherCpuPctAtStart": 10, "unity": "6000.6.7f1", "backend": "il2cpp", "commandLine": "D:\\wt\\td7\\demo3d\\Builds\\il2cpp\\PlaylistSurvivors3D.exe -force-d3d12 -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --bench D:\\wt\\td7\\demo3d\\sweeps\\synthetic-small.json --out D:\\wt\\td7\\demo3d\\Logs\\bench\\small1 -logFile D:\\wt\\td7\\demo3d\\Logs\\bench\\small1\\player.log --lock-held"}
+22:42:03 clocks: FrameTimingManager 10000000 Hz, QueryPerformanceCounter 10000000 Hz, newest frame started 9.3 ms ago
+22:42:03 point 30m/demo/msaa4: capacity 1593, ceiling 1593, seed none
+22:42:03 rebuilt for n 399 in 0 ms
+22:42:13 probe n 399 30m/demo/msaa4: gpu p99 1.19 main 0.81 render 0.51 ms -> pass (gpu 0.28) NOISY
+22:42:13 run noisy (other processes used 16.1% CPU over 5 s), repeating (2/3)
+22:42:39 machine quiet: other processes 9.5% CPU over 5 s (waited 26 s)
+22:42:47 probe n 399 30m/demo/msaa4: gpu p99 1.16 main 0.69 render 0.40 ms -> pass (gpu 0.28)
+22:42:47 rebuilt for n 846 in 0 ms
+22:42:55 probe n 846 30m/demo/msaa4: gpu p99 2.15 main 0.92 render 0.56 ms -> pass (gpu 0.51)
+22:42:55 rebuilt for n 1294 in 0 ms
+22:43:03 probe n 1294 30m/demo/msaa4: gpu p99 2.88 main 0.86 render 0.48 ms -> pass (gpu 0.69) NOISY
+22:43:03 run noisy (other processes used 11.5% CPU over 5 s), repeating (2/3)
+22:43:33 waiting for a quiet machine: other processes 18.5% CPU (31 s)
+22:43:42 machine quiet: other processes 9.3% CPU over 5 s (waited 40 s)
+22:43:51 probe n 1294 30m/demo/msaa4: gpu p99 2.89 main 0.91 render 0.50 ms -> pass (gpu 0.69)
+22:43:51 rebuilt for n 1593 in 0 ms
+22:44:04 ceiling n 1593 30m/demo/msaa4: gpu p99 3.38 main 1.13 render 0.66 ms -> pass (gpu 0.80) NOISY
+22:44:04 run noisy (other processes used 10.9% CPU over 5 s), repeating (2/3)
+22:44:09 machine quiet: other processes 7.9% CPU over 5 s (waited 6 s)
+22:44:22 ceiling n 1593 30m/demo/msaa4: gpu p99 3.39 main 1.06 render 0.57 ms -> pass (gpu 0.81)
+22:44:22 frontier 30m/demo/msaa4: 1593 (capacity), 3 probes + 1 full runs, fit 1593 confirmed True
+22:44:22 point 40m/demo/msaa4: capacity 2832, ceiling 2832, seed 1593
+22:44:22 rebuilt for n 1195 in 0 ms
+22:44:30 probe n 1195 40m/demo/msaa4: gpu p99 2.55 main 1.09 render 0.66 ms -> pass (gpu 0.61) NOISY
+22:44:30 run noisy (other processes used 16.2% CPU over 5 s), repeating (2/3)
+22:45:01 waiting for a quiet machine: other processes 14.4% CPU (31 s)
+22:45:31 machine still busy after 61 s (other processes 14.7% CPU); running anyway
+22:45:39 probe n 1195 40m/demo/msaa4: gpu p99 2.54 main 0.95 render 0.52 ms -> pass (gpu 0.60) NOISY
+22:45:39 run noisy (other processes used 16.0% CPU over 5 s), repeating (3/3)
+22:46:10 waiting for a quiet machine: other processes 25.2% CPU (31 s)
+22:46:40 machine still busy after 61 s (other processes 15.4% CPU); running anyway
+22:46:48 probe n 1195 40m/demo/msaa4: gpu p99 2.54 main 0.90 render 0.49 ms -> pass (gpu 0.61) NOISY
+22:46:48 rebuilt for n 1593 in 1 ms
+22:46:56 probe n 1593 40m/demo/msaa4: gpu p99 3.15 main 1.34 render 0.81 ms -> pass (gpu 0.75) NOISY
+22:46:56 run noisy (other processes used 20.1% CPU over 5 s), repeating (2/3)
+22:47:26 waiting for a quiet machine: other processes 28.5% CPU (31 s)
+22:47:38 machine quiet: other processes 9.5% CPU over 5 s (waited 43 s)
+22:47:46 probe n 1593 40m/demo/msaa4: gpu p99 3.12 main 0.84 render 0.47 ms -> pass (gpu 0.74)
+22:47:46 rebuilt for n 1991 in 0 ms
+22:47:55 probe n 1991 40m/demo/msaa4: gpu p99 3.72 main 0.96 render 0.53 ms -> pass (gpu 0.89)
+22:47:55 rebuilt for n 2316 in 0 ms
+22:48:08 confirm n 2316 40m/demo/msaa4: gpu p99 4.19 main 1.49 render 0.89 ms -> pass (gpu 1.00) NOISY
+22:48:08 run noisy (other processes used 20.0% CPU over 5 s), repeating (2/3)
+22:48:38 waiting for a quiet machine: other processes 16.3% CPU (31 s)
+22:48:44 machine quiet: other processes 9.1% CPU over 5 s (waited 37 s)
+22:48:57 confirm n 2316 40m/demo/msaa4: gpu p99 4.22 main 1.03 render 0.54 ms -> fail (gpu 1.01)
+22:48:57 rebuilt for n 1991 in 0 ms
+22:49:11 bisect n 1991 40m/demo/msaa4: gpu p99 3.71 main 0.93 render 0.52 ms -> pass (gpu 0.88)
+22:49:11 rebuilt for n 2147 in 0 ms
+22:49:24 bisect n 2147 40m/demo/msaa4: gpu p99 3.96 main 1.21 render 0.74 ms -> pass (gpu 0.94) NOISY
+22:49:24 run noisy (other processes used 12.9% CPU over 5 s), repeating (2/3)
+22:49:29 machine quiet: other processes 7.3% CPU over 5 s (waited 6 s)
+22:49:42 bisect n 2147 40m/demo/msaa4: gpu p99 3.96 main 1.21 render 0.72 ms -> pass (gpu 0.94)
+22:49:42 rebuilt for n 2230 in 0 ms
+22:49:55 bisect n 2230 40m/demo/msaa4: gpu p99 4.10 main 1.21 render 0.63 ms -> fail (gpu 1.42) NOISY
+22:49:55 run noisy (other processes used 12.2% CPU over 5 s), repeating (2/3)
+22:50:26 waiting for a quiet machine: other processes 16.6% CPU (31 s)
+22:50:36 machine quiet: other processes 9.8% CPU over 5 s (waited 41 s)
+22:50:49 bisect n 2230 40m/demo/msaa4: gpu p99 4.11 main 1.33 render 0.71 ms -> pass (gpu 0.98) NOISY
+22:50:49 run noisy (other processes used 17.9% CPU over 5 s), repeating (3/3)
+22:51:20 waiting for a quiet machine: other processes 15.6% CPU (31 s)
+22:51:50 machine still busy after 61 s (other processes 17.8% CPU); running anyway
+22:52:03 bisect n 2230 40m/demo/msaa4: gpu p99 4.10 main 1.36 render 0.76 ms -> pass (gpu 0.98) NOISY
+22:52:03 frontier 40m/demo/msaa4: 2230 (gpu), 3 probes + 4 full runs, fit 2316 confirmed False
+22:52:03 sweep done
+22:52:04 exit 0

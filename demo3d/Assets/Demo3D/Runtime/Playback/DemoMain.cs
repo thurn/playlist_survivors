@@ -1,0 +1,362 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using Demo3D.Choreography;
+using Demo3D.Runtime.Crowd;
+using Unity.Collections;
+using UnityEngine;
+using ChoreoRoster = Demo3D.Choreography.Roster;
+
+namespace Demo3D.Runtime.Playback
+{
+    /// <summary>
+    /// The demo player (TD4): builds the song's timeline (or a stress scene's) at load, then each
+    /// frame evaluates it at the song clock's time and draws the crowd, the hero, projectiles and
+    /// the camera. Flags are qa.md's (DevFlags). It starts itself in a player unless the frame
+    /// probe or the benchmark harness owns the run.
+    /// </summary>
+    public sealed class DemoMain : MonoBehaviour
+    {
+        DevFlags _flags;
+        Timeline _tl;
+        TimelineEvaluator _eval;
+        ICrowdRenderer _crowd;
+        CrowdSlots _slots;
+        StockCrowd _heroRenderer;
+        GameCameraRig _rig;
+        SongClock _clock;
+        CaptureTool _capture;
+        RosterAssets _roster;
+        DemoOverlay _overlay;
+
+        // Per timeline type: the crowd's type index, walk clip and roster asset data.
+        int[] _crowdType;
+        float[] _walkStride, _walkLength, _hover, _height;
+        RosterAssets.TypeAssets[] _typeAssets;
+        int[] _clipToRoster; // per annotation index: the clip index in its owner's RosterAssets clips
+        RosterAssets.TypeAssets _hero;
+        int _heroWalk;
+        float _heroStride = 1.45f;
+
+        readonly List<int> _active = new List<int>();
+        int[] _bySpawn;
+        int _nextSpawn;
+        readonly List<GameObject> _projectiles = new List<GameObject>();
+        List<int>[] _typeLists;
+        double _endAt;
+        public int OnScreenAlive { get; private set; }
+        public int OnScreenDying { get; private set; }
+        public double SongTime { get; private set; }
+        public Timeline Timeline => _tl;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        static void AutoStart()
+        {
+            if (Application.isEditor || Args.Has("--frame-probe") || Args.Has("--bench") || Args.Has("--crowd-bench") || Args.Has("--no-demo")) return;
+            new GameObject("DemoMain").AddComponent<DemoMain>();
+        }
+
+        void Start()
+        {
+            if (Shader.Find("Universal Render Pipeline/Lit") == null) Debug.LogError("DemoMain: URP Lit is missing from the build");
+            if (Application.isBatchMode && (Args.Has("--capture-stills") || Args.Has("--capture-video")))
+                Debug.LogError("DemoMain: captures need a windowed player; a batch-mode player draws no frames");
+            _flags = DevFlags.FromCommandLine();
+            QualitySettings.vSyncCount = _flags.FixedTime ? 0 : 1;
+            Application.targetFrameRate = -1;
+            BenchEnvironment.Build();
+            _roster = RosterAssets.Load();
+            var data = PlaybackData.Load();
+            var level = LevelScript.Parse(data.level.text);
+            if (_flags.Envelope > 0) level.EnvelopeOnScreen = _flags.Envelope;
+            StressScript stress = _flags.Scene == "song" ? null
+                : StressScript.Parse(data.Stress(_flags.Scene).text)
+                    .With(_flags.N, _flags.ViewWidth, _flags.Load, _flags.Seconds > 0 ? _flags.StartAt + _flags.Seconds + 1 : 0);
+            string layoutName = (stress != null ? stress.Layout : level.Layout) ?? "arena";
+            var layout = data.Layout(layoutName) ?? data.Layout("arena");
+            var choreo = ChoreographyData.FromJson(data.annotations.text, data.roster.text, layout.text, data.footprints.text);
+            var started = Time.realtimeSinceStartupAsDouble;
+            _tl = stress == null
+                ? Choreographer.Run(SongMap.Parse(data.songMap.text), level, choreo)
+                : Choreographer.RunStress(stress, choreo);
+            Debug.Log($"DemoMain: {_tl.Name} built in {Time.realtimeSinceStartupAsDouble - started:F2} s, " +
+                      $"{_tl.EntityCount} entities; sim ticks {_tl.TickTiming?.ToJson()}");
+            _eval = new TimelineEvaluator(_tl, choreo.Clips);
+            MapTypes(choreo);
+            _endAt = _flags.Seconds > 0 ? _flags.StartAt + _flags.Seconds : _tl.Duration;
+
+            _crowd = CrowdFactory.Create(_flags.Crowd);
+            _crowd.Initialize(Array.ConvertAll(_typeAssets, t => t.id), 16384); // instances per type; the bone path sizes small buffers by it
+            _slots = new CrowdSlots(_typeAssets.Length, 16384);
+            if (_crowd is BoneTextureCrowd bone) bone.Clock = () => (float)SongTime; // deterministic LOD crossfades
+            _heroRenderer = new StockCrowd();
+            _heroRenderer.Initialize(new[] { _hero.id }, 1);
+            _rig = new GameCameraRig();
+            ApplyAntiAliasing(_flags.Aa, _rig.Camera);
+            _overlay = _flags.Overlay ? gameObject.AddComponent<DemoOverlay>() : null;
+            if (_overlay != null) _overlay.Main = this;
+
+            _bySpawn = new int[_tl.EntityCount];
+            for (int i = 0; i < _bySpawn.Length; i++) _bySpawn[i] = i;
+            Array.Sort(_bySpawn, (a, b) => _tl.Entities[a].Spawn.CompareTo(_tl.Entities[b].Spawn));
+            _typeLists = new List<int>[_typeAssets.Length];
+            for (int i = 0; i < _typeLists.Length; i++) _typeLists[i] = new List<int>();
+
+            _clock = new SongClock(_flags.FixedTime, _flags.StartAt);
+            if (_flags.CaptureStills != null || _flags.CaptureVideo != null)
+                _capture = new CaptureTool(_rig.Camera, _flags.CaptureStills, _flags.StillsAt, _flags.CaptureVideo);
+            var music = gameObject.AddComponent<AudioSource>();
+            AudioSource click = null;
+            AudioClip clickClip = null;
+            if (_flags.Click && _flags.Scene == "song")
+            {
+                click = gameObject.AddComponent<AudioSource>();
+                clickClip = ClickTrack.Build(_tl.Map);
+            }
+            _clock.Start(_flags.Scene == "song" ? music : null, data.music, 0.5, click, clickClip);
+        }
+
+        /// <summary>`--aa msaa4|taa|off` (performance.md: MSAA 4x until TD9 picks).</summary>
+        public static void ApplyAntiAliasing(string mode, Camera camera)
+        {
+            var urp = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline as UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset;
+            var data = camera.GetComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
+            bool taa = mode == "taa";
+            if (urp != null) urp.msaaSampleCount = mode == "msaa4" ? 4 : 1;
+            if (data != null)
+                data.antialiasing = taa ? UnityEngine.Rendering.Universal.AntialiasingMode.TemporalAntiAliasing
+                                        : UnityEngine.Rendering.Universal.AntialiasingMode.None;
+        }
+
+        void MapTypes(ChoreographyData choreo)
+        {
+            int n = _tl.TypeNames.Length;
+            _typeAssets = new RosterAssets.TypeAssets[n];
+            _walkStride = new float[n];
+            _walkLength = new float[n];
+            _hover = new float[n];
+            _height = new float[n];
+            for (int i = 0; i < n; i++)
+            {
+                var name = _tl.TypeNames[i];
+                var asset = _roster.Find(name) ?? (name == "boss" ? Array.Find(_roster.types, t => t.kind == "boss") : null)
+                    ?? throw new InvalidOperationException("DemoMain: no roster asset for type " + name);
+                _typeAssets[i] = asset;
+                int walkAnn = choreo.Clips.Find(name + " walk");
+                _walkStride[i] = walkAnn >= 0 ? choreo.Clips[walkAnn].StrideM : 1f;
+                int walk = asset.ClipIndex("walk");
+                _walkLength[i] = walk >= 0 ? asset.clips[walk].length : 1f;
+                _hover[i] = asset.hoverM;
+                _height[i] = asset.heightM;
+            }
+            _hero = _roster.Find("hero");
+            _heroWalk = _hero.ClipIndex("walk");
+            int heroWalkAnn = choreo.Clips.Find("hero walk");
+            if (heroWalkAnn >= 0 && choreo.Clips[heroWalkAnn].StrideM > 0) _heroStride = choreo.Clips[heroWalkAnn].StrideM;
+            _clipToRoster = new int[choreo.Clips.Count];
+            for (int c = 0; c < choreo.Clips.Count; c++)
+            {
+                var owner = _eval.OwnerOf(c);
+                var asset = owner == "hero" ? _hero : _roster.Find(owner) ?? (owner == "boss" ? Array.Find(_roster.types, t => t.kind == "boss") : null);
+                _clipToRoster[c] = asset != null ? asset.ClipIndex(_eval.RoleOf(c)) : -1;
+            }
+        }
+
+        void Update()
+        {
+            if (_tl == null) return;
+            try { Frame(); }
+            catch (Exception e)
+            {
+                // A broken frame never recovers; end the run instead of spinning on it.
+                Debug.LogException(e);
+                Quit(1);
+            }
+        }
+
+        double _captureAt = double.NaN;
+
+        void OnEnable() => UnityEngine.Rendering.RenderPipelineManager.endCameraRendering += AfterCamera;
+        void OnDisable() => UnityEngine.Rendering.RenderPipelineManager.endCameraRendering -= AfterCamera;
+
+        void AfterCamera(UnityEngine.Rendering.ScriptableRenderContext context, Camera camera)
+        {
+            if (_capture == null || double.IsNaN(_captureAt) || _rig == null || camera != _rig.Camera) return;
+            _capture.Capture(_captureAt);
+            _captureAt = double.NaN;
+        }
+
+        readonly System.Diagnostics.Stopwatch _evalWatch = new System.Diagnostics.Stopwatch();
+        readonly System.Diagnostics.Stopwatch _drawWatch = new System.Diagnostics.Stopwatch();
+        double _lastWall;
+
+        bool _quitNext;
+
+        void Frame()
+        {
+            if (_quitNext) { Quit(); return; }
+            _evalWatch.Reset();
+            _drawWatch.Reset();
+            double t = _flags.FreezeAt >= 0 ? _flags.FreezeAt : _clock.Now();
+            SongTime = t;
+            Activate(t);
+
+            foreach (var l in _typeLists) l.Clear();
+            int proj = 0;
+            OnScreenAlive = OnScreenDying = 0;
+            var framing = _tl.FramingAt(Math.Max(0, t));
+            float viewWidth = _flags.ViewWidth > 0 && _flags.Scene != "song" ? _flags.ViewWidth : framing.ViewWidth;
+            _rig.Frame(new Vector2(framing.Focus.X, framing.Focus.Y), viewWidth);
+            foreach (var e in _active)
+            {
+                var info = _tl.Entities[e];
+                if (info.Kind == EntityKind.Monster) _typeLists[info.Type].Add(e);
+                else if (info.Kind == EntityKind.Projectile) DrawProjectile(proj++, e, t);
+            }
+            for (int i = proj; i < _projectiles.Count; i++) _projectiles[i].SetActive(false);
+
+            _evalWatch.Start();
+            // Stable slots: a monster keeps its slot while it lives (motion vectors, the previous
+            // palette and LOD state follow the slot); a freed slot is written Hidden first.
+            _slots.Begin();
+            for (int type = 0; type < _typeLists.Length; type++)
+                foreach (int e in _typeLists[type]) _slots.Assign(type, e);
+            _slots.End();
+            for (int type = 0; type < _typeLists.Length; type++)
+            {
+                var list = _typeLists[type];
+                var inst = _crowd.Instances(type, _slots.Count(type));
+                _slots.FillHidden(type, inst);
+                for (int k = 0; k < list.Count; k++)
+                {
+                    int e = list[k];
+                    var st = _eval.Evaluate(e, t, _walkStride[type], _walkLength[type], _hover[type]);
+                    inst[_slots.Assign(type, e)] = ToInstance(st, _typeAssets[type], type, _tl.Entities[e].Seed);
+                    if (_rig.OnScreen(st.Position, _height[type]))
+                    {
+                        if (st.Dying) OnScreenDying++; else OnScreenAlive++;
+                    }
+                }
+            }
+            _evalWatch.Stop();
+            _drawWatch.Start();
+            _crowd.Draw(_rig.Camera);
+            _drawWatch.Stop();
+
+            var heroState = _eval.Evaluate(0, t, _heroStride, _hero.clips[_heroWalk].length, 0);
+            var heroInst = _heroRenderer.Instances(0, 1);
+            heroInst[0] = ToInstance(heroState, _hero, -1, 0);
+            _heroRenderer.Draw(_rig.Camera);
+
+            _captureAt = _capture != null ? t : double.NaN; // read back once URP has drawn it
+            WriteStats(t);
+            _lastWall = Time.realtimeSinceStartupAsDouble;
+            _clock.EndFrame();
+            // Quit on the next frame, so this frame is drawn (and captured) first.
+            if (t >= _endAt || (_capture != null && _capture.Done && _flags.CaptureVideo == null))
+                _quitNext = true;
+        }
+
+        MonsterInstance ToInstance(in TimelineEvaluator.State st, RosterAssets.TypeAssets asset, int type, uint seed)
+        {
+            uint a = RosterClip(st.A, asset), b = RosterClip(st.B, asset);
+            return new MonsterInstance
+            {
+                Position = st.Position,
+                Yaw = st.Yaw,
+                ClipA = a, TimeA = st.A.Time,
+                ClipB = b, TimeB = st.B.Time,
+                Blend = st.Blend,
+                Scale = 0.92f + 0.16f * TimelineEvaluator.Jitter(seed, 1),
+                HitFlash = st.HitFlash,
+                Dissolve = st.Dissolve,
+                Tint = 0,
+                Flags = (uint)(st.Dying ? CrowdFlags.Dying : CrowdFlags.Alive),
+            };
+        }
+
+        uint RosterClip(TimelineEvaluator.Slot s, RosterAssets.TypeAssets asset)
+        {
+            int idx = s.Clip < 0 ? asset.ClipIndex("walk") : _clipToRoster[s.Clip];
+            return (uint)Math.Max(0, idx);
+        }
+
+        void Activate(double t)
+        {
+            // Seeks and freezes rebuild the active set; forward play adds and drops incrementally.
+            if (_nextSpawn == 0 || t < _lastT)
+            {
+                _active.Clear();
+                _nextSpawn = 0;
+            }
+            _lastT = t;
+            while (_nextSpawn < _bySpawn.Length && _tl.Entities[_bySpawn[_nextSpawn]].Spawn <= t)
+            {
+                int e = _bySpawn[_nextSpawn++];
+                if (_tl.Entities[e].Kind != EntityKind.Hero && _tl.Entities[e].Despawn > t) _active.Add(e);
+            }
+            _active.RemoveAll(e => _tl.Entities[e].Despawn <= t);
+        }
+
+        double _lastT = double.NegativeInfinity;
+
+        void DrawProjectile(int slot, int e, double t)
+        {
+            while (_projectiles.Count <= slot)
+            {
+                var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                Destroy(go.GetComponent<Collider>());
+                go.transform.localScale = Vector3.one * 0.35f;
+                // URP Lit is in every build (the bench ground uses it); Unlit may be stripped.
+                var mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                mat.SetColor("_BaseColor", Color.black);
+                mat.EnableKeyword("_EMISSION");
+                mat.SetColor("_EmissionColor", new Color(4f, 2.2f, 0.8f));
+                go.GetComponent<Renderer>().sharedMaterial = mat;
+                _projectiles.Add(go);
+            }
+            var p = _tl.PositionAt(e, t);
+            _projectiles[slot].SetActive(true);
+            _projectiles[slot].transform.position = new Vector3(p.X, 1.2f, p.Y);
+        }
+
+        System.IO.StreamWriter _stats;
+        double _nextStat = double.NegativeInfinity;
+
+        void WriteStats(double t)
+        {
+            if (_flags.Stats == null || t < _nextStat) return;
+            if (_stats == null)
+            {
+                _stats = new System.IO.StreamWriter(_flags.Stats) { AutoFlush = true };
+                _stats.WriteLine("t,section,onScreenAlive,onScreenDying,target,active,viewWidth,wallFrameMs,evalMs,crowdMs");
+            }
+            _nextStat = t + 0.5;
+            int si = _tl.Map != null ? _tl.Map.SectionIndexAt(t) : 0;
+            var sec = _tl.Sections != null && si >= 0 && si < _tl.Sections.Length ? _tl.Sections[si] : null;
+            double wall = Time.realtimeSinceStartupAsDouble;
+            _stats.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0:F2},{1},{2},{3},{4},{5},{6:F1},{7:F1},{8:F2},{9:F2}",
+                t, sec?.Label ?? _tl.Name, OnScreenAlive, OnScreenDying, sec?.TargetOnScreen ?? 0, _active.Count,
+                _tl.FramingAt(Math.Max(0, t)).ViewWidth, (wall - _lastWall) * 1000, _evalWatch.Elapsed.TotalMilliseconds,
+                _drawWatch.Elapsed.TotalMilliseconds));
+        }
+
+        void Quit(int code = 0)
+        {
+            _stats?.Dispose();
+            _stats = null;
+            _capture?.Dispose();
+            _capture = null;
+            Debug.Log($"DemoMain: done at song time {SongTime.ToString("F2", CultureInfo.InvariantCulture)}");
+            enabled = false;
+            Application.Quit(code);
+        }
+
+        void OnDestroy()
+        {
+            _capture?.Dispose();
+            _crowd?.Dispose();
+            _heroRenderer?.Dispose();
+        }
+    }
+}

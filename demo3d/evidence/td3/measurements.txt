@@ -1,0 +1,57 @@
+TD3 measurements: choreography on open ground
+
+Measured on Cygnus (Windows 11, .NET SDK 10.0.403, x64) on 2026-10-27, while another agent
+session ran Unity on the same machine (10-20% of total CPU busy), so absolute times carry noise.
+Commands run from the worktree's root.
+
+Files
+- tick-timing.md: build time and sim tick timing for the song and for S1-S5 at N = 500, 1000,
+  2000 and 2800 at a 40 m view:
+    dotnet run --project demo3d/dotnet/Demo3D.Choreography.Cli -c Release -- timing
+- song-summary.txt: the song's per-section table (... -- song).
+- song-dump-37.0-37.6.json: the debug dump for 37.0-37.6 s (break-1 into drop-1's first
+  downbeat): ... -- song --out <file> --from 37.0 --to 37.6. The whole dump is about 81 million
+  characters, so it is not kept.
+
+The song's build time (budget: under 3 s)
+  CLI, Release                                        first 1.51-1.56 s, second 1.52 s
+  dotnet test (Debug; the layer has Optimize=true)    first 1.25-1.38 s, second 1.03-1.24 s
+  CLI, Debug with -p:Optimize=false                   first 2.62 s, second 2.55 s
+  Unity 6.6 editor EditMode test (Mono, editor code)  first 6.93-6.96 s, second 6.61-6.98 s
+The Unity row comes from the two cold `demo3d check` runs; it is not
+the budget, since the editor runs Mono with debug code. The test asserts 3 s under .NET and a
+20 s sanity bound on Mono. A player build (IL2CPP) was not timed.
+
+Sim tick timing (one thread, 60 Hz, first 5 s excluded; tick-timing.md)
+- Song: p50 0.015 ms, p99 2.9-3.0 ms, max 14-18 ms, mean 0.12-0.13 ms over 11,640 ticks.
+- Stress at 40 m: p99 about 0.6-0.8 ms at N = 500, 1.4-1.8 ms at 1000, 3.2-4.2 ms at 2000,
+  3.7-6.0 ms at 2800 (S1-S5).
+- Every tick advances every monster. Beat ticks (1 in 23 at 155 bpm, 1 in 26 at 140 bpm) also
+  plan every step with separation; impact ticks run hit tests; the spatial hash is rebuilt on the
+  first tick that queries it. So p50 is the quiet tick and p99 the beat tick. The maxima are
+  single outliers, likely preemption on the shared machine.
+- TD12's line is p99 <= 3.5 ms in the player; here (dotnet, shared machine) the choreographer
+  stays under it up to about N = 1,800.
+
+The song's timeline
+12,145 entities, 547,198 segments, 39,381 actions, 28,288 effects, 2,441 sounds (aggregated),
+11,940 framing samples. Deaths/s are 0.92-1.08 of each section's load preset (tested: within
+10%); worst build 0.921 and breakdown 0.936. Per section: song-summary.txt.
+Not shown or not met:
+- On-screen counts lag targets where the hero travels (drop-2 72%, final-peak 70% of target):
+  the reserve walks in behind a moving view and a kill zone forms around the hero. Where targets
+  fall (outro, ending) the horde lingers above them. TD13 tunes the level script.
+- Hits/s fall short of the presets' 2x deaths in dense sections (final-peak 160 against 200):
+  the hit shapes are capped at 2.5x and at a quarter of the view's width.
+- The goal is reached in 6 of the 9 sections that name one.
+
+Stress timelines and fill
+At the tracked N = 1200 (the 40 m fill count): every bar's average on screen within 5% of N for
+S1-S4, S5 averaging 87-89% (worst beats remove 30% of the screen every 4 bars), deaths/s within
+1% of the preset. Mean on screen at higher N (tick-timing.md):
+  N 2000:  S1 1861   S3 1571   S5 1119
+  N 2800:  S1 1899   S3 1481   S5 1111
+Monsters converge on the hero, so the crowd is a disc that never fills the view's far corners
+(about 1,900 at most without kills), and the kill zone empties the middle. At N = 2000, S2
+(combos only) deals 90% of its deaths and S5 79%. TD7's rows should carry the measured on-screen
+count rather than assume N above about 1,500 at 40 m.

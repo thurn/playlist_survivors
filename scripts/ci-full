@@ -4,7 +4,7 @@
 # waits for it. Run it locally only when a change touches CI scripts, the Tollgate policy,
 # workspace-wide configuration or shared test infrastructure.
 #
-#   scripts/ci-full [baker|analysis|native|survivors|survivors-replay]    # one section (a Tollgate release step each), or all
+#   scripts/ci-full [baker|analysis|native|survivors|survivors-replay|demo3d]    # one section (a Tollgate release step each), or all
 set -eu
 cd "$(dirname "$0")/.."
 . scripts/lib/changes.sh
@@ -13,8 +13,8 @@ section="${1:-all}"
 STAMPS="${PS_CI_STAMPS:-$HOME/Library/Caches/playlist-survivors/ci-stamps}"
 
 case "$section" in
-  all|baker|analysis|native|survivors|survivors-replay) ;;
-  *) echo "usage: scripts/ci-full [baker|analysis|native|survivors|survivors-replay]" >&2; exit 2 ;;
+  all|baker|analysis|native|survivors|survivors-replay|demo3d) ;;
+  *) echo "usage: scripts/ci-full [baker|analysis|native|survivors|survivors-replay|demo3d]" >&2; exit 2 ;;
 esac
 
 # The asset baker (tools/baker): its lint, typecheck and the baked assets' check.
@@ -109,4 +109,19 @@ if [ "$section" = all ] || [ "$section" = survivors-replay ]; then
   uv run --directory tools/analysis ruff check ../../native/scripts/survivors_sweep.py ../../native/scripts/test_survivors_sweep.py
   uv run --no-project python -m unittest native/scripts/test_survivors_sweep.py
   uv run --no-project python native/scripts/survivors_sweep.py --release --replay-only
+fi
+
+# The 3D demo (docs/tech-demo-3d/): the vendor guard over the whole tree and everything remote
+# master doesn't have yet, the last line of defence before this stage moves it; the tools' lint
+# and tests; and the choreography layer's tests under dotnet, without Unity.
+if [ "$section" = all ] || [ "$section" = demo3d ]; then
+  uv run --quiet --project demo3d/tools demo3d guard --tree HEAD
+  if git rev-parse --verify --quiet origin/master >/dev/null; then
+    uv run --quiet --project demo3d/tools demo3d guard --range origin/master..HEAD
+  else
+    echo "ci-full demo3d: no origin/master, so the guard checked the tree only, not the range" >&2
+  fi
+  uv run --directory demo3d/tools ruff check .
+  uv run --directory demo3d/tools pytest -q
+  dotnet test demo3d/dotnet/Demo3D.Choreography.Tests --nologo -v q
 fi

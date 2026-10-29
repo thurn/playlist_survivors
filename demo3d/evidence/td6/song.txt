@@ -1,0 +1,17 @@
+song:action: built in 2.074 s; 12204 entities, 543266 segments, 31326 actions, 20282 effects, 2422 sounds, 11940 framing samples
+sim ticks after 5 s: 11640 ticks, p50 0.016 ms, p99 4.361 ms, max 21.603 ms, mean 0.167 ms; flow-field rebuilds 84 in 1968 slices
+| section | feel | s | load | target N | mean on screen | max | deaths/s target | deaths/s | ratio | hits/s | spawns | attacks | strides | goal reached |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| intro | pulsed | 0.0–12.4 | light | 12 | 13 | 14 | 0.30 | 0.32 | 1.076 | 4.8 | 3 | 53 | 2 | 0.0 s |
+| groove | pulsed | 12.4–34.1 | light | 300 | 259 | 324 | 7.50 | 7.24 | 0.966 | 18.3 | 575 | 61 | 7 | 32.5 s |
+| break-1 | free | 34.1–37.2 | light | 300 | 290 | 294 | 7.50 | 7.43 | 0.990 | 50.4 | 20 | 14 | 0 | – |
+| drop-1 | pulsed | 37.2–74.3 | demo | 800 | 631 | 754 | 40.00 | 38.62 | 0.965 | 62.3 | 2137 | 15 | 13 | 59.6 s |
+| breakdown | pulsed | 74.3–86.7 | light | 600 | 531 | 628 | 15.00 | 14.05 | 0.936 | 48.9 | 0 | 27 | 1 | no |
+| groove-2 | pulsed | 86.7–111.5 | demo | 1000 | 680 | 788 | 50.00 | 48.96 | 0.979 | 66.7 | 1662 | 11 | 5 | 94.1 s |
+| build | pulsed | 111.5–120.8 | demo | 1000 | 731 | 799 | 50.00 | 46.18 | 0.924 | 70.7 | 429 | 0 | 14 | 120.0 s |
+| break-2 | free | 120.8–123.9 | light | 800 | 612 | 650 | 20.00 | 19.70 | 0.985 | 93.6 | 0 | 0 | 0 | – |
+| drop-2 | pulsed | 123.9–161.0 | demo | 1600 | 950 | 1193 | 80.00 | 78.55 | 0.982 | 45.3 | 3887 | 2 | 28 | 141.7 s |
+| final-peak | pulsed | 161.0–185.8 | demo | 2000 | 1070 | 1195 | 100.00 | 96.79 | 0.968 | 54.0 | 3080 | 0 | 17 | 169.6 s |
+| outro | pulsed | 185.8–195.1 | light | 1000 | 1031 | 1122 | 25.00 | 24.76 | 0.990 | 61.8 | 0 | 6 | 0 | – |
+| ending | free | 195.1–199.0 | light | 500 | 967 | 1007 | 12.50 | 12.43 | 0.995 | 16.3 | 0 | 13 | 0 | – |
+snapshot: demo3d/evidence/td6/song-final-peak.png at 175.00 s, 2948 monsters

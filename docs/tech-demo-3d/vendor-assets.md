@@ -80,9 +80,11 @@ change wherever it can leave the machine:
 - **On Cygnus, before every push to the relay repository,** from a git
   pre-push hook. The relay is private, but everything pushed to it is bound
   for the public repository.
-- **On the Mac, at integration:** `scripts/check-fast`, the gate and the
-  release stage. The release stage is the last line of defense, because it
-  moves remote master.
+- **On the Mac, since integration:** `scripts/check-fast`, the gate (which
+  rebuilds the Mac's record when the manifest changes) and the release
+  stage's `ci-full-demo3d` step. The release stage is the last line of
+  defense, because it moves remote master, and Tollgate's push of remote
+  master runs the same pre-push hook.
 
 The guard fails when any tracked file:
 
@@ -114,6 +116,27 @@ More rules:
 - **The guard has its own tests,** with synthetic fixtures: a fake record, a
   fake vendor file, a tagged render. TD1 proves every failure case with them
   before any vendor file exists.
+- **What TD1 built** (after the guard's review):
+  - The record lists every file under every source root, not only the
+    synced ones, each with its GUID, its SHA-256 and `sha256Lf` (the hash
+    with CRLF folded to LF, since git stores text with LF). A record with an
+    unknown version or an entry without both hashes fails every check, and
+    so does one that lacks a GUID the tracked manifest lists.
+  - A **derived record** beside it holds the hashes and GUIDs of every file
+    in each worktree's `Assets/Baked/` and of the song's source. The guard
+    adds to it before each check and never removes from it. An edited copy
+    of a vendor file with new bytes and a fresh GUID can't be recognized;
+    the binary rule and the gitignored folders are the defense there.
+  - Song audio means any audio file under `songs/` or `public/` with a path
+    segment starting `action`, plus any binary file under `songs/action/`.
+  - A tagged render must end where its image ends and stay under 4 MB.
+  - The hook lives in the clone's shared hooks folder, so every checkout
+    runs it. A checkout without `demo3d/tools` (Tollgate pushes remote
+    master from the Mac's main checkout, which may be on an older master)
+    runs the guard from the first pushed commit that has them, and refuses
+    any push that touches the demo's paths only when none has. Until
+    integration the guard also refused demo files bound for the public
+    repository; integration dropped that rule.
 
 ```
 vendor guard: FAIL

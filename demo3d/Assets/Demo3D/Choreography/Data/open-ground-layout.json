@@ -1,0 +1,14 @@
+{
+  "note": "TD3's test layout on open ground: the hero's start and the named goal areas the level script's sections walk to, in metres on a 160 m arena centred on the origin. TD9's arena layout replaces it; TD6 adds the structures.",
+  "name": "open-ground",
+  "heroStart": [0, -50],
+  "goals": [
+    { "name": "camp", "center": [0, -50], "radius": 3 },
+    { "name": "glowing-tree", "center": [0, -38], "radius": 4 },
+    { "name": "crystal-ring", "center": [12, -26], "radius": 5 },
+    { "name": "graveyard", "center": [22, -14], "radius": 5 },
+    { "name": "ruins-gate", "center": [16, -2], "radius": 4 },
+    { "name": "courtyard", "center": [0, 10], "radius": 6 },
+    { "name": "brazier-glade", "center": [-12, 18], "radius": 5 }
+  ]
+}

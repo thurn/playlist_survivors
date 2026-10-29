@@ -1,0 +1,1839 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Numerics;
+
+namespace Demo3D.Choreography
+{
+    enum ImpactKind { HeroCombo, Ring, Bolt, Circle, LaserTick, MonsterAttack, WorstRing }
+
+    struct Impact
+    {
+        public double Time;
+        public long Seq;
+        public ImpactKind Kind;
+        public int Entity, Target, Clip;
+        public Move Move;
+        public Vector2 Point;
+        public float Yaw, Strength;
+        public double ClipStart;     // the fitted clip's start and speed (attacks), NaN otherwise
+        public float ClipSpeed;
+
+        public bool Kills => Kind != ImpactKind.LaserTick && Kind != ImpactKind.MonsterAttack;
+    }
+
+    struct SoundRequest
+    {
+        public int Category;
+        public double Time;
+        public float Strength;
+        public int Seq;
+    }
+
+    /// <summary>
+    /// One run of the choreographer. Everything is single-threaded and ordered by entity id or by
+    /// (time, sequence), so the same inputs give the same timeline on one runtime.
+    /// </summary>
+    sealed class Sim
+    {
+        const double TickDt = 1.0 / Choreographer.TickRate;
+        const float SmallRadius = 0.5f;          // monsters above this are checked from a list, not the hash
+        const float SimOverlap = 0.1f;           // the sim keeps overlaps within 10% of the smaller radius (the test allows 25%; transients add up to ~0.1)
+        const float KnockbackSeconds = 0.12f;
+        const float CorpseLinger = 1.0f;
+        const float HitShapeInflate = 0.5f;      // a monster is struck when its centre is within the shape plus half its radius
+        const float FollowTimeConstant = 0.4f;   // camera-and-sound.md: critically damped, 0.4 s
+        const int ZoomBars = 2;
+        const float SpawnMargin = 2f, SpawnBand = 4f;
+        const float FarDespawn = 30f;
+        const float MaxStepReach = 1.4f;         // the longest step a neighbour takes in a beat (0.95 m × 1.3 off screen), plus margin
+        const float ReleaseLeadSeconds = 2.5f;
+        const float AheadCos = 0.2588f;          // cos 75°
+        const float MaxShapeScale = 4f, HitsShapeScale = 2.5f, MaxShapeViewFraction = 0.25f;
+        const float OffscreenStride = 1.3f;     // culled monsters walking in take longer steps
+
+        readonly SongMap map;
+        readonly BeatGrid grid;
+        readonly SectionPlan[] plans;
+        readonly Roster roster;
+        readonly ClipLibrary clips;
+        readonly uint seed;
+        readonly float initialInnerRadius;
+        readonly bool worstBeats;
+        readonly Vector2 heroStart;
+        readonly int[] barOfBeat;
+        readonly int[][] spellCount;
+
+        Rng spawnRng, spellRng, cooldownRng;
+
+        // Entities, indexed by id.
+        int entityCount;
+        EntityKind[] kind = new EntityKind[0];
+        int[] etype = new int[0];
+        double[] spawnT = new double[0], despawnT = new double[0];
+        uint[] eseed = new uint[0];
+        // Monster state, indexed by id.
+        Vector2[] pos = new Vector2[0], rest = new Vector2[0], planFrom = new Vector2[0];
+        MotionSegment[] cur = new MotionSegment[0];   // each monster's latest segment
+        int[] hp = new int[0], planSerial = new int[0];
+        float[] facing = new float[0], radius = new float[0];
+        byte[] state = new byte[0];   // 0 none, 1 alive, 2 dying, 3 gone
+        double[] busyUntil = new double[0], lastActionEnd = new double[0], bossDeathAfter = new double[0];
+        bool[] onScreen = new bool[0], released = new bool[0];
+        sbyte[] sideMem = new sbyte[0];   // with walls: the side of each monster's last sidestep (0 none yet)
+
+        const byte Alive = 1, Dying = 2, Gone = 3;
+
+        int[] live = new int[256];
+        int liveCount;
+        int[] big = new int[16];
+        int bigCount;
+        readonly SpatialHash hash = new SpatialHash();
+        int[] buf = new int[1024];
+        int[] strike = new int[256];
+        int[] cand = new int[256];
+        long[] keys = new long[256];
+        int[] order = new int[256];
+        int[] offIds = new int[256];
+        long[] offKeys = new long[256];
+        readonly List<int> beatSpawns = new List<int>();   // monsters spawned since the hash was last rebuilt
+
+        readonly List<MotionSegment> segs = new List<MotionSegment>(1 << 16);
+        readonly List<ActionEvent> actions = new List<ActionEvent>(1 << 14);
+        readonly List<EffectEvent> effects = new List<EffectEvent>(1 << 14);
+        readonly List<SoundRequest> sounds = new List<SoundRequest>(1 << 14);
+        FramingSample[] framing;
+
+        // Hero.
+        readonly List<int> heroSegs = new List<int>();
+        double heroPendingImpact = -1, heroLastEnd;
+        int comboCycle;
+        GoalArea goal;
+        bool goalReached;
+
+        // Section and feedback.
+        int curSection = -1;
+        SectionPlan plan;
+        double secStart, secEnd;
+        int secKills;
+        float shapeScale = 1f;
+        int barStruck;
+        double barStart;
+        SectionStats[] stats;
+        int[] statTicks;
+
+        // Camera.
+        float wFrom, wTo, viewWidth;
+        double wT0, wT1;
+        Vector2 focus, focusVel;
+
+        // Impacts.
+        Impact[] heap = new Impact[256];
+        int heapCount;
+        long impactSeq;
+        int beatSerial;
+        float beatMaxStep;   // the longest step planned so far this beat
+        int totalKills, killsAtClassify;
+        double deathRate, lastClassify;
+        int onScreenCount, offscreenAlive;
+        bool populated;
+
+        // Navigation (TD6): null on open ground, where the run is exactly TD3's.
+        const float TypicalRadius = 0.4f;     // the field toward the hero crosses cells with more clearance than this
+        const float RebuildMoveM = 1f;        // the field toward the hero is rebuilt once the hero stands this far from its source
+        const float FieldReachM = 70f;        // ... and reaches this far by the way: past the view, the reserve band and the far despawn
+        const float WallSlack = 0.02f;        // a step's intermediate points may come this much closer to a wall than its radius
+        readonly NavGrid nav;
+        FlowField heroField, heroFieldNext;   // toward the hero: the field in use, and the one being rebuilt
+        readonly Dictionary<string, FlowField> goalFields = new Dictionary<string, FlowField>();
+        FlowField goalField;                  // the current section's goal field
+        int flowRebuilds, flowSlices, sliceBudget;
+
+        public Sim(SongMap map, SectionPlan[] plans, ChoreographyData data, uint seed, float initialInnerRadius, bool worstBeats,
+            Vector2? heroStart = null)
+        {
+            this.map = map;
+            grid = new BeatGrid(map);
+            this.plans = plans;
+            roster = data.Roster;
+            clips = data.Clips;
+            this.seed = seed;
+            this.initialInnerRadius = initialInnerRadius;
+            this.worstBeats = worstBeats;
+            this.heroStart = heroStart ?? data.Layout.HeroStart;
+            spawnRng = new Rng(seed, 1);
+            spellRng = new Rng(seed, 2);
+            cooldownRng = new Rng(seed, 3);
+            barOfBeat = new int[map.Beats.Length];
+            for (int bar = 1; ; bar++)
+            {
+                int b0 = map.DownbeatIndexOfBar(bar), b1 = map.DownbeatIndexOfBar(bar + 1);
+                if (b0 >= map.Beats.Length) break;
+                for (int b = Math.Max(0, b0); b < b1 && b < map.Beats.Length; b++) barOfBeat[b] = bar;
+            }
+            spellCount = new int[plans.Length][];
+            for (int i = 0; i < plans.Length; i++)
+            {
+                spellCount[i] = new int[plans[i].Spells.Length];
+                foreach (GridEntry e in plans[i].Combo)
+                    if (roster.Combo(e.Name) == null) throw new FormatException("combo '" + e.Name + "' is not a hero combo in the roster");
+                foreach (GridEntry e in plans[i].Spells)
+                    if (roster.Spell(e.Name) == null) throw new FormatException("spell '" + e.Name + "' is not in the roster");
+            }
+            nav = data.Layout.Nav;
+            if (nav != null)
+            {
+                heroField = new FlowField(nav, TypicalRadius);
+                heroFieldNext = new FlowField(nav, TypicalRadius);
+                heroField.MaxCost = heroFieldNext.MaxCost = (int)(FieldReachM / FlowField.MetresPerCost);
+                // The hero's goal fields, one per named goal, from the goal's centre outward, built at load.
+                foreach (SectionPlan p in plans)
+                {
+                    if (p.Goal == null || goalFields.ContainsKey(p.Goal.Name)) continue;
+                    var f = new FlowField(nav, roster.HeroRadius + 0.05f);
+                    f.BeginArea(p.Goal.Center, Math.Min(p.Goal.Radius, 1f));
+                    f.BuildAll();
+                    goalFields[p.Goal.Name] = f;
+                }
+            }
+            stats = new SectionStats[map.Sections.Length];
+            statTicks = new int[map.Sections.Length];
+            for (int i = 0; i < stats.Length; i++)
+            {
+                SongSection s = map.Sections[i];
+                SectionPlan p = plans[i];
+                stats[i] = new SectionStats
+                {
+                    Label = s.Label, Feel = s.Feel, Start = s.Start, End = s.End, Load = p.Preset.Name,
+                    Goal = p.Goal == null ? null : p.Goal.Name, TargetOnScreen = p.TargetOnScreen, ViewWidthM = p.ViewWidth,
+                    TargetDeathsPerSecond = p.Preset.DeathsPerSecond(p.TargetOnScreen),
+                    TargetHitsPerSecond = p.Preset.HitsPerSecond(p.TargetOnScreen),
+                };
+            }
+        }
+
+        // ------------------------------------------------------------------ run
+
+        public Timeline Run(string name)
+        {
+            double duration = map.Duration;
+            int ticks = (int)Math.Ceiling(duration * Choreographer.TickRate) + 1;
+            var tickMs = new float[ticks];
+            framing = new FramingSample[ticks];
+
+            // Decision times: a pre-roll at t = 0 when the first beat is later, then every beat.
+            var decisions = new List<double>();
+            var decisionBeat = new List<int>();
+            if (map.Beats[0] > 0) { decisions.Add(0); decisionBeat.Add(-1); }
+            for (int b = 0; b < map.Beats.Length; b++) { decisions.Add(map.Beats[b]); decisionBeat.Add(b); }
+
+            int hero = NewEntity(EntityKind.Hero, -1, 0);
+            despawnT[hero] = duration;
+            heroSegs.Add(AddSeg(new MotionSegment(hero, 0, 0, heroStart, heroStart, 0, 0, Ease.Linear)));
+            focus = heroStart;
+
+            double toMs = 1000.0 / Stopwatch.Frequency;
+            int di = 0;
+            for (int k = 0; k < ticks; k++)
+            {
+                long start = Stopwatch.GetTimestamp();
+                double t = k * TickDt;
+                while (true)
+                {
+                    double nextImpact = heapCount > 0 ? heap[0].Time : double.PositiveInfinity;
+                    double nextDecision = di < decisions.Count ? decisions[di] : double.PositiveInfinity;
+                    double next = Math.Min(nextImpact, nextDecision);
+                    if (next > t + 1e-9) break;
+                    if (nextImpact <= nextDecision) ProcessImpact(Pop());
+                    else
+                    {
+                        int b = decisionBeat[di];
+                        double tnext = di + 1 < decisions.Count ? decisions[di + 1]
+                            : decisions[di] + (map.Beats[map.Beats.Length - 1] - map.Beats[map.Beats.Length - 2]);
+                        Decide(decisions[di], tnext, b);
+                        di++;
+                    }
+                }
+                UpdateTick(t, k);
+                tickMs[k] = (float)((Stopwatch.GetTimestamp() - start) * toMs);
+            }
+            return Build(name, duration, new SimTickTiming(tickMs, Choreographer.TickRate, flowSlices, flowRebuilds));
+        }
+
+        // ------------------------------------------------------------------ entities
+
+        int NewEntity(EntityKind k, int type, double spawn)
+        {
+            int id = entityCount++;
+            if (id >= kind.Length) Grow(Math.Max(256, kind.Length * 2));
+            kind[id] = k; etype[id] = type; spawnT[id] = spawn; despawnT[id] = double.PositiveInfinity;
+            eseed[id] = Rng.Hash(seed, (uint)id, 0x5EED);
+            return id;
+        }
+
+        void Grow(int n)
+        {
+            Array.Resize(ref kind, n); Array.Resize(ref etype, n); Array.Resize(ref spawnT, n); Array.Resize(ref despawnT, n);
+            Array.Resize(ref eseed, n); Array.Resize(ref pos, n); Array.Resize(ref rest, n); Array.Resize(ref planFrom, n);
+            Array.Resize(ref cur, n); Array.Resize(ref hp, n); Array.Resize(ref planSerial, n); Array.Resize(ref facing, n);
+            Array.Resize(ref radius, n); Array.Resize(ref state, n); Array.Resize(ref busyUntil, n); Array.Resize(ref lastActionEnd, n);
+            Array.Resize(ref bossDeathAfter, n); Array.Resize(ref onScreen, n); Array.Resize(ref released, n);
+            Array.Resize(ref sideMem, n);
+        }
+
+        int AddSeg(MotionSegment s)
+        {
+            segs.Add(s);
+            return segs.Count - 1;
+        }
+
+        void SetMonsterSeg(int m, MotionSegment s)
+        {
+            AddSeg(s);
+            cur[m] = s;
+            rest[m] = s.To;
+            facing[m] = s.FacingTo;
+        }
+
+        Vector2 MonsterPosAt(int m, double t) => cur[m].PositionAt(t);
+
+        /// <summary>
+        /// Where the monster stands at <paramref name="t"/>. With <paramref name="hold"/>, it stops
+        /// there: a zero-length segment supersedes the rest of its current one. Segments are never
+        /// cut short in place, so the motion before <paramref name="t"/> stays exactly as planned.
+        /// </summary>
+        Vector2 StopAt(int m, double t, bool hold)
+        {
+            MotionSegment s = cur[m];
+            if (s.T1 <= t) return s.To;
+            Vector2 p = s.PositionAt(t);
+            if (hold)
+            {
+                float f = s.FacingAt(t);
+                SetMonsterSeg(m, new MotionSegment(m, t, t, p, p, f, f, Ease.Linear));
+            }
+            return p;
+        }
+
+        Vector2 HeroPosAt(double t)
+        {
+            for (int i = heroSegs.Count - 1; i >= 0; i--)
+            {
+                MotionSegment s = segs[heroSegs[i]];
+                if (s.T0 <= t) return s.PositionAt(t);
+            }
+            return heroStart;
+        }
+
+        Vector2 HeroRest => segs[heroSegs[heroSegs.Count - 1]].To;
+        float HeroFacing => segs[heroSegs[heroSegs.Count - 1]].FacingTo;
+
+        void AddHeroSeg(MotionSegment s) => heroSegs.Add(AddSeg(s));
+
+        int Spawn(int type, Vector2 p, double t, bool initial)
+        {
+            MonsterType mt = roster.Monsters[type];
+            int m = NewEntity(EntityKind.Monster, type, t);
+            state[m] = Alive;
+            hp[m] = Math.Max(1, mt.HitPoints);
+            radius[m] = mt.Radius;
+            pos[m] = p;
+            busyUntil[m] = 0;
+            lastActionEnd[m] = 0;
+            bossDeathAfter[m] = double.PositiveInfinity;
+            planSerial[m] = -1;
+            float yaw = Easing.Yaw(HeroRest - p);
+            SetMonsterSeg(m, new MotionSegment(m, t, t, p, p, yaw, yaw, Ease.Linear));
+            actions.Add(new ActionEvent(m, ActionKind.Spawn, t, -1, -1, 0));
+            if (liveCount == live.Length) Array.Resize(ref live, live.Length * 2);
+            live[liveCount++] = m;
+            if (!initial) stats[curSection].Spawns++;
+            return m;
+        }
+
+        int PickType(int[] cumulative, bool fodderOnly)
+        {
+            int total = cumulative[cumulative.Length - 1];
+            int r = spawnRng.Next(total);
+            int type = 0;
+            while (type < cumulative.Length - 1 && r >= cumulative[type]) type++;
+            MonsterType mt = roster.Monsters[type];
+            if (mt.Rank == MonsterRank.Boss || (fodderOnly && mt.Rank != MonsterRank.Fodder))
+            {
+                for (int i = 0; i < cumulative.Length; i++)
+                {
+                    int w = cumulative[i] - (i > 0 ? cumulative[i - 1] : 0);
+                    if (w > 0 && roster.Monsters[i].Rank == MonsterRank.Fodder) return i;
+                }
+                for (int i = 0; i < roster.Monsters.Length; i++) if (roster.Monsters[i].Rank == MonsterRank.Fodder) return i;
+            }
+            return type;
+        }
+
+        // ------------------------------------------------------------------ the tick
+
+        void UpdateTick(double t, int k)
+        {
+            // Advance everything a real sim moves each tick, then the camera. The spatial hash is rebuilt
+            // lazily, by the first query on a tick that has decisions or impacts.
+            bool sampleStats = (k & 3) == 0;
+            int w = 0;
+            bigCount = 0;
+            int on = 0;
+            var view = new ViewGeometry(viewWidth > 0 ? viewWidth : plans[0].ViewWidth);
+            for (int i = 0; i < liveCount; i++)
+            {
+                int m = live[i];
+                if (state[m] == Dying && t >= despawnT[m]) state[m] = Gone;
+                if (state[m] == Gone) continue;
+                live[w++] = m;
+                MotionSegment s = cur[m];
+                pos[m] = s.From == s.To ? s.To : s.PositionAt(t);
+                if (radius[m] > SmallRadius)
+                {
+                    if (bigCount == big.Length) Array.Resize(ref big, big.Length * 2);
+                    big[bigCount++] = m;
+                }
+                if (sampleStats && view.Contains(focus, pos[m])) on++;
+            }
+            liveCount = w;
+            hashDirty = true;   // rebuilt by the first query of the next tick that needs it
+
+            // One slice of a flow-field rebuild toward the hero, spread over the beat's ticks.
+            if (nav != null && heroFieldNext.Building)
+            {
+                flowSlices++;
+                if (heroFieldNext.Step(sliceBudget))
+                {
+                    FlowField done = heroFieldNext;
+                    heroFieldNext = heroField;
+                    heroField = done;
+                }
+            }
+
+            Vector2 target = HeroPosAt(t);
+            float omega = 1f / FollowTimeConstant;
+            float dt = (float)TickDt;
+            if (k == 0) { focus = target; focusVel = Vector2.Zero; }
+            else
+            {
+                Vector2 x = focus - target;
+                float e = (float)Math.Exp(-omega * dt);
+                Vector2 c = focusVel + omega * x;
+                focus = target + (x + c * dt) * e;
+                focusVel = (focusVel - omega * c * dt) * e;
+            }
+            viewWidth = WidthAt(t);
+            framing[k] = new FramingSample(focus, viewWidth);
+
+            if (sampleStats && curSection >= 0 && t < map.Sections[curSection].End + 1e-9)
+            {
+                SectionStats st = stats[curSection];
+                st.MeanOnScreen += on;
+                statTicks[curSection]++;
+                if (on > st.MaxOnScreen) st.MaxOnScreen = on;
+            }
+        }
+
+        bool hashDirty = true;
+
+        SpatialHash Near()
+        {
+            if (hashDirty) { hash.Build(live, liveCount, pos, focus); hashDirty = false; }
+            return hash;
+        }
+
+        float WidthAt(double t)
+        {
+            if (curSection < 0) return plans[0].ViewWidth;
+            if (t >= wT1 || wT1 <= wT0) return wTo;
+            if (t <= wT0) return wFrom;
+            float u = (float)((t - wT0) / (wT1 - wT0));
+            u = u * u * (3 - 2 * u);
+            return wFrom + (wTo - wFrom) * u;
+        }
+
+        // ------------------------------------------------------------------ decisions on each beat
+
+        void Decide(double tb, double tnext, int bi)
+        {
+            int s = bi < 0 ? 0 : map.SectionIndexAt(tb);
+            if (s != curSection) EnterSection(s, tb);
+            if (bi >= 0 && grid.IsDownbeat[bi] && tb > barStart + 1e-6) BarFeedback(tb);
+            if (nav != null) FlowBeat(tb, tnext);
+            if (!populated) { InitialPopulation(tb); populated = true; }
+            beatSerial++;
+            bool free = map.Sections[s].Feel == SectionFeel.Free;
+            var view = new ViewGeometry(viewWidth > 0 ? viewWidth : plan.ViewWidth);
+            Classify(view, tb);
+            if (worstBeats && bi >= 0 && bi + 1 < map.Beats.Length && grid.IsDownbeat[bi + 1] && barOfBeat[bi + 1] % 4 == 0)
+                WorstBeat(tb, map.Beats[bi + 1], view);
+            if (bi >= 0)   // the pre-roll before the first beat only places the opening horde
+            {
+                HeroDecide(tb, tnext);
+                MonsterDecide(tb, tnext, HeroPosAt(tnext), free);
+            }
+            Spells(tb, tnext);
+            Refill(tb, view);
+            beatSpawns.Clear();   // spawns are in the hash from the next tick on
+        }
+
+        void EnterSection(int s, double t)
+        {
+            bool first = curSection < 0;
+            curSection = s;
+            // A lighter section starts its hit shapes small again (TD6): shapes the feedback grew for a heavier one
+            // would hold the horde at arm's length all through it, knocking back everything they strike past the budget.
+            if (!first && nav != null && plans[s].Preset.DeathsPerSecond(plans[s].TargetOnScreen) < plan.Preset.DeathsPerSecond(plan.TargetOnScreen))
+                shapeScale = Math.Min(shapeScale, 1.5f);
+            plan = plans[s];
+            SongSection sec = map.Sections[s];
+            secStart = sec.Start;
+            secEnd = sec.End;
+            secKills = 0;
+            wFrom = first ? plan.ViewWidth : viewWidth;
+            wTo = plan.ViewWidth;
+            wT0 = t;
+            wT1 = map.TimeOfBeatIndex(sec.FirstBeat + ZoomBars * map.BeatsPerBarAt(sec.FirstBar));
+            if (first) viewWidth = wTo;
+            Vector2 h = HeroRest;
+            if (plan.Goal != null) goal = plan.Goal;
+            else goal = new GoalArea { Name = "hold", Center = h, Radius = 3f };
+            goalField = plan.Goal != null && goalFields.TryGetValue(plan.Goal.Name, out FlowField gf) ? gf : null;
+            goalReached = Vector2.Distance(h, goal.Center) <= goal.Radius;
+            if (goalReached && plan.Goal != null) stats[s].GoalReachedAt = t;
+            barStart = t;
+            barStruck = 0;
+            if (plan.Boss >= 0 && !first)
+            {
+                var view = new ViewGeometry(Math.Max(viewWidth, plan.ViewWidth));
+                Vector2 dir = goalReached ? new Vector2(0, 1) : nav != null ? GoalHeading(h, out _) : Vector2.Normalize(goal.Center - h);
+                float br = roster.Monsters[plan.Boss].Radius;
+                Vector2 p;
+                if (nav == null)
+                {
+                    float dist = view.Near;
+                    while (view.OutsideDistance(focus, focus + dir * dist) < SpawnMargin + br || SpawnBlocked(focus + dir * dist, br)) dist += 0.5f;
+                    p = focus + dir * dist;
+                }
+                else p = BossEntry(view, dir, br);
+                int m = Spawn(plan.Boss, p, t, false);
+                beatSpawns.Add(m);
+                double bar = map.TimeOfBeatIndex(sec.EndBeat) - map.TimeOfBeatIndex(sec.EndBeat - map.BeatsPerBarAt(sec.LastBar));
+                bossDeathAfter[m] = secEnd - bar;
+            }
+        }
+
+        /// <summary>
+        /// Each bar, scale the hero's and the spells' hit shapes so struck monsters (hits plus
+        /// deaths) per second follow the load preset; who dies is held by the kill budget.
+        /// </summary>
+        void BarFeedback(double tb)
+        {
+            double barDur = tb - barStart;
+            double target = (plan.Preset.DeathsPerSecond(plan.TargetOnScreen) + plan.Preset.HitsPerSecond(plan.TargetOnScreen)) * barDur;
+            double rate = plan.Preset.DeathsPerSecond(plan.TargetOnScreen);
+            if (target > 0 && barDur > 0)
+            {
+                // Deaths come first: while the kill budget runs behind by more than half a second's worth,
+                // the shapes grow to reach more monsters. Otherwise they steer struck monsters toward the
+                // preset's deaths plus hits, but stay at most 2.5x, since a wide kill zone empties the
+                // middle of the screen.
+                bool behind = rate * (tb - secStart) - secKills > 0.5 * rate;
+                double ratio = target / Math.Max(1, barStruck);
+                float k = (float)Math.Max(0.85, Math.Min(1.2, Math.Sqrt(ratio)));
+                if (behind) k = Math.Max(k, 1.1f);
+                float cap = behind ? MaxShapeScale : HitsShapeScale;
+                shapeScale = Math.Max(0.5f, Math.Min(Math.Max(cap, Math.Min(shapeScale, MaxShapeScale) * 0.95f), shapeScale * k));
+                if (!behind && shapeScale > HitsShapeScale) shapeScale = Math.Max(HitsShapeScale, shapeScale * 0.95f);
+            }
+            barStart = tb;
+            barStruck = 0;
+        }
+
+        void InitialPopulation(double t)
+        {
+            var view = new ViewGeometry(plan.ViewWidth);
+            Vector2 h = HeroRest;
+            float spacing = 0;   // the widest fodder's diameter, so the opening horde starts apart
+            foreach (MonsterType mt in roster.Monsters) if (mt.Rank == MonsterRank.Fodder) spacing = Math.Max(spacing, 2 * mt.Radius);
+            float half = view.Radius + SpawnMargin + SpawnBand + 4;
+            int cols = (int)(2 * half / spacing) + 1;
+            float rowH = spacing * 0.8660254f;
+            int rows = (int)(2 * half / rowH) + 1;
+            var pts = new List<Vector2>(cols * rows);
+            for (int j = 0; j < rows; j++)
+                for (int i = 0; i < cols; i++)
+                    pts.Add(new Vector2(h.X - half + i * spacing + ((j & 1) == 1 ? spacing / 2 : 0), h.Y - half + j * rowH));
+            var dkeys = new long[pts.Count];
+            var idx = new int[pts.Count];
+            for (int i = 0; i < pts.Count; i++) { dkeys[i] = ((long)(Vector2.Distance(pts[i], h) * 1000) << 24) | (long)i; idx[i] = i; }
+            Array.Sort(dkeys, idx);
+            int onLeft = plan.TargetOnScreen, offLeft = plan.Reserve;
+            foreach (int i in idx)
+            {
+                if (onLeft <= 0 && offLeft <= 0) break;
+                Vector2 p = pts[i];
+                float d = Vector2.Distance(p, h);
+                if (d < initialInnerRadius) continue;
+                if (nav != null && (nav.Distance(p) < spacing / 2 + 0.05f || !heroField.Reached(p))) continue;
+                if (view.Contains(h, p, -0.5f))
+                {
+                    if (onLeft <= 0) continue;
+                    onLeft--;
+                }
+                else if (!view.Contains(h, p, SpawnMargin) && view.Contains(h, p, SpawnMargin + SpawnBand))
+                {
+                    if (offLeft <= 0) continue;
+                    offLeft--;
+                }
+                else continue;
+                Spawn(PickType(plan.Mix, true), p, t, true);
+            }
+            for (int i = 0; i < liveCount; i++) pos[live[i]] = rest[live[i]];
+            hash.Build(live, liveCount, pos, focus);
+        }
+
+        void Classify(ViewGeometry view, double tb)
+        {
+            // Deaths per second, smoothed over about a second.
+            if (tb > lastClassify)
+            {
+                double dt = tb - lastClassify;
+                double k = 1 - Math.Exp(-dt / 1.0);
+                deathRate += k * ((totalKills - killsAtClassify) / dt - deathRate);
+                lastClassify = tb;
+                killsAtClassify = totalKills;
+            }
+            onScreenCount = 0;
+            int offN = 0;
+            float far = view.Radius + FarDespawn;
+            for (int i = 0; i < liveCount; i++)
+            {
+                int m = live[i];
+                if (state[m] == Gone) continue;
+                released[m] = false;
+                bool on = view.Contains(focus, pos[m]);
+                onScreen[m] = on;
+                if (on) { onScreenCount++; continue; }
+                if (state[m] != Alive) continue;
+                float d = Vector2.Distance(pos[m], focus);
+                float outside = view.OutsideDistance(focus, pos[m]);
+                if (d > far && busyUntil[m] <= tb)
+                {
+                    state[m] = Gone;
+                    despawnT[m] = tb;
+                    continue;
+                }
+                if (offN == offIds.Length) { Array.Resize(ref offIds, offN * 2); Array.Resize(ref offKeys, offN * 2); }
+                offIds[offN] = m;
+                offKeys[offN] = ((long)(outside * 1000) << 24) | (long)m;
+                offN++;
+            }
+            offscreenAlive = offN;
+            // Release the deficit plus the deaths expected while a released monster walks in from the
+            // spawn band (about 3 s), nearest the view's edge first.
+            int deficit = plan.TargetOnScreen - onScreenCount + (int)Math.Round(deathRate * ReleaseLeadSeconds);
+            if (deficit <= 0 || offN == 0) return;
+            Array.Sort(offKeys, offIds, 0, offN);
+            for (int i = 0; i < offN && i < deficit; i++) released[offIds[i]] = true;
+        }
+
+        // ------------------------------------------------------------------ the hero
+
+        void HeroDecide(double tb, double tnext)
+        {
+            Vector2 h = HeroPosAt(tb);
+            if (!goalReached && Vector2.Distance(h, goal.Center) <= goal.Radius)
+            {
+                goalReached = true;
+                if (plan.Goal != null) stats[curSection].GoalReachedAt = tb;
+            }
+            if (heroPendingImpact > tb + 1e-9) return;
+            bool canAct = plan.HeroAttacks && plan.Combo.Length > 0;
+            // While heading for an unreached goal, only monsters ahead (within 75° of the way to the goal)
+            // stop the hero's stride; those beside and behind are left behind.
+            Vector2 ahead = goalReached ? Vector2.Zero : nav != null ? GoalHeading(h, out _) : Vector2.Normalize(goal.Center - h);
+            // Holding ground (a reached goal), the hero attacks whatever its hit shapes reach as the feedback
+            // scales them (TD6: walls slow the horde, and a hero idling inside its own kill zone starves the
+            // kill budget); travelling, only what is within its unscaled reach.
+            float reach = goalReached && nav != null ? Math.Max(roster.HeroReachM, Scaled(roster.HeroReachM)) : roster.HeroReachM;
+            if (canAct && AnyMonsterWithin(h, reach, ahead))
+            {
+                ScheduleHeroAction(tb, Math.Max(tb, heroLastEnd));
+                return;
+            }
+            if (heroLastEnd > tb + 1e-9) return;
+            Stride(tb, tnext, h);
+        }
+
+        bool AnyMonsterWithin(Vector2 p, float r, Vector2 ahead)
+        {
+            int n = Near().Gather(p, r + SmallRadius, ref buf);
+            for (int i = 0; i < n + bigCount; i++)
+            {
+                int m = i < n ? buf[i] : big[i - n];
+                if (state[m] != Alive) continue;
+                Vector2 d = pos[m] - p;
+                float l = d.Length();
+                if (l > r + radius[m]) continue;
+                if (ahead == Vector2.Zero || l < 1e-4f || Vector2.Dot(d / l, ahead) >= AheadCos) return true;
+            }
+            return false;
+        }
+
+        void ScheduleHeroAction(double tb, double availFrom)
+        {
+            for (int gi = grid.FirstAfter(tb); gi < grid.Count && grid.Points[gi].Time <= tb + 4.0; gi++)
+            {
+                GridPoint p = grid.Points[gi];
+                GridEntry[] combo = plans[p.Section].Combo;
+                GridEntry e = PickCombo(combo, p.Flags, out bool plain);
+                if (e == null) continue;
+                Move mv = roster.Combo(e.Name);
+                ClipAnnotation clip = clips[mv.Clip];
+                if (!ClipLibrary.Fit(clip, availFrom, p.Time, out double start, out double end, out float speed)) continue;
+                if (start < tb - 1e-9) continue;
+
+                Vector2 from = HeroRest;
+                float fFrom = Easing.Wrap(HeroFacing);
+                Vector2 dir = DenseDirection(from, roster.HeroReachM * 1.5f, out bool any);
+                if (!goalReached) { dir = nav != null ? GoalHeading(from, out _) : Vector2.Normalize(goal.Center - from); any = true; }   // cut a way toward the goal
+                if (!any) dir = Easing.Dir(fFrom);
+                Vector2 to = from + dir * clip.RootMotionM;
+                if (nav != null) to = WallStep(from, to, roster.HeroRadius);
+                to = HeroPath(from, to);
+                if (goalReached) to = ClampToGoal(to);
+                AddHeroSeg(new MotionSegment(0, start, end, from, to, fFrom, Easing.Unwrap(fFrom, Easing.Yaw(dir)), Ease.Linear));
+                Push(new Impact
+                {
+                    Time = p.Time, Kind = ImpactKind.HeroCombo, Entity = 0, Target = -1, Clip = mv.Clip, Move = mv,
+                    Yaw = Easing.Yaw(dir), Strength = Math.Max(mv.Strength, p.AccentStrength), ClipStart = start, ClipSpeed = speed,
+                });
+                heroPendingImpact = p.Time;
+                heroLastEnd = end;
+                if (plain) comboCycle++;
+                stats[curSection].HeroActions++;
+                return;
+            }
+        }
+
+        GridEntry PickCombo(GridEntry[] combo, GridFlags flags, out bool plain)
+        {
+            plain = false;
+            GridEntry best = null;
+            int plainCount = 0;
+            foreach (GridEntry e in combo)
+            {
+                if (!e.Positioned) { plainCount++; continue; }
+                if ((flags & e.Position) != e.Position) continue;
+                if (best == null || e.Priority > best.Priority) best = e;
+            }
+            if (best != null) return best;
+            if (plainCount == 0 || (flags & GridFlags.Beat) == 0) return null;
+            int want = comboCycle % plainCount;
+            foreach (GridEntry e in combo)
+            {
+                if (e.Positioned) continue;
+                if (want-- == 0) { plain = true; return e; }
+            }
+            return null;
+        }
+
+        void Stride(double tb, double tnext, Vector2 h)
+        {
+            Vector2 dir;
+            float len;
+            if (!goalReached)
+            {
+                Vector2 d = goal.Center - h;
+                float dist = d.Length();
+                if (dist < 1e-4f) return;
+                dir = d / dist;
+                if (nav != null) dir = GoalHeading(h, out dist);
+                len = Math.Min(roster.HeroStrideM, dist);
+            }
+            else
+            {
+                dir = DenseDirection(h, roster.HeroSenseM, out bool any);
+                if (!any) return;
+                len = roster.HeroStrideM;
+            }
+            Vector2 to = h + dir * len;
+            if (goalReached) to = ClampToGoal(to);
+            if (nav != null) to = WallStep(h, to, roster.HeroRadius);
+            to = HeroPath(h, to);
+            if (Vector2.Distance(h, to) < 0.05f) return;
+            float fFrom = Easing.Wrap(HeroFacing);
+            AddHeroSeg(new MotionSegment(0, tb, tnext, h, to, fFrom, Easing.Unwrap(fFrom, Easing.Yaw(to - h)), Ease.Pulse));
+            stats[curSection].HeroStrides++;
+        }
+
+        Vector2 ClampToGoal(Vector2 p)
+        {
+            Vector2 d = p - goal.Center;
+            float l = d.Length();
+            return l <= goal.Radius ? p : goal.Center + d * (goal.Radius / l);
+        }
+
+        /// <summary>The hero's move from <paramref name="a"/> toward <paramref name="b"/>, shortened so it stops short of monsters.</summary>
+        Vector2 HeroPath(Vector2 a, Vector2 b)
+        {
+            if (HeroClear(a, b)) return b;
+            float lo = 0, hi = 1;
+            for (int it = 0; it < 6; it++)
+            {
+                float mid = (lo + hi) / 2;
+                if (HeroClear(a, Vector2.Lerp(a, b, mid))) lo = mid; else hi = mid;
+            }
+            return Vector2.Lerp(a, b, lo);
+        }
+
+        bool HeroClear(Vector2 a, Vector2 p)
+        {
+            float hr = roster.HeroRadius;
+            if (nav != null && !SegmentClear(a, p, hr)) return false;
+            int n = Near().Gather(p, hr + SmallRadius + MaxStepReach, ref buf);
+            for (int i = 0; i < n; i++)
+                if (!HeroClearOf(buf[i], a, p, hr)) return false;
+            for (int i = 0; i < bigCount; i++)
+                if (!HeroClearOf(big[i], a, p, hr)) return false;
+            return true;
+        }
+
+        bool HeroClearOf(int m, Vector2 a, Vector2 p, float hr)
+        {
+            if (state[m] != Alive) return true;   // the dying fall away and never block
+            float need = hr + radius[m];
+            float d = Vector2.Distance(rest[m], p);
+            return d >= need || d >= Vector2.Distance(rest[m], a);
+        }
+
+        /// <summary>The centre of the 45° sector holding the most monsters within <paramref name="r"/>, weighted toward an unreached goal.</summary>
+        Vector2 DenseDirection(Vector2 p, float r, out bool any)
+        {
+            Span8 counts = default;
+            int n = Near().Gather(p, r, ref buf);
+            any = false;
+            for (int i = 0; i < n + bigCount; i++)
+            {
+                int m = i < n ? buf[i] : big[i - n];
+                if (i < n && radius[m] > SmallRadius) continue;
+                if (state[m] != Alive) continue;
+                Vector2 d = pos[m] - p;
+                float l = d.Length();
+                if (l > r || l < 1e-4f) continue;
+                float yaw = Easing.Yaw(d);
+                int sector = ((int)Math.Floor((yaw + Math.PI) / (Math.PI / 4) + 0.5)) & 7;
+                counts[sector] += 1f;
+                any = true;
+            }
+            if (!any) return Vector2.Zero;
+            if (!goalReached)
+            {
+                float gy = Easing.Yaw(goal.Center - p);
+                for (int s = 0; s < 8; s++)
+                {
+                    float sy = (float)(-Math.PI + s * Math.PI / 4);
+                    if (Math.Abs(Easing.Unwrap(gy, sy) - gy) <= 1.18f) counts[s] *= 1.5f;
+                }
+            }
+            int best = 0;
+            for (int s = 1; s < 8; s++) if (counts[s] > counts[best]) best = s;
+            return Easing.Dir((float)(-Math.PI + best * Math.PI / 4));
+        }
+
+        struct Span8
+        {
+            float a0, a1, a2, a3, a4, a5, a6, a7;
+            public float this[int i]
+            {
+                get
+                {
+                    switch (i) { case 0: return a0; case 1: return a1; case 2: return a2; case 3: return a3; case 4: return a4; case 5: return a5; case 6: return a6; default: return a7; }
+                }
+                set
+                {
+                    switch (i) { case 0: a0 = value; break; case 1: a1 = value; break; case 2: a2 = value; break; case 3: a3 = value; break; case 4: a4 = value; break; case 5: a5 = value; break; case 6: a6 = value; break; default: a7 = value; break; }
+                }
+            }
+        }
+
+        // ------------------------------------------------------------------ monsters
+
+        void MonsterDecide(double tb, double tnext, Vector2 heroAt, bool free)
+        {
+            int n = 0;
+            for (int i = 0; i < liveCount; i++)
+            {
+                int m = live[i];
+                if (state[m] != Alive || busyUntil[m] > tb + 1e-9) continue;
+                if (n == keys.Length) { Array.Resize(ref keys, n * 2); Array.Resize(ref order, n * 2); }
+                // Nearest the hero first, by the way there: with walls, the front of a queue at a gap
+                // plans before those pressed against the wall beside it, so the queue moves up.
+                float way = Vector2.Distance(rest[m], heroAt);
+                if (nav != null) way = Math.Min(Math.Max(way, heroField.CostAt(rest[m])), 1e6f);
+                keys[n] = ((long)(way * 1000) << 24) | (long)m;
+                order[n] = m;
+                n++;
+            }
+            Array.Sort(keys, order, 0, n);
+            beatMaxStep = 0;
+            Ease ease = free ? Ease.Linear : Ease.Pulse;
+            for (int oi = 0; oi < n; oi++)
+            {
+                int m = order[oi];
+                MonsterType mt = roster.Monsters[etype[m]];
+                Vector2 a = rest[m];
+                float contact = roster.HeroRadius + mt.Radius + 0.15f;
+                Vector2 toHero = heroAt - a;
+                float d = toHero.Length();
+                if (plan.MonsterAttacks && d <= contact + mt.ReachM && (nav == null || nav.LineClear(a, heroAt)))
+                {
+                    TryScheduleAttack(m, mt, tb, toHero);
+                    continue;
+                }
+                if (!onScreen[m] && !released[m]) continue;
+                Vector2 dir = d > 1e-4f ? toHero / d : Easing.Dir(facing[m]);
+                float left = d;
+                if (nav != null) dir = MonsterHeading(a, heroAt, mt.Radius, dir, ref left);
+                float stepM = onScreen[m] ? mt.StepM : mt.StepM * OffscreenStride;
+                float step = Math.Min(stepM, Math.Max(0, left - contact));
+                Vector2 best = a;
+                float bestProg = 0;
+                if (step > 1e-3f)
+                {
+                    Vector2 b = a + dir * step;
+                    if (nav != null) b = WallStep(a, b, mt.Radius);
+                    GatherCandidates(m, a, Math.Max(step, 0.8f * mt.StepM));
+                    float f = SepFraction(m, a, b);
+                    best = Vector2.Lerp(a, b, f);
+                    bestProg = nav == null ? step * f : Vector2.Dot(dir, best - a);
+                    if (bestProg < 0.5f * mt.StepM && step >= 0.2f * mt.StepM)
+                    {
+                        // One sidestep a beat, alternating sides, lets a blocked monster slide around the one ahead.
+                        // With walls (TD6) a monster that would still mark time also tries the other side, then
+                        // wider sidesteps, starting from the side its last sidestep took: a queue through a gap fans
+                        // out round the hero instead of filing in single file, two monsters touching side by side
+                        // never lock each other, and a monster keeps sliding the same way instead of zig-zagging.
+                        int side = ((m + beatSerial) & 1) == 0 ? 1 : -1;
+                        bool sticky = nav != null && sideMem[m] != 0;
+                        if (sticky) side = sideMem[m];
+                        // Away from walls (8 m by the open-distance field) the horde comes from every side and TD3's
+                        // one sidestep serves; hemmed in on every side, one try is all there is room for.
+                        int tries = nav == null || nav.OpenAt(a) > 8f || Touching(m, a) >= 5 ? 1 : sticky ? 2 : 4;
+                        for (int k = 0; k < tries; k++)
+                        {
+                            if (k > 0 && Vector2.Distance(best, a) >= 0.2f * mt.StepM) break;
+                            int s = sticky || (k & 1) == 0 ? side : -side;
+                            float turn = s * (sticky ? (k == 0 ? 0.8f : 1.4f) : (k < 2 ? 0.8f : 1.4f));
+                            Vector2 b2 = a + Rotate(dir, turn) * (mt.StepM * 0.8f);
+                            if (nav != null) b2 = WallStep(a, b2, mt.Radius);
+                            if (Vector2.Distance(b2, heroAt) < contact) continue;
+                            // A sidestep shorter than a quarter of its length would only mark time: skip the search
+                            // when a neighbour already blocks that quarter.
+                            if (nav != null && !AllClear(m, a, b2, 0.25f)) continue;
+                            float f2 = SepFraction(m, a, b2);
+                            Vector2 c2 = Vector2.Lerp(a, b2, f2);
+                            float prog = Vector2.Dot(dir, c2 - a);
+                            if (k == 0 ? prog > bestProg + 0.05f : prog > 0.02f && Vector2.Distance(c2, a) >= 0.2f * mt.StepM)
+                            {
+                                best = c2; bestProg = prog;
+                                if (nav != null) sideMem[m] = (sbyte)s;
+                            }
+                        }
+                    }
+                }
+                if (nav != null && best != a) best = WallKeep(m, a, best, mt.Radius);
+                if (Vector2.Distance(best, a) < 0.2f * mt.StepM)
+                {
+                    best = a;   // marching in place
+                    if (nav != null) sideMem[m] = 0;   // a monster marking time may try either side next beat
+                }
+                float fFrom = Easing.Wrap(facing[m]);
+                float fTo = Easing.Unwrap(fFrom, Easing.Yaw(dir));
+                SetMonsterSeg(m, new MotionSegment(m, tb, tnext, a, best, fFrom, fTo, ease));
+                beatMaxStep = Math.Max(beatMaxStep, Vector2.Distance(a, best));
+                planSerial[m] = beatSerial;
+                planFrom[m] = a;
+            }
+        }
+
+        static Vector2 Rotate(Vector2 v, float yaw)
+        {
+            float c = (float)Math.Cos(yaw), s = (float)Math.Sin(yaw);
+            return new Vector2(v.X * c + v.Y * s, -v.X * s + v.Y * c);
+        }
+
+        /// <summary>
+        /// The largest fraction of the step from <paramref name="a"/> to <paramref name="b"/> that
+        /// keeps every neighbour apart over the whole step. Neighbours already planned this beat
+        /// move with the same timing and ease, so their relative path is a straight segment and its
+        /// closest approach is exact; the others stand at their current segment's end.
+        /// </summary>
+        /// <summary>Collects the neighbours a step of up to <paramref name="maxStep"/> from <paramref name="a"/> could touch (in cand, nc).</summary>
+        void GatherCandidates(int m, Vector2 a, float maxStep)
+        {
+            float ri = radius[m];
+            int n = Near().Gather(a, ri + SmallRadius + maxStep + Math.Max(beatMaxStep, 0.5f) + 0.05f, ref buf);
+            nc = 0;
+            for (int i = 0; i < n + bigCount; i++)
+            {
+                int j = i < n ? buf[i] : big[i - n];
+                if (j == m || (i < n && radius[j] > SmallRadius)) continue;
+                if (state[j] != Alive) continue;   // the dying fall away and never block
+                // Only neighbours whose own move this beat can come within reach of this step.
+                bool planned = planSerial[j] == beatSerial;
+                float reachJ = planned ? Vector2.Distance(planFrom[j], rest[j]) : 0f;
+                Vector2 cj = planned ? planFrom[j] : rest[j];
+                float lim = ri + radius[j] + maxStep + reachJ;
+                if (Vector2.DistanceSquared(a, cj) > lim * lim) continue;
+                if (nc == cand.Length) Array.Resize(ref cand, nc * 2);
+                cand[nc++] = j;
+            }
+        }
+
+        /// <summary>Does the step from <paramref name="a"/> to <paramref name="b"/>, cut to fraction <paramref name="f"/>, keep clear of every gathered neighbour?</summary>
+        bool AllClear(int m, Vector2 a, Vector2 b, float f)
+        {
+            for (int k = 0; k < nc; k++)
+                if (!PairOk(m, cand[k], radius[m], a, b, f)) return false;
+            return true;
+        }
+
+        /// <summary>How many of the gathered neighbours (cand) touch a monster standing at <paramref name="a"/>, by where they stand or, if planned this beat, where they started.</summary>
+        int Touching(int m, Vector2 a)
+        {
+            int n = 0;
+            for (int k = 0; k < nc; k++)
+            {
+                int j = cand[k];
+                Vector2 q = planSerial[j] == beatSerial ? planFrom[j] : rest[j];
+                float reach = radius[m] + radius[j] + 0.3f;
+                if (Vector2.DistanceSquared(a, q) < reach * reach) n++;
+            }
+            return n;
+        }
+
+        int nc;
+
+        float SepFraction(int m, Vector2 a, Vector2 b)
+        {
+            float ri = radius[m];
+            int nf = 0;
+            for (int k = 0; k < nc; k++)
+            {
+                if (PairOk(m, cand[k], ri, a, b, 1f)) continue;
+                if (nf == strike.Length) Array.Resize(ref strike, nf * 2);
+                strike[nf++] = cand[k];
+            }
+            if (nf == 0) return 1f;
+            float lo = 0, hi = 1;
+            for (int it = 0; it < 6; it++)
+            {
+                float mid = (lo + hi) / 2;
+                bool ok = true;
+                for (int k = 0; k < nf && ok; k++) ok = PairOk(m, strike[k], ri, a, b, mid);
+                if (ok) lo = mid; else hi = mid;
+            }
+            // A neighbour moving past can clear the full step but not a shorter one, so check every
+            // candidate at the chosen fraction and halve it until all clear (standing still always does).
+            float f = lo;
+            while (f > 0)
+            {
+                bool ok = true;
+                for (int k = 0; k < nc && ok; k++) ok = PairOk(m, cand[k], ri, a, b, f);
+                if (ok) break;
+                f = f < 0.1f ? 0 : f * 0.5f;
+            }
+            return f;
+        }
+
+        bool PairOk(int m, int j, float ri, Vector2 a, Vector2 b, float f)
+        {
+            float rj = radius[j];
+            float dmin = ri + rj - SimOverlap * Math.Min(ri, rj);
+            Vector2 bi = a + (b - a) * f;
+            Vector2 r0, r1;
+            if (planSerial[j] == beatSerial) { r0 = a - planFrom[j]; r1 = bi - rest[j]; }
+            else { r0 = a - rest[j]; r1 = bi - rest[j]; }
+            float d0 = r0.Length();
+            float need = Math.Min(dmin, d0 - 1e-4f);
+            return ClosestApproach(r0, r1) >= need;
+        }
+
+        static float ClosestApproach(Vector2 r0, Vector2 r1)
+        {
+            Vector2 d = r1 - r0;
+            float dd = Vector2.Dot(d, d);
+            if (dd < 1e-12f) return r0.Length();
+            float u = -Vector2.Dot(r0, d) / dd;
+            if (u < 0) u = 0; else if (u > 1) u = 1;
+            return (r0 + d * u).Length();
+        }
+
+        bool TryScheduleAttack(int m, MonsterType mt, double tb, Vector2 toHero)
+        {
+            ClipAnnotation clip = clips[mt.AttackClip];
+            double cooldown = cooldownRng.Next(3) * 0.25 * (map.Beats[1] - map.Beats[0]);
+            double availFrom = Math.Max(tb, lastActionEnd[m] + cooldown);
+            for (int gi = grid.FirstAfter(tb); gi < grid.Count && grid.Points[gi].Time <= tb + 3.0; gi++)
+            {
+                GridPoint p = grid.Points[gi];
+                if ((p.Flags & GridFlags.Beat) == 0) continue;
+                if (!ClipLibrary.Fit(clip, availFrom, p.Time, out double start, out double end, out float speed)) continue;
+                if (start < tb - 1e-9) continue;
+                Push(new Impact { Time = p.Time, Kind = ImpactKind.MonsterAttack, Entity = m, Target = 0, Clip = mt.AttackClip, ClipStart = start, ClipSpeed = speed });
+                busyUntil[m] = end;
+                lastActionEnd[m] = end;
+                float fFrom = Easing.Wrap(facing[m]);
+                float fTo = Easing.Unwrap(fFrom, Easing.Yaw(toHero));
+                if (Math.Abs(fTo - fFrom) > 0.35f)
+                    SetMonsterSeg(m, new MotionSegment(m, tb, Math.Min(start, tb + 0.15), rest[m], rest[m], fFrom, fTo, Ease.Linear));
+                return true;
+            }
+            return false;
+        }
+
+        // ------------------------------------------------------------------ navigation (TD6)
+
+        /// <summary>
+        /// On each beat: when the hero has entered a new cell, start rebuilding the field toward the
+        /// hero, to be advanced one slice a tick across this beat's ticks (choreography.md, "Rebuilds
+        /// are rare and spread out"). Monsters keep using the previous field until the new one is done.
+        /// The first field is built whole, at load.
+        /// </summary>
+        void FlowBeat(double tb, double tnext)
+        {
+            Vector2 h = HeroRest;
+            if (heroField.SourceCell < 0)
+            {
+                heroField.Begin(h);
+                heroField.BuildAll();
+                flowRebuilds++;
+                flowSlices++;
+                return;
+            }
+            if (heroFieldNext.Building || Vector2.Distance(h, heroField.Source) < RebuildMoveM) return;
+            heroFieldNext.Begin(h);
+            flowRebuilds++;
+            int ticks = Math.Max(1, (int)Math.Floor((tnext - tb) * Choreographer.TickRate));
+            sliceBudget = Math.Max(256, (heroField.Settled + ticks - 1) / ticks);
+        }
+
+        /// <summary>
+        /// A monster's heading at <paramref name="a"/>: straight at the hero where the line to it is
+        /// clear of walls, else downhill along the field toward the hero. <paramref name="left"/> becomes the way's length by the field.
+        /// </summary>
+        Vector2 MonsterHeading(Vector2 a, Vector2 heroAt, float r, Vector2 straight, ref float left)
+        {
+            if (nav.Clear(a, heroAt, r)) return straight;
+            FlowField f = heroField;
+            // Off the field (squeezed against a wall, where the cell is too tight for it), Direction heads for
+            // the cheapest reached neighbour cell; off the grid or walled in, head straight and let walls push out.
+            if (!f.Direction(a, out Vector2 dir)) return straight;
+            float cost = f.CostAt(a);
+            if (!float.IsInfinity(cost)) left = Math.Max(left, cost);
+            return dir;
+        }
+
+        /// <summary>The hero's way toward the section's goal at <paramref name="h"/>, by its goal field, and the way's length.</summary>
+        Vector2 GoalHeading(Vector2 h, out float left)
+        {
+            Vector2 d = goal.Center - h;
+            float dist = d.Length();
+            left = dist;
+            Vector2 straight = dist > 1e-4f ? d / dist : new Vector2(0, 1);
+            if (goalField == null || nav.Clear(h, goal.Center, roster.HeroRadius)) return straight;
+            if (!goalField.Direction(h, out Vector2 dir)) return straight;
+            float cost = goalField.CostAt(h);
+            if (!float.IsInfinity(cost)) left = cost;
+            return dir;
+        }
+
+        /// <summary>
+        /// A step from <paramref name="a"/> toward <paramref name="b"/> for a body of radius
+        /// <paramref name="r"/>: far from every wall (one field lookup at each end) it stands; near
+        /// one, it slides: four quarter steps, each pushed out of the walls along their normals, so a
+        /// step into a wall runs along it and round its corners. The step ends at the farthest of
+        /// those points whose straight line from <paramref name="a"/> keeps clear.
+        /// </summary>
+        Vector2 WallStep(Vector2 a, Vector2 b, float r)
+        {
+            float len = Vector2.Distance(a, b);
+            if (Math.Min(nav.ClearanceLowerBound(a), nav.ClearanceLowerBound(b)) - len / 2 >= r) return b;
+            Vector2 d = (b - a) / 4, p = a;
+            Vector2 p1 = a, p2 = a, p3 = a, p4 = a;
+            int n = 0;
+            for (int k = 1; k <= 4; k++)
+            {
+                p += d;
+                if (!nav.PushOut(ref p, r)) break;
+                n = k;
+                if (k == 1) p1 = p; else if (k == 2) p2 = p; else if (k == 3) p3 = p; else p4 = p;
+            }
+            if (n >= 4 && SegmentClear(a, p4, r)) return p4;
+            if (n >= 3 && SegmentClear(a, p3, r)) return p3;
+            if (n >= 2 && SegmentClear(a, p2, r)) return p2;
+            if (n >= 1 && SegmentClear(a, p1, r)) return p1;
+            return a;
+        }
+
+        /// <summary>
+        /// A planned step's end pulled back toward <paramref name="a"/> until it keeps the full radius
+        /// from every wall (or no less than <paramref name="a"/> had), so nobody ratchets into a wall
+        /// a little each beat. A shortened step is checked against the neighbours again, and stays put
+        /// if any would come too close.
+        /// </summary>
+        Vector2 WallKeep(int m, Vector2 a, Vector2 p, float r)
+        {
+            if (nav.ClearanceLowerBound(p) >= r) return p;
+            float keep = Math.Min(r, nav.Distance(a));
+            if (nav.Distance(p) >= keep) return p;
+            float lo = 0, hi = 1;
+            for (int it = 0; it < 5; it++)
+            {
+                float mid = (lo + hi) / 2;
+                if (nav.Distance(Vector2.Lerp(a, p, mid)) >= keep) lo = mid; else hi = mid;
+            }
+            Vector2 q = Vector2.Lerp(a, p, lo);
+            for (int k = 0; k < nc; k++)
+                if (!PairOk(m, cand[k], radius[m], a, q, 1f)) return a;
+            return q;
+        }
+
+        /// <summary>Does the straight move from <paramref name="a"/> to <paramref name="b"/> keep radius <paramref name="r"/> clear of walls (or no closer than it starts)?</summary>
+        bool SegmentClear(Vector2 a, Vector2 b, float r)
+        {
+            float len = Vector2.Distance(a, b);
+            if (Math.Min(nav.ClearanceLowerBound(a), nav.ClearanceLowerBound(b)) - len / 2 >= r) return true;
+            // The end must keep the full radius (or no less than the start had), so nobody ratchets into a wall
+            // a little more each beat; the points between may graze it by WallSlack.
+            float keep = Math.Min(r, nav.Distance(a));
+            int n = Math.Max(2, (int)Math.Ceiling(len / 0.15f));
+            for (int i = 1; i <= n; i++)
+                if (nav.Distance(Vector2.Lerp(a, b, (float)i / n)) < (i == n ? keep : keep - WallSlack)) return false;
+            return true;
+        }
+
+        /// <summary>Where the boss enters: outside the view toward <paramref name="dir"/>, turning in 30° steps until the ground is open.</summary>
+        Vector2 BossEntry(ViewGeometry view, Vector2 dir, float br)
+        {
+            for (int k = 0; k < 12; k++)
+            {
+                float turn = (k + 1) / 2 * (float)(Math.PI / 6) * ((k & 1) == 0 ? 1 : -1);
+                Vector2 d = Rotate(dir, turn);
+                for (float dist = view.Near; dist < view.Radius + 20f; dist += 0.5f)
+                {
+                    Vector2 p = focus + d * dist;
+                    if (view.OutsideDistance(focus, p) >= SpawnMargin + br && !SpawnBlocked(p, br)) return p;
+                }
+            }
+            return focus + dir * (view.Radius + SpawnMargin + br);
+        }
+
+        // ------------------------------------------------------------------ spells
+
+        void Spells(double tb, double tnext)
+        {
+            for (int gi = grid.FirstAfter(tb); gi < grid.Count && grid.Points[gi].Time <= tnext + 1e-9; gi++)
+            {
+                GridPoint p = grid.Points[gi];
+                SectionPlan sp = plans[p.Section];
+                if (!sp.HeroAttacks) continue;
+                for (int k = 0; k < sp.Spells.Length; k++)
+                {
+                    GridEntry e = sp.Spells[k];
+                    if ((p.Flags & e.Position) != e.Position) continue;
+                    int c = spellCount[p.Section][k]++;
+                    if (c % e.Every != 0) continue;
+                    CastSpell(roster.Spell(e.Name), p, tb, tnext);
+                }
+            }
+        }
+
+        void CastSpell(Move mv, GridPoint p, double tb, double tnext)
+        {
+            float strength = Math.Max(mv.Strength, p.AccentStrength);
+            switch (mv.Shape)
+            {
+                case HitShape.Ring:
+                    Push(new Impact { Time = p.Time, Kind = ImpactKind.Ring, Entity = 0, Target = -1, Move = mv, Strength = strength });
+                    break;
+                case HitShape.Single:
+                {
+                    Vector2 h = HeroPosAt(p.Time);
+                    float speed = roster.Projectiles[mv.Projectile].SpeedMps;
+                    float range = (float)Math.Min(mv.RangeM, speed * (p.Time - tb));
+                    if (range < 2f) break;
+                    if (!PickTarget(h, 1.5f, range, p.Time, true, out int target, out Vector2 landing)) break;
+                    double launch = p.Time - Vector2.Distance(h, landing) / speed;
+                    Vector2 from = HeroPosAt(launch);
+                    int proj = NewEntity(EntityKind.Projectile, mv.Projectile, launch);
+                    despawnT[proj] = p.Time;
+                    float yaw = Easing.Yaw(landing - from);
+                    AddSeg(new MotionSegment(proj, launch, p.Time, from, landing, yaw, yaw, Ease.Linear));
+                    effects.Add(new EffectEvent(Catalog.BoltLaunch, -1, eseed[proj], launch, new Vector3(from.X, 1.3f, from.Y), yaw, 1f));
+                    Push(new Impact { Time = p.Time, Kind = ImpactKind.Bolt, Entity = proj, Target = target, Move = mv, Point = landing, Strength = strength });
+                    break;
+                }
+                case HitShape.Circle:
+                {
+                    Vector2 h = HeroPosAt(p.Time);
+                    if (!PickTarget(h, 3f, mv.RangeM, p.Time, false, out int target, out Vector2 point)) break;
+                    Push(new Impact { Time = p.Time, Kind = ImpactKind.Circle, Entity = 0, Target = target, Move = mv, Point = point, Strength = strength });
+                    break;
+                }
+                case HitShape.Line:
+                {
+                    double beat = tnext - tb;
+                    double dur = mv.Bars * map.BeatsPerBarAt(1) * beat;
+                    float yaw0 = Easing.Wrap(HeroFacing);
+                    effects.Add(new EffectEvent(mv.Effect, 0, Rng.Hash(seed, (uint)effects.Count, 0x1A5E), p.Time,
+                        new Vector3(0, 1.2f, 0), yaw0, Scaled(mv.Length)));
+                    if (mv.Sound >= 0) Sound(mv.Sound, p.Time, strength);
+                    for (int gi = grid.FirstAfter(p.Time); gi < grid.Count && grid.Points[gi].Time <= p.Time + dur + 1e-9; gi++)
+                    {
+                        GridPoint g = grid.Points[gi];
+                        if ((g.Flags & GridFlags.Eighth) == 0) continue;
+                        float yaw = yaw0 + (float)(2 * Math.PI * (g.Time - p.Time) / dur);
+                        Push(new Impact { Time = g.Time, Kind = ImpactKind.LaserTick, Entity = 0, Target = -1, Move = mv, Yaw = yaw, Strength = 0.2f });
+                    }
+                    break;
+                }
+                default:
+                    Push(new Impact { Time = p.Time, Kind = ImpactKind.Ring, Entity = 0, Target = -1, Move = mv, Strength = strength });
+                    break;
+            }
+        }
+
+        bool PickTarget(Vector2 h, float minR, float maxR, double t, bool needLine, out int target, out Vector2 point)
+        {
+            int n = Near().Gather(h, maxR + SmallRadius, ref buf);
+            int c = 0;
+            for (int i = 0; i < n; i++)
+            {
+                int m = buf[i];
+                if (state[m] != Alive) continue;
+                float d = Vector2.Distance(pos[m], h);
+                if (d < minR || d > maxR) continue;
+                if (!onScreen[m]) continue;
+                if (needLine && nav != null && !nav.LineClear(h, pos[m])) continue;   // bolts need a clear line; lightning ignores walls
+                if (c == strike.Length) Array.Resize(ref strike, c * 2);
+                strike[c++] = m;
+            }
+            if (c == 0) { target = -1; point = h; return false; }
+            Array.Sort(strike, 0, c);
+            target = strike[spellRng.Next(c)];
+            point = MonsterPosAt(target, t);
+            return true;
+        }
+
+        // ------------------------------------------------------------------ impacts
+
+        void ProcessImpact(Impact im)
+        {
+            double t = im.Time;
+            // An impact on a section's first downbeat belongs to that section's budget.
+            int sec = map.SectionIndexAt(t);
+            if (sec > curSection) EnterSection(sec, t);
+            switch (im.Kind)
+            {
+                case ImpactKind.HeroCombo:
+                {
+                    Vector2 o = HeroPosAt(t);
+                    Move mv = im.Move;
+                    int n = mv.Shape == HitShape.Line
+                        ? QueryLine(o, im.Yaw, Scaled(mv.Length), Scaled(mv.Width), t)
+                        : QueryArc(o, im.Yaw, Scaled(mv.Radius), mv.Shape == HitShape.Arc ? mv.ArcDeg : 360f, t);
+                    actions.Add(new ActionEvent(0, ActionKind.Attack, t, im.Clip, -1, im.Strength, im.ClipStart, im.ClipSpeed));
+                    if (mv.Effect >= 0)
+                        effects.Add(new EffectEvent(mv.Effect, 0, Rng.Hash(seed, (uint)effects.Count, 0xC0B0), t, new Vector3(0, 1f, 0), im.Yaw, shapeScale));
+                    Sound(mv.Sound >= 0 ? mv.Sound : Catalog.SwingSound, t, im.Strength);
+                    Strike(t, o, n, im.Strength, true);
+                    break;
+                }
+                case ImpactKind.Ring:
+                {
+                    Vector2 o = HeroPosAt(t);
+                    float r = Scaled(im.Move.Radius);
+                    int n = QueryArc(o, 0, r, 360f, t);
+                    if (im.Move.Effect >= 0)
+                        effects.Add(new EffectEvent(im.Move.Effect, -1, Rng.Hash(seed, (uint)effects.Count, 0x7106), t, new Vector3(o.X, 0.1f, o.Y), 0, r));
+                    if (im.Move.Sound >= 0) Sound(im.Move.Sound, t, im.Strength);
+                    Strike(t, o, n, im.Strength, false);
+                    break;
+                }
+                case ImpactKind.Bolt:
+                {
+                    int n = QueryArc(im.Point, 0, 0.8f, 360f, t);
+                    if (n > 1)
+                    {
+                        int best = 0;
+                        float bd = float.MaxValue;
+                        for (int i = 0; i < n; i++)
+                        {
+                            float d = Vector2.Distance(MonsterPosAt(strike[i], t), im.Point);
+                            if (d < bd) { bd = d; best = i; }
+                        }
+                        strike[0] = strike[best];
+                        n = 1;
+                    }
+                    effects.Add(new EffectEvent(Catalog.BoltImpact, -1, eseed[im.Entity], t, new Vector3(im.Point.X, 1f, im.Point.Y), 0, 1f));
+                    if (im.Move.Sound >= 0) Sound(im.Move.Sound, t, im.Strength);
+                    Strike(t, im.Point, n, im.Strength, false);
+                    break;
+                }
+                case ImpactKind.Circle:
+                {
+                    float r = Scaled(im.Move.Radius);
+                    int n = QueryArc(im.Point, 0, r, 360f, t);
+                    if (im.Move.Effect >= 0)
+                        effects.Add(new EffectEvent(im.Move.Effect, -1, Rng.Hash(seed, (uint)effects.Count, 0x119E), t, new Vector3(im.Point.X, 0, im.Point.Y), 0, r));
+                    if (im.Move.Sound >= 0) Sound(im.Move.Sound, t, im.Strength);
+                    Strike(t, im.Point, n, im.Strength, false);
+                    break;
+                }
+                case ImpactKind.LaserTick:
+                {
+                    Vector2 o = HeroPosAt(t);
+                    int n = QueryLine(o, im.Yaw, Scaled(im.Move.Length), Scaled(im.Move.Width), t);
+                    for (int i = 0; i < n; i++) actions.Add(new ActionEvent(strike[i], ActionKind.Tick, t, -1, -1, im.Strength));
+                    stats[curSection].Ticks += n;
+                    break;
+                }
+                case ImpactKind.MonsterAttack:
+                {
+                    int m = im.Entity;
+                    if (state[m] != Alive) break;
+                    MonsterType mt = roster.Monsters[etype[m]];
+                    Vector2 h = HeroPosAt(t);
+                    Vector2 p = MonsterPosAt(m, t);
+                    bool inReach = Vector2.Distance(h, p) <= roster.HeroRadius + mt.Radius + 0.15f + mt.ReachM + 0.3f;
+                    actions.Add(new ActionEvent(m, ActionKind.Attack, t, im.Clip, inReach ? 0 : -1, 0.3f, im.ClipStart, im.ClipSpeed));
+                    stats[curSection].Attacks++;
+                    if (inReach)
+                    {
+                        Vector2 dir = p - h;
+                        dir = dir.LengthSquared() > 1e-8f ? Vector2.Normalize(dir) : new Vector2(0, 1);
+                        Vector2 at = h + dir * roster.HeroRadius;
+                        actions.Add(new ActionEvent(0, ActionKind.Parry, t, -1, m, 0.3f));
+                        effects.Add(new EffectEvent(Catalog.ParrySpark, -1, eseed[m], t, new Vector3(at.X, 1.2f, at.Y), Easing.Yaw(dir), 1f));
+                        Sound(Catalog.ParrySound, t, 0.3f);
+                        stats[curSection].Parries++;
+                    }
+                    break;
+                }
+                case ImpactKind.WorstRing:
+                {
+                    Vector2 o = HeroPosAt(t);
+                    var view = new ViewGeometry(viewWidth);
+                    int c = 0;
+                    for (int i = 0; i < liveCount; i++)
+                    {
+                        int m = live[i];
+                        if (state[m] != Alive || !view.Contains(focus, pos[m])) continue;
+                        if (c == keys.Length) { Array.Resize(ref keys, c * 2); Array.Resize(ref order, c * 2); }
+                        keys[c] = ((long)(Vector2.Distance(pos[m], o) * 1000) << 24) | (long)m;
+                        order[c] = m;
+                        c++;
+                    }
+                    Array.Sort(keys, order, 0, c);
+                    int kills = (int)Math.Round(0.3 * c);
+                    for (int i = 0; i < kills; i++) Kill(order[i], t, 1f);
+                    effects.Add(new EffectEvent(Catalog.Effect("ring"), -1, Rng.Hash(seed, (uint)effects.Count, 0x3A57), t, new Vector3(o.X, 0.1f, o.Y), 0, viewWidth / 2));
+                    Sound(Catalog.Sound("ring"), t, 1f);
+                    break;
+                }
+            }
+        }
+
+        /// <summary>A hit shape's size after the kill-rate feedback, kept within a quarter of the view's width.</summary>
+        float Scaled(float size) => Math.Min(size * shapeScale, MaxShapeViewFraction * viewWidth);
+
+        int QueryArc(Vector2 o, float yaw, float r, float arcDeg, double t)
+        {
+            var view = new ViewGeometry(viewWidth);
+            int n = Near().Gather(o, r + SmallRadius + 0.6f, ref buf);
+            float cosHalf = (float)Math.Cos(arcDeg * Math.PI / 360);
+            Vector2 fwd = Easing.Dir(yaw);
+            int c = 0;
+            for (int i = 0; i < n + bigCount; i++)
+            {
+                int m = i < n ? buf[i] : big[i - n];
+                if (i < n && radius[m] > SmallRadius) continue;
+                if (state[m] != Alive) continue;
+                Vector2 p = MonsterPosAt(m, t);
+                if (!view.Contains(focus, p, radius[m])) continue;
+                Vector2 d = p - o;
+                float l = d.Length();
+                if (l > r + HitShapeInflate * radius[m]) continue;
+                if (arcDeg < 359f && l > 1e-4f && Vector2.Dot(d / l, fwd) < cosHalf && l > radius[m]) continue;
+                if (c == strike.Length) Array.Resize(ref strike, c * 2);
+                strike[c++] = m;
+            }
+            Array.Sort(strike, 0, c);
+            return c;
+        }
+
+        int QueryLine(Vector2 o, float yaw, float length, float width, double t)
+        {
+            var view = new ViewGeometry(viewWidth);
+            Vector2 fwd = Easing.Dir(yaw);
+            Vector2 mid = o + fwd * (length / 2);
+            int n = Near().Gather(mid, length / 2 + width + SmallRadius + 0.6f, ref buf);
+            int c = 0;
+            for (int i = 0; i < n + bigCount; i++)
+            {
+                int m = i < n ? buf[i] : big[i - n];
+                if (i < n && radius[m] > SmallRadius) continue;
+                if (state[m] != Alive) continue;
+                Vector2 pm = MonsterPosAt(m, t);
+                if (!view.Contains(focus, pm, radius[m])) continue;
+                Vector2 d = pm - o;
+                float along = Vector2.Dot(d, fwd);
+                float across = Math.Abs(d.X * fwd.Y - d.Y * fwd.X);
+                float inflate = HitShapeInflate * radius[m];
+                if (along < -inflate || along > length + inflate || across > width / 2 + inflate) continue;
+                if (c == strike.Length) Array.Resize(ref strike, c * 2);
+                strike[c++] = m;
+            }
+            Array.Sort(strike, 0, c);
+            return c;
+        }
+
+        /// <summary>
+        /// The kill budget: deaths the section's load preset asks for by the midpoint to the next
+        /// killing impact (or the section's end), less those already dealt in this section.
+        /// </summary>
+        int Allot(double t)
+        {
+            double rate = plan.Preset.DeathsPerSecond(plan.TargetOnScreen);
+            if (rate <= 0) return 0;
+            double next = double.PositiveInfinity;
+            for (int i = 0; i < heapCount; i++)
+                if (heap[i].Kills && heap[i].Time < next && heap[i].Time >= t) next = heap[i].Time;
+            // The next chance to kill: the next pending killing impact, or in a free section its next grid
+            // point, or in a pulsed one at most two beats on; within the last two beats, the section's end.
+            double nextOpp;
+            if (map.Sections[curSection].Feel == SectionFeel.Free)
+            {
+                nextOpp = next;
+                int gi = grid.FirstAfter(t);
+                if (gi < grid.Count && grid.Points[gi].Section == curSection) nextOpp = Math.Min(nextOpp, grid.Points[gi].Time);
+            }
+            else
+            {
+                double beat = map.Beats[1] - map.Beats[0];
+                nextOpp = t + 2 * beat >= secEnd ? double.PositiveInfinity : Math.Min(next, t + 2 * beat);
+            }
+            double horizon = nextOpp < secEnd ? t + 0.5 * (nextOpp - t) : secEnd;
+            return Math.Max(0, (int)Math.Round(rate * (horizon - secStart) - secKills));
+        }
+
+        void Strike(double t, Vector2 origin, int n, float strength, bool heroCombo)
+        {
+            if (n == 0) return;
+            int allot = Allot(t);
+            if (keys.Length < n) { Array.Resize(ref keys, Math.Max(n, keys.Length * 2)); Array.Resize(ref order, keys.Length); }
+            for (int i = 0; i < n; i++)
+            {
+                int m = strike[i];
+                long dmm = Math.Min((1L << 20) - 1, (long)(Vector2.Distance(MonsterPosAt(m, t), origin) * 1000));
+                keys[i] = ((long)hp[m] << 40) | (dmm << 20) | (long)(m & 0xFFFFF);   // fewest hit points, then nearest, then id
+                order[i] = m;
+            }
+            Array.Sort(keys, order, 0, n);
+            int kills = 0;
+            barStruck += n;
+            for (int i = 0; i < n; i++)
+            {
+                int m = order[i];
+                if (roster.Monsters[etype[m]].Rank == MonsterRank.Boss)
+                {
+                    if (heroCombo && t >= bossDeathAfter[m]) Kill(m, t, 1f);
+                    else Hit(m, t, origin, strength);
+                }
+                else if (kills < allot) { Kill(m, t, strength); kills++; }
+                else Hit(m, t, origin, strength);
+            }
+        }
+
+        void Hit(int m, double t, Vector2 origin, float strength)
+        {
+            MonsterType mt = roster.Monsters[etype[m]];
+            hp[m] = Math.Max(1, hp[m] - 1);
+            actions.Add(new ActionEvent(m, ActionKind.Hit, t, mt.HitClip, -1, strength));
+            effects.Add(new EffectEvent(Catalog.HitSpark, m, Rng.Hash(eseed[m], (uint)(t * 1000), 1), t, new Vector3(0, 1f, 0), 0, 1f));
+            Sound(Catalog.HitSound, t, strength);
+            stats[curSection].Hits++;
+
+            Vector2 p = StopAt(m, t, false);
+            Vector2 dir = p - origin;
+            dir = dir.LengthSquared() > 1e-8f ? Vector2.Normalize(dir) : Easing.Dir(facing[m] + (float)Math.PI);
+            float dist = (mt.Rank == MonsterRank.Fodder ? 0.25f : 0.1f) + 0.2f * strength;
+            // The push starts from where the current step was going: neighbours behind planned around
+            // that end, so stopping short of it would run them into this one.
+            Vector2 baseEnd = rest[m];
+            // ... and gets there no later than the step would have (at least 30 ms on).
+            double tEnd = cur[m].T1 > t ? Math.Max(t + 0.03, Math.Min(t + KnockbackSeconds, cur[m].T1)) : t + KnockbackSeconds;
+            Vector2 to = KnockbackPath(m, p, t, baseEnd, baseEnd + dir * dist, tEnd);
+            float f = Easing.Wrap(facing[m]);
+            SetMonsterSeg(m, new MotionSegment(m, t, tEnd, p, to, f, f, Ease.Linear));
+            planSerial[m] = -1;
+            busyUntil[m] = Math.Max(busyUntil[m], tEnd);
+        }
+
+        Vector2 KnockbackPath(int m, Vector2 s0, double t, Vector2 a, Vector2 b, double tEnd)
+        {
+            if (KnockbackOk(m, s0, t, a, b, tEnd)) return b;
+            float lo = 0, hi = 1;
+            for (int it = 0; it < 4; it++)
+            {
+                float mid = (lo + hi) / 2;
+                if (KnockbackOk(m, s0, t, a, Vector2.Lerp(a, b, mid), tEnd)) lo = mid; else hi = mid;
+            }
+            return Vector2.Lerp(a, b, lo);
+        }
+
+        /// <summary>
+        /// Does a knockback from <paramref name="s0"/> (at <paramref name="t"/>) to <paramref name="p"/>
+        /// (at <paramref name="tEnd"/>) keep clear of every neighbour, at its end and halfway, or at
+        /// least no closer than the unpushed move to <paramref name="a"/> would come?
+        /// </summary>
+        bool KnockbackOk(int m, Vector2 s0, double t, Vector2 a, Vector2 p, double tEnd)
+        {
+            float ri = radius[m];
+            double tMid = (t + tEnd) / 2;
+            Vector2 pMid = Vector2.Lerp(s0, p, 0.5f), aMid = Vector2.Lerp(s0, a, 0.5f);
+            if (nav != null && (nav.Distance(p) < Math.Min(ri, nav.Distance(a)) || nav.Distance(pMid) < Math.Min(ri, nav.Distance(aMid)) - WallSlack)) return false;
+            int n = Near().Gather(p, ri + SmallRadius + MaxStepReach, ref buf);
+            for (int i = 0; i < n + bigCount; i++)
+            {
+                int j = i < n ? buf[i] : big[i - n];
+                if (j == m || (i < n && radius[j] > SmallRadius)) continue;
+                if (state[j] != Alive) continue;
+                float dmin = ri + radius[j] - SimOverlap * Math.Min(ri, radius[j]);
+                Vector2 q1 = rest[j], q2 = MonsterPosAt(j, tEnd);
+                float now = Math.Min(Vector2.Distance(a, q1), Vector2.Distance(a, q2));
+                float need = Math.Min(dmin, now - 1e-4f);
+                if (Vector2.Distance(p, q1) < need || Vector2.Distance(p, q2) < need) return false;
+                Vector2 qm = MonsterPosAt(j, tMid);
+                if (Vector2.Distance(pMid, qm) < Math.Min(dmin, Vector2.Distance(aMid, qm) - 1e-4f)) return false;
+            }
+            return true;
+        }
+
+        void Kill(int m, double t, float strength)
+        {
+            MonsterType mt = roster.Monsters[etype[m]];
+            StopAt(m, t, true);
+            state[m] = Dying;
+            ClipAnnotation death = clips[mt.DeathClip];
+            despawnT[m] = t + Math.Max(0.2, death.End - death.Impact) + CorpseLinger;
+            actions.Add(new ActionEvent(m, ActionKind.Death, t, mt.DeathClip, -1, strength));
+            effects.Add(new EffectEvent(Catalog.DeathBurst, m, Rng.Hash(eseed[m], 0xDEAD), t, new Vector3(0, 0.6f, 0), 0, mt.Radius / 0.4f));
+            Sound(Catalog.DeathSound, t, strength);
+            secKills++;
+            totalKills++;
+            stats[curSection].Deaths++;
+        }
+
+        void Sound(int category, double t, float strength) =>
+            sounds.Add(new SoundRequest { Category = category, Time = t, Strength = strength, Seq = sounds.Count });
+
+        // ------------------------------------------------------------------ worst beats, refills
+
+        void WorstBeat(double tb, double downbeat, ViewGeometry view)
+        {
+            for (int i = 0; i < liveCount; i++)
+            {
+                int m = live[i];
+                if (state[m] != Alive || busyUntil[m] > tb + 1e-9 || !view.Contains(focus, pos[m])) continue;
+                MonsterType mt = roster.Monsters[etype[m]];
+                if (!ClipLibrary.Fit(clips[mt.AttackClip], tb, downbeat, out double start, out double end, out float speed) || start < tb - 1e-9) continue;
+                Push(new Impact { Time = downbeat, Kind = ImpactKind.MonsterAttack, Entity = m, Target = 0, Clip = mt.AttackClip, ClipStart = start, ClipSpeed = speed });
+                busyUntil[m] = end;
+                lastActionEnd[m] = end;
+            }
+            Push(new Impact { Time = downbeat, Kind = ImpactKind.WorstRing, Entity = 0, Target = -1, Strength = 1f });
+        }
+
+        void Refill(double tb, ViewGeometry current)
+        {
+            int total = onScreenCount + offscreenAlive;
+            int want = plan.TargetOnScreen + plan.Reserve;
+            int need = want - total;
+            if (need <= 0) return;
+            need = Math.Min(need, Math.Max(24, want / 6));
+            var view = new ViewGeometry(Math.Max(current.Width, plan.ViewWidth));
+            Vector2 travel = Vector2.Zero;
+            if (!goalReached)
+            {
+                Vector2 d = goal.Center - HeroRest;
+                if (d.LengthSquared() > 1e-6f) travel = Vector2.Normalize(d);
+                if (nav != null && travel != Vector2.Zero) travel = GoalHeading(HeroRest, out _);
+            }
+            for (int i = 0; i < need; i++)
+            {
+                int type = PickType(plan.Mix, false);
+                float r = roster.Monsters[type].Radius;
+                for (int attempt = 0, attempts = nav == null ? 6 : 12; attempt < attempts; attempt++)
+                {
+                    float u = spawnRng.NextFloat();
+                    float margin = SpawnMargin + r + spawnRng.Range(0, SpawnBand);
+                    Vector2 p = view.EdgePoint(focus, u, margin, out Vector2 normal);
+                    if (travel != Vector2.Zero)
+                    {
+                        float wgt = (1f + 2f * Math.Max(0f, Vector2.Dot(normal, travel))) / 3f;
+                        if (spawnRng.NextFloat() > wgt) continue;
+                    }
+                    if (SpawnBlocked(p, r)) continue;
+                    beatSpawns.Add(Spawn(type, p, tb, false));
+                    break;
+                }
+            }
+        }
+
+        bool SpawnBlocked(Vector2 p, float r)
+        {
+            if (nav != null && (nav.Distance(p) < r + 0.05f || !heroField.Reached(p))) return true;   // open cells the field toward the hero reaches
+            int n = Near().Gather(p, r + SmallRadius + MaxStepReach, ref buf);
+            int nb = beatSpawns.Count;
+            for (int i = 0; i < n + bigCount + nb; i++)
+            {
+                int j = i < n ? buf[i] : i < n + bigCount ? big[i - n] : beatSpawns[i - n - bigCount];
+                if (i < n && radius[j] > SmallRadius) continue;
+                if (state[j] != Alive && state[j] != Dying) continue;
+                float need = r + radius[j];
+                if (Vector2.Distance(p, rest[j]) < need || Vector2.Distance(p, pos[j]) < need) return true;
+                // A neighbour stepping this beat must not pass through the spawn point either.
+                if (planSerial[j] == beatSerial && ClosestApproach(p - planFrom[j], p - rest[j]) < need) return true;
+            }
+            return false;
+        }
+
+        // ------------------------------------------------------------------ heap
+
+        void Push(Impact im)
+        {
+            im.Seq = impactSeq++;
+            if (heapCount == heap.Length) Array.Resize(ref heap, heap.Length * 2);
+            int i = heapCount++;
+            heap[i] = im;
+            while (i > 0)
+            {
+                int parent = (i - 1) >> 1;
+                if (!Less(heap[i], heap[parent])) break;
+                Impact tmp = heap[i]; heap[i] = heap[parent]; heap[parent] = tmp;
+                i = parent;
+            }
+        }
+
+        Impact Pop()
+        {
+            Impact top = heap[0];
+            heap[0] = heap[--heapCount];
+            int i = 0;
+            while (true)
+            {
+                int l = 2 * i + 1, r = l + 1, s = i;
+                if (l < heapCount && Less(heap[l], heap[s])) s = l;
+                if (r < heapCount && Less(heap[r], heap[s])) s = r;
+                if (s == i) break;
+                Impact tmp = heap[i]; heap[i] = heap[s]; heap[s] = tmp;
+                i = s;
+            }
+            return top;
+        }
+
+        static bool Less(in Impact a, in Impact b)
+        {
+            if (a.Time != b.Time) return a.Time < b.Time;
+            // At one instant monsters swing first, then the hero's blows land.
+            int ka = a.Kind == ImpactKind.MonsterAttack ? 0 : 1, kb = b.Kind == ImpactKind.MonsterAttack ? 0 : 1;
+            if (ka != kb) return ka < kb;
+            return a.Seq < b.Seq;
+        }
+
+        // ------------------------------------------------------------------ the timeline
+
+        Timeline Build(string name, double duration, SimTickTiming timing)
+        {
+            var tl = new Timeline { Name = name, Seed = seed, Duration = duration, Map = map, Grid = grid, TickTiming = timing };
+            int e = entityCount;
+            tl.Entities = new EntityInfo[e];
+            for (int i = 0; i < e; i++)
+            {
+                double despawn = double.IsPositiveInfinity(despawnT[i]) ? duration : Math.Min(despawnT[i], duration);
+                tl.Entities[i] = new EntityInfo(i, etype[i], kind[i], spawnT[i], despawn, eseed[i]);
+            }
+
+            // Segments and actions grouped by entity (counting sort keeps append order), then by time.
+            tl.SegmentStart = new int[e + 1];
+            foreach (MotionSegment s in segs) tl.SegmentStart[s.Entity + 1]++;
+            for (int i = 0; i < e; i++) tl.SegmentStart[i + 1] += tl.SegmentStart[i];
+            tl.Segments = new MotionSegment[segs.Count];
+            var cursor = (int[])tl.SegmentStart.Clone();
+            foreach (MotionSegment s in segs) tl.Segments[cursor[s.Entity]++] = s;
+            for (int i = 0; i < e; i++) InsertionSortSegments(tl.Segments, tl.SegmentStart[i], tl.SegmentStart[i + 1]);
+
+            tl.ActionStart = new int[e + 1];
+            foreach (ActionEvent a in actions) tl.ActionStart[a.Entity + 1]++;
+            for (int i = 0; i < e; i++) tl.ActionStart[i + 1] += tl.ActionStart[i];
+            tl.Actions = new ActionEvent[actions.Count];
+            cursor = (int[])tl.ActionStart.Clone();
+            foreach (ActionEvent a in actions) tl.Actions[cursor[a.Entity]++] = a;
+            for (int i = 0; i < e; i++) InsertionSortActions(tl.Actions, tl.ActionStart[i], tl.ActionStart[i + 1]);
+
+            var effIdx = new int[effects.Count];
+            for (int i = 0; i < effIdx.Length; i++) effIdx[i] = i;
+            Array.Sort(effIdx, (x, y) => { int c = effects[x].Time.CompareTo(effects[y].Time); return c != 0 ? c : x.CompareTo(y); });
+            tl.Effects = new EffectEvent[effects.Count];
+            for (int i = 0; i < effIdx.Length; i++) tl.Effects[i] = effects[effIdx[i]];
+
+            tl.Sounds = SoundAggregator.Aggregate(sounds, map, seed);
+            tl.Framing = framing;
+
+            tl.TypeNames = new string[roster.Monsters.Length];
+            tl.TypeRadii = new float[roster.Monsters.Length];
+            for (int i = 0; i < roster.Monsters.Length; i++) { tl.TypeNames[i] = roster.Monsters[i].Name; tl.TypeRadii[i] = roster.Monsters[i].Radius; }
+            tl.ProjectileNames = new string[roster.Projectiles.Length];
+            for (int i = 0; i < roster.Projectiles.Length; i++) tl.ProjectileNames[i] = roster.Projectiles[i].Name;
+            tl.ClipNames = new string[clips.Count];
+            for (int i = 0; i < clips.Count; i++) tl.ClipNames[i] = clips[i].Use;
+            tl.EffectNames = (string[])Catalog.Effects.Clone();
+            tl.SoundNames = Catalog.SoundNames();
+
+            for (int i = 0; i < stats.Length; i++)
+            {
+                if (statTicks[i] > 0) stats[i].MeanOnScreen /= statTicks[i];
+                stats[i].FinalShapeScale = shapeScale;
+            }
+            tl.Sections = stats;
+            return tl;
+        }
+
+        static void InsertionSortSegments(MotionSegment[] a, int lo, int hi)
+        {
+            for (int i = lo + 1; i < hi; i++)
+            {
+                MotionSegment x = a[i];
+                int j = i - 1;
+                while (j >= lo && a[j].T0 > x.T0) { a[j + 1] = a[j]; j--; }
+                a[j + 1] = x;
+            }
+        }
+
+        static void InsertionSortActions(ActionEvent[] a, int lo, int hi)
+        {
+            for (int i = lo + 1; i < hi; i++)
+            {
+                ActionEvent x = a[i];
+                int j = i - 1;
+                while (j >= lo && a[j].Impact > x.Impact) { a[j + 1] = a[j]; j--; }
+                a[j + 1] = x;
+            }
+        }
+    }
+}

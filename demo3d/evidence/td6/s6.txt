@@ -1,0 +1,6 @@
+stress:S6:n1200:w40:demo: built in 1.017 s; 5377 entities, 176590 segments, 11066 actions, 6180 effects, 725 sounds, 3601 framing samples
+sim ticks after 5 s: 3301 ticks, p50 0.020 ms, p99 5.123 ms, max 29.193 ms, mean 0.218 ms; flow-field rebuilds 15 in 357 slices
+| section | feel | s | load | target N | mean on screen | max | deaths/s target | deaths/s | ratio | hits/s | spawns | attacks | strides | goal reached |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| stress | pulsed | 0.0–60.0 | demo | 1200 | 1018 | 1255 | 60.00 | 58.97 | 0.983 | 37.1 | 3437 | 8 | 23 | 0.0 s |
+snapshot: demo3d/evidence/td6/s6-funnel.png at 40.00 s, 1792 monsters

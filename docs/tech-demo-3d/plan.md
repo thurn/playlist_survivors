@@ -313,7 +313,16 @@ the task that consumes the result removes the row once it has used it.
 
 | What | How | Added by | Consumed by |
 |---|---|---|---|
-| Finish Cygnus's setup | Reboot once and check D: comes back, or add a startup task that attaches `C:\DevDrive\DevDrive.vhdx`; confirm Settings, Accounts, Sign-in options, "If you've been away" is Never; delete the start-up checkout's untracked `native/evidence/windows-spike/` and `native/spike-windows/` (in git since `73530c7`) and the `D:\wt\windows-spike` worktree | Cygnus setup (2026-10-28) | TD1 |
+| Finish Cygnus's setup | Reboot once and check D: comes back, or add a startup task that attaches `C:\DevDrive\DevDrive.vhdx`; confirm Settings, Accounts, Sign-in options, "If you've been away" is Never; remove the `D:\wt\windows-spike` worktree (`git worktree remove D:\wt\windows-spike`). TD1 found the start-up checkout clean apart from ignored build output | Cygnus setup (2026-10-28) | TD7 (a locked desktop refuses sweeps) |
+| Listen to *Action*'s click track | Render the click track locally from a checkout with `songs/action/` (it contains the NCS audio, so never commit or share it). On Cygnus, `export UV_PYTHON_PREFERENCE=managed` first. Then: `ffmpeg -i "D:\vendor\songs\action\Alessia Labate, Conrad Taylor - Action [NCS Release].mp3" -map 0:a -c:a flac public/audio/action.flac` and `uv run --project tools/analysis ps-analysis click songs/action/songmap.json --out tools/analysis/work/action-click.wav`. (`D:\wt\td0` already has the WAV while the worktree exists.) Listen on speakers or headphones for: the 1 kHz beat click sitting on every kick with no flam or drift from start to end; the louder 1.6 kHz downbeat click on each bar's first kick; the 2.4 kHz section clicks at the changes in `songs/action/form.md`; the clicks keeping time through the two kickless breaks (34.1–37.2 s, 120.8–123.9 s), with the drops landing on the section click (12.4, 37.2, 123.9 s); the early hit on beat 3 of bars 82, 84 and 86 (126.2, 129.3, 132.4 s), with the click on the kick, not the hit. Also note whether the "stabs" (36.4, 123.2, 195.9, 197.4 s) are vocals. Record any mismatch with its song time. | TD0 | TD3 |
+| Review the clip annotations | Open `demo3d/evidence/td2/contact-*.jpg`: each row is a clip in 8 frames, with the proposed impact framed in red. Note any attack whose red frame isn't the blow, or any hit or death whose red frame isn't the reaction, with its type and role (`evidence/td2/README.md` lists them) | TD2 | TD4 (it switches to the real annotations) |
+| Decide the NCS licence for a public demo build | NCS's policy covers the capture video with its credit, but sends games to its commercial licensing form (`songs/action/source.json`, `terms`). Decide whether the Windows demo build stays private, or apply through NCS's form before sharing it | TD0 (recorded by the TD1 session) | TD13 (the demo build) |
+| Answer the Windows Firewall prompt for `playlistsurvivors3d.exe` | On the desktop since 2026-10-27 23:13, raised by a TD7 development build (`D:\wt\td7\demo3d\Builds\il2cpp-dev`, since deleted); the bench needs no network, so denying it is fine. Until then every sweep refuses at the foreground check unless run with `demo3d sweep --no-foreground`. Afterwards an agent re-runs `demo3d sweep demo3d/sweeps/synthetic-frontier.json` for a frontier with the foreground, and the display-off check with the window composited (turn the display off, start a sweep, expect `display was off, now on` and normal runs) | TD7 | TD5 (its first sweep) |
+| Turn on Developer Mode for PIX's replay | Settings, System, For developers, Developer Mode (administrator). Then an agent runs `uv run --project demo3d/tools demo3d pix demo3d/sweeps/synthetic-frontier.json --point n=2000,viewWidthM=40,load=demo,aa=msaa4 --out <dir>`, which captures and then stops at `E_PIX_FEATURE_REQUIRES_DEVELOPER_MODE` (both seen with the same pixtool commands by hand; `demo3d pix` itself hasn't run end to end), and checks its passes.md against PIX's UI once | TD7 | TD12 |
+| The locked-desktop refusal | Lock the desktop (Win+L) while an agent session (Remote Control) runs `uv run --project demo3d/tools demo3d sweep demo3d/sweeps/synthetic-small.json`; expect exit 3 and `refusal.json` saying `desktopLocked`; unlock | TD7 | TD12 |
+| Watch the first assembled check | From `demo3d/`, windowed: `Builds\\il2cpp\\PlaylistSurvivors3D.exe -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --click --overlay --seconds 60 --envelope 750` (about 300 monsters), then `--start-at 45`, then `--start-at 196` (the ending's accents). Expect every gait step, hit flinch and death on a click with no drift over the minute; feet that don't slide and crossfades without pops; overlay counts near the targets; the horde at 0:45 appearing at once. Note the song times of anything off | TD4 | TD13 |
+| Watch the bone-texture crowd in motion | After `demo3d unity BakeCrowd` and `demo3d build`, from `demo3d/`: `Builds\il2cpp\PlaylistSurvivors3D.exe -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --crowd-bench --arm bone --scene s2 --n 800 --view-width 30 --seconds 60` (windowed). Look for feet sliding on the walks, pops at crossfades (into and out of attacks, hits and deaths), the hit flash's strength, the dissolve and its edge, and weapons leaving hands. Stills: `demo3d/evidence/td5/crowd-*.jpg` | TD5 | TD4 (its timeline hookup replaces TD5's scenario) |
+| Judge the crowd's look against the packs | Compare `demo3d/evidence/td5/crowd-bone-s2-30m-crop.jpg` with the vendor demo scenes: the slime is drawn opaque (its vendor material is transparent), the goblin, bat and mushroom use albedo baked from InfinityPBR's colour-ID shader, and tints are placeholder near-white sets. Note anything that reads wrong | TD5 | TD15 (the art pass) |
 
 ## Task Notes
 
@@ -324,35 +333,934 @@ In progress, Done.
 
 ### TD0
 
-Status: Not started.
+Status: Done (2026-10-27, on Cygnus).
+
+- **Commits** (branch `td/td0`): the song map, source record, evidence and
+  this entry in `529cea9`; this SHA recorded in a follow-up commit.
+- **Tracked output.**
+  - `songs/action/`: `songmap.json`, `edits.json`, `form.md`,
+    `report-summary.md` and `source.json`.
+  - `demo3d/evidence/td0/`: `alignment.json` (the measurement) and
+    `align.py` (the script that makes it).
+  - No audio is tracked. The map's audio (`public/audio/action.flac`), the
+    Ogg and the click track are gitignored, checked with
+    `git status --ignored`.
+- **The map's time origin** is the MP3's first gapless sample. The map
+  references `action.flac`, which ffmpeg decodes from the MP3 using its
+  Info/LAME header:
+  - encoder delay 576 plus decoder delay 529, so 1105 samples are dropped at
+    the start;
+  - 352 samples of padding are dropped at the end;
+  - the result is 8774479 frames (198.967778 s), stored losslessly as 24-bit
+    FLAC.
+  The full MP3 is used, with no crop. The commands are in
+  `songs/action/report-summary.md`.
+- **The map.**
+  - Tempo and grid: a constant 155.000 BPM. A least-squares fit of 483 strong
+    onset peaks gives 155.0002 BPM with a residual spread of 3.2 ms and no
+    drift. The map has 514 beats on one exact grid from 0.00982 s, and 129
+    bars of 4/4 (the last has 2 beats).
+  - No tempo changes, no ritardando and no closing chord: the evidence shows
+    none.
+  - Bar phase: every sub-bass entry and cut falls on the map's downbeats.
+    madmom's downbeat tracker is off by one to two beats after each break,
+    and was rejected.
+- **Sections** (bars):
+  - intro 1–8;
+  - groove (the first drop) 9–22;
+  - break-1 23–24 (free);
+  - drop-1 25–48;
+  - breakdown 49–56;
+  - groove-2 57–72;
+  - build 73–78;
+  - break-2 79–80 (free);
+  - drop-2 81–104;
+  - final-peak 105–120 (the final energy peak, from 161.042 to 185.816 s);
+  - outro 121–126;
+  - ending 127–129 (free: no kick; the last hit is a stab at 197.446 s).
+  The phrases are 8 bars. There are 26 accents: `drop` ×3, `re-entry` ×5
+  and `stab` ×5.
+- **`check`: OK.** Onset alignment is 93.7–100% in the pulsed sections, with
+  0% gap change. The one warning, an incomplete last bar, is expected: the
+  file ends 0.77 s into bar 129. `check` also passes against the converted
+  Ogg.
+- **The conversion command** (for the worktree setup command):
+  `ffmpeg -nostdin -y -i "<source.mp3>" -map 0:a -map_metadata -1 -c:a libvorbis -q:a 6 "<baked>/action.ogg"`.
+  - Measured alignment: decoded and cross-correlated against the map's FLAC
+    in four 10 s windows, the offset is 0.000 samples (0.00 ms; |lag| below
+    0.002 samples) with an identical frame count.
+  - A decoder that ignores the gapless header plays 1105 samples (25.057 ms)
+    late, also measured.
+  - The measurement was made outside Unity; TD3's click check confirms the
+    origin in Unity.
+- **Choices, with reasons.**
+  - A constant grid over the trackers' beats: the trackers are quantized to
+    10 ms, which broke smoothness, and the fit shows no drift.
+  - The breaks and the ending are `free` with anchors (9 in all): they have
+    no kick. The arrivals after them carry `drop` accents.
+  - Each drop is one section with 8-bar phrases. Bars 81–88 alone fail
+    alignment, because a hit lands about 32 ms ahead of beat 3 in bars 82,
+    84 and 86. The beat stays on the kick.
+  - Accents on the beat sit exactly on their beat's time, so an accent on a
+    section's first downbeat belongs to that section.
+  - Keys are left out of the map: chroma is too weak in the drops.
+- **NCS terms** (in `songs/action/source.json`). The credit block comes
+  from https://ncs.io/Action and was read online. The usage policy allows
+  free use in videos with that credit. It sends *games* to NCS's commercial
+  licensing form, so a public demo build needs the operator's decision. The
+  Terms page returned 404, so its wording on redistribution is unverified.
+- **Tool problems on Windows.** The tool itself was not changed.
+  - `tools/analysis` pins `python-preference = "only-system"`, and Cygnus has
+    no Python 3.12. `uv run --project tools/analysis ...` failed with
+    `error: No interpreter found for Python ==3.12.* in search path or registry`.
+    Workaround: `UV_PYTHON_PREFERENCE=managed`, which downloads uv's
+    cpython-3.12.16 to `%APPDATA%\uv\python`. It is needed on every `uv run`
+    on Cygnus.
+  - The first `uv sync` from Git Bash then failed (once) with
+    `error: Missing expected target directory for Python minor version link at C:\Users\dthurn\AppData\Roaming\uv\python\cpython-3.12.16-windows-x86_64-none`,
+    although the junction was intact. The same `uv sync` from PowerShell
+    succeeded, and Git Bash has worked since.
+  - `report` writes `summary.md` and `disagreements.md` with Python's
+    default Windows encoding (cp1252) and CRLF, so en dashes come out as
+    invalid UTF-8. These are work files only; the tracked
+    `report-summary.md` was written as UTF-8.
+  - The tool's tests were not run, since the tool is unchanged.
 
 ### TD1
 
-Status: Not started.
+Status: Done.
+
+- **Commits:** `6cf1db5` (project, tools, guard, dotnet), `b0a1a39` (cache keys),
+  `37957b2` (spikes), `4b6e8d4` (the guard review's fixes), and this entry's commit.
+- **Run:** in a fresh worktree, `uv run --project demo3d/tools demo3d setup`; then
+  `demo3d test`, `demo3d build`, `demo3d check --player` (see `demo3d/README.md`).
+- **Setup verified** ([spikes.md](../../demo3d/evidence/td1/spikes.md)): Unity probe exit 0
+  with licensing initialized; .NET SDK 10.0.403; uv 0.13.6; PIX 2603.25; D: is ReFS
+  (`DevDrive`); the vendor sources in place; the relay takes and deletes a test branch; High
+  performance plan; DDR4-2133. D: surviving a reboot and the sign-in setting stay with the
+  operator (the row below).
+- **Built:**
+  - The Unity project `demo3d/` on Unity 6000.6.7f1, URP 17.6 Forward+ with forced depth
+    priming, HDR, MSAA 4×, soft two-cascade 2048 px shadows; Direct3D 12 only, IL2CPP, linear
+    color, frame timing stats on. `Demo3D.EditorTools.ProjectSetup` writes it all and three
+    EditMode tests hold it.
+  - Assemblies: `Demo3D.Choreography` (no engine references), `Demo3D.Runtime`,
+    `Demo3D.EditorTools`, and two test assemblies. `demo3d/dotnet/` builds the choreography
+    layer and its tests from the same files with `dotnet test`.
+  - `demo3d` tools in Python under uv (`demo3d/tools/`): setup, the vendor guard, the Unity
+    task runner, the warm editor's client, and the sync record (TD2 finishes the sync tool).
+    Batch entry points are `Demo3D.EditorTools.Tasks` (Noop, Configure, BakeAll, BuildPlayer).
+  - The warm editor (`WarmEditor.cs`): TCP on localhost with a per-session token; job
+    results land in files, so a domain reload mid-job loses nothing.
+  - The per-machine cache at `D:\cache\playlist-survivors\demo3d\`: `roots.json`, the sync
+    and derived records, and the vendor, baked and Library entries keyed by input hashes.
+- **Choices:**
+  - Python under uv for the tools, like the analysis tool: it handles tar and gzip natively,
+    and `shutil.copy2` block-clones on ReFS (CopyFile2), so no .NET console tool was needed.
+  - Localhost TCP with a token for the warm editor, since .NET named pipes in Unity's Mono
+    are less reliable across domain reloads; result files make reloads harmless.
+  - The record lists every file under every source root (69,266), not only synced ones, so
+    a vendor file outside the manifest is still caught.
+  - The C# layer targets C# 9 over .NET Standard 2.1 (no records), as Unity compiles.
+- **Spikes:** cold compile and test 7.0 to 7.4 s, warm 0.8 s unchanged and 3.2 to 4.3 s
+  after a change; IL2CPP build 101 s, Mono 27 s; a windowed player at exactly 1920×1080 on the
+  4K desktop reports FrameTimingManager GPU times on D3D12; setup clones 16,086 Library files
+  in 2.7 s, and a fresh worktree is ready in 46 to 49 s (first open 43 s, Bee rebuilding its
+  graph for the new path); C# 9.0; `-logFile -` streams on Windows.
+- **The guard's review** (a fresh read-only subagent): 8 findings, all fixed in `4b6e8d4`.
+  1. Only set-up worktrees ran the hook: it now lives in the clone's shared hooks folder,
+     refuses demo changes from checkouts without the tools, and setup refuses a
+     `core.hooksPath` that would bypass it. 2. A malformed or stale record passed: the record
+     is validated, cross-checked against the manifest, and rebuilt by every setup.
+     3. Song audio under other paths: any `action*` segment under `songs/` or `public/`, any
+     binary in `songs/action/`, and the song's hash. 4. Derived files: the derived record
+     (edited copies with fresh bytes stay a policy-only rule, now stated in vendor-assets.md).
+     5. `sha256Lf` is now required and always written. 6. Renders with trailing data or over
+     4 MB fail. 7. Tests added for the shared hook, the launcher without tools, merges, tags,
+     unknown remote SHAs and fetched remotes. 8. Malformed hook input and pushed blob tags
+     fail with a clear message. 52 tests pass.
+- **Checks before push:** the guard over the full tree passes (4,609 files, 4 s); 52 guard
+  tests; `dotnet test`; cold EditMode tests 4/4; IL2CPP build.
+- **Waits:** the [vendor guard drill](qa.md#vendor-guard-drill) runs once TD2 and TD4 exist
+  (TD4 records it).
 
 ### TD2
 
-Status: Not started.
+Status: Done.
+
+- **Commits:** the TD2 commit that adds this entry (its SHA is in the next entry's commit
+  list, TD4's), plus `sync.py` and the record producer in TD1's `4b6e8d4`.
+- **Run:** `uv run --project demo3d/tools demo3d setup` (syncs and imports the vendor
+  folder), then `demo3d unity AnnotateClips` and `demo3d unity StyleStills`; `demo3d manifest
+  find|add <source> <glob> --use ...` edits the manifest. The selection commands are in the
+  manifest itself: each entry's `use`.
+- **Built:**
+  - The manifest (`demo3d/manifest.json`, 259 entries with source hashes and GUIDs) and the
+    sync tool: Synty packages unpack once into the cache keyed by SHA-256, `unity_assets`
+    files copy with their `.meta`, `guid:` references are followed within a root (scripts and
+    scenes never), a source whose hash differs is refused, and `--record-only` builds the
+    record without copying (the Mac's guard at integration). The closure is 673 files, 304 MB.
+  - `demo3d manifest find|add`, which fills GUIDs and hashes from the sources.
+  - The roster (`Assets/Demo3D/Data/roster.json`): each type's prefab and clips by GUID, its
+    height in the demo (the prefab is scaled to it) and separation radius.
+  - The clip annotator (`ClipAnnotator.cs`): samples every clip at 60 Hz with the editor's
+    animation sampling and proposes impact, end, stride and root motion, writing
+    `Assets/Demo3D/Data/clip-annotations.json` and tagged contact sheets.
+  - `RenderTag` (runtime): the `ps-render` tag on JPEGs (a COM segment) and PNGs (a tEXt
+    chunk), for every tool that writes images.
+  - The style stills (`StyleStill.cs`): roster and kit under night lighting from the game
+    camera at 30 m and 40 m, and the boss candidates side by side.
+- **Chosen** ([evidence](../../demo3d/evidence/td2/README.md)):
+  - Fodder: Magic Pig Games' Skeleton Warrior, Goblin, Slime, Bat, Mushroom Monster and Demon,
+    scaled to 0.3 to 1.9 m. Elites: Fantasy Rivals' Big Ork and Troll at 2.9 m with their
+    weapons, on Synty's sword-combat and locomotion clips (Humanoid retargeting). Boss: the
+    Magic Pig Dragon at 4.5 m, over the Evil God, because its winged, non-humanoid silhouette
+    reads at a 55 m view and doesn't look like a big elite.
+  - Hero: POLYGON Knights' Knight 01 Orange (warm, against the cool set) with the broadsword
+    and shield. Combos: LightCombo01 A/B/C slashes, HeavyStab01 thrust, HeavyFlourish01 spin,
+    LightLeaping01 slam, Parry F; walk and run from Base Locomotion.
+  - Kit: Fantasy Kingdom trees and rocks, Adventure solid-canopy trees and logs, Elven Realm's
+    glowing tree and canopy, bushes, ferns and flowers, Dark Fantasy ruin walls, graveyard,
+    braziers, candles, pyres and statues (environment.md's mix). TD6 and TD9 add pieces.
+  - Effect candidates for TD8: Hovl sword slashes, magic hits, AOE lightning and explosion,
+    AAA projectiles (nova orange, fire, electro), 3D lasers, magic circles; KriptoFX
+    explosions 1 to 6. Sounds: Universal Sound FX sword hits and clings, armor impacts and
+    creature squeals; RPG Magic 3 fire, electric and generic impacts; two thunder takes.
+- **Annotations:** every roster type's walk, attack, hit and death, and every hero combo and
+  locomotion clip, has impact and end (or stride). Synty marks each attack with its own
+  `_Hit_` clip, and the proposed impacts land 0.0 to 0.1 s after it (a test holds this).
+  Fodder walks cover 0.9 to 2.0 m/s, the elites 2.1, the hero 1.4 walking and 2.5 running.
+  The slam (LightLeaping01) travels 7.1 m of root motion: TD10 decides whether that leap
+  stays.
+- **Choices:**
+  - Impact is the peak speed of the fastest end bone relative to the body (hands, weapons,
+    head, jaw, tail; every skinned bone on the slime and mushroom, whose bones are unnamed).
+    Hits and deaths take the reaction's first peak, and death's end is where the body rests.
+  - Stride comes from the body's own travel when a clip moves (the Magic Pig walks do), else
+    from the feet's fore-aft range; humanoid combos measure travel on their root-motion twins.
+  - Renders before TD9 swap Standard materials for in-memory URP Lit copies; nothing derived
+    is saved.
+  - Newtonsoft JSON (Unity's own package) for the editor tools.
+- **Tests:** EditMode 10/10 (roster assets resolve, nine types and a hero, every used clip
+  annotated with ordered times, Synty impacts within the vendor's hit window, both render
+  tags); the tools' 58 tests (6 for the sync tool on a synthetic package and project).
+- **What it doesn't show:** the annotations are proposals from motion alone; whether each
+  blow *looks* like it lands on its frame is for the operator's eye on the contact sheets
+  (row below). The stills are lit and graded only roughly: TD9 and TD15 own the look.
 
 ### TD3
 
-Status: Not started.
+Status: Done (2026-10-27, on Cygnus).
+
+- **Commits** (branch `td/td3`): the layer, scripts, data and CLI in `7c9a1c3`; the tests and
+  the sim fixes they forced in `4f2860e`; Unity's importer blocks for the data metas in `908b5c9`;
+  the 10% overlap margin and the fill column in `98095e0`; the evidence and this entry in
+  `e9a191f`, and the check's summary in `ba1e9be`.
+- **Run:** `dotnet test demo3d/dotnet/Demo3D.Choreography.Tests` (77 tests);
+  `dotnet run --project demo3d/dotnet/Demo3D.Choreography.Cli -c Release -- song` (or
+  `stress S3 --n 2000 --view 40 --load heavy --seconds 30`, or `timing`), with `--out <file>`
+  `[--from S --to S]` for the debug dump.
+- **Built** (`demo3d/Assets/Demo3D/Choreography/`, all C# 9 with no UnityEngine):
+  - the timeline types of choreography.md (`TimelineTypes.cs`) and `Timeline`, with per-entity
+    segment and action ranges, `PositionAt`, `FramingAt`, the name tables and per-section stats;
+  - the choreographer (`Choreographer.Run` for the song, `Choreographer.RunStress` for a stress
+    script, both over `Sim`): 60 Hz ticks, the framing track, the kill budget and shape
+    feedback, free sections, spells, worst beats, refills with the off-screen reserve, and
+    sound aggregation;
+  - the song map and beat grid, the level-script and stress-script formats with the load presets,
+    the clip library with retiming (`ClipLibrary.Fit`), the roster and the open-ground test
+    layout, the camera's view geometry, a JSON reader and writer, the debug dump
+    (`TimelineJson`) and `SimTickTiming`;
+  - data in `Choreography/Data/` (TextAssets for the client, files for dotnet): placeholder clip
+    annotations in choreography.md's format (`guid` "placeholder"; roles in `use`, such as
+    "skeleton attack" and "hero slashL", so TD2's file swaps in), the placeholder roster
+    (`roster.json`), `open-ground-layout.json`, `action-level.json` with the placeholder envelope
+    (2,000 on screen at 40 m) and `stress-s1.json` to `stress-s5.json`;
+  - the CLI `demo3d/dotnet/Demo3D.Choreography.Cli`.
+- **For TD4:** `ChoreographyData.FromJson(annotations, roster, layout)`, `SongMap.Parse`,
+  `LevelScript.Parse`, then `Choreographer.Run`. Segments hold until the next segment's start
+  (a later one may supersede an earlier one's end; past its own `T1` an entity rests at `To`).
+  Ground `(X, Y)` is Unity's `(x, z)`; facings are yaws, `atan2(dx, dy)`; hit sparks and death
+  bursts are attached to their monster. **For TD7:** `StressScript.With(n, viewWidthM, load,
+  seconds)`, `Choreographer.RunStress`, then `timeline.TickTiming.Summarize()` or
+  `WriteJsonFields(JsonOut)` (`simTickP50Ms`, `simTickP99Ms`, `simTickMaxMs`, `simTickMeanMs`,
+  `simTicks`, `simWarmupS`, `flowRebuildSlices`) and `timeline.Sections[0].MeanOnScreen`.
+- **Tests** (77 under dotnet; 80/80 in Unity's cold EditMode run with the project's own 3), on
+  the song and on S1–S5: byte-identical dumps (song by FNV-1a over 81 M characters, S5 by string),
+  impacts within 1 ms of the grid (accents in free sections), gait steps on beats outside free
+  sections, monsters moving in Linear segments in free sections, hero strides straight at the goal
+  until reached and inside it after, deaths/s per section within 10% of the preset (the song's
+  sections; stress after 5 s), each stress bar's on-screen mean within 5% of N, no two living
+  monsters overlapping by more than a quarter radius (every beat, +0.1 s and +0.2 s), clips and
+  effects on every hit and death, spawns at least 1 m outside the section's view, at most three
+  voices per beat and category, tick timing reported, framing and zoom, the 3 s song build, and
+  the inputs (JSON, grid, retiming, view, scripts, roster).
+- **Measurements** ([measurements.txt](../../demo3d/evidence/td3/measurements.txt),
+  [tick-timing.md](../../demo3d/evidence/td3/tick-timing.md)):
+  - The song builds in 1.5 s in Release, 1.0–1.4 s under `dotnet test`, 2.6 s unoptimized, and
+    6.6–7.0 s in Unity's editor (Mono, not the budget; the player was not timed).
+  - Tick timing after 5 s: the song p50 0.015 ms, p99 2.9–3.0 ms; stress p99 about 1.5 ms at
+    N = 1000 and 3.2–4.2 ms at 2000, so under dotnet the 3.5 ms line holds to about N = 1,800.
+  - The song: 12,145 entities and 547,198 segments; deaths/s 0.92–1.08 of each preset.
+  - What it does not reach: the song's on-screen counts lag where the hero travels (final-peak
+    70% of 2,000), and stress fill tops out near 1,900 (S1) and 1,500–1,600 (S3) at 40 m, so
+    the tracked stress scripts run N = 1,200. Hits/s fall short of 2× deaths in dense sections.
+- **Choices, with reasons:**
+  - A free section's grid is its curated accents plus its anchors (merged within 30 ms), and
+    counts as beat, eighth and accent positions, not downbeats: break-1 then has four points
+    instead of two, and spells on beats still fire there.
+  - Deaths come from a per-section kill budget at each impact (the preset's rate up to midway to
+    the next killing impact, or the section's end), and victims are the struck monsters with the
+    fewest hit points, then the nearest. Hit points only order victims; the per-bar feedback scales
+    the hit shapes instead (toward deaths plus hits, at most 2.5×, or 4× while deaths run behind,
+    and at most a quarter of the view's width). Feedback on hit points alone could not hold 10%
+    on short sections.
+  - On screen counts alive and dying monsters in the view's trapezoid, for the song as for the
+    stress scripts; the reserve (0.5× the target) waits 2–6 m beyond the view's edge and is
+    released nearest the edge first, by the deficit plus 2.5 s of measured deaths. Culled
+    monsters take 1.3× steps. Reserve monsters 30 m beyond the view despawn silently.
+  - The opening horde is placed at t = 0 on a fodder lattice inside the view (it is exempt from
+    the spawn test); all later spawns come on beats, 2 m plus their radius and 0–4 m beyond the
+    edge of the view at the wider of the current and the section's width, weighted toward an
+    unreached goal.
+  - The view is the exact trapezoid the camera sees, with a fixed yaw looking along ground +Y.
+  - Separation is exact for steps on the same beat (the closest approach of the relative path),
+    every neighbour is checked at the chosen fraction, and the sim keeps overlaps within 10% of a
+    radius, which leaves room for knockback transients under the test's 25%. A blocked monster
+    tries one sidestep a beat, alternating sides, and marks time below 20% of its step. The dying
+    never block.
+  - Segments are never cut short: a death adds a zero-length segment, and a knockback starts from
+    where the monster is, ends past where its step was going, no later than that step would
+    have, and is checked at its end and halfway. A hit on a beat costs that beat's step.
+  - The hero strides only when no monster is within reach ahead (within 75° of the way to an
+    unreached goal), and attacks toward the goal until reaching it: with any monster in reach
+    counting, the hero never left the start. Strides are always Pulse segments and attacks' root
+    motion Linear, so the tests tell them apart. At 155 bpm the hero acts on every second beat,
+    as the retiming rule implies.
+  - Spells accept "/k" (every k-th occurrence) so presets can say "lightning@beat/3" (about one
+    a second). Projectiles fly at most one beat, so their launch is never before the decision;
+    bolts and lightning pick on-screen monsters. The laser sweeps once round per bar and ticks on
+    eighths; ticks never kill and carry no effect.
+  - The boss enters outside the view at its section's start, is left out of the budget, and dies
+    to the first hero combo that strikes it in its section's last bar or later. S5's worst
+    attacks land on the downbeats of bars 4, 8 and so on, and its ring kills the nearest 30%,
+    counted against the budget.
+  - Sound: per beat and category at most 3 voices at the instants with the most requests, gain
+    min(1, (0.35 + 0.15 log2 n)(0.7 + 0.3 × strongest)), variants by seed.
+  - Every tick advances every monster; the spatial hash is rebuilt on the first tick that queries
+    it, which keeps quiet ticks cheap without changing any result.
+  - Fodder steps are 0.6–0.95 m a beat (about 1.5–2.5 m/s at 155 bpm): slower crowds could not
+    feed the demo preset's kill rate.
+  - The layer's dotnet project builds with `Optimize=true` in every configuration, so the 3 s
+    test times what a player runs.
+  - TD6's hooks: monsters step toward the hero and the hero toward the goal's centre in
+    `Sim.MonsterDecide` and `Sim.Stride`, where the flow fields plug in, and `SimTickTiming`
+    already carries `flowRebuildSlices` (0 here).
+- **The click-track check** in [Pending on the operator](#pending-on-the-operator) is still
+  unconsumed: TD3 proceeds on TD0's measured alignment, and the row stays for its listen.
+- **Checks:** `dotnet test` 77/77; cold Unity compile and EditMode tests 80/80 (84 s); the vendor
+  guard fails on `songs/action/songmap.json` with the branch's own tools: setup copies the song
+  map into `Assets/Baked/`, and TD1's derived record then lists our own file. Relay `demo3d`
+  fixes this in `2697609` (TD2), which `td/td3` does not have yet. Running this branch's setup
+  re-added the song map's hash to the per-machine derived record, which fails every worktree's
+  guard; that one entry was removed again (backup in the session's scratchpad). With relay's
+  tools (`git archive relay/demo3d demo3d/tools` into a scratch folder, run from this worktree),
+  `demo3d check` passes: `check: vendor guard ok, dotnet test ok, unity editmode (cold) ok`
+  (guard PASS over 4,689 files; dotnet 77/77; Unity 80/80 in 87 s, the song building in 7.0 s on
+  Mono, worst overlap 0.18 of a radius). Merging relay `demo3d` brings the fix.
 
 ### TD4
 
-Status: Not started.
+Status: Done.
+
+- **Commits:** `c8f705b`, `cc29023`, `25e385f`, `adf8bb9`, `0278488`, `3d9e740`, and this
+  entry's commit; the TD0, TD3, TD6, TD7 and TD5 merges (`d101c75`, `f4b3dcb`, `7b3b409`,
+  `3ad8f1a`, `7b49139`) carry TD4's integration fixes.
+- **Run** (from `demo3d/`, after `demo3d setup`, `demo3d unity BakeAll` and
+  `demo3d build --backend il2cpp`): `Builds\il2cpp\PlaylistSurvivors3D.exe -screen-width 1920
+  -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --overlay` plays the song; add
+  `--click`, `--start-at <s>`, `--seconds <n>`, `--envelope <n>`, `--crowd bone|stock|baseline`,
+  `--scene S1..S6 --n <N> --view-width <m> --load <preset>`, `--fixed-time`, `--freeze-at <s>`,
+  `--aa msaa4|taa|off`, `--stats <csv>`, and captures with `--capture-stills DIR --stills-at s,s`
+  or `--capture-video captures\x.mp4` (windowed only). Stress scenes for the harness:
+  `demo3d sweep` with `"scene": "S1"` to `"S6"`.
+- **Built:**
+  - The client's timeline evaluation (`TimelineEvaluator`): positions and facings from
+    segments; each clip action retimed so its blow lands on its impact (ClipLibrary.Fit, speed
+    0.75 to 1.33, from the previous action's end); the walk's phase following distance; two
+    slots with a 0.12 s crossfade; 50 ms hit-stop and hit flash; a death's one-beat hold and
+    one-beat dissolve. It is a function of song time, so seeks are exact.
+  - The song clock (`SongClock`: PlayScheduled half a second after load, a least-squares fit
+    of dspTime over 2 s, the predicted present) and fixed-time mode.
+  - The bench scene (`BenchEnvironment`), the game camera (`GameCameraRig`), the demo player
+    (`DemoMain`), the overlay, the click track and the flags in qa.md (`DevFlags`;
+    `--show-lod`, `--overdraw` and `--show-nav` are parsed for TD11, TD7 and TD6's views).
+  - The stock baseline crowd (`StockCrowd`: vendor prefabs, an Animator per monster playing a
+    graph whose clip slots follow the instance's clips and times exactly) and a simply drawn
+    hero on it; `CrowdFactory` picks `bone` (TD5's path, the default), `stock` or `baseline`
+    (TD5's spec-literal arm).
+  - The baked runtime data (`RosterBaker`, `PlaybackBaker` into `Assets/Baked/`), the switch to
+    TD2's measured annotations (`ChoreographyFiles.LoadData`; the annotator now writes TD3's
+    format), and the stress scenes S1 to S6 registered with TD7's harness (`TimelineScene`),
+    with the sim's tick timing in each rebuild.
+  - The capture tool (`CaptureTool`, `PipeProcess`): fixed-time tagged stills and 1080p60
+    video streamed into ffmpeg, as A/B pairs.
+- **Measured** ([evidence](../../demo3d/evidence/td4/README.md)): the whole song plays in the
+  IL2CPP player; on-screen counts reach 0.61 to 1.05 of the level targets per section (low in
+  drop-2 and the final peak; the ending doesn't clear, 945 against 500: TD13); evaluation costs
+  about 1 ms of main thread at 1,300 live monsters; the timeline builds in 2.0 to 2.2 s (IL2CPP).
+  A seek to 0:45 gives a byte-identical still to a run from 0:40.
+- **The first assembled check** (qa.md), as far as an agent can run it: every blow's clip is at
+  its annotated impact at the impact (an EditMode test over a 300-monster S2 timeline); hits and
+  deaths start their clips on the blow; seeks are exact; the overlay's counts come from the same
+  evaluation the stats log. Watching it with the click (drift, sliding feet, crossfade pops) is
+  the operator's (row below).
+- **Integration fixes found here:** death clips started well before the blow because TD2
+  annotated a hit's or death's impact at the reaction's peak; the annotator now takes the
+  reaction's onset (a fifth of the peak speed). The warm editor hung on a save-scenes dialog
+  before tests; it now resets to a clean scene before tests and after each task.
+- **The vendor guard drill** passed all four Cygnus cases
+  ([vendor-guard-drill.md](../../demo3d/evidence/td4/vendor-guard-drill.md)).
+- **Choices:** playables at the timeline's exact times for the client's stock crowd, rather
+  than CrossFade calls on game time, which would drift off the song (TD5's `baseline` keeps the
+  CrossFade arm for the frontier's stock comparison); captures windowed (above); plain C#
+  evaluation until profiled; `--envelope` to run the song at the stock crowd's few hundred.
+- **Tests:** EditMode 164/164 cold (6 for the evaluator); dotnet 112/112.
+- **The foundations milestone's review** (TD0 to TD4, TD6, TD7; a fresh read-only subagent
+  over each task's commits): 7 findings, all fixed in the review commit.
+  1. The client refitted each attack's clip with its own chain, so starts and speeds differed
+     from the sim's (41 of 184 hero combos started their clip before the sim's root-motion
+     segment; most monster attacks played at 0.75): attacks now carry the sim's fitted start and
+     speed (`ActionEvent.ClipStart`, `ClipSpeed`; timeline format 2) and the client plays them;
+     dotnet tests check the blow lands on the impact and that each hero combo's root-motion
+     segment starts with its clip.
+  2. The harness dropped frames without a GPU time from GPU p99 (20% of a passing probe's
+     frames): frames are now committed only once their GPU time arrives (within the 64-frame
+     window), a run with more than 0.5% still missing is marked noisy, and the report states the
+     share. TD7's frontier rows predate this; TD12's sweep uses the fix.
+  3. Stress scenes looped their timeline at 45 s without looping the downbeat check: the stress
+     timelines now run 120 s and the downbeat check maps through the same loop.
+  4. The song clock: it now subtracts the mixer's output latency, adds one refresh of display
+     latency, starts a seek sample-exactly (`timeSamples`), keeps 2 s of samples at any frame
+     rate, and never runs backwards. Whether picture and sound line up in Unity still needs the
+     operator's ears (the click-track rows).
+  5. Hit-stop jumped after its hold, and the heavy-blow slowdown was missing: the clip now holds
+     (or runs at 0.6x on the hero's blows of strength 0.8 or more) for 50 ms, then catches up
+     over 0.15 s with no jump (an EditMode test).
+  6. Setup's vendor cache ignored the sync tool's own logic: its key now includes
+     `sync.SYNC_VERSION`.
+  7. Sync dropped unresolved references silently: it now lists them (20 today, package assets
+     such as URP's shaders and vendor script references) in the cache's `sync-unresolved.txt`.
+- **A flaky dotnet run:** one `demo3d check` reported dotnet test failed while TD8 and TD9 were
+  importing; the push went ahead without gating on it (my mistake: that push carried `be77a63`,
+  whose tree passes 112/112 on rerun). Repeated runs fail about one in six under load; the
+  failing test isn't identified yet and is followed up in TD8's window.
 
 ### TD5
 
-Status: Not started.
+Status: Done (2026-10-28, on Cygnus). Its hookup to TD4's timeline evaluation waits for TD4.
+
+- **Commits** (branch `td/td5`, from `070cd4c`): `4695c9b` (the baker, both skinning variants,
+  GPU culling, the shaders, the stock arm, the bench player and the tests), `6afb8f4` (the
+  per-vertex variant deleted; the buffer views), and this entry's commit (evidence and notes).
+- **Run:** in a set-up worktree, `demo3d unity BakeCrowd` (writes only `Assets/Baked/Crowd/`; also
+  the `crowd` baker of `demo3d unity BakeAll`), `demo3d build --backend il2cpp`, then from
+  `demo3d/`: `Builds/il2cpp/PlaylistSurvivors3D.exe -screen-width 1920 -screen-height 1080
+  -screen-fullscreen 0 -job-worker-count 6 --crowd-bench --arm bone --scene s2 --n 2000
+  --view-width 40` (`--arm stock` for the baseline; `--seconds`, `--warmup`, `--out rows.jsonl`,
+  `--search --probes a,b,c`, `--stills DIR [--still-widths 30,40,55] [--crop] [--live
+  --fixed-time]`, `--lights N`, `--aa taa`, `--show-motion`, `--show-normals`, `--sun-elevation`,
+  `--ablate main|shadows|skin|extension`). The measured plan: `uv run --project demo3d/tools
+  python demo3d/evidence/td5/bench.py OUT.jsonl breakdown search ablations extension stills`
+  (it holds TD7's machine lock; it was run before the per-vertex arm was deleted).
+- **Built:**
+  - The baker (`Editor/Crowd/CrowdBaker.cs`): per drawn roster type (the nine; not the hero or
+    the rejected boss), a combined mesh at demo scale (every active skin plus rigid attachments,
+    weapons included; 4 bone indices in UV1, weights in UV2), one RGBAFloat texture of skinning
+    matrices (bone world × bind pose relative to the root, 3 float4 rows per bone, every clip at
+    60 Hz with both ends; a looping clip's horizontal root drift removed), the clip table (first
+    row, frames, length, loop, TD2's impact, end and stride, and each clip's bounding sphere),
+    crowd materials, and the stock arm's prefab (the same mesh on one SkinnedMeshRenderer, an
+    AnimatorController with a state per clip). InfinityPBR's colour-ID shader (goblin, bat,
+    mushroom) is evaluated per texel into a plain albedo. 17 MB of bone textures in all.
+  - The crowd (`Runtime/Crowd/BoneTextureCrowd.cs`, `Runtime/Crowd/Shaders/`): `ICrowdRenderer`
+    unchanged. `Instances()` returns the GPU buffer locked with `LockBufferForWrite` (write every
+    field; a type not requested in a frame draws nothing; tint 0 means white); slots are stable
+    and the buffers double-buffered for motion vectors. Per type and frame: a culling compute
+    pass (the frustum, and the same sphere swept along the sun by its longest shadow; 8 depth
+    bins, one indirect command each; LOD by projected height with 10% hysteresis and a 0.2 s
+    dithered crossfade, LOD0 only until TD11; a shadow list for the proxy draw; on-screen
+    counts), the palette pass, then flat `RenderMeshIndirect` calls: one main draw (no shadows)
+    and one shadow-only draw per type and material, 20 in all. One HLSL shader with
+    UniversalForward (Forward+ through URP's cluster loop, cascaded soft shadows, ambient from the
+    global probe, tint, hit flash, dissolve with an emissive edge), DepthOnly, DepthNormals,
+    ShadowCaster and MotionVectors (the previous instance and palette). `CrowdStaticShadow()` is
+    TD9's hook.
+  - The stock arm (`StockCrowd.cs` here; renamed `BaselineCrowd` at the merge, since TD4 has its
+    own timeline-exact `StockCrowd`; `CrowdFactory`'s "baseline"), kept as the harness option: a GameObject per monster, an
+    Animator crossfading (`CrossFadeInFixedTime`) when a monster's clip changes, one
+    SkinnedMeshRenderer, a Burst transform job. GPU skinning is now on in `ProjectSetup`
+    (`meshDeformation` GPU batched; it was CPU). TD4's stock crowd was not merged, so this is
+    TD5's minimal one.
+  - The test scene and windowed player (`Runtime/Crowd/Bench/`): flat ground, the default sun, the
+    game camera; every monster walks its own circle (walk phase from distance, smooth turns); S2
+    adds, per monster every 7 s, an attack, a hit (flash, flinch, knockback) or a death (clip,
+    1-beat hold, 1-beat dissolve, then a refill that dissolves in); 10% more monsters stand just
+    off screen. A Burst job writes the instances. It stands in until TD4's timeline evaluation
+    and TD7's harness take over.
+- **The comparison** (40 m; [evidence](../../demo3d/evidence/td5/README.md)):
+
+  | Arm | S2 max: placed (on screen) | S1 max | Limit | At 2,000, S2: GPU / main / render p50 (p99), ms |
+  |---|---|---|---|---|
+  | Palette (kept) | 1,395 (1,295) | 1,232 (1,255) | GPU | 5.21 (5.78) / 0.68 (1.05) / 0.39 (0.61) |
+  | Per-vertex (deleted) | 1,237 (1,142) | 1,196 (1,214) | GPU | 5.83 (6.42) / 0.85 (1.30) / 0.48 (0.74) |
+  | Stock (option; BaselineCrowd) | 726 (651) | 748 (764) | main | 3.79 (7.72) / 23.89 (28.85) / 1.82 (2.55) |
+
+  - **Palette wins** the rule (the larger S2 maximum at 40 m, +13%) and is 0.4 to 0.6 ms faster
+    on the GPU at 2,000 in both scenes. Each maximum passed a full 20 s run and 5% more failed.
+  - **No arm passes 2,000 on screen at 40 m**; the bone-texture path is GPU-bound near 1,300.
+    Ablations show why: the rest pose with no skinning still costs 4.8 ms at 2,000 (skinning adds
+    0.45 ms with the palette, 1.0 ms per-vertex). The roster averages 5,700 triangles a monster,
+    drawn four times (depth prime, forward, two cascades), and shadows cost as much as the main
+    draw. TD11's LODs and shadow proxy are what move the frontier; the mechanism is in place.
+  - **Stock Unity** is cheaper on the GPU at 2,000 (it skins once a frame and draws plain
+    vertices), but 2,000 Animators and renderers cost 23 ms of main thread.
+  - **What it doesn't show:** every run was marked noisy (other sessions used 14% of the CPU on
+    average against the 10% line); a breakdown run and its repeat differ by up to 0.10 ms of GPU
+    p50 and the repetitions by up to 0.18 ms, and 16 of its 24 rows had another player running
+    (TD4's batch captures), against the palette's 0.4 to 0.6 ms lead; no PIX per-pass split;
+    30 and 55 m, TAA and the packing ceiling were not searched. TD12 re-measures on TD7's harness.
+- **Implementation notes per arm:**
+  - *Palette:* about 1,400 lines of runtime C# and HLSL shared with the per-vertex variant, plus
+    about 90 of its own (the blend kernel; slot-indexed palettes with frame stamps, so a slot new
+    to the view takes this frame's pose for its motion vectors). It struggled with nothing on the
+    floor.
+  - *Per-vertex:* about 15 lines of its own: 48 texel loads per vertex in every pass, and again
+    for the previous pose in MotionVectors. Simplest, but every pass pays for the skinning.
+  - *Stock:* 220 lines plus 70 in the baker. Workarounds: the vendor prefabs have up to 148 skins
+    (the skeleton), so the arm uses the baker's one-skin prefab; URP Lit has no dissolve, so a
+    dissolving monster hides at half-way; hit flash is a per-renderer property block (breaking
+    batching while it flashes); Animator time follows the instance only at clip changes.
+- **Choices, with reasons:**
+  - The palette is indexed by stable slot and grown on demand, not sized to the capacity (12,000
+    slots × 108 bones would be 62 MB per palette for the dragon alone).
+  - Bounding spheres per clip, around the vertical axis so yaw needs no recompute; a crossfade
+    takes a sphere holding both clips. Type-wide spheres (a death sprawls to 3.3 m on the
+    skeleton) counted far too many monsters on screen.
+  - The shadow-only draw holds every caster; its vertex shader skips skinning outside each
+    cascade's box (no measurable gain here; kept, since it costs nothing).
+  - The slime is drawn opaque (its vendor material is premultiplied transparent); the dragon keeps
+    two materials; materials sharing a texture share a submesh.
+  - Tints are placeholder near-white sets (TD2 defined no colour sets); scale jitter 0.9–1.1.
+  - The bench is standalone (`--crowd-bench` on the empty scene), so it needs no tracked scene,
+    and `bench.py` stands in for TD7's sweep runner, sharing its lock.
+  - Shaders live in `Runtime/Crowd/Shaders/`, so no folder `.meta` collides with TD7's new
+    `Assets/Demo3D/Shaders/`.
+- **Fidelity floor:** every visible monster (and every shadow-casting one) is skinned every frame
+  with a 2-clip, 2-frame crossfade; real casters in both cascades, including monsters just off
+  screen (25 more at a 25° sun); hit flash, death clip, hold and dissolve with an emissive edge;
+  Forward+ point lights (a 48-light still); ambient from the global probe; motion vectors with
+  skinned motion (a still); depth bins near to far; weapons rigid on the hand bone; tint and
+  scale jitter. Not yet: SSAO itself (the DepthNormals pass is verified; TD9 adds SSAO), the
+  static shadow map (TD9), LOD1 and LOD2 meshes (TD11).
+- **Tests:** EditMode 24/24, TD5's 14: the texture layout, the clip table against the roster and
+  annotations, a sampled frame's matrices against the rig and the combined mesh against Unity's
+  own `SkinnedMeshRenderer.BakeMesh` on a multi-skin MPG rig and a humanoid with a weapon (under
+  1 mm), the colour-ID conversion, the baked library, the culling arithmetic, the scenario's
+  placement and continuity, and the compute culling pass against the CPU.
+- **Checks before push:** `demo3d check --player`: vendor guard (4,691 files and the index) ok, dotnet test ok, cold EditMode 24/24, IL2CPP player build ok.
+- **Tool problems:** the warm editor blocked on the test runner's save-the-scene dialog after a
+  task left a modified scene (`DisplayDialog: Scene(s) Have Been Modified ... This should not be
+  called in batch mode`; the job never returned; once). The baker and TD5's tests now leave an
+  empty scene. `BuildPlayer` with `-backend mono` saves ProjectSettings with Mono as the backend
+  (its restore isn't saved), which fails `ProjectSetupTests` cold until `Configure` runs.
+- **Self-review** (before the crowd milestone's cold review): downstream needs, done (TD4: the
+  contract is unchanged and its semantics are in `BoneTextureCrowd`'s docs; TD9: the static
+  shadow hook, verified motion vectors and DepthNormals, the cascade-split observation; TD11: the
+  LOD and shadow-LOD mechanism, though `CrowdType` holds LOD0 only and the 60 Hz rate is a
+  constant, `CrowdLibrary.ClipRate` and `CROWD_RATE`, that its 30 Hz cut must make per type; TD7
+  and TD12: the stock arm and the bench can register as stress scenes); claims, done (every
+  number is in `rows.jsonl` or `ablations.jsonl`, with what they don't show above); edge cases,
+  done (a type with no instances draws nothing, capacity overflow and a second lock in a frame
+  throw, a hidden or zero-scale slot is culled, a new or regrown slot has no previous pose, the
+  first frame has none); tests against the source, done (Unity's own skinning, the CPU culling);
+  concurrency, done (jobs complete before the buffers unlock; the stock transform job completes
+  in Draw).
+- **Review** (the crowd milestone's cold review, after the merge `7b49139`; fixes on `td/td5-review`
+  in `5e83737` and the commit adding this bullet):
+  1. Capacity: fixed by the integrating session (callers initialize with 16,384).
+  2. Slots weren't stable (TimelineScene and DemoMain wrote by list position): fixed.
+     `Runtime/Crowd/CrowdSlots.cs` keeps entity → slot per type with a free list; a freed slot is
+     written Hidden for a frame before reuse, and the count passed to `Instances()` is the
+     high-water mark. Both callers use it; StockCrowd and BaselineCrowd hide Hidden slots.
+     Tests: `CrowdSlotsTests`.
+  3. Frames in flight: fixed. The CPU-written instance buffers are a ring of `maxQueuedFrames + 2`
+     (at least 4); palettes and stamps stay double-buffered, being GPU-only.
+  4. `PreviousOf` took a Hidden or unscaled previous instance: fixed; such a slot (and one new
+     this frame) uses the current instance and no previous palette.
+  5. Claims: confirmed and restated here and in the evidence README (run-to-run up to 0.10 ms,
+     repetitions up to 0.18 ms, 16 of 24 breakdown rows with another player running).
+  6. The skin ablation ran the palette pass: fixed (`SkipPalette` under `--ablate skin`) and
+     re-measured: 5.22 ms with skinning, 4.80 without, so palette skinning costs 0.42 ms in all
+     (the blend pass is within noise); the README says what the original rows include.
+  7. BaselineCrowd started clips at 0 and ignored ClipB, TimeB, Blend and Tint: it now starts with
+     `PlayInFixedTime` at TimeA and restarts a slot's next owner. ClipB, TimeB and Blend stay
+     ignored (the Animator crossfades on its own from the clip change) and Tint too (a property
+     block per renderer breaks batching): biases in the baseline's favour on CPU, stated in its
+     docs.
+  8. The matrix test recomputed the baker's formula: added `ThePalettePassBlendsTheBakedFrames`,
+     which reads the GPU palette back for a crossfade, a looping clip past its length and a
+     non-looping clip past its end, against the bake's frames interpolated on the CPU (under
+     1e-4). The BakeMesh comparison already tied the bake to Unity's own skinning.
+  9. LOD clock and owners: fixed. `BoneTextureCrowd.Clock` (TimelineScene, DemoMain and the bench
+     pass their timeline time); a crossfade ignores a clock that sought back; the culling pass
+     marks a slot's LOD state unset when its previous frame was Hidden or it is new, so a new
+     owner starts at its own LOD with no crossfade; `RenderParams.camera` is the drawing camera.
+  10. BaselineCrowd's root leaked: fixed (it owns and destroys its root when given none). The
+      bench's `--arm stock` rows in `evidence/td5/` are BaselineCrowd, not TD4's StockCrowd.
+  - Also found: after the merge, DemoMain started beside `--crowd-bench` and quit the player at
+    `--seconds`; it now stays out of the crowd bench.
+  - Checks: `demo3d check --player`: vendor guard (4,917 files) ok, dotnet test ok, cold EditMode 169/169, IL2CPP build ok.
 
 ### TD6
 
-Status: Not started.
+Status: Done (2026-10-28, on Cygnus).
+
+- **Commits** (branch `td/td6`): the footprint measurer and its data in `4c62ae1`; the layout
+  parameters, placement list, obstacle map, flow fields and the sim's navigation in `6854258`; the
+  navigation tests and the fixes they forced in `f5b0524`; sidesteps that fan queues out, and the
+  timing tables with S6, in `12dc580`; Unity's metas in `c8835cc`; the evidence and this entry in
+  `0c6c7da`, and this commit list in the next.
+- **Run:** `dotnet test demo3d/dotnet/Demo3D.Choreography.Tests` (112 tests). The CLI
+  (`dotnet run --project demo3d/dotnet/Demo3D.Choreography.Cli -c Release --`): `placements
+  [--layout arena|courtyard-test] [--density D] [--out list.json] [--png map.png [--field] [--px P]]`;
+  `stress S6 [--png snap.png --at T --span M]`; `song [--png ... --at T] [--hero]`; `timing
+  --repeat 2`; `field --layout L --sx X --sy Y --px X --py Y` (one cell's cost and heading).
+  `uv run --project demo3d/tools demo3d unity MeasureFootprints` re-measures the footprints.
+- **Built** (`demo3d/Assets/Demo3D/Choreography/`, C# 9, no UnityEngine):
+  - `FootprintMeasurer` (editor): for every manifest entry whose `use` starts `kit`, the prefab's
+    colliders (else meshes) cut 1 m above the ground; the hull's minimum-area rectangle is the
+    footprint, or a circle round it when nearly square. Pieces under 0.5 m tall, under 0.15 m in
+    equivalent radius, or soft (grass, flowers, ferns, small rocks, candles) do not block. Also each
+    piece's height and canopy reach. `Data/footprints.json`: 85 pieces by GUID, 66 blocking.
+  - `ArenaLayout` (`ArenaLayout.cs`; format in `Data/arena-layout.json`'s note): areas typed
+    clearing, path, edge, forest (`fill`), landmark, structure; prop groups with weights; seeded
+    jittered-grid scatter per type (spacing, scale, yaw, chance, `keepCanopyOff`, `maxSlopeDeg` kept
+    for terrain); edge bands a seeded 3–6 m round all fighting ground; landmarks' explicit pieces;
+    structures `courtyard` (size, yaw, 3 or 4 gaps of `gapM`, `closedSide`) and `ruin-wall` (from,
+    to, gaps), laid from wall pieces end to end along their local X; named areas with `goal {at,
+    radius}`; `shots`; `decorationDensity` scaling edge and forest spacing by 1/√density. `Generate`
+    gives the `PlacementList`: pieces first, then path, clearing, forest and edge scatter, so the
+    fighting ground's clutter is the same at every density.
+  - `Data/arena-layout.json`, the 160 m arena: clearings camp (the start), glade, courtyard-field
+    (holding the 16 m courtyard with four 5 m gaps), brazier-glade and opening (35 m, for S1–S5);
+    a path; landmarks glowing-tree, crystal-ring (six standing stones), graveyard, brazier-glade and
+    opening-ruin; the ruins-gate wall with a 6 m gate; forest everywhere else. 1,417 placements, 828
+    blocking (2,088 and 1,353 at density 2). `Data/courtyard-test-layout.json` is the test layout.
+  - `NavGrid` (`Navigation.cs`): blocking footprints as exact world shapes in 2 m buckets; the 0.5 m
+    obstacle map (320 × 320) whose cells hold the exact clearance to the nearest footprint or the
+    arena's edge, capped at 2.5 m (blocked under 0.25 m); an uncapped distance transform of the
+    blocked cells; exact `Distance`, `PushOut`, `LineClear` and a conservative `Clear(a, b, r)`.
+    About 20 ms per layout.
+  - `FlowField`: 8-neighbour Dijkstra with 10/14 step costs and no corner cutting, by bucket queue
+    (Dial's), so `Step(budget)` time-slices it with the same result; `Begin` from a point,
+    `BeginArea` from a goal; `Direction` is the cost's gradient over four cells, or the way to the
+    cheapest neighbour where one is unreached.
+  - In `Sim` (only when the layout has placements; on open ground a run is TD3's): the field toward
+    the hero (cells with over 0.4 m clearance, reaching 70 m by the way), built whole at load and
+    rebuilt once the hero stands 1 m from its source, one rebuild at a time, sliced over the beat's
+    ticks (`flowRebuildSlices`; new `flowRebuilds`); a goal field per named goal at load (0.55 m
+    clearance); monsters and the hero head straight where `Clear` finds the line open, else down
+    their field; steps slide along walls (four pushed-out quarter steps) and end with the full radius
+    kept; knockbacks, spawns, the opening horde and the boss's entry respect walls and reachability;
+    bolts need a clear line and monsters attack only across one; planning goes nearest first by the
+    way to the hero; marching in place as before, a zero-length Pulse segment on the beat.
+  - S6 (`Data/stress-s6.json`): S3 at demo load holding the courtyard. Stress scripts gain `layout`,
+    `hold` (a named area) and `openingInnerM`; S1–S5 now say `"layout": "arena", "hold": "opening"`.
+- **For TD9:** `PlacementList list = ChoreographyFiles.LoadPlacements(root, "arena", density)`, or from
+  TextAssets `ArenaLayout.Parse(layoutJson).WithDensity(d).Generate(FootprintTable.Parse(footprintsJson))`.
+  Instantiate `list.Props[p.Prop].Guid` at each `Placement`: ground `(X, Y)` is Unity's `(x, z)`,
+  `Yaw` is radians with Unity's Euler y = `Yaw × 180/π`, `Scale` is uniform. `ArenaLayout.Areas`,
+  `Classify(p)`, `FightingDistance(p)`, `EdgeWidth(p)`, `Goals()` and `Shots` give the ground's types
+  (for materials), the goals and the camera positions; `list.ToJson()` is the dump. The format may
+  gain fields; keep the existing ones' meaning. Refine the art freely, but keep every gap wider than
+  the largest monster's diameter plus 1 m (`Validate` throws) and re-run the tests.
+- **For TD4, TD5 and TD7:** the timeline format is unchanged. `ChoreographyFiles.LoadData(root)` now
+  loads the arena with `footprints.json`; from strings, `ChoreographyData.FromJson(annotations,
+  roster, layout, footprints)` (the 3-argument form still takes the open-ground layout). A
+  zero-length Pulse segment is a monster marking time: play the walk in place. Tick timing adds
+  `flowRebuilds`. S6's walls ration its screen: read `Sections[0].MeanOnScreen`, not N.
+- **Tests** (112 under dotnet; 121/121 in Unity's cold EditMode run). New: every kit piece has a
+  footprint; the placement list is deterministic, keeps blocking pieces and forest canopies off
+  fighting ground, scales only edge and forest with density, and names every level-script goal; both
+  courtyards have exactly their gaps, each wide enough, and no slits; the flow field equals an
+  independent sorted-set Dijkstra on every cell of three small layouts at any slicing and from goal
+  areas, and walking its headings arrives; nobody stands inside a wall in the song, S1–S6 and both
+  courtyard runs (deepest 0.022 m inside a radius, tolerance 0.05 m); on the courtyard test layout
+  every monster with a path reaches the hero (80, from behind the closed side, inside the U and
+  beyond the long wall; the last at 19.5 s), none goes 4 beats without gaining 0.25 m by the
+  reference search unless in a crowd, and in a dense run 84% of gait steps mark time, every one
+  beside a neighbour, with 12 reversals in 35,444 steps and no zig-zags; S6 has monsters inside the
+  walls on every beat. Changed: a hero stride heads straight at the goal along a clear line, else
+  within 60° of its goal field's way downhill; S5's run mean within 20% (15% on open ground); S6's
+  bars never overfill and its mean reaches 75% of N.
+- **Measurements** ([tick-timing.md](../../demo3d/evidence/td6/tick-timing.md),
+  [measurements.txt](../../demo3d/evidence/td6/measurements.txt), maps in
+  [evidence/td6](../../demo3d/evidence/td6/README.md)):
+  - The song builds in 1.87–2.13 s (best under `dotnet test`, and the CLI; TD3 1.6 s back to back)
+    and in 9.1–9.5 s on Mono. Its ticks after 5 s: p50 0.015 ms, p99 4.4–4.8 ms, max 20–24 ms; 84
+    flow rebuilds in 1,968 slices (about 120 ms in all). Each section's deaths/s stay within
+    0.92–1.07 of its preset (build 0.92 and breakdown 0.94 the tightest).
+  - Stress back to back with TD3: S1 at 2000 p99 2.9 ms (TD3 3.2), S3 at 2000 5.2 ms (TD3 4.4; 4.15 on
+    open ground through TD6's code), S1 at 1000 1.6–2.3 ms (1.8). The full table ran under other
+    sessions' load and reads higher (S3 at 1000 2.8 ms, S6 at 1000 4.3 ms).
+  - S6 at N = 1,200 holds a mean of 1,018 on screen (85%; bars 939–1,139) at 0.98 of its kill rate:
+    the courtyard's inside is the hero's kill zone, fed through four gaps, so the screen holds about
+    1,000 to 1,100 at 40 m whatever N.
+- **Choices, with reasons:**
+  - Footprints are rectangles or circles from colliders cut at 1 m: walls and tombs need their
+    length, trunks and rocks are round, and the cut leaves out canopies.
+  - Exact shapes for wall checks, the grid only to gate them: a 0.5 m grid alone is off by up to a
+    third of a fodder radius, more than the test's tolerance.
+  - Straight headings by line of sight, not by comparing the field's cost with the straight
+    distance: beside a gap the cost through it is within a few percent of straight, and monsters
+    walked into the wall next to it.
+  - Near walls (within 8 m by the distance transform) a blocked monster tries both sides and a wider
+    80° sidestep, keeping to its last side until it marks time: one sidestep left queues filing
+    through gaps in single file and two touching monsters locked, and alternating wide sidesteps
+    zig-zagged. Away from walls, or with 5 neighbours touching, TD3's single sidestep stays: the
+    extra tries doubled the tick cost in open crowds.
+  - Rebuild on 1 m of hero movement, reaching 70 m: halves rebuilds and cells against a rebuild per
+    0.5 m cell, and monsters near the hero head straight anyway.
+  - The level script follows the arena: the final peak leaves the courtyard by its north gate for
+    open ground (`courtyard-field`), and the outro holds ground there with lightning every second
+    beat. Inside a 4-gap courtyard the peak held 0.75 of its kill rate; travelling to the
+    brazier-glade the outro held 0.87 (its rings left nothing near the hero for its combos).
+  - Holding ground, the hero attacks whatever its scaled hit shapes reach, and a lighter section
+    starts its shapes at 1.5× at most: both stop the horde idling at the kill zone's edge.
+  - S1–S5 hold the arena's 35 m opening, so the bench's timelines match TD9's scene; on TD4's flat
+    bench they avoid trees that TD9 will draw.
+- **What it does not show:** whether jams at the gaps look acceptable (that needs TD9's scene and
+  TD4's playback; the task that captures S6 adds the operator's row); the sim's timing in the player
+  (TD7); the art (TD9's: the wall `End` pieces are unused, since which end is broken is unknown).
+  `NavGrid.PassableFor` caches per instance and is not thread-safe: build timelines on one thread.
+- **Checks:** `demo3d check`: `vendor guard ok, dotnet test ok, unity editmode (cold) ok` (guard PASS
+  over 4,756 files; dotnet 112/112; Unity 121/121 in 119 s).
 
 ### TD7
 
-Status: Not started.
+Status: Done (2026-10-27), with one caveat: the first frontier was measured while a Windows
+Firewall prompt held the foreground (see QA below and
+[Pending on the operator](#pending-on-the-operator)).
+
+Commits on `td/td7` (from `demo3d` at `37957b2`): `87ce465`, `e315294`, `3ea6b78`, `141676c`,
+`f6798c2`, `9398317`, `29c806a`, `a108886`, `1202b45`, `860f297`, and the commit that records
+these notes.
+
+Run command, from the worktree's root:
+
+```
+uv run --project demo3d/tools demo3d sweep demo3d/sweeps/synthetic-frontier.json --out <dir>
+```
+
+It builds the IL2CPP player if `Builds/il2cpp` has none (`--build` to rebuild), takes the machine
+lock, and launches `PlaylistSurvivors3D.exe -force-d3d12 -screen-width 1920 -screen-height 1080
+-screen-fullscreen 0 -job-worker-count 6 --bench <spec> --out <dir> --lock-held`. The player
+alone (without `--lock-held`, taking the lock itself) is the design's command. `demo3d report
+<dir>` regenerates the report; evidence in [demo3d/evidence/td7/](../../demo3d/evidence/td7/).
+
+**First frontier** (the synthetic load: 12,000-triangle capsules with glow quads, `load` demo as a
+label, MSAA 4x; 2026-10-28 00:38 to 01:23, IL2CPP; [frontier/](../../demo3d/evidence/td7/frontier/)):
+
+| view | frontier N | limit | GPU p99 | main / render p99 | compute est. | fill count | runs (probe+full) |
+|---|---|---|---|---|---|---|---|
+| 30 m | 1,593 (capacity-bound) | capacity | 3.64 ms | 1.51 / 0.86 ms | 10.9 ms | 664 | 3+1, fit confirmed |
+| 40 m | 2,146 | GPU | 4.20 ms | 1.45 / 0.79 ms | 12.6 ms | 1,180 | 3+5, bisected |
+| 55 m | 2,326 | GPU | 4.15 ms | 2.05 / 1.01 ms | 12.5 ms | 2,232 | 3+2, fit confirmed |
+
+- The envelope rule gives 55 m, 2,300 on screen; for a synthetic load that only exercises the
+  report.
+- **Every one of the 51 runs was noisy**, so all three points rest on noisy runs: TD5's session
+  used 13 to 55% of the CPU throughout (Unity imports, IL2CPP builds, its own crowd bench), and its
+  stills player up to 23% of the GPU's 3D engine (one run read 27.8 ms GPU p99 under it). The
+  window never held the foreground (the firewall prompt), and wasn't occluded except by a stray
+  Microsoft Store window and TD5's player window. The small sweep at 22:42, when the machine was
+  quieter, found 40 m at 2,230 (+4%).
+- This frontier took each noisy run's last attempt. At 40 m that decided 2,146 on a third attempt
+  at 4.199 ms after two at 4.27 and 4.26; the search now uses the median of an all-noisy run's
+  attempts (`860f297`), which on the same rows gives 2,093.
+- The synthetic load is GPU-bound: main and render thread p99 stay under 3 ms at every count, so
+  the CPU lines first meet a real load with TD5's crowd.
+- Overdraw at the frontier: opaque depth complexity 4.1, 3.4 and 2.4, transparent fragments per
+  pixel 5.1 (flagged, over 5), 4.0 and 2.4 at 30, 40 and 55 m; the glow quads' beat peak equals
+  their mean, as they don't vary with the beat.
+- GPU 67 to 75 °C during runs, throttle reasons only `power_cap` (or none); no thermal reason.
+  Zero GPU readings: 3 to 57 of about 5,000 timed frames per run. Every row says `jobWorkers: 6`
+  and memory 2133 MHz.
+- A point costs 4 to 8 full-length-equivalent runs as designed (3 short probes + 1 to 5 full
+  runs); the noise repeats tripled that, and the bounded quiet waits (up to 10 minutes at the
+  start, 60 s before a repeat) took about a third of the 45 minutes.
+
+**What was built.**
+
+- `Assets/Demo3D/Bench/` (engine-free, `Demo3D.Bench`): the sweep spec (benchmarks.md's format,
+  plus `n.fixed`, `lines`, `quiet`, `sceneOptions`), the fitted search (`FrontierSearch`), the
+  pass rule, statistics, the camera geometry (footprint, visible ground, packing capacity), result
+  rows and machine facts (power plans, NVML throttle reasons, SMBIOS memory speed). 26 EditMode
+  tests cover them (`BenchCoreTests`).
+- `Runtime/Bench/`: the player (`BenchRunner`, `--bench <spec> --out <dir>`, plus `--hold` for one
+  configuration and `--pix-capture`), the scene registry (`IBenchScene`, `BenchScenes`), the
+  synthetic load, the bench rig (camera, sun, post), the overdraw counters, the machine lock, the
+  noise sampler and the Win32/NVML calls.
+- `tools/`: `demo3d sweep`, `demo3d report`, `demo3d pix`, with pytest coverage of the lock (a
+  killed holder frees it at once), the report and the PIX summary.
+- `sweeps/`: the frontier and small sweeps and the QA specs. ProjectSetup generates the bench
+  materials under `Resources/Bench/`.
+
+**Design choices.**
+
+- **The player does the measuring, the search and the refusals; Python only orchestrates.** The
+  design's command line is the player itself, so it must be complete alone: one process per
+  scene, which loads once and changes axes in place (a new N rebuilds the crowd and re-warms 3 s;
+  the first run warms 5 s). The search and row logic are pure C# so EditMode tests reach them.
+- **The orchestrator takes the lock before the window opens.** A second sweep then waits without
+  putting its window over the first one's. The player gets `--lock-held`; launched alone, it takes
+  the lock itself. The lock is `bench.lock` in the per-machine cache opened with no sharing
+  (`CreateFileW`, share mode 0), so Windows releases it with the process.
+- **A Job object with kill-on-close holds the player.** Killing the orchestrator with `taskkill
+  /F` kills the player too, so no orphaned window keeps the GPU while the lock is free.
+- **The search.** Probes at 20/50/80% of the way to the ceiling, or 0.75/1/1.25× the nearest
+  measured point's frontier (nearest: fewest differing axes, then log view-width distance); a
+  least-squares line per resource (GPU, main, render p99); the lowest crossing is the candidate,
+  floored and clamped to the ceiling. A full run at the candidate, then one at ⌈1.05×⌉; any
+  disagreement bisects geometrically between the largest full-run pass and smallest full-run fail
+  (probes are hints only), to 5%. A point's limit is the worst resource of its smallest failing
+  full run, or `capacity`. At most 14 full runs per point.
+- **The ceiling** is min(12,000, packing capacity), capacity being the footprint's area (the four
+  frustum corner rays on the ground) × 2.4 per m². The computed visible ground is 664, 1,180 and
+  2,230 m² at 30/40/55 m, 3 to 4% under camera-and-sound.md's rounded 690, 1,220 and 2,300; the
+  report's fill counts use the computed values.
+- **Frame timing.** FrameTimingManager's newest frames have no GPU time yet (they read 0), so each
+  frame is held until 24 newer frames exist and only then committed; that cut zero GPU readings
+  from 17% to 0 at 300 fps (5% remain at 1,000 fps, counted and excluded as TD1 suggested). Main
+  thread time is `cpuMainThreadFrameTime`, which excludes its Present wait (reported separately).
+  Run windows and counter frames are matched to frames by QueryPerformanceCounter timestamps,
+  FrameTimingManager's clock (Mono's Stopwatch has another epoch; checked at startup).
+- **Overdraw counters** render off the camera with a command buffer into a 2048² RGFloat target
+  (1920×1080 viewport): every opaque fragment with no depth test (opaque depth complexity), the
+  opaque depth, then transparent fragments that pass it. A mip chain averages it on the GPU and one
+  texel is read back asynchronously. They run on every 60th frame and the frame after each
+  downbeat (the synthetic load has a nominal 120 bpm); those frames and the next are excluded from
+  timing. Scenes reissue their draws through `IOverdrawSink`, so TD5's crowd will need a variant of
+  the counting shader that skins (noted for TD5).
+- **Refusals** in order: backbuffer (`Screen` and `Display.main.renderingWidth/Height` must equal
+  the spec's 1920×1080), `JobsUtility.JobWorkerCount` ≠ `jobWorkers`, not Direct3D 12, power plan
+  not High/Ultimate (`PowerGetActiveScheme`), a locked desktop (`OpenInputDesktop` +
+  `SwitchDesktop`), a display that doesn't come back within 15 s, a window that can't take the
+  foreground, a GPU not under 50 °C with no thermal reason after up to 3 minutes of cooling. Each
+  writes `refusal.json` and exits 3.
+- **The display** is read from `GUID_CONSOLE_DISPLAY_STATE` notifications, woken by a zero-sum
+  mouse nudge (`SendInput`) and held with `SetThreadExecutionState(ES_CONTINUOUS |
+  ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED)` for the sweep's life.
+- **Noise** is sampled every second on a background thread: other processes' CPU (system busy time
+  less our own, `GetSystemTimes`/`GetProcessTimes`), its 5 s rolling mean against 10%; NVML's
+  temperature and clock-event reasons (thermal, hardware slowdown and power brake are noise; the
+  power cap is recorded); the foreground window; occlusion (Unity doesn't expose its swap chain's
+  `DXGI_STATUS_OCCLUDED`, so any visible, uncloaked window above ours in the z-order that overlaps
+  it counts); and the display state. A noisy run waits up to 60 s for quiet and repeats, up to
+  twice, and its row says why. `pass` in a row is the timing rule alone; the report counts the
+  points that rest on noisy runs.
+- **NVML instead of spawning `nvidia-smi`** for temperature, throttle reasons, driver and name:
+  the same library `nvidia-smi` uses, without a process launch every second counting as other
+  processes' CPU. Memory speed comes from the SMBIOS table (`GetSystemFirmwareTable`, type 17's
+  configured speed), since WMI isn't available to the player.
+- **The synthetic load** is N procedural capsules (0.4 m radius, 1.8 m, `triangles` option, 12,000
+  in the frontier sweep so the GPU limits inside the packing capacity), drawn with
+  `RenderMeshInstanced` in chunks of 1,023 with shadows, each walking a 0.6 m circle at 1.2 m/s
+  around an anchor on a jittered grid over the view's footprint, plus (option `glow`) an additive
+  camera-facing quad each, which gives the transparent counter work. Flat 600 m ground, a soft-
+  shadowed sun, shadow distance fitted to the view's farthest corner, bloom, neutral tonemapping,
+  color adjustments and vignette (SSAO arrives with TD9's post stack). The `load` axis is recorded
+  but means nothing to it.
+- **The scene interface** (`IBenchScene`): `Load` once, `Configure(point)`, `Rebuild(n)` returning
+  the sim's tick timing (null without a sim), `Tick(t)`, `DownbeatIn`, `CollectCounters`,
+  `DrawOverdraw`, and an optional packing density. TD4 registers S0 to S6 and the song with
+  `BenchScenes.Register(id, factory)`; the row fields for particles, lights, LOD, skinning and the
+  sim stay null until a scene reports them.
+- **PIX.** The player calls PIX's programmatic capture API (WinPixGpuCapturer.dll's
+  `CaptureNextFrame`, which pix3.h's `PIXGpuCaptureNextFrames` wraps) after warming up at the held
+  point, with pixtool loading the capturer. The exact commands (pixtool's `--command-line` must be
+  quoted on the raw command line and can't contain `=`, which is why `--hold` also takes colons):
+
+  ```
+  "C:\Program Files\Microsoft PIX\2603.25\pixtool.exe" launch "<exe>" --command-line="-force-d3d12
+    -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --bench <spec>
+    --out <dir> -logFile <dir>\player.log --hold n:2000,viewWidthM:40,load:demo,aa:msaa4
+    --pix-capture <dir>\capture.wpix --pix-frames 3" programmatic-capture
+  "C:\Program Files\Microsoft PIX\2603.25\pixtool.exe" open-capture <dir>\capture.wpix
+    save-event-list <dir>\events.csv --counters="*Duration*"
+  ```
+
+  The capture works (a 3-frame, 45 MB capture at 2,000 instances, 40 m). The event list doesn't:
+  PIX's replay needs Windows' Developer Mode, an administrator setting
+  (`E_PIX_FEATURE_REQUIRES_DEVELOPER_MODE`), so the per-pass summary (`demo3d pix`'s passes.md:
+  top-level marker durations per frame) waits for the operator, and its CSV parser is tested only
+  on a synthetic event list. Unity's own GPU markers were tried as a fallback: a release player
+  exposes only `FrameTime.GPU`, and a development player opens a profiler socket (below).
+- **Steel Nomad.** Confirmed for the RTX 4070 Ti (5,040) and both bandwidths (504 and 256 GB/s);
+  not for the RTX 4060 Laptop, whose published medians are 2,267 (UL) and 2,236 (Notebookcheck),
+  not 2,025, which matches the desktop RTX 4060 (2,040). That would make the ratio 2.22× and the
+  GPU line 4.69 ms. The harness keeps 4.2 ms (about 11% conservative) until the design changes it
+  ([sources.md](../../demo3d/evidence/td7/sources.md)).
+
+**QA** ([Sweeps and the machine lock](qa.md#sweeps-and-the-machine-lock),
+[qa-checks.md](../../demo3d/evidence/td7/qa-checks.md)):
+
+- Small sweep (one scene, two points): **pass**; 21 rows with timings, counters, machine state and
+  `pass`; 30 m 1,593 (capacity-bound), 40 m 2,230 (GPU).
+- Heavy build beside a sweep: **pass**, with TD5's real builds and imports as the load rather than
+  a staged one: bounded waits ("machine still busy after 61 s ...; running anyway", 200 s and
+  600 s at sweep starts), noisy runs marked with their reasons, repeated twice, and counted in the
+  report (12 of 21 in the small sweep, 51 of 51 in the frontier, "Frontier points resting on noisy
+  runs: 3 of 3").
+- Second sweep while one runs: **pass**; it printed the holder and waited, then started 3 s after
+  the first one's player exited. TD5's crowd bench honoured the same lock.
+- Killed with `taskkill /F`: **pass**; killing the orchestrator took the player with it (Job
+  object) and the next sweep took the lock at once; a pytest repeats it.
+- Balanced power plan: **pass**; `powercfg /setactive` needs no administrator rights, the refusal
+  names "Balanced (381b4222-...)", and High performance was restored at once.
+- Locked desktop: **pending on the operator** (an agent can't unlock it again).
+- Display off: **wake passes** (off, then on 0.6 s after the sweep's start); "the sweep runs with its
+  window composited" is **pending** the firewall prompt (the run then refused at the foreground).
+- Three sweeps back to back: **partly**: not run as three dedicated sweeps (`sweeps/qa-thermal.json`), because TD5's crowd bench held the machine lock from 01:23 for longer than TD7 could wait. Throttle reasons are recorded in every row (`gpuThrottle`), thermal ones are noise, and the report lists every reason seen; the frontier's 51 consecutive runs over 45 minutes stayed at 67 to 75 °C with `power_cap` only. TD12's sweeps cover the back-to-back case.
+- Different window size: **pass**; `--screen 1600x900` refused with "the backbuffer is 1600x900
+  ...; the sweep needs 1920x1080". `--workers 4` refused likewise.
+- `jobWorkers: 6` in every row: **pass** (all 72 kept rows).
+- `demo3d check --player`: `check: vendor guard ok, dotnet test ok, unity editmode (cold) ok, il2cpp
+  player build ok` (27/27 EditMode tests; pytest 37 passed).
+
+**Not done.** The dedicated back-to-back thermal sweeps (above); a frontier with the foreground
+(pending the firewall prompt); the PIX per-pass summary (pending Developer Mode).
+
+**Lessons.**
+
+- **Never launch a development player on Cygnus unsupervised.** Its profiler socket raised a
+  Windows Firewall prompt ("Windows Firewall has blocked some features of
+  playlistsurvivors3d.exe"), which holds the foreground until someone answers it, and answering
+  it (even Cancel, which adds a block rule) changes a security setting, so only the operator may.
+  Every later sweep refused at the foreground check until TD7 added `quiet.requireForeground`
+  (`demo3d sweep --no-foreground`).
+- **Other sessions dominate the noise.** Another session's idle warm editor alone uses 6 to 8% of
+  Cygnus's CPU, against a 10% threshold, and its imports, builds and player windows (one occluded
+  TD7's window) made most runs noisy. `demo3d sweep` stops its own worktree's warm editor.
+- **Kill players by PID, never by image name.** Twice a TD7 sweep's player died with exit code 1,
+  its log cut mid-line, a few seconds before TD5's crowd bench took the machine lock; something on
+  TD5's side was apparently killing every `PlaylistSurvivors3D.exe`. TD7's frontier ran from a
+  renamed copy of its build (`--player Builds/il2cpp-td7/PlaylistSurvivors3D-TD7.exe`, the exe
+  and its `_Data` folder renamed). Sessions should wait for the lock and kill only their own PIDs.
+- **A stray Microsoft Store window** (an agent running a bare `python`, which opens the Store
+  through Windows' app alias) sat maximized over the player's window; TD7 minimized it. Use
+  `uv run python`, never `python`, on Cygnus.
 
 ### TD8
 

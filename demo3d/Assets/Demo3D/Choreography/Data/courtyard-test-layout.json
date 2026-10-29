@@ -1,0 +1,30 @@
+{
+  "note": "TD6's courtyard test layout for the navigation tests (windows.md, Automated Checks): a 64 m square of open yard ringed by forest, a walled courtyard with three gaps (its north side closed) where the hero holds, a U of ruin walls open to the west that traps a straight walk, and a long ruin wall with one gap. Same format as arena-layout.json.",
+  "name": "courtyard-test",
+  "seed": 3,
+  "size": [64, 64],
+  "decorationDensity": 1.0,
+  "edgeWidthM": [2, 3],
+  "heroStart": [0, 0],
+  "props": {
+    "trees": { "kingdom/SM_Env_Tree_Round_01": 1, "kingdom/SM_Env_Tree_Round_02": 1, "adventure/SM_Env_Tree_01": 1, "adventure/SM_Env_TreePine_01": 1 },
+    "bushes": { "elven/SM_Env_Bush_01": 1, "elven/SM_Env_Bush_02": 1, "elven/SM_Env_Bush_03": 1, "elven/SM_Env_Fern_01": 1 },
+    "clutter": { "kingdom/SM_Env_Rock_01": 1, "kingdom/SM_Generic_Small_Rocks_02": 1 },
+    "walls": { "darkfantasy/SM_Bld_Wall_Ruin_01": 1, "darkfantasy/SM_Bld_Wall_Ruin_03": 1, "darkfantasy/SM_Bld_Wall_Ruin_05": 1, "darkfantasy/SM_Bld_Wall_Ruin_06": 1 }
+  },
+  "scatter": {
+    "forest": [ { "props": "trees", "spacingM": 4.0, "scale": [0.9, 1.2] } ],
+    "edge": [ { "props": "bushes", "spacingM": 2.5, "scale": [0.8, 1.1] } ],
+    "clearing": [ { "props": "clutter", "spacingM": 3.0, "scale": [1.0, 1.5], "chance": 0.5 } ]
+  },
+  "areas": [
+    { "type": "clearing", "name": "yard", "center": [0, 0], "radius": 28 },
+    { "type": "structure", "name": "court", "kind": "courtyard", "center": [0, 0], "size": [16, 16], "gaps": 3, "closedSide": 2, "gapM": 4.5, "walls": "walls",
+      "goal": { "at": [0, 0], "radius": 2 } },
+    { "type": "structure", "name": "u-north", "kind": "ruin-wall", "from": [12, 24], "to": [24, 24], "walls": "walls", "clearM": 1 },
+    { "type": "structure", "name": "u-east", "kind": "ruin-wall", "from": [24, 24], "to": [24, 12], "walls": "walls", "clearM": 1 },
+    { "type": "structure", "name": "u-south", "kind": "ruin-wall", "from": [24, 12], "to": [12, 12], "walls": "walls", "clearM": 1 },
+    { "type": "structure", "name": "west-wall", "kind": "ruin-wall", "from": [-22, -14], "to": [-22, 14], "gaps": 1, "gapM": 5, "walls": "walls", "clearM": 1 },
+    { "type": "forest", "fill": true }
+  ]
+}

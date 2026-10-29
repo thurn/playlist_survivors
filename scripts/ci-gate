@@ -9,6 +9,9 @@
 # - Native (native/, and the content it reads): native/scripts/check-fast, which formats, checks
 #   the pure crates' purity, and runs clippy and the tests of the crates the diff touches and
 #   their dependents. Tollgate's gate step sets CARGO_TARGET_DIR to a persistent directory.
+# - The 3D demo's vendor guard (docs/tech-demo-3d/vendor-assets.md), always: over the commits since
+#   the base and the whole tree, after rebuilding the machine's sync record when the demo's
+#   manifest changed; and its tools' lint when demo3d/ changed.
 # The release stage (scripts/ci-full) runs everything, the slow checks included, on `staging`.
 set -eu
 cd "$(dirname "$0")/.."
@@ -54,6 +57,21 @@ if changes_native; then
   native/scripts/check-fast
 else
   echo "ci-gate: native/ and its content unchanged; skipping the native section"
+fi
+
+echo "ci-gate: vendor guard"
+if changes_demo3d_manifest; then
+  uv run --quiet --project demo3d/tools demo3d sync --record-only
+fi
+if [ -n "$CHANGES_BASE" ]; then
+  uv run --quiet --project demo3d/tools demo3d guard --range "$CHANGES_BASE..HEAD"
+fi
+uv run --quiet --project demo3d/tools demo3d guard --tree HEAD
+if changes_demo3d; then
+  echo "ci-gate: demo3d section"
+  uv run --directory demo3d/tools ruff check .
+else
+  echo "ci-gate: demo3d/ unchanged; skipping the demo3d section"
 fi
 
 echo "ci-gate: passed in $(( $(date +%s) - started )) s"

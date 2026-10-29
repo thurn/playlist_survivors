@@ -1,0 +1,7 @@
+{
+  "_comment": "qa.md, Sweeps and the machine lock: run beside a heavy build. A short bounded wait (60 s, not 600) keeps the check quick.",
+  "scene": "synthetic", "seconds": 10, "warmup": 5, "rewarm": 3,
+  "n": { "fixed": [1500] }, "viewWidthM": [40], "load": ["demo"], "aa": ["msaa4"], "jobWorkers": 6,
+  "quiet": { "maxWaitS": 60, "repeatWaitS": 20 },
+  "sceneOptions": { "triangles": 12000, "glow": true }
+}

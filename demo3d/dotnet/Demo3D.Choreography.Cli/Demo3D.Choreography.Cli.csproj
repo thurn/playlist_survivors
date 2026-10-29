@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- A small CLI over the choreography layer: build the song or a stress timeline, print its
+       summary and tick timing, and write the debug JSON dump. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="LayoutPng.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Demo3D.Choreography/Demo3D.Choreography.csproj" />
+  </ItemGroup>
+</Project>

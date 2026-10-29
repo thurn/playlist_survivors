@@ -1,0 +1,202 @@
+00:28:17 sweep 20261028-002817: D:\wt\td7\demo3d\Logs\bench\frontier3\synthetic-frontier.no-foreground.json -> D:\wt\td7\demo3d\Logs\bench\frontier3
+00:28:17 the orchestrator holds the machine lock
+00:28:18 display was on, now on after 0.0 s (watching: True); held on for the sweep
+00:28:28 WARNING: the foreground is held by Shell_SystemDialog "Windows Security"; quiet.requireForeground is off, so focus loss is recorded, not noise
+00:28:28 GPU 38 °C, throttle none
+00:28:58 waiting for a quiet machine: other processes 18.8% CPU (30 s)
+00:29:28 waiting for a quiet machine: other processes 25.7% CPU (61 s)
+00:29:58 waiting for a quiet machine: other processes 20.4% CPU (91 s)
+00:30:29 waiting for a quiet machine: other processes 18.7% CPU (121 s)
+00:30:59 waiting for a quiet machine: other processes 19.7% CPU (152 s)
+00:31:30 waiting for a quiet machine: other processes 19.7% CPU (182 s)
+00:32:00 waiting for a quiet machine: other processes 21.6% CPU (212 s)
+00:32:30 waiting for a quiet machine: other processes 25.9% CPU (242 s)
+00:33:00 waiting for a quiet machine: other processes 21.9% CPU (272 s)
+00:33:31 waiting for a quiet machine: other processes 20.0% CPU (303 s)
+00:34:01 waiting for a quiet machine: other processes 24.4% CPU (334 s)
+00:34:31 waiting for a quiet machine: other processes 24.2% CPU (364 s)
+00:35:02 waiting for a quiet machine: other processes 25.7% CPU (394 s)
+00:35:33 waiting for a quiet machine: other processes 19.4% CPU (425 s)
+00:36:04 waiting for a quiet machine: other processes 19.0% CPU (456 s)
+00:36:35 waiting for a quiet machine: other processes 17.8% CPU (487 s)
+00:37:05 waiting for a quiet machine: other processes 27.2% CPU (517 s)
+00:37:36 waiting for a quiet machine: other processes 20.8% CPU (548 s)
+00:38:07 waiting for a quiet machine: other processes 21.3% CPU (579 s)
+00:38:28 machine still busy after 600 s (other processes 26.1% CPU); running anyway
+00:38:28 machine {"sweep": "20261028-002817", "api": "d3d12", "gpu": "NVIDIA GeForce RTX 4070 Ti", "driver": "610.88", "cpu": "12th Gen Intel(R) Core(TM) i7-12700F", "logicalCores": 20, "powerPlan": "high", "powerPlanName": "High performance", "memMHz": 2133, "jobWorkers": 6, "backbuffer": "1920x1080", "display": "on", "gpuTempC": 43, "gpuThrottle": "none", "quietWaitS": 600, "otherCpuPctAtStart": 26.1, "requireForeground": false, "unity": "6000.6.7f1", "backend": "il2cpp", "commandLine": "D:\\wt\\td7\\demo3d\\Builds\\il2cpp-td7\\PlaylistSurvivors3D-TD7.exe -force-d3d12 -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --bench D:\\wt\\td7\\demo3d\\Logs\\bench\\frontier3\\synthetic-frontier.no-foreground.json --out D:\\wt\\td7\\demo3d\\Logs\\bench\\frontier3 -logFile D:\\wt\\td7\\demo3d\\Logs\\bench\\frontier3\\player.log --lock-held"}
+00:38:28 clocks: FrameTimingManager 10000000 Hz, QueryPerformanceCounter 10000000 Hz, newest frame started 13.3 ms ago
+00:38:28 point 30m/demo/msaa4: capacity 1593, ceiling 1593, seed none
+00:38:28 rebuilt for n 399 in 0 ms
+00:38:41 probe n 399 30m/demo/msaa4: gpu p99 2.14 main 1.01 render 0.59 ms -> pass (gpu 0.51) NOISY
+00:38:41 run noisy (other processes used 26.2% CPU over 5 s; other processes used 8.1% of the GPU's 3D engine (busiest: pid 35068 (exited, 8%)); the player's window was occluded by ApplicationFrameWindow "Microsoft Store"), repeating (2/3)
+00:39:11 waiting for a quiet machine: other processes 24.7% CPU (31 s)
+00:39:41 machine still busy after 61 s (other processes 31.8% CPU); running anyway
+00:39:52 probe n 399 30m/demo/msaa4: gpu p99 0.86 main 1.62 render 0.91 ms -> pass (gpu 0.21) NOISY
+00:39:52 run noisy (other processes used 34.2% CPU over 5 s; other processes used 11.6% of the GPU's 3D engine (busiest: pid 35068 (exited, 11%))), repeating (3/3)
+00:40:23 waiting for a quiet machine: other processes 28.4% CPU (31 s)
+00:40:53 machine still busy after 61 s (other processes 21.8% CPU); running anyway
+00:41:04 probe n 399 30m/demo/msaa4: gpu p99 1.16 main 1.54 render 0.84 ms -> pass (gpu 0.28) NOISY
+00:41:04 rebuilt for n 846 in 0 ms
+00:41:15 probe n 846 30m/demo/msaa4: gpu p99 2.19 main 1.99 render 1.16 ms -> pass (gpu 0.52) NOISY
+00:41:15 run noisy (other processes used 36.4% CPU over 5 s; other processes used 11.4% of the GPU's 3D engine (busiest: pid 35068 (exited, 11%))), repeating (2/3)
+00:41:46 waiting for a quiet machine: other processes 25.0% CPU (31 s)
+00:42:16 machine still busy after 61 s (other processes 32.8% CPU); running anyway
+00:42:27 probe n 846 30m/demo/msaa4: gpu p99 2.19 main 1.98 render 1.14 ms -> pass (gpu 0.52) NOISY
+00:42:27 run noisy (other processes used 31.1% CPU over 5 s; other processes used 10.0% of the GPU's 3D engine (busiest: pid 35068 (exited, 9%))), repeating (3/3)
+00:42:57 waiting for a quiet machine: other processes 17.7% CPU (31 s)
+00:43:27 machine still busy after 61 s (other processes 19.4% CPU); running anyway
+00:43:38 probe n 846 30m/demo/msaa4: gpu p99 1.91 main 1.11 render 0.62 ms -> pass (gpu 0.46) NOISY
+00:43:38 rebuilt for n 1294 in 0 ms
+00:43:50 probe n 1294 30m/demo/msaa4: gpu p99 2.72 main 1.00 render 0.56 ms -> pass (gpu 0.65) NOISY
+00:43:50 run noisy (other processes used 17.5% CPU over 5 s), repeating (2/3)
+00:43:55 machine quiet: other processes 10.0% CPU over 5 s (waited 6 s)
+00:44:06 probe n 1294 30m/demo/msaa4: gpu p99 2.73 main 1.27 render 0.74 ms -> pass (gpu 0.65) NOISY
+00:44:06 run noisy (other processes used 20.5% CPU over 5 s), repeating (3/3)
+00:44:37 waiting for a quiet machine: other processes 32.8% CPU (31 s)
+00:45:07 machine still busy after 61 s (other processes 11.9% CPU); running anyway
+00:45:18 probe n 1294 30m/demo/msaa4: gpu p99 2.76 main 1.39 render 0.79 ms -> pass (gpu 0.66) NOISY
+00:45:18 rebuilt for n 1593 in 0 ms
+00:45:41 ceiling n 1593 30m/demo/msaa4: gpu p99 3.41 main 1.60 render 0.84 ms -> fail (gpu 8.83) NOISY
+00:45:41 run noisy (other processes used 31.7% CPU over 5 s; other processes used 12.4% of the GPU's 3D engine (busiest: pid 38248 (exited, 12%))), repeating (2/3)
+00:46:12 waiting for a quiet machine: other processes 30.0% CPU (31 s)
+00:46:42 machine still busy after 61 s (other processes 32.4% CPU); running anyway
+00:47:05 ceiling n 1593 30m/demo/msaa4: gpu p99 3.65 main 2.25 render 1.26 ms -> pass (gpu 0.87) NOISY
+00:47:05 run noisy (other processes used 36.6% CPU over 5 s; other processes used 8.3% of the GPU's 3D engine (busiest: pid 38248 (exited, 8%))), repeating (3/3)
+00:47:35 waiting for a quiet machine: other processes 24.4% CPU (31 s)
+00:48:05 machine still busy after 61 s (other processes 12.5% CPU); running anyway
+00:48:29 ceiling n 1593 30m/demo/msaa4: gpu p99 3.64 main 1.51 render 0.86 ms -> pass (gpu 0.87) NOISY
+00:48:29 frontier 30m/demo/msaa4: 1593 (capacity), 3 probes + 1 full runs, fit 1593 confirmed True
+00:48:29 point 40m/demo/msaa4: capacity 2832, ceiling 2832, seed 1593
+00:48:29 rebuilt for n 1195 in 1 ms
+00:48:40 probe n 1195 40m/demo/msaa4: gpu p99 2.61 main 1.49 render 0.76 ms -> pass (gpu 0.62) NOISY
+00:48:40 run noisy (other processes used 26.0% CPU over 5 s; other processes used 5.9% of the GPU's 3D engine (busiest: pid 38248 (exited, 5%))), repeating (2/3)
+00:49:10 waiting for a quiet machine: other processes 21.9% CPU (31 s)
+00:49:40 machine still busy after 61 s (other processes 23.3% CPU); running anyway
+00:49:51 probe n 1195 40m/demo/msaa4: gpu p99 2.62 main 1.54 render 0.74 ms -> pass (gpu 0.62) NOISY
+00:49:51 run noisy (other processes used 26.4% CPU over 5 s; other processes used 5.0% of the GPU's 3D engine (busiest: pid 38248 (exited, 4%))), repeating (3/3)
+00:50:22 waiting for a quiet machine: other processes 17.2% CPU (31 s)
+00:50:52 machine still busy after 61 s (other processes 14.1% CPU); running anyway
+00:51:03 probe n 1195 40m/demo/msaa4: gpu p99 2.80 main 1.95 render 1.01 ms -> pass (gpu 0.67) NOISY
+00:51:03 rebuilt for n 1593 in 1 ms
+00:51:14 probe n 1593 40m/demo/msaa4: gpu p99 3.42 main 1.68 render 0.84 ms -> pass (gpu 0.82) NOISY
+00:51:14 run noisy (other processes used 29.5% CPU over 5 s), repeating (2/3)
+00:51:45 waiting for a quiet machine: other processes 23.3% CPU (31 s)
+00:52:15 machine still busy after 61 s (other processes 11.3% CPU); running anyway
+00:52:26 probe n 1593 40m/demo/msaa4: gpu p99 3.41 main 1.30 render 0.70 ms -> pass (gpu 0.81) NOISY
+00:52:26 run noisy (other processes used 16.5% CPU over 5 s), repeating (3/3)
+00:52:56 waiting for a quiet machine: other processes 13.0% CPU (31 s)
+00:53:26 machine still busy after 61 s (other processes 12.9% CPU); running anyway
+00:53:37 probe n 1593 40m/demo/msaa4: gpu p99 3.42 main 1.27 render 0.71 ms -> pass (gpu 0.81) NOISY
+00:53:37 rebuilt for n 1991 in 1 ms
+00:53:49 probe n 1991 40m/demo/msaa4: gpu p99 4.05 main 1.38 render 0.78 ms -> pass (gpu 0.96) NOISY
+00:53:49 run noisy (other processes used 17.4% CPU over 5 s), repeating (2/3)
+00:54:19 waiting for a quiet machine: other processes 14.2% CPU (31 s)
+00:54:49 machine still busy after 61 s (other processes 13.2% CPU); running anyway
+00:55:00 probe n 1991 40m/demo/msaa4: gpu p99 4.04 main 1.50 render 0.89 ms -> pass (gpu 0.96) NOISY
+00:55:00 run noisy (other processes used 19.2% CPU over 5 s), repeating (3/3)
+00:55:31 waiting for a quiet machine: other processes 21.8% CPU (31 s)
+00:56:01 machine still busy after 61 s (other processes 25.2% CPU); running anyway
+00:56:12 probe n 1991 40m/demo/msaa4: gpu p99 3.66 main 1.99 render 1.05 ms -> pass (gpu 0.87) NOISY
+00:56:12 rebuilt for n 2431 in 1 ms
+00:56:35 confirm n 2431 40m/demo/msaa4: gpu p99 4.30 main 2.31 render 1.18 ms -> fail (gpu 1.16) NOISY
+00:56:35 run noisy (other processes used 54.8% CPU over 5 s), repeating (2/3)
+00:57:06 waiting for a quiet machine: other processes 10.6% CPU (31 s)
+00:57:07 machine quiet: other processes 9.9% CPU over 5 s (waited 32 s)
+00:57:30 confirm n 2431 40m/demo/msaa4: gpu p99 4.27 main 1.67 render 0.91 ms -> fail (gpu 1.02) NOISY
+00:57:30 run noisy (other processes used 33.4% CPU over 5 s), repeating (3/3)
+00:58:01 waiting for a quiet machine: other processes 27.9% CPU (31 s)
+00:58:31 machine still busy after 61 s (other processes 42.7% CPU); running anyway
+00:58:54 confirm n 2431 40m/demo/msaa4: gpu p99 4.73 main 2.59 render 1.35 ms -> fail (gpu 1.13) NOISY
+00:58:54 rebuilt for n 1991 in 0 ms
+00:59:17 bisect n 1991 40m/demo/msaa4: gpu p99 4.00 main 1.40 render 0.75 ms -> pass (gpu 0.95) NOISY
+00:59:17 run noisy (other processes used 20.1% CPU over 5 s), repeating (2/3)
+00:59:47 waiting for a quiet machine: other processes 19.8% CPU (31 s)
+01:00:17 machine still busy after 61 s (other processes 17.1% CPU); running anyway
+01:00:41 bisect n 1991 40m/demo/msaa4: gpu p99 4.02 main 1.55 render 0.83 ms -> pass (gpu 0.96) NOISY
+01:00:41 run noisy (other processes used 19.8% CPU over 5 s), repeating (3/3)
+01:01:11 waiting for a quiet machine: other processes 19.7% CPU (31 s)
+01:01:41 machine still busy after 61 s (other processes 18.1% CPU); running anyway
+01:02:04 bisect n 1991 40m/demo/msaa4: gpu p99 4.05 main 1.63 render 0.87 ms -> pass (gpu 0.96) NOISY
+01:02:04 rebuilt for n 2200 in 0 ms
+01:02:27 bisect n 2200 40m/demo/msaa4: gpu p99 4.36 main 1.56 render 0.82 ms -> fail (gpu 1.04) NOISY
+01:02:27 run noisy (other processes used 24.5% CPU over 5 s), repeating (2/3)
+01:02:58 waiting for a quiet machine: other processes 18.5% CPU (31 s)
+01:03:28 machine still busy after 61 s (other processes 13.9% CPU); running anyway
+01:03:51 bisect n 2200 40m/demo/msaa4: gpu p99 4.33 main 1.53 render 0.81 ms -> fail (gpu 1.03) NOISY
+01:03:51 run noisy (other processes used 16.0% CPU over 5 s), repeating (3/3)
+01:04:09 machine quiet: other processes 10.0% CPU over 5 s (waited 18 s)
+01:04:32 bisect n 2200 40m/demo/msaa4: gpu p99 4.35 main 1.32 render 0.71 ms -> fail (gpu 1.04) NOISY
+01:04:32 rebuilt for n 2093 in 0 ms
+01:04:55 bisect n 2093 40m/demo/msaa4: gpu p99 4.19 main 1.37 render 0.71 ms -> pass (gpu 1.00) NOISY
+01:04:55 run noisy (other processes used 14.4% CPU over 5 s), repeating (2/3)
+01:05:26 waiting for a quiet machine: other processes 12.2% CPU (31 s)
+01:05:33 machine quiet: other processes 9.8% CPU over 5 s (waited 38 s)
+01:05:56 bisect n 2093 40m/demo/msaa4: gpu p99 4.18 main 1.52 render 0.83 ms -> pass (gpu 1.00) NOISY
+01:05:56 run noisy (other processes used 22.6% CPU over 5 s), repeating (3/3)
+01:06:26 waiting for a quiet machine: other processes 12.3% CPU (31 s)
+01:06:28 machine quiet: other processes 9.8% CPU over 5 s (waited 33 s)
+01:06:51 bisect n 2093 40m/demo/msaa4: gpu p99 4.19 main 1.32 render 0.67 ms -> pass (gpu 1.00) NOISY
+01:06:51 rebuilt for n 2146 in 1 ms
+01:07:15 bisect n 2146 40m/demo/msaa4: gpu p99 4.27 main 1.40 render 0.73 ms -> fail (gpu 1.02) NOISY
+01:07:15 run noisy (other processes used 13.7% CPU over 5 s), repeating (2/3)
+01:07:45 waiting for a quiet machine: other processes 20.3% CPU (31 s)
+01:08:15 machine still busy after 61 s (other processes 19.1% CPU); running anyway
+01:08:38 bisect n 2146 40m/demo/msaa4: gpu p99 4.26 main 1.43 render 0.76 ms -> fail (gpu 1.02) NOISY
+01:08:38 run noisy (other processes used 20.6% CPU over 5 s), repeating (3/3)
+01:08:52 machine quiet: other processes 9.5% CPU over 5 s (waited 14 s)
+01:09:15 bisect n 2146 40m/demo/msaa4: gpu p99 4.20 main 1.45 render 0.79 ms -> pass (gpu 1.00) NOISY
+01:09:15 frontier 40m/demo/msaa4: 2146 (gpu), 3 probes + 5 full runs, fit 2431 confirmed False
+01:09:15 point 55m/demo/msaa4: capacity 5355, ceiling 5355, seed 2146
+01:09:15 rebuilt for n 1610 in 0 ms
+01:09:26 probe n 1610 55m/demo/msaa4: gpu p99 2.79 main 1.31 render 0.72 ms -> pass (gpu 0.66) NOISY
+01:09:26 run noisy (other processes used 26.8% CPU over 5 s), repeating (2/3)
+01:09:57 waiting for a quiet machine: other processes 76.5% CPU (31 s)
+01:10:27 machine still busy after 61 s (other processes 90.5% CPU); running anyway
+01:10:38 probe n 1610 55m/demo/msaa4: gpu p99 2.85 main 2.89 render 1.27 ms -> pass (gpu 0.68) NOISY
+01:10:38 run noisy (other processes used 91.9% CPU over 5 s), repeating (3/3)
+01:11:08 waiting for a quiet machine: other processes 34.5% CPU (31 s)
+01:11:39 machine still busy after 61 s (other processes 36.6% CPU); running anyway
+01:11:50 probe n 1610 55m/demo/msaa4: gpu p99 3.05 main 2.35 render 1.14 ms -> pass (gpu 0.73) NOISY
+01:11:50 rebuilt for n 2146 in 0 ms
+01:12:01 probe n 2146 55m/demo/msaa4: gpu p99 3.97 main 2.12 render 1.01 ms -> pass (gpu 0.94) NOISY
+01:12:01 run noisy (other processes used 15.4% CPU over 5 s), repeating (2/3)
+01:12:31 waiting for a quiet machine: other processes 13.9% CPU (31 s)
+01:13:01 machine still busy after 61 s (other processes 13.6% CPU); running anyway
+01:13:12 probe n 2146 55m/demo/msaa4: gpu p99 3.99 main 2.19 render 1.00 ms -> pass (gpu 0.95) NOISY
+01:13:12 run noisy (other processes used 15.2% CPU over 5 s), repeating (3/3)
+01:13:43 waiting for a quiet machine: other processes 14.5% CPU (31 s)
+01:14:13 machine still busy after 61 s (other processes 13.7% CPU); running anyway
+01:14:24 probe n 2146 55m/demo/msaa4: gpu p99 3.98 main 2.20 render 1.01 ms -> pass (gpu 0.95) NOISY
+01:14:24 rebuilt for n 2682 in 0 ms
+01:14:35 probe n 2682 55m/demo/msaa4: gpu p99 4.73 main 2.11 render 0.93 ms -> fail (gpu 1.13) NOISY
+01:14:35 run noisy (other processes used 18.0% CPU over 5 s), repeating (2/3)
+01:15:06 waiting for a quiet machine: other processes 13.6% CPU (31 s)
+01:15:36 machine still busy after 61 s (other processes 13.2% CPU); running anyway
+01:15:47 probe n 2682 55m/demo/msaa4: gpu p99 4.73 main 1.94 render 0.87 ms -> fail (gpu 1.13) NOISY
+01:15:47 run noisy (other processes used 18.8% CPU over 5 s), repeating (3/3)
+01:16:18 waiting for a quiet machine: other processes 13.9% CPU (31 s)
+01:16:48 machine still busy after 61 s (other processes 14.2% CPU); running anyway
+01:16:59 probe n 2682 55m/demo/msaa4: gpu p99 4.72 main 2.06 render 0.88 ms -> fail (gpu 1.12) NOISY
+01:16:59 rebuilt for n 2326 in 0 ms
+01:17:22 confirm n 2326 55m/demo/msaa4: gpu p99 4.25 main 2.14 render 0.95 ms -> fail (gpu 1.01) NOISY
+01:17:22 run noisy (other processes used 17.6% CPU over 5 s), repeating (2/3)
+01:17:53 waiting for a quiet machine: other processes 13.0% CPU (31 s)
+01:18:23 machine still busy after 61 s (other processes 14.5% CPU); running anyway
+01:18:46 confirm n 2326 55m/demo/msaa4: gpu p99 4.24 main 1.85 render 0.91 ms -> fail (gpu 1.01) NOISY
+01:18:46 run noisy (other processes used 15.8% CPU over 5 s), repeating (3/3)
+01:19:16 waiting for a quiet machine: other processes 14.5% CPU (31 s)
+01:19:46 machine still busy after 61 s (other processes 36.7% CPU); running anyway
+01:20:10 confirm n 2326 55m/demo/msaa4: gpu p99 4.15 main 2.05 render 1.01 ms -> pass (gpu 0.99) NOISY
+01:20:10 rebuilt for n 2443 in 1 ms
+01:20:33 above n 2443 55m/demo/msaa4: gpu p99 4.39 main 2.07 render 1.09 ms -> fail (gpu 1.05) NOISY
+01:20:33 run noisy (other processes used 18.5% CPU over 5 s), repeating (2/3)
+01:21:03 waiting for a quiet machine: other processes 23.6% CPU (31 s)
+01:21:33 machine still busy after 61 s (other processes 11.4% CPU); running anyway
+01:21:57 above n 2443 55m/demo/msaa4: gpu p99 27.79 main 5.86 render 2.71 ms -> fail (gpu 6.62) NOISY
+01:21:57 run noisy (other processes used 40.6% CPU over 5 s; other processes used 22.7% of the GPU's 3D engine (busiest: pid 38608 (exited, 22%)); the player's window was occluded by UnityWndClass "Playlist Survivors 3D Demo"), repeating (3/3)
+01:22:27 waiting for a quiet machine: other processes 33.8% CPU (31 s)
+01:22:52 machine quiet: other processes 8.9% CPU over 5 s (waited 56 s)
+01:23:15 above n 2443 55m/demo/msaa4: gpu p99 23.80 main 7.75 render 3.16 ms -> fail (gpu 5.67) NOISY
+01:23:15 frontier 55m/demo/msaa4: 2326 (gpu), 3 probes + 2 full runs, fit 2326 confirmed True
+01:23:15 sweep done
+01:23:16 exit 0

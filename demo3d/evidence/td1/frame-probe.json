@@ -1,0 +1,15 @@
+{
+  "graphicsDeviceType": "Direct3D12",
+  "graphicsDeviceName": "NVIDIA GeForce RTX 4070 Ti",
+  "screen": [1920, 1080],
+  "display": [3840, 2160],
+  "renderingSize": [1920, 1080],
+  "fullScreenMode": "Windowed",
+  "dpi": 192,
+  "frames": 18935,
+  "timedFrames": 18935,
+  "seconds": 10,
+  "gpuMs": { "mean": 0.0640, "p50": 0.0911, "p99": 0.1270, "max": 0.1475 },
+  "mainThreadMs": { "mean": 0.2860, "p50": 0.2698, "p99": 0.5104, "max": 1.4887 },
+  "renderThreadMs": { "mean": 0.1533, "p50": 0.1516, "p99": 0.2979, "max": 0.4772 }
+}

@@ -4,7 +4,8 @@
 #   changes_init  sets CHANGES_BASE and writes the changed paths, one per line, to $CHANGES_FILE
 #                 (committed since the base, staged, unstaged and untracked). With no base it
 #                 sets CHANGES_UNKNOWN=1, and every section runs.
-#   changes_baker / changes_analysis / changes_friction / changes_native   succeed when that section
+#   changes_baker / changes_analysis / changes_friction / changes_native / changes_demo3d
+#                 succeed when that section
 #                 must run.
 #
 # The base is where the branch left `staging` (Tollgate bases worktrees and speculative
@@ -66,6 +67,17 @@ changes_native() {
   [ "$CHANGES_UNKNOWN" = 1 ] \
     || grep -E '^(native/|content/|levels/.*\.ya?ml$|public/assets/|public/reactive/|scripts/lib/changes\.sh$)' "$CHANGES_FILE" \
       | grep -Evq '^native/evidence/'
+}
+
+# The 3D tech demo (demo3d/: its tools, its choreography layer, its Unity project) and the song
+# map it plays.
+changes_demo3d() {
+  changes_match '^(demo3d/|songs/action/)'
+}
+
+# The demo's sync record must know every GUID its manifest lists; a manifest change rebuilds it.
+changes_demo3d_manifest() {
+  changes_match '^demo3d/manifest\.json$'
 }
 
 # The changed files that still exist and match the extended regular expression $1, one per line.
