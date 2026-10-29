@@ -228,8 +228,9 @@ that consumes the result removes the row.
 | What | How | Added by | Consumed by |
 |---|---|---|---|
 | Does a windowed player report a GPU frame time every frame? (A batch-mode one reports it on 3% of frames.) | After `demo2d build`, from the worktree's root: `open -n demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app --args -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --frame-timing "$PWD/captures/px1-timing/windowed-400.json" --spike-sprites 400 --seconds 10`; the window closes itself after 12 s. In the JSON, compare `ftm.gpuFrameTimeMs`'s `nonzero` with `frames`. | PX1 | PX10 |
-| Are PX3's clip annotations right? Each attack's and slash's impact on the blow, each hit's and death's end where it settles or rests, the slam's on the landing, and the walks' strides plausible for their gait (two are fallbacks: the lava beast and the boss have no planted foot). | Look over `demo2d/evidence/px3/annotations-*.jpg` (impact framed red, end blue); the numbers and methods are in `demo2d/Assets/Demo2D/Data/clip-annotations.json`. To change a clip or a proposal, edit the entry's `clip` and re-run `demo2d unity AnnotateClips`, or note the frame here. | PX3 | PX5 |
+| Are PX3's clip annotations right? Each attack's and slash's impact on the blow, each hit's and death's end where it settles or rests, the slam's on the landing, and the walks' strides plausible for their gait (two are fallbacks: the lava beast and the boss have no planted foot). | Look over `demo2d/evidence/px3/annotations-*.jpg` (impact framed red, end blue); the numbers and methods are in `demo2d/Assets/Demo2D/Data/clip-annotations.json`. To change a clip or a proposal, edit the entry's `clip` and re-run `demo2d unity AnnotateClips`, or note the frame here. | PX3 | PX8 (PX5 plays them as annotated; still unanswered) |
 | Is every type recognizable at its game size, and the hero findable in a crowd? PX3 found each type distinct, but the hero findable only from his place and a warm light, and the ghoul, zombie warrior, ice skull and blood mage close in colour at night. | Look at `demo2d/evidence/px3/lineup.png` and `crowd.png` (2×, as at 1080p). | PX3 | PX9 |
+| Does the song play on the click? Every step, blow, flinch and death landing on the beat, with no sprite popping, sliding or flickering between facings, and the scroll and zoom smooth. | After `demo2d build`, from the worktree's root: `demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app/Contents/MacOS/"Playlist Survivors 2D Demo" --click --overlay` (add `--start-at 160` for the climax). Note any section or second that drifts. | PX5 | PX8 |
 
 ## Task Notes
 
@@ -546,7 +547,80 @@ notes commit. [Evidence](../../demo2d/evidence/px4/README.md).
 
 ### PX5
 
-Not started.
+Done (bead ps-tfn.1.8). Commits: `7fb693de` (the client, its tests and the design's choices),
+and this notes commit. `demo2d check --player` passes (the guard, dotnet, EditMode 78 of 78 with
+4 of them PX5's, the IL2CPP build). [Evidence](../../demo2d/evidence/px5/README.md).
+
+- **Run:** from a worktree's root (the player's paths absolute):
+
+  ```
+  uv run --project demo3d/tools demo2d setup     # vendor, the song
+  uv run --project demo3d/tools demo2d build     # bakes the atlases if missing, then PlaybackData, then the player
+  APP="$PWD/demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app/Contents/MacOS/Playlist Survivors 2D Demo"
+  "$APP" --click --overlay                       # the operator: the song with a click and the counts
+  "$APP" -batchmode -force-metal -logFile "$PWD/demo2d/Logs/px5.log" \
+    --capture-stills "$PWD/demo2d/evidence/px5" --stills-at 8,116,172.5
+  ```
+
+  Flags: `--click`, `--start-at <s>`, `--seconds <n>` (of song), `--fixed-time`, `--freeze-at
+  <s>`, `--overlay` (song time, section, on-screen counts against the target, view, upscale,
+  frame time), `--capture-stills <dir>` with `--stills-at s,...` (fixed time, 1920×1080 tagged
+  JPEGs), `--zoom target|soft`, `--no-feel` (no punch or shake), and `--test-card` (PX1's
+  scene, which the timing spike's `--frame-timing` still uses).
+- **The client** (`Demo2D.Runtime.Playback`): `DemoMain` (starts itself in a player; the clock,
+  music, click, stills, overlay), `SongPlayback` (the timeline from the baked `PlaybackData`, then
+  any song time drawn on request, shared with the tests), `SpriteEvaluator` (demo3d's
+  TimelineEvaluator for flipbooks: retimed attacks, hits and deaths from their onset, walks by
+  distance, the hero idling after a still beat, hit-stop, flash, the death's fade), `SpriteCrowd`,
+  `PixelPipeline`, `CharacterAtlas` (PX3's atlas JSON at runtime; SpriteBaker's `Sprite` now
+  calls it). `SongClock`, `ClickTrack` and `CameraFeel` are demo3d's, copied (they live in
+  demo3d's runtime assembly, which demo2d can't reference; CameraFeel's shake is now 2D).
+  `PlaybackBaker` (`demo2d unity BakePlayback`, and every build) indexes the baked song,
+  atlases, data, shaders and the open ground into `Assets/Baked/Playback/Resources`.
+- **Choices:**
+  - **Sprites are pooled SpriteRenderers**, not hand-instanced quads: the 2D renderer lights
+    them with its `Light2D`s and draws every type's atlas in one back-to-front order; an
+    instanced draw per atlas couldn't interleave types by y. Flash is one shared material per
+    level (`Sprite-Lit-Flash.shader`, URP's lit sprite plus `_Flash`, 4 steps), so no sprite needs
+    its own property block. Tint is a per-monster brightness jitter (0.88 to 1). Facing is a
+    flip chosen per segment from its yaw with hysteresis (sideways past 0.25), so a walk
+    straight up or down keeps its side. Positions snap to whole texels.
+  - **The draw order is explicit:** each frame ranks the sprites by the feet's texel row, then
+    entity id, into their sorting order. Snapped feet often share a row, and the renderer breaks
+    ties by its registration order, which pooling changes: a seek drew overlaps differently.
+    The cost: sprites of different atlases interleave, so they batch less (PX10 measures).
+  - **The zoom-out keeps the grid with a larger target** (README updated), from paired stills:
+    a fixed 960×540 target at 40.5 m drops and doubles texels. The target is sized once for
+    the song's widest view (1328×761 with a 16-texel margin) and drawn whole every frame, about
+    twice the base view's pixels; the upscale window and `_Scale` follow the view and punch.
+  - **The present pass** is a second camera drawing one quad (layer 31) with
+    `SharpUpscale.shader` over the screen, offset by the sub-texel remainder of the whole-texel
+    world camera, so the scroll is smooth. PX7's bloom and grade go on that camera.
+  - **Stills are drawn in DemoMain's LateUpdate** (execution order 10000), on a frame set to
+    exactly the still's time: a `Light2D` refreshes its culling bounds in its own LateUpdate,
+    so a still drawn earlier after a seek lit the hero from his old place. PX7's light pool
+    inherits this.
+  - **A killing blow shows the death,** not the flinch (the sim gives both the same impact).
+  - **The open ground** is PX3's stills' grass with moss and dirt patches over 96×120 tiles
+    (`SpriteStills.GroundMap`, now shared), baked as tile indices; PX6 replaces it.
+  - **A warm light follows the hero** (radius 4.5 m), so he reads at night; PX7 owns lighting.
+    Casters' bolts are a generated 7-pixel spark a metre up until PX7's effects.
+- **Evidence:** stills at the intro (8 s), the build (116 s) and the final peak (172.5 s); the
+  zoom pair; a seek's stills identical to a run from 0 to the pixel (from 100, 116 and 172.5 s,
+  including a still on the player's first frame); the impact-frame test over every attack, hit
+  and death in the song.
+- **Surprise:** the IL2CPP player's timeline differs from the Mono player's (3,817 entities to
+  3,803), as choreography.md allows (deterministic per runtime only). Compare stills within one
+  build.
+- **For PX6 onward:** `SongPlayback.BuildGround` is the open ground's only use; the arena's
+  tilemaps replace it. Effects and their lights (PX7) draw on the world camera's layers; anything
+  on layer 31 is the present quad's. Edit-mode tests run no LateUpdate, so `Light2D`s keep their
+  first culling bounds there; check lights with the player's stills.
+- **Self-review:** re-read the diff against `origin/staging`. Outside demo2d's runtime, editor
+  code, tests and evidence: `SpriteStills.Ground` split into `GroundMap` (same seed and patch
+  count, so PX3's stills are unchanged), SpriteBaker's `Sprite` delegating to `CharacterAtlas`,
+  StillCapture's readback shared and installed only for the test card, and the build baking
+  `PlaybackData` first. Unity's rewrites of two ProjectSettings files were discarded, as in PX2.
 
 ### PX6
 
