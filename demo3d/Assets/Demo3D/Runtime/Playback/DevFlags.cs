@@ -13,7 +13,7 @@ namespace Demo3D.Runtime.Playback
         public bool FixedTime;        // --fixed-time: 1/60 s frames, sound muted
         public string Scene = "song"; // --scene <S0..S6|song>
         public int N;                 // --n <count> (stress scenes)
-        public float ViewWidth;       // --view-width <m> (0: the timeline's framing)
+        public float ViewWidth;       // --view-width <m>: a stress scene's width, or the song's widest, its zoom arc scaled (0: the script's)
         public string Load = "demo";  // --load <preset>
         public string Aa = "msaa4";   // --aa <mode>
         public double FreezeAt = -1;  // --freeze-at <s>

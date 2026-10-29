@@ -116,6 +116,25 @@ namespace Demo3D.Choreography.Tests
         }
 
         [Test]
+        public void ScalingTheLevelScriptsViewWidthKeepsTheZoomArc()
+        {
+            LevelScript level = ChoreographyFiles.LoadLevel(Fixtures.Root); // a copy: Fixtures.Level is shared
+            float[] before = Array.ConvertAll(level.Sections, s => s.ViewWidthM);
+            float widest = 0;
+            foreach (float w in before) widest = Math.Max(widest, w);
+            level.ScaleViewWidth(40f);
+            float scaledWidest = 0;
+            for (int i = 0; i < before.Length; i++)
+            {
+                Assert.That(level.Sections[i].ViewWidthM, Is.EqualTo(before[i] * 40f / widest).Within(1e-4f));
+                scaledWidest = Math.Max(scaledWidest, level.Sections[i].ViewWidthM);
+            }
+            Assert.That(scaledWidest, Is.EqualTo(40f).Within(1e-4f));
+            Assert.That(level.EnvelopeViewWidthM, Is.EqualTo(40f));
+            Assert.Throws<ArgumentOutOfRangeException>(() => level.ScaleViewWidth(0));
+        }
+
+        [Test]
         public void LevelScriptCoversEverySongSectionWithinTheEnvelope()
         {
             LevelScript level = Fixtures.Level;

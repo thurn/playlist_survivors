@@ -156,6 +156,22 @@ namespace Demo3D.Choreography
             return null;
         }
 
+        /// <summary>
+        /// Scales every section's view width so the widest is <paramref name="widestM"/>, keeping
+        /// the zoom arc's shape (the player's `--view-width` on the song). The timeline places the
+        /// horde and its reserve for these widths, so the camera never shows the reserve's edge.
+        /// </summary>
+        public void ScaleViewWidth(float widestM)
+        {
+            if (!(widestM > 0)) throw new ArgumentOutOfRangeException(nameof(widestM));
+            float widest = 0;
+            foreach (LevelSection s in Sections) widest = Math.Max(widest, s.ViewWidthM);
+            if (widest <= 0) return;
+            float k = widestM / widest;
+            foreach (LevelSection s in Sections) s.ViewWidthM *= k;
+            EnvelopeViewWidthM = widestM;
+        }
+
         public static LevelScript Parse(string json)
         {
             JsonValue root = JsonValue.Parse(json);

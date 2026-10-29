@@ -101,6 +101,7 @@ namespace Demo3D.Runtime.Playback
             var data = PlaybackData.Load();
             var level = LevelScript.Parse(data.level.text);
             if (_flags.Envelope > 0) level.EnvelopeOnScreen = _flags.Envelope;
+            if (_flags.ViewWidth > 0 && _flags.Scene == "song") level.ScaleViewWidth(_flags.ViewWidth);
             StressScript stress = _flags.Scene == "song" ? null
                 : StressScript.Parse(data.Stress(_flags.Scene).text)
                     .With(_flags.N, _flags.ViewWidth, _flags.Load, _flags.Seconds > 0 ? _flags.StartAt + _flags.Seconds + 1 : 0);

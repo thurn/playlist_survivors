@@ -47,6 +47,15 @@ open -n demo3d/Builds/mac/il2cpp/PlaylistSurvivors3D.app --args -screen-width 19
 The player takes the same flags as on Cygnus ([Manual QA](qa.md#manual-qa)),
 such as `--start-at 160` for the climax or `--click` for the click track.
 
+To compare crowd sizes in the song itself, change `--envelope <count>` (the
+final peak holds 1.05 times it on screen; the level script's is 425) and keep
+everything else equal. `--view-width <m>` widens the song's camera: it scales
+every section's zoom so the widest (the climax, 30 m in the level script) is
+`<m>`, and the timeline places the horde for the wider view. For example,
+`--start-at 160 --view-width 40 --envelope 300`, then the same with
+`--envelope 900`. The hero's route follows the horde, so it differs a little
+between counts.
+
 Windowless stills, for agents' checks: a batch-mode player draws no frames,
 so it draws the camera by hand for each still it owes.
 
