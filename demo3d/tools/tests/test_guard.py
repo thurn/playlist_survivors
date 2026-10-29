@@ -498,7 +498,7 @@ def test_derived_files_are_recorded_and_caught_elsewhere(repo: Path, tmp_path: P
     (baked / "Arena.unity").write_text("%YAML 1.1\ngenerated scene from vendor prefabs\n")
     (baked / "Arena.unity.meta").write_text(f"fileFormatVersion: 2\nguid: {'e' * 32}\n")
     (baked / "readme-copy.md").write_bytes(b"hello\r\n")  # a copy of the tracked README.md
-    assert derived.refresh(repo, cache / "derived-record.json") == 3  # the copy isn't derived
+    assert len(derived.refresh(repo, cache / "derived-record.json")) == 3  # the copy isn't derived
     add(repo, "docs/arena-copy.unity", (baked / "Arena.unity").read_bytes())
     add(repo, "demo3d/Assets/Demo3D/Arena.unity.meta", (baked / "Arena.unity.meta").read_bytes())
     add(repo, "notes/song.bin", b"ID3 the NCS song")
@@ -508,7 +508,8 @@ def test_derived_files_are_recorded_and_caught_elsewhere(repo: Path, tmp_path: P
                     if p == "demo3d/Assets/Demo3D/Arena.unity.meta"]
     assert any(r.startswith("GUID eeee") for r in meta_reasons)
     assert "song source" in fails["notes/song.bin"]
-    assert derived.refresh(repo, cache / "derived-record.json") == 0  # add-only, no duplicates
+    derived.refresh(repo, cache / "derived-record.json")
+    assert len(json.loads((cache / "derived-record.json").read_text())["files"]) == 3  # no duplicates
 
 
 def test_demo2d_derived_files_are_recorded_and_caught_elsewhere(
@@ -525,7 +526,7 @@ def test_demo2d_derived_files_are_recorded_and_caught_elsewhere(
     baked.mkdir(parents=True)
     (baked / "skeleton.json").write_text('{"frames": ["run_0", "run_1"], "from": "vendor PNGs"}\n')
     (baked / "skeleton.json.meta").write_text(f"fileFormatVersion: 2\nguid: {'d' * 32}\n")
-    assert derived.refresh(repo, cache / "derived-record.json") == 2
+    assert len(derived.refresh(repo, cache / "derived-record.json")) == 2
     add(repo, "docs/frames.json", (baked / "skeleton.json").read_bytes())
     add(repo, "demo2d/Assets/Demo2D/Data/atlas.json.meta", (baked / "skeleton.json.meta").read_bytes())
     fails = failures(guard.run("index", repo, None, None, None))
@@ -534,24 +535,60 @@ def test_demo2d_derived_files_are_recorded_and_caught_elsewhere(
     assert any(r.startswith(f"GUID {'d' * 32}") for r in meta)
 
 
-def test_vendor_files_unity_rewrote_are_recorded_and_caught_elsewhere(
-        repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Unity re-serializes demo2d's binary .anim clips as YAML on import: new bytes, no GUID."""
-    from demo3d_tools import derived
-
+def derived_cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     cache = tmp_path / "cache"
     cache.mkdir()
     (cache / "sync-record.json").write_text(json.dumps({"version": 1, "files": []}))
     (cache / "roots.json").write_text(json.dumps(
         {**no_vendor_roots(tmp_path), "song": str(tmp_path / "no-song.mp3")}))
     monkeypatch.setenv("DEMO3D_CACHE", str(cache))
+    return cache
+
+
+# Unity re-serializes demo2d's binary .anim clips as YAML on import: new bytes, no GUID.
+REWRITTEN_CLIP = b"%YAML 1.1\nAnimationClip:\n  m_Name: death\n"
+
+
+def test_vendor_files_unity_rewrote_are_caught_elsewhere(
+        repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    derived_cache(tmp_path, monkeypatch)
     clips = repo / "demo2d" / "Assets" / "Vendor" / "Skeleton" / "skeleton"
     clips.mkdir(parents=True)
-    (clips / "death.anim").write_text("%YAML 1.1\nAnimationClip:\n  m_Name: death\n")
-    assert derived.refresh(repo, cache / "derived-record.json") == 1
-    add(repo, "demo2d/Assets/Demo2D/Art/death.anim", (clips / "death.anim").read_bytes())
+    (clips / "death.anim").write_bytes(REWRITTEN_CLIP)
+    add(repo, "demo2d/Assets/Demo2D/Art/death.anim", REWRITTEN_CLIP)
     fails = failures(guard.run("index", repo, None, None, None))
     assert "derived: demo2d/Assets/Vendor/Skeleton/skeleton/death.anim" in fails["demo2d/Assets/Demo2D/Art/death.anim"]
+
+
+def test_another_worktrees_rewritten_vendor_files_are_caught(
+        repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Unity rewrote a clip in a worktree whose guard never ran; it is copied into this one."""
+    derived_cache(tmp_path, monkeypatch)
+    other = tmp_path / "other"
+    git(repo, "worktree", "add", "-q", "--detach", str(other))
+    clips = other / "demo2d" / "Assets" / "Vendor" / "Skeleton"
+    clips.mkdir(parents=True)
+    (clips / "death.anim").write_bytes(REWRITTEN_CLIP)
+    add(repo, "demo2d/Assets/Demo2D/Art/death.anim", REWRITTEN_CLIP)
+    assert "derived: demo2d/Assets/Vendor/Skeleton/death.anim (worktree other)" in failures(
+        guard.run("index", repo, None, None, None))["demo2d/Assets/Demo2D/Art/death.anim"]
+    # Removed since, the worktree's files stay in the record.
+    git(repo, "worktree", "remove", "--force", str(other))
+    assert "demo2d/Assets/Demo2D/Art/death.anim" in failures(guard.run("index", repo, None, None, None))
+
+
+def test_derived_files_are_caught_when_a_concurrent_check_replaced_the_record(
+        repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Two checks refresh at once: the last to write wins, and its record lacks the other's files."""
+    from demo3d_tools import derived
+
+    derived_cache(tmp_path, monkeypatch)
+    monkeypatch.setattr(derived, "_write_json", lambda path, data: None)  # the other's write won
+    baked = repo / "demo2d" / "Assets" / "Baked"
+    baked.mkdir(parents=True)
+    (baked / "atlas.json").write_text('{"frames": "from vendor PNGs"}\n')
+    add(repo, "docs/atlas.json", (baked / "atlas.json").read_bytes())
+    assert "docs/atlas.json" in failures(guard.run("index", repo, None, None, None))
 
 
 def test_launcher_without_tools_refuses_demo_changes_only(repo: Path, tmp_path: Path) -> None:

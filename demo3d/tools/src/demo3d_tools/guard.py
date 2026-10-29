@@ -20,8 +20,9 @@ one of the machine's asset folders (a top-level folder of `unity_assets` or `pix
 `.meta` GUID it lacks, such as a pack copied in, or a root added, since the last sync).
 
 Besides the sync record, the guard reads the derived record: the hashes and GUIDs of every file
-in this worktree's demos' Assets/Baked/ and Assets/Vendor/ (where Unity may rewrite a vendor file
-on import) and of the song's source, which it refreshes before each check. Derived files that are
+in the demos' Assets/Baked/ and Assets/Vendor/ (where Unity may rewrite a vendor file on import)
+of every worktree of this clone, now or since the record began, and of the song's source. It
+refreshes the record before each check (derived.py). Derived files that are
 edited copies with fresh GUIDs and new bytes can't be recognized; the binary rule and the
 gitignored folders are the defense there.
 """
@@ -87,9 +88,12 @@ class Record:
         extra = set(raw) - RECORD_KEYS
         if extra or not isinstance(raw.get("files"), list):
             raise RecordError(f"{label} at {path}: unexpected keys {sorted(extra)} or no file list")
-        for i, f in enumerate(raw["files"]):
+        self.add_entries(raw["files"], f"{label} at {path}")
+
+    def add_entries(self, files: list, label: str) -> None:
+        for i, f in enumerate(files):
             if not isinstance(f, dict) or not f.get("sha256") or not f.get("sha256Lf"):
-                raise RecordError(f"{label} at {path}: entry {i} lacks sha256 or sha256Lf")
+                raise RecordError(f"{label}: entry {i} lacks sha256 or sha256Lf")
             origin = f.get("origin") or f.get("path", "?")
             if f.get("guid"):
                 self.guids[f["guid"].lower()] = origin
@@ -448,11 +452,14 @@ def run(mode: str, repo: Path, rev: str | None, remote: str | None, record_file:
     derived_at = derived_file or (record_at.parent / "derived-record.json")
     res = Result()
     try:
+        current: list[dict] = []
         if refresh and record_file is None:
             from . import derived
 
-            derived.refresh(repo, derived_at)
+            current = derived.refresh(repo, derived_at)
         record = Record.load(record_at, derived_at)
+        if record is not None:  # another check may have replaced the file without them
+            record.add_entries(current, "derived files")
         if mode == "tree":
             entries = tree_entries(repo, rev or "HEAD")
         elif mode == "index":
