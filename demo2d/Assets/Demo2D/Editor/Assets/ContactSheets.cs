@@ -17,7 +17,7 @@ namespace Demo2D.EditorTools.Assets
     /// </summary>
     public static class ContactSheets
     {
-        const int RowH = 56, Gap = 2, LabelW = 200, Scale = 2;
+        const int RowH = 48, Gap = 2, LabelW = 200, Scale = 2;
         static readonly Color32 Background = new Color32(34, 36, 44, 255), Cell = new Color32(52, 56, 66, 255);
         static readonly Color32 Label = new Color32(230, 230, 230, 255), Used = new Color32(255, 214, 120, 255);
 
@@ -65,7 +65,7 @@ namespace Demo2D.EditorTools.Assets
                 var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
                 tex.SetPixels32(px);
                 tex.Apply();
-                RenderTag.Save(tex, path, "PX2 contact sheet " + ch.Name, 80);
+                RenderTag.Save(tex, path, "PX2 contact sheet " + ch.Name, 72);
                 UnityEngine.Object.DestroyImmediate(tex);
             }
             finally

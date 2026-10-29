@@ -92,17 +92,17 @@ namespace Demo2D.EditorTools.Assets
             AssetDatabase.LoadAssetAtPath<Material>(ProjectSetup.SpriteLitPath)
             ?? throw new InvalidOperationException("PixelShots: no " + ProjectSetup.SpriteLitPath);
 
-        /// <summary>Copies a region of a bottom-up buffer, scaled up by a whole factor (nearest).</summary>
-        public static Texture2D Crop(Color32[] px, int width, RectInt r, int scale = 1)
+        /// <summary>Copies a region of a bottom-up buffer into an opaque texture.</summary>
+        public static Texture2D Crop(Color32[] px, int width, RectInt r)
         {
-            var tex = new Texture2D(r.width * scale, r.height * scale, TextureFormat.RGBA32, false);
-            var o = new Color32[tex.width * tex.height];
-            for (int y = 0; y < tex.height; y++)
-            for (int x = 0; x < tex.width; x++)
+            var tex = new Texture2D(r.width, r.height, TextureFormat.RGBA32, false);
+            var o = new Color32[r.width * r.height];
+            for (int y = 0; y < r.height; y++)
+            for (int x = 0; x < r.width; x++)
             {
-                var c = px[(r.y + y / scale) * width + r.x + x / scale];
+                var c = px[(r.y + y) * width + r.x + x];
                 c.a = 255;
-                o[y * tex.width + x] = c;
+                o[y * r.width + x] = c;
             }
             tex.SetPixels32(o);
             tex.Apply();

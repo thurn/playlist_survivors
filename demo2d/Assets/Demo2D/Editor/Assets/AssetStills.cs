@@ -43,11 +43,11 @@ namespace Demo2D.EditorTools.Assets
                     PixelText.Draw(labelled, w, h, r.x * 32 + 4, (map.H - r.y) * 32 - 4, name, label, 2);
                 Save(PixelShots.Shrink(labelled, w, h, 2), Path.Combine(dir, "tile-test-map.jpg"), "PX2 tile test map (half size)");
 
-                // The transition sets at the game's 2× scale, by day and at night with a few lights.
+                // The transition sets in a 960×540 view, by day and at night with a few lights.
                 var sets = map.Regions.Skip(catalog.Stamps.Count).Select(r => r.rect).ToList();
                 var bounds = new RectInt(sets.Min(r => r.xMin), sets.Min(r => r.yMin), 0, 0);
                 var crop = new RectInt(bounds.x * 32, (map.H - bounds.y) * 32 - 540, 960, 540);
-                Save(PixelShots.Crop(px, w, crop, 2), Path.Combine(dir, "tile-test-map-day.jpg"), "PX2 tile test map, transitions");
+                Save(PixelShots.Crop(px, w, crop), Path.Combine(dir, "tile-test-map-day.jpg"), "PX2 tile test map, transitions");
                 Object.DestroyImmediate(day.gameObject);
                 PixelShots.GlobalLight(root.transform, true);
                 var rng = new System.Random(3);
@@ -58,7 +58,7 @@ namespace Demo2D.EditorTools.Assets
                     PixelShots.PointLight(root.transform, at, c, 5f, 1.3f);
                 }
                 var night = PixelShots.Render(world, PixelShots.NightSky, hdr: true);
-                Save(PixelShots.Crop(night, w, crop, 2), Path.Combine(dir, "tile-test-map-night.jpg"), "PX2 tile test map, transitions at night");
+                Save(PixelShots.Crop(night, w, crop), Path.Combine(dir, "tile-test-map-night.jpg"), "PX2 tile test map, transitions at night");
             }
             finally
             {

@@ -164,7 +164,7 @@ namespace Demo2D.EditorTools.Assets
         /// <summary>
         /// One still per kind: the pool's prefabs in columns (5 m each); in rows, as authored then
         /// laid flat, each at the gallery's times; over forest ground at night with a soft light
-        /// under each, the knight beside each for scale. Drawn at 960×544 grid pixels, kept at 2×.
+        /// under each, the knight beside each for scale. Kept at the grid's 960×544 pixels.
         /// </summary>
         public static void Write(string dir)
         {
@@ -197,10 +197,10 @@ namespace Demo2D.EditorTools.Assets
                     var px = PixelShots.Render(world, PixelShots.NightSky, hdr: true);
                     int w = world.width * PixelShots.PixelsPerMetre, hgt = world.height * PixelShots.PixelsPerMetre;
                     var white = new Color32(235, 235, 235, 255);
-                    PixelText.Draw(px, w, hgt, 4, hgt - 4, $"px2 cfxr gallery: {kv.Key}. rows: as authored at {Times[0]} s, {Times[1]} s; laid flat at {Times[0]} s, {Times[1]} s", white, 2);
+                    PixelText.Draw(px, w, hgt, 3, hgt - 3, $"px2 cfxr gallery: {kv.Key}. rows: as authored at {Times[0]} s, {Times[1]} s; laid flat at {Times[0]} s, {Times[1]} s", white, 1);
                     for (int i = 0; i < kv.Value.Count; i++)
-                        PixelText.Draw(px, w, hgt, i * 160 + 4, hgt - 24, $"{i + 1} {Short(kv.Value[i])}", white, 1);
-                    var tex = PixelShots.Crop(px, w, new RectInt(0, 0, w, hgt), 2);
+                        PixelText.Draw(px, w, hgt, i * 160 + 3, hgt - 12, $"{i + 1} {Short(kv.Value[i])}", white, 1);
+                    var tex = PixelShots.Crop(px, w, new RectInt(0, 0, w, hgt));
                     var path = Path.Combine(dir, $"cfxr-{kv.Key.Replace(' ', '-')}.jpg");
                     Runtime.RenderTag.Save(tex, path, "PX2 CFXR gallery " + kv.Key);
                     UnityEngine.Object.DestroyImmediate(tex);
