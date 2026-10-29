@@ -569,9 +569,11 @@ and this notes commit. `demo2d check --player` passes (the guard, dotnet, EditMo
   scene, which the timing spike's `--frame-timing` still uses).
 - **The client** (`Demo2D.Runtime.Playback`): `DemoMain` (starts itself in a player; the clock,
   music, click, stills, overlay), `SongPlayback` (the timeline from the baked `PlaybackData`, then
-  any song time drawn on request, shared with the tests), `SpriteEvaluator` (demo3d's
-  TimelineEvaluator for flipbooks: retimed attacks, hits and deaths from their onset, walks by
-  distance, the hero idling after a still beat, hit-stop, flash, the death's fade), `SpriteCrowd`,
+  any song time drawn on request, shared with the tests), `SpriteEvaluator` (the package's
+  `ClipSchedule`, which demo3d's TimelineEvaluator shares, drawn as flipbook frames: retimed
+  attacks, hits and deaths from their onset, walks by distance, the hero idling after a still
+  beat, hit-stop, flash, the death's fade; engine-free in `Demo2D.Choreography` since ps-tfn.2.3,
+  so its frame tests run under `dotnet test`), `SpriteCrowd`,
   `PixelPipeline`, `CharacterAtlas` (PX3's atlas JSON at runtime; SpriteBaker's `Sprite` now
   calls it). `SongClock`, `ClickTrack` and `CameraFeel` are demo3d's, copied (they live in
   demo3d's runtime assembly, which demo2d can't reference; CameraFeel's shake is now 2D).

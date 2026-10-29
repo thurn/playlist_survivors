@@ -1,0 +1,149 @@
+using System;
+using System.Numerics;
+using PS.Choreography;
+
+namespace Demo2D.Choreography
+{
+    /// <summary>
+    /// The 2D client's timeline evaluation (PX5): the shared <see cref="ClipSchedule"/> drawn as
+    /// flipbook frames. Every entity's state is a function of the timeline and the song time, so a
+    /// seek shows the same horde as a run from the start.
+    ///
+    /// - Position comes from the entity's segments. During a hero combo whose clip carries root
+    ///   motion, the sprite holds at the clip's start (the frames move it; PX3's notes).
+    /// - Each clip action shows the frame at its schedule's local time. Frames are frame starts
+    ///   (frame = ⌊time × rate⌋), so the impact frame shows from the impact.
+    /// - Between actions the entity walks, the walk's frame following the distance travelled (a
+    ///   cycle per stride), so feet don't slide; standing still freezes it. The hero idles once
+    ///   it hasn't moved for a beat.
+    /// - Sprites can't crossfade, so a new clip simply replaces the old.
+    /// - Facing is the art's right or a horizontal flip, chosen per segment from its yaw with
+    ///   hysteresis (a walk straight up or down keeps its side), precomputed so seeks agree.
+    /// </summary>
+    public sealed class SpriteEvaluator
+    {
+        /// <summary>A facing turns to the other side only past this much sideways (sin of the yaw).</summary>
+        public const float FlipHysteresis = 0.25f;
+        /// <summary>Snaps a clip time onto its frame: annotation times are rounded to the ms.</summary>
+        const double FrameEpsilon = 0.02;
+
+        readonly Timeline _tl;
+        readonly ClipLibrary _clips;
+        readonly ClipSchedule _schedule;
+        readonly int[] _frames;          // per annotation: its frame count
+        readonly float _rate;
+        readonly int[] _walk;            // per timeline type: its walk annotation
+        readonly int _heroWalk, _heroIdle;
+        readonly bool[] _left;           // per segment: faces left
+
+        public Timeline Timeline => _tl;
+        public ClipSchedule Schedule => _schedule;
+
+        public struct State
+        {
+            public Vector2 Position;     // the feet, metres
+            public int Clip;             // annotation index
+            public int Frame;
+            public bool FlipX;
+            public float Flash;          // 0..1 toward white
+            public float Alpha;          // 1 until a death's fade
+            public bool Dying;
+        }
+
+        /// <param name="frames">Each annotation's frame count (its atlas clip's).</param>
+        /// <param name="walk">Each timeline type's walk annotation.</param>
+        public SpriteEvaluator(Timeline timeline, ClipLibrary clips, int[] frames, float frameRate, int[] walk, int heroWalk, int heroIdle)
+        {
+            _tl = timeline;
+            _clips = clips;
+            _schedule = new ClipSchedule(timeline, clips, slowHeavyBlows: false);
+            _frames = frames;
+            _rate = frameRate;
+            _walk = walk;
+            _heroWalk = heroWalk;
+            _heroIdle = heroIdle;
+            _left = new bool[timeline.Segments.Length];
+            for (int e = 0; e < timeline.EntityCount; e++)
+            {
+                var segs = timeline.SegmentsOf(e);
+                bool left = segs.Count > 0 && Math.Sin(segs.Array[segs.Offset].FacingFrom) < 0;
+                for (int k = 0; k < segs.Count; k++)
+                {
+                    float side = (float)Math.Sin(segs.Array[segs.Offset + k].FacingTo);
+                    if (side < -FlipHysteresis) left = true;
+                    else if (side > FlipHysteresis) left = false;
+                    _left[segs.Offset + k] = left;
+                }
+            }
+        }
+
+        /// <summary>The segment holding at t (index into Segments), or -1 with none.</summary>
+        int SegmentAt(int e, double t)
+        {
+            int lo = _tl.SegmentStart[e], hi = _tl.SegmentStart[e + 1] - 1;
+            if (hi < lo || t < _tl.Segments[lo].T0) return hi < lo ? -1 : lo;
+            while (lo < hi)
+            {
+                int mid = (lo + hi + 1) >> 1;
+                if (_tl.Segments[mid].T0 <= t) lo = mid; else hi = mid - 1;
+            }
+            return lo;
+        }
+
+        /// <summary>The frame of annotation <paramref name="clip"/> showing <paramref name="time"/> s into it.</summary>
+        public int FrameAt(int clip, double time) =>
+            Math.Clamp((int)Math.Floor(time * _rate + FrameEpsilon), 0, _frames[clip] - 1);
+
+        /// <summary>A cycle's frame (walks and idles repeat their first frame as their last).</summary>
+        int CycleFrame(int clip, double phase)
+        {
+            int cycle = Math.Max(1, _frames[clip] - 1);
+            return (int)Math.Floor((phase - Math.Floor(phase)) * cycle + 1e-6) % cycle;
+        }
+
+        public State Evaluate(int e, double t)
+        {
+            var info = _tl.Entities[e];
+            bool hero = info.Kind == EntityKind.Hero;
+            var st = new State { Alpha = 1f };
+            var p = _tl.PositionAt(e, t);
+            if (info.Kind == EntityKind.Projectile)
+            {
+                st.Position = p;
+                st.Clip = -1;
+                return st;
+            }
+            int seg = SegmentAt(e, t);
+            st.FlipX = seg >= 0 && _left[seg];
+
+            int act = _schedule.ActiveAction(e, t, out _);
+            if (act >= 0)
+            {
+                var a = _tl.Actions[act];
+                st.Clip = a.Clip;
+                st.Frame = FrameAt(a.Clip, _schedule.LocalTime(act, t));
+                if (hero && a.Kind == ActionKind.Attack && _clips[a.Clip].RootMotionM > 0)
+                    p = _tl.PositionAt(e, _schedule.Start(act));
+            }
+            else if (hero && _heroIdle >= 0 && _schedule.DistanceAt(e, t) - _schedule.DistanceAt(e, t - _schedule.BeatLength(t)) < 0.05f)
+            {
+                st.Clip = _heroIdle;
+                st.Frame = CycleFrame(_heroIdle, t * _rate / Math.Max(1, _frames[_heroIdle] - 1));
+            }
+            else
+            {
+                int walk = hero ? _heroWalk : _walk[info.Type];
+                float stride = _clips[walk].StrideM;
+                st.Clip = walk;
+                st.Frame = stride > 0 ? CycleFrame(walk, _schedule.DistanceAt(e, t) / stride) : 0;
+            }
+            st.Position = p;
+
+            var fb = _schedule.FeedbackAt(e, t);
+            st.Flash = fb.Flash;
+            st.Alpha = 1f - fb.Fade;
+            st.Dying = fb.Dying;
+            return st;
+        }
+    }
+}

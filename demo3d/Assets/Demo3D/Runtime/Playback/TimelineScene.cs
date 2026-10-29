@@ -266,7 +266,7 @@ namespace Demo3D.Runtime.Playback
             {
                 Position = st.Position, Yaw = st.Yaw,
                 ClipA = Clip(st.A), TimeA = st.A.Time, ClipB = Clip(st.B), TimeB = st.B.Time, Blend = st.Blend,
-                Scale = 0.92f + 0.16f * TimelineEvaluator.Jitter(seed, 1),
+                Scale = 0.92f + 0.16f * ClipSchedule.Jitter(seed, 1),
                 HitFlash = st.HitFlash, Dissolve = st.Dissolve,
                 Flags = (uint)(st.Dying ? CrowdFlags.Dying : CrowdFlags.Alive),
             };

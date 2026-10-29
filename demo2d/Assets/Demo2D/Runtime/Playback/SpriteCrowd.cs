@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Demo2D.Choreography;
 using PS.Choreography;
 using UnityEngine;
 
@@ -79,7 +80,7 @@ namespace Demo2D.Runtime.Playback
                 if (i == _bodies.Count) Add();
                 var body = _bodies[i];
                 var shadow = _shadows[i];
-                var feet = Snap(st.Position);
+                var feet = Snap(new Vector2(st.Position.X, st.Position.Y));
                 if (i == _sortKeys.Length)
                 {
                     Array.Resize(ref _sortKeys, i * 2);
@@ -105,7 +106,7 @@ namespace Demo2D.Runtime.Playback
                 var frames = _clipSprites[st.Clip];
                 body.sprite = frames[Mathf.Min(st.Frame, frames.Length - 1)];
                 body.flipX = st.FlipX;
-                float tint = info.Kind == EntityKind.Hero ? 1f : 0.88f + 0.12f * SpriteEvaluator.Jitter(info.Seed, 2);
+                float tint = info.Kind == EntityKind.Hero ? 1f : 0.88f + 0.12f * ClipSchedule.Jitter(info.Seed, 2);
                 body.color = new Color(tint, tint, tint, st.Alpha);
                 body.sharedMaterial = _flash[Mathf.Clamp(Mathf.RoundToInt(st.Flash * FlashLevels), 0, FlashLevels)];
                 body.transform.localPosition = feet;

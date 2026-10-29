@@ -32,7 +32,7 @@ namespace Demo3D.Tests
             {
                 var a = _tl.Actions[i];
                 // A hit or death on the same beat interrupts an attack, which is then not drawn.
-                if (a.Kind != ActionKind.Attack || a.Clip < 0 || _eval.Interrupted(i)) continue;
+                if (a.Kind != ActionKind.Attack || a.Clip < 0 || _eval.Schedule.Interrupted(i)) continue;
                 var ann = _data.Clips[a.Clip];
                 var st = _eval.Evaluate(a.Entity, a.Impact, 1f, 1f, 0f);
                 // At the impact the playing clip (slot A) is the attack, at its annotated impact.
@@ -50,7 +50,7 @@ namespace Demo3D.Tests
             for (int i = 0; i < _tl.Actions.Length; i++)
             {
                 var a = _tl.Actions[i];
-                if ((a.Kind != ActionKind.Hit && a.Kind != ActionKind.Death) || a.Clip < 0 || _eval.Interrupted(i)) continue;
+                if ((a.Kind != ActionKind.Hit && a.Kind != ActionKind.Death) || a.Clip < 0 || _eval.Schedule.Interrupted(i)) continue;
                 var st = _eval.Evaluate(a.Entity, a.Impact + 0.001, 1f, 1f, 0f);
                 Assert.That(st.A.Clip, Is.EqualTo(a.Clip));
                 Assert.That(st.HitFlash, Is.GreaterThan(0.9f));
@@ -66,7 +66,7 @@ namespace Demo3D.Tests
             foreach (var a in _tl.Actions)
             {
                 if (a.Kind != ActionKind.Death) continue;
-                double beat = _eval.BeatLength(a.Impact);
+                double beat = _eval.Schedule.BeatLength(a.Impact);
                 Assert.That(_eval.Evaluate(a.Entity, a.Impact + 0.01, 1f, 1f, 0f).Dissolve, Is.EqualTo(0f));
                 var late = _eval.Evaluate(a.Entity, System.Math.Min(_tl.Entities[a.Entity].Despawn - 1e-3, a.Impact + 10), 1f, 1f, 0f);
                 Assert.That(late.Dying, Is.True);
@@ -98,23 +98,6 @@ namespace Demo3D.Tests
         }
 
         [Test]
-        public void HitStopHoldsThenCatchesUpWithoutAJump([Values(0f, 0.6f)] float rate)
-        {
-            const double impact = 10.0;
-            double prev = double.NegativeInfinity;
-            for (double t = impact - 0.1; t < impact + 0.5; t += 0.001)
-            {
-                double local = TimelineEvaluator.HoldThenCatchUp(t, impact, rate);
-                Assert.That(local, Is.GreaterThanOrEqualTo(prev - 1e-9), "never runs backwards");
-                if (prev > double.NegativeInfinity)
-                    Assert.That(local - prev, Is.LessThan(0.003), $"no jump at {t}");
-                prev = local;
-            }
-            Assert.That(TimelineEvaluator.HoldThenCatchUp(impact, impact, rate), Is.EqualTo(impact));
-            Assert.That(TimelineEvaluator.HoldThenCatchUp(impact + 0.3, impact, rate), Is.EqualTo(impact + 0.3).Within(1e-9));
-        }
-
-        [Test]
         public void TicksFlashDimmerAndShorterThanHits()
         {
             int ticks = 0;
@@ -126,7 +109,7 @@ namespace Demo3D.Tests
                     if (b.Kind != ActionKind.Tick && b.Kind != ActionKind.Spawn && System.Math.Abs(b.Impact - a.Impact) < 0.13) alsoStruck = true;
                 if (alsoStruck) continue;
                 var st = _eval.Evaluate(a.Entity, a.Impact + 0.001, 1f, 1f, 0f);
-                Assert.That(st.HitFlash, Is.LessThanOrEqualTo(TimelineEvaluator.TickFlash + 1e-4f));
+                Assert.That(st.HitFlash, Is.LessThanOrEqualTo(ClipSchedule.TickFlash + 1e-4f));
                 ticks++;
             }
             Assert.Pass($"{ticks} lone ticks checked");
@@ -169,7 +152,7 @@ namespace Demo3D.Tests
                 var segs = _tl.SegmentsOf(e);
                 if (segs.Count < 3) continue;
                 var s = segs.Array[segs.Offset + 1];
-                float d0 = _eval.DistanceAt(e, s.T0), d1 = _eval.DistanceAt(e, s.T1);
+                float d0 = _eval.Schedule.DistanceAt(e, s.T0), d1 = _eval.Schedule.DistanceAt(e, s.T1);
                 Assert.That(d1 - d0, Is.EqualTo(System.Numerics.Vector2.Distance(s.From, s.To)).Within(0.02f));
                 return;
             }

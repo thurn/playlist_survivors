@@ -394,7 +394,7 @@ namespace Demo3D.Runtime.Playback
                 ClipA = a, TimeA = Pose(st.A.Time),
                 ClipB = b, TimeB = Pose(st.B.Time),
                 Blend = st.Blend,
-                Scale = 0.92f + 0.16f * TimelineEvaluator.Jitter(seed, 1),
+                Scale = 0.92f + 0.16f * ClipSchedule.Jitter(seed, 1),
                 HitFlash = st.HitFlash,
                 Dissolve = st.Dissolve,
                 Tint = 0,

@@ -374,6 +374,17 @@ start = impact - annotatedImpact / speed
 - **Two animation slots** play per monster: the current clip and the one it
   is leaving. Locomotion counts as a clip. A change crossfades over 0.12 s.
   If a third change starts mid-crossfade, the oldest clip is dropped.
+- **Both demos' clients share one schedule,** the package's `ClipSchedule`:
+  each clip action's retimed start, end and speed, the clip playing at a song
+  time, the walked distance, the hit-stop, the flashes and the death's fade.
+  Each client keeps only its presentation (demo3d's slots, demo2d's frames).
+  Where the clients' copies once differed, it chose:
+  - **A killing blow shows the death, not the flinch.** The sim gives a hit
+    and a death at one impact only when two blows land on one tick; the hit
+    plays no clip.
+  - **Clips that start together play in action order** (a stable sort).
+  - **The hero's heavy blows slow to 0.6×** only when the client asks for it
+    (demo3d does; demo2d's PX8 will).
 
 ## Time and Synchronization
 
