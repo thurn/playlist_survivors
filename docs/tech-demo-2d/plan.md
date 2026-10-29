@@ -228,6 +228,8 @@ that consumes the result removes the row.
 | What | How | Added by | Consumed by |
 |---|---|---|---|
 | Does a windowed player report a GPU frame time every frame? (A batch-mode one reports it on 3% of frames.) | After `demo2d build`, from the worktree's root: `open -n demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app --args -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --frame-timing "$PWD/captures/px1-timing/windowed-400.json" --spike-sprites 400 --seconds 10`; the window closes itself after 12 s. In the JSON, compare `ftm.gpuFrameTimeMs`'s `nonzero` with `frames`. | PX1 | PX10 |
+| Are PX3's clip annotations right? Each attack's and slash's impact on the blow, each hit's and death's end where it settles or rests, the slam's on the landing, and the walks' strides plausible for their gait (two are fallbacks: the lava beast and the boss have no planted foot). | Look over `demo2d/evidence/px3/annotations-*.jpg` (impact framed red, end blue); the numbers and methods are in `demo2d/Assets/Demo2D/Data/clip-annotations.json`. To change a clip or a proposal, edit the entry's `clip` and re-run `demo2d unity AnnotateClips`, or note the frame here. | PX3 | PX5 |
+| Is every type recognizable at its game size, and the hero findable in a crowd? PX3 found each type distinct, but the hero findable only from his place and a warm light, and the ghoul, zombie warrior, ice skull and blood mage close in colour at night. | Look at `demo2d/evidence/px3/lineup.png` and `crowd.png` (2×, as at 1080p). | PX3 | PX9 |
 
 ## Task Notes
 
@@ -442,7 +444,56 @@ this notes commit. `demo2d check --player` passes (the guard, dotnet, cold EditM
 
 ### PX3
 
-Not started.
+Done (bead ps-tfn.1.6). Commits: `e01e5dd9` (the baker, annotator, stills and tests), `af2b3142`
+(each clip's anchor in the library), and this notes commit. `demo2d test` passes (74 of 74, 6 of
+them PX3's); the choreography's dotnet tests pass on the measured library (18 of 18).
+[Evidence](../../demo2d/evidence/px3/README.md).
+
+- **Run:** from a worktree's root, after `demo2d setup`:
+
+  ```
+  uv run --project demo3d/tools demo2d unity BakeSprites      # Assets/Baked/Characters: an atlas and its JSON per type (31 s)
+  uv run --project demo3d/tools demo2d unity AnnotateClips -out "$PWD/demo2d/evidence/px3"   # also rewrites Data/clip-annotations.json
+  uv run --project demo3d/tools demo2d unity SpriteStills -out "$PWD/demo2d/evidence/px3"    # lineup and crowd, from the bake
+  ```
+
+- **The baker** (`Demo2D.EditorTools.Assets.SpriteBaker`): one scale per type (its walk's first
+  frame stands `gameHeightPx`); each clip anchored at the walk's feet by matching silhouettes
+  (43 of 44; the knight's shield-up bash uses its own feet); an exact area downsample onto grid
+  pixels placed around the feet, alpha snapped at half coverage; per-frame crops shelf-packed into
+  one point-filtered, uncompressed atlas per type (448×360 to 960×956, the boss 1856×1900; 7.6 MB
+  in all). `Baked/Characters/<type>.json` gives each clip's size and pivot and each frame's
+  `[x, y, w, h, ox, oy]` (atlas rectangle, offset in the clip's frame). Setup doesn't bake, as
+  with demo3d's Unity bakers: run `BakeSprites` before anything draws characters.
+- **The clip library,** `Data/clip-annotations.json` (`ClipAnnotator`), the core's annotation
+  format plus `frames`, `impactFrame`, `endFrame`, `pivotPx`, `sizePx`, `anchor` and `method`.
+  Impacts and ends from the motion between frames (strikes at the first peak within 85% of the
+  largest; the slam on landing; hits and deaths at the first large motion, ending as they settle);
+  strides from the planted foot's slide over a cycle (0.34 to 1.78 m; the lava beast and the boss
+  have none and take two gait steps); the hero's root motion from the feet's travel (0.25 m for the
+  slam, 0 otherwise). It annotates the clips its own file names, so choosing another clip is an
+  edit and a re-run; a test fails if the file drifts from a fresh annotation.
+- **Choices:** the skeleton attacks with `skill_3` (`skill_1` lunges 2 m and ends lying in an
+  explosion), the skeleton mage casts with `skill_2` (`skill_1` ends collapsed); the hero is 66 px
+  (60 was hardly taller than the grunts); the other heights stand as PX4 set them.
+- **Lineup and readability:** every type at game size on the forest ground at night, and the hero
+  in a crowd of about 130 at the base view. Each type reads by silhouette and colour; the night pulls four
+  grunts toward one dark teal; the hero is findable only from his place and a warm light, so PX7
+  or PX9 should mark him with light. Both judgements are in
+  [Pending on the operator](#pending-on-the-operator).
+- **For PX5 onward:**
+  - **Frames carry their own motion.** One anchor per clip, so a lunge or fall moves within the
+    frames. The sim moves the hero `rootMotionM` over a combo too, so the client holds the
+    sprite at the segment's start for combo clips (0.25 m, the slam's, is the only nonzero one).
+  - **Times are frame starts:** `impact = impactFrame / 15`; a clip of n frames lasts n/15 s.
+    Walk and idle cycles are n − 1 frames (the last repeats the first).
+  - **The art faces right** in every pack: flip for left.
+  - **Uses' clips:** the hero's spin reuses `skill_1` (same impact as slashL) and the bash is
+    `hit_defensive` (a shield block, impact on frame 1); PX8 may pick others.
+- **Self-review:** re-read the diff against `origin/staging`. Outside demo2d's editor code, tests,
+  data and evidence, the only change is the hero's `gameHeightPx` (the sim ignores it). New
+  tracked files are our code, JSON, `.meta`s Unity wrote and tagged stills; the guard passes the
+  tree (5,569 files). Unity's rewrites of two ProjectSettings files were discarded, as in PX2.
 
 ### PX4
 
