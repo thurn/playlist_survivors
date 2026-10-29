@@ -266,6 +266,17 @@ Done (bead ps-tfn.1.1). Commits: `2671f867` (the move), and this notes commit.
   way (`file:../../unity-packages/com.playlistsurvivors.choreography`). Its
   tests still live in demo3d (`Tests/Choreography/`), since they run on
   demo3d's data.
+- **Review** (Warden, bead ps-tfn.1.2): no problems confirmed, no code
+  changed. Re-ran on the staging tip `3187ee6f`: dotnet 121 passed and the
+  song's dump is still `09945e3b…`; nothing under the package or demo3d's
+  Unity project changed since PX0, so its EditMode, build and stills
+  evidence stands. Checked: the package names no demo3d type or file (only
+  shared vocabulary such as the default `skeleton` mix); the old core
+  asmdef's GUID moved to `PS.Choreography.asmdef`, and no asmdef references
+  by GUID; check-fast's dotnet filter covers the package, and slow CI runs
+  every section. Left alone: the package has no tests of its own (they run
+  on demo3d's data, and fire on package changes), and the unused
+  `changes_demo3d` in `scripts/lib/changes.sh` does not list the package.
 
 ### PX1
 
