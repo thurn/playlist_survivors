@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using Demo3D.Choreography;
 using Demo3D.Runtime.Crowd;
+using Demo3D.Runtime.Effects;
 using Unity.Collections;
 using UnityEngine;
 using ChoreoRoster = Demo3D.Choreography.Roster;
@@ -28,6 +29,12 @@ namespace Demo3D.Runtime.Playback
         CaptureTool _capture;
         RosterAssets _roster;
         DemoOverlay _overlay;
+        Demo3D.Runtime.Arena.ArenaRuntime _arena;
+        EffectSystem _fx;
+        EffectDriver _fxDriver;
+        double _fxLast = double.NaN;
+        CameraFeel _feel;
+        SoundScheduler _sounds;
 
         // Per timeline type: the crowd's type index, walk clip and roster asset data.
         int[] _crowdType;
@@ -52,7 +59,7 @@ namespace Demo3D.Runtime.Playback
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void AutoStart()
         {
-            if (Application.isEditor || Args.Has("--frame-probe") || Args.Has("--bench") || Args.Has("--crowd-bench") || Args.Has("--no-demo")) return;
+            if (Application.isEditor || Args.Has("--frame-probe") || Args.Has("--bench") || Args.Has("--crowd-bench") || Args.Has("--no-demo") || Args.Has("--effect-gallery")) return;
             new GameObject("DemoMain").AddComponent<DemoMain>();
         }
 
@@ -62,9 +69,23 @@ namespace Demo3D.Runtime.Playback
             if (Application.isBatchMode && (Args.Has("--capture-stills") || Args.Has("--capture-video")))
                 Debug.LogError("DemoMain: captures need a windowed player; a batch-mode player draws no frames");
             _flags = DevFlags.FromCommandLine();
+            Cuts.Active = Cuts.FromCommandLine();
+            Debug.Log($"DemoMain: cuts {Cuts.Active} (--cuts; TD11)");
             QualitySettings.vSyncCount = _flags.FixedTime ? 0 : 1;
             Application.targetFrameRate = -1;
-            BenchEnvironment.Build();
+            // The empty boot scene's default camera and light would draw and light the frame too.
+            foreach (var c in FindObjectsByType<Camera>(FindObjectsInactive.Include)) Destroy(c.gameObject);
+            foreach (var l in FindObjectsByType<Light>(FindObjectsInactive.Include)) Destroy(l.gameObject);
+            _rig = new GameCameraRig();
+            // The arena (TD9) when it is baked into the build, else TD4's flat bench ground.
+            if (_flags.Arena != "off" && Demo3D.Runtime.Arena.ArenaRuntime.Available(_flags.Arena, _flags.Density))
+                _arena = Demo3D.Runtime.Arena.ArenaRuntime.Load(_flags.Arena, _flags.Density, _rig.Camera, transform);
+            else
+            {
+                if (_flags.Arena != "off")
+                    Debug.LogWarning($"DemoMain: no arena for --arena {_flags.Arena} --density {_flags.Density} (baked: {Demo3D.Runtime.Arena.ArenaRuntime.Describe()}); flat ground");
+                BenchEnvironment.Build();
+            }
             _roster = RosterAssets.Load();
             var data = PlaybackData.Load();
             var level = LevelScript.Parse(data.level.text);
@@ -91,8 +112,8 @@ namespace Demo3D.Runtime.Playback
             if (_crowd is BoneTextureCrowd bone) bone.Clock = () => (float)SongTime; // deterministic LOD crossfades
             _heroRenderer = new StockCrowd();
             _heroRenderer.Initialize(new[] { _hero.id }, 1);
-            _rig = new GameCameraRig();
             ApplyAntiAliasing(_flags.Aa, _rig.Camera);
+            StartEffects();
             _overlay = _flags.Overlay ? gameObject.AddComponent<DemoOverlay>() : null;
             if (_overlay != null) _overlay.Main = this;
 
@@ -114,6 +135,27 @@ namespace Demo3D.Runtime.Playback
                 clickClip = ClickTrack.Build(_tl.Map);
             }
             _clock.Start(_flags.Scene == "song" ? music : null, data.music, 0.5, click, clickClip);
+            _feel = _tl.Map != null ? new CameraFeel(_tl) : null;
+            if (_flags.DumpSounds != null) DumpSounds(_flags.DumpSounds);
+            if (!_flags.FixedTime && _flags.Scene == "song")
+                _sounds = new SoundScheduler(_tl, _clock, SoundBank.Load(), gameObject, _flags.StartAt);
+        }
+
+        /// <summary>
+        /// TD8's effects on the GPU runtime, unless `--no-effects` or the library isn't baked:
+        /// `--effect-pool N` particles, `--light-pool N` pooled lights (EffectLights.DefaultPool).
+        /// </summary>
+        void StartEffects()
+        {
+            var lib = Args.Has("--no-effects") ? null : EffectLibrary.TryLoad();
+            if (lib == null)
+            {
+                if (!Args.Has("--no-effects")) Debug.LogWarning("DemoMain: no effect library (run `demo3d unity BakeEffects`); effects off");
+                return;
+            }
+            _fx = new EffectSystem(lib, Args.GetInt("--effect-pool", EffectSystem.DefaultPool), Args.GetInt("--light-pool", EffectLights.DefaultPool));
+            _fx.AddCamera(_rig.Camera);
+            _fxDriver = new EffectDriver(_tl, _fx, t => _typeAssets[t].kind == "elite" || _typeAssets[t].kind == "boss");
         }
 
         /// <summary>`--aa msaa4|taa|off` (performance.md: MSAA 4x until TD9 picks).</summary>
@@ -197,7 +239,7 @@ namespace Demo3D.Runtime.Playback
             if (_quitNext) { Quit(); return; }
             _evalWatch.Reset();
             _drawWatch.Reset();
-            double t = _flags.FreezeAt >= 0 ? _flags.FreezeAt : _clock.Now();
+            double t = (_flags.FreezeAt >= 0 ? _flags.FreezeAt : _clock.Now()) + _flags.TimeOffset;
             SongTime = t;
             Activate(t);
 
@@ -206,14 +248,28 @@ namespace Demo3D.Runtime.Playback
             OnScreenAlive = OnScreenDying = 0;
             var framing = _tl.FramingAt(Math.Max(0, t));
             float viewWidth = _flags.ViewWidth > 0 && _flags.Scene != "song" ? _flags.ViewWidth : framing.ViewWidth;
-            _rig.Frame(new Vector2(framing.Focus.X, framing.Focus.Y), viewWidth);
+            // Punch and shake follow the song as heard, not --time-offset (TD11's invisible anchor
+            // must change only the horde), and the shadows fit the view before its punch, so the
+            // cascades don't resize every frame after an accent (the demo systems' review).
+            double feelT = t - _flags.TimeOffset;
+            float punch = _feel != null && !_flags.NoFeel ? _feel.Punch(feelT) : 1f;
+            _rig.Frame(new Vector2(framing.Focus.X, framing.Focus.Y), viewWidth * punch, viewWidth);
+            if (_feel != null && !_flags.NoFeel) _rig.Camera.transform.position += _feel.Shake(feelT);
+            _sounds?.Update(t);
             foreach (var e in _active)
             {
                 var info = _tl.Entities[e];
                 if (info.Kind == EntityKind.Monster) _typeLists[info.Type].Add(e);
-                else if (info.Kind == EntityKind.Projectile) DrawProjectile(proj++, e, t);
+                else if (info.Kind == EntityKind.Projectile && _fx == null) DrawProjectile(proj++, e, t);
             }
             for (int i = proj; i < _projectiles.Count; i++) _projectiles[i].SetActive(false);
+            if (_fx != null)
+            {
+                _fx.BeginFrame();
+                _fxDriver.Frame(t);
+                _fx.Update(t, double.IsNaN(_fxLast) ? 0f : (float)Math.Max(0, t - _fxLast), _rig.Camera);
+                _fxLast = t;
+            }
 
             _evalWatch.Start();
             // Stable slots: a monster keeps its slot while it lives (motion vectors, the previous
@@ -260,12 +316,13 @@ namespace Demo3D.Runtime.Playback
         MonsterInstance ToInstance(in TimelineEvaluator.State st, RosterAssets.TypeAssets asset, int type, uint seed)
         {
             uint a = RosterClip(st.A, asset), b = RosterClip(st.B, asset);
+            float Pose(float time) => _flags.PoseRate > 0 ? Mathf.Floor(time * _flags.PoseRate) / _flags.PoseRate : time;
             return new MonsterInstance
             {
                 Position = st.Position,
                 Yaw = st.Yaw,
-                ClipA = a, TimeA = st.A.Time,
-                ClipB = b, TimeB = st.B.Time,
+                ClipA = a, TimeA = Pose(st.A.Time),
+                ClipB = b, TimeB = Pose(st.B.Time),
                 Blend = st.Blend,
                 Scale = 0.92f + 0.16f * TimelineEvaluator.Jitter(seed, 1),
                 HitFlash = st.HitFlash,
@@ -329,7 +386,7 @@ namespace Demo3D.Runtime.Playback
             if (_stats == null)
             {
                 _stats = new System.IO.StreamWriter(_flags.Stats) { AutoFlush = true };
-                _stats.WriteLine("t,section,onScreenAlive,onScreenDying,target,active,viewWidth,wallFrameMs,evalMs,crowdMs");
+                _stats.WriteLine("t,section,onScreenAlive,onScreenDying,target,active,viewWidth,wallFrameMs,evalMs,crowdMs,particles,effectSpawns,lightCues,lightsUsed,lightDropShare");
             }
             _nextStat = t + 0.5;
             int si = _tl.Map != null ? _tl.Map.SectionIndexAt(t) : 0;
@@ -338,7 +395,31 @@ namespace Demo3D.Runtime.Playback
             _stats.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0:F2},{1},{2},{3},{4},{5},{6:F1},{7:F1},{8:F2},{9:F2}",
                 t, sec?.Label ?? _tl.Name, OnScreenAlive, OnScreenDying, sec?.TargetOnScreen ?? 0, _active.Count,
                 _tl.FramingAt(Math.Max(0, t)).ViewWidth, (wall - _lastWall) * 1000, _evalWatch.Elapsed.TotalMilliseconds,
-                _drawWatch.Elapsed.TotalMilliseconds));
+                _drawWatch.Elapsed.TotalMilliseconds) + string.Format(CultureInfo.InvariantCulture, ",{0},{1},{2},{3},{4:F4}",
+                _fx?.Particles ?? 0, _fx?.SpawnsTotal ?? 0, _fx?.Lights.ActiveCues ?? 0, _fx?.Lights.LightsUsed ?? 0, _fx?.Lights.DropShare ?? 0));
+        }
+
+        /// <summary>
+        /// The timeline's sound events with each one's clip name, for TD13's offline mix (the same
+        /// list the live scheduler plays).
+        /// </summary>
+        void DumpSounds(string path)
+        {
+            var bank = SoundBank.Load();
+            var sb = new System.Text.StringBuilder("{\"sounds\": [\n");
+            for (int i = 0; i < _tl.Sounds.Length; i++)
+            {
+                var s = _tl.Sounds[i];
+                var name = _tl.SoundNames[s.Sound];
+                var clip = bank != null ? bank.Find(name) : null;
+                // (A "}}" right after a format spec would be read into the spec, so the closing
+                // brace is its own argument.)
+                sb.AppendFormat(CultureInfo.InvariantCulture, "  {{\"time\": {0:F6}, \"sound\": \"{1}\", \"clip\": \"{2}\", \"gain\": {3:F4}{4}{5}\n",
+                    s.Time, name, clip != null ? clip.name : "", s.Gain, "}", i + 1 < _tl.Sounds.Length ? "," : "");
+            }
+            sb.Append("]}\n");
+            System.IO.File.WriteAllText(path, sb.ToString());
+            Debug.Log($"DemoMain: wrote {_tl.Sounds.Length} sound events to {path} (sound bank {(bank != null ? bank.names.Length + " names" : "missing")})");
         }
 
         void Quit(int code = 0)
@@ -347,7 +428,8 @@ namespace Demo3D.Runtime.Playback
             _stats = null;
             _capture?.Dispose();
             _capture = null;
-            Debug.Log($"DemoMain: done at song time {SongTime.ToString("F2", CultureInfo.InvariantCulture)}");
+            Debug.Log($"DemoMain: done at song time {SongTime.ToString("F2", CultureInfo.InvariantCulture)}" +
+                      (_fx != null ? $"; effects: {_fx.SpawnsTotal} spawns, {_fx.MergedTotal} merged (cuts), {_fx.GlowsDropped} glow emitters dropped (cuts)" : ""));
             enabled = false;
             Application.Quit(code);
         }
@@ -355,8 +437,10 @@ namespace Demo3D.Runtime.Playback
         void OnDestroy()
         {
             _capture?.Dispose();
+            _fx?.Dispose();
             _crowd?.Dispose();
             _heroRenderer?.Dispose();
+            _arena?.Dispose();
         }
     }
 }

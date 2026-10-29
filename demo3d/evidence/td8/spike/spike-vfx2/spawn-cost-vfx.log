@@ -1,0 +1,17 @@
+TimelineScene: beat-frame spawn cost over 12 frames (305 spawns mean): p50 0.029 ms, p99 0.067 ms, max 0.067 ms
+TimelineScene: beat-frame spawn cost over 12 frames (389 spawns mean): p50 0.040 ms, p99 0.088 ms, max 0.088 ms
+TimelineScene: beat-frame spawn cost over 12 frames (464 spawns mean): p50 0.046 ms, p99 0.111 ms, max 0.111 ms
+TimelineScene: beat-frame spawn cost over 7 frames (614 spawns mean): p50 0.063 ms, p99 0.106 ms, max 0.106 ms
+TimelineScene: beat-frame spawn cost over 8 frames (509 spawns mean): p50 0.072 ms, p99 0.102 ms, max 0.102 ms
+TimelineScene: beat-frame spawn cost over 8 frames (524 spawns mean): p50 0.073 ms, p99 0.084 ms, max 0.084 ms
+TimelineScene: beat-frame spawn cost over 8 frames (583 spawns mean): p50 0.081 ms, p99 0.097 ms, max 0.097 ms
+TimelineScene: beat-frame spawn cost over 8 frames (449 spawns mean): p50 0.044 ms, p99 0.099 ms, max 0.099 ms
+TimelineScene: beat-frame spawn cost over 8 frames (567 spawns mean): p50 0.062 ms, p99 0.091 ms, max 0.091 ms
+TimelineScene: beat-frame spawn cost over 8 frames (502 spawns mean): p50 0.048 ms, p99 0.082 ms, max 0.082 ms
+TimelineScene: beat-frame spawn cost over 9 frames (518 spawns mean): p50 0.067 ms, p99 0.100 ms, max 0.100 ms
+TimelineScene: beat-frame spawn cost over 8 frames (544 spawns mean): p50 0.061 ms, p99 0.088 ms, max 0.088 ms
+TimelineScene: beat-frame spawn cost over 8 frames (492 spawns mean): p50 0.050 ms, p99 0.093 ms, max 0.093 ms
+TimelineScene: beat-frame spawn cost over 8 frames (545 spawns mean): p50 0.061 ms, p99 0.083 ms, max 0.083 ms
+TimelineScene: beat-frame spawn cost over 8 frames (550 spawns mean): p50 0.068 ms, p99 0.087 ms, max 0.087 ms
+TimelineScene: beat-frame spawn cost over 8 frames (546 spawns mean): p50 0.088 ms, p99 0.182 ms, max 0.182 ms
+TimelineScene: beat-frame spawn cost over 7 frames (497 spawns mean): p50 0.068 ms, p99 0.104 ms, max 0.104 ms

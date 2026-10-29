@@ -64,15 +64,20 @@ namespace Demo3D.Runtime.Crowd
         static readonly int IdClipBounds = Shader.PropertyToID("_ClipBounds");
         static readonly int IdPaletteOut = Shader.PropertyToID("_PaletteOut");
         static readonly int IdStampOut = Shader.PropertyToID("_StampOut");
+        static readonly int IdClipRate = Shader.PropertyToID("_ClipRate");
 
         /// <summary>
-        /// LOD thresholds in projected pixels, coarsest last. LOD1 and LOD2 are TD11's cuts; until
-        /// then every type has LOD0 only, and the mechanism runs with one LOD.
+        /// LOD thresholds in projected pixels, coarsest last: LOD1 below x, LOD2 below y. LOD1 and
+        /// LOD2 are TD11's <c>lod</c> cut (<see cref="Cuts"/>); without it every type draws LOD0 only,
+        /// and the mechanism runs with one LOD.
         /// </summary>
         public float4 LodThresholds = new float4(60, 30, 0, 0);
 
-        /// <summary>The LOD the shadow proxy draws (crowd.md, Shadows can use a proxy).</summary>
+        /// <summary>The LOD the shadow proxy draws (crowd.md, Shadows can use a proxy): 2 under TD11's <c>shadow-proxy</c> cut.</summary>
         public int ShadowLod;
+
+        /// <summary>The cuts this crowd was initialized with (<see cref="Cuts.Active"/> at Initialize).</summary>
+        public Cuts Cuts { get; private set; }
 
         /// <summary>Ablation switches for measurement (both on in every result row unless stated).</summary>
         public bool DrawMain = true, DrawShadows = true;
@@ -113,6 +118,9 @@ namespace Demo3D.Runtime.Crowd
         {
             public CrowdType Type;
             public Mesh[] Lods;
+            public Mesh ShadowMesh; // the shadow proxy's mesh: LOD0, or LOD2 under the shadow-proxy cut
+            public Texture2D Bones;  // 60 Hz, or 30 Hz under the clips30 cut
+            public float ClipRate;
             public Material[] Materials;
             public GraphicsBuffer[] Instances; // a ring: the CPU never writes one the GPU may still read
             public GraphicsBuffer VisibleList, ShadowList, LodState, VisibleFlags, Counters, Args, ShadowArgs, ClipTable, ClipBounds;
@@ -144,6 +152,9 @@ namespace Demo3D.Runtime.Crowd
         {
             Dispose();
             _capacity = capacityPerType;
+            Cuts = Cuts.Active;
+            LodThresholds = new float4(Cuts.LodPx1, Cuts.LodPx2, 0, 0);
+            ShadowLod = Cuts.On(Cuts.ShadowProxy) ? Mathf.Clamp(Cuts.ShadowProxyLod, 0, 2) : 0;
             _types = new TypeState[typeIds.Length];
             for (int i = 0; i < typeIds.Length; i++)
             {
@@ -155,7 +166,18 @@ namespace Demo3D.Runtime.Crowd
 
         TypeState Create(CrowdType t)
         {
-            var s = new TypeState { Type = t, Lods = new[] { t.Mesh } };
+            var cuts = Cuts ?? Cuts.Active;
+            bool lods3 = cuts.On(Cuts.Lod) && t.Lod1 != null && t.Lod2 != null;
+            bool clips30 = cuts.On(Cuts.Clips30) && t.Bones30 != null;
+            if (cuts.On(Cuts.Lod) && !lods3) Debug.LogWarning($"BoneTextureCrowd: {t.Id} has no LOD1/LOD2 (re-run BakeCrowd); LOD0 only");
+            var s = new TypeState
+            {
+                Type = t,
+                Lods = lods3 ? new[] { t.Mesh, t.Lod1, t.Lod2 } : new[] { t.Mesh },
+                ShadowMesh = ShadowLod == 2 && t.Lod2 != null ? t.Lod2 : ShadowLod == 1 && t.Lod1 != null ? t.Lod1 : t.Mesh,
+                Bones = clips30 ? t.Bones30 : t.Bones,
+                ClipRate = clips30 ? CrowdLibrary.CutClipRate : CrowdLibrary.ClipRate,
+            };
             s.OnReadback = r =>
             {
                 if (r.hasError || r.layerDataSize < 16) return;
@@ -193,7 +215,7 @@ namespace Demo3D.Runtime.Crowd
                         args[at + 4] = (uint)((l * Bins + b) * cap);
                     }
                 }
-                var sd = s.Lods[Mathf.Min(ShadowLod, lods - 1)].GetSubMesh(sm);
+                var sd = s.ShadowMesh.GetSubMesh(sm);
                 shadowArgs[sm * ArgsInts] = (uint)sd.indexCount;
                 shadowArgs[sm * ArgsInts + 2] = (uint)sd.indexStart;
                 shadowArgs[sm * ArgsInts + 3] = (uint)sd.baseVertex;
@@ -205,7 +227,9 @@ namespace Demo3D.Runtime.Crowd
 
             var clips = new Vector4[t.Clips.Length];
             for (int i = 0; i < clips.Length; i++)
-                clips[i] = new Vector4(t.Clips[i].FirstRow, t.Clips[i].Frames, t.Clips[i].Length, t.Clips[i].Loop ? 1 : 0);
+                clips[i] = clips30
+                    ? new Vector4(t.Clips[i].FirstRow30, t.Clips[i].Frames30, t.Clips[i].Length, t.Clips[i].Loop ? 1 : 0)
+                    : new Vector4(t.Clips[i].FirstRow, t.Clips[i].Frames, t.Clips[i].Length, t.Clips[i].Loop ? 1 : 0);
             s.ClipTable = new GraphicsBuffer(GraphicsBuffer.Target.Structured, clips.Length, 16) { name = t.Id + "_clips" };
             s.ClipTable.SetData(clips);
             var spheres = new Vector4[t.Clips.Length];
@@ -219,7 +243,7 @@ namespace Demo3D.Runtime.Crowd
             s.Shadow = new MaterialPropertyBlock();
             foreach (var mpb in AllBlocks(s))
             {
-                mpb.SetTexture(IdBoneTex, t.Bones);
+                mpb.SetTexture(IdBoneTex, s.Bones);
                 mpb.SetBuffer(IdClipTable, s.ClipTable);
                 mpb.SetBuffer(IdClipBounds, s.ClipBounds);
                 mpb.SetBuffer(IdLodState, s.LodState);
@@ -359,7 +383,7 @@ namespace Demo3D.Runtime.Crowd
                             reflectionProbeUsage = ReflectionProbeUsage.Off,
                             layer = 0,
                         };
-                        Graphics.RenderMeshIndirect(srp, s.Lods[Mathf.Min(ShadowLod, lods - 1)], s.ShadowArgs, 1, sm);
+                        Graphics.RenderMeshIndirect(srp, s.ShadowMesh, s.ShadowArgs, 1, sm);
                         draws++;
                     }
                     AsyncGPUReadback.Request(s.Counters, s.OnReadback);
@@ -428,10 +452,11 @@ namespace Demo3D.Runtime.Crowd
             _palette.SetInt(IdCount, s.Count);
             _palette.SetInt(IdBoneCount, s.Type.BoneCount);
             _palette.SetInt(IdCrowdFrame, (int)_frame);
+            _palette.SetFloat(IdClipRate, s.ClipRate);
             _palette.SetBuffer(_kBlend, IdInstances, s.Instances[icur]);
             _palette.SetBuffer(_kBlend, IdVisibleFlags, s.VisibleFlags);
             _palette.SetBuffer(_kBlend, IdClipTable, s.ClipTable);
-            _palette.SetTexture(_kBlend, IdBoneTex, s.Type.Bones);
+            _palette.SetTexture(_kBlend, IdBoneTex, s.Bones);
             _palette.SetBuffer(_kBlend, IdPaletteOut, s.Palette[cur]);
             _palette.SetBuffer(_kBlend, IdStampOut, s.Stamp[cur]);
             s.LastPalette = s.Palette[cur];

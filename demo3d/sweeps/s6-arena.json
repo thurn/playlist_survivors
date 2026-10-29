@@ -1,0 +1,6 @@
+{
+  "_comment": "TD9: S6 (walls and chokes: S3 at demo load holding the walled courtyard) runs in the arena (E2, 1x). A short fixed-count check that it runs; TD12 takes its frontier.",
+  "scene": "S6", "seconds": 20, "warmup": 5, "rewarm": 3,
+  "n": { "fixed": [1200] }, "viewWidthM": [40], "load": ["demo"], "aa": ["msaa4"], "jobWorkers": 6,
+  "sceneOptions": { "crowd": "bone", "arena": "e2", "density": 1 }
+}

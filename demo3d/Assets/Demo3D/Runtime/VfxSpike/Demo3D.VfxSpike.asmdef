@@ -1,0 +1,19 @@
+{
+    "name": "Demo3D.VfxSpike",
+    "rootNamespace": "Demo3D.Runtime.VfxSpike",
+    "references": [
+        "Demo3D.Runtime",
+        "Unity.VisualEffectGraph.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        { "name": "com.unity.visualeffectgraph", "expression": "17.0.0", "define": "DEMO3D_VFX" }
+    ],
+    "noEngineReferences": false
+}

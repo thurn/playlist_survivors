@@ -42,6 +42,10 @@ namespace Demo3D.EditorTools.Assets
                         if (!saved.TryGetValue(m, out var asset))
                         {
                             asset = new Material(m);
+                            // The hero takes the arena's static shadow map (TD9): URP Lit's
+                            // passes and properties with the shared static-shadow lighting.
+                            if (t.kind == "hero" && asset.shader != null && asset.shader.name == "Universal Render Pipeline/Lit")
+                                asset.shader = Shader.Find("Demo3D/LitStaticShadow") ?? asset.shader;
                             var path = AssetDatabase.GenerateUniqueAssetPath($"{MaterialDir}/{Safe(m.name)}.mat");
                             AssetDatabase.CreateAsset(asset, path);
                             saved[m] = asset;

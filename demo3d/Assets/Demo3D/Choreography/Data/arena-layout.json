@@ -5,7 +5,8 @@
     "seed: the scatter's seed. size: the ground. decorationDensity: scales edge-band and forest scatter only (spacing / sqrt(density)); clearings and paths stay as they are. edgeWidthM: the edge band's width, varied by seeded noise between the two.",
     "props: named groups of kit pieces ('pack/prefab', as in footprints.json), each with a weight. scatter: per area type (clearing, path, edge, forest), layers of {props, spacingM (a jittered grid), scale [min, max], yawJitterDeg, chance, maxSlopeDeg (unused while the ground is flat), keepCanopyOff (forest's default: canopies never overhang fighting ground)}. Clearing and path layers may hold only pieces that do not block.",
     "areas: {type, name?, shape, goal?, pieces?}. Shapes: center + radius (a disc), center + ring [inner, outer], from + to + width (a path), or fill (forest: everything not otherwise typed). Edge bands need no area: they ring all fighting ground (clearings and paths). Landmarks (at) and structures (center, or from/to) are placed explicitly: pieces [{prop, at (from the area's anchor), yawDeg, scale}], and for a structure its walls from a prop group: kind courtyard (size [x, y], yawDeg, gaps 3 or 4 of gapM metres, one per side, closedSide 0 south / 1 east / 2 north / 3 west when 3) or kind ruin-wall (from, to, gaps evenly spaced). Every gap must exceed the largest monster's diameter by 1 m. Scatter keeps clearM (computed if absent) from a landmark's or structure's anchor (a ruin wall's line).",
-    "goal {at, radius}: makes a named area a goal the level script (or a stress script's hold) can name. shots: named camera positions for the beauty shots."
+    "goal {at, radius}: makes a named area a goal the level script (or a stress script's hold) can name. shots: named camera positions for the beauty shots.",
+    "lighting (TD9; environment.md, Lighting the night): the moon (Unity Euler angles: elevationDeg above the horizon, yawDeg the direction its light travels; linear colour; intensity), the trilight ambient and the exponential fog (sRGB colours), flames (realtime flickering point lights on these pieces, in placement order, at most maxLights; heightM above the piece's base, scaled with it) and glow (point lights on glowing pieces: baked in the lit scenes, realtime at rung E0). ArenaLighting reads it; ArenaBaker places the lights."
   ],
   "name": "arena",
   "seed": 7,
@@ -13,6 +14,19 @@
   "decorationDensity": 1.0,
   "edgeWidthM": [3, 6],
   "heroStart": [0, -50],
+  "lighting": {
+    "moon": { "elevationDeg": 30, "yawDeg": -35, "color": [0.55, 0.66, 1.0], "intensity": 0.95 },
+    "ambient": { "sky": [0.13, 0.17, 0.28], "equator": [0.08, 0.10, 0.15], "ground": [0.04, 0.04, 0.05] },
+    "fog": { "color": [0.035, 0.05, 0.09], "density": 0.011 },
+    "flames": { "maxLights": 8, "props": {
+      "darkfantasy/SM_Prop_Brazier_01": { "heightM": 1.35, "rangeM": 9, "intensity": 3.2, "color": [1.0, 0.52, 0.22] },
+      "darkfantasy/SM_Prop_Pyre_02": { "heightM": 1.2, "rangeM": 10, "intensity": 3.6, "color": [1.0, 0.48, 0.18] },
+      "darkfantasy/SM_Prop_Candle_01": { "heightM": 0.6, "rangeM": 4, "intensity": 2.0, "color": [1.0, 0.62, 0.32] },
+      "darkfantasy/SM_Prop_Candle_02": { "heightM": 0.6, "rangeM": 4, "intensity": 2.0, "color": [1.0, 0.62, 0.32] },
+      "darkfantasy/SM_Prop_Candle_03": { "heightM": 0.5, "rangeM": 4, "intensity": 2.0, "color": [1.0, 0.62, 0.32] } } },
+    "glow": {
+      "elven/SM_Env_Tree_Glowing_01": { "heightM": 3.5, "rangeM": 14, "intensity": 2.5, "color": [0.35, 0.85, 1.0] } }
+  },
   "props": {
     "forest-trees": {
       "kingdom/SM_Env_Tree_Round_01": 3, "kingdom/SM_Env_Tree_Round_02": 3, "kingdom/SM_Env_Tree_Round_03": 3, "kingdom/SM_Env_Tree_Round_04": 2,
@@ -67,7 +81,7 @@
   },
   "areas": [
     { "type": "clearing", "name": "camp", "center": [0, -48], "radius": 17, "goal": { "at": [0, -50], "radius": 3 } },
-    { "type": "landmark", "name": "glowing-tree", "at": [-8, -38],
+    { "type": "landmark", "name": "glowing-tree", "at": [-11, -39],
       "pieces": [ { "prop": "elven/SM_Env_Tree_Glowing_01", "at": [0, 0], "yawDeg": 30 },
                   { "prop": "elven/SM_Env_Tree_Glowing_Canopy_01", "at": [0, 0], "yawDeg": 30 } ],
       "goal": { "at": [-1, -38], "radius": 4 } },
@@ -122,7 +136,7 @@
   "shots": [
     { "name": "opening", "at": [44, 40], "viewWidthM": 40 },
     { "name": "path", "at": [7, -30], "viewWidthM": 36 },
-    { "name": "glowing-tree", "at": [-4, -38], "viewWidthM": 32 },
+    { "name": "glowing-tree", "at": [-5, -46], "viewWidthM": 32 },
     { "name": "graveyard", "at": [24, -13], "viewWidthM": 34 },
     { "name": "courtyard", "at": [0, 16], "viewWidthM": 40 },
     { "name": "forest-edge", "at": [-12, -48], "viewWidthM": 32 }

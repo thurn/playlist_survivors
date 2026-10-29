@@ -33,6 +33,12 @@ namespace Demo3D.EditorTools
         /// <summary>Bakes the bone-texture crowd and the stock baseline prefabs into Assets/Baked/Crowd/ (TD5).</summary>
         public static void BakeCrowd() => Crowd.CrowdBaker.Bake();
 
+        /// <summary>
+        /// Generates the arena's scenes, materials, ground and lightmaps into Assets/Baked/Arena/
+        /// (TD9): `[-e0 0.5,1,2,4] [-lit 1,2] [-noLightmaps]`.
+        /// </summary>
+        public static void BakeArena() => Arena.ArenaBaker.Bake();
+
         /// <summary>Proposes clip annotations and writes contact sheets (TD2).</summary>
         public static void AnnotateClips() =>
             Assets.ClipAnnotator.Run(TaskArgs.Get("-evidence", "evidence/td2"));
@@ -48,6 +54,16 @@ namespace Demo3D.EditorTools
         public static void EffectInventory() =>
             Effects.EffectInventory.Run(TaskArgs.Get("-out", "evidence/td8/inventory.md"));
 
+        /// <summary>Converts the chosen effects (Data/effects.json) into Assets/Baked/Effects/ (TD8).</summary>
+        public static void BakeEffects() => Effects.EffectConverter.Bake();
+
+        /// <summary>Writes the runtime spike's VFX Graph template from the package's Simple Burst (TD8).</summary>
+        public static void VfxSpikeTemplate() => Effects.VfxSpikeTemplate.Write();
+
+        /// <summary>Runs every effect candidate through the converter and writes the report (TD8).</summary>
+        public static void EffectReport() =>
+            Effects.EffectConverter.Report(TaskArgs.Get("-out", "evidence/td8/converter-report.md"));
+
         /// <summary>
         /// Builds the Windows x64 player. `-backend il2cpp|mono` (default il2cpp), `-buildOut
         /// <dir>` (default Builds/&lt;backend&gt;), `-development`, `-scene <path>` (repeatable;
@@ -60,7 +76,13 @@ namespace Demo3D.EditorTools
             var outDir = TaskArgs.Get("-buildOut", Path.Combine("Builds", backend));
             var scenes = TaskArgs.All("-scene");
             if (scenes.Count == 0)
+            {
                 scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToList();
+                // The baked arena's scenes (TD9), loaded by name at runtime. They live in the
+                // gitignored Baked/, so they join the build here, not in the tracked build settings.
+                if (Directory.Exists(Arena.ArenaBaker.Dir))
+                    scenes.AddRange(Directory.GetFiles(Arena.ArenaBaker.Dir, "*.unity").Select(p => p.Replace(Path.DirectorySeparatorChar, '/')).OrderBy(p => p));
+            }
             if (scenes.Count == 0) throw new Exception("Tasks.BuildPlayer: no scenes to build");
 
             var previous = PlayerSettings.GetScriptingBackend(NamedBuildTarget.Standalone);

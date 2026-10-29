@@ -1,0 +1,109 @@
+06:31:46 sweep 20261028-063146: D:\wt\td9\demo3d\sweeps\td9-aa-s3.json -> D:\wt\td9\demo3d\evidence\td9\aa
+06:31:46 the orchestrator holds the machine lock
+06:31:47 display was on, now on after 0.0 s (watching: True); held on for the sweep
+06:31:47 GPU 43 °C, throttle none
+06:31:52 machine quiet: other processes 3.4% CPU over 5 s (waited 6 s)
+06:31:52 machine {"sweep": "20261028-063146", "api": "d3d12", "gpu": "NVIDIA GeForce RTX 4070 Ti", "driver": "610.88", "cpu": "12th Gen Intel(R) Core(TM) i7-12700F", "logicalCores": 20, "powerPlan": "high", "powerPlanName": "High performance", "memMHz": 2133, "jobWorkers": 6, "backbuffer": "1920x1080", "display": "on", "gpuTempC": 42, "gpuThrottle": "none", "quietWaitS": 6, "otherCpuPctAtStart": 3.4, "requireForeground": true, "unity": "6000.6.7f1", "backend": "il2cpp", "commandLine": "D:\\wt\\td9\\demo3d\\Builds\\il2cpp\\PlaylistSurvivors3D.exe -force-d3d12 -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --bench D:\\wt\\td9\\demo3d\\sweeps\\td9-aa-s3.json --out D:\\wt\\td9\\demo3d\\evidence\\td9\\aa -logFile D:\\wt\\td9\\demo3d\\evidence\\td9\\aa\\player.log --lock-held"}
+06:31:53 clocks: FrameTimingManager 10000000 Hz, QueryPerformanceCounter 10000000 Hz, newest frame started 289.1 ms ago
+06:31:53 rebuilt for n 800 in 762 ms
+06:32:18 fixed n 800 40m/demo/msaa4: gpu p99 4.10 main 4.52 render 0.71 ms -> pass (gpu 0.98) NOISY
+06:32:18 run noisy (other processes used 10.1% CPU over 5 s; 78 of 3681 frames had no GPU time (over 0.5 %)), repeating (2/3)
+06:32:26 machine quiet: other processes 8.9% CPU over 5 s (waited 8 s)
+06:32:49 fixed n 800 40m/demo/msaa4: gpu p99 4.68 main 4.50 render 0.73 ms -> fail (gpu 1.11) NOISY
+06:32:49 run noisy (other processes used 10.5% CPU over 5 s; the player's window lost the foreground to UnityWndClass "Playlist Survivors 3D Demo"; the player's window was occluded by UnityWndClass "Playlist Survivors 3D Demo"; 104 of 3674 frames had no GPU time (over 0.5 %)), repeating (3/3)
+06:32:55 machine quiet: other processes 6.0% CPU over 5 s (waited 6 s)
+06:33:18 fixed n 800 40m/demo/msaa4: gpu p99 4.04 main 4.33 render 0.69 ms -> pass (gpu 0.96) NOISY
+06:33:18 every attempt was noisy; the search uses attempt 1, the median of 3
+06:33:19 rebuilt for n 1200 in 1130 ms
+06:33:42 fixed n 1200 40m/demo/msaa4: gpu p99 5.64 main 5.81 render 0.70 ms -> fail (gpu 1.34) NOISY
+06:33:42 run noisy (55 of 2567 frames had no GPU time (over 0.5 %)), repeating (2/3)
+06:33:52 machine quiet: other processes 8.7% CPU over 5 s (waited 10 s)
+06:34:15 fixed n 1200 40m/demo/msaa4: gpu p99 5.84 main 6.27 render 1.03 ms -> fail (gpu 1.39) NOISY
+06:34:15 run noisy (other processes used 32.1% CPU over 5 s; the player's window lost the foreground to ConsoleWindowClass "C:\Program Files\Unity\Hub\Editor\6000.6.7f1\Editor\Unity.exe"; 77 of 2469 frames had no GPU time (over 0.5 %)), repeating (3/3)
+06:34:45 waiting for a quiet machine: other processes 17.4% CPU (31 s)
+06:34:52 machine quiet: other processes 9.4% CPU over 5 s (waited 38 s)
+06:35:16 fixed n 1200 40m/demo/msaa4: gpu p99 5.28 main 5.74 render 0.76 ms -> fail (gpu 1.26) NOISY
+06:35:16 every attempt was noisy; the search uses attempt 1, the median of 3
+06:35:16 rebuilt for n 800 in 709 ms
+06:35:40 fixed n 800 40m/demo/taa: gpu p99 3.66 main 4.30 render 0.71 ms -> pass (gpu 0.87) NOISY
+06:35:40 run noisy (96 of 4036 frames had no GPU time (over 0.5 %)), repeating (2/3)
+06:35:45 machine quiet: other processes 9.5% CPU over 5 s (waited 6 s)
+06:36:08 fixed n 800 40m/demo/taa: gpu p99 3.57 main 4.24 render 0.67 ms -> pass (gpu 0.85) NOISY
+06:36:08 run noisy (95 of 4092 frames had no GPU time (over 0.5 %)), repeating (3/3)
+06:36:14 machine quiet: other processes 9.3% CPU over 5 s (waited 6 s)
+06:36:37 fixed n 800 40m/demo/taa: gpu p99 3.53 main 4.18 render 0.66 ms -> pass (gpu 0.84) NOISY
+06:36:37 every attempt was noisy; the search uses attempt 2, the median of 3
+06:36:38 rebuilt for n 1200 in 1114 ms
+06:37:01 fixed n 1200 40m/demo/taa: gpu p99 5.08 main 5.86 render 0.67 ms -> fail (gpu 1.21) NOISY
+06:37:01 run noisy (63 of 2816 frames had no GPU time (over 0.5 %)), repeating (2/3)
+06:37:07 machine quiet: other processes 8.4% CPU over 5 s (waited 6 s)
+06:37:30 fixed n 1200 40m/demo/taa: gpu p99 5.02 main 5.85 render 0.71 ms -> fail (gpu 1.20) NOISY
+06:37:30 run noisy (65 of 2801 frames had no GPU time (over 0.5 %)), repeating (3/3)
+06:37:35 machine quiet: other processes 8.6% CPU over 5 s (waited 6 s)
+06:37:59 fixed n 1200 40m/demo/taa: gpu p99 4.81 main 5.64 render 0.68 ms -> fail (gpu 1.15) NOISY
+06:37:59 every attempt was noisy; the search uses attempt 2, the median of 3
+06:37:59 sweep done
+06:37:59 exit 0
+06:38:01 sweep 20261028-063801: D:\wt\td9\demo3d\sweeps\td9-aa-s1.json -> D:\wt\td9\demo3d\evidence\td9\aa
+06:38:01 the orchestrator holds the machine lock
+06:38:02 display was on, now on after 0.0 s (watching: True); held on for the sweep
+06:38:04 GPU 49 °C, throttle none
+06:38:09 machine quiet: other processes 3.6% CPU over 5 s (waited 6 s)
+06:38:09 machine {"sweep": "20261028-063801", "api": "d3d12", "gpu": "NVIDIA GeForce RTX 4070 Ti", "driver": "610.88", "cpu": "12th Gen Intel(R) Core(TM) i7-12700F", "logicalCores": 20, "powerPlan": "high", "powerPlanName": "High performance", "memMHz": 2133, "jobWorkers": 6, "backbuffer": "1920x1080", "display": "on", "gpuTempC": 48, "gpuThrottle": "none", "quietWaitS": 6, "otherCpuPctAtStart": 3.6, "requireForeground": true, "unity": "6000.6.7f1", "backend": "il2cpp", "commandLine": "D:\\wt\\td9\\demo3d\\Builds\\il2cpp\\PlaylistSurvivors3D.exe -force-d3d12 -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --bench D:\\wt\\td9\\demo3d\\sweeps\\td9-aa-s1.json --out D:\\wt\\td9\\demo3d\\evidence\\td9\\aa -logFile D:\\wt\\td9\\demo3d\\evidence\\td9\\aa\\player.log --lock-held"}
+06:38:09 clocks: FrameTimingManager 10000000 Hz, QueryPerformanceCounter 10000000 Hz, newest frame started 268.6 ms ago
+06:38:10 rebuilt for n 800 in 614 ms
+06:38:35 fixed n 800 40m/demo/msaa4: gpu p99 4.02 main 4.54 render 0.63 ms -> pass (gpu 0.96) NOISY
+06:38:35 run noisy (75 of 3688 frames had no GPU time (over 0.5 %)), repeating (2/3)
+06:38:41 machine quiet: other processes 9.6% CPU over 5 s (waited 6 s)
+06:39:04 fixed n 800 40m/demo/msaa4: gpu p99 4.06 main 4.22 render 0.67 ms -> pass (gpu 0.97) NOISY
+06:39:04 run noisy (77 of 3686 frames had no GPU time (over 0.5 %)), repeating (3/3)
+06:39:12 machine quiet: other processes 9.9% CPU over 5 s (waited 9 s)
+06:39:36 fixed n 800 40m/demo/msaa4: gpu p99 4.07 main 4.34 render 0.69 ms -> pass (gpu 0.97) NOISY
+06:39:36 every attempt was noisy; the search uses attempt 2, the median of 3
+06:39:36 rebuilt for n 1200 in 859 ms
+06:40:00 fixed n 1200 40m/demo/msaa4: gpu p99 5.73 main 5.97 render 0.73 ms -> fail (gpu 1.36) NOISY
+06:40:00 run noisy (54 of 2500 frames had no GPU time (over 0.5 %)), repeating (2/3)
+06:40:05 machine quiet: other processes 9.1% CPU over 5 s (waited 6 s)
+06:40:28 fixed n 1200 40m/demo/msaa4: gpu p99 5.72 main 5.95 render 0.70 ms -> fail (gpu 1.36) NOISY
+06:40:28 run noisy (54 of 2505 frames had no GPU time (over 0.5 %)), repeating (3/3)
+06:40:34 machine quiet: other processes 9.3% CPU over 5 s (waited 6 s)
+06:40:57 fixed n 1200 40m/demo/msaa4: gpu p99 5.73 main 5.84 render 0.70 ms -> fail (gpu 1.36) NOISY
+06:40:57 every attempt was noisy; the search uses attempt 3, the median of 3
+06:40:58 rebuilt for n 800 in 568 ms
+06:41:21 fixed n 800 40m/demo/taa: gpu p99 3.58 main 4.20 render 0.66 ms -> pass (gpu 0.85) NOISY
+06:41:21 run noisy (91 of 4034 frames had no GPU time (over 0.5 %)), repeating (2/3)
+06:41:26 machine quiet: other processes 8.9% CPU over 5 s (waited 6 s)
+06:41:50 fixed n 800 40m/demo/taa: gpu p99 3.61 main 4.17 render 0.65 ms -> pass (gpu 0.86) NOISY
+06:41:50 run noisy (other processes used 10.1% CPU over 5 s; 88 of 4034 frames had no GPU time (over 0.5 %)), repeating (3/3)
+06:41:55 machine quiet: other processes 8.9% CPU over 5 s (waited 6 s)
+06:42:18 fixed n 800 40m/demo/taa: gpu p99 3.62 main 4.26 render 0.64 ms -> pass (gpu 0.86) NOISY
+06:42:18 every attempt was noisy; the search uses attempt 2, the median of 3
+06:42:19 rebuilt for n 1200 in 845 ms
+06:42:42 fixed n 1200 40m/demo/taa: gpu p99 5.05 main 5.87 render 0.65 ms -> fail (gpu 1.20) NOISY
+06:42:42 run noisy (61 of 2750 frames had no GPU time (over 0.5 %)), repeating (2/3)
+06:42:48 machine quiet: other processes 9.0% CPU over 5 s (waited 6 s)
+06:43:11 fixed n 1200 40m/demo/taa: gpu p99 4.98 main 6.06 render 0.66 ms -> fail (gpu 1.19) NOISY
+06:43:11 run noisy (62 of 2760 frames had no GPU time (over 0.5 %)), repeating (3/3)
+06:43:16 machine quiet: other processes 9.1% CPU over 5 s (waited 6 s)
+06:43:40 fixed n 1200 40m/demo/taa: gpu p99 5.04 main 5.89 render 0.68 ms -> fail (gpu 1.20) NOISY
+06:43:40 every attempt was noisy; the search uses attempt 3, the median of 3
+06:43:40 sweep done
+06:43:40 exit 0
+06:43:42 sweep 20261028-064342: D:\wt\td9\demo3d\sweeps\s6-arena.json -> D:\wt\td9\demo3d\evidence\td9\aa
+06:43:42 the orchestrator holds the machine lock
+06:43:42 display was on, now on after 0.0 s (watching: True); held on for the sweep
+06:43:47 GPU 48 °C, throttle none
+06:43:52 machine quiet: other processes 4.0% CPU over 5 s (waited 6 s)
+06:43:52 machine {"sweep": "20261028-064342", "api": "d3d12", "gpu": "NVIDIA GeForce RTX 4070 Ti", "driver": "610.88", "cpu": "12th Gen Intel(R) Core(TM) i7-12700F", "logicalCores": 20, "powerPlan": "high", "powerPlanName": "High performance", "memMHz": 2133, "jobWorkers": 6, "backbuffer": "1920x1080", "display": "on", "gpuTempC": 46, "gpuThrottle": "none", "quietWaitS": 6, "otherCpuPctAtStart": 4, "requireForeground": true, "unity": "6000.6.7f1", "backend": "il2cpp", "commandLine": "D:\\wt\\td9\\demo3d\\Builds\\il2cpp\\PlaylistSurvivors3D.exe -force-d3d12 -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --bench D:\\wt\\td9\\demo3d\\sweeps\\s6-arena.json --out D:\\wt\\td9\\demo3d\\evidence\\td9\\aa -logFile D:\\wt\\td9\\demo3d\\evidence\\td9\\aa\\player.log --lock-held"}
+06:43:53 clocks: FrameTimingManager 10000000 Hz, QueryPerformanceCounter 10000000 Hz, newest frame started 288.7 ms ago
+06:43:54 rebuilt for n 1200 in 1614 ms
+06:44:19 fixed n 1200 40m/demo/msaa4: gpu p99 5.33 main 5.92 render 0.72 ms -> fail (gpu 1.27) NOISY
+06:44:19 run noisy (60 of 2700 frames had no GPU time (over 0.5 %)), repeating (2/3)
+06:44:25 machine quiet: other processes 8.8% CPU over 5 s (waited 6 s)
+06:44:48 fixed n 1200 40m/demo/msaa4: gpu p99 5.01 main 6.15 render 0.75 ms -> fail (gpu 1.19) NOISY
+06:44:48 run noisy (67 of 2740 frames had no GPU time (over 0.5 %)), repeating (3/3)
+06:44:54 machine quiet: other processes 9.1% CPU over 5 s (waited 6 s)
+06:45:17 fixed n 1200 40m/demo/msaa4: gpu p99 4.91 main 6.14 render 0.76 ms -> fail (gpu 1.17) NOISY
+06:45:17 every attempt was noisy; the search uses attempt 2, the median of 3
+06:45:17 sweep done
+06:45:17 exit 0

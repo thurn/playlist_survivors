@@ -117,49 +117,10 @@ Shader "Demo3D/CrowdSkinned"
                 return o;
             }
 
-            // TD9's hook: the static shadow map of the arena's static set, sampled from the
-            // moon's direction (environment.md, Lighting the night). 1 until TD9 renders it.
-            half CrowdStaticShadow(float3 positionWS)
-            {
-                return 1;
-            }
-
-            // UniversalFragmentPBR without clear coat, light layers or debug views, so the main
-            // light's shadow can take the static shadow map too.
-            half3 CrowdLighting(InputData inputData, SurfaceData surfaceData)
-            {
-                BRDFData brdfData;
-                InitializeBRDFData(surfaceData, brdfData);
-                half4 shadowMask = CalculateShadowMask(inputData);
-                AmbientOcclusionFactor aoFactor = CreateAmbientOcclusionFactor(inputData, surfaceData);
-                Light mainLight = GetMainLight(inputData, shadowMask, aoFactor);
-                mainLight.shadowAttenuation *= CrowdStaticShadow(inputData.positionWS);
-                MixRealtimeAndBakedGI(mainLight, inputData.normalWS, inputData.bakedGI);
-                LightingData lightingData = CreateLightingData(inputData, surfaceData);
-                lightingData.giColor = GlobalIllumination(brdfData, brdfData, 0, inputData.bakedGI,
-                    aoFactor.indirectAmbientOcclusion, inputData.positionWS, inputData.normalWS,
-                    inputData.viewDirectionWS, inputData.normalizedScreenSpaceUV);
-                lightingData.mainLightColor = LightingPhysicallyBased(brdfData, brdfData, mainLight,
-                    inputData.normalWS, inputData.viewDirectionWS, 0, false);
-                #if defined(_ADDITIONAL_LIGHTS)
-                uint pixelLightCount = GetAdditionalLightsCount();
-                #if USE_CLUSTER_LIGHT_LOOP
-                [loop] for (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS); lightIndex++)
-                {
-                    CLUSTER_LIGHT_LOOP_SUBTRACTIVE_LIGHT_CHECK
-                    Light light = GetAdditionalLight(lightIndex, inputData, shadowMask, aoFactor);
-                    lightingData.additionalLightsColor += LightingPhysicallyBased(brdfData, brdfData, light,
-                        inputData.normalWS, inputData.viewDirectionWS, 0, false);
-                }
-                #endif
-                LIGHT_LOOP_BEGIN(pixelLightCount)
-                    Light light = GetAdditionalLight(lightIndex, inputData, shadowMask, aoFactor);
-                    lightingData.additionalLightsColor += LightingPhysicallyBased(brdfData, brdfData, light,
-                        inputData.normalWS, inputData.viewDirectionWS, 0, false);
-                LIGHT_LOOP_END
-                #endif
-                return CalculateFinalColor(lightingData, 1).rgb;
-            }
+            // The main light's shadow takes TD9's static shadow map of the arena's static set
+            // (environment.md, Lighting the night); the lighting is shared with the hero's shader.
+            #include "../../Arena/Shaders/StaticShadow.hlsl"
+            #define CrowdLighting Demo3DLightingPBR
 
             half4 frag(Varyings i) : SV_Target
             {

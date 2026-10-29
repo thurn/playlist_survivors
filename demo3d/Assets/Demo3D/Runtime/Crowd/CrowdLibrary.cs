@@ -12,7 +12,9 @@ namespace Demo3D.Runtime.Crowd
     public sealed class CrowdLibrary : ScriptableObject
     {
         public const string ResourcePath = "CrowdLibrary";
+        /// <summary>The default clip rate; 30 Hz is a cut (TD11, <c>clips30</c>), baked beside it.</summary>
         public const float ClipRate = 60f;
+        public const float CutClipRate = 30f;
 
         public CrowdType[] Types = Array.Empty<CrowdType>();
         public Shader CrowdShader;
@@ -42,10 +44,18 @@ namespace Demo3D.Runtime.Crowd
         public string Kind;
         /// <summary>The combined mesh at demo scale: bone indices in UV1, weights in UV2 (float4).</summary>
         public Mesh Mesh;
+        /// <summary>
+        /// TD11's decimated LODs of <see cref="Mesh"/> (Unity's MeshLodUtility, the same vertices and
+        /// streams): LOD1 about half its triangles, LOD2 about a quarter. Null if not baked.
+        /// </summary>
+        public Mesh Lod1, Lod2;
+        public int Lod1Triangles, Lod2Triangles;
         /// <summary>One material per submesh (one per albedo texture).</summary>
         public Material[] Materials;
         /// <summary>Skinning matrices: bone b's row r of frame f is texel (3b + r, f).</summary>
         public Texture2D Bones;
+        /// <summary>The same clips baked at 30 Hz (TD11's clips30 cut): rows from each clip's FirstRow30.</summary>
+        public Texture2D Bones30;
         public int BoneCount;
         public CrowdClip[] Clips;
         /// <summary>Yaw-invariant bounds at instance scale 1: a sphere around (0, CenterY, 0).</summary>
@@ -72,6 +82,9 @@ namespace Demo3D.Runtime.Crowd
         public string Name;
         public int FirstRow;
         public int Frames;
+        /// <summary>The clip's rows in the 30 Hz texture (<see cref="CrowdType.Bones30"/>).</summary>
+        public int FirstRow30;
+        public int Frames30;
         public float Length;
         public bool Loop;
         /// <summary>From the clip annotations (TD2); negative where absent.</summary>
@@ -81,12 +94,10 @@ namespace Demo3D.Runtime.Crowd
         /// <summary>This clip's own bounding sphere at instance scale 1 (see CrowdType).</summary>
         public float CenterY, Radius, HeightM;
 
-        /// <summary>Frames a clip of this length bakes to at 60 Hz: both ends included.</summary>
-        public static int FrameCount(float length) => Math.Max(2, (int)Math.Ceiling(length * ClipRateF - 1e-3f) + 1);
+        /// <summary>Frames a clip of this length bakes to at 60 Hz (or <paramref name="rate"/>): both ends included.</summary>
+        public static int FrameCount(float length, float rate = CrowdLibrary.ClipRate) => Math.Max(2, (int)Math.Ceiling(length * rate - 1e-3f) + 1);
 
-        const float ClipRateF = CrowdLibrary.ClipRate;
-
-        /// <summary>The sample time of frame f (the last frame is the clip's end).</summary>
-        public float FrameTime(int f) => Math.Min(Length, f / CrowdLibrary.ClipRate);
+        /// <summary>The sample time of frame f at 60 Hz (or <paramref name="rate"/>; the last frame is the clip's end).</summary>
+        public float FrameTime(int f, float rate = CrowdLibrary.ClipRate) => Math.Min(Length, f / rate);
     }
 }

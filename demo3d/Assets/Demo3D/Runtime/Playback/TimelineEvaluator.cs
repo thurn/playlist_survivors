@@ -25,6 +25,7 @@ namespace Demo3D.Runtime.Playback
     public sealed class TimelineEvaluator
     {
         public const float Crossfade = 0.12f, HitStop = 0.05f, FlashSeconds = 0.12f;
+        public const float TickFlash = 0.5f, TickFlashSeconds = 0.08f, ParryFlash = 0.6f;
         /// <summary>After a hold or slowdown the clip catches up over this long, well inside a beat.</summary>
         public const float CatchUp = 0.15f;
         /// <summary>Heavy blows (strength 0.8 or more) slow the hero's clip to 0.6x for 50 ms.</summary>
@@ -260,9 +261,14 @@ namespace Demo3D.Runtime.Playback
             {
                 var a = acts.Array[acts.Offset + k];
                 if (a.Impact > t) continue;
-                if (a.Kind == ActionKind.Hit || a.Kind == ActionKind.Tick)
+                if (a.Kind == ActionKind.Hit || a.Kind == ActionKind.Tick || a.Kind == ActionKind.Parry)
                 {
-                    st.HitFlash = Mathf.Max(st.HitFlash, 1f - (float)((t - a.Impact) / FlashSeconds));
+                    // Tiered feedback (effects.md): a tick, a lingering effect's repeat hit, flashes
+                    // at half strength and briefly, so a swept monster (or the boss under the laser)
+                    // pulses rather than glowing white; a parry is the hero's shield flash.
+                    float peak = a.Kind == ActionKind.Hit ? 1f : a.Kind == ActionKind.Tick ? TickFlash : ParryFlash;
+                    float span = a.Kind == ActionKind.Tick ? TickFlashSeconds : FlashSeconds;
+                    st.HitFlash = Mathf.Max(st.HitFlash, peak * (1f - (float)((t - a.Impact) / span)));
                     if (t - a.Impact > FlashSeconds) break;
                 }
                 else if (a.Kind == ActionKind.Death)

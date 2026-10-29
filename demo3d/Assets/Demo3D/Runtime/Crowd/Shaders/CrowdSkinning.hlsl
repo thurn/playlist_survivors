@@ -3,7 +3,7 @@
 #ifndef DEMO3D_CROWD_SKINNING_INCLUDED
 #define DEMO3D_CROWD_SKINNING_INCLUDED
 
-#define CROWD_RATE 60.0
+// Clip rates (60 Hz, or 30 Hz under TD11's clips30 cut) come per type as a parameter.
 #define CROWD_ALIVE 1u
 #define CROWD_DYING 2u
 #define CROWD_HIDDEN 4u
@@ -37,16 +37,16 @@ float4 CrowdSphere(MonsterInstance m, out float height)
 }
 
 // The two texture rows around a clip time and the fraction between them.
-void ClipRows(uint clip, float t, out uint row0, out uint row1, out float frac)
+void ClipRows(uint clip, float t, float rate, out uint row0, out uint row1, out float frac)
 {
     float4 c = _ClipTable[clip];
     float len = c.z;
     if (c.w > 0.5) t = len > 0 ? t - floor(t / len) * len : 0;
     else t = clamp(t, 0, len);
     uint frames = (uint)c.y;
-    uint f0 = min((uint)(t * CROWD_RATE), frames - 2);
-    float t0 = f0 / CROWD_RATE;
-    float t1 = min((f0 + 1) / CROWD_RATE, len);
+    uint f0 = min((uint)(t * rate), frames - 2);
+    float t0 = f0 / rate;
+    float t1 = min((f0 + 1) / rate, len);
     frac = saturate((t - t0) / max(t1 - t0, 1e-5));
     row0 = (uint)c.x + f0;
     row1 = row0 + 1;
@@ -60,11 +60,11 @@ float3x4 LoadBone(uint row, uint bone)
 
 struct ClipSample { uint a0, a1, b0, b1; float fa, fb, blend; };
 
-ClipSample SampleOf(MonsterInstance m)
+ClipSample SampleOf(MonsterInstance m, float rate)
 {
     ClipSample s;
-    ClipRows(m.clipA, m.timeA, s.a0, s.a1, s.fa);
-    ClipRows(m.clipB, m.timeB, s.b0, s.b1, s.fb);
+    ClipRows(m.clipA, m.timeA, rate, s.a0, s.a1, s.fa);
+    ClipRows(m.clipB, m.timeB, rate, s.b0, s.b1, s.fb);
     s.blend = saturate(m.blend);
     return s;
 }

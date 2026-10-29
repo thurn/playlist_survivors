@@ -1,0 +1,6 @@
+{
+  "_comment": "TD9: S0 at rung E2 (lightmaps, the static set out of the cascades, the static shadow map), density 1x: for TD14's ladder, which owns the rung's verdict.",
+  "scene": "S0", "seconds": 20, "warmup": 5, "rewarm": 3,
+  "n": { "fixed": [0] }, "viewWidthM": [40, 55], "load": ["demo"], "aa": ["msaa4", "taa"], "jobWorkers": 6,
+  "sceneOptions": { "rung": "e2", "density": 1 }
+}

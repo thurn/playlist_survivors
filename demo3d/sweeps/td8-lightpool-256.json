@@ -1,0 +1,7 @@
+{
+  "_comment": "TD8's light pool size (effects.md, Effect lights): S3 (full combat, real effects and lights) at heavy load, 40 m, with 256 pooled lights. Compare GPU p99 and the dropped share's p99 across 64, 128 and 256.",
+  "scene": "S3", "seconds": 20, "warmup": 5, "rewarm": 3,
+  "n": { "fixed": [2600] }, "viewWidthM": [40], "load": ["heavy"], "aa": ["msaa4"], "jobWorkers": 6,
+  "quiet": { "maxWaitS": 120, "repeatWaitS": 30 },
+  "sceneOptions": { "lightPool": 256 }
+}

@@ -13,6 +13,8 @@ Commands:
   library save        save this worktree's Library as the warm one for its packages
   sync                fill a vendor folder from the manifest (--record-only for the Mac)
   manifest find|add   list source assets by glob, or add them to the manifest
+  mix                 the offline mix of a video capture (the song plus the timeline's sounds)
+  flip A B            FLIP scores of two capture folders' stills (calibrate: the A/B thresholds)
   sweep SPEC...       a benchmark sweep in the windowed player (one process per spec), then its
                       report: takes the machine lock first; --out DIR, --backend, --build,
                       --screen WxH and --workers N (to test refusals), --no-lock
@@ -177,6 +179,18 @@ def cmd_pix(a: argparse.Namespace) -> int:
     return pix.cmd_pix(a)
 
 
+def cmd_mix(a: argparse.Namespace) -> int:
+    from . import mix
+
+    return mix.main(a.args)
+
+
+def cmd_flip(a: argparse.Namespace) -> int:
+    from . import flip
+
+    return flip.main(a.args)
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="demo3d", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -260,6 +274,14 @@ def build_parser() -> argparse.ArgumentParser:
     px.add_argument("--player")
     px.set_defaults(func=cmd_pix)
 
+    mx = sub.add_parser("mix", help="the video capture's offline mix: the song plus the timeline's sounds")
+    mx.add_argument("args", nargs=argparse.REMAINDER)
+    mx.set_defaults(func=cmd_mix)
+
+    fl = sub.add_parser("flip", help="FLIP scores of A/B capture pairs (or calibrate the thresholds)")
+    fl.add_argument("args", nargs=argparse.REMAINDER)
+    fl.set_defaults(func=cmd_flip)
+
     y = sub.add_parser("sync")
     y.add_argument("--record-only", action="store_true")
     y.add_argument("--out")
@@ -270,5 +292,11 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> None:
     if shutil.which("git") is None:
         sys.exit("demo3d: git is not on PATH")
+    argv = sys.argv[1:] if argv is None else argv
+    # These parse their own options (argparse's REMAINDER won't take a leading --option).
+    if argv and argv[0] in ("mix", "flip"):
+        from . import flip, mix
+
+        sys.exit((mix if argv[0] == "mix" else flip).main(argv[1:]))
     args = build_parser().parse_args(argv)
     sys.exit(args.func(args))

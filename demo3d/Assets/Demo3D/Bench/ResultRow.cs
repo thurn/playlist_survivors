@@ -31,6 +31,7 @@ namespace Demo3D.Bench
         // Counters.
         public int? OnScreenAlive, OnScreenDying, OffScreen, ShadowCasters, SkinnedVertices;
         public string VisibleByTypeLod; // a JSON object, or null
+        public string Environment;      // a JSON object (the arena's counters), or null
         public int? Particles, SpawnsMaxPerFrame, SpawnsRejected, LightCues, LightsUsed;
         public double? SpawnsPerFrame, LightDropShareP99;
         public double? SimTickP99Ms, SimTickMaxMs;
@@ -79,7 +80,7 @@ namespace Demo3D.Bench
                 .Add("frames", Frames).Add("timedFrames", TimedFrames).Add("gpuZeroFrames", GpuZeroFrames)
                 .Add("excludedFrames", ExcludedFrames)
                 .Add("offScreen", OffScreen).Add("shadowCasters", ShadowCasters).Add("skinnedVertices", SkinnedVertices)
-                .AddRaw("visibleByTypeLod", VisibleByTypeLod)
+                .AddRaw("visibleByTypeLod", VisibleByTypeLod).AddRaw("environment", Environment)
                 .Add("spawnsPerFrame", SpawnsPerFrame).Add("lightCues", LightCues)
                 .Add("simTickP99Ms", SimTickP99Ms).Add("simTickMaxMs", SimTickMaxMs)
                 .Add("flowRebuildSlices", FlowRebuildSlices)

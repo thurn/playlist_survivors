@@ -1,0 +1,18 @@
+06:45:19 sweep 20261028-064519: D:\wt\td8\demo3d\sweeps\td8-spike-vfx.json -> D:\wt\td8\demo3d\Logs\bench\spike-vfx2
+06:45:19 the orchestrator holds the machine lock
+06:45:20 display was on, now on after 0.0 s (watching: True); held on for the sweep
+06:45:22 GPU 48 °C, throttle none
+06:45:28 machine quiet: other processes 5.6% CPU over 5 s (waited 6 s)
+06:45:28 machine {"sweep": "20261028-064519", "api": "d3d12", "gpu": "NVIDIA GeForce RTX 4070 Ti", "driver": "610.88", "cpu": "12th Gen Intel(R) Core(TM) i7-12700F", "logicalCores": 20, "powerPlan": "high", "powerPlanName": "High performance", "memMHz": 2133, "jobWorkers": 6, "backbuffer": "1920x1080", "display": "on", "gpuTempC": 47, "gpuThrottle": "none", "quietWaitS": 6, "otherCpuPctAtStart": 5.6, "requireForeground": true, "unity": "6000.6.7f1", "backend": "il2cpp", "commandLine": "D:\\wt\\td8\\demo3d\\Builds\\il2cpp\\PlaylistSurvivors3D.exe -force-d3d12 -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --bench D:\\wt\\td8\\demo3d\\sweeps\\td8-spike-vfx.json --out D:\\wt\\td8\\demo3d\\Logs\\bench\\spike-vfx2 -logFile D:\\wt\\td8\\demo3d\\Logs\\bench\\spike-vfx2\\player.log --lock-held"}
+06:45:28 clocks: FrameTimingManager 10000000 Hz, QueryPerformanceCounter 10000000 Hz, newest frame started 169.9 ms ago
+06:45:30 rebuilt for n 2600 in 2678 ms
+06:45:55 fixed n 2600 40m/heavy/msaa4: gpu p99 0.22 main 0.98 render 0.42 ms -> fail (gpu 213475613311.94) NOISY
+06:45:55 run noisy (other processes used 16.9% CPU over 5 s; 7096 of 25164 frames had no GPU time (over 0.5 %)), repeating (2/3)
+06:46:03 machine quiet: other processes 9.9% CPU over 5 s (waited 8 s)
+06:46:26 fixed n 2600 40m/heavy/msaa4: gpu p99 0.21 main 0.82 render 0.41 ms -> pass (render 0.17) NOISY
+06:46:26 run noisy (other processes used 11.1% CPU over 5 s; 7937 of 26386 frames had no GPU time (over 0.5 %)), repeating (3/3)
+06:46:35 machine quiet: other processes 9.8% CPU over 5 s (waited 9 s)
+06:46:58 fixed n 2600 40m/heavy/msaa4: gpu p99 0.23 main 1.74 render 0.69 ms -> pass (render 0.28) NOISY
+06:46:58 every attempt was noisy; the search uses attempt 3, the median of 3
+06:46:58 sweep done
+06:46:59 exit 0

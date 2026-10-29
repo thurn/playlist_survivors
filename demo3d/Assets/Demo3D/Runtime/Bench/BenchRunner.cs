@@ -507,7 +507,7 @@ namespace Demo3D.Runtime.Bench
             MainMax = row.MainMaxMs ?? double.NaN,
             RenderMax = row.RenderMaxMs ?? double.NaN,
             SpawnsRejected = row.SpawnsRejected,
-            LightDropWithinLimit = null, // TD8's light pool sets the limit
+            LightDropWithinLimit = row.LightDropShareP99.HasValue ? row.LightDropShareP99.Value <= Effects.EffectLights.DropLimit : (bool?)null,
             Noisy = row.Noisy,
         };
 
@@ -800,18 +800,19 @@ namespace Demo3D.Runtime.Bench
             readonly List<double> _lightShare = new List<double>();
             readonly List<double> _opaque = new List<double>(), _transparent = new List<double>(), _beat = new List<double>();
             long _spawns, _rejected, _lightCues;
-            int _frames, _spawnsMax, _lightsMax;
+            int _frames, _spawnsMax, _lightsMax, _cueFrames;
             bool _hasSpawns, _hasRejected, _hasCues, _hasLights;
-            string _byTypeLod;
+            string _byTypeLod, _environment;
 
             public void Reset()
             {
                 _onScreen.Clear(); _dying.Clear(); _off.Clear(); _casters.Clear(); _skinned.Clear(); _particles.Clear();
                 _lightShare.Clear(); _opaque.Clear(); _transparent.Clear(); _beat.Clear();
                 _spawns = _rejected = _lightCues = 0;
-                _frames = _spawnsMax = _lightsMax = 0;
+                _frames = _spawnsMax = _lightsMax = _cueFrames = 0;
                 _hasSpawns = _hasRejected = _hasCues = _hasLights = false;
                 _byTypeLod = null;
+                _environment = null;
             }
 
             public void Add(SceneCounters c, bool view)
@@ -824,7 +825,7 @@ namespace Demo3D.Runtime.Bench
                     _spawnsMax = Math.Max(_spawnsMax, c.SpawnsThisFrame.Value);
                 }
                 if (c.SpawnsRejected.HasValue) { _hasRejected = true; _rejected += c.SpawnsRejected.Value; }
-                if (c.LightCues.HasValue) { _hasCues = true; _lightCues += c.LightCues.Value; }
+                if (c.LightCues.HasValue) { _hasCues = true; _lightCues += c.LightCues.Value; _cueFrames++; }
                 if (c.LightsUsed.HasValue) { _hasLights = true; _lightsMax = Math.Max(_lightsMax, c.LightsUsed.Value); }
                 if (c.LightDropShare.HasValue) _lightShare.Add(c.LightDropShare.Value);
                 if (c.Particles.HasValue) _particles.Add(c.Particles.Value);
@@ -835,6 +836,7 @@ namespace Demo3D.Runtime.Bench
                 if (c.OffScreen.HasValue) _off.Add(c.OffScreen.Value);
                 if (c.SkinnedVertices.HasValue) _skinned.Add(c.SkinnedVertices.Value);
                 if (c.VisibleByTypeLod != null) _byTypeLod = c.VisibleByTypeLod;
+                if (c.Environment != null) _environment = c.Environment;
             }
 
             public void AddOverdraw(double opaque, double transparent, bool beat)
@@ -856,10 +858,11 @@ namespace Demo3D.Runtime.Bench
                 row.SkinnedVertices = MeanInt(_skinned);
                 row.Particles = MeanInt(_particles);
                 row.VisibleByTypeLod = _byTypeLod;
+                row.Environment = _environment;
                 row.SpawnsPerFrame = _hasSpawns && _frames > 0 ? _spawns / (double)_frames : (double?)null;
                 row.SpawnsMaxPerFrame = _hasSpawns ? _spawnsMax : (int?)null;
                 row.SpawnsRejected = _hasRejected ? (int)_rejected : (int?)null;
-                row.LightCues = _hasCues ? (int)_lightCues : (int?)null;
+                row.LightCues = _hasCues && _cueFrames > 0 ? (int)Math.Round(_lightCues / (double)_cueFrames) : (int?)null; // mean active cues per frame
                 row.LightsUsed = _hasLights ? _lightsMax : (int?)null;
                 row.LightDropShareP99 = _lightShare.Count == 0 ? (double?)null : Stats.Summarize(_lightShare).P99;
                 row.OpaqueDepth = Mean(_opaque);

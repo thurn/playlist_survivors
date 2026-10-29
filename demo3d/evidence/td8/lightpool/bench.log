@@ -1,0 +1,55 @@
+07:00:00 sweep 20261028-070000: D:\wt\td8\demo3d\sweeps\td8-lightpool-64.json -> D:\wt\td8\demo3d\Logs\bench\lightpool2
+07:00:00 the orchestrator holds the machine lock
+07:00:00 display was on, now on after 0.0 s (watching: True); held on for the sweep
+07:00:00 GPU 38 °C, throttle none
+07:00:06 machine quiet: other processes 8.9% CPU over 5 s (waited 6 s)
+07:00:06 machine {"sweep": "20261028-070000", "api": "d3d12", "gpu": "NVIDIA GeForce RTX 4070 Ti", "driver": "610.88", "cpu": "12th Gen Intel(R) Core(TM) i7-12700F", "logicalCores": 20, "powerPlan": "high", "powerPlanName": "High performance", "memMHz": 2133, "jobWorkers": 6, "backbuffer": "1920x1080", "display": "on", "gpuTempC": 37, "gpuThrottle": "none", "quietWaitS": 6, "otherCpuPctAtStart": 8.9, "requireForeground": true, "unity": "6000.6.7f1", "backend": "il2cpp", "commandLine": "D:\\wt\\td8\\demo3d\\Builds\\il2cpp\\PlaylistSurvivors3D.exe -force-d3d12 -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --bench D:\\wt\\td8\\demo3d\\sweeps\\td8-lightpool-64.json --out D:\\wt\\td8\\demo3d\\Logs\\bench\\lightpool2 -logFile D:\\wt\\td8\\demo3d\\Logs\\bench\\lightpool2\\player.log --lock-held"}
+07:00:06 clocks: FrameTimingManager 10000000 Hz, QueryPerformanceCounter 10000000 Hz, newest frame started 239.3 ms ago
+07:00:09 rebuilt for n 2600 in 2641 ms
+07:00:34 fixed n 2600 40m/heavy/msaa4: gpu p99 6.90 main 3.52 render 0.69 ms -> fail (gpu 1.64) NOISY
+07:00:34 run noisy (other processes used 16.7% CPU over 5 s; 49 of 2236 frames had no GPU time (over 0.5 %)), repeating (2/3)
+07:01:05 machine still busy after 31 s (other processes 14.0% CPU); running anyway
+07:01:28 fixed n 2600 40m/heavy/msaa4: gpu p99 5.36 main 2.92 render 0.68 ms -> fail (gpu 1.28) NOISY
+07:01:28 run noisy (other processes used 14.2% CPU over 5 s; 58 of 2858 frames had no GPU time (over 0.5 %)), repeating (3/3)
+07:01:58 machine still busy after 31 s (other processes 13.6% CPU); running anyway
+07:02:22 fixed n 2600 40m/heavy/msaa4: gpu p99 6.37 main 4.76 render 0.76 ms -> fail (gpu 1.52) NOISY
+07:02:22 every attempt was noisy; the search uses attempt 3, the median of 3
+07:02:22 sweep done
+07:02:22 exit 0
+07:02:24 sweep 20261028-070224: D:\wt\td8\demo3d\sweeps\td8-lightpool-128.json -> D:\wt\td8\demo3d\Logs\bench\lightpool2
+07:02:24 the orchestrator holds the machine lock
+07:02:25 display was on, now on after 0.0 s (watching: True); held on for the sweep
+07:02:25 GPU 49 °C, throttle none
+07:02:56 waiting for a quiet machine: other processes 14.4% CPU (31 s)
+07:03:19 machine quiet: other processes 9.5% CPU over 5 s (waited 55 s)
+07:03:19 machine {"sweep": "20261028-070224", "api": "d3d12", "gpu": "NVIDIA GeForce RTX 4070 Ti", "driver": "610.88", "cpu": "12th Gen Intel(R) Core(TM) i7-12700F", "logicalCores": 20, "powerPlan": "high", "powerPlanName": "High performance", "memMHz": 2133, "jobWorkers": 6, "backbuffer": "1920x1080", "display": "on", "gpuTempC": 39, "gpuThrottle": "none", "quietWaitS": 55, "otherCpuPctAtStart": 9.5, "requireForeground": true, "unity": "6000.6.7f1", "backend": "il2cpp", "commandLine": "D:\\wt\\td8\\demo3d\\Builds\\il2cpp\\PlaylistSurvivors3D.exe -force-d3d12 -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --bench D:\\wt\\td8\\demo3d\\sweeps\\td8-lightpool-128.json --out D:\\wt\\td8\\demo3d\\Logs\\bench\\lightpool2 -logFile D:\\wt\\td8\\demo3d\\Logs\\bench\\lightpool2\\player.log --lock-held"}
+07:03:20 clocks: FrameTimingManager 10000000 Hz, QueryPerformanceCounter 10000000 Hz, newest frame started 180.6 ms ago
+07:03:22 rebuilt for n 2600 in 2657 ms
+07:03:47 fixed n 2600 40m/heavy/msaa4: gpu p99 7.63 main 3.84 render 0.80 ms -> fail (gpu 1.82) NOISY
+07:03:47 run noisy (other processes used 11.1% CPU over 5 s; the player's window lost the foreground to UnityContainerWndClass "Unity"; 47 of 2121 frames had no GPU time (over 0.5 %)), repeating (2/3)
+07:04:18 machine still busy after 31 s (other processes 10.9% CPU); running anyway
+07:04:41 fixed n 2600 40m/heavy/msaa4: gpu p99 5.93 main 3.14 render 0.71 ms -> fail (gpu 1.41) NOISY
+07:04:41 run noisy (other processes used 12.9% CPU over 5 s; 54 of 2761 frames had no GPU time (over 0.5 %)), repeating (3/3)
+07:05:12 machine still busy after 31 s (other processes 13.1% CPU); running anyway
+07:05:35 fixed n 2600 40m/heavy/msaa4: gpu p99 7.23 main 6.76 render 0.73 ms -> fail (gpu 1.72) NOISY
+07:05:35 every attempt was noisy; the search uses attempt 3, the median of 3
+07:05:35 sweep done
+07:05:36 exit 0
+07:05:37 sweep 20261028-070537: D:\wt\td8\demo3d\sweeps\td8-lightpool-256.json -> D:\wt\td8\demo3d\Logs\bench\lightpool2
+07:05:37 the orchestrator holds the machine lock
+07:05:38 display was on, now on after 0.0 s (watching: True); held on for the sweep
+07:05:38 GPU 49 °C, throttle none
+07:05:44 machine quiet: other processes 9.7% CPU over 5 s (waited 6 s)
+07:05:44 machine {"sweep": "20261028-070537", "api": "d3d12", "gpu": "NVIDIA GeForce RTX 4070 Ti", "driver": "610.88", "cpu": "12th Gen Intel(R) Core(TM) i7-12700F", "logicalCores": 20, "powerPlan": "high", "powerPlanName": "High performance", "memMHz": 2133, "jobWorkers": 6, "backbuffer": "1920x1080", "display": "on", "gpuTempC": 46, "gpuThrottle": "none", "quietWaitS": 6, "otherCpuPctAtStart": 9.7, "requireForeground": true, "unity": "6000.6.7f1", "backend": "il2cpp", "commandLine": "D:\\wt\\td8\\demo3d\\Builds\\il2cpp\\PlaylistSurvivors3D.exe -force-d3d12 -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --bench D:\\wt\\td8\\demo3d\\sweeps\\td8-lightpool-256.json --out D:\\wt\\td8\\demo3d\\Logs\\bench\\lightpool2 -logFile D:\\wt\\td8\\demo3d\\Logs\\bench\\lightpool2\\player.log --lock-held"}
+07:05:44 clocks: FrameTimingManager 10000000 Hz, QueryPerformanceCounter 10000000 Hz, newest frame started 169.5 ms ago
+07:05:46 rebuilt for n 2600 in 2630 ms
+07:06:12 fixed n 2600 40m/heavy/msaa4: gpu p99 7.39 main 7.98 render 0.98 ms -> fail (gpu 1.76) NOISY
+07:06:12 run noisy (other processes used 34.5% CPU over 5 s; 69 of 2120 frames had no GPU time (over 0.5 %)), repeating (2/3)
+07:06:42 machine still busy after 31 s (other processes 24.7% CPU); running anyway
+07:07:05 fixed n 2600 40m/heavy/msaa4: gpu p99 5.80 main 6.77 render 0.84 ms -> fail (gpu 1.38) NOISY
+07:07:05 run noisy (other processes used 26.0% CPU over 5 s; 100 of 2753 frames had no GPU time (over 0.5 %)), repeating (3/3)
+07:07:36 machine still busy after 31 s (other processes 24.8% CPU); running anyway
+07:07:59 fixed n 2600 40m/heavy/msaa4: gpu p99 6.99 main 7.28 render 0.83 ms -> fail (gpu 1.67) NOISY
+07:07:59 every attempt was noisy; the search uses attempt 3, the median of 3
+07:07:59 sweep done
+07:08:00 exit 0

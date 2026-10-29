@@ -1,0 +1,35 @@
+TimelineScene: effects t 0.0 spawns 0 requested 0 emitted 0 alive 0 rejected 0 cues 0 lights 0
+TimelineScene: beat-frame spawn cost over 12 frames (305 spawns mean): p50 0.075 ms, p99 0.114 ms, max 0.114 ms
+TimelineScene: effects t 5.0 spawns 3885 requested 77700 emitted 77700 alive 8264 rejected 0 cues 0 lights 0
+TimelineScene: beat-frame spawn cost over 12 frames (389 spawns mean): p50 0.099 ms, p99 0.134 ms, max 0.134 ms
+TimelineScene: effects t 10.0 spawns 8655 requested 173100 emitted 173100 alive 11704 rejected 0 cues 0 lights 0
+TimelineScene: beat-frame spawn cost over 12 frames (464 spawns mean): p50 0.117 ms, p99 0.169 ms, max 0.169 ms
+TimelineScene: effects t 15.0 spawns 14310 requested 286200 emitted 286200 alive 17671 rejected 0 cues 0 lights 0
+TimelineScene: beat-frame spawn cost over 7 frames (614 spawns mean): p50 0.122 ms, p99 0.166 ms, max 0.166 ms
+TimelineScene: effects t 20.0 spawns 18950 requested 379000 emitted 379000 alive 8106 rejected 0 cues 0 lights 0
+TimelineScene: beat-frame spawn cost over 8 frames (509 spawns mean): p50 0.132 ms, p99 0.173 ms, max 0.173 ms
+TimelineScene: effects t 25.0 spawns 23320 requested 466400 emitted 466400 alive 4331 rejected 0 cues 0 lights 0
+TimelineScene: beat-frame spawn cost over 8 frames (524 spawns mean): p50 0.140 ms, p99 0.236 ms, max 0.236 ms
+TimelineScene: effects t 30.0 spawns 27850 requested 557000 emitted 557000 alive 10197 rejected 0 cues 0 lights 0
+TimelineScene: beat-frame spawn cost over 8 frames (583 spawns mean): p50 0.130 ms, p99 0.179 ms, max 0.179 ms
+TimelineScene: effects t 35.0 spawns 32805 requested 656100 emitted 656100 alive 19078 rejected 0 cues 0 lights 0
+TimelineScene: beat-frame spawn cost over 8 frames (449 spawns mean): p50 0.112 ms, p99 0.156 ms, max 0.156 ms
+TimelineScene: effects t 40.0 spawns 36700 requested 734000 emitted 734000 alive 4758 rejected 0 cues 0 lights 0
+TimelineScene: beat-frame spawn cost over 8 frames (567 spawns mean): p50 0.122 ms, p99 0.171 ms, max 0.171 ms
+TimelineScene: effects t 45.0 spawns 41510 requested 830200 emitted 830200 alive 9122 rejected 0 cues 0 lights 0
+TimelineScene: beat-frame spawn cost over 8 frames (502 spawns mean): p50 0.109 ms, p99 0.143 ms, max 0.143 ms
+TimelineScene: effects t 50.0 spawns 45805 requested 916100 emitted 916100 alive 6834 rejected 0 cues 0 lights 0
+TimelineScene: beat-frame spawn cost over 9 frames (518 spawns mean): p50 0.123 ms, p99 0.184 ms, max 0.184 ms
+TimelineScene: effects t 55.0 spawns 50650 requested 1013000 emitted 1013000 alive 14741 rejected 0 cues 0 lights 0
+TimelineScene: beat-frame spawn cost over 8 frames (544 spawns mean): p50 0.113 ms, p99 0.146 ms, max 0.146 ms
+TimelineScene: effects t 60.0 spawns 55235 requested 1104700 emitted 1104700 alive 18246 rejected 0 cues 0 lights 0
+TimelineScene: beat-frame spawn cost over 8 frames (492 spawns mean): p50 0.109 ms, p99 0.141 ms, max 0.141 ms
+TimelineScene: effects t 65.0 spawns 59380 requested 1187600 emitted 1187600 alive 5503 rejected 0 cues 0 lights 0
+TimelineScene: beat-frame spawn cost over 8 frames (545 spawns mean): p50 0.124 ms, p99 0.221 ms, max 0.221 ms
+TimelineScene: effects t 70.0 spawns 63980 requested 1279600 emitted 1279600 alive 6031 rejected 0 cues 0 lights 0
+TimelineScene: beat-frame spawn cost over 8 frames (550 spawns mean): p50 0.131 ms, p99 0.150 ms, max 0.150 ms
+TimelineScene: effects t 75.0 spawns 68665 requested 1373300 emitted 1373300 alive 7324 rejected 0 cues 0 lights 0
+TimelineScene: beat-frame spawn cost over 8 frames (546 spawns mean): p50 0.112 ms, p99 0.145 ms, max 0.145 ms
+TimelineScene: effects t 80.0 spawns 73255 requested 1465100 emitted 1465100 alive 11253 rejected 0 cues 0 lights 0
+TimelineScene: beat-frame spawn cost over 7 frames (497 spawns mean): p50 0.107 ms, p99 0.231 ms, max 0.231 ms
+TimelineScene: effects t 85.0 spawns 77020 requested 1540400 emitted 1540400 alive 3870 rejected 0 cues 0 lights 0

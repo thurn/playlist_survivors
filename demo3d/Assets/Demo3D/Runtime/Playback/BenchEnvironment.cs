@@ -83,12 +83,31 @@ namespace Demo3D.Runtime.Playback
             return viewWidth / (2f * Mathf.Tan(hfov * 0.5f));
         }
 
-        public void Frame(Vector2 focus, float viewWidth)
+        /// <summary>Frames the view; the shadows fit `shadowWidth` (the view before its punch).</summary>
+        public void Frame(Vector2 focus, float viewWidth, float shadowWidth = 0)
         {
+            if (shadowWidth <= 0) shadowWidth = viewWidth;
             var rot = Quaternion.Euler(Pitch, 0, 0);
             var target = new Vector3(focus.x, 0, focus.y);
             Camera.transform.SetPositionAndRotation(target - rot * Vector3.forward * Distance(viewWidth), rot);
+            // Shadows reach the view's farthest ground corner, as the bench rig fits them (TD9:
+            // the pipeline's 50 m default cut the top of a 40 m view's shadows off).
+            if (shadowWidth != _shadowFor && GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset urp)
+            {
+                _shadowFor = shadowWidth;
+                Demo3D.Bench.CameraGeometry.Position(shadowWidth, out var y, out var z);
+                var fp = Demo3D.Bench.CameraGeometry.GroundFootprint(shadowWidth);
+                double far = 0;
+                for (int i = 0; i < 4; i++)
+                {
+                    double dx = fp[2 * i], dz = fp[2 * i + 1] - z;
+                    far = System.Math.Max(far, System.Math.Sqrt(dx * dx + y * y + dz * dz));
+                }
+                urp.shadowDistance = (float)(far + 5);
+            }
         }
+
+        float _shadowFor = -1;
 
         /// <summary>True if a ground point (with a height) projects inside the viewport.</summary>
         public bool OnScreen(Vector3 p, float height)

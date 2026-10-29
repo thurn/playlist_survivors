@@ -934,6 +934,13 @@
     },
     {
       "source": "unity_assets",
+      "path": "Assets/Hovl Studio/AAA Projectiles Vol 1/Prefabs/Flash and hits/Hit 25 orange explosion.prefab",
+      "sourceSha256": "e5a0c253bdfb41d0de63b292f2ec39c98d75cafccf1f366adddc68e83f2c68d9",
+      "guid": "2e33bbd89680b744a8f2b0727a31b0ca",
+      "use": "effect candidate: death bursts and explosions"
+    },
+    {
+      "source": "unity_assets",
       "path": "Assets/Hovl Studio/AAA Projectiles Vol 1/Prefabs/Projectile VFX loop/Projectile 16 fire.prefab",
       "sourceSha256": "fb26cae9e0a97fb9c0df74cf90a05165eb9a5543bfcd275f2d377c8c5ecfa0f3",
       "guid": "3fff46610e3e8a9448b12a4547cf04f4",
@@ -1022,6 +1029,20 @@
       "sourceSha256": "6a08e4f8f99d529d1642945a62d32201738c1950a8f46d8032bdefa400b5254c",
       "guid": "a32d87b33cadfed4b83eeaa564eb7724",
       "use": "effect candidate: rings and lightning"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Fantastic cartoon VFX/Prefabs/Cartoon explosion.prefab",
+      "sourceSha256": "5c45c1a945a549218f870689fbd7696cafa77745ee2caf027cbf2fe0d52c9d4e",
+      "guid": "3477fec71dd99b64f83a0316b4d5b4e5",
+      "use": "effect candidate: death bursts and explosions"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Fantastic cartoon VFX/Prefabs/Cartoon smoke.prefab",
+      "sourceSha256": "09f8494104311169509edbcb8d7aef8f78970aa51d69b71af35e06a506a33a77",
+      "guid": "354a5321132adc64ea182ed454d28ad2",
+      "use": "effect candidate: monster dust puffs"
     },
     {
       "source": "unity_assets",
@@ -1134,6 +1155,20 @@
       "sourceSha256": "513bfc81ba861bd7ae7ac435b171544fb1342caf57ead29a56a3fe28668e8523",
       "guid": "bfbc37d0bc0e8ff4082a8b2894b3a486",
       "use": "effect candidate: sword slashes"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/KriptoFX/Explosions/Prefabs/Mobile/MobileExplosion1.prefab",
+      "sourceSha256": "388ab028af00b43e06a9f1bc043fda6f5ee4e6cf691ebe8af1b7eb1c1e1c9a93",
+      "guid": "26a1a0102e7febb42a30bfcce1be6f5c",
+      "use": "effect candidate: death bursts and explosions"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/KriptoFX/Explosions/Prefabs/Mobile/MobileExplosion3.prefab",
+      "sourceSha256": "e1c2bd575a4f9d10d7f80a5aa1f946138724d93c70d431b7d3dc867890a85a6c",
+      "guid": "780e00d2918d98641a3b5495da904d2c",
+      "use": "effect candidate: death bursts and explosions"
     },
     {
       "source": "unity_assets",
@@ -1365,6 +1400,27 @@
       "sourceSha256": "41162a2653ba20e6a65565640b3c51a475df2c69387b9bb5f113c66ad4830d2e",
       "guid": "7fec430887d724867a2483827db438a9",
       "use": "fodder: slime"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/MagicPig Shared/Magic Spells & Particles/Particle Components/PComponent Fire Embers.prefab",
+      "sourceSha256": "6d85980d1434c08226d9f26bdf9e461ef0d8d7b3cb1dac4c58a735ae650328d1",
+      "guid": "c17f7da048ca646b6af33275801eab88",
+      "use": "effect candidate: ambient embers and wisps"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/MagicPig Shared/Magic Spells & Particles/Particle Components/PComponent Smoke Puff.prefab",
+      "sourceSha256": "63f2f40a238b01ef60a6700e43d791a2ea4f83079dc68f426a29acd3cf803e6b",
+      "guid": "ae40da984d1ec447a85e14a012b8e5f4",
+      "use": "effect candidate: monster dust puffs"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/MagicPig Shared/Magic Spells & Particles/Particle Components/PComponent Wisps Circular.prefab",
+      "sourceSha256": "903cef4f42a9038c22c74a684ee9b916fd495c60fbce505a202a0354ad0de315",
+      "guid": "3b58fe0a9faca412f8fe45e237555132",
+      "use": "effect candidate: ambient embers and wisps"
     },
     {
       "source": "unity_assets",

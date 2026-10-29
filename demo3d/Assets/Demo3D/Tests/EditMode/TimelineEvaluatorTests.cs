@@ -115,6 +115,39 @@ namespace Demo3D.Tests
         }
 
         [Test]
+        public void TicksFlashDimmerAndShorterThanHits()
+        {
+            int ticks = 0;
+            foreach (var a in _tl.Actions)
+            {
+                if (a.Kind != ActionKind.Tick) continue;
+                bool alsoStruck = false;
+                foreach (var b in _tl.ActionsOf(a.Entity))
+                    if (b.Kind != ActionKind.Tick && b.Kind != ActionKind.Spawn && System.Math.Abs(b.Impact - a.Impact) < 0.13) alsoStruck = true;
+                if (alsoStruck) continue;
+                var st = _eval.Evaluate(a.Entity, a.Impact + 0.001, 1f, 1f, 0f);
+                Assert.That(st.HitFlash, Is.LessThanOrEqualTo(TimelineEvaluator.TickFlash + 1e-4f));
+                ticks++;
+            }
+            Assert.Pass($"{ticks} lone ticks checked");
+        }
+
+        [Test]
+        public void PunchAndShakeStayWithinTheirBounds()
+        {
+            var feel = new CameraFeel(_tl);
+            float maxShake = 0, minPunch = 1;
+            for (double t = 0; t < _tl.Duration; t += 1.0 / 60)
+            {
+                maxShake = UnityEngine.Mathf.Max(maxShake, feel.Shake(t).magnitude);
+                minPunch = UnityEngine.Mathf.Min(minPunch, feel.Punch(t));
+                Assert.That(feel.Shake(t), Is.EqualTo(feel.Shake(t)), "a function of time");
+            }
+            Assert.That(maxShake, Is.GreaterThan(0f).And.LessThanOrEqualTo(CameraFeel.ShakeCap * 1.01f));
+            Assert.That(minPunch, Is.InRange(1f - CameraFeel.PunchAmount - 1e-4f, 1f));
+        }
+
+        [Test]
         public void EvaluationIsAFunctionOfTime()
         {
             var e = _tl.Actions[_tl.Actions.Length / 2].Entity;

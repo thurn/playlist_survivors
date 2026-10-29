@@ -1,0 +1,7 @@
+{
+  "_comment": "TD8's runtime spike (effects.md, Choosing the GPU runtime): S4 (effects only) at heavy load, 40 m, every timeline effect spawned as the one billboard burst, five copies each (the stress timeline gives about 85 events a beat at this N; five copies make about 450 spawns on each beat frame), on our compute runtime. Lights off on both arms.",
+  "scene": "S4", "seconds": 20, "warmup": 5, "rewarm": 3,
+  "n": { "fixed": [2600] }, "viewWidthM": [40], "load": ["heavy"], "aa": ["msaa4"], "jobWorkers": 6,
+  "quiet": { "maxWaitS": 120, "repeatWaitS": 30 },
+  "sceneOptions": { "spikeEffect": "spike-burst", "spikeCopies": 5, "lightPool": 0 }
+}

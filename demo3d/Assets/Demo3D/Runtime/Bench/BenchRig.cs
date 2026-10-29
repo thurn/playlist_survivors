@@ -200,6 +200,11 @@ namespace Demo3D.Runtime.Bench
             if (_pass == 2) _cmd.DrawMeshInstanced(mesh, 0, _mat, 2, matrices, count);
         }
 
+        public void Transparent(Action<CommandBuffer> issue)
+        {
+            if (_pass == 2) issue(_cmd);
+        }
+
         public void Dispose()
         {
             _cmd.Release();

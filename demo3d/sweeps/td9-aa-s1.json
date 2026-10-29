@@ -1,0 +1,6 @@
+{
+  "_comment": "TD9's anti-aliasing cost: S1 (the crowd walking) in the arena (E2, 1x) at 40 m, MSAA 4x against TAA at matched counts.",
+  "scene": "S1", "seconds": 20, "warmup": 5, "rewarm": 3,
+  "n": { "fixed": [800, 1200] }, "viewWidthM": [40], "load": ["demo"], "aa": ["msaa4", "taa"], "jobWorkers": 6,
+  "sceneOptions": { "crowd": "bone", "arena": "e2", "density": 1 }
+}

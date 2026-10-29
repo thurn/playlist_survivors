@@ -83,6 +83,9 @@ namespace Demo3D.Runtime.Playback
             return _last;
         }
 
+        /// <summary>The DSP time at which song time `songTime` is mixed (for PlayScheduled).</summary>
+        public double DspAt(double songTime) => _dspStart + (songTime - _startAt);
+
         /// <summary>Advances fixed-time mode by one frame; call once per rendered frame.</summary>
         public void EndFrame() => _fixedFrames++;
 

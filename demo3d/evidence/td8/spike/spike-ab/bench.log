@@ -1,0 +1,36 @@
+06:28:22 sweep 20261028-062822: D:\wt\td8\demo3d\sweeps\td8-spike-vfx.json -> D:\wt\td8\demo3d\Logs\bench\spike-ab
+06:28:22 the orchestrator holds the machine lock
+06:28:23 display was on, now on after 0.0 s (watching: True); held on for the sweep
+06:28:23 GPU 49 °C, throttle none
+06:28:28 machine quiet: other processes 5.4% CPU over 5 s (waited 6 s)
+06:28:28 machine {"sweep": "20261028-062822", "api": "d3d12", "gpu": "NVIDIA GeForce RTX 4070 Ti", "driver": "610.88", "cpu": "12th Gen Intel(R) Core(TM) i7-12700F", "logicalCores": 20, "powerPlan": "high", "powerPlanName": "High performance", "memMHz": 2133, "jobWorkers": 6, "backbuffer": "1920x1080", "display": "on", "gpuTempC": 46, "gpuThrottle": "none", "quietWaitS": 6, "otherCpuPctAtStart": 5.4, "requireForeground": true, "unity": "6000.6.7f1", "backend": "il2cpp", "commandLine": "D:\\wt\\td8\\demo3d\\Builds\\il2cpp\\PlaylistSurvivors3D.exe -force-d3d12 -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --bench D:\\wt\\td8\\demo3d\\sweeps\\td8-spike-vfx.json --out D:\\wt\\td8\\demo3d\\Logs\\bench\\spike-ab -logFile D:\\wt\\td8\\demo3d\\Logs\\bench\\spike-ab\\player.log --lock-held"}
+06:28:29 clocks: FrameTimingManager 10000000 Hz, QueryPerformanceCounter 10000000 Hz, newest frame started 276.8 ms ago
+06:28:31 rebuilt for n 2600 in 2637 ms
+06:28:56 fixed n 2600 40m/heavy/msaa4: gpu p99 0.20 main 0.85 render 0.38 ms -> pass (render 0.18) NOISY
+06:28:56 run noisy (other processes used 14.1% CPU over 5 s; 7953 of 27180 frames had no GPU time (over 0.5 %)), repeating (2/3)
+06:29:13 machine quiet: other processes 9.3% CPU over 5 s (waited 17 s)
+06:29:36 fixed n 2600 40m/heavy/msaa4: gpu p99 0.20 main 0.88 render 0.41 ms -> pass (render 0.20) NOISY
+06:29:36 run noisy (other processes used 14.3% CPU over 5 s; 7766 of 28656 frames had no GPU time (over 0.5 %)), repeating (3/3)
+06:29:41 machine quiet: other processes 9.4% CPU over 5 s (waited 6 s)
+06:30:05 fixed n 2600 40m/heavy/msaa4: gpu p99 0.20 main 0.83 render 0.38 ms -> fail (gpu 1982565462082.65) NOISY
+06:30:05 every attempt was noisy; the search uses attempt 2, the median of 3
+06:30:05 sweep done
+06:30:06 exit 0
+06:30:07 sweep 20261028-063007: D:\wt\td8\demo3d\sweeps\td8-spike-own.json -> D:\wt\td8\demo3d\Logs\bench\spike-ab
+06:30:07 the orchestrator holds the machine lock
+06:30:07 display was on, now on after 0.0 s (watching: True); held on for the sweep
+06:30:07 GPU 40 °C, throttle none
+06:30:13 machine quiet: other processes 3.8% CPU over 5 s (waited 6 s)
+06:30:13 machine {"sweep": "20261028-063007", "api": "d3d12", "gpu": "NVIDIA GeForce RTX 4070 Ti", "driver": "610.88", "cpu": "12th Gen Intel(R) Core(TM) i7-12700F", "logicalCores": 20, "powerPlan": "high", "powerPlanName": "High performance", "memMHz": 2133, "jobWorkers": 6, "backbuffer": "1920x1080", "display": "on", "gpuTempC": 38, "gpuThrottle": "none", "quietWaitS": 6, "otherCpuPctAtStart": 3.8, "requireForeground": true, "unity": "6000.6.7f1", "backend": "il2cpp", "commandLine": "D:\\wt\\td8\\demo3d\\Builds\\il2cpp\\PlaylistSurvivors3D.exe -force-d3d12 -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --bench D:\\wt\\td8\\demo3d\\sweeps\\td8-spike-own.json --out D:\\wt\\td8\\demo3d\\Logs\\bench\\spike-ab -logFile D:\\wt\\td8\\demo3d\\Logs\\bench\\spike-ab\\player.log --lock-held"}
+06:30:13 clocks: FrameTimingManager 10000000 Hz, QueryPerformanceCounter 10000000 Hz, newest frame started 152.4 ms ago
+06:30:16 rebuilt for n 2600 in 2632 ms
+06:30:41 fixed n 2600 40m/heavy/msaa4: gpu p99 0.23 main 0.99 render 0.51 ms -> fail (gpu 1982565457483.04) NOISY
+06:30:41 run noisy (other processes used 10.0% CPU over 5 s; 6538 of 23639 frames had no GPU time (over 0.5 %)), repeating (2/3)
+06:30:52 machine quiet: other processes 9.7% CPU over 5 s (waited 12 s)
+06:31:16 fixed n 2600 40m/heavy/msaa4: gpu p99 0.23 main 0.96 render 0.46 ms -> fail (gpu 1982565453518.78) NOISY
+06:31:16 run noisy (other processes used 10.5% CPU over 5 s; 6859 of 24179 frames had no GPU time (over 0.5 %)), repeating (3/3)
+06:31:21 machine quiet: other processes 9.6% CPU over 5 s (waited 6 s)
+06:31:44 fixed n 2600 40m/heavy/msaa4: gpu p99 0.23 main 0.96 render 0.46 ms -> fail (gpu 1982565451059.79) NOISY
+06:31:44 every attempt was noisy; the search uses attempt 2, the median of 3
+06:31:44 sweep done
+06:31:44 exit 0

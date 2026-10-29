@@ -24,8 +24,15 @@ namespace Demo3D.Runtime.Playback
         public string CaptureStills;  // --capture-stills <dir>: fixed-time stills (with --stills-at)
         public string StillsAt;       // --stills-at <s,s,...>
         public string CaptureVideo;   // --capture-video <file.mp4>: fixed-time 1080p60 video
+        public double TimeOffset;     // --time-offset <s>: shift song time (TD11's invisible anchor: 0.001)
+        public float PoseRate;        // --pose-rate <hz>: round pose times down (TD11's visible anchor: 15)
+        public string DumpSounds;     // --dump-sounds <file.json>: the timeline's sound events, for the offline mix
+        public bool NoFeel;           // --no-feel: no punch or shake (A/B captures may use it)
         public int Envelope;          // --envelope <count>: override the level script's envelope count
         public string Stats;          // --stats <file.csv>: on-screen counts against targets, twice a second
+        public string Arena = "e2";   // --arena <e0|e2|off>: the arena's rung (TD9), or TD4's flat bench ground
+        public float Density = 1f;    // --density <0.5|1|2|4>: the arena's decoration density
+        // --cuts default|none|all|name,-name (TD11's cuts; Demo3D.Runtime.Cuts reads it), --lod-px, --light-cell, --merge-px
 
         public static DevFlags FromCommandLine()
         {
@@ -51,6 +58,12 @@ namespace Demo3D.Runtime.Playback
                 CaptureVideo = Args.Get("--capture-video"),
                 Stats = Args.Get("--stats"),
                 Envelope = Args.GetInt("--envelope", 0),
+                NoFeel = Args.Has("--no-feel"),
+                DumpSounds = Args.Get("--dump-sounds"),
+                Arena = Args.Get("--arena", "e2"),
+                Density = Args.GetFloat("--density", 1f),
+                TimeOffset = Args.GetFloat("--time-offset", 0f),
+                PoseRate = Args.GetFloat("--pose-rate", 0f),
             };
             if (f.CaptureStills != null || f.CaptureVideo != null) f.FixedTime = true;
             return f;

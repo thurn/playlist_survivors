@@ -4,6 +4,7 @@ using Demo3D.Bench;
 using Demo3D.Choreography;
 using Demo3D.Runtime.Bench;
 using Demo3D.Runtime.Crowd;
+using Demo3D.Runtime.Effects;
 using UnityEngine;
 
 namespace Demo3D.Runtime.Playback
@@ -13,7 +14,13 @@ namespace Demo3D.Runtime.Playback
     /// runner): each rebuilds the choreographer's stress timeline for N (timing its ticks, as at
     /// load), then plays it through the same evaluation and crowd as the demo. The camera keeps
     /// the harness's height and pitch, and follows the timeline's framing focus.
-    /// sceneOptions: <c>crowd</c> ("stock" until TD5's bone path replaces it).
+    /// sceneOptions: <c>crowd</c> (bone, stock or baseline; default bone); <c>arena</c> (the
+    /// arena's rung, "e2" by default, or "e0"; "off" for TD4's flat ground) and <c>density</c>
+    /// (default 1). From TD9 the scenes run in the arena (benchmarks.md, Stress scenes), when
+    /// it is baked; S1 to S5 hold its opening clearing and S6 its walled courtyard.
+    /// sceneOptions: <c>crowd</c> (the crowd renderer, default bone), <c>lightPool</c> (pooled effect
+    /// lights, default EffectLights.DefaultPool), <c>effectPool</c> (particles). The stress script's
+    /// <c>draw</c> list picks the systems: S4 hides the crowd and draws effects and lights only.
     /// </summary>
     public sealed class TimelineScene : IBenchScene
     {
@@ -35,6 +42,17 @@ namespace Demo3D.Runtime.Playback
         List<int>[] _slotOf;     // each listed entity's stable crowd slot
         CrowdSlots _slots;
         int _onScreenAlive, _onScreenDying, _offScreen;
+        Demo3D.Runtime.Arena.ArenaRuntime _arena;
+        Demo3D.Runtime.Arena.RenderStats _stats;
+        EffectSystem _fx;
+        EffectDriver _fxDriver;
+        ISpawnSink _altSink; // the runtime spike's VFX Graph arm (sceneOptions runtime: vfx)
+        bool _drawCrowd = true, _drawEffects, _drawLights;
+        double _fxLast = double.NaN;
+        float _fxLogAt;
+        readonly System.Diagnostics.Stopwatch _fxWatch = new System.Diagnostics.Stopwatch();
+        readonly List<double> _beatCost = new List<double>();
+        readonly List<int> _beatSpawns = new List<int>();
         double _t;
         // Covers warm-ups, probes, full runs and noisy repeats at one N; longer runs (holds, long
         // repeat waits) loop the timeline's settled part, and the downbeat check loops with it.
@@ -60,11 +78,39 @@ namespace Demo3D.Runtime.Playback
         public void Load(BenchContext ctx)
         {
             _ctx = ctx;
+            Cuts.Active = Cuts.FromOptions(ctx.Options); // TD11's cuts: sceneOptions cuts, else --cuts
+            Debug.Log($"TimelineScene: cuts {Cuts.Active}");
             _data = PlaybackData.Load();
             _roster = RosterAssets.Load();
             _script = StressScript.Parse(_data.Stress(_scene).text);
             var layout = _data.Layout(_script.Layout ?? "arena") ?? _data.Layout("arena");
             _choreo = ChoreographyData.FromJson(_data.annotations.text, _data.roster.text, layout.text, _data.footprints.text);
+            _drawCrowd = _script.Draw.Length == 0 || Array.IndexOf(_script.Draw, "crowd") >= 0;
+            _drawEffects = Array.IndexOf(_script.Draw, "effects") >= 0;
+            _drawLights = Array.IndexOf(_script.Draw, "lights") >= 0;
+            if (_drawEffects)
+            {
+                int Opt(string key, int fallback) =>
+                    ctx.Options != null && ctx.Options.TryGetValue(key, out var v) && v != null ? Convert.ToInt32(v, System.Globalization.CultureInfo.InvariantCulture) : fallback;
+                if (ctx.Options != null && ctx.Options.TryGetValue("runtime", out var rt) && rt is string runtime && runtime != "own")
+                    _altSink = SpawnSinks.Create(runtime, EffectLibrary.Load(), ctx.Camera);
+                else
+                {
+                    _fx = new EffectSystem(EffectLibrary.Load(), Opt("effectPool", EffectSystem.DefaultPool), _drawLights ? Opt("lightPool", EffectLights.DefaultPool) : 0);
+                    _fx.AddCamera(ctx.Camera);
+                }
+            }
+            string rung = ctx.Options.TryGetValue("arena", out var a) && a is string s ? s : Demo3D.Runtime.Arena.ArenaIndex.E2;
+            float density = ctx.Options.TryGetValue("density", out var d) && d is double dd ? (float)dd : 1f;
+            if (rung != "off" && (_script.Layout ?? "arena") == "arena")
+            {
+                if (!Demo3D.Runtime.Arena.ArenaRuntime.Available(rung, density))
+                    throw new InvalidOperationException($"TimelineScene: no arena for rung {rung} at {density}x (baked: " +
+                                                        $"{Demo3D.Runtime.Arena.ArenaRuntime.Describe()}); bake it or pass sceneOptions arena: off");
+                _arena = Demo3D.Runtime.Arena.ArenaScene.LoadInto(ctx, rung, density);
+                _stats = new Demo3D.Runtime.Arena.RenderStats();
+                return;
+            }
             var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
             UnityEngine.Object.Destroy(ground.GetComponent<Collider>());
             ground.transform.SetParent(ctx.Root, false);
@@ -82,6 +128,16 @@ namespace Demo3D.Runtime.Playback
             MapTypes();
             _t = 0;
             _slots = new CrowdSlots(_typeIds.Length, Capacity);
+            if (_fx != null || _altSink != null)
+            {
+                var lib = _fx != null ? _fx.Library : EffectLibrary.Load();
+                _fxDriver = new EffectDriver(_tl, lib, (ISpawnSink)_fx ?? _altSink, t => _assets[t].kind == "elite" || _assets[t].kind == "boss");
+                if (_ctx.Options != null && _ctx.Options.TryGetValue("spikeEffect", out var spike) && spike is string name)
+                    _fxDriver.OverrideAll = lib.IndexOf(name) >= 0 ? lib.IndexOf(name) : throw new ArgumentException("no effect " + name);
+                if (_ctx.Options != null && _ctx.Options.TryGetValue("spikeCopies", out var copies) && copies != null)
+                    _fxDriver.OverrideCopies = Convert.ToInt32(copies, System.Globalization.CultureInfo.InvariantCulture);
+                _fxLast = double.NaN;
+            }
             var s = _tl.TickTiming.Summarize();
             int offScreen = (int)Math.Round(n * script.ReserveFactor);
             return new SimTickStats
@@ -142,7 +198,7 @@ namespace Demo3D.Runtime.Playback
                 foreach (int e in _lists[type]) _slotOf[type].Add(_slots.Assign(type, e));
             }
             _slots.End();
-            for (int type = 0; type < _lists.Length; type++)
+            for (int type = 0; _drawCrowd && type < _lists.Length; type++)
             {
                 var list = _lists[type];
                 var inst = _crowd.Instances(type, _slots.Count(type));
@@ -153,7 +209,50 @@ namespace Demo3D.Runtime.Playback
                     inst[_slotOf[type][k]] = Instance(st, _assets[type], _tl.Entities[list[k]].Seed);
                 }
             }
-            _crowd.Draw(_ctx.Camera);
+            if (_drawCrowd) _crowd.Draw(_ctx.Camera);
+            if (_altSink != null)
+            {
+                _fxWatch.Restart();
+                _fxDriver.Frame(_t);
+                _altSink.Update(_t, 0, _ctx.Camera);
+                _fxWatch.Stop();
+                if (_fxDriver.EventsThisFrame >= 100) { _beatCost.Add(_fxWatch.Elapsed.TotalMilliseconds); _beatSpawns.Add(_fxDriver.EventsThisFrame); }
+                if (Time.realtimeSinceStartup > _fxLogAt) { _fxLogAt = Time.realtimeSinceStartup + 5; LogBeatCost(); }
+            }
+            if (_fx != null)
+            {
+                _fxWatch.Restart();
+                _fx.BeginFrame();
+                _fxDriver.Frame(_t);
+                float dt = double.IsNaN(_fxLast) || _t < _fxLast ? 0f : (float)(_t - _fxLast);
+                _fx.Update(_t, dt, _ctx.Camera);
+                _fxWatch.Stop();
+                // The spike's beat-frame spawn cost: CPU time of the spawn path on frames with 100 or more spawns.
+                if (_fxDriver.EventsThisFrame >= 100 && !double.IsNaN(_fxLast) && _t > _fxLast)
+                {
+                    _beatCost.Add(_fxWatch.Elapsed.TotalMilliseconds);
+                    _beatSpawns.Add(_fxDriver.EventsThisFrame);
+                }
+                _fxLast = _t;
+                if (Time.realtimeSinceStartup > _fxLogAt)
+                {
+                    _fxLogAt = Time.realtimeSinceStartup + 5;
+                    LogBeatCost();
+                    Debug.Log($"TimelineScene: effects t {_t:F1} spawns {_fx.SpawnsTotal} requested {_fx.ParticlesRequested} emitted {_fx.ParticlesEmitted} alive {_fx.Particles} rejected {_fx.RejectedTotal} cues {_fx.Lights.ActiveCues} lights {_fx.Lights.LightsUsed}");
+                }
+            }
+        }
+
+        void LogBeatCost()
+        {
+            if (_beatCost.Count == 0) return;
+            _beatCost.Sort();
+            double sum = 0;
+            foreach (var s in _beatSpawns) sum += s;
+            Debug.Log($"TimelineScene: beat-frame spawn cost over {_beatCost.Count} frames ({sum / _beatSpawns.Count:F0} spawns mean): " +
+                      $"p50 {_beatCost[_beatCost.Count / 2]:F3} ms, p99 {_beatCost[(int)(_beatCost.Count * 0.99)]:F3} ms, max {_beatCost[_beatCost.Count - 1]:F3} ms");
+            _beatCost.Clear();
+            _beatSpawns.Clear();
         }
 
         internal static MonsterInstance Instance(in TimelineEvaluator.State st, RosterAssets.TypeAssets asset, uint seed,
@@ -202,6 +301,19 @@ namespace Demo3D.Runtime.Playback
 
         public void CollectCounters(SceneCounters c, bool viewFrame)
         {
+            if (_altSink != null) { c.SpawnsThisFrame = _fxDriver?.EventsThisFrame ?? 0; c.Particles = _altSink.Particles; c.SpawnsRejected = 0; }
+            if (_fx != null)
+            {
+                c.Particles = _fx.Particles;
+                c.SpawnsThisFrame = _fxDriver?.EventsThisFrame ?? 0;
+                c.SpawnsRejected = _fx.TakeRejected();
+                if (_drawLights)
+                {
+                    c.LightCues = _fx.Lights.ActiveCues;
+                    c.LightsUsed = _fx.Lights.LightsUsed;
+                    c.LightDropShare = _fx.Lights.DropShare;
+                }
+            }
             var cc = _crowd.Counters;
             c.SkinnedVertices = (int)Math.Min(int.MaxValue, cc.SkinnedVertices);
             c.ShadowCasters = cc.ShadowCasters;
@@ -219,10 +331,19 @@ namespace Demo3D.Runtime.Playback
             c.OnScreenAlive = _onScreenAlive;
             c.OnScreenDying = _onScreenDying;
             c.OffScreen = _offScreen;
+            if (_arena != null && _arena.Ready)
+            {
+                var urp = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline as UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset;
+                _arena.Count(_ctx.Camera, urp != null ? urp.shadowDistance : 50f, out int visible, out int casters);
+                c.Environment = Demo3D.Runtime.Arena.ArenaScene.EnvironmentJson(_arena, _stats, visible, casters);
+            }
         }
 
         public void DrawOverdraw(IOverdrawSink sink)
         {
+            if (_fx != null) sink.Transparent(cmd => _fx.DrawOverdraw(cmd));
+            Demo3D.Runtime.Arena.ArenaScene.DrawOverdraw(_arena, _ctx.Camera, sink);
+            if (!_drawCrowd) return;
             // The stock crowd's bind-pose meshes at each instance stand in for the skinned draws.
             for (int type = 0; type < _lists.Length; type++)
             {
@@ -239,8 +360,15 @@ namespace Demo3D.Runtime.Playback
 
         public void Dispose()
         {
+            _fx?.Dispose();
+            _fx = null;
+            _altSink?.Dispose();
+            _altSink = null;
             _crowd?.Dispose();
             _crowd = null;
+            _stats?.Dispose();
+            _arena?.Dispose();
+            _arena = null;
         }
     }
 

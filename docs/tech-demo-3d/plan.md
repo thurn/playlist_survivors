@@ -323,6 +323,12 @@ the task that consumes the result removes the row once it has used it.
 | Watch the first assembled check | From `demo3d/`, windowed: `Builds\\il2cpp\\PlaylistSurvivors3D.exe -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --click --overlay --seconds 60 --envelope 750` (about 300 monsters), then `--start-at 45`, then `--start-at 196` (the ending's accents). Expect every gait step, hit flinch and death on a click with no drift over the minute; feet that don't slide and crossfades without pops; overlay counts near the targets; the horde at 0:45 appearing at once. Note the song times of anything off | TD4 | TD13 |
 | Watch the bone-texture crowd in motion | After `demo3d unity BakeCrowd` and `demo3d build`, from `demo3d/`: `Builds\il2cpp\PlaylistSurvivors3D.exe -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --crowd-bench --arm bone --scene s2 --n 800 --view-width 30 --seconds 60` (windowed). Look for feet sliding on the walks, pops at crossfades (into and out of attacks, hits and deaths), the hit flash's strength, the dissolve and its edge, and weapons leaving hands. Stills: `demo3d/evidence/td5/crowd-*.jpg` | TD5 | TD4 (its timeline hookup replaces TD5's scenario) |
 | Judge the crowd's look against the packs | Compare `demo3d/evidence/td5/crowd-bone-s2-30m-crop.jpg` with the vendor demo scenes: the slime is drawn opaque (its vendor material is transparent), the goblin, bat and mushroom use albedo baked from InfinityPBR's colour-ID shader, and tints are placeholder near-white sets. Note anything that reads wrong | TD5 | TD15 (the art pass) |
+| Review TD9's anti-aliasing pairs | Flip between `demo3d/evidence/td9/aa/*-msaa4-*-crop.jpg` and the matching `*-taa-*` crops (3× enlargements of the view's centre), and watch `D:\wt\demo3d\captures\td9\s3-msaa4.mp4` against `s3-taa.mp4` and `song-msaa4.mp4` against `song-taa.mp4` (2 s, fixed-time; full stills beside them). TD9 chose MSAA 4×: TAA left the horde's edges stepped. Note any moment where TAA looks better (shimmer on thin swords, the bolts' trails) or MSAA worse. Regenerate with `uv run --project demo3d/tools python demo3d/evidence/td9/aa_captures.py` | TD9 | TD12 (its AA mode) |
+| Judge the arena's night look | Flip through `demo3d/evidence/td9/stills/arena-e2-1x-*.jpg` (the six shot positions, empty) and the E0 set beside them; watch the song in the arena (TD9's run command). Note anything too dark, too flat or off-palette, props that float or clip, and whether monsters read in the static shade | TD9 | TD15 (the art pass) |
+| Watch S6 in the arena | From `demo3d/`, windowed: `Builds\il2cpp\PlaylistSurvivors3D.exe -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --scene S6 --n 1200 --view-width 40 --load demo --overlay --seconds 60`. qa.md, Walls and the sim: the horde flows round the courtyard's walls and through its gaps, never through a wall; jams at the gaps read as marching in place on the beat | TD9 | TD12 (S6 at the envelope) |
+| Listen to the hero's blows on the click | From `demo3d/`, windowed with speakers on: `Builds\\il2cpp\\PlaylistSurvivors3D.exe -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --click --overlay --seconds 60`. Expect every sword blow, hit flinch and death on a click, swings and impacts (not a wall of identical sounds) at the dense beats, punch on accents and shake that grows with the hits but never jars. Note the song time of anything off | TD10 | TD13 |
+| Review TD8's effect A/B stills | Open `demo3d/evidence/td8/ab/ab-*.jpg` (each: the stock prefab left, our GPU runtime right, at four times of its life, 2×2) and `demo3d/evidence/td8/song-141.5s.jpg`. Note any effect whose read differs: colour, size, timing, a missing layer (README lists the known approximations: curl noise, trails as stretched billboards, sword-slash shading, the laser's beam, skipped distortion). To see one moving: from `demo3d/`, `Builds\il2cpp\PlaylistSurvivors3D.exe -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --effect-gallery <dir> --effects <name>` | TD8 | TD11 (cuts) |
+| Review TD11's accepted cuts | Open `demo3d/evidence/td11/ab/*.jpg` at 100% (each: the centre of the frame with the largest FLIP, A with every cut off left, B right): `lod-120-60-*` (LOD1 below 120 px, LOD2 below 60 px), `clips30-*`, and `accepted-lod-clips-*` (both, the defaults); `invisible-*` and `visible-*` show the two anchors for scale. Full PNG stills: `D:\wt\td11\captures\td11\<name>\still-*.png` against `...\base\`. Watch `D:\wt\td11\captures\td11\lod-120-60.mp4`, `clips30.mp4` and `accepted-lod-clips.mp4` against `base.mp4` (2 s, fixed time, S3 at 600, 40 m; captures are gitignored, so move them with the worktree's other captures). Note any visible difference: LOD pops or dithered crossfades, faceted silhouettes on small monsters, 30 Hz stepping in fast attacks. Rejected cuts' videos sit beside them (`shadow-proxy`, `light-cell`, `light-cell-2m`, `drop-glow`, `merge`) | TD11 | TD12 (the frontier uses the accepted cuts) |
 
 ## Task Notes
 
@@ -1264,19 +1270,424 @@ label, MSAA 4x; 2026-10-28 00:38 to 01:23, IL2CPP; [frontier/](../../demo3d/evid
 
 ### TD8
 
-Status: Not started.
+Status: Done (2026-10-28, on Cygnus).
+
+- **Commits** (branch `td/td8`, from `3d9e740`, with `demo3d` at `b03b45a` merged in `334fa0d`):
+  `10dabb0` (runtime, converter, light pool, gallery, hookups), `4856155` (trails as stretched
+  billboards, beams, orbital velocity, the spike burst, spawn-cost timing), `22207d1` (the VFX Graph
+  arm, spawn sinks, EditMode tests, light pool specs), `246b70d` (the spike's decision, authored
+  light cues, the VFX package removed again), `88ef4eb` (A/B stills, light pool sweeps), and this
+  entry's commit.
+- **Run:** in a set-up worktree, `demo3d unity BakeAll` (the `effects` baker writes
+  `Assets/Baked/Effects/Resources/EffectLibrary.asset`; also `demo3d unity BakeEffects`), then
+  `demo3d build`. The song with effects: from `demo3d/`, `Builds\il2cpp\PlaylistSurvivors3D.exe
+  -screen-width 1920 -screen-height 1080 -screen-fullscreen 0` (`--no-effects`, `--light-pool N`,
+  `--effect-pool N`; `--stats` adds particles, spawns, cues, lights and the drop share). The A/B
+  stills: `... --effect-gallery <dir> [--effects a,b] [--gallery-night]` (windowed). The spike:
+  `demo3d sweep demo3d/sweeps/td8-spike-own.json` (the VFX arm needs com.unity.visualeffectgraph
+  17.6.0 back in Packages/manifest.json, `demo3d unity VfxSpikeTemplate`, and
+  `sweeps/td8-spike-vfx.json`). The pool: `sweeps/td8-lightpool-{64,128,256}.json`. Evidence and
+  every table: [demo3d/evidence/td8/](../../demo3d/evidence/td8/README.md).
+- **The spike** (S4, heavy, 40 m, N 2,600 requested, ~700–930 on screen, 450–550 bursts on each
+  beat frame, lights off):
+
+  ```
+                      gpu p99        main p99      beat-frame spawn cost (p50 / p99)   authoring
+  own runtime         0.23 ms        0.96-0.99 ms  0.11-0.13 / 0.14-0.23 ms            code only
+  VFX Graph template  0.21-0.23 ms   0.82-1.74 ms  0.06-0.09 / 0.08-0.18 ms            Simple Burst edited as text
+  ```
+
+  The VFX row carries ~63 live particles against our 10–11k: the template (VFX Graph 17.6.0's
+  Simple Burst, edited as text by `VfxSpikeTemplate.cs`: counts, lifetimes, speeds, capacity,
+  bounds, culling off, gravity and drag out, one Set Position (Add, from source) block in) imported
+  without repair and draws a single spawn like ours, but its spawner fires one burst a frame
+  however many OnPlay events arrive. The design's route, a spawn GraphicsBuffer read by spawnIndex,
+  needs new operator, exposed-property and linked-slot objects in the .vfx: building the graph, not
+  editing a sample. **Our runtime wins** by the rule's second clause. No VFX feature was seen to
+  break batching (one system served every spawn). The package is out again; Runtime/VfxSpike
+  compiles only while it is present.
+- **Built:**
+  - The converter (`Editor/Effects/EffectConverter.cs`), to the inventory
+    ([inventory.md](../../demo3d/evidence/td8/inventory.md), regenerated over 52 candidates):
+    main, emission (bursts with cycles and probability, rate over time and distance), shapes
+    (sphere, hemisphere, cone, cone volume, circle, box, edge; arcs random and burst-spread;
+    random and spherical direction; shape transform), velocity (with orbital and radial), limit
+    velocity, inherit velocity, force, colour, size (axes), size by speed, rotation (three axes),
+    noise (curl approximation), texture sheets (whole sheet), custom data, lights (a cue), every
+    curve and gradient mode baked into 64-sample rows (one lookup atlas for all definitions, 14
+    rows each, since one dispatch serves every type), renderers billboard, stretched, horizontal,
+    vertical, mesh (meshes expanded to triangle lists), local alignment, min and max size, sorting
+    fudge; LineRenderers as beams. Collision, sub-emitters, trails, triggers, external forces,
+    colour by speed and the rest fail loudly per prefab and child unless the selection drops the
+    module, skips the child or approximates trails; `converter-report.md` lists every candidate's
+    result. Textures go into one 512² DXT5 sRGB array (55 slices). The selection is tracked
+    (`Assets/Demo3D/Data/effects.json`, by manifest path); all output is in the gitignored
+    `Assets/Baked/Effects/`.
+  - The runtime (`Runtime/Effects/`): `EffectSystem` (one 262,144-particle pool for every type, a
+    dead list and two alive lists; each frame's spawns are expanded on the CPU into emitter
+    instances with their emission segments and go up in one upload; kernels Allocate (all of a
+    spawn's particles or a counted rejection), Emit, Simulate, compact; a bitonic sort of the
+    alpha-blended billboards across types, sized from the last readback; indirect procedural draws
+    in buckets (alpha billboards sorted, alpha meshes, then additive) from a render pass after
+    opaques, enqueued per camera like TD5's debug pass so the renderer asset is untouched;
+    randomness hashed from spawn seed, emitter and particle index). `EffectParticles.shader`,
+    `EffectSim.compute`, `EffectSort.compute` and `EffectCommon.hlsl` are our own, written from the
+    materials' observed inputs (blend factors, texture, tint and emission, opacity, noise mask and
+    its scroll speeds, soft-particle depth power).
+  - `EffectLights`: cues, 1.5 m clustering, frustum culling, the pool by screen contribution, the
+    dropped share; `EffectDriver`: timeline events due each frame through the Catalog mapping, plus
+    the client's own bolt-in-flight, monster dust puffs and ambient emitters; `EffectGallery`.
+  - Hookups: `DemoMain` (the song; the placeholder projectile spheres go when effects are on) and
+    `TimelineScene` (S3–S6 draw effects and lights from the stress script's `draw` list; S4 hides
+    the crowd). Counters: particles, effect spawns per frame and max, spawns rejected, mean active
+    cues, lights used (max) and the drop share's p99; `PassRule` now fails a p99 drop share over 2%,
+    and the overdraw counters count particles (`IOverdrawSink.Transparent(Action<CommandBuffer>)`).
+  - Tests (`Tests/EditMode/EffectTests.cs`, 6): the spike burst's conversion, loud failure and
+    drops, emission segments (bursts, cycles, rates, distance, determinism), clustering, drops and
+    culling, and the runtime's shaders compile. EditMode 181/181.
+- **The effect list** (20; Catalog name → effect → stock prefab):
+  hit-spark → hit-spark / hit-spark-b by seed (Magic hits Hit 1 / Hit 2), elites → hit-heavy
+  (Hit 3); death-burst → death-burst (AAA Projectiles Hit 25 orange explosion), at Scale ≥ 2.5 →
+  death-burst-large (Cartoon explosion); parry-spark (Flash 2 electro); slash-trail (Sword Slash
+  2); thrust-trail (Slash wave); spin-trail (Sword Slash 11); slam-shock (AOE Magic hit); ring
+  (Magic circle sun); bolt-launch (Flash 16 fire); bolt-impact (Hit 16 fire); lightning (Lightning
+  hit) with lightning-circle (Magic circle electro); laser (Laser beam 10 fire); and the client's
+  bolt (Projectile 18 nova orange, along each bolt's flight), dust-puff (Cartoon smoke, cut to a
+  0.25 s puff at a third of its size), ambient-embers and ambient-wisps (Magic Pig PComponent Fire
+  Embers, Wisps Circular; six emitters over the view every 2 s). Glow quads are kept (TD11's cut).
+- **Swaps and approximations, with reasons:**
+  - Death bursts: KriptoFX Explosion1–6 → Hovl Hit 25 orange explosion and Cartoon explosion. The
+    PC explosions' particles use KriptoFX's distortion shader, magenta in URP (stock and converted
+    alike); the Mobile ones are a mesh, not particles.
+  - Ring: Energy explosion → Magic circle sun. Its fire and smoke are birth sub-emitters (and two
+    children have no mesh in the synced closure); the circle's curved trails are skipped (ribbons
+    drawn as stretched billboards became straight spokes there).
+  - Skipped children: Hovl's distortion layers (their shader isn't in the project: magenta in the
+    stock prefab too). Dropped modules: collision on slam-shock, bolt-impact, laser and the large
+    death burst (cosmetic). Lightning-circle's electric trails are stretched billboards over their
+    particles (same seeds and births).
+  - The laser's beam is its LineRenderer as a camera-facing strip of the event's length; its
+    script (missing, like every Hovl script) normally sets the length and scrolls the texture.
+  - Sword slashes multiply their shape and second texture and mask with the dissolve noise; the
+    vendor graph's exact mix isn't reproduced.
+  - Light cues authored where the prefab has no light: death bursts, bolt launch and impact,
+    slashes, slam, lightning and laser (effects.json).
+- **Light pool: fixed at 128.** URP 17.6 Forward+'s limit is 256 visible additional lights on
+  desktop (logged at start). At S3 heavy, 64 saturates and drops 12–23% of visible cue intensity;
+  128 and 256 never drop (at most 103 used) and cost the same within noise; 128 leaves half of
+  Forward+ for the arena's lights. Only 690–910 were on screen in those runs, so TD12 rechecks
+  the drop share at the envelope through the pass rule.
+- **Measured but not TD8's to fix:** S3 heavy at that count runs 5–7 ms GPU p99 with 10–12
+  transparent fragments per pixel (beat peak 13–15, flagged); about 23k particles alive, no
+  rejections. Every run was noisy (TD9's session, and the firewall prompt on the desktop).
+- **Self-review** (AGENTS.md's checklist):
+  - Downstream needs: TD10 gets the laser's sweep (yaw rate one turn a bar, duration a bar, from
+    the map) and `EffectSystem.Add` with velocity, yaw rate and duration; attached events are
+    placed at the entity's position at the event time and don't follow it (deferred to TD10 for
+    the hero's slashes). TD11: glow quads are separate children (`skip` in the selection drops
+    one), `EffectLights.Cell` is the cluster size, merging would sit in `EffectSystem.Add`
+    (not built). TD12: every counter above is in the rows, and the pass rule uses the drop share.
+  - Claims: every number above is in `evidence/td8/` (rows, bench logs, spawn-cost logs); the
+    spike's VFX row is labelled as not carrying the load; the pool's runs are below the envelope.
+  - Edge cases: a seek or a loop wrap resets the pool and re-spawns 4 s of events; a frame over
+    16,384 emitter instances counts the rest as rejected; the 65,536-entry instance ring would
+    overwrite an instance still alive after about 50 s of heavy spawning (not guarded); the sort
+    covers 1.5× the last read-back alpha count (any excess draws unsorted).
+  - Tests against the source: the A/B stills against the stock prefabs; the converter's tests run
+    a Shuriken system built in code.
+  - Concurrency: GPU readbacks land on the main thread and are ignored after Dispose.
+- **Not done:** sub-emitters and real ribbons (swapped or approximated instead); distortion; merging
+  (TD11); attached effects that follow their entity (TD10). The A/B stills wait on the operator
+  (row below).
+- **Review** (the demo-systems milestone's cold review; fixes on `td/td8-review`):
+  1. Alpha billboards past the sort size drew stale sort-list slots (the size came from a readback
+     a few frames old, so a beat's jump in alpha count made smoke and sparks vanish): **fixed**.
+     The material gets the size each frame used, and instances past it read the unsorted draw list,
+     so the excess now really draws unsorted. Single-effect A/B stills are unchanged (their alpha
+     counts stay under the 2,048 minimum sort); only dense beats in S3/S5 and the song change.
+  2. (Not sent to TD8.)
+  3. Rejections hidden (`Math.Max` of the CPU total and the GPU counter, the counter zeroed by
+     resets, spawns half allocated per emitter): **fixed**. `RejectionLedger` keeps CPU and GPU
+     counts apart; the GPU counter resets each frame and is summed per readback; readbacks issued
+     before a reset are ignored; a spawn is rejected whole on the CPU (all its instances fit the
+     frame's list or none) and on the GPU (Allocate runs once per spawn over its instances). Test:
+     `RejectionsSumCpuAndGpuIgnoreStaleReadbacksAndExcuseResets`.
+  4. A seek or loop wrap re-spawned 4 s of events whether alive or not: **fixed**. The look-back
+     spawns only effects still alive (`EffectDriver.StillAlive`: spawn time plus lifetime, or the
+     requested duration, past now), and a reset frame's overflow is excused from the pass rule and
+     logged. Test: `SeeksRespawnOnlyEffectsStillAlive`. Smoke: S5 heavy (N 2,600, 40 m) ran 20 s
+     with about 100k particles on beats, no rejections and no errors.
 
 ### TD9
 
-Status: Not started.
+Status: Done (2026-10-28, on Cygnus). No step waited: TD5 had landed.
+
+- **Commits** (branch `td/td9`, from `demo3d` at `3d9e740`): `c6a2b4a` (the generator, the
+  material conversion, the lighting, the static shadow map, the post stack, S0), `51c4a0e` (the demo
+  and S1–S6 in the arena, the capture tool's MSAA, tests, sweep specs), `2798b09` (merge of
+  `demo3d` at `b03b45a`), and this entry's commit (evidence and notes).
+- **Run:**
+  - Bake: `demo3d unity BakeArena` (also the `Arena` baker of `demo3d unity BakeAll`; `-e0 0.5,1,2,4
+    -lit 1,2 -noLightmaps` choose; 3.5 min with lightmaps), then `demo3d build --backend il2cpp`.
+    Stills: `demo3d unity Demo3D.EditorTools.Arena.ArenaStills.Run -rung e2|e0 -density 1 -out <dir
+    relative to demo3d/> [-heroes] [-shots a,b]`.
+  - **The demo** (the song in the arena), from `demo3d/`: `Builds\il2cpp\PlaylistSurvivors3D.exe
+    -screen-width 1920 -screen-height 1080 -screen-fullscreen 0` (`--arena e0|e2|off`, `--density
+    0.5|1|2|4`; default E2 at 1×). The full song ran to 198.98 s at 60 fps (vsync): 387 samples, one
+    52 ms frame.
+  - Sweeps: `demo3d sweep demo3d/sweeps/s0-e0-{0.5,1,2,4}x.json demo3d/sweeps/s0-e2-{1,2}x.json
+    --out <dir>`; `td9-aa-s3.json`, `td9-aa-s1.json`, `s6-arena.json`. Tables: `uv run --project
+    demo3d/tools python demo3d/evidence/td9/summarize.py <dir>`; captures: `aa_captures.py` beside it.
+- **Built:**
+  - `Editor/Arena/ArenaBaker.cs`: from `ArenaLayout.WithDensity(d).Generate(footprints)`, one scene
+    per rung and density in `Assets/Baked/Arena/` (gitignored): the kit's prefabs instantiated and
+    unpacked at each placement (colliders, vendor scripts, prefab lights stripped), grouped by area
+    type; a 220 m ground mesh with an albedo generated from the layout's ground types (forest floor,
+    edge band, clearing, path; our own design, written to Baked/) and Elven Realm's ground normals as
+    a 3 m detail map; the moon; the flame and glow lights; the `ArenaIndex` the player reads. E0
+    scenes at 0.5, 1, 2, 4× (976, 1,418, 2,086, 2,775 renderers; 0.33 to 1.07 M LOD0 triangles); E2
+    scenes at 1× and 2× with lightmaps baked in batch mode (Progressive GPU, shadowmask, 6 texels/m
+    on the ground only, a probe grid every 8 m for the kit; 66 s each).
+  - `MaterialConverter` (same file): the kit's 8 materials saved under `Baked/Arena/Materials/`:
+    Standard to URP Lit as Unity's converter maps it (albedo, colour, normal and metallic-gloss maps,
+    emission, alpha clip), the candles' flame particles to URP's unlit additive particles, Elven
+    Realm's triplanar rock to plain Lit in its rock colour (its Shader Graph port is TD14's). E2's
+    kit gets `Demo3D/LitStaticShadow` twins (below).
+  - The lighting (`lighting` in `arena-layout.json`, read by `ArenaLighting`): the moon at 30°
+    elevation, cool blue (0.55, 0.66, 1.0), intensity 0.95, soft shadows; trilight ambient;
+    exponential fog 0.011, the camera clearing to its colour; 8 flickering flame lights (4 braziers,
+    the pyre, 3 graveyard candles; `FlameFlicker`) and the glowing tree's cyan light (baked at E2).
+    Emissive kit materials bloom.
+  - The static shadow map (`StaticShadowMap.cs`, `Shaders/StaticShadow.hlsl`): at load the static
+    set's depth through each material's own ShadowCaster pass, 4096² from the moon over the arena's
+    bounds (5.9 × 3.5 cm texels by axis; 5 ms in the player), published as shader globals. The crowd
+    shader (its TD5 hook, now the shared `Demo3DLightingPBR`), the hero (`Demo3D/LitStaticShadow`:
+    URP Lit's passes with our forward pass; RosterBaker gives the hero's materials it) and E2's kit
+    sample it with a 2×2 tent and take the min with the realtime shadow. At E0 it is off.
+  - The post stack (`NightLook.cs`): bloom, neutral tonemapping, colour adjustments, a 32³ night LUT
+    generated in code (shadows to blue-violet, warm saturated highlights kept, a gentle S-curve; no
+    texture asset), vignette; SSAO as the renderer's feature (ProjectSetup: depth-normals, full
+    resolution, medium samples, radius 0.3 m, intensity 1.2); shadowmask mode Shadowmask.
+  - Runtime (`ArenaRuntime.cs`): loads the scene additively, makes it active, takes the moon, applies
+    the rung; `RenderStats` reads Unity's draw, set-pass, triangle and shadow-caster counters (a
+    release player has them). `ArenaScene.cs` is S0 (sceneOptions `rung`, `density`, `holdS`; the
+    camera tours the six shot positions, 3 s each, at the point's view width). S1–S6
+    (`TimelineScene`) load the arena when baked (`arena`, `density`); rows gain `environment`.
+  - DemoMain loads the arena instead of the flat ground, removes the boot scene's camera and light
+    (both had been drawing every frame), and fits the shadow distance to the view (the 50 m default
+    cut off the top of a 40 m view). The capture tool now renders at the pipeline's MSAA count (with
+    a 1-sample target URP drew MSAA captures without MSAA) and keeps enlarged crops
+    (`--capture-crop x,y,w,h,scale`).
+  - Layout refinements: the glowing tree moved to (−11, −39) and its shot to (−5, −46), so its canopy
+    no longer fills the shot; `dotnet test` 112/112 after.
+- **S0 at rung E0** ([evidence](../../demo3d/evidence/td9/README.md); GPU / main / render p99 ms,
+  MSAA 4×, medians of 3): at 40 m, 0.5× 0.39 / 0.96 / 0.55, 1× 0.40 / 0.90 / 0.53, 2× 0.42 / 1.00 /
+  0.54, 4× 0.43 / 1.00 / 0.55; at 55 m, 0.41 / 1.43 / 0.75, 0.43 / 0.98 / 0.57, 0.46 / 1.03 / 0.59,
+  0.50 / 1.12 / 0.65. All far under the ceiling (1.5 / 1.7 / 1.7 ms); 1× to 4× costs 0.03–0.07 ms
+  of GPU. At E0, 1×, 40 m a frame issues 433–525 draw calls with 18–25 set-passes, with 61–94 kit
+  pieces in view and 241–307 shadow casters (Unity's count); at 4×, 55 m, 1,339–1,384 calls and
+  684–803 casters. E2 at 1× takes the casters to 0 and the calls to 186–195 (40 m) for the same GPU
+  time (0.39 ms). S0 runs CPU-bound near 1,000 fps, so these say the environment is cheap on this
+  GPU, not where its limit is; every row was marked noisy (TD8's session, and the zero-GPU-time
+  frames at 1,000 fps), though attempts agree within 0.05 ms.
+- **S6 runs in the arena:** 1,200 at 40 m, demo load: 960 on screen alive, GPU p99 4.91–5.33 ms,
+  main 5.9–6.1 ms, sim tick p99 5.0 ms.
+- **Anti-aliasing: MSAA 4×.** TAA saves 0.45–0.69 ms of GPU p99 (11–13 %) on S1 and S3 at 800 and
+  1,200 in the arena at 40 m (S3 at 1,200: 5.64 against 5.02 ms), and 0.04 ms on S0. In the
+  fixed-time captures (S3 at 1,200, and the song's drop-1) TAA leaves the monsters' outlines and the
+  bolts as stepped as no anti-aliasing: nearly every edge in the horde moves every frame, so its
+  history is mostly rejected. MSAA's edges are smooth. The horde is the demo's subject, so MSAA 4×
+  stays the default; TD12 measures TAA only at the envelope point. Crops in `evidence/td9/aa/`,
+  videos in `D:\wt\demo3d\captures\td9\` (gitignored); the review is in Pending on the operator. TD8's
+  spark trails weren't on this branch: projectiles and hit flashes stood in.
+- **Choices, with reasons:**
+  - E0 and E2 as separate scenes, not one scene with its lightmaps switched off: E0 must carry no
+    baked data to be the stock baseline, and E0 at every density then needs no bake.
+  - Only the ground is lightmapped; the kit (no UV2 on 74 of its 85 pieces, and vendor import
+    settings stay untouched) takes probes, and at E2 the static shadow map instead of probe
+    occlusion: without it a rock under a tree came out lit at E2 (`stills/shade/`).
+  - Lights come from the layout parameters, not from the prefabs, so the cap of 8 flames is a layout
+    rule.
+  - The LUT is generated at runtime, so nothing derived or binary is stored for it.
+  - E2 is the demo's and the stress scenes' default (the static map is TD9's to build); S0 defaults
+    to E0. TD14 owns the rungs' verdicts.
+- **Tests:** EditMode 182/182, TD9's 6 in `ArenaTests` (the moon's angle, colour and flame cap; the
+  LUT's shape, cool shadows, warm highlights and monotonic greys; the shadow map's projection
+  covering every arena corner, texels under 6.5 cm, depth order toward the moon; the ground's value
+  structure; every density baked; each baked scene against its placement list: counts, sampled
+  positions, no colliders or scripts, converted materials and shaders, E0's casters, one moon, the
+  flame cap, E2's lighting data). `dotnet test` 112/112.
+- **For TD14:** `--arena e0|e2` and S0's `rung` and `density` select rungs; E1 needs GPU Resident
+  Drawer compatible materials (`Demo3D/LitStaticShadow` has no DOTS instancing variant yet); the
+  kit's 8 materials keep set-passes near 20, so E1's gain is in draw submission. **For TD15:** the
+  look is a first pass (`stills/`): the opening is bare, the glow light barely reaches the ground,
+  no mist cards, fireflies or canopy fade yet. **For TD12:** S0 to S6 run in the arena; rows carry
+  `environment`. **For TD11:** the capture tool's crops and MSAA-correct captures.
+- **Self-review** (AGENTS.md's checklist): downstream needs, done (TD14's rung switches and density
+  scenes, TD15's shots and stills tool, TD12's arena scenes and AA mode, TD11's capture fixes; noted
+  above); claims, done (every number is in `evidence/td9/` rows, tables or logs, with what they don't
+  show: CPU-bound S0, noisy rows, one-frame counters); edge cases, done (an arena not baked falls
+  back to flat ground in the demo and refuses clearly in S1–S6; `arena: off`; LOD 1+ skipped in the
+  map; particle renderers kept out of the static set; an existing index merged when baking a
+  subset); tests against the source, done (scenes against the placement list; E0's and E2's stills
+  agree on where the static set's shadows fall, on the ground and on a hero); concurrency, not
+  applicable.
+- **Tool problems:** the warm editor stopped answering after a compile error was fixed (its listener
+  never came back; `editor stop` left it running; killed by PID). The first build after the lit
+  scenes compiled 3,584 URP Lit variants (81 min; 85 s afterwards, from the cache), and `demo3d
+  build`'s client timed out while the editor finished it. Two of TD9's player runs (a no-AA capture
+  and a song run, about 06:47–06:53) ran without the machine lock beside TD8's sweep; later runs
+  took the lock. One `dotnet test` run failed the 3 s song-build test under TD8's load (5.2 s) and
+  passed on a rerun.
 
 ### TD10
 
-Status: Not started.
+Status: Done (the click-track listening check is the operator's; row below).
+
+- **Commits:** `716d606`, `c021c3e` (feel, sounds, ending slams), the foundations review's
+  `6b25c0a` (the sim's clip timing in the client, hit-stop catch-up and the hero's heavy-blow
+  slowdown), and this entry's commit (flash tiers, notes).
+- **Run** (from `demo3d/`, after `demo3d unity BakeAll` and `demo3d build --backend il2cpp`):
+  `Builds\il2cpp\PlaylistSurvivors3D.exe -screen-width 1920 -screen-height 1080
+  -screen-fullscreen 0 -job-worker-count 6 --click --overlay --seconds 60` (the first minute with
+  the click); the full song without `--seconds`.
+- **Built:**
+  - The hero: TD4's playable graph on the hero prefab (TD9 gave it the static-shadow shader),
+    clips started exactly where the sim fitted them, combos with their root-motion segments, and
+    spells and parries from the timeline's events, drawn by TD8's effects.
+  - Local hit-stop: a struck monster's clip holds 50 ms then catches up over 0.15 s; the hero's
+    clip runs at 0.6x for 50 ms on blows of strength 0.8 or more, then catches up, so the next
+    impact still lands on its beat (`TimelineEvaluator.HoldThenCatchUp`).
+  - Tiered flashes: a hit flashes full; a tick (a lingering effect's repeat hit, such as the
+    laser's) flashes at half strength for 80 ms with no clip, flinch or knockback; a parry is the
+    hero's shield flash (0.6). The dragon under the laser no longer reads white.
+  - The client's punch and shake (`CameraFeel`): a 2% zoom-in over a sixteenth on accents,
+    released over a beat; shake min(0.25, 0.08 x strongest + 0.02 x log2(1 + hits)) metres per
+    beat, decaying over it; both functions of song time.
+  - Sound scheduling (`SoundScheduler`, `SoundBank` baked from TD2's sounds): the timeline's
+    aggregated SoundEvents are scheduled with PlayScheduled once within 150 ms, on 32 voices.
+  - The ending's accent slams: a plain combo now gives way when its recovery would leave no
+    room for the windup of the next section's positioned combo, in a section whose combos are
+    all positioned (the ending's `slam@accent`).
+- **Checks:** every accent of the ending gets a hero slam, and ticks never knock a monster back
+  (dotnet tests over the song); every blow's clip is at its impact at the impact (EditMode, TD4);
+  ticks flash at most half strength (EditMode). Whether every blow *sounds* on its click in the
+  first minute is the operator's ears (row below).
+- **Choices:** attached effects (slash trails on the hero) spawn where their entity is at the
+  event and don't follow it afterwards: a slash lasts about 0.3 s, over which the hero moves
+  well under a metre. The hero keeps TD4's playable graph rather than a separate component; it is
+  the same evaluation the crowd uses.
+- **Not done here:** the ending still holds about 1,000 monsters against its 500 target, so it
+  doesn't clear the screen: TD13 tunes the level script's ending.
+- **The demo systems milestone's review** (TD8, TD10, TD11; a fresh read-only subagent): 8
+  findings. Fixed here in `73f463c`: (2) TD11's invisible anchor moved the camera, since
+  `--time-offset` fed the shake and punch: they now follow t minus the offset, and `--no-feel`
+  turns both off; (5) the punch resized the shadow cascades every frame after an accent: shadows
+  now fit the view before its punch; (7) close accents snapped the punch back: overlapping
+  punches take the deepest; (8) late sounds were judged on the display's time: they're now skipped
+  when past on the DSP clock. TD8's agent fixed (1) alpha billboards past the sort size, (3) hidden
+  rejections and (4) seek re-spawns (TD8's entry, merged in `7584db7`); TD11's agent re-ran the
+  calibration and the cuts for (2) and recorded their parameters for (6) (TD11's entry).
+- **Stills:** [song-040.jpg](../../demo3d/evidence/td10/song-040.jpg),
+  [song-172.jpg](../../demo3d/evidence/td10/song-172.jpg) (the final peak in the arena with effects).
 
 ### TD11
 
-Status: Not started.
+Status: Done (2026-10-28, on Cygnus).
+
+- **Commits** (branch `td/td11`, from `demo3d` at `df37614`): `c18dc83` (the cut switches, LOD and
+  30 Hz bakes, the merge and glow cuts, the tooling), `768cd81` (merge of `demo3d` at `2a2df25`:
+  TD10's flash tiers, TD13's mixer), and this entry's commit (evidence, notes, an edit-mode fix).
+- **Run:** in a set-up worktree, `demo3d unity BakeAll` (the crowd baker now also writes each
+  type's LOD1, LOD2 and 30 Hz bone texture; the effects baker marks glow quads), `demo3d build
+  --backend il2cpp`, then the demo as before: it runs with the accepted cuts by default
+  (`DemoMain: cuts lod,clips30` in the log). `--cuts none|all|default|name,-name` (names `lod`,
+  `shadow-proxy`, `clips30`, `light-cell`, `merge`, `drop-glow`), `--lod-px 120,60`, `--shadow-lod
+  1|2`, `--light-cell 2`, `--merge-px 8`; sweeps take the same as sceneOptions `cuts`, `lodPx`,
+  `shadowLod`, `lightCell`, `mergePx`. Every step of the evidence: `uv run --project demo3d/tools
+  python demo3d/evidence/td11/td11.py calibrate|cut|cost|frontier|table`
+  ([evidence](../../demo3d/evidence/td11/README.md)).
+- **A/B setup:** S3 at demo load, 40 m, through the demo client (`--scene S3 --n 600 --view-width
+  40 --load demo`: the game camera, the hero, the arena at E2 1x, MSAA 4x; effects, lights and
+  the time offset and pose rate all apply there), 12 PNG stills at 10.0 to 29.8 s (1.8 s apart, on
+  the frame grid) and a 2 s video from 14 s, fixed time. N = 600: the 40 m frontier with every cut
+  off is about 600 (below), under 2,000.
+- **Thresholds** ([thresholds.json](../../demo3d/evidence/td11/thresholds.json), the file TD14's
+  E3 and E4 use): invisible anchor (`--time-offset 0.001`) mean 0.02336, p99 0.3867; visible anchor
+  (`--pose-rate 15`) mean 0.04324, p99 0.5150; **a cut passes at mean <= 0.02999 and p99 <=
+  0.4295**. The run-to-run floor (A against a second A) is 0.00098 / 0.0327. The 1 ms shift moves
+  every particle, so the invisible anchor sits far above the floor.
+- **The cuts** (GPU saved, A minus B, medians of 2 interleaved fixed-N runs; S3 at 600, S1 at
+  1,200 for the crowd's cuts):
+
+  | Cut | mean FLIP | p99 FLIP | A/B | S3 GPU p50 / p99 saved | S1 GPU p50 / p99 saved | Verdict |
+  |---|---|---|---|---|---|---|
+  | lod, 60 / 30 px | 0.01007 | 0.1977 | pass | +0.10 / +0.07 ms | +0.37 / +0.23 ms | superseded |
+  | **lod, 120 / 60 px** | 0.02428 | 0.3667 | pass | **+0.53 / +0.67 ms** | **+0.99 / +0.88 ms** | **accepted** |
+  | shadow-proxy, LOD2 (LOD1) | 0.03048 (0.03090) | 0.2957 (0.3011) | fail: mean | +0.23 / -0.73 ms | +1.14 / +1.13 ms | rejected |
+  | **clips30** | 0.00669 | 0.0971 | pass | -0.08 / -0.08 ms | -0.12 / -0.14 ms | **accepted**: bone textures halved |
+  | light-cell, 3 m | 0.01369 | 0.4726 | fail: p99 | +0.13 / +0.19 ms | | rejected |
+  | light-cell, 2 m | 0.00964 | 0.3292 | pass alone | +0.07 / +0.14 ms | | rejected: fails combined |
+  | merge, 8 px | 0.00099 | 0.0343 | pass | -0.01 / -0.04 ms | | rejected: saves nothing |
+  | drop-glow | 0.00592 | 0.3734 | pass alone | +0.02 / +0.03 ms | | rejected: fails combined |
+  | **lod 120/60 + clips30** | 0.02632 | 0.3682 | pass | | | **the defaults** |
+
+  The passing cuts together fail: with light-cell 2 m and drop-glow added, 0.03477 / 0.5147 (lod
+  at 60/30: 0.02386 / 0.4702); lod, clips30 and light-cell 2 m, 0.03142 / 0.4466. Both cuts that
+  tip the sum save nothing measurable, so the defaults keep LOD at 120 / 60 and clips30 only.
+- **Choices, with reasons:**
+  - Decimation: Unity 6.6's own Mesh LOD generation (`MeshLodUtility.GenerateMeshLods`, which
+    rewrites index buffers only, so bone indices and weights in UV1 and UV2 survive), copied into
+    separate LOD1 and LOD2 meshes over the same vertices so the indirect draws stay one mesh per
+    LOD. No third-party simplifier is available offline. LOD1 is 51 to 59% of LOD0's triangles
+    and LOD2 25 to 31% (goblin 73% and 36%: its seams stop the simplifier).
+  - LOD thresholds: 60 / 30 px (performance.md's example) passes with room and saves 0.1 to 0.4 ms;
+    120 / 60 still passes and saves 0.5 to 1.0 ms (at 40 m the 1 to 2 m roster projects to roughly
+    50 to 100 px, so more of it drops a level). Hysteresis (10%) and the 0.2 s dithered crossfade are TD5's.
+  - clips30 saves no measurable GPU time (the palette pass blends each bone once a frame either
+    way) but halves the bone textures' size (17 MB at 60 Hz), and passes far below the lines, so it
+    stays on. The 30 Hz texture is baked beside the 60 Hz one; `CROWD_RATE` is a per-type
+    `_ClipRate`.
+  - Shadow proxy: any mesh other than the drawn one shifts every monster's self-shadowing, so LOD1
+    fails like LOD2. It is the largest saving (about 1.1 ms in S1); a retry would pair it with a
+    larger shadow normal bias, which also changes A.
+  - Merge: at 40 m 8 px is about 17 cm; 21 of 2,734 spawns (0.8%) merged, and its O(n^2) per-frame
+    pass costs CPU on beat frames for no gain. A merged spawn's density brightens additive
+    particles k times and gives alpha the coverage of k layers.
+  - Glow quads: the selection's `glow` list (one additive soft-point billboard of 1.5 m or more:
+    hit-spark-b's Glow, death-burst's Flash, death-burst-large's ExplWave, slam-shock's
+    Glow(Optional) and Flash, the bolt's Glow); the laser is left out (its child names repeat).
+- **What it doesn't show:** every cost run was noisy (TD14's and TD15's sessions used 15 to 100%
+  of the CPU, at times a quarter of the GPU), so main-thread times are contention and GPU
+  differences under about 0.15 ms are noise. Neither frontier search is a frontier: every cut off
+  stopped at 380 on main-thread contention (GPU p99 2.85 ms at 380, 3.78 at 495, 4.45 at 646,
+  crossing 4.2 ms near 600, which set N); the defaults stopped at 180, main-bound (main p99 8 to
+  34 ms). TD12 measures the frontier with the defaults. The captures and costs ran before the
+  merge of TD10's flash tiers (A and every B on the same build). The operator's review of the
+  stills and videos is pending (row above).
+- **Tests:** EditMode 193/193 (TD11's 5 in `CutsTests`: cut specs; LODs share vertices and streams
+  with fewer triangles; 30 Hz rows equal the 60 Hz rows at the same times; the glow quads marked;
+  merge, drop-glow and the light cell on the CPU side). `demo3d check --player`: vendor guard,
+  dotnet test, cold EditMode and the IL2CPP build ok.
+- **Self-review** (AGENTS.md's checklist):
+  - Downstream needs: TD12 runs with the defaults (lod 120/60, clips30), and a sweep can turn
+    them off with sceneOptions `cuts: none`; TD14's E3 and E4 use `thresholds.json` and can capture
+    with `td11.py capture <name> -- <flags>` and score with `td11.py cut`; TD5's crowd bench now
+    also runs with the defaults.
+  - Claims: every number is in `evidence/td11/` (thresholds, scores, costs with each run's row),
+    with what the noisy costs and the contended frontiers don't show stated above and in the README.
+  - Edge cases: a library without LODs or a 30 Hz texture falls back to LOD0 and 60 Hz with a
+    warning; the last 30 Hz frame is the clip's end; a spawn behind the camera never merges; a
+    seek or reset clears the merge queue; merged spawns keep every light cue.
+  - Tests against the source: the 30 Hz rows against the 60 Hz bake (from Unity's own sampling),
+    the LOD meshes against LOD0's streams; the A/B scores are against the uncut client.
+  - Concurrency: not applicable (main-thread only).
+- **Tool problems:** a cold `demo3d unity BakeAll` hung after Unity exited: the LicensingClient
+  it launched inherited the output pipe (the wrapper was killed by PID). A build failed in
+  ILPostProcessing under load (gRPC thread-pool starvation), then the warm editor's ILPP runner
+  stayed broken until restarted, and the restart once crashed in UDS initialization; the next start
+  worked. `EffectSystem.Dispose` called `Destroy` in edit mode (fixed). A `redefinition of 'k'` in
+  my EffectSim edit made every kernel invalid in the player with only a log line (fixed).
 
 ### TD12
 

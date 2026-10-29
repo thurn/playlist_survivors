@@ -1,0 +1,126 @@
+{
+  "cut": "lod-120-60",
+  "cuts": "lod",
+  "options": [
+    "lodPx=120,60"
+  ],
+  "scene": "S3",
+  "n": 600,
+  "reps": 2,
+  "summary": {
+    "gpuP50Ms": {
+      "base": 3.2085,
+      "cut": 2.6755,
+      "saved": 0.5329999999999999
+    },
+    "gpuP99Ms": {
+      "base": 4.1305,
+      "cut": 3.4645,
+      "saved": 0.6659999999999995
+    },
+    "mainP99Ms": {
+      "base": 3.3105,
+      "cut": 3.283,
+      "saved": 0.027500000000000302
+    },
+    "renderP99Ms": {
+      "base": 0.8140000000000001,
+      "cut": 0.8660000000000001,
+      "saved": -0.052000000000000046
+    }
+  },
+  "runs": {
+    "base": [
+      {
+        "n": 600,
+        "gpuP50Ms": 3.207,
+        "gpuP99Ms": 4.161,
+        "mainP99Ms": 3.396,
+        "renderP99Ms": 0.848,
+        "onScreenAlive": 552,
+        "onScreenDying": 69,
+        "particles": 14439,
+        "lightsUsed": 67,
+        "lightDropShareP99": 0,
+        "transparentPerPixel": 1.309,
+        "noisy": true,
+        "noiseReasons": [
+          "other processes used 15.5% CPU over 5 s",
+          "85 of 4267 frames had no GPU time (over 0.5 %)"
+        ],
+        "pass": true,
+        "kind": "fixed",
+        "attempt": 1,
+        "time": "2026-10-28T08:49:55"
+      },
+      {
+        "n": 600,
+        "gpuP50Ms": 3.21,
+        "gpuP99Ms": 4.1,
+        "mainP99Ms": 3.225,
+        "renderP99Ms": 0.78,
+        "onScreenAlive": 553,
+        "onScreenDying": 68,
+        "particles": 14415,
+        "lightsUsed": 67,
+        "lightDropShareP99": 0,
+        "transparentPerPixel": 1.271,
+        "noisy": true,
+        "noiseReasons": [
+          "other processes used 16.8% CPU over 5 s",
+          "84 of 4303 frames had no GPU time (over 0.5 %)"
+        ],
+        "pass": true,
+        "kind": "fixed",
+        "attempt": 1,
+        "time": "2026-10-28T08:52:44"
+      }
+    ],
+    "lod-120-60": [
+      {
+        "n": 600,
+        "gpuP50Ms": 2.674,
+        "gpuP99Ms": 3.488,
+        "mainP99Ms": 3.367,
+        "renderP99Ms": 0.932,
+        "onScreenAlive": 553,
+        "onScreenDying": 69,
+        "particles": 14436,
+        "lightsUsed": 67,
+        "lightDropShareP99": 0,
+        "transparentPerPixel": 1.294,
+        "noisy": true,
+        "noiseReasons": [
+          "other processes used 19.4% CPU over 5 s",
+          "128 of 4827 frames had no GPU time (over 0.5 %)"
+        ],
+        "pass": true,
+        "kind": "fixed",
+        "attempt": 1,
+        "time": "2026-10-28T08:50:50"
+      },
+      {
+        "n": 600,
+        "gpuP50Ms": 2.677,
+        "gpuP99Ms": 3.441,
+        "mainP99Ms": 3.199,
+        "renderP99Ms": 0.8,
+        "onScreenAlive": 552,
+        "onScreenDying": 69,
+        "particles": 14409,
+        "lightsUsed": 67,
+        "lightDropShareP99": 0,
+        "transparentPerPixel": 1.311,
+        "noisy": true,
+        "noiseReasons": [
+          "other processes used 17.0% CPU over 5 s",
+          "105 of 4846 frames had no GPU time (over 0.5 %)"
+        ],
+        "pass": true,
+        "kind": "fixed",
+        "attempt": 1,
+        "time": "2026-10-28T08:51:44"
+      }
+    ]
+  }
+}

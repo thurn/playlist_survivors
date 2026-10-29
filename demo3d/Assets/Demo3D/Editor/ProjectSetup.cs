@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.SceneManagement;
@@ -73,6 +74,7 @@ namespace Demo3D.EditorTools
             Set(r, "m_DepthPrimingMode", (int)DepthPrimingMode.Forced);
             Set(r, "m_CopyDepthMode", 0); // after opaques
             r.ApplyModifiedPropertiesWithoutUndo();
+            EnsureSsao(renderer);
             EditorUtility.SetDirty(renderer);
 
             var pipeline = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(PipelinePath);
@@ -109,6 +111,9 @@ namespace Demo3D.EditorTools
                 QualitySettings.renderPipeline = pipeline;
                 QualitySettings.vSyncCount = 1; // the showcase caps at the display rate; benchmarks turn it off
                 QualitySettings.antiAliasing = 0; // URP's asset owns MSAA
+                // The arena's lit scenes (TD9): static casters shadow the static set through the
+                // baked shadowmask only, so the realtime cascades hold the dynamic casters.
+                QualitySettings.shadowmaskMode = ShadowmaskMode.Shadowmask;
             }
             QualitySettings.SetQualityLevel(current, false);
         }
@@ -124,6 +129,44 @@ namespace Demo3D.EditorTools
             var scenes = EditorBuildSettings.scenes;
             if (scenes.Length == 0 || scenes[0].path != EmptyScenePath)
                 EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(EmptyScenePath, true) };
+        }
+
+        /// <summary>
+        /// SSAO as a renderer feature (performance.md's post stack, from TD9): depth-normals
+        /// source (its prepass primes depth), full resolution, medium samples, a 0.3 m radius.
+        /// </summary>
+        static void EnsureSsao(UniversalRendererData renderer)
+        {
+            var ssao = renderer.rendererFeatures.OfType<ScreenSpaceAmbientOcclusion>().FirstOrDefault();
+            if (ssao == null)
+            {
+                ssao = ScriptableObject.CreateInstance<ScreenSpaceAmbientOcclusion>();
+                ssao.name = "SSAO";
+                AssetDatabase.AddObjectToAsset(ssao, renderer);
+                AssetDatabase.TryGetGUIDAndLocalFileIdentifier(ssao, out string _, out long localId);
+                var so = new SerializedObject(renderer);
+                var features = so.FindProperty("m_RendererFeatures");
+                var map = so.FindProperty("m_RendererFeatureMap");
+                features.arraySize++;
+                features.GetArrayElementAtIndex(features.arraySize - 1).objectReferenceValue = ssao;
+                map.arraySize++;
+                map.GetArrayElementAtIndex(map.arraySize - 1).longValue = localId;
+                so.ApplyModifiedPropertiesWithoutUndo();
+            }
+            ssao.SetActive(true);
+            var s = new SerializedObject(ssao);
+            var settings = s.FindProperty("m_Settings") ?? throw new InvalidOperationException("ProjectSetup: SSAO has no m_Settings");
+            settings.FindPropertyRelative("Downsample").boolValue = false;
+            settings.FindPropertyRelative("AfterOpaque").boolValue = false;
+            settings.FindPropertyRelative("Source").intValue = 1;          // DepthNormals
+            settings.FindPropertyRelative("NormalSamples").intValue = 1;   // Medium
+            settings.FindPropertyRelative("Intensity").floatValue = 1.2f;
+            settings.FindPropertyRelative("DirectLightingStrength").floatValue = 0.25f;
+            settings.FindPropertyRelative("Radius").floatValue = 0.3f;
+            settings.FindPropertyRelative("Samples").intValue = 1;         // Medium
+            settings.FindPropertyRelative("Falloff").floatValue = 100f;
+            s.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(ssao);
         }
 
         public const string BenchDir = "Assets/Demo3D/Resources/Bench";

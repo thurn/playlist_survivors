@@ -80,6 +80,8 @@ namespace Demo3D.Runtime.Bench
         public int? Particles, SpawnsThisFrame, SpawnsRejected, LightCues, LightsUsed;
         public double? LightDropShare;
         public string VisibleByTypeLod;
+        /// <summary>The environment's counters (S0 and arena scenes: kit renderers, draws, casters), a JSON object.</summary>
+        public string Environment;
 
         public void Clear()
         {
@@ -87,6 +89,7 @@ namespace Demo3D.Runtime.Bench
             Particles = SpawnsThisFrame = SpawnsRejected = LightCues = LightsUsed = null;
             LightDropShare = null;
             VisibleByTypeLod = null;
+            Environment = null;
         }
     }
 
@@ -96,6 +99,8 @@ namespace Demo3D.Runtime.Bench
         void Opaque(Mesh mesh, Matrix4x4 matrix);
         void Opaque(Mesh mesh, Matrix4x4[] matrices, int count);
         void Transparent(Mesh mesh, Matrix4x4[] matrices, int count);
+        /// <summary>Transparent draws a scene issues itself (procedural particles), with a pass that writes the counter's green channel under the global _OverdrawVP.</summary>
+        void Transparent(Action<UnityEngine.Rendering.CommandBuffer> issue);
     }
 
     /// <summary>The registry of stress scenes by id.</summary>

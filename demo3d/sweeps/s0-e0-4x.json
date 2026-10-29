@@ -1,0 +1,6 @@
+{
+  "_comment": "TD9: S0, the empty arena at rung E0 (the stock baseline: the kit as plain GameObjects, realtime shadows from all), decoration density 4x. The camera tours the layout's six shots at the point's view width. N means nothing to S0.",
+  "scene": "S0", "seconds": 20, "warmup": 5, "rewarm": 3,
+  "n": { "fixed": [0] }, "viewWidthM": [40, 55], "load": ["demo"], "aa": ["msaa4", "taa"], "jobWorkers": 6,
+  "sceneOptions": { "rung": "e0", "density": 4 }
+}

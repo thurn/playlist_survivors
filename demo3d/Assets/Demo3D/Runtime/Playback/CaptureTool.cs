@@ -18,7 +18,7 @@ namespace Demo3D.Runtime.Playback
     public sealed class CaptureTool : IDisposable
     {
         public const int Width = 1920, Height = 1080;
-        readonly RenderTexture _target;
+        readonly RenderTexture _target, _resolved;
         readonly Camera _camera;
         readonly List<double> _stillTimes = new List<double>();
         readonly string _stillDir;
@@ -31,8 +31,18 @@ namespace Demo3D.Runtime.Playback
         public CaptureTool(Camera camera, string stillDir, string stillTimes, string videoPath)
         {
             _camera = camera;
-            _target = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32) { antiAliasing = 1, name = "Capture" };
+            // URP renders an offscreen camera with its target's sample count, not the pipeline
+            // asset's, so the target carries the asset's MSAA (1 under TAA) and is resolved for
+            // readback; with antiAliasing 1, MSAA captures came out aliased.
+            int msaa = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline is UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset urp
+                       && camera.allowMSAA ? Math.Max(1, urp.msaaSampleCount) : 1;
+            _target = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32) { antiAliasing = msaa, name = "Capture" };
             _target.Create();
+            if (msaa > 1)
+            {
+                _resolved = new RenderTexture(Width, Height, 0, RenderTextureFormat.ARGB32) { antiAliasing = 1, name = "Capture resolved" };
+                _resolved.Create();
+            }
             _camera.targetTexture = _target;
             _stillDir = stillDir;
             if (!string.IsNullOrEmpty(stillTimes))
@@ -81,7 +91,8 @@ namespace Demo3D.Runtime.Playback
         {
             bool still = _stillTimes.Count > 0 && t + 1e-6 >= _stillTimes[0];
             if (!_pipe && !still) return;
-            var req = AsyncGPUReadback.Request(_target, 0, TextureFormat.RGBA32);
+            if (_resolved != null) Graphics.Blit(_target, _resolved);
+            var req = AsyncGPUReadback.Request(_resolved != null ? _resolved : _target, 0, TextureFormat.RGBA32);
             req.WaitForCompletion();
             if (req.hasError) throw new Exception("CaptureTool: GPU readback failed");
             var data = req.GetData<byte>();
@@ -98,11 +109,44 @@ namespace Demo3D.Runtime.Playback
                 var tex = new Texture2D(Width, Height, TextureFormat.RGBA32, false);
                 tex.LoadRawTextureData(data);
                 tex.Apply();
-                var name = string.Format(CultureInfo.InvariantCulture, "still-{0:000.000}.jpg", at);
+                // PNG for A/B scoring (no JPEG noise in the FLIP scores), JPEG for evidence.
+                var ext = Args.Get("--stills-format", "jpg") == "png" ? "png" : "jpg";
+                var name = string.Format(CultureInfo.InvariantCulture, "still-{0:000.000}.{1}", at, ext);
                 RenderTag.Save(tex, Path.Combine(_stillDir ?? "captures", name), "capture tool t=" + at.ToString("F3", CultureInfo.InvariantCulture));
+                SaveCrop(tex, at);
                 UnityEngine.Object.Destroy(tex);
                 StillsWritten++;
             }
+        }
+
+        /// <summary>
+        /// `--capture-crop x,y,w,h[,scale]` (pixels from the top left): also keeps that region of
+        /// each still, enlarged by whole pixels (default 3×), for edge-by-edge comparisons such as
+        /// TD9's anti-aliasing pairs.
+        /// </summary>
+        void SaveCrop(Texture2D tex, double at)
+        {
+            var spec = Args.Get("--capture-crop");
+            if (string.IsNullOrEmpty(spec)) return;
+            var v = Array.ConvertAll(spec.Split(','), s => int.Parse(s, CultureInfo.InvariantCulture));
+            int x = v[0], y = v[1], w = v[2], h = v[3], k = v.Length > 4 ? Math.Max(1, v[4]) : 3;
+            x = Mathf.Clamp(x, 0, Width - 1); y = Mathf.Clamp(y, 0, Height - 1);
+            w = Math.Min(w, Width - x); h = Math.Min(h, Height - y);
+            var src = tex.GetPixels32();
+            var dst = new Color32[w * k * h * k];
+            for (int j = 0; j < h * k; j++)
+            for (int i = 0; i < w * k; i++)
+            {
+                // The readback is bottom-up; the crop's y counts from the top.
+                int sx = x + i / k, sy = Height - 1 - (y + (h * k - 1 - j) / k);
+                dst[j * w * k + i] = src[sy * Width + sx];
+            }
+            var crop = new Texture2D(w * k, h * k, TextureFormat.RGBA32, false);
+            crop.SetPixels32(dst);
+            crop.Apply();
+            var name = string.Format(CultureInfo.InvariantCulture, "still-{0:000.000}-crop.jpg", at);
+            RenderTag.Save(crop, Path.Combine(_stillDir ?? "captures", name), "capture tool crop t=" + at.ToString("F3", CultureInfo.InvariantCulture), 95);
+            UnityEngine.Object.Destroy(crop);
         }
 
         public bool Done => !_pipe && _stillTimes.Count == 0;
@@ -118,6 +162,7 @@ namespace Demo3D.Runtime.Playback
             }
             _camera.targetTexture = null;
             _target.Release();
+            if (_resolved != null) _resolved.Release();
         }
     }
 }

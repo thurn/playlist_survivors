@@ -19,7 +19,10 @@ namespace Demo3D.EditorTools.Crowd
     /// - a combined mesh at demo scale: every active skinned mesh plus rigid attachments (the
     ///   weapons on their hand bones), with 4 bone indices in UV1 and weights in UV2;
     /// - one float texture of skinning matrices (bone world × bind pose, relative to the
-    ///   character's root), 3 float4 rows per bone per frame, every clip sampled at 60 Hz;
+    ///   character's root), 3 float4 rows per bone per frame, every clip sampled at 60 Hz, and a
+    ///   second texture at 30 Hz for TD11's clips30 cut;
+    /// - LOD1 and LOD2 (TD11): the combined mesh decimated to about a half and a quarter of its
+    ///   triangles by Unity's MeshLodUtility, each its own mesh over the same vertices;
     /// - the clip table (first row, frame count, loop, length and TD2's annotations);
     /// - one crowd material per albedo texture (one per type except the dragon, which has two);
     ///   InfinityPBR's colour-ID shader is baked to a plain albedo texture;
@@ -76,6 +79,9 @@ namespace Demo3D.EditorTools.Crowd
             public List<AnimationClip> AnimationClips = new List<AnimationClip>();
             public float[] Texels; // RGBAFloat, width = 3 × bones, height = total frames
             public int Width, Height;
+            /// <summary>The same matrices at 30 Hz (TD11's clips30 cut), rows from each clip's FirstRow30.</summary>
+            public float[] Texels30;
+            public int Height30;
             public float CenterY, Radius, HeightM;
 
             public Mesh BuildMesh(string name, bool skinStreams = true)
@@ -133,7 +139,7 @@ namespace Demo3D.EditorTools.Crowd
                 int height = bake.Height, width = bake.Width, subs = bake.Submeshes.Count;
                 var ct = Save(bake, shader);
                 types.Add(ct);
-                Debug.Log($"CrowdBaker: {t.id}: {ct.Vertices} vertices, {ct.Triangles} triangles, {ct.BoneCount} bones, " +
+                Debug.Log($"CrowdBaker: {t.id}: {ct.Vertices} vertices, {ct.Triangles} triangles (LOD1 {ct.Lod1Triangles}, LOD2 {ct.Lod2Triangles}), {ct.BoneCount} bones, " +
                           $"{height} frames ({width}x{height} texels, {width * height * 16 / 1024} KiB), " +
                           $"{subs} material(s), radius {ct.Radius:F2} m, height {ct.HeightM:F2} m, " +
                           $"in {(DateTime.UtcNow - started).TotalSeconds:F1} s");
@@ -330,7 +336,7 @@ namespace Demo3D.EditorTools.Crowd
         static void SampleClips(TypeBake b, JObject annotations)
         {
             var body = BodyBone(b);
-            int row = 0;
+            int row = 0, row30 = 0;
             foreach (var kv in b.Type.clips)
             {
                 var clip = Roster.LoadClip(kv.Value);
@@ -342,6 +348,8 @@ namespace Demo3D.EditorTools.Crowd
                     FirstRow = row,
                     Length = clip.length,
                     Frames = CrowdClip.FrameCount(clip.length),
+                    FirstRow30 = row30,
+                    Frames30 = CrowdClip.FrameCount(clip.length, CrowdLibrary.CutClipRate),
                     Loop = a != null ? (bool)a["loop"] : clip.isLooping,
                     Impact = (float?)a?["impact"] ?? -1,
                     End = (float?)a?["end"] ?? -1,
@@ -360,11 +368,20 @@ namespace Demo3D.EditorTools.Crowd
                 b.Clips.Add(c);
                 b.AnimationClips.Add(clip);
                 row += c.Frames;
+                row30 += c.Frames30;
             }
             b.Width = b.Entries.Count * 3;
             b.Height = row;
+            b.Height30 = row30;
             if (b.Width > 16384 || b.Height > 16384) throw new Exception($"CrowdBaker: {b.Type.id} bone texture {b.Width}x{b.Height} is too large");
-            b.Texels = new float[b.Width * b.Height * 4];
+            b.Texels = Sample(b, body, Rate, b.Height, c => c.FirstRow, c => c.Frames);
+            b.Texels30 = Sample(b, body, CrowdLibrary.CutClipRate, b.Height30, c => c.FirstRow30, c => c.Frames30);
+        }
+
+        /// <summary>Every clip's skinning matrices at one rate into a texel array of <paramref name="height"/> rows.</summary>
+        static float[] Sample(TypeBake b, Transform body, float rate, int height, Func<CrowdClip, int> firstRow, Func<CrowdClip, int> frames)
+        {
+            var texels = new float[b.Width * height * 4];
             for (int ci = 0; ci < b.Clips.Count; ci++)
             {
                 var c = b.Clips[ci];
@@ -375,9 +392,9 @@ namespace Demo3D.EditorTools.Crowd
                     drift = BodyAt(b, clip, c.Length, body) - BodyAt(b, clip, 0, body);
                     drift.y = 0;
                 }
-                for (int f = 0; f < c.Frames; f++)
+                for (int f = 0; f < frames(c); f++)
                 {
-                    float time = c.FrameTime(f);
+                    float time = c.FrameTime(f, rate);
                     Pose(b, clip, time);
                     var rootInv = RootTR(b).inverse;
                     if (c.DriftRemovedM > 0) rootInv = Matrix4x4.Translate(-drift * (time / c.Length)) * rootInv;
@@ -386,16 +403,17 @@ namespace Demo3D.EditorTools.Crowd
                         var m = rootInv * b.Entries[e].Bone.localToWorldMatrix * b.Entries[e].Bind;
                         for (int r = 0; r < 3; r++)
                         {
-                            int at = (((c.FirstRow + f) * b.Width) + e * 3 + r) * 4;
+                            int at = (((firstRow(c) + f) * b.Width) + e * 3 + r) * 4;
                             var v = m.GetRow(r);
-                            b.Texels[at] = v.x;
-                            b.Texels[at + 1] = v.y;
-                            b.Texels[at + 2] = v.z;
-                            b.Texels[at + 3] = v.w;
+                            texels[at] = v.x;
+                            texels[at + 1] = v.y;
+                            texels[at + 2] = v.z;
+                            texels[at + 3] = v.w;
                         }
                     }
                 }
             }
+            return texels;
         }
 
         static Vector3 BodyAt(TypeBake b, AnimationClip clip, float time, Transform body)
@@ -467,6 +485,9 @@ namespace Demo3D.EditorTools.Crowd
             Directory.CreateDirectory(TypeDir(id));
             var mesh = b.BuildMesh(id + "_crowd");
             Replace(mesh, $"{TypeDir(id)}/{id}_crowd.mesh");
+            var lods = BuildLods(mesh, id);
+            Replace(lods[0], $"{TypeDir(id)}/{id}_lod1.mesh");
+            Replace(lods[1], $"{TypeDir(id)}/{id}_lod2.mesh");
 
             var tex = new Texture2D(b.Width, b.Height, TextureFormat.RGBAFloat, false, true)
             {
@@ -475,6 +496,13 @@ namespace Demo3D.EditorTools.Crowd
             tex.SetPixelData(b.Texels, 0);
             tex.Apply(false, false);
             Replace(tex, $"{TypeDir(id)}/{id}_bones.asset");
+            var tex30 = new Texture2D(b.Width, b.Height30, TextureFormat.RGBAFloat, false, true)
+            {
+                name = id + "_bones30", filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp, anisoLevel = 0,
+            };
+            tex30.SetPixelData(b.Texels30, 0);
+            tex30.Apply(false, false);
+            Replace(tex30, $"{TypeDir(id)}/{id}_bones30.asset");
 
             var crowdMats = new Material[b.Submeshes.Count];
             var stockMats = new Material[b.Submeshes.Count];
@@ -498,8 +526,13 @@ namespace Demo3D.EditorTools.Crowd
                 Id = id,
                 Kind = b.Type.kind,
                 Mesh = mesh,
+                Lod1 = lods[0],
+                Lod2 = lods[1],
+                Lod1Triangles = Triangles(lods[0]),
+                Lod2Triangles = Triangles(lods[1]),
                 Materials = crowdMats,
                 Bones = tex,
+                Bones30 = tex30,
                 BoneCount = b.Entries.Count,
                 Clips = b.Clips.ToArray(),
                 CenterY = b.CenterY,
@@ -512,6 +545,76 @@ namespace Demo3D.EditorTools.Crowd
             };
             ct.StockPrefab = SaveStock(b, stockMats);
             return ct;
+        }
+
+        /// <summary>
+        /// LOD1 and LOD2 of the combined mesh (TD11, performance.md's decimated meshes): Unity 6.6's
+        /// own Mesh LOD generation (MeshLodUtility, which simplifies each submesh's index buffer by
+        /// about half per level and keeps every vertex and stream), run on a copy; each level's
+        /// index ranges become their own mesh over the same vertices, so the crowd's indirect draws
+        /// stay one mesh per LOD.
+        /// </summary>
+        public static Mesh[] BuildLods(Mesh lod0, string id)
+        {
+            var work = UnityEngine.Object.Instantiate(lod0);
+            try
+            {
+                MeshLodUtility.GenerateMeshLods(work, 2);
+                var result = new Mesh[2];
+                for (int level = 1; level <= 2; level++)
+                {
+                    var m = UnityEngine.Object.Instantiate(lod0);
+                    m.name = $"{id}_lod{level}";
+                    for (int sm = 0; sm < lod0.subMeshCount; sm++)
+                    {
+                        int[] idx;
+                        if (work.lodCount > level)
+                        {
+                            var range = work.GetLod(sm, level);
+                            var d = work.GetSubMesh(sm);
+                            // A level's range is relative to its submesh's start in the whole index buffer.
+                            idx = LodIndices(work, sm, d, range);
+                        }
+                        else idx = lod0.GetIndices(sm, false); // too small to simplify further
+                        m.SetIndices(idx, MeshTopology.Triangles, sm, false, lod0.GetSubMesh(sm).baseVertex);
+                    }
+                    m.bounds = lod0.bounds;
+                    result[level - 1] = m;
+                }
+                return result;
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(work);
+            }
+        }
+
+        /// <summary>One LOD level's indices of a submesh, relative to the submesh's base vertex.</summary>
+        static int[] LodIndices(Mesh work, int sm, SubMeshDescriptor d, MeshLodRange range)
+        {
+            using var data = Mesh.AcquireReadOnlyMeshData(work);
+            var md = data[0];
+            var idx = new int[range.indexCount];
+            int start = d.indexStart + (int)range.indexStart;
+            if (md.indexFormat == IndexFormat.UInt16)
+            {
+                var all = md.GetIndexData<ushort>();
+                for (int i = 0; i < idx.Length; i++) idx[i] = all[start + i];
+            }
+            else
+            {
+                var all = md.GetIndexData<int>();
+                for (int i = 0; i < idx.Length; i++) idx[i] = all[start + i];
+            }
+            // The index buffer holds vertex indices relative to the submesh's base vertex.
+            return idx;
+        }
+
+        static int Triangles(Mesh m)
+        {
+            long n = 0;
+            for (int sm = 0; sm < m.subMeshCount; sm++) n += m.GetIndexCount(sm);
+            return (int)(n / 3);
         }
 
         static void Replace(UnityEngine.Object asset, string path)

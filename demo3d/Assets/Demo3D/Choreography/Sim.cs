@@ -694,6 +694,11 @@ namespace Demo3D.Choreography
                 ClipAnnotation clip = clips[mv.Clip];
                 if (!ClipLibrary.Fit(clip, availFrom, p.Time, out double start, out double end, out float speed)) continue;
                 if (start < tb - 1e-9) continue;
+                // Across a section change a positioned combo owns its slot: skip a plain one whose
+                // recovery would leave no room for the windup of the next section's positioned one
+                // (the ending's accent slams after the outro, TD10). Within a section a positioned
+                // combo that can't fit moves later, as before.
+                if (plain && BlocksPositioned(gi, end)) continue;
 
                 Vector2 from = HeroRest;
                 float fFrom = Easing.Wrap(HeroFacing);
@@ -716,6 +721,31 @@ namespace Demo3D.Choreography
                 stats[curSection].HeroActions++;
                 return;
             }
+        }
+
+        /// <summary>
+        /// Whether an action ending at <paramref name="end"/> would make the next positioned combo
+        /// after grid point <paramref name="gi"/> (within 4 s), if it lies in a later section whose
+        /// combos are all positioned (its only actions), unable to fit at full speed.
+        /// </summary>
+        bool BlocksPositioned(int gi, double end)
+        {
+            for (int k = gi + 1; k < grid.Count && grid.Points[k].Time <= grid.Points[gi].Time + 4.0; k++)
+            {
+                GridPoint q = grid.Points[k];
+                GridEntry e = PickCombo(plans[q.Section].Combo, q.Flags, out bool plainNext);
+                if (e == null || plainNext) continue;
+                if (q.Section == grid.Points[gi].Section || !AllPositioned(plans[q.Section].Combo)) return false;
+                ClipAnnotation c = clips[roster.Combo(e.Name).Clip];
+                return end > q.Time - c.Impact / ClipLibrary.MaxSpeed;
+            }
+            return false;
+        }
+
+        static bool AllPositioned(GridEntry[] combo)
+        {
+            foreach (GridEntry e in combo) if (!e.Positioned) return false;
+            return combo.Length > 0;
         }
 
         GridEntry PickCombo(GridEntry[] combo, GridFlags flags, out bool plain)
