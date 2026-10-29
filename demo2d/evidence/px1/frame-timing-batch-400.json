@@ -1,0 +1,22 @@
+{
+  "batchMode": true,
+  "graphicsDeviceType": "Metal",
+  "graphicsDeviceName": "Apple M5 Max",
+  "frameTimingStatsSupported": true,
+  "sprites": 400,
+  "frames": 9168,
+  "framesWithTimings": 9168,
+  "seconds": 10,
+  "systemMemoryMiB": { "start": 533.9, "end": 532.1 },
+  "series": {
+    "drawToReadbackMs": { "n": 9168, "nonzero": 9168, "mean": 0.966, "p50": 0.579, "p99": 3.399, "max": 5.690 },
+    "ftm.cpuFrameTimeMs": { "n": 9168, "nonzero": 9168, "mean": 1.091, "p50": 0.704, "p99": 3.510, "max": 5.911 },
+    "ftm.cpuMainThreadMs": { "n": 9168, "nonzero": 9168, "mean": 1.090, "p50": 0.704, "p99": 3.510, "max": 5.910 },
+    "ftm.cpuRenderThreadMs": { "n": 9168, "nonzero": 0, "mean": 0.000, "p50": 0.000, "p99": 0.000, "max": 0.000 },
+    "ftm.gpuFrameTimeMs": { "n": 9168, "nonzero": 286, "mean": 0.078, "p50": 0.000, "p99": 4.059, "max": 6.489 },
+    "counter.CPU Total Frame Time (ms)": { "n": 9168, "nonzero": 9168, "mean": 1.091, "p50": 0.704, "p99": 3.510, "max": 5.911 },
+    "counter.CPU Main Thread Frame Time (ms)": { "n": 9168, "nonzero": 9168, "mean": 1.090, "p50": 0.704, "p99": 3.510, "max": 5.910 },
+    "counter.CPU Render Thread Frame Time (ms)": { "n": 9168, "nonzero": 0, "mean": 0.000, "p50": 0.000, "p99": 0.000, "max": 0.000 },
+    "counter.GPU Frame Time (ms)": { "n": 9168, "nonzero": 286, "mean": 0.059, "p50": 0.000, "p99": 2.503, "max": 5.945 }
+  }
+}

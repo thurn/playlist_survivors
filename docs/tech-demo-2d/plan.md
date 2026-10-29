@@ -227,6 +227,7 @@ that consumes the result removes the row.
 
 | What | How | Added by | Consumed by |
 |---|---|---|---|
+| Does a windowed player report a GPU frame time every frame? (A batch-mode one reports it on 3% of frames.) | After `demo2d build`, from the worktree's root: `open -n demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app --args -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --frame-timing "$PWD/captures/px1-timing/windowed-400.json" --spike-sprites 400 --seconds 10`; the window closes itself after 12 s. In the JSON, compare `ftm.gpuFrameTimeMs`'s `nonzero` with `frames`. | PX1 | PX10 |
 
 ## Task Notes
 
@@ -280,7 +281,62 @@ Done (bead ps-tfn.1.1). Commits: `2671f867` (the move), and this notes commit.
 
 ### PX1
 
-Not started.
+Done (bead ps-tfn.1.3). Commits: `c5cc4687` (the tools and the guard), `ff0a944a` (the
+project), `51074dfe` (docstrings), and this notes commit. `demo2d check --player` passes
+(the guard, dotnet, cold EditMode 23 of 23, the IL2CPP build). [Evidence](../../demo2d/evidence/px1/README.md).
+
+- **Run:** from a worktree's root, with the player's paths absolute (a Mac player resolves
+  relative ones against the `.app`'s folder):
+
+  ```
+  uv run --project demo3d/tools demo2d setup    # vendor, the song, a warm Library, the guard hook
+  uv run --project demo3d/tools demo2d build    # Builds/mac/il2cpp/PlaylistSurvivors2D.app (--backend mono: faster)
+  uv run --project demo3d/tools demo2d test     # EditMode tests
+  "$PWD/demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app/Contents/MacOS/Playlist Survivors 2D Demo" \
+    -batchmode -force-metal -logFile "$PWD/demo2d/Logs/stills.log" \
+    --capture-stills "$PWD/captures/px1" --stills-at 2 --seconds 2.5
+  ```
+
+- **The project:** `demo2d/`, Unity 6000.6.7f1, URP 17.6's 2D renderer (transparency sorted
+  on the y axis, HDR, no MSAA), Metal only, IL2CPP, Apple silicon, linear, 1920×1080
+  windowed, frame timing stats on. `ProjectSetup.Configure` (`demo2d unity Configure`) writes
+  all of it and the empty scene; it is idempotent. Assemblies: `Demo2D.Runtime` (args, the
+  render tag, windowless stills, the timing spike, the generated test card),
+  `Demo2D.EditorTools` (`Tasks`: Noop, Configure, BuildPlayer; Mac only, and it restores the
+  two URP assets a build rewrites), `Demo2D.EditMode.Tests`; PX4's `Demo2D.Choreography`
+  assemblies now compile and pass in Unity too (23 of 23).
+- **The tools:** a second entry point, `demo2d`, over `demo3d/tools` (chosen over a
+  `--project` option so every command line names its project once, at the front). It runs
+  setup, guard, check, unity, test, build, library, sync and manifest on `demo2d/`; sweep,
+  report, pix, mix, flip and the warm editor stay demo3d's (demo2d has no warm editor; every
+  Unity step runs cold). Both projects share the per-machine cache, `roots.json` and one sync
+  record; Library and vendor caches are keyed by each project's own files, so they never
+  collide. Setup checks only the roots its project needs.
+- **The guard:** the new root `pixel_assets` is `~/unity_assets` (whose `Assets/` holds the
+  2D packs), as `unity_assets` is `~/unity_assets/UnityAssets`; a `roots.json` without it gains
+  the default. The record now lists every file under it. `demo2d/` falls under the vendor and
+  baked folders, the binary rule (tagged renders only under `demo2d/evidence/`), the missing
+  record rule, the derived record (its `Assets/Baked/`; labels now name the demo, as
+  `demo3d/Assets/Baked/...`) and the stale check (`demo2d/manifest.json`, empty until PX2).
+  The pre-push hook's no-tools fallback refuses `demo2d/` changes too. `.gitignore` mirrors
+  demo3d's lines. 19 new test cases on synthetic fixtures (92 pass, 2 skip); `scripts/check-fast` runs them whenever
+  `demo3d/tools` changes, and runs the guard itself on every push.
+- **Spikes:** cold compile 36.7 s, warm 7.9 s; EditMode tests 31.3 s cold, 13 to 18 s warm;
+  IL2CPP build 60.8 s first and 16.4 s after, Mono 13.9 s. A batch-mode Metal player drawing
+  by hand reports CPU times every frame but GPU times on only 3% of frames (at 400 or 4,000
+  sprites), so PX10 should time the whole frame with a one-pixel readback after each draw
+  (the main thread then includes the GPU's work; conservative). Memory stays flat over 9,168
+  hand-drawn frames, so a whole-song batch-mode run is feasible. The windowed comparison is in
+  [Pending on the operator](#pending-on-the-operator).
+- **The guard's review** is the separate Warden bead ps-tfn.1.4.
+- **Surprises:** a sprite renderer created at runtime in a player gets the unlit sprite
+  material, so the first still had no lighting; the scene's test card now names URP's
+  `Sprite-Lit-Default`, which PX5's crowd should do too. The Mac player resolves relative
+  paths against the folder holding the `.app`.
+- **Self-review:** re-read the diff against `origin/staging`. demo3d's behaviour is unchanged
+  except the derived record's labels, setup checking only demo3d's roots, and the shared
+  record gaining `pixel_assets`; `demo3d setup --no-unity` still runs. Every `.meta` GUID in
+  `demo2d/` is Unity's own, and the guard passes the tree and the index.
 
 ### PX2
 
