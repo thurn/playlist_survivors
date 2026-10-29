@@ -33,6 +33,8 @@ namespace Demo2D.EditorTools.Assets
         {
             public string Name, Pack, Prefix, Rank;
             public int GameHeightPx;
+            /// <summary>The sim's gait step per beat, in metres (a monster's stepM, the hero's strideM).</summary>
+            public float GaitStepM;
             public string FramesDir => $"{VendorDir}/{Pack}/{Prefix}_png";
             public string ClipsDir => $"{VendorDir}/{Pack}/{Prefix}";
 
@@ -81,6 +83,7 @@ namespace Demo2D.EditorTools.Assets
             Pack = v["pack"].AsString() ?? throw new FormatException(name + ": no pack"),
             Prefix = v["clipPrefix"].AsString() ?? throw new FormatException(name + ": no clipPrefix"),
             GameHeightPx = v["gameHeightPx"].AsInt(),
+            GaitStepM = v["stepM"].AsFloat(v["strideM"].AsFloat()),
         };
 
         /// <summary>

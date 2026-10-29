@@ -35,6 +35,19 @@ namespace Demo2D.EditorTools
             Assets.AssetStills.Write(TaskArgs.Get("-out", Path.Combine("evidence", "px2")));
         }
 
+        /// <summary>PX3: bakes the clip library's frames into Assets/Baked/Characters (SpriteBaker).</summary>
+        public static void BakeSprites() => Assets.SpriteBaker.Run();
+
+        /// <summary>
+        /// PX3: bakes, then rewrites the clip library (Data/clip-annotations.json) from the frames
+        /// and writes its contact sheets into `-out &lt;dir&gt;` (default evidence/px3).
+        /// </summary>
+        public static void AnnotateClips() =>
+            Assets.ClipAnnotator.Run(Assets.SpriteBaker.Run(), TaskArgs.Get("-out", Path.Combine("evidence", "px3")));
+
+        /// <summary>PX3's lineup and crowd stills from the baked atlases into `-out &lt;dir&gt;` (default evidence/px3).</summary>
+        public static void SpriteStills() => Assets.SpriteStills.Write(TaskArgs.Get("-out", Path.Combine("evidence", "px3")));
+
         // URP's build preprocessing rewrites these tracked assets for the build's target (the
         // pipeline's shader prefilters, the global settings' runtime list). BuildPlayer puts them
         // back, so a build leaves the checkout clean.
