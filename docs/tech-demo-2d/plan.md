@@ -653,7 +653,61 @@ and this notes commit. `demo2d check --player` passes (the guard, dotnet, EditMo
 
 ### PX6
 
-Not started.
+Done (bead ps-tfn.3.1). Commits: the arena commit `feat(px6): …` and this notes commit (SHAs on
+the bead). `demo2d test` 84 of 84; dotnet 27 of 27, 6 of them PX6's. [Evidence](../../demo2d/evidence/px6/README.md).
+
+- **Run:** from a worktree's root (the player's paths absolute):
+
+  ```
+  uv run --project demo3d/tools demo2d setup
+  uv run --project demo3d/tools demo2d build     # bakes PlaybackData (now with the arena's textures and tiles), then the player
+  APP="$PWD/demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app/Contents/MacOS/Playlist Survivors 2D Demo"
+  "$APP" --click --overlay                       # the song in the arena
+  uv run --project demo3d/tools demo2d unity ArenaStills -out "$PWD/demo2d/evidence/px6"   # overview and shots
+  ```
+
+- **The data:** `Data/arena-layout.json` (demo3d's ArenaLayout plus `ground`, `cliffs` and
+  `water` with `bridges`; its note documents them) replaces `open-ground-layout.json` as the level
+  script's layout. `Data/forest-props.json` is both the footprint table and the sprite catalogue:
+  99 props (7 swaying trees, 3 dead trees, 2 stumps, 2 fallen branches, the great dead tree, 84
+  plants), their rectangles and feet measured from the sheets' alpha. `forest-tiles.json` gains the
+  plateau, channel and bridge blocks.
+- **The code:** `ForestArena` and `ArenaTiles` (engine-free, `Demo2D.Choreography`) parse the
+  layout, generate the placement list (the core's scatter, minus anything in water or on a cliff,
+  plus a blocking polygon per cliff and per stretch of channel between bridges) and compose the
+  Tilemap layers. `ArenaGround` builds the Tilemaps, `ArenaProps` the props (sway, culling, canopy
+  fade), and `SpriteCrowd` ranks the visible props with the characters. `ForestTiles.CornerTiles`
+  now delegates to `TileSheet.CornerTiles`.
+- **Choices:**
+  - **Generated at load, not baked.** The README planned an editor bake into `Baked/`; the arena is
+    instead composed from its JSON when the player loads (a few ms), as the sim's placements are, so
+    the drawn arena can't go stale against the navigated one (the Mason's note on the bead). Only the
+    vendor textures and the sheet's tiles are indexed in PlaybackData, which every build re-bakes.
+  - **Cliffs and water are rectangles** (README updated): the sheet's plateau block has only a south
+    face and its channel block no corners, so a capsule or a bend couldn't be drawn.
+  - **Ground materials** use the `clear-on-*` sets (inner terrain transparent), so each material
+    is an overlay layer with soft edges over the base grass; diagonal corner patterns fill. Water keeps
+    base grass within a tile, matching the channel block's own banks.
+  - **The canopy fade** fades a whole prop at least 2.5 m tall to 45% by how deep a character
+    standing behind it is inside its sprite (above its base), a function of the positions, so seeks
+    match.
+  - **The route:** camp glade, old stump, moss clearing, over the bridge, past the ledge's foot, into
+    the great clearing, spaced to the hero's real pace so the stream and cliff stay out of the
+    climax's view (when they were in it the final peak fell to 223 to 248 on screen).
+- **Fixed on the way: the hero never moved.** Since PX3's measured annotations (no root motion for
+  knight_male's slashes and bash), a hero within reach of the horde attacked in place all song: on
+  open ground too, it never left the camp. The core's hero combos take an optional `advanceM` (the
+  least the hero moves toward an unreached goal over the clip; demo3d sets none, and its dump is still
+  `09945e3b…`), and demo2d's roster sets 0.5 m on the slashes and 0.8 m on the bash. The hero now
+  reaches the stump at 19 s, the moss clearing at 54 s, crosses the bridge in the build and reaches the
+  great clearing at 147 s. The cyclops weight went from 0.2 to 0.35 (build) and 0.3 (final peak):
+  elites are a few per song, and the arena's run spawned none.
+- **For PX7 onward:** props are lit with `Sprite-Lit-Default`; the umbrella plants are candidates
+  for glowing plants. Sorting orders: ground layers from -1100, shadows -1, characters and props
+  ranked from 0. Plateau tops are bare (PX9 can dress them; scatter skips terrain).
+- **Self-review:** re-read the diff against `origin/staging`. The core change is the opt-in
+  `advanceM`; demo3d's dotnet tests (129) and dump are unchanged. New tracked files are our code,
+  JSON, `.meta`s Unity wrote and tagged stills; Unity's ProjectSettings rewrites were discarded.
 
 ### PX7
 
