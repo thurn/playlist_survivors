@@ -1,0 +1,92 @@
+PX2 vendor guard drill at 68de5e1e, 2026-10-29T19:56:36Z
+PASS the clean index (control)
+FAIL knight_male: a frame force-staged in Vendor/:   demo2d/Assets/Vendor/knight_male/knight_male_png/knight_male-death_0.png   inside the vendor or baked folder
+FAIL knight_male: the frame copied under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/knight_male-death_0.png   binary file under demo2d/
+FAIL knight_male: the frame's .meta alone under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/knight_male-death_0.png.meta   GUID 2f046cfcd29c3463d809ddb99b27c2a7 is a vendor asset (derived: demo2d/Assets/Vendor/knigh
+FAIL knight_male: a clip (.anim as Unity rewrote it, YAML) under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/death.anim   SHA-256 f8cf8dd5a603… is a vendor file (derived: demo2d/Assets/Vendor/knight_male/knight_male/death.anim)
+FAIL knight_male: the source clip (.anim, binary) under docs/:   docs/death.anim   SHA-256 b9dc3828fb03… is a vendor file (pixel_assets)
+FAIL Skeleton: a frame force-staged in Vendor/:   demo2d/Assets/Vendor/Skeleton/skeleton_png/skeleton-death_0.png   inside the vendor or baked folder
+FAIL Skeleton: the frame copied under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/skeleton-death_0.png   binary file under demo2d/
+FAIL Skeleton: the frame's .meta alone under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/skeleton-death_0.png.meta   GUID 0bb2b833eb0fa204bb1aad04863a73f6 is a vendor asset (derived: demo2d/Assets/Vendor/Skeleton
+FAIL Skeleton: a clip (.anim as Unity rewrote it, YAML) under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/death.anim   SHA-256 489ba8360667… is a vendor file (derived: demo2d/Assets/Vendor/Skeleton/skeleton/death.anim)
+FAIL Skeleton: the source clip (.anim, binary) under docs/:   docs/death.anim   SHA-256 fa13d572638a… is a vendor file (pixel_assets)
+FAIL Ghoul: a frame force-staged in Vendor/:   demo2d/Assets/Vendor/Ghoul/hunger_zombie_png/hunger_zombie-death_0.png   inside the vendor or baked folder
+FAIL Ghoul: the frame copied under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/hunger_zombie-death_0.png   binary file under demo2d/
+FAIL Ghoul: the frame's .meta alone under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/hunger_zombie-death_0.png.meta   GUID 9bfa5cb1ab4c091459628bc2a62cbeb2 is a vendor asset (derived: demo2d/Assets/Vendor/Gho
+FAIL Ghoul: a clip (.anim as Unity rewrote it, YAML) under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/death.anim   SHA-256 8f44fe9881ca… is a vendor file (derived: demo2d/Assets/Vendor/Ghoul/hunger_zombie/death.anim)
+FAIL Ghoul: the source clip (.anim, binary) under docs/:   docs/death.anim   SHA-256 56a7fed80acb… is a vendor file (pixel_assets)
+FAIL Zombie Warrior: a frame force-staged in Vendor/:   demo2d/Assets/Vendor/Zombie Warrior/laugh_zombie_png/laugh_zombie-death_0.png   inside the vendor or baked folder
+FAIL Zombie Warrior: the frame copied under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/laugh_zombie-death_0.png   binary file under demo2d/
+FAIL Zombie Warrior: the frame's .meta alone under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/laugh_zombie-death_0.png.meta   GUID 48c6099f0cc8e7045a8f87b29b185051 is a vendor asset (derived: demo2d/Assets/Vendor/Zomb
+FAIL Zombie Warrior: a clip (.anim as Unity rewrote it, YAML) under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/death.anim   SHA-256 6960e24cf534… is a vendor file (derived: demo2d/Assets/Vendor/Zombie Warrior/laugh_zombie/death.anim
+FAIL Zombie Warrior: the source clip (.anim, binary) under docs/:   docs/death.anim   SHA-256 09a4420b448f… is a vendor file (pixel_assets)
+FAIL Flame Imp: a frame force-staged in Vendor/:   demo2d/Assets/Vendor/Flame Imp/flame_imp_png/flame_imp-death_0.png   inside the vendor or baked folder
+FAIL Flame Imp: the frame copied under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/flame_imp-death_0.png   binary file under demo2d/
+FAIL Flame Imp: the frame's .meta alone under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/flame_imp-death_0.png.meta   GUID 50d1ba13cecf44648a63a982c6aa8455 is a vendor asset (derived: demo2d/Assets/Vendor/Flame I
+FAIL Flame Imp: a clip (.anim as Unity rewrote it, YAML) under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/death.anim   SHA-256 fbc28c1c1cad… is a vendor file (derived: demo2d/Assets/Vendor/Flame Imp/flame_imp/death.anim)
+FAIL Flame Imp: the source clip (.anim, binary) under docs/:   docs/death.anim   SHA-256 d7b645881c88… is a vendor file (pixel_assets)
+FAIL Ice Skull: a frame force-staged in Vendor/:   demo2d/Assets/Vendor/Ice Skull/frozen_skeleton_png/frozen_skeleton-death_0.png   inside the vendor or baked folder
+FAIL Ice Skull: the frame copied under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/frozen_skeleton-death_0.png   binary file under demo2d/
+FAIL Ice Skull: the frame's .meta alone under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/frozen_skeleton-death_0.png.meta   GUID 95be0d0df88eb704bad26637b480f3b7 is a vendor asset (derived: demo2d/Assets/Vendor/I
+FAIL Ice Skull: a clip (.anim as Unity rewrote it, YAML) under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/death.anim   SHA-256 81d102b89142… is a vendor file (derived: demo2d/Assets/Vendor/Ice Skull/frozen_skeleton/death.anim)
+FAIL Ice Skull: the source clip (.anim, binary) under docs/:   docs/death.anim   SHA-256 3a28be15785a… is a vendor file (pixel_assets)
+FAIL Mask: a frame force-staged in Vendor/:   demo2d/Assets/Vendor/Mask/mask_man_png/mask_man-death_0.png   inside the vendor or baked folder
+FAIL Mask: the frame copied under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/mask_man-death_0.png   binary file under demo2d/
+FAIL Mask: the frame's .meta alone under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/mask_man-death_0.png.meta   GUID 655d8aedc3a04304aa0104e554e8901b is a vendor asset (derived: demo2d/Assets/Vendor/Mask/mas
+FAIL Mask: a clip (.anim as Unity rewrote it, YAML) under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/death.anim   SHA-256 11fedc5b8d4e… is a vendor file (derived: demo2d/Assets/Vendor/Mask/mask_man/death.anim)
+FAIL Mask: the source clip (.anim, binary) under docs/:   docs/death.anim   SHA-256 dfdfe670d945… is a vendor file (pixel_assets)
+FAIL Skeleton Mage: a frame force-staged in Vendor/:   demo2d/Assets/Vendor/Skeleton Mage/skeleton_mage_png/skeleton_mage-death_0.png   inside the vendor or baked folder
+FAIL Skeleton Mage: the frame copied under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/skeleton_mage-death_0.png   binary file under demo2d/
+FAIL Skeleton Mage: the frame's .meta alone under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/skeleton_mage-death_0.png.meta   GUID 6609b50d1e05e53498ff101e0287c19b is a vendor asset (derived: demo2d/Assets/Vendor/Ske
+FAIL Skeleton Mage: a clip (.anim as Unity rewrote it, YAML) under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/death.anim   SHA-256 75cdef80c5bd… is a vendor file (derived: demo2d/Assets/Vendor/Skeleton Mage/skeleton_mage/death.anim
+FAIL Skeleton Mage: the source clip (.anim, binary) under docs/:   docs/death.anim   SHA-256 f8bdb213686e… is a vendor file (pixel_assets)
+FAIL Blood Mage: a frame force-staged in Vendor/:   demo2d/Assets/Vendor/Blood Mage/blood_mage_png/blood_mage-death_0.png   inside the vendor or baked folder
+FAIL Blood Mage: the frame copied under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/blood_mage-death_0.png   binary file under demo2d/
+FAIL Blood Mage: the frame's .meta alone under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/blood_mage-death_0.png.meta   GUID d7edc909d3c1b1d41a50a6febaae29ec is a vendor asset (derived: demo2d/Assets/Vendor/Blood 
+FAIL Blood Mage: a clip (.anim as Unity rewrote it, YAML) under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/death.anim   SHA-256 50c32b7f162e… is a vendor file (derived: demo2d/Assets/Vendor/Blood Mage/blood_mage/death.anim)
+FAIL Blood Mage: the source clip (.anim, binary) under docs/:   docs/death.anim   SHA-256 7a64cdc4e1b7… is a vendor file (pixel_assets)
+FAIL Ogre: a frame force-staged in Vendor/:   demo2d/Assets/Vendor/Ogre/ogre_png/ogre-death_0.png   inside the vendor or baked folder
+FAIL Ogre: the frame copied under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/ogre-death_0.png   binary file under demo2d/
+FAIL Ogre: the frame's .meta alone under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/ogre-death_0.png.meta   GUID ebf3dceaa37c2ec418eed11bb670ff93 is a vendor asset (derived: demo2d/Assets/Vendor/Ogre/ogre_pn
+FAIL Ogre: a clip (.anim as Unity rewrote it, YAML) under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/death.anim   SHA-256 b6b838ea6b79… is a vendor file (derived: demo2d/Assets/Vendor/Ogre/ogre/death.anim)
+FAIL Ogre: the source clip (.anim, binary) under docs/:   docs/death.anim   SHA-256 ed4afe9116a8… is a vendor file (pixel_assets)
+FAIL Cyclops: a frame force-staged in Vendor/:   demo2d/Assets/Vendor/Cyclops/cyclops_png/cyclops-death_0.png   inside the vendor or baked folder
+FAIL Cyclops: the frame copied under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/cyclops-death_0.png   binary file under demo2d/
+FAIL Cyclops: the frame's .meta alone under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/cyclops-death_0.png.meta   GUID ac2e34189c4a6af4696c932c1c41158a is a vendor asset (derived: demo2d/Assets/Vendor/Cyclops/c
+FAIL Cyclops: a clip (.anim as Unity rewrote it, YAML) under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/death.anim   SHA-256 b41fb6bb10b7… is a vendor file (derived: demo2d/Assets/Vendor/Cyclops/cyclops/death.anim)
+FAIL Cyclops: the source clip (.anim, binary) under docs/:   docs/death.anim   SHA-256 9ca50c4a2b4a… is a vendor file (pixel_assets)
+FAIL Werewolf: a frame force-staged in Vendor/:   demo2d/Assets/Vendor/Werewolf/polar_werewolf_png/polar_werewolf-death_0.png   inside the vendor or baked folder
+FAIL Werewolf: the frame copied under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/polar_werewolf-death_0.png   binary file under demo2d/
+FAIL Werewolf: the frame's .meta alone under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/polar_werewolf-death_0.png.meta   GUID 8dd35c11be6ef054bbb1b6cb93cbea36 is a vendor asset (derived: demo2d/Assets/Vendor/We
+FAIL Werewolf: a clip (.anim as Unity rewrote it, YAML) under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/death.anim   SHA-256 a968e80586a2… is a vendor file (derived: demo2d/Assets/Vendor/Werewolf/polar_werewolf/death.anim)
+FAIL Werewolf: the source clip (.anim, binary) under docs/:   docs/death.anim   SHA-256 cb62284b6ba3… is a vendor file (pixel_assets)
+FAIL Lava Beast: a frame force-staged in Vendor/:   demo2d/Assets/Vendor/Lava Beast/lava_beast_png/lava_beast-death_0.png   inside the vendor or baked folder
+FAIL Lava Beast: the frame copied under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/lava_beast-death_0.png   binary file under demo2d/
+FAIL Lava Beast: the frame's .meta alone under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/lava_beast-death_0.png.meta   GUID 65fb1e47281eadd4a8a0165958ed2af5 is a vendor asset (derived: demo2d/Assets/Vendor/Lava B
+FAIL Lava Beast: a clip (.anim as Unity rewrote it, YAML) under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/death.anim   SHA-256 46181c74edfd… is a vendor file (derived: demo2d/Assets/Vendor/Lava Beast/lava_beast/death.anim)
+FAIL Lava Beast: the source clip (.anim, binary) under docs/:   docs/death.anim   SHA-256 a5d89019834d… is a vendor file (pixel_assets)
+FAIL Boss Devil Man: a frame force-staged in Vendor/:   demo2d/Assets/Vendor/Boss Devil Man/boss_devil_man_png/boss_devil_man-death_0.png   inside the vendor or baked folder
+FAIL Boss Devil Man: the frame copied under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/boss_devil_man-death_0.png   binary file under demo2d/
+FAIL Boss Devil Man: the frame's .meta alone under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/boss_devil_man-death_0.png.meta   GUID 15d5023aa7acbb149aeac590bcad4258 is a vendor asset (derived: demo2d/Assets/Vendor/Bo
+FAIL Boss Devil Man: a clip (.anim as Unity rewrote it, YAML) under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/death.anim   SHA-256 85eee15538f4… is a vendor file (derived: demo2d/Assets/Vendor/Boss Devil Man/boss_devil_man/death.an
+FAIL Boss Devil Man: the source clip (.anim, binary) under docs/:   docs/death.anim   SHA-256 c42b60a96c92… is a vendor file (pixel_assets)
+FAIL AncientForest: MainLev.png force-staged in Vendor/:   demo2d/Assets/Vendor/RPGW_AncientForest/Sliced/MainLev.png   inside the vendor or baked folder
+FAIL AncientForest: MainLev.png renamed under docs/:   docs/tech-demo-2d/tiles.png   SHA-256 27d73e9b7f04… is a vendor file (derived: demo2d/Assets/Vendor/RPGW_AncientForest/Sliced/MainLev.png)
+FAIL AncientForest: MainLev.png.meta alone under Demo2D/Data/:   demo2d/Assets/Demo2D/Data/MainLev.png.meta   GUID 89e90e73f0dcbd84eb40c61bb749563e is a vendor asset (derived: demo2d/Assets/Vendor/RPGW_AncientFore
+FAIL AncientForest: a tree clip (.anim, YAML) under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/tree1.anim   SHA-256 83ee327074da… is a vendor file (derived: demo2d/Assets/Vendor/RPGW_AncientForest/Animated/tree1.anim
+FAIL AncientForest: a tree controller under unity-packages/:   unity-packages/com.playlistsurvivors.choreography/Runtime/tree1_0.controller   SHA-256 17a3458713a9… is a vendor file (derived: demo2d/Assets/Vend
+FAIL CFXR: a prefab under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/slash.prefab   SHA-256 3115600b0265… is a vendor file (derived: demo2d/Assets/Vendor/JMO Assets/Cartoon FX Remaster/CFXR 
+FAIL CFXR: a prefab's .meta alone under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/slash.prefab.meta   GUID 18d69cc11ae74294aac3f0c1b92d192d is a vendor asset (derived: demo2d/Assets/Vendor/JMO Assets/Carto
+FAIL CFXR: the ubershader (text) under Demo2D/Runtime/:   demo2d/Assets/Demo2D/Runtime/Uber.cfxrshader   SHA-256 7841cb5b240b… is a vendor file (derived: demo2d/Assets/Vendor/JMO Assets/Cartoon FX Remaste
+FAIL CFXR: a script (CFXR_Effect.cs) under Demo2D/Runtime/:   demo2d/Assets/Demo2D/Runtime/CFXR_Effect.cs   SHA-256 03e7bfeedf71… is a vendor file (derived: demo2d/Assets/Vendor/JMO Assets/Cartoon FX Remaster
+FAIL CFXR: a texture force-staged in Vendor/:   demo2d/Assets/Vendor/JMO Assets/Cartoon FX Remaster/CFXR Assets/Graphics/cfxr star.png   inside the vendor or baked folder
+FAIL Magic Spells SFX Bundle: a sound under Demo2D/Audio/:   demo2d/Assets/Demo2D/Audio/Thunder 1.mp3   binary file under demo2d/
+FAIL Magic Spells SFX Bundle: its .meta alone under Demo2D/Audio/:   demo2d/Assets/Demo2D/Audio/Thunder 1.mp3.meta   GUID 8996068b115344046ae1b38f30513505 is a vendor asset (derived: demo2d/Assets/Vendor/Magic Spells 
+FAIL RPG Magic Sound Effects Pack 3 [ELEMENTAL]: a sound under Demo2D/Audio/:   demo2d/Assets/Demo2D/Audio/RPG3_FireMagicBall_Projectile02.wav   binary file under demo2d/
+FAIL RPG Magic Sound Effects Pack 3 [ELEMENTAL]: its .meta alone under Demo2D/Audio/:   demo2d/Assets/Demo2D/Audio/RPG3_FireMagicBall_Projectile02.wav.meta   GUID 298c18378b5684473939c7ea69afe8d6 is a vendor asset (derived: demo2d/Asset
+FAIL Universal Sound FX: a sound under Demo2D/Audio/:   demo2d/Assets/Demo2D/Audio/IMPACT_Medieval_Armor_Hit_11_mono.wav   binary file under demo2d/
+FAIL Universal Sound FX: its .meta alone under Demo2D/Audio/:   demo2d/Assets/Demo2D/Audio/IMPACT_Medieval_Armor_Hit_11_mono.wav.meta   GUID 1763711b91a6d694293ed555af4ea21f is a vendor asset (derived: demo2d/Ass
+FAIL a baked atlas force-staged in Baked/:   demo2d/Assets/Baked/Atlases/skeleton.png        inside the vendor or baked folder
+FAIL a baked atlas (untagged PNG) under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/skeleton-atlas.png   binary file under demo2d/
+FAIL a baked atlas (untagged PNG) under evidence/px2/:   demo2d/evidence/px2/skeleton-atlas.png   binary file under demo2d/
+PASS a tagged still under evidence/ (control: allowed): 

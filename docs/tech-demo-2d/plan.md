@@ -362,7 +362,71 @@ project), `51074dfe` (docstrings), and this notes commit. `demo2d check --player
 
 ### PX2
 
-Not started.
+Done (bead ps-tfn.1.5). Commits: `ce81bfb6` (the manifest, the checks and the stills' code),
+`de587bc6` (the stills at the grid's size, and the evidence), `68de5e1e` (the guard fix), and
+this notes commit. `demo2d check --player` passes (the guard, dotnet, cold EditMode 68 of
+68 with 45 of them PX2's, the IL2CPP build with CFXR's scripts). [Evidence](../../demo2d/evidence/px2/README.md).
+
+- **Run:** from a worktree's root:
+
+  ```
+  uv run --project demo3d/tools demo2d setup     # syncs demo2d/manifest.json into Assets/Vendor
+  uv run --project demo3d/tools demo2d test      # Demo2D.Tests.AssetTests: the automatic checks
+  uv run --project demo3d/tools demo2d unity AssetStills -out "$PWD/demo2d/evidence/px2"
+  ```
+
+- **The manifest:** 3,619 entries (about 7,400 files, 205 MB once synced): every frame and
+  `.anim` of knight_male and the 13 roster packs; AncientForest's sliced `MainLev` and
+  `Decorative` sheets and its 7 swaying trees; CFXR's shaders, their importer (CFXR's editor
+  scripts: `.cfxrshader` files need it) and its runtime scripts; 37 CFXR effect candidates; and
+  demo3d's 64 sound entries.
+- **The checks** (`Demo2D.Tests.AssetTests`), one per automatic check in Verifying the Assets:
+  every clip a complete, imported sequence; every clip the clip library names has its frames;
+  the forest sheets at 32 px per unit, point filtered; every transition set's corner patterns;
+  the tile test map rendering exactly as its tiles compose on the CPU (no seams, 3.4 M pixels);
+  the trees' clips; each of the 37 CFXR prefabs free of missing scripts, meshes and broken or
+  undrawn shaders, and visible under the moon and with no light; and the candidate list.
+- **The code** (`Demo2D.EditorTools.Assets`): `CharacterPacks` (frames and clips by pack),
+  `ForestTiles` (the sheet's catalogue, a corner autotiler, the test map), `EffectGallery`,
+  `ContactSheets`, `AssetStills` (`Tasks.AssetStills`), `PixelShots` (render a world rectangle
+  at one pixel per grid pixel and read it back), `PixelText` (a 3×5 label font).
+- **The tile sheet,** in `Data/forest-tiles.json`: 14 transition sets, each two 5×5 corner
+  templates (inner on outer and the reverse) that give every corner pattern but the two
+  diagonals, so a corner autotiler draws any blob with convex and concave corners; their edge
+  and fill variants mix without visible seams (the stills). Six sets have a transparent
+  terrain, drawn over another ground. The cliffs, plateaus and cliffs over water are authored
+  blocks (stamps) that PX6 must compose; the test map places them as authored.
+- **Effect candidates,** in `Data/effect-candidates.json`, chosen from the galleries: 3 per
+  kind, best first, with reasons, all used as authored. Five prefabs left the pool: four draw
+  nothing to the 2D camera, and ScreenDistortion Ring draws a grey blur instead of distorting
+  (the 2D renderer gives it no opaque texture), so the README's distortion prefabs are out
+  unless PX7 provides one. CFXR has no true beam, and its slashes are spark bursts (knight_male's
+  skills draw their own arcs). At native scale the effects are large (a hit spark is about 2 m).
+- **Guard drill:** 89 cases in a scratch clone, every one refused; both controls pass
+  (evidence's `guard-drill.txt`). Its first run found a gap, fixed in `68de5e1e`: Unity
+  re-serializes the packs' binary Spine clips as YAML on import, so the copies in `Vendor/`
+  matched no source hash and carried no GUID, and a copy under `Demo2D/Art/` passed. The derived
+  record now records each demo's `Assets/Vendor/` as well as its `Assets/Baked/` (about 3 s on a
+  first guard run, cached after). Its own review is Warden bead ps-tfn.1.10.
+- **Nothing tracked under `demo2d/` is vendor or derived:** the guard passes the tree and the
+  index (5,566 files); the new tracked files are our code, JSON, `.meta`s Unity wrote, and
+  tagged stills.
+- **For PX3 onward:**
+  - **The frames run at 15 fps,** not the `.anim`s' 30: every pack exported its frames from 0
+    through the clip's end at 15 fps, so a clip of length L has ⌈15·L⌉ + 1 frames (all 196
+    clips; `CharacterPacks.FrameRate`). The placeholder annotations' 30 fps is wrong by 2×.
+  - **Each clip has its own canvas** (sizes differ between clips of a pack), so the baker should
+    trim per clip and align by a fixed anchor, not by canvas.
+  - **Edit-mode `AnimationClip.SampleAnimation` doesn't set a sprite;** `AssetStills.TreeSprite`
+    reads the clip's sprite keys instead.
+  - **Opening the project rewrites two ProjectSettings files** (`GraphicsSettings`' light
+    intensity flags, `InputManager`'s debug buttons): Unity's own changes, discarded here.
+  - Some CFXR meshes are an old serialization version that Unity warns about; they load, and the
+    prefabs using them draw.
+- **Self-review:** re-read the diff against `origin/staging`. The only change outside demo2d's
+  data, code and evidence is the guard fix (`derived.py`, a test, and doc lines). demo3d is
+  unchanged except that the guard now also records its `Assets/Vendor/`, catching any file Unity
+  rewrote there too. Evidence is 2.7 MB, kept small by saving at the grid's size.
 
 ### PX3
 

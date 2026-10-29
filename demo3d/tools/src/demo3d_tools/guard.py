@@ -21,8 +21,9 @@ one of the machine's asset folders (a top-level folder of `unity_assets` or `pix
 
 Besides the sync record, the guard reads the derived record: the hashes and GUIDs of every file
 in this worktree's demos' Assets/Baked/ and Assets/Vendor/ (where Unity may rewrite a vendor file
-on import) and of the song's source, which it refreshes before each check. Derived files that are edited copies with fresh GUIDs and new bytes can't be recognized;
-the binary rule and the gitignored folders are the defense there.
+on import) and of the song's source, which it refreshes before each check. Derived files that are
+edited copies with fresh GUIDs and new bytes can't be recognized; the binary rule and the
+gitignored folders are the defense there.
 """
 
 from __future__ import annotations

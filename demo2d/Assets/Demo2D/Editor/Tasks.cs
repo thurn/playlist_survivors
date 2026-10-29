@@ -28,7 +28,7 @@ namespace Demo2D.EditorTools
 
         /// <summary>
         /// PX2's asset evidence into `-out &lt;dir&gt;` (default evidence/px2): a contact sheet per
-        /// character, the tile test map and the CFXR gallery, all tagged renders.
+        /// character, the tile test map, the swaying trees and the CFXR gallery, all tagged renders.
         /// </summary>
         public static void AssetStills()
         {
