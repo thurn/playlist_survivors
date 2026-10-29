@@ -1,5 +1,9 @@
 """`demo3d <command>`: the 3D tech demo's tools (run with `uv run --project demo3d/tools demo3d`).
 
+`demo2d <command>` (`uv run --project demo3d/tools demo2d`) runs the same tools on the 2D demo's
+project, `demo2d/`: setup, guard, check, unity, test, build, library, sync and manifest. The
+guard is the same either way; it checks the whole repository.
+
 Commands:
   setup               prepare this worktree (vendor, baked, warm Library, guard hook, license)
   guard               the vendor guard (--tree REV, --index, --range A..B, --pre-push REMOTE)
@@ -37,7 +41,7 @@ from . import guard, paths, setup, unity
 
 def cmd_setup(a: argparse.Namespace) -> int:
     try:
-        return setup.setup(paths.worktree(), song=a.song, run_unity=not a.no_unity,
+        return setup.setup(paths.worktree(name=a.project), song=a.song, run_unity=not a.no_unity,
                            fresh_library=a.fresh_library)
     except setup.SetupError as e:
         print(f"setup: {e}", file=sys.stderr)
@@ -60,7 +64,7 @@ def cmd_guard(a: argparse.Namespace) -> int:
 
 
 def dotnet_test(wt: paths.Worktree) -> bool:
-    proj = wt.project / "dotnet" / "Demo3D.Choreography.Tests"
+    proj = wt.project / "dotnet" / f"{wt.namespace}.Choreography.Tests"
     started = time.monotonic()
     code = subprocess.run(["dotnet", "test", str(proj), "--nologo", "-v", "q"], check=False).returncode
     print(f"check: dotnet test {'passed' if code == 0 else 'FAILED'} in {time.monotonic() - started:.1f} s")
@@ -68,7 +72,7 @@ def dotnet_test(wt: paths.Worktree) -> bool:
 
 
 def cmd_check(a: argparse.Namespace) -> int:
-    wt = paths.worktree()
+    wt = paths.worktree(name=a.project)
     results: list[tuple[str, bool]] = []
     res = guard.run("tree", wt.root, "HEAD", None, None)
     res.report()
@@ -92,11 +96,11 @@ def cmd_check(a: argparse.Namespace) -> int:
 
 
 def cmd_unity(a: argparse.Namespace) -> int:
-    return unity.run_method(paths.worktree(), a.method, a.args, cold=a.cold)
+    return unity.run_method(paths.worktree(name=a.project), a.method, a.args, cold=a.cold)
 
 
 def cmd_test(a: argparse.Namespace) -> int:
-    s = unity.run_tests(paths.worktree(), a.assembly or [], cold=a.cold)
+    s = unity.run_tests(paths.worktree(name=a.project), a.assembly or [], cold=a.cold)
     print(f"tests: {s.passed}/{s.total} passed, {s.failed} failed, {s.skipped} skipped\n{s.failures}")
     return 0 if s.ok else 1
 
@@ -110,11 +114,11 @@ def cmd_build(a: argparse.Namespace) -> int:
         args.append("-development")
     for s in a.scene or []:
         args += ["-scene", s]
-    return unity.run_method(paths.worktree(), "BuildPlayer", args, cold=a.cold)
+    return unity.run_method(paths.worktree(name=a.project), "BuildPlayer", args, cold=a.cold)
 
 
 def cmd_editor(a: argparse.Namespace) -> int:
-    wt = paths.worktree()
+    wt = paths.worktree(name=a.project)
     if a.action == "start":
         started = time.monotonic()
         s = unity.editor_start(wt)
@@ -128,7 +132,7 @@ def cmd_editor(a: argparse.Namespace) -> int:
 
 
 def cmd_library(a: argparse.Namespace) -> int:
-    wt = paths.worktree()
+    wt = paths.worktree(name=a.project)
     if unity.warm_server(wt):
         print("library: stop the warm editor first", file=sys.stderr)
         return 1
@@ -145,7 +149,7 @@ def cmd_sync(a: argparse.Namespace) -> int:
 def cmd_manifest(a: argparse.Namespace) -> int:
     from . import sync
 
-    wt = paths.worktree()
+    wt = paths.worktree(name=a.project)
     cache = paths.cache_root()
     sources = sync.Sources(paths.load_roots(create=True), cache,
                            sync.HashCache(cache / "source-hashes.json"))
@@ -193,9 +197,11 @@ def cmd_flip(a: argparse.Namespace) -> int:
     return flip.main(a.args)
 
 
-def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="demo3d", description=__doc__,
+def build_parser(project: str = "demo3d") -> argparse.ArgumentParser:
+    """The commands for `project`; the sweep, PIX, capture and warm-editor tools are demo3d's."""
+    p = argparse.ArgumentParser(prog=project, description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.set_defaults(project=project)
     sub = p.add_subparsers(dest="command", required=True)
 
     s = sub.add_parser("setup")
@@ -238,20 +244,28 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--cold", action="store_true")
     b.set_defaults(func=cmd_build)
 
-    e = sub.add_parser("editor")
-    e.add_argument("action", choices=["start", "stop", "status"])
-    e.set_defaults(func=cmd_editor)
-
     lib = sub.add_parser("library")
     lib.add_argument("action", choices=["save"])
     lib.set_defaults(func=cmd_library)
 
     m = sub.add_parser("manifest", help="find source assets, or add them to the manifest")
     m.add_argument("action", choices=["find", "add"])
-    m.add_argument("source", help="synty:<package file> or unity_assets")
+    m.add_argument("source", help="synty:<package file>, unity_assets or pixel_assets")
     m.add_argument("patterns", nargs="+", help="glob(s) over Unity paths (Assets/...)")
     m.add_argument("--use", help="what the demo uses it for")
     m.set_defaults(func=cmd_manifest)
+
+    y = sub.add_parser("sync")
+    y.add_argument("--record-only", action="store_true")
+    y.add_argument("--out")
+    y.set_defaults(func=cmd_sync)
+    if project != "demo3d":
+        return p
+
+    e = sub.add_parser("editor")
+    e.add_argument("action", choices=["start", "stop", "status"])
+    e.set_defaults(func=cmd_editor)
+
     sw = sub.add_parser("sweep")
     sw.add_argument("spec", nargs="+", help="sweep specs (JSON), one player process each")
     sw.add_argument("--out", help="the sweep folder (default demo3d/Logs/bench/<time>)")
@@ -285,22 +299,22 @@ def build_parser() -> argparse.ArgumentParser:
     fl = sub.add_parser("flip", help="FLIP scores of A/B capture pairs (or calibrate the thresholds)")
     fl.add_argument("args", nargs=argparse.REMAINDER)
     fl.set_defaults(func=cmd_flip)
-
-    y = sub.add_parser("sync")
-    y.add_argument("--record-only", action="store_true")
-    y.add_argument("--out")
-    y.set_defaults(func=cmd_sync)
     return p
 
 
-def main(argv: list[str] | None = None) -> None:
+def main(argv: list[str] | None = None, project: str = "demo3d") -> None:
     if shutil.which("git") is None:
-        sys.exit("demo3d: git is not on PATH")
+        sys.exit(f"{project}: git is not on PATH")
     argv = sys.argv[1:] if argv is None else argv
     # These parse their own options (argparse's REMAINDER won't take a leading --option).
-    if argv and argv[0] in ("mix", "flip"):
+    if project == "demo3d" and argv and argv[0] in ("mix", "flip"):
         from . import flip, mix
 
         sys.exit((mix if argv[0] == "mix" else flip).main(argv[1:]))
-    args = build_parser().parse_args(argv)
+    args = build_parser(project).parse_args(argv)
     sys.exit(args.func(args))
+
+
+def main2d() -> None:
+    """`demo2d <command>`: the same tools on the 2D demo's project."""
+    main(project="demo2d")

@@ -23,11 +23,10 @@ from pathlib import Path
 
 from . import paths
 
-TASKS = "Demo3D.EditorTools.Tasks"
 
-
-def method_name(name: str) -> str:
-    return name if "." in name else f"{TASKS}.{name}"
+def method_name(wt: paths.Worktree, name: str) -> str:
+    """A task method's full name: `Noop` is the project's `Demo3D.EditorTools.Tasks.Noop`."""
+    return name if "." in name else f"{wt.namespace}.EditorTools.Tasks.{name}"
 
 
 def base_args(wt: paths.Worktree) -> list[str]:
@@ -100,7 +99,7 @@ class Server:
 
 
 def _server_file(wt: paths.Worktree) -> Path:
-    return wt.library / "Demo3DWarm" / "server.json"
+    return wt.library / f"{wt.namespace}Warm" / "server.json"
 
 
 def pid_alive(pid: int) -> bool:
@@ -155,7 +154,7 @@ def _send(server: Server, cmd: str, args: list[str]) -> str:
 
 def warm_job(wt: paths.Worktree, server: Server, cmd: str, args: list[str], timeout: float) -> dict:
     job = _send(server, cmd, args)
-    result = wt.library / "Demo3DWarm" / "jobs" / f"{job}.json"
+    result = wt.library / f"{wt.namespace}Warm" / "jobs" / f"{job}.json"
     deadline = time.monotonic() + timeout
     while not result.exists():
         if not pid_alive(server.pid):
@@ -178,7 +177,7 @@ def editor_start(wt: paths.Worktree, wait: float = 600) -> Server:
     _server_file(wt).unlink(missing_ok=True)
     wt.logs.mkdir(parents=True, exist_ok=True)
     cmd = base_args(wt) + [
-        "-executeMethod", "Demo3D.EditorTools.WarmEditor.Serve",
+        "-executeMethod", f"{wt.namespace}.EditorTools.WarmEditor.Serve",
         "-logFile", str(wt.logs / "warm-editor.log"),
     ]
     flags = 0
@@ -217,7 +216,7 @@ def editor_stop(wt: paths.Worktree) -> bool:
 
 def run_method(wt: paths.Worktree, name: str, args: list[str], cold: bool = False,
                timeout: float = 3600) -> int:
-    method = method_name(name)
+    method = method_name(wt, name)
     server = None if cold else warm_server(wt)
     if server:
         started = time.monotonic()

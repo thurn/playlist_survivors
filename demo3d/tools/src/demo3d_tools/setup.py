@@ -1,4 +1,4 @@
-"""`demo3d setup`: prepares a fresh worktree in one command.
+"""`demo3d setup` (or `demo2d setup`): prepares a fresh worktree's project in one command.
 
 It checks the machine's sources, makes sure the sync record exists (empty until the sync tool
 first fills it), clones the vendor folder, the baked folders and a warm Library from the
@@ -19,8 +19,6 @@ from pathlib import Path
 
 from . import clone, paths, unity
 
-MANIFEST = "demo3d/manifest.json"
-
 
 def file_hash(root: Path, *files: Path) -> str:
     """A hash of files' names (relative to `root`, so every worktree agrees) and contents."""
@@ -35,7 +33,8 @@ def manifest_key(wt: paths.Worktree) -> str:
     """The vendor cache's key: the manifest, and the sync tool's version."""
     from . import sync
 
-    return hashlib.sha256((file_hash(wt.root, wt.root / MANIFEST) + sync.SYNC_VERSION).encode()).hexdigest()[:16]
+    manifest = wt.project / "manifest.json"
+    return hashlib.sha256((file_hash(wt.root, manifest) + sync.SYNC_VERSION).encode()).hexdigest()[:16]
 
 
 def library_key(wt: paths.Worktree) -> str:
@@ -48,8 +47,8 @@ def library_key(wt: paths.Worktree) -> str:
     )
 
 
-# Bakers that run without Unity. Unity bakers (TD2, TD5) register in Bakers.cs and run through
-# `demo3d unity BakeAll`; setup caches their output the same way.
+# Bakers that run without Unity, for either project. demo3d's Unity bakers (TD2, TD5) register
+# in Bakers.cs and run through `demo3d unity BakeAll`.
 
 
 @dataclass
@@ -113,8 +112,8 @@ class SetupError(Exception):
     pass
 
 
-def check_sources(roots: dict[str, str]) -> None:
-    missing = [f"{name}: {path}" for name, path in roots.items() if not Path(path).exists()]
+def check_sources(roots: dict[str, str], needed: tuple[str, ...]) -> None:
+    missing = [f"{name}: {roots[name]}" for name in needed if not Path(roots[name]).exists()]
     if missing:
         raise SetupError(
             "missing vendor source(s):\n  " + "\n  ".join(missing)
@@ -149,7 +148,7 @@ def install_hook(wt: paths.Worktree) -> Path:
     common = Path(git("rev-parse", "--path-format=absolute", "--git-common-dir").stdout.strip())
     hook = common / "hooks" / "pre-push"
     hook.parent.mkdir(parents=True, exist_ok=True)
-    data = (wt.project / "tools" / "hooks" / "pre-push").read_bytes().replace(b"\r\n", b"\n")
+    data = (wt.root / "demo3d" / "tools" / "hooks" / "pre-push").read_bytes().replace(b"\r\n", b"\n")
     if not hook.exists() or hook.read_bytes() != data:
         tmp = hook.with_name("pre-push.tmp")
         tmp.write_bytes(data)
@@ -159,7 +158,7 @@ def install_hook(wt: paths.Worktree) -> Path:
 
 
 def build_vendor(wt: paths.Worktree, roots: dict[str, str], out: Path) -> None:
-    manifest = json.loads((wt.root / MANIFEST).read_text(encoding="utf-8"))
+    manifest = json.loads((wt.project / "manifest.json").read_text(encoding="utf-8"))
     out.mkdir(parents=True, exist_ok=True)
     if manifest.get("assets"):
         from . import sync
@@ -194,7 +193,7 @@ def save_library(wt: paths.Worktree) -> Path:
     dest = cache / "library" / library_key(wt) / manifest_key(wt)
     tmp = dest.with_name(dest.name + ".tmp")
     clone.clone_tree(wt.library, tmp)
-    clone.remove_tree(tmp / "Demo3DWarm")
+    clone.remove_tree(tmp / f"{wt.namespace}Warm")
     clone.remove_tree(dest)
     tmp.rename(dest)
     return dest
@@ -208,7 +207,7 @@ def setup(wt: paths.Worktree, song: str | None = None, run_unity: bool = True,
     roots = paths.load_roots(create=True)
     if song:
         roots["song"] = song
-    check_sources(roots)
+    check_sources(roots, paths.PROJECT_ROOTS[wt.name])
     record = ensure_record()
     mode = "block clones" if clone.clones_blocks(cache, wt.project) else "plain copies (slow)"
     print(f"setup: cache {cache} ({clone.volume_fs(cache)}), {mode}; record {record}")
@@ -249,20 +248,21 @@ def setup(wt: paths.Worktree, song: str | None = None, run_unity: bool = True,
 
     hook = install_hook(wt)
     print(f"setup: pre-push guard installed for every checkout ({hook})")
-    if any(name.startswith("synty") or name == "unity_assets" for name in roots):
-        from . import sync
+    # The record covers every source root on the machine, not just this project's, so one guard
+    # knows both demos' vendor files.
+    from . import sync
 
-        t = time.monotonic()
-        hashes = sync.HashCache(cache / "source-hashes.json")
-        count = sync.build_record(sync.Sources(roots, cache, hashes), record)
-        hashes.save()
-        print(f"setup: sync record of {count} vendor files in {time.monotonic() - t:.1f} s")
+    t = time.monotonic()
+    hashes = sync.HashCache(cache / "source-hashes.json")
+    count = sync.build_record(sync.Sources(roots, cache, hashes), record)
+    hashes.save()
+    print(f"setup: sync record of {count} vendor files in {time.monotonic() - t:.1f} s")
 
     if run_unity:
         if unity.warm_server(wt):
             print("setup: the warm editor holds the project; skipped the batch-mode check")
         else:
-            code = unity.run_cold(wt, ["-executeMethod", unity.method_name("Noop"), "-quit"],
+            code = unity.run_cold(wt, ["-executeMethod", unity.method_name(wt, "Noop"), "-quit"],
                                   "setup-noop", quiet=True)
             log = (wt.logs / "setup-noop.log").read_text(encoding="utf-8", errors="replace")
             # A fresh licensing client logs "Licensing is initialized"; one another editor

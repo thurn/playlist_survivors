@@ -44,7 +44,7 @@ if [ -n "$tip" ]; then
 fi
 
 # Nothing here has the tools, so nothing can run the guard: refuse any push that carries a change
-# to the demo's paths, and let the rest through.
+# to either demo's paths (demo3d/, demo2d/, the song's), and let the rest through.
 status=0
 while read -r local_ref local_sha remote_ref remote_sha; do
   [ -z "$local_sha" ] || [ "$local_sha" = "$zero" ] && continue
@@ -55,8 +55,8 @@ while read -r local_ref local_sha remote_ref remote_sha; do
   fi
   [ -z "$commits" ] && continue
   if echo "$commits" | git diff-tree --stdin -r -m --root --no-commit-id --name-only \
-      | grep -iqE '^(demo3d/|songs/action/|public/(.*/)?action)'; then
-    echo "pre-push: $local_ref changes the 3D demo's paths, but there are no demo3d/tools" \
+      | grep -iqE '^(demo3d/|demo2d/|songs/action/|public/(.*/)?action)'; then
+    echo "pre-push: $local_ref changes the demos' paths, but there are no demo3d/tools" \
       "(in this checkout or the pushed commits) to run the vendor guard; refusing the push" >&2
     status=1
   fi

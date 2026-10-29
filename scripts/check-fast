@@ -8,8 +8,8 @@
 #   and the song map's check when the song maps changed.
 # - The friction ledger: its records and scripts/friction's tests, when either changed.
 # - native/scripts/check-fast when native/ changed and the workspace has one (F4 adds it).
-# - The 3D demo's vendor guard, always, over the commits since the base and the index; its tools'
-#   lint and tests when demo3d/tools changed, and the choreography layer's tests (on each demo's
+# - The demos' vendor guard (demo3d/tools, covering demo3d/ and demo2d/), always, over the commits
+#   since the base and the index; its tools' lint and tests when demo3d/tools changed, and the choreography layer's tests (on each demo's
 #   data) when the package or that demo's data or tests changed.
 # Slow CI (scripts/ci-full, on the `staging` tip) runs the rest.
 set -eu

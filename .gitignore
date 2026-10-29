@@ -28,6 +28,20 @@ reactive-local/
 /demo3d/*.csproj
 /demo3d/*.sln
 /demo3d/*.slnx
+# The 2D pixel demo, under the same rules (docs/tech-demo-2d/README.md, Vendor Assets).
+/demo2d/Assets/Vendor/
+/demo2d/Assets/Vendor.meta
+/demo2d/Assets/Baked/
+/demo2d/Assets/Baked.meta
+/demo2d/[Ll]ibrary/
+/demo2d/[Tt]emp/
+/demo2d/[Oo]bj/
+/demo2d/[Bb]uilds/
+/demo2d/[Ll]ogs/
+/demo2d/[Uu]ser[Ss]ettings/
+/demo2d/*.csproj
+/demo2d/*.sln
+/demo2d/*.slnx
 # The 3D demo's song (Action, NCS) is not redistributable: its source audio and
 # every conversion or crop stay local. Only its song map and notes are tracked.
 /songs/action/*.mp3

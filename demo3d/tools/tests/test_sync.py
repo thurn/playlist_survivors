@@ -50,7 +50,17 @@ def roots(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
     (ua / "Slash.prefab.meta").write_text(f"fileFormatVersion: 2\nguid: {'f' * 32}\n")
     (ua / "Glow.shader").write_text("Shader \"Glow\" {}\n")
     (ua / "Glow.shader.meta").write_text(f"fileFormatVersion: 2\nguid: {'e' * 32}\n")
-    return {"synty": str(synty), "unity_assets": str(tmp_path / "ua")}
+    px = tmp_path / "px" / "Assets" / "Skeleton"
+    (px / "skeleton_png").mkdir(parents=True)
+    (px / "Skeleton.prefab").write_text("m_Sprite: {guid: " + "1" * 32 + "}\n")
+    (px / "Skeleton.prefab.meta").write_text(f"fileFormatVersion: 2\nguid: {'2' * 32}\n")
+    (px / "skeleton_png" / "skeleton-run_0.png").write_bytes(b"\x89PNG\r\n\x1a\nframe")
+    (px / "skeleton_png" / "skeleton-run_0.png.meta").write_text(
+        f"fileFormatVersion: 2\nguid: {'1' * 32}\n")
+    (tmp_path / "px" / "Library").mkdir()  # the asset project's own folders aren't sources
+    (tmp_path / "px" / "Library" / "cache.bin").write_bytes(b"\x00library")
+    return {"synty": str(synty), "unity_assets": str(tmp_path / "ua"),
+            "pixel_assets": str(tmp_path / "px")}
 
 
 def sources(roots: dict[str, str], tmp_path: Path) -> sync.Sources:
@@ -99,13 +109,36 @@ def test_unity_assets_entries_copy_files_with_meta_and_dependencies(roots, tmp_p
 def test_the_record_lists_every_source_file_and_the_guard_accepts_it(roots, tmp_path: Path) -> None:
     record = tmp_path / "cache" / "sync-record.json"
     n = sync.build_record(sources(roots, tmp_path), record)
-    assert n == 12  # 4 package assets and 2 project files, each with its .meta
+    assert n == 16  # 4 package assets, 2 + 2 asset-folder files, each with its .meta
     data = json.loads(record.read_text())
     assert all(f["sha256"] and f["sha256Lf"] for f in data["files"])
     mat = next(f for f in data["files"] if f["path"] == "Assets/Pack/Materials/Thing.mat")
     assert mat["sha256Lf"] != mat["sha256"]  # the CRLF material's folded hash
     rec = guard.Record.load(record)
     assert rec is not None and PREFAB in rec.guids and SCRIPT in rec.guids
+    assert rec.guids["1" * 32] == "pixel_assets"  # the 2D packs' frames
+    assert not any("Library" in f["path"] for f in data["files"])
+
+
+def test_pixel_assets_entries_sync_with_meta_and_dependencies(roots, tmp_path: Path) -> None:
+    prefab = Path(roots["pixel_assets"]) / "Assets/Skeleton/Skeleton.prefab"
+    e = {"source": "pixel_assets", "path": "Assets/Skeleton/Skeleton.prefab",
+         "sourceSha256": hashlib.sha256(prefab.read_bytes()).hexdigest(), "guid": "2" * 32}
+    out = tmp_path / "Vendor"
+    sync.copy_items(sync.resolve({"assets": [e]}, sources(roots, tmp_path)), out)
+    assert (out / "Skeleton/Skeleton.prefab.meta").exists()
+    assert (out / "Skeleton/skeleton_png/skeleton-run_0.png").exists()
+
+
+def test_a_roots_file_from_before_demo2d_gains_the_pixel_assets_root(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from demo3d_tools import paths
+
+    monkeypatch.setenv("DEMO3D_CACHE", str(tmp_path))
+    (tmp_path / "roots.json").write_text(json.dumps({"synty": "/s", "unity_assets": "/u"}))
+    roots = paths.load_roots(create=True)
+    assert roots["synty"] == "/s" and roots["pixel_assets"] == paths.default_roots()["pixel_assets"]
+    assert json.loads((tmp_path / "roots.json").read_text())["pixel_assets"]
 
 
 def test_manifest_add_fills_guid_and_hashes(roots, tmp_path: Path) -> None:

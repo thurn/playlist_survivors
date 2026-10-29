@@ -1,12 +1,13 @@
 [project]
 name = "demo3d-tools"
 version = "0.1.0"
-description = "The 3D tech demo's worktree setup, vendor guard, sync tool and Unity task runner"
+description = "The tech demos' worktree setup, vendor guard, sync tool and Unity task runner"
 requires-python = ">=3.12"
 dependencies = ["flip-evaluator", "numpy", "pillow"]
 
 [project.scripts]
 demo3d = "demo3d_tools.cli:main"
+demo2d = "demo3d_tools.cli:main2d"
 
 [build-system]
 requires = ["setuptools>=68"]

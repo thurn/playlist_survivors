@@ -93,6 +93,10 @@ def failures(res: guard.Result) -> dict[str, str]:
     return {p: r for p, r in res.failures}
 
 
+def reasons(res: guard.Result, rel: str) -> list[str]:
+    return [r for p, r in res.failures if p == rel]
+
+
 def test_clean_tree_passes_with_an_empty_record(repo: Path, tmp_path: Path) -> None:
     empty = tmp_path / "empty-record.json"
     empty.write_text(json.dumps({"version": 1, "files": []}))
@@ -106,10 +110,15 @@ def test_clean_tree_passes_with_an_empty_record(repo: Path, tmp_path: Path) -> N
     "demo3d/Assets/vendor/Synty/Knight.prefab",  # Windows paths are case-insensitive
     "demo3d/Assets/Baked/BoneTextures/goblin.json",
     "demo3d/Assets/Vendor.meta",
+    "demo2d/Assets/Vendor/Skeleton/skeleton_png/skeleton-run_3.png",
+    "demo2d/Assets/vendor/JMO Assets/CFXR Hit.prefab",
+    "demo2d/Assets/Baked/Atlases/skeleton.json",
+    "demo2d/Assets/Baked.meta",
+    "Demo2D/Assets/Vendor/x.txt",  # macOS paths are case-insensitive too
 ])
 def test_vendor_and_baked_paths_fail(repo: Path, record: Path, rel: str) -> None:
     add(repo, rel, b"text\n")
-    assert "inside the vendor or baked folder" in failures(check_index(repo, record))[rel]
+    assert "inside the vendor or baked folder" in reasons(check_index(repo, record), rel)
 
 
 @pytest.mark.parametrize("rel,data", [
@@ -122,6 +131,28 @@ def test_vendor_and_baked_paths_fail(repo: Path, record: Path, rel: str) -> None
 def test_untagged_binaries_under_demo3d_fail(repo: Path, record: Path, rel: str, data: bytes) -> None:
     add(repo, rel, data)
     assert failures(check_index(repo, record))[rel] == "binary file under demo3d/"
+
+
+@pytest.mark.parametrize("rel,data", [
+    ("demo2d/Assets/Art/knight.png", png(tag=False)),
+    ("demo2d/Assets/Demo2D/Data/atlas.bytes", b"atlas"),
+    ("demo2d/Assets/Demo2D/Data/frames.json", b"[1]\x00"),
+    ("demo2d/evidence/px1/still.jpg", jpeg(tag=False)),
+    ("demo2d/Assets/Art/render.png", png(tag=True)),
+    ("demo2d/evidence-old/still.png", png(tag=True)),  # only the evidence folder itself
+])
+def test_untagged_binaries_under_demo2d_fail(repo: Path, record: Path, rel: str, data: bytes) -> None:
+    add(repo, rel, data)
+    assert failures(check_index(repo, record))[rel] == "binary file under demo2d/"
+
+
+def test_a_render_tagged_in_the_other_demos_evidence_still_needs_its_own_folder(
+        repo: Path, record: Path) -> None:
+    add(repo, "demo2d/evidence/px1/still.png", png(tag=True))
+    add(repo, "demo3d/evidence/px1/still.jpg", jpeg(tag=True))
+    assert check_index(repo, record).ok
+    add(repo, "demo2dx/still.png", png(tag=False))  # not a demo's folder: not the binary rule
+    assert check_index(repo, record).ok
 
 
 def test_tagged_renders_under_evidence_pass(repo: Path, record: Path) -> None:
@@ -146,6 +177,14 @@ def test_recorded_guid_fails(repo: Path, record: Path) -> None:
     add(repo, "demo3d/Assets/Fx/Slash.prefab.meta", meta)
     reason = failures(check_index(repo, record))["demo3d/Assets/Fx/Slash.prefab.meta"]
     assert reason.startswith(f"GUID {GUID} is a vendor asset (Hovl)")
+
+
+def test_recorded_guid_and_hash_fail_under_demo2d(repo: Path, record: Path) -> None:
+    add(repo, "demo2d/Assets/Demo2D/Hit.prefab.meta", f"fileFormatVersion: 2\nguid: {GUID}\n".encode())
+    add(repo, "demo2d/Assets/Demo2D/Shaders/Slash.shader", VENDOR_TEXT)
+    fails = failures(check_index(repo, record))
+    assert fails["demo2d/Assets/Demo2D/Hit.prefab.meta"].startswith(f"GUID {GUID}")
+    assert "is a vendor file (Hovl)" in fails["demo2d/Assets/Demo2D/Shaders/Slash.shader"]
 
 
 def test_a_reference_to_a_vendor_guid_is_not_vendor_content(repo: Path, record: Path) -> None:
@@ -189,6 +228,13 @@ def test_missing_record_fails_changes_under_demo3d(repo: Path) -> None:
     res = check_index(repo, None)
     assert not res.ok
     assert res.failures[0][0] == "(sync record)"
+
+
+def test_missing_record_fails_changes_under_demo2d(repo: Path) -> None:
+    git(repo, "rm", "-q", "-r", "--cached", "demo3d")
+    add(repo, "demo2d/Assets/Demo2D/A.cs", b"class A {}\n")
+    res = check_index(repo, None)
+    assert [p for p, _ in res.failures] == ["(sync record)"]
 
 
 def test_missing_record_only_warns_elsewhere(repo: Path, tmp_path: Path) -> None:
@@ -236,7 +282,10 @@ def test_pre_push_passes_a_clean_range_and_ignores_deletes(repo: Path, record: P
     assert res.ok, res.failures
 
 
-def test_hook_script_refuses_a_push_with_a_vendor_file(repo: Path, record: Path, tmp_path: Path) -> None:
+@pytest.mark.parametrize("leak", ["demo3d/Assets/Vendor/Knight.prefab",
+                                  "demo2d/Assets/Vendor/Skeleton/skeleton.png"])
+def test_hook_script_refuses_a_push_with_a_vendor_file(repo: Path, record: Path, tmp_path: Path,
+                                                       leak: str) -> None:
     """The real pre-push hook, through git, against a bare remote: the push must not land."""
     tools = Path(__file__).resolve().parents[1]
     remote = tmp_path / "remote.git"
@@ -249,13 +298,13 @@ def test_hook_script_refuses_a_push_with_a_vendor_file(repo: Path, record: Path,
     (hooks / "pre-push").write_text(script)
     setup.install_hook(paths.Worktree(repo))  # into the shared hooks folder, as setup does
     git(repo, "remote", "add", "relay", str(remote))
-    add(repo, "demo3d/Assets/Vendor/Knight.prefab", b"vendor\n")
+    add(repo, leak, b"vendor\n")
     git(repo, "commit", "-qm", "leak")
     env = {**os.environ, "DEMO3D_CACHE": str(record.parent)}
     proc = subprocess.run(["git", "push", "relay", "main"], cwd=repo, capture_output=True, check=False,
                           text=True, env=env)
     assert proc.returncode != 0
-    assert "demo3d/Assets/Vendor/Knight.prefab" in proc.stderr
+    assert leak in proc.stderr
     assert git(remote, "branch", "--list").strip() == ""
 
 
@@ -302,6 +351,17 @@ def test_a_record_missing_a_manifest_guid_is_stale(repo: Path, record: Path) -> 
 def test_more_ncs_audio_paths_fail(repo: Path, record: Path, rel: str, data: bytes) -> None:
     add(repo, rel, data)
     assert rel in failures(check_index(repo, record))
+
+
+def test_a_record_missing_a_demo2d_manifest_guid_is_stale(repo: Path, record: Path) -> None:
+    other = "a" * 32
+    (repo / "demo2d").mkdir()
+    (repo / "demo2d" / "manifest.json").write_text(json.dumps({"version": 1, "assets": [
+        {"source": "pixel_assets", "path": "Assets/Skeleton/Skeleton.prefab", "guid": other},
+    ]}))
+    fails = check_index(repo, record).failures
+    assert [p for p, _ in fails] == ["(sync record)"]
+    assert other in fails[0][1] and "demo2d sync" in fails[0][1]
 
 
 def test_a_render_with_data_after_the_image_fails(repo: Path, record: Path) -> None:
@@ -405,12 +465,34 @@ def test_derived_files_are_recorded_and_caught_elsewhere(repo: Path, tmp_path: P
     add(repo, "demo3d/Assets/Demo3D/Arena.unity.meta", (baked / "Arena.unity.meta").read_bytes())
     add(repo, "notes/song.bin", b"ID3 the NCS song")
     fails = failures(guard.run("index", repo, None, None, None))
-    assert "derived: Baked/Scenes/Arena.unity" in fails["docs/arena-copy.unity"]
+    assert "derived: demo3d/Assets/Baked/Scenes/Arena.unity" in fails["docs/arena-copy.unity"]
     meta_reasons = [r for p, r in guard.run("index", repo, None, None, None).failures
                     if p == "demo3d/Assets/Demo3D/Arena.unity.meta"]
     assert any(r.startswith("GUID eeee") for r in meta_reasons)
     assert "song source" in fails["notes/song.bin"]
     assert derived.refresh(repo, cache / "derived-record.json") == 0  # add-only, no duplicates
+
+
+def test_demo2d_derived_files_are_recorded_and_caught_elsewhere(
+        repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from demo3d_tools import derived
+
+    cache = tmp_path / "cache"
+    cache.mkdir()
+    (cache / "sync-record.json").write_text(json.dumps({"version": 1, "files": []}))
+    (cache / "roots.json").write_text(json.dumps({"song": str(tmp_path / "no-song.mp3")}))
+    monkeypatch.setenv("DEMO3D_CACHE", str(cache))
+    baked = repo / "demo2d" / "Assets" / "Baked" / "Atlases"
+    baked.mkdir(parents=True)
+    (baked / "skeleton.json").write_text('{"frames": ["run_0", "run_1"], "from": "vendor PNGs"}\n')
+    (baked / "skeleton.json.meta").write_text(f"fileFormatVersion: 2\nguid: {'d' * 32}\n")
+    assert derived.refresh(repo, cache / "derived-record.json") == 2
+    add(repo, "docs/frames.json", (baked / "skeleton.json").read_bytes())
+    add(repo, "demo2d/Assets/Demo2D/Data/atlas.json.meta", (baked / "skeleton.json.meta").read_bytes())
+    fails = failures(guard.run("index", repo, None, None, None))
+    assert "derived: demo2d/Assets/Baked/Atlases/skeleton.json" in fails["docs/frames.json"]
+    meta = reasons(guard.run("index", repo, None, None, None), "demo2d/Assets/Demo2D/Data/atlas.json.meta")
+    assert any(r.startswith(f"GUID {'d' * 32}") for r in meta)
 
 
 def test_launcher_without_tools_refuses_demo_changes_only(repo: Path, tmp_path: Path) -> None:
@@ -429,12 +511,15 @@ def test_launcher_without_tools_refuses_demo_changes_only(repo: Path, tmp_path: 
     ok = subprocess.run(["git", "push", "relay", "main"], cwd=repo, capture_output=True,
                         text=True, check=False)
     assert ok.returncode == 0, ok.stderr
-    add(repo, "demo3d/Assets/Demo3D/A.cs", b"class A {}\n")
-    git(repo, "commit", "-qm", "demo")
-    bad = subprocess.run(["git", "push", "relay", "main"], cwd=repo, capture_output=True,
-                         text=True, check=False)
-    assert bad.returncode != 0
-    assert "no demo3d/tools" in bad.stderr
+    for rel in ("demo3d/Assets/Demo3D/A.cs", "demo2d/Assets/Demo2D/A.cs"):
+        before = git(repo, "rev-parse", "HEAD").strip()
+        add(repo, rel, b"class A {}\n")
+        git(repo, "commit", "-qm", "demo")
+        bad = subprocess.run(["git", "push", "relay", "main"], cwd=repo, capture_output=True,
+                             text=True, check=False)
+        assert bad.returncode != 0, rel
+        assert "no demo3d/tools" in bad.stderr
+        git(repo, "reset", "-q", "--hard", before)
 
 
 def test_launcher_without_tools_runs_the_guard_from_the_pushed_tip(repo: Path, record: Path,

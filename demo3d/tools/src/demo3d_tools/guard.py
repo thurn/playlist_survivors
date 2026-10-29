@@ -1,23 +1,24 @@
 """The vendor guard: no vendor file, derived file or NCS audio may leave the machine.
 
 It checks blobs as git stores them, so it sees exactly what a push or a commit would carry.
-A file fails when it:
+It covers both demos' Unity projects, demo3d/ and demo2d/, alike. A file fails when it:
 
-- is inside the vendor or baked folders;
-- is binary (by extension or a NUL byte) under demo3d/, unless it is a PNG or JPEG under
-  demo3d/evidence/ that carries the `ps-render` text tag;
+- is inside either demo's vendor or baked folders;
+- is binary (by extension or a NUL byte) under a demo's folder, unless it is a PNG or JPEG under
+  that demo's evidence/ that carries the `ps-render` text tag;
 - is a .meta whose GUID is in the sync record;
 - has a SHA-256 that is in the sync record (raw, or with CRLF folded to LF, since git stores
   text with LF);
 - is audio (by extension or content) under songs/action/, or under public/audio/ with a name
   starting `action`.
 
-A missing sync record fails any change under demo3d/ and only warns elsewhere
+A missing sync record fails any change under a demo's folder and only warns elsewhere
 (vendor-assets.md, The vendor guard). An unreadable or malformed record fails everything, and so
-does a record that lacks a GUID the tracked manifest lists (a stale record).
+does a record that lacks a GUID either demo's tracked manifest lists (a stale record).
 
 Besides the sync record, the guard reads the derived record: the hashes and GUIDs of every file
-in this worktree's Assets/Baked/ and of the song's source, which it refreshes before each check.
+in this worktree's demos' Assets/Baked/ and of the song's source, which it refreshes before each
+check.
 Derived files that are edited copies with fresh GUIDs and new bytes can't be recognized; the
 binary rule and the gitignored folders are the defense there.
 """
@@ -166,12 +167,11 @@ def extension(path: str) -> str:
 
 
 def in_vendor_or_baked(lower: str) -> bool:
-    return lower.startswith(("demo3d/assets/vendor/", "demo3d/assets/baked/")) or lower in (
-        "demo3d/assets/vendor.meta",
-        "demo3d/assets/baked.meta",
-        "demo3d/assets/vendor",
-        "demo3d/assets/baked",
-    )
+    for demo in paths.PROJECTS:
+        for folder in (f"{demo}/assets/vendor", f"{demo}/assets/baked"):
+            if lower.startswith(folder + "/") or lower in (folder, folder + ".meta"):
+                return True
+    return False
 
 
 def is_song_audio_path(lower: str) -> bool:
@@ -184,8 +184,14 @@ def is_song_audio_path(lower: str) -> bool:
     )
 
 
+def demo_of(lower: str) -> str | None:
+    """The demo whose folder holds the path (demo3d or demo2d), if any."""
+    head = lower.split("/", 1)[0]
+    return head if head in paths.PROJECTS and "/" in lower else None
+
+
 def under_demo(lower: str) -> bool:
-    return lower.startswith("demo3d/")
+    return demo_of(lower) is not None
 
 
 def check_blob(path: str, data: bytes, record: Record | None) -> list[str]:
@@ -195,14 +201,15 @@ def check_blob(path: str, data: bytes, record: Record | None) -> list[str]:
     ext = extension(path)
     if in_vendor_or_baked(lower):
         reasons.append("inside the vendor or baked folder")
-    if under_demo(lower) and (ext in BINARY_EXTENSIONS or b"\x00" in data):
+    demo = demo_of(lower)
+    if demo and (ext in BINARY_EXTENSIONS or b"\x00" in data):
         tagged = (
-            lower.startswith("demo3d/evidence/")
+            lower.startswith(f"{demo}/evidence/")
             and ext in IMAGE_TAG_EXTENSIONS
             and has_render_tag(data)
         )
         if not tagged:
-            reasons.append("binary file under demo3d/")
+            reasons.append(f"binary file under {demo}/")
     if is_song_audio_path(lower) and (ext in AUDIO_EXTENSIONS or looks_like_audio(data)):
         reasons.append("audio of the NCS song (never tracked)")
     elif lower.startswith("songs/action/") and (ext in BINARY_EXTENSIONS or b"\x00" in data):
@@ -392,12 +399,18 @@ def pre_push_entries(repo: Path, remote: str, lines: Iterable[str]) -> list[tupl
     return sorted(entries)
 
 
-def manifest_guids(repo: Path) -> dict[str, str]:
-    manifest = repo / "demo3d" / "manifest.json"
-    if not manifest.exists():
-        return {}
-    data = json.loads(manifest.read_text(encoding="utf-8"))
-    return {a["guid"].lower(): a.get("path", "?") for a in data.get("assets", []) if a.get("guid")}
+def manifest_guids(repo: Path) -> dict[str, tuple[str, str]]:
+    """Every GUID the demos' tracked manifests list: guid -> (demo, path)."""
+    guids: dict[str, tuple[str, str]] = {}
+    for demo in paths.PROJECTS:
+        manifest = repo / demo / "manifest.json"
+        if not manifest.exists():
+            continue
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+        for a in data.get("assets", []):
+            if a.get("guid"):
+                guids[a["guid"].lower()] = (demo, a.get("path", "?"))
+    return guids
 
 
 def run(mode: str, repo: Path, rev: str | None, remote: str | None, record_file: Path | None,
@@ -431,8 +444,8 @@ def run(mode: str, repo: Path, rev: str | None, remote: str | None, record_file:
         res.failures.append(("(guard)", f"could not check: {detail}"))
         return res
     if record is not None:
-        for guid, path in manifest_guids(repo).items():
+        for guid, (demo, path) in manifest_guids(repo).items():
             if guid not in record.guids:
-                res.failures.append(("(sync record)", (f"stale: the manifest's {path} ({guid}) "
-                                     "is not in it; run `demo3d sync`")))
+                res.failures.append(("(sync record)", (f"stale: {demo}'s manifest's {path} "
+                                     f"({guid}) is not in it; run `{demo} sync`")))
     return res

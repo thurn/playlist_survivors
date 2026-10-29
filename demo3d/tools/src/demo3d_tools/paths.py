@@ -1,6 +1,8 @@
 """Where things live: the worktree, the Unity project and the per-machine cache.
 
-The cache holds what never reaches git (vendor files, baked files, a warm Library) and the
+One tool serves both demos' Unity projects, `demo3d/` and `demo2d/` (the `demo3d` and `demo2d`
+commands). They share the per-machine cache, its roots and its sync record, so one guard knows
+every vendor file on the machine. The cache holds what never reaches git (vendor files, baked files, a warm Library) and the
 machine's config: `roots.json` maps each manifest source root to a folder, and
 `sync-record.json` lists every synced vendor file for the guard. On Cygnus the cache is on the
 Dev Drive beside the worktrees, since ReFS block clones only work within one volume.
@@ -16,6 +18,13 @@ from dataclasses import dataclass
 from pathlib import Path
 
 UNITY_VERSION = "6000.6.7f1"
+PROJECTS = ("demo3d", "demo2d")
+# The source roots each project's setup needs (the song from the `song` root, the rest synced):
+# demo2d syncs the 2D packs and reuses demo3d's sounds.
+PROJECT_ROOTS = {
+    "demo3d": ("synty", "unity_assets", "song"),
+    "demo2d": ("pixel_assets", "unity_assets", "song"),
+}
 SONG_FILE = "Alessia Labate, Conrad Taylor - Action [NCS Release].mp3"
 
 
@@ -42,31 +51,38 @@ def record_path() -> Path:
 
 
 def default_roots() -> dict[str, str]:
-    """Each machine's vendor sources (windows.md, Moving the assets)."""
+    """Each machine's vendor sources (windows.md, Moving the assets).
+
+    `unity_assets` and `pixel_assets` are asset folders holding an `Assets/` folder: the 3D
+    packs in `~/unity_assets/UnityAssets/Assets`, the 2D packs (Pixel Cattle Games, the Ancient
+    Forest, CFXR) in `~/unity_assets/Assets`.
+    """
     if is_windows():
         return {
             "synty": "D:/vendor/synty",
             "unity_assets": "D:/vendor/unity_assets/UnityAssets",
+            "pixel_assets": "D:/vendor/unity_assets",
             "song": f"D:/vendor/songs/action/{SONG_FILE}",
         }
     home = Path.home()
     return {
         "synty": str(home / "synty"),
         "unity_assets": str(home / "unity_assets" / "UnityAssets"),
+        "pixel_assets": str(home / "unity_assets"),
         "song": str(home / "Downloads" / SONG_FILE),
     }
 
 
 def load_roots(create: bool = False) -> dict[str, str]:
-    """The machine's roots.json, created with the defaults when `create` is set."""
+    """The machine's roots.json, with defaults for any root it lacks (a roots.json written
+    before demo2d has no `pixel_assets`); written back when `create` is set."""
     path = cache_root() / "roots.json"
-    if not path.exists():
-        roots = default_roots()
-        if create:
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(json.dumps(roots, indent=2) + "\n", encoding="utf-8")
-        return roots
-    return json.loads(path.read_text(encoding="utf-8"))
+    saved = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    roots = {**default_roots(), **saved}
+    if create and roots != saved:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(roots, indent=2) + "\n", encoding="utf-8")
+    return roots
 
 
 def unity_exe() -> Path:
@@ -81,10 +97,16 @@ def unity_exe() -> Path:
 @dataclass(frozen=True)
 class Worktree:
     root: Path
+    name: str = "demo3d"  # the Unity project: demo3d or demo2d
 
     @property
     def project(self) -> Path:
-        return self.root / "demo3d"
+        return self.root / self.name
+
+    @property
+    def namespace(self) -> str:
+        """The project's C# namespace prefix: Demo3D or Demo2D."""
+        return "Demo" + self.name.removeprefix("demo").upper()
 
     @property
     def vendor(self) -> Path:
@@ -114,5 +136,5 @@ def git_root(start: Path | None = None) -> Path:
     return Path(out)
 
 
-def worktree(start: Path | None = None) -> Worktree:
-    return Worktree(git_root(start))
+def worktree(start: Path | None = None, name: str = "demo3d") -> Worktree:
+    return Worktree(git_root(start), name)

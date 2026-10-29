@@ -146,3 +146,22 @@ vendor guard: FAIL
 
 AGENTS.md carries the rule for every agent: never commit vendor or derived
 files, never force-add an ignored path, and never bypass the guard.
+
+### The 2D demo
+
+Since PX1 the same guard and tools also cover the
+[2D pixel demo](../tech-demo-2d/README.md#vendor-assets), `demo2d/`:
+
+- **A third root, `pixel_assets`,** is the asset folder whose `Assets/`
+  holds the 2D packs (`~/unity_assets/Assets` on the Mac; the root itself
+  is `~/unity_assets`, as `unity_assets` is `~/unity_assets/UnityAssets`).
+  A `roots.json` written before it gains it with its default. The sync
+  record lists its files as it lists the others', so one record per machine
+  knows both demos' vendor files.
+- **`demo2d/` is under every rule `demo3d/` is under:** its `Assets/Vendor/`
+  and `Assets/Baked/` are gitignored and refused; binaries under it fail
+  unless they are tagged renders under `demo2d/evidence/`; a missing record
+  fails changes under it; the derived record adds its `Assets/Baked/`; and
+  the stale-record check reads `demo2d/manifest.json` too.
+- **`demo2d <command>`** (`uv run --project demo3d/tools demo2d`) runs the
+  setup, sync, guard, Unity, test and build tools on `demo2d/`.

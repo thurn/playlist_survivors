@@ -10,13 +10,14 @@ Curation and sync):
 
 - A Synty `.unitypackage.gz` (a gzipped tar of per-GUID folders holding `asset`, `asset.meta`
   and `pathname`) is unpacked once into the per-machine cache, keyed by its SHA-256.
-- From `unity_assets`, files are copied with their `.meta`.
-- `sourceSha256` is the package's hash for Synty, and the file's own hash for unity_assets. A
+- From `unity_assets` and `pixel_assets` (asset folders: the 3D packs, and the 2D demo's packs),
+  files are copied with their `.meta`.
+- `sourceSha256` is the package's hash for Synty, and the file's own hash for an asset folder. A
   source whose hash differs is refused, so both machines sync from identical files.
 - `guid:` references in the copied YAML and `.meta` files are followed within the same root
   (prefab to material to texture or shader). Scripts and scenes are never followed: vendor
   code doesn't enter the project, and a prefab's script becomes a missing script.
-- Files land in the vendor folder at their path without the leading `Assets/`.
+- Files land in the project's vendor folder at their path without the leading `Assets/`.
 
 The sync record lists every file under every source root with its GUID and SHA-256, not just
 the synced ones, so the guard knows every vendor file this machine has. `--record-only` builds
@@ -117,7 +118,7 @@ class Item:
 
 @dataclass
 class Source:
-    name: str  # "synty:<file>" or "unity_assets"
+    name: str  # "synty:<file>", or an asset folder's root: "unity_assets" or "pixel_assets"
     sha256: str | None  # the package's hash (Synty)
     by_guid: dict[str, Item] = field(default_factory=dict)
     by_path: dict[str, Item] = field(default_factory=dict)
@@ -174,8 +175,11 @@ def load_synty(pkg: Path, sha: str, cache: Path) -> Source:
     return src
 
 
-def load_unity_assets(root: Path) -> Source:
-    src = Source("unity_assets", None)
+ASSET_FOLDERS = ("unity_assets", "pixel_assets")
+
+
+def load_asset_folder(name: str, root: Path) -> Source:
+    src = Source(name, None)
     assets = root / "Assets"
     for dirpath, dirs, files in os.walk(assets):
         dirs[:] = [d for d in dirs if d != "__MACOSX"]
@@ -208,11 +212,11 @@ class Sources:
             if not pkg.exists():
                 raise SyncError(f"missing source {name}: {pkg}")
             src = load_synty(pkg, self.hashes.get(pkg), self.cache)
-        elif name == "unity_assets":
-            root = Path(self.roots["unity_assets"])
-            if not (root / "Assets").exists():
-                raise SyncError(f"missing source unity_assets: {root}")
-            src = load_unity_assets(root)
+        elif name in ASSET_FOLDERS:
+            root = Path(self.roots.get(name, ""))
+            if not (root / "Assets").is_dir():
+                raise SyncError(f"missing source {name}: {root}")
+            src = load_asset_folder(name, root)
         else:
             raise SyncError(f"unknown source root in {name!r}")
         self.loaded[name] = src
@@ -329,8 +333,7 @@ def all_sources(roots: dict[str, str]) -> list[str]:
     synty = Path(roots.get("synty", ""))
     if synty.is_dir():
         names += [f"synty:{p.name}" for p in sorted(synty.glob("*.unitypackage.gz"))]
-    if (Path(roots.get("unity_assets", "")) / "Assets").is_dir():
-        names.append("unity_assets")
+    names += [n for n in ASSET_FOLDERS if roots.get(n) and (Path(roots[n]) / "Assets").is_dir()]
     return names
 
 
@@ -350,7 +353,7 @@ def build_record(sources: Sources, record_path: Path) -> int:
             pkg = Path(sources.roots["synty"]) / name.split(":", 1)[1]
             key = f"{name}:{sources.hashes.get(pkg)}"
         else:
-            key = f"{name}:{_tree_stamp(Path(sources.roots['unity_assets']) / 'Assets')}"
+            key = f"{name}:{_tree_stamp(Path(sources.roots[name]) / 'Assets')}"
         if key in index:
             fresh[key] = index[key]
         else:
@@ -439,7 +442,7 @@ def find(source: str, pattern: str, sources: Sources) -> list[str]:
 
 
 def main(a: argparse.Namespace) -> int:
-    wt = paths.worktree()
+    wt = paths.worktree(name=a.project)
     manifest = json.loads((wt.project / "manifest.json").read_text(encoding="utf-8"))
     roots = paths.load_roots(create=True)
     cache = paths.cache_root()

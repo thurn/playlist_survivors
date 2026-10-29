@@ -1,8 +1,9 @@
 """The derived record: hashes and GUIDs of files made from vendor files or the song.
 
-Bakers write derived files into the gitignored Assets/Baked/. A copy of one elsewhere in the
-tree would pass the sync record's checks, since its bytes and GUID are new. So before every
-check the guard adds every file in this worktree's Assets/Baked/ (and the song's source MP3) to
+Bakers write derived files into each demo's gitignored Assets/Baked/. A copy of one elsewhere in
+the tree would pass the sync record's checks, since its bytes and GUID are new. So before every
+check the guard adds every file in this worktree's demo3d/ and demo2d/ Assets/Baked/ (and the
+song's source MP3) to
 the per-machine derived record. It only ever adds: every worktree's baked files stay recorded.
 A file in Baked/ whose bytes are a blob tracked at HEAD is a copy of our own file (setup copies
 the song map there), so it isn't recorded.
@@ -54,13 +55,15 @@ def _is_tracked_copy(repo: Path, path: Path) -> bool:
 def refresh(repo: Path, record: Path) -> int:
     """Adds this worktree's baked files and the song to the derived record; returns new entries."""
     files: list[tuple[Path, str]] = []
-    baked = repo / "demo3d" / "Assets" / "Baked"
-    if baked.is_dir():
+    for demo in paths.PROJECTS:
+        baked = repo / demo / "Assets" / "Baked"
+        if not baked.is_dir():
+            continue
         for dirpath, _dirs, names in os.walk(baked):
             for n in names:
                 p = Path(dirpath) / n
-                files.append((p, "Baked/" + p.relative_to(baked).as_posix()))
-        files = [f for f in files if not _is_tracked_copy(repo, f[0])]
+                files.append((p, f"{demo}/Assets/Baked/" + p.relative_to(baked).as_posix()))
+    files = [f for f in files if not _is_tracked_copy(repo, f[0])]
     song = paths.load_roots().get("song")
     if song and Path(song).is_file():
         files.append((Path(song), "song source"))
