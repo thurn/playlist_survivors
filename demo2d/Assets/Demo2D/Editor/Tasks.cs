@@ -48,6 +48,9 @@ namespace Demo2D.EditorTools
         /// <summary>PX3's lineup and crowd stills from the baked atlases into `-out &lt;dir&gt;` (default evidence/px3).</summary>
         public static void SpriteStills() => Assets.SpriteStills.Write(TaskArgs.Get("-out", Path.Combine("evidence", "px3")));
 
+        /// <summary>PX5: bakes the player's PlaybackData (PlaybackBaker). Every build runs it too.</summary>
+        public static void BakePlayback() => Assets.PlaybackBaker.Bake();
+
         // URP's build preprocessing rewrites these tracked assets for the build's target (the
         // pipeline's shader prefilters, the global settings' runtime list). BuildPlayer puts them
         // back, so a build leaves the checkout clean.
@@ -56,7 +59,8 @@ namespace Demo2D.EditorTools
         /// <summary>
         /// Builds the Mac player, an Apple silicon app drawing with Metal: `-backend il2cpp|mono`
         /// (default il2cpp), `-buildOut &lt;dir&gt;` (default Builds/mac/&lt;backend&gt;), `-development`,
-        /// `-scene &lt;path&gt;` (repeatable; default: the build settings' scenes).
+        /// `-scene &lt;path&gt;` (repeatable; default: the build settings' scenes). Bakes the player's
+        /// PlaybackData first (and the atlases, if they're missing).
         /// </summary>
         public static void BuildPlayer()
         {
@@ -70,6 +74,7 @@ namespace Demo2D.EditorTools
                 scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToList();
             if (scenes.Count == 0) throw new Exception("Tasks.BuildPlayer: no scenes to build");
 
+            Assets.PlaybackBaker.Bake(); // the player's index of the baked song, atlases and data
             var kept = RestoredAfterBuild.Where(File.Exists).ToDictionary(p => p, File.ReadAllBytes);
             var previous = PlayerSettings.GetScriptingBackend(NamedBuildTarget.Standalone);
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone, impl);

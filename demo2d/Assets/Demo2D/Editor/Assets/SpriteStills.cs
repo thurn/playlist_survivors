@@ -68,11 +68,20 @@ namespace Demo2D.EditorTools.Assets
         static GameObject Ground(int w, int h, int seed)
         {
             var catalog = ForestTiles.Load();
+            return ForestTiles.Instantiate(GroundMap(catalog, w, h, seed), catalog);
+        }
+
+        /// <summary>
+        /// The forest's grass with <paramref name="patches"/> patches of moss and dirt, w × h tiles
+        /// (the stills' ground, and the player's open ground until PX6's arena).
+        /// </summary>
+        public static ForestTiles.TestMap GroundMap(ForestTiles.Catalog catalog, int w, int h, int seed, int patches = 7)
+        {
             var map = new ForestTiles.TestMap { W = w, H = h, Base = catalog.Base, Overlay = new Vector2Int?[w, h] };
             var sets = catalog.Transitions.Where(t => t.name == "dark-grass-on-grass" || t.name == "dirt-on-grass").Select(t => ForestTiles.CornerTiles(t.at)).ToList();
             var rng = new System.Random(seed);
             // Blobs on the vertex grid: a vertex is inner when it lies in one of a few ellipses.
-            var blobs = Enumerable.Range(0, 7).Select(i => (set: i % sets.Count, c: new Vector2((float)rng.NextDouble() * w, (float)rng.NextDouble() * h),
+            var blobs = Enumerable.Range(0, patches).Select(i => (set: i % sets.Count, c: new Vector2((float)rng.NextDouble() * w, (float)rng.NextDouble() * h),
                 r: new Vector2(2.5f + (float)rng.NextDouble() * 4, 1.5f + (float)rng.NextDouble() * 2.5f))).ToList();
             for (int k = 0; k < sets.Count; k++)
             {
@@ -87,7 +96,7 @@ namespace Demo2D.EditorTools.Assets
                     map.Overlay[x, y] = options[(x * 7 + y * 13) % options.Count];
                 }
             }
-            return ForestTiles.Instantiate(map, catalog);
+            return map;
         }
 
         static float Sq(float v) => v * v;

@@ -3,6 +3,7 @@
     "rootNamespace": "Demo2D.Tests",
     "references": [
         "PS.Choreography",
+        "Demo2D.Choreography",
         "Demo2D.Runtime",
         "Demo2D.EditorTools",
         "Unity.RenderPipelines.Universal.Runtime",

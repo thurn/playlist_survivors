@@ -193,9 +193,11 @@ Character frames are baked, not imported as is:
 - **Annotations** (impact frame for attacks, the stride per walk cycle, the
   end of hit and death) live in tracked JSON, proposed by the annotator from
   frame motion and checked from contact sheets, as demo3d's TD2 did.
-- **Drawing.** One instanced quad per entity: atlas, frame, flip, flash and
-  tint per instance, sorted by y. 400 monsters plus the hero and projectiles
-  are a few draw calls.
+- **Drawing.** One pooled SpriteRenderer per entity: frame, flip, flash and
+  tint per sprite, drawn back to front by the feet's row, over a pixel-blob
+  shadow. PX5 chose these over hand-instanced quads: the 2D renderer lights
+  them with its `Light2D`s and draws across every type's atlas in one order
+  (an instanced draw per atlas couldn't interleave types by y).
 - **Retiming.** As in demo3d: the client starts each attack clip so its
   impact frame lands on the timeline's impact time, and scales walk cycles to
   match the beat-step gait.
@@ -208,9 +210,11 @@ Character frames are baked, not imported as is:
 - The upscale pass maps the target to 1080p at the current zoom (2× at the
   base view, down to about 1.48× at the climax's 1.35× zoom-out). Its
   filter is sharp-bilinear (texel-centred, antialiased only at the texel
-  edges), so non-integer zooms stay crisp without shimmer. At 1.35×, the
-  target grows to 1296×729 instead, so the climax keeps the grid's density.
-  PX5 picks between these two from stills.
+  edges), so non-integer zooms stay crisp without shimmer. The target grows
+  with the view (1296×729 at the climax's 1.35×, sized once for the song's
+  widest view), so the climax keeps the grid's density: PX5 chose this over
+  a fixed 960×540 target drawing the wider view at fewer texels per metre,
+  which drops and doubles the art's pixels (its paired stills).
 - Bloom, screen distortion (CFXR's distortion prefabs, if kept) and the
   colour grade run on the 1080p image.
 

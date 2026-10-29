@@ -1,0 +1,210 @@
+using System;
+using System.Collections.Generic;
+using PS.Choreography;
+using UnityEngine;
+using UnityEngine.Rendering.Universal;
+using UnityEngine.Tilemaps;
+
+namespace Demo2D.Runtime.Playback
+{
+    /// <summary>
+    /// The song's playback (PX5), apart from its clock: builds the timeline from the baked
+    /// PlaybackData, then draws any song time on request (<see cref="Frame"/>): the open ground,
+    /// the sprite crowd, the camera's follow, punch and shake, and the pixel pipeline. Everything
+    /// it draws is a function of the time, so the player (DemoMain, which owns the clock) and the
+    /// seek test share it.
+    /// </summary>
+    public sealed class SongPlayback : IDisposable
+    {
+        public readonly Timeline Timeline;
+        public readonly SpriteEvaluator Evaluator;
+        public readonly PixelPipeline Pipeline;
+        readonly SpriteCrowd _crowd;
+        readonly CameraFeel _feel;
+        readonly GameObject _root;
+        readonly Light2D _heroLight;
+        readonly int[] _bySpawn;
+        readonly List<int> _active = new List<int>();
+        int _nextSpawn;
+        double _lastT = double.NegativeInfinity;
+        readonly List<UnityEngine.Object> _made = new List<UnityEngine.Object>();
+
+        public bool Feel = true;
+        public double BuildSeconds { get; }
+        public int OnScreenAlive { get; private set; }
+        public int OnScreenDying { get; private set; }
+        public int Drawn => _crowd.Drawn;
+        public float ViewWidth { get; private set; }
+
+        public SongPlayback(PlaybackData data, string zoom, Transform parent)
+        {
+            _root = new GameObject("Song Playback");
+            _root.transform.SetParent(parent, false);
+            var level = LevelScript.Parse(data.level.text);
+            var layout = data.Layout(level.Layout) ?? throw new InvalidOperationException("SongPlayback: no layout " + level.Layout);
+            var choreo = ChoreographyData.FromJson(data.annotations.text, data.roster.text, layout.text);
+            var started = Time.realtimeSinceStartupAsDouble;
+            Timeline = Choreographer.Run(SongMap.Parse(data.songMap.text), level, choreo);
+            BuildSeconds = Time.realtimeSinceStartupAsDouble - started;
+
+            // Each annotation's frames, from its owner's atlas ("hero" is the knight's).
+            var atlases = new Dictionary<string, CharacterAtlas>(StringComparer.Ordinal);
+            for (int i = 0; i < data.atlases.Length; i++)
+            {
+                var a = new CharacterAtlas(data.atlases[i], data.atlasJson[i].text);
+                atlases[a.Type] = a;
+            }
+            var clips = choreo.Clips;
+            var sprites = new Sprite[clips.Count][];
+            var frames = new int[clips.Count];
+            for (int c = 0; c < clips.Count; c++)
+            {
+                var use = clips[c].Use;
+                var owner = use.Substring(0, use.LastIndexOf(' '));
+                var type = owner == "hero" ? "knight" : owner;
+                if (!atlases.TryGetValue(type, out var atlas)) throw new InvalidOperationException($"SongPlayback: no atlas for {type} (run demo2d unity BakeSprites)");
+                sprites[c] = atlas.ForLibraryClip(clips[c].Clip) ?? throw new InvalidOperationException($"SongPlayback: {type}'s atlas has no {clips[c].Clip}");
+                frames[c] = sprites[c].Length;
+                foreach (var s in sprites[c]) _made.Add(s);
+            }
+            var walk = Array.ConvertAll(Timeline.TypeNames, n => clips.Require(n + " walk"));
+            Evaluator = new SpriteEvaluator(Timeline, clips, frames, FrameRate(atlases), walk, clips.Require("hero walk"), clips.Find("hero idle"));
+
+            float heroRadius = JsonValue.Parse(data.roster.text)["hero"]["radius"].AsFloat(0.5f);
+            _crowd = new SpriteCrowd(Evaluator, sprites, data.spriteFlash, data.spriteUnlit, heroRadius, _root.transform);
+            _feel = new CameraFeel(Timeline);
+            float widest = 0;
+            foreach (var f in Timeline.Framing) widest = Mathf.Max(widest, f.ViewWidth);
+            Pipeline = new PixelPipeline(data.upscale, widest, zoom, _root.transform);
+            BuildGround(data);
+
+            // A warm light on the hero, so he reads in the night crowd (PX3's lineup; PX7 owns the lighting).
+            _heroLight = new GameObject("Hero Light").AddComponent<Light2D>();
+            _heroLight.transform.SetParent(_root.transform, false);
+            _heroLight.lightType = Light2D.LightType.Point;
+            _heroLight.color = new Color(1f, 0.75f, 0.45f);
+            _heroLight.intensity = 0.9f;
+            _heroLight.pointLightOuterRadius = 4.5f;
+            _heroLight.pointLightInnerRadius = 0.8f;
+
+            _bySpawn = new int[Timeline.EntityCount];
+            for (int i = 0; i < _bySpawn.Length; i++) _bySpawn[i] = i;
+            Array.Sort(_bySpawn, (a, b) =>
+            {
+                int c = Timeline.Entities[a].Spawn.CompareTo(Timeline.Entities[b].Spawn);
+                return c != 0 ? c : a.CompareTo(b);
+            });
+        }
+
+        /// <summary>The packs' frame rate (every atlas has the same, 15).</summary>
+        static float FrameRate(Dictionary<string, CharacterAtlas> atlases)
+        {
+            foreach (var a in atlases.Values) return a.FrameRate;
+            return 15;
+        }
+
+        /// <summary>Draws song time t on an output of outW × outH pixels.</summary>
+        public void Frame(double t, int outW, int outH)
+        {
+            Activate(t);
+            _crowd.Draw(_active, t);
+
+            var framing = Timeline.FramingAt(Math.Max(0, t));
+            float punch = Feel ? _feel.Punch(t) : 1f;
+            var centre = new Vector2(framing.Focus.X, framing.Focus.Y) + (Feel ? _feel.Shake(t) : Vector2.zero);
+            ViewWidth = framing.ViewWidth;
+            Pipeline.Frame(centre, framing.ViewWidth * punch, framing.ViewWidth, outW, outH);
+
+            var hero = Timeline.PositionAt(0, t);
+            _heroLight.transform.localPosition = new Vector3(hero.X, hero.Y + 1f, 0);
+
+            // On-screen counts as the sim counts them: monsters inside the framing's view.
+            var view = Timeline.View(framing.ViewWidth);
+            OnScreenAlive = OnScreenDying = 0;
+            foreach (int e in _active)
+            {
+                if (Timeline.Entities[e].Kind != EntityKind.Monster) continue;
+                if (!view.Contains(framing.Focus, Timeline.PositionAt(e, t))) continue;
+                if (IsDying(e, t)) OnScreenDying++; else OnScreenAlive++;
+            }
+        }
+
+        bool IsDying(int e, double t)
+        {
+            var acts = Timeline.ActionsOf(e);
+            for (int k = acts.Count - 1; k >= 0; k--)
+            {
+                var a = acts.Array[acts.Offset + k];
+                if (a.Kind == ActionKind.Death) return a.Impact <= t;
+            }
+            return false;
+        }
+
+        /// <summary>The entities alive at t, in id order. Seeks rebuild it; forward play adds and drops.</summary>
+        void Activate(double t)
+        {
+            if (t < _lastT)
+            {
+                _active.Clear();
+                _nextSpawn = 0;
+            }
+            _lastT = t;
+            bool added = false;
+            while (_nextSpawn < _bySpawn.Length && Timeline.Entities[_bySpawn[_nextSpawn]].Spawn <= t)
+            {
+                int e = _bySpawn[_nextSpawn++];
+                if (Timeline.Entities[e].Despawn > t) { _active.Add(e); added = true; }
+            }
+            _active.RemoveAll(e => Timeline.Entities[e].Despawn <= t);
+            if (added) _active.Sort();
+        }
+
+        /// <summary>The open ground (PX3's forest grass with moss and dirt), until PX6's arena.</summary>
+        void BuildGround(PlaybackData data)
+        {
+            var root = new GameObject("Ground");
+            root.transform.SetParent(_root.transform, false);
+            root.transform.localPosition = new Vector3(data.groundOrigin.x, data.groundOrigin.y, 0);
+            root.AddComponent<Grid>().cellSize = Vector3.one;
+            var tiles = new TileBase[data.groundSprites.Length];
+            for (int i = 0; i < tiles.Length; i++)
+            {
+                var tile = ScriptableObject.CreateInstance<Tile>();
+                tile.sprite = data.groundSprites[i];
+                tiles[i] = tile;
+                _made.Add(tile);
+            }
+            void Layer(string name, int order, int[] cells)
+            {
+                var go = new GameObject(name);
+                go.transform.SetParent(root.transform, false);
+                var map = go.AddComponent<Tilemap>();
+                var r = go.AddComponent<TilemapRenderer>();
+                r.sharedMaterial = data.spriteLit;
+                r.sortingOrder = order;
+                r.mode = TilemapRenderer.Mode.Chunk;
+                var block = new TileBase[cells.Length];
+                for (int i = 0; i < cells.Length; i++) block[i] = cells[i] >= 0 ? tiles[cells[i]] : null;
+                map.SetTilesBlock(new BoundsInt(0, 0, 0, data.groundW, data.groundH, 1), block);
+            }
+            Layer("Base", -1001, data.groundBase);
+            Layer("Overlay", -1000, data.groundOverlay);
+        }
+
+        public void Dispose()
+        {
+            _crowd.Dispose();
+            Pipeline.Dispose();
+            Destroy(_root);
+            foreach (var o in _made) Destroy(o);
+        }
+
+        /// <summary>Destroys an object in a player, or at once in the editor (the tests).</summary>
+        public static void Destroy(UnityEngine.Object o)
+        {
+            if (o == null) return;
+            if (Application.isPlaying) UnityEngine.Object.Destroy(o);
+            else UnityEngine.Object.DestroyImmediate(o);
+        }
+    }
+}

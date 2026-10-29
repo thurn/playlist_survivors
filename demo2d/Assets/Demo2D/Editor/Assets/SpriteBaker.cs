@@ -410,12 +410,7 @@ namespace Demo2D.EditorTools.Assets
         }
 
         /// <summary>A Sprite for one baked frame, pivoted at its clip's feet (for stills).</summary>
-        public static Sprite Sprite(Texture2D atlas, Placed p, Vector2Int pivot)
-        {
-            var r = p.Rect;
-            var at = pivot - p.Offset;
-            return UnityEngine.Sprite.Create(atlas, new Rect(r.x, r.y, r.width, r.height),
-                new Vector2((float)at.x / r.width, (float)at.y / r.height), PixelShots.PixelsPerMetre, 0, SpriteMeshType.FullRect);
-        }
+        public static Sprite Sprite(Texture2D atlas, Placed p, Vector2Int pivot) =>
+            Demo2D.Runtime.Playback.CharacterAtlas.Sprite(atlas, new Demo2D.Runtime.Playback.CharacterAtlas.Crop(p.Rect, p.Offset), pivot);
     }
 }
