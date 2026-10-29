@@ -18,10 +18,12 @@ namespace Demo3D.EditorTools.Assets
         public static void Bake()
         {
             Directory.CreateDirectory(Dir);
-            var music = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Baked/Audio/action.ogg");
+            // Setup writes action.ogg, or action.wav where ffmpeg has no libvorbis (the Mac).
+            var musicPath = File.Exists("Assets/Baked/Audio/action.ogg") ? "Assets/Baked/Audio/action.ogg" : "Assets/Baked/Audio/action.wav";
+            var music = AssetDatabase.LoadAssetAtPath<AudioClip>(musicPath);
             if (music != null)
             {
-                var importer = (AudioImporter)AssetImporter.GetAtPath("Assets/Baked/Audio/action.ogg");
+                var importer = (AudioImporter)AssetImporter.GetAtPath(musicPath);
                 var s = importer.defaultSampleSettings;
                 if (s.loadType != AudioClipLoadType.Streaming)
                 {

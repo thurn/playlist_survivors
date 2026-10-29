@@ -119,6 +119,11 @@ namespace Demo3D.Runtime.Bench
                 yield break;
             }
             Log($"sweep {_sweepId}: {specPath} -> {_out}");
+            if (!Win32.IsWindows)
+            {
+                Refuse("platform", "sweeps run on Windows (Cygnus), against the target's Direct3D 12 numbers");
+                yield break;
+            }
 
             // The machine lock: wait for it, never around it.
             if (!Args.Has("--lock-held"))

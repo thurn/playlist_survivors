@@ -1,6 +1,7 @@
 # demo3d
 
-The 3D tech demo's Unity 6.6 project (URP, Direct3D 12) and its tools. The design and plan are
+The 3D tech demo's Unity 6.6 project (URP, Direct3D 12; Metal on the Mac, see
+[Running on the Mac](../docs/tech-demo-3d/mac.md)) and its tools. The design and plan are
 in [docs/tech-demo-3d/](../docs/tech-demo-3d/README.md).
 
 - `Assets/Demo3D/Choreography/`: the choreography layer, plain C# 9 with no UnityEngine
@@ -32,7 +33,7 @@ uv run --project demo3d/tools demo3d setup          # prepare a fresh worktree, 
 uv run --project demo3d/tools demo3d editor start   # optional: the warm editor
 uv run --project demo3d/tools demo3d test           # EditMode tests (warm if running)
 uv run --project demo3d/tools demo3d unity Configure    # any Tasks method, or a full name
-uv run --project demo3d/tools demo3d build --backend il2cpp
+uv run --project demo3d/tools demo3d build --backend il2cpp  # the Mac: `demo3d build` (Mono, Metal)
 uv run --project demo3d/tools demo3d check --player # every check, before a push
 uv run --project demo3d/tools demo3d sweep demo3d/sweeps/synthetic-frontier.json --out <dir>
 uv run --project demo3d/tools demo3d report <dir>   # regenerate a sweep's report.md

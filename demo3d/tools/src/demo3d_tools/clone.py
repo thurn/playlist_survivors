@@ -8,6 +8,7 @@ On macOS, `cp -c` clones on APFS. Anywhere else this falls back to plain copies,
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import stat
 import subprocess
@@ -31,8 +32,20 @@ def volume_fs(path: Path) -> str:
         )
         return name.value if ok else "unknown"
     if sys.platform == "darwin":
-        out = subprocess.run(["stat", "-f", "%T", str(p)], capture_output=True, text=True, check=False)
-        return out.stdout.strip() or "unknown"
+        # `mount` lists "<device> on <mount point> (<fs>, ...)"; the longest mount point holding
+        # the path is its volume. (`stat -f %T` names the file's type, not the filesystem's.)
+        out = subprocess.run(["/sbin/mount"], capture_output=True, text=True, check=False).stdout
+        target = str(p.resolve())
+        best, fs = "", "unknown"
+        for line in out.splitlines():
+            m = re.match(r"^.+? on (.+) \(([^,)]+)", line)
+            if not m:
+                continue
+            point = m.group(1)
+            inside = target == point or target.startswith(point.rstrip("/") + "/")
+            if inside and len(point) > len(best):
+                best, fs = point, m.group(2)
+        return fs
     return "unknown"
 
 

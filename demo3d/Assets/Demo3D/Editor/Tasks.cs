@@ -65,15 +65,20 @@ namespace Demo3D.EditorTools
             Effects.EffectConverter.Report(TaskArgs.Get("-out", "evidence/td8/converter-report.md"));
 
         /// <summary>
-        /// Builds the Windows x64 player. `-backend il2cpp|mono` (default il2cpp), `-buildOut
-        /// <dir>` (default Builds/&lt;backend&gt;), `-development`, `-scene <path>` (repeatable;
-        /// default: the build settings' scenes).
+        /// Builds the player. `-platform windows|mac` (default: this machine's), `-backend
+        /// il2cpp|mono` (default il2cpp on Windows; the Mac builds Mono only, as its editor has no
+        /// IL2CPP module), `-buildOut <dir>` (default Builds/&lt;backend&gt;, or Builds/mac),
+        /// `-development`, `-scene <path>` (repeatable; default: the build settings' scenes). The
+        /// Mac's player is an Apple silicon app drawing with Metal (ProjectSetup).
         /// </summary>
         public static void BuildPlayer()
         {
-            var backend = TaskArgs.Get("-backend", "il2cpp").ToLowerInvariant();
+            bool mac = TaskArgs.Get("-platform", Application.platform == RuntimePlatform.OSXEditor ? "mac" : "windows")
+                .ToLowerInvariant() == "mac";
+            var backend = TaskArgs.Get("-backend", mac ? "mono" : "il2cpp").ToLowerInvariant();
+            if (mac && backend != "mono") throw new Exception("Tasks.BuildPlayer: the Mac builds Mono only (-backend mono)");
             var impl = backend == "mono" ? ScriptingImplementation.Mono2x : ScriptingImplementation.IL2CPP;
-            var outDir = TaskArgs.Get("-buildOut", Path.Combine("Builds", backend));
+            var outDir = TaskArgs.Get("-buildOut", mac ? Path.Combine("Builds", "mac") : Path.Combine("Builds", backend));
             var scenes = TaskArgs.All("-scene");
             if (scenes.Count == 0)
             {
@@ -86,20 +91,22 @@ namespace Demo3D.EditorTools
             if (scenes.Count == 0) throw new Exception("Tasks.BuildPlayer: no scenes to build");
 
             var previous = PlayerSettings.GetScriptingBackend(NamedBuildTarget.Standalone);
+            int architecture = PlayerSettings.GetArchitecture(NamedBuildTarget.Standalone);
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone, impl);
+            if (mac) PlayerSettings.SetArchitecture(NamedBuildTarget.Standalone, 1); // Apple silicon
             try
             {
                 var options = new BuildPlayerOptions
                 {
                     scenes = scenes.ToArray(),
-                    locationPathName = Path.Combine(outDir, "PlaylistSurvivors3D.exe"),
-                    target = BuildTarget.StandaloneWindows64,
+                    locationPathName = Path.Combine(outDir, mac ? "PlaylistSurvivors3D.app" : "PlaylistSurvivors3D.exe"),
+                    target = mac ? BuildTarget.StandaloneOSX : BuildTarget.StandaloneWindows64,
                     targetGroup = BuildTargetGroup.Standalone,
                     options = TaskArgs.Has("-development") ? BuildOptions.Development : BuildOptions.None,
                 };
                 var report = BuildPipeline.BuildPlayer(options);
                 var s = report.summary;
-                Debug.Log($"Tasks.BuildPlayer: {s.result} ({backend}) in {s.totalTime.TotalSeconds:F1} s, " +
+                Debug.Log($"Tasks.BuildPlayer: {s.result} ({(mac ? "mac, " : "")}{backend}) in {s.totalTime.TotalSeconds:F1} s, " +
                           $"{s.totalSize / (1024 * 1024)} MiB, {s.totalErrors} errors -> {s.outputPath}");
                 if (s.result != BuildResult.Succeeded)
                     throw new Exception($"Tasks.BuildPlayer: {s.result}");
@@ -107,6 +114,7 @@ namespace Demo3D.EditorTools
             finally
             {
                 PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone, previous);
+                PlayerSettings.SetArchitecture(NamedBuildTarget.Standalone, architecture);
             }
         }
     }

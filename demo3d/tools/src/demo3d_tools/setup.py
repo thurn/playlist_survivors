@@ -62,8 +62,16 @@ class PyBaker:
 
 # TD0 fixed this conversion (songs/action/source.json, "conversion"): the MP3 decoded with
 # its encoder delay and padding trimmed, then encoded to Ogg Vorbis, so the Ogg's sample 0 is
-# the song map's time 0.
+# the song map's time 0. An ffmpeg without libvorbis (Homebrew's, on the Mac) writes the same
+# decoded samples as WAV instead; Unity's importer encodes either to streamed Vorbis.
 SONG_OGG_ARGS = ["-map_metadata", "-1", "-c:a", "libvorbis", "-q:a", "6"]
+SONG_WAV_ARGS = ["-map_metadata", "-1", "-c:a", "pcm_s16le"]
+
+
+def ffmpeg_has_libvorbis() -> bool:
+    out = subprocess.run(["ffmpeg", "-hide_banner", "-encoders"], capture_output=True, text=True,
+                         check=True).stdout
+    return any(line.split()[1:2] == ["libvorbis"] for line in out.splitlines())
 
 
 def _song_inputs(wt: paths.Worktree, roots: dict[str, str]) -> list[Path]:
@@ -75,8 +83,9 @@ def _song_build(wt: paths.Worktree, roots: dict[str, str], out: Path) -> None:
     songmap = wt.root / "songs" / "action" / "songmap.json"
     if songmap.exists():
         shutil.copy2(songmap, out / "action.songmap.json")
+    args, name = (SONG_OGG_ARGS, "action.ogg") if ffmpeg_has_libvorbis() else (SONG_WAV_ARGS, "action.wav")
     cmd = ["ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "error", "-y",
-           "-i", roots["song"], "-map", "0:a", *SONG_OGG_ARGS, str(out / "action.ogg")]
+           "-i", roots["song"], "-map", "0:a", *args, str(out / name)]
     subprocess.run(cmd, check=True)
 
 

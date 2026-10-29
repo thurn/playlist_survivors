@@ -13,8 +13,9 @@ namespace Demo3D.EditorTools
     /// <summary>
     /// Puts the project into the configuration every measurement uses (performance.md, Engine and
     /// Rendering Setup): Direct3D 12 only, IL2CPP, linear color, URP Forward+ with forced depth
-    /// priming, HDR, MSAA 4x and soft two-cascade 2048 px sun shadows. Idempotent: run it after
-    /// changing anything here, and commit the settings it writes.
+    /// priming, HDR, MSAA 4x and soft two-cascade 2048 px sun shadows. The Mac's player, for
+    /// viewing rather than measuring, draws with Metal. Idempotent: run it after changing anything
+    /// here, and commit the settings it writes.
     /// </summary>
     public static class ProjectSetup
     {
@@ -58,7 +59,11 @@ namespace Demo3D.EditorTools
             PlayerSettings.usePlayerLog = true;
             PlayerSettings.SplashScreen.show = false;
             PlayerSettings.SplashScreen.showUnityLogo = false;
-            EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, target);
+            PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.StandaloneOSX, false);
+            PlayerSettings.SetGraphicsAPIs(BuildTarget.StandaloneOSX, new[] { GraphicsDeviceType.Metal });
+            // The Mac's editor has no Windows build support: it stays on its own target.
+            var active = Application.platform == RuntimePlatform.OSXEditor ? BuildTarget.StandaloneOSX : target;
+            EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, active);
         }
 
         static UniversalRenderPipelineAsset ConfigurePipeline()

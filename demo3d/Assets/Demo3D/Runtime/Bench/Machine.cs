@@ -102,6 +102,8 @@ namespace Demo3D.Runtime.Bench
 
         void Loop()
         {
+            // The samples are Windows counters; on the Mac a verdict says "no machine samples".
+            if (!Win32.IsWindows) return;
             Win32.CpuTimes(out var idle0, out var kernel0, out var user0, out var own0);
             var window = new Queue<double>();
             using var gpu = new GpuUsage();

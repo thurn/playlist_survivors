@@ -7,7 +7,7 @@ Commands:
                       EditMode tests, and with --player an IL2CPP player build
   unity METHOD ...    run a batch-mode task method (warm editor if running, else cold)
   test                EditMode tests (warm editor if running, else cold)
-  build               build the Windows player (--backend il2cpp|mono, --out DIR)
+  build               build the player (--platform windows|mac, --backend il2cpp|mono, --out DIR)
   editor start|stop|status
                       the warm editor for this worktree
   library save        save this worktree's Library as the warm one for its packages
@@ -84,8 +84,9 @@ def cmd_check(a: argparse.Namespace) -> int:
           f"{summary.failed} failed\n{summary.failures}")
     results.append(("unity editmode (cold)", summary.ok))
     if a.player:
-        code = unity.run_method(wt, "BuildPlayer", ["-backend", "il2cpp"], cold=True)
-        results.append(("il2cpp player build", code == 0))
+        build = ["-platform", "windows", "-backend", "il2cpp"] if paths.is_windows() else ["-platform", "mac"]
+        code = unity.run_method(wt, "BuildPlayer", build, cold=True)
+        results.append(("il2cpp player build" if paths.is_windows() else "mac player build", code == 0))
     print("check: " + ", ".join(f"{n} {'ok' if ok else 'FAILED'}" for n, ok in results))
     return 0 if all(ok for _, ok in results) else 1
 
@@ -101,7 +102,8 @@ def cmd_test(a: argparse.Namespace) -> int:
 
 
 def cmd_build(a: argparse.Namespace) -> int:
-    args = ["-backend", a.backend]
+    platform = a.platform or ("windows" if paths.is_windows() else "mac")
+    args = ["-platform", platform, "-backend", a.backend or ("mono" if platform == "mac" else "il2cpp")]
     if a.out:
         args += ["-buildOut", a.out]
     if a.development:
@@ -212,7 +214,7 @@ def build_parser() -> argparse.ArgumentParser:
     g.set_defaults(func=cmd_guard)
 
     c = sub.add_parser("check")
-    c.add_argument("--player", action="store_true", help="also build the IL2CPP player")
+    c.add_argument("--player", action="store_true", help="also build the player (IL2CPP on Windows, Mono on the Mac)")
     c.set_defaults(func=cmd_check)
 
     u = sub.add_parser("unity")
@@ -227,7 +229,10 @@ def build_parser() -> argparse.ArgumentParser:
     t.set_defaults(func=cmd_test)
 
     b = sub.add_parser("build")
-    b.add_argument("--backend", choices=["il2cpp", "mono"], default="il2cpp")
+    b.add_argument("--platform", choices=["windows", "mac"],
+                   help="the player's platform (default: this machine's)")
+    b.add_argument("--backend", choices=["il2cpp", "mono"],
+                   help="default il2cpp on Windows; the Mac builds mono only")
     b.add_argument("--out")
     b.add_argument("--scene", action="append")
     b.add_argument("--development", action="store_true")

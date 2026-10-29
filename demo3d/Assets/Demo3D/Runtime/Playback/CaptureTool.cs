@@ -86,15 +86,16 @@ namespace Demo3D.Runtime.Playback
 
         /// <summary>
         /// After URP has drawn the camera into the capture target for song time `t`: keeps what
-        /// is due. Capture runs are windowed players. In a batch-mode player no camera is drawn
+        /// is due. Video runs are windowed players. In a batch-mode player no camera is drawn
         /// by the player loop, and drawing one by hand every frame (Camera.Render or a render
         /// request) grew memory by about 90 MB a frame in URP 17.6, since its pooled targets are
-        /// only freed at the end of a frame the player loop renders (TD4).
+        /// only freed at the end of a frame the player loop renders (TD4); a batch-mode player
+        /// draws by hand only the frames that keep a still (DemoMain).
         /// </summary>
         public void Capture(double t)
         {
             bool forced = _forced != null;
-            bool still = forced || (_stillTimes.Count > 0 && t + 1e-6 >= _stillTimes[0]);
+            bool still = StillDue(t);
             if (!_pipe && !still) return;
             if (_resolved != null) Graphics.Blit(_target, _resolved);
             var req = AsyncGPUReadback.Request(_resolved != null ? _resolved : _target, 0, TextureFormat.RGBA32);
@@ -161,6 +162,9 @@ namespace Demo3D.Runtime.Playback
             _forced = prefix;
             _forcedAt = at;
         }
+
+        /// <summary>Whether a capture at song time `t` keeps a still.</summary>
+        public bool StillDue(double t) => _forced != null || (_stillTimes.Count > 0 && t + 1e-6 >= _stillTimes[0]);
 
         public bool Done => !_pipe && _stillTimes.Count == 0 && _forced == null;
 

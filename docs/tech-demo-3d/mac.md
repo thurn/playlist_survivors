@@ -1,0 +1,71 @@
+# 3D Tech Demo: Running on the Mac
+
+The demo was built and measured on Cygnus ([Working on Cygnus](windows.md)).
+Since integration it also sets up, bakes, builds and plays on the operator's
+Mac (Apple silicon), for watching and for work that doesn't need Cygnus's
+numbers. Every measurement in the plan stays Cygnus's: the Mac's player draws
+with Metal on another GPU, under Mono, and nothing here is a performance claim.
+
+## What the Mac needs
+
+- **Unity 6000.6.7f1** with Mac Build Support (Mono). It has no IL2CPP or
+  Windows module, so the Mac builds only its own Mono player.
+- **The .NET SDK 10, `uv` and ffmpeg**, from Homebrew.
+- **The vendor sources and the song**, at the defaults setup writes to
+  `~/Library/Caches/playlist-survivors/demo3d/roots.json`: `~/synty`,
+  `~/unity_assets/UnityAssets` and
+  `~/Downloads/Alessia Labate, Conrad Taylor - Action [NCS Release].mp3`.
+
+Homebrew's ffmpeg has no libvorbis, so setup writes the song as `action.wav`
+in place of `action.ogg`: the same decoded samples, with the MP3's encoder
+delay trimmed, so sample 0 is still the song map's time 0. Unity's importer
+encodes either to streamed Vorbis.
+
+## Commands
+
+From a worktree's root:
+
+```
+uv run --project demo3d/tools demo3d setup        # vendor files, the song, a warm Library
+uv run --project demo3d/tools demo3d unity BakeAll
+uv run --project demo3d/tools demo3d build        # Builds/mac/PlaylistSurvivors3D.app
+uv run --project demo3d/tools demo3d test         # EditMode tests
+```
+
+The first setup imported the project in about a minute, and saved the
+`Library` to the cache for the next worktree. `BakeAll` took 2.5 minutes and
+the first build 17, both in batch mode
+([evidence](../../demo3d/evidence/mac/README.md)).
+
+To watch the demo, windowed at 1080p with sound (the operator's view; agents
+stay windowless):
+
+```
+open -n demo3d/Builds/mac/PlaylistSurvivors3D.app --args -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --overlay
+```
+
+The player takes the same flags as on Cygnus ([Manual QA](qa.md#manual-qa)),
+such as `--start-at 160` for the climax or `--click` for the click track.
+
+Windowless stills, for agents' checks: a batch-mode player draws no frames,
+so it draws the camera by hand for each still it owes.
+
+```
+"demo3d/Builds/mac/PlaylistSurvivors3D.app/Contents/MacOS/Playlist Survivors 3D Demo" \
+  -batchmode -force-metal -logFile demo3d/Logs/mac-stills.log \
+  --fixed-time --capture-stills captures/mac --stills-at 45,170,196 --seconds 200
+```
+
+## Limits on the Mac
+
+- **Sweeps, the song check's verdict and PIX.** The bench player refuses to
+  sweep off Windows, and the song check's machine samples are Windows
+  counters, so a Mac verdict always says "no machine samples".
+- **Video capture** needs a windowed player (on either machine); on the Mac
+  it pipes frames into ffmpeg through `System.Diagnostics.Process`, not yet
+  run (plan.md, Pending on the operator).
+- **Unity rewrites tracked settings on the Mac.** `demo3d unity Configure`
+  also rewrites the URP global settings' runtime list, the quality level's
+  anti-aliasing and two bench materials' colours, and a build rewrites the
+  pipeline asset's shader prefilters. Commit only what a change needs, such
+  as the Metal API entry in `ProjectSettings.asset`.

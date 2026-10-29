@@ -18,6 +18,13 @@ namespace Demo3D.Tests
         }
 
         [Test]
+        public void MacPlayerIsMetalOnly()
+        {
+            Assert.That(PlayerSettings.GetUseDefaultGraphicsAPIs(BuildTarget.StandaloneOSX), Is.False);
+            Assert.That(PlayerSettings.GetGraphicsAPIs(BuildTarget.StandaloneOSX), Is.EqualTo(new[] { GraphicsDeviceType.Metal }));
+        }
+
+        [Test]
         public void PlayerUsesIl2cppAndLinearColor()
         {
             Assert.That(PlayerSettings.GetScriptingBackend(NamedBuildTarget.Standalone), Is.EqualTo(ScriptingImplementation.IL2CPP));

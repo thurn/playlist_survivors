@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.InteropServices;
 
 namespace Demo3D.Runtime.Playback
@@ -8,15 +9,25 @@ namespace Demo3D.Runtime.Playback
     /// Starts a process with a pipe to its standard input, through Win32 directly. IL2CPP's
     /// System.Diagnostics.Process fails to start a child with redirected input on Windows
     /// (Win32Exception, "Native error= Success"; TD4), and the capture tool must stream frames
-    /// into ffmpeg.
+    /// into ffmpeg. Elsewhere (the Mac's Mono player) System.Diagnostics.Process does it.
     /// </summary>
     public sealed class PipeProcess : IDisposable
     {
+        static bool Windows => Environment.OSVersion.Platform == PlatformID.Win32NT;
+
         IntPtr _process, _write;
+        System.Diagnostics.Process _child;
+        Stream _input;
 
         /// <summary>Writes all of a buffer to the child's input (WriteFile, which blocks while the pipe is full).</summary>
         public void Write(byte[] buffer, int offset, int count)
         {
+            if (_child != null)
+            {
+                if (_input == null) throw new ObjectDisposedException("PipeProcess");
+                _input.Write(buffer, offset, count);
+                return;
+            }
             if (_write == IntPtr.Zero) throw new ObjectDisposedException("PipeProcess");
             var handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
             try
@@ -35,6 +46,16 @@ namespace Demo3D.Runtime.Playback
 
         public static PipeProcess Start(string exe, string args)
         {
+            if (!Windows)
+            {
+                var child = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(exe, args)
+                {
+                    UseShellExecute = false,
+                    RedirectStandardInput = true,
+                    CreateNoWindow = true,
+                });
+                return new PipeProcess { _child = child, _input = child.StandardInput.BaseStream };
+            }
             // Neither end inheritable, then only the child's read end: if the child inherited our
             // write end too, closing ours would never give it end of input.
             var sa = new SecurityAttributes { nLength = Marshal.SizeOf<SecurityAttributes>(), bInheritHandle = false };
@@ -65,6 +86,17 @@ namespace Demo3D.Runtime.Playback
         /// <summary>Closes the input and waits for the process to exit; returns its exit code.</summary>
         public int CloseAndWait(int timeoutMs)
         {
+            if (_child != null)
+            {
+                _input?.Close(); // the child sees end of input
+                _input = null;
+                if (!_child.WaitForExit(timeoutMs))
+                {
+                    UnityEngine.Debug.LogError("PipeProcess: the child didn't exit in time");
+                    return -1;
+                }
+                return _child.ExitCode;
+            }
             if (_write != IntPtr.Zero) CloseHandle(_write); // the child sees end of input
             _write = IntPtr.Zero;
             if (_process == IntPtr.Zero) return -1;
@@ -76,6 +108,13 @@ namespace Demo3D.Runtime.Playback
 
         public void Dispose()
         {
+            if (_child != null)
+            {
+                if (_input != null) CloseAndWait(120000);
+                _child.Dispose();
+                _child = null;
+                return;
+            }
             CloseAndWait(120000);
             if (_process != IntPtr.Zero) CloseHandle(_process);
             _process = IntPtr.Zero;

@@ -8,9 +8,24 @@ namespace Demo3D.Runtime.Bench
     /// <summary>
     /// The Windows and NVML calls the benchmark player makes. None needs administrator rights.
     /// Every wrapper returns null or false rather than throwing when a call isn't available.
+    /// Off Windows (the Mac) only the clock and <see cref="OwnWindow"/> are called.
     /// </summary>
     public static class Win32
     {
+        public static readonly bool IsWindows = Environment.OSVersion.Platform == PlatformID.Win32NT;
+
+        [DllImport("/usr/lib/libSystem.dylib")]
+        static extern ulong mach_absolute_time();
+
+        [DllImport("/usr/lib/libSystem.dylib")]
+        static extern int mach_timebase_info(out MachTimebase info);
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct MachTimebase
+        {
+            public uint Numer, Denom;
+        }
+
         // kernel32
 
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
@@ -47,16 +62,22 @@ namespace Demo3D.Runtime.Bench
         [DllImport("kernel32.dll")]
         static extern bool QueryPerformanceFrequency(out long frequency);
 
-        /// <summary>QueryPerformanceCounter, FrameTimingManager's clock on Windows. (Mono's Stopwatch
-        /// counts from another epoch; IL2CPP's matches.)</summary>
+        /// <summary>QueryPerformanceCounter, FrameTimingManager's clock on Windows; mach_absolute_time,
+        /// its clock on the Mac. (Mono's Stopwatch counts from another epoch; IL2CPP's matches.)</summary>
         public static long Qpc()
         {
+            if (!IsWindows) return (long)mach_absolute_time();
             QueryPerformanceCounter(out var c);
             return c;
         }
 
         public static long QpcFrequency()
         {
+            if (!IsWindows)
+            {
+                mach_timebase_info(out var tb);
+                return tb.Numer == 0 ? 1_000_000_000L : (long)(1e9 * tb.Denom / tb.Numer);
+            }
             QueryPerformanceFrequency(out var f);
             return f;
         }
@@ -325,6 +346,7 @@ namespace Demo3D.Runtime.Bench
         /// <summary>The player's own top-level window.</summary>
         public static IntPtr OwnWindow()
         {
+            if (!IsWindows) return IntPtr.Zero;
             _found = IntPtr.Zero;
             _findPid = GetCurrentProcessId();
             EnumWindows(FindProc, IntPtr.Zero);

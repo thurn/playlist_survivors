@@ -73,8 +73,8 @@ namespace Demo3D.Runtime.Playback
         void Start()
         {
             if (Shader.Find("Universal Render Pipeline/Lit") == null) Debug.LogError("DemoMain: URP Lit is missing from the build");
-            if (Application.isBatchMode && (Args.Has("--capture-stills") || Args.Has("--capture-video")))
-                Debug.LogError("DemoMain: captures need a windowed player; a batch-mode player draws no frames");
+            if (Application.isBatchMode && Args.Has("--capture-video"))
+                Debug.LogError("DemoMain: video needs a windowed player; a batch-mode player draws no frames");
             _flags = DevFlags.FromCommandLine();
             Cuts.Active = Cuts.FromCommandLine();
             Debug.Log($"DemoMain: effective {Cuts.Active.Describe()} (--cuts; TD11)");
@@ -368,6 +368,10 @@ namespace Demo3D.Runtime.Playback
             Demo3D.Runtime.Arena.CanopyFade.SetHero(heroState.Position); // TD15: canopies near the hero dither out
 
             _captureAt = _capture != null ? t : double.NaN; // read back once URP has drawn it
+            // A batch-mode player draws no frames, so it draws the camera by hand for each still it
+            // owes (windowless checks on the Mac). Only those frames: URP's hand-drawn frames hold
+            // their pooled targets until a frame the player loop draws (CaptureTool).
+            if (Application.isBatchMode && _capture != null && _capture.StillDue(t)) _rig.Camera.Render();
             WriteStats(t);
             if (_flags.SongCheck != null)
                 (_songCheck ??= new SongRunCheck()).Update(t, _fx?.TakeRejected() ?? 0, _fx?.Lights.DropShare ?? 0);

@@ -17,6 +17,8 @@ operator's Windows desktop, as a standalone run (see
 - [Vendor Assets](vendor-assets.md): what never reaches git, and the guard.
 - [Working on Cygnus](windows.md): how the run works, the machine, Unity work
   by agents, and the checks.
+- [Running on the Mac](mac.md): setting up, building and watching the demo on
+  the operator's Mac since integration.
 - [Implementation Plan](plan.md): the tasks TD0 to TD15, their order, status
   and notes, and what is pending on the operator.
 - [Manual QA](qa.md) and [Alternatives Considered](alternatives.md).
