@@ -1,0 +1,7 @@
+{
+  "_comment": "TD12: the other anti-aliasing mode (TAA) only at the envelope point: S3, demo load, 30 m, in the finished arena with TD11's defaults; a frontier search, for the report.",
+  "scene": "S3", "seconds": 20, "warmup": 5, "rewarm": 3, "probeSeconds": 8,
+  "n": { "search": [100, 12000], "resolution": 0.05 },
+  "viewWidthM": [30], "load": ["demo"], "aa": ["taa"], "jobWorkers": 6,
+  "sceneOptions": { "crowd": "bone", "arena": "e2", "density": 2, "cuts": "default" }
+}

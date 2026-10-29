@@ -86,6 +86,39 @@ namespace Demo3D.Tests
             Color = Color.white, Range = 4, Intensity = intensity, Duration = 1, Curve = new[] { 1f, 1f },
         };
 
+        /// <summary>TD13: more visible clusters than the pool holds merge at a coarser cell instead of dropping out.</summary>
+        [Test]
+        public void ACrowdedBeatCoarsensTheLightCellsInsteadOfDropping()
+        {
+            var cam = new GameObject("cam").AddComponent<Camera>();
+            cam.transform.SetPositionAndRotation(new Vector3(0, 30, -20), Quaternion.Euler(55, 0, 0));
+            var lights = new EffectLights(EffectLights.DefaultPool);
+            try
+            {
+                for (int i = 0; i < 16; i++)
+                    for (int j = 0; j < 10; j++)
+                        lights.Add(new Vector3(-12.8f + 1.6f * i, 1, -6f + 1.6f * j), Cue(1), 0, 1, Vector3.zero);
+                lights.Update(0.5, cam);
+                Assert.That(lights.CellUsed, Is.GreaterThan(lights.Cell));
+                Assert.That(lights.VisibleClusters, Is.LessThanOrEqualTo(EffectLights.DefaultPool));
+                Assert.That(lights.DropShare, Is.EqualTo(0));
+                float coarse = lights.CellUsed;
+                // The coarse cell holds for CellHoldSeconds after the overflow (0.5 to 1.0 here), then a
+                // quiet frame clusters at the fine cell again.
+                lights.Add(new Vector3(0, 1, 0), Cue(1), 1.05, 1, Vector3.zero);
+                lights.Update(0.9, cam);
+                Assert.That(lights.CellUsed, Is.EqualTo(coarse), "held");
+                lights.Update(1.1, cam);
+                Assert.That(lights.ActiveCues, Is.EqualTo(1));
+                Assert.That(lights.CellUsed, Is.EqualTo(lights.Cell), "a quiet frame after the hold clusters at the fine cell again");
+            }
+            finally
+            {
+                lights.Dispose();
+                UnityEngine.Object.DestroyImmediate(cam.gameObject);
+            }
+        }
+
         [Test]
         public void LightsClusterOnTheGridAndCountDrops()
         {
@@ -94,17 +127,18 @@ namespace Demo3D.Tests
             var lights = new EffectLights(1);
             try
             {
-                // Two cues in one 1.5 m cell merge; a third far away is its own cluster.
-                lights.Add(new Vector3(0.1f, 1, 0.1f), Cue(2), 0, 1, Vector3.zero);
-                lights.Add(new Vector3(0.5f, 1, 0.4f), Cue(2), 0, 1, Vector3.zero);
+                // Two cues in one 1.5 m cell merge; a third far away is its own cluster, even at the coarsest cell.
+                lights.Add(new Vector3(-0.5f, 1, 0.1f), Cue(2), 0, 1, Vector3.zero);
+                lights.Add(new Vector3(-0.1f, 1, 0.4f), Cue(2), 0, 1, Vector3.zero);
                 lights.Add(new Vector3(8.2f, 1, 3.1f), Cue(1), 0, 1, Vector3.zero);
                 lights.Update(0.5, cam);
                 Assert.That(lights.ActiveCues, Is.EqualTo(3));
                 Assert.That(lights.Clusters, Is.EqualTo(2));
                 Assert.That(lights.VisibleClusters, Is.EqualTo(2));
                 Assert.That(lights.LightsUsed, Is.EqualTo(1));
-                // The pool of one keeps the strong cluster (intensity 4): 1 of 5 dropped.
+                // The pool of one keeps the strong cluster (intensity 4): 1 of 5 dropped, after the cell grew as far as it may.
                 Assert.That(lights.DropShare, Is.EqualTo(0.2).Within(1e-6));
+                Assert.That(lights.CellUsed, Is.EqualTo(EffectLights.DefaultCell * EffectLights.MaxCellGrowth));
                 // Expired cues leave.
                 lights.Update(2.0, cam);
                 Assert.That(lights.ActiveCues, Is.EqualTo(0));

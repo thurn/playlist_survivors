@@ -33,6 +33,7 @@ namespace Demo3D.Choreography.Cli
                             System.Numerics.Vector2 hp = tl.PositionAt(0, ht);
                             Console.WriteLine("hero at " + ht.ToString("F0", CultureInfo.InvariantCulture) + " s: (" + hp.X.ToString("F1", CultureInfo.InvariantCulture) + ", " + hp.Y.ToString("F1", CultureInfo.InvariantCulture) + ") in " + tl.Sections[tl.Map.SectionIndexAt(ht)].Label);
                         }
+                    if (Has(args, "--onscreen")) OnScreenSeries(tl, DoubleOpt(args, "--from", 0), DoubleOpt(args, "--to", tl.Duration));
                     Dump(tl, args);
                     return 0;
                 }
@@ -137,6 +138,34 @@ namespace Demo3D.Choreography.Cli
             System.Numerics.Vector2 centre = Opt(args, "--cx") != null ? new System.Numerics.Vector2((float)DoubleOpt(args, "--cx"), (float)DoubleOpt(args, "--cy")) : tl.FramingAt(t).Focus;
             LayoutPng.Write(png, data.Layout.Arena, data.Layout.Placements, px, null, dots.ToArray(), hero, centre, span);
             Console.WriteLine("snapshot: " + png + " at " + t.ToString("F2", CultureInfo.InvariantCulture) + " s, " + dots.Count + " monsters");
+        }
+
+        /// <summary>--onscreen [--from S] [--to S]: monsters on screen (alive / dying) each second, against the section's target.</summary>
+        static void OnScreenSeries(Timeline tl, double from, double to)
+        {
+            var deathAt = new double[tl.EntityCount];
+            for (int e = 0; e < tl.EntityCount; e++)
+            {
+                deathAt[e] = double.PositiveInfinity;
+                foreach (ActionEvent a in tl.ActionsOf(e)) if (a.Kind == ActionKind.Death) { deathAt[e] = a.Impact; break; }
+            }
+            for (double t = Math.Ceiling(from); t < to; t += 1)
+            {
+                FramingSample f = tl.FramingAt(t);
+                var view = new ViewGeometry(f.ViewWidth);
+                int alive = 0, dying = 0;
+                for (int e = 1; e < tl.EntityCount; e++)
+                {
+                    EntityInfo info = tl.Entities[e];
+                    if (info.Kind != EntityKind.Monster || t < info.Spawn || t >= info.Despawn) continue;
+                    if (!view.Contains(f.Focus, tl.PositionAt(e, t))) continue;
+                    if (t >= deathAt[e]) dying++; else alive++;
+                }
+                SectionStats s = tl.Sections[tl.Map.SectionIndexAt(t)];
+                System.Numerics.Vector2 h = tl.PositionAt(0, t);
+                Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0,6:F0} s {1,-11} on screen {2,4} + {3,3} dying, target {4,4}, view {5,4:F1} m, hero ({6:F1}, {7:F1})",
+                    t, s.Label, alive, dying, s.TargetOnScreen, f.ViewWidth, h.X, h.Y));
+            }
         }
 
         static void Dump(Timeline tl, string[] args)

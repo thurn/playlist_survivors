@@ -48,6 +48,13 @@ namespace Demo3D.Runtime.Effects
         double _origin;
 
         public float Cell = DefaultCell;
+        /// <summary>The coarsest cell the clustering may grow to, as a multiple of <see cref="Cell"/>.</summary>
+        public const float MaxCellGrowth = 8f;
+        /// <summary>The cell the last update clustered at: <see cref="Cell"/>, or coarser while the pool overflowed.</summary>
+        public float CellUsed { get; private set; } = DefaultCell;
+        /// <summary>How long a coarsened cell holds after the overflow that set it.</summary>
+        public const float CellHoldSeconds = 0.5f;
+        float _cellHeld = DefaultCell, _cellHeldUntil = float.NegativeInfinity;
         public int PoolSize => _pool.Length;
         /// <summary>Active cues, visible clusters, lights used and the dropped share of visible intensity, this frame.</summary>
         public int ActiveCues { get; private set; }
@@ -85,6 +92,8 @@ namespace Demo3D.Runtime.Effects
             _cues.Clear();
             foreach (var l in _pool) l.enabled = false;
             LightsUsed = 0;
+            _cellHeld = Cell;
+            _cellHeldUntil = float.NegativeInfinity; // a seek starts at the fine cell
         }
 
         public void Add(Vector3 position, in LightCue cue, double time, float scale, Vector3 velocity)
@@ -99,61 +108,53 @@ namespace Demo3D.Runtime.Effects
         public void Update(double now, Camera camera)
         {
             float t = (float)(now - _origin);
-            // Evaluate and expire cues, clustering the live ones.
-            _cells.Clear();
-            int n = 0;
+            // Expire cues.
             int w = 0;
             for (int i = 0; i < _cues.Count; i++)
-            {
-                var c = _cues[i];
-                float age = t - c.Start;
-                if (age >= c.Source.Duration) continue;
-                _cues[w++] = c;
-                if (age < 0) continue;
-                float intensity = c.Source.At(age) * IntensityScale;
-                if (intensity <= 0) continue;
-                Vector3 p = c.Position + c.Velocity * age;
-                long key = Key(p);
-                if (!_cells.TryGetValue(key, out int k))
-                {
-                    if (n == _clusters.Length) Grow();
-                    k = n++;
-                    _cells[key] = k;
-                    _clusters[k] = default;
-                }
-                ref var cl = ref _clusters[k];
-                cl.Intensity += intensity;
-                cl.Weighted += p * intensity;
-                cl.Color += new Vector3(c.Color.r, c.Color.g, c.Color.b) * intensity;
-                cl.Range = Mathf.Max(cl.Range, c.Range);
-            }
+                if (t - _cues[i].Start < _cues[i].Source.Duration) _cues[w++] = _cues[i];
             _cues.RemoveRange(w, _cues.Count - w);
             ActiveCues = w;
-            Clusters = n;
 
-            // Cull by the view, score by screen contribution.
-            int visible = 0;
-            double total = 0;
-            if (camera != null)
+            // Cluster the live cues by cell, cull by the view and score by screen contribution. When
+            // more clusters are visible than the pool holds (hundreds of deaths in one beat: the
+            // ending's last slam, TD13), cluster again at twice the cell, up to 8x: the light merges
+            // into fewer, wider sources instead of dropping out.
+            if (camera != null) GeometryUtility.CalculateFrustumPlanes(camera, _planes);
+            int n, visible;
+            double total;
+            // A coarsened cell holds for CellHoldSeconds, so lights don't jump between cell sizes every frame while the count hovers at the pool's size.
+            float cell = t < _cellHeldUntil ? Mathf.Max(Cell, Mathf.Min(_cellHeld, Cell * MaxCellGrowth)) : Cell;
+            while (true)
             {
-                GeometryUtility.CalculateFrustumPlanes(camera, _planes);
-                var camPos = camera.transform.position;
-                float tanHalf = Mathf.Tan(camera.fieldOfView * 0.5f * Mathf.Deg2Rad);
-                for (int k = 0; k < n; k++)
+                n = ClusterCues(t, cell);
+                visible = 0;
+                total = 0;
+                if (camera != null)
                 {
-                    ref var cl = ref _clusters[k];
-                    var p = cl.Position;
-                    if (!SphereVisible(p, cl.Range)) continue;
-                    float dist = Mathf.Max(0.01f, Vector3.Distance(p, camPos));
-                    float rScreen = cl.Range / (dist * tanHalf); // fraction of the half view height
-                    float area = Mathf.Min(1f, rScreen * rScreen);
-                    cl.Score = cl.Intensity * area;
-                    _order[visible] = k;
-                    _keys[visible] = -cl.Score;
-                    visible++;
-                    total += cl.Intensity;
+                    var camPos = camera.transform.position;
+                    float tanHalf = Mathf.Tan(camera.fieldOfView * 0.5f * Mathf.Deg2Rad);
+                    for (int k = 0; k < n; k++)
+                    {
+                        ref var cl = ref _clusters[k];
+                        var p = cl.Position;
+                        if (!SphereVisible(p, cl.Range)) continue;
+                        float dist = Mathf.Max(0.01f, Vector3.Distance(p, camPos));
+                        float rScreen = cl.Range / (dist * tanHalf); // fraction of the half view height
+                        float area = Mathf.Min(1f, rScreen * rScreen);
+                        cl.Score = cl.Intensity * area;
+                        _order[visible] = k;
+                        _keys[visible] = -cl.Score;
+                        visible++;
+                        total += cl.Intensity;
+                    }
                 }
+                if (visible <= _pool.Length || cell >= Cell * MaxCellGrowth) break;
+                cell *= 2;
             }
+            Clusters = n;
+            if (cell > Cell && (cell > _cellHeld || t >= _cellHeldUntil)) { _cellHeld = cell; _cellHeldUntil = t + CellHoldSeconds; }
+            else if (t >= _cellHeldUntil) _cellHeld = Cell;
+            CellUsed = cell;
             VisibleClusters = visible;
             Array.Sort(_keys, _order, 0, visible);
             int used = Mathf.Min(visible, _pool.Length);
@@ -186,9 +187,39 @@ namespace Demo3D.Runtime.Effects
             return true;
         }
 
-        long Key(Vector3 p)
+        /// <summary>Clusters the live cues at song time <paramref name="t"/> by cells of <paramref name="cell"/> metres; returns the count.</summary>
+        int ClusterCues(float t, float cell)
         {
-            long x = Mathf.FloorToInt(p.x / Cell) & 0x1FFFFF, y = Mathf.FloorToInt(p.y / Cell) & 0x1FFFFF, z = Mathf.FloorToInt(p.z / Cell) & 0x1FFFFF;
+            _cells.Clear();
+            int n = 0;
+            for (int i = 0; i < _cues.Count; i++)
+            {
+                var c = _cues[i];
+                float age = t - c.Start;
+                if (age < 0) continue;
+                float intensity = c.Source.At(age) * IntensityScale;
+                if (intensity <= 0) continue;
+                Vector3 p = c.Position + c.Velocity * age;
+                long key = Key(p, cell);
+                if (!_cells.TryGetValue(key, out int k))
+                {
+                    if (n == _clusters.Length) Grow();
+                    k = n++;
+                    _cells[key] = k;
+                    _clusters[k] = default;
+                }
+                ref var cl = ref _clusters[k];
+                cl.Intensity += intensity;
+                cl.Weighted += p * intensity;
+                cl.Color += new Vector3(c.Color.r, c.Color.g, c.Color.b) * intensity;
+                cl.Range = Mathf.Max(cl.Range, c.Range);
+            }
+            return n;
+        }
+
+        static long Key(Vector3 p, float cell)
+        {
+            long x = Mathf.FloorToInt(p.x / cell) & 0x1FFFFF, y = Mathf.FloorToInt(p.y / cell) & 0x1FFFFF, z = Mathf.FloorToInt(p.z / cell) & 0x1FFFFF;
             return (x << 42) | (y << 21) | z;
         }
 

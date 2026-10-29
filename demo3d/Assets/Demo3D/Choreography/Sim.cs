@@ -48,6 +48,7 @@ namespace Demo3D.Choreography
         const float FarDespawn = 30f;
         const float MaxStepReach = 1.4f;         // the longest step a neighbour takes in a beat (0.95 m × 1.3 off screen), plus margin
         const float ReleaseLeadSeconds = 2.5f;
+        const double SectionLeadSeconds = 4;   // releases look ahead to a fuller next section this far (TD13)
         const float AheadCos = 0.2588f;          // cos 75°
         const float MaxShapeScale = 4f, HitsShapeScale = 2.5f, MaxShapeViewFraction = 0.25f;
         const float OffscreenStride = 1.3f;     // culled monsters walking in take longer steps
@@ -633,10 +634,28 @@ namespace Demo3D.Choreography
             offscreenAlive = offN;
             // Release the deficit plus the deaths expected while a released monster walks in from the
             // spawn band (about 3 s), nearest the view's edge first.
-            int deficit = plan.TargetOnScreen - onScreenCount + (int)Math.Round(deathRate * ReleaseLeadSeconds);
-            if (deficit <= 0 || offN == 0) return;
+            int deficit = TargetAhead(tb, out _) - onScreenCount + (int)Math.Round(deathRate * ReleaseLeadSeconds);
+            if (deficit <= 0 || offN == 0 || plan.Clear) return;   // a clearing section lets no more in
             Array.Sort(offKeys, offIds, 0, offN);
             for (int i = 0; i < offN && i < deficit; i++) released[offIds[i]] = true;
+        }
+
+        /// <summary>
+        /// The on-screen target releases and refills work toward: the section's own, or within
+        /// <see cref="SectionLeadSeconds"/> of a section with a larger one, that section's (TD13: a
+        /// drop then lands with its horde instead of filling over the next 20 s).
+        /// </summary>
+        int TargetAhead(double tb, out int reserve)
+        {
+            reserve = plan.Reserve;
+            int target = plan.TargetOnScreen;
+            int next = curSection + 1;
+            if (next < plans.Length && !plans[next].Clear && map.Sections[next].Start - tb <= SectionLeadSeconds && plans[next].TargetOnScreen > target)
+            {
+                target = plans[next].TargetOnScreen;
+                reserve = plans[next].Reserve;
+            }
+            return target;
         }
 
         // ------------------------------------------------------------------ the hero
@@ -658,7 +677,7 @@ namespace Demo3D.Choreography
             // scales them (TD6: walls slow the horde, and a hero idling inside its own kill zone starves the
             // kill budget); travelling, only what is within its unscaled reach.
             float reach = goalReached && nav != null ? Math.Max(roster.HeroReachM, Scaled(roster.HeroReachM)) : roster.HeroReachM;
-            if (canAct && AnyMonsterWithin(h, reach, ahead))
+            if (canAct && (plan.Clear || AnyMonsterWithin(h, reach, ahead)))   // a clearing section slams on every accent
             {
                 ScheduleHeroAction(tb, Math.Max(tb, heroLastEnd));
                 return;
@@ -1380,7 +1399,8 @@ namespace Demo3D.Choreography
                     if (mv.Effect >= 0)
                         effects.Add(new EffectEvent(mv.Effect, 0, Rng.Hash(seed, (uint)effects.Count, 0xC0B0), t, new Vector3(0, 1f, 0), im.Yaw, shapeScale));
                     Sound(mv.Sound >= 0 ? mv.Sound : Catalog.SwingSound, t, im.Strength);
-                    Strike(t, o, n, im.Strength, true);
+                    if (plan.Clear) ClearStrike(t, o, im.Strength);
+                    else Strike(t, o, n, im.Strength, true);
                     break;
                 }
                 case ImpactKind.Ring:
@@ -1589,6 +1609,36 @@ namespace Demo3D.Choreography
             }
         }
 
+        /// <summary>
+        /// A clearing section's blow (the ending, TD13): it kills its share of the monsters alive on
+        /// screen, nearest first, so that each accent left takes as many and the last takes the rest;
+        /// its shockwave is a ring to the view's edge. The kill budget doesn't apply.
+        /// </summary>
+        void ClearStrike(double t, Vector2 o, float strength)
+        {
+            var view = new ViewGeometry(viewWidth);
+            int left = 0;   // this section's accents after this one
+            for (int gi = grid.FirstAfter(t + 1e-6); gi < grid.Count && grid.Points[gi].Section == curSection; gi++)
+                if ((grid.Points[gi].Flags & GridFlags.Accent) != 0) left++;
+            // The last blow also takes the off-screen band, which the view's drift after it would reveal.
+            float margin = left == 0 ? SpawnMargin + SpawnBand : 0;
+            int c = 0;
+            for (int i = 0; i < liveCount; i++)
+            {
+                int m = live[i];
+                if (state[m] != Alive || !view.Contains(focus, MonsterPosAt(m, t), radius[m] + margin)) continue;
+                if (c == keys.Length) { Array.Resize(ref keys, c * 2); Array.Resize(ref order, c * 2); }
+                keys[c] = ((long)(Vector2.Distance(MonsterPosAt(m, t), o) * 1000) << 24) | (long)(m & 0xFFFFFF);
+                order[c] = m;
+                c++;
+            }
+            Array.Sort(keys, order, 0, c);
+            int kills = (c + left) / (left + 1);
+            for (int i = 0; i < kills; i++) Kill(order[i], t, strength);
+            barStruck += kills;
+            effects.Add(new EffectEvent(Catalog.Effect("ring"), -1, Rng.Hash(seed, (uint)effects.Count, 0xC1EA), t, new Vector3(o.X, 0.1f, o.Y), 0, viewWidth / 2));
+        }
+
         void Hit(int m, double t, Vector2 origin, float strength)
         {
             MonsterType mt = roster.Monsters[etype[m]];
@@ -1692,9 +1742,9 @@ namespace Demo3D.Choreography
         void Refill(double tb, ViewGeometry current)
         {
             int total = onScreenCount + offscreenAlive;
-            int want = plan.TargetOnScreen + plan.Reserve;
+            int want = TargetAhead(tb, out int reserve) + reserve;
             int need = want - total;
-            if (need <= 0) return;
+            if (need <= 0 || plan.Clear) return;
             need = Math.Min(need, Math.Max(24, want / 6));
             var view = new ViewGeometry(Math.Max(current.Width, plan.ViewWidth));
             Vector2 travel = Vector2.Zero;

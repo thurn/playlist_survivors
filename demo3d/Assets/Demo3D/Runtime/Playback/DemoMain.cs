@@ -33,6 +33,7 @@ namespace Demo3D.Runtime.Playback
         EffectSystem _fx;
         EffectDriver _fxDriver;
         double _fxLast = double.NaN;
+        SongRunCheck _songCheck;
         CameraFeel _feel;
         SoundScheduler _sounds;
         // TD15's beauty shots: --hold-at x,y (a stress scene's hero holds that point), --beauty-empty (no
@@ -64,6 +65,7 @@ namespace Demo3D.Runtime.Playback
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void AutoStart()
         {
+            if (UnityEngine.Object.FindAnyObjectByType<Demo3D.Runtime.Crowd.SkeletonLodPreview>() != null) return;
             if (Application.isEditor || Args.Has("--frame-probe") || Args.Has("--bench") || Args.Has("--crowd-bench") || Args.Has("--no-demo") || Args.Has("--effect-gallery")) return;
             new GameObject("DemoMain").AddComponent<DemoMain>();
         }
@@ -76,7 +78,8 @@ namespace Demo3D.Runtime.Playback
             _flags = DevFlags.FromCommandLine();
             Cuts.Active = Cuts.FromCommandLine();
             Debug.Log($"DemoMain: effective {Cuts.Active.Describe()} (--cuts; TD11)");
-            QualitySettings.vSyncCount = _flags.FixedTime ? 0 : 1;
+            // The song check measures uncapped, as the harness does: at the display rate the GPU clocks down and its times inflate.
+            QualitySettings.vSyncCount = _flags.FixedTime || _flags.SongCheck != null ? 0 : 1;
             Application.targetFrameRate = -1;
             // The empty boot scene's default camera and light would draw and light the frame too.
             foreach (var c in FindObjectsByType<Camera>(FindObjectsInactive.Include)) Destroy(c.gameObject);
@@ -366,6 +369,8 @@ namespace Demo3D.Runtime.Playback
 
             _captureAt = _capture != null ? t : double.NaN; // read back once URP has drawn it
             WriteStats(t);
+            if (_flags.SongCheck != null)
+                (_songCheck ??= new SongRunCheck()).Update(t, _fx?.TakeRejected() ?? 0, _fx?.Lights.DropShare ?? 0);
             _lastWall = Time.realtimeSinceStartupAsDouble;
             _clock.EndFrame();
             // Quit on the next frame, so this frame is drawn (and captured) first.
@@ -486,6 +491,9 @@ namespace Demo3D.Runtime.Playback
         {
             _stats?.Dispose();
             _stats = null;
+            if (_songCheck != null && !_songCheck.Write(_flags.SongCheck, _tl.Duration, Environment.CommandLine) && code == 0) code = 2;
+            _songCheck?.Dispose();
+            _songCheck = null;
             _capture?.Dispose();
             _capture = null;
             Debug.Log($"DemoMain: done at song time {SongTime.ToString("F2", CultureInfo.InvariantCulture)}" +
@@ -497,6 +505,7 @@ namespace Demo3D.Runtime.Playback
         void OnDestroy()
         {
             _capture?.Dispose();
+            _songCheck?.Dispose();
             _fx?.Dispose();
             _crowd?.Dispose();
             _heroRenderer?.Dispose();

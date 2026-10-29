@@ -112,4 +112,4 @@ def test_pix_command_lines_quote_the_player_arguments(tmp_path: Path) -> None:
     assert '--command-line="-force-d3d12 ' in cmd
     assert "--hold n:2000,viewWidthM:40,load:demo,aa:msaa4" in cmd
     assert cmd.count("=") == 1  # only the option's own: pixtool splits at the last "="
-    assert cmd.endswith("programmatic-capture")
+    assert "programmatic-capture --open save-capture" in cmd and cmd.endswith('capture.wpix"')

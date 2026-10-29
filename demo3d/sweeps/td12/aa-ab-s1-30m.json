@@ -1,0 +1,6 @@
+{
+  "_comment": "TD12: MSAA 4x against TAA at a matched count, S1 at demo load, 30 m and 591 requested (the 30 m S3 frontier), the finished arena with TD11's defaults; both modes in one process, minutes apart. S1 has no effects: it separates the crowd and scene's share of MSAA's cost from the effects'.",
+  "scene": "S1", "seconds": 20, "warmup": 5, "rewarm": 3,
+  "n": { "fixed": [591] }, "viewWidthM": [30], "load": ["demo"], "aa": ["msaa4", "taa", "msaa4", "taa"], "jobWorkers": 6,
+  "sceneOptions": { "crowd": "bone", "arena": "e2", "density": 2, "cuts": "default" }
+}

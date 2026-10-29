@@ -48,21 +48,12 @@ namespace Demo3D.Runtime.Bench
         int? _memMHz;
         int _jobWorkers, _bbW, _bbH;
 
-        // Frame timing.
-        struct FrameRec
-        {
-            public ulong Start;
-            public double Gpu, Main, Render, Cpu;
-        }
-
-        readonly FrameTiming[] _ft = new FrameTiming[64];
+        // Frame timing (FrameTimingCollector: the song check shares its policy).
         const double MaxGpuZeroShare = 0.005;
-        readonly List<FrameRec> _frames = new List<FrameRec>();
-        ulong _lastFrameStart;
+        readonly FrameTimingCollector _timing = new FrameTimingCollector();
+        List<FrameTimingCollector.Frame> _frames => _timing.Frames;
+        ulong _lastFrameStart => _timing.LastFrameStart;
         double _ftmPerTick = 1; // FrameTimingManager timer ticks per QueryPerformanceCounter tick
-        ulong _committed;
-        readonly Dictionary<ulong, FrameRec> _pending = new Dictionary<ulong, FrameRec>();
-        readonly List<ulong> _keys = new List<ulong>();
         readonly List<long[]> _excluded = new List<long[]>();
         long _prevUpdate;
         bool _closeExclusion;
@@ -699,51 +690,11 @@ namespace Demo3D.Runtime.Bench
             _prevUpdate = now;
         }
 
-        /// <summary>
-        /// Collects every frame's timing once it is complete. GetLatestTimings returns the newest
-        /// frames first, and the newest ones don't have their GPU time yet (it reads 0). A frame
-        /// stays pending, updated on every poll, until at least 24 newer frames exist and its GPU
-        /// time has arrived, or until it is about to leave GetLatestTimings' 64-frame window.
-        /// Frames are committed in order, so an unfinished one holds back the newer ones (the
-        /// foundations review: dropping zero readings biased GPU p99 low, since the frames still
-        /// unfinished tend to be the slow ones; 20% of a passing probe's frames read zero).
-        /// </summary>
         void PollTimings()
         {
-            int Hold = Args.GetInt("--timing-hold", 24);
-            FrameTimingManager.CaptureFrameTimings();
-            uint n = FrameTimingManager.GetLatestTimings((uint)_ft.Length, _ft);
-            for (int i = 0; i < n; i++)
-            {
-                var f = _ft[i];
-                if (f.frameStartTimestamp <= _committed) continue;
-                _lastFrameStart = Math.Max(_lastFrameStart, f.frameStartTimestamp);
-                _pending[f.frameStartTimestamp] = new FrameRec
-                {
-                    Start = f.frameStartTimestamp,
-                    Gpu = f.gpuFrameTime,
-                    // The main thread's work time; its wait in Present is reported separately.
-                    Main = f.cpuMainThreadFrameTime,
-                    Render = f.cpuRenderThreadFrameTime,
-                    Cpu = f.cpuFrameTime,
-                };
-            }
-            if (_pending.Count <= Hold) return;
-            _keys.Clear();
-            _keys.AddRange(_pending.Keys);
-            _keys.Sort();
-            int window = _ft.Length - 2;
-            for (int i = 0; i < _keys.Count - Hold; i++)
-            {
-                // Wait for the GPU time while the frame can still be read again.
-                if (_pending[_keys[i]].Gpu <= 0 && _keys.Count - i < window) break;
-                _frames.Add(_pending[_keys[i]]);
-                _pending.Remove(_keys[i]);
-                _committed = _keys[i];
-            }
-            if (_frames.Count > 200000) _frames.RemoveRange(0, 100000);
+            _timing.Hold = Args.GetInt("--timing-hold", 24);
+            _timing.Poll();
         }
-
         void Log(string line)
         {
             var stamped = $"{DateTime.Now:HH:mm:ss} {line}";

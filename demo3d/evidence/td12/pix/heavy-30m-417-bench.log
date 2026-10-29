@@ -1,0 +1,9 @@
+22:28:21 sweep 20261028-222821: D:\wt\td12\demo3d\sweeps\td12\s3-msaa4-heavy.json -> D:\wt\td12\demo3d\Logs\pix\heavy-30m-417
+22:28:21 took the machine lock D:\cache\playlist-survivors\demo3d\bench.lock
+22:28:22 display was on, now on after 0.0 s (watching: True); held on for the sweep
+22:28:22 GPU 40 °C, throttle none
+22:28:28 machine quiet: other processes 3.1% CPU over 5 s (waited 6 s)
+22:28:28 machine {"sweep": "20261028-222821", "api": "d3d12", "gpu": "NVIDIA GeForce RTX 4070 Ti", "driver": "610.88", "cpu": "12th Gen Intel(R) Core(TM) i7-12700F", "logicalCores": 20, "powerPlan": "high", "powerPlanName": "High performance", "memMHz": 2133, "jobWorkers": 6, "backbuffer": "1920x1080", "display": "on", "gpuTempC": 38, "gpuThrottle": "none", "quietWaitS": 6, "otherCpuPctAtStart": 3.1, "requireForeground": true, "unity": "6000.6.7f1", "backend": "il2cpp", "commandLine": "D:\\wt\\td12\\demo3d\\Builds\\il2cpp\\PlaylistSurvivors3D.exe -force-d3d12 -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --bench D:\\wt\\td12\\demo3d\\sweeps\\td12\\s3-msaa4-heavy.json --out D:\\wt\\td12\\demo3d\\Logs\\pix\\heavy-30m-417 -logFile D:\\wt\\td12\\demo3d\\Logs\\pix\\heavy-30m-417\\player.log --hold n:417,viewWidthM:30,load:heavy,aa:msaa4 --pix-capture D:\\wt\\td12\\demo3d\\Logs\\pix\\heavy-30m-417\\capture.wpix --pix-frames 1"}
+22:28:28 clocks: FrameTimingManager 10000000 Hz, QueryPerformanceCounter 10000000 Hz, newest frame started 437.0 ms ago
+22:28:28 rebuilt for n 417 in 443 ms
+22:28:33 PIX: PIXGpuCaptureNextFrames(D:\wt\td12\demo3d\Logs\pix\heavy-30m-417\capture.wpix, 1) returned 0x00000000

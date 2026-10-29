@@ -1,0 +1,35 @@
+22:01:01 sweep 20261028-220101: D:\wt\td12\demo3d\sweeps\td12\s3-msaa4-heavy-55m-first-window.json -> D:\wt\td12\demo3d\Logs\bench\td12-heavy55
+22:01:01 the orchestrator holds the machine lock
+22:01:02 display was on, now on after 0.0 s (watching: True); held on for the sweep
+22:01:06 GPU 48 °C, throttle none
+22:01:12 machine quiet: other processes 2.6% CPU over 5 s (waited 6 s)
+22:01:12 machine {"sweep": "20261028-220101", "api": "d3d12", "gpu": "NVIDIA GeForce RTX 4070 Ti", "driver": "610.88", "cpu": "12th Gen Intel(R) Core(TM) i7-12700F", "logicalCores": 20, "powerPlan": "high", "powerPlanName": "High performance", "memMHz": 2133, "jobWorkers": 6, "backbuffer": "1920x1080", "display": "on", "gpuTempC": 47, "gpuThrottle": "none", "quietWaitS": 6, "otherCpuPctAtStart": 2.6, "requireForeground": true, "unity": "6000.6.7f1", "backend": "il2cpp", "commandLine": "D:\\wt\\td12\\demo3d\\Builds\\il2cpp\\PlaylistSurvivors3D.exe -force-d3d12 -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --bench D:\\wt\\td12\\demo3d\\sweeps\\td12\\s3-msaa4-heavy-55m-first-window.json --out D:\\wt\\td12\\demo3d\\Logs\\bench\\td12-heavy55 -logFile D:\\wt\\td12\\demo3d\\Logs\\bench\\td12-heavy55\\player.log --lock-held"}
+22:01:12 clocks: FrameTimingManager 10000000 Hz, QueryPerformanceCounter 10000000 Hz, newest frame started 423.2 ms ago
+22:01:12 point 55m/heavy/msaa4: capacity 5355, ceiling 5355, seed none
+22:01:13 rebuilt for n 1151 in 835 ms
+22:01:26 probe n 1151 55m/heavy/msaa4: gpu p99 5.92 main 5.56 render 0.85 ms -> fail (gpu 1.41) NOISY
+22:01:30 rebuilt for n 2728 in 3412 ms
+22:01:41 probe n 2728 55m/heavy/msaa4: gpu p99 10.95 main 12.49 render 1.00 ms -> fail (gpu 2.61) NOISY
+22:01:47 rebuilt for n 4304 in 5369 ms
+22:01:58 probe n 4304 55m/heavy/msaa4: gpu p99 12.03 main 13.87 render 1.03 ms -> fail (gpu 2.86) NOISY
+22:01:58 rebuilt for n 100 in 62 ms
+22:02:21 confirm n 100 55m/heavy/msaa4: gpu p99 1.22 main 1.61 render 0.78 ms -> pass (main 0.33) NOISY
+22:02:21 rebuilt for n 105 in 66 ms
+22:02:45 above n 105 55m/heavy/msaa4: gpu p99 1.23 main 1.64 render 0.77 ms -> pass (gpu 0.29) NOISY
+22:02:45 rebuilt for n 1151 in 788 ms
+22:03:08 bisect n 1151 55m/heavy/msaa4: gpu p99 5.67 main 5.50 render 0.92 ms -> fail (gpu 1.35) NOISY
+22:03:09 rebuilt for n 348 in 183 ms
+22:03:32 bisect n 348 55m/heavy/msaa4: gpu p99 2.41 main 2.38 render 0.84 ms -> pass (gpu 0.57) NOISY
+22:03:32 rebuilt for n 633 in 356 ms
+22:03:55 bisect n 633 55m/heavy/msaa4: gpu p99 3.88 main 3.44 render 0.91 ms -> pass (gpu 0.92) NOISY
+22:03:56 rebuilt for n 854 in 501 ms
+22:04:19 bisect n 854 55m/heavy/msaa4: gpu p99 4.90 main 4.39 render 0.89 ms -> fail (gpu 1.17) NOISY
+22:04:19 rebuilt for n 735 in 413 ms
+22:04:42 bisect n 735 55m/heavy/msaa4: gpu p99 4.14 main 3.79 render 0.91 ms -> pass (gpu 0.99) NOISY
+22:04:43 rebuilt for n 792 in 438 ms
+22:05:06 bisect n 792 55m/heavy/msaa4: gpu p99 4.75 main 4.10 render 0.88 ms -> fail (gpu 1.13) NOISY
+22:05:06 rebuilt for n 763 in 428 ms
+22:05:30 bisect n 763 55m/heavy/msaa4: gpu p99 4.33 main 3.96 render 0.91 ms -> fail (gpu 1.03) NOISY
+22:05:30 frontier 55m/heavy/msaa4: 735 (gpu), 3 probes + 9 full runs, fit 100 confirmed False
+22:05:30 sweep done
+22:05:30 exit 0

@@ -26,6 +26,34 @@ namespace Demo3D.Choreography.Tests
             Assert.That(accents, Is.GreaterThan(0));
         }
 
+        /// <summary>TD13: the ending's last accent slam leaves no monster alive on screen, to the song's end.</summary>
+        [Test]
+        public void TheEndingClearsTheScreen()
+        {
+            Timeline tl = Fixtures.SongTimeline;
+            SongMap map = tl.Map;
+            SongSection ending = map.Sections[map.Sections.Length - 1];
+            double last = -1;
+            foreach (TimedStrength a in map.Accents) if (a.Time >= ending.Start && a.Time < ending.End) last = a.Time;
+            int before = 0;
+            for (double t = last - 1e-3; t < tl.Duration; t += 0.25)
+            {
+                FramingSample f = tl.FramingAt(t);
+                var view = new ViewGeometry(f.ViewWidth);
+                int alive = 0;
+                foreach (EntityInfo e in tl.Entities)
+                {
+                    if (e.Kind != EntityKind.Monster || t < e.Spawn || t >= e.Despawn) continue;
+                    bool dead = false;
+                    foreach (ActionEvent a in tl.ActionsOf(e.Id)) if (a.Kind == ActionKind.Death && a.Impact <= t) dead = true;
+                    if (!dead && view.Contains(f.Focus, tl.PositionAt(e.Id, t))) alive++;
+                }
+                if (t < last) { before = alive; continue; }
+                Assert.That(alive, Is.EqualTo(0), "monsters alive on screen at " + t.ToString("F2") + " after the last slam");
+            }
+            Assert.That(before, Is.GreaterThan(50), "the last slam has a horde to clear");
+        }
+
         [Test]
         public void TicksNeverKnockAMonsterBack()
         {

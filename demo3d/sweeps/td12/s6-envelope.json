@@ -1,0 +1,6 @@
+{
+  "_comment": "TD12: S6 (walls and chokes: S3 at demo load with the hero holding the arena's walled courtyard) at the envelope, 30 m and 500 requested on screen, and at the 30 m S3 frontier's 591; fixed counts, MSAA 4x, the finished arena with TD11's defaults. The rows carry the sim's tick timing.",
+  "scene": "S6", "seconds": 20, "warmup": 5, "rewarm": 3,
+  "n": { "fixed": [500, 591] }, "viewWidthM": [30], "load": ["demo"], "aa": ["msaa4"], "jobWorkers": 6,
+  "sceneOptions": { "crowd": "bone", "arena": "e2", "density": 2, "cuts": "default" }
+}

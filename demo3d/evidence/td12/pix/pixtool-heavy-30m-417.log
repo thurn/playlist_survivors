@@ -1,0 +1,14 @@
+  0.0: Launching GpuPlayback engine
+  0.0: Opening D:\wt\td12\demo3d\Logs\pix\heavy-30m-417\capture.wpix
+  0.1: Capture OS: Windows 11 Core, version 25H2 (26200.9711)
+  0.1: Starting analysis on localhost
+  0.1: Connecting to: localhost
+  0.1: Playback: Adapter ID was set to 0
+  0.1: Playback: Trying to find adapter with capture-time LUID instead
+  0.1: [Adapters] Seeking adapter via DXGI (LUID 54611)
+  0.1: [Adapters] Enumerated adapter 'NVIDIA GeForce RTX 4070 Ti' (LUID 54611)
+  0.1: [Adapters] Adapter selected by matching adapter LUID
+  0.1: [IsDevModeEnabled]: LocalSettings=false, GroupPolicy=false, WCOS=false
+  0.1: pixtool error: PIXTOOL7 - Engine request failed
+
+  0.1: save-event-list failed: This feature requires developer mode to be enabled on the analysis device. Type "developer mode" into the start menu to find the correct setting. (E_PIX_FEATURE_REQUIRES_DEVELOPER_MODE)

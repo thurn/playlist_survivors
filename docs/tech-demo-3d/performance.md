@@ -91,8 +91,15 @@ window after 5 s of warm-up:
   [Benchmark Harness](benchmarks.md#benchmark-harness)).
 
 The demo's full song has no steady state. Its run passes when every 20 s
-window, starting every 5 s, meets the same lines, and no frame anywhere
-exceeds twice its line.
+window, starting every 5 s after the same 5 s of warm-up and one more ending
+at the run's last frame, meets the same lines (the drop share's limit
+included), and no frame after the warm-up exceeds twice its line (TD13: the
+first frames load, and are reported, not judged). The run is uncapped and
+collects frames as the harness does; a window where under half the frames
+have a GPU time fails, a GPU time over a second is counted as a garbage
+reading, and the machine's samples are recorded with the verdict (a noisy
+run is repeated, as the harness repeats one, not failed). The run must cover
+the whole song.
 
 The environment has a ceiling of its own: the empty arena, with lighting and
 post-processing, gets at most 1.5 ms of GPU p99 on Cygnus, about 4.5 ms of

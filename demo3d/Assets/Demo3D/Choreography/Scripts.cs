@@ -137,6 +137,7 @@ namespace Demo3D.Choreography
         public GridEntry[] Combo = new GridEntry[0];
         public GridEntry[] Spells = new GridEntry[0];
         public string Boss;             // a roster type that enters at the section's start
+        public bool Clear;              // the hero's combos clear the screen: no releases or refills (the ending, TD13)
     }
 
     /// <summary>The level script (choreography.md, "The choreographer"): per song-map section, its targets.</summary>
@@ -183,6 +184,7 @@ namespace Demo3D.Choreography
                     Combo = GridEntry.ParseList(s["combo"]),
                     Spells = GridEntry.ParseList(s["spells"]),
                     Boss = s["boss"].AsString(),
+                    Clear = s["clear"].AsBool(false),
                 };
                 LoadPreset.Get(ls.Sections[i].Load);
             }

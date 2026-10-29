@@ -1,0 +1,165 @@
+{
+  "counts": {
+    "A": {
+      "triangles": 2143,
+      "vertices": 4008
+    },
+    "B": {
+      "triangles": 2003,
+      "vertices": 4211
+    }
+  },
+  "budgetScale": 0.75,
+  "method": "CPU submission plus GPU completion (one-pixel readback); not GPU-only",
+  "device": "Apple M5 Max",
+  "api": "Metal",
+  "pairedBlocks": 36,
+  "medianPairedBOverA": 1.0126730787672082,
+  "individualPairedBlockRange": [
+    0.8939153997747747,
+    1.1188127787649127
+  ],
+  "costConfigurations": [
+    {
+      "instances": 1024,
+      "widthM": 30,
+      "pose": "walk",
+      "aMedianMs": 2.9026,
+      "bMedianMs": 2.99695,
+      "medianPairedRatio": 1.0157789567973543
+    },
+    {
+      "instances": 1024,
+      "widthM": 30,
+      "pose": "attack",
+      "aMedianMs": 2.79195,
+      "bMedianMs": 3.08535,
+      "medianPairedRatio": 1.0082021526173464
+    },
+    {
+      "instances": 1024,
+      "widthM": 30,
+      "pose": "crossfade",
+      "aMedianMs": 2.81935,
+      "bMedianMs": 2.81965,
+      "medianPairedRatio": 1.0013031438345008
+    },
+    {
+      "instances": 1024,
+      "widthM": 55,
+      "pose": "walk",
+      "aMedianMs": 2.4623500000000003,
+      "bMedianMs": 2.5452000000000004,
+      "medianPairedRatio": 1.0423884998157023
+    },
+    {
+      "instances": 1024,
+      "widthM": 55,
+      "pose": "attack",
+      "aMedianMs": 2.54225,
+      "bMedianMs": 2.5766,
+      "medianPairedRatio": 1.0173091896424364
+    },
+    {
+      "instances": 1024,
+      "widthM": 55,
+      "pose": "crossfade",
+      "aMedianMs": 2.43035,
+      "bMedianMs": 2.49395,
+      "medianPairedRatio": 0.9854393867551762
+    },
+    {
+      "instances": 4096,
+      "widthM": 30,
+      "pose": "walk",
+      "aMedianMs": 9.8253,
+      "bMedianMs": 10.08155,
+      "medianPairedRatio": 1.0220634767948724
+    },
+    {
+      "instances": 4096,
+      "widthM": 30,
+      "pose": "attack",
+      "aMedianMs": 9.717500000000001,
+      "bMedianMs": 9.9809,
+      "medianPairedRatio": 1.0078672498070491
+    },
+    {
+      "instances": 4096,
+      "widthM": 30,
+      "pose": "crossfade",
+      "aMedianMs": 9.71755,
+      "bMedianMs": 10.2362,
+      "medianPairedRatio": 1.0533725064445256
+    },
+    {
+      "instances": 4096,
+      "widthM": 55,
+      "pose": "walk",
+      "aMedianMs": 8.8385,
+      "bMedianMs": 8.9045,
+      "medianPairedRatio": 1.0074673304293715
+    },
+    {
+      "instances": 4096,
+      "widthM": 55,
+      "pose": "attack",
+      "aMedianMs": 8.581900000000001,
+      "bMedianMs": 9.1965,
+      "medianPairedRatio": 1.071615842645568
+    },
+    {
+      "instances": 4096,
+      "widthM": 55,
+      "pose": "crossfade",
+      "aMedianMs": 8.2102,
+      "bMedianMs": 8.69915,
+      "medianPairedRatio": 1.008008698040139
+    }
+  ],
+  "qualityAtGameSizes": [
+    {
+      "widthM": 30,
+      "A": {
+        "meanSilhouetteIoU": 0.8775783625776008,
+        "meanForegroundRgbMae": 0.07563927033267528
+      },
+      "B": {
+        "meanSilhouetteIoU": 0.9217162628586845,
+        "meanForegroundRgbMae": 0.060587259836011625
+      }
+    },
+    {
+      "widthM": 40,
+      "A": {
+        "meanSilhouetteIoU": 0.8763864416125865,
+        "meanForegroundRgbMae": 0.0722041756801346
+      },
+      "B": {
+        "meanSilhouetteIoU": 0.9217121846975123,
+        "meanForegroundRgbMae": 0.05797360504838796
+      }
+    },
+    {
+      "widthM": 55,
+      "A": {
+        "meanSilhouetteIoU": 0.8754744632583819,
+        "meanForegroundRgbMae": 0.06842522612227131
+      },
+      "B": {
+        "meanSilhouetteIoU": 0.9197949861892193,
+        "meanForegroundRgbMae": 0.05560543233865291
+      }
+    }
+  ],
+  "bSilhouetteWinsOf270": 267,
+  "bColourWinsOf270": 263,
+  "hashes": {
+    "source.json": "3b04b7bf2930bc4dc86ec0707ce5dc03d2d90317cf3e187b4df9ce318be8b6f9",
+    "A.json": "89c19f595d491a893aab3d69ac386b3e0fe5f4e77b718cc9da3561195acf481d",
+    "B-matched.json": "cb403daaf99bd00907f223a7792be9af926e2dda3b34c4beacb1fe244ef0e3b1",
+    "B-matched-recipe.json": "af03e5f2609a119fafab8db7ba4ff43cb7b8721579a86203bd4850e4b9444623"
+  },
+  "rawCostSha256": "dd8718ce769294a9c6abbfb7b777857ef03e58ca188c8e7b6dbe439043d28063",
+  "rawQualitySha256": "ed40d92a4e4d41889a9e83b276e5c6696ca4240ef6f892061541ff2290692c76"
+}

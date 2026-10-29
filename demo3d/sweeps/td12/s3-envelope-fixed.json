@@ -1,0 +1,6 @@
+{
+  "_comment": "TD12: S3 held at the envelope itself (500 requested on screen, 30 m, demo load, MSAA 4x, the finished arena with TD11's defaults): its GPU time, compute estimate and sim tick timing at the count the level script carries.",
+  "scene": "S3", "seconds": 20, "warmup": 5, "rewarm": 3,
+  "n": { "fixed": [500] }, "viewWidthM": [30], "load": ["demo"], "aa": ["msaa4"], "jobWorkers": 6,
+  "sceneOptions": { "crowd": "bone", "arena": "e2", "density": 2, "cuts": "default" }
+}

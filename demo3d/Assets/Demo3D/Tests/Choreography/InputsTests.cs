@@ -126,7 +126,11 @@ namespace Demo3D.Choreography.Tests
                 Assert.That(ls.ViewWidthM, Is.LessThanOrEqualTo(level.EnvelopeViewWidthM));
                 if (ls.Goal != null) Assert.That(Fixtures.Data.Layout.Goal(ls.Goal), Is.Not.Null, ls.Goal);
             }
-            Assert.That(level.EnvelopeOnScreen, Is.EqualTo(2000));
+            // TD12's envelope (evidence/td12/report.md): a count rounded down to 100 at a measured width,
+            // 500, which TD13 lowered in 5% steps (25) until the full song passed.
+            Assert.That(level.EnvelopeOnScreen, Is.GreaterThan(0).And.LessThanOrEqualTo(500));
+            Assert.That((500 - level.EnvelopeOnScreen) % 25, Is.EqualTo(0));
+            Assert.That(new[] { 30f, 40f, 55f }, Does.Contain(level.EnvelopeViewWidthM));
         }
 
         [Test]

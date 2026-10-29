@@ -362,6 +362,85 @@ namespace Demo3D.Tests
             Assert.That(MachineFacts.MemoryMHz(new byte[3]), Is.Null);
         }
 
+        static List<SongWindows.Frame> SongFrames(double seconds, Func<double, double> gpu)
+        {
+            var f = new List<SongWindows.Frame>();
+            for (int i = 0; i < seconds * 120; i++)
+                f.Add(new SongWindows.Frame { T = i / 120.0, GpuMs = gpu(i / 120.0), MainMs = 5, RenderMs = 4 });
+            return f;
+        }
+
+        [Test]
+        public void SongWindowsStepEveryFiveSecondsAndFailOnOneBadWindow()
+        {
+            var none = new List<(double, double)>();
+            var ok = SongWindows.Evaluate(SongFrames(60, t => 3), none, 0, L, 0.02);
+            // Every 5 s from the warm-up while a window fits, then one ending at the last frame.
+            double end = 7199 / 120.0 - SongWindows.Window;
+            Assert.That(ok.Windows.ConvertAll(w => w.From), Is.EqualTo(new[] { 5.0, 10, 15, 20, 25, 30, 35, end }).Within(1e-9));
+            Assert.That(ok.Pass, Is.True);
+            // 3 s at 4.5 ms (over the line, under twice it) fails exactly the windows that hold it.
+            var slow = SongWindows.Evaluate(SongFrames(60, t => t >= 41 && t < 44 ? 4.5 : 3), none, 0, L, 0.02);
+            Assert.That(slow.Windows.FindAll(w => !w.Pass).ConvertAll(w => w.From), Is.EqualTo(new[] { 25.0, 30, 35, end }).Within(1e-9));
+            Assert.That(slow.NoFrameOverTwice, Is.True);
+            Assert.That(slow.Pass, Is.False);
+        }
+
+        [Test]
+        public void SongWindowsFailOnOneSpikeARejectionOrDroppedLight()
+        {
+            var none = new List<(double, double)>();
+            var spike = SongWindows.Evaluate(SongFrames(40, t => Math.Abs(t - 12) < 0.004 ? 9 : 3), none, 0, L, 0.02);
+            Assert.That(spike.Windows.TrueForAll(w => w.Pass), Is.True, "one frame moves no p99");
+            Assert.That(spike.NoFrameOverTwice, Is.False);
+            Assert.That(spike.Pass, Is.False);
+            var loading = SongWindows.Evaluate(SongFrames(40, t => Math.Abs(t - 2) < 0.004 ? 900 : 3), none, 0, L, 0.02);
+            Assert.That(loading.Pass, Is.True, "a warm-up frame is reported, not judged");
+            Assert.That(loading.WarmupMaxGpu, Is.EqualTo(900));
+            Assert.That(SongWindows.Evaluate(SongFrames(40, t => 3), none, 1, L, 0.02).Pass, Is.False);
+            var drops = new List<(double, double)>();
+            for (double t = 0; t < 40; t += 0.1) drops.Add((t, t > 20 && t < 21 ? 0.1 : 0));
+            var dropped = SongWindows.Evaluate(SongFrames(40, t => 3), drops, 0, L, 0.02);
+            Assert.That(dropped.Windows[0].DropP99, Is.EqualTo(0.1));
+            Assert.That(dropped.Pass, Is.False);
+        }
+
+        [Test]
+        public void SongWindowsCountFramesWithoutGpuTimeOnlyOnTheCpuLines()
+        {
+            var f = SongFrames(30, t => 3);
+            for (int i = 0; i < f.Count; i += 100) f[i] = new SongWindows.Frame { T = f[i].T, MainMs = 5, RenderMs = 4 };
+            var r = SongWindows.Evaluate(f, new List<(double, double)>(), 0, L, 0.02);
+            Assert.That(r.Windows.Count, Is.EqualTo(2));
+            Assert.That(r.Windows[0].GpuP99, Is.EqualTo(3));
+            Assert.That(r.GpuZeroFrames, Is.EqualTo(36));
+            Assert.That(r.Noisy, Is.True, "1% of frames without a GPU time is noise");
+            Assert.That(r.Pass, Is.True, "noise is reported, as the harness does, not failed");
+            Assert.That(r.ToJson(), Does.Contain("\"song\": 5.00"));
+        }
+
+        /// <summary>The review of the answer milestone: no GPU data is no pass; the run's end is always judged; garbage readings are counted, not judged.</summary>
+        [Test]
+        public void SongWindowsFailWithoutGpuDataAndJudgeTheRunsEnd()
+        {
+            var none = new List<(double, double)>();
+            var blind = SongWindows.Evaluate(SongFrames(40, t => 0), none, 0, L, 0.02);
+            Assert.That(blind.Windows.TrueForAll(w => !w.Pass), Is.True);
+            Assert.That(blind.Pass, Is.False, "a run with no GPU times must not pass");
+            // 47 s: the last 2 s at 4.5 ms fall in no 5 s step's window, but the final window holds them.
+            var tail = SongWindows.Evaluate(SongFrames(47, t => t >= 45 ? 4.5 : 3), none, 0, L, 0.02);
+            Assert.That(tail.Windows[tail.Windows.Count - 1].From, Is.EqualTo(5639 / 120.0 - SongWindows.Window).Within(1e-9));
+            Assert.That(tail.Windows[tail.Windows.Count - 1].Pass, Is.False);
+            Assert.That(tail.Pass, Is.False);
+            // Song time can start before 0 (the pre-roll): windows count from the first frame.
+            var shifted = SongFrames(40, t => 3).ConvertAll(f => new SongWindows.Frame { T = f.T - 0.5, GpuMs = f.GpuMs, MainMs = f.MainMs, RenderMs = f.RenderMs });
+            Assert.That(SongWindows.Evaluate(shifted, none, 0, L, 0.02).Windows[0].From, Is.EqualTo(4.5).Within(1e-9));
+            var garbage = SongFrames(40, t => Math.Abs(t - 12) < 0.004 ? 1.6e13 : 3);
+            var g = SongWindows.Evaluate(garbage, none, 0, L, 0.02);
+            Assert.That(g.GpuGarbageFrames, Is.EqualTo(1));
+            Assert.That(g.Pass, Is.True, "a garbage GPU reading is missing data, not a spike");
+        }
+
         [Test]
         public void JsonReadsEscapesAndNesting()
         {

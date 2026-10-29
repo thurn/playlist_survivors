@@ -5,8 +5,12 @@
    `--frames` frames. pixtool launches it, which loads the capturer:
 
        pixtool launch <exe> --command-line="<player args> --hold n:..,viewWidthM:..,load:..,aa:..
-           --pix-capture <dir>\\capture.wpix --pix-frames 3" programmatic-capture
+           --pix-capture <dir>\\capture.wpix --pix-frames 3" programmatic-capture --open
+           save-capture <dir>\\capture.wpix
 
+   pixtool holds a programmatic capture itself (the API's file name isn't honoured under it), so
+   it opens the capture and saves it (TD12: without `--open save-capture` no file was written).
+   pixtool closes the player once it has the capture, so a hold under PIX writes no row.
    pixtool's --command-line must be quoted on the raw command line and can't contain '=' (it
    splits the option at the last '='), hence the colons in --hold.
 2. PIX replays the capture to time each event, and its event list goes to CSV:
@@ -40,7 +44,10 @@ def capture_command(exe: Path, spec: Path, out: Path, point: str, frames: int) -
         point = point.replace("=", ":")
     player = " ".join(sweep.player_args(spec, out, (1920, 1080), 6, [])) + \
         f" --hold {point} --pix-capture {out / 'capture.wpix'} --pix-frames {frames}"
-    return f'"{PIXTOOL}" launch "{exe}" --command-line="{player}" programmatic-capture'
+    # pixtool keeps a programmatic capture itself (the API's file name isn't honoured under it), so
+    # it opens the capture and saves it under that name (TD12: without these, no file was written).
+    return (f'"{PIXTOOL}" launch "{exe}" --command-line="{player}" programmatic-capture --open '
+            f'save-capture "{out / "capture.wpix"}"')
 
 
 def event_list_command(out: Path) -> str:

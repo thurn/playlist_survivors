@@ -82,6 +82,7 @@ namespace Demo3D.Choreography
                     Boss = ls.Boss == null ? -1 : data.Roster.MonsterIndex(ls.Boss),
                     HeroAttacks = true,
                     MonsterAttacks = true,
+                    Clear = ls.Clear,
                 };
                 if (ls.Boss != null && plans[i].Boss < 0) throw new FormatException("level script: unknown boss type '" + ls.Boss + "'");
             }
@@ -142,6 +143,7 @@ namespace Demo3D.Choreography
         public GridEntry[] Combo, Spells;
         public int Boss;
         public bool HeroAttacks, MonsterAttacks;
+        public bool Clear;              // see LevelSection.Clear
     }
 
     static class RosterExtensions

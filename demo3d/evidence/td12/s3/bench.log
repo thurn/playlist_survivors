@@ -1,0 +1,758 @@
+19:43:25 sweep 20261028-194325: D:\wt\td12\demo3d\sweeps\td12\s3-msaa4-demo.json -> D:\wt\td12\demo3d\Logs\bench\td12-s3
+19:43:25 the orchestrator holds the machine lock
+19:43:26 display was on, now on after 0.0 s (watching: True); held on for the sweep
+19:43:26 GPU 44 °C, throttle none
+19:43:31 machine quiet: other processes 6.5% CPU over 5 s (waited 6 s)
+19:43:31 machine {"sweep": "20261028-194325", "api": "d3d12", "gpu": "NVIDIA GeForce RTX 4070 Ti", "driver": "610.88", "cpu": "12th Gen Intel(R) Core(TM) i7-12700F", "logicalCores": 20, "powerPlan": "high", "powerPlanName": "High performance", "memMHz": 2133, "jobWorkers": 6, "backbuffer": "1920x1080", "display": "on", "gpuTempC": 43, "gpuThrottle": "none", "quietWaitS": 6, "otherCpuPctAtStart": 6.5, "requireForeground": true, "unity": "6000.6.7f1", "backend": "il2cpp", "commandLine": "D:\\wt\\td12\\demo3d\\Builds\\il2cpp\\PlaylistSurvivors3D.exe -force-d3d12 -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --bench D:\\wt\\td12\\demo3d\\sweeps\\td12\\s3-msaa4-demo.json --out D:\\wt\\td12\\demo3d\\Logs\\bench\\td12-s3 -logFile D:\\wt\\td12\\demo3d\\Logs\\bench\\td12-s3\\player.log --lock-held"}
+19:43:32 clocks: FrameTimingManager 10000000 Hz, QueryPerformanceCounter 10000000 Hz, newest frame started 642.4 ms ago
+19:43:32 point 30m/demo/msaa4: capacity 1593, ceiling 1593, seed none
+19:43:33 rebuilt for n 399 in 454 ms
+19:43:46 probe n 399 30m/demo/msaa4: gpu p99 3.08 main 2.80 render 0.86 ms -> pass (gpu 0.73) NOISY
+19:43:46 run noisy (other processes used 14.1% CPU over 5 s; 68 of 2424 frames had no GPU time (over 0.5 %)), repeating (2/3)
+19:44:16 waiting for a quiet machine: other processes 11.1% CPU (31 s)
+19:44:46 machine still busy after 61 s (other processes 11.2% CPU); running anyway
+19:44:57 probe n 399 30m/demo/msaa4: gpu p99 2.94 main 2.65 render 0.77 ms -> pass (gpu 0.70) NOISY
+19:44:57 run noisy (other processes used 18.7% CPU over 5 s; 62 of 2469 frames had no GPU time (over 0.5 %)), repeating (3/3)
+19:45:11 machine quiet: other processes 10.0% CPU over 5 s (waited 14 s)
+19:45:22 probe n 399 30m/demo/msaa4: gpu p99 2.96 main 2.62 render 0.82 ms -> pass (gpu 0.70) NOISY
+19:45:22 every attempt was noisy; the search uses attempt 3, the median of 3
+19:45:23 rebuilt for n 846 in 867 ms
+19:45:34 probe n 846 30m/demo/msaa4: gpu p99 5.58 main 4.96 render 0.85 ms -> fail (gpu 1.33) NOISY
+19:45:34 run noisy (other processes used 10.3% CPU over 5 s; 26 of 1264 frames had no GPU time (over 0.5 %)), repeating (2/3)
+19:46:05 waiting for a quiet machine: other processes 16.4% CPU (31 s)
+19:46:35 machine still busy after 61 s (other processes 12.4% CPU); running anyway
+19:46:46 probe n 846 30m/demo/msaa4: gpu p99 5.78 main 4.74 render 0.89 ms -> fail (gpu 1.38) NOISY
+19:46:46 run noisy (other processes used 12.4% CPU over 5 s; 29 of 1355 frames had no GPU time (over 0.5 %)), repeating (3/3)
+19:47:16 waiting for a quiet machine: other processes 11.7% CPU (31 s)
+19:47:46 machine still busy after 61 s (other processes 14.4% CPU); running anyway
+19:47:58 probe n 846 30m/demo/msaa4: gpu p99 5.76 main 4.89 render 0.94 ms -> fail (gpu 1.37) NOISY
+19:47:58 every attempt was noisy; the search uses attempt 3, the median of 3
+19:47:59 rebuilt for n 1294 in 1594 ms
+19:48:10 probe n 1294 30m/demo/msaa4: gpu p99 6.40 main 6.19 render 0.90 ms -> fail (gpu 1.52) NOISY
+19:48:10 run noisy (other processes used 11.3% CPU over 5 s; 21 of 1010 frames had no GPU time (over 0.5 %)), repeating (2/3)
+19:48:41 waiting for a quiet machine: other processes 11.5% CPU (31 s)
+19:49:11 machine quiet: other processes 9.8% CPU over 5 s (waited 61 s)
+19:49:22 probe n 1294 30m/demo/msaa4: gpu p99 6.62 main 6.70 render 0.89 ms -> fail (gpu 1.58) NOISY
+19:49:22 run noisy (other processes used 12.0% CPU over 5 s; 22 of 1020 frames had no GPU time (over 0.5 %)), repeating (3/3)
+19:49:53 waiting for a quiet machine: other processes 11.4% CPU (31 s)
+19:50:23 machine still busy after 61 s (other processes 10.0% CPU); running anyway
+19:50:34 probe n 1294 30m/demo/msaa4: gpu p99 6.50 main 6.88 render 1.01 ms -> fail (gpu 1.55) NOISY
+19:50:34 every attempt was noisy; the search uses attempt 3, the median of 3
+19:50:35 rebuilt for n 625 in 618 ms
+19:50:58 confirm n 625 30m/demo/msaa4: gpu p99 4.42 main 3.86 render 0.91 ms -> fail (gpu 1.05) NOISY
+19:50:58 run noisy (other processes used 19.3% CPU over 5 s; 100 of 4204 frames had no GPU time (over 0.5 %)), repeating (2/3)
+19:51:28 waiting for a quiet machine: other processes 15.4% CPU (31 s)
+19:51:58 machine still busy after 61 s (other processes 14.9% CPU); running anyway
+19:52:22 confirm n 625 30m/demo/msaa4: gpu p99 4.39 main 3.69 render 0.83 ms -> fail (gpu 1.05) NOISY
+19:52:22 run noisy (other processes used 16.3% CPU over 5 s; 102 of 4310 frames had no GPU time (over 0.5 %)), repeating (3/3)
+19:52:52 waiting for a quiet machine: other processes 12.6% CPU (31 s)
+19:53:22 machine still busy after 61 s (other processes 15.5% CPU); running anyway
+19:53:45 confirm n 625 30m/demo/msaa4: gpu p99 4.45 main 4.00 render 0.89 ms -> fail (gpu 1.06) NOISY
+19:53:45 every attempt was noisy; the search uses attempt 1, the median of 3
+19:53:46 rebuilt for n 399 in 370 ms
+19:54:09 bisect n 399 30m/demo/msaa4: gpu p99 3.11 main 2.66 render 0.83 ms -> pass (gpu 0.74) NOISY
+19:54:09 run noisy (other processes used 17.7% CPU over 5 s; 166 of 5981 frames had no GPU time (over 0.5 %)), repeating (2/3)
+19:54:39 waiting for a quiet machine: other processes 13.0% CPU (31 s)
+19:55:09 machine still busy after 61 s (other processes 16.2% CPU); running anyway
+19:55:33 bisect n 399 30m/demo/msaa4: gpu p99 3.05 main 2.81 render 0.84 ms -> pass (gpu 0.73) NOISY
+19:55:33 run noisy (other processes used 17.6% CPU over 5 s; 185 of 6006 frames had no GPU time (over 0.5 %)), repeating (3/3)
+19:56:03 waiting for a quiet machine: other processes 17.5% CPU (31 s)
+19:56:33 machine still busy after 61 s (other processes 11.6% CPU); running anyway
+19:56:56 bisect n 399 30m/demo/msaa4: gpu p99 3.06 main 2.93 render 0.94 ms -> pass (gpu 0.73) NOISY
+19:56:56 every attempt was noisy; the search uses attempt 3, the median of 3
+19:56:57 rebuilt for n 499 in 484 ms
+19:57:20 bisect n 499 30m/demo/msaa4: gpu p99 3.65 main 3.09 render 0.82 ms -> pass (gpu 0.87) NOISY
+19:57:20 run noisy (other processes used 17.6% CPU over 5 s; 119 of 5112 frames had no GPU time (over 0.5 %)), repeating (2/3)
+19:57:50 waiting for a quiet machine: other processes 15.8% CPU (31 s)
+19:58:20 machine still busy after 61 s (other processes 16.0% CPU); running anyway
+19:58:44 bisect n 499 30m/demo/msaa4: gpu p99 3.84 main 3.29 render 0.93 ms -> pass (gpu 0.91) NOISY
+19:58:44 run noisy (other processes used 17.0% CPU over 5 s; 137 of 4962 frames had no GPU time (over 0.5 %)), repeating (3/3)
+19:59:14 waiting for a quiet machine: other processes 11.2% CPU (31 s)
+19:59:35 machine quiet: other processes 9.3% CPU over 5 s (waited 52 s)
+19:59:58 bisect n 499 30m/demo/msaa4: gpu p99 3.55 main 3.16 render 0.76 ms -> pass (gpu 0.84) NOISY
+19:59:58 every attempt was noisy; the search uses attempt 1, the median of 3
+19:59:59 rebuilt for n 558 in 524 ms
+20:00:22 bisect n 558 30m/demo/msaa4: gpu p99 3.93 main 3.47 render 0.78 ms -> pass (gpu 0.94) NOISY
+20:00:22 run noisy (113 of 4790 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:00:27 machine quiet: other processes 5.7% CPU over 5 s (waited 6 s)
+20:00:51 bisect n 558 30m/demo/msaa4: gpu p99 3.98 main 3.68 render 0.91 ms -> pass (gpu 0.95) NOISY
+20:00:51 run noisy (other processes used 22.3% CPU over 5 s; 169 of 4672 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:00:56 machine quiet: other processes 9.9% CPU over 5 s (waited 6 s)
+20:01:19 bisect n 558 30m/demo/msaa4: gpu p99 4.00 main 3.46 render 0.78 ms -> pass (gpu 0.95) NOISY
+20:01:19 every attempt was noisy; the search uses attempt 2, the median of 3
+20:01:20 rebuilt for n 591 in 561 ms
+20:01:43 bisect n 591 30m/demo/msaa4: gpu p99 4.13 main 3.80 render 0.79 ms -> pass (gpu 0.98) NOISY
+20:01:43 run noisy (101 of 4408 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:01:48 machine quiet: other processes 6.7% CPU over 5 s (waited 6 s)
+20:02:12 bisect n 591 30m/demo/msaa4: gpu p99 4.19 main 3.66 render 0.78 ms -> pass (gpu 1.00) NOISY
+20:02:12 run noisy (108 of 4546 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:02:17 machine quiet: other processes 6.5% CPU over 5 s (waited 6 s)
+20:02:40 bisect n 591 30m/demo/msaa4: gpu p99 4.17 main 3.80 render 0.79 ms -> pass (gpu 0.99) NOISY
+20:02:40 every attempt was noisy; the search uses attempt 3, the median of 3
+20:02:41 rebuilt for n 608 in 580 ms
+20:03:04 bisect n 608 30m/demo/msaa4: gpu p99 4.38 main 3.66 render 0.78 ms -> fail (gpu 1.04) NOISY
+20:03:04 run noisy (100 of 4324 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:03:09 machine quiet: other processes 6.5% CPU over 5 s (waited 6 s)
+20:03:33 bisect n 608 30m/demo/msaa4: gpu p99 4.19 main 3.69 render 0.82 ms -> pass (gpu 1.00) NOISY
+20:03:33 run noisy (121 of 4543 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:03:38 machine quiet: other processes 6.3% CPU over 5 s (waited 5 s)
+20:04:01 bisect n 608 30m/demo/msaa4: gpu p99 4.32 main 3.87 render 0.92 ms -> fail (gpu 1.03) NOISY
+20:04:01 every attempt was noisy; the search uses attempt 3, the median of 3
+20:04:01 frontier 30m/demo/msaa4: 591 (gpu), 3 probes + 6 full runs, fit 625 confirmed False
+20:04:01 point 40m/demo/msaa4: capacity 2832, ceiling 2832, seed 591
+20:04:02 rebuilt for n 443 in 370 ms
+20:04:13 probe n 443 40m/demo/msaa4: gpu p99 2.84 main 3.02 render 0.86 ms -> pass (gpu 0.68) NOISY
+20:04:13 run noisy (152 of 2367 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:04:18 machine quiet: other processes 9.7% CPU over 5 s (waited 6 s)
+20:04:29 probe n 443 40m/demo/msaa4: gpu p99 2.83 main 2.97 render 0.84 ms -> pass (gpu 0.67) NOISY
+20:04:29 run noisy (126 of 2366 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:04:35 machine quiet: other processes 6.9% CPU over 5 s (waited 6 s)
+20:04:46 probe n 443 40m/demo/msaa4: gpu p99 2.81 main 3.02 render 0.83 ms -> pass (gpu 0.67) NOISY
+20:04:46 every attempt was noisy; the search uses attempt 2, the median of 3
+20:04:47 rebuilt for n 591 in 509 ms
+20:04:58 probe n 591 40m/demo/msaa4: gpu p99 3.55 main 3.51 render 0.88 ms -> pass (gpu 0.85) NOISY
+20:04:58 run noisy (63 of 1960 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:05:03 machine quiet: other processes 8.2% CPU over 5 s (waited 6 s)
+20:05:14 probe n 591 40m/demo/msaa4: gpu p99 3.52 main 3.51 render 0.88 ms -> pass (gpu 0.84) NOISY
+20:05:14 run noisy (86 of 1960 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:05:20 machine quiet: other processes 8.1% CPU over 5 s (waited 6 s)
+20:05:31 probe n 591 40m/demo/msaa4: gpu p99 3.75 main 3.68 render 0.92 ms -> pass (gpu 0.89) NOISY
+20:05:31 every attempt was noisy; the search uses attempt 1, the median of 3
+20:05:32 rebuilt for n 739 in 665 ms
+20:05:43 probe n 739 40m/demo/msaa4: gpu p99 4.24 main 4.38 render 0.91 ms -> fail (gpu 1.01) NOISY
+20:05:43 run noisy (50 of 1612 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:05:48 machine quiet: other processes 9.6% CPU over 5 s (waited 6 s)
+20:05:59 probe n 739 40m/demo/msaa4: gpu p99 4.26 main 4.17 render 0.83 ms -> fail (gpu 1.02) NOISY
+20:05:59 run noisy (50 of 1649 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:06:22 machine quiet: other processes 9.3% CPU over 5 s (waited 23 s)
+20:06:33 probe n 739 40m/demo/msaa4: gpu p99 4.15 main 4.39 render 0.81 ms -> pass (gpu 0.99) NOISY
+20:06:33 every attempt was noisy; the search uses attempt 1, the median of 3
+20:06:34 rebuilt for n 730 in 641 ms
+20:06:57 confirm n 730 40m/demo/msaa4: gpu p99 4.17 main 4.27 render 0.86 ms -> pass (gpu 0.99) NOISY
+20:06:57 run noisy (130 of 4145 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:07:03 machine quiet: other processes 10.0% CPU over 5 s (waited 7 s)
+20:07:27 confirm n 730 40m/demo/msaa4: gpu p99 4.26 main 4.33 render 0.85 ms -> fail (gpu 1.01) NOISY
+20:07:27 run noisy (125 of 4129 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:07:32 machine quiet: other processes 9.7% CPU over 5 s (waited 6 s)
+20:07:55 confirm n 730 40m/demo/msaa4: gpu p99 4.20 main 4.22 render 0.86 ms -> pass (gpu 1.00) NOISY
+20:07:55 every attempt was noisy; the search uses attempt 3, the median of 3
+20:07:56 rebuilt for n 767 in 693 ms
+20:08:19 above n 767 40m/demo/msaa4: gpu p99 4.49 main 4.50 render 0.85 ms -> fail (gpu 1.07) NOISY
+20:08:19 run noisy (115 of 3908 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:08:24 machine quiet: other processes 9.8% CPU over 5 s (waited 6 s)
+20:08:48 above n 767 40m/demo/msaa4: gpu p99 4.55 main 4.37 render 0.99 ms -> fail (gpu 1.08) NOISY
+20:08:48 run noisy (other processes used 12.3% CPU over 5 s; 135 of 3958 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:08:59 machine quiet: other processes 9.8% CPU over 5 s (waited 12 s)
+20:09:22 above n 767 40m/demo/msaa4: gpu p99 4.30 main 4.39 render 0.84 ms -> fail (gpu 1.02) NOISY
+20:09:22 every attempt was noisy; the search uses attempt 1, the median of 3
+20:09:22 frontier 40m/demo/msaa4: 730 (gpu), 3 probes + 2 full runs, fit 730 confirmed True
+20:09:22 point 55m/demo/msaa4: capacity 5355, ceiling 5355, seed 730
+20:09:23 rebuilt for n 548 in 398 ms
+20:09:34 probe n 548 55m/demo/msaa4: gpu p99 2.88 main 3.48 render 0.93 ms -> pass (gpu 0.69) NOISY
+20:09:34 run noisy (165 of 2134 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:09:39 machine quiet: other processes 7.5% CPU over 5 s (waited 6 s)
+20:09:50 probe n 548 55m/demo/msaa4: gpu p99 2.80 main 3.55 render 0.93 ms -> pass (gpu 0.67) NOISY
+20:09:50 run noisy (193 of 2192 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:09:56 machine quiet: other processes 7.8% CPU over 5 s (waited 6 s)
+20:10:07 probe n 548 55m/demo/msaa4: gpu p99 2.72 main 3.61 render 1.02 ms -> pass (gpu 0.65) NOISY
+20:10:07 every attempt was noisy; the search uses attempt 2, the median of 3
+20:10:08 rebuilt for n 730 in 543 ms
+20:10:19 probe n 730 55m/demo/msaa4: gpu p99 3.50 main 4.15 render 0.98 ms -> pass (gpu 0.83) NOISY
+20:10:19 run noisy (88 of 1786 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:10:24 machine quiet: other processes 8.6% CPU over 5 s (waited 6 s)
+20:10:35 probe n 730 55m/demo/msaa4: gpu p99 3.55 main 4.17 render 1.07 ms -> pass (gpu 0.85) NOISY
+20:10:35 run noisy (101 of 1768 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:10:41 machine quiet: other processes 8.1% CPU over 5 s (waited 6 s)
+20:10:52 probe n 730 55m/demo/msaa4: gpu p99 3.38 main 4.34 render 0.98 ms -> pass (gpu 0.80) NOISY
+20:10:52 every attempt was noisy; the search uses attempt 1, the median of 3
+20:10:53 rebuilt for n 912 in 713 ms
+20:11:04 probe n 912 55m/demo/msaa4: gpu p99 4.17 main 5.23 render 0.98 ms -> pass (gpu 0.99) NOISY
+20:11:04 run noisy (53 of 1438 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:11:09 machine quiet: other processes 9.0% CPU over 5 s (waited 6 s)
+20:11:21 probe n 912 55m/demo/msaa4: gpu p99 4.25 main 4.99 render 1.02 ms -> fail (gpu 1.01) NOISY
+20:11:21 run noisy (58 of 1495 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:11:26 machine quiet: other processes 9.3% CPU over 5 s (waited 6 s)
+20:11:37 probe n 912 55m/demo/msaa4: gpu p99 4.14 main 5.10 render 0.99 ms -> pass (gpu 0.99) NOISY
+20:11:37 every attempt was noisy; the search uses attempt 1, the median of 3
+20:11:38 rebuilt for n 919 in 726 ms
+20:12:01 confirm n 919 55m/demo/msaa4: gpu p99 4.33 main 5.18 render 0.94 ms -> fail (gpu 1.03) NOISY
+20:12:01 run noisy (123 of 3570 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:12:07 machine quiet: other processes 9.0% CPU over 5 s (waited 6 s)
+20:12:30 confirm n 919 55m/demo/msaa4: gpu p99 4.48 main 5.17 render 0.98 ms -> fail (gpu 1.07) NOISY
+20:12:30 run noisy (137 of 3512 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:12:53 machine quiet: other processes 9.8% CPU over 5 s (waited 24 s)
+20:13:17 confirm n 919 55m/demo/msaa4: gpu p99 4.53 main 5.16 render 0.99 ms -> fail (gpu 1.08) NOISY
+20:13:17 every attempt was noisy; the search uses attempt 2, the median of 3
+20:13:17 rebuilt for n 912 in 723 ms
+20:13:40 bisect n 912 55m/demo/msaa4: gpu p99 4.30 main 5.27 render 0.99 ms -> fail (gpu 1.02) NOISY
+20:13:40 run noisy (152 of 3570 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:13:46 machine quiet: other processes 8.7% CPU over 5 s (waited 6 s)
+20:14:09 bisect n 912 55m/demo/msaa4: gpu p99 4.31 main 5.03 render 0.97 ms -> fail (gpu 1.03) NOISY
+20:14:09 run noisy (160 of 3726 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:14:15 machine quiet: other processes 8.5% CPU over 5 s (waited 6 s)
+20:14:38 bisect n 912 55m/demo/msaa4: gpu p99 4.46 main 5.11 render 0.98 ms -> fail (gpu 1.06) NOISY
+20:14:38 every attempt was noisy; the search uses attempt 2, the median of 3
+20:14:38 rebuilt for n 730 in 552 ms
+20:15:01 bisect n 730 55m/demo/msaa4: gpu p99 3.59 main 4.22 render 1.00 ms -> pass (gpu 0.86) NOISY
+20:15:01 run noisy (226 of 4441 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:15:07 machine quiet: other processes 8.2% CPU over 5 s (waited 6 s)
+20:15:30 bisect n 730 55m/demo/msaa4: gpu p99 3.65 main 4.44 render 1.05 ms -> pass (gpu 0.87) NOISY
+20:15:30 run noisy (272 of 4384 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:15:36 machine quiet: other processes 7.8% CPU over 5 s (waited 6 s)
+20:15:59 bisect n 730 55m/demo/msaa4: gpu p99 3.70 main 4.36 render 1.03 ms -> pass (gpu 0.88) NOISY
+20:15:59 every attempt was noisy; the search uses attempt 2, the median of 3
+20:15:59 rebuilt for n 816 in 611 ms
+20:16:23 bisect n 816 55m/demo/msaa4: gpu p99 4.05 main 4.52 render 1.01 ms -> pass (gpu 0.96) NOISY
+20:16:23 run noisy (153 of 3976 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:16:28 machine quiet: other processes 9.2% CPU over 5 s (waited 6 s)
+20:16:51 bisect n 816 55m/demo/msaa4: gpu p99 4.15 main 4.56 render 1.08 ms -> pass (gpu 0.99) NOISY
+20:16:51 run noisy (other processes used 12.7% CPU over 5 s; 244 of 4013 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:16:59 machine quiet: other processes 9.6% CPU over 5 s (waited 8 s)
+20:17:22 bisect n 816 55m/demo/msaa4: gpu p99 4.15 main 4.55 render 1.19 ms -> pass (gpu 0.99) NOISY
+20:17:22 every attempt was noisy; the search uses attempt 2, the median of 3
+20:17:23 rebuilt for n 863 in 676 ms
+20:17:46 bisect n 863 55m/demo/msaa4: gpu p99 4.26 main 4.72 render 0.99 ms -> fail (gpu 1.01) NOISY
+20:17:46 run noisy (135 of 3745 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:17:51 machine quiet: other processes 8.6% CPU over 5 s (waited 6 s)
+20:18:14 bisect n 863 55m/demo/msaa4: gpu p99 4.45 main 4.82 render 0.95 ms -> fail (gpu 1.06) NOISY
+20:18:14 run noisy (133 of 3741 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:18:20 machine quiet: other processes 8.3% CPU over 5 s (waited 6 s)
+20:18:43 bisect n 863 55m/demo/msaa4: gpu p99 4.15 main 4.96 render 0.93 ms -> pass (gpu 0.99) NOISY
+20:18:43 every attempt was noisy; the search uses attempt 1, the median of 3
+20:18:44 rebuilt for n 839 in 638 ms
+20:19:07 bisect n 839 55m/demo/msaa4: gpu p99 4.10 main 4.60 render 1.04 ms -> pass (gpu 0.98) NOISY
+20:19:07 run noisy (158 of 3883 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:19:14 machine quiet: other processes 9.2% CPU over 5 s (waited 8 s)
+20:19:38 bisect n 839 55m/demo/msaa4: gpu p99 4.15 main 4.69 render 1.03 ms -> pass (gpu 0.99) NOISY
+20:19:38 run noisy (164 of 3860 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:19:43 machine quiet: other processes 8.4% CPU over 5 s (waited 5 s)
+20:20:06 bisect n 839 55m/demo/msaa4: gpu p99 4.18 main 4.69 render 1.02 ms -> pass (gpu 0.99) NOISY
+20:20:06 every attempt was noisy; the search uses attempt 2, the median of 3
+20:20:06 frontier 55m/demo/msaa4: 839 (gpu), 3 probes + 6 full runs, fit 919 confirmed False
+20:20:06 sweep done
+20:20:06 exit 0
+20:20:08 sweep 20261028-202008: D:\wt\td12\demo3d\sweeps\td12\s3-msaa4-light.json -> D:\wt\td12\demo3d\Logs\bench\td12-s3
+20:20:08 the orchestrator holds the machine lock
+20:20:09 display was on, now on after 0.0 s (watching: True); held on for the sweep
+20:20:11 GPU 49 °C, throttle none
+20:20:17 machine quiet: other processes 4.9% CPU over 5 s (waited 6 s)
+20:20:17 machine {"sweep": "20261028-202008", "api": "d3d12", "gpu": "NVIDIA GeForce RTX 4070 Ti", "driver": "610.88", "cpu": "12th Gen Intel(R) Core(TM) i7-12700F", "logicalCores": 20, "powerPlan": "high", "powerPlanName": "High performance", "memMHz": 2133, "jobWorkers": 6, "backbuffer": "1920x1080", "display": "on", "gpuTempC": 48, "gpuThrottle": "none", "quietWaitS": 6, "otherCpuPctAtStart": 4.9, "requireForeground": true, "unity": "6000.6.7f1", "backend": "il2cpp", "commandLine": "D:\\wt\\td12\\demo3d\\Builds\\il2cpp\\PlaylistSurvivors3D.exe -force-d3d12 -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --bench D:\\wt\\td12\\demo3d\\sweeps\\td12\\s3-msaa4-light.json --out D:\\wt\\td12\\demo3d\\Logs\\bench\\td12-s3 -logFile D:\\wt\\td12\\demo3d\\Logs\\bench\\td12-s3\\player.log --lock-held"}
+20:20:17 clocks: FrameTimingManager 10000000 Hz, QueryPerformanceCounter 10000000 Hz, newest frame started 443.0 ms ago
+20:20:17 point 30m/light/msaa4: capacity 1593, ceiling 1593, seed none
+20:20:18 rebuilt for n 399 in 411 ms
+20:20:31 probe n 399 30m/light/msaa4: gpu p99 2.58 main 2.84 render 0.93 ms -> pass (gpu 0.61) NOISY
+20:20:31 run noisy (213 of 2504 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:20:36 machine quiet: other processes 8.1% CPU over 5 s (waited 6 s)
+20:20:47 probe n 399 30m/light/msaa4: gpu p99 2.58 main 2.78 render 0.95 ms -> pass (gpu 0.61) NOISY
+20:20:47 run noisy (225 of 2531 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:20:53 machine quiet: other processes 7.4% CPU over 5 s (waited 6 s)
+20:21:04 probe n 399 30m/light/msaa4: gpu p99 2.45 main 2.63 render 0.83 ms -> pass (gpu 0.58) NOISY
+20:21:04 every attempt was noisy; the search uses attempt 1, the median of 3
+20:21:05 rebuilt for n 846 in 774 ms
+20:21:16 probe n 846 30m/light/msaa4: gpu p99 4.48 main 4.92 render 0.87 ms -> fail (gpu 1.07) NOISY
+20:21:16 run noisy (40 of 1437 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:21:22 machine quiet: other processes 9.5% CPU over 5 s (waited 7 s)
+20:21:34 probe n 846 30m/light/msaa4: gpu p99 4.62 main 4.90 render 0.84 ms -> fail (gpu 1.10) NOISY
+20:21:34 run noisy (35 of 1440 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:21:43 machine quiet: other processes 9.6% CPU over 5 s (waited 10 s)
+20:21:54 probe n 846 30m/light/msaa4: gpu p99 4.53 main 4.63 render 0.88 ms -> fail (gpu 1.08) NOISY
+20:21:54 every attempt was noisy; the search uses attempt 3, the median of 3
+20:21:56 rebuilt for n 1294 in 1341 ms
+20:22:07 probe n 1294 30m/light/msaa4: gpu p99 5.32 main 6.16 render 0.89 ms -> fail (gpu 1.27) NOISY
+20:22:07 run noisy (29 of 1075 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:22:12 machine quiet: other processes 9.6% CPU over 5 s (waited 6 s)
+20:22:23 probe n 1294 30m/light/msaa4: gpu p99 5.30 main 6.62 render 0.91 ms -> fail (gpu 1.26) NOISY
+20:22:23 run noisy (33 of 1070 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:22:29 machine quiet: other processes 9.0% CPU over 5 s (waited 6 s)
+20:22:40 probe n 1294 30m/light/msaa4: gpu p99 5.13 main 6.72 render 0.87 ms -> fail (gpu 1.22) NOISY
+20:22:40 every attempt was noisy; the search uses attempt 2, the median of 3
+20:22:41 rebuilt for n 867 in 797 ms
+20:23:04 confirm n 867 30m/light/msaa4: gpu p99 4.46 main 4.91 render 0.84 ms -> fail (gpu 1.06) NOISY
+20:23:04 run noisy (86 of 3455 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:23:10 machine quiet: other processes 10.0% CPU over 5 s (waited 6 s)
+20:23:33 confirm n 867 30m/light/msaa4: gpu p99 4.54 main 4.84 render 0.86 ms -> fail (gpu 1.08) NOISY
+20:23:33 run noisy (109 of 3612 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:23:39 machine quiet: other processes 10.0% CPU over 5 s (waited 7 s)
+20:24:02 confirm n 867 30m/light/msaa4: gpu p99 4.45 main 4.67 render 0.83 ms -> fail (gpu 1.06) NOISY
+20:24:02 every attempt was noisy; the search uses attempt 1, the median of 3
+20:24:03 rebuilt for n 399 in 339 ms
+20:24:26 bisect n 399 30m/light/msaa4: gpu p99 2.50 main 2.70 render 0.80 ms -> pass (gpu 0.60) NOISY
+20:24:26 run noisy (399 of 6458 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:24:31 machine quiet: other processes 8.1% CPU over 5 s (waited 5 s)
+20:24:55 bisect n 399 30m/light/msaa4: gpu p99 2.49 main 2.62 render 0.82 ms -> pass (gpu 0.59) NOISY
+20:24:55 run noisy (358 of 6467 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:25:00 machine quiet: other processes 7.1% CPU over 5 s (waited 6 s)
+20:25:23 bisect n 399 30m/light/msaa4: gpu p99 2.45 main 2.78 render 0.93 ms -> pass (gpu 0.58) NOISY
+20:25:23 every attempt was noisy; the search uses attempt 2, the median of 3
+20:25:24 rebuilt for n 588 in 527 ms
+20:25:47 bisect n 588 30m/light/msaa4: gpu p99 3.54 main 3.71 render 0.92 ms -> pass (gpu 0.84) NOISY
+20:25:47 run noisy (193 of 4720 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:25:52 machine quiet: other processes 8.1% CPU over 5 s (waited 6 s)
+20:26:15 bisect n 588 30m/light/msaa4: gpu p99 3.28 main 3.64 render 0.87 ms -> pass (gpu 0.78) NOISY
+20:26:15 run noisy (227 of 4961 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:26:21 machine quiet: other processes 7.6% CPU over 5 s (waited 6 s)
+20:26:44 bisect n 588 30m/light/msaa4: gpu p99 3.23 main 3.71 render 0.91 ms -> pass (gpu 0.77) NOISY
+20:26:44 every attempt was noisy; the search uses attempt 2, the median of 3
+20:26:45 rebuilt for n 714 in 643 ms
+20:27:08 bisect n 714 30m/light/msaa4: gpu p99 4.07 main 4.32 render 0.88 ms -> pass (gpu 0.97) NOISY
+20:27:08 run noisy (other processes used 10.7% CPU over 5 s; 123 of 4025 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:27:13 machine quiet: other processes 8.1% CPU over 5 s (waited 6 s)
+20:27:36 bisect n 714 30m/light/msaa4: gpu p99 3.82 main 4.28 render 0.84 ms -> pass (gpu 0.91) NOISY
+20:27:36 run noisy (148 of 4244 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:27:42 machine quiet: other processes 8.4% CPU over 5 s (waited 6 s)
+20:28:05 bisect n 714 30m/light/msaa4: gpu p99 3.75 main 4.28 render 0.86 ms -> pass (gpu 0.89) NOISY
+20:28:05 every attempt was noisy; the search uses attempt 2, the median of 3
+20:28:06 rebuilt for n 787 in 700 ms
+20:28:29 bisect n 787 30m/light/msaa4: gpu p99 4.24 main 4.63 render 0.86 ms -> fail (gpu 1.01) NOISY
+20:28:29 run noisy (99 of 3804 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:28:35 machine quiet: other processes 9.3% CPU over 5 s (waited 6 s)
+20:28:58 bisect n 787 30m/light/msaa4: gpu p99 4.27 main 4.53 render 0.82 ms -> fail (gpu 1.02) NOISY
+20:28:58 run noisy (other processes used 10.0% CPU over 5 s; 97 of 3793 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:29:05 machine quiet: other processes 9.9% CPU over 5 s (waited 8 s)
+20:29:28 bisect n 787 30m/light/msaa4: gpu p99 4.08 main 4.55 render 0.86 ms -> pass (gpu 0.97) NOISY
+20:29:28 every attempt was noisy; the search uses attempt 1, the median of 3
+20:29:29 rebuilt for n 750 in 683 ms
+20:29:52 bisect n 750 30m/light/msaa4: gpu p99 4.12 main 4.42 render 0.87 ms -> pass (gpu 0.98) NOISY
+20:29:52 run noisy (117 of 3920 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:29:58 machine quiet: other processes 9.7% CPU over 5 s (waited 6 s)
+20:30:21 bisect n 750 30m/light/msaa4: gpu p99 4.01 main 4.50 render 0.87 ms -> pass (gpu 0.95) NOISY
+20:30:21 run noisy (other processes used 10.4% CPU over 5 s; 128 of 4005 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:30:26 machine quiet: other processes 9.9% CPU over 5 s (waited 6 s)
+20:30:50 bisect n 750 30m/light/msaa4: gpu p99 4.08 main 4.50 render 0.83 ms -> pass (gpu 0.97) NOISY
+20:30:50 every attempt was noisy; the search uses attempt 3, the median of 3
+20:30:50 frontier 30m/light/msaa4: 750 (gpu), 3 probes + 6 full runs, fit 867 confirmed False
+20:30:50 point 40m/light/msaa4: capacity 2832, ceiling 2832, seed 750
+20:30:50 rebuilt for n 562 in 461 ms
+20:31:01 probe n 562 40m/light/msaa4: gpu p99 2.76 main 3.61 render 0.85 ms -> pass (gpu 0.66) NOISY
+20:31:01 run noisy (131 of 2121 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:31:07 machine quiet: other processes 7.5% CPU over 5 s (waited 6 s)
+20:31:18 probe n 562 40m/light/msaa4: gpu p99 2.76 main 3.60 render 0.83 ms -> pass (gpu 0.66) NOISY
+20:31:18 run noisy (143 of 2125 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:31:23 machine quiet: other processes 6.9% CPU over 5 s (waited 6 s)
+20:31:34 probe n 562 40m/light/msaa4: gpu p99 2.68 main 3.71 render 0.85 ms -> pass (gpu 0.64) NOISY
+20:31:34 every attempt was noisy; the search uses attempt 2, the median of 3
+20:31:35 rebuilt for n 750 in 636 ms
+20:31:46 probe n 750 40m/light/msaa4: gpu p99 3.68 main 4.45 render 0.83 ms -> pass (gpu 0.88) NOISY
+20:31:46 run noisy (68 of 1665 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:31:52 machine quiet: other processes 8.0% CPU over 5 s (waited 6 s)
+20:32:03 probe n 750 40m/light/msaa4: gpu p99 3.54 main 4.44 render 0.91 ms -> pass (gpu 0.84) NOISY
+20:32:03 run noisy (62 of 1662 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:32:08 machine quiet: other processes 7.5% CPU over 5 s (waited 6 s)
+20:32:19 probe n 750 40m/light/msaa4: gpu p99 3.53 main 4.46 render 0.89 ms -> pass (gpu 0.84) NOISY
+20:32:19 every attempt was noisy; the search uses attempt 2, the median of 3
+20:32:20 rebuilt for n 938 in 824 ms
+20:32:31 probe n 938 40m/light/msaa4: gpu p99 4.35 main 5.41 render 0.84 ms -> fail (gpu 1.04) NOISY
+20:32:31 run noisy (47 of 1361 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:32:37 machine quiet: other processes 8.5% CPU over 5 s (waited 6 s)
+20:32:48 probe n 938 40m/light/msaa4: gpu p99 4.38 main 5.24 render 0.87 ms -> fail (gpu 1.04) NOISY
+20:32:48 run noisy (42 of 1376 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:32:54 machine quiet: other processes 9.1% CPU over 5 s (waited 6 s)
+20:33:05 probe n 938 40m/light/msaa4: gpu p99 4.35 main 5.44 render 0.87 ms -> fail (gpu 1.04) NOISY
+20:33:05 every attempt was noisy; the search uses attempt 3, the median of 3
+20:33:06 rebuilt for n 903 in 786 ms
+20:33:29 confirm n 903 40m/light/msaa4: gpu p99 4.20 main 5.22 render 0.86 ms -> fail (gpu 1.00) NOISY
+20:33:29 run noisy (124 of 3513 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:33:34 machine quiet: other processes 8.5% CPU over 5 s (waited 6 s)
+20:33:57 confirm n 903 40m/light/msaa4: gpu p99 4.22 main 5.23 render 0.88 ms -> fail (gpu 1.00) NOISY
+20:33:57 run noisy (121 of 3512 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:34:03 machine quiet: other processes 8.9% CPU over 5 s (waited 6 s)
+20:34:26 confirm n 903 40m/light/msaa4: gpu p99 4.33 main 5.13 render 0.86 ms -> fail (gpu 1.03) NOISY
+20:34:26 every attempt was noisy; the search uses attempt 2, the median of 3
+20:34:27 rebuilt for n 750 in 630 ms
+20:34:50 bisect n 750 40m/light/msaa4: gpu p99 3.58 main 4.48 render 0.91 ms -> pass (gpu 0.85) NOISY
+20:34:50 run noisy (179 of 4199 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:34:55 machine quiet: other processes 7.7% CPU over 5 s (waited 6 s)
+20:35:18 bisect n 750 40m/light/msaa4: gpu p99 3.60 main 4.44 render 0.92 ms -> pass (gpu 0.86) NOISY
+20:35:18 run noisy (182 of 4193 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:35:24 machine quiet: other processes 7.3% CPU over 5 s (waited 6 s)
+20:35:47 bisect n 750 40m/light/msaa4: gpu p99 3.53 main 4.33 render 0.88 ms -> pass (gpu 0.84) NOISY
+20:35:47 every attempt was noisy; the search uses attempt 1, the median of 3
+20:35:48 rebuilt for n 823 in 698 ms
+20:36:11 bisect n 823 40m/light/msaa4: gpu p99 3.81 main 4.83 render 0.85 ms -> pass (gpu 0.91) NOISY
+20:36:11 run noisy (156 of 3883 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:36:16 machine quiet: other processes 8.0% CPU over 5 s (waited 6 s)
+20:36:40 bisect n 823 40m/light/msaa4: gpu p99 3.86 main 4.81 render 0.84 ms -> pass (gpu 0.92) NOISY
+20:36:40 run noisy (143 of 3858 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:36:45 machine quiet: other processes 7.5% CPU over 5 s (waited 6 s)
+20:37:08 bisect n 823 40m/light/msaa4: gpu p99 3.95 main 4.88 render 0.84 ms -> pass (gpu 0.94) NOISY
+20:37:08 every attempt was noisy; the search uses attempt 2, the median of 3
+20:37:09 rebuilt for n 862 in 751 ms
+20:37:32 bisect n 862 40m/light/msaa4: gpu p99 4.00 main 4.91 render 0.85 ms -> pass (gpu 0.95) NOISY
+20:37:32 run noisy (135 of 3708 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:37:38 machine quiet: other processes 8.3% CPU over 5 s (waited 6 s)
+20:38:01 bisect n 862 40m/light/msaa4: gpu p99 4.15 main 4.84 render 0.83 ms -> pass (gpu 0.99) NOISY
+20:38:01 run noisy (123 of 3692 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:38:06 machine quiet: other processes 9.1% CPU over 5 s (waited 6 s)
+20:38:30 bisect n 862 40m/light/msaa4: gpu p99 4.13 main 4.89 render 0.89 ms -> pass (gpu 0.98) NOISY
+20:38:30 every attempt was noisy; the search uses attempt 3, the median of 3
+20:38:30 frontier 40m/light/msaa4: 862 (gpu), 3 probes + 4 full runs, fit 903 confirmed False
+20:38:30 point 55m/light/msaa4: capacity 5355, ceiling 5355, seed 862
+20:38:30 rebuilt for n 646 in 515 ms
+20:38:41 probe n 646 55m/light/msaa4: gpu p99 2.72 main 4.04 render 0.96 ms -> pass (gpu 0.65) NOISY
+20:38:41 run noisy (214 of 1944 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:38:47 machine quiet: other processes 7.8% CPU over 5 s (waited 6 s)
+20:38:58 probe n 646 55m/light/msaa4: gpu p99 2.77 main 4.06 render 1.03 ms -> pass (gpu 0.66) NOISY
+20:38:58 run noisy (179 of 1942 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:39:03 machine quiet: other processes 8.7% CPU over 5 s (waited 6 s)
+20:39:14 probe n 646 55m/light/msaa4: gpu p99 2.74 main 4.35 render 1.15 ms -> pass (gpu 0.65) NOISY
+20:39:14 every attempt was noisy; the search uses attempt 3, the median of 3
+20:39:15 rebuilt for n 862 in 709 ms
+20:39:26 probe n 862 55m/light/msaa4: gpu p99 3.64 main 5.05 render 1.03 ms -> pass (gpu 0.87) NOISY
+20:39:26 run noisy (79 of 1554 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:39:32 machine quiet: other processes 7.2% CPU over 5 s (waited 6 s)
+20:39:43 probe n 862 55m/light/msaa4: gpu p99 3.44 main 4.88 render 0.99 ms -> pass (gpu 0.82) NOISY
+20:39:43 run noisy (99 of 1606 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:39:49 machine quiet: other processes 7.1% CPU over 5 s (waited 6 s)
+20:40:00 probe n 862 55m/light/msaa4: gpu p99 3.52 main 5.11 render 1.14 ms -> pass (gpu 0.84) NOISY
+20:40:00 every attempt was noisy; the search uses attempt 3, the median of 3
+20:40:01 rebuilt for n 1078 in 894 ms
+20:40:12 probe n 1078 55m/light/msaa4: gpu p99 4.21 main 5.95 render 1.14 ms -> fail (gpu 1.00) NOISY
+20:40:12 run noisy (52 of 1264 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:40:17 machine quiet: other processes 8.4% CPU over 5 s (waited 6 s)
+20:40:28 probe n 1078 55m/light/msaa4: gpu p99 4.30 main 5.86 render 0.97 ms -> fail (gpu 1.02) NOISY
+20:40:28 run noisy (49 of 1266 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:40:35 machine quiet: other processes 9.3% CPU over 5 s (waited 7 s)
+20:40:46 probe n 1078 55m/light/msaa4: gpu p99 4.21 main 5.93 render 1.02 ms -> fail (gpu 1.00) NOISY
+20:40:46 every attempt was noisy; the search uses attempt 1, the median of 3
+20:40:47 rebuilt for n 1070 in 905 ms
+20:41:10 confirm n 1070 55m/light/msaa4: gpu p99 4.17 main 5.76 render 1.02 ms -> pass (gpu 0.99) NOISY
+20:41:10 run noisy (133 of 3208 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:41:16 machine quiet: other processes 8.5% CPU over 5 s (waited 6 s)
+20:41:39 confirm n 1070 55m/light/msaa4: gpu p99 4.02 main 5.89 render 1.00 ms -> pass (gpu 0.96) NOISY
+20:41:39 run noisy (139 of 3282 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:41:44 machine quiet: other processes 7.9% CPU over 5 s (waited 6 s)
+20:42:07 confirm n 1070 55m/light/msaa4: gpu p99 4.07 main 5.91 render 0.94 ms -> pass (gpu 0.97) NOISY
+20:42:07 every attempt was noisy; the search uses attempt 3, the median of 3
+20:42:08 rebuilt for n 1124 in 956 ms
+20:42:32 above n 1124 55m/light/msaa4: gpu p99 4.30 main 6.08 render 0.94 ms -> fail (gpu 1.02) NOISY
+20:42:32 run noisy (117 of 3066 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:42:37 machine quiet: other processes 8.8% CPU over 5 s (waited 6 s)
+20:43:00 above n 1124 55m/light/msaa4: gpu p99 4.36 main 6.19 render 0.98 ms -> fail (gpu 1.04) NOISY
+20:43:00 run noisy (120 of 3086 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:43:06 machine quiet: other processes 8.4% CPU over 5 s (waited 6 s)
+20:43:29 above n 1124 55m/light/msaa4: gpu p99 4.33 main 6.07 render 0.95 ms -> fail (gpu 1.03) NOISY
+20:43:29 every attempt was noisy; the search uses attempt 3, the median of 3
+20:43:29 frontier 55m/light/msaa4: 1070 (gpu), 3 probes + 2 full runs, fit 1070 confirmed True
+20:43:29 sweep done
+20:43:29 exit 0
+20:43:31 sweep 20261028-204331: D:\wt\td12\demo3d\sweeps\td12\s3-msaa4-heavy.json -> D:\wt\td12\demo3d\Logs\bench\td12-s3
+20:43:31 the orchestrator holds the machine lock
+20:43:31 display was on, now on after 0.0 s (watching: True); held on for the sweep
+20:43:33 GPU 49 °C, throttle none
+20:43:39 machine quiet: other processes 3.6% CPU over 5 s (waited 6 s)
+20:43:39 machine {"sweep": "20261028-204331", "api": "d3d12", "gpu": "NVIDIA GeForce RTX 4070 Ti", "driver": "610.88", "cpu": "12th Gen Intel(R) Core(TM) i7-12700F", "logicalCores": 20, "powerPlan": "high", "powerPlanName": "High performance", "memMHz": 2133, "jobWorkers": 6, "backbuffer": "1920x1080", "display": "on", "gpuTempC": 47, "gpuThrottle": "none", "quietWaitS": 6, "otherCpuPctAtStart": 3.6, "requireForeground": true, "unity": "6000.6.7f1", "backend": "il2cpp", "commandLine": "D:\\wt\\td12\\demo3d\\Builds\\il2cpp\\PlaylistSurvivors3D.exe -force-d3d12 -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --bench D:\\wt\\td12\\demo3d\\sweeps\\td12\\s3-msaa4-heavy.json --out D:\\wt\\td12\\demo3d\\Logs\\bench\\td12-s3 -logFile D:\\wt\\td12\\demo3d\\Logs\\bench\\td12-s3\\player.log --lock-held"}
+20:43:39 clocks: FrameTimingManager 10000000 Hz, QueryPerformanceCounter 10000000 Hz, newest frame started 457.5 ms ago
+20:43:39 point 30m/heavy/msaa4: capacity 1593, ceiling 1593, seed none
+20:43:40 rebuilt for n 399 in 429 ms
+20:43:53 probe n 399 30m/heavy/msaa4: gpu p99 3.95 main 2.48 render 0.74 ms -> pass (gpu 0.94) NOISY
+20:43:53 run noisy (41 of 2104 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:43:58 machine quiet: other processes 9.7% CPU over 5 s (waited 6 s)
+20:44:09 probe n 399 30m/heavy/msaa4: gpu p99 4.02 main 2.65 render 0.77 ms -> pass (gpu 0.96) NOISY
+20:44:09 run noisy (39 of 2051 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:44:15 machine quiet: other processes 9.7% CPU over 5 s (waited 6 s)
+20:44:26 probe n 399 30m/heavy/msaa4: gpu p99 3.99 main 2.65 render 0.77 ms -> pass (gpu 0.95) NOISY
+20:44:26 every attempt was noisy; the search uses attempt 3, the median of 3
+20:44:27 rebuilt for n 846 in 888 ms
+20:44:38 probe n 846 30m/heavy/msaa4: gpu p99 6.35 main 4.54 render 0.81 ms -> fail (gpu 1.51) NOISY
+20:44:38 run noisy (24 of 1148 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:44:44 machine quiet: other processes 9.3% CPU over 5 s (waited 6 s)
+20:44:55 probe n 846 30m/heavy/msaa4: gpu p99 5.87 main 4.49 render 0.84 ms -> fail (gpu 1.40) NOISY
+20:44:55 run noisy (25 of 1244 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:45:00 machine quiet: other processes 9.1% CPU over 5 s (waited 6 s)
+20:45:12 probe n 846 30m/heavy/msaa4: gpu p99 5.57 main 4.38 render 0.83 ms -> fail (gpu 1.33) NOISY
+20:45:12 every attempt was noisy; the search uses attempt 2, the median of 3
+20:45:13 rebuilt for n 1294 in 1593 ms
+20:45:24 probe n 1294 30m/heavy/msaa4: gpu p99 6.89 main 6.13 render 0.82 ms -> fail (gpu 1.64) NOISY
+20:45:24 run noisy (21 of 971 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:45:30 machine quiet: other processes 8.2% CPU over 5 s (waited 6 s)
+20:45:41 probe n 1294 30m/heavy/msaa4: gpu p99 5.59 main 5.09 render 0.81 ms -> fail (gpu 1.33) NOISY
+20:45:41 run noisy (25 of 1198 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:45:48 machine quiet: other processes 9.6% CPU over 5 s (waited 7 s)
+20:45:59 probe n 1294 30m/heavy/msaa4: gpu p99 5.30 main 4.94 render 0.82 ms -> fail (gpu 1.26) NOISY
+20:45:59 every attempt was noisy; the search uses attempt 2, the median of 3
+20:45:59 rebuilt for n 314 in 282 ms
+20:46:22 confirm n 314 30m/heavy/msaa4: gpu p99 3.32 main 2.29 render 0.79 ms -> pass (gpu 0.79) NOISY
+20:46:22 run noisy (other processes used 12.2% CPU over 5 s; 132 of 6064 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:46:30 machine quiet: other processes 9.8% CPU over 5 s (waited 8 s)
+20:46:53 confirm n 314 30m/heavy/msaa4: gpu p99 3.25 main 2.00 render 0.77 ms -> pass (gpu 0.77) NOISY
+20:46:53 run noisy (other processes used 10.4% CPU over 5 s; 139 of 6463 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:46:58 machine quiet: other processes 9.7% CPU over 5 s (waited 6 s)
+20:47:21 confirm n 314 30m/heavy/msaa4: gpu p99 3.27 main 2.16 render 0.79 ms -> pass (gpu 0.78) NOISY
+20:47:21 every attempt was noisy; the search uses attempt 3, the median of 3
+20:47:22 rebuilt for n 330 in 306 ms
+20:47:45 above n 330 30m/heavy/msaa4: gpu p99 3.49 main 2.54 render 0.85 ms -> pass (gpu 0.83) NOISY
+20:47:45 run noisy (other processes used 16.4% CPU over 5 s; 144 of 5830 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:47:59 machine quiet: other processes 9.0% CPU over 5 s (waited 15 s)
+20:48:23 above n 330 30m/heavy/msaa4: gpu p99 3.41 main 2.09 render 0.75 ms -> pass (gpu 0.81) NOISY
+20:48:23 run noisy (other processes used 10.3% CPU over 5 s; 130 of 6114 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:48:32 machine quiet: other processes 9.8% CPU over 5 s (waited 10 s)
+20:48:55 above n 330 30m/heavy/msaa4: gpu p99 3.36 main 2.31 render 0.79 ms -> pass (gpu 0.80) NOISY
+20:48:55 every attempt was noisy; the search uses attempt 2, the median of 3
+20:48:56 rebuilt for n 846 in 873 ms
+20:49:19 bisect n 846 30m/heavy/msaa4: gpu p99 6.06 main 4.54 render 0.85 ms -> fail (gpu 1.44) NOISY
+20:49:19 run noisy (63 of 3027 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:49:25 machine quiet: other processes 9.4% CPU over 5 s (waited 6 s)
+20:49:48 bisect n 846 30m/heavy/msaa4: gpu p99 5.61 main 4.51 render 0.90 ms -> fail (gpu 1.33) NOISY
+20:49:48 run noisy (65 of 3106 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:49:53 machine quiet: other processes 9.7% CPU over 5 s (waited 6 s)
+20:50:17 bisect n 846 30m/heavy/msaa4: gpu p99 5.82 main 4.63 render 0.87 ms -> fail (gpu 1.39) NOISY
+20:50:17 every attempt was noisy; the search uses attempt 3, the median of 3
+20:50:17 rebuilt for n 528 in 486 ms
+20:50:40 bisect n 528 30m/heavy/msaa4: gpu p99 4.71 main 3.28 render 0.83 ms -> fail (gpu 1.12) NOISY
+20:50:40 run noisy (other processes used 10.2% CPU over 5 s; 87 of 4266 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:50:50 machine quiet: other processes 9.5% CPU over 5 s (waited 10 s)
+20:51:13 bisect n 528 30m/heavy/msaa4: gpu p99 4.59 main 3.23 render 0.82 ms -> fail (gpu 1.09) NOISY
+20:51:13 run noisy (84 of 4208 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:51:19 machine quiet: other processes 9.5% CPU over 5 s (waited 6 s)
+20:51:42 bisect n 528 30m/heavy/msaa4: gpu p99 4.83 main 3.18 render 0.83 ms -> fail (gpu 1.15) NOISY
+20:51:42 every attempt was noisy; the search uses attempt 1, the median of 3
+20:51:42 rebuilt for n 417 in 383 ms
+20:52:05 bisect n 417 30m/heavy/msaa4: gpu p99 4.04 main 2.70 render 0.79 ms -> pass (gpu 0.96) NOISY
+20:52:05 run noisy (100 of 5021 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:52:11 machine quiet: other processes 9.4% CPU over 5 s (waited 6 s)
+20:52:34 bisect n 417 30m/heavy/msaa4: gpu p99 3.95 main 2.70 render 0.79 ms -> pass (gpu 0.94) NOISY
+20:52:34 run noisy (104 of 5073 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:52:44 machine quiet: other processes 9.9% CPU over 5 s (waited 11 s)
+20:53:08 bisect n 417 30m/heavy/msaa4: gpu p99 4.21 main 2.85 render 0.79 ms -> fail (gpu 1.00) NOISY
+20:53:08 every attempt was noisy; the search uses attempt 1, the median of 3
+20:53:08 rebuilt for n 469 in 441 ms
+20:53:31 bisect n 469 30m/heavy/msaa4: gpu p99 4.57 main 2.92 render 0.77 ms -> fail (gpu 1.09) NOISY
+20:53:31 run noisy (89 of 4546 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:53:37 machine quiet: other processes 8.3% CPU over 5 s (waited 6 s)
+20:54:00 bisect n 469 30m/heavy/msaa4: gpu p99 4.44 main 2.83 render 0.74 ms -> fail (gpu 1.06) NOISY
+20:54:00 run noisy (93 of 4672 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:54:05 machine quiet: other processes 8.4% CPU over 5 s (waited 6 s)
+20:54:28 bisect n 469 30m/heavy/msaa4: gpu p99 4.67 main 2.86 render 0.76 ms -> fail (gpu 1.11) NOISY
+20:54:28 every attempt was noisy; the search uses attempt 1, the median of 3
+20:54:29 rebuilt for n 442 in 406 ms
+20:54:52 bisect n 442 30m/heavy/msaa4: gpu p99 4.25 main 2.64 render 0.77 ms -> fail (gpu 1.01) NOISY
+20:54:52 run noisy (93 of 4836 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:54:58 machine quiet: other processes 7.2% CPU over 5 s (waited 6 s)
+20:55:21 bisect n 442 30m/heavy/msaa4: gpu p99 4.30 main 2.70 render 0.75 ms -> fail (gpu 1.02) NOISY
+20:55:21 run noisy (95 of 4810 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:55:26 machine quiet: other processes 7.9% CPU over 5 s (waited 6 s)
+20:55:49 bisect n 442 30m/heavy/msaa4: gpu p99 4.36 main 2.83 render 0.75 ms -> fail (gpu 1.04) NOISY
+20:55:49 every attempt was noisy; the search uses attempt 2, the median of 3
+20:55:50 rebuilt for n 429 in 397 ms
+20:56:13 bisect n 429 30m/heavy/msaa4: gpu p99 4.19 main 2.63 render 0.75 ms -> pass (gpu 1.00) NOISY
+20:56:13 run noisy (97 of 4963 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:56:18 machine quiet: other processes 7.9% CPU over 5 s (waited 6 s)
+20:56:42 bisect n 429 30m/heavy/msaa4: gpu p99 4.25 main 2.74 render 0.74 ms -> fail (gpu 1.01) NOISY
+20:56:42 run noisy (97 of 4847 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:56:47 machine quiet: other processes 7.1% CPU over 5 s (waited 6 s)
+20:57:10 bisect n 429 30m/heavy/msaa4: gpu p99 4.36 main 2.70 render 0.75 ms -> fail (gpu 1.04) NOISY
+20:57:10 every attempt was noisy; the search uses attempt 2, the median of 3
+20:57:10 frontier 30m/heavy/msaa4: 417 (gpu), 3 probes + 8 full runs, fit 314 confirmed False
+20:57:10 point 40m/heavy/msaa4: capacity 2832, ceiling 2832, seed 417
+20:57:10 rebuilt for n 313 in 248 ms
+20:57:21 probe n 313 40m/heavy/msaa4: gpu p99 2.57 main 2.16 render 0.76 ms -> pass (gpu 0.61) NOISY
+20:57:21 run noisy (99 of 2830 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:57:27 machine quiet: other processes 5.0% CPU over 5 s (waited 6 s)
+20:57:38 probe n 313 40m/heavy/msaa4: gpu p99 2.66 main 1.78 render 0.73 ms -> pass (gpu 0.63) NOISY
+20:57:38 run noisy (72 of 2799 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:57:44 machine quiet: other processes 5.1% CPU over 5 s (waited 6 s)
+20:57:55 probe n 313 40m/heavy/msaa4: gpu p99 2.75 main 2.00 render 0.75 ms -> pass (gpu 0.65) NOISY
+20:57:55 every attempt was noisy; the search uses attempt 2, the median of 3
+20:57:55 rebuilt for n 417 in 312 ms
+20:58:06 probe n 417 40m/heavy/msaa4: gpu p99 3.32 main 2.57 render 0.85 ms -> pass (gpu 0.79) NOISY
+20:58:06 run noisy (60 of 2308 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:58:12 machine quiet: other processes 7.0% CPU over 5 s (waited 6 s)
+20:58:23 probe n 417 40m/heavy/msaa4: gpu p99 3.32 main 2.60 render 0.76 ms -> pass (gpu 0.79) NOISY
+20:58:23 run noisy (46 of 2192 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:58:28 machine quiet: other processes 6.9% CPU over 5 s (waited 6 s)
+20:58:39 probe n 417 40m/heavy/msaa4: gpu p99 3.23 main 2.44 render 0.74 ms -> pass (gpu 0.77) NOISY
+20:58:39 every attempt was noisy; the search uses attempt 2, the median of 3
+20:58:40 rebuilt for n 521 in 382 ms
+20:58:51 probe n 521 40m/heavy/msaa4: gpu p99 4.10 main 3.01 render 0.74 ms -> pass (gpu 0.98) NOISY
+20:58:51 run noisy (36 of 1902 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:58:56 machine quiet: other processes 4.3% CPU over 5 s (waited 6 s)
+20:59:08 probe n 521 40m/heavy/msaa4: gpu p99 4.02 main 3.06 render 0.91 ms -> pass (gpu 0.96) NOISY
+20:59:08 run noisy (41 of 1846 frames had no GPU time (over 0.5 %)), repeating (3/3)
+20:59:13 machine quiet: other processes 7.2% CPU over 5 s (waited 6 s)
+20:59:24 probe n 521 40m/heavy/msaa4: gpu p99 3.94 main 2.96 render 0.79 ms -> pass (gpu 0.94) NOISY
+20:59:24 every attempt was noisy; the search uses attempt 2, the median of 3
+20:59:25 rebuilt for n 549 in 423 ms
+20:59:48 confirm n 549 40m/heavy/msaa4: gpu p99 4.15 main 3.20 render 0.84 ms -> pass (gpu 0.99) NOISY
+20:59:48 run noisy (99 of 4579 frames had no GPU time (over 0.5 %)), repeating (2/3)
+20:59:53 machine quiet: other processes 6.7% CPU over 5 s (waited 6 s)
+21:00:16 confirm n 549 40m/heavy/msaa4: gpu p99 3.85 main 3.12 render 0.79 ms -> pass (gpu 0.92) NOISY
+21:00:16 run noisy (95 of 4672 frames had no GPU time (over 0.5 %)), repeating (3/3)
+21:00:22 machine quiet: other processes 6.7% CPU over 5 s (waited 6 s)
+21:00:45 confirm n 549 40m/heavy/msaa4: gpu p99 4.19 main 3.13 render 0.76 ms -> pass (gpu 1.00) NOISY
+21:00:45 every attempt was noisy; the search uses attempt 1, the median of 3
+21:00:45 rebuilt for n 577 in 430 ms
+21:01:09 above n 577 40m/heavy/msaa4: gpu p99 4.29 main 3.25 render 0.75 ms -> fail (gpu 1.02) NOISY
+21:01:09 run noisy (88 of 4382 frames had no GPU time (over 0.5 %)), repeating (2/3)
+21:01:14 machine quiet: other processes 7.9% CPU over 5 s (waited 6 s)
+21:01:37 above n 577 40m/heavy/msaa4: gpu p99 3.98 main 3.31 render 0.77 ms -> pass (gpu 0.95) NOISY
+21:01:37 run noisy (91 of 4422 frames had no GPU time (over 0.5 %)), repeating (3/3)
+21:01:43 machine quiet: other processes 7.3% CPU over 5 s (waited 6 s)
+21:02:06 above n 577 40m/heavy/msaa4: gpu p99 4.07 main 3.15 render 0.74 ms -> pass (gpu 0.97) NOISY
+21:02:06 every attempt was noisy; the search uses attempt 3, the median of 3
+21:02:09 rebuilt for n 2832 in 2695 ms
+21:02:32 ceiling n 2832 40m/heavy/msaa4: gpu p99 8.36 main 7.23 render 0.81 ms -> fail (gpu 1.99) NOISY
+21:02:32 run noisy (42 of 1927 frames had no GPU time (over 0.5 %)), repeating (2/3)
+21:02:37 machine quiet: other processes 6.3% CPU over 5 s (waited 6 s)
+21:03:01 ceiling n 2832 40m/heavy/msaa4: gpu p99 6.37 main 5.95 render 0.81 ms -> fail (gpu 1.52) NOISY
+21:03:01 run noisy (55 of 2468 frames had no GPU time (over 0.5 %)), repeating (3/3)
+21:03:06 machine quiet: other processes 7.0% CPU over 5 s (waited 6 s)
+21:03:29 ceiling n 2832 40m/heavy/msaa4: gpu p99 6.71 main 6.13 render 0.82 ms -> fail (gpu 1.60) NOISY
+21:03:29 every attempt was noisy; the search uses attempt 3, the median of 3
+21:03:31 rebuilt for n 1278 in 1214 ms
+21:03:54 bisect n 1278 40m/heavy/msaa4: gpu p99 7.18 main 5.85 render 0.84 ms -> fail (gpu 1.71) NOISY
+21:03:54 run noisy (53 of 2327 frames had no GPU time (over 0.5 %)), repeating (2/3)
+21:03:59 machine quiet: other processes 8.5% CPU over 5 s (waited 6 s)
+21:04:23 bisect n 1278 40m/heavy/msaa4: gpu p99 5.83 main 5.84 render 0.83 ms -> fail (gpu 1.39) NOISY
+21:04:23 run noisy (56 of 2585 frames had no GPU time (over 0.5 %)), repeating (3/3)
+21:04:28 machine quiet: other processes 6.6% CPU over 5 s (waited 6 s)
+21:04:51 bisect n 1278 40m/heavy/msaa4: gpu p99 5.99 main 5.91 render 0.92 ms -> fail (gpu 1.43) NOISY
+21:04:51 every attempt was noisy; the search uses attempt 3, the median of 3
+21:04:52 rebuilt for n 859 in 659 ms
+21:05:15 bisect n 859 40m/heavy/msaa4: gpu p99 5.70 main 4.48 render 0.84 ms -> fail (gpu 1.36) NOISY
+21:05:15 run noisy (65 of 3165 frames had no GPU time (over 0.5 %)), repeating (2/3)
+21:05:21 machine quiet: other processes 6.1% CPU over 5 s (waited 6 s)
+21:05:44 bisect n 859 40m/heavy/msaa4: gpu p99 5.05 main 4.54 render 0.85 ms -> fail (gpu 1.20) NOISY
+21:05:44 run noisy (68 of 3222 frames had no GPU time (over 0.5 %)), repeating (3/3)
+21:05:49 machine quiet: other processes 6.8% CPU over 5 s (waited 6 s)
+21:06:13 bisect n 859 40m/heavy/msaa4: gpu p99 4.98 main 4.52 render 0.80 ms -> fail (gpu 1.19) NOISY
+21:06:13 every attempt was noisy; the search uses attempt 2, the median of 3
+21:06:13 rebuilt for n 704 in 513 ms
+21:06:36 bisect n 704 40m/heavy/msaa4: gpu p99 5.01 main 3.91 render 0.85 ms -> fail (gpu 1.19) NOISY
+21:06:36 run noisy (other processes used 12.2% CPU over 5 s; 75 of 3708 frames had no GPU time (over 0.5 %)), repeating (2/3)
+21:06:54 machine quiet: other processes 8.9% CPU over 5 s (waited 18 s)
+21:07:17 bisect n 704 40m/heavy/msaa4: gpu p99 4.49 main 3.70 render 0.76 ms -> fail (gpu 1.07) NOISY
+21:07:17 run noisy (78 of 3912 frames had no GPU time (over 0.5 %)), repeating (3/3)
+21:07:22 machine quiet: other processes 8.7% CPU over 5 s (waited 6 s)
+21:07:46 bisect n 704 40m/heavy/msaa4: gpu p99 4.65 main 3.83 render 0.75 ms -> fail (gpu 1.11) NOISY
+21:07:46 every attempt was noisy; the search uses attempt 3, the median of 3
+21:07:46 rebuilt for n 637 in 473 ms
+21:08:09 bisect n 637 40m/heavy/msaa4: gpu p99 4.75 main 3.45 render 0.77 ms -> fail (gpu 1.13) NOISY
+21:08:09 run noisy (81 of 4034 frames had no GPU time (over 0.5 %)), repeating (2/3)
+21:08:15 machine quiet: other processes 7.5% CPU over 5 s (waited 6 s)
+21:08:38 bisect n 637 40m/heavy/msaa4: gpu p99 4.31 main 3.58 render 0.78 ms -> fail (gpu 1.03) NOISY
+21:08:38 run noisy (83 of 4034 frames had no GPU time (over 0.5 %)), repeating (3/3)
+21:08:43 machine quiet: other processes 7.4% CPU over 5 s (waited 6 s)
+21:09:07 bisect n 637 40m/heavy/msaa4: gpu p99 4.44 main 3.51 render 0.77 ms -> fail (gpu 1.06) NOISY
+21:09:07 every attempt was noisy; the search uses attempt 3, the median of 3
+21:09:07 rebuilt for n 606 in 458 ms
+21:09:30 bisect n 606 40m/heavy/msaa4: gpu p99 4.38 main 3.37 render 0.81 ms -> fail (gpu 1.04) NOISY
+21:09:30 run noisy (88 of 4253 frames had no GPU time (over 0.5 %)), repeating (2/3)
+21:09:36 machine quiet: other processes 7.6% CPU over 5 s (waited 6 s)
+21:09:59 bisect n 606 40m/heavy/msaa4: gpu p99 4.11 main 3.28 render 0.87 ms -> pass (gpu 0.98) NOISY
+21:09:59 run noisy (89 of 4324 frames had no GPU time (over 0.5 %)), repeating (3/3)
+21:10:04 machine quiet: other processes 8.3% CPU over 5 s (waited 6 s)
+21:10:28 bisect n 606 40m/heavy/msaa4: gpu p99 4.20 main 3.26 render 0.80 ms -> fail (gpu 1.00) NOISY
+21:10:28 every attempt was noisy; the search uses attempt 3, the median of 3
+21:10:28 frontier 40m/heavy/msaa4: 577 (gpu), 3 probes + 8 full runs, fit 549 confirmed False
+21:10:28 point 55m/heavy/msaa4: capacity 5355, ceiling 5355, seed 577
+21:10:28 rebuilt for n 433 in 228 ms
+21:10:39 probe n 433 55m/heavy/msaa4: gpu p99 2.89 main 2.66 render 0.88 ms -> pass (gpu 0.69) NOISY
+21:10:39 run noisy (73 of 2388 frames had no GPU time (over 0.5 %)), repeating (2/3)
+21:10:44 machine quiet: other processes 5.5% CPU over 5 s (waited 6 s)
+21:10:55 probe n 433 55m/heavy/msaa4: gpu p99 2.32 main 2.69 render 0.89 ms -> pass (gpu 0.55) NOISY
+21:10:55 run noisy (172 of 2584 frames had no GPU time (over 0.5 %)), repeating (3/3)
+21:11:01 machine quiet: other processes 5.4% CPU over 5 s (waited 6 s)
+21:11:12 probe n 433 55m/heavy/msaa4: gpu p99 2.15 main 2.57 render 0.93 ms -> pass (gpu 0.51) NOISY
+21:11:12 every attempt was noisy; the search uses attempt 2, the median of 3
+21:11:12 rebuilt for n 577 in 304 ms
+21:11:24 probe n 577 55m/heavy/msaa4: gpu p99 3.58 main 3.45 render 0.97 ms -> pass (gpu 0.85) NOISY
+21:11:24 run noisy (74 of 1945 frames had no GPU time (over 0.5 %)), repeating (2/3)
+21:11:29 machine quiet: other processes 6.8% CPU over 5 s (waited 6 s)
+21:11:40 probe n 577 55m/heavy/msaa4: gpu p99 2.85 main 3.46 render 0.92 ms -> pass (gpu 0.68) NOISY
+21:11:40 run noisy (89 of 2047 frames had no GPU time (over 0.5 %)), repeating (3/3)
+21:11:46 machine quiet: other processes 4.2% CPU over 5 s (waited 6 s)
+21:11:57 probe n 577 55m/heavy/msaa4: gpu p99 2.79 main 3.44 render 0.85 ms -> pass (gpu 0.66) NOISY
+21:11:57 every attempt was noisy; the search uses attempt 2, the median of 3
+21:11:57 rebuilt for n 721 in 430 ms
+21:12:08 probe n 721 55m/heavy/msaa4: gpu p99 4.40 main 3.86 render 0.94 ms -> fail (gpu 1.05) NOISY
+21:12:08 run noisy (36 of 1612 frames had no GPU time (over 0.5 %)), repeating (2/3)
+21:12:14 machine quiet: other processes 8.0% CPU over 5 s (waited 6 s)
+21:12:25 probe n 721 55m/heavy/msaa4: gpu p99 3.38 main 3.72 render 0.89 ms -> pass (gpu 0.81) NOISY
+21:12:25 run noisy (50 of 1768 frames had no GPU time (over 0.5 %)), repeating (3/3)
+21:12:30 machine quiet: other processes 6.4% CPU over 5 s (waited 6 s)
+21:12:42 probe n 721 55m/heavy/msaa4: gpu p99 3.16 main 3.75 render 0.88 ms -> pass (gpu 0.75) NOISY
+21:12:42 every attempt was noisy; the search uses attempt 2, the median of 3
+21:12:42 rebuilt for n 942 in 555 ms
+21:13:05 confirm n 942 55m/heavy/msaa4: gpu p99 4.96 main 4.78 render 0.89 ms -> fail (gpu 1.18) NOISY
+21:13:05 run noisy (69 of 3280 frames had no GPU time (over 0.5 %)), repeating (2/3)
+21:13:11 machine quiet: other processes 7.4% CPU over 5 s (waited 6 s)
+21:13:34 confirm n 942 55m/heavy/msaa4: gpu p99 3.92 main 4.63 render 0.91 ms -> pass (gpu 0.93) NOISY
+21:13:34 run noisy (100 of 3628 frames had no GPU time (over 0.5 %)), repeating (3/3)
+21:13:40 machine quiet: other processes 6.9% CPU over 5 s (waited 6 s)
+21:14:03 confirm n 942 55m/heavy/msaa4: gpu p99 3.91 main 4.73 render 0.93 ms -> pass (gpu 0.93) NOISY
+21:14:03 every attempt was noisy; the search uses attempt 2, the median of 3
+21:14:03 rebuilt for n 990 in 604 ms
+21:14:27 above n 990 55m/heavy/msaa4: gpu p99 5.21 main 5.14 render 1.07 ms -> fail (gpu 1.24) NOISY
+21:14:27 run noisy (other processes used 21.1% CPU over 5 s; 83 of 3106 frames had no GPU time (over 0.5 %)), repeating (2/3)
+21:14:35 machine quiet: other processes 9.4% CPU over 5 s (waited 9 s)
+21:14:58 above n 990 55m/heavy/msaa4: gpu p99 4.15 main 4.94 render 0.97 ms -> pass (gpu 0.99) NOISY
+21:14:58 run noisy (95 of 3420 frames had no GPU time (over 0.5 %)), repeating (3/3)
+21:15:04 machine quiet: other processes 8.1% CPU over 5 s (waited 6 s)
+21:15:27 above n 990 55m/heavy/msaa4: gpu p99 3.95 main 4.84 render 0.96 ms -> pass (gpu 0.94) NOISY
+21:15:27 every attempt was noisy; the search uses attempt 2, the median of 3
+21:15:33 rebuilt for n 5355 in 5922 ms
+21:15:56 ceiling n 5355 55m/heavy/msaa4: gpu p99 11.86 main 12.28 render 0.97 ms -> fail (gpu 2.82) NOISY
+21:15:56 run noisy (36 of 1134 frames had no GPU time (over 0.5 %)), repeating (2/3)
+21:16:02 machine quiet: other processes 10.0% CPU over 5 s (waited 6 s)
+21:16:25 ceiling n 5355 55m/heavy/msaa4: gpu p99 8.98 main 11.27 render 1.09 ms -> fail (gpu 2.14) NOISY
+21:16:25 run noisy (other processes used 11.8% CPU over 5 s; 49 of 1363 frames had no GPU time (over 0.5 %)), repeating (3/3)
+21:16:31 machine quiet: other processes 8.1% CPU over 5 s (waited 6 s)
+21:16:54 ceiling n 5355 55m/heavy/msaa4: gpu p99 8.71 main 11.41 render 0.97 ms -> fail (gpu 2.07) NOISY
+21:16:54 every attempt was noisy; the search uses attempt 2, the median of 3
+21:16:56 rebuilt for n 2302 in 2404 ms
+21:17:20 bisect n 2302 55m/heavy/msaa4: gpu p99 9.60 main 9.87 render 0.99 ms -> fail (gpu 2.28) NOISY
+21:17:20 run noisy (36 of 1524 frames had no GPU time (over 0.5 %)), repeating (2/3)
+21:17:25 machine quiet: other processes 7.1% CPU over 5 s (waited 6 s)
+21:17:48 bisect n 2302 55m/heavy/msaa4: gpu p99 8.16 main 10.09 render 0.97 ms -> fail (gpu 1.94) NOISY
+21:17:48 run noisy (41 of 1544 frames had no GPU time (over 0.5 %)), repeating (3/3)
+21:17:55 machine quiet: other processes 9.8% CPU over 5 s (waited 7 s)
+21:18:18 bisect n 2302 55m/heavy/msaa4: gpu p99 7.88 main 10.24 render 0.99 ms -> fail (gpu 1.88) NOISY
+21:18:18 every attempt was noisy; the search uses attempt 2, the median of 3
+21:18:19 rebuilt for n 1510 in 1212 ms
+21:18:43 bisect n 1510 55m/heavy/msaa4: gpu p99 7.03 main 7.07 render 1.00 ms -> fail (gpu 1.67) NOISY
+21:18:43 run noisy (other processes used 12.8% CPU over 5 s; 56 of 2158 frames had no GPU time (over 0.5 %)), repeating (2/3)
+21:18:48 machine quiet: other processes 2.8% CPU over 5 s (waited 6 s)
+21:19:11 bisect n 1510 55m/heavy/msaa4: gpu p99 5.81 main 6.78 render 0.92 ms -> fail (gpu 1.38) NOISY
+21:19:11 run noisy (59 of 2341 frames had no GPU time (over 0.5 %)), repeating (3/3)
+21:19:17 machine quiet: other processes 7.5% CPU over 5 s (waited 6 s)
+21:19:40 bisect n 1510 55m/heavy/msaa4: gpu p99 5.64 main 6.90 render 1.00 ms -> fail (gpu 1.34) NOISY
+21:19:40 every attempt was noisy; the search uses attempt 2, the median of 3
+21:19:41 rebuilt for n 1223 in 795 ms
+21:20:04 bisect n 1223 55m/heavy/msaa4: gpu p99 6.02 main 5.64 render 0.94 ms -> fail (gpu 1.43) NOISY
+21:20:04 run noisy (58 of 2643 frames had no GPU time (over 0.5 %)), repeating (2/3)
+21:20:10 machine quiet: other processes 6.6% CPU over 5 s (waited 6 s)
+21:20:33 bisect n 1223 55m/heavy/msaa4: gpu p99 4.98 main 6.06 render 0.96 ms -> fail (gpu 1.19) NOISY
+21:20:33 run noisy (76 of 2758 frames had no GPU time (over 0.5 %)), repeating (3/3)
+21:20:39 machine quiet: other processes 5.7% CPU over 5 s (waited 6 s)
+21:21:02 bisect n 1223 55m/heavy/msaa4: gpu p99 4.86 main 5.67 render 0.95 ms -> fail (gpu 1.16) NOISY
+21:21:02 every attempt was noisy; the search uses attempt 2, the median of 3
+21:21:02 rebuilt for n 1100 in 678 ms
+21:21:26 bisect n 1100 55m/heavy/msaa4: gpu p99 5.48 main 5.56 render 0.94 ms -> fail (gpu 1.31) NOISY
+21:21:26 run noisy (67 of 2841 frames had no GPU time (over 0.5 %)), repeating (2/3)
+21:21:31 machine quiet: other processes 8.5% CPU over 5 s (waited 6 s)
+21:21:54 bisect n 1100 55m/heavy/msaa4: gpu p99 4.43 main 5.32 render 0.96 ms -> fail (gpu 1.05) NOISY
+21:21:54 run noisy (85 of 3154 frames had no GPU time (over 0.5 %)), repeating (3/3)
+21:22:00 machine quiet: other processes 7.2% CPU over 5 s (waited 6 s)
+21:22:23 bisect n 1100 55m/heavy/msaa4: gpu p99 4.38 main 5.36 render 0.97 ms -> fail (gpu 1.04) NOISY
+21:22:23 every attempt was noisy; the search uses attempt 2, the median of 3
+21:22:24 rebuilt for n 1044 in 635 ms
+21:22:47 bisect n 1044 55m/heavy/msaa4: gpu p99 5.28 main 4.97 render 0.94 ms -> fail (gpu 1.26) NOISY
+21:22:47 run noisy (67 of 3048 frames had no GPU time (over 0.5 %)), repeating (2/3)
+21:22:52 machine quiet: other processes 6.3% CPU over 5 s (waited 6 s)
+21:23:15 bisect n 1044 55m/heavy/msaa4: gpu p99 4.24 main 5.03 render 0.96 ms -> fail (gpu 1.01) NOISY
+21:23:15 run noisy (94 of 3372 frames had no GPU time (over 0.5 %)), repeating (3/3)
+21:23:21 machine quiet: other processes 6.3% CPU over 5 s (waited 6 s)
+21:23:44 bisect n 1044 55m/heavy/msaa4: gpu p99 4.17 main 5.07 render 0.97 ms -> pass (gpu 0.99) NOISY
+21:23:44 every attempt was noisy; the search uses attempt 2, the median of 3
+21:23:45 rebuilt for n 1017 in 684 ms
+21:24:08 bisect n 1017 55m/heavy/msaa4: gpu p99 5.21 main 5.08 render 0.96 ms -> fail (gpu 1.24) NOISY
+21:24:08 run noisy (72 of 3048 frames had no GPU time (over 0.5 %)), repeating (2/3)
+21:24:13 machine quiet: other processes 7.6% CPU over 5 s (waited 6 s)
+21:24:37 bisect n 1017 55m/heavy/msaa4: gpu p99 4.04 main 5.03 render 0.96 ms -> pass (gpu 0.96) NOISY
+21:24:37 run noisy (110 of 3441 frames had no GPU time (over 0.5 %)), repeating (3/3)
+21:24:42 machine quiet: other processes 6.6% CPU over 5 s (waited 6 s)
+21:25:05 bisect n 1017 55m/heavy/msaa4: gpu p99 3.98 main 4.88 render 0.93 ms -> pass (gpu 0.95) NOISY
+21:25:05 every attempt was noisy; the search uses attempt 2, the median of 3
+21:25:05 frontier 55m/heavy/msaa4: 1017 (gpu), 3 probes + 9 full runs, fit 942 confirmed False
+21:25:05 sweep done
+21:25:06 exit 0

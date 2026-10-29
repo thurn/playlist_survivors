@@ -316,20 +316,21 @@ the task that consumes the result removes the row once it has used it.
 | Finish Cygnus's setup | Reboot once and check D: comes back, or add a startup task that attaches `C:\DevDrive\DevDrive.vhdx`; confirm Settings, Accounts, Sign-in options, "If you've been away" is Never; remove the `D:\wt\windows-spike` worktree (`git worktree remove D:\wt\windows-spike`). TD1 found the start-up checkout clean apart from ignored build output | Cygnus setup (2026-10-28) | TD7 (a locked desktop refuses sweeps) |
 | Listen to *Action*'s click track | Render the click track locally from a checkout with `songs/action/` (it contains the NCS audio, so never commit or share it). On Cygnus, `export UV_PYTHON_PREFERENCE=managed` first. Then: `ffmpeg -i "D:\vendor\songs\action\Alessia Labate, Conrad Taylor - Action [NCS Release].mp3" -map 0:a -c:a flac public/audio/action.flac` and `uv run --project tools/analysis ps-analysis click songs/action/songmap.json --out tools/analysis/work/action-click.wav`. (`D:\wt\td0` already has the WAV while the worktree exists.) Listen on speakers or headphones for: the 1 kHz beat click sitting on every kick with no flam or drift from start to end; the louder 1.6 kHz downbeat click on each bar's first kick; the 2.4 kHz section clicks at the changes in `songs/action/form.md`; the clicks keeping time through the two kickless breaks (34.1–37.2 s, 120.8–123.9 s), with the drops landing on the section click (12.4, 37.2, 123.9 s); the early hit on beat 3 of bars 82, 84 and 86 (126.2, 129.3, 132.4 s), with the click on the kick, not the hit. Also note whether the "stabs" (36.4, 123.2, 195.9, 197.4 s) are vocals. Record any mismatch with its song time. | TD0 | TD3 |
 | Review the clip annotations | Open `demo3d/evidence/td2/contact-*.jpg`: each row is a clip in 8 frames, with the proposed impact framed in red. Note any attack whose red frame isn't the blow, or any hit or death whose red frame isn't the reaction, with its type and role (`evidence/td2/README.md` lists them) | TD2 | TD4 (it switches to the real annotations) |
-| Decide the NCS licence for a public demo build | NCS's policy covers the capture video with its credit, but sends games to its commercial licensing form (`songs/action/source.json`, `terms`). Decide whether the Windows demo build stays private, or apply through NCS's form before sharing it | TD0 (recorded by the TD1 session) | TD13 (the demo build) |
+| Decide the NCS licence for a public demo build | NCS's policy covers the capture video with its credit, but sends games to its commercial licensing form (`songs/action/source.json`, `terms`). Decide whether the Windows demo build stays private, or apply through NCS's form before sharing it | TD0 (recorded by the TD1 session) | integration (the demo build; TD13 kept it private) |
 | Answer the Windows Firewall prompt for `playlistsurvivors3d.exe` | On the desktop since 2026-10-27 23:13, raised by a TD7 development build (`D:\wt\td7\demo3d\Builds\il2cpp-dev`, since deleted); the bench needs no network, so denying it is fine. Until then every sweep refuses at the foreground check unless run with `demo3d sweep --no-foreground`. Afterwards an agent re-runs `demo3d sweep demo3d/sweeps/synthetic-frontier.json` for a frontier with the foreground, and the display-off check with the window composited (turn the display off, start a sweep, expect `display was off, now on` and normal runs) | TD7 | TD5 (its first sweep) |
-| Turn on Developer Mode for PIX's replay | Settings, System, For developers, Developer Mode (administrator). Then an agent runs `uv run --project demo3d/tools demo3d pix demo3d/sweeps/synthetic-frontier.json --point n=2000,viewWidthM=40,load=demo,aa=msaa4 --out <dir>`, which captures and then stops at `E_PIX_FEATURE_REQUIRES_DEVELOPER_MODE` (both seen with the same pixtool commands by hand; `demo3d pix` itself hasn't run end to end), and checks its passes.md against PIX's UI once | TD7 | TD12 |
-| The locked-desktop refusal | Lock the desktop (Win+L) while an agent session (Remote Control) runs `uv run --project demo3d/tools demo3d sweep demo3d/sweeps/synthetic-small.json`; expect exit 3 and `refusal.json` saying `desktopLocked`; unlock | TD7 | TD12 |
-| Watch the first assembled check | From `demo3d/`, windowed: `Builds\\il2cpp\\PlaylistSurvivors3D.exe -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --click --overlay --seconds 60 --envelope 750` (about 300 monsters), then `--start-at 45`, then `--start-at 196` (the ending's accents). Expect every gait step, hit flinch and death on a click with no drift over the minute; feet that don't slide and crossfades without pops; overlay counts near the targets; the horde at 0:45 appearing at once. Note the song times of anything off | TD4 | TD13 |
+| Turn on Developer Mode for PIX's replay | Settings, System, For developers, Developer Mode (administrator). Then an agent runs TD12's two captures, `uv run --project demo3d/tools demo3d pix demo3d/sweeps/td12/s3-msaa4-demo.json --point n=591,viewWidthM=30,load=demo,aa=msaa4 --out <dir>` (the 30 m frontier point; TD13 lowered the envelope to 425) and `... demo3d/sweeps/td12/s3-msaa4-heavy.json --point n=417,viewWidthM=30,load=heavy,aa=msaa4 --frames 1 --out <dir>` (its heavy-load point), checks one passes.md against PIX's UI, and adds the per-pass estimates to `demo3d/evidence/td12/report.md` (performance.md, the per-pass estimate). TD12 found both capture (since it fixed `demo3d pix`) and stop at `E_PIX_FEATURE_REQUIRES_DEVELOPER_MODE` | TD7 | integration (TD12 tried: the compute estimate stands meanwhile) |
+| The locked-desktop refusal | Lock the desktop (Win+L) while an agent session (Remote Control) runs `uv run --project demo3d/tools demo3d sweep demo3d/sweeps/synthetic-small.json`; expect exit 3 and `refusal.json` saying `desktopLocked`; unlock | TD7 | integration (TD12's and TD13's runs didn't need it) |
+| Watch the first assembled check | From `demo3d/`, windowed: `Builds\\il2cpp\\PlaylistSurvivors3D.exe -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --click --overlay --seconds 60` (the envelope, 425, at the climax; the first minute holds about 60 to 160), then `--start-at 45`, then `--start-at 196` (the ending's accents). Expect every gait step, hit flinch and death on a click with no drift over the minute; feet that don't slide and crossfades without pops; overlay counts near the targets; the horde at 0:45 appearing at once. Note the song times of anything off | TD4 | integration (TD13's song check covers the timing numbers, not the eyes) |
 | Watch the bone-texture crowd in motion | After `demo3d unity BakeCrowd` and `demo3d build`, from `demo3d/`: `Builds\il2cpp\PlaylistSurvivors3D.exe -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --crowd-bench --arm bone --scene s2 --n 800 --view-width 30 --seconds 60` (windowed). Look for feet sliding on the walks, pops at crossfades (into and out of attacks, hits and deaths), the hit flash's strength, the dissolve and its edge, and weapons leaving hands. Stills: `demo3d/evidence/td5/crowd-*.jpg` | TD5 | TD4 (its timeline hookup replaces TD5's scenario) |
 | Judge the crowd's look against the packs | Compare `demo3d/evidence/td5/crowd-bone-s2-30m-crop.jpg` with the vendor demo scenes: the slime is drawn opaque (its vendor material is transparent), the goblin, bat and mushroom use albedo baked from InfinityPBR's colour-ID shader, and tints are placeholder near-white sets. Note anything that reads wrong | TD5 | TD15 (the art pass) |
-| Review TD9's anti-aliasing pairs | Flip between `demo3d/evidence/td9/aa/*-msaa4-*-crop.jpg` and the matching `*-taa-*` crops (3× enlargements of the view's centre), and watch `D:\wt\demo3d\captures\td9\s3-msaa4.mp4` against `s3-taa.mp4` and `song-msaa4.mp4` against `song-taa.mp4` (2 s, fixed-time; full stills beside them). TD9 chose MSAA 4×: TAA left the horde's edges stepped. Note any moment where TAA looks better (shimmer on thin swords, the bolts' trails) or MSAA worse. Regenerate with `uv run --project demo3d/tools python demo3d/evidence/td9/aa_captures.py` | TD9 | TD12 (its AA mode) |
+| Review TD9's anti-aliasing pairs | Flip between `demo3d/evidence/td9/aa/*-msaa4-*-crop.jpg` and the matching `*-taa-*` crops (3× enlargements of the view's centre), and watch `D:\wt\demo3d\captures\td9\s3-msaa4.mp4` against `s3-taa.mp4` and `song-msaa4.mp4` against `song-taa.mp4` (2 s, fixed-time; full stills beside them). TD9 chose MSAA 4×: TAA left the horde's edges stepped. Note any moment where TAA looks better (shimmer on thin swords, the bolts' trails) or MSAA worse. Regenerate with `uv run --project demo3d/tools python demo3d/evidence/td9/aa_captures.py`. TD12 measured the frontier at MSAA 4× and found TAA now saves 38 % of S3's GPU time at the envelope point (TD9: 11 to 13 %), so this look decides more than it did | TD9 | integration |
 | Judge the arena's night look | Flip through `demo3d/evidence/td9/stills/arena-e2-1x-*.jpg` (the six shot positions, empty) and the E0 set beside them; watch the song in the arena (TD9's run command). Note anything too dark, too flat or off-palette, props that float or clip, and whether monsters read in the static shade | TD9 | TD15 (the art pass) |
-| Watch S6 in the arena | From `demo3d/`, windowed: `Builds\il2cpp\PlaylistSurvivors3D.exe -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --scene S6 --n 1200 --view-width 40 --load demo --overlay --seconds 60`. qa.md, Walls and the sim: the horde flows round the courtyard's walls and through its gaps, never through a wall; jams at the gaps read as marching in place on the beat | TD9 | TD12 (S6 at the envelope) |
-| Listen to the hero's blows on the click | From `demo3d/`, windowed with speakers on: `Builds\\il2cpp\\PlaylistSurvivors3D.exe -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --click --overlay --seconds 60`. Expect every sword blow, hit flinch and death on a click, swings and impacts (not a wall of identical sounds) at the dense beats, punch on accents and shake that grows with the hits but never jars. Note the song time of anything off | TD10 | TD13 |
+| Watch S6 in the arena | From `demo3d/`, windowed: `Builds\il2cpp\PlaylistSurvivors3D.exe -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --scene S6 --n 425 --view-width 30 --load demo --overlay --seconds 60` (the envelope, 425 since TD13; S6 held TD12's 500 by the numbers). qa.md, Walls and the sim: the horde flows round the courtyard's walls and through its gaps, never through a wall; jams at the gaps read as marching in place on the beat | TD9 | integration |
+| Listen to the hero's blows on the click | From `demo3d/`, windowed with speakers on: `Builds\\il2cpp\\PlaylistSurvivors3D.exe -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --click --overlay --seconds 60`. Expect every sword blow, hit flinch and death on a click, swings and impacts (not a wall of identical sounds) at the dense beats, punch on accents and shake that grows with the hits but never jars. Note the song time of anything off | TD10 | integration (TD13's video carries the offline mix, not the live scheduling) |
 | Review TD8's effect A/B stills | Open `demo3d/evidence/td8/ab/ab-*.jpg` (each: the stock prefab left, our GPU runtime right, at four times of its life, 2×2) and `demo3d/evidence/td8/song-141.5s.jpg`. Note any effect whose read differs: colour, size, timing, a missing layer (README lists the known approximations: curl noise, trails as stretched billboards, sword-slash shading, the laser's beam, skipped distortion). To see one moving: from `demo3d/`, `Builds\il2cpp\PlaylistSurvivors3D.exe -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --effect-gallery <dir> --effects <name>` | TD8 | TD11 (cuts) |
-| Review TD11's accepted cuts | Open `demo3d/evidence/td11/ab/*.jpg` at 100% (each: the centre of the frame with the largest FLIP, A with every cut off left, B right): `shadow-proxy-lod2-*` (crowd shadows drawn from LOD2), `clips30-*`, and `combo-shadow2-clips30-*` (both: the defaults); `invisible-*` and `visible-*` show the two anchors for scale. Full PNG stills: `D:\wt\td11-review\captures\td11\<name>\still-*.png` against `...\base\`. Watch `shadow-proxy-lod2.mp4`, `clips30.mp4` and `combo-shadow2-clips30.mp4` against `base.mp4` in the same folder (2 s, fixed time, S3 at 600, 40 m; gitignored, so keep them with the worktree's other captures). Note any visible difference: shadows that shift, crawl or speckle on the monsters (self-shadowing from the proxy), 30 Hz stepping in fast attacks. The other runs' videos sit beside them (`lod-60-30`, `combo-lod60-clips30` and the rejected ones) | TD11 | TD12 (the frontier uses the accepted cuts) |
-| Judge TD15's beauty shots | Flip through `demo3d/evidence/td15/shots/` (each of the six shots empty and with the horde: S3 at demo load, 2,000 requested, held at the shot), with `demo3d/evidence/td15/reference/` (the packs' demo scenes through our camera) and `readability.md` beside them; `canopy/` shows the canopy fade off and on. To see one moving, from `demo3d/`: `Builds\il2cpp\PlaylistSurvivors3D.exe -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --scene S3 --load demo --n 2000 --view-width 40 --hold-at 44,40 --seconds 30` (the shots' points are in `arena-layout.json`, `shots`). Note anything too dark, too flat or off-palette; mist that reads as smudges; runes or light pools too graphic or too bright; the horde not reading at a glance; effects lost in the set; props that float, clip or repeat; a canopy that hides the hero | TD15 | TD13 (the demo's capture) |
+| Review TD11's accepted cuts | Open `demo3d/evidence/td11/ab/*.jpg` at 100% (each: the centre of the frame with the largest FLIP, A with every cut off left, B right): `shadow-proxy-lod2-*` (crowd shadows drawn from LOD2), `clips30-*`, and `combo-shadow2-clips30-*` (both: the defaults); `invisible-*` and `visible-*` show the two anchors for scale. Full PNG stills: `D:\wt\td11-review\captures\td11\<name>\still-*.png` against `...\base\`. Watch `shadow-proxy-lod2.mp4`, `clips30.mp4` and `combo-shadow2-clips30.mp4` against `base.mp4` in the same folder (2 s, fixed time, S3 at 600, 40 m; gitignored, so keep them with the worktree's other captures). Note any visible difference: shadows that shift, crawl or speckle on the monsters (self-shadowing from the proxy), 30 Hz stepping in fast attacks. The other runs' videos sit beside them (`lod-60-30`, `combo-lod60-clips30` and the rejected ones) | TD11 | integration (TD12 and TD13 used them as accepted) |
+| Judge TD15's beauty shots | Flip through `demo3d/evidence/td15/shots/` (each of the six shots empty and with the horde: S3 at demo load, 2,000 requested, held at the shot), with `demo3d/evidence/td15/reference/` (the packs' demo scenes through our camera) and `readability.md` beside them; `canopy/` shows the canopy fade off and on. To see one moving, from `demo3d/`: `Builds\il2cpp\PlaylistSurvivors3D.exe -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --scene S3 --load demo --n 2000 --view-width 40 --hold-at 44,40 --seconds 30` (the shots' points are in `arena-layout.json`, `shots`). Note anything too dark, too flat or off-palette; mist that reads as smudges; runes or light pools too graphic or too bright; the horde not reading at a glance; effects lost in the set; props that float, clip or repeat; a canopy that hides the hero | TD15 | integration (TD13's video shows the scene in motion) |
+| Watch the demo | Play `D:\wt\demo3d\captures\td13\demo-mixed.mp4` (1080p60, 199 s, with its offline mix; gitignored, and the NCS song keeps it off any share until the licence row is settled) at full screen with sound. qa.md, The full demo: the arc from a handful of monsters to the envelope (425) at the final peak (161 to 186 s); the hero fighting through the arena; every hit and death visible, no effect missing on the densest beats and no light flickering out; the ending's two accent slams (195.9 and 197.4 s) clearing the screen (the last slam's merged lights wash the frame orange: too much?); weight, not clipping, at the densest beats. Note the song times of anything off. To watch it live instead, TD13's run command | TD13 | integration |
 | Judge the triplanar rock port | Open `demo3d/evidence/td14/stills/rock-triplanar-e2-1x-forest-edge-crop.jpg` (the big rock, centre top) beside Elven Realm's own demo scene: TD14 ported `SyntyStudios_RockTriplanar` to `Demo3D/RockTriplanar` (rock-wall sides projected on the object's axes, grass laid over where it faces up). Note if the grass cover is too strong or too weak, the texture scale is off, or the rock reads flatter than the vendor's | TD14 | TD15 (the art pass) |
 
 ## Task Notes
@@ -1744,11 +1745,218 @@ Review bullet below supersedes the first pass's thresholds, scores and defaults)
 
 ### TD12
 
-Status: Not started.
+Status: Done (2026-10-28, on Cygnus). The per-pass estimates wait for Developer Mode (Pending on
+the operator); the compute estimate stands meanwhile.
+
+- **Commits** (branch `td/td12`, from `demo3d` at `b1b4d73`): `16e1f11` (the envelope in the level
+  script, the sweep specs, `demo3d pix` saving its capture, the two tests), and this entry's
+  commit (the report, evidence and notes).
+- **Run:** in a set-up worktree, `demo3d unity BakeAll` and `demo3d build --backend il2cpp`; the
+  sweeps are `demo3d sweep demo3d/sweeps/td12/<spec>.json --out <dir>` (the full sweep is
+  `s3-msaa4-demo.json s3-msaa4-light.json s3-msaa4-heavy.json` in one invocation; every command is
+  in the report's Run commands); tables: `uv run --project demo3d/tools python
+  demo3d/evidence/td12/summarize.py <dirs> --out table.md`. The demo now plays at the envelope by
+  default (TD9's run command).
+- **The frontier** ([report](../../demo3d/evidence/td12/report.md); S3 in the finished arena, E2 at
+  2×, TD11's defaults, MSAA 4×; requested N, on screen in brackets; every point GPU-limited, compute
+  estimate 12.1 to 12.6 ms):
+
+  | load | 30 m | 40 m | 55 m |
+  |---|---|---|---|
+  | light | 750 (748) | 862 (881) | 1,070 (1,094) |
+  | **demo** | **591 (600)** | 730 (750) | 839 (863) |
+  | heavy | 417 (435) | 577 (597) | 735 (770), re-run in one window |
+
+  Fill counts 664 / 1,180 / 2,232: only light load at 30 m fills its screen. Main thread p99 stays
+  2.7 to 5.9 ms, render 0.7 to 1.0 ms.
+- **The envelope: 30 m, 500 on screen** (**TD13 lowered it to 425**: the full song failed in the
+  climax at 500, 475 and 450; TD13's entry and the report's correction) (no width fills its screen at demo load, so 30 m; 591
+  rounded down). In `action-level.json`, its sections' widths scaled by 0.75 (22.5 to 30 m). Held
+  at 500: GPU p99 3.74 ms, compute estimate 11.2 ms, sim tick 1.38 ms. At the published RTX 4060
+  Laptop Steel Nomad median (GPU line 4.69 ms instead of 4.2, TD7's sources) the 30 m point
+  searches to 655 (661 on screen, still under 664): 30 m, 600. The design's line is kept.
+- **Per-pass (PIX):** not obtained. `demo3d pix` had never saved a capture (pixtool keeps it:
+  fixed, `--open save-capture`); both captures now exist (the heavy one with `--frames 1`) and
+  replay stops at `E_PIX_FEATURE_REQUIRES_DEVELOPER_MODE`. The per-pass estimate lies between GPU
+  p99 × 2.4 and × 3.0, so the compute estimate is its upper bound: 9.0 to 11.2 ms at the envelope.
+- **S6 at the envelope holds** (30 m, 500 requested, about 470 on screen: GPU p99 3.16 to 3.37 ms,
+  3 of 3 pass). S6's own 30 m frontier: 873 requested (about 630 on screen), GPU-limited.
+- **The sim fits its 3.5 ms reserve at the envelope:** tick p99 1.38 ms (S3 at 500), 2.70 ms (S6 at
+  500), 0.97 to 2.70 ms at every S3 frontier point. It crosses the line in S6 between 591 (3.25)
+  and 846 requested (4.58; S6's frontier reads 4.62), and in S3 between 846 and 1,294.
+- **TAA** (the envelope point only): capacity-bound at 30 m (at least 932 on screen, GPU p99 3.67
+  ms, sim tick 7.97 ms there). At matched counts TAA saves 38 % of S3's GPU time and 18 % of S1's
+  (TD9: 11 to 13 %): most of MSAA's cost now comes with the effects. MSAA stays (TD9's look).
+- **Against stock Unity** (40 m, demo, `crowd: baseline`): 362 (377 on screen), main-thread-bound
+  at 10 ms, against the bone-texture path's 730: **2.0×**.
+- **Environment** (TD14 and TD15, in the report): S0 at the authored 2× 0.49 / 0.56 ms GPU p99 at
+  40 / 55 m against the 1.5 ms ceiling; doubling the decoration costs no monsters within 5 %; E2
+  against E0 equal in monsters within 5 %, kept for the static shade.
+- **What's noisy:** 370 of 372 runs, mostly for up to 12 % of frames without a GPU time; 63 also for
+  other sessions' CPU. The foreground was held throughout (`requireForeground` on). Heavy load at
+  55 m isn't steady in its stress timeline (the hero's melee stops after about 15 s), so its noise
+  repeats measured half the particles and the sweep's 1,017 was re-run in one window (735). S6's
+  opening is heavier than its later windows.
+- **For TD13:** the envelope is 500 at 30 m. The song at it (`dotnet ... song`) holds a mean of 317
+  on screen in the final peak (target 500) and 319 in drop-2 (400), so the climax doesn't reach the
+  envelope yet. Heavy load's 30 m frontier (417) is under 500: a climax with heavy-preset effects
+  won't hold it; spells first, as the plan says. TD15's `beauty.py` should run at `n` 500 and 30 m (425 since TD13 lowered the envelope).
+- **Tests:** two changed with the envelope. `LevelScriptCoversEverySongSectionWithinTheEnvelope`
+  no longer pins 2000 (a count rounded to 100 at a measured width). `FramingFollowsTheHeroAndEasesTheZoom`
+  allowed 3 m of camera lag; at 30 m one slam's root motion (about 7 m in under a second) falls
+  on the way to a goal and the 0.4 s spring trails it by 4.7 m at 173.4 s, so lag now stays under
+  6 m and over 3 m in at most 1 % of samples. Clamping every width to 30 m instead failed the
+  breakdown's kill rate (0.88); scaling the arc passes it. `demo3d check --player`: vendor guard
+  (5,275 files) ok, dotnet 119/119, cold EditMode 203/203, IL2CPP build ok.
+- **Self-review** (AGENTS.md's checklist):
+  - Downstream needs: TD13 (the climax holding the envelope) gets the count, the width, the
+    sections' clamped widths, the climax's current shortfall, the heavy-load frontier and the
+    5 % step-down's baseline; integration gets the Developer Mode row with exact commands. Done.
+  - Claims: every number is in `evidence/td12/` rows (372 runs), frontier files and logs, or quoted
+    from TD11, TD14 and TD15's evidence with its source; the 4.69 ms counts other than 30 m are
+    labelled fitted; the MSAA effects split is by subtraction. Done.
+  - Edge cases: the envelope rule with no width qualifying (30 m fallback); capacity-bound TAA
+    reported by on-screen count; requested against on-screen counts; non-steady stress windows
+    (heavy at 55 m re-run, S6 noted); the zero-GPU-time frames' possible low bias. Done.
+  - Tests against the source: `summarize.py`'s frontier numbers come from the harness's own
+    frontier.jsonl and match its report.md; the 4.69 ms line was searched by the harness, not only
+    fitted. Done.
+  - Concurrency: not applicable (no threads added).
+- **Tool problems:** `demo3d pix` wrote no capture (fixed); PIX's 3-frame capture of heavy load
+  killed the player twice (one frame worked); `dotnet test`'s 3 s song-build test failed once under
+  another session's load (4.3 s; passed on rerun); each build rewrites `URP-Demo.asset` and
+  `UniversalRenderPipelineGlobalSettings.asset` (reverted, not committed). Another session's tests
+  and builds ran in `D:\wt\demo3d` beside the sweeps.
 
 ### TD13
 
-Status: Not started.
+Status: Done (2026-10-29, on Cygnus), with the answer milestone's review recorded below. The
+viewing and listening checks are the operator's (rows above).
+
+- **Commits** (on `demo3d`): `f44309d` (the song check, the clearing ending), `2c7ddb0` (look-ahead
+  releases, the route, the reserve), `8b84006` (a window test fix), `41912e3` (the song run
+  uncapped, light clustering that coarsens, the climax's spells thinned, the envelope at 425 and
+  TD12's correction), `229a3ee` (the breakdown holds ground), `b1626af` (evidence, notes, Pending
+  rows), and this entry's commit (the review's fixes, the re-runs, the video re-captured). The merges
+  `8b9d3b0` (TD12) and `7f74c94` (the relay's skeleton LOD work from another session) sit between.
+- **Run** (from `demo3d/`, after `demo3d unity BakeAll` and `demo3d build --backend il2cpp`):
+  `Builds\il2cpp\PlaylistSurvivors3D.exe -screen-width 1920 -screen-height 1080
+  -screen-fullscreen 0 -job-worker-count 6 --overlay` (the whole song); the check adds
+  `--song-check <out.json> --stats <out.csv>` (uncapped); the video, `--capture-video
+  ..\captures\td13\demo.mp4 --dump-sounds ..\captures\td13\sounds.json`, then from the root
+  `uv run --project demo3d/tools demo3d mix --events captures/td13/sounds.json --video
+  captures/td13/demo.mp4 --out captures/td13/demo-mixed.mp4`.
+- **The song passes at an envelope of 425** ([evidence](../../demo3d/evidence/td13/README.md)):
+  two runs after the review's fixes, every window within the lines (worst GPU p99 4.022 and 4.026
+  ms, the last window: the climax's last 7 s, the outro and the ending's clear; the climax's own
+  windows at most 3.79 ms), main thread p99 under 3.6 ms, render under 1.3 ms, no frame after the
+  warm-up over twice its line (largest GPU frame 4.72 ms), no rejected spawn, no window dropping
+  light, the whole song covered. One run's machine was noisy by the harness's rule (other
+  processes at 10.6% CPU); the other was quiet. 450 fails under the same measurement (4.30 and 4.27
+  ms).
+- **The steps, as the plan orders them:** (1) the climax's spells thinned to the demo load plus
+  the laser (bolts on beats, not eighths; lightning every third beat, not every second): the
+  climax still failed at 500 (4.34 to 4.54 ms), and its particles matched drop-2's (about 16,000);
+  (2) the boss has no effects of its own beyond the shared hit sparks, so nothing to thin; (3) the
+  envelope lowered in 5% steps: 475 failed, 450 passed once at 4.176 ms and failed once at 4.208
+  ms, 425 passed twice; the review's re-runs confirm it (above). TD12's report carries the
+  correction at its top: S3 holds 500 at 3.74 ms, but the song's climax costs more at the same
+  count; what makes it so (the boss, the laser, the arena around the courtyard, the light
+  clustering) isn't isolated.
+- **The climax holds the envelope:** at TD12's 500 the final peak averaged 317 on screen. Three
+  causes, three changes:
+  - The route walked the hero through the walled courtyard in the climax, where the walls split
+    the horde (about 215 on screen). The level script's goals now run ruins gate (groove-2),
+    courtyard (build) and the courtyard field (drop-2); the breakdown and the final peak hold
+    ground. The hero reaches none of those three goals at this density: drop-2 ends, and the final
+    peak holds, at about (9.5, 16), against the courtyard's east wall
+    ([choreography output](../../demo3d/evidence/td13/choreography/song-onscreen.txt)).
+  - Monsters for a fuller section only started walking in at its start, so drops filled over 20 s.
+    Releases and refills now look 4 s ahead to a section with a larger target (`Sim.TargetAhead`).
+  - The sim holds about 94% of a target while 25 monsters a second die (dying ones count on
+    screen), so the reserve is 1.5x and the final peak asks for 1.05 of the envelope.
+  In the choreography at 425 the climax holds 426 on average and 452 at most (alive and dying); the
+  player counted 413 and 428 (`final-1-stats.csv`).
+- **The ending clears the horde:** the level script's `clear` makes the ending's accent slams kill
+  the monsters on screen, nearest first, so each accent left takes as many and the last takes the
+  rest and the off-screen band its drift would reveal; a clearing section releases and refills
+  nothing, and its hero slams on every accent. Nothing alive is on screen from the last slam to the
+  end (a dotnet test).
+- **Built:** `SongWindows` (Demo3D.Bench, EditMode-tested), `SongRunCheck` (`--song-check`) and
+  `FrameTimingCollector` (the harness's frame-commit policy, now shared by BenchRunner and the song
+  check); `EffectLights` clusters again at twice the cell, up to 8x, while more clusters are visible
+  than the pool holds, and holds a coarsened cell for 0.5 s (the ending's last slam: 335 cues
+  against 128 lights dropped 6% before); the choreography CLI's `song --onscreen`.
+- **The video:** `D:\wt\demo3d\captures\td13\demo-mixed.mp4` (gitignored; 1080p60, 199 s, re-captured
+  with the review's build; the song plus every sound event through the offline mixer, `demo3d mix`;
+  the NCS song and vendor sounds never leave the machine). The operator's viewing row is above.
+- **Choices:**
+  - The song check runs uncapped: at the display's 60 Hz the GPU clocked down and read 5 to 9 ms in
+    the near-empty intro. Single frames in the first 5 s are reported, not judged (the first frame
+    loads for 1.3 to 1.6 s on the main thread while the song plays), and frames without a GPU time
+    mark the run noisy without failing it, as the harness does (7 to 8% here, with the harness's
+    own policy); a window with under half its frames timed fails.
+  - Light clusters merge instead of dropping: no light switches off on the densest beat, at the
+    price of wider, less local light for that beat (the operator's viewing row asks about it).
+  - The climax's fraction above 1.0 is a sim setting, not more than the envelope on screen: the
+    measured count is what holds the envelope.
+  - The breakdown holds ground: walking to the graveyard it killed 0.88 of its preset under Mono
+    (EditMode) and 0.93 under .NET, against the test's 10%.
+  - The stride test requires strides on a sparse song (an envelope of 100) and checks the song's
+    own for direction only: at the envelope the hero almost never strides, since a monster is
+    nearly always within reach ahead, and it cuts its way by its blows.
+- **Not done here:** the hero reaches no goal after drop-1 at this density, so the tour of the arena
+  is shorter than the level script reads (TD15's landmarks still pass through the frame). The NCS
+  licence decides whether the Windows build is shared (row above).
+- **Self-review** (AGENTS.md's checklist, before the review): downstream needs, done (integration
+  needs the song run, the video and the rows; the envelope change is carried into TD12's report and
+  entry); claims, done (numbers from `evidence/td13/`); edge cases, done (windows at the run's end,
+  warm-up frames, frames without GPU time, a clearing section with no accent left, the light
+  growth's cap); tests against the source, done (the ending's clear and the stride rules on the song
+  timeline; the windows on synthetic frames with known answers); concurrency, not applicable. The
+  review found what the claims and edge-case passes missed (below).
+- **The answer milestone's review** (TD12 and TD13; a fresh read-only subagent, no warden skill in
+  the session): 13 findings, none blocking in the sim and nothing that could commit vendor or NCS
+  files. Fixed in this entry's commit:
+  1. A run with no GPU times passed (empty p99 = 0): a window with under half its frames timed now
+     fails (test).
+  2. The song check committed frames by a looser rule than the harness (it lost 7 to 8% of GPU
+     times against the harness's 2% in S3): `FrameTimingCollector` is the harness's policy, used by
+     both; the re-runs above use it. The share without a GPU time stayed 7.8 to 7.9% in the song,
+     so it comes from the frame rate, not the policy.
+  3. Frames and song times were on different clocks (windows labelled up to 1.5 s early, drops
+     judged in the wrong windows; a latent unsigned underflow): each frame is now placed at its own
+     Update's song time through the QueryPerformanceCounter map the harness checks, frames before
+     the first Update are dropped, and window times are song seconds.
+  4. Whether the run's last seconds were judged depended on its length modulo 5 s: a window ending
+     at the last frame is always added (test).
+  5. The quiet-machine condition wasn't checked or stated, and verdicts didn't say what produced
+     them: the harness's machine samples, the build and the command line are now in every verdict;
+     a noisy run is reported, as the harness reports one, not failed.
+  6. The rule as built differed from performance.md, and a garbage GPU reading (1.6e13 ms, seen in
+     a warm-up) would have failed a run after the warm-up: performance.md's song paragraph now
+     states the rule as built, and GPU times over a second are counted and treated as missing
+     (test).
+  8. Coarsened light cells had no hysteresis: a coarsened cell now holds 0.5 s (test). The merged
+     clusters' look (summed intensity at the largest cue's range) is left to the operator's viewing
+     row.
+  9. Evidence claims: 500's range (4.34, not 4.45), 450-b's failing windows (2, not 3), "no light
+     dropped" (now "no window dropping light"), the cause of the climax's cost (now "not isolated"),
+     and the choreography numbers (now kept in `evidence/td13/choreography/`) are corrected.
+  10. The stride test summed strides over the song and a sparse song: strides are now required on
+     the sparse song and the song's own checked for direction; the claim that drop-2 reaches the
+     field and the climax holds on open ground is corrected (it holds against the courtyard's
+     wall).
+  11. `summarize.py` judged "fills" by the requested count: it uses the on-screen count, and
+     `table.md`'s S6 row reads "no" (627 on screen against 664; the envelope is unaffected).
+  12. Stale rows: the PIX row's "envelope point", the S6 row's `--n 500` and the `beauty.py` note now
+     say 425.
+  13. A partial run (`--start-at`, `--seconds`) could pass: a run that doesn't cover the whole song
+     now fails (`wholeSong`; judged by the run's Updates, since the first measured frame lands near
+     1 s after the load).
+  Dismissed: 7, the clearing ending assumes each remaining accent gets a slam. In this song both
+  accents do and the test proves the screen clear; a level script whose ending accents sit closer
+  than a slam would need the sweep, and none does.
 
 ### TD14
 
@@ -2069,3 +2277,101 @@ Status: Done (2026-10-28, on Cygnus). The headroom step ran after TD14 landed (a
   for the first build after, beside other worktrees' compiles).
   Another worktree's sweep held the machine lock, then a shader compile kept the machine busy, so
   my S0 sweep waited for quiet before measuring.
+
+### Skeleton LOD Mac experiment (standalone, 2026-10-28)
+
+- **Status:** Done. Explicit operator handoff overrides the Cygnus-only host
+  rule for this experiment. Fresh relay worktree; no Hive or Tollgate.
+- **Scope:** two independent Skeleton Warrior LOD experiments and a synchronized
+  Metal/Mono Mac preview. Production LODs/defaults stay unchanged.
+- **Evidence, recipes, commands and limitations:** [skeleton-lod comparison](../../demo3d/evidence/skeleton-lod/README.md).
+- **Tool incident:** first Mac `uv run --directory demo3d/tools pytest -q` returned
+  `1 failed, 67 passed, 2 skipped`: the synthetic hook in
+  `test_launcher_without_tools_refuses_demo_changes_only` was not executable, so
+  POSIX Git ignored it and the expected refusal never occurred. The test fixture
+  now chmods its hook like the real installer. Rerun: 68 passed, 2 skipped.
+  No change to guard policy. Blender's normal zero exit on Python exceptions was
+  caught during recipe development; the reproducible route explicitly uses
+  `--python-exit-code 1` and checks subprocess status.
+- **Operator pending:** human visual acceptance of A/B and the interactive preview;
+  no pause before completing the experiment. Windows performance/parity are outside
+  this Mac task.
+
+- **Implementation checkpoint:** `0850eedc419e475653817337eb7e4eacebdef5bf`.
+  A retains 2,143 triangles / 4,008 vertices; the 1,200-triangle attempt failed the
+  whole-body preservation requirement. B is an independent 1,264-triangle / 3,792-vertex
+  proxy with visibly blockier armour. Both reuse the original binding/60 Hz clips.
+- **Validation:** 119 .NET tests, 68 Python tests (2 Windows-only skips), 197 cold Unity
+  tests (7 unrelated production-bake skips), full tools lint, check-fast and vendor
+  guard passed. Mac arm64 Mono/Metal non-development build and final offscreen player
+  capture passed. The full renderer exercise covers all 15 clips and preceding
+  crossfades; 384 intended stills plus a 47.867 s reel are kept locally. No Cygnus,
+  Windows/D3D12 or Windows IL2CPP checks were run.
+- **Cold review:** two confirmed UI issues fixed (paused clip selection and clipped
+  single-view controls); the new regression also caught target-texture disposal
+  ordering, now corrected. Review and limitations are in the linked comparison.
+- **Run:** `open demo3d/Builds/SkeletonLodPreview.app` in the Mac task worktree.
+  Scene: `demo3d/Assets/Baked/SkeletonLod/SkeletonLodPreview.unity`; exact regeneration,
+  build, offscreen capture, reel and controls are in the linked evidence README.
+- **Additional tool incident:** ffmpeg's optional `drawtext` filter is absent on this
+  Mac (`No such filter: 'drawtext'`, once). The reproducible assembler uses Pillow
+  for labels and ffmpeg's available raw-video/H.264 path; the full reel passed.
+
+### Skeleton LOD preview UI follow-up (2026-10-28)
+
+- **Status:** Done; fresh Mac worktree from relay `2815a785`, standalone relay
+  delivery, no Hive or Tollgate.
+- **Operator report:** changing text painted repeatedly over itself in full screen;
+  detail inspection also needed a closer zoom.
+- **Fix:** a dedicated empty presentation camera clears the screen, and IMGUI
+  paints an opaque background before its labels. Previously every camera rendered
+  only to its model texture. Zoom minimum is now 0.5 m (formerly 2.5 m); wheel,
+  +/- and logarithmic slider controls, matched head/torso/feet focus presets and
+  a focus-height slider support detail inspection. Production meshes/defaults are
+  unchanged. The full-screen player was reopened at a close upper-body view;
+  read-only live inspection confirmed legible changing labels without overprint.
+- **Checks:** 3 focused regressions (including old-pixel erasure and registered
+  head/feet/minimum zoom), 199 cold Unity passes (7 unrelated bake skips), 119 .NET
+  passes, 68 Python passes (2 Windows-only skips), tools lint and the normal Mac
+  Mono/Metal build passed. Twelve matched detail renders were checked locally.
+  Check-fast and vendor guard run before delivery. Windows-only checks not run.
+- **Evidence and commands:** [preview follow-up](../../demo3d/evidence/skeleton-lod/README.md#preview-ui-follow-up-2026-10-28).
+  No cold review trigger: under 300 lines of non-test/non-documentation code,
+  no sim determinism/vendor guard change and no demo milestone boundary.
+- **Capture note:** a temporary batch-player backbuffer screenshot probe returned
+  black rather than the live UI. It was rejected, with no false UI-pass claim;
+  the unshipped route was removed. Tests render to explicit textures, and the
+  already operator-requested full-screen app was inspected after launch.
+
+### Skeleton LOD cost-matched comparison (2026-10-28)
+
+- **Implementation commit:** `3b59ec4`.
+- **Status:** Done; fresh standalone Mac worktree from relay `9f3abb795ac1a9679e4b8ca8ac0fca58483a8f78`.
+  No Hive, Tollgate or Cygnus; production defaults unchanged.
+- **Operator request:** replace the unequal A/B comparison with B at comparable
+  rendering cost and recommend the LOD strategy.
+- **Result:** B matched has 2,003 triangles / 4,211 vertices, versus A's
+  2,143 / 4,008. Median paired synchronized render latency is 1.013 × A over
+  36 paired blocks (Mac Metal, 1,024/4,096 instances, main and own shadows).
+  Across 270 game-size poses, B improves silhouette overlap in 267 and RGB error
+  in 263; average overlap is about 92% versus 88%, colour error about 20% lower.
+- **Recommendation:** part-aware hybrid for aggressive crowd LODs. Retain cheap
+  important authored shells, allocate reductions per semantic part and reconstruct
+  selected small anatomy/details. Lighter source reduction serves nearer LODs;
+  keep LOD0 where visible damage remains. This is skeleton-specific pipeline
+  evidence, not a universal threshold or Windows performance claim.
+- **Evidence and exact commands:** [cost-matched comparison](../../demo3d/evidence/skeleton-lod/cost-match.md).
+  Raw runs, generated meshes and the updated preview remain local and ignored.
+  App: `demo3d/Builds/SkeletonLodPreview.app` in `.worktrees/skeleton-lod-cost-match`;
+  scene: `demo3d/Assets/Baked/SkeletonLod/SkeletonLodPreview.unity`.
+- **Validation:** 199 cold Unity passes (7 unrelated bake skips), 119 .NET passes,
+  68 Python passes (2 Windows-only skips), tools lint, normal Mac Mono/Metal build,
+  all-clip/crossfade/detail captures and validated cost/quality runs passed.
+  Check-fast and vendor guard passed before delivery. Windows-only checks not run.
+- **Review:** self-review recorded in evidence; fresh read-only same-host warden
+  review found no actionable issues. The previously read skill disappeared on disk;
+  its cached instructions were supplied and applied. Human aesthetic acceptance
+  and target-device performance thresholds remain pending.
+- **Run:** `open -n demo3d/Builds/SkeletonLodPreview.app --args -screen-fullscreen 1 --view-width 5`.
+  The third pane is **B matched**; the earlier full-screen clearing and zoom
+  controls are preserved.

@@ -30,6 +30,7 @@ namespace Demo3D.Runtime.Playback
         public bool NoFeel;           // --no-feel: no punch or shake (A/B captures may use it)
         public int Envelope;          // --envelope <count>: override the level script's envelope count
         public string Stats;          // --stats <file.csv>: on-screen counts against targets, twice a second
+        public string SongCheck;      // --song-check <file.json>: TD13's full-song verdict (SongRunCheck), uncapped
         public string Arena = "e2";   // --arena <e0|e2|off>: the arena's rung (TD9), or TD4's flat bench ground
         public float Density = 1f;    // --density <0.5|1|2|4>: the arena's decoration density
         public Demo3D.Runtime.Arena.ArenaOptions ArenaOptions; // --arena, --density and TD14's --grd, --merged, --tex-cap, --prepass
@@ -58,6 +59,7 @@ namespace Demo3D.Runtime.Playback
                 StillsAt = Args.Get("--stills-at"),
                 CaptureVideo = Args.Get("--capture-video"),
                 Stats = Args.Get("--stats"),
+                SongCheck = Args.Get("--song-check"),
                 Envelope = Args.GetInt("--envelope", 0),
                 NoFeel = Args.Has("--no-feel"),
                 DumpSounds = Args.Get("--dump-sounds"),

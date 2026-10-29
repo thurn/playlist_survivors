@@ -115,17 +115,29 @@ namespace Demo3D.Choreography.Tests
         /// heads toward the section's goal until the hero first stands in it, and stays in it
         /// afterwards. With a clear line to the goal the stride heads straight for it; otherwise it
         /// follows the goal's flow field around the walls (TD6): within 60° of the field's way downhill,
-        /// and never uphill by more than a cell.
+        /// and never uphill by more than a cell. Checked on the song and on a sparse song (an envelope
+        /// of 100): at the envelope the hero rarely strides, since a monster is nearly always in its way
+        /// and it cuts its way by its blows (TD13).
         /// </summary>
         [Test]
         public void HeroStridesHeadTowardTheGoalUntilReached()
         {
-            Timeline tl = Fixtures.SongTimeline;
+            LevelScript sparse = ChoreographyFiles.LoadLevel(Fixtures.Root);
+            sparse.EnvelopeOnScreen = 100;
+            var problems = new List<string>();
+            StrideProblems(Fixtures.SongTimeline, problems);   // at the envelope: strides are rare, but each must head for the goal
+            int toward = StrideProblems(Choreographer.Run(Fixtures.Song, sparse, Fixtures.Data), problems);
+            Assert.That(toward, Is.GreaterThan(0), "the sparse song never strode toward a goal");
+            Assert.That(problems, Is.Empty, Report(problems));
+        }
+
+        /// <summary>Adds the timeline's stride problems; returns its strides toward a goal.</summary>
+        static int StrideProblems(Timeline tl, List<string> problems)
+        {
             GroundLayout layout = Fixtures.Data.Layout;
             NavGrid nav = layout.Nav;
             float heroR = Fixtures.Data.Roster.HeroRadius;
             ArraySegment<MotionSegment> hero = tl.SegmentsOf(0);
-            var problems = new List<string>();
             int toward = 0, around = 0, after = 0;
             for (int si = 0; si < tl.Sections.Length; si++)
             {
@@ -178,9 +190,8 @@ namespace Demo3D.Choreography.Tests
                     }
                 }
             }
-            TestContext.WriteLine("strides toward a goal: " + toward + " (" + around + " around walls by the goal field), within a reached goal: " + after);
-            Assert.That(toward, Is.GreaterThan(0), "the hero never strode toward a goal");
-            Assert.That(problems, Is.Empty, Report(problems));
+            TestContext.WriteLine(tl.Name + ": strides toward a goal: " + toward + " (" + around + " around walls by the goal field), within a reached goal: " + after);
+            return toward;
         }
 
         /// <summary>Each section's measured deaths per second stay within 10% of its load preset.</summary>
@@ -198,7 +209,7 @@ namespace Demo3D.Choreography.Tests
                 int deaths = CountDeaths(tl, sec.Start, sec.End);
                 double rate = deaths / (sec.End - sec.Start);
                 TestContext.WriteLine(sec.Label + ": " + rate.ToString("F2") + " deaths/s against " + target.ToString("F2"));
-                if (target <= 0) continue;
+                if (target <= 0 || ls.Clear) continue;   // a clearing section kills what is on screen
                 if (Math.Abs(rate / target - 1) > 0.10) problems.Add(sec.Label + " " + rate.ToString("F2") + " deaths/s against " + target.ToString("F2"));
             }
             Assert.That(problems, Is.Empty, Report(problems));
@@ -454,12 +465,21 @@ namespace Demo3D.Choreography.Tests
                 if (t >= sec.End) continue;
                 Assert.That(tl.FramingAt(t).ViewWidth, Is.EqualTo(tl.Sections[tl.Map.SectionIndexOf(sec.Label)].ViewWidthM).Within(1e-3f), sec.Label);
             }
-            // The focus trails the hero by a spring, never by more than a few metres.
+            // The focus trails the hero by a spring, never by more than a few metres. A slam's root
+            // motion (about 7 m in under a second) on the way to a goal outruns the 0.4 s critically
+            // damped spring, whose steady lag behind a speed v is 2 x 0.4 s x v (about 5.8 m at 7.3 m/s):
+            // such a move may stretch the lag past 3 m briefly (TD12's 30 m envelope put one slam
+            // en route, 4.7 m at 173.4 s), never past 6 m, and only for a few samples.
+            int samples = 0, over = 0;
             for (int i = 0; i < tl.Framing.Length; i += 30)
             {
                 double t = i / Timeline.FramingRate;
-                Assert.That(Vector2.Distance(tl.Framing[i].Focus, tl.PositionAt(0, t)), Is.LessThan(3f), "at " + t);
+                float lag = Vector2.Distance(tl.Framing[i].Focus, tl.PositionAt(0, t));
+                Assert.That(lag, Is.LessThan(6f), "at " + t);
+                samples++;
+                if (lag >= 3f) over++;
             }
+            Assert.That(over, Is.LessThanOrEqualTo(Math.Max(1, samples / 100)), "samples trailing by 3 m or more");
         }
     }
 }

@@ -1,0 +1,18 @@
+22:22:30 sweep 20261028-222230: D:\wt\td12\demo3d\sweeps\td12\s3-envelope-fixed.json -> D:\wt\td12\demo3d\Logs\bench\td12-envelope
+22:22:30 the orchestrator holds the machine lock
+22:22:30 display was on, now on after 0.0 s (watching: True); held on for the sweep
+22:22:34 GPU 48 °C, throttle none
+22:22:40 machine quiet: other processes 3.1% CPU over 5 s (waited 6 s)
+22:22:40 machine {"sweep": "20261028-222230", "api": "d3d12", "gpu": "NVIDIA GeForce RTX 4070 Ti", "driver": "610.88", "cpu": "12th Gen Intel(R) Core(TM) i7-12700F", "logicalCores": 20, "powerPlan": "high", "powerPlanName": "High performance", "memMHz": 2133, "jobWorkers": 6, "backbuffer": "1920x1080", "display": "on", "gpuTempC": 47, "gpuThrottle": "none", "quietWaitS": 6, "otherCpuPctAtStart": 3.1, "requireForeground": true, "unity": "6000.6.7f1", "backend": "il2cpp", "commandLine": "D:\\wt\\td12\\demo3d\\Builds\\il2cpp\\PlaylistSurvivors3D.exe -force-d3d12 -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --bench D:\\wt\\td12\\demo3d\\sweeps\\td12\\s3-envelope-fixed.json --out D:\\wt\\td12\\demo3d\\Logs\\bench\\td12-envelope -logFile D:\\wt\\td12\\demo3d\\Logs\\bench\\td12-envelope\\player.log --lock-held"}
+22:22:40 clocks: FrameTimingManager 10000000 Hz, QueryPerformanceCounter 10000000 Hz, newest frame started 450.6 ms ago
+22:22:41 rebuilt for n 500 in 528 ms
+22:23:06 fixed n 500 30m/demo/msaa4: gpu p99 3.74 main 2.81 render 0.73 ms -> pass (gpu 0.89) NOISY
+22:23:06 run noisy (102 of 5115 frames had no GPU time (over 0.5 %)), repeating (2/3)
+22:23:11 machine quiet: other processes 8.6% CPU over 5 s (waited 6 s)
+22:23:35 fixed n 500 30m/demo/msaa4: gpu p99 3.60 main 2.69 render 0.78 ms -> pass (gpu 0.86) NOISY
+22:23:35 run noisy (107 of 5370 frames had no GPU time (over 0.5 %)), repeating (3/3)
+22:23:40 machine quiet: other processes 7.5% CPU over 5 s (waited 6 s)
+22:24:03 fixed n 500 30m/demo/msaa4: gpu p99 3.77 main 2.83 render 0.76 ms -> pass (gpu 0.90) NOISY
+22:24:03 every attempt was noisy; the search uses attempt 1, the median of 3
+22:24:03 sweep done
+22:24:04 exit 0

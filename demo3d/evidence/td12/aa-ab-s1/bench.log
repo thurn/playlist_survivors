@@ -1,0 +1,45 @@
+22:16:55 sweep 20261028-221655: D:\wt\td12\demo3d\sweeps\td12\aa-ab-s1-30m.json -> D:\wt\td12\demo3d\Logs\bench\td12-aa-ab-s1
+22:16:55 the orchestrator holds the machine lock
+22:16:56 display was on, now on after 0.0 s (watching: True); held on for the sweep
+22:16:56 GPU 41 °C, throttle none
+22:17:01 machine quiet: other processes 3.7% CPU over 5 s (waited 6 s)
+22:17:01 machine {"sweep": "20261028-221655", "api": "d3d12", "gpu": "NVIDIA GeForce RTX 4070 Ti", "driver": "610.88", "cpu": "12th Gen Intel(R) Core(TM) i7-12700F", "logicalCores": 20, "powerPlan": "high", "powerPlanName": "High performance", "memMHz": 2133, "jobWorkers": 6, "backbuffer": "1920x1080", "display": "on", "gpuTempC": 39, "gpuThrottle": "none", "quietWaitS": 6, "otherCpuPctAtStart": 3.7, "requireForeground": true, "unity": "6000.6.7f1", "backend": "il2cpp", "commandLine": "D:\\wt\\td12\\demo3d\\Builds\\il2cpp\\PlaylistSurvivors3D.exe -force-d3d12 -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --bench D:\\wt\\td12\\demo3d\\sweeps\\td12\\aa-ab-s1-30m.json --out D:\\wt\\td12\\demo3d\\Logs\\bench\\td12-aa-ab-s1 -logFile D:\\wt\\td12\\demo3d\\Logs\\bench\\td12-aa-ab-s1\\player.log --lock-held"}
+22:17:02 clocks: FrameTimingManager 10000000 Hz, QueryPerformanceCounter 10000000 Hz, newest frame started 379.2 ms ago
+22:17:02 rebuilt for n 591 in 485 ms
+22:17:27 fixed n 591 30m/demo/msaa4: gpu p99 2.79 main 3.23 render 0.80 ms -> pass (gpu 0.66) NOISY
+22:17:27 run noisy (other processes used 17.6% CPU over 5 s; 185 of 5460 frames had no GPU time (over 0.5 %)), repeating (2/3)
+22:17:33 machine quiet: other processes 5.0% CPU over 5 s (waited 6 s)
+22:17:56 fixed n 591 30m/demo/msaa4: gpu p99 2.66 main 3.37 render 0.71 ms -> pass (gpu 0.63) NOISY
+22:17:56 run noisy (182 of 5452 frames had no GPU time (over 0.5 %)), repeating (3/3)
+22:18:02 machine quiet: other processes 4.7% CPU over 5 s (waited 6 s)
+22:18:25 fixed n 591 30m/demo/msaa4: gpu p99 2.72 main 3.29 render 0.74 ms -> pass (gpu 0.65) NOISY
+22:18:25 every attempt was noisy; the search uses attempt 3, the median of 3
+22:18:25 rebuilt for n 591 in 421 ms
+22:18:48 fixed n 591 30m/demo/taa: gpu p99 2.20 main 3.24 render 0.82 ms -> pass (gpu 0.52) NOISY
+22:18:48 run noisy (386 of 6033 frames had no GPU time (over 0.5 %)), repeating (2/3)
+22:18:54 machine quiet: other processes 6.0% CPU over 5 s (waited 6 s)
+22:19:17 fixed n 591 30m/demo/taa: gpu p99 2.36 main 3.28 render 0.75 ms -> pass (gpu 0.56) NOISY
+22:19:17 run noisy (382 of 6006 frames had no GPU time (over 0.5 %)), repeating (3/3)
+22:19:22 machine quiet: other processes 6.1% CPU over 5 s (waited 6 s)
+22:19:45 fixed n 591 30m/demo/taa: gpu p99 2.35 main 3.33 render 0.76 ms -> pass (gpu 0.56) NOISY
+22:19:45 every attempt was noisy; the search uses attempt 3, the median of 3
+22:19:46 rebuilt for n 591 in 421 ms
+22:20:09 fixed n 591 30m/demo/msaa4: gpu p99 2.79 main 3.24 render 0.73 ms -> pass (gpu 0.67) NOISY
+22:20:09 run noisy (141 of 5368 frames had no GPU time (over 0.5 %)), repeating (2/3)
+22:20:14 machine quiet: other processes 5.8% CPU over 5 s (waited 6 s)
+22:20:38 fixed n 591 30m/demo/msaa4: gpu p99 2.79 main 3.24 render 0.74 ms -> pass (gpu 0.66) NOISY
+22:20:38 run noisy (140 of 5368 frames had no GPU time (over 0.5 %)), repeating (3/3)
+22:20:43 machine quiet: other processes 5.6% CPU over 5 s (waited 6 s)
+22:21:06 fixed n 591 30m/demo/msaa4: gpu p99 2.79 main 3.28 render 0.74 ms -> pass (gpu 0.66) NOISY
+22:21:06 every attempt was noisy; the search uses attempt 3, the median of 3
+22:21:07 rebuilt for n 591 in 420 ms
+22:21:30 fixed n 591 30m/demo/taa: gpu p99 2.24 main 3.38 render 0.77 ms -> pass (gpu 0.53) NOISY
+22:21:30 run noisy (449 of 5981 frames had no GPU time (over 0.5 %)), repeating (2/3)
+22:21:35 machine quiet: other processes 4.4% CPU over 5 s (waited 6 s)
+22:21:58 fixed n 591 30m/demo/taa: gpu p99 2.20 main 3.37 render 0.78 ms -> pass (gpu 0.52) NOISY
+22:21:58 run noisy (428 of 5993 frames had no GPU time (over 0.5 %)), repeating (3/3)
+22:22:04 machine quiet: other processes 5.3% CPU over 5 s (waited 6 s)
+22:22:27 fixed n 591 30m/demo/taa: gpu p99 2.21 main 3.32 render 0.78 ms -> pass (gpu 0.53) NOISY
+22:22:27 every attempt was noisy; the search uses attempt 3, the median of 3
+22:22:27 sweep done
+22:22:27 exit 0
