@@ -18,9 +18,8 @@ does a record that lacks a GUID either demo's tracked manifest lists (a stale re
 
 Besides the sync record, the guard reads the derived record: the hashes and GUIDs of every file
 in this worktree's demos' Assets/Baked/ and of the song's source, which it refreshes before each
-check.
-Derived files that are edited copies with fresh GUIDs and new bytes can't be recognized; the
-binary rule and the gitignored folders are the defense there.
+check. Derived files that are edited copies with fresh GUIDs and new bytes can't be recognized;
+the binary rule and the gitignored folders are the defense there.
 """
 
 from __future__ import annotations

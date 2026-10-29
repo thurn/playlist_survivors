@@ -2,7 +2,9 @@
 
 One tool serves both demos' Unity projects, `demo3d/` and `demo2d/` (the `demo3d` and `demo2d`
 commands). They share the per-machine cache, its roots and its sync record, so one guard knows
-every vendor file on the machine. The cache holds what never reaches git (vendor files, baked files, a warm Library) and the
+every vendor file on the machine.
+
+The cache holds what never reaches git (vendor files, baked files, a warm Library) and the
 machine's config: `roots.json` maps each manifest source root to a folder, and
 `sync-record.json` lists every synced vendor file for the guard. On Cygnus the cache is on the
 Dev Drive beside the worktrees, since ReFS block clones only work within one volume.

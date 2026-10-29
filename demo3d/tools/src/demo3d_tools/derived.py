@@ -3,8 +3,8 @@
 Bakers write derived files into each demo's gitignored Assets/Baked/. A copy of one elsewhere in
 the tree would pass the sync record's checks, since its bytes and GUID are new. So before every
 check the guard adds every file in this worktree's demo3d/ and demo2d/ Assets/Baked/ (and the
-song's source MP3) to
-the per-machine derived record. It only ever adds: every worktree's baked files stay recorded.
+song's source MP3) to the per-machine derived record. It only ever adds: every worktree's baked
+files stay recorded.
 A file in Baked/ whose bytes are a blob tracked at HEAD is a copy of our own file (setup copies
 the song map there), so it isn't recorded.
 """
