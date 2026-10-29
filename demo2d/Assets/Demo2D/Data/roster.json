@@ -1,0 +1,53 @@
+{
+  "note": "demo2d's catalog (PX4): the hero's moves, the 13 roster types, their projectiles and the spells, in the core's roster format. One tile (32 grid pixels) is one metre. Radii are the sim's footprints in metres; gait steps are per beat; reach is beyond contact (casters stand off at theirs and fire a projectile that lands on an eighth note); hit points are before the kill-rate feedback. 'pack' and 'clipPrefix' name each type's Pixel Cattle Games pack in ~/unity_assets/Assets and its frame names, and 'gameHeightPx' its height on the 960x540 grid (grunts about 56 px, elites about 1.6x, the boss about 3x), for PX3's baker, which may revise them from its lineup still. The sim ignores those three fields.",
+  "hero": {
+    "pack": "knight_male", "clipPrefix": "knight_male", "gameHeightPx": 60,
+    "radius": 0.5, "strideM": 0.9, "reachM": 2.4, "senseM": 8.0,
+    "combos": {
+      "slashL": { "shape": "arc", "radius": 2.4, "arcDeg": 160, "strength": 0.5, "effect": "slash-trail", "sound": "swing" },
+      "slashR": { "shape": "arc", "radius": 2.4, "arcDeg": 160, "strength": 0.5, "effect": "slash-trail", "sound": "swing" },
+      "bash": { "shape": "line", "length": 2.6, "width": 1.6, "strength": 0.6, "effect": "thrust-trail", "sound": "swing" },
+      "spin": { "shape": "ring", "radius": 2.8, "strength": 0.8, "effect": "spin-trail", "sound": "swing" },
+      "slam": { "shape": "ring", "radius": 3.6, "strength": 1.0, "effect": "slam-shock", "sound": "swing" }
+    }
+  },
+  "monsters": [
+    { "name": "skeleton", "pack": "Skeleton", "clipPrefix": "skeleton", "gameHeightPx": 56,
+      "rank": "fodder", "radius": 0.4, "stepM": 0.75, "reachM": 0.5, "hitPoints": 2 },
+    { "name": "ghoul", "pack": "Ghoul", "clipPrefix": "hunger_zombie", "gameHeightPx": 54,
+      "rank": "fodder", "radius": 0.4, "stepM": 0.85, "reachM": 0.45, "hitPoints": 2 },
+    { "name": "zombie-warrior", "pack": "Zombie Warrior", "clipPrefix": "laugh_zombie", "gameHeightPx": 58,
+      "rank": "fodder", "radius": 0.42, "stepM": 0.65, "reachM": 0.55, "hitPoints": 3 },
+    { "name": "flame-imp", "pack": "Flame Imp", "clipPrefix": "flame_imp", "gameHeightPx": 48,
+      "rank": "fodder", "radius": 0.35, "stepM": 0.95, "reachM": 0.4, "hitPoints": 1 },
+    { "name": "ice-skull", "pack": "Ice Skull", "clipPrefix": "frozen_skeleton", "gameHeightPx": 56,
+      "rank": "fodder", "radius": 0.4, "stepM": 0.7, "reachM": 0.5, "hitPoints": 2 },
+    { "name": "mask", "pack": "Mask", "clipPrefix": "mask_man", "gameHeightPx": 56,
+      "rank": "fodder", "radius": 0.4, "stepM": 0.8, "reachM": 0.5, "hitPoints": 2 },
+    { "name": "skeleton-mage", "pack": "Skeleton Mage", "clipPrefix": "skeleton_mage", "gameHeightPx": 56,
+      "rank": "fodder", "radius": 0.4, "stepM": 0.6, "reachM": 6.0, "hitPoints": 2, "projectile": "bone-bolt" },
+    { "name": "blood-mage", "pack": "Blood Mage", "clipPrefix": "blood_mage", "gameHeightPx": 56,
+      "rank": "fodder", "radius": 0.4, "stepM": 0.6, "reachM": 7.0, "hitPoints": 3, "projectile": "blood-bolt" },
+    { "name": "ogre", "pack": "Ogre", "clipPrefix": "ogre", "gameHeightPx": 90,
+      "rank": "elite", "radius": 0.75, "stepM": 0.65, "reachM": 0.8, "hitPoints": 6 },
+    { "name": "cyclops", "pack": "Cyclops", "clipPrefix": "cyclops", "gameHeightPx": 92,
+      "rank": "elite", "radius": 0.8, "stepM": 0.6, "reachM": 0.9, "hitPoints": 8 },
+    { "name": "werewolf", "pack": "Werewolf", "clipPrefix": "polar_werewolf", "gameHeightPx": 88,
+      "rank": "elite", "radius": 0.7, "stepM": 0.9, "reachM": 0.8, "hitPoints": 6 },
+    { "name": "lava-beast", "pack": "Lava Beast", "clipPrefix": "lava_beast", "gameHeightPx": 90,
+      "rank": "elite", "radius": 0.8, "stepM": 0.6, "reachM": 0.9, "hitPoints": 8 },
+    { "name": "boss-devil", "pack": "Boss Devil Man", "clipPrefix": "boss_devil_man", "gameHeightPx": 168,
+      "rank": "boss", "radius": 1.4, "stepM": 0.6, "reachM": 1.2, "hitPoints": 60 }
+  ],
+  "projectiles": [
+    { "name": "bolt", "speedMps": 30 },
+    { "name": "bone-bolt", "speedMps": 12 },
+    { "name": "blood-bolt", "speedMps": 10 }
+  ],
+  "spells": {
+    "ring": { "shape": "ring", "radius": 4.5, "strength": 0.6, "effect": "ring", "sound": "ring" },
+    "bolt": { "shape": "single", "projectile": "bolt", "rangeM": 12, "strength": 0.4, "effect": "bolt-impact", "sound": "bolt" },
+    "lightning": { "shape": "circle", "radius": 2.2, "rangeM": 12, "strength": 0.7, "effect": "lightning", "sound": "lightning" },
+    "beam": { "shape": "line", "length": 14, "width": 0.8, "bars": 1, "strength": 0.2, "effect": "laser", "sound": "laser" }
+  }
+}

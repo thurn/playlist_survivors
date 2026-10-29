@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NUnit.Framework;
 using PS.Choreography;
 
@@ -13,18 +14,8 @@ namespace Demo3D.Choreography.Tests
         [Test]
         public void EveryAttackCarriesAFittedStartWithinTheSpeedLimits()
         {
-            Timeline tl = Fixtures.SongTimeline;
-            int n = 0;
-            foreach (ActionEvent a in tl.Actions)
-            {
-                if (a.Kind != ActionKind.Attack) continue;
-                Assert.That(a.HasClipTiming, Is.True, "attack at " + a.Impact);
-                Assert.That(a.ClipSpeed, Is.InRange(ClipLibrary.MinSpeed - 1e-6f, ClipLibrary.MaxSpeed + 1e-6f));
-                ClipAnnotation clip = Fixtures.Data.Clips[a.Clip];
-                // The blow lands on the impact: start + annotated impact / speed = impact.
-                Assert.That(a.ClipStart + clip.Impact / a.ClipSpeed, Is.EqualTo(a.Impact).Within(1e-6));
-                n++;
-            }
+            List<string> problems = TimelineChecks.AttacksCarryTheirFit(Fixtures.SongTimeline, Fixtures.Data.Clips, out int n);
+            Assert.That(problems, Is.Empty, TimelineChecks.Report(problems));
             Assert.That(n, Is.GreaterThan(50));
         }
 

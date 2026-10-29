@@ -1,0 +1,10 @@
+<Project>
+  <!-- Match what Unity 6.6 compiles: C# 9 over .NET Standard 2.1 (TD1's spike). -->
+  <PropertyGroup>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Deterministic>true</Deterministic>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+</Project>

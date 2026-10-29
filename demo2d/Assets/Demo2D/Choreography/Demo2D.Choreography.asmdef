@@ -1,0 +1,14 @@
+{
+    "name": "Demo2D.Choreography",
+    "rootNamespace": "Demo2D.Choreography",
+    "references": ["PS.Choreography"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

@@ -4,14 +4,16 @@ using System.Numerics;
 namespace PS.Choreography
 {
     /// <summary>
-    /// The game camera's visible ground (camera-and-sound.md, "Camera"): a 55° pitch, a 30°
-    /// vertical field of view at 16:9, looking along ground +Y with a fixed yaw. A pinhole camera
-    /// sees a trapezoid of ground: narrow at the near (−Y) edge, wide at the far edge, and exactly
-    /// the view width across its middle (the focus). Everything scales with the view width.
+    /// The game camera's visible ground (camera-and-sound.md, "Camera"): by default demo3d's 55°
+    /// pitch, a 30° vertical field of view at 16:9, looking along ground +Y with a fixed yaw. A
+    /// pinhole camera sees a trapezoid of ground: narrow at the near (−Y) edge, wide at the far
+    /// edge, and exactly the view width across its middle (the focus). Everything scales with the
+    /// view width. At <see cref="TopDownPitchDeg"/> (demo2d's top-down ground) the trapezoid is a
+    /// rectangle, the view width by the width over the aspect.
     /// </summary>
     public readonly struct ViewGeometry
     {
-        public const double PitchDeg = 55, VerticalFovDeg = 30, Aspect = 16.0 / 9.0;
+        public const double PitchDeg = 55, TopDownPitchDeg = 90, VerticalFovDeg = 30, Aspect = 16.0 / 9.0;
 
         public readonly float Width;
         /// <summary>Distances from the focus to the near and far edges, along ground Y.</summary>
@@ -19,13 +21,13 @@ namespace PS.Choreography
         /// <summary>Half widths of the near and far edges.</summary>
         public readonly float NearHalf, FarHalf;
 
-        public ViewGeometry(float width)
+        public ViewGeometry(float width, double pitchDeg = PitchDeg)
         {
             Width = width;
             double deg = Math.PI / 180;
             double tanHalfH = Math.Tan(VerticalFovDeg / 2 * deg) * Aspect;
             double distance = width / (2 * tanHalfH);
-            double pitch = PitchDeg * deg;
+            double pitch = pitchDeg * deg;
             double h = distance * Math.Sin(pitch);
             double back = distance * Math.Cos(pitch);
             double nearGround = h / Math.Tan(pitch + VerticalFovDeg / 2 * deg);

@@ -12,6 +12,8 @@ namespace PS.Choreography
         public float Radius, StepM, ReachM;
         public int HitPoints;
         public int WalkClip, AttackClip, HitClip, DeathClip;   // indices into the clip library
+        /// <summary>Casters: the projectile each attack fires at the hero from its reach (-1: a melee blow).</summary>
+        public int Projectile = -1;
     }
 
     public enum HitShape { Arc, Ring, Line, Circle, Single }
@@ -51,6 +53,12 @@ namespace PS.Choreography
         {
             for (int i = 0; i < Monsters.Length; i++) if (Monsters[i].Name == name) return i;
             return -1;
+        }
+
+        int ProjectileIndex(string name, string user)
+        {
+            for (int i = 0; i < Projectiles.Length; i++) if (Projectiles[i].Name == name) return i;
+            throw new FormatException("roster: " + user + " names unknown projectile '" + name + "'");
         }
 
         public Move Combo(string name) => FindMove(Combos, name);
@@ -111,6 +119,11 @@ namespace PS.Choreography
             r.Projectiles = new ProjectileType[projs.Count];
             for (int i = 0; i < projs.Count; i++)
                 r.Projectiles[i] = new ProjectileType { Name = projs[i]["name"].AsString(), SpeedMps = projs[i]["speedMps"].AsFloat(30f) };
+            for (int i = 0; i < mons.Count; i++)
+            {
+                string proj = mons[i]["projectile"].AsString();
+                if (proj != null) r.Monsters[i].Projectile = r.ProjectileIndex(proj, "monster '" + r.Monsters[i].Name + "'");
+            }
 
             r.Combos = ReadMoves(hero["combos"], clips, r, true);
             r.Spells = ReadMoves(root["spells"], clips, r, false);
@@ -141,11 +154,7 @@ namespace PS.Choreography
                     Sound = Catalog.Sound(m["sound"].AsString()),
                 };
                 string proj = m["projectile"].AsString();
-                if (proj != null)
-                {
-                    for (int i = 0; i < r.Projectiles.Length; i++) if (r.Projectiles[i].Name == proj) move.Projectile = i;
-                    if (move.Projectile < 0) throw new FormatException("roster: unknown projectile '" + proj + "'");
-                }
+                if (proj != null) move.Projectile = r.ProjectileIndex(proj, "move '" + kv.Key + "'");
                 if (combos) move.Clip = clips.Require("hero " + kv.Key);
                 list.Add(move);
             }

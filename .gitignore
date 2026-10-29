@@ -43,6 +43,8 @@ reactive-local/
 /public/audio/action*
 /demo3d/dotnet/**/bin/
 /demo3d/dotnet/**/obj/
+/demo2d/dotnet/**/bin/
+/demo2d/dotnet/**/obj/
 /demo3d/tools/.venv/
 
 # Beads / Dolt files (added by bd init)

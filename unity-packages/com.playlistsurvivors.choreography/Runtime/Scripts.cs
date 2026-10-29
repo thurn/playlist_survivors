@@ -148,6 +148,8 @@ namespace PS.Choreography
         public float EnvelopeViewWidthM;
         public uint Seed = 1;
         public float ReserveFactor = 0.5f;
+        /// <summary>The game camera's pitch, which shapes the view the horde is counted and spawned around (its <c>viewPitchDeg</c>: demo3d's 55°, or 90° for a top-down 2D view).</summary>
+        public double ViewPitchDeg = ViewGeometry.PitchDeg;
         public LevelSection[] Sections;
 
         public LevelSection For(string sectionLabel)
@@ -183,6 +185,7 @@ namespace PS.Choreography
                 EnvelopeViewWidthM = root["envelope"]["viewWidthM"].AsFloat(40f),
                 Seed = (uint)root["seed"].AsDouble(1),
                 ReserveFactor = root["reserve"].AsFloat(0.5f),
+                ViewPitchDeg = root["viewPitchDeg"].AsDouble(ViewGeometry.PitchDeg),
             };
             JsonValue secs = root["sections"];
             ls.Sections = new LevelSection[secs.Count];

@@ -5,7 +5,7 @@ using System.Numerics;
 
 namespace PS.Choreography
 {
-    enum ImpactKind { HeroCombo, Ring, Bolt, Circle, LaserTick, MonsterAttack, WorstRing }
+    enum ImpactKind { HeroCombo, Ring, Bolt, Circle, LaserTick, MonsterAttack, WorstRing, MonsterBolt }
 
     struct Impact
     {
@@ -19,7 +19,7 @@ namespace PS.Choreography
         public double ClipStart;     // the fitted clip's start and speed (attacks), NaN otherwise
         public float ClipSpeed;
 
-        public bool Kills => Kind != ImpactKind.LaserTick && Kind != ImpactKind.MonsterAttack;
+        public bool Kills => Kind != ImpactKind.LaserTick && Kind != ImpactKind.MonsterAttack && Kind != ImpactKind.MonsterBolt;
     }
 
     struct SoundRequest
@@ -62,6 +62,7 @@ namespace PS.Choreography
         readonly float initialInnerRadius;
         readonly bool worstBeats;
         readonly Vector2 heroStart;
+        readonly double viewPitchDeg;
         readonly int[] barOfBeat;
         readonly int[][] spellCount;
 
@@ -151,8 +152,9 @@ namespace PS.Choreography
         int flowRebuilds, flowSlices, sliceBudget;
 
         public Sim(SongMap map, SectionPlan[] plans, ChoreographyData data, uint seed, float initialInnerRadius, bool worstBeats,
-            Vector2? heroStart = null)
+            Vector2? heroStart = null, double viewPitchDeg = ViewGeometry.PitchDeg)
         {
+            this.viewPitchDeg = viewPitchDeg;
             this.map = map;
             grid = new BeatGrid(map);
             this.plans = plans;
@@ -298,6 +300,8 @@ namespace PS.Choreography
 
         Vector2 MonsterPosAt(int m, double t) => cur[m].PositionAt(t);
 
+        ViewGeometry View(float width) => new ViewGeometry(width, viewPitchDeg);
+
         /// <summary>
         /// Where the monster stands at <paramref name="t"/>. With <paramref name="hold"/>, it stops
         /// there: a zero-length segment supersedes the rest of its current one. Segments are never
@@ -381,7 +385,7 @@ namespace PS.Choreography
             int w = 0;
             bigCount = 0;
             int on = 0;
-            var view = new ViewGeometry(viewWidth > 0 ? viewWidth : plans[0].ViewWidth);
+            var view = View(viewWidth > 0 ? viewWidth : plans[0].ViewWidth);
             for (int i = 0; i < liveCount; i++)
             {
                 int m = live[i];
@@ -465,7 +469,7 @@ namespace PS.Choreography
             if (!populated) { InitialPopulation(tb); populated = true; }
             beatSerial++;
             bool free = map.Sections[s].Feel == SectionFeel.Free;
-            var view = new ViewGeometry(viewWidth > 0 ? viewWidth : plan.ViewWidth);
+            var view = View(viewWidth > 0 ? viewWidth : plan.ViewWidth);
             Classify(view, tb);
             if (worstBeats && bi >= 0 && bi + 1 < map.Beats.Length && grid.IsDownbeat[bi + 1] && barOfBeat[bi + 1] % 4 == 0)
                 WorstBeat(tb, map.Beats[bi + 1], view);
@@ -507,7 +511,7 @@ namespace PS.Choreography
             barStruck = 0;
             if (plan.Boss >= 0 && !first)
             {
-                var view = new ViewGeometry(Math.Max(viewWidth, plan.ViewWidth));
+                var view = View(Math.Max(viewWidth, plan.ViewWidth));
                 Vector2 dir = goalReached ? new Vector2(0, 1) : nav != null ? GoalHeading(h, out _) : Vector2.Normalize(goal.Center - h);
                 float br = roster.Monsters[plan.Boss].Radius;
                 Vector2 p;
@@ -554,7 +558,7 @@ namespace PS.Choreography
 
         void InitialPopulation(double t)
         {
-            var view = new ViewGeometry(plan.ViewWidth);
+            var view = View(plan.ViewWidth);
             Vector2 h = HeroRest;
             float spacing = 0;   // the widest fodder's diameter, so the opening horde starts apart
             foreach (MonsterType mt in roster.Monsters) if (mt.Rank == MonsterRank.Fodder) spacing = Math.Max(spacing, 2 * mt.Radius);
@@ -1462,22 +1466,17 @@ namespace PS.Choreography
                     bool inReach = Vector2.Distance(h, p) <= roster.HeroRadius + mt.Radius + 0.15f + mt.ReachM + 0.3f;
                     actions.Add(new ActionEvent(m, ActionKind.Attack, t, im.Clip, inReach ? 0 : -1, 0.3f, im.ClipStart, im.ClipSpeed));
                     stats[curSection].Attacks++;
-                    if (inReach)
-                    {
-                        Vector2 dir = p - h;
-                        dir = dir.LengthSquared() > 1e-8f ? Vector2.Normalize(dir) : new Vector2(0, 1);
-                        Vector2 at = h + dir * roster.HeroRadius;
-                        actions.Add(new ActionEvent(0, ActionKind.Parry, t, -1, m, 0.3f));
-                        effects.Add(new EffectEvent(Catalog.ParrySpark, -1, eseed[m], t, new Vector3(at.X, 1.2f, at.Y), Easing.Yaw(dir), 1f));
-                        Sound(Catalog.ParrySound, t, 0.3f);
-                        stats[curSection].Parries++;
-                    }
+                    if (inReach && mt.Projectile >= 0) Fire(m, mt, t, p, h);
+                    else if (inReach) Parry(m, t, p, h);
                     break;
                 }
+                case ImpactKind.MonsterBolt:
+                    Parry(im.Target, t, im.Point, HeroPosAt(t));
+                    break;
                 case ImpactKind.WorstRing:
                 {
                     Vector2 o = HeroPosAt(t);
-                    var view = new ViewGeometry(viewWidth);
+                    var view = View(viewWidth);
                     int c = 0;
                     for (int i = 0; i < liveCount; i++)
                     {
@@ -1503,7 +1502,7 @@ namespace PS.Choreography
 
         int QueryArc(Vector2 o, float yaw, float r, float arcDeg, double t)
         {
-            var view = new ViewGeometry(viewWidth);
+            var view = View(viewWidth);
             int n = Near().Gather(o, r + SmallRadius + 0.6f, ref buf);
             float cosHalf = (float)Math.Cos(arcDeg * Math.PI / 360);
             Vector2 fwd = Easing.Dir(yaw);
@@ -1528,7 +1527,7 @@ namespace PS.Choreography
 
         int QueryLine(Vector2 o, float yaw, float length, float width, double t)
         {
-            var view = new ViewGeometry(viewWidth);
+            var view = View(viewWidth);
             Vector2 fwd = Easing.Dir(yaw);
             Vector2 mid = o + fwd * (length / 2);
             int n = Near().Gather(mid, length / 2 + width + SmallRadius + 0.6f, ref buf);
@@ -1616,7 +1615,7 @@ namespace PS.Choreography
         /// </summary>
         void ClearStrike(double t, Vector2 o, float strength)
         {
-            var view = new ViewGeometry(viewWidth);
+            var view = View(viewWidth);
             int left = 0;   // this section's accents after this one
             for (int gi = grid.FirstAfter(t + 1e-6); gi < grid.Count && grid.Points[gi].Section == curSection; gi++)
                 if ((grid.Points[gi].Flags & GridFlags.Accent) != 0) left++;
@@ -1746,7 +1745,7 @@ namespace PS.Choreography
             int need = want - total;
             if (need <= 0 || plan.Clear) return;
             need = Math.Min(need, Math.Max(24, want / 6));
-            var view = new ViewGeometry(Math.Max(current.Width, plan.ViewWidth));
+            var view = View(Math.Max(current.Width, plan.ViewWidth));
             Vector2 travel = Vector2.Zero;
             if (!goalReached)
             {
@@ -1793,6 +1792,42 @@ namespace PS.Choreography
             return false;
         }
 
+        /// <summary>The hero, standing at <paramref name="h"/>, blocks a blow or a bolt that came from <paramref name="from"/>.</summary>
+        void Parry(int m, double t, Vector2 from, Vector2 h)
+        {
+            Vector2 dir = from - h;
+            dir = dir.LengthSquared() > 1e-8f ? Vector2.Normalize(dir) : new Vector2(0, 1);
+            Vector2 at = h + dir * roster.HeroRadius;
+            actions.Add(new ActionEvent(0, ActionKind.Parry, t, -1, m, 0.3f));
+            effects.Add(new EffectEvent(Catalog.ParrySpark, -1, eseed[m], t, new Vector3(at.X, 1.2f, at.Y), Easing.Yaw(dir), 1f));
+            Sound(Catalog.ParrySound, t, 0.3f);
+            stats[curSection].Parries++;
+        }
+
+        /// <summary>
+        /// A caster's attack releases its projectile on the beat, aimed where the hero will stand; it
+        /// lands, and the hero parries it, on the first eighth note it can reach at its speed.
+        /// </summary>
+        void Fire(int m, MonsterType mt, double t, Vector2 p, Vector2 h)
+        {
+            float speed = roster.Projectiles[mt.Projectile].SpeedMps;
+            Vector2 dir = h - p;
+            dir = dir.LengthSquared() > 1e-8f ? Vector2.Normalize(dir) : new Vector2(0, 1);
+            Vector2 from = p + dir * mt.Radius;
+            int gi = grid.FirstAfter(t + Math.Max(0, Vector2.Distance(from, h) - roster.HeroRadius) / speed);
+            while (gi < grid.Count && (grid.Points[gi].Flags & GridFlags.Eighth) == 0) gi++;
+            if (gi >= grid.Count) return;
+            double land = grid.Points[gi].Time;
+            Vector2 target = HeroPosAt(land), way = target - from;
+            Vector2 to = way.LengthSquared() > 1e-8f ? target - Vector2.Normalize(way) * roster.HeroRadius : target;
+            int proj = NewEntity(EntityKind.Projectile, mt.Projectile, t);
+            despawnT[proj] = land;
+            float yaw = Easing.Yaw(to - from);
+            AddSeg(new MotionSegment(proj, t, land, from, to, yaw, yaw, Ease.Linear));
+            effects.Add(new EffectEvent(Catalog.BoltLaunch, -1, eseed[proj], t, new Vector3(from.X, 1.3f, from.Y), yaw, 1f));
+            Push(new Impact { Time = land, Kind = ImpactKind.MonsterBolt, Entity = proj, Target = m, Point = from });
+        }
+
         // ------------------------------------------------------------------ heap
 
         void Push(Impact im)
@@ -1831,7 +1866,8 @@ namespace PS.Choreography
         {
             if (a.Time != b.Time) return a.Time < b.Time;
             // At one instant monsters swing first, then the hero's blows land.
-            int ka = a.Kind == ImpactKind.MonsterAttack ? 0 : 1, kb = b.Kind == ImpactKind.MonsterAttack ? 0 : 1;
+            int ka = a.Kind == ImpactKind.MonsterAttack || a.Kind == ImpactKind.MonsterBolt ? 0 : 1;
+            int kb = b.Kind == ImpactKind.MonsterAttack || b.Kind == ImpactKind.MonsterBolt ? 0 : 1;
             if (ka != kb) return ka < kb;
             return a.Seq < b.Seq;
         }
@@ -1840,7 +1876,7 @@ namespace PS.Choreography
 
         Timeline Build(string name, double duration, SimTickTiming timing)
         {
-            var tl = new Timeline { Name = name, Seed = seed, Duration = duration, Map = map, Grid = grid, TickTiming = timing };
+            var tl = new Timeline { Name = name, Seed = seed, Duration = duration, Map = map, Grid = grid, TickTiming = timing, ViewPitchDeg = viewPitchDeg };
             int e = entityCount;
             tl.Entities = new EntityInfo[e];
             for (int i = 0; i < e; i++)

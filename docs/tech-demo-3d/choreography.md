@@ -205,6 +205,10 @@ What the simulation does on each grid step:
 - **A monster within reach attacks.** It schedules an impact on the next beat
   its windup fits. The hero parries any blow that would land, with a parry
   effect and no damage; the hero is a perfect player.
+  - **Casters** (a roster type with a `projectile`, demo2d's mages) attack
+    from their longer reach. The blow releases the projectile on the beat,
+    aimed where the hero will stand; it lands on the first eighth note it can
+    reach at its speed, and the hero parries it there.
 - **At each impact time,** the hit shape (an arc, a ring or a line) is tested
   against monster positions at that instant. The result is `Hit` events with
   short `Linear` knockback segments, or `Death` events once a monster's hit
@@ -222,7 +226,9 @@ What the simulation does on each grid step:
 The choreographer also owns the camera's **framing**: where the view is
 centred and how wide it is. It runs the follow spring and zoom easing
 described in [Camera](camera-and-sound.md#camera) and records them as the framing track. That is
-how it knows which monsters are on screen and where the view's edge is. The
+how it knows which monsters are on screen and where the view's edge is.
+The view's shape follows the level script's `viewPitchDeg`: demo3d's 55°
+trapezoid by default, or, at 90°, demo2d's top-down 16:9 rectangle. The
 client adds punch (at most 2% of the view width) and shake (at most 0.25 m)
 on top, which the 2 m spawn margin covers.
 

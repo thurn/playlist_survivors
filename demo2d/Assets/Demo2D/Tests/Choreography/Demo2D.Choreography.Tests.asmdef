@@ -1,0 +1,19 @@
+{
+    "name": "Demo2D.Choreography.Tests",
+    "rootNamespace": "Demo2D.Choreography.Tests",
+    "references": [
+        "PS.Choreography",
+        "Demo2D.Choreography",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": ["Editor"],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": ["nunit.framework.dll"],
+    "autoReferenced": false,
+    "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

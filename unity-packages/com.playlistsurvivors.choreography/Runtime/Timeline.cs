@@ -61,6 +61,11 @@ namespace PS.Choreography
         public SimTickTiming TickTiming;
         /// <summary>Wall time of the whole build in seconds (not part of the dump).</summary>
         public double BuildSeconds;
+        /// <summary>The camera pitch the sim counted the view with (the level script's; not part of the dump).</summary>
+        public double ViewPitchDeg = ViewGeometry.PitchDeg;
+
+        /// <summary>The visible ground at <paramref name="width"/>, as the sim counted it.</summary>
+        public ViewGeometry View(float width) => new ViewGeometry(width, ViewPitchDeg);
 
         public int EntityCount => Entities.Length;
 

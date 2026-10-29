@@ -4,7 +4,7 @@
 # locally only when a change touches CI scripts, `.enact.toml`, workspace-wide configuration or
 # shared test infrastructure.
 #
-#   scripts/ci-full [baker|analysis|native|survivors|survivors-replay|demo3d]    # one section, or all
+#   scripts/ci-full [baker|analysis|native|survivors|survivors-replay|demo3d|demo2d]    # one section, or all
 set -eu
 cd "$(dirname "$0")/.."
 . scripts/lib/changes.sh
@@ -13,8 +13,8 @@ section="${1:-all}"
 STAMPS="${PS_CI_STAMPS:-$HOME/Library/Caches/playlist-survivors/ci-stamps}"
 
 case "$section" in
-  all|baker|analysis|native|survivors|survivors-replay|demo3d) ;;
-  *) echo "usage: scripts/ci-full [baker|analysis|native|survivors|survivors-replay|demo3d]" >&2; exit 2 ;;
+  all|baker|analysis|native|survivors|survivors-replay|demo3d|demo2d) ;;
+  *) echo "usage: scripts/ci-full [baker|analysis|native|survivors|survivors-replay|demo3d|demo2d]" >&2; exit 2 ;;
 esac
 
 # The asset baker (tools/baker): its lint, typecheck and the baked assets' check.
@@ -125,4 +125,9 @@ if [ "$section" = all ] || [ "$section" = demo3d ]; then
   uv run --directory demo3d/tools ruff check .
   uv run --directory demo3d/tools pytest -q
   dotnet test demo3d/dotnet/Demo3D.Choreography.Tests --nologo -v q
+fi
+
+# The 2D demo (docs/tech-demo-2d/): the choreography layer's tests on demo2d's data, under dotnet.
+if [ "$section" = all ] || [ "$section" = demo2d ]; then
+  dotnet test demo2d/dotnet/Demo2D.Choreography.Tests --nologo -v q
 fi

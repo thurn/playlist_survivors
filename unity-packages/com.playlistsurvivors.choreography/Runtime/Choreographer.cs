@@ -86,7 +86,7 @@ namespace PS.Choreography
                 };
                 if (ls.Boss != null && plans[i].Boss < 0) throw new FormatException("level script: unknown boss type '" + ls.Boss + "'");
             }
-            var sim = new Sim(map, plans, data, seedOverride ?? script.Seed, initialInnerRadius: 6f, worstBeats: false);
+            var sim = new Sim(map, plans, data, seedOverride ?? script.Seed, initialInnerRadius: 6f, worstBeats: false, viewPitchDeg: script.ViewPitchDeg);
             Timeline tl = sim.Run("song:" + map.Song);
             tl.BuildSeconds = (Stopwatch.GetTimestamp() - t0) / (double)Stopwatch.Frequency;
             return tl;
