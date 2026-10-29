@@ -236,7 +236,36 @@ entry.
 
 ### PX0
 
-Not started.
+Done (bead ps-tfn.1.1). Commits: `2671f867` (the move), and this notes commit.
+[Evidence](../../demo2d/evidence/px0/README.md).
+
+- **The package:** `unity-packages/com.playlistsurvivors.choreography/`,
+  `Runtime/PS.Choreography.asmdef` (namespace `PS.Choreography`), a `file:`
+  dependency in demo3d's manifest. The moved files kept their `.meta` GUIDs.
+- **What stayed in demo3d:** `Data/` (roster, footprints, layouts, level and
+  stress scripts), and a small `Demo3D.Choreography` assembly beside it with
+  `ChoreographyFiles` (loading demo3d's files from a checkout) and
+  `TimingTables` (the evidence tables over S1 to S6, split out of
+  `TimelineReport`). The footprint table's error no longer names demo3d's
+  `MeasureFootprints` task.
+- **dotnet:** `demo3d/dotnet/PS.Choreography/` builds the package's sources;
+  `Demo3D.Choreography` builds the glue over it. `scripts/check-fast` runs the
+  dotnet tests when the package changes; `scripts/ci-full demo3d` already ran
+  the same test project.
+- **Evidence:** the song's timeline dump is byte-identical before and after
+  (SHA-256 `09945e3b…`); dotnet 121 passed; EditMode 211 of 214 passed, 3
+  skipped; BakeAll and the IL2CPP build succeeded; the stills at 45, 170 and
+  196 s differ from the old build's no more than the old build's differ
+  between runs. mac.md's commands ran as written.
+- **Self-review:** re-read the diff against `origin/staging`: only namespace
+  lines change in the moved files besides the `TimelineReport` split, the
+  `LayerInfo` comment and the footprint message.
+- **Surprise:** `demo3d test` hung 35 minutes after its tests passed, held
+  open by an orphaned UnityPackageManager server; filed as ps-tfn.7.
+- **For PX1 onward:** reference the package from demo2d's manifest the same
+  way (`file:../../unity-packages/com.playlistsurvivors.choreography`). Its
+  tests still live in demo3d (`Tests/Choreography/`), since they run on
+  demo3d's data.
 
 ### PX1
 
