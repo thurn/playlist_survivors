@@ -1,0 +1,20 @@
+{
+    "name": "Demo2D.Runtime",
+    "rootNamespace": "Demo2D.Runtime",
+    "references": [
+        "PS.Choreography",
+        "Demo2D.Choreography",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Universal.2D.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
