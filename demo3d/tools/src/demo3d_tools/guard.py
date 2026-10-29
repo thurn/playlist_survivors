@@ -257,12 +257,21 @@ class Result:
             print(f"  {p.ljust(width)}   {reason}", file=out)
 
 
-def check_blobs(blobs: Iterable[tuple[str, bytes]], record: Record | None, record_at: Path) -> Result:
+# The guard's own code: a missing record only warns for it, so a machine without one (the Mac)
+# can still change the guard. Its other checks (vendor paths, binaries, NCS audio) still apply.
+OWN_TOOLS = "demo3d/tools/"
+
+
+def check_blobs(blobs: Iterable[tuple[str, bytes]], record: Record | None, record_at: Path,
+                changed: set[str] | None = None) -> Result:
+    """`changed`, if given, limits the paths that fail a missing record to those it names."""
     res = Result()
     demo_touched = False
     for path, data in blobs:
         res.checked += 1
-        demo_touched = demo_touched or under_demo(path.lower())
+        demo_touched = demo_touched or (
+            under_demo(path.lower()) and not path.lower().startswith(OWN_TOOLS)
+            and (changed is None or path in changed))
         for reason in check_blob(path, data, record):
             res.failures.append((path, reason))
     if record is None:
@@ -365,6 +374,18 @@ def commits_to_push(repo: Path, remote: str, local_sha: str, remote_sha: str) ->
             return out.decode().split()
     out = _git(repo, "rev-list", local_sha, "--not", f"--remotes={remote}")
     return out.decode().split()
+
+
+def vetted_entries(repo: Path, remote: str) -> set[tuple[str, str]] | None:
+    """The remote master's files, which a missing record need not fail: None if there is none.
+
+    Master moves only when slow CI passes, and its range check fails any demo change a machine
+    without a record makes, so every demo file there was checked against some machine's record.
+    """
+    ref = f"refs/remotes/{remote}/master"
+    known = subprocess.run(["git", "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}"],
+                           cwd=repo, capture_output=True, check=False).returncode == 0
+    return set(tree_entries(repo, ref)) if known else None
 
 
 def demo_paths_only(entries: list[tuple[str, str]]) -> list[tuple[str, str]]:
@@ -472,7 +493,12 @@ def run(mode: str, repo: Path, rev: str | None, remote: str | None, record_file:
             entries = pre_push_entries(repo, remote or "origin", stdin_lines)
         else:
             raise ValueError(mode)
-        res = check_blobs(read_blobs(repo, entries), record, record_at)
+        changed = None
+        if record is None:
+            vetted = vetted_entries(repo, remote or "origin")
+            if vetted is not None:
+                changed = {p for p, s in entries if (p, s) not in vetted}
+        res = check_blobs(read_blobs(repo, entries), record, record_at, changed)
     except (RecordError, PushError, subprocess.CalledProcessError, ValueError) as e:
         detail = e.stderr.decode(errors="replace").strip() if isinstance(
             e, subprocess.CalledProcessError) and e.stderr else str(e)

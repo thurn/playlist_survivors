@@ -257,6 +257,36 @@ def test_missing_record_only_warns_elsewhere(repo: Path, tmp_path: Path) -> None
     assert res.warnings and "sync record missing" in res.warnings[0]
 
 
+def test_missing_record_passes_demo_files_the_remote_master_has(repo: Path) -> None:
+    git(repo, "update-ref", "refs/remotes/origin/master", "HEAD")
+    res = check_index(repo, None)
+    assert res.ok
+    assert res.warnings and "sync record missing" in res.warnings[0]
+    tree = guard.run("tree", repo, "HEAD", None, repo / "no-such-record.json")
+    assert tree.ok
+
+
+def test_missing_record_fails_demo_changes_the_remote_master_lacks(repo: Path) -> None:
+    git(repo, "update-ref", "refs/remotes/origin/master", "HEAD")
+    add(repo, "demo3d/Code.cs", b"class C { int x; }\n")
+    assert [p for p, _ in check_index(repo, None).failures] == ["(sync record)"]
+    git(repo, "commit", "-qm", "change")
+    no_record = repo / "no-such-record.json"
+    for mode, rev in (("tree", "HEAD"), ("range", "origin/master..HEAD")):
+        res = guard.run(mode, repo, rev, None, no_record)
+        assert [p for p, _ in res.failures] == ["(sync record)"], mode
+
+
+def test_missing_record_only_warns_for_the_guards_own_code(repo: Path) -> None:
+    git(repo, "update-ref", "refs/remotes/origin/master", "HEAD")
+    add(repo, "demo3d/tools/src/demo3d_tools/guard.py", b"# guard\n")
+    res = check_index(repo, None)
+    assert res.ok
+    assert res.warnings and "sync record missing" in res.warnings[0]
+    add(repo, "demo3d/tools/x.png", png(tag=False))
+    assert list(failures(check_index(repo, None))) == ["demo3d/tools/x.png"]
+
+
 def test_tree_mode_checks_a_commit(repo: Path, record: Path) -> None:
     add(repo, "demo3d/Assets/Vendor/x.txt", b"x\n")
     git(repo, "commit", "-qm", "leak")
@@ -293,6 +323,20 @@ def test_pre_push_passes_a_clean_range_and_ignores_deletes(repo: Path, record: P
     lines = push_lines(repo, base) + [f"(delete) {guard.ZERO_SHA} refs/heads/old {base}"]
     res = guard.run("pre-push", repo, None, "relay", record, lines)
     assert res.ok, res.failures
+
+
+def test_pre_push_without_a_record_passes_only_what_the_remote_master_has(repo: Path) -> None:
+    base = git(repo, "rev-parse", "HEAD").strip()
+    git(repo, "update-ref", "refs/remotes/relay/master", base)
+    add(repo, "README.md", b"changed\n")
+    git(repo, "commit", "-qm", "docs")
+    no_record = repo / "no-such-record.json"
+    assert guard.run("pre-push", repo, None, "relay", no_record, push_lines(repo, base)).ok
+    assert not guard.run("pre-push", repo, None, "origin", no_record, push_lines(repo, base)).ok
+    add(repo, "demo3d/More.cs", b"class D {}\n")
+    git(repo, "commit", "-qm", "more")
+    res = guard.run("pre-push", repo, None, "relay", no_record, push_lines(repo, base))
+    assert [p for p, _ in res.failures] == ["(sync record)"]
 
 
 @pytest.mark.parametrize("leak", ["demo3d/Assets/Vendor/Knight.prefab",

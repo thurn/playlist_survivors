@@ -112,7 +112,17 @@ More rules:
   sync tool (TD2) first fills it. An empty record is valid.
 - **A missing record fails safe.** If the record file is missing, the GUID and
   hash checks cannot run. The guard then fails any change that touches
-  `demo3d/`, and only warns for changes elsewhere.
+  `demo3d/` or `demo2d/`, and only warns for changes elsewhere. A demo file
+  whose path and contents are already on the remote's master (the local
+  `<remote>/master` ref: `origin/master`, or the pushed remote's in a push) is
+  not a change: it is already public, so checking it again guards nothing.
+  This lets a machine without a record (the Mac, since the vendor packs live on
+  Cygnus) pass its index and tree checks, while its range checks still fail
+  any new demo file. Without that ref, every demo file counts as a change. The
+  rule trusts the local ref, so a stale or hand-moved one would let its
+  contents through. The guard's own code, `demo3d/tools/`, only warns without
+  a record, as `docs/` does, so the Mac can still change the guard; its
+  vendor-path, binary and audio checks still apply there.
 - **The guard has its own tests,** with synthetic fixtures: a fake record, a
   fake vendor file, a tagged render. TD1 proves every failure case with them
   before any vendor file exists.
