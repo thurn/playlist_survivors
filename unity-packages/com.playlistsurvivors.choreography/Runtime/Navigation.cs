@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 
-namespace Demo3D.Choreography
+namespace PS.Choreography
 {
     /// <summary>
     /// The obstacle map and wall distance field for one placement list (choreography.md,

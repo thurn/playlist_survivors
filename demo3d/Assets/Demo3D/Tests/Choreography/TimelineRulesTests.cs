@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using NUnit.Framework;
+using PS.Choreography;
 
 namespace Demo3D.Choreography.Tests
 {

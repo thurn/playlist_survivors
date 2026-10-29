@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Demo3D.Choreography;
+using PS.Choreography;
 using Demo3D.Runtime.Crowd;
 using UnityEngine;
 using NVector2 = System.Numerics.Vector2;

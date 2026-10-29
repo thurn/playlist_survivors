@@ -1,7 +1,7 @@
 using System;
 using System.Numerics;
 
-namespace Demo3D.Choreography
+namespace PS.Choreography
 {
     // The timeline contract (docs/tech-demo-3d/choreography.md, "Timeline contract").
     //

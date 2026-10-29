@@ -1,5 +1,5 @@
 using System.IO;
-using Demo3D.Choreography;
+using PS.Choreography;
 using Demo3D.Runtime.Playback;
 using NUnit.Framework;
 

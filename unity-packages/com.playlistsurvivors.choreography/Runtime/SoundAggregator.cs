@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Demo3D.Choreography
+namespace PS.Choreography
 {
     /// <summary>
     /// Sound aggregation (camera-and-sound.md, "Sound"): per beat and per sound category, at most

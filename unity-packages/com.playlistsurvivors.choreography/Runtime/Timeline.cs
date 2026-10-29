@@ -1,7 +1,7 @@
 using System;
 using System.Numerics;
 
-namespace Demo3D.Choreography
+namespace PS.Choreography
 {
     /// <summary>One section's targets and what the choreographer produced in it.</summary>
     public sealed class SectionStats

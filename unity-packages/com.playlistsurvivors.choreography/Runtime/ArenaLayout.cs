@@ -4,7 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Numerics;
 
-namespace Demo3D.Choreography
+namespace PS.Choreography
 {
     public enum AreaType { Clearing, Path, Edge, Forest, Landmark, Structure }
 

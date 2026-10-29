@@ -57,7 +57,7 @@ namespace Demo3D.Runtime.Arena
                 try
                 {
                     var layout = Playback.PlaybackData.Load()?.Layout("arena");
-                    if (layout != null) _authored = Choreography.JsonValue.Parse(layout.text)["decorationDensity"].AsFloat(1f);
+                    if (layout != null) _authored = PS.Choreography.JsonValue.Parse(layout.text)["decorationDensity"].AsFloat(1f);
                 }
                 catch (Exception e) { UnityEngine.Debug.LogWarning("ArenaOptions: no authored density (" + e.Message + "); 1"); }
                 return _authored;

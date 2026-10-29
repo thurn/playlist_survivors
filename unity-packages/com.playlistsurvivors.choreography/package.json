@@ -1,0 +1,8 @@
+{
+  "name": "com.playlistsurvivors.choreography",
+  "version": "0.1.0",
+  "displayName": "Playlist Survivors Choreography",
+  "description": "The tech demos' shared choreography core: song map, beat grid, forward sim, navigation, timeline and sound aggregation. Engine-free C# 9, also built by `dotnet test` (demo3d/dotnet/).",
+  "unity": "6000.6",
+  "dependencies": {}
+}

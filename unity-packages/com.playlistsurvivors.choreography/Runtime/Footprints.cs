@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 
-namespace Demo3D.Choreography
+namespace PS.Choreography
 {
     public enum FootprintShape { None, Circle, Polygon }
 
@@ -65,7 +65,7 @@ namespace Demo3D.Choreography
         public Footprint this[string id] => byId.TryGetValue(id, out Footprint f) ? f : null;
 
         public Footprint Require(string id) =>
-            this[id] ?? throw new FormatException("footprints: no kit piece '" + id + "' (add it to the manifest with a 'kit: ...' use and run `demo3d unity MeasureFootprints`)");
+            this[id] ?? throw new FormatException("footprints: no kit piece '" + id + "' (measure it into the footprint table)");
 
         public static FootprintTable Parse(string json)
         {

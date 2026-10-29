@@ -1,4 +1,4 @@
-namespace Demo3D.Choreography
+namespace PS.Choreography
 {
     /// <summary>A small seeded generator (xorshift64*), so the layer never depends on System.Random's implementation.</summary>
     public struct Rng

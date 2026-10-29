@@ -5,7 +5,11 @@
 The choreography layer stands in for a game's simulation. It is plain C#
 (netstandard2.1, `System.Numerics` for vectors, no Unity types), compiled by
 Unity through an assembly definition with `noEngineReferences: true`, and also
-built and tested by `dotnet test` outside Unity.
+built and tested by `dotnet test` outside Unity. Since the 2D demo's PX0 it is
+a local Unity package both demos share,
+`unity-packages/com.playlistsurvivors.choreography/` (namespace
+`PS.Choreography`); demo3d's data and the code that loads it from a checkout
+stay in `demo3d/Assets/Demo3D/Choreography/`.
 
 The code stays within C# 9, the version Unity's compiler is documented to
 accept (TD1 confirms it for 6.6). So the timeline's types are plain

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Demo3D.Bench;
-using Demo3D.Choreography;
+using PS.Choreography;
 using Demo3D.Runtime.Bench;
 using Demo3D.Runtime.Crowd;
 using Demo3D.Runtime.Effects;

@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.playlistsurvivors.choreography": "file:../../unity-packages/com.playlistsurvivors.choreography",
     "com.unity.burst": "2.0.0",
     "com.unity.collections": "6.6.0",
     "com.unity.mathematics": "1.4.0",

@@ -2,7 +2,7 @@
     "name": "Demo3D.Runtime",
     "rootNamespace": "Demo3D.Runtime",
     "references": [
-        "Demo3D.Choreography",
+        "PS.Choreography",
         "Demo3D.Bench",
         "Unity.Mathematics",
         "Unity.Burst",

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The shared choreography package's sources, as Unity compiles them (the PS.Choreography assembly). -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <RootNamespace>PS.Choreography</RootNamespace>
+    <!-- Optimized in every configuration, so `dotnet test` (Debug by default) times the layer
+         as a player build would run it (TD3: the song must build in under 3 s). -->
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../unity-packages/com.playlistsurvivors.choreography/Runtime/**/*.cs" />
+  </ItemGroup>
+</Project>

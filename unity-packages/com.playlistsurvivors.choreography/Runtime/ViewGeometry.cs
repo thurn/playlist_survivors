@@ -1,7 +1,7 @@
 using System;
 using System.Numerics;
 
-namespace Demo3D.Choreography
+namespace PS.Choreography
 {
     /// <summary>
     /// The game camera's visible ground (camera-and-sound.md, "Camera"): a 55° pitch, a 30°

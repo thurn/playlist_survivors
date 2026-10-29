@@ -4,8 +4,11 @@ The 3D tech demo's Unity 6.6 project (URP, Direct3D 12; Metal on the Mac, see
 [Running on the Mac](../docs/tech-demo-3d/mac.md)) and its tools. The design and plan are
 in [docs/tech-demo-3d/](../docs/tech-demo-3d/README.md).
 
-- `Assets/Demo3D/Choreography/`: the choreography layer, plain C# 9 with no UnityEngine
-  dependency. `dotnet/` builds and tests the same sources without Unity.
+- `Assets/Demo3D/Choreography/`: demo3d's choreography data (`Data/`) and the code that loads it
+  from a checkout. The layer itself, plain C# 9 with no UnityEngine dependency, is the shared
+  package `unity-packages/com.playlistsurvivors.choreography/` (namespace `PS.Choreography`,
+  a `file:` dependency in `Packages/manifest.json`). `dotnet/` builds and tests both without
+  Unity.
 - `Assets/Demo3D/Runtime/`, `Editor/`, `Tests/`: the client, the batch-mode task entry points
   (`Demo3D.EditorTools.Tasks`), the warm editor, and the tests.
 - `Assets/Vendor/` and `Assets/Baked/`: gitignored; vendor files and derived files only.

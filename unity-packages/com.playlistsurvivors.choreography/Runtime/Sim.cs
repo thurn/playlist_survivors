@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
 
-namespace Demo3D.Choreography
+namespace PS.Choreography
 {
     enum ImpactKind { HeroCombo, Ring, Bolt, Circle, LaserTick, MonsterAttack, WorstRing }
 

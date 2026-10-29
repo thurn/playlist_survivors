@@ -3,7 +3,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Numerics;
 using System.Text;
-using Demo3D.Choreography;
+using PS.Choreography;
 
 namespace Demo3D.Choreography.Cli
 {

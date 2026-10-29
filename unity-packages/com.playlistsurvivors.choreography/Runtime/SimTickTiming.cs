@@ -2,7 +2,7 @@ using System;
 using System.Globalization;
 using System.IO;
 
-namespace Demo3D.Choreography
+namespace PS.Choreography
 {
     /// <summary>
     /// The choreographer's per-tick wall times (benchmarks.md, "Sim tick timing"): one 60 Hz tick

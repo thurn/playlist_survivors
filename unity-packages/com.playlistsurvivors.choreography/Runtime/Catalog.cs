@@ -1,6 +1,6 @@
 using System;
 
-namespace Demo3D.Choreography
+namespace PS.Choreography
 {
     /// <summary>
     /// The effect and sound ids a timeline's events use. The timeline also carries these names,

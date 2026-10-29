@@ -2,7 +2,7 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Text;
-using Demo3D.Choreography;
+using PS.Choreography;
 
 namespace Demo3D.Choreography.Cli
 {
@@ -108,7 +108,7 @@ namespace Demo3D.Choreography.Cli
                 }
                 case "timing":
                 {
-                    string md = TimelineReport.TimingTables(root, IntOpt(args, "--repeat") > 0 ? IntOpt(args, "--repeat") : 1);
+                    string md = TimingTables.Build(root, IntOpt(args, "--repeat") > 0 ? IntOpt(args, "--repeat") : 1);
                     Console.Write(md);
                     string outPath = Opt(args, "--out");
                     if (outPath != null) File.WriteAllText(outPath, md, new UTF8Encoding(false));

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Demo3D.Choreography;
+using PS.Choreography;
 
 namespace Demo3D.Choreography.Tests
 {
@@ -62,13 +62,13 @@ namespace Demo3D.Choreography.Tests
         /// closed side, inside the U, beyond the long wall), a wide view so all of them start on screen,
         /// no reserve, and the hero holding the courtyard without attacking, so nobody dies.
         /// </summary>
-        public static Timeline CourtyardSparse => courtyardSparse ?? (courtyardSparse = Choreographer.RunStress(Demo3D.Choreography.StressScript.Parse(
+        public static Timeline CourtyardSparse => courtyardSparse ?? (courtyardSparse = Choreographer.RunStress(PS.Choreography.StressScript.Parse(
             "{ \"scene\": \"court-sparse\", \"layout\": \"courtyard-test\", \"hold\": \"court\", \"bpm\": 140, \"seconds\": 45, \"seed\": 2, \"reserve\": 0,"
             + " \"viewWidthM\": 70, \"n\": 80, \"openingInnerM\": 22, \"load\": \"none\", \"heroAttacks\": false,"
             + " \"mix\": { \"skeleton\": 3, \"goblin\": 2, \"bat\": 1, \"demon\": 1, \"bigork\": 0.5, \"troll\": 0.5 } }"), CourtyardData));
 
         /// <summary>A dense run on the courtyard test layout: 500 on screen pressing in on a hero who never attacks, so every gap jams.</summary>
-        public static Timeline CourtyardDense => courtyardDense ?? (courtyardDense = Choreographer.RunStress(Demo3D.Choreography.StressScript.Parse(
+        public static Timeline CourtyardDense => courtyardDense ?? (courtyardDense = Choreographer.RunStress(PS.Choreography.StressScript.Parse(
             "{ \"scene\": \"court-dense\", \"layout\": \"courtyard-test\", \"hold\": \"court\", \"bpm\": 140, \"seconds\": 30, \"seed\": 3, \"reserve\": 0.5,"
             + " \"viewWidthM\": 40, \"n\": 500, \"openingInnerM\": 9, \"load\": \"none\", \"heroAttacks\": false,"
             + " \"mix\": { \"skeleton\": 3, \"goblin\": 3, \"slime\": 2, \"bat\": 2, \"demon\": 1, \"bigork\": 0.3 } }"), CourtyardData));

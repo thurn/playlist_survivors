@@ -1,5 +1,11 @@
 {
   "dependencies": {
+    "com.playlistsurvivors.choreography": {
+      "version": "file:../../unity-packages/com.playlistsurvivors.choreography",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
+    },
     "com.unity.burst": {
       "version": "2.0.0",
       "depth": 0,

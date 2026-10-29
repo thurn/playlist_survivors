@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace Demo3D.Choreography
+namespace PS.Choreography
 {
     /// <summary>The clip annotations, roster and layout a run needs, loaded from JSON strings.</summary>
     public sealed class ChoreographyData

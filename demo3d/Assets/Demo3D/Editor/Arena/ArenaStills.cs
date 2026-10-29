@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
-using Demo3D.Choreography;
+using PS.Choreography;
 using Demo3D.Runtime;
 using Demo3D.Runtime.Arena;
 using UnityEditor;

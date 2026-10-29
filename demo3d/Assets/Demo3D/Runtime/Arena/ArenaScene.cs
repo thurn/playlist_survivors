@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using Demo3D.Bench;
-using Demo3D.Choreography;
+using PS.Choreography;
 using Demo3D.Runtime.Bench;
 using Demo3D.Runtime.Playback;
 using UnityEngine;

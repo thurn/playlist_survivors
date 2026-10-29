@@ -1,11 +1,12 @@
 using System;
 using System.IO;
+using PS.Choreography;
 
 namespace Demo3D.Choreography
 {
     /// <summary>
-    /// Loads the layer's inputs from a checkout (the dotnet tests and the CLI). The Unity client
-    /// reads the same JSON from TextAssets and the baked song map, and calls the string parsers.
+    /// Loads demo3d's choreography inputs from a checkout (the dotnet tests and the CLI). The Unity
+    /// client reads the same JSON from TextAssets and the baked song map, and calls the string parsers.
     /// </summary>
     public static class ChoreographyFiles
     {

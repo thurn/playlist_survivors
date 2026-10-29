@@ -1,7 +1,7 @@
 using System;
 using System.Numerics;
 
-namespace Demo3D.Choreography
+namespace PS.Choreography
 {
     /// <summary>
     /// A uniform grid of 1 m cells around a moving centre, rebuilt from scratch by counting sort

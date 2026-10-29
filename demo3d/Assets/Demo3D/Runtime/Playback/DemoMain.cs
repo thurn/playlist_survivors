@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using Demo3D.Choreography;
+using PS.Choreography;
 using Demo3D.Runtime.Crowd;
 using Demo3D.Runtime.Effects;
 using Unity.Collections;
 using UnityEngine;
-using ChoreoRoster = Demo3D.Choreography.Roster;
+using ChoreoRoster = PS.Choreography.Roster;
 
 namespace Demo3D.Runtime.Playback
 {

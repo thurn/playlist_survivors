@@ -85,7 +85,7 @@ if changes_match '^demo3d/tools/'; then
   uv run --directory demo3d/tools ruff check .
   uv run --directory demo3d/tools pytest -q
 fi
-if changes_match '^(demo3d/(dotnet/|Assets/Demo3D/Choreography/|Assets/Demo3D/Tests/Choreography/)|songs/action/)'; then
+if changes_match '^(demo3d/(dotnet/|Assets/Demo3D/Choreography/|Assets/Demo3D/Tests/Choreography/)|unity-packages/com.playlistsurvivors.choreography/|songs/action/)'; then
   dotnet test demo3d/dotnet/Demo3D.Choreography.Tests --nologo -v q
 fi
 

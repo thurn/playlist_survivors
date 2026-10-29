@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Demo3D.Choreography
+namespace PS.Choreography
 {
     public enum MonsterRank { Fodder, Elite, Boss }
 

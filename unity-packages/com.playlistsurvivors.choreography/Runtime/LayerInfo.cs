@@ -1,8 +1,9 @@
-namespace Demo3D.Choreography
+namespace PS.Choreography
 {
     /// <summary>
     /// The choreography layer: plain C# (C# 9, .NET Standard 2.1) with no UnityEngine
-    /// dependency, compiled both by Unity and by `dotnet test` (demo3d/dotnet/).
+    /// dependency, shared by the demos as a local Unity package and compiled by `dotnet test`
+    /// (demo3d/dotnet/). Each demo keeps its own data and loads it itself.
     /// </summary>
     public static class LayerInfo
     {

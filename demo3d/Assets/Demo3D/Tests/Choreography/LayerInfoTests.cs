@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using PS.Choreography;
 
 namespace Demo3D.Choreography.Tests
 {

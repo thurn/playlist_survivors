@@ -1,7 +1,7 @@
 {
     "name": "Demo3D.Choreography",
     "rootNamespace": "Demo3D.Choreography",
-    "references": [],
+    "references": ["PS.Choreography"],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

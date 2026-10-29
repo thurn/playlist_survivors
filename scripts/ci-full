@@ -113,7 +113,8 @@ fi
 
 # The 3D demo (docs/tech-demo-3d/): the vendor guard over the whole tree and everything remote
 # master doesn't have yet, the last line of defence before this stage moves it; the tools' lint
-# and tests; and the choreography layer's tests under dotnet, without Unity.
+# and tests; and the choreography layer's tests (the shared package and demo3d's data) under
+# dotnet, without Unity.
 if [ "$section" = all ] || [ "$section" = demo3d ]; then
   uv run --quiet --project demo3d/tools demo3d guard --tree HEAD
   if git rev-parse --verify --quiet origin/master >/dev/null; then

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Demo3D.Choreography;
+using PS.Choreography;
 using Demo3D.EditorTools.Arena;
 using Demo3D.Runtime.Arena;
 using NUnit.Framework;

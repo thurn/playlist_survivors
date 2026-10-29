@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Demo3D.Choreography
+namespace PS.Choreography
 {
     /// <summary>
     /// One clip's annotation (choreography.md, "Clip annotations and retiming"): impact and end in

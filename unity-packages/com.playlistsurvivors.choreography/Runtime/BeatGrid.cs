@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Demo3D.Choreography
+namespace PS.Choreography
 {
     /// <summary>The grid positions a point stands on. A beat is also an eighth and a sixteenth position.</summary>
     [Flags]

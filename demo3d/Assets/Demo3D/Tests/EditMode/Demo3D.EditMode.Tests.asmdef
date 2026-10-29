@@ -2,7 +2,7 @@
     "name": "Demo3D.EditMode.Tests",
     "rootNamespace": "Demo3D.Tests",
     "references": [
-        "Demo3D.Choreography",
+        "PS.Choreography",
         "Demo3D.Bench",
         "Demo3D.Runtime",
         "Demo3D.EditorTools",
