@@ -7,11 +7,14 @@ project's lock while it runs, so every Unity step in that worktree goes through 
 
 from __future__ import annotations
 
+import itertools
 import json
 import os
+import signal
 import socket
 import subprocess
 import sys
+import threading
 import time
 import uuid
 import xml.etree.ElementTree as ET
@@ -32,7 +35,12 @@ def base_args(wt: paths.Worktree) -> list[str]:
 
 
 def run_cold(wt: paths.Worktree, extra: list[str], log_name: str, quiet: bool = False) -> int:
-    """One cold batch-mode launch, its log streamed to the console and saved under Logs/."""
+    """One cold batch-mode launch, its log streamed to the console and saved under Logs/.
+
+    The run ends when Unity exits, not when its stdout closes: its UnityPackageManager server
+    can outlive it holding the inherited pipe, so the pipe is read on a daemon thread, the
+    server is reaped once Unity exits, and the pipe gets a moment to drain.
+    """
     wt.logs.mkdir(parents=True, exist_ok=True)
     log = wt.logs / f"{log_name}.log"
     cmd = base_args(wt) + extra + ["-logFile", "-"]
@@ -40,14 +48,45 @@ def run_cold(wt: paths.Worktree, extra: list[str], log_name: str, quiet: bool = 
     with open(log, "w", encoding="utf-8", errors="replace") as out:
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         assert proc.stdout
-        for raw in proc.stdout:
-            line = raw.decode("utf-8", "replace")
-            out.write(line)
-            if not quiet:
-                sys.stdout.write(line)
+
+        def pump() -> None:
+            try:
+                for raw in proc.stdout:
+                    line = raw.decode("utf-8", "replace")
+                    out.write(line)
+                    if not quiet:
+                        sys.stdout.write(line)
+            except ValueError:  # `out` closed under a pipe something else still holds
+                pass
+
+        reader = threading.Thread(target=pump, daemon=True)
+        reader.start()
         code = proc.wait()
+        reap_package_manager(proc.pid)
+        reader.join(timeout=5)
     print(f"unity: {log_name} exited {code} after {time.monotonic() - started:.1f} s (log {log})")
     return code
+
+
+def reap_package_manager(unity_pid: int) -> None:
+    """Kills the UnityPackageManager server Unity `unity_pid` started, if it outlived Unity.
+
+    The server runs in its own session, so it isn't in Unity's process group; it names its
+    Unity as `-s <pid>`.
+    """
+    if paths.is_windows():
+        return
+    ps = subprocess.run(["ps", "-axo", "pid=,command="], check=False, capture_output=True,
+                        text=True)
+    for row in ps.stdout.splitlines():
+        pid, _, command = row.strip().partition(" ")
+        args = command.split()
+        if any(a.endswith("UnityPackageManager") for a in args) and any(
+                a == "-s" and b == str(unity_pid) for a, b in itertools.pairwise(args)):
+            try:
+                os.kill(int(pid), signal.SIGTERM)
+            except OSError:
+                pass
 
 
 # The warm editor.
@@ -169,6 +208,7 @@ def editor_stop(wt: paths.Worktree) -> bool:
     deadline = time.monotonic() + 60
     while pid_alive(server.pid) and time.monotonic() < deadline:
         time.sleep(0.25)
+    reap_package_manager(server.pid)
     return True
 
 
