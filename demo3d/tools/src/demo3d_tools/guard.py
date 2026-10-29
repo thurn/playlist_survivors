@@ -4,8 +4,9 @@ It checks blobs as git stores them, so it sees exactly what a push or a commit w
 It covers both demos' Unity projects, demo3d/ and demo2d/, alike. A file fails when it:
 
 - is inside either demo's vendor or baked folders;
-- is binary (by extension or a NUL byte) under a demo's folder, unless it is a PNG or JPEG under
-  that demo's evidence/ that carries the `ps-render` text tag;
+- is binary (by extension or a NUL byte) under a demo's folder or the Unity package they share
+  (unity-packages/, code only), unless it is a PNG or JPEG under that demo's evidence/ that
+  carries the `ps-render` text tag;
 - is a .meta whose GUID is in the sync record;
 - has a SHA-256 that is in the sync record (raw, or with CRLF folded to LF, since git stores
   text with LF);
@@ -14,7 +15,9 @@ It covers both demos' Unity projects, demo3d/ and demo2d/, alike. A file fails w
 
 A missing sync record fails any change under a demo's folder and only warns elsewhere
 (vendor-assets.md, The vendor guard). An unreadable or malformed record fails everything, and so
-does a record that lacks a GUID either demo's tracked manifest lists (a stale record).
+does a stale record: one that lacks a GUID either demo's tracked manifest lists, or a pack in
+one of the machine's asset folders (a top-level folder of `unity_assets` or `pixel_assets` whose
+`.meta` GUID it lacks, such as a pack copied in, or a root added, since the last sync).
 
 Besides the sync record, the guard reads the derived record: the hashes and GUIDs of every file
 in this worktree's demos' Assets/Baked/ and of the song's source, which it refreshes before each
@@ -57,6 +60,8 @@ AUDIO_EXTENSIONS = frozenset(
     "wav mp3 ogg oga flac aif aiff m4a aac opus wma mp4 m4b caf wv ape mka webm".split()
 )
 IMAGE_TAG_EXTENSIONS = frozenset({"png", "jpg", "jpeg"})
+# The folders whose binaries are refused: both demos, and the Unity package they share.
+BINARY_FOLDERS = (*paths.PROJECTS, "unity-packages")
 META_GUID = re.compile(rb"^guid:\s*([0-9a-fA-F]{32})\s*$", re.MULTILINE)
 
 
@@ -201,14 +206,16 @@ def check_blob(path: str, data: bytes, record: Record | None) -> list[str]:
     if in_vendor_or_baked(lower):
         reasons.append("inside the vendor or baked folder")
     demo = demo_of(lower)
-    if demo and (ext in BINARY_EXTENSIONS or b"\x00" in data):
+    folder = lower.split("/", 1)[0] if "/" in lower else None
+    if folder in BINARY_FOLDERS and (ext in BINARY_EXTENSIONS or b"\x00" in data):
         tagged = (
-            lower.startswith(f"{demo}/evidence/")
+            demo is not None
+            and lower.startswith(f"{demo}/evidence/")
             and ext in IMAGE_TAG_EXTENSIONS
             and has_render_tag(data)
         )
         if not tagged:
-            reasons.append(f"binary file under {demo}/")
+            reasons.append(f"binary file under {folder}/")
     if is_song_audio_path(lower) and (ext in AUDIO_EXTENSIONS or looks_like_audio(data)):
         reasons.append("audio of the NCS song (never tracked)")
     elif lower.startswith("songs/action/") and (ext in BINARY_EXTENSIONS or b"\x00" in data):
@@ -412,6 +419,27 @@ def manifest_guids(repo: Path) -> dict[str, tuple[str, str]]:
     return guids
 
 
+def unrecorded_packs(roots: dict[str, str], record: Record) -> list[tuple[str, str]]:
+    """The packs in the machine's asset folders that the record lacks: (root, pack) pairs.
+
+    Their files would pass the GUID and hash checks unseen, so each top-level `.meta` under a
+    root's Assets/ must have its GUID in the record.
+    """
+    missing = []
+    for name in paths.ASSET_FOLDERS:
+        assets = Path(roots[name]) / "Assets" if roots.get(name) else None
+        if assets is None or not assets.is_dir():
+            continue
+        for meta in sorted(assets.glob("*.meta")):
+            try:
+                m = None if meta.name.startswith("._") else META_GUID.search(meta.read_bytes()[:4096])
+            except OSError:
+                m = None
+            if m and m.group(1).decode().lower() not in record.guids:
+                missing.append((name, meta.name.removesuffix(".meta")))
+    return missing
+
+
 def run(mode: str, repo: Path, rev: str | None, remote: str | None, record_file: Path | None,
         stdin_lines: Iterable[str] = (), derived_file: Path | None = None, refresh: bool = True) -> Result:
     """Checks what `mode` selects: a tree, the index, a commit range, or a push."""
@@ -447,4 +475,12 @@ def run(mode: str, repo: Path, rev: str | None, remote: str | None, record_file:
             if guid not in record.guids:
                 res.failures.append(("(sync record)", (f"stale: {demo}'s manifest's {path} "
                                      f"({guid}) is not in it; run `{demo} sync`")))
+        if record_file is None:  # the machine's own record, so its own roots
+            missing: dict[str, list[str]] = {}
+            for root, pack in unrecorded_packs(paths.load_roots(), record):
+                missing.setdefault(root, []).append(pack)
+            for root, packs in missing.items():
+                shown = ", ".join(repr(p) for p in packs[:3]) + (", ..." if len(packs) > 3 else "")
+                res.failures.append(("(sync record)", (f"stale: {len(packs)} of {root}'s packs "
+                                     f"({shown}) are not in it; run `demo2d sync --record-only`")))
     return res

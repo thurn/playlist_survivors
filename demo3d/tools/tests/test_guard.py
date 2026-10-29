@@ -61,9 +61,15 @@ def repo(tmp_path: Path) -> Path:
     return r
 
 
+def no_vendor_roots(tmp_path: Path) -> dict[str, str]:
+    """Roots that exist nowhere, so a guard run never reads this machine's vendor folders."""
+    return {name: str(tmp_path / "no-vendor" / name) for name in ("synty", *paths.ASSET_FOLDERS)}
+
+
 @pytest.fixture
 def record(tmp_path: Path) -> Path:
     path = tmp_path / "sync-record.json"
+    (tmp_path / "roots.json").write_text(json.dumps(no_vendor_roots(tmp_path)))  # the hook's cache
     lf = VENDOR_TEXT.replace(b"\r\n", b"\n")
     path.write_text(json.dumps({"version": 1, "files": [
         {"path": "Assets/Vendor/Hovl/Slash.prefab.meta", "origin": "Hovl", "guid": GUID,
@@ -170,6 +176,13 @@ def test_untagged_jpeg_under_evidence_fails(repo: Path, record: Path) -> None:
 def test_binaries_outside_demo3d_are_not_the_binary_rule(repo: Path, record: Path) -> None:
     add(repo, "public/images/logo.png", png(tag=False))
     assert check_index(repo, record).ok
+
+
+def test_binaries_in_the_shared_unity_package_fail(repo: Path, record: Path) -> None:
+    """Both demos import unity-packages/, so an edited vendor sprite there is as bad as in a demo."""
+    rel = "unity-packages/com.playlistsurvivors.choreography/Runtime/edited.png"
+    add(repo, rel, png(tag=True))
+    assert reasons(check_index(repo, record), rel) == ["binary file under unity-packages/"]
 
 
 def test_recorded_guid_fails(repo: Path, record: Path) -> None:
@@ -445,6 +458,30 @@ def test_pushing_demo_work_to_the_public_origin_passes(repo: Path, record: Path)
     assert guard.run("pre-push", repo, None, "origin", record, push_lines(repo, base)).ok
 
 
+def test_a_record_missing_a_pack_on_disk_is_stale(repo: Path, tmp_path: Path,
+                                                   monkeypatch: pytest.MonkeyPatch) -> None:
+    """A root added (or a pack copied in) since the last sync fails until the record has it."""
+    cache = tmp_path / "cache"
+    cache.mkdir()
+    pixels = tmp_path / "pixels" / "Assets"
+    (pixels / "Skeleton").mkdir(parents=True)
+    (pixels / "Skeleton.meta").write_text(f"fileFormatVersion: 2\nguid: {'c' * 32}\n")
+    (pixels / "Skeleton" / "run.anim").write_text("%YAML 1.1\nvendor clip\n")
+    (pixels / "._Skeleton.meta").write_bytes(b"\x00\x05\x16\x07 AppleDouble")
+    (cache / "roots.json").write_text(json.dumps(
+        {**no_vendor_roots(tmp_path), "pixel_assets": str(pixels.parent)}))
+    (cache / "sync-record.json").write_text(json.dumps({"version": 1, "files": []}))
+    monkeypatch.setenv("DEMO3D_CACHE", str(cache))
+    fails = guard.run("index", repo, None, None, None).failures
+    assert [p for p, _ in fails] == ["(sync record)"]
+    assert "1 of pixel_assets's packs ('Skeleton')" in fails[0][1]
+    h = hashlib.sha256(b"x").hexdigest()
+    (cache / "sync-record.json").write_text(json.dumps({"version": 1, "files": [
+        {"path": "Assets/Skeleton.meta", "origin": "pixel_assets", "guid": "C" * 32,
+         "sha256": h, "sha256Lf": h}]}))
+    assert guard.run("index", repo, None, None, None).ok
+
+
 def test_derived_files_are_recorded_and_caught_elsewhere(repo: Path, tmp_path: Path,
                                                          monkeypatch: pytest.MonkeyPatch) -> None:
     from demo3d_tools import derived
@@ -452,7 +489,8 @@ def test_derived_files_are_recorded_and_caught_elsewhere(repo: Path, tmp_path: P
     cache = tmp_path / "cache"
     cache.mkdir()
     (cache / "sync-record.json").write_text(json.dumps({"version": 1, "files": []}))
-    (cache / "roots.json").write_text(json.dumps({"song": str(tmp_path / "song.mp3")}))
+    (cache / "roots.json").write_text(json.dumps(
+        {**no_vendor_roots(tmp_path), "song": str(tmp_path / "song.mp3")}))
     (tmp_path / "song.mp3").write_bytes(b"ID3 the NCS song")
     monkeypatch.setenv("DEMO3D_CACHE", str(cache))
     baked = repo / "demo3d" / "Assets" / "Baked" / "Scenes"
@@ -480,7 +518,8 @@ def test_demo2d_derived_files_are_recorded_and_caught_elsewhere(
     cache = tmp_path / "cache"
     cache.mkdir()
     (cache / "sync-record.json").write_text(json.dumps({"version": 1, "files": []}))
-    (cache / "roots.json").write_text(json.dumps({"song": str(tmp_path / "no-song.mp3")}))
+    (cache / "roots.json").write_text(json.dumps(
+        {**no_vendor_roots(tmp_path), "song": str(tmp_path / "no-song.mp3")}))
     monkeypatch.setenv("DEMO3D_CACHE", str(cache))
     baked = repo / "demo2d" / "Assets" / "Baked" / "Atlases"
     baked.mkdir(parents=True)

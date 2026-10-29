@@ -175,9 +175,6 @@ def load_synty(pkg: Path, sha: str, cache: Path) -> Source:
     return src
 
 
-ASSET_FOLDERS = ("unity_assets", "pixel_assets")
-
-
 def load_asset_folder(name: str, root: Path) -> Source:
     src = Source(name, None)
     assets = root / "Assets"
@@ -212,7 +209,7 @@ class Sources:
             if not pkg.exists():
                 raise SyncError(f"missing source {name}: {pkg}")
             src = load_synty(pkg, self.hashes.get(pkg), self.cache)
-        elif name in ASSET_FOLDERS:
+        elif name in paths.ASSET_FOLDERS:
             root = Path(self.roots.get(name, ""))
             if not (root / "Assets").is_dir():
                 raise SyncError(f"missing source {name}: {root}")
@@ -333,7 +330,7 @@ def all_sources(roots: dict[str, str]) -> list[str]:
     synty = Path(roots.get("synty", ""))
     if synty.is_dir():
         names += [f"synty:{p.name}" for p in sorted(synty.glob("*.unitypackage.gz"))]
-    names += [n for n in ASSET_FOLDERS if roots.get(n) and (Path(roots[n]) / "Assets").is_dir()]
+    names += [n for n in paths.ASSET_FOLDERS if roots.get(n) and (Path(roots[n]) / "Assets").is_dir()]
     return names
 
 

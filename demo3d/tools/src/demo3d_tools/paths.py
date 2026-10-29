@@ -27,6 +27,8 @@ PROJECT_ROOTS = {
     "demo3d": ("synty", "unity_assets", "song"),
     "demo2d": ("pixel_assets", "unity_assets", "song"),
 }
+# The roots that are asset folders (an `Assets/` folder of packs, files beside their `.meta`).
+ASSET_FOLDERS = ("unity_assets", "pixel_assets")
 SONG_FILE = "Alessia Labate, Conrad Taylor - Action [NCS Release].mp3"
 
 

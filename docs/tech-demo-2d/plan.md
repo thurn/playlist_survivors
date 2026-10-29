@@ -329,6 +329,28 @@ project), `51074dfe` (docstrings), and this notes commit. `demo2d check --player
   hand-drawn frames, so a whole-song batch-mode run is feasible. The windowed comparison is in
   [Pending on the operator](#pending-on-the-operator).
 - **The guard's review** is the separate Warden bead ps-tfn.1.4.
+- **Review** (Warden, bead ps-tfn.1.4): two gaps fixed, in the commit `fix(px1): …`
+  after `4333d425`.
+  - **A record older than a root went unnoticed.** A machine whose record predates
+    `pixel_assets` (Cygnus, once it has the 2D packs), or one that gains a pack after its last
+    sync, let that pack's text files (prefabs, clips, materials, `.meta`s) through. Only the
+    binary rule stood in the way, and only under a demo. Now every top-level pack `.meta` in
+    the machine's asset folders must have its GUID in the record, or every check fails with
+    one `stale` line per root. A folder nested inside a known pack still isn't noticed; setup
+    rebuilds the record per worktree.
+  - **Binaries in `unity-packages/`** (both demos import it; code only today) now fail the
+    binary rule too. The executor flagged this.
+  - **Fixtures pinned:** guard tests now give their temp cache a `roots.json`. Without one,
+    `load_roots`'s new defaults pointed them at the real vendor folders.
+  - **Drill**, in a scratch clone at `4333d425`, staged with `git add -f`; every case failed:
+    a 2D pack's PNG and its `.meta` under `demo2d/Assets/Art/`, a prefab (and a CRLF copy),
+    a `.meta` in `Vendor/`, a fresh binary under `Demo2D/` (upper case), and a PNG, `.mat`
+    and `.anim` under `docs/` and `unity-packages/` (by hash). Against a record without
+    `pixel_assets`, the new check fails it (42 packs). The `.gitignore` lines all match.
+  - **Dismissed:** the derived record's relabelling (dedup is by hash and GUID, so nothing
+    doubles); the stale-manifest failure on a machine without the 2D packs (that is the
+    intended fail-closed); and the no-tools pre-push fallback skipping `unity-packages/`
+    (every pushed tip since TD1 has the tools).
 - **Surprises:** a sprite renderer created at runtime in a player gets the unlit sprite
   material, so the first still had no lighting; the scene's test card now names URP's
   `Sprite-Lit-Default`, which PX5's crowd should do too. The Mac player resolves relative

@@ -163,5 +163,13 @@ Since PX1 the same guard and tools also cover the
   unless they are tagged renders under `demo2d/evidence/`; a missing record
   fails changes under it; the derived record adds its `Assets/Baked/`; and
   the stale-record check reads `demo2d/manifest.json` too.
+- **The shared Unity package is code only:** binaries under
+  `unity-packages/`, which both demos import, fail as they do under a demo.
+- **The record must know every pack on disk:** a top-level folder of
+  `unity_assets` or `pixel_assets` whose `.meta` GUID the record lacks (a
+  pack copied in, or a root added, since the last sync) fails every check
+  until `demo2d sync --record-only` rebuilds the record. A new folder nested
+  inside an existing pack is not noticed; setup's sync rebuilds the record
+  per worktree.
 - **`demo2d <command>`** (`uv run --project demo3d/tools demo2d`) runs the
   setup, sync, guard, Unity, test and build tools on `demo2d/`.
