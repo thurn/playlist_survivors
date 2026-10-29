@@ -33,7 +33,7 @@ uv run --project demo3d/tools demo3d setup          # prepare a fresh worktree, 
 uv run --project demo3d/tools demo3d editor start   # optional: the warm editor
 uv run --project demo3d/tools demo3d test           # EditMode tests (warm if running)
 uv run --project demo3d/tools demo3d unity Configure    # any Tasks method, or a full name
-uv run --project demo3d/tools demo3d build --backend il2cpp  # the Mac: `demo3d build` (Mono, Metal)
+uv run --project demo3d/tools demo3d build --backend il2cpp  # on the Mac: Builds/mac/il2cpp/, Metal
 uv run --project demo3d/tools demo3d check --player # every check, before a push
 uv run --project demo3d/tools demo3d sweep demo3d/sweeps/synthetic-frontier.json --out <dir>
 uv run --project demo3d/tools demo3d report <dir>   # regenerate a sweep's report.md

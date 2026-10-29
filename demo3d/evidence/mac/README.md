@@ -21,7 +21,19 @@ Mac: Apple M5 Max, Metal, Unity 6000.6.7f1 with Mono. How-to:
     --fixed-time --start-at 160 --capture-stills ../captures/mac-smoke
     --stills-at 165,175 --seconds 18`.
 
-What this run doesn't show:
+## IL2CPP (2026-10-29, later)
+
+With Mac Build Support (IL2CPP) installed, `demo3d build` builds IL2CPP on the
+Mac too, into `Builds/mac/il2cpp/`.
+
+- **Build:** 1,038 s cold (a warm Library, a fresh worktree), 1,827 MiB with
+  IL2CPP's intermediate output beside the app, and no errors.
+- **The same windowless run** (`Builds/mac/il2cpp/...`): the timeline built
+  in 0.37 s (3,576 entities, against Mono's 3,573: Mono and IL2CPP diverged
+  on Cygnus too), 1,394 effects spawned by 175 s, and no exception in the log.
+  Its 165 s still showed the same climax in another layout (not kept).
+
+What neither run shows:
 
 - **Sound and live timing.** A batch-mode player plays no audio, and fixed
   time doesn't follow the song clock. The windowed check is the operator's

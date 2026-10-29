@@ -66,19 +66,18 @@ namespace Demo3D.EditorTools
 
         /// <summary>
         /// Builds the player. `-platform windows|mac` (default: this machine's), `-backend
-        /// il2cpp|mono` (default il2cpp on Windows; the Mac builds Mono only, as its editor has no
-        /// IL2CPP module), `-buildOut <dir>` (default Builds/&lt;backend&gt;, or Builds/mac),
-        /// `-development`, `-scene <path>` (repeatable; default: the build settings' scenes). The
-        /// Mac's player is an Apple silicon app drawing with Metal (ProjectSetup).
+        /// il2cpp|mono` (default il2cpp), `-buildOut <dir>` (default Builds/&lt;backend&gt;, or
+        /// Builds/mac/&lt;backend&gt;), `-development`, `-scene <path>` (repeatable; default: the build
+        /// settings' scenes). The Mac's player is an Apple silicon app drawing with Metal
+        /// (ProjectSetup).
         /// </summary>
         public static void BuildPlayer()
         {
             bool mac = TaskArgs.Get("-platform", Application.platform == RuntimePlatform.OSXEditor ? "mac" : "windows")
                 .ToLowerInvariant() == "mac";
-            var backend = TaskArgs.Get("-backend", mac ? "mono" : "il2cpp").ToLowerInvariant();
-            if (mac && backend != "mono") throw new Exception("Tasks.BuildPlayer: the Mac builds Mono only (-backend mono)");
+            var backend = TaskArgs.Get("-backend", "il2cpp").ToLowerInvariant();
             var impl = backend == "mono" ? ScriptingImplementation.Mono2x : ScriptingImplementation.IL2CPP;
-            var outDir = TaskArgs.Get("-buildOut", mac ? Path.Combine("Builds", "mac") : Path.Combine("Builds", backend));
+            var outDir = TaskArgs.Get("-buildOut", mac ? Path.Combine("Builds", "mac", backend) : Path.Combine("Builds", backend));
             var scenes = TaskArgs.All("-scene");
             if (scenes.Count == 0)
             {
