@@ -71,6 +71,12 @@ namespace Demo3D.EditorTools
         /// settings' scenes). The Mac's player is an Apple silicon app drawing with Metal
         /// (ProjectSetup).
         /// </summary>
+        // URP's build preprocessing rewrites these tracked assets for the build's target (the
+        // pipeline's shader prefilters, the global settings' runtime list). BuildPlayer puts them
+        // back, so a build leaves the checkout clean: Tollgate won't sync a local master whose
+        // checkout has changes.
+        static readonly string[] RestoredAfterBuild = { ProjectSetup.PipelinePath, "Assets/UniversalRenderPipelineGlobalSettings.asset" };
+
         public static void BuildPlayer()
         {
             bool mac = TaskArgs.Get("-platform", Application.platform == RuntimePlatform.OSXEditor ? "mac" : "windows")
@@ -89,6 +95,7 @@ namespace Demo3D.EditorTools
             }
             if (scenes.Count == 0) throw new Exception("Tasks.BuildPlayer: no scenes to build");
 
+            var kept = RestoredAfterBuild.Where(File.Exists).ToDictionary(p => p, File.ReadAllBytes);
             var previous = PlayerSettings.GetScriptingBackend(NamedBuildTarget.Standalone);
             int architecture = PlayerSettings.GetArchitecture(NamedBuildTarget.Standalone);
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone, impl);
@@ -114,6 +121,14 @@ namespace Demo3D.EditorTools
             {
                 PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone, previous);
                 PlayerSettings.SetArchitecture(NamedBuildTarget.Standalone, architecture);
+                AssetDatabase.SaveAssets(); // write any rewrite still pending, then undo it on disk and in memory
+                foreach (var kv in kept)
+                {
+                    if (File.ReadAllBytes(kv.Key).SequenceEqual(kv.Value)) continue;
+                    File.WriteAllBytes(kv.Key, kv.Value);
+                    AssetDatabase.ImportAsset(kv.Key, ImportAssetOptions.ForceUpdate);
+                    Debug.Log("Tasks.BuildPlayer: restored " + kv.Key);
+                }
             }
         }
     }

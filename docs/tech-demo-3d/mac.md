@@ -75,6 +75,8 @@ so it draws the camera by hand for each still it owes.
   run (plan.md, Pending on the operator).
 - **Unity rewrites tracked settings on the Mac.** `demo3d unity Configure`
   also rewrites the URP global settings' runtime list, the quality level's
-  anti-aliasing and two bench materials' colours, and a build rewrites the
-  pipeline asset's shader prefilters. Commit only what a change needs, such
-  as the Metal API entry in `ProjectSettings.asset`.
+  anti-aliasing and two bench materials' colours. Commit only what a change
+  needs, such as the Metal API entry in `ProjectSettings.asset`. A build also
+  rewrites the pipeline asset's shader prefilters and the global settings'
+  runtime list, but `BuildPlayer` restores both afterwards, so a build leaves
+  the checkout clean and Tollgate can still sync local master.
