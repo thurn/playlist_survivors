@@ -39,7 +39,7 @@ namespace Demo2D.EditorTools.Assets
 
         public sealed class Annotation
         {
-            public string Guid, Clip, Use, Method;
+            public string Guid, Clip, Use, Method, Anchor;
             public int Frames, ImpactFrame, EndFrame;
             public float StrideM, RootMotionM;
             public Vector2Int Pivot, Size;
@@ -84,6 +84,7 @@ namespace Demo2D.EditorTools.Assets
                 a.Use = use;
                 a.Pivot = game.Pivot;
                 a.Size = new Vector2Int(game.W, game.H);
+                a.Anchor = b.Anchor[name];
                 list.Add(a);
             }
             return list;
@@ -248,7 +249,7 @@ namespace Demo2D.EditorTools.Assets
             j.Append("{\n  \"note\": \"demo2d's clip library (PX3), written by ClipAnnotator (`demo2d unity AnnotateClips`) from the sprite baker's frames: ")
              .Append("one entry per clip the choreography uses, 'clip' naming the pack's frame sequence (<clipPrefix>-<clip>_<n>.png) and 'use' its role. ")
              .Append("Frames play at 'frameRate'; times are seconds from the clip's start, each at the start of its frame ('impact' = impactFrame / frameRate). ")
-             .Append("'pivotPx' is the feet and 'sizePx' the frame on the 960x540 grid, as baked into Assets/Baked/Characters. ")
+             .Append("'pivotPx' is the feet and 'sizePx' the frame on the 960x540 grid, as baked into Assets/Baked/Characters; 'anchor' says how the baker found the feet. ")
              .Append("Strides and root motion are metres (32 grid pixels). The frames carry any root motion themselves (the clips share one anchor per clip), ")
              .Append("so a client drawing a hero combo whose segment moves rootMotionM holds the sprite at the segment's start. ")
              .Append("To choose another clip, edit 'clip' here and re-run the annotator.\",\n");
@@ -258,9 +259,9 @@ namespace Demo2D.EditorTools.Assets
                 var a = list[i];
                 j.Append(string.Format(inv,
                     "    {{\"guid\": \"{0}\", \"clip\": \"{1}\", \"use\": \"{2}\", \"frames\": {3}, \"impactFrame\": {4}, \"impact\": {5:0.###}, " +
-                    "\"endFrame\": {6}, \"end\": {7:0.###}, \"strideM\": {8:0.##}, \"rootMotionM\": {9:0.##}, \"pivotPx\": [{10}, {11}], \"sizePx\": [{12}, {13}], \"method\": \"{14}\"}}",
+                    "\"endFrame\": {6}, \"end\": {7:0.###}, \"strideM\": {8:0.##}, \"rootMotionM\": {9:0.##}, \"pivotPx\": [{10}, {11}], \"sizePx\": [{12}, {13}], \"anchor\": \"{15}\", \"method\": \"{14}\"}}",
                     a.Guid, a.Clip, a.Use, a.Frames, a.ImpactFrame, a.Impact, a.EndFrame, a.End, a.StrideM, a.RootMotionM,
-                    a.Pivot.x, a.Pivot.y, a.Size.x, a.Size.y, a.Method));
+                    a.Pivot.x, a.Pivot.y, a.Size.x, a.Size.y, a.Method, a.Anchor));
                 j.Append(i + 1 < list.Count ? ",\n" : "\n");
             }
             j.Append("  ]\n}\n");
