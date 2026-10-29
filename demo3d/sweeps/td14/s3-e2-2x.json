@@ -1,0 +1,4 @@
+{"_comment": "TD14's ladder: S3 (full combat with TD8's effects and lights, demo load) at 2000, 40 m, in the arena at 2x, rung e2.",
+  "scene": "S3", "seconds": 20, "warmup": 5, "rewarm": 3,
+  "n": {"fixed": [2000]}, "viewWidthM": [40], "load": ["demo"], "aa": ["msaa4"], "jobWorkers": 6,
+  "sceneOptions": {"arena": "e2", "density": 2.0, "crowd": "bone"}}

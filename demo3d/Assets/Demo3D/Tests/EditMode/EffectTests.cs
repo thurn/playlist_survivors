@@ -170,5 +170,58 @@ namespace Demo3D.Tests
             Assert.That(EffectDriver.StillAlive(fx, 4.0, 1.6f, 6.0), Is.True);
             Assert.That(EffectDriver.StillAlive(fx, 3.0, 1.6f, 6.0), Is.False);
         }
+
+        sealed class Collect : ISpawnSink
+        {
+            public readonly System.Collections.Generic.List<EffectSystem.Spawn> Spawns = new System.Collections.Generic.List<EffectSystem.Spawn>();
+            public bool Add(in EffectSystem.Spawn s) { Spawns.Add(s); return true; }
+            public void Reset(double origin) { }
+            public void Update(double now, float dt, Camera camera) { }
+            public int Particles => 0;
+            public void Dispose() { }
+        }
+
+        /// <summary>
+        /// TD15's ambient particles: each 2 s period spawns the selection's ambientPerPeriod emitters,
+        /// cycling through its list, inside the view at that moment, the same from a seek as in play.
+        /// </summary>
+        [Test]
+        public void AmbientParticlesFillTheViewDeterministically()
+        {
+            var lib = ScriptableObject.CreateInstance<EffectLibrary>();
+            try
+            {
+                lib.Effects = new[] { new EffectEntry { Name = "ambient-fireflies" }, new EffectEntry { Name = "ambient-wisps" } };
+                lib.Selection = "{\"client\": {\"ambient\": [\"ambient-fireflies\", \"ambient-fireflies\", \"ambient-wisps\"], \"ambientPerPeriod\": 9}}";
+                (Vector2, float) View(double t) => (new Vector2(10, -20), 40f);
+                var a = new Collect();
+                var amb = new AmbientEffects(lib, a);
+                amb.Reset(0);
+                for (int f = 0; f <= 600; f++) amb.Spawn(f / 60.0, View);
+                Assert.That(a.Spawns.Count, Is.EqualTo(5 * 9), "five periods by t = 10 s");
+                Assert.That(a.Spawns.FindAll(x => x.Effect == 1).Count, Is.EqualTo(5 * 3), "a third of them wisps");
+                foreach (var s in a.Spawns)
+                {
+                    Assert.That(Mathf.Abs(s.Position.x - 10f), Is.LessThanOrEqualTo(20f));
+                    Assert.That(s.Position.z, Is.InRange(-20f - 0.4f * 24f, -20f + 0.6f * 24f));
+                    Assert.That(s.Duration, Is.EqualTo(2 * AmbientEffects.Period).Within(1e-5));
+                }
+                var b = new Collect();
+                var seek = new AmbientEffects(lib, b);
+                seek.Reset(6.5);
+                seek.Spawn(10.0, View);
+                var tail = a.Spawns.FindAll(x => x.Time > 6.5);
+                Assert.That(b.Spawns.Count, Is.EqualTo(tail.Count));
+                for (int k = 0; k < tail.Count; k++)
+                {
+                    Assert.That(b.Spawns[k].Seed, Is.EqualTo(tail[k].Seed));
+                    Assert.That(b.Spawns[k].Position, Is.EqualTo(tail[k].Position));
+                }
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(lib);
+            }
+        }
     }
 }

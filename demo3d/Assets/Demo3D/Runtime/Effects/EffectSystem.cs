@@ -163,6 +163,7 @@ namespace Demo3D.Runtime.Effects
 
         /// <summary>Draw for this camera (the game or bench camera; captures use the same one).</summary>
         public void AddCamera(Camera camera) => _cameras.Add(camera);
+        public void RemoveCamera(Camera camera) => _cameras.Remove(camera);
 
         /// <summary>Clears every particle and cue (seeks, rebuilds); <paramref name="origin"/> is the new time zero.</summary>
         public void Reset(double origin)

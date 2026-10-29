@@ -25,15 +25,17 @@ namespace Demo3D.Runtime.Arena
             public int renderers;       // kit renderers (the static set), the ground excluded
             public int lights;          // realtime point lights
             public long triangles;      // LOD 0
+            public bool merged;         // TD14's E1 variant: small props merged into one mesh per cell and material
+            public int mergedRenderers; // merged scenes: the renderers the small props became
         }
 
         public Entry[] entries = new Entry[0];
 
-        public Entry Find(string rung, float density) =>
-            Array.Find(entries, e => e.rung == rung && Mathf.Abs(e.density - density) < 1e-3f);
+        public Entry Find(string rung, float density, bool merged = false) =>
+            Array.Find(entries, e => e.rung == rung && Mathf.Abs(e.density - density) < 1e-3f && e.merged == merged);
 
-        public static string SceneName(string rung, float density) =>
-            "Arena-" + rung.ToUpperInvariant() + "-" + density.ToString("0.###", CultureInfo.InvariantCulture) + "x";
+        public static string SceneName(string rung, float density, bool merged = false) =>
+            "Arena-" + rung.ToUpperInvariant() + "-" + density.ToString("0.###", CultureInfo.InvariantCulture) + "x" + (merged ? "-merged" : "");
 
         public static ArenaIndex Load() => Resources.Load<ArenaIndex>(ResourcePath);
     }

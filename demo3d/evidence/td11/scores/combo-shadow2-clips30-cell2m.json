@@ -1,0 +1,113 @@
+{
+  "a": "captures/td11/base",
+  "b": "captures/td11/combo-shadow2-clips30-cell2m",
+  "frames": [
+    {
+      "frame": "still-010.000.png",
+      "mean": 0.030942104756832123,
+      "p99": 0.25116756558418274
+    },
+    {
+      "frame": "still-011.800.png",
+      "mean": 0.03319842740893364,
+      "p99": 0.25247713923454285
+    },
+    {
+      "frame": "still-013.600.png",
+      "mean": 0.03223375231027603,
+      "p99": 0.2605896592140198
+    },
+    {
+      "frame": "still-015.400.png",
+      "mean": 0.031066205352544785,
+      "p99": 0.2352266013622284
+    },
+    {
+      "frame": "still-017.200.png",
+      "mean": 0.04438088461756706,
+      "p99": 0.303390234708786
+    },
+    {
+      "frame": "still-019.000.png",
+      "mean": 0.030314210802316666,
+      "p99": 0.2365119308233261
+    },
+    {
+      "frame": "still-020.800.png",
+      "mean": 0.03439163416624069,
+      "p99": 0.2678854763507843
+    },
+    {
+      "frame": "still-022.600.png",
+      "mean": 0.03776054084300995,
+      "p99": 0.3105253577232361
+    },
+    {
+      "frame": "still-024.400.png",
+      "mean": 0.028623759746551514,
+      "p99": 0.22432774305343628
+    },
+    {
+      "frame": "still-026.200.png",
+      "mean": 0.04360997676849365,
+      "p99": 0.3379872739315033
+    },
+    {
+      "frame": "still-028.000.png",
+      "mean": 0.029496897011995316,
+      "p99": 0.22003455460071564
+    },
+    {
+      "frame": "still-029.800.png",
+      "mean": 0.033928997814655304,
+      "p99": 0.25849995017051697
+    }
+  ],
+  "unpaired": [],
+  "mean": 0.034162282633284725,
+  "p99": 0.3379872739315033,
+  "pass": false,
+  "lines": {
+    "mean": 0.030422206450667646,
+    "p99": 0.3232830961545309
+  },
+  "args": {
+    "cuts": "shadow-proxy,clips30,light-cell",
+    "params": {
+      "lodPx": "60,30",
+      "shadowLod": 2,
+      "lightCell": 2.0,
+      "mergePx": 8.0
+    },
+    "n": 600,
+    "feel": [],
+    "extra": [],
+    "effective": "cuts [shadow-proxy,clips30,light-cell] lodPx 60,30 shadowLod 2 lightCell 2 m mergePx 8 (--cuts; TD11)",
+    "args": [
+      "--scene",
+      "S3",
+      "--view-width",
+      "40",
+      "--load",
+      "demo",
+      "--aa",
+      "msaa4",
+      "--arena",
+      "e2",
+      "--density",
+      "1",
+      "--n",
+      "600",
+      "--cuts",
+      "shadow-proxy,clips30,light-cell",
+      "--lod-px",
+      "60,30",
+      "--shadow-lod",
+      "2",
+      "--light-cell",
+      "2",
+      "--merge-px",
+      "8"
+    ]
+  }
+}

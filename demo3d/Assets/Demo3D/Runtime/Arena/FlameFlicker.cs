@@ -5,8 +5,8 @@ namespace Demo3D.Runtime.Arena
     /// <summary>
     /// A flame light's flicker (environment.md: at most 8 flickering flame lights): two octaves of
     /// smooth noise on intensity and a little on range, phase-shifted per light by its position,
-    /// so neighbouring braziers never pulse together. Driven by Time.time, which fixed-time
-    /// captures step at 1/60 s.
+    /// so neighbouring braziers never pulse together. Driven by the arena's clock
+    /// (ArenaClock: song time in the demo, so fixed-time captures repeat exactly; Time.time elsewhere).
     /// </summary>
     [RequireComponent(typeof(Light))]
     public sealed class FlameFlicker : MonoBehaviour
@@ -24,9 +24,9 @@ namespace Demo3D.Runtime.Arena
             _seed = Mathf.Abs(p.x * 12.9898f + p.z * 78.233f) % 97f;
         }
 
-        void Update()
+        void LateUpdate()
         {
-            float t = Time.time + _seed;
+            float t = ArenaClock.Now + _seed;
             float n = 0.65f * (Mathf.PerlinNoise(t * 2.1f, _seed) - 0.5f) + 0.35f * (Mathf.PerlinNoise(t * 7.3f, _seed + 13f) - 0.5f);
             _light.intensity = baseIntensity * (1f + 2f * amount * n);
             _light.range = baseRange * (1f + 0.5f * amount * n);

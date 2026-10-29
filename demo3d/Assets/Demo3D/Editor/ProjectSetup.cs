@@ -29,6 +29,7 @@ namespace Demo3D.EditorTools
             var pipeline = ConfigurePipeline();
             GraphicsSettings.defaultRenderPipeline = pipeline;
             ConfigureQuality(pipeline);
+            ConfigureEnvironmentRungs();
             EnsureEmptyScene();
             EnsureBenchMaterials();
             AssetDatabase.SaveAssets();
@@ -96,6 +97,11 @@ namespace Demo3D.EditorTools
             Set(p, "m_SoftShadowsSupported", true);
             Set(p, "m_RequireDepthTexture", true);
             Set(p, "m_RequireOpaqueTexture", false);
+            // TD14 (E1): with GpuResidentDrawer the drawer is on in the asset, so the build keeps its
+            // resources; every player starts on a drawer-off copy and the arena's rung turns it on
+            // (ArenaPipeline). Off (TD14 dropped E1): the stock asset, and --grd refuses.
+            Set(p, "m_GPUResidentDrawerMode", GpuResidentDrawer ? 1 : 0); // GPUResidentDrawerMode.InstancedDrawing : Disabled
+            Set(p, "m_GPUResidentDrawerEnableOcclusionCullingInCameras", false);
             p.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(pipeline);
             return pipeline;
@@ -116,6 +122,32 @@ namespace Demo3D.EditorTools
                 QualitySettings.shadowmaskMode = ShadowmaskMode.Shadowmask;
             }
             QualitySettings.SetQualityLevel(current, false);
+        }
+
+        /// <summary>
+        /// TD14's rung E1, the GPU Resident Drawer, in the build. TD14 measured it and dropped it
+        /// (plan.md, TD14): on top of E2 it saved nothing, and keeping it costs every lit build
+        /// URP Lit's DOTS instancing variants (about 40 minutes of shader compiles more). Set this
+        /// to true and run Configure to measure it again (`grd: on` in a sweep, `--grd on`).
+        /// </summary>
+        public const bool GpuResidentDrawer = false;
+
+        /// <summary>
+        /// TD14's rungs that need project settings: with <see cref="GpuResidentDrawer"/>, every
+        /// BatchRendererGroup (DOTS instancing) variant kept in the build (E1); the kit's texture
+        /// group for E5's cap (KitTextureImport).
+        /// </summary>
+        static void ConfigureEnvironmentRungs()
+        {
+            var brg = GpuResidentDrawer ? UnityEditor.Rendering.BatchRendererGroupStrippingMode.KeepAll
+                : UnityEditor.Rendering.BatchRendererGroupStrippingMode.KeepIfEntitiesGraphics;
+            var graphics = new SerializedObject(AssetDatabase.LoadMainAssetAtPath("ProjectSettings/GraphicsSettings.asset"));
+            Set(graphics, "m_BrgStripping", (int)brg);
+            graphics.ApplyModifiedPropertiesWithoutUndo();
+            if (UnityEditor.Rendering.EditorGraphicsSettings.batchRendererGroupShaderStrippingMode != brg)
+                throw new InvalidOperationException("ProjectSetup: BatchRendererGroup stripping isn't " + brg);
+            if (!TextureMipmapLimitGroups.HasGroup(Demo3D.Runtime.Arena.ArenaPipeline.KitTextureGroup))
+                TextureMipmapLimitGroups.CreateGroup(Demo3D.Runtime.Arena.ArenaPipeline.KitTextureGroup);
         }
 
         static void EnsureEmptyScene()

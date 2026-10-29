@@ -1,0 +1,133 @@
+{
+  "cut": "lod-120-60",
+  "cuts": "lod",
+  "options": [
+    "lodPx=120,60"
+  ],
+  "scene": "S1",
+  "n": 1200,
+  "reps": 2,
+  "summary": {
+    "gpuP50Ms": {
+      "base": 5.2905,
+      "cut": 4.305,
+      "saved": 0.9855
+    },
+    "gpuP99Ms": {
+      "base": 6.705,
+      "cut": 5.823499999999999,
+      "saved": 0.8815000000000008
+    },
+    "mainP99Ms": {
+      "base": 27.3155,
+      "cut": 28.1685,
+      "saved": -0.8530000000000015
+    },
+    "renderP99Ms": {
+      "base": 12.036,
+      "cut": 12.203,
+      "saved": -0.16699999999999982
+    }
+  },
+  "runs": {
+    "base": [
+      {
+        "n": 1200,
+        "gpuP50Ms": 5.254,
+        "gpuP99Ms": 6.71,
+        "mainP99Ms": 24.535,
+        "renderP99Ms": 11.796,
+        "onScreenAlive": 1200,
+        "onScreenDying": 0,
+        "particles": null,
+        "lightsUsed": null,
+        "lightDropShareP99": null,
+        "transparentPerPixel": 0,
+        "noisy": true,
+        "noiseReasons": [
+          "other processes used 91.9% CPU over 5 s",
+          "90 of 850 frames had no GPU time (over 0.5 %)"
+        ],
+        "pass": false,
+        "kind": "fixed",
+        "attempt": 1,
+        "time": "2026-10-28T09:48:12"
+      },
+      {
+        "n": 1200,
+        "gpuP50Ms": 5.327,
+        "gpuP99Ms": 6.7,
+        "mainP99Ms": 30.096,
+        "renderP99Ms": 12.276,
+        "onScreenAlive": 1200,
+        "onScreenDying": 0,
+        "particles": null,
+        "lightsUsed": null,
+        "lightDropShareP99": null,
+        "transparentPerPixel": 0,
+        "noisy": true,
+        "noiseReasons": [
+          "other processes used 91.8% CPU over 5 s",
+          "83 of 849 frames had no GPU time (over 0.5 %)"
+        ],
+        "pass": false,
+        "kind": "fixed",
+        "attempt": 1,
+        "time": "2026-10-28T09:51:52"
+      }
+    ],
+    "lod-120-60": [
+      {
+        "n": 1200,
+        "gpuP50Ms": 4.325,
+        "gpuP99Ms": 5.837,
+        "mainP99Ms": 27.854,
+        "renderP99Ms": 12.279,
+        "onScreenAlive": 1200,
+        "onScreenDying": 0,
+        "particles": null,
+        "lightsUsed": null,
+        "lightDropShareP99": null,
+        "transparentPerPixel": 0,
+        "noisy": true,
+        "noiseReasons": [
+          "other processes used 91.6% CPU over 5 s",
+          "83 of 846 frames had no GPU time (over 0.5 %)"
+        ],
+        "pass": false,
+        "kind": "fixed",
+        "attempt": 1,
+        "time": "2026-10-28T09:49:22"
+      },
+      {
+        "n": 1200,
+        "gpuP50Ms": 4.285,
+        "gpuP99Ms": 5.81,
+        "mainP99Ms": 28.483,
+        "renderP99Ms": 12.127,
+        "onScreenAlive": 1200,
+        "onScreenDying": 0,
+        "particles": null,
+        "lightsUsed": null,
+        "lightDropShareP99": null,
+        "transparentPerPixel": 0,
+        "noisy": true,
+        "noiseReasons": [
+          "other processes used 91.6% CPU over 5 s",
+          "80 of 846 frames had no GPU time (over 0.5 %)"
+        ],
+        "pass": false,
+        "kind": "fixed",
+        "attempt": 1,
+        "time": "2026-10-28T09:50:37"
+      }
+    ]
+  },
+  "params": {
+    "lodPx": "120,60",
+    "shadowLod": 2,
+    "lightCell": 3.0,
+    "mergePx": 8.0
+  },
+  "paramsNote": "reconstructed after review finding 6: the build then defaulted to lodPx 60,30, shadowLod 2, lightCell 3 m, mergePx 8 and the cost runs passed only the --opt shown; measured before TD15 art pass and the time-offset fix"
+}

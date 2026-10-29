@@ -1,0 +1,4 @@
+{"_comment": "TD14's ladder: S3 (full combat with TD8's effects and lights, demo load) the 40 m frontier, 40 m, in the arena at 1x, rung e0.",
+  "scene": "S3", "seconds": 20, "warmup": 5, "rewarm": 3,
+  "n": {"search": [100, 12000], "resolution": 0.05}, "viewWidthM": [40], "load": ["demo"], "aa": ["msaa4"], "jobWorkers": 6,
+  "sceneOptions": {"arena": "e0", "density": 1.0, "crowd": "bone"}}

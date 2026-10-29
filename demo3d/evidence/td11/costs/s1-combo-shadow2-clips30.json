@@ -1,0 +1,160 @@
+{
+  "cut": "combo-shadow2-clips30",
+  "cuts": "shadow-proxy,clips30",
+  "params": {
+    "lodPx": "60,30",
+    "shadowLod": 2,
+    "lightCell": 3.0,
+    "mergePx": 8.0
+  },
+  "scene": "S1",
+  "n": 1200,
+  "reps": 2,
+  "summary": {
+    "gpuP50Ms": {
+      "base": 5.157,
+      "cut": 3.8064999999999998,
+      "saved": 1.3505000000000003
+    },
+    "gpuP99Ms": {
+      "base": 5.836,
+      "cut": 4.4655000000000005,
+      "saved": 1.3704999999999998
+    },
+    "mainP99Ms": {
+      "base": 5.811999999999999,
+      "cut": 5.550000000000001,
+      "saved": 0.2619999999999987
+    },
+    "renderP99Ms": {
+      "base": 0.831,
+      "cut": 0.791,
+      "saved": 0.039999999999999925
+    }
+  },
+  "runs": {
+    "base": [
+      {
+        "n": 1200,
+        "gpuP50Ms": 5.224,
+        "gpuP99Ms": 5.895,
+        "mainP99Ms": 5.712,
+        "renderP99Ms": 0.84,
+        "onScreenAlive": 1200,
+        "onScreenDying": 0,
+        "particles": null,
+        "lightsUsed": null,
+        "lightDropShareP99": null,
+        "transparentPerPixel": 0,
+        "noisy": true,
+        "noiseReasons": [
+          "other processes used 10.4% CPU over 5 s",
+          "52 of 2410 frames had no GPU time (over 0.5 %)"
+        ],
+        "pass": false,
+        "kind": "fixed",
+        "attempt": 1,
+        "time": "2026-10-28T16:08:59",
+        "cuts": "none",
+        "params": {
+          "lodPx": "60,30",
+          "shadowLod": 2,
+          "lightCell": 3.0,
+          "mergePx": 8.0
+        },
+        "effective": "cuts [] lodPx 60,30 shadowLod 2 lightCell 3 m mergePx 8"
+      },
+      {
+        "n": 1200,
+        "gpuP50Ms": 5.09,
+        "gpuP99Ms": 5.777,
+        "mainP99Ms": 5.912,
+        "renderP99Ms": 0.822,
+        "onScreenAlive": 1200,
+        "onScreenDying": 0,
+        "particles": null,
+        "lightsUsed": null,
+        "lightDropShareP99": null,
+        "transparentPerPixel": 0,
+        "noisy": true,
+        "noiseReasons": [
+          "other processes used 11.3% CPU over 5 s",
+          "52 of 2468 frames had no GPU time (over 0.5 %)"
+        ],
+        "pass": false,
+        "kind": "fixed",
+        "attempt": 1,
+        "time": "2026-10-28T16:13:50",
+        "cuts": "none",
+        "params": {
+          "lodPx": "60,30",
+          "shadowLod": 2,
+          "lightCell": 3.0,
+          "mergePx": 8.0
+        },
+        "effective": "cuts [] lodPx 60,30 shadowLod 2 lightCell 3 m mergePx 8"
+      }
+    ],
+    "combo-shadow2-clips30": [
+      {
+        "n": 1200,
+        "gpuP50Ms": 3.81,
+        "gpuP99Ms": 4.468,
+        "mainP99Ms": 5.57,
+        "renderP99Ms": 0.789,
+        "onScreenAlive": 1200,
+        "onScreenDying": 0,
+        "particles": null,
+        "lightsUsed": null,
+        "lightDropShareP99": null,
+        "transparentPerPixel": 0,
+        "noisy": true,
+        "noiseReasons": [
+          "80 of 2990 frames had no GPU time (over 0.5 %)"
+        ],
+        "pass": false,
+        "kind": "fixed",
+        "attempt": 1,
+        "time": "2026-10-28T16:12:31",
+        "cuts": "shadow-proxy,clips30",
+        "params": {
+          "lodPx": "60,30",
+          "shadowLod": 2,
+          "lightCell": 3.0,
+          "mergePx": 8.0
+        },
+        "effective": "cuts [shadow-proxy,clips30] lodPx 60,30 shadowLod 2 lightCell 3 m mergePx 8"
+      },
+      {
+        "n": 1200,
+        "gpuP50Ms": 3.803,
+        "gpuP99Ms": 4.463,
+        "mainP99Ms": 5.53,
+        "renderP99Ms": 0.793,
+        "onScreenAlive": 1200,
+        "onScreenDying": 0,
+        "particles": null,
+        "lightsUsed": null,
+        "lightDropShareP99": null,
+        "transparentPerPixel": 0,
+        "noisy": true,
+        "noiseReasons": [
+          "other processes used 10.5% CPU over 5 s",
+          "85 of 2951 frames had no GPU time (over 0.5 %)"
+        ],
+        "pass": false,
+        "kind": "fixed",
+        "attempt": 1,
+        "time": "2026-10-28T16:13:13",
+        "cuts": "shadow-proxy,clips30",
+        "params": {
+          "lodPx": "60,30",
+          "shadowLod": 2,
+          "lightCell": 3.0,
+          "mergePx": 8.0
+        },
+        "effective": "cuts [shadow-proxy,clips30] lodPx 60,30 shadowLod 2 lightCell 3 m mergePx 8"
+      }
+    ]
+  }
+}

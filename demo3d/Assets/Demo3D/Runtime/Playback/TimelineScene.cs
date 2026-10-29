@@ -15,8 +15,9 @@ namespace Demo3D.Runtime.Playback
     /// load), then plays it through the same evaluation and crowd as the demo. The camera keeps
     /// the harness's height and pitch, and follows the timeline's framing focus.
     /// sceneOptions: <c>crowd</c> (bone, stock or baseline; default bone); <c>arena</c> (the
-    /// arena's rung, "e2" by default, or "e0"; "off" for TD4's flat ground) and <c>density</c>
-    /// (default 1). From TD9 the scenes run in the arena (benchmarks.md, Stress scenes), when
+    /// arena's rung, "e0" or "e2"; "off" for TD4's flat ground), <c>density</c> (default 1) and
+    /// TD14's rung switches (<see cref="Demo3D.Runtime.Arena.ArenaOptions.FromBench"/>; the
+    /// defaults are the ladder's final rung). From TD9 the scenes run in the arena (benchmarks.md, Stress scenes), when
     /// it is baked; S1 to S5 hold its opening clearing and S6 its walled courtyard.
     /// sceneOptions: <c>crowd</c> (the crowd renderer, default bone), <c>lightPool</c> (pooled effect
     /// lights, default EffectLights.DefaultPool), <c>effectPool</c> (particles). The stress script's
@@ -79,12 +80,14 @@ namespace Demo3D.Runtime.Playback
         {
             _ctx = ctx;
             Cuts.Active = Cuts.FromOptions(ctx.Options); // TD11's cuts: sceneOptions cuts, else --cuts
-            Debug.Log($"TimelineScene: cuts {Cuts.Active}");
+            Debug.Log($"TimelineScene: effective {Cuts.Active.Describe()}");
             _data = PlaybackData.Load();
             _roster = RosterAssets.Load();
             _script = StressScript.Parse(_data.Stress(_scene).text);
             var layout = _data.Layout(_script.Layout ?? "arena") ?? _data.Layout("arena");
-            _choreo = ChoreographyData.FromJson(_data.annotations.text, _data.roster.text, layout.text, _data.footprints.text);
+            // The timeline navigates the density of the arena it draws (TD15; the cold review's item 3).
+            var arenaDensity = Demo3D.Runtime.Arena.ArenaOptions.FromBench(ctx.Options, "arena", Demo3D.Runtime.Arena.ArenaOptions.Final()).Density;
+            _choreo = ChoreographyData.FromJson(_data.annotations.text, _data.roster.text, layout.text, _data.footprints.text, arenaDensity);
             _drawCrowd = _script.Draw.Length == 0 || Array.IndexOf(_script.Draw, "crowd") >= 0;
             _drawEffects = Array.IndexOf(_script.Draw, "effects") >= 0;
             _drawLights = Array.IndexOf(_script.Draw, "lights") >= 0;
@@ -100,14 +103,13 @@ namespace Demo3D.Runtime.Playback
                     _fx.AddCamera(ctx.Camera);
                 }
             }
-            string rung = ctx.Options.TryGetValue("arena", out var a) && a is string s ? s : Demo3D.Runtime.Arena.ArenaIndex.E2;
-            float density = ctx.Options.TryGetValue("density", out var d) && d is double dd ? (float)dd : 1f;
-            if (rung != "off" && (_script.Layout ?? "arena") == "arena")
+            var arena = Demo3D.Runtime.Arena.ArenaOptions.FromBench(ctx.Options, "arena", Demo3D.Runtime.Arena.ArenaOptions.Final());
+            if (arena.Rung != "off" && (_script.Layout ?? "arena") == "arena")
             {
-                if (!Demo3D.Runtime.Arena.ArenaRuntime.Available(rung, density))
-                    throw new InvalidOperationException($"TimelineScene: no arena for rung {rung} at {density}x (baked: " +
+                if (!Demo3D.Runtime.Arena.ArenaRuntime.Available(arena))
+                    throw new InvalidOperationException($"TimelineScene: no arena for {arena.Label()} (baked: " +
                                                         $"{Demo3D.Runtime.Arena.ArenaRuntime.Describe()}); bake it or pass sceneOptions arena: off");
-                _arena = Demo3D.Runtime.Arena.ArenaScene.LoadInto(ctx, rung, density);
+                _arena = Demo3D.Runtime.Arena.ArenaScene.LoadInto(ctx, arena);
                 _stats = new Demo3D.Runtime.Arena.RenderStats();
                 return;
             }

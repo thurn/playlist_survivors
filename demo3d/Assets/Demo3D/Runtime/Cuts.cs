@@ -20,7 +20,7 @@ namespace Demo3D.Runtime
     /// <item><c>drop-glow</c>: effects drop their large soft glow quads, leaving bloom the halo.</item>
     /// </list>
     /// The command line: <c>--cuts default|none|all|name,name,-name</c> (a list starting with
-    /// <c>-name</c> or <c>+name</c> edits the defaults), <c>--lod-px 120,60</c>, <c>--light-cell 2</c>,
+    /// <c>-name</c> or <c>+name</c> edits the defaults), <c>--lod-px 60,30</c>, <c>--light-cell 2</c>,
     /// <c>--merge-px 8</c>, <c>--shadow-lod 2</c>. A bench scene's sceneOptions <c>cuts</c> (same syntax) overrides it.
     /// </summary>
     public sealed class Cuts
@@ -31,16 +31,17 @@ namespace Demo3D.Runtime
         public static readonly string[] All = { Lod, ShadowProxy, Clips30, LightCell, Merge, DropGlow };
 
         /// <summary>
-        /// The accepted cuts (TD11's verdicts, docs/tech-demo-3d/plan.md, TD11): LOD at 120 / 60 px
-        /// and 30 Hz clips, which pass the A/B check alone and together. light-cell (2 m) and
-        /// drop-glow pass alone but not beside them; shadow-proxy and light-cell at 3 m fail; merge
-        /// passes but saves nothing.
+        /// The accepted cuts (TD11's verdicts after the demo systems review, docs/tech-demo-3d/plan.md,
+        /// TD11): the shadow proxy from LOD2 and 30 Hz clips, which pass the A/B check alone and
+        /// together and save the most. LOD at 60 / 30 px passes alone (and with clips30) but not beside
+        /// the shadow proxy, and saves less; light-cell (2 m) and merge pass alone but not in the set or
+        /// save nothing; LOD at 90 / 45 or 120 / 60, light cells at 3 m and drop-glow fail.
         /// </summary>
-        public static readonly string[] Defaults = { Lod, Clips30 };
+        public static readonly string[] Defaults = { ShadowProxy, Clips30 };
 
         readonly HashSet<string> _on = new HashSet<string>();
 
-        public float LodPx1 = 120, LodPx2 = 60; // TD11 tried 60 / 30 (passes, saves less) and 120 / 60
+        public float LodPx1 = 60, LodPx2 = 30; // TD11: 60 / 30 passes alone; 90 / 45 and 120 / 60 fail
         public int ShadowProxyLod = 2;
         public float LightCellM = 2f; // 3 m failed the A/B check; 2 m passes alone
         public float MergePx = 8f;
@@ -49,6 +50,14 @@ namespace Demo3D.Runtime
         public IEnumerable<string> Enabled => _on;
 
         public override string ToString() => _on.Count == 0 ? "none" : string.Join(",", _on);
+
+        /// <summary>
+        /// The effective cuts and every parameter, for logs and evidence: the cuts on, in
+        /// <see cref="All"/>'s order, then the parameters (each logged even when its cut is off).
+        /// </summary>
+        public string Describe() => string.Format(CultureInfo.InvariantCulture,
+            "cuts [{0}] lodPx {1:0.###},{2:0.###} shadowLod {3} lightCell {4:0.###} m mergePx {5:0.###}",
+            string.Join(",", Array.FindAll(All, On)), LodPx1, LodPx2, ShadowProxyLod, LightCellM, MergePx);
 
         /// <summary>The cuts in force for this run (set by DemoMain or a bench scene before it builds its renderers).</summary>
         public static Cuts Active = FromCommandLine();

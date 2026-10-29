@@ -17,14 +17,18 @@ namespace Demo3D.Runtime.Arena
     ///   shadow caster, no lightmaps, no static shadow map;
     /// - <c>e2</c>: lightmaps baked in batch mode (moon mixed, shadowmask), the static set out of
     ///   the realtime cascades, and the static shadow map rendered at load for the crowd and hero.
+    /// TD14's other rungs come with <see cref="ArenaOptions"/>: the GPU Resident Drawer and the
+    /// texture cap (<see cref="ArenaPipeline"/>, before the scene loads), the merged scene variant,
+    /// and the static set out of the depth-normals prepass (its materials' DepthNormals and
+    /// DepthOnly passes switched off on copies).
     /// The scene finishes loading on the next frame; <see cref="Ready"/> says when.
     /// </summary>
     public sealed class ArenaRuntime : IDisposable
     {
-        public static float DefaultDensity = 1f;
 
         public readonly string Rung;
         public readonly float Density;
+        public readonly ArenaOptions Options;
         public readonly string SceneName;
         public readonly ArenaLighting Lighting;
         readonly Camera _camera;
@@ -39,13 +43,16 @@ namespace Demo3D.Runtime.Arena
         public Bounds ArenaBounds { get; private set; }
         public event Action<ArenaRuntime> OnReady;
         GameObject _post;
+        readonly List<Material> _copies = new List<Material>();
 
         /// <summary>True if the arena scene for this rung and density is baked into the build.</summary>
-        public static bool Available(string rung, float density)
+        public static bool Available(string rung, float density, bool merged = false)
         {
             var index = ArenaIndex.Load();
-            return index != null && index.Find(rung, density) != null;
+            return index != null && index.Find(rung, density, merged) != null;
         }
+
+        public static bool Available(ArenaOptions o) => Available(o.Rung, o.Density, o.Merged);
 
         public static string Describe()
         {
@@ -60,24 +67,30 @@ namespace Demo3D.Runtime.Arena
         /// Starts loading the arena. <paramref name="camera"/> gets the night's clear colour and
         /// post; the post volume goes under <paramref name="volumeParent"/> (or the scene root).
         /// </summary>
-        public static ArenaRuntime Load(string rung, float density, Camera camera, Transform volumeParent = null)
+        public static ArenaRuntime Load(string rung, float density, Camera camera, Transform volumeParent = null) =>
+            Load(new ArenaOptions { Rung = (rung ?? ArenaIndex.E2).ToLowerInvariant(), Density = density }, camera, volumeParent);
+
+        public static ArenaRuntime Load(ArenaOptions o, Camera camera, Transform volumeParent = null)
         {
-            rung = (rung ?? ArenaIndex.E2).ToLowerInvariant();
-            if (density <= 0) density = DefaultDensity;
+            o = o.Clone();
+            if (o.Density <= 0) o.Density = ArenaOptions.AuthoredDensity;
             var index = ArenaIndex.Load() ?? throw new InvalidOperationException("ArenaRuntime: no arena baked (run demo3d unity BakeArena)");
-            var entry = index.Find(rung, density)
-                ?? throw new ArgumentException($"ArenaRuntime: no arena scene for rung {rung} at density {density.ToString(CultureInfo.InvariantCulture)} (have: {Describe()})");
+            var entry = index.Find(o.Rung, o.Density, o.Merged)
+                ?? throw new ArgumentException($"ArenaRuntime: no arena scene for rung {o.Rung} at density {o.Density.ToString(CultureInfo.InvariantCulture)}" +
+                                               (o.Merged ? " merged" : "") + $" (have: {Describe()})");
             var layout = PlaybackData.Load().Layout("arena") ?? throw new InvalidOperationException("ArenaRuntime: no arena layout in PlaybackData");
-            var a = new ArenaRuntime(rung, density, entry.scene, ArenaLighting.Parse(layout.text), camera, volumeParent);
+            ArenaPipeline.Apply(o);
+            var a = new ArenaRuntime(o, entry.scene, ArenaLighting.Parse(layout.text), camera, volumeParent);
             SceneManager.sceneLoaded += a.Loaded;
             SceneManager.LoadScene(entry.scene, LoadSceneMode.Additive);
             return a;
         }
 
-        ArenaRuntime(string rung, float density, string scene, ArenaLighting lighting, Camera camera, Transform volumeParent)
+        ArenaRuntime(ArenaOptions o, string scene, ArenaLighting lighting, Camera camera, Transform volumeParent)
         {
-            Rung = rung;
-            Density = density;
+            Options = o;
+            Rung = o.Rung;
+            Density = o.Density;
             SceneName = scene;
             Lighting = lighting;
             _camera = camera;
@@ -85,9 +98,13 @@ namespace Demo3D.Runtime.Arena
         }
 
         /// <summary>Sets up an arena scene that is already open (the editor's stills).</summary>
-        public static ArenaRuntime Attach(Scene scene, string rung, float density, ArenaLighting lighting, Camera camera, Transform volumeParent = null)
+        public static ArenaRuntime Attach(Scene scene, string rung, float density, ArenaLighting lighting, Camera camera, Transform volumeParent = null) =>
+            Attach(scene, new ArenaOptions { Rung = rung, Density = density }, lighting, camera, volumeParent);
+
+        /// <summary>Sets up an open arena scene with TD14's scene-level switches (prepass); the pipeline's are the caller's.</summary>
+        public static ArenaRuntime Attach(Scene scene, ArenaOptions o, ArenaLighting lighting, Camera camera, Transform volumeParent = null)
         {
-            var a = new ArenaRuntime(rung, density, scene.name, lighting, camera, volumeParent);
+            var a = new ArenaRuntime(o.Clone(), scene.name, lighting, camera, volumeParent);
             a.Setup(scene);
             return a;
         }
@@ -107,6 +124,7 @@ namespace Demo3D.Runtime.Arena
             foreach (var go in scene.GetRootGameObjects())
                 if (go.name == "Arena") root = go.transform;
             if (root == null) throw new InvalidOperationException("ArenaRuntime: scene " + SceneName + " has no Arena root");
+            if (root.GetComponent<ArenaClock>() == null) root.gameObject.AddComponent<ArenaClock>();
             foreach (var l in root.GetComponentsInChildren<Light>(true))
             {
                 if (l.type == LightType.Directional) Moon = l;
@@ -117,6 +135,7 @@ namespace Demo3D.Runtime.Arena
             var stat = root.Find("Static") ?? throw new InvalidOperationException("ArenaRuntime: no Static group in " + SceneName);
             foreach (var r in stat.GetComponentsInChildren<Renderer>(true))
                 if (!(r is ParticleSystemRenderer)) Static.Add(r);
+            if (!Options.Prepass) LeavePrepass();
             var b = new Bounds(Vector3.zero, Vector3.zero);
             bool first = true;
             foreach (var r in Static)
@@ -143,9 +162,65 @@ namespace Demo3D.Runtime.Arena
                           $"texel {ShadowMap.TexelM.x * 100:F1}×{ShadowMap.TexelM.y * 100:F1} cm, {ShadowMap.RenderMs:F0} ms");
             }
             else StaticShadowMap.Disable();
+            if (Options.Without != "") Hide(root.Find("Static"));
             Ready = true;
-            Debug.Log($"ArenaRuntime: {SceneName} ready: {Static.Count} kit renderers, {Lights.Count} realtime lights, rung {Rung}");
+            Debug.Log($"ArenaRuntime: {SceneName} ready: {Static.Count} kit renderers, {Lights.Count} realtime lights, {Options.Label()}");
             OnReady?.Invoke(this);
+        }
+
+        /// <summary>
+        /// E6: the static set out of the depth-normals prepass. Its materials are copied with their
+        /// DepthNormals and DepthOnly passes off, so the prepass (which feeds SSAO and the depth
+        /// texture; with MSAA, URP does no depth priming) draws only the ground and what moves.
+        /// </summary>
+        void LeavePrepass()
+        {
+            var copies = new Dictionary<Material, Material>();
+            foreach (var r in Static)
+            {
+                var mats = r.sharedMaterials;
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    if (mats[i] == null) continue;
+                    if (!copies.TryGetValue(mats[i], out var c))
+                    {
+                        c = new Material(mats[i]) { name = mats[i].name + " (no prepass)" };
+                        c.SetShaderPassEnabled("DepthNormals", false);
+                        c.SetShaderPassEnabled("DepthNormalsOnly", false);
+                        c.SetShaderPassEnabled("DepthOnly", false);
+                        copies[mats[i]] = c;
+                        _copies.Add(c);
+                    }
+                    mats[i] = c;
+                }
+                r.sharedMaterials = mats;
+            }
+        }
+
+        /// <summary>
+        /// The bounds of E3 and E4 (bench only): hides the small props, or the forest's interior,
+        /// after the static shadow map took them (an LOD or an impostor would still shade monsters).
+        /// </summary>
+        void Hide(Transform stat)
+        {
+            int hidden = 0;
+            foreach (Transform group in stat)
+            {
+                bool forest = group.name == "Forest";
+                bool placed = group.name == "Landmarks" || group.name == "Structures";
+                foreach (var r in group.GetComponentsInChildren<Renderer>(true))
+                {
+                    if (r is ParticleSystemRenderer) continue;
+                    var s = r.bounds.size;
+                    bool small = !placed && Mathf.Max(s.x, Mathf.Max(s.y, s.z)) < ArenaOptions.SmallPropM;
+                    if ((Options.Without == ArenaOptions.WithoutForest && forest) || (Options.Without == ArenaOptions.WithoutSmall && small))
+                    {
+                        r.enabled = false;
+                        hidden++;
+                    }
+                }
+            }
+            Debug.Log($"ArenaRuntime: without {Options.Without}: {hidden} kit renderers hidden");
         }
 
         /// <summary>Kit renderers whose bounds the camera sees, and those that cast realtime shadows into the view.</summary>
@@ -170,12 +245,55 @@ namespace Demo3D.Runtime.Arena
             }
         }
 
+        readonly List<Renderer> _maskHidden = new List<Renderer>();
+
+        /// <summary>
+        /// TD15's ID render (the readability measure): hides what must not occlude or tint it, the
+        /// ground, the atmosphere's cards (mist, runes, glow pools), every particle renderer and the transparent kit; the kit
+        /// itself stays and draws black with its depth (LitStaticShadow under _Demo3DIdMask).
+        /// </summary>
+        public void SetIdMask(bool on)
+        {
+            if (!Ready) return;
+            if (on)
+            {
+                _maskHidden.Clear();
+                var root = Ground != null ? Ground.transform.parent : null;
+                if (Ground != null) _maskHidden.Add(Ground);
+                if (root != null)
+                {
+                    foreach (var name in new[] { "Mist", "Runes", "GlowPools" })
+                    {
+                        var t = root.Find(name);
+                        if (t != null && t.TryGetComponent<Renderer>(out var r)) _maskHidden.Add(r);
+                    }
+                    _maskHidden.AddRange(root.GetComponentsInChildren<ParticleSystemRenderer>(false));
+                    // And any transparent kit renderer (the candles' additive glow cards).
+                    foreach (var r in Static) if (r.sharedMaterial != null && r.sharedMaterial.renderQueue >= 2500) _maskHidden.Add(r);
+                }
+                _maskHidden.RemoveAll(r => r == null || !r.enabled);
+                foreach (var r in _maskHidden) r.enabled = false;
+            }
+            else
+            {
+                foreach (var r in _maskHidden) if (r != null) r.enabled = true;
+                _maskHidden.Clear();
+            }
+        }
+
         public void Dispose()
         {
             SceneManager.sceneLoaded -= Loaded;
             ShadowMap?.Dispose();
             ShadowMap = null;
             StaticShadowMap.Disable();
+            foreach (var c in _copies)
+            {
+                if (Application.isPlaying) UnityEngine.Object.Destroy(c);
+                else UnityEngine.Object.DestroyImmediate(c);
+            }
+            _copies.Clear();
+            ArenaPipeline.Restore();
             if (_post != null)
             {
                 if (Application.isPlaying) UnityEngine.Object.Destroy(_post);
@@ -192,7 +310,7 @@ namespace Demo3D.Runtime.Arena
     /// </summary>
     public sealed class RenderStats : IDisposable
     {
-        readonly ProfilerRecorder _draws, _batches, _setPass, _tris, _casters;
+        readonly ProfilerRecorder _draws, _batches, _setPass, _tris, _casters, _gfx;
 
         public RenderStats()
         {
@@ -201,6 +319,7 @@ namespace Demo3D.Runtime.Arena
             _setPass = ProfilerRecorder.StartNew(ProfilerCategory.Render, "SetPass Calls Count");
             _tris = ProfilerRecorder.StartNew(ProfilerCategory.Render, "Triangles Count");
             _casters = ProfilerRecorder.StartNew(ProfilerCategory.Render, "Shadow Casters Count");
+            _gfx = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "Gfx Used Memory");
         }
 
         static long? Read(ProfilerRecorder r) => r.Valid && r.Count > 0 ? r.LastValue : (long?)null;
@@ -210,6 +329,8 @@ namespace Demo3D.Runtime.Arena
         public long? SetPassCalls => Read(_setPass);
         public long? Triangles => Read(_tris);
         public long? ShadowCasters => Read(_casters);
+        /// <summary>Graphics memory in use (textures, meshes, buffers, render targets), for E5.</summary>
+        public long? GfxUsedBytes => Read(_gfx);
 
         public void Dispose()
         {
@@ -218,6 +339,7 @@ namespace Demo3D.Runtime.Arena
             _setPass.Dispose();
             _tris.Dispose();
             _casters.Dispose();
+            _gfx.Dispose();
         }
     }
 }

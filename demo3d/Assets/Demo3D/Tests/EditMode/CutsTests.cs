@@ -25,6 +25,10 @@ namespace Demo3D.Tests
             foreach (var d in Cuts.Defaults)
                 Assert.That(Cuts.Parse("-" + d).On(d), Is.False, d);
             Assert.Throws<ArgumentException>(() => Cuts.Parse("lod,blob"));
+            // The evidence's record: the cuts on and every parameter.
+            var c = Cuts.Parse("clips30,lod");
+            c.LodPx1 = 90; c.LodPx2 = 45;
+            Assert.That(c.Describe(), Is.EqualTo("cuts [lod,clips30] lodPx 90,45 shadowLod 2 lightCell 2 m mergePx 8"));
             foreach (var d in Cuts.Defaults) Assert.That(Cuts.All, Does.Contain(d));
         }
 

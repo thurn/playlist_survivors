@@ -53,7 +53,7 @@ namespace Demo3D.Choreography.Tests
             string a = ChoreographyFiles.LoadPlacements(Fixtures.Root).ToJson();
             string b = ChoreographyFiles.LoadPlacements(Fixtures.Root).ToJson();
             Assert.That(b == a, Is.True, "two generations differ");
-            Assert.That(ChoreographyFiles.LoadPlacements(Fixtures.Root, density: 2f).ToJson() == a, Is.False);
+            Assert.That(ChoreographyFiles.LoadPlacements(Fixtures.Root, density: 2f * ChoreographyFiles.LoadLayout(Fixtures.Root).DecorationDensity).ToJson() == a, Is.False);
         }
 
         /// <summary>
@@ -85,7 +85,7 @@ namespace Demo3D.Choreography.Tests
             Assert.That(counts.ContainsKey(AreaType.Forest) && counts.ContainsKey(AreaType.Edge) && counts.ContainsKey(AreaType.Clearing), Is.True);
             Assert.That(problems, Is.Empty, Report(problems));
 
-            PlacementList dense = ChoreographyFiles.LoadPlacements(Fixtures.Root, density: 2f);
+            PlacementList dense = ChoreographyFiles.LoadPlacements(Fixtures.Root, density: 2f * ChoreographyFiles.LoadLayout(Fixtures.Root).DecorationDensity);
             var dcounts = new Dictionary<AreaType, int>();
             foreach (Placement p in dense.Items)
             {
@@ -97,7 +97,9 @@ namespace Demo3D.Choreography.Tests
             TestContext.WriteLine("at density 2: " + string.Join(", ", Describe(dcounts)));
             Assert.That(dcounts[AreaType.Clearing], Is.EqualTo(counts[AreaType.Clearing]), "clearings must not change with density");
             Assert.That(dcounts[AreaType.Path], Is.EqualTo(counts[AreaType.Path]), "paths must not change with density");
-            Assert.That(dcounts[AreaType.Forest] + dcounts[AreaType.Edge], Is.GreaterThan(1.5 * (counts[AreaType.Forest] + counts[AreaType.Edge])));
+            // Doubling the authored density adds at least a quarter more edge and forest (1x to 2x adds
+            // more than 1.5x; from 2x, TD15's authored density, the forest starts to fill: 2x to 4x adds 1.36x).
+            Assert.That(dcounts[AreaType.Forest] + dcounts[AreaType.Edge], Is.GreaterThan(1.25 * (counts[AreaType.Forest] + counts[AreaType.Edge])));
         }
 
         static IEnumerable<string> Describe(Dictionary<AreaType, int> counts)
@@ -571,6 +573,83 @@ namespace Demo3D.Choreography.Tests
             Assert.That(mean, Is.GreaterThanOrEqualTo(0.75 * s.N));
             Assert.That(tl.Sections[0].MaxOnScreen, Is.LessThanOrEqualTo(1.1 * s.N));
             Assert.That(beatsWithNone, Is.LessThanOrEqualTo(beats / 50));
+        }
+
+        /// <summary>
+        /// TD15's dressing comes after everything else: the arena generated without it is exactly the
+        /// full arena's first pieces, so dressing never moves a piece the choreography navigates.
+        /// </summary>
+        [Test]
+        public void DressingNeverMovesAnEarlierPiece()
+        {
+            var table = ChoreographyFiles.LoadFootprints(Fixtures.Root);
+            ArenaLayout full = ChoreographyFiles.LoadLayout(Fixtures.Root);
+            ArenaLayout bare = ChoreographyFiles.LoadLayout(Fixtures.Root);
+            Assert.That(Array.Exists(full.Areas, a => a.Dressing), Is.True);
+            int lastPlain = Array.FindLastIndex(bare.Areas, a => !a.Dressing && a.Type != AreaType.Forest && a.Type != AreaType.Clearing && a.Type != AreaType.Path);
+            Assert.That(Array.FindIndex(bare.Areas, a => a.Dressing), Is.GreaterThan(lastPlain), "dressing areas follow every placed area, so indices hold");
+            bare.Areas = Array.FindAll(bare.Areas, a => !a.Dressing);
+            foreach (AreaType t in new List<AreaType>(bare.Scatter.Keys))
+                bare.Scatter[t] = Array.FindAll(bare.Scatter[t], s => !s.Dressing);
+            foreach (float density in new[] { 1f, 2f })
+            {
+                PlacementList a = bare.WithDensity(density).Generate(table), b = full.WithDensity(density).Generate(table);
+                Assert.That(b.Items.Length, Is.GreaterThan(a.Items.Length));
+                for (int i = 0; i < a.Items.Length; i++)
+                {
+                    Assert.That(b.Props[b.Items[i].Prop].Id, Is.EqualTo(a.Props[a.Items[i].Prop].Id), "piece " + i);
+                    Assert.That(b.Items[i].Position, Is.EqualTo(a.Items[i].Position), "piece " + i);
+                }
+            }
+        }
+
+        /// <summary>
+        /// The cold review's item 4: flat dressing on fighting ground never sits inside a blocking piece
+        /// (a wall, a tomb, a brazier) nor in a landmark's or structure's keep-out.
+        /// </summary>
+        [Test]
+        public void DressingStaysOffWallsAndKeepOuts()
+        {
+            ArenaLayout layout = ChoreographyFiles.LoadLayout(Fixtures.Root);
+            PlacementList list = Fixtures.Data.Layout.Placements;
+            var walls = new WallGeometry(list);
+            var dressing = new HashSet<string>(layout.Groups["ground-dressing"].Props);
+            int n = 0;
+            var problems = new List<string>();
+            foreach (Placement p in list.Items)
+            {
+                Footprint f = list.Props[p.Prop];
+                if (p.Area >= 0 || !dressing.Contains(f.Id) || layout.FightingDistance(p.Position, out _) > 0) continue;
+                n++;
+                if (walls.Distance(p.Position) <= 0) problems.Add(f.Id + " at " + p.Position + " is inside a blocking piece");
+                if (layout.InKeepOut(p.Position, 0)) problems.Add(f.Id + " at " + p.Position + " is in a keep-out");
+            }
+            Assert.That(n, Is.GreaterThan(100), "dressing on fighting ground");
+            Assert.That(problems, Is.Empty, Report(problems));
+        }
+
+        /// <summary>
+        /// TD15's beauty shots hold the hero at each shot's ground (`--hold-at`): every shot's point is
+        /// fighting ground (a clearing or path, not a landmark's or wall's footprint), and a stress run
+        /// held there keeps the hero within its hold radius of it.
+        /// </summary>
+        [Test]
+        public void BeautyShotsHoldTheHeroOnOpenGround()
+        {
+            ArenaLayout layout = Fixtures.Data.Layout.Arena;
+            Assert.That(layout.Shots.Length, Is.EqualTo(6));
+            var walls = new WallGeometry(Fixtures.Data.Layout.Placements);
+            foreach (LayoutShot shot in layout.Shots)
+            {
+                Assert.That(layout.FightingDistance(shot.At, out _), Is.LessThanOrEqualTo(0f), shot.Name + " is not on fighting ground");
+                Assert.That(walls.Distance(shot.At), Is.GreaterThan(0.5f), shot.Name + " stands in or against a blocking piece");
+            }
+            StressScript s = Fixtures.StressScript("S1").With(n: 40, seconds: 12);
+            LayoutShot path = Array.Find(layout.Shots, x => x.Name == "path");
+            s.HoldAt = path.At;
+            Timeline tl = Choreographer.RunStress(s, Fixtures.Data);
+            for (double t = 2; t < 11; t += 1)
+                Assert.That(Vector2.Distance(tl.PositionAt(0, t), path.At), Is.LessThanOrEqualTo(s.HoldRadiusM + 0.5f), "hero at t=" + t);
         }
     }
 

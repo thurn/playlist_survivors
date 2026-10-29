@@ -17,7 +17,9 @@ namespace Demo3D.Choreography
         /// The run's inputs from JSON. An arena layout (one with <c>areas</c>) needs the footprint
         /// annotations (Data/footprints.json) to generate its placement list; open ground does not.
         /// </summary>
-        public static ChoreographyData FromJson(string annotationsJson, string rosterJson, string layoutJson, string footprintsJson = null)
+        /// <param name="density">The arena's decoration density to navigate (0: the layout's authored one).
+        /// The client passes the density of the scene it loads, so monsters walk round what is drawn.</param>
+        public static ChoreographyData FromJson(string annotationsJson, string rosterJson, string layoutJson, string footprintsJson = null, float density = 0)
         {
             ClipLibrary clips = ClipLibrary.Parse(annotationsJson);
             FootprintTable fp = footprintsJson == null ? null : FootprintTable.Parse(footprintsJson);
@@ -26,7 +28,7 @@ namespace Demo3D.Choreography
                 Clips = clips,
                 Roster = Roster.Parse(rosterJson, clips),
                 Footprints = fp,
-                Layout = GroundLayout.Parse(layoutJson, fp),
+                Layout = GroundLayout.Parse(layoutJson, fp, density),
             };
             data.Layout.Arena?.Validate(data.Roster);
             return data;
@@ -105,6 +107,7 @@ namespace Demo3D.Choreography
                 if (area != null) hold = area.Center;
                 else if (data.Layout.Arena != null) throw new FormatException("stress script " + script.Scene + ": no area '" + script.Hold + "' in layout '" + data.Layout.Name + "'");
             }
+            if (script.HoldAt.HasValue) hold = script.HoldAt.Value;
             var plan = new SectionPlan
             {
                 Label = map.Sections[0].Label,

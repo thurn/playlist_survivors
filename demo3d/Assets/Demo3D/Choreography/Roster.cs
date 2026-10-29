@@ -202,13 +202,16 @@ namespace Demo3D.Choreography
         /// An open-ground layout, or an arena layout's parameters (which need the footprint table to
         /// generate their placement list).
         /// </summary>
-        public static GroundLayout Parse(string json, FootprintTable footprints = null)
+        /// <param name="density">An arena's decoration density for the placement list (0: the layout's own,
+        /// its authored density), so the timeline navigates the scene the client shows.</param>
+        public static GroundLayout Parse(string json, FootprintTable footprints = null, float density = 0)
         {
             JsonValue root = JsonValue.Parse(json);
             if (root.Has("areas"))
             {
                 if (footprints == null) throw new FormatException("layout '" + root["name"].AsString() + "' has areas, which need the footprint annotations");
-                return FromArena(ArenaLayout.Parse(json), footprints);
+                ArenaLayout arena = ArenaLayout.Parse(json);
+                return FromArena(density > 0 ? arena.WithDensity(density) : arena, footprints);
             }
             var layout = new GroundLayout
             {

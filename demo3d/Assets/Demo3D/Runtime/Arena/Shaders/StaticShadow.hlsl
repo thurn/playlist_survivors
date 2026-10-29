@@ -9,6 +9,9 @@
 TEXTURE2D_SHADOW(_Demo3DStaticShadowMap);
 float4x4 _Demo3DStaticShadowMatrix;   // world to shadow texture (xy in 0..1, z the compare depth)
 float4 _Demo3DStaticShadowParams;     // x on (0 or 1), y one texel in uv, z strength (0..1)
+// TD15's ID render for the readability measure: 1 draws the crowd flat white (CrowdSkinned) and the
+// set and hero black with their depth (LitStaticShadow), so the set occludes the monsters behind it.
+float _Demo3DIdMask;
 
 // 1 where the moon reaches the point past the static set, 0 in full static shade. Outside the
 // map (or with the map off) it is 1. Four bilinear compare taps half a texel apart: a 2x2 tent.

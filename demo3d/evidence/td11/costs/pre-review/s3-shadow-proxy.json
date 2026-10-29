@@ -1,0 +1,132 @@
+{
+  "cut": "shadow-proxy",
+  "cuts": "shadow-proxy",
+  "options": [],
+  "scene": "S3",
+  "n": 600,
+  "reps": 2,
+  "summary": {
+    "gpuP50Ms": {
+      "base": 3.257,
+      "cut": 3.0309999999999997,
+      "saved": 0.22600000000000042
+    },
+    "gpuP99Ms": {
+      "base": 4.24,
+      "cut": 4.9719999999999995,
+      "saved": -0.7319999999999993
+    },
+    "mainP99Ms": {
+      "base": 13.9485,
+      "cut": 16.632,
+      "saved": -2.683500000000002
+    },
+    "renderP99Ms": {
+      "base": 13.3295,
+      "cut": 13.561,
+      "saved": -0.23150000000000048
+    }
+  },
+  "runs": {
+    "base": [
+      {
+        "n": 600,
+        "gpuP50Ms": 3.278,
+        "gpuP99Ms": 4.2,
+        "mainP99Ms": 13.302,
+        "renderP99Ms": 13.451,
+        "onScreenAlive": 551,
+        "onScreenDying": 70,
+        "particles": 14233,
+        "lightsUsed": 67,
+        "lightDropShareP99": 0,
+        "transparentPerPixel": 1.267,
+        "noisy": true,
+        "noiseReasons": [
+          "other processes used 90.4% CPU over 5 s",
+          "150 of 1498 frames had no GPU time (over 0.5 %)"
+        ],
+        "pass": false,
+        "kind": "fixed",
+        "attempt": 1,
+        "time": "2026-10-28T09:17:41"
+      },
+      {
+        "n": 600,
+        "gpuP50Ms": 3.236,
+        "gpuP99Ms": 4.28,
+        "mainP99Ms": 14.595,
+        "renderP99Ms": 13.208,
+        "onScreenAlive": 549,
+        "onScreenDying": 72,
+        "particles": 14169,
+        "lightsUsed": 66,
+        "lightDropShareP99": 0,
+        "transparentPerPixel": 1.38,
+        "noisy": true,
+        "noiseReasons": [
+          "other processes used 90.5% CPU over 5 s",
+          "128 of 1427 frames had no GPU time (over 0.5 %)"
+        ],
+        "pass": false,
+        "kind": "fixed",
+        "attempt": 1,
+        "time": "2026-10-28T09:21:28"
+      }
+    ],
+    "shadow-proxy": [
+      {
+        "n": 600,
+        "gpuP50Ms": 3.057,
+        "gpuP99Ms": 5.763,
+        "mainP99Ms": 18.789,
+        "renderP99Ms": 13.352,
+        "onScreenAlive": 550,
+        "onScreenDying": 71,
+        "particles": 14094,
+        "lightsUsed": 66,
+        "lightDropShareP99": 0,
+        "transparentPerPixel": 1.256,
+        "noisy": true,
+        "noiseReasons": [
+          "other processes used 93.2% CPU over 5 s",
+          "the player's window lost the foreground to ConsoleWindowClass \"C:\\Program Files\\Unity\\Hub\\Editor\\6000.6.7f1\\Editor\\Unity.exe\"",
+          "193 of 1296 frames had no GPU time (over 0.5 %)"
+        ],
+        "pass": false,
+        "kind": "fixed",
+        "attempt": 1,
+        "time": "2026-10-28T09:18:56"
+      },
+      {
+        "n": 600,
+        "gpuP50Ms": 3.005,
+        "gpuP99Ms": 4.181,
+        "mainP99Ms": 14.475,
+        "renderP99Ms": 13.77,
+        "onScreenAlive": 551,
+        "onScreenDying": 70,
+        "particles": 14142,
+        "lightsUsed": 66,
+        "lightDropShareP99": 0,
+        "transparentPerPixel": 1.302,
+        "noisy": true,
+        "noiseReasons": [
+          "other processes used 90.8% CPU over 5 s",
+          "112 of 1416 frames had no GPU time (over 0.5 %)"
+        ],
+        "pass": false,
+        "kind": "fixed",
+        "attempt": 1,
+        "time": "2026-10-28T09:20:12"
+      }
+    ]
+  },
+  "params": {
+    "lodPx": "60,30",
+    "shadowLod": 2,
+    "lightCell": 3.0,
+    "mergePx": 8.0
+  },
+  "paramsNote": "reconstructed after review finding 6: the build then defaulted to lodPx 60,30, shadowLod 2, lightCell 3 m, mergePx 8 and the cost runs passed only the --opt shown; measured before TD15 art pass and the time-offset fix"
+}

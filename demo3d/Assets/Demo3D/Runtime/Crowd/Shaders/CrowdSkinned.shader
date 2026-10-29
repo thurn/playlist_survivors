@@ -121,11 +121,17 @@ Shader "Demo3D/CrowdSkinned"
             // (environment.md, Lighting the night); the lighting is shared with the hero's shader.
             #include "../../Arena/Shaders/StaticShadow.hlsl"
             #define CrowdLighting Demo3DLightingPBR
+            // TD15 (environment.md, Value structure): the night's extra fill on the horde's ambient (x, added
+            // to 1) and a cool rim light on its silhouettes (rgb, linear), so monsters stay the brightest
+            // values against the dark ground. NightLook sets them from the layout's lighting; 0 is TD9's look.
+            float4 _Demo3DCrowdRim;
+            float _Demo3DCrowdFill;
 
             half4 frag(Varyings i) : SV_Target
             {
                 CrowdLodClip(i.fx.zw, i.positionCS);
                 float edge = CrowdDissolve(i.fx.y, i.restPosition);
+                if (_Demo3DIdMask > 0.5) return half4(1, 1, 1, 1);
                 half4 albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, i.uv) * _BaseColor * i.tint;
 
                 InputData inputData = (InputData)0;
@@ -135,7 +141,7 @@ Shader "Demo3D/CrowdSkinned"
                 inputData.viewDirectionWS = GetWorldSpaceNormalizeViewDir(i.positionWS);
                 inputData.shadowCoord = TransformWorldToShadowCoord(i.positionWS);
                 inputData.fogCoord = i.fogFactor;
-                inputData.bakedGI = SampleSH(inputData.normalWS); // the global ambient probe
+                inputData.bakedGI = SampleSH(inputData.normalWS) * (1 + _Demo3DCrowdFill); // the global ambient probe
                 inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(i.positionCS);
                 inputData.shadowMask = 1;
 
@@ -147,6 +153,8 @@ Shader "Demo3D/CrowdSkinned"
                 s.alpha = 1;
                 s.emission = SAMPLE_TEXTURE2D(_EmissionMap, sampler_EmissionMap, i.uv).rgb * _EmissionColor.rgb
                     + _FlashColor.rgb * i.fx.x + _DissolveEdgeColor.rgb * edge;
+                half rim = 1 - saturate(dot(inputData.normalWS, inputData.viewDirectionWS));
+                s.emission += _Demo3DCrowdRim.rgb * (rim * rim * rim) * albedo.rgb * 4;
 
                 half3 color = CrowdLighting(inputData, s);
                 color = MixFog(color, inputData.fogCoord);

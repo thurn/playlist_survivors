@@ -215,6 +215,8 @@ namespace Demo3D.Choreography
         public string Layout;
         /// <summary>The named area whose goal centre is the hero's ground (its <c>hold</c>, TD6), or null for the origin.</summary>
         public string Hold;
+        /// <summary>A ground point for the hero to hold instead of a named area's goal (TD15's beauty shots; null: <see cref="Hold"/>).</summary>
+        public System.Numerics.Vector2? HoldAt;
         /// <summary>The opening horde starts at least this far from the hero (0: the hero's radius plus 1 m).</summary>
         public float OpeningInnerM;
         /// <summary>Which systems the client draws (crowd, hero, effects, lights); the timeline ignores it.</summary>

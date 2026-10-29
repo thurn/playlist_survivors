@@ -328,7 +328,9 @@ the task that consumes the result removes the row once it has used it.
 | Watch S6 in the arena | From `demo3d/`, windowed: `Builds\il2cpp\PlaylistSurvivors3D.exe -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --scene S6 --n 1200 --view-width 40 --load demo --overlay --seconds 60`. qa.md, Walls and the sim: the horde flows round the courtyard's walls and through its gaps, never through a wall; jams at the gaps read as marching in place on the beat | TD9 | TD12 (S6 at the envelope) |
 | Listen to the hero's blows on the click | From `demo3d/`, windowed with speakers on: `Builds\\il2cpp\\PlaylistSurvivors3D.exe -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 -job-worker-count 6 --click --overlay --seconds 60`. Expect every sword blow, hit flinch and death on a click, swings and impacts (not a wall of identical sounds) at the dense beats, punch on accents and shake that grows with the hits but never jars. Note the song time of anything off | TD10 | TD13 |
 | Review TD8's effect A/B stills | Open `demo3d/evidence/td8/ab/ab-*.jpg` (each: the stock prefab left, our GPU runtime right, at four times of its life, 2×2) and `demo3d/evidence/td8/song-141.5s.jpg`. Note any effect whose read differs: colour, size, timing, a missing layer (README lists the known approximations: curl noise, trails as stretched billboards, sword-slash shading, the laser's beam, skipped distortion). To see one moving: from `demo3d/`, `Builds\il2cpp\PlaylistSurvivors3D.exe -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --effect-gallery <dir> --effects <name>` | TD8 | TD11 (cuts) |
-| Review TD11's accepted cuts | Open `demo3d/evidence/td11/ab/*.jpg` at 100% (each: the centre of the frame with the largest FLIP, A with every cut off left, B right): `lod-120-60-*` (LOD1 below 120 px, LOD2 below 60 px), `clips30-*`, and `accepted-lod-clips-*` (both, the defaults); `invisible-*` and `visible-*` show the two anchors for scale. Full PNG stills: `D:\wt\td11\captures\td11\<name>\still-*.png` against `...\base\`. Watch `D:\wt\td11\captures\td11\lod-120-60.mp4`, `clips30.mp4` and `accepted-lod-clips.mp4` against `base.mp4` (2 s, fixed time, S3 at 600, 40 m; captures are gitignored, so move them with the worktree's other captures). Note any visible difference: LOD pops or dithered crossfades, faceted silhouettes on small monsters, 30 Hz stepping in fast attacks. Rejected cuts' videos sit beside them (`shadow-proxy`, `light-cell`, `light-cell-2m`, `drop-glow`, `merge`) | TD11 | TD12 (the frontier uses the accepted cuts) |
+| Review TD11's accepted cuts | Open `demo3d/evidence/td11/ab/*.jpg` at 100% (each: the centre of the frame with the largest FLIP, A with every cut off left, B right): `shadow-proxy-lod2-*` (crowd shadows drawn from LOD2), `clips30-*`, and `combo-shadow2-clips30-*` (both: the defaults); `invisible-*` and `visible-*` show the two anchors for scale. Full PNG stills: `D:\wt\td11-review\captures\td11\<name>\still-*.png` against `...\base\`. Watch `shadow-proxy-lod2.mp4`, `clips30.mp4` and `combo-shadow2-clips30.mp4` against `base.mp4` in the same folder (2 s, fixed time, S3 at 600, 40 m; gitignored, so keep them with the worktree's other captures). Note any visible difference: shadows that shift, crawl or speckle on the monsters (self-shadowing from the proxy), 30 Hz stepping in fast attacks. The other runs' videos sit beside them (`lod-60-30`, `combo-lod60-clips30` and the rejected ones) | TD11 | TD12 (the frontier uses the accepted cuts) |
+| Judge TD15's beauty shots | Flip through `demo3d/evidence/td15/shots/` (each of the six shots empty and with the horde: S3 at demo load, 2,000 requested, held at the shot), with `demo3d/evidence/td15/reference/` (the packs' demo scenes through our camera) and `readability.md` beside them; `canopy/` shows the canopy fade off and on. To see one moving, from `demo3d/`: `Builds\il2cpp\PlaylistSurvivors3D.exe -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --scene S3 --load demo --n 2000 --view-width 40 --hold-at 44,40 --seconds 30` (the shots' points are in `arena-layout.json`, `shots`). Note anything too dark, too flat or off-palette; mist that reads as smudges; runes or light pools too graphic or too bright; the horde not reading at a glance; effects lost in the set; props that float, clip or repeat; a canopy that hides the hero | TD15 | TD13 (the demo's capture) |
+| Judge the triplanar rock port | Open `demo3d/evidence/td14/stills/rock-triplanar-e2-1x-forest-edge-crop.jpg` (the big rock, centre top) beside Elven Realm's own demo scene: TD14 ported `SyntyStudios_RockTriplanar` to `Demo3D/RockTriplanar` (rock-wall sides projected on the object's axes, grass laid over where it faces up). Note if the grass cover is too strong or too weak, the texture scale is off, or the rock reads flatter than the vendor's | TD14 | TD15 (the art pass) |
 
 ## Task Notes
 
@@ -1460,7 +1462,8 @@ Status: Done (2026-10-28, on Cygnus). No step waited: TD5 had landed.
     Emissive kit materials bloom.
   - The static shadow map (`StaticShadowMap.cs`, `Shaders/StaticShadow.hlsl`): at load the static
     set's depth through each material's own ShadowCaster pass, 4096² from the moon over the arena's
-    bounds (5.9 × 3.5 cm texels by axis; 5 ms in the player), published as shader globals. The crowd
+    bounds (5.9 × 3.5 cm texels by axis; 5 ms in the player, the CPU's command submission, not
+    GPU time), published as shader globals. The crowd
     shader (its TD5 hook, now the shared `Demo3DLightingPBR`), the hero (`Demo3D/LitStaticShadow`:
     URP Lit's passes with our forward pass; RosterBaker gives the hero's materials it) and E2's kit
     sample it with a 2×2 tent and take the min with the realtime shadow. At E0 it is off.
@@ -1593,7 +1596,8 @@ Status: Done (the click-track listening check is the operator's; row below).
 
 ### TD11
 
-Status: Done (2026-10-28, on Cygnus).
+Status: Done (2026-10-28, on Cygnus); its A/B results re-run after the demo systems review (the
+Review bullet below supersedes the first pass's thresholds, scores and defaults).
 
 - **Commits** (branch `td/td11`, from `demo3d` at `df37614`): `c18dc83` (the cut switches, LOD and
   30 Hz bakes, the merge and glow cuts, the tooling), `768cd81` (merge of `demo3d` at `2a2df25`:
@@ -1601,8 +1605,8 @@ Status: Done (2026-10-28, on Cygnus).
 - **Run:** in a set-up worktree, `demo3d unity BakeAll` (the crowd baker now also writes each
   type's LOD1, LOD2 and 30 Hz bone texture; the effects baker marks glow quads), `demo3d build
   --backend il2cpp`, then the demo as before: it runs with the accepted cuts by default
-  (`DemoMain: cuts lod,clips30` in the log). `--cuts none|all|default|name,-name` (names `lod`,
-  `shadow-proxy`, `clips30`, `light-cell`, `merge`, `drop-glow`), `--lod-px 120,60`, `--shadow-lod
+  (`DemoMain: effective cuts [shadow-proxy,clips30] lodPx 60,30 shadowLod 2 lightCell 2 m mergePx 8` in the log). `--cuts none|all|default|name,-name` (names `lod`,
+  `shadow-proxy`, `clips30`, `light-cell`, `merge`, `drop-glow`), `--lod-px 60,30`, `--shadow-lod
   1|2`, `--light-cell 2`, `--merge-px 8`; sweeps take the same as sceneOptions `cuts`, `lodPx`,
   `shadowLod`, `lightCell`, `mergePx`. Every step of the evidence: `uv run --project demo3d/tools
   python demo3d/evidence/td11/td11.py calibrate|cut|cost|frontier|table`
@@ -1612,12 +1616,12 @@ Status: Done (2026-10-28, on Cygnus).
   the time offset and pose rate all apply there), 12 PNG stills at 10.0 to 29.8 s (1.8 s apart, on
   the frame grid) and a 2 s video from 14 s, fixed time. N = 600: the 40 m frontier with every cut
   off is about 600 (below), under 2,000.
-- **Thresholds** ([thresholds.json](../../demo3d/evidence/td11/thresholds.json), the file TD14's
+- **Thresholds, first pass** (superseded: Review below) ([thresholds.json](../../demo3d/evidence/td11/thresholds.json), the file TD14's
   E3 and E4 use): invisible anchor (`--time-offset 0.001`) mean 0.02336, p99 0.3867; visible anchor
   (`--pose-rate 15`) mean 0.04324, p99 0.5150; **a cut passes at mean <= 0.02999 and p99 <=
   0.4295**. The run-to-run floor (A against a second A) is 0.00098 / 0.0327. The 1 ms shift moves
   every particle, so the invisible anchor sits far above the floor.
-- **The cuts** (GPU saved, A minus B, medians of 2 interleaved fixed-N runs; S3 at 600, S1 at
+- **The cuts, first pass** (superseded: Review below; GPU saved, A minus B, medians of 2 interleaved fixed-N runs; S3 at 600, S1 at
   1,200 for the crowd's cuts):
 
   | Cut | mean FLIP | p99 FLIP | A/B | S3 GPU p50 / p99 saved | S1 GPU p50 / p99 saved | Verdict |
@@ -1688,6 +1692,55 @@ Status: Done (2026-10-28, on Cygnus).
   stayed broken until restarted, and the restart once crashed in UDS initialization; the next start
   worked. `EffectSystem.Dispose` called `Destroy` in edit mode (fixed). A `redefinition of 'k'` in
   my EffectSim edit made every kernel invalid in the player with only a log line (fixed).
+- **Review** (the demo systems milestone's cold review, TD8, TD10 and TD11; branch
+  `td/td11-review` from `demo3d` at `7584db7`, merged with `2256e1d` for TD15's final arena before
+  any capture). Two findings on TD11, both fixed:
+  - **2, the invisible anchor moved the camera:** `--time-offset` fed CameraFeel's punch and shake,
+    so the anchor's scores followed beat phase and the pass line sat about 30 times the floor.
+    Fixed in `73f463c` (TD10: punch and shake on t minus the offset). Punch and shake stay on, alike
+    in A, B and both anchors. Recapturing on TD15's scene also showed its rune circle, mist cards,
+    flame flicker and kit particles running on wall time (`_Time`, `Time.time`), which put the
+    floor at 0.0103 / 0.369: they now run on `ArenaClock` (song time in the demo, fixed particle
+    seeds in fixed time; `Runtime/Arena/ArenaClock.cs`), and the floor is 0.00106 / 0.0374.
+  - **6, the evidence didn't record parameters:** the player logs the effective cuts and every
+    parameter at startup (`Cuts.Describe()`: `effective cuts [...] lodPx ... shadowLod ... lightCell
+    ... mergePx ...`); `td11.py` passes every parameter explicitly (`PARAMS`, `ARMS`) and writes
+    the player's line into each capture's `args.json`, each score's `args` and each cost run; the
+    first pass's costs moved to `costs/pre-review/` with their parameters reconstructed from that
+    build's defaults.
+  - **New thresholds** ([thresholds.json](../../demo3d/evidence/td11/thresholds.json), for TD14's
+    E3 and E4): invisible anchor mean 0.01608, p99 0.1907; visible anchor 0.05911 / 0.5884; **a cut
+    passes at mean <= 0.03042 and p99 <= 0.3233**.
+  - **New scores** (every run against the same base, parameters in the names):
+
+    | Run | mean | p99 | A/B | Verdict |
+    |---|---|---|---|---|
+    | lod 60/30 | 0.01886 | 0.3175 | pass | rejected: fails beside the shadow proxy, saves less |
+    | lod 90/45, lod 120/60 | 0.03599, 0.04493 | 0.4577, 0.5253 | fail | rejected |
+    | **shadow-proxy, LOD2** | 0.02524 | 0.2329 | pass | **accepted** |
+    | shadow-proxy, LOD1 | 0.02549 | 0.2352 | pass | not taken (LOD2 is smaller) |
+    | **clips30** | 0.00995 | 0.1385 | pass | **accepted** |
+    | light-cell 3 m | 0.01235 | 0.4510 | fail | rejected |
+    | light-cell 2 m | 0.00877 | 0.3030 | pass | rejected: fails in the set |
+    | merge 8 px | 0.00108 | 0.0336 | pass | rejected: saves nothing (8 of 2,575 spawns merged) |
+    | drop-glow | 0.00587 | 0.3711 | fail | rejected |
+    | lod 60/30 + shadow-proxy (+ clips30, + light-cell 2 m) | 0.03826 (0.04093, 0.04534) | 0.3530 (0.3541, 0.4198) | fail | |
+    | shadow-proxy + clips30 + light-cell 2 m | 0.03416 | 0.3380 | fail | |
+    | **shadow-proxy (LOD2) + clips30** | 0.02923 | 0.2408 | pass | **the defaults** |
+    | lod 60/30 + clips30 | 0.02467 | 0.3191 | pass | saves less |
+
+  - **Costs of the two passing sets** (GPU p50 / p99 saved, medians of 2 interleaved runs, all noisy
+    from other sessions' CPU; main thread near 3.4 and 5.8 ms): shadow-proxy + clips30 saves 0.50 /
+    0.53 ms in S3 at 600 and 1.35 / 1.37 ms in S1 at 1,200; lod 60/30 + clips30 saves 0.04 / 0.10 and
+    0.26 / 0.24 ms. **The defaults are now the shadow proxy from LOD2 and 30 Hz clips** (`Cuts.cs`;
+    LOD at 120 / 60 px is no longer on, and LOD's default thresholds are 60 / 30 px when it is).
+    No frontier was re-run; TD12 measures it with these defaults.
+  - Evidence: [README](../../demo3d/evidence/td11/README.md) (Results), `scores/`, `costs/`, `ab/`;
+    captures in `D:\wt\td11-review\captures\td11\`. Run: `td11.py calibrate`, `td11.py cut all`,
+    `td11.py cut <name> --cuts <spec> --param key=value`, `td11.py cost <name> ...`, `td11.py table`.
+  - Commits: `f68daca` (finding 6), `94e1194` (merge of `2256e1d`), and the commit adding this
+    bullet (ArenaClock, the new defaults, evidence and notes). Tests: EditMode 199/199;
+    `demo3d check --player` ok.
 
 ### TD12
 
@@ -1699,8 +1752,320 @@ Status: Not started.
 
 ### TD14
 
-Status: Not started.
+Status: Done (2026-10-28, on Cygnus). Every rung measured and kept or dropped; the final rung is
+E2 (TD9's lighting) with the triplanar rock port. E3 and E4 didn't wait: TD11 landed during the
+task, and their bounds (below) ruled them out without an A/B check.
+
+- **Commits** (branch `td/td14`, from `demo3d` at `ede3af3`): `00ffc63` (the rung switches,
+  the merged scenes, the texture cap's import override, DOTS instancing in LitStaticShadow, the
+  triplanar rock, the sweep specs and table script), `5cf8b95` (merge of `demo3d` at `2a2df25`:
+  TD8's effects, TD10, TD13), `dbea273` (the drawer's resources kept in the build), `646b27f`
+  (merge of `demo3d` at `2256e1d`: TD15's art pass, TD11's cuts), `80f5b34` (E1 dropped from the
+  project settings; round 2's specs), `2bb73db` (the E3 and E4 bounds), and this entry's commit
+  (evidence and notes).
+- **Run:** `demo3d unity BakeAll` (the arena baker now bakes E2 at 0.5–4× and merged variants at
+  1× and 2×; `BakeArena -merged <densities>`), `demo3d build --backend il2cpp`. The demo is TD9's
+  command and default (E2 at 1×). Rung switches, as sweep sceneOptions (`rung` for S0, `arena`
+  for S1–S6) or demo flags: `merged: true` / `--merged`, `texCap: 1024` / `--tex-cap 1024`,
+  `prepass: "out"` / `--prepass out`, bench-only `without: "small"|"forest"` / `--without`, and
+  `grd: on|occlusion` / `--grd`, which needs `ProjectSetup.GpuResidentDrawer = true`, Configure
+  and a rebuild (it logs an error otherwise). Sweeps: `demo3d sweep demo3d/sweeps/td14/<spec>.json
+  --out <dir>` (one spec per invocation frees the machine lock between them; round 3's list is in
+  `evidence/td14/README.md`); tables: `uv run --project demo3d/tools python
+  demo3d/evidence/td14/summarize.py <dir>`. Stills: `demo3d unity
+  Demo3D.EditorTools.Arena.ArenaStills.Run -rung e2 -density 1 -out evidence/td14/stills -task TD14
+  -shots forest-edge,graveyard [-prepassOut] [-texCap 1024] [-merged] [-crop x,y,w,h,scale]`.
+- **The ladder** ([evidence](../../demo3d/evidence/td14/README.md); GPU / main / render p99 ms,
+  S0 at 1×, 40 m and 55 m; S3 at 2,000, 40 m, GPU p99, against its same-round reference; E1 on
+  TD9's arena, the rest on TD15's):
+
+  | rung | S0 1×, 40 m | S0 1×, 55 m | S0 2×, 40 / 55 m GPU | S3 at 2,000 | verdict |
+  |---|---|---|---|---|---|
+  | E0 stock | 0.44 / 1.16 / 0.68 | 0.47 / 1.25 / 0.74 | 0.46 / 0.51 | 7.62; frontier 723 | baseline |
+  | E1 drawer on E0 (TD9's arena; E0 there 0.42 / 1.08, 0.46 / 2.13 main) | 0.44 / 0.99 / 0.62 | 0.45 / 0.94 / 0.60 | 0.48 / 0.85 (noisy) | 8.91 (E0 9.18) | helps E0's CPU only |
+  | E1 + GPU occlusion | 0.49 / 1.24 / 1.01 | 0.51 / 1.25 / 0.97 | 0.50 / 0.53 | 9.41 | dropped |
+  | E1 + merged small props | 0.44 / 0.96 / 0.59 | 0.46 / 0.92 / 0.59 | 0.46 / 0.48 | 9.52 | dropped |
+  | E2 + E1 drawer (E2 there 0.41 / 0.85, 0.44 / 0.91) | 0.41 / 0.97 / 0.60 | 0.43 / 0.93 / 0.59 | 0.41 / 0.44 | 9.16 (E2 8.89) | E1 dropped |
+  | **E2 lightmaps, static shadow map** | **0.46 / 1.04 / 0.69** | **0.51 / 1.11 / 0.73** | **0.47 / 0.55** | **8.04; frontier 716** | **kept (for the static shade; costs S3 GPU)** |
+  | E3 bound: small props hidden | 0.43 / 0.95 / 0.61 | 0.70 / 1.72 / 0.96 (noisy) | 0.45 / 0.49 | 7.61 | dropped |
+  | E4 bound: forest interior hidden | 0.44 / 1.03 / 0.66 | 0.46 / 1.03 / 0.64 | 0.45 / 0.47 | 7.82 | dropped |
+  | E5 kit textures capped at 1,024 | 0.46 / 0.93 / 0.62 | 0.51 / 0.99 / 0.64 | 0.47 / 0.55 | 7.83 | dropped |
+  | E6 static set out of the prepass | 0.45 / 1.00 / 0.63 | 0.48 / 0.96 / 0.63 | 0.45 / 0.51 | 7.89 | dropped |
+
+- **The final rung against E0:** S0 GPU +0.02 / +0.04 ms (the kit's static-shadow taps and probe
+  light), main −0.12 / −0.14 ms, render equal; draws 747 → 326 at 40 m (1,028 → 533 at 55 m) and
+  no kit shadow casters; S3's 40 m frontier 716 against 723, equal within the search's 5 %.
+  Restated after the scene milestone's review: the main-thread difference (1.04 against 1.16 ms)
+  is inside E2's own 0.13–0.15 ms spread between attempts, so it is no win, and in S3 E2 is
+  GPU-slower than E0 at every matched N (3.82 against 3.69 ms at 646, the search probes; 8.04 against 7.62 ms at
+  2,000: about 4–6 %, the static map's taps on every monster pixel). **E2 is kept because its
+  static shadow map is how monsters take the trees' static shade (TD9), at that S3 GPU cost**, not
+  for time saved. (Not re-run: E0 and E2 were measured in the same round, not interleaved.)
+- **The density curve** (E2; GPU / main / render p99 ms at 40 m and 55 m): 0.5× (1,419 kit
+  renderers) 0.45 / 0.91 / 0.59 and 0.47 / 0.99 / 0.64; 1× (1,903) 0.46 / 1.04 / 0.69 and 0.51 /
+  1.11 / 0.73; 2× (2,598) 0.47 / 0.91 / 0.61 and 0.55 / 1.01 / 0.67; 4× (3,271) 0.48 / 0.93 / 0.60
+  and 0.59 / 1.10 / 0.70. S3's 40 m frontier: 716 at 1×, 721 at 2×. **The richness-to-monsters
+  trade:** doubling the decoration costs 0.01–0.04 ms of S0's GPU p99 and no monsters within the
+  frontier's 5 %; 0.5× to 4× costs 0.03–0.12 ms, 7 to 27 monsters at the frontier's slope (4.5 µs
+  per monster).
+- **S0 at the authored density fits the ceiling:** 0.46 / 0.51 ms of GPU p99 against 1.5 ms,
+  main 1.04 / 1.11 and render 0.69 / 0.73 ms against 1.7 ms. 4× fits too (0.59 ms at 55 m), which
+  is TD15's headroom: the ceiling doesn't limit decoration density up to 4×.
+- **Choices, with reasons:**
+  - E1 dropped although it works (the drawer took E0's draws from 524 to 112 and E0's main thread
+    at 55 m from 2.13 to 0.94 ms): on top of E2, which already takes the casters that multiplied
+    the draws, it saved nothing at 1×, 2× or 4×, and keeping it costs every lit build URP Lit's
+    DOTS instancing variants (the first such build took 41 minutes of shader compiles, the next
+    97). The code stays: LitStaticShadow and RockTriplanar keep DOTS instancing, ArenaPipeline
+    switches the drawer per run, and `ProjectSetup.GpuResidentDrawer` brings the settings back.
+    GPU occlusion culling cost 0.05 ms of GPU and 0.4 ms of render thread with nothing to cull in
+    S0's open views.
+  - Merging small props: our own merge (one mesh per 16 m cell, material, shadow mode and probe
+    use; 688 props into 111 renderers at 1×), not Mesh Combine Studio, which isn't in the
+    vendor project; the prototype rule prefers it, and it measures the same thing. It cut draws
+    by about 20 % and no time, and a cell's one probe sample flattens the kit's indirect light.
+  - E3 and E4 measured by their bounds: hiding the small props, or the forest's interior, after
+    the static shadow map took them, bounds what any LOD or impostor could save. The bounds are
+    0.02–0.08 ms of S0 GPU (one noisy 55 m run aside) and 0.2–0.4 ms of S3 at 2,000, inside S3's
+    run-to-run spread; an LOD keeps the pieces' pixels, so it would save less. No candidate could
+    clear the keep rule, so none was built and no A/B ran (TD11's thresholds were ready).
+  - E5: the cap is an import override (KitTextureImport puts the four classic packs' textures in
+    a mipmap limit group; ArenaPipeline sets its limit), so no vendor file or .meta changes. At
+    1,024 (and 512) nothing moved; the atlases are already shared per pack (5 atlases plus two
+    tiling ruin textures and the rock's), so there was no atlas to merge. The memory saving
+    (about 70 to 18 MB by size) isn't measured: the release player has no Gfx memory counter.
+  - E6: with MSAA 4× URP does no depth priming, so the prepass only feeds SSAO and the depth
+    texture. Leaving the static set out halved E2's draws again for at most 0.04 ms and took SSAO
+    contact shade off the kit (`stills/arena-e2-1x-prepassout-*`).
+  - Elven Realm's triplanar rock is ported as hand-written HLSL (`Demo3D/RockTriplanar`), not
+    Shader Graph: a graph can't be authored reliably in batch mode, and GPU Resident Drawer
+    support, the reason environment.md gives, comes from its DOTS instancing. It reuses URP Lit's
+    material layout (mapped in its header), so the SRP Batcher, URP Lit's shadow and depth passes
+    and TD15's kit value apply; it lights through Demo3DLightingPBR, so at E2 it takes the static
+    shadow map. Its look is in Pending on the operator.
+  - The drawer's switch: a build keeps the drawer's compute resources only when a build pipeline
+    asset has it on, so (with the setting on) the asset has it on and every player starts on a
+    drawer-off copy (`ArenaPipeline.Boot`); a copy made at runtime from a drawer-off asset failed
+    with a null reference in `InstanceDataSystem` (round 1's first run).
+- **Tests:** EditMode 201/201 (TD14's: the rung switches' parsing and refusals, the kit textures'
+  group, every scene's triangles against its placement list, merged or not, and the merged
+  renderers; E2 at every density). `demo3d check --player` passes (below).
+- **For TD15** (its headroom step): S0 at E2 stays within the ceiling up to 4× (0.59 / 1.10 /
+  0.70 ms at 55 m) and S3's frontier doesn't move from 1× to 2×, so density is limited by the
+  look, not the budget; rerun `td15-s0-e2-{1,2}x.json` and `s0-e2-4x.json` after raising it.
+  **For TD12** (the report's environment section): the density curve, the trade, and the final
+  rung against E0 above, with rows in `evidence/td14/r3/`; the frontier there is TD11's default
+  cuts on TD15's arena (716 at 40 m, demo load).
+- **Self-review** (AGENTS.md's checklist): downstream needs, done (TD15's headroom step and TD12's
+  environment section read; both get their numbers and run commands above); claims, done (every
+  number is in `evidence/td14/r{1,2,3}/` rows and tables, with what they don't show: CPU-bound S0,
+  S3's run-to-run spread, E1 only on TD9's arena, bounds instead of built LODs and impostors, no
+  memory counter); after the scene milestone's review: E1 was dropped on TD9's smaller arena (before
+  TD15's 1,903-renderer dressing), so its verdict on today's scene is by extension; round 3's S0 E2
+  4× 40 m row reads 0 draws and set-passes (a bad counter frame, not a measurement); `summarize.py`
+  now keeps rounds and run kinds (fixed runs, search probes) apart, which it had merged, and the
+  rounds' tables were regenerated; edge cases, done (merged scenes with multi-material pieces split per submesh
+  and checked by the triangle test; a cell over 65,535 vertices gets 32-bit indices; `grd` asked
+  for without the drawer in the build logs an error and runs without it; unknown switch values
+  refuse; the texture group is a no-op at limit 0); tests against the source, done (scenes
+  against the placement list, merged scenes against the unmerged triangle counts; the drawer's
+  activity read from its own state, `grdActive` in rows, and its draw counts); concurrency, not
+  applicable.
+- **Tool problems:** `demo3d build`'s client timed out after 3,600 s while the editor compiled
+  5,376 Lit variants (the build finished in the editor after 97 min, as TD9 saw); `demo3d unity
+  BakeAll` after each merge failed until `demo3d setup` synced the newly listed vendor assets
+  (TD8's effect prefabs, TD15's kit pieces); the first stills after a build rendered the kit in
+  placeholder colours while the editor compiled shaders (rerun). TD11's and TD15's sweeps shared
+  the machine lock; TD14's final round ran one spec per sweep so they could interleave.
 
 ### TD15
 
-Status: Not started.
+Status: Done (2026-10-28, on Cygnus). The headroom step ran after TD14 landed (authored density
+2×), with the scene milestone's review fixed in the same round (Review, below).
+
+- **Commits** (branch `td/td15`, from `demo3d` at `df37614`): `9f922cc` (the art pass, the beauty
+  shots' player modes, the reference stills, tests), `0e59670` (merge of `demo3d` at `2a2df25`),
+  `85590ed` (dressing after the scatter, the candle ring, canopy twins refreshed each bake),
+  `3e85e94` (evidence and notes); the headroom round on `td/td15-headroom` (from `demo3d` at
+  `7645849`, TD14 and TD11 merged): `456ef3b` (authored density 2× end to end and the review's fixes), and this entry's commit (evidence, notes, TD14's restated claims).
+- **Run:** in a set-up worktree, `demo3d unity BakeAll` (the arena, its dressing and the fireflies),
+  `demo3d build --backend il2cpp`; the demo as TD9's run command (the art pass is in the default E2
+  scene). Beauty shots and the measure: `uv run --project demo3d/tools python
+  demo3d/evidence/td15/beauty.py [--shots a,b] [--measure-only] [--tag t --player-args "..."]`
+  (holds the machine lock; one shot by hand: `Builds\il2cpp\PlaylistSurvivors3D.exe -screen-width
+  1920 -screen-height 1080 -screen-fullscreen 0 --scene S3 --load demo --n 2000 --view-width 40
+  --hold-at 44,40 --start-at 17 --stills-at 20 --capture-stills <dir> --capture-mask`, and again with
+  `--beauty-empty`). S0: `demo3d sweep demo3d/sweeps/td15-s0-e2-1x.json
+  demo3d/sweeps/td15-s0-e2-2x.json --out <dir>`. Reference stills: sync a pack's demo scene with a
+  temporary manifest entry (never committed), then `demo3d unity
+  Demo3D.EditorTools.Arena.ReferenceStills.Run -scene Assets/Vendor/<pack>/Scenes/<scene>.unity
+  -name <n> -out evidence/td15/reference`. The canopy check: `demo3d unity
+  Demo3D.EditorTools.Arena.ArenaStills.Run -rung e2 -heroes -canopyCheck -18,-48 -out <dir>`.
+  Evidence: [demo3d/evidence/td15/](../../demo3d/evidence/td15/README.md).
+- **Built** (all tracked as layout parameters in `arena-layout.json`; everything generated lives in
+  the gitignored `Assets/Baked/`):
+  - Kit: 19 new pieces (Elven Realm's fallen leaves, pebbles, flower clumps, stepping stones, lamp
+    posts, lantern, shrine, well, pedestal; Dark Fantasy's moss) with measured footprints; a
+    `ground-dressing` scatter layer on clearings, paths and edge bands (flat, non-blocking);
+    landmarks: the opening's ring (stepping stones, glowing flowers, eight candles), stepping stones
+    down the path, flowers at the glowing tree's base, a stone circle in the courtyard. 1× has
+    1,903 kit renderers (TD9: 1,418). The lamps, lantern, shrine, well and pedestal are in the
+    kit but unplaced: they block, and any new blocker changes the song's navigation (Tests). All of it is `dressing`: generated after TD9's landmarks and scatter, keeping
+    nothing clear, so it never displaces a TD9 piece (the flat pieces on fighting ground skip the
+    overlap test, so the clearings stay the same at every density).
+  - Atmosphere (`ArenaDressing`, our own shaders, one mesh and one draw each): 12 low mist cards in
+    hollows and edges (`Demo3D/MistCard`: drifting value noise, elliptical edge, soft depth fade);
+    3 rune circles on the opening, the courtyard and the tombstone ring (`Demo3D/RuneCircle`,
+    additive, turning slowly, violet so they stay apart from the spells' blue-white rings); soft
+    light pools under the glowing tree and the candles (`Demo3D/GroundGlow`), since the dark ground's
+    lightmap barely shows a baked glow light. The glowing tree's light went from 2.5 to 10.
+  - Fireflies: Elven Realm's `FX_Fireflies_01` on TD8's runtime (prewarm and flipped rotation
+    dropped), with the wisps, nine emitters per 2 s over the view (`AmbientEffects`, shared by the
+    demo's `EffectDriver` and now S0). TD8's warm embers left the ambient list (environment.md,
+    Color separation: warm is for combat).
+  - The canopy fade: at E2 the trees' materials become `Demo3D/LitCanopy` twins (LitStaticShadow's
+    colour pass with its new `_CANOPY_FADE` variant, URP Lit's depth and depth-normal passes wrapped
+    to clip the same pixels); tree pixels nearer the camera than the hero and within 3.2 m of it on
+    screen dither out (`CanopyFade.hlsl`; the demo publishes the hero each frame). E0 stays stock.
+  - Value: `kitValue` scales the converted kit materials' RGB (Elven 0.5, Dark Fantasy 0.7, the
+    triplanar rock 0.6, brick and stucco 0.75): the packs' pale stone and lilac atlases had been
+    the brightest things under the moon. `crowd` gives the horde extra ambient fill (2.5) and a cool
+    rim light (0.6, 0.7, 0.95) in `CrowdSkinned`; `--crowd-fill` and `--crowd-rim` override them
+    for tuning.
+  - Beauty shots: the six `shots` carry the ground focus (and the hero's hold), view width, stress
+    time and horde size; the player's `--hold-at x,y` (`StressScript.HoldAt`), `--beauty-empty`
+    (no horde, no combat effects) and `--capture-mask` (the same frame again as the ID render:
+    the crowd flat white on black, `mask-<t>.png`). The glowing-tree shot moved to (−6, −40) so
+    the tree shows whole.
+  - Reference stills (`ReferenceStills`): a pack's demo scene in batch mode through our camera, its
+    materials as URP Lit in memory, under its own lights and under our night.
+- **Readability** (`beauty.py`, [readability.md](../../demo3d/evidence/td15/readability.md)): dL\*,
+  the median monster L\* less the median L\* of the ground in a 3–10 px ring around the monsters,
+  in a still of the horde without effects (S3 at demo load, 2,000 requested, t = 20 s) and its
+  ID render, which since the review draws the set and hero black with their depth, so monsters
+  behind a canopy or wall drop out. At the authored 2×: opening 20.6, path 21.0, glowing tree
+  18.8, graveyard 20.2, courtyard 19.4, forest edge 19.5. **Floor: dL\* ≥ 17 in every shot**
+  (re-derived: the lowest shot, less a margin; the first, undepth-tested measure with effects had
+  12 at 1×, its forest edge reading 13.1 because dark monsters on dark ground had been dropped as
+  "hidden"). With the crowd's fill and rim off (TD9's crowd light) the opening had read 6.1 under
+  the first measure: the horde's light made the difference, the ground stayed put. The evidence's
+  ID renders include a few dozen pixels of the stand-in projectile spheres that `--no-effects`
+  draws (negligible against 0.6–1.2 M monster pixels); the ID render leaves them out since `456ef3b`.
+- **Checklist** (environment.md, Making it look good), every shot: a landmark or edge decoration
+  in view; no canopy over fighting ground (the forest edge's canopies cover its edge band); the
+  combat effects' warm bursts stand apart, though TD8's blue-white spell rings sit near the runes'
+  hue; nothing floats or clips in the stills. The table per shot is in the evidence README.
+- **S0 at the authored density** (E2, **2×**, MSAA 4×, TD14's final rung, with the fireflies; GPU /
+  main / render p99, medians of 3; [s0-headroom/](../../demo3d/evidence/td15/s0-headroom/table-2x-final.md)):
+  40 m 0.49 / 0.91 / 0.60 ms, 55 m 0.56 / 1.03 / 0.67 ms, against the ceiling's 1.5 / 1.7 / 1.7.
+  The headroom sweep before the review's dressing fix, same build otherwise
+  ([table.md](../../demo3d/evidence/td15/s0-headroom/table.md)): 1× 0.46 / 1.01 / 0.62 and 0.51 /
+  1.01 / 0.64; 2× 0.47 / 0.92 / 0.61 and 0.55 / 1.06 / 0.70; 4× 0.49 / 1.00 / 0.63 and 0.60 / 1.10
+  / 0.70. At 1× before TD14 (TD15's first round, `evidence/td15/s0/`): 0.46 / 0.89 / 0.59 and 0.50
+  / 0.99 / 0.64. CPU-bound near 1,000 fps and marked noisy as TD9's were.
+- **The headroom step: authored density 2×** (`decorationDensity: 2.0`). Every density to 4× fits
+  the ceiling (TD14: 0.5× to 4× costs 0.01–0.04 ms and 7–27 monsters), so the look chose. Editor
+  stills of the shots at 1×, 2× and 4× (E2): 2× fills the edge bands and forest edges with more
+  bushes and trees while every clearing, path and the courtyard stay as they are (only edge and
+  forest scale); 4× crowds the shots' edges with canopy and puts more of the edge bands in tree
+  shade. The density is now one setting end to end: the layout's `decorationDensity` is what the
+  choreography navigates and what the player loads by default (`ArenaOptions.AuthoredDensity`;
+  `--density` and the `density` sceneOption now also set the timeline's navigation, the review's
+  item 3). Raising it changed the song's navigation, so the song tests ran in dotnet and Unity: at
+  1.5× and 2× Unity's Mono had the hero brushing a graveyard tombstone at 99 s
+  (`NobodyStandsInsideAWall("song")`), at 3× two framing and stride tests failed, while dotnet
+  passed every density. The graveyard goal's radius went from 5 to 4 m, which keeps the hero's held
+  ground 1.4 m clear of the tombs; every song test then passes at 2× in both (dotnet 119/119,
+  EditMode 203/203). The triplanar rock (TD14's port) looks right in the shots: mossy grey-green,
+  lit by the moon and in the static shade like the kit; TD14's Pending row stays for the operator.
+- **Choices, with reasons:**
+  - Readability came from lighting the horde, not brightening the set: the art direction wants a
+    dark, low-contrast ground, and the ring's L\* barely moved across trials.
+  - Light pools as additive ground cards rather than stronger baked lights: at 6 texels/m on an
+    albedo near 0.05 linear, a baked glow light needed intensities that bloomed the lamp posts' heads
+    white before it showed on the ground (tried at the opening, before the lamps went).
+  - Mist, runes and pools as merged meshes of our own shaders in the baked scene (one draw each,
+    nothing per frame on the CPU), not effects: they are static set dressing.
+  - The canopy fade only at E2 and up: E0 is the stock baseline.
+  - Horde shots in S3 held at each shot's point, not the song: the song reaches only four of the
+    six shot positions, and a fixed stress time gives repeatable frames for the measure.
+  - Small edits in TD14's files (ArenaBaker: one hook and the kit value; LitStaticShadow: one
+    keyword and one call; ArenaScene: the ambient particles) to keep its merge simple.
+- **Self-review** (AGENTS.md's checklist):
+  - Downstream needs: TD12's report gets S0 at the authored density with the art pass (the rows
+    carry TD9's environment counters; the ambient particles run in S0 but their particle counts
+    aren't in its rows), and S1–S6 run in the dressed arena with the crowd's fill and rim (no extra
+    draws). TD13's capture gets the Pending row, the tracked shots, `beauty.py` (re-run with `n`
+    set to TD12's envelope instead of the 2,000 placeholder) and the floor every later change must
+    keep. TD14 gets `Demo3D/LitCanopy` (its depth passes carry DOTS instancing; its colour pass is
+    LitStaticShadow's, so TD14's DOTS variant reaches it on merge), `dressing` pieces that its prop
+    merging may combine, and the headroom step below. Done.
+  - Claims: every number is in `evidence/td15/` (readability.md, s0/ rows, the stills) or in the
+    bake log quoted (renderer counts); the readability trials are labelled as measured before the
+    hidden-pixel exclusion; the README says what the measure does not show. Done.
+  - Edge cases: a mask frame never lands in a video (`--capture-mask` is off with
+    `--capture-video`) or in an empty run; the canopy fade is off until the demo publishes a hero
+    and ignores pixels behind it; canopy twins refresh from their sources every bake (a warm editor
+    had kept stale twins: found here, fixed, and tested); dressing on fighting ground is the same at
+    every density; the ID render has no scene depth, so pixels the set hides are dropped. Done.
+  - Tests against the source: the measure compares the player's own frame with its own ID render
+    and empty twin; the shots' points are checked against the placement list's real footprints.
+    Done.
+  - Concurrency: not applicable (the capture's mask frame is sequential, on the main thread).
+- **Review** (the scene milestone's cold review of TD9, TD14 and TD15; each checked against the
+  code):
+  1. The readability measure's "hidden" pixels (horde still equal to the empty still) also dropped
+     dark monsters on dark ground and effects raised monster L\*: **fixed.** The ID render is
+     depth-tested (LitStaticShadow and RockTriplanar draw black with depth under `_Demo3DIdMask`,
+     `ArenaRuntime.SetIdMask` hides the ground, cards, particles and transparent kit), the measured
+     still is a third run with `--no-effects`, the heuristic is gone, the floor was re-derived (17)
+     and every shot re-scored.
+  2. TD14's E2 "kept" main-thread win is inside E2's spread and E2 is GPU-slower than E0 in S3:
+     **fixed (claims).** TD14's entry and evidence now keep E2 for the static shade, with its S3
+     GPU cost (3.82 against 3.69 ms at 646, 8.04 against 7.62 at 2,000); no new runs.
+  3. `--density` and the `density` sceneOption changed the scene but not the navigation:
+     **fixed.** `ChoreographyData.FromJson(..., density)` builds the placement list at the drawn
+     density (DemoMain from the loaded arena, TimelineScene from its options); the default density
+     comes from the layout. Song tests run after raising it (above).
+  4. Fighting-ground dressing placed with force could sit through walls, tombs, braziers and the
+     pyre, and overlap itself: **fixed.** It now tests landmark and structure pieces, dressing already
+     placed and keep-outs (`OverlapsFixed`, `InKeepOut`), still density-invariant; test
+     `DressingStaysOffWallsAndKeepOuts`.
+  5. `ArenaStills.Frame` left its shadow distance in the tracked URP asset: **fixed** (saved and
+     restored in `finally`).
+  6. The static shadow map's test checked only the CPU matrix: **fixed.** A GPU test renders one
+     cube into a 512² map and checks the ground in LitStaticShadow dark in its shadow and lit
+     opposite and beside it (projection, y-flip and reversed Z end to end); it renders one frame before publishing
+     the map, since a cold editor sets the pipeline up on its first camera and the map published
+     before that read as no shade (players render the map after the scene's first frames); the texel test now
+     reports and bounds the ground-projected texel: about 5.5 × 6.6 cm over the 160 m box (5.9 ×
+     7.0 cm on the arena's real bounds, by TD9's light-space sizes), not "about 4 cm". Fitting the
+     ortho box's rotation to the arena: **dismissed** for now (at most about 15 % on one axis, and
+     the shade already reads at the game camera's 3 cm per pixel).
+  7. `ArenaClock` stepped nested particle systems once per ancestor and restarted at `now % 60`:
+     **fixed** (each system stepped alone, `withChildren: false`; seeks simulate the full song time).
+  8. Minor: round 3's S0 E2 4× 40 m row's 0 draws (a bad counter frame), TD14's summarize.py
+     merging rounds and probe/full runs (now kept apart, tables regenerated), TD9's "5 ms" (CPU
+     submission), E1 on TD9's smaller arena: **noted** in TD14's and TD9's entries. The canopy
+     fade's cost is **unmeasured** in S0 (no hero there) and S1–S6 (the bench doesn't publish the
+     hero): a branch and a few view-space ops per tree pixel near the hero, not isolated by any row.
+     The `reference/*-own.jpg` stills (the vendors' demo scenes under their own lights) are
+     **removed** from git (`git rm --cached`); `ReferenceStills` now writes them to the gitignored
+     `captures/td15/reference-own/`, and only the under-our-night stills stay in evidence.
+- **Tests:** dotnet 119/119 (TD15's: the beauty shots on open ground and the hold; dressing never
+  moves an earlier piece, at 1x and 2x; dressing stays off walls and keep-outs); EditMode 203/203 at the
+  authored 2× (TD15's: the static shadow map on the GPU, the ground texel, the kit value, canopy materials
+  following their sources and the atmosphere's draws in every baked scene, the ambient spawner's
+  determinism and seek). The first layout put its dressing in the middle of the scatter, which
+  moved forest and edge pieces and so the song's navigation: two song tests then failed under
+  Unity's Mono (`FramingFollowsTheHeroAndEasesTheZoom` at 173 s, `NoTwoMonstersOverlapByMoreThanAQuarterRadius`
+  at 197.5 s) though dotnet passed them, and passed again with TD9's layout. Hence `dressing`: it is
+  placed after everything else, so the blocking set the choreography navigates is exactly TD9's.
+  Four lamp posts at the opening, far from the song's route, still broke both tests in Unity (the
+  flow field is global): they went, and eight non-blocking candles took their place.
+- **Tool notes:** `ArenaStills` writes the view's shadow distance into the URP asset, which the
+  warm editor then saves (reverted before committing, as TD9's run had to). Changing
+  LitStaticShadow's or CrowdSkinned's source recompiles their variants on the next build (11 minutes
+  for the first build after, beside other worktrees' compiles).
+  Another worktree's sweep held the machine lock, then a shader compile kept the machine busy, so
+  my S0 sweep waited for quiet before measuring.

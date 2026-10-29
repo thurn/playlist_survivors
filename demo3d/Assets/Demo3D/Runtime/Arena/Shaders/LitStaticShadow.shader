@@ -3,6 +3,8 @@
 // does. Opaque, metallic workflow, lit by the ambient probe or light probes (no lightmaps); the
 // depth, normals, shadow-caster, motion-vector and meta passes are URP Lit's own. The hero's
 // baked materials (RosterBaker) and the kit's materials in the E2 scenes (ArenaBaker) use it.
+// The forward pass has DOTS instancing (TD14), so the GPU Resident Drawer draws the kit at E1
+// with E2 (URP Lit's own passes already have it).
 Shader "Demo3D/LitStaticShadow"
 {
     Properties
@@ -63,6 +65,7 @@ Shader "Demo3D/LitStaticShadow"
             #pragma shader_feature_local_fragment _EMISSION
             #pragma shader_feature_local_fragment _METALLICSPECGLOSSMAP
             #pragma shader_feature_local_fragment _OCCLUSIONMAP
+            #pragma shader_feature_local_fragment _CANOPY_FADE
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
             #pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
@@ -70,9 +73,13 @@ Shader "Demo3D/LitStaticShadow"
             #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
             #pragma multi_compile_fragment _ _LIGHT_COOKIES
             #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Fog.hlsl"
+            #pragma multi_compile_instancing
+            #pragma instancing_options renderinglayer
+            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "StaticShadow.hlsl"
+            #include "CanopyFade.hlsl"
 
             struct Attributes
             {
@@ -80,6 +87,7 @@ Shader "Demo3D/LitStaticShadow"
                 float3 normalOS : NORMAL;
                 float4 tangentOS : TANGENT;
                 float2 uv : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
@@ -90,11 +98,14 @@ Shader "Demo3D/LitStaticShadow"
                 float4 tangentWS : TEXCOORD2;
                 float2 uv : TEXCOORD3;
                 float fogFactor : TEXCOORD4;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             Varyings vert(Attributes v)
             {
-                Varyings o;
+                Varyings o = (Varyings)0;
+                UNITY_SETUP_INSTANCE_ID(v);
+                UNITY_TRANSFER_INSTANCE_ID(v, o);
                 VertexPositionInputs p = GetVertexPositionInputs(v.positionOS.xyz);
                 VertexNormalInputs n = GetVertexNormalInputs(v.normalOS, v.tangentOS);
                 o.positionCS = p.positionCS;
@@ -108,6 +119,7 @@ Shader "Demo3D/LitStaticShadow"
 
             half4 frag(Varyings i) : SV_Target
             {
+                UNITY_SETUP_INSTANCE_ID(i);
                 SurfaceData s;
                 InitializeStandardLitSurfaceData(i.uv, s);
                 InputData inputData = (InputData)0;
@@ -125,6 +137,10 @@ Shader "Demo3D/LitStaticShadow"
                 inputData.bakedGI = SampleSH(inputData.normalWS);
                 inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(i.positionCS);
                 inputData.shadowMask = 1;
+                #if defined(_CANOPY_FADE)
+                Demo3DCanopyClip(i.positionCS, i.positionWS);
+                #endif
+                if (_Demo3DIdMask > 0.5) return half4(0, 0, 0, 1); // the ID render: black, depth kept
                 half3 color = Demo3DLightingPBR(inputData, s);
                 color = MixFog(color, inputData.fogCoord);
                 return half4(color, 1);

@@ -14,12 +14,13 @@ verdicts: docs/tech-demo-3d/plan.md, TD11.
   lines and the verdict. `base-repeat.json` is the floor (base against a second base run).
 - `costs/<scene>-<cut>.json`: fixed-N harness runs, every cut off against the cut on, interleaved
   (A B, B A), medians of 2 each; `costs/frontier-*.json`: 40 m S3 frontier searches.
-- `ab/<cut>-still-<t>.jpg`: the frame with the largest mean FLIP, its centre (480 x 270 px from
+- `ab/<run>-still-<t>.jpg` (passing cuts, the defaults' set and the anchors): the frame with the largest mean FLIP, its centre (480 x 270 px from
   (720, 330)) at 100%: A (every cut off) left, B (the cut on) right. Small `ps-render` JPEGs;
   `invisible-*` and `visible-*` show the two anchors the same way.
 
 The full PNG stills (12 per run) and the 2 s fixed-time videos (`<name>.mp4`, 14 to 16 s) are in
-the gitignored `captures/td11/` of the TD11 worktree (`D:\wt\td11\captures\td11\`).
+the gitignored `captures/td11/` of the TD11 review worktree (`D:\wt\td11-review\captures\td11\`);
+the first pass's are in `D:\wt\td11\captures\td11\` while that worktree exists.
 
 ## Method
 
@@ -38,55 +39,60 @@ the gitignored `captures/td11/` of the TD11 worktree (`D:\wt\td11\captures\td11\
   crowd's cuts, S1 at N 1,200 (the crowd alone near its 40 m frontier), in the arena; quiet wait
   capped at 30 s and no repeats, since the A/B interleaving is the noise control.
 
-## Results
+## Results (after the demo systems review, on `demo3d` at 2256e1d)
 
-Thresholds (`thresholds.json`): a cut passes at **mean <= 0.02999 and p99 <= 0.4295**. Invisible
-anchor 0.02336 / 0.3867, visible anchor 0.04324 / 0.5150; the run-to-run floor (base against a
-second base run) 0.00098 / 0.0327. The invisible anchor scores well above the floor because a
-1 ms shift moves every particle and spark: the lines are as tolerant of effect changes as of
-crowd changes.
+Re-run in full after the milestone review's findings 2 and 6: the invisible anchor had moved the
+camera (punch and shake ran on the offset song time; fixed in 73f463c), and the evidence didn't
+record the cut parameters. Every run now passes every parameter (`td11.py`'s `PARAMS` and `ARMS`)
+and records the player's own `effective cuts [...]` line (in `args.json`, in each score file's
+`args`, and in each cost run). Camera punch and shake stay on, alike in A, B and both anchors.
+The arena is TD15's final scene. Its rune circle, mist cards, flame flicker and kit particles had
+followed wall time (`_Time`, `Time.time`), which put the run-to-run floor at 0.0103 / 0.369; they
+now follow `ArenaClock` (song time in the demo, with fixed particle seeds in fixed time), and the
+floor is back to 0.00106 / 0.0374.
 
-| Cut (B) | mean FLIP | p99 FLIP | A/B | S3 600, GPU p50 / p99 saved, ms | S1 1,200, GPU p50 / p99 saved, ms | Verdict |
-|---|---|---|---|---|---|---|
-| lod, 60 / 30 px | 0.01007 | 0.1977 | pass | +0.10 / +0.07 | +0.37 / +0.23 | superseded by 120 / 60 |
-| **lod, 120 / 60 px** | 0.02428 | 0.3667 | pass | **+0.53 / +0.67** | **+0.99 / +0.88** | **accepted** |
-| shadow-proxy (LOD2) | 0.03048 | 0.2957 | fail (mean) | +0.23 / -0.73 | +1.14 / +1.13 | rejected |
-| shadow-proxy (LOD1) | 0.03090 | 0.3011 | fail (mean) | | | rejected |
-| **clips30** | 0.00669 | 0.0971 | pass | -0.08 / -0.08 | -0.12 / -0.14 | **accepted** (bone textures about half) |
-| light-cell, 3 m | 0.01369 | 0.4726 | fail (p99) | +0.13 / +0.19 | | rejected |
-| light-cell, 2 m | 0.00964 | 0.3292 | pass alone | +0.07 / +0.14 | | rejected (fails combined) |
-| merge, 8 px | 0.00099 | 0.0343 | pass | -0.01 / -0.04 | | rejected (saves nothing) |
-| drop-glow | 0.00592 | 0.3734 | pass alone | +0.02 / +0.03 | | rejected (fails combined) |
+Thresholds (`thresholds.json`): a cut passes at **mean <= 0.03042 and p99 <= 0.3233**. Invisible
+anchor 0.01608 / 0.1907 (the horde and its effects 1 ms later), visible anchor 0.05911 / 0.5884.
 
-Combinations against the same base:
+| Run (B) | effective cuts | mean FLIP | p99 FLIP | A/B | verdict |
+|---|---|---|---|---|---|
+| lod-60-30 | lod, lodPx 60,30 | 0.01886 | 0.3175 | pass | rejected: fails beside the shadow proxy, saves less |
+| lod-90-45 | lod, lodPx 90,45 | 0.03599 | 0.4577 | fail | rejected |
+| lod-120-60 | lod, lodPx 120,60 | 0.04493 | 0.5253 | fail | rejected (the old default) |
+| **shadow-proxy-lod2** | shadow-proxy, shadowLod 2 | 0.02524 | 0.2329 | pass | **accepted** |
+| shadow-proxy-lod1 | shadow-proxy, shadowLod 1 | 0.02549 | 0.2352 | pass | not taken: LOD2 is the smaller proxy for the same score |
+| **clips30** | clips30 | 0.00995 | 0.1385 | pass | **accepted** (bone textures halved) |
+| light-cell-3m | light-cell, lightCell 3 | 0.01235 | 0.4510 | fail | rejected |
+| light-cell-2m | light-cell, lightCell 2 | 0.00877 | 0.3030 | pass | rejected: fails in the set |
+| merge-8px | merge, mergePx 8 | 0.00108 | 0.0336 | pass | rejected: saves nothing (8 of 2,575 spawns merged) |
+| drop-glow | drop-glow | 0.00587 | 0.3711 | fail | rejected |
+
+Combinations (parameters as in their names):
 
 | Set | mean | p99 | A/B |
 |---|---|---|---|
-| lod 120/60 + clips30 + light-cell 2 m + drop-glow | 0.03477 | 0.5147 | fail |
-| lod 60/30 + clips30 + light-cell 2 m + drop-glow | 0.02386 | 0.4702 | fail |
-| lod 120/60 + clips30 + light-cell 2 m | 0.03142 | 0.4466 | fail |
-| **lod 120/60 + clips30 (the defaults)** | 0.02632 | 0.3682 | **pass** |
+| lod 60/30 + shadow-proxy + clips30 + light-cell 2 m | 0.04534 | 0.4198 | fail |
+| lod 60/30 + shadow-proxy + clips30 | 0.04093 | 0.3541 | fail |
+| lod 60/30 + shadow-proxy | 0.03826 | 0.3530 | fail |
+| shadow-proxy + clips30 + light-cell 2 m | 0.03416 | 0.3380 | fail |
+| **shadow-proxy (LOD2) + clips30: the defaults** | 0.02923 | 0.2408 | **pass** |
+| lod 60/30 + clips30 | 0.02467 | 0.3191 | pass |
 
-- **What the costs don't show.** Every cost run was marked noisy: other sessions (TD14, TD15)
-  used 15 to 100% of the CPU and at times a quarter of the GPU, so main-thread times (3 to 28 ms)
-  are contention, not the client. GPU differences under about 0.15 ms are within run-to-run
-  noise: clips30's -0.1 ms, merge and drop-glow are noise, and light-cell's 0.07 to 0.19 ms are at its edge. Medians of 2 interleaved
-  runs per arm.
-- **Frontiers.** `frontier-none.json` (every cut off) stopped at 380 on main-thread contention;
-  its GPU p99 (2.85 ms at 380, 3.78 at 495, 4.45 at 646) crosses the 4.2 ms line near 600,
-  which sets N. `frontier-accepted.json` (the defaults) stopped at 180, main-bound by heavier
-  contention (main p99 8 to 34 ms); its GPU p99 at 646 (4.49 ms) was taken while another
-  editor used the GPU. Neither is a frontier; TD12 measures it.
-- **Merge.** 21 of 2,734 spawns (0.8%) coincided within 8 px at 40 m (8 px is about 17 cm), so
-  the cut changes almost nothing and saves nothing measurable.
-- **Shadow proxy.** Any mesh other than the drawn one changes every monster's self-shadowing
-  (the proxy's surface lies in front of or behind the drawn one), so LOD1 scores as badly as LOD2.
-  It is the largest saving (about 1.1 ms in S1): a later try could pair it with a larger shadow
-  normal bias, which would change the base too.
-- **LOD meshes.** Unity 6.6's MeshLodUtility.GenerateMeshLods (no third-party decimator is
-  available offline): LOD1 / LOD2 triangles per type: skeleton 9,310 → 4,735 / 2,368, goblin
-  12,457 → 9,051 / 4,543 (its seams stop it at 73%), slime 1,428 → 767 / 383, bat 3,092 → 1,662 /
-  832, mushroom 1,638 → 958 / 512, demon 5,992 → 3,070 / 1,536, bigork 6,812 → 3,456 / 1,727, troll
-  5,220 → 2,687 / 1,344, dragon 5,996 → 3,072 / 1,535.
-- **Base build.** The captures and costs ran on the code of `c18dc83` (with A as `--cuts none`) before the merge of TD10's
-  flash tiers; the anchors and every B run share that build.
+Costs of the two passing sets (`costs/`; GPU p50 / p99, every cut off minus the set, medians of 2
+interleaved runs, explicit parameters in each run):
+
+| Set | S3 at 600 | S1 at 1,200 |
+|---|---|---|
+| **shadow-proxy (LOD2) + clips30** | **+0.50 / +0.53 ms** (3.21 → 2.71 p50) | **+1.35 / +1.37 ms** (5.16 → 3.81 p50) |
+| lod 60/30 + clips30 | +0.04 / +0.10 ms | +0.26 / +0.24 ms |
+
+- **The defaults** are the shadow proxy from LOD2 and 30 Hz clips (`Cuts.Defaults`); the LOD
+  thresholds' default is now 60 / 30 px for runs that turn LOD on.
+- **What the costs don't show.** Every run was still marked noisy (other sessions' CPU), though
+  main-thread times were near 3.4 ms (S3) and 5.8 ms (S1) this time; differences under about
+  0.15 ms are noise. No frontier was re-run; TD12 measures it with the defaults.
+- **Merge.** 8 of 2,575 spawns (0.3%) coincide within 8 px at 40 m (about 17 cm).
+- **LOD meshes.** Unity 6.6's MeshLodUtility.GenerateMeshLods: LOD1 51 to 59% of LOD0's
+  triangles, LOD2 25 to 31% (goblin 73% and 36%).
+- **Superseded.** `costs/pre-review/` holds the first pass's costs (before the fixes and TD15's
+  scene), with the parameters they ran with reconstructed from that build's defaults.

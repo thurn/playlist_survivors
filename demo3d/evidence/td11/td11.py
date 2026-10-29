@@ -4,20 +4,24 @@ From the worktree's root: `uv run --project demo3d/tools python demo3d/evidence/
 
     capture NAME [--cuts SPEC] [-- extra player args]
         12 PNG stills of S3 (demo load, 40 m, N) at fixed time over 20 s, and a 2 s fixed-time video,
-        into the gitignored captures/td11/NAME/ and captures/td11/NAME.mp4. Holds TD7's machine lock.
+        into the gitignored captures/td11/NAME/ and captures/td11/NAME.mp4, with every cut parameter
+        passed explicitly and recorded with the player's "effective cuts" line in NAME/args.json.
+        Holds TD7's machine lock.
     calibrate
         captures base (every cut off), base-repeat (the run-to-run floor), the invisible anchor
         (--time-offset 0.001) and the visible anchor (--pose-rate 15), then writes thresholds.json.
-    cut NAME --cuts SPEC [-- extra]
-        captures NAME with the cut on and scores it against base: scores/NAME.json, and A/B
-        evidence crops (small ps-render JPEGs) in ab/.
-    cost NAME --cuts SPEC [--scene S3] [--n N] [--reps 2]
-        fixed-N harness runs, the cut off (base) and on, interleaved: costs/<scene>-NAME.json.
-    frontier NAME --cuts SPEC
+    cut ARM|all | cut NAME --cuts SPEC [--param key=value ...] [-- extra]
+        captures an ARMS entry (or every one, or an ad hoc set) and scores it against base:
+        scores/NAME.json, and an A/B crop (a small ps-render JPEG) in ab/.
+    cost ARM | cost NAME --cuts SPEC [--param key=value ...] [--scene S3] [--n N] [--reps 2]
+        fixed-N harness runs, every cut off (base) against the cuts on, interleaved, both with the same
+        explicit parameters: costs/<scene>-NAME.json, each run with its effective-cuts line.
+    frontier NAME --cuts SPEC [--opt key=value ...]
         a 40 m S3 frontier search with these cuts: costs/frontier-NAME.json.
     table
-        prints the cuts table (scores against the thresholds, costs, verdict).
+        prints the cuts table (scores against the thresholds, costs, the effective cuts).
 
+Parameters (sceneOptions keys): lodPx "a,b", shadowLod 1|2, lightCell (m), mergePx.
 The scene is S3 at demo load and a 40 m view in the arena (E2, 1x), MSAA 4x, the game camera
 (DemoMain's stress path: `--scene S3 --n N --view-width 40 --load demo`), with every cut off in
 the A run (`--cuts none`). N is min(2,000, the 40 m frontier) (N below).
@@ -46,10 +50,11 @@ COSTS = EVIDENCE / "costs"
 AB = EVIDENCE / "ab"
 THRESHOLDS = EVIDENCE / "thresholds.json"
 
-N = 600  # min(2,000, S3's 40 m frontier with every cut off, about 600): see costs/frontier-none.json and the notes
+N = 600  # min(2,000, S3's 40 m frontier with every cut off, about 600): costs/pre-review/frontier-none.json and the notes
 START = 8.0
 STILLS = [10.0 + 1.8 * i for i in range(12)]  # 12 frames over 19.8 s, each on the 1/60 s grid
 VIDEO_AT, VIDEO_S = 14.0, 2.0
+FEEL: list[str] = []  # camera punch and shake stay on, alike in A, B and both anchors (73f463c keeps them off the time offset)
 SCENE = ["--scene", "S3", "--view-width", "40", "--load", "demo", "--aa", "msaa4", "--arena", "e2", "--density", "1"]
 WINDOW = ["-screen-width", "1920", "-screen-height", "1080", "-screen-fullscreen", "0", "-job-worker-count", "6"]
 CROP = (720, 330, 480, 270)  # x, y, w, h from the top left: the view's centre, where the hero meets the horde
@@ -63,12 +68,49 @@ def player(out: Path, args: list[str], log: str) -> None:
         raise SystemExit(f"td11: player exited {code} ({out / log})")
 
 
-def capture(name: str, cuts: str, extra: list[str], n: int = N, video: bool = True) -> Path:
+# Every run passes every cut parameter explicitly, so a capture or cost never depends on Cuts.cs's
+# defaults; each records the cuts and parameters the player reports in its log ("effective cuts [...]").
+PARAMS = {"lodPx": "60,30", "shadowLod": 2, "lightCell": 3.0, "mergePx": 8.0}
+
+# The cuts tried: name -> (cut spec, parameter overrides).
+ARMS = {
+    "lod-60-30": ("lod", {"lodPx": "60,30"}),
+    "lod-90-45": ("lod", {"lodPx": "90,45"}),
+    "lod-120-60": ("lod", {"lodPx": "120,60"}),
+    "shadow-proxy-lod2": ("shadow-proxy", {"shadowLod": 2}),
+    "shadow-proxy-lod1": ("shadow-proxy", {"shadowLod": 1}),
+    "clips30": ("clips30", {}),
+    "light-cell-3m": ("light-cell", {"lightCell": 3.0}),
+    "light-cell-2m": ("light-cell", {"lightCell": 2.0}),
+    "merge-8px": ("merge", {"mergePx": 8.0}),
+    "drop-glow": ("drop-glow", {}),
+}
+
+
+def params_of(overrides: dict | None) -> dict:
+    return {**PARAMS, **(overrides or {})}
+
+
+def param_args(params: dict) -> list[str]:
+    return ["--lod-px", str(params["lodPx"]), "--shadow-lod", str(params["shadowLod"]),
+            "--light-cell", f"{params['lightCell']:g}", "--merge-px", f"{params['mergePx']:g}"]
+
+
+def effective(log: Path) -> str:
+    """The player's own record of the cuts and parameters in force (DemoMain or TimelineScene)."""
+    for line in log.read_text(encoding="utf-8", errors="replace").splitlines():
+        if "effective cuts [" in line:
+            return line[line.index("cuts ["):].split(" (--cuts")[0].strip()
+    raise SystemExit(f"td11: no 'effective cuts' line in {log}")
+
+
+def capture(name: str, cuts: str, extra: list[str], n: int = N, video: bool = True, params: dict | None = None) -> Path:
     out = CAPTURES / name
     if out.exists():
         shutil.rmtree(out)
     out.mkdir(parents=True)
-    common = [*SCENE, "--n", str(n), "--cuts", cuts, *extra]
+    params = params_of(params)
+    common = [*SCENE, "--n", str(n), "--cuts", cuts, *param_args(params), *FEEL, *extra]
     with sweep.machine_lock(f"TD11 A/B capture {name}"):
         player(out, [*common, "--start-at", f"{START:g}", "--capture-stills", str(out), "--stills-format", "png",
                      "--stills-at", ",".join(f"{t:.1f}" for t in STILLS)], "stills.log")
@@ -78,7 +120,9 @@ def capture(name: str, cuts: str, extra: list[str], n: int = N, video: bool = Tr
     got = sorted(out.glob("still-*.png"))
     if len(got) != len(STILLS):
         raise SystemExit(f"td11: {name}: {len(got)} stills, expected {len(STILLS)}")
-    (out / "args.json").write_text(json.dumps({"cuts": cuts, "n": n, "extra": extra}, indent=2) + "\n", encoding="utf-8")
+    record = {"cuts": cuts, "params": params, "n": n, "feel": FEEL, "extra": extra,
+              "effective": effective(out / "stills.log"), "args": common}
+    (out / "args.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
     return out
 
 
@@ -119,7 +163,7 @@ def score(name: str) -> dict:
 def cmd_calibrate(a) -> None:
     if not a.score_only:
         capture("base", "none", [])
-        capture("base-repeat", "none", [], video=False)
+        capture("base-repeat", "none", [])
         capture("invisible", "none", ["--time-offset", "0.001"])
         capture("visible", "none", ["--pose-rate", "15"])
     floor = score("base-repeat")
@@ -141,10 +185,18 @@ def cmd_calibrate(a) -> None:
 
 
 def cmd_cut(a) -> None:
-    if not a.score_only:
-        capture(a.name, a.cuts, a.extra)
-    r = score(a.name)
-    ab_crops(a.name, r["frames"])
+    names = list(ARMS) if a.name == "all" else [a.name]
+    for name in names:
+        if not a.score_only:
+            if a.cuts:
+                capture(name, a.cuts, a.extra, params=opts(a.param))
+            elif name in ARMS:
+                cuts, over = ARMS[name]
+                capture(name, cuts, a.extra, params={**over, **opts(a.param)})
+            else:
+                raise SystemExit(f"td11: {name} is not in ARMS; pass --cuts")
+        r = score(name)
+        ab_crops(name, r["frames"])
 
 
 def spec_for(scene: str, n: int, cuts: str, search: bool = False, options: dict | None = None) -> dict:
@@ -162,7 +214,7 @@ def spec_for(scene: str, n: int, cuts: str, search: bool = False, options: dict 
 
 def opts(pairs: list[str]) -> dict:
     """sceneOptions from key=value pairs (lodPx=120,60, lightCell=2, shadowLod=1, mergePx=8)."""
-    kv = dict(o.split("=", 1) for o in pairs)
+    kv = dict(o.split("=", 1) for o in pairs or [])
     return {k: (float(v) if k in ("lightCell", "mergePx") else int(v) if k == "shadowLod" else v) for k, v in kv.items()}
 
 
@@ -194,11 +246,19 @@ def last_full(rows: list[dict]) -> dict:
 
 
 def cmd_cost(a) -> None:
+    cuts, over = (a.cuts, {}) if a.cuts else ARMS[a.name]
+    params = params_of({**over, **opts(a.param)})
+    arms = {"base": "none", a.name: cuts}
     runs = {"base": [], a.name: []}
     for rep in range(a.reps):
-        for arm, cuts in (("base", "none"), (a.name, a.cuts)) if rep % 2 == 0 else ((a.name, a.cuts), ("base", "none")):
-            rows = run_spec(f"{a.scene.lower()}-{arm}-{a.name}-{rep}", spec_for(a.scene, a.n, cuts, options=opts(a.opt) if arm != "base" else {}))
-            runs[arm].append(last_full(rows))
+        for arm in (("base", a.name) if rep % 2 == 0 else (a.name, "base")):
+            tag = f"{a.scene.lower()}-{arm}-{a.name}-{rep}"
+            rows = run_spec(tag, spec_for(a.scene, a.n, arms[arm], options=params))
+            row = last_full(rows)
+            row["cuts"], row["params"] = arms[arm], params
+            row["effective"] = effective(CAPTURES / "sweeps" / tag / "player.log")
+            runs[arm].append(row)
+
     def med(arm, key):
         v = [r[key] for r in runs[arm] if r.get(key) is not None]
         return statistics.median(v) if v else None
@@ -206,7 +266,8 @@ def cmd_cost(a) -> None:
     for k, v in summary.items():
         if v["base"] is not None and v["cut"] is not None:
             v["saved"] = v["base"] - v["cut"]
-    result = {"cut": a.name, "cuts": a.cuts, "options": a.opt, "scene": a.scene, "n": a.n, "reps": a.reps, "summary": summary, "runs": runs}
+    result = {"cut": a.name, "cuts": cuts, "params": params, "scene": a.scene, "n": a.n, "reps": a.reps,
+              "summary": summary, "runs": runs}
     COSTS.mkdir(parents=True, exist_ok=True)
     (COSTS / f"{a.scene.lower()}-{a.name}.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(summary, indent=2))
@@ -215,7 +276,7 @@ def cmd_cost(a) -> None:
 def cmd_frontier(a) -> None:
     tag = f"frontier-{a.name}"
     out = CAPTURES / "sweeps" / tag
-    rows = [json.loads(x) for x in (out / "rows.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]         if a.reuse else run_spec(tag, spec_for("S3", 0, a.cuts, search=True, options=opts(a.opt)))
+    rows = [json.loads(x) for x in (out / "rows.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]         if a.reuse else run_spec(tag, spec_for("S3", 0, a.cuts, search=True, options=params_of(opts(a.opt))))
     keep = [{k: r.get(k) for k in KEEP} for r in rows]
     fl = CAPTURES / "sweeps" / tag / "frontier.jsonl"
     frontier = [json.loads(x) for x in fl.read_text(encoding="utf-8").splitlines() if x.strip()] if fl.exists() else []
@@ -231,17 +292,20 @@ def cmd_table(a) -> None:
     print(f"thresholds: mean <= {lines['mean']:.5f}, p99 <= {lines['p99']:.4f} (invisible {lines['invisible']['mean']:.5f} / "
           f"{lines['invisible']['p99']:.4f}; visible {lines['visible']['mean']:.5f} / {lines['visible']['p99']:.4f}; "
           f"floor {lines['floor']['mean']:.5f} / {lines['floor']['p99']:.4f})")
-    print("| cut | mean FLIP | p99 FLIP | A/B | S3 GPU p50 / p99 saved, ms | S1 GPU p50 / p99 saved, ms |")
-    print("|---|---|---|---|---|---|")
+    print("| run | effective cuts | mean FLIP | p99 FLIP | A/B | S3 GPU p50 / p99 saved, ms | S1 GPU p50 / p99 saved, ms |")
+    print("|---|---|---|---|---|---|---|")
     for p in sorted(SCORES.glob("*.json")):
         s = json.loads(p.read_text(encoding="utf-8"))
+
         def saved(scene):
             c = COSTS / f"{scene}-{p.stem}.json"
             if not c.exists():
                 return ""
             m = json.loads(c.read_text(encoding="utf-8"))["summary"]
             return f"{m['gpuP50Ms'].get('saved', 0):+.2f} / {m['gpuP99Ms'].get('saved', 0):+.2f}"
-        print(f"| {p.stem} | {s['mean']:.5f} | {s['p99']:.4f} | {'floor' if p.stem == 'base-repeat' else 'pass' if s.get('pass') else 'fail'} | {saved('s3')} | {saved('s1')} |")
+        eff = (s.get("args") or {}).get("effective", "").split(" (--cuts")[0]
+        verdict = "floor" if p.stem == "base-repeat" else "pass" if s.get("pass") else "fail"
+        print(f"| {p.stem} | {eff} | {s['mean']:.5f} | {s['p99']:.4f} | {verdict} | {saved('s3')} | {saved('s1')} |")
 
 
 def main() -> int:
@@ -250,11 +314,14 @@ def main() -> int:
     c = sub.add_parser("capture"); c.add_argument("name"); c.add_argument("--cuts", default="none"); c.add_argument("extra", nargs="*")
     c.add_argument("--n", type=int, default=N); c.add_argument("--no-video", action="store_true")
     k = sub.add_parser("calibrate"); k.add_argument("--score-only", action="store_true")
-    u = sub.add_parser("cut"); u.add_argument("name"); u.add_argument("--cuts", required=True); u.add_argument("extra", nargs="*")
+    u = sub.add_parser("cut", help="an ARMS name, 'all', or any name with --cuts")
+    u.add_argument("name"); u.add_argument("--cuts"); u.add_argument("extra", nargs="*")
+    u.add_argument("--param", action="append", default=[], help="a cut parameter, key=value (lodPx, shadowLod, lightCell, mergePx)")
     u.add_argument("--score-only", action="store_true")
-    o = sub.add_parser("cost"); o.add_argument("name"); o.add_argument("--cuts", required=True)
+    o = sub.add_parser("cost", help="an ARMS name, or any name with --cuts")
+    o.add_argument("name"); o.add_argument("--cuts")
+    o.add_argument("--param", action="append", default=[], help="a cut parameter, key=value")
     o.add_argument("--scene", default="S3"); o.add_argument("--n", type=int, default=N); o.add_argument("--reps", type=int, default=2)
-    o.add_argument("--opt", action="append", default=[], help="sceneOptions key=value for the cut arm (lodPx=120,60, lightCell=2, shadowLod=1)")
     f = sub.add_parser("frontier"); f.add_argument("name"); f.add_argument("--cuts", required=True)
     f.add_argument("--reuse", action="store_true", help="summarize the existing sweep folder")
     f.add_argument("--opt", action="append", default=[], help="sceneOptions key=value")

@@ -11,7 +11,7 @@ namespace Demo3D.Runtime.Effects
     /// Catalog's names to converted effects by the selection's catalog table (variants by seed,
     /// heavier variants on elites and large deaths, companions spawned together). The client adds
     /// what the timeline leaves to it: a projectile effect along each bolt's flight, a dust puff
-    /// on each monster attack, and ambient embers and wisps over the view. Attached events are
+    /// on each monster attack, and the ambient particles over the view (AmbientEffects). Attached events are
     /// placed at their entity's position at the event time (they don't follow it afterwards).
     /// </summary>
     public sealed class EffectDriver
@@ -31,13 +31,15 @@ namespace Demo3D.Runtime.Effects
         double _now;
         readonly Mapping[] _map;
         readonly int _projectile, _dust;
-        readonly int[] _ambient;
+        readonly AmbientEffects _ambient;
         readonly bool[] _eliteType;
         readonly int[] _actionsByTime;
         readonly int[] _projBySpawn;
         double _last = double.NaN;
         int _nextAction, _nextProj;
         public bool Ambient = true;
+        /// <summary>Only the ambient particles: no timeline events, bolts or dust (TD15's empty beauty shots).</summary>
+        public bool OnlyAmbient;
         /// <summary>The runtime spike: every timeline event spawns this one effect, and the client adds nothing.</summary>
         public int OverrideAll = -1;
         /// <summary>The spike: copies of each event (jittered within half a metre), to reach its spawns per beat frame.</summary>
@@ -73,7 +75,7 @@ namespace Demo3D.Runtime.Effects
             var client = root["client"];
             _projectile = Index(lib, client["projectile"].AsString());
             _dust = Index(lib, client["monsterAttack"].AsString());
-            _ambient = Indices(lib, client["ambient"]);
+            _ambient = new AmbientEffects(lib, fx);
             _eliteType = new bool[tl.TypeNames.Length];
             for (int t = 0; t < _eliteType.Length; t++) _eliteType[t] = isEliteType != null && isEliteType(t);
             _actionsByTime = tl.ActionsByTime();
@@ -108,10 +110,10 @@ namespace Demo3D.Runtime.Effects
                 _nextAction = LowerBoundAction(from);
                 _nextProj = 0;
                 while (_nextProj < _projBySpawn.Length && _tl.Entities[_projBySpawn[_nextProj]].Spawn <= from) _nextProj++;
-                _nextAmbient = Math.Floor(from / AmbientPeriod);
+                _ambient.Reset(from);
             }
             _last = now;
-            for (int i = _tl.FirstEffectAt(from); i < _tl.Effects.Length; i++)
+            for (int i = OnlyAmbient ? _tl.Effects.Length : _tl.FirstEffectAt(from); i < _tl.Effects.Length; i++)
             {
                 var ev = _tl.Effects[i];
                 if (ev.Time > now) break;
@@ -200,6 +202,11 @@ namespace Demo3D.Runtime.Effects
         void ClientEffects(double from, double now)
         {
             if (OverrideAll >= 0) return;
+            if (OnlyAmbient)
+            {
+                if (Ambient) EventsThisFrame += _ambient.Spawn(now, t => { var f = _tl.FramingAt(t); return (new Vector2(f.Focus.X, f.Focus.Y), f.ViewWidth); });
+                return;
+            }
             // A projectile effect along each bolt's straight flight.
             if (_projectile >= 0)
                 while (_nextProj < _projBySpawn.Length && _tl.Entities[_projBySpawn[_nextProj]].Spawn <= now)
@@ -224,21 +231,8 @@ namespace Demo3D.Runtime.Effects
                 var d = Easing.Dir(facing);
                 Add(_dust, new Vector3(g.X + d.X * 0.4f, 0.05f, g.Y + d.Y * 0.4f), facing, 1f, (uint)act.Entity * 2654435761u, act.Impact, Vector3.zero, 0, 0);
             }
-            // Ambient embers and wisps: a few emitters scattered over the view every two seconds.
-            if (Ambient && _ambient.Length > 0)
-                while ((_nextAmbient + 1) * AmbientPeriod <= now)
-                {
-                    _nextAmbient++;
-                    double t = _nextAmbient * AmbientPeriod;
-                    var f = _tl.FramingAt(Math.Max(0, t));
-                    uint k = (uint)_nextAmbient;
-                    for (int j = 0; j < 6; j++)
-                    {
-                        uint seed = EffectSystem.Hash(k, (uint)j);
-                        float x = (EffectSystem.Rand(seed, 1) - 0.5f) * f.ViewWidth, z = (EffectSystem.Rand(seed, 2) - 0.4f) * f.ViewWidth * 0.6f;
-                        Add(_ambient[j % _ambient.Length], new Vector3(f.Focus.X + x, 0.3f, f.Focus.Y + z), 0, 1f, seed, t, Vector3.zero, 0, (float)(AmbientPeriod * 2));
-                    }
-                }
+            // Ambient fireflies and wisps over the view (AmbientEffects).
+            if (Ambient) EventsThisFrame += _ambient.Spawn(now, t => { var f = _tl.FramingAt(t); return (new Vector2(f.Focus.X, f.Focus.Y), f.ViewWidth); });
         }
     }
 }

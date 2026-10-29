@@ -46,6 +46,7 @@ namespace Demo3D.Choreography
         public Vector2 GoalAt;
         public float GoalRadius = 4f;
         public float ClearM = -1;        // landmarks and structures: scatter keeps this far from the anchor (or the wall line); -1 computed
+        public bool Dressing;            // TD15: placed after all other scatter, so the layout's earlier placements stay as they were
     }
 
     /// <summary>One scatter rule: which prop group, how far apart, and the scale and rotation jitter.</summary>
@@ -58,6 +59,7 @@ namespace Demo3D.Choreography
         public float Chance = 1f;
         public float MaxSlopeDeg = 90f;   // the ground is flat for now; kept for TD9's terrain
         public bool KeepCanopyOff;        // forest: canopies never overhang fighting ground
+        public bool Dressing;             // TD15: run after every other layer, so it never displaces their pieces
     }
 
     public sealed class PropGroup
@@ -173,6 +175,7 @@ namespace Demo3D.Choreography
                             Chance = s["chance"].AsFloat(1f),
                             MaxSlopeDeg = s["maxSlopeDeg"].AsFloat(90f),
                             KeepCanopyOff = s["keepCanopyOff"].AsBool(type == AreaType.Forest),
+                            Dressing = s["dressing"].AsBool(false),
                         };
                         if (layers[i].Group == null || !l.Groups.ContainsKey(layers[i].Group))
                             throw new FormatException("layout: scatter for " + kv.Key + " names unknown prop group '" + layers[i].Group + "'");
@@ -208,6 +211,7 @@ namespace Demo3D.Choreography
                 ClosedSide = a["closedSide"].AsInt(2),
                 Walls = a["walls"].AsString(),
                 ClearM = a["clearM"].AsFloat(-1f),
+                Dressing = a["dressing"].AsBool(false),
             };
             area.Center = a.Has("center") ? Vec(a["center"]) : Vec(a["at"]);
             if (a.Has("ring")) { area.IsRing = true; area.RingInner = a["ring"][0].AsFloat(); area.RingOuter = a["ring"][1].AsFloat(); }
@@ -295,6 +299,7 @@ namespace Demo3D.Choreography
             foreach (LayoutArea a in Areas)
             {
                 if (a.Type != AreaType.Landmark && a.Type != AreaType.Structure) continue;
+                if (a.Dressing) continue; // dressing keeps nothing clear: it comes after the scatter
                 float clear = ClearOf(a) + pad;
                 float d = a.Type == AreaType.Structure && a.Kind == "ruin-wall" ? SegmentDistance(p, a.From, a.To) : Vector2.Distance(p, a.Center);
                 if (d < clear) return true;
@@ -364,22 +369,31 @@ namespace Demo3D.Choreography
         /// <summary>
         /// The placement list: explicit landmark and structure pieces first (in area order), then the
         /// scatter of paths, clearings, forest and edge bands, in that order, so the fighting ground's
-        /// clutter is the same at every density. Deterministic for a given layout, density and footprint table.
+        /// clutter is the same at every density. Dressing (TD15: landmarks and scatter layers marked
+        /// <c>dressing</c>) comes last, in the same orders, so it never displaces an earlier piece and the
+        /// blocking set (what the choreography navigates) is unchanged by flat dressing. Deterministic for
+        /// a given layout, density and footprint table.
         /// </summary>
         public PlacementList Generate(FootprintTable table)
         {
             footprints = table;
             var gen = new Generator(this, table);
-            for (int i = 0; i < Areas.Length; i++)
+            foreach (bool dressing in new[] { false, true })
             {
-                LayoutArea a = Areas[i];
-                foreach (PieceSpec s in a.Pieces) gen.Place(s.Prop, a.Center + s.At, DegToRad(s.YawDeg), s.Scale, i, true);
-                if (a.Type == AreaType.Structure) gen.Structure(a, i);
-            }
-            foreach (AreaType t in new[] { AreaType.Path, AreaType.Clearing, AreaType.Forest, AreaType.Edge })
-            {
-                if (!Scatter.TryGetValue(t, out ScatterLayer[] layers)) continue;
-                for (int k = 0; k < layers.Length; k++) gen.ScatterLayer(t, k, layers[k]);
+                if (dressing) gen.BeginDressing();
+                for (int i = 0; i < Areas.Length; i++)
+                {
+                    LayoutArea a = Areas[i];
+                    if (a.Dressing != dressing) continue;
+                    foreach (PieceSpec s in a.Pieces) gen.Place(s.Prop, a.Center + s.At, DegToRad(s.YawDeg), s.Scale, i, true);
+                    if (a.Type == AreaType.Structure) gen.Structure(a, i);
+                }
+                foreach (AreaType t in new[] { AreaType.Path, AreaType.Clearing, AreaType.Forest, AreaType.Edge })
+                {
+                    if (!Scatter.TryGetValue(t, out ScatterLayer[] layers)) continue;
+                    for (int k = 0; k < layers.Length; k++)
+                        if (layers[k].Dressing == dressing) gen.ScatterLayer(t, k, layers[k]);
+                }
             }
             PlacementList list = gen.Finish();
             footprints = null;
@@ -413,6 +427,32 @@ namespace Demo3D.Choreography
             static float Body(Footprint f, float scale) => f.Blocks ? f.BoundingRadius * scale : Math.Min(0.4f, f.BoundingRadius * scale * 0.5f);
 
             static long Key(int x, int y) => ((long)x << 32) ^ (uint)y;
+
+            int dressingStart = int.MaxValue;
+
+            /// <summary>From here on, pieces are dressing (see <see cref="OverlapsFixed"/>).</summary>
+            public void BeginDressing() => dressingStart = items.Count;
+
+            /// <summary>
+            /// Overlap with the pieces that are the same at every density: landmark and structure pieces
+            /// (walls, tombs, braziers, the pyre) and dressing already placed on fighting ground. Flat
+            /// dressing on fighting ground tests only these, so it never sits through a wall or on another
+            /// patch, and stays density-invariant (the density-scaled forest and edge never reach
+            /// fighting ground; edge dressing comes after it).
+            /// </summary>
+            bool OverlapsFixed(Vector2 p, float r)
+            {
+                int x0 = (int)Math.Floor((p.X - r - 8) / Bucket), x1 = (int)Math.Floor((p.X + r + 8) / Bucket);
+                int y0 = (int)Math.Floor((p.Y - r - 8) / Bucket), y1 = (int)Math.Floor((p.Y + r + 8) / Bucket);
+                for (int y = y0; y <= y1; y++)
+                    for (int x = x0; x <= x1; x++)
+                    {
+                        if (!buckets.TryGetValue(Key(x, y), out List<int> list)) continue;
+                        foreach (int j in list)
+                            if ((items[j].Area >= 0 || j >= dressingStart) && Vector2.Distance(items[j].Position, p) < r + bodyR[j]) return true;
+                    }
+                return false;
+            }
 
             bool Overlaps(Vector2 p, float r)
             {
@@ -571,6 +611,15 @@ namespace Demo3D.Choreography
                             if (s.KeepCanopyOff) reach = Math.Max(reach, f.CanopyRadiusM * scale);
                             if (d < reach) continue;
                             if (l.InKeepOut(p, f.BoundingRadius * scale)) continue;
+                        }
+                        if (s.Dressing && !dense)
+                        {
+                            // Dressing on fighting ground: kept out of landmarks' and structures' clear zones
+                            // and off fixed pieces only (OverlapsFixed), so it is the same at every density.
+                            float body = Body(f, scale);
+                            if (l.InKeepOut(p, body) || OverlapsFixed(p, body)) continue;
+                            Add(new Placement(PropIndex(id), p, yaw, scale, -1), body);
+                            continue;
                         }
                         Place(id, p, yaw, scale, -1, false);
                     }

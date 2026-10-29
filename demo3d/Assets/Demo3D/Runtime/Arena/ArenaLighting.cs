@@ -26,6 +26,9 @@ namespace Demo3D.Runtime.Arena
             AmbientGround = new Color(0.03f, 0.03f, 0.04f);
         public Color FogColor = new Color(0.04f, 0.06f, 0.10f);
         public float FogDensity = 0.012f;
+        /// <summary>TD15: the horde's extra ambient fill (added to 1) and its rim light (linear rgb), CrowdSkinned's globals.</summary>
+        public float CrowdFill;
+        public Color CrowdRim = Color.black;
         public int MaxFlameLights = 8;
         /// <summary>Flickering flame lights (realtime, at most <see cref="MaxFlameLights"/>), in priority order.</summary>
         public readonly List<PropLight> Flames = new List<PropLight>();
@@ -51,6 +54,9 @@ namespace Demo3D.Runtime.Arena
             JsonValue fog = root["fog"];
             l.FogColor = Col(fog["color"], l.FogColor);
             l.FogDensity = fog["density"].AsFloat(l.FogDensity);
+            JsonValue crowd = root["crowd"];
+            l.CrowdFill = crowd["fill"].AsFloat(0f);
+            l.CrowdRim = Col(crowd["rim"], Color.black);
             JsonValue flames = root["flames"];
             l.MaxFlameLights = flames["maxLights"].AsInt(l.MaxFlameLights);
             Lights(flames["props"], l.Flames, true);

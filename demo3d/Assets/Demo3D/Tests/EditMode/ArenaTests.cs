@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -56,7 +57,7 @@ namespace Demo3D.Tests
         }
 
         [Test]
-        public void TheStaticShadowMapCoversTheWholeArenaAtAboutFourCentimetres()
+        public void TheStaticShadowMapCoversTheWholeArenaUnderSevenCentimetresOnTheGround()
         {
             var l = ArenaLighting.Parse(LayoutJson);
             var bounds = new Bounds(new Vector3(0, 12, 0), new Vector3(160, 24, 160));
@@ -70,7 +71,14 @@ namespace Demo3D.Tests
                 Assert.That(s.y, Is.InRange(0f, 1f), "corner " + c);
                 Assert.That(s.z, Is.InRange(0f, 1f), "corner " + c);
             }
-            Assert.That(Mathf.Max(texel.x, texel.y), Is.LessThan(0.065f), "texel size in metres");
+            Assert.That(Mathf.Max(texel.x, texel.y), Is.LessThan(0.065f), "texel size in metres, in light space");
+            // On the ground a texel stretches along the moon's azimuth by 1 / sin(elevation) (the cold
+            // review's item 6): light-space y tilts toward the light, x stays horizontal.
+            float sinElev = Mathf.Sin(l.MoonElevationDeg * Mathf.Deg2Rad);
+            var groundTexel = new Vector2(texel.x, texel.y / sinElev);
+            TestContext.WriteLine($"static shadow map texel: light space {texel.x * 100:F1} x {texel.y * 100:F1} cm, " +
+                                  $"on the ground {groundTexel.x * 100:F1} x {groundTexel.y * 100:F1} cm");
+            Assert.That(Mathf.Max(groundTexel.x, groundTexel.y), Is.LessThan(0.13f), "ground-projected texel in metres");
             // A point nearer the moon along its ray compares as nearer the light than the ground.
             var toLight = -(l.MoonRotation * Vector3.forward);
             var ground = m.MultiplyPoint(Vector3.zero);
@@ -78,6 +86,110 @@ namespace Demo3D.Tests
             Assert.That(above.x, Is.EqualTo(ground.x).Within(1e-4f));
             Assert.That(above.y, Is.EqualTo(ground.y).Within(1e-4f));
             Assert.That(SystemInfo.usesReversedZBuffer ? above.z > ground.z : above.z < ground.z, Is.True, "depth order toward the light");
+        }
+
+        /// <summary>
+        /// The cold review's item 6: the static shadow map end to end on the GPU (the projection's
+        /// y-flip and reversed Z included). One cube is rendered into a small map from the moon; a
+        /// ground quad in Demo3D/LitStaticShadow (the hero's and the E2 kit's shader) is then drawn
+        /// top-down with no realtime shadows: where the cube's shadow falls (projected along the moon)
+        /// the ground must be dark, and lit where it doesn't.
+        /// </summary>
+        [Test]
+        public void TheStaticShadowMapShadesWhereItsCasterShadowsOnTheGpu()
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            var l = ArenaLighting.Parse(LayoutJson);
+            var objects = new List<UnityEngine.Object>();
+            StaticShadowMap map = null;
+            RenderTexture rt = null;
+            bool async = ShaderUtil.allowAsyncCompilation;
+            ShaderUtil.allowAsyncCompilation = false; // a cold editor would draw placeholder shaders while compiling
+            try
+            {
+                RenderSettings.ambientMode = AmbientMode.Flat;
+                RenderSettings.ambientLight = Color.black;
+                RenderSettings.fog = false;
+                var sun = new GameObject("Moon").AddComponent<Light>();
+                sun.type = LightType.Directional;
+                sun.transform.rotation = l.MoonRotation;
+                sun.intensity = 1f;
+                sun.shadows = LightShadows.None;
+                RenderSettings.sun = sun;
+                objects.Add(sun.gameObject);
+
+                var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                cube.transform.position = new Vector3(0, 4, 0);
+                cube.transform.localScale = new Vector3(2, 2, 2);
+                var litShader = Shader.Find("Universal Render Pipeline/Lit");
+                var cubeMat = new Material(litShader);
+                cube.GetComponent<Renderer>().sharedMaterial = cubeMat;
+                objects.Add(cube);
+                objects.Add(cubeMat);
+
+                var ground = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                ground.transform.SetPositionAndRotation(Vector3.zero, Quaternion.Euler(90, 0, 0));
+                ground.transform.localScale = new Vector3(40, 40, 1);
+                var groundMat = new Material(Shader.Find("Demo3D/LitStaticShadow"));
+                groundMat.SetColor("_BaseColor", Color.white);
+                groundMat.SetFloat("_Smoothness", 0f);
+                ground.GetComponent<Renderer>().sharedMaterial = groundMat;
+                ground.GetComponent<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
+                objects.Add(ground);
+                objects.Add(groundMat);
+
+                var cam = new GameObject("Top").AddComponent<Camera>();
+                objects.Add(cam.gameObject);
+                cam.orthographic = true;
+                cam.orthographicSize = 20;
+                cam.transform.SetPositionAndRotation(new Vector3(0, 50, 0), Quaternion.Euler(90, 0, 0));
+                cam.clearFlags = CameraClearFlags.SolidColor;
+                cam.backgroundColor = Color.black;
+                cam.nearClipPlane = 1;
+                cam.farClipPlane = 100;
+                rt = new RenderTexture(256, 256, 24, RenderTextureFormat.ARGB32);
+                cam.targetTexture = rt;
+                // One frame first: a cold editor sets the pipeline up on its first camera, which must
+                // not come after the map is published.
+                cube.GetComponent<Renderer>().enabled = false;
+                cam.Render();
+                cube.GetComponent<Renderer>().enabled = true;
+                map = StaticShadowMap.Render(new[] { cube.GetComponent<Renderer>() }, l.MoonRotation,
+                    new Bounds(new Vector3(0, 5, 0), new Vector3(40, 10, 40)), 512);
+                cube.GetComponent<Renderer>().enabled = false; // only its shadow, through the map
+                cam.Render();
+                RenderTexture.active = rt;
+                var tex = new Texture2D(256, 256, TextureFormat.RGB24, false);
+                tex.ReadPixels(new Rect(0, 0, 256, 256), 0, 0);
+                tex.Apply();
+                RenderTexture.active = null;
+                cam.targetTexture = null;
+                objects.Add(tex);
+
+                float Lum(Vector3 world)
+                {
+                    var c = tex.GetPixel(Mathf.RoundToInt((world.x + 20) / 40 * 256), Mathf.RoundToInt((world.z + 20) / 40 * 256));
+                    return 0.2126f * c.r + 0.7152f * c.g + 0.0722f * c.b;
+                }
+                var toLight = -(l.MoonRotation * Vector3.forward);
+                var shade = cube.transform.position - toLight * (cube.transform.position.y / toLight.y);
+                shade.y = 0;
+                var lit = new Vector3(-shade.x, 0, -shade.z); // the other side of the cube
+                var off = shade + Vector3.Cross(Vector3.up, new Vector3(toLight.x, 0, toLight.z).normalized) * 5f; // beside the shadow
+                float inShade = Lum(shade), outside = Lum(lit), beside = Lum(off);
+                TestContext.WriteLine($"shadow at {shade}: {inShade:F3}; opposite {outside:F3}; beside {beside:F3}");
+                Assert.That(outside, Is.GreaterThan(0.1f), "the ground is lit away from the cube");
+                Assert.That(beside, Is.GreaterThan(0.1f), "and beside its shadow");
+                Assert.That(inShade, Is.LessThan(0.35f * outside), "the cube's shadow falls where the moon throws it");
+            }
+            finally
+            {
+                map?.Dispose();
+                ShaderUtil.allowAsyncCompilation = async;
+                if (rt != null) rt.Release();
+                foreach (var o in objects) if (o != null) UnityEngine.Object.DestroyImmediate(o);
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            }
         }
 
         [Test]
@@ -100,6 +212,26 @@ namespace Demo3D.Tests
             }
         }
 
+        /// <summary>The kit piece (a child of a Static group) that a renderer belongs to.</summary>
+        static Transform PieceOf(Transform t, Transform stat)
+        {
+            while (t.parent != null && t.parent.parent != stat) t = t.parent;
+            return t;
+        }
+
+        /// <summary>TD15's kit value scales a converted material's RGB by its pack's entry and leaves alpha (alpha clipping) alone.</summary>
+        [Test]
+        public void KitValueDarkensThePaleAtlasesButKeepsAlpha()
+        {
+            var c = ArenaDressing.KitValue(new Color(1f, 0.8f, 0.6f, 0.5f), "PolygonElven_Mat_01_A");
+            Assert.That(c.r, Is.LessThan(1f));
+            Assert.That(c.g / c.r, Is.EqualTo(0.8f).Within(1e-4f));
+            Assert.That(c.a, Is.EqualTo(0.5f));
+            Assert.That(ArenaDressing.KitValue(Color.white, "SomeOtherPack_Mat"), Is.EqualTo(Color.white));
+            Assert.That(ArenaDressing.IsTree("SM_Env_Tree_Round_01"), Is.True);
+            Assert.That(ArenaDressing.IsTree("SM_Env_TreeLog_01"), Is.False);
+        }
+
         [Test]
         public void EveryDensityIsBakedForTheBaseline()
         {
@@ -107,6 +239,51 @@ namespace Demo3D.Tests
             foreach (var d in ArenaBaker.E0Densities)
                 Assert.That(index.Find(ArenaIndex.E0, d), Is.Not.Null, $"E0 at {d}x");
             Assert.That(index.Find(ArenaIndex.E2, 1f), Is.Not.Null, "E2 at 1x (the demo's)");
+            foreach (var d in ArenaBaker.LitDensities)
+                Assert.That(index.Find(ArenaIndex.E2, d), Is.Not.Null, $"E2 at {d}x (TD14's density sweep)");
+            foreach (var d in ArenaBaker.MergedDensities)
+            {
+                Assert.That(index.Find(ArenaIndex.E0, d, true), Is.Not.Null, $"E0 merged at {d}x");
+                Assert.That(index.Find(ArenaIndex.E2, d, true), Is.Not.Null, $"E2 merged at {d}x");
+            }
+        }
+
+        [Test]
+        public void ArenaOptionsReadTheRungSwitches()
+        {
+            var o = ArenaOptions.FromBench(new Dictionary<string, object>
+            {
+                ["rung"] = "e2", ["density"] = 2.0, ["grd"] = "occlusion", ["merged"] = true, ["texCap"] = 1024.0, ["prepass"] = "out",
+            }, "rung", ArenaOptions.Stock());
+            Assert.That(o.Rung, Is.EqualTo(ArenaIndex.E2));
+            Assert.That(o.Density, Is.EqualTo(2f));
+            Assert.That(o.Grd, Is.EqualTo(ArenaOptions.GrdOcclusion));
+            Assert.That(o.Merged, Is.True);
+            Assert.That(o.TexCap, Is.EqualTo(1024));
+            Assert.That(o.Prepass, Is.False);
+            Assert.That(o.Label(), Is.EqualTo("e2 2x grd:occlusion merged tex:1024 prepass:out"));
+            var stock = ArenaOptions.FromBench(new Dictionary<string, object>(), "rung", ArenaOptions.Stock());
+            Assert.That(stock.Label(), Is.EqualTo("e0 1x"), "S0's default is the stock baseline");
+            Assert.That(ArenaOptions.FromBench(new Dictionary<string, object> { ["grd"] = true }, "rung", ArenaOptions.Stock()).Grd,
+                Is.EqualTo(ArenaOptions.GrdOn));
+            Assert.Throws<ArgumentException>(() => ArenaOptions.FromBench(new Dictionary<string, object> { ["grd"] = "maybe" }, "rung", ArenaOptions.Stock()));
+            Assert.Throws<ArgumentException>(() => ArenaOptions.FromBench(new Dictionary<string, object> { ["texCap"] = 1000.0 }, "rung", ArenaOptions.Stock()));
+            Assert.Throws<ArgumentException>(() => ArenaOptions.FromBench(new Dictionary<string, object> { ["rung"] = "e9" }, "rung", ArenaOptions.Stock()));
+            Assert.That(ArenaOptions.FromBench(new Dictionary<string, object> { ["without"] = "forest" }, "rung", ArenaOptions.Stock()).Label(),
+                Is.EqualTo("e0 1x without:forest"));
+            Assert.Throws<ArgumentException>(() => ArenaOptions.FromBench(new Dictionary<string, object> { ["without"] = "trees" }, "rung", ArenaOptions.Stock()));
+        }
+
+        [Test]
+        public void TheKitsTexturesImportIntoTheCapGroup()
+        {
+            Assert.That(UnityEngine.TextureMipmapLimitGroups.HasGroup(ArenaPipeline.KitTextureGroup), Is.True, "ProjectSetup creates the group");
+            Assert.That(KitTextureImport.IsKit("Assets/Vendor/PolygonElvenRealm/Textures/Alts/PolygonElven_Texture_01_A.png"), Is.True);
+            Assert.That(KitTextureImport.IsKit("Assets/Vendor/PolygonKnights/Textures/PolygonKnights_Texture_01.png"), Is.False, "the hero's pack");
+            var guids = AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/Vendor/PolygonElvenRealm" });
+            if (guids.Length == 0) Assert.Ignore("vendor assets not synced");
+            var imp = (TextureImporter)AssetImporter.GetAtPath(AssetDatabase.GUIDToAssetPath(guids[0]));
+            Assert.That(imp.mipmapLimitGroupName, Is.EqualTo(ArenaPipeline.KitTextureGroup));
         }
 
         [Test]
@@ -125,13 +302,13 @@ namespace Demo3D.Tests
                     var scene = EditorSceneManager.OpenScene($"{ArenaBaker.Dir}/{e.scene}.unity", OpenSceneMode.Single);
                     var root = scene.GetRootGameObjects().Single(g => g.name == "Arena").transform;
                     var stat = root.Find("Static");
-                    int pieces = stat.Cast<Transform>().Sum(g => g.childCount);
+                    int pieces = stat.Cast<Transform>().Where(g => g.name != "Merged").Sum(g => g.childCount);
                     Assert.That(pieces, Is.EqualTo(list.Items.Length), e.scene + " pieces");
                     Assert.That(stat.GetComponentsInChildren<Collider>(true), Is.Empty, e.scene + " colliders");
                     Assert.That(stat.GetComponentsInChildren<MonoBehaviour>(true), Is.Empty, e.scene + " vendor scripts");
                     // Every piece where its placement says (a sample).
                     int checkedPieces = 0;
-                    var groups = stat.Cast<Transform>().ToList();
+                    var groups = stat.Cast<Transform>().Where(g => g.name != "Merged").ToList();
                     var all = groups.SelectMany(g => g.Cast<Transform>()).ToList();
                     for (int i = 0; i < list.Items.Length; i += 37)
                     {
@@ -147,8 +324,42 @@ namespace Demo3D.Tests
                     {
                         Assert.That(m, Is.Not.Null, r.name);
                         Assert.That(AssetDatabase.GetAssetPath(m), Does.StartWith(ArenaBaker.MaterialDir), r.name + " uses a converted material");
-                        string expect = e.rung == ArenaIndex.E2 ? "Demo3D/LitStaticShadow" : "Universal Render Pipeline/Lit";
+                        // At E2 the trees take TD15's canopy fade (Demo3D/LitCanopy, its keyword on); the rock is TD14's triplanar port.
+                        bool canopy = e.rung == ArenaIndex.E2 && ArenaDressing.IsTree(PieceOf(r.transform, stat).name);
+                        string expect = m.name.StartsWith("RockTriplanar") ? "Demo3D/RockTriplanar"
+                            : canopy ? "Demo3D/LitCanopy" : e.rung == ArenaIndex.E2 ? "Demo3D/LitStaticShadow" : "Universal Render Pipeline/Lit";
                         Assert.That(m.shader.name, Is.EqualTo(expect), r.name);
+                        if (canopy)
+                        {
+                            Assert.That(m.IsKeywordEnabled("_CANOPY_FADE"), Is.True, r.name + " fades");
+                            // The twin follows its converted material (the kit value included), bake after bake.
+                            var source = AssetDatabase.LoadAssetAtPath<Material>(AssetDatabase.GetAssetPath(m).Replace("_Canopy.mat", ".mat"));
+                            Assert.That(source, Is.Not.Null, m.name + "'s source");
+                            Assert.That(m.GetColor("_BaseColor"), Is.EqualTo(source.GetColor("_BaseColor")), m.name + " colour");
+                        }
+                    }
+                    // TD15's atmosphere: each of mist, runes and glow pools one shadowless draw outside the static set.
+                    foreach (var name in new[] { "Mist", "Runes", "GlowPools" })
+                    {
+                        var go = root.Find(name);
+                        Assert.That(go, Is.Not.Null, e.scene + " " + name);
+                        var mr = go.GetComponent<MeshRenderer>();
+                        Assert.That(mr.shadowCastingMode, Is.EqualTo(ShadowCastingMode.Off), name);
+                        Assert.That(go.GetComponent<MeshFilter>().sharedMesh.vertexCount, Is.GreaterThanOrEqualTo(4), name);
+                    }
+                    // Every scene draws the placement list's triangles, merged or not.
+                    long tris = 0;
+                    foreach (var r in renderers)
+                    {
+                        var mf = r.GetComponent<MeshFilter>();
+                        if (mf == null || mf.sharedMesh == null) continue;
+                        for (int s = 0; s < mf.sharedMesh.subMeshCount; s++) tris += mf.sharedMesh.GetIndexCount(s) / 3;
+                    }
+                    Assert.That(tris, Is.EqualTo(e.triangles), e.scene + " triangles");
+                    if (e.merged)
+                    {
+                        Assert.That(e.mergedRenderers, Is.GreaterThan(0), e.scene + " merged renderers");
+                        Assert.That(stat.Find("Merged").childCount, Is.EqualTo(e.mergedRenderers), e.scene);
                     }
                     if (e.rung == ArenaIndex.E0)
                         Assert.That(renderers.All(r => r.shadowCastingMode == ShadowCastingMode.On), Is.True, "E0: every piece casts realtime shadows");

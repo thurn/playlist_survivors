@@ -1,0 +1,4 @@
+{"_comment": "TD14's ladder: S0 (the empty arena, the camera touring the six shots) at 2x, rung e3-bound-without-small.",
+  "scene": "S0", "seconds": 20, "warmup": 5, "rewarm": 3,
+  "n": {"fixed": [0]}, "viewWidthM": [40, 55], "load": ["demo"], "aa": ["msaa4"], "jobWorkers": 6,
+  "sceneOptions": {"rung": "e2", "without": "small", "density": 2.0}}

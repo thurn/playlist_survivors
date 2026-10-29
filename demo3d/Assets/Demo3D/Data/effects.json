@@ -1,4 +1,4 @@
-{ "note": "TD8's effect list (effects.md, The effect list): the converter's selection, by manifest path. skip: children left out (distortion needs a material we can't read, or a costly module); drop: cosmetic modules dropped; glow: the large soft glow quads (one additive soft-point billboard of 1.5 m or more), which TD11's drop-glow cut leaves to bloom; scaleRef: the event Scale at which the effect has its stock size; catalog: the choreography Catalog's names mapped to effects (variants by seed, 'elite' for elite and boss targets, 'large' at or above largeScale, 'with': spawned together).",
+{ "note": "TD8's effect list (effects.md, The effect list): the converter's selection, by manifest path. skip: children left out (distortion needs a material we can't read, or a costly module); drop: cosmetic modules dropped; glow: the large soft glow quads (one additive soft-point billboard of 1.5 m or more), which TD11's drop-glow cut leaves to bloom; scaleRef: the event Scale at which the effect has its stock size; catalog: the choreography Catalog's names mapped to effects (variants by seed, 'elite' for elite and boss targets, 'large' at or above largeScale, 'with': spawned together); client.ambient: the ambient particles spread over the view every 2 s (ambientPerPeriod emitters, cycling through the list; TD15 swapped the warm embers for cool fireflies, environment.md Color separation).",
   "effects": [
     { "name": "hit-spark", "prefab": "Assets/Hovl Studio/Magic hits/Prefabs/Hit 1.prefab", "galleryHeight": 1, "galleryView": 5 },
     { "name": "hit-spark-b", "prefab": "Assets/Hovl Studio/Magic hits/Prefabs/Hit 2.prefab", "glow": ["Glow"], "galleryHeight": 1, "galleryView": 5 },
@@ -19,7 +19,8 @@
     { "name": "laser", "prefab": "Assets/Hovl Studio/3D Lasers Pack/Prefabs/Laser beam 10 fire.prefab", "light": { "color": [1.0, 0.45, 0.15], "range": 5, "intensity": 4, "duration": 1.6 }, "drop": ["collision"], "lines": true, "beamLength": 12, "scaleRef": 12, "duration": 1.6, "galleryHeight": 1.2, "galleryView": 16 },
     { "name": "dust-puff", "prefab": "Assets/Hovl Studio/Fantastic cartoon VFX/Prefabs/Cartoon smoke.prefab", "duration": 0.25, "sizeScale": 0.35, "galleryHeight": 0.1, "galleryView": 5, "notes": "a looping smoke source cut to a quarter-second puff at a third of its size" },
     { "name": "ambient-embers", "prefab": "Assets/Magic Pig Games (Infinity PBR)/MagicPig Shared/Magic Spells & Particles/Particle Components/PComponent Fire Embers.prefab", "duration": 4, "galleryHeight": 0.5, "galleryView": 8 },
-    { "name": "ambient-wisps", "prefab": "Assets/Magic Pig Games (Infinity PBR)/MagicPig Shared/Magic Spells & Particles/Particle Components/PComponent Wisps Circular.prefab", "duration": 4, "galleryHeight": 0.8, "galleryView": 8 }
+    { "name": "ambient-wisps", "prefab": "Assets/Magic Pig Games (Infinity PBR)/MagicPig Shared/Magic Spells & Particles/Particle Components/PComponent Wisps Circular.prefab", "duration": 4, "galleryHeight": 0.8, "galleryView": 8 },
+    { "name": "ambient-fireflies", "prefab": "Assets/PolygonElvenRealm/Prefabs/FX/FX_Fireflies_01.prefab", "duration": 4, "drop": ["main.prewarm", "main.flipRotation"], "galleryHeight": 1.0, "galleryView": 10, "notes": "TD15: Elven Realm's fireflies, the arena's ambient particles (environment.md, Atmosphere); prewarm (the ambient spawner keeps the view populated) and flipped rotation (round sprites) dropped" }
   ],
   "catalog": {
     "hit-spark": { "effects": ["hit-spark", "hit-spark-b"], "elite": "hit-heavy" },
@@ -35,5 +36,5 @@
     "lightning": { "effects": ["lightning"], "with": ["lightning-circle"] },
     "laser": { "effects": ["laser"] }
   },
-  "client": { "projectile": "bolt", "monsterAttack": "dust-puff", "ambient": ["ambient-embers", "ambient-wisps"] }
+  "client": { "projectile": "bolt", "monsterAttack": "dust-puff", "ambient": ["ambient-fireflies", "ambient-fireflies", "ambient-wisps"], "ambientPerPeriod": 9 }
 }

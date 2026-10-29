@@ -35,6 +35,11 @@ namespace Demo3D.Runtime.Playback
         double _fxLast = double.NaN;
         CameraFeel _feel;
         SoundScheduler _sounds;
+        // TD15's beauty shots: --hold-at x,y (a stress scene's hero holds that point), --beauty-empty (no
+        // horde and no combat effects: the arena, the hero and the ambient particles), --capture-mask
+        // (after each still, the same frame again as an ID render of the monsters: mask-<t>.png).
+        bool _beautyEmpty, _captureMask, _maskOn;
+        double _maskAt = double.NaN;
 
         // Per timeline type: the crowd's type index, walk clip and roster asset data.
         int[] _crowdType;
@@ -70,20 +75,23 @@ namespace Demo3D.Runtime.Playback
                 Debug.LogError("DemoMain: captures need a windowed player; a batch-mode player draws no frames");
             _flags = DevFlags.FromCommandLine();
             Cuts.Active = Cuts.FromCommandLine();
-            Debug.Log($"DemoMain: cuts {Cuts.Active} (--cuts; TD11)");
+            Debug.Log($"DemoMain: effective {Cuts.Active.Describe()} (--cuts; TD11)");
             QualitySettings.vSyncCount = _flags.FixedTime ? 0 : 1;
             Application.targetFrameRate = -1;
             // The empty boot scene's default camera and light would draw and light the frame too.
             foreach (var c in FindObjectsByType<Camera>(FindObjectsInactive.Include)) Destroy(c.gameObject);
             foreach (var l in FindObjectsByType<Light>(FindObjectsInactive.Include)) Destroy(l.gameObject);
             _rig = new GameCameraRig();
+            Demo3D.Runtime.Arena.ArenaClock.Deterministic = _flags.FixedTime; // TD11: captures repeat exactly
             // The arena (TD9) when it is baked into the build, else TD4's flat bench ground.
-            if (_flags.Arena != "off" && Demo3D.Runtime.Arena.ArenaRuntime.Available(_flags.Arena, _flags.Density))
-                _arena = Demo3D.Runtime.Arena.ArenaRuntime.Load(_flags.Arena, _flags.Density, _rig.Camera, transform);
+            // TD14's rung switches (--grd, --merged, --tex-cap, --prepass) default to the ladder's final rung.
+            var arena = _flags.ArenaOptions;
+            if (arena.Rung != "off" && Demo3D.Runtime.Arena.ArenaRuntime.Available(arena))
+                _arena = Demo3D.Runtime.Arena.ArenaRuntime.Load(arena, _rig.Camera, transform);
             else
             {
-                if (_flags.Arena != "off")
-                    Debug.LogWarning($"DemoMain: no arena for --arena {_flags.Arena} --density {_flags.Density} (baked: {Demo3D.Runtime.Arena.ArenaRuntime.Describe()}); flat ground");
+                if (arena.Rung != "off")
+                    Debug.LogWarning($"DemoMain: no arena for {arena.Label()} (baked: {Demo3D.Runtime.Arena.ArenaRuntime.Describe()}); flat ground");
                 BenchEnvironment.Build();
             }
             _roster = RosterAssets.Load();
@@ -93,9 +101,18 @@ namespace Demo3D.Runtime.Playback
             StressScript stress = _flags.Scene == "song" ? null
                 : StressScript.Parse(data.Stress(_flags.Scene).text)
                     .With(_flags.N, _flags.ViewWidth, _flags.Load, _flags.Seconds > 0 ? _flags.StartAt + _flags.Seconds + 1 : 0);
+            if (stress != null && Args.Get("--hold-at") is string holdAt)
+            {
+                var xy = holdAt.Split(',');
+                stress.HoldAt = new System.Numerics.Vector2(float.Parse(xy[0], CultureInfo.InvariantCulture), float.Parse(xy[1], CultureInfo.InvariantCulture));
+            }
+            _beautyEmpty = Args.Has("--beauty-empty");
+            _captureMask = Args.Has("--capture-mask") && !_beautyEmpty && _flags.CaptureVideo == null; // a mask frame would land in the video
             string layoutName = (stress != null ? stress.Layout : level.Layout) ?? "arena";
             var layout = data.Layout(layoutName) ?? data.Layout("arena");
-            var choreo = ChoreographyData.FromJson(data.annotations.text, data.roster.text, layout.text, data.footprints.text);
+            // The timeline navigates the density the arena scene is drawn at (TD15; the cold review's item 3).
+            var choreo = ChoreographyData.FromJson(data.annotations.text, data.roster.text, layout.text, data.footprints.text,
+                _arena != null ? _arena.Density : 0);
             var started = Time.realtimeSinceStartupAsDouble;
             _tl = stress == null
                 ? Choreographer.Run(SongMap.Parse(data.songMap.text), level, choreo)
@@ -156,6 +173,7 @@ namespace Demo3D.Runtime.Playback
             _fx = new EffectSystem(lib, Args.GetInt("--effect-pool", EffectSystem.DefaultPool), Args.GetInt("--light-pool", EffectLights.DefaultPool));
             _fx.AddCamera(_rig.Camera);
             _fxDriver = new EffectDriver(_tl, _fx, t => _typeAssets[t].kind == "elite" || _typeAssets[t].kind == "boss");
+            _fxDriver.OnlyAmbient = _beautyEmpty;
         }
 
         /// <summary>`--aa msaa4|taa|off` (performance.md: MSAA 4x until TD9 picks).</summary>
@@ -224,9 +242,41 @@ namespace Demo3D.Runtime.Playback
         void AfterCamera(UnityEngine.Rendering.ScriptableRenderContext context, Camera camera)
         {
             if (_capture == null || double.IsNaN(_captureAt) || _rig == null || camera != _rig.Camera) return;
+            int before = _capture.StillsWritten;
             _capture.Capture(_captureAt);
             _captureAt = double.NaN;
+            if (_captureMask && !_maskOn && _capture.StillsWritten > before) _maskAt = _capture.LastStillAt;
         }
+
+        /// <summary>
+        /// The ID render's frame (TD15's readability measure): only the crowd, drawn flat white
+        /// (CrowdSkinned's _Demo3DIdMask) on black. At E2 the set and the hero draw black with their depth
+        /// (LitStaticShadow), so a monster behind a tree or a wall is masked out; the ground, the
+        /// atmosphere's cards and particles are hidden; effects and post are off. At E0 (URP Lit kit) the
+        /// arena is hidden instead, without that occlusion.
+        /// </summary>
+        void MaskMode(bool on)
+        {
+            _maskOn = on;
+            Shader.SetGlobalFloat("_Demo3DIdMask", on ? 1f : 0f);
+            if (_arena != null)
+            {
+                if (_arena.Rung == Demo3D.Runtime.Arena.ArenaIndex.E2) _arena.SetIdMask(on);
+                else
+                {
+                    var scene = UnityEngine.SceneManagement.SceneManager.GetSceneByName(_arena.SceneName);
+                    if (scene.IsValid()) foreach (var go in scene.GetRootGameObjects()) go.SetActive(!on);
+                }
+                if (on) _maskBackground = _rig.Camera.backgroundColor;
+            }
+            if (on) _rig.Camera.backgroundColor = Color.black;
+            else if (_arena != null) _rig.Camera.backgroundColor = _maskBackground;
+            var data = _rig.Camera.GetComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
+            if (data != null) data.renderPostProcessing = !on;
+            if (on) _fx?.RemoveCamera(_rig.Camera); else _fx?.AddCamera(_rig.Camera);
+        }
+
+        Color _maskBackground;
 
         readonly System.Diagnostics.Stopwatch _evalWatch = new System.Diagnostics.Stopwatch();
         readonly System.Diagnostics.Stopwatch _drawWatch = new System.Diagnostics.Stopwatch();
@@ -239,7 +289,15 @@ namespace Demo3D.Runtime.Playback
             if (_quitNext) { Quit(); return; }
             _evalWatch.Reset();
             _drawWatch.Reset();
+            if (_maskOn) MaskMode(false);
             double t = (_flags.FreezeAt >= 0 ? _flags.FreezeAt : _clock.Now()) + _flags.TimeOffset;
+            if (!double.IsNaN(_maskAt))
+            {
+                t = _maskAt; // the still's frame again, as its ID render
+                _maskAt = double.NaN;
+                MaskMode(true);
+                _capture.ForceStill(t, "mask");
+            }
             SongTime = t;
             Activate(t);
 
@@ -252,6 +310,7 @@ namespace Demo3D.Runtime.Playback
             // must change only the horde), and the shadows fit the view before its punch, so the
             // cascades don't resize every frame after an accent (the demo systems' review).
             double feelT = t - _flags.TimeOffset;
+            Demo3D.Runtime.Arena.ArenaClock.Override = feelT; // the arena animates on song time, off the anchor's offset
             float punch = _feel != null && !_flags.NoFeel ? _feel.Punch(feelT) : 1f;
             _rig.Frame(new Vector2(framing.Focus.X, framing.Focus.Y), viewWidth * punch, viewWidth);
             if (_feel != null && !_flags.NoFeel) _rig.Camera.transform.position += _feel.Shake(feelT);
@@ -259,11 +318,11 @@ namespace Demo3D.Runtime.Playback
             foreach (var e in _active)
             {
                 var info = _tl.Entities[e];
-                if (info.Kind == EntityKind.Monster) _typeLists[info.Type].Add(e);
-                else if (info.Kind == EntityKind.Projectile && _fx == null) DrawProjectile(proj++, e, t);
+                if (info.Kind == EntityKind.Monster && !_beautyEmpty) _typeLists[info.Type].Add(e);
+                else if (info.Kind == EntityKind.Projectile && _fx == null && !_maskOn) DrawProjectile(proj++, e, t); // no stand-in spheres in the ID render
             }
             for (int i = proj; i < _projectiles.Count; i++) _projectiles[i].SetActive(false);
-            if (_fx != null)
+            if (_fx != null && !_maskOn)
             {
                 _fx.BeginFrame();
                 _fxDriver.Frame(t);
@@ -302,14 +361,15 @@ namespace Demo3D.Runtime.Playback
             var heroState = _eval.Evaluate(0, t, _heroStride, _hero.clips[_heroWalk].length, 0);
             var heroInst = _heroRenderer.Instances(0, 1);
             heroInst[0] = ToInstance(heroState, _hero, -1, 0);
-            _heroRenderer.Draw(_rig.Camera);
+            if (!_maskOn) _heroRenderer.Draw(_rig.Camera);
+            Demo3D.Runtime.Arena.CanopyFade.SetHero(heroState.Position); // TD15: canopies near the hero dither out
 
             _captureAt = _capture != null ? t : double.NaN; // read back once URP has drawn it
             WriteStats(t);
             _lastWall = Time.realtimeSinceStartupAsDouble;
             _clock.EndFrame();
             // Quit on the next frame, so this frame is drawn (and captured) first.
-            if (t >= _endAt || (_capture != null && _capture.Done && _flags.CaptureVideo == null))
+            if (t >= _endAt || (_capture != null && _capture.Done && _flags.CaptureVideo == null && double.IsNaN(_maskAt) && !_maskOn))
                 _quitNext = true;
         }
 

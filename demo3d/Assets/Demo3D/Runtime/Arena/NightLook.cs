@@ -26,6 +26,18 @@ namespace Demo3D.Runtime.Arena
             RenderSettings.fogColor = l.FogColor;
             RenderSettings.fogDensity = l.FogDensity;
             RenderSettings.skybox = null;
+            // `--crowd-fill f` and `--crowd-rim r,g,b` override them in a player, for tuning against the readability measure.
+            float fill = Args.GetFloat("--crowd-fill", l.CrowdFill);
+            var rim = (Vector4)l.CrowdRim;
+            var rimArg = Args.Get("--crowd-rim");
+            if (!string.IsNullOrEmpty(rimArg))
+            {
+                var v = rimArg.Split(',');
+                rim = new Vector4(float.Parse(v[0], System.Globalization.CultureInfo.InvariantCulture), float.Parse(v[1], System.Globalization.CultureInfo.InvariantCulture),
+                    float.Parse(v[2], System.Globalization.CultureInfo.InvariantCulture), 0);
+            }
+            Shader.SetGlobalFloat("_Demo3DCrowdFill", fill);
+            Shader.SetGlobalVector("_Demo3DCrowdRim", rim);
         }
 
         /// <summary>The camera clears to the fog's colour, so the arena's far edge fades into it.</summary>

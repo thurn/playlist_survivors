@@ -1,0 +1,6 @@
+{
+  "_comment": "TD15: S0 at rung E2, density 4x, with the art pass (ground dressing, landmarks, mist, runes, glow pools, the canopy fade, and the ambient fireflies and wisps on the effect runtime): the environment's ceiling (performance.md: GPU p99 <= 1.5 ms, main and render <= 1.7 ms) at 4x, for the headroom step.",
+  "scene": "S0", "seconds": 20, "warmup": 5, "rewarm": 3,
+  "n": { "fixed": [0] }, "viewWidthM": [40, 55], "load": ["demo"], "aa": ["msaa4"], "jobWorkers": 6,
+  "sceneOptions": { "rung": "e2", "density": 4 }
+}

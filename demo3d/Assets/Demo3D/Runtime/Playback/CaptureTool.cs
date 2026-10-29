@@ -27,6 +27,10 @@ namespace Demo3D.Runtime.Playback
         byte[] _frame;
         public int FramesWritten { get; private set; }
         public int StillsWritten { get; private set; }
+        /// <summary>The song time of the last still kept from the still times (not forced ones).</summary>
+        public double LastStillAt { get; private set; } = double.NaN;
+        string _forced;   // a still forced for the next capture (TD15's ID masks): its file prefix, always PNG
+        double _forcedAt;
 
         public CaptureTool(Camera camera, string stillDir, string stillTimes, string videoPath)
         {
@@ -89,7 +93,8 @@ namespace Demo3D.Runtime.Playback
         /// </summary>
         public void Capture(double t)
         {
-            bool still = _stillTimes.Count > 0 && t + 1e-6 >= _stillTimes[0];
+            bool forced = _forced != null;
+            bool still = forced || (_stillTimes.Count > 0 && t + 1e-6 >= _stillTimes[0]);
             if (!_pipe && !still) return;
             if (_resolved != null) Graphics.Blit(_target, _resolved);
             var req = AsyncGPUReadback.Request(_resolved != null ? _resolved : _target, 0, TextureFormat.RGBA32);
@@ -104,16 +109,17 @@ namespace Demo3D.Runtime.Playback
             }
             if (still)
             {
-                double at = _stillTimes[0];
-                _stillTimes.RemoveAt(0);
+                double at = forced ? _forcedAt : _stillTimes[0];
+                if (!forced) { _stillTimes.RemoveAt(0); LastStillAt = at; }
                 var tex = new Texture2D(Width, Height, TextureFormat.RGBA32, false);
                 tex.LoadRawTextureData(data);
                 tex.Apply();
                 // PNG for A/B scoring (no JPEG noise in the FLIP scores), JPEG for evidence.
-                var ext = Args.Get("--stills-format", "jpg") == "png" ? "png" : "jpg";
-                var name = string.Format(CultureInfo.InvariantCulture, "still-{0:000.000}.{1}", at, ext);
+                var ext = forced || Args.Get("--stills-format", "jpg") == "png" ? "png" : "jpg";
+                var name = string.Format(CultureInfo.InvariantCulture, "{0}-{1:000.000}.{2}", forced ? _forced : "still", at, ext);
                 RenderTag.Save(tex, Path.Combine(_stillDir ?? "captures", name), "capture tool t=" + at.ToString("F3", CultureInfo.InvariantCulture));
-                SaveCrop(tex, at);
+                if (!forced) SaveCrop(tex, at);
+                _forced = null;
                 UnityEngine.Object.Destroy(tex);
                 StillsWritten++;
             }
@@ -149,7 +155,14 @@ namespace Demo3D.Runtime.Playback
             UnityEngine.Object.Destroy(crop);
         }
 
-        public bool Done => !_pipe && _stillTimes.Count == 0;
+        /// <summary>Keeps the next capture as `<prefix>-<at>.png` whatever the still times say (TD15's ID mask of the still just taken).</summary>
+        public void ForceStill(double at, string prefix)
+        {
+            _forced = prefix;
+            _forcedAt = at;
+        }
+
+        public bool Done => !_pipe && _stillTimes.Count == 0 && _forced == null;
 
         public void Dispose()
         {

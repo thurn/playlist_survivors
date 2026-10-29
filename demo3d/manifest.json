@@ -402,6 +402,27 @@
     },
     {
       "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Environment/SM_Env_Moss_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "c46e5eab5ae387a46b104decca3669d6",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Environment/SM_Env_Moss_02.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "909e62e4de82b2944bbd2e47b1467a53",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Environment/SM_Env_Moss_03.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "2f4e14677d461564689eb2057c164d17",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
       "path": "Assets/PolygonDarkFantasy/Prefabs/Environment/SM_Env_Tree_Dead_01.prefab",
       "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
       "guid": "649cfd5a63de1c14da210383152753da",
@@ -563,6 +584,27 @@
     },
     {
       "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/Flowers/SM_Env_Pebbles_01.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "c3407d5db18ac3e44b80246efa1e5d14",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/Flowers/SM_Env_Pebbles_02.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "8ca7a4f5479c8ca47907b74074d7b578",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/Flowers/SM_Env_Pebbles_03.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "d173ed9340ea0cc4da72193d5546e781",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
       "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Bush_01.prefab",
       "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
       "guid": "86acfcdc44f21094f971b4d64c013360",
@@ -609,6 +651,62 @@
       "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
       "guid": "f4bb209e0f8a9cb4c805c01b413130bf",
       "use": "kit: edge-band bushes, ferns, flowers"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Flowers_Clump_01.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "61506e0617662a44b8ecd3cbcb532dc1",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Flowers_Clump_02.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "75166a8e729698c46a14985a7f0469a6",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Footpath_Stone_01.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "3591fea9804d55645ae7aa0c819824d3",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Footpath_Stone_02.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "1f782decbb282824580535d85f82ef7c",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Footpath_Stone_03.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "8a295e89ab0aae4439843fcb4c0d2b7c",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Leaves_Clump_01.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "a182711bf83413f4dab69ee86f0b3f81",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Leaves_Clump_02.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "d68c169168c3d954ba801d9d15a957c1",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Leaves_Clump_03.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "984d30487d366bc45a8c727c08f4e184",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
     },
     {
       "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
@@ -672,6 +770,62 @@
       "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
       "guid": "91f7280ce4074b7408a194ed006873db",
       "use": "kit: elven and glowing trees (landmarks)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/FX/FX_Fireflies_01.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "56bd6cc8dd2838a4287f77146fd63462",
+      "use": "effect candidate: ambient fireflies and mist"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/FX/FX_Fog_Large_01.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "8a480d63f1de6bb47aaf7d0e0b0093b1",
+      "use": "effect candidate: ambient fireflies and mist"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/FX/FX_Magic_Lights_01.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "bfa7361dd2bd6a0459a7efb5471c1db4",
+      "use": "effect candidate: ambient fireflies and mist"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Props/SM_Prop_Lamp_Post_01.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "c2cdbca594efea349a3d9e0f8decae73",
+      "use": "kit: elven lamps, shrines and wells (landmarks)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Props/SM_Prop_Lantern_01.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "870704362dcf6224ba95b23f0ad2b2f7",
+      "use": "kit: elven lamps, shrines and wells (landmarks)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Props/SM_Prop_Magic_Well_01.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "b90aab22f8c55474aa7089a3d4c98ab3",
+      "use": "kit: elven lamps, shrines and wells (landmarks)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Props/SM_Prop_OfferingShrine_01.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "b8a1328018f21fe458a53028a5f37167",
+      "use": "kit: elven lamps, shrines and wells (landmarks)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Props/SM_Prop_Pedestal_01.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "46b635a159bc5e84c8930a815e3720dc",
+      "use": "kit: elven lamps, shrines and wells (landmarks)"
     },
     {
       "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",

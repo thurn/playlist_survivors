@@ -32,6 +32,7 @@ namespace Demo3D.Runtime.Playback
         public string Stats;          // --stats <file.csv>: on-screen counts against targets, twice a second
         public string Arena = "e2";   // --arena <e0|e2|off>: the arena's rung (TD9), or TD4's flat bench ground
         public float Density = 1f;    // --density <0.5|1|2|4>: the arena's decoration density
+        public Demo3D.Runtime.Arena.ArenaOptions ArenaOptions; // --arena, --density and TD14's --grd, --merged, --tex-cap, --prepass
         // --cuts default|none|all|name,-name (TD11's cuts; Demo3D.Runtime.Cuts reads it), --lod-px, --light-cell, --merge-px
 
         public static DevFlags FromCommandLine()
@@ -65,6 +66,9 @@ namespace Demo3D.Runtime.Playback
                 TimeOffset = Args.GetFloat("--time-offset", 0f),
                 PoseRate = Args.GetFloat("--pose-rate", 0f),
             };
+            f.ArenaOptions = Demo3D.Runtime.Arena.ArenaOptions.FromCommandLine(Demo3D.Runtime.Arena.ArenaOptions.Final());
+            f.Arena = f.ArenaOptions.Rung;
+            f.Density = f.ArenaOptions.Density;
             if (f.CaptureStills != null || f.CaptureVideo != null) f.FixedTime = true;
             return f;
         }
