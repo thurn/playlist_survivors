@@ -292,7 +292,52 @@ Not started.
 
 ### PX4
 
-Not started.
+Done (bead ps-tfn.1.7). Commits: `0861154f` (the data and the core's additions), and this
+notes commit. [Evidence](../../demo2d/evidence/px4/README.md).
+
+- **The data,** under `demo2d/Assets/Demo2D/Data/`:
+  - `roster.json`, the catalog: the 13 types' ranks, footprint radii, gait steps, reach and
+    hit points, the hero's five combos, three projectiles and four spells. Each type also
+    names its pack, frame prefix and game height (grunts 48 to 58 px, elites 88 to 92, the
+    boss 168) for PX3's baker, which may revise them; the sim ignores those fields.
+  - `placeholder-annotations.json`: one entry per clip the choreography uses, naming the
+    pack's frame sequence and its frame count, timed at a placeholder 30 fps until PX3
+    measures them. Monsters walk with `walk`, attack with `skill_1`, flinch with `hit_1`.
+    The hero's slashes are knight_male's `skill_1` and `skill_2`, the spin reuses `skill_1`,
+    the slam is `jump` and the shield bash (which replaces demo3d's thrust) `hit_defensive`;
+    PX3 and PX8 may pick others. `ChoreographyFiles` prefers PX3's `clip-annotations.json`
+    once it exists.
+  - `open-ground-layout.json`: the arena's areas as goals (camp glade, old stump, moss
+    clearing, stone bridge, cliff ledge, great clearing) on open ground, closer together
+    than demo3d's so the hero reaches four of the six goals; PX6 places them in the arena.
+  - `action-level.json`: demo3d's sections, loads and grids, the 2D roster's mix (grunts,
+    then waves, casters from drop-1, elites from groove-2, the boss at the final peak), views
+    from the base 30 m to the climax's 40.5 m, the beam sweep for the laser.
+- **Core additions** (both demos can use them; demo3d's song dump is still `09945e3b…`):
+  - **The view's pitch** (`viewPitchDeg` in the level script, `ViewGeometry`'s optional
+    pitch, `Timeline.View`): at 90° the counted and spawned-around view is the top-down
+    16:9 rectangle instead of demo3d's 55° trapezoid. The pitch is not in the dump, so
+    demo3d's stays identical.
+  - **Casters:** a monster type with a `projectile` attacks from its reach; the blow
+    releases the projectile on the beat and it lands on the first eighth note it can reach,
+    where the hero parries it (choreography.md, "A monster within reach attacks").
+  - **`TimelineChecks`:** demo3d's generic timeline rules moved from its tests into the
+    package, so both demos' tests run the same checks; plus the section-count check below.
+    demo3d's tests now call them (122 pass).
+- **"demo3d's tolerance"** for the section counts: `TimelineChecks.SectionsHoldTheirTargets`
+  checks pulsed sections after the opening whose target is at least the previous section's,
+  within 25%, what demo3d's own song holds (its `build` averages 77% of its target).
+  demo2d's worst held section is `build` at 87%; the climax averages 399 at 40.5 m.
+- **Facing** stays the core's yaw; quantizing it to left or right is PX5's.
+- **Casters' bolts** that leave just before a free section fly until its next accent, up to
+  1.6 s (about 20 of 1,610); PX8 may thin casters' attacks there if it reads badly.
+- **Unity:** demo2d has no project until PX1, so its EditMode run waits for PX1 (the asmdefs
+  and `.meta` files are in place). demo3d's EditMode run (cold Library,
+  windowless): its choreography assembly 122 of 122; 83 other passes, 10 skipped for this
+  worktree's missing bake, 0 failed.
+- **Self-review:** re-read the diff against `origin/staging`. The core's changes are opt-in
+  (default pitch 55°, no `projectile` on demo3d's types), and the moved checks keep their
+  conditions; `Parry` is the old inline block unchanged.
 
 ### PX5
 
