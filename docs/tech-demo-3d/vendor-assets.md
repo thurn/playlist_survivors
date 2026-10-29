@@ -123,7 +123,9 @@ More rules:
     unknown version or an entry without both hashes fails every check, and
     so does one that lacks a GUID the tracked manifest lists.
   - A **derived record** beside it holds the hashes and GUIDs of every file
-    in each worktree's `Assets/Baked/` and of the song's source. The guard
+    in each worktree's `Assets/Baked/` and `Assets/Vendor/` (Unity rewrites
+    some vendor files on import, such as demo2d's binary Spine clips, which
+    it re-serializes as YAML; PX2) and of the song's source. The guard
     adds to it before each check and never removes from it. An edited copy
     of a vendor file with new bytes and a fresh GUID can't be recognized;
     the binary rule and the gitignored folders are the defense there.
@@ -161,7 +163,8 @@ Since PX1 the same guard and tools also cover the
 - **`demo2d/` is under every rule `demo3d/` is under:** its `Assets/Vendor/`
   and `Assets/Baked/` are gitignored and refused; binaries under it fail
   unless they are tagged renders under `demo2d/evidence/`; a missing record
-  fails changes under it; the derived record adds its `Assets/Baked/`; and
+  fails changes under it; the derived record adds its `Assets/Baked/` and
+  `Assets/Vendor/`; and
   the stale-record check reads `demo2d/manifest.json` too.
 - **The shared Unity package is code only:** binaries under
   `unity-packages/`, which both demos import, fail as they do under a demo.

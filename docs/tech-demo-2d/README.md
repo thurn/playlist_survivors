@@ -265,7 +265,9 @@ edited prefabs), build or song audio ever reaches git. This demo adds:
   generated project files, mirroring demo3d's `.gitignore` lines.
 - **The guard covers `demo2d/`** exactly as it covers `demo3d/`: the binary
   rule (with the `ps-render` tag exception for evidence stills), the record's
-  GUIDs and hashes, and the derived record of `demo2d/Assets/Baked/`.
+  GUIDs and hashes, and the derived record of `demo2d/Assets/Baked/` and
+  `demo2d/Assets/Vendor/` (Unity re-serializes the packs' binary clips as
+  YAML on import, so those copies match no source file; PX2).
 - **A manifest,** `demo2d/manifest.json`, lists every vendor asset the demo
   uses, synced by the same tool.
 

@@ -534,6 +534,26 @@ def test_demo2d_derived_files_are_recorded_and_caught_elsewhere(
     assert any(r.startswith(f"GUID {'d' * 32}") for r in meta)
 
 
+def test_vendor_files_unity_rewrote_are_recorded_and_caught_elsewhere(
+        repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Unity re-serializes demo2d's binary .anim clips as YAML on import: new bytes, no GUID."""
+    from demo3d_tools import derived
+
+    cache = tmp_path / "cache"
+    cache.mkdir()
+    (cache / "sync-record.json").write_text(json.dumps({"version": 1, "files": []}))
+    (cache / "roots.json").write_text(json.dumps(
+        {**no_vendor_roots(tmp_path), "song": str(tmp_path / "no-song.mp3")}))
+    monkeypatch.setenv("DEMO3D_CACHE", str(cache))
+    clips = repo / "demo2d" / "Assets" / "Vendor" / "Skeleton" / "skeleton"
+    clips.mkdir(parents=True)
+    (clips / "death.anim").write_text("%YAML 1.1\nAnimationClip:\n  m_Name: death\n")
+    assert derived.refresh(repo, cache / "derived-record.json") == 1
+    add(repo, "demo2d/Assets/Demo2D/Art/death.anim", (clips / "death.anim").read_bytes())
+    fails = failures(guard.run("index", repo, None, None, None))
+    assert "derived: demo2d/Assets/Vendor/Skeleton/skeleton/death.anim" in fails["demo2d/Assets/Demo2D/Art/death.anim"]
+
+
 def test_launcher_without_tools_refuses_demo_changes_only(repo: Path, tmp_path: Path) -> None:
     """A checkout without demo3d/tools (master) refuses pushes touching the demo's paths."""
     tools = Path(__file__).resolve().parents[1]

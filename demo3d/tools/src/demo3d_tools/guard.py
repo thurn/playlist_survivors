@@ -20,8 +20,8 @@ one of the machine's asset folders (a top-level folder of `unity_assets` or `pix
 `.meta` GUID it lacks, such as a pack copied in, or a root added, since the last sync).
 
 Besides the sync record, the guard reads the derived record: the hashes and GUIDs of every file
-in this worktree's demos' Assets/Baked/ and of the song's source, which it refreshes before each
-check. Derived files that are edited copies with fresh GUIDs and new bytes can't be recognized;
+in this worktree's demos' Assets/Baked/ and Assets/Vendor/ (where Unity may rewrite a vendor file
+on import) and of the song's source, which it refreshes before each check. Derived files that are edited copies with fresh GUIDs and new bytes can't be recognized;
 the binary rule and the gitignored folders are the defense there.
 """
 
