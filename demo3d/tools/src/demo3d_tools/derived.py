@@ -27,11 +27,16 @@ META_GUID = re.compile(rb"^guid:\s*([0-9a-fA-F]{32})", re.MULTILINE)
 
 
 def _write_json(path: Path, data: object) -> None:
-    """Writes atomically: checks in several worktrees run concurrently."""
+    """Writes atomically: checks in several worktrees run concurrently. On Windows the replace
+    fails while another check reads the file; the next check writes it instead (this one
+    checks against its own entries anyway)."""
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
     tmp.write_text(json.dumps(data), encoding="utf-8")
-    os.replace(tmp, path)
+    try:
+        os.replace(tmp, path)
+    except PermissionError:
+        tmp.unlink(missing_ok=True)
 
 
 def _hashes(path: Path, cache: dict, key: str) -> tuple[str, str]:
