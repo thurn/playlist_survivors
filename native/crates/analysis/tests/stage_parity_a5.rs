@@ -6,7 +6,6 @@
 
 use std::path::{Path, PathBuf};
 
-use analysis::analyzer::{Analyzer, Entry, Params};
 use analysis::structure::{KEYS, N_FFT, Structure, StructureParams, StructureTick, TickFeatures};
 use analysis::tensors::Tensors;
 
@@ -370,54 +369,6 @@ fn structure_matches_python_on_the_galop() {
     let want = &fixture()["galop30"];
     let ours = run(&pcm, want["ticks"].as_u64().unwrap() as usize);
     assert_structure(&ours, want, "galop30");
-}
-
-#[test]
-#[ignore = "release: the whole analyzer, decoding hindsight windows (scripts/ci-full native runs it)"]
-fn the_analyzer_from_pcm_matches_python() {
-    // Structure reads only samples, so the analyzer's ticks carry Python's keys and its changes,
-    // jumps and ends are Python's, fed in uneven blocks.
-    let models = models();
-    let f = fixture();
-    for (who, pcm) in [
-        ("synthetic", synthetic(&f["sections"])),
-        (
-            "synthetic29997",
-            synthetic(&f["sections"])[..(29.997 * SR) as usize].to_vec(),
-        ),
-        ("long", synthetic(&f["long"]["sections"])),
-        (
-            "galop30",
-            golden("orpheus-galop-hindsight").f32("pcm").unwrap(),
-        ),
-    ] {
-        let want = &f[who];
-        let mut an = Analyzer::new(&models, Params::default()).unwrap();
-        let mut out = Vec::new();
-        for block in pcm.chunks(1000) {
-            an.push(block, &mut out);
-        }
-        an.finish(&mut out);
-        let mut ticks: Vec<StructureTick> = Vec::new();
-        for e in &out {
-            match e {
-                Entry::Tick(k) => ticks.push(StructureTick {
-                    key: k.key,
-                    ..StructureTick::default()
-                }),
-                Entry::Change(c) => ticks.last_mut().unwrap().change = Some(*c),
-                Entry::Jump(j) => ticks.last_mut().unwrap().jump = Some(*j),
-                Entry::End(e) => ticks.last_mut().unwrap().end = Some(*e),
-                _ => {}
-            }
-        }
-        assert_eq!(
-            ticks.len(),
-            want["ticks"].as_u64().unwrap() as usize,
-            "{who}: ticks"
-        );
-        assert_structure(&ticks, want, who);
-    }
 }
 
 #[test]

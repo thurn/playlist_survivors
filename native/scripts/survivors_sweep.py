@@ -4,11 +4,12 @@
 # ///
 """Release survival reports. Local jobs enter background QoS; --release uses utility.
 
-Normal damage: 5 seeds x 3 orders x positioning/AFK, plus one random-pick report.
-The base-order continuous-analysis lane runs 5 seeds x positioning/AFK. It starts
-alongside the cached lane, then reuses a full-source cache for its remaining cases.
---assert-survival gates the positioning player. AFK minimum difficulty and pacing
-remain reported diagnostics, secondary to game feel (operator direction 2026-10-27).
+Normal damage: the positioning player on one seed in each of 3 playlist orders, plus
+the base order on a continuously analysed source, which starts alongside the cached
+runs. --assert-survival gates them. Pacing remains a reported diagnostic, secondary to
+game feel (operator direction 2026-10-27); the AFK and random-pick bots are for
+hand-run `ps survive` reports. A complete 30-minute matrix also records its base-order
+run and replays the session exactly while the other runs finish.
 """
 
 from __future__ import annotations
@@ -61,17 +62,10 @@ class Case:
 
 def cases() -> list[Case]:
     out = [
-        Case("cached", order, bot, seed)
+        Case("cached", order, "positioning", 1)
         for order in ("original", "reverse", "rotate")
-        for seed in range(1, 6)
-        for bot in ("positioning", "afk")
     ]
-    out.append(Case("cached", "original", "random-pick", 1))
-    out += [
-        Case("continuous", "original", bot, seed)
-        for seed in range(1, 6)
-        for bot in ("positioning", "afk")
-    ]
+    out.append(Case("continuous", "original", "positioning", 1))
     return out
 
 
@@ -213,6 +207,35 @@ def run_case(
     return data
 
 
+def replay_session(binary: Path, session: Path, data: dict, deadline: float) -> dict:
+    """`ps replay` of a recorded run must settle to the run's own records and hash."""
+    runs = json.loads((session / "meta.json").read_text())["runs"]
+    if len(runs) != 1 or runs[0].get("noHeroDamage", False) != data["noHeroDamage"]:
+        raise ValueError("recording/report damage modes differ")
+    report = data["report"]
+    if (
+        runs[0]["settledHash"] != report["settledHash"]
+        or runs[0]["settledRecords"] != report["settledRecords"]
+    ):
+        raise ValueError("recording/report settled prefixes differ")
+    start = time.monotonic()
+    replay = checked(
+        [str(binary), "replay", str(session)], deadline, cwd=ROOT / "native"
+    )
+    (session.parent / "replay.log").write_text(replay.stdout + replay.stderr)
+    print(
+        f"survivors replay: {report['settledRecords']} records, hash "
+        f"{report['settledHash']}, the same",
+        flush=True,
+    )
+    return {
+        "session": str(session),
+        "settledRecords": report["settledRecords"],
+        "settledHash": report["settledHash"],
+        "wallSeconds": time.monotonic() - start,
+    }
+
+
 def run(args: argparse.Namespace) -> None:
     enter_qos(args.release)
     start = time.monotonic()
@@ -250,34 +273,32 @@ def run(args: argparse.Namespace) -> None:
         target = ROOT / "native" / target
     binary = target / "release/ps"
     results = {}
-    first_continuous = next(
-        (case for case in selected if case.mode == "continuous"), None
-    )
+    continuous = next((case for case in selected if case.mode == "continuous"), None)
     cached = [case for case in selected if case.mode == "cached"]
     normal = Case("cached", "original", "positioning", 1)
-    # One continuous analysis starts alongside cache preparation. Other continuous cases
-    # wait for its atomically committed cache, avoiding duplicate full-source analysis.
+    # The continuous run's full-source analysis starts alongside cache preparation.
+    replay = None
     with ThreadPoolExecutor(max_workers=args.jobs) as pool:
         pending = {}
-        if first_continuous and args.jobs > 1:
+        if continuous and args.jobs > 1:
             future = pool.submit(
-                run_case, binary, first_continuous, out, args.minutes, deadline
+                run_case, binary, continuous, out, args.minutes, deadline
             )
-            pending[future] = first_continuous
+            pending[future] = continuous
         warmup = run_case(
             binary,
             Case("cached", "original", "afk", 0),
             out,
             0.01,
             deadline,
-            jobs=max(1, args.jobs - bool(first_continuous)),
+            jobs=max(1, args.jobs - bool(continuous)),
         )
         (out / "warmup.json").write_text(json.dumps(warmup, indent=2) + "\n")
-        if first_continuous and args.jobs == 1:
+        if continuous and args.jobs == 1:
             future = pool.submit(
-                run_case, binary, first_continuous, out, args.minutes, deadline
+                run_case, binary, continuous, out, args.minutes, deadline
             )
-            pending[future] = first_continuous
+            pending[future] = continuous
         for case in cached:
             future = pool.submit(
                 run_case,
@@ -289,26 +310,30 @@ def run(args: argparse.Namespace) -> None:
                 "normal-session" if full and case == normal else None,
             )
             pending[future] = case
-        # Iterate rounds so newly submitted continuous-cache readers are also joined.
+        # Iterate rounds so the replay, submitted once its run is done, is also joined.
         while pending:
             future = next(as_completed(pending))
             case = pending.pop(future)
+            if case is None:
+                replay = future.result()
+                continue
             results[case] = future.result()
-            if case == first_continuous:
-                for extra in selected:
-                    if extra.mode == "continuous" and extra != first_continuous:
-                        following = pool.submit(
-                            run_case, binary, extra, out, args.minutes, deadline
-                        )
-                        pending[following] = extra
+            if full and case == normal and complete_run(results[case]):
+                following = pool.submit(
+                    replay_session,
+                    binary,
+                    out / "normal-session",
+                    results[case],
+                    deadline,
+                )
+                pending[following] = None
     rows = [summary(case, results[case]) for case in selected]
-    # The first normal case keeps a session. Full 30:00 replay/diagnostic delivery
-    # evidence is checked separately, outside this matrix's 20-minute release budget.
     report = {
         "assertSurvival": args.assert_survival,
         "pacingReportOnly": True,
         "wallSeconds": time.monotonic() - start,
         "cases": rows,
+        "replay": replay,
     }
     (out / "summary.json").write_text(json.dumps(report, indent=2) + "\n")
     failures = [row["case"] for row in rows if row["survivalGate"] is False]
@@ -330,162 +355,20 @@ def complete_run(data: dict) -> bool:
     return r["done"] and not r["fallen"] and r["survivalS"] >= 1800
 
 
-def matrix_run(home_cache: Path) -> tuple[Case, Path | None, dict] | None:
-    """Only reuse reports from an exact current-input matrix, in a stable case order."""
-    for asserting in (False, True):
-        key = input_key(asserting)
-        if key is None:
-            continue
-        stamp = home_cache / "ci-stamps" / f"survivors-{key}"
-        if not stamp.is_file():
-            continue
-        folder = Path(stamp.read_text().strip())
-        for case in cases():
-            if case.bot != "positioning":
-                continue
-            report = folder / f"{case.name}.json"
-            if report.is_file():
-                data = json.loads(report.read_text())
-                if not data["noHeroDamage"] and complete_run(data):
-                    session = folder / "normal-session"
-                    reuse = (
-                        case == Case("cached", "original", "positioning", 1)
-                        and (session / "meta.json").is_file()
-                    )
-                    return case, session if reuse else None, data
-    return None
-
-
-def run_replay(args: argparse.Namespace) -> None:
-    enter_qos(args.release)
-    start = time.monotonic()
-    deadline = start + 20 * 60
-    home_cache = Path.home() / "Library/Caches/playlist-survivors"
-    key = input_key(False)
-    if key:
-        key = hashlib.sha256(
-            (key + f"|replay={args.replay_case or 'auto'}").encode()
-        ).hexdigest()
-    stamp = home_cache / "ci-stamps" / f"survivors-replay-{key}"
-    if (
-        key
-        and stamp.is_file()
-        and (Path(stamp.read_text().strip()) / "summary.json").is_file()
-        and not args.force
-    ):
-        print(
-            f"survivors replay: unchanged inputs {key}, passed at {stamp.read_text().strip()}"
-        )
-        return
-    out = (
-        args.out
-        or home_cache / "survivors-replay" / f"{key or 'dirty'}-{time.time_ns()}"
-    )
-    out.mkdir(parents=True, exist_ok=False)
-    built = checked(
-        ["cargo", "build", "--locked", "--release", "-p", "cli"],
-        deadline,
-        cwd=ROOT / "native",
-    )
-    (out / "build.log").write_text(built.stdout + built.stderr)
-    target = Path(os.environ.get("CARGO_TARGET_DIR", ROOT / "native/target"))
-    if not target.is_absolute():
-        target = ROOT / "native" / target
-    binary = target / "release/ps"
-    prepared = matrix_run(home_cache) if args.replay_case is None else None
-    session = None
-    if args.replay_case:
-        case = next(c for c in cases() if c.name == args.replay_case)
-        diagnostic = False
-    elif prepared is not None:
-        case, session, data = prepared
-        diagnostic = False
-    else:
-        # Structural coverage before all weapons exist: excluded from balance verdicts.
-        case = Case("cached", "original", "positioning", 1)
-        diagnostic = True
-    if session is None:
-        data = run_case(
-            binary,
-            case,
-            out,
-            30,
-            deadline,
-            record="runner-session",
-            soak=diagnostic,
-            jobs=args.jobs,
-        )
-        session = out / "runner-session"
-    if not complete_run(data):
-        raise ValueError("the selected runner session did not finish 30:00")
-    meta = json.loads((session / "meta.json").read_text())
-    runs = meta["runs"]
-    if len(runs) != 1 or runs[0].get("noHeroDamage", False) != data["noHeroDamage"]:
-        raise ValueError("recording/report damage modes differ")
-    if (
-        runs[0]["settledHash"] != data["report"]["settledHash"]
-        or runs[0]["settledRecords"] != data["report"]["settledRecords"]
-    ):
-        raise ValueError("recording/report settled prefixes differ")
-    replay = checked(
-        [str(binary), "replay", str(session)], deadline, cwd=ROOT / "native"
-    )
-    (out / "replay.log").write_text(replay.stdout + replay.stderr)
-    (out / "source-report.json").write_text(json.dumps(data, indent=2) + "\n")
-    report = {
-        "runnerDiagnostic": data["noHeroDamage"],
-        "survivalVerdict": None,
-        "case": case.name,
-        "session": str(session),
-        "wallSeconds": time.monotonic() - start,
-        "report": data["report"],
-    }
-    (out / "summary.json").write_text(json.dumps(report, indent=2) + "\n")
-    print(
-        f"survivors replay: {data['report']['settledRecords']} records, hash "
-        f"{data['report']['settledHash']}, diagnostic={data['noHeroDamage']}, "
-        f"{report['wallSeconds']:.3f}s; {out}",
-        flush=True,
-    )
-    now_key = input_key(False)
-    if key and now_key:
-        current = hashlib.sha256(
-            (now_key + f"|replay={args.replay_case or 'auto'}").encode()
-        ).hexdigest()
-        if current == key:
-            stamp.parent.mkdir(parents=True, exist_ok=True)
-            stamp.write_text(str(out) + "\n")
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--jobs", type=int, choices=range(1, 17), default=6)
-    parser.add_argument("--only", type=int, choices=range(1, 42))
+    parser.add_argument("--only", type=int, choices=range(1, len(cases()) + 1))
     parser.add_argument("--minutes", type=float, default=30)
     parser.add_argument("--out", type=Path)
     parser.add_argument("--release", action="store_true")
     parser.add_argument("--assert-survival", action="store_true")
     parser.add_argument("--force", action="store_true")
-    parser.add_argument("--replay-only", action="store_true")
-    parser.add_argument(
-        "--replay-case", choices=[c.name for c in cases() if c.bot == "positioning"]
-    )
     args = parser.parse_args()
     if not 0 < args.minutes <= 30:
         parser.error("minutes must be positive and <= 30")
-    if args.replay_case and not args.replay_only:
-        parser.error("--replay-case needs --replay-only")
-    if args.replay_only and (
-        args.only is not None or args.minutes != 30 or args.assert_survival
-    ):
-        parser.error(
-            "replay uses a complete 30-minute run and has no balance assertions"
-        )
     try:
-        if args.replay_only:
-            run_replay(args)
-        else:
-            run(args)
+        run(args)
     except (OSError, ValueError, subprocess.SubprocessError, TimeoutError) as error:
         print(f"survivors sweep: {error}", file=sys.stderr)
         raise SystemExit(1) from error

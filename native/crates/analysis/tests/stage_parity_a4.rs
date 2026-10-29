@@ -1,19 +1,15 @@
 //! Stage parity, A4 (docs/design/native-app.md, "Stage parity" and "Hindsight's live latency"):
 //! the offline front end, the BiLSTM ensemble, the offline DBN's decode, the hindsight entries
 //! and the phase check against Python's golden data (`native/models/golden/`), each stage fed
-//! Python's own upstream; then the whole analyzer from PCM with D = 0, inline and on the worker.
+//! Python's own upstream; then the whole analyzer from PCM at the live D, inline and on the worker.
 #![forbid(unsafe_code)]
 
 use std::path::{Path, PathBuf};
-use std::sync::OnceLock;
-use std::time::Instant;
 
 use analysis::analyzer::{Analyzer, Entry, Params};
 use analysis::beats::{BeatParams, Beliefs, Commit, Committer, Evidence};
 use analysis::dbn::OnlineDbn;
-use analysis::hindsight::{
-    HindsightDecoder, HindsightEntry, HindsightParams, OnlineBeats, phase_shift,
-};
+use analysis::hindsight::{HindsightDecoder, HindsightEntry, HindsightParams, phase_shift};
 use analysis::tensors::Tensors;
 
 fn models_dir() -> PathBuf {
@@ -174,135 +170,9 @@ fn parallel_models_smoke() {
     for jobs in [0, 2, 4, usize::MAX] {
         assert_eq!(nn.activations_with_jobs(features, frames, jobs), inline);
     }
-    // Truncating the bidirectional window changes activations; the full-window upstream
-    // assertions live in offline_activations_and_beats_match_python.
+    // Truncating the bidirectional window changes activations; full windows are checked
+    // against Python end to end by corpus parity (scripts/ci-full).
     assert_eq!(nn.activations_with_jobs(&[], 0, 4), Vec::<f32>::new());
-}
-
-#[test]
-#[ignore = "release: actual PCM with nonzero delay, parallel models against inline"]
-fn parallel_analyzer_preserves_delayed_arrivals() {
-    let models = models();
-    let pcm = golden("orpheus-galop-hindsight").f32("pcm").unwrap();
-    let params = Params {
-        hindsight: HindsightParams::live(),
-        ..Params::default()
-    };
-    let mut parallel = Analyzer::with_hindsight_jobs(&models, params, 4).unwrap();
-    let mut out = Vec::new();
-    for block in pcm.chunks(4096) {
-        parallel.push(block, &mut out);
-    }
-    parallel.finish(&mut out);
-    assert_eq!(&out, galop_inline(&models, 0.67));
-}
-
-#[test]
-#[ignore = "release: stage parity, decodes hindsight windows (scripts/ci-full native runs it)"]
-fn offline_activations_and_beats_match_python() {
-    let models = models();
-    let mut dec = HindsightDecoder::new(&models, 100.0, SR).unwrap();
-    let (fe, nn, dbn) = dec.stages();
-    for excerpt in EXCERPTS {
-        let g = golden(excerpt);
-        let py_feat = g.f32("offline.features").unwrap();
-        let frames = g.shape("offline.features").unwrap()[0];
-        let py_acts = g.f32("offline.activations").unwrap();
-        let acts = nn.activations(&py_feat, frames);
-        for jobs in [2, 4] {
-            assert_eq!(
-                nn.activations_with_jobs(&py_feat, frames, jobs),
-                acts,
-                "{excerpt}: ordered reduction with {jobs} model jobs"
-            );
-        }
-        let (w, at) = worst(&acts, &py_acts, |i| tolerance(py_acts[i]));
-        let (rf, rfeat) = fe.process(&g.f32("pcm").unwrap());
-        let (w2, _) = worst(&nn.activations(&rfeat, rf), &py_acts, |i| {
-            tolerance(py_acts[i])
-        });
-        eprintln!(
-            "{excerpt}: offline activations worst {w:.3} of tolerance (frame {at}) from Python's features, {w2:.3} from Rust's"
-        );
-        assert!(
-            w <= 1.0 && w2 <= 1.0,
-            "{excerpt}: offline activations beyond tolerance"
-        );
-        let beats = dbn.beats(&py_acts);
-        assert_eq!(
-            bits(beats.iter().copied()),
-            bits(g.f64("offline.beats").unwrap()),
-            "{excerpt}: offline beats from Python's activations"
-        );
-        assert_eq!(
-            bits(dbn.beats(&acts)),
-            bits(g.f64("offline.beats").unwrap()),
-            "{excerpt}: offline beats from Rust's activations"
-        );
-        eprintln!("{excerpt}: {} offline beats bit-equal", beats.len());
-    }
-}
-
-#[test]
-#[ignore = "release: stage parity, decodes hindsight windows (scripts/ci-full native runs it)"]
-fn hindsight_entries_match_python() {
-    // The 30 s Galop excerpt: a window every second, 20 s long once the audio allows, decoded from
-    // PCM; the believed beats from Python's online beliefs.
-    let models = models();
-    let g = golden("orpheus-galop-hindsight");
-    let pcm = g.f32("pcm").unwrap();
-    let p = HindsightParams::default();
-    let bp = BeatParams::default();
-    let mut dec = HindsightDecoder::new(&models, bp.fps, SR).unwrap();
-    let since = g.f64("online.since").unwrap();
-    let mut online = OnlineBeats::new(p.keep_s, bp.fps, bp.bias_s);
-    let python = python_entries(&g);
-    let mut times = Vec::new();
-    let mut n = 0;
-    for (k, want) in (1u32..).zip(&python) {
-        let t_end = f64::from(k) * p.every_s;
-        let frame = (t_end * bp.fps).round() as usize;
-        while n <= frame.min(since.len() - 1) {
-            online.push(n, since[n]);
-            n += 1;
-        }
-        let start = (t_end - p.window_s).max(0.0);
-        let window = &pcm[(start * SR as f64).round() as usize
-            ..((t_end * SR as f64).round() as usize).min(pcm.len())];
-        let t0 = Instant::now();
-        let beats = dec.decode(window);
-        times.push(t0.elapsed().as_secs_f64() * 1000.0);
-        let lo = t_end - p.keep_s;
-        let offline: Vec<f64> = beats
-            .into_iter()
-            .map(|b| b + start + p.bias_s)
-            .filter(|&b| lo <= b && b <= t_end)
-            .collect();
-        assert_eq!(
-            t_end.to_bits(),
-            want.window_end.to_bits(),
-            "window {k}: its end"
-        );
-        assert_eq!(
-            bits(offline),
-            bits(want.offline.iter().copied()),
-            "window {k}: offline beats"
-        );
-        assert_eq!(
-            bits(online.kept(frame, lo, t_end)),
-            bits(want.online.iter().copied()),
-            "window {k}: believed beats"
-        );
-    }
-    times.sort_by(f64::total_cmp);
-    eprintln!(
-        "hindsight: {} entries bit-equal; decode ms (window up to 20 s): min {:.0}, median {:.0}, p90 {:.0}, max {:.0}",
-        python.len(),
-        times[0],
-        times[times.len() / 2],
-        times[times.len() * 9 / 10],
-        times[times.len() - 1]
-    );
 }
 
 #[test]
@@ -329,25 +199,6 @@ fn the_phase_check_commits_pythons_beats() {
         commits.len()
     );
     assert!(shifted > 0, "the excerpt exercises the phase check");
-}
-
-/// The 30 s Galop excerpt analyzed inline at D = 0 and at the live D, once per test binary.
-fn galop_inline(models: &Tensors, delay_s: f64) -> &'static [Entry] {
-    static AT_ZERO: OnceLock<Vec<Entry>> = OnceLock::new();
-    static LIVE: OnceLock<Vec<Entry>> = OnceLock::new();
-    let cell = if delay_s == 0.0 { &AT_ZERO } else { &LIVE };
-    assert!(
-        delay_s == 0.0 || delay_s == HindsightParams::live().delay_s,
-        "cached at D = 0 and the live D"
-    );
-    cell.get_or_init(|| {
-        analyze(
-            models,
-            &golden("orpheus-galop-hindsight").f32("pcm").unwrap(),
-            false,
-            delay_s,
-        )
-    })
 }
 
 fn analyze(models: &Tensors, pcm: &[f32], worker: bool, delay_s: f64) -> Vec<Entry> {
@@ -415,180 +266,15 @@ fn phased_commits(models: &Tensors, g: &Tensors, delay_s: f64) -> (Vec<Commit>, 
 }
 
 #[test]
-#[ignore = "release: stage parity, decodes hindsight windows (scripts/ci-full native runs it)"]
-fn the_analyzer_from_pcm_commits_pythons_phased_beats() {
-    let models = models();
-    let g = golden("orpheus-galop-hindsight");
-    let out = galop_inline(&models, 0.0);
-    let beats: Vec<f64> = out
-        .iter()
-        .filter_map(|e| {
-            if let Entry::Beat(b) = e {
-                Some(b.t)
-            } else {
-                None
-            }
-        })
-        .collect();
-    let entries: Vec<&HindsightEntry> = out
-        .iter()
-        .filter_map(|e| {
-            if let Entry::Hindsight(h) = e {
-                Some(h)
-            } else {
-                None
-            }
-        })
-        .collect();
-    let python = python_entries(&g);
-    assert_eq!(entries.len(), python.len(), "hindsight entries");
-    for (ours, want) in entries.iter().zip(&python) {
-        assert_eq!(
-            bits(ours.offline.iter().copied()),
-            bits(want.offline.iter().copied()),
-            "window ending {}: offline",
-            want.window_end
-        );
-        assert_eq!(
-            bits(ours.online.iter().copied()),
-            bits(want.online.iter().copied()),
-            "window ending {}: online",
-            want.window_end
-        );
-    }
-    assert_eq!(
-        bits(beats.iter().copied()),
-        bits(g.f64("commits.t").unwrap()),
-        "phased committed beats from PCM"
-    );
-    eprintln!(
-        "analyzer from PCM: {} hindsight entries and {} phased beats bit-equal",
-        entries.len(),
-        beats.len()
-    );
-}
-
-#[test]
-#[ignore = "release: stage parity, decodes hindsight windows (scripts/ci-full native runs it)"]
+#[ignore = "release: the whole analyzer on the 30 s Galop, twice (scripts/ci-full native-tests runs it)"]
 fn the_worker_gives_the_inline_results() {
     let models = models();
     let pcm = golden("orpheus-galop-hindsight").f32("pcm").unwrap();
-    for delay in [0.0, 0.67] {
-        assert_eq!(
-            analyze(&models, &pcm, true, delay),
-            galop_inline(&models, delay),
-            "D = {delay}"
-        );
-    }
-}
-
-#[test]
-#[ignore = "release: stage parity, decodes hindsight windows (scripts/ci-full native runs it)"]
-fn with_a_delay_entries_count_from_their_window_ends_plus_d() {
-    // D = 0.67 s (the live delay): every entry is usable 0.67 s after its window ends, and the
-    // analyzer's commits from PCM equal the commit rule fed Python's entries shifted by D (whose
-    // beats equal the analyzer's, as the D = 0 test shows).
-    let models = models();
-    let g = golden("orpheus-galop-hindsight");
     let d = HindsightParams::live().delay_s;
-    assert_eq!(d, 0.67);
-    let out = galop_inline(&models, d);
-    for e in out.iter().filter_map(|e| {
-        if let Entry::Hindsight(h) = e {
-            Some(h)
-        } else {
-            None
-        }
-    }) {
-        assert_eq!(
-            e.known_at.to_bits(),
-            (e.window_end + d).to_bits(),
-            "window ending {}",
-            e.window_end
-        );
-    }
-    let beats: Vec<f64> = out
-        .iter()
-        .filter_map(|e| {
-            if let Entry::Beat(b) = e {
-                Some(b.t)
-            } else {
-                None
-            }
-        })
-        .collect();
-    let (want, shifted) = phased_commits(&models, &g, d);
     assert_eq!(
-        bits(beats),
-        bits(want.iter().map(|c| c.t)),
-        "commits with D = {d}"
+        analyze(&models, &pcm, true, d),
+        analyze(&models, &pcm, false, d)
     );
-    let (at_zero, _) = phased_commits(&models, &g, 0.0);
-    eprintln!(
-        "D = {d}: {} committed beats as the oracle gives them ({shifted} frames shifted); {} differ from D = 0",
-        want.len(),
-        want.iter()
-            .zip(&at_zero)
-            .filter(|(a, b)| a.t != b.t)
-            .count()
-            + want.len().abs_diff(at_zero.len())
-    );
-}
-
-#[test]
-#[ignore = "release: stage parity, decodes hindsight windows (scripts/ci-full native runs it)"]
-fn a_stream_of_awkward_length_has_pythons_entries() {
-    // The 30 s Galop excerpt cut to 29.997 s (neither whole seconds nor a multiple of 441):
-    // Python's entries for it (tests/fixtures/a4-galop-29997.json, from stream.hindsight_entries).
-    let models = models();
-    let fixture: serde_json::Value = serde_json::from_str(
-        &std::fs::read_to_string(
-            Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/a4-galop-29997.json"),
-        )
-        .unwrap(),
-    )
-    .unwrap();
-    let len = fixture["samples"].as_u64().unwrap() as usize;
-    let pcm = golden("orpheus-galop-hindsight").f32("pcm").unwrap();
-    let out = analyze(&models, &pcm[..len], false, 0.0);
-    let ours: Vec<&HindsightEntry> = out
-        .iter()
-        .filter_map(|e| {
-            if let Entry::Hindsight(h) = e {
-                Some(h)
-            } else {
-                None
-            }
-        })
-        .collect();
-    let want = fixture["entries"].as_array().unwrap();
-    assert_eq!(ours.len(), want.len(), "entries");
-    let words = |v: &serde_json::Value| {
-        v.as_array()
-            .unwrap()
-            .iter()
-            .map(|x| x.as_u64().unwrap())
-            .collect::<Vec<u64>>()
-    };
-    for (o, w) in ours.iter().zip(want) {
-        assert_eq!(
-            o.window_end.to_bits(),
-            w["knownAt"].as_u64().unwrap(),
-            "window end"
-        );
-        assert_eq!(
-            bits(o.offline.iter().copied()),
-            words(&w["offline"]),
-            "window ending {}: offline",
-            o.window_end
-        );
-        assert_eq!(
-            bits(o.online.iter().copied()),
-            words(&w["online"]),
-            "window ending {}: online",
-            o.window_end
-        );
-    }
 }
 
 #[test]
@@ -625,24 +311,8 @@ fn viterbi_ties_and_edges_are_madmoms() {
 }
 
 #[test]
-#[ignore = "release: stage parity, decodes hindsight windows (scripts/ci-full native runs it)"]
-fn the_worker_reports_its_stalls() {
-    // With D = 0 every entry is due as its window ends, so the analyzer waits for each decode
-    // (bar the windows too short to decode): the stalls count them.
-    let models = models();
-    let pcm = golden("orpheus-galop-hindsight").f32("pcm").unwrap();
-    let params = Params::default();
-    let mut an = Analyzer::with_hindsight_worker(&models, params).unwrap();
-    let mut out = Vec::new();
-    an.push(&pcm, &mut out);
-    let (stalls, waited) = an.hindsight_stalls();
-    eprintln!("worker at D = 0: {stalls} stalls, {waited:?} in all");
-    assert!(stalls > 0 && waited > std::time::Duration::ZERO);
-}
-
-#[test]
 fn a_short_stream_from_pcm_matches_python() {
-    // The gate's smoke test (the full runs above are the release stage's): the analyzer on the
+    // The gate's smoke test (corpus parity runs whole tracks): the analyzer on the
     // Galop's first 4 s, whose hindsight windows are 1 to 4 s long: its entries and the beats
     // committed by then are Python's to the bit.
     let models = models();

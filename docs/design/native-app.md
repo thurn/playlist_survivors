@@ -649,9 +649,9 @@ stage-parity test.
   - **release stage** (unconditionally, on every `staging` tip: it is
     asynchronous, and a skipped section could hide a break): the whole
     workspace's clippy and tests, every check in
-    [Automated Checks](#automated-checks) (the full corpus parity and oracle
-    sweep included; nothing is left to run by hand), `ps bench`, and a release
-    build of the app.
+    [Automated Checks](#automated-checks), `ps bench`, and a release build of
+    the app. (Since ps-qtj.1 the release stage samples the corpus and the
+    survival sweep to stay near 5 minutes; the whole corpus is run by hand.)
 - **Builds:** S0 measured a cold build at about 30 s and the native section at
   about 90 s in a fresh worktree, with no consistent gain from sccache. The gate
   stage therefore builds into a **persistent target directory** outside the
@@ -810,6 +810,11 @@ and the live D costs up to 3 points on 10 of 47 tracks measured. `ps analysis-pa
   resamples 48 kHz causally with `rubato`. The difference is measured, not
   matched.
 
+The whole-analyzer-from-PCM runs above were release-stage tests until ps-qtj.1
+deleted them to keep the release stage near 5 minutes: each stage's parity
+test fed Python's upstream stays in the gate, and corpus parity checks the
+whole analyzer against Python's streams.
+
 ### Hindsight's live latency
 
 Python stamps a hindsight entry at the end of its window, as if decoding took
@@ -823,12 +828,12 @@ parity runs with the real `D` and reports its cost.
 
 ### Corpus parity
 
-`ps analysis-parity` (in the CLI) runs the Rust analyzer over every track's
-audio at faster than real time, in blocks the size of capture buffers, and
-compares the result with the committed `stream.json`. It runs in the release
-stage only, with tracks in parallel (one track at a time decodes hindsight in
-order, about 3.5 times real time), as a long batch job; a local command over
-three tracks, outside `check-fast`, serves the bead while it iterates:
+`ps analysis-parity` (in the CLI) runs the Rust analyzer over each track's
+audio, in blocks the size of capture buffers, and compares the result with the
+committed `stream.json`. Tracks run in parallel, but each track's passes decode
+hindsight in order at about real time, so the longest track sets the wall
+time. A local command over three tracks, outside `check-fast`, serves a bead
+while it iterates:
 
 - committed-beat accuracy against each track's reference grid (as
   `stream.py`'s `accuracy` computes it): per track at most 1 point worse than
@@ -838,7 +843,11 @@ three tracks, outside `check-fast`, serves the bead while it iterates:
 - the real-time factor of each group and of the whole analyzer;
 - the arrival delay of each group.
 
-The release stage runs it on every track. The gate stage runs no corpus
+The release stage runs it on four short tracks (steady house, a swing groove,
+an accelerando and a hard NotJam track): about 2 minutes, skipped while its
+inputs are unchanged.
+The whole corpus (`ps analysis-parity --all`, over 30 minutes) is run by hand
+when the analyzer's accuracy is in question. The gate stage runs no corpus
 parity at all; a bead changing the analyzer runs it locally on three tracks (a
 synthetic track, the Galop and one corpus track).
 
@@ -1688,10 +1697,18 @@ Set by the spike's executor from the phase 0 numbers
 
 ### Release stage (asynchronous, moves `release`)
 
+`scripts/ci-full`, about 5 minutes warm: the native section (clippy, builds
+and the timed benches) runs alone, then the tests, corpus parity, the survival
+sweep (with its 30-minute session replay) and the tools' checks run in parallel
+lanes. ps-qtj.1 pruned
+it from over 15 minutes: the analyzer's whole-excerpt stage parity tests went
+(each stage keeps its gate parity test, and corpus parity checks the whole
+analyzer), and corpus parity and the survival sweep became samples.
+
 - The whole workspace's clippy and tests.
-- **Analyzer:** A1 to A6's stage parity while it passes; corpus accuracy on
-  every track against the reference beats and Python's, with the per-track
-  table; the stream causality test.
+- **Analyzer:** corpus accuracy on a sample of tracks against the reference
+  beats and Python's, with the per-track table; the stream causality test at
+  three cuts.
 - **Sim:** B1 to B5's oracle tests while they pass; determinism (the same
   Replay twice, and in random-sized bursts, gives the identical recording).
 - **Causality:** perturbation, truncation and the negative control on the
@@ -1702,7 +1719,7 @@ Set by the spike's executor from the phase 0 numbers
 - **Delayed listening (from E1 and E2):** the lead check; the stream causality
   test by audio position; sim causality on a Delayed Galop stream; a small
   Delayed File-mode session replays bit-exactly; `ps analysis-parity --delayed
-  <M>` over every track against Direct listening.
+  <M>` over the sampled tracks against Direct listening.
 - **Renderer:** a still renders headlessly without error.
 - `ps bench`: sim, evaluator and rollback costs on the Galop's busiest minute.
 - A release build of the app.

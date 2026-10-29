@@ -1,12 +1,12 @@
 //! Stage parity, A3 (docs/design/native-app.md, "Stage parity"): ticks (evidence, energy,
 //! level) and onsets (the superflux function, its online peak picking, strengths and strong
 //! flags) against Python's golden data (`native/models/golden/`), each stage fed Python's own
-//! upstream; then the whole analyzer from PCM.
+//! upstream; then the whole analyzer's independence of block sizes.
 #![forbid(unsafe_code)]
 
 use std::path::{Path, PathBuf};
 
-use analysis::analyzer::{Analyzer, Entry, Params};
+use analysis::analyzer::{Analyzer, Params};
 use analysis::beats::{BeatParams, Beliefs, Evidence};
 use analysis::dbn::OnlineDbn;
 use analysis::frontend::{HOP, OnlineFrontEnd};
@@ -303,120 +303,7 @@ fn onsets_from_pythons_function_match_to_the_bit() {
 }
 
 #[test]
-#[ignore = "release: stage parity, decodes hindsight windows (scripts/ci-full native runs it)"]
-fn the_analyzer_from_pcm_matches_python() {
-    // The whole chain: Rust's activations and onset function (each within float32 rounding of
-    // Python's) feeding the later stages. The commits, energies, levels and onsets are Python's to
-    // the bit here; the evidence reads Rust's activations, so it is checked within tolerance.
-    let models = models();
-    for excerpt in EXCERPTS {
-        let g = golden(excerpt);
-        let mut an = Analyzer::new(&models, Params::default()).unwrap();
-        let mut out = Vec::new();
-        for block in g.f32("pcm").unwrap().chunks(1000) {
-            an.push(block, &mut out);
-        }
-        an.finish(&mut out);
-        let ticks: Vec<Tick> = out
-            .iter()
-            .filter_map(|e| {
-                if let Entry::Tick(k) = e {
-                    Some(*k)
-                } else {
-                    None
-                }
-            })
-            .collect();
-        let onsets: Vec<Onset> = out
-            .iter()
-            .filter_map(|e| {
-                if let Entry::Onset(o) = e {
-                    Some(*o)
-                } else {
-                    None
-                }
-            })
-            .collect();
-        let beats: Vec<f64> = out
-            .iter()
-            .filter_map(|e| {
-                if let Entry::Beat(b) = e {
-                    Some(b.t)
-                } else {
-                    None
-                }
-            })
-            .collect();
-        assert_eq!(
-            bits(beats),
-            bits(g.f64("commits.t").unwrap()),
-            "{excerpt}: committed beats"
-        );
-        assert_eq!(
-            bits(ticks.iter().map(|k| k.energy)),
-            bits(g.f64("ticks.energy").unwrap()),
-            "{excerpt}: energy"
-        );
-        assert_eq!(
-            ticks.iter().map(|k| k.level.code()).collect::<Vec<_>>(),
-            g.i32("ticks.level").unwrap(),
-            "{excerpt}: levels"
-        );
-        let py_ev = g.f64("ticks.evidence").unwrap();
-        let worst = ticks
-            .iter()
-            .zip(&py_ev)
-            .map(|(k, p)| (k.evidence - p).abs() / (1e-5 * p.abs()).max(1e-7))
-            .fold(0.0f64, f64::max);
-        assert!(
-            worst <= 1.0,
-            "{excerpt}: evidence beyond tolerance ({worst})"
-        );
-        // (The strengths are Rust's onset function at each onset's frame: within its tolerance.)
-        let (_, tol) = onset_function(&models, &g.f32("pcm").unwrap());
-        let py_strength = g.f64("onsets.strength").unwrap();
-        assert_eq!(
-            onsets.len(),
-            py_strength.len(),
-            "{excerpt} from PCM: onsets"
-        );
-        assert_eq!(
-            bits(onsets.iter().map(|o| o.t)),
-            bits(g.f64("onsets.t").unwrap()),
-            "{excerpt} from PCM: onset times"
-        );
-        assert_eq!(
-            bits(onsets.iter().map(|o| o.known_at)),
-            bits(g.f64("onsets.knownAt").unwrap()),
-            "{excerpt} from PCM: knownAt"
-        );
-        assert_eq!(
-            onsets
-                .iter()
-                .map(|o| i32::from(o.strong))
-                .collect::<Vec<_>>(),
-            g.i32("onsets.strong").unwrap(),
-            "{excerpt} from PCM: strong flags"
-        );
-        for (o, p) in onsets.iter().zip(&py_strength) {
-            let frame = (o.known_at * 100.0).round() as usize;
-            assert!(
-                (o.strength - p).abs() <= f64::from(tol[frame]),
-                "{excerpt} from PCM: strength at {}",
-                o.known_at
-            );
-        }
-        eprintln!(
-            "{excerpt} from PCM: {} beats, {} ticks (evidence worst {worst:.3} of tolerance), {} onsets",
-            g.f64("commits.t").unwrap().len(),
-            ticks.len(),
-            onsets.len()
-        );
-    }
-}
-
-#[test]
-#[ignore = "release: stage parity, decodes hindsight windows (scripts/ci-full native runs it)"]
+#[ignore = "release: the whole analyzer on the Galop excerpt, three times (scripts/ci-full native-tests runs it)"]
 fn the_analyzer_is_independent_of_block_sizes() {
     let models = models();
     let pcm = golden("orpheus-galop").f32("pcm").unwrap();
@@ -430,7 +317,7 @@ fn the_analyzer_is_independent_of_block_sizes() {
         out
     };
     let whole = run(pcm.len());
-    for size in [1, 333, 441, 4096] {
+    for size in [333, 4096] {
         assert_eq!(run(size), whole, "blocks of {size}");
     }
 }

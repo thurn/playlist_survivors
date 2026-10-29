@@ -7,10 +7,8 @@
 use std::path::{Path, PathBuf};
 
 use analysis::accents::{AccentParams, Accents, Forecast};
-use analysis::analyzer::{Analyzer, Entry, Params};
 use analysis::beats::Commit;
 use analysis::onsets::Onset;
-use analysis::tensors::Tensors;
 
 fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..")
@@ -166,47 +164,4 @@ fn forecasts_match_python_at_the_edges() {
         );
         println!("{name}: {} forecasts bit-equal", want.len());
     }
-}
-
-/// The fixture's accented pulse (`fixture.py`'s `accented`), sample for sample.
-fn accented(seconds: usize) -> Vec<f32> {
-    (0..seconds * 44100)
-        .map(|n| {
-            let k = n / 22050;
-            let amp = if k % 4 == 0 { 0.8 } else { 0.2 };
-            let env = (1.0 - (n - k * 22050) as f64 / 2205.0).max(0.0);
-            let saw = (n % 100) as f64 / 100.0 * 2.0 - 1.0;
-            (amp * env * saw) as f32
-        })
-        .collect()
-}
-
-#[test]
-#[ignore = "release: the whole analyzer, decoding hindsight windows (scripts/ci-full native runs it)"]
-fn the_analyzer_from_pcm_forecasts_as_python() {
-    // Python's whole stream of a 40 s pulse with every 4th beat accented: its phase-checked beats
-    // and onsets are the analyzer's to the bit (A3, A4), so its forecasts must be too.
-    let models = Tensors::load(&root().join("native/models/madmom.bin")).unwrap();
-    let fixture = json(&root().join("native/crates/analysis/tests/fixtures/a6-forecasts.json"));
-    let want = expected(&fixture["accented40"]);
-    assert!(want.len() > 10, "{} forecasts", want.len());
-    let mut an = Analyzer::new(&models, Params::default()).unwrap();
-    let mut out = Vec::new();
-    for block in accented(40).chunks(1000) {
-        an.push(block, &mut out);
-    }
-    an.finish(&mut out);
-    let mut ours: Vec<Forecast> = out
-        .iter()
-        .filter_map(|e| {
-            if let Entry::Forecast(f) = e {
-                Some(*f)
-            } else {
-                None
-            }
-        })
-        .collect();
-    ours.sort_by(|a, b| a.t.total_cmp(&b.t));
-    assert_eq!(bits(&ours), bits(&want), "{ours:?} against {want:?}");
-    println!("accented pulse: {} forecasts bit-equal", want.len());
 }

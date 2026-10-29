@@ -40,24 +40,19 @@ def data(bot="positioning"):
 
 
 class SurvivalReports(unittest.TestCase):
-    def test_matrix_covers_every_seed_order_and_both_analysis_paths(self):
+    def test_matrix_covers_every_order_and_both_analysis_paths(self):
         cases = sweep.cases()
-        self.assertEqual(len(cases), 41)
-        self.assertEqual(len({c.name for c in cases}), 41)
-        for mode, orders in [
-            ("cached", ("original", "reverse", "rotate")),
-            ("continuous", ("original",)),
-        ]:
-            for order in orders:
-                for bot in ("positioning", "afk"):
-                    self.assertEqual(
-                        {
-                            c.seed
-                            for c in cases
-                            if (c.mode, c.order, c.bot) == (mode, order, bot)
-                        },
-                        set(range(1, 6)),
-                    )
+        self.assertEqual(
+            {(c.mode, c.order) for c in cases},
+            {
+                ("cached", "original"),
+                ("cached", "reverse"),
+                ("cached", "rotate"),
+                ("continuous", "original"),
+            },
+        )
+        self.assertEqual(len({c.name for c in cases}), len(cases))
+        self.assertTrue(all(c.bot == "positioning" for c in cases))
 
     def test_only_survival_and_hp_share_gate_positioning(self):
         d = data()
@@ -120,7 +115,7 @@ class Workers(unittest.TestCase):
                 peak = max(peak, active)
             try:
                 time.sleep(0.01)
-                if fail and case.seed == 1 and case.bot == "afk":
+                if fail and case.order == "reverse":
                     raise RuntimeError("worker failed")
                 result = deepcopy(data(case.bot))
                 result["requestedMinutes"] = minutes
@@ -133,7 +128,6 @@ class Workers(unittest.TestCase):
             [
                 sweep.Case("cached", "original", "positioning", 1),
                 sweep.Case("continuous", "original", "positioning", 1),
-                sweep.Case("continuous", "original", "afk", 1),
             ]
             if continuous
             else sweep.cases()[:2]
@@ -198,44 +192,24 @@ class FullReplay(unittest.TestCase):
         d["report"].update(survivalS=1800, done=False)
         self.assertFalse(sweep.complete_run(d))
 
-    def test_exact_matrix_can_select_a_completed_normal_case_after_a_failed_case(self):
-        with tempfile.TemporaryDirectory() as folder:
-            home = Path(folder)
-            reports = home / "reports"
-            reports.mkdir()
-            stamps = home / "ci-stamps"
-            stamps.mkdir()
-            (stamps / "survivors-key-False").write_text(str(reports))
-            first = sweep.Case("cached", "original", "positioning", 1)
-            second = sweep.Case("cached", "reverse", "positioning", 1)
-            failed = data()
-            failed["report"]["fallen"] = True
-            (reports / f"{first.name}.json").write_text(json.dumps(failed))
-            (reports / f"{second.name}.json").write_text(json.dumps(data()))
-            with (
-                patch.object(
-                    sweep, "input_key", side_effect=lambda flag: f"key-{flag}"
-                ),
-                patch.object(sweep, "cases", return_value=[first, second]),
-            ):
-                case, session, result = sweep.matrix_run(home)
-                self.assertEqual(case, second)
-                self.assertIsNone(session)
-                self.assertFalse(result["noHeroDamage"])
-            with patch.object(sweep, "input_key", return_value=None):
-                self.assertIsNone(
-                    sweep.matrix_run(home),
-                    "dirty/different inputs cannot reuse a matrix",
-                )
-
     def exercise(self, mismatch: bool):
         with tempfile.TemporaryDirectory() as folder:
-            args = Namespace(
-                release=False,
-                replay_case=None,
-                force=True,
-                jobs=1,
-                out=Path(folder) / "out",
+            session = Path(folder) / "normal-session"
+            session.mkdir()
+            d = data()
+            d["report"]["settledRecords"] = 123
+            (session / "meta.json").write_text(
+                json.dumps(
+                    {
+                        "runs": [
+                            {
+                                "noHeroDamage": mismatch,
+                                "settledRecords": 123,
+                                "settledHash": d["report"]["settledHash"],
+                            }
+                        ]
+                    }
+                )
             )
             commands = []
 
@@ -243,51 +217,61 @@ class FullReplay(unittest.TestCase):
                 commands.append(command)
                 return subprocess.CompletedProcess(command, 0, "the same", "")
 
-            def case(binary, selected, out, minutes, deadline, **kwargs):
-                self.assertTrue(kwargs["soak"])
-                d = data()
-                d["noHeroDamage"] = True
-                d["report"]["settledRecords"] = 123
-                session = out / kwargs["record"]
-                session.mkdir()
-                (session / "meta.json").write_text(
-                    json.dumps(
-                        {
-                            "runs": [
-                                {
-                                    "noHeroDamage": not mismatch,
-                                    "settledRecords": 123,
-                                    "settledHash": d["report"]["settledHash"],
-                                }
-                            ]
-                        }
-                    )
-                )
-                return d
-
             with (
-                patch.object(sweep, "enter_qos"),
-                patch.object(sweep, "input_key", return_value=None),
-                patch.object(sweep, "matrix_run", return_value=None),
                 patch.object(sweep, "checked", side_effect=checked),
-                patch.object(sweep, "run_case", side_effect=case),
                 redirect_stdout(io.StringIO()),
             ):
                 if mismatch:
                     with self.assertRaisesRegex(ValueError, "damage modes differ"):
-                        sweep.run_replay(args)
-                    self.assertEqual(
-                        len(commands), 1, "bad metadata cannot reach replay"
-                    )
+                        sweep.replay_session(Path("ps"), session, d, 0)
+                    self.assertEqual(commands, [], "bad metadata cannot reach replay")
                 else:
-                    sweep.run_replay(args)
-                    report = json.loads((args.out / "summary.json").read_text())
-                    self.assertTrue(report["runnerDiagnostic"])
-                    self.assertIsNone(report["survivalVerdict"])
-                    self.assertEqual(commands[-1][1], "replay")
-                    self.assertTrue((args.out / "replay.log").is_file())
+                    result = sweep.replay_session(Path("ps"), session, d, 0)
+                    self.assertEqual(commands, [["ps", "replay", str(session)]])
+                    self.assertEqual(result["settledRecords"], 123)
+                    self.assertTrue((Path(folder) / "replay.log").is_file())
 
-    def test_diagnostic_is_labeled_and_replayed_after_a_full_run(self):
+    def test_a_full_matrix_replays_its_base_order_run(self):
+        replays = []
+
+        def fake_case(binary, case, out, minutes, deadline, *args, **kwargs):
+            result = deepcopy(data(case.bot))
+            result["requestedMinutes"] = minutes
+            return result
+
+        def fake_replay(binary, session, result, deadline):
+            replays.append(session.name)
+            return {"session": str(session)}
+
+        with tempfile.TemporaryDirectory() as folder:
+            out = Path(folder) / "reports"
+            args = Namespace(
+                jobs=3,
+                only=None,
+                minutes=30,
+                assert_survival=True,
+                release=False,
+                force=True,
+                out=out,
+            )
+            with (
+                patch.object(sweep, "enter_qos"),
+                patch.object(sweep, "input_key", return_value=None),
+                patch.object(sweep, "run_case", fake_case),
+                patch.object(sweep, "replay_session", fake_replay),
+                patch.object(
+                    sweep,
+                    "checked",
+                    return_value=subprocess.CompletedProcess([], 0, "", ""),
+                ),
+                redirect_stdout(io.StringIO()),
+            ):
+                sweep.run(args)
+            report = json.loads((out / "summary.json").read_text())
+        self.assertEqual(replays, ["normal-session"])
+        self.assertEqual(report["replay"], {"session": str(out / "normal-session")})
+
+    def test_a_recorded_run_is_replayed(self):
         self.exercise(mismatch=False)
 
     def test_recording_and_report_damage_modes_must_agree(self):

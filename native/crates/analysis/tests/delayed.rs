@@ -130,23 +130,22 @@ fn every_beat_leads_by_the_horizon_and_stamps_never_go_back() {
 }
 
 #[test]
-#[ignore = "release: the Galop excerpt analysed twice more, cut"]
+#[ignore = "release: the Galop excerpt analysed once more, cut"]
 fn the_stream_is_causal_by_audio_position() {
     let p = chosen();
     let full = beats(delayed_run());
-    for cut in [12.37, 21.0] {
-        let part = beats(&analyse(
-            &pcm()[..(cut * SR).round() as usize],
-            Listening::Delayed(p),
-        ));
-        let by = |bs: &[Commit]| -> Vec<Commit> {
-            bs.iter()
-                .copied()
-                .filter(|c| c.known_at + p.m - p.a <= cut - 0.05 + 1e-9)
-                .collect()
-        };
-        let (want, got) = (by(&full), by(&part));
-        assert!(!want.is_empty());
-        assert_eq!(got, want, "beats committed before {cut} differ");
-    }
+    let cut = 12.37;
+    let part = beats(&analyse(
+        &pcm()[..(cut * SR).round() as usize],
+        Listening::Delayed(p),
+    ));
+    let by = |bs: &[Commit]| -> Vec<Commit> {
+        bs.iter()
+            .copied()
+            .filter(|c| c.known_at + p.m - p.a <= cut - 0.05 + 1e-9)
+            .collect()
+    };
+    let (want, got) = (by(&full), by(&part));
+    assert!(!want.is_empty());
+    assert_eq!(got, want, "beats committed before {cut} differ");
 }

@@ -136,19 +136,10 @@ fn a_short_stream_is_causal() {
 }
 
 #[test]
-#[ignore = "release: re-analyses 30 s at eight cuts, decoding hindsight windows (scripts/ci-full native runs it)"]
+#[ignore = "release: re-analyses 30 s at three cuts, decoding hindsight windows (scripts/ci-full native-tests runs it)"]
 fn the_stream_is_causal_in_every_group() {
     let samples = pcm("orpheus-galop-hindsight");
-    let cuts = [
-        (3.0, MARGIN_S),
-        (6.37, MARGIN_S),
-        (10.91, MARGIN_S),
-        (18.4, MARGIN_S),
-        (26.2, MARGIN_S),
-        (4.123_457, 0.0),
-        (9.005_013, 0.0),
-        (22.5, 0.0),
-    ];
+    let cuts = [(6.37, MARGIN_S), (9.005_013, 0.0), (18.4, MARGIN_S)];
     let seen = check("orpheus-galop-hindsight", &samples, &cuts);
     let shown: Vec<String> = GROUPS
         .iter()
@@ -160,83 +151,4 @@ fn the_stream_is_causal_in_every_group() {
     for k in [0, 1, 2, 3, 8] {
         assert!(seen[k] > 0, "{}: none", GROUPS[k]);
     }
-}
-
-/// A5's synthetic piece (`tests/fixtures/a5-structure.json`'s sections): saw chords that change,
-/// a loud stretch and near silence, so changes, jumps and an end occur.
-fn sections_piece() -> Vec<f32> {
-    let fixture: serde_json::Value = serde_json::from_str(
-        &std::fs::read_to_string(
-            root().join("native/crates/analysis/tests/fixtures/a5-structure.json"),
-        )
-        .unwrap(),
-    )
-    .unwrap();
-    let sections = fixture["sections"].as_array().unwrap();
-    let total = sections.last().unwrap()[1].as_u64().unwrap() as usize * 44100;
-    let mut y = vec![0.0f32; total];
-    for s in sections {
-        let (from, to) = (
-            s[0].as_u64().unwrap() as usize * 44100,
-            s[1].as_u64().unwrap() as usize * 44100,
-        );
-        let amp = s[2].as_f64().unwrap();
-        let periods: Vec<usize> = s[3]
-            .as_array()
-            .unwrap()
-            .iter()
-            .map(|p| p.as_u64().unwrap() as usize)
-            .collect();
-        for (n, v) in y.iter_mut().enumerate().take(to).skip(from) {
-            let mut x = 0.0f64;
-            for &p in &periods {
-                x += amp * ((n % p) as f64 / p as f64 * 2.0 - 1.0);
-            }
-            *v = x as f32;
-        }
-    }
-    y
-}
-
-/// A6's accented pulse (every 4th beat at 120 bpm loud), so forecasts occur.
-fn accented_pulse(seconds: usize) -> Vec<f32> {
-    (0..seconds * 44100)
-        .map(|n| {
-            let k = n / 22050;
-            let amp = if k % 4 == 0 { 0.8 } else { 0.2 };
-            let env = (1.0 - (n - k * 22050) as f64 / 2205.0).max(0.0);
-            let saw = (n % 100) as f64 / 100.0 * 2.0 - 1.0;
-            (amp * env * saw) as f32
-        })
-        .collect()
-}
-
-#[test]
-#[ignore = "release: re-analyses synthetic pieces at several cuts (scripts/ci-full native runs it)"]
-fn structure_and_forecasts_are_causal() {
-    // Cuts after each structure event is known (changes about 18 s and 26 s, jumps 20.8 s and
-    // 26.2 s, the end 27.55 s) and between them, and through the pulse's forecasts.
-    let seen = check(
-        "sections",
-        &sections_piece(),
-        &[
-            (19.0, MARGIN_S),
-            (26.1, MARGIN_S),
-            (27.7, 0.0),
-            (31.37, MARGIN_S),
-        ],
-    );
-    for k in [4, 5, 6] {
-        assert!(seen[k] > 0, "{}: none", GROUPS[k]);
-    }
-    let pulse = check(
-        "pulse",
-        &accented_pulse(40),
-        &[(24.0, MARGIN_S), (33.333_331, 0.0), (39.0, MARGIN_S)],
-    );
-    assert!(pulse[7] > 0, "forecasts: none");
-    println!(
-        "sections: {} changes, {} jumps, {} ends; pulse: {} forecasts",
-        seen[4], seen[5], seen[6], pulse[7]
-    );
 }

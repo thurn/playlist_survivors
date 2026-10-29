@@ -914,9 +914,12 @@ New virtual players in the `players` crate:
 **Gating criteria (SW7 asserts them; earlier milestones report them).**
 Only survival gates:
 
-- **Positioning bot:** survives 30:00 on 5 seeds × 3 playlist orders, with
-  lowest HP above 25% of max.
-- **AFK bot:** dies before minute 10 on every seed.
+- **Positioning bot:** survives 30:00 with lowest HP above 25% of max, on one
+  seed in each of the 3 playlist orders and on the continuously analysed
+  source. (5 seeds each until ps-qtj.1 cut the release sweep to about 3
+  minutes; run more by hand with `ps survive --seed`.)
+- **AFK bot:** dies before minute 10 (report-only, from hand-run `ps survive
+  --bot afk` reports; the release sweep no longer runs it).
 
 **Pacing (report-only, never a gate).** Every sweep reports these against the
 targets, and they guide the offer table, but no bead fails on them:
@@ -931,8 +934,10 @@ targets, and they guide the offer table, but no bead fails on them:
   sanity report; the operator’s only-survival-gates instruction keeps all
   level-at-time numbers report-only. SF9 measures it
   within the gate's budget.
-- **The release stage:** the full sweep, as a new `ci-full` native step.
-  - **Budget:** 20 minutes, with the runs in parallel jobs.
+- **The release stage:** the sweep, as `ci-full`'s `survivors` step: four
+  30-minute positioning runs in parallel, about 3 minutes, in a lane beside
+  the native tests.
+  - **Budget:** 20 minutes, a hang's bound.
   - **QoS:** utility, like the corpus parity step (AGENTS.md: the background
     class keeps to the efficiency cores and is too slow for a release step).
   - It's skipped while its inputs (the sim, content, levels and the playlist)
@@ -963,7 +968,7 @@ gate: the operator judges game performance by play, not by blocking landings.
     across a freeze.
 - **Session replay:** `ps replay` of a `ps survive --record` session (30
   minutes, positioning bot) settles to the run's hash. It's a release-stage
-  check from SF9.
+  check from SF9, run inside the sweep's step on its base-order run.
 
 ### Operator checks
 

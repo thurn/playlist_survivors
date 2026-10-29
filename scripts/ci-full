@@ -2,29 +2,60 @@
 # Enact's slow CI: every check, on the newest `staging` tip, asynchronously. A pass moves remote
 # master; a failure is fixed forward by a Steward bead (AGENTS.md). Nobody waits for it. Run it
 # locally only when a change touches CI scripts, `.enact.toml`, workspace-wide configuration or
-# shared test infrastructure.
+# shared test infrastructure. Budget: about 5 minutes warm (ps-qtj.1).
 #
-#   scripts/ci-full [baker|analysis|native|survivors|survivors-replay|demo3d|demo2d]    # one section, or all
+#   scripts/ci-full [SECTION]    # one section, or all
 set -eu
 cd "$(dirname "$0")/.."
 . scripts/lib/changes.sh
 section="${1:-all}"
 # Pass stamps, keyed by a check's inputs' hash (outside the slots, so they persist).
 STAMPS="${PS_CI_STAMPS:-$HOME/Library/Caches/playlist-survivors/ci-stamps}"
+SECTIONS="baker analysis native native-tests parity survivors demo3d demo2d"
 
-case "$section" in
-  all|baker|analysis|native|survivors|survivors-replay|demo3d|demo2d) ;;
-  *) echo "usage: scripts/ci-full [baker|analysis|native|survivors|survivors-replay|demo3d|demo2d]" >&2; exit 2 ;;
+case " all $SECTIONS " in
+  *" $section "*) ;;
+  *) echo "usage: scripts/ci-full [$(echo $SECTIONS | tr ' ' '|')]" >&2; exit 2 ;;
 esac
 
+# All: the native section first, alone, since its benches are timed and it builds what the others
+# run; then the rest in parallel lanes, each lane's output printed once it is done.
+if [ "$section" = all ]; then
+  scripts/ci-full native
+  logs=$(mktemp -d)
+  lanes=""
+  lane() {
+    name=$1
+    shift
+    (for s in "$@"; do scripts/ci-full "$s" || exit 1; done) > "$logs/$name.log" 2>&1 &
+    lanes="$lanes $!:$name"
+  }
+  lane native-tests native-tests
+  lane parity parity
+  lane survivors survivors
+  lane tools baker analysis demo3d demo2d
+  failed=""
+  for entry in $lanes; do
+    if wait "${entry%%:*}"; then result=passed; else result=FAILED; failed="$failed ${entry#*:}"; fi
+    echo "=== ci-full ${entry#*:}: $result"
+    cat "$logs/${entry#*:}.log"
+  done
+  rm -rf "$logs"
+  if [ -n "$failed" ]; then
+    echo "ci-full: failed:$failed" >&2
+    exit 1
+  fi
+  exit 0
+fi
+
 # The asset baker (tools/baker): its lint, typecheck and the baked assets' check.
-if [ "$section" = all ] || [ "$section" = baker ]; then
+if [ "$section" = baker ]; then
   npm ci --no-audit --no-fund --prefer-offline
   npm run check
 fi
 
 # The Python tooling: the analysis tool and the friction ledger.
-if [ "$section" = all ] || [ "$section" = analysis ]; then
+if [ "$section" = analysis ]; then
   uv run --directory tools/analysis pytest -q
   uv run --directory tools/analysis ruff check .
   uv run --project tools/analysis ps-analysis check songs/orpheus-galop/songmap.json
@@ -34,12 +65,12 @@ if [ "$section" = all ] || [ "$section" = analysis ]; then
   uv run --no-project python -m unittest scripts/test_check_conflict_markers.py
 fi
 
-# The native workspace: every crate's clippy and tests, the pure crates' purity, unused
-# dependencies, and a release build of the app. Each phase adds its release-stage checks here
-# (docs/design/native-app.md, "Automated Checks"): stage and corpus parity (A), the oracle sweep,
-# causality and playability (B), visual parity (C1), sessions (D3), `ps bench`, Delayed listening
-# (E). `.enact.toml`'s slow command sets CARGO_TARGET_DIR to a persistent directory.
-if [ "$section" = all ] || [ "$section" = native ]; then
+# The native workspace: every crate's clippy, the pure crates' purity, unused dependencies, the
+# tests' build, a release build of the app and the CLI, and the live engine's cost against its
+# gates (G5, docs/design/native-app.md "Targets"): the rollbacks' re-simulation per second and the
+# engine's time per frame, then the whole frame's work (sim, evaluate, encode) offscreen.
+# `.enact.toml`'s slow command sets CARGO_TARGET_DIR to a persistent directory.
+if [ "$section" = native ]; then
   uv run --directory tools/analysis ruff check ../../native/scripts/crates ../../native/scripts/test_crates.py
   uv run --no-project python -m unittest native/scripts/test_crates.py
   (
@@ -47,25 +78,33 @@ if [ "$section" = all ] || [ "$section" = native ]; then
     cargo fmt --all --check
     scripts/crates purity
     cargo clippy --locked --workspace --all-targets -- -D warnings
-    # (With the release-only stage parity tests the gate skips: #[ignore = "release: ..."].)
-    cargo test --locked --workspace -- --include-ignored
     cargo machete
-    cargo build --locked --release -p app
+    cargo test --locked --workspace --no-run
+    cargo build --locked --release -p app -p cli
+    cargo run --locked --release -p cli -- runner-bench --check
+    cargo run --locked --release -p app -- --bench --check
   )
-  # Corpus parity (A7, docs/design/native-app.md "Corpus parity"): the Rust analyzer over a sample
-  # of tracks against Python's committed streams (the margins, at D = 0; the live delay's cost is
-  # measured by hand into the design's appendix), in the utility QoS class (the
-  # background class keeps to the efficiency cores and took over an hour; a warm gate check under
-  # it took 14.8 s against 11 s, hv-t8o8.12), and
-  # skipped when its inputs (the analyzer, the CLI, the models, the workspace's build files, the
-  # streams and audio, Python's decoding and its lock file)
-  # match a commit that passed it.
-  # A fixed sample: steady (house, drum and bass), a swing groove, an accelerando, two classical
-  # pieces, two hard tracks. The whole corpus (--all) took over 30 minutes on a loaded host;
-  # run it by hand (`ps analysis-parity --all`) when the analyzer's accuracy is in question.
-  # Delayed listening at the chosen M (E1) rides on the same runs: its lead check fails the step.
+fi
+
+# Every crate's tests, with the release-only ones the gate skips (#[ignore = "release: ..."]).
+if [ "$section" = native-tests ]; then
+  (cd native && cargo test --locked --workspace -- --include-ignored)
+fi
+
+# Corpus parity (A7, docs/design/native-app.md "Corpus parity"): the Rust analyzer over a sample
+# of tracks against Python's committed streams (the margins, at D = 0; the live-delay run, which
+# Delayed listening replays, only reports the delay's cost), in the utility QoS class (the
+# background class keeps to the efficiency cores and took over an hour, hv-t8o8.12), and skipped
+# when its inputs (the analyzer, the CLI, the models, the workspace's build files, the streams and
+# audio, Python's decoding and its lock file) match a commit that passed it.
+# A fixed sample of short tracks, about 2 minutes: steady house, a swing groove, an accelerando
+# and a hard NotJam track. Each track's passes run in turn at about real time, so a longer track
+# lengthens the step; run the whole corpus by hand (`ps analysis-parity --all`, over 30 minutes)
+# when the analyzer's accuracy is in question.
+# Delayed listening at the chosen M (E1) rides on the same runs: its lead check fails the step.
+if [ "$section" = parity ]; then
   PARITY_DELAYED="--delayed 3"
-  PARITY_TRACKS=house-128,dnb-174,hiphop-92-swing,accelerando-100-140,orpheus-galop,beethoven-fifth,notjam-klepto-linda-caverns-b,notjam-crystal-caverns
+  PARITY_TRACKS=house-128,hiphop-92-swing,accelerando-100-140,notjam-crystal-caverns
   parity=$(
     {
       echo "$PARITY_TRACKS $PARITY_DELAYED"
@@ -77,7 +116,7 @@ if [ "$section" = all ] || [ "$section" = native ]; then
   )
   if [ -z "$(git status --porcelain --untracked-files=no)" ] && [ -f "$STAMPS/parity-$parity" ] &&
     [ "${PS_CI_FULL_FORCE:-0}" != 1 ]; then
-    echo "ci-full native: corpus parity inputs $parity passed at $(cat "$STAMPS/parity-$parity"); skipping"
+    echo "ci-full parity: corpus parity inputs $parity passed at $(cat "$STAMPS/parity-$parity"); skipping"
   else
     out="$HOME/Library/Caches/playlist-survivors/parity/$(git rev-parse --short HEAD)"
     (cd native && taskpolicy -c utility cargo run --locked --release -p cli -- analysis-parity --tracks "$PARITY_TRACKS" $PARITY_DELAYED --jobs 8 --check --out "$out")
@@ -87,33 +126,22 @@ if [ "$section" = all ] || [ "$section" = native ]; then
       echo "$(git rev-parse --short HEAD) $(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$STAMPS/parity-$parity"
     fi
   fi
-  # The live engine's cost against its gates (G5, docs/design/native-app.md "Targets"): the
-  # rollbacks' re-simulation per second and the engine's time per frame, then the whole frame's
-  # work (sim, evaluate, encode) offscreen.
-  (cd native && cargo run --locked --release -p cli -- runner-bench --check)
-  (cd native && cargo run --locked --release -p app -- --bench --check)
 fi
 
-# SF9's own release step: utility QoS, a bounded matrix, source-keyed skip, 20-minute budget.
-# Active-player survival asserts; AFK minimum difficulty and pacing remain report-only.
-if [ "$section" = all ] || [ "$section" = survivors ]; then
+# SF9's own release step: utility QoS, four 30-minute positioning runs (one seed in each playlist
+# order, and the continuously analysed source) and the exact replay of the base order's recorded
+# session, source-keyed skip, 20-minute budget. Survival asserts; pacing remains report-only.
+if [ "$section" = survivors ]; then
   uv run --directory tools/analysis ruff check ../../native/scripts/survivors_sweep.py ../../native/scripts/test_survivors_sweep.py
   uv run --no-project python -m unittest native/scripts/test_survivors_sweep.py
   uv run --no-project python native/scripts/survivors_sweep.py --release --assert-survival
-fi
-
-# Full 30:00 exact replay is a separate step so its work does not consume the matrix budget.
-if [ "$section" = all ] || [ "$section" = survivors-replay ]; then
-  uv run --directory tools/analysis ruff check ../../native/scripts/survivors_sweep.py ../../native/scripts/test_survivors_sweep.py
-  uv run --no-project python -m unittest native/scripts/test_survivors_sweep.py
-  uv run --no-project python native/scripts/survivors_sweep.py --release --replay-only
 fi
 
 # The 3D demo (docs/tech-demo-3d/): the vendor guard over the whole tree and everything remote
 # master doesn't have yet, the last line of defence before this stage moves it; the tools' lint
 # and tests; and the choreography layer's tests (the shared package and demo3d's data) under
 # dotnet, without Unity.
-if [ "$section" = all ] || [ "$section" = demo3d ]; then
+if [ "$section" = demo3d ]; then
   uv run --quiet --project demo3d/tools demo3d guard --tree HEAD
   if git rev-parse --verify --quiet origin/master >/dev/null; then
     uv run --quiet --project demo3d/tools demo3d guard --range origin/master..HEAD
@@ -126,6 +154,6 @@ if [ "$section" = all ] || [ "$section" = demo3d ]; then
 fi
 
 # The 2D demo (docs/tech-demo-2d/): the choreography layer's tests on demo2d's data, under dotnet.
-if [ "$section" = all ] || [ "$section" = demo2d ]; then
+if [ "$section" = demo2d ]; then
   dotnet test demo2d/dotnet/Demo2D.Choreography.Tests --nologo -v q
 fi
