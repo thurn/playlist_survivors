@@ -266,7 +266,8 @@ python3 "$HOME/enact/scripts/enact.py" setup
 ```
 
 `.enact.toml` holds the fast check (`scripts/check-fast`) and the slow check (`scripts/ci-full`,
-with a persistent Cargo target directory). Deliver a change from a worktree:
+with a persistent Cargo target directory). Its worktree hooks (`scripts/enact-worktree`) clone a
+warm Cargo target into each new worktree. Deliver a change from a worktree:
 
 ```sh
 cd "$PS_ROOT"

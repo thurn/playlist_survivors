@@ -10,8 +10,9 @@ slow = 'CARGO_TARGET_DIR="$HOME/Library/Caches/playlist-survivors/target-release
 
 [worktree]
 root = ".worktrees"   # inside the checkout; gitignored
-# create = "scripts/enact-worktree create"   # replaces `git worktree add`
-# remove = "scripts/enact-worktree remove"   # replaces `git worktree remove`
+# APFS-clone a warm Cargo target into each new worktree (scripts/enact-worktree).
+create = "scripts/enact-worktree create"   # replaces `git worktree add`
+remove = "scripts/enact-worktree remove"   # replaces `git worktree remove`
 
 # [roles.warden.claude]
 # model = "opus"

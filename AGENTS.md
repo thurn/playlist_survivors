@@ -22,7 +22,7 @@ Vision: Playlist Survivors is "the game that doesn't need a trailer". This is be
 
 ## Features
 
-- **Worktrees.** Use a fresh worktree per prompt or bead. Run `npm ci` in a new worktree only before touching the asset baker (`tools/baker`, `assets-src/`, `public/assets/`).
+- **Worktrees.** Use a fresh worktree per prompt or bead. Enact's hooks (`scripts/enact-worktree`) APFS-clone a seed Cargo target into its `native/target`, so its first build compiles only the workspace's crates, and move its target back into the seed on removal. Run `npm ci` in a new worktree only before touching the asset baker (`tools/baker`, `assets-src/`, `public/assets/`).
 - **Validation.** Staged, cheapest first:
   1. While iterating and while fixing review findings, focused checks: `cargo test -p <crate> <filter>` for native crates, `uv run --directory tools/analysis pytest -q <tests>` for the analysis tool, `npm run check` for the baker.
   2. `scripts/check-fast`, which `enact push` runs on the rebased tree; run it yourself first only when you want the answer sooner. It is diff-aware against where the branch left `origin/staging` (the baker's lint, typecheck and asset check when its paths changed; ruff and the matching test modules for the analysis tool; `native/scripts/check-fast` for native changes; the vendor guard always) and its budget is 60 s. Set `CHANGES_BASE=<rev>` to diff against another base.

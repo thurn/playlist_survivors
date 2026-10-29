@@ -1,5 +1,5 @@
 #!/bin/sh
-# The native half of the fast check (budget 60 s warm), and the gate stage's native section:
+# The native half of the fast check (budget 60 s warm):
 # diff-aware, from the paths that differ from the branch's base (scripts/lib/changes.sh).
 #
 #   native/scripts/check-fast
@@ -8,13 +8,13 @@
 # - clippy (-D warnings) and the tests of the crates the diff touches and their dependents
 #   (every crate when the workspace's files or the content it reads changed);
 # - unused dependencies (cargo machete, a fraction of a second) whenever a crate changed: a code
-#   removal can leave one, and the release stage would otherwise be the first to fail
+#   removal can leave one, and slow CI would otherwise be the first to fail
 #   (hv-t8o8.70);
 # - native/scripts/crates' own tests when that script changed.
-# Set CARGO_TARGET_DIR to build elsewhere (Tollgate's steps use persistent directories). Never
+# Set CARGO_TARGET_DIR to build elsewhere (slow CI uses a persistent directory). Never
 # share one target directory between worktrees: cargo names a workspace crate's artifacts by its
 # path within the workspace, so one worktree would link another's stale build (hv-t8o8.79).
-# The oracle and causality smokes join the gate stage when the sim has them (B7, B8).
+# The oracle and causality smokes join the fast check when the sim has them (B7, B8).
 set -eu
 cd "$(dirname "$0")/../.."
 . scripts/lib/changes.sh

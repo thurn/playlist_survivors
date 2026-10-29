@@ -1,0 +1,65 @@
+#!/bin/sh
+# Enact's worktree hooks (.enact.toml [worktree]), which replace `git worktree add` and `remove`.
+#
+#   scripts/enact-worktree create|remove
+#
+# Enact sets ENACT_WORKTREE_PATH, ENACT_BRANCH (empty for a detached worktree), ENACT_BASE_SHA
+# and ENACT_REPO (the main checkout). Beyond plain git, they keep a warm Cargo cache:
+# - create APFS-clones (`cp -c`, copy-on-write) the seed target directory into the new worktree's
+#   native/target, so its first build compiles only the workspace's crates, not the dependencies;
+# - remove moves the worktree's native/target into the seed first, so the seed tracks the newest
+#   Cargo.lock and toolchain.
+# The seed is $PS_TARGET_SEED (default ~/Library/Caches/playlist-survivors/target-seed), else the
+# main checkout's native/target. A clone is a copy, not a shared directory: the worktree's sources
+# are checked out after the seed's last build, so cargo sees every workspace crate as changed and
+# never links another worktree's build (hv-t8o8.79). Slow CI's worktrees (ci-*) skip the clone,
+# since slow CI builds into its own persistent CARGO_TARGET_DIR. A failed clone or seed update
+# only warns: the worktree then builds cold.
+set -eu
+: "${ENACT_WORKTREE_PATH:?}" "${ENACT_REPO:?}"
+seed="${PS_TARGET_SEED:-$HOME/Library/Caches/playlist-survivors/target-seed}"
+path="$ENACT_WORKTREE_PATH"
+git() { command git -C "$ENACT_REPO" "$@"; }
+
+case "${1:-}" in
+  create)
+    if [ -n "${ENACT_BRANCH:-}" ]; then
+      git worktree add -q -b "$ENACT_BRANCH" "$path" "$ENACT_BASE_SHA"
+    else
+      git worktree add -q --detach "$path" "$ENACT_BASE_SHA"
+    fi
+    case "$(basename "$path")" in ci-*) exit 0 ;; esac
+    from="$seed"
+    [ -d "$from" ] || from="$ENACT_REPO/native/target"
+    if [ -d "$from" ]; then
+      started=$(date +%s)
+      if cp -c -R "$from" "$path/native/target" 2>/dev/null; then
+        echo "enact-worktree: cloned $from in $(( $(date +%s) - started )) s" >&2
+      else
+        echo "enact-worktree: cloning $from failed; building cold" >&2
+        rm -rf "$path/native/target"
+      fi
+    fi
+    ;;
+  remove)
+    if [ -d "$path/native/target" ]; then
+      # Swap by rename, so a create cloning the seed meanwhile reads a whole directory.
+      mkdir -p "$(dirname "$seed")"
+      old="$seed.old.$$"
+      if [ -d "$seed" ]; then mv "$seed" "$old" 2>/dev/null || old=""; else old=""; fi
+      if mv "$path/native/target" "$seed" 2>/dev/null; then
+        [ -z "$old" ] || rm -rf "$old"
+      else
+        echo "enact-worktree: updating the seed $seed failed; keeping the old one" >&2
+        [ -z "$old" ] || mv "$old" "$seed" 2>/dev/null || rm -rf "$old"
+      fi
+    fi
+    git worktree remove --force "$path" 2>/dev/null || true
+    if [ -n "${ENACT_BRANCH:-}" ]; then git branch -q -D "$ENACT_BRANCH" 2>/dev/null || true; fi
+    git worktree prune
+    ;;
+  *)
+    echo "usage: scripts/enact-worktree create|remove" >&2
+    exit 2
+    ;;
+esac
