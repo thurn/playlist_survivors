@@ -142,16 +142,22 @@ namespace Demo2D.Tests
             {
                 // One playback in the scene at a time: both would draw into each other's stills.
                 const double at = 116; // the build, a few hundred on screen
+                // A throwaway draw first: the editor's first draw in a session samples atlases it
+                // hasn't uploaded yet, so its sprites show other types' pixels (a player's don't).
+                playback = new SongPlayback(data, PixelPipeline.TargetZoom, null);
+                Still(playback, at, rt);
+                playback.Dispose();
+
+                playback = new SongPlayback(data, PixelPipeline.TargetZoom, null);
+                var jumped = Still(playback, at, rt);
+                playback.Dispose();
+
                 playback = new SongPlayback(data, PixelPipeline.TargetZoom, null);
                 for (int f = 0; f < at * 60; f++) playback.Frame(f / 60.0, rt.width, rt.height);
                 var fromStart = Still(playback, at, rt);
                 Assert.That(playback.OnScreenAlive, Is.GreaterThan(100), "the still shows a horde");
                 playback.Frame(150, rt.width, rt.height);
                 var backAgain = Still(playback, at, rt);
-                playback.Dispose();
-
-                playback = new SongPlayback(data, PixelPipeline.TargetZoom, null);
-                var jumped = Still(playback, at, rt);
 
                 Assert.That(Differing(jumped, fromStart), Is.Zero, "a seek forward");
                 Assert.That(Differing(backAgain, fromStart), Is.Zero, "a seek back");

@@ -21,7 +21,8 @@ namespace Demo2D.EditorTools.Assets
         const string AudioDir = "Assets/Baked/Audio";
         public const string SpriteFlashPath = "Assets/Demo2D/Runtime/Shaders/Sprite-Lit-Flash.shader";
         public const string UpscalePath = "Assets/Demo2D/Runtime/Shaders/SharpUpscale.shader";
-        public const string SpriteUnlitPath = "Packages/com.unity.render-pipelines.universal/Runtime/Materials/Sprite-Unlit-Default.mat";
+        const string SpriteBakerSource = "Assets/Demo2D/Editor/Assets/SpriteBaker.cs";
+        public const string SpriteUnlitPath ="Packages/com.unity.render-pipelines.universal/Runtime/Materials/Sprite-Unlit-Default.mat";
         /// <summary>The open ground's extent in metres (tiles): the open-ground layout's goals with room around them.</summary>
         public static readonly RectInt GroundRect = new RectInt(-48, -84, 96, 120);
 
@@ -58,9 +59,13 @@ namespace Demo2D.EditorTools.Assets
                 .Select(p => Load<TextAsset>(p.Replace('\\', '/'))).ToArray();
 
             var characters = CharacterPacks.Load();
-            if (characters.Any(c => !File.Exists($"{SpriteBaker.OutDir}/{c.Name}.png")))
+            // The atlases follow the roster's heights, the library's clip choices and the baker
+            // itself: a bake older than any of them would draw stale frames without an error.
+            var inputs = new[] { Data("roster.json"), Data("clip-annotations.json"), SpriteBakerSource }.Max(File.GetLastWriteTimeUtc);
+            if (characters.Any(c => !File.Exists($"{SpriteBaker.OutDir}/{c.Name}.png") ||
+                                    File.GetLastWriteTimeUtc($"{SpriteBaker.OutDir}/{c.Name}.json") < inputs))
             {
-                Debug.Log("PlaybackBaker: atlases missing; baking them (SpriteBaker)");
+                Debug.Log("PlaybackBaker: atlases missing or older than their inputs; baking them (SpriteBaker)");
                 SpriteBaker.Run();
             }
             data.atlases = characters.Select(c => Load<Texture2D>($"{SpriteBaker.OutDir}/{c.Name}.png")).ToArray();

@@ -128,6 +128,7 @@ namespace Demo2D.Tests
                 string what = a.Use;
                 Assert.That(new[] { f["impactFrame"].AsInt(), f["endFrame"].AsInt() }, Is.EqualTo(new[] { a.ImpactFrame, a.EndFrame }), what);
                 Assert.That(f["strideM"].AsFloat(), Is.EqualTo(a.StrideM).Within(0.006f), what + ": stride");
+                Assert.That(f["rootMotionM"].AsFloat(), Is.EqualTo(a.RootMotionM).Within(0.006f), what + ": root motion");
                 Assert.That(f["impact"].AsFloat(), Is.EqualTo(a.ImpactFrame / (float)CharacterPacks.FrameRate).Within(0.001f), what);
                 Assert.That(a.ImpactFrame, Is.InRange(0, a.EndFrame), what + ": impact before the end");
                 Assert.That(a.EndFrame, Is.InRange(1, a.Frames), what + ": end within the clip");

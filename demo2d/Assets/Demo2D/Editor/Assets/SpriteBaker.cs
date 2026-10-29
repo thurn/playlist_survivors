@@ -163,8 +163,8 @@ namespace Demo2D.EditorTools.Assets
             var c = Mask.Of(first, q);
             var (coarse, _) = Best(a, c, new Vector2Int(Mathf.RoundToInt((float)guess.x / q), Mathf.RoundToInt((float)guess.y / q)), 12);
             var (fine, iou) = Best(Mask.Of(walk, 1), Mask.Of(first, 1), coarse * q, q + 1);
-            if (iou < MinMatch) return (own, $"own feet (overlap {iou:0.00})");
-            return (walkFeet + fine, $"matched walk (overlap {iou:0.00})");
+            if (iou < MinMatch) return (own, string.Format(CultureInfo.InvariantCulture, "own feet (overlap {0:0.00})", iou));
+            return (walkFeet + fine, string.Format(CultureInfo.InvariantCulture, "matched walk (overlap {0:0.00})", iou));
         }
 
         sealed class Mask
@@ -228,8 +228,9 @@ namespace Demo2D.EditorTools.Assets
             int gx0 = Mathf.FloorToInt((src.xMin - feet.x) * scale), gx1 = Mathf.CeilToInt((src.xMax - feet.x) * scale);
             int gy0 = Mathf.FloorToInt((src.yMin - feet.y) * scale), gy1 = Mathf.CeilToInt((src.yMax - feet.y) * scale);
             int w = gx1 - gx0, h = gy1 - gy0;
-            var xs = Weights(gx0, w, feet.x, scale, frames[0].W);
-            var ys = Weights(gy0, h, feet.y, scale, frames[0].H);
+            // Frames may differ in size; each skips the source pixels it lacks.
+            var xs = Weights(gx0, w, feet.x, scale, frames.Max(f => f.W));
+            var ys = Weights(gy0, h, feet.y, scale, frames.Max(f => f.H));
             float area = 1f / (scale * scale);
 
             var seq = new Sequence { W = w, H = h, Pivot = new Vector2Int(-gx0, -gy0) };
@@ -381,7 +382,7 @@ namespace Demo2D.EditorTools.Assets
             for (int i = 0; i < names.Count; i++)
             {
                 var s = b.Clips[names[i]];
-                j.Append($"    \"{names[i]}\": {{\"sizePx\": [{s.W}, {s.H}], \"pivotPx\": [{s.Pivot.x}, {s.Pivot.y}], \"frames\": [")
+                j.Append(string.Format(inv, "    \"{0}\": {{\"sizePx\": [{1}, {2}], \"pivotPx\": [{3}, {4}], \"frames\": [", names[i], s.W, s.H, s.Pivot.x, s.Pivot.y))
                  .Append(string.Join(", ", frames[names[i]].Select(p => string.Format(inv, "[{0}, {1}, {2}, {3}, {4}, {5}]",
                      p.Rect.x, p.Rect.y, p.Rect.width, p.Rect.height, p.Offset.x, p.Offset.y))))
                  .Append(i + 1 < names.Count ? "]},\n" : "]}\n");

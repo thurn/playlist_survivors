@@ -555,7 +555,7 @@ and this notes commit. `demo2d check --player` passes (the guard, dotnet, EditMo
 
   ```
   uv run --project demo3d/tools demo2d setup     # vendor, the song
-  uv run --project demo3d/tools demo2d build     # bakes the atlases if missing, then PlaybackData, then the player
+  uv run --project demo3d/tools demo2d build     # bakes the atlases if missing or stale, then PlaybackData, then the player
   APP="$PWD/demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app/Contents/MacOS/Playlist Survivors 2D Demo"
   "$APP" --click --overlay                       # the operator: the song with a click and the counts
   "$APP" -batchmode -force-metal -logFile "$PWD/demo2d/Logs/px5.log" \
@@ -621,6 +621,33 @@ and this notes commit. `demo2d check --player` passes (the guard, dotnet, EditMo
   count, so PX3's stills are unchanged), SpriteBaker's `Sprite` delegating to `CharacterAtlas`,
   StillCapture's readback shared and installed only for the test card, and the build baking
   `PlaybackData` first. Unity's rewrites of two ProjectSettings files were discarded, as in PX2.
+- **Review** (Warden, bead ps-tfn.1.9, the foundations milestone PX1 to PX5): one test bug and
+  three small baker problems fixed, in the commit `fix(px5): …` after `68f27368`; one follow-up
+  filed. `demo2d test` 78 of 78, twice, one of them with a cold shader cache.
+  - **The seek test failed in a fresh worktree** (163,503 pixels on "a seek forward"; it passed
+    once in five runs). The editor's first draw in a session samples atlases it hasn't uploaded
+    yet, so whichever still came first showed other types' pixels in the right sprite shapes. The
+    player's stills are right (PX5's evidence, and a seek's first frame there matches). The test
+    now makes a throwaway draw first. Async shader compilation was ruled out.
+  - **A stale bake drew silently.** The build re-baked the atlases only when one was missing, so a
+    changed `gameHeightPx`, clip choice or baker kept the old frames. It now re-bakes when an atlas
+    is older than `roster.json`, `clip-annotations.json` or `SpriteBaker.cs`, and the annotator
+    leaves an unchanged library's file time alone, so that check doesn't re-bake every time.
+  - **Culture-dependent text in baked and tracked files:** the atlas JSON's pivots (negative ones
+    are invalid JSON where the minus is U+2212) and the library's `anchor` and `method` strings now
+    format invariantly.
+  - **Frames larger than a clip's first** lost the pixels past its size (latent: every pack's
+    clips keep one canvas). The library test now also checks `rootMotionM` against a fresh
+    annotation, the one value the client applies by hand.
+  - **Filed:** ps-tfn.8. No Unity EditMode test of either demo runs in fast or slow CI (only the
+    dotnet choreography tests do), so PX5's seek and impact tests run only when an agent remembers.
+  - **Checked and left alone:** the evaluator's retiming (impact frames land on their impacts),
+    facing hysteresis, the explicit y-sort, the death's fade (two beats, inside the sim's 1 s
+    corpse linger at *Action*'s 155 bpm), the sharp upscale's filter, the target sizing and margin
+    against the 0.25 m shake, the 90° view geometry (the exact 16:9 rectangle), casters' bolts and
+    the moved timeline checks. The skeleton mage's clips sit 1 grid pixel above their feet (its
+    lowest row snaps clear); `hero spin` reusing `skill_1` is PX3's recorded placeholder for PX8.
+    The guard's changes had their own reviews (ps-tfn.1.4, ps-tfn.1.10).
 
 ### PX6
 

@@ -60,8 +60,10 @@ namespace Demo2D.EditorTools.Assets
         public static List<Annotation> Run(List<SpriteBaker.Baked> baked, string evidenceDir)
         {
             var annotations = Annotate(baked, Entries());
-            File.WriteAllText(OutPath, Json(annotations));
-            Debug.Log($"ClipAnnotator: wrote {annotations.Count} annotations to {OutPath}");
+            // Unchanged, the file keeps its time, so the next build doesn't re-bake the atlases (PlaybackBaker).
+            var json = Json(annotations);
+            if (!File.Exists(OutPath) || File.ReadAllText(OutPath) != json) File.WriteAllText(OutPath, json);
+            Debug.Log($"ClipAnnotator: {annotations.Count} annotations in {OutPath}");
             Directory.CreateDirectory(evidenceDir);
             foreach (var b in baked) ContactSheet(b, annotations, Path.Combine(evidenceDir, $"annotations-{b.Character.Name}.jpg"));
             return annotations;
@@ -123,7 +125,7 @@ namespace Demo2D.EditorTools.Assets
                             a.Method = $"cycle of {cycle} frames; stride from the planted foot's slide";
                         else
                         {
-                            a.Method = $"cycle of {cycle} frames; no planted foot ({a.StrideM:0.00} m), stride two gait steps";
+                            a.Method = string.Format(CultureInfo.InvariantCulture, "cycle of {0} frames; no planted foot ({1:0.00} m), stride two gait steps", cycle, a.StrideM);
                             a.StrideM = 2 * gaitStepM;
                         }
                     }
