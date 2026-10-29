@@ -125,8 +125,12 @@ More rules:
   - A **derived record** beside it holds the hashes and GUIDs of every file
     in each worktree's `Assets/Baked/` and `Assets/Vendor/` (Unity rewrites
     some vendor files on import, such as demo2d's binary Spine clips, which
-    it re-serializes as YAML; PX2) and of the song's source. The guard
-    adds to it before each check and never removes from it. An edited copy
+    it re-serializes as YAML; PX2) and of the song's source. Before each
+    check the guard hashes those files in every worktree of the clone, so a
+    file copied from a worktree whose guard never ran is caught too; it
+    checks against them directly (a concurrent check may replace the record
+    without them) and adds them to the record, which never forgets a removed
+    worktree's files. An edited copy
     of a vendor file with new bytes and a fresh GUID can't be recognized;
     the binary rule and the gitignored folders are the defense there.
   - Song audio means any audio file under `songs/` or `public/` with a path

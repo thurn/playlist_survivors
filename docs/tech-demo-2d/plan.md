@@ -408,6 +408,18 @@ this notes commit. `demo2d check --player` passes (the guard, dotnet, cold EditM
   matched no source hash and carried no GUID, and a copy under `Demo2D/Art/` passed. The derived
   record now records each demo's `Assets/Vendor/` as well as its `Assets/Baked/` (about 3 s on a
   first guard run, cached after). Its own review is Warden bead ps-tfn.1.10.
+- **Guard review** (ps-tfn.1.10): the fix holds; the review's guard commit closed two gaps.
+  A clip Unity rewrote in a worktree whose guard never ran passed when copied into another, since each
+  guard recorded only its own worktree; the guard now hashes every worktree's `Baked/` and
+  `Vendor/` (17,000 files on the Mac, under 1 s warm). And two concurrent checks each replaced the
+  record without the other's entries, so a check could read back a record lacking its own
+  rewritten files; it now checks against them in memory too, writes the record and its stat
+  cache atomically, and prunes the stat cache to files that exist. A cold import in a fresh
+  worktree rewrote 196 `.anim`s and 10 `.anim.meta`s (all keeping their vendor GUID) and nothing
+  else (no prefab, material or texture); a warm Library rewrites nothing. The drill, re-run in a
+  scratch clone of that commit on those rewrites: 89 refused, both controls pass. Left alone:
+  edited copies with new bytes stay undetectable (as designed), and a separate clone's folders are
+  not scanned (only this clone's worktrees).
 - **Nothing tracked under `demo2d/` is vendor or derived:** the guard passes the tree and the
   index (5,566 files); the new tracked files are our code, JSON, `.meta`s Unity wrote, and
   tagged stills.
