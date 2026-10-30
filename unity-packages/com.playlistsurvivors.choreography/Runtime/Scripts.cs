@@ -16,6 +16,9 @@ namespace PS.Choreography
         public GridFlags Position = GridFlags.Beat;
         public int Every = 1;
 
+        /// <summary>A plain combo entry's rank: it plays on the beat.</summary>
+        public const int BeatPriority = 2;
+
         /// <summary>When positions coincide: phrase beats downbeat, which beats accent, which beats beat.</summary>
         public int Priority
         {
@@ -26,7 +29,7 @@ namespace PS.Choreography
                     case GridFlags.Phrase: return 5;
                     case GridFlags.Downbeat: return 4;
                     case GridFlags.Accent: return 3;
-                    case GridFlags.Beat: return 2;
+                    case GridFlags.Beat: return BeatPriority;
                     case GridFlags.Eighth: return 1;
                     default: return 0;
                 }
@@ -189,6 +192,12 @@ namespace PS.Choreography
         /// default: travelling, it attacks only what is within its unscaled reach.
         /// </summary>
         public bool TravelScaledReach;
+        /// <summary>
+        /// The hero holds back a beat's blow (or a flurry's) that would leave no room for the windup of the
+        /// section's next spin or slam on its accent or phrase (its <c>yieldToAccents</c>). False, the default:
+        /// such a spin or slam moves later, as any positioned combo that can't fit does.
+        /// </summary>
+        public bool YieldToAccents;
 
         public static readonly SimTuning Default = new SimTuning();
 
@@ -213,6 +222,7 @@ namespace PS.Choreography
                 RefillDivisor = root["refillDivisor"].AsFloat(d.RefillDivisor),
                 ReleaseLeadS = root["releaseLeadS"].AsFloat(d.ReleaseLeadS),
                 TravelScaledReach = root["travelScaledReach"].AsBool(d.TravelScaledReach),
+                YieldToAccents = root["yieldToAccents"].AsBool(d.YieldToAccents),
             };
             if (!(t.ComboMinSpeed >= ClipLibrary.MinSpeed) || !(t.ComboMaxSpeed >= t.ComboMinSpeed))
                 throw new FormatException("hero combo speeds " + t.ComboMinSpeed + " to " + t.ComboMaxSpeed + " are out of order or below the clips' minimum");

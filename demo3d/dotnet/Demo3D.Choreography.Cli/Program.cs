@@ -7,7 +7,7 @@ using PS.Choreography;
 namespace Demo3D.Choreography.Cli
 {
     /// <summary>
-    /// dotnet run --project demo3d/dotnet/Demo3D.Choreography.Cli -c Release -- song [--level action-level-forest.json] [--intensity overdrive] [--seed N] [--out dump.json] [--from S --to S] [--hero] [--onscreen] [--ring]
+    /// dotnet run --project demo3d/dotnet/Demo3D.Choreography.Cli -c Release -- song [--level action-level-forest.json] [--intensity overdrive] [--seed N] [--out dump.json] [--from S --to S] [--hero] [--onscreen] [--ring] [--checks]
     ///                                                                        stress S3 [--n N] [--view W] [--load L] [--seconds S] [--out dump.json]
     ///                                                                       usage: song | stress <S1..S6> | placements | timing [--out timing.md]
     /// </summary>
@@ -27,6 +27,7 @@ namespace Demo3D.Choreography.Cli
                     string level = Opt(args, "--level") ?? ChoreographyFiles.LevelFile;
                     Timeline tl = ChoreographyFiles.BuildSong(root, seed == null ? (uint?)null : uint.Parse(seed, CultureInfo.InvariantCulture), level, Opt(args, "--intensity"));
                     Console.Write(TimelineReport.Summary(tl));
+                    if (Has(args, "--checks")) Checks(tl, ChoreographyFiles.LoadLevel(root, level, Opt(args, "--intensity")), root);
                     Snapshot(tl, ChoreographyFiles.LoadData(root, ChoreographyFiles.LoadLevel(root, level).Layout ?? ChoreographyFiles.DefaultLayout), args);
                     if (Has(args, "--hero"))
                         for (double ht = 0; ht < tl.Duration; ht += 5)
@@ -208,6 +209,32 @@ namespace Demo3D.Choreography.Cli
                 Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0,-11} nearest p5 {1,4:F2} m, min {2,4:F2} m; within 2 m {3,5:F2} on average",
                     s.Label, p5, min, within / Math.Max(1, samples)));
             }
+        }
+
+        /// <summary>
+        /// The song's timeline checks (TimelineRulesTests and IntensityTests run them on the default
+        /// script), on any level script and intensity: one line per check, then its problems.
+        /// </summary>
+        static void Checks(Timeline tl, LevelScript level, string root)
+        {
+            ChoreographyData data = ChoreographyFiles.LoadData(root, level.Layout ?? ChoreographyFiles.DefaultLayout);
+            void Show(string name, System.Collections.Generic.List<string> problems)
+            {
+                Console.WriteLine("check " + name + ": " + (problems.Count == 0 ? "ok" : problems.Count + " problems"));
+                for (int i = 0; i < Math.Min(problems.Count, 10); i++) Console.WriteLine("  " + problems[i]);
+            }
+            Show("entities and order", TimelineChecks.EntitiesAndOrder(tl));
+            Show("impacts on the grid", TimelineChecks.ImpactsOnGrid(tl, out _));
+            Show("gait steps on beats", TimelineChecks.GaitStepsOnBeats(tl, out _));
+            Show("free sections move smoothly", TimelineChecks.FreeSectionsMoveSmoothly(tl, out _));
+            Show("section death rates", TimelineChecks.SectionDeathRates(tl, level));
+            Show("sections hold their targets", TimelineChecks.SectionsHoldTheirTargets(tl, TimelineChecks.SectionOnScreenTolerance, out _));
+            Show("overlaps", TimelineChecks.Overlaps(tl, out _, out _));
+            Show("hits and deaths have clip and effect", TimelineChecks.HitsAndDeathsHaveClipAndEffect(tl, out _));
+            Show("spawns outside the view", TimelineChecks.SpawnsOutsideTheView(tl, out _));
+            Show("sounds aggregated", TimelineChecks.SoundsAggregated(tl, out _));
+            Show("attacks carry their fit", TimelineChecks.AttacksCarryTheirFit(tl, data.Clips, out _, level.Tuning.ComboMaxSpeed));
+            Show("framing eases the zoom", TimelineChecks.FramingEasesTheZoom(tl, level.EnvelopeViewWidthM));
         }
 
         static void Dump(Timeline tl, string[] args)

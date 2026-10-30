@@ -718,6 +718,14 @@ namespace PS.Choreography
             {
                 // With a fixed windup the next combo's windup cuts into the last one's follow-through.
                 ScheduleHeroAction(tb, roster.HeroWindupS > 0 ? tb : Math.Max(tb, heroLastEnd));
+                // A flurry (an eighth's combo entry) can strike before the next beat: the hero then
+                // goes on to that beat's action, so the flurry adds a blow instead of shifting one.
+                while (heroPendingImpact > tb + 1e-9 && heroPendingImpact < tnext - 1e-9)
+                {
+                    double after = heroPendingImpact;
+                    ScheduleHeroAction(after, roster.HeroWindupS > 0 ? after : heroLastEnd);
+                    if (heroPendingImpact <= after + 1e-9) break;
+                }
                 return;
             }
             if (heroLastEnd > tb + 1e-9) return;
@@ -758,6 +766,11 @@ namespace PS.Choreography
                 // (the ending's accent slams after the outro, TD10). Within a section a positioned
                 // combo that can't fit moves later, as before.
                 if (plain && BlocksPositioned(gi, windup > 0 ? p.Time : end)) continue;
+                // A flurry's blow between beats never costs the hero the next beat's, and with the level
+                // script's yieldToAccents no beat's or flurry's blow costs the section's next accent or
+                // phrase its spin or slam (both for a hero that retimes its clips by speed, as demo3d's does).
+                if (windup <= 0 && (p.Flags & GridFlags.Beat) == 0 && FlurryTakesTheBeat(gi, availFrom, end)) continue;
+                if (windup <= 0 && tuning.YieldToAccents && e.Priority <= GridEntry.BeatPriority && TakesTheAccent(gi, availFrom, end)) continue;
 
                 Vector2 from = HeroRest;
                 float fFrom = Easing.Wrap(HeroFacing);
@@ -811,6 +824,43 @@ namespace PS.Choreography
             return false;
         }
 
+        /// <summary>
+        /// Whether a blow between beats at grid point <paramref name="gi"/>, ending at <paramref name="end"/>,
+        /// would leave the next beat's combo unable to fit when it could have from <paramref name="availFrom"/>.
+        /// </summary>
+        bool FlurryTakesTheBeat(int gi, double availFrom, double end)
+        {
+            int k = gi + 1;
+            while (k < grid.Count && (grid.Points[k].Flags & GridFlags.Beat) == 0) k++;
+            if (k == grid.Count) return false;
+            GridPoint q = grid.Points[k];
+            GridEntry e = PickCombo(plans[q.Section].Combo, q.Flags, out _);
+            if (e == null) return false;
+            ClipAnnotation c = clips[roster.Combo(e.Name).Clip];
+            return ClipLibrary.Fit(c, availFrom, q.Time, out _, out _, out _, tuning.ComboMaxSpeed, tuning.ComboMinSpeed)
+                && !ClipLibrary.Fit(c, end, q.Time, out _, out _, out _, tuning.ComboMaxSpeed, tuning.ComboMinSpeed);
+        }
+
+        /// <summary>
+        /// Whether a blow at grid point <paramref name="gi"/>, ending at <paramref name="end"/>, would leave
+        /// the next combo positioned above the beat in the same section (within 4 s) unable to fit when it
+        /// could have from <paramref name="availFrom"/>.
+        /// </summary>
+        bool TakesTheAccent(int gi, double availFrom, double end)
+        {
+            GridPoint p = grid.Points[gi];
+            for (int k = gi + 1; k < grid.Count && grid.Points[k].Time <= p.Time + 4.0 && grid.Points[k].Section == p.Section; k++)
+            {
+                GridPoint q = grid.Points[k];
+                GridEntry e = PickCombo(plans[q.Section].Combo, q.Flags, out _);
+                if (e == null || e.Priority <= GridEntry.BeatPriority) continue;
+                ClipAnnotation c = clips[roster.Combo(e.Name).Clip];
+                return ClipLibrary.Fit(c, availFrom, q.Time, out _, out _, out _, tuning.ComboMaxSpeed, tuning.ComboMinSpeed)
+                    && !ClipLibrary.Fit(c, end, q.Time, out _, out _, out _, tuning.ComboMaxSpeed, tuning.ComboMinSpeed);
+            }
+            return false;
+        }
+
         static bool AllPositioned(GridEntry[] combo)
         {
             foreach (GridEntry e in combo) if (!e.Positioned) return false;
@@ -828,7 +878,8 @@ namespace PS.Choreography
                 if ((flags & e.Position) != e.Position) continue;
                 if (best == null || e.Priority > best.Priority) best = e;
             }
-            if (best != null) return best;
+            // A plain entry plays on the beat, so on a beat it outranks an eighth's or a sixteenth's.
+            if (best != null && (best.Priority >= GridEntry.BeatPriority || plainCount == 0 || (flags & GridFlags.Beat) == 0)) return best;
             if (plainCount == 0 || (flags & GridFlags.Beat) == 0) return null;
             int want = comboCycle % plainCount;
             foreach (GridEntry e in combo)
