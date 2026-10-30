@@ -1,0 +1,29 @@
+{
+  "note": "demo2d's night (PX7), for URP's 2D renderer. 'moon' is the global Light2D (characters and tiles are lit; effects are unlit). 'hero' is a warm light that follows the knight so he reads in the crowd (PX3's lineup). 'shafts' are moonlight shafts: freeform Light2D parallelograms falling to the south-east, at [x, y] ground positions in metres with a width and length, breathing slowly (period in seconds). 'fireflies' hover around the arena's trees: 'count' trees are drawn by seed, one firefly each, drifting within 'driftM' of a point 1 to 3 m up the trunk, blinking; each is a glowing dot and a small light. 'plants' lights the umbrella plants (their ids start with 'prefix') with a soft glow that pulses. Point lights for fireflies and plants are only placed in view, at most 'maxLights' each. 'post' is the present camera's post-processing on the 1080p image: bloom (threshold and intensity in linear HDR), a neutral tonemap, the colour adjustments, white balance, shadows lift and a vignette.",
+  "moon": { "color": [0.5, 0.62, 1.0], "intensity": 0.24 },
+  "hero": { "color": [1.0, 0.78, 0.5], "radiusM": 4.5, "innerM": 0.8, "intensity": 0.8, "heightM": 1.0 },
+  "shafts": {
+    "color": [0.62, 0.74, 1.0], "intensity": 0.26, "falloffM": 3, "skewM": 2.5, "periodS": 9,
+    "items": [
+      { "at": [-3.5, -33], "widthM": 2.2, "lengthM": 6 },
+      { "at": [4, -29.5], "widthM": 1.6, "lengthM": 5 },
+      { "at": [1, -21], "widthM": 2.0, "lengthM": 5.5 },
+      { "at": [7.5, -11], "widthM": 1.6, "lengthM": 5 },
+      { "at": [3, -4], "widthM": 2.0, "lengthM": 6 },
+      { "at": [-15, 4], "widthM": 2.6, "lengthM": 7 },
+      { "at": [-3, 14], "widthM": 2.2, "lengthM": 6.5 },
+      { "at": [2, 2], "widthM": 1.8, "lengthM": 5.5 },
+      { "at": [-14, 15], "widthM": 2.0, "lengthM": 6 }
+    ]
+  },
+  "fireflies": {
+    "seed": 7, "count": 420, "color": [1.0, 0.95, 0.45], "glow": 6.0, "driftM": 1.4, "periodS": [5, 11], "blinkS": [2.5, 6],
+    "lightRadiusM": 1.3, "lightIntensity": 0.55, "maxLights": 24
+  },
+  "plants": { "prefix": "forest/umbrella", "color": [0.35, 1.0, 0.85], "radiusM": 1.5, "intensity": 0.6, "periodS": 4, "maxLights": 24 },
+  "post": {
+    "bloom": { "threshold": 1.25, "intensity": 0.7, "scatter": 0.6, "tint": [0.9, 0.95, 1.0] },
+    "exposure": 0.15, "contrast": 12, "saturation": 6, "temperature": -10, "tint": 0,
+    "shadows": [0.92, 0.96, 1.1], "vignette": 0.24
+  }
+}

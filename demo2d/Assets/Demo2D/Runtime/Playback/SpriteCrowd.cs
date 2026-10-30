@@ -44,6 +44,8 @@ namespace Demo2D.Runtime.Playback
         int[] _sortIndex = new int[64];
 
         public int Drawn => _used;
+        /// <summary>Draw no hit flash (the empty arena's stills, where the hero's parries would flash at nothing).</summary>
+        public bool NoFlash;
 
         /// <param name="clipSprites">Each annotation's frames.</param>
         /// <param name="heroRadiusM">The hero's footprint (the timeline's radii are the roster types').</param>
@@ -109,7 +111,7 @@ namespace Demo2D.Runtime.Playback
                 body.flipX = st.FlipX;
                 float tint = info.Kind == EntityKind.Hero ? 1f : 0.88f + 0.12f * ClipSchedule.Jitter(info.Seed, 2);
                 body.color = new Color(tint, tint, tint, st.Alpha);
-                body.sharedMaterial = _flash[Mathf.Clamp(Mathf.RoundToInt(st.Flash * FlashLevels), 0, FlashLevels)];
+                body.sharedMaterial = _flash[NoFlash ? 0 : Mathf.Clamp(Mathf.RoundToInt(st.Flash * FlashLevels), 0, FlashLevels)];
                 body.transform.localPosition = feet;
                 shadow.sprite = _shadowOf[info.Kind == EntityKind.Hero ? _shadowOf.Length - 1 : info.Type];
                 shadow.color = new Color(1, 1, 1, st.Alpha);

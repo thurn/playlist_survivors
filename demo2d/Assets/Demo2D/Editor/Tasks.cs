@@ -51,6 +51,10 @@ namespace Demo2D.EditorTools
         /// <summary>PX5: bakes the player's PlaybackData (PlaybackBaker). Every build runs it too.</summary>
         public static void BakePlayback() => Assets.PlaybackBaker.Bake();
 
+        /// <summary>PX7: the effect library, one still per entry at three ages, into `-out &lt;dir&gt;` (default evidence/px7).</summary>
+        public static void EffectLibraryStills() =>
+            Assets.EffectLibraryStills.Write(TaskArgs.Get("-out", Path.Combine("evidence", "px7")));
+
         /// <summary>PX6: bakes PlaybackData, then the arena's overview and shots into `-out &lt;dir&gt;` (default evidence/px6).</summary>
         public static void ArenaStills()
         {

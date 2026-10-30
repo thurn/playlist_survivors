@@ -3,16 +3,15 @@ using System.Collections.Generic;
 using Demo2D.Choreography;
 using PS.Choreography;
 using UnityEngine;
-using UnityEngine.Rendering.Universal;
 
 namespace Demo2D.Runtime.Playback
 {
     /// <summary>
     /// The song's playback (PX5), apart from its clock: builds the timeline from the baked
     /// PlaybackData, then draws any song time on request (<see cref="Frame"/>): the arena (PX6),
-    /// the sprite crowd, the camera's follow, punch and shake, and the pixel pipeline. Everything
-    /// it draws is a function of the time, so the player (DemoMain, which owns the clock) and the
-    /// seek test share it.
+    /// the sprite crowd, the effects and the night's lights (PX7), the camera's follow, punch and
+    /// shake, and the pixel pipeline. Everything it draws is a function of the time, so the player
+    /// (DemoMain, which owns the clock) and the seek test share it.
     /// </summary>
     public sealed class SongPlayback : IDisposable
     {
@@ -24,7 +23,8 @@ namespace Demo2D.Runtime.Playback
         readonly List<Vector2> _feet = new List<Vector2>();
         readonly CameraFeel _feel;
         readonly GameObject _root;
-        readonly Light2D _heroLight;
+        public readonly EffectLayer Effects;
+        public readonly NightLighting Night;
         readonly int[] _bySpawn;
         readonly List<int> _active = new List<int>();
         int _nextSpawn;
@@ -35,6 +35,8 @@ namespace Demo2D.Runtime.Playback
         const float PropMarginM = 2f;
 
         public bool Feel = true;
+        /// <summary>Draw the hero alone and unflashed (`--empty`): the arena and its night without the horde.</summary>
+        public bool Empty;
         public double BuildSeconds { get; }
         public int OnScreenAlive { get; private set; }
         public int OnScreenDying { get; private set; }
@@ -86,14 +88,11 @@ namespace Demo2D.Runtime.Playback
             ArenaGround.Build(Arena, data, _root.transform, _made);
             _props = new ArenaProps(Arena, data.propSheets, data.spriteLit, _root.transform);
 
-            // A warm light on the hero, so he reads in the night crowd (PX3's lineup; PX7 owns the lighting).
-            _heroLight = new GameObject("Hero Light").AddComponent<Light2D>();
-            _heroLight.transform.SetParent(_root.transform, false);
-            _heroLight.lightType = Light2D.LightType.Point;
-            _heroLight.color = new Color(1f, 0.75f, 0.45f);
-            _heroLight.intensity = 0.9f;
-            _heroLight.pointLightOuterRadius = 4.5f;
-            _heroLight.pointLightInnerRadius = 0.8f;
+            var library = EffectLibrary.Parse(data.effects.text);
+            var prefabs = new Dictionary<string, GameObject>(StringComparer.Ordinal);
+            for (int i = 0; i < data.effectPaths.Length; i++) prefabs[data.effectPaths[i]] = data.effectPrefabs[i];
+            Effects = new EffectLayer(Timeline, library, prefabs, data.roster.text, data.glow, _root.transform);
+            Night = new NightLighting(data.night.text, Arena, data.glow, _root.transform);
 
             _bySpawn = new int[Timeline.EntityCount];
             for (int i = 0; i < _bySpawn.Length; i++) _bySpawn[i] = i;
@@ -111,10 +110,15 @@ namespace Demo2D.Runtime.Playback
             return 15;
         }
 
-        /// <summary>Draws song time t on an output of outW × outH pixels.</summary>
-        public void Frame(double t, int outW, int outH)
+        /// <summary>
+        /// Draws song time t on an output of outW × outH pixels; <paramref name="still"/> simulates
+        /// the effects exactly to t (a still: EffectLayer), where live play lets them run.
+        /// </summary>
+        public void Frame(double t, int outW, int outH, bool still = false)
         {
             Activate(t);
+            if (Empty) _active.RemoveAll(e => e != 0);
+            _crowd.NoFlash = Empty;
             var framing = Timeline.FramingAt(Math.Max(0, t));
             float punch = Feel ? _feel.Punch(t) : 1f;
             var centre = new Vector2(framing.Focus.X, framing.Focus.Y) + (Feel ? _feel.Shake(t) : Vector2.zero);
@@ -129,12 +133,13 @@ namespace Demo2D.Runtime.Playback
                     var p = Timeline.PositionAt(e, t);
                     _feet.Add(new Vector2(p.X, p.Y));
                 }
-            _props.Draw(t, new Rect(centre.x - w / 2, centre.y - h / 2, w, h), _feet);
+            var shown = new Rect(centre.x - w / 2, centre.y - h / 2, w, h);
+            _props.Draw(t, shown, _feet);
             _crowd.Draw(_active, t, _props);
-            Pipeline.Frame(centre, framing.ViewWidth * punch, framing.ViewWidth, outW, outH);
-
+            Effects.Frame(t, shown, _active, still);
             var hero = Timeline.PositionAt(0, t);
-            _heroLight.transform.localPosition = new Vector3(hero.X, hero.Y + 1f, 0);
+            Night.Frame(t, shown, new Vector2(hero.X, hero.Y));
+            Pipeline.Frame(centre, framing.ViewWidth * punch, framing.ViewWidth, outW, outH);
 
             // On-screen counts as the sim counts them: monsters inside the framing's view.
             var view = Timeline.View(framing.ViewWidth);
@@ -181,6 +186,8 @@ namespace Demo2D.Runtime.Playback
         {
             _crowd.Dispose();
             _props.Dispose();
+            Effects.Dispose();
+            Night.Dispose();
             Pipeline.Dispose();
             Destroy(_root);
             foreach (var o in _made) Destroy(o);

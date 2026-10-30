@@ -1,0 +1,84 @@
+{
+  "note": "demo2d's effect library (PX7): one CFXR prefab per timeline effect kind (the core's Catalog.Effects), picked from PX2's candidates (effect-candidates.json), and one per projectile in flight. Paths are the manifest's (pixel_assets); the project has them under Assets/Vendor/. 'scale' is the prefab's uniform scale when the event's scale is 'eventScaleUnit' (default 1) and grows in proportion to it: rings and lightning carry their radius in metres, combos the sim's shape scale, deaths the monster's radius / 0.4 and the beam its length. 'tint' multiplies every particle's start colour. 'layer' is 'over' (above every character) or 'ground' (over the ground tiles, under shadows and characters). 'durationS' is how long an instance lives; at most 'max' live at once (the newest win). 'aim' turns the prefab to the event's yaw ('side': mirrored to face left or right; 'yaw': its +y axis turned along the yaw in the screen's plane, the beam's sweep, whose prefab is a line up from its origin, about 5 m long at scale 1), and 'reachM' moves it that far along the yaw. 'beam' draws the laser's sweep as a jagged line (a hot core in a wider glow, linear HDR colours, widths in grid pixels) from the hero along the yaw, 'lengthM' at the event's scale unit, fading over 'fadeS' after the sweep: CFXR has no beam, and its Electric Barrier, kept small as the crackle at the hero's hand, reads as short strokes at random angles when scaled to 14 m. 'light' is the cue for a pooled Light2D: colour, outer radius (scaling with the event like the prefab, at most 4x), peak intensity, a linear attack and a decay to 0. Every effect draws in the 960x540 pixel grid; an entry may opt out with 'fullRes' and its reason (none does). 'lightPool' caps the effect lights (the brightest win).",
+  "lightPool": 28,
+  "kinds": {
+    "hit-spark": {
+      "prefab": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Impacts/CFXR Hit A (Red).prefab",
+      "scale": 0.42, "layer": "over", "durationS": 0.45, "max": 48,
+      "light": { "color": [1.0, 0.62, 0.3], "radiusM": 1.6, "intensity": 0.9, "attackS": 0.02, "decayS": 0.22 }
+    },
+    "death-burst": {
+      "prefab": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Misc/CFXR Smoke Poof.prefab",
+      "scale": 0.5, "tint": [0.55, 0.62, 0.8, 0.75], "layer": "over", "durationS": 1.0, "max": 40,
+      "light": { "color": [0.6, 0.75, 1.0], "radiusM": 1.4, "intensity": 0.5, "attackS": 0.03, "decayS": 0.35 }
+    },
+    "parry-spark": {
+      "prefab": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Impacts/CFXR Hit B (Blue).prefab",
+      "scale": 0.4, "layer": "over", "durationS": 0.45, "max": 12,
+      "light": { "color": [0.5, 0.85, 1.0], "radiusM": 1.8, "intensity": 1.0, "attackS": 0.02, "decayS": 0.25 }
+    },
+    "slash-trail": {
+      "prefab": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Impacts/Variants/CFXR Slash (Orange).prefab",
+      "scale": 0.8, "layer": "over", "durationS": 0.5, "max": 4, "aim": "side", "reachM": 0.9,
+      "light": { "color": [1.0, 0.72, 0.4], "radiusM": 2.6, "intensity": 1.0, "attackS": 0.02, "decayS": 0.25 }
+    },
+    "thrust-trail": {
+      "prefab": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Impacts/Variants/CFXR Slash (Cross, Orange).prefab",
+      "scale": 0.75, "layer": "over", "durationS": 0.5, "max": 4, "aim": "side", "reachM": 1.2,
+      "light": { "color": [1.0, 0.72, 0.4], "radiusM": 2.8, "intensity": 1.1, "attackS": 0.02, "decayS": 0.28 }
+    },
+    "spin-trail": {
+      "prefab": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Impacts/CFXR Slash (Blue).prefab",
+      "scale": 1.2, "layer": "over", "durationS": 0.5, "max": 4,
+      "light": { "color": [0.55, 0.75, 1.0], "radiusM": 3.4, "intensity": 1.2, "attackS": 0.02, "decayS": 0.3 }
+    },
+    "slam-shock": {
+      "prefab": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Impacts/CFXR Big Impact HDR.prefab",
+      "scale": 1.3, "layer": "ground", "durationS": 0.9, "max": 4,
+      "light": { "color": [1.0, 0.9, 0.75], "radiusM": 5.0, "intensity": 1.6, "attackS": 0.02, "decayS": 0.45 }
+    },
+    "ring": {
+      "prefab": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Fire/Variants/CFXR Fire Ring (Blue).prefab",
+      "scale": 2.57, "eventScaleUnit": 4.5, "layer": "over", "durationS": 1.0, "max": 6,
+      "light": { "color": [0.4, 0.6, 1.0], "radiusM": 6.0, "intensity": 1.1, "attackS": 0.04, "decayS": 0.6 }
+    },
+    "bolt-launch": {
+      "prefab": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Impacts/CFXR Hit C.prefab",
+      "scale": 0.25, "tint": [1.0, 0.8, 0.55, 1.0], "layer": "over", "durationS": 0.35, "max": 16,
+      "light": { "color": [1.0, 0.7, 0.4], "radiusM": 1.2, "intensity": 0.7, "attackS": 0.01, "decayS": 0.15 }
+    },
+    "bolt-impact": {
+      "prefab": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Impacts/Variants/CFXR Impact Glowing HDR (Blue, No Flare).prefab",
+      "scale": 0.4, "layer": "over", "durationS": 0.6, "max": 16,
+      "light": { "color": [0.45, 0.7, 1.0], "radiusM": 2.2, "intensity": 1.2, "attackS": 0.02, "decayS": 0.3 }
+    },
+    "lightning": {
+      "prefab": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Electric/CFXR Lightning Strike + Impact.prefab",
+      "scale": 0.8, "eventScaleUnit": 2.2, "layer": "over", "durationS": 0.8, "max": 6,
+      "light": { "color": [0.75, 0.8, 1.0], "radiusM": 5.0, "intensity": 2.0, "attackS": 0.01, "decayS": 0.35 }
+    },
+    "laser": {
+      "prefab": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Electric/CFXR Electric Barrier Simple (HDR).prefab",
+      "scale": 0.5, "eventScaleUnit": 14, "layer": "over", "durationS": 1.75, "max": 2, "aim": "yaw", "sweep": true,
+      "beam": { "lengthM": 14, "coreWidthPx": 2, "glowWidthPx": 7, "jitterM": 0.18, "segments": 28, "core": [5, 5, 6], "glow": [0.5, 0.8, 2.6, 0.8], "fadeS": 0.15 },
+      "light": { "color": [0.6, 0.75, 1.0], "radiusM": 6.0, "intensity": 1.4, "attackS": 0.05, "decayS": 1.6 }
+    }
+  },
+  "flights": {
+    "bolt": {
+      "prefab": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Fire/CFXR Fireball + Fire Trail.prefab",
+      "scale": 0.6, "layer": "over", "max": 24,
+      "light": { "color": [1.0, 0.6, 0.3], "radiusM": 1.8, "intensity": 0.9 }
+    },
+    "bone-bolt": {
+      "prefab": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Fire/Variants/CFXR Fireball Plain.prefab",
+      "scale": 0.7, "tint": [0.55, 1.0, 0.75, 1.0], "layer": "over", "max": 24,
+      "light": { "color": [0.5, 1.0, 0.7], "radiusM": 1.4, "intensity": 0.7 }
+    },
+    "blood-bolt": {
+      "prefab": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Fire/Variants/CFXR Fireball Plain.prefab",
+      "scale": 0.7, "tint": [1.0, 0.3, 0.35, 1.0], "layer": "over", "max": 24,
+      "light": { "color": [1.0, 0.3, 0.3], "radiusM": 1.4, "intensity": 0.7 }
+    }
+  }
+}

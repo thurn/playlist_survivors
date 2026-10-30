@@ -16,6 +16,12 @@ namespace Demo2D.Runtime.Playback
         public string StillsAt;       // --stills-at <s,s,...>
         public string Zoom = PixelPipeline.TargetZoom; // --zoom <target|soft>: how a wider view keeps the grid (PX5's choice)
         public bool NoFeel;           // --no-feel: no punch or shake
+        public bool NoEffects;        // --no-effects: no CFXR effects or their lights (PX7)
+        public bool NoNight;          // --no-night: no moonlight shafts, fireflies or glowing plants (the moon, hero light and grade stay)
+        public bool NoPost;           // --no-post: no bloom or colour grade
+        public bool Empty;            // --empty: the arena with the hero alone (no horde, projectiles or effects), for the night's look
+        public bool EffectStills;     // --effect-stills: with --capture-stills, a still of each effect kind as it fires (PX7)
+        public string Measure;        // --measure <json>: fixed-time frames drawn by hand at 1080p, each timed through a one-pixel readback
 
         public static DevFlags FromCommandLine()
         {
@@ -31,8 +37,14 @@ namespace Demo2D.Runtime.Playback
                 StillsAt = Args.Get("--stills-at"),
                 Zoom = Args.Get("--zoom", PixelPipeline.TargetZoom),
                 NoFeel = Args.Has("--no-feel"),
+                NoEffects = Args.Has("--no-effects"),
+                NoNight = Args.Has("--no-night"),
+                NoPost = Args.Has("--no-post"),
+                Empty = Args.Has("--empty"),
+                EffectStills = Args.Has("--effect-stills"),
+                Measure = Args.Get("--measure"),
             };
-            if (f.CaptureStills != null) f.FixedTime = true;
+            if (f.CaptureStills != null || f.Measure != null) f.FixedTime = true;
             return f;
         }
     }

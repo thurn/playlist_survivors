@@ -1,7 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
+using System.Text;
+using Demo2D.Choreography;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 namespace Demo2D.Runtime.Playback
 {
@@ -16,6 +20,11 @@ namespace Demo2D.Runtime.Playback
     /// drawn in LateUpdate, after every other script's: the 2D lights refresh their culling
     /// bounds in their own LateUpdate, so a still drawn earlier would light a moved light (the
     /// hero's, after a seek) from where it was.
+    ///
+    /// `--effect-stills` (PX7) adds a still of each effect kind as it fires, near the camera's
+    /// focus, and lists them in `effect-stills.txt`. `--measure &lt;json&gt;` draws every
+    /// fixed-time frame by hand at 1080p and times it through a one-pixel readback (the main
+    /// thread then waits for the GPU's work too, PX1's spike), with the effect and light counts.
     /// </summary>
     [DefaultExecutionOrder(10000)]
     public sealed class DemoMain : MonoBehaviour
@@ -30,6 +39,8 @@ namespace Demo2D.Runtime.Playback
         double _endAt;
         bool _quitNext, _stillNow;
         int _frames;
+        readonly List<string> _effectStills = new List<string>();
+        Measurement _measure;
 
         public double SongTime { get; private set; }
 
@@ -46,12 +57,17 @@ namespace Demo2D.Runtime.Playback
             _flags = DevFlags.FromCommandLine();
             QualitySettings.vSyncCount = _flags.FixedTime ? 0 : 1;
             Application.targetFrameRate = -1;
-            // The boot scene's camera and test card would draw too; its moonlight stays.
+            // The boot scene's camera, test card and moonlight would draw too (the night owns the moon: NightLighting).
             foreach (var c in FindObjectsByType<Camera>(FindObjectsInactive.Include)) Destroy(c.gameObject);
             foreach (var card in FindObjectsByType<TestCard>(FindObjectsInactive.Include)) Destroy(card.gameObject);
+            foreach (var l in FindObjectsByType<Light2D>(FindObjectsInactive.Include)) DestroyImmediate(l.gameObject);
 
             var data = PlaybackData.Load();
             _playback = new SongPlayback(data, _flags.Zoom, transform) { Feel = !_flags.NoFeel };
+            _playback.Empty = _flags.Empty;
+            _playback.Effects.Enabled = !_flags.NoEffects && !_flags.Empty;
+            _playback.Night.Extras = !_flags.NoNight;
+            _playback.Pipeline.PostProcessing = !_flags.NoPost;
             var tl = _playback.Timeline;
             Debug.Log($"DemoMain: {tl.Name} built in {_playback.BuildSeconds:F2} s, {tl.EntityCount} entities; " +
                       $"target {_playback.Pipeline.TargetW}x{_playback.Pipeline.TargetH} ({_flags.Zoom} zoom)");
@@ -61,10 +77,13 @@ namespace Demo2D.Runtime.Playback
             {
                 foreach (var s in (_flags.StillsAt ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
                     _stillsAt.Add(double.Parse(s, CultureInfo.InvariantCulture));
+                if (_flags.EffectStills) AddEffectStills(data);
                 _stillsAt.Sort();
                 _stillsAt.RemoveAll(s => s < _flags.StartAt);
-                _still = new RenderTexture(StillW, StillH, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB) { name = "Still" };
             }
+            if (_flags.CaptureStills != null || _flags.Measure != null)
+                _still = new RenderTexture(StillW, StillH, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB) { name = "Still" };
+            if (_flags.Measure != null) _measure = new Measurement(_flags);
 
             _clock = new SongClock(_flags.FixedTime, _flags.StartAt);
             var music = gameObject.AddComponent<AudioSource>();
@@ -100,8 +119,9 @@ namespace Demo2D.Runtime.Playback
             _stillNow = _stillsAt.Count > 0 && _stillsAt[0] <= t;
             if (_stillNow) t = _stillsAt[0];
             SongTime = t;
-            bool screen = !Application.isBatchMode && !_stillNow;
-            _playback.Frame(t, screen ? Screen.width : StillW, screen ? Screen.height : StillH);
+            bool screen = !Application.isBatchMode && !_stillNow && _measure == null;
+            _measure?.Begin();
+            _playback.Frame(t, screen ? Screen.width : StillW, screen ? Screen.height : StillH, _stillNow);
             _clock.EndFrame();
             _frames++;
         }
@@ -127,6 +147,11 @@ namespace Demo2D.Runtime.Playback
                 _stillsAt.RemoveAt(0);
                 _stillNow = false;
             }
+            else if (_measure != null)
+            {
+                _playback.Pipeline.Render(_still);
+                _measure.End(_still, SongTime, _playback);
+            }
             bool stillsDone = _flags.CaptureStills != null && _stillsAt.Count == 0 && _flags.Seconds <= 0;
             if (SongTime >= _endAt || stillsDone) _quitNext = true; // after this frame is drawn
         }
@@ -147,8 +172,107 @@ namespace Demo2D.Runtime.Playback
             GUI.Label(new Rect(16, 12, 900, 140), text, style);
         }
 
+        /// <summary>
+        /// A still of each effect kind as it fires: of each kind's events, the one nearest the
+        /// camera's focus (the earliest of equals), a moment after it (0.15 s, once the hit flash is over; the beam's sweep 0.45 s).
+        /// </summary>
+        void AddEffectStills(PlaybackData data)
+        {
+            var tl = _playback.Timeline;
+            var library = EffectLibrary.Parse(data.effects.text);
+            for (int k = 0; k < tl.EffectNames.Length; k++)
+            {
+                int best = -1;
+                float bestD = float.MaxValue;
+                for (int i = 0; i < tl.Effects.Length; i++)
+                {
+                    var ev = tl.Effects[i];
+                    if (ev.Effect != k || ev.Time < _flags.StartAt) continue;
+                    var at = new Vector2(ev.Position.X, ev.Position.Z);
+                    if (ev.AttachTo >= 0) { var p = tl.PositionAt(ev.AttachTo, ev.Time); at = new Vector2(p.X, p.Y); }
+                    var f = tl.FramingAt(ev.Time);
+                    float d = Vector2.Distance(at, new Vector2(f.Focus.X, f.Focus.Y));
+                    if (d < bestD - 1e-3f) { bestD = d; best = i; }
+                }
+                var name = tl.EffectNames[k];
+                if (best < 0) { _effectStills.Add($"{name}: never fires"); continue; }
+                var spec = library.Kinds[name];
+                double after = spec.Sweep ? 0.45 : 0.15;
+                double at_ = Math.Round((tl.Effects[best].Time + after) * 1000) / 1000;
+                _stillsAt.Add(at_);
+                _effectStills.Add(string.Format(CultureInfo.InvariantCulture, "{0}: event {1} at {2:F3} s, {3:F1} m from the focus: still-{4:000.000}.jpg",
+                    name, best, tl.Effects[best].Time, bestD, at_));
+            }
+            Directory.CreateDirectory(_flags.CaptureStills);
+            File.WriteAllLines(Path.Combine(_flags.CaptureStills, "effect-stills.txt"), _effectStills);
+        }
+
+        /// <summary>`--measure`: each frame's time through a one-pixel readback, and what it drew.</summary>
+        sealed class Measurement
+        {
+            readonly DevFlags _flags;
+            readonly Texture2D _pixel = new Texture2D(1, 1, TextureFormat.RGBA32, false);
+            readonly List<double> _ms = new List<double>();
+            readonly List<string> _rows = new List<string>();
+            long _start;
+            int _maxLive, _maxParticles, _maxEffectLights, _maxOffered;
+
+            public Measurement(DevFlags flags) { _flags = flags; }
+
+            public void Begin() => _start = System.Diagnostics.Stopwatch.GetTimestamp();
+
+            public void End(RenderTexture rt, double t, SongPlayback playback)
+            {
+                var previous = RenderTexture.active;
+                RenderTexture.active = rt;
+                _pixel.ReadPixels(new Rect(0, 0, 1, 1), 0, 0, false);
+                RenderTexture.active = previous;
+                double ms = (System.Diagnostics.Stopwatch.GetTimestamp() - _start) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+                _ms.Add(ms);
+                var fx = playback.Effects;
+                _maxLive = Math.Max(_maxLive, fx.Live);
+                _maxEffectLights = Math.Max(_maxEffectLights, fx.Lights.Lit);
+                if (_ms.Count % 15 == 0)
+                {
+                    int particles = fx.ParticleCount();
+                    _maxParticles = Math.Max(_maxParticles, particles);
+                    _rows.Add(string.Format(CultureInfo.InvariantCulture, "[{0:F3}, {1:F2}, {2}, {3}, {4}, {5}, {6}, {7}]", t, ms, playback.OnScreenAlive,
+                        fx.Live, particles, fx.Lights.Lit, playback.Night.FireflyLights.Lit, playback.Night.PlantLights.Lit));
+                }
+            }
+
+            public void Write()
+            {
+                if (_ms.Count == 0) return;
+                var sorted = new List<double>(_ms);
+                sorted.Sort();
+                double P(double q) => sorted[Math.Min(sorted.Count - 1, (int)Math.Floor(q * sorted.Count))];
+                double mean = 0;
+                foreach (var m in _ms) mean += m;
+                mean /= _ms.Count;
+                var sb = new StringBuilder();
+                sb.Append("{\n");
+                sb.AppendFormat(CultureInfo.InvariantCulture, "  \"startAt\": {0}, \"seconds\": {1}, \"effects\": {2}, \"night\": {3}, \"post\": {4}, \"frames\": {5},\n",
+                    _flags.StartAt, _flags.Seconds, Json(!_flags.NoEffects), Json(!_flags.NoNight), Json(!_flags.NoPost), _ms.Count);
+                // (A closing brace straight after a format item would read as part of its format.)
+                sb.AppendFormat(CultureInfo.InvariantCulture, "  \"ms\": {{\"mean\": {0:F2}, \"p50\": {1:F2}, \"p95\": {2:F2}, \"p99\": {3:F2}, \"max\": {4:F2}",
+                    mean, P(0.5), P(0.95), P(0.99), sorted[sorted.Count - 1]).Append("},\n");
+                sb.AppendFormat(CultureInfo.InvariantCulture, "  \"most\": {{\"effects\": {0}, \"particles\": {1}, \"effectLights\": {2}", _maxLive, _maxParticles, _maxEffectLights).Append("},\n");
+                sb.Append("  \"columns\": [\"t\", \"ms\", \"onScreen\", \"effects\", \"particles\", \"effectLights\", \"fireflyLights\", \"plantLights\"],\n");
+                sb.Append("  \"every15thFrame\": [\n    ").Append(string.Join(",\n    ", _rows)).Append("\n  ]\n}\n");
+                var dir = Path.GetDirectoryName(_flags.Measure);
+                if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+                File.WriteAllText(_flags.Measure, sb.ToString());
+                Debug.Log(string.Format(CultureInfo.InvariantCulture, "DemoMain: measured {0} frames: mean {1:F2} ms, p99 {2:F2} ms, max {3:F2} ms -> {4}",
+                    _ms.Count, mean, P(0.99), sorted[sorted.Count - 1], _flags.Measure));
+            }
+
+            static string Json(bool b) => b ? "true" : "false";
+        }
+
         void Quit(int code)
         {
+            _measure?.Write();
             Debug.Log($"DemoMain: done at song time {SongTime.ToString("F2", CultureInfo.InvariantCulture)} after {_frames} frames");
             enabled = false;
             Application.Quit(code);

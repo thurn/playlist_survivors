@@ -11,7 +11,8 @@ namespace Demo2D.EditorTools.Assets
     /// Bakes the player's PlaybackData index into Assets/Baked/Playback/Resources/ (PX5): the
     /// baked song and music, demo2d's choreography data, PX3's atlases, the shaders and materials
     /// the client creates at runtime (so the build keeps them), and the arena's vendor textures and
-    /// tiles (PX6; the client composes the arena from its JSON at load, so no bake of it goes stale).
+    /// tiles (PX6; the client composes the arena from its JSON at load, so no bake of it goes stale),
+    /// and the effect library's data and CFXR prefabs and the night's data (PX7).
     /// Needs `demo2d setup` (the song); bakes the atlases (SpriteBaker) when they're missing.
     /// Every build runs it.
     /// </summary>
@@ -21,6 +22,7 @@ namespace Demo2D.EditorTools.Assets
         const string AudioDir = "Assets/Baked/Audio";
         public const string SpriteFlashPath = "Assets/Demo2D/Runtime/Shaders/Sprite-Lit-Flash.shader";
         public const string UpscalePath = "Assets/Demo2D/Runtime/Shaders/SharpUpscale.shader";
+        public const string GlowPath = "Assets/Demo2D/Runtime/Shaders/Glow.shader";
         const string SpriteBakerSource = "Assets/Demo2D/Editor/Assets/SpriteBaker.cs";
         public const string SpriteUnlitPath ="Packages/com.unity.render-pipelines.universal/Runtime/Materials/Sprite-Unlit-Default.mat";
         const string ForestDir = "Assets/Vendor/RPGW_AncientForest";
@@ -73,6 +75,7 @@ namespace Demo2D.EditorTools.Assets
             data.spriteLit = Load<Material>(ProjectSetup.SpriteLitPath);
             data.spriteUnlit = Load<Material>(SpriteUnlitPath);
             BakeArena(data);
+            BakeEffects(data);
 
             var path = Dir + "/" + PlaybackData.ResourcePath + ".asset";
             AssetDatabase.DeleteAsset(path);
@@ -84,6 +87,17 @@ namespace Demo2D.EditorTools.Assets
 
         static T Load<T>(string path) where T : UnityEngine.Object =>
             AssetDatabase.LoadAssetAtPath<T>(path) ?? throw new Exception("PlaybackBaker: missing " + path);
+
+        /// <summary>The effect library, its prefabs (by the library's manifest paths) and the night's data.</summary>
+        static void BakeEffects(PlaybackData data)
+        {
+            data.effects = Load<TextAsset>(CharacterPacks.DataDir + "/" + Demo2D.Choreography.EffectLibrary.File);
+            data.night = Load<TextAsset>(CharacterPacks.DataDir + "/night-lighting.json");
+            data.glow = Load<Shader>(GlowPath);
+            var library = Demo2D.Choreography.EffectLibrary.Parse(data.effects.text);
+            data.effectPaths = library.Prefabs().ToArray();
+            data.effectPrefabs = data.effectPaths.Select(p => Load<GameObject>(EffectGallery.VendorPath(p))).ToArray();
+        }
 
         /// <summary>The arena's inputs: the 2D kit, the sheet's catalogue and tiles, and the props' textures.</summary>
         static void BakeArena(PlaybackData data)

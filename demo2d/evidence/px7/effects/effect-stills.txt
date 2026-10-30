@@ -1,0 +1,12 @@
+hit-spark: event 3121 at 102.203 s, 0.6 m from the focus: still-102.353.jpg
+death-burst: event 890 at 44.913 s, 0.6 m from the focus: still-045.063.jpg
+parry-spark: event 774 at 41.816 s, 0.1 m from the focus: still-041.966.jpg
+slash-trail: event 1677 at 65.429 s, 0.0 m from the focus: still-065.579.jpg
+thrust-trail: event 1579 at 63.107 s, 0.0 m from the focus: still-063.257.jpg
+spin-trail: event 601 at 37.095 s, 0.0 m from the focus: still-037.245.jpg
+slam-shock: event 9456 at 197.446 s, 0.2 m from the focus: still-197.596.jpg
+ring: event 610 at 37.095 s, 0.0 m from the focus: still-037.245.jpg
+bolt-launch: event 668 at 37.470 s, 0.0 m from the focus: still-037.620.jpg
+bolt-impact: event 1993 at 73.558 s, 1.2 m from the focus: still-073.708.jpg
+lightning: event 2702 at 92.526 s, 2.9 m from the focus: still-092.676.jpg
+laser: event 6399 at 161.042 s, 0.3 m from the focus: still-161.492.jpg

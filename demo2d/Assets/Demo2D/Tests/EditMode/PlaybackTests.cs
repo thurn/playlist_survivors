@@ -5,7 +5,6 @@ using NUnit.Framework;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
-using UnityEngine.Rendering.Universal;
 
 namespace Demo2D.Tests
 {
@@ -21,7 +20,7 @@ namespace Demo2D.Tests
 
         static Color32[] Still(SongPlayback playback, double t, RenderTexture rt)
         {
-            playback.Frame(t, rt.width, rt.height);
+            playback.Frame(t, rt.width, rt.height, still: true);
             playback.Pipeline.Render(rt);
             var req = AsyncGPUReadback.Request(rt, 0, TextureFormat.RGBA32);
             req.WaitForCompletion();
@@ -31,23 +30,21 @@ namespace Demo2D.Tests
         /// <summary>
         /// A seek shows the same horde as a run from the start: a still at a song time is the same
         /// image whether the playback ran every 1/60 s frame up to it, jumped straight to it, or
-        /// jumped back to it. (Edit mode runs no LateUpdate, so the 2D lights keep their first
-        /// culling bounds here; the player's stills cover the lights, DemoMain.)
+        /// jumped back to it, effects and night included (PX7: each effect re-simulated from its
+        /// event's seed). (Edit mode runs no LateUpdate, so the 2D lights keep their first culling
+        /// bounds here; the player's stills cover the lights, DemoMain.)
         /// </summary>
         [Test]
         public void ASeekDrawsTheSameStillAsARunFromTheStart()
         {
             var data = BakedData();
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            var moon = new GameObject("Moon").AddComponent<Light2D>();
-            moon.lightType = Light2D.LightType.Global;
-            moon.intensity = 0.4f;
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); // the playback brings its own moon
             var rt = new RenderTexture(960, 540, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
             SongPlayback playback = null;
             try
             {
                 // One playback in the scene at a time: both would draw into each other's stills.
-                const double at = 116; // the build, a few hundred on screen
+                const double at = 116; // the build, a few hundred on screen, spells and their lights
                 // A throwaway draw first: the editor's first draw in a session samples atlases it
                 // hasn't uploaded yet, so its sprites show other types' pixels (a player's don't).
                 playback = new SongPlayback(data, PixelPipeline.TargetZoom, null);
@@ -72,7 +69,6 @@ namespace Demo2D.Tests
             {
                 playback?.Dispose();
                 rt.Release();
-                UnityEngine.Object.DestroyImmediate(moon.gameObject);
             }
         }
 

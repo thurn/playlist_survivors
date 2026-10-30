@@ -17,6 +17,10 @@ namespace Demo2D.Runtime.Playback
     /// - <see cref="SoftZoom"/>: the target stays 960×540 (plus the margin) and draws the wider
     ///   view at fewer texels per metre, so the 32 px/m art is resampled before the upscale.
     /// Punch is a zoom of the upscale's window in either mode.
+    ///
+    /// The target is HDR (PX7), so effects and fireflies brighter than white survive the upscale;
+    /// the present camera then runs the night's bloom and colour grade (NightLighting's volume) on
+    /// the 1080p image, tonemapping it into the screen or a still.
     /// </summary>
     public sealed class PixelPipeline : IDisposable
     {
@@ -43,6 +47,13 @@ namespace Demo2D.Runtime.Playback
         /// <summary>Screen pixels per texel of the last frame.</summary>
         public float Upscale { get; private set; }
 
+        /// <summary>The present camera's bloom and grade (`--no-post` turns them off).</summary>
+        public bool PostProcessing
+        {
+            get => Present.GetComponent<UniversalAdditionalCameraData>().renderPostProcessing;
+            set => Present.GetComponent<UniversalAdditionalCameraData>().renderPostProcessing = value;
+        }
+
         /// <param name="widestViewM">The song's widest view (its framing's), which sizes the target.</param>
         public PixelPipeline(Shader upscale, float widestViewM, string zoom, Transform parent)
         {
@@ -51,7 +62,7 @@ namespace Demo2D.Runtime.Playback
             _baseViewM = (float)BaseW / PixelsPerMetre;
             int w = _soft ? BaseW : Mathf.CeilToInt(Mathf.Max(widestViewM, _baseViewM) * PixelsPerMetre);
             int h = Mathf.CeilToInt(w * 9f / 16f);
-            _target = new RenderTexture(w + 2 * Margin, h + 2 * Margin, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB)
+            _target = new RenderTexture(w + 2 * Margin, h + 2 * Margin, 24, RenderTextureFormat.DefaultHDR, RenderTextureReadWrite.Linear)
             {
                 name = "Pixel Target", filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp, antiAliasing = 1,
             };
@@ -67,7 +78,8 @@ namespace Demo2D.Runtime.Playback
             Present = NewCamera("Present Camera", 1, 1 << PresentLayer, Color.black);
             Present.transform.position = new Vector3(0, -100000, -10);
             Present.orthographicSize = 0.5f;
-            Present.allowHDR = false;
+            Present.allowHDR = true;
+            Present.GetComponent<UniversalAdditionalCameraData>().renderPostProcessing = true;
             Present.gameObject.AddComponent<AudioListener>();
             _upscale = new Material(upscale) { name = "Sharp Upscale" };
             _upscale.mainTexture = _target;

@@ -35,6 +35,15 @@ namespace Demo2D.Runtime.Playback
         public Sprite[] sheetSprites;
         public Vector2Int[] sheetCells;
 
+        /// <summary>
+        /// PX7's effect library and night (Data/effects.json, night-lighting.json), the library's
+        /// CFXR prefabs (vendor) by its paths, and the fireflies' glow shader.
+        /// </summary>
+        public TextAsset effects, night;
+        public string[] effectPaths;
+        public GameObject[] effectPrefabs;
+        public Shader glow;
+
         public static PlaybackData Load() =>
             Resources.Load<PlaybackData>(ResourcePath)
             ?? throw new InvalidOperationException("PlaybackData: not baked (run demo2d unity BakeSprites, then BakePlayback)");
