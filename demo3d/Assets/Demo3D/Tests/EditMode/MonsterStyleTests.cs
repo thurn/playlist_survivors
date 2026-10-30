@@ -71,7 +71,7 @@ namespace Demo3D.Tests
                 volume.sharedProfile.TryGet(out Tonemapping tonemap);
                 Assert.That(color.postExposure.value, Is.EqualTo(look.exposure + feel.At(t).Exposure).Within(1e-4f));
                 Assert.That(color.contrast.value, Is.EqualTo(look.contrast + feel.At(t).Contrast).Within(1e-4f));
-                Assert.That(tonemap.mode.value, Is.EqualTo(TonemappingMode.ACES));
+                Assert.That(tonemap.mode.value, Is.EqualTo(TonemappingMode.Neutral), "the night's tonemapper (ps-a54.4's tuning)");
             }
             finally
             {
@@ -235,7 +235,11 @@ namespace Demo3D.Tests
             {
                 if (!expected.TryGetValue(t.Id, out var shader)) continue;
                 seen++;
-                foreach (var m in mix.Materials(lib, t)) Assert.That(m.shader.name, Is.EqualTo(shader), t.Id);
+                foreach (var m in mix.Materials(lib, t))
+                {
+                    Assert.That(m.shader.name, Is.EqualTo(shader), t.Id);
+                    Assert.That(m.GetFloat("_Peak"), Is.EqualTo(MonsterStyle.Parse(mix.StyleOf(t.Id)).Peak(t.Id)), $"{t.Id} is graded as its style");
+                }
                 Assert.That(mix.UsesStyleMesh(t.Id), Is.EqualTo(t.Id == "slime" || t.Id == "bat"), t.Id);
                 var shell = mix.Shell(lib, t);
                 if (shader == "Demo3D/Styles/Spectrum" || shader == "Demo3D/Styles/Crystal" || shader == "Demo3D/Styles/Chrome" || shader == "Demo3D/Styles/Void")

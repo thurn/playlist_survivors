@@ -12,6 +12,7 @@ Shader "Demo3D/Styles/Chrome"
         _Tint ("Metal tint", Color) = (1, 1, 1, 1)
         _Ripple ("Ripple (metres)", Float) = 0.012
         _Gain ("Horde gain (MonsterStyle tuning)", Float) = 1
+        _Peak ("Horde peak (MonsterStyle tuning)", Float) = 1000
         _HeightM ("Height at scale 1 (m)", Float) = 1.8
     }
     SubShader
@@ -25,7 +26,7 @@ Shader "Demo3D/Styles/Chrome"
         CBUFFER_START(UnityPerMaterial)
             float4 _BaseMap_ST; half4 _BaseColor;
             half4 _Tint; float _Ripple;
-            half _Gain;
+            half _Gain; half _Peak;
             float _HeightM;
         CBUFFER_END
 
@@ -116,7 +117,7 @@ Shader "Demo3D/Styles/Chrome"
                 color += addSpec * 10.0 * _Tint.rgb + addDiffuse * _Tint.rgb * 0.08;
                 color += float3(1.0, 0.95, 0.9) * SL_HIT(i);
                 color += float3(1.8, 0.55, 0.35) * 2.0 * edge;
-                return half4(MixFog(color * _Gain, i.fogFactor), 1);
+                return half4(MixFog(SL_Grade(color), i.fogFactor), 1);
             }
             ENDHLSL
         }

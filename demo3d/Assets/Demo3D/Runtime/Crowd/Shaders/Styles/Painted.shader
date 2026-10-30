@@ -22,6 +22,7 @@ Shader "Demo3D/Styles/Painted"
         _SpotAmount ("Glow spot threshold", Range(0, 1)) = 0.68
         _Ambient ("Ambient", Float) = 0.9
         _Gain ("Horde gain (MonsterStyle tuning)", Float) = 1
+        _Peak ("Horde peak (MonsterStyle tuning)", Float) = 1000
         _HeightM ("Height at scale 1 (m)", Float) = 1.8
     }
     SubShader
@@ -36,7 +37,7 @@ Shader "Demo3D/Styles/Painted"
             float4 _BaseMap_ST; half4 _BaseColor;
             float4 _LumRange; half4 _ShadowColor; half4 _RimColor; half4 _SpecColor; half _Gloss;
             half _Sheen; half4 _SpotColor; half _SpotScale; half _SpotAmount; half _Ambient;
-            half _Gain;
+            half _Gain; half _Peak;
             float _HeightM;
         CBUFFER_END
 
@@ -117,7 +118,7 @@ Shader "Demo3D/Styles/Painted"
 
                 color += float3(1.5, 1.25, 1.0) * SL_HIT(i);
                 color += _RimColor.rgb * 3.0 * edge;
-                return half4(MixFog(color * _Gain, i.fogFactor), 1);
+                return half4(MixFog(SL_Grade(color), i.fogFactor), 1);
             }
             ENDHLSL
         }

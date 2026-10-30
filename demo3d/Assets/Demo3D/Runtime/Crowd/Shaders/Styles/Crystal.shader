@@ -13,6 +13,7 @@ Shader "Demo3D/Styles/Crystal"
         _Refraction ("Refraction", Float) = 0.06
         _Facets ("Faceting", Range(0, 1)) = 0.9
         _Gain ("Horde gain (MonsterStyle tuning)", Float) = 1
+        _Peak ("Horde peak (MonsterStyle tuning)", Float) = 1000
         _HeightM ("Height at scale 1 (m)", Float) = 1.8
     }
     SubShader
@@ -25,7 +26,7 @@ Shader "Demo3D/Styles/Crystal"
 
         CBUFFER_START(UnityPerMaterial)
             half4 _Tint; float _Refraction; half _Facets;
-            half _Gain;
+            half _Gain; half _Peak;
             float _HeightM;
         CBUFFER_END
 
@@ -99,7 +100,7 @@ Shader "Demo3D/Styles/Crystal"
                 float twinkle = step(0.88, SL_Hash1(faceRand * 91.7 + SL_WaveBeat(i.positionWS) * 13.1));
                 color += twinkle * wave * (tint * 3.0 + 1.5);
                 color += float3(1.0, 1.0, 1.1) * SL_HIT(i) + tint * 3.0 * shatter;
-                return half4(MixFog(color * _Gain, i.fogFactor), 1);
+                return half4(MixFog(SL_Grade(color), i.fogFactor), 1);
             }
             ENDHLSL
         }

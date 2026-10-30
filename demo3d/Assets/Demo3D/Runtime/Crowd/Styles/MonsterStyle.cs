@@ -20,7 +20,7 @@ namespace Demo3D.Runtime.Crowd
 
         /// <summary>
         /// `--style-tune key=value,...`: overrides the tuned values for a run, to judge a change
-        /// without a rebuild. Keys: gain (every type's <see cref="Gain"/>) and the post look's
+        /// without a rebuild. Keys: gain and peak (every type's <see cref="Gain"/> and <see cref="Peak"/>) and the post look's
         /// exposure, contrast, saturation, bloom, threshold, chroma, vignette and neutral (0 or 1).
         /// </summary>
         public const string TuneFlag = "--style-tune";
@@ -72,7 +72,7 @@ namespace Demo3D.Runtime.Crowd
         readonly Dictionary<string, Texture2D> _ramps = new Dictionary<string, Texture2D>();
 
         readonly Dictionary<string, float> _tune = new Dictionary<string, float>();
-        static readonly string[] TuneKeys = { "gain", "exposure", "contrast", "saturation", "bloom", "threshold", "chroma", "vignette", "neutral" };
+        static readonly string[] TuneKeys = { "gain", "peak", "exposure", "contrast", "saturation", "bloom", "threshold", "chroma", "vignette", "neutral" };
 
         MonsterStyle(string name) { Name = name; }
 
@@ -125,16 +125,36 @@ namespace Demo3D.Runtime.Crowd
         }
 
         /// <summary>
-        /// The scale on a type's forward colour (the shaders' _Gain), from the tuning pass in
-        /// demo3d's scenes (evidence/styles/all/README.md): it keeps the effects the brightest
-        /// values on screen over the self-lit treatments.
+        /// The scale on a type's forward colour (the shaders' _Gain, SL_Grade), from the tuning
+        /// pass in demo3d's scenes (evidence/styles/all/README.md).
         /// </summary>
         public float Gain(string typeId)
         {
             if (_tune.TryGetValue("gain", out float g)) return g;
             switch (StyleOf(typeId))
             {
+                case "painted": return 2f;    // its ramp reads dull under the night's grade; the peak holds the highlights
+                case "chrome": return 0.5f;   // dark mirrors against the lit ground: brighter, they matched it (|dL*| near 0)
+                case "void": return 0.5f;     // likewise, a hole in the ground
                 default: return 1f;
+            }
+        }
+
+        /// <summary>
+        /// The soft limit on a type's luminance after the gain (the shaders' _Peak,
+        /// SL_Grade): it keeps the effects the brightest values on screen over the self-lit
+        /// treatments. From the same tuning pass; 1000 is no limit.
+        /// </summary>
+        public float Peak(string typeId)
+        {
+            if (_tune.TryGetValue("peak", out float p)) return p;
+            switch (StyleOf(typeId))
+            {
+                case "fire": return 0.15f;    // dense additive flames, the pale ones the hottest
+                case "hologram": return 0.1f; // additive too, and overlapping holograms sum
+                case "crystal":
+                case "spectrum": return 0.3f; // facet glints and wireframe
+                default: return 0.4f;
             }
         }
 
@@ -195,6 +215,7 @@ namespace Demo3D.Runtime.Crowd
                 m.SetColor("_BaseColor", baked.GetColor("_BaseColor"));
                 m.SetFloat("_HeightM", type.HeightM);
                 m.SetFloat("_Gain", Gain(type.Id));
+                m.SetFloat("_Peak", Peak(type.Id));
                 var look = StyleLook.Of(type.Id);
                 switch (style)
                 {
@@ -263,6 +284,7 @@ namespace Demo3D.Runtime.Crowd
             }
             m.SetFloat("_HeightM", type.HeightM);
             m.SetFloat("_Gain", Gain(type.Id));
+            m.SetFloat("_Peak", Peak(type.Id));
             _owned.Add(m);
             return m;
         }
@@ -334,9 +356,17 @@ namespace Demo3D.Runtime.Crowd
         public bool neutral;   // neutral tonemapping (the night's) rather than ACES
         public float exposure, contrast, saturation, bloom, bloomThreshold, chroma, vignette;
 
+        /// <summary>
+        /// The lab's stylized grade with its per-treatment bloom and chroma, retuned for demo3d's
+        /// arena (ps-a54.4, evidence/styles/all/README.md). The lab's ACES at exposure 0.25,
+        /// contrast 12 and saturation 15 left a quarter to two thirds of demo3d's frame near
+        /// black, so the tonemapper, exposure and bloom threshold are the night's (neutral, 0.8,
+        /// 1.5), with contrast and saturation between the two. At the night's threshold only the
+        /// hottest effects bloom, so the treatment's bloom intensity changes little.
+        /// </summary>
         public static PostLook Stylized(float bloom = 0.9f, float chroma = 0f) => new PostLook
         {
-            exposure = 0.25f, contrast = 12f, saturation = 15f, bloom = bloom, bloomThreshold = 1.0f,
+            neutral = true, exposure = 0.8f, contrast = 20f, saturation = 25f, bloom = bloom, bloomThreshold = 1.5f,
             chroma = chroma, vignette = 0.3f,
         };
 

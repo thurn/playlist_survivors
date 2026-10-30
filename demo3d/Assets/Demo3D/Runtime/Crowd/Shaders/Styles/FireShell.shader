@@ -15,6 +15,7 @@ Shader "Demo3D/Styles/Shells/FireShell"
         _Lick ("Tongue height (metres)", Float) = 0.35
         _Intensity ("Intensity", Float) = 0.7
         _Gain ("Horde gain (MonsterStyle tuning)", Float) = 1
+        _Peak ("Horde peak (MonsterStyle tuning)", Float) = 1000
         _HeightM ("Height at scale 1 (m)", Float) = 1.8
     }
     SubShader
@@ -27,7 +28,7 @@ Shader "Demo3D/Styles/Shells/FireShell"
 
         CBUFFER_START(UnityPerMaterial)
             half4 _Ember; half4 _Flame; half4 _Core; float _Thickness; float _Lick; half _Intensity;
-            half _Gain;
+            half _Gain; half _Peak;
             float _HeightM;
         CBUFFER_END
 
@@ -73,7 +74,7 @@ Shader "Demo3D/Styles/Shells/FireShell"
                 float flame = saturate(f * 1.9 - 0.4 + (1.0 - h01) * 0.2) * (0.45 + edge * 1.1);
                 flame *= (0.8 + 0.7 * wave) * (1.0 - smoothstep(0.7, 1.0, SL_DEATH(i)));
                 float3 color = FireRamp(flame, _Ember.rgb, _Flame.rgb, _Core.rgb) * _Intensity;
-                return half4(color * _Gain, 0);
+                return half4(SL_Grade(color), 0);
             }
             ENDHLSL
         }

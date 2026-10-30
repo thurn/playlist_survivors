@@ -2,7 +2,7 @@
 // StyleLabCommon.hlsl ported onto the bone-texture crowd. The beat globals, the skinned vertex
 // front end and per-monster values from the instance buffer, noise, the beat wave, lighting
 // helpers and death. A style shader declares its UnityPerMaterial CBUFFER (ending with
-// `half _Gain`, the treatment's tuned scale on its forward colour (MonsterStyle.Gain), and the type's
+// `half _Gain; half _Peak;`, the treatment's tuned grade (SL_Grade), and the type's
 // `float _HeightM`, CrowdType.HeightM: its height at instance scale 1) before including this, as
 // CrowdSkinned does before CrowdCommon.hlsl, in the SubShader's HLSLINCLUDE so its shadow,
 // depth and motion passes (StylePasses.hlsl) see the same displacement and death.
@@ -331,5 +331,12 @@ float SL_Wire(float3 bary, float pixels)
     CrowdLodClip((i).fx.zw, (i).positionCS); \
     float edge = SL_DISSOLVE((i).rest, SL_DEATH(i)); \
     if (_Demo3DIdMask > 0.5) return half4(1, 1, 1, 1);
+
+// The tuning pass's grade on a style's forward colour (MonsterStyle.Gain and Peak): a gain, then
+// a soft limit on luminance, keeping the hue, so no monster pixel passes _Peak and the effects stay
+// the brightest values on screen over a self-lit horde (a pale fire is far brighter than a red one
+// at the same channel values). A macro, as shells like the ink line declare neither.
+float3 SL_GradeOf(float3 color, float peak) { return color / (1.0 + Luminance(color) / peak); }
+#define SL_Grade(color) SL_GradeOf((color) * _Gain, _Peak)
 
 #endif

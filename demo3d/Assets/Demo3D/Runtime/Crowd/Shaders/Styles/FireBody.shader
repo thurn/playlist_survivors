@@ -15,6 +15,7 @@ Shader "Demo3D/Styles/FireBody"
         _CrackScale ("Crack scale (per metre)", Float) = 3.5
         _CrackWidth ("Crack width", Float) = 0.07
         _Gain ("Horde gain (MonsterStyle tuning)", Float) = 1
+        _Peak ("Horde peak (MonsterStyle tuning)", Float) = 1000
         _HeightM ("Height at scale 1 (m)", Float) = 1.8
     }
     SubShader
@@ -28,7 +29,7 @@ Shader "Demo3D/Styles/FireBody"
         CBUFFER_START(UnityPerMaterial)
             float4 _BaseMap_ST; half4 _BaseColor;
             half4 _Ember; half4 _Flame; half4 _Core; half _CrackScale; half _CrackWidth;
-            half _Gain;
+            half _Gain; half _Peak;
             float _HeightM;
         CBUFFER_END
 
@@ -96,7 +97,7 @@ Shader "Demo3D/Styles/FireBody"
                 float fres = pow(1.0 - saturate(dot(N, V)), 2.5);
                 color += FireRamp(0.55 + 0.3 * wave, _Ember.rgb, _Flame.rgb, _Core.rgb) * fres;
                 color += _Core.rgb * (SL_HIT(i) * 0.25 + burnEdge);
-                return half4(MixFog(color * _Gain, i.fogFactor), 1);
+                return half4(MixFog(SL_Grade(color), i.fogFactor), 1);
             }
             ENDHLSL
         }
