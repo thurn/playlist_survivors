@@ -84,8 +84,10 @@ instead of `native/target`; use an absolute target path if overriding it.
 ### Launch options
 
 The repository's `justfile` wraps the game, its checks and the Unity demos' tools for the
-current checkout, passing extra arguments through: `just native --file <path>`,
-`just demo3d-build --backend mono`, `just demo3d-play --start-at 160`. Run `just` to list them
+current checkout, passing extra arguments through. `just native --file <path>` and
+`just demo3d --start-at 160` (or `demo2d`, `stylelab`) build what changed and run it;
+`just backend=mono demo3d` builds a faster Mono player. The `-build`, `-play` and `-tool`
+recipes are the single steps. Run `just` to list them
 ([install just](https://just.systems/man/en/packages.html), or `brew install just`).
 
 From `native/`, run `cargo run --locked --release -p app -- <flags>`:

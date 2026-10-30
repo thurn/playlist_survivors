@@ -1,15 +1,20 @@
 # Commands for this checkout. `just` lists them; extra arguments pass straight through,
-# e.g. `just native --file song.ogg --delayed` or `just demo3d-play --start-at 160`.
+# e.g. `just native --file song.ogg --delayed` or `just demo3d --start-at 160`. Each of
+# `just native`, `just demo3d`, `just demo2d` and `just stylelab` builds what changed and runs
+# it; the `-build`, `-play` and `-tool` recipes are the single steps.
 
 set positional-arguments
 
 tools := "uv run --project demo3d/tools"
+# The demos' player backend: `just backend=mono demo3d` builds faster (Mono's simulation
+# diverges from IL2CPP's, so never compare their look sets).
+backend := "il2cpp"
 unity_app := "/Applications/Unity/Hub/Editor/6000.6.7f1/Unity.app"
 
 default:
     @just --list --unsorted
 
-# The game: `cargo run -p app` with its flags (SETUP.md, Launch options; paths from native/)
+# Build and run the game with its flags (SETUP.md, Launch options; paths from native/)
 [group('native')]
 native *args:
     cd native && cargo run --locked --release -p app -- "$@"
@@ -44,50 +49,65 @@ check *args:
 ci *args:
     scripts/ci-full "$@"
 
-# The 3D demo's tools: `just demo3d look <slug> --build`, `just demo3d unity BakeAll`
+# Build the 3D demo (setting up first if needed) and play it at 1080p, with player flags (--start-at 160, --click)
 [group('demo3d')]
-demo3d *args:
-    {{tools}} demo3d "$@"
+demo3d *args: demo3d-build
+    @just backend={{backend}} _play demo3d PlaylistSurvivors3D "$@"
 
-# Set up if needed, then build the player (--backend mono builds faster)
+# Set up if needed, then build the player (build flags: --development, --scene ...)
 [group('demo3d')]
 demo3d-build *args: (_setup "demo3d")
-    {{tools}} demo3d build "$@"
+    {{tools}} demo3d build --backend {{backend}} "$@"
 
-# Open the newest player windowed at 1080p, with player flags (--start-at 160, --click)
+# Play the last build without rebuilding
 [group('demo3d')]
 demo3d-play *args:
-    @just _play demo3d PlaylistSurvivors3D "$@"
+    @just backend={{backend}} _play demo3d PlaylistSurvivors3D "$@"
 
-# The 2D demo's tools
+# The tools themselves: `just demo3d-tool look <slug>`, `just demo3d-tool unity BakeAll`
+[group('demo3d')]
+demo3d-tool *args:
+    {{tools}} demo3d "$@"
+
+# Build the 2D demo (setting up first if needed) and play it at 1080p, with player flags
 [group('demo2d')]
-demo2d *args:
-    {{tools}} demo2d "$@"
+demo2d *args: demo2d-build
+    @just backend={{backend}} _play demo2d PlaylistSurvivors2D "$@"
 
-# Set up if needed, then build the player
+# Set up if needed, then build the player (build flags: --development, --scene ...)
 [group('demo2d')]
 demo2d-build *args: (_setup "demo2d")
-    {{tools}} demo2d build "$@"
+    {{tools}} demo2d build --backend {{backend}} "$@"
 
-# Open the newest player windowed at 1080p, with player flags
+# Play the last build without rebuilding
 [group('demo2d')]
 demo2d-play *args:
-    @just _play demo2d PlaylistSurvivors2D "$@"
+    @just backend={{backend}} _play demo2d PlaylistSurvivors2D "$@"
 
-# The style lab's tools
+# The tools themselves: `just demo2d-tool test`, `just demo2d-tool setup`
+[group('demo2d')]
+demo2d-tool *args:
+    {{tools}} demo2d "$@"
+
+# Build the style lab (setting up first if needed) and play it at 1080p, with player flags
 [group('stylelab')]
-stylelab *args:
-    {{tools}} stylelab "$@"
+stylelab *args: stylelab-build
+    @just backend={{backend}} _play stylelab StyleLab "$@"
 
-# Set up if needed, then build the player
+# Set up if needed, then build the player (build flags: --development, --scene ...)
 [group('stylelab')]
 stylelab-build *args: (_setup "stylelab")
-    {{tools}} stylelab build "$@"
+    {{tools}} stylelab build --backend {{backend}} "$@"
 
-# Open the newest player windowed at 1080p, with player flags
+# Play the last build without rebuilding
 [group('stylelab')]
 stylelab-play *args:
-    @just _play stylelab StyleLab "$@"
+    @just backend={{backend}} _play stylelab StyleLab "$@"
+
+# The tools themselves: `just stylelab-tool test`, `just stylelab-tool setup`
+[group('stylelab')]
+stylelab-tool *args:
+    {{tools}} stylelab "$@"
 
 # Open a Unity project (demo3d, demo2d or stylelab) in the editor
 [group('unity')]
@@ -105,9 +125,9 @@ _play project app *args:
     #!/usr/bin/env bash
     set -euo pipefail
     shift 2
-    player=$(ls -td "{{project}}"/Builds/mac/*/"{{app}}.app" 2>/dev/null | head -1 || true)
-    if [ -z "$player" ]; then
-        echo "no {{project}} player yet; run just {{project}}-build" >&2
+    player="{{project}}/Builds/mac/{{backend}}/{{app}}.app"
+    if [ ! -d "$player" ]; then
+        echo "no {{backend}} {{project}} player yet; run just {{project}}" >&2
         exit 1
     fi
     echo "playing $player"
