@@ -239,7 +239,8 @@ impl Sim {
             if scale < 0.99 && crowd(self) >= target.min(regular_cap) {
                 continue;
             }
-            let mut before = 0;
+            // (An arena crowd's strays leave before the refill counts it.)
+            let mut before = if song_clock { crowd(self) } else { 0 };
             loop {
                 for role in &batch.roster.enemies {
                     if self.alive_count() >= regular_cap {
