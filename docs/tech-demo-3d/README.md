@@ -24,6 +24,8 @@ operator's Windows desktop, as a standalone run (see
 - [Manual QA](qa.md) and [Alternatives Considered](alternatives.md).
 - [Style Lab](stylelab.md): a separate Unity project that shows the demo's
   horde in stylized shader treatments, to choose a look.
+- [Trailer Mode](trailer.md): `--trailer`, a 30-second gameplay sizzle reel
+  cut on the beat across the environments.
 
 ## Introduction
 
