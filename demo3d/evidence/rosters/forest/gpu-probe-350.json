@@ -1,0 +1,14 @@
+{
+  "graphicsDeviceName": "Apple M5 Max",
+  "size": [1920, 1080],
+  "msaa": 4,
+  "args": "-batchmode -force-metal -logFile captures/rosters/forest-perf/gpu-350.log --roster forest --envelope 350 --fixed-time --gpu-probe-at 60,145,170,175,180,190 --gpu-probe-out captures/rosters/forest-perf/gpu-forest-350.json --seconds 192",
+  "points": [
+    {"at": 60.00, "alive": 65, "medianMs": 6.20, "maxMs": 8.12, "ms": [5.97, 6.20, 8.12]},
+    {"at": 145.00, "alive": 122, "medianMs": 7.27, "maxMs": 10.45, "ms": [4.95, 7.27, 10.45]},
+    {"at": 170.00, "alive": 185, "medianMs": 6.84, "maxMs": 8.30, "ms": [5.97, 6.84, 8.30]},
+    {"at": 175.00, "alive": 158, "medianMs": 9.62, "maxMs": 13.02, "ms": [9.48, 9.62, 13.02]},
+    {"at": 180.00, "alive": 142, "medianMs": 6.59, "maxMs": 7.08, "ms": [5.79, 6.59, 7.08]},
+    {"at": 190.00, "alive": 123, "medianMs": 4.63, "maxMs": 6.69, "ms": [4.50, 4.63, 6.69]}
+  ]
+}
