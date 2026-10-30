@@ -667,8 +667,15 @@ impl Sim {
 
     pub(super) fn gem_arrives(&mut self, i: usize, value: f64) {
         self.rec.gem_arrive(i, self.st.w);
+        let scale = self
+            .st
+            .spawner
+            .minute
+            .and_then(|m| self.env.input.level.survivor_schedule.get(m))
+            .and_then(|row| row.xp_scale)
+            .unwrap_or(1.0);
         if let Some(p) = &mut self.st.survivor {
-            p.gain_xp(value);
+            p.gain_xp(value * scale);
             self.open_survivor_offer();
             self.push_xp();
             self.publish_run();

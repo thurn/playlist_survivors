@@ -39,6 +39,10 @@ pub struct Treasure {
     pub level: usize,
     pub prize_types: String,
     pub fixed_prizes: Vec<String>,
+    /// The chest may evolve a weapon whatever its minute (otherwise only minutes 10, 15, 20 and
+    /// 25's may; the showcase's song is over by minute 4).
+    #[serde(default)]
+    pub evolves: bool,
 }
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 pub struct SpawnMinute {
@@ -51,6 +55,10 @@ pub struct SpawnMinute {
     pub song_s: Option<f64>,
     /// How much wider than the level's camera the view is from this row on (eased in).
     pub widen: Option<f64>,
+    /// How much of each gem's experience the hero takes while this row plays (1 when absent;
+    /// the showcase's crowd would level it every few seconds, its drops frozen on cards).
+    #[serde(rename = "xpScale")]
+    pub xp_scale: Option<f64>,
     pub enemies: Option<Vec<String>>,
     #[serde(default, deserialize_with = "optional_count")]
     pub minimum: Option<usize>,

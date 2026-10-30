@@ -558,3 +558,166 @@ pub fn density(dir: &Path, level: &Path) -> Result<(), String> {
     .map_err(|e| e.to_string())?;
     Ok(())
 }
+
+/// The hero's arsenal: each weapon (evolved ones by their own name) and passive with its rank.
+fn arsenal(view: &eval::live::LiveView) -> Vec<String> {
+    use sim::survivors::Item;
+    let Some(inv) = view.inventory else {
+        return Vec::new();
+    };
+    inv.weapons
+        .iter()
+        .map(|s| format!("{} {}", Item::Weapon(s.id).name(), s.rank))
+        .chain(
+            inv.passives
+                .iter()
+                .map(|s| format!("{} {}", Item::Passive(s.id).name(), s.rank)),
+        )
+        .collect()
+}
+
+/// One section's progression: the level it ends on, its level-ups and chests, the song time it
+/// spent frozen on cards or a chest, and the arsenal it ends with.
+#[derive(Default)]
+struct Growth {
+    level: usize,
+    level_ups: usize,
+    chests: usize,
+    frozen_s: f64,
+    arsenal: Vec<String>,
+}
+
+/// Sections whose middle `--showcase-arsenal` draws: the drops and the final peak.
+const ARSENAL_STILLS: [&str; 4] = ["drop-1", "groove-2", "drop-2", "final-peak"];
+
+/// `--showcase-arsenal <session> [--level <path>]`: the recorded session's music on `level` with
+/// the virtual player, as `density` plays it; prints each section's progression (level, level-ups,
+/// chests, time frozen, the arsenal it ends with) and writes `arsenal.json` and stills of the drops
+/// and the final peak to `<session>/final/`.
+pub fn arsenal_growth(dir: &Path, level: &Path) -> Result<(), String> {
+    let rec = Recorded::load(dir)?;
+    let world = World::load(Some(level))?;
+    let (sections, song_end) = sections()?;
+    let out = dir.join("final");
+    std::fs::create_dir_all(&out).map_err(|e| e.to_string())?;
+    let span = |i: usize| {
+        let end = sections.get(i + 1).map_or(song_end, |n| n.start);
+        (sections[i].start - rec.s0, end - rec.s0)
+    };
+    let section_at = |s: f64| (0..sections.len()).rev().find(|&i| span(i).0 <= s);
+    let mut painter = Painter::new(rec.delayed)?;
+    let still = (960u32, 540u32);
+    let mut gpu = capture::Offscreen::new(&painter.art.pages, still.0, still.1)?;
+    let mut shot = vec![false; sections.len()];
+    // Each seed's level-ups, chests and time frozen over the whole song, and its level as the
+    // final peak ends.
+    let mut totals = Vec::new();
+    let mut table: Vec<Growth> = Vec::new();
+    for seed in 1..=DENSITY_SEEDS {
+        let first = seed == 1;
+        let mut growth: Vec<Growth> = (0..sections.len()).map(|_| Growth::default()).collect();
+        let (mut last_level, mut last_roulette) = (1, None);
+        // (The song time each chest opened.)
+        let mut opened = Vec::new();
+        let bot = players::SurvivorBot::new(players::SurvivorBotKind::Positioning, seed);
+        replay(&mut world.engine(true)?, &rec, Some(bot), |engine, s, _| {
+            if first {
+                painter.keep_up(&world, engine, s);
+            } else {
+                engine.view.borrow_mut().take_moments();
+            }
+            let Some(i) = section_at(s).filter(|&i| s < span(i).1) else {
+                return Ok(());
+            };
+            let (run, items) = {
+                let view = engine.view.borrow();
+                (view.run.unwrap_or_default(), arsenal(&view))
+            };
+            let g = &mut growth[i];
+            g.level_ups += run.level.saturating_sub(last_level);
+            last_level = last_level.max(run.level);
+            g.level = last_level;
+            let roulette = run.roulette.map(|r| r.id);
+            if roulette.is_some() && roulette != last_roulette {
+                g.chests += 1;
+                opened.push(((s + rec.s0) * 10.0).round() / 10.0);
+                last_roulette = roulette;
+            }
+            if run.frozen.is_some() {
+                g.frozen_s += 1.0 / 120.0;
+            }
+            g.arsenal = items;
+            let (start, end) = span(i);
+            if first
+                && !shot[i]
+                && run.frozen.is_none()
+                && s >= start.midpoint(end)
+                && ARSENAL_STILLS.contains(&sections[i].label.as_str())
+            {
+                shot[i] = true;
+                painter.draw(&world, engine, &mut gpu, still, s)?;
+                let name = format!("{:02}-{}.png", i + 1, sections[i].label);
+                capture::write_png(&out.join(&name), still.0, still.1, &gpu.rgba()?)?;
+                eprintln!(
+                    "showcase-arsenal: {name} at run {s:.2} (song {:.2}), level {}",
+                    s + rec.s0,
+                    run.level
+                );
+            }
+            Ok(())
+        })?;
+        let peak = sections
+            .iter()
+            .position(|s| s.label == "final-peak")
+            .ok_or("no final-peak section")?;
+        totals.push(serde_json::json!({
+            "seed": seed,
+            "levelUps": growth.iter().map(|g| g.level_ups).sum::<usize>(),
+            "chests": growth.iter().map(|g| g.chests).sum::<usize>(),
+            "chestsOpenedAtSongS": opened,
+            "frozenS": growth.iter().map(|g| g.frozen_s).sum::<f64>(),
+            "finalPeakLevel": growth[peak].level,
+            "finalPeakArsenal": growth[peak].arsenal,
+        }));
+        if first {
+            table = growth;
+        }
+    }
+
+    println!("section      song s  level  level-ups  chests  frozen s  | arsenal at its end");
+    let mut rows = Vec::new();
+    let mut before: Vec<String> = Vec::new();
+    for (i, (section, g)) in sections.iter().zip(&table).enumerate() {
+        // (What the section added: items new to the arsenal or a rank up.)
+        let gained: Vec<&String> = g.arsenal.iter().filter(|a| !before.contains(a)).collect();
+        println!(
+            "{:<12} {:>6.1}  {:>5}  {:>9}  {:>6}  {:>8.1}  | {}",
+            section.label,
+            section.start,
+            g.level,
+            g.level_ups,
+            g.chests,
+            g.frozen_s,
+            g.arsenal.join(", ")
+        );
+        rows.push(serde_json::json!({
+            "section": section.label, "songS": section.start, "level": g.level,
+            "levelUps": g.level_ups, "chests": g.chests, "frozenS": g.frozen_s,
+            "gained": gained, "arsenal": g.arsenal, "still": shot[i],
+        }));
+        before.clone_from(&g.arsenal);
+    }
+    for t in &totals {
+        println!("seed {}: {t}", t["seed"]);
+    }
+    let summary = serde_json::json!({
+        "session": dir.display().to_string(), "level": level.display().to_string(),
+        "runStartSongS": rec.s0, "sections": rows, "seeds": totals,
+    });
+    std::fs::write(
+        out.join("arsenal.json"),
+        serde_json::to_string_pretty(&summary).map_err(|e| e.to_string())? + "\n",
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}

@@ -4852,6 +4852,32 @@ mod tests {
     }
 
     #[test]
+    fn a_rows_xp_scale_scales_each_gem_while_the_row_plays() {
+        let mut sim = survivor_sim();
+        let row = |minute: usize, xp_scale: Option<f64>| {
+            serde_json::from_value::<crate::survivors::SpawnMinute>(serde_json::json!({
+                "minute": minute, "xpScale": xp_scale, "bosses": [], "events": [], "treasure": [],
+            }))
+            .unwrap()
+        };
+        Rc::get_mut(&mut sim.env)
+            .unwrap()
+            .input
+            .level
+            .survivor_schedule = vec![row(0, Some(0.25)), row(1, Some(0.0)), row(2, None)];
+        let xp = |sim: &Sim| sim.st.survivor.as_ref().unwrap().xp;
+        sim.st.spawner.minute = Some(0);
+        sim.gem_arrives(0, 12.0);
+        assert_eq!(xp(&sim), 3.0);
+        sim.st.spawner.minute = Some(1);
+        sim.gem_arrives(1, 12.0);
+        assert_eq!(xp(&sim), 3.0, "a row at 0 takes no experience");
+        sim.st.spawner.minute = Some(2);
+        sim.gem_arrives(2, 12.0);
+        assert_eq!(xp(&sim), 15.0, "a row without xpScale takes it all");
+    }
+
+    #[test]
     fn survivor_passive_card_applies_the_real_delta_and_heals_added_maximum() {
         use crate::survivors::{Item, PassiveId};
         let mut sim = survivor_sim();
@@ -5323,6 +5349,14 @@ mod tests {
         use super::*;
         use crate::survivors::{ChestEvent, FreezeReason, Item, WeaponId};
         fn fixture(beats: usize) -> (Sim, Rc<std::cell::RefCell<crate::recorder::LogRecorder>>) {
+            chest_from(beats, 10, |_| {})
+        }
+        /// A tier-3 chest from `minute`'s treasure taken at once, `prepare` run on the sim first.
+        fn chest_from(
+            beats: usize,
+            minute: usize,
+            prepare: impl FnOnce(&mut Sim),
+        ) -> (Sim, Rc<std::cell::RefCell<crate::recorder::LogRecorder>>) {
             let mut file = stream();
             file.log = StreamLog {
                 beats: (0..beats)
@@ -5336,13 +5370,14 @@ mod tests {
                 ..Default::default()
             };
             let mut s = survivor_sim_with(file);
+            prepare(&mut s);
             let r = Rc::new(std::cell::RefCell::new(
                 crate::recorder::LogRecorder::default(),
             ));
             s.rec = Box::new(Rc::clone(&r));
             s.advance_to(0.13);
             let h = s.hero_pose(s.st.w);
-            s.drop_chest(h.x, h.y, 3, 10);
+            s.drop_chest(h.x, h.y, 3, minute);
             s.touch_chests();
             (s, r)
         }
@@ -5395,6 +5430,41 @@ mod tests {
             eprintln!(
                 "SH10: tier3, 8 ticks at1.0..2.75, landing3.0, source upgrades Sword1->6, run frozen{run:.6}"
             );
+        }
+        #[test]
+        fn a_treasure_that_evolves_may_evolve_outside_the_evolution_minutes() {
+            use crate::survivors::PassiveId;
+            for evolves in [false, true] {
+                let (mut s, _) = chest_from(30, 3, |s| {
+                    let row = serde_json::from_value::<crate::survivors::SpawnMinute>(
+                        serde_json::json!({
+                            "minute": 3, "bosses": [], "events": [],
+                            "treasure": [{"chances": [0, 0, 0], "tier": 3, "evolves": evolves,
+                                "level": 1, "prizeTypes": "WAAAA", "fixedPrizes": []}],
+                        }),
+                    )
+                    .unwrap();
+                    // (Minute 3's row alone: the run never reaches it, so nothing spawns.)
+                    Rc::get_mut(&mut s.env)
+                        .unwrap()
+                        .input
+                        .level
+                        .survivor_schedule = vec![row];
+                    // Sword 7 and its partner: the chest's first item maxes the Sword.
+                    for _ in 1..7 {
+                        s.learn_survivor_weapon(WeaponId::Sword).unwrap();
+                    }
+                    s.learn_survivor_passive(PassiveId::HollowHeart).unwrap();
+                });
+                s.advance_to(3.001);
+                let rewards = s.run_state().roulette.unwrap().rewards;
+                assert_eq!(rewards[0], Some(Item::Weapon(WeaponId::Sword)));
+                assert_eq!(
+                    rewards[1] == Some(Item::Weapon(WeaponId::BloodyTear)),
+                    evolves,
+                    "{rewards:?}"
+                );
+            }
         }
         #[test]
         fn chest_snapshot_repeats_reward_timing_inventory_and_all_events() {

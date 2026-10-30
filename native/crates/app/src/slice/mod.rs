@@ -35,6 +35,8 @@
 //!     playlist-survivors --showcase-stills <session>  # a recorded showcase replayed offscreen: three stills
 //!     playlist-survivors --showcase-density <session> [--level <yaml>]  # its music on the showcase
 //!                                     # level, autoplayed offscreen: crowds per section, stills, frame work
+//!     playlist-survivors --showcase-arsenal <session> [--level <yaml>]  # the same, measuring the
+//!                                     # hero's growth: level-ups, chests, time frozen, arsenal per section
 
 mod apps;
 mod bible;
@@ -194,6 +196,8 @@ struct Options {
     /// A recorded showcase's music replayed on the showcase level, its crowds measured
     /// (`showcase::density`).
     showcase_density: Option<PathBuf>,
+    /// The same replay, the hero's growth per section measured (`showcase::arsenal_growth`).
+    showcase_arsenal: Option<PathBuf>,
     file: Option<PathBuf>,
     level: Option<PathBuf>,
     still: Option<PathBuf>,
@@ -273,6 +277,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         showcase: false,
         showcase_stills: None,
         showcase_density: None,
+        showcase_arsenal: None,
         file: None,
         level: None,
         still: None,
@@ -343,6 +348,13 @@ fn options(args: &[String]) -> Result<Options, String> {
                 o.showcase_density = Some(
                     it.next()
                         .ok_or("--showcase-density needs a session directory")?
+                        .into(),
+                );
+            }
+            "--showcase-arsenal" => {
+                o.showcase_arsenal = Some(
+                    it.next()
+                        .ok_or("--showcase-arsenal needs a session directory")?
                         .into(),
                 );
             }
@@ -820,12 +832,16 @@ pub fn run(args: &[String]) -> Result<(), String> {
     if let Some(dir) = &opts.showcase_stills {
         return showcase::stills(dir);
     }
-    if let Some(dir) = &opts.showcase_density {
-        let level = opts
-            .level
+    let showcase_level = || {
+        opts.level
             .clone()
-            .unwrap_or_else(|| live::resource("levels", "../../../levels").join(SHOWCASE_LEVEL));
-        return showcase::density(dir, &level);
+            .unwrap_or_else(|| live::resource("levels", "../../../levels").join(SHOWCASE_LEVEL))
+    };
+    if let Some(dir) = &opts.showcase_density {
+        return showcase::density(dir, &showcase_level());
+    }
+    if let Some(dir) = &opts.showcase_arsenal {
+        return showcase::arsenal_growth(dir, &showcase_level());
     }
     if let Some(dir) = &opts.passives_check {
         return cards::passives_check::run(dir);

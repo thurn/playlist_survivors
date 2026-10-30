@@ -401,10 +401,15 @@ fn song_clock_schedules_and_caps_are_validated() {
             "minimum above the cap 300",
         ),
         (
-            edit(&showcase, "cap: 1000", "cap: 300"),
+            edit(&showcase, "cap: 1200", "cap: 300"),
             "minimum above the cap",
         ),
-        (edit(&showcase, "cap: 1000", "cap: 2001"), "cap"),
+        (edit(&showcase, "cap: 1200", "cap: 2001"), "cap"),
+        // A row's share of each gem's experience is never negative.
+        (
+            edit(&showcase, "\"xpScale\":0.5,", "\"xpScale\":-1,"),
+            "xpScale",
+        ),
     ] {
         let e = load(&bad).expect_err(why);
         assert!(e.contains(why), "{why}: {e}");

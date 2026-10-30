@@ -10,7 +10,7 @@ survivors:
   durationS: 240
   endsWithSong: true
   heroStands: true
-  cap: 1000
+  cap: 1200
   contactDamage: 0.5
   bruteChickenChance: 0.05
   bossChickens: 1
@@ -20,7 +20,8 @@ survivors:
   # map's time less the run's start (song 7.0 s, native's auto-start), so a level-up's freeze never
   # shifts a row. minimum is the crowd ON SCREEN, demo2d's onScreen x 400 (the spawner steers a
   # crowd round the view toward it; `--showcase-density` measures it); widen is demo2d's
-  # viewWidthM / 30 m, eased in over 2 s. cap: the most alive at once (the final peak holds ~950).
+  # viewWidthM / 30 m, eased in over 2 s. cap: the most alive at once (the final peak holds
+  # ~1180: its late arsenal kills more of the view's crowd, so the arena round it needs more).
   # demo2d's mixes onto native kinds of a similar role (frequency is milliseconds; duplicates
   # weight the mix, elites spread through it):
   #   grunts: skeleton > vs-skeleton, ghoul > vs-zombie, flame-imp > vs-bat3, ice-skull > vs-ghost,
@@ -29,32 +30,43 @@ survivors:
   #   elites: ogre > vs-mudman2, cyclops > vs-xlmantis, werewolf > vs-werewolf,
   #           lava-beast > vs-xlmummy
   #   boss: boss-devil > vs-boss-xlmantis at the final peak
-  # The chests ride on vs-bat4 at drop-1 and groove-2, as the Mad Forest's minutes 1 and 3 did.
+  # Growth, compressed for 3:19 (evidence: native/evidence/showcase/final): xpScale is how much of
+  # each gem's experience the hero takes while a row plays. This crowd would level the hero every
+  # few seconds at 1 (39 level-ups, a third of the song frozen on cards), so the hero banks most
+  # of its levels in the breakdown, the build and break-2 (0.7), takes a few in the grooves and
+  # the drops (0.2-0.5) and none from the final peak on (0): the climax never stops for a card.
+  # The big level-ups are three tier-3 chests (five items each) on vs-bat4 at the starts of the
+  # groove, the breakdown and groove-2. The hero takes a chest only clear of the crowd, so each
+  # lands a section or so later: the first just before drop-1, the last by drop-2. The last two
+  # may evolve (evolves: otherwise only the Mad Forest's minutes 10-25), so the final peak plays
+  # Bloody Tear, Holy Wand and Soul Eater beside King Bible and Lightning Ring.
   schedule:
     # intro: demo2d 3 on screen
-    - {"minute":0,"songS":0,"widen":1.0,"minimum":3,"frequency":250,"enemies":["vs-skeleton"],"bosses":[],"events":[],"treasure":[]}
+    - {"minute":0,"songS":0,"xpScale":0.5,"widen":1.0,"minimum":3,"frequency":250,"enemies":["vs-skeleton"],"bosses":[],"events":[],"treasure":[]}
     # groove: demo2d 60 on screen
-    - {"minute":1,"songS":5.4,"widen":1.0,"minimum":60,"frequency":250,"enemies":["vs-skeleton","vs-skeleton","vs-skeleton","vs-bat3","vs-skeleton","vs-zombie","vs-zombie","vs-zombie"],"bosses":[],"events":[],"treasure":[]}
+    - {"minute":1,"songS":5.4,"xpScale":0.25,"widen":1.0,"minimum":60,"frequency":250,"enemies":["vs-skeleton","vs-skeleton","vs-skeleton","vs-bat3","vs-skeleton","vs-zombie","vs-zombie","vs-zombie"],"bosses":["vs-bat4"],"events":[],"treasure":[{"chances":[0,0,0],"tier":3,"level":1,"prizeTypes":"EAAAA","fixedPrizes":[]}]}
     # break-1: demo2d 60 on screen
-    - {"minute":2,"songS":27.07,"widen":1.0,"minimum":60,"frequency":250,"enemies":["vs-skeleton","vs-skeleton","vs-skeleton","vs-bat3","vs-skeleton","vs-zombie","vs-zombie","vs-zombie"],"bosses":[],"events":[],"treasure":[]}
+    - {"minute":2,"songS":27.07,"xpScale":0.25,"widen":1.0,"minimum":60,"frequency":250,"enemies":["vs-skeleton","vs-skeleton","vs-skeleton","vs-bat3","vs-skeleton","vs-zombie","vs-zombie","vs-zombie"],"bosses":[],"events":[],"treasure":[]}
     # drop-1: demo2d 160 on screen
-    - {"minute":3,"songS":30.17,"widen":1.0667,"minimum":160,"frequency":250,"enemies":["vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-ghost","vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-xlbat","vs-zombie","vs-zombie","vs-zombie","vs-zombie","vs-ghost","vs-zombie","vs-zombie","vs-bat3","vs-bat3","vs-bat3","vs-bat3"],"bosses":["vs-bat4"],"events":[],"treasure":[{"chances":[0,0,30],"level":1,"prizeTypes":"EAAAA","fixedPrizes":["AMOUNT"]}]}
-    # breakdown: demo2d 120 on screen
-    - {"minute":4,"songS":67.33,"widen":1.0,"minimum":120,"frequency":250,"enemies":["vs-skeleton","vs-bat2","vs-skeleton","vs-bat2","vs-skeleton","vs-ghost","vs-ghost"],"bosses":[],"events":[],"treasure":[]}
+    - {"minute":3,"songS":30.17,"xpScale":0.2,"widen":1.0667,"minimum":160,"frequency":250,"enemies":["vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-ghost","vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-xlbat","vs-zombie","vs-zombie","vs-zombie","vs-zombie","vs-ghost","vs-zombie","vs-zombie","vs-bat3","vs-bat3","vs-bat3","vs-bat3"],"bosses":[],"events":[],"treasure":[]}
+    # breakdown: demo2d 120 on screen (asked 150: the hero, maxed Sword by now, thins it faster
+    # than the spawner refills it; 120 measured ~85)
+    - {"minute":4,"songS":67.33,"xpScale":0.7,"widen":1.0,"minimum":150,"frequency":250,"enemies":["vs-skeleton","vs-bat2","vs-skeleton","vs-bat2","vs-skeleton","vs-ghost","vs-ghost"],"bosses":["vs-bat4"],"events":[],"treasure":[{"chances":[0,0,0],"tier":3,"evolves":true,"level":1,"prizeTypes":"WAAAA","fixedPrizes":[]}]}
     # groove-2: demo2d 200 on screen
-    - {"minute":5,"songS":79.72,"widen":1.1333,"minimum":200,"frequency":250,"enemies":["vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-xlbat","vs-skeleton","vs-zombie","vs-zombie","vs-zombie","vs-zombie","vs-zombie","vs-bat2","vs-mudman2","vs-bat2","vs-bat2","vs-bat2","vs-bat2","vs-mudman1","vs-mudman1","vs-mudman1","vs-mudman1","vs-mudman1"],"bosses":["vs-bat4"],"events":[],"treasure":[{"chances":[0,5,40],"level":1,"prizeTypes":"WAAAA","fixedPrizes":[]}]}
+    - {"minute":5,"songS":79.72,"xpScale":0.3,"widen":1.1333,"minimum":200,"frequency":250,"enemies":["vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-xlbat","vs-skeleton","vs-zombie","vs-zombie","vs-zombie","vs-zombie","vs-zombie","vs-bat2","vs-mudman2","vs-bat2","vs-bat2","vs-bat2","vs-bat2","vs-mudman1","vs-mudman1","vs-mudman1","vs-mudman1","vs-mudman1"],"bosses":["vs-bat4"],"events":[],"treasure":[{"chances":[0,0,0],"tier":3,"evolves":true,"level":1,"prizeTypes":"WAAAA","fixedPrizes":[]}]}
     # build: demo2d 200 on screen
-    - {"minute":6,"songS":104.49,"widen":1.1333,"minimum":200,"frequency":250,"enemies":["vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-xlbat","vs-zombie","vs-zombie","vs-zombie","vs-zombie","vs-zombie","vs-zombie","vs-zombie","vs-zombie","vs-xlmantis","vs-bat3","vs-bat3","vs-bat3","vs-bat3","vs-bat3","vs-mudman1","vs-mudman1","vs-mudman1","vs-mudman1","vs-mudman1"],"bosses":[],"events":[],"treasure":[]}
+    - {"minute":6,"songS":104.49,"xpScale":0.7,"widen":1.1333,"minimum":200,"frequency":250,"enemies":["vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-xlbat","vs-zombie","vs-zombie","vs-zombie","vs-zombie","vs-zombie","vs-zombie","vs-zombie","vs-zombie","vs-xlmantis","vs-bat3","vs-bat3","vs-bat3","vs-bat3","vs-bat3","vs-mudman1","vs-mudman1","vs-mudman1","vs-mudman1","vs-mudman1"],"bosses":[],"events":[],"treasure":[]}
     # break-2: demo2d 160 on screen
-    - {"minute":7,"songS":113.78,"widen":1.1333,"minimum":160,"frequency":250,"enemies":["vs-skeleton","vs-skeleton","vs-bat3","vs-skeleton","vs-zombie","vs-bat3","vs-zombie","vs-zombie","vs-mudman1","vs-mudman1"],"bosses":[],"events":[],"treasure":[]}
+    - {"minute":7,"songS":113.78,"xpScale":0.7,"widen":1.1333,"minimum":160,"frequency":250,"enemies":["vs-skeleton","vs-skeleton","vs-bat3","vs-skeleton","vs-zombie","vs-bat3","vs-zombie","vs-zombie","vs-mudman1","vs-mudman1"],"bosses":[],"events":[],"treasure":[]}
     # drop-2: demo2d 320 on screen
-    - {"minute":8,"songS":116.88,"widen":1.2,"minimum":320,"frequency":250,"enemies":["vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-xlbat","vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-mudman2","vs-zombie","vs-zombie","vs-zombie","vs-zombie","vs-zombie","vs-werewolf","vs-zombie","vs-zombie","vs-zombie","vs-bat3","vs-bat3","vs-xlbat","vs-bat3","vs-bat3","vs-bat3","vs-mudman1","vs-mudman1","vs-xlmummy","vs-mudman1","vs-mudman1","vs-mudman1","vs-ghost","vs-ghost","vs-ghost"],"bosses":[],"events":[],"treasure":[]}
+    - {"minute":8,"songS":116.88,"xpScale":0.3,"widen":1.2,"minimum":320,"frequency":250,"enemies":["vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-xlbat","vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-mudman2","vs-zombie","vs-zombie","vs-zombie","vs-zombie","vs-zombie","vs-werewolf","vs-zombie","vs-zombie","vs-zombie","vs-bat3","vs-bat3","vs-xlbat","vs-bat3","vs-bat3","vs-bat3","vs-mudman1","vs-mudman1","vs-xlmummy","vs-mudman1","vs-mudman1","vs-mudman1","vs-ghost","vs-ghost","vs-ghost"],"bosses":[],"events":[],"treasure":[]}
     # final-peak: demo2d 384 on screen
-    - {"minute":9,"songS":154.04,"widen":1.35,"minimum":384,"frequency":250,"enemies":["vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-xlbat","vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-mudman2","vs-skeleton","vs-skeleton","vs-zombie","vs-zombie","vs-xlmantis","vs-zombie","vs-zombie","vs-zombie","vs-zombie","vs-xlbat","vs-zombie","vs-zombie","vs-bat3","vs-bat3","vs-werewolf","vs-bat3","vs-bat3","vs-bat3","vs-mudman1","vs-xlmummy","vs-mudman1","vs-mudman1","vs-mudman1","vs-mudman1","vs-ghost","vs-ghost","vs-ghost","vs-bat2","vs-bat2","vs-bat2"],"bosses":["vs-boss-xlmantis"],"events":[],"treasure":[]}
-    # outro: demo2d 200 on screen
-    - {"minute":10,"songS":178.82,"widen":1.2,"minimum":200,"frequency":250,"enemies":["vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-zombie","vs-zombie","vs-zombie","vs-mudman1","vs-mudman1"],"bosses":[],"events":[],"treasure":[]}
+    - {"minute":9,"songS":154.04,"xpScale":0,"widen":1.35,"minimum":384,"frequency":250,"enemies":["vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-xlbat","vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-mudman2","vs-skeleton","vs-skeleton","vs-zombie","vs-zombie","vs-xlmantis","vs-zombie","vs-zombie","vs-zombie","vs-zombie","vs-xlbat","vs-zombie","vs-zombie","vs-bat3","vs-bat3","vs-werewolf","vs-bat3","vs-bat3","vs-bat3","vs-mudman1","vs-xlmummy","vs-mudman1","vs-mudman1","vs-mudman1","vs-mudman1","vs-ghost","vs-ghost","vs-ghost","vs-bat2","vs-bat2","vs-bat2"],"bosses":["vs-boss-xlmantis"],"events":[],"treasure":[]}
+    # outro: demo2d 200 on screen (asked 225: the three evolutions thin it faster than the
+    # spawner refills it; 200 measured ~150)
+    - {"minute":10,"songS":178.82,"xpScale":0,"widen":1.2,"minimum":225,"frequency":250,"enemies":["vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-zombie","vs-zombie","vs-zombie","vs-mudman1","vs-mudman1"],"bosses":[],"events":[],"treasure":[]}
     # ending: demo2d 100 on screen
-    - {"minute":11,"songS":188.11,"widen":1.1,"minimum":100,"frequency":250,"enemies":["vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-zombie","vs-zombie","vs-zombie"],"bosses":[],"events":[],"treasure":[]}
+    - {"minute":11,"songS":188.11,"xpScale":0,"widen":1.1,"minimum":100,"frequency":250,"enemies":["vs-skeleton","vs-skeleton","vs-skeleton","vs-skeleton","vs-zombie","vs-zombie","vs-zombie"],"bosses":[],"events":[],"treasure":[]}
 hero: { health: { max: 120, invulnerableMs: 120 } }
 upgrades: { loadout: [], offer: [] }
 zones: [twilight-glade, galop-woods, mushroom-grove, ember-hollow, infernal-grove]

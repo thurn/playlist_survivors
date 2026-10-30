@@ -165,7 +165,7 @@ impl Sim {
                     .expect("survivors")
                     .arsenal
                     .inventory();
-                let item = chest_item(inv, weapon_catalog(), matches!(r.minute, 10 | 15 | 20 | 25));
+                let item = chest_item(inv, weapon_catalog(), self.chest_evolves(r.minute));
                 self.apply_chest_item(item);
                 *slot = Some(item);
             }
@@ -214,6 +214,19 @@ impl Sim {
             self.st.roulette = Some(r);
         }
         self.publish_run();
+    }
+    /// Whether a chest from `minute`'s treasure may evolve a weapon.
+    fn chest_evolves(&self, minute: usize) -> bool {
+        matches!(minute, 10 | 15 | 20 | 25)
+            || self
+                .env
+                .input
+                .level
+                .survivor_schedule
+                .iter()
+                .find(|r| r.minute == minute)
+                .and_then(|r| r.treasure.first())
+                .is_some_and(|t| t.evolves)
     }
     fn apply_chest_item(&mut self, item: Item) {
         match item {
