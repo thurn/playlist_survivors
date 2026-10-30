@@ -19,11 +19,12 @@ namespace Demo3D.Choreography.Tests
         /// <summary>
         /// The dumps' FNV-1a hashes before the tuning fields existed (ps-5pd.1), under .NET on Apple
         /// silicon, where the dump is byte-identical run to run. A change that alters normal runs on
-        /// purpose records the new hashes here.
+        /// purpose records the new hashes here: the song's are ps-7n4's, whose level script turned on
+        /// one-hit kills.
         /// </summary>
         static readonly (string name, long chars, string hash)[] Before =
         {
-            ("song", 19118387, "8b9387cc84d560ef"),
+            ("song", 19762408, "1432eb98e74e3c29"),
             ("S1", 22781381, "0efef3392079eb9e"),
             ("S2", 24718997, "fd46c88ae8289c77"),
             ("S3", 26045232, "84e21b99f520e8bb"),
@@ -63,6 +64,7 @@ namespace Demo3D.Choreography.Tests
             Assert.That(t.RefillDivisor, Is.EqualTo(6f));
             Assert.That(t.ReleaseLeadS, Is.EqualTo(2.5f));
             Assert.That(t.YieldToAccents, Is.False);
+            Assert.That(t.OneHitKills, Is.False);
             Assert.That((t.SoundGainBase, t.SoundGainPerDoubling, t.SoundGainMax, t.HeavyBlowKills), Is.EqualTo((0.35, 0.15, 1.0, 0)));
 
             SimTuning set = LevelScript.Parse(Script("\"comboMaxSpeed\": 2.5, \"maxShapeScale\": 8, \"hitsShapeScale\": 6, \"maxShapeViewFraction\": 0.4, "
@@ -78,6 +80,7 @@ namespace Demo3D.Choreography.Tests
             Assert.That(set.RefillDivisor, Is.EqualTo(3f));
             Assert.That(set.ReleaseLeadS, Is.EqualTo(3f));
             Assert.That(set.YieldToAccents, Is.True);
+            Assert.That(LevelScript.Parse(Script("\"oneHitKills\": true,")).Tuning.OneHitKills, Is.True);
             SimTuning sound = LevelScript.Parse(Script("\"soundGain\": { \"base\": 0.2, \"perDoubling\": 0.1, \"max\": 0.8 }, \"heavyBlowKills\": 40,")).Tuning;
             Assert.That((sound.SoundGainBase, sound.SoundGainPerDoubling, sound.SoundGainMax, sound.HeavyBlowKills), Is.EqualTo((0.2, 0.1, 0.8, 40)));
             Assert.Throws<FormatException>(() => LevelScript.Parse(Script("\"comboMaxSpeed\": 0.5,")));
@@ -166,7 +169,8 @@ namespace Demo3D.Choreography.Tests
         /// Overdrive's flurries (an eighth's combo entry) add blows between the beats without costing a
         /// beat its own: each blow between beats is followed by one on the next beat (or by the windup of a
         /// spin or slam the hero held back for, which at 3x may start just after that beat), and the hero strikes on most beats of every rhythmic section
-        /// (such windups and strides on the way to a goal are the rest; the peaks hold ground).
+        /// (such windups and strides on the way to a goal are the rest; the peaks hold ground, though with one-hit kills a
+        /// blow empties its reach, so the odd beat finds nothing in it).
         /// </summary>
         [Test]
         public void OverdriveFlurriesAddBlowsBetweenTheBeats()
@@ -193,7 +197,7 @@ namespace Demo3D.Choreography.Tests
                 TestContext.WriteLine(sec.Label + ": blows on " + struck + " of " + sectionBeats + " beats");
                 // The peaks hold ground; the sections before travel to their goals, striding where nothing is in reach ahead.
                 bool peak = sec.Label == "drop-2" || sec.Label == "final-peak";
-                Assert.That(struck, Is.GreaterThanOrEqualTo((peak ? 0.85 : 0.6) * sectionBeats), sec.Label);
+                Assert.That(struck, Is.GreaterThanOrEqualTo((peak ? 0.75 : 0.6) * sectionBeats), sec.Label);
                 foreach (double t in blows)
                 {
                     if (t < sec.Start || t >= sec.End || OnBeat(t)) continue;

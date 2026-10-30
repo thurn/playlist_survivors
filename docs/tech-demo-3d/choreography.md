@@ -88,7 +88,8 @@ public readonly struct FramingSample { public readonly Vector2 Focus;
 
 A `Tick` is a repeat hit from a lingering effect, such as the laser's sweep
 or a ring's afterburn. The client plays it as a shader flash only, with no
-clip, knockback or effect event.
+clip, knockback or effect event. Under [one-hit kills](#one-hit-kills) there
+are none: the sweep kills.
 
 The **beat grid** is the song map's beats and their halves and quarters.
 Accents are the song map's curated accent list; a beat counts as an accent
@@ -236,7 +237,8 @@ What the simulation does on each grid step:
   against monster positions at that instant. The result is `Hit` events with
   short `Linear` knockback segments, or `Death` events once a monster's hit
   points run out.
-- **Kill rate follows the section's load preset.** The song holds each
+- **Kill rate follows the section's load preset.** (demo3d's level scripts
+  kill differently: see [One-hit kills](#one-hit-kills).) The song holds each
   section's deaths and hits per second with the same per-bar feedback as the
   stress timelines, so its climax kills as fast as the frontier's measured
   points. The climax adds the boss, the laser and denser spells on top.
@@ -323,6 +325,7 @@ the normal timelines' dump hashes for demo3d and demo2d.
 | `releaseLeadS` | 2.5 | Releases add this many seconds of the expected deaths, to cover the walk in from the spawn band. |
 | `loads` | none | The script's own load presets by name (`deathsPerN`, `hitsPerDeath`, `spells`), alongside `light`, `demo` and `heavy`. |
 | `soundGain` | `{ "base": 0.35, "perDoubling": 0.15, "max": 1 }` | The aggregated sounds' gain for a beat's n requests of a category: min(max, (base + perDoubling × log2 n) × (0.7 + 0.3 × strongest)). Overdrive's lower curve leaves a 60-kill beat clearly louder than a 5-kill one, with headroom. |
+| `oneHitKills` | false | Every monster but the boss dies to the first blow or spell that strikes it; see [One-hit kills](#one-hit-kills). |
 | `heavyBlowKills` | 0 (off) | A hero blow that kills at least this many also asks for the ring's heavy impact, at a strength growing to 1 at twice as many, so a mass kill lands as one layered boom. |
 
 **The client's feel.** An overlay's `feel` object is the client's, not the
@@ -335,6 +338,46 @@ section table, with the numbers an intensity is tuned by. For each section it
 gives the hero's swings per second, kills per swing (mean and peak), hero
 kills, spell kills and their share, other kills (trampling and worst beats),
 and the mean on screen against the target.
+
+### One-hit kills
+
+demo3d's three level scripts set `oneHitKills` (ps-7n4), as a horde survivor
+game plays: the horde walks in and dies to the first thing that touches it.
+Under the kill budget, a struck monster beyond the section's allotment took
+a non-lethal `Hit` and knockback instead. So the song's opening struck its
+lone skeleton for about 16 s before one died, and the groove dealt 14 hits a
+second for 1.6 deaths. demo2d and the stress scripts keep the budget.
+
+- **Every monster struck dies,** by a hero blow, a ring, a bolt, lightning
+  or the laser's sweep, whatever its hit points. The boss is the exception:
+  it keeps taking hits until its section's last bar, as before.
+- **The load preset steers how far the blows reach,** not who survives
+  them. The bar feedback grows the hit shapes while deaths run behind the
+  preset's rate and shrinks them otherwise, ignoring `hitsPerDeath`, since
+  no hits come.
+- **Spells top up.** A spell holds back while the section's deaths are
+  within a quarter second's worth of the rate, so the hero's blows do most
+  of the reaping and a ring's lump of kills doesn't overshoot the rate.
+- **Sections kill what walks in.** The hero can't kill slower than the horde
+  arrives. Quiet sections often run above their rate, as do the free breaks
+  (which fill with the next drop's horde) and the sections after a bigger one
+  (which kill its leftovers as they arrive). `SectionDeathRates` therefore
+  holds only the sections that hold or grow the horde, from 90% of their rate
+  to 1.5 times it.
+- **The hero always has a slam ready for the ending.** Under one-hit kills
+  the outro empties, so when nothing is in reach before a clearing section,
+  the hero winds up for its first accent slam instead of striding past it.
+
+demo3d's loads are `swarm-light` (0.075 deaths/s per monster on screen, 3x
+`light`), `swarm` (0.15, 3x `demo`) and `swarm-build` (0.11). The build
+travels to the courtyard and kills about 2.5x what it did. forest's and
+heroic's closer view walks their small groove horde in faster, so their
+groove has `swarm-groove` (0.15). Against the old budget, the song kills
+3.0x as many monsters before the ending (2.6x with it, since the ending's
+clearing blow finds fewer leftovers), and no monster but the boss takes a
+non-lethal hit. Overdrive inherits it. Its own loads drop `hitsPerDeath`,
+its build rises to 0.045 deaths/s per monster, and its groove plays
+`swarm-light` on every roster set.
 
 ### Free sections
 

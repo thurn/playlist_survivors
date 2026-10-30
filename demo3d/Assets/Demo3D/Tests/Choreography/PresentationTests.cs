@@ -4,7 +4,7 @@ using PS.Choreography;
 
 namespace Demo3D.Choreography.Tests
 {
-    /// <summary>TD10's checks on the song's timeline: slams on the ending's accents, ticks without knockback.</summary>
+    /// <summary>TD10's checks on the song's timeline: slams on the ending's accents, ticks without knockback, one-hit kills.</summary>
     public class PresentationTests
     {
         [Test]
@@ -55,10 +55,35 @@ namespace Demo3D.Choreography.Tests
             Assert.That(before, Is.GreaterThan(50), "the last slam has a horde to clear");
         }
 
+        /// <summary>
+        /// ps-7n4: with the level script's one-hit kills, normal and overdrive alike, every monster but the boss dies
+        /// to the first blow or spell that strikes it, the laser's sweep included: none takes a hit or a tick and lives.
+        /// </summary>
+        [TestCase("song")]
+        [TestCase("song-overdrive")]
+        public void EveryMonsterButTheBossDiesToItsFirstStrike(string name)
+        {
+            Timeline tl = Fixtures.Named(name);
+            int bossType = Fixtures.Data.Roster.MonsterIndex("boss");
+            int deaths = 0, bossHits = 0;
+            foreach (ActionEvent a in tl.Actions)
+            {
+                EntityInfo e = tl.Entities[a.Entity];
+                if (e.Kind != EntityKind.Monster) continue;
+                if (a.Kind == ActionKind.Death) deaths++;
+                if (a.Kind != ActionKind.Hit && a.Kind != ActionKind.Tick) continue;
+                if (e.Type == bossType) { bossHits++; continue; }
+                Assert.Fail(tl.TypeNames[e.Type] + " " + a.Entity + " takes a " + a.Kind + " at " + a.Impact.ToString("F2") + " and lives");
+            }
+            Assert.That(deaths, Is.GreaterThan(1000));
+            Assert.That(bossHits, Is.GreaterThan(0), "the boss still takes blows until its last bar");
+        }
+
+        /// <summary>Without one-hit kills a laser tick is a flash only: it never knocks its monster back.</summary>
         [Test]
         public void TicksNeverKnockAMonsterBack()
         {
-            Timeline tl = Fixtures.SongTimeline;
+            Timeline tl = Fixtures.MultiHitTimeline;
             int ticks = 0;
             foreach (ActionEvent a in tl.Actions)
             {

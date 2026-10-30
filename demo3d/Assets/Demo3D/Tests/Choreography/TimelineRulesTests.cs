@@ -124,7 +124,10 @@ namespace Demo3D.Choreography.Tests
                             bool ok = field.Direction(s.From, out Vector2 down);
                             float cos = ok ? Vector2.Dot(Vector2.Normalize(step), down) : -1;
                             if (cos < 0.5f) problems.Add("stride at " + s.T0 + " in " + sec.Label + " heads " + Math.Acos(Math.Max(-1, Math.Min(1, cos))) * 57.3 + "° off the goal field");
-                            if (field.CostAt(s.To) > field.CostAt(s.From) + 0.5f) problems.Add("stride at " + s.T0 + " in " + sec.Label + " climbs the goal field");
+                            // A stride may end in a 0.5 m cell the field leaves out, whose centre is too near a wall,
+                            // while the hero itself keeps clear of it (NobodyStandsInsideAWall checks that): no climb.
+                            float costTo = field.CostAt(s.To);
+                            if (!float.IsInfinity(costTo) && costTo > field.CostAt(s.From) + 0.5f) problems.Add("stride at " + s.T0 + " in " + sec.Label + " climbs the goal field");
                         }
                     }
                     else
@@ -138,7 +141,7 @@ namespace Demo3D.Choreography.Tests
             return toward;
         }
 
-        /// <summary>Each section's measured deaths per second stay within 10% of its load preset.</summary>
+        /// <summary>Each section's measured deaths per second follow its load preset (under the song's one-hit kills, its held sections).</summary>
         [Test]
         public void SongSectionDeathRatesFollowTheirPresets()
         {

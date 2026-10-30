@@ -18,7 +18,7 @@ namespace Demo3D.Choreography.Tests
         static SongMap song;
         static Timeline songTimeline;
         static LevelScript overdriveLevel;
-        static Timeline overdriveTimeline;
+        static Timeline overdriveTimeline, multiHitTimeline;
         static readonly Dictionary<string, Timeline> stress = new Dictionary<string, Timeline>();
 
         public static readonly string[] StressScenes = { "S1", "S2", "S3", "S4", "S5", "S6" };
@@ -43,6 +43,13 @@ namespace Demo3D.Choreography.Tests
         }
 
         public static Timeline BuildSong() => Choreographer.Run(Song, Level, Data);
+
+        /// <summary>
+        /// The song's timeline without one-hit kills (action-level.json under an overlay turning <c>oneHitKills</c> off):
+        /// the kill budget decides who dies and the laser ticks, for the checks on non-lethal hits.
+        /// </summary>
+        public static Timeline MultiHitTimeline => multiHitTimeline ?? (multiHitTimeline = Choreographer.Run(Song,
+            LevelScript.Parse(System.IO.File.ReadAllText(ChoreographyFiles.DataPath(Root, ChoreographyFiles.LevelFile)), "{ \"oneHitKills\": false }"), Data));
 
         /// <summary>The level script under `--intensity overdrive` (intensity-overdrive.json over action-level.json).</summary>
         public static LevelScript OverdriveLevel => overdriveLevel ?? (overdriveLevel = ChoreographyFiles.LoadLevel(Root, ChoreographyFiles.LevelFile, "overdrive"));

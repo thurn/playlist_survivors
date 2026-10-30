@@ -100,23 +100,39 @@ namespace PS.Choreography
 
         /// <summary>
         /// Each song section's measured deaths per second stay within 10% of its load preset at its
-        /// target (a clearing section kills what is on screen, so it is left out).
+        /// target (a clearing section kills what is on screen, so it is left out). With one-hit kills
+        /// the hero reaps whatever walks in, so only the sections that hold or grow the horde (as in
+        /// <see cref="SectionsHoldTheirTargets"/>) are held to their rate, from 90% of it to
+        /// <see cref="OneHitDeathRateCeiling"/> times it: the opening and the free breaks fill with the
+        /// next section's horde, and a section after a bigger one kills what is left of it as it walks in.
         /// </summary>
         public static List<string> SectionDeathRates(Timeline tl, LevelScript level, Action<string> log = null)
         {
             var problems = new List<string>();
-            foreach (SongSection sec in tl.Map.Sections)
+            int prevN = 0;
+            for (int i = 0; i < tl.Map.Sections.Length; i++)
             {
+                SongSection sec = tl.Map.Sections[i];
                 LevelSection ls = level.For(sec.Label);
                 int n = (int)Math.Round(ls.OnScreen * level.EnvelopeOnScreen);
                 double target = level.Preset(ls.Load).DeathsPerSecond(n);
                 double rate = CountDeaths(tl, sec.Start, sec.End) / (sec.End - sec.Start);
+                bool held = i > 0 && sec.Feel != SectionFeel.Free && n >= prevN;
+                prevN = n;
                 log?.Invoke(sec.Label + ": " + rate.ToString("F2") + " deaths/s against " + target.ToString("F2"));
                 if (target <= 0 || ls.Clear) continue;
-                if (Math.Abs(rate / target - 1) > 0.10) problems.Add(sec.Label + " " + rate.ToString("F2") + " deaths/s against " + target.ToString("F2"));
+                bool ok = !level.Tuning.OneHitKills ? Math.Abs(rate / target - 1) <= 0.10
+                    : !held || (rate >= 0.9 * target && rate <= OneHitDeathRateCeiling * target);
+                if (!ok) problems.Add(sec.Label + " " + rate.ToString("F2") + " deaths/s against " + target.ToString("F2"));
             }
             return problems;
         }
+
+        /// <summary>
+        /// With one-hit kills, how far above its preset's rate a section that holds or grows the horde may
+        /// kill: demo3d's groove, whose walk-in outpaces its quiet rate, reaches about 1.3 on some seeds.
+        /// </summary>
+        public const double OneHitDeathRateCeiling = 1.5;
 
         /// <summary>
         /// How far a song section's mean on screen may stray from its target: demo3d's song holds

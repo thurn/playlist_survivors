@@ -208,6 +208,13 @@ namespace PS.Choreography
         /// at a strength growing to 1 at twice as many, so a mass kill lands as one layered boom. 0, the default: none.
         /// </summary>
         public int HeavyBlowKills;
+        /// <summary>
+        /// Every monster but the boss dies to the first blow or spell that strikes it, the laser's sweep
+        /// included (its <c>oneHitKills</c>), as in a horde survivor game: the load preset's rate steers only
+        /// the hit shapes' size, never who survives a strike. False, the default: the kill budget decides who
+        /// dies, and the rest take non-lethal hits.
+        /// </summary>
+        public bool OneHitKills;
 
         public static readonly SimTuning Default = new SimTuning();
 
@@ -237,6 +244,7 @@ namespace PS.Choreography
                 SoundGainPerDoubling = gain["perDoubling"].AsDouble(d.SoundGainPerDoubling),
                 SoundGainMax = gain["max"].AsDouble(d.SoundGainMax),
                 HeavyBlowKills = root["heavyBlowKills"].AsInt(d.HeavyBlowKills),
+                OneHitKills = root["oneHitKills"].AsBool(d.OneHitKills),
             };
             if (!(t.ComboMinSpeed >= ClipLibrary.MinSpeed) || !(t.ComboMaxSpeed >= t.ComboMinSpeed))
                 throw new FormatException("hero combo speeds " + t.ComboMinSpeed + " to " + t.ComboMaxSpeed + " are out of order or below the clips' minimum");

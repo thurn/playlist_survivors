@@ -567,7 +567,9 @@ namespace PS.Choreography
         void BarFeedback(double tb)
         {
             double barDur = tb - barStart;
-            double target = (plan.Preset.DeathsPerSecond(plan.TargetOnScreen) + plan.Preset.HitsPerSecond(plan.TargetOnScreen)) * barDur;
+            // With one-hit kills every monster struck dies, so the preset's hits never come.
+            double hits = tuning.OneHitKills ? 0 : plan.Preset.HitsPerSecond(plan.TargetOnScreen);
+            double target = (plan.Preset.DeathsPerSecond(plan.TargetOnScreen) + hits) * barDur;
             double rate = plan.Preset.DeathsPerSecond(plan.TargetOnScreen);
             if (target > 0 && barDur > 0)
             {
@@ -731,6 +733,14 @@ namespace PS.Choreography
                 return;
             }
             if (heroLastEnd > tb + 1e-9) return;
+            // With nothing in reach just before a clearing section (an outro the hero has emptied), the hero winds
+            // up for its first slam rather than striding past the beat its windup has to start on.
+            int next = curSection + 1;
+            if (canAct && next < plans.Length && plans[next].Clear && plans[next].HeroAttacks)
+            {
+                ScheduleHeroAction(tb, roster.HeroWindupS > 0 ? tb : Math.Max(tb, heroLastEnd), map.Sections[next].Start);
+                if (heroPendingImpact > tb + 1e-9) return;
+            }
             Stride(tb, tnext, h);
         }
 
@@ -749,9 +759,9 @@ namespace PS.Choreography
             return false;
         }
 
-        void ScheduleHeroAction(double tb, double availFrom)
+        void ScheduleHeroAction(double tb, double availFrom, double firstPoint = double.NegativeInfinity)
         {
-            for (int gi = grid.FirstAfter(tb); gi < grid.Count && grid.Points[gi].Time <= tb + 4.0; gi++)
+            for (int gi = grid.FirstAfter(Math.Max(tb, firstPoint - 1e-6)); gi < grid.Count && grid.Points[gi].Time <= tb + 4.0; gi++)
             {
                 GridPoint p = grid.Points[gi];
                 GridEntry[] combo = plans[p.Section].Combo;
@@ -782,7 +792,12 @@ namespace PS.Choreography
                 Vector2 to = from + dir * Math.Max(clip.RootMotionM, mv.AdvanceM);
                 if (nav != null) to = WallStep(from, to, roster.HeroRadius);
                 to = HeroPath(from, to);
-                if (goalReached) to = ClampToGoal(to);
+                if (goalReached)
+                {
+                    // Pulled back into the goal, a step that slid along a wall could cut into it: it then stays where it slid.
+                    Vector2 c = ClampToGoal(to);
+                    if (nav == null || SegmentClear(from, c, roster.HeroRadius)) to = c;
+                }
                 float fTo = Easing.Unwrap(fFrom, Easing.Yaw(dir));
                 // A stepping hero without root motion steps with the blow, on its beat; otherwise it moves over the clip.
                 if (roster.HeroStepS > 0 && clip.RootMotionM <= 0)
@@ -1458,9 +1473,22 @@ namespace PS.Choreography
                     if ((p.Flags & e.Position) != e.Position) continue;
                     int c = spellCount[p.Section][k]++;
                     if (c % e.Every != 0) continue;
+                    // With one-hit kills the hero's blows reap whatever walks in, so spells only top up the
+                    // section's deaths: one that would land while they keep up with the load's rate holds back.
+                    if (tuning.OneHitKills && p.Section == curSection && OnRate(p.Time)) continue;
                     CastSpell(roster.Spell(e.Name), p, tb, tnext);
                 }
             }
+        }
+
+        /// <summary>
+        /// Whether this section's deaths at <paramref name="t"/> keep up with its load preset's rate, to within
+        /// a quarter second's worth: a spell's kills come in a lump, so one cast a hair behind would overshoot.
+        /// </summary>
+        bool OnRate(double t)
+        {
+            double rate = plan.Preset.DeathsPerSecond(plan.TargetOnScreen);
+            return rate > 0 && secKills >= rate * (t - secStart - 0.25);
         }
 
         void CastSpell(Move mv, GridPoint p, double tb, double tnext)
@@ -1627,6 +1655,12 @@ namespace PS.Choreography
                 {
                     Vector2 o = HeroPosAt(t);
                     int n = QueryLine(o, im.Yaw, Reaching(im.Move.Length), Scaled(im.Move.Width), t);
+                    if (tuning.OneHitKills)
+                    {
+                        Strike(t, o, n, im.Strength, false);
+                        stats[curSection].SpellKills += totalKills - killsBefore;
+                        break;
+                    }
                     for (int i = 0; i < n; i++) actions.Add(new ActionEvent(strike[i], ActionKind.Tick, t, -1, -1, im.Strength));
                     stats[curSection].Ticks += n;
                     break;
@@ -1788,7 +1822,7 @@ namespace PS.Choreography
                     if (heroCombo && t >= bossDeathAfter[m]) Kill(m, t, 1f);
                     else Hit(m, t, origin, strength);
                 }
-                else if (kills < allot) { Kill(m, t, strength); kills++; }
+                else if (tuning.OneHitKills || kills < allot) { Kill(m, t, strength); kills++; }
                 else Hit(m, t, origin, strength);
             }
         }
