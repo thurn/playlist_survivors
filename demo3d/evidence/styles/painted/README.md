@@ -1,4 +1,4 @@
-# Monster style: painted (ps-a54.1)
+# Monster style: painted (ps-a54.1, ink line ps-a54.2)
 
 `--monster-style painted`: stylelab's "Polished painted" treatment, drawn through the
 bone-texture crowd's indirect draws ([crowd.md, Monster styles](../../../../docs/tech-demo-3d/crowd.md#monster-styles)).
@@ -28,17 +28,24 @@ The lab's grade (ACES, exposure +0.25, contrast +12, saturation +15) replaces th
 lab's brighter arena, so here it is dark. Every player log says
 `DemoMain: --monster-style painted's post look on the night volume`.
 
-- **Readability passes in every beauty shot.** The monsters' |dL*| is 23 to 26, against
-  final's 20 to 24 and a floor of 17.
-- **The frame is dark.** Near-black is 25 to 50% of the song stills, against final's 3 to
+- **The ink line (ps-a54.2) costs readability.** The stills and numbers here were re-rendered
+  with the line, which is on by default as in the lab. It is a dark inverted hull round every
+  monster, and the ID render counts it as monster: the monster pixels grow by about 15% and
+  their p10 falls to L* 0.3. The monsters' |dL*| falls from 23 to 26 without it to 12 to 15, below
+  the floor of 17, so the harness exits 1. A thinner or lighter line, or turning it off
+  (`MonsterStyle.Outlines`), is ps-a54.4's call.
+- **The frame is dark.** Near-black is 26 to 54% of the song stills, against final's 3 to
   17%.
-- **The horde is half final's chroma.** Monster C*ab is about 28 against 55.
-- **The effects are not always the brightest values.** In 6 of 11 stills, the effects'
+- **The horde is well under half final's chroma.** Monster C*ab is about 22 with the line (28
+  without it) against 55.
+- **The effects are not always the brightest values.** In 5 of 11 stills, the effects'
   L* p98 is below the rest of the frame's.
 
 The epic's tuning bead owns all of this.
 
 ## The beat wave
+
+This sequence was rendered by ps-a54.1, before the ink line.
 
 [beat-wave.jpg](beat-wave.jpg) has five stills of the same frame, each a fifth of a beat apart
 in the music. It starts at song time 100.268 s, the beat that opens groove-2, with a beat
