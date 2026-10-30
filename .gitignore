@@ -67,6 +67,7 @@ reactive-local/
 .beads-credential-key
 .beads/proxieddb/
 /.beads/interactions.jsonl
+/.beads.gate.lock
 # The shader style prototype (docs/tech-demo-3d/stylelab.md), under the same rules.
 /stylelab/Assets/Vendor/
 /stylelab/Assets/Vendor.meta
