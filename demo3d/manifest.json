@@ -2,6 +2,118 @@
   "version": 1,
   "assets": [
     {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Evil Mushroom/FBX/Evil Mushroom@BreathAttack.FBX",
+      "sourceSha256": "3e29f809fe74557650e2d213a762da732fd20655d5cd22a32bf75c76ecc1b7c3",
+      "guid": "78283c15d6df236469bffcc8407f3c09",
+      "use": "forest: mushroom clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Evil Mushroom/FBX/Evil Mushroom@Die.FBX",
+      "sourceSha256": "849d0c51ddb835ee92a8c425cee6ea42fffca72b6db5848d31a0114cfc88b0d4",
+      "guid": "faed0fb32da81bd4ba84d011fb141765",
+      "use": "forest: mushroom clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Evil Mushroom/FBX/Evil Mushroom@Idle.FBX",
+      "sourceSha256": "d223a9ddbd32e00b05873dac9f0ec4e3a1487d109814530c3191978967aa2a2c",
+      "guid": "1e12c7298eaf9ed4fb6409f628d80e95",
+      "use": "forest: mushroom clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Evil Mushroom/FBX/Evil Mushroom@Punch.FBX",
+      "sourceSha256": "38675255719cdd44453bf00580877a50208ca9a504361d3b5c588b714e375c4c",
+      "guid": "b284455c57240324fa57bf50fa728e18",
+      "use": "forest: mushroom clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Evil Mushroom/FBX/Evil Mushroom@TakeDamage.FBX",
+      "sourceSha256": "512bc0f1080443a1092db7e52f42ec815d3208518004712c741ffc75c74c09cb",
+      "guid": "6f108c46ccb6a4343b633c6f66c0df13",
+      "use": "forest: mushroom clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Evil Mushroom/FBX/Evil Mushroom@Walk Forward Without Root Motion.FBX",
+      "sourceSha256": "ce75d69824642c4695b7e22c087aaa8daa7bca158f042a94a7cfb24690260c4e",
+      "guid": "af1c01844d8b3db4e8ccc072b1d43c7a",
+      "use": "forest: mushroom clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Evil Mushroom/Prefabs/Evil Mushroom-Red.prefab",
+      "sourceSha256": "5eb402d41c44725f49835a3375b1004d06851ffc919f45738915797cbc68dd3e",
+      "guid": "d5315294978a47d4cabac6f8bfd9e0fe",
+      "use": "forest: mushroom (Evil Mushroom, red)",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Goblin/FBX Files/Goblin@Attack1SwordShield.FBX",
+      "sourceSha256": "b8c45d9f0e45fe00f7e8d71c3476aeb05aee8beec46d50d1e7bf720fa1004f4f",
+      "guid": "eaa055f25dc10e740861bfe96437ef06",
+      "use": "heroic: goblin clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Goblin/FBX Files/Goblin@Attack2SwordShield.FBX",
+      "sourceSha256": "8ead1118bd3b6aa0b883907233383928a9d30aa17d54405c134cea012af9f1ee",
+      "guid": "558f95389b0200e46af5ab85373e4077",
+      "use": "heroic: goblin clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Goblin/FBX Files/Goblin@DeathSwordShield.FBX",
+      "sourceSha256": "3ec7e8cece45b7cc010aec8ed5d029a49fd4d8919cc1e2f1872e92b103ae9c7f",
+      "guid": "2e08a1ff694c0d94d8f958be7138fd58",
+      "use": "heroic: goblin clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Goblin/FBX Files/Goblin@GetHitSwordShield.FBX",
+      "sourceSha256": "c200f07ccb0285404656106efdf4fbf6b42fbf2b0fe27cdcda9557fb5ceb9c0a",
+      "guid": "f1b38bfb8b647ea4abac6df05e771fb2",
+      "use": "heroic: goblin clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Goblin/FBX Files/Goblin@IdleSwordShield.FBX",
+      "sourceSha256": "1002ffce8861e459a5523a0b30ddb248dd42f191274ee6aac30311aadf165d19",
+      "guid": "c5fb14a9a8ee85c439efc113375c7f04",
+      "use": "heroic: goblin clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Goblin/FBX Files/Goblin@WalkForwardSwordShield.FBX",
+      "sourceSha256": "3a51e026df2af60c4bfca17f187831cb805849f924fc7e7e6fb7bbf9b6bce8e9",
+      "guid": "6d7616f4d612f74478c53b90b5535030",
+      "use": "heroic: goblin clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Goblin/Prefabs/Goblin.prefab",
+      "sourceSha256": "d054dc25aff147037610950c1887218648b26f38b69b980f5648814b24ace193",
+      "guid": "5f0706883a962914493653ef8cb5bc61",
+      "use": "heroic: goblin (Goblin, sword and shield)",
+      "roster": "heroic"
+    },
+    {
       "source": "synty:ANIMATION_Base_Locomotion_Unity_2021_1_v1_1_1.unitypackage.gz",
       "path": "Assets/Synty/AnimationBaseLocomotion/Animations/Polygon/Masculine/Locomotion/Run/A_Run_F_Masc.fbx",
       "sourceSha256": "6b6e48cf0d642b13cc49b4fc09eb9061eca897310760ee7d0602e2250bb35398",

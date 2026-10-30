@@ -197,3 +197,29 @@ Since PX1 the same guard and tools also cover the
   per worktree.
 - **`demo2d <command>`** (`uv run --project demo3d/tools demo2d`) runs the
   setup, sync, guard, Unity, test and build tools on `demo2d/`.
+
+### The roster sets
+
+Since ps-f8a.1, demo3d's [`--roster` sets](crowd.md#roster-sets) draw on a
+fourth root:
+
+- **`more_assets`** is the asset folder whose `Assets/` holds the MoreAssets
+  packs (`~/unity_assets/MoreAssets/MoreAssets` on the Mac). Only the Mac
+  maps it; Cygnus has no default for it, and a `roots.json` written before
+  it gains the Mac's default.
+- **Its manifest entries sync only on request.** Each one names its set
+  (`"roster": "forest"` or `"heroic"`), and a `more_assets` entry without
+  one is refused. `demo3d setup --roster <set>` (or `demo3d sync --roster
+  <set>`) syncs them beside the default's; without the flag they are
+  skipped, so CI and a clean checkout never need the root. Asking for a set
+  where the root is not mapped fails with that message. Add entries with
+  `demo3d manifest add more_assets <glob> --roster <set>`.
+- **The vendor cache keys by the sets too,** so a set's vendor folder and
+  its Library never warm a default worktree. The worktree's vendor folder
+  records its sets in `Assets/Vendor/.rosters`.
+- **The guard covers it where it is.** The record lists every file under
+  the root, as for the other asset folders, and its packs must be in the
+  record. Where the root is absent, its manifest entries are not needed in
+  the record.
+- **Derived files** go to `demo3d/Assets/Baked/Rosters/<set>/`, gitignored
+  with the rest of `Assets/Baked/`.

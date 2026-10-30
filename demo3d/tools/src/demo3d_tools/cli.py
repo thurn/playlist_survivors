@@ -46,7 +46,7 @@ from . import guard, paths, setup, unity
 def cmd_setup(a: argparse.Namespace) -> int:
     try:
         return setup.setup(paths.worktree(name=a.project), song=a.song, run_unity=not a.no_unity,
-                           fresh_library=a.fresh_library)
+                           fresh_library=a.fresh_library, rosters=tuple(a.roster or ()))
     except setup.SetupError as e:
         print(f"setup: {e}", file=sys.stderr)
         return 2
@@ -183,7 +183,7 @@ def cmd_manifest(a: argparse.Namespace) -> int:
                 print(p)
             return 0
         n = sync.manifest_add(wt.project / "manifest.json", a.source, a.patterns, a.use or "",
-                              sources)
+                              sources, a.roster)
         print(f"manifest: {n} new entries")
         return 0
     except sync.SyncError as e:
@@ -244,6 +244,8 @@ def build_parser(project: str = "demo3d") -> argparse.ArgumentParser:
     s.add_argument("--song", help="the Action MP3, if not at the machine's default path")
     s.add_argument("--no-unity", action="store_true", help="skip opening the project")
     s.add_argument("--fresh-library", action="store_true", help="replace an existing Library")
+    s.add_argument("--roster", action="append", choices=paths.ROSTERS,
+                   help="also sync a roster set's packs (demo3d; needs the more_assets root)")
     s.set_defaults(func=cmd_setup)
 
     g = sub.add_parser("guard")
@@ -288,14 +290,18 @@ def build_parser(project: str = "demo3d") -> argparse.ArgumentParser:
 
     m = sub.add_parser("manifest", help="find source assets, or add them to the manifest")
     m.add_argument("action", choices=["find", "add"])
-    m.add_argument("source", help="synty:<package file>, unity_assets or pixel_assets")
+    m.add_argument("source", help="synty:<package file>, unity_assets, pixel_assets or more_assets")
     m.add_argument("patterns", nargs="+", help="glob(s) over Unity paths (Assets/...)")
     m.add_argument("--use", help="what the demo uses it for")
+    m.add_argument("--roster", choices=paths.ROSTERS,
+                   help="the roster set the entries belong to (required for more_assets)")
     m.set_defaults(func=cmd_manifest)
 
     y = sub.add_parser("sync")
     y.add_argument("--record-only", action="store_true")
     y.add_argument("--out")
+    y.add_argument("--roster", action="append", choices=paths.ROSTERS,
+                   help="also sync a roster set's packs (needs the more_assets root)")
     y.set_defaults(func=cmd_sync)
     if project != "demo3d":
         return p

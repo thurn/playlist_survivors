@@ -31,12 +31,24 @@ def file_hash(root: Path, *files: Path) -> str:
     return h.hexdigest()[:16]
 
 
-def manifest_key(wt: paths.Worktree) -> str:
-    """The vendor cache's key: the manifest, and the sync tool's version."""
+ROSTERS_FILE = ".rosters"  # in the vendor folder: the roster sets synced into it (a dotfile, so Unity skips it)
+
+
+def synced_rosters(wt: paths.Worktree) -> tuple[str, ...]:
+    """The roster sets the worktree's vendor folder holds (`setup --roster`), sorted."""
+    f = wt.vendor / ROSTERS_FILE
+    return tuple(sorted(f.read_text(encoding="utf-8").split())) if f.exists() else ()
+
+
+def manifest_key(wt: paths.Worktree, rosters: tuple[str, ...] | None = None) -> str:
+    """The vendor cache's key: the manifest, the sync tool's version, and the roster sets synced
+    with it (default: the vendor folder's), so a set's Library never warms a default worktree."""
     from . import sync
 
     manifest = wt.project / "manifest.json"
-    return hashlib.sha256((file_hash(wt.root, manifest) + sync.SYNC_VERSION).encode()).hexdigest()[:16]
+    sets = tuple(sorted(rosters)) if rosters is not None else synced_rosters(wt)
+    extra = "".join(f"+{r}" for r in sets)
+    return hashlib.sha256((file_hash(wt.root, manifest) + sync.SYNC_VERSION + extra).encode()).hexdigest()[:16]
 
 
 def library_key(wt: paths.Worktree) -> str:
@@ -115,7 +127,8 @@ class SetupError(Exception):
 
 
 def check_sources(roots: dict[str, str], needed: tuple[str, ...]) -> None:
-    missing = [f"{name}: {roots[name]}" for name in needed if not Path(roots[name]).exists()]
+    missing = [f"{name}: {roots.get(name) or '(not mapped)'}" for name in needed
+               if not roots.get(name) or not Path(roots[name]).exists()]
     if missing:
         raise SetupError(
             "missing vendor source(s):\n  " + "\n  ".join(missing)
@@ -159,13 +172,16 @@ def install_hook(wt: paths.Worktree) -> Path:
     return hook
 
 
-def build_vendor(wt: paths.Worktree, roots: dict[str, str], out: Path) -> None:
+def build_vendor(wt: paths.Worktree, roots: dict[str, str], out: Path,
+                 rosters: tuple[str, ...] = ()) -> None:
     manifest = json.loads((wt.project / "manifest.json").read_text(encoding="utf-8"))
     out.mkdir(parents=True, exist_ok=True)
     if manifest.get("assets"):
         from . import sync
 
-        sync.sync(manifest, roots, out, paths.record_path())
+        sync.sync(manifest, roots, out, paths.record_path(), rosters)
+    if rosters:
+        (out / ROSTERS_FILE).write_text(" ".join(rosters) + "\n", encoding="utf-8")
 
 
 def _cached(cache_dir: Path, build: Callable[[Path], None]) -> tuple[Path, bool]:
@@ -246,23 +262,36 @@ def baked(wt: paths.Worktree) -> bool:
 
 
 def setup(wt: paths.Worktree, song: str | None = None, run_unity: bool = True,
-          fresh_library: bool = False) -> int:
+          fresh_library: bool = False, rosters: tuple[str, ...] = ()) -> int:
+    """`rosters` also syncs those roster sets' vendor files (demo3d's `--roster`), which need the
+    `more_assets` root."""
     started = time.monotonic()
     cache = paths.cache_root()
     cache.mkdir(parents=True, exist_ok=True)
     roots = paths.load_roots(create=True)
     if song:
         roots["song"] = song
-    check_sources(roots, paths.PROJECT_ROOTS[wt.name])
+    rosters = tuple(sorted(set(rosters)))
+    unknown = [r for r in rosters if r not in paths.ROSTERS]
+    if unknown or (rosters and wt.name != "demo3d"):
+        raise SetupError(f"--roster takes demo3d's sets ({', '.join(paths.ROSTERS)}), not "
+                         f"{', '.join(unknown or rosters)}")
+    check_sources(roots, paths.PROJECT_ROOTS[wt.name] + (paths.OPT_IN_ROOTS if rosters else ()))
     record = ensure_record()
     mode = "block clones" if clone.clones_blocks(cache, wt.project) else "plain copies (slow)"
     print(f"setup: cache {cache} ({clone.volume_fs(cache)}), {mode}; record {record}")
 
     t = time.monotonic()
-    vkey = manifest_key(wt)
-    src, built = _cached(cache / "vendor" / vkey, lambda out: build_vendor(wt, roots, out))
+    vkey = manifest_key(wt, rosters)
+    from . import sync
+
+    try:
+        src, built = _cached(cache / "vendor" / vkey, lambda out: build_vendor(wt, roots, out, rosters))
+    except sync.SyncError as e:
+        raise SetupError(str(e)) from e
     n = clone.clone_tree(src, wt.vendor)
-    print(f"setup: Vendor {'synced' if built else 'cloned'} ({n} files, manifest {vkey}) "
+    print(f"setup: Vendor {'synced' if built else 'cloned'} ({n} files, manifest {vkey}"
+          f"{', rosters ' + ' '.join(rosters) if rosters else ''}) "
           f"in {time.monotonic() - t:.2f} s")
 
     t = time.monotonic()
@@ -296,8 +325,6 @@ def setup(wt: paths.Worktree, song: str | None = None, run_unity: bool = True,
     print(f"setup: pre-push guard installed for every checkout ({hook})")
     # The record covers every source root on the machine, not just this project's, so one guard
     # knows both demos' vendor files.
-    from . import sync
-
     t = time.monotonic()
     hashes = sync.HashCache(cache / "source-hashes.json")
     count = sync.build_record(sync.Sources(roots, cache, hashes), record)

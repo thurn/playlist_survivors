@@ -152,3 +152,68 @@ def test_manifest_add_fills_guid_and_hashes(roots, tmp_path: Path) -> None:
     assert a["guid"] == PREFAB and len(a["sourceSha256"]) == 64
     with pytest.raises(sync.SyncError, match="nothing matches"):
         sync.manifest_add(manifest, pkg, ["Assets/Nope/*"], "test", src)
+
+
+def more_assets(tmp_path: Path) -> tuple[str, dict]:
+    """A tiny more_assets root (the roster sets' packs) and a forest entry for its prefab."""
+    pack = tmp_path / "more" / "Assets" / "Forest Creatures Pack" / "Evil Mushroom"
+    pack.mkdir(parents=True)
+    (pack / "Mushroom.prefab").write_text("m_Material: {guid: " + "5" * 32 + "}\n")
+    (pack / "Mushroom.prefab.meta").write_text(f"fileFormatVersion: 2\nguid: {'4' * 32}\n")
+    (pack / "Mushroom.mat").write_text("m_Shader: {fileID: 46}\n")
+    (pack / "Mushroom.mat.meta").write_text(f"fileFormatVersion: 2\nguid: {'5' * 32}\n")
+    e = {"source": "more_assets", "path": "Assets/Forest Creatures Pack/Evil Mushroom/Mushroom.prefab",
+         "sourceSha256": hashlib.sha256((pack / "Mushroom.prefab").read_bytes()).hexdigest(),
+         "guid": "4" * 32, "use": "forest: mushroom", "roster": "forest"}
+    return str(tmp_path / "more"), e
+
+
+def test_roster_entries_sync_only_when_their_set_is_asked_for(roots, tmp_path: Path) -> None:
+    root, forest = more_assets(tmp_path)
+    manifest = {"assets": [entry(roots), forest]}
+    # The default sync never touches the set's root, mapped or not.
+    paths_default = [i.path for _s, i, _u in sync.resolve(manifest, sources(roots, tmp_path))]
+    assert not any("Forest" in p for p in paths_default)
+    out = tmp_path / "Vendor"
+    sync.copy_items(sync.resolve(manifest, sources({**roots, "more_assets": root}, tmp_path),
+                                 rosters=("forest",)), out)
+    assert (out / "Forest Creatures Pack/Evil Mushroom/Mushroom.mat.meta").exists()
+    assert (out / "Pack/Prefabs/Thing.prefab").exists()
+
+
+def test_a_roster_set_fails_clearly_where_more_assets_is_not_mapped(roots, tmp_path: Path) -> None:
+    _root, forest = more_assets(tmp_path)
+    manifest = {"assets": [entry(roots), forest]}
+    with pytest.raises(sync.SyncError, match="more_assets root is not mapped"):
+        sync.resolve(manifest, sources(roots, tmp_path), rosters=("forest",))
+    with pytest.raises(sync.SyncError, match="unknown roster"):
+        sync.resolve(manifest, sources(roots, tmp_path), rosters=("swamp",))
+    with pytest.raises(sync.SyncError, match="no entries for roster 'heroic'"):
+        sync.resolve(manifest, sources(roots, tmp_path), rosters=("heroic",))
+
+
+def test_more_assets_entries_must_name_a_roster(roots, tmp_path: Path) -> None:
+    root, forest = more_assets(tmp_path)
+    del forest["roster"]
+    with pytest.raises(sync.SyncError, match="needs a roster"):
+        sync.resolve({"assets": [forest]}, sources({**roots, "more_assets": root}, tmp_path))
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(json.dumps({"version": 1, "assets": []}))
+    src = sources({**roots, "more_assets": root}, tmp_path)
+    with pytest.raises(sync.SyncError, match="need --roster"):
+        sync.manifest_add(manifest, "more_assets", ["Assets/Forest*/*/*.prefab"], "t", src)
+    assert sync.manifest_add(manifest, "more_assets", ["Assets/Forest*/*/*.prefab"], "t", src,
+                             "forest") == 1
+    assert json.loads(manifest.read_text())["assets"][0]["roster"] == "forest"
+
+
+def test_the_guard_needs_roster_entries_only_where_more_assets_is(tmp_path: Path) -> None:
+    (tmp_path / "demo3d").mkdir()
+    (tmp_path / "demo3d" / "manifest.json").write_text(json.dumps({"assets": [
+        {"source": "unity_assets", "path": "Assets/A.prefab", "guid": "a" * 32},
+        {"source": "more_assets", "path": "Assets/B.prefab", "guid": "b" * 32, "roster": "forest"},
+    ]}))
+    assert set(guard.manifest_guids(tmp_path)) == {"a" * 32, "b" * 32}
+    assert set(guard.manifest_guids(tmp_path, {"more_assets"})) == {"a" * 32}
+    # Only opt-in roots drop out: an absent unity_assets still leaves its entries required.
+    assert set(guard.manifest_guids(tmp_path, {"unity_assets"})) == {"a" * 32, "b" * 32}

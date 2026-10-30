@@ -10,8 +10,11 @@ Curation and sync):
 
 - A Synty `.unitypackage.gz` (a gzipped tar of per-GUID folders holding `asset`, `asset.meta`
   and `pathname`) is unpacked once into the per-machine cache, keyed by its SHA-256.
-- From `unity_assets` and `pixel_assets` (asset folders: the 3D packs, and the 2D demo's packs),
-  files are copied with their `.meta`.
+- From `unity_assets`, `pixel_assets` and `more_assets` (asset folders: the 3D packs, the 2D
+  demo's packs, and the roster sets' packs), files are copied with their `.meta`.
+- An entry with a `roster` (forest or heroic, demo3d's `--roster` sets) syncs only when that set
+  is asked for (`--roster`); `more_assets` entries must name one, so the default sync never
+  needs that root, which only the Mac maps.
 - `sourceSha256` is the package's hash for Synty, and the file's own hash for an asset folder. A
   source whose hash differs is refused, so both machines sync from identical files.
 - `guid:` references in the copied YAML and `.meta` files are followed within the same root
@@ -118,7 +121,7 @@ class Item:
 
 @dataclass
 class Source:
-    name: str  # "synty:<file>", or an asset folder's root: "unity_assets" or "pixel_assets"
+    name: str  # "synty:<file>", or an asset folder's root: "unity_assets", "pixel_assets", ...
     sha256: str | None  # the package's hash (Synty)
     by_guid: dict[str, Item] = field(default_factory=dict)
     by_path: dict[str, Item] = field(default_factory=dict)
@@ -210,8 +213,14 @@ class Sources:
                 raise SyncError(f"missing source {name}: {pkg}")
             src = load_synty(pkg, self.hashes.get(pkg), self.cache)
         elif name in paths.ASSET_FOLDERS:
-            root = Path(self.roots.get(name, ""))
-            if not (root / "Assets").is_dir():
+            mapped = self.roots.get(name)
+            root = Path(mapped or "")
+            if not mapped or not (root / "Assets").is_dir():
+                if name in paths.OPT_IN_ROOTS:
+                    raise SyncError(
+                        f"the {name} root is not mapped on this machine ({mapped or 'no path'} has "
+                        f"no Assets/); the roster sets sync only where MoreAssets is (the Mac): "
+                        f"map it in {paths.cache_root() / 'roots.json'}, or drop --roster")
                 raise SyncError(f"missing source {name}: {root}")
             src = load_asset_folder(name, root)
         else:
@@ -237,14 +246,35 @@ def follow(item: Item) -> set[str]:
     return refs
 
 
-def resolve(manifest: dict, sources: Sources,
-            unresolved: dict[str, str] | None = None) -> list[tuple[Source, Item, str]]:
-    """Every item to sync: the manifest's entries and their dependency closure. References no
-    loaded source provides (package assets such as URP's shaders, or something missing) go into
-    `unresolved` (GUID -> the first asset referring to it)."""
+def manifest_entries(manifest: dict, rosters: tuple[str, ...] = ()) -> list[dict]:
+    """The manifest's entries to sync: every entry without a `roster`, plus those of `rosters`."""
+    for r in rosters:
+        if r not in paths.ROSTERS:
+            raise SyncError(f"unknown roster {r!r} (one of {', '.join(paths.ROSTERS)})")
+    out = []
+    for entry in manifest.get("assets", []):
+        roster = entry.get("roster")
+        if roster is not None and roster not in paths.ROSTERS:
+            raise SyncError(f"{entry['path']}: unknown roster {roster!r}")
+        if roster is None and entry["source"].split(":")[0] in paths.OPT_IN_ROOTS:
+            raise SyncError(f"{entry['path']}: a {entry['source']} entry needs a roster, so the "
+                            f"default sync never needs that root")
+        if roster is None or roster in rosters:
+            out.append(entry)
+    for r in rosters:
+        if not any(e.get("roster") == r for e in out):
+            raise SyncError(f"the manifest has no entries for roster {r!r}")
+    return out
+
+
+def resolve(manifest: dict, sources: Sources, unresolved: dict[str, str] | None = None,
+            rosters: tuple[str, ...] = ()) -> list[tuple[Source, Item, str]]:
+    """Every item to sync: the manifest's entries (those of `rosters` too) and their dependency
+    closure. References no loaded source provides (package assets such as URP's shaders, or
+    something missing) go into `unresolved` (GUID -> the first asset referring to it)."""
     chosen: dict[str, tuple[Source, Item, str]] = {}
     queue: list[tuple[Source, Item, str]] = []
-    for entry in manifest.get("assets", []):
+    for entry in manifest_entries(manifest, rosters):
         src = sources.get(entry["source"])
         if src.sha256 is not None and entry.get("sourceSha256") != src.sha256:
             raise SyncError(f"{entry['source']}: SHA-256 {src.sha256} differs from the "
@@ -388,12 +418,13 @@ def report_unresolved(unresolved: dict[str, str], cache: Path) -> None:
           f"URP's shaders, or missing files); see {listing}", file=sys.stderr)
 
 
-def sync(manifest: dict, roots: dict[str, str], out: Path, record_path: Path) -> int:
+def sync(manifest: dict, roots: dict[str, str], out: Path, record_path: Path,
+         rosters: tuple[str, ...] = ()) -> int:
     cache = paths.cache_root()
     sources = Sources(roots, cache, HashCache(cache / "source-hashes.json"))
     try:
         unresolved: dict[str, str] = {}
-        items = resolve(manifest, sources, unresolved)
+        items = resolve(manifest, sources, unresolved, rosters)
         report_unresolved(unresolved, cache)
         n = copy_items(items, out)
         build_record(sources, record_path)
@@ -403,10 +434,15 @@ def sync(manifest: dict, roots: dict[str, str], out: Path, record_path: Path) ->
 
 
 def manifest_add(manifest_path: Path, source: str, patterns: list[str], use: str,
-                 sources: Sources) -> int:
-    """Adds every asset matching the glob patterns (fnmatch, case-insensitive) to the manifest."""
+                 sources: Sources, roster: str | None = None) -> int:
+    """Adds every asset matching the glob patterns (fnmatch, case-insensitive) to the manifest,
+    as entries of `roster` when given (required for an opt-in root such as `more_assets`)."""
     import fnmatch
 
+    if roster is not None and roster not in paths.ROSTERS:
+        raise SyncError(f"unknown roster {roster!r} (one of {', '.join(paths.ROSTERS)})")
+    if roster is None and source.split(":")[0] in paths.OPT_IN_ROOTS:
+        raise SyncError(f"{source} entries need --roster ({', '.join(paths.ROSTERS)})")
     src = sources.get(source)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     assets = {(a["source"], a["path"].lower()): a for a in manifest.get("assets", [])}
@@ -424,6 +460,8 @@ def manifest_add(manifest_path: Path, source: str, patterns: list[str], use: str
                 added += 1
             assets[key] = {"source": source, "path": item.path, "sourceSha256": sha,
                            "guid": item.guid, "use": use}
+            if roster is not None:
+                assets[key]["roster"] = roster
     manifest["assets"] = sorted(assets.values(), key=lambda a: (a["source"], a["path"].lower()))
     manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
                              encoding="utf-8", newline="\n")
@@ -447,7 +485,7 @@ def main(a: argparse.Namespace) -> int:
     started = time.monotonic()
     try:
         unresolved: dict[str, str] = {}
-        items = resolve(manifest, sources, unresolved)
+        items = resolve(manifest, sources, unresolved, tuple(a.roster or ()))
         report_unresolved(unresolved, cache)
         if not a.record_only:
             out = Path(a.out) if a.out else wt.vendor

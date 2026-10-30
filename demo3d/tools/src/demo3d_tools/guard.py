@@ -16,10 +16,12 @@ It covers every demo Unity project (paths.PROJECTS: demo3d/, demo2d/, stylelab/)
 A missing sync record fails any change under a demo's folder and only warns elsewhere
 (vendor-assets.md, The vendor guard). An unreadable or malformed record fails everything, and so
 does a stale record: one that lacks a GUID either demo's tracked manifest lists, or a pack in
-one of the machine's asset folders (a top-level folder of `unity_assets` or `pixel_assets` whose
-`.meta` GUID it lacks, such as a pack copied in, or a root added, since the last sync). A record
-that lacks a demo's manifest GUIDs because one of that demo's source roots is absent from the
-machine is not stale but partial: that demo's files are treated as under a missing record.
+one of the machine's asset folders (a top-level folder of `unity_assets`, `pixel_assets` or
+`more_assets` whose `.meta` GUID it lacks, such as a pack copied in, or a root added, since the
+last sync). A record that lacks a demo's manifest GUIDs because one of that demo's source roots is
+absent from the machine is not stale but partial: that demo's files are treated as under a
+missing record. The roster sets' entries (`more_assets`, synced only on request) are not needed
+at all where that root is absent.
 
 Besides the sync record, the guard reads the derived record: the hashes and GUIDs of every file
 in the demos' Assets/Baked/ and Assets/Vendor/ (where Unity may rewrite a vendor file on import)
@@ -433,8 +435,13 @@ def pre_push_entries(repo: Path, remote: str, lines: Iterable[str]) -> list[tupl
     return sorted(entries)
 
 
-def manifest_guids(repo: Path) -> dict[str, tuple[str, str]]:
-    """Every GUID the demos' tracked manifests list: guid -> (demo, path)."""
+def manifest_guids(repo: Path, absent: Iterable[str] = ()) -> dict[str, tuple[str, str]]:
+    """Every GUID the demos' tracked manifests list: guid -> (demo, path).
+
+    Entries from an opt-in root in `absent` (`more_assets` on a machine without MoreAssets) are
+    left out: they sync only on request, so the record never needs them there.
+    """
+    skip = set(absent) & set(paths.OPT_IN_ROOTS)
     guids: dict[str, tuple[str, str]] = {}
     for demo in paths.PROJECTS:
         manifest = repo / demo / "manifest.json"
@@ -442,7 +449,7 @@ def manifest_guids(repo: Path) -> dict[str, tuple[str, str]]:
             continue
         data = json.loads(manifest.read_text(encoding="utf-8"))
         for a in data.get("assets", []):
-            if a.get("guid"):
+            if a.get("guid") and a.get("source", "").split(":")[0] not in skip:
                 guids[a["guid"].lower()] = (demo, a.get("path", "?"))
     return guids
 
@@ -531,7 +538,7 @@ def run(mode: str, repo: Path, rev: str | None, remote: str | None, record_file:
             if vetted is not None:
                 changed = {p for p, s in entries if (p, s) not in vetted}
         res = check_blobs(read_blobs(repo, entries), record, record_at, changed)
-        manifest = manifest_guids(repo) if record is not None else {}
+        manifest = manifest_guids(repo, missing_roots(paths.load_roots())) if record is not None else {}
         uncovered: dict[str, list[str]] = {}
         if record is not None and record_file is None:  # the machine's own record and roots
             uncovered = uncovered_demos(paths.load_roots(), record, manifest)

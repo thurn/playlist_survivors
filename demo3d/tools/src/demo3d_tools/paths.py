@@ -31,7 +31,12 @@ PROJECT_ROOTS = {
 # Each project's C# namespace prefix.
 NAMESPACES = {"demo3d": "Demo3D", "demo2d": "Demo2D", "stylelab": "StyleLab"}
 # The roots that are asset folders (an `Assets/` folder of packs, files beside their `.meta`).
-ASSET_FOLDERS = ("unity_assets", "pixel_assets")
+ASSET_FOLDERS = ("unity_assets", "pixel_assets", "more_assets")
+# demo3d's alternate monster sets (`--roster <set>`, crowd.md, Roster sets). Their manifest
+# entries come from `more_assets`, mapped only on the Mac, and sync only when a set is asked for
+# (`demo3d setup --roster forest`), so the default sync, bake, build and checks never need it.
+ROSTERS = ("forest", "heroic")
+OPT_IN_ROOTS = ("more_assets",)
 SONG_FILE = "Alessia Labate, Conrad Taylor - Action [NCS Release].mp3"
 
 
@@ -62,7 +67,8 @@ def default_roots() -> dict[str, str]:
 
     `unity_assets` and `pixel_assets` are asset folders holding an `Assets/` folder: the 3D
     packs in `~/unity_assets/UnityAssets/Assets`, the 2D packs (Pixel Cattle Games, the Ancient
-    Forest, CFXR) in `~/unity_assets/Assets`.
+    Forest, CFXR) in `~/unity_assets/Assets`. `more_assets`, the roster sets' packs in
+    `~/unity_assets/MoreAssets/MoreAssets/Assets`, is the Mac's only: Cygnus leaves it unmapped.
     """
     if is_windows():
         return {
@@ -76,6 +82,7 @@ def default_roots() -> dict[str, str]:
         "synty": str(home / "synty"),
         "unity_assets": str(home / "unity_assets" / "UnityAssets"),
         "pixel_assets": str(home / "unity_assets"),
+        "more_assets": str(home / "unity_assets" / "MoreAssets" / "MoreAssets"),
         "song": str(home / "Downloads" / SONG_FILE),
     }
 
