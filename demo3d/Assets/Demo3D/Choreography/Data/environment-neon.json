@@ -1,0 +1,321 @@
+{
+  "note": ["The neon environment (ps-bop.3.7: a city at night; very dark and cool): the arena's area plan in POLYGON CyberCity's and SciFi City's streets: lit low-rise blocks, shacks, power units, parked vehicles and street poles for the forest, street furniture, crates, bins, vending machines and hover lights for the edge bands, glowing manholes, puddles and litter on a near-black wet street. A hologram cherry tree for the glowing tree, a ring of street-light pylons, a night market for the graveyard, shopfront walls for the ruin walls and the courtyard (a neon dragon over its north wall), a food truck at the opening. A dim cool key on the set, a neutral key on the horde, magenta and cyan emissives and pools everywhere, violet fog and a cool grade. Its palette and findings: demo3d/evidence/look/env-neon/README.md. Format: arena-layout.json's note, Environments."],
+  "extends": "arena",
+  "ground": {"forest": [0.03, 0.03, 0.04], "edge": [0.045, 0.045, 0.06], "clearing": [0.12, 0.13, 0.17], "path": [0.14, 0.15, 0.19], "smoothness": 0.45},
+  "lighting": {
+    "moon": {"color": [0.6, 0.7, 1.0], "intensity": 0.5},
+    "ambient": {"sky": [0.025, 0.03, 0.07], "equator": [0.02, 0.02, 0.05], "ground": [0.03, 0.012, 0.04]},
+    "fog": {"color": [0.015, 0.02, 0.06]},
+    "kitValue": {"PolygonCyberCity": 0.55, "PolygonScifi": 0.55, "PolygonSciFi_Buildings": 0.6, "Wall_": 0.55, "Junk": 0.55},
+    "kitEmission": {"PolygonCyberCity": 2.6, "PolygonScifi_NeonSigns": 3.0, "PolygonScifi": 3.0, "PolygonSciFi": 2.4, "Sign": 2.4, "Billboard": 2.0, "Hologram": 0.2},
+    "crowd": {"rim": [0.26, 0.3, 0.46], "keyColor": [1.0, 1.0, 1.0], "key": 3.0},
+    "hero": {"intensity": 120, "color": [0.86, 0.9, 1.0]},
+    "vignette": {"intensity": 0.3, "color": [0.02, 0.0, 0.06]},
+    "post": {"grade": {"shadow": [0.96, 0.95, 1.08], "mid": [1.0, 1.0, 1.0], "high": [0.97, 1.0, 1.05]}},
+    "flames": {
+      "props": {
+        "darkfantasy/SM_Prop_Brazier_01": null,
+        "darkfantasy/SM_Prop_Pyre_02": null,
+        "cyber/SM_Prop_Hover_Light_02": {"heightM": 1.3, "rangeM": 9, "intensity": 3.0, "color": [1.0, 0.25, 0.8], "pool": {"radiusM": 3.0, "intensity": 0.3}},
+        "cyber/SM_Prop_Hover_Light_04": {"heightM": 1.3, "rangeM": 9, "intensity": 3.0, "color": [0.25, 0.9, 1.0], "pool": {"radiusM": 3.0, "intensity": 0.3}}
+      }
+    },
+    "glow": {
+      "elven/SM_Env_Tree_Glowing_01": null,
+      "cyber/SM_Env_Hologram_Cherry_Tree_02": {"heightM": 3.5, "rangeM": 16, "intensity": 9, "color": [1.0, 0.3, 0.85], "pool": {"radiusM": 7.0, "intensity": 0.35}},
+      "cyber/SM_Prop_Street_Light_Large_01": {"heightM": 2.6, "rangeM": 8, "intensity": 3, "color": [0.3, 0.9, 1.0], "pool": {"radiusM": 2.6, "intensity": 0.3}},
+      "cyber/SM_Prop_Street_Light_Large_02": {"heightM": 2.6, "rangeM": 8, "intensity": 3, "color": [1.0, 0.3, 0.85], "pool": {"radiusM": 2.6, "intensity": 0.3}},
+      "cyber/SM_Prop_Vending_Machine_01": {"heightM": 1.5, "rangeM": 5, "intensity": 1.5, "color": [0.3, 0.9, 1.0], "pool": {"radiusM": 1.8, "intensity": 0.25}},
+      "cyber/SM_Prop_Vending_Machine_02": {"heightM": 1.5, "rangeM": 5, "intensity": 1.5, "color": [1.0, 0.3, 0.85], "pool": {"radiusM": 1.8, "intensity": 0.25}},
+      "scifi/SM_Prop_MarketLights_01": {"heightM": 1.6, "rangeM": 7, "intensity": 2.5, "color": [1.0, 0.6, 0.3], "pool": {"radiusM": 2.6, "intensity": 0.25}},
+      "scifi/SM_Bld_Background_Small_01": {"heightM": 3, "rangeM": 8, "intensity": 2, "color": [0.25, 0.85, 1.0], "pool": {"radiusM": 4.0, "intensity": 0.22}},
+      "scifi/SM_Bld_Background_Small_02": {"heightM": 3, "rangeM": 8, "intensity": 2, "color": [1.0, 0.25, 0.8], "pool": {"radiusM": 4.0, "intensity": 0.22}},
+      "scifi/SM_Bld_Background_Small_03": {"heightM": 3, "rangeM": 7, "intensity": 2, "color": [0.55, 0.3, 1.0], "pool": {"radiusM": 3.0, "intensity": 0.22}},
+      "scifi/SM_Bld_Background_Small_04": {"heightM": 3, "rangeM": 7, "intensity": 2, "color": [0.25, 0.85, 1.0], "pool": {"radiusM": 3.0, "intensity": 0.22}},
+      "cyber/SM_Prop_Holo_Planter_01": {"heightM": 1.2, "rangeM": 4, "intensity": 1.2, "color": [0.3, 0.9, 1.0], "pool": {"radiusM": 1.6, "intensity": 0.25}},
+      "cyber/SM_Prop_Holo_Planter_02": {"heightM": 1.2, "rangeM": 4, "intensity": 1.2, "color": [1.0, 0.3, 0.85], "pool": {"radiusM": 1.6, "intensity": 0.25}},
+      "cyber/SM_Prop_Hover_Light_01": {"heightM": 1.2, "rangeM": 5, "intensity": 1.5, "color": [0.3, 0.9, 1.0], "pool": {"radiusM": 2.0, "intensity": 0.25}},
+      "cyber/SM_Prop_Hover_Light_03": {"heightM": 1.2, "rangeM": 5, "intensity": 1.5, "color": [1.0, 0.3, 0.85], "pool": {"radiusM": 2.0, "intensity": 0.25}},
+      "scifi/SM_Prop_Advertisement_Pillar_01": {"heightM": 1.6, "rangeM": 5, "intensity": 1.5, "color": [0.55, 0.3, 1.0], "pool": {"radiusM": 2.2, "intensity": 0.25}},
+      "cyber/SM_Prop_Claw_Machine_01": {"heightM": 1.6, "rangeM": 5, "intensity": 1.5, "color": [1.0, 0.3, 0.85], "pool": {"radiusM": 2.0, "intensity": 0.25}},
+      "cyber/SM_Veh_Food_Truck_01": {"heightM": 3, "rangeM": 12, "intensity": 5, "color": [0.3, 0.85, 1.0], "pool": {"radiusM": 5, "intensity": 0.3}}
+    }
+  },
+  "atmosphere": {
+    "mist": {"color": [0.16, 0.1, 0.3]},
+    "runes": {
+      "circles": [
+        {"at": [44, 40], "radiusM": 8.6, "color": [1.0, 0.2, 0.75], "intensity": 0.12},
+        {"at": [0, 16], "radiusM": 4.6, "color": [0.2, 0.85, 1.0], "intensity": 0.14},
+        {"at": [12, -25], "radiusM": 5.4, "color": [0.2, 0.85, 1.0], "intensity": 0.14}
+      ]
+    }
+  },
+  "props": {
+    "forest-trees": {
+      "scifi/SM_Bld_Background_Small_01": 2.4,
+      "scifi/SM_Bld_Background_Small_02": 2.4,
+      "scifi/SM_Bld_Background_Small_03": 2.0,
+      "scifi/SM_Bld_Background_Small_04": 2.0,
+      "scifi/SM_Building_Shack_01": 0.8,
+      "scifi/SM_Building_Shack_02": 0.8,
+      "scifi/SM_Bld_Power_02": 0.4,
+      "scifi/SM_Bld_Power_03": 0.4,
+      "scifi/SM_Bld_Power_04": 0.6,
+      "scifi/SM_Bld_FoodHole_01": 0.6,
+      "cyber/SM_Veh_Food_Trailer_01": 0.3,
+      "cyber/SM_Veh_Truck_01": 0.3,
+      "cyber/SM_Veh_SUV_01": 0.4,
+      "scifi/SM_Veh_Garbage_01": 0.3,
+      "scifi/SM_Veh_Future_Taxi_01": 0.4,
+      "scifi/SM_Veh_Future_Cop_01": 0.2,
+      "scifi/SM_Veh_Retro_01": 0.3,
+      "scifi/SM_Prop_Pillar_01": 0.4,
+      "scifi/SM_Prop_Pillar_02": 0.4,
+      "cyber/SM_Prop_Street_Pole_01": 0.5,
+      "cyber/SM_Prop_Canopy_Pole_01": 0.4,
+      "scifi/SM_Prop_Powerpoll_01": 0.4,
+      "cyber/SM_Prop_Powerpole_01": 0.4,
+      "scifi/SM_Env_Tree_01": 0.5,
+      "scifi/SM_Env_Tree_02": 0.6,
+      "scifi/SM_Env_Tree_03": 0.6,
+      "scifi/SM_Prop_VendingMachine_Soda_01": 0.4,
+      "cyber/SM_Prop_Antenna_02": 0.3
+    },
+    "forest-rocks": {
+      "cyber/SM_Prop_Greeble_Cube_03": 1,
+      "scifi/SM_Env_Greeble_Cube_01": 1,
+      "scifi/SM_Env_Greeble_Cube_02": 1,
+      "cyber/SM_Env_Junk_Pile_04": 1,
+      "cyber/SM_Env_Junk_Pile_05": 1,
+      "scifi/SM_Prop_Dumpster_01": 1,
+      "cyber/SM_Prop_Recycle_Bin_01": 1
+    },
+    "edge-plants": {
+      "cyber/SM_Prop_Crate_01": 0.5,
+      "cyber/SM_Prop_Crate_04": 0.4,
+      "cyber/SM_Prop_Crate_05": 0.4,
+      "scifi/SM_Prop_Crate_01": 0.6,
+      "scifi/SM_Prop_Crate_03": 0.6,
+      "scifi/SM_Prop_Crate_04": 0.5,
+      "cyber/SM_Prop_Trash_Bin_01": 0.6,
+      "cyber/SM_Prop_Trash_Bin_02": 0.6,
+      "cyber/SM_Prop_Trash_Skip_01": 0.5,
+      "scifi/SM_Prop_TrashBag_01": 0.8,
+      "scifi/SM_Prop_TrashBag_02": 0.8,
+      "scifi/SM_Prop_TrashBag_03": 0.8,
+      "scifi/SM_Prop_TrashCan_01": 0.5,
+      "cyber/SM_Prop_Vending_Machine_01": 0.5,
+      "cyber/SM_Prop_Vending_Machine_02": 0.5,
+      "cyber/SM_Prop_Street_Console_01": 0.3,
+      "cyber/SM_Prop_Street_Console_02": 0.3,
+      "cyber/SM_Prop_Electrical_Box_01": 0.4,
+      "cyber/SM_Prop_Fire_Hydrant_01": 0.3,
+      "scifi/SM_Prop_AirConditioningUnit_01": 0.5,
+      "scifi/SM_Prop_AirConditioningUnit_02": 0.5,
+      "scifi/SM_Prop_SatDish_02": 0.3,
+      "cyber/SM_Prop_Bench_Seat_01": 0.3,
+      "cyber/SM_Prop_Hover_Light_01": 0.6,
+      "cyber/SM_Prop_Hover_Light_03": 0.6,
+      "cyber/SM_Prop_Holo_Planter_01": 0.7,
+      "cyber/SM_Prop_Holo_Planter_02": 0.7,
+      "cyber/SM_Prop_Information_Booth_01": 0.3,
+      "cyber/SM_Prop_Claw_Machine_01": 0.3,
+      "scifi/SM_Prop_Atm_01": 0.2,
+      "scifi/SM_Prop_ChargingStation_01": 0.2,
+      "scifi/SM_Prop_Advertisement_Pillar_01": 0.4,
+      "scifi/SM_Prop_Barrier_Plastic_01": 0.3,
+      "scifi/SM_Prop_Cylinder_01": 0.4,
+      "cyber/SM_Prop_Robot_Posed_Pile_01": 0.2,
+      "cyber/SM_Prop_Robot_Posed_Pile_02": 0.2
+    },
+    "edge-soft": {
+      "cyber/SM_Prop_Junk_Paper_01": 1,
+      "cyber/SM_Prop_Junk_Paper_04": 1,
+      "cyber/SM_Prop_Junk_Paper_05": 1,
+      "scifi/SM_Prop_RubbishPile_02": 1,
+      "scifi/SM_Prop_RubbishPile_03": 1,
+      "cyber/SM_Env_Junk_Pile_01": 0.6,
+      "cyber/SM_Env_Junk_Pile_02": 0.6,
+      "cyber/SM_Env_Junk_Pile_03": 0.6,
+      "cyber/SM_Prop_Junk_Can_03": 0.6,
+      "cyber/SM_Prop_Junk_Can_04": 0.6,
+      "cyber/SM_Prop_Robot_Part_02": 0.4,
+      "cyber/SM_Prop_Robot_Part_04": 0.4
+    },
+    "clutter": {
+      "cyber/SM_Prop_Junk_Paper_02": 1,
+      "cyber/SM_Prop_Junk_Paper_03": 1,
+      "cyber/SM_Prop_Junk_Can_01": 0.6,
+      "cyber/SM_Prop_Junk_Can_02": 0.6,
+      "scifi/SM_Prop_Sidewalk_Rubble_01": 1,
+      "scifi/SM_Prop_Rubbish_Paper_01": 0.6,
+      "scifi/SM_Prop_Rubbish_Paper_03": 0.6,
+      "cyber/SM_Prop_Water_Puddle_01": 1,
+      "cyber/SM_Prop_Water_Puddle_02": 1,
+      "cyber/SM_Prop_Water_Puddle_03": 0.6
+    },
+    "ruin-walls": {
+      "cyber/SM_Bld_Wall_Shop_01": 1,
+      "cyber/SM_Bld_Wall_Shop_02": 1,
+      "cyber/SM_Bld_Wall_Shop_03": 1,
+      "cyber/SM_Bld_Wall_Shop_04": 1,
+      "cyber/SM_Bld_Wall_Window_01": 0.6,
+      "cyber/SM_Bld_Wall_Window_02": 0.6,
+      "cyber/SM_Bld_Wall_Window_03": 0.6,
+      "cyber/SM_Bld_Wall_Window_04": 0.6
+    },
+    "ground-dressing": {
+      "cyber/SM_Prop_Water_Puddle_01": 1.2,
+      "cyber/SM_Prop_Water_Puddle_02": 1.2,
+      "cyber/SM_Prop_Junk_Paper_04": 0.8,
+      "cyber/SM_Prop_Manholes_03": 0.25,
+      "cyber/SM_Prop_Manholes_05": 0.25,
+      "cyber/SM_Prop_Manholes_07": 0.25
+    }
+  },
+  "scatter": {
+    "forest": [{"props": "forest-trees", "spacingM": 5.0, "scale": [0.85, 1.15]}, {"props": "forest-rocks", "spacingM": 14, "scale": [0.8, 1.1], "chance": 0.6}],
+    "edge": [
+      {"props": "edge-plants", "spacingM": 2.6, "scale": [0.9, 1.2]},
+      {"props": "edge-soft", "spacingM": 2.2, "scale": [0.9, 1.3]},
+      {"props": "ground-dressing", "dressing": true, "spacingM": 2.6, "scale": [1.0, 1.4]}
+    ],
+    "path": [
+      {"props": "clutter", "spacingM": 3.5, "scale": [1.0, 1.5], "chance": 0.4},
+      {"props": "ground-dressing", "dressing": true, "spacingM": 3.4, "scale": [1.0, 1.4], "chance": 0.5}
+    ],
+    "clearing": [
+      {"props": "clutter", "spacingM": 3.0, "scale": [1.0, 1.5], "chance": 0.45},
+      {"props": "ground-dressing", "dressing": true, "spacingM": 3.8, "scale": [1.0, 1.4], "chance": 0.5}
+    ]
+  },
+  "pieces": {
+    "glowing-tree": [
+      {"prop": "cyber/SM_Env_Hologram_Cherry_Tree_02", "at": [0, 0], "yawDeg": 30},
+      {"prop": "cyber/SM_Env_Hologram_Cherry_Tree_01", "at": [3.4, -2.8], "yawDeg": 70, "scale": 0.75},
+      {"prop": "cyber/SM_Prop_Holo_Planter_03", "at": [-3.4, 2.4], "yawDeg": 10},
+      {"prop": "cyber/SM_Prop_Holo_Planter_04", "at": [2.6, 2.8], "yawDeg": 210},
+      {"prop": "cyber/SM_Prop_Hologram_Stand_03", "at": [-2.6, -2.2], "yawDeg": 160}
+    ],
+    "glowing-tree-flowers": [
+      {"prop": "cyber/SM_Prop_Hover_Light_05", "at": [3.87, 1.64], "yawDeg": 0, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Manholes_07", "at": [1.13, 4.04], "yawDeg": 47, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Hover_Light_07", "at": [-2.46, 3.41], "yawDeg": 94, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Hover_Light_05", "at": [-4.2, 0.2], "yawDeg": 141, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Manholes_07", "at": [-2.78, -3.15], "yawDeg": 188, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Hover_Light_07", "at": [0.73, -4.14], "yawDeg": 235, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Hover_Light_05", "at": [3.69, -2.0], "yawDeg": 282, "scale": 1.2}
+    ],
+    "crystal-ring": [
+      {"prop": "cyber/SM_Prop_Street_Light_Large_01", "at": [7.0, 0.0], "yawDeg": 90, "scale": 1.1},
+      {"prop": "cyber/SM_Prop_Street_Light_Large_02", "at": [3.5, 6.06], "yawDeg": 30, "scale": 1.1},
+      {"prop": "cyber/SM_Prop_Street_Light_Large_01", "at": [-3.5, 6.06], "yawDeg": -30, "scale": 1.1},
+      {"prop": "cyber/SM_Prop_Street_Light_Large_02", "at": [-7.0, 0.0], "yawDeg": -90, "scale": 1.1},
+      {"prop": "cyber/SM_Prop_Street_Light_Large_01", "at": [-3.5, -6.06], "yawDeg": -150, "scale": 1.1},
+      {"prop": "cyber/SM_Prop_Street_Light_Large_02", "at": [3.5, -6.06], "yawDeg": -210, "scale": 1.1}
+    ],
+    "graveyard": [
+      {"prop": "scifi/SM_Prop_MarketCover_01", "at": [0, 2], "yawDeg": 5},
+      {"prop": "scifi/SM_Prop_MarketTable_04", "at": [0, 2], "yawDeg": 5},
+      {"prop": "scifi/SM_Prop_MarketCover_03", "at": [2.8, -2], "yawDeg": -8},
+      {"prop": "scifi/SM_Prop_MarketTable_05", "at": [2.8, -2], "yawDeg": -8},
+      {"prop": "scifi/SM_Prop_MarketCover_04", "at": [-1.5, -4], "yawDeg": 12},
+      {"prop": "scifi/SM_Prop_MarketTable_01", "at": [-1.5, -4], "yawDeg": 12},
+      {"prop": "scifi/SM_Prop_MarketCover_02", "at": [3, 5], "yawDeg": -20},
+      {"prop": "scifi/SM_Prop_MarketCover_05", "at": [-2, 5.5], "yawDeg": 4},
+      {"prop": "scifi/SM_Prop_MarketLights_01", "at": [4.5, 1.5], "yawDeg": -90},
+      {"prop": "scifi/SM_Prop_MarketLights_02", "at": [-3.6, 0.6], "yawDeg": 80},
+      {"prop": "cyber/SM_Veh_Food_Trailer_01", "at": [6.5, -5], "yawDeg": 40},
+      {"prop": "scifi/SM_Prop_Paper_Lantern_01", "at": [-1.2, 0.2], "yawDeg": 0, "liftM": 2.4},
+      {"prop": "scifi/SM_Prop_Paper_Lantern_02", "at": [1.4, -3.5], "yawDeg": 0, "liftM": 2.4},
+      {"prop": "scifi/SM_Prop_Paper_Lantern_01", "at": [-2.6, 3.4], "yawDeg": 0, "liftM": 2.4},
+      {"prop": "scifi/SM_Sign_Neon_07", "at": [0.5, 8.5], "yawDeg": 0, "liftM": 1.6},
+      {"prop": "cyber/SM_Prop_Bench_Seat_02", "at": [5.2, -1.5], "yawDeg": 70}
+    ],
+    "ruins-gate": [
+      {"prop": "scifi/SM_Prop_Pillar_02", "at": [0.5, -2.2], "yawDeg": 10},
+      {"prop": "scifi/SM_Sign_Billboard_Large_02", "at": [27, 1.5], "yawDeg": 0, "liftM": 2.45},
+      {"prop": "scifi/SM_Sign_Ad_01", "at": [6, -0.6], "yawDeg": 0, "liftM": 1.9},
+      {"prop": "cyber/SM_Prop_NeonSign_03", "at": [20, -0.7], "yawDeg": 0, "liftM": 2.4}
+    ],
+    "courtyard": [
+      {"prop": "scifi/SM_Prop_Pillar_04", "at": [-8, -8], "yawDeg": 0},
+      {"prop": "scifi/SM_Prop_Pillar_04", "at": [8, -8], "yawDeg": 90},
+      {"prop": "scifi/SM_Prop_Pillar_04", "at": [8, 8], "yawDeg": 180},
+      {"prop": "scifi/SM_Prop_Pillar_04", "at": [-8, 8], "yawDeg": 270},
+      {"prop": "scifi/SM_Sign_Billboard_Large_01", "at": [-5.2, 8.4], "yawDeg": 0, "liftM": 5.45},
+      {"prop": "cyber/SM_Prop_NeonSign_04", "at": [5.2, 7.6], "yawDeg": 0, "liftM": 2.3},
+      {"prop": "scifi/SM_Sign_Ad_11", "at": [-7.6, 3.5], "yawDeg": 90, "liftM": 1.8},
+      {"prop": "scifi/SM_Sign_Ad_13", "at": [7.6, -4], "yawDeg": 270, "liftM": 1.8}
+    ],
+    "courtyard-circle": [
+      {"prop": "cyber/SM_Prop_Manholes_07", "at": [3.6, 0.0], "yawDeg": 0},
+      {"prop": "cyber/SM_Prop_Hover_Light_07", "at": [2.55, 2.55], "yawDeg": 47},
+      {"prop": "cyber/SM_Prop_Manholes_07", "at": [0.0, 3.6], "yawDeg": 94},
+      {"prop": "cyber/SM_Prop_Hover_Light_07", "at": [-2.55, 2.55], "yawDeg": 141},
+      {"prop": "cyber/SM_Prop_Manholes_07", "at": [-3.6, 0.0], "yawDeg": 188},
+      {"prop": "cyber/SM_Prop_Hover_Light_07", "at": [-2.55, -2.55], "yawDeg": 235},
+      {"prop": "cyber/SM_Prop_Manholes_07", "at": [-0.0, -3.6], "yawDeg": 282},
+      {"prop": "cyber/SM_Prop_Hover_Light_07", "at": [2.55, -2.55], "yawDeg": 329}
+    ],
+    "brazier-glade": [
+      {"prop": "cyber/SM_Prop_Hover_Light_02", "at": [5.5, 0], "yawDeg": 0},
+      {"prop": "cyber/SM_Prop_Hover_Light_04", "at": [0, 5.5], "yawDeg": 0},
+      {"prop": "cyber/SM_Prop_Hover_Light_02", "at": [-5.5, 0], "yawDeg": 0},
+      {"prop": "cyber/SM_Prop_Hover_Light_04", "at": [0, -5.5], "yawDeg": 0},
+      {"prop": "cyber/SM_Prop_Claw_Machine_01", "at": [-6, 7], "yawDeg": 20},
+      {"prop": "cyber/SM_Prop_Vending_Machine_02", "at": [6, 7], "yawDeg": 200},
+      {"prop": "cyber/SM_Prop_Vending_Machine_01", "at": [7.6, 5], "yawDeg": 230},
+      {"prop": "cyber/SM_Prop_Hologram_Stand_01", "at": [0, 0], "yawDeg": 0}
+    ],
+    "opening-ruin": [
+      {"prop": "cyber/SM_Veh_Food_Truck_01", "at": [0, 0], "yawDeg": 215},
+      {"prop": "cyber/SM_Veh_Cart_01", "at": [-4.5, -3], "yawDeg": 230},
+      {"prop": "scifi/SM_Veh_Hover_Bike_01", "at": [4, -4], "yawDeg": 160},
+      {"prop": "scifi/SM_Sign_Billboard_Large_04", "at": [-3, 5], "yawDeg": 0, "liftM": 1.65}
+    ],
+    "fairy-ring": [
+      {"prop": "cyber/SM_Prop_Manholes_07", "at": [10.0, 0.0], "yawDeg": 0, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Water_Puddle_01", "at": [9.67, 2.57], "yawDeg": 47, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Hover_Light_07", "at": [9.29, 3.7], "yawDeg": 94, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Water_Puddle_02", "at": [7.91, 6.12], "yawDeg": 141, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Manholes_08", "at": [6.69, 7.43], "yawDeg": 188, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Manholes_07", "at": [4.56, 8.9], "yawDeg": 235, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Water_Puddle_01", "at": [3.47, 9.38], "yawDeg": 282, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Hover_Light_07", "at": [0.75, 9.97], "yawDeg": 329, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Water_Puddle_02", "at": [-1.05, 9.95], "yawDeg": 16, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Manholes_08", "at": [-3.56, 9.34], "yawDeg": 63, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Manholes_07", "at": [-4.65, 8.85], "yawDeg": 110, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Water_Puddle_01", "at": [-6.91, 7.23], "yawDeg": 157, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Hover_Light_07", "at": [-8.09, 5.88], "yawDeg": 204, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Water_Puddle_02", "at": [-9.33, 3.61], "yawDeg": 251, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Manholes_08", "at": [-9.69, 2.47], "yawDeg": 298, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Manholes_07", "at": [-10.0, -0.3], "yawDeg": 345, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Water_Puddle_01", "at": [-9.78, -2.08], "yawDeg": 32, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Hover_Light_07", "at": [-8.92, -4.52], "yawDeg": 79, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Water_Puddle_02", "at": [-8.32, -5.55], "yawDeg": 126, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Manholes_08", "at": [-6.47, -7.63], "yawDeg": 173, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Manholes_07", "at": [-5.0, -8.66], "yawDeg": 220, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Water_Puddle_01", "at": [-2.61, -9.65], "yawDeg": 267, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Hover_Light_07", "at": [-1.44, -9.9], "yawDeg": 314, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Water_Puddle_02", "at": [1.34, -9.91], "yawDeg": 1, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Manholes_08", "at": [3.09, -9.51], "yawDeg": 48, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Manholes_07", "at": [5.43, -8.4], "yawDeg": 95, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Water_Puddle_01", "at": [6.39, -7.69], "yawDeg": 142, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Hover_Light_07", "at": [8.26, -5.63], "yawDeg": 189, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Water_Puddle_02", "at": [9.14, -4.07], "yawDeg": 236, "scale": 1.2},
+      {"prop": "cyber/SM_Prop_Manholes_08", "at": [9.87, -1.59], "yawDeg": 283, "scale": 1.2}
+    ],
+    "path-stones": [
+      {"prop": "cyber/SM_Prop_Manholes_03", "at": [0.0, 0.0], "yawDeg": 0},
+      {"prop": "cyber/SM_Prop_Manholes_04", "at": [0.73, 1.18], "yawDeg": 37},
+      {"prop": "cyber/SM_Prop_Manholes_05", "at": [1.46, 2.36], "yawDeg": 74},
+      {"prop": "cyber/SM_Prop_Manholes_06", "at": [2.19, 3.54], "yawDeg": 111},
+      {"prop": "cyber/SM_Prop_Manholes_03", "at": [2.92, 4.72], "yawDeg": 148},
+      {"prop": "cyber/SM_Prop_Manholes_04", "at": [3.65, 5.9], "yawDeg": 185},
+      {"prop": "cyber/SM_Prop_Manholes_05", "at": [4.38, 7.08], "yawDeg": 222},
+      {"prop": "cyber/SM_Prop_Manholes_06", "at": [5.11, 8.26], "yawDeg": 259}
+    ]
+  }
+}

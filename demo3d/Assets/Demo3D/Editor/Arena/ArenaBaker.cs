@@ -89,7 +89,7 @@ namespace Demo3D.EditorTools.Arena
                 Directory.CreateDirectory(env.MergedDir);
                 var layout = ArenaLayout.Parse(env.Json);
                 var lighting = ArenaLighting.Parse(env.Json);
-                var converter = new MaterialConverter(env.MaterialDir, env.Root["lighting"]["kitValue"]);
+                var converter = new MaterialConverter(env.MaterialDir, env.Root["lighting"]["kitValue"], env.Root["lighting"]["kitEmission"]);
                 var ground = GroundMaterial(env, layout, detail);
                 var authored = env.IsDefault ? null : EnvironmentDensities(layout);
                 var e0 = Floats(TaskArgs.Get("-e0")) ?? authored ?? E0Densities;
@@ -197,7 +197,7 @@ namespace Demo3D.EditorTools.Arena
                 string group = p.Area >= 0 ? (layout.Areas[p.Area].Type == AreaType.Structure ? "Structures" : "Landmarks")
                     : (layout.Classify(p.Position)?.ToString() ?? "Forest");
                 go.transform.SetParent(Group(group), false);
-                go.transform.SetPositionAndRotation(new Vector3(p.Position.X, 0, p.Position.Y), Quaternion.Euler(0, p.Yaw * Mathf.Rad2Deg, 0));
+                go.transform.SetPositionAndRotation(new Vector3(p.Position.X, p.Lift, p.Position.Y), Quaternion.Euler(0, p.Yaw * Mathf.Rad2Deg, 0));
                 go.transform.localScale = prefab.transform.localScale * p.Scale;
                 Strip(go, stripped);
                 converter.Convert(go, lit);
@@ -522,7 +522,7 @@ namespace Demo3D.EditorTools.Arena
             mat.shader = Shader.Find("Universal Render Pipeline/Lit");
             mat.SetTexture("_BaseMap", albedo);
             mat.SetColor("_BaseColor", Color.white);
-            mat.SetFloat("_Smoothness", 0.12f);
+            mat.SetFloat("_Smoothness", env.Root["ground"]["smoothness"].AsFloat(0.12f)); // the neon street's is wet
             mat.SetFloat("_Metallic", 0f);
             // Our generated cracks and stones as a detail albedo every DetailM, with the kit's own
             // ground normals (Elven Realm's, already synced for its rock shader) as its detail
@@ -802,16 +802,20 @@ namespace Demo3D.EditorTools.Arena
     public sealed class MaterialConverter
     {
         readonly string _dir;
-        readonly JsonValue _kitValue;
+        readonly JsonValue _kitValue, _kitEmission;
         readonly Dictionary<Material, Material> _done = new Dictionary<Material, Material>();
         readonly Dictionary<Material, Material> _static = new Dictionary<Material, Material>();
         public int Count => _done.Count + _static.Count;
 
-        /// <summary>Converts into <paramref name="dir"/>, scaling base colours by the environment's <c>lighting.kitValue</c>.</summary>
-        public MaterialConverter(string dir, JsonValue kitValue)
+        /// <summary>
+        /// Converts into <paramref name="dir"/>, scaling base colours by the environment's
+        /// <c>lighting.kitValue</c> and emission by its <c>lighting.kitEmission</c> (the same keys).
+        /// </summary>
+        public MaterialConverter(string dir, JsonValue kitValue, JsonValue kitEmission)
         {
             _dir = dir;
             _kitValue = kitValue;
+            _kitEmission = kitEmission;
         }
 
         /// <summary>
@@ -842,7 +846,7 @@ namespace Demo3D.EditorTools.Arena
             if (_done.TryGetValue(m, out var c)) return c;
             var path = $"{_dir}/{Safe(m.name)}.mat";
             var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
-            c = Build(m, existing, _kitValue);
+            c = Build(m, existing, _kitValue, _kitEmission);
             if (existing == null) AssetDatabase.CreateAsset(c, path);
             else EditorUtility.SetDirty(c);
             _done[m] = c;
@@ -875,13 +879,16 @@ namespace Demo3D.EditorTools.Arena
             return twin;
         }
 
-        static Material Build(Material m, Material into, JsonValue kitValue)
+        static Material Build(Material m, Material into, JsonValue kitValue, JsonValue kitEmission)
         {
             string shader = m.shader != null ? m.shader.name : "";
             if (shader.StartsWith("Particles/")) return Particle(m, into);
             if (shader == "SyntyStudios_RockTriplanar") return Triplanar(m, into, kitValue);
+            if (shader == "SyntyStudios_Hologram_01") return Hologram(m, into, kitEmission);
             var lit = Target(into, "Universal Render Pipeline/Lit", m.name);
-            var tex = m.HasProperty("_MainTex") ? m.GetTexture("_MainTex") : null;
+            // SciFi City's neon signs (SyntyStudios/Polygon_UVScroll) name their maps _Diffuse and
+            // _Emission; drawn as Lit, their emission stands still instead of scrolling.
+            var tex = m.HasProperty("_MainTex") ? m.GetTexture("_MainTex") : m.HasProperty("_Diffuse") ? m.GetTexture("_Diffuse") : null;
             lit.SetTexture("_BaseMap", tex);
             lit.SetTextureScale("_BaseMap", m.HasProperty("_MainTex") ? m.GetTextureScale("_MainTex") : UnityEngine.Vector2.one);
             lit.SetColor("_BaseColor", ArenaDressing.KitValue(kitValue, m.HasProperty("_Color") ? m.GetColor("_Color") : Color.white, m.name)); // TD15: the kit's value
@@ -907,8 +914,8 @@ namespace Demo3D.EditorTools.Arena
             }
             if (m.IsKeywordEnabled("_EMISSION") && m.HasProperty("_EmissionColor"))
             {
-                var e = m.GetColor("_EmissionColor");
-                var emap = m.HasProperty("_EmissionMap") ? m.GetTexture("_EmissionMap") : null;
+                var e = ArenaDressing.KitValue(kitEmission, m.GetColor("_EmissionColor"), m.name);
+                var emap = m.HasProperty("_EmissionMap") ? m.GetTexture("_EmissionMap") : m.HasProperty("_Emission") ? m.GetTexture("_Emission") : null;
                 if (e.maxColorComponent > 0.001f)
                 {
                     lit.SetTexture("_EmissionMap", emap);
@@ -956,6 +963,29 @@ namespace Demo3D.EditorTools.Arena
             t.SetFloat("_Metallic", F("_Metallic", 0.02f));
             t.SetFloat("_Smoothness", F("_Smoothness", 0.2f));
             return t;
+        }
+
+        /// <summary>
+        /// CyberCity's hologram (SyntyStudios_Hologram_01) to Demo3D/KitHologram (ps-bop.3.7): the
+        /// neon colour, tinting the emission mask when the material's switches say so, at its power
+        /// times the environment's <c>kitEmission</c>.
+        /// </summary>
+        static Material Hologram(Material m, Material into, JsonValue kitEmission)
+        {
+            var h = Target(into, "Demo3D/KitHologram", m.name);
+            Texture Tex(string p) => m.HasProperty(p) ? m.GetTexture(p) : null;
+            float F(string p, float d) => m.HasProperty(p) ? m.GetFloat(p) : d;
+            bool masked = F("_EmissionMask_FlatColourSwitch", 1f) > 0.5f, tinted = F("_EmissionMask_TintSwitch", 0f) > 0.5f;
+            var neon = m.HasProperty("_Neon_Colour_01") ? m.GetColor("_Neon_Colour_01") : Color.white;
+            var color = masked && !tinted ? Color.white : neon;
+            h.SetTexture("_BaseMap", Tex("_AlbedoTexture"));
+            h.SetTexture("_EmissionMap", masked ? Tex("_EmissionMask") : null);
+            h.SetTexture("_LinesMap", Tex("_HoloLines"));
+            h.SetColor("_EmissionColor", ArenaDressing.KitValue(kitEmission, color * F("_Emission_Power", 1f), m.name));
+            h.SetFloat("_Opacity", F("_Opacity", 0.8f));
+            h.SetFloat("_ScrollSpeed", F("_Scroll_Speed", 0.1f));
+            h.renderQueue = (int)RenderQueue.Transparent;
+            return h;
         }
 
         static Material Particle(Material m, Material into)

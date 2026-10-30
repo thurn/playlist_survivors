@@ -56,6 +56,21 @@ namespace Demo3D.Choreography.Tests
         }
 
         [Test]
+        public void APiecesLiftRaisesItsPlacementOnly()
+        {
+            string root = Fixtures.Root;
+            string arena = File.ReadAllText(ChoreographyFiles.DataPath(root, "arena-layout.json"));
+            string env = "{ \"extends\": \"arena\", \"pieces\": { \"glowing-tree\": [ { \"prop\": \"elven/SM_Env_Tree_Glowing_01\", \"at\": [0, 0] },"
+                + " { \"prop\": \"elven/SM_Env_Tree_Glowing_01\", \"at\": [2, 0], \"liftM\": 3.5 } ] } }";
+            ArenaLayout l = ArenaLayout.Parse(LayoutEnvironment.Resolve(env, name => name == "arena" ? arena : null, "test"));
+            PlacementList list = l.Generate(ChoreographyFiles.LoadFootprints(root));
+            int tree = Array.FindIndex(l.Areas, a => a.Name == "glowing-tree");
+            var lifts = list.Items.Where(p => p.Area == tree).Select(p => p.Lift).ToArray();
+            Assert.That(lifts, Is.EqualTo(new[] { 0f, 3.5f }));
+            Assert.That(list.Items.Where(p => p.Area != tree).All(p => p.Lift == 0f), "scatter and other areas stay on the ground");
+        }
+
+        [Test]
         public void AnEnvironmentCannotMoveTheAreaPlan()
         {
             foreach (string key in LayoutEnvironment.PlanKeys)

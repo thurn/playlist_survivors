@@ -161,7 +161,14 @@ compare shot for shot.
   emission map: rivers of lava winding through the edge bands and the
   forest, never onto fighting ground, with cracks glowing in the crust
   around them and, dimly, across fighting ground (`ArenaBaker.GroundLava`).
-  Its glow is baked onto the kit through the probes.
+  Its glow is baked onto the kit through the probes. An optional
+  `ground.smoothness` (0.12 by default) wets the neon environment's street.
+- **The kit's own values.** `lighting.kitValue` scales the converted kit
+  materials' base colours by vendor material name prefix, and
+  `lighting.kitEmission` their emission (the neon city's signs and windows
+  need several times the packs' own to bloom). A landmark's or structure's
+  piece may set `liftM`, metres above the ground, for the signs whose pivot is
+  their centre.
 - **The horde is never recoloured.** `lighting.crowd.keyColor` gives the
   horde its own key colour at the moon's luminance, so a coloured moon on the
   set leaves the type hues alone. `lighting.post.grade` sets the grade's
@@ -232,8 +239,11 @@ E6    the static set in or out of the depth prepass      prepass vertices vs
   the hero is never hidden. The layout keeps canopies off fighting ground; the
   fade covers forest edges.
 - **Only what the kit uses is ported.** Elven Realm's triplanar rock shader is
-  the one custom shader the kit needs. It is rewritten in Shader Graph, which
-  makes it compatible with the GPU Resident Drawer.
+  the one custom shader the forest needs. It is rewritten in Shader Graph, which
+  makes it compatible with the GPU Resident Drawer. The neon environment adds
+  CyberCity's hologram (its trees and planters), ported as our own additive
+  Demo3D/KitHologram with its scrolling scan lines; SciFi City's scrolling neon
+  signs draw as URP Lit with their emission standing still.
 
 ### Environment frontier
 

@@ -34,7 +34,7 @@ namespace Demo3D.EditorTools.Arena
         /// (<paramref name="values"/>) applied (environment.md, Value structure): the first entry whose
         /// key starts the vendor material's name scales its RGB (alpha, and so alpha clipping,
         /// untouched). The packs' pale stone and lilac atlases otherwise outshine the horde under the
-        /// moon; emission is left as it is.
+        /// moon. The converter applies <c>lighting.kitEmission</c> to emission the same way.
         /// </summary>
         public static Color KitValue(JsonValue values, Color c, string materialName)
         {

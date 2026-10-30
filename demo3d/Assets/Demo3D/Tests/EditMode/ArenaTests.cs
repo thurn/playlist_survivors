@@ -572,9 +572,11 @@ namespace Demo3D.Tests
                     {
                         Assert.That(m, Is.Not.Null, r.name);
                         Assert.That(AssetDatabase.GetAssetPath(m), Does.StartWith(env.MaterialDir + "/"), r.name + " uses its environment's converted material");
-                        // At E2 the trees take TD15's canopy fade (Demo3D/LitCanopy, its keyword on); the rock is TD14's triplanar port.
-                        bool canopy = e.rung == ArenaIndex.E2 && ArenaDressing.IsTree(PieceOf(r.transform, stat).name);
-                        string expect = m.name.StartsWith("RockTriplanar") ? "Demo3D/RockTriplanar"
+                        // At E2 the trees take TD15's canopy fade (Demo3D/LitCanopy, its keyword on); the rock is TD14's triplanar port,
+                        // CyberCity's hologram (the neon's trees and planters) ps-bop.3.7's.
+                        bool hologram = m.name.StartsWith("Hologram_");
+                        bool canopy = !hologram && e.rung == ArenaIndex.E2 && ArenaDressing.IsTree(PieceOf(r.transform, stat).name);
+                        string expect = hologram ? "Demo3D/KitHologram" : m.name.StartsWith("RockTriplanar") ? "Demo3D/RockTriplanar"
                             : canopy ? "Demo3D/LitCanopy" : e.rung == ArenaIndex.E2 ? "Demo3D/LitStaticShadow" : "Universal Render Pipeline/Lit";
                         Assert.That(m.shader.name, Is.EqualTo(expect), r.name);
                         if (canopy)

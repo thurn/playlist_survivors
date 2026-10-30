@@ -1913,6 +1913,566 @@
       "use": "kit: desert braziers, torches and pottery"
     },
     {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Buildings/SM_Bld_Wall_Shop_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "cb7c39e2ec48c0c4d94981c0db75c793",
+      "use": "kit: neon walls"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Buildings/SM_Bld_Wall_Shop_02.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "8e245b9bcb1a089459b0d7eb6999ae97",
+      "use": "kit: neon walls"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Buildings/SM_Bld_Wall_Shop_03.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "1fbc35b7677d6fc46944185174b2057f",
+      "use": "kit: neon walls"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Buildings/SM_Bld_Wall_Shop_04.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "498850f8e2741084baaa1031795e822f",
+      "use": "kit: neon walls"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Buildings/SM_Bld_Wall_Window_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "00aa6b9ba469d644a97a38427cd287a1",
+      "use": "kit: neon walls"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Buildings/SM_Bld_Wall_Window_02.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "c7eed9c6a1ea8494eaac24f474f41b52",
+      "use": "kit: neon walls"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Buildings/SM_Bld_Wall_Window_03.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "36bd9690de484ee43ad493e996423e77",
+      "use": "kit: neon walls"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Buildings/SM_Bld_Wall_Window_04.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "d27474ad83ed31b42b44a901a19edc0c",
+      "use": "kit: neon walls"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Env/SM_Env_Hologram_Cherry_Tree_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "a45236db60337a04c9e8c9176a80634e",
+      "use": "kit: neon hologram trees"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Env/SM_Env_Hologram_Cherry_Tree_02.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "0132044d992df8944bbf0057804ffc7e",
+      "use": "kit: neon hologram trees"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Env/SM_Env_Junk_Pile_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "9d58ee279c6db9a41809fbe28ff1fd16",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Env/SM_Env_Junk_Pile_02.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "777e61a56e392e645a5e1476aac3a578",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Env/SM_Env_Junk_Pile_03.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "cf84b38c92f9bb14993841bbae83e318",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Env/SM_Env_Junk_Pile_04.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "1eff6285a93e5424b8ae79d26a91a68c",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Env/SM_Env_Junk_Pile_05.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "370b90268b6436248bc4458fb790d66b",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Antenna_02.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "8fb51fe1cfd799648b58ed3e9c0f1612",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Bench_Seat_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "1d956569594ccb14ab4a4c5253ad606d",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Bench_Seat_02.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "8dbf8defb1d24b047a2eead4161cdac9",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Canopy_Pole_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "3bc2af8e047dde142bd5723cacf43c99",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Claw_Machine_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "94200ffdb61c0c642a2c56b7d50f6988",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Crate_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "233e65bb2eeb6a44c839d9655ff33910",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Crate_04.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "bdca2ecd37794da4c91def6c2eee1eae",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Crate_05.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "081f53350f26aee46b86364bac36a6ca",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Electrical_Box_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "d9401fe5feca19b49ae63387b1d3a20c",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Fire_Hydrant_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "ef632c1b440b045448e7ad09c6a093cf",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Greeble_Cube_03.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "3d68e00949b5f444da2bf9d458a05e28",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Holo_Planter_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "02b0e6a9e5ba0864e8a7beb0df57b714",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Holo_Planter_02.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "d5ec4bf88efe45c43a1cfd655757d86f",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Holo_Planter_03.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "df42e74ee01c7f045869f24eefff7354",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Holo_Planter_04.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "2b4e16b26af33f940a840054269e9bea",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Hologram_Stand_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "619ce54db4b2a0540921a1507901bbaf",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Hologram_Stand_03.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "885ff13010b90454fab3748ba674cac2",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Hover_Light_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "ee609b769400c1449b51a4fbe8e4e05d",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Hover_Light_02.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "b3cb57dec66988348a5e7d14ff0f1c2e",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Hover_Light_03.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "d9d025010b4a3ba448954722b2481733",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Hover_Light_04.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "852e4b350b1a71c438fd05a9acac4c05",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Hover_Light_05.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "4eadb46403b8dd842a033792dcf6dc84",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Hover_Light_07.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "b3b4710cba5bade42b553501b825e5bd",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Information_Booth_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "81fbd7ad8c7b6da4aa3d9763d15a3f0b",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Junk_Can_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "5142a607e3b210b4785a193b1d082379",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Junk_Can_02.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "9bb27d232c97e7648a1b212127096a63",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Junk_Can_03.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "97162ac9376476c45b4496ef5e2e4a02",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Junk_Can_04.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "eaf49764cf793b14bbfcf2b5a244284e",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Junk_Paper_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "5a3fa100259f08244b2d5af9a29c88d2",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Junk_Paper_02.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "4be47ab84f5396044b51e13f8e97f011",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Junk_Paper_03.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "ab4c902c9085aa64bbc5f3446c3fe2ce",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Junk_Paper_04.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "21032c5a0415f1840b9b09b9ccc78502",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Junk_Paper_05.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "acb255941e0d26b4fbd5c0fcff18ddfc",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Manholes_03.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "b8ec1491409384c40ab33ef835c00ee1",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Manholes_04.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "d98a88eb4bae57f488413116f4f899bd",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Manholes_05.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "d71e9cc2ca6dd7b4fb8c78906b520324",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Manholes_06.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "ae25a5b955eb113488099711b253bd78",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Manholes_07.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "a2bf85bb333194742bc3e0b62a7f62cd",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Manholes_08.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "0252642671781cf44b6328e7c37d9a20",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_NeonSign_03.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "55d8cd7a60da3f84bbb8560458cdcb58",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_NeonSign_04.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "ba81fec7600f4c94699bba0df9131439",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Powerpole_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "c60bc34182849f247b47ee3749e080b8",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Recycle_Bin_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "665e46db2c65c9848a9bb6d2e62c85f5",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Robot_Part_02.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "78655dcad9fd908488d7fa32bfc71d85",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Robot_Part_04.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "59c245fc60258734190e0cbe22754798",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Robot_Posed_Pile_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "0c892112ae4aecb45b487454bb7ccad5",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Robot_Posed_Pile_02.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "61c1561588a8ba5468d04471e349c6f3",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Street_Console_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "655fed6447c61b240bbb4d9c3cdc75f2",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Street_Console_02.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "cf20d8553676889479422bb9295fd268",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Street_Light_Large_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "2dd8be8e0d9cf1d47a94348f28f6bf74",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Street_Light_Large_02.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "3e6a78949f88fed49bdfc8b25579417d",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Street_Pole_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "ebbddad369332294187b48c028b1c43e",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Trash_Bin_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "798b4410061b8ff468175ed6931d755d",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Trash_Bin_02.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "0cc96094b22f1d14bb6341d6cc993741",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Trash_Skip_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "6daeffa8b8268d044a74b3ea388bdddd",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Vending_Machine_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "2e8389d38f4590b468f287fce2e0f001",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Vending_Machine_02.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "9b73f0996d783a24eb1c1f4423d97aa9",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Water_Puddle_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "e13c7f9d54c36da4d97e127526ceac4e",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Water_Puddle_02.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "4592083655d2b284696e58a88dfe8449",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Props/SM_Prop_Water_Puddle_03.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "1793485db50b2354b916f6230763b579",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Vehicles/SM_Veh_Cart_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "96d7fea595a850349b70be28386ddb2e",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Vehicles/SM_Veh_Food_Trailer_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "64fc33af0730bf7429f87d432efd193d",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Vehicles/SM_Veh_Food_Truck_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "d917d1bc31156a640890d2f77ec5d3be",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Vehicles/SM_Veh_SUV_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "a10cbea2cb57b7842bc174bdfb73ae99",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_CyberCity_Unity_2021_3_v1_3_1 (1).unitypackage.gz",
+      "path": "Assets/PolygonCyberCity/Prefabs/Vehicles/SM_Veh_Truck_01.prefab",
+      "sourceSha256": "63a06aa46871769c39a24e4a0d96f6b5f6528c620b0320cef0c297f5f556ab51",
+      "guid": "0ffa50fc32a133a44b342f668ca1546a",
+      "use": "kit: neon street props"
+    },
+    {
       "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
       "path": "Assets/PolygonDarkFantasy/Prefabs/Building/SM_Bld_Fence_Cemetary_01.prefab",
       "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
@@ -3227,6 +3787,461 @@
       "sourceSha256": "ef0aedb72af33542c0b846b8b9c0e31e79949b7e46bbc90c41d93d115a04e9f8",
       "guid": "a7b97d24ba2370040ba159577de7b931",
       "use": "hero: sword and shield"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Buildings/SM_Bld_Background_Small_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "1337ff3f0ba67b743a229bd87105578f",
+      "use": "kit: neon city buildings"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Buildings/SM_Bld_Background_Small_02.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "346d59f0a37939843934a260b13f9d2e",
+      "use": "kit: neon city buildings"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Buildings/SM_Bld_Background_Small_03.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "ce31bf417050b6843b2ef2efaed2e4a8",
+      "use": "kit: neon city buildings"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Buildings/SM_Bld_Background_Small_04.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "98be61c6635b7784aa91fcee4f0df5ff",
+      "use": "kit: neon city buildings"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Buildings/SM_Bld_FoodHole_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "44f7531c4a7c3d64cbe98cf88d70bd68",
+      "use": "kit: neon city buildings"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Buildings/SM_Bld_Power_02.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "a279d9ca726ccb34a923266d9c5f9987",
+      "use": "kit: neon city buildings"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Buildings/SM_Bld_Power_03.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "0fafb1450aa63ce469d1b0dde39971c1",
+      "use": "kit: neon city buildings"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Buildings/SM_Bld_Power_04.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "3144fdf31c6d99242985622dcb79b6c6",
+      "use": "kit: neon city buildings"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Buildings/SM_Building_Shack_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "1c0266737a5eeb24cad25970b29bc2b9",
+      "use": "kit: neon city buildings"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Buildings/SM_Building_Shack_02.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "fda403bfb7f9ddb4bb2f8dce1834ea75",
+      "use": "kit: neon city buildings"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Environments/SM_Env_Greeble_Cube_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "3a843a0d0b9616045aa9a5220ca6e083",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Environments/SM_Env_Greeble_Cube_02.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "e0fedf4e86585184ab349b990d268f7a",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Environments/SM_Env_Tree_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "3776a26feef85024daaf2f145df5495e",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Environments/SM_Env_Tree_02.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "2f5545a07cd72dd41bd50f89ccdddae8",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Environments/SM_Env_Tree_03.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "fd0cc423568469440bd7a6fd8de96940",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_Advertisement_Pillar_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "f9a80be48a6254344b5f885cfff4bbb0",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_AirConditioningUnit_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "481f055a844be084eae4eefebdd9a49f",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_AirConditioningUnit_02.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "c4de1579d85603245ab9ad2a03114629",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_Atm_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "a56da3c44063ebe4e8fdac7b93bf1969",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_Barrier_Plastic_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "2ef431f56f242194fb0aac1efde07107",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_ChargingStation_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "7e05c8c7fe0f4fd46ae180dadca97f75",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_Crate_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "28f2883c42945194b9a7df1e5c8544c5",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_Crate_03.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "abc342a947c02fe42b97460526b073e4",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_Crate_04.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "3b6822620dff24e4f9c2c71a04fd47e0",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_Cylinder_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "063fa5da770865646944152ec96fc2e3",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_Dumpster_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "7212648f69551c847a203228e2c30f7f",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_MarketCover_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "244ba0d968ab9624f8fbeed4105ed29e",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_MarketCover_02.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "d1c50647ac4408a498acb44fc4ee423c",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_MarketCover_03.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "a44d1f79f0cbe4a479e0963e91b6d55c",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_MarketCover_04.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "2116cbffcdc93b54da3cf623bfa07ffd",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_MarketCover_05.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "bc74d1af733c9dd42b24fa0018d92a18",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_MarketLights_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "2938a9aff0e95ec4193072353b47b203",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_MarketLights_02.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "fa726b14e6d967248833d7e6860ab2de",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_MarketTable_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "7cecc1acfc0597a419339c5e35fd0b18",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_MarketTable_04.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "7783a0eeaba15044ab28535f0510b5f3",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_MarketTable_05.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "8105bb799c54ba640b347de3be074822",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_Paper_Lantern_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "d71ef14e65958ca4cb303cb74b7c1f3d",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_Paper_Lantern_02.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "49dfa7d19c855b84faf678bed61ccb73",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_Pillar_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "0b1d025fb128aef49a9892bd63865ced",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_Pillar_02.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "a6ef39decdd8823418a28d63543c77ea",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_Pillar_04.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "e809e6db323b5c14c80b047ecfc18795",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_Powerpoll_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "8d5b51ef008472d438a5e4cc4bf5c2c2",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_Rubbish_Paper_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "712c5d98f7d5ef947ba35471213eefd1",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_Rubbish_Paper_03.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "f4e7aafddc507f340b682560df2b00f6",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_RubbishPile_02.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "eebb3423a961cfc4ba871f3508cf9083",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_RubbishPile_03.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "a018652472678ac4da0156a81a55a871",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_SatDish_02.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "af207c30346b15644914a3d5715006e1",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_Sidewalk_Rubble_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "a9089a8996de8574c8a12b63cba7a0b5",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_TrashBag_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "6327f3b529212ab4692c4ce3714ab082",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_TrashBag_02.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "debe807fa5b29714089d99f8db9c2c48",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_TrashBag_03.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "5de9807b57f4b6b458c52fa853b6e16b",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_TrashCan_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "49403e0fe06c5a94caf8def848fd9941",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Props/SM_Prop_VendingMachine_Soda_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "b9aa404ea67c0ae41b1fc669a5b71369",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Signs/SM_Sign_Ad_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "2ac0656dcc1a1e440927710928df20a4",
+      "use": "kit: neon signs"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Signs/SM_Sign_Ad_11.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "e915fa70d65f19348986013a8b5b6db7",
+      "use": "kit: neon signs"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Signs/SM_Sign_Ad_13.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "ace9aade42ef57f4d99670bf0bcb54bc",
+      "use": "kit: neon signs"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Signs/SM_Sign_Billboard_Large_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "3180d24cf316a724aba849078ed6e992",
+      "use": "kit: neon signs"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Signs/SM_Sign_Billboard_Large_02.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "822f275bdc859ca4e9aded058796e259",
+      "use": "kit: neon signs"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Signs/SM_Sign_Billboard_Large_04.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "ca5448f7c73d3a349856be1bf2fe18d8",
+      "use": "kit: neon signs"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Signs/SM_Sign_Neon_07.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "f74a85b2d013fb14b8261bc593134c13",
+      "use": "kit: neon signs"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Vehicles/SM_Veh_Future_Cop_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "6d2e3ff93a24cdc4692bd749280c96c5",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Vehicles/SM_Veh_Future_Taxi_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "3453465b381fd294e8e0b2c3a9cb1950",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Vehicles/SM_Veh_Garbage_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "f923d13d00af49f4c888dd5f62f0835e",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Vehicles/SM_Veh_Hover_Bike_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "542b24be0fbb7404398c770175ca589d",
+      "use": "kit: neon street props"
+    },
+    {
+      "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
+      "path": "Assets/PolygonSciFiCity/Prefabs/Vehicles/SM_Veh_Retro_01.prefab",
+      "sourceSha256": "083339d86dc6b52c7485eab51cf39e13ebe114cd30a83f152eda7cc8d60d8d58",
+      "guid": "e3ab0b0c66c14454b893cffcb67dcc33",
+      "use": "kit: neon street props"
     },
     {
       "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",

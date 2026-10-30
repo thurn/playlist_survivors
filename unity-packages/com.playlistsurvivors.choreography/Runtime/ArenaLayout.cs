@@ -8,12 +8,15 @@ namespace PS.Choreography
 {
     public enum AreaType { Clearing, Path, Edge, Forest, Landmark, Structure }
 
-    /// <summary>A kit piece placed explicitly by a landmark or structure: offset from the area's anchor, yaw in degrees.</summary>
+    /// <summary>
+    /// A kit piece placed explicitly by a landmark or structure: offset from the area's anchor, yaw in
+    /// degrees, and <c>liftM</c> above the ground (signs centred on their pivot, ps-bop.3.7).
+    /// </summary>
     public sealed class PieceSpec
     {
         public string Prop;
         public Vector2 At;
-        public float YawDeg, Scale = 1f;
+        public float YawDeg, Scale = 1f, LiftM;
     }
 
     /// <summary>
@@ -222,7 +225,7 @@ namespace PS.Choreography
             for (int k = 0; k < pieces.Count; k++)
             {
                 JsonValue p = pieces[k];
-                area.Pieces[k] = new PieceSpec { Prop = p["prop"].AsString(), At = Vec(p["at"]), YawDeg = p["yawDeg"].AsFloat(0f), Scale = p["scale"].AsFloat(1f) };
+                area.Pieces[k] = new PieceSpec { Prop = p["prop"].AsString(), At = Vec(p["at"]), YawDeg = p["yawDeg"].AsFloat(0f), Scale = p["scale"].AsFloat(1f), LiftM = p["liftM"].AsFloat(0f) };
             }
             JsonValue goal = a["goal"];
             if (goal.Type == JsonType.Object)
@@ -385,7 +388,7 @@ namespace PS.Choreography
                 {
                     LayoutArea a = Areas[i];
                     if (a.Dressing != dressing) continue;
-                    foreach (PieceSpec s in a.Pieces) gen.Place(s.Prop, a.Center + s.At, DegToRad(s.YawDeg), s.Scale, i, true);
+                    foreach (PieceSpec s in a.Pieces) gen.Place(s.Prop, a.Center + s.At, DegToRad(s.YawDeg), s.Scale, i, true, s.LiftM);
                     if (a.Type == AreaType.Structure) gen.Structure(a, i);
                 }
                 foreach (AreaType t in new[] { AreaType.Path, AreaType.Clearing, AreaType.Forest, AreaType.Edge })
@@ -468,13 +471,13 @@ namespace PS.Choreography
                 return false;
             }
 
-            public void Place(string id, Vector2 p, float yaw, float scale, int area, bool force)
+            public void Place(string id, Vector2 p, float yaw, float scale, int area, bool force, float lift = 0f)
             {
                 int pi = PropIndex(id);
                 Footprint f = props[pi];
                 float body = Body(f, scale);
                 if (!force && Overlaps(p, body)) return;
-                Add(new Placement(pi, p, yaw, scale, area), body);
+                Add(new Placement(pi, p, yaw, scale, area, lift), body);
             }
 
             void Add(Placement pl, float body)
@@ -651,9 +654,10 @@ namespace PS.Choreography
         public readonly Vector2 Position;
         public readonly float Yaw, Scale;
         public readonly int Area;          // the landmark or structure that placed it, or -1 for scatter
-        public Placement(int prop, Vector2 position, float yaw, float scale, int area)
+        public readonly float Lift;        // metres above the ground (a piece's liftM)
+        public Placement(int prop, Vector2 position, float yaw, float scale, int area, float lift = 0f)
         {
-            Prop = prop; Position = position; Yaw = yaw; Scale = scale; Area = area;
+            Prop = prop; Position = position; Yaw = yaw; Scale = scale; Area = area; Lift = lift;
         }
 
         /// <summary>A footprint point (prefab frame, scale 1) on the ground.</summary>
