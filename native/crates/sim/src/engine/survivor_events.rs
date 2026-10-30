@@ -2,7 +2,7 @@
 use super::{Member, Sim};
 use crate::core::rng::{Part, Rng};
 use crate::recorder::FormationRecord;
-use crate::survivors::{SURVIVOR_CAP, SpawnEvent};
+use crate::survivors::SpawnEvent;
 
 #[derive(Clone, Debug)]
 struct Armed {
@@ -223,7 +223,9 @@ impl Sim {
     }
     pub(super) fn event_room(&mut self, count: usize) -> usize {
         let hero = self.hero_pose(self.st.w);
-        let cap = SURVIVOR_CAP.saturating_sub(self.st.spawner.waiting_bosses.len());
+        let cap = self
+            .survivor_cap()
+            .saturating_sub(self.st.spawner.waiting_bosses.len());
         let excess = (self.st.alive.len() + count).saturating_sub(cap);
         let mut far: Vec<_> = self
             .st

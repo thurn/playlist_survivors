@@ -775,7 +775,8 @@ impl Sim {
         let (tx, ty) = self.lead_dir_at(sk);
         let d = &env.director;
         let lead = self.by_level(sk, &|l| by_level(&d.camera, l).lead);
-        let mut zoom = self.by_level(sk, &|l| by_level(&d.camera, l).zoom);
+        let mut zoom = self.by_level(sk, &|l| by_level(&d.camera, l).zoom)
+            / crate::survivors::widen_at(&env.input.level.survivor_schedule, sk);
         for i in (0..self.st.punches.len()).rev() {
             let mut pu = self.st.punches[i];
             if pu.w.is_none() && sk >= pu.s - 1e-9 {

@@ -128,7 +128,7 @@ impl Sim {
                 if !self.st.signature.started {
                     self.retire_musical();
                     self.reclaim_boss_room(1);
-                    if self.st.alive.len() >= crate::survivors::SURVIVOR_CAP {
+                    if self.st.alive.len() >= self.survivor_cap() {
                         return;
                     }
                     self.st.plan.boss = Some(BossPlan::signature(config.kind.clone(), landing));

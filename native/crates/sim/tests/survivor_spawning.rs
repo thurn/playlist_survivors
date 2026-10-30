@@ -3,7 +3,7 @@
 mod common;
 use sim::content::level::load_level;
 use sim::schedule::reactive_song_map;
-use sim::survivors::{SpawnMinute, Spawner};
+use sim::survivors::{SURVIVOR_CAP, SpawnMinute, Spawner, WIDEN_EASE_S, widen_at};
 use stream::Beat;
 fn schedule() -> Vec<SpawnMinute> {
     load_level(
@@ -313,4 +313,91 @@ fn unknown_survivor_event_kinds_are_rejected() {
         )
         .is_err()
     );
+}
+
+fn load(src: &sim::content::SourceFile) -> Result<sim::content::level::LevelScript, String> {
+    load_level(
+        src,
+        common::library(),
+        &reactive_song_map(f64::INFINITY),
+        None,
+    )
+    .map_err(|e| e.to_string())
+}
+
+#[test]
+fn song_clock_rows_begin_on_the_song_whatever_the_run_clock_says() {
+    let level = load(&common::source("levels/action-showcase.yaml")).unwrap();
+    let schedule = &level.survivor_schedule[..2];
+    let groove = schedule[1].song_s.unwrap();
+    let mut state = Spawner::default();
+    state.prepare(schedule, 0.0, 0.0, &[]);
+    assert_eq!(state.minute, Some(0));
+    assert_eq!(state.take_due(0.0).len(), 1);
+    // Freezes have held the run clock 100 s behind the song: the next stop is still the row's
+    // song time (a run-clock row would wait for run minute 1).
+    assert_eq!(state.next_stop(schedule, groove - 0.1, 100.0), groove);
+    state.prepare(schedule, 0.5, groove - 0.5, &[]);
+    assert_eq!(state.minute, Some(0));
+    state.prepare(schedule, 1.0, groove, &[]);
+    assert_eq!(state.minute, Some(1));
+}
+
+#[test]
+fn the_view_widens_from_each_song_clock_row_eased_and_never_on_the_run_clock() {
+    let level = load(&common::source("levels/action-showcase.yaml")).unwrap();
+    let rows = &level.survivor_schedule;
+    let peak = rows.iter().position(|r| r.widen == Some(1.35)).unwrap();
+    let (at, before) = (rows[peak].song_s.unwrap(), rows[peak - 1].widen.unwrap());
+    assert_eq!(widen_at(rows, 0.0), 1.0);
+    assert_eq!(widen_at(rows, at - 0.01), before);
+    assert_eq!(widen_at(rows, at), before);
+    let middle = widen_at(rows, at + WIDEN_EASE_S / 2.0);
+    assert!((middle - before.midpoint(1.35)).abs() < 1e-9, "{middle}");
+    assert_eq!(widen_at(rows, at + WIDEN_EASE_S), 1.35);
+    // A run-clock schedule (every existing level) keeps the level's own camera.
+    assert!((0..1800).all(|s| widen_at(&schedule(), f64::from(s)) == 1.0));
+}
+
+#[test]
+fn the_cap_defaults_to_survivor_cap_and_a_level_may_raise_it() {
+    let survivors = load(&common::source("levels/survivors.yaml")).unwrap();
+    assert_eq!(survivors.survivors.unwrap().cap(), SURVIVOR_CAP);
+    let showcase = load(&common::source("levels/action-showcase.yaml")).unwrap();
+    assert!(showcase.survivors.unwrap().cap() >= 400);
+}
+
+#[test]
+fn song_clock_schedules_and_caps_are_validated() {
+    let showcase = common::source("levels/action-showcase.yaml");
+    let survivors = common::source("levels/survivors.yaml");
+    let edit = |src: &sim::content::SourceFile, from: &str, to: &str| {
+        let mut bad = src.clone();
+        assert!(bad.text.contains(from), "{from}");
+        bad.text = bad.text.replacen(from, to, 1);
+        bad
+    };
+    for (bad, why) in [
+        // songS on some rows only, or not rising.
+        (edit(&showcase, "\"songS\":5.4,", ""), "songS"),
+        (edit(&showcase, "\"songS\":5.4,", "\"songS\":0,"), "songS"),
+        // widen without song-clock rows.
+        (
+            edit(&survivors, "{\"minute\":0,", "{\"minute\":0,\"widen\":1.2,"),
+            "widen",
+        ),
+        // A crowd above the cap: the default 300, or the level's own.
+        (
+            edit(&survivors, "\"minimum\":30,", "\"minimum\":301,"),
+            "minimum above the cap 300",
+        ),
+        (
+            edit(&showcase, "cap: 1000", "cap: 300"),
+            "minimum above the cap",
+        ),
+        (edit(&showcase, "cap: 1000", "cap: 2001"), "cap"),
+    ] {
+        let e = load(&bad).expect_err(why);
+        assert!(e.contains(why), "{why}: {e}");
+    }
 }

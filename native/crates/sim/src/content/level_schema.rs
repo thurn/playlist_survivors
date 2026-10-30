@@ -389,12 +389,15 @@ pub fn level_script() -> Schema {
                 def("maxedHeal", min(0.0), json!(30)),
                 opt("endsWithSong", bool()),
                 opt("heroStands", bool()),
+                opt("cap", int_range(1.0, 2000.0)),
                 def(
                     "schedule",
                     array(object(vec![
                         req("minute", int_range(0.0, 30.0)),
+                        opt("songS", min(0.0)),
+                        opt("widen", positive()),
                         opt("enemies", array(id())),
-                        opt("minimum", int_range(0.0, 300.0)),
+                        opt("minimum", int_range(0.0, 2000.0)),
                         opt("frequency", positive()),
                         def("bosses", array(id()), json!([])),
                         def(

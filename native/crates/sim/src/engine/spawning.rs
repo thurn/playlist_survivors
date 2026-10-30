@@ -3,6 +3,19 @@ use super::Sim;
 use crate::core::rng::{Part, Rng};
 use crate::survivors::SURVIVOR_CAP;
 use std::rc::Rc;
+/// How far beyond the view a song-clock schedule's arena reaches, in view widths.
+const ARENA_BAND: f64 = 0.25;
+/// A song-clock schedule's arena crowd per enemy wanted on screen: where it starts and its
+/// bounds. Each tick moves it by ARENA_GAIN times the view's shortfall (a share of the target), and
+/// pushes that tick's arena by ARENA_PUSH times it: fresh spawns take a second or two to walk into
+/// view, so the steering is gentle and the push carries the rest.
+const ARENA_START: f64 = 2.0;
+const ARENA_SCALE: (f64, f64) = (1.0, 4.0);
+const ARENA_GAIN: f64 = 0.1;
+const ARENA_PUSH: f64 = 2.0;
+/// How far a song-clock row's crowd leads its section (s, at most a quarter of the row before):
+/// spawns take that long to walk into view, and a falling crowd needs the hero's time to thin.
+const ARENA_LEAD: f64 = 2.0;
 impl Sim {
     fn spawning_active(&self) -> bool {
         self.st.survivor.is_some()
@@ -24,6 +37,14 @@ impl Sim {
             self.st.s,
             self.st.freeze.total_s,
         )
+    }
+    /// The level's population cap (`SURVIVOR_CAP` unless the level raises it).
+    pub(super) fn survivor_cap(&self) -> usize {
+        self.env
+            .input
+            .level
+            .survivors
+            .map_or(SURVIVOR_CAP, |s| s.cap())
     }
     fn alive_count(&self) -> usize {
         self.st
@@ -73,6 +94,77 @@ impl Sim {
         }
         self.st.spawner.spawned += 1;
     }
+    /// The view grown by a quarter of its width on every side: a song-clock schedule's arena,
+    /// where its fresh spawns land (just out of view) and its crowd is counted.
+    fn arena(&self) -> [f64; 4] {
+        let v = self.st.camera.view();
+        let band = (v[2] - v[0]) * ARENA_BAND;
+        [v[0] - band, v[1] - band, v[2] + band, v[3] + band]
+    }
+    fn in_arena(&self, id: usize, a: &[f64; 4]) -> bool {
+        let (x, y) = self.pos(id, self.st.w);
+        x >= a[0] && x <= a[2] && y >= a[1] && y <= a[3]
+    }
+    /// The enemies in the camera's view.
+    fn on_screen(&self) -> usize {
+        let v = self.st.camera.view();
+        self.st
+            .alive
+            .iter()
+            .filter(|&&id| self.st.foes[id].alive && self.in_arena(id, &v))
+            .count()
+    }
+    /// A song-clock schedule's crowd: the enemies in the arena.
+    fn crowd(&self) -> usize {
+        let a = self.arena();
+        self.st
+            .alive
+            .iter()
+            .filter(|&&id| self.st.foes[id].alive && self.in_arena(id, &a))
+            .count()
+    }
+    /// A song-clock schedule keeps its crowd in the arena, so it rises and falls with the music:
+    /// ordinary enemies left outside it (out of sight) leave the field.
+    fn release_stranded(&mut self) {
+        let a = self.arena();
+        let stranded: Vec<usize> = self
+            .st
+            .alive
+            .iter()
+            .copied()
+            .filter(|&id| {
+                let f = &self.st.foes[id];
+                f.alive
+                    && !f.survivor_boss
+                    && f.member.is_none()
+                    && self.st.boss_foe != Some(id)
+                    && !self.in_arena(id, &a)
+            })
+            .collect();
+        self.expire_event_members(&stranded);
+    }
+    /// A song-clock row's minimum is its crowd on screen: the crowd it keeps in the arena (the view
+    /// and a band round it, where its spawns land) is steered toward a size that shows it.
+    fn arena_target(&mut self, minimum: usize, scale: f64) -> usize {
+        let rows = &self.env.input.level.survivor_schedule;
+        let next = self.st.spawner.minute.and_then(|m| {
+            let (this, next) = (rows.get(m)?.song_s?, rows.get(m + 1)?);
+            let lead = ARENA_LEAD.min(0.25 * (next.song_s? - this));
+            (next.song_s? - self.st.s <= lead)
+                .then_some(next.minimum)
+                .flatten()
+        });
+        let wanted = (next.unwrap_or(minimum) as f64 * scale).ceil();
+        let shortfall = (wanted - self.on_screen() as f64) / wanted.max(1.0);
+        let sp = &mut self.st.spawner;
+        if sp.arena_scale == 0.0 {
+            sp.arena_scale = ARENA_START;
+        }
+        sp.arena_scale =
+            (sp.arena_scale + ARENA_GAIN * shortfall).clamp(ARENA_SCALE.0, ARENA_SCALE.1);
+        let arena = (sp.arena_scale + ARENA_PUSH * shortfall).max(ARENA_SCALE.0);
+        (wanted * arena).ceil() as usize
+    }
     pub(super) fn tick_spawner(&mut self) {
         if !self.spawning_active() {
             return;
@@ -93,14 +185,15 @@ impl Sim {
                 .extend(batch.bosses.iter().cloned());
         }
         self.reserve_boss_room();
-        let room = self.alive_count() < SURVIVOR_CAP;
+        let cap = self.survivor_cap();
+        let room = self.alive_count() < cap;
         if self
             .st
             .spawner
             .bosses_due(self.st.s, &self.log.beats[..self.st.ingested.beats], room)
         {
             let mut bosses = std::mem::take(&mut self.st.spawner.waiting_bosses).into_iter();
-            while self.alive_count() < SURVIVOR_CAP {
+            while self.alive_count() < cap {
                 let Some(role) = bosses.next() else {
                     break;
                 };
@@ -111,22 +204,42 @@ impl Sim {
         }
         // Reserve open slots while a held boss waits for its grid step. A regular refill
         // must not continually take the slot back before the boss can arrive.
-        let regular_cap = SURVIVOR_CAP.saturating_sub(self.st.spawner.waiting_bosses.len());
+        let regular_cap = cap.saturating_sub(self.st.spawner.waiting_bosses.len());
         let scale = self
             .by_level(self.st.s, &|l| {
                 crate::reactive::director::by_level(&self.env.director.population.level_scale, l)
             })
             .clamp(0.6, 1.3);
+        let song_clock = self
+            .env
+            .input
+            .level
+            .survivor_schedule
+            .first()
+            .is_some_and(|row| row.song_s.is_some());
         for batch in batches {
             if batch.roster.enemies.is_empty() {
                 continue;
             }
-            let target = (batch.roster.minimum as f64 * scale).ceil() as usize;
+            let target = if song_clock {
+                self.arena_target(batch.roster.minimum, scale)
+            } else {
+                (batch.roster.minimum as f64 * scale).ceil() as usize
+            };
+            let crowd = |sim: &mut Self| {
+                if song_clock {
+                    sim.release_stranded();
+                    sim.crowd()
+                } else {
+                    sim.alive_count()
+                }
+            };
             // Quiet passages can breathe once their bounded target is satisfied.
             // Skipped ticks are discarded, never saved as a later refill burst.
-            if scale < 0.99 && self.alive_count() >= target.min(regular_cap) {
+            if scale < 0.99 && crowd(self) >= target.min(regular_cap) {
                 continue;
             }
+            let mut before = 0;
             loop {
                 for role in &batch.roster.enemies {
                     if self.alive_count() >= regular_cap {
@@ -134,9 +247,16 @@ impl Sim {
                     }
                     self.spawn_role(role, false);
                 }
-                if self.alive_count() >= target.min(regular_cap) {
+                let now = crowd(self);
+                // (A pass that adds nothing to an arena crowd, its spawns landing outside it,
+                // ends the refill rather than spawning and releasing forever.)
+                if self.alive_count() >= regular_cap
+                    || now >= target.min(regular_cap)
+                    || (song_clock && now <= before)
+                {
                     break;
                 }
+                before = now;
             }
         }
     }
@@ -156,6 +276,21 @@ mod tests {
     use stream::StreamLog;
 
     fn sim() -> Sim {
+        let mut s = sim_on("levels/survivors.yaml");
+        // Isolate scheduled holders, leaving exact boss and treasure rows intact.
+        for row in &mut Rc::get_mut(&mut s.env)
+            .unwrap()
+            .input
+            .level
+            .survivor_schedule
+        {
+            row.minimum = Some(0);
+            row.enemies = Some(Vec::new());
+            row.events.clear();
+        }
+        s
+    }
+    fn sim_on(level: &str) -> Sim {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
         let source = |path: &Path| SourceFile {
             name: path.to_string_lossy().into(),
@@ -168,19 +303,13 @@ mod tests {
             .collect();
         paths.sort();
         let lib = load_content(&paths.iter().map(|p| source(p)).collect::<Vec<_>>()).unwrap();
-        let mut level = load_level(
-            &source(&root.join("levels/survivors.yaml")),
+        let level = load_level(
+            &source(&root.join(level)),
             &lib,
             &reactive_song_map(f64::INFINITY),
             None,
         )
         .unwrap();
-        // Isolate scheduled holders, leaving exact boss and treasure rows intact.
-        for row in &mut level.survivor_schedule {
-            row.minimum = Some(0);
-            row.enemies = Some(Vec::new());
-            row.events.clear();
-        }
         let mut input = SimInput::new(level, &lib, &indexmap::IndexMap::new(), 0.5, false);
         input.zen = true;
         Sim::new(
@@ -191,6 +320,52 @@ mod tests {
         )
     }
 
+    #[test]
+    fn a_song_clock_crowd_passes_the_default_cap_and_strays_out_of_sight_leave() {
+        let mut s = sim_on("levels/action-showcase.yaml");
+        let schedule = s.env.input.level.survivor_schedule.clone();
+        let peak = schedule
+            .iter()
+            .position(|r| r.minimum == Some(384))
+            .unwrap();
+        // The final peak's row begins on the song, though the run clock (held by freezes) is
+        // far behind it.
+        let at = schedule[peak].song_s.unwrap();
+        s.st.spawner.minute = Some(peak - 1);
+        (s.st.s, s.st.w, s.st.run_s) = (at, at, 30.0);
+        s.tick_spawner();
+        assert_eq!(s.st.spawner.minute, Some(peak));
+        let first: Vec<usize> = s.st.alive.clone();
+        assert!(
+            first.len() > SURVIVOR_CAP && first.len() <= s.survivor_cap(),
+            "{} alive",
+            first.len()
+        );
+        let arena = s.arena();
+        assert!(
+            first
+                .iter()
+                .all(|&id| s.in_arena(id, &arena) || s.st.foes[id].survivor_boss)
+        );
+        assert!(s.on_screen() < first.len(), "fresh spawns land out of view");
+        // The camera moves far off: every enemy is out of sight, and the next tick sends them
+        // off the field and gathers a fresh crowd round the new view.
+        s.st.camera.x += 1e4;
+        (s.st.s, s.st.w, s.st.run_s) = (at + 0.25, at + 0.25, 30.25);
+        s.tick_spawner();
+        assert!(first.iter().all(|&id| {
+            let f = &s.st.foes[id];
+            !f.alive || f.survivor_boss || f.member.is_some()
+        }));
+        let arena = s.arena();
+        assert!(s.st.alive.len() > SURVIVOR_CAP);
+        // (Only the final peak's boss, which never leaves, stays behind.)
+        assert!(
+            s.st.alive
+                .iter()
+                .all(|&id| s.in_arena(id, &arena) || s.st.foes[id].survivor_boss)
+        );
+    }
     #[test]
     fn big_four_spawn_on_their_minutes_scale_actual_hp_and_drop_scripted_tiers() {
         for level in [1, 7, 35] {

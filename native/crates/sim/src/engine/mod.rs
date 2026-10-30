@@ -2336,6 +2336,7 @@ mod tests {
                 maxed_heal: 30.0,
                 ends_with_song: false,
                 hero_stands: false,
+                cap: None,
             });
         sim.st.run_s = 1.9;
         let hp = sim.st.health;
@@ -2359,6 +2360,7 @@ mod tests {
                 maxed_heal: 30.0,
                 ends_with_song: false,
                 hero_stands: true,
+                cap: None,
             });
         let hp = sim.st.health;
         let floor = sim.health_max() * 0.1;
@@ -2386,6 +2388,7 @@ mod tests {
                 maxed_heal: 30.0,
                 ends_with_song: false,
                 hero_stands: false,
+                cap: None,
             });
         let rec = Rc::new(RefCell::new(LogRecorder::default()));
         sim.rec = Box::new(Rc::clone(&rec));

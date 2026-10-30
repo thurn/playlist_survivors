@@ -3,7 +3,6 @@
 use super::{FoeSlot, Member, RingPath, Sim, SlotPlace};
 use crate::core::rng::{Part, Rng};
 use crate::recorder::{DanceRecord, FormationRecord};
-use crate::survivors::SURVIVOR_CAP;
 use stream::Level;
 
 const GROUP_CAP: usize = 40;
@@ -127,11 +126,12 @@ impl Sim {
         self.reclaim_boss_room(self.st.spawner.waiting_bosses.len());
     }
     pub(super) fn reclaim_boss_room(&mut self, need: usize) {
-        let need = need.min(SURVIVOR_CAP);
+        let cap = self.survivor_cap();
+        let need = need.min(cap);
         if need == 0 {
             return;
         }
-        let excess = (self.st.alive.len() + need).saturating_sub(SURVIVOR_CAP);
+        let excess = (self.st.alive.len() + need).saturating_sub(cap);
         if excess == 0 {
             return;
         }

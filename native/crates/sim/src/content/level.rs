@@ -253,6 +253,17 @@ pub struct Survivors {
     /// falls (the showcase, which nobody plays).
     #[serde(default)]
     pub hero_stands: bool,
+    /// The most enemies alive at once (`SURVIVOR_CAP` when absent; the showcase raises it).
+    #[serde(default)]
+    pub cap: Option<f64>,
+}
+
+impl Survivors {
+    /// The most enemies alive at once.
+    pub fn cap(&self) -> usize {
+        self.cap
+            .map_or(crate::survivors::SURVIVOR_CAP, |c| c as usize)
+    }
 }
 
 /// The loaded level script.
@@ -1164,7 +1175,29 @@ pub fn load_level(
         .and_then(|s| s.get("schedule"))
         .and_then(Value::as_array)
     {
+        let cap = data["survivors"]["cap"]
+            .as_f64()
+            .unwrap_or(crate::survivors::SURVIVOR_CAP as f64);
+        let song_clock = schedule.first().is_some_and(|m| m.get("songS").is_some());
+        let mut last_song_s = f64::NEG_INFINITY;
         for (i, minute) in schedule.iter().enumerate() {
+            match minute["songS"].as_f64() {
+                Some(t) if song_clock && t > last_song_s => last_song_s = t,
+                None if !song_clock => {}
+                _ => issues.push(at(
+                    "survivors.schedule",
+                    "songS must be on every row or none, rising".into(),
+                )),
+            }
+            if !song_clock && minute.get("widen").is_some() {
+                issues.push(at("survivors.schedule", "widen needs songS rows".into()));
+            }
+            if minute["minimum"].as_f64().is_some_and(|m| m > cap) {
+                issues.push(at(
+                    "survivors.schedule",
+                    format!("minimum above the cap {cap}"),
+                ));
+            }
             if minute["minute"].as_f64() != Some(i as f64) {
                 issues.push(at(
                     "survivors.schedule",

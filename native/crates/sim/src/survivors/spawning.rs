@@ -42,8 +42,15 @@ pub struct Treasure {
 }
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 pub struct SpawnMinute {
+    /// The row's index; without `song_s`, its start on the run clock (minutes).
     #[serde(deserialize_with = "count")]
     pub minute: usize,
+    /// The row's start in song seconds instead (the showcase's rows follow the song's sections,
+    /// so a level-up's freeze does not shift them).
+    #[serde(rename = "songS")]
+    pub song_s: Option<f64>,
+    /// How much wider than the level's camera the view is from this row on (eased in).
+    pub widen: Option<f64>,
     pub enemies: Option<Vec<String>>,
     #[serde(default, deserialize_with = "optional_count")]
     pub minimum: Option<usize>,
@@ -52,6 +59,35 @@ pub struct SpawnMinute {
     pub bosses: Vec<String>,
     pub events: Vec<SpawnEvent>,
     pub treasure: Vec<Treasure>,
+}
+impl SpawnMinute {
+    /// The row's start on the song clock, given the run clock's offset (song = run + offset).
+    fn start(&self, offset: f64) -> f64 {
+        self.song_s.unwrap_or(self.minute as f64 * 60.0 + offset)
+    }
+    /// Whether the row has begun at run time `run` and song time `song`.
+    fn begun(&self, run: f64, song: f64) -> bool {
+        match self.song_s {
+            Some(at) => at <= song + 1e-9,
+            None => self.minute as f64 * 60.0 <= run + 1e-9,
+        }
+    }
+}
+/// How long the camera eases from one row's `widen` to the next's (song s).
+pub const WIDEN_EASE_S: f64 = 2.0;
+/// The view's widening at song time `song`: each song-clock row's `widen` (1 when absent), eased
+/// over `WIDEN_EASE_S` from its start. Run-clock rows never widen.
+pub fn widen_at(schedule: &[SpawnMinute], song: f64) -> f64 {
+    let mut from = 1.0;
+    for row in schedule {
+        let Some(at) = row.song_s.filter(|&at| at <= song) else {
+            continue;
+        };
+        let to = row.widen.unwrap_or(1.0);
+        let u = ((song - at) / WIDEN_EASE_S).clamp(0.0, 1.0);
+        from += (to - from) * u * u * (3.0 - 2.0 * u);
+    }
+    from
 }
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct SpawnRoster {
@@ -94,6 +130,9 @@ pub struct Spawner {
     pub waiting_bosses: Vec<ScheduledBoss>,
     pub spawned: usize,
     boss_song: Option<f64>,
+    /// A song-clock schedule's arena crowd per enemy wanted on screen (0 until its first tick),
+    /// steered by what the view shows.
+    pub arena_scale: f64,
 }
 #[derive(Clone, Debug)]
 pub struct SpawnBatch {
@@ -108,13 +147,14 @@ impl Spawner {
         let phase = self.minute.map_or(0, |m| m + 1);
         let boundary = schedule
             .get(phase)
-            .map_or(f64::INFINITY, |m| m.minute as f64 * 60.0);
-        let deadline = boundary.min(if self.minute.is_some() {
-            self.next_tick
+            .map_or(f64::INFINITY, |m| m.start(offset));
+        let tick = if self.minute.is_some() {
+            self.next_tick + offset
         } else {
             f64::INFINITY
-        });
-        (deadline + offset)
+        };
+        boundary
+            .min(tick)
             .max(song)
             .min(
                 self.pending
@@ -129,10 +169,7 @@ impl Spawner {
     pub fn prepare(&mut self, schedule: &[SpawnMinute], run: f64, song: f64, beats: &[Beat]) {
         let next = self.minute.map_or(0, |m| m + 1);
         let mut bosses = Vec::new();
-        if let Some(phase) = schedule
-            .get(next)
-            .filter(|p| p.minute as f64 * 60.0 <= run + 1e-9)
-        {
+        if let Some(phase) = schedule.get(next).filter(|p| p.begun(run, song)) {
             self.minute = Some(next);
             self.roster.apply(phase);
             bosses.extend(phase.bosses.iter().map(|role| ScheduledBoss {
