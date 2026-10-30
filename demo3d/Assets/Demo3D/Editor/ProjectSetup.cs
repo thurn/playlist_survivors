@@ -23,6 +23,7 @@ namespace Demo3D.EditorTools
         public const string PipelinePath = SettingsDir + "/URP-Demo.asset";
         public const string RendererPath = SettingsDir + "/URP-Demo_Renderer.asset";
         public const string EmptyScenePath = "Assets/Demo3D/Scenes/Empty.unity";
+        const string PostProcessDataPath = "Packages/com.unity.render-pipelines.universal/Runtime/Data/PostProcessData.asset";
 
         public static void Configure()
         {
@@ -80,6 +81,10 @@ namespace Demo3D.EditorTools
             Set(r, "m_DepthPrimingMode", (int)DepthPrimingMode.Forced);
             Set(r, "m_CopyDepthMode", 0); // after opaques
             r.ApplyModifiedPropertiesWithoutUndo();
+            // Without its post-process data URP turns post-processing off altogether: the night
+            // look's bloom, tonemapping, grading and vignette (NightLook) never ran before ps-e8r.2.
+            renderer.postProcessData = AssetDatabase.LoadAssetAtPath<PostProcessData>(PostProcessDataPath)
+                ?? throw new InvalidOperationException("ProjectSetup: no URP post-process data at " + PostProcessDataPath);
             EnsureSsao(renderer);
             EditorUtility.SetDirty(renderer);
 
