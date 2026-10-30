@@ -164,7 +164,8 @@ should feel like watching an expert play a finished pixel-art game.
   110 ms step with a small hop on each beat, from clearing to clearing, then
   a stand until the next. Sword combos wind up in 190 ms and land their blows
   on beats, a swing on every beat while the horde is in reach. The horde
-  holds off a 2 m clear ring round the knight, as in a horde survivor game,
+  holds off a 2.5 m clear ring round the knight (demo3d's is 2 m; a
+  side-view monster south of the knight draws 1.75 m up over him), as in a horde survivor game,
   so it is never buried in melee; casters still fire from beyond it.
   Spells fire on the musical grid: rings on downbeats, bolts on eighth notes,
   lightning on accents, and a beam sweep in the climax.

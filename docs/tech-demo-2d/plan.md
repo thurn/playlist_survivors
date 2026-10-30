@@ -1013,7 +1013,10 @@ this notes commit. dotnet 40 of 40; `demo2d test` 97 of 97. [Evidence](../../dem
 
 - **Status:** done 2026-10-29, after the operator's review of PX10: the hero was buried in the horde,
   swung slowly and off the music, and floated. The fix copies the native (Rust) game.
-- **The clear ring:** `clearRadiusM` 2 m in the level script, demo3d's ring. Casters still fire from
+- **The clear ring:** `clearRadiusM` 2.5 m in the level script. demo3d's 2 m left the knight
+  swamped in the stills, since a monster south of him draws 1.75 m up the screen; 3 m held the climax's
+  crowd so deep the boss could not walk in. The hero's reach and hit shapes grow about 1.1 m to meet
+  the ring's edge, and the boss's reach is 12 m so it casts from behind the crowd. Casters still fire from
   beyond it (a core change: the ring had stopped every monster attack, so no bolt or hellfire flew).
 - **Swings** (`windupS` 0.19 in the roster, the native `swings.windupMs`): each combo's clip starts
   190 ms before its impact at `max(1, impact / windup)` speed, the native sword's
@@ -1032,7 +1035,7 @@ this notes commit. dotnet 40 of 40; `demo2d test` 97 of 97. [Evidence](../../dem
   path distance and adding two bridges were tried first and barely helped (122 to 129).
 - **The boss:** entering toward the cliff ledge it stalled at the stream's east end, and toward the
   great tree in the forest's trunks (1.4 m radius); `bossFrom` is now the great clearing (in view at
-  163.9 s), its reach 10 m so it casts from behind the climax's crowd, and `bossFallsLast` (opt-in)
+  163.9 s), and `bossFallsLast` (opt-in)
   spares it from the ending's earlier clearing slams so it still falls to the last.
 - **demo3d is unchanged:** every core change is opt-in or touches only casters under a ring (demo3d
   has none); its song dump hash is the same before and after (FNV-1a `8b9387cc84d560ef`).
