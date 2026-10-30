@@ -162,6 +162,44 @@ packing, about 2.4 monsters per m² for 0.4 m radii. The search's
 ceiling is the smaller of 12,000 and that capacity. A point that reaches it
 is reported as capacity-bound.
 
+### Overdrive's offline cost
+
+`--intensity overdrive` (epic ps-5pd) is for a trailer recorded at fixed time on a powerful
+machine, so it has no frame-time target: its limits are capacity, and the full song must play
+windowless without errors. Measured on the Mac (Apple M5 Max) with the IL2CPP player, the
+headline combination `--intensity overdrive --palette neon --monster-style crystal`
+([evidence](../../demo3d/evidence/overdrive/showcase/README.md)):
+
+- **It plays.** Windowless at fixed time the whole song reaches `done at song time 198.98` with
+  no exceptions, no effect spawns rejected and no effect light dropped: 15,225 effect spawns
+  (normal: about 9,500), 4,637 deaths broken into shards and at most 7,475 shards live (the
+  feel's shard cap of 240 sets; normal crystal peaks at about 12,000). The player holds up to
+  3,983 monsters active, under the crowd's 16,384 slots a type.
+- **Simulating it** at fixed time takes 228 s of wall time for the 199 s song, about 19 ms a
+  frame without drawing. The crystal shatter's PhysX is most of it: per section, the median
+  frame and the shatter's share:
+
+  | section | frame median / max (ms) | shatter (ms) | shards max | particles max |
+  |---|---|---|---|---|
+  | drop-1 | 18.3 / 108 | 16.2 | 7,260 | 21,452 |
+  | groove-2 | 16.6 / 50 | 14.7 | 7,230 | 15,369 |
+  | build | 15.8 / 36 | 12.3 | 6,917 | 12,930 |
+  | drop-2 | 19.2 / 153 | 16.4 | 7,219 | 45,099 |
+  | final-peak | 24.6 / 76 | 21.6 | 7,320 | 56,198 |
+
+  Overdrive with the stock look (no shatter) runs its peaks at a median 1.2 to 2.2 ms a frame
+  in real time, its timeline evaluation 0.7 to 1.6 ms of it; normal neon + crystal, 0.3 to
+  5 ms.
+- **Drawing it:** `--gpu-probe-at` (CPU submission and GPU in series, 1080p, MSAA 4×) gives
+  62 to 91 ms a frame at drop-1's slam (49.6 s), drop-2 (136.3 s) and the final peak (173.5
+  and 180 s), against 22 to 46 ms for normal neon + crystal at the same times. Expect a
+  windowed fixed-time capture of the whole song to take roughly 20 minutes (11,940 frames at
+  about 100 ms each).
+- **Real time** is not a goal and doesn't hold: unpaced, neon + crystal's peaks ran at a median
+  15 to 300 ms a frame, varying run to run, because the shatter's step grows with the frame. A
+  real-time run then shatters fewer deaths (about 3,000 to 4,500). Watch it windowed for the
+  feel, but record the trailer at fixed time.
+
 ## Engine and Rendering Setup
 
 The project uses Unity 6.6 (6000.6.7f1, installed on Cygnus during
