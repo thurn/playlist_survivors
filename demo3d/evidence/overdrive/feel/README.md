@@ -98,7 +98,7 @@ The whole song windowless (`--fixed-time --intensity overdrive --palette neon
 --monster-style crystal`) reached `done at song time 198.98` with no exceptions:
 15,225 effect spawns, 4,637 deaths shattered, and at most 7,475 shards live. That
 is fewer than normal crystal's 12,051 at its own density
-([shatter/burst](../../shatter/burst/README.md)), a load the shatter already carries.
+([shatter/impact](../../shatter/impact/README.md)), a load the shatter already carries.
 
 ## Without the flag
 

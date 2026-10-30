@@ -101,14 +101,16 @@ right. It must stay as punchy at 100 hits a beat as at one.
   `heavyBlowKills`).
 - **The crystal shatter's sounds** (epic ps-2iq) are the client's own, worked out from the
   timeline when the run starts (`ShatterSounds`), so the live scheduler, `--dump-sounds` and
-  the offline mix share them. Each crystal death's release beat gets three layers: a crunching
-  ice break (RPG3 IceBreak), a bright glass spray (Universal SHATTER Glass Medium) and, as the
-  shards land about 0.4 s later, a quieter fragment tinkle. They are aggregated as above, at most
+  the offline mix share them. Each crystal death's killing blow, where its shards break, gets
+  three layers on top of the creature's death cry at the same blow: a crunching ice break (RPG3
+  IceBreak), a bright glass spray (Universal SHATTER Glass Medium) and, as the shards land about
+  0.4 s later, a quieter fragment tinkle. They are aggregated as above, at most
   3 voices per beat and layer, going to the beat's largest distinct types first. Each voice is
   pitched by its type's size, as (1.8 m / height)^0.3 within 0.8 to 1.3, with ±4% by seed. So a
   troll breaks low, a slime rings high, and a crowded beat isn't one sample. The mix resamples
-  pitched events. Choices and the mix check:
-  [shatter/burst](../../demo3d/evidence/shatter/burst/README.md).
+  pitched events, and with the glass and the cry landing together the song's peak before the
+  limiter is 1.78 against 1.71 without the shatter, so the levels stand. Choices and the mix check:
+  [shatter/impact](../../demo3d/evidence/shatter/impact/README.md).
 - **Scheduling.** The client schedules each sound event with `PlayScheduled`
   at its DSP time once it comes within 150 ms, using the timeline's
   lookahead. A pool of 32 voices covers the demo.

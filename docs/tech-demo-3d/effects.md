@@ -128,21 +128,23 @@ and our own draw shader; no vendor file changes. Per effect:
   washed the ground and the horde yellow-white at a climax.
 
 **The crystal shatter's burst** (epic ps-2iq,
-[evidence](../../demo3d/evidence/shatter/burst/README.md)): wherever Crystal draws a type, its
-deaths skip their death burst. On the beat its shards release, `crystal-burst` spawns at the
-held pose's centre instead: the selection's `client.crystalShatter`, scaled by the monster's
-height. It is built in, with no prefab: an entry without one is built from its `sparks`, which
-may be a list of layers. It has two layers, both twinkling (their brightness flickers over the
-life, like facets catching the light): fine stretched glints thrown out fast, and slow crystal
-dust that bursts out, stops and floats down. It has no glow quad, so the shards stay in sight.
-Each spawn carries a **tint**, the type's gem colour, so one definition serves every type. A
-tinted spawn's heat ramp runs from the gem squared, through the gem, to a white core, and its
-light cue takes the gem's colour: a 0.3 s flash of range 4.5 m, set 1.2 m above the burst (a
-cue's `height`) so it washes the floor and the neighbours rather than burning a hot spot under a
-body lying on the floor. The releases on one beat share their flash: each spawn's light is
-1/√n of the n releases on its beat (the spawn's `LightGain`), so seven goblins breaking together
-flash about 2.6 times as hard as one, not seven, which washed the view lime
-([final pass](../../demo3d/evidence/shatter/final/README.md)).
+[evidence](../../demo3d/evidence/shatter/impact/README.md)): wherever Crystal draws a type, its
+deaths skip their death burst. At the killing blow, where its shards break, `crystal-burst`
+spawns where the blow lands on the body (`CrystalShatter.HitPoint`) instead: the selection's
+`client.crystalShatter`, scaled by the monster's height and turned along the blow (the spawn's
+yaw turns the effect's +z). It is built in, with no prefab: an entry without one is built from
+its `sparks`, which may be a list of layers. Its two layers are thrown forward in cones along the
+blow (a spark layer's `pitch` and `spread`), through and past the breaking body, with the shards:
+34 small bright chips (4 to 10 m/s, slightly stretched) and 80 grains of fine crystal dust (1.5
+to 6 m/s, in a wider cone), both slowed by drag (`limit`, `dampen`), shrinking (`shrink`) and
+fading out smoothly (`fade`) within 0.4 to 0.7 s. Nothing blinks or flickers, and it has no glow
+quad, so the shards stay in sight. Each spawn carries a **tint**, the type's gem colour, so one
+definition serves every type. A tinted spawn's heat ramp runs from the gem squared, through the
+gem, to a white core: the chips start white-hot and cool into the gem, the dust stays in the
+gem. Its light cue takes the gem's colour: a 0.25 s flash of intensity 2.2 and range 4 m, set
+0.4 m above the burst (a cue's `height`). The breaks at one moment (one blow's kills) share their
+flash: each spawn's light is 1/√n of the n breaks (the spawn's `LightGain`), so a slam that breaks
+seven goblins flashes about 2.6 times as hard as one, not seven, which washed the view lime.
 
 The horde's hit flash (CrowdSkinned, `lighting.crowd.flash` in the layout)
 is an ember rather than white: at the final peak, flashing bodies alone made

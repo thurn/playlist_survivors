@@ -41,8 +41,9 @@ implementations, not features.
   target's early depth rejection.
 - **Lighting.** Forward+ shading with the sun, ambient and every effect light.
 - **Reactions.** Hit flash, knockback, death clip, then a 1-beat hold and a
-  1-beat dissolve with an emissive edge. A monster drawn by Crystal instead cracks over the hold
-  and shatters into physical shards on the next beat ([The crystal shatter](#monster-styles)).
+  1-beat dissolve with an emissive edge. A monster drawn by Crystal instead plays no death clip:
+  it shatters into physical shards on the killing blow's frame, from whatever pose it is in
+  ([The crystal shatter](#monster-styles)).
 - **Variation.** Per-instance tint from the type's own color sets, plus small
   scale jitter.
 - **Weapons.** Weapons ride their hand bone rigidly.
@@ -210,71 +211,79 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
     still flies its triangles apart.
 - **The crystal shatter** (epic ps-2iq) replaces crystal's triangle shatter wherever Crystal draws
   a type (`--monster-style crystal`, the mix's slimes):
-  - **Baked shards.** CrowdBaker poses each type's LOD0 style mesh as the crowd holds its death
-    (the death clip at max(end, impact), from the 30 Hz bone texture as the default cuts draw it)
-    and `CrowdShardBaker` cuts it into 20 to 40 chunks of varied size: surface patches around
-    weighted seeds, split into connected pieces and merged by contact, each closed by inside faces
-    to an apex inside the body (the vendor meshes are rarely closed, so a Voronoi slice would have
-    nothing to cap). Each chunk has a convex collider of at most 42 support points. They go to
-    `CrowdShards.asset` beside the style meshes, which only a crystal run loads.
-  - **The swap.** At the start of the hold (`TimelineEvaluator.State.Held`) DemoMain hides the
-    instance and `CrystalShatter` places the type's shards from a pool at its position, yaw and
-    scale. Their skin is the style mesh's own triangles at that pose, drawn by
-    `CrystalShard.shader` with Crystal's surface (`CrystalCommon.hlsl`), so the frame doesn't
-    change; only the shadow does, by a few pixels, since the crowd casts from the LOD2 shadow
-    proxy.
-  - **Cracks over the hold.** Glowing seams spread across the assembled shards from where the blow
-    landed (the pose's edge toward the hero), at a steady pace that covers the body by 80% of the
-    hold: the cuts between chunks (the skin's edges on a cut, marked in the bake's UV2) and, at a
-    third of the brightness, hairline cracks on a fifth of the edges inside each chunk. They are
-    thin at the front and wider behind it, and their heat builds to the beat; from 55% of the hold
-    the shards swell apart (3%) and tremble, harder toward the beat (`CrystalShard.shader`'s
-    CrackGlow, `CrystalShatter.Place`).
-  - **The release.** On the next beat (where the dissolve used to start) the shards pop a few
-    millimetres apart, their inside faces show (brighter and more saturated) and the cracks flare;
-    they hold there for 4 frames (hit-stop on the dying monster only), then become PhysX
-    rigidbodies, kicked outward from the hit point (harder near it), along the killing blow (the
-    hero to the monster) and up. Each shard's share varies widely: a quarter slump where they
-    stand, one in eight flies far, and the largest chunks get about half the smallest's share.
-    Small shards spin fastest, and the heat cools over the first half second of flight. Gravity is
-    2.2 times Earth's, so they clack down, bounce once or twice, skitter and settle into a pile on
-    a floor collider under y = 0, and sink after 5 s. The pop also brings the burst: gem-tinted
-    glints and crystal dust with a flash of light in place of the death burst
-    ([effects.md](effects.md#the-look)), and a layered glass break pitched by the type's size
-    ([camera-and-sound.md](camera-and-sound.md#sound)). Both are worked out from the timeline
-    ahead of time (`CrystalShatter.Releases`, at `ClipSchedule.FadeStart`). Physics steps on the song clock in script
-    mode at 120 Hz, so `--fixed-time` runs repeat exactly; deaths before `--start-at` are not
-    reconstructed. Tuning and filmstrips: [shatter/motion](../../demo3d/evidence/shatter/motion/README.md).
+  - **At the blow.** A crystal death breaks on the killing blow's impact frame, from whatever pose
+    the monster is in (walking, attacking, flinching), with no death clip, hold or pause. Its death
+    plays no clip (`TimelineEvaluator.BreaksAtImpact`, `ClipSchedule.ActiveAction`'s `skipDeath`),
+    so up to the blow it shows exactly what it would have without dying; from the blow it is
+    `State.Broken`, and DemoMain hides the instance and hands it to `CrystalShatter.Breaking`.
+  - **Baked shards on the rest pose.** CrowdBaker gives `CrowdShardBaker` each type's LOD0 style
+    mesh on its rest pose, which it cuts into 20 to 40 chunks of varied size: surface patches
+    around weighted seeds, split into connected pieces and merged by contact, each closed by inside
+    faces to an apex inside the body (the vendor meshes are rarely closed, so a Voronoi slice would
+    have nothing to cap). Every corner keeps the style mesh's bones and weights (UV4, UV5), and an
+    apex takes its patch's area-weighted blend. They go to `CrowdShards.asset` beside the style
+    meshes, which only a crystal run loads. The rest pose because the pose at the blow varies: it is
+    the pose every pose is skinned from, so the chunks can be skinned to any of them, and its limbs
+    stand apart, so a chunk rarely spans two.
+  - **The swap: posing the chunks on the CPU.** `CrystalShatter` takes a pooled set of the type's
+    chunks and skins every corner with `CrowdPose`, a CPU mirror of the crowd's skinning: the bone
+    texture's rows (30 Hz under the default cuts) around both slots' clip times, lerped and
+    crossfaded as `CrowdPalette.compute` does, then the corner's weighted matrices and the
+    instance's scale, yaw and position, as `SkinVertex` does. So the chunks land where the crowd
+    drew the monster on that frame (an EditMode test checks the CPU's bones against the GPU's
+    palette, and every chunk corner against the drawn mesh). Each chunk then becomes rigid: its
+    frame turns with the bone that carries most of it, its pivot is its box's centre in that
+    frame, and its mesh (its own per pooled set) is rewritten relative to them, with the inside
+    faces' normals from their posed corners. Why on the CPU rather than in the shard shader: the
+    colliders and the kick need the posed chunks on the CPU anyway, it happens once per death, and
+    the shards stay plain MeshRenderers whose shadow and motion-vector passes URP draws unchanged.
+    The bone textures stay readable for it. The shards flash white as the crowd's hit flash does
+    (`_ShardFlash`, over 0.12 s).
+  - **The break.** On the same frame every chunk becomes a PhysX rigidbody with a box collider
+    fitted to it (85% of its box, as a chunk tapers to its apex; colliders approximate), kicked
+    outward from where the blow landed (`CrystalShatter.HitPoint`: 0.6 of the height up, toward
+    the hero), harder near it, along the killing blow (the hero to the monster) and a little up:
+    2.8, 5.0 and 1.6 m/s for a 1.8 m monster. Each shard's share varies widely: a quarter slump
+    where they stand (the legs fold under the body), one in eight flies far, and the largest
+    chunks get about half the smallest's share. Small shards spin fastest. Gravity is 2.2 times
+    Earth's, so they clack down, bounce once or twice, skitter and settle into a pile on a floor
+    collider under y = 0, and sink after 5 s. The blow also brings the burst: a spray of bright
+    chips and crystal dust along the blow with a flash of light in place of the death burst
+    ([effects.md](effects.md#the-look)), and a layered glass break pitched by the type's size, on
+    top of the death cry ([camera-and-sound.md](camera-and-sound.md#sound)). Both are worked out
+    from the timeline ahead of time (`CrystalShatter.Breaks`, at each death's impact). Physics
+    steps on the song clock in script mode at 120 Hz, so `--fixed-time` runs repeat exactly;
+    deaths before a run's first frame are not reconstructed. Tuning and filmstrips:
+    [shatter/impact](../../demo3d/evidence/shatter/impact/README.md).
   - **Motion vectors.** Each shard draws a second material on the same shader in the last opaque
     queue with only its MotionVectors pass enabled, so under `--aa taa` the shards reproject with
     their own motion (the crowd's crystal monsters still smear, as below).
-  - **Cost** (measured on the Mac's M5 Max, 2026-10-30, ps-2iq.4: the starting point for the
-    scale-up). Beauty came first, so nothing is optimized. Each shard is a pooled GameObject with
-    a PhysX rigidbody and convex collider and two materials (the surface and its motion-vector
-    twin), and physics steps at 120 Hz. At the song's own density under `--monster-style crystal`
-    (windowless, fixed time, `--stats`, whose `shards` and `shatterMs` columns are the live shards
-    and `CrystalShatter.Frame`'s time):
+  - **Cost** (the Mac's M5 Max, 2026-10-30; the starting point for the scale-up). Beauty came
+    first. Each shard is a pooled GameObject with a PhysX rigidbody, a box collider and two
+    materials (the surface and its motion-vector twin), and physics steps at 120 Hz. At the song's
+    own density under `--monster-style crystal` (windowless, real time, `--stats`, whose `shards`
+    and `shatterMs` columns are the live shards and the shatter's time, now including posing the
+    chunks at each break): 2,409 deaths shattered, at most
+    14,194 shards live, no errors, 203 s of wall time for the 199 s song.
 
-    | song time | on screen | live shards (mean) | CPU frame, crystal (mean / max ms) | of it the shatter | CPU frame, no flag | GPU probe, crystal (median ms) | GPU probe, crystal before the shards |
-    |---|---:|---:|---:|---:|---:|---:|---:|
-    | 60 | 128 | 1,700 | 3.7 / 4.6 | 2.8 | 0.35 | 13.8 | 5.4 |
-    | 113 | 141 | 2,100 | 4.8 / 5.3 | 3.8 | 0.59 | 21.7 | 6.6 |
-    | 145 | 258 | 3,490 | 17.7 / 82 | 16.5 | 0.59 | 26.4 | 6.0 |
-    | 175 | 362 | 4,820 | 13.1 / 21 | 11.6 | 0.78 | 73.5 | 15.3 |
-    | 197 | 137 | 3,440 (8,950 at 198) | 8.5 / 25 | 7.0 | 0.72 | 31.6 | 11.6 |
+    | song time | live shards (mean) | CPU frame (mean / max ms) | of it the shatter (mean ms) |
+    |---|---:|---:|---:|
+    | 60 | 1,650 | 1.3 / 2.8 | 0.5 |
+    | 113 | 2,020 | 2.2 / 6.5 | 1.3 |
+    | 145 | 3,310 | 1.9 / 5.2 | 0.9 |
+    | 175 | 4,300 | 76 / 367 | 74 |
+    | 197 | 5,550 | 184 / 408 | 181 |
 
-    The CPU numbers are the mean and max over the 4 s around each time (a sample every 0.5 s),
-    with no frames drawn. The GPU probe (`--gpu-probe-at`) is one hand-drawn 1080p frame, MSAA
-    4x, CPU submission and GPU in series. "Before the shards" is the same probe in a build of
-    97a17230, whose crystal style still flew its triangles apart. The peak is 12,051 shards live
-    at the song's end. The whole song takes 91 s of wall time windowless, against 10 s before the
-    shards. The CPU spikes, up to 126 ms (around 165 s), are almost all `CrystalShatter.Frame`
-    (the PhysX steps and shard updates), on beats that release many monsters among thousands of
-    shards still lying on the floor (5 s linger). The draw cost grows with the live shards:
-    about 2,000 to 5,000 GameObjects with two materials each. Evidence:
-    [shatter/final](../../demo3d/evidence/shatter/final/README.md).
-  - `--shatter-log` logs each hold and release with its song time and place in the view, to find
-    deaths for filmstrips (`demo3d filmstrip`, [mac.md](mac.md#filmstrips)).
+    The numbers are the mean and max over the 4 s around each time (a sample every 0.5 s), with
+    no frames drawn. Quiet stretches cost about a millisecond; the spikes, up to about 400 ms, are
+    the climax's and the ending's mass kills, where tens of monsters break in one frame (posing
+    each set skins every corner of its chunks, tens of thousands, on the CPU) among thousands of
+    shards on the floor. A real-time run that falls behind also steps physics up to 12 times a
+    frame, so one slow stretch can feed the next: two runs of the same build measured a whole-song
+    shatter mean of 3.8 and 15 ms. Moving the posing and the physics off the main thread, or onto
+    the GPU, is the scale-up epic's.
+  - `--shatter-log` logs each break with its song time and place in the view, to find deaths for
+    filmstrips (`demo3d filmstrip`, [mac.md](mac.md#filmstrips)).
   - **Transparent styles.** Crystal draws in Transparent-10 and refracts the camera's opaque
     texture. URP's asset keeps that texture off, and `MonsterStyle.NeedsOpaqueTexture` turns it
     on for the game camera only under crystal and mix (DemoMain): one half-resolution copy of the
