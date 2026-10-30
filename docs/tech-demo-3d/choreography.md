@@ -166,6 +166,10 @@ Combo and spell entries are a clip or spell name, optionally followed by
 - **A positioned entry preempts the cycle** on its position. When positions
   coincide, `phrase` beats `downbeat`, which beats `accent`, which beats
   `beat`.
+- **An `@eighth` entry is a flurry** (overdrive's `slashR@eighth`): it
+  strikes on the eighth notes between the beats whenever the clip fits, and a
+  plain entry still owns the beat. A flurry never costs the next beat its
+  blow: the hero skips a flurry that would leave the beat's combo no room.
 - **Spells are independent** of combos and of each other. Each fires on every
   occurrence of its position.
 
@@ -272,7 +276,10 @@ the known ones. Only the choreography changes, so every `--palette`,
 `--monster-style` and `--roster` works with every intensity.
 
 The trailer's `overdrive` (ps-5pd) is the only overlay so far. Its file's
-`note` gives its reasons, and `song --intensity overdrive` prints its numbers.
+`note` gives its reasons, and `song --intensity overdrive` prints its numbers;
+`--checks` adds the song's timeline checks, on any `--level` and intensity.
+It sets its counts and views outright, so every roster set plays the same
+overdrive (demo3d/evidence/overdrive/tuning/).
 
 An overlay has three parts:
 
@@ -307,6 +314,7 @@ the normal timelines' dump hashes for demo3d and demo2d.
 | `comboMaxSpeed` | 1.33 | The hero's combo clips speed up at most this much to land on their grid point. Monsters keep 1.33. |
 | `comboMinSpeed` | 0.75 | The hero's combo clips play at least this fast. The fit plays a clip as slowly as still lands it, so a slow follow-through can run past the next beat; raising this floor frees the hero for that beat. |
 | `travelScaledReach` | false | A hero heading for a goal attacks whatever its scaled hit shapes reach, as it does when holding ground, instead of only what is within its unscaled reach. |
+| `yieldToAccents` | false | The hero holds back a beat's blow (or a flurry's) that would leave no room for the windup of the section's next spin or slam on its accent or phrase. Without it, such a spin or slam moves later, and between back-to-back blows it never fits. |
 | `maxShapeScale`, `hitsShapeScale` | 4, 2.5 | The kill-rate feedback's caps on the hit shapes' scale: while the kill budget runs behind, and otherwise. |
 | `maxShapeViewFraction` | 0.25 | A scaled hit shape is at most this fraction of the view's width. |
 | `hitPointScale` | 1 per rank | Multiplies the roster's hit points by rank, for example `{ "fodder": 0 }`. Every monster keeps at least 1. Struck monsters die fewest hit points first, while the load preset's kill budget decides how many die. |

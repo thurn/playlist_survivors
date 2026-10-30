@@ -1,43 +1,67 @@
 {
   "name": "overdrive",
-  "note": "--intensity overdrive (choreography.md, Intensity overlays): the trailer's turned-up-to-11 horde, merged over whichever level script the roster picks. ps-5pd.1's first cut, tuned by the timeline's numbers only (TimelineReport's carnage table; the tuning bead owns it from here). Three times the envelope's horde and 1.5 times its reserve, under the rhythmic sections' views 1.25x wider (and the envelope's), since at today's widths the screen packs out at about 60% of the tripled count; the quiet sections keep theirs, where a wider view overfills; the hero's combos play at 1.8x to 2.5x, so their follow-through clears the next beat, and the rhythmic sections drop the thrust, whose windup takes two beats even at 2.5x, so the hero swings on nearly every beat (spins and slams keep their accents and phrases); and a travelling hero carves its way with its scaled shapes; fodder dies fewest-hit-points-first as one-hit monsters. The rhythmic sections take the overdrive load (deaths/s = 0.06 of the on-screen target, against demo's 0.05, at three times the count) with wider hit shapes to reach it (only while the kill budget runs behind: the hits cap stays 2.5, since more knockbacks in the quiet sections overlap the dense horde), and the ring on the phrase and bolts on accents, so the hero's blows take the kills; the build, short and travelling, can't reach its rate with the hero's blows alone (about 90%, too close to the check's 10% under Mono), so its lightning strikes every second beat and takes most of its kills. Quiet sections keep their loads at the tripled count (the intro its old one): the drops still hit harder by their load and swing rate, and at half that count the quiet sections leave too few for the next drop to fill from (the final peak fell to 76% of its target).",
+  "note": "--intensity overdrive (choreography.md, Intensity overlays): the trailer's turned-up-to-11 horde, merged over whichever level script the roster picks; tuned by ps-5pd.2 on the timeline's numbers (demo3d/evidence/overdrive/tuning/README.md). It sets its counts and views outright, not as multiples, so every roster set plays the same overdrive: forest's and heroic's 150 at 18 m are real-time cuts, and overdrive is recorded offline (at three times their own they miss the song's on-screen check, as they do at normal). The envelope is three times action-level.json's 425 under a 45 m view (1.5x), since the horde can only walk into the hero's kill zone so fast: at 37.5 m the final peak held 70-85% of its target at its kill rate, at 45 m about 90-100%. The rhythmic sections are where it turns up: the hero's combos play at 2x to 3x, and drop-1, groove-2 and the build add slashR flurries on the eighths between beats (a flurry never costs a beat its blow), about 3 to 3.5 blows a second; drop-2 and the final peak swing once a beat (2.45-2.5 a second) with heavier blows instead, since the final peak's supply caps deaths near 120 a second, and flurries there split that into about 30 a blow instead of 40+. yieldToAccents holds back a blow to leave room for a phrase's slam, which otherwise never fits between back-to-back blows. Fodder dies in one blow. Loads: deaths/s per monster on screen 0.08 in drop-1 and groove-2, 0.1 in drop-2 and 0.09 in the final peak (the most its supply holds with margin; 0.1 there fell 10-20% short on some seeds), and 0.035 in the build with two hits a death: the build travels to the courtyard, and its hero alone tops out near 28 deaths/s, so it builds tension at a lower rate with wide shapes that keep the hero striking instead of striding. Spells stay on the phrase and accents (ring, bolt, lightning, and the final peak's laser), so the hero takes 90-98% of the kills. Refills spawn up to max(150, wanted/3) a beat and releases lead by 5 s of deaths, so the horde floods back as fast as it dies; bigger bursts overlapped monsters in the free break before drop-2, whose views are widened (build 41 m, break-2 45 m) so drop-2's horde has room as it fills in. Quiet sections keep their loads and views at the tripled count (groove at 0.17 so its walk-in doesn't overfill, drop-1 at 0.43 for the same reason), so the drops hit harder by load, swing rate and width.",
   "multiply": {
-    "envelope.onScreen": 3,
-    "envelope.viewWidthM": 1.25,
     "reserve": 1.5
   },
-  "comboMaxSpeed": 2.5,
-  "comboMinSpeed": 1.8,
+  "envelope": {
+    "onScreen": 1275,
+    "viewWidthM": 45
+  },
+  "comboMaxSpeed": 3.0,
+  "comboMinSpeed": 2.0,
   "travelScaledReach": true,
-  "maxShapeScale": 8,
+  "yieldToAccents": true,
+  "maxShapeScale": 9,
   "maxShapeViewFraction": 0.3,
   "hitPointScale": {
     "fodder": 0
   },
-  "refillMinPerBeat": 96,
+  "refillMinPerBeat": 150,
   "refillDivisor": 3,
-  "releaseLeadS": 3,
+  "releaseLeadS": 5,
   "loads": {
     "overdrive": {
-      "deathsPerN": 0.06,
+      "deathsPerN": 0.08,
       "hitsPerDeath": 0.25,
+      "spells": []
+    },
+    "overdrive-peak": {
+      "deathsPerN": 0.1,
+      "hitsPerDeath": 0.25,
+      "spells": []
+    },
+    "overdrive-final": {
+      "deathsPerN": 0.09,
+      "hitsPerDeath": 0.25,
+      "spells": []
+    },
+    "overdrive-build": {
+      "deathsPerN": 0.035,
+      "hitsPerDeath": 2.0,
       "spells": []
     }
   },
   "sections": {
     "intro": {
-      "multiply": {
-        "onScreen": 0.3333333
-      }
+      "viewWidthM": 22.5,
+      "onScreen": 0.002
+    },
+    "groove": {
+      "viewWidthM": 24,
+      "onScreen": 0.17
+    },
+    "break-1": {
+      "viewWidthM": 24,
+      "onScreen": 0.17
     },
     "drop-1": {
+      "viewWidthM": 33.75,
       "load": "overdrive",
-      "multiply": {
-        "viewWidthM": 1.25
-      },
       "combo": [
         "slashL",
         "slashR",
+        "slashR@eighth",
         "spin@accent",
         "slam@phrase"
       ],
@@ -45,16 +69,19 @@
         "ring@phrase",
         "bolt@accent",
         "lightning@phrase"
-      ]
+      ],
+      "onScreen": 0.43
+    },
+    "breakdown": {
+      "viewWidthM": 25.5
     },
     "groove-2": {
+      "viewWidthM": 35.62,
       "load": "overdrive",
-      "multiply": {
-        "viewWidthM": 1.25
-      },
       "combo": [
         "slashL",
         "slashR",
+        "slashR@eighth",
         "spin@accent",
         "slam@phrase"
       ],
@@ -65,27 +92,27 @@
       ]
     },
     "build": {
-      "load": "overdrive",
-      "multiply": {
-        "viewWidthM": 1.25
-      },
+      "viewWidthM": 41.32,
+      "load": "overdrive-build",
       "combo": [
         "slashL",
         "slashR",
+        "slashR@eighth",
         "spin@accent",
         "slam@phrase"
       ],
       "spells": [
         "ring@phrase",
-        "bolt@beat",
-        "lightning@beat/2"
+        "bolt@accent",
+        "lightning@phrase"
       ]
     },
+    "break-2": {
+      "viewWidthM": 45
+    },
     "drop-2": {
-      "load": "overdrive",
-      "multiply": {
-        "viewWidthM": 1.25
-      },
+      "viewWidthM": 45.0,
+      "load": "overdrive-peak",
       "combo": [
         "slashL",
         "slashR",
@@ -99,10 +126,8 @@
       ]
     },
     "final-peak": {
-      "load": "overdrive",
-      "multiply": {
-        "viewWidthM": 1.25
-      },
+      "viewWidthM": 45.0,
+      "load": "overdrive-final",
       "combo": [
         "slashL",
         "slashR",
@@ -115,6 +140,12 @@
         "lightning@phrase",
         "laser@phrase"
       ]
+    },
+    "outro": {
+      "viewWidthM": 28.5
+    },
+    "ending": {
+      "viewWidthM": 27
     }
   }
 }

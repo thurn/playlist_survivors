@@ -62,9 +62,10 @@ namespace Demo3D.Choreography.Tests
             Assert.That(t.RefillMinPerBeat, Is.EqualTo(24));
             Assert.That(t.RefillDivisor, Is.EqualTo(6f));
             Assert.That(t.ReleaseLeadS, Is.EqualTo(2.5f));
+            Assert.That(t.YieldToAccents, Is.False);
 
             SimTuning set = LevelScript.Parse(Script("\"comboMaxSpeed\": 2.5, \"maxShapeScale\": 8, \"hitsShapeScale\": 6, \"maxShapeViewFraction\": 0.4, "
-                + "\"hitPointScale\": { \"fodder\": 0, \"elite\": 0.5, \"boss\": 2 }, \"refillMinPerBeat\": 90, \"refillDivisor\": 3, \"releaseLeadS\": 3,")).Tuning;
+                + "\"hitPointScale\": { \"fodder\": 0, \"elite\": 0.5, \"boss\": 2 }, \"refillMinPerBeat\": 90, \"refillDivisor\": 3, \"releaseLeadS\": 3, \"yieldToAccents\": true,")).Tuning;
             Assert.That(set.ComboMaxSpeed, Is.EqualTo(2.5f));
             Assert.That(set.MaxShapeScale, Is.EqualTo(8f));
             Assert.That(set.HitsShapeScale, Is.EqualTo(6f));
@@ -75,6 +76,7 @@ namespace Demo3D.Choreography.Tests
             Assert.That(set.RefillMinPerBeat, Is.EqualTo(90));
             Assert.That(set.RefillDivisor, Is.EqualTo(3f));
             Assert.That(set.ReleaseLeadS, Is.EqualTo(3f));
+            Assert.That(set.YieldToAccents, Is.True);
             Assert.Throws<FormatException>(() => LevelScript.Parse(Script("\"comboMaxSpeed\": 0.5,")));
         }
 
@@ -130,18 +132,84 @@ namespace Demo3D.Choreography.Tests
             Assert.That(ChoreographyFiles.LoadLevel(Fixtures.Root, ChoreographyFiles.LevelFile, "normal").Intensity, Is.Null);
         }
 
-        /// <summary>Overdrive loads over every roster set's level script, tripling its envelope and taking over its rhythmic sections.</summary>
+        static readonly string[] Rhythmic = { "drop-1", "groove-2", "build", "drop-2", "final-peak" };
+
+        /// <summary>
+        /// Overdrive loads over every roster set's level script and sets the same horde on each: three times
+        /// the default script's envelope, its views and its counts, whatever the set's own real-time cut
+        /// (forest and heroic draw 150 at 18 m), so the song's checks on the default script hold for all three.
+        /// </summary>
         [TestCase("action-level.json")]
         [TestCase("action-level-forest.json")]
         [TestCase("action-level-heroic.json")]
         public void OverdriveLoadsOverEveryRostersScript(string file)
         {
             LevelScript normal = ChoreographyFiles.LoadLevel(Fixtures.Root, file), od = ChoreographyFiles.LoadLevel(Fixtures.Root, file, "overdrive");
+            LevelScript reference = Fixtures.OverdriveLevel;
             Assert.That(od.Intensity, Is.EqualTo("overdrive"));
-            Assert.That(od.EnvelopeOnScreen, Is.EqualTo(3 * normal.EnvelopeOnScreen));
-            foreach (string label in new[] { "drop-1", "groove-2", "build", "drop-2", "final-peak" })
-                Assert.That(od.For(label).Load, Is.EqualTo("overdrive"), label);
+            Assert.That(od.EnvelopeOnScreen, Is.EqualTo(3 * Fixtures.Level.EnvelopeOnScreen));
+            Assert.That((od.EnvelopeOnScreen, od.EnvelopeViewWidthM), Is.EqualTo((reference.EnvelopeOnScreen, reference.EnvelopeViewWidthM)));
+            foreach (SongSection sec in Fixtures.Song.Sections)
+            {
+                LevelSection a = od.For(sec.Label), b = reference.For(sec.Label);
+                Assert.That((a.OnScreen, a.ViewWidthM, a.Load), Is.EqualTo((b.OnScreen, b.ViewWidthM, b.Load)), sec.Label);
+            }
+            foreach (string label in Rhythmic) StringAssert.StartsWith("overdrive", od.For(label).Load, label);
             Assert.That(od.For("intro").Load, Is.EqualTo(normal.For("intro").Load));
+        }
+
+        /// <summary>
+        /// Overdrive's flurries (an eighth's combo entry) add blows between the beats without costing a
+        /// beat its own: each blow between beats is followed by one on the next beat (or by the windup of a
+        /// spin or slam the hero held back for), and the hero strikes on most beats of every rhythmic section
+        /// (such windups and strides on the way to a goal are the rest).
+        /// </summary>
+        [Test]
+        public void OverdriveFlurriesAddBlowsBetweenTheBeats()
+        {
+            Timeline tl = Fixtures.OverdriveTimeline;
+            var blows = new List<double>();
+            var windups = new List<(double from, double to)>();
+            foreach (ActionEvent a in tl.ActionsOf(0))
+                if (a.Kind == ActionKind.Attack) { blows.Add(a.Impact); windups.Add((a.ClipStart, a.Impact)); }
+            double[] beats = tl.Map.Beats;
+            bool OnBeat(double t) { int i = Array.BinarySearch(beats, t); if (i < 0) i = ~i; return (i < beats.Length && Math.Abs(beats[i] - t) < 1e-3) || (i > 0 && Math.Abs(beats[i - 1] - t) < 1e-3); }
+            bool Struck(double t) { int i = blows.BinarySearch(t); if (i < 0) i = ~i; return (i < blows.Count && Math.Abs(blows[i] - t) < 1e-3) || (i > 0 && Math.Abs(blows[i - 1] - t) < 1e-3); }
+            int between = 0;
+            foreach (SongSection sec in tl.Map.Sections)
+            {
+                if (Array.IndexOf(Rhythmic, sec.Label) < 0) continue;
+                int sectionBeats = 0, struck = 0;
+                foreach (double b in beats)
+                {
+                    if (b < sec.Start || b >= sec.End) continue;
+                    sectionBeats++;
+                    if (Struck(b)) struck++;
+                }
+                TestContext.WriteLine(sec.Label + ": blows on " + struck + " of " + sectionBeats + " beats");
+                Assert.That(struck, Is.GreaterThanOrEqualTo(0.7 * sectionBeats), sec.Label);
+                foreach (double t in blows)
+                {
+                    if (t < sec.Start || t >= sec.End || OnBeat(t)) continue;
+                    between++;
+                    int next = Array.BinarySearch(beats, t);
+                    next = next < 0 ? ~next : next + 1;
+                    if (next < beats.Length && beats[next] < sec.End)
+                        Assert.That(Struck(beats[next]) || windups.Exists(w => w.from < beats[next] && beats[next] < w.to), Is.True, "the flurry blow at " + t + " cost the next beat its blow");
+                }
+            }
+            Assert.That(between, Is.GreaterThan(50), "no flurries between the beats");
+        }
+
+        /// <summary>With yieldToAccents the hero holds back a blow to leave room for a phrase's slam; without it, the slam never fits between back-to-back blows.</summary>
+        [Test]
+        public void OverdriveSlamsLandOnTheirPhrases()
+        {
+            Timeline tl = Fixtures.OverdriveTimeline;
+            int slam = Fixtures.Data.Clips.Require("hero slam"), slams = 0;
+            foreach (ActionEvent a in tl.ActionsOf(0))
+                if (a.Kind == ActionKind.Attack && a.Clip == slam && Array.IndexOf(Rhythmic, tl.Sections[tl.Map.SectionIndexAt(a.Impact)].Label) >= 0) slams++;
+            Assert.That(slams, Is.GreaterThanOrEqualTo(3));
         }
 
         [Test]
