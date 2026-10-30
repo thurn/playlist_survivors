@@ -1,0 +1,301 @@
+{
+  "note": [
+    "The lava environment (ps-bop.3.5: a basalt hellscape lit by lava; very dark and warm): the arena's area plan in POLYGON Dungeon Realms' hell kit (black rocks, spikes, spires and obelisks, a giant horned skull, skeletal hands, dead trees) and Dark Fantasy's basalt columns and cliffs, burnt pyres, bones and demon shrines, on a near-black basalt ground cut by glowing lava rivers (ground.lava: ArenaBaker.GroundLava). A dim warm key on the set, a neutral key on the horde, the lava's glow baked onto the kit, braziers and a pyre, smoke-red fog and a hot grade. Its palette and findings: demo3d/evidence/look/env-lava/README.md. Format: arena-layout.json's note, Environments."
+  ],
+  "extends": "arena",
+  "ground": {
+    "forest": [0.04, 0.035, 0.032],
+    "edge": [0.06, 0.05, 0.045],
+    "clearing": [0.16, 0.14, 0.125],
+    "path": [0.18, 0.155, 0.135],
+    "lava": {
+      "hot": [1.0, 0.72, 0.3],
+      "color": [1.0, 0.24, 0.02],
+      "intensity": 2.2,
+      "fromM": 1.5,
+      "rampM": 6,
+      "widthM": 3.6,
+      "scaleM": 28,
+      "glowM": 1.6,
+      "glow": 0.3,
+      "crackM": 2.6,
+      "crack": 0.5,
+      "crackReachM": 7,
+      "crackFight": 0.1
+    }
+  },
+  "lighting": {
+    "moon": {"color": [1.0, 0.62, 0.46], "intensity": 0.7},
+    "ambient": {"sky": [0.05, 0.025, 0.022], "equator": [0.045, 0.022, 0.016], "ground": [0.09, 0.035, 0.012]},
+    "fog": {"color": [0.07, 0.025, 0.016]},
+    "kitValue": {"PolygonDungeonRealms": 0.5, "PolygonDarkFantasy": 0.55},
+    "crowd": {"rim": [0.32, 0.22, 0.18], "keyColor": [1.0, 1.0, 1.0], "key": 3.2},
+    "hero": {"intensity": 150, "color": [1.0, 0.8, 0.62]},
+    "vignette": {"intensity": 0.3, "color": [0.05, 0.006, 0.0]},
+    "post": {"grade": {"shadow": [1.04, 0.97, 0.95], "mid": [1.0, 1.0, 1.0], "high": [1.03, 0.98, 0.9]}},
+    "glow": {
+      "elven/SM_Env_Tree_Glowing_01": null,
+      "realms/SM_Env_Obelisk_Glow_01": {"heightM": 5, "rangeM": 14, "intensity": 8, "color": [0.3, 0.85, 1.0], "pool": {"radiusM": 6.5, "intensity": 0.35}}
+    }
+  },
+  "atmosphere": {
+    "mist": {"color": [0.24, 0.11, 0.07]},
+    "runes": {
+      "circles": [
+        {"at": [44, 40], "radiusM": 8.6, "color": [1.0, 0.3, 0.05], "intensity": 0.1},
+        {"at": [0, 16], "radiusM": 4.6, "color": [1.0, 0.28, 0.05], "intensity": 0.12},
+        {"at": [12, -25], "radiusM": 5.4, "color": [1.0, 0.32, 0.06], "intensity": 0.12}
+      ]
+    }
+  },
+  "props": {
+    "forest-trees": {
+      "darkfantasy/SM_Env_Basalt_01": 1.5,
+      "darkfantasy/SM_Env_Basalt_02": 0.8,
+      "darkfantasy/SM_Env_Basalt_04": 1.5,
+      "realms/SM_Env_Hell_Obelisk_01": 0.6,
+      "realms/SM_Env_Hell_Obelisk_02": 0.6,
+      "realms/SM_Env_Hell_Obelisk_03": 0.5,
+      "realms/SM_Env_Hell_Obelisk_05": 0.6,
+      "realms/SM_Env_Hell_Pillar_01": 0.4,
+      "realms/SM_Env_Hell_Pillar_03": 0.4,
+      "realms/SM_Env_Hell_Spikes_02": 1,
+      "realms/SM_Env_Hell_Spikes_03": 1,
+      "realms/SM_Env_Hell_Spikes_04": 1,
+      "realms/SM_Env_Hell_Spikes_05": 1,
+      "realms/SM_Env_Hell_Rock_07": 0.8,
+      "realms/SM_Env_Hell_Rock_08": 0.8,
+      "realms/SM_Env_Tree_Dead_01": 1.2,
+      "realms/SM_Env_Tree_Dead_02": 1.2,
+      "realms/SM_Env_Tree_Dead_Windswept_01": 0.6,
+      "realms/SM_Env_Tree_Dead_Windswept_02": 0.6,
+      "darkfantasy/SM_Env_Tree_Dead_01": 0.8,
+      "darkfantasy/SM_Env_Tree_Dead_02": 0.8,
+      "darkfantasy/SM_Env_Tree_Dead_04": 0.8
+    },
+    "forest-rocks": {
+      "darkfantasy/SM_Env_Cliff_Basalt_01": 1,
+      "darkfantasy/SM_Env_Cliff_Basalt_02": 1,
+      "darkfantasy/SM_Env_Cliff_Basalt_04": 1,
+      "realms/SM_Env_Hell_Spikes_01": 1,
+      "realms/SM_Env_Hell_Ground_01": 1,
+      "realms/SM_Env_Hell_Ground_02": 1,
+      "realms/SM_Env_Hell_Ground_03": 1
+    },
+    "edge-plants": {
+      "realms/SM_Env_Hell_Rock_01": 1.5,
+      "realms/SM_Env_Hell_Rock_02": 1.5,
+      "realms/SM_Env_Hell_Rock_03": 1.5,
+      "realms/SM_Env_Hell_Rock_04": 1.2,
+      "realms/SM_Env_Hell_Rock_05": 1.2,
+      "realms/SM_Env_Hell_Rock_06": 0.8,
+      "realms/SM_Env_Rock_Medium_01": 0.6,
+      "realms/SM_Env_Rock_Medium_04": 0.6,
+      "realms/SM_Env_Rock_Medium_06": 0.6,
+      "darkfantasy/SM_Env_Basalt_03": 0.8,
+      "darkfantasy/SM_Env_Basalt_05": 1,
+      "realms/SM_Env_Bramble_01": 1.2,
+      "realms/SM_Env_Bramble_02": 1.2,
+      "realms/SM_Env_Bramble_03": 1,
+      "darkfantasy/SM_Prop_Pyre_Stake_02_Burnt_01": 0.25,
+      "darkfantasy/SM_Prop_Pyre_Stake_02_Burnt_02": 0.25,
+      "darkfantasy/SM_Prop_Pyre_Stake_02_Burnt_03": 0.25,
+      "darkfantasy/SM_Prop_Pyre_Stake_02_Burnt_04": 0.25,
+      "darkfantasy/SM_Prop_Body_Pile_Burnt_01": 0.25,
+      "darkfantasy/SM_Prop_Rubble_Pile_Burnt_02": 0.5,
+      "darkfantasy/SM_Prop_Rubble_Pile_Burnt_03": 0.5,
+      "darkfantasy/SM_Prop_Skull_Pile_03": 0.3,
+      "darkfantasy/SM_Prop_Skull_04": 0.2,
+      "darkfantasy/SM_Prop_Demon_Ward_01": 0.12,
+      "darkfantasy/SM_Prop_Pyre_02_Burnt_01": 0.12
+    },
+    "edge-soft": {
+      "realms/SM_Env_Rubble_Rocks_01": 2,
+      "realms/SM_Env_Rubble_Rocks_02": 2,
+      "realms/SM_Env_Rubble_Rocks_03": 2,
+      "realms/SM_Env_Rock_Small_03": 1,
+      "realms/SM_Env_Rock_Small_05": 1,
+      "darkfantasy/SM_Prop_Bone_Pile_01": 0.8,
+      "darkfantasy/SM_Prop_Bone_Pile_02": 0.8,
+      "darkfantasy/SM_Prop_Skull_Pile_02": 0.5,
+      "darkfantasy/SM_Prop_Rubble_Pile_Burnt_01": 0.8,
+      "darkfantasy/SM_Prop_Body_Burnt_01": 0.2,
+      "darkfantasy/SM_Prop_Body_Burnt_02": 0.2,
+      "darkfantasy/SM_Prop_Body_Burnt_03": 0.2
+    },
+    "clutter": {
+      "realms/SM_Env_Rock_Small_01": 1.2,
+      "realms/SM_Env_Rock_Small_02": 1.2,
+      "realms/SM_Env_Rock_Small_04": 1.2,
+      "realms/SM_Env_Rubble_Rocks_02": 1,
+      "realms/SM_Env_Rubble_Rocks_03": 1,
+      "darkfantasy/SM_Prop_Skull_01": 0.3,
+      "darkfantasy/SM_Prop_Skull_02": 0.3,
+      "darkfantasy/SM_Prop_Bone_Pile_02": 0.4
+    },
+    "ruin-walls": {
+      "darkfantasy/SM_Bld_Wall_Ruin_01": 1,
+      "darkfantasy/SM_Bld_Wall_Ruin_02": 1,
+      "darkfantasy/SM_Bld_Wall_Ruin_03": 1,
+      "darkfantasy/SM_Bld_Wall_Ruin_04": 1,
+      "darkfantasy/SM_Bld_Wall_Ruin_05": 1,
+      "darkfantasy/SM_Bld_Wall_Ruin_06": 1,
+      "darkfantasy/SM_Bld_Wall_Ruin_07": 1
+    },
+    "ground-dressing": {"realms/SM_Env_Rubble_Rocks_01": 1, "realms/SM_Env_Rubble_Rocks_02": 1, "darkfantasy/SM_Prop_Bone_Pile_02": 0.4, "darkfantasy/SM_Prop_Skull_03": 0.3, "realms/SM_Env_Rock_Small_05": 0.6}
+  },
+  "scatter": {
+    "forest": [{"props": "forest-trees", "spacingM": 5.5, "scale": [0.55, 0.9]}, {"props": "forest-rocks", "spacingM": 14, "scale": [0.45, 0.75], "chance": 0.6}],
+    "edge": [
+      {"props": "edge-plants", "spacingM": 2.4, "scale": [0.9, 1.5]},
+      {"props": "edge-soft", "spacingM": 2.0, "scale": [0.9, 1.4]},
+      {"props": "ground-dressing", "dressing": true, "spacingM": 2.4, "scale": [1.0, 1.5]}
+    ]
+  },
+  "pieces": {
+    "glowing-tree": [
+      {"prop": "realms/SM_Env_Obelisk_Glow_01", "at": [0, 0], "yawDeg": 30},
+      {"prop": "realms/SM_Env_Obelisk_Glow_03", "at": [3.2, -2.6], "yawDeg": 70, "scale": 0.6},
+      {"prop": "realms/SM_Env_Hell_Rock_04", "at": [-3.4, 2.4], "yawDeg": 10},
+      {"prop": "realms/SM_Env_Hell_Rock_02", "at": [2.6, 2.8], "yawDeg": 210}
+    ],
+    "glowing-tree-flowers": [
+      {"prop": "darkfantasy/SM_Prop_Skull_01", "at": [3.87, 1.64], "yawDeg": 0, "scale": 1.3},
+      {"prop": "darkfantasy/SM_Prop_Bone_Pile_02", "at": [1.26, 4.48], "yawDeg": 61, "scale": 1.3},
+      {"prop": "darkfantasy/SM_Prop_Skull_02", "at": [-2.23, 3.1], "yawDeg": 122, "scale": 1.3},
+      {"prop": "realms/SM_Env_Rock_Small_03", "at": [-4.06, 0.2], "yawDeg": 183, "scale": 1.3},
+      {"prop": "darkfantasy/SM_Prop_Skull_03", "at": [-3.1, -3.52], "yawDeg": 244, "scale": 1.3},
+      {"prop": "darkfantasy/SM_Prop_Bone_Pile_01", "at": [0.69, -3.87], "yawDeg": 305, "scale": 1.3},
+      {"prop": "darkfantasy/SM_Prop_Skull_01", "at": [3.45, -1.88], "yawDeg": 6, "scale": 1.3}
+    ],
+    "crystal-ring": [
+      {"prop": "realms/SM_Env_Hell_Spikes_02", "at": [7, 0], "yawDeg": 90, "scale": 0.7},
+      {"prop": "realms/SM_Env_Hell_Spikes_03", "at": [3.5, 6.06], "yawDeg": 30, "scale": 0.7},
+      {"prop": "realms/SM_Env_Hell_Spikes_04", "at": [-3.5, 6.06], "yawDeg": -30, "scale": 0.7},
+      {"prop": "realms/SM_Env_Hell_Spikes_05", "at": [-7, 0], "yawDeg": -90, "scale": 0.7},
+      {"prop": "realms/SM_Env_Hell_Spikes_02", "at": [-3.5, -6.06], "yawDeg": -150, "scale": 0.7},
+      {"prop": "realms/SM_Env_Hell_Spikes_03", "at": [3.5, -6.06], "yawDeg": 150, "scale": 0.7}
+    ],
+    "graveyard": [
+      {"prop": "darkfantasy/SM_Prop_Tomb_01", "at": [0, 2], "yawDeg": 5},
+      {"prop": "darkfantasy/SM_Prop_Tomb_02", "at": [2.8, -2], "yawDeg": -8},
+      {"prop": "darkfantasy/SM_Prop_Tomb_Stone_02", "at": [-1.5, -4], "yawDeg": 12},
+      {"prop": "darkfantasy/SM_Prop_Tomb_Stone_03", "at": [-2, 5.5], "yawDeg": 4},
+      {"prop": "darkfantasy/SM_Prop_Pyre_Stake_01_Burnt_01", "at": [4.6, -3.4], "yawDeg": -30},
+      {"prop": "realms/SM_Env_Hell_Bone_Hand_R_01", "at": [6.5, 3.5], "yawDeg": 200, "scale": 0.7},
+      {"prop": "darkfantasy/SM_Env_Tree_Dead_04", "at": [6, -6], "yawDeg": 40, "scale": 0.7},
+      {"prop": "darkfantasy/SM_Prop_Pyre_Stake_02_Burnt_01", "at": [-1, 8.5], "yawDeg": 0},
+      {"prop": "darkfantasy/SM_Prop_Pyre_Stake_02_Burnt_03", "at": [0.8, 8.5], "yawDeg": 60},
+      {"prop": "darkfantasy/SM_Prop_Pyre_Stake_02_Burnt_02", "at": [2.6, 8.5], "yawDeg": 120},
+      {"prop": "darkfantasy/SM_Prop_Pyre_Stake_02_Burnt_04", "at": [4.2, 8.5], "yawDeg": 200},
+      {"prop": "darkfantasy/SM_Prop_Candle_01", "at": [-1.2, 0.2], "yawDeg": 0},
+      {"prop": "darkfantasy/SM_Prop_Candle_02", "at": [1.4, -3.5], "yawDeg": 0},
+      {"prop": "darkfantasy/SM_Prop_Candle_03", "at": [-2.6, 3.4], "yawDeg": 0},
+      {"prop": "darkfantasy/SM_Prop_Body_Burnt_01", "at": [-3.2, 0.8], "yawDeg": 110},
+      {"prop": "darkfantasy/SM_Prop_Skull_Pile_03", "at": [5.2, -0.8], "yawDeg": 70},
+      {"prop": "darkfantasy/SM_Prop_Bone_Pile_01", "at": [1.0, 5.2], "yawDeg": 30}
+    ],
+    "ruins-gate": [{"prop": "darkfantasy/SM_Env_Basalt_05", "at": [0.5, -2.2], "yawDeg": 10, "scale": 1.1}, {"prop": "darkfantasy/SM_Env_Basalt_04", "at": [27, 1.5], "yawDeg": 0, "scale": 0.9}],
+    "courtyard": [
+      {"prop": "realms/SM_Env_Hell_Obelisk_05", "at": [-8, -8], "yawDeg": 0, "scale": 0.4},
+      {"prop": "realms/SM_Env_Hell_Obelisk_05", "at": [8, -8], "yawDeg": 90, "scale": 0.4},
+      {"prop": "realms/SM_Env_Hell_Obelisk_05", "at": [8, 8], "yawDeg": 180, "scale": 0.4},
+      {"prop": "realms/SM_Env_Hell_Obelisk_05", "at": [-8, 8], "yawDeg": 270, "scale": 0.4}
+    ],
+    "courtyard-circle": [
+      {"prop": "realms/SM_Env_Rubble_Tile_01", "at": [3.2, 0.0], "yawDeg": 0, "scale": 1.0},
+      {"prop": "realms/SM_Env_Rubble_Tile_02", "at": [2.59, 1.88], "yawDeg": 324, "scale": 1.0},
+      {"prop": "realms/SM_Env_Rubble_Tile_03", "at": [0.99, 3.04], "yawDeg": 288, "scale": 1.0},
+      {"prop": "realms/SM_Env_Rubble_Tile_01", "at": [-0.99, 3.04], "yawDeg": 252, "scale": 1.0},
+      {"prop": "realms/SM_Env_Rubble_Tile_02", "at": [-2.59, 1.88], "yawDeg": 216, "scale": 1.0},
+      {"prop": "realms/SM_Env_Rubble_Tile_03", "at": [-3.2, 0.0], "yawDeg": 180, "scale": 1.0},
+      {"prop": "realms/SM_Env_Rubble_Tile_01", "at": [-2.59, -1.88], "yawDeg": 144, "scale": 1.0},
+      {"prop": "realms/SM_Env_Rubble_Tile_02", "at": [-0.99, -3.04], "yawDeg": 108, "scale": 1.0},
+      {"prop": "realms/SM_Env_Rubble_Tile_03", "at": [0.99, -3.04], "yawDeg": 72, "scale": 1.0},
+      {"prop": "realms/SM_Env_Rubble_Tile_01", "at": [2.59, -1.88], "yawDeg": 36, "scale": 1.0},
+      {"prop": "darkfantasy/SM_Prop_Skull_01", "at": [3.89, 3.89], "yawDeg": 0, "scale": 1.0},
+      {"prop": "darkfantasy/SM_Prop_Bone_Pile_02", "at": [-3.89, 3.89], "yawDeg": 90, "scale": 1.0},
+      {"prop": "darkfantasy/SM_Prop_Skull_02", "at": [-3.89, -3.89], "yawDeg": 180, "scale": 1.0},
+      {"prop": "realms/SM_Env_Rock_Small_03", "at": [3.89, -3.89], "yawDeg": 270, "scale": 1.0}
+    ],
+    "brazier-glade": [
+      {"prop": "darkfantasy/SM_Prop_Brazier_01", "at": [5.5, 0], "yawDeg": 0},
+      {"prop": "darkfantasy/SM_Prop_Brazier_01", "at": [0, 5.5], "yawDeg": 0},
+      {"prop": "darkfantasy/SM_Prop_Brazier_01", "at": [-5.5, 0], "yawDeg": 0},
+      {"prop": "darkfantasy/SM_Prop_Brazier_01", "at": [0, -5.5], "yawDeg": 0},
+      {"prop": "darkfantasy/SM_Prop_Pyre_02", "at": [-6, 7], "yawDeg": 20},
+      {"prop": "darkfantasy/SM_Prop_Demon_01", "at": [6, 7], "yawDeg": 200, "scale": 1.4},
+      {"prop": "darkfantasy/SM_Prop_Demon_Ward_01", "at": [8, 3], "yawDeg": 240},
+      {"prop": "darkfantasy/SM_Prop_Skull_Pile_03", "at": [3.5, 8.5], "yawDeg": 0}
+    ],
+    "opening-ruin": [
+      {"prop": "realms/SM_Env_Skull_Huge_01", "at": [0, 0], "yawDeg": 215},
+      {"prop": "realms/SM_Env_Hell_Bone_Hand_L_01", "at": [-6, -4.5], "yawDeg": 230, "scale": 0.7},
+      {"prop": "realms/SM_Env_Hell_Spikes_03", "at": [5, -4], "yawDeg": 20, "scale": 0.8}
+    ],
+    "fairy-ring": [
+      {"prop": "darkfantasy/SM_Prop_Skull_01", "at": [10.0, 0.0], "yawDeg": 0, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Bone_Pile_02", "at": [10.18, 2.56], "yawDeg": 47, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Skull_02", "at": [9.21, 3.56], "yawDeg": 94, "scale": 1.5},
+      {"prop": "realms/SM_Env_Rock_Small_03", "at": [7.55, 5.83], "yawDeg": 141, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Skull_03", "at": [6.77, 7.69], "yawDeg": 188, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Bone_Pile_01", "at": [5.59, 8.77], "yawDeg": 235, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Skull_01", "at": [2.55, 9.31], "yawDeg": 282, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Bone_Pile_02", "at": [1.2, 9.62], "yawDeg": 329, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Skull_02", "at": [-0.86, 10.39], "yawDeg": 16, "scale": 1.5},
+      {"prop": "realms/SM_Env_Rock_Small_03", "at": [-3.61, 9.54], "yawDeg": 63, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Skull_03", "at": [-4.41, 8.44], "yawDeg": 110, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Bone_Pile_01", "at": [-6.7, 7.32], "yawDeg": 157, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Skull_01", "at": [-8.68, 5.9], "yawDeg": 204, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Bone_Pile_02", "at": [-8.87, 4.49], "yawDeg": 251, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Skull_02", "at": [-9.37, 1.65], "yawDeg": 298, "scale": 1.5},
+      {"prop": "realms/SM_Env_Rock_Small_03", "at": [-10.18, -0.03], "yawDeg": 345, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Skull_03", "at": [-10.29, -1.77], "yawDeg": 32, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Bone_Pile_01", "at": [-8.66, -4.38], "yawDeg": 79, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Skull_01", "at": [-7.94, -5.46], "yawDeg": 126, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Bone_Pile_02", "at": [-7.06, -7.62], "yawDeg": 173, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Skull_02", "at": [-4.73, -9.11], "yawDeg": 220, "scale": 1.5},
+      {"prop": "realms/SM_Env_Rock_Small_03", "at": [-3.37, -8.93], "yawDeg": 267, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Skull_03", "at": [-0.87, -9.81], "yawDeg": 314, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Bone_Pile_01", "at": [1.35, -10.41], "yawDeg": 1, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Skull_01", "at": [2.63, -9.67], "yawDeg": 48, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Bone_Pile_02", "at": [5.08, -8.03], "yawDeg": 95, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Skull_02", "at": [6.72, -7.55], "yawDeg": 142, "scale": 1.5},
+      {"prop": "realms/SM_Env_Rock_Small_03", "at": [8.26, -6.43], "yawDeg": 189, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Skull_03", "at": [9.11, -3.52], "yawDeg": 236, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Bone_Pile_01", "at": [9.31, -2.3], "yawDeg": 283, "scale": 1.5},
+      {"prop": "realms/SM_Env_Rubble_Tile_01", "at": [6.82, 1.56], "yawDeg": 347, "scale": 1.0},
+      {"prop": "realms/SM_Env_Rubble_Tile_02", "at": [5.47, 4.36], "yawDeg": 321, "scale": 1.0},
+      {"prop": "realms/SM_Env_Rubble_Tile_03", "at": [3.04, 6.31], "yawDeg": 296, "scale": 1.0},
+      {"prop": "realms/SM_Env_Rubble_Tile_01", "at": [0.0, 7.0], "yawDeg": 270, "scale": 1.0},
+      {"prop": "realms/SM_Env_Rubble_Tile_02", "at": [-3.04, 6.31], "yawDeg": 244, "scale": 1.0},
+      {"prop": "realms/SM_Env_Rubble_Tile_03", "at": [-5.47, 4.36], "yawDeg": 219, "scale": 1.0},
+      {"prop": "realms/SM_Env_Rubble_Tile_01", "at": [-6.82, 1.56], "yawDeg": 193, "scale": 1.0},
+      {"prop": "realms/SM_Env_Rubble_Tile_02", "at": [-6.82, -1.56], "yawDeg": 167, "scale": 1.0},
+      {"prop": "realms/SM_Env_Rubble_Tile_03", "at": [-5.47, -4.36], "yawDeg": 141, "scale": 1.0},
+      {"prop": "realms/SM_Env_Rubble_Tile_01", "at": [-3.04, -6.31], "yawDeg": 116, "scale": 1.0},
+      {"prop": "realms/SM_Env_Rubble_Tile_02", "at": [-0.0, -7.0], "yawDeg": 90, "scale": 1.0},
+      {"prop": "realms/SM_Env_Rubble_Tile_03", "at": [3.04, -6.31], "yawDeg": 64, "scale": 1.0},
+      {"prop": "realms/SM_Env_Rubble_Tile_01", "at": [5.47, -4.36], "yawDeg": 39, "scale": 1.0},
+      {"prop": "realms/SM_Env_Rubble_Tile_02", "at": [6.82, -1.56], "yawDeg": 13, "scale": 1.0},
+      {"prop": "darkfantasy/SM_Prop_Candle_01", "at": [8.87, 3.67], "yawDeg": 0, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Candle_02", "at": [3.67, 8.87], "yawDeg": 53, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Candle_03", "at": [-3.67, 8.87], "yawDeg": 106, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Candle_01", "at": [-8.87, 3.67], "yawDeg": 159, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Candle_02", "at": [-8.87, -3.67], "yawDeg": 212, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Candle_03", "at": [-3.67, -8.87], "yawDeg": 265, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Candle_01", "at": [3.67, -8.87], "yawDeg": 318, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Candle_02", "at": [8.87, -3.67], "yawDeg": 11, "scale": 1.5}
+    ],
+    "path-stones": [
+      {"prop": "realms/SM_Env_Rubble_Tile_01", "at": [0.0, 0.0], "yawDeg": 0, "scale": 0.9},
+      {"prop": "realms/SM_Env_Rubble_Tile_02", "at": [0.73, 1.35], "yawDeg": 37, "scale": 0.9},
+      {"prop": "realms/SM_Env_Rubble_Tile_03", "at": [2.15, 2.11], "yawDeg": 74, "scale": 0.9},
+      {"prop": "realms/SM_Env_Rubble_Tile_01", "at": [2.88, 3.46], "yawDeg": 111, "scale": 0.9},
+      {"prop": "realms/SM_Env_Rubble_Tile_02", "at": [3.61, 4.8], "yawDeg": 148, "scale": 0.9},
+      {"prop": "realms/SM_Env_Rubble_Tile_03", "at": [5.04, 5.56], "yawDeg": 185, "scale": 0.9},
+      {"prop": "realms/SM_Env_Rubble_Tile_01", "at": [5.75, 6.92], "yawDeg": 222, "scale": 0.9},
+      {"prop": "realms/SM_Env_Rubble_Tile_02", "at": [6.49, 8.26], "yawDeg": 259, "scale": 0.9}
+    ]
+  }
+}

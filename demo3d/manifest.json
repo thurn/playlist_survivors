@@ -2033,6 +2033,62 @@
     },
     {
       "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Environment/SM_Env_Basalt_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "d6cb4d599386aad4783694fec45c897f",
+      "use": "kit: basalt columns, cliffs and dead trees"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Environment/SM_Env_Basalt_02.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "deaac0ea32d413f4d90968c434372fa7",
+      "use": "kit: basalt columns, cliffs and dead trees"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Environment/SM_Env_Basalt_03.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "dafb0867a1ee55145bb0e2f47f964aca",
+      "use": "kit: basalt columns, cliffs and dead trees"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Environment/SM_Env_Basalt_04.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "82ad56f1934c2ca448972de668e5982f",
+      "use": "kit: basalt columns, cliffs and dead trees"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Environment/SM_Env_Basalt_05.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "999413c2efac15c4a9f3d06bec2912ce",
+      "use": "kit: basalt columns, cliffs and dead trees"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Environment/SM_Env_Cliff_Basalt_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "62257a34878d0154f869d925170c9580",
+      "use": "kit: basalt columns, cliffs and dead trees"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Environment/SM_Env_Cliff_Basalt_02.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "dab18b94bd285514e9e88188800bc738",
+      "use": "kit: basalt columns, cliffs and dead trees"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Environment/SM_Env_Cliff_Basalt_04.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "4767bca14e4997f44bf8bcafa0c1757c",
+      "use": "kit: basalt columns, cliffs and dead trees"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
       "path": "Assets/PolygonDarkFantasy/Prefabs/Environment/SM_Env_Moss_01.prefab",
       "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
       "guid": "c46e5eab5ae387a46b104decca3669d6",
@@ -2075,6 +2131,55 @@
     },
     {
       "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Environment/SM_Env_Tree_Dead_04.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "2eda3b6db64ebbf4aaa1513c37212954",
+      "use": "kit: basalt columns, cliffs and dead trees"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Body_Burnt_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "f4011dbe32d6c8f46ab1a454d6bf169c",
+      "use": "kit: burnt pyres, bodies, bones, tombstones and demon shrines"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Body_Burnt_02.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "c21772fc49d9e08469e38c6fc90701c9",
+      "use": "kit: burnt pyres, bodies, bones, tombstones and demon shrines"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Body_Burnt_03.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "3ec8e8212e3e4df46ad9e1916a75d3c8",
+      "use": "kit: burnt pyres, bodies, bones, tombstones and demon shrines"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Body_Pile_Burnt_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "8ba759f4ddabacb45b16f382ef0045ac",
+      "use": "kit: burnt pyres, bodies, bones, tombstones and demon shrines"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Bone_Pile_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "4bb66d8760dcffd419ba3643aa704d4b",
+      "use": "kit: burnt pyres, bodies, bones, tombstones and demon shrines"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Bone_Pile_02.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "07a33f740282b6f44b6df0ae6e80008f",
+      "use": "kit: burnt pyres, bodies, bones, tombstones and demon shrines"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
       "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Brazier_01.prefab",
       "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
       "guid": "887ca6f05d8eb0940be8f3d4916be6b1",
@@ -2103,6 +2208,20 @@
     },
     {
       "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Demon_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "61650dbd5057d0f4b8ec101c1b7ca5de",
+      "use": "kit: burnt pyres, bodies, bones, tombstones and demon shrines"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Demon_Ward_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "15ad4db60b08a594f939eef914d56424",
+      "use": "kit: burnt pyres, bodies, bones, tombstones and demon shrines"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
       "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Gargoyle_Statue_01.prefab",
       "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
       "guid": "cd544784b3e98454bb8b2913ffb6a903",
@@ -2124,10 +2243,115 @@
     },
     {
       "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Pyre_02_Burnt_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "6b856de5109584245a382ae14b63ac72",
+      "use": "kit: burnt pyres, bodies, bones, tombstones and demon shrines"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Pyre_Stake_01_Burnt_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "74df3d22dddaa3a448693a125f737d0b",
+      "use": "kit: burnt pyres, bodies, bones, tombstones and demon shrines"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Pyre_Stake_02_Burnt_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "57d036e653063eb4aab540f9efd5b485",
+      "use": "kit: burnt pyres, bodies, bones, tombstones and demon shrines"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Pyre_Stake_02_Burnt_02.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "217ba8e466fb36444b7e0f64e2d4396e",
+      "use": "kit: burnt pyres, bodies, bones, tombstones and demon shrines"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Pyre_Stake_02_Burnt_03.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "5303386be3bc81847ae197002c07b42d",
+      "use": "kit: burnt pyres, bodies, bones, tombstones and demon shrines"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Pyre_Stake_02_Burnt_04.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "60d8f4905988cab4b877e5eb467b7818",
+      "use": "kit: burnt pyres, bodies, bones, tombstones and demon shrines"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Rubble_Pile_Burnt_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "4fb538139942fde4589b7e8d16645877",
+      "use": "kit: burnt pyres, bodies, bones, tombstones and demon shrines"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Rubble_Pile_Burnt_02.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "4ea44ccdf605e5846afdf1d0d81bb8c5",
+      "use": "kit: burnt pyres, bodies, bones, tombstones and demon shrines"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Rubble_Pile_Burnt_03.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "941faa6b35421bc4a9c41efcf2aece0a",
+      "use": "kit: burnt pyres, bodies, bones, tombstones and demon shrines"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Skull_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "2f127edb413a6f14f9fac33b7746a0b5",
+      "use": "kit: burnt pyres, bodies, bones, tombstones and demon shrines"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Skull_02.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "8558b88955935ac488984ab2c8fd555c",
+      "use": "kit: burnt pyres, bodies, bones, tombstones and demon shrines"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Skull_03.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "d996ec05d10ea3e4d9fe5e25aee233e5",
+      "use": "kit: burnt pyres, bodies, bones, tombstones and demon shrines"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Skull_04.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "818ed293b255e9d4daac6c06eee0a60e",
+      "use": "kit: burnt pyres, bodies, bones, tombstones and demon shrines"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
       "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Skull_Pile_01.prefab",
       "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
       "guid": "b62b2f48ae7d1a74ab01bcf36e2da6c4",
       "use": "kit: braziers, candles, pyres, statues"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Skull_Pile_02.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "a24831c0b50f4be4e95e8815b94fc03c",
+      "use": "kit: burnt pyres, bodies, bones, tombstones and demon shrines"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Skull_Pile_03.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "2a0b07bc23cef0e4ab649419d9e94be7",
+      "use": "kit: burnt pyres, bodies, bones, tombstones and demon shrines"
     },
     {
       "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
@@ -2163,6 +2387,356 @@
       "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
       "guid": "ae5f1db14a31b5b41bac93e3e9ee303a",
       "use": "kit: graveyard"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Tomb_Stone_02.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "c08b40bbbb802c84986e9f88310d00ee",
+      "use": "kit: burnt pyres, bodies, bones, tombstones and demon shrines"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Tomb_Stone_03.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "dab3a8687c90bea45847e6c9f2418ebf",
+      "use": "kit: burnt pyres, bodies, bones, tombstones and demon shrines"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Bramble_01.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "8b4f36b4159c2b54485db28da3403a33",
+      "use": "kit: hellscape dead trees and brambles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Bramble_02.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "8c73641373f39e842b21f84d113028e6",
+      "use": "kit: hellscape dead trees and brambles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Bramble_03.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "315d0774aac09674a8f427ec9eae871d",
+      "use": "kit: hellscape dead trees and brambles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Hell_Bone_Hand_L_01.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "e2601cfae5922224da511097d24528bf",
+      "use": "kit: hellscape landmarks (obelisks, spires, a horned skull, bone hands)"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Hell_Bone_Hand_R_01.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "e28c21f05c6bd6540b5423d8a14ea570",
+      "use": "kit: hellscape landmarks (obelisks, spires, a horned skull, bone hands)"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Hell_Ground_01.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "63225b1817d58a342ad564b15a425f41",
+      "use": "kit: hellscape landmarks (obelisks, spires, a horned skull, bone hands)"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Hell_Ground_02.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "c42dd32ca0e5a8e43bf986fe5a9d19b0",
+      "use": "kit: hellscape landmarks (obelisks, spires, a horned skull, bone hands)"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Hell_Ground_03.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "2d2f0e23c0daa564eabf5c4feaa85105",
+      "use": "kit: hellscape landmarks (obelisks, spires, a horned skull, bone hands)"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Hell_Obelisk_01.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "58ec8aaca45a85148964d3d01a86fb64",
+      "use": "kit: hellscape landmarks (obelisks, spires, a horned skull, bone hands)"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Hell_Obelisk_02.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "3d5b39a309ef61b438d1d05622fe4f78",
+      "use": "kit: hellscape landmarks (obelisks, spires, a horned skull, bone hands)"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Hell_Obelisk_03.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "d84457d2342b7a149ab5f10f194fffdb",
+      "use": "kit: hellscape landmarks (obelisks, spires, a horned skull, bone hands)"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Hell_Obelisk_05.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "5fcc58a71eb68224a9521f08431f770d",
+      "use": "kit: hellscape landmarks (obelisks, spires, a horned skull, bone hands)"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Hell_Pillar_01.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "41cb659555c7a9c4bb0482150158796e",
+      "use": "kit: hellscape landmarks (obelisks, spires, a horned skull, bone hands)"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Hell_Pillar_03.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "8ff94f8665d36b6419b9c053865dd1c9",
+      "use": "kit: hellscape landmarks (obelisks, spires, a horned skull, bone hands)"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Hell_Rock_01.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "0a518d37ed1bbf64fb73b8c7004f6715",
+      "use": "kit: hellscape rocks and spikes"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Hell_Rock_02.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "47eb2556e91c61549b8efa43e8d534fd",
+      "use": "kit: hellscape rocks and spikes"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Hell_Rock_03.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "e768c96fc268fe54e88b5c34911b60e8",
+      "use": "kit: hellscape rocks and spikes"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Hell_Rock_04.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "a72364b64b3334b428d4de5c934a26c0",
+      "use": "kit: hellscape rocks and spikes"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Hell_Rock_05.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "42479dc3b0653044899d1da06fa918a0",
+      "use": "kit: hellscape rocks and spikes"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Hell_Rock_06.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "1d6e173159d44574b8c05028adfd552c",
+      "use": "kit: hellscape rocks and spikes"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Hell_Rock_07.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "ccf49ee4d3b3f0a438c2e2ec0e89845b",
+      "use": "kit: hellscape rocks and spikes"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Hell_Rock_08.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "2026e130b04e76e4f8e57ff40ea8aeec",
+      "use": "kit: hellscape rocks and spikes"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Hell_Spikes_01.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "b3ea28ad9ce04ee4182d26e1605c674d",
+      "use": "kit: hellscape rocks and spikes"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Hell_Spikes_02.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "46cd2b5041a601c4a934298012becc51",
+      "use": "kit: hellscape rocks and spikes"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Hell_Spikes_03.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "14a154085757b584ca95fae07d6e1e42",
+      "use": "kit: hellscape rocks and spikes"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Hell_Spikes_04.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "92064442806018f4095480c9d0700358",
+      "use": "kit: hellscape rocks and spikes"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Hell_Spikes_05.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "1d979db59fa7f1f48ac953325be2140e",
+      "use": "kit: hellscape rocks and spikes"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Obelisk_Glow_01.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "79c0cc817e2f1764ebf92f6f52035269",
+      "use": "kit: hellscape landmarks (obelisks, spires, a horned skull, bone hands)"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Obelisk_Glow_03.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "6d2c982bade23fa44b3122eae0ecec72",
+      "use": "kit: hellscape landmarks (obelisks, spires, a horned skull, bone hands)"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Rock_Medium_01.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "2c360d0ce7c2dc24398efd6de779da32",
+      "use": "kit: hellscape rocks and spikes"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Rock_Medium_04.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "0dfdba163b6c7b741aef9fc19bee1502",
+      "use": "kit: hellscape rocks and spikes"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Rock_Medium_06.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "e2569ced491ce7a46bea5dda0340cb61",
+      "use": "kit: hellscape rocks and spikes"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Rock_Small_01.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "0103a55aa92c3084da66183500c8d7d0",
+      "use": "kit: hellscape rocks and spikes"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Rock_Small_02.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "fa04c20e383fe38478963d2d2b0205fd",
+      "use": "kit: hellscape rocks and spikes"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Rock_Small_03.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "312ccee2d945f7b4ca6acbf7c11e70d9",
+      "use": "kit: hellscape rocks and spikes"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Rock_Small_04.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "5c83cb0af798dd94bbaaee46b87c3b8e",
+      "use": "kit: hellscape rocks and spikes"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Rock_Small_05.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "5e55afdca0e6fc84db4574bde6f18f21",
+      "use": "kit: hellscape rocks and spikes"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Rubble_Rocks_01.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "63f612186130a2943a9cd95acbd8a566",
+      "use": "kit: hellscape rubble"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Rubble_Rocks_02.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "e3f914b5c19523a44aeb69eb56fa94bc",
+      "use": "kit: hellscape rubble"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Rubble_Rocks_03.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "398af32a3423bd840b25d0c6842b7874",
+      "use": "kit: hellscape rubble"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Rubble_Tile_01.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "89f930ca1d4b4274680af1f9c4851f77",
+      "use": "kit: hellscape rubble"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Rubble_Tile_02.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "b3d55b9f2e8ff81438f099339d59b579",
+      "use": "kit: hellscape rubble"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Rubble_Tile_03.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "c5b16a0efbb6be74b8c769cb58e7b45d",
+      "use": "kit: hellscape rubble"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Skull_Huge_01.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "d50d61a0618cfeb4e952a193f42a0be2",
+      "use": "kit: hellscape landmarks (obelisks, spires, a horned skull, bone hands)"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Tree_Dead_01.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "640286906aa824b4ca18e55de74a108f",
+      "use": "kit: hellscape dead trees and brambles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Tree_Dead_02.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "b36ed3c0a9ec5de468e0563d3014d28a",
+      "use": "kit: hellscape dead trees and brambles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Tree_Dead_Windswept_01.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "e7045812ae5453b40adc0882141d4101",
+      "use": "kit: hellscape dead trees and brambles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Realms_Unity_2021_3_v1_3_4.unitypackage.gz",
+      "path": "Assets/PolygonDungeonRealms/Prefabs/Environments/SM_Env_Tree_Dead_Windswept_02.prefab",
+      "sourceSha256": "443d16f201d69e4a7a8a4c65dc46a241769244ade5461534900d1b33c878fc89",
+      "guid": "55c83fbc4be6adc40838f0f47a64bc97",
+      "use": "kit: hellscape dead trees and brambles"
     },
     {
       "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",

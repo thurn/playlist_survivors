@@ -413,6 +413,27 @@ namespace Demo3D.Tests
             Assert.That(clearing.g, Is.GreaterThan(forest.g));
         }
 
+        /// <summary>ps-bop.3.5: the lava's rivers glow past the edge of fighting ground; on it only the cooled crust's dim cracks.</summary>
+        [Test]
+        public void LavaRunsOnlyPastFightingGround()
+        {
+            var lava = ArenaEnvironment.Load("lava");
+            var layout = ArenaLayout.Parse(lava.Json);
+            var spec = ArenaBaker.GroundLava.Parse(lava.Root["ground"]["lava"]);
+            int fighting = 0, lit = 0, outside = 0;
+            for (float x = -79; x < 80; x += 1.3f)
+            for (float z = -79; z < 80; z += 1.3f)
+            {
+                var c = ArenaBaker.LavaColor(layout, spec, x, z);
+                float d = layout.FightingDistance(new System.Numerics.Vector2(x, z), out _);
+                if (d <= spec.FromM) { fighting++; Assert.That(c.maxColorComponent, Is.LessThanOrEqualTo(spec.CrackFight + 1e-4f), $"no river at ({x}, {z}), {d:F1} m from fighting ground"); }
+                else { outside++; if (c.maxColorComponent > 0.5f) lit++; }
+            }
+            Assert.That(fighting, Is.GreaterThan(1000));
+            Assert.That(lit, Is.InRange(outside / 50, outside / 3), "rivers, not a lake");
+            Assert.Throws<FormatException>(() => ArenaBaker.GroundLava.Parse(JsonValue.Parse("{ \"fromM\": -1 }")));
+        }
+
         static ArenaIndex Index
         {
             get

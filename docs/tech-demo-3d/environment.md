@@ -157,6 +157,11 @@ compare shot for shot.
   pieces at the same anchor.
 - **The ground's colours** are the layout's `ground` (forest, edge,
   clearing, path, in sRGB); the baker generates the albedo from them.
+  An optional `ground.lava` (the lava environment's) adds a generated
+  emission map: rivers of lava winding through the edge bands and the
+  forest, never onto fighting ground, with cracks glowing in the crust
+  around them and, dimly, across fighting ground (`ArenaBaker.GroundLava`).
+  Its glow is baked onto the kit through the probes.
 - **The horde is never recoloured.** `lighting.crowd.keyColor` gives the
   horde its own key colour at the moon's luminance, so a coloured moon on the
   set leaves the type hues alone. `lighting.post.grade` sets the grade's

@@ -35,6 +35,7 @@ namespace Demo3D.EditorTools.Assets
             { "PolygonAdventure", "adventure" }, { "PolygonDarkFantasy", "darkfantasy" },
             { "PolygonElvenRealm", "elven" }, { "PolygonFantasyKingdom", "kingdom" }, { "PolygonVikings", "vikings" },
             { "PolygonAncientEgypt", "egypt" }, { "PolygonAncientEmpire", "empire" }, { "PolygonWesternFrontier", "western" },
+            { "PolygonDungeonRealms", "realms" },
         };
 
         public static void Run()

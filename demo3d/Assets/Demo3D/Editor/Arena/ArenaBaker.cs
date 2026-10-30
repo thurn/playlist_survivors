@@ -534,8 +534,131 @@ namespace Demo3D.EditorTools.Arena
             mat.SetTexture("_DetailNormalMap", normals);
             mat.SetFloat("_DetailNormalMapScale", 0.8f);
             mat.EnableKeyword("_DETAIL_MULX2");
+            var lava = env.Root["ground"]["lava"];
+            if (lava.IsNull)
+            {
+                mat.SetTexture("_EmissionMap", null);
+                mat.SetColor("_EmissionColor", Color.black);
+                mat.DisableKeyword("_EMISSION");
+                mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.EmissiveIsBlack;
+            }
+            else
+            {
+                var spec = GroundLava.Parse(lava);
+                mat.SetTexture("_EmissionMap", LavaEmission(env, layout, spec));
+                mat.SetColor("_EmissionColor", Color.white * spec.Intensity);
+                mat.EnableKeyword("_EMISSION");
+                // The lava lights the kit around it through the baked probes (E2).
+                mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.BakedEmissive;
+            }
             EditorUtility.SetDirty(mat);
             return mat;
+        }
+
+        /// <summary>
+        /// The ground's lava (ps-bop.3.5), from the layout's optional <c>ground.lava</c>: rivers of
+        /// it wind through the edge bands and the forest, never onto fighting ground. A river is an
+        /// iso-line of warped noise (<c>scaleM</c> between bends), its half-width growing from
+        /// nothing at <c>fromM</c> past fighting ground to <c>widthM</c>/2 over <c>rampM</c>. Its
+        /// core runs from <c>color</c> (sRGB) at the banks to <c>hot</c> mid-stream; a <c>glowM</c>
+        /// halo of <c>color</c> at <c>glow</c> warms the basalt beside it, and the crust's cracks
+        /// (cells <c>crackM</c> across) glow at <c>crack</c>, fading over <c>crackReachM</c> from
+        /// the banks to <c>crackFight</c>, the cooled crust's dim cracks that also cross fighting
+        /// ground in patches. <c>intensity</c> is the emission's HDR multiplier.
+        /// </summary>
+        public struct GroundLava
+        {
+            public Color Hot, Color;
+            public float Intensity, FromM, RampM, WidthM, ScaleM, GlowM, Glow, CrackM, Crack, CrackReachM, CrackFight;
+
+            public static GroundLava Parse(JsonValue v)
+            {
+                Color C(string key, Color fallback) => v[key].Count >= 3 ? new Color(v[key][0].AsFloat(), v[key][1].AsFloat(), v[key][2].AsFloat()) : fallback;
+                var l = new GroundLava
+                {
+                    Hot = C("hot", new Color(1f, 0.78f, 0.35f)), Color = C("color", new Color(1f, 0.28f, 0.03f)),
+                    Intensity = v["intensity"].AsFloat(4f), FromM = v["fromM"].AsFloat(3f), RampM = v["rampM"].AsFloat(10f),
+                    WidthM = v["widthM"].AsFloat(3f), ScaleM = v["scaleM"].AsFloat(40f), GlowM = v["glowM"].AsFloat(1.2f), Glow = v["glow"].AsFloat(0.25f),
+                    CrackM = v["crackM"].AsFloat(4f), Crack = v["crack"].AsFloat(0.5f), CrackReachM = v["crackReachM"].AsFloat(6f),
+                    CrackFight = v["crackFight"].AsFloat(0f),
+                };
+                if (l.FromM < 0) throw new FormatException("ArenaBaker: ground.lava.fromM must be >= 0: lava never runs on fighting ground");
+                return l;
+            }
+        }
+
+        /// <summary>The lava's emission at (x, z), sRGB: on fighting ground only the cooled crust's cracks.</summary>
+        public static Color LavaColor(ArenaLayout layout, GroundLava lava, float x, float z)
+        {
+            float d = layout.FightingDistance(new Vector2(x, z), out _);
+            // The cooled crust's cracks come in patches about 15 m across, so fighting ground isn't one tiling.
+            float cooled = lava.CrackFight * Smooth(0.38f, 0.62f, Mathf.PerlinNoise(x * 0.065f + 23.7f, z * 0.065f + 91.3f));
+            if (d <= lava.FromM) return cooled > 0 ? lava.Color * cooled * Crack(lava, x, z) : Color.black;
+            float grow = Smooth(lava.FromM, lava.FromM + lava.RampM, d);
+            // The river: distance (m) to the warped field's 0.5 iso-line, from its value and gradient.
+            float wx = x + 12f * (Mathf.PerlinNoise(x * 0.017f + 13.1f, z * 0.017f + 7.7f) - 0.5f);
+            float wz = z + 12f * (Mathf.PerlinNoise(x * 0.017f + 3.3f, z * 0.017f + 29.9f) - 0.5f);
+            float f = 1f / lava.ScaleM;
+            float N(float px, float pz) => Mathf.PerlinNoise(px * f + 0.37f, pz * f + 0.71f);
+            const float e = 0.25f;
+            float gx = (N(wx + e, wz) - N(wx - e, wz)) / (2 * e), gz = (N(wx, wz + e) - N(wx, wz - e)) / (2 * e);
+            float dist = Mathf.Abs(N(wx, wz) - 0.5f) / Mathf.Max(1e-4f, Mathf.Sqrt(gx * gx + gz * gz));
+            float half = 0.5f * lava.WidthM * grow * (0.4f + 0.9f * Mathf.PerlinNoise(x * 0.04f + 61.3f, z * 0.04f + 17.9f));
+            float mid = half > 0.05f ? Mathf.Clamp01(1 - dist / half) : 0; // 1 mid-stream, 0 at the banks
+            float core = mid > 0 ? Smooth(0, 0.25f, mid) : 0;
+            float bank = Mathf.Max(0, dist - half);
+            float halo = lava.Glow * Mathf.Exp(-bank / lava.GlowM) * grow;
+            // The crust's cracks, glowing near the river.
+            float crack = Mathf.Max(cooled, lava.Crack * Mathf.Exp(-bank / lava.CrackReachM) * grow) * Crack(lava, x, z);
+            float k = Mathf.Max(core, Mathf.Max(halo, crack));
+            return Color.Lerp(lava.Color * k, lava.Hot, Smooth(0.35f, 1f, mid));
+        }
+
+        /// <summary>The crust's cracks at (x, z): 1 on the edges of jittered cells <c>crackM</c> across, 0 inside them.</summary>
+        static float Crack(GroundLava lava, float x, float z)
+        {
+            // Warped, so the cells' edges wander and don't read as a grid.
+            float cx = (x + 2.2f * (Mathf.PerlinNoise(x * 0.3f + 5.5f, z * 0.3f + 1.9f) - 0.5f)) / lava.CrackM;
+            float cz = (z + 2.2f * (Mathf.PerlinNoise(x * 0.3f + 8.1f, z * 0.3f + 4.4f) - 0.5f)) / lava.CrackM;
+            int ix = Mathf.FloorToInt(cx), iz = Mathf.FloorToInt(cz);
+            float f1 = float.MaxValue, f2 = float.MaxValue;
+            for (int j = -1; j <= 1; j++)
+            for (int i = -1; i <= 1; i++)
+            {
+                uint h = (uint)(ix + i) * 73856093u ^ (uint)(iz + j) * 19349663u;
+                h ^= h >> 13; h *= 0x5bd1e995u; h ^= h >> 15;
+                float px = ix + i + (h & 0xFFFF) / 65536f, pz = iz + j + (h >> 16) / 65536f;
+                float dd = (px - cx) * (px - cx) + (pz - cz) * (pz - cz);
+                if (dd < f1) { f2 = f1; f1 = dd; }
+                else if (dd < f2) f2 = dd;
+            }
+            float edge = (Mathf.Sqrt(f2) - Mathf.Sqrt(f1)) * lava.CrackM; // about twice the distance (m) to the cells' edge
+            return 1 - Smooth(0.06f, 0.22f, edge);
+        }
+
+        static Texture2D LavaEmission(ArenaEnvironment env, ArenaLayout layout, GroundLava lava)
+        {
+            string path = env.Dir + "/GroundLava.png";
+            const int size = 2048; // about 11 cm a texel: the cracks stay lines, the rivers keep their banks
+            var px = new Color32[size * size];
+            float m = 2 * GroundHalfM / size;
+            for (int j = 0; j < size; j++)
+            for (int i = 0; i < size; i++)
+                px[j * size + i] = LavaColor(layout, lava, -GroundHalfM + (i + 0.5f) * m, -GroundHalfM + (j + 0.5f) * m);
+            var tex = new Texture2D(size, size, TextureFormat.RGB24, false);
+            tex.SetPixels32(px);
+            tex.Apply();
+            File.WriteAllBytes(path, tex.EncodeToPNG());
+            UnityEngine.Object.DestroyImmediate(tex);
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+            var imp = (TextureImporter)AssetImporter.GetAtPath(path);
+            imp.sRGBTexture = true;
+            imp.mipmapEnabled = true;
+            imp.wrapMode = TextureWrapMode.Clamp;
+            imp.anisoLevel = 4;
+            imp.textureCompression = TextureImporterCompression.CompressedHQ;
+            imp.SaveAndReimport();
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
         }
 
         /// <summary>The detail layer's tile (m): about 1.2 cm per pixel of <see cref="DetailAlbedo"/>.</summary>
