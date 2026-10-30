@@ -325,6 +325,51 @@ the flag through `--player-args`. Without it, the demo is unchanged.
   bones for the annotator where the fastest is a tail. Its level keeps 150
   on screen at 18 m, measured windowless at about 3x under the 60 fps
   budget ([evidence](../../demo3d/evidence/rosters/forest/README.md)).
+- **Heroic fills all nine slots** (ps-f8a.3): Skeleton Knight, Goblin,
+  Giant Rat, Harpy, Kobold and Ghoul, the Fat Ogre and Troll as elites and
+  the Mountain Dragon as the boss, in the pack's own URP Lit materials, with
+  texture memory capped at import (1K fodder, 2K elites and boss: 264 MB)
+  ([evidence](../../demo3d/evidence/rosters/heroic/README.md)).
+- **Each set has its own look** (ps-f8a.4). arena-layout.json's `rosters`
+  gives each set a partial `lighting` object over the night's, as a palette
+  does, read only by the runtime, so the baked kit is the night's. The post
+  stack's base values (`lighting.post`: exposure, contrast, saturation,
+  white-balance temperature, tonemapper and bloom) moved there from code,
+  and the post feel's beat and section offsets still ride on top. The sets'
+  materials take none of the bone crowd's fill, rim, key or shoulder, so
+  their look comes from the grade and the lights:
+  - forest: saturation 14 (the night's 30 made the packs' already
+    saturated paint scream), contrast 22, bloom threshold 1.8 at 0.8
+    intensity, so bloom stays on the glow and the effects. The roster
+    file's `glow` scales a type's glow-map emission at bake: the wolf's
+    spikes 0.5, the treant 0.6, the golem 0.7 and the dragon 0.6, while the
+    small eyes keep the pack's 1.1.
+  - heroic: a cooler moon (0.86, 0.9, 1.0 at 1.15), exposure 0.65, saturation
+    14, contrast 32 and temperature -10, so the leather, bone and metal keep
+    their detail instead of sinking into the warm ground's browns.
+  - A `--palette` still applies over a set's look.
+- **A set's corpses sink.** Stock URP Lit has no dissolve, and a
+  dissolve-capable copy of URP Lit would be a fork of a large package
+  shader to maintain against a vendor-materials-only epic, so the stock
+  crowd sinks a set's corpse its whole height below the ground over the
+  dissolve's beat (easing in), instead of scaling it away: the death clip
+  plays out, the body lies still for a beat, then the ground takes it, with
+  its materials untouched. The default stock crowd still scales away.
+- **Running a set.** On the Mac, in a worktree:
+
+  ```
+  uv run --project demo3d/tools demo3d setup --roster forest --roster heroic
+  uv run --project demo3d/tools demo3d unity BakeAll
+  uv run --project demo3d/tools demo3d unity BakeRoster -roster forest
+  uv run --project demo3d/tools demo3d unity BakeRoster -roster heroic
+  uv run --project demo3d/tools demo3d build
+  open -n demo3d/Builds/mac/il2cpp/PlaylistSurvivors3D.app --args -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --roster forest
+  ```
+
+  Name both sets in one `setup`: it syncs only the sets it is given. The
+  look set of a set is `demo3d look <slug> --player-args "--roster <set>"
+  --baseline final`; [evidence/rosters/compare](../../demo3d/evidence/rosters/compare/README.md)
+  puts default, forest and heroic side by side.
 
 ## The Hero
 
