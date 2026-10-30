@@ -229,9 +229,10 @@ What the simulation does on each grid step:
   points. The climax adds the boss, the laser and denser spells on top.
 - **The boss enters outside the view** at its section's start. By default it
   waits there to be released like any other monster, which a full climax
-  never does (demo3d's boss stays out of view: ps-tfn.9). A level script's
-  `bossFrom` (demo2d's, PX8) names a layout goal: the boss enters in that
-  goal's direction from the hero and always walks in.
+  never does. A level script's `bossFrom` (PX8) names a layout goal: the boss
+  enters in that goal's direction from the hero and always walks in. Both
+  demos set it: demo3d's boss comes from the `opening`, to the hero's
+  north-east (ps-tfn.9).
 - **Spawns refill toward the section's target count.** They come in on beats,
   a few at a time, at a ring 2 m beyond the view's edge, on open cells the
   flow field can reach. While the hero heads for a goal, spawns are weighted

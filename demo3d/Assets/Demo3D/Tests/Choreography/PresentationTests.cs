@@ -81,5 +81,37 @@ namespace Demo3D.Choreography.Tests
             }
             Assert.That(ticks, Is.GreaterThan(0), "the song has laser ticks");
         }
+
+        /// <summary>
+        /// ps-tfn.9: the boss enters at the final peak, walks into the view while the section has
+        /// most of it left, stays in view to the section's end, and is struck before the ending.
+        /// </summary>
+        [Test]
+        public void TheBossWalksIntoViewAndIsStruck()
+        {
+            Timeline tl = Fixtures.SongTimeline;
+            int bossType = Fixtures.Data.Roster.MonsterIndex("boss");
+            EntityInfo boss = Array.Find(tl.Entities, e => e.Kind == EntityKind.Monster && e.Type == bossType);
+            SectionStats peak = Array.Find(tl.Sections, s => s.Label == "final-peak");
+            SectionStats ending = Array.Find(tl.Sections, s => s.Label == "ending");
+            Assert.That(boss.Spawn, Is.EqualTo(peak.Start).Within(1e-6));
+
+            bool InView(double t)
+            {
+                FramingSample f = tl.FramingAt(t);
+                return tl.View(f.ViewWidth).Contains(f.Focus, tl.PositionAt(boss.Id, t));
+            }
+            double inView = peak.End;
+            for (double t = boss.Spawn; t < peak.End; t += 0.1) if (InView(t)) { inView = t; break; }
+            TestContext.WriteLine("boss in view at " + inView.ToString("F1") + " s");
+            Assert.That(inView, Is.LessThan(peak.Start + (peak.End - peak.Start) / 3), "in view in the section's first third");
+            for (double t = inView; t < peak.End; t += 0.1) Assert.That(InView(t), Is.True, "boss out of view at " + t.ToString("F1"));
+
+            int blows = 0;
+            foreach (ActionEvent a in tl.ActionsOf(boss.Id))
+                if ((a.Kind == ActionKind.Attack || a.Kind == ActionKind.Hit) && a.Impact < ending.Start) blows++;
+            TestContext.WriteLine(blows + " boss attacks and hits before the ending");
+            Assert.That(blows, Is.GreaterThan(0), "the boss attacks or is struck before the ending");
+        }
     }
 }

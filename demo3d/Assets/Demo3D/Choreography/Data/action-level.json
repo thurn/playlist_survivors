@@ -30,7 +30,7 @@
     { "section": "drop-2", "onScreen": 0.8, "viewWidthM": 30, "load": "demo", "goal": "courtyard-field",
       "mix": { "skeleton": 4, "goblin": 3, "bat": 2, "slime": 1, "demon": 2, "bigork": 0.3, "troll": 0.2 }, "combo": ["slashL", "slashR", "thrust", "spin@accent", "slam@phrase"],
       "spells": ["ring@downbeat", "bolt@beat", "lightning@beat/3"] },
-    { "section": "final-peak", "onScreen": 1.05, "viewWidthM": 30, "load": "demo", "goal": null, "boss": "boss",
+    { "section": "final-peak", "onScreen": 1.05, "viewWidthM": 30, "load": "demo", "goal": null, "boss": "boss", "bossFrom": "opening",
       "mix": { "skeleton": 4, "goblin": 3, "bat": 2, "slime": 1, "mushroom": 1, "demon": 2, "bigork": 0.4, "troll": 0.3 },
       "combo": ["slashL", "slashR", "thrust", "spin@accent", "slam@phrase"],
       "spells": ["ring@downbeat", "bolt@beat", "lightning@beat/3", "laser@phrase"] },

@@ -2376,3 +2376,32 @@ Status: Done (2026-10-28, on Cygnus). The headroom step ran after TD14 landed (a
 - **Run:** `open -n demo3d/Builds/SkeletonLodPreview.app --args -screen-fullscreen 1 --view-width 5`.
   The third pane is **B matched**; the earlier full-screen clearing and zoom
   controls are preserved.
+
+### The climax's boss walks in (ps-tfn.9, 2026-10-29)
+
+- **Status:** Done (bead ps-tfn.9, from the 2D demo's PX8). Commit SHA on the bead.
+- **Problem:** the boss entered beyond the view's north edge at the final peak (161.0 s) and stood
+  there to the song's end, one motion segment and no actions: the sim moves an off-screen monster
+  only when it releases it to fill the view's deficit, nearest the edge first, and a full climax
+  never reached it.
+- **Fix:** the final peak sets PX8's opt-in `bossFrom` (choreography.md) to `opening`, the
+  clearing to the hero's north-east. The boss enters on that side and always walks in. Tried on
+  the song's timeline: `courtyard-field` (north) stops it near the frame's top edge, about 12 m
+  past the focus; `brazier-glade` (north-west) is never struck before the outro; from `courtyard`
+  (west) it is stuck behind the courtyard's walls. With `opening` it is in view from 163.1 s to
+  the section's end, about 7 m up and right of the hero, is struck at 178.5 s and falls to one of the
+  ending's slams (195.9 s) with the horde. Its reach and attack are unchanged: a 1.2 m melee boss
+  can't get through about 430 monsters to the hero, so it never attacks; demo2d made its boss a
+  caster for that, which demo3d's client would need a projectile effect for.
+- **Song dump** (`dotnet run --project demo3d/dotnet/Demo3D.Choreography.Cli -c Release -- song
+  --out song.json`): SHA-256 `f5170f7184724ca94eee3438a1d342c07cba43958559a9c8e5bb2679fa84208c`
+  before (the same-type clump commits had already moved it off PX8's `09945e3b…`), and
+  `5f2bf73bf6a943f810c4e997c3d8495723a2ffa774916840a5b3cd3f35998337` (19,118,387 bytes) after,
+  identical over two runs. Only the final peak onward changes.
+- **Checks:** `dotnet test demo3d/dotnet/Demo3D.Choreography.Tests` 132 of 132, with the new
+  `TheBossWalksIntoViewAndIsStruck` (in view in the section's first third and to its end, struck
+  before the ending; it fails without `bossFrom`); `demo3d test` 220 of 223, 3 skipped (the
+  skeleton-LOD preview bake); IL2CPP build. Windowless stills by [mac.md](mac.md)'s command at
+  [170 s](../../demo3d/evidence/boss-entry/still-170.000.jpg) and
+  [185 s](../../demo3d/evidence/boss-entry/still-185.000.jpg): the boss (the green dragon) is in
+  frame to the hero's upper right in both.
