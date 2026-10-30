@@ -66,6 +66,8 @@ namespace Demo3D.Runtime.Playback
             public float Blend;  // weight of A
             public float HitFlash, Dissolve;
             public bool Dying;
+            /// <summary>A death resting on its clip's last pose: the hold and the dissolve (the crystal shatter's swap, CrystalShatter).</summary>
+            public bool Held;
         }
 
         Slot SlotFor(int action, int e, double t, float walkStride, float walkLength)
@@ -95,6 +97,11 @@ namespace Demo3D.Runtime.Playback
 
             int act = _schedule.ActiveAction(e, t, out double since);
             st.A = SlotFor(act, e, t, walkStride, walkLength);
+            if (act >= 0 && _tl.Actions[act].Kind == ActionKind.Death)
+            {
+                var ann = _clips[_tl.Actions[act].Clip];
+                st.Held = st.A.Time >= Mathf.Max(ann.End, ann.Impact);
+            }
             st.Blend = 1f;
             st.B = st.A;
             if (t - since < Crossfade && !double.IsInfinity(since))

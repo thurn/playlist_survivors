@@ -112,7 +112,16 @@ namespace Demo3D.Tests
                     // Shells cast no shadow (the body does); an opaque shell still needs depth and motion
                     // vectors, while an additive one (the flames) has only its colour pass.
                     string[] passes;
-                    if (!shader.name.StartsWith("Demo3D/Styles/Shells/", StringComparison.Ordinal))
+                    if (shader.name == "Demo3D/Styles/CrystalShard")
+                    {
+                        // The crystal shatter's shards: a MeshRenderer, not the crowd. Their motion-vector twin
+                        // draws in an opaque queue, where a depth pass would write the shards into the
+                        // depth prepass and punch holes in the opaque texture behind them.
+                        passes = new[] { "ForwardLit", "ShadowCaster", "MotionVectors" };
+                        Assert.That(m.FindPass("DepthOnly"), Is.LessThan(0), shader.name);
+                        Assert.That(m.FindPass("DepthNormals"), Is.LessThan(0), shader.name);
+                    }
+                    else if (!shader.name.StartsWith("Demo3D/Styles/Shells/", StringComparison.Ordinal))
                         passes = shader.name == "Demo3D/Styles/Hologram" // a projection of light casts no shadow
                             ? new[] { "ForwardLit", "DepthOnly", "DepthNormals", "MotionVectors" }
                             : new[] { "ForwardLit", "ShadowCaster", "DepthOnly", "DepthNormals", "MotionVectors" };

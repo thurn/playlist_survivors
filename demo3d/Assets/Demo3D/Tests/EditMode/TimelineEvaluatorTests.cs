@@ -76,6 +76,35 @@ namespace Demo3D.Tests
             Assert.Fail("no deaths");
         }
 
+        /// <summary>
+        /// The crystal shatter swaps a death to its baked pose (CrystalShatter): from the hold's start
+        /// through the dissolve a death is Held, on its clip's last pose, which is all the bake samples.
+        /// </summary>
+        [Test]
+        public void DeathsAreHeldOnTheirLastPoseThroughTheHoldAndDissolve()
+        {
+            int checkedDeaths = 0;
+            foreach (var a in _tl.Actions)
+            {
+                if (a.Kind != ActionKind.Death || a.Clip < 0) continue;
+                Assert.That(_eval.Evaluate(a.Entity, a.Impact + 0.01, 1f, 1f, 0f).Held, Is.False, "the death clip is still playing");
+                var ann = _data.Clips[a.Clip];
+                double end = System.Math.Min(_tl.Entities[a.Entity].Despawn, a.Impact + 10);
+                for (double t = a.Impact; t < end; t += 1.0 / 60)
+                {
+                    var st = _eval.Evaluate(a.Entity, t, 1f, 1f, 0f);
+                    if (st.Dissolve > 0) Assert.That(st.Held, Is.True, "the dissolve is held");
+                    if (!st.Held) continue;
+                    Assert.That(st.Dying, Is.True);
+                    Assert.That(st.A.Clip, Is.EqualTo(a.Clip));
+                    Assert.That(st.A.Time, Is.EqualTo(System.Math.Max(ann.End, ann.Impact)), "the clip's held time");
+                    Assert.That(st.Blend, Is.EqualTo(1f));
+                }
+                if (++checkedDeaths == 40) break;
+            }
+            Assert.That(checkedDeaths, Is.GreaterThan(10));
+        }
+
         [Test]
         public void CrossfadesBlendFromTheLeavingClip()
         {

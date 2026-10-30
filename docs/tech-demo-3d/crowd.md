@@ -205,6 +205,33 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
   - **Shatter** (crystal, spectrum) is `SL_ShatterDisplace` in `SL_DISPLACE`, so every pass
     moves the shards. A shard that has finished its flight collapses to a point, and such a
     style sets `SL_DISSOLVE` to `0.0` (no clip). Hologram's scan-out is its own `SL_DISSOLVE`.
+    In the demo, crystal's deaths break into baked shards instead (below), so only spectrum
+    still flies its triangles apart.
+- **The crystal shatter** (epic ps-2iq) replaces crystal's triangle shatter wherever Crystal draws
+  a type (`--monster-style crystal`, the mix's slimes):
+  - **Baked shards.** CrowdBaker poses each type's LOD0 style mesh as the crowd holds its death
+    (the death clip at max(end, impact), from the 30 Hz bone texture as the default cuts draw it)
+    and `CrowdShardBaker` cuts it into 20 to 40 chunks of varied size: surface patches around
+    weighted seeds, split into connected pieces and merged by contact, each closed by inside faces
+    to an apex inside the body (the vendor meshes are rarely closed, so a Voronoi slice would have
+    nothing to cap). Each chunk has a convex collider of at most 42 support points. They go to
+    `CrowdShards.asset` beside the style meshes, which only a crystal run loads.
+  - **The swap.** At the start of the hold (`TimelineEvaluator.State.Held`) DemoMain hides the
+    instance and `CrystalShatter` places the type's shards from a pool at its position, yaw and
+    scale. Their skin is the style mesh's own triangles at that pose, drawn by
+    `CrystalShard.shader` with Crystal's surface (`CrystalCommon.hlsl`), so the frame doesn't
+    change; only the shadow does, by a few pixels, since the crowd casts from the LOD2 shadow
+    proxy.
+  - **The release.** On the next beat (where the dissolve used to start) the shards become PhysX
+    rigidbodies with an outward kick plus the killing blow's direction (the hero to the monster),
+    their inside faces show (brighter and more saturated), and they land on a floor collider under
+    y = 0, settle, and sink after 2.5 s. Physics steps on the song clock in script mode at 120 Hz,
+    so `--fixed-time` runs repeat exactly; deaths before `--start-at` are not reconstructed.
+  - **Motion vectors.** Each shard draws a second material on the same shader in the last opaque
+    queue with only its MotionVectors pass enabled, so under `--aa taa` the shards reproject with
+    their own motion (the crowd's crystal monsters still smear, as below).
+  - `--shatter-log` logs each hold and release with its song time and place in the view, to find
+    deaths for filmstrips (`demo3d filmstrip`, [mac.md](mac.md#filmstrips)).
   - **Transparent styles.** Crystal draws in Transparent-10 and refracts the camera's opaque
     texture. URP's asset keeps that texture off, and `MonsterStyle.NeedsOpaqueTexture` turns it
     on for the game camera only under crystal and mix (DemoMain): one half-resolution copy of the

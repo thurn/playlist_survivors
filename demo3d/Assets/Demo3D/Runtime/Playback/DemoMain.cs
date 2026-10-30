@@ -39,6 +39,7 @@ namespace Demo3D.Runtime.Playback
         PostFeel _postFeel;
         MonsterStyle _style;
         StyleBeat _styleBeat;
+        CrystalShatter _shatter; // crystal types' deaths break into baked shards (null without one)
         bool _stylePosted;
         SoundScheduler _sounds;
         // TD15's beauty shots: --hold-at x,y (a stress scene's hero holds that point), --beauty-empty (no
@@ -160,6 +161,9 @@ namespace Demo3D.Runtime.Playback
             }
             else if (!_style.IsBaseline) throw new InvalidOperationException($"DemoMain: {MonsterStyle.Flag} {_style.Name} needs the bone crowd, not --crowd {_flags.Crowd}");
             if (!_style.IsBaseline) _styleBeat = new StyleBeat(_tl.Map ?? SongMap.Synthetic(120, _tl.Duration));
+            if (_crowd is BoneTextureCrowd)
+                _shatter = CrystalShatter.Create(_tl, _style, CrowdLibrary.Load(), Array.ConvertAll(_typeAssets, t => t.id));
+            if (_shatter != null) _shatter.View = _rig.Camera;
             Debug.Log($"DemoMain: {MonsterStyle.Flag} {_style.Name}");
             _crowd.Initialize(Array.ConvertAll(_typeAssets, t => t.id), 16384); // instances per type; the bone path sizes small buffers by it
             _slots = new CrowdSlots(_typeAssets.Length, 16384);
@@ -407,6 +411,7 @@ namespace Demo3D.Runtime.Playback
             }
 
             _evalWatch.Start();
+            _shatter?.Frame(t);
             // Stable slots: a monster keeps its slot while it lives (motion vectors, the previous
             // palette and LOD state follow the slot); a freed slot is written Hidden first.
             _slots.Begin();
@@ -422,7 +427,10 @@ namespace Demo3D.Runtime.Playback
                 {
                     int e = list[k];
                     var st = _eval.Evaluate(e, t, _walkStride[type], _walkLength[type], _hover[type]);
-                    inst[_slots.Assign(type, e)] = ToInstance(st, _typeAssets[type], type, _tl.Entities[e].Seed);
+                    var mi = ToInstance(st, _typeAssets[type], type, _tl.Entities[e].Seed);
+                    // A crystal monster's hold and dissolve are its shards (CrystalShatter).
+                    if (st.Held && _shatter != null && _shatter.Dying(e, type, mi, _tl.Entities[e].Seed)) mi.Flags |= (uint)CrowdFlags.Hidden;
+                    inst[_slots.Assign(type, e)] = mi;
                     if (_rig.OnScreen(st.Position, _height[type]))
                     {
                         if (st.Dying) OnScreenDying++; else OnScreenAlive++;
@@ -580,7 +588,8 @@ namespace Demo3D.Runtime.Playback
             _gpuProbe?.Dispose();
             _gpuProbe = null;
             Debug.Log($"DemoMain: done at song time {SongTime.ToString("F2", CultureInfo.InvariantCulture)}" +
-                      (_fx != null ? $"; effects: {_fx.SpawnsTotal} spawns, {_fx.MergedTotal} merged (cuts), {_fx.GlowsDropped} glow emitters dropped (cuts)" : ""));
+                      (_fx != null ? $"; effects: {_fx.SpawnsTotal} spawns, {_fx.MergedTotal} merged (cuts), {_fx.GlowsDropped} glow emitters dropped (cuts)" : "") +
+                      (_shatter != null ? $"; crystal shatter: {_shatter.Deaths} deaths, at most {_shatter.PeakShards} shards live" : ""));
             enabled = false;
             Application.Quit(code);
         }
@@ -591,6 +600,7 @@ namespace Demo3D.Runtime.Playback
             _songCheck?.Dispose();
             _fx?.Dispose();
             _crowd?.Dispose();
+            _shatter?.Dispose();
             _style?.Dispose();
             _heroRenderer?.Dispose();
             _arena?.Dispose();
