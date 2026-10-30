@@ -108,7 +108,10 @@ the monsters' L* p10/p90, the effects' pixels and readability, whose floor is
 also gets the stage (ps-e8r.5): the median L* of the ground within 6 m of the
 hero against the frame's outer 15% border, from the `view-<t>.json` the
 player writes beside each still (its camera's view-projection and the hero's
-feet).
+feet). The empty beauty shots also get the ground (ps-e8r.6): the median L*
+of fighting ground (inside the layout's clearings and paths) and of the edge
+bands and forest past them, and the fighting ground's local detail (the mean
+standard deviation of L* in 16 px windows).
 `--measure-only` re-measures kept captures; `--trial` writes nothing to
 evidence; `--player-args` passes flags to every capture. To tell effects apart in a
 still, a player's `--only-effects a,b` spawns only those library effects. The baseline set is

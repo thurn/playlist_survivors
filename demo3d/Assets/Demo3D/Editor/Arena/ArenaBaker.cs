@@ -443,9 +443,12 @@ namespace Demo3D.EditorTools.Arena
             return mesh;
         }
 
-        /// <summary>The ground's colours by type (sRGB): forest floor, edge band, clearing moss, path dirt.</summary>
-        static readonly Color Forest = new Color(0.14f, 0.15f, 0.11f), Edge = new Color(0.20f, 0.23f, 0.15f),
-            Clearing = new Color(0.27f, 0.31f, 0.19f), PathDirt = new Color(0.33f, 0.29f, 0.21f);
+        /// <summary>
+        /// The ground's colours by type (sRGB): dark forest floor, a darker edge band, and warm,
+        /// mid-value earth on the fighting ground (the look epic ps-e8r: a lit stage, darkness at the edges).
+        /// </summary>
+        static readonly Color Forest = new Color(0.12f, 0.11f, 0.08f), Edge = new Color(0.25f, 0.22f, 0.16f),
+            Clearing = new Color(0.49f, 0.45f, 0.40f), PathDirt = new Color(0.54f, 0.48f, 0.41f);
 
         static Material GroundMaterial(ArenaLayout layout)
         {
@@ -486,18 +489,113 @@ namespace Demo3D.EditorTools.Arena
             mat.SetColor("_BaseColor", Color.white);
             mat.SetFloat("_Smoothness", 0.12f);
             mat.SetFloat("_Metallic", 0f);
-            // The kit's own ground normals (Elven Realm's, already synced for its rock shader) as a
-            // detail normal map every 3 m, so the moon catches the forest floor.
+            // Our generated cracks and stones as a detail albedo every DetailM, with the kit's own
+            // ground normals (Elven Realm's, already synced for its rock shader) as its detail
+            // normal map at the same tiling, so the moon and the hero's light catch the ground.
+            mat.SetTexture("_DetailAlbedoMap", DetailAlbedo());
+            mat.SetFloat("_DetailAlbedoMapScale", 1f);
+            mat.SetTextureScale("_DetailAlbedoMap", new UnityEngine.Vector2(2 * GroundHalfM / DetailM, 2 * GroundHalfM / DetailM));
             var normals = FindVendorTexture("Ground_Normals_01");
-            if (normals != null)
-            {
-                mat.SetTexture("_DetailNormalMap", normals);
-                mat.SetFloat("_DetailNormalMapScale", 0.8f);
-                mat.SetTextureScale("_DetailAlbedoMap", new UnityEngine.Vector2(2 * GroundHalfM / 3f, 2 * GroundHalfM / 3f));
-                mat.EnableKeyword("_DETAIL_MULX2");
-            }
+            mat.SetTexture("_DetailNormalMap", normals);
+            mat.SetFloat("_DetailNormalMapScale", 0.8f);
+            mat.EnableKeyword("_DETAIL_MULX2");
             EditorUtility.SetDirty(mat);
             return mat;
+        }
+
+        /// <summary>The detail layer's tile (m): about 1.2 cm per pixel of <see cref="DetailAlbedo"/>.</summary>
+        const float DetailM = 6f;
+
+        /// <summary>
+        /// The ground's tiling detail (linear; URP Lit's detail albedo doubles it, so 0.5 leaves the
+        /// albedo as it is): mottled soil, a network of dark cracks between irregular cells, and
+        /// scattered pebbles lit from the moon's side with a shadow on the other. Every term wraps
+        /// at the tile's edges.
+        /// </summary>
+        static Texture2D DetailAlbedo()
+        {
+            const string path = Dir + "/GroundDetail.png";
+            const int size = 512, cells = 7, pebbles = 110;
+            var rng = new System.Random(6061);
+            // Crack cells: jittered points on a cells x cells lattice, so a cell is about 0.85 m.
+            var seeds = new UnityEngine.Vector2[cells * cells];
+            for (int j = 0; j < cells; j++)
+            for (int i = 0; i < cells; i++)
+                seeds[j * cells + i] = new UnityEngine.Vector2((i + 0.05f + 0.9f * (float)rng.NextDouble()) / cells,
+                    (j + 0.05f + 0.9f * (float)rng.NextDouble()) / cells);
+            var stones = new (float x, float y, float r, float v)[pebbles];
+            for (int k = 0; k < pebbles; k++)
+            {
+                float u = (float)rng.NextDouble();
+                stones[k] = ((float)rng.NextDouble(), (float)rng.NextDouble(),
+                    (k < 6 ? 0.012f + 0.008f * u : 0.003f + 0.007f * u * u), -0.06f + 0.16f * (float)rng.NextDouble());
+            }
+            var px = new Color32[size * size];
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float u = (x + 0.5f) / size, w = (y + 0.5f) / size;
+                // Mottling: two octaves of value noise that wrap at the tile.
+                float mottle = 0.6f * TileNoise(u, w, 8, 11) + 0.4f * TileNoise(u, w, 32, 23) - 0.5f;
+                float v = 0.5f + 0.24f * mottle;
+                // Cracks: where the nearest two cell points are about equally near, with the
+                // coordinates warped so the edges wander.
+                float wu = u + 0.025f * (TileNoise(u, w, 12, 37) - 0.5f), ww = w + 0.025f * (TileNoise(u, w, 12, 41) - 0.5f);
+                float f1 = float.MaxValue, f2 = float.MaxValue;
+                foreach (var c in seeds)
+                {
+                    float dx = Mathf.Repeat(wu - c.x + 0.5f, 1f) - 0.5f, dy = Mathf.Repeat(ww - c.y + 0.5f, 1f) - 0.5f;
+                    float d = Mathf.Sqrt(dx * dx + dy * dy);
+                    if (d < f1) { f2 = f1; f1 = d; }
+                    else if (d < f2) f2 = d;
+                }
+                // Cracks run 2-4 cm wide and fade out along about half the cells' edges, so they
+                // read as a broken crust, not paving.
+                float width = 0.003f + 0.003f * TileNoise(u, w, 6, 53);
+                float crack = (1 - Smooth(0, width, f2 - f1)) * Smooth(0.4f, 0.65f, TileNoise(u, w, 5, 59));
+                v *= 1 - 0.6f * crack;
+                // Pebbles: a lit dome with a shadow toward the far side of the moon.
+                foreach (var s in stones)
+                {
+                    float dx = Mathf.Repeat(u - s.x + 0.5f, 1f) - 0.5f, dy = Mathf.Repeat(w - s.y + 0.5f, 1f) - 0.5f;
+                    float d = Mathf.Sqrt(dx * dx + dy * dy) / s.r;
+                    float sd = Mathf.Sqrt((dx - 0.35f * s.r) * (dx - 0.35f * s.r) + (dy + 0.35f * s.r) * (dy + 0.35f * s.r)) / s.r;
+                    if (d < 1) v = Mathf.Lerp(v, 0.5f + s.v + 0.06f * (dy / s.r - dx / s.r), Smooth(1, 0.6f, d));
+                    else if (sd < 1.1f) v *= Mathf.Lerp(0.75f, 1, Smooth(0.6f, 1.1f, sd));
+                }
+                byte b = (byte)Mathf.Clamp(Mathf.RoundToInt(v * 255), 0, 255);
+                px[y * size + x] = new Color32(b, b, b, 255);
+            }
+            var tex = new Texture2D(size, size, TextureFormat.RGB24, false);
+            tex.SetPixels32(px);
+            tex.Apply();
+            File.WriteAllBytes(path, tex.EncodeToPNG());
+            UnityEngine.Object.DestroyImmediate(tex);
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+            var imp = (TextureImporter)AssetImporter.GetAtPath(path);
+            imp.sRGBTexture = false;
+            imp.mipmapEnabled = true;
+            imp.wrapMode = TextureWrapMode.Repeat;
+            imp.anisoLevel = 8;
+            imp.textureCompression = TextureImporterCompression.CompressedHQ;
+            imp.SaveAndReimport();
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+        }
+
+        /// <summary>Value noise on a period x period lattice over the unit square, wrapping at its edges (0..1).</summary>
+        static float TileNoise(float u, float w, int period, uint salt)
+        {
+            float gx = u * period, gy = w * period;
+            int x0 = Mathf.FloorToInt(gx), y0 = Mathf.FloorToInt(gy);
+            float fx = gx - x0, fy = gy - y0;
+            fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy);
+            float N(int x, int y)
+            {
+                uint h = (uint)((x % period + period) % period) * 73856093u ^ (uint)((y % period + period) % period) * 19349663u ^ salt * 83492791u;
+                h ^= h >> 13; h *= 0x5bd1e995u; h ^= h >> 15;
+                return (h & 0xFFFFFF) / (float)0x1000000;
+            }
+            return Mathf.Lerp(Mathf.Lerp(N(x0, y0), N(x0 + 1, y0), fx), Mathf.Lerp(N(x0, y0 + 1), N(x0 + 1, y0 + 1), fx), fy);
         }
 
         static Texture2D FindVendorTexture(string name)
@@ -510,7 +608,7 @@ namespace Demo3D.EditorTools.Arena
             return null;
         }
 
-        /// <summary>The ground's colour at (x, z): by distance to fighting ground and its type, with two octaves of noise.</summary>
+        /// <summary>The ground's colour at (x, z): by distance to fighting ground and its type, with three octaves of noise.</summary>
         public static Color32 GroundColor(ArenaLayout layout, float x, float z)
         {
             var p = new Vector2(x, z);
@@ -522,7 +620,8 @@ namespace Demo3D.EditorTools.Arena
             else if (d < 5) c = Color.Lerp(fight, Edge, Smooth(0, 5, d));
             else c = Color.Lerp(Edge, Forest, Smooth(5, 12, d));
             float n = 0.6f * Mathf.PerlinNoise(x * 0.11f + 31.7f, z * 0.11f + 17.3f) + 0.4f * Mathf.PerlinNoise(x * 0.47f + 5.1f, z * 0.47f + 9.9f);
-            float k = 0.72f + 0.56f * n;
+            // Patches about 30 m across, so the detail layer's 6 m tile doesn't show as a grid.
+            float k = (0.72f + 0.56f * n) * (0.75f + 0.5f * Mathf.PerlinNoise(x * 0.033f + 47.2f, z * 0.033f + 61.8f));
             float hue = Mathf.PerlinNoise(x * 0.05f + 71f, z * 0.05f + 3f) - 0.5f; // moss to soil
             c = new Color(c.r * k * (1 + 0.15f * hue), c.g * k, c.b * k * (1 - 0.1f * hue));
             return c;

@@ -136,3 +136,33 @@ def test_the_stage_compares_the_ground_near_the_hero_with_the_border() -> None:
     monsters = d <= 6  # a horde over all of it leaves no ground to measure
     assert "error" in look.stage(img, v, monsters)
     assert not look.stage(frame(GREY_50, 90, 160), v, None)["pass"]  # an evenly lit frame has no stage
+
+
+def test_fighting_distance_matches_the_layouts_clearings_and_paths() -> None:
+    areas = [{"type": "clearing", "center": [0, 0], "radius": 10},
+             {"type": "path", "from": [20, 0], "to": [40, 0], "width": 4},
+             {"type": "forest", "center": [0, 0], "radius": 100}]
+    x, z = np.array([0.0, 12.0, 30.0, 30.0]), np.array([0.0, 0.0, 1.0, 5.0])
+    assert look.fighting_distance(areas, x, z) == pytest.approx([-10, 2, -1, 3])
+
+
+def test_the_ground_look_splits_fighting_ground_from_the_forest() -> None:
+    v = view_looking_down(hero=(0.0, 0.0, 0.0))
+    areas = [{"type": "clearing", "center": [0, 0], "radius": 6}]
+    x, z = look.ground_points(v, 160, 90)
+    inside = np.hypot(x, z) <= 6
+    img = np.repeat(np.where(inside, GREY_50, GREY_DARK).astype(np.uint8)[..., None], 3, axis=-1)
+    g = look.ground_look(img, v, areas)
+    assert g["lFight"] == pytest.approx(50.0, abs=0.1) and g["lOuter"] == pytest.approx(5.9, abs=0.1)
+    assert g["detail"] == pytest.approx(0, abs=0.01)  # a flat ground has no detail
+    img[::2, ::2] = 255  # a fine texture raises it
+    assert look.ground_look(img, v, areas)["detail"] > 10
+
+
+def test_window_detail_ignores_windows_off_the_region() -> None:
+    lum = np.zeros((32, 32))
+    lum[:16, :16] = np.tile([0.0, 10.0], (16, 8))  # standard deviation 5
+    region = np.zeros((32, 32), dtype=bool)
+    region[:16, :20] = True  # one whole window, and part of another
+    assert look.window_detail(lum, region) == pytest.approx(5)
+    assert look.window_detail(lum, np.zeros_like(region)) is None

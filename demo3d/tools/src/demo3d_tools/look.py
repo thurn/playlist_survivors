@@ -28,6 +28,11 @@ view-<t>.json (its camera's view-projection and the hero's feet): the median L* 
 STAGE_R_M of the hero (each pixel's view ray met with the ground plane at the hero's feet, less the
 monsters of the ID render and the hero's own STAGE_HERO_M) less the median L* of the frame's outer
 STAGE_BORDER border. The bead's bar is STAGE_FLOOR.
+
+The ground (ps-e8r.6) is measured in the empty beauty shots, from the same view-<t>.json: each ground
+pixel is classed by ArenaLayout.FightingDistance as fighting ground (inside a clearing or path) or
+outer (the edge bands and forest). look.md has each class's median L* and the fighting ground's
+local detail, the mean standard deviation of L* in GROUND_WINDOW px windows.
 """
 
 from __future__ import annotations
@@ -55,6 +60,7 @@ EFFECT_DL = 5.0  # an effect pixel: the effects move its L* by more than this
 STAGE_R_M, STAGE_HERO_M = 6.0, 1.2  # the stage's ground: within 6 m of the hero, past its own body
 STAGE_BORDER = 0.15  # the frame's outer 15% on every side
 STAGE_FLOOR = 15.0  # ps-e8r.5: the stage's median L* above the border's
+GROUND_WINDOW = 16  # ps-e8r.6: the ground's local detail, the standard deviation of L* in 16 px windows
 JPEG_W, JPEG_H = 960, 540
 APP = "PlaylistSurvivors3D.app/Contents/MacOS/Playlist Survivors 3D Demo"
 
@@ -156,8 +162,8 @@ def readability(measured: np.ndarray, mask: np.ndarray, empty: np.ndarray) -> di
             "pass": abs(lm - lg) >= FLOOR_DL}
 
 
-def ground_distance(view: dict, w: int, h: int) -> np.ndarray:
-    """Each pixel's distance (m) from the hero's feet along the ground plane through them; inf off it."""
+def ground_points(view: dict, w: int, h: int) -> tuple[np.ndarray, np.ndarray]:
+    """Each pixel's view ray met with the ground plane through the hero's feet: its x and z (m), nan off it."""
     inv = np.linalg.inv(np.array(view["viewProj"], dtype=np.float64).reshape(4, 4))
     hero = np.array(view["hero"], dtype=np.float64)
     x = (np.arange(w) + 0.5) / w * 2 - 1
@@ -171,8 +177,57 @@ def ground_distance(view: dict, w: int, h: int) -> np.ndarray:
     with np.errstate(divide="ignore", invalid="ignore"):
         k = (hero[1] - near[..., 1]) / d[..., 1]
     hit = near + k[..., None] * d
-    dist = np.hypot(hit[..., 0] - hero[0], hit[..., 2] - hero[2])
-    return np.where((k > 0) & np.isfinite(k), dist, np.inf)
+    on = (k > 0) & np.isfinite(k)
+    return np.where(on, hit[..., 0], np.nan), np.where(on, hit[..., 2], np.nan)
+
+
+def ground_distance(view: dict, w: int, h: int) -> np.ndarray:
+    """Each pixel's distance (m) from the hero's feet along the ground plane through them; inf off it."""
+    x, z = ground_points(view, w, h)
+    hero = view["hero"]
+    return np.nan_to_num(np.hypot(x - hero[0], z - hero[2]), nan=np.inf)
+
+
+def fighting_distance(areas: list[dict], x: np.ndarray, z: np.ndarray) -> np.ndarray:
+    """ArenaLayout.FightingDistance on arrays: the distance (m) outside the nearest clearing or path, negative inside."""
+    best = np.full(np.shape(x), np.inf)
+    for a in areas:
+        if a.get("type") not in ("clearing", "path"):
+            continue
+        if "from" in a:  # a capsule: a path, or a clearing drawn as one
+            (ax, az), (bx, bz) = a["from"], a["to"]
+            dx, dz = bx - ax, bz - az
+            t = np.clip(((x - ax) * dx + (z - az) * dz) / max(dx * dx + dz * dz, 1e-9), 0, 1)
+            d = np.hypot(x - ax - t * dx, z - az - t * dz) - a.get("width", 6.0) / 2
+        else:
+            d = np.hypot(x - a["center"][0], z - a["center"][1]) - a["radius"]
+        best = np.minimum(best, d)
+    return best
+
+
+def window_detail(lum: np.ndarray, region: np.ndarray, size: int = GROUND_WINDOW) -> float | None:
+    """The mean standard deviation of L* over the size x size windows (a grid) lying wholly in region."""
+    h, w = (lum.shape[0] // size) * size, (lum.shape[1] // size) * size
+    tiles = lum[:h, :w].reshape(h // size, size, w // size, size)
+    inside = region[:h, :w].reshape(h // size, size, w // size, size).all(axis=(1, 3))
+    return float(tiles.std(axis=(1, 3))[inside].mean()) if inside.any() else None
+
+
+def ground_look(rgb: np.ndarray, view: dict, areas: list[dict]) -> dict:
+    """The ground in an empty still: fighting ground (clearings and paths) against the edge bands and forest."""
+    h, w = rgb.shape[:2]
+    x, z = ground_points(view, w, h)
+    d = np.where(np.isnan(x), np.nan, fighting_distance(areas, np.nan_to_num(x), np.nan_to_num(z)))
+    with np.errstate(invalid="ignore"):
+        fight, outer = d <= 0, d > 0
+    lum = lstar(rgb)
+    out = {"fightPx": int(fight.sum()), "outerPx": int(outer.sum())}
+    if fight.any():
+        out["lFight"] = float(np.median(lum[fight]))
+        out["detail"] = window_detail(lum, fight)
+    if outer.any():
+        out["lOuter"] = float(np.median(lum[outer]))
+    return out
 
 
 def stage(rgb: np.ndarray, view: dict, monsters: np.ndarray | None) -> dict:
@@ -298,7 +353,7 @@ STATS_HEAD = ["| still | L* p2 | L* p50 | L* p98 | RMS contrast | mean C*ab | ne
 
 
 def report(slug: str, song: dict[str, dict], shots: dict[str, dict], baseline: dict | None,
-           stages: dict[str, dict] | None = None) -> str:
+           stages: dict[str, dict] | None = None, grounds: dict[str, dict] | None = None) -> str:
     lines = [f"# Look set: {slug}", "",
              "Generated by `demo3d look` (demo3d/tools/src/demo3d_tools/look.py). Stills: 1920x1080 PNGs,",
              "windowless batch-mode player in fixed time. L* is CIE L* (0-100) of the sRGB pixels; RMS contrast",
@@ -353,6 +408,16 @@ def report(slug: str, song: dict[str, dict], shots: dict[str, dict], baseline: d
                 continue
             lines.append(f"| {n} | {st['groundPx']:,} | {st['lGround']:.1f} | {st['lBorder']:.1f} | {st['dL']:.1f} | "
                          f"{'pass' if st['pass'] else 'FAIL'} |")
+    if grounds:
+        lines += ["", "## Ground", "",
+                  "The ground in the empty beauty shots (ps-e8r.6): each pixel's view ray met with the ground plane,",
+                  "classed by its distance to the layout's clearings and paths. Fighting ground: inside them; outer:",
+                  "the edge bands and forest past them (props included). Detail: the mean standard deviation of L* in",
+                  f"the {GROUND_WINDOW} px windows lying wholly on fighting ground.", "",
+                  "| shot | fighting px | L* fighting | detail | outer px | L* outer |", "|---|---:|---:|---:|---:|---:|"]
+        for n, g in grounds.items():
+            cell = {k: f"{g[k]:.1f}" if g.get(k) is not None else "" for k in ("lFight", "detail", "lOuter")}
+            lines.append(f"| {n} | {g['fightPx']:,} | {cell['lFight']} | {cell['detail']} | {g['outerPx']:,} | {cell['lOuter']} |")
     if baseline:
         lines += ["", f"## Against {baseline['slug']}", "",
                   "Song stills and beauty shots (horde stills); deltas are this set less the baseline.", "",
@@ -381,8 +446,9 @@ def cmd_look(a: argparse.Namespace) -> int:
     slug = a.slug
     captures = wt.root / "captures" / "look" / slug
     evidence = wt.project / "evidence" / "look" / slug
-    shots = json.loads((wt.project / "Assets" / "Demo3D" / "Choreography" / "Data" / "arena-layout.json")
-                       .read_text(encoding="utf-8"))["shots"]
+    layout = json.loads((wt.project / "Assets" / "Demo3D" / "Choreography" / "Data" / "arena-layout.json")
+                        .read_text(encoding="utf-8"))
+    shots, areas = layout["shots"], layout["areas"]
     caps = plan(captures, shots, song=not a.beauty_only, beauty=not a.song_only)
     if not a.measure_only:
         exe = player(wt, a.backend)
@@ -414,7 +480,12 @@ def cmd_look(a: argparse.Namespace) -> int:
         v = next((captures / name).glob("view-*.json"), None)  # sets captured before ps-e8r.5 have none
         return stage(load_rgb(still(name)), json.loads(v.read_text(encoding="utf-8")), monsters) if v else None
 
+    def ground_of(name: str) -> dict | None:
+        v = next((captures / name).glob("view-*.json"), None)
+        return ground_look(load_rgb(still(name)), json.loads(v.read_text(encoding="utf-8")), areas) if v else None
+
     stages: dict[str, dict] = {}
+    grounds: dict[str, dict] = {}
     for c in caps:
         if c.name.startswith("song-"):
             song[c.name] = still_stats(load_rgb(still(c.name)))
@@ -428,9 +499,11 @@ def cmd_look(a: argparse.Namespace) -> int:
                         "fx": effect_stats(horde, measured)}
         if (st := stage_of(f"{n}-horde", monsters)) is not None:
             stages[n] = st
+        if (g := ground_of(f"{n}-empty")) is not None:
+            grounds[n] = g
 
     if a.trial:
-        print(report(slug, song, shot_rows, None, stages))
+        print(report(slug, song, shot_rows, None, stages, grounds))
         return 0
     evidence.mkdir(parents=True, exist_ok=True)
     names = list(song) + [f"{n}-{k}" for n in shot_rows for k in ("horde", "empty")]
@@ -438,14 +511,14 @@ def cmd_look(a: argparse.Namespace) -> int:
         small_jpeg(still(n), evidence / f"{n}.jpg", n)
     numbers = {"slug": slug, "stats": {**song, **{n: s["horde"] for n, s in shot_rows.items()}},
                "dL": {n: s["read"].get("dL") for n, s in shot_rows.items()},
-               "stage": {n: st.get("dL") for n, st in stages.items()}}
+               "stage": {n: st.get("dL") for n, st in stages.items()}, "ground": grounds}
     (evidence / "look.json").write_text(json.dumps(numbers, indent=1) + "\n", encoding="utf-8")
     base = None
     if a.baseline:
         bdir = wt.project / "evidence" / "look" / a.baseline
         base = json.loads((bdir / "look.json").read_text(encoding="utf-8"))
         contact_sheet(names, bdir, evidence, evidence / "contact-sheet.jpg", (a.baseline, slug))
-    text = report(slug, song, shot_rows, base, stages)
+    text = report(slug, song, shot_rows, base, stages, grounds)
     (evidence / "look.md").write_text(text, encoding="utf-8")
     print(text)
     return 0 if all(s["read"].get("pass") for s in shot_rows.values()) else 1
