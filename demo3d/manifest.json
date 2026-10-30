@@ -507,6 +507,238 @@
     },
     {
       "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Fantasy Animals Pack/Giant Rat/FBX Files/GiantRat@Death.FBX",
+      "sourceSha256": "d6b995b0622987515315bce2befd24b2ce0ccc0dd70d1ad4fffd238952880ef4",
+      "guid": "e697baac3ae557a4da1f86b6a27e08a8",
+      "use": "heroic: slime clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Fantasy Animals Pack/Giant Rat/FBX Files/GiantRat@GetHitFront.FBX",
+      "sourceSha256": "1fe905f80d7219b1953e5b8636b9d1273b192877d1b64cfcf18d115b8f01f1d0",
+      "guid": "be1100ffd78d6c44d843966ab33cd26f",
+      "use": "heroic: slime clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Fantasy Animals Pack/Giant Rat/FBX Files/GiantRat@Idle.FBX",
+      "sourceSha256": "47dd414ffee930a3a3c47058a749f57941724f76a7f9bf65ba50aa2c54200c1c",
+      "guid": "6d6267d0b95611a4b92d8129c72664ae",
+      "use": "heroic: slime clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Fantasy Animals Pack/Giant Rat/FBX Files/GiantRat@JumpBite.FBX",
+      "sourceSha256": "9097067bc78df1e851351ff622405745d775d7f0ac3fd05007f1d64e89acda67",
+      "guid": "d5fe25ed1af167241882d4e02f9989e6",
+      "use": "heroic: slime clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Fantasy Animals Pack/Giant Rat/FBX Files/GiantRat@Taunt.FBX",
+      "sourceSha256": "478923e0e2f4d578b3e503193f89b68026d76331cb17c4e330883bbac9d4022b",
+      "guid": "abe6c393b4217d84e90b30e1c53ff5cc",
+      "use": "heroic: slime clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Fantasy Animals Pack/Giant Rat/FBX Files/GiantRat@walk.FBX",
+      "sourceSha256": "4907f1ede5692c96297af9d25c351e2e1a492875d8624927b2018b9c68aab4b2",
+      "guid": "5c434291c1e8c59469d2fd9dc2929897",
+      "use": "heroic: slime clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Fantasy Animals Pack/Giant Rat/Prefabs/GiantRat.prefab",
+      "sourceSha256": "7cf38be1c7bbecb68a39ba115f68acb0b76dc0b9eb6053091ae41b9fce6aaeab",
+      "guid": "8458f50765dd8064d89a1b7a3ab6a21d",
+      "use": "heroic: slime (Giant Rat)",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Fantasy Lizards Pack/Mountain Dragon/FBX Files/MountainDragon@ClawsAttackLeft.FBX",
+      "sourceSha256": "b6d7ffa80e786159634c23acc7b78f85dccf244af134b99d6d9e5e2088bb9aac",
+      "guid": "caa38537e74bb374da11d9ad1561846d",
+      "use": "heroic: dragon clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Fantasy Lizards Pack/Mountain Dragon/FBX Files/MountainDragon@ClawsAttackRight.FBX",
+      "sourceSha256": "b380e50ab4270ecceb3b9a0a49be4994991df8f456ad5a779e7b53380a25807a",
+      "guid": "28343beef93d8584f8c6ede79d4b671b",
+      "use": "heroic: dragon clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Fantasy Lizards Pack/Mountain Dragon/FBX Files/MountainDragon@Death.FBX",
+      "sourceSha256": "c7ebd0a1c4feb27175aed5e77e2faf3cf117aaf9ac7d35bad975c652576c82e0",
+      "guid": "aa7c274edaa07da4982cb0ad2d84ef05",
+      "use": "heroic: dragon clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Fantasy Lizards Pack/Mountain Dragon/FBX Files/MountainDragon@GetHitFront.FBX",
+      "sourceSha256": "0ecb2cf66184e965463f8b9e451ef43e6191f3fede7e81e7d0b33d964ba01d70",
+      "guid": "8620b0d36bcb4f04b9a02eaf685fa452",
+      "use": "heroic: dragon clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Fantasy Lizards Pack/Mountain Dragon/FBX Files/MountainDragon@IdleBreathe.FBX",
+      "sourceSha256": "fb48e5289161ad29ec8b13631d864225cb91d9850512bb841639405541177244",
+      "guid": "24d806b00695be940854a55947eeb615",
+      "use": "heroic: dragon clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Fantasy Lizards Pack/Mountain Dragon/FBX Files/MountainDragon@SpitFireBall.FBX",
+      "sourceSha256": "553afb4e4231168cbe6f5129430043e4ceb13b923f27106d89c96a75dcb4de56",
+      "guid": "acb56b2d00e9f3340b44e315c4bed68c",
+      "use": "heroic: dragon clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Fantasy Lizards Pack/Mountain Dragon/FBX Files/MountainDragon@Walk.FBX",
+      "sourceSha256": "866e3c5a2ce2e400ef580460d6792a6cbb563791c6b493da5dc742cf313e90eb",
+      "guid": "1443a3ed6b583ba4bb2a73fa4e69932d",
+      "use": "heroic: dragon clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Fantasy Lizards Pack/Mountain Dragon/Prefabs/MountainDragon.prefab",
+      "sourceSha256": "3ca251ec9d9252fb3030f04541d61db40c0e1ff89f4fff11eadbdc8573eb6425",
+      "guid": "c68c3760a7f483e4a8a945fca9ee9b5a",
+      "use": "heroic: dragon (Mountain Dragon)",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Ghoul/FBX Files/Ghoul@Attack1.FBX",
+      "sourceSha256": "aa96e3172eacffb9d481a5cf8478acac2d5f57534ba44ce3734242846ef031c3",
+      "guid": "af84d9698cdb86449a1d16ea9e082ddf",
+      "use": "heroic: demon clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Ghoul/FBX Files/Ghoul@Attack2.FBX",
+      "sourceSha256": "d54a2110e7e5f791e6a3fc95ea5c5e6c24b76881731f6eb3c4c2fee5d559e0e2",
+      "guid": "9af4fb5e5b0b03841b03dcfca3193997",
+      "use": "heroic: demon clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Ghoul/FBX Files/Ghoul@Death.FBX",
+      "sourceSha256": "d9b57ddd4b6115213f9048aee056a6c2fb9c94be4904b93c01fe85a4e48171c9",
+      "guid": "697b469632c14b644b03a8f1453169cc",
+      "use": "heroic: demon clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Ghoul/FBX Files/Ghoul@GetHit1.FBX",
+      "sourceSha256": "e380571aed27b3c824ed2233fe4bba4b05ee1f0fc797dce47f12f97e7298f3a0",
+      "guid": "9664c11bd1ec0e349a853e0015d02f89",
+      "use": "heroic: demon clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Ghoul/FBX Files/Ghoul@Idle.FBX",
+      "sourceSha256": "0022241ec25a1ed058369195b1452c40030418ede6d3fed8691515645b3225a1",
+      "guid": "d370a8b163bf70246a304719e9c0b81d",
+      "use": "heroic: demon clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Ghoul/FBX Files/Ghoul@Walk.FBX",
+      "sourceSha256": "5413ffbad2a4e5c719faf28dff3db3e93b2ed44b75f8e2b6f573557ec6c495c0",
+      "guid": "c9b4d175e82478443966b1e0e0a37ebe",
+      "use": "heroic: demon clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Ghoul/Prefabs/Ghoul.prefab",
+      "sourceSha256": "382cebc254466e97df0eef396736ce65ac0622824be897f1ae68cfa0541ccf33",
+      "guid": "09efc08a66079d1489a0aee5d107d882",
+      "use": "heroic: demon (Ghoul)",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Skeleton Knight/FBX files/SkeletonKnight@1HandedAttack1.FBX",
+      "sourceSha256": "98f40da9b6c7f9cb394e51cac336b5ed773ca7dfd4abbc95bcdfc1f0f6111274",
+      "guid": "910cb645d11cd234997299977e671fc2",
+      "use": "heroic: skeleton clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Skeleton Knight/FBX files/SkeletonKnight@1HandedAttack2.FBX",
+      "sourceSha256": "5e227901e684e3b53a3ba2d26779b848056a182e95e21f21245d39cafa6b7416",
+      "guid": "8d88a0edd367a5a498e76cbf2ff2129d",
+      "use": "heroic: skeleton clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Skeleton Knight/FBX files/SkeletonKnight@1HandedDeath.FBX",
+      "sourceSha256": "453e6ec787566737a94861b593cfde8cf85a578f208f1e62d84b54e21b6c6bfb",
+      "guid": "d1f556ef84da9314eb437fafa88ec051",
+      "use": "heroic: skeleton clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Skeleton Knight/FBX files/SkeletonKnight@1HandedGetHit.FBX",
+      "sourceSha256": "2a201916e694da8ed1ea62924d24d402820556dc5459b36dc3c4af8c461488cf",
+      "guid": "a3c32c64871eed847a9710fc621cb1ab",
+      "use": "heroic: skeleton clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Skeleton Knight/FBX files/SkeletonKnight@1HandedWalk.FBX",
+      "sourceSha256": "7f6e8b6b1ed2092117cf2f8e16c3b00ce8af03bbef017d74ac95cca24198bd30",
+      "guid": "b382f435d0b832f4fb03e434324e1e48",
+      "use": "heroic: skeleton clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Skeleton Knight/FBX files/SkeletonKnight@Idle1Handed.FBX",
+      "sourceSha256": "34f4b3212e0ef2e65ae1cdd7282f3c694b2bec50362096fd135ed1a3e3307f09",
+      "guid": "7802b8d421e81ab44ad028e8683f14ed",
+      "use": "heroic: skeleton clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Skeleton Knight/Prefabs/SkeletonKnight.prefab",
+      "sourceSha256": "4608fc3972dd9d50c8aa8fc62c74a9141318ce166899de4a4df382215420a986",
+      "guid": "24482ef7632aa6042b45735370df80ec",
+      "use": "heroic: skeleton (Skeleton Knight, one-handed sword and shield)",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
       "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Goblin/FBX Files/Goblin@Attack1SwordShield.FBX",
       "sourceSha256": "b8c45d9f0e45fe00f7e8d71c3476aeb05aee8beec46d50d1e7bf720fa1004f4f",
       "guid": "eaa055f25dc10e740861bfe96437ef06",
@@ -559,6 +791,278 @@
       "sourceSha256": "d054dc25aff147037610950c1887218648b26f38b69b980f5648814b24ace193",
       "guid": "5f0706883a962914493653ef8cb5bc61",
       "use": "heroic: goblin (Goblin, sword and shield)",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Kobold/FBX Files/Kobold@Attack1.FBX",
+      "sourceSha256": "f370091e411f3883dc1058823966d46af348d3b3b425ab71cd3b1e8d636369e1",
+      "guid": "59f8756d3c10f2f4e96443f243aa5019",
+      "use": "heroic: mushroom clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Kobold/FBX Files/Kobold@Attack2.FBX",
+      "sourceSha256": "e7abac6a33bca2828c36668cd3452223d2bce1dfdf87d47e97177c03876d3c02",
+      "guid": "b05f72412c8495149af8a599ef0a9fba",
+      "use": "heroic: mushroom clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Kobold/FBX Files/Kobold@Death.FBX",
+      "sourceSha256": "ce5e0686e6830dd1bfaad961ab7b932840358e470d8f64ce89357679029fccdb",
+      "guid": "22b5d82abc7d1da439ddda84bcc82bd5",
+      "use": "heroic: mushroom clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Kobold/FBX Files/Kobold@GetHitFront.FBX",
+      "sourceSha256": "23b8a83fa5b57e55c3ab981ac1322fb553048f0492cce9754bc06b8408034dca",
+      "guid": "9d9685aeca1bffa4ea928a8b109d5f2d",
+      "use": "heroic: mushroom clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Kobold/FBX Files/Kobold@IdleCombat.FBX",
+      "sourceSha256": "df17e50ceb6a81eaf74ac70dc75debc115dbe13532946f6a312d909b3462962b",
+      "guid": "12c733e6a5eff3448acfcd147ad2a0fd",
+      "use": "heroic: mushroom clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Kobold/FBX Files/Kobold@WalkForwardCombat.FBX",
+      "sourceSha256": "96656bb93dd340307c46d3148066fde4a3e9901729cbf9cecc5b877cfbe24c2c",
+      "guid": "697970c906c5b774889a45ff96952c88",
+      "use": "heroic: mushroom clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Kobold/Prefabs/Kobold.prefab",
+      "sourceSha256": "d7600a6647235d827d4c1c3b308ea1d7babe6b87be532ea49f80f78d710a8f6f",
+      "guid": "90d641864f25fd14bbb9c882b2d00fc0",
+      "use": "heroic: mushroom (Kobold, stone axe and shield)",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Ogre/FBX Files/FatOgre@Attack1.FBX",
+      "sourceSha256": "955926f75d9f821effb7270c176d38e02f6244790e6babeca239569cf75a9869",
+      "guid": "c6c60bc28d145e341afa22a0cc166250",
+      "use": "heroic: bigork clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Ogre/FBX Files/FatOgre@Attack2.FBX",
+      "sourceSha256": "ba949a4940d364c2661d13ef6d69a8495184884e07c8d96769f70f761c4fac70",
+      "guid": "ce6e8484c21fc4b4b86347ffad099cb9",
+      "use": "heroic: bigork clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Ogre/FBX Files/FatOgre@Death.FBX",
+      "sourceSha256": "e559d927e0aea0de3a108c000c1c6d002e1fba897e2264abb1be2f9084272397",
+      "guid": "f8fda3699676d2e47a8a056e972152b9",
+      "use": "heroic: bigork clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Ogre/FBX Files/FatOgre@GetHit1.FBX",
+      "sourceSha256": "f1541b1caf4155341f932b1cc96d5fddeda7b1d0de688e9bccd599fec92c95fa",
+      "guid": "cdd3e2fbf61484c409c420669720c247",
+      "use": "heroic: bigork clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Ogre/FBX Files/FatOgre@Idle.FBX",
+      "sourceSha256": "5f1152fcba485715ba323e40ceeaba3af7ce691ae6411aa640ea9984fc763b3f",
+      "guid": "6b5e201a6a4432d4180d70e7d9d9d93e",
+      "use": "heroic: bigork clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Ogre/FBX Files/FatOgre@Walk.FBX",
+      "sourceSha256": "9070a0cb283a6f93552613b9e8564fb281ef5956336a7a7e30ece430d98df2a2",
+      "guid": "950067766357002429f0616dae6b2207",
+      "use": "heroic: bigork clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Ogre/Prefabs/FatOgre.prefab",
+      "sourceSha256": "b78fae5ec223865b6d86edc3ed7da49459f04d45b7cdf303479e1868e5c20bf1",
+      "guid": "e040fed9364558541bb6583b064025c2",
+      "use": "heroic: bigork (Fat Ogre, morning star)",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Troll/FBX Files/Troll@Attack1.FBX",
+      "sourceSha256": "9db9665451d787e60152b9428f437064a9d49bbf857cdf73acc3836842f156f1",
+      "guid": "43b9fea932ce7e9409b39b9af96e34df",
+      "use": "heroic: troll clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Troll/FBX Files/Troll@Attack2.FBX",
+      "sourceSha256": "f9bba903687050017df5102f2f4b5d68c43eb381854658b3cea4a79d41bf48e8",
+      "guid": "42d067e0c3d56b34baac11b2b11a494b",
+      "use": "heroic: troll clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Troll/FBX Files/Troll@Death.FBX",
+      "sourceSha256": "387da6ca39947a12bf2211f938ad7a7ce98fa2ef9a40bea73a68eaf348f4944d",
+      "guid": "aa6bb6dae756c034f8701999f532a813",
+      "use": "heroic: troll clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Troll/FBX Files/Troll@GetHit1.FBX",
+      "sourceSha256": "05f6a9de1845c3abc9f9c8d706db3657f6ccc5d847809755c8c530b99f7dd4a7",
+      "guid": "03b8c5d3c61cc1c4b9ccf48c8ce3e093",
+      "use": "heroic: troll clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Troll/FBX Files/Troll@Idle.FBX",
+      "sourceSha256": "6fa729b6bdce52027eef76d461fa43a01aea6fc8dd59be1424944f08c522b9f2",
+      "guid": "05d9c50c768275e4f9437cb9da19e768",
+      "use": "heroic: troll clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Troll/FBX Files/Troll@Walk.FBX",
+      "sourceSha256": "1cea7279ba59b2a657f5eb30ca01ec0ecb09d266816381f85e56fbefed30ef46",
+      "guid": "762dc6b4a5477604a9cbc7bf4c0ea4a1",
+      "use": "heroic: troll clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Troll/Prefabs/Troll.prefab",
+      "sourceSha256": "9e041c9f42cfdb971099e381e1426f6bcd718c4fc0bf76dd61d4034211abc701",
+      "guid": "1e337205febf0bb4384ee08cc2e75c1d",
+      "use": "heroic: troll (Troll)",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Harpy/FBX Files/Harpy@Attack1.FBX",
+      "sourceSha256": "223c191f3cf3c23cd8eaac31573ef524bf24373697863eb09b96fa7a4a13fd49",
+      "guid": "4104b57a70c4a9a4eb6c8e69d16d9b52",
+      "use": "heroic: bat clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Harpy/FBX Files/Harpy@Attack2.FBX",
+      "sourceSha256": "4d4ac0c6f1807d00f72e6bd884a20dc5f5ccc78c2db5d9c51e3b920c19ae054b",
+      "guid": "7238b256e7dacb3449113e027e6185b1",
+      "use": "heroic: bat clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Harpy/FBX Files/Harpy@Attack3.FBX",
+      "sourceSha256": "d8f68185e9aa90e0000871daba50175b2a2027232ecb3b7ade1c3bb19c5607bc",
+      "guid": "56d7d66682400a24cbef49c60b31aa55",
+      "use": "heroic: bat clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Harpy/FBX Files/Harpy@Death.FBX",
+      "sourceSha256": "c0a0686ce2c7a4b1b9b6ecdda5f3219af4c52e8d481806cfd8a3b1a6da425782",
+      "guid": "5e242dca57d01b143901bfac16896123",
+      "use": "heroic: bat clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Harpy/FBX Files/Harpy@DeathHitTheGround.FBX",
+      "sourceSha256": "906e17050a1fe23a08eff0581cc6fa5ee6446303a681800364cd09fe7b9d3f07",
+      "guid": "810784fc6efc84648b7a0b10bee69ae2",
+      "use": "heroic: bat clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Harpy/FBX Files/Harpy@Fly.FBX",
+      "sourceSha256": "919619a4996491e613c75fcd859f63d446fb80bb64a141bd9400a5fb8e769160",
+      "guid": "0b98ee3541fd1af49b1cfffd1bd44aef",
+      "use": "heroic: bat clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Harpy/FBX Files/Harpy@FlyGetHit.FBX",
+      "sourceSha256": "13631d75724b7da81306cb74de1222adae3471817532bfb2ed4dad72104b28dc",
+      "guid": "bce312d6d16e41043b08013d761b2d75",
+      "use": "heroic: bat clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Harpy/FBX Files/Harpy@GetHit1.FBX",
+      "sourceSha256": "6686971c45077820cf93a0ca1d52d2e5733534f8dbb33ee1ecff981ec7762545",
+      "guid": "5dd5e98359ab2ed43bd7084bd2bea5ab",
+      "use": "heroic: bat clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Harpy/FBX Files/Harpy@Glide.FBX",
+      "sourceSha256": "dbaebce1159791a2f69cac2c53c7faa59bb8b3f6d51d53111a75e7ad62470429",
+      "guid": "bb89fcc91c8a18942ac82d87e053da43",
+      "use": "heroic: bat clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Harpy/FBX Files/Harpy@Idle.FBX",
+      "sourceSha256": "5fbda9c4fab51013edcd681cbfb0b93c59e6bd98ee99e50683243c2ec6b785da",
+      "guid": "eaf74aecfd04d5548a903f24c36175cd",
+      "use": "heroic: bat clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Harpy/FBX Files/Harpy@JumpClawsAttack.FBX",
+      "sourceSha256": "a8577d955176dd5442c779b8357d397e5aa4189682ceaea3a95884b9a82a01c3",
+      "guid": "02aa6490a0225e9468b6f915fcb8cdc7",
+      "use": "heroic: bat clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Harpy/FBX Files/Harpy@Swoop.FBX",
+      "sourceSha256": "9558e93fe05d08de818fecd850fefd695a207e01a7430bdc918c53fac31aa094",
+      "guid": "71663847ab1792d48b66683be0a53b50",
+      "use": "heroic: bat clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Harpy/Prefabs/HarpyBreastsCovered.prefab",
+      "sourceSha256": "c6b1ff6d26ab75710dce6182d27115959b39d0fa04f43c521a3b0db7a81bb16f",
+      "guid": "874b050f6ccc96e488ecf0f00db2a53c",
+      "use": "heroic: bat (Harpy, covered)",
       "roster": "heroic"
     },
     {
