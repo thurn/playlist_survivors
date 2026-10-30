@@ -229,11 +229,9 @@ that consumes the result removes the row.
 |---|---|---|---|
 | Does a windowed player report a GPU frame time every frame? (A batch-mode one reports it on 3% of frames.) | After `demo2d build`, from the worktree's root: `open -n demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app --args -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --frame-timing "$PWD/captures/px1-timing/windowed-400.json" --spike-sprites 400 --seconds 10`; the window closes itself after 12 s. In the JSON, compare `ftm.gpuFrameTimeMs`'s `nonzero` with `frames`. | PX1 | PX10 |
 | Are PX3's clip annotations right? Each attack's and slash's impact on the blow, each hit's and death's end where it settles or rests, the slam's on the landing, and the walks' strides plausible for their gait (two are fallbacks: the lava beast and the boss have no planted foot). | Look over `demo2d/evidence/px3/annotations-*.jpg` (impact framed red, end blue); the numbers and methods are in `demo2d/Assets/Demo2D/Data/clip-annotations.json`. To change a clip or a proposal, edit the entry's `clip` and re-run `demo2d unity AnnotateClips`, or note the frame here. | PX3 | PX10 (PX5 and PX8 play them as annotated; still unanswered) |
-| Is every type recognizable at its game size, and the hero findable in a crowd? PX3 found each type distinct, but the hero findable only from his place and a warm light, and the ghoul, zombie warrior, ice skull and blood mage close in colour at night. | Look at `demo2d/evidence/px3/lineup.png` and `crowd.png` (2×, as at 1080p). | PX3 | PX9 |
 | Does the song play on the click? Every step, blow, flinch and death landing on the beat, with no sprite popping, sliding or flickering between facings, and the scroll and zoom smooth. | After `demo2d build`, from the worktree's root: `demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app/Contents/MacOS/"Playlist Survivors 2D Demo" --click --overlay` (add `--start-at 160` for the climax). Note any section or second that drifts. | PX5 | PX10 (still unanswered at PX8; PX8's listening check below covers the same run with sound) |
-| Does the night look right? The moon's cool fill, the hero's warm pool, the moonlight shafts, the glowing umbrella plants and the fireflies (PX7 found them faint, small dots by the trunks), and in the fight the effects carrying the light, with bloom and the grade. Too dark, too blue, the shafts too geometric, the downbeat rings too strong? | Compare `demo2d/evidence/px7/night-empty/` with `night/` (the same five times), and the per-kind stills in `effects/` and `library/`; or watch: `demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app/Contents/MacOS/"Playlist Survivors 2D Demo"` (`--empty` for the arena alone, `--no-night`, `--no-post` or `--no-effects` to compare). The values are in `demo2d/Assets/Demo2D/Data/night-lighting.json` and `effects.json`. | PX7 | PX9 |
-
 | Does the fight sound right, and does every blow land on its click? In the first minute (0 to 60 s) and the climax (160 to 199 s): swings, hits, deaths, parries and spells on the beat and not too loud against the song; the spins' and slams' hit-stop and the knockback hops reading as weight; the struck crowd's warm flash (PX7's white flash is gone) and the hero's cool parry gleam; the boss entering from the right at about 165 s, its hellfire parried, and its fall on the last slam. | After `demo2d build`, from the worktree's root: `"$APP" --click` and `"$APP" --click --start-at 160` (`APP` as in PX8's notes), then once without `--click` for the mix. `--no-sound` drops the effect sounds; `--no-feel` the punch and shake. Note any second that drifts or a sound that is wrong. | PX8 | PX10 |
+| Do PX9's beauty shots pass the checklist (one focal point, the hero readable, effects carrying light, no flat or muddy ground, no tiling repetition visible)? This also answers PX3's readability question (each type recognizable at game size, the hero findable in a crowd) and PX7's night question (too dark, too blue, the shafts too geometric, the downbeat rings too strong?), whose rows it replaces. | Look over the six stills in `demo2d/evidence/px9/` with its README's table (`before/` has PX8's look at three of the same moments), and `readability.txt`; or watch: `"$APP"` (`APP` as in PX8's notes; `--start-at 160` for the climax, `--no-night`, `--no-post` or `--no-effects` to compare). Note any shot that fails a point, and why. The values are in `night-lighting.json`, `effects.json` and `forest-tiles.json`. | PX9 | PX10 |
 
 ## Task Notes
 
@@ -857,7 +855,64 @@ the bead). dotnet 37 of 37, 5 of them PX8's; demo3d's dotnet 129 of 129 and its 
 
 ### PX9
 
-Not started.
+Done (bead ps-tfn.3.4). Commits: the art-pass commit `feat(px9): …` and this notes commit (SHAs on
+the bead). dotnet 38 of 38, 1 of them PX9's; `demo2d test` 95 of 95. [Evidence](../../demo2d/evidence/px9/README.md).
+
+- **Run:** from a worktree's root (the player's paths absolute):
+
+  ```
+  uv run --project demo3d/tools demo2d setup     # now also syncs AncientForest's Demo.unity
+  uv run --project demo3d/tools demo2d build
+  APP="$PWD/demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app/Contents/MacOS/Playlist Survivors 2D Demo"
+  "$APP" --click                                 # the song, as PX8
+  "$APP" -batchmode -force-metal --capture-stills "$PWD/demo2d/evidence/px9" --stills-at 6,30,89.35,119.7,166,176
+  uv run --project demo3d/tools demo2d unity ReferenceStills -out "$PWD/demo2d/evidence/px9"
+  uv run --project demo3d/tools demo2d unity Readability -out "$PWD/demo2d/evidence/px9"   # fails unless every type is distinct and the hero findable
+  ```
+
+- **References:** AncientForest's `Demo.unity` joins the manifest; `ReferenceStills` renders its camera
+  and the whole scene (only the seven swaying trees: its two whole-sheet sprites point at sheets the demo
+  doesn't sync). CFXR's demo scene uses built-in materials (pink under URP), so PX2's gallery stays the
+  effects' reference.
+- **The beauty shots** (6 s intro, 30 s first wave, 89.35 s caster volley with five bolts in view, 119.7 s
+  an ogre's death, 166 s the boss walking in, 176 s the climax), each judged against the checklist in the
+  evidence's table. The moments came from the timeline (bolts in view per 0.05 s, elite deaths in view), then
+  from candidate stills around each.
+- **What the first stills showed,** at PX8's build: the death smoke's white clouds buried the hero and most
+  of a struck crowd; the hero couldn't be found at the climax; a strong cyan ring on most downbeats; one grass
+  tile repeated over every clearing (the base layer drew a single tile); the shafts read as hard-edged
+  parallelograms; the plateau's top a flat rectangle in the climax's view; the whole frame dim and blue.
+- **The hero:** ranks as if he stood `HeroLeadM` (1.8 m) further south, so the grunts in front draw behind
+  him (an elite's taller body still covers him), and four copies of his frame a texel off each way, in a flat
+  warm colour (`Silhouette.shader`, in PlaybackData), rim him. Sorting orders now step by two to fit the rim.
+- **The ground:** `forest-tiles.json` gains `baseSet` (the base grass varies over the plain tiles of the set
+  whose outer terrain is that grass) and `details`, per transition set its outer terrain's 3×3 detail blocks
+  from the sheet's ground fills, matched by mean colour. `ArenaTiles` gives a tile wholly of one ground a plain
+  variant or, in value-noise patches (up to 70% where it peaks, one kind per patch), a detail tile;
+  `ForestArena.ValueNoise` is the wobble's noise, shared. The plateau's top inside its rims (the block's own
+  top is the base tile) varies the same way, and a `ledge-top` landmark of plants dresses it. Plants never
+  block, and the song's timeline is unchanged: a hash of every entity's spawn, despawn and position every
+  0.5 s matched before and after the dressing.
+- **Effects and night** (values only): death smoke at 0.3 scale, 0.4 alpha, 0.7 s, at most 16; the ring dimmed
+  to 0.45 to 0.75 of its colour, 0.8 s, at most 4, its light 0.8; bolts in flight 25 to 30% larger and lit
+  brighter. Moon 0.32 (was 0.24) and less blue, the hero's light 5 m at 0.95, shafts at 0.1 with a 6 m
+  falloff, exposure 0.25.
+- **Readability measure** (`Readability`, `readability.txt`): per type the walk frame's lit colour (moon, and
+  moon plus half the hero's light) in CIELAB and its alpha mask; distinct when the nearest type differs by ΔE
+  ≥ 8 in both lights or overlaps ≤ 0.7. Every type passes on silhouette (largest overlap 0.59); by colour alone
+  most don't (nearest ΔE 4.5 to 11 under the moon), confirming PX3. The hero's rim is ΔE 64 from the ground
+  and 52 from the nearest type.
+- **Pending:** the beauty shots' checklist, now one row in [Pending on the operator](#pending-on-the-operator)
+  for PX10, replacing PX3's readability row and PX7's night row, which it answers.
+- **Left alone:** the horde's shape (a tight disc of skeletons round the hero in the first wave) and the
+  camera are the choreography's; the shafts are faint rather than reshaped; colour separation between grunts at
+  night (silhouette carries them, and tinting types would fight the packs' art).
+- **The scene milestone's review** (PX6, PX7, PX9) is the Warden bead ps-tfn.3.5.
+- **Self-review:** re-read the diff against `origin/staging`. No core change (demo3d untouched); demo2d's
+  runtime gains the hero's rim and rank, its arena generator the detail tiles, its editor the two tasks; data
+  edits are values and the ledge's pieces. New tracked files are our code, the shader, `.meta`s Unity wrote,
+  tagged stills and `readability.txt`; the scene stays vendor (manifest only). Unity's ProjectSettings
+  rewrites were discarded.
 
 ### PX10
 
