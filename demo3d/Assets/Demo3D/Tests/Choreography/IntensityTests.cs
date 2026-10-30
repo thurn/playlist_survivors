@@ -161,8 +161,8 @@ namespace Demo3D.Choreography.Tests
         /// <summary>
         /// Overdrive's flurries (an eighth's combo entry) add blows between the beats without costing a
         /// beat its own: each blow between beats is followed by one on the next beat (or by the windup of a
-        /// spin or slam the hero held back for), and the hero strikes on most beats of every rhythmic section
-        /// (such windups and strides on the way to a goal are the rest).
+        /// spin or slam the hero held back for, which at 3x may start just after that beat), and the hero strikes on most beats of every rhythmic section
+        /// (such windups and strides on the way to a goal are the rest; the peaks hold ground).
         /// </summary>
         [Test]
         public void OverdriveFlurriesAddBlowsBetweenTheBeats()
@@ -187,7 +187,9 @@ namespace Demo3D.Choreography.Tests
                     if (Struck(b)) struck++;
                 }
                 TestContext.WriteLine(sec.Label + ": blows on " + struck + " of " + sectionBeats + " beats");
-                Assert.That(struck, Is.GreaterThanOrEqualTo(0.7 * sectionBeats), sec.Label);
+                // The peaks hold ground; the sections before travel to their goals, striding where nothing is in reach ahead.
+                bool peak = sec.Label == "drop-2" || sec.Label == "final-peak";
+                Assert.That(struck, Is.GreaterThanOrEqualTo((peak ? 0.85 : 0.6) * sectionBeats), sec.Label);
                 foreach (double t in blows)
                 {
                     if (t < sec.Start || t >= sec.End || OnBeat(t)) continue;
@@ -195,7 +197,7 @@ namespace Demo3D.Choreography.Tests
                     int next = Array.BinarySearch(beats, t);
                     next = next < 0 ? ~next : next + 1;
                     if (next < beats.Length && beats[next] < sec.End)
-                        Assert.That(Struck(beats[next]) || windups.Exists(w => w.from < beats[next] && beats[next] < w.to), Is.True, "the flurry blow at " + t + " cost the next beat its blow");
+                        Assert.That(Struck(beats[next]) || windups.Exists(w => w.from < beats[next] + 0.1 && beats[next] < w.to), Is.True, "the flurry blow at " + t + " cost the next beat its blow");
                 }
             }
             Assert.That(between, Is.GreaterThan(50), "no flurries between the beats");

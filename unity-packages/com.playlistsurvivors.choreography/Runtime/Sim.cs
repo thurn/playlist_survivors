@@ -719,9 +719,10 @@ namespace PS.Choreography
             {
                 // With a fixed windup the next combo's windup cuts into the last one's follow-through.
                 ScheduleHeroAction(tb, roster.HeroWindupS > 0 ? tb : Math.Max(tb, heroLastEnd));
-                // A flurry (an eighth's combo entry) can strike before the next beat: the hero then
-                // goes on to that beat's action, so the flurry adds a blow instead of shifting one.
-                while (heroFlurry && heroPendingImpact > tb + 1e-9 && heroPendingImpact < tnext - 1e-9)
+                // A flurry (an eighth's combo entry) strikes between beats: the hero goes straight on to
+                // the following beat's action, which no later decision could still schedule, so the
+                // flurry adds a blow instead of shifting one.
+                while (heroFlurry)
                 {
                     double after = heroPendingImpact;
                     ScheduleHeroAction(after, roster.HeroWindupS > 0 ? after : heroLastEnd);
