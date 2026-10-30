@@ -202,6 +202,16 @@ What the simulation does on each grid step:
   [Navigation around structures](#navigation-around-structures)). A spatial
   hash keeps them apart, so they never overlap by more than a quarter of
   their radius.
+- **The clear ring.** A level script's `clearRadiusM` (the song's is 2 m)
+  keeps the horde out of a ring round the hero, as in a horde survivor game,
+  where the hero's weapons kill whatever closes in. Monsters stop at the
+  ring's edge instead of at contact, and step back out, still facing the hero,
+  when the hero closes in. They never reach the hero to swing, so no melee
+  attacks, parries or attack dust puffs crowd the hero, who stays in plain
+  sight. The hero stops short of the edge (by 0.75 of the ring holding
+  ground, 0.25 cutting a way toward a goal), hero-centred hit shapes never
+  shrink below the edge, and monsters inside the ring die first. Without it
+  (0, the default, as in the stress scripts) monsters close to contact:
 - **A monster within reach attacks.** It schedules an impact on the next beat
   its windup fits. The hero parries any blow that would land, with a parry
   effect and no damage; the hero is a perfect player.

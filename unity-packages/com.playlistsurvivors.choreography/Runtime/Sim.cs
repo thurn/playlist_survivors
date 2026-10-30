@@ -63,6 +63,7 @@ namespace PS.Choreography
         readonly bool worstBeats;
         readonly Vector2 heroStart;
         readonly double viewPitchDeg;
+        readonly float clearRadius;   // the level script's clear ring: monsters' bodies keep this far from the hero (0: contact)
         readonly int[] barOfBeat;
         readonly int[][] spellCount;
 
@@ -152,9 +153,10 @@ namespace PS.Choreography
         int flowRebuilds, flowSlices, sliceBudget;
 
         public Sim(SongMap map, SectionPlan[] plans, ChoreographyData data, uint seed, float initialInnerRadius, bool worstBeats,
-            Vector2? heroStart = null, double viewPitchDeg = ViewGeometry.PitchDeg)
+            Vector2? heroStart = null, double viewPitchDeg = ViewGeometry.PitchDeg, float clearRadius = 0)
         {
             this.viewPitchDeg = viewPitchDeg;
+            this.clearRadius = clearRadius;
             this.map = map;
             grid = new BeatGrid(map);
             this.plans = plans;
@@ -857,7 +859,9 @@ namespace PS.Choreography
         bool HeroClearOf(int m, Vector2 a, Vector2 p, float hr)
         {
             if (state[m] != Alive) return true;   // the dying fall away and never block
-            float need = hr + radius[m];
+            // With a clear ring the hero stops short of the horde's edge too, leaving the ring to its blows:
+            // well short holding ground, and closer while cutting a way toward a goal, where the horde backs off.
+            float need = Math.Max(hr, (goalReached ? 0.75f : 0.25f) * clearRadius) + radius[m];
             float d = Vector2.Distance(rest[m], p);
             return d >= need || d >= Vector2.Distance(rest[m], a);
         }
@@ -941,7 +945,15 @@ namespace PS.Choreography
                 float contact = roster.HeroRadius + mt.Radius + 0.15f;
                 Vector2 toHero = heroAt - a;
                 float d = toHero.Length();
-                if (plan.MonsterAttacks && d <= contact + mt.ReachM && (nav == null || nav.LineClear(a, heroAt)))
+                // With a clear ring the horde holds at its edge and never reaches the hero to swing: the hero's
+                // blows meet the front rank there, and the hero stays in plain sight.
+                float hold = Math.Max(contact, clearRadius + mt.Radius);
+                if (clearRadius > 0 && d < hold - 0.1f)
+                {
+                    BackOff(m, mt, a, heroAt, toHero, d, hold, tb, tnext, ease);
+                    continue;
+                }
+                if (plan.MonsterAttacks && clearRadius <= 0 && d <= contact + mt.ReachM && (nav == null || nav.LineClear(a, heroAt)))
                 {
                     TryScheduleAttack(m, mt, tb, toHero);
                     continue;
@@ -951,7 +963,7 @@ namespace PS.Choreography
                 float left = d;
                 if (nav != null) dir = MonsterHeading(a, heroAt, mt.Radius, dir, ref left);
                 float stepM = onScreen[m] ? mt.StepM : mt.StepM * OffscreenStride;
-                float step = Math.Min(stepM, Math.Max(0, left - contact));
+                float step = Math.Min(stepM, Math.Max(0, left - hold));
                 Vector2 best = a;
                 float bestProg = 0;
                 if (step > 1e-3f)
@@ -982,7 +994,7 @@ namespace PS.Choreography
                             float turn = s * (sticky ? (k == 0 ? 0.8f : 1.4f) : (k < 2 ? 0.8f : 1.4f));
                             Vector2 b2 = a + Rotate(dir, turn) * (mt.StepM * 0.8f);
                             if (nav != null) b2 = WallStep(a, b2, mt.Radius);
-                            if (Vector2.Distance(b2, heroAt) < contact) continue;
+                            if (Vector2.Distance(b2, heroAt) < hold) continue;
                             // A sidestep shorter than a quarter of its length would only mark time: skip the search
                             // when a neighbour already blocks that quarter.
                             if (nav != null && !AllClear(m, a, b2, 0.25f)) continue;
@@ -1010,6 +1022,27 @@ namespace PS.Choreography
                 planSerial[m] = beatSerial;
                 planFrom[m] = a;
             }
+        }
+
+        /// <summary>
+        /// A monster inside the clear ring (the hero closed in on it) steps back out toward the ring's
+        /// edge, still facing the hero, as far as its neighbours and the walls let it.
+        /// </summary>
+        void BackOff(int m, MonsterType mt, Vector2 a, Vector2 heroAt, Vector2 toHero, float d, float hold, double tb, double tnext, Ease ease)
+        {
+            Vector2 away = d > 1e-4f ? -toHero / d : -Easing.Dir(facing[m]);
+            float step = Math.Min(mt.StepM, hold - d);
+            Vector2 b = a + away * step;
+            if (nav != null) b = WallStep(a, b, mt.Radius);
+            GatherCandidates(m, a, step);
+            Vector2 best = Vector2.Lerp(a, b, SepFraction(m, a, b));
+            if (nav != null && best != a) best = WallKeep(m, a, best, mt.Radius);
+            float fFrom = Easing.Wrap(facing[m]);
+            float fTo = Easing.Unwrap(fFrom, Easing.Yaw(toHero));
+            SetMonsterSeg(m, new MotionSegment(m, tb, tnext, a, best, fFrom, fTo, ease));
+            beatMaxStep = Math.Max(beatMaxStep, Vector2.Distance(a, best));
+            planSerial[m] = beatSerial;
+            planFrom[m] = a;
         }
 
         static Vector2 Rotate(Vector2 v, float yaw)
@@ -1326,7 +1359,10 @@ namespace PS.Choreography
                     despawnT[proj] = p.Time;
                     float yaw = Easing.Yaw(landing - from);
                     AddSeg(new MotionSegment(proj, launch, p.Time, from, landing, yaw, yaw, Ease.Linear));
-                    effects.Add(new EffectEvent(Catalog.BoltLaunch, -1, eseed[proj], launch, new Vector3(from.X, 1.3f, from.Y), yaw, 1f));
+                    // The muzzle flash fires from just beyond the hero's body, toward the target, and small: one
+                    // a beat at the hero's own centre would bury the hero in fire.
+                    Vector2 muzzle = from + Easing.Dir(yaw) * (roster.HeroRadius + 0.4f);
+                    effects.Add(new EffectEvent(Catalog.BoltLaunch, -1, eseed[proj], launch, new Vector3(muzzle.X, 1.3f, muzzle.Y), yaw, 0.6f));
                     Push(new Impact { Time = p.Time, Kind = ImpactKind.Bolt, Entity = proj, Target = target, Move = mv, Point = landing, Strength = strength });
                     break;
                 }
@@ -1343,7 +1379,7 @@ namespace PS.Choreography
                     double dur = mv.Bars * map.BeatsPerBarAt(1) * beat;
                     float yaw0 = Easing.Wrap(HeroFacing);
                     effects.Add(new EffectEvent(mv.Effect, 0, Rng.Hash(seed, (uint)effects.Count, 0x1A5E), p.Time,
-                        new Vector3(0, 1.2f, 0), yaw0, Scaled(mv.Length)));
+                        new Vector3(0, 1.2f, 0), yaw0, Reaching(mv.Length)));
                     if (mv.Sound >= 0) Sound(mv.Sound, p.Time, strength);
                     for (int gi = grid.FirstAfter(p.Time); gi < grid.Count && grid.Points[gi].Time <= p.Time + dur + 1e-9; gi++)
                     {
@@ -1396,12 +1432,16 @@ namespace PS.Choreography
                 {
                     Vector2 o = HeroPosAt(t);
                     Move mv = im.Move;
+                    float size = mv.Shape == HitShape.Line ? mv.Length : mv.Radius;
+                    float reach = Reaching(size);
                     int n = mv.Shape == HitShape.Line
-                        ? QueryLine(o, im.Yaw, Scaled(mv.Length), Scaled(mv.Width), t)
-                        : QueryArc(o, im.Yaw, Scaled(mv.Radius), mv.Shape == HitShape.Arc ? mv.ArcDeg : 360f, t);
+                        ? QueryLine(o, im.Yaw, reach, Scaled(mv.Width), t)
+                        : QueryArc(o, im.Yaw, reach, mv.Shape == HitShape.Arc ? mv.ArcDeg : 360f, t);
                     actions.Add(new ActionEvent(0, ActionKind.Attack, t, im.Clip, -1, im.Strength, im.ClipStart, im.ClipSpeed));
+                    // The trail matches the blow's reach (the feedback's scale, or the ring's floor on it).
+                    float fxScale = clearRadius > 0 && size > 0 ? reach / size : shapeScale;
                     if (mv.Effect >= 0)
-                        effects.Add(new EffectEvent(mv.Effect, 0, Rng.Hash(seed, (uint)effects.Count, 0xC0B0), t, new Vector3(0, 1f, 0), im.Yaw, shapeScale));
+                        effects.Add(new EffectEvent(mv.Effect, 0, Rng.Hash(seed, (uint)effects.Count, 0xC0B0), t, new Vector3(0, 1f, 0), im.Yaw, fxScale));
                     Sound(mv.Sound >= 0 ? mv.Sound : Catalog.SwingSound, t, im.Strength);
                     if (plan.Clear) ClearStrike(t, o, im.Strength);
                     else Strike(t, o, n, im.Strength, true);
@@ -1410,7 +1450,7 @@ namespace PS.Choreography
                 case ImpactKind.Ring:
                 {
                     Vector2 o = HeroPosAt(t);
-                    float r = Scaled(im.Move.Radius);
+                    float r = Reaching(im.Move.Radius);
                     int n = QueryArc(o, 0, r, 360f, t);
                     if (im.Move.Effect >= 0)
                         effects.Add(new EffectEvent(im.Move.Effect, -1, Rng.Hash(seed, (uint)effects.Count, 0x7106), t, new Vector3(o.X, 0.1f, o.Y), 0, r));
@@ -1451,7 +1491,7 @@ namespace PS.Choreography
                 case ImpactKind.LaserTick:
                 {
                     Vector2 o = HeroPosAt(t);
-                    int n = QueryLine(o, im.Yaw, Scaled(im.Move.Length), Scaled(im.Move.Width), t);
+                    int n = QueryLine(o, im.Yaw, Reaching(im.Move.Length), Scaled(im.Move.Width), t);
                     for (int i = 0; i < n; i++) actions.Add(new ActionEvent(strike[i], ActionKind.Tick, t, -1, -1, im.Strength));
                     stats[curSection].Ticks += n;
                     break;
@@ -1499,6 +1539,12 @@ namespace PS.Choreography
 
         /// <summary>A hit shape's size after the kill-rate feedback, kept within a quarter of the view's width.</summary>
         float Scaled(float size) => Math.Min(size * shapeScale, MaxShapeViewFraction * viewWidth);
+
+        /// <summary>
+        /// The reach of a shape centred on the hero, after the feedback: with a clear ring, never short
+        /// of the front rank at its edge, so the hero's blows always land on the horde, not the air.
+        /// </summary>
+        float Reaching(float size) => clearRadius > 0 ? Math.Max(Scaled(size), Math.Min(size, clearRadius + 0.6f)) : Scaled(size);
 
         int QueryArc(Vector2 o, float yaw, float r, float arcDeg, double t)
         {
@@ -1585,11 +1631,15 @@ namespace PS.Choreography
             if (n == 0) return;
             int allot = Allot(t);
             if (keys.Length < n) { Array.Resize(ref keys, Math.Max(n, keys.Length * 2)); Array.Resize(ref order, keys.Length); }
+            Vector2 hero = clearRadius > 0 ? HeroPosAt(t) : Vector2.Zero;
             for (int i = 0; i < n; i++)
             {
                 int m = strike[i];
-                long dmm = Math.Min((1L << 20) - 1, (long)(Vector2.Distance(MonsterPosAt(m, t), origin) * 1000));
-                keys[i] = ((long)hp[m] << 40) | (dmm << 20) | (long)(m & 0xFFFFF);   // fewest hit points, then nearest, then id
+                Vector2 pm = MonsterPosAt(m, t);
+                long dmm = Math.Min((1L << 20) - 1, (long)(Vector2.Distance(pm, origin) * 1000));
+                // With a clear ring, monsters inside it die first, so the blows keep the ring open.
+                long outside = clearRadius > 0 && Vector2.Distance(pm, hero) > clearRadius + radius[m] ? 1L << 50 : 0;
+                keys[i] = outside | ((long)hp[m] << 40) | (dmm << 20) | (long)(m & 0xFFFFF);   // inside the ring, fewest hit points, then nearest, then id
                 order[i] = m;
             }
             Array.Sort(keys, order, 0, n);

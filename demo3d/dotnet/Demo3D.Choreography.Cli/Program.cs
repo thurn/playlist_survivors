@@ -7,7 +7,7 @@ using PS.Choreography;
 namespace Demo3D.Choreography.Cli
 {
     /// <summary>
-    /// dotnet run --project demo3d/dotnet/Demo3D.Choreography.Cli -c Release -- song [--seed N] [--out dump.json] [--from S --to S]
+    /// dotnet run --project demo3d/dotnet/Demo3D.Choreography.Cli -c Release -- song [--seed N] [--out dump.json] [--from S --to S] [--hero] [--onscreen] [--ring]
     ///                                                                        stress S3 [--n N] [--view W] [--load L] [--seconds S] [--out dump.json]
     ///                                                                       usage: song | stress <S1..S6> | placements | timing [--out timing.md]
     /// </summary>
@@ -34,6 +34,7 @@ namespace Demo3D.Choreography.Cli
                             Console.WriteLine("hero at " + ht.ToString("F0", CultureInfo.InvariantCulture) + " s: (" + hp.X.ToString("F1", CultureInfo.InvariantCulture) + ", " + hp.Y.ToString("F1", CultureInfo.InvariantCulture) + ") in " + tl.Sections[tl.Map.SectionIndexAt(ht)].Label);
                         }
                     if (Has(args, "--onscreen")) OnScreenSeries(tl, DoubleOpt(args, "--from", 0), DoubleOpt(args, "--to", tl.Duration));
+                    if (Has(args, "--ring")) RingSeries(tl);
                     Dump(tl, args);
                     return 0;
                 }
@@ -165,6 +166,46 @@ namespace Demo3D.Choreography.Cli
                 System.Numerics.Vector2 h = tl.PositionAt(0, t);
                 Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0,6:F0} s {1,-11} on screen {2,4} + {3,3} dying, target {4,4}, view {5,4:F1} m, hero ({6:F1}, {7:F1})",
                     t, s.Label, alive, dying, s.TargetOnScreen, f.ViewWidth, h.X, h.Y));
+            }
+        }
+
+        /// <summary>
+        /// Per section, how close living monsters come to the hero (centre to centre), sampled every
+        /// 0.25 s: the 5th percentile and least of the nearest, and the mean count within 2 m.
+        /// </summary>
+        static void RingSeries(Timeline tl)
+        {
+            var deathAt = new double[tl.EntityCount];
+            for (int e = 0; e < tl.EntityCount; e++)
+            {
+                deathAt[e] = double.PositiveInfinity;
+                foreach (ActionEvent a in tl.ActionsOf(e)) if (a.Kind == ActionKind.Death) { deathAt[e] = a.Impact; break; }
+            }
+            for (int si = 0; si < tl.Sections.Length; si++)
+            {
+                SectionStats s = tl.Sections[si];
+                var nearest = new System.Collections.Generic.List<double>();
+                double within = 0;
+                int samples = 0;
+                for (double t = s.Start; t < s.End; t += 0.25)
+                {
+                    System.Numerics.Vector2 h = tl.PositionAt(0, t);
+                    double best = double.PositiveInfinity;
+                    for (int e = 1; e < tl.EntityCount; e++)
+                    {
+                        EntityInfo info = tl.Entities[e];
+                        if (info.Kind != EntityKind.Monster || t < info.Spawn || t >= info.Despawn || t >= deathAt[e]) continue;
+                        double d = System.Numerics.Vector2.Distance(tl.PositionAt(e, t), h);
+                        if (d < best) best = d;
+                        if (d < 2) within++;
+                    }
+                    samples++;
+                    if (!double.IsInfinity(best)) nearest.Add(best);
+                }
+                nearest.Sort();
+                double p5 = nearest.Count > 0 ? nearest[nearest.Count / 20] : double.NaN, min = nearest.Count > 0 ? nearest[0] : double.NaN;
+                Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0,-11} nearest p5 {1,4:F2} m, min {2,4:F2} m; within 2 m {3,5:F2} on average",
+                    s.Label, p5, min, within / Math.Max(1, samples)));
             }
         }
 

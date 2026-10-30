@@ -150,6 +150,12 @@ namespace PS.Choreography
         public float ReserveFactor = 0.5f;
         /// <summary>The game camera's pitch, which shapes the view the horde is counted and spawned around (its <c>viewPitchDeg</c>: demo3d's 55°, or 90° for a top-down 2D view).</summary>
         public double ViewPitchDeg = ViewGeometry.PitchDeg;
+        /// <summary>
+        /// The clear ring (its <c>clearRadiusM</c>): monsters hold their bodies at least this far from the
+        /// hero's centre, backing off when the hero closes in, so the hero stands in a cleared ring as in a
+        /// horde survivor game instead of buried in melee. 0, the default, lets them close to contact.
+        /// </summary>
+        public float ClearRadiusM;
         public LevelSection[] Sections;
 
         public LevelSection For(string sectionLabel)
@@ -186,6 +192,7 @@ namespace PS.Choreography
                 Seed = (uint)root["seed"].AsDouble(1),
                 ReserveFactor = root["reserve"].AsFloat(0.5f),
                 ViewPitchDeg = root["viewPitchDeg"].AsDouble(ViewGeometry.PitchDeg),
+                ClearRadiusM = root["clearRadiusM"].AsFloat(0f),
             };
             JsonValue secs = root["sections"];
             ls.Sections = new LevelSection[secs.Count];
