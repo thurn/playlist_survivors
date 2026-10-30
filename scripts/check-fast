@@ -7,6 +7,7 @@
 # - The analysis tool: ruff on the changed Python files, the test modules of the changed modules,
 #   and the song map's check when the song maps changed.
 # - The friction ledger: its records and scripts/friction's tests, when either changed.
+# - scripts/prune-cargo-target's tests, when it or they changed.
 # - native/scripts/check-fast when native/ changed and the workspace has one (F4 adds it).
 # - The demos' vendor guard (demo3d/tools, covering demo3d/ and demo2d/), always, over the commits
 #   since the base and the index; its tools' lint and tests when demo3d/tools changed, and the choreography layer's tests (on each demo's
@@ -29,6 +30,9 @@ if [ -s "$list" ]; then
 fi
 if changes_match '^scripts/(check-conflict-markers|test_check_conflict_markers\.py)$'; then
   uv run --no-project python -m unittest scripts/test_check_conflict_markers.py
+fi
+if changes_match '^scripts/(prune-cargo-target|test_prune_cargo_target\.py)$'; then
+  uv run --no-project python -m unittest scripts/test_prune_cargo_target.py
 fi
 
 if changes_baker; then

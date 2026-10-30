@@ -8,13 +8,15 @@
 # - create APFS-clones (`cp -c`, copy-on-write) the seed target directory into the new worktree's
 #   native/target, so its first build compiles only the workspace's crates, not the dependencies;
 # - remove moves the worktree's native/target into the seed first, so the seed tracks the newest
-#   Cargo.lock and toolchain.
+#   Cargo.lock and toolchain, after scripts/prune-cargo-target deletes what a clone cannot reuse
+#   (incremental sessions, the workspace crates' own artifacts, units no recent build uses), so
+#   the seed and its clone stay small (ps-tfn.10).
 # The seed is $PS_TARGET_SEED (default ~/Library/Caches/playlist-survivors/target-seed), else the
 # main checkout's native/target. A clone is a copy, not a shared directory: the worktree's sources
 # are checked out after the seed's last build, so cargo sees every workspace crate as changed and
 # never links another worktree's build (hv-t8o8.79). Slow CI's worktrees (ci-*) skip the clone,
-# since slow CI builds into its own persistent CARGO_TARGET_DIR. A failed clone or seed update
-# only warns: the worktree then builds cold.
+# since slow CI builds into its own persistent CARGO_TARGET_DIR. A failed clone, prune or seed
+# update only warns: the worktree then builds cold, or the seed keeps more than it needs.
 set -eu
 : "${ENACT_WORKTREE_PATH:?}" "${ENACT_REPO:?}"
 seed="${PS_TARGET_SEED:-$HOME/Library/Caches/playlist-survivors/target-seed}"
@@ -43,6 +45,10 @@ case "${1:-}" in
     ;;
   remove)
     if [ -d "$path/native/target" ]; then
+      prune="$(dirname "$0")/prune-cargo-target"
+      if [ -f "$prune" ] && ! python3 "$prune" "$path/native"; then
+        echo "enact-worktree: pruning $path/native/target failed; seeding it unpruned" >&2
+      fi
       # Swap by rename, so a create cloning the seed meanwhile reads a whole directory.
       mkdir -p "$(dirname "$seed")"
       old="$seed.old.$$"

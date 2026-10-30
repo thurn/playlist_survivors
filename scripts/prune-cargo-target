@@ -1,0 +1,152 @@
+#!/usr/bin/env python3
+"""Deletes what a worktree's next clone of a Cargo target directory cannot reuse (ps-tfn.10).
+
+    scripts/prune-cargo-target [--dry-run] WORKSPACE
+
+scripts/enact-worktree remove runs it on the worktree's native/target before that becomes the seed,
+which otherwise kept every incremental session and every unit any worktree ever built. A new
+worktree's sources are newer than the seed's build, so cargo rebuilds every workspace crate there:
+only the dependencies' units are worth cloning. In each profile directory (one holding
+.fingerprint) of WORKSPACE/target it deletes:
+- incremental/, which holds only workspace crates' sessions;
+- the workspace crates' own units (their files named <name>-<hash> under deps, build and examples:
+  rlibs, test binaries, the object files macOS keeps for their debug info), but not their
+  .fingerprint entries, which the next step reads;
+- every unit, its fingerprint included, that no recent build uses. Mtimes and atimes cannot tell
+  (an unchanged dependency keeps its first build's mtime, and macOS updates atime only on the first
+  read after a write), but cargo's fingerprints can. The roots are the units built within KEEP_DAYS
+  of the profile's newest build; a unit is live if a root depends on it, transitively, since each
+  .fingerprint/<pkg>-<hash>/<kind>-<name>.json lists the fingerprints of its dependencies, which
+  are the contents of their own units' hash files. The window counts back from the newest build,
+  not from now, so an idle week deletes nothing.
+Files whose hash names no unit are kept.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+KEEP_DAYS = 2
+HASH = re.compile(r"-([0-9a-f]{16})(?:\.|$)")
+ARTIFACT_DIRS = ("deps", "build", "examples")
+
+
+def newest_mtime(path: Path) -> float:
+    """The newest mtime of the files under a directory (0 if none). Directories' own mtimes do not
+    count: the worktree's `cp -c -R` clone preserves files' mtimes but not directories'."""
+    times = [0.0]
+    for root, _, files in os.walk(path):
+        times += [os.lstat(os.path.join(root, f)).st_mtime for f in files]
+    return max(times)
+
+
+def size(path: Path) -> int:
+    if not path.is_dir() or path.is_symlink():
+        return path.lstat().st_size
+    return sum(f.lstat().st_size for f in path.rglob("*") if not f.is_dir() or f.is_symlink())
+
+
+def workspace_packages(workspace: Path) -> set[str]:
+    out = subprocess.run(
+        ["cargo", "metadata", "--no-deps", "--offline", "--format-version", "1"],
+        cwd=workspace,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    metadata = json.loads(out)
+    members = set(metadata["workspace_members"])
+    return {p["name"] for p in metadata["packages"] if p["id"] in members}
+
+
+def unused_paths(profile: Path, workspace: set[str], keep_seconds: float) -> list[Path]:
+    """What a new worktree cannot reuse in one profile directory."""
+    built: dict[str, float] = {}  # unit hash -> its newest fingerprint mtime
+    deps: dict[str, list[str]] = {}  # unit hash -> the fingerprints it depends on
+    owner: dict[str, str] = {}  # fingerprint -> unit hash
+    ours: set[str] = set()  # the workspace crates' unit hashes
+    for unit in (profile / ".fingerprint").iterdir():
+        m = HASH.search(unit.name)
+        if not m or not unit.is_dir():
+            continue
+        h = m.group(1)
+        built[h] = newest_mtime(unit)
+        deps[h] = []
+        if unit.name[: m.start()] in workspace:
+            ours.add(h)
+        for j in unit.glob("*.json"):
+            fingerprint = j.with_suffix("")
+            if fingerprint.is_file():
+                owner[fingerprint.read_text().strip()] = h
+            try:
+                dep_list = json.loads(j.read_text()).get("deps", [])
+            except (OSError, ValueError):
+                continue
+            # Cargo writes a fingerprint as the hex of its little-endian bytes.
+            deps[h] += [
+                d[3].to_bytes(8, "little").hex()
+                for d in dep_list
+                if isinstance(d, list) and len(d) == 4 and isinstance(d[3], int)
+            ]
+    unused: list[Path] = []
+    if built:
+        cutoff = max(built.values()) - keep_seconds
+        live = {h for h, t in built.items() if t >= cutoff}
+        queue = list(live)
+        while queue:
+            for fingerprint in deps[queue.pop()]:
+                h = owner.get(fingerprint)
+                if h is not None and h not in live:
+                    live.add(h)
+                    queue.append(h)
+        for name in (*ARTIFACT_DIRS, ".fingerprint"):
+            d = profile / name
+            if not d.is_dir():
+                continue
+            for e in d.iterdir():
+                m = HASH.search(e.name)
+                if not m or m.group(1) not in built:
+                    continue
+                h = m.group(1)
+                if h not in live or (h in ours and name != ".fingerprint"):
+                    unused.append(e)
+    incremental = profile / "incremental"
+    if incremental.is_dir():
+        unused += list(incremental.iterdir())
+    return unused
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("workspace", type=Path, help="the Cargo workspace, whose target/ is pruned")
+    parser.add_argument("--dry-run", action="store_true", help="report what would be deleted")
+    args = parser.parse_args()
+    target = args.workspace / "target"
+    workspace = workspace_packages(args.workspace)
+    profiles = [f.parent for f in target.glob("*/.fingerprint")]
+    profiles += [f.parent for f in target.glob("*/*/.fingerprint")]
+    count = freed = 0
+    for profile in profiles:
+        for path in unused_paths(profile, workspace, KEEP_DAYS * 86400):
+            count += 1
+            freed += size(path)
+            if args.dry_run:
+                continue
+            if path.is_dir() and not path.is_symlink():
+                shutil.rmtree(path)
+            else:
+                path.unlink()
+    verb = "would delete" if args.dry_run else "deleted"
+    print(f"prune-cargo-target: {verb} {count} entries, {freed / 1e9:.1f} GB", file=sys.stderr)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
