@@ -2032,6 +2032,349 @@
       "use": "hero: sword and shield"
     },
     {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Environments/SM_Env_Glacier_03.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "3fcd066fcc091354f8d7a4f5b1382049",
+      "use": "kit: glaciers and ice"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Environments/SM_Env_Iceberg_01.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "b60d2db556c6aa24b84c18b24899de0f",
+      "use": "kit: glaciers and ice"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Environments/SM_Env_Iceberg_02.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "a2fd6eb2561e0844abe038f988bb84da",
+      "use": "kit: glaciers and ice"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Environments/SM_Env_IceChunk_03.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "838440234b5e6ac40912b70ff1d38863",
+      "use": "kit: glaciers and ice"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Environments/SM_Env_IceChunk_04.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "0704de4aad0f42247b81d5bef55a63c2",
+      "use": "kit: glaciers and ice"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Env_Grass_Large_01_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "706f228787b4cf5458cc0eccc5a8933c",
+      "use": "kit: snow rocks, stones and drifts"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Env_Grass_Large_02_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "ce22ce230562e1d4e9d583fdabbf68cb",
+      "use": "kit: snow rocks, stones and drifts"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Env_GrassPatch_01_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "6f6e56c36de525f49b70f800be98bd4a",
+      "use": "kit: snow rocks, stones and drifts"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Env_GrassPatch_02_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "3960f855dd5ebfb40a819aceffbe0c4b",
+      "use": "kit: snow rocks, stones and drifts"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Env_GrassPatch_03_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "ee7f95e5a5208284abcf579d4e871cf5",
+      "use": "kit: snow rocks, stones and drifts"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Env_GrassPatch_04_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "92a39aa5778531746ac46c7feae87c4a",
+      "use": "kit: snow rocks, stones and drifts"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Env_Rock_01_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "1f9ce3a84faaa624492243994a459aba",
+      "use": "kit: snow rocks, stones and drifts"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Env_Rock_02_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "7880b77d6c347824c9f4ec0f5cac284a",
+      "use": "kit: snow rocks, stones and drifts"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Env_Rock_03_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "c1c1c56cea7dc2a42bda98e57ed0a700",
+      "use": "kit: snow rocks, stones and drifts"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Env_Rock_06_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "0be516a51cf3c4b4aa37bb4de3c1fe0b",
+      "use": "kit: snow rocks, stones and drifts"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Env_Rock_07_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "70e834876464ded4a99b5ddffbad72de",
+      "use": "kit: snow rocks, stones and drifts"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Env_Stone_01_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "8e53b1db85d033b4da99dda676888ef1",
+      "use": "kit: snow rocks, stones and drifts"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Env_Stone_02_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "7f38756f10a71554eabea174461a6033",
+      "use": "kit: snow rocks, stones and drifts"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Env_Tree_Pine_01_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "436e5ddef84d20144915c0f77882095b",
+      "use": "kit: snow pines (forest)"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Env_Tree_Pine_02_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "e9d63f27185ddf849b2bf58b4f8cbfff",
+      "use": "kit: snow pines (forest)"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Env_Tree_Pine_03_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "ac37d177299599347819d045b97a5047",
+      "use": "kit: snow pines (forest)"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Env_Tree_Pine_04_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "4cd12378b9180634896e364a2ac12f95",
+      "use": "kit: snow pines (forest)"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Env_Tree_Pine_Large_01_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "76517d61edef32a4d8548bb025f17d99",
+      "use": "kit: snow pines (forest)"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Env_Tree_Pine_Large_02_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "9294f12d436cf5a4281abae31de41b76",
+      "use": "kit: snow pines (forest)"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Env_Tree_Pine_Large_03_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "e6f6550324ff4424fa8b632d6e98c287",
+      "use": "kit: snow pines (forest)"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Prop_Barrel_Half_01_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "b2c17946abbfa74438665d416ccc234a",
+      "use": "kit: viking camp props"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Prop_Boat_Broken_01_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "792f018adeeab554b80d8bfa9c9623be",
+      "use": "kit: viking camp props"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Prop_Cow_Skull_01_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "cd349b2f4be4a6545b4b4b1a027bbffe",
+      "use": "kit: viking camp props"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Prop_Crate_Base_01_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "86c8491757ffb72489c2e992a8ea267a",
+      "use": "kit: viking camp props"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Prop_Fence_Wood_01_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "ce5dc0bfecb83e84289b63f0ead3e05d",
+      "use": "kit: palisades and spikes (structures)"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Prop_Fence_Wood_02_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "84f1830334d6f5249976f544c6d2ffb8",
+      "use": "kit: palisades and spikes (structures)"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Prop_Fence_Wood_03_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "577e89d38c8d3cb4aaa97aa7d63d4f5d",
+      "use": "kit: palisades and spikes (structures)"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Prop_Fence_Wood_Pole_04_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "8e5e3d5aee1499a49b3d84ba1467530c",
+      "use": "kit: palisades and spikes (structures)"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Prop_Fish_Rack_02_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "7b276fe82e3e0654a93729505bb6b299",
+      "use": "kit: viking camp props"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Prop_Log_01_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "7a82049f442f51b4082340f8e2efe9e8",
+      "use": "kit: viking camp props"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Prop_Logs_01_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "a05f863b43c88ff48ad851af5fcccc6c",
+      "use": "kit: viking camp props"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Prop_Rock_Circle_01_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "daf81ff421f0ab241ba62bcb683f3043",
+      "use": "kit: viking landmarks (statue, rock circle, totems, gate, altar)"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Prop_Rock_Totem_01_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "c19c64cd53a431e4aac693013de9bc54",
+      "use": "kit: viking landmarks (statue, rock circle, totems, gate, altar)"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Prop_Shield_Decor_01_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "837bce8248795a748839021d959b8da6",
+      "use": "kit: viking camp props"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Prop_Skull_Pole_01_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "1ff68eaf05f70e64480ed36895ea3c2a",
+      "use": "kit: viking landmarks (statue, rock circle, totems, gate, altar)"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Prop_Village_Entrance_01_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "9034af8f0f660e0469964bb5c38c5efe",
+      "use": "kit: viking landmarks (statue, rock circle, totems, gate, altar)"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Prop_Wagon_01_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "17b4bbe18f764db4fb9e7ebe10eb3ffe",
+      "use": "kit: viking camp props"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Prop_Wood_Sharp_01_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "670d66fdda84b6649a60a144eb95ecc9",
+      "use": "kit: palisades and spikes (structures)"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Prop_Wood_Sharp_02_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "d1b236edd60ad6046ab8ff476aca4e37",
+      "use": "kit: palisades and spikes (structures)"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Prop_Wood_Spike_01_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "6d14d5772ead97d44aa230b4e1ec6313",
+      "use": "kit: palisades and spikes (structures)"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Prop_Wood_Spike_02_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "38d6c9ae92a3b7a479b114dc0c987641",
+      "use": "kit: palisades and spikes (structures)"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Prop_Wood_Spike_03_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "40bf4b8e60a1935428f79c4cf597da11",
+      "use": "kit: palisades and spikes (structures)"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Prop_Wood_Spike_04_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "ec24aea48407b32429ac032f1da41aa7",
+      "use": "kit: palisades and spikes (structures)"
+    },
+    {
+      "source": "synty:POLYGON_Vikings_Unity_2021_3_v1_4_1.unitypackage.gz",
+      "path": "Assets/PolygonVikings/Prefabs/Snow_Variant/SM_Stone_Statue_01_Snow.prefab",
+      "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
+      "guid": "94383b27c74d02f4cb0b6a60855e76a9",
+      "use": "kit: viking landmarks (statue, rock circle, totems, gate, altar)"
+    },
+    {
       "source": "unity_assets",
       "path": "Assets/Hovl Studio/3D Lasers Pack/Prefabs/Laser beam 10 fire.prefab",
       "sourceSha256": "ef6b6c1ebf93b332c3cb1d2de372e1c54a8110a0e5d0f6b4d885dc9477250987",

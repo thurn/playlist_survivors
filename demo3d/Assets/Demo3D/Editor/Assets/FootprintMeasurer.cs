@@ -33,7 +33,7 @@ namespace Demo3D.EditorTools.Assets
         static readonly Dictionary<string, string> Packs = new Dictionary<string, string>
         {
             { "PolygonAdventure", "adventure" }, { "PolygonDarkFantasy", "darkfantasy" },
-            { "PolygonElvenRealm", "elven" }, { "PolygonFantasyKingdom", "kingdom" },
+            { "PolygonElvenRealm", "elven" }, { "PolygonFantasyKingdom", "kingdom" }, { "PolygonVikings", "vikings" },
         };
 
         public static void Run()

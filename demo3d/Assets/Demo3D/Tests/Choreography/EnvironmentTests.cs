@@ -67,16 +67,45 @@ namespace Demo3D.Choreography.Tests
             Assert.That(LayoutEnvironment.Resolve(Base, Layouts()), Is.EqualTo(Base), "a layout that extends nothing is itself");
         }
 
-        /// <summary>The crypt's placement list is its own kit on the arena's plan, and the courtyard's stress scene runs in it.</summary>
+        /// <summary>Every environment beside the arena's layout (Data/environment-&lt;name&gt;.json).</summary>
+        static IEnumerable<string> Environments() =>
+            Directory.GetFiles(Path.Combine(Fixtures.Root, ChoreographyFiles.DataDir), "environment-*.json")
+                .Select(f => Path.GetFileNameWithoutExtension(f).Substring("environment-".Length)).OrderBy(n => n, StringComparer.Ordinal);
+
+        /// <summary>
+        /// Each environment's placement list is its own kit on the arena's plan: the same goals and shots,
+        /// the level's goals and the stress scenes' holds walkable, and the courtyard's stress scene runs in it.
+        /// </summary>
+        [TestCaseSource(nameof(Environments))]
+        public void AnEnvironmentsPlacementListKeepsTheArenasPlanWalkable(string name)
+        {
+            string root = Fixtures.Root;
+            string layout = ChoreographyFiles.EnvironmentLayout(root, name);
+            FootprintTable fp = ChoreographyFiles.LoadFootprints(root);
+            ArenaLayout arena = ChoreographyFiles.LoadLayout(root), env = ArenaLayout.Parse(layout);
+            Assert.That(env.Goals().Select(g => (g.Name, g.Center, g.Radius)), Is.EqualTo(arena.Goals().Select(g => (g.Name, g.Center, g.Radius))));
+            Assert.That(env.Shots.Select(s => (s.Name, s.At)), Is.EqualTo(arena.Shots.Select(s => (s.Name, s.At))));
+            PlacementList c = env.Generate(fp);
+            // No scattered blocking piece's centre inside a goal.
+            foreach (GoalArea g in env.Goals())
+                foreach (Placement p in c.Items)
+                    if (c.Props[p.Prop].Blocks && p.Area < 0)
+                        Assert.That(System.Numerics.Vector2.Distance(p.Position, g.Center), Is.GreaterThan(g.Radius), g.Name + " is clear of " + c.Props[p.Prop].Id);
+
+            var data = ChoreographyData.FromJson(File.ReadAllText(ChoreographyFiles.DataPath(root, ChoreographyFiles.AnnotationsFile)),
+                File.ReadAllText(ChoreographyFiles.DataPath(root, ChoreographyFiles.RosterFile)), layout,
+                File.ReadAllText(ChoreographyFiles.DataPath(root, ChoreographyFiles.FootprintsFile)));
+            Timeline tl = Choreographer.RunStress(Fixtures.StressScript("S6").With(300, 0, null, 20), data);
+            Assert.That(tl.EntityCount, Is.GreaterThan(100), "S6 runs in " + name);
+        }
+
+        /// <summary>The crypt swaps the forest's kit and leaves the untouched landmarks where the arena's are.</summary>
         [Test]
         public void TheCryptsPlacementListIsItsKitOnTheArenasPlan()
         {
             string root = Fixtures.Root;
-            string crypt = ChoreographyFiles.EnvironmentLayout(root, "crypt");
             FootprintTable fp = ChoreographyFiles.LoadFootprints(root);
-            ArenaLayout arena = ChoreographyFiles.LoadLayout(root), env = ArenaLayout.Parse(crypt);
-            Assert.That(env.Goals().Select(g => (g.Name, g.Center, g.Radius)), Is.EqualTo(arena.Goals().Select(g => (g.Name, g.Center, g.Radius))));
-            Assert.That(env.Shots.Select(s => (s.Name, s.At)), Is.EqualTo(arena.Shots.Select(s => (s.Name, s.At))));
+            ArenaLayout arena = ChoreographyFiles.LoadLayout(root), env = ArenaLayout.Parse(ChoreographyFiles.EnvironmentLayout(root, "crypt"));
             PlacementList a = arena.Generate(fp), c = env.Generate(fp);
             var ids = new HashSet<string>(c.Items.Select(p => c.Props[p.Prop].Id));
             Assert.That(ids, Does.Not.Contain("kingdom/SM_Env_Tree_Round_01"), "the forest's trees stay in the forest");
@@ -85,17 +114,6 @@ namespace Demo3D.Choreography.Tests
             var graveyard = arena.Area("graveyard");
             var at = a.Items.Where(p => p.Area >= 0 && arena.Areas[p.Area] == graveyard).Select(p => p.Position).ToList();
             Assert.That(c.Items.Where(p => p.Area >= 0 && env.Areas[p.Area].Name == "graveyard").Select(p => p.Position), Is.EqualTo(at));
-            // The level's goals and the stress scenes' holds stay walkable: no blocking piece's centre inside one.
-            foreach (GoalArea g in env.Goals())
-                foreach (Placement p in c.Items)
-                    if (c.Props[p.Prop].Blocks && p.Area < 0)
-                        Assert.That(System.Numerics.Vector2.Distance(p.Position, g.Center), Is.GreaterThan(g.Radius), g.Name + " is clear of " + c.Props[p.Prop].Id);
-
-            var data = ChoreographyData.FromJson(File.ReadAllText(ChoreographyFiles.DataPath(root, ChoreographyFiles.AnnotationsFile)),
-                File.ReadAllText(ChoreographyFiles.DataPath(root, ChoreographyFiles.RosterFile)), crypt,
-                File.ReadAllText(ChoreographyFiles.DataPath(root, ChoreographyFiles.FootprintsFile)));
-            Timeline tl = Choreographer.RunStress(Fixtures.StressScript("S6").With(300, 0, null, 20), data);
-            Assert.That(tl.EntityCount, Is.GreaterThan(100), "S6 runs in the crypt");
         }
     }
 }

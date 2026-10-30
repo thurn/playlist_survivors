@@ -1,0 +1,189 @@
+{
+  "note": [
+    "The snow environment (ps-bop.3.1: frozen fjord at blue hour; light and cool): the arena's area plan in POLYGON Vikings' snow variants (pines, rocks, drifts, standing stones, a ship burial, palisade fences), its glaciers and ice, Dark Fantasy's braziers, pyre and candles for warm light, and Fantasy Kingdom's rocks, on a snow ground under a neutral key, a blue sky fill and a cool grade. Its palette and findings: demo3d/evidence/look/env-snow/README.md. Format: arena-layout.json's note, Environments."
+  ],
+  "extends": "arena",
+  "ground": {"forest": [0.56, 0.61, 0.7], "edge": [0.7, 0.73, 0.78], "clearing": [0.85, 0.86, 0.88], "path": [0.78, 0.79, 0.81]},
+  "lighting": {
+    "moon": {"color": [0.95, 0.96, 1.0], "intensity": 0.65},
+    "ambient": {"sky": [0.7, 0.76, 0.9], "equator": [0.56, 0.61, 0.72], "ground": [0.46, 0.49, 0.56]},
+    "fog": {"color": [0.42, 0.52, 0.68]},
+    "kitValue": {"PolyVikings": 0.9},
+    "crowd": {"rim": [0.3, 0.36, 0.48], "keyColor": [1.0, 1.0, 1.0], "fill": 0.2, "key": 2.6},
+    "hero": {"intensity": 6, "color": [1.0, 0.86, 0.72]},
+    "vignette": {"intensity": 0.3, "color": [0.12, 0.16, 0.26]},
+    "post": {"exposure": 0.45, "saturation": 20, "grade": {"shadow": [0.92, 0.97, 1.06], "mid": [1.0, 1.0, 1.0], "high": [1.0, 1.0, 1.0]}},
+    "glow": {"elven/SM_Env_Tree_Glowing_01": null, "vikings/SM_Env_Glacier_03": {"heightM": 4, "rangeM": 14, "intensity": 6, "color": [0.45, 0.8, 1.0], "pool": {"radiusM": 6, "intensity": 0.2}}}
+  },
+  "atmosphere": {
+    "mist": {"color": [0.72, 0.8, 0.92]},
+    "runes": {"circles": [{"at": [44, 40], "radiusM": 8.6, "color": [0.3, 0.6, 1.0], "intensity": 0.12}, {"at": [0, 16], "radiusM": 4.6, "color": [0.35, 0.55, 1.0], "intensity": 0.14}, {"at": [12, -25], "radiusM": 5.4, "color": [0.3, 0.65, 1.0], "intensity": 0.14}]}
+  },
+  "props": {
+    "forest-trees": {"vikings/SM_Env_Tree_Pine_01_Snow": 2, "vikings/SM_Env_Tree_Pine_02_Snow": 2, "vikings/SM_Env_Tree_Pine_03_Snow": 1, "vikings/SM_Env_Tree_Pine_Large_01_Snow": 3, "vikings/SM_Env_Tree_Pine_Large_02_Snow": 3, "vikings/SM_Env_Tree_Pine_Large_03_Snow": 3},
+    "forest-rocks": {"vikings/SM_Env_Iceberg_01": 1, "vikings/SM_Env_Iceberg_02": 1, "vikings/SM_Env_Glacier_03": 0.5, "kingdom/SM_Env_Rock_Chunk_02": 1, "kingdom/SM_Env_Rock_Chunk_03": 1},
+    "edge-plants": {"vikings/SM_Env_Rock_01_Snow": 1.5, "vikings/SM_Env_Rock_02_Snow": 1.5, "vikings/SM_Env_Rock_03_Snow": 1.5, "vikings/SM_Env_Rock_07_Snow": 1, "vikings/SM_Env_Tree_Pine_04_Snow": 2, "vikings/SM_Env_Tree_Pine_03_Snow": 1, "vikings/SM_Prop_Log_01_Snow": 0.6, "vikings/SM_Prop_Logs_01_Snow": 0.4, "kingdom/SM_Env_Rock_Chunk_01": 1, "vikings/SM_Prop_Barrel_Half_01_Snow": 0.15, "vikings/SM_Prop_Crate_Base_01_Snow": 0.15, "vikings/SM_Prop_Fish_Rack_02_Snow": 0.1, "vikings/SM_Prop_Wagon_01_Snow": 0.08, "vikings/SM_Prop_Rock_Circle_01_Snow": 0.1, "vikings/SM_Prop_Wood_Sharp_01_Snow": 0.25, "vikings/SM_Prop_Wood_Sharp_02_Snow": 0.25},
+    "edge-soft": {"vikings/SM_Env_Grass_Large_01_Snow": 2, "vikings/SM_Env_Grass_Large_02_Snow": 2, "vikings/SM_Env_GrassPatch_04_Snow": 2, "vikings/SM_Env_Rock_06_Snow": 1, "vikings/SM_Prop_Wood_Spike_01_Snow": 0.3, "vikings/SM_Prop_Skull_Pole_01_Snow": 0.15},
+    "clutter": {"vikings/SM_Env_Stone_01_Snow": 2, "vikings/SM_Env_Stone_02_Snow": 1.5, "vikings/SM_Env_GrassPatch_03_Snow": 1, "kingdom/SM_Generic_Small_Rocks_01": 1, "kingdom/SM_Generic_Small_Rocks_02": 1},
+    "ruin-walls": {"vikings/SM_Prop_Fence_Wood_01_Snow": 1, "vikings/SM_Prop_Fence_Wood_02_Snow": 1, "vikings/SM_Prop_Fence_Wood_03_Snow": 0.6},
+    "ground-dressing": {"vikings/SM_Env_GrassPatch_01_Snow": 0.4, "vikings/SM_Env_GrassPatch_02_Snow": 0.4, "vikings/SM_Env_GrassPatch_03_Snow": 1, "vikings/SM_Env_IceChunk_03": 0.5, "vikings/SM_Env_IceChunk_04": 0.7, "vikings/SM_Env_Stone_02_Snow": 1.2}
+  },
+  "scatter": {
+    "forest": [
+      {"props": "forest-trees", "spacingM": 4.5, "scale": [1.4, 2.0]},
+      {"props": "forest-rocks", "spacingM": 14, "scale": [0.6, 1.0], "chance": 0.6}
+    ],
+    "path": [
+      {"props": "clutter", "spacingM": 3.5, "scale": [1.0, 1.6], "chance": 0.4},
+      {"props": "ground-dressing", "dressing": true, "spacingM": 3.2, "scale": [1.0, 1.5], "chance": 0.3}
+    ],
+    "clearing": [
+      {"props": "clutter", "spacingM": 3.0, "scale": [1.0, 1.6], "chance": 0.5},
+      {"props": "ground-dressing", "dressing": true, "spacingM": 3.6, "scale": [1.0, 1.6], "chance": 0.3}
+    ]
+  },
+  "pieces": {
+    "glowing-tree": [
+      {"prop": "vikings/SM_Env_Glacier_03", "at": [0, 0], "yawDeg": 30},
+      {"prop": "vikings/SM_Env_IceChunk_03", "at": [3.2, -2.6], "yawDeg": 40},
+      {"prop": "vikings/SM_Env_Rock_02_Snow", "at": [-3.6, 2.4], "yawDeg": 10, "scale": 1.3}
+    ],
+    "glowing-tree-flowers": [
+      {"prop": "vikings/SM_Env_IceChunk_04", "at": [3.87, 1.64], "yawDeg": 0, "scale": 1.2},
+      {"prop": "vikings/SM_Env_GrassPatch_03_Snow", "at": [1.26, 4.48], "yawDeg": 61, "scale": 1.2},
+      {"prop": "vikings/SM_Env_IceChunk_04", "at": [-2.23, 3.1], "yawDeg": 122, "scale": 1.2},
+      {"prop": "vikings/SM_Env_GrassPatch_03_Snow", "at": [-4.06, 0.2], "yawDeg": 183, "scale": 1.2},
+      {"prop": "vikings/SM_Env_IceChunk_04", "at": [-3.1, -3.52], "yawDeg": 244, "scale": 1.2},
+      {"prop": "vikings/SM_Env_GrassPatch_03_Snow", "at": [0.69, -3.87], "yawDeg": 305, "scale": 1.2},
+      {"prop": "vikings/SM_Env_IceChunk_04", "at": [3.45, -1.88], "yawDeg": 6, "scale": 1.2}
+    ],
+    "crystal-ring": [
+      {"prop": "vikings/SM_Prop_Rock_Totem_01_Snow", "at": [7, 0], "yawDeg": 90, "scale": 1.25},
+      {"prop": "vikings/SM_Prop_Rock_Totem_01_Snow", "at": [3.5, 6.06], "yawDeg": 30, "scale": 1.25},
+      {"prop": "vikings/SM_Prop_Rock_Totem_01_Snow", "at": [-3.5, 6.06], "yawDeg": -30, "scale": 1.25},
+      {"prop": "vikings/SM_Prop_Rock_Totem_01_Snow", "at": [-7, 0], "yawDeg": -90, "scale": 1.25},
+      {"prop": "vikings/SM_Prop_Rock_Totem_01_Snow", "at": [-3.5, -6.06], "yawDeg": -150, "scale": 1.25},
+      {"prop": "vikings/SM_Prop_Rock_Totem_01_Snow", "at": [3.5, -6.06], "yawDeg": 150, "scale": 1.25}
+    ],
+    "graveyard": [
+      {"prop": "vikings/SM_Prop_Boat_Broken_01_Snow", "at": [1.5, 1], "yawDeg": 8},
+      {"prop": "vikings/SM_Stone_Statue_01_Snow", "at": [4.5, 1.5], "yawDeg": -90, "scale": 1.5},
+      {"prop": "vikings/SM_Prop_Rock_Totem_01_Snow", "at": [-1.5, -4], "yawDeg": 12},
+      {"prop": "vikings/SM_Prop_Skull_Pole_01_Snow", "at": [3, 5], "yawDeg": -20, "scale": 1.2},
+      {"prop": "vikings/SM_Prop_Skull_Pole_01_Snow", "at": [-2, 5.5], "yawDeg": 4, "scale": 1.2},
+      {"prop": "vikings/SM_Env_Tree_Pine_Large_02_Snow", "at": [6, -5], "yawDeg": 40, "scale": 1.1},
+      {"prop": "vikings/SM_Prop_Fence_Wood_01_Snow", "at": [-1, 8.5], "yawDeg": 0},
+      {"prop": "vikings/SM_Prop_Fence_Wood_02_Snow", "at": [1, 8.5], "yawDeg": 0},
+      {"prop": "vikings/SM_Prop_Fence_Wood_Pole_04_Snow", "at": [2.2, 8.5], "yawDeg": 0},
+      {"prop": "darkfantasy/SM_Prop_Candle_01", "at": [-1.8, -1.2], "yawDeg": 0},
+      {"prop": "darkfantasy/SM_Prop_Candle_02", "at": [2.6, -3.4], "yawDeg": 0},
+      {"prop": "darkfantasy/SM_Prop_Candle_03", "at": [-2.6, 3.4], "yawDeg": 0},
+      {"prop": "vikings/SM_Prop_Shield_Decor_01_Snow", "at": [5.4, -1.5], "yawDeg": 70, "scale": 1.6},
+      {"prop": "vikings/SM_Prop_Cow_Skull_01_Snow", "at": [-3.4, 0.8], "yawDeg": 120, "scale": 1.3}
+    ],
+    "ruins-gate": [
+      {"prop": "vikings/SM_Prop_Village_Entrance_01_Snow", "at": [0.5, -2.2], "yawDeg": 10},
+      {"prop": "vikings/SM_Prop_Rock_Totem_01_Snow", "at": [27, 1.5], "yawDeg": 0, "scale": 1.1}
+    ],
+    "courtyard": [
+      {"prop": "vikings/SM_Prop_Fence_Wood_Pole_04_Snow", "at": [-8, -8], "yawDeg": 0, "scale": 1.2},
+      {"prop": "vikings/SM_Prop_Fence_Wood_Pole_04_Snow", "at": [8, -8], "yawDeg": 0, "scale": 1.2},
+      {"prop": "vikings/SM_Prop_Fence_Wood_Pole_04_Snow", "at": [8, 8], "yawDeg": 0, "scale": 1.2},
+      {"prop": "vikings/SM_Prop_Fence_Wood_Pole_04_Snow", "at": [-8, 8], "yawDeg": 0, "scale": 1.2}
+    ],
+    "courtyard-circle": [
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [3.2, 0.0], "yawDeg": 0, "scale": 1.15},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [2.59, 1.88], "yawDeg": 324, "scale": 1.15},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [0.99, 3.04], "yawDeg": 288, "scale": 1.15},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [-0.99, 3.04], "yawDeg": 252, "scale": 1.15},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [-2.59, 1.88], "yawDeg": 216, "scale": 1.15},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [-3.2, 0.0], "yawDeg": 180, "scale": 1.15},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [-2.59, -1.88], "yawDeg": 144, "scale": 1.15},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [-0.99, -3.04], "yawDeg": 108, "scale": 1.15},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [0.99, -3.04], "yawDeg": 72, "scale": 1.15},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [2.59, -1.88], "yawDeg": 36, "scale": 1.15},
+      {"prop": "vikings/SM_Env_GrassPatch_01_Snow", "at": [3.89, 3.89], "yawDeg": 0, "scale": 1.4},
+      {"prop": "vikings/SM_Env_GrassPatch_01_Snow", "at": [-3.89, 3.89], "yawDeg": 90, "scale": 1.4},
+      {"prop": "vikings/SM_Env_GrassPatch_01_Snow", "at": [-3.89, -3.89], "yawDeg": 180, "scale": 1.4},
+      {"prop": "vikings/SM_Env_GrassPatch_01_Snow", "at": [3.89, -3.89], "yawDeg": 270, "scale": 1.4}
+    ],
+    "brazier-glade": [
+      {"prop": "darkfantasy/SM_Prop_Brazier_01", "at": [5.5, 0], "yawDeg": 0},
+      {"prop": "darkfantasy/SM_Prop_Brazier_01", "at": [0, 5.5], "yawDeg": 0},
+      {"prop": "darkfantasy/SM_Prop_Brazier_01", "at": [-5.5, 0], "yawDeg": 0},
+      {"prop": "darkfantasy/SM_Prop_Brazier_01", "at": [0, -5.5], "yawDeg": 0},
+      {"prop": "darkfantasy/SM_Prop_Pyre_02", "at": [-6, 7], "yawDeg": 20},
+      {"prop": "vikings/SM_Stone_Statue_01_Snow", "at": [6, 7], "yawDeg": 200, "scale": 1.6},
+      {"prop": "vikings/SM_Prop_Skull_Pole_01_Snow", "at": [3.5, 8.5], "yawDeg": 0, "scale": 1.2},
+      {"prop": "vikings/SM_Prop_Skull_Pole_01_Snow", "at": [8.2, 4.6], "yawDeg": 0, "scale": 1.2}
+    ],
+    "opening-ruin": [
+      {"prop": "vikings/SM_Env_Iceberg_01", "at": [0, 0], "yawDeg": 15},
+      {"prop": "vikings/SM_Prop_Rock_Totem_01_Snow", "at": [-5.5, -4], "yawDeg": 230, "scale": 1.2}
+    ],
+    "fairy-ring": [
+      {"prop": "vikings/SM_Prop_Skull_Pole_01_Snow", "at": [10.0, 0.0], "yawDeg": 0, "scale": 1.3},
+      {"prop": "vikings/SM_Prop_Wood_Spike_01_Snow", "at": [10.18, 2.56], "yawDeg": 47, "scale": 1.4},
+      {"prop": "vikings/SM_Prop_Wood_Spike_01_Snow", "at": [9.21, 3.56], "yawDeg": 94, "scale": 1.4},
+      {"prop": "vikings/SM_Prop_Skull_Pole_01_Snow", "at": [7.55, 5.83], "yawDeg": 141, "scale": 1.3},
+      {"prop": "vikings/SM_Prop_Wood_Spike_01_Snow", "at": [6.77, 7.69], "yawDeg": 188, "scale": 1.4},
+      {"prop": "vikings/SM_Prop_Wood_Spike_01_Snow", "at": [5.59, 8.77], "yawDeg": 235, "scale": 1.4},
+      {"prop": "vikings/SM_Prop_Skull_Pole_01_Snow", "at": [2.55, 9.31], "yawDeg": 282, "scale": 1.3},
+      {"prop": "vikings/SM_Prop_Wood_Spike_01_Snow", "at": [1.2, 9.62], "yawDeg": 329, "scale": 1.4},
+      {"prop": "vikings/SM_Prop_Wood_Spike_01_Snow", "at": [-0.86, 10.39], "yawDeg": 16, "scale": 1.4},
+      {"prop": "vikings/SM_Prop_Skull_Pole_01_Snow", "at": [-3.61, 9.54], "yawDeg": 63, "scale": 1.3},
+      {"prop": "vikings/SM_Prop_Wood_Spike_01_Snow", "at": [-4.41, 8.44], "yawDeg": 110, "scale": 1.4},
+      {"prop": "vikings/SM_Prop_Wood_Spike_01_Snow", "at": [-6.7, 7.32], "yawDeg": 157, "scale": 1.4},
+      {"prop": "vikings/SM_Prop_Skull_Pole_01_Snow", "at": [-8.68, 5.9], "yawDeg": 204, "scale": 1.3},
+      {"prop": "vikings/SM_Prop_Wood_Spike_01_Snow", "at": [-8.87, 4.49], "yawDeg": 251, "scale": 1.4},
+      {"prop": "vikings/SM_Prop_Wood_Spike_01_Snow", "at": [-9.37, 1.65], "yawDeg": 298, "scale": 1.4},
+      {"prop": "vikings/SM_Prop_Skull_Pole_01_Snow", "at": [-10.18, -0.03], "yawDeg": 345, "scale": 1.3},
+      {"prop": "vikings/SM_Prop_Wood_Spike_01_Snow", "at": [-10.29, -1.77], "yawDeg": 32, "scale": 1.4},
+      {"prop": "vikings/SM_Prop_Wood_Spike_01_Snow", "at": [-8.66, -4.38], "yawDeg": 79, "scale": 1.4},
+      {"prop": "vikings/SM_Prop_Skull_Pole_01_Snow", "at": [-7.94, -5.46], "yawDeg": 126, "scale": 1.3},
+      {"prop": "vikings/SM_Prop_Wood_Spike_01_Snow", "at": [-7.06, -7.62], "yawDeg": 173, "scale": 1.4},
+      {"prop": "vikings/SM_Prop_Wood_Spike_01_Snow", "at": [-4.73, -9.11], "yawDeg": 220, "scale": 1.4},
+      {"prop": "vikings/SM_Prop_Skull_Pole_01_Snow", "at": [-3.37, -8.93], "yawDeg": 267, "scale": 1.3},
+      {"prop": "vikings/SM_Prop_Wood_Spike_01_Snow", "at": [-0.87, -9.81], "yawDeg": 314, "scale": 1.4},
+      {"prop": "vikings/SM_Prop_Wood_Spike_01_Snow", "at": [1.35, -10.41], "yawDeg": 1, "scale": 1.4},
+      {"prop": "vikings/SM_Prop_Skull_Pole_01_Snow", "at": [2.63, -9.67], "yawDeg": 48, "scale": 1.3},
+      {"prop": "vikings/SM_Prop_Wood_Spike_01_Snow", "at": [5.08, -8.03], "yawDeg": 95, "scale": 1.4},
+      {"prop": "vikings/SM_Prop_Wood_Spike_01_Snow", "at": [6.72, -7.55], "yawDeg": 142, "scale": 1.4},
+      {"prop": "vikings/SM_Prop_Skull_Pole_01_Snow", "at": [8.26, -6.43], "yawDeg": 189, "scale": 1.3},
+      {"prop": "vikings/SM_Prop_Wood_Spike_01_Snow", "at": [9.11, -3.52], "yawDeg": 236, "scale": 1.4},
+      {"prop": "vikings/SM_Prop_Wood_Spike_01_Snow", "at": [9.31, -2.3], "yawDeg": 283, "scale": 1.4},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [6.82, 1.56], "yawDeg": 347, "scale": 1.2},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [5.47, 4.36], "yawDeg": 321, "scale": 1.2},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [3.04, 6.31], "yawDeg": 296, "scale": 1.2},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [0.0, 7.0], "yawDeg": 270, "scale": 1.2},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [-3.04, 6.31], "yawDeg": 244, "scale": 1.2},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [-5.47, 4.36], "yawDeg": 219, "scale": 1.2},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [-6.82, 1.56], "yawDeg": 193, "scale": 1.2},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [-6.82, -1.56], "yawDeg": 167, "scale": 1.2},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [-5.47, -4.36], "yawDeg": 141, "scale": 1.2},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [-3.04, -6.31], "yawDeg": 116, "scale": 1.2},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [-0.0, -7.0], "yawDeg": 90, "scale": 1.2},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [3.04, -6.31], "yawDeg": 64, "scale": 1.2},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [5.47, -4.36], "yawDeg": 39, "scale": 1.2},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [6.82, -1.56], "yawDeg": 13, "scale": 1.2},
+      {"prop": "darkfantasy/SM_Prop_Candle_01", "at": [8.87, 3.67], "yawDeg": 0, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Candle_02", "at": [3.67, 8.87], "yawDeg": 53, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Candle_03", "at": [-3.67, 8.87], "yawDeg": 106, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Candle_01", "at": [-8.87, 3.67], "yawDeg": 159, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Candle_02", "at": [-8.87, -3.67], "yawDeg": 212, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Candle_03", "at": [-3.67, -8.87], "yawDeg": 265, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Candle_01", "at": [3.67, -8.87], "yawDeg": 318, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Candle_02", "at": [8.87, -3.67], "yawDeg": 11, "scale": 1.5}
+    ],
+    "path-stones": [
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [0.0, 0.0], "yawDeg": 0, "scale": 1.0},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [0.73, 1.35], "yawDeg": 37, "scale": 1.0},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [2.15, 2.11], "yawDeg": 74, "scale": 1.0},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [2.88, 3.46], "yawDeg": 111, "scale": 1.0},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [3.61, 4.8], "yawDeg": 148, "scale": 1.0},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [5.04, 5.56], "yawDeg": 185, "scale": 1.0},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [5.75, 6.92], "yawDeg": 222, "scale": 1.0},
+      {"prop": "vikings/SM_Env_Stone_02_Snow", "at": [6.49, 8.26], "yawDeg": 259, "scale": 1.0}
+    ]
+  }
+}

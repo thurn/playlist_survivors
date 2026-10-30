@@ -17,11 +17,12 @@ namespace Demo3D.EditorTools.Arena
     /// field of view) at our view widths, from the framings that see the most of its dressing.
     /// Each framing twice: under the scene's own lights (to the gitignored captures/, `-ownOut`: a
     /// screenshot of the vendor's demo isn't evidence), and under our night (the arena's moon,
-    /// ambient, fog and post stack; evidence), so its density and dressing can be set beside our shots.
+    /// ambient, fog and post stack, or `-environment`'s; evidence), so its density and dressing can be
+    /// set beside our shots.
     /// The demo scenes are vendor files: sync them into Assets/Vendor only for the run (a
     /// temporary manifest entry) and never commit them; only the small tagged JPEGs are kept.
     /// `demo3d unity Demo3D.EditorTools.Arena.ReferenceStills.Run -scene Assets/Vendor/.../Demo.unity
-    /// -name elven -out evidence/td15/reference [-views 30,40] [-count 3] [-width 960]`.
+    /// -name elven -out evidence/td15/reference [-environment snow] [-views 30,40] [-count 3] [-width 960]`.
     /// </summary>
     public static class ReferenceStills
     {
@@ -59,7 +60,7 @@ namespace Demo3D.EditorTools.Arena
             Debug.Log($"ReferenceStills: {name}: {renderers.Count} renderers, {ownLights.Count} lights, {ownVolumes.Count} volumes, {fixedUp} custom-shader materials as plain Lit");
 
             var cam0 = ArenaStills.GameCamera();
-            var lighting = ArenaLighting.Parse(File.ReadAllText(ArenaBaker.LayoutPath));
+            var lighting = ArenaLighting.Parse(ArenaEnvironment.Load(TaskArgs.Get("-environment")).Json);
             try
             {
                 foreach (float view in views)
