@@ -106,5 +106,21 @@ namespace Demo3D.Tests
             Assert.That(Encoding.ASCII.GetString(tagged, 33 + 8, 9), Is.EqualTo("ps-render"));
             Assert.That(tex.LoadImage(tagged), Is.True);
         }
+
+        [Test]
+        public void KitIdsNameThePackEvenUnderTheSyntyFolder()
+        {
+            Assert.That(FootprintMeasurer.Id("Assets/PolygonVikings/Prefabs/Environments/SM_Env_Iceberg_01.prefab"), Is.EqualTo("vikings/SM_Env_Iceberg_01"));
+            Assert.That(FootprintMeasurer.Id("Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Brazier_01.prefab"), Is.EqualTo("egypt/SM_Prop_Brazier_01"));
+            Assert.That(FootprintMeasurer.Id("Assets/PolygonAncientEmpire/Prefabs/Props/SM_Prop_Brazier_01.prefab"), Is.EqualTo("empire/SM_Prop_Brazier_01"),
+                "two packs' pieces of the same name keep apart");
+        }
+
+        [Test]
+        public void EveryKitIdIsUnique()
+        {
+            var ids = JObject.Parse(File.ReadAllText(FootprintMeasurer.OutPath))["props"].Select(p => (string)p["id"]).ToList();
+            Assert.That(ids, Is.Unique);
+        }
     }
 }

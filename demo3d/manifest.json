@@ -1290,6 +1290,629 @@
       "use": "kit: solid-canopy trees and logs"
     },
     {
+      "source": "synty:POLYGON_AncientEmpire_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonAncientEmpire/Prefabs/Environment/SM_Env_Pebbles_01.prefab",
+      "sourceSha256": "059f130d7f13e4711a1dc442aa8af98f3f5f9d10ee0968d477f3e2c80d3ae66e",
+      "guid": "c3aa477a5d702814584a9a4812312681",
+      "use": "kit: desert rocks and dunes"
+    },
+    {
+      "source": "synty:POLYGON_AncientEmpire_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonAncientEmpire/Prefabs/Environment/SM_Env_Pebbles_02.prefab",
+      "sourceSha256": "059f130d7f13e4711a1dc442aa8af98f3f5f9d10ee0968d477f3e2c80d3ae66e",
+      "guid": "ee166bb18a1e98c48af24857a81359e8",
+      "use": "kit: desert rocks and dunes"
+    },
+    {
+      "source": "synty:POLYGON_AncientEmpire_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonAncientEmpire/Prefabs/Environment/SM_Env_Rock_Cliff_01.prefab",
+      "sourceSha256": "059f130d7f13e4711a1dc442aa8af98f3f5f9d10ee0968d477f3e2c80d3ae66e",
+      "guid": "7452fef3248f77f438a8e59beffb3e8c",
+      "use": "kit: desert rocks and dunes"
+    },
+    {
+      "source": "synty:POLYGON_AncientEmpire_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonAncientEmpire/Prefabs/Environment/SM_Env_Rock_Cliff_02.prefab",
+      "sourceSha256": "059f130d7f13e4711a1dc442aa8af98f3f5f9d10ee0968d477f3e2c80d3ae66e",
+      "guid": "d8d4443482b1dbe419f9490b0c3b6e24",
+      "use": "kit: desert rocks and dunes"
+    },
+    {
+      "source": "synty:POLYGON_AncientEmpire_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonAncientEmpire/Prefabs/Environment/SM_Env_Tree_Palm_01.prefab",
+      "sourceSha256": "059f130d7f13e4711a1dc442aa8af98f3f5f9d10ee0968d477f3e2c80d3ae66e",
+      "guid": "720a715495233354197cde731a9a7d5b",
+      "use": "kit: desert palms and trees"
+    },
+    {
+      "source": "synty:POLYGON_AncientEmpire_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonAncientEmpire/Prefabs/Environment/SM_Env_Tree_Palm_02.prefab",
+      "sourceSha256": "059f130d7f13e4711a1dc442aa8af98f3f5f9d10ee0968d477f3e2c80d3ae66e",
+      "guid": "239e89113e31eaf419e7c9f2d5a38ebc",
+      "use": "kit: desert palms and trees"
+    },
+    {
+      "source": "synty:POLYGON_AncientEmpire_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonAncientEmpire/Prefabs/Environment/SM_Env_Tree_Palm_03.prefab",
+      "sourceSha256": "059f130d7f13e4711a1dc442aa8af98f3f5f9d10ee0968d477f3e2c80d3ae66e",
+      "guid": "9e3b438c6f81f69438fa285e0f46dc37",
+      "use": "kit: desert palms and trees"
+    },
+    {
+      "source": "synty:POLYGON_AncientEmpire_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonAncientEmpire/Prefabs/Props/SM_Prop_Marble_Rubble_01.prefab",
+      "sourceSha256": "059f130d7f13e4711a1dc442aa8af98f3f5f9d10ee0968d477f3e2c80d3ae66e",
+      "guid": "e9e8c8d922ce6a04f968950e517ad455",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_AncientEmpire_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonAncientEmpire/Prefabs/Props/SM_Prop_Marble_Rubble_03.prefab",
+      "sourceSha256": "059f130d7f13e4711a1dc442aa8af98f3f5f9d10ee0968d477f3e2c80d3ae66e",
+      "guid": "341849fabb4e4c941bac199d87d4f6bd",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_AncientEmpire_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonAncientEmpire/Prefabs/Props/SM_Prop_Marble_Rubble_04.prefab",
+      "sourceSha256": "059f130d7f13e4711a1dc442aa8af98f3f5f9d10ee0968d477f3e2c80d3ae66e",
+      "guid": "ee6597e286de27d41b28e9d8653e8e26",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_AncientEmpire_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonAncientEmpire/Prefabs/Props/SM_Prop_Marble_Rubble_05.prefab",
+      "sourceSha256": "059f130d7f13e4711a1dc442aa8af98f3f5f9d10ee0968d477f3e2c80d3ae66e",
+      "guid": "9d6f24add3f093f4ba9c920d13b8b91f",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_AncientEmpire_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonAncientEmpire/Prefabs/Props/SM_Prop_Marble_Rubble_06.prefab",
+      "sourceSha256": "059f130d7f13e4711a1dc442aa8af98f3f5f9d10ee0968d477f3e2c80d3ae66e",
+      "guid": "d8c3ab5af9f445945837e42efec45fb0",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_AncientEmpire_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonAncientEmpire/Prefabs/Props/SM_Prop_Statue_Broken_02.prefab",
+      "sourceSha256": "059f130d7f13e4711a1dc442aa8af98f3f5f9d10ee0968d477f3e2c80d3ae66e",
+      "guid": "c50d2a727441af84aa3d6ae7f148d437",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_AncientEmpire_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonAncientEmpire/Prefabs/Props/SM_Prop_Statue_Broken_03.prefab",
+      "sourceSha256": "059f130d7f13e4711a1dc442aa8af98f3f5f9d10ee0968d477f3e2c80d3ae66e",
+      "guid": "d2601a7b1af546b49872be5b8e04a848",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_AncientEmpire_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonAncientEmpire/Prefabs/Props/SM_Prop_Statue_Broken_05.prefab",
+      "sourceSha256": "059f130d7f13e4711a1dc442aa8af98f3f5f9d10ee0968d477f3e2c80d3ae66e",
+      "guid": "51345ae1ddc6e7946909839a226a0648",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_AncientEmpire_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonAncientEmpire/Prefabs/Props/SM_Prop_Statue_Broken_08.prefab",
+      "sourceSha256": "059f130d7f13e4711a1dc442aa8af98f3f5f9d10ee0968d477f3e2c80d3ae66e",
+      "guid": "f0e1f99f26222254189e0ca7dcfeef76",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Buildings/SM_Bld_Obelisk_Medium_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "52604b8e771b8e942b9dcfa8c9b7cce1",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Buildings/SM_Bld_Pillar_Ornate_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "1914f6a2345620d4cb747515f2a13c45",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Buildings/SM_Bld_Pillar_Ornate_Damaged_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "df68e99b9a47d0c4dbf15d6d7441203a",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Buildings/SM_Bld_Pillar_Ornate_Damaged_02.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "97ac7d6984d2c6f459f57055369511d9",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Buildings/SM_Bld_Pillar_Ornate_Large_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "361cfb5f656832d47ac1b2ade51f20fc",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Buildings/SM_Bld_Pillar_Ornate_Large_Damaged_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "34a0eabdbd342d44a8965e0e3805efda",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Buildings/SM_Bld_Sphinx_Medium_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "4eb89799a406b044b934d6bddbbec006",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Bush_Dead_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "3ee1b9d1be8c26c43b61f99bfae74bbf",
+      "use": "kit: desert shrubs and grass"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Bush_Dead_02.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "29eef973eb6d2954e8efe241c5a2611f",
+      "use": "kit: desert shrubs and grass"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Bush_Dead_03.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "85f092f0a7fa636469df84815da4218f",
+      "use": "kit: desert shrubs and grass"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Bush_Dead_04.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "96391966dd8416e4392475235b02099a",
+      "use": "kit: desert shrubs and grass"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Bush_Group_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "905390b45d70d8540ba11203f1de404d",
+      "use": "kit: desert shrubs and grass"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Bush_Group_02.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "fb38c94296cc6c74f828659e1c322968",
+      "use": "kit: desert shrubs and grass"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Bush_Group_03.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "86ab3b847ccff7b45a0655a50b35c431",
+      "use": "kit: desert shrubs and grass"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Bush_Group_04.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "e5996bd7067279b42bc39dadfef540f8",
+      "use": "kit: desert shrubs and grass"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Grass_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "bc83f25562ddc594f985ed10cc479e76",
+      "use": "kit: desert shrubs and grass"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Grass_02.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "2be65cff2a6c2bc4eb2a3d5ae2a843ba",
+      "use": "kit: desert shrubs and grass"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Grass_03.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "b4bb1af96d9130f4f9cdb6e07b87611b",
+      "use": "kit: desert shrubs and grass"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Grass_04.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "6005e705a3b34204a9ca401975780830",
+      "use": "kit: desert shrubs and grass"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Grass_05.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "c61a233a113ca16429c6cc8a5f06fd1d",
+      "use": "kit: desert shrubs and grass"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Grass_Patch_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "788769ccd8efd4e469580aaf0b12fb4d",
+      "use": "kit: desert shrubs and grass"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Rock_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "d441f833f65484f43885042c70f2b364",
+      "use": "kit: desert rocks and dunes"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Rock_02.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "bc47636f3f9676845aa59a7bda74dd53",
+      "use": "kit: desert rocks and dunes"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Rock_03.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "b631d4d559c3eed4d9ccf4692ff68286",
+      "use": "kit: desert rocks and dunes"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Rock_04.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "3276edffa679d23469f3d2f1f448456d",
+      "use": "kit: desert rocks and dunes"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Rock_05.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "c4245718c5163ab4392e6db29c365437",
+      "use": "kit: desert rocks and dunes"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Rock_Pebbles_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "ed0f872413d1ed64681b979ce2a88212",
+      "use": "kit: desert rocks and dunes"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Rock_Pebbles_02.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "93f382dd689f0fd4a86fa3b05911b9c9",
+      "use": "kit: desert rocks and dunes"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Rock_Pebbles_03.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "fe768bca51f2c1f48a3afe2433b99cad",
+      "use": "kit: desert rocks and dunes"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Rock_Pebbles_05.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "bfc35ece8d5f6f0489d80f50cdc740d2",
+      "use": "kit: desert rocks and dunes"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Rock_Pebbles_06.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "2cad5ae6dc0000f4a88f619a472eadfd",
+      "use": "kit: desert rocks and dunes"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Rock_Wall_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "c649f0b13fdf63e409706b9ee24907e0",
+      "use": "kit: desert rocks and dunes"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Rock_Wall_02.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "67649dee0f5368340a419c5a5f136517",
+      "use": "kit: desert rocks and dunes"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Tree_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "5659cbbeeaa251b46a1f29cba54ccab8",
+      "use": "kit: desert palms and trees"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Tree_02.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "cda806e5d31f0e148a65a16430ae36d6",
+      "use": "kit: desert palms and trees"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Tree_Dead_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "4c5ce20367e79824a9c5d23f31457278",
+      "use": "kit: desert palms and trees"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Tree_Dead_02.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "e6ef3c487bde181479945b162b417fc9",
+      "use": "kit: desert palms and trees"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Tree_Palm_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "e23171e3b7c60bb44a50285a18153e7d",
+      "use": "kit: desert palms and trees"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Tree_Palm_02.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "a5c3b98f46406af48a5538d578adcf4a",
+      "use": "kit: desert palms and trees"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Environment/SM_Env_Tree_Palm_03.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "c6f3d55a00987ff489fb73ee7570b8d2",
+      "use": "kit: desert palms and trees"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Basket_Pile_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "d925fb3337a2e5542b4033c688fb6814",
+      "use": "kit: desert braziers, torches and pottery"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Brazier_03.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "64502335e3168d042b476be07f488f54",
+      "use": "kit: desert braziers, torches and pottery"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Brazier_03_Insert_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "fe1bd2829da74c64588c4498ee2b5fcd",
+      "use": "kit: desert braziers, torches and pottery"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Canopic_Jar_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "330d2be664abade40879c9046a892765",
+      "use": "kit: desert braziers, torches and pottery"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Canopic_Jar_02.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "4ac9edb1949dacd47935163ce40673f3",
+      "use": "kit: desert braziers, torches and pottery"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Canopic_Jar_03.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "2f86b3724b8ffef4b9119f9384544dff",
+      "use": "kit: desert braziers, torches and pottery"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Canopic_Jar_04.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "d15fb615aff5a824bb7356c1d7152c38",
+      "use": "kit: desert braziers, torches and pottery"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Jar_Pile_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "4fb6972009d204d40aef194d45fe17da",
+      "use": "kit: desert braziers, torches and pottery"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Limestone_Block_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "133f5ec624cfd9744a04fd67146c5444",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Limestone_Block_02.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "5ea87cc71d458cb4a931fa20d1b805c8",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Limestone_Block_03.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "5ca316bb2db69c14fb1200f5bd2378ec",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Limestone_Rubble_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "94948e97f2705d845b44cebd6cb3afb0",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Limestone_Rubble_02.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "602ac5329defd3948b70176d808ac312",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Limestone_Rubble_03.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "b688f67c6318b3c4c9778728a4498e8e",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Limestone_Stack_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "c57be74ee6e86e643b6d5d8abd28c85e",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Limestone_Stack_02.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "7c678dee3bcb3dc47a10a977ef771d0f",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Pot_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "0260d642d0184594eafce19ca3445bd8",
+      "use": "kit: desert braziers, torches and pottery"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Pot_02.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "27d24b3aa7370214192c3f163be5ae7b",
+      "use": "kit: desert braziers, torches and pottery"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Ruins_Base_02.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "e59946f6a617c9c4387a004017ff0924",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Sack_Pile_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "f904a14da4078194cb685128f5d36371",
+      "use": "kit: desert braziers, torches and pottery"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Sarcophagus_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "10875038f9c2ca746a86d94f9674aa28",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Sarcophagus_02.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "025b527cffd3d5a4f98d77307df29d8e",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Statue_03.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "6086f5045ae90b74f85b13986ab488a3",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Statue_06.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "bcf1c39d2823254428f1fc00c76ff403",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Statue_07.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "4dbf51005cf413148a053a9a62e9e4c6",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Statue_08.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "a4b1e34041fa8c944be7b08bcf8a8c7b",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Statue_10.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "7019c67099058244b8a713b1e350a8e4",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Statue_Damaged_02.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "f67e21c6c9c72984dba60f187b8aac14",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Statue_Damaged_03.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "c5b792c669ca69940965be2d0ee27d93",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Statue_Damaged_05.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "75e383b659acd744fae8043355f0beb4",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Statue_Small_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "caff3d6610c752d42ae2fbc8381eddaa",
+      "use": "kit: desert ruins, obelisks and statues"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Props/SM_Prop_Vase_Pile_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "11ed8818ab775ec4f9f857a6e554b14a",
+      "use": "kit: desert braziers, torches and pottery"
+    },
+    {
+      "source": "synty:POLYGON_Ancient_Egypt_Unity_2021_3_v1_0_2 (1).unitypackage.gz",
+      "path": "Assets/Synty/PolygonAncientEgypt/Prefabs/Vehicles/SM_Veh_Cart_01.prefab",
+      "sourceSha256": "890d3342ca4459b1f836bb954aab8e8dcae5ebf01071ed898b882e93c9c9329a",
+      "guid": "0846bcb01e813184993b129d58f640de",
+      "use": "kit: desert braziers, torches and pottery"
+    },
+    {
       "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
       "path": "Assets/PolygonDarkFantasy/Prefabs/Building/SM_Bld_Fence_Cemetary_01.prefab",
       "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
@@ -2373,6 +2996,216 @@
       "sourceSha256": "815620083b5d7a853d0890d862148204bde1850dfd3c6bbb1439a6dde020cf2a",
       "guid": "94383b27c74d02f4cb0b6a60855e76a9",
       "use": "kit: viking landmarks (statue, rock circle, totems, gate, altar)"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Buildings/SM_Bld_Mexican_Wall_Small_01.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "cbd6aafd391154743b48c7900e0c00d1",
+      "use": "kit: desert camp props"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Buildings/SM_Bld_Mexican_Wall_Small_02.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "0ebb33a8f45457841b175e3e2b155981",
+      "use": "kit: desert camp props"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Environments/SM_Env_Cactus_01.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "a3e1703ed60693740812810c153d2ceb",
+      "use": "kit: desert cacti and trees"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Environments/SM_Env_Cactus_02.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "7afcd92debc5e7741982b7225f83930d",
+      "use": "kit: desert cacti and trees"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Environments/SM_Env_Cactus_03.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "86f2e266d9ba4004aa3523931401c127",
+      "use": "kit: desert cacti and trees"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Environments/SM_Env_Cactus_Large_01.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "5062c27c7d396614c96b4d09d814f40d",
+      "use": "kit: desert cacti and trees"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Environments/SM_Env_Cactus_Large_02.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "6ce7d101e859cd3409c5d0916d5ee777",
+      "use": "kit: desert cacti and trees"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Environments/SM_Env_Cactus_Large_03.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "5472627700b046a49ba4bcfa7c3113c8",
+      "use": "kit: desert cacti and trees"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Environments/SM_Env_Cactus_Large_04.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "5810d5798a340174a9a2da12a0ae477b",
+      "use": "kit: desert cacti and trees"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Environments/SM_Env_Cactus_Large_05.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "f82f799a80f40ea45883e64c70d84f29",
+      "use": "kit: desert cacti and trees"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Environments/SM_Env_Cactus_Large_06.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "50be67da65ab30f45b10768454899cdc",
+      "use": "kit: desert cacti and trees"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Environments/SM_Env_Cactus_Large_07.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "e4994f18a15e8a64a89a92edc1f7387f",
+      "use": "kit: desert cacti and trees"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Environments/SM_Env_Cactus_Large_08.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "664e0bb2223cb984b8aa1dd6fdb254f3",
+      "use": "kit: desert cacti and trees"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Environments/SM_Env_Grass_Desert_01.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "232230736ca35364491649faf7d527f5",
+      "use": "kit: desert shrubs and grass"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Environments/SM_Env_RockFlat_02.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "e3765b319a26a4e4d89dab3df5bbb566",
+      "use": "kit: desert rocks and dunes"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Environments/SM_Env_RockFlat_03.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "3b6c2fd1f7c46a040b4d51b86727c535",
+      "use": "kit: desert rocks and dunes"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Environments/SM_Env_RockSmall_01.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "cec4459708e506b448d6befe680ff5d4",
+      "use": "kit: desert rocks and dunes"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Environments/SM_Env_RockSmall_02.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "c4cb2573a82ed654d87dbcfcebb784fc",
+      "use": "kit: desert rocks and dunes"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Environments/SM_Env_RockSmall_03.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "40416f6f047a36b49b29f48e2de76762",
+      "use": "kit: desert rocks and dunes"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Environments/SM_Env_RockTall_01.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "f6fb50e760598c84b80b58178f21cd13",
+      "use": "kit: desert rocks and dunes"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Environments/SM_Env_RockTall_02.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "57db1575d7ae8174693d14731f604c0e",
+      "use": "kit: desert rocks and dunes"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Environments/SM_Env_RockTall_03.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "9feab419dc1ebe8439a3e79a63c9b46e",
+      "use": "kit: desert rocks and dunes"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Environments/SM_Env_ShrubGrass_01.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "65b84d74a62057c4093c5566e0c0f07f",
+      "use": "kit: desert shrubs and grass"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Environments/SM_Env_Tree_Dead_01.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "7d8de34e5ef49134da2071a4a9458c81",
+      "use": "kit: desert cacti and trees"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Environments/SM_Env_Tree_Desert_01.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "b7a3bf101d1963f4f9cc2cf96a26c9db",
+      "use": "kit: desert cacti and trees"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Environments/SM_Env_Tree_Desert_02.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "486c4171b7f88ce46b8f085736eec23f",
+      "use": "kit: desert cacti and trees"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Props/SM_Prop_Campfire_01.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "ac728ce9ca76cf84bb4f051bad08e5b0",
+      "use": "kit: desert camp props"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Props/SM_Prop_SkullPole_01.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "2e3cfebbd5d324e4eae5b923e7df1511",
+      "use": "kit: desert camp props"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Props/SM_Prop_Wagon_Destroyed_01.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "0dabedfe925eeea45b0201fe7018d696",
+      "use": "kit: desert camp props"
+    },
+    {
+      "source": "synty:POLYGON_Western_Frontier_Unity_2021_3_v1_6_2.unitypackage.gz",
+      "path": "Assets/PolygonWesternFrontier/Prefabs/Props/SM_Prop_WagonWheel_01.prefab",
+      "sourceSha256": "0c8f91903c91b18e070ef050f03114858ac2adcdc5430444b65b013a0a6d4432",
+      "guid": "6a7a7859156da3d48b2e96d98ac87ebb",
+      "use": "kit: desert camp props"
     },
     {
       "source": "unity_assets",

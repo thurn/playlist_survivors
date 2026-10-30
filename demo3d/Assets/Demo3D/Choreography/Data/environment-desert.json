@@ -1,0 +1,190 @@
+{
+  "note": [
+    "The desert environment (ps-bop.3.3: sun-bleached ruins at golden hour; light and warm): the arena's area plan in POLYGON Ancient Egypt's palms, limestone, obelisks, pillars, statues and braziers, Ancient Empire's marble rubble and broken statues, and Western Frontier's cacti, desert trees and mesas, on pale sand under a low warm sun, a blue sky fill for cool shadows and a neutral key on the horde. Its palette and findings: demo3d/evidence/look/env-desert/README.md. Format: arena-layout.json's note, Environments."
+  ],
+  "extends": "arena",
+  "ground": {"forest": [0.78, 0.65, 0.48], "edge": [0.84, 0.72, 0.55], "clearing": [0.93, 0.84, 0.68], "path": [0.89, 0.79, 0.63]},
+  "lighting": {
+    "moon": {"elevationDeg": 38, "color": [1.0, 0.8, 0.58], "intensity": 0.64},
+    "ambient": {"sky": [0.8, 0.86, 1.0], "equator": [0.8, 0.74, 0.66], "ground": [0.74, 0.62, 0.48]},
+    "fog": {"color": [0.8, 0.66, 0.5]},
+    "kitValue": {"PolygonAncientEgypt": 0.85, "PolygonAncientEmpire": 0.8, "PolygonWesternFrontier": 0.9, "Statue_Mat": 0.8},
+    "crowd": {"rim": [0.3, 0.36, 0.5], "keyColor": [1.0, 1.0, 1.0], "fill": 0.0, "key": 1.6},
+    "hero": {"intensity": 4, "color": [1.0, 0.84, 0.66]},
+    "vignette": {"intensity": 0.32, "color": [0.26, 0.14, 0.06]},
+    "post": {"exposure": 0.45, "saturation": 22, "grade": {"shadow": [0.93, 0.97, 1.06], "mid": [1.0, 1.0, 1.0], "high": [1.03, 0.99, 0.92]}},
+    "flames": {"props": {"egypt/SM_Prop_Brazier_03": {"heightM": 2.6, "rangeM": 10, "intensity": 3.4, "color": [1.0, 0.52, 0.2]}, "western/SM_Prop_Campfire_01": {"heightM": 0.8, "rangeM": 10, "intensity": 3.6, "color": [1.0, 0.48, 0.18]}}},
+    "glow": {"elven/SM_Env_Tree_Glowing_01": null, "egypt/SM_Bld_Obelisk_Medium_01": {"heightM": 5.5, "rangeM": 14, "intensity": 8, "color": [0.3, 0.85, 1.0], "pool": {"radiusM": 6.5, "intensity": 0.4}}}
+  },
+  "atmosphere": {
+    "mist": {"color": [0.86, 0.74, 0.58]},
+    "runes": {"circles": [{"at": [44, 40], "radiusM": 8.6, "color": [0.2, 0.7, 1.0], "intensity": 0.1}, {"at": [0, 16], "radiusM": 4.6, "color": [0.25, 0.65, 1.0], "intensity": 0.1}, {"at": [12, -25], "radiusM": 5.4, "color": [0.2, 0.75, 1.0], "intensity": 0.1}]}
+  },
+  "props": {
+    "forest-trees": {"egypt/SM_Env_Tree_Palm_01": 1.2, "egypt/SM_Env_Tree_Palm_02": 2.5, "egypt/SM_Env_Tree_Palm_03": 0.8, "empire/SM_Env_Tree_Palm_01": 2.5, "empire/SM_Env_Tree_Palm_02": 1.5, "empire/SM_Env_Tree_Palm_03": 0.8, "egypt/SM_Env_Tree_01": 1.5, "egypt/SM_Env_Tree_02": 1.5, "western/SM_Env_Tree_Desert_01": 2, "western/SM_Env_Tree_Desert_02": 2, "egypt/SM_Env_Tree_Dead_01": 0.4, "egypt/SM_Env_Tree_Dead_02": 0.3, "western/SM_Env_Cactus_Large_01": 0.6, "western/SM_Env_Cactus_Large_04": 0.6, "western/SM_Env_Cactus_Large_05": 0.6},
+    "forest-rocks": {"western/SM_Env_RockTall_01": 1, "western/SM_Env_RockTall_02": 0.7, "western/SM_Env_RockTall_03": 0.7, "empire/SM_Env_Rock_Cliff_01": 1, "empire/SM_Env_Rock_Cliff_02": 1, "egypt/SM_Env_Rock_Wall_01": 1, "egypt/SM_Env_Rock_Wall_02": 1},
+    "edge-plants": {"egypt/SM_Env_Bush_Dead_01": 1.5, "egypt/SM_Env_Bush_Dead_02": 1.5, "egypt/SM_Env_Bush_Dead_03": 1.5, "egypt/SM_Env_Bush_Dead_04": 1.5, "egypt/SM_Env_Bush_Group_01": 1, "egypt/SM_Env_Bush_Group_02": 1, "egypt/SM_Env_Bush_Group_03": 1, "egypt/SM_Env_Bush_Group_04": 0.8, "western/SM_Env_Cactus_Large_02": 0.8, "western/SM_Env_Cactus_Large_03": 0.8, "western/SM_Env_Cactus_Large_06": 0.8, "western/SM_Env_Cactus_Large_07": 0.8, "western/SM_Env_Cactus_Large_08": 0.8, "western/SM_Env_Cactus_01": 0.8, "western/SM_Env_Cactus_02": 0.8, "egypt/SM_Env_Rock_01": 0.8, "egypt/SM_Env_Rock_02": 0.8, "egypt/SM_Env_Rock_03": 0.8, "egypt/SM_Env_Rock_04": 0.8, "egypt/SM_Env_Rock_05": 0.8, "western/SM_Env_RockFlat_02": 0.5, "western/SM_Env_RockFlat_03": 0.3, "egypt/SM_Prop_Limestone_Block_01": 0.5, "egypt/SM_Prop_Limestone_Block_02": 0.5, "egypt/SM_Prop_Limestone_Block_03": 0.4, "egypt/SM_Prop_Limestone_Rubble_01": 0.4, "empire/SM_Prop_Marble_Rubble_01": 0.4, "western/SM_Env_Tree_Dead_01": 0.3, "egypt/SM_Prop_Pot_01": 0.15, "egypt/SM_Prop_Pot_02": 0.15, "egypt/SM_Prop_Vase_Pile_01": 0.15, "egypt/SM_Prop_Jar_Pile_01": 0.15, "egypt/SM_Prop_Basket_Pile_01": 0.1, "egypt/SM_Prop_Sack_Pile_01": 0.1, "egypt/SM_Prop_Statue_Damaged_02": 0.12, "egypt/SM_Prop_Statue_Damaged_03": 0.12, "western/SM_Prop_WagonWheel_01": 0.08, "western/SM_Prop_SkullPole_01": 0.08, "egypt/SM_Veh_Cart_01": 0.05, "western/SM_Prop_Wagon_Destroyed_01": 0.05},
+    "edge-soft": {"egypt/SM_Env_Grass_01": 2, "egypt/SM_Env_Grass_02": 2, "egypt/SM_Env_Grass_03": 2, "egypt/SM_Env_Grass_05": 2, "egypt/SM_Env_Grass_Patch_01": 1, "western/SM_Env_Grass_Desert_01": 2, "western/SM_Env_ShrubGrass_01": 1, "western/SM_Env_Cactus_03": 0.5, "egypt/SM_Env_Rock_Pebbles_06": 1},
+    "clutter": {"egypt/SM_Env_Rock_Pebbles_02": 0.4, "egypt/SM_Env_Rock_Pebbles_05": 0.4, "western/SM_Env_RockSmall_01": 1.2, "western/SM_Env_RockSmall_02": 1.2, "western/SM_Env_RockSmall_03": 1.2, "empire/SM_Prop_Marble_Rubble_03": 0.8, "empire/SM_Prop_Marble_Rubble_05": 0.8, "egypt/SM_Prop_Limestone_Rubble_03": 0.8, "empire/SM_Prop_Statue_Broken_02": 0.25, "empire/SM_Prop_Statue_Broken_05": 0.25, "egypt/SM_Prop_Statue_Damaged_05": 0.25, "egypt/SM_Env_Grass_04": 0.6},
+    "ruin-walls": {"egypt/SM_Prop_Limestone_Stack_01": 1, "egypt/SM_Prop_Limestone_Stack_02": 0.6, "western/SM_Bld_Mexican_Wall_Small_01": 1, "western/SM_Bld_Mexican_Wall_Small_02": 0.6},
+    "ground-dressing": {"egypt/SM_Env_Rock_Pebbles_03": 0.4, "empire/SM_Env_Pebbles_01": 0.8, "empire/SM_Env_Pebbles_02": 0.8, "egypt/SM_Env_Grass_04": 0.6, "egypt/SM_Prop_Limestone_Rubble_02": 0.3, "empire/SM_Prop_Marble_Rubble_04": 0.3}
+  },
+  "scatter": {
+    "forest": [
+      {"props": "forest-trees", "spacingM": 4.5, "scale": [0.6, 0.85]},
+      {"props": "forest-rocks", "spacingM": 14, "scale": [0.5, 0.85], "chance": 0.6}
+    ],
+    "path": [
+      {"props": "clutter", "spacingM": 3.5, "scale": [1.0, 1.5], "chance": 0.4},
+      {"props": "ground-dressing", "dressing": true, "spacingM": 3.2, "scale": [1.0, 1.5], "chance": 0.4}
+    ],
+    "clearing": [
+      {"props": "clutter", "spacingM": 3.0, "scale": [1.0, 1.5], "chance": 0.35},
+      {"props": "ground-dressing", "dressing": true, "spacingM": 3.6, "scale": [1.0, 1.5], "chance": 0.4}
+    ]
+  },
+  "pieces": {
+    "glowing-tree": [
+      {"prop": "egypt/SM_Bld_Obelisk_Medium_01", "at": [0, 0], "yawDeg": 30, "scale": 1.2},
+      {"prop": "egypt/SM_Prop_Limestone_Block_03", "at": [3.2, -2.6], "yawDeg": 40},
+      {"prop": "egypt/SM_Bld_Pillar_Ornate_Damaged_01", "at": [-3.6, 2.4], "yawDeg": 10, "scale": 1.2},
+      {"prop": "egypt/SM_Prop_Statue_Small_01", "at": [2.6, 2.8], "yawDeg": 210, "scale": 1.4}
+    ],
+    "glowing-tree-flowers": [
+      {"prop": "egypt/SM_Env_Rock_Pebbles_02", "at": [3.87, 1.64], "yawDeg": 0, "scale": 1.3},
+      {"prop": "egypt/SM_Env_Grass_02", "at": [1.13, 4.05], "yawDeg": 61, "scale": 1.3},
+      {"prop": "egypt/SM_Prop_Canopic_Jar_01", "at": [-2.46, 3.4], "yawDeg": 122, "scale": 1.3},
+      {"prop": "egypt/SM_Env_Grass_03", "at": [-4.2, 0.2], "yawDeg": 183, "scale": 1.3},
+      {"prop": "egypt/SM_Env_Rock_Pebbles_05", "at": [-2.77, -3.16], "yawDeg": 244, "scale": 1.3},
+      {"prop": "egypt/SM_Prop_Canopic_Jar_03", "at": [0.74, -4.13], "yawDeg": 305, "scale": 1.3},
+      {"prop": "egypt/SM_Env_Grass_02", "at": [3.69, -2.0], "yawDeg": 6, "scale": 1.3}
+    ],
+    "crystal-ring": [
+      {"prop": "egypt/SM_Bld_Pillar_Ornate_Damaged_02", "at": [7, 0], "yawDeg": 90, "scale": 1.3},
+      {"prop": "egypt/SM_Bld_Pillar_Ornate_01", "at": [3.5, 6.06], "yawDeg": 30, "scale": 1.3},
+      {"prop": "egypt/SM_Bld_Pillar_Ornate_Damaged_02", "at": [-3.5, 6.06], "yawDeg": -30, "scale": 1.3},
+      {"prop": "egypt/SM_Bld_Pillar_Ornate_Damaged_01", "at": [-7, 0], "yawDeg": -90, "scale": 1.3},
+      {"prop": "egypt/SM_Bld_Pillar_Ornate_Damaged_02", "at": [-3.5, -6.06], "yawDeg": -150, "scale": 1.3},
+      {"prop": "egypt/SM_Bld_Pillar_Ornate_01", "at": [3.5, -6.06], "yawDeg": 150, "scale": 1.3}
+    ],
+    "graveyard": [
+      {"prop": "egypt/SM_Prop_Sarcophagus_01", "at": [0, 2], "yawDeg": 5, "scale": 1.2},
+      {"prop": "egypt/SM_Prop_Sarcophagus_02", "at": [2.8, -2], "yawDeg": -8, "scale": 1.2},
+      {"prop": "egypt/SM_Prop_Statue_03", "at": [-1.5, -4], "yawDeg": 12, "scale": 1.2},
+      {"prop": "egypt/SM_Prop_Statue_07", "at": [3, 5], "yawDeg": -20, "scale": 1.2},
+      {"prop": "egypt/SM_Prop_Statue_08", "at": [-2, 5.5], "yawDeg": 4, "scale": 1.2},
+      {"prop": "egypt/SM_Prop_Statue_10", "at": [4.8, 1.5], "yawDeg": 0, "scale": 1.2},
+      {"prop": "egypt/SM_Env_Tree_Dead_01", "at": [6, -5], "yawDeg": 40, "scale": 0.8},
+      {"prop": "western/SM_Bld_Mexican_Wall_Small_01", "at": [-0.4, 8.5], "yawDeg": 0},
+      {"prop": "western/SM_Bld_Mexican_Wall_Small_02", "at": [2.2, 8.5], "yawDeg": 0},
+      {"prop": "egypt/SM_Bld_Pillar_Ornate_01", "at": [3.6, 8.5], "yawDeg": 0},
+      {"prop": "darkfantasy/SM_Prop_Candle_01", "at": [-1.8, -1.2], "yawDeg": 0},
+      {"prop": "darkfantasy/SM_Prop_Candle_02", "at": [1.0, -3.6], "yawDeg": 0},
+      {"prop": "darkfantasy/SM_Prop_Candle_03", "at": [-2.6, 3.4], "yawDeg": 0},
+      {"prop": "egypt/SM_Prop_Vase_Pile_01", "at": [5.6, -1.6], "yawDeg": 70},
+      {"prop": "egypt/SM_Prop_Canopic_Jar_02", "at": [-3.2, 0.9], "yawDeg": 120, "scale": 1.3}
+    ],
+    "ruins-gate": [
+      {"prop": "egypt/SM_Bld_Pillar_Ornate_Large_Damaged_01", "at": [0.5, -2.2], "yawDeg": 10},
+      {"prop": "egypt/SM_Bld_Pillar_Ornate_Large_01", "at": [27, 1.5], "yawDeg": 0}
+    ],
+    "courtyard": [
+      {"prop": "egypt/SM_Bld_Pillar_Ornate_01", "at": [-8, -8], "yawDeg": 0, "scale": 1.2},
+      {"prop": "egypt/SM_Bld_Pillar_Ornate_01", "at": [8, -8], "yawDeg": 0, "scale": 1.2},
+      {"prop": "egypt/SM_Bld_Pillar_Ornate_01", "at": [8, 8], "yawDeg": 0, "scale": 1.2},
+      {"prop": "egypt/SM_Bld_Pillar_Ornate_01", "at": [-8, 8], "yawDeg": 0, "scale": 1.2}
+    ],
+    "courtyard-circle": [
+      {"prop": "egypt/SM_Env_Rock_Pebbles_03", "at": [3.2, 0.0], "yawDeg": 0, "scale": 1.2},
+      {"prop": "empire/SM_Prop_Marble_Rubble_06", "at": [2.59, 1.88], "yawDeg": 324, "scale": 1.2},
+      {"prop": "egypt/SM_Env_Rock_Pebbles_03", "at": [0.99, 3.04], "yawDeg": 288, "scale": 1.2},
+      {"prop": "empire/SM_Prop_Marble_Rubble_06", "at": [-0.99, 3.04], "yawDeg": 252, "scale": 1.2},
+      {"prop": "egypt/SM_Env_Rock_Pebbles_03", "at": [-2.59, 1.88], "yawDeg": 216, "scale": 1.2},
+      {"prop": "empire/SM_Prop_Marble_Rubble_06", "at": [-3.2, 0.0], "yawDeg": 180, "scale": 1.2},
+      {"prop": "egypt/SM_Env_Rock_Pebbles_03", "at": [-2.59, -1.88], "yawDeg": 144, "scale": 1.2},
+      {"prop": "empire/SM_Prop_Marble_Rubble_06", "at": [-0.99, -3.04], "yawDeg": 108, "scale": 1.2},
+      {"prop": "egypt/SM_Env_Rock_Pebbles_03", "at": [0.99, -3.04], "yawDeg": 72, "scale": 1.2},
+      {"prop": "empire/SM_Prop_Marble_Rubble_06", "at": [2.59, -1.88], "yawDeg": 36, "scale": 1.2},
+      {"prop": "egypt/SM_Env_Grass_Patch_01", "at": [3.89, 3.89], "yawDeg": 0, "scale": 1.0},
+      {"prop": "egypt/SM_Env_Grass_Patch_01", "at": [-3.89, 3.89], "yawDeg": 90, "scale": 1.0},
+      {"prop": "egypt/SM_Env_Grass_Patch_01", "at": [-3.89, -3.89], "yawDeg": 180, "scale": 1.0},
+      {"prop": "egypt/SM_Env_Grass_Patch_01", "at": [3.89, -3.89], "yawDeg": 270, "scale": 1.0}
+    ],
+    "brazier-glade": [
+      {"prop": "egypt/SM_Prop_Brazier_03", "at": [5.5, 0], "yawDeg": 0},
+      {"prop": "egypt/SM_Prop_Brazier_03_Insert_01", "at": [5.5, 0], "yawDeg": 0},
+      {"prop": "egypt/SM_Prop_Brazier_03", "at": [0, 5.5], "yawDeg": 0},
+      {"prop": "egypt/SM_Prop_Brazier_03_Insert_01", "at": [0, 5.5], "yawDeg": 0},
+      {"prop": "egypt/SM_Prop_Brazier_03", "at": [-5.5, 0], "yawDeg": 0},
+      {"prop": "egypt/SM_Prop_Brazier_03_Insert_01", "at": [-5.5, 0], "yawDeg": 0},
+      {"prop": "egypt/SM_Prop_Brazier_03", "at": [0, -5.5], "yawDeg": 0},
+      {"prop": "egypt/SM_Prop_Brazier_03_Insert_01", "at": [0, -5.5], "yawDeg": 0},
+      {"prop": "western/SM_Prop_Campfire_01", "at": [-6, 7], "yawDeg": 20},
+      {"prop": "egypt/SM_Prop_Statue_06", "at": [6, 7], "yawDeg": 200, "scale": 1.6},
+      {"prop": "egypt/SM_Prop_Pot_01", "at": [3.5, 8.5], "yawDeg": 0},
+      {"prop": "egypt/SM_Prop_Jar_Pile_01", "at": [8.2, 4.6], "yawDeg": 30}
+    ],
+    "opening-ruin": [
+      {"prop": "egypt/SM_Prop_Ruins_Base_02", "at": [0, 0], "yawDeg": 15},
+      {"prop": "egypt/SM_Bld_Sphinx_Medium_01", "at": [-5.5, -4], "yawDeg": 230, "scale": 1.6}
+    ],
+    "fairy-ring": [
+      {"prop": "egypt/SM_Prop_Canopic_Jar_01", "at": [10.0, 0.0], "yawDeg": 0, "scale": 1.5},
+      {"prop": "empire/SM_Prop_Statue_Broken_03", "at": [9.95, 2.67], "yawDeg": 47, "scale": 1.5},
+      {"prop": "egypt/SM_Prop_Canopic_Jar_02", "at": [8.31, 4.8], "yawDeg": 94, "scale": 1.5},
+      {"prop": "egypt/SM_Env_Grass_01", "at": [7.35, 7.35], "yawDeg": 141, "scale": 1.5},
+      {"prop": "egypt/SM_Prop_Canopic_Jar_03", "at": [4.95, 8.57], "yawDeg": 188, "scale": 1.5},
+      {"prop": "empire/SM_Prop_Statue_Broken_08", "at": [2.46, 9.18], "yawDeg": 235, "scale": 1.5},
+      {"prop": "egypt/SM_Prop_Canopic_Jar_04", "at": [0.0, 10.2], "yawDeg": 282, "scale": 1.5},
+      {"prop": "egypt/SM_Env_Grass_05", "at": [-2.54, 9.47], "yawDeg": 329, "scale": 1.5},
+      {"prop": "egypt/SM_Prop_Canopic_Jar_01", "at": [-5.0, 8.66], "yawDeg": 16, "scale": 1.5},
+      {"prop": "empire/SM_Prop_Statue_Broken_03", "at": [-7.28, 7.28], "yawDeg": 63, "scale": 1.5},
+      {"prop": "egypt/SM_Prop_Canopic_Jar_02", "at": [-8.31, 4.8], "yawDeg": 110, "scale": 1.5},
+      {"prop": "egypt/SM_Env_Grass_01", "at": [-10.05, 2.69], "yawDeg": 157, "scale": 1.5},
+      {"prop": "egypt/SM_Prop_Canopic_Jar_03", "at": [-9.9, 0.0], "yawDeg": 204, "scale": 1.5},
+      {"prop": "empire/SM_Prop_Statue_Broken_08", "at": [-9.18, -2.46], "yawDeg": 251, "scale": 1.5},
+      {"prop": "egypt/SM_Prop_Canopic_Jar_04", "at": [-8.83, -5.1], "yawDeg": 298, "scale": 1.5},
+      {"prop": "egypt/SM_Env_Grass_05", "at": [-6.93, -6.93], "yawDeg": 345, "scale": 1.5},
+      {"prop": "egypt/SM_Prop_Canopic_Jar_01", "at": [-5.0, -8.66], "yawDeg": 32, "scale": 1.5},
+      {"prop": "empire/SM_Prop_Statue_Broken_03", "at": [-2.67, -9.95], "yawDeg": 79, "scale": 1.5},
+      {"prop": "egypt/SM_Prop_Canopic_Jar_02", "at": [-0.0, -9.6], "yawDeg": 126, "scale": 1.5},
+      {"prop": "egypt/SM_Env_Grass_01", "at": [2.69, -10.05], "yawDeg": 173, "scale": 1.5},
+      {"prop": "egypt/SM_Prop_Canopic_Jar_03", "at": [4.95, -8.57], "yawDeg": 220, "scale": 1.5},
+      {"prop": "empire/SM_Prop_Statue_Broken_08", "at": [6.72, -6.72], "yawDeg": 267, "scale": 1.5},
+      {"prop": "egypt/SM_Prop_Canopic_Jar_04", "at": [8.83, -5.1], "yawDeg": 314, "scale": 1.5},
+      {"prop": "egypt/SM_Env_Grass_05", "at": [9.47, -2.54], "yawDeg": 1, "scale": 1.5},
+      {"prop": "egypt/SM_Env_Rock_Pebbles_03", "at": [6.82, 1.57], "yawDeg": 0, "scale": 1.2},
+      {"prop": "empire/SM_Prop_Marble_Rubble_04", "at": [5.46, 4.38], "yawDeg": 26, "scale": 1.2},
+      {"prop": "egypt/SM_Env_Rock_Pebbles_01", "at": [3.02, 6.31], "yawDeg": 52, "scale": 1.2},
+      {"prop": "egypt/SM_Env_Rock_Pebbles_03", "at": [-0.02, 7.0], "yawDeg": 78, "scale": 1.2},
+      {"prop": "empire/SM_Prop_Marble_Rubble_04", "at": [-3.05, 6.3], "yawDeg": 104, "scale": 1.2},
+      {"prop": "egypt/SM_Env_Rock_Pebbles_01", "at": [-5.48, 4.35], "yawDeg": 130, "scale": 1.2},
+      {"prop": "egypt/SM_Env_Rock_Pebbles_03", "at": [-6.83, 1.54], "yawDeg": 156, "scale": 1.2},
+      {"prop": "empire/SM_Prop_Marble_Rubble_04", "at": [-6.82, -1.57], "yawDeg": 182, "scale": 1.2},
+      {"prop": "egypt/SM_Env_Rock_Pebbles_01", "at": [-5.46, -4.38], "yawDeg": 208, "scale": 1.2},
+      {"prop": "egypt/SM_Env_Rock_Pebbles_03", "at": [-3.02, -6.31], "yawDeg": 234, "scale": 1.2},
+      {"prop": "empire/SM_Prop_Marble_Rubble_04", "at": [0.02, -7.0], "yawDeg": 260, "scale": 1.2},
+      {"prop": "egypt/SM_Env_Rock_Pebbles_01", "at": [3.05, -6.3], "yawDeg": 286, "scale": 1.2},
+      {"prop": "egypt/SM_Env_Rock_Pebbles_03", "at": [5.48, -4.35], "yawDeg": 312, "scale": 1.2},
+      {"prop": "empire/SM_Prop_Marble_Rubble_04", "at": [6.83, -1.54], "yawDeg": 338, "scale": 1.2},
+      {"prop": "darkfantasy/SM_Prop_Candle_01", "at": [8.19, 3.39], "yawDeg": 0, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Candle_02", "at": [3.39, 8.19], "yawDeg": 53, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Candle_03", "at": [-3.39, 8.19], "yawDeg": 106, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Candle_01", "at": [-8.19, 3.39], "yawDeg": 159, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Candle_02", "at": [-8.19, -3.39], "yawDeg": 212, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Candle_03", "at": [-3.39, -8.19], "yawDeg": 265, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Candle_01", "at": [3.39, -8.19], "yawDeg": 318, "scale": 1.5},
+      {"prop": "darkfantasy/SM_Prop_Candle_02", "at": [8.19, -3.39], "yawDeg": 11, "scale": 1.5}
+    ],
+    "path-stones": [
+      {"prop": "empire/SM_Prop_Marble_Rubble_06", "at": [0, 0], "yawDeg": 0, "scale": 1.3},
+      {"prop": "empire/SM_Prop_Marble_Rubble_05", "at": [0.73, 1.35], "yawDeg": 37, "scale": 1.3},
+      {"prop": "empire/SM_Prop_Marble_Rubble_06", "at": [2.15, 2.11], "yawDeg": 74, "scale": 1.3},
+      {"prop": "empire/SM_Prop_Marble_Rubble_05", "at": [2.88, 3.46], "yawDeg": 111, "scale": 1.3},
+      {"prop": "empire/SM_Prop_Marble_Rubble_06", "at": [3.61, 4.8], "yawDeg": 148, "scale": 1.3},
+      {"prop": "empire/SM_Prop_Marble_Rubble_05", "at": [5.04, 5.56], "yawDeg": 185, "scale": 1.3},
+      {"prop": "empire/SM_Prop_Marble_Rubble_06", "at": [5.75, 6.92], "yawDeg": 222, "scale": 1.3},
+      {"prop": "empire/SM_Prop_Marble_Rubble_05", "at": [6.49, 8.26], "yawDeg": 259, "scale": 1.3}
+    ]
+  }
+}

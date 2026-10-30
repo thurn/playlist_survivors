@@ -34,6 +34,7 @@ namespace Demo3D.EditorTools.Assets
         {
             { "PolygonAdventure", "adventure" }, { "PolygonDarkFantasy", "darkfantasy" },
             { "PolygonElvenRealm", "elven" }, { "PolygonFantasyKingdom", "kingdom" }, { "PolygonVikings", "vikings" },
+            { "PolygonAncientEgypt", "egypt" }, { "PolygonAncientEmpire", "empire" }, { "PolygonWesternFrontier", "western" },
         };
 
         public static void Run()
@@ -80,10 +81,14 @@ namespace Demo3D.EditorTools.Assets
             Debug.Log($"FootprintMeasurer: {props.Count} props, {props.Count(p => (bool)p["blocks"])} blocking -> {OutPath}");
         }
 
-        /// <summary>"kingdom/SM_Env_Tree_Round_01" from the manifest's source path.</summary>
+        /// <summary>
+        /// "kingdom/SM_Env_Tree_Round_01" from the manifest's source path. Newer packs nest under
+        /// Assets/Synty/ ("Assets/Synty/PolygonAncientEgypt/..."), so the pack is the folder after it.
+        /// </summary>
         public static string Id(string sourcePath)
         {
-            string pack = sourcePath.Split('/')[1];
+            var parts = sourcePath.Split('/');
+            string pack = parts[1] == "Synty" ? parts[2] : parts[1];
             string short_ = Packs.TryGetValue(pack, out var s) ? s : pack.ToLowerInvariant();
             return short_ + "/" + Path.GetFileNameWithoutExtension(sourcePath);
         }
