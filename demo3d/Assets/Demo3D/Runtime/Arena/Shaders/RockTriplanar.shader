@@ -175,7 +175,7 @@ Shader "Demo3D/RockTriplanar"
                 inputData.bakedGI = SampleSH(normalWS);
                 inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(i.positionCS);
                 inputData.shadowMask = 1;
-                if (_Demo3DIdMask > 0.5) return half4(0, 0, 0, 1); // TD15's ID render: black, depth kept
+                if (_Demo3DIdMask > 0.5) return Demo3DIdSet(); // TD15's ID render: black (a structure blue), depth kept
                 half3 color = Demo3DLightingPBR(inputData, s);
                 color = MixFog(color, inputData.fogCoord);
                 return half4(color, 1);

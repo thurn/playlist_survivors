@@ -1,0 +1,42 @@
+// The fire's body treatment's forward pass (FireBody.shader): its vertex and fragment programs, on
+// StyleCommon.hlsl's front end, so they compile for the skinned crowd and, under SL_STATIC, for a
+// structure's static mesh. Include it in the forward pass after FireInput.hlsl.
+TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
+
+SLVaryings vert(SLAttributes v)
+{
+    SLVertex c = SL_Skin(v);
+    return SL_Finish(v, c, c.positionWS, c.normalWS);
+}
+
+half4 frag(SLVaryings i) : SV_Target
+{
+    SL_FRAGMENT_BEGIN(i, burnEdge)
+    float h01 = saturate(i.rest.y / max(_HeightM, 0.1));
+    half3 tex = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, i.uv).rgb * _BaseColor.rgb;
+    float3 N = normalize(i.normalWS);
+    float3 V = GetWorldSpaceNormalizeViewDir(i.positionWS);
+    Light L = SL_MainLight(i.positionWS);
+    float lit = saturate(dot(N, L.direction)) * L.shadowAttenuation;
+    float3 charcoal = (0.02 + SL_Luma(tex) * 0.08) * float3(1.0, 0.55, 0.45);
+    float3 color = charcoal * (L.color * lit + SampleSH(N) + 0.2);
+
+    float3 q = i.rest * _CrackScale + float3(0, -_SL_Time * 0.35, 0) + SL_SEED(i) * 5.0;
+    float2 vor = SL_Voronoi(q);
+    float crack = 1.0 - smoothstep(0.0, _CrackWidth, vor.y);
+    // Only some cracks are live; the rest are cold seams in the charcoal.
+    crack *= smoothstep(0.35, 0.65, SL_Noise(i.rest * 1.3 + float3(0, -_SL_Time * 0.4, 0)));
+    float flicker = 0.75 + 0.5 * SL_Noise(i.rest * 3.0 + _SL_Time * 2.5);
+    float wave = SL_Wave(i.positionWS, 6.0);
+    // Embers smoulder hottest low on the body, where the flames start.
+    float heat = crack * flicker * (0.55 + 0.45 * wave) + pow(1.0 - h01, 3.0) * 0.35;
+    color += FireRamp(heat, _Ember.rgb, _Flame.rgb, _Core.rgb);
+
+    float fres = pow(1.0 - saturate(dot(N, V)), 2.5);
+#if defined(SL_STATIC)
+    fres *= 0.3; // a wall is seen edge-on from above: a full molten rim would cover the charcoal and its cracks
+#endif
+    color += FireRamp(0.55 + 0.3 * wave, _Ember.rgb, _Flame.rgb, _Core.rgb) * fres;
+    color += _Core.rgb * (SL_HIT(i) * 0.25 + burnEdge);
+    return half4(MixFog(SL_Grade(color), i.fogFactor), 1);
+}

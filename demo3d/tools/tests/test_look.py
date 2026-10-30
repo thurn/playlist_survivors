@@ -209,3 +209,20 @@ def test_contact_sheet_has_a_column_per_set_and_skips_stills_a_set_lacks(tmp_pat
     with Image.open(dst) as im:
         assert im.size == (3 * (look.JPEG_W // 4), 18 + look.JPEG_H // 4)
         assert b"ps-render" in im.info["comment"]
+
+
+def test_the_horde_against_structures_needs_enough_structure_pixels_near_it() -> None:
+    img, monsters = horde_on_ground(GREY_50, GREY_DARK)
+    structures = np.zeros(monsters.shape, dtype=bool)
+    r = look.structure_contrast(img, monsters, structures)
+    assert r["setPx"] == 0 and "dL" not in r
+    # A wall beside the horde, far darker than it.
+    structures[30:70, 62:80] = True
+    img[structures] = 0
+    r = look.structure_contrast(img, monsters, structures)
+    assert r["ringPx"] >= look.STRUCTURE_MIN_PX
+    assert r["dL"] == pytest.approx(50.0, abs=0.2) and r["lStructure"] == pytest.approx(0.0, abs=0.1)
+    # A wall beyond the ring isn't near the horde.
+    far = np.zeros(monsters.shape, dtype=bool)
+    far[:, 95:] = True
+    assert "dL" not in look.structure_contrast(img, monsters, far)

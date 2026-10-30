@@ -24,6 +24,11 @@ namespace Demo3D.Runtime.Crowd
         public Shader BufferDebug;
         /// <summary>The `--monster-style` shaders (Shaders/Styles/), by their names (<see cref="StyleShader"/>).</summary>
         public Shader[] StyleShaders = Array.Empty<Shader>();
+        /// <summary>
+        /// The `--structure-style` shaders (Arena/Shaders/Structures/, the styles' code on static meshes), by their
+        /// names (<see cref="StructureShader"/>): kept here beside the styles they share code with, so a build has them.
+        /// </summary>
+        public Shader[] StructureShaders = Array.Empty<Shader>();
 
         public static CrowdLibrary Load() =>
             Resources.Load<CrowdLibrary>(ResourcePath)
@@ -33,6 +38,10 @@ namespace Demo3D.Runtime.Crowd
         public Shader StyleShader(string name) =>
             Array.Find(StyleShaders, s => s != null && s.name == name)
             ?? throw new InvalidOperationException($"CrowdLibrary: no style shader {name} (re-run `demo3d unity BakeCrowd`)");
+
+        public Shader StructureShader(string name) =>
+            Array.Find(StructureShaders, s => s != null && s.name == name)
+            ?? throw new InvalidOperationException($"CrowdLibrary: no structure shader {name} (re-run `demo3d unity BakeCrowd`)");
 
         public int IndexOf(string id)
         {

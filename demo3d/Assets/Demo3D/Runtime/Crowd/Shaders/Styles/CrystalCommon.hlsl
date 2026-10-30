@@ -3,7 +3,7 @@
 // opaque texture with a little dispersion, tinted by the type's gem colour, with light trapped in
 // each facet, hard banded reflections, facet edges that catch the light and glints as the beat wave
 // passes. Include it in a forward pass after StyleCommon.hlsl (the SubShader's HLSLINCLUDE, with
-// Crystal's UnityPerMaterial CBUFFER).
+// Crystal's UnityPerMaterial CBUFFER). Under SL_STATIC (crystal structures) bary is SL_StaticFacets'.
 #ifndef DEMO3D_CRYSTAL_COMMON_INCLUDED
 #define DEMO3D_CRYSTAL_COMMON_INCLUDED
 
@@ -19,6 +19,12 @@ half4 CrystalShade(float3 positionWS, float3 normalWS, float4 positionCS, float4
     float3 V = GetWorldSpaceNormalizeViewDir(positionWS);
     float3 facet = normalize(cross(ddy(positionWS), ddx(positionWS)));
     if (dot(facet, V) < 0) facet = -facet;
+#if defined(SL_STATIC)
+    // A structure's facets are SL_StaticFacets' cells across the kit's few large triangles: each
+    // cell is tilted its own way, as a cut stone's faces are.
+    facet = normalize(facet + (SL_Hash3(bary.w * 91.3 + 3.1) - 0.5) * 1.2);
+    if (dot(facet, V) < 0) facet = normalize(facet - 1.2 * dot(facet, V) * V);
+#endif
     float3 N = normalize(lerp(normalize(normalWS), facet, _Facets));
     float NdotV = saturate(dot(N, V));
 
@@ -33,6 +39,9 @@ half4 CrystalShade(float3 positionWS, float3 normalWS, float4 positionCS, float4
     float3 tint = _Tint.rgb;
     float wave = SL_Wave(positionWS, 6.0);
     float faceRand = bary.w;
+#if defined(SL_STATIC)
+    behind *= 0.5; // a structure is thicker, darker gem: it doesn't uncover the lighter ground behind the horde beside it
+#endif
     float3 color = behind * lerp(float3(1, 1, 1), tint, lerp(0.85, 1.0, inside)) * 1.2 + tint * lerp(0.08, 0.45, inside);
     // Light trapped inside: each facet its own brightness, like a cut stone, and a core
     // that throbs on the beat.

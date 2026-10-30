@@ -24,6 +24,9 @@ here, since the demo itself takes no input:
                     Environments in one player)
 --switch-every <s>  with --resident, cycle the drawn environment every s song
                     seconds from --start-at
+--structure-style <name>
+                    the arena's structures in a monster style's treatment
+                    (environment.md, Structure styles)
 ```
 
 ### First assembled check
@@ -126,6 +129,21 @@ baseline crowd handles a few hundred monsters, which is enough.
   scatter. **Expect** none.
 - Compare the final scene with rung E0 in the report. **Expect** the same
   look at a fraction of the cost.
+
+### Structure styles
+
+- Run the song windowed with `--structure-style <name>` for each of painted,
+  fire, crystal, spectrum, hologram, chrome and void, on the forest and with
+  `--environment crypt`, and once with `--monster-style fire --structure-style
+  match`.
+- **Expect** the courtyard's walls, the landmarks and the trees in the style,
+  pulsing with the music as the horde does, and the ground, mist, runes and
+  small props as they are. Trees near the hero still dither out.
+- **Expect** the set to stay behind the horde and the effects: no wall
+  brighter than the monsters in front of it, and no structure blooming between
+  beats.
+- **Expect** an unknown name to stop the player at start-up, listing the known
+  ones.
 
 ### A/B review
 

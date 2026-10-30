@@ -45,6 +45,15 @@ namespace Demo3D.Runtime.Arena
         public Light Moon { get; private set; }
         public Renderer Ground { get; private set; }
         public readonly List<Renderer> Static = new List<Renderer>();
+        /// <summary>
+        /// The structures (environment.md, Structure styles; epic ps-suy, Decision 2): every opaque kit renderer under
+        /// Static/Structures and Static/Landmarks, and any other whose bounds' largest side is at least
+        /// <see cref="ArenaOptions.SmallPropM"/> (the trees). The ground, the atmosphere's cards, small props, merged small
+        /// props and transparent kit (the candles' glow cards) are never among them. `--structure-style` restyles them.
+        /// </summary>
+        public readonly List<Renderer> Structures = new List<Renderer>();
+        /// <summary>The rendering layer a structure takes in the ID render only (StaticShadow.hlsl's DEMO3D_STRUCTURE_LAYER).</summary>
+        public const uint StructureLayer = 1u << 7;
         public readonly List<Light> Lights = new List<Light>();
         public StaticShadowMap ShadowMap { get; private set; }
         /// <summary>The hero's light (<see cref="ArenaLighting.HeroIntensity"/>), or null without one; <see cref="FollowHero"/> moves it.</summary>
@@ -153,6 +162,7 @@ namespace Demo3D.Runtime.Arena
             var stat = root.Find("Static") ?? throw new InvalidOperationException("ArenaRuntime: no Static group in " + SceneName);
             foreach (var r in stat.GetComponentsInChildren<Renderer>(true))
                 if (!(r is ParticleSystemRenderer)) Static.Add(r);
+            FindStructures(stat);
             if (!Options.Prepass) LeavePrepass();
             var b = new Bounds(Vector3.zero, Vector3.zero);
             bool first = true;
@@ -321,6 +331,29 @@ namespace Demo3D.Runtime.Arena
             }
         }
 
+        /// <summary>A kit renderer smaller than <see cref="ArenaOptions.SmallPropM"/> on every side.</summary>
+        static bool Small(Renderer r)
+        {
+            var s = r.bounds.size;
+            return Mathf.Max(s.x, Mathf.Max(s.y, s.z)) < ArenaOptions.SmallPropM;
+        }
+
+        void FindStructures(Transform stat)
+        {
+            foreach (Transform group in stat)
+            {
+                if (group.name == "Merged") continue; // small props by construction, however wide their merged bounds
+                bool placed = group.name == "Landmarks" || group.name == "Structures";
+                foreach (var r in group.GetComponentsInChildren<MeshRenderer>(true))
+                {
+                    if (!placed && Small(r)) continue;
+                    bool opaque = true;
+                    foreach (var m in r.sharedMaterials) opaque &= m != null && m.renderQueue < (int)RenderQueue.Transparent;
+                    if (opaque) Structures.Add(r);
+                }
+            }
+        }
+
         /// <summary>
         /// The bounds of E3 and E4 (bench only): hides the small props, or the forest's interior,
         /// after the static shadow map took them (an LOD or an impostor would still shade monsters).
@@ -335,8 +368,7 @@ namespace Demo3D.Runtime.Arena
                 foreach (var r in group.GetComponentsInChildren<Renderer>(true))
                 {
                     if (r is ParticleSystemRenderer) continue;
-                    var s = r.bounds.size;
-                    bool small = !placed && Mathf.Max(s.x, Mathf.Max(s.y, s.z)) < ArenaOptions.SmallPropM;
+                    bool small = !placed && Small(r);
                     if ((Options.Without == ArenaOptions.WithoutForest && forest) || (Options.Without == ArenaOptions.WithoutSmall && small))
                     {
                         r.enabled = false;
@@ -374,11 +406,14 @@ namespace Demo3D.Runtime.Arena
         /// <summary>
         /// TD15's ID render (the readability measure): hides what must not occlude or tint it, the
         /// ground, the atmosphere's cards (mist, runes, glow pools), every particle renderer and the transparent kit; the kit
-        /// itself stays and draws black with its depth (LitStaticShadow under _Demo3DIdMask).
+        /// itself stays and draws black with its depth (LitStaticShadow under _Demo3DIdMask), the structures blue
+        /// (<see cref="StructureLayer"/>, for this frame only), so `demo3d look` measures the horde against them too.
         /// </summary>
         public void SetIdMask(bool on)
         {
             if (!Ready) return;
+            foreach (var r in Structures)
+                if (r != null) r.renderingLayerMask = on ? r.renderingLayerMask | StructureLayer : r.renderingLayerMask & ~StructureLayer;
             if (on)
             {
                 _maskHidden.Clear();
@@ -392,8 +427,11 @@ namespace Demo3D.Runtime.Arena
                         if (t != null && t.TryGetComponent<Renderer>(out var r)) _maskHidden.Add(r);
                     }
                     _maskHidden.AddRange(root.GetComponentsInChildren<ParticleSystemRenderer>(false));
-                    // And any transparent kit renderer (the candles' additive glow cards).
-                    foreach (var r in Static) if (r.sharedMaterial != null && r.sharedMaterial.renderQueue >= 2500) _maskHidden.Add(r);
+                    // And any transparent kit renderer (the candles' additive glow cards), but not a structure in a
+                    // transparent style (crystal, hologram), which marks itself in the ID render.
+                    var structures = new HashSet<Renderer>(Structures);
+                    foreach (var r in Static)
+                        if (r.sharedMaterial != null && r.sharedMaterial.renderQueue >= 2500 && !structures.Contains(r)) _maskHidden.Add(r);
                 }
                 _maskHidden.RemoveAll(r => r == null || !r.enabled);
                 foreach (var r in _maskHidden) r.enabled = false;

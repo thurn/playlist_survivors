@@ -47,6 +47,7 @@ namespace Demo3D.EditorTools.Crowd
         public const string PalettePath = "Assets/Demo3D/Runtime/Crowd/Shaders/CrowdPalette.compute";
         /// <summary>The `--monster-style` shaders (crowd.md, Monster styles), every one in the library so a build has them.</summary>
         public const string StylesDir = "Assets/Demo3D/Runtime/Crowd/Shaders/Styles";
+        public const string StructuresDir = "Assets/Demo3D/Runtime/Arena/Shaders/Structures";
         const string AnnotationsPath = "Assets/Demo3D/Data/clip-annotations.json";
         const float Rate = CrowdLibrary.ClipRate;
 
@@ -171,6 +172,8 @@ namespace Demo3D.EditorTools.Crowd
             lib.Ground = SaveGround();
             lib.BufferDebug = Shader.Find("Hidden/Demo3D/BufferDebug");
             lib.StyleShaders = AssetDatabase.FindAssets("t:Shader", new[] { StylesDir })
+                .Select(g => AssetDatabase.LoadAssetAtPath<Shader>(AssetDatabase.GUIDToAssetPath(g))).ToArray();
+            lib.StructureShaders = AssetDatabase.FindAssets("t:Shader", new[] { StructuresDir })
                 .Select(g => AssetDatabase.LoadAssetAtPath<Shader>(AssetDatabase.GUIDToAssetPath(g))).ToArray();
             AssetDatabase.DeleteAsset(LibraryPath);
             AssetDatabase.CreateAsset(lib, LibraryPath);

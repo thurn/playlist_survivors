@@ -45,6 +45,7 @@ namespace Demo3D.Runtime.Playback
         BlowFeel _blows; // an intensity's blow weights and feel (null: normal)
         PostFeel _postFeel;
         MonsterStyle _style;
+        StructureStyle _structures;
         StyleBeat _styleBeat;
         CrystalShatter _shatter; // crystal types' deaths break into baked shards (null without one)
         bool _stylePosted;
@@ -108,6 +109,8 @@ namespace Demo3D.Runtime.Playback
                 Debug.LogError("DemoMain: video needs a windowed player; a batch-mode player draws no frames");
             _flags = DevFlags.FromCommandLine();
             _style = MonsterStyle.FromCommandLine();
+            _structures = StructureStyle.FromCommandLine(_style); // fails here on an unknown name; match follows the horde
+            Debug.Log($"DemoMain: {StructureStyle.Flag} {_structures.Name}");
             var rosterSet = RosterSet.Active; // fails here on an unknown set or a style beside one
             Debug.Log($"DemoMain: {RosterSet.Flag} {rosterSet.Name}");
             var intensity = Intensity.Active; // fails here on an unknown intensity
@@ -144,6 +147,14 @@ namespace Demo3D.Runtime.Playback
                 if (arena.Rung != "off")
                     Debug.LogWarning($"DemoMain: no arena for {arena.Label()} (baked: {Demo3D.Runtime.Arena.ArenaRuntime.Describe()}); flat ground");
                 BenchEnvironment.Build();
+            }
+            if (!_structures.IsBaseline)
+            {
+                if (_arena == null) throw new InvalidOperationException($"DemoMain: {StructureStyle.Flag} {_structures.Name} needs the arena, not flat ground");
+                // A look only: the structures' materials change once each arena's scene is ready (environment.md, Structure
+                // styles), every resident one's too.
+                if (_arenas != null) for (int i = 0; i < _arenas.Count; i++) _arenas[i].OnReady += a => _structures.Apply(a, CrowdLibrary.Load());
+                else _arena.OnReady += a => _structures.Apply(a, CrowdLibrary.Load());
             }
             _roster = RosterAssets.Load();
             var data = PlaybackData.Load();
@@ -183,7 +194,7 @@ namespace Demo3D.Runtime.Playback
                 bone.Clock = () => (float)SongTime; // deterministic LOD crossfades
             }
             else if (!_style.IsBaseline) throw new InvalidOperationException($"DemoMain: {MonsterStyle.Flag} {_style.Name} needs the bone crowd, not --crowd {_flags.Crowd}");
-            if (!_style.IsBaseline) _styleBeat = new StyleBeat(_tl.Map ?? SongMap.Synthetic(120, _tl.Duration));
+            if (!_style.IsBaseline || !_structures.IsBaseline) _styleBeat = new StyleBeat(_tl.Map ?? SongMap.Synthetic(120, _tl.Duration));
             if (_crowd is BoneTextureCrowd)
                 _shatter = CrystalShatter.Create(_tl, _style, CrowdLibrary.Load(), Array.ConvertAll(_typeAssets, t => t.id));
             if (_shatter != null) _shatter.View = _rig.Camera;
@@ -193,7 +204,7 @@ namespace Demo3D.Runtime.Playback
             _heroRenderer = new StockCrowd();
             _heroRenderer.Initialize(new[] { _hero.id }, 1);
             ApplyAntiAliasing(_flags.Aa, _rig.Camera);
-            if (_style.NeedsOpaqueTexture)
+            if (_style.NeedsOpaqueTexture || _structures.NeedsOpaqueTexture)
                 UnityEngine.Rendering.Universal.CameraExtensions.GetUniversalAdditionalCameraData(_rig.Camera).requiresColorOption =
                     UnityEngine.Rendering.Universal.CameraOverrideOption.On;
             StartEffects();
@@ -337,12 +348,16 @@ namespace Demo3D.Runtime.Playback
             if (_postFeels != null) _postFeel = _postFeels[i];
         }
 
-        /// <summary>A monster style's grade on an arena's night volume, before its post feel first binds (it becomes PostFeel's base).</summary>
+        /// <summary>
+        /// The style's grade on an arena's night volume, before its post feel first binds (it becomes PostFeel's base):
+        /// one look, the monster style's, else the structure style's over the night's own (environment.md, Structure styles).
+        /// </summary>
         void PostStyle(Demo3D.Runtime.Arena.ArenaRuntime arena)
         {
-            if (!(_style.Post is PostLook look)) return;
+            if (!(StructureStyle.PostFor(_style, _structures, PostLook.From(arena.Post.sharedProfile)) is PostLook look)) return;
             look.ApplyTo(arena.Post.sharedProfile);
-            Debug.Log($"DemoMain: {MonsterStyle.Flag} {_style.Name}'s post look on the night volume" + (_arenas != null ? " of " + arena.Options.Environment : ""));
+            string by = _style.Post != null ? $"{MonsterStyle.Flag} {_style.Name}" : $"{StructureStyle.Flag} {_structures.Name}";
+            Debug.Log($"DemoMain: {by}'s post look on the night volume" + (_arenas != null ? " of " + arena.Options.Environment : ""));
         }
 
         /// <summary>`--aa msaa4|taa|off` (performance.md: MSAA 4x until TD9 picks).</summary>
@@ -539,7 +554,7 @@ namespace Demo3D.Runtime.Playback
             if (!_stylePosted && _arena?.Post != null)
             {
                 // The arena's volume exists once its scene has loaded; the style's grade goes on it before
-                // PostFeel first binds, so it becomes PostFeel's base.
+                // PostFeel first binds, so it becomes PostFeel's base. One look: the horde's, else the structures'.
                 _stylePosted = true;
                 PostStyle(_arena);
             }
@@ -751,6 +766,7 @@ namespace Demo3D.Runtime.Playback
             _crowd?.Dispose();
             _shatter?.Dispose();
             _style?.Dispose();
+            _structures?.Dispose();
             _heroRenderer?.Dispose();
             if (_arenas != null) _arenas.Dispose();
             else _arena?.Dispose();

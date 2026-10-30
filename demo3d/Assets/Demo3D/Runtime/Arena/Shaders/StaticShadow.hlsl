@@ -13,6 +13,12 @@ float4 _Demo3DStaticShadowParams;     // x on (0 or 1), y one texel in uv, z str
 // set and hero black with their depth (LitStaticShadow), so the set occludes the monsters behind it.
 float _Demo3DIdMask;
 
+// The set's colour in the ID render: black, or blue on a structure (ArenaRuntime.Structures, which
+// SetIdMask puts on this rendering layer for the ID frame only), so `demo3d look` can measure the
+// horde against the structures near it. The `--structure-style` shaders draw blue themselves.
+#define DEMO3D_STRUCTURE_LAYER 0x80u
+half4 Demo3DIdSet() { return half4(0, 0, (GetMeshRenderingLayer() & DEMO3D_STRUCTURE_LAYER) != 0 ? 1 : 0, 1); }
+
 // 1 where the moon reaches the point past the static set, 0 in full static shade. Outside the
 // map (or with the map off) it is 1. Four bilinear compare taps half a texel apart: a 2x2 tent.
 half Demo3DStaticShadow(float3 positionWS)

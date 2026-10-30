@@ -25,17 +25,7 @@ Shader "Demo3D/Styles/Crystal"
         HLSLINCLUDE
         #pragma target 4.5
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-
-        CBUFFER_START(UnityPerMaterial)
-            half4 _Tint; float _Refraction; half _Facets;
-            half _Gain; half _Peak;
-            float _HeightM;
-        CBUFFER_END
-
-        #define SL_STYLE_MESH
-        #define SL_DISSOLVE(rest, death) 0.0
-        #define SL_DISPLACE(v, m, slot, positionWS, normalWS) SL_ShatterDisplace(v, m, slot, positionWS, 1.6);
-        #include "StyleCommon.hlsl"
+        #include "CrystalInput.hlsl"
         ENDHLSL
 
         Pass
@@ -49,20 +39,7 @@ Shader "Demo3D/Styles/Crystal"
             #pragma vertex vert
             #pragma fragment frag
             #include_with_pragmas "StylePragmas.hlsl"
-            #include "CrystalCommon.hlsl"
-
-            SLVaryings vert(SLAttributes v)
-            {
-                SLVertex c = SL_Skin(v);
-                return SL_Finish(v, c, c.positionWS, c.normalWS);
-            }
-
-            half4 frag(SLVaryings i) : SV_Target
-            {
-                SL_FRAGMENT_BEGIN(i, edge)
-                float shatter = SL_ShatterT(SL_DEATH(i), i.bary.w);
-                return CrystalShade(i.positionWS, i.normalWS, i.positionCS, i.bary, SL_HIT(i), shatter, 0, i.fogFactor);
-            }
+            #include "CrystalForward.hlsl"
             ENDHLSL
         }
 

@@ -140,7 +140,7 @@ Shader "Demo3D/LitStaticShadow"
                 #if defined(_CANOPY_FADE)
                 Demo3DCanopyClip(i.positionCS, i.positionWS);
                 #endif
-                if (_Demo3DIdMask > 0.5) return half4(0, 0, 0, 1); // the ID render: black, depth kept
+                if (_Demo3DIdMask > 0.5) return Demo3DIdSet(); // the ID render: black (a structure blue), depth kept
                 half3 color = Demo3DLightingPBR(inputData, s);
                 color = MixFog(color, inputData.fogCoord);
                 return half4(color, 1);

@@ -5,6 +5,10 @@
 // SL_PASS_SHADOWCASTER, SL_PASS_DEPTHONLY, SL_PASS_DEPTHNORMALS or SL_PASS_MOTIONVECTORS and
 // includes this after StyleCommon.hlsl (the SubShader's HLSLINCLUDE); its render state is in the
 // shader (see Painted.shader).
+//
+// Under SL_STATIC (the structure shaders) they are a static mesh's: no cascade culling and no
+// MotionVectors pass (a still structure has only the camera's motion), and each clips with the kit
+// material's alpha clip and, but for the shadow caster, the canopy fade (SL_StaticClip).
 #ifndef DEMO3D_STYLE_PASSES_INCLUDED
 #define DEMO3D_STYLE_PASSES_INCLUDED
 
@@ -16,7 +20,34 @@ struct SLPassVaryings
     float3 normalWS : TEXCOORD2;
     float4 positionCSNoJitter : TEXCOORD3;
     float4 previousPositionCSNoJitter : TEXCOORD4;
+#if defined(SL_STATIC)
+    float3 positionWS : TEXCOORD5;
+    float2 uv : TEXCOORD6;
+#endif
 };
+
+#if defined(SL_PASS_SHADOWCASTER)
+#define SL_PASS_IS_SHADOW true
+#else
+#define SL_PASS_IS_SHADOW false
+#endif
+
+#if defined(SL_STATIC)
+// What a static pass's clips read: its rest position, its world position and the kit's uv.
+void SL_PassStatic(SLAttributes v, SLVertex c, inout SLPassVaryings o)
+{
+    o.rest = c.rest;
+    o.positionWS = c.positionWS;
+    o.uv = v.uv;
+}
+
+void SL_PassClip(SLPassVaryings i)
+{
+    SL_StaticClip(i.positionCS, i.positionWS, i.uv, !SL_PASS_IS_SHADOW);
+    SL_DISSOLVE(i.rest, i.fx.y);
+}
+#else
+#define SL_PassStatic(v, c, o)
 
 // The death and LOD clips of every pass (SL_FRAGMENT_BEGIN's, without the ID render).
 void SL_PassClip(SLPassVaryings i)
@@ -24,6 +55,7 @@ void SL_PassClip(SLPassVaryings i)
     CrowdLodClip(i.fx.zw, i.positionCS);
     SL_DISSOLVE(i.rest, i.fx.y);
 }
+#endif
 
 #if defined(SL_PASS_SHADOWCASTER)
 float3 _LightDirection;
@@ -32,6 +64,7 @@ float3 _LightPosition;
 SLPassVaryings vert(SLAttributes v)
 {
     SLPassVaryings o = (SLPassVaryings)0;
+#if !defined(SL_STATIC)
     // URP repeats the shadow draw for each cascade: skip a monster outside this cascade's
     // light-space box, as CrowdSkinned does (the depth axis is not tested).
     uint slot = CrowdSlot(v.instanceID);
@@ -44,6 +77,7 @@ SLPassVaryings vert(SLAttributes v)
         o.positionCS = float4(2, 2, 2, 1);
         return o;
     }
+#endif
     SLVertex c = SL_Skin(v);
     #if _CASTING_PUNCTUAL_LIGHT_SHADOW
     float3 lightDirectionWS = normalize(_LightPosition - c.positionWS);
@@ -53,6 +87,7 @@ SLPassVaryings vert(SLAttributes v)
     o.positionCS = ApplyShadowClamping(TransformWorldToHClip(ApplyShadowBias(c.positionWS, c.normalWS, lightDirectionWS)));
     o.rest = v.positionOS;
     o.fx = c.fx;
+    SL_PassStatic(v, c, o);
     return o;
 }
 
@@ -72,6 +107,7 @@ SLPassVaryings vert(SLAttributes v)
     o.normalWS = c.normalWS;
     o.rest = v.positionOS;
     o.fx = c.fx;
+    SL_PassStatic(v, c, o);
     return o;
 }
 #endif
@@ -98,7 +134,7 @@ half4 frag(SLPassVaryings i) : SV_Target
 }
 #endif
 
-#if defined(SL_PASS_MOTIONVECTORS)
+#if defined(SL_PASS_MOTIONVECTORS) && !defined(SL_STATIC)
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MotionVectorsCommon.hlsl"
 float2 _CrowdDebugMotion; // --debug-motion's offset (CrowdSkinned)
 

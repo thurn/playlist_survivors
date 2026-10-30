@@ -73,7 +73,8 @@ namespace Demo3D.Runtime.Crowd
         readonly Dictionary<string, Texture2D> _ramps = new Dictionary<string, Texture2D>();
 
         readonly Dictionary<string, float> _tune = new Dictionary<string, float>();
-        static readonly string[] TuneKeys = { "gain", "peak", "exposure", "contrast", "saturation", "bloom", "threshold", "chroma", "vignette", "neutral" };
+        /// <summary>The tune keys, `--style-tune`'s and `--structure-tune`'s (<see cref="StructureStyle"/>).</summary>
+        internal static readonly string[] TuneKeys = { "gain", "peak", "exposure", "contrast", "saturation", "bloom", "threshold", "chroma", "vignette", "neutral" };
 
         MonsterStyle(string name) { Name = name; }
 
@@ -113,15 +114,18 @@ namespace Demo3D.Runtime.Crowd
         }
 
         /// <summary>Applies `--style-tune` pairs ("gain=0.6,exposure=0.5"); an unknown key or bad number fails.</summary>
-        public void Tune(string pairs)
+        public void Tune(string pairs) => ParseTune(TuneFlag, pairs, _tune);
+
+        /// <summary>Reads a tune flag's pairs into <paramref name="into"/>; an unknown key or bad number fails.</summary>
+        internal static void ParseTune(string flag, string pairs, Dictionary<string, float> into)
         {
             foreach (var pair in pairs.Split(','))
             {
                 var kv = pair.Split('=');
                 if (kv.Length != 2 || Array.IndexOf(TuneKeys, kv[0].Trim()) < 0
                     || !float.TryParse(kv[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float v))
-                    throw new ArgumentException($"{TuneFlag}: bad pair '{pair}' (keys {string.Join(", ", TuneKeys)})");
-                _tune[kv[0].Trim()] = v;
+                    throw new ArgumentException($"{flag}: bad pair '{pair}' (keys {string.Join(", ", TuneKeys)})");
+                into[kv[0].Trim()] = v;
             }
         }
 
@@ -166,40 +170,22 @@ namespace Demo3D.Runtime.Crowd
         /// The post stack the style wants as PostFeel's base (null: the night's own). From
         /// stylelab's Treatments.cs; the crowd-only knobs of the look pass stay the baseline's.
         /// </summary>
-        public PostLook? Post
-        {
-            get
-            {
-                if (IsBaseline) return null;
-                var look = BasePost;
-                if (_tune.TryGetValue("exposure", out float v)) look.exposure = v;
-                if (_tune.TryGetValue("contrast", out v)) look.contrast = v;
-                if (_tune.TryGetValue("saturation", out v)) look.saturation = v;
-                if (_tune.TryGetValue("bloom", out v)) look.bloom = v;
-                if (_tune.TryGetValue("threshold", out v)) look.bloomThreshold = v;
-                if (_tune.TryGetValue("chroma", out v)) look.chroma = v;
-                if (_tune.TryGetValue("vignette", out v)) look.vignette = v;
-                if (_tune.TryGetValue("neutral", out v)) look.neutral = v > 0.5f;
-                return look;
-            }
-        }
+        public PostLook? Post => IsBaseline ? (PostLook?)null : PostOf(Name).With(_tune);
 
-        PostLook BasePost
+        /// <summary>A style's own post look, before any tuning (also a structure style's, <see cref="StructureStyle.Post"/>).</summary>
+        internal static PostLook PostOf(string name)
         {
-            get
+            switch (name)
             {
-                switch (Name)
-                {
-                    case "painted": return PostLook.Stylized();
-                    case "fire": return PostLook.Stylized(1.0f);
-                    case "chrome": return PostLook.Stylized(1.0f);
-                    case "void": return PostLook.Stylized(1.3f);
-                    case "crystal": return PostLook.Stylized(1.0f);
-                    case "spectrum": return PostLook.Stylized(1.2f, 0.12f);
-                    case "hologram": return PostLook.Stylized(1.35f, 0.35f);
-                    case "mix": return PostLook.Stylized(1.1f, 0.05f);
-                    default: throw new InvalidOperationException(Name);
-                }
+                case "painted": return PostLook.Stylized();
+                case "fire": return PostLook.Stylized(1.0f);
+                case "chrome": return PostLook.Stylized(1.0f);
+                case "void": return PostLook.Stylized(1.3f);
+                case "crystal": return PostLook.Stylized(1.0f);
+                case "spectrum": return PostLook.Stylized(1.2f, 0.12f);
+                case "hologram": return PostLook.Stylized(1.35f, 0.35f);
+                case "mix": return PostLook.Stylized(1.1f, 0.05f);
+                default: throw new InvalidOperationException(name);
             }
         }
 
@@ -313,14 +299,22 @@ namespace Demo3D.Runtime.Crowd
             }
         }
 
-        /// <summary>A type's colour strip as a 256×1 linear texture, the stops evenly spaced.</summary>
+        /// <summary>A type's colour strip (<see cref="RampTexture"/>), made once per type.</summary>
         Texture2D Ramp(string id)
         {
             if (_ramps.TryGetValue(id, out var tex)) return tex;
-            var stops = StyleLook.Of(id).ramp;
-            tex = new Texture2D(256, 1, TextureFormat.RGBAHalf, false, true)
+            tex = RampTexture(StyleLook.Of(id).ramp, "Ramp " + id);
+            _ramps[id] = tex;
+            _owned.Add(tex);
+            return tex;
+        }
+
+        /// <summary>A colour strip as a 256×1 linear texture, the stops evenly spaced; the caller owns it.</summary>
+        internal static Texture2D RampTexture(Color[] stops, string name)
+        {
+            var tex = new Texture2D(256, 1, TextureFormat.RGBAHalf, false, true)
             {
-                name = "Ramp " + id, wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear,
+                name = name, wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear,
             };
             var px = new Color[256];
             for (int i = 0; i < 256; i++)
@@ -331,8 +325,6 @@ namespace Demo3D.Runtime.Crowd
             }
             tex.SetPixels(px);
             tex.Apply(false, true);
-            _ramps[id] = tex;
-            _owned.Add(tex);
             return tex;
         }
 
@@ -371,6 +363,42 @@ namespace Demo3D.Runtime.Crowd
             neutral = true, exposure = 0.8f, contrast = 20f, saturation = 25f, bloom = bloom, bloomThreshold = 1.5f,
             chroma = chroma, vignette = 0.3f,
         };
+
+        /// <summary>A profile's current values as a look (the night's, for a structure style to build on).</summary>
+        public static PostLook From(VolumeProfile profile)
+        {
+            var look = new PostLook { neutral = true };
+            if (profile.TryGet(out Bloom bloom))
+            {
+                look.bloomThreshold = bloom.threshold.value;
+                look.bloom = bloom.intensity.value;
+            }
+            if (profile.TryGet(out Tonemapping tonemap)) look.neutral = tonemap.mode.value != TonemappingMode.ACES;
+            if (profile.TryGet(out ColorAdjustments color))
+            {
+                look.exposure = color.postExposure.value;
+                look.contrast = color.contrast.value;
+                look.saturation = color.saturation.value;
+            }
+            if (profile.TryGet(out Vignette v)) look.vignette = v.intensity.value;
+            if (profile.TryGet(out ChromaticAberration c)) look.chroma = c.intensity.value;
+            return look;
+        }
+
+        /// <summary>This look with a tune flag's post keys (exposure, contrast, saturation, bloom, threshold, chroma, vignette, neutral) over it.</summary>
+        public PostLook With(IReadOnlyDictionary<string, float> tune)
+        {
+            var look = this;
+            if (tune.TryGetValue("exposure", out float v)) look.exposure = v;
+            if (tune.TryGetValue("contrast", out v)) look.contrast = v;
+            if (tune.TryGetValue("saturation", out v)) look.saturation = v;
+            if (tune.TryGetValue("bloom", out v)) look.bloom = v;
+            if (tune.TryGetValue("threshold", out v)) look.bloomThreshold = v;
+            if (tune.TryGetValue("chroma", out v)) look.chroma = v;
+            if (tune.TryGetValue("vignette", out v)) look.vignette = v;
+            if (tune.TryGetValue("neutral", out v)) look.neutral = v > 0.5f;
+            return look;
+        }
 
         /// <summary>Overrides the profile's grade; its LUT, vignette shape and white balance stay the night's.</summary>
         public void ApplyTo(VolumeProfile profile)

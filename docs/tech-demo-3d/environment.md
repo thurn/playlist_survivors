@@ -193,6 +193,90 @@ are already synced and measured (footprints.json), then bake and render it
 Dark Fantasy's dead trees, ruins, tombs and statues and Fantasy Kingdom's
 rocks on a grey stone ground, under a neutral moon and grade.
 
+### Structure styles
+
+`--structure-style <name>` (epic ps-suy) draws the arena's structures in one
+of the horde's treatments ([Monster styles](crowd.md#monster-styles)):
+`--structure-style crystal` makes the courtyard's walls, the landmarks and the
+trees out of crystal, `fire` sets them burning, `hologram` turns them into
+projections. The names are the monster styles' (painted, fire, crystal,
+spectrum, hologram, chrome, void) and baseline, plus `match`, which takes
+`--monster-style`'s style (mix, a style per type, has none for the set:
+baseline). baseline is the default and leaves the arena exactly as it is. An
+unknown name stops the player at start-up, listing the known ones. It is a
+look only; breaking structures is a separate choreography flag. Performance is
+not a goal under it, and it is not benchmarked.
+
+- **What a structure is** (`ArenaRuntime.Structures`): every opaque kit
+  renderer under Static/Structures and Static/Landmarks, plus any other whose
+  bounds' largest side is at least `ArenaOptions.SmallPropM` (4 m: the trees).
+  The ground, the mist, runes and glow pools, small props, merged small props
+  and transparent kit (the candles' glow cards) are never styled. The player
+  logs how many renderers it styled.
+- **A runtime material swap.** `StructureStyle.Apply` runs when the arena is
+  ready (`ArenaRuntime.OnReady`) and swaps each structure's materials for its
+  style's structure shader, one material per kit material, with nothing
+  rebaked. Each renderer gets its piece values in a MaterialPropertyBlock:
+  `_SL_Piece` (its bounds' centre at their floor, and a seed), `_HeightM`, and
+  `_SL_PieceFx` (hit flash and death, 0 while it stands, for breaks). Disposing
+  the style puts the kit back.
+- **The styles' own code.** Each style's forward code lives in
+  `Runtime/Crowd/Shaders/Styles/<Style>Input.hlsl` and `<Style>Forward.hlsl`,
+  which the crowd shader and its structure twin (`Runtime/Arena/Shaders/Structures/`,
+  `Demo3D/Structures/<Style>`) both include. The twin defines `SL_STATIC` first,
+  and `StyleCommon.hlsl` then swaps the skinned front end for a static mesh's:
+  the same `SLVertex` and `SLVaryings` from the renderer's transform, the rest
+  position in metres from the piece's base. The crowd's compiled output is
+  unchanged. CrowdBaker lists the structure shaders in
+  `CrowdLibrary.StructureShaders`, so a new one needs `BakeCrowd`.
+- **The kit's lighting.** A structure is lit as the kit is: light probes
+  (`SampleSH`), the moon with the static shadow map, and Forward+'s lights.
+  Its shadows stay where the bake put them (the static shadow map and the
+  shadowmask). Alpha clip, cull and the canopy fade follow the kit material it
+  replaces, so styled trees keep their leaves' shapes and still dither out
+  near the hero. Opaque styles keep the depth, depth-normals (SSAO) and shadow
+  passes; a still structure needs no motion vectors.
+- **Facets without a rebake.** Crystal, spectrum and hologram read a style
+  mesh's barycentrics on the crowd. The kit's walls are a few large
+  triangles, so structures get world-space facets instead (`SL_StaticFacets`):
+  crystal's are cellular noise, cut across like a geode, each cell tilted its
+  own way; hologram's and spectrum's are a square lattice in the surface's
+  main plane (a projected grid, a synth's panel).
+- **See-through structures stay dark.** A crystal or hologram structure
+  shows what is behind it, and the ground is lighter than the kit's dark
+  trees and walls, which cost the horde up to 3 L* against its ring. So a
+  crystal structure passes half the light behind it (a thicker, darker gem),
+  and a hologram structure draws its light over dim glass that takes 75% of
+  what is behind away.
+- **Fire's flames are a second renderer.** Each burning structure gets a child
+  `Flames` renderer on its own mesh with `Demo3D/Structures/FireFlames` (the
+  FireShell approach), additive, casting no shadow, its tongues sized to the
+  piece. They clip by the leaves' alpha, and canopies burn lower.
+- **Per-style looks for the set.** Structures are larger and dimmer than
+  monsters, so each style sets its own colours and scales on the set
+  (`StructureStyle.Look`): painted's colour strip is moonlit stone with violet
+  shadows and teal runes on the beat wave, fire's cracks are a structure's
+  size, crystal's gem a dark sapphire. Painted draws no ink line on
+  structures: an inverted hull splits apart on the kit's hard edges.
+- **The beat.** `StyleBeat` publishes its globals under either flag, so the
+  set pulses with the music as the horde does.
+- **Value structure.** Structures have their own `Gain` and `Peak`, below each
+  style's horde peak, and the structure shaders also hold every channel under
+  the bloom's knee (`SL_STATIC_CHANNEL_MAX`), so a self-lit wall blooms only
+  as PostFeel's beat raises the bloom, and never out-glows the horde or the
+  effects. `--structure-tune key=value,...` overrides them for a run (the same
+  keys as `--style-tune`).
+- **One post look.** Exactly one `PostLook` goes on the night volume: the
+  monster style's if `--monster-style` sets one, otherwise the structure
+  style's (the monster style's of the same name). Crystal structures turn on
+  the camera's opaque texture, as crystal monsters do.
+- **Readability.** The ID render marks the structures in blue (the kit
+  through a rendering layer set for the ID frame only, the structure shaders
+  themselves), and `demo3d look` reports the horde against the structure
+  pixels near it beside its dL* against the ground. Every style keeps the
+  horde's |dL*| >= 17. Stills and numbers:
+  [evidence/structures/looks](../../demo3d/evidence/structures/looks/README.md).
+
 ### Environment rendering
 
 The kit's prefabs, placed as plain GameObjects, cost about what Synty's own

@@ -352,7 +352,8 @@ def build_parser(project: str = "demo3d") -> argparse.ArgumentParser:
 
     lk = sub.add_parser("look", help="the look pass's stills, stats and readability (Mac, windowless)")
     lk.add_argument("slug", help="the set's name: captures/look/SLUG and demo3d/evidence/look/SLUG")
-    lk.add_argument("--baseline", help="a committed set to compare against (contact sheet, deltas)")
+    lk.add_argument("--baseline", help="a committed set to compare against (contact sheet, deltas): a look/ slug, "
+                    "or a path under demo3d/evidence/ (structures/looks/forest-baseline)")
     lk.add_argument("--backend", choices=["il2cpp", "mono"], default="il2cpp")
     lk.add_argument("--build", action="store_true", help="rebuild the player first (after a change)")
     lk.add_argument("--workers", type=int, default=4, help="player processes at a time")
@@ -361,6 +362,7 @@ def build_parser(project: str = "demo3d") -> argparse.ArgumentParser:
     lk.add_argument("--beauty-only", action="store_true")
     lk.add_argument("--trial", action="store_true", help="print the tables, write nothing to evidence")
     lk.add_argument("--player-args", default="", help="extra player flags, e.g. '--crowd-fill 1.5'")
+    lk.add_argument("--evidence", help="the evidence folder under demo3d/evidence/ (default look/SLUG)")
     lk.set_defaults(func=cmd_look)
 
     from . import filmstrip

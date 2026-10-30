@@ -6,6 +6,14 @@
 // `float _HeightM`, CrowdType.HeightM: its height at instance scale 1) before including this, as
 // CrowdSkinned does before CrowdCommon.hlsl, in the SubShader's HLSLINCLUDE so its shadow,
 // depth and motion passes (StylePasses.hlsl) see the same displacement and death.
+//
+// SL_STATIC, defined before this (the `--structure-style` shaders, Arena/Shaders/Structures/;
+// environment.md, Structure styles), swaps the skinned front end for a static mesh's: the same
+// SLVertex and SLVaryings from the renderer's own transform, so a style's forward code compiles
+// unchanged for the arena's structures. The piece's base, seed, hit and death come per renderer
+// (_SL_Piece, _SL_PieceFx), its rest position is metres from its base, alpha clip and the canopy
+// fade follow the kit material it replaces, a style mesh's barycentrics become world-space facets
+// (SL_StaticFacets), and SL_Grade also keeps every channel under the bloom's knee.
 #ifndef DEMO3D_STYLE_COMMON_INCLUDED
 #define DEMO3D_STYLE_COMMON_INCLUDED
 
@@ -13,6 +21,9 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 #include "../CrowdCommon.hlsl"
 #include "../../../Arena/Shaders/StaticShadow.hlsl"
+#if defined(SL_STATIC)
+#include "../../../Arena/Shaders/CanopyFade.hlsl"
+#endif
 
 // Set every frame by StyleBeat.cs from the song clock, the song map and the hero.
 float _SL_Time;      // the song's time, seconds
@@ -24,6 +35,28 @@ float4 _SL_HeroPos;  // the hero's feet, world space
 float _SL_WaveSpeed; // how far the beat wave travels in one beat, metres
 float _SL_RingGain;  // the lab's beat ring on the ground: always 0 here (demo3d's ground has none)
 
+#if defined(SL_STATIC)
+// A structure's static mesh, in its renderer's object space.
+struct SLAttributes
+{
+    float3 positionOS : POSITION;
+    float3 normalOS : NORMAL;
+    float2 uv : TEXCOORD0;
+};
+
+// Per renderer (StructureStyle's MaterialPropertyBlock): the piece's base (xyz: its bounds' centre
+// at their floor, world) and seed (w, 0..1); its hit flash (x) and death (y), 0 while it stands.
+float4 _SL_Piece;
+float4 _SL_PieceFx;
+// Per material, from the kit material it replaces: its albedo and cutoff for alpha clip (0: none),
+// and 1 to dither out near the hero as tree canopies do (CanopyFade.hlsl).
+TEXTURE2D(_SL_ClipMap); SAMPLER(sampler_SL_ClipMap);
+float4 _SL_ClipMap_ST;
+float _SL_Cutoff;
+float _SL_Canopy;
+// SL_StaticFacets' cells per metre.
+float _SL_CellScale;
+#else
 // The crowd's welded mesh (CrowdAttributes): bone data in TEXCOORD1/2. A style that draws the
 // unwelded style mesh (CrowdBaker.Unweld, MonsterStyle.UsesStyleMesh) defines SL_STYLE_MESH before
 // including this, and gets its extras: the face normal (SL_SkinFace) and barycentrics.
@@ -40,8 +73,9 @@ struct SLAttributes
 #endif
     uint instanceID : SV_InstanceID;
 };
+#endif
 
-#if defined(SL_STYLE_MESH)
+#if defined(SL_STYLE_MESH) && !defined(SL_STATIC)
 // The style mesh's face normal in world space, turned by the vertex's bones and the instance's yaw
 // as its normal is (this frame's bones, also for the previous pose: one frame's turn of a flying
 // shard's direction doesn't show).
@@ -226,7 +260,10 @@ float SL_Dissolve(float3 rest, float death)
 #define SL_DISSOLVE(rest, death) SL_Dissolve(rest, death)
 #endif
 
-#if defined(SL_STYLE_MESH)
+#if defined(SL_STYLE_MESH) && defined(SL_STATIC)
+// A structure keeps its triangles together: its break is CrystalShatter's kind of shards.
+#define SL_ShatterDisplace(v, m, slot, positionWS, strength)
+#elif defined(SL_STYLE_MESH)
 // SL_Shatter for SL_DISPLACE: a dying monster's triangles fly apart. One that has flown its course
 // collapses to a point, so no pass draws it, and such a style defines SL_DISSOLVE as 0.0.
 void SL_ShatterDisplace(SLAttributes v, MonsterInstance m, uint slot, inout float3 positionWS, float strength)
@@ -251,6 +288,9 @@ struct SLVertex
     float3 normalWS;
     float4 fx;      // x hit, y death, zw the LOD fade (CrowdLodFade)
     float4 center;  // xyz the feet, w the seed (0..1)
+#if defined(SL_STATIC)
+    float3 rest;    // metres from the piece's base, before SL_DISPLACE
+#endif
 };
 
 // A style that moves vertices (shatter, flames, melt) defines SL_DISPLACE(v, m, slot, positionWS,
@@ -264,6 +304,27 @@ struct SLVertex
 // A monster's seed (0..1), from its slot: stable while it lives.
 float SL_SeedOf(uint slot) { return frac(slot * 0.6180339887 + 0.137); }
 
+#if defined(SL_STATIC)
+// A structure's vertex: placed by its renderer, with the piece's values standing in for the
+// instance's (its base as the feet, scale 1, the hit and death from _SL_PieceFx).
+SLVertex SL_Skin(SLAttributes v)
+{
+    SLVertex o;
+    o.slot = (uint)(_SL_Piece.w * 65521.0);
+    o.m = (MonsterInstance)0;
+    o.m.position = _SL_Piece.xyz;
+    o.m.scale = 1;
+    o.m.hitFlash = _SL_PieceFx.x;
+    o.m.dissolve = _SL_PieceFx.y;
+    o.positionWS = TransformObjectToWorld(v.positionOS);
+    o.normalWS = TransformObjectToWorldNormal(v.normalOS);
+    o.rest = o.positionWS - _SL_Piece.xyz;
+    o.fx = float4(_SL_PieceFx.xy, 0, 1);
+    o.center = _SL_Piece;
+    SL_DISPLACE(v, o.m, o.slot, o.positionWS, o.normalWS);
+    return o;
+}
+#else
 SLVertex SL_Skin(SLAttributes v)
 {
     SLVertex o;
@@ -275,6 +336,7 @@ SLVertex SL_Skin(SLAttributes v)
     SL_DISPLACE(v, o.m, o.slot, o.positionWS, o.normalWS);
     return o;
 }
+#endif
 
 // ---------------------------------------------------------------------------------------------
 // The varyings most shaders pass on: a vertex shader displaces positionWS, then finishes here.
@@ -291,7 +353,7 @@ struct SLVaryings
     float fogFactor : TEXCOORD6;
     float4 extra : TEXCOORD7;  // a shader's own per-vertex values
 #if defined(SL_STYLE_MESH)
-    float4 bary : TEXCOORD8;   // SLAttributes.bary
+    float4 bary : TEXCOORD8;   // SLAttributes.bary (static: SL_StaticFacets', filled in the fragment)
 #endif
 };
 
@@ -302,12 +364,18 @@ SLVaryings SL_Finish(SLAttributes v, SLVertex c, float3 positionWS, float3 norma
     o.positionCS = TransformWorldToHClip(positionWS);
     o.normalWS = normalWS;
     o.uv = v.uv;
+#if defined(SL_STATIC)
+    o.rest = c.rest;
+#else
     o.rest = v.positionOS;
+#endif
     o.fx = c.fx;
     o.center = c.center;
     o.fogFactor = ComputeFogFactor(o.positionCS.z);
     o.extra = 0;
-#if defined(SL_STYLE_MESH)
+#if defined(SL_STYLE_MESH) && defined(SL_STATIC)
+    o.bary = 0;
+#elif defined(SL_STYLE_MESH)
     o.bary = v.bary;
 #endif
     return o;
@@ -325,18 +393,95 @@ float SL_Wire(float3 bary, float pixels)
     return 1.0 - smoothstep(w * 0.5, w, e);
 }
 
+#if defined(SL_STATIC)
+// A structure's clip in every pass but the shadow caster's: the kit material's alpha clip, and the
+// canopy fade on trees (the shadow pass's view is the light's, which the fade must not read).
+void SL_StaticClip(float4 positionCS, float3 positionWS, float2 uv, bool canopy)
+{
+    if (_SL_Cutoff > 0)
+        clip(SAMPLE_TEXTURE2D(_SL_ClipMap, sampler_SL_ClipMap, uv * _SL_ClipMap_ST.xy + _SL_ClipMap_ST.zw).a - _SL_Cutoff);
+    if (canopy && _SL_Canopy > 0.5) Demo3DCanopyClip(positionCS, positionWS);
+}
+
+// A style mesh's barycentrics for a static mesh, whose triangles are the kit's (a few large ones
+// per wall): world-space facets of _SL_CellScale per metre. xyz: the distance to the facet's edge
+// (x; y and z 1, so SL_Wire draws the facet edges), w: a random value per facet. Crystal's
+// facets are cellular noise, cut across like a geode; SL_STATIC_GRID gives a square lattice in
+// the surface's main plane instead (hologram and spectrum: projected and synthesized grids).
+float4 SL_StaticFacets(float3 positionWS, float3 normalWS)
+{
+    float3 p = positionWS * max(_SL_CellScale, 0.01);
+#if defined(SL_STATIC_GRID)
+    float3 n = abs(normalWS);
+    float axis = n.y >= max(n.x, n.z) ? 1 : (n.x >= n.z ? 0 : 2);
+    float2 q = axis == 1 ? p.xz : (axis == 0 ? p.zy : p.xy);
+    float2 d = abs(frac(q) - 0.5);
+    return float4(0.5 - max(d.x, d.y), 1, 1, SL_Hash(float3(floor(q), axis) + 0.37));
+#else
+    float3 cell = floor(p);
+    float3 f = frac(p);
+    float d1 = 8.0, d2 = 8.0;
+    float3 nearest = 0;
+    for (int k = -1; k <= 1; k++)
+    for (int j = -1; j <= 1; j++)
+    for (int i = -1; i <= 1; i++)
+    {
+        float3 b = float3(i, j, k);
+        float3 r = b - f + SL_Hash3(cell + b);
+        float dd = dot(r, r);
+        if (dd < d1) { d2 = d1; d1 = dd; nearest = cell + b; }
+        else if (dd < d2) { d2 = dd; }
+    }
+    return float4((sqrt(d2) - sqrt(d1)) * 0.5, 1, 1, SL_Hash(nearest + 0.37));
+#endif
+}
+
+#if defined(SL_STYLE_MESH)
+#define SL_STATIC_FACETS(i) (i).bary = SL_StaticFacets((i).positionWS, normalize((i).normalWS));
+#else
+#define SL_STATIC_FACETS(i)
+#endif
+
+// A structure's fragment starts here: the kit's clips, the facets, the death's clip and TD15's ID
+// render, which draws a structure as the set does (with its depth, no colour but the structures'
+// blue: Demo3DIdSet) for `demo3d look`'s horde-against-structure measure.
+#define SL_FRAGMENT_BEGIN(i, edge) \
+    SL_StaticClip((i).positionCS, (i).positionWS, (i).uv, true); \
+    SL_STATIC_FACETS(i) \
+    float edge = SL_DISSOLVE((i).rest, SL_DEATH(i)); \
+    if (_Demo3DIdMask > 0.5) return half4(0, 0, 1, 1);
+#else
 // Every style fragment starts here: the LOD crossfade's dither, the death's clip (returning its
 // hot edge) and TD15's ID render, which draws the crowd flat white (DemoMain.MaskMode).
 #define SL_FRAGMENT_BEGIN(i, edge) \
     CrowdLodClip((i).fx.zw, (i).positionCS); \
     float edge = SL_DISSOLVE((i).rest, SL_DEATH(i)); \
     if (_Demo3DIdMask > 0.5) return half4(1, 1, 1, 1);
+#endif
 
 // The tuning pass's grade on a style's forward colour (MonsterStyle.Gain and Peak): a gain, then
 // a soft limit on luminance, keeping the hue, so no monster pixel passes _Peak and the effects stay
 // the brightest values on screen over a self-lit horde (a pale fire is far brighter than a red one
 // at the same channel values). A macro, as shells like the ink line declare neither.
 float3 SL_GradeOf(float3 color, float peak) { return color / (1.0 + Luminance(color) / peak); }
+#if defined(SL_STATIC)
+// A structure's grade (StructureStyle.Gain and Peak) adds a soft limit on the brightest channel,
+// under the bloom's knee (half the night's threshold of 1.5): the luminance limit alone lets a
+// saturated hue's channel past it. So a self-lit structure blooms only as PostFeel's beat raises
+// the bloom's intensity, or when the effects light it, and never out-glows the horde or the effects.
+#define SL_STATIC_CHANNEL_MAX 0.7
+float3 SL_StaticGradeOf(float3 color, float peak)
+{
+    color = SL_GradeOf(color, peak);
+    float m = max(color.r, max(color.g, color.b));
+    float knee = SL_STATIC_CHANNEL_MAX * 0.5;
+    if (m <= knee) return color;
+    float limited = knee + (SL_STATIC_CHANNEL_MAX - knee) * (1.0 - exp(-(m - knee) / (SL_STATIC_CHANNEL_MAX - knee)));
+    return color * (limited / m);
+}
+#define SL_Grade(color) SL_StaticGradeOf((color) * _Gain, _Peak)
+#else
 #define SL_Grade(color) SL_GradeOf((color) * _Gain, _Peak)
+#endif
 
 #endif
