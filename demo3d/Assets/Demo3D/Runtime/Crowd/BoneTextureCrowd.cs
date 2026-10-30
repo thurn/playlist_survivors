@@ -178,7 +178,7 @@ namespace Demo3D.Runtime.Crowd
             var cuts = Cuts ?? Cuts.Active;
             // LOD0 to LOD2: the welded meshes, or the unwelded style meshes for a style that needs them.
             Mesh[] meshes;
-            if (Style != null && Style.UsesStyleMesh)
+            if (Style != null && Style.UsesStyleMesh(t.Id))
             {
                 _styleMeshes ??= CrowdStyleMeshes.Load();
                 var e = _styleMeshes.Of(t.Id);

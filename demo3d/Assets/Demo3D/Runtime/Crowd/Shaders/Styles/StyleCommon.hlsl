@@ -1,7 +1,8 @@
 // What every `--monster-style` shader shares (crowd.md, Monster styles): stylelab's
 // StyleLabCommon.hlsl ported onto the bone-texture crowd. The beat globals, the skinned vertex
 // front end and per-monster values from the instance buffer, noise, the beat wave, lighting
-// helpers and death. A style shader declares its UnityPerMaterial CBUFFER (ending with the type's
+// helpers and death. A style shader declares its UnityPerMaterial CBUFFER (ending with
+// `half _Gain`, the treatment's tuned scale on its forward colour (MonsterStyle.Gain), and the type's
 // `float _HeightM`, CrowdType.HeightM: its height at instance scale 1) before including this, as
 // CrowdSkinned does before CrowdCommon.hlsl, in the SubShader's HLSLINCLUDE so its shadow,
 // depth and motion passes (StylePasses.hlsl) see the same displacement and death.

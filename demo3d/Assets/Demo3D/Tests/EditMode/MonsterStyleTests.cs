@@ -38,6 +38,20 @@ namespace Demo3D.Tests
         }
 
         [Test]
+        public void StyleTuneOverridesTheGainAndPostLookForARun()
+        {
+            var tuned = MonsterStyle.FromArgs(new[] { "--style-tune", "gain=0.5,exposure=0.8,neutral=1", "--monster-style", "fire" });
+            var plain = MonsterStyle.Parse("fire");
+            Assert.That(tuned.Gain("demon"), Is.EqualTo(0.5f));
+            Assert.That(tuned.Post.Value.exposure, Is.EqualTo(0.8f));
+            Assert.That(tuned.Post.Value.neutral, Is.True);
+            Assert.That(tuned.Post.Value.bloom, Is.EqualTo(plain.Post.Value.bloom), "untuned values stay");
+            Assert.Throws<ArgumentException>(() => MonsterStyle.FromArgs(new[] { "--monster-style", "fire", "--style-tune", "glow=2" }));
+            Assert.Throws<ArgumentException>(() => MonsterStyle.FromArgs(new[] { "--monster-style", "fire", "--style-tune", "gain=x" }));
+            Assert.Throws<ArgumentException>(() => MonsterStyle.FromArgs(new[] { "--style-tune", "gain=0.5" }), "baseline has nothing to tune");
+        }
+
+        [Test]
         public void TheStylesPostLookIsPostFeelsBase()
         {
             Assert.That(MonsterStyle.Baseline().Post, Is.Null, "baseline keeps the night's post");
@@ -136,7 +150,6 @@ namespace Demo3D.Tests
                 }
                 Assert.That(t.ValueRange.y - t.ValueRange.x, Is.GreaterThanOrEqualTo(0.05f - 1e-5f), t.Id);
             }
-            Assert.Throws<NotSupportedException>(() => MonsterStyle.Parse("mix").Materials(lib, lib.Types[0]), "unported styles fail loudly");
         }
 
         [Test]
@@ -176,7 +189,7 @@ namespace Demo3D.Tests
         {
             var lib = AssetDatabase.LoadAssetAtPath<CrowdLibrary>(CrowdBaker.LibraryPath);
             if (lib == null) Assert.Ignore("no baked library: run `demo3d unity BakeCrowd`");
-            Assert.That(MonsterStyle.Baseline().UsesStyleMesh || MonsterStyle.Parse("painted").UsesStyleMesh, Is.False,
+            Assert.That(MonsterStyle.Baseline().UsesStyleMesh("slime") || MonsterStyle.Parse("painted").UsesStyleMesh("slime"), Is.False,
                 "the default path keeps the welded mesh");
             Assert.That(MonsterStyle.Baseline().NeedsOpaqueTexture, Is.False);
             var expected = new[]
@@ -188,7 +201,7 @@ namespace Demo3D.Tests
             foreach (var (name, property, queue) in expected)
             {
                 using var style = MonsterStyle.Parse(name);
-                Assert.That(style.UsesStyleMesh, name);
+                Assert.That(style.UsesStyleMesh(lib.Types[0].Id), name);
                 Assert.That(style.NeedsOpaqueTexture, Is.EqualTo(name == "crystal"), name);
                 Assert.That(style.Post, Is.Not.Null, name);
                 foreach (var t in lib.Types)
@@ -203,6 +216,36 @@ namespace Demo3D.Tests
             }
             Assert.That(MonsterStyle.Parse("spectrum").Post.Value.chroma, Is.GreaterThan(0f));
             Assert.That(MonsterStyle.Parse("hologram").Post.Value.chroma, Is.GreaterThan(MonsterStyle.Parse("spectrum").Post.Value.chroma));
+        }
+    
+        [Test]
+        public void TheMixGivesEachTypeTheShowcasesStyle()
+        {
+            var lib = AssetDatabase.LoadAssetAtPath<CrowdLibrary>(CrowdBaker.LibraryPath);
+            if (lib == null) Assert.Ignore("no baked library: run `demo3d unity BakeCrowd`");
+            using var mix = MonsterStyle.Parse("mix");
+            var expected = new System.Collections.Generic.Dictionary<string, string>
+            {
+                ["skeleton"] = "Demo3D/Styles/Painted", ["goblin"] = "Demo3D/Styles/Painted", ["mushroom"] = "Demo3D/Styles/Painted",
+                ["slime"] = "Demo3D/Styles/Crystal", ["bat"] = "Demo3D/Styles/Spectrum", ["demon"] = "Demo3D/Styles/FireBody",
+                ["bigork"] = "Demo3D/Styles/Chrome", ["troll"] = "Demo3D/Styles/Void", ["dragon"] = "Demo3D/Styles/FireBody",
+            };
+            int seen = 0;
+            foreach (var t in lib.Types)
+            {
+                if (!expected.TryGetValue(t.Id, out var shader)) continue;
+                seen++;
+                foreach (var m in mix.Materials(lib, t)) Assert.That(m.shader.name, Is.EqualTo(shader), t.Id);
+                Assert.That(mix.UsesStyleMesh(t.Id), Is.EqualTo(t.Id == "slime" || t.Id == "bat"), t.Id);
+                var shell = mix.Shell(lib, t);
+                if (shader == "Demo3D/Styles/Spectrum" || shader == "Demo3D/Styles/Crystal" || shader == "Demo3D/Styles/Chrome" || shader == "Demo3D/Styles/Void")
+                    Assert.That(shell, Is.Null, t.Id);
+                else
+                    Assert.That(shell.shader.name, Is.EqualTo(shader == "Demo3D/Styles/FireBody" ? "Demo3D/Styles/Shells/FireShell" : "Demo3D/Styles/Shells/Outline"), t.Id);
+            }
+            Assert.That(seen, Is.EqualTo(expected.Count), "the roster has every showcase type");
+            Assert.That(mix.NeedsOpaqueTexture, "the slimes refract");
+            Assert.That(mix.Post, Is.Not.Null);
         }
     }
 }

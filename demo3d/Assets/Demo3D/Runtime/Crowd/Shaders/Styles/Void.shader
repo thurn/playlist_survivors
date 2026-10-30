@@ -13,6 +13,7 @@ Shader "Demo3D/Styles/Void"
         _RimPower ("Edge tightness", Float) = 4
         _NebulaA ("Nebula A", Color) = (0.25, 0.05, 0.4, 1)
         _NebulaB ("Nebula B", Color) = (0.0, 0.3, 0.45, 1)
+        _Gain ("Horde gain (MonsterStyle tuning)", Float) = 1
         _HeightM ("Height at scale 1 (m)", Float) = 1.8
     }
     SubShader
@@ -26,6 +27,7 @@ Shader "Demo3D/Styles/Void"
         CBUFFER_START(UnityPerMaterial)
             float4 _BaseMap_ST; half4 _BaseColor;
             half4 _RimColor; half _RimPower; half4 _NebulaA; half4 _NebulaB;
+            half _Gain;
             float _HeightM;
         CBUFFER_END
 
@@ -90,7 +92,7 @@ Shader "Demo3D/Styles/Void"
                 color += _RimColor.rgb * rim * (0.9 + 2.5 * wave + SL_DEATH(i) * 6.0);
                 color += _RimColor.rgb * smoothstep(0.78, 0.86, 1.0 - NdotV) * 0.35;
                 color += float3(1.0, 1.0, 1.0) * SL_HIT(i) * rim;
-                return half4(MixFog(color, i.fogFactor), 1);
+                return half4(MixFog(color * _Gain, i.fogFactor), 1);
             }
             ENDHLSL
         }

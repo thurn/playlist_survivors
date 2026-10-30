@@ -10,6 +10,7 @@ Shader "Demo3D/Styles/Hologram"
     {
         [HDR] _Color ("Colour", Color) = (0.2, 1.4, 2.0, 1)
         _Glitch ("Glitch", Float) = 0.12
+        _Gain ("Horde gain (MonsterStyle tuning)", Float) = 1
         _HeightM ("Height at scale 1 (m)", Float) = 1.8
     }
     SubShader
@@ -22,6 +23,7 @@ Shader "Demo3D/Styles/Hologram"
 
         CBUFFER_START(UnityPerMaterial)
             half4 _Color; float _Glitch;
+            half _Gain;
             float _HeightM;
         CBUFFER_END
 
@@ -87,7 +89,7 @@ Shader "Demo3D/Styles/Hologram"
                 color *= flicker * (0.75 + 1.0 * wave);
                 color += float3(1.5, 1.5, 1.5) * SL_HIT(i) * fres + _Color.rgb * 4.0 * scanEdge;
                 // Added light fades into the fog rather than glowing through it.
-                return half4(MixFogColor(color, half3(0, 0, 0), i.fogFactor), 0);
+                return half4(MixFogColor(color * _Gain, half3(0, 0, 0), i.fogFactor), 0);
             }
             ENDHLSL
         }

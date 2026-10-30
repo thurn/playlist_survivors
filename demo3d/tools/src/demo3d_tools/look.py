@@ -348,15 +348,15 @@ def small_jpeg(src: Path, dst: Path, label: str) -> None:
     small.save(dst, "JPEG", quality=82, comment=f"ps-render look harness {label}".encode())
 
 
-def contact_sheet(names: list[str], before: Path, after: Path, dst: Path, labels: tuple[str, str]) -> None:
-    """Rows of before | after, at half the evidence JPEGs' size."""
-    w, h, pad = JPEG_W // 2, JPEG_H // 2, 18
-    rows = [n for n in names if (before / f"{n}.jpg").exists() and (after / f"{n}.jpg").exists()]
-    sheet = Image.new("RGB", (2 * w, len(rows) * (pad + h)), (16, 16, 16))
+def contact_sheet(names: list[str], sets: list[Path], dst: Path, labels: list[str], scale: int = 2) -> None:
+    """A row per still with a column per set (before | after for two), at 1/scale of the evidence JPEGs' size."""
+    w, h, pad = JPEG_W // scale, JPEG_H // scale, 18
+    rows = [n for n in names if all((d / f"{n}.jpg").exists() for d in sets)]
+    sheet = Image.new("RGB", (len(sets) * w, len(rows) * (pad + h)), (16, 16, 16))
     draw = ImageDraw.Draw(sheet)
     for i, n in enumerate(rows):
         y = i * (pad + h)
-        for j, src in enumerate((before, after)):
+        for j, src in enumerate(sets):
             draw.text((j * w + 4, y + 3), f"{n}: {labels[j]}", fill=(220, 220, 220))
             with Image.open(src / f"{n}.jpg") as im:
                 sheet.paste(im.convert("RGB").resize((w, h), Image.LANCZOS), (j * w, y + pad))
@@ -563,8 +563,24 @@ def cmd_look(a: argparse.Namespace) -> int:
     if a.baseline:
         bdir = wt.project / "evidence" / "look" / a.baseline
         base = json.loads((bdir / "look.json").read_text(encoding="utf-8"))
-        contact_sheet(names, bdir, evidence, evidence / "contact-sheet.jpg", (a.baseline, slug))
+        contact_sheet(names, [bdir, evidence], evidence / "contact-sheet.jpg", [a.baseline, slug])
     text = report(slug, song, shot_rows, base, stages, grounds, song_fx)
     (evidence / "look.md").write_text(text, encoding="utf-8")
     print(text)
     return 0 if all(s["read"].get("pass") for s in shot_rows.values()) else 1
+
+
+def cmd_look_sheet(a: argparse.Namespace) -> int:
+    """One contact sheet across committed look sets: a row per still, a column per set."""
+    wt = paths.worktree()
+    root = wt.project / "evidence" / "look"
+    sets = [root / s for s in a.sets]
+    missing = [str(d) for d in sets if not (d / "look.json").exists()]
+    if missing:
+        print(f"look-sheet: no look set at {', '.join(missing)}", file=sys.stderr)
+        return 2
+    dst = root / a.out
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    contact_sheet(a.stills.split(","), sets, dst, [Path(s).name for s in a.sets], a.scale)
+    print(f"look-sheet: {dst}")
+    return 0

@@ -18,6 +18,13 @@ namespace Demo3D.Runtime.Crowd
     {
         public const string Flag = "--monster-style";
 
+        /// <summary>
+        /// `--style-tune key=value,...`: overrides the tuned values for a run, to judge a change
+        /// without a rebuild. Keys: gain (every type's <see cref="Gain"/>) and the post look's
+        /// exposure, contrast, saturation, bloom, threshold, chroma, vignette and neutral (0 or 1).
+        /// </summary>
+        public const string TuneFlag = "--style-tune";
+
         /// <summary>Every name the flag takes (the epic's nine); mix is the showcase mix, a style per type.</summary>
         public static readonly string[] Names = { "baseline", "painted", "fire", "crystal", "spectrum", "hologram", "chrome", "void", "mix" };
 
@@ -25,20 +32,47 @@ namespace Demo3D.Runtime.Crowd
         public bool IsBaseline => Name == "baseline";
 
         /// <summary>
-        /// Whether the style draws the unwelded style mesh (CrowdStyleMeshes) rather than the
-        /// welded one: its triangles move alone (shatter), or it reads each one's barycentrics
-        /// (facets, wireframe).
+        /// The single style a type draws in: the style itself, or under mix the showcase's choice
+        /// (stylelab's Treatments.StyleFor): painted fodder; crystal slimes, spectrum bats and fire
+        /// demons; chrome orks, void trolls and a fire dragon.
         /// </summary>
-        public bool UsesStyleMesh => Name == "crystal" || Name == "spectrum" || Name == "hologram";
+        public string StyleOf(string typeId)
+        {
+            if (Name != "mix") return Name;
+            switch (typeId)
+            {
+                case "slime": return "crystal";
+                case "bat": return "spectrum";
+                case "demon": return "fire";
+                case "bigork": return "chrome";
+                case "troll": return "void";
+                case "dragon": return "fire";
+                default: return "painted";
+            }
+        }
 
         /// <summary>
-        /// Whether the style reads the camera's opaque texture (crystal's refraction). URP's asset
-        /// leaves it off, so only this style's camera pays for the copy (DemoMain).
+        /// Whether a type draws the unwelded style mesh (CrowdStyleMeshes) rather than the welded
+        /// one: its triangles move alone (shatter), or it reads each one's barycentrics (facets,
+        /// wireframe).
         /// </summary>
-        public bool NeedsOpaqueTexture => Name == "crystal";
+        public bool UsesStyleMesh(string typeId)
+        {
+            var s = StyleOf(typeId);
+            return s == "crystal" || s == "spectrum" || s == "hologram";
+        }
+
+        /// <summary>
+        /// Whether some type reads the camera's opaque texture (crystal's refraction, the mix's
+        /// slimes). URP's asset leaves it off, so only these styles' camera pays for the copy (DemoMain).
+        /// </summary>
+        public bool NeedsOpaqueTexture => Name == "crystal" || Name == "mix";
 
         readonly List<UnityEngine.Object> _owned = new List<UnityEngine.Object>();
         readonly Dictionary<string, Texture2D> _ramps = new Dictionary<string, Texture2D>();
+
+        readonly Dictionary<string, float> _tune = new Dictionary<string, float>();
+        static readonly string[] TuneKeys = { "gain", "exposure", "contrast", "saturation", "bloom", "threshold", "chroma", "vignette", "neutral" };
 
         MonsterStyle(string name) { Name = name; }
 
@@ -53,17 +87,55 @@ namespace Demo3D.Runtime.Crowd
             return new MonsterStyle(name);
         }
 
-        /// <summary>The style command-line arguments ask for: `--monster-style name`, else baseline.</summary>
+        /// <summary>The style command-line arguments ask for: `--monster-style name`, else baseline; and any `--style-tune`.</summary>
         public static MonsterStyle FromArgs(IReadOnlyList<string> args)
         {
+            MonsterStyle style = null;
+            string tune = null;
             for (int i = 0; i < args.Count; i++)
             {
-                if (args[i] != Flag) continue;
+                if (args[i] != Flag && args[i] != TuneFlag) continue;
                 if (i + 1 >= args.Count || args[i + 1].StartsWith("--", StringComparison.Ordinal))
-                    throw new ArgumentException($"{Flag} needs a style (one of {string.Join(", ", Names)})");
-                return Parse(args[i + 1]);
+                    throw new ArgumentException(args[i] == Flag
+                        ? $"{Flag} needs a style (one of {string.Join(", ", Names)})"
+                        : $"{TuneFlag} needs key=value pairs (keys {string.Join(", ", TuneKeys)})");
+                if (args[i] == Flag) style = Parse(args[i + 1]);
+                else tune = args[i + 1];
             }
-            return Baseline();
+            style ??= Baseline();
+            if (tune != null)
+            {
+                if (style.IsBaseline) throw new ArgumentException($"{TuneFlag} tunes a {Flag} treatment; baseline has none");
+                style.Tune(tune);
+            }
+            return style;
+        }
+
+        /// <summary>Applies `--style-tune` pairs ("gain=0.6,exposure=0.5"); an unknown key or bad number fails.</summary>
+        public void Tune(string pairs)
+        {
+            foreach (var pair in pairs.Split(','))
+            {
+                var kv = pair.Split('=');
+                if (kv.Length != 2 || Array.IndexOf(TuneKeys, kv[0].Trim()) < 0
+                    || !float.TryParse(kv[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float v))
+                    throw new ArgumentException($"{TuneFlag}: bad pair '{pair}' (keys {string.Join(", ", TuneKeys)})");
+                _tune[kv[0].Trim()] = v;
+            }
+        }
+
+        /// <summary>
+        /// The scale on a type's forward colour (the shaders' _Gain), from the tuning pass in
+        /// demo3d's scenes (evidence/styles/all/README.md): it keeps the effects the brightest
+        /// values on screen over the self-lit treatments.
+        /// </summary>
+        public float Gain(string typeId)
+        {
+            if (_tune.TryGetValue("gain", out float g)) return g;
+            switch (StyleOf(typeId))
+            {
+                default: return 1f;
+            }
         }
 
         public static MonsterStyle FromCommandLine() => FromArgs(Environment.GetCommandLineArgs());
@@ -76,9 +148,26 @@ namespace Demo3D.Runtime.Crowd
         {
             get
             {
+                if (IsBaseline) return null;
+                var look = BasePost;
+                if (_tune.TryGetValue("exposure", out float v)) look.exposure = v;
+                if (_tune.TryGetValue("contrast", out v)) look.contrast = v;
+                if (_tune.TryGetValue("saturation", out v)) look.saturation = v;
+                if (_tune.TryGetValue("bloom", out v)) look.bloom = v;
+                if (_tune.TryGetValue("threshold", out v)) look.bloomThreshold = v;
+                if (_tune.TryGetValue("chroma", out v)) look.chroma = v;
+                if (_tune.TryGetValue("vignette", out v)) look.vignette = v;
+                if (_tune.TryGetValue("neutral", out v)) look.neutral = v > 0.5f;
+                return look;
+            }
+        }
+
+        PostLook BasePost
+        {
+            get
+            {
                 switch (Name)
                 {
-                    case "baseline": return null;
                     case "painted": return PostLook.Stylized();
                     case "fire": return PostLook.Stylized(1.0f);
                     case "chrome": return PostLook.Stylized(1.0f);
@@ -86,7 +175,8 @@ namespace Demo3D.Runtime.Crowd
                     case "crystal": return PostLook.Stylized(1.0f);
                     case "spectrum": return PostLook.Stylized(1.2f, 0.12f);
                     case "hologram": return PostLook.Stylized(1.35f, 0.35f);
-                    default: throw NotPorted();
+                    case "mix": return PostLook.Stylized(1.1f, 0.05f);
+                    default: throw new InvalidOperationException(Name);
                 }
             }
         }
@@ -95,16 +185,18 @@ namespace Demo3D.Runtime.Crowd
         public Material[] Materials(CrowdLibrary lib, CrowdType type)
         {
             if (IsBaseline) return type.Materials;
+            var style = StyleOf(type.Id);
             var mats = new Material[type.Materials.Length];
             for (int k = 0; k < mats.Length; k++)
             {
                 var baked = type.Materials[k];
-                var m = new Material(lib.StyleShader(ShaderOf(Name))) { name = $"{type.Id}_{Name}{k}", enableInstancing = false };
+                var m = new Material(lib.StyleShader(ShaderOf(style))) { name = $"{type.Id}_{style}{k}", enableInstancing = false };
                 m.SetTexture("_BaseMap", baked.GetTexture("_BaseMap"));
                 m.SetColor("_BaseColor", baked.GetColor("_BaseColor"));
                 m.SetFloat("_HeightM", type.HeightM);
+                m.SetFloat("_Gain", Gain(type.Id));
                 var look = StyleLook.Of(type.Id);
-                switch (Name)
+                switch (style)
                 {
                     case "painted":
                         m.SetTexture("_Ramp", Ramp(type.Id));
@@ -151,10 +243,11 @@ namespace Demo3D.Runtime.Crowd
         /// </summary>
         public Material Shell(CrowdLibrary lib, CrowdType type)
         {
-            if (Name != "fire" && !(Name == "painted" && Outlines)) return null;
+            var style = StyleOf(type.Id);
+            if (style != "fire" && !(style == "painted" && Outlines)) return null;
             var look = StyleLook.Of(type.Id);
             Material m;
-            if (Name == "fire")
+            if (style == "fire")
             {
                 m = new Material(lib.StyleShader("Demo3D/Styles/Shells/FireShell")) { name = $"{type.Id}_fireShell", enableInstancing = false };
                 SetFire(m, look);
@@ -169,6 +262,7 @@ namespace Demo3D.Runtime.Crowd
                 m.SetFloat("_Width", 0.022f);
             }
             m.SetFloat("_HeightM", type.HeightM);
+            m.SetFloat("_Gain", Gain(type.Id));
             _owned.Add(m);
             return m;
         }
@@ -180,7 +274,7 @@ namespace Demo3D.Runtime.Crowd
             m.SetVector("_Core", look.core);
         }
 
-        string ShaderOf(string name)
+        static string ShaderOf(string name)
         {
             switch (name)
             {
@@ -191,11 +285,9 @@ namespace Demo3D.Runtime.Crowd
                 case "crystal": return "Demo3D/Styles/Crystal";
                 case "spectrum": return "Demo3D/Styles/Spectrum";
                 case "hologram": return "Demo3D/Styles/Hologram";
-                default: throw NotPorted();
+                default: throw new InvalidOperationException(name);
             }
         }
-
-        Exception NotPorted() => new NotSupportedException($"{Flag} {Name}: not ported to demo3d yet (epic ps-a54)");
 
         /// <summary>A type's colour strip as a 256×1 linear texture, the stops evenly spaced.</summary>
         Texture2D Ramp(string id)

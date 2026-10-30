@@ -5,7 +5,7 @@ namespace Demo3D.Runtime.Crowd
 {
     /// <summary>
     /// The `--monster-style` style meshes (crowd.md, Monster styles), a second asset beside the
-    /// library so a player loads them only for a style that draws them (<see cref="MonsterStyle.UsesStyleMesh"/>):
+    /// library so a player loads them only for a style that draws them (<see cref="MonsterStyle.UsesStyleMesh(string)"/>):
     /// a ScriptableObject loads everything it references, and the library loads on every run.
     /// </summary>
     public sealed class CrowdStyleMeshes : ScriptableObject

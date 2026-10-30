@@ -11,6 +11,7 @@ Shader "Demo3D/Styles/Spectrum"
         _Hue ("Hue offset", Range(0, 1)) = 0
         _WireGlow ("Wire glow", Float) = 2.5
         _Bulge ("Bass swell (metres)", Float) = 0.035
+        _Gain ("Horde gain (MonsterStyle tuning)", Float) = 1
         _HeightM ("Height at scale 1 (m)", Float) = 1.8
     }
     SubShader
@@ -23,6 +24,7 @@ Shader "Demo3D/Styles/Spectrum"
 
         CBUFFER_START(UnityPerMaterial)
             half _Hue; half _WireGlow; float _Bulge;
+            half _Gain;
             float _HeightM;
         CBUFFER_END
 
@@ -85,7 +87,7 @@ Shader "Demo3D/Styles/Spectrum"
                 color += SL_Hue(h01 * 0.6 + _Hue) * bar * 0.5;
 
                 color += float3(1.0, 1.0, 1.0) * SL_HIT(i) + SL_Hue(hue + i.bary.w) * 2.5 * shatter;
-                return half4(MixFog(color, i.fogFactor), 1);
+                return half4(MixFog(color * _Gain, i.fogFactor), 1);
             }
             ENDHLSL
         }

@@ -215,6 +215,12 @@ def cmd_look(a: argparse.Namespace) -> int:
     return look.cmd_look(a)
 
 
+def cmd_look_sheet(a: argparse.Namespace) -> int:
+    from . import look
+
+    return look.cmd_look_sheet(a)
+
+
 def cmd_mix(a: argparse.Namespace) -> int:
     from . import mix
 
@@ -344,6 +350,13 @@ def build_parser(project: str = "demo3d") -> argparse.ArgumentParser:
     lk.add_argument("--trial", action="store_true", help="print the tables, write nothing to evidence")
     lk.add_argument("--player-args", default="", help="extra player flags, e.g. '--crowd-fill 1.5'")
     lk.set_defaults(func=cmd_look)
+
+    ls = sub.add_parser("look-sheet", help="one contact sheet across committed look sets")
+    ls.add_argument("out", help="the JPEG, under demo3d/evidence/look/ (e.g. ../styles/all/song.jpg)")
+    ls.add_argument("sets", nargs="+", help="look set slugs, one column each")
+    ls.add_argument("--stills", required=True, help="comma-separated still names, one row each")
+    ls.add_argument("--scale", type=int, default=4, help="each still at 1/scale of the 960 px JPEGs")
+    ls.set_defaults(func=cmd_look_sheet)
     return p
 
 

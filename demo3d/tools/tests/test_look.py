@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pytest
+from PIL import Image
 
 from demo3d_tools import look
 
@@ -192,3 +195,17 @@ def test_effects_are_brightest_when_their_p98_beats_the_rest() -> None:
     e = look.effect_stats(horde, measured)
     assert e["share"] == pytest.approx(0.04)
     assert e["p98"] == pytest.approx(100) and e["restP98"] == pytest.approx(50.0, abs=0.1)
+
+
+def test_contact_sheet_has_a_column_per_set_and_skips_stills_a_set_lacks(tmp_path: Path):
+    sets = [tmp_path / n for n in ("a", "b", "c")]
+    for i, d in enumerate(sets):
+        d.mkdir()
+        for n in ("song-060", "path-horde"):
+            if not (n == "path-horde" and i == 2):
+                Image.new("RGB", (look.JPEG_W, look.JPEG_H), (40 * i, 0, 0)).save(d / f"{n}.jpg")
+    dst = tmp_path / "sheet.jpg"
+    look.contact_sheet(["song-060", "path-horde"], sets, dst, ["a", "b", "c"], scale=4)
+    with Image.open(dst) as im:
+        assert im.size == (3 * (look.JPEG_W // 4), 18 + look.JPEG_H // 4)
+        assert b"ps-render" in im.info["comment"]
