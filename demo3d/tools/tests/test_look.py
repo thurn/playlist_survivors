@@ -172,3 +172,23 @@ def test_window_detail_ignores_windows_off_the_region() -> None:
     region[:16, :20] = True  # one whole window, and part of another
     assert look.window_detail(lum, region) == pytest.approx(5)
     assert look.window_detail(lum, np.zeros_like(region)) is None
+
+
+def test_cool_share_counts_saturated_cyan_to_violet_only() -> None:
+    img = frame(GREY_50, 10, 10)
+    img[0:2] = (40, 200, 255)  # cyan-azure, hue about 197
+    img[2:3] = (140, 60, 255)  # violet, hue about 265
+    img[3:4] = (255, 120, 30)  # warm orange: not cool
+    img[4:5] = (60, 62, 70)  # a dull navy grey: cool hue, but under the chroma bar
+    assert look.cool_share(img) == pytest.approx(0.3)
+    assert look.still_stats(img)["cool"] == pytest.approx(0.3)
+
+
+def test_effects_are_brightest_when_their_p98_beats_the_rest() -> None:
+    measured = frame(GREY_DARK, 100, 100)
+    measured[:, :20] = GREY_50  # a lit ground strip, not an effect
+    horde = measured.copy()
+    horde[40:60, 40:60] = 255  # a hot effect core
+    e = look.effect_stats(horde, measured)
+    assert e["share"] == pytest.approx(0.04)
+    assert e["p98"] == pytest.approx(100) and e["restP98"] == pytest.approx(50.0, abs=0.1)

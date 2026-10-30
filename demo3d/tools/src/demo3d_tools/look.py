@@ -4,7 +4,7 @@ Renders the look set with the windowless batch-mode player (mac.md), in fixed ti
 process per capture, a few at a time. It builds the player first (BakeAll too if the worktree isn't
 baked) when there is none, or with --build after a change:
 - song stills at SONG_TIMES (one each in groove, drop-1, groove-2, drop-2 and the final peak),
-  each from WARMUP_S before it;
+  each from WARMUP_S before it, and the same frame with `--no-effects` (song-<t>-measure);
 - TD15's six beauty shots (arena-layout.json's `shots`), three captures each as in
   evidence/td15/beauty.py: the horde; the same frame with `--no-effects --capture-mask` (the
   measured still and its ID render of the monsters); and `--beauty-empty`. All three run with
@@ -17,8 +17,10 @@ and, given --baseline, a before/after contact sheet go to demo3d/evidence/look/S
 look.md has, for every still: CIE L* p2/p50/p98, the RMS contrast (the standard deviation of L*),
 the mean chroma C*ab, the near-black share (L* < 10), the clipped share (every channel >= 250) and
 the largest connected clipped region's share (a blown-out blob, not scattered hot pixels).
-For beauty shots it adds the monster pixels' L* p10/p90 and mean chroma, the effects (the pixels whose L* the
-effects move by more than EFFECT_DL, horde still against measured still) and readability.
+It adds the cool accents' share (ps-e8r.10: HSV hue in COOL_HUE, C*ab above COOL_CHROMA) and, for every
+still, the effects (the pixels whose L* the effects move by more than EFFECT_DL, against the no-effects
+still) with the other pixels' L* p98, since effects should be the brightest values. For beauty shots it
+adds the monster pixels' L* p10/p90 and mean chroma and readability.
 
 Readability is TD15's measure, made absolute (the look epic's Decision 3): in the measured still,
 the monster pixels (the ID render) against the ground in a ring 3-10 px around them, in L*. dL* is
@@ -63,6 +65,8 @@ STAGE_R_M, STAGE_HERO_M = 6.0, 1.2  # the stage's ground: within 6 m of the hero
 STAGE_BORDER = 0.15  # the frame's outer 15% on every side
 STAGE_FLOOR = 15.0  # ps-e8r.5: the stage's median L* above the border's
 GROUND_WINDOW = 16  # ps-e8r.6: the ground's local detail, the standard deviation of L* in 16 px windows
+COOL_HUE, COOL_CHROMA = (180.0, 280.0), 20.0  # ps-e8r.10: a cool accent pixel, HSV hue (degrees) and C*ab
+COOL_CAP = 0.15  # ps-e8r.10: cool accents cover at most this share of a song still
 JPEG_W, JPEG_H = 960, 540
 APP = "PlaylistSurvivors3D.app/Contents/MacOS/Playlist Survivors 3D Demo"
 
@@ -91,12 +95,28 @@ def chroma(rgb: np.ndarray) -> np.ndarray:
     return np.hypot(500 * (f[..., 0] - f[..., 1]), 200 * (f[..., 1] - f[..., 2]))
 
 
+def hue(rgb: np.ndarray) -> np.ndarray:
+    """HSV hue (degrees, 0-360) of 8-bit sRGB pixels; 0 for greys."""
+    c = rgb.astype(np.float64)
+    r, g, b = c[..., 0], c[..., 1], c[..., 2]
+    mx, mn = c.max(axis=-1), c.min(axis=-1)
+    d = np.where(mx > mn, mx - mn, 1.0)
+    h = np.where(mx == r, (g - b) / d % 6, np.where(mx == g, (b - r) / d + 2, (r - g) / d + 4))
+    return np.where(mx > mn, h * 60.0, 0.0)
+
+
+def cool_share(rgb: np.ndarray) -> float:
+    """The share of the frame in the cool accents' hues (ps-e8r.10): HSV hue in COOL_HUE, C*ab above COOL_CHROMA."""
+    h = hue(rgb)
+    return float(((h >= COOL_HUE[0]) & (h <= COOL_HUE[1]) & (chroma(rgb) > COOL_CHROMA)).mean())
+
+
 def still_stats(rgb: np.ndarray) -> dict:
     """The whole frame's look stats."""
     lum = lstar(rgb)
     p2, p50, p98 = np.percentile(lum, [2, 50, 98])
     return {"p2": float(p2), "p50": float(p50), "p98": float(p98), "contrast": float(lum.std()),
-            "chroma": float(chroma(rgb).mean()), "nearBlack": float((lum < 10).mean()),
+            "chroma": float(chroma(rgb).mean()), "nearBlack": float((lum < 10).mean()), "cool": cool_share(rgb),
             "clipped": float((rgb >= 250).all(axis=-1).mean()),
             "clippedBlob": largest_region((rgb >= 250).all(axis=-1)) / lum.size}
 
@@ -250,13 +270,15 @@ def stage(rgb: np.ndarray, view: dict, monsters: np.ndarray | None) -> dict:
 
 
 def effect_stats(horde: np.ndarray, measured: np.ndarray) -> dict:
-    """The effects: the pixels whose L* they move by more than EFFECT_DL (horde vs no-effects still)."""
+    """The effects: the pixels whose L* they move by more than EFFECT_DL (horde vs no-effects still).
+    restP98 is the other pixels' L* p98, in the same still: effects should be the brightest values (ps-e8r.10)."""
     lh = lstar(horde)
     fx = np.abs(lh - lstar(measured)) > EFFECT_DL
     if not fx.any():
         return {"share": 0.0}
     p50, p98 = np.percentile(lh[fx], [50, 98])
     return {"share": float(fx.mean()), "p50": float(p50), "p98": float(p98),
+            "restP98": float(np.percentile(lh[~fx], 98)) if not fx.all() else None,
             "chroma": float(chroma(horde[fx]).mean()),
             "clipped": float((horde[fx] >= 250).all(axis=-1).mean())}
 
@@ -278,8 +300,9 @@ def plan(root: Path, shots: list[dict], song: bool = True, beauty: bool = True) 
     caps: list[Capture] = []
     if song:
         for t in SONG_TIMES:
-            caps.append(Capture(f"song-{t:03.0f}", ["--start-at", f"{t - WARMUP_S:.3f}", "--stills-at", f"{t:.3f}",
-                                                    "--capture-mask"]))  # the mask keeps monsters out of the stage's ground
+            common = ["--start-at", f"{t - WARMUP_S:.3f}", "--stills-at", f"{t:.3f}"]
+            caps.append(Capture(f"song-{t:03.0f}", common + ["--capture-mask"]))  # the mask keeps monsters out of the stage's ground
+            caps.append(Capture(f"song-{t:03.0f}-measure", common + ["--no-effects"]))  # the effects' pixels (ps-e8r.10)
     if beauty:
         for s in shots:
             x, y = s["at"]
@@ -347,20 +370,23 @@ def _pct(v: float) -> str:
 def stats_row(name: str, s: dict) -> str:
     return (f"| {name} | {s['p2']:.1f} | {s['p50']:.1f} | {s['p98']:.1f} | {s['contrast']:.1f} | "
             f"{s['chroma']:.1f} | {_pct(s['nearBlack'])} | {_pct(s['clipped'])} | "
-            f"{_pct(s['clippedBlob']) if 'clippedBlob' in s else ''} |")
+            f"{_pct(s['clippedBlob']) if 'clippedBlob' in s else ''} | {_pct(s['cool']) if 'cool' in s else ''} |")
 
 
-STATS_HEAD = ["| still | L* p2 | L* p50 | L* p98 | RMS contrast | mean C*ab | near-black | clipped | clipped blob |",
-              "|---|---:|---:|---:|---:|---:|---:|---:|---:|"]
+STATS_HEAD = ["| still | L* p2 | L* p50 | L* p98 | RMS contrast | mean C*ab | near-black | clipped | clipped blob | cool |",
+              "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|"]
 
 
 def report(slug: str, song: dict[str, dict], shots: dict[str, dict], baseline: dict | None,
-           stages: dict[str, dict] | None = None, grounds: dict[str, dict] | None = None) -> str:
+           stages: dict[str, dict] | None = None, grounds: dict[str, dict] | None = None,
+           song_fx: dict[str, dict] | None = None) -> str:
     lines = [f"# Look set: {slug}", "",
              "Generated by `demo3d look` (demo3d/tools/src/demo3d_tools/look.py). Stills: 1920x1080 PNGs,",
              "windowless batch-mode player in fixed time. L* is CIE L* (0-100) of the sRGB pixels; RMS contrast",
              "is the standard deviation of L*; near-black is L* < 10; clipped is every channel >= 250; clipped",
-             "blob is the largest 8-connected region of clipped pixels.", "",
+             "blob is the largest 8-connected region of clipped pixels; cool is the share in the cool accents' hues",
+             f"(HSV hue {COOL_HUE[0]:g}-{COOL_HUE[1]:g} degrees, C*ab > {COOL_CHROMA:g}; at most {COOL_CAP * 100:g}% of a song",
+             "still, ps-e8r.10).", "",
              "## Song stills", "",
              f"Song mode, each from {WARMUP_S:g} s before its time: "
              + ", ".join(f"{t:g} s" for t in SONG_TIMES)
@@ -390,14 +416,19 @@ def report(slug: str, song: dict[str, dict], shots: dict[str, dict], baseline: d
     lines += ["", "## Effects", "",
               f"The pixels whose L* the effects move by more than {EFFECT_DL:g} (the horde still against the",
               "measured still): their share of the frame, L* p50/p98 and mean C*ab in the horde still, and the",
-              "share of them clipped.", "",
-              "| shot | effect px | L* p50 | L* p98 | mean C*ab | clipped |", "|---|---:|---:|---:|---:|---:|"]
-    for n, s in shots.items():
-        e = s["fx"]
+              "share of them clipped. Rest p98: the other pixels' L* p98 in the same still; brightest: the effects'",
+              "p98 is above it (ps-e8r.10: effects are the brightest values on screen). Song stills measure against",
+              "the same frame with `--no-effects`.", "",
+              "| still | effect px | L* p50 | L* p98 | rest p98 | brightest | mean C*ab | clipped |",
+              "|---|---:|---:|---:|---:|---|---:|---:|"]
+    for n, e in [*(song_fx or {}).items(), *((n, s["fx"]) for n, s in shots.items())]:
         if e["share"] == 0:
-            lines.append(f"| {n} | 0 | | | | |")
+            lines.append(f"| {n} | 0 | | | | | | |")
         else:
+            rest = e.get("restP98")
             lines.append(f"| {n} | {_pct(e['share'])} | {e['p50']:.1f} | {e['p98']:.1f} | "
+                         f"{'' if rest is None else f'{rest:.1f}'} | "
+                         f"{'' if rest is None else ('yes' if e['p98'] > rest else 'NO')} | "
                          f"{e['chroma']:.1f} | {_pct(e['clipped'])} |")
     if stages:
         lines += ["", "## Stage", "",
@@ -496,9 +527,12 @@ def cmd_look(a: argparse.Namespace) -> int:
 
     stages: dict[str, dict] = {}
     grounds: dict[str, dict] = {}
+    song_fx: dict[str, dict] = {}
     for c in caps:
-        if c.name.startswith("song-"):
-            song[c.name] = still_stats(load_rgb(still(c.name)))
+        if c.name.startswith("song-") and not c.name.endswith("-measure"):
+            horde = load_rgb(still(c.name))
+            song[c.name] = still_stats(horde)
+            song_fx[c.name] = effect_stats(horde, load_rgb(still(f"{c.name}-measure")))
             if (st := stage_of(c.name, mask(c.name))) is not None:
                 stages[c.name] = st
     for s in shots if not a.song_only else []:
@@ -513,7 +547,7 @@ def cmd_look(a: argparse.Namespace) -> int:
             grounds[n] = g
 
     if a.trial:
-        print(report(slug, song, shot_rows, None, stages, grounds))
+        print(report(slug, song, shot_rows, None, stages, grounds, song_fx))
         return 0
     evidence.mkdir(parents=True, exist_ok=True)
     names = list(song) + [f"{n}-{k}" for n in shot_rows for k in ("horde", "empty")]
@@ -522,14 +556,15 @@ def cmd_look(a: argparse.Namespace) -> int:
     numbers = {"slug": slug, "stats": {**song, **{n: s["horde"] for n, s in shot_rows.items()}},
                "dL": {n: s["read"].get("dL") for n, s in shot_rows.items()},
                "monsterChroma": {n: s["read"].get("cMonster") for n, s in shot_rows.items()},
-               "stage": {n: st.get("dL") for n, st in stages.items()}, "ground": grounds}
+               "stage": {n: st.get("dL") for n, st in stages.items()}, "ground": grounds,
+               "effects": {**song_fx, **{n: s["fx"] for n, s in shot_rows.items()}}}
     (evidence / "look.json").write_text(json.dumps(numbers, indent=1) + "\n", encoding="utf-8")
     base = None
     if a.baseline:
         bdir = wt.project / "evidence" / "look" / a.baseline
         base = json.loads((bdir / "look.json").read_text(encoding="utf-8"))
         contact_sheet(names, bdir, evidence, evidence / "contact-sheet.jpg", (a.baseline, slug))
-    text = report(slug, song, shot_rows, base, stages, grounds)
+    text = report(slug, song, shot_rows, base, stages, grounds, song_fx)
     (evidence / "look.md").write_text(text, encoding="utf-8")
     print(text)
     return 0 if all(s["read"].get("pass") for s in shot_rows.values()) else 1

@@ -54,6 +54,8 @@ namespace Demo3D.Runtime.Arena
                     float.Parse(v[2], System.Globalization.CultureInfo.InvariantCulture), 1);
             }
             Shader.SetGlobalVector("_Demo3DCrowdFlash", flash);
+            // `--crowd-shoulder k` overrides it, as the other crowd terms.
+            Shader.SetGlobalFloat("_Demo3DCrowdShoulder", Args.GetFloat("--crowd-shoulder", l.CrowdShoulder));
         }
 
         /// <summary>The focus distance of the song's widest view (30 m; camera-and-sound.md), for cameras that look at no ground.</summary>

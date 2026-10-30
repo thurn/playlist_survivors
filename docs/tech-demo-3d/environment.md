@@ -11,15 +11,24 @@ and a density axis that shows what richness costs in monsters.
 
 ### Art direction
 
-- **Mood.** An enchanted forest at night. Cool blue moonlight; warm pools of
-  light from braziers, candles and pyres; cyan and violet magic from glowing
-  trees, crystals and runes; low mist in the hollows.
-- **Value structure.** The ground is dark and low in contrast. Monsters, the
-  hero and effects carry the brightest values and the most saturated colors,
-  so the horde reads at a glance even at a 55 m view.
-- **Color separation.** The environment keeps to cool blues, greens and
-  violets. Combat effects are warm and white-hot, so they never get lost in
-  the set.
+- **Mood.** An enchanted forest at night, played as a lit stage (the look
+  pass, epic ps-e8r, with Deep Rock Galactic: Survivor as the colour
+  reference). A warm key light and a warm pool around the hero light a warm,
+  mid-value, textured fighting ground; darkness stays at the frame's edges
+  and in the forest. Braziers, candles and pyres add warm pools; low mist
+  sits in the hollows.
+- **Value structure.** Effects are the brightest values on screen, with
+  white-hot cores. Then the key-lit horde and the lit stage around the hero
+  (mid values); then the dark edge bands and forest. The horde must read
+  against the ground by at least 17 L* either way, darker or lighter (see
+  [Making it look good](#making-it-look-good)).
+- **Color plan.** Warm dominates: the ground, the key light, the hero's pool
+  and the combat effects (white, then orange, then red). Every monster type
+  has one signature hue (roster.json), spawned in same-type clumps, so the
+  horde reads as masses of colour. Cool cyan and violet are the accents, kept
+  small: glowing trees, runes, magic, wisps and fireflies. The palette table,
+  role by role, is in
+  [evidence/look/final](../../demo3d/evidence/look/final/README.md).
 - **Composition.** Open clearings 30–60 m across, linked by paths and ringed
   by forest. Each clearing has one landmark the eye can rest on: a glowing
   elven tree, a ruined shrine, a stone circle, the walled courtyard or a
@@ -88,7 +97,13 @@ wall the monsters walk around.
 
 ### Lighting the night
 
-- **Moonlight.** One directional light, cool blue, at 25° to 35° elevation.
+- **The key light.** One directional light, warm-neutral, at 42° elevation
+  (the layout's `lighting.moon`). The crowd shader boosts it on the horde
+  alone (`crowd.key`) over a weak ambient fill, so monsters show form, with a
+  faint cool rim.
+- **The hero's light.** One unshadowed realtime point light follows the
+  hero: the lit stage. A cool-tinted vignette darkens the frame's edges
+  around it.
 - **Baked static light.** Lightmaps, baked in batch mode, hold the moon's
   light and shadows on the static set, plus the static light of braziers,
   lamps and glowing plants.
@@ -107,9 +122,12 @@ wall the monsters walk around.
 - **Ambient for monsters.** Thousands of monsters cannot each sample light
   probes cheaply, so they take ambient from Unity's global ambient probe.
   Per-pixel Adaptive Probe Volume sampling is measured as an option.
-- **Night grading.** A color-grading lookup table built for the night palette,
-  on top of the post-processing in
+- **Night grading.** A color-grading lookup table built in code for the lit
+  stage (shadows held near black, warm midtones, saturated colours keeping
+  their hue), on top of the post-processing in
   [Engine and Rendering Setup](performance.md#engine-and-rendering-setup).
+  The post stack follows the music: a pulse on every beat, flashes on
+  accents, and a grade per section (cooler breakdowns, hotter drops).
 
 ### Environment rendering
 
@@ -199,9 +217,12 @@ and checked from fixed shots.
   - effect colors stand apart from the set;
   - nothing floats, clips or repeats in an obvious pattern.
 - **A readability measure.** For the horde shots, an ID render masks monster
-  pixels, and the harness reports the luminance contrast between monster
-  pixels and the ground around them. TD15 sets a floor from the first layout
-  that passes the checklist, and later changes must not fall below it.
+  pixels, and the harness reports dL*: the median L* of the monster pixels
+  less that of the ground in a ring around them. The floor is absolute,
+  |dL*| >= 17 (TD15's lowest shot) in every beauty shot, since a warm,
+  mid-value ground can put a darker horde on a lighter ground; no change may
+  fall below it. `demo3d look` renders the shots and measures it
+  ([Running on the Mac](mac.md#the-look-set)).
 - **The operator's eye.** Each set of beauty shots goes to
   [Pending on the operator](plan.md#pending-on-the-operator) for review. Feedback arrives later as new tasks, and
   no task waits for it.

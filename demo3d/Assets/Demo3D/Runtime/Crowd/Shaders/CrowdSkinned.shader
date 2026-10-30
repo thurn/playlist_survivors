@@ -130,6 +130,9 @@ Shader "Demo3D/CrowdSkinned"
             // The hit flash's colour (rgb, linear HDR; w 1 when set), from the layout's crowd.flash
             // (ps-e8r.7): hot rather than a white that clips whole bodies at a climax.
             float4 _Demo3DCrowdFlash;
+            // The knee (linear) above which the lit colour rolls off toward twice it, from the layout's
+            // crowd.shoulder (ps-e8r.10): the horde's highlights stay below the effects. 0: off.
+            float _Demo3DCrowdShoulder;
             // The type's signature colour (ps-e8r.8; CrowdType.SignatureColor, per type): rgb its hue at
             // full value (linear), w the dye. Zero for the hero.
             float4 _Demo3DTypeColor;
@@ -195,6 +198,12 @@ Shader "Demo3D/CrowdSkinned"
                 s.emission += _Demo3DCrowdRim.rgb * pow(rim, max(_Demo3DCrowdRim.w, 1)) * albedo.rgb * 4;
 
                 half3 color = CrowdLighting(inputData, s);
+                half peak = max(color.r, max(color.g, color.b));
+                if (_Demo3DCrowdShoulder > 0 && peak > _Demo3DCrowdShoulder)
+                {
+                    half over = peak - _Demo3DCrowdShoulder;
+                    color *= (_Demo3DCrowdShoulder + over / (1 + over / _Demo3DCrowdShoulder)) / peak;
+                }
                 color = MixFog(color, inputData.fogCoord);
                 return half4(color, 1);
             }

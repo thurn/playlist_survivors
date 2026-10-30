@@ -44,6 +44,12 @@ namespace Demo3D.Runtime.Arena
         /// <summary>The horde's hit flash (linear HDR rgb, added as emission at full flash); clear keeps the material's.</summary>
         public Color CrowdFlash = Color.clear;
         /// <summary>
+        /// ps-e8r.10: the knee (linear) above which the horde's lit colour rolls off toward twice it, hue
+        /// kept, so key-lit bright swatches (yellow caps, pale hides) and hit flashes stay below the
+        /// effects, the brightest values on screen. 0 is off.
+        /// </summary>
+        public float CrowdShoulder;
+        /// <summary>
         /// The hero's light (ps-e8r.5): one unshadowed realtime point light <see cref="HeroHeightM"/>
         /// above the hero's feet, lighting the set and the horde in a warm pool that fades out by
         /// <see cref="HeroRangeM"/>, so the frame's centre is a lit stage. Intensity 0 leaves it out.
@@ -89,6 +95,7 @@ namespace Demo3D.Runtime.Arena
             l.CrowdRimPower = crowd["rimPower"].AsFloat(l.CrowdRimPower);
             l.CrowdKey = crowd["key"].AsFloat(l.CrowdKey);
             l.CrowdFlash = Col(crowd["flash"], Color.clear);
+            l.CrowdShoulder = crowd["shoulder"].AsFloat(0f);
             JsonValue hero = root["hero"];
             l.HeroHeightM = hero["heightM"].AsFloat(l.HeroHeightM);
             l.HeroRangeM = hero["rangeM"].AsFloat(l.HeroRangeM);

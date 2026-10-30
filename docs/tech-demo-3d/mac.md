@@ -92,7 +92,8 @@ IL2CPP's, so never compare sets made by different players
 It runs one batch-mode player per still, four at a time, in fixed time:
 
 - **Song stills** at 25, 60, 100, 145 and 175 s (groove, drop-1, groove-2,
-  drop-2, the final peak), each from 5 s before.
+  drop-2, the final peak), each from 5 s before, and again with
+  `--no-effects` to find the effects' pixels.
 - **TD15's six beauty shots** (arena-layout.json's `shots`), three captures
   each as in [beauty.py](../../demo3d/evidence/td15/beauty.py): the horde,
   the measured still (`--no-effects --capture-mask`, with its ID render) and
@@ -102,9 +103,12 @@ Full PNGs go to the gitignored `captures/look/<slug>/`. Tagged 960 px JPEGs,
 `look.md`, `look.json` and, with `--baseline`, `contact-sheet.jpg` go to
 `demo3d/evidence/look/<slug>/`. `look.md` has each still's L* p2/p50/p98, RMS
 contrast, mean chroma, near-black and clipped shares, and the largest
-connected clipped region (a blown-out blob); for the beauty shots,
-the monsters' L* p10/p90, the effects' pixels and readability, whose floor is
-|dL*| >= 17. The command exits 1 if a shot is below the floor. Every still
+connected clipped region (a blown-out blob), and the share in the cool
+accents' hues (HSV 180-280 degrees, C*ab > 20; the palette pass caps it at
+15% of a song still); for every still, the effects' pixels (against the same
+frame with `--no-effects`) and whether their L* p98 is above the other
+pixels'; for the beauty shots, the monsters' L* p10/p90 and readability, whose
+floor is |dL*| >= 17. The command exits 1 if a shot is below the floor. Every still
 also gets the stage (ps-e8r.5): the median L* of the ground within 6 m of the
 hero against the frame's outer 15% border, from the `view-<t>.json` the
 player writes beside each still (its camera's view-projection and the hero's

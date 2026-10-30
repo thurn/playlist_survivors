@@ -12,7 +12,7 @@ namespace Demo3D.Runtime.Playback
     /// - every beat of a pulsed section: an exposure and bloom pulse and a vignette breath, decaying over the beat;
     /// - accents, free sections' anchors and the hero's big hits: a flash (exposure spike), a chromatic-aberration
     ///   burst and a saturation spike, scaled by their strength and gone within a beat;
-    /// - per section: a grade offset (exposure, saturation, contrast, white-balance temperature), eased in over
+    /// - per section: a grade offset (exposure, saturation, contrast, white-balance temperature, vignette), eased in over
     ///   <see cref="Amounts.EaseBars"/> bars from the section's first downbeat, as the camera's zoom eases.
     /// It writes offsets on top of the night volume's base values (NightLook.CreateProfile, the hero pool's vignette
     /// included), read once when it first binds, and is a function of song time alone, so fixed-time stills reproduce.
@@ -54,6 +54,7 @@ namespace Demo3D.Runtime.Playback
                         Saturation = s["saturation"].AsFloat(0f),
                         Contrast = s["contrast"].AsFloat(0f),
                         Temperature = s["temperature"].AsFloat(0f),
+                        Vignette = s["vignette"].AsFloat(0f),
                         Pulse = s["pulse"].AsFloat(1f),
                     });
                 }
@@ -73,7 +74,7 @@ namespace Demo3D.Runtime.Playback
         {
             public static readonly SectionGrade None = new SectionGrade();
             public string Match = "";
-            public float Exposure, Saturation, Contrast, Temperature, Pulse = 1f;
+            public float Exposure, Saturation, Contrast, Temperature, Vignette, Pulse = 1f;
         }
 
         /// <summary>Offsets from the volume's base values at one moment.</summary>
@@ -163,6 +164,7 @@ namespace Demo3D.Runtime.Playback
                 Saturation = Mathf.Lerp(prev.Saturation, cur.Saturation, w),
                 Contrast = Mathf.Lerp(prev.Contrast, cur.Contrast, w),
                 Temperature = Mathf.Lerp(prev.Temperature, cur.Temperature, w),
+                Vignette = Mathf.Lerp(prev.Vignette, cur.Vignette, w),
             };
         }
 
@@ -177,7 +179,7 @@ namespace Demo3D.Runtime.Playback
             {
                 Exposure = g.Exposure + a.BeatExposure * pulse + a.FlashExposure * flash,
                 Bloom = a.BeatBloom * pulse,
-                Vignette = a.BeatVignette * pulse,
+                Vignette = g.Vignette + a.BeatVignette * pulse,
                 Saturation = g.Saturation + a.FlashSaturation * flash,
                 Contrast = g.Contrast,
                 Temperature = g.Temperature,

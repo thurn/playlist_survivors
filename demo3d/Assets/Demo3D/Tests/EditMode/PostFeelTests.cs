@@ -83,6 +83,8 @@ namespace Demo3D.Tests
                 Assert.That(Mid(hot, g => g.Saturation), Is.GreaterThan(Mid(cool, g => g.Saturation)), $"{hot} vs {cool}");
                 Assert.That(Mid(hot, g => g.Exposure), Is.GreaterThan(Mid(cool, g => g.Exposure)), $"{hot} vs {cool}");
                 Assert.That(Mid(hot, g => g.Temperature), Is.GreaterThan(Mid(cool, g => g.Temperature)), $"{hot} vs {cool}");
+                // ps-e8r.10: the climaxes also close in on the stage, darker at the frame's edges.
+                Assert.That(Mid(hot, g => g.Vignette), Is.GreaterThan(Mid(cool, g => g.Vignette)), $"{hot} vs {cool}");
             }
         }
 
