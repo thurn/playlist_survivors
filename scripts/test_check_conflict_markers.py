@@ -18,7 +18,7 @@ def check(*contents: bytes) -> subprocess.CompletedProcess[str]:
             p.write_bytes(c)
             paths.append(str(p))
         return subprocess.run(
-            [str(SCRIPT), *paths, str(Path(d) / "missing")],
+            ["sh", str(SCRIPT), *paths, str(Path(d) / "missing")],  # sh: Windows runs no shebang
             check=False,
             capture_output=True,
             text=True,

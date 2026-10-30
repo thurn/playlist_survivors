@@ -35,7 +35,7 @@ def volume_fs(path: Path) -> str:
         # `mount` lists "<device> on <mount point> (<fs>, ...)"; the longest mount point holding
         # the path is its volume. (`stat -f %T` names the file's type, not the filesystem's.)
         out = subprocess.run(["/sbin/mount"], capture_output=True, text=True, check=False).stdout
-        target = str(p.resolve())
+        target = p.resolve().as_posix()
         best, fs = "", "unknown"
         for line in out.splitlines():
             m = re.match(r"^.+? on (.+) \(([^,)]+)", line)

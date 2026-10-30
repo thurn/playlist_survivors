@@ -8,14 +8,27 @@
 set -eu
 cd "$(dirname "$0")/.."
 . scripts/lib/changes.sh
+. scripts/lib/platform.sh
 section="${1:-all}"
 # Pass stamps, keyed by a check's inputs' hash (outside the slots, so they persist).
-STAMPS="${PS_CI_STAMPS:-$HOME/Library/Caches/playlist-survivors/ci-stamps}"
+STAMPS="${PS_CI_STAMPS:-$PS_CACHE/ci-stamps}"
 SECTIONS="baker analysis native native-tests parity survivors demo3d demo2d"
 
 case " all $SECTIONS " in
   *" $section "*) ;;
   *) echo "usage: scripts/ci-full [$(echo $SECTIONS | tr ' ' '|')]" >&2; exit 2 ;;
+esac
+
+# The native workspace builds only on macOS (objc2), so elsewhere (Cygnus, the Windows desktop) its
+# four sections pass as skipped and slow CI covers the rest. A pass there still moves master, with
+# the native workspace untested: the operator's choice, since nobody changes it on Cygnus.
+case "$section" in
+  native | native-tests | parity | survivors)
+    if [ "$(uname -s)" != Darwin ]; then
+      echo "ci-full $section: skipped, the native workspace builds only on macOS"
+      exit 0
+    fi
+    ;;
 esac
 
 # All: the native section first, alone, since its benches are timed and it builds what the others
@@ -124,8 +137,8 @@ if [ "$section" = parity ]; then
     [ "${PS_CI_FULL_FORCE:-0}" != 1 ]; then
     echo "ci-full parity: corpus parity inputs $parity passed at $(cat "$STAMPS/parity-$parity"); skipping"
   else
-    out="$HOME/Library/Caches/playlist-survivors/parity/$(git rev-parse --short HEAD)"
-    (cd native && taskpolicy -c utility cargo run --locked --release -p cli -- analysis-parity --tracks "$PARITY_TRACKS" $PARITY_DELAYED --jobs 8 --check --out "$out")
+    out="$PS_CACHE/parity/$(git rev-parse --short HEAD)"
+    (cd native && utility cargo run --locked --release -p cli -- analysis-parity --tracks "$PARITY_TRACKS" $PARITY_DELAYED --jobs 8 --check --out "$out")
     mkdir -p "$STAMPS"
     # (Only a pass on clean inputs vouches for HEAD's.)
     if inputs_clean; then
@@ -165,12 +178,17 @@ fi
 # song's playback baked, and Unity's EditMode tests, where a skip (a test missing its setup or
 # bake) fails too. About 2 minutes with a warm Library. demo3d's EditMode tests stay out: they
 # need its full BakeAll and the Synty packs. Unity's rewrites of ProjectSettings are discarded.
+# A machine without the 2D packs (Cygnus so far) skips the Unity half, saying so.
 if [ "$section" = demo2d ]; then
   dotnet test demo2d/dotnet/Demo2D.Choreography.Tests --nologo -v q
-  (
+  packs=$(uv run --quiet --project demo3d/tools python -c \
+    'from pathlib import Path; from demo3d_tools import paths; r = Path(paths.load_roots()["pixel_assets"]); print("" if (r / "Assets").is_dir() else r)')
+  if [ -n "$packs" ]; then
+    echo "ci-full demo2d: skipped the Unity setup, bake and tests: no 2D packs at $packs/Assets"
+  else (
     trap 'git checkout --quiet -- demo2d/ProjectSettings' EXIT
     uv run --quiet --project demo3d/tools demo2d setup
     uv run --quiet --project demo3d/tools demo2d unity BakePlayback
     uv run --quiet --project demo3d/tools demo2d test --no-skips
-  )
+  ) fi
 fi

@@ -11,7 +11,9 @@
 #   Cargo.lock and toolchain, after scripts/prune-cargo-target deletes what a clone cannot reuse
 #   (incremental sessions, the workspace crates' own artifacts, units no recent build uses), so
 #   the seed and its clone stay small (ps-tfn.10).
-# The seed is $PS_TARGET_SEED (default ~/Library/Caches/playlist-survivors/target-seed), else the
+# Windows has no copy-on-write clone, so there create takes the seed itself by rename (the next
+# create meanwhile builds cold) and never copies the main checkout's native/target.
+# The seed is $PS_TARGET_SEED (default $PS_CACHE/target-seed, scripts/lib/platform.sh), else the
 # main checkout's native/target. A clone is a copy, not a shared directory: the worktree's sources
 # are checked out after the seed's last build, so cargo sees every workspace crate as changed and
 # never links another worktree's build (hv-t8o8.79). Slow CI's worktrees (ci-*) skip the clone,
@@ -19,9 +21,16 @@
 # update only warns: the worktree then builds cold, or the seed keeps more than it needs.
 set -eu
 : "${ENACT_WORKTREE_PATH:?}" "${ENACT_REPO:?}"
-seed="${PS_TARGET_SEED:-$HOME/Library/Caches/playlist-survivors/target-seed}"
 path="$ENACT_WORKTREE_PATH"
 git() { command git -C "$ENACT_REPO" "$@"; }
+# create runs from a copy of this script, so platform.sh comes from the worktree once it exists
+# (remove's worktree has it too, or the main checkout's).
+platform() {
+  for lib in "$path/scripts/lib/platform.sh" "$ENACT_REPO/scripts/lib/platform.sh"; do
+    if [ -f "$lib" ]; then . "$lib"; break; fi
+  done
+  seed="${PS_TARGET_SEED:-${PS_CACHE:-$HOME/Library/Caches/playlist-survivors}/target-seed}"
+}
 
 case "${1:-}" in
   create)
@@ -31,9 +40,16 @@ case "${1:-}" in
       git worktree add -q --detach "$path" "$ENACT_BASE_SHA"
     fi
     case "$(basename "$path")" in ci-*) exit 0 ;; esac
+    platform
     from="$seed"
     [ -d "$from" ] || from="$ENACT_REPO/native/target"
-    if [ -d "$from" ]; then
+    if [ "$(uname -s)" != Darwin ]; then
+      if [ "$from" = "$seed" ] && mv "$seed" "$path/native/target" 2>/dev/null; then
+        echo "enact-worktree: took the seed $seed" >&2
+      else
+        echo "enact-worktree: no seed to take; building cold" >&2
+      fi
+    elif [ -d "$from" ]; then
       started=$(date +%s)
       if cp -c -R "$from" "$path/native/target" 2>/dev/null; then
         echo "enact-worktree: cloned $from in $(( $(date +%s) - started )) s" >&2
@@ -44,6 +60,7 @@ case "${1:-}" in
     fi
     ;;
   remove)
+    platform
     if [ -d "$path/native/target" ]; then
       prune="$(dirname "$0")/prune-cargo-target"
       if [ -f "$prune" ] && ! python3 "$prune" "$path/native"; then

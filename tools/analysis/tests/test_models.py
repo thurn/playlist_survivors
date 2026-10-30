@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -14,6 +15,11 @@ COMMITTED = ROOT / "native" / "models"
 
 
 REGENERATE = "native/models is stale: run `npm run analysis -- export-models`"
+# The golden data pin the arithmetic of the Mac's numpy and BLAS, for the native crate, which builds
+# only on macOS; Windows' BLAS differs in the last bits (Cygnus's slow CI skips the native crate too).
+macos_arithmetic = pytest.mark.skipif(
+    sys.platform != "darwin", reason="pins macOS's BLAS arithmetic for the native crate"
+)
 
 
 def assert_same_tensors(a: dict[str, np.ndarray], b: dict[str, np.ndarray]) -> None:
@@ -75,6 +81,7 @@ def test_committed_models_match_a_fresh_export(tmp_path: Path) -> None:
     )
 
 
+@macos_arithmetic
 @pytest.mark.parametrize("excerpt", models.EXCERPTS, ids=lambda e: e.name)
 def test_committed_golden_data_match_a_fresh_export(
     excerpt: models.Excerpt, tmp_path: Path

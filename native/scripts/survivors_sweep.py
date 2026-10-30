@@ -247,7 +247,8 @@ def run(args: argparse.Namespace) -> None:
     if args.assert_survival and not full:
         raise ValueError("survival assertions require the complete 30-minute matrix")
     key = input_key(args.assert_survival) if full else None
-    home_cache = Path.home() / "Library/Caches/playlist-survivors"
+    # scripts/lib/platform.sh exports PS_CACHE under ci-full.
+    home_cache = Path(os.environ.get("PS_CACHE") or Path.home() / "Library/Caches/playlist-survivors")
     stamp = home_cache / "ci-stamps" / f"survivors-{key}"
     if (
         key

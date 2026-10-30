@@ -6,7 +6,7 @@ master_branch = "master"
 [checks]
 fast = "scripts/check-fast"
 # One persistent target directory: the slow-CI runner is serialized by its lock.
-slow = 'CARGO_TARGET_DIR="$HOME/Library/Caches/playlist-survivors/target-release" scripts/ci-full'
+slow = '. scripts/lib/platform.sh && CARGO_TARGET_DIR="$PS_CACHE/target-release" scripts/ci-full'
 
 [worktree]
 root = ".worktrees"   # inside the checkout; gitignored

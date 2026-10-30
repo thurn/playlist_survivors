@@ -6,12 +6,16 @@ analyzer against the new behaviour before regenerating the fixture with
 """
 
 import json
+import sys
 
 import numpy as np
+import pytest
 
 from ps_analysis import probe
 
 
+# Pinned on macOS, for the native crate, which builds only there; Windows' BLAS differs in the last bits.
+@pytest.mark.skipif(sys.platform != "darwin", reason="pins macOS's BLAS arithmetic for the native crate")
 def test_the_libraries_still_compute_what_the_native_crate_pins():
     with np.errstate(divide="ignore"):
         now = probe.probe()
