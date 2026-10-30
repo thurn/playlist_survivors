@@ -72,6 +72,42 @@ so it draws the camera by hand for each still it owes.
   --fixed-time --capture-stills captures/mac --stills-at 45,170,196 --seconds 200
 ```
 
+## The look set
+
+The look pass (epic ps-e8r) compares every change with stills and numbers.
+One command renders the whole set windowless, from a fresh worktree:
+
+```
+uv run --project demo3d/tools demo3d setup && uv run --project demo3d/tools demo3d look <slug> --baseline baseline
+```
+
+`look` builds the IL2CPP player if the worktree has none (and runs `BakeAll`
+first if it isn't baked): about 4.5 minutes in a fresh worktree with the
+saved Library, then about 25 s per set. After a change, pass `--build` (or
+run `build`, and `BakeAll` if a baker reads the change) so the stills show
+it. `--backend mono` uses a Mono player, whose simulation diverges from
+IL2CPP's, so never compare sets made by different players
+([baseline README](../../demo3d/evidence/look/baseline/README.md#build-path-and-timings)).
+
+It runs one batch-mode player per still, four at a time, in fixed time:
+
+- **Song stills** at 25, 60, 100, 145 and 175 s (groove, drop-1, groove-2,
+  drop-2, the final peak), each from 5 s before.
+- **TD15's six beauty shots** (arena-layout.json's `shots`), three captures
+  each as in [beauty.py](../../demo3d/evidence/td15/beauty.py): the horde,
+  the measured still (`--no-effects --capture-mask`, with its ID render) and
+  `--beauty-empty`.
+
+Full PNGs go to the gitignored `captures/look/<slug>/`. Tagged 960 px JPEGs,
+`look.md`, `look.json` and, with `--baseline`, `contact-sheet.jpg` go to
+`demo3d/evidence/look/<slug>/`. `look.md` has each still's L* p2/p50/p98, RMS
+contrast, mean chroma, near-black and clipped shares; for the beauty shots,
+the monsters' L* p10/p90, the effects' pixels and readability, whose floor is
+|dL*| >= 17. The command exits 1 if a shot is below the floor.
+`--measure-only` re-measures kept captures; `--trial` writes nothing to
+evidence; `--player-args` passes flags to every capture. The baseline set is
+[evidence/look/baseline](../../demo3d/evidence/look/baseline/README.md).
+
 ## Limits on the Mac
 
 - **Sweeps, the song check's verdict and PIX.** The bench player refuses to

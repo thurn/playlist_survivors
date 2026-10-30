@@ -1,7 +1,8 @@
 """`demo3d look SLUG [--baseline SLUG]`: the look pass's stills and numbers on the Mac (ps-e8r.1).
 
 Renders the look set with the windowless batch-mode player (mac.md), in fixed time, one player
-process per capture, a few at a time:
+process per capture, a few at a time. It builds the player first (BakeAll too if the worktree isn't
+baked) when there is none, or with --build after a change:
 - song stills at SONG_TIMES (one each in groove, drop-1, groove-2, drop-2 and the final peak),
   each from WARMUP_S before it;
 - TD15's six beauty shots (arena-layout.json's `shots`), three captures each as in
@@ -189,16 +190,14 @@ def contact_sheet(names: list[str], before: Path, after: Path, dst: Path, labels
     """Rows of before | after, at half the evidence JPEGs' size."""
     w, h, pad = JPEG_W // 2, JPEG_H // 2, 18
     rows = [n for n in names if (before / f"{n}.jpg").exists() and (after / f"{n}.jpg").exists()]
-    sheet = Image.new("RGB", (2 * w, pad + len(rows) * (h + pad)), (16, 16, 16))
+    sheet = Image.new("RGB", (2 * w, len(rows) * (pad + h)), (16, 16, 16))
     draw = ImageDraw.Draw(sheet)
-    draw.text((4, 3), labels[0], fill=(230, 230, 230))
-    draw.text((w + 4, 3), labels[1], fill=(230, 230, 230))
     for i, n in enumerate(rows):
-        y = pad + i * (h + pad)
+        y = i * (pad + h)
         for j, src in enumerate((before, after)):
+            draw.text((j * w + 4, y + 3), f"{n}: {labels[j]}", fill=(220, 220, 220))
             with Image.open(src / f"{n}.jpg") as im:
-                sheet.paste(im.convert("RGB").resize((w, h), Image.LANCZOS), (j * w, y))
-        draw.text((4, y + h + 3), n, fill=(200, 200, 200))
+                sheet.paste(im.convert("RGB").resize((w, h), Image.LANCZOS), (j * w, y + pad))
     sheet.save(dst, "JPEG", quality=85, comment=b"ps-render look harness contact sheet")
 
 
@@ -290,10 +289,14 @@ def cmd_look(a: argparse.Namespace) -> int:
     caps = plan(captures, shots, song=not a.beauty_only, beauty=not a.song_only)
     if not a.measure_only:
         exe = player(wt, a.backend)
-        if not exe.exists():
-            print(f"look: no {a.backend} player at {exe}; run `demo3d build --backend {a.backend}`",
-                  file=sys.stderr)
-            return 2
+        if a.build or not exe.exists():
+            from .cli import cmd_build
+
+            build = argparse.Namespace(project="demo3d", platform="mac", backend=a.backend, out=None,
+                                       development=False, scene=None, cold=False)
+            if cmd_build(build) != 0:
+                print("look: the player build failed", file=sys.stderr)
+                return 2
         extra = a.player_args.split()
         started = time.monotonic()
         with ThreadPoolExecutor(max_workers=a.workers) as pool:
