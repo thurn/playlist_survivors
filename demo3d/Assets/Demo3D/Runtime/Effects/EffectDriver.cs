@@ -41,6 +41,7 @@ namespace Demo3D.Runtime.Effects
         double _last = double.NaN;
         int _nextAction, _nextProj, _nextShatter;
         Shatter[] _shatters = Array.Empty<Shatter>();
+        float[] _shatterLight = Array.Empty<float>(); // each release's light gain: 1/sqrt(the releases on its beat)
         readonly HashSet<int> _shattered = new HashSet<int>();
 
         /// <summary>A crystal death's burst on its release beat (CrystalShatter.Releases), in place of its death burst.</summary>
@@ -116,13 +117,21 @@ namespace Demo3D.Runtime.Effects
         /// <summary>
         /// The crystal deaths, sorted by time: each one's death-burst event is skipped and the
         /// client.crystalShatter effect spawns at its release instead (nothing changes if the
-        /// selection names no such effect).
+        /// selection names no such effect). The releases on one beat share their flash: each one's
+        /// light is 1/sqrt(n) of n, so a crowded beat is brighter than a lone death without its
+        /// lights summing into a wash over the whole view.
         /// </summary>
         public void SetShatters(Shatter[] shatters)
         {
             _shattered.Clear();
             _shatters = _crystal >= 0 && shatters != null ? shatters : Array.Empty<Shatter>();
             foreach (var s in _shatters) _shattered.Add(s.Entity);
+            _shatterLight = new float[_shatters.Length];
+            for (int i = 0, j; i < _shatters.Length; i = j)
+            {
+                for (j = i + 1; j < _shatters.Length && _shatters[j].Time - _shatters[i].Time < 1e-3; j++) { }
+                for (int k = i; k < j; k++) _shatterLight[k] = 1f / Mathf.Sqrt(j - i);
+            }
             _last = double.NaN; // the next frame starts afresh
         }
 
@@ -224,7 +233,7 @@ namespace Demo3D.Runtime.Effects
             return (beats[i] - beats[i - 1]) * _tl.Map.BeatsPerBarAt(1);
         }
 
-        void Add(int fx, Vector3 pos, float yaw, float scale, uint seed, double time, Vector3 vel, float yawRate, float duration, Color tint = default)
+        void Add(int fx, Vector3 pos, float yaw, float scale, uint seed, double time, Vector3 vel, float yawRate, float duration, Color tint = default, float lightGain = 0)
         {
             // After a seek or loop wrap, the look-back re-spawns only effects still alive now.
             if (Only != null && (fx < 0 || fx >= Only.Length || !Only[fx])) return;
@@ -232,7 +241,7 @@ namespace Demo3D.Runtime.Effects
             _fx.Add(new EffectSystem.Spawn
             {
                 Effect = fx, Position = pos, Yaw = yaw, Scale = scale, Seed = seed, Time = time, Velocity = vel,
-                YawRate = yawRate, Duration = duration, Tint = tint,
+                YawRate = yawRate, Duration = duration, Tint = tint, LightGain = lightGain,
             });
             EventsThisFrame++;
         }
@@ -268,9 +277,10 @@ namespace Demo3D.Runtime.Effects
             // A crystal death's burst on the beat its shards release.
             while (_nextShatter < _shatters.Length && _shatters[_nextShatter].Time <= now)
             {
+                float light = _shatterLight[_nextShatter];
                 var s = _shatters[_nextShatter++];
                 if (s.Time <= from) continue;
-                Add(_crystal, s.Position, 0, s.Scale, s.Seed ^ 0x6C8E9CF5u, s.Time, Vector3.zero, 0, 0, s.Tint);
+                Add(_crystal, s.Position, 0, s.Scale, s.Seed ^ 0x6C8E9CF5u, s.Time, Vector3.zero, 0, 0, s.Tint, light);
             }
             // A dust puff at each monster's attack.
             while (_nextAction < _actionsByTime.Length)

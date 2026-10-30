@@ -364,6 +364,7 @@ namespace Demo3D.Runtime.Playback
 
         readonly System.Diagnostics.Stopwatch _evalWatch = new System.Diagnostics.Stopwatch();
         readonly System.Diagnostics.Stopwatch _drawWatch = new System.Diagnostics.Stopwatch();
+        readonly System.Diagnostics.Stopwatch _shatterWatch = new System.Diagnostics.Stopwatch(); // the crystal shatter's physics steps and shard updates
         double _lastWall;
 
         bool _quitNext;
@@ -373,6 +374,7 @@ namespace Demo3D.Runtime.Playback
             if (_quitNext) { Quit(); return; }
             _evalWatch.Reset();
             _drawWatch.Reset();
+            _shatterWatch.Reset();
             if (_maskOn) MaskMode(false);
             double t = (_flags.FreezeAt >= 0 ? _flags.FreezeAt : _clock.Now()) + _flags.TimeOffset;
             if (!double.IsNaN(_maskAt))
@@ -426,8 +428,10 @@ namespace Demo3D.Runtime.Playback
                 _fxLast = t;
             }
 
-            _evalWatch.Start();
+            _shatterWatch.Start();
             _shatter?.Frame(t);
+            _shatterWatch.Stop();
+            _evalWatch.Start();
             // Stable slots: a monster keeps its slot while it lives (motion vectors, the previous
             // palette and LOD state follow the slot); a freed slot is written Hidden first.
             _slots.Begin();
@@ -559,7 +563,7 @@ namespace Demo3D.Runtime.Playback
             if (_stats == null)
             {
                 _stats = new System.IO.StreamWriter(_flags.Stats) { AutoFlush = true };
-                _stats.WriteLine("t,section,onScreenAlive,onScreenDying,target,active,viewWidth,wallFrameMs,evalMs,crowdMs,particles,effectSpawns,lightCues,lightsUsed,lightDropShare");
+                _stats.WriteLine("t,section,onScreenAlive,onScreenDying,target,active,viewWidth,wallFrameMs,evalMs,crowdMs,particles,effectSpawns,lightCues,lightsUsed,lightDropShare,shards,shatterMs");
             }
             _nextStat = t + 0.5;
             int si = _tl.Map != null ? _tl.Map.SectionIndexAt(t) : 0;
@@ -568,8 +572,9 @@ namespace Demo3D.Runtime.Playback
             _stats.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0:F2},{1},{2},{3},{4},{5},{6:F1},{7:F1},{8:F2},{9:F2}",
                 t, sec?.Label ?? _tl.Name, OnScreenAlive, OnScreenDying, sec?.TargetOnScreen ?? 0, _active.Count,
                 _tl.FramingAt(Math.Max(0, t)).ViewWidth, (wall - _lastWall) * 1000, _evalWatch.Elapsed.TotalMilliseconds,
-                _drawWatch.Elapsed.TotalMilliseconds) + string.Format(CultureInfo.InvariantCulture, ",{0},{1},{2},{3},{4:F4}",
-                _fx?.Particles ?? 0, _fx?.SpawnsTotal ?? 0, _fx?.Lights.ActiveCues ?? 0, _fx?.Lights.LightsUsed ?? 0, _fx?.Lights.DropShare ?? 0));
+                _drawWatch.Elapsed.TotalMilliseconds) + string.Format(CultureInfo.InvariantCulture, ",{0},{1},{2},{3},{4:F4},{5},{6:F2}",
+                _fx?.Particles ?? 0, _fx?.SpawnsTotal ?? 0, _fx?.Lights.ActiveCues ?? 0, _fx?.Lights.LightsUsed ?? 0, _fx?.Lights.DropShare ?? 0,
+                _shatter?.Shards ?? 0, _shatterWatch.Elapsed.TotalMilliseconds));
         }
 
         /// <summary>

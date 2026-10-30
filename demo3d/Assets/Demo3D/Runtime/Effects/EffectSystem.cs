@@ -30,6 +30,8 @@ namespace Demo3D.Runtime.Effects
             public double Time;
             /// <summary>Alpha above 0: the spawn's own colour for the heat ramp (its edge and mid) and its light cue, at that weight (a crystal death's gem colour).</summary>
             public Color Tint;
+            /// <summary>Above 0: the light cue's intensity scale (the crystal releases sharing one beat); 0 is the cue as authored.</summary>
+            public float LightGain;
         }
 
         public readonly EffectLibrary Library;
@@ -204,6 +206,7 @@ namespace Demo3D.Runtime.Effects
             {
                 var cue = fx.Light;
                 if (s.Tint.a > 0) cue.Color = Color.Lerp(cue.Color, new Color(s.Tint.r, s.Tint.g, s.Tint.b), s.Tint.a);
+                if (s.LightGain > 0) cue.Intensity *= s.LightGain;
                 Lights.Add(s.Position + Vector3.up * (cue.Height * scale), cue, s.Time, scale, s.Velocity);
             }
             if (_cuts.On(Cuts.Merge)) _queued.Add(s); // merged against the camera in Update

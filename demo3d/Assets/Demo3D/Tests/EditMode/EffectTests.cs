@@ -104,7 +104,8 @@ namespace Demo3D.Tests
 
         /// <summary>
         /// A crystal death's burst replaces its death burst: it spawns the selection's client.crystalShatter
-        /// on the release beat, in the gem's tint; other deaths keep their death burst.
+        /// on the release beat, in the gem's tint; other deaths keep their death burst. Releases on one
+        /// beat share their flash (1/sqrt(n) each).
         /// </summary>
         [Test]
         public void CrystalDeathsSwapTheirDeathBurstForTheShatterOnTheRelease()
@@ -143,15 +144,22 @@ namespace Demo3D.Tests
                 var sink = new Collect();
                 var driver = new EffectDriver(tl, lib, sink) { Ambient = false };
                 var gem = new Color(0.2f, 0.9f, 1f, 1f);
-                driver.SetShatters(new[] { new EffectDriver.Shatter { Time = 2.25, Entity = 1, Position = new Vector3(2, 0.3f, 0), Scale = 1, Seed = 2, Tint = gem } });
+                driver.SetShatters(new[]
+                {
+                    new EffectDriver.Shatter { Time = 2.25, Entity = 1, Position = new Vector3(2, 0.3f, 0), Scale = 1, Seed = 2, Tint = gem },
+                    new EffectDriver.Shatter { Time = 2.25, Entity = 5, Position = new Vector3(4, 0.3f, 0), Scale = 1, Seed = 5, Tint = gem },
+                    new EffectDriver.Shatter { Time = 2.75, Entity = 6, Position = new Vector3(6, 0.3f, 0), Scale = 1, Seed = 6, Tint = gem },
+                });
                 for (int f = 0; f <= 180; f++) driver.Frame(f / 60.0);
-                Assert.That(sink.Spawns.Count, Is.EqualTo(2));
+                Assert.That(sink.Spawns.Count, Is.EqualTo(4));
                 Assert.That(sink.Spawns[0].Effect, Is.EqualTo(0), "the other monster's death burst");
                 Assert.That(sink.Spawns[0].Position.x, Is.EqualTo(-2f).Within(1e-5f));
                 Assert.That(sink.Spawns[1].Effect, Is.EqualTo(1), "the crystal death's shatter, not its death burst");
                 Assert.That(sink.Spawns[1].Time, Is.EqualTo(2.25).Within(1e-9));
                 Assert.That(sink.Spawns[1].Position, Is.EqualTo(new Vector3(2, 0.3f, 0)));
                 Assert.That(sink.Spawns[1].Tint, Is.EqualTo(gem));
+                Assert.That(sink.Spawns[1].LightGain, Is.EqualTo(1 / Mathf.Sqrt(2)).Within(1e-6f), "two releases on the beat share the flash");
+                Assert.That(sink.Spawns[3].LightGain, Is.EqualTo(1f), "a lone release keeps the cue as authored");
             }
             finally { UnityEngine.Object.DestroyImmediate(lib); }
         }
